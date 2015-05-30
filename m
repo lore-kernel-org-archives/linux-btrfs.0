@@ -1,56 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f181.google.com ([209.85.192.181]:35730 "EHLO
-	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751799AbbEZRF6 (ORCPT
+Received: from mail-pd0-f178.google.com ([209.85.192.178]:35486 "EHLO
+	mail-pd0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750756AbbE3I7w (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 26 May 2015 13:05:58 -0400
-Received: by pdea3 with SMTP id a3so95063491pde.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 26 May 2015 10:05:58 -0700 (PDT)
-Date: Tue, 26 May 2015 10:05:47 -0700
+	Sat, 30 May 2015 04:59:52 -0400
+Received: by pdbnf5 with SMTP id nf5so9373929pdb.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2015 01:59:52 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Miao Xie <miaoxie@huawei.com>, Philip <bugzilla@philip-seeger.de>
-Subject: Re: [PATCH 0/4] Btrfs: RAID 5/6 missing device replace
-Message-ID: <20150526170547.GA21342@mew.lv.cox.net>
-References: <cover.1431330020.git.osandov@osandov.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1431330020.git.osandov@osandov.com>
+Cc: Markus Schauler <mschauler@gmail.com>, Omar Sandoval <osandov@osandov.com>,
+        <stable@vger.kernel.org>
+Subject: [PATCH] Btrfs: don't invalidate root dentry when subvolume deletion fails
+Date: Sat, 30 May 2015 01:59:26 -0700
+Message-Id: <d901ccc6dbbc8db40962b4b8e4d391a684e88335.1432975901.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, May 11, 2015 at 12:58:11AM -0700, Omar Sandoval wrote:
-> A user reported on Bugzilla that they were seeing kernel BUGs when
-> attempting to replace a missing device on a RAID 6 array. After
-> identifying the apparent cause of the BUG, I reached the conclusion that
-> there wasn't a quick fix. Maybe Miao Xie can point something out that I
-> missed, as he originally implemented device replace on RAID 5/6 :)
-> 
-> Patch 4 has the details, but the main problem is that we can't create
-> bios for a missing device, so the main scrub code path isn't very
-> useful. On RAID 5/6, since we only have one mirror for any piece of
-> data, the missing device is the only mirror we can use. Clearly, (unless
-> I missed something), this case needs to be handled differently.
-> 
-> These patches are on top of v4.1-rc2. I ran the scrub and replace
-> xfstests and the script below, which also reproduces the original BUG.
-> 
-> Thanks!
-> 
-> Omar Sandoval (4):
->   Btrfs: remove misleading handling of missing device scrub
->   Btrfs: count devices correctly in readahead during RAID 5/6 replace
->   Btrfs: add RAID 5/6 BTRFS_RBIO_REBUILD_MISSING operation
->   Btrfs: fix device replace of a missing RAID 5/6 device
-> 
->  fs/btrfs/raid56.c |  87 +++++++++++++++++++++++++----
->  fs/btrfs/raid56.h |  10 +++-
->  fs/btrfs/reada.c  |   4 +-
->  fs/btrfs/scrub.c  | 164 +++++++++++++++++++++++++++++++++++++++++++++---------
->  4 files changed, 225 insertions(+), 40 deletions(-)
-> 
+Since commit bafc9b754f75 ("vfs: More precise tests in d_invalidate"),
+mounted subvolumes can be deleted because d_invalidate() won't fail.
+However, we run into problems when we attempt to delete the default
+subvolume while it is mounted as the root filesystem:
 
-Ping for review.
+	# btrfs subvol list /
+	ID 257 gen 306 top level 5 path rootvol
+	ID 267 gen 334 top level 5 path snap1
+	# btrfs subvol get-default /
+	ID 267 gen 334 top level 5 path snap1
+	# btrfs inspect-internal rootid /
+	267
+	# mount -o subvol=/ /dev/vda1 /mnt
+	# btrfs subvol del /mnt/snap1
+	Delete subvolume (no-commit): '/mnt/snap1'
+	ERROR: cannot delete '/mnt/snap1' - Operation not permitted
+	# findmnt /
+	findmnt: can't read /proc/mounts: No such file or directory
+	# ls /proc
+	#
 
+Markus reported that this same scenario simply led to a kernel oops.
+
+This happens because in btrfs_ioctl_snap_destroy(), we call
+d_invalidate() before we check may_destroy_subvol(), which means that we
+detach the submounts and drop the dentry before erroring out. Instead,
+we should only invalidate the dentry once we know that we're going
+through with the deletion.
+
+Cc: <stable@vger.kernel.org>
+Fixes: bafc9b754f75 ("vfs: More precise tests in d_invalidate")
+Reported-by: Markus Schauler <mschauler@gmail.com>
+Signed-off-by: Omar Sandoval <osandov@osandov.com>
+---
+The other fix for preventing all mounted subvolumes from being deleted
+would preclude this, but it sounded like we were leaning towards
+enforcing that in userspace once subvolume info becomes available in
+/proc/mounts, so this should be fixed separately.
+
+ fs/btrfs/ioctl.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 1c22c6518504..8edb8544088b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2413,14 +2413,14 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+ 		goto out_unlock_inode;
+ 	}
+ 
+-	d_invalidate(dentry);
+-
+ 	down_write(&root->fs_info->subvol_sem);
+ 
+ 	err = may_destroy_subvol(dest);
+ 	if (err)
+ 		goto out_up_write;
+ 
++	d_invalidate(dentry);
++
+ 	btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
+ 	/*
+ 	 * One for dir inode, two for dir entries, two for root
 -- 
-Omar
+2.4.2
+

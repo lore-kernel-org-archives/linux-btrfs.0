@@ -1,137 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:50125 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751488AbbE0Rvn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 27 May 2015 13:51:43 -0400
-Received: from pps.filterd (m0004077 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t4RHm9R2026630
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2015 10:51:32 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 1ungdj0h18-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 27 May 2015 10:51:32 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: specify mountpoint for recieve
-Date: Wed, 27 May 2015 13:51:29 -0400
-Message-ID: <1432749089-14663-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:54011 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752702AbbE3Oy7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 30 May 2015 10:54:59 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YyiA3-0008Nt-3D
+	for linux-btrfs@vger.kernel.org; Sat, 30 May 2015 16:54:55 +0200
+Received: from host-78-149-208-209.as13285.net ([78.149.208.209])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2015 16:54:55 +0200
+Received: from samtygier by host-78-149-208-209.as13285.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 30 May 2015 16:54:55 +0200
+To: linux-btrfs@vger.kernel.org
+From: sam tygier <samtygier@yahoo.co.uk>
+Subject: [PATCH v2] btrfs-progs: check metadata redundancy
+Date: Sat, 30 May 2015 15:54:48 +0100
+Message-ID: <mkcivp$l8b$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In a chroot environment we may not have /proc mounted, which makes btrfs receive
-freak out since it wants to know the base directory where are are mounted for
-things like clone and such.  Give an option to specify where the mountpoint is
-in these cases so you can still do a btrfs receive in a chroot.  Thanks,
+Currently BTRFS allows you to make bad choices of data and 
+metadata levels. For example -d raid1 -m raid0 means you can
+only use half your total disk space, but will loose everything
+if 1 disk fails. It should give a warning in these cases.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+When making a filesystem check that metadata mode is at least
+as redundant as the data mode. For example give warning when:
+	-d raid1 -m raid0
+
+V1 -> V2 Downgrade from error to warning as requested by David
+Sterba.
+
+Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
+
+>From fdfcb5f733ff5ed48562366bda6f1a9c740b031a Mon Sep 17 00:00:00 2001
+From: Sam Tygier <samtygier@yahoo.co.uk>
+Date: Sat, 30 May 2015 15:37:37 +0100
+Subject: [PATCH] When making a filesystem check that metadata mode is at least
+ as redundant as the data mode. For example give warning when:
+   -d raid1 -m raid0
+
 ---
- cmds-receive.c | 47 +++++++++++++++++++++++++++++++----------------
- 1 file changed, 31 insertions(+), 16 deletions(-)
+ mkfs.c  |  6 ++++++
+ utils.c | 18 ++++++++++++++++++
+ utils.h |  1 +
+ 3 files changed, 25 insertions(+)
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index b7cf3f9..28ae8e9 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -813,8 +813,8 @@ static struct btrfs_send_ops send_ops = {
- 	.utimes = process_utimes,
- };
- 
--static int do_receive(struct btrfs_receive *r, const char *tomnt, int r_fd,
--		      u64 max_errors)
-+static int do_receive(struct btrfs_receive *r, const char *tomnt,
-+		      char *realmnt, int r_fd, u64 max_errors)
- {
- 	int ret;
- 	char *dest_dir_full_path;
-@@ -836,20 +836,24 @@ static int do_receive(struct btrfs_receive *r, const char *tomnt, int r_fd,
- 		goto out;
+diff --git a/mkfs.c b/mkfs.c
+index 14e0fed..938840d 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1367,6 +1367,12 @@ int main(int ac, char **av)
+ 		exit(1);
  	}
  
--	ret = find_mount_root(dest_dir_full_path, &r->root_path);
--	if (ret < 0) {
--		fprintf(stderr,
--			"ERROR: failed to determine mount point for %s: %s\n",
--			dest_dir_full_path, strerror(-ret));
--		ret = -EINVAL;
--		goto out;
--	}
--	if (ret > 0) {
--		fprintf(stderr,
-+	if (realmnt) {
-+		r->root_path = realmnt;
-+	} else {
-+		ret = find_mount_root(dest_dir_full_path, &r->root_path);
-+		if (ret < 0) {
-+			fprintf(stderr,
-+				"ERROR: failed to determine mount point for %s: %s\n",
-+				dest_dir_full_path, strerror(-ret));
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (ret > 0) {
-+			fprintf(stderr,
- 			"ERROR: %s doesn't belong to btrfs mount point\n",
- 			dest_dir_full_path);
--		ret = -EINVAL;
--		goto out;
-+			ret = -EINVAL;
-+			goto out;
-+		}
- 	}
- 	r->mnt_fd = open(r->root_path, O_RDONLY | O_NOATIME);
- 	if (r->mnt_fd < 0) {
-@@ -943,6 +947,7 @@ int cmd_receive(int argc, char **argv)
- {
- 	char *tomnt = NULL;
- 	char *fromfile = NULL;
-+	char *realmnt = NULL;
- 	struct btrfs_receive r;
- 	int receive_fd = fileno(stdin);
- 	u64 max_errors = 1;
-@@ -962,7 +967,7 @@ int cmd_receive(int argc, char **argv)
- 			{ NULL, 0, NULL, 0 }
- 		};
- 
--		c = getopt_long(argc, argv, "Cevf:", long_opts, NULL);
-+		c = getopt_long(argc, argv, "Cevf:m:", long_opts, NULL);
- 		if (c < 0)
- 			break;
- 
-@@ -982,6 +987,13 @@ int cmd_receive(int argc, char **argv)
- 		case 'E':
- 			max_errors = arg_strtou64(optarg);
- 			break;
-+		case 'm':
-+			realmnt = strdup(optarg);
-+			if (!realmnt) {
-+				fprintf(stderr, "ERROR: couldn't allocate realmnt.\n");
-+				return 1;
-+			}
-+			break;
- 		case '?':
- 		default:
- 			fprintf(stderr, "ERROR: receive args invalid.\n");
-@@ -1002,7 +1014,7 @@ int cmd_receive(int argc, char **argv)
- 		}
- 	}
- 
--	ret = do_receive(&r, tomnt, receive_fd, max_errors);
-+	ret = do_receive(&r, tomnt, realmnt, receive_fd, max_errors);
- 
- 	return !!ret;
++	if (group_profile_max_safe_loss(metadata_profile) <
++		group_profile_max_safe_loss(data_profile)){
++		fprintf(stderr,
++			"Warning: metatdata has lower redundancy than data\n");
++	}
++
+ 	/* if we are here that means all devs are good to btrfsify */
+ 	printf("%s\n", PACKAGE_STRING);
+ 	printf("See %s for more information.\n\n", PACKAGE_URL);
+diff --git a/utils.c b/utils.c
+index 4b8a826..ba35b34 100644
+--- a/utils.c
++++ b/utils.c
+@@ -2354,6 +2354,24 @@ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
+ 	return 0;
  }
-@@ -1032,5 +1044,8 @@ const char * const cmd_receive_usage[] = {
- 	"--max-errors <N> Terminate as soon as N errors happened while",
- 	"                 processing commands from the send stream.",
- 	"                 Default value is 1. A value of 0 means no limit.",
-+	"-m <mountpoint>  The root mount point of the destination fs.",
-+	"                 If you do not have /proc use this to tell us where ",
-+	"                 this file system is mounted.",
- 	NULL
- };
+ 
++int group_profile_max_safe_loss(u64 flag)
++{
++	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case 0: /* single */
++	case BTRFS_BLOCK_GROUP_DUP:
++	case BTRFS_BLOCK_GROUP_RAID0:
++		return 0;
++	case BTRFS_BLOCK_GROUP_RAID1:
++	case BTRFS_BLOCK_GROUP_RAID5:
++	case BTRFS_BLOCK_GROUP_RAID10:
++		return 1;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		return 2;
++	default:
++		return -1;
++	}
++}
++
+ /* Check if disk is suitable for btrfs
+  * returns:
+  *  1: something is wrong, estr provides the error
+diff --git a/utils.h b/utils.h
+index 5657c74..98fd812 100644
+--- a/utils.h
++++ b/utils.h
+@@ -144,6 +144,7 @@ int test_dev_for_mkfs(char *file, int force_overwrite, char *estr);
+ int get_label_mounted(const char *mount_path, char *labelp);
+ int test_num_disk_vs_raid(u64 metadata_profile, u64 data_profile,
+ 	u64 dev_cnt, int mixed, char *estr);
++int group_profile_max_safe_loss(u64 flag);
+ int is_vol_small(char *file);
+ int csum_tree_block(struct btrfs_root *root, struct extent_buffer *buf,
+ 			   int verify);
 -- 
-1.8.3.1
+2.1.4
 

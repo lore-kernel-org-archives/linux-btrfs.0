@@ -1,89 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35051 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750959AbbFDDJK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 23:09:10 -0400
-Message-ID: <556FC14E.1030700@oracle.com>
-Date: Thu, 04 Jun 2015 11:09:02 +0800
+Received: from aserp1040.oracle.com ([141.146.126.69]:20054 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752443AbbFAGZi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 02:25:38 -0400
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t516PaBB017560
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 1 Jun 2015 06:25:37 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id t516Pa9U016769
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 1 Jun 2015 06:25:36 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+	by userv0122.oracle.com (8.13.8/8.13.8) with ESMTP id t516Pa53002434
+	for <linux-btrfs@vger.kernel.org>; Mon, 1 Jun 2015 06:25:36 GMT
 From: Anand Jain <anand.jain@oracle.com>
-MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: avoid duplicate checks on user provided
- devid
-References: <1433139918-820-1-git-send-email-anand.jain@oracle.com> <20150602151234.GH6761@twin.jikos.cz> <556EB19D.6010807@oracle.com>
-In-Reply-To: <556EB19D.6010807@oracle.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] btrfs-progs: avoid duplicate checks on user provided devid
+Date: Mon,  1 Jun 2015 14:25:17 +0800
+Message-Id: <1433139918-820-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+kernel is already checking it (rightly), we don't need to check that in the user land.
 
-David,
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ cmds-replace.c | 27 ---------------------------
+ 1 file changed, 27 deletions(-)
 
-  Kindly do not integrated this patch as of now.
-  As I have just found that, the error reporting when
-  the default background option is used is not completely
-  transparent. I need to fix this before this patch.
+diff --git a/cmds-replace.c b/cmds-replace.c
+index 6ea7c61..0787ce3 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -118,7 +118,6 @@ static int cmd_start_replace(int argc, char **argv)
+ 	struct btrfs_ioctl_dev_replace_args start_args = {0};
+ 	struct btrfs_ioctl_dev_replace_args status_args = {0};
+ 	int ret;
+-	int i;
+ 	int c;
+ 	int fdmnt = -1;
+ 	int fdsrcdev = -1;
+@@ -214,33 +213,7 @@ static int cmd_start_replace(int argc, char **argv)
+ 	}
+ 
+ 	if (is_numerical(srcdev)) {
+-		struct btrfs_ioctl_fs_info_args fi_args;
+-		struct btrfs_ioctl_dev_info_args *di_args = NULL;
+-
+ 		start_args.start.srcdevid = arg_strtou64(srcdev);
+-
+-		ret = get_fs_info(path, &fi_args, &di_args);
+-		if (ret) {
+-			fprintf(stderr, "ERROR: getting dev info for devstats failed: "
+-					"%s\n", strerror(-ret));
+-			free(di_args);
+-			goto leave_with_error;
+-		}
+-		if (!fi_args.num_devices) {
+-			fprintf(stderr, "ERROR: no devices found\n");
+-			free(di_args);
+-			goto leave_with_error;
+-		}
+-
+-		for (i = 0; i < fi_args.num_devices; i++)
+-			if (start_args.start.srcdevid == di_args[i].devid)
+-				break;
+-		free(di_args);
+-		if (i == fi_args.num_devices) {
+-			fprintf(stderr, "Error: '%s' is not a valid devid for filesystem '%s'\n",
+-				srcdev, path);
+-			goto leave_with_error;
+-		}
+ 	} else {
+ 		fdsrcdev = open(srcdev, O_RDWR);
+ 		if (fdsrcdev < 0) {
+-- 
+2.4.1
 
-Thanks, Anand
-
-
-On 06/03/2015 03:49 PM, Anand Jain wrote:
->
-> On 06/02/2015 11:12 PM, David Sterba wrote:
->> On Mon, Jun 01, 2015 at 02:25:17PM +0800, Anand Jain wrote:
->>> kernel is already checking it (rightly), we don't need to check that
->>> in the user land.
->>
->> Sometimes it's useful to duplicate the checks in userspace because we
->> can fail early and return the error message directly, compared to
->> messages in syslog or a simple errno.
->
->   right. But here what do you feel about the gain obtained vs additional
->   code thats required ?
->
->   My take: get_fs_info() calls check_mounted_where() which in turn calls
->   btrfs_scan_lblkid(), which is system wide scan of all block devices,
->   thats heavy weight.
->
->   My past tests showed visible delay/jitter in the output of
->   'btrfs fi show -d' when btrfs scrub is running. The main culprit
->   is check_mounted_where calling btrfs_scan_lblkid. so its recommend
->   to run get_fs_info() only if required.
->
->> Have you observed that the userspace checks were problematic?
->
->   Nope. Just a cleanup. With this patch cmd_start_replace() would
->   should match with cmd_rm_dev().
->   As both 'btrfs dev del <devid> ..' and 'btrfs replace start <devid> .."
->   intentions are same, so theoretically up to certain extent their codes
->   should match.
->
->>> @@ -214,33 +213,7 @@ static int cmd_start_replace(int argc, char **argv)
->>>       }
->>>
->>>       if (is_numerical(srcdev)) {
->>> -        struct btrfs_ioctl_fs_info_args fi_args;
->>> -        struct btrfs_ioctl_dev_info_args *di_args = NULL;
->>> -
->>>           start_args.start.srcdevid = arg_strtou64(srcdev);
->>> -
->>> -        ret = get_fs_info(path, &fi_args, &di_args);
->>
->> This does additional checks, like checking where it's mounted.
->
->   in this part of the if statement srcdev is <num> and is devid.
->   get_fs_info check does not help.
->
->   What did I miss ?
->
-> Thanks Anand
->
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

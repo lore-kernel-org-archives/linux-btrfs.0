@@ -1,73 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f176.google.com ([209.85.223.176]:34811 "EHLO
-	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753541AbbFASSM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 14:18:12 -0400
-Received: by ieczm2 with SMTP id zm2so115490559iec.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2015 11:18:10 -0700 (PDT)
+Received: from mail-ie0-f180.google.com ([209.85.223.180]:36298 "EHLO
+	mail-ie0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751493AbbFATNF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 15:13:05 -0400
+Received: by ieclw1 with SMTP id lw1so21338016iec.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2015 12:13:02 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <mkhjkp$hgl$1@ger.gmane.org>
+In-Reply-To: <CAG3t+pEHqATjGFUQrLn__O5-ByW4oX6MWjQiYh9GpgfqdKKiyg@mail.gmail.com>
 References: <mkhjkp$hgl$1@ger.gmane.org>
-Date: Mon, 1 Jun 2015 12:18:10 -0600
-Message-ID: <CAJCQCtSSt623v-M6wvRUt7vbkd9qkKPnS7guMgCKDxJd+C9rtw@mail.gmail.com>
+	<CAJCQCtSSt623v-M6wvRUt7vbkd9qkKPnS7guMgCKDxJd+C9rtw@mail.gmail.com>
+	<CAG3t+pEHqATjGFUQrLn__O5-ByW4oX6MWjQiYh9GpgfqdKKiyg@mail.gmail.com>
+Date: Mon, 1 Jun 2015 13:13:02 -0600
+Message-ID: <CAJCQCtSKFgxygYcOgW8GfjDq-mQ0M1RLEORExa33R+Zsk-6CYg@mail.gmail.com>
 Subject: Re: [newb] move /home to subvolume
 From: Chris Murphy <lists@colorremedies.com>
 To: Neal Becker <ndbecker2@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 1, 2015 at 6:36 AM, Neal Becker <ndbecker2@gmail.com> wrote:
-> I have everything under /:
->
-> sudo btrfs subvolume list /
-> ID 257 gen 65795 top level 5 path root
+On Mon, Jun 1, 2015 at 12:52 PM, Neal Becker <ndbecker2@gmail.com> wrote:
 
-root is a subvolume, but is not the top level (default) subvolume.
->
-> I want to move /home onto it's own subvolume.  I hope I can do this while
-> the root device is mounted.
+> Let me just make sure I'm clear on this.  So I already have /dev/sdaX
+> mounted as /.
+
+Actually your fstab will show you have subvol=root mounted at /, not
+the top level.
+
+>You're saying I should mount it again as /mnt, and this
+> procedure is OK while the filesystem is in use, correct?
 
 Yes.
 
-You need to mount the top level and create a new subvolume. Assuming
-you haven't changed the default subvolume, just mount the device
-normally:
-
-mount /dev/sdaX /mnt
-btrfs sub create /mnt/home
-cp -a --reflink /mnt/root/home /mnt/
-vi /etc/fstab ## to add an entry to mount subvol=home at /home
-umount /home
-mount /home
-
-And then at your leisure you can blow away the contents of the copied
-and no longer used /home directory still in the root subvolume. Just
-be certain you're deleting the correct home. You could:
-cd /mnt/root/home
-rm -rf *     ## egads be certain
-
-This is not a mount point, but the old home directory which is no
-longer in use. The path to the in use one is /mnt/home as well as
-/home (in the above example).
-
-
-
 >
-> What is the procedure?
+>>
+>> btrfs sub create /mnt/home
 >
-> I tried first to create a subvolume for /home at the top-level, but couldn't
-> figure out the syntax:
 >
-> [nbecker@nbecker2 ~]$ sudo btrfs subvolume create /home
-> [sudo] password for nbecker:
-> ERROR: '/home' exists
+> Well there is already a directory called /home, under / on this filesystem.
+
+/ is a mount point. And the subvolume named root is what's mounted
+there. If you mount the top level subvolume at /mnt then you will see
+the root subvolume in /mnt/. And you will see your current home
+directory in /mnt/root/home.
 
 
-That doesn't work because you're trying to create a home subvolume
-where a home directory exists. You need to mount the top level
-subvolume to create a subvolume in it.
+> Well, /home is not mounted.  There is right now just a single mount of /
+>
+>>
+>> umount /home
+
+OK so you can skip the umount part.
 
 
 -- 

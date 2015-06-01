@@ -1,121 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55434 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752865AbbF3VmZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 17:42:25 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 5/5] btrfs: don't update mtime/ctime on deduped inodes
-Date: Tue, 30 Jun 2015 14:42:08 -0700
-Message-Id: <1435700528-14141-6-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
-References: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:34070 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751479AbbFAQ4o (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 12:56:44 -0400
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <d901ccc6dbbc8db40962b4b8e4d391a684e88335.1432975901.git.osandov@osandov.com>
+References: <d901ccc6dbbc8db40962b4b8e4d391a684e88335.1432975901.git.osandov@osandov.com>
+Date: Mon, 1 Jun 2015 17:56:43 +0100
+Message-ID: <CAL3q7H6PvooaNWpKCTFgAxc=R0pT1XiwSQvJiYVXiV4iuJHXRA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: don't invalidate root dentry when subvolume
+ deletion fails
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Omar Sandoval <osandov@osandov.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Markus Schauler <mschauler@gmail.com>, stable@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One issue users have reported is that dedupe changes mtime on files,
-resulting in tools like rsync thinking that their contents have changed when
-in fact the data is exactly the same. We also skip the ctime update as no
-user-visible metadata changes here and we want dedupe to be transparent to
-the user.
+On Sat, May 30, 2015 at 9:59 AM, Omar Sandoval <osandov@osandov.com> wrote:
+> Since commit bafc9b754f75 ("vfs: More precise tests in d_invalidate"),
+> mounted subvolumes can be deleted because d_invalidate() won't fail.
+> However, we run into problems when we attempt to delete the default
+> subvolume while it is mounted as the root filesystem:
+>
+>         # btrfs subvol list /
+>         ID 257 gen 306 top level 5 path rootvol
+>         ID 267 gen 334 top level 5 path snap1
+>         # btrfs subvol get-default /
+>         ID 267 gen 334 top level 5 path snap1
+>         # btrfs inspect-internal rootid /
+>         267
+>         # mount -o subvol=/ /dev/vda1 /mnt
+>         # btrfs subvol del /mnt/snap1
+>         Delete subvolume (no-commit): '/mnt/snap1'
+>         ERROR: cannot delete '/mnt/snap1' - Operation not permitted
+>         # findmnt /
+>         findmnt: can't read /proc/mounts: No such file or directory
+>         # ls /proc
+>         #
+>
+> Markus reported that this same scenario simply led to a kernel oops.
+>
+> This happens because in btrfs_ioctl_snap_destroy(), we call
+> d_invalidate() before we check may_destroy_subvol(), which means that we
+> detach the submounts and drop the dentry before erroring out. Instead,
+> we should only invalidate the dentry once we know that we're going
+> through with the deletion.
+>
+> Cc: <stable@vger.kernel.org>
+> Fixes: bafc9b754f75 ("vfs: More precise tests in d_invalidate")
+> Reported-by: Markus Schauler <mschauler@gmail.com>
+> Signed-off-by: Omar Sandoval <osandov@osandov.com>
+> ---
+> The other fix for preventing all mounted subvolumes from being deleted
+> would preclude this, but it sounded like we were leaning towards
+> enforcing that in userspace once subvolume info becomes available in
+> /proc/mounts, so this should be fixed separately.
+>
+>  fs/btrfs/ioctl.c | 4 ++--
+>  1 file changed, 2 insertions(+), 2 deletions(-)
+>
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 1c22c6518504..8edb8544088b 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -2413,14 +2413,14 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
+>                 goto out_unlock_inode;
+>         }
+>
+> -       d_invalidate(dentry);
+> -
+>         down_write(&root->fs_info->subvol_sem);
+>
+>         err = may_destroy_subvol(dest);
+>         if (err)
+>                 goto out_up_write;
+>
+> +       d_invalidate(dentry);
+> +
 
-Clone still wants time changes, so we special case this in the code.
+Any reason why not calling d_invalidate() only if the call
+btrfs_unlink_subvol() succeeds? Not seeing a reason why we should
+invalidate before doing the actual deletion successfully (before that
+metadata reservation can fail or failure to start/join a transaction,
+etc).
 
-This was tested with the btrfs-extent-same tool.
+Also, would you consider making an xfstest for this?
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
----
- fs/btrfs/ioctl.c | 24 ++++++++++++++----------
- 1 file changed, 14 insertions(+), 10 deletions(-)
+thanks
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 83f4679..5fdad21 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -87,7 +87,8 @@ struct btrfs_ioctl_received_subvol_args_32 {
- 
- 
- static int btrfs_clone(struct inode *src, struct inode *inode,
--		       u64 off, u64 olen, u64 olen_aligned, u64 destoff);
-+		       u64 off, u64 olen, u64 olen_aligned, u64 destoff,
-+		       int no_time_update);
- 
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
-@@ -3054,7 +3055,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	/* pass original length for comparison so we stay within i_size */
- 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
- 	if (ret == 0)
--		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
-+		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
- 
- 	if (same_inode)
- 		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
-@@ -3219,13 +3220,15 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
- 				     struct inode *inode,
- 				     u64 endoff,
- 				     const u64 destoff,
--				     const u64 olen)
-+				     const u64 olen,
-+				     int no_time_update)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret;
- 
- 	inode_inc_iversion(inode);
--	inode->i_mtime = inode->i_ctime = CURRENT_TIME;
-+	if (!no_time_update)
-+		inode->i_mtime = inode->i_ctime = CURRENT_TIME;
- 	/*
- 	 * We round up to the block size at eof when determining which
- 	 * extents to clone above, but shouldn't round up the file size.
-@@ -3310,13 +3313,13 @@ static void clone_update_extent_map(struct inode *inode,
-  * @inode: Inode to clone to
-  * @off: Offset within source to start clone from
-  * @olen: Original length, passed by user, of range to clone
-- * @olen_aligned: Block-aligned value of olen, extent_same uses
-- *               identical values here
-+ * @olen_aligned: Block-aligned value of olen
-  * @destoff: Offset within @inode to start clone
-+ * @no_time_update: Whether to update mtime/ctime on the target inode
-  */
- static int btrfs_clone(struct inode *src, struct inode *inode,
- 		       const u64 off, const u64 olen, const u64 olen_aligned,
--		       const u64 destoff)
-+		       const u64 destoff, int no_time_update)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_path *path = NULL;
-@@ -3640,7 +3643,8 @@ process_slot:
- 					      root->sectorsize);
- 			ret = clone_finish_inode_update(trans, inode,
- 							last_dest_end,
--							destoff, olen);
-+							destoff, olen,
-+							no_time_update);
- 			if (ret)
- 				goto out;
- 			if (new_key.offset + datal >= destoff + len)
-@@ -3678,7 +3682,7 @@ process_slot:
- 		clone_update_extent_map(inode, trans, NULL, last_dest_end,
- 					destoff + len - last_dest_end);
- 		ret = clone_finish_inode_update(trans, inode, destoff + len,
--						destoff, olen);
-+						destoff, olen, no_time_update);
- 	}
- 
- out:
-@@ -3808,7 +3812,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 		btrfs_double_extent_lock(src, off, inode, destoff, len);
- 	}
- 
--	ret = btrfs_clone(src, inode, off, olen, len, destoff);
-+	ret = btrfs_clone(src, inode, off, olen, len, destoff, 0);
- 
- 	if (same_inode) {
- 		u64 lock_start = min_t(u64, off, destoff);
+
+>         btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
+>         /*
+>          * One for dir inode, two for dir entries, two for root
+> --
+> 2.4.2
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.1.2
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

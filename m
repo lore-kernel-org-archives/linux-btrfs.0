@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28053 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42621 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751786AbbFAAb7 convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1753175AbbFABZx convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 31 May 2015 20:31:59 -0400
-Message-ID: <556BA7FF.6080001@cn.fujitsu.com>
-Date: Mon, 1 Jun 2015 08:31:59 +0800
+	Sun, 31 May 2015 21:25:53 -0400
+Message-ID: <556BB4A0.5050305@cn.fujitsu.com>
+Date: Mon, 1 Jun 2015 09:25:52 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 To: <fdmanana@gmail.com>
@@ -78,12 +78,15 @@ Date: 2015年05月30日 19:39
 >      (Run 'diff -u tests/btrfs/022.out
 > /home/fdmanana/git/hub/xfstests/results//btrfs/022.out.bad'  to see
 > the entire diff)
-I'll investigate this bug soon.
+>
+> thanks
+Unfortunately, it's quite hard to trigger in my environment.
+I tried about 15 times, and can only trigger it once.
+
+Any hint about mount options or other things to improve the reproducibility?
 
 Thanks,
 Qu
->
-> thanks
 >
 >
 >> +       else if (flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT)

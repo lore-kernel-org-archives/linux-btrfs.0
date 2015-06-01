@@ -1,132 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp07.au.ibm.com ([202.81.31.140]:39327 "EHLO
-	e23smtp07.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753187AbbFAPYn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 11:24:43 -0400
+Received: from e23smtp08.au.ibm.com ([202.81.31.141]:59279 "EHLO
+	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751910AbbFAPYw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 11:24:52 -0400
 Received: from /spool/local
-	by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 2 Jun 2015 01:24:41 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 1814C357804C
-	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2015 01:24:39 +1000 (EST)
+	Tue, 2 Jun 2015 01:24:51 +1000
+Received: from d23relay07.au.ibm.com (d23relay07.au.ibm.com [9.190.26.37])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 578DB3578052
+	for <linux-btrfs@vger.kernel.org>; Tue,  2 Jun 2015 01:24:48 +1000 (EST)
 Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t51FOUA355181372
-	for <linux-btrfs@vger.kernel.org>; Tue, 2 Jun 2015 01:24:38 +1000
+	by d23relay07.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t51FOeXs56950908
+	for <linux-btrfs@vger.kernel.org>; Tue, 2 Jun 2015 01:24:48 +1000
 Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
-	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t51FO6n4027586
-	for <linux-btrfs@vger.kernel.org>; Tue, 2 Jun 2015 01:24:06 +1000
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t51FOFDO027815
+	for <linux-btrfs@vger.kernel.org>; Tue, 2 Jun 2015 01:24:15 +1000
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: clm@fb.com, jbacik@fb.com, dsterba@suse.cz, bo.li.liu@oracle.com
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: [RFC PATCH V11 11/21] Btrfs: subpagesize-blocksize: btrfs_page_mkwrite: Reserve space in sectorsized units.
-Date: Mon,  1 Jun 2015 20:52:46 +0530
-Message-Id: <1433172176-8742-12-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V11 15/21] Btrfs: subpagesize-blocksize: Revert commit fc4adbff823f76577ece26dcb88bf6f8392dbd43.
+Date: Mon,  1 Jun 2015 20:52:50 +0530
+Message-Id: <1433172176-8742-16-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize scenario, if i_size occurs in a block which is not
-the last block in the page, then the space to be reserved should be calculated
-appropriately.
+In subpagesize-blocksize, we have multiple blocks in a page. Checking for
+existence of a page in the page cache isn't a sufficient check, since we
+could be truncating a subset of the blocks mapped by the page.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/inode.c | 36 +++++++++++++++++++++++++++++++-----
- 1 file changed, 31 insertions(+), 5 deletions(-)
+ fs/btrfs/btrfs_inode.h | 2 --
+ fs/btrfs/file.c        | 4 +++-
+ fs/btrfs/inode.c       | 3 ++-
+ 3 files changed, 5 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 0ef5cc1..2bf8043 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -323,6 +323,4 @@ static inline void btrfs_inode_resume_unlocked_dio(struct inode *inode)
+ 		  &BTRFS_I(inode)->runtime_flags);
+ }
+ 
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end);
+-
+ #endif
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 9600410a..cc9feed 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2419,7 +2419,9 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 		if ((!ordered ||
+ 		    (ordered->file_offset + ordered->len <= lockstart ||
+ 		     ordered->file_offset > lockend)) &&
+-		     !btrfs_page_exists_in_range(inode, lockstart, lockend)) {
++		     !test_range_bit(&BTRFS_I(inode)->io_tree, lockstart,
++				     lockend, EXTENT_UPTODATE, 0,
++				     cached_state)) {
+ 			if (ordered)
+ 				btrfs_put_ordered_extent(ordered);
+ 			break;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 9486e61..e9bab73 100644
+index bfffc62..03faff0 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -8601,11 +8601,24 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	loff_t size;
- 	int ret;
- 	int reserved = 0;
-+	u64 reserved_space;
- 	u64 page_start;
- 	u64 page_end;
-+	u64 end;
-+
-+	reserved_space = PAGE_CACHE_SIZE;
- 
- 	sb_start_pagefault(inode->i_sb);
--	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
-+
-+	/*
-+	  Reserving delalloc space after obtaining the page lock can lead to
-+	  deadlock. For example, if a dirty page is locked by this function
-+	  and the call to btrfs_delalloc_reserve_space() ends up triggering
-+	  dirty page write out, then the btrfs_writepage() function could
-+	  end up waiting indefinitely to get a lock on the page currently
-+	  being processed by btrfs_page_mkwrite() function.
-+	 */
-+	ret  = btrfs_delalloc_reserve_space(inode, reserved_space);
- 	if (!ret) {
- 		ret = file_update_time(vma->vm_file);
- 		reserved = 1;
-@@ -8626,6 +8639,7 @@ again:
- 	size = i_size_read(inode);
- 	page_start = page_offset(page);
- 	page_end = page_start + PAGE_CACHE_SIZE - 1;
-+	end = page_end;
- 
- 	if ((page->mapping != inode->i_mapping) ||
- 	    (page_start >= size)) {
-@@ -8641,7 +8655,7 @@ again:
- 	 * we can't set the delalloc bits if there are pending ordered
- 	 * extents.  Drop our locks and wait for them to finish
- 	 */
--	ordered = btrfs_lookup_ordered_extent(inode, page_start);
-+	ordered = btrfs_lookup_ordered_range(inode, page_start, page_end);
- 	if (ordered) {
- 		unlock_extent_cached(io_tree, page_start, page_end,
- 				     &cached_state, GFP_NOFS);
-@@ -8651,6 +8665,18 @@ again:
- 		goto again;
- 	}
- 
-+	if (page->index == ((size - 1) >> PAGE_CACHE_SHIFT)) {
-+		reserved_space = round_up(size - page_start, root->sectorsize);
-+		if (reserved_space < PAGE_CACHE_SIZE) {
-+			end = page_start + reserved_space - 1;
-+			spin_lock(&BTRFS_I(inode)->lock);
-+			BTRFS_I(inode)->outstanding_extents++;
-+			spin_unlock(&BTRFS_I(inode)->lock);
-+			btrfs_delalloc_release_space(inode,
-+						PAGE_CACHE_SIZE - reserved_space);
-+		}
-+	}
-+
- 	/*
- 	 * XXX - page_mkwrite gets called every time the page is dirtied, even
- 	 * if it was already dirty, so for space accounting reasons we need to
-@@ -8658,12 +8684,12 @@ again:
- 	 * is probably a better way to do this, but for now keep consistent with
- 	 * prepare_pages in the normal write path.
- 	 */
--	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
-+	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, end,
- 			  EXTENT_DIRTY | EXTENT_DELALLOC |
- 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
- 			  0, 0, &cached_state, GFP_NOFS);
- 
--	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
-+	ret = btrfs_set_extent_delalloc(inode, page_start, end,
- 					&cached_state);
- 	if (ret) {
- 		unlock_extent_cached(io_tree, page_start, page_end,
-@@ -8706,7 +8732,7 @@ out_unlock:
- 	}
- 	unlock_page(page);
- out:
--	btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
-+	btrfs_delalloc_release_space(inode, reserved_space);
- out_noreserve:
- 	sb_end_pagefault(inode->i_sb);
+@@ -7281,7 +7281,8 @@ out:
  	return ret;
+ }
+ 
+-bool btrfs_page_exists_in_range(struct inode *inode, loff_t start, loff_t end)
++static bool btrfs_page_exists_in_range(struct inode *inode, loff_t start,
++				loff_t end)
+ {
+ 	struct radix_tree_root *root = &inode->i_mapping->page_tree;
+ 	int found = false;
 -- 
 2.1.0
 

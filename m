@@ -1,46 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.web.de ([212.227.17.11]:50580 "EHLO mout.web.de"
+Received: from plane.gmane.org ([80.91.229.3]:59879 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751003AbbFAH0m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 1 Jun 2015 03:26:42 -0400
-MIME-Version: 1.0
-Message-ID: <trinity-dbb28c3f-406d-44a8-8e9f-46ec5cf69147-1433143591498@3capp-webde-bs11>
-From: =?UTF-8?Q?=22Conch=C3=BAr_Navid=22?= <conchur@web.de>
-To: "Hugo Mills" <hugo@carfax.org.uk>
-Cc: linux-btrfs@vger.kernel.org, "Josef Bacik" <jbacik@fb.com>
-Subject: Aw: Re: Metadata size limitations of btrfs
-Content-Type: text/plain; charset=UTF-8
-Date: Mon, 1 Jun 2015 09:26:31 +0200
-In-Reply-To: <20150528122302.GK16826@carfax.org.uk>
-References: <trinity-4b189d7e-816b-4903-87ba-0cfd9972d4e4-1432801960117@3capp-webde-bs21>,
- <20150528122302.GK16826@carfax.org.uk>
+	id S1751726AbbFAMgu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 1 Jun 2015 08:36:50 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1YzOxS-00072d-Vt
+	for linux-btrfs@vger.kernel.org; Mon, 01 Jun 2015 14:36:47 +0200
+Received: from exa2-in-fw-01-epn.hns.com ([139.85.223.11])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2015 14:36:46 +0200
+Received: from ndbecker2 by exa2-in-fw-01-epn.hns.com with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 01 Jun 2015 14:36:46 +0200
+To: linux-btrfs@vger.kernel.org
+From: Neal Becker <ndbecker2@gmail.com>
+Subject: [newb] move /home to subvolume
+Date: Mon, 01 Jun 2015 08:36:40 -0400
+Message-ID: <mkhjkp$hgl$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset="ISO-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[...] 
-> > Here the requested information of my fs (after removing a lot of build
-> > directories):
-> >
-> > franzbroetchen# uname -a
-> > Linux franzbroetchen 4.0.0-1-amd64 #1 SMP Debian 4.0.2-1 (2015-05-11) x86_64 GNU/Linux
-> > franzbroetchen# btrfs --version
-> > btrfs-progs v4.0
-> > franzbroetchen# btrfs fi show
-> > Label: 'root' uuid: 57fe2100-0510-11e5-977e-0021ccb48233
-> > Total devices 1 FS bytes used 182.55GiB
-> > devid 1 size 467.68GiB used 206.06GiB path /dev/mapper/franzbroetchen_vg-root
-> 
-> Hmm. You shouldn't be seeing any kind of ENOSPC with this
-> allocation -- there's plenty of space for it to allocate from. I think
-> you've hit the horrible undiagnosed bug which prevents the FS from
-> allocating more space. I know josef was looking at this one but kept
-> getting distracted by data-corruption issues. He may be able to
-> comment more on it.
-> 
-> Given the information above, I'm not sure that the usage=5 or
-> limit=3 suggestion I made above will have any benefit for you.
+I have everything under /:
 
-No, I've tried this in the past without any success. I think I went up to usage=90
-(without any limit) and it had no affect. I would guess that the problem is
-an allocation problem for the metadata because enough free space for allocation
-was available.
+sudo btrfs subvolume list /
+ID 257 gen 65795 top level 5 path root
+
+I want to move /home onto it's own subvolume.  I hope I can do this while 
+the root device is mounted.
+
+What is the procedure?
+
+I tried first to create a subvolume for /home at the top-level, but couldn't 
+figure out the syntax:
+
+[nbecker@nbecker2 ~]$ sudo btrfs subvolume create /home
+[sudo] password for nbecker: 
+ERROR: '/home' exists
+
+-- 
+Those who fail to understand recursion are doomed to repeat it
+

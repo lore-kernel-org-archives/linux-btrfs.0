@@ -1,35 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41543 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:42715 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753781AbbFBO50 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Jun 2015 10:57:26 -0400
-Date: Tue, 2 Jun 2015 16:57:24 +0200
+	id S1759345AbbFBPMg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 2 Jun 2015 11:12:36 -0400
+Date: Tue, 2 Jun 2015 17:12:34 +0200
 From: David Sterba <dsterba@suse.cz>
-To: sam tygier <samtygier@yahoo.co.uk>
+To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs-progs: check metadata redundancy
-Message-ID: <20150602145724.GG6761@twin.jikos.cz>
+Subject: Re: [PATCH 1/2] btrfs-progs: avoid duplicate checks on user provided
+ devid
+Message-ID: <20150602151234.GH6761@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <mkcivp$l8b$1@ger.gmane.org>
+References: <1433139918-820-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <mkcivp$l8b$1@ger.gmane.org>
+In-Reply-To: <1433139918-820-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 30, 2015 at 03:54:48PM +0100, sam tygier wrote:
-> Currently BTRFS allows you to make bad choices of data and 
-> metadata levels. For example -d raid1 -m raid0 means you can
-> only use half your total disk space, but will loose everything
-> if 1 disk fails. It should give a warning in these cases.
-> 
-> When making a filesystem check that metadata mode is at least
-> as redundant as the data mode. For example give warning when:
-> 	-d raid1 -m raid0
-> 
-> V1 -> V2 Downgrade from error to warning as requested by David
-> Sterba.
-> 
-> Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
+On Mon, Jun 01, 2015 at 02:25:17PM +0800, Anand Jain wrote:
+> kernel is already checking it (rightly), we don't need to check that in the user land.
 
-Applied, thanks.
+Sometimes it's useful to duplicate the checks in userspace because we
+can fail early and return the error message directly, compared to
+messages in syslog or a simple errno.
+
+Have you observed that the userspace checks were problematic?
+
+> @@ -214,33 +213,7 @@ static int cmd_start_replace(int argc, char **argv)
+>  	}
+>  
+>  	if (is_numerical(srcdev)) {
+> -		struct btrfs_ioctl_fs_info_args fi_args;
+> -		struct btrfs_ioctl_dev_info_args *di_args = NULL;
+> -
+>  		start_args.start.srcdevid = arg_strtou64(srcdev);
+> -
+> -		ret = get_fs_info(path, &fi_args, &di_args);
+
+This does additional checks, like checking where it's mounted.

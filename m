@@ -1,113 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:34070 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751479AbbFAQ4o (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 12:56:44 -0400
+Received: from cn.fujitsu.com ([59.151.112.132]:56513 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753437AbbFBMOE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jun 2015 08:14:04 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t52CCRQX027506
+	for <linux-btrfs@vger.kernel.org>; Tue, 2 Jun 2015 20:12:27 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Fix lockdep warning of wr_ctx->wr_lock in scrub_free_wr_ctx()
+Date: Tue, 2 Jun 2015 20:12:20 +0800
+Message-ID: <278b7effa4d3646aa02f3dce7aa474c8cf044729.1433247110.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <d901ccc6dbbc8db40962b4b8e4d391a684e88335.1432975901.git.osandov@osandov.com>
-References: <d901ccc6dbbc8db40962b4b8e4d391a684e88335.1432975901.git.osandov@osandov.com>
-Date: Mon, 1 Jun 2015 17:56:43 +0100
-Message-ID: <CAL3q7H6PvooaNWpKCTFgAxc=R0pT1XiwSQvJiYVXiV4iuJHXRA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: don't invalidate root dentry when subvolume
- deletion fails
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Omar Sandoval <osandov@osandov.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Markus Schauler <mschauler@gmail.com>, stable@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, May 30, 2015 at 9:59 AM, Omar Sandoval <osandov@osandov.com> wrote:
-> Since commit bafc9b754f75 ("vfs: More precise tests in d_invalidate"),
-> mounted subvolumes can be deleted because d_invalidate() won't fail.
-> However, we run into problems when we attempt to delete the default
-> subvolume while it is mounted as the root filesystem:
->
->         # btrfs subvol list /
->         ID 257 gen 306 top level 5 path rootvol
->         ID 267 gen 334 top level 5 path snap1
->         # btrfs subvol get-default /
->         ID 267 gen 334 top level 5 path snap1
->         # btrfs inspect-internal rootid /
->         267
->         # mount -o subvol=/ /dev/vda1 /mnt
->         # btrfs subvol del /mnt/snap1
->         Delete subvolume (no-commit): '/mnt/snap1'
->         ERROR: cannot delete '/mnt/snap1' - Operation not permitted
->         # findmnt /
->         findmnt: can't read /proc/mounts: No such file or directory
->         # ls /proc
->         #
->
-> Markus reported that this same scenario simply led to a kernel oops.
->
-> This happens because in btrfs_ioctl_snap_destroy(), we call
-> d_invalidate() before we check may_destroy_subvol(), which means that we
-> detach the submounts and drop the dentry before erroring out. Instead,
-> we should only invalidate the dentry once we know that we're going
-> through with the deletion.
->
-> Cc: <stable@vger.kernel.org>
-> Fixes: bafc9b754f75 ("vfs: More precise tests in d_invalidate")
-> Reported-by: Markus Schauler <mschauler@gmail.com>
-> Signed-off-by: Omar Sandoval <osandov@osandov.com>
-> ---
-> The other fix for preventing all mounted subvolumes from being deleted
-> would preclude this, but it sounded like we were leaning towards
-> enforcing that in userspace once subvolume info becomes available in
-> /proc/mounts, so this should be fixed separately.
->
->  fs/btrfs/ioctl.c | 4 ++--
->  1 file changed, 2 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 1c22c6518504..8edb8544088b 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2413,14 +2413,14 @@ static noinline int btrfs_ioctl_snap_destroy(struct file *file,
->                 goto out_unlock_inode;
->         }
->
-> -       d_invalidate(dentry);
-> -
->         down_write(&root->fs_info->subvol_sem);
->
->         err = may_destroy_subvol(dest);
->         if (err)
->                 goto out_up_write;
->
-> +       d_invalidate(dentry);
-> +
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Any reason why not calling d_invalidate() only if the call
-btrfs_unlink_subvol() succeeds? Not seeing a reason why we should
-invalidate before doing the actual deletion successfully (before that
-metadata reservation can fail or failure to start/join a transaction,
-etc).
+lockdep report following warning in test:
+ [25176.843958] =================================
+ [25176.844519] [ INFO: inconsistent lock state ]
+ [25176.845047] 4.1.0-rc3 #22 Tainted: G        W
+ [25176.845591] ---------------------------------
+ [25176.846153] inconsistent {SOFTIRQ-ON-W} -> {IN-SOFTIRQ-W} usage.
+ [25176.846713] fsstress/26661 [HC0[0]:SC1[1]:HE1:SE0] takes:
+ [25176.847246]  (&wr_ctx->wr_lock){+.?...}, at: [<ffffffffa04cdc6d>] scrub_free_ctx+0x2d/0xf0 [btrfs]
+ [25176.847838] {SOFTIRQ-ON-W} state was registered at:
+ [25176.848396]   [<ffffffff810bf460>] __lock_acquire+0x6a0/0xe10
+ [25176.848955]   [<ffffffff810bfd1e>] lock_acquire+0xce/0x2c0
+ [25176.849491]   [<ffffffff816489af>] mutex_lock_nested+0x7f/0x410
+ [25176.850029]   [<ffffffffa04d04ff>] scrub_stripe+0x4df/0x1080 [btrfs]
+ [25176.850575]   [<ffffffffa04d11b1>] scrub_chunk.isra.19+0x111/0x130 [btrfs]
+ [25176.851110]   [<ffffffffa04d144c>] scrub_enumerate_chunks+0x27c/0x510 [btrfs]
+ [25176.851660]   [<ffffffffa04d3b87>] btrfs_scrub_dev+0x1c7/0x6c0 [btrfs]
+ [25176.852189]   [<ffffffffa04e918e>] btrfs_dev_replace_start+0x36e/0x450 [btrfs]
+ [25176.852771]   [<ffffffffa04a98e0>] btrfs_ioctl+0x1e10/0x2d20 [btrfs]
+ [25176.853315]   [<ffffffff8121c5b8>] do_vfs_ioctl+0x318/0x570
+ [25176.853868]   [<ffffffff8121c851>] SyS_ioctl+0x41/0x80
+ [25176.854406]   [<ffffffff8164da17>] system_call_fastpath+0x12/0x6f
+ [25176.854935] irq event stamp: 51506
+ [25176.855511] hardirqs last  enabled at (51506): [<ffffffff810d4ce5>] vprintk_emit+0x225/0x5e0
+ [25176.856059] hardirqs last disabled at (51505): [<ffffffff810d4b77>] vprintk_emit+0xb7/0x5e0
+ [25176.856642] softirqs last  enabled at (50886): [<ffffffff81067a23>] __do_softirq+0x363/0x640
+ [25176.857184] softirqs last disabled at (50949): [<ffffffff8106804d>] irq_exit+0x10d/0x120
+ [25176.857746]
+ other info that might help us debug this:
+ [25176.858845]  Possible unsafe locking scenario:
+ [25176.859981]        CPU0
+ [25176.860537]        ----
+ [25176.861059]   lock(&wr_ctx->wr_lock);
+ [25176.861705]   <Interrupt>
+ [25176.862272]     lock(&wr_ctx->wr_lock);
+ [25176.862881]
+  *** DEADLOCK ***
 
-Also, would you consider making an xfstest for this?
+Reason:
+ Above warning is caused by:
+ Interrupt
+ -> bio_endio()
+ -> ...
+ -> scrub_put_ctx()
+ -> scrub_free_ctx() *1
+ -> ...
+ -> mutex_lock(&wr_ctx->wr_lock);
 
-thanks
+ scrub_put_ctx() is allowed to be called in end_bio interrupt, but
+ in code design, it will never call scrub_free_ctx(sctx) in interrupe
+ context(above *1), because btrfs_scrub_dev() get one additional
+ reference of sctx->refs, which makes scrub_free_ctx() only called
+ withine btrfs_scrub_dev().
 
+ Now the code runs out of our wish, because free sequence in
+ scrub_pending_bio_dec() have a gap.
 
->         btrfs_init_block_rsv(&block_rsv, BTRFS_BLOCK_RSV_TEMP);
->         /*
->          * One for dir inode, two for dir entries, two for root
-> --
-> 2.4.2
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+ Current code:
+ -----------------------------------+-----------------------------------
+ scrub_pending_bio_dec()            |  btrfs_scrub_dev
+ -----------------------------------+-----------------------------------
+ atomic_dec(&sctx->bios_in_flight); |
+ wake_up(&sctx->list_wait);         |
+                                    | scrub_put_ctx()
+                                    | -> atomic_dec_and_test(&sctx->refs)
+ scrub_put_ctx(sctx);               |
+ -> atomic_dec_and_test(&sctx->refs)|
+ -> scrub_free_ctx()                |
+ -----------------------------------+-----------------------------------
 
+ We expected:
+ -----------------------------------+-----------------------------------
+ scrub_pending_bio_dec()            |  btrfs_scrub_dev
+ -----------------------------------+-----------------------------------
+ atomic_dec(&sctx->bios_in_flight); |
+ wake_up(&sctx->list_wait);         |
+ scrub_put_ctx(sctx);               |
+ -> atomic_dec_and_test(&sctx->refs)|
+                                    | scrub_put_ctx()
+                                    | -> atomic_dec_and_test(&sctx->refs)
+                                    | -> scrub_free_ctx()
+ -----------------------------------+-----------------------------------
 
+Fix:
+ To fix above problem, we can move scrub_put_ctx() to line before
+ atomic_dec(&sctx->bios_in_flight) in scrub_pending_bio_dec(), to force
+ scrub_put_ctx() in btrfs_scrub_dev() run after scrub_put_ctx() in
+ scrub_pending_bio_dec().
 
+Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index ab58115..1b4b27c 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -317,9 +317,9 @@ static void scrub_pending_bio_inc(struct scrub_ctx *sctx)
+ 
+ static void scrub_pending_bio_dec(struct scrub_ctx *sctx)
+ {
++	scrub_put_ctx(sctx);
+ 	atomic_dec(&sctx->bios_in_flight);
+ 	wake_up(&sctx->list_wait);
+-	scrub_put_ctx(sctx);
+ }
+ 
+ static void __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
 -- 
-Filipe David Manana,
+1.8.5.1
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

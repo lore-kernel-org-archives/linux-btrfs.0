@@ -1,42 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([80.100.93.5]:53065 "EHLO panda.humilis.net"
+Received: from mail.kernel.org ([198.145.29.136]:38866 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752585AbbFBH0F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Jun 2015 03:26:05 -0400
-Date: Tue, 2 Jun 2015 09:26:01 +0200
-From: Sander <sander@humilis.net>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: possible raid6 corruption
-Message-ID: <20150602072601.GA16215@panda>
-Reply-To: sander@humilis.net
-References: <1433208291.7073.52.camel@scientia.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1433208291.7073.52.camel@scientia.net>
+	id S1759059AbbFBPic (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 2 Jun 2015 11:38:32 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: check pending chunks when shrinking fs to avoid corruption
+Date: Tue,  2 Jun 2015 14:43:21 +0100
+Message-Id: <1433252601-14088-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer wrote (ao):
-> May 19 03:25:50 lcg-lrz-dc10 kernel: [903106.581205] sd 0:0:14:0: Device offlined - not ready after error recovery
+From: Filipe Manana <fdmanana@suse.com>
 
-> May 28 16:38:43 lcg-lrz-dc10 kernel: [1727488.984810] sd 0:0:14:0: rejecting I/O to offline device
+When we shrink the usable size of a device (its total_bytes), we go over
+all the device extent items in the device tree and attempt to relocate
+the chunk of any device extent that goes beyond the new usable size for
+the device. We do that after setting the new usable size (total_bytes) in
+the device object, so that all new allocations (and reallocations) don't
+use areas of the device that go beyond the new (shorter) size. However we
+were not considering that before setting the new size in the device,
+pending chunks might have been created that use device extents that go
+beyond the new size, and those device extents are not yet in the device
+tree after we search the device tree - they are still attached to the
+list of new block group for some ongoing transaction handle, and they are
+only added to the device tree when the transaction handle is ended (via
+btrfs_create_pending_block_groups()).
 
-> May 28 16:39:19 lcg-lrz-dc10 kernel: [1727524.067182] BTRFS: lost page write due to I/O error on /dev/sdm
-> May 28 16:39:19 lcg-lrz-dc10 kernel: [1727524.067426] BTRFS: bdev /dev/sdm errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
+So check for pending chunks with device extents that go beyond the new
+size and if any exists, commit the current transaction and repeat the
+search in the device tree.
 
-> May 28 21:03:06 lcg-lrz-dc10 kernel: [1743336.347191] sd 0:0:14:0: rejecting I/O to offline device
-> May 28 21:03:06 lcg-lrz-dc10 kernel: [1743336.369569] BTRFS: lost page write due to I/O error on /dev/sdm
+Not doing this it would mean we would return success to user space while
+still having extents that go beyond the new size, and later user space
+could override those locations on the device while the fs still references
+them, causing all sorts of corruption and unexpected events.
 
-> Well as I've said,.. maybe it's not an issue at all, but at least it's
-> strange that this happens on brand new hardware only with the
-> btrfs-raid56 node, especially the gazillions of megasas messages.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/volumes.c | 49 ++++++++++++++++++++++++++++++++++++++++---------
+ 1 file changed, 40 insertions(+), 9 deletions(-)
 
-Brand new hardware is most likely to show (hardware) issues as it has no
-proven track record yet while it was subject to any kind of abuse during
-transport. I'm sure you will see the same if you put sw raid + ext4 on
-this server.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index dbea12e..09e89a6 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3984,6 +3984,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
+ 	int slot;
+ 	int failed = 0;
+ 	bool retried = false;
++	bool checked_pending_chunks = false;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+ 	struct btrfs_super_block *super_copy = root->fs_info->super_copy;
+@@ -4064,15 +4065,6 @@ again:
+ 		goto again;
+ 	} else if (failed && retried) {
+ 		ret = -ENOSPC;
+-		lock_chunks(root);
+-
+-		btrfs_device_set_total_bytes(device, old_size);
+-		if (device->writeable)
+-			device->fs_devices->total_rw_bytes += diff;
+-		spin_lock(&root->fs_info->free_chunk_lock);
+-		root->fs_info->free_chunk_space += diff;
+-		spin_unlock(&root->fs_info->free_chunk_lock);
+-		unlock_chunks(root);
+ 		goto done;
+ 	}
+ 
+@@ -4084,6 +4076,35 @@ again:
+ 	}
+ 
+ 	lock_chunks(root);
++
++	/*
++	 * We checked in the above loop all device extents that were already in
++	 * the device tree. However before we have updated the device's
++	 * total_bytes to the new size, we might have had chunk allocations that
++	 * have not complete yet (new block groups attached to transaction
++	 * handles), and therefore their device extents were not yet in the
++	 * device tree and we missed them in the loop above. So if we have any
++	 * pending chunk using a device extent that overlaps the device range
++	 * that we can not use anymore, commit the current transaction and
++	 * repeat the search on the device tree - this way we guarantee we will
++	 * not have chunks using device extents that end beyond 'new_size'.
++	 */
++	if (!checked_pending_chunks) {
++		u64 start = new_size;
++		u64 len = old_size - new_size;
++
++		if (contains_pending_extent(trans, device, &start, len)) {
++			unlock_chunks(root);
++			checked_pending_chunks = true;
++			failed = 0;
++			retried = false;
++			ret = btrfs_commit_transaction(trans, root);
++			if (ret)
++				goto done;
++			goto again;
++		}
++	}
++
+ 	btrfs_device_set_disk_total_bytes(device, new_size);
+ 	if (list_empty(&device->resized_list))
+ 		list_add_tail(&device->resized_list,
+@@ -4098,6 +4119,16 @@ again:
+ 	btrfs_end_transaction(trans, root);
+ done:
+ 	btrfs_free_path(path);
++	if (ret) {
++		lock_chunks(root);
++		btrfs_device_set_total_bytes(device, old_size);
++		if (device->writeable)
++			device->fs_devices->total_rw_bytes += diff;
++		spin_lock(&root->fs_info->free_chunk_lock);
++		root->fs_info->free_chunk_space += diff;
++		spin_unlock(&root->fs_info->free_chunk_lock);
++		unlock_chunks(root);
++	}
+ 	return ret;
+ }
+ 
+-- 
+2.1.3
 
-Nice hardware btw, please share your findings.
-
-	Sander

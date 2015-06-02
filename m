@@ -1,60 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35682 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752582AbbF3EPc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 00:15:32 -0400
-Subject: [RFC 00/11] xfstests: test the btrfs/xfs reflink/dedupe ioctls
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: david@fromorbit.com, darrick.wong@oracle.com
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 29 Jun 2015 21:15:20 -0700
-Message-ID: <20150630041519.2476.23059.stgit@birch.djwong.org>
+Received: from mail-qc0-f175.google.com ([209.85.216.175]:36370 "EHLO
+	mail-qc0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755649AbbFBOCu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 2 Jun 2015 10:02:50 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <55646D1F.6000506@fb.com>
+References: <20150523000905.GA16230@ret.masoncoding.com>
+	<CA+5PVA7yA-q3V_KHp-zL+4G_bO9Fp4i0jH_UXdez0r+4D4KqYQ@mail.gmail.com>
+	<55646D1F.6000506@fb.com>
+Date: Tue, 2 Jun 2015 10:02:49 -0400
+Message-ID: <CA+5PVA4b5N-xcnDUd3ECNw5TM7Am+jjyq6nwjG+Wnme+FQWbqQ@mail.gmail.com>
+Subject: Re: [GIT PULL] Btrfs
+From: Josh Boyer <jwboyer@fedoraproject.org>
+To: Chris Mason <clm@fb.com>
+Cc: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+On Tue, May 26, 2015 at 8:54 AM, Chris Mason <clm@fb.com> wrote:
+> On 05/26/2015 08:33 AM, Josh Boyer wrote:
+>> On Fri, May 22, 2015 at 9:14 PM, Chris Mason <clm@fb.com> wrote:
+>>> Hi Linus,
+>>>
+>>> My for-linus-4.1 branch has three more fixes:
+>>>
+>>> git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.1
+>>>
+>>> I fixed up a regression from 4.0 where conversion between different raid
+>>> levels would sometimes bail out without converting.
+>>>
+>>> Filipe tracked down a race where it was possible to double allocate
+>>> chunks on the drive.
+>>>
+>>> Mark has a fix for fiemap.  All three will get bundled off for stable as
+>>> well.
+>>>
+>>> Chris Mason (1) commits (+18/-0):
+>>>     Btrfs: fix regression in raid level conversion
+>>
+>> Shouldn't this be CC'd to stable since it fixes a broken commit in 4.0?
+>
+> Yes, I'm retesting two of these against 4.0
 
-This is a RFC-quality pass at making xfstests perform more rigorous
-testing of the btrfs/xfs file clone, reflink, and dedupe ioctls.
-There are now tests of the basic functionality of the three ioctls;
-tests to ensure that the filesystem exhibits the expected copy on
-write semantics; tests to try to suss out race conditions in the new
-write paths; tests to ensure that the ioctls peform basic disk
-accounting correctly; tests of the interaction between reflink and the
-various fallocate verbs (allocate, punch, collapse, insert zeroes);
-and some attempts to test the upper limits of reflinking.  The first
-patch in the series adds fuzz testing to ext4 and XFS; aside from
-being first in line, it isn't tied to any of the reflink
-functionality.
+Did you finish up testing the two commits?  I might have missed it,
+but I haven't seen anything being requested to the 4.0.y stable tree
+yet.
 
-To run these tests, you'll have to patch xfsprogs to have reflink and
-dedupe support[1]; the patch ought to apply fairly cleanly against the
-upstream git.  They should more or less work with the btrfs that
-appears in 4.1, though if you want to test the XFS implementation,
-you're going to have to apply a lot of patches to the kernel and
-xfsprogs.  See the cover letters[2][3] for those patchsets for more
-information.
-
-Known issues: 
- * I think the race checks for dedupe could be a little sharper at
-   finding mistakes.
- * I started the numbering really high to prevent the tests from
-   colliding with whatever new tests might arrive; this will require
-   some intervention to fix.
- * When ext4 gains reflink support, it shouldn't be difficult to make
-   these tests run on it.  The patch set is based on the current
-   xfstest master on kernel.org.
- * If the copy_file_range syscall ever comes around, we'll have to
-   adapt xfs_io to use that in addition to the btrfs ioctls.
-
-Comments and questions are, as always, welcome.
-
---D
-
-[1] http://djwong.org/docs/03-xfs_io-reflink-and-dedupe.patch
-[2] See thread "[RFC 00/15] xfsprogs: support the reflink btree" dated today.
-[3] http://oss.sgi.com/archives/xfs/2015-06/msg00407.html
+josh

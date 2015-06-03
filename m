@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:56843 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:56845 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754540AbbFCOsC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1754427AbbFCOsC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 3 Jun 2015 10:48:02 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B161AAD31
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id AFD1BAD1F
 	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2015 14:48:00 +0000 (UTC)
 From: jeffm@suse.com
 To: linux-btrfs@vger.kernel.org
 Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 3/3] btrfs: add missing discards when unpinning extents with -o discard
-Date: Wed,  3 Jun 2015 10:47:54 -0400
-Message-Id: <1433342874-7099-4-git-send-email-jeffm@suse.com>
+Subject: [PATCH 1/3] btrfs: iterate over unused chunk space in FITRIM
+Date: Wed,  3 Jun 2015 10:47:52 -0400
+Message-Id: <1433342874-7099-2-git-send-email-jeffm@suse.com>
 In-Reply-To: <1433342874-7099-1-git-send-email-jeffm@suse.com>
 References: <1433342874-7099-1-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,310 +19,316 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Jeff Mahoney <jeffm@suse.com>
 
-When we clear the dirty bits in btrfs_delete_unused_bgs for extents
-in the empty block group, it results in btrfs_finish_extent_commit being
-unable to discard the freed extents.
+Since we now clean up block groups automatically as they become
+empty, iterating over block groups is no longer sufficient to discard
+unused space.
 
-The block group removal patch added an alternate path to forget extents
-other than btrfs_finish_extent_commit.  As a result, any extents that
-would be freed when the block group is removed aren't discarded.  In my
-test run, with a large copy of mixed sized files followed by removal, it
-left nearly 2/3 of extents undiscarded.
+This patch iterates over the unused chunk space and discards any regions
+that are unallocated, regardless of whether they were ever used.  This is
+a change for btrfs but is consistent with other file systems.
 
-To clean up the block groups, we add the removed block group onto a list
-that will be discarded after transaction commit.
+We do this in a transactionless manner since the discard process can take
+a substantial amount of time and a transaction would need to be started
+before the acquisition of the device list lock.  That would mean a
+transaction would be held open across /all/ of the discards collectively.
+In order to prevent other threads from allocating or freeing chunks, we
+hold the chunks lock across the search and discard calls.  We release it
+between searches to allow the file system to perform more-or-less
+normally.  Since the running transaction can commit and disappear while
+we're using the transaction pointer, we take a reference to it and
+release it after the search.  This is safe since it would happen normally
+at the end of the transaction commit after any locks are released anyway.
+We also take the commit_root_sem to protect against a transaction starting
+and committing while we're running.
 
 v1->v2:
-- Fix ordering to ensure that we don't discard extents freed in an
-  uncommitted transaction.
+- Doesn't take a transaction, so the entire run is transactionless
+- The loop can be interrupted while waiting on the chunk mutex
+  and after the discard has completed.
+- The only lock held for the duration is the device_list_mutex. The chunk
+  mutex is taken per loop iteration, so normal operation should continue
+  while we're running even on large file systems.
 
 v2->v3:
-- Factor out get/put block_group->trimming to ensure that cleanup always
-  happens at the last reference drop.
-- Cleanup the free space cache on the last reference drop.
-- Use list_move instead of list_add in case of multiple adds.  We still
-  issue a warning, but we shouldn't fall over.
+- Cleaned up pointer tricks that abused &NULL->member.
+- Take commit_root_sem across loop iteration to protect against transaction
+  commit.
 
 Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h            |  3 ++
- fs/btrfs/extent-tree.c      | 69 ++++++++++++++++++++++++++++++++++++++++++---
- fs/btrfs/free-space-cache.c | 57 +++++++++++++++++++++----------------
- fs/btrfs/super.c            |  2 +-
- fs/btrfs/transaction.c      |  2 ++
- fs/btrfs/transaction.h      |  2 ++
- 6 files changed, 106 insertions(+), 29 deletions(-)
+ fs/btrfs/extent-tree.c | 100 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c     |  60 +++++++++++++++++------------
+ fs/btrfs/volumes.h     |   3 ++
+ 3 files changed, 140 insertions(+), 23 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 6f364e1..780acf1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3438,6 +3438,8 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 group_start,
- 			     struct extent_map *em);
- void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info);
-+void btrfs_get_block_group_trimming(struct btrfs_block_group_cache *cache);
-+void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *cache);
- void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
- 				       struct btrfs_root *root);
- u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data);
-@@ -4068,6 +4070,7 @@ __printf(5, 6)
- void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
- 		     unsigned int line, int errno, const char *fmt, ...);
- 
-+const char *btrfs_decode_error(int errno);
- 
- void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root, const char *function,
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index fb4dbfc..e53dbe9 100644
+index 0ec3acd..fb4dbfc 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -6034,20 +6034,19 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root)
- {
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_block_group_cache *block_group, *tmp;
-+	struct list_head *deleted_bgs;
- 	struct extent_io_tree *unpin;
- 	u64 start;
- 	u64 end;
- 	int ret;
- 
--	if (trans->aborted)
--		return 0;
--
- 	if (fs_info->pinned_extents == &fs_info->freed_extents[0])
- 		unpin = &fs_info->freed_extents[1];
- 	else
- 		unpin = &fs_info->freed_extents[0];
- 
--	while (1) {
-+	while (!trans->aborted) {
- 		mutex_lock(&fs_info->unused_bg_unpin_mutex);
- 		ret = find_first_extent_bit(unpin, 0, &start, &end,
- 					    EXTENT_DIRTY, NULL);
-@@ -6066,6 +6065,34 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- 		cond_resched();
- 	}
- 
-+	/*
-+	 * Transaction is finished.  We don't need the lock anymore.  We
-+	 * do need to clean up the block groups in case of a transaction
-+	 * abort.
-+	 */
-+	deleted_bgs = &trans->transaction->deleted_bgs;
-+	list_for_each_entry_safe(block_group, tmp, deleted_bgs, bg_list) {
-+		u64 trimmed = 0;
-+
-+		ret = -EROFS;
-+		if (!trans->aborted)
-+			ret = btrfs_discard_extent(root,
-+						   block_group->key.objectid,
-+						   block_group->key.offset,
-+						   &trimmed);
-+
-+		list_del_init(&block_group->bg_list);
-+		btrfs_put_block_group_trimming(block_group);
-+		btrfs_put_block_group(block_group);
-+
-+		if (ret) {
-+			const char *errstr = btrfs_decode_error(ret);
-+			btrfs_warn(fs_info,
-+				   "Discard failed while removing blockgroup: errno=%d %s\n",
-+				   ret, errstr);
-+		}
-+	}
-+
- 	return 0;
+@@ -10074,10 +10074,98 @@ int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+ 	return unpin_extent_range(root, start, end, false);
  }
  
-@@ -9845,6 +9872,11 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 	 * currently running transaction might finish and a new one start,
- 	 * allowing for new block groups to be created that can reuse the same
- 	 * physical device locations unless we take this special care.
-+	 *
-+	 * There may also be an implicit trim operation if the file system
-+	 * is mounted with -odiscard. The same protections must remain
-+	 * in place until the extents have been discarded completely when
-+	 * the transaction commit has completed.
- 	 */
- 	remove_em = (atomic_read(&block_group->trimming) == 0);
- 	/*
-@@ -9917,8 +9949,10 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		return;
- 
- 	spin_lock(&fs_info->unused_bgs_lock);
-+
- 	while (!list_empty(&fs_info->unused_bgs)) {
- 		u64 start, end;
-+		int trimming;
- 
- 		block_group = list_first_entry(&fs_info->unused_bgs,
- 					       struct btrfs_block_group_cache,
-@@ -10016,12 +10050,39 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		spin_unlock(&block_group->lock);
- 		spin_unlock(&space_info->lock);
- 
-+		/* DISCARD can flip during remount */
-+		trimming = btrfs_test_opt(root, DISCARD);
-+
-+		/* Implicit trim during transaction commit. */
-+		if (trimming)
-+			btrfs_get_block_group_trimming(block_group);
-+
- 		/*
- 		 * Btrfs_remove_chunk will abort the transaction if things go
- 		 * horribly wrong.
- 		 */
- 		ret = btrfs_remove_chunk(trans, root,
- 					 block_group->key.objectid);
-+
-+		if (ret) {
-+			if (trimming)
-+				btrfs_put_block_group_trimming(block_group);
-+			goto end_trans;
-+		}
-+
-+		/*
-+		 * If we're not mounted with -odiscard, we can just forget
-+		 * about this block group. Otherwise we'll need to wait
-+		 * until transaction commit to do the actual discard.
-+		 */
-+		if (trimming) {
-+			WARN_ON(!list_empty(&block_group->bg_list));
-+			spin_lock(&trans->transaction->deleted_bgs_lock);
-+			list_move(&block_group->bg_list,
-+				  &trans->transaction->deleted_bgs);
-+			spin_unlock(&trans->transaction->deleted_bgs_lock);
-+			btrfs_get_block_group(block_group);
-+		}
- end_trans:
- 		btrfs_end_transaction(trans, root);
- next:
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 9dbe5b5..c79253e 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -3274,35 +3274,23 @@ next:
- 	return ret;
- }
- 
--int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
--			   u64 *trimmed, u64 start, u64 end, u64 minlen)
-+void btrfs_get_block_group_trimming(struct btrfs_block_group_cache *cache)
- {
--	int ret;
-+	atomic_inc(&cache->trimming);
-+}
- 
--	*trimmed = 0;
-+void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *block_group)
++/*
++ * It used to be that old block groups would be left around forever.
++ * Iterating over them would be enough to trim unused space.  Since we
++ * now automatically remove them, we also need to iterate over unallocated
++ * space.
++ *
++ * We don't want a transaction for this since the discard may take a
++ * substantial amount of time.  We don't require that a transaction be
++ * running, but we do need to take a running transaction into account
++ * to ensure that we're not discarding chunks that were released in
++ * the current transaction.
++ *
++ * Holding the chunks lock will prevent other threads from allocating
++ * or releasing chunks, but it won't prevent a running transaction
++ * from committing and releasing the memory that the pending chunks
++ * list head uses.  For that, we need to take a reference to the
++ * transaction.
++ */
++static int btrfs_trim_free_extents(struct btrfs_device *device,
++				   u64 minlen, u64 *trimmed)
 +{
-+	struct extent_map_tree *em_tree;
-+	struct extent_map *em;
-+	bool cleanup;
- 
- 	spin_lock(&block_group->lock);
--	if (block_group->removed) {
--		spin_unlock(&block_group->lock);
--		return 0;
--	}
--	atomic_inc(&block_group->trimming);
-+	cleanup = (atomic_dec_and_test(&block_group->trimming) &&
-+		   block_group->removed);
- 	spin_unlock(&block_group->lock);
- 
--	ret = trim_no_bitmap(block_group, trimmed, start, end, minlen);
--	if (ret)
--		goto out;
--
--	ret = trim_bitmaps(block_group, trimmed, start, end, minlen);
--out:
--	spin_lock(&block_group->lock);
--	if (atomic_dec_and_test(&block_group->trimming) &&
--	    block_group->removed) {
--		struct extent_map_tree *em_tree;
--		struct extent_map *em;
--
--		spin_unlock(&block_group->lock);
--
-+	if (cleanup) {
- 		lock_chunks(block_group->fs_info->chunk_root);
- 		em_tree = &block_group->fs_info->mapping_tree.map_tree;
- 		write_lock(&em_tree->lock);
-@@ -3326,10 +3314,31 @@ out:
- 		 * this block group have left 1 entry each one. Free them.
- 		 */
- 		__btrfs_remove_free_space_cache(block_group->free_space_ctl);
--	} else {
-+	}
-+}
-+
-+int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
-+			   u64 *trimmed, u64 start, u64 end, u64 minlen)
-+{
++	u64 start = 0, len = 0;
 +	int ret;
 +
 +	*trimmed = 0;
 +
-+	spin_lock(&block_group->lock);
-+	if (block_group->removed) {
- 		spin_unlock(&block_group->lock);
++	/* Not writeable = nothing to do. */
++	if (!device->writeable)
 +		return 0;
- 	}
-+	btrfs_get_block_group_trimming(block_group);
-+	spin_unlock(&block_group->lock);
 +
-+	ret = trim_no_bitmap(block_group, trimmed, start, end, minlen);
-+	if (ret)
-+		goto out;
++	/* No free space = nothing to do. */
++	if (device->total_bytes <= device->bytes_used)
++		return 0;
++
++	ret = 0;
++
++	while (1) {
++		struct btrfs_fs_info *fs_info = device->dev_root->fs_info;
++		struct btrfs_transaction *trans;
++
++		ret = mutex_lock_interruptible(&fs_info->chunk_mutex);
++		if (ret)
++			return ret;
++
++		down_read(&fs_info->commit_root_sem);
++
++		spin_lock(&fs_info->trans_lock);
++		trans = fs_info->running_transaction;
++		if (trans)
++			atomic_inc(&trans->use_count);
++		spin_unlock(&fs_info->trans_lock);
++
++		ret = find_free_dev_extent_start(trans, device, minlen, start,
++						 &start, &len);
++		if (trans)
++			btrfs_put_transaction(trans);
++
++		if (ret) {
++			up_read(&fs_info->commit_root_sem);
++			mutex_unlock(&fs_info->chunk_mutex);
++			if (ret == -ENOSPC)
++				ret = 0;
++			break;
++		}
++
++		ret = btrfs_issue_discard(device->bdev, start, len);
++		up_read(&fs_info->commit_root_sem);
++		mutex_unlock(&fs_info->chunk_mutex);
++
++		if (ret)
++			break;
++
++		start += len;
++		*trimmed += len;
++
++		if (fatal_signal_pending(current)) {
++			ret = -ERESTARTSYS;
++			break;
++		}
++
++		cond_resched();
++	}
++
++	return ret;
++}
++
+ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_block_group_cache *cache = NULL;
++	struct btrfs_device *device;
++	struct list_head *devices;
+ 	u64 group_trimmed;
+ 	u64 start;
+ 	u64 end;
+@@ -10132,6 +10220,18 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ 		cache = next_block_group(fs_info->tree_root, cache);
+ 	}
  
-+	ret = trim_bitmaps(block_group, trimmed, start, end, minlen);
-+out:
-+	btrfs_put_block_group_trimming(block_group);
++	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
++	devices = &root->fs_info->fs_devices->alloc_list;
++	list_for_each_entry(device, devices, dev_alloc_list) {
++		ret = btrfs_trim_free_extents(device, range->minlen,
++					      &group_trimmed);
++		if (ret)
++			break;
++
++		trimmed += group_trimmed;
++	}
++	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
++
+ 	range->len = trimmed;
+ 	return ret;
+ }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 174f5e1..7fdde31 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1051,15 +1051,18 @@ out:
  	return ret;
  }
  
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 2ccd8d4..a80da03 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -69,7 +69,7 @@ static struct file_system_type btrfs_fs_type;
- 
- static int btrfs_remount(struct super_block *sb, int *flags, char *data);
- 
--static const char *btrfs_decode_error(int errno)
-+const char *btrfs_decode_error(int errno)
+-static int contains_pending_extent(struct btrfs_trans_handle *trans,
++static int contains_pending_extent(struct btrfs_transaction *transaction,
+ 				   struct btrfs_device *device,
+ 				   u64 *start, u64 len)
  {
- 	char *errstr = "unknown";
++	struct btrfs_fs_info *fs_info = device->dev_root->fs_info;
+ 	struct extent_map *em;
+-	struct list_head *search_list = &trans->transaction->pending_chunks;
++	struct list_head *search_list = &fs_info->pinned_chunks;
+ 	int ret = 0;
+ 	u64 physical_start = *start;
  
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 5628e25..2005262 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -256,6 +256,8 @@ loop:
- 	mutex_init(&cur_trans->cache_write_mutex);
- 	cur_trans->num_dirty_bgs = 0;
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
-+	INIT_LIST_HEAD(&cur_trans->deleted_bgs);
-+	spin_lock_init(&cur_trans->deleted_bgs_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
- 			     fs_info->btree_inode->i_mapping);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 0b24755..14325f2 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -74,6 +74,8 @@ struct btrfs_transaction {
- 	 */
- 	struct mutex cache_write_mutex;
- 	spinlock_t dirty_bgs_lock;
-+	struct list_head deleted_bgs;
-+	spinlock_t deleted_bgs_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
- 	int dirty_bg_run;
++	if (transaction)
++		search_list = &transaction->pending_chunks;
+ again:
+ 	list_for_each_entry(em, search_list, list) {
+ 		struct map_lookup *map;
+@@ -1078,8 +1081,8 @@ again:
+ 			ret = 1;
+ 		}
+ 	}
+-	if (search_list == &trans->transaction->pending_chunks) {
+-		search_list = &trans->root->fs_info->pinned_chunks;
++	if (search_list != &fs_info->pinned_chunks) {
++		search_list = &fs_info->pinned_chunks;
+ 		goto again;
+ 	}
+ 
+@@ -1088,12 +1091,13 @@ again:
+ 
+ 
+ /*
+- * find_free_dev_extent - find free space in the specified device
+- * @device:	the device which we search the free space in
+- * @num_bytes:	the size of the free space that we need
+- * @start:	store the start of the free space.
+- * @len:	the size of the free space. that we find, or the size of the max
+- * 		free space if we don't find suitable free space
++ * find_free_dev_extent_start - find free space in the specified device
++ * @device:	  the device which we search the free space in
++ * @num_bytes:	  the size of the free space that we need
++ * @search_start: the position from which to begin the search
++ * @start:	  store the start of the free space.
++ * @len:	  the size of the free space. that we find, or the size
++ *		  of the max free space if we don't find suitable free space
+  *
+  * this uses a pretty simple search, the expectation is that it is
+  * called very infrequently and that a given device has a small number
+@@ -1107,9 +1111,9 @@ again:
+  * But if we don't find suitable free space, it is used to store the size of
+  * the max free space.
+  */
+-int find_free_dev_extent(struct btrfs_trans_handle *trans,
+-			 struct btrfs_device *device, u64 num_bytes,
+-			 u64 *start, u64 *len)
++int find_free_dev_extent_start(struct btrfs_transaction *transaction,
++			       struct btrfs_device *device, u64 num_bytes,
++			       u64 search_start, u64 *start, u64 *len)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_root *root = device->dev_root;
+@@ -1119,19 +1123,11 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 	u64 max_hole_start;
+ 	u64 max_hole_size;
+ 	u64 extent_end;
+-	u64 search_start;
+ 	u64 search_end = device->total_bytes;
+ 	int ret;
+ 	int slot;
+ 	struct extent_buffer *l;
+ 
+-	/* FIXME use last free of some kind */
+-
+-	/* we don't want to overwrite the superblock on the drive,
+-	 * so we make sure to start at an offset of at least 1MB
+-	 */
+-	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
+-
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -1192,7 +1188,7 @@ again:
+ 			 * Have to check before we set max_hole_start, otherwise
+ 			 * we could end up sending back this offset anyway.
+ 			 */
+-			if (contains_pending_extent(trans, device,
++			if (contains_pending_extent(transaction, device,
+ 						    &search_start,
+ 						    hole_size)) {
+ 				if (key.offset >= search_start) {
+@@ -1241,7 +1237,7 @@ next:
+ 	if (search_end > search_start) {
+ 		hole_size = search_end - search_start;
+ 
+-		if (contains_pending_extent(trans, device, &search_start,
++		if (contains_pending_extent(transaction, device, &search_start,
+ 					    hole_size)) {
+ 			btrfs_release_path(path);
+ 			goto again;
+@@ -1267,6 +1263,24 @@ out:
+ 	return ret;
+ }
+ 
++int find_free_dev_extent(struct btrfs_trans_handle *trans,
++			 struct btrfs_device *device, u64 num_bytes,
++			 u64 *start, u64 *len)
++{
++	struct btrfs_root *root = device->dev_root;
++	u64 search_start;
++
++	/* FIXME use last free of some kind */
++
++	/*
++	 * we don't want to overwrite the superblock on the drive,
++	 * so we make sure to start at an offset of at least 1MB
++	 */
++	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
++	return find_free_dev_extent_start(trans->transaction, device,
++					  num_bytes, search_start, start, len);
++}
++
+ static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_device *device,
+ 			  u64 start, u64 *dev_extent_len)
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index ebc3133..30918a8 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -449,6 +449,9 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
++int find_free_dev_extent_start(struct btrfs_transaction *transaction,
++			 struct btrfs_device *device, u64 num_bytes,
++			 u64 search_start, u64 *start, u64 *max_avail);
+ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_device *device, u64 num_bytes,
+ 			 u64 *start, u64 *max_avail);
 -- 
 1.8.4.5
 

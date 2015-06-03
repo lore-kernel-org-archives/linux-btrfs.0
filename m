@@ -1,146 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pd0-f181.google.com ([209.85.192.181]:33947 "EHLO
-	mail-pd0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751094AbbFCFFj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 01:05:39 -0400
-Received: by pdbki1 with SMTP id ki1so148488167pdb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 02 Jun 2015 22:05:39 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2] btrfs: test premature submount unmounting when deleting default subvolume
-Date: Tue,  2 Jun 2015 22:05:30 -0700
-Message-Id: <cbf811009efa5a8bc78a75aa98c8f27cc4a4c7f3.1433307753.git.osandov@osandov.com>
+Received: from e23smtp04.au.ibm.com ([202.81.31.146]:44079 "EHLO
+	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752774AbbFCJbE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 05:31:04 -0400
+Received: from /spool/local
+	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 3 Jun 2015 19:31:00 +1000
+Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 127822BB0059
+	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2015 19:30:57 +1000 (EST)
+Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
+	by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t539UkRS34799860
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2015 19:30:55 +1000
+Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
+	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t539UMTe010289
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2015 19:30:23 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, chandan@mykolab.com
+Subject: [PATCH] Btrfs: btrfs_defrag_file: Fix calculation of max_to_defrag.
+Date: Wed,  3 Jun 2015 14:59:54 +0530
+Message-Id: <1433323794-10045-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a regression test for a problem where attempting to delete the
-default subvolume would fail (as expected), but not until after all
-submounts under the subvolume were unmounted.
+max_to_defrag represents the number of pages to defrag rather than the last
+page of the file range to be defragged. Fix this.
 
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
-v1->v2:
-- Simpler test: just depends on umount of the bind mount succeeding
-  instead of running find. Without the patch applied, the bind mount
-  will disappear so umount will fail.
-- Fix Eryu's comments (better subject, copyright, use
-  _btrfs_get_subvolid)
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
- tests/btrfs/089     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/089.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 84 insertions(+)
- create mode 100755 tests/btrfs/089
- create mode 100644 tests/btrfs/089.out
-
-diff --git a/tests/btrfs/089 b/tests/btrfs/089
-new file mode 100755
-index 000000000000..c81df2a3b225
---- /dev/null
-+++ b/tests/btrfs/089
-@@ -0,0 +1,81 @@
-+#! /bin/bash
-+# FS QA Test 089
-+#
-+# Test deleting the default subvolume, making sure that it fails and that
-+# submounts under it are not unmounted prematurely. This is a regression test
-+# for Linux commit "Btrfs: don't invalidate root dentry when subvolume deletion
-+# fails".
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Omar Sandoval.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/filter.btrfs
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+# Create a new subvolume and make it the default subvolume.
-+$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/testvol" >> $seqres.full 2>&1 \
-+	|| _fail "couldn't create subvol"
-+testvol_id=$(_btrfs_get_subvolid "$SCRATCH_MNT" testvol)
-+$BTRFS_UTIL_PROG subvolume set-default $testvol_id "$SCRATCH_MNT" >> $seqres.full 2>&1 \
-+	|| _fail "couldn't set default"
-+
-+# Bind-mount a directory under the default subvolume.
-+mkdir "$SCRATCH_MNT/testvol/testdir"
-+touch "$SCRATCH_MNT/testvol/testdir/testfile"
-+mkdir "$SCRATCH_MNT/testvol/mnt"
-+mount --bind "$SCRATCH_MNT/testvol/testdir" "$SCRATCH_MNT/testvol/mnt"
-+
-+# Now attempt to delete the default subvolume, which should fail.
-+$BTRFS_UTIL_PROG subvolume delete "$SCRATCH_MNT/testvol" >> $seqres.full 2>&1
-+
-+# Unmount the bind mount, which should still be alive.
-+$UMOUNT_PROG "$SCRATCH_MNT/testvol/mnt"
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
-new file mode 100644
-index 000000000000..a7fcdee9b767
---- /dev/null
-+++ b/tests/btrfs/089.out
-@@ -0,0 +1,2 @@
-+QA output created by 089
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index ffe18bff0d21..616d060758c1 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -91,6 +91,7 @@
- 086 auto quick clone
- 087 auto quick send
- 088 auto quick metadata
-+089 auto quick subvol
- 090 auto quick metadata
- 091 auto quick qgroup
- 092 auto quick send
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ca5d968..2a45026 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1318,7 +1318,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		i = range->start >> PAGE_CACHE_SHIFT;
+ 	}
+ 	if (!max_to_defrag)
+-		max_to_defrag = last_index + 1;
++		max_to_defrag = last_index - i + 1;
+ 
+ 	/*
+ 	 * make writeback starts from i, so the defrag range can be
 -- 
-2.4.2
+2.1.0
 

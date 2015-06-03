@@ -1,128 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:38866 "EHLO mail.kernel.org"
+Received: from fuz.su ([5.135.162.8]:39570 "EHLO fuz.su"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759059AbbFBPic (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 2 Jun 2015 11:38:32 -0400
-From: fdmanana@kernel.org
+	id S1757086AbbFCPbp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 3 Jun 2015 11:31:45 -0400
+Date: Wed, 3 Jun 2015 17:27:04 +0200
+From: fuz@fuz.su
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: check pending chunks when shrinking fs to avoid corruption
-Date: Tue,  2 Jun 2015 14:43:21 +0100
-Message-Id: <1433252601-14088-1-git-send-email-fdmanana@kernel.org>
+Subject: btrfs refuses to mount rw, access yields ESTALE on ro mount
+Message-ID: <20150603152704.GA17845@fuz.su>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hello!
 
-When we shrink the usable size of a device (its total_bytes), we go over
-all the device extent items in the device tree and attempt to relocate
-the chunk of any device extent that goes beyond the new usable size for
-the device. We do that after setting the new usable size (total_bytes) in
-the device object, so that all new allocations (and reallocations) don't
-use areas of the device that go beyond the new (shorter) size. However we
-were not considering that before setting the new size in the device,
-pending chunks might have been created that use device extents that go
-beyond the new size, and those device extents are not yet in the device
-tree after we search the device tree - they are still attached to the
-list of new block group for some ongoing transaction handle, and they are
-only added to the device tree when the transaction handle is ended (via
-btrfs_create_pending_block_groups()).
+I'm experiencing a problem with a btrfs partition on my system. It
+refuses to mount rw, dmesg contains this message and a stack trace [0]
+when I try:
 
-So check for pending chunks with device extents that go beyond the new
-size and if any exists, commit the current transaction and repeat the
-search in the device tree.
+    BTRFS info (device sdb1): disk space caching is enabled
 
-Not doing this it would mean we would return success to user space while
-still having extents that go beyond the new size, and later user space
-could override those locations on the device while the fs still references
-them, causing all sorts of corruption and unexpected events.
+I can mount the fs as readonly but then I get a bunch of these errors on
+file access:
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/volumes.c | 49 ++++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 40 insertions(+), 9 deletions(-)
+[121618.400230] BTRFS info (device sdb1): no csum found for inode 3357352 start 0
+[121618.400398] BTRFS info (device sdb1): no csum found for inode 3357352 start 4096
+[121618.400501] BTRFS info (device sdb1): no csum found for inode 3357352 start 8192
+[121618.400603] BTRFS info (device sdb1): no csum found for inode 3357352 start 12288
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index dbea12e..09e89a6 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3984,6 +3984,7 @@ int btrfs_shrink_device(struct btrfs_device *device, u64 new_size)
- 	int slot;
- 	int failed = 0;
- 	bool retried = false;
-+	bool checked_pending_chunks = false;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
- 	struct btrfs_super_block *super_copy = root->fs_info->super_copy;
-@@ -4064,15 +4065,6 @@ again:
- 		goto again;
- 	} else if (failed && retried) {
- 		ret = -ENOSPC;
--		lock_chunks(root);
--
--		btrfs_device_set_total_bytes(device, old_size);
--		if (device->writeable)
--			device->fs_devices->total_rw_bytes += diff;
--		spin_lock(&root->fs_info->free_chunk_lock);
--		root->fs_info->free_chunk_space += diff;
--		spin_unlock(&root->fs_info->free_chunk_lock);
--		unlock_chunks(root);
- 		goto done;
- 	}
- 
-@@ -4084,6 +4076,35 @@ again:
- 	}
- 
- 	lock_chunks(root);
-+
-+	/*
-+	 * We checked in the above loop all device extents that were already in
-+	 * the device tree. However before we have updated the device's
-+	 * total_bytes to the new size, we might have had chunk allocations that
-+	 * have not complete yet (new block groups attached to transaction
-+	 * handles), and therefore their device extents were not yet in the
-+	 * device tree and we missed them in the loop above. So if we have any
-+	 * pending chunk using a device extent that overlaps the device range
-+	 * that we can not use anymore, commit the current transaction and
-+	 * repeat the search on the device tree - this way we guarantee we will
-+	 * not have chunks using device extents that end beyond 'new_size'.
-+	 */
-+	if (!checked_pending_chunks) {
-+		u64 start = new_size;
-+		u64 len = old_size - new_size;
-+
-+		if (contains_pending_extent(trans, device, &start, len)) {
-+			unlock_chunks(root);
-+			checked_pending_chunks = true;
-+			failed = 0;
-+			retried = false;
-+			ret = btrfs_commit_transaction(trans, root);
-+			if (ret)
-+				goto done;
-+			goto again;
-+		}
-+	}
-+
- 	btrfs_device_set_disk_total_bytes(device, new_size);
- 	if (list_empty(&device->resized_list))
- 		list_add_tail(&device->resized_list,
-@@ -4098,6 +4119,16 @@ again:
- 	btrfs_end_transaction(trans, root);
- done:
- 	btrfs_free_path(path);
-+	if (ret) {
-+		lock_chunks(root);
-+		btrfs_device_set_total_bytes(device, old_size);
-+		if (device->writeable)
-+			device->fs_devices->total_rw_bytes += diff;
-+		spin_lock(&root->fs_info->free_chunk_lock);
-+		root->fs_info->free_chunk_space += diff;
-+		spin_unlock(&root->fs_info->free_chunk_lock);
-+		unlock_chunks(root);
-+	}
- 	return ret;
- }
- 
+Here are the results of btrfs checks with two different versions of the
+btrfs(8) utility: [1] [2]. I was then advised to run btrfs check --repair
+on the file system by users on the #btrfs IRC channel. The log of this
+execution and an execution of btrfs check --readonly immediately after
+that can be found here: [3] [4]. What's interesting is that the error
+count did not went down to 0 and neiher was the problem alleviated.
+
+Before all of this, I performed btrfs-zero-log as suggested in various
+articles on the internet.
+
+Meta data from the file system pulled with btrfs-image(8) is available
+on request only due to privacy concerns.
+
+Yours sincerely,
+Robert Clausecker
+
+[0]: http://fuz.su/~fuz/txt/btrfs.trace
+[1]: http://fuz.su/~fuz/txt/btrfs.check
+[2]: http://fuz.su/~fuz/txt/btrfs.check2
+[3]: http://fuz.su/~fuz/txt/btrfs.check3
+[4]: http://fuz.su/~fuz/txt/btrfs.check4
+
 -- 
-2.1.3
-
+()  ascii ribbon campaign - for an 8-bit clean world 
+/\  - against html email  - against proprietary attachments

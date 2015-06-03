@@ -1,95 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:40081 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755632AbbFAGZk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 1 Jun 2015 02:25:40 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t516Pe6Y025708
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 1 Jun 2015 06:25:40 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by userv0022.oracle.com (8.13.8/8.13.8) with ESMTP id t516PdZI026784
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 1 Jun 2015 06:25:40 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id t516Pdwx010337
-	for <linux-btrfs@vger.kernel.org>; Mon, 1 Jun 2015 06:25:39 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: use function is_block_device() instead
-Date: Mon,  1 Jun 2015 14:25:18 +0800
-Message-Id: <1433139918-820-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1433139918-820-1-git-send-email-anand.jain@oracle.com>
-References: <1433139918-820-1-git-send-email-anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:17747 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751945AbbFCHCY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 03:02:24 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5370p5N010773
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2015 15:00:51 +0800
+From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs: qgroup: show 'none' when we did not limit it on this qgroup
+Date: Wed, 3 Jun 2015 14:57:31 +0800
+Message-ID: <1433314653-548-1-git-send-email-yangds.fnst@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here the delete code as below, is trying to check if the provided device
-is a block device, there is a function for it. use it.
+There are two understanding of the '0' value in btrfs qgroup show.
+(1) is no-limitation on this qgroup. (2) is the max-limitation is 0.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+This patch make it showing in different way.
+
+(1). max-limitation for 0 is still showing '0'.
+(2). no-limitation will show 'none'.
+
+qgroupid         rfer         excl     max_rfer     max_excl parent
+--------         ----         ----     --------     -------- ------
+0/5           2.19GiB      2.19GiB         none         none ---
+0/257       100.02MiB    100.02MiB         none         none ---
+
+Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
 ---
- cmds-replace.c | 25 +------------------------
- 1 file changed, 1 insertion(+), 24 deletions(-)
+ qgroup.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 0787ce3..e6bc27e 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -120,14 +120,12 @@ static int cmd_start_replace(int argc, char **argv)
- 	int ret;
- 	int c;
- 	int fdmnt = -1;
--	int fdsrcdev = -1;
- 	int fddstdev = -1;
- 	char *path;
- 	char *srcdev;
- 	char *dstdev = NULL;
- 	int avoid_reading_from_srcdev = 0;
- 	int force_using_targetdev = 0;
--	struct stat st;
- 	u64 dstdev_block_count;
- 	int do_not_background = 0;
- 	int mixed = 0;
-@@ -214,28 +212,9 @@ static int cmd_start_replace(int argc, char **argv)
- 
- 	if (is_numerical(srcdev)) {
- 		start_args.start.srcdevid = arg_strtou64(srcdev);
--	} else {
--		fdsrcdev = open(srcdev, O_RDWR);
--		if (fdsrcdev < 0) {
--			fprintf(stderr, "Error: Unable to open device '%s'\n",
--				srcdev);
--			fprintf(stderr, "\tTry using the devid instead of the path\n");
--			goto leave_with_error;
--		}
--		ret = fstat(fdsrcdev, &st);
--		if (ret) {
--			fprintf(stderr, "Error: Unable to stat '%s'\n", srcdev);
--			goto leave_with_error;
--		}
--		if (!S_ISBLK(st.st_mode)) {
--			fprintf(stderr, "Error: '%s' is not a block device\n",
--				srcdev);
--			goto leave_with_error;
--		}
-+	} else if (is_block_device(srcdev)) {
- 		strncpy((char *)start_args.start.srcdev_name, srcdev,
- 			BTRFS_DEVICE_PATH_NAME_MAX);
--		close(fdsrcdev);
--		fdsrcdev = -1;
- 		start_args.start.srcdevid = 0;
- 	}
- 
-@@ -308,8 +287,6 @@ leave_with_error:
- 		free(dstdev);
- 	if (fdmnt != -1)
- 		close(fdmnt);
--	if (fdsrcdev != -1)
--		close(fdsrcdev);
- 	if (fddstdev != -1)
- 		close(fddstdev);
- 	return 1;
+diff --git a/qgroup.c b/qgroup.c
+index 53815b5..dc04b03 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -237,10 +237,16 @@ static void print_qgroup_column(struct btrfs_qgroup *qgroup,
+ 		print_qgroup_column_add_blank(BTRFS_QGROUP_PARENT, len);
+ 		break;
+ 	case BTRFS_QGROUP_MAX_RFER:
+-		len = printf("%*s", max_len, pretty_size_mode(qgroup->max_rfer, unit_mode));
++		if (qgroup->flags & BTRFS_QGROUP_LIMIT_MAX_RFER)
++			len = printf("%*s", max_len, pretty_size_mode(qgroup->max_rfer, unit_mode));
++		else
++			len = printf("%*s", max_len, "none");
+ 		break;
+ 	case BTRFS_QGROUP_MAX_EXCL:
+-		len = printf("%*s", max_len, pretty_size_mode(qgroup->max_excl, unit_mode));
++		if (qgroup->flags & BTRFS_QGROUP_LIMIT_MAX_EXCL)
++			len = printf("%*s", max_len, pretty_size_mode(qgroup->max_excl, unit_mode));
++		else
++			len = printf("%*s", max_len, "none");
+ 		break;
+ 	case BTRFS_QGROUP_CHILD:
+ 		len = print_child_column(qgroup);
 -- 
-2.4.1
+1.8.4.2
 

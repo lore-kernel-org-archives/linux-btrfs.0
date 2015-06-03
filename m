@@ -1,180 +1,272 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from victor.provo.novell.com ([137.65.250.26]:47495 "EHLO
+Received: from victor.provo.novell.com ([137.65.250.26]:46308 "EHLO
 	prv3-mh.provo.novell.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1754511AbbFCQHU (ORCPT
+	by vger.kernel.org with ESMTP id S1754625AbbFCQHU (ORCPT
 	<rfc822;groupwise-linux-btrfs@vger.kernel.org:0:0>);
 	Wed, 3 Jun 2015 12:07:20 -0400
 From: Filipe Manana <fdmanana@suse.com>
 To: clm@fb.com
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/2 RESEND] Btrfs: incremental send, don't delay directory renames unnecessarily
-Date: Wed,  3 Jun 2015 04:15:18 +0100
-Message-Id: <1433301319-515-2-git-send-email-fdmanana@suse.com>
+Subject: [PATCH 2/2 RESEND] Btrfs: incremental send, check if orphanized dir inode needs delayed rename
+Date: Wed,  3 Jun 2015 04:15:19 +0100
+Message-Id: <1433301319-515-3-git-send-email-fdmanana@suse.com>
 In-Reply-To: <1433301319-515-1-git-send-email-fdmanana@suse.com>
 References: <1433301319-515-1-git-send-email-fdmanana@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even though we delay the rename of directories when they become
-descendents of other directories that were also renamed in the send
-root to prevent infinite path build loops, we were doing it in cases
-where this was not needed and was actually harmful resulting in
-infinite path build loops as we ended up with a circular dependency
-of delayed directory renames.
+If a directory inode is orphanized, because some inode previously
+processed has a new name that collides with the old name of the current
+inode, we need to check if it needs its rename operation delayed too,
+as its ancestor-descendent relationship with some other inode might
+have been reversed between the parent and send snapshots and therefore
+its rename operation needs to happen after that other inode is renamed.
 
-Consider the following reproducer:
+For example, for the following reproducer where this is needed (provided
+by Robbie Ko):
 
   $ mkfs.btrfs -f /dev/sdb
   $ mount /dev/sdb /mnt
   $ mkfs.btrfs -f /dev/sdc
   $ mount /dev/sdc /mnt2
 
-  $ mkdir /mnt/data
-  $ mkdir /mnt/data/n1
-  $ mkdir /mnt/data/n1/n2
+  $ mkdir -p /mnt/data/n1/n2
   $ mkdir /mnt/data/n4
-  $ mkdir /mnt/data/n1/n2/p1
-  $ mkdir /mnt/data/n1/n2/p1/p2
-  $ mkdir /mnt/data/t6
+  $ mkdir -p /mnt/data/t6/t7
+  $ mkdir /mnt/data/t5
   $ mkdir /mnt/data/t7
-  $ mkdir -p /mnt/data/t5/t7
-  $ mkdir /mnt/data/t2
+  $ mkdir /mnt/data/n4/t2
   $ mkdir /mnt/data/t4
-  $ mkdir -p /mnt/data/t1/t3
-  $ mkdir /mnt/data/p1
-  $ mv /mnt/data/t1 /mnt/data/p1
-  $ mkdir -p /mnt/data/p1/p2
-  $ mv /mnt/data/t4 /mnt/data/p1/p2/t1
-  $ mv /mnt/data/t5 /mnt/data/n4/t5
-  $ mv /mnt/data/n1/n2/p1/p2 /mnt/data/n4/t5/p2
-  $ mv /mnt/data/t7 /mnt/data/n4/t5/p2/t7
-  $ mv /mnt/data/t2 /mnt/data/n4/t1
-  $ mv /mnt/data/p1 /mnt/data/n4/t5/p2/p1
-  $ mv /mnt/data/n1/n2 /mnt/data/n4/t5/p2/p1/p2/n2
-  $ mv /mnt/data/n4/t5/p2/p1/p2/t1 /mnt/data/n4/t5/p2/p1/p2/n2/t1
-  $ mv /mnt/data/n4/t5/t7 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7
-  $ mv /mnt/data/n4/t5/p2/p1/t1/t3 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t3
-  $ mv /mnt/data/n4/t5/p2/p1/p2/n2/p1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7/p1
-  $ mv /mnt/data/t6 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t3/t5
-  $ mv /mnt/data/n4/t5/p2/p1/t1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t3/t1
-  $ mv /mnt/data/n1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/n1
+  $ mkdir /mnt/data/t3
+  $ mv /mnt/data/t7 /mnt/data/n4/t2
+  $ mv /mnt/data/t4 /mnt/data/n4/t2/t7
+  $ mv /mnt/data/t5 /mnt/data/n4/t2/t7/t4
+  $ mv /mnt/data/t6 /mnt/data/n4/t2/t7/t4/t5
+  $ mv /mnt/data/n1/n2 /mnt/data/n4/t2/t7/t4/t5/t6
+  $ mv /mnt/data/n1 /mnt/data/n4/t2/t7/t4/t5/t6
+  $ mv /mnt/data/n4/t2/t7/t4/t5/t6/t7 /mnt/data/n4/t2/t7/t4/t5/t6/n2
+  $ mv /mnt/data/t3 /mnt/data/n4/t2/t7/t4/t5/t6/n2/t7
 
   $ btrfs subvolume snapshot -r /mnt /mnt/snap1
 
-  $ mv /mnt/data/n4/t1 /mnt/data/n4/t5/p2/p1/p2/n2/t1/t7/p1/t1
-  $ mv /mnt/data/n4/t5/p2/p1/p2/n2/t1 /mnt/data/n4/
-  $ mv /mnt/data/n4/t5/p2/p1/p2/n2 /mnt/data/n4/t1/n2
-  $ mv /mnt/data/n4/t1/t7/p1 /mnt/data/n4/t1/n2/p1
-  $ mv /mnt/data/n4/t1/t3/t1 /mnt/data/n4/t1/n2/t1
-  $ mv /mnt/data/n4/t1/t3 /mnt/data/n4/t1/n2/t1/t3
-  $ mv /mnt/data/n4/t5/p2/p1/p2 /mnt/data/n4/t1/n2/p1/p2
-  $ mv /mnt/data/n4/t1/t7 /mnt/data/n4/t1/n2/p1/t7
-  $ mv /mnt/data/n4/t5/p2/p1 /mnt/data/n4/t1/n2/p1/p2/p1
-  $ mv /mnt/data/n4/t1/n2/t1/t3/t5 /mnt/data/n4/t1/n2/p1/p2/t5
-  $ mv /mnt/data/n4/t5 /mnt/data/n4/t1/n2/p1/p2/p1/t5
-  $ mv /mnt/data/n4/t1/n2/p1/p2/p1/t5/p2 /mnt/data/n4/t1/n2/p1/p2/p1/p2
-  $ mv /mnt/data/n4/t1/n2/p1/p2/p1/p2/t7 /mnt/data/n4/t1/t7
+  $ mv /mnt/data/n4/t2/t7/t4/t5/t6/n1 /mnt/data/n4
+  $ mv /mnt/data/n4/t2 /mnt/data/n4/n1
+  $ mv /mnt/data/n4/n1/t2/t7/t4/t5/t6/n2 /mnt/data/n4/n1/t2
+  $ mv /mnt/data/n4/n1/t2/n2/t7/t3 /mnt/data/n4/n1/t2
+  $ mv /mnt/data/n4/n1/t2/t7/t4/t5/t6 /mnt/data/n4/n1/t2
+  $ mv /mnt/data/n4/n1/t2/t7/t4 /mnt/data/n4/n1/t2/t6
+  $ mv /mnt/data/n4/n1/t2/t7 /mnt/data/n4/n1/t2/t3
+  $ mv /mnt/data/n4/n1/t2/n2/t7 /mnt/data/n4/n1/t2
 
   $ btrfs subvolume snapshot -r /mnt /mnt/snap2
 
   $ btrfs send /mnt/snap1 | btrfs receive /mnt2
-  $ btrfs send -p /mnt/snap1 /mnt/snap2 | btrfs receive -vv /mnt2
+  $ btrfs send -p /mnt/snap1 /mnt/snap2 | btrfs receive /mnt2
   ERROR: send ioctl failed with -12: Cannot allocate memory
 
-This reproducer resulted in an infinite path build loop when building the
-path for inode 266 because the following circular dependency of delayed
-directory renames was created:
+Where the parent snapshot directory hierarchy is the following:
 
-   ino 272 <- ino 261 <- ino 259 <- ino 268 <- ino 267 <- ino 261
+  .                                                        (ino 256)
+  |-- data/                                                (ino 257)
+        |-- n4/                                            (ino 260)
+             |-- t2/                                       (ino 265)
+                  |-- t7/                                  (ino 264)
+                       |-- t4/                             (ino 266)
+                            |-- t5/                        (ino 263)
+                                 |-- t6/                   (ino 261)
+                                      |-- n1/              (ino 258)
+                                      |-- n2/              (ino 259)
+                                           |-- t7/         (ino 262)
+                                                |-- t3/    (ino 267)
 
-Where the notation "X <- Y" means the rename of inode X is delayed by the
-rename of inode Y (X will be renamed after Y is renamed). This resulted
-in an infinite path build loop of inode 266 because that inode has inode
-261 as an ancestor in the send root and inode 261 is in the circular
-dependency of delayed renames listed above.
+And the send snapshot's directory hierarchy is the following:
 
-Fix this by not delaying the rename of a directory inode if an ancestor of
-the inode in the send root, which has a delayed rename operation, is not
-also a descendent of the inode in the parent root.
+  .                                                        (ino 256)
+  |-- data/                                                (ino 257)
+        |-- n4/                                            (ino 260)
+             |-- n1/                                       (ino 258)
+                  |-- t2/                                  (ino 265)
+                       |-- n2/                             (ino 259)
+                       |-- t3/                             (ino 267)
+                       |    |-- t7                         (ino 264)
+                       |
+                       |-- t6/                             (ino 261)
+                       |    |-- t4/                        (ino 266)
+                       |         |-- t5/                   (ino 263)
+                       |
+                       |-- t7/                             (ino 262)
 
-Thanks to Robbie Ko for sending the reproducer example.
-A test case for xfstests follows soon.
+While processing inode 262 we orphanize inode 264 and later attempt
+to rename inode 264 to its new name/location, which resulted in building
+an incorrect destination path string for the rename operation with the
+value "data/n4/t2/t7/t4/t5/t6/n2/t7/t3/t7". This rename operation must
+have been done only after inode 267 is processed and renamed, as the
+ancestor-descendent relationship between inodes 264 and 267 was reversed
+between both snapshots, because otherwise it results in an infinite loop
+when building the path string for inode 264 when we are processing an
+inode with a number larger than 264. That loop is the following:
+
+  start inode 264, send progress of 265 for example
+  parent of 264 -> 267
+  parent of 267 -> 262
+  parent of 262 -> 259
+  parent of 259 -> 261
+  parent of 261 -> 263
+  parent of 263 -> 266
+  parent of 266 -> 264
+    |--> back to first iteration while current path string length
+         is <= PATH_MAX, and fail with -ENOMEM otherwise
+
+So fix this by making the check if we need to delay a directory rename
+regardless of the current inode having been orphanized or not.
+
+A test case for fstests follows soon.
+
+Thanks to Robbie Ko for providing a reproducer for this problem.
 
 Reported-by: Robbie Ko <robbieko@synology.com>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 48 ++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 46 insertions(+), 2 deletions(-)
+ fs/btrfs/send.c | 56 +++++++++++++++++++++++++++++++++++++-------------------
+ 1 file changed, 37 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index a1216f9..2ed36af 100644
+index 2ed36af..895f1b1 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -3353,6 +3353,37 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * Check if ino ino1 is an ancestor of inode ino2 in the given root.
-+ * Return 1 if true, 0 if false and < 0 on error.
-+ */
-+static int is_ancestor(struct btrfs_root *root,
-+		       const u64 ino1,
-+		       const u64 ino1_gen,
-+		       const u64 ino2,
-+		       struct fs_path *fs_path)
-+{
-+	u64 ino = ino2;
-+
-+	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
-+		int ret;
-+		u64 parent;
-+		u64 parent_gen;
-+
-+		fs_path_reset(fs_path);
-+		ret = get_first_ref(root, ino, &parent, &parent_gen, fs_path);
-+		if (ret < 0) {
-+			if (ret == -ENOENT && ino == ino2)
-+				ret = 0;
-+			return ret;
-+		}
-+		if (parent == ino1)
-+			return parent_gen == ino1_gen ? 1 : 0;
-+		ino = parent;
-+	}
-+	return 0;
-+}
-+
- static int wait_for_parent_move(struct send_ctx *sctx,
- 				struct recorded_ref *parent_ref)
- {
-@@ -3374,11 +3405,24 @@ static int wait_for_parent_move(struct send_ctx *sctx,
- 	 * Our current directory inode may not yet be renamed/moved because some
- 	 * ancestor (immediate or not) has to be renamed/moved first. So find if
- 	 * such ancestor exists and make sure our own rename/move happens after
--	 * that ancestor is processed.
-+	 * that ancestor is processed to avoid path build infinite loops (done
-+	 * at get_cur_path()).
+@@ -243,6 +243,7 @@ struct waiting_dir_move {
+ 	 * after this directory is moved, we can try to rmdir the ino rmdir_ino.
  	 */
- 	while (ino > BTRFS_FIRST_FREE_OBJECTID) {
- 		if (is_waiting_for_move(sctx, ino)) {
--			ret = 1;
-+			/*
-+			 * If the current inode is an ancestor of ino in the
-+			 * parent root, we need to delay the rename of the
-+			 * current inode, otherwise don't delayed the rename
-+			 * because we can end up with a circular dependency
-+			 * of renames, resulting in some directories never
-+			 * getting the respective rename operations issued in
-+			 * the send stream or getting into infinite path build
-+			 * loops.
-+			 */
-+			ret = is_ancestor(sctx->parent_root,
-+					  sctx->cur_ino, sctx->cur_inode_gen,
-+					  ino, path_before);
+ 	u64 rmdir_ino;
++	bool orphanized;
+ };
+ 
+ struct orphan_dir_info {
+@@ -1900,8 +1901,13 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 		goto out;
+ 	}
+ 
+-	/* we know that it is or will be overwritten. check this now */
+-	if (ow_inode < sctx->send_progress)
++	/*
++	 * We know that it is or will be overwritten. Check this now.
++	 * The current inode being processed might have been the one that caused
++	 * inode 'ino' to be orphanized, therefore ow_inode can actually be the
++	 * same as sctx->send_progress.
++	 */
++	if (ow_inode <= sctx->send_progress)
+ 		ret = 1;
+ 	else
+ 		ret = 0;
+@@ -2223,6 +2229,8 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
+ 	fs_path_reset(dest);
+ 
+ 	while (!stop && ino != BTRFS_FIRST_FREE_OBJECTID) {
++		struct waiting_dir_move *wdm;
++
+ 		fs_path_reset(name);
+ 
+ 		if (is_waiting_for_rm(sctx, ino)) {
+@@ -2233,7 +2241,11 @@ static int get_cur_path(struct send_ctx *sctx, u64 ino, u64 gen,
  			break;
  		}
  
+-		if (is_waiting_for_move(sctx, ino)) {
++		wdm = get_waiting_dir_move(sctx, ino);
++		if (wdm && wdm->orphanized) {
++			ret = gen_unique_name(sctx, ino, gen, name);
++			stop = 1;
++		} else if (wdm) {
+ 			ret = get_first_ref(sctx->parent_root, ino,
+ 					    &parent_inode, &parent_gen, name);
+ 		} else {
+@@ -2923,7 +2935,7 @@ static int is_waiting_for_move(struct send_ctx *sctx, u64 ino)
+ 	return entry != NULL;
+ }
+ 
+-static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino)
++static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino, bool orphanized)
+ {
+ 	struct rb_node **p = &sctx->waiting_dir_moves.rb_node;
+ 	struct rb_node *parent = NULL;
+@@ -2934,6 +2946,7 @@ static int add_waiting_dir_move(struct send_ctx *sctx, u64 ino)
+ 		return -ENOMEM;
+ 	dm->ino = ino;
+ 	dm->rmdir_ino = 0;
++	dm->orphanized = orphanized;
+ 
+ 	while (*p) {
+ 		parent = *p;
+@@ -3030,7 +3043,7 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+ 			goto out;
+ 	}
+ 
+-	ret = add_waiting_dir_move(sctx, pm->ino);
++	ret = add_waiting_dir_move(sctx, pm->ino, is_orphan);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -3385,7 +3398,8 @@ static int is_ancestor(struct btrfs_root *root,
+ }
+ 
+ static int wait_for_parent_move(struct send_ctx *sctx,
+-				struct recorded_ref *parent_ref)
++				struct recorded_ref *parent_ref,
++				const bool is_orphan)
+ {
+ 	int ret = 0;
+ 	u64 ino = parent_ref->dir;
+@@ -3464,7 +3478,7 @@ out:
+ 					   ino,
+ 					   &sctx->new_refs,
+ 					   &sctx->deleted_refs,
+-					   false);
++					   is_orphan);
+ 		if (!ret)
+ 			ret = 1;
+ 	}
+@@ -3633,6 +3647,17 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 			}
+ 		}
+ 
++		if (S_ISDIR(sctx->cur_inode_mode) && sctx->parent_root &&
++		    can_rename) {
++			ret = wait_for_parent_move(sctx, cur, is_orphan);
++			if (ret < 0)
++				goto out;
++			if (ret == 1) {
++				can_rename = false;
++				*pending_move = 1;
++			}
++		}
++
+ 		/*
+ 		 * link/move the ref to the new place. If we have an orphan
+ 		 * inode, move it and update valid_path. If not, link or move
+@@ -3653,18 +3678,11 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 				 * dirs, we always have one new and one deleted
+ 				 * ref. The deleted ref is ignored later.
+ 				 */
+-				ret = wait_for_parent_move(sctx, cur);
+-				if (ret < 0)
+-					goto out;
+-				if (ret) {
+-					*pending_move = 1;
+-				} else {
+-					ret = send_rename(sctx, valid_path,
+-							  cur->full_path);
+-					if (!ret)
+-						ret = fs_path_copy(valid_path,
+-							       cur->full_path);
+-				}
++				ret = send_rename(sctx, valid_path,
++						  cur->full_path);
++				if (!ret)
++					ret = fs_path_copy(valid_path,
++							   cur->full_path);
+ 				if (ret < 0)
+ 					goto out;
+ 			} else {
 -- 
 2.1.3
 

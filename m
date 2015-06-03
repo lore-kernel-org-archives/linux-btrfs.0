@@ -1,58 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34210 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751656AbbFCKlE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Jun 2015 06:41:04 -0400
-Date: Wed, 3 Jun 2015 12:41:02 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Received: from e28smtp01.in.ibm.com ([122.248.162.1]:47416 "EHLO
+	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758580AbbFCMqd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 08:46:33 -0400
+Received: from /spool/local
+	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 3 Jun 2015 18:16:30 +0530
+Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
+	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 0F8481258056
+	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2015 18:18:53 +0530 (IST)
+Received: from d28av02.in.ibm.com (d28av02.in.ibm.com [9.184.220.64])
+	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t53CkQ7r55967770
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2015 18:16:26 +0530
+Received: from d28av02.in.ibm.com (localhost [127.0.0.1])
+	by d28av02.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t53BtdLJ026307
+	for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2015 17:25:39 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: dsterba@suse.cz
 Cc: linux-btrfs@vger.kernel.org, chandan@mykolab.com
-Subject: Re: [PATCH] Btrfs: btrfs_defrag_file: Fix calculation of
- max_to_defrag.
-Message-ID: <20150603104102.GL6761@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1433323794-10045-1-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: Re: [PATCH] Btrfs: btrfs_defrag_file: Fix calculation of max_to_defrag.
+Date: Wed, 03 Jun 2015 18:16:23 +0530
+Message-ID: <5453369.Yc0I2j2qX5@localhost.localdomain>
+In-Reply-To: <20150603104102.GL6761@twin.jikos.cz>
+References: <1433323794-10045-1-git-send-email-chandan@linux.vnet.ibm.com> <20150603104102.GL6761@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1433323794-10045-1-git-send-email-chandan@linux.vnet.ibm.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 03, 2015 at 02:59:54PM +0530, Chandan Rajendra wrote:
-> max_to_defrag represents the number of pages to defrag rather than the last
-> page of the file range to be defragged. Fix this.
-
-Please update the changelog and describe the buggy behaviour. From a
-brief look I think that the defrag batch will be much higher than
-desired. Elsewhere the defrag batch is 1024, the page indexes used here
-are always large numbers. I guess this could (partially) explain high
-load during defrag that people report.
-
-ACK for the fix, I'll stick a reviewed-by to v2.
-
+On Wednesday 03 Jun 2015 12:41:02 David Sterba wrote:
+> On Wed, Jun 03, 2015 at 02:59:54PM +0530, Chandan Rajendra wrote:
+> > max_to_defrag represents the number of pages to defrag rather than the
+> > last
+> > page of the file range to be defragged. Fix this.
 > 
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-> ---
->  fs/btrfs/ioctl.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
+> Please update the changelog and describe the buggy behaviour. From a
+> brief look I think that the defrag batch will be much higher than
+> desired. Elsewhere the defrag batch is 1024, the page indexes used here
+> are always large numbers. I guess this could (partially) explain high
+> load during defrag that people report.
 > 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index ca5d968..2a45026 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -1318,7 +1318,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
->  		i = range->start >> PAGE_CACHE_SHIFT;
->  	}
->  	if (!max_to_defrag)
-> -		max_to_defrag = last_index + 1;
-> +		max_to_defrag = last_index - i + 1;
->  
->  	/*
->  	 * make writeback starts from i, so the defrag range can be
-> -- 
-> 2.1.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> ACK for the fix, I'll stick a reviewed-by to v2.
+
+Hello Dave,
+
+Consider a file having 10 4k blocks (i.e. blocks in the range [0 - 9]). If the
+defrag ioctl was invoked for the block range [3 - 6], then max_to_defrag
+should actually have the value 4. Instead in the current code we end up
+setting it to 6.
+
+Now, this does not (yet) cause an issue since the first part of the while loop
+condition in btrfs_defrag_file() (i.e. "i <= last_index") causes the control
+to flow out of the while loop before any buggy behavior is actually caused. So
+the patch just makes sure that max_to_defrag ends up having the right value
+rather than fixing a bug. I did run the xfstests suite to make sure that no
+new regressions were introduced by this patch.
+
+-- 
+chandan
+

@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f174.google.com ([209.85.223.174]:34797 "EHLO
-	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752646AbbFDQY5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jun 2015 12:24:57 -0400
-Received: by iebmu5 with SMTP id mu5so4754622ieb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2015 09:24:54 -0700 (PDT)
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:36476 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753381AbbFDQkY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jun 2015 12:40:24 -0400
+Received: by igbpi8 with SMTP id pi8so142147960igb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2015 09:40:23 -0700 (PDT)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1433416690-19177-4-git-send-email-robbieko@synology.com>
+In-Reply-To: <1433416690-19177-5-git-send-email-robbieko@synology.com>
 References: <1433416690-19177-1-git-send-email-robbieko@synology.com>
-	<1433416690-19177-4-git-send-email-robbieko@synology.com>
-Date: Thu, 4 Jun 2015 17:24:54 +0100
-Message-ID: <CAL3q7H5Rj48S8BGT4xy+3pHhcwmNTAiEQB9ra3VLAOxfpcAeAw@mail.gmail.com>
-Subject: Re: [PATCH 3/5] Btrfs: incremental send, fix orphan_dir_info not
- completely cleared
+	<1433416690-19177-5-git-send-email-robbieko@synology.com>
+Date: Thu, 4 Jun 2015 17:40:23 +0100
+Message-ID: <CAL3q7H5QdA0swW-Ng1VY7XC6moJVo6cbBeMzSVE8r-EVA4RKbA@mail.gmail.com>
+Subject: Re: [PATCH 4/5] Btrfs: incremental send, fix rmdir but dir have a
+ unprocess item
 From: Filipe David Manana <fdmanana@gmail.com>
 To: Robbie Ko <robbieko@synology.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
@@ -22,9 +22,9 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Thu, Jun 4, 2015 at 12:18 PM, Robbie Ko <robbieko@synology.com> wrote:
-> There's one case where we not clear orphan_dir_info issue.
+> There's one case where we can't rmdir issue.
 
-You mean where we leak a orphan_dir_info structure.
+"There's one case where we attempt to rmdir a directory prematurely."
 
 >
 > Example:
@@ -35,94 +35,50 @@ You mean where we leak a orphan_dir_info structure.
 > |---- del/ (ino 281)
 >   |---- tmp/ (ino 280)
 >   |---- long/ (ino 283)
->   |---- longlong/ (ino 284)
 >
 > Send snapshot:
 > |---- a/ (ino 279)
 >   |---- long (ino 283)
->   |---- longlong (ino 284)
 > |---- c/ (ino 282)
 >   |---- tmp/ (ino 280)
 >
 > Here we process 281 use can_rmdir check, but 280 is waiting, so create orphan_dir_info
 > and when 282 is move to dest, so 280 can move to c/tmp, and now run can_rmdir check again.
-> Return is false, because 283 and 284 is unprocess, but now not release orphan_dir_info.
-> When 283 and 284 is processd, 281 be delete, but not delete orphan_dir_info.
-> So fix this by release orphan_dir_info for this case.
 
-Could be described more generically as freeing an existing
-orphan_dir_info for a directory, when we realize we can't rmdir the
-directory because it has a descendant that wasn't yet processed, and
-the orphan_dir_info was created because it had a descendant that had
-its rename operation delayed.
+> Return is true, because sctx->cur_ino is 282 , and call can_rmdir(, sctx->cur_ino + 1)
+> so 283 is equal or lesser than (sctx->cur_ino + 1), not anything unprocess.
 
+We pass 283 (sctx->cur_ino + 1) as the send_progress to the
+can_rmdir() function and that makes it return true when it shouldn't,
+because the inode 283 wasn't processed yet and it's still a child of
+the directory with inode number 281, which makes the receiver run into
+an ENOTEMPTY error when attempting to remove the directory.
+
+> So fix this rmdir for this case.
 >
 > Signed-off-by: Robbie Ko <robbieko@synology.com>
 > ---
->  fs/btrfs/send.c | 19 ++++++++++++-------
->  1 file changed, 12 insertions(+), 7 deletions(-)
+>  fs/btrfs/send.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
 >
 > diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-> index 596b9dc..ff9d052 100644
+> index ff9d052..e8eb3ab 100644
 > --- a/fs/btrfs/send.c
 > +++ b/fs/btrfs/send.c
-> @@ -2785,12 +2785,6 @@ add_orphan_dir_info(struct send_ctx *sctx, u64 dir_ino)
->         struct rb_node *parent = NULL;
->         struct orphan_dir_info *entry, *odi;
->
-> -       odi = kmalloc(sizeof(*odi), GFP_NOFS);
-> -       if (!odi)
-> -               return ERR_PTR(-ENOMEM);
-> -       odi->ino = dir_ino;
-> -       odi->gen = 0;
-> -
->         while (*p) {
->                 parent = *p;
->                 entry = rb_entry(parent, struct orphan_dir_info, node);
-> @@ -2799,11 +2793,16 @@ add_orphan_dir_info(struct send_ctx *sctx, u64 dir_ino)
->                 } else if (dir_ino > entry->ino) {
->                         p = &(*p)->rb_right;
->                 } else {
-> -                       kfree(odi);
->                         return entry;
+> @@ -3213,7 +3213,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+>                         /* already deleted */
+>                         goto finish;
 >                 }
->         }
->
-> +       odi = kmalloc(sizeof(*odi), GFP_NOFS);
-> +       if (!odi)
-> +               return ERR_PTR(-ENOMEM);
-> +       odi->ino = dir_ino;
-> +       odi->gen = 0;
-> +
+> -               ret = can_rmdir(sctx, rmdir_ino, odi->gen, sctx->cur_ino + 1);
+> +               ret = can_rmdir(sctx, rmdir_ino, odi->gen, sctx->cur_ino);
 
-All the above changes don't fix the issue described in this change -
-the memory leak - they just avoid the overhead of allocating an
-orphan_dir_info object unnecessarily.
-
-The change is ok, but should be a separate patch in the series that
-does only that.
-
->         rb_link_node(&odi->node, parent, p);
->         rb_insert_color(&odi->node, &sctx->orphan_dirs);
->         return odi;
-> @@ -2913,6 +2912,12 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
->                 }
->
->                 if (loc.objectid > send_progress) {
-> +                       struct orphan_dir_info *odi;
-> +
-> +                       odi = get_orphan_dir_info(sctx, dir);
-> +                       if (odi) {
-> +                               free_orphan_dir_info(sctx, odi);
-> +                       }
-
-Looks correct, great catch.
+Looks good, great catch.
 
 Thanks.
 
->                         ret = 0;
+>                 if (ret < 0)
 >                         goto out;
->                 }
+>                 if (!ret)
 > --
 > 1.9.1
 >

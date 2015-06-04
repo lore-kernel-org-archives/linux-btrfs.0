@@ -1,56 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fuz.su ([5.135.162.8]:39570 "EHLO fuz.su"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757086AbbFCPbp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Jun 2015 11:31:45 -0400
-Date: Wed, 3 Jun 2015 17:27:04 +0200
-From: fuz@fuz.su
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs refuses to mount rw, access yields ESTALE on ro mount
-Message-ID: <20150603152704.GA17845@fuz.su>
+Received: from magic.merlins.org ([209.81.13.136]:33158 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750936AbbFDImt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jun 2015 04:42:49 -0400
+Date: Thu, 4 Jun 2015 17:42:45 +0900
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: counting fragments takes more time than defragmenting
+Message-ID: <20150604084245.GR23272@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!
+Hi Chris,
 
-I'm experiencing a problem with a btrfs partition on my system. It
-refuses to mount rw, dmesg contains this message and a stack trace [0]
-when I try:
+After our quick chat, I gave it a shot on 3.19.6, and things are better
+than last time I tried.
 
-    BTRFS info (device sdb1): disk space caching is enabled
+legolas:/var/local/nobck/VirtualBox VMs# lsattr Win7/
+---------------C Win7/Logs
+---------------C Win7/Snapshots
+---------------C Win7/Win7.vdi
+---------------C Win7/Win7.png
+---------------C Win7/autotune1.png
+---------------C Win7/new_autotune2.png
+---------------C Win7/Win7.vbox-prev
+---------------C Win7/Win7.vbox
 
-I can mount the fs as readonly but then I get a bunch of these errors on
-file access:
+But I have snapshots of that subvolume, so obviously that gets
+in the way of disabling COW.
 
-[121618.400230] BTRFS info (device sdb1): no csum found for inode 3357352 start 0
-[121618.400398] BTRFS info (device sdb1): no csum found for inode 3357352 start 4096
-[121618.400501] BTRFS info (device sdb1): no csum found for inode 3357352 start 8192
-[121618.400603] BTRFS info (device sdb1): no csum found for inode 3357352 start 12288
+I had a look, and I have 100K fragments. That took 10mn to figure out:
 
-Here are the results of btrfs checks with two different versions of the
-btrfs(8) utility: [1] [2]. I was then advised to run btrfs check --repair
-on the file system by users on the #btrfs IRC channel. The log of this
-execution and an execution of btrfs check --readonly immediately after
-that can be found here: [3] [4]. What's interesting is that the error
-count did not went down to 0 and neiher was the problem alleviated.
+legolas:/var/local/nobck/VirtualBox VMs/Win7# filefrag Win7.vdi
+Win7.vdi: 104306 extents found
 
-Before all of this, I performed btrfs-zero-log as suggested in various
-articles on the internet.
+This first filefrag run took about 10mn to count all the fragments on my
+SSD. That feels a bit slow, but maybe the userland tool is doing things
+in suboptimal ways.
 
-Meta data from the file system pulled with btrfs-image(8) is available
-on request only due to privacy concerns.
+Defrag actually worked (mostly) and wasn't too slow. It used to take hours
+not to finish, and now it worked in 3mn:
+legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi 
+real	3m43.807s
+user	0m0.000s
+sys	0m44.044s
 
-Yours sincerely,
-Robert Clausecker
+This is defintely better than before.
+Note that it's not fully defragged, but close enough. Each subsequent
+run, filefrag is faster, and defrag is still faster than filefrag:
 
-[0]: http://fuz.su/~fuz/txt/btrfs.trace
-[1]: http://fuz.su/~fuz/txt/btrfs.check
-[2]: http://fuz.su/~fuz/txt/btrfs.check2
-[3]: http://fuz.su/~fuz/txt/btrfs.check3
-[4]: http://fuz.su/~fuz/txt/btrfs.check4
+legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
+Win7.vdi: 11428 extents found
+real	2m42.090s
+user	0m0.000s
+sys	2m37.308s
 
+legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi 
+real	0m7.483s
+user	0m0.000s
+sys	0m2.672s
+
+legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
+Win7.vdi: 11132 extents found
+real	0m22.525s
+user	0m0.000s
+sys	0m22.264s
+
+It's a bit unexpected that I still have 10k fragments after 2 defrag
+runs, but it's better than 100k :)
+
+Marc
 -- 
-()  ascii ribbon campaign - for an 8-bit clean world 
-/\  - against html email  - against proprietary attachments
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

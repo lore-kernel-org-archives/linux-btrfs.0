@@ -1,18 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:34689 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752609AbbFDNEk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jun 2015 09:04:40 -0400
-Received: by igbhj9 with SMTP id hj9so14800196igb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2015 06:04:39 -0700 (PDT)
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:33204 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752888AbbFDNu1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 4 Jun 2015 09:50:27 -0400
+Received: by igbpi8 with SMTP id pi8so15716747igb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 04 Jun 2015 06:50:27 -0700 (PDT)
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1433416690-19177-1-git-send-email-robbieko@synology.com>
+In-Reply-To: <1433416690-19177-2-git-send-email-robbieko@synology.com>
 References: <1433416690-19177-1-git-send-email-robbieko@synology.com>
-Date: Thu, 4 Jun 2015 14:04:39 +0100
-Message-ID: <CAL3q7H6=28M29Fssz1MNt4xxoWUQ_GggJUOWiNwMBqFE4o1O4g@mail.gmail.com>
-Subject: Re: [PATCH 0/5] Btrfs incremental send fix serval case for rename and
- rm directory
+	<1433416690-19177-2-git-send-email-robbieko@synology.com>
+Date: Thu, 4 Jun 2015 14:50:26 +0100
+Message-ID: <CAL3q7H4Vrw7q3pBLATSO03P=GYopYPHBiWyTG1rrO-E1vpTL3g@mail.gmail.com>
+Subject: Re: [PATCH 1/5] Btrfs: incremental send, avoid circular waiting and
+ descendant overwrite ancestor need to update path
 From: Filipe David Manana <fdmanana@gmail.com>
 To: Robbie Ko <robbieko@synology.com>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
@@ -21,39 +22,206 @@ Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 On Thu, Jun 4, 2015 at 12:18 PM, Robbie Ko <robbieko@synology.com> wrote:
-> Patch for fix btrfs send receive. These patches base on v4.1-rc6-49-g8a7deb3
-> plus following patches.
-> [PATCH] Btrfs: incremental send, don't delay directory renames unnecessarily
-> [PATCH] Btrfs: incremental send, check if orphanized dir inode needs delayed rename
+> Base on [PATCH] Btrfs: incremental send, check if orphanized dir inode needs delayed rename
 >
-> Thanks.
+> Example1:
+> There's one case where we can't issue a rename operation for a directory
+> immediately when we process it.
 >
-> Robbie Ko (5):
->   Btrfs: incremental send, avoid circular waiting and descendant
->     overwrite ancestor need to update path
->   Btrfs: incremental send, avoid ancestor rename to descendant
->   Btrfs: incremental send, fix orphan_dir_info not completely cleared
->   Btrfs: incremental send, fix rmdir but dir have a unprocess item
->   Btrfs: incremental send, fix rmdir not send utimes
+> Parent snapshot:
+> |---- d/ (ino 257)
+>   |---- p1 (ino 258)
+> |---- p1/ (ino 259)
 >
->  fs/btrfs/send.c | 163 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
->  1 file changed, 149 insertions(+), 14 deletions(-)
+> Send snapshot:
+> |---- d/ (ino 257)
+>   |---- p1 (ino 259)
+>     |---- p1/ (ino 258)
+>
+> Here we can not rename 258 from d/p1 to p1/p1 without the rename of inode 259.
+> p1 258 is put into wait_parent_move. 259 can't be rename to d/p1, so it is put into
+> circular waiting happens.
 
-Thanks for doing this, a quick look over all the patches and they seem
-ok, just some minor comments later.
+"... into circular waiting happens" -> so 259's rename is delayed to
+happen after 258's rename, which creates a circular dependency (258 ->
+259 -> 258).
 
-Would you be willing to submit test cases for xfstests that cover all
-these cases?
-We don't want to get regressions in the future, and this particular
-part of send is complex and messy, being easy to break it for some use
-cases without noticing it, and xfstests [1] is the test suite
-developers (and some QA people) use to validate their changes and
-verify they aren't introducing regressions.
+> This is fix by rename destination directory and set
+> it as orphanized for this case.
+>
+> Example2:
+> There's one case where we can't issue a rename operation for a directory
+> immediately we process it.
+> After moving 262 outside, path of 265 is stored in the name_cache_entry.
+> When 263 try to overwrite 265, its ancestor, 265 is moved to orphanized. Path of 263
+> is still the original path, however. This causes error.
 
-[1] https://git.kernel.org/cgit/fs/xfs/xfstests-dev.git/log/ and
-mailing list: fstests@vger.kernel.org
+For the sake of a more complete/informative change log, can you
+mention what's the error?
 
 >
+> Parent snapshot:
+> |---- a/ (ino 259)
+>   |---- c (ino 266)
+> |---- d/ (ino 260)
+>   |---- ance (ino 265)
+>     |---- e (ino 261)
+>     |---- f (ino 262)
+>     |---- ance (ino 263)
+>
+> Send snapshot:
+> |---- a/ (ino 259)
+> |---- c/ (ino 266)
+>   |---- ance (ino 265)
+> |---- d/ (ino 260)
+>   |---- ance (ino 263)
+> |---- f/ (ino 262)
+>   |---- e (ino 261)
+>
+> Signed-off-by: Robbie Ko <robbieko@synology.com>
+> ---
+>  fs/btrfs/send.c | 45 ++++++++++++++++++++++++++++++++++++++++-----
+>  1 file changed, 40 insertions(+), 5 deletions(-)
+>
+> diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+> index 1c1f161..fbfbb8b 100644
+> --- a/fs/btrfs/send.c
+> +++ b/fs/btrfs/send.c
+> @@ -230,7 +230,6 @@ struct pending_dir_move {
+>         u64 parent_ino;
+>         u64 ino;
+>         u64 gen;
+> -       bool is_orphan;
+>         struct list_head update_refs;
+>  };
+>
+> @@ -1840,7 +1839,7 @@ static int will_overwrite_ref(struct send_ctx *sctx, u64 dir, u64 dir_gen,
+>          * was already unlinked/moved, so we can safely assume that we will not
+>          * overwrite anything at this point in time.
+>          */
+> -       if (other_inode > sctx->send_progress) {
+> +       if (other_inode > sctx->send_progress || is_waiting_for_move(sctx, other_inode)) {
+>                 ret = get_inode_info(sctx->parent_root, other_inode, NULL,
+>                                 who_gen, NULL, NULL, NULL, NULL);
+>                 if (ret < 0)
+> @@ -3014,7 +3013,6 @@ static int add_pending_dir_move(struct send_ctx *sctx,
+>         pm->parent_ino = parent_ino;
+>         pm->ino = ino;
+>         pm->gen = ino_gen;
+> -       pm->is_orphan = is_orphan;
+>         INIT_LIST_HEAD(&pm->list);
+>         INIT_LIST_HEAD(&pm->update_refs);
+>         RB_CLEAR_NODE(&pm->node);
+> @@ -3091,6 +3089,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+>         struct waiting_dir_move *dm = NULL;
+>         u64 rmdir_ino = 0;
+>         int ret;
+> +       bool is_orphan;
+>
+>         name = fs_path_alloc();
+>         from_path = fs_path_alloc();
+> @@ -3102,9 +3101,10 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
+>         dm = get_waiting_dir_move(sctx, pm->ino);
+>         ASSERT(dm);
+>         rmdir_ino = dm->rmdir_ino;
+> +       is_orphan = dm->orphanized;
+>         free_waiting_dir_move(sctx, dm);
+>
+> -       if (pm->is_orphan) {
+> +       if (is_orphan) {
+>                 ret = gen_unique_name(sctx, pm->ino,
+>                                       pm->gen, from_path);
+>         } else {
+> @@ -3292,6 +3292,7 @@ static int wait_for_dest_dir_move(struct send_ctx *sctx,
+>         u64 left_gen;
+>         u64 right_gen;
+>         int ret = 0;
+> +       struct waiting_dir_move *wdm;
+>
+>         if (RB_EMPTY_ROOT(&sctx->waiting_dir_moves))
+>                 return 0;
+> @@ -3350,7 +3351,8 @@ static int wait_for_dest_dir_move(struct send_ctx *sctx,
+>                 goto out;
+>         }
+>
+> -       if (is_waiting_for_move(sctx, di_key.objectid)) {
+> +       wdm = get_waiting_dir_move(sctx, di_key.objectid);
+> +       if (wdm && !wdm->orphanized) {
+>                 ret = add_pending_dir_move(sctx,
+>                                            sctx->cur_ino,
+>                                            sctx->cur_inode_gen,
+> @@ -3610,11 +3612,33 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+>                                 goto out;
+>                         if (ret) {
+>                                 struct name_cache_entry *nce;
+> +                               struct waiting_dir_move *wdm;
+> +                               bool cur_is_ancestor = false;
+> +
+> +                               /*
+> +                                * check is dset path is ancestor src path
+> +                                * if yes, need to update cur_ino path
+> +                                */
+
+Typos/confusing comment and doesn't explain why the following check is
+being done.
+
+> +                               if (strncmp(cur->full_path->start, valid_path->start, fs_path_len(cur->full_path)) == 0 &&
+> +                                                       fs_path_len(valid_path) > fs_path_len(cur->full_path) && valid_path->start[fs_path_len(cur->full_path)] == '/') {
+
+At a first glance it seems confusing why we are comparing substrings
+of an entire path instead of just the old and new names for the
+current and the conflicting (ow_inode) inodes and their parent inode
+numbers and generation. I think the comment should explain why.
+
+Also please try to keep lines up to 80 characters (that line is 169
+characters long).
+You can run ./scripts/checkpatch.pl to validate your patch files and
+warn you if the code doesn't comply to the coding standard.
+
+> +                                       cur_is_ancestor = true;
+> +                               }
+>
+>                                 ret = orphanize_inode(sctx, ow_inode, ow_gen,
+>                                                 cur->full_path);
+>                                 if (ret < 0)
+>                                         goto out;
+> +
+> +                               /*
+> +                                * check is waiting dir, if yes change the ino
+> +                                * to orphanized in the waiting tree.
+> +                                */
+> +                               if (is_waiting_for_move(sctx, ow_inode)) {
+> +                                       wdm = get_waiting_dir_move(sctx, ow_inode);
+> +                                       ASSERT(wdm);
+> +                                       wdm->orphanized = true;
+> +                               }
+> +
+>                                 /*
+>                                  * Make sure we clear our orphanized inode's
+>                                  * name from the name cache. This is because the
+> @@ -3630,6 +3654,17 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+>                                         name_cache_delete(sctx, nce);
+>                                         kfree(nce);
+>                                 }
+> +
+> +                               /*
+> +                                * if ow_inode is ancestor cur_ino, need to update
+> +                                * update cur_ino path.
+> +                                */
+
+"If ow_inode is an ancestor of cur_ino in the send snapshot, update
+valid_path because ow_inode was orphanized and valid_path contains its
+pre-orphanization name, which is not valid anymore".
+
+> +                               if (cur_is_ancestor) {
+> +                                       fs_path_reset(valid_path);
+> +                                       ret = get_cur_path(sctx, sctx->cur_ino, sctx->cur_inode_gen, valid_path);
+> +                                       if (ret < 0)
+> +                                               goto out;
+> +                               }
+>                         } else {
+>                                 ret = send_unlink(sctx, cur->full_path);
+>                                 if (ret < 0)
 > --
 > 1.9.1
 >

@@ -1,150 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36770 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752537AbbFCIqK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 04:46:10 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t538iaM4019028
-	for <linux-btrfs@vger.kernel.org>; Wed, 3 Jun 2015 16:44:36 +0800
-Message-ID: <556EBDB0.7010704@cn.fujitsu.com>
-Date: Wed, 3 Jun 2015 16:41:20 +0800
-From: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
+Received: from userp1040.oracle.com ([156.151.31.81]:35051 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750959AbbFDDJK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 23:09:10 -0400
+Message-ID: <556FC14E.1030700@oracle.com>
+Date: Thu, 04 Jun 2015 11:09:02 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 2/2] btrfs-progs: qgroup: allow user to clear some limitation
- on qgroup.
-References: <1433314653-548-1-git-send-email-yangds.fnst@cn.fujitsu.com> <1433314653-548-3-git-send-email-yangds.fnst@cn.fujitsu.com> <556EBD7C.8000603@jp.fujitsu.com>
-In-Reply-To: <556EBD7C.8000603@jp.fujitsu.com>
-Content-Type: text/plain; charset="ISO-2022-JP"
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: avoid duplicate checks on user provided
+ devid
+References: <1433139918-820-1-git-send-email-anand.jain@oracle.com> <20150602151234.GH6761@twin.jikos.cz> <556EB19D.6010807@oracle.com>
+In-Reply-To: <556EB19D.6010807@oracle.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/03/2015 04:40 PM, Tsutomu Itoh wrote:
-> On 2015/06/03 15:57, Dongsheng Yang wrote:
->> Currently, we can not clear a limitation on a qgroup. Although
->> there is a 'none' choice provided to user to do it, it does not
->> work well.
->>
->> It does not set the flag which user want to clear, then kernel
->> will never know what the user want to do at all.
->>
->> *Without this commit*
->>    # ./btrfs qgroup show -re /mnt
->> qgroupid         rfer         excl     max_rfer     max_excl
->> --------         ----         ----     --------     --------
->> 0/5           2.19GiB      2.19GiB      5.00GiB         none
->> 0/257       100.02MiB    100.02MiB         none         none
->>    # ./btrfs qgroup limit none /mnt
->>    # ./btrfs qgroup show -re /mnt
->> qgroupid         rfer         excl     max_rfer     max_excl
->> --------         ----         ----     --------     --------
->> 0/5           2.19GiB      2.19GiB      5.00GiB         none
->> 0/257       100.02MiB    100.02MiB         none         none
->>
->> This patch will set the flag user want to clear and pass a
->> size=-1 to kernel. Then kernel will clear it correctly.
->>
->> *With this commit*
->>    # ./btrfs qgroup show -re /mnt
->> qgroupid         rfer         excl     max_rfer     max_excl
->> --------         ----         ----     --------     --------
->> 0/5           2.19GiB      2.19GiB      5.00GiB         none
->> 0/257       100.02MiB    100.02MiB         none         none
->>    # ./btrfs qgroup limit none /mnt
->>    # ./btrfs qgroup show -re /mnt
->> qgroupid         rfer         excl     max_rfer     max_excl
->> --------         ----         ----     --------     --------
->> 0/5           2.19GiB      2.19GiB         none         none
->> 0/257       100.02MiB    100.02MiB         none         none
->>
->> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
->> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
->> ---
->>    cmds-qgroup.c | 23 +++++++++++------------
->>    1 file changed, 11 insertions(+), 12 deletions(-)
->>
->> diff --git a/cmds-qgroup.c b/cmds-qgroup.c
->> index b073250..00cc089 100644
->> --- a/cmds-qgroup.c
->> +++ b/cmds-qgroup.c
->> @@ -110,9 +110,10 @@ static int parse_limit(const char *p, unsigned long long *s)
->>    {
->>    	char *endptr;
->>    	unsigned long long size;
->> +	unsigned long long CLEAR_VALUE = -1;
-> 
-> Even if a negative value is specified, it doesn't become an error...
-> So, it doesn't make an error of the following command.
-> 
-> # btrfs qg lim -- -1 sub1
-> # btrfs qg show -prce /test1
-> qgroupid         rfer         excl     max_rfer     max_excl parent  child
-> --------         ----         ----     --------     -------- ------  -----
-> 0/5          16.00KiB     16.00KiB         none         none ---     ---
-> 0/259         8.86GiB      7.88GiB         none         none ---     ---
-> # btrfs qg lim -- -2 sub1
-> # btrfs qg show -prce /test1
-> qgroupid         rfer         excl     max_rfer     max_excl parent  child
-> --------         ----         ----     --------     -------- ------  -----
-> 0/5          16.00KiB     16.00KiB         none         none ---     ---
-> 0/259         8.86GiB      7.88GiB     16.00EiB         none ---     ---
 
-Agreed, I understand your point here.
+David,
 
-If we pass a negative value to limit command, we should Error out. But
-currently, btrfs-progs are treating it as a unsigned value in parsing
-it. Yes, that's a bit of confusing.
+  Kindly do not integrated this patch as of now.
+  As I have just found that, the error reporting when
+  the default background option is used is not completely
+  transparent. I need to fix this before this patch.
 
-We need to cover it in parsing steps with another patch I think.
-> 
-> Otherwise OK,
-> 
-> Tested-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-
-Thanx
+Thanks, Anand
 
 
-Yang
-> 
-> 
->>    
->>    	if (strcasecmp(p, "none") == 0) {
->> -		*s = 0;
->> +		*s = CLEAR_VALUE;
->>    		return 1;
->>    	}
->>    	size = strtoull(p, &endptr, 10);
->> @@ -406,17 +407,15 @@ static int cmd_qgroup_limit(int argc, char **argv)
->>    	}
->>    
->>    	memset(&args, 0, sizeof(args));
->> -	if (size) {
->> -		if (compressed)
->> -			args.lim.flags |= BTRFS_QGROUP_LIMIT_RFER_CMPR |
->> -					  BTRFS_QGROUP_LIMIT_EXCL_CMPR;
->> -		if (exclusive) {
->> -			args.lim.flags |= BTRFS_QGROUP_LIMIT_MAX_EXCL;
->> -			args.lim.max_exclusive = size;
->> -		} else {
->> -			args.lim.flags |= BTRFS_QGROUP_LIMIT_MAX_RFER;
->> -			args.lim.max_referenced = size;
->> -		}
->> +	if (compressed)
->> +		args.lim.flags |= BTRFS_QGROUP_LIMIT_RFER_CMPR |
->> +				  BTRFS_QGROUP_LIMIT_EXCL_CMPR;
->> +	if (exclusive) {
->> +		args.lim.flags |= BTRFS_QGROUP_LIMIT_MAX_EXCL;
->> +		args.lim.max_exclusive = size;
->> +	} else {
->> +		args.lim.flags |= BTRFS_QGROUP_LIMIT_MAX_RFER;
->> +		args.lim.max_referenced = size;
->>    	}
->>    
->>    	if (argc - optind == 2) {
+On 06/03/2015 03:49 PM, Anand Jain wrote:
+>
+> On 06/02/2015 11:12 PM, David Sterba wrote:
+>> On Mon, Jun 01, 2015 at 02:25:17PM +0800, Anand Jain wrote:
+>>> kernel is already checking it (rightly), we don't need to check that
+>>> in the user land.
 >>
-> 
-> 
-> .
-> 
-
+>> Sometimes it's useful to duplicate the checks in userspace because we
+>> can fail early and return the error message directly, compared to
+>> messages in syslog or a simple errno.
+>
+>   right. But here what do you feel about the gain obtained vs additional
+>   code thats required ?
+>
+>   My take: get_fs_info() calls check_mounted_where() which in turn calls
+>   btrfs_scan_lblkid(), which is system wide scan of all block devices,
+>   thats heavy weight.
+>
+>   My past tests showed visible delay/jitter in the output of
+>   'btrfs fi show -d' when btrfs scrub is running. The main culprit
+>   is check_mounted_where calling btrfs_scan_lblkid. so its recommend
+>   to run get_fs_info() only if required.
+>
+>> Have you observed that the userspace checks were problematic?
+>
+>   Nope. Just a cleanup. With this patch cmd_start_replace() would
+>   should match with cmd_rm_dev().
+>   As both 'btrfs dev del <devid> ..' and 'btrfs replace start <devid> .."
+>   intentions are same, so theoretically up to certain extent their codes
+>   should match.
+>
+>>> @@ -214,33 +213,7 @@ static int cmd_start_replace(int argc, char **argv)
+>>>       }
+>>>
+>>>       if (is_numerical(srcdev)) {
+>>> -        struct btrfs_ioctl_fs_info_args fi_args;
+>>> -        struct btrfs_ioctl_dev_info_args *di_args = NULL;
+>>> -
+>>>           start_args.start.srcdevid = arg_strtou64(srcdev);
+>>> -
+>>> -        ret = get_fs_info(path, &fi_args, &di_args);
+>>
+>> This does additional checks, like checking where it's mounted.
+>
+>   in this part of the if statement srcdev is <num> and is devid.
+>   get_fs_info check does not help.
+>
+>   What did I miss ?
+>
+> Thanks Anand
+>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

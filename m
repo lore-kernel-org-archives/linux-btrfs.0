@@ -1,149 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:34562 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751330AbbFEVAm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jun 2015 17:00:42 -0400
-Received: by payr10 with SMTP id r10so57467336pay.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jun 2015 14:00:42 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3] btrfs: test premature submount unmounting when deleting default subvolume
-Date: Fri,  5 Jun 2015 14:00:32 -0700
-Message-Id: <1ebef916f54960cf6fef34be950e3d38cc3a50b0.1433537929.git.osandov@osandov.com>
+Received: from mail-pd0-f175.google.com ([209.85.192.175]:33751 "EHLO
+	mail-pd0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752488AbbFEWu0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 5 Jun 2015 18:50:26 -0400
+Received: by pdjn11 with SMTP id n11so23968032pdj.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 05 Jun 2015 15:50:26 -0700 (PDT)
+MIME-Version: 1.0
+Date: Fri, 5 Jun 2015 15:50:26 -0700
+Message-ID: <CAG+QAKViMuK4WRp9e89izd7nFcckp-aq0eEmG+peBK-5RKVsGQ@mail.gmail.com>
+Subject: checksum error on vmem file
+From: Rich Rauenzahn <rrauenza@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a regression test for a problem where attempting to delete the
-default subvolume would fail (as expected), but not until after all
-submounts under the subvolume were unmounted.
+I get this error occasionally on the same file.  I suspect it is some
+interaction between vmware server and btrfs.  Besides this error, I
+have no ill effects.
 
-Reviewed-by: Eryu Guan <eguan@redhat.com>
-Signed-off-by: Omar Sandoval <osandov@osandov.com>
----
-v2->v3:
-- Update description (thanks, Eryu)
-- Remove unneeded touch
+Is this a known issue?  Is it something that ought to be investigated
+to improve btrfs?
 
-v1->v2:
-- Simpler test: just depends on umount of the bind mount succeeding
-  instead of running find. Without the patch applied, the bind mount
-  will disappear so umount will fail.
-- Fix Eryu's comments (better subject, copyright, use
-  _btrfs_get_subvolid)
+I might be able to help find the right folks at vmware...
 
- tests/btrfs/089     | 79 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/089.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 82 insertions(+)
- create mode 100755 tests/btrfs/089
- create mode 100644 tests/btrfs/089.out
+Rich
 
-diff --git a/tests/btrfs/089 b/tests/btrfs/089
-new file mode 100755
-index 000000000000..537269824b62
---- /dev/null
-+++ b/tests/btrfs/089
-@@ -0,0 +1,79 @@
-+#! /bin/bash
-+# FS QA Test 089
-+#
-+# Test deleting the default subvolume, making sure that submounts under it are
-+# not unmounted prematurely. This is a regression test for Linux commit "Btrfs:
-+# don't invalidate root dentry when subvolume deletion fails".
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Omar Sandoval.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/filter.btrfs
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+# Create a new subvolume and make it the default subvolume.
-+$BTRFS_UTIL_PROG subvolume create "$SCRATCH_MNT/testvol" >>$seqres.full 2>&1 \
-+	|| _fail "couldn't create subvol"
-+testvol_id=$(_btrfs_get_subvolid "$SCRATCH_MNT" testvol)
-+$BTRFS_UTIL_PROG subvolume set-default $testvol_id "$SCRATCH_MNT" >>$seqres.full 2>&1 \
-+	|| _fail "couldn't set default"
-+
-+# Bind-mount a directory under the default subvolume.
-+mkdir "$SCRATCH_MNT/testvol/testdir"
-+mkdir "$SCRATCH_MNT/testvol/mnt"
-+mount --bind "$SCRATCH_MNT/testvol/testdir" "$SCRATCH_MNT/testvol/mnt"
-+
-+# Now attempt to delete the default subvolume.
-+$BTRFS_UTIL_PROG subvolume delete "$SCRATCH_MNT/testvol" >>$seqres.full 2>&1
-+
-+# Unmount the bind mount, which should still be alive.
-+$UMOUNT_PROG "$SCRATCH_MNT/testvol/mnt"
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
-new file mode 100644
-index 000000000000..a7fcdee9b767
---- /dev/null
-+++ b/tests/btrfs/089.out
-@@ -0,0 +1,2 @@
-+QA output created by 089
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index ffe18bff0d21..616d060758c1 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -91,6 +91,7 @@
- 086 auto quick clone
- 087 auto quick send
- 088 auto quick metadata
-+089 auto quick subvol
- 090 auto quick metadata
- 091 auto quick qgroup
- 092 auto quick send
--- 
-2.4.2
-
+Fri Jun  5 15:43:41 2015: Jun  5 15:43:41 tendo kernel: BTRFS:
+checksum error at logical 2253263028224 on dev /dev/sde1, sector
+2382346400, root 257, inode 610942, offset 908943360, length 4096,
+links 1 (path: VMs/Ubuntu
+64-bit/564dc367-07ae-10b5-bff0-8762c109606c.vmem)

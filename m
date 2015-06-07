@@ -1,33 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:43692 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:43707 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752522AbbFGLH5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Jun 2015 07:07:57 -0400
+	with ESMTP id S1751583AbbFGLIB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 7 Jun 2015 07:08:01 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH] sysfs support for the replace of the seed device
-Date: Sun,  7 Jun 2015 17:44:31 +0800
-Message-Id: <1433670272-1563-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH] Btrfs: sysfs support for the replace of the seed device
+Date: Sun,  7 Jun 2015 17:44:32 +0800
+Message-Id: <1433670272-1563-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1433670272-1563-1-git-send-email-anand.jain@oracle.com>
+References: <1433670272-1563-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I couldn't add this feature earlier because there was an issue
-as reported here: http://www.spinics.net/lists/linux-btrfs/msg41365.html
-Now I don't see this bug, however couldn't identify the patch which
-fixed it.
-moving on, now added sysfs support to support the scenario of
-replacing the seed device.
+Earlier as reported "replace seed/sprout hangs (regression ?)"
+and since now I don't see that regression, was able to test
+this scenario. And thus added the support in the sysfs.
 
-This is on top the patch set sent before:
-[PATCH 00/27 V5] provide framework so that sysfs attributes from the fs_devices can be added
+Test case
+ mount seed device
+ add sprout
+ replace seed device
+ (so now sprout fs is independent of seed fs)
+ The sysfs layout should change accordingly.
 
-Anand Jain (1):
-  Btrfs: sysfs support for the replace of the seed device
-
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
  fs/btrfs/dev-replace.c | 6 +++++-
  1 file changed, 5 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index a6a2b84..5a6f732 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -585,7 +585,11 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 
+ 	/* replace the sysfs entry */
+ 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, src_device, 0);
+-	btrfs_sysfs_rm_device_attr(src_device);
++	if (src_device->fs_devices->seeding &&
++			!src_device->fs_devices->num_devices)
++		btrfs_sysfs_remove_fsid(src_device->fs_devices);
++	else
++		btrfs_sysfs_rm_device_attr(src_device);
+ 	btrfs_rm_dev_replace_free_srcdev(fs_info, src_device);
+ 
+ 	/* write back the superblocks */
 -- 
 2.4.1
 

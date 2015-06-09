@@ -1,56 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10174 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752684AbbFHMHc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 8 Jun 2015 08:07:32 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t58C5ucu032705
-	for <linux-btrfs@vger.kernel.org>; Mon, 8 Jun 2015 20:05:56 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: cleanup noused initialization of dev in btrfs_end_bio()
-Date: Mon, 8 Jun 2015 20:05:50 +0800
-Message-ID: <9f8bfeed7f5af89039d1a989275235c04976cb23.1433765143.git.zhaolei@cn.fujitsu.com>
+Received: from mail-pd0-f195.google.com ([209.85.192.195]:36405 "EHLO
+	mail-pd0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752812AbbFIGEA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2015 02:04:00 -0400
+Received: by pdev10 with SMTP id v10so2060208pde.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 08 Jun 2015 23:04:00 -0700 (PDT)
+Message-ID: <557681C6.7050608@gmail.com>
+Date: Tue, 09 Jun 2015 14:03:50 +0800
+From: Wang Shilong <wangshilong1991@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>
+CC: adam900710@gmail.com, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [GIT PULL] Qgroup rework with other Fujitsu fix.
+References: <557506BC.701@cn.fujitsu.com>
+In-Reply-To: <557506BC.701@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+Hi Qu,
 
-It is introduced by:
- c404e0dc2c843b154f9a36c3aec10d0a715d88eb
- Btrfs: fix use-after-free in the finishing procedure of the device replace
+> Hi Chris,
+> 
+> Please pull the 19 patchset from my branch for_chris_4.2.
+> We have tested it in a week.
+> 
+> Although it is originally based on 4.1-rc5, not the integration branch.
+> Quick tests shows no new bugs, although we will rerun the full test,
+> I'll send the patchset first for your reviewing:
+> 
+> https://github.com/adam900710/linux.git for_chris_4.2
+> 
+> This contains the following patches.
+> 
+> 1. Qgroup rework (first 18 commits)
+> These commits rework the qgroup framework.
+> Now, quota won't need to do per-delayed-ref accounting.
+> But only need to record dirty delayed-ref, and account quota at transaction time.
 
-But seems no relationship with that bug, this patch revirt these
-code block for cleanup.
+Can you share perfomaces results with/without patches with quota enabled.
+Especially, if there are thounds of snapshots, how much performaces down or up
+with these patches applied.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/volumes.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Regards,
+Wang Shilong
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 174f5e1..1702adc 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -5596,7 +5596,6 @@ static inline void btrfs_end_bbio(struct btrfs_bio *bbio, struct bio *bio, int e
- static void btrfs_end_bio(struct bio *bio, int err)
- {
- 	struct btrfs_bio *bbio = bio->bi_private;
--	struct btrfs_device *dev = bbio->stripes[0].dev;
- 	int is_orig_bio = 0;
- 
- 	if (err) {
-@@ -5604,6 +5603,7 @@ static void btrfs_end_bio(struct bio *bio, int err)
- 		if (err == -EIO || err == -EREMOTEIO) {
- 			unsigned int stripe_index =
- 				btrfs_io_bio(bio)->stripe_index;
-+			struct btrfs_device *dev;
- 
- 			BUG_ON(stripe_index >= bbio->num_stripes);
- 			dev = bbio->stripes[stripe_index].dev;
--- 
-1.8.5.1
-
+> 
+> The good thing is, at transaction time, we have no other interruption or
+> concurrency, account can be quite accurate and only need to account once
+> for every dirty extent.(especially faster for shared extents)
+> 
+> And clearer codes and logic. Codes changes from 1K to 0.5K, even a lot
+> of comments are added.
+> 
+> With the patchset, btrfs can pass all qgroup test in fstests.
+> No longer minus number now.
+> 
+> The only problem left is, we need a new mechanism to account subvolume deletion. But this is the long-existing problem, I'd prefer to address
+> it in next merge windows if we have a pretty method to solve it.
+> 
+> Or maybe a small patch to mark qgroup inconsistent when delete subvolume with level higher than 0.
+> 
+> 2. write-rm-loop fixes from Zhao Lei.
+> Other patches from Zhao Lei and Forrest Liu have already been merged
+> into mainline, but this is the one still unmerged.
+> 
+> This patch fixes the last super rare problem we found in write-rm-loop
+> case.
+> And the patch will only modify the minor routine, so it won't affect the normal routine.
+> 
+> Thanks,
+> Qu
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

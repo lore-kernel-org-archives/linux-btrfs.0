@@ -1,130 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from hmm.wantstofly.org ([148.251.232.15]:55465 "EHLO
-	mail.wantstofly.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753763AbbFIKyq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2015 06:54:46 -0400
-Date: Tue, 9 Jun 2015 13:54:43 +0300
-From: Lennert Buytenhek <buytenh@wantstofly.org>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: intermittent -ENOSPC errors on btrfs filesystem with 170G free
-Message-ID: <20150609105443.GA13858@wantstofly.org>
-References: <20150526173634.GU11340@wantstofly.org>
- <20150526180820.GG16826@carfax.org.uk>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20150526180820.GG16826@carfax.org.uk>
+Received: from aserp1040.oracle.com ([141.146.126.69]:42702 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753827AbbFIMEo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2015 08:04:44 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t59C4htr005641
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 9 Jun 2015 12:04:43 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+	by aserv0022.oracle.com (8.13.8/8.13.8) with ESMTP id t59C4gUZ023829
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 9 Jun 2015 12:04:43 GMT
+Received: from abhmp0007.oracle.com (abhmp0007.oracle.com [141.146.116.13])
+	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t59C4g1k026138
+	for <linux-btrfs@vger.kernel.org>; Tue, 9 Jun 2015 12:04:42 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH 1/2] Btrfs: add noi_version option to disable MS_I_VERSION
+Date: Tue,  9 Jun 2015 20:04:30 +0800
+Message-Id: <1433851471-11543-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, May 26, 2015 at 06:08:20PM +0000, Hugo Mills wrote:
+MS_I_VERSION is enabled by default for btrfs, this adds an alternative
+option to toggle it off.
 
-> > The btrfs filesystem on my newly installed laptop has managed to
-> > hose itself rather thoroughly, and it's now in a state where it
-> > works okay if you don't write too much to it, but if you do, it
-> > starts returning -ENOSPC on a random subset of your filesystem
-> > operations until you let it cool down again.
-> > 
-> > This was a fresh Fedora 21 install, upgraded to F22, installed
-> > about a month ago, with a ~250G btrfs filesystem on a 256G SSD,
-> > and this system has only even run 4.0, and it has never had more
-> > than ~60G on it.  It's currently running:
-> >
-> > # uname -a
-> > Linux foobox 4.0.1-300.fc22.x86_64 #1 SMP Wed Apr 29 15:48:25 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-> > 
-> > # btrfs --version
-> > btrfs-progs v4.0
-> > 
-> > # btrfs fi show
-> > Label: 'foobox'  uuid: [...]
-> >         Total devices 1 FS bytes used 58.87GiB
-> >         devid    1 size 229.97GiB used 229.97GiB path /dev/[...]
-> 
->    All the space has been allocated for some purpose.
-> 
-> > # btrfs fi df /
-> > Data, single: total=227.94GiB, used=58.16GiB
-> > System, DUP: total=8.00MiB, used=48.00KiB
-> > System, single: total=4.00MiB, used=0.00B
-> > Metadata, DUP: total=1.00GiB, used=730.80MiB
-> > Metadata, single: total=8.00MiB, used=0.00B
-> > GlobalReserve, single: total=256.00MiB, used=0.00B
-> 
->    For a filesystem of this size, a very small proportion has gone to
-> metadata for some reason. This is odd. Given that it's happened,
-> though, all the other behaviour is as expected.
-> 
-> > It's currently still in a funky state:
-> > 
-> > [root@foobox lib]# df /
-> > Filesystem     1K-blocks     Used Available Use% Mounted on
-> > /dev/dm-0      241145856 62743256 178027464  27% /
-> 
->    Looks reasonable, give the figures above.
-> 
-> > [root@foobox lib]# pwd
-> > /var/lib
-> > [root@foobox lib]# touch foo
-> > [root@foobox lib]# rm -f foo
-> > [root@foobox lib]# ls -ald abrt
-> > drwxr-xr-x. 1 root root 56 May 21 10:02 abrt
-> > [root@foobox lib]# mv abrt abrt2
-> > mv: cannot move ‘abrt’ to ‘abrt2’: No space left on device
-> > [root@foobox lib]# 
-> > 
-> > Any tests anyone wants to run on this before I wipe and reinstall
-> > the box?
-> 
->    No tests needed. Just run a filtered balance on it to clean up
-> unused chunks:
-> 
-> # btrfs balance start -dusage=5 /
-> 
-> as suggested in the FAQ [1].
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/super.c | 7 ++++++-
+ 1 file changed, 6 insertions(+), 1 deletion(-)
 
-Doing this helped for a few days, but now I'm back in a state where
-I can't create any files at all -- everything fails with -ENOSPC.  The
-filesystem isn't even half full and has never been more than half full.
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index f2c9f9d..c81a3f1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -324,7 +324,7 @@ enum {
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+ 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+-	Opt_datasum, Opt_treelog, Opt_noinode_cache,
++	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_noi_version,
+ 	Opt_err,
+ };
+ 
+@@ -351,6 +351,7 @@ static match_table_t tokens = {
+ 	{Opt_nossd, "nossd"},
+ 	{Opt_acl, "acl"},
+ 	{Opt_noacl, "noacl"},
++	{Opt_noi_version, "noi_version"},
+ 	{Opt_notreelog, "notreelog"},
+ 	{Opt_treelog, "treelog"},
+ 	{Opt_flushoncommit, "flushoncommit"},
+@@ -593,6 +594,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_noacl:
+ 			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
+ 			break;
++		case Opt_noi_version:
++			root->fs_info->sb->s_flags &= ~MS_I_VERSION;
++			btrfs_info(root->fs_info, "disable i_version");
++			break;
+ 		case Opt_notreelog:
+ 			btrfs_set_and_info(root, NOTREELOG,
+ 					   "disabling tree log");
+-- 
+2.1.0
 
-[root@foobox ~]# uname -a
-Linux foobox.wantstofly.org 4.0.4-301.fc22.x86_64 #1 SMP Thu May 21 13:10:33 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-[root@foobox ~]# btrfs --version
-btrfs-progs v4.0
-
-[root@foobox ~]# btrfs fi show
-Label: 'foobox'  uuid: [...]
-        Total devices 1 FS bytes used 98.72GiB
-        devid    1 size 229.97GiB used 100.97GiB path /dev/mapper/[...]
-
-btrfs-progs v4.0
-
-[root@foobox ~]# btrfs fi df /
-Data, single: total=98.00GiB, used=98.00GiB
-System, DUP: total=8.00MiB, used=16.00KiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, DUP: total=1.47GiB, used=737.73MiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=256.00MiB, used=0.00B
-
-[root@foobox ~]# df /
-Filesystem     1K-blocks      Used Available Use% Mounted on
-/dev/dm-0      241145856 104533304 135265480  44% /
-
-
-The balancing trick doesn't do anything:
-
-[root@foobox ~]# btrfs balance start -dusage=5 /
-Done, had to relocate 0 out of 104 chunks
-[root@foobox ~]# btrfs balance start -dusage=10 /
-Done, had to relocate 0 out of 104 chunks
-[root@foobox ~]# btrfs balance start -dusage=20 /
-Done, had to relocate 0 out of 104 chunks
-[root@foobox ~]# btrfs balance start -dusage=50 /
-Done, had to relocate 0 out of 104 chunks
-[root@foobox ~]# btrfs balance start -dusage=80 /
-Done, had to relocate 0 out of 104 chunks
-[root@foobox ~]# 
-
-
-Any ideas?

@@ -1,92 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1738 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752322AbbFRGqQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Jun 2015 02:46:16 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5I6ideT009957
-	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2015 14:44:39 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/2] btrfs-progs: Modify document and help message of "fi show" for units options
-Date: Thu, 18 Jun 2015 14:46:12 +0800
-Message-ID: <1434609972-8513-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1434609972-8513-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1434609972-8513-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from e28smtp06.in.ibm.com ([122.248.162.6]:54244 "EHLO
+	e28smtp06.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751896AbbFIFFg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2015 01:05:36 -0400
+Received: from /spool/local
+	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Tue, 9 Jun 2015 10:35:34 +0530
+Received: from d28relay02.in.ibm.com (d28relay02.in.ibm.com [9.184.220.59])
+	by d28dlp01.in.ibm.com (Postfix) with ESMTP id 7A43DE0054
+	for <linux-btrfs@vger.kernel.org>; Tue,  9 Jun 2015 10:38:52 +0530 (IST)
+Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
+	by d28relay02.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t5955Mwn39387194
+	for <linux-btrfs@vger.kernel.org>; Tue, 9 Jun 2015 10:35:23 +0530
+Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t5955Lwv025390
+	for <linux-btrfs@vger.kernel.org>; Tue, 9 Jun 2015 10:35:22 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz,
+        chandan@mykolab.com
+Subject: [PATCH V2] Btrfs: btrfs_defrag_file: Fix calculation of max_to_defrag.
+Date: Tue,  9 Jun 2015 10:35:11 +0530
+Message-Id: <1433826311-3345-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- Documentation/btrfs-filesystem.asciidoc | 28 +++++++++++++++++++++++-----
- cmds-filesystem.c                       |  8 ++++++++
- 2 files changed, 31 insertions(+), 5 deletions(-)
+max_to_defrag represents the number of pages to defrag rather than the last
+page of the file range to be defragged.
 
-diff --git a/Documentation/btrfs-filesystem.asciidoc b/Documentation/btrfs-filesystem.asciidoc
-index f1c35b6..033d3aa 100644
---- a/Documentation/btrfs-filesystem.asciidoc
-+++ b/Documentation/btrfs-filesystem.asciidoc
-@@ -117,15 +117,33 @@ partition after reducing the size of the filesystem.  This can done using
- it with the new desired size.  When recreating the partition make sure to use
- the same starting disk cylinder as before.
+Consider a file having 10 4k blocks (i.e. blocks in the range [0 - 9]). If the
+defrag ioctl was invoked for the block range [3 - 6], then max_to_defrag
+should actually have the value 4. Instead in the current code we end up
+setting it to 6.
+
+Now, this does not (yet) cause an issue since the first part of the while loop
+condition in btrfs_defrag_file() (i.e. "i <= last_index") causes the control
+to flow out of the while loop before any buggy behavior is actually caused. So
+the patch just makes sure that max_to_defrag ends up having the right value
+rather than fixing a bug. I did run the xfstests suite to make sure that the
+code does not regress.
+
+Changelog: v1->v2:
+Provide a much descriptive commit message.
+
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/ioctl.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index ca5d968..2a45026 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1318,7 +1318,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
+ 		i = range->start >> PAGE_CACHE_SHIFT;
+ 	}
+ 	if (!max_to_defrag)
+-		max_to_defrag = last_index + 1;
++		max_to_defrag = last_index - i + 1;
  
--*show* [--mounted|--all-devices|<path>|<uuid>|<device>|<label>]::
-+*show* [options] [<path>|<uuid>|<device>|<label>]::
- Show the btrfs filesystem with some additional info.
- +
- If no option nor <path>|<uuid>|<device>|<label> is passed, btrfs shows
- information of all the btrfs filesystem both mounted and unmounted.
--If '--mounted' is passed, it would probe btrfs kernel to list mounted btrfs
--filesystem(s);
--If '--all-devices' is passed, all the devices under /dev are scanned;
--otherwise the devices list is extracted from the /proc/partitions file.
-++
-+`Options`
-++
-+--mounted::::
-+probe btrfs kernel to list mounted btrfs filesystems(s)
-+--all-devices::::
-+scan all devices under /dev, otherwise the devices list is extracted from the
-+/proc/partitions file.
-+--human-readable::::
-+print human friendly numbers, base 1024, this is the default
-+--iec::::
-+select the 1024 base for the following options, according to the IEC standard
-+--si::::
-+select the 1000 base for the following options, according to the SI standard
-+--kbytes::::
-+show sizes in KiB, or kB with --si
-+--mbytes::::
-+show sizes in MiB, or MB with --si
-+--gbytes::::
-+show sizes in GiB, or GB with --si
-+--tbytes::::
-+show sizes in TiB, or TB with --si
- 
- *sync* <path>::
- Force a sync for the filesystem identified by <path>.
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index a9dbcfe..688fdb3 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -820,6 +820,14 @@ static const char * const cmd_show_usage[] = {
- 	"Show the structure of a filesystem",
- 	"-d|--all-devices   show only disks under /dev containing btrfs filesystem",
- 	"-m|--mounted       show only mounted btrfs",
-+	"--raw              raw numbers in bytes",
-+	"-human-readable    human friendly numbers, base 1024(default)",
-+	"--iec              use 1024 as a base (KiB, MiB, GiB, TiB)",
-+	"--si               use 1000 as a base (kB, MB, GB, TB)",
-+	"--kbytes           show sizes in KiB, or kB with --si",
-+	"--mbytes           show sizes in MiB, or MB with --si",
-+	"--gbytes           show sizes in GiB, or GB with --si",
-+	"--tbytes           show sizes in TiB, or TB with --si",
- 	"If no argument is given, structure of all present filesystems is shown.",
- 	NULL
- };
+ 	/*
+ 	 * make writeback starts from i, so the defrag range can be
 -- 
-2.4.3
+2.1.0
 

@@ -1,40 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38823 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932532AbbFJCti (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2015 22:49:38 -0400
-Date: Wed, 10 Jun 2015 10:49:28 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Trollkarlen Marklund <robbelibobban@gmail.com>
-Cc: =?utf-8?B?IuKAnGxpbnV4LWJ0cmZzQHZnZXIua2VybmVsLm9yZ+KAnSI=?=
-	<linux-btrfs@vger.kernel.org>
-Subject: Re: superblock recovery raid0
-Message-ID: <20150610024927.GB2849@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20EA23B4-B6B7-45A8-B045-917BEA32F0E2@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20EA23B4-B6B7-45A8-B045-917BEA32F0E2@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:43437 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751560AbbFJD6m (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 9 Jun 2015 23:58:42 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Z2X9y-0005fX-Vr
+	for linux-btrfs@vger.kernel.org; Wed, 10 Jun 2015 05:58:39 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 05:58:38 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 05:58:38 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: rw-mount-problem after raid1-failure
+Date: Wed, 10 Jun 2015 03:58:33 +0000 (UTC)
+Message-ID: <pan$cff9$37e01034$74a19930$1abaea06@cox.net>
+References: <2227931.EqpnWnc32X@malu-aspire-v3-771>
+	<557790A9.3080705@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 09, 2015 at 10:39:49AM +0200, Trollkarlen Marklund wrote:
-> 
-> Hi!
-> 
-> I have a two disk in raid0 where one of the disks have failed. Approximately  17Mb cant be read from the disk, due to hardware issues. I made a clone of the disk but all 3 superblocks are in the non-readable areas :( 
-> 
-> So my question is, is there any tool to recreate the superblock from the content of the disk and the superblock from the non-failing disk in the array ?
-> Any other suggestions is also welcome so solve the situation.
+Anand Jain posted on Wed, 10 Jun 2015 09:19:37 +0800 as excerpted:
 
-Have you tried to mount that non-failing disk?  Both of disks have their own superblock sections.
-
-Thanks,
-
--liubo
+> On 06/09/2015 01:10 AM, Martin wrote:
+>> Hello!
+>>
+>> I have a raid1-btrfs-system (Kernel 3.19.0-18-generic, Ubuntu Vivid
+>> Vervet, btrfs-tools 3.17-1.1). One disk failed some days ago. I could
+>> remount the remaining one with "-o degraded". After one day and some
+>> write-operations (with no errrors) I had to reboot the system. And now
+>> I can not mount "rw" anymore, only "-o degraded,ro" is possible.
+>>
+>> In the kernel log I found BTRFS: too many missing devices, writeable
+>> mount is not allowed.
+>>
+>> I read about https://bugzilla.kernel.org/show_bug.cgi?id=60594 but I
+>> did no conversion to a single drive.
+>>
+>> How can I mount the disk "rw" to remove the "missing" drive and add a
+>> new one?
+>> Because there are many snapshots of the filesystem, copying the system
+>> would be only the last alternative ;-)
 > 
-> 
-> /R --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> How many disks you had in the RAID1. How many are failed ?
+
+The answer is (a bit indirectly) in what you quoted.  Repeating:
+
+>> One disk failed[.] I could remount the remaining one[.]
+
+So it was a two-device raid1, one failed device, one remaining, unfailed.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

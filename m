@@ -1,50 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45454 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751744AbbFJLr5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jun 2015 07:47:57 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5ABkLHE022592
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 19:46:21 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Update out-of-date "skip parity stripe" comment
-Date: Wed, 10 Jun 2015 19:45:48 +0800
-Message-ID: <f3a491939f803f9a391619aad209b6e1c000bbd8.1433936721.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:39880 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754001AbbFJMCW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jun 2015 08:02:22 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix a comment in inode.c:evict_inode_truncate_pages()
+Date: Wed, 10 Jun 2015 13:02:12 +0100
+Message-Id: <1433937732-7355-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Because btrfs support scrub raid56 parity stripe now.
+The comment was not correct about the part where it says the endio
+callback of the bio might have not yet been called - update it
+to mention that by that time the endio callback execution might
+still be in progress only.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/scrub.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/inode.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a13f91a..5ee5630 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3202,12 +3202,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 	 */
- 	ret = 0;
- 	while (physical < physical_end) {
--		/* for raid56, we skip parity stripe */
- 		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
- 			ret = get_raid56_logic_offset(physical, num,
- 					map, &logical, &stripe_logical);
- 			logical += base;
- 			if (ret) {
-+				/* it is parity strip */
- 				stripe_logical += base;
- 				stripe_end = stripe_logical + increment - 1;
- 				ret = scrub_raid56_parity(sctx, map, scrub_dev,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 855935f..a21ad34 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4989,8 +4989,9 @@ static void evict_inode_truncate_pages(struct inode *inode)
+ 	/*
+ 	 * Keep looping until we have no more ranges in the io tree.
+ 	 * We can have ongoing bios started by readpages (called from readahead)
+-	 * that didn't get their end io callbacks called yet or they are still
+-	 * in progress ((extent_io.c:end_bio_extent_readpage()). This means some
++	 * that have their endio callback (extent_io.c:end_bio_extent_readpage)
++	 * still in progress (unlocked the pages in the bio but did not yet
++	 * unlocked the ranges in the io tree). Therefore this means some
+ 	 * ranges can still be locked and eviction started because before
+ 	 * submitting those bios, which are executed by a separate task (work
+ 	 * queue kthread), inode references (inode->i_count) were not taken
 -- 
-1.8.5.1
+2.1.3
 

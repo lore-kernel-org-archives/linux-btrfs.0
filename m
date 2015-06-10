@@ -1,317 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:38012 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754227AbbFJLTr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jun 2015 07:19:47 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix race between balance and unused block group deletion
-Date: Wed, 10 Jun 2015 12:19:36 +0100
-Message-Id: <1433935176-12241-1-git-send-email-fdmanana@kernel.org>
+Received: from extern.sonoring.de ([212.23.155.200]:38984 "EHLO
+	cmail.imagmbh.de" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751318AbbFJMFv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jun 2015 08:05:51 -0400
+From: Martin <develop@imagmbh.de>
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: rw-mount-problem after raid1-failure
+Date: Wed, 10 Jun 2015 14:05:56 +0200
+Message-ID: <4768404.UTQo4H2Sip@term0>
+In-Reply-To: <5577EB6C.6090405@oracle.com>
+References: <2227931.EqpnWnc32X@malu-aspire-v3-771> <1631897.Efqz0Ef53G@malu-aspire-v3-771> <5577EB6C.6090405@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hello Anand,
 
-We have a race between deleting an unused block group and balancing the
-same block group that leads to an assertion failure/BUG(), producing the
-following assertion failure/BUG_ON():
+the failed disk was removed. My procedure was the following:
 
-[181631.208236] BTRFS: assertion failed: 0, file: fs/btrfs/volumes.c, line: 2622
-[181631.220591] ------------[ cut here ]------------
-[181631.222959] kernel BUG at fs/btrfs/ctree.h:4062!
-[181631.223932] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-[181631.224566] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse acpi_cpufreq parpor$
-[181631.224566] CPU: 8 PID: 17451 Comm: btrfs Tainted: G        W       4.1.0-rc5-btrfs-next-10+ #1
-[181631.224566] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
-[181631.224566] task: ffff880127e09590 ti: ffff8800b5824000 task.ti: ffff8800b5824000
-[181631.224566] RIP: 0010:[<ffffffffa03f19f6>]  [<ffffffffa03f19f6>] assfail.constprop.50+0x1e/0x20 [btrfs]
-[181631.224566] RSP: 0018:ffff8800b5827ae8  EFLAGS: 00010246
-[181631.224566] RAX: 0000000000000040 RBX: ffff8800109fc218 RCX: ffffffff81095dce
-[181631.224566] RDX: 0000000000005124 RSI: ffffffff81464819 RDI: 00000000ffffffff
-[181631.224566] RBP: ffff8800b5827ae8 R08: 0000000000000001 R09: 0000000000000000
-[181631.224566] R10: 0000000000000000 R11: 0000000000000000 R12: ffff8800109fc200
-[181631.224566] R13: ffff880020095000 R14: ffff8800b1a13f38 R15: ffff880020095000
-[181631.224566] FS:  00007f70ca0b0c80(0000) GS:ffff88013ec00000(0000) knlGS:0000000000000000
-[181631.224566] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[181631.224566] CR2: 00007f2872ab6e68 CR3: 00000000a717c000 CR4: 00000000000006e0
-[181631.224566] Stack:
-[181631.224566]  ffff8800b5827ba8 ffffffffa03f3916 ffff8800b5827b38 ffffffffa03d080e
-[181631.224566]  ffffffffa03d1423 ffff880020095000 ffff88001233c000 0000000000000001
-[181631.224566]  ffff880020095000 ffff8800b1a13f38 0000000a69c00000 0000000000000000
-[181631.224566] Call Trace:
-[181631.224566]  [<ffffffffa03f3916>] btrfs_remove_chunk+0xa4/0x6bb [btrfs]
-[181631.224566]  [<ffffffffa03d080e>] ? join_transaction.isra.8+0xb9/0x3ba [btrfs]
-[181631.224566]  [<ffffffffa03d1423>] ? wait_current_trans.isra.13+0x22/0xfc [btrfs]
-[181631.224566]  [<ffffffffa03f3fbc>] btrfs_relocate_chunk.isra.29+0x8f/0xa7 [btrfs]
-[181631.224566]  [<ffffffffa03f54df>] btrfs_balance+0xaa4/0xc52 [btrfs]
-[181631.224566]  [<ffffffffa03fd388>] btrfs_ioctl_balance+0x23f/0x2b0 [btrfs]
-[181631.224566]  [<ffffffff810872f9>] ? trace_hardirqs_on+0xd/0xf
-[181631.224566]  [<ffffffffa04019a3>] btrfs_ioctl+0xfe2/0x2220 [btrfs]
-[181631.224566]  [<ffffffff812603ed>] ? __this_cpu_preempt_check+0x13/0x15
-[181631.224566]  [<ffffffff81084669>] ? arch_local_irq_save+0x9/0xc
-[181631.224566]  [<ffffffff81138def>] ? handle_mm_fault+0x834/0xcd2
-[181631.224566]  [<ffffffff81138def>] ? handle_mm_fault+0x834/0xcd2
-[181631.224566]  [<ffffffff8103e48c>] ? __do_page_fault+0x211/0x424
-[181631.224566]  [<ffffffff811755e6>] do_vfs_ioctl+0x3c6/0x479
-(...)
+ - I found some write errors in the kernel log, so
+ - I shutdown the system
+ - I removed the failed disk
+ - I powered on the system
+ - I mounted the remaining disk degraded,rw (works OK)
+ - the system works an and was rebooted some times, mounting degraded,rw works
+ - suddentlym mounting degraded,rw stops working and only degraded,ro works.
 
-The sequence of steps leading to this are:
+Thanks, Martin
 
-     CPU 0                                         CPU 1
 
-btrfs_balance()
-btrfs_relocate_chunk()
-   btrfs_relocate_block_group(bg X)
-
-                                        cleaner_kthread
-                                            btrfs_delete_unused_bgs()
-                                               btrfs_remove_chunk(bg X)
-
-   btrfs_remove_chunk(bg X)
-      extent map not found
-         --> ASSERT(0)
-
-Fix this by using a new mutex to make sure these 2 operations, block
-group relocation and removal, are serialized.
-
-This issue is reproducible by running fstests generic/038 (which stresses
-chunk allocation and automatic removal of unused block groups) together
-with the following balance loop:
-
-    while true; do btrfs balance start -dusage=0 <mountpoint> ; done
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/disk-io.c     | 12 +++++++++++-
- fs/btrfs/extent-tree.c |  3 +++
- fs/btrfs/volumes.c     | 48 +++++++++++++++++++++++++++++++++++++++++++-----
- 4 files changed, 58 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ea15c6a..061c5b4 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1780,6 +1780,7 @@ struct btrfs_fs_info {
- 	spinlock_t unused_bgs_lock;
- 	struct list_head unused_bgs;
- 	struct mutex unused_bg_unpin_mutex;
-+	struct mutex delete_unused_bgs_mutex;
- 
- 	/* For btrfs to record security options */
- 	struct security_mnt_opts security_opts;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2ef9a4b..f23675c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1773,7 +1773,6 @@ static int cleaner_kthread(void *arg)
- 		}
- 
- 		btrfs_run_delayed_iputs(root);
--		btrfs_delete_unused_bgs(root->fs_info);
- 		again = btrfs_clean_one_deleted_snapshot(root);
- 		mutex_unlock(&root->fs_info->cleaner_mutex);
- 
-@@ -1782,6 +1781,16 @@ static int cleaner_kthread(void *arg)
- 		 * needn't do anything special here.
- 		 */
- 		btrfs_run_defrag_inodes(root->fs_info);
-+
-+		/*
-+		 * Acquires fs_info->delete_unused_bgs_mutex to avoid racing
-+		 * with relocation (btrfs_relocate_chunk) and relocation
-+		 * acquires fs_info->cleaner_mutex (btrfs_relocate_block_group)
-+		 * after acquiring fs_info->delete_unused_bgs_mutex. So we
-+		 * can't hold, nor need to, fs_info->cleaner_mutex when deleting
-+		 * unused block groups.
-+		 */
-+		btrfs_delete_unused_bgs(root->fs_info);
- sleep:
- 		if (!try_to_freeze() && !again) {
- 			set_current_state(TASK_INTERRUPTIBLE);
-@@ -2489,6 +2498,7 @@ int open_ctree(struct super_block *sb,
- 	spin_lock_init(&fs_info->unused_bgs_lock);
- 	rwlock_init(&fs_info->tree_mod_log_lock);
- 	mutex_init(&fs_info->unused_bg_unpin_mutex);
-+	mutex_init(&fs_info->delete_unused_bgs_mutex);
- 	mutex_init(&fs_info->reloc_mutex);
- 	mutex_init(&fs_info->delalloc_root_mutex);
- 	seqlock_init(&fs_info->profiles_lock);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 0b108c5..f61d0af 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10003,6 +10003,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		}
- 		spin_unlock(&fs_info->unused_bgs_lock);
- 
-+		mutex_lock(&root->fs_info->delete_unused_bgs_mutex);
-+
- 		/* Don't want to race with allocators so take the groups_sem */
- 		down_write(&space_info->groups_sem);
- 		spin_lock(&block_group->lock);
-@@ -10097,6 +10099,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- end_trans:
- 		btrfs_end_transaction(trans, root);
- next:
-+		mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 		btrfs_put_block_group(block_group);
- 		spin_lock(&fs_info->unused_bgs_lock);
- 	}
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c7ac25e..ccf7d14 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2697,6 +2697,20 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
- 	root = root->fs_info->chunk_root;
- 	extent_root = root->fs_info->extent_root;
- 
-+	/*
-+	 * Prevent races with automatic removal of unused block groups.
-+	 * After we relocate and before we remove the chunk with offset
-+	 * chunk_offset, automatic removal of the block group can kick in,
-+	 * resulting in a failure when calling btrfs_remove_chunk() below.
-+	 *
-+	 * Make sure to acquire this mutex before doing a tree search (dev
-+	 * or chunk trees) to find chunks. Otherwise the cleaner kthread might
-+	 * call btrfs_remove_chunk() (through btrfs_delete_unused_bgs()) after
-+	 * we release the path used to search the chunk/dev tree and before
-+	 * the current task acquires this mutex and calls us.
-+	 */
-+	ASSERT(mutex_is_locked(&root->fs_info->delete_unused_bgs_mutex));
-+
- 	ret = btrfs_can_relocate(extent_root, chunk_offset);
- 	if (ret)
- 		return -ENOSPC;
-@@ -2745,13 +2759,18 @@ again:
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
- 
- 	while (1) {
-+		mutex_lock(&root->fs_info->delete_unused_bgs_mutex);
- 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
--		if (ret < 0)
-+		if (ret < 0) {
-+			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 			goto error;
-+		}
- 		BUG_ON(ret == 0); /* Corruption */
- 
- 		ret = btrfs_previous_item(chunk_root, path, key.objectid,
- 					  key.type);
-+		if (ret)
-+			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 		if (ret < 0)
- 			goto error;
- 		if (ret > 0)
-@@ -2774,6 +2793,7 @@ again:
- 			else
- 				BUG_ON(ret);
- 		}
-+		mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 
- 		if (found_key.offset == 0)
- 			break;
-@@ -3230,9 +3250,12 @@ again:
- 			goto error;
- 		}
- 
-+		mutex_lock(&fs_info->delete_unused_bgs_mutex);
- 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
--		if (ret < 0)
-+		if (ret < 0) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 			goto error;
-+		}
- 
- 		/*
- 		 * this shouldn't happen, it means the last relocate
-@@ -3244,6 +3267,7 @@ again:
- 		ret = btrfs_previous_item(chunk_root, path, 0,
- 					  BTRFS_CHUNK_ITEM_KEY);
- 		if (ret) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 			ret = 0;
- 			break;
- 		}
-@@ -3252,8 +3276,10 @@ again:
- 		slot = path->slots[0];
- 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
- 
--		if (found_key.objectid != key.objectid)
-+		if (found_key.objectid != key.objectid) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 			break;
-+		}
- 
- 		chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
- 
-@@ -3266,10 +3292,13 @@ again:
- 		ret = should_balance_chunk(chunk_root, leaf, chunk,
- 					   found_key.offset);
- 		btrfs_release_path(path);
--		if (!ret)
-+		if (!ret) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 			goto loop;
-+		}
- 
- 		if (counting) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 			spin_lock(&fs_info->balance_lock);
- 			bctl->stat.expected++;
- 			spin_unlock(&fs_info->balance_lock);
-@@ -3279,6 +3308,7 @@ again:
- 		ret = btrfs_relocate_chunk(chunk_root,
- 					   found_key.objectid,
- 					   found_key.offset);
-+		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 		if (ret && ret != -ENOSPC)
- 			goto error;
- 		if (ret == -ENOSPC) {
-@@ -4018,11 +4048,16 @@ again:
- 	key.type = BTRFS_DEV_EXTENT_KEY;
- 
- 	do {
-+		mutex_lock(&root->fs_info->delete_unused_bgs_mutex);
- 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
--		if (ret < 0)
-+		if (ret < 0) {
-+			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 			goto done;
-+		}
- 
- 		ret = btrfs_previous_item(root, path, 0, key.type);
-+		if (ret)
-+			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 		if (ret < 0)
- 			goto done;
- 		if (ret) {
-@@ -4036,6 +4071,7 @@ again:
- 		btrfs_item_key_to_cpu(l, &key, path->slots[0]);
- 
- 		if (key.objectid != device->devid) {
-+			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 			btrfs_release_path(path);
- 			break;
- 		}
-@@ -4044,6 +4080,7 @@ again:
- 		length = btrfs_dev_extent_length(l, dev_extent);
- 
- 		if (key.offset + length <= new_size) {
-+			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 			btrfs_release_path(path);
- 			break;
- 		}
-@@ -4053,6 +4090,7 @@ again:
- 		btrfs_release_path(path);
- 
- 		ret = btrfs_relocate_chunk(root, chunk_objectid, chunk_offset);
-+		mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
- 		if (ret && ret != -ENOSPC)
- 			goto done;
- 		if (ret == -ENOSPC)
--- 
-2.1.3
+Am Mittwoch, 10. Juni 2015, 15:46:52 schrieb Anand Jain:
+> On 06/10/2015 02:58 PM, Martin wrote:
+> > Hello Anand,
+> > 
+> > the
+> > 
+> >> mount -o degraded <good-disk> <-- this should work
+> > 
+> > is my problem. The fist times it works but suddently, after a reboot, it
+> > fails with message "BTRFS: too many missing devices, writeable mount is
+> > not allowed" in kernel log.
+> 
+>   the failed(ing) disk is it still physically in the system ?
+>   when btrfs finds EIO on the intermittently failing disk,
+>   ro-mode kicks in, (there are some opportunity for fixes which
+>   I am trying). To recover, the approach is to make the failing
+>   disk a missing disk instead, by pulling out the failing disk
+>   from the system and boot. When system finds disk missing
+>   (not EIO rather) it should mount rw,degraded (from the VM part
+>   at least) and then replace (with a new disk) should work.
+> 
+> Thanks, Anand
+> 
+> > "btrfs fi show /backup2" shows:
+> > Label: none  uuid: 6d755db5-f8bb-494e-9bdc-cf524ff99512
+> > 
+> > 	Total devices 2 FS bytes used 3.50TiB
+> > 	devid    4 size 7.19TiB used 4.02TiB path /dev/sdb2
+> > 	*** Some devices missing
+> > 
+> > I suppose there is a "marker", telling the system only to mount in
+> > ro-mode?
+> > 
+> > Due to the ro-mount I can't replace the missing one because all the btrfs-
+> > commands need rw-access ...
+> > 
+> > Martin
+> > 
+> > Am Mittwoch, 10. Juni 2015, 14:38:38 schrieb Anand Jain:
+> >> Ah thanks David. So its 2 disks RAID1.
+> >> 
+> >> Martin,
+> >> 
+> >>    disk pool error handle is primitive as of now. readonly is the only
+> >>    action it would take. rest of recovery action is manual. thats
+> >>    unacceptable in a data center solutions. I don't recommend btrfs VM
+> >>    productions yet. But we are working to get that to a complete VM.
+> >>    
+> >>    For now, for your pool recovery: pls try this.
+> >>    
+> >>       - After reboot.
+> >>       - modunload and modload (so that kernel devlist is empty)
+> >>       - mount -o degraded <good-disk> <-- this should work.
+> >>       - btrfs fi show -m <-- Should show missing if you don't let me
+> >>       know.
+> >>       - Do a replace of the missing disk without reading the source disk.
+> >> 
+> >> Good luck.
+> >> 
+> >> Thanks, Anand
+> >> 
+> >> On 06/10/2015 11:58 AM, Duncan wrote:
+> >>> Anand Jain posted on Wed, 10 Jun 2015 09:19:37 +0800 as excerpted:
+> >>>> On 06/09/2015 01:10 AM, Martin wrote:
+> >>>>> Hello!
+> >>>>> 
+> >>>>> I have a raid1-btrfs-system (Kernel 3.19.0-18-generic, Ubuntu Vivid
+> >>>>> Vervet, btrfs-tools 3.17-1.1). One disk failed some days ago. I could
+> >>>>> remount the remaining one with "-o degraded". After one day and some
+> >>>>> write-operations (with no errrors) I had to reboot the system. And now
+> >>>>> I can not mount "rw" anymore, only "-o degraded,ro" is possible.
+> >>>>> 
+> >>>>> In the kernel log I found BTRFS: too many missing devices, writeable
+> >>>>> mount is not allowed.
+> >>>>> 
+> >>>>> I read about https://bugzilla.kernel.org/show_bug.cgi?id=60594 but I
+> >>>>> did no conversion to a single drive.
+> >>>>> 
+> >>>>> How can I mount the disk "rw" to remove the "missing" drive and add a
+> >>>>> new one?
+> >>>>> Because there are many snapshots of the filesystem, copying the system
+> >>>>> would be only the last alternative ;-)
+> >>>> 
+> >>>> How many disks you had in the RAID1. How many are failed ?
+> >>> 
+> >>> The answer is (a bit indirectly) in what you quoted.  Repeating:
+> >>>>> One disk failed[.] I could remount the remaining one[.]
+> >>> 
+> >>> So it was a two-device raid1, one failed device, one remaining,
+> >>> unfailed.
+> >> 
+> >> --
+> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> >> the body of a message to majordomo@vger.kernel.org
+> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> > 
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

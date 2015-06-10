@@ -1,207 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57310 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754676AbbFCO4V (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 3 Jun 2015 10:56:21 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 58C5CAAD6
-	for <linux-btrfs@vger.kernel.org>; Wed,  3 Jun 2015 14:56:20 +0000 (UTC)
-From: jeffm@suse.com
-To: linux-btrfs@vger.kernel.org
-Cc: Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH] btrfs: cleanup, stop casting for extent_map->lookup everywhere
-Date: Wed,  3 Jun 2015 10:55:48 -0400
-Message-Id: <1433343348-8158-1-git-send-email-jeffm@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:45454 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751744AbbFJLr5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jun 2015 07:47:57 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5ABkLHE022592
+	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 19:46:21 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Update out-of-date "skip parity stripe" comment
+Date: Wed, 10 Jun 2015 19:45:48 +0800
+Message-ID: <f3a491939f803f9a391619aad209b6e1c000bbd8.1433936721.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jeff Mahoney <jeffm@suse.com>
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Overloading extent_map->bdev to struct map_lookup * might have started out
-as a means to an end, but it's a pattern that's used all over the place
-now. Let's get rid of the casting and just add a union instead.
+Because btrfs support scrub raid56 parity stripe now.
 
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/dev-replace.c |  2 +-
- fs/btrfs/extent_map.c  |  2 +-
- fs/btrfs/extent_map.h  | 10 +++++++++-
- fs/btrfs/scrub.c       |  2 +-
- fs/btrfs/volumes.c     | 24 ++++++++++++------------
- 5 files changed, 24 insertions(+), 16 deletions(-)
+ fs/btrfs/scrub.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 0573848..2ad3289 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -613,7 +613,7 @@ static void btrfs_dev_replace_update_device_in_mapping_tree(
- 		em = lookup_extent_mapping(em_tree, start, (u64)-1);
- 		if (!em)
- 			break;
--		map = (struct map_lookup *)em->bdev;
-+		map = em->map_lookup;
- 		for (i = 0; i < map->num_stripes; i++)
- 			if (srcdev == map->stripes[i].dev)
- 				map->stripes[i].dev = tgtdev;
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 6a98bdd..84fb56d 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -76,7 +76,7 @@ void free_extent_map(struct extent_map *em)
- 		WARN_ON(extent_map_in_tree(em));
- 		WARN_ON(!list_empty(&em->list));
- 		if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
--			kfree(em->bdev);
-+			kfree(em->map_lookup);
- 		kmem_cache_free(extent_map_cache, em);
- 	}
- }
-diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-index b2991fd..eb8b8fa 100644
---- a/fs/btrfs/extent_map.h
-+++ b/fs/btrfs/extent_map.h
-@@ -32,7 +32,15 @@ struct extent_map {
- 	u64 block_len;
- 	u64 generation;
- 	unsigned long flags;
--	struct block_device *bdev;
-+	union {
-+		struct block_device *bdev;
-+
-+		/*
-+		 * used for chunk mappings
-+		 * flags & EXTENT_FLAG_FS_MAPPING must be set
-+		 */
-+		struct map_lookup *map_lookup;
-+	};
- 	atomic_t refs;
- 	unsigned int compress_type;
- 	struct list_head list;
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index ab58115..19f7241d 100644
+index a13f91a..5ee5630 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -3339,7 +3339,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
- 	if (!em)
- 		return -EINVAL;
- 
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 	if (em->start != chunk_offset)
- 		goto out;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 7fdde31..9f48ae5 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1068,7 +1068,7 @@ again:
- 		struct map_lookup *map;
- 		int i;
- 
--		map = (struct map_lookup *)em->bdev;
-+		map = em->map_lookup;
- 		for (i = 0; i < map->num_stripes; i++) {
- 			if (map->stripes[i].dev != device)
- 				continue;
-@@ -2622,7 +2622,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
- 			free_extent_map(em);
- 		return -EINVAL;
- 	}
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 
- 	for (i = 0; i < map->num_stripes; i++) {
- 		struct btrfs_device *device = map->stripes[i].dev;
-@@ -4465,7 +4465,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
- 		goto error;
- 	}
- 	set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
--	em->bdev = (struct block_device *)map;
-+	em->map_lookup = map;
- 	em->start = start;
- 	em->len = num_bytes;
- 	em->block_start = 0;
-@@ -4560,7 +4560,7 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
- 		return -EINVAL;
- 	}
- 
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 	item_size = btrfs_chunk_item_size(map->num_stripes);
- 	stripe_size = em->orig_block_len;
- 
-@@ -4702,7 +4702,7 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset)
- 	if (!em)
- 		return 1;
- 
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 	for (i = 0; i < map->num_stripes; i++) {
- 		if (map->stripes[i].dev->missing) {
- 			miss_ndevs++;
-@@ -4782,7 +4782,7 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
- 		return 1;
- 	}
- 
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
- 		ret = map->num_stripes;
- 	else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
-@@ -4818,7 +4818,7 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
- 	BUG_ON(!em);
- 
- 	BUG_ON(em->start > logical || em->start + em->len < logical);
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
- 		len = map->stripe_len * nr_data_stripes(map);
- 	free_extent_map(em);
-@@ -4839,7 +4839,7 @@ int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
- 	BUG_ON(!em);
- 
- 	BUG_ON(em->start > logical || em->start + em->len < logical);
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
- 		ret = 1;
- 	free_extent_map(em);
-@@ -5000,7 +5000,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
- 		return -EINVAL;
- 	}
- 
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 	offset = logical - em->start;
- 
- 	stripe_len = map->stripe_len;
-@@ -5542,7 +5542,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
- 		free_extent_map(em);
- 		return -EIO;
- 	}
--	map = (struct map_lookup *)em->bdev;
-+	map = em->map_lookup;
- 
- 	length = em->len;
- 	rmap_len = map->stripe_len;
-@@ -6057,7 +6057,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	}
- 
- 	set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
--	em->bdev = (struct block_device *)map;
-+	em->map_lookup = map;
- 	em->start = logical;
- 	em->len = length;
- 	em->orig_start = 0;
-@@ -6733,7 +6733,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
- 	/* In order to kick the device replace finish process */
- 	lock_chunks(root);
- 	list_for_each_entry(em, &transaction->pending_chunks, list) {
--		map = (struct map_lookup *)em->bdev;
-+		map = em->map_lookup;
- 
- 		for (i = 0; i < map->num_stripes; i++) {
- 			dev = map->stripes[i].dev;
+@@ -3202,12 +3202,12 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 	 */
+ 	ret = 0;
+ 	while (physical < physical_end) {
+-		/* for raid56, we skip parity stripe */
+ 		if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+ 			ret = get_raid56_logic_offset(physical, num,
+ 					map, &logical, &stripe_logical);
+ 			logical += base;
+ 			if (ret) {
++				/* it is parity strip */
+ 				stripe_logical += base;
+ 				stripe_end = stripe_logical + increment - 1;
+ 				ret = scrub_raid56_parity(sctx, map, scrub_dev,
 -- 
-1.8.4.5
+1.8.5.1
 

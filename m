@@ -1,66 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7499 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932066AbbFJAha convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2015 20:37:30 -0400
-Message-ID: <557785DE.9030307@cn.fujitsu.com>
-Date: Wed, 10 Jun 2015 08:33:34 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:47787 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751206AbbFJK1g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jun 2015 06:27:36 -0400
+Date: Wed, 10 Jun 2015 18:27:29 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Toralf =?iso-8859-1?Q?F=F6rster?= <toralf.foerster@gmx.de>
+Cc: linux-btrfs@vger.kernel.org, Linux Kernel <linux-kernel@vger.kernel.org>
+Subject: Re: deleting a btrfs subvolume shut up a server
+Message-ID: <20150610102728.GC3561@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <5554923A.1090903@gmx.de>
 MIME-Version: 1.0
-To: Josef Bacik <jbacik@fb.com>, adam900710 <adam900710@gmail.com>
-CC: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [GIT PULL] Qgroup rework with other Fujitsu fix.
-References: <557506BC.701@cn.fujitsu.com>	<5576F3F0.6050900@fb.com> <CAFy8SQW58c7DUUod7FaiNtY2MaoY6ZYt3jacG-RQHJZx+4so7A@mail.gmail.com> <5576FE3E.9050202@fb.com>
-In-Reply-To: <5576FE3E.9050202@fb.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <5554923A.1090903@gmx.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, May 14, 2015 at 02:16:58PM +0200, Toralf F�rster wrote:
+> I created at a 3 TB btrfs formatted disk a btrfs subvolume, unpacked a minimal Gentoo Linux in it, created in addition few files within it under ./tmp and bind mount from the host few files onto those files. If I now delete in another terminal the subvolume - then the server dies immediately
+> 
+> It is a headless server, I had to request a manually reset to get it back.
+> Nothing in the syslog (syslog-ng 3.6.2) - the server was just shot in he head.
+> 
+> This happened 2 times in a row. Host is a stable hardened Gentoo with 4.0.2 kernel.
 
-
--------- Original Message  --------
-Subject: Re: [GIT PULL] Qgroup rework with other Fujitsu fix.
-From: Josef Bacik <jbacik@fb.com>
-To: adam900710 <adam900710@gmail.com>
-Date: 2015年06月09日 22:54
-
-> On 06/09/2015 10:23 AM, adam900710 wrote:
->> Sorry, forgot to reply to all.
->>
->> To Josef,
->>
->> I am afraid that your conclusion is not right, as in the patch, it will
->> only merge delayed refs when they are in same sequence number.
->>
->> In fact, in the patch, conditions for merge is even more restrict than
->> before, it will not allow merging delayed refs for the same extent if
->> there are other delayed refs between them.
->>
->
-> You're right, I missed this bit
->
-> +    if (exist->type != ref->type || exist->no_quota != ref->no_quota ||
-> +        exist->seq != ref->seq)
-> +        goto add_tail;
->
-> I don't want the merging more strict, I want to merge as much as
-> possible, this was the problem with the original qgroup work and that's
-> why I reworked all this sequence number crap.  Thanks,
->
-> Josef
-The old problem of qgroup is addressed by later patches, which reworks
-the whole qgroup framework again.
-So qgroup will not be a problem.
-
-This patch is mainly used to cleanup the delayed-ref codes, at a little
-cost of restrict merging condition, but delayed-refs will still be
-mergeable unlike the very codes before your rework.
-
-It's possible not to include this patch in this pull, but I still prefer
-to include this one.
-As old implements is not so clear and easy to cause bug, the new
-straight-forward data structure with less codes will definitely make
-sense for maintaining.
+Hmm, is it possible to get some information from netconsole?
 
 Thanks,
-Qu
+
+-liubo
+> 
+> :-/
+> 
+> -- 
+> Toralf
+> pgp key: 7B1A 07F4 EC82 0F90 D4C2  8936 872A E508 0076 E94E
+> --
+> "; the past is all dirty and cruel in the modern popular imagination, with the exception of the Romans, who are just cruel"
+> Ian Mortimer, 2008, "The Time Traveller's Guide to Medieval England"
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

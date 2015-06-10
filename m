@@ -1,143 +1,346 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42169 "EHLO plane.gmane.org"
+Received: from mail.kernel.org ([198.145.29.136]:48253 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750724AbbFKEOc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 00:14:32 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
-	id 1Z2tss-0000Xk-Rg
-	for linux-btrfs@vger.kernel.org; Thu, 11 Jun 2015 06:14:31 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2015 06:14:30 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2015 06:14:30 +0200
+	id S1751376AbbFKJkE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jun 2015 05:40:04 -0400
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Does raid56 work on latest kernel?
-Date: Thu, 11 Jun 2015 04:14:25 +0000 (UTC)
-Message-ID: <pan$4058c$7888c445$459683cf$d6eac669@cox.net>
-References: <CAEko1BmP0Rrf5ng5Gqo56SzRhGdJzBE7w=-x--T2EBv81iaT6w@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix race between balance and unused block group deletion
+Date: Thu, 11 Jun 2015 00:58:53 +0100
+Message-Id: <1433980733-27456-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1433935176-12241-1-git-send-email-fdmanana@kernel.org>
+References: <1433935176-12241-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Guilherme Gonçalves posted on Wed, 10 Jun 2015 21:05:38 -0300 as
-excerpted:
+From: Filipe Manana <fdmanana@suse.com>
 
-> Hello!,  use arch linux with the latest kernel, i am trying to do raid 5
-> on 3 devices, but i get this on btfs fi usage:
-> 
-> "WARNING: RAID56 detected, not implemented"
-> 
-> what is not implemented?
+We have a race between deleting an unused block group and balancing the
+same block group that leads to an assertion failure/BUG(), producing the
+following trace:
 
-That warning is purely regarding the btrfs fi usage subcommand.  Usage is 
-a relatively new subcommand, and the patches adding it didn't implement 
-the calculations code necessary to produce correct numbers for some of 
-the non-mainstream (at the time) modes, including mixed-blockgroup mode 
-(for small btrfs, the default on btrfs' under 1 GiB and recommended by 
-some but not all regulars, on btrfs upto 16 or 32 GiB, but it remains a 
-bit of a corner-case), and raid56 mode, as support for it wasn't complete 
-anyway.
+[181631.208236] BTRFS: assertion failed: 0, file: fs/btrfs/volumes.c, line: 2622
+[181631.220591] ------------[ cut here ]------------
+[181631.222959] kernel BUG at fs/btrfs/ctree.h:4062!
+[181631.223932] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+[181631.224566] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse acpi_cpufreq parpor$
+[181631.224566] CPU: 8 PID: 17451 Comm: btrfs Tainted: G        W       4.1.0-rc5-btrfs-next-10+ #1
+[181631.224566] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[181631.224566] task: ffff880127e09590 ti: ffff8800b5824000 task.ti: ffff8800b5824000
+[181631.224566] RIP: 0010:[<ffffffffa03f19f6>]  [<ffffffffa03f19f6>] assfail.constprop.50+0x1e/0x20 [btrfs]
+[181631.224566] RSP: 0018:ffff8800b5827ae8  EFLAGS: 00010246
+[181631.224566] RAX: 0000000000000040 RBX: ffff8800109fc218 RCX: ffffffff81095dce
+[181631.224566] RDX: 0000000000005124 RSI: ffffffff81464819 RDI: 00000000ffffffff
+[181631.224566] RBP: ffff8800b5827ae8 R08: 0000000000000001 R09: 0000000000000000
+[181631.224566] R10: 0000000000000000 R11: 0000000000000000 R12: ffff8800109fc200
+[181631.224566] R13: ffff880020095000 R14: ffff8800b1a13f38 R15: ffff880020095000
+[181631.224566] FS:  00007f70ca0b0c80(0000) GS:ffff88013ec00000(0000) knlGS:0000000000000000
+[181631.224566] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[181631.224566] CR2: 00007f2872ab6e68 CR3: 00000000a717c000 CR4: 00000000000006e0
+[181631.224566] Stack:
+[181631.224566]  ffff8800b5827ba8 ffffffffa03f3916 ffff8800b5827b38 ffffffffa03d080e
+[181631.224566]  ffffffffa03d1423 ffff880020095000 ffff88001233c000 0000000000000001
+[181631.224566]  ffff880020095000 ffff8800b1a13f38 0000000a69c00000 0000000000000000
+[181631.224566] Call Trace:
+[181631.224566]  [<ffffffffa03f3916>] btrfs_remove_chunk+0xa4/0x6bb [btrfs]
+[181631.224566]  [<ffffffffa03d080e>] ? join_transaction.isra.8+0xb9/0x3ba [btrfs]
+[181631.224566]  [<ffffffffa03d1423>] ? wait_current_trans.isra.13+0x22/0xfc [btrfs]
+[181631.224566]  [<ffffffffa03f3fbc>] btrfs_relocate_chunk.isra.29+0x8f/0xa7 [btrfs]
+[181631.224566]  [<ffffffffa03f54df>] btrfs_balance+0xaa4/0xc52 [btrfs]
+[181631.224566]  [<ffffffffa03fd388>] btrfs_ioctl_balance+0x23f/0x2b0 [btrfs]
+[181631.224566]  [<ffffffff810872f9>] ? trace_hardirqs_on+0xd/0xf
+[181631.224566]  [<ffffffffa04019a3>] btrfs_ioctl+0xfe2/0x2220 [btrfs]
+[181631.224566]  [<ffffffff812603ed>] ? __this_cpu_preempt_check+0x13/0x15
+[181631.224566]  [<ffffffff81084669>] ? arch_local_irq_save+0x9/0xc
+[181631.224566]  [<ffffffff81138def>] ? handle_mm_fault+0x834/0xcd2
+[181631.224566]  [<ffffffff81138def>] ? handle_mm_fault+0x834/0xcd2
+[181631.224566]  [<ffffffff8103e48c>] ? __do_page_fault+0x211/0x424
+[181631.224566]  [<ffffffff811755e6>] do_vfs_ioctl+0x3c6/0x479
+(...)
 
-So specific btrfs fi usage subcommand support for those modes isn't there 
-now and can be expected later, but because the usage subcommand is purely 
-informational anyway, and basically prints the same information available 
-from the fi show and fi df commands separately, only a bit prettier, this 
-missing support doesn't affect actual btrfs operation in any way.
+The sequence of steps leading to this are:
 
-That said...
+           CPU 0                                         CPU 1
 
-> btrfs-progs v4.0.1
-> 
-> does it work on my kernel (4.0.5-1-ARCH), i know it was incomplete
-> before, but now on 4.0 does it work despite it being new? what is "not
-> implemented" on the message mean?
+  btrfs_balance()
+    btrfs_relocate_chunk()
 
-Technically, all the raid56 support should be there now -- it's code-
-complete.  Practically, however, I've been recommending people continue 
-to stay off of it for anything but pure data-loss-ok testing, for at 
-*LEAST* another couple kernels, to shake out some of the inevitable bugs 
-and let the code settle at least a /bit/.
+      btrfs_relocate_block_group(bg X)
+        btrfs_lookup_block_group(bg X)
 
-And point-of-fact, we /did/ have some bad raid56 mode reports shortly 
-after 4.0, from people who had /not/ let it shake out a bit and were 
-trying to use it in normal-case situations.  Whether they're actually 
-fixed now (with the latest stable or with late 4.1-rcs for 4.1 release) 
-I'm not sure, tho the number of bad reports has died down quite a bit, 
-but I don't know whether that is people actually following the 
-recommendation, or because it's fixed now.  Either way, however, I'd not 
-be using it myself, and couldn't recommend it for others except as I said 
-purely for data-loss-doesn't-matter testing, until at LEAST 4.2, as 
-there's still likely to be a few more critical bugs to shake out.
+                                               cleaner_kthread
+                                                  locks fs_info->cleaner_mutex
 
-And even at 4.2, I'd still recommend raid56 mode only for those willing 
-to be bleeding edge testers, if that's what it takes to be leading edge 
-testers, because point-of-fact, that code still won't be as stable as the 
-raid0/1/10 modes, which are basically as stable as btrfs itself is by 
-this point.  It's going to take some time, as well as the reports of 
-those leading/bleeding edge testers, to shake out further bugs and 
-stabilize that still very new code.
+                                                  btrfs_delete_unused_bgs()
+                                                    finds bg X, which became
+                                                    unused in the previous
+                                                    transaction
 
-For more btrfs-mainstream users[1], I'd recommend waiting about a year, 
-five kernel cycles, for btrfs raid56 mode to stabilize.  By that point, 
-with testing/reporting from the leading/bleeding edge and corresponding 
-fixes from the devs, raid56 mode should be approaching the stability of 
-btrfs in general, and I'd suggest following the list's raid56 mode 
-discussion for kernel 4.4 and early 4.5, and as long as things look 
-reasonably calm, *THEN* I'd say it's reasonable for a mainline btrfs user 
-to consider raid56 mode.
+                                                    checks bg X ->ro == 0,
+                                                    so it proceeds
+        sets bg X ->ro to 1
+        (btrfs_set_block_group_ro(bg X))
 
-But even then, be sure to have tested backups or by definition of your 
-action, you really do NOT care about losing that data, no matter any 
-claims to the contrary.  Because while btrfs in general is certainly 
-stabilizing, and in a year will certainly be more stable and mature then 
-than it is now, as a practical matter, it simply won't have the time 
-tested stability and maturity of filesystems such as ext3/4, xfs, and 
-even reiserfs[2], for some years yet.
+        blocks on fs_info->cleaner_mutex
+                                                    btrfs_remove_chunk(bg X)
+                                                  unlocks fs_info->cleaner_mutex
 
-In the mean time, I'd recommend the much more mature btrfs raid10 mode.  
-You might need a few more devices to get equivalent capacity, but at 
-least you're getting a mode that's known to be basically as mature and 
-stable as btrfs itself is, at this point, not the still new btrfs raid56 
-mode code that's still not been even minimally time-tested and is 
-statistically still very likely to have some pretty critical bugs 
-crawling around.
+        acquires fs_info->cleaner_mutex
+        relocate_block_group()
+          --> does nothing, no extents found in
+              the extent tree from bg X
+        unlocks fs_info->cleaner_mutex
 
-Tho of course it's your system, your data, and your call.  But I know 
-what my call would be for /my/ systems. =:^)  And I know a number of 
-posters who wish they had been (quite!) a bit more cautious with raid56 
-mode for 4.0, at least. =:^(
+      btrfs_relocate_block_group(bg X) returns
 
+    btrfs_remove_chunk(bg X)
+       extent map not found
+          --> ASSERT(0)
+
+Fix this by using a new mutex to make sure these 2 operations, block
+group relocation and removal, are serialized.
+
+This issue is reproducible by running fstests generic/038 (which stresses
+chunk allocation and automatic removal of unused block groups) together
+with the following balance loop:
+
+    while true; do btrfs balance start -dusage=0 <mountpoint> ; done
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
-[1] Btrfs-mainstream users.  This takes into account that btrfs itself is 
-still not entirely stable, tho it's definitely making progress, so the 
-sysadmin's backup rule that if you don't have a backup, by definition, 
-you don't care about losing that data, and an untested would-be backup 
-isn't a backup yet, because it's not a backup until you have tested that 
-you can actually recover from it, applies double, compared to more tested 
-stable filesystems -- have that backup or you by your actions really do 
-NOT care!
 
-[2] Reiserfs:  My own time-tested stability favorite, at least post-
-data=ordered-by-default, thru various hardware problems that would bring 
-ordinary filesystems to their knees.  I'm convinced it's at least partly 
-because most non-fs-expert kernel devs fear reiserfs enough to leave it 
-alone, so only the real reiserfs experts dare work with it, while every 
-kernel dev and their brother thinks they know enough about the ext* 
-family of filesystems to tinker with them.  Consider the period when ext3 
-got switched back to data=writeback mode by default, the very same mode 
-that caused reiserfs to have the bad name it did, back in the early 
-days.  The folks that did that left reiserfs alone, so reiserfs users 
-were actually safer by default during that period than ext3 users!
+V2: No code changes. Updated only the diagram that shows the race to be
+    more detailed.
 
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/disk-io.c     | 12 +++++++++++-
+ fs/btrfs/extent-tree.c |  3 +++
+ fs/btrfs/volumes.c     | 48 +++++++++++++++++++++++++++++++++++++++++++-----
+ 4 files changed, 58 insertions(+), 6 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index ea15c6a..061c5b4 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1780,6 +1780,7 @@ struct btrfs_fs_info {
+ 	spinlock_t unused_bgs_lock;
+ 	struct list_head unused_bgs;
+ 	struct mutex unused_bg_unpin_mutex;
++	struct mutex delete_unused_bgs_mutex;
+ 
+ 	/* For btrfs to record security options */
+ 	struct security_mnt_opts security_opts;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2ef9a4b..f23675c 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1773,7 +1773,6 @@ static int cleaner_kthread(void *arg)
+ 		}
+ 
+ 		btrfs_run_delayed_iputs(root);
+-		btrfs_delete_unused_bgs(root->fs_info);
+ 		again = btrfs_clean_one_deleted_snapshot(root);
+ 		mutex_unlock(&root->fs_info->cleaner_mutex);
+ 
+@@ -1782,6 +1781,16 @@ static int cleaner_kthread(void *arg)
+ 		 * needn't do anything special here.
+ 		 */
+ 		btrfs_run_defrag_inodes(root->fs_info);
++
++		/*
++		 * Acquires fs_info->delete_unused_bgs_mutex to avoid racing
++		 * with relocation (btrfs_relocate_chunk) and relocation
++		 * acquires fs_info->cleaner_mutex (btrfs_relocate_block_group)
++		 * after acquiring fs_info->delete_unused_bgs_mutex. So we
++		 * can't hold, nor need to, fs_info->cleaner_mutex when deleting
++		 * unused block groups.
++		 */
++		btrfs_delete_unused_bgs(root->fs_info);
+ sleep:
+ 		if (!try_to_freeze() && !again) {
+ 			set_current_state(TASK_INTERRUPTIBLE);
+@@ -2489,6 +2498,7 @@ int open_ctree(struct super_block *sb,
+ 	spin_lock_init(&fs_info->unused_bgs_lock);
+ 	rwlock_init(&fs_info->tree_mod_log_lock);
+ 	mutex_init(&fs_info->unused_bg_unpin_mutex);
++	mutex_init(&fs_info->delete_unused_bgs_mutex);
+ 	mutex_init(&fs_info->reloc_mutex);
+ 	mutex_init(&fs_info->delalloc_root_mutex);
+ 	seqlock_init(&fs_info->profiles_lock);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 0b108c5..f61d0af 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10003,6 +10003,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		}
+ 		spin_unlock(&fs_info->unused_bgs_lock);
+ 
++		mutex_lock(&root->fs_info->delete_unused_bgs_mutex);
++
+ 		/* Don't want to race with allocators so take the groups_sem */
+ 		down_write(&space_info->groups_sem);
+ 		spin_lock(&block_group->lock);
+@@ -10097,6 +10099,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ end_trans:
+ 		btrfs_end_transaction(trans, root);
+ next:
++		mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 		btrfs_put_block_group(block_group);
+ 		spin_lock(&fs_info->unused_bgs_lock);
+ 	}
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c7ac25e..ccf7d14 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2697,6 +2697,20 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
+ 	root = root->fs_info->chunk_root;
+ 	extent_root = root->fs_info->extent_root;
+ 
++	/*
++	 * Prevent races with automatic removal of unused block groups.
++	 * After we relocate and before we remove the chunk with offset
++	 * chunk_offset, automatic removal of the block group can kick in,
++	 * resulting in a failure when calling btrfs_remove_chunk() below.
++	 *
++	 * Make sure to acquire this mutex before doing a tree search (dev
++	 * or chunk trees) to find chunks. Otherwise the cleaner kthread might
++	 * call btrfs_remove_chunk() (through btrfs_delete_unused_bgs()) after
++	 * we release the path used to search the chunk/dev tree and before
++	 * the current task acquires this mutex and calls us.
++	 */
++	ASSERT(mutex_is_locked(&root->fs_info->delete_unused_bgs_mutex));
++
+ 	ret = btrfs_can_relocate(extent_root, chunk_offset);
+ 	if (ret)
+ 		return -ENOSPC;
+@@ -2745,13 +2759,18 @@ again:
+ 	key.type = BTRFS_CHUNK_ITEM_KEY;
+ 
+ 	while (1) {
++		mutex_lock(&root->fs_info->delete_unused_bgs_mutex);
+ 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
+-		if (ret < 0)
++		if (ret < 0) {
++			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 			goto error;
++		}
+ 		BUG_ON(ret == 0); /* Corruption */
+ 
+ 		ret = btrfs_previous_item(chunk_root, path, key.objectid,
+ 					  key.type);
++		if (ret)
++			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 		if (ret < 0)
+ 			goto error;
+ 		if (ret > 0)
+@@ -2774,6 +2793,7 @@ again:
+ 			else
+ 				BUG_ON(ret);
+ 		}
++		mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 
+ 		if (found_key.offset == 0)
+ 			break;
+@@ -3230,9 +3250,12 @@ again:
+ 			goto error;
+ 		}
+ 
++		mutex_lock(&fs_info->delete_unused_bgs_mutex);
+ 		ret = btrfs_search_slot(NULL, chunk_root, &key, path, 0, 0);
+-		if (ret < 0)
++		if (ret < 0) {
++			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 			goto error;
++		}
+ 
+ 		/*
+ 		 * this shouldn't happen, it means the last relocate
+@@ -3244,6 +3267,7 @@ again:
+ 		ret = btrfs_previous_item(chunk_root, path, 0,
+ 					  BTRFS_CHUNK_ITEM_KEY);
+ 		if (ret) {
++			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 			ret = 0;
+ 			break;
+ 		}
+@@ -3252,8 +3276,10 @@ again:
+ 		slot = path->slots[0];
+ 		btrfs_item_key_to_cpu(leaf, &found_key, slot);
+ 
+-		if (found_key.objectid != key.objectid)
++		if (found_key.objectid != key.objectid) {
++			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 			break;
++		}
+ 
+ 		chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
+ 
+@@ -3266,10 +3292,13 @@ again:
+ 		ret = should_balance_chunk(chunk_root, leaf, chunk,
+ 					   found_key.offset);
+ 		btrfs_release_path(path);
+-		if (!ret)
++		if (!ret) {
++			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 			goto loop;
++		}
+ 
+ 		if (counting) {
++			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 			spin_lock(&fs_info->balance_lock);
+ 			bctl->stat.expected++;
+ 			spin_unlock(&fs_info->balance_lock);
+@@ -3279,6 +3308,7 @@ again:
+ 		ret = btrfs_relocate_chunk(chunk_root,
+ 					   found_key.objectid,
+ 					   found_key.offset);
++		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 		if (ret && ret != -ENOSPC)
+ 			goto error;
+ 		if (ret == -ENOSPC) {
+@@ -4018,11 +4048,16 @@ again:
+ 	key.type = BTRFS_DEV_EXTENT_KEY;
+ 
+ 	do {
++		mutex_lock(&root->fs_info->delete_unused_bgs_mutex);
+ 		ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+-		if (ret < 0)
++		if (ret < 0) {
++			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 			goto done;
++		}
+ 
+ 		ret = btrfs_previous_item(root, path, 0, key.type);
++		if (ret)
++			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 		if (ret < 0)
+ 			goto done;
+ 		if (ret) {
+@@ -4036,6 +4071,7 @@ again:
+ 		btrfs_item_key_to_cpu(l, &key, path->slots[0]);
+ 
+ 		if (key.objectid != device->devid) {
++			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 			btrfs_release_path(path);
+ 			break;
+ 		}
+@@ -4044,6 +4080,7 @@ again:
+ 		length = btrfs_dev_extent_length(l, dev_extent);
+ 
+ 		if (key.offset + length <= new_size) {
++			mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 			btrfs_release_path(path);
+ 			break;
+ 		}
+@@ -4053,6 +4090,7 @@ again:
+ 		btrfs_release_path(path);
+ 
+ 		ret = btrfs_relocate_chunk(root, chunk_objectid, chunk_offset);
++		mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
+ 		if (ret && ret != -ENOSPC)
+ 			goto done;
+ 		if (ret == -ENOSPC)
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.1.3
 

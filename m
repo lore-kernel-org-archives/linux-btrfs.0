@@ -1,244 +1,254 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37679 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753845AbbFJLMP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jun 2015 07:12:15 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 48C12205DC
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 11:12:13 +0000 (UTC)
-Received: from mail-ig0-f173.google.com (mail-ig0-f173.google.com [209.85.213.173])
-	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id BCA1C204AD
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 11:12:11 +0000 (UTC)
-Received: by igblz2 with SMTP id lz2so30837953igb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 04:12:11 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150610110516.GE3561@localhost.localdomain>
-References: <1432598142-4434-1-git-send-email-fdmanana@kernel.org>
-	<20150610104129.GD3561@localhost.localdomain>
-	<CAL3q7H4Pxx7PWyJZFjYs4hVxep7Df_V=8cgPb9R_D7vmoNiB7w@mail.gmail.com>
-	<20150610110516.GE3561@localhost.localdomain>
-Date: Wed, 10 Jun 2015 12:12:11 +0100
-Message-ID: <CAL3q7H4Pyu4xprL=ZUrW9tVwgk8PWuHF12y728JF7+gsKVNL3A@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix hang during inode eviction due to concurrent readahead
-From: Filipe Manana <fdmanana@kernel.org>
-To: Liu Bo <bo.li.liu@oracle.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:40988 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751963AbbFJL1u (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 10 Jun 2015 07:27:50 -0400
+Date: Wed, 10 Jun 2015 19:27:30 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Filipe Manana <fdmanana@kernel.org>
 Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
         Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: [PATCH] Btrfs: fix hang during inode eviction due to concurrent
+ readahead
+Message-ID: <20150610112729.GF3561@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1432598142-4434-1-git-send-email-fdmanana@kernel.org>
+ <20150610104129.GD3561@localhost.localdomain>
+ <CAL3q7H4Pxx7PWyJZFjYs4hVxep7Df_V=8cgPb9R_D7vmoNiB7w@mail.gmail.com>
+ <20150610110516.GE3561@localhost.localdomain>
+ <CAL3q7H4Pyu4xprL=ZUrW9tVwgk8PWuHF12y728JF7+gsKVNL3A@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAL3q7H4Pyu4xprL=ZUrW9tVwgk8PWuHF12y728JF7+gsKVNL3A@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 10, 2015 at 12:05 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
-> On Wed, Jun 10, 2015 at 11:44:17AM +0100, Filipe Manana wrote:
->> On Wed, Jun 10, 2015 at 11:41 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
->> > On Tue, May 26, 2015 at 12:55:42AM +0100, fdmanana@kernel.org wrote:
->> >> From: Filipe Manana <fdmanana@suse.com>
->> >>
->> >> Zygo Blaxell and other users have reported occasional hangs while an
->> >> inode is being evicted, leading to traces like the following:
->> >>
->> >> [ 5281.972322] INFO: task rm:20488 blocked for more than 120 seconds.
->> >> [ 5281.973836]       Not tainted 4.0.0-rc5-btrfs-next-9+ #2
->> >> [ 5281.974818] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
->> >> [ 5281.976364] rm              D ffff8800724cfc38     0 20488   7747 0x00000000
->> >> [ 5281.977506]  ffff8800724cfc38 ffff8800724cfc38 ffff880065da5c50 0000000000000001
->> >> [ 5281.978461]  ffff8800724cffd8 ffff8801540a5f50 0000000000000008 ffff8801540a5f78
->> >> [ 5281.979541]  ffff8801540a5f50 ffff8800724cfc58 ffffffff8143107e 0000000000000123
->> >> [ 5281.981396] Call Trace:
->> >> [ 5281.982066]  [<ffffffff8143107e>] schedule+0x74/0x83
->> >> [ 5281.983341]  [<ffffffffa03b33cf>] wait_on_state+0xac/0xcd [btrfs]
->> >> [ 5281.985127]  [<ffffffff81075cd6>] ? signal_pending_state+0x31/0x31
->> >> [ 5281.986715]  [<ffffffffa03b4b71>] wait_extent_bit.constprop.32+0x7c/0xde [btrfs]
->> >> [ 5281.988680]  [<ffffffffa03b540b>] lock_extent_bits+0x5d/0x88 [btrfs]
->> >> [ 5281.990200]  [<ffffffffa03a621d>] btrfs_evict_inode+0x24e/0x5be [btrfs]
->> >> [ 5281.991781]  [<ffffffff8116964d>] evict+0xa0/0x148
->> >> [ 5281.992735]  [<ffffffff8116a43d>] iput+0x18f/0x1e5
->> >> [ 5281.993796]  [<ffffffff81160d4a>] do_unlinkat+0x15b/0x1fa
->> >> [ 5281.994806]  [<ffffffff81435b54>] ? ret_from_sys_call+0x1d/0x58
->> >> [ 5281.996120]  [<ffffffff8107d314>] ? trace_hardirqs_on_caller+0x18f/0x1ab
->> >> [ 5281.997562]  [<ffffffff8123960b>] ? trace_hardirqs_on_thunk+0x3a/0x3f
->> >> [ 5281.998815]  [<ffffffff81161a16>] SyS_unlinkat+0x29/0x2b
->> >> [ 5281.999920]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
->> >> [ 5282.001299] 1 lock held by rm/20488:
->> >> [ 5282.002066]  #0:  (sb_writers#12){.+.+.+}, at: [<ffffffff8116dd81>] mnt_want_write+0x24/0x4b
->> >>
->> >> This happens when we have readahead, which calls readpages(), happening
->> >> right before the inode eviction handler is invoked. So the reason is
->> >> essentially:
->> >>
->> >> 1) readpages() is called while a reference on the inode is held, so
->> >>    eviction can not be triggered before readpages() returns. It also
->> >>    locks one or more ranges in the inode's io_tree (which is done at
->> >>    extent_io.c:__do_contiguous_readpages());
->> >>
->> >> 2) readpages() submits several read bios, all with an end io callback
->> >>    that runs extent_io.c:end_bio_extent_readpage() and that is executed
->> >>    by other task when a bio finishes, corresponding to a work queue
->> >>    (fs_info->end_io_workers) worker kthread. This callback unlocks
->> >>    the ranges in the inode's io_tree that were previously locked in
->> >>    step 1;
->> >>
->> >> 3) readpages() returns, the reference on the inode is dropped;
->> >>
->> >> 4) One or more of the read bios previously submitted are still not
->> >>    complete (their end io callback was not yet invoked or has not
->> >>    yet finished execution);
->> >>
->> >> 5) Inode eviction is triggered (through an unlink call for example).
->> >>    The inode reference count was not incremented before submitting
->> >>    the read bios, therefore this is possible;
->> >>
->> >> 6) The eviction handler starts executing and enters the loop that
->> >>    iterates over all extent states in the inode's io_tree;
->> >
->> > One question here:
->> >  btrfs_evict_inode()->
->> >         evict_inode_truncate_pages()->
->> >                 truncate_inode_pages_final()
->> >
->> > truncate_inode_pages_final() finds all pages in the mapping and
->> > lock_page() on each page, if there is a readpage running by other tasks,
->> > it should be blocked on lock_page() until end_bio_extent_readpage()
->> > does a unlock_page().
->> >
->> > How does eviction handler bypasses this and enters 'extent_state' loop?
->> >
->> > Am I missing something?
->>
->> Yes, you are missing something.
->> end_bio_extent_readpage() unlocks the pages and only after it does
->> unlock the ranges in the inode's io tree.
->
-> ah, that's right, another thing is
-> truncate_inode_pages_final() gets every page's lock, which means that
-> all the endio must have been processed, but the below comment in the
-> code says some bios may still not get their endio called.
+On Wed, Jun 10, 2015 at 12:12:11PM +0100, Filipe Manana wrote:
+> On Wed, Jun 10, 2015 at 12:05 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> > On Wed, Jun 10, 2015 at 11:44:17AM +0100, Filipe Manana wrote:
+> >> On Wed, Jun 10, 2015 at 11:41 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> >> > On Tue, May 26, 2015 at 12:55:42AM +0100, fdmanana@kernel.org wrote:
+> >> >> From: Filipe Manana <fdmanana@suse.com>
+> >> >>
+> >> >> Zygo Blaxell and other users have reported occasional hangs while an
+> >> >> inode is being evicted, leading to traces like the following:
+> >> >>
+> >> >> [ 5281.972322] INFO: task rm:20488 blocked for more than 120 seconds.
+> >> >> [ 5281.973836]       Not tainted 4.0.0-rc5-btrfs-next-9+ #2
+> >> >> [ 5281.974818] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> >> >> [ 5281.976364] rm              D ffff8800724cfc38     0 20488   7747 0x00000000
+> >> >> [ 5281.977506]  ffff8800724cfc38 ffff8800724cfc38 ffff880065da5c50 0000000000000001
+> >> >> [ 5281.978461]  ffff8800724cffd8 ffff8801540a5f50 0000000000000008 ffff8801540a5f78
+> >> >> [ 5281.979541]  ffff8801540a5f50 ffff8800724cfc58 ffffffff8143107e 0000000000000123
+> >> >> [ 5281.981396] Call Trace:
+> >> >> [ 5281.982066]  [<ffffffff8143107e>] schedule+0x74/0x83
+> >> >> [ 5281.983341]  [<ffffffffa03b33cf>] wait_on_state+0xac/0xcd [btrfs]
+> >> >> [ 5281.985127]  [<ffffffff81075cd6>] ? signal_pending_state+0x31/0x31
+> >> >> [ 5281.986715]  [<ffffffffa03b4b71>] wait_extent_bit.constprop.32+0x7c/0xde [btrfs]
+> >> >> [ 5281.988680]  [<ffffffffa03b540b>] lock_extent_bits+0x5d/0x88 [btrfs]
+> >> >> [ 5281.990200]  [<ffffffffa03a621d>] btrfs_evict_inode+0x24e/0x5be [btrfs]
+> >> >> [ 5281.991781]  [<ffffffff8116964d>] evict+0xa0/0x148
+> >> >> [ 5281.992735]  [<ffffffff8116a43d>] iput+0x18f/0x1e5
+> >> >> [ 5281.993796]  [<ffffffff81160d4a>] do_unlinkat+0x15b/0x1fa
+> >> >> [ 5281.994806]  [<ffffffff81435b54>] ? ret_from_sys_call+0x1d/0x58
+> >> >> [ 5281.996120]  [<ffffffff8107d314>] ? trace_hardirqs_on_caller+0x18f/0x1ab
+> >> >> [ 5281.997562]  [<ffffffff8123960b>] ? trace_hardirqs_on_thunk+0x3a/0x3f
+> >> >> [ 5281.998815]  [<ffffffff81161a16>] SyS_unlinkat+0x29/0x2b
+> >> >> [ 5281.999920]  [<ffffffff81435b32>] system_call_fastpath+0x12/0x17
+> >> >> [ 5282.001299] 1 lock held by rm/20488:
+> >> >> [ 5282.002066]  #0:  (sb_writers#12){.+.+.+}, at: [<ffffffff8116dd81>] mnt_want_write+0x24/0x4b
+> >> >>
+> >> >> This happens when we have readahead, which calls readpages(), happening
+> >> >> right before the inode eviction handler is invoked. So the reason is
+> >> >> essentially:
+> >> >>
+> >> >> 1) readpages() is called while a reference on the inode is held, so
+> >> >>    eviction can not be triggered before readpages() returns. It also
+> >> >>    locks one or more ranges in the inode's io_tree (which is done at
+> >> >>    extent_io.c:__do_contiguous_readpages());
+> >> >>
+> >> >> 2) readpages() submits several read bios, all with an end io callback
+> >> >>    that runs extent_io.c:end_bio_extent_readpage() and that is executed
+> >> >>    by other task when a bio finishes, corresponding to a work queue
+> >> >>    (fs_info->end_io_workers) worker kthread. This callback unlocks
+> >> >>    the ranges in the inode's io_tree that were previously locked in
+> >> >>    step 1;
+> >> >>
+> >> >> 3) readpages() returns, the reference on the inode is dropped;
+> >> >>
+> >> >> 4) One or more of the read bios previously submitted are still not
+> >> >>    complete (their end io callback was not yet invoked or has not
+> >> >>    yet finished execution);
+> >> >>
+> >> >> 5) Inode eviction is triggered (through an unlink call for example).
+> >> >>    The inode reference count was not incremented before submitting
+> >> >>    the read bios, therefore this is possible;
+> >> >>
+> >> >> 6) The eviction handler starts executing and enters the loop that
+> >> >>    iterates over all extent states in the inode's io_tree;
+> >> >
+> >> > One question here:
+> >> >  btrfs_evict_inode()->
+> >> >         evict_inode_truncate_pages()->
+> >> >                 truncate_inode_pages_final()
+> >> >
+> >> > truncate_inode_pages_final() finds all pages in the mapping and
+> >> > lock_page() on each page, if there is a readpage running by other tasks,
+> >> > it should be blocked on lock_page() until end_bio_extent_readpage()
+> >> > does a unlock_page().
+> >> >
+> >> > How does eviction handler bypasses this and enters 'extent_state' loop?
+> >> >
+> >> > Am I missing something?
+> >>
+> >> Yes, you are missing something.
+> >> end_bio_extent_readpage() unlocks the pages and only after it does
+> >> unlock the ranges in the inode's io tree.
+> >
+> > ah, that's right, another thing is
+> > truncate_inode_pages_final() gets every page's lock, which means that
+> > all the endio must have been processed, but the below comment in the
+> > code says some bios may still not get their endio called.
+> 
+> truncate_inode_pages_final() can lock the pages after
+> end_bio_extent_readpage() unlocks them and before
+> end_bio_extent_readpage() unlocks the ranges in the io tree. I know
+> there's some mangling around that makes the bio's original endio
+> function to be run by an work queue (fs_info->endio_workers) task plus
+> one or two more levels of indirection. But by endio I really meant
+> end_bio_extent_readpage(), as I mention in the comment between
+> parenthesis, and not any of the indirections added by
+> btrfs_submit_bio_hook().
 
-truncate_inode_pages_final() can lock the pages after
-end_bio_extent_readpage() unlocks them and before
-end_bio_extent_readpage() unlocks the ranges in the io tree. I know
-there's some mangling around that makes the bio's original endio
-function to be run by an work queue (fs_info->endio_workers) task plus
-one or two more levels of indirection. But by endio I really meant
-end_bio_extent_readpage(), as I mention in the comment between
-parenthesis, and not any of the indirections added by
-btrfs_submit_bio_hook().
 
->
-> Thanks,
->
-> -liubo
->>
->> thanks
->>
->>
->> >
->> > Thanks,
->> >
->> > -liubo
->> >>
->> >> 7) The loop picks one extent state record and uses its ->start and
->> >>    ->end fields, after releasing the inode's io_tree spinlock, to
->> >>    call lock_extent_bits() and clear_extent_bit(). The call to lock
->> >>    the range [state->start, state->end] blocks because the whole
->> >>    range or a part of it was locked by the previous call to
->> >>    readpages() and the corresponding end io callback, which unlocks
->> >>    the range was not yet executed;
->> >>
->> >> 8) The end io callback for the read bio is executed and unlocks the
->> >>    range [state->start, state->end] (or a superset of that range).
->> >>    And at clear_extent_bit() the extent_state record state is used
->> >>    as a second argument to split_state(), which sets state->start to
->> >>    a larger value;
->> >>
->> >> 9) The task executing the eviction handler is woken up by the task
->> >>    executing the bio's end io callback (through clear_state_bit) and
->> >>    the eviction handler locks the range
->> >>    [old value for state->start, state->end]. Shortly after, when
->> >>    calling clear_extent_bit(), it unlocks the range
->> >>    [new value for state->start, state->end], so it ends up unlocking
->> >>    only part of the range that it locked, leaving an extent state
->> >>    record in the io_tree that represents the unlocked subrange;
->> >>
->> >> 10) The eviction handler loop, in its next iteration, gets the
->> >>     extent_state record for the subrange that it did not unlock in the
->> >>     previous step and then tries to lock it, resulting in an hang.
->> >>
->> >> So fix this by not using the ->start and ->end fields of an existing
->> >> extent_state record. This is a simple solution, and an alternative
->> >> could be to bump the inode's reference count before submitting each
->> >> read bio and having it dropped in the bio's end io callback. But that
->> >> would be a more invasive/complex change and would not protect against
->> >> other possible places that are not holding a reference on the inode
->> >> as well. Something to consider in the future.
->> >>
->> >> Many thanks to Zygo Blaxell for reporting, in the mailing list, the
->> >> issue, a set of scripts to trigger it and testing this fix.
->> >>
->> >> Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
->> >> Tested-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
->> >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->> >> ---
->> >>  fs/btrfs/inode.c | 26 +++++++++++++++++++++-----
->> >>  1 file changed, 21 insertions(+), 5 deletions(-)
->> >>
->> >> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
->> >> index 0020b56..ef05800 100644
->> >> --- a/fs/btrfs/inode.c
->> >> +++ b/fs/btrfs/inode.c
->> >> @@ -4987,24 +4987,40 @@ static void evict_inode_truncate_pages(struct inode *inode)
->> >>       }
->> >>       write_unlock(&map_tree->lock);
->> >>
->> >> +     /*
->> >> +      * Keep looping until we have no more ranges in the io tree.
->> >> +      * We can have ongoing bios started by readpages (called from readahead)
->> >> +      * that didn't get their end io callbacks called yet or they are still
->> >> +      * in progress ((extent_io.c:end_bio_extent_readpage()). This means some
->> >> +      * ranges can still be locked and eviction started because before
->> >> +      * submitting those bios, which are executed by a separate task (work
->> >> +      * queue kthread), inode references (inode->i_count) were not taken
->> >> +      * (which would be dropped in the end io callback of each bio).
->> >> +      * Therefore here we effectively end up waiting for those bios and
->> >> +      * anyone else holding locked ranges without having bumped the inode's
->> >> +      * reference count - if we don't do it, when they access the inode's
->> >> +      * io_tree to unlock a range it may be too late, leading to an
->> >> +      * use-after-free issue.
->> >> +      */
->> >>       spin_lock(&io_tree->lock);
->> >>       while (!RB_EMPTY_ROOT(&io_tree->state)) {
->> >>               struct extent_state *state;
->> >>               struct extent_state *cached_state = NULL;
->> >> +             u64 start;
->> >> +             u64 end;
->> >>
->> >>               node = rb_first(&io_tree->state);
->> >>               state = rb_entry(node, struct extent_state, rb_node);
->> >> -             atomic_inc(&state->refs);
->> >> +             start = state->start;
->> >> +             end = state->end;
->> >>               spin_unlock(&io_tree->lock);
->> >>
->> >> -             lock_extent_bits(io_tree, state->start, state->end,
->> >> -                              0, &cached_state);
->> >> -             clear_extent_bit(io_tree, state->start, state->end,
->> >> +             lock_extent_bits(io_tree, start, end, 0, &cached_state);
->> >> +             clear_extent_bit(io_tree, start, end,
->> >>                                EXTENT_LOCKED | EXTENT_DIRTY |
->> >>                                EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
->> >>                                EXTENT_DEFRAG, 1, 1,
->> >>                                &cached_state, GFP_NOFS);
->> >> -             free_extent_state(state);
->> >>
->> >>               cond_resched();
->> >>               spin_lock(&io_tree->lock);
->> >> --
->> >> 2.1.3
->> >>
->> >> --
->> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> >> the body of a message to majordomo@vger.kernel.org
->> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Excerpted from the below comment,
+
+> >> >> +      * We can have ongoing bios started by readpages (called from readahead)
+> >> >> +      * that didn't get their end io callbacks called yet or they are still
+> >> >> +      * in progress ((extent_io.c:end_bio_extent_readpage()).
+
+I mean that by the time of truncate_inode_pages_final() ending, all the end_bio_extent_readpage()
+have already been called since pages are needed to be unlock'd to make evict() go on.
+
+Thanks,
+
+-liubo
+
+> 
+> >
+> > Thanks,
+> >
+> > -liubo
+> >>
+> >> thanks
+> >>
+> >>
+> >> >
+> >> > Thanks,
+> >> >
+> >> > -liubo
+> >> >>
+> >> >> 7) The loop picks one extent state record and uses its ->start and
+> >> >>    ->end fields, after releasing the inode's io_tree spinlock, to
+> >> >>    call lock_extent_bits() and clear_extent_bit(). The call to lock
+> >> >>    the range [state->start, state->end] blocks because the whole
+> >> >>    range or a part of it was locked by the previous call to
+> >> >>    readpages() and the corresponding end io callback, which unlocks
+> >> >>    the range was not yet executed;
+> >> >>
+> >> >> 8) The end io callback for the read bio is executed and unlocks the
+> >> >>    range [state->start, state->end] (or a superset of that range).
+> >> >>    And at clear_extent_bit() the extent_state record state is used
+> >> >>    as a second argument to split_state(), which sets state->start to
+> >> >>    a larger value;
+> >> >>
+> >> >> 9) The task executing the eviction handler is woken up by the task
+> >> >>    executing the bio's end io callback (through clear_state_bit) and
+> >> >>    the eviction handler locks the range
+> >> >>    [old value for state->start, state->end]. Shortly after, when
+> >> >>    calling clear_extent_bit(), it unlocks the range
+> >> >>    [new value for state->start, state->end], so it ends up unlocking
+> >> >>    only part of the range that it locked, leaving an extent state
+> >> >>    record in the io_tree that represents the unlocked subrange;
+> >> >>
+> >> >> 10) The eviction handler loop, in its next iteration, gets the
+> >> >>     extent_state record for the subrange that it did not unlock in the
+> >> >>     previous step and then tries to lock it, resulting in an hang.
+> >> >>
+> >> >> So fix this by not using the ->start and ->end fields of an existing
+> >> >> extent_state record. This is a simple solution, and an alternative
+> >> >> could be to bump the inode's reference count before submitting each
+> >> >> read bio and having it dropped in the bio's end io callback. But that
+> >> >> would be a more invasive/complex change and would not protect against
+> >> >> other possible places that are not holding a reference on the inode
+> >> >> as well. Something to consider in the future.
+> >> >>
+> >> >> Many thanks to Zygo Blaxell for reporting, in the mailing list, the
+> >> >> issue, a set of scripts to trigger it and testing this fix.
+> >> >>
+> >> >> Reported-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> >> >> Tested-by: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+> >> >> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> >> >> ---
+> >> >>  fs/btrfs/inode.c | 26 +++++++++++++++++++++-----
+> >> >>  1 file changed, 21 insertions(+), 5 deletions(-)
+> >> >>
+> >> >> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> >> >> index 0020b56..ef05800 100644
+> >> >> --- a/fs/btrfs/inode.c
+> >> >> +++ b/fs/btrfs/inode.c
+> >> >> @@ -4987,24 +4987,40 @@ static void evict_inode_truncate_pages(struct inode *inode)
+> >> >>       }
+> >> >>       write_unlock(&map_tree->lock);
+> >> >>
+> >> >> +     /*
+> >> >> +      * Keep looping until we have no more ranges in the io tree.
+> >> >> +      * We can have ongoing bios started by readpages (called from readahead)
+> >> >> +      * that didn't get their end io callbacks called yet or they are still
+> >> >> +      * in progress ((extent_io.c:end_bio_extent_readpage()). This means some
+> >> >> +      * ranges can still be locked and eviction started because before
+> >> >> +      * submitting those bios, which are executed by a separate task (work
+> >> >> +      * queue kthread), inode references (inode->i_count) were not taken
+> >> >> +      * (which would be dropped in the end io callback of each bio).
+> >> >> +      * Therefore here we effectively end up waiting for those bios and
+> >> >> +      * anyone else holding locked ranges without having bumped the inode's
+> >> >> +      * reference count - if we don't do it, when they access the inode's
+> >> >> +      * io_tree to unlock a range it may be too late, leading to an
+> >> >> +      * use-after-free issue.
+> >> >> +      */
+> >> >>       spin_lock(&io_tree->lock);
+> >> >>       while (!RB_EMPTY_ROOT(&io_tree->state)) {
+> >> >>               struct extent_state *state;
+> >> >>               struct extent_state *cached_state = NULL;
+> >> >> +             u64 start;
+> >> >> +             u64 end;
+> >> >>
+> >> >>               node = rb_first(&io_tree->state);
+> >> >>               state = rb_entry(node, struct extent_state, rb_node);
+> >> >> -             atomic_inc(&state->refs);
+> >> >> +             start = state->start;
+> >> >> +             end = state->end;
+> >> >>               spin_unlock(&io_tree->lock);
+> >> >>
+> >> >> -             lock_extent_bits(io_tree, state->start, state->end,
+> >> >> -                              0, &cached_state);
+> >> >> -             clear_extent_bit(io_tree, state->start, state->end,
+> >> >> +             lock_extent_bits(io_tree, start, end, 0, &cached_state);
+> >> >> +             clear_extent_bit(io_tree, start, end,
+> >> >>                                EXTENT_LOCKED | EXTENT_DIRTY |
+> >> >>                                EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
+> >> >>                                EXTENT_DEFRAG, 1, 1,
+> >> >>                                &cached_state, GFP_NOFS);
+> >> >> -             free_extent_state(state);
+> >> >>
+> >> >>               cond_resched();
+> >> >>               spin_lock(&io_tree->lock);
+> >> >> --
+> >> >> 2.1.3
+> >> >>
+> >> >> --
+> >> >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> >> >> the body of a message to majordomo@vger.kernel.org
+> >> >> More majordomo info at  http://vger.kernel.org/majordomo-info.html

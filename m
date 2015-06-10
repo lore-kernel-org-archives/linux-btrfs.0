@@ -1,103 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:38822 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751431AbbFJFbs convert rfc822-to-8bit (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:32933 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753849AbbFJGiq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jun 2015 01:31:48 -0400
-Received: by wibdq8 with SMTP id dq8so35187772wib.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 09 Jun 2015 22:31:47 -0700 (PDT)
+	Wed, 10 Jun 2015 02:38:46 -0400
+Message-ID: <5577DB6E.8000301@oracle.com>
+Date: Wed, 10 Jun 2015 14:38:38 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <CAEko1BnVkHrZPR9O1-CX_DwuN0ZEfrzTHFQsr3XJxt85BpG5qQ@mail.gmail.com>
-References: <CAEko1BnVkHrZPR9O1-CX_DwuN0ZEfrzTHFQsr3XJxt85BpG5qQ@mail.gmail.com>
-Date: Wed, 10 Jun 2015 15:31:47 +1000
-Message-ID: <CA+WRLO9fnZNezbthL8QmMtZXA5U+AU0NfKmVdKDZQGgL6ehmwA@mail.gmail.com>
-Subject: Re: raid 1 to 10 conversion
-From: Gareth Pye <gareth@cerberos.id.au>
-To: =?UTF-8?Q?Guilherme_Gon=C3=A7alves?= <agamennon@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Subject: Re: rw-mount-problem after raid1-failure
+References: <2227931.EqpnWnc32X@malu-aspire-v3-771>	<557790A9.3080705@oracle.com> <pan$cff9$37e01034$74a19930$1abaea06@cox.net>
+In-Reply-To: <pan$cff9$37e01034$74a19930$1abaea06@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs has a small bug at the moment where balance can't convert raid
-levels (it just does nothing), it is meant to be fixed with the next
-kernel release.
-
-On Wed, Jun 10, 2015 at 3:28 PM, Guilherme Gonçalves
-<agamennon@gmail.com> wrote:
-> Hello!, i think i made a mistake
-> i had two 3tb drivre on a raid 1 setup, i bought two aditional 3tb
-> drives to make my raid 10 array
-> i used this commands
->
-> btrfs -f device add /dev/sdc /mnt/nas/    (i used -f because i
-> formatted my new drives using gpt)
-> btrfs -f device add /dev/sdf /mnt/nas/
->
-> finally:
-> btrfs balance start -dconvert=raid10 -mconvert=raid10 /mnt/nas/
->
-> after a couple of hours i ran:
->
-> btrfs filesystem  df /mnt/nas/
->
-> Data, RAID1: total=963.00GiB, used=962.69GiB
-> System, RAID1: total=32.00MiB, used=176.00KiB
-> Metadata, RAID1: total=6.00GiB, used=4.59GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
-> should that not read raid 10 ?
->
-> output for btrfs fi usage /mnt/nas
->
-> Overall:
->     Device size:  10.92TiB
->     Device allocated:   1.89TiB
->     Device unallocated:   9.02TiB
->     Device missing:     0.00B
->     Used:   1.89TiB
->     Free (estimated):   4.51TiB (min: 4.51TiB)
->     Data ratio:      2.00
->     Metadata ratio:      2.00
->     Global reserve: 512.00MiB (used: 0.00B)
->
-> Data,RAID1: Size:963.00GiB, Used:962.69GiB
->    /dev/sdc 481.00GiB
->    /dev/sdd1 482.00GiB
->    /dev/sde1 482.00GiB
->    /dev/sdf 481.00GiB
->
-> Metadata,RAID1: Size:6.00GiB, Used:4.59GiB
->    /dev/sdc   4.00GiB
->    /dev/sdd1   2.00GiB
->    /dev/sde1   2.00GiB
->    /dev/sdf   4.00GiB
->
-> System,RAID1: Size:32.00MiB, Used:176.00KiB
->    /dev/sdd1  32.00MiB
->    /dev/sde1  32.00MiB
->
-> Unallocated:
->    /dev/sdc   2.25TiB
->    /dev/sdd1   2.26TiB
->    /dev/sde1   2.26TiB
->    /dev/sdf   2.25TiB
->
->
-> I think i made a mess here...  why is system only on two drives? why
-> is it not showing raid 10?
-> If i actually failed how do i acheive this? i want all four drives in
-> a raid 10 setup.
->
-> Thanks in advance
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
+Ah thanks David. So its 2 disks RAID1.
 
--- 
-Gareth Pye
-Level 2 MTG Judge, Melbourne, Australia
-"Dear God, I would like to file a bug report"
+Martin,
+
+  disk pool error handle is primitive as of now. readonly is the only
+  action it would take. rest of recovery action is manual. thats
+  unacceptable in a data center solutions. I don't recommend btrfs VM
+  productions yet. But we are working to get that to a complete VM.
+
+  For now, for your pool recovery: pls try this.
+
+     - After reboot.
+     - modunload and modload (so that kernel devlist is empty)
+     - mount -o degraded <good-disk> <-- this should work.
+     - btrfs fi show -m <-- Should show missing if you don't let me know.
+     - Do a replace of the missing disk without reading the source disk.
+
+Good luck.
+
+Thanks, Anand
+
+
+On 06/10/2015 11:58 AM, Duncan wrote:
+> Anand Jain posted on Wed, 10 Jun 2015 09:19:37 +0800 as excerpted:
+>
+>> On 06/09/2015 01:10 AM, Martin wrote:
+>>> Hello!
+>>>
+>>> I have a raid1-btrfs-system (Kernel 3.19.0-18-generic, Ubuntu Vivid
+>>> Vervet, btrfs-tools 3.17-1.1). One disk failed some days ago. I could
+>>> remount the remaining one with "-o degraded". After one day and some
+>>> write-operations (with no errrors) I had to reboot the system. And now
+>>> I can not mount "rw" anymore, only "-o degraded,ro" is possible.
+>>>
+>>> In the kernel log I found BTRFS: too many missing devices, writeable
+>>> mount is not allowed.
+>>>
+>>> I read about https://bugzilla.kernel.org/show_bug.cgi?id=60594 but I
+>>> did no conversion to a single drive.
+>>>
+>>> How can I mount the disk "rw" to remove the "missing" drive and add a
+>>> new one?
+>>> Because there are many snapshots of the filesystem, copying the system
+>>> would be only the last alternative ;-)
+>>
+>> How many disks you had in the RAID1. How many are failed ?
+>
+> The answer is (a bit indirectly) in what you quoted.  Repeating:
+>
+>>> One disk failed[.] I could remount the remaining one[.]
+>
+> So it was a two-device raid1, one failed device, one remaining, unfailed.

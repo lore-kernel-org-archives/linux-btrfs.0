@@ -1,118 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:60228 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:34842 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751133AbbFKPZT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 11:25:19 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 51B23AD27
-	for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2015 15:25:18 +0000 (UTC)
-Message-ID: <5579A85C.2040301@suse.com>
-Date: Thu, 11 Jun 2015 11:25:16 -0400
-From: Jeff Mahoney <jeffm@suse.com>
-MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/4] btrfs: skip superblocks during discard
-References: <1434036062-21597-1-git-send-email-jeffm@suse.com> <1434036062-21597-2-git-send-email-jeffm@suse.com>
-In-Reply-To: <1434036062-21597-2-git-send-email-jeffm@suse.com>
-Content-Type: text/plain; charset=windows-1252
+	id S1752448AbbFKQGj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jun 2015 12:06:39 -0400
+From: David Sterba <dsterba@suse.cz>
+To: stable@vger.kernel.org
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Btrfs stable updates for 4.0
+Date: Thu, 11 Jun 2015 18:06:32 +0200
+Message-Id: <cover.1434037853.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Hi,
 
-On 6/11/15 11:20 AM, jeffm@suse.com wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
-> 
-> Btrfs doesn't track superblocks with extent records so there is
-> nothing persistent on-disk to indicate that those blocks are in
-> use.  We track the superblocks in memory to ensure they don't get
-> used by removing them from the free space cache when we load a
-> block group from disk.  Prior to 47ab2a6c6a (Btrfs: remove empty
-> block groups automatically), that was fine since the block group
-> would never be reclaimed so the superblock was always safe.  Once
-> we started removing the empty block groups, we were protected by
-> the fact that discards weren't being properly issued for unused
-> space either via FITRIM or -odiscard.  The block groups were still
-> being released, but the blocks remained on disk.
-> 
-> In order to properly discard unused block groups, we need to filter
-> out the superblocks from the discard range.  Superblocks are
-> located at fixed locations on each device, so it makes sense to
-> filter them out in btrfs_issue_discard, which is used by both
-> -odiscard and FITRIM.
-> 
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com> --- 
-> fs/btrfs/extent-tree.c | 50
-> ++++++++++++++++++++++++++++++++++++++++++++------ 1 file changed,
-> 44 insertions(+), 6 deletions(-)
-> 
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c index
-> 0ec3acd..75d0226 100644 --- a/fs/btrfs/extent-tree.c +++
-> b/fs/btrfs/extent-tree.c @@ -1884,10 +1884,47 @@ static int
-> remove_extent_backref(struct btrfs_trans_handle *trans, return
-> ret; }
-> 
-> -static int btrfs_issue_discard(struct block_device *bdev, -				u64
-> start, u64 len) +#define in_range(b, first, len)	((b) >= (first) &&
-> (b) < (first) + (len)) +static int btrfs_issue_discard(struct
-> block_device *bdev, u64 start, u64 len, +			       u64
-> *discarded_bytes) { -	return blkdev_issue_discard(bdev, start >> 9,
-> len >> 9, GFP_NOFS, 0); +	u64 skipped = 0; +	u64 bytes_left = len; 
-> +	int ret = 0 , j; + +	*discarded_bytes = 0; + +	/* Skip any
-> superblocks on this device. */ +	for (j = 0; j <
-> BTRFS_SUPER_MIRROR_MAX; j++) { +		u64 sb_offset =
-> btrfs_sb_offset(j); +		u64 size = sb_offset - start; + +		if
-> (!in_range(sb_offset, start, bytes_left)) +			continue; + +		if
-> (size) { +			ret = blkdev_issue_discard(bdev, start >> 9, size >>
-> 9, +						   GFP_NOFS, 0); +			if (!ret) +				*discarded_bytes +=
-> size; +			else if (ret != -EOPNOTSUPP) +				return ret; +		} + +
-> start = sb_offset + BTRFS_SUPER_INFO_SIZE; +		if (start > len) +
-> start = len; +		bytes_left = len - start; +		skipped +=
-> BTRFS_SUPER_INFO_SIZE;
+please queue the following patches to 4.0 stable. There are fixes for user
+visible bugs and one usability regression with RAID1 -> single conversion
+during balance.
 
-Whoops. This is an unused artifact from an earlier version.
+One of the patches does not apply cleanly to 4.0.5, there's a minor conflict in
+patch context (153c35b6cccc0c72de9fae06c8e2c8b2c47d79d4, the last one). A reply
+to this mail is the adapted version or you can pull/cherry-pick from
 
-- -Jeff
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-stable-4.0
 
-> +	} + +	if (bytes_left) { +		ret = blkdev_issue_discard(bdev, start
-> >> 9, bytes_left >> 9, +					   GFP_NOFS, 0); +		if (!ret) +
-> *discarded_bytes += bytes_left; +	} +	return ret; }
-> 
-> int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr, @@
-> -1906,16 +1943,17 @@ int btrfs_discard_extent(struct btrfs_root
-> *root, u64 bytenr, struct btrfs_bio_stripe *stripe =
-> bbio->stripes; int i;
-> 
-> - for (i = 0; i < bbio->num_stripes; i++, stripe++) { +			u64
-> bytes; + if (!stripe->dev->can_discard) continue;
-> 
-> ret = btrfs_issue_discard(stripe->dev->bdev, stripe->physical, -
-> stripe->length); +						  stripe->length, &bytes); if (!ret) -
-> discarded_bytes += stripe->length; +				discarded_bytes += bytes; 
-> else if (ret != -EOPNOTSUPP) break; /* Logic errors or -ENOMEM, or
-> -EIO but I don't know how that could happen JDM */
-> 
-> 
+Subjects:
+	Btrfs: send, add missing check for dead clone root
+	Btrfs: send, don't leave without decrementing clone root's send_progress
+	btrfs: incorrect handling for fiemap_fill_next_extent return
+	btrfs: cleanup orphans while looking up default subvolume
+	Btrfs: fix range cloning when same inode used as source and destination
+	Btrfs: fix uninit variable in clone ioctl
+	Btrfs: fix regression in raid level conversion
+Commits:
+	5cc2b17e80cf5770f2e585c2d90fd8af1b901258 # 3.14+
+	2f1f465ae6da244099af55c066e5355abd8ff620 # 3.14+
+	26e726afe01c1c82072cf23a5ed89ce25f39d9f2 # 3.10+
+	727b9784b6085c99c2f836bf4fcc2848dc9cf904 # 3.14+
+	df858e76723ace61342b118aa4302bd09de4e386 # 4.0+
+	de249e66a73d696666281cd812087979c6fae552 # 4.0+
+	153c35b6cccc0c72de9fae06c8e2c8b2c47d79d4 # 4.0+
 
-
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-
-iQIcBAEBAgAGBQJVeahbAAoJEB57S2MheeWyA3YP/00sK18TqJi6ohu0l18otsd2
-vG2lAtPUDT6f4dFM1GvO4PYLssuwm0Vy98qFYO30lvcHbdbajhsGd1qk+IzEq3Dr
-+Qxze9lIrX8267nRE3aqu1I8/y2Gn5Wcy5Xr6fwhN0g+m5J+fWZHy1mfTvqbNt+M
-U7Cg4hgvTFDcuV5adrg3JoQ3W/w6IvgIid27oNZ0MJMaK4f2jcLfmhGVCTcCnydp
-7fEUsMow2firGJew7161ORYkYjTn76JW2HXB8ETOgWUcMpZon1KWduVXOTD0r9sk
-UrfMJ8dLw6334T265gmQrBXvb3yOBLbyRYuksUFhXFUo1/xDSQMLGMBrkEf6T/Vo
-mwnXVw5hnPM41vZiJ4Pc56vg1Yy4JGMXs28XEyHrj7gQWo3b1jRw0YhosZE/TR5+
-BsJb4KqBTPor/upPLmDwIOYU4Ia+GZ5V2k1jYsE9qs6khHXlX9is8WHeB/fMzfCe
-zkZEl8YI3ek50wXcqBk+QHFj8LT89Eyq59O3iaCFceIhvjO87ldRDBtTtBR34ogf
-mZphx9UzVTcY31wftDYKMMi2Xs+8BZgXq7H7IXc2muugFlK9AGsMv4iXPbVkmUmE
-T4pS2vKqCwfkW9bGf7ufQaOpVgwzQjDkC/Ngtybl8sULroOjI3lm6p+2/jMuqyYd
-twV2FaYAJAI/tiQkTken
-=1g/b
------END PGP SIGNATURE-----
+Thanks.

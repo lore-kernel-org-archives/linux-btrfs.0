@@ -1,72 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34851 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752554AbbFKQG4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 12:06:56 -0400
-From: David Sterba <dsterba@suse.cz>
-To: stable@vger.kernel.org
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: [PATCH 7/7] Btrfs: fix regression in raid level conversion
-Date: Thu, 11 Jun 2015 18:06:51 +0200
-Message-Id: <25c5856aa419479bb07466fd7d0de01da0b7b421.1434037853.git.dsterba@suse.cz>
-In-Reply-To: <cover.1434037853.git.dsterba@suse.cz>
-References: <cover.1434037853.git.dsterba@suse.cz>
+Received: from mail-ie0-f177.google.com ([209.85.223.177]:36765 "EHLO
+	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752165AbbFKQrD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jun 2015 12:47:03 -0400
+Received: by iebps5 with SMTP id ps5so9013289ieb.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2015 09:47:02 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1434036062-21597-2-git-send-email-jeffm@suse.com>
+References: <1434036062-21597-1-git-send-email-jeffm@suse.com>
+	<1434036062-21597-2-git-send-email-jeffm@suse.com>
+Date: Thu, 11 Jun 2015 17:47:02 +0100
+Message-ID: <CAL3q7H5Hsv2HvBgu_kOEDwXK_53+_1GH9WC_Upa+X8Lhd7sXng@mail.gmail.com>
+Subject: Re: [PATCH 1/4] btrfs: skip superblocks during discard
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Chris Mason <clm@fb.com>
+On Thu, Jun 11, 2015 at 4:20 PM,  <jeffm@suse.com> wrote:
+> From: Jeff Mahoney <jeffm@suse.com>
+>
+> Btrfs doesn't track superblocks with extent records so there is nothing
+> persistent on-disk to indicate that those blocks are in use.  We track
+> the superblocks in memory to ensure they don't get used by removing them
+> from the free space cache when we load a block group from disk.  Prior
+> to 47ab2a6c6a (Btrfs: remove empty block groups automatically), that
+> was fine since the block group would never be reclaimed so the superblock
+> was always safe.  Once we started removing the empty block groups, we
+> were protected by the fact that discards weren't being properly issued
+> for unused space either via FITRIM or -odiscard.  The block groups were
+> still being released, but the blocks remained on disk.
+>
+> In order to properly discard unused block groups, we need to filter out
+> the superblocks from the discard range.  Superblocks are located at fixed
+> locations on each device, so it makes sense to filter them out in
+> btrfs_issue_discard, which is used by both -odiscard and FITRIM.
+>
+> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+> ---
+>  fs/btrfs/extent-tree.c | 50 ++++++++++++++++++++++++++++++++++++++++++++------
+>  1 file changed, 44 insertions(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 0ec3acd..75d0226 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -1884,10 +1884,47 @@ static int remove_extent_backref(struct btrfs_trans_handle *trans,
+>         return ret;
+>  }
+>
+> -static int btrfs_issue_discard(struct block_device *bdev,
+> -                               u64 start, u64 len)
+> +#define in_range(b, first, len)        ((b) >= (first) && (b) < (first) + (len))
 
-Commit 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e changed
-btrfs_set_block_group_ro to avoid trying to allocate new chunks with the
-new raid profile during conversion.  This fixed failures when there was
-no space on the drive to allocate a new chunk, but the metadata
-reserves were sufficient to continue the conversion.
+Hi Jeff,
 
-But this ended up causing a regression when the drive had plenty of
-space to allocate new chunks, mostly because reduce_alloc_profile isn't
-using the new raid profile.
+So this will work if every caller behaves well and passes a region
+whose start and end offsets are a multiple of the sector size (4096)
+which currently matches the superblock size.
 
-Fixing btrfs_reduce_alloc_profile is a bigger patch.  For now, do a
-partial revert of 2f0810880, and don't error out if we hit ENOSPC.
+However, I think it would be safer to check for the case where the
+start offset of a superblock mirror is < (first) and (sb_offset +
+sb_len) > (first).  Just to deal with cases where for example the 2nd
+half of the sb starts at offset (first).
 
-Signed-off-by: Chris Mason <clm@fb.com>
-Tested-by: Dave Sterba <dsterba@suse.cz>
-Reported-by: Holger Hoffstaette <holger.hoffstaette@googlemail.com>
-[adapted for stable kernel branch, v4.0.5]
-Signed-off-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/extent-tree.c | 18 ++++++++++++++++++
- 1 file changed, 18 insertions(+)
+I guess this sectorsize becoming less than 4096 will happen sooner or
+later with the subpage sectorsize patch set, so it wouldn't hurt to
+make it more bullet proof already.
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8b33da6ec3dd..63be2a96ed6a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8535,6 +8535,24 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
- 	trans = btrfs_join_transaction(root);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
-+	/*
-+	 * if we are changing raid levels, try to allocate a corresponding
-+	 * block group with the new raid level.
-+	 */
-+	alloc_flags = update_block_group_flags(root, cache->flags);
-+	if (alloc_flags != cache->flags) {
-+		ret = do_chunk_alloc(trans, root, alloc_flags,
-+				     CHUNK_ALLOC_FORCE);
-+		/*
-+		 * ENOSPC is allowed here, we may have enough space
-+		 * already allocated at the new raid level to
-+		 * carry on
-+		 */
-+		if (ret == -ENOSPC)
-+			ret = 0;
-+		if (ret < 0)
-+			goto out;
-+	}
- 
- 	ret = set_block_group_ro(cache, 0);
- 	if (!ret)
+Otherwise it looks good to me.
+I'll give a test on this patchset soon.
+
+thanks
+
+> +static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
+> +                              u64 *discarded_bytes)
+>  {
+> -       return blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_NOFS, 0);
+> +       u64 skipped = 0;
+> +       u64 bytes_left = len;
+> +       int ret = 0 , j;
+> +
+> +       *discarded_bytes = 0;
+> +
+> +       /* Skip any superblocks on this device. */
+> +       for (j = 0; j < BTRFS_SUPER_MIRROR_MAX; j++) {
+> +               u64 sb_offset = btrfs_sb_offset(j);
+> +               u64 size = sb_offset - start;
+> +
+> +               if (!in_range(sb_offset, start, bytes_left))
+> +                       continue;
+> +
+> +               if (size) {
+> +                       ret = blkdev_issue_discard(bdev, start >> 9, size >> 9,
+> +                                                  GFP_NOFS, 0);
+> +                       if (!ret)
+> +                               *discarded_bytes += size;
+> +                       else if (ret != -EOPNOTSUPP)
+> +                               return ret;
+> +               }
+> +
+> +               start = sb_offset + BTRFS_SUPER_INFO_SIZE;
+> +               if (start > len)
+> +                       start = len;
+> +               bytes_left = len - start;
+> +               skipped += BTRFS_SUPER_INFO_SIZE;
+> +       }
+> +
+> +       if (bytes_left) {
+> +               ret = blkdev_issue_discard(bdev, start >> 9, bytes_left >> 9,
+> +                                          GFP_NOFS, 0);
+> +               if (!ret)
+> +                       *discarded_bytes += bytes_left;
+> +       }
+> +       return ret;
+>  }
+>
+>  int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+> @@ -1906,16 +1943,17 @@ int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
+>                 struct btrfs_bio_stripe *stripe = bbio->stripes;
+>                 int i;
+>
+> -
+>                 for (i = 0; i < bbio->num_stripes; i++, stripe++) {
+> +                       u64 bytes;
+> +
+>                         if (!stripe->dev->can_discard)
+>                                 continue;
+>
+>                         ret = btrfs_issue_discard(stripe->dev->bdev,
+>                                                   stripe->physical,
+> -                                                 stripe->length);
+> +                                                 stripe->length, &bytes);
+>                         if (!ret)
+> -                               discarded_bytes += stripe->length;
+> +                               discarded_bytes += bytes;
+>                         else if (ret != -EOPNOTSUPP)
+>                                 break; /* Logic errors or -ENOMEM, or -EIO but I don't know how that could happen JDM */
+>
+> --
+> 1.8.4.5
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.1.3
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

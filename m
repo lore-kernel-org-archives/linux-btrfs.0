@@ -1,89 +1,143 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:36785 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751822AbbFKAFj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jun 2015 20:05:39 -0400
-Received: by igbpi8 with SMTP id pi8so46409060igb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 17:05:38 -0700 (PDT)
-MIME-Version: 1.0
-Date: Wed, 10 Jun 2015 21:05:38 -0300
-Message-ID: <CAEko1BmP0Rrf5ng5Gqo56SzRhGdJzBE7w=-x--T2EBv81iaT6w@mail.gmail.com>
-Subject: Does raid56 work on latest kernel?
-From: =?UTF-8?Q?Guilherme_Gon=C3=A7alves?= <agamennon@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:42169 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750724AbbFKEOc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jun 2015 00:14:32 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Z2tss-0000Xk-Rg
+	for linux-btrfs@vger.kernel.org; Thu, 11 Jun 2015 06:14:31 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2015 06:14:30 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2015 06:14:30 +0200
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Does raid56 work on latest kernel?
+Date: Thu, 11 Jun 2015 04:14:25 +0000 (UTC)
+Message-ID: <pan$4058c$7888c445$459683cf$d6eac669@cox.net>
+References: <CAEko1BmP0Rrf5ng5Gqo56SzRhGdJzBE7w=-x--T2EBv81iaT6w@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello!,  use arch linux with the latest kernel, i am trying to do raid
-5 on 3 devices, but i get this on
-btfs fi usage:
+Guilherme Gonçalves posted on Wed, 10 Jun 2015 21:05:38 -0300 as
+excerpted:
 
-"WARNING: RAID56 detected, not implemented"
+> Hello!,  use arch linux with the latest kernel, i am trying to do raid 5
+> on 3 devices, but i get this on btfs fi usage:
+> 
+> "WARNING: RAID56 detected, not implemented"
+> 
+> what is not implemented?
 
-what is not implemented?
+That warning is purely regarding the btrfs fi usage subcommand.  Usage is 
+a relatively new subcommand, and the patches adding it didn't implement 
+the calculations code necessary to produce correct numbers for some of 
+the non-mainstream (at the time) modes, including mixed-blockgroup mode 
+(for small btrfs, the default on btrfs' under 1 GiB and recommended by 
+some but not all regulars, on btrfs upto 16 or 32 GiB, but it remains a 
+bit of a corner-case), and raid56 mode, as support for it wasn't complete 
+anyway.
 
-full output:
+So specific btrfs fi usage subcommand support for those modes isn't there 
+now and can be expected later, but because the usage subcommand is purely 
+informational anyway, and basically prints the same information available 
+from the fi show and fi df commands separately, only a bit prettier, this 
+missing support doesn't affect actual btrfs operation in any way.
 
-WARNING: RAID56 detected, not implemented
-WARNING: RAID56 detected, not implemented
-WARNING: RAID56 detected, not implemented
-Overall:
-    Device size:   8.19TiB
-    Device allocated:  20.00MiB
-    Device unallocated:   8.19TiB
-    Device missing:     0.00B
-    Used:     0.00B
-    Free (estimated):   2.05PiB (min: 8.19TiB)
-    Data ratio:      0.00
-    Metadata ratio:      0.00
-    Global reserve:  16.00MiB (used: 0.00B)
+That said...
 
-Data,single: Size:8.00MiB, Used:0.00B
-   /dev/sdc   8.00MiB
+> btrfs-progs v4.0.1
+> 
+> does it work on my kernel (4.0.5-1-ARCH), i know it was incomplete
+> before, but now on 4.0 does it work despite it being new? what is "not
+> implemented" on the message mean?
 
-Data,RAID5: Size:2.00GiB, Used:1.00MiB
-   /dev/sdc   1.00GiB
-   /dev/sde   1.00GiB
-   /dev/sdf   1.00GiB
+Technically, all the raid56 support should be there now -- it's code-
+complete.  Practically, however, I've been recommending people continue 
+to stay off of it for anything but pure data-loss-ok testing, for at 
+*LEAST* another couple kernels, to shake out some of the inevitable bugs 
+and let the code settle at least a /bit/.
 
-Metadata,single: Size:8.00MiB, Used:0.00B
-   /dev/sdc   8.00MiB
+And point-of-fact, we /did/ have some bad raid56 mode reports shortly 
+after 4.0, from people who had /not/ let it shake out a bit and were 
+trying to use it in normal-case situations.  Whether they're actually 
+fixed now (with the latest stable or with late 4.1-rcs for 4.1 release) 
+I'm not sure, tho the number of bad reports has died down quite a bit, 
+but I don't know whether that is people actually following the 
+recommendation, or because it's fixed now.  Either way, however, I'd not 
+be using it myself, and couldn't recommend it for others except as I said 
+purely for data-loss-doesn't-matter testing, until at LEAST 4.2, as 
+there's still likely to be a few more critical bugs to shake out.
 
-Metadata,RAID5: Size:2.00GiB, Used:112.00KiB
-   /dev/sdc   1.00GiB
-   /dev/sde   1.00GiB
-   /dev/sdf   1.00GiB
+And even at 4.2, I'd still recommend raid56 mode only for those willing 
+to be bleeding edge testers, if that's what it takes to be leading edge 
+testers, because point-of-fact, that code still won't be as stable as the 
+raid0/1/10 modes, which are basically as stable as btrfs itself is by 
+this point.  It's going to take some time, as well as the reports of 
+those leading/bleeding edge testers, to shake out further bugs and 
+stabilize that still very new code.
 
-System,single: Size:4.00MiB, Used:0.00B
-   /dev/sdc   4.00MiB
+For more btrfs-mainstream users[1], I'd recommend waiting about a year, 
+five kernel cycles, for btrfs raid56 mode to stabilize.  By that point, 
+with testing/reporting from the leading/bleeding edge and corresponding 
+fixes from the devs, raid56 mode should be approaching the stability of 
+btrfs in general, and I'd suggest following the list's raid56 mode 
+discussion for kernel 4.4 and early 4.5, and as long as things look 
+reasonably calm, *THEN* I'd say it's reasonable for a mainline btrfs user 
+to consider raid56 mode.
 
-System,RAID5: Size:16.00MiB, Used:16.00KiB
-   /dev/sdc   8.00MiB
-   /dev/sde   8.00MiB
-   /dev/sdf   8.00MiB
+But even then, be sure to have tested backups or by definition of your 
+action, you really do NOT care about losing that data, no matter any 
+claims to the contrary.  Because while btrfs in general is certainly 
+stabilizing, and in a year will certainly be more stable and mature then 
+than it is now, as a practical matter, it simply won't have the time 
+tested stability and maturity of filesystems such as ext3/4, xfs, and 
+even reiserfs[2], for some years yet.
 
-Unallocated:
-   /dev/sdc   2.73TiB
-   /dev/sde   2.73TiB
-   /dev/sdf   2.73TiB
+In the mean time, I'd recommend the much more mature btrfs raid10 mode.  
+You might need a few more devices to get equivalent capacity, but at 
+least you're getting a mode that's known to be basically as mature and 
+stable as btrfs itself is, at this point, not the still new btrfs raid56 
+mode code that's still not been even minimally time-tested and is 
+statistically still very likely to have some pretty critical bugs 
+crawling around.
+
+Tho of course it's your system, your data, and your call.  But I know 
+what my call would be for /my/ systems. =:^)  And I know a number of 
+posters who wish they had been (quite!) a bit more cautious with raid56 
+mode for 4.0, at least. =:^(
+
+---
+[1] Btrfs-mainstream users.  This takes into account that btrfs itself is 
+still not entirely stable, tho it's definitely making progress, so the 
+sysadmin's backup rule that if you don't have a backup, by definition, 
+you don't care about losing that data, and an untested would-be backup 
+isn't a backup yet, because it's not a backup until you have tested that 
+you can actually recover from it, applies double, compared to more tested 
+stable filesystems -- have that backup or you by your actions really do 
+NOT care!
+
+[2] Reiserfs:  My own time-tested stability favorite, at least post-
+data=ordered-by-default, thru various hardware problems that would bring 
+ordinary filesystems to their knees.  I'm convinced it's at least partly 
+because most non-fs-expert kernel devs fear reiserfs enough to leave it 
+alone, so only the real reiserfs experts dare work with it, while every 
+kernel dev and their brother thinks they know enough about the ext* 
+family of filesystems to tinker with them.  Consider the period when ext3 
+got switched back to data=writeback mode by default, the very same mode 
+that caused reiserfs to have the bad name it did, back in the early 
+days.  The folks that did that left reiserfs alone, so reiserfs users 
+were actually safer by default during that period than ext3 users!
 
 
-Output of btrfs fi show
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-Label: 'NAS'  uuid: a34ffd88-54b8-42d7-b9f0-fc67c98af3c9
-Total devices 3 FS bytes used 1.12MiB
-devid    1 size 2.73TiB used 2.03GiB path /dev/sdc
-devid    2 size 2.73TiB used 2.01GiB path /dev/sde
-devid    3 size 2.73TiB used 2.01GiB path /dev/sdf
-
-Label: 'bkpd'  uuid: 41699e82-8e9b-41d6-a03d-373fde1a6230
-Total devices 1 FS bytes used 828.34GiB
-devid    1 size 2.73TiB used 832.04GiB path /dev/sdd
-
-btrfs-progs v4.0.1
-
-does it work on my kernel (4.0.5-1-ARCH), i know it was incomplete
-before, but now on 4.0 does it work despite it being new? what is "not
-implemented" on the message mean?

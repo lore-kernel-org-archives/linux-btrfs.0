@@ -1,29 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f195.google.com ([209.85.216.195]:33083 "EHLO
-	mail-qc0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753173AbbFKNAD (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:34686 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S933310AbbFKNtZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 09:00:03 -0400
-Received: by qcrw7 with SMTP id w7so491909qcr.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 11 Jun 2015 06:00:02 -0700 (PDT)
+	Thu, 11 Jun 2015 09:49:25 -0400
+Message-ID: <557991D6.8090501@fb.com>
+Date: Thu, 11 Jun 2015 09:49:10 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-Date: Thu, 11 Jun 2015 20:44:35 +0800
-Message-ID: <CAGnHSEkjM2LVCvHgtpL6BKu8tabnZO5pcBaJQdf=B4P10UC3OQ@mail.gmail.com>
-Subject: What is `mkfs.btrfs -r $rootdir` supposed to be used with?
-From: Tom Yan <tom.ty89@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: <bo.li.liu@oracle.com>, Julia Lawall <julia.lawall@lip6.fr>
+CC: kbuild test robot <fengguang.wu@intel.com>, <kbuild@01.org>,
+        David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [btrfs:integration-4.2 29/57] fs/btrfs/disk-io.c:2325:17-30:
+ ERROR: reference preceded by free on line 2324
+References: <201506110750.oOHGNTQE%fengguang.wu@intel.com> <alpine.DEB.2.02.1506110800020.2014@localhost6.localdomain6> <20150611062319.GA9634@localhost.localdomain>
+In-Reply-To: <20150611062319.GA9634@localhost.localdomain>
+Content-Type: text/plain; charset="windows-1252"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I know `mkfs.btrfs -r $rootdir` copies whatever in $rootdir to the
-newly created filesystem.
+On 06/11/2015 02:23 AM, Liu Bo wrote:
+> On Thu, Jun 11, 2015 at 08:07:09AM +0200, Julia Lawall wrote:
+>> This does not look correct.  Please check.
+> 
+> Oops, thanks for pointing it out.
+> 
+> Sorry for my miss, here is the fix.
+> 
+> (Chris, if you prefer me to fold this into the original patch, I'll do
+> it.)
+> 
+> Thanks,
+> 
+> -liubo
+> 
 
-When I try to use it for a block device, it creates a "minimal"
-filesystem which can only be mounted read-only.
+Thanks Julia! Liu, lets leave it as an incremental so we can give Julia
+the reported-by.
 
-When I use it for an (qemu raw) image, it seems to work but it also gives:
- ERROR: device scan failed 'test.img' - Block device required
-in the process.
+-chris
 
-So what is it supposed to be used with?

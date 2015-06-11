@@ -1,42 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:34686 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S933310AbbFKNtZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 09:49:25 -0400
-Message-ID: <557991D6.8090501@fb.com>
-Date: Thu, 11 Jun 2015 09:49:10 -0400
-From: Chris Mason <clm@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:38761 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754227AbbFKRJD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jun 2015 13:09:03 -0400
+Date: Thu, 11 Jun 2015 19:09:01 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tom Yan <tom.ty89@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: What is `mkfs.btrfs -r $rootdir` supposed to be used with?
+Message-ID: <20150611170901.GG6761@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CAGnHSEkjM2LVCvHgtpL6BKu8tabnZO5pcBaJQdf=B4P10UC3OQ@mail.gmail.com>
 MIME-Version: 1.0
-To: <bo.li.liu@oracle.com>, Julia Lawall <julia.lawall@lip6.fr>
-CC: kbuild test robot <fengguang.wu@intel.com>, <kbuild@01.org>,
-        David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [btrfs:integration-4.2 29/57] fs/btrfs/disk-io.c:2325:17-30:
- ERROR: reference preceded by free on line 2324
-References: <201506110750.oOHGNTQE%fengguang.wu@intel.com> <alpine.DEB.2.02.1506110800020.2014@localhost6.localdomain6> <20150611062319.GA9634@localhost.localdomain>
-In-Reply-To: <20150611062319.GA9634@localhost.localdomain>
-Content-Type: text/plain; charset="windows-1252"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAGnHSEkjM2LVCvHgtpL6BKu8tabnZO5pcBaJQdf=B4P10UC3OQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/11/2015 02:23 AM, Liu Bo wrote:
-> On Thu, Jun 11, 2015 at 08:07:09AM +0200, Julia Lawall wrote:
->> This does not look correct.  Please check.
+On Thu, Jun 11, 2015 at 08:44:35PM +0800, Tom Yan wrote:
+> I know `mkfs.btrfs -r $rootdir` copies whatever in $rootdir to the
+> newly created filesystem.
 > 
-> Oops, thanks for pointing it out.
+> When I try to use it for a block device, it creates a "minimal"
+> filesystem which can only be mounted read-only.
 > 
-> Sorry for my miss, here is the fix.
+> When I use it for an (qemu raw) image, it seems to work but it also gives:
+>  ERROR: device scan failed 'test.img' - Block device required
+> in the process.
 > 
-> (Chris, if you prefer me to fold this into the original patch, I'll do
-> it.)
-> 
-> Thanks,
-> 
-> -liubo
-> 
+> So what is it supposed to be used with?
 
-Thanks Julia! Liu, lets leave it as an incremental so we can give Julia
-the reported-by.
-
--chris
-
+That's a bug (will be fixed in btrfs-progs 4.1). The device scan ioctl
+should not be called on a file. Otherwise it's harmless.

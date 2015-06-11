@@ -1,44 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34842 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:34851 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752448AbbFKQGj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 12:06:39 -0400
+	id S1752554AbbFKQG4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 11 Jun 2015 12:06:56 -0400
 From: David Sterba <dsterba@suse.cz>
 To: stable@vger.kernel.org
 Cc: David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Btrfs stable updates for 4.0
-Date: Thu, 11 Jun 2015 18:06:32 +0200
-Message-Id: <cover.1434037853.git.dsterba@suse.cz>
+Subject: [PATCH 7/7] Btrfs: fix regression in raid level conversion
+Date: Thu, 11 Jun 2015 18:06:51 +0200
+Message-Id: <25c5856aa419479bb07466fd7d0de01da0b7b421.1434037853.git.dsterba@suse.cz>
+In-Reply-To: <cover.1434037853.git.dsterba@suse.cz>
+References: <cover.1434037853.git.dsterba@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Chris Mason <clm@fb.com>
 
-please queue the following patches to 4.0 stable. There are fixes for user
-visible bugs and one usability regression with RAID1 -> single conversion
-during balance.
+Commit 2f0810880f082fa8ba66ab2c33b02e4ff9770a5e changed
+btrfs_set_block_group_ro to avoid trying to allocate new chunks with the
+new raid profile during conversion.  This fixed failures when there was
+no space on the drive to allocate a new chunk, but the metadata
+reserves were sufficient to continue the conversion.
 
-One of the patches does not apply cleanly to 4.0.5, there's a minor conflict in
-patch context (153c35b6cccc0c72de9fae06c8e2c8b2c47d79d4, the last one). A reply
-to this mail is the adapted version or you can pull/cherry-pick from
+But this ended up causing a regression when the drive had plenty of
+space to allocate new chunks, mostly because reduce_alloc_profile isn't
+using the new raid profile.
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git for-stable-4.0
+Fixing btrfs_reduce_alloc_profile is a bigger patch.  For now, do a
+partial revert of 2f0810880, and don't error out if we hit ENOSPC.
 
-Subjects:
-	Btrfs: send, add missing check for dead clone root
-	Btrfs: send, don't leave without decrementing clone root's send_progress
-	btrfs: incorrect handling for fiemap_fill_next_extent return
-	btrfs: cleanup orphans while looking up default subvolume
-	Btrfs: fix range cloning when same inode used as source and destination
-	Btrfs: fix uninit variable in clone ioctl
-	Btrfs: fix regression in raid level conversion
-Commits:
-	5cc2b17e80cf5770f2e585c2d90fd8af1b901258 # 3.14+
-	2f1f465ae6da244099af55c066e5355abd8ff620 # 3.14+
-	26e726afe01c1c82072cf23a5ed89ce25f39d9f2 # 3.10+
-	727b9784b6085c99c2f836bf4fcc2848dc9cf904 # 3.14+
-	df858e76723ace61342b118aa4302bd09de4e386 # 4.0+
-	de249e66a73d696666281cd812087979c6fae552 # 4.0+
-	153c35b6cccc0c72de9fae06c8e2c8b2c47d79d4 # 4.0+
+Signed-off-by: Chris Mason <clm@fb.com>
+Tested-by: Dave Sterba <dsterba@suse.cz>
+Reported-by: Holger Hoffstaette <holger.hoffstaette@googlemail.com>
+[adapted for stable kernel branch, v4.0.5]
+Signed-off-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/extent-tree.c | 18 ++++++++++++++++++
+ 1 file changed, 18 insertions(+)
 
-Thanks.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8b33da6ec3dd..63be2a96ed6a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8535,6 +8535,24 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans))
+ 		return PTR_ERR(trans);
++	/*
++	 * if we are changing raid levels, try to allocate a corresponding
++	 * block group with the new raid level.
++	 */
++	alloc_flags = update_block_group_flags(root, cache->flags);
++	if (alloc_flags != cache->flags) {
++		ret = do_chunk_alloc(trans, root, alloc_flags,
++				     CHUNK_ALLOC_FORCE);
++		/*
++		 * ENOSPC is allowed here, we may have enough space
++		 * already allocated at the new raid level to
++		 * carry on
++		 */
++		if (ret == -ENOSPC)
++			ret = 0;
++		if (ret < 0)
++			goto out;
++	}
+ 
+ 	ret = set_block_group_ro(cache, 0);
+ 	if (!ret)
+-- 
+2.1.3
+

@@ -1,143 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qc0-f180.google.com ([209.85.216.180]:36356 "EHLO
-	mail-qc0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754834AbbFLKLI (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:18153 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751089AbbFLKib (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 06:11:08 -0400
-Received: by qcjl8 with SMTP id l8so9057807qcj.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2015 03:11:07 -0700 (PDT)
+	Fri, 12 Jun 2015 06:38:31 -0400
+Message-ID: <557AB69A.1000101@oracle.com>
+Date: Fri, 12 Jun 2015 18:38:18 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <pan$e5a8$4c012c37$4117558f$ba504801@cox.net>
-References: <CAGnHSEkEshdECi7TQ73DZRDg=t7kxwB7FCkPOTXruaiwHfzUUQ@mail.gmail.com>
-	<pan$e5a8$4c012c37$4117558f$ba504801@cox.net>
-Date: Fri, 12 Jun 2015 18:11:07 +0800
-Message-ID: <CAGnHSE=ik7Vta4i3ia9AvH=Epb=G3oifCAvTJVck81zi=0VWjQ@mail.gmail.com>
-Subject: Re: multiple "devices" with multiple partitions on one SSD
-From: Tom Yan <tom.ty89@gmail.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Martin <develop@imagmbh.de>
+CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: rw-mount-problem after raid1-failure
+References: <2227931.EqpnWnc32X@malu-aspire-v3-771> <4768404.UTQo4H2Sip@term0> <FA615B68-27BB-4FFD-A1C6-AEC6027C476C@oracle.com> <4628680.5DrabroMAI@malu-aspire-v3-771>
+In-Reply-To: <4628680.5DrabroMAI@malu-aspire-v3-771>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you for you reply. I thought of the same thing as you've told,
-but because I don't really know how SSD/SATA works internally, so I
-was also thinking if "raid0" on the same drive might works as
-something like "Hyper-Threading" in CPU.
 
-I'll go for "single" then. With that I don't have to start with two
-partitions as well. : )
 
-On 12 June 2015 at 17:47, Duncan <1i5t5.duncan@cox.net> wrote:
-> Tom Yan posted on Thu, 11 Jun 2015 19:34:13 +0800 as excerpted:
+On 06/11/2015 09:03 PM, Martin wrote:
+> It is reproduceable but the logs doesn't say much:
 >
->> So I am thinking of having multiple partitions (50GiB per one) on an
->> SATA3 SSD (200GiB available) to be used with a single btrfs filesystem.
->> The reason I am thinking about this is I would like to start from one
->> partition (or two if necessary), and then add the remaining one on
->> demand (if they aren't going to be used for other purpose). So I would
->> like to know whether raid0 has any advantages on a single drive, or I
->> should just use the "single" profile, or it's a bad idea either way.
+> dmesg:
+> [151183.214355] BTRFS info (device sdb2): allowing degraded mounts
+> [151183.214361] BTRFS info (device sdb2): disk space caching is enabled
+> [151183.317719] BTRFS: bdev (null) errs: wr 7988389, rd 7707002, flush 150,
+> corrupt 0, gen 0
+> [151214.513046] BTRFS: too many missing devices, writeable mount is not
+> allowed
+
+presumably (we did not confirm that only one disk is missing from
+kernel point of view?) with One disk missing if you are still getting
+this that means, there is a group profile in your disk pool that does
+not tolerate single disk failure either.
+
+So now how would we check all the group profiles in an unmount(able)
+state ?
+
+There is a patch to show devlist using /proc/fs/btrfs/devlist.
+That would have helped here to debug. I am ok if you could confirm
+that using any other method as well.
+
+Thanks, Anand
+
+
+> [151214.548566] BTRFS: open_ctree failed
 >
-> Interesting question.  Totally not where I thought this was going, given
-> the subject.  I thought you were going to ask about faking raid1.[1]
-> Instead, you went the opposite direction, and are effectively asking
-> about faking raid0. =:^)
+> Can I get more info out of the kernel-module?
 >
-> On a partitioned single physical device, between single mode and raid1
-> I'd say stick with single mode.  With ssd the speed shouldn't matter much
-> (on spinning rust single mode would be predicted to be faster due to less
-> seeking), but single mode is much less complex in terms of btrfs
-> management, and in case of damage, you're more likely to recover more
-> files in single mode, than you would with raid0.
+> Thanks, Martin
 >
-> That said, btrfs checksumming and the chance of recovery it gives you if
-> there's a second copy available, means if you have the room, raid1 (or dup
-> mode on a single device, but that wouldn't work with your multi-partition-
-> device idea, see the footnote below) can be worth the additional space it
-> takes.  In single mode if the checksum is bad you just lost that file as
-> btrfs doesn't yet have a way to tell it "I know the checksum says bad,
-> but give it to me anyway as I might be able to recover /something/ out of
-> it".  In raid1 or dup mode, there's a second copy to fall back to, that
-> might well be valid.  For me at least, that's worth the extra space it
-> requires.
+> Am Donnerstag, 11. Juni 2015, 08:04:04 schrieb Anand Jain:
+>>> On 10 Jun 2015, at 5:35 pm, Martin <develop@imagmbh.de> wrote:
+>>>
+>>> Hello Anand,
+>>>
+>>> the failed disk was removed. My procedure was the following:
+>>>
+>>> - I found some write errors in the kernel log, so
+>>> - I shutdown the system
+>>> - I removed the failed disk
+>>> - I powered on the system
+>>> - I mounted the remaining disk degraded,rw (works OK)
+>>> - the system works an and was rebooted some times, mounting degraded,rw
+>>> works - suddentlym mounting degraded,rw stops working and only
+>>> degraded,ro works.
+>> any logs to say why. ?
+>> Or
+>> If these (above) stages are reproducible, could you fetch them afresh?
+>>
+>> Thanks Anand
+>>
+>>> Thanks, Martin
+>>>
+>>> Am Mittwoch, 10. Juni 2015, 15:46:52 schrieb Anand Jain:
+>>>> On 06/10/2015 02:58 PM, Martin wrote:
+>>>>> Hello Anand,
+>>>>>
+>>>>> the
+>>>>>
+>>>>>> mount -o degraded <good-disk> <-- this should work
+>>>>>
+>>>>> is my problem. The fist times it works but suddently, after a reboot, it
+>>>>> fails with message "BTRFS: too many missing devices, writeable mount is
+>>>>> not allowed" in kernel log.
+>>>>>
+>>>>   the failed(ing) disk is it still physically in the system ?
+>>>>   when btrfs finds EIO on the intermittently failing disk,
+>>>>   ro-mode kicks in, (there are some opportunity for fixes which
+>>>>   I am trying). To recover, the approach is to make the failing
+>>>>   disk a missing disk instead, by pulling out the failing disk
+>>>>   from the system and boot. When system finds disk missing
+>>>>   (not EIO rather) it should mount rw,degraded (from the VM part
+>>>>   at least) and then replace (with a new disk) should work.
+>>>>
+>>>> Thanks, Anand
+>>>>
+>>>>> "btrfs fi show /backup2" shows:
+>>>>> Label: none  uuid: 6d755db5-f8bb-494e-9bdc-cf524ff99512
+>>>>>
+>>>>>     Total devices 2 FS bytes used 3.50TiB
+>>>>>     devid    4 size 7.19TiB used 4.02TiB path /dev/sdb2
+>>>>>     *** Some devices missing
+>>>>>
+>>>>> I suppose there is a "marker", telling the system only to mount in
+>>>>> ro-mode?
+>>>>>
+>>>>> Due to the ro-mount I can't replace the missing one because all the
+>>>>> btrfs-
+>>>>> commands need rw-access ...
+>>>>>
+>>>>> Martin
+>>>>>
+>>>>> Am Mittwoch, 10. Juni 2015, 14:38:38 schrieb Anand Jain:
+>>>>>> Ah thanks David. So its 2 disks RAID1.
+>>>>>>
+>>>>>> Martin,
+>>>>>>
+>>>>>>    disk pool error handle is primitive as of now. readonly is the only
+>>>>>>    action it would take. rest of recovery action is manual. thats
+>>>>>>    unacceptable in a data center solutions. I don't recommend btrfs VM
+>>>>>>    productions yet. But we are working to get that to a complete VM.
+>>>>>>
+>>>>>>    For now, for your pool recovery: pls try this.
+>>>>>>
+>>>>>>       - After reboot.
+>>>>>>       - modunload and modload (so that kernel devlist is empty)
+>>>>>>       - mount -o degraded <good-disk> <-- this should work.
+>>>>>>       - btrfs fi show -m <-- Should show missing if you don't let me
+>>>>>>       know.
+>>>>>>       - Do a replace of the missing disk without reading the source
+>>>>>>       disk.
+>>>>>>
+>>>>>> Good luck.
+>>>>>>
+>>>>>> Thanks, Anand
+>>>>>>
+>>>>>>> On 06/10/2015 11:58 AM, Duncan wrote:
+>>>>>>>
+>>>>>>> Anand Jain posted on Wed, 10 Jun 2015 09:19:37 +0800 as excerpted:
+>>>>>>>>> On 06/09/2015 01:10 AM, Martin wrote:
+>>>>>>>>> Hello!
+>>>>>>>>>
+>>>>>>>>> I have a raid1-btrfs-system (Kernel 3.19.0-18-generic, Ubuntu Vivid
+>>>>>>>>> Vervet, btrfs-tools 3.17-1.1). One disk failed some days ago. I
+>>>>>>>>> could
+>>>>>>>>> remount the remaining one with "-o degraded". After one day and some
+>>>>>>>>> write-operations (with no errrors) I had to reboot the system. And
+>>>>>>>>> now
+>>>>>>>>> I can not mount "rw" anymore, only "-o degraded,ro" is possible.
+>>>>>>>>>
+>>>>>>>>> In the kernel log I found BTRFS: too many missing devices, writeable
+>>>>>>>>> mount is not allowed.
+>>>>>>>>>
+>>>>>>>>> I read about https://bugzilla.kernel.org/show_bug.cgi?id=60594 but I
+>>>>>>>>> did no conversion to a single drive.
+>>>>>>>>>
+>>>>>>>>> How can I mount the disk "rw" to remove the "missing" drive and add
+>>>>>>>>> a
+>>>>>>>>> new one?
+>>>>>>>>> Because there are many snapshots of the filesystem, copying the
+>>>>>>>>> system
+>>>>>>>>> would be only the last alternative ;-)
+>>>>>>>>
+>>>>>>>> How many disks you had in the RAID1. How many are failed ?
+>>>>>>>
+>>>>>>> The answer is (a bit indirectly) in what you quoted.  Repeating:
+>>>>>>>>> One disk failed[.] I could remount the remaining one[.]
+>>>>>>>
+>>>>>>> So it was a two-device raid1, one failed device, one remaining,
+>>>>>>> unfailed.
+>>>>>>
+>>>>>> --
+>>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>>> in
+>>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>
+>>>>> --
+>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>> in
+>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >
-> That's for data.  For metadata, I'd DEFINITELY recommend raid1/dup, even
-> if you can't spare the room to raid1/dup the data, and that's actually
-> the default, except for single-device SSD, which defaults to single mode
-> metadata for various reasons.
->
->
-> As for whether the whole multi-partition faking multi-device idea is
-> worth it... I'd say it's close enough to be your call.
->
-> Personally, were I working with a single device in that way, I'd probably
-> do just one big partition, but use the mkfs.btrfs --byte-count option to
-> create a filesystem smaller than the entire partition it was in.  Then I
-> could increase the size of the filesystem when I needed to, without
-> having to worry about adding a new fake device (actually partition on the
-> same device) to it.  Or make just one smaller partition and leave the
-> rest of the space unpartitioned, so you can grow the partition, and then
-> the filesystem, when needed.
->
-> But again for me personally, as I explained above, I prefer btrfs raid1
-> or dup mode, so there's a second copy of everything in case of checksum
-> failure on the one.  For the single physical device case, that means
-> either mixed-blockgroup-mode data/metadata so dup mode can be used for
-> both, or faking (at least) two devices and doing raid1 for both data and
-> metadata, so one copy appears on each device.  I actually discuss that in
-> the footnote section below.
->
-> Tho of course if you're doing dup/raid1, that will by definition take
-> twice the space, or put differently, let you store half the stuff.  While
-> that's a tradeoff I consider well worth it, not everyone will.  In which
-> case, we're back to what you proposed, single for data, with the caveat
-> that I'd strongly recommend dup/raid1 for metadata, depending on whether
-> you go the single logical device route or the multiple logical device
-> route.
->
->
-> Meanwhile... I'm not sure that came out as clear written down as it is in
-> my head, but hopefully you can make at least some sense of it. =:^)
->
->
-> -----
-> [1] I thought it was going to be a question about faking multiple
-> physical devices using partitions on a single physical device, in ordered
-> to do raid1, in ordered to be able to take advantage of the checksum
-> redundancy it provides for data, since only metadata can be set to dup
-> mode.  For that use-case, I was going to say that while it doesn't matter
-> so much on ssd, on spinning rust that's going to really drag down
-> performance due to the seeks to write the second copy in the other
-> partition.  Setting mixed-blockgroup-mode (data and metadata mix together
-> in the same blockgroups, this is the default for filesystems under a GiB)
-> during the mkfs.btrfs is a far more efficient way to achieve close to the
-> same thing, at least on spinning rust, as you'll get the second copy, but
-> without the long seeks.  Mixed-bg mode has performance penalty compared
-> to separate data/metadata, but it's nothing close to the penalty you'll
-> get from raid1 on separate partitions of the same physical disk.
->
-> OTOH, in theory at least, if you create one partition at each end with
-> some unused space in the middle for separation, the physical partitions
-> raid1 would be a slightly more robust solution, as damage would be more
-> likely limited to one copy of the two as they'd be guaranteed to be
-> spaced at least the blank-space between the partitions apart.
->
-> On ssd, separate partitions for raid1 on a single physical device
-> wouldn't be as bad, but I /suspect/ that dup would still be better.
-> However, I'd have to see benchmark results to be sure, and I don't know
-> of any tests of that specific scenario, so I can't say for sure.  But the
-> distance apart wouldn't likely matter on ssd, as the ssd firmware
-> redirects writes so you don't have any way of knowing where they are
-> actually placed on the physical media anyway, unless you know how that
-> specific firmware works.
->
-> --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

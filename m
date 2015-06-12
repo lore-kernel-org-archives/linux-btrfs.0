@@ -1,109 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39962 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754647AbbFKRdO (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:15900 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751163AbbFLHOM convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 13:33:14 -0400
-Date: Thu, 11 Jun 2015 17:33:59 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: use received_uuid of parent during send
-Message-ID: <20150611173359.GL18226@carfax.org.uk>
-References: <1433452645-7904-1-git-send-email-jbacik@fb.com>
- <20150611170942.GK18226@carfax.org.uk>
- <5579C26A.4040203@fb.com>
+	Fri, 12 Jun 2015 03:14:12 -0400
+Message-ID: <557A8691.6070908@cn.fujitsu.com>
+Date: Fri, 12 Jun 2015 15:13:21 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="QWRRbczYj8mXuejp"
-In-Reply-To: <5579C26A.4040203@fb.com>
+To: Tomasz Chmielewski <tch@virtall.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: kernel crashes with btrfs and busy database IO - how to debug?
+References: <ae9b9ca434c98509ca6c1ba6dbd84b63@admin.virtall.com>
+In-Reply-To: <ae9b9ca434c98509ca6c1ba6dbd84b63@admin.virtall.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---QWRRbczYj8mXuejp
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
 
-On Thu, Jun 11, 2015 at 01:16:26PM -0400, Josef Bacik wrote:
-> On 06/11/2015 01:09 PM, Hugo Mills wrote:
-> >On Thu, Jun 04, 2015 at 05:17:25PM -0400, Josef Bacik wrote:
-> >>Neil Horman pointed out a problem where if he did something like this
-> >>
-> >>receive A
-> >>snap A B
-> >>change B
-> >>send -p A B
-> >>
-> >>and then on another box do
-> >>
-> >>recieve A
-> >>receive B
-> >>
-> >>the receive B would fail because we use the UUID of A for the clone sources for
-> >>B.  This makes sense most of the time because normally you are sending from the
-> >>original sources, not a received source.  However when you use a recieved subvol
-> >>its UUID is going to be something completely different, so if you then try to
-> >>receive the diff on a different volume it won't find the UUID because the new A
-> >>will be something else.  The only constant is the received uuid.  So instead
-> >>check to see if we have received_uuid set on the root, and if so use that as the
-> >>clone source, as btrfs receive looks for matches either in received_uuid or
-> >>uuid.  Thanks,
-> >
-> >    While this deals with Neil's problem, there's a few other use-cases
-> >that people have been asking for that (I think) it won't deal with.
-> >
-> >    I think ultimately we should be sending all three of the parent
-> >UUID, the parent's Received UUID (if it exists), and the parent's
-> >Parent UUID. That would have to go in the FARv2 update, though.
-> >
-> >    However, since this patch doesn't rule out the above happening at
-> >some future date, and I think it'll do the job as described above,
-> >
-> 
-> Yeah I'd like to send more information so we can better find the
-> UUID we're looking for, but I think at least trying to keep a
-> consistent UUID we carry around would be good.  Received UUID mostly
-> accomplishes this, I'd like to know what other use cases aren't
-> working so we can think about what we need to do for them.  Thanks,
+-------- Original Message  --------
+Subject: kernel crashes with btrfs and busy database IO - how to debug?
+From: Tomasz Chmielewski <tch@virtall.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Date: 2015年06月11日 19:33
 
-   I did a write-up of this a while ago, in some detail (which is why
-I weighed in here):
+> I have a server where I've installed a couple of LXC guests, btrfs - so
+> easy to test things with snapshots. Or so it seems.
+>
+> Unfortunately the box crashes when I put "too much IO load" - with too
+> much load being these two running at the same time:
+>
+> - quite busy MySQL database (doing up to 100% IO wait when running alone)
+> - busy mongo database (doing up to 100% IO wait when running alone)
+>
+> With both mongo and mysql running at the same time, it crashes after 1-2
+> days (tried kernels 4.0.4, 4.0.5, 4.1-rc7 from Ubuntu "kernel-ppa"). It
+> does not crash if I only run mongo, or only mysql. There is plenty of
+> memory available (just around 2-4 GB used out of 32 GB) when it crashes.
+>
+> As the box is only reachable remotely, I'm not able to catch a crash.
+> Sometimes, I'm able to get a bit of it printed via remote SSH, like here:
+>
+> [162276.341030] BUG: unable to handle kernel NULL pointer dereference at
+> 0000000000000008
+> [162276.341069] IP: [<ffffffff810c06cd>] prepare_to_wait_event+0xcd/0x100
+> [162276.341096] PGD 80a15e067 PUD 6e08c2067 PMD 0
+> [162276.341116] Oops: 0002 [#1] SMP
+> [162276.341133] Modules linked in: xfs libcrc32c xt_conntrack veth
+> xt_CHECKSUM iptable_mangle ipt_MASQUERADE nf_nat_masquerade_ipv4
+> iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat
+> nf_conntrack xt_tcpudp iptable_filter ip_tables x_tables bridge stp llc
+> intel_rapl iosf_mbi x86_pkg_temp_thermal intel_powerclamp coretemp
+> kvm_intel kvm crct10dif_pclmul crc32_pclmul ghash_clmulni_intel
+> aesni_intel aes_x86_64 lrw eeepc_wmi gf128mul asus_wmi glue_helper
+> sparse_keymap ablk_helper cryptd ie31200_edac shpchp lpc_ich edac_core
+> mac_hid 8250_fintek tpm_infineon wmi serio_raw video lp parport btrfs
+> raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor
+> async_tx xor raid6_pq e1000e raid1 raid0 ahci ptp libahci multipath
+> pps_core linear [last unloaded: xfs]
+> [162276.341394] CPU: 6 PID: 12853 Comm: mysqld Not tainted
+> 4.1.0-040100rc7-generic #201506080035
+> [162276.341428] Hardware name: System manufacturer System Product
+> Name/P8B WS, BIOS 0904 10/24/2011
+> [162276.341463] task: ffff8800730d8a10 ti: ffff88047a0f8000 task.ti:
+> ffff88047a0f8000
+> [162276.341495] RIP: 0010:[<ffffffff810c06cd>]  [<ffffffff810c06cd>]
+> prepare_to_wait_event+0xcd/0x100
+> [162276.341532] RSP: 0018:ffff88047a0fbcd8  EFLAGS: 00010046
+> [162276.341583] RDX: ffff88047a0fbd48 RSI: ffff8800730d8a10 RDI:
+> ffff8801e2f96ee8
+> [162276.341615] RBP: ffff88047a0fbd08 R08: 0000000000000000 R09:
+> 0000000000000001
+> [162276.341646] R10: 0000000000000001 R11: 0000000000000000 R12:
+> ffff8801e2f96ee8
+> [162276.341678] R13: 0000000000000002 R14: ffff8801e2f96e60 R15:
+> ffff8806b513f248
+> [162276.341709] FS:  00007f9f2bbd3700(0000) GS:ffff88082fb80000(0000)
+> knlGS:0000000000000000
+>
+> Remote syslog does not capture anything.
+No backtrace?
 
-http://www.spinics.net/lists/linux-btrfs/msg44089.html
+Without backtrace, it's much harder to debug for us.
+It's quite possible that some codes go mad and pass a NULL pointer,
+and then wait_event() is called on the NULL->some_member.
 
-   I'm afraid it's rather long, but the tl;dr is the second indented
-section in "What to do about it", with the notation described in
-detail in the first few paragraphs.
+Anyway, backtrace is needed to debug this.
 
-   Hugo.
+If syslog can't help, what about kdump + crash to get the backtrace?
 
--- 
-Hugo Mills             | ... one ping(1) to rule them all, and in the
-hugo@... carfax.org.uk | darkness bind(2) them.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                                Illiad
-
---QWRRbczYj8mXuejp
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVecaHAAoJEFheFHXiqx3k91cP/io2giU+BSCYgGY5x87Tq1Zi
-SbcltatD+PaLFShe2gphmFcbeLfxjKRs06V8bAGvUQ0YyONjuD5LmsDONQhZqapp
-O2n3y1pEnRXlhyU3qSoZ3T3psLLSuRDvYLpqAm3fZ8qHeZg9gP+1alJB0jzvXYvH
-SJE1SGIOfUpETEun+be4fKNRXt9CMqLA4lZDfDlJAUAiUgan17sxsIWZbbCfeEUL
-lGeYlcP3OpJXDwzs2eh+oIeIA9flk1UWg+HoYtz/zKHhRKL66ZMy+U52YZcn4W7x
-X5QOUtdEriPCu94HQ761Mty2vJVENX1Luk9mzhbUsVfOz/JuFPXEFtKyNN/g4LrH
-wDSX983AprQYHinjoL9uZ74J8/NYwIGQQDTHD9+amrFQzScRncduw5QqHo/ShUbs
-hPok0F/UFdi1xXIUltnaZmmR9bVUtCReDoKjP6cfnSF3IYX63lkT3vr+4seS/KfX
-5ZPLK0xNnr4J55qXkfRuPIWuAGXgz1GfK2h5H97z8teQ2MBXrdLVSF4+un/IRwV9
-4z9RDTp79PNhvU/K+5YLuTEALQoNaQ6kKgI67+UG3Jy6UVpAGClPdeFaXFH0P44f
-SrnLHqhMcDho8bjUkBGTjOvGl7gjsesNd812lsHN86vjgQxEnIS8WdVCpAfbuy3k
-vJl+zEpyNpZDyJ7Uyi8C
-=K9aA
------END PGP SIGNATURE-----
-
---QWRRbczYj8mXuejp--
+Thanks,
+Qu
+>
+> The above crash does not point at btrfs - although the box does not
+> crash with the same tests done on ext4. The box passes memtests and is
+> generally stable otherwise.
+>
+> How can I debug this further?
+>
+>
+> "prepare_to_wait_event" can be found here in 4.1-rc7 kernel:
+>
+> include/linux/wait.h:           long __int = prepare_to_wait_event(&wq,
+> &__wait, state);\
+> include/linux/wait.h:long prepare_to_wait_event(wait_queue_head_t *q,
+> wait_queue_t *wait, int state);
+> kernel/sched/wait.c:long prepare_to_wait_event(wait_queue_head_t *q,
+> wait_queue_t *wait, int state)
+> kernel/sched/wait.c:EXPORT_SYMBOL(prepare_to_wait_event);
+>
+>
+>

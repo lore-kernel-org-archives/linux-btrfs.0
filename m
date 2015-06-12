@@ -1,201 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35233 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750814AbbFLOKj (ORCPT
+Received: from mail-qg0-f45.google.com ([209.85.192.45]:32997 "EHLO
+	mail-qg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750856AbbFLQJj convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 10:10:39 -0400
-Date: Fri, 12 Jun 2015 22:10:22 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
+	Fri, 12 Jun 2015 12:09:39 -0400
+Received: by qgfa66 with SMTP id a66so12944159qgf.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2015 09:09:38 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <557A890D.8080306@cn.fujitsu.com>
+References: <CAEMJtDs=U5+YO9sbVvjxLthdxp6JvZO=07EMhcU5Smif_1m5QQ@mail.gmail.com>
+	<557A890D.8080306@cn.fujitsu.com>
+Date: Fri, 12 Jun 2015 09:09:38 -0700
+Message-ID: <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
+Subject: Re: Can't mount btrfs volume on rbd
+From: Steve Dainard <sdainard@spd1.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
-Message-ID: <20150612141021.GA26692@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 12, 2015 at 11:00:15AM +0800, Qu Wenruo wrote:
-> Introduce the new partial csum mechanism for tree block.
-> 
-> [Old tree block csum]
-> 0     4     8    12    16    20    24    28    32
-> -------------------------------------------------
-> |csum |   unused, all 0				|
-> -------------------------------------------------
-> Csum is the crc32 of the whole tree block data.
-> 
-> [New tree block csum]
-> -------------------------------------------------
-> |csum0|csum1|csum2|csum3|csum4|csum5|csum6|csum7|
-> -------------------------------------------------
-> Where csum0 is the same as the old one, crc32 of the whole tree block
-> data.
-> 
-> But csum1~csum7 will restore crc32 of each eighth part.
-> Take example of 16K leafsize, then:
-> csum1: crc32 of BTRFS_CSUM_SIZE~4K
-> csum2: crc32 of 4K~6K
-> ...
-> csum7: crc32 of 14K~16K
-> 
-> This provides the ability for btrfs not only to detect corruption but
-> also to know where corruption is.
-> Further improve the robustness of btrfs.
+Hi Qu,
 
-What of the use to know where corruption locates?  It still turns to
-find a good copy of this block (if there is) and recovery from it,
-doesn't it?
+I have another volume with the same error, btrfs-debug-tree output
+from btrfs-progs 4.0.1 is here: http://pastebin.com/k3R3bngE
 
-Can you eleborate more on how to improve the robustness?
+I'm not sure how to interpret the output, but the exit status is 0 so
+it looks like btrfs doesn't think there's an issue with the file
+system.
 
-> 
-> Although the best practise is to introduce new csum type and put every
-> eighth crc32 into corresponding place, but the benefit is not worthy to
-> break the backward compatibility.
-> So keep csum0 and modify csum1 range to keep backward compatibility.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> TODO:
->   Add scrub support to use partial csum to rebuild metadata.
->   This is a little hard as current scrub don't treat tree block as a whole.
->   Needs a lot of other improvement for scrub.
-> ---
->  fs/btrfs/disk-io.c | 75 ++++++++++++++++++++++++++++++++++++------------------
->  1 file changed, 50 insertions(+), 25 deletions(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 7f83778..54052d3 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -271,47 +271,76 @@ void btrfs_csum_final(u32 crc, char *result)
->  }
->  
->  /*
-> - * compute the csum for a btree block, and either verify it or write it
-> - * into the csum field of the block.
-> + * Calcuate partial crc32 for each part.
-> + *
-> + * Part should be in [0, 7].
-> + * Part 0 is the old crc32 of the whole leaf/node.
-> + * Part 1 is the crc32 of 32~ 2/8 of leaf/node.
-> + * Part 2 is the crc32 of 3/8 of leaf/node.
-> + * Part 3 is the crc32 of 4/8 of lean/node and so on.
+I get the same mount error with options ro,recovery.
 
-typo here.
-
-Thanks,
-
--liubo
->   */
-> -static int csum_tree_block(struct btrfs_fs_info *fs_info,
-> -			   struct extent_buffer *buf,
-> -			   int verify)
-> +static int csum_tree_block_part(struct extent_buffer *buf,
-> +				char *result, int part)
->  {
-> -	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-> -	char *result = NULL;
-> +	int offset;
-> +	int err;
->  	unsigned long len;
->  	unsigned long cur_len;
-> -	unsigned long offset = BTRFS_CSUM_SIZE;
-> -	char *kaddr;
->  	unsigned long map_start;
->  	unsigned long map_len;
-> -	int err;
-> +	char *kaddr;
->  	u32 crc = ~(u32)0;
-> -	unsigned long inline_result;
->  
-> -	len = buf->len - offset;
-> +	BUG_ON(part >= 8 || part < 0);
-> +	BUG_ON(ALIGN(buf->len, 8) != buf->len);
-> +
-> +	if (part == 0) {
-> +		offset = BTRFS_CSUM_SIZE;
-> +		len = buf->len - offset;
-> +	} else if (part == 0) {
-> +		offset = BTRFS_CSUM_SIZE;
-> +		len = buf->len * 2 / 8 - offset;
-> +	} else {
-> +		offset = part * buf->len / 8;
-> +		len = buf->len / 8;
-> +	}
-> +
->  	while (len > 0) {
->  		err = map_private_extent_buffer(buf, offset, 32,
->  					&kaddr, &map_start, &map_len);
->  		if (err)
-> -			return 1;
-> +			return err;
->  		cur_len = min(len, map_len - (offset - map_start));
->  		crc = btrfs_csum_data(kaddr + offset - map_start,
->  				      crc, cur_len);
->  		len -= cur_len;
->  		offset += cur_len;
->  	}
-> -	if (csum_size > sizeof(inline_result)) {
-> -		result = kzalloc(csum_size, GFP_NOFS);
-> -		if (!result)
-> +	btrfs_csum_final(crc, result + BTRFS_CSUM_SIZE * part/ 8);
-> +	return 0;
-> +}
-> +
-> +/*
-> + * compute the csum for a btree block, and either verify it or write it
-> + * into the csum field of the block.
-> + */
-> +static int csum_tree_block(struct btrfs_fs_info *fs_info,
-> +			   struct extent_buffer *buf,
-> +			   int verify)
-> +{
-> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
-> +	char result[BTRFS_CSUM_SIZE] = {0};
-> +	int err;
-> +	u32 crc = ~(u32)0;
-> +	int index = 0;
-> +
-> +	/* get every part csum */
-> +	for (index = 0; index < 8; index++) {
-> +		err = csum_tree_block_part(buf, result, index);
-> +		if (err)
->  			return 1;
-> -	} else {
-> -		result = (char *)&inline_result;
->  	}
->  
-> -	btrfs_csum_final(crc, result);
-> -
->  	if (verify) {
->  		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
->  			u32 val;
-> @@ -324,15 +353,11 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
->  				"level %d\n",
->  				fs_info->sb->s_id, buf->start,
->  				val, found, btrfs_header_level(buf));
-> -			if (result != (char *)&inline_result)
-> -				kfree(result);
->  			return 1;
->  		}
->  	} else {
-> -		write_extent_buffer(buf, result, 0, csum_size);
-> +		write_extent_buffer(buf, result, 0, BTRFS_CSUM_SIZE);
->  	}
-> -	if (result != (char *)&inline_result)
-> -		kfree(result);
->  	return 0;
->  }
->  
-> -- 
-> 2.4.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Fri, Jun 12, 2015 at 12:23 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> -------- Original Message  --------
+> Subject: Can't mount btrfs volume on rbd
+> From: Steve Dainard <sdainard@spd1.com>
+> To: <linux-btrfs@vger.kernel.org>
+> Date: 2015年06月11日 23:26
+>
+>> Hello,
+>>
+>> I'm getting an error when attempting to mount a volume on a host that
+>> was forceably powered off:
+>>
+>> # mount /dev/rbd4 climate-downscale-CMIP5/
+>> mount: mount /dev/rbd4 on /mnt/climate-downscale-CMIP5 failed: Stale file
+>> handle
+>>
+>> /var/log/messages:
+>> Jun 10 15:31:07 node1 kernel: rbd4: unknown partition table
+>>
+>> # parted /dev/rbd4 print
+>> Model: Unknown (unknown)
+>> Disk /dev/rbd4: 36.5TB
+>> Sector size (logical/physical): 512B/512B
+>> Partition Table: loop
+>> Disk Flags:
+>>
+>> Number  Start  End     Size    File system  Flags
+>>   1      0.00B  36.5TB  36.5TB  btrfs
+>>
+>> # btrfs check --repair /dev/rbd4
+>> enabling repair mode
+>> Checking filesystem on /dev/rbd4
+>> UUID: dfe6b0c8-2866-4318-abc2-e1e75c891a5e
+>> checking extents
+>> cmds-check.c:2274: check_owner_ref: Assertion `rec->is_root` failed.
+>> btrfs[0x4175cc]
+>> btrfs[0x41b873]
+>> btrfs[0x41c3fe]
+>> btrfs[0x41dc1d]
+>> btrfs[0x406922]
+>>
+>>
+>> OS: CentOS 7.1
+>> btrfs-progs: 3.16.2
+>
+> The btrfs-progs seems quite old, and the above btrfsck error seems quite
+> possible related to the old version.
+>
+> Would you please upgrade btrfs-progs to 4.0 and see what will happen?
+> Hopes it can give better info.
+>
+> BTW, it's a good idea to call btrfs-debug-tree /dev/rbd4 to see the output.
+>
+> Thanks
+> Qu.
+>>
+>> Ceph: version: 0.94.1/CentOS 7.1
+>>
+>> I haven't found any references to 'stale file handle' on btrfs.
+>>
+>> The underlying block device is ceph rbd, so I've posted to both lists
+>> for any feedback. Also once I reformatted btrfs I didn't get a mount
+>> error.
+>>
+>> The btrfs volume has been reformatted so I won't be able to do much
+>> post mortem but I'm wondering if anyone has some insight.
+>>
+>> Thanks,
+>> Steve
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>

@@ -1,108 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32.italiaonline.it ([212.48.25.160]:49359 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751424AbbFLUIW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 16:08:22 -0400
-Message-ID: <557B3C32.9030707@inwind.it>
-Date: Fri, 12 Jun 2015 22:08:18 +0200
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Reply-To: kreijack@inwind.it
+Received: from mail.virtall.com ([178.63.195.102]:51187 "EHLO mail.virtall.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750814AbbFLXX4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 12 Jun 2015 19:23:56 -0400
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: kernel crashes with btrfs and busy database IO - how to debug?
 MIME-Version: 1.0
-To: Andrei Borzenkov <arvidjaar@gmail.com>, Anand Jain <anand.jain@oracle.com>
-CC: systemd-devel@lists.freedesktop.org,
-        "linux-btrfs@vger.kernel.org >> linux-btrfs"
-	<linux-btrfs@vger.kernel.org>,
-        dsterba@suse.cz
-Subject: Re: [systemd-devel] [survey]  BTRFS_IOC_DEVICES_READY return status
-References: <557ADBAE.9040407@oracle.com> <20150612210453.3dee4563@opensuse.site>
-In-Reply-To: <20150612210453.3dee4563@opensuse.site>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Sat, 13 Jun 2015 08:23:53 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <557AA1B9.9040009@cn.fujitsu.com>
+References: <ae9b9ca434c98509ca6c1ba6dbd84b63@admin.virtall.com>
+ <557A8691.6070908@cn.fujitsu.com>
+ <73cb882c23a71c9039a0e7bbfddfab64@admin.virtall.com>
+ <557AA1B9.9040009@cn.fujitsu.com>
+Message-ID: <cf09b22a06bf52a5b365fa44e15583f7@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-06-12 20:04, Andrei Borzenkov wrote:
-> В Fri, 12 Jun 2015 21:16:30 +0800
-> Anand Jain <anand.jain@oracle.com> пишет:
+On 2015-06-12 18:09, Qu Wenruo wrote:
+
+>> while true; do dmesg -c ; done
+>> 
+>> but that's usually incomplete.
+> If your dmesg is up-to-date, dmesg -w should do it better than your 
+> script.
+> And normally, I can get a full trace with backtrace when kernel down 
+> with it.
 > 
->>
->>
->> BTRFS_IOC_DEVICES_READY is to check if all the required devices
->> are known by the btrfs kernel, so that admin/system-application
->> could mount the FS. It is checked against a device in the argument.
->>
->> However the actual implementation is bit more than just that,
->> in the way that it would also scan and register the device
->> provided in the argument (same as btrfs device scan subcommand
->> or BTRFS_IOC_SCAN_DEV ioctl).
->>
->> So BTRFS_IOC_DEVICES_READY ioctl isn't a read/view only ioctl,
->> but its a write command as well.
->>
->> Next, since in the kernel we only check if total_devices
->> (read from SB)  is equal to num_devices (counted in the list)
->> to state the status as 0 (ready) or 1 (not ready). But this
->> does not work in rest of the device pool state like missing,
->> seeding, replacing since total_devices is actually not equal
->> to num_devices in these state but device pool is ready for
->> the mount and its a bug which is not part of this discussions.
->>
->>
->> Questions:
->>
->>   - Do we want BTRFS_IOC_DEVICES_READY ioctl to also scan and
->>     register the device provided (same as btrfs device scan
->>     command or the BTRFS_IOC_SCAN_DEV ioctl)
->>     OR can BTRFS_IOC_DEVICES_READY be read-only ioctl interface
->>     to check the state of the device pool. ?
->>
-> 
-> udev is using it to incrementally assemble multi-device btrfs, so in
-> this case I think it should. 
+> And if it still can't get the full trace, then try kdump.
 
-I agree, the ioctl name is confusing, but unfortunately this is an API and 
-it has to be stay here forever. Udev uses it, so we know for sure that it
-is widely used.
+Thanks for the tip with dmesg -w - my version didn't have this option, 
+so I had to get it from newer util-linux. Unfortunately still didn't get 
+the crash with this (over SSH).
 
-> Are there any other users?
-> 
->>   - If the the device in the argument is already mounted,
->>     can it straightaway return 0 (ready) ? (as of now it would
->>     again independently read the SB determine total_devices
->>     and check against num_devices.
->>
-> 
-> I think yes; obvious use case is btrfs mounted in initrd and later
-> coldplug. There is no point to wait for anything as filesystem is
-> obviously there.
-> 
->>   - What should be the expected return when the FS is mounted
->>     and there is a missing device.
+I did get it from /var/crash/ though - is it more useful? I don't have 
+vmlinux for this kernel though, but have just built 4.1-rc7 with the 
+same config, can try to get the crash there.
 
-I suggest to not invest further energy on a ioctl API. If you want these kind of information, you (we) should export these in sysfs:
-In an ideal world:
-
-- a new btrfs device appears
-- udev register it with BTRFS_IOC_SCAN_DEV:
-- udev (or mount ?) checks the status of the filesystem reading the sysfs entries (total devices, present devices, seed devices, raid level....); on the basis of the local policy (allow degraded mount, device timeout, how many device are missing, filesystem redundancy level.....) udev (mount) may mount the filesystem with the appropriate parameter (ro, degraded, or even insert a spare device to correct a missing device....)
-
->>
-> 
-> This is similar to problem mdadm had to solve. mdadm starts timer as
-> soon as enough raid devices are present; if timer expires before raid
-> is complete, raid is started in degraded mode. This avoids spurious
-> rebuilds. So it would be good if btrfs could distinguish between enough
-> devices to mount and all devices.
-
-These are two different things: how export the filesystem information (I am still convinced that these have to be exported via sysfs), and what the system has to do in case of ... (a missing device ?). The latter is a policy, and I think that it should be not rely in the kernel.
+Let me know.
 
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+(lots of "blocked for more than 120 second" prior to the crash).
+
+[45196.626314] INFO: task mongod:26260 blocked for more than 120 
+seconds.
+[45196.626335]       Not tainted 4.1.0-040100rc7-generic #201506080035
+[45196.626354] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" 
+disables this message.
+[45196.626386] mongod          D ffff8803411f3ce8     0 26260   7478 
+0x00000100
+[45196.626388]  ffff8803411f3ce8 ffff8803411f3d08 ffff8800c5e8bfc0 
+ffff88080bf2bc60
+[45196.626389]  ffff8808075dda90 0000000000000246 ffff8803411f4000 
+ffff8808094e71f0
+[45196.626391]  ffff8808094e7000 ffff8808094e71f0 0000000000000001 
+ffff8803411f3d08
+[45196.626392] Call Trace:
+[45196.626393]  [<ffffffff81808b47>] schedule+0x37/0x90
+[45196.626400]  [<ffffffffc015a131>] 
+wait_current_trans.isra.33+0xb1/0x110 [btrfs]
+[45196.626401]  [<ffffffff810c0700>] ? prepare_to_wait_event+0x100/0x100
+[45196.626407]  [<ffffffffc015be1e>] 
+start_transaction.part.35+0x46e/0x540 [btrfs]
+[45196.626414]  [<ffffffffc015bf19>] start_transaction+0x29/0x30 [btrfs]
+[45196.626420]  [<ffffffffc015c25b>] btrfs_start_transaction+0x1b/0x20 
+[btrfs]
+[45196.626427]  [<ffffffffc017180a>] btrfs_sync_file+0x1aa/0x380 [btrfs]
+[45196.626428]  [<ffffffff811390c9>] ? 
+__seccomp_phase1_filter+0x69/0x1a0
+[45196.626430]  [<ffffffff81236c26>] vfs_fsync_range+0x46/0xc0
+[45196.626431]  [<ffffffff811c0fc3>] ? find_vma+0x73/0x80
+[45196.626432]  [<ffffffff811c6e88>] SyS_msync+0x188/0x210
+[45196.626434]  [<ffffffff8180cbb2>] system_call_fastpath+0x16/0x75
+[45196.626435] INFO: task mongod:26942 blocked for more than 120 
+seconds.
+[45196.626456]       Not tainted 4.1.0-040100rc7-generic #201506080035
+[45196.626475] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" 
+disables this message.
+[45196.626507] mongod          D ffff880020957d18     0 26942   7478 
+0x00000100
+[45196.626509]  ffff880020957d18 ffff880020957d08 ffff8800c5e8bfc0 
+ffff88080bf28a10
+[45196.626510]  ffff88071f2ce4a0 0000000000000246 ffff880020958000 
+ffff8800b3c5fc98
+[45196.626511]  0000000000000000 ffff8800b3c5fc20 ffff8808072381b0 
+ffff880020957d38
+[45196.626513] Call Trace:
+[45196.626514]  [<ffffffff81808b47>] schedule+0x37/0x90
+[45196.626521]  [<ffffffffc0158cf5>] wait_for_commit.isra.25+0x45/0x80 
+[btrfs]
+[45196.626522]  [<ffffffff810c0700>] ? prepare_to_wait_event+0x100/0x100
+[45196.626529]  [<ffffffffc015ab23>] 
+btrfs_commit_transaction+0x153/0xb60 [btrfs]
+[45196.626537]  [<ffffffffc0176c96>] ? 
+btrfs_wait_ordered_range+0x106/0x160 [btrfs]
+[45196.626545]  [<ffffffffc0171973>] btrfs_sync_file+0x313/0x380 [btrfs]
+[45196.626546]  [<ffffffff81236c26>] vfs_fsync_range+0x46/0xc0
+[45196.626547]  [<ffffffff81236cbc>] vfs_fsync+0x1c/0x20
+[45196.626549]  [<ffffffff81236cf8>] do_fsync+0x38/0x70
+[45196.626550]  [<ffffffff812370f3>] SyS_fdatasync+0x13/0x20
+[45196.626551]  [<ffffffff8180cbb2>] system_call_fastpath+0x16/0x75
+[45705.854778] BUG: unable to handle kernel NULL pointer dereference at 
+0000000000000008
+[45705.854824] IP: [<ffffffffc0158b8e>] 
+btrfs_wait_pending_ordered+0x5e/0x110 [btrfs]
+[45705.854870] PGD 457a23067 PUD 7113e6067 PMD 0
+[45705.854889] Oops: 0002 [#1] SMP
+[45705.854907] Modules linked in: xt_conntrack veth xt_CHECKSUM 
+iptable_mangle ipt_MASQUERADE nf_nat_masquerade_ipv4 iptable_nat 
+nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack 
+xt_tcpudp iptable_filter ip_tables x_tables bridge stp llc intel_rapl 
+iosf_mbi x86_pkg_temp_thermal intel_powerclamp coretemp kvm_intel kvm 
+eeepc_wmi asus_wmi crct10dif_pclmul crc32_pclmul ghash_clmulni_intel 
+aesni_intel sparse_keymap ie31200_edac shpchp 8250_fintek lpc_ich 
+edac_core aes_x86_64 lrw gf128mul tpm_infineon glue_helper serio_raw 
+video mac_hid ablk_helper cryptd wmi btrfs lp parport raid10 raid456 
+async_raid6_recov async_memcpy async_pq async_xor async_tx xor raid6_pq 
+e1000e raid1 ahci ptp raid0 libahci pps_core multipath linear
+[45705.855168] CPU: 1 PID: 4010 Comm: mongod Not tainted 
+4.1.0-040100rc7-generic #201506080035
+[45705.855202] Hardware name: System manufacturer System Product 
+Name/P8B WS, BIOS 0904 10/24/2011
+[45705.855235] task: ffff8807fc85da90 ti: ffff8800a0620000 task.ti: 
+ffff8800a0620000
+[45705.855266] RIP: 0010:[<ffffffffc0158b8e>]  [<ffffffffc0158b8e>] 
+btrfs_wait_pending_ordered+0x5e/0x110 [btrfs]
+[45705.855308] RSP: 0018:ffff8800a0623d18  EFLAGS: 00010212
+[45705.855326] RAX: 0000000000000000 RBX: ffff88000e1e0078 RCX: 
+000000000000322e
+[45705.855347] RDX: 0000000000000000 RSI: 000000000000322e RDI: 
+ffff8808068aa838
+[45705.855368] RBP: ffff8800a0623d88 R08: 0000000000000000 R09: 
+0000000000000000
+[45705.855389] R10: 0000000000000001 R11: 0000000000000000 R12: 
+ffff880806d67800
+[45705.855410] R13: ffff8808068aa838 R14: ffff88000e1e0000 R15: 
+ffff8800b3c5fc20
+[45705.855431] FS:  00007f6fc5f37700(0000) GS:ffff88082fa40000(0000) 
+knlGS:0000000000000000
+[45705.855463] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[45705.855482] CR2: 0000000000000008 CR3: 000000046293a000 CR4: 
+00000000000407e0
+[45705.855503] Stack:
+[45705.855516]  ffff8800a0623d48 ffff8800b3c5fcd0 ffff8808094fe800 
+ffff880806d67800
+[45705.855549]  ffff88080a70ec28 ffffffffa0623db0 0000000000000283 
+ffff88080a6f1c60
+[45705.855582]  ffff880806d67800 ffff88080a6f1c60 ffff880806d67800 
+0000000000000000
+[45705.855615] Call Trace:
+[45705.855637]  [<ffffffffc015addb>] 
+btrfs_commit_transaction+0x40b/0xb60 [btrfs]
+[45705.855671]  [<ffffffff810c0700>] ? prepare_to_wait_event+0x100/0x100
+[45705.855698]  [<ffffffffc0171973>] btrfs_sync_file+0x313/0x380 [btrfs]
+[45705.855721]  [<ffffffff81236c26>] vfs_fsync_range+0x46/0xc0
+[45705.855740]  [<ffffffff81236cbc>] vfs_fsync+0x1c/0x20
+[45705.855758]  [<ffffffff81236cf8>] do_fsync+0x38/0x70
+[45705.855777]  [<ffffffff812370d0>] SyS_fsync+0x10/0x20
+[45705.855796]  [<ffffffff8180cbb2>] system_call_fastpath+0x16/0x75
+[45705.855815] Code: 45 98 48 39 d8 0f 84 ad 00 00 00 48 8d 45 a8 48 83 
+c0 18 48 89 45 90 66 0f 1f 44 00 00 48 8b 13 48 8b 43 08 4c 89 ef 4c 8d 
+73 88 <48> 89 42 08 48 89 10 48 89 1b 48 89 5b 08 e8 4f 3b 6b c1 e8 3a
+[45705.855906] RIP  [<ffffffffc0158b8e>] 
+btrfs_wait_pending_ordered+0x5e/0x110 [btrfs]
+[45705.855944]  RSP <ffff8800a0623d18>
+[45705.855959] CR2: 0000000000000008
 
 
 -- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Tomasz Chmielewski
+http://wpkg.org
+
+

@@ -1,60 +1,201 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:36657 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:35233 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754755AbbFLNQn (ORCPT
+	with ESMTP id S1750814AbbFLOKj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 09:16:43 -0400
-Message-ID: <557ADBAE.9040407@oracle.com>
-Date: Fri, 12 Jun 2015 21:16:30 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Fri, 12 Jun 2015 10:10:39 -0400
+Date: Fri, 12 Jun 2015 22:10:22 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
+Message-ID: <20150612141021.GA26692@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-To: systemd-devel@lists.freedesktop.org,
-        "linux-btrfs@vger.kernel.org >> linux-btrfs"
-	<linux-btrfs@vger.kernel.org>
-CC: lennart@poettering.net, dsterba@suse.cz
-Subject: [survey]  BTRFS_IOC_DEVICES_READY return status
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Fri, Jun 12, 2015 at 11:00:15AM +0800, Qu Wenruo wrote:
+> Introduce the new partial csum mechanism for tree block.
+> 
+> [Old tree block csum]
+> 0     4     8    12    16    20    24    28    32
+> -------------------------------------------------
+> |csum |   unused, all 0				|
+> -------------------------------------------------
+> Csum is the crc32 of the whole tree block data.
+> 
+> [New tree block csum]
+> -------------------------------------------------
+> |csum0|csum1|csum2|csum3|csum4|csum5|csum6|csum7|
+> -------------------------------------------------
+> Where csum0 is the same as the old one, crc32 of the whole tree block
+> data.
+> 
+> But csum1~csum7 will restore crc32 of each eighth part.
+> Take example of 16K leafsize, then:
+> csum1: crc32 of BTRFS_CSUM_SIZE~4K
+> csum2: crc32 of 4K~6K
+> ...
+> csum7: crc32 of 14K~16K
+> 
+> This provides the ability for btrfs not only to detect corruption but
+> also to know where corruption is.
+> Further improve the robustness of btrfs.
 
+What of the use to know where corruption locates?  It still turns to
+find a good copy of this block (if there is) and recovery from it,
+doesn't it?
 
-BTRFS_IOC_DEVICES_READY is to check if all the required devices
-are known by the btrfs kernel, so that admin/system-application
-could mount the FS. It is checked against a device in the argument.
+Can you eleborate more on how to improve the robustness?
 
-However the actual implementation is bit more than just that,
-in the way that it would also scan and register the device
-provided in the argument (same as btrfs device scan subcommand
-or BTRFS_IOC_SCAN_DEV ioctl).
+> 
+> Although the best practise is to introduce new csum type and put every
+> eighth crc32 into corresponding place, but the benefit is not worthy to
+> break the backward compatibility.
+> So keep csum0 and modify csum1 range to keep backward compatibility.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> TODO:
+>   Add scrub support to use partial csum to rebuild metadata.
+>   This is a little hard as current scrub don't treat tree block as a whole.
+>   Needs a lot of other improvement for scrub.
+> ---
+>  fs/btrfs/disk-io.c | 75 ++++++++++++++++++++++++++++++++++++------------------
+>  1 file changed, 50 insertions(+), 25 deletions(-)
+> 
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 7f83778..54052d3 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -271,47 +271,76 @@ void btrfs_csum_final(u32 crc, char *result)
+>  }
+>  
+>  /*
+> - * compute the csum for a btree block, and either verify it or write it
+> - * into the csum field of the block.
+> + * Calcuate partial crc32 for each part.
+> + *
+> + * Part should be in [0, 7].
+> + * Part 0 is the old crc32 of the whole leaf/node.
+> + * Part 1 is the crc32 of 32~ 2/8 of leaf/node.
+> + * Part 2 is the crc32 of 3/8 of leaf/node.
+> + * Part 3 is the crc32 of 4/8 of lean/node and so on.
 
-So BTRFS_IOC_DEVICES_READY ioctl isn't a read/view only ioctl,
-but its a write command as well.
+typo here.
 
-Next, since in the kernel we only check if total_devices
-(read from SB)  is equal to num_devices (counted in the list)
-to state the status as 0 (ready) or 1 (not ready). But this
-does not work in rest of the device pool state like missing,
-seeding, replacing since total_devices is actually not equal
-to num_devices in these state but device pool is ready for
-the mount and its a bug which is not part of this discussions.
+Thanks,
 
-
-Questions:
-
-  - Do we want BTRFS_IOC_DEVICES_READY ioctl to also scan and
-    register the device provided (same as btrfs device scan
-    command or the BTRFS_IOC_SCAN_DEV ioctl)
-    OR can BTRFS_IOC_DEVICES_READY be read-only ioctl interface
-    to check the state of the device pool. ?
-
-  - If the the device in the argument is already mounted,
-    can it straightaway return 0 (ready) ? (as of now it would
-    again independently read the SB determine total_devices
-    and check against num_devices.
-
-  - What should be the expected return when the FS is mounted
-    and there is a missing device.
-
-
-Thanks, Anand
+-liubo
+>   */
+> -static int csum_tree_block(struct btrfs_fs_info *fs_info,
+> -			   struct extent_buffer *buf,
+> -			   int verify)
+> +static int csum_tree_block_part(struct extent_buffer *buf,
+> +				char *result, int part)
+>  {
+> -	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+> -	char *result = NULL;
+> +	int offset;
+> +	int err;
+>  	unsigned long len;
+>  	unsigned long cur_len;
+> -	unsigned long offset = BTRFS_CSUM_SIZE;
+> -	char *kaddr;
+>  	unsigned long map_start;
+>  	unsigned long map_len;
+> -	int err;
+> +	char *kaddr;
+>  	u32 crc = ~(u32)0;
+> -	unsigned long inline_result;
+>  
+> -	len = buf->len - offset;
+> +	BUG_ON(part >= 8 || part < 0);
+> +	BUG_ON(ALIGN(buf->len, 8) != buf->len);
+> +
+> +	if (part == 0) {
+> +		offset = BTRFS_CSUM_SIZE;
+> +		len = buf->len - offset;
+> +	} else if (part == 0) {
+> +		offset = BTRFS_CSUM_SIZE;
+> +		len = buf->len * 2 / 8 - offset;
+> +	} else {
+> +		offset = part * buf->len / 8;
+> +		len = buf->len / 8;
+> +	}
+> +
+>  	while (len > 0) {
+>  		err = map_private_extent_buffer(buf, offset, 32,
+>  					&kaddr, &map_start, &map_len);
+>  		if (err)
+> -			return 1;
+> +			return err;
+>  		cur_len = min(len, map_len - (offset - map_start));
+>  		crc = btrfs_csum_data(kaddr + offset - map_start,
+>  				      crc, cur_len);
+>  		len -= cur_len;
+>  		offset += cur_len;
+>  	}
+> -	if (csum_size > sizeof(inline_result)) {
+> -		result = kzalloc(csum_size, GFP_NOFS);
+> -		if (!result)
+> +	btrfs_csum_final(crc, result + BTRFS_CSUM_SIZE * part/ 8);
+> +	return 0;
+> +}
+> +
+> +/*
+> + * compute the csum for a btree block, and either verify it or write it
+> + * into the csum field of the block.
+> + */
+> +static int csum_tree_block(struct btrfs_fs_info *fs_info,
+> +			   struct extent_buffer *buf,
+> +			   int verify)
+> +{
+> +	u16 csum_size = btrfs_super_csum_size(fs_info->super_copy);
+> +	char result[BTRFS_CSUM_SIZE] = {0};
+> +	int err;
+> +	u32 crc = ~(u32)0;
+> +	int index = 0;
+> +
+> +	/* get every part csum */
+> +	for (index = 0; index < 8; index++) {
+> +		err = csum_tree_block_part(buf, result, index);
+> +		if (err)
+>  			return 1;
+> -	} else {
+> -		result = (char *)&inline_result;
+>  	}
+>  
+> -	btrfs_csum_final(crc, result);
+> -
+>  	if (verify) {
+>  		if (memcmp_extent_buffer(buf, result, 0, csum_size)) {
+>  			u32 val;
+> @@ -324,15 +353,11 @@ static int csum_tree_block(struct btrfs_fs_info *fs_info,
+>  				"level %d\n",
+>  				fs_info->sb->s_id, buf->start,
+>  				val, found, btrfs_header_level(buf));
+> -			if (result != (char *)&inline_result)
+> -				kfree(result);
+>  			return 1;
+>  		}
+>  	} else {
+> -		write_extent_buffer(buf, result, 0, csum_size);
+> +		write_extent_buffer(buf, result, 0, BTRFS_CSUM_SIZE);
+>  	}
+> -	if (result != (char *)&inline_result)
+> -		kfree(result);
+>  	return 0;
+>  }
+>  
+> -- 
+> 2.4.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

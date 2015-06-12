@@ -1,191 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:18153 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751089AbbFLKib (ORCPT
+Received: from mail-lb0-f170.google.com ([209.85.217.170]:34755 "EHLO
+	mail-lb0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755105AbbFLMTI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 06:38:31 -0400
-Message-ID: <557AB69A.1000101@oracle.com>
-Date: Fri, 12 Jun 2015 18:38:18 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Fri, 12 Jun 2015 08:19:08 -0400
+Received: by lbcmx3 with SMTP id mx3so18946829lbc.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2015 05:19:06 -0700 (PDT)
 MIME-Version: 1.0
-To: Martin <develop@imagmbh.de>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: rw-mount-problem after raid1-failure
-References: <2227931.EqpnWnc32X@malu-aspire-v3-771> <4768404.UTQo4H2Sip@term0> <FA615B68-27BB-4FFD-A1C6-AEC6027C476C@oracle.com> <4628680.5DrabroMAI@malu-aspire-v3-771>
-In-Reply-To: <4628680.5DrabroMAI@malu-aspire-v3-771>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Date: Fri, 12 Jun 2015 15:19:06 +0300
+Message-ID: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
+Subject: btrfs partition converted from ext4 becomes read-only minutes after
+ booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120
+From: Robert Munteanu <robert.munteanu@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+
+I have converted my root ext4 partition to btrfs. I used an USB stick
+to boot and used btrfs-convert.
+
+I also did a balance and defrag ( in that order ) , both when the fs
+was mounted.
+
+After logging in to KDE I quickly get a read-only filesystem. I've
+pasted the backtrace below
+
+Jun 11 23:13:08 mars kernel: WARNING: CPU: 2 PID: 2777 at
+../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120 [btrfs]()
+Jun 11 23:13:08 mars kernel: BTRFS: Transaction aborted (error -95)
+Jun 11 23:13:08 mars kernel: Modules linked in: bnep bluetooth rfkill
+fuse vboxpci(O) vboxnetadp(O) vboxnetflt(O) vboxdrv(O) af_packet
+nf_log_ipv6 xt_pkttype nf_log_ip
+v4 nf_log_common xt_LOG xt_limit ip6t_REJECT xt_tcpudp
+nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_raw ipt_REJECT iptable_raw
+xt_CT iptable_filter ip6table_mangle nf_con
+ntrack_netbios_ns nf_conntrack_broadcast nf_conntrack_ipv4
+nf_defrag_ipv4 ip_tables xt_conntrack nf_conntrack ip6table_filter
+ip6_tables x_tables xfs libcrc32c snd_hda
+_codec_hdmi raid1 md_mod gpio_ich ppdev iTCO_wdt iTCO_vendor_support
+coretemp snd_hda_codec_realtek snd_hda_codec_generic kvm_intel
+snd_hda_intel dm_mod kvm snd_hda_co
+ntroller snd_hda_codec snd_hwdep serio_raw pcspkr snd_pcm i2c_i801
+snd_seq joydev snd_seq_device snd_timer snd 8250_fintek parport_pc
+parport acpi_cpufreq lpc_ich
+Jun 11 23:13:08 mars kernel:  soundcore mfd_core shpchp processor
+ata_generic btrfs hid_logitech_hidpp xor raid6_pq sr_mod cdrom
+nvidia_uvm(PO) nvidia(PO) firewire_ohc
+i firewire_core crc_itu_t uas usb_storage r8169 mii pata_jmicron
+hid_logitech_dj drm button sg
+Jun 11 23:13:08 mars kernel: CPU: 2 PID: 2777 Comm: kworker/u8:0
+Tainted: P           O    4.0.4-3-desktop #1
+Jun 11 23:13:08 mars kernel: Hardware name: Gigabyte Technology Co.,
+Ltd. EP35-DS4/EP35-DS4, BIOS F6d 01/08/2009
+Jun 11 23:13:08 mars kernel: Workqueue: btrfs-endio-write
+btrfs_endio_write_helper [btrfs]
+Jun 11 23:13:08 mars kernel:  0000000000000000 ffffffffa0a92832
+ffffffff8167c4aa ffff880128513ca8
+Jun 11 23:13:08 mars kernel:  ffffffff81063bb1 ffff880031929d28
+ffff880221e71800 00000000ffffffa1
+Jun 11 23:13:08 mars kernel:  ffffffffa0a914e0 0000000000000b50
+ffffffff81063c2a ffffffffa0a95928
+Jun 11 23:13:08 mars kernel: Call Trace:
+Jun 11 23:13:08 mars kernel:  [<ffffffff8100574c>] dump_trace+0x8c/0x340
+Jun 11 23:13:08 mars kernel:  [<ffffffff81005aa3>] show_stack_log_lvl+0xa3/0x190
+Jun 11 23:13:08 mars kernel:  [<ffffffff81007201>] show_stack+0x21/0x50
+Jun 11 23:13:08 mars kernel:  [<ffffffff8167c4aa>] dump_stack+0x47/0x67
+Jun 11 23:13:08 mars kernel:  [<ffffffff81063bb1>]
+warn_slowpath_common+0x81/0xb0
+Jun 11 23:13:08 mars kernel:  [<ffffffff81063c2a>] warn_slowpath_fmt+0x4a/0x50
+Jun 11 23:13:08 mars kernel:  [<ffffffffa09e598b>]
+__btrfs_abort_transaction+0x4b/0x120 [btrfs]
+Jun 11 23:13:08 mars kernel:  [<ffffffffa0a1d18a>]
+btrfs_finish_ordered_io+0x5aa/0x620 [btrfs]
+Jun 11 23:13:08 mars kernel:  [<ffffffffa0a43253>]
+normal_work_helper+0xc3/0x320 [btrfs]
+Jun 11 23:13:08 mars kernel:  [<ffffffff8107bcf2>] process_one_work+0x142/0x420
+Jun 11 23:13:08 mars kernel:  [<ffffffff8107c0e4>] worker_thread+0x114/0x460
+Jun 11 23:13:08 mars kernel:  [<ffffffff81081261>] kthread+0xc1/0xe0
+Jun 11 23:13:08 mars kernel:  [<ffffffff81682d58>] ret_from_fork+0x58/0x90
+Jun 11 23:13:08 mars kernel: ---[ end trace 4c4eb7d6e98afa91 ]---
+Jun 11 23:13:08 mars kernel: BTRFS: error (device sda1) in
+btrfs_finish_ordered_io:2896: errno=-95 unknown
+Jun 11 23:13:08 mars kernel: BTRFS info (device sda1): forced readonly
+
+Some diagnostic info:
+
+- btrfs scrub reports no errors
+- on the host machine I'm running btrfs v4.0+20150429 and kernel 4.0.4-3-desktop
+- on the live medium, used to run btrfs-convert, I was running btrfs
+v4.0+20150429 and kernel 4.0.3-1-default
+
+# btrfs fi show
+Label: none  uuid: 54dea125-74cd-4bb2-86a2-f7bc645b76cf
+        Total devices 1 FS bytes used 90.22GiB
+        devid    1 size 223.57GiB used 92.03GiB path /dev/sda1
+
+btrfs-progs v4.0+20150429
+
+# btrfs fi df /
+Data, single: total=89.00GiB, used=88.17GiB
+System, single: total=32.00MiB, used=16.00KiB
+Metadata, single: total=3.00GiB, used=2.05GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Is there a way out? I still have the old ext4 image and can revert,
+but I'm keeping the btrfs one for now, in case I can extract some
+useful debugging information from it.
+
+Thanks,
+
+Robert
 
 
-On 06/11/2015 09:03 PM, Martin wrote:
-> It is reproduceable but the logs doesn't say much:
->
-> dmesg:
-> [151183.214355] BTRFS info (device sdb2): allowing degraded mounts
-> [151183.214361] BTRFS info (device sdb2): disk space caching is enabled
-> [151183.317719] BTRFS: bdev (null) errs: wr 7988389, rd 7707002, flush 150,
-> corrupt 0, gen 0
-> [151214.513046] BTRFS: too many missing devices, writeable mount is not
-> allowed
-
-presumably (we did not confirm that only one disk is missing from
-kernel point of view?) with One disk missing if you are still getting
-this that means, there is a group profile in your disk pool that does
-not tolerate single disk failure either.
-
-So now how would we check all the group profiles in an unmount(able)
-state ?
-
-There is a patch to show devlist using /proc/fs/btrfs/devlist.
-That would have helped here to debug. I am ok if you could confirm
-that using any other method as well.
-
-Thanks, Anand
-
-
-> [151214.548566] BTRFS: open_ctree failed
->
-> Can I get more info out of the kernel-module?
->
-> Thanks, Martin
->
-> Am Donnerstag, 11. Juni 2015, 08:04:04 schrieb Anand Jain:
->>> On 10 Jun 2015, at 5:35 pm, Martin <develop@imagmbh.de> wrote:
->>>
->>> Hello Anand,
->>>
->>> the failed disk was removed. My procedure was the following:
->>>
->>> - I found some write errors in the kernel log, so
->>> - I shutdown the system
->>> - I removed the failed disk
->>> - I powered on the system
->>> - I mounted the remaining disk degraded,rw (works OK)
->>> - the system works an and was rebooted some times, mounting degraded,rw
->>> works - suddentlym mounting degraded,rw stops working and only
->>> degraded,ro works.
->> any logs to say why. ?
->> Or
->> If these (above) stages are reproducible, could you fetch them afresh?
->>
->> Thanks Anand
->>
->>> Thanks, Martin
->>>
->>> Am Mittwoch, 10. Juni 2015, 15:46:52 schrieb Anand Jain:
->>>> On 06/10/2015 02:58 PM, Martin wrote:
->>>>> Hello Anand,
->>>>>
->>>>> the
->>>>>
->>>>>> mount -o degraded <good-disk> <-- this should work
->>>>>
->>>>> is my problem. The fist times it works but suddently, after a reboot, it
->>>>> fails with message "BTRFS: too many missing devices, writeable mount is
->>>>> not allowed" in kernel log.
->>>>>
->>>>   the failed(ing) disk is it still physically in the system ?
->>>>   when btrfs finds EIO on the intermittently failing disk,
->>>>   ro-mode kicks in, (there are some opportunity for fixes which
->>>>   I am trying). To recover, the approach is to make the failing
->>>>   disk a missing disk instead, by pulling out the failing disk
->>>>   from the system and boot. When system finds disk missing
->>>>   (not EIO rather) it should mount rw,degraded (from the VM part
->>>>   at least) and then replace (with a new disk) should work.
->>>>
->>>> Thanks, Anand
->>>>
->>>>> "btrfs fi show /backup2" shows:
->>>>> Label: none  uuid: 6d755db5-f8bb-494e-9bdc-cf524ff99512
->>>>>
->>>>>     Total devices 2 FS bytes used 3.50TiB
->>>>>     devid    4 size 7.19TiB used 4.02TiB path /dev/sdb2
->>>>>     *** Some devices missing
->>>>>
->>>>> I suppose there is a "marker", telling the system only to mount in
->>>>> ro-mode?
->>>>>
->>>>> Due to the ro-mount I can't replace the missing one because all the
->>>>> btrfs-
->>>>> commands need rw-access ...
->>>>>
->>>>> Martin
->>>>>
->>>>> Am Mittwoch, 10. Juni 2015, 14:38:38 schrieb Anand Jain:
->>>>>> Ah thanks David. So its 2 disks RAID1.
->>>>>>
->>>>>> Martin,
->>>>>>
->>>>>>    disk pool error handle is primitive as of now. readonly is the only
->>>>>>    action it would take. rest of recovery action is manual. thats
->>>>>>    unacceptable in a data center solutions. I don't recommend btrfs VM
->>>>>>    productions yet. But we are working to get that to a complete VM.
->>>>>>
->>>>>>    For now, for your pool recovery: pls try this.
->>>>>>
->>>>>>       - After reboot.
->>>>>>       - modunload and modload (so that kernel devlist is empty)
->>>>>>       - mount -o degraded <good-disk> <-- this should work.
->>>>>>       - btrfs fi show -m <-- Should show missing if you don't let me
->>>>>>       know.
->>>>>>       - Do a replace of the missing disk without reading the source
->>>>>>       disk.
->>>>>>
->>>>>> Good luck.
->>>>>>
->>>>>> Thanks, Anand
->>>>>>
->>>>>>> On 06/10/2015 11:58 AM, Duncan wrote:
->>>>>>>
->>>>>>> Anand Jain posted on Wed, 10 Jun 2015 09:19:37 +0800 as excerpted:
->>>>>>>>> On 06/09/2015 01:10 AM, Martin wrote:
->>>>>>>>> Hello!
->>>>>>>>>
->>>>>>>>> I have a raid1-btrfs-system (Kernel 3.19.0-18-generic, Ubuntu Vivid
->>>>>>>>> Vervet, btrfs-tools 3.17-1.1). One disk failed some days ago. I
->>>>>>>>> could
->>>>>>>>> remount the remaining one with "-o degraded". After one day and some
->>>>>>>>> write-operations (with no errrors) I had to reboot the system. And
->>>>>>>>> now
->>>>>>>>> I can not mount "rw" anymore, only "-o degraded,ro" is possible.
->>>>>>>>>
->>>>>>>>> In the kernel log I found BTRFS: too many missing devices, writeable
->>>>>>>>> mount is not allowed.
->>>>>>>>>
->>>>>>>>> I read about https://bugzilla.kernel.org/show_bug.cgi?id=60594 but I
->>>>>>>>> did no conversion to a single drive.
->>>>>>>>>
->>>>>>>>> How can I mount the disk "rw" to remove the "missing" drive and add
->>>>>>>>> a
->>>>>>>>> new one?
->>>>>>>>> Because there are many snapshots of the filesystem, copying the
->>>>>>>>> system
->>>>>>>>> would be only the last alternative ;-)
->>>>>>>>
->>>>>>>> How many disks you had in the RAID1. How many are failed ?
->>>>>>>
->>>>>>> The answer is (a bit indirectly) in what you quoted.  Repeating:
->>>>>>>>> One disk failed[.] I could remount the remaining one[.]
->>>>>>>
->>>>>>> So it was a two-device raid1, one failed device, one remaining,
->>>>>>> unfailed.
->>>>>>
->>>>>> --
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>>>> in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>>
->>>>> --
->>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>>> in
->>>>> the body of a message to majordomo@vger.kernel.org
->>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+-- 
+http://robert.muntea.nu/

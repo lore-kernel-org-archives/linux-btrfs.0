@@ -1,60 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:41446 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1221 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755642AbbFLQX0 (ORCPT
+	by vger.kernel.org with ESMTP id S1755455AbbFLQ04 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 12:23:26 -0400
-Message-ID: <557B076B.7050500@fb.com>
-Date: Fri, 12 Jun 2015 12:23:07 -0400
+	Fri, 12 Jun 2015 12:26:56 -0400
+Message-ID: <557B084C.1030007@fb.com>
+Date: Fri, 12 Jun 2015 12:26:52 -0400
 From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
-References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
+To: Tomasz Chmielewski <tch@virtall.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: kernel crashes with btrfs and busy database IO - how to debug?
+References: <ae9b9ca434c98509ca6c1ba6dbd84b63@admin.virtall.com>
+In-Reply-To: <ae9b9ca434c98509ca6c1ba6dbd84b63@admin.virtall.com>
 Content-Type: text/plain; charset="windows-1252"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 06/11/2015 11:00 PM, Qu Wenruo wrote:
-> Introduce the new partial csum mechanism for tree block.
+On 06/11/2015 07:33 AM, Tomasz Chmielewski wrote:
+> I have a server where I've installed a couple of LXC guests, btrfs - so
+> easy to test things with snapshots. Or so it seems.
 > 
-> [Old tree block csum]
-> 0     4     8    12    16    20    24    28    32
-> -------------------------------------------------
-> |csum |   unused, all 0				|
-> -------------------------------------------------
-> Csum is the crc32 of the whole tree block data.
+> Unfortunately the box crashes when I put "too much IO load" - with too
+> much load being these two running at the same time:
 > 
-> [New tree block csum]
-> -------------------------------------------------
-> |csum0|csum1|csum2|csum3|csum4|csum5|csum6|csum7|
-> -------------------------------------------------
-> Where csum0 is the same as the old one, crc32 of the whole tree block
-> data.
+> - quite busy MySQL database (doing up to 100% IO wait when running alone)
+> - busy mongo database (doing up to 100% IO wait when running alone)
 > 
-> But csum1~csum7 will restore crc32 of each eighth part.
-> Take example of 16K leafsize, then:
-> csum1: crc32 of BTRFS_CSUM_SIZE~4K
-> csum2: crc32 of 4K~6K
-> ...
-> csum7: crc32 of 14K~16K
+> With both mongo and mysql running at the same time, it crashes after 1-2
+> days (tried kernels 4.0.4, 4.0.5, 4.1-rc7 from Ubuntu "kernel-ppa"). It
+> does not crash if I only run mongo, or only mysql. There is plenty of
+> memory available (just around 2-4 GB used out of 32 GB) when it crashes.
 > 
-> This provides the ability for btrfs not only to detect corruption but
-> also to know where corruption is.
-> Further improve the robustness of btrfs.
+> As the box is only reachable remotely, I'm not able to catch a crash.
+> Sometimes, I'm able to get a bit of it printed via remote SSH, like here:
 > 
-> Although the best practise is to introduce new csum type and put every
-> eighth crc32 into corresponding place, but the benefit is not worthy to
-> break the backward compatibility.
-> So keep csum0 and modify csum1 range to keep backward compatibility.
+> [162276.341030] BUG: unable to handle kernel NULL pointer dereference at
+> 0000000000000008
 
-I do like how you're maintaining compatibility here, but I'm curious if
-you have data about situations this is likely to help?  Is there a
-particular kind of corruption you're targeting?
-
-Or is the goal to prevent tossing the whole block, and try to limit it
-to a smaller set of items in a node?
+The 0x8 part is identical to your chattr +C crash, so its safe to assume
+that we can focus on that on.  I'll see what I can find, but if you can
+run with CONFIG_DEBUG_PAGEALLOC (it'll be slow) my guess is the suspect
+will pop out pretty quickly.
 
 -chris
 

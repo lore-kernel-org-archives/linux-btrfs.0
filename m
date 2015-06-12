@@ -1,110 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f45.google.com ([209.85.192.45]:32997 "EHLO
-	mail-qg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750856AbbFLQJj convert rfc822-to-8bit (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:41446 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755642AbbFLQX0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 12:09:39 -0400
-Received: by qgfa66 with SMTP id a66so12944159qgf.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2015 09:09:38 -0700 (PDT)
+	Fri, 12 Jun 2015 12:23:26 -0400
+Message-ID: <557B076B.7050500@fb.com>
+Date: Fri, 12 Jun 2015 12:23:07 -0400
+From: Chris Mason <clm@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <557A890D.8080306@cn.fujitsu.com>
-References: <CAEMJtDs=U5+YO9sbVvjxLthdxp6JvZO=07EMhcU5Smif_1m5QQ@mail.gmail.com>
-	<557A890D.8080306@cn.fujitsu.com>
-Date: Fri, 12 Jun 2015 09:09:38 -0700
-Message-ID: <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
-Subject: Re: Can't mount btrfs volume on rbd
-From: Steve Dainard <sdainard@spd1.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
+References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="windows-1252"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Qu,
+On 06/11/2015 11:00 PM, Qu Wenruo wrote:
+> Introduce the new partial csum mechanism for tree block.
+> 
+> [Old tree block csum]
+> 0     4     8    12    16    20    24    28    32
+> -------------------------------------------------
+> |csum |   unused, all 0				|
+> -------------------------------------------------
+> Csum is the crc32 of the whole tree block data.
+> 
+> [New tree block csum]
+> -------------------------------------------------
+> |csum0|csum1|csum2|csum3|csum4|csum5|csum6|csum7|
+> -------------------------------------------------
+> Where csum0 is the same as the old one, crc32 of the whole tree block
+> data.
+> 
+> But csum1~csum7 will restore crc32 of each eighth part.
+> Take example of 16K leafsize, then:
+> csum1: crc32 of BTRFS_CSUM_SIZE~4K
+> csum2: crc32 of 4K~6K
+> ...
+> csum7: crc32 of 14K~16K
+> 
+> This provides the ability for btrfs not only to detect corruption but
+> also to know where corruption is.
+> Further improve the robustness of btrfs.
+> 
+> Although the best practise is to introduce new csum type and put every
+> eighth crc32 into corresponding place, but the benefit is not worthy to
+> break the backward compatibility.
+> So keep csum0 and modify csum1 range to keep backward compatibility.
 
-I have another volume with the same error, btrfs-debug-tree output
-from btrfs-progs 4.0.1 is here: http://pastebin.com/k3R3bngE
+I do like how you're maintaining compatibility here, but I'm curious if
+you have data about situations this is likely to help?  Is there a
+particular kind of corruption you're targeting?
 
-I'm not sure how to interpret the output, but the exit status is 0 so
-it looks like btrfs doesn't think there's an issue with the file
-system.
+Or is the goal to prevent tossing the whole block, and try to limit it
+to a smaller set of items in a node?
 
-I get the same mount error with options ro,recovery.
+-chris
 
-On Fri, Jun 12, 2015 at 12:23 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
-> -------- Original Message  --------
-> Subject: Can't mount btrfs volume on rbd
-> From: Steve Dainard <sdainard@spd1.com>
-> To: <linux-btrfs@vger.kernel.org>
-> Date: 2015年06月11日 23:26
->
->> Hello,
->>
->> I'm getting an error when attempting to mount a volume on a host that
->> was forceably powered off:
->>
->> # mount /dev/rbd4 climate-downscale-CMIP5/
->> mount: mount /dev/rbd4 on /mnt/climate-downscale-CMIP5 failed: Stale file
->> handle
->>
->> /var/log/messages:
->> Jun 10 15:31:07 node1 kernel: rbd4: unknown partition table
->>
->> # parted /dev/rbd4 print
->> Model: Unknown (unknown)
->> Disk /dev/rbd4: 36.5TB
->> Sector size (logical/physical): 512B/512B
->> Partition Table: loop
->> Disk Flags:
->>
->> Number  Start  End     Size    File system  Flags
->>   1      0.00B  36.5TB  36.5TB  btrfs
->>
->> # btrfs check --repair /dev/rbd4
->> enabling repair mode
->> Checking filesystem on /dev/rbd4
->> UUID: dfe6b0c8-2866-4318-abc2-e1e75c891a5e
->> checking extents
->> cmds-check.c:2274: check_owner_ref: Assertion `rec->is_root` failed.
->> btrfs[0x4175cc]
->> btrfs[0x41b873]
->> btrfs[0x41c3fe]
->> btrfs[0x41dc1d]
->> btrfs[0x406922]
->>
->>
->> OS: CentOS 7.1
->> btrfs-progs: 3.16.2
->
-> The btrfs-progs seems quite old, and the above btrfsck error seems quite
-> possible related to the old version.
->
-> Would you please upgrade btrfs-progs to 4.0 and see what will happen?
-> Hopes it can give better info.
->
-> BTW, it's a good idea to call btrfs-debug-tree /dev/rbd4 to see the output.
->
-> Thanks
-> Qu.
->>
->> Ceph: version: 0.94.1/CentOS 7.1
->>
->> I haven't found any references to 'stale file handle' on btrfs.
->>
->> The underlying block device is ceph rbd, so I've posted to both lists
->> for any feedback. Also once I reformatted btrfs I didn't get a mount
->> error.
->>
->> The btrfs volume has been reformatted so I won't be able to do much
->> post mortem but I'm wondering if anyone has some insight.
->>
->> Thanks,
->> Steve
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->

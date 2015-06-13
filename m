@@ -1,53 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:36058 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:36075 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751394AbbFMNUV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Jun 2015 09:20:21 -0400
+	id S1752001AbbFMNU1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Jun 2015 09:20:27 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH 1/2] Btrfs: use kmem_cache_free when freeing entry in inode cache
-Date: Sat, 13 Jun 2015 06:52:56 +0100
-Message-Id: <1434174777-14409-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 2/2] Btrfs: fix race between caching kthread and returning inode to inode cache
+Date: Sat, 13 Jun 2015 06:52:57 +0100
+Message-Id: <1434174777-14409-2-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1434174777-14409-1-git-send-email-fdmanana@kernel.org>
+References: <1434174777-14409-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-The free space entries are allocated using kmem_cache_zalloc(),
-through __btrfs_add_free_space(), therefore we should use
-kmem_cache_free() and not kfree() to avoid any confusion and
-any potential problem. Looking at the kfree() definition at
-mm/slab.c it has the following comment:
+While the inode cache caching kthread is calling btrfs_unpin_free_ino(),
+we could have a concurrent call to btrfs_return_ino() that adds a new
+entry to the root's free space cache of pinned inodes. This concurrent
+call does not acquire the fs_info->commit_root_sem before adding a new
+entry if the caching state is BTRFS_CACHE_FINISHED, which is a problem
+because the caching kthread calls btrfs_unpin_free_ino() after setting
+the caching state to BTRFS_CACHE_FINISHED and therefore races with
+the task calling btrfs_return_ino(), which is adding a new entry, while
+the former (caching kthread) is navigating the cache's rbtree, removing
+and freeing nodes from the cache's rbtree without acquiring the spinlock
+that protects the rbtree.
 
-  /*
-   * (...)
-   *
-   * Don't free memory not originally allocated by kmalloc()
-   * or you will run into trouble.
-   */
+This race resulted in memory corruption due to double free of struct
+btrfs_free_space objects because both tasks can end up doing freeing the
+same objects. Note that adding a new entry can result in merging it with
+other entries in the cache, in which case those entries are freed.
+This is particularly important as btrfs_free_space structures are also
+used for the block group free space caches.
 
-So better be safe and use kmem_cache_free().
+This memory corruption can be detected by a debugging kernel, which
+reports it with the following trace:
 
+[132408.501148] slab error in verify_redzone_free(): cache `btrfs_free_space': double free detected
+[132408.505075] CPU: 15 PID: 12248 Comm: btrfs-ino-cache Tainted: G        W       4.1.0-rc5-btrfs-next-10+ #1
+[132408.505075] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[132408.505075]  ffff880023e7d320 ffff880163d73cd8 ffffffff8145eec7 ffffffff81095dce
+[132408.505075]  ffff880009735d40 ffff880163d73ce8 ffffffff81154e1e ffff880163d73d68
+[132408.505075]  ffffffff81155733 ffffffffa054a95a ffff8801b6099f00 ffffffffa0505b5f
+[132408.505075] Call Trace:
+[132408.505075]  [<ffffffff8145eec7>] dump_stack+0x4f/0x7b
+[132408.505075]  [<ffffffff81095dce>] ? console_unlock+0x356/0x3a2
+[132408.505075]  [<ffffffff81154e1e>] __slab_error.isra.28+0x25/0x36
+[132408.505075]  [<ffffffff81155733>] __cache_free+0xe2/0x4b6
+[132408.505075]  [<ffffffffa054a95a>] ? __btrfs_add_free_space+0x2f0/0x343 [btrfs]
+[132408.505075]  [<ffffffffa0505b5f>] ? btrfs_unpin_free_ino+0x8e/0x99 [btrfs]
+[132408.505075]  [<ffffffff810f3b30>] ? time_hardirqs_off+0x15/0x28
+[132408.505075]  [<ffffffff81084d42>] ? trace_hardirqs_off+0xd/0xf
+[132408.505075]  [<ffffffff811563a1>] ? kfree+0xb6/0x14e
+[132408.505075]  [<ffffffff811563d0>] kfree+0xe5/0x14e
+[132408.505075]  [<ffffffffa0505b5f>] btrfs_unpin_free_ino+0x8e/0x99 [btrfs]
+[132408.505075]  [<ffffffffa0505e08>] caching_kthread+0x29e/0x2d9 [btrfs]
+[132408.505075]  [<ffffffffa0505b6a>] ? btrfs_unpin_free_ino+0x99/0x99 [btrfs]
+[132408.505075]  [<ffffffff8106698f>] kthread+0xef/0xf7
+[132408.505075]  [<ffffffff810f3b08>] ? time_hardirqs_on+0x15/0x28
+[132408.505075]  [<ffffffff810668a0>] ? __kthread_parkme+0xad/0xad
+[132408.505075]  [<ffffffff814653d2>] ret_from_fork+0x42/0x70
+[132408.505075]  [<ffffffff810668a0>] ? __kthread_parkme+0xad/0xad
+[132408.505075] ffff880023e7d320: redzone 1:0x9f911029d74e35b, redzone 2:0x9f911029d74e35b.
+[132409.501654] slab: double free detected in cache 'btrfs_free_space', objp ffff880023e7d320
+[132409.503355] ------------[ cut here ]------------
+[132409.504241] kernel BUG at mm/slab.c:2571!
+
+Therefore fix this by having btrfs_unpin_free_ino() acquire the lock
+that protects the rbtree while doing the searches and removing entries.
+
+Fixes: 1c70d8fb4dfa ("Btrfs: fix inode caching vs tree log")
 Cc: stable@vger.kernel.org
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode-map.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/inode-map.c | 15 +++++++++++----
+ 1 file changed, 11 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index f6a596d..218df70 100644
+index 218df70..d4a582a 100644
 --- a/fs/btrfs/inode-map.c
 +++ b/fs/btrfs/inode-map.c
-@@ -271,7 +271,7 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
- 		__btrfs_add_free_space(ctl, info->offset, count);
- free:
+@@ -246,6 +246,7 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
+ {
+ 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
+ 	struct rb_root *rbroot = &root->free_ino_pinned->free_space_offset;
++	spinlock_t *rbroot_lock = &root->free_ino_pinned->tree_lock;
+ 	struct btrfs_free_space *info;
+ 	struct rb_node *n;
+ 	u64 count;
+@@ -254,23 +255,29 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
+ 		return;
+ 
+ 	while (1) {
++		bool add_to_ctl = true;
++
++		spin_lock(rbroot_lock);
+ 		n = rb_first(rbroot);
+-		if (!n)
++		if (!n) {
++			spin_unlock(rbroot_lock);
+ 			break;
++		}
+ 
+ 		info = rb_entry(n, struct btrfs_free_space, offset_index);
+ 		BUG_ON(info->bitmap); /* Logic error */
+ 
+ 		if (info->offset > root->ino_cache_progress)
+-			goto free;
++			add_to_ctl = false;
+ 		else if (info->offset + info->bytes > root->ino_cache_progress)
+ 			count = root->ino_cache_progress - info->offset + 1;
+ 		else
+ 			count = info->bytes;
+ 
+-		__btrfs_add_free_space(ctl, info->offset, count);
+-free:
  		rb_erase(&info->offset_index, rbroot);
--		kfree(info);
-+		kmem_cache_free(btrfs_free_space_cachep, info);
++		spin_unlock(rbroot_lock);
++		if (add_to_ctl)
++			__btrfs_add_free_space(ctl, info->offset, count);
+ 		kmem_cache_free(btrfs_free_space_cachep, info);
  	}
  }
- 
 -- 
 2.1.3
 

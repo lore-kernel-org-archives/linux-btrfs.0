@@ -1,35 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:33839 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:36058 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753432AbbFLW4e (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 18:56:34 -0400
-Date: Fri, 12 Jun 2015 15:56:32 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Chris Mason <clm@fb.com>
-Cc: linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>,
-        Matt Robinson <git@nerdoftheherd.com>
-Subject: Re: [RESEND][PATCH] btrfs: Align EOF length to block in extent_same
-Message-ID: <20150612225632.GP18148@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <20150610221355.GN18148@wotan.suse.de>
- <557B3E91.3060206@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <557B3E91.3060206@fb.com>
+	id S1751394AbbFMNUV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Jun 2015 09:20:21 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: use kmem_cache_free when freeing entry in inode cache
+Date: Sat, 13 Jun 2015 06:52:56 +0100
+Message-Id: <1434174777-14409-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 12, 2015 at 04:18:25PM -0400, Chris Mason wrote:
-> Hi Mark,
-> 
-> This one conflicts with your btrfs: Handle unaligned length in
-> extent_same, which is in integration now.  If we need both, can you
-> please rework it?
+From: Filipe Manana <fdmanana@suse.com>
 
-They both fix the same bug, so we just need one of them. You can keep mine
-in there if it's easiest or take Matt's if you like it better. Both were
-tested the same way on my end too. Thanks Chris.
-	--Mark
+The free space entries are allocated using kmem_cache_zalloc(),
+through __btrfs_add_free_space(), therefore we should use
+kmem_cache_free() and not kfree() to avoid any confusion and
+any potential problem. Looking at the kfree() definition at
+mm/slab.c it has the following comment:
 
---
-Mark Fasheh
+  /*
+   * (...)
+   *
+   * Don't free memory not originally allocated by kmalloc()
+   * or you will run into trouble.
+   */
+
+So better be safe and use kmem_cache_free().
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode-map.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index f6a596d..218df70 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -271,7 +271,7 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
+ 		__btrfs_add_free_space(ctl, info->offset, count);
+ free:
+ 		rb_erase(&info->offset_index, rbroot);
+-		kfree(info);
++		kmem_cache_free(btrfs_free_space_cachep, info);
+ 	}
+ }
+ 
+-- 
+2.1.3
+

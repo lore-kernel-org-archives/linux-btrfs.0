@@ -1,129 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:36075 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:36161 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752001AbbFMNU1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 13 Jun 2015 09:20:27 -0400
+	id S1752001AbbFMNWq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 13 Jun 2015 09:22:46 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH 2/2] Btrfs: fix race between caching kthread and returning inode to inode cache
-Date: Sat, 13 Jun 2015 06:52:57 +0100
-Message-Id: <1434174777-14409-2-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1434174777-14409-1-git-send-email-fdmanana@kernel.org>
-References: <1434174777-14409-1-git-send-email-fdmanana@kernel.org>
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix crash on close_ctree() if cleaner starts new transaction
+Date: Sat, 13 Jun 2015 06:55:31 +0100
+Message-Id: <1434174931-14478-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-While the inode cache caching kthread is calling btrfs_unpin_free_ino(),
-we could have a concurrent call to btrfs_return_ino() that adds a new
-entry to the root's free space cache of pinned inodes. This concurrent
-call does not acquire the fs_info->commit_root_sem before adding a new
-entry if the caching state is BTRFS_CACHE_FINISHED, which is a problem
-because the caching kthread calls btrfs_unpin_free_ino() after setting
-the caching state to BTRFS_CACHE_FINISHED and therefore races with
-the task calling btrfs_return_ino(), which is adding a new entry, while
-the former (caching kthread) is navigating the cache's rbtree, removing
-and freeing nodes from the cache's rbtree without acquiring the spinlock
-that protects the rbtree.
+Often when running fstests btrfs/079 I was running into the following
+trace during umount on one of my qemu/kvm test vms:
 
-This race resulted in memory corruption due to double free of struct
-btrfs_free_space objects because both tasks can end up doing freeing the
-same objects. Note that adding a new entry can result in merging it with
-other entries in the cache, in which case those entries are freed.
-This is particularly important as btrfs_free_space structures are also
-used for the block group free space caches.
+[ 8245.682441] WARNING: CPU: 8 PID: 25064 at fs/btrfs/extent-tree.c:138 btrfs_put_block_group+0x51/0x69 [btrfs]()
+[ 8245.685039] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc i2c_piix4 acpi_cpufreq processor psmouse i2c_core thermal_sys parport evdev serio_raw button pcspkr microcode ext4 crc16 jbd2 mbcache sg sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix libata floppy virtio_pci virtio_ring scsi_mod virtio e1000 [last unloaded: btrfs]
+[ 8245.693860] CPU: 8 PID: 25064 Comm: umount Tainted: G        W       4.1.0-rc5-btrfs-next-10+ #1
+[ 8245.695081] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[ 8245.697583]  0000000000000009 ffff88020d047ce8 ffffffff8145eec7 ffffffff81095dce
+[ 8245.699234]  0000000000000000 ffff88020d047d28 ffffffff8104b399 0000000000000028
+[ 8245.700995]  ffffffffa04db07b ffff8801c6036c00 ffff8801c6036d68 ffff880202eb40b0
+[ 8245.702510] Call Trace:
+[ 8245.703006]  [<ffffffff8145eec7>] dump_stack+0x4f/0x7b
+[ 8245.705393]  [<ffffffff81095dce>] ? console_unlock+0x356/0x3a2
+[ 8245.706569]  [<ffffffff8104b399>] warn_slowpath_common+0xa1/0xbb
+[ 8245.707747]  [<ffffffffa04db07b>] ? btrfs_put_block_group+0x51/0x69 [btrfs]
+[ 8245.709101]  [<ffffffff8104b456>] warn_slowpath_null+0x1a/0x1c
+[ 8245.710274]  [<ffffffffa04db07b>] btrfs_put_block_group+0x51/0x69 [btrfs]
+[ 8245.711823]  [<ffffffffa04e3473>] btrfs_free_block_groups+0x145/0x322 [btrfs]
+[ 8245.713251]  [<ffffffffa04ef31a>] close_ctree+0x1ef/0x325 [btrfs]
+[ 8245.714448]  [<ffffffff8117d26e>] ? evict_inodes+0xdc/0xeb
+[ 8245.715539]  [<ffffffffa04cb3ad>] btrfs_put_super+0x19/0x1b [btrfs]
+[ 8245.716835]  [<ffffffff81167607>] generic_shutdown_super+0x73/0xef
+[ 8245.718015]  [<ffffffff81167a3a>] kill_anon_super+0x13/0x1e
+[ 8245.719101]  [<ffffffffa04cb1b6>] btrfs_kill_super+0x17/0x23 [btrfs]
+[ 8245.720316]  [<ffffffff81167544>] deactivate_locked_super+0x3b/0x68
+[ 8245.721517]  [<ffffffff81167dd6>] deactivate_super+0x3f/0x43
+[ 8245.722581]  [<ffffffff8117fbb9>] cleanup_mnt+0x59/0x78
+[ 8245.723538]  [<ffffffff8117fc18>] __cleanup_mnt+0x12/0x14
+[ 8245.724572]  [<ffffffff81065371>] task_work_run+0x8f/0xbc
+[ 8245.725598]  [<ffffffff810028fb>] do_notify_resume+0x45/0x53
+[ 8245.726892]  [<ffffffff814651ac>] int_signal+0x12/0x17
+[ 8245.737887] ---[ end trace a01d038397e99b92 ]---
+[ 8245.769363] general protection fault: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+[ 8245.770737] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc i2c_piix4 acpi_cpufreq processor psmouse i2c_core thermal_sys parport evdev serio_raw button pcspkr microcode ext4 crc16 jbd2 mbcache sg sr_mod cdrom sd_mod ata_generic virtio_scsi ata_piix libata floppy virtio_pci virtio_ring scsi_mod virtio e1000 [last unloaded: btrfs]
+[ 8245.772641] CPU: 2 PID: 25064 Comm: umount Tainted: G        W       4.1.0-rc5-btrfs-next-10+ #1
+[ 8245.772641] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[ 8245.772641] task: ffff880013005810 ti: ffff88020d044000 task.ti: ffff88020d044000
+[ 8245.772641] RIP: 0010:[<ffffffffa051c8e6>]  [<ffffffffa051c8e6>] btrfs_queue_work+0x2c/0x14d [btrfs]
+[ 8245.772641] RSP: 0018:ffff88020d0478b8  EFLAGS: 00010202
+[ 8245.772641] RAX: 0000000000000004 RBX: 6b6b6b6b6b6b6b6b RCX: ffffffffa0581488
+[ 8245.772641] RDX: 0000000000000000 RSI: ffff880194b7bf48 RDI: ffff880144b6a7a0
+[ 8245.772641] RBP: ffff88020d0478d8 R08: 0000000000000000 R09: 000000000000ffff
+[ 8245.772641] R10: 0000000000000004 R11: 0000000000000005 R12: ffff880194b7bf48
+[ 8245.772641] R13: ffff880194b7bf48 R14: 0000000000000410 R15: 0000000000000000
+[ 8245.772641] FS:  00007f991e77d840(0000) GS:ffff88023e280000(0000) knlGS:0000000000000000
+[ 8245.772641] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[ 8245.772641] CR2: 00007fbbd325ee68 CR3: 000000021de8e000 CR4: 00000000000006e0
+[ 8245.772641] Stack:
+[ 8245.772641]  ffff880194b7bf00 ffff880202eb4000 ffff880194b7bf48 0000000000000410
+[ 8245.772641]  ffff88020d047958 ffffffffa04ec6d5 ffff8801629b2ee8 0000000082987570
+[ 8245.772641]  0000000000a5813f 0000000000000001 ffff880013006100 0000000000000002
+[ 8245.772641] Call Trace:
+[ 8245.772641]  [<ffffffffa04ec6d5>] btrfs_wq_submit_bio+0xe1/0x17b [btrfs]
+[ 8245.772641]  [<ffffffff81086bff>] ? check_irq_usage+0x76/0x87
+[ 8245.772641]  [<ffffffffa04ec825>] btree_submit_bio_hook+0xb6/0xd9 [btrfs]
+[ 8245.772641]  [<ffffffffa04ebb7c>] ? btree_csum_one_bio+0xad/0xad [btrfs]
+[ 8245.772641]  [<ffffffffa04eb1a6>] ? btree_io_failed_hook+0x5e/0x5e [btrfs]
+[ 8245.772641]  [<ffffffffa050a6e7>] submit_one_bio+0x8c/0xc7 [btrfs]
+[ 8245.772641]  [<ffffffffa050d75b>] submit_extent_page.isra.18+0x9d/0x186 [btrfs]
+[ 8245.772641]  [<ffffffffa050d95b>] write_one_eb+0x117/0x1ae [btrfs]
+[ 8245.772641]  [<ffffffffa050a79b>] ? end_extent_buffer_writeback+0x21/0x21 [btrfs]
+[ 8245.772641]  [<ffffffffa0510510>] btree_write_cache_pages+0x2ab/0x385 [btrfs]
+[ 8245.772641]  [<ffffffffa04eb2b8>] btree_writepages+0x23/0x5c [btrfs]
+[ 8245.772641]  [<ffffffff8111c661>] do_writepages+0x23/0x2c
+[ 8245.772641]  [<ffffffff81189cd4>] __writeback_single_inode+0xda/0x5bd
+[ 8245.772641]  [<ffffffff8118aa60>] ? writeback_single_inode+0x2b/0x173
+[ 8245.772641]  [<ffffffff8118aafd>] writeback_single_inode+0xc8/0x173
+[ 8245.772641]  [<ffffffff8118ac95>] write_inode_now+0x8a/0x95
+[ 8245.772641]  [<ffffffff81247bf0>] ? _atomic_dec_and_lock+0x30/0x4e
+[ 8245.772641]  [<ffffffff8117cc5e>] iput+0x17d/0x26a
+[ 8245.772641]  [<ffffffffa04ef355>] close_ctree+0x22a/0x325 [btrfs]
+[ 8245.772641]  [<ffffffff8117d26e>] ? evict_inodes+0xdc/0xeb
+[ 8245.772641]  [<ffffffffa04cb3ad>] btrfs_put_super+0x19/0x1b [btrfs]
+[ 8245.772641]  [<ffffffff81167607>] generic_shutdown_super+0x73/0xef
+[ 8245.772641]  [<ffffffff81167a3a>] kill_anon_super+0x13/0x1e
+[ 8245.772641]  [<ffffffffa04cb1b6>] btrfs_kill_super+0x17/0x23 [btrfs]
+[ 8245.772641]  [<ffffffff81167544>] deactivate_locked_super+0x3b/0x68
+[ 8245.772641]  [<ffffffff81167dd6>] deactivate_super+0x3f/0x43
+[ 8245.772641]  [<ffffffff8117fbb9>] cleanup_mnt+0x59/0x78
+[ 8245.772641]  [<ffffffff8117fc18>] __cleanup_mnt+0x12/0x14
+[ 8245.772641]  [<ffffffff81065371>] task_work_run+0x8f/0xbc
+[ 8245.772641]  [<ffffffff810028fb>] do_notify_resume+0x45/0x53
+[ 8245.772641]  [<ffffffff814651ac>] int_signal+0x12/0x17
+[ 8245.772641] Code: 1f 44 00 00 55 48 89 e5 41 56 41 55 41 54 53 49 89 f4 48 8b 46 70 a8 04 74 09 48 8b 5f 08 48 85 db 75 03 48 8b 1f 49 89 5c 24 68 <83> 7b 5c ff 74 04 f0 ff 43 50 49 83 7c 24 08 00 74 2c 4c 8d 6b
+[ 8245.772641] RIP  [<ffffffffa051c8e6>] btrfs_queue_work+0x2c/0x14d [btrfs]
+[ 8245.772641]  RSP <ffff88020d0478b8>
+[ 8245.845040] ---[ end trace a01d038397e99b93 ]---
 
-This memory corruption can be detected by a debugging kernel, which
-reports it with the following trace:
+For logical reasons such as the phase of the moon, this happened more
+often with "-o inode_cache" than without any mount options.
 
-[132408.501148] slab error in verify_redzone_free(): cache `btrfs_free_space': double free detected
-[132408.505075] CPU: 15 PID: 12248 Comm: btrfs-ino-cache Tainted: G        W       4.1.0-rc5-btrfs-next-10+ #1
-[132408.505075] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
-[132408.505075]  ffff880023e7d320 ffff880163d73cd8 ffffffff8145eec7 ffffffff81095dce
-[132408.505075]  ffff880009735d40 ffff880163d73ce8 ffffffff81154e1e ffff880163d73d68
-[132408.505075]  ffffffff81155733 ffffffffa054a95a ffff8801b6099f00 ffffffffa0505b5f
-[132408.505075] Call Trace:
-[132408.505075]  [<ffffffff8145eec7>] dump_stack+0x4f/0x7b
-[132408.505075]  [<ffffffff81095dce>] ? console_unlock+0x356/0x3a2
-[132408.505075]  [<ffffffff81154e1e>] __slab_error.isra.28+0x25/0x36
-[132408.505075]  [<ffffffff81155733>] __cache_free+0xe2/0x4b6
-[132408.505075]  [<ffffffffa054a95a>] ? __btrfs_add_free_space+0x2f0/0x343 [btrfs]
-[132408.505075]  [<ffffffffa0505b5f>] ? btrfs_unpin_free_ino+0x8e/0x99 [btrfs]
-[132408.505075]  [<ffffffff810f3b30>] ? time_hardirqs_off+0x15/0x28
-[132408.505075]  [<ffffffff81084d42>] ? trace_hardirqs_off+0xd/0xf
-[132408.505075]  [<ffffffff811563a1>] ? kfree+0xb6/0x14e
-[132408.505075]  [<ffffffff811563d0>] kfree+0xe5/0x14e
-[132408.505075]  [<ffffffffa0505b5f>] btrfs_unpin_free_ino+0x8e/0x99 [btrfs]
-[132408.505075]  [<ffffffffa0505e08>] caching_kthread+0x29e/0x2d9 [btrfs]
-[132408.505075]  [<ffffffffa0505b6a>] ? btrfs_unpin_free_ino+0x99/0x99 [btrfs]
-[132408.505075]  [<ffffffff8106698f>] kthread+0xef/0xf7
-[132408.505075]  [<ffffffff810f3b08>] ? time_hardirqs_on+0x15/0x28
-[132408.505075]  [<ffffffff810668a0>] ? __kthread_parkme+0xad/0xad
-[132408.505075]  [<ffffffff814653d2>] ret_from_fork+0x42/0x70
-[132408.505075]  [<ffffffff810668a0>] ? __kthread_parkme+0xad/0xad
-[132408.505075] ffff880023e7d320: redzone 1:0x9f911029d74e35b, redzone 2:0x9f911029d74e35b.
-[132409.501654] slab: double free detected in cache 'btrfs_free_space', objp ffff880023e7d320
-[132409.503355] ------------[ cut here ]------------
-[132409.504241] kernel BUG at mm/slab.c:2571!
+After some debugging it turned out to be simple to understand what was
+happening:
 
-Therefore fix this by having btrfs_unpin_free_ino() acquire the lock
-that protects the rbtree while doing the searches and removing entries.
+1) close_ctree() is called;
 
-Fixes: 1c70d8fb4dfa ("Btrfs: fix inode caching vs tree log")
-Cc: stable@vger.kernel.org
+2) It then stops the transaction kthread, which commits the current
+   transaction;
+
+3) It asks the cleaner kthread to stop, which is currently running
+   btrfs_delete_unused_bgs();
+
+4) btrfs_delete_unused_bgs() finds an unused block group, starts a new
+   transaction, deletes the block group, which implies COWing some
+   tree nodes and leafs and dirtying their respective pages, and then
+   finally it ends the transaction it started, without committing it;
+
+5) The cleaner kthread stops;
+
+6) close_ctree() releases (from memory) the block group objects, which
+   produces the warning in the trace pasted above;
+
+7) Then it invalidates all pages of the btree inode, by calling
+   invalidate_inode_pages2(), which waits for any pages under writeback,
+   and releases any non-dirty pages;
+
+8) All work queues are destroyed (waiting first for their current tasks
+   to finish execution);
+
+9) A final iput() is called against the btree inode;
+
+10) This iput triggers a writeback of the btree inode because it still
+    has dirty pages;
+
+11) This starts the whole chain of callbacks for the btree inode until
+    it eventually reaches btrfs_wq_submit_bio() where it leads to a
+    NULL pointer dereference because the work queues were already
+    destroyed.
+
+Fix this by making the cleaner commit any transaction that it started
+after the transaction kthread was stopped.
+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode-map.c | 15 +++++++++++----
- 1 file changed, 11 insertions(+), 4 deletions(-)
+ fs/btrfs/disk-io.c | 29 +++++++++++++++++++++++++++++
+ 1 file changed, 29 insertions(+)
 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 218df70..d4a582a 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -246,6 +246,7 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f23675c..404559a 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1752,6 +1752,7 @@ static int cleaner_kthread(void *arg)
  {
- 	struct btrfs_free_space_ctl *ctl = root->free_ino_ctl;
- 	struct rb_root *rbroot = &root->free_ino_pinned->free_space_offset;
-+	spinlock_t *rbroot_lock = &root->free_ino_pinned->tree_lock;
- 	struct btrfs_free_space *info;
- 	struct rb_node *n;
- 	u64 count;
-@@ -254,23 +255,29 @@ void btrfs_unpin_free_ino(struct btrfs_root *root)
- 		return;
+ 	struct btrfs_root *root = arg;
+ 	int again;
++	struct btrfs_trans_handle *trans;
  
- 	while (1) {
-+		bool add_to_ctl = true;
+ 	do {
+ 		again = 0;
+@@ -1799,6 +1800,34 @@ sleep:
+ 			__set_current_state(TASK_RUNNING);
+ 		}
+ 	} while (!kthread_should_stop());
 +
-+		spin_lock(rbroot_lock);
- 		n = rb_first(rbroot);
--		if (!n)
-+		if (!n) {
-+			spin_unlock(rbroot_lock);
- 			break;
-+		}
- 
- 		info = rb_entry(n, struct btrfs_free_space, offset_index);
- 		BUG_ON(info->bitmap); /* Logic error */
- 
- 		if (info->offset > root->ino_cache_progress)
--			goto free;
-+			add_to_ctl = false;
- 		else if (info->offset + info->bytes > root->ino_cache_progress)
- 			count = root->ino_cache_progress - info->offset + 1;
- 		else
- 			count = info->bytes;
- 
--		__btrfs_add_free_space(ctl, info->offset, count);
--free:
- 		rb_erase(&info->offset_index, rbroot);
-+		spin_unlock(rbroot_lock);
-+		if (add_to_ctl)
-+			__btrfs_add_free_space(ctl, info->offset, count);
- 		kmem_cache_free(btrfs_free_space_cachep, info);
- 	}
++	/*
++	 * Transaction kthread is stopped before us and wakes us up.
++	 * However we might have started a new transaction and COWed some
++	 * tree blocks when deleting unused block groups for example. So
++	 * make sure we commit the transaction we started to have a clean
++	 * shutdown when evicting the btree inode - if it has dirty pages
++	 * when we do the final iput() on it, eviction will trigger a
++	 * writeback for it which will fail with null pointer dereferences
++	 * since work queues and other resources were already released and
++	 * destroyed by the time the iput/eviction/writeback is made.
++	 */
++	trans = btrfs_attach_transaction(root);
++	if (IS_ERR(trans)) {
++		if (PTR_ERR(trans) != -ENOENT)
++			btrfs_err(root->fs_info,
++				  "cleaner transaction attach returned %ld",
++				  PTR_ERR(trans));
++	} else {
++		int ret;
++
++		ret = btrfs_commit_transaction(trans, root);
++		if (ret)
++			btrfs_err(root->fs_info,
++				  "cleaner open transaction commit returned %d",
++				  ret);
++	}
++
+ 	return 0;
  }
+ 
 -- 
 2.1.3
 

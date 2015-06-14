@@ -1,36 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from resqmta-po-11v.sys.comcast.net ([96.114.154.170]:33037 "EHLO
-	resqmta-po-11v.sys.comcast.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750797AbbFNEeU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Jun 2015 00:34:20 -0400
-Message-ID: <557D0447.6040506@shroop.net>
-Date: Sat, 13 Jun 2015 21:34:15 -0700
-From: Rich Rauenzahn <rich@shroop.net>
-MIME-Version: 1.0
-To: crocket <crockabiscuit@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: How do I make 'btrfs scrub' report errors via email?
-References: <CAL0=0H19M7JG4o4p55Li3tF4PeA-UXb8mURcSOdPLwxfL0c1DQ@mail.gmail.com>
-In-Reply-To: <CAL0=0H19M7JG4o4p55Li3tF4PeA-UXb8mURcSOdPLwxfL0c1DQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:42103 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751918AbbFNPMH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 14 Jun 2015 11:12:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Z49Zu-0001DY-37
+	for linux-btrfs@vger.kernel.org; Sun, 14 Jun 2015 17:12:06 +0200
+Received: from host-78-149-208-209.as13285.net ([78.149.208.209])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jun 2015 17:12:06 +0200
+Received: from samtygier by host-78-149-208-209.as13285.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jun 2015 17:12:06 +0200
+To: linux-btrfs@vger.kernel.org
+From: sam tygier <samtygier@yahoo.co.uk>
+Subject: [PATCH] Check metadata redundancy on balance
+Date: Sun, 14 Jun 2015 16:11:59 +0100
+Message-ID: <mlk5jv$60n$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 6/13/2015 6:48 AM, crocket wrote:
-> I can check the result of 'btrfs scrub' later, but I don't want to
-> take time to actually check it.
-> Does anyone know how to make 'btrfs scrub' report errors via email?
-> It seems google doesn't know.
+Currently BTRFS allows you to make bad choices of data and 
+metadata levels. For example -d raid1 -m raid0 means you can
+only use half your total disk space, but will loose everything
+if 1 disk fails. It should give a warning in these cases.
 
-I use this job in /etc/cron.d/btrfs.scrub.cron :
+This patch is a follow up to
+[PATCH v2] btrfs-progs: check metadata redundancy
+in order to cover the case of using balance to convert to such
+a set of raid levels.
 
-0 0 * * fri root for dev in `mount | grep "type btrfs" | awk '{print 
-$1}' | sort -u`; do  echo --------------------------; echo Scrubbing 
-$dev :; echo --------------------------; /usr/sbin/btrfs scrub start -B 
-$dev; done
+A simple example to hit this is to create a single device fs, 
+which will default to single:dup, then to add a second device and
+attempt to convert to raid1 with the command
+btrfs balance start -dconvert=raid1  /mnt
+this will result in a filesystem with raid1:dup, which will not
+survive the loss of one drive. I personally don't see why the tools
+should allow this, but in the previous thread a warning was
+considered sufficient.
 
-I also use sec:
+Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
 
-http://superuser.com/questions/789303/how-to-monitor-btrfs-filesystem-raid-for-errors
+From: Sam Tygier <samtygier@yahoo.co.uk>
+Date: Sat, 13 Jun 2015 18:13:06 +0100
+Subject: [PATCH] Check metadata redundancy on balance
 
+When converting a filesystem via balance check that metadata mode
+is at least as redundant as the data mode. For example give warning
+when:
+-dconvert=raid1 -mconvert=single
+---
+ fs/btrfs/volumes.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 174f5e1..875d608 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3336,6 +3336,24 @@ static void __cancel_balance(struct btrfs_fs_info *fs_info)
+ 	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
+ }
+ 
++static int group_profile_max_safe_loss(u64 flag)
++{
++	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case 0: /* single */
++	case BTRFS_BLOCK_GROUP_DUP:
++	case BTRFS_BLOCK_GROUP_RAID0:
++		return 0;
++	case BTRFS_BLOCK_GROUP_RAID1:
++	case BTRFS_BLOCK_GROUP_RAID5:
++	case BTRFS_BLOCK_GROUP_RAID10:
++		return 1;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		return 2;
++	default:
++		return -1;
++	}
++}
++
+ /*
+  * Should be called with both balance and volume mutexes held
+  */
+@@ -3454,6 +3472,12 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 		}
+ 	} while (read_seqretry(&fs_info->profiles_lock, seq));
+ 
++	if (group_profile_max_safe_loss(bctl->meta.target) <
++		group_profile_max_safe_loss(bctl->data.target)) {
++		btrfs_info(fs_info,
++			"Warning: metatdata has lower redundancy than data\n");
++	}
++
+ 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+ 		int num_tolerated_disk_barrier_failures;
+ 		u64 target = bctl->sys.target;
+-- 
+2.4.2
 

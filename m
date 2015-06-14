@@ -1,189 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from extern.sonoring.de ([212.23.155.200]:38810 "EHLO
-	cmail.imagmbh.de" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752343AbbFNS2C (ORCPT
+Received: from mail-lb0-f177.google.com ([209.85.217.177]:35579 "EHLO
+	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751982AbbFNTir convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Jun 2015 14:28:02 -0400
-From: Martin <develop@imagmbh.de>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: rw-mount-problem after raid1-failure
-Date: Sun, 14 Jun 2015 20:24:49 +0200
-Message-ID: <1646810.T2fMSGCrYe@malu-aspire-v3-771>
-In-Reply-To: <557AB69A.1000101@oracle.com>
-References: <2227931.EqpnWnc32X@malu-aspire-v3-771> <4628680.5DrabroMAI@malu-aspire-v3-771> <557AB69A.1000101@oracle.com>
+	Sun, 14 Jun 2015 15:38:47 -0400
+Received: by lbbtu8 with SMTP id tu8so42207932lbb.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 14 Jun 2015 12:38:45 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Date: Sun, 14 Jun 2015 21:38:45 +0200
+Message-ID: <CAN8=bazs9GeqtA5+kOoN=MWrtaQQw0+TUxA8jrTfY5ouuqVm+A@mail.gmail.com>
+Subject: I_ERR_FILE_EXTENT_DISCOUNT when there are no file extent holes in inode
+From: =?UTF-8?Q?Przemys=C5=82aw_Pawe=C5=82czyk?=
+	<przemyslaw@pawelczyk.it>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Do you know, where I can find this kernel-patch because I didn't find it. Then 
-I will build the patched kernel and send the devlist-output.
+Hi!
 
-Thanks, Martin
+I wanted to move and resize /home btrfs partition of my debian jessie
+v8.1 (w/ btrfs-tools v3.17) in virtual machine using gparted 0.22.0
+after booting from latest SysRescCD 4.5.3 (w/ btrfs-progs v3.19.1).
+GParted does fs check before, to make sure that everything is fine,
+but it wasn't. There were following errors from `btrfsck`:
 
-Am Freitag, 12. Juni 2015, 18:38:18 schrieb Anand Jain:
-> On 06/11/2015 09:03 PM, Martin wrote:
-> > It is reproduceable but the logs doesn't say much:
-> > 
-> > dmesg:
-> > [151183.214355] BTRFS info (device sdb2): allowing degraded mounts
-> > [151183.214361] BTRFS info (device sdb2): disk space caching is enabled
-> > [151183.317719] BTRFS: bdev (null) errs: wr 7988389, rd 7707002, flush
-> > 150,
-> > corrupt 0, gen 0
-> > [151214.513046] BTRFS: too many missing devices, writeable mount is not
-> > allowed
-> 
-> presumably (we did not confirm that only one disk is missing from
-> kernel point of view?) with One disk missing if you are still getting
-> this that means, there is a group profile in your disk pool that does
-> not tolerate single disk failure either.
-> 
-> So now how would we check all the group profiles in an unmount(able)
-> state ?
-> 
-> There is a patch to show devlist using /proc/fs/btrfs/devlist.
-> That would have helped here to debug. I am ok if you could confirm
-> that using any other method as well.
-> 
-> Thanks, Anand
-> 
-> > [151214.548566] BTRFS: open_ctree failed
-> > 
-> > Can I get more info out of the kernel-module?
-> > 
-> > Thanks, Martin
-> > 
-> > Am Donnerstag, 11. Juni 2015, 08:04:04 schrieb Anand Jain:
-> >>> On 10 Jun 2015, at 5:35 pm, Martin <develop@imagmbh.de> wrote:
-> >>> 
-> >>> Hello Anand,
-> >>> 
-> >>> the failed disk was removed. My procedure was the following:
-> >>> 
-> >>> - I found some write errors in the kernel log, so
-> >>> - I shutdown the system
-> >>> - I removed the failed disk
-> >>> - I powered on the system
-> >>> - I mounted the remaining disk degraded,rw (works OK)
-> >>> - the system works an and was rebooted some times, mounting degraded,rw
-> >>> works - suddentlym mounting degraded,rw stops working and only
-> >>> degraded,ro works.
-> >> 
-> >> any logs to say why. ?
-> >> Or
-> >> If these (above) stages are reproducible, could you fetch them afresh?
-> >> 
-> >> Thanks Anand
-> >> 
-> >>> Thanks, Martin
-> >>> 
-> >>> Am Mittwoch, 10. Juni 2015, 15:46:52 schrieb Anand Jain:
-> >>>> On 06/10/2015 02:58 PM, Martin wrote:
-> >>>>> Hello Anand,
-> >>>>> 
-> >>>>> the
-> >>>>> 
-> >>>>>> mount -o degraded <good-disk> <-- this should work
-> >>>>> 
-> >>>>> is my problem. The fist times it works but suddently, after a reboot,
-> >>>>> it
-> >>>>> fails with message "BTRFS: too many missing devices, writeable mount
-> >>>>> is
-> >>>>> not allowed" in kernel log.
-> >>>>> 
-> >>>>   the failed(ing) disk is it still physically in the system ?
-> >>>>   when btrfs finds EIO on the intermittently failing disk,
-> >>>>   ro-mode kicks in, (there are some opportunity for fixes which
-> >>>>   I am trying). To recover, the approach is to make the failing
-> >>>>   disk a missing disk instead, by pulling out the failing disk
-> >>>>   from the system and boot. When system finds disk missing
-> >>>>   (not EIO rather) it should mount rw,degraded (from the VM part
-> >>>>   at least) and then replace (with a new disk) should work.
-> >>>> 
-> >>>> Thanks, Anand
-> >>>> 
-> >>>>> "btrfs fi show /backup2" shows:
-> >>>>> Label: none  uuid: 6d755db5-f8bb-494e-9bdc-cf524ff99512
-> >>>>> 
-> >>>>>     Total devices 2 FS bytes used 3.50TiB
-> >>>>>     devid    4 size 7.19TiB used 4.02TiB path /dev/sdb2
-> >>>>>     *** Some devices missing
-> >>>>> 
-> >>>>> I suppose there is a "marker", telling the system only to mount in
-> >>>>> ro-mode?
-> >>>>> 
-> >>>>> Due to the ro-mount I can't replace the missing one because all the
-> >>>>> btrfs-
-> >>>>> commands need rw-access ...
-> >>>>> 
-> >>>>> Martin
-> >>>>> 
-> >>>>> Am Mittwoch, 10. Juni 2015, 14:38:38 schrieb Anand Jain:
-> >>>>>> Ah thanks David. So its 2 disks RAID1.
-> >>>>>> 
-> >>>>>> Martin,
-> >>>>>> 
-> >>>>>>    disk pool error handle is primitive as of now. readonly is the
-> >>>>>>    only
-> >>>>>>    action it would take. rest of recovery action is manual. thats
-> >>>>>>    unacceptable in a data center solutions. I don't recommend btrfs
-> >>>>>>    VM
-> >>>>>>    productions yet. But we are working to get that to a complete VM.
-> >>>>>>    
-> >>>>>>    For now, for your pool recovery: pls try this.
-> >>>>>>    
-> >>>>>>       - After reboot.
-> >>>>>>       - modunload and modload (so that kernel devlist is empty)
-> >>>>>>       - mount -o degraded <good-disk> <-- this should work.
-> >>>>>>       - btrfs fi show -m <-- Should show missing if you don't let me
-> >>>>>>       know.
-> >>>>>>       - Do a replace of the missing disk without reading the source
-> >>>>>>       disk.
-> >>>>>> 
-> >>>>>> Good luck.
-> >>>>>> 
-> >>>>>> Thanks, Anand
-> >>>>>> 
-> >>>>>>> On 06/10/2015 11:58 AM, Duncan wrote:
-> >>>>>>> 
-> >>>>>>> Anand Jain posted on Wed, 10 Jun 2015 09:19:37 +0800 as excerpted:
-> >>>>>>>>> On 06/09/2015 01:10 AM, Martin wrote:
-> >>>>>>>>> Hello!
-> >>>>>>>>> 
-> >>>>>>>>> I have a raid1-btrfs-system (Kernel 3.19.0-18-generic, Ubuntu
-> >>>>>>>>> Vivid
-> >>>>>>>>> Vervet, btrfs-tools 3.17-1.1). One disk failed some days ago. I
-> >>>>>>>>> could
-> >>>>>>>>> remount the remaining one with "-o degraded". After one day and
-> >>>>>>>>> some
-> >>>>>>>>> write-operations (with no errrors) I had to reboot the system. And
-> >>>>>>>>> now
-> >>>>>>>>> I can not mount "rw" anymore, only "-o degraded,ro" is possible.
-> >>>>>>>>> 
-> >>>>>>>>> In the kernel log I found BTRFS: too many missing devices,
-> >>>>>>>>> writeable
-> >>>>>>>>> mount is not allowed.
-> >>>>>>>>> 
-> >>>>>>>>> I read about https://bugzilla.kernel.org/show_bug.cgi?id=60594 but
-> >>>>>>>>> I
-> >>>>>>>>> did no conversion to a single drive.
-> >>>>>>>>> 
-> >>>>>>>>> How can I mount the disk "rw" to remove the "missing" drive and
-> >>>>>>>>> add
-> >>>>>>>>> a
-> >>>>>>>>> new one?
-> >>>>>>>>> Because there are many snapshots of the filesystem, copying the
-> >>>>>>>>> system
-> >>>>>>>>> would be only the last alternative ;-)
-> >>>>>>>> 
-> >>>>>>>> How many disks you had in the RAID1. How many are failed ?
-> >>>>>>> 
-> >>>>>>> The answer is (a bit indirectly) in what you quoted.  Repeating:
-> >>>>>>>>> One disk failed[.] I could remount the remaining one[.]
-> >>>>>>> 
-> >>>>>>> So it was a two-device raid1, one failed device, one remaining,
-> >>>>>>> unfailed.
+checking fs roots
+root 5 inode 1521611 errors 100, file extent discount
+Found file extent holes:
+start: 12288, len:4096
+root 5 inode 1521634 errors 100, file extent discount
+Found file extent holes:
+root 5 inode 1521645 errors 100, file extent discount
+Found file extent holes:
+start: 8192, len:4096
+root 5 inode 1521647 errors 100, file extent discount
+Found file extent holes:
+start: 8192, len:8192
+start: 20480, len:4096
+root 5 inode 1521648 errors 100, file extent discount
+Found file extent holes:
+root 5 inode 1521649 errors 100, file extent discount
+Found file extent holes:
+...
 
+As you can see not every inode w/ file extent discount error flag has
+file extent holes. I'm not sure of exact definition of this error
+flag, so cannot tell myself how (ab?)normal it is. I was using this
+partition almost daily for almost a year (back then it was debian
+testing when installed) and beside occasional VirtualBox hangups
+(during rsync from USB), I had no problems at all.
 
+Qu Wenruo's discount file extent hole repairing function landed in
+btrfs-progs v3.19, so I couldn't use debian's old btrfsck to improve
+the situation, but sysresccd's one was recent enough (and I was
+already booted into it), so I went with its `btrfsck --repair`. I got
+many 'Fixed discount file extents for inode' messages, but next
+`btrfsck` run still reported file extent discount errors. Looking
+closely there was some improvement, because 2 inodes were no longer
+reported (only one within visible part of the below log dump):
+
+checking fs roots
+root 5 inode 1521634 errors 100, file extent discount
+Found file extent holes:
+root 5 inode 1521645 errors 100, file extent discount
+Found file extent holes:
+root 5 inode 1521647 errors 100, file extent discount
+Found file extent holes:
+root 5 inode 1521648 errors 100, file extent discount
+Found file extent holes:
+root 5 inode 1521649 errors 100, file extent discount
+Found file extent holes:
+...
+
+I cloned btrfs-progs.git with latest stable v4.0.1, and executed
+self-built `btrfsck --repair` from my debian, hoping that maybe there
+were some improvements in that department. Sadly no, I got many 'Fixed
+discount file extents for inode', but next `btrfsck` revealed same old
+file extent discount errors. It looked like flag error is simply not
+cleared, so I finally looked into the code.
+
+When I found repair_inode_discount_extent() in cmds-check.c, I though
+I've found the bug. I_ERR_FILE_EXTENT_DISCOUNT is cleared only within
+while (node) loop, so if there are no file extents hole, it won't be
+cleared. So I moved
+
+    if (RB_EMPTY_ROOT(&rec->holes))
+        rec->errors &= ~I_ERR_FILE_EXTENT_DISCOUNT;
+
+after the while loop. It must have helped clearing error flag during
+`btrfsck --repair`, but rerunning `btrfsck` revealed that there are
+still the same file extent discount errors, so apparently they were
+reset in some other code path.
+
+I added some debug printf to verify that RB_EMPTY_ROOT(&rec->holes)
+was not false (i.e. 0) and other one in maybe_free_inode_rec() after
+conditions that lead to setting I_ERR_FILE_EXTENT_DISCOUNT error flag,
+to see the values that met the conditions:
+
+    if (rec->nlink > 0 && !no_holes
+        && (   rec->extent_end < rec->isize
+            || first_extent_gap(&rec->holes) < rec->isize
+           )
+       )
+
+Rerunning `btrfsck` gave me this new info:
+
+Checking filesystem on /dev/sda7
+UUID: 8b889e4c-5dba-43e3-a116-e13874bfb311
+!Set discount file extents for inode    1521634 (nlink=1 extent_end=0
+        isize=1408       first_extent_gap(holes)=18446744073709551615)
+!Set discount file extents for inode    1521645 (nlink=1
+extent_end=20480      isize=47496
+first_extent_gap(holes)=18446744073709551615)
+!Set discount file extents for inode    1521647 (nlink=1
+extent_end=36864      isize=37728
+first_extent_gap(holes)=18446744073709551615)
+!Set discount file extents for inode    1521648 (nlink=1 extent_end=0
+        isize=936        first_extent_gap(holes)=18446744073709551615)
+!Set discount file extents for inode    1521649 (nlink=1 extent_end=0
+        isize=936        first_extent_gap(holes)=18446744073709551615)
+
+(This long number is ((u64)-1)
+
+So extent_end < isize for these bloody inodes.
+
+Now I have a few questions related to my problem.
+
+1. What is the exact meaning of I_ERR_FILE_EXTENT_DISCOUNT nowadays
+and are the conditions leading to setting this error flag proper
+w.r.t. current btrfs state?
+
+2. How these errors should be fixed?
+
+I guess extending repair_inode_discount_extent() to fiddle with
+extents properly, even if there are no file extent holes, will be
+required, but I don't have enough btrfs knowledge to do it myself
+right now (first time looking into btrfs-related code today). My
+moving of error clearing out of the loop was bogus, because real issue
+is apparently not fixed then (and clearing within loop can be bogus as
+well for the same reason).
+
+Regards.
+
+PS Please CC me when replying, as I'm not on the list.
+
+-- 
+Przemysław Pawełczyk

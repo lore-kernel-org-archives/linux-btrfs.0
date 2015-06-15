@@ -1,98 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63895 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:5196 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751238AbbFOIC4 (ORCPT
+	with ESMTP id S1753983AbbFOIGd convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jun 2015 04:02:56 -0400
-Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
-To: Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>
-References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
- <557B076B.7050500@fb.com>
+	Mon, 15 Jun 2015 04:06:33 -0400
+Subject: Re: Can't mount btrfs volume on rbd
+To: Steve Dainard <sdainard@spd1.com>
+References: <CAEMJtDs=U5+YO9sbVvjxLthdxp6JvZO=07EMhcU5Smif_1m5QQ@mail.gmail.com>
+ <557A890D.8080306@cn.fujitsu.com>
+ <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <557E86A9.8040207@cn.fujitsu.com>
-Date: Mon, 15 Jun 2015 16:02:49 +0800
+Message-ID: <557E877E.2060704@cn.fujitsu.com>
+Date: Mon, 15 Jun 2015 16:06:22 +0800
 MIME-Version: 1.0
-In-Reply-To: <557B076B.7050500@fb.com>
+In-Reply-To: <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> On 06/11/2015 11:00 PM, Qu Wenruo wrote:
->> Introduce the new partial csum mechanism for tree block.
->>
->> [Old tree block csum]
->> 0     4     8    12    16    20    24    28    32
->> -------------------------------------------------
->> |csum |   unused, all 0				|
->> -------------------------------------------------
->> Csum is the crc32 of the whole tree block data.
->>
->> [New tree block csum]
->> -------------------------------------------------
->> |csum0|csum1|csum2|csum3|csum4|csum5|csum6|csum7|
->> -------------------------------------------------
->> Where csum0 is the same as the old one, crc32 of the whole tree block
->> data.
->>
->> But csum1~csum7 will restore crc32 of each eighth part.
->> Take example of 16K leafsize, then:
->> csum1: crc32 of BTRFS_CSUM_SIZE~4K
->> csum2: crc32 of 4K~6K
->> ...
->> csum7: crc32 of 14K~16K
->>
->> This provides the ability for btrfs not only to detect corruption but
->> also to know where corruption is.
->> Further improve the robustness of btrfs.
->>
->> Although the best practise is to introduce new csum type and put every
->> eighth crc32 into corresponding place, but the benefit is not worthy to
->> break the backward compatibility.
->> So keep csum0 and modify csum1 range to keep backward compatibility.
->
-> I do like how you're maintaining compatibility here, but I'm curious if
-> you have data about situations this is likely to help?  Is there a
-> particular kind of corruption you're targeting?
->
-> Or is the goal to prevent tossing the whole block, and try to limit it
-> to a smaller set of items in a node?
->
-> -chris
->
-To both Chris and Liu,
+The debug result seems valid.
+So I'm afraid the problem is not in btrfs.
 
-In the following case of corruption, RAID1 or DUP will fail to recover
-it(Use 16K as leafsize)
-0		4K		8K		12K		16K
-Mirror 0:
-|<-OK---------->|<----ERROR---->|<-----------------OK------------->|
+Would your please try the following 2 things to eliminate btrfs problems?
 
-Mirror 1:
-|<----------------------------OK--------------->|<------Error----->|
+1) btrfsck from 4.0.1 on the rbd
 
-Since the CRC32 stored in header is calculated for the whole leaf,
-so both will fail the CRC32 check.
+If assert still happens, please update the image of the volume(dd 
+image), to help us improve btrfs-progs.
 
-But the corruption are in different position, in fact, if we know where
-the corruption is (no need to be so accurate), we can recover the tree
-block by using the current part.
+2) btrfs-image dump and rebuilt the fs into other place.
 
-In above example, we can just use the correct 0~12K from mirror 1
-and then 12K~16K from mirror 0.
+# btrfs-image <RBD_DEV> <tmp_file1> -c9
+# btrfs-image -r <tmp_file1> <tmp_file2>
+# mount <tmp_file2> <mnt>
 
-And in my patch, since csum1~7 is the csum for each 1/8 parts
-(except csum1), so csum1~5 in mirror 1 should pass the CRC32 check,
-and csum6~6 in mirror 0 should pass too.
+This will dump all metadata from <RBD_DEV> to <tmp_file1>,
+and then use <tmp_file1> to rebuild a image called <tmp_file2>.
 
-And scrub (or read_tree_block?) should be able to repair the tree block
-using the correct parts.
-The repair patches are still under coding as it's much harder to
-implement with current scrub codes.
+If <tmp_file2> can be mounted, then the metadata in the RBD device is 
+completely OK, and we can make conclusion the problem is not caused by 
+btrfs.(maybe ceph?)
 
-Yes, this corruption case may be minor enough, since even corruption in
-one mirror is rare enough.
-So I didn't introduce a new CRC32 checksum, but use the extra 32-4 bytes
-to store the partial CRC32 to keep the backward compatibility.
+BTW, all the commands are recommended to be executed on the device which 
+you get the debug info from.
+As it's a small and almost empty device, so commands execution should be 
+quite fast on it.
 
 Thanks,
 Qu
+
+在 2015年06月13日 00:09, Steve Dainard 写道:
+> Hi Qu,
+>
+> I have another volume with the same error, btrfs-debug-tree output
+> from btrfs-progs 4.0.1 is here: http://pastebin.com/k3R3bngE
+>
+> I'm not sure how to interpret the output, but the exit status is 0 so
+> it looks like btrfs doesn't think there's an issue with the file
+> system.
+>
+> I get the same mount error with options ro,recovery.
+>
+> On Fri, Jun 12, 2015 at 12:23 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>
+>>
+>> -------- Original Message  --------
+>> Subject: Can't mount btrfs volume on rbd
+>> From: Steve Dainard <sdainard@spd1.com>
+>> To: <linux-btrfs@vger.kernel.org>
+>> Date: 2015年06月11日 23:26
+>>
+>>> Hello,
+>>>
+>>> I'm getting an error when attempting to mount a volume on a host that
+>>> was forceably powered off:
+>>>
+>>> # mount /dev/rbd4 climate-downscale-CMIP5/
+>>> mount: mount /dev/rbd4 on /mnt/climate-downscale-CMIP5 failed: Stale file
+>>> handle
+>>>
+>>> /var/log/messages:
+>>> Jun 10 15:31:07 node1 kernel: rbd4: unknown partition table
+>>>
+>>> # parted /dev/rbd4 print
+>>> Model: Unknown (unknown)
+>>> Disk /dev/rbd4: 36.5TB
+>>> Sector size (logical/physical): 512B/512B
+>>> Partition Table: loop
+>>> Disk Flags:
+>>>
+>>> Number  Start  End     Size    File system  Flags
+>>>    1      0.00B  36.5TB  36.5TB  btrfs
+>>>
+>>> # btrfs check --repair /dev/rbd4
+>>> enabling repair mode
+>>> Checking filesystem on /dev/rbd4
+>>> UUID: dfe6b0c8-2866-4318-abc2-e1e75c891a5e
+>>> checking extents
+>>> cmds-check.c:2274: check_owner_ref: Assertion `rec->is_root` failed.
+>>> btrfs[0x4175cc]
+>>> btrfs[0x41b873]
+>>> btrfs[0x41c3fe]
+>>> btrfs[0x41dc1d]
+>>> btrfs[0x406922]
+>>>
+>>>
+>>> OS: CentOS 7.1
+>>> btrfs-progs: 3.16.2
+>>
+>> The btrfs-progs seems quite old, and the above btrfsck error seems quite
+>> possible related to the old version.
+>>
+>> Would you please upgrade btrfs-progs to 4.0 and see what will happen?
+>> Hopes it can give better info.
+>>
+>> BTW, it's a good idea to call btrfs-debug-tree /dev/rbd4 to see the output.
+>>
+>> Thanks
+>> Qu.
+>>>
+>>> Ceph: version: 0.94.1/CentOS 7.1
+>>>
+>>> I haven't found any references to 'stale file handle' on btrfs.
+>>>
+>>> The underlying block device is ceph rbd, so I've posted to both lists
+>>> for any feedback. Also once I reformatted btrfs I didn't get a mount
+>>> error.
+>>>
+>>> The btrfs volume has been reformatted so I won't be able to do much
+>>> post mortem but I'm wondering if anyone has some insight.
+>>>
+>>> Thanks,
+>>> Steve
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>
+>>

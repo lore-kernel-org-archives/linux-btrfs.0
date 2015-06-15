@@ -1,141 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5196 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:29553 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753983AbbFOIGd convert rfc822-to-8bit (ORCPT
+	with ESMTP id S932077AbbFOIKZ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jun 2015 04:06:33 -0400
-Subject: Re: Can't mount btrfs volume on rbd
-To: Steve Dainard <sdainard@spd1.com>
-References: <CAEMJtDs=U5+YO9sbVvjxLthdxp6JvZO=07EMhcU5Smif_1m5QQ@mail.gmail.com>
- <557A890D.8080306@cn.fujitsu.com>
- <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
+	Mon, 15 Jun 2015 04:10:25 -0400
+Subject: Re: kernel crashes with btrfs and busy database IO - how to debug?
+To: Tomasz Chmielewski <tch@virtall.com>
+References: <ae9b9ca434c98509ca6c1ba6dbd84b63@admin.virtall.com>
+ <557A8691.6070908@cn.fujitsu.com>
+ <73cb882c23a71c9039a0e7bbfddfab64@admin.virtall.com>
+ <557AA1B9.9040009@cn.fujitsu.com>
+ <cf09b22a06bf52a5b365fa44e15583f7@admin.virtall.com>
+ <f96134ed2c586f25fa959234fc525ab9@admin.virtall.com>
+ <40998423616120fecd531f31971b0b8b@admin.virtall.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <557E877E.2060704@cn.fujitsu.com>
-Date: Mon, 15 Jun 2015 16:06:22 +0800
+Message-ID: <557E8860.3080307@cn.fujitsu.com>
+Date: Mon, 15 Jun 2015 16:10:08 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
+In-Reply-To: <40998423616120fecd531f31971b0b8b@admin.virtall.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The debug result seems valid.
-So I'm afraid the problem is not in btrfs.
+Now we can get the full backtrace.
+That's a step forward
 
-Would your please try the following 2 things to eliminate btrfs problems?
+[45705.854778] BUG: unable to handle kernel NULL pointer dereference at 
+0000000000000008
+[45705.854824] IP: [<ffffffffc0158b8e>] 
+btrfs_wait_pending_ordered+0x5e/0x110 [btrfs]
+[45705.855615] Call Trace:
+[45705.855637]  [<ffffffffc015addb>] 
+btrfs_commit_transaction+0x40b/0xb60 [btrfs]
+[45705.855671]  [<ffffffff810c0700>] ? prepare_to_wait_event+0x100/0x100
+[45705.855698]  [<ffffffffc0171973>] btrfs_sync_file+0x313/0x380 [btrfs]
+[45705.855721]  [<ffffffff81236c26>] vfs_fsync_range+0x46/0xc0
+[45705.855740]  [<ffffffff81236cbc>] vfs_fsync+0x1c/0x20
+[45705.855758]  [<ffffffff81236cf8>] do_fsync+0x38/0x70
+[45705.855777]  [<ffffffff812370d0>] SyS_fsync+0x10/0x20
+[45705.855796]  [<ffffffff8180cbb2>] system_call_fastpath+0x16/0x75
 
-1) btrfsck from 4.0.1 on the rbd
-
-If assert still happens, please update the image of the volume(dd 
-image), to help us improve btrfs-progs.
-
-2) btrfs-image dump and rebuilt the fs into other place.
-
-# btrfs-image <RBD_DEV> <tmp_file1> -c9
-# btrfs-image -r <tmp_file1> <tmp_file2>
-# mount <tmp_file2> <mnt>
-
-This will dump all metadata from <RBD_DEV> to <tmp_file1>,
-and then use <tmp_file1> to rebuild a image called <tmp_file2>.
-
-If <tmp_file2> can be mounted, then the metadata in the RBD device is 
-completely OK, and we can make conclusion the problem is not caused by 
-btrfs.(maybe ceph?)
-
-BTW, all the commands are recommended to be executed on the device which 
-you get the debug info from.
-As it's a small and almost empty device, so commands execution should be 
-quite fast on it.
+Also the hang seems to be highly related to the bug,
+would you please send a new mail reporting the hang?
 
 Thanks,
 Qu
 
-在 2015年06月13日 00:09, Steve Dainard 写道:
-> Hi Qu,
+在 2015年06月14日 15:58, Tomasz Chmielewski 写道:
+> On 2015-06-14 09:30, Tomasz Chmielewski wrote:
+>> On 2015-06-13 08:23, Tomasz Chmielewski wrote:
+>>
+>>> I did get it from /var/crash/ though - is it more useful? I don't have
+>>> vmlinux for this kernel though, but have just built 4.1-rc7 with the
+>>> same config, can try to get the crash there.
+>>
+>> I've uploaded a crash dump and vmlinux here:
+>>
+>> http://www.virtall.com/files/temp/201506132321/
+>>
+>> Let me know if it's anything useful or if you need more info.
 >
-> I have another volume with the same error, btrfs-debug-tree output
-> from btrfs-progs 4.0.1 is here: http://pastebin.com/k3R3bngE
+> I've tried running it the same procedure to get one more crash, but it
+> didn't crash this time.
 >
-> I'm not sure how to interpret the output, but the exit status is 0 so
-> it looks like btrfs doesn't think there's an issue with the file
-> system.
+> Instead, btrfs is hanged on any writes - any processes trying to write
+> get into D state and never return; there is no write activity when
+> checking for example with iostat. "sync" command does not return.
 >
-> I get the same mount error with options ro,recovery.
+> Reads from this btrfs filesystem are OK.
 >
-> On Fri, Jun 12, 2015 at 12:23 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>
->>
->> -------- Original Message  --------
->> Subject: Can't mount btrfs volume on rbd
->> From: Steve Dainard <sdainard@spd1.com>
->> To: <linux-btrfs@vger.kernel.org>
->> Date: 2015年06月11日 23:26
->>
->>> Hello,
->>>
->>> I'm getting an error when attempting to mount a volume on a host that
->>> was forceably powered off:
->>>
->>> # mount /dev/rbd4 climate-downscale-CMIP5/
->>> mount: mount /dev/rbd4 on /mnt/climate-downscale-CMIP5 failed: Stale file
->>> handle
->>>
->>> /var/log/messages:
->>> Jun 10 15:31:07 node1 kernel: rbd4: unknown partition table
->>>
->>> # parted /dev/rbd4 print
->>> Model: Unknown (unknown)
->>> Disk /dev/rbd4: 36.5TB
->>> Sector size (logical/physical): 512B/512B
->>> Partition Table: loop
->>> Disk Flags:
->>>
->>> Number  Start  End     Size    File system  Flags
->>>    1      0.00B  36.5TB  36.5TB  btrfs
->>>
->>> # btrfs check --repair /dev/rbd4
->>> enabling repair mode
->>> Checking filesystem on /dev/rbd4
->>> UUID: dfe6b0c8-2866-4318-abc2-e1e75c891a5e
->>> checking extents
->>> cmds-check.c:2274: check_owner_ref: Assertion `rec->is_root` failed.
->>> btrfs[0x4175cc]
->>> btrfs[0x41b873]
->>> btrfs[0x41c3fe]
->>> btrfs[0x41dc1d]
->>> btrfs[0x406922]
->>>
->>>
->>> OS: CentOS 7.1
->>> btrfs-progs: 3.16.2
->>
->> The btrfs-progs seems quite old, and the above btrfsck error seems quite
->> possible related to the old version.
->>
->> Would you please upgrade btrfs-progs to 4.0 and see what will happen?
->> Hopes it can give better info.
->>
->> BTW, it's a good idea to call btrfs-debug-tree /dev/rbd4 to see the output.
->>
->> Thanks
->> Qu.
->>>
->>> Ceph: version: 0.94.1/CentOS 7.1
->>>
->>> I haven't found any references to 'stale file handle' on btrfs.
->>>
->>> The underlying block device is ceph rbd, so I've posted to both lists
->>> for any feedback. Also once I reformatted btrfs I didn't get a mount
->>> error.
->>>
->>> The btrfs volume has been reformatted so I won't be able to do much
->>> post mortem but I'm wondering if anyone has some insight.
->>>
->>> Thanks,
->>> Steve
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>
+> I've uploaded the output of "echo w > /proc/sysrq-trigger" here:
+>
+> http://www.virtall.com/files/temp/dmesg.txt
+>
+>
+> Tomasz Chmielewski
+>

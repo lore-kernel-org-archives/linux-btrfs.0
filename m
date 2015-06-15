@@ -1,83 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:51644 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:58786 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753329AbbFONPI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jun 2015 09:15:08 -0400
-Date: Mon, 15 Jun 2015 15:15:07 +0200
+	id S1754396AbbFOPB6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jun 2015 11:01:58 -0400
+Date: Mon, 15 Jun 2015 17:01:57 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
-Message-ID: <20150615131507.GL6761@twin.jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: systemd-devel@lists.freedesktop.org,
+        "linux-btrfs@vger.kernel.org >> linux-btrfs"
+	<linux-btrfs@vger.kernel.org>,
+        lennart@poettering.net
+Subject: Re: [survey]  BTRFS_IOC_DEVICES_READY return status
+Message-ID: <20150615150156.GO6761@suse.cz>
 Reply-To: dsterba@suse.cz
-References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
- <557B076B.7050500@fb.com>
- <557E86A9.8040207@cn.fujitsu.com>
+References: <557ADBAE.9040407@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <557E86A9.8040207@cn.fujitsu.com>
+In-Reply-To: <557ADBAE.9040407@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 15, 2015 at 04:02:49PM +0800, Qu Wenruo wrote:
-> In the following case of corruption, RAID1 or DUP will fail to recover
-> it(Use 16K as leafsize)
-> 0		4K		8K		12K		16K
-> Mirror 0:
-> |<-OK---------->|<----ERROR---->|<-----------------OK------------->|
+On Fri, Jun 12, 2015 at 09:16:30PM +0800, Anand Jain wrote:
+> BTRFS_IOC_DEVICES_READY is to check if all the required devices
+> are known by the btrfs kernel, so that admin/system-application
+> could mount the FS. It is checked against a device in the argument.
 > 
-> Mirror 1:
-> |<----------------------------OK--------------->|<------Error----->|
+> However the actual implementation is bit more than just that,
+> in the way that it would also scan and register the device
+> provided in the argument (same as btrfs device scan subcommand
+> or BTRFS_IOC_SCAN_DEV ioctl).
 > 
-> Since the CRC32 stored in header is calculated for the whole leaf,
-> so both will fail the CRC32 check.
+> So BTRFS_IOC_DEVICES_READY ioctl isn't a read/view only ioctl,
+> but its a write command as well.
+
+The implemented DEVICES_READY behaviour is intentional, but not a good
+example of ioctl interface design. I asked for a more generic interface
+to querying devices when this patch was submitted but to no outcome.
+
+> Next, since in the kernel we only check if total_devices
+> (read from SB)  is equal to num_devices (counted in the list)
+> to state the status as 0 (ready) or 1 (not ready). But this
+> does not work in rest of the device pool state like missing,
+> seeding, replacing since total_devices is actually not equal
+> to num_devices in these state but device pool is ready for
+> the mount and its a bug which is not part of this discussions.
+
+That's an example why the single-shot ioctl is bad - it relies on some
+internal state that's otherwise nontrivial to get.
+
+> Questions:
 > 
-> But the corruption are in different position, in fact, if we know where
-> the corruption is (no need to be so accurate), we can recover the tree
-> block by using the current part.
-> 
-> In above example, we can just use the correct 0~12K from mirror 1
-> and then 12K~16K from mirror 0.
+>   - Do we want BTRFS_IOC_DEVICES_READY ioctl to also scan and
+>     register the device provided (same as btrfs device scan
+>     command or the BTRFS_IOC_SCAN_DEV ioctl)
+>     OR can BTRFS_IOC_DEVICES_READY be read-only ioctl interface
+>     to check the state of the device pool. ?
 
-If the mirror 0 copy is intact, you can use it entirely. Your
-improvement could help if each mirror is partially broken but we can
-find good copies of all 4k blocks among all mirrors.
+This has been mentioned in the thread, we cannot change the ioctl that
+way. Extensions are possible as far as they stay backward compatible
+without changes to the existing users.
 
-The natural question is how often this happens and if it's worth adding
-the code complexity and what's the estimated speed drop.
+>   - If the the device in the argument is already mounted,
+>     can it straightaway return 0 (ready) ? (as of now it would
+>     again independently read the SB determine total_devices
+>     and check against num_devices.
 
-I think the conditions are very rare and that we could add minimal code
-to attempt to build the metadata block from the available copies without
-the separate block checksums. This is an immediate idea so I could have
-missed something:
+We can do that, looks like a safe optimization.
 
-* if a metadata-block checksum mismatches, do a direct comparison of the
-  metadata-blocks in all available mirrors
-  * if they match and checksums match, no help, it's damaged
-  * if there's a good copy (ie the original checksum or data were
-    corrupted), use it
-  * otherwise attempt to rebuild the metadata block from what's available
+>   - What should be the expected return when the FS is mounted
+>     and there is a missing device.
 
-* by direct comparisons of the 4k blocks, find the first where the
-  metadataA and mirror1 blocks mismatch, offset N
-* try to compute the checksum from metadataA[0..N-1] + mirror1 block N +
-  rest of metadataA
-  * if it's ok, use it
-  * if not: the block N is corrupted in mirror1 (we've skipped it in
-    metadataA)
-    then repeat with metadataA[0..N] + mirror1[N+1..end]
-
-That's a rough idea that I hope will cover most of the cases when it
-happens. With some more exhaustive attempts to rebuild the metadata
-block we can try to repair 2 damaged blocks.
-
-As this is completely independent, we can test it separately, and also
-add it as a rescue feature to the userspace tools.
-
-> Yes, this corruption case may be minor enough, since even corruption in
-> one mirror is rare enough.
-> So I didn't introduce a new CRC32 checksum, but use the extra 32-4 bytes
-> to store the partial CRC32 to keep the backward compatibility.
-
-The above would work with any checksums, without the need to store the
-per-block checksums which become impossible with strongher algorithms.
+I think the current ioctl cannot give a good answer to that, similar to
+the seeding or dev-replace case. We'd need an improved ioctl or do it
+via sysfs which is my preference at the moment.

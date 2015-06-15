@@ -1,210 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:46216 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752445AbbFOA7D (ORCPT
+Received: from v-27-120-84-145.ub-freebit.net ([27.120.84.145]:38613 "EHLO
+	mail.reasonset.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751871AbbFOFmH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 14 Jun 2015 20:59:03 -0400
-Message-ID: <557E234C.8080301@oracle.com>
-Date: Mon, 15 Jun 2015 08:58:52 +0800
-From: Anand Jain <anand.jain@oracle.com>
-MIME-Version: 1.0
-To: Martin <develop@imagmbh.de>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: rw-mount-problem after raid1-failure
-References: <2227931.EqpnWnc32X@malu-aspire-v3-771> <4628680.5DrabroMAI@malu-aspire-v3-771> <557AB69A.1000101@oracle.com> <1646810.T2fMSGCrYe@malu-aspire-v3-771>
-In-Reply-To: <1646810.T2fMSGCrYe@malu-aspire-v3-771>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+	Mon, 15 Jun 2015 01:42:07 -0400
+Received: from hydrangea (218-45-17-237.flets.kamome.or.jp [218.45.17.237])
+	by mail.reasonset.net (Postfix) with ESMTPSA id 487E97C48001
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 14:35:49 +0900 (JST)
+Date: Mon, 15 Jun 2015 14:35:48 +0900
+From: MASAKI Yuhsuke <yek@reasonset.net>
+To: linux-btrfs@vger.kernel.org
+Subject: Rsync to brtfs subvolume probrem.
+Message-Id: <20150615143548.4820538a42593fb70c3a1b76@reasonset.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin,
+Hi.
 
-below patch will help to obtain the device list from the kernel.
+I got rsync to remote host freezing problem.
 
-https://patchwork.kernel.org/patch/4996111/
+Situation:
+* rsync local host btrfs subvolume to remote host subvolume.
+* Occured after three month from this system starting up.
+* rsync (rsync -auvP --delete-after -e "ssh -i $3" $1 $2 >&2) was frozen up. -P option display update also stopped ( elapsed time so.)
+* I could stop rsync with SIGINT on local host but rsync process in remote host didn't stop.
+* Never complete rsync.
+* I could login with SSH, operate and write/read to btrfs, but couldn't shutdown remote host.
+* If stop rsync process in remote host with SIGKILL, I couldn't shutdown.
+* It always appears since once appeared.
 
-(just fyi above patch is v1 which should apply,
-however its v2 would not apply without sysfs patches)
+After reboot,
+* The time required of "Building file list" on --delete-after is too short.
+* rsync wanted to transfer all directories but not any file in these directories.
+* When stop to rsync and re-rsync, already transferred (listed) files.
+* It looks files didn't transfer to remote host for me (checked with ssh login.)
 
-However  other data what we need is group profile,
-collect them when and if device could mount.
+S.M.A.R.T. test was PASSED.
 
-(was there any patch which can obtain the group profile,
-without mounting ?, I vaguely remember some efforts/comment
-on that before).
+When reappeared this issue with btrfs scrubbing, force shutdown and reboot,
+* btrfs scrub status reports "running".
+* btrfs scrub start -> already running
+* btrfs scrub cancel -> not running
 
-Thanks, Anand
+Before reboot, scrub didn't progress but counted time.
+After reboot, scrub didn't progress and didn't count.
 
+I re-created btrfs.
+It worked for a while, but re-appeared after two days.
 
+I solved temporary with btrfsck + btrfs scrub start -f,
+but re-appeared at next day.
 
-On 06/15/2015 02:24 AM, Martin wrote:
-> Do you know, where I can find this kernel-patch because I didn't find it. Then
-> I will build the patched kernel and send the devlist-output.
->
-> Thanks, Martin
->
-> Am Freitag, 12. Juni 2015, 18:38:18 schrieb Anand Jain:
->> On 06/11/2015 09:03 PM, Martin wrote:
->>> It is reproduceable but the logs doesn't say much:
->>>
->>> dmesg:
->>> [151183.214355] BTRFS info (device sdb2): allowing degraded mounts
->>> [151183.214361] BTRFS info (device sdb2): disk space caching is enabled
->>> [151183.317719] BTRFS: bdev (null) errs: wr 7988389, rd 7707002, flush
->>> 150,
->>> corrupt 0, gen 0
->>> [151214.513046] BTRFS: too many missing devices, writeable mount is not
->>> allowed
->>
->> presumably (we did not confirm that only one disk is missing from
->> kernel point of view?) with One disk missing if you are still getting
->> this that means, there is a group profile in your disk pool that does
->> not tolerate single disk failure either.
->>
->> So now how would we check all the group profiles in an unmount(able)
->> state ?
->>
->> There is a patch to show devlist using /proc/fs/btrfs/devlist.
->> That would have helped here to debug. I am ok if you could confirm
->> that using any other method as well.
->>
->> Thanks, Anand
->>
->>> [151214.548566] BTRFS: open_ctree failed
->>>
->>> Can I get more info out of the kernel-module?
->>>
->>> Thanks, Martin
->>>
->>> Am Donnerstag, 11. Juni 2015, 08:04:04 schrieb Anand Jain:
->>>>> On 10 Jun 2015, at 5:35 pm, Martin <develop@imagmbh.de> wrote:
->>>>>
->>>>> Hello Anand,
->>>>>
->>>>> the failed disk was removed. My procedure was the following:
->>>>>
->>>>> - I found some write errors in the kernel log, so
->>>>> - I shutdown the system
->>>>> - I removed the failed disk
->>>>> - I powered on the system
->>>>> - I mounted the remaining disk degraded,rw (works OK)
->>>>> - the system works an and was rebooted some times, mounting degraded,rw
->>>>> works - suddentlym mounting degraded,rw stops working and only
->>>>> degraded,ro works.
->>>>
->>>> any logs to say why. ?
->>>> Or
->>>> If these (above) stages are reproducible, could you fetch them afresh?
->>>>
->>>> Thanks Anand
->>>>
->>>>> Thanks, Martin
->>>>>
->>>>> Am Mittwoch, 10. Juni 2015, 15:46:52 schrieb Anand Jain:
->>>>>> On 06/10/2015 02:58 PM, Martin wrote:
->>>>>>> Hello Anand,
->>>>>>>
->>>>>>> the
->>>>>>>
->>>>>>>> mount -o degraded <good-disk> <-- this should work
->>>>>>>
->>>>>>> is my problem. The fist times it works but suddently, after a reboot,
->>>>>>> it
->>>>>>> fails with message "BTRFS: too many missing devices, writeable mount
->>>>>>> is
->>>>>>> not allowed" in kernel log.
->>>>>>>
->>>>>>    the failed(ing) disk is it still physically in the system ?
->>>>>>    when btrfs finds EIO on the intermittently failing disk,
->>>>>>    ro-mode kicks in, (there are some opportunity for fixes which
->>>>>>    I am trying). To recover, the approach is to make the failing
->>>>>>    disk a missing disk instead, by pulling out the failing disk
->>>>>>    from the system and boot. When system finds disk missing
->>>>>>    (not EIO rather) it should mount rw,degraded (from the VM part
->>>>>>    at least) and then replace (with a new disk) should work.
->>>>>>
->>>>>> Thanks, Anand
->>>>>>
->>>>>>> "btrfs fi show /backup2" shows:
->>>>>>> Label: none  uuid: 6d755db5-f8bb-494e-9bdc-cf524ff99512
->>>>>>>
->>>>>>>      Total devices 2 FS bytes used 3.50TiB
->>>>>>>      devid    4 size 7.19TiB used 4.02TiB path /dev/sdb2
->>>>>>>      *** Some devices missing
->>>>>>>
->>>>>>> I suppose there is a "marker", telling the system only to mount in
->>>>>>> ro-mode?
->>>>>>>
->>>>>>> Due to the ro-mount I can't replace the missing one because all the
->>>>>>> btrfs-
->>>>>>> commands need rw-access ...
->>>>>>>
->>>>>>> Martin
->>>>>>>
->>>>>>> Am Mittwoch, 10. Juni 2015, 14:38:38 schrieb Anand Jain:
->>>>>>>> Ah thanks David. So its 2 disks RAID1.
->>>>>>>>
->>>>>>>> Martin,
->>>>>>>>
->>>>>>>>     disk pool error handle is primitive as of now. readonly is the
->>>>>>>>     only
->>>>>>>>     action it would take. rest of recovery action is manual. thats
->>>>>>>>     unacceptable in a data center solutions. I don't recommend btrfs
->>>>>>>>     VM
->>>>>>>>     productions yet. But we are working to get that to a complete VM.
->>>>>>>>
->>>>>>>>     For now, for your pool recovery: pls try this.
->>>>>>>>
->>>>>>>>        - After reboot.
->>>>>>>>        - modunload and modload (so that kernel devlist is empty)
->>>>>>>>        - mount -o degraded <good-disk> <-- this should work.
->>>>>>>>        - btrfs fi show -m <-- Should show missing if you don't let me
->>>>>>>>        know.
->>>>>>>>        - Do a replace of the missing disk without reading the source
->>>>>>>>        disk.
->>>>>>>>
->>>>>>>> Good luck.
->>>>>>>>
->>>>>>>> Thanks, Anand
->>>>>>>>
->>>>>>>>> On 06/10/2015 11:58 AM, Duncan wrote:
->>>>>>>>>
->>>>>>>>> Anand Jain posted on Wed, 10 Jun 2015 09:19:37 +0800 as excerpted:
->>>>>>>>>>> On 06/09/2015 01:10 AM, Martin wrote:
->>>>>>>>>>> Hello!
->>>>>>>>>>>
->>>>>>>>>>> I have a raid1-btrfs-system (Kernel 3.19.0-18-generic, Ubuntu
->>>>>>>>>>> Vivid
->>>>>>>>>>> Vervet, btrfs-tools 3.17-1.1). One disk failed some days ago. I
->>>>>>>>>>> could
->>>>>>>>>>> remount the remaining one with "-o degraded". After one day and
->>>>>>>>>>> some
->>>>>>>>>>> write-operations (with no errrors) I had to reboot the system. And
->>>>>>>>>>> now
->>>>>>>>>>> I can not mount "rw" anymore, only "-o degraded,ro" is possible.
->>>>>>>>>>>
->>>>>>>>>>> In the kernel log I found BTRFS: too many missing devices,
->>>>>>>>>>> writeable
->>>>>>>>>>> mount is not allowed.
->>>>>>>>>>>
->>>>>>>>>>> I read about https://bugzilla.kernel.org/show_bug.cgi?id=60594 but
->>>>>>>>>>> I
->>>>>>>>>>> did no conversion to a single drive.
->>>>>>>>>>>
->>>>>>>>>>> How can I mount the disk "rw" to remove the "missing" drive and
->>>>>>>>>>> add
->>>>>>>>>>> a
->>>>>>>>>>> new one?
->>>>>>>>>>> Because there are many snapshots of the filesystem, copying the
->>>>>>>>>>> system
->>>>>>>>>>> would be only the last alternative ;-)
->>>>>>>>>>
->>>>>>>>>> How many disks you had in the RAID1. How many are failed ?
->>>>>>>>>
->>>>>>>>> The answer is (a bit indirectly) in what you quoted.  Repeating:
->>>>>>>>>>> One disk failed[.] I could remount the remaining one[.]
->>>>>>>>>
->>>>>>>>> So it was a two-device raid1, one failed device, one remaining,
->>>>>>>>> unfailed.
->
->
+I retried btrfsck + btrfs scrub start -f.
+It finished but btrfs scrub status said:
+
+scrub status for 7ebc7d8d-35c6-4d98-8457-3323c242e9fe
+	scrub started at Tue May  5 23:48:36 2015 and finished after 5700 seconds
+	total bytes scrubbed: 666.26GiB with 0 errors
+
+But btrfs filesystem df
+
+Data, RAID0: total=2.59TiB, used=2.58TiB
+Data, single: total=8.00MiB, used=8.00MiB
+System, RAID1: total=8.00MiB, used=160.00KiB
+System, single: total=4.00MiB, used=0.00
+Metadata, RAID1: total=7.00GiB, used=5.27GiB
+Metadata, single: total=8.00MiB, used=0.00
+GlobalReserve, single: total=512.00MiB, used=0.00
+
+localhost : Manjaro Linux, 3.19.4-1 x86_64, ASRock FM2+Killer, AMD A10-7700K, 32GB RAM
+  4disks GPT total 24TB, btrfs RAID1.
+  mount with 
+  subvol=xxx,relatime,autodefrag,compress=zlib,space_cache,noauto 
+remotehost : CentOS 7, 3.10.0-229.1.2 x86_64, hp ProLiant Server, 
+  4disks GPT total 25TB, btrfs RAID0 Data + RAID1 System
+  mount with
+  noatime,autodefrag,compress-force=lzo,space_cache,subvol=xxx
+
+-----
+
+I was reported same issue.
+
+Situation:
+* rsync localhost to localhost.
+* Sometime rsync froze up a while, and a moment completely froze up.
+* Couldn't kill rsync.
+* Not always appears.
+
+He tried with:
+* Funtoo Linux, 4.0.1 x86_64 amd64-k10, with defaults,recovery,compress=zlib,inode_cache,space_cache,autodefrag
+* SystemRescueCD, 3.14.35
+But every over for the same result.
+
+His machine is:
+  AMD Phenom II X6 1055T Processor, 8GB RAM.
+  single disk 500GB, btrfs single Data + RAID1 System.
+
+### MASAKI Yuhsuke

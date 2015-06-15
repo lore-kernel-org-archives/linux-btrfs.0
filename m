@@ -1,229 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f175.google.com ([209.85.223.175]:33949 "EHLO
-	mail-ie0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752154AbbFQKI3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 06:08:29 -0400
-Received: by iebmu5 with SMTP id mu5so30416104ieb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 03:08:29 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:53566 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751940AbbFONpE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jun 2015 09:45:04 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D7E44AC7C
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 13:45:02 +0000 (UTC)
+Message-ID: <557ED6DC.6070900@suse.com>
+Date: Mon, 15 Jun 2015 09:45:00 -0400
+From: Jeff Mahoney <jeffm@suse.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1434375680-4115-7-git-send-email-jeffm@suse.com>
-Date: Wed, 17 Jun 2015 11:08:29 +0100
-Message-ID: <CAL3q7H5qT-O2wqGZzSOOG5ope595424YoEXJTyAYE2UPhRxa8w@mail.gmail.com>
-Subject: Re: [PATCH 7/7] btrfs: cleanup, stop casting for extent_map->lookup everywhere
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v5] btrfs: fix automatic blockgroup remove + discard
+In-Reply-To: <1434375680-4115-1-git-send-email-jeffm@suse.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1434375680-4115-7-git-send-email-jeffm@suse.com>
+References: <1434375680-4115-1-git-send-email-jeffm@suse.com>
 
-On Mon, Jun 15, 2015 at 2:41 PM,  <jeffm@suse.com> wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
->
-> Overloading extent_map->bdev to struct map_lookup * might have started out
-> as a means to an end, but it's a pattern that's used all over the place
-> now. Let's get rid of the casting and just add a union instead.
->
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Filipe Manana <fdmanana@suse.com>
+Apologies for the out-of-order post. git send-email caught ^C
+at just the right time and send them without my confirmation. That's
+also why the map->lookup casting patch got mixed in here.
 
-> ---
->  fs/btrfs/dev-replace.c |  2 +-
->  fs/btrfs/extent_map.c  |  2 +-
->  fs/btrfs/extent_map.h  | 10 +++++++++-
->  fs/btrfs/scrub.c       |  2 +-
->  fs/btrfs/volumes.c     | 24 ++++++++++++------------
->  5 files changed, 24 insertions(+), 16 deletions(-)
->
-> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-> index 0573848..2ad3289 100644
-> --- a/fs/btrfs/dev-replace.c
-> +++ b/fs/btrfs/dev-replace.c
-> @@ -613,7 +613,7 @@ static void btrfs_dev_replace_update_device_in_mapping_tree(
->                 em = lookup_extent_mapping(em_tree, start, (u64)-1);
->                 if (!em)
->                         break;
-> -               map = (struct map_lookup *)em->bdev;
-> +               map = em->map_lookup;
->                 for (i = 0; i < map->num_stripes; i++)
->                         if (srcdev == map->stripes[i].dev)
->                                 map->stripes[i].dev = tgtdev;
-> diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-> index 6a98bdd..84fb56d 100644
-> --- a/fs/btrfs/extent_map.c
-> +++ b/fs/btrfs/extent_map.c
-> @@ -76,7 +76,7 @@ void free_extent_map(struct extent_map *em)
->                 WARN_ON(extent_map_in_tree(em));
->                 WARN_ON(!list_empty(&em->list));
->                 if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
-> -                       kfree(em->bdev);
-> +                       kfree(em->map_lookup);
->                 kmem_cache_free(extent_map_cache, em);
->         }
->  }
-> diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
-> index b2991fd..eb8b8fa 100644
-> --- a/fs/btrfs/extent_map.h
-> +++ b/fs/btrfs/extent_map.h
-> @@ -32,7 +32,15 @@ struct extent_map {
->         u64 block_len;
->         u64 generation;
->         unsigned long flags;
-> -       struct block_device *bdev;
-> +       union {
-> +               struct block_device *bdev;
-> +
-> +               /*
-> +                * used for chunk mappings
-> +                * flags & EXTENT_FLAG_FS_MAPPING must be set
-> +                */
-> +               struct map_lookup *map_lookup;
-> +       };
->         atomic_t refs;
->         unsigned int compress_type;
->         struct list_head list;
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index ab58115..19f7241d 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3339,7 +3339,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
->         if (!em)
->                 return -EINVAL;
->
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->         if (em->start != chunk_offset)
->                 goto out;
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 7fdde31..9f48ae5 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -1068,7 +1068,7 @@ again:
->                 struct map_lookup *map;
->                 int i;
->
-> -               map = (struct map_lookup *)em->bdev;
-> +               map = em->map_lookup;
->                 for (i = 0; i < map->num_stripes; i++) {
->                         if (map->stripes[i].dev != device)
->                                 continue;
-> @@ -2622,7 +2622,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
->                         free_extent_map(em);
->                 return -EINVAL;
->         }
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->
->         for (i = 0; i < map->num_stripes; i++) {
->                 struct btrfs_device *device = map->stripes[i].dev;
-> @@ -4465,7 +4465,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
->                 goto error;
->         }
->         set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
-> -       em->bdev = (struct block_device *)map;
-> +       em->map_lookup = map;
->         em->start = start;
->         em->len = num_bytes;
->         em->block_start = 0;
-> @@ -4560,7 +4560,7 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
->                 return -EINVAL;
->         }
->
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->         item_size = btrfs_chunk_item_size(map->num_stripes);
->         stripe_size = em->orig_block_len;
->
-> @@ -4702,7 +4702,7 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset)
->         if (!em)
->                 return 1;
->
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->         for (i = 0; i < map->num_stripes; i++) {
->                 if (map->stripes[i].dev->missing) {
->                         miss_ndevs++;
-> @@ -4782,7 +4782,7 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
->                 return 1;
->         }
->
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->         if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
->                 ret = map->num_stripes;
->         else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
-> @@ -4818,7 +4818,7 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
->         BUG_ON(!em);
->
->         BUG_ON(em->start > logical || em->start + em->len < logical);
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->         if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
->                 len = map->stripe_len * nr_data_stripes(map);
->         free_extent_map(em);
-> @@ -4839,7 +4839,7 @@ int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
->         BUG_ON(!em);
->
->         BUG_ON(em->start > logical || em->start + em->len < logical);
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->         if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
->                 ret = 1;
->         free_extent_map(em);
-> @@ -5000,7 +5000,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
->                 return -EINVAL;
->         }
->
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->         offset = logical - em->start;
->
->         stripe_len = map->stripe_len;
-> @@ -5542,7 +5542,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
->                 free_extent_map(em);
->                 return -EIO;
->         }
-> -       map = (struct map_lookup *)em->bdev;
-> +       map = em->map_lookup;
->
->         length = em->len;
->         rmap_len = map->stripe_len;
-> @@ -6057,7 +6057,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
->         }
->
->         set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
-> -       em->bdev = (struct block_device *)map;
-> +       em->map_lookup = map;
->         em->start = logical;
->         em->len = length;
->         em->orig_start = 0;
-> @@ -6733,7 +6733,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
->         /* In order to kick the device replace finish process */
->         lock_chunks(root);
->         list_for_each_entry(em, &transaction->pending_chunks, list) {
-> -               map = (struct map_lookup *)em->bdev;
-> +               map = em->map_lookup;
->
->                 for (i = 0; i < map->num_stripes; i++) {
->                         dev = map->stripes[i].dev;
-> --
-> 2.4.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+The automatic block group removal patch introduced some regressions
+in how discards are handled.
 
+1/ FITRIM only iterates over block groups on disk - removed block groups
+   won't be trimmed.
+2/ Clearing the dirty bit from extents in removed block groups means that
+   those extents won't be discarded when the block group is removed.
+3/ More of a UI wart: We don't wait on block groups to be removed during
+   read-only remount or fs umount. This results in block groups that
+   /should/ have been discarded on thin provisioned storage hanging around
+   until the file system is mounted read-write again.
 
+The following patches address these problems by:
+1/ Iterating over block groups on disk and then iterating over free space.
+   This is consistent with how other file systems handle FITRIM.
+2/ Putting removed block groups on a list so that they are automatically
+   discarded during btrfs_finish_extent_commit after transaction commit.
+   Note: This may still leave undiscarded space on disk if the system
+   crashes after transaction commit but before discard. The file system
+   itself will be compeltely consistent, but the user will need to trim
+   manually.
+3/ Simple: We call btrfs_delete_unused_bgs explicitly during ro-remount
+   and umount.
+Changelog:
+v1->v2
+- -odiscard
+ - Fix ordering to ensure that we don't discard extents freed in an
+    uncommitted transaction.
+- FITRIM
+  - Don't start a transaction so the entire run is transactionless
+  - The loop can be interrupted while waiting on the chunk mutex and
+    after the discard has completed.
+  - The only lock held for the duration is the device_list_mutex.  The
+    chunk mutex is take per loop iteration so normal operations should
+    continue while we're running, even on large file systems.
 
--- 
-Filipe David Manana,
+v2->v3
+- -odiscard
+ - Factor out get/put block_group->trimming to ensure that cleanup always
+   happens at the last reference drop.
+ - Cleanup the free space cache on the last reference drop.
+ - Use list_move instead of list_add in case of multiple adds.  We still
+   issue a warning but we shouldn't fall over.
+ - Explicitly delete unused block groups in close_ctree and ro-remount.
+- FITRIM
+ - Cleaned up pointer tricks that abused &NULL->member.
+ - Take the commit_root_sem across loop iteration to protect against
+   transaction commit moving the commit root.
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+v3->v4
+- new: skip superblocks during discard
+- new: btrfs_issue_discard passes back discarded_bytes on success
+
+v4->v5
+- new: check/align/warn on unaligned starting offset in btrfs_issue_discard
+- new: handle case where superblock begins before the range on <4k filesystems
+- no changes to other patches
+
+Thanks,
+
+-Jeff-- 
+Jeff Mahoney
+SUSE Labs

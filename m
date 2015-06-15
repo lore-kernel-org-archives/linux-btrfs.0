@@ -1,335 +1,208 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:33084 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751819AbbFQKHT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 06:07:19 -0400
-Received: by igbos3 with SMTP id os3so64432765igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 03:07:18 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1434375680-4115-6-git-send-email-jeffm@suse.com>
-Date: Wed, 17 Jun 2015 11:07:18 +0100
-Message-ID: <CAL3q7H4nbC0yZj9JczQMQYg-hAK9JGTNHSph7RhQbXVtD_Xz-A@mail.gmail.com>
-Subject: Re: [PATCH 6/7] btrfs: add missing discards when unpinning extents
- with -o discard
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from cantor2.suse.de ([195.135.220.15]:53350 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755849AbbFONl1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jun 2015 09:41:27 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 456DEAC7C
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 13:41:26 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 7/7] btrfs: cleanup, stop casting for extent_map->lookup everywhere
+Date: Mon, 15 Jun 2015 09:41:20 -0400
+Message-Id: <1434375680-4115-7-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1434375680-4115-6-git-send-email-jeffm@suse.com>
+In-Reply-To: <557ED6DC.6070900@suse.com>
 
-On Mon, Jun 15, 2015 at 2:41 PM,  <jeffm@suse.com> wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
->
-> When we clear the dirty bits in btrfs_delete_unused_bgs for extents
-> in the empty block group, it results in btrfs_finish_extent_commit being
-> unable to discard the freed extents.
->
-> The block group removal patch added an alternate path to forget extents
-> other than btrfs_finish_extent_commit.  As a result, any extents that
-> would be freed when the block group is removed aren't discarded.  In my
-> test run, with a large copy of mixed sized files followed by removal, it
-> left nearly 2/3 of extents undiscarded.
->
-> To clean up the block groups, we add the removed block group onto a list
-> that will be discarded after transaction commit.
->
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Filipe Manana <fdmanana@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-> ---
->  fs/btrfs/ctree.h            |  3 ++
->  fs/btrfs/extent-tree.c      | 68 ++++++++++++++++++++++++++++++++++++++++++---
->  fs/btrfs/free-space-cache.c | 57 +++++++++++++++++++++----------------
->  fs/btrfs/super.c            |  2 +-
->  fs/btrfs/transaction.c      |  2 ++
->  fs/btrfs/transaction.h      |  2 ++
->  6 files changed, 105 insertions(+), 29 deletions(-)
->
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index 6f364e1..780acf1 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3438,6 +3438,8 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
->                              struct btrfs_root *root, u64 group_start,
->                              struct extent_map *em);
->  void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info);
-> +void btrfs_get_block_group_trimming(struct btrfs_block_group_cache *cache);
-> +void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *cache);
->  void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
->                                        struct btrfs_root *root);
->  u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data);
-> @@ -4068,6 +4070,7 @@ __printf(5, 6)
->  void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
->                      unsigned int line, int errno, const char *fmt, ...);
->
-> +const char *btrfs_decode_error(int errno);
->
->  void __btrfs_abort_transaction(struct btrfs_trans_handle *trans,
->                                struct btrfs_root *root, const char *function,
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 24b48df..3598440 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -6103,20 +6103,19 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
->                                struct btrfs_root *root)
->  {
->         struct btrfs_fs_info *fs_info = root->fs_info;
-> +       struct btrfs_block_group_cache *block_group, *tmp;
-> +       struct list_head *deleted_bgs;
->         struct extent_io_tree *unpin;
->         u64 start;
->         u64 end;
->         int ret;
->
-> -       if (trans->aborted)
-> -               return 0;
-> -
->         if (fs_info->pinned_extents == &fs_info->freed_extents[0])
->                 unpin = &fs_info->freed_extents[1];
->         else
->                 unpin = &fs_info->freed_extents[0];
->
-> -       while (1) {
-> +       while (!trans->aborted) {
->                 mutex_lock(&fs_info->unused_bg_unpin_mutex);
->                 ret = find_first_extent_bit(unpin, 0, &start, &end,
->                                             EXTENT_DIRTY, NULL);
-> @@ -6135,6 +6134,34 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
->                 cond_resched();
->         }
->
-> +       /*
-> +        * Transaction is finished.  We don't need the lock anymore.  We
-> +        * do need to clean up the block groups in case of a transaction
-> +        * abort.
-> +        */
-> +       deleted_bgs = &trans->transaction->deleted_bgs;
-> +       list_for_each_entry_safe(block_group, tmp, deleted_bgs, bg_list) {
-> +               u64 trimmed = 0;
-> +
-> +               ret = -EROFS;
-> +               if (!trans->aborted)
-> +                       ret = btrfs_discard_extent(root,
-> +                                                  block_group->key.objectid,
-> +                                                  block_group->key.offset,
-> +                                                  &trimmed);
-> +
-> +               list_del_init(&block_group->bg_list);
-> +               btrfs_put_block_group_trimming(block_group);
-> +               btrfs_put_block_group(block_group);
-> +
-> +               if (ret) {
-> +                       const char *errstr = btrfs_decode_error(ret);
-> +                       btrfs_warn(fs_info,
-> +                                  "Discard failed while removing blockgroup: errno=%d %s\n",
-> +                                  ret, errstr);
-> +               }
-> +       }
-> +
->         return 0;
->  }
->
-> @@ -9914,6 +9941,11 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
->          * currently running transaction might finish and a new one start,
->          * allowing for new block groups to be created that can reuse the same
->          * physical device locations unless we take this special care.
-> +        *
-> +        * There may also be an implicit trim operation if the file system
-> +        * is mounted with -odiscard. The same protections must remain
-> +        * in place until the extents have been discarded completely when
-> +        * the transaction commit has completed.
->          */
->         remove_em = (atomic_read(&block_group->trimming) == 0);
->         /*
-> @@ -9988,6 +10020,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->         spin_lock(&fs_info->unused_bgs_lock);
->         while (!list_empty(&fs_info->unused_bgs)) {
->                 u64 start, end;
-> +               int trimming;
->
->                 block_group = list_first_entry(&fs_info->unused_bgs,
->                                                struct btrfs_block_group_cache,
-> @@ -10085,12 +10118,39 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->                 spin_unlock(&block_group->lock);
->                 spin_unlock(&space_info->lock);
->
-> +               /* DISCARD can flip during remount */
-> +               trimming = btrfs_test_opt(root, DISCARD);
-> +
-> +               /* Implicit trim during transaction commit. */
-> +               if (trimming)
-> +                       btrfs_get_block_group_trimming(block_group);
-> +
->                 /*
->                  * Btrfs_remove_chunk will abort the transaction if things go
->                  * horribly wrong.
->                  */
->                 ret = btrfs_remove_chunk(trans, root,
->                                          block_group->key.objectid);
-> +
-> +               if (ret) {
-> +                       if (trimming)
-> +                               btrfs_put_block_group_trimming(block_group);
-> +                       goto end_trans;
-> +               }
-> +
-> +               /*
-> +                * If we're not mounted with -odiscard, we can just forget
-> +                * about this block group. Otherwise we'll need to wait
-> +                * until transaction commit to do the actual discard.
-> +                */
-> +               if (trimming) {
-> +                       WARN_ON(!list_empty(&block_group->bg_list));
-> +                       spin_lock(&trans->transaction->deleted_bgs_lock);
-> +                       list_move(&block_group->bg_list,
-> +                                 &trans->transaction->deleted_bgs);
-> +                       spin_unlock(&trans->transaction->deleted_bgs_lock);
-> +                       btrfs_get_block_group(block_group);
-> +               }
->  end_trans:
->                 btrfs_end_transaction(trans, root);
->  next:
-> diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-> index 9dbe5b5..c79253e 100644
-> --- a/fs/btrfs/free-space-cache.c
-> +++ b/fs/btrfs/free-space-cache.c
-> @@ -3274,35 +3274,23 @@ next:
->         return ret;
->  }
->
-> -int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
-> -                          u64 *trimmed, u64 start, u64 end, u64 minlen)
-> +void btrfs_get_block_group_trimming(struct btrfs_block_group_cache *cache)
->  {
-> -       int ret;
-> +       atomic_inc(&cache->trimming);
-> +}
->
-> -       *trimmed = 0;
-> +void btrfs_put_block_group_trimming(struct btrfs_block_group_cache *block_group)
-> +{
-> +       struct extent_map_tree *em_tree;
-> +       struct extent_map *em;
-> +       bool cleanup;
->
->         spin_lock(&block_group->lock);
-> -       if (block_group->removed) {
-> -               spin_unlock(&block_group->lock);
-> -               return 0;
-> -       }
-> -       atomic_inc(&block_group->trimming);
-> +       cleanup = (atomic_dec_and_test(&block_group->trimming) &&
-> +                  block_group->removed);
->         spin_unlock(&block_group->lock);
->
-> -       ret = trim_no_bitmap(block_group, trimmed, start, end, minlen);
-> -       if (ret)
-> -               goto out;
-> -
-> -       ret = trim_bitmaps(block_group, trimmed, start, end, minlen);
-> -out:
-> -       spin_lock(&block_group->lock);
-> -       if (atomic_dec_and_test(&block_group->trimming) &&
-> -           block_group->removed) {
-> -               struct extent_map_tree *em_tree;
-> -               struct extent_map *em;
-> -
-> -               spin_unlock(&block_group->lock);
-> -
-> +       if (cleanup) {
->                 lock_chunks(block_group->fs_info->chunk_root);
->                 em_tree = &block_group->fs_info->mapping_tree.map_tree;
->                 write_lock(&em_tree->lock);
-> @@ -3326,10 +3314,31 @@ out:
->                  * this block group have left 1 entry each one. Free them.
->                  */
->                 __btrfs_remove_free_space_cache(block_group->free_space_ctl);
-> -       } else {
-> +       }
-> +}
-> +
-> +int btrfs_trim_block_group(struct btrfs_block_group_cache *block_group,
-> +                          u64 *trimmed, u64 start, u64 end, u64 minlen)
-> +{
-> +       int ret;
-> +
-> +       *trimmed = 0;
-> +
-> +       spin_lock(&block_group->lock);
-> +       if (block_group->removed) {
->                 spin_unlock(&block_group->lock);
-> +               return 0;
->         }
-> +       btrfs_get_block_group_trimming(block_group);
-> +       spin_unlock(&block_group->lock);
-> +
-> +       ret = trim_no_bitmap(block_group, trimmed, start, end, minlen);
-> +       if (ret)
-> +               goto out;
->
-> +       ret = trim_bitmaps(block_group, trimmed, start, end, minlen);
-> +out:
-> +       btrfs_put_block_group_trimming(block_group);
->         return ret;
->  }
->
-> diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-> index 2ccd8d4..a80da03 100644
-> --- a/fs/btrfs/super.c
-> +++ b/fs/btrfs/super.c
-> @@ -69,7 +69,7 @@ static struct file_system_type btrfs_fs_type;
->
->  static int btrfs_remount(struct super_block *sb, int *flags, char *data);
->
-> -static const char *btrfs_decode_error(int errno)
-> +const char *btrfs_decode_error(int errno)
->  {
->         char *errstr = "unknown";
->
-> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-> index 5628e25..2005262 100644
-> --- a/fs/btrfs/transaction.c
-> +++ b/fs/btrfs/transaction.c
-> @@ -256,6 +256,8 @@ loop:
->         mutex_init(&cur_trans->cache_write_mutex);
->         cur_trans->num_dirty_bgs = 0;
->         spin_lock_init(&cur_trans->dirty_bgs_lock);
-> +       INIT_LIST_HEAD(&cur_trans->deleted_bgs);
-> +       spin_lock_init(&cur_trans->deleted_bgs_lock);
->         list_add_tail(&cur_trans->list, &fs_info->trans_list);
->         extent_io_tree_init(&cur_trans->dirty_pages,
->                              fs_info->btree_inode->i_mapping);
-> diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-> index 0b24755..14325f2 100644
-> --- a/fs/btrfs/transaction.h
-> +++ b/fs/btrfs/transaction.h
-> @@ -74,6 +74,8 @@ struct btrfs_transaction {
->          */
->         struct mutex cache_write_mutex;
->         spinlock_t dirty_bgs_lock;
-> +       struct list_head deleted_bgs;
-> +       spinlock_t deleted_bgs_lock;
->         struct btrfs_delayed_ref_root delayed_refs;
->         int aborted;
->         int dirty_bg_run;
-> --
-> 2.4.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Overloading extent_map->bdev to struct map_lookup * might have started out
+as a means to an end, but it's a pattern that's used all over the place
+now. Let's get rid of the casting and just add a union instead.
 
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/dev-replace.c |  2 +-
+ fs/btrfs/extent_map.c  |  2 +-
+ fs/btrfs/extent_map.h  | 10 +++++++++-
+ fs/btrfs/scrub.c       |  2 +-
+ fs/btrfs/volumes.c     | 24 ++++++++++++------------
+ 5 files changed, 24 insertions(+), 16 deletions(-)
 
-
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 0573848..2ad3289 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -613,7 +613,7 @@ static void btrfs_dev_replace_update_device_in_mapping_tree(
+ 		em = lookup_extent_mapping(em_tree, start, (u64)-1);
+ 		if (!em)
+ 			break;
+-		map = (struct map_lookup *)em->bdev;
++		map = em->map_lookup;
+ 		for (i = 0; i < map->num_stripes; i++)
+ 			if (srcdev == map->stripes[i].dev)
+ 				map->stripes[i].dev = tgtdev;
+diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
+index 6a98bdd..84fb56d 100644
+--- a/fs/btrfs/extent_map.c
++++ b/fs/btrfs/extent_map.c
+@@ -76,7 +76,7 @@ void free_extent_map(struct extent_map *em)
+ 		WARN_ON(extent_map_in_tree(em));
+ 		WARN_ON(!list_empty(&em->list));
+ 		if (test_bit(EXTENT_FLAG_FS_MAPPING, &em->flags))
+-			kfree(em->bdev);
++			kfree(em->map_lookup);
+ 		kmem_cache_free(extent_map_cache, em);
+ 	}
+ }
+diff --git a/fs/btrfs/extent_map.h b/fs/btrfs/extent_map.h
+index b2991fd..eb8b8fa 100644
+--- a/fs/btrfs/extent_map.h
++++ b/fs/btrfs/extent_map.h
+@@ -32,7 +32,15 @@ struct extent_map {
+ 	u64 block_len;
+ 	u64 generation;
+ 	unsigned long flags;
+-	struct block_device *bdev;
++	union {
++		struct block_device *bdev;
++
++		/*
++		 * used for chunk mappings
++		 * flags & EXTENT_FLAG_FS_MAPPING must be set
++		 */
++		struct map_lookup *map_lookup;
++	};
+ 	atomic_t refs;
+ 	unsigned int compress_type;
+ 	struct list_head list;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index ab58115..19f7241d 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3339,7 +3339,7 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
+ 	if (!em)
+ 		return -EINVAL;
+ 
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 	if (em->start != chunk_offset)
+ 		goto out;
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 7fdde31..9f48ae5 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1068,7 +1068,7 @@ again:
+ 		struct map_lookup *map;
+ 		int i;
+ 
+-		map = (struct map_lookup *)em->bdev;
++		map = em->map_lookup;
+ 		for (i = 0; i < map->num_stripes; i++) {
+ 			if (map->stripes[i].dev != device)
+ 				continue;
+@@ -2622,7 +2622,7 @@ int btrfs_remove_chunk(struct btrfs_trans_handle *trans,
+ 			free_extent_map(em);
+ 		return -EINVAL;
+ 	}
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		struct btrfs_device *device = map->stripes[i].dev;
+@@ -4465,7 +4465,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		goto error;
+ 	}
+ 	set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
+-	em->bdev = (struct block_device *)map;
++	em->map_lookup = map;
+ 	em->start = start;
+ 	em->len = num_bytes;
+ 	em->block_start = 0;
+@@ -4560,7 +4560,7 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 		return -EINVAL;
+ 	}
+ 
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 	item_size = btrfs_chunk_item_size(map->num_stripes);
+ 	stripe_size = em->orig_block_len;
+ 
+@@ -4702,7 +4702,7 @@ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset)
+ 	if (!em)
+ 		return 1;
+ 
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		if (map->stripes[i].dev->missing) {
+ 			miss_ndevs++;
+@@ -4782,7 +4782,7 @@ int btrfs_num_copies(struct btrfs_fs_info *fs_info, u64 logical, u64 len)
+ 		return 1;
+ 	}
+ 
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 	if (map->type & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1))
+ 		ret = map->num_stripes;
+ 	else if (map->type & BTRFS_BLOCK_GROUP_RAID10)
+@@ -4818,7 +4818,7 @@ unsigned long btrfs_full_stripe_len(struct btrfs_root *root,
+ 	BUG_ON(!em);
+ 
+ 	BUG_ON(em->start > logical || em->start + em->len < logical);
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+ 		len = map->stripe_len * nr_data_stripes(map);
+ 	free_extent_map(em);
+@@ -4839,7 +4839,7 @@ int btrfs_is_parity_mirror(struct btrfs_mapping_tree *map_tree,
+ 	BUG_ON(!em);
+ 
+ 	BUG_ON(em->start > logical || em->start + em->len < logical);
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 	if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK)
+ 		ret = 1;
+ 	free_extent_map(em);
+@@ -5000,7 +5000,7 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		return -EINVAL;
+ 	}
+ 
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 	offset = logical - em->start;
+ 
+ 	stripe_len = map->stripe_len;
+@@ -5542,7 +5542,7 @@ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 		free_extent_map(em);
+ 		return -EIO;
+ 	}
+-	map = (struct map_lookup *)em->bdev;
++	map = em->map_lookup;
+ 
+ 	length = em->len;
+ 	rmap_len = map->stripe_len;
+@@ -6057,7 +6057,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 	}
+ 
+ 	set_bit(EXTENT_FLAG_FS_MAPPING, &em->flags);
+-	em->bdev = (struct block_device *)map;
++	em->map_lookup = map;
+ 	em->start = logical;
+ 	em->len = length;
+ 	em->orig_start = 0;
+@@ -6733,7 +6733,7 @@ void btrfs_update_commit_device_bytes_used(struct btrfs_root *root,
+ 	/* In order to kick the device replace finish process */
+ 	lock_chunks(root);
+ 	list_for_each_entry(em, &transaction->pending_chunks, list) {
+-		map = (struct map_lookup *)em->bdev;
++		map = em->map_lookup;
+ 
+ 		for (i = 0; i < map->num_stripes; i++) {
+ 			dev = map->stripes[i].dev;
 -- 
-Filipe David Manana,
+2.4.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

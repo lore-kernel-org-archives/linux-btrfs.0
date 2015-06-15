@@ -1,91 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f176.google.com ([209.85.223.176]:35574 "EHLO
-	mail-ie0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752281AbbFQJzS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 05:55:18 -0400
-Received: by iesa3 with SMTP id a3so30266020ies.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 02:55:17 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1434375680-4115-2-git-send-email-jeffm@suse.com>
-Date: Wed, 17 Jun 2015 10:55:17 +0100
-Message-ID: <CAL3q7H4ad9sYq0PcfYfiQ883eOFpEuwk5jJ+cpRDby+V_9ePKA@mail.gmail.com>
-Subject: Re: [PATCH 2/7] btrfs: btrfs_issue_discard ensure offset/length are
- aligned to sector boundaries
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from cantor2.suse.de ([195.135.220.15]:53340 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755845AbbFONlY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jun 2015 09:41:24 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 52DB0AD5E
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 13:41:23 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 3/7] btrfs: skip superblocks during discard
+Date: Mon, 15 Jun 2015 09:41:16 -0400
+Message-Id: <1434375680-4115-3-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1434375680-4115-2-git-send-email-jeffm@suse.com>
+In-Reply-To: <557ED6DC.6070900@suse.com>
 
-On Mon, Jun 15, 2015 at 2:41 PM,  <jeffm@suse.com> wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
->
-> It's possible, though unexpected, to pass unaligned offsets and lengths
-> to btrfs_issue_discard.  We then shift the offset/length values to sector
-> units.  If an unaligned offset has been passed, it will result in the
-> entire sector being discarded, possibly losing data.  An unaligned
-> length is safe but we'll end up returning an inaccurate number of
-> discarded bytes.
->
-> This patch aligns the offset to the 512B boundary, adjusts the length,
-> and warns, since we shouldn't be discarding on an offset that isn't
-> aligned with our sector size.
->
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Filipe Manana <fdmanana@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-> ---
->  fs/btrfs/extent-tree.c | 17 +++++++++++++----
->  1 file changed, 13 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index da1145d..cf9cefd 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -1888,12 +1888,21 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
->                                u64 *discarded_bytes)
->  {
->         int ret = 0;
-> +       u64 aligned_start = ALIGN(start, 1 << 9);
->
-> -       *discarded_bytes = 0;
-> -       ret = blkdev_issue_discard(bdev, start >> 9, len >> 9, GFP_NOFS, 0);
-> -       if (!ret)
-> -               *discarded_bytes = len;
-> +       if (WARN_ON(start != aligned_start)) {
-> +               len -= aligned_start - start;
-> +               len = round_down(len, 1 << 9);
-> +               start = aligned_start;
-> +       }
->
-> +       *discarded_bytes = 0;
-> +       if (len) {
-> +               ret = blkdev_issue_discard(bdev, start >> 9, len >> 9,
-> +                                          GFP_NOFS, 0);
-> +               if (!ret)
-> +                       *discarded_bytes = len;
-> +       }
->         return ret;
->  }
->
-> --
-> 2.4.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Btrfs doesn't track superblocks with extent records so there is nothing
+persistent on-disk to indicate that those blocks are in use.  We track
+the superblocks in memory to ensure they don't get used by removing them
+from the free space cache when we load a block group from disk.  Prior
+to 47ab2a6c6a (Btrfs: remove empty block groups automatically), that
+was fine since the block group would never be reclaimed so the superblock
+was always safe.  Once we started removing the empty block groups, we
+were protected by the fact that discards weren't being properly issued
+for unused space either via FITRIM or -odiscard.  The block groups were
+still being released, but the blocks remained on disk.
 
+In order to properly discard unused block groups, we need to filter out
+the superblocks from the discard range.  Superblocks are located at fixed
+locations on each device, so it makes sense to filter them out in
+btrfs_issue_discard, which is used by both -odiscard and FITRIM.
 
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 55 insertions(+), 4 deletions(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index cf9cefd..1e44b93 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -1884,10 +1884,12 @@ static int remove_extent_backref(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
++#define in_range(b, first, len)        ((b) >= (first) && (b) < (first) + (len))
+ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
+ 			       u64 *discarded_bytes)
+ {
+-	int ret = 0;
++	int j, ret = 0;
++	u64 bytes_left, end;
+ 	u64 aligned_start = ALIGN(start, 1 << 9);
+ 
+ 	if (WARN_ON(start != aligned_start)) {
+@@ -1897,11 +1899,60 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
+ 	}
+ 
+ 	*discarded_bytes = 0;
+-	if (len) {
+-		ret = blkdev_issue_discard(bdev, start >> 9, len >> 9,
++
++	if (!len)
++		return 0;
++
++	end = start + len;
++	bytes_left = len;
++
++	/* Skip any superblocks on this device. */
++	for (j = 0; j < BTRFS_SUPER_MIRROR_MAX; j++) {
++		u64 sb_start = btrfs_sb_offset(j);
++		u64 sb_end = sb_start + BTRFS_SUPER_INFO_SIZE;
++		u64 size = sb_start - start;
++
++		if (!in_range(sb_start, start, bytes_left) &&
++		    !in_range(sb_end, start, bytes_left) &&
++		    !in_range(start, sb_start, BTRFS_SUPER_INFO_SIZE))
++			continue;
++
++		/*
++		 * Superblock spans beginning of range.  Adjust start and
++		 * try again.
++		 */
++		if (sb_start <= start) {
++			start += sb_end - start;
++			if (start > end) {
++				bytes_left = 0;
++				break;
++			}
++			bytes_left = end - start;
++			continue;
++		}
++
++		if (size) {
++			ret = blkdev_issue_discard(bdev, start >> 9, size >> 9,
++						   GFP_NOFS, 0);
++			if (!ret)
++				*discarded_bytes += size;
++			else if (ret != -EOPNOTSUPP)
++				return ret;
++		}
++
++		start = sb_end;
++		if (start > end) {
++			bytes_left = 0;
++			break;
++		}
++		bytes_left = end - start;
++	}
++
++	if (bytes_left) {
++		ret = blkdev_issue_discard(bdev, start >> 9, bytes_left >> 9,
+ 					   GFP_NOFS, 0);
+ 		if (!ret)
+-			*discarded_bytes = len;
++			*discarded_bytes += bytes_left;
+ 	}
+ 	return ret;
+ }
 -- 
-Filipe David Manana,
+2.4.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

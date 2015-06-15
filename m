@@ -1,70 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gardel.0pointer.net ([85.214.157.71]:56089 "EHLO
-	gardel.0pointer.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754046AbbFOKqW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jun 2015 06:46:22 -0400
-Date: Mon, 15 Jun 2015 12:46:18 +0200
-From: Lennart Poettering <lennart@poettering.net>
-To: kreijack@inwind.it
-Cc: Anand Jain <anand.jain@oracle.com>, Andrei Borzenkov <arvidjaar@gmail.com>,
-        systemd-devel@lists.freedesktop.org, dsterba@suse.cz,
-        "linux-btrfs@vger.kernel.org >> linux-btrfs"
-	<linux-btrfs@vger.kernel.org>
-Subject: Re: [systemd-devel] [survey] BTRFS_IOC_DEVICES_READY return status
-Message-ID: <20150615104618.GB25616@gardel-login>
-References: <557ADBAE.9040407@oracle.com>
- <20150612210453.3dee4563@opensuse.site>
- <557B3C32.9030707@inwind.it>
- <557BF979.9040106@oracle.com>
- <557C479F.2070403@libero.it>
+Received: from cantor2.suse.de ([195.135.220.15]:51644 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753329AbbFONPI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jun 2015 09:15:08 -0400
+Date: Mon, 15 Jun 2015 15:15:07 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
+Message-ID: <20150615131507.GL6761@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <557B076B.7050500@fb.com>
+ <557E86A9.8040207@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <557C479F.2070403@libero.it>
+In-Reply-To: <557E86A9.8040207@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 13.06.15 17:09, Goffredo Baroncelli (kreijack@libero.it) wrote:
-
-> > Further, the problem will be more intense in this eg. if you use dd
-> > and copy device A to device B. After you mount device A, by just
-> > providing device B in the above two commands you could let kernel
-> > update the device path, again all the IO (since device is mounted)
-> > are still going to the device A (not B), but /proc/self/mounts and
-> > 'btrfs fi show' shows it as device B (not A).
-> > 
-> > Its a bug. very tricky to fix.
+On Mon, Jun 15, 2015 at 04:02:49PM +0800, Qu Wenruo wrote:
+> In the following case of corruption, RAID1 or DUP will fail to recover
+> it(Use 16K as leafsize)
+> 0		4K		8K		12K		16K
+> Mirror 0:
+> |<-OK---------->|<----ERROR---->|<-----------------OK------------->|
 > 
-> In the past [*] I proposed a mount.btrfs helper . I tried to move the logic outside the kernel.
-> I think that the problem is that we try to manage all these cases
-> from a device point of view: when a device appears, we register the
-> device and we try to mount the filesystem... This works very well
-> when there is 1-volume filesystem. For the other cases there is a
-> mess between the different layers:
-
-> - kernel
-> - udev/systemd
-> - initrd logic
+> Mirror 1:
+> |<----------------------------OK--------------->|<------Error----->|
 > 
-> My attempt followed a different idea: the mount helper waits the
-> devices if needed, or if it is the case it mounts the filesystem in
-> degraded mode. All devices are passed as mount arguments
-> (--device=/dev/sdX), there is no a device registration: this avoids
-> all these problems.
+> Since the CRC32 stored in header is calculated for the whole leaf,
+> so both will fail the CRC32 check.
+> 
+> But the corruption are in different position, in fact, if we know where
+> the corruption is (no need to be so accurate), we can recover the tree
+> block by using the current part.
+> 
+> In above example, we can just use the correct 0~12K from mirror 1
+> and then 12K~16K from mirror 0.
 
-Hmm, no. /bin/mount should not block for devices. That's generally
-incompatible with how the tool is used, and in particular from
-systemd. We would not make use for such a scheme in
-systemd. /bin/mount should always be short-running.
+If the mirror 0 copy is intact, you can use it entirely. Your
+improvement could help if each mirror is partially broken but we can
+find good copies of all 4k blocks among all mirrors.
 
-I am pretty sure that if such automatic degraded mounting should be
-supported, then this should be done with some background storage
-daemon that alters the effect of the READY ioctl somehow after the
-timeout, and then retriggers the devcies so that systemd takes
-note. (or, alternatively: such a scheme could even be implemented all
-in kernel, based on some configurable kernel setting...)
+The natural question is how often this happens and if it's worth adding
+the code complexity and what's the estimated speed drop.
 
-Lennart
+I think the conditions are very rare and that we could add minimal code
+to attempt to build the metadata block from the available copies without
+the separate block checksums. This is an immediate idea so I could have
+missed something:
 
--- 
-Lennart Poettering, Red Hat
+* if a metadata-block checksum mismatches, do a direct comparison of the
+  metadata-blocks in all available mirrors
+  * if they match and checksums match, no help, it's damaged
+  * if there's a good copy (ie the original checksum or data were
+    corrupted), use it
+  * otherwise attempt to rebuild the metadata block from what's available
+
+* by direct comparisons of the 4k blocks, find the first where the
+  metadataA and mirror1 blocks mismatch, offset N
+* try to compute the checksum from metadataA[0..N-1] + mirror1 block N +
+  rest of metadataA
+  * if it's ok, use it
+  * if not: the block N is corrupted in mirror1 (we've skipped it in
+    metadataA)
+    then repeat with metadataA[0..N] + mirror1[N+1..end]
+
+That's a rough idea that I hope will cover most of the cases when it
+happens. With some more exhaustive attempts to rebuild the metadata
+block we can try to repair 2 damaged blocks.
+
+As this is completely independent, we can test it separately, and also
+add it as a rescue feature to the userspace tools.
+
+> Yes, this corruption case may be minor enough, since even corruption in
+> one mirror is rare enough.
+> So I didn't introduce a new CRC32 checksum, but use the extra 32-4 bytes
+> to store the partial CRC32 to keep the backward compatibility.
+
+The above would work with any checksums, without the need to store the
+per-block checksums which become impossible with strongher algorithms.

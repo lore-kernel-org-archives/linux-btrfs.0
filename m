@@ -1,138 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49302 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751634AbbFKTqP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 11 Jun 2015 15:46:15 -0400
-Message-ID: <5579E583.4020209@suse.com>
-Date: Thu, 11 Jun 2015 15:46:11 -0400
-From: Jeff Mahoney <jeffm@suse.com>
+Received: from lb3-smtp-cloud2.xs4all.net ([194.109.24.29]:44466 "EHLO
+	lb3-smtp-cloud2.xs4all.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752168AbbFOIww convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jun 2015 04:52:52 -0400
+Date: Mon, 15 Jun 2015 10:53:33 +0200
+From: =?UTF-8?B?R8OhYm9y?= Nyers <pubny@xs4all.nl>
+To: Jeff Mahoney <jeffm@suse.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Subject: Re: "@" prefix in subvolume paths
+Message-ID: <20150615105333.640a6a1f@host22323.xs4all.nl>
+In-Reply-To: <5578E95B.70105@suse.com>
+References: <20150609195505.12ace1e8@host22323.xs4all.nl>
+	<20150610231014.GF18226@carfax.org.uk>
+	<5578E95B.70105@suse.com>
 MIME-Version: 1.0
-To: Chris Mason <clm@fb.com>, fdmanana@gmail.com
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/4] btrfs: skip superblocks during discard
-References: <1434036062-21597-1-git-send-email-jeffm@suse.com>	<1434036062-21597-2-git-send-email-jeffm@suse.com>	<CAL3q7H5Hsv2HvBgu_kOEDwXK_53+_1GH9WC_Upa+X8Lhd7sXng@mail.gmail.com>	<5579D0A2.7000407@suse.com> <CAL3q7H7Q-789EkzcBGzMWuAXDJ9t3E-qeMJkRKYASb6NSr7JTQ@mail.gmail.com> <5579DE52.2060502@suse.com> <5579E069.6060404@fb.com> <5579E13A.5030903@suse.com> <5579E301.6050908@fb.com>
-In-Reply-To: <5579E301.6050908@fb.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+Jeff,
 
-On 6/11/15 3:35 PM, Chris Mason wrote:
-> On 06/11/2015 03:27 PM, Jeff Mahoney wrote:
->> On 6/11/15 3:24 PM, Chris Mason wrote:
->>> On 06/11/2015 03:15 PM, Jeff Mahoney wrote:
->>>> On 6/11/15 2:44 PM, Filipe David Manana wrote:
->>>>> On Thu, Jun 11, 2015 at 7:17 PM, Jeff Mahoney 
->>>>> <jeffm@suse.com> wrote: On 6/11/15 12:47 PM, Filipe David 
->>>>> Manana wrote:
->>>>>>>> On Thu, Jun 11, 2015 at 4:20 PM,  <jeffm@suse.com> 
->>>>>>>> wrote:
->>>>>>>>> From: Jeff Mahoney <jeffm@suse.com>
->>>>>>>>> 
->>>>>>>>> Btrfs doesn't track superblocks with extent
->>>>>>>>> records so there is nothing persistent on-disk to
->>>>>>>>> indicate that those blocks are in use.  We track
->>>>>>>>> the superblocks in memory to ensure they don't get
->>>>>>>>> used by removing them from the free space cache
->>>>>>>>> when we load a block group from disk.  Prior to
->>>>>>>>> 47ab2a6c6a (Btrfs: remove empty block groups
->>>>>>>>> automatically), that was fine since the block group
->>>>>>>>> would never be reclaimed so the superblock was
->>>>>>>>> always safe. Once we started removing the empty
->>>>>>>>> block groups, we were protected by the fact that
->>>>>>>>> discards weren't being properly issued for unused
->>>>>>>>> space either via FITRIM or -odiscard. The block
->>>>>>>>> groups were still being released, but the blocks
->>>>>>>>> remained on disk.
->>>>>>>>> 
->>>>>>>>> In order to properly discard unused block groups, 
->>>>>>>>> we need to filter out the superblocks from the 
->>>>>>>>> discard range. Superblocks are located at fixed 
->>>>>>>>> locations on each device, so it makes sense to 
->>>>>>>>> filter them out in btrfs_issue_discard, which is 
->>>>>>>>> used by both -odiscard and FITRIM.
->>>>>>>>> 
->>>>>>>>> Signed-off-by: Jeff Mahoney <jeffm@suse.com> --- 
->>>>>>>>> fs/btrfs/extent-tree.c | 50 
->>>>>>>>> ++++++++++++++++++++++++++++++++++++++++++++------ 
->>>>>>>>> 1 file changed, 44 insertions(+), 6 deletions(-)
->>>>>>>>> 
->>>>>>>>> diff --git a/fs/btrfs/extent-tree.c 
->>>>>>>>> b/fs/btrfs/extent-tree.c index 0ec3acd..75d0226 
->>>>>>>>> 100644 --- a/fs/btrfs/extent-tree.c +++ 
->>>>>>>>> b/fs/btrfs/extent-tree.c @@ -1884,10 +1884,47 @@ 
->>>>>>>>> static int remove_extent_backref(struct 
->>>>>>>>> btrfs_trans_handle *trans, return ret; }
->>>>>>>>> 
->>>>>>>>> -static int btrfs_issue_discard(struct block_device
->>>>>>>>> *bdev, - u64 start, u64 len) +#define in_range(b,
->>>>>>>>> first, len) ((b)
->>>>>>>>>> = (first) && (b) < (first) + (len))
->>>>>>>> 
->>>>>>>> Hi Jeff,
->>>>>>>> 
->>>>>>>> So this will work if every caller behaves well and 
->>>>>>>> passes a region whose start and end offsets are a 
->>>>>>>> multiple of the sector size (4096) which currently 
->>>>>>>> matches the superblock size.
->>>>>>>> 
->>>>>>>> However, I think it would be safer to check for the 
->>>>>>>> case where the start offset of a superblock mirror
->>>>>>>> is < (first) and (sb_offset + sb_len) > (first).
->>>>>>>> Just to deal with cases where for example the 2nd
->>>>>>>> half of the sb starts at offset (first).
->>>>>>>> 
->>>>>>>> I guess this sectorsize becoming less than 4096 will
->>>>>>>>  happen sooner or later with the subpage sectorsize 
->>>>>>>> patch set, so it wouldn't hurt to make it more
->>>>>>>> bullet proof already.
->>>> 
->>>>> Is that something anyone intends to support?  While I 
->>>>> suppose the subpage sector patch /could/ be used to allow 
->>>>> file systems with a node size under 4k, the intention is 
->>>>> the other way around -- systems that have higher order
->>>>> page sizes currently don't work with btrfs file system
->>>>> created on systems with smaller order page sizes like x86.
->> 
->>> The best use of smaller node sizes is just to test the 
->>> subpagesize patches on more common hardware.  I wouldn't
->>> expect anyone to use a 1K node size in production.
->> 
->> Any chance we can enforce that?  Like with a compile-time
->> option? :)
+Thanks for elaborating on this. I'm wondering where in the
+SLES/openSUSE documentation these considerations are documented. Do you
+have a pointer?
+
+Thanks,
+Gábor
+
+
+On Wed, 10 Jun 2015 21:50:19 -0400
+Jeff Mahoney <jeffm@suse.com> wrote:
+
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
 > 
-> We can make mkfs.btrfs advise strongly against it ;)
+> On 6/10/15 7:10 PM, Hugo Mills wrote:
+> > On Tue, Jun 09, 2015 at 07:55:05PM +0200, pubny@xs4all.nl wrote:
+> >> Hi,
+> >> 
+> >> I've noticed this "@" sign in the subvolume's path with SLES12.
+> >> I'm wondering what is its purpose. openSUSE 13.2 doesn't seem to
+> >> be using it.
+> > 
+> > They created a subvolume called "@" and then put all the other 
+> > subvolumes under there. There's nothing special about it.
+> > 
+> > The @ is often used as a prefix on subvolumes (e.g. in Ubuntu) to 
+> > indicate that they're subvolumes, but it's not required, and
+> > doesn't have any extra meaning beyond being a useful naming
+> > convention.
 > 
-> But, since I wasn't horribly clear, I'd love one extra if
-> statement in the discard function.  Silently eating bytes is
-> horribly hard to track down.
+> Yep. That explanation is accurate but is missing the rest of the
+> story. The choice of @ is probably due to following the convention
+> started by the Ubuntu folks but also because it's the least
+> complicated of the alternative names we could have used. The @
+> subvolume is set as the default subvolume. As you'd expect, it's
+> mounted at / and used as such. The reason we use a separate subvolume
+> is so we can easily implement our boot-and-rollback-from-snapshot
+> functionality in SLE12. Having the root file system as a separate
+> subvolume means we can move one of the snapshot subvolumes into the fs
+> tree root, move the other @ subvolumes into that subvolume, and we
+> have a rolled back system from which we can easily remove the
+> now-unused root. If we didn't use a separate subvolume for it, it
+> would make the rollback very complicated. It's used in concert with
+> our GRUB implementation that iterates and presents possible snapshots
+> to use as a root file system in lieu of the "real" one should a
+> problem occur.
+> 
+> - -Jeff
+> 
+> >> 
+> >> SLES12: # btrfs sub list / ID 257 gen 2270 top level 5 path @ ID
+> >> 258 gen 1655 top level 257 path @/boot/grub2/i386-pc ID 259 gen
+> >> 4263 top level 257 path @/boot/grub2/x86_64-efi ID 260 gen 4037
+> >> top level 257 path @/opt ID 261 gen 2553 top level 257 path
+> >> @/srv ID 262 gen 4521 top level 257 path @/tmp ID 263 gen 4492
+> >> top level 257 path @/usr/local ID 264 gen 1655 top level 257 path
+> >> @/var/crash ID 265 gen 1655 top level 257 path @/var/lib/mailman 
+> >> ID 266 gen 1655 top level 257 path @/var/lib/named ID 267 gen
+> >> 1655 top level 257 path @/var/lib/pgsql ID 268 gen 4523 top level
+> >> 257 path @/var/log ID 269 gen 1655 top level 257 path @/var/opt 
+> >> ID 270 gen 4524 top level 257 path @/var/spool ID 271 gen 4521
+> >> top level 257 path @/var/tmp ID 275 gen 4505 top level 257 path
+> >> @/.snapshots
+> >> 
+> >> 
+> >> openSUSE 13.2:
+> >> 
+> >> # btrfs subvol list / ID 257 gen 3481911 top level 5 path
+> >> boot/grub2/i386-pc ID 258 gen 3481911 top level 5 path
+> >> boot/grub2/x86_64-efi ID 259 gen 3517714 top level 5 path home ID
+> >> 260 gen 3515789 top level 5 path opt ID 261 gen 3513493 top level
+> >> 5 path srv ID 262 gen 3513372 top level 5 path tmp ID 263 gen
+> >> 3517660 top level 5 path usr/local ID 264 gen 3513372 top level 5
+> >> path var/crash ID 265 gen 3513372 top level 5 path
+> >> var/lib/mailman ID 266 gen 3513372 top level 5 path
+> >> var/lib/named ID 267 gen 3513372 top level 5 path var/lib/pgsql 
+> >> ID 268 gen 3517714 top level 5 path var/log ID 269 gen 3513372
+> >> top level 5 path var/opt ID 270 gen 3517714 top level 5 path
+> >> var/spool ID 271 gen 3517706 top level 5 path var/tmp ID 276 gen
+> >> 3517669 top level 5 path .snapshots
+> > 
+> 
+> 
+> - -- 
+> Jeff Mahoney
+> SUSE Labs
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+> 
+> iQIcBAEBAgAGBQJVeOlbAAoJEB57S2MheeWy0JYP/1mbM5ybHNcwEB21CbS+5ujv
+> omBmiVhX6nAcTDAJ2OJG7MsrE4L1j93R8gv/xRkPjBLuaiqJ+wr88VaG/AcKvtSZ
+> qMF64PJCNzsXFd0FFPi8CNXxhVbJyEKF+m8Xl+tfRsMhsNIKdbqkMHInMc99qWJH
+> dMLTSYObvdo9AYIkOj8PM6nBjeQ4zEBQY9uOf9M9HL8Ulc1VQgzSu1giuvHg8/Cf
+> Ela2iZJi2APZeNisQtQcJssMyBaDTbSH0RhQh8kcdfG6GCruSDR8AWbyuY36OeaG
+> 5Ifp4J7oSS+eUwlTtvLFfZl079VmJWZbF/KEy8GfY++kp+BVB95Z8QOKVOVTEA8A
+> 4AvkMfdGvtykZJNRskXGaIsUIX07iTmT2f+VyN7jbfp2J5FyBALp+i4Ub5fyjUZG
+> +OWcAIkTC9z2AQW77ZMdA4DdkHk5bi3aRSCNV1gSPGDib5CH5ZLyMY/KKtxCLSnO
+> syNdcZmQs4bb7FZBfcM4CQraUYsnBl4ArGechkMWpJCrMx2dtRrGlKlh+7KmG+m8
+> 60xBKU3ApmZrcKUTAcWvN2cy72xmc8GZaOPnNepAUhMLduarsEtyCemOkGCZxRiu
+> c0QRGhGBgK91MBF1KxXzrnO0cm1ijdjMAbwmol6vEYRzXItXK3AeD74IeY6Abqr/
+> U2lTFYlKYpkTmzhk0gM8
+> =lO/K
+> -----END PGP SIGNATURE-----
+> --
+> To unsubscribe from this list: send the line "unsubscribe
+> linux-btrfs" in the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Heh, yeah.  I'm making it bulletproof now.  If the goal is to also
-catch potential misbehavior, I'm catching some other cases as well.  A
-few extra conditionals will still take a small percentage of the time
-a discard takes.
-
-- -Jeff
-
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-
-iQIcBAEBAgAGBQJVeeWDAAoJEB57S2MheeWygMEQAMPCNf8ZIMfYRDkzbpW0mezB
-6Vbu7PM5WNAqOU2XdJXq47Z+jvLzsbBG0Z1hDLdavkQiOfjOQeBDvwVQQwFPizJ9
-lRA4HB6P0nMKVl4x4PcXzgRinrIIy46nFY7VFZBe/cO0aEq7bsB3/vjlRj4LKvsp
-eeMg212Sc4V6yuVbSfLSgYTtMGcAsmE9rUWl+2+kV6aTGqZr72YG1033YVu9Y+0F
-vnelEIKFSmYF1y7FqO8Ejpk7G6fOoKYXGIxjcyC5v6kAKygZkxuUFYt9wPgpxl4X
-eTYnPwjRwE3qRHlZtCGmb0SKvIkFMeKaI5Dy8KXUSHu6Q4NZ8q+kftgzNTGHcEzD
-EgGrsbMa3N6necDYsmKYrIWVq21Nj2vSZc7YmLDKYtVQJRH2ScPOvHQlosEX8JsA
-h4DfSp8fLVWu8hAORrUvByrGfw7DkFOlv1bF4B76MokP7sb4ITnpBUJtW+0Uiw3x
-n1OJ94RiFOXpxWvEYquZUnK/9k1cg/eCwDpaFTCSDrTOVfW78lnoso1VKhQ1CJLg
-Ed3I77RA0jPE004hpwtLdGE2AMiOZfAMKTAPkErnnWMfcrBh9O8DUBWVXds3IBSg
-mv6lKPz24P28ymOINkqFC22D1vyXBH4Xiel0ZuPHHjnrxPUwovrF//XRbwcc7lCf
-jzsGyTnEnAf00/R8s7sP
-=v4r5
------END PGP SIGNATURE-----

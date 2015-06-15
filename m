@@ -1,147 +1,321 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:35387 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751934AbbFQJ5G (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 05:57:06 -0400
-Received: by igbzc4 with SMTP id zc4so99046736igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 02:57:05 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1434375680-4115-3-git-send-email-jeffm@suse.com>
-Date: Wed, 17 Jun 2015 10:57:05 +0100
-Message-ID: <CAL3q7H7GV1dtvmgeKobnWXb-QWE-p3kn8K50Cx5Zmspx9WfsEg@mail.gmail.com>
-Subject: Re: [PATCH 3/7] btrfs: skip superblocks during discard
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Jeff Mahoney <jeffm@suse.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from cantor2.suse.de ([195.135.220.15]:53344 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755841AbbFONlY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 15 Jun 2015 09:41:24 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 66AB8AD65
+	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 13:41:23 +0000 (UTC)
+From: jeffm@suse.com
+To: linux-btrfs@vger.kernel.org
+Cc: Jeff Mahoney <jeffm@suse.com>
+Subject: [PATCH 4/7] btrfs: iterate over unused chunk space in FITRIM
+Date: Mon, 15 Jun 2015 09:41:17 -0400
+Message-Id: <1434375680-4115-4-git-send-email-jeffm@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1434375680-4115-3-git-send-email-jeffm@suse.com>
+In-Reply-To: <557ED6DC.6070900@suse.com>
 
-On Mon, Jun 15, 2015 at 2:41 PM,  <jeffm@suse.com> wrote:
-> From: Jeff Mahoney <jeffm@suse.com>
->
-> Btrfs doesn't track superblocks with extent records so there is nothing
-> persistent on-disk to indicate that those blocks are in use.  We track
-> the superblocks in memory to ensure they don't get used by removing them
-> from the free space cache when we load a block group from disk.  Prior
-> to 47ab2a6c6a (Btrfs: remove empty block groups automatically), that
-> was fine since the block group would never be reclaimed so the superblock
-> was always safe.  Once we started removing the empty block groups, we
-> were protected by the fact that discards weren't being properly issued
-> for unused space either via FITRIM or -odiscard.  The block groups were
-> still being released, but the blocks remained on disk.
->
-> In order to properly discard unused block groups, we need to filter out
-> the superblocks from the discard range.  Superblocks are located at fixed
-> locations on each device, so it makes sense to filter them out in
-> btrfs_issue_discard, which is used by both -odiscard and FITRIM.
->
-> Signed-off-by: Jeff Mahoney <jeffm@suse.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Tested-by: Filipe Manana <fdmanana@suse.com>
+From: Jeff Mahoney <jeffm@suse.com>
 
-> ---
->  fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++++++++++++++++++++----
->  1 file changed, 55 insertions(+), 4 deletions(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index cf9cefd..1e44b93 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -1884,10 +1884,12 @@ static int remove_extent_backref(struct btrfs_trans_handle *trans,
->         return ret;
->  }
->
-> +#define in_range(b, first, len)        ((b) >= (first) && (b) < (first) + (len))
->  static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
->                                u64 *discarded_bytes)
->  {
-> -       int ret = 0;
-> +       int j, ret = 0;
-> +       u64 bytes_left, end;
->         u64 aligned_start = ALIGN(start, 1 << 9);
->
->         if (WARN_ON(start != aligned_start)) {
-> @@ -1897,11 +1899,60 @@ static int btrfs_issue_discard(struct block_device *bdev, u64 start, u64 len,
->         }
->
->         *discarded_bytes = 0;
-> -       if (len) {
-> -               ret = blkdev_issue_discard(bdev, start >> 9, len >> 9,
-> +
-> +       if (!len)
-> +               return 0;
-> +
-> +       end = start + len;
-> +       bytes_left = len;
-> +
-> +       /* Skip any superblocks on this device. */
-> +       for (j = 0; j < BTRFS_SUPER_MIRROR_MAX; j++) {
-> +               u64 sb_start = btrfs_sb_offset(j);
-> +               u64 sb_end = sb_start + BTRFS_SUPER_INFO_SIZE;
-> +               u64 size = sb_start - start;
-> +
-> +               if (!in_range(sb_start, start, bytes_left) &&
-> +                   !in_range(sb_end, start, bytes_left) &&
-> +                   !in_range(start, sb_start, BTRFS_SUPER_INFO_SIZE))
-> +                       continue;
-> +
-> +               /*
-> +                * Superblock spans beginning of range.  Adjust start and
-> +                * try again.
-> +                */
-> +               if (sb_start <= start) {
-> +                       start += sb_end - start;
-> +                       if (start > end) {
-> +                               bytes_left = 0;
-> +                               break;
-> +                       }
-> +                       bytes_left = end - start;
-> +                       continue;
-> +               }
-> +
-> +               if (size) {
-> +                       ret = blkdev_issue_discard(bdev, start >> 9, size >> 9,
-> +                                                  GFP_NOFS, 0);
-> +                       if (!ret)
-> +                               *discarded_bytes += size;
-> +                       else if (ret != -EOPNOTSUPP)
-> +                               return ret;
-> +               }
-> +
-> +               start = sb_end;
-> +               if (start > end) {
-> +                       bytes_left = 0;
-> +                       break;
-> +               }
-> +               bytes_left = end - start;
-> +       }
-> +
-> +       if (bytes_left) {
-> +               ret = blkdev_issue_discard(bdev, start >> 9, bytes_left >> 9,
->                                            GFP_NOFS, 0);
->                 if (!ret)
-> -                       *discarded_bytes = len;
-> +                       *discarded_bytes += bytes_left;
->         }
->         return ret;
->  }
-> --
-> 2.4.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Since we now clean up block groups automatically as they become
+empty, iterating over block groups is no longer sufficient to discard
+unused space.
 
+This patch iterates over the unused chunk space and discards any regions
+that are unallocated, regardless of whether they were ever used.  This is
+a change for btrfs but is consistent with other file systems.
 
+We do this in a transactionless manner since the discard process can take
+a substantial amount of time and a transaction would need to be started
+before the acquisition of the device list lock.  That would mean a
+transaction would be held open across /all/ of the discards collectively.
+In order to prevent other threads from allocating or freeing chunks, we
+hold the chunks lock across the search and discard calls.  We release it
+between searches to allow the file system to perform more-or-less
+normally.  Since the running transaction can commit and disappear while
+we're using the transaction pointer, we take a reference to it and
+release it after the search.  This is safe since it would happen normally
+at the end of the transaction commit after any locks are released anyway.
+We also take the commit_root_sem to protect against a transaction starting
+and committing while we're running.
 
+Signed-off-by: Jeff Mahoney <jeffm@suse.com>
+---
+ fs/btrfs/extent-tree.c | 101 +++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.c     |  60 ++++++++++++++++++-----------
+ fs/btrfs/volumes.h     |   3 ++
+ 3 files changed, 141 insertions(+), 23 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1e44b93..24b48df 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10143,10 +10143,99 @@ int btrfs_error_unpin_extent_range(struct btrfs_root *root, u64 start, u64 end)
+ 	return unpin_extent_range(root, start, end, false);
+ }
+ 
++/*
++ * It used to be that old block groups would be left around forever.
++ * Iterating over them would be enough to trim unused space.  Since we
++ * now automatically remove them, we also need to iterate over unallocated
++ * space.
++ *
++ * We don't want a transaction for this since the discard may take a
++ * substantial amount of time.  We don't require that a transaction be
++ * running, but we do need to take a running transaction into account
++ * to ensure that we're not discarding chunks that were released in
++ * the current transaction.
++ *
++ * Holding the chunks lock will prevent other threads from allocating
++ * or releasing chunks, but it won't prevent a running transaction
++ * from committing and releasing the memory that the pending chunks
++ * list head uses.  For that, we need to take a reference to the
++ * transaction.
++ */
++static int btrfs_trim_free_extents(struct btrfs_device *device,
++				   u64 minlen, u64 *trimmed)
++{
++	u64 start = 0, len = 0;
++	int ret;
++
++	*trimmed = 0;
++
++	/* Not writeable = nothing to do. */
++	if (!device->writeable)
++		return 0;
++
++	/* No free space = nothing to do. */
++	if (device->total_bytes <= device->bytes_used)
++		return 0;
++
++	ret = 0;
++
++	while (1) {
++		struct btrfs_fs_info *fs_info = device->dev_root->fs_info;
++		struct btrfs_transaction *trans;
++		u64 bytes;
++
++		ret = mutex_lock_interruptible(&fs_info->chunk_mutex);
++		if (ret)
++			return ret;
++
++		down_read(&fs_info->commit_root_sem);
++
++		spin_lock(&fs_info->trans_lock);
++		trans = fs_info->running_transaction;
++		if (trans)
++			atomic_inc(&trans->use_count);
++		spin_unlock(&fs_info->trans_lock);
++
++		ret = find_free_dev_extent_start(trans, device, minlen, start,
++						 &start, &len);
++		if (trans)
++			btrfs_put_transaction(trans);
++
++		if (ret) {
++			up_read(&fs_info->commit_root_sem);
++			mutex_unlock(&fs_info->chunk_mutex);
++			if (ret == -ENOSPC)
++				ret = 0;
++			break;
++		}
++
++		ret = btrfs_issue_discard(device->bdev, start, len, &bytes);
++		up_read(&fs_info->commit_root_sem);
++		mutex_unlock(&fs_info->chunk_mutex);
++
++		if (ret)
++			break;
++
++		start += len;
++		*trimmed += bytes;
++
++		if (fatal_signal_pending(current)) {
++			ret = -ERESTARTSYS;
++			break;
++		}
++
++		cond_resched();
++	}
++
++	return ret;
++}
++
+ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ {
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct btrfs_block_group_cache *cache = NULL;
++	struct btrfs_device *device;
++	struct list_head *devices;
+ 	u64 group_trimmed;
+ 	u64 start;
+ 	u64 end;
+@@ -10201,6 +10290,18 @@ int btrfs_trim_fs(struct btrfs_root *root, struct fstrim_range *range)
+ 		cache = next_block_group(fs_info->tree_root, cache);
+ 	}
+ 
++	mutex_lock(&root->fs_info->fs_devices->device_list_mutex);
++	devices = &root->fs_info->fs_devices->alloc_list;
++	list_for_each_entry(device, devices, dev_alloc_list) {
++		ret = btrfs_trim_free_extents(device, range->minlen,
++					      &group_trimmed);
++		if (ret)
++			break;
++
++		trimmed += group_trimmed;
++	}
++	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
++
+ 	range->len = trimmed;
+ 	return ret;
+ }
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 174f5e1..7fdde31 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1051,15 +1051,18 @@ out:
+ 	return ret;
+ }
+ 
+-static int contains_pending_extent(struct btrfs_trans_handle *trans,
++static int contains_pending_extent(struct btrfs_transaction *transaction,
+ 				   struct btrfs_device *device,
+ 				   u64 *start, u64 len)
+ {
++	struct btrfs_fs_info *fs_info = device->dev_root->fs_info;
+ 	struct extent_map *em;
+-	struct list_head *search_list = &trans->transaction->pending_chunks;
++	struct list_head *search_list = &fs_info->pinned_chunks;
+ 	int ret = 0;
+ 	u64 physical_start = *start;
+ 
++	if (transaction)
++		search_list = &transaction->pending_chunks;
+ again:
+ 	list_for_each_entry(em, search_list, list) {
+ 		struct map_lookup *map;
+@@ -1078,8 +1081,8 @@ again:
+ 			ret = 1;
+ 		}
+ 	}
+-	if (search_list == &trans->transaction->pending_chunks) {
+-		search_list = &trans->root->fs_info->pinned_chunks;
++	if (search_list != &fs_info->pinned_chunks) {
++		search_list = &fs_info->pinned_chunks;
+ 		goto again;
+ 	}
+ 
+@@ -1088,12 +1091,13 @@ again:
+ 
+ 
+ /*
+- * find_free_dev_extent - find free space in the specified device
+- * @device:	the device which we search the free space in
+- * @num_bytes:	the size of the free space that we need
+- * @start:	store the start of the free space.
+- * @len:	the size of the free space. that we find, or the size of the max
+- * 		free space if we don't find suitable free space
++ * find_free_dev_extent_start - find free space in the specified device
++ * @device:	  the device which we search the free space in
++ * @num_bytes:	  the size of the free space that we need
++ * @search_start: the position from which to begin the search
++ * @start:	  store the start of the free space.
++ * @len:	  the size of the free space. that we find, or the size
++ *		  of the max free space if we don't find suitable free space
+  *
+  * this uses a pretty simple search, the expectation is that it is
+  * called very infrequently and that a given device has a small number
+@@ -1107,9 +1111,9 @@ again:
+  * But if we don't find suitable free space, it is used to store the size of
+  * the max free space.
+  */
+-int find_free_dev_extent(struct btrfs_trans_handle *trans,
+-			 struct btrfs_device *device, u64 num_bytes,
+-			 u64 *start, u64 *len)
++int find_free_dev_extent_start(struct btrfs_transaction *transaction,
++			       struct btrfs_device *device, u64 num_bytes,
++			       u64 search_start, u64 *start, u64 *len)
+ {
+ 	struct btrfs_key key;
+ 	struct btrfs_root *root = device->dev_root;
+@@ -1119,19 +1123,11 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 	u64 max_hole_start;
+ 	u64 max_hole_size;
+ 	u64 extent_end;
+-	u64 search_start;
+ 	u64 search_end = device->total_bytes;
+ 	int ret;
+ 	int slot;
+ 	struct extent_buffer *l;
+ 
+-	/* FIXME use last free of some kind */
+-
+-	/* we don't want to overwrite the superblock on the drive,
+-	 * so we make sure to start at an offset of at least 1MB
+-	 */
+-	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
+-
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		return -ENOMEM;
+@@ -1192,7 +1188,7 @@ again:
+ 			 * Have to check before we set max_hole_start, otherwise
+ 			 * we could end up sending back this offset anyway.
+ 			 */
+-			if (contains_pending_extent(trans, device,
++			if (contains_pending_extent(transaction, device,
+ 						    &search_start,
+ 						    hole_size)) {
+ 				if (key.offset >= search_start) {
+@@ -1241,7 +1237,7 @@ next:
+ 	if (search_end > search_start) {
+ 		hole_size = search_end - search_start;
+ 
+-		if (contains_pending_extent(trans, device, &search_start,
++		if (contains_pending_extent(transaction, device, &search_start,
+ 					    hole_size)) {
+ 			btrfs_release_path(path);
+ 			goto again;
+@@ -1267,6 +1263,24 @@ out:
+ 	return ret;
+ }
+ 
++int find_free_dev_extent(struct btrfs_trans_handle *trans,
++			 struct btrfs_device *device, u64 num_bytes,
++			 u64 *start, u64 *len)
++{
++	struct btrfs_root *root = device->dev_root;
++	u64 search_start;
++
++	/* FIXME use last free of some kind */
++
++	/*
++	 * we don't want to overwrite the superblock on the drive,
++	 * so we make sure to start at an offset of at least 1MB
++	 */
++	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
++	return find_free_dev_extent_start(trans->transaction, device,
++					  num_bytes, search_start, start, len);
++}
++
+ static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_device *device,
+ 			  u64 start, u64 *dev_extent_len)
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index ebc3133..30918a8 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -449,6 +449,9 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
++int find_free_dev_extent_start(struct btrfs_transaction *transaction,
++			 struct btrfs_device *device, u64 num_bytes,
++			 u64 search_start, u64 *start, u64 *max_avail);
+ int find_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_device *device, u64 num_bytes,
+ 			 u64 *start, u64 *max_avail);
 -- 
-Filipe David Manana,
+2.4.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

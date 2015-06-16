@@ -1,110 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp113.ord1c.emailsrvr.com ([108.166.43.113]:44159 "EHLO
-	smtp113.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753213AbbFPNlo convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Jun 2015 09:41:44 -0400
-Received: from smtp23.relay.ord1c.emailsrvr.com (localhost.localdomain [127.0.0.1])
-	by smtp23.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id EFF22280971
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2015 09:36:21 -0400 (EDT)
-Received: from smtp23.relay.ord1c.emailsrvr.com (localhost.localdomain [127.0.0.1])
-	by smtp23.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id BF04928081D
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2015 09:36:21 -0400 (EDT)
-Received: by smtp23.relay.ord1c.emailsrvr.com (Authenticated sender: vincent-AT-up4.tv) with ESMTPSA id 4CF46280961
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2015 09:34:37 -0400 (EDT)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2098\))
-Subject: Re: RAID10 Balancing Request for Comments and Advices
-From: Vincent Olivier <vincent@up4.com>
-In-Reply-To: <20150616122545.GI9850@carfax.org.uk>
-Date: Tue, 16 Jun 2015 09:34:29 -0400
-Message-Id: <61CBE6C4-0D06-4F16-B522-4DBB756FBC31@up4.com>
-References: <1434456557.89597618@apps.rackspace.com> <20150616122545.GI9850@carfax.org.uk>
+Received: from plane.gmane.org ([80.91.229.3]:33887 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754734AbbFPOTW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 16 Jun 2015 10:19:22 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1@m.gmane.org>)
+	id 1Z4rhh-00027m-S9
+	for linux-btrfs@vger.kernel.org; Tue, 16 Jun 2015 16:19:05 +0200
+Received: from c-73-47-108-123.hsd1.ma.comcast.net ([73.47.108.123])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2015 16:19:05 +0200
+Received: from cdysthe by c-73-47-108-123.hsd1.ma.comcast.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2015 16:19:05 +0200
 To: linux-btrfs@vger.kernel.org
+From: Christian <cdysthe@gmail.com>
+Subject: trim not working and irreparable errors from btrfsck
+Date: Tue, 16 Jun 2015 10:18:56 -0400
+Message-ID: <mlpb8i$dus$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> 
-> On Jun 16, 2015, at 8:25 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> 
-> On Tue, Jun 16, 2015 at 08:09:17AM -0400, Vincent Olivier wrote:
->> 
->> "btrfs filesystem df” gives :
->> 
->> 
->> Data, RAID10: total=7.08TiB, used=7.02TiB
->> Data, single: total=8.00MiB, used=0.00B
->> System, RAID10: total=7.88MiB, used=656.00KiB
->> System, single: total=4.00MiB, used=0.00B
->> Metadata, RAID10: total=9.19GiB, used=7.56GiB
->> Metadata, single: total=8.00MiB, used=0.00B
->> GlobalReserve, single: total=512.00MiB, used=0.00B
-> 
->> My first question is this : is it normal to have “single” blocks ?
->> Why not only RAID10? I don’t remember the exact mkfs options I used
->> but I certainly didn’t ask for “single” so this is unexpected.
-> 
->  Yes. It's an artefact of the way that mkfs works. If you run a
-> balance on those chunks, they'll go away. (btrfs balance start
-> -dusage=0 -musage=0 /mountpoint)
+Hi,
+
+I have a btrfs partions on my laptop containing / and /home. Recently I 
+noticed that trim (fstrim) didn't work anymore. It always tells me there 
+nothing to trim which can not be correct. I then tried to to run btrfsck 
+--repair and this is the result:
+
+ubuntu@ubuntu:~$ sudo btrfsck /dev/sda3 --repair
+enabling repair mode
+Fixed 0 roots.
+Checking filesystem on /dev/sda3
+UUID: 3d52dc93-c89f-453f-965d-8601d11e7710
+checking extents
+checking free space cache
+cache and super generation don't match, space cache will be invalidated
+checking fs roots
+root 257 inode 353819 errors 400, nbytes wrong
+root 2260 inode 353819 errors 400, nbytes wrong
+root 2262 inode 353819 errors 400, nbytes wrong
+root 2264 inode 353819 errors 400, nbytes wrong
+root 2266 inode 353819 errors 400, nbytes wrong
+root 2268 inode 353819 errors 400, nbytes wrong
+root 2270 inode 353819 errors 400, nbytes wrong
+root 2273 inode 353819 errors 400, nbytes wrong
+root 2275 inode 353819 errors 400, nbytes wrong
+root 2277 inode 353819 errors 400, nbytes wrong
+root 2279 inode 353819 errors 400, nbytes wrong
+root 2281 inode 353819 errors 400, nbytes wrong
+root 2283 inode 353819 errors 400, nbytes wrong
+root 2285 inode 353819 errors 400, nbytes wrong
+root 2287 inode 353819 errors 400, nbytes wrong
+root 2289 inode 353819 errors 400, nbytes wrong
+root 2291 inode 353819 errors 400, nbytes wrong
+root 2293 inode 353819 errors 400, nbytes wrong
+root 2295 inode 353819 errors 400, nbytes wrong
+root 2297 inode 353819 errors 400, nbytes wrong
+root 2299 inode 353819 errors 400, nbytes wrong
+root 2301 inode 353819 errors 400, nbytes wrong
+root 2303 inode 353819 errors 400, nbytes wrong
+root 2305 inode 353819 errors 400, nbytes wrong
+root 2317 inode 353819 errors 400, nbytes wrong
+root 2320 inode 353819 errors 400, nbytes wrong
+root 2326 inode 353819 errors 400, nbytes wrong
+root 2556 inode 353819 errors 400, nbytes wrong
+root 2574 inode 353819 errors 400, nbytes wrong
+root 2592 inode 353819 errors 400, nbytes wrong
+root 2601 inode 353819 errors 400, nbytes wrong
+root 2617 inode 353819 errors 400, nbytes wrong
+root 2620 inode 353819 errors 400, nbytes wrong
+root 2621 inode 353819 errors 400, nbytes wrong
+root 2624 inode 353819 errors 400, nbytes wrong
+root 2625 inode 353819 errors 400, nbytes wrong
+root 2626 inode 353819 errors 400, nbytes wrong
+root 2627 inode 353819 errors 400, nbytes wrong
+root 2628 inode 353819 errors 400, nbytes wrong
+root 2629 inode 353819 errors 400, nbytes wrong
+root 2630 inode 353819 errors 400, nbytes wrong
+root 2631 inode 353819 errors 400, nbytes wrong
+root 2632 inode 353819 errors 400, nbytes wrong
+found 49406146650 bytes used err is 1
+total csum bytes: 117817456
+total tree bytes: 792248320
+total fs tree bytes: 604520448
+total extent tree bytes: 52101120
+btree space waste bytes: 180897891
+file data blocks allocated: 195314843648
+  referenced 135991529472
+Btrfs v3.17
+
+I get the exact same result every time I run btrfsck --repair. If the 
+file system irreparable or is there something I can do to save it?
 
 
-
-Thanks! I did and it did go away, except for the "GlobalReserve, single: total=512.00MiB, used=0.00B”. But I suppose this is a permanent fixture, right?
-
-
-
-> 
->> My second question is : what is the best device add / balance sequence to use if I want to add 2 more disks to this RAID10 volume? Also is a balance necessary at all since I’m adding a pair?
-> 
->  Add both devices first, then balance.
-> 
->  For a RAID-1 filesystem, adding two devices wouldn't need a balance
-> to get full usage out of the new devices. However, you've got RAID-10,
-> so the most you'd be able to get on the FS without a balance is four
-> times the remaining space on one of the existing disks.
-> 
->  The chunk allocator for RAID-10 will allocate as many chunks as it
-> can in an even number across all the devices, omitting the device with
-> the smallest free space if there's an odd number of devices. It must
-> have space on at least four devices, so adding two devices means that
-> it'll have to have free space on at least two of the existing ones
-> (and will try to use all of them).
-> 
->  So yes, unless you're adding four devices, a rebalance is required
-> here.
+-- 
+//Christian
 
 
-It is perfectly clear and logical that 1+0 works on four devices at a time.
-
-
->> My third question is: given that this file system is an offline
->> backup for another RAID0 volume with SMB sharing, what is the best
->> maintenance schedule as long as it is offline? For now, I only have
->> a weekly cron scrub now, but I think that the priority is to have it
->> balanced after a send-receive or rsync to optimize storage space
->> availability (over performance). Is there a “light” balancing method
->> recommended in this case?
-> 
->  You don't need to balance after send/receive or rsync. If you find
-> that you have lots of data space allocated but not used (the first
-> line in btrfs fi df, above), *and* metadata close to usage (within,
-> say, 700 MiB), *and* no unallocated space (btrfs fi show), then it's
-> worth running a filtered balance with -dlimit=3 or some similar small
-> value to free up some space that the metadata can expand into. Other
-> than that, it's pretty much entirely pointless.
-
-
-Ok thanks. Is there a btrfs-utils way of automating the "if less than 1Gb free do balance -dlimit=3” ?
-
-
->  For maintenance, I would suggest running a scrub regularly, to
-> check for various forms of bitrot. Typical frequencies for a scrub
-> are once a week or once a month -- opinions vary (as do runtimes).
-
-
-Yes. I cronned it weekly for now. Takes about 5 hours. Is it automatically corrected on RAID10 since a copy of it exist within the filesystem ? What happens for RAID0 ?
-
-Thanks!
-
-V

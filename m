@@ -1,191 +1,191 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55025 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:53692 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751301AbbFPCj5 (ORCPT
+	with ESMTP id S1756034AbbFPHyb convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jun 2015 22:39:57 -0400
-Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
-To: <dsterba@suse.cz>, Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>
-References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
- <557B076B.7050500@fb.com> <557E86A9.8040207@cn.fujitsu.com>
- <20150615131507.GL6761@twin.jikos.cz> <557F7A5F.5010206@cn.fujitsu.com>
+	Tue, 16 Jun 2015 03:54:31 -0400
+Subject: Re: I_ERR_FILE_EXTENT_DISCOUNT when there are no file extent holes in
+ inode
+To: =?UTF-8?Q?Przemys=c5=82aw_Pawe=c5=82czyk?=
+	<przemyslaw@pawelczyk.it>,
+        <linux-btrfs@vger.kernel.org>
+References: <CAN8=bazs9GeqtA5+kOoN=MWrtaQQw0+TUxA8jrTfY5ouuqVm+A@mail.gmail.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <557F8C78.7080304@cn.fujitsu.com>
-Date: Tue, 16 Jun 2015 10:39:52 +0800
+Message-ID: <557FD632.6050609@cn.fujitsu.com>
+Date: Tue, 16 Jun 2015 15:54:26 +0800
 MIME-Version: 1.0
-In-Reply-To: <557F7A5F.5010206@cn.fujitsu.com>
+In-Reply-To: <CAN8=bazs9GeqtA5+kOoN=MWrtaQQw0+TUxA8jrTfY5ouuqVm+A@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Qu Wenruo wrote on 2015/06/16 09:22 +0800:
+Przemysław Pawełczyk wrote on 2015/06/14 21:38 +0200:
+> Hi!
 >
+> I wanted to move and resize /home btrfs partition of my debian jessie
+> v8.1 (w/ btrfs-tools v3.17) in virtual machine using gparted 0.22.0
+> after booting from latest SysRescCD 4.5.3 (w/ btrfs-progs v3.19.1).
+> GParted does fs check before, to make sure that everything is fine,
+> but it wasn't. There were following errors from `btrfsck`:
 >
-> David Sterba wrote on 2015/06/15 15:15 +0200:
->> On Mon, Jun 15, 2015 at 04:02:49PM +0800, Qu Wenruo wrote:
->>> In the following case of corruption, RAID1 or DUP will fail to recover
->>> it(Use 16K as leafsize)
->>> 0        4K        8K        12K        16K
->>> Mirror 0:
->>> |<-OK---------->|<----ERROR---->|<-----------------OK------------->|
->>>
->>> Mirror 1:
->>> |<----------------------------OK--------------->|<------Error----->|
->>>
->>> Since the CRC32 stored in header is calculated for the whole leaf,
->>> so both will fail the CRC32 check.
->>>
->>> But the corruption are in different position, in fact, if we know where
->>> the corruption is (no need to be so accurate), we can recover the tree
->>> block by using the current part.
->>>
->>> In above example, we can just use the correct 0~12K from mirror 1
->>> and then 12K~16K from mirror 0.
->>
->> If the mirror 0 copy is intact, you can use it entirely. Your
->> improvement could help if each mirror is partially broken but we can
->> find good copies of all 4k blocks among all mirrors.
->>
->> The natural question is how often this happens and if it's worth adding
->> the code complexity and what's the estimated speed drop.
->>
->> I think the conditions are very rare and that we could add minimal code
->> to attempt to build the metadata block from the available copies without
->> the separate block checksums. This is an immediate idea so I could have
->> missed something:
->>
->> * if a metadata-block checksum mismatches, do a direct comparison of the
->>    metadata-blocks in all available mirrors
->>    * if they match and checksums match, no help, it's damaged
->>    * if there's a good copy (ie the original checksum or data were
->>      corrupted), use it
->>    * otherwise attempt to rebuild the metadata block from what's
->> available
->>
->> * by direct comparisons of the 4k blocks, find the first where the
->>    metadataA and mirror1 blocks mismatch, offset N
->> * try to compute the checksum from metadataA[0..N-1] + mirror1 block N +
->>    rest of metadataA
->>    * if it's ok, use it
->>    * if not: the block N is corrupted in mirror1 (we've skipped it in
->>      metadataA)
->>      then repeat with metadataA[0..N] + mirror1[N+1..end]
-> The method sounds good, but the codes will be even more complex than
-> mine.
-> Also, due to the nature of CRC32 and RAID1/Dup case, things will be
-> quite complex like the following case using your method.
+> checking fs roots
+> root 5 inode 1521611 errors 100, file extent discount
+> Found file extent holes:
+> start: 12288, len:4096
+> root 5 inode 1521634 errors 100, file extent discount
+> Found file extent holes:
+> root 5 inode 1521645 errors 100, file extent discount
+> Found file extent holes:
+> start: 8192, len:4096
+> root 5 inode 1521647 errors 100, file extent discount
+> Found file extent holes:
+> start: 8192, len:8192
+> start: 20480, len:4096
+> root 5 inode 1521648 errors 100, file extent discount
+> Found file extent holes:
+> root 5 inode 1521649 errors 100, file extent discount
+> Found file extent holes:
+> ...
 >
-> 0    4K    8K    12K    16K
-> Mirror 0
-> |    |   X    |    |    |
-> Mirror 1
-> |    |    |   X    |    |
+> As you can see not every inode w/ file extent discount error flag has
+> file extent holes. I'm not sure of exact definition of this error
+> flag, so cannot tell myself how (ab?)normal it is. I was using this
+> partition almost daily for almost a year (back then it was debian
+> testing when installed) and beside occasional VirtualBox hangups
+> (during rsync from USB), I had no problems at all.
 >
-> If using your method:
-> [0~4K]
-> CRC32 of 0~4K are the same. No problem.
+> Qu Wenruo's discount file extent hole repairing function landed in
+> btrfs-progs v3.19, so I couldn't use debian's old btrfsck to improve
+> the situation, but sysresccd's one was recent enough (and I was
+> already booted into it), so I went with its `btrfsck --repair`. I got
+> many 'Fixed discount file extents for inode' messages, but next
+> `btrfsck` run still reported file extent discount errors. Looking
+> closely there was some improvement, because 2 inodes were no longer
+> reported (only one within visible part of the below log dump):
 >
-> [4~8K]
-> CRC32 of 0~8K differs.
-> Now we know there is something wrong with 4~8K, but we still don't know
-> which is the good copy.
+> checking fs roots
+> root 5 inode 1521634 errors 100, file extent discount
+> Found file extent holes:
+> root 5 inode 1521645 errors 100, file extent discount
+> Found file extent holes:
+> root 5 inode 1521647 errors 100, file extent discount
+> Found file extent holes:
+> root 5 inode 1521648 errors 100, file extent discount
+> Found file extent holes:
+> root 5 inode 1521649 errors 100, file extent discount
+> Found file extent holes:
+> ...
 >
-> We can continue, keep 2 different CRC32 seed for later checksum.
-> One seed using the 4~8 from mirror 0 and one from mirror1.
+> I cloned btrfs-progs.git with latest stable v4.0.1, and executed
+> self-built `btrfsck --repair` from my debian, hoping that maybe there
+> were some improvements in that department. Sadly no, I got many 'Fixed
+> discount file extents for inode', but next `btrfsck` revealed same old
+> file extent discount errors. It looked like flag error is simply not
+> cleared, so I finally looked into the code.
 >
-> Note, the crc32 is for the whole tree block, so until we calculate all
-> the tree block, we can know which one is correct.
-Sorry here, "can" -> "can't"
+> When I found repair_inode_discount_extent() in cmds-check.c, I though
+> I've found the bug. I_ERR_FILE_EXTENT_DISCOUNT is cleared only within
+> while (node) loop, so if there are no file extents hole, it won't be
+> cleared. So I moved
+>
+>      if (RB_EMPTY_ROOT(&rec->holes))
+>          rec->errors &= ~I_ERR_FILE_EXTENT_DISCOUNT;
+
+Thanks a lot for pointing out the problem.
+I'll try to fix it soon.
+
+Also, welcome aboard to btrfs development! :)
+
+>
+> after the while loop. It must have helped clearing error flag during
+> `btrfsck --repair`, but rerunning `btrfsck` revealed that there are
+> still the same file extent discount errors, so apparently they were
+> reset in some other code path.
+>
+> I added some debug printf to verify that RB_EMPTY_ROOT(&rec->holes)
+> was not false (i.e. 0) and other one in maybe_free_inode_rec() after
+> conditions that lead to setting I_ERR_FILE_EXTENT_DISCOUNT error flag,
+> to see the values that met the conditions:
+>
+>      if (rec->nlink > 0 && !no_holes
+>          && (   rec->extent_end < rec->isize
+>              || first_extent_gap(&rec->holes) < rec->isize
+>             )
+>         )
+>
+> Rerunning `btrfsck` gave me this new info:
+>
+> Checking filesystem on /dev/sda7
+> UUID: 8b889e4c-5dba-43e3-a116-e13874bfb311
+> !Set discount file extents for inode    1521634 (nlink=1 extent_end=0
+>          isize=1408       first_extent_gap(holes)=18446744073709551615)
+> !Set discount file extents for inode    1521645 (nlink=1
+> extent_end=20480      isize=47496
+> first_extent_gap(holes)=18446744073709551615)
+> !Set discount file extents for inode    1521647 (nlink=1
+> extent_end=36864      isize=37728
+> first_extent_gap(holes)=18446744073709551615)
+> !Set discount file extents for inode    1521648 (nlink=1 extent_end=0
+>          isize=936        first_extent_gap(holes)=18446744073709551615)
+> !Set discount file extents for inode    1521649 (nlink=1 extent_end=0
+>          isize=936        first_extent_gap(holes)=18446744073709551615)
+>
+> (This long number is ((u64)-1)
+>
+> So extent_end < isize for these bloody inodes.
+My first thought on this is that my codes lacks check on inlined extent.
+But a quick test shows that's not true.
+For inlined extent, if inline file extent is found, its extent_end 
+should be 4096.
+
+So if that's OK for you, would you please upload a btrfs-image dump of 
+your filesystem and send it to me for further debugging?
+
+# btrfs-image <YOUR_BTRFS_DEV> <OUTPUT_FILE> -c9
+
+WARNING: btrfs-image dump will only contains metadata, no data at all.
+But even metadata, including the filename or dir name contains 
+confidential or personal info, just ignore my request.
+
+>
+> Now I have a few questions related to my problem.
+>
+> 1. What is the exact meaning of I_ERR_FILE_EXTENT_DISCOUNT nowadays
+> and are the conditions leading to setting this error flag proper
+> w.r.t. current btrfs state?
+This error flags means your file extents are not continuous.
+Without enable the no-holes feature, btrfs won't allow non-continuous 
+file extents.
+Even you do things like:
+dd if=/dev/zero of=/btrfs/mnt/test.file bs=1m count=1 seek=1.
+
+The first 1M extent will be a "hole" extent, which takes no space on 
+disk. And the second 1M extent will be a normal file extent, which takes 
+1M on disk.
+
+
+>
+> 2. How these errors should be fixed?
+>
+> I guess extending repair_inode_discount_extent() to fiddle with
+> extents properly, even if there are no file extent holes, will be
+> required, but I don't have enough btrfs knowledge to do it myself
+> right now (first time looking into btrfs-related code today). My
+> moving of error clearing out of the loop was bogus, because real issue
+> is apparently not fixed then (and clearing within loop can be bogus as
+> well for the same reason).
+For normal file extent case, repair_inode_discount_extent() will fix it 
+by insert "hole" file extent fill the hole and make them continuous.
+For inlined file extent case, it shouldn't happen as it will only be one 
+extent...
+And you hit the impossible case :(
 
 Thanks,
 Qu
 >
-> [8~12K]
-> Now crc32 mismatches again.
-> We still don't know which part is correct.
+> Regards.
 >
-> We can still continue by recording different CRC32 seed for them.
-> But don't forget the previous 2 seeds we recorded.
-> So we records 4 crc32 seeds for 0~12K.(Mi0, Mi0) (Mi0, Mi1) (Mi1, Mi0)
-> (Mi1, Mi1).
+> PS Please CC me when replying, as I'm not on the list.
 >
-> [12~16K]
-> Continue calculate the crc32 with above 4 seeds.
-> Finally, we found the crc32 matches with the tree block is using the
-> combination of (Mi1, Mi0). And we can restore the tree block.
->
-> Yes, with this behavior, we can restore the tree block even 3 parts are
-> corrupted, but in that case, we need to try 8 times.
->
-> So, I don't consider this is more easy to implement than my idea.
->
-> [ROOT CAUSE]
-> The root cause of the complex is:
-> 1) Checksum algorithm depends on previous input(seed)
-> Almost all checksum algorithm depends on previous input.
-> And you won't know the data is correct or not until all data is calculated.
->
-> 2) Only one extra duplication for RAID1/DUP
-> We don't have extra duplication to judge which block is correct as there
-> are only two mirror.
->
-> So my partial checksum solves the 2 root cause at the same time.
-> With partial checksum, we don't depend on previous data to calculate
-> checksum.
-> And we have extra reference if mirror differs with each other, we use
-> checksum to judge which copy is correct.
->
->>
->> That's a rough idea that I hope will cover most of the cases when it
->> happens. With some more exhaustive attempts to rebuild the metadata
->> block we can try to repair 2 damaged blocks.
->>
->> As this is completely independent, we can test it separately, and also
->> add it as a rescue feature to the userspace tools.
->>
->>> Yes, this corruption case may be minor enough, since even corruption in
->>> one mirror is rare enough.
->>> So I didn't introduce a new CRC32 checksum, but use the extra 32-4 bytes
->>> to store the partial CRC32 to keep the backward compatibility.
->>
->> The above would work with any checksums, without the need to store the
->> per-block checksums which become impossible with strongher algorithms.
->>
-> [FURTHER CSUM DESIGN]
-> As you mentioned in later part, yes, stronger checksum like SHA256 won't
-> be able to do such partial checksum as it uses all the space.
->
-> But that's already a trade-off, right?
->
-> If btrfs was using partial csum from the beginning, pros and cons of
-> strong checksum should be quite obvious:
->
-> Stronger checksum:
-> (Pros)
-> 1. Less confliction
-> Which means more security.
->
-> (Cons)
-> 1. More space usage for data.
-> 4Bytes/4K vs 32Bytes/4K. Obvious.
->
-> 2. No/less partial checksum for metadata.
-> Harder to detect/repair partial error.
->
-> 3. (generally) More CPU time
-> Normally, stronger checksums are cryptographic checksum, which uses
-> more CPU time.
->
-> So with this patch, I also want to inspire other developers about the
-> trade off between different checksums.
-> Especially the fact, we can make better use of the spare metadata csum
-> space if the csum length is less than 32bytes.
->
-> Thanks,
-> Qu
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

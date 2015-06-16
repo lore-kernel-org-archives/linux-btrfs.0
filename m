@@ -1,179 +1,204 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3330 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:58602 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751648AbbFPBWo (ORCPT
+	with ESMTP id S1755843AbbFPB1e convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jun 2015 21:22:44 -0400
-Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
-To: <dsterba@suse.cz>, Chris Mason <clm@fb.com>, <linux-btrfs@vger.kernel.org>
-References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
- <557B076B.7050500@fb.com> <557E86A9.8040207@cn.fujitsu.com>
- <20150615131507.GL6761@twin.jikos.cz>
+	Mon, 15 Jun 2015 21:27:34 -0400
+Subject: Re: Can't mount btrfs volume on rbd
+To: Steve Dainard <sdainard@spd1.com>
+References: <CAEMJtDs=U5+YO9sbVvjxLthdxp6JvZO=07EMhcU5Smif_1m5QQ@mail.gmail.com>
+ <557A890D.8080306@cn.fujitsu.com>
+ <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
+ <557E877E.2060704@cn.fujitsu.com>
+ <CAEMJtDusywPEnDcNcMvvFKQsuZyTmSMXXgJT=eBZX1F+R8RM8w@mail.gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <557F7A5F.5010206@cn.fujitsu.com>
-Date: Tue, 16 Jun 2015 09:22:39 +0800
+Message-ID: <557F7B82.2060203@cn.fujitsu.com>
+Date: Tue, 16 Jun 2015 09:27:30 +0800
 MIME-Version: 1.0
-In-Reply-To: <20150615131507.GL6761@twin.jikos.cz>
+In-Reply-To: <CAEMJtDusywPEnDcNcMvvFKQsuZyTmSMXXgJT=eBZX1F+R8RM8w@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-David Sterba wrote on 2015/06/15 15:15 +0200:
-> On Mon, Jun 15, 2015 at 04:02:49PM +0800, Qu Wenruo wrote:
->> In the following case of corruption, RAID1 or DUP will fail to recover
->> it(Use 16K as leafsize)
->> 0		4K		8K		12K		16K
->> Mirror 0:
->> |<-OK---------->|<----ERROR---->|<-----------------OK------------->|
->>
->> Mirror 1:
->> |<----------------------------OK--------------->|<------Error----->|
->>
->> Since the CRC32 stored in header is calculated for the whole leaf,
->> so both will fail the CRC32 check.
->>
->> But the corruption are in different position, in fact, if we know where
->> the corruption is (no need to be so accurate), we can recover the tree
->> block by using the current part.
->>
->> In above example, we can just use the correct 0~12K from mirror 1
->> and then 12K~16K from mirror 0.
+Steve Dainard wrote on 2015/06/15 09:19 -0700:
+> Hi Qu,
 >
-> If the mirror 0 copy is intact, you can use it entirely. Your
-> improvement could help if each mirror is partially broken but we can
-> find good copies of all 4k blocks among all mirrors.
+> # btrfs --version
+> btrfs-progs v4.0.1
+> # btrfs check /dev/rbd30
+> Checking filesystem on /dev/rbd30
+> UUID: 1bb22a03-bc25-466f-b078-c66c6f6a6d28
+> checking extents
+> cmds-check.c:3735: check_owner_ref: Assertion `rec->is_root` failed.
+> btrfs[0x41aee6]
+> btrfs[0x423f5d]
+> btrfs[0x424c99]
+> btrfs[0x4258f6]
+> btrfs(cmd_check+0x14a3)[0x42893d]
+> btrfs(main+0x15d)[0x409c71]
+> /lib64/libc.so.6(__libc_start_main+0xf5)[0x7f29ce437af5]
+> btrfs[0x409829]
 >
-> The natural question is how often this happens and if it's worth adding
-> the code complexity and what's the estimated speed drop.
->
-> I think the conditions are very rare and that we could add minimal code
-> to attempt to build the metadata block from the available copies without
-> the separate block checksums. This is an immediate idea so I could have
-> missed something:
->
-> * if a metadata-block checksum mismatches, do a direct comparison of the
->    metadata-blocks in all available mirrors
->    * if they match and checksums match, no help, it's damaged
->    * if there's a good copy (ie the original checksum or data were
->      corrupted), use it
->    * otherwise attempt to rebuild the metadata block from what's available
->
-> * by direct comparisons of the 4k blocks, find the first where the
->    metadataA and mirror1 blocks mismatch, offset N
-> * try to compute the checksum from metadataA[0..N-1] + mirror1 block N +
->    rest of metadataA
->    * if it's ok, use it
->    * if not: the block N is corrupted in mirror1 (we've skipped it in
->      metadataA)
->      then repeat with metadataA[0..N] + mirror1[N+1..end]
-The method sounds good, but the codes will be even more complex than
-mine.
-Also, due to the nature of CRC32 and RAID1/Dup case, things will be
-quite complex like the following case using your method.
+> # btrfs-image /dev/rbd30 rbd30.image -c9
+> # btrfs-image -r rbd30.image rbd30.image.2
+> # mount rbd30.image.2 temp
+> mount: mount /dev/loop0 on /mnt/temp failed: Stale file handle
+OK, my assumption are all wrong.
 
-0	4K	8K	12K	16K
-Mirror 0
-|	|   X	|	|	|
-Mirror 1
-|	|	|   X	|	|
+I'd better check the debug-tree output more carefully.
 
-If using your method:
-[0~4K]
-CRC32 of 0~4K are the same. No problem.
+BTW, the rbd30 is the block device which you took the debug-tree output?
 
-[4~8K]
-CRC32 of 0~8K differs.
-Now we know there is something wrong with 4~8K, but we still don't know
-which is the good copy.
+If so, would you please do a dd dump of it and send it to me?
+If it contains important/secret info, just forget this.
 
-We can continue, keep 2 different CRC32 seed for later checksum.
-One seed using the 4~8 from mirror 0 and one from mirror1.
-
-Note, the crc32 is for the whole tree block, so until we calculate all 
-the tree block, we can know which one is correct.
-
-[8~12K]
-Now crc32 mismatches again.
-We still don't know which part is correct.
-
-We can still continue by recording different CRC32 seed for them.
-But don't forget the previous 2 seeds we recorded.
-So we records 4 crc32 seeds for 0~12K.(Mi0, Mi0) (Mi0, Mi1) (Mi1, Mi0) 
-(Mi1, Mi1).
-
-[12~16K]
-Continue calculate the crc32 with above 4 seeds.
-Finally, we found the crc32 matches with the tree block is using the 
-combination of (Mi1, Mi0). And we can restore the tree block.
-
-Yes, with this behavior, we can restore the tree block even 3 parts are 
-corrupted, but in that case, we need to try 8 times.
-
-So, I don't consider this is more easy to implement than my idea.
-
-[ROOT CAUSE]
-The root cause of the complex is:
-1) Checksum algorithm depends on previous input(seed)
-Almost all checksum algorithm depends on previous input.
-And you won't know the data is correct or not until all data is calculated.
-
-2) Only one extra duplication for RAID1/DUP
-We don't have extra duplication to judge which block is correct as there 
-are only two mirror.
-
-So my partial checksum solves the 2 root cause at the same time.
-With partial checksum, we don't depend on previous data to calculate 
-checksum.
-And we have extra reference if mirror differs with each other, we use 
-checksum to judge which copy is correct.
+Maybe I can improve the btrfsck tool to fix it.
 
 >
-> That's a rough idea that I hope will cover most of the cases when it
-> happens. With some more exhaustive attempts to rebuild the metadata
-> block we can try to repair 2 damaged blocks.
->
-> As this is completely independent, we can test it separately, and also
-> add it as a rescue feature to the userspace tools.
->
->> Yes, this corruption case may be minor enough, since even corruption in
->> one mirror is rare enough.
->> So I didn't introduce a new CRC32 checksum, but use the extra 32-4 bytes
->> to store the partial CRC32 to keep the backward compatibility.
->
-> The above would work with any checksums, without the need to store the
-> per-block checksums which become impossible with strongher algorithms.
->
-[FURTHER CSUM DESIGN]
-As you mentioned in later part, yes, stronger checksum like SHA256 won't
-be able to do such partial checksum as it uses all the space.
-
-But that's already a trade-off, right?
-
-If btrfs was using partial csum from the beginning, pros and cons of 
-strong checksum should be quite obvious:
-
-Stronger checksum:
-(Pros)
-1. Less confliction
-Which means more security.
-
-(Cons)
-1. More space usage for data.
-4Bytes/4K vs 32Bytes/4K. Obvious.
-
-2. No/less partial checksum for metadata.
-Harder to detect/repair partial error.
-
-3. (generally) More CPU time
-Normally, stronger checksums are cryptographic checksum, which uses
-more CPU time.
-
-So with this patch, I also want to inspire other developers about the 
-trade off between different checksums.
-Especially the fact, we can make better use of the spare metadata csum
-space if the csum length is less than 32bytes.
+> I have a suspicion this was caused by pacemaker starting
+> ceph/filesystem resources on two nodes at the same time,I haven't
+> been able to replicate the issue after hard poweroff if ceph/btrfs are
+> not being controlled by pacemaker.
+Did you mean mount the same device on different system?
 
 Thanks,
 Qu
+>
+> Thanks for your help.
+>
+>
+>
+> On Mon, Jun 15, 2015 at 1:06 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> The debug result seems valid.
+>> So I'm afraid the problem is not in btrfs.
+>>
+>> Would your please try the following 2 things to eliminate btrfs problems?
+>>
+>> 1) btrfsck from 4.0.1 on the rbd
+>>
+>> If assert still happens, please update the image of the volume(dd image), to
+>> help us improve btrfs-progs.
+>>
+>> 2) btrfs-image dump and rebuilt the fs into other place.
+>>
+>> # btrfs-image <RBD_DEV> <tmp_file1> -c9
+>> # btrfs-image -r <tmp_file1> <tmp_file2>
+>> # mount <tmp_file2> <mnt>
+>>
+>> This will dump all metadata from <RBD_DEV> to <tmp_file1>,
+>> and then use <tmp_file1> to rebuild a image called <tmp_file2>.
+>>
+>> If <tmp_file2> can be mounted, then the metadata in the RBD device is
+>> completely OK, and we can make conclusion the problem is not caused by
+>> btrfs.(maybe ceph?)
+>>
+>> BTW, all the commands are recommended to be executed on the device which you
+>> get the debug info from.
+>> As it's a small and almost empty device, so commands execution should be
+>> quite fast on it.
+>>
+>> Thanks,
+>> Qu
+>>
+>>
+>> 在 2015年06月13日 00:09, Steve Dainard 写道:
+>>>
+>>> Hi Qu,
+>>>
+>>> I have another volume with the same error, btrfs-debug-tree output
+>>> from btrfs-progs 4.0.1 is here: http://pastebin.com/k3R3bngE
+>>>
+>>> I'm not sure how to interpret the output, but the exit status is 0 so
+>>> it looks like btrfs doesn't think there's an issue with the file
+>>> system.
+>>>
+>>> I get the same mount error with options ro,recovery.
+>>>
+>>> On Fri, Jun 12, 2015 at 12:23 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> wrote:
+>>>>
+>>>>
+>>>>
+>>>> -------- Original Message  --------
+>>>> Subject: Can't mount btrfs volume on rbd
+>>>> From: Steve Dainard <sdainard@spd1.com>
+>>>> To: <linux-btrfs@vger.kernel.org>
+>>>> Date: 2015年06月11日 23:26
+>>>>
+>>>>> Hello,
+>>>>>
+>>>>> I'm getting an error when attempting to mount a volume on a host that
+>>>>> was forceably powered off:
+>>>>>
+>>>>> # mount /dev/rbd4 climate-downscale-CMIP5/
+>>>>> mount: mount /dev/rbd4 on /mnt/climate-downscale-CMIP5 failed: Stale
+>>>>> file
+>>>>> handle
+>>>>>
+>>>>> /var/log/messages:
+>>>>> Jun 10 15:31:07 node1 kernel: rbd4: unknown partition table
+>>>>>
+>>>>> # parted /dev/rbd4 print
+>>>>> Model: Unknown (unknown)
+>>>>> Disk /dev/rbd4: 36.5TB
+>>>>> Sector size (logical/physical): 512B/512B
+>>>>> Partition Table: loop
+>>>>> Disk Flags:
+>>>>>
+>>>>> Number  Start  End     Size    File system  Flags
+>>>>>     1      0.00B  36.5TB  36.5TB  btrfs
+>>>>>
+>>>>> # btrfs check --repair /dev/rbd4
+>>>>> enabling repair mode
+>>>>> Checking filesystem on /dev/rbd4
+>>>>> UUID: dfe6b0c8-2866-4318-abc2-e1e75c891a5e
+>>>>> checking extents
+>>>>> cmds-check.c:2274: check_owner_ref: Assertion `rec->is_root` failed.
+>>>>> btrfs[0x4175cc]
+>>>>> btrfs[0x41b873]
+>>>>> btrfs[0x41c3fe]
+>>>>> btrfs[0x41dc1d]
+>>>>> btrfs[0x406922]
+>>>>>
+>>>>>
+>>>>> OS: CentOS 7.1
+>>>>> btrfs-progs: 3.16.2
+>>>>
+>>>>
+>>>> The btrfs-progs seems quite old, and the above btrfsck error seems quite
+>>>> possible related to the old version.
+>>>>
+>>>> Would you please upgrade btrfs-progs to 4.0 and see what will happen?
+>>>> Hopes it can give better info.
+>>>>
+>>>> BTW, it's a good idea to call btrfs-debug-tree /dev/rbd4 to see the
+>>>> output.
+>>>>
+>>>> Thanks
+>>>> Qu.
+>>>>>
+>>>>>
+>>>>> Ceph: version: 0.94.1/CentOS 7.1
+>>>>>
+>>>>> I haven't found any references to 'stale file handle' on btrfs.
+>>>>>
+>>>>> The underlying block device is ceph rbd, so I've posted to both lists
+>>>>> for any feedback. Also once I reformatted btrfs I didn't get a mount
+>>>>> error.
+>>>>>
+>>>>> The btrfs volume has been reformatted so I won't be able to do much
+>>>>> post mortem but I'm wondering if anyone has some insight.
+>>>>>
+>>>>> Thanks,
+>>>>> Steve
+>>>>> --
+>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>> in
+>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>>
+>>>>
+>>

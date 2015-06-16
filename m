@@ -1,34 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from spamfilter2.dtu.dk ([130.225.73.113]:47612 "EHLO
-	spamfilter2.dtu.dk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756180AbbFPOZW convert rfc822-to-8bit (ORCPT
+Received: from mail-wi0-f176.google.com ([209.85.212.176]:37075 "EHLO
+	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754946AbbFPQnZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Jun 2015 10:25:22 -0400
-Received: from ait-pexedg01.win.dtu.dk (ait-pexedg01.win.dtu.dk [192.38.82.191])
-	by spamfilter2.dtu.dk  with ESMTP id t5GEAA9j022551-t5GEAA9q022551
-	(version=TLSv1.0 cipher=AES128-SHA bits=128 verify=CAFAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2015 16:10:16 +0200
-From: Hugo Maxwell Connery <hmco@env.dtu.dk>
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Big congrats
-Date: Tue, 16 Jun 2015 14:08:44 +0000
-Message-ID: <6CB05D82CE245B4083BBF3B97E2ED4703377BA@ait-pex01mbx01.win.dtu.dk>
-Content-Type: text/plain; charset="us-ascii"
+	Tue, 16 Jun 2015 12:43:25 -0400
+Received: by wifx6 with SMTP id x6so25478282wif.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 16 Jun 2015 09:43:23 -0700 (PDT)
 MIME-Version: 1.0
+Date: Tue, 16 Jun 2015 18:43:23 +0200
+Message-ID: <CAOQP4cG2344VZYT8eZ4=MJzi_KsdzH7pxFJ+ZpOTXtdDOrXRyQ@mail.gmail.com>
+Subject: Replacing a drive from a RAID 1 array
+From: Arnaud Kapp <kapp.arno@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hello,
 
-I have been waiting patiently for btrfs for years (whilst you have been working
-diligently to produce this wonderful technology).
+Consider the following situation: I have a RAID 1 array with 4 drives.
+I want to replace one the drive by a new one, with greater capacity.
 
-I am building a 100+ TB archiving storage solution for our researchers
-and am so glad, post basic initial testing of btrfs.  It is brilliant, and a paradigm shift.
+However, let's say I only have 4 HDD slots so I cannot plug the new
+drive, add it to the array then remove the other one.
+If there a *safe* way to change drives in this situation? I'd bet that
+booting with 3drives, adding the new one then removing the old, non
+connected one would work. However, is there something that could go
+wrong in this situation?
 
-I bow to the excellence of your work.  You have significantly raised the
-bar for file systems.
+Thanks,
 
-With thanks,
---
-Hugo Connery, Head of IT, DTU Environment, http://www.env.dtu.dk
+-- 
+Kapp Arnaud - Xaqq

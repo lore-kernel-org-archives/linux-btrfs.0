@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8336 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:43300 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757860AbbFQHtJ (ORCPT
+	with ESMTP id S1758110AbbFQHtK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 03:49:09 -0400
+	Wed, 17 Jun 2015 03:49:10 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5H7lVIW015769
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 15:47:31 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5H7lWi6015773
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 15:47:32 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 2/5] btrfs-progs: map-logical: Introduce map_one_extent function.
-Date: Wed, 17 Jun 2015 15:49:01 +0800
-Message-ID: <1434527344-314-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 3/5] Btrfs-progs: map-logical: Introduce print_mapping_info function.
+Date: Wed, 17 Jun 2015 15:49:02 +0800
+Message-ID: <1434527344-314-4-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1434527344-314-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1434527344-314-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,76 +19,84 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce the function to get accurate extent length based on extent
-tree search.
+The new function will print the mapping info of given range
+[logical, logical+len).
+
+Note, caller must ensure the range are completely inside an extent.
+Or btrfs_map_block can return -ENOENT.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-map-logical.c | 58 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 58 insertions(+)
+ btrfs-map-logical.c | 63 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 63 insertions(+)
 
 diff --git a/btrfs-map-logical.c b/btrfs-map-logical.c
-index e5e2da5..8442779 100644
+index 8442779..22ece82 100644
 --- a/btrfs-map-logical.c
 +++ b/btrfs-map-logical.c
-@@ -35,6 +35,64 @@
-  * */
- static FILE *info_file;
+@@ -93,6 +93,69 @@ out:
+ 	return ret;
+ }
  
-+static int map_one_extent(struct btrfs_fs_info *fs_info,
-+			  u64 *logical_ret, u64 *len_ret, int search_foward)
++static int __print_mapping_info(struct btrfs_fs_info *fs_info, u64 logical,
++				u64 len, int mirror_num)
 +{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	u64 logical;
-+	u64 len = 0;
++	struct btrfs_multi_bio *multi = NULL;
++	u64 cur_offset = 0;
++	u64 cur_len;
 +	int ret = 0;
 +
-+	BUG_ON(!logical_ret);
-+	logical = *logical_ret;
++	while (cur_offset < len) {
++		struct btrfs_device *device;
++		int i;
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	key.objectid = logical;
-+	key.type = 0;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, fs_info->extent_root, &key, path,
-+				0, 0);
-+	if (ret < 0)
-+		goto out;
-+	BUG_ON(ret == 0);
-+	ret = 0;
-+
-+again:
-+	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+	if ((search_foward && key.objectid < logical) ||
-+	    (!search_foward && key.objectid > logical) ||
-+	    (key.type != BTRFS_EXTENT_ITEM_KEY &&
-+	     key.type != BTRFS_METADATA_ITEM_KEY)) {
-+		if (!search_foward)
-+			ret = btrfs_previous_extent_item(fs_info->extent_root,
-+							 path, 0);
-+		else
-+			ret = btrfs_next_item(fs_info->extent_root, path);
-+		if (ret)
-+			goto out;
-+		goto again;
++		cur_len = len - cur_offset;
++		ret = btrfs_map_block(&fs_info->mapping_tree, READ,
++				logical + cur_offset, &cur_len,
++				&multi, mirror_num, NULL);
++		if (ret) {
++			fprintf(info_file,
++				"Error: fails to map mirror%d logical %llu: %s\n",
++				mirror_num, logical, strerror(-ret));
++			return ret;
++		}
++		for (i = 0; i < multi->num_stripes; i++) {
++			device = multi->stripes[i].dev;
++			fprintf(info_file,
++				"mirror %d logical %Lu physical %Lu device %s\n",
++				mirror_num, logical + cur_offset,
++				multi->stripes[0].physical,
++				device->name);
++		}
++		kfree(multi);
++		multi = NULL;
++		cur_offset += cur_len;
 +	}
-+	logical = key.objectid;
-+	if (key.type == BTRFS_METADATA_ITEM_KEY)
-+		len = fs_info->tree_root->leafsize;
-+	else
-+		len = key.offset;
++	return ret;
++}
 +
-+out:
-+	btrfs_free_path(path);
-+	if (!ret) {
-+		*logical_ret = logical;
-+		if (len_ret)
-+			*len_ret = len;
++/*
++ * Logical and len is the exact value of a extent.
++ * And offset is the offset inside the extent. It's only used for case
++ * where user only want to print part of the extent.
++ *
++ * Caller *MUST* ensure the range [logical,logical+len) are in one extent.
++ * Or we can encounter the following case, causing a -ENOENT error:
++ * |<-----given parameter------>|
++ *		|<------ Extent A ----->|
++ */
++static int print_mapping_info(struct btrfs_fs_info *fs_info, u64 logical,
++			      u64 len)
++{
++	int num_copies;
++	int mirror_num;
++	int ret = 0;
++
++	num_copies = btrfs_num_copies(&fs_info->mapping_tree, logical, len);
++	for (mirror_num = 1; mirror_num <= num_copies; mirror_num++) {
++		ret = __print_mapping_info(fs_info, logical, len, mirror_num);
++		if (ret < 0)
++			return ret;
 +	}
 +	return ret;
 +}

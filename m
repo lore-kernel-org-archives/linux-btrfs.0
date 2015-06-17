@@ -1,37 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:39865 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752418AbbFQRsG (ORCPT
+Received: from mail-wg0-f42.google.com ([74.125.82.42]:35475 "EHLO
+	mail-wg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752890AbbFQVVr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 13:48:06 -0400
-Date: Wed, 17 Jun 2015 10:48:02 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: crocket <crockabiscuit@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20150617174802.GN16468@merlins.org>
-References: <CAL0=0H19M7JG4o4p55Li3tF4PeA-UXb8mURcSOdPLwxfL0c1DQ@mail.gmail.com>
+	Wed, 17 Jun 2015 17:21:47 -0400
+Received: by wgbhy7 with SMTP id hy7so47485801wgb.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 14:21:45 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL0=0H19M7JG4o4p55Li3tF4PeA-UXb8mURcSOdPLwxfL0c1DQ@mail.gmail.com>
-Subject: Re: How do I make 'btrfs scrub' report errors via email?
+Date: Wed, 17 Jun 2015 22:21:45 +0100
+Message-ID: <CAMU1PDjKbbXPrr5uPgPUEzfN+RWxi9McvRLS02N7N9JJ39q2ug@mail.gmail.com>
+Subject: btrfs-progs 4.1-rc1: btrfstune -u reporting incorrect current fsid?
+From: Mike Fleetwood <mike.fleetwood@googlemail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jun 13, 2015 at 10:48:35PM +0900, crocket wrote:
-> I can check the result of 'btrfs scrub' later, but I don't want to
-> take time to actually check it.
-> Does anyone know how to make 'btrfs scrub' report errors via email?
-> It seems google doesn't know.
+Hi,
 
-See the bottom of:
-http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair
+I've done a quick test on changing the UUID of a btrfs.  It worked, but
+btrfstune -u didn't print the same current uuid that btrfs fi sh does.
+It also upper cases the UUID where as btrfs fi sh and blkid don't.
 
-You can remove shlock from the script if you don't have it (or use
-another lock script).
+Thanks,
+Mike
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+# btrfs filesystem show /dev/sdb1 | fgrep uuid
+Label: none  uuid: b2813976-4d8b-4976-9d59-cbfbd588399c
+
+# ~fedora/programming/c/btrfs-progs-unstable/btrfstune -f -u /dev/sdb1
+Current fsid: FFFFFFFF-0000-0000-00B0-8F12937F0000
+New fsid: D294F3F3-F2B7-4407-B83A-DE5A4F8CBAB1
+Set superblock flag CHANGING_FSID
+Change fsid in extents
+Change fsid on devices
+Clear superblock flag CHANGING_FSID
+Fsid change finished
+
+# btrfs filesystem show /dev/sdb1 | fgrep uuid
+Label: none  uuid: d294f3f3-f2b7-4407-b83a-de5a4f8cbab1
+
+# blkid | fgrep sdb1
+/dev/sdb1: UUID="d294f3f3-f2b7-4407-b83a-de5a4f8cbab1"
+UUID_SUB="70065403-5ec1-462c-93a4-26cff8b6aea2" TYPE="btrfs"
+PARTUUID="b309c48c-486f-4882-896c-34d4d0aeb529"

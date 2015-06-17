@@ -1,31 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:35287 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:42012 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751568AbbFZOIZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jun 2015 10:08:25 -0400
-Date: Fri, 26 Jun 2015 16:08:23 +0200
+	id S1757581AbbFQR1c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jun 2015 13:27:32 -0400
+Date: Wed, 17 Jun 2015 19:27:30 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Davide Italiano <dccitaliano@gmail.com>
+To: Anand Jain <anand.jain@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: Improve FL_KEEP_SIZE handling in fallocate.
-Message-ID: <20150626140823.GU726@twin.jikos.cz>
+Subject: Re: [PATCH] Btrfs: fix typo in the error log
+Message-ID: <20150617172730.GC6761@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1428383355-1686-1-git-send-email-dccitaliano@gmail.com>
- <1428383355-1686-2-git-send-email-dccitaliano@gmail.com>
+References: <1434376943-382-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1428383355-1686-2-git-send-email-dccitaliano@gmail.com>
+In-Reply-To: <1434376943-382-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Apr 06, 2015 at 10:09:15PM -0700, Davide Italiano wrote:
-> - We call inode_size_ok() only if FL_KEEP_SIZE isn't specified.
-> - As an optimisation we can skip the call if (off + len)
->   isn't greater than the current size of the file. This operation
->   is called under the lock so the less work we do, the better.
-> - If we call inode_size_ok() pass to it the correct value rather
->   than a more conservative estimation.
+On Mon, Jun 15, 2015 at 10:02:23PM +0800, Anand Jain wrote:
+> ---
+>  fs/btrfs/disk-io.c | 2 +-
+>  fs/btrfs/super.c   | 2 +-
+>  2 files changed, 2 insertions(+), 2 deletions(-)
 > 
-> Signed-off-by: Davide Italiano <dccitaliano@gmail.com>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 57d48f8..5147cb7 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2896,7 +2896,7 @@ retry_root_backup:
+>  	     fs_info->num_tolerated_disk_barrier_failures &&
+>  	    !(sb->s_flags & MS_RDONLY)) {
+>  		printk(KERN_WARNING "BTRFS: "
+> -			"too many missing devices, writeable mount is not allowed\n");
+> +			"too many missing devices, writable mount is not allowed\n");
 
-Reviewed-by: David Sterba <dsterba@suse.cz>
+I see both forms are accepted:
+
+http://dictionary.reference.com/browse/writeable
+http://dictionary.reference.com/browse/writable
+
+Though not here:
+
+http://www.merriam-webster.com/dictionary/writable

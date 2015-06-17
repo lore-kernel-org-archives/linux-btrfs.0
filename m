@@ -1,65 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f170.google.com ([209.85.223.170]:36154 "EHLO
-	mail-ie0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754851AbbFCPxS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 3 Jun 2015 11:53:18 -0400
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1433315455-814-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-References: <CAL3q7H7yZyUXAsK41e1ZAwVsV3WB8_XNJR_sQ4p8UZLfEM5hDA@mail.gmail.com>
-	<1433315455-814-1-git-send-email-yangds.fnst@cn.fujitsu.com>
-Date: Wed, 3 Jun 2015 16:53:17 +0100
-Message-ID: <CAL3q7H71H1Q9_d7ogQ0mi+e14wySOuSUh3eEmbBcvkXyO1eSDg@mail.gmail.com>
-Subject: Re: [PATCH] xfstests: btrfs: 022: add a quota rescan -w to wait
- rescan finished.
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.kernel.org ([198.145.29.136]:57218 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755496AbbFQLwX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jun 2015 07:52:23 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: generic test for fsync after adding hard link to a file
+Date: Wed, 17 Jun 2015 12:52:16 +0100
+Message-Id: <1434541936-28353-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 3, 2015 at 8:10 AM, Dongsheng Yang
-<yangds.fnst@cn.fujitsu.com> wrote:
-> When we enable quota, btrfs will rescan quota numbers. We need
-> to wait the rescan finished before any more operations on btrfs
-> qgroups. Otherwith, the new btrfs-progs would WARN out:
->
-> WARNING: Rescan is running, qgroup data may be incorrect.
->
-> It would make btrfs/022 failed.
->
-> Signed-off-by: Dongsheng Yang <yangds.fnst@cn.fujitsu.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Thanks, it works and it makes sense.
+This test is motivated by an issue found in btrfs.
 
-> ---
->  tests/btrfs/022 | 1 +
->  1 file changed, 1 insertion(+)
->
-> diff --git a/tests/btrfs/022 b/tests/btrfs/022
-> index 5c1a82d..56d4f3d 100755
-> --- a/tests/btrfs/022
-> +++ b/tests/btrfs/022
-> @@ -51,6 +51,7 @@ _basic_test()
->  {
->         _run_btrfs_util_prog subvolume create $SCRATCH_MNT/a
->         _run_btrfs_util_prog quota enable $SCRATCH_MNT/a
-> +       _run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
->         subvolid=$(_btrfs_get_subvolid $SCRATCH_MNT a)
->         $BTRFS_UTIL_PROG qgroup show $units $SCRATCH_MNT | grep $subvolid >> \
->                 $seqres.full 2>&1
-> --
-> 1.8.4.2
->
+It tests that after syncing the filesystem, adding a hard link to a file,
+syncing the filesystem again, doing a write to the file that increases
+its size and then doing a fsync against that file, durably persists the
+data written to the file. That is, after log/journal replay, the data
+is available.
 
+The btrfs issue is fixed by the commit titled:
 
+  "Btrfs: fix fsync data loss after append write"
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/generic/090     | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/090.out |  17 ++++++++
+ tests/generic/group   |   1 +
+ 3 files changed, 126 insertions(+)
+ create mode 100755 tests/generic/090
+ create mode 100644 tests/generic/090.out
+
+diff --git a/tests/generic/090 b/tests/generic/090
+new file mode 100755
+index 0000000..a1f2b89
+--- /dev/null
++++ b/tests/generic/090
+@@ -0,0 +1,108 @@
++#! /bin/bash
++# FS QA Test No. 090
++#
++# Test that after syncing the filesystem, adding a hard link to a file,
++# syncing the filesystem again, doing a write to the file that increases
++# its size and then doing a fsync against that file, durably persists the
++# data written to the file. That is, after log/journal replay, the data
++# is available.
++#
++# This test is motivated by a bug found in btrfs.
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++
++_cleanup()
++{
++	_cleanup_flakey
++	rm -f $tmp.*
++}
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_supported_fs generic
++_supported_os Linux
++_need_to_be_root
++_require_scratch
++_require_dm_flakey
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >> $seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++# Create the test file with some initial data and then fsync it.
++# The fsync here is only needed to trigger the issue in btrfs, as it causes the
++# the flag BTRFS_INODE_NEEDS_FULL_SYNC to be removed from the btrfs inode.
++$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 32k" \
++		-c "fsync" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
++sync
++
++# Add a hard link to our file.
++# On btrfs this sets the flag BTRFS_INODE_COPY_EVERYTHING on the btrfs inode,
++# which is a necessary condition to trigger the issue.
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++
++# Sync the filesystem to force a commit of the current btrfs transaction, this
++# is a necessary condition to trigger the bug on btrfs.
++sync
++
++# Now append more data to our file, increasing its size, and fsync the file.
++# In btrfs because the inode flag BTRFS_INODE_COPY_EVERYTHING was set and the
++# write path did not update the inode item in the btree nor the delayed inode
++# item (in memory structure) in the current transaction (created by the fsync
++# handler), the fsync did not record the inode's new i_size in the fsync
++# log/journal. This made the data unavailable after the fsync log/journal is
++# replayed.
++$XFS_IO_PROG -c "pwrite -S 0xbb 32K 32K" \
++		-c "fsync" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
++
++echo "File content after fsync and before crash:"
++od -t x1 $SCRATCH_MNT/foo
++
++# Simulate a crash/power loss.
++_load_flakey_table $FLAKEY_DROP_WRITES
++_unmount_flakey
++
++# Allow writes again and mount. This makes the fs replay its fsync log.
++_load_flakey_table $FLAKEY_ALLOW_WRITES
++_mount_flakey
++
++echo "File content after crash and log replay:"
++od -t x1 $SCRATCH_MNT/foo
++
++status=0
++exit
+diff --git a/tests/generic/090.out b/tests/generic/090.out
+new file mode 100644
+index 0000000..4a4423a
+--- /dev/null
++++ b/tests/generic/090.out
+@@ -0,0 +1,17 @@
++QA output created by 090
++wrote 32768/32768 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 32768/32768 bytes at offset 32768
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File content after fsync and before crash:
++0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++0100000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++0200000
++File content after crash and log replay:
++0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++0100000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++0200000
+diff --git a/tests/generic/group b/tests/generic/group
+index 0c8964c..ae40fed 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -92,6 +92,7 @@
+ 087 perms auto quick
+ 088 perms auto quick
+ 089 metadata auto
++090 metadata auto quick
+ 091 rw auto quick
+ 092 auto quick prealloc
+ 093 attr cap udf auto
 -- 
-Filipe David Manana,
+2.1.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

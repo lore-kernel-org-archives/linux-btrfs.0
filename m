@@ -1,63 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:33608 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753817AbbFQHRD (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:24445 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932112AbbFQHzR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 03:17:03 -0400
-Date: Wed, 17 Jun 2015 00:16:54 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <20150617071654.GI16468@merlins.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-Subject: BTRFS: read error corrected: ino 1 off 226840576 (dev
- /dev/mapper/dshelf1 sector 459432)
+	Wed, 17 Jun 2015 03:55:17 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: fdmanana@suse.com
+Subject: [RFC PATCH v2 1/2] Btrfs: add noi_version option to disable MS_I_VERSION
+Date: Wed, 17 Jun 2015 15:54:31 +0800
+Message-Id: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I had a few power offs due to a faulty power supply, and my mdadm raid5
-got into fail mode after 2 drives got kicked out since their sequence
-numbers didn't match due to the abrupt power offs.
+MS_I_VERSION is enabled by default for btrfs, this adds an alternative
+option to toggle it off.
 
-I brought the swraid5 back up by force assembling it with 4 drives (one
-was really only a few sequence numbers behind), and it's doing a full
-parity rebuild on the 5th drive that was farther behind.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/super.c |    7 ++++++-
+ 1 files changed, 6 insertions(+), 1 deletions(-)
 
-So I can understand how I may have had a few blocks that are in a bad
-state.
-I'm getting a few (not many) of those messages in syslog.
-BTRFS: read error corrected: ino 1 off 226840576 (dev /dev/mapper/dshelf1 sector 459432)
-
-Filesystem looks like this:
-Label: 'btrfs_pool1'  uuid: 6358304a-2234-4243-b02d-4944c9af47d7
-        Total devices 1 FS bytes used 8.29TiB
-        devid    1 size 14.55TiB used 8.32TiB path /dev/mapper/dshelf1
-
-gargamel:~# btrfs fi df /mnt/btrfs_pool1
-Data, single: total=8.29TiB, used=8.28TiB
-System, DUP: total=8.00MiB, used=920.00KiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, DUP: total=14.00GiB, used=10.58GiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-Kernel 3.19.8.
-
-Just to make sure I understand, do those messages in syslog mean that my
-metadata got corrupted a bit, but because I have 2 copies, btrfs can fix
-the bad copy by using the good one?
-
-Also, if my actual data got corrupted, am I correct that btrfs will
-detect the checksum failure and give me a different error message of a
-read error that cannot be corrected?
-
-I'll do a scrub later, for now I have to wait 20 hours for the raid rebuild
-first.
-
-Thanks,
-Marc
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 05fef19..e610e3e 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -324,7 +324,7 @@ enum {
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+ 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+-	Opt_datasum, Opt_treelog, Opt_noinode_cache,
++	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_noi_version,
+ 	Opt_err,
+ };
+ 
+@@ -351,6 +351,7 @@ static match_table_t tokens = {
+ 	{Opt_nossd, "nossd"},
+ 	{Opt_acl, "acl"},
+ 	{Opt_noacl, "noacl"},
++	{Opt_noi_version, "noi_version"},
+ 	{Opt_notreelog, "notreelog"},
+ 	{Opt_treelog, "treelog"},
+ 	{Opt_flushoncommit, "flushoncommit"},
+@@ -593,6 +594,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		case Opt_noacl:
+ 			root->fs_info->sb->s_flags &= ~MS_POSIXACL;
+ 			break;
++		case Opt_noi_version:
++			root->fs_info->sb->s_flags &= ~MS_I_VERSION;
++			btrfs_info(root->fs_info, "disable i_version");
++			break;
+ 		case Opt_notreelog:
+ 			btrfs_set_and_info(root, NOTREELOG,
+ 					   "disabling tree log");
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+1.7.7.6
+

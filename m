@@ -1,117 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:26126 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752847AbbFQNOU (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:60261 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753997AbbFQN1i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 09:14:20 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v5.3 24/27] Btrfs: free the stale device
-Date: Wed, 17 Jun 2015 21:10:48 +0800
-Message-Id: <1434546648-14105-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1432999945-4320-1-git-send-email-Anand.Jain@oracle.com>
-References: <1432999945-4320-1-git-send-email-Anand.Jain@oracle.com>
+	Wed, 17 Jun 2015 09:27:38 -0400
+Date: Wed, 17 Jun 2015 13:27:36 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Vincent Olivier <vincent@up4.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: RAID10 Balancing Request for Comments and Advices
+Message-ID: <20150617132736.GT9850@carfax.org.uk>
+References: <1434456557.89597618@apps.rackspace.com>
+ <20150616122545.GI9850@carfax.org.uk>
+ <61CBE6C4-0D06-4F16-B522-4DBB756FBC31@up4.com>
+ <pan$966fb$92ec2f1c$291706f7$cf1b6c68@cox.net>
+ <CAJCQCtRGxCr4GaVwkA0QpK8dYjhaBS0-rmi=ymPxycQiGUa_fg@mail.gmail.com>
+ <80BA2964-3B67-430B-99BE-62A348C5DBED@up4.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="/asd063ZXkk5ILJU"
+In-Reply-To: <80BA2964-3B67-430B-99BE-62A348C5DBED@up4.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
 
-When btrfs on a device is overwritten with a new btrfs (mkfs),
-the old btrfs instance in the kernel becomes stale. So with this
-patch, if kernel finds device is overwritten then delete the stale
-fsid/uuid.
+--/asd063ZXkk5ILJU
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v5.2->v5.3: removed unnecessary return in retun void func
-v5.1->v5.2: accepts David's review comments with thanks. esp.ly the
-important rcu part
-v5->v5.1: since this deals with only devices in unmounted state, don't
-try to remove device link
+On Wed, Jun 17, 2015 at 09:13:08AM -0400, Vincent Olivier wrote:
+>=20
+> > On Jun 16, 2015, at 8:14 PM, Chris Murphy <lists@colorremedies.com> wro=
+te:
+> >=20
+> > On Tue, Jun 16, 2015 at 5:58 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> >=20
+> >> On a current kernel unlike older ones, btrfs actually automates entire=
+ly
+> >> empty chunk reclaim, so this problem doesn't occur anything close to n=
+ear
+> >> as often as it used to.  However, it's still possible to have mostly b=
+ut
+> >> not entirely empty chunks that btrfs won't automatically reclaim.  A
+> >> balance can be used to rewrite and combine these mostly empty chunks,
+> >> reclaiming the space saved.  This is what Hugo was recommending.
+> >=20
+> > Yes, as little as a -dusage=3D5 (data chunks that are 5% or less full)
+> > can clear the problem and is very fast, seconds. Possibly a bit
+> > longer, many seconds o single digit minutes is -dusage=3D15. I haven't
+> > done a full balance in forever.
+>=20
+>=20
+> Yes, on this 80% full 6x4TB RAID10 -dusage=3D15 took 2 seconds and reloca=
+ted "0 out of 3026 chunks=E2=80=9D.
+>=20
+> Out of curiosity, I had to use -dusage=3D90 to have it relocate only 1 ch=
+unk and it took les than 30 seconds.
+>=20
+> So I put a -dusage=3D25 in the weekly cron just before the scrub.
 
- fs/btrfs/volumes.c | 61 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 61 insertions(+)
+   In most cases, all you need to do is clean up one data chunk to
+give the metadata enough space to work in. Instead of manually
+iterating through several values of usage=3D until you get a useful
+response, you can use limit=3D<n> to stop after <n> successful block
+group relocations.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e50005f..39d4d48 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -445,6 +445,61 @@ static void pending_bios_fn(struct btrfs_work *work)
- 	run_scheduled_bios(device);
- }
- 
-+
-+void btrfs_free_stale_device(struct btrfs_device *cur_dev)
-+{
-+	struct btrfs_fs_devices *fs_devs;
-+	struct btrfs_device *dev;
-+
-+	if (!cur_dev->name)
-+		return;
-+
-+	list_for_each_entry(fs_devs, &fs_uuids, list) {
-+		int del = 1;
-+
-+		if (fs_devs->opened)
-+			continue;
-+		if (fs_devs->seeding)
-+			continue;
-+
-+		list_for_each_entry(dev, &fs_devs->devices, dev_list) {
-+
-+			if (dev == cur_dev)
-+				continue;
-+			if (!dev->name)
-+				continue;
-+
-+			/*
-+			 * Todo: This won't be enough. What if the same device
-+			 * comes back (with new uuid and) with its mapper path?
-+			 * But for now, this does help as mostly an admin will
-+			 * either use mapper or non mapper path throughout.
-+			 */
-+			rcu_read_lock();
-+			del = strcmp(rcu_str_deref(dev->name),
-+						rcu_str_deref(cur_dev->name));
-+			rcu_read_unlock();
-+			if (!del)
-+				break;
-+		}
-+
-+		if (!del) {
-+			/* delete the stale device */
-+			if (fs_devs->num_devices == 1) {
-+				btrfs_sysfs_remove_fsid(fs_devs);
-+				list_del(&fs_devs->list);
-+				free_fs_devices(fs_devs);
-+			} else {
-+				fs_devs->num_devices--;
-+				list_del(&dev->dev_list);
-+				rcu_string_free(dev->name);
-+				kfree(dev);
-+			}
-+			break;
-+		}
-+	}
-+}
-+
- /*
-  * Add new device to list of registered devices
-  *
-@@ -560,6 +615,12 @@ static noinline int device_list_add(const char *path,
- 	if (!fs_devices->opened)
- 		device->generation = found_transid;
- 
-+	/*
-+	 * if there is new btrfs on an already registered device,
-+	 * then remove the stale device entry.
-+	 */
-+	btrfs_free_stale_device(device);
-+
- 	*fs_devices_ret = fs_devices;
- 
- 	return ret;
--- 
-2.4.1
+   Hugo.
 
+--=20
+Hugo Mills             | Alert status mauve ocelot: Slight chance of
+hugo@... carfax.org.uk | brimstone. Be prepared to make a nice cup of tea.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--/asd063ZXkk5ILJU
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJVgXXIAAoJEFheFHXiqx3kraYP/3H1YbPvrv4eRFa+YEmh/cau
+iDxit4mrCfFDHGFMYDhBi9pLi581ngyLS438Rft/+DOYZ0DX+eMNN7I1Wnu5aQji
+JhsWoLSIkA0PDsXcDKZ64L3gTiyUcFB3wcUoGK/zjjBxfk7mrglmHeLjwOFWTSu3
+IIAHm8VSVQNLye2qO7xINEv0BnFjiDd0lIxA7Xj8BgtqmOAVOmLj1djWVH+ed2Nh
+SnK3A/RXQVPhJezpqOAE9dhvTQdhhDdF+2HWKruCZ94G7B4BRoWHAkEchrjkiylc
+gq6+7VxLq2O+N6OBKds7p4NfNO9EAx84KwXJfTWzj1hxThKBiK30RuD1X9bms7Gv
+eOzSKr6LxfjStfWsGAHo2PNelRnWA6Y7gxx2RlYVwEEdrqm1Ch9285qCvO7BqhH9
+9wNkxSR35l/PLUxkwrsCGl3eIQdmU66DAT0x7vygD3b7U5XyOj/L58b6vIuKUPpa
+ryxIPdi9umDgX9YCgKDK8QQWIaqIqK68CPjnSFLC6f01TT+W2cpRMasHLX+GvyNZ
+5sNZdh1u5p1OMqv1d/owG95/S6Ot4gWlWn16D7TdtUcZR/uc+xzzH1L9v8x5OzFx
++0CEeq91zPe7jSsM8EXVVRaXxNh+a3XhkRsd12i6i0jDjfay7AbASRsgrQ8If9qX
+s5o0uLQCtbzvcxYaMYr6
+=QJRr
+-----END PGP SIGNATURE-----
+
+--/asd063ZXkk5ILJU--

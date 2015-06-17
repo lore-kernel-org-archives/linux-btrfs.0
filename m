@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:57218 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:57311 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755496AbbFQLwX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 07:52:23 -0400
+	id S1756186AbbFQLwy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jun 2015 07:52:54 -0400
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: generic test for fsync after adding hard link to a file
-Date: Wed, 17 Jun 2015 12:52:16 +0100
-Message-Id: <1434541936-28353-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] fstests: generic test for fsync after adding xattr to a file
+Date: Wed, 17 Jun 2015 12:52:47 +0100
+Message-Id: <1434541967-28402-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -16,39 +16,38 @@ From: Filipe Manana <fdmanana@suse.com>
 
 This test is motivated by an issue found in btrfs.
 
-It tests that after syncing the filesystem, adding a hard link to a file,
-syncing the filesystem again, doing a write to the file that increases
-its size and then doing a fsync against that file, durably persists the
-data written to the file. That is, after log/journal replay, the data
-is available.
+It tests that after syncing the filesystem, adding a xattr to a file,
+syncing the filesystem again, writing to the file and then doing a fsync
+against that file, the xattr still exists after a power failure. That is,
+after the fsync log/journal is replayed, the xattr still exists and with
+the correct value.
 
-The btrfs issue is fixed by the commit titled:
+The btrfs issue is fixed by the patch titled:
 
-  "Btrfs: fix fsync data loss after append write"
+  "Btrfs: fix fsync xattr loss in the fast fsync path"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/generic/090     | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/090.out |  17 ++++++++
+ tests/generic/094     | 112 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/094.out |  29 +++++++++++++
  tests/generic/group   |   1 +
- 3 files changed, 126 insertions(+)
- create mode 100755 tests/generic/090
- create mode 100644 tests/generic/090.out
+ 3 files changed, 142 insertions(+)
+ create mode 100755 tests/generic/094
+ create mode 100644 tests/generic/094.out
 
-diff --git a/tests/generic/090 b/tests/generic/090
+diff --git a/tests/generic/094 b/tests/generic/094
 new file mode 100755
-index 0000000..a1f2b89
+index 0000000..1c6d113
 --- /dev/null
-+++ b/tests/generic/090
-@@ -0,0 +1,108 @@
++++ b/tests/generic/094
+@@ -0,0 +1,112 @@
 +#! /bin/bash
-+# FS QA Test No. 090
++# FS QA Test No. 094
 +#
-+# Test that after syncing the filesystem, adding a hard link to a file,
-+# syncing the filesystem again, doing a write to the file that increases
-+# its size and then doing a fsync against that file, durably persists the
-+# data written to the file. That is, after log/journal replay, the data
-+# is available.
++# Test that after syncing the filesystem, adding a xattr to a file, syncing
++# the filesystem again, writing to the file and then doing a fsync against that
++# file, the xattr still exists after a power failure. That is, after the fsync
++# log/journal is replayed, the xattr still exists and with the correct value.
 +#
 +# This test is motivated by a bug found in btrfs.
 +#
@@ -90,6 +89,7 @@ index 0000000..a1f2b89
 +. ./common/rc
 +. ./common/filter
 +. ./common/dmflakey
++. ./common/attr
 +
 +# real QA test starts here
 +_supported_fs generic
@@ -97,6 +97,7 @@ index 0000000..a1f2b89
 +_need_to_be_root
 +_require_scratch
 +_require_dm_flakey
++_require_attrs
 +_require_metadata_journaling $SCRATCH_DEV
 +
 +rm -f $seqres.full
@@ -105,36 +106,36 @@ index 0000000..a1f2b89
 +_init_flakey
 +_mount_flakey
 +
-+# Create the test file with some initial data and then fsync it.
-+# The fsync here is only needed to trigger the issue in btrfs, as it causes the
-+# the flag BTRFS_INODE_NEEDS_FULL_SYNC to be removed from the btrfs inode.
++# Create the test file with some initial data and make sure everything is
++# durably persisted. We do fsync before calling sync to make sure that if the
++# filesystem is btrfs, we get the flag BTRFS_INODE_NEEDS_FULL_SYNC cleared
++# from the btrfs inode - a condition necessary to trigger the issue in btrfs.
 +$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 32k" \
 +		-c "fsync" \
 +		$SCRATCH_MNT/foo | _filter_xfs_io
 +sync
 +
-+# Add a hard link to our file.
-+# On btrfs this sets the flag BTRFS_INODE_COPY_EVERYTHING on the btrfs inode,
-+# which is a necessary condition to trigger the issue.
-+ln $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++# Add a xattr to our file.
++$SETFATTR_PROG -n user.attr -v somevalue $SCRATCH_MNT/foo
 +
 +# Sync the filesystem to force a commit of the current btrfs transaction, this
 +# is a necessary condition to trigger the bug on btrfs.
 +sync
 +
-+# Now append more data to our file, increasing its size, and fsync the file.
-+# In btrfs because the inode flag BTRFS_INODE_COPY_EVERYTHING was set and the
-+# write path did not update the inode item in the btree nor the delayed inode
-+# item (in memory structure) in the current transaction (created by the fsync
-+# handler), the fsync did not record the inode's new i_size in the fsync
-+# log/journal. This made the data unavailable after the fsync log/journal is
-+# replayed.
-+$XFS_IO_PROG -c "pwrite -S 0xbb 32K 32K" \
++# Now update our file's data and fsync the file.
++# After a successful fsync, if the fsync log/journal is replayed we expect to
++# see the xattr named "user.attr" with a value of "somevalue" (and the updated
++# file data of course). Btrfs used to remove the xattr when it replayed the
++# fsync log/journal.
++$XFS_IO_PROG -c "pwrite -S 0xbb 8K 16K" \
 +		-c "fsync" \
 +		$SCRATCH_MNT/foo | _filter_xfs_io
 +
 +echo "File content after fsync and before crash:"
 +od -t x1 $SCRATCH_MNT/foo
++
++echo "File xattrs after fsync and before crash:"
++$GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/foo | _filter_scratch
 +
 +# Simulate a crash/power loss.
 +_load_flakey_table $FLAKEY_DROP_WRITES
@@ -147,43 +148,58 @@ index 0000000..a1f2b89
 +echo "File content after crash and log replay:"
 +od -t x1 $SCRATCH_MNT/foo
 +
++echo "File xattrs after crash and log replay:"
++$GETFATTR_PROG --absolute-names --dump $SCRATCH_MNT/foo | _filter_scratch
++
 +status=0
 +exit
-diff --git a/tests/generic/090.out b/tests/generic/090.out
+diff --git a/tests/generic/094.out b/tests/generic/094.out
 new file mode 100644
-index 0000000..4a4423a
+index 0000000..2e5e0fa
 --- /dev/null
-+++ b/tests/generic/090.out
-@@ -0,0 +1,17 @@
-+QA output created by 090
++++ b/tests/generic/094.out
+@@ -0,0 +1,29 @@
++QA output created by 094
 +wrote 32768/32768 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 32768/32768 bytes at offset 32768
++wrote 16384/16384 bytes at offset 8192
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +File content after fsync and before crash:
 +0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 +*
-+0100000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++0020000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
 +*
-+0200000
++0060000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++0100000
++File xattrs after fsync and before crash:
++# file: SCRATCH_MNT/foo
++user.attr="somevalue"
++
 +File content after crash and log replay:
 +0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 +*
-+0100000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++0020000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
 +*
-+0200000
++0060000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++0100000
++File xattrs after crash and log replay:
++# file: SCRATCH_MNT/foo
++user.attr="somevalue"
++
 diff --git a/tests/generic/group b/tests/generic/group
-index 0c8964c..ae40fed 100644
+index ae40fed..18f31a7 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -92,6 +92,7 @@
- 087 perms auto quick
- 088 perms auto quick
- 089 metadata auto
-+090 metadata auto quick
+@@ -96,6 +96,7 @@
  091 rw auto quick
  092 auto quick prealloc
  093 attr cap udf auto
++094 metadata auto quick
+ 097 udf auto
+ 099 udf auto
+ 100 udf auto
 -- 
 2.1.3
 

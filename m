@@ -1,60 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gardel.0pointer.net ([85.214.157.71]:36491 "EHLO
-	gardel.0pointer.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752113AbbFQVCF (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:42067 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752963AbbFQVyT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 17:02:05 -0400
-Date: Wed, 17 Jun 2015 23:02:02 +0200
-From: Lennart Poettering <lennart@poettering.net>
-To: kreijack@inwind.it
-Cc: systemd Mailing List <systemd-devel@lists.freedesktop.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [systemd-devel] [survey] BTRFS_IOC_DEVICES_READY return status
-Message-ID: <20150617210202.GA30833@gardel-login>
-References: <557ADBAE.9040407@oracle.com>
- <20150612210453.3dee4563@opensuse.site>
- <557B3C32.9030707@inwind.it>
- <557BF979.9040106@oracle.com>
- <557C479F.2070403@libero.it>
- <20150615104618.GB25616@gardel-login>
- <557F0A26.8070308@inwind.it>
- <20150615173806.GB26366@gardel-login>
- <5581C60A.6090505@libero.it>
+	Wed, 17 Jun 2015 17:54:19 -0400
+Date: Wed, 17 Jun 2015 14:54:14 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Filipe David Manana <fdmanana@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe David Borba Manana <fdmanana@suse.com>
+Message-ID: <20150617215414.GQ16468@merlins.org>
+References: <20140908015124.GA21441@merlins.org>
+ <CAL3q7H70SGvWamdeuvF1id-pnP0o4PskgJMb7qE+CfGBB5vd1w@mail.gmail.com>
+ <20140915001836.GU8530@merlins.org>
+ <20150511214412.GE15670@merlins.org>
+ <CAL3q7H7SYfka5MK=8XZkw1m7PGjyR-1fzrD0tP_=dhznQ5QdGQ@mail.gmail.com>
+ <20150617175805.GO16468@merlins.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5581C60A.6090505@libero.it>
+In-Reply-To: <20150617175805.GO16468@merlins.org>
+Subject: Re: btrfs differential receive has become excrutiatingly slow on one
+ machine
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, 17.06.15 21:10, Goffredo Baroncelli (kreijack@libero.it) wrote:
-
-> > Well, /bin/mount is not a daemon, and it should not be one.
+On Wed, Jun 17, 2015 at 10:58:05AM -0700, Marc MERLIN wrote:
+> You requested strace -T in the past. I'm showing an exerpt of system calls that take
+> more than 1 second.
 > 
-> My helper is not a deamon; you was correct the first time: it blocks
-> until all needed/enough devices are appeared.
-> Anyway this should not be different from mounting a nfs
-> filesystem. Even in this case the mount helper blocks until the
-> connection happened. The block time is not negligible, even tough
-> not long as a device timeout ...
-
-Well, the mount tool doesn't wait for the network to be configured or
-so. It just waits for a response from the server. That's quite a
-difference.
-
-> > Well, it's not really ugly. I mean, if the state or properties of a
-> > device change, then udev should update its information about it, and
-> > that's done via a retrigger. We do that all the time already, for
-> > example when an existing loopback device gets a backing file assigned
-> > or removed. I am pretty sure that loopback case is very close to what
-> > you want to do here, hence retriggering (either from the kernel side,
-> > or from userspace), appears like an OK thing to do.
+> When I see this, I get worried:
+> truncate("/mnt/btrfs_pool2/backup/debian64/legolas/varchange_ggm_daily_ro.20150616_23:06:10/merlin-change/Maildir.google/lists2/new/1432663866_0.19916.legolas,U=427356,FMD5=7e806062200fb6d33546530d24aac86c:2,", 21043) = 0 <19.335333>
 > 
-> What seems strange to me is that in this case the devices don't have changed their status.
-> How this problem is managed in the md/dm raid cases ?
+> Or this:
+> unlink("/mnt/btrfs_pool2/backup/debian64/legolas/varchange_ggm_daily_ro.20150616_23:06:10/src/linux-3.19.8-amd64-i915-volpreempt-s20150421/drivers/media/tuners/mt2266.mod.dwo") = 0 <28.298224>
+> unlink("/mnt/btrfs_pool2/backup/debian64/legolas/varchange_ggm_daily_ro.20150616_23:06:10/merlin-change/Maildir.google/INBOX/cur/1432061846_0.2789.legolas,U=381014,FMD5=7e33429f656f1e6e9d79b29c3f82c57e:2,") = 0 <45.084068>
+> 
+> 19 seconds for a truncate or 28 or 45 seconds for an unlink cannot be right of course.
 
-md has a daemon mdmon to my knowledge.
+Interesting. The restore only took 2.5h.
+It's still too long but not as bad as I thought.
 
-Lennart
+But now I think I understand what's going on, because of the frequent
+pauses of a few seconds to 30s or more, this totally destroys the tcp
+flow, causing the sender to stop, and re-start sending slowly, ramp up
+the speed, only to be stopped again.
 
+No wonder that given that it can take 12h or more when I have send to
+receive talk over the network.
+
+So now the question is why the receive pauses for so long, and pseudo-randomly.
+
+Is there anything I can provide on that filesystem that would help?
+
+Thanks,
+Marc
 -- 
-Lennart Poettering, Red Hat
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

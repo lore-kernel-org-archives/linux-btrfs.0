@@ -1,53 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp89.ord1c.emailsrvr.com ([108.166.43.89]:60959 "EHLO
-	smtp89.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751138AbbFQNNY convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 09:13:24 -0400
-Received: from smtp12.relay.ord1c.emailsrvr.com (localhost.localdomain [127.0.0.1])
-	by smtp12.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id 0860C38028B
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 09:13:23 -0400 (EDT)
-Received: from smtp12.relay.ord1c.emailsrvr.com (localhost.localdomain [127.0.0.1])
-	by smtp12.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id D86BC38029E
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 09:13:23 -0400 (EDT)
-Received: by smtp12.relay.ord1c.emailsrvr.com (Authenticated sender: vincent-AT-up4.tv) with ESMTPSA id BBB0638028B
-	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 09:13:16 -0400 (EDT)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2098\))
-Subject: Re: RAID10 Balancing Request for Comments and Advices
-From: Vincent Olivier <vincent@up4.com>
-In-Reply-To: <CAJCQCtRGxCr4GaVwkA0QpK8dYjhaBS0-rmi=ymPxycQiGUa_fg@mail.gmail.com>
-Date: Wed, 17 Jun 2015 09:13:08 -0400
-Message-Id: <80BA2964-3B67-430B-99BE-62A348C5DBED@up4.com>
-References: <1434456557.89597618@apps.rackspace.com> <20150616122545.GI9850@carfax.org.uk> <61CBE6C4-0D06-4F16-B522-4DBB756FBC31@up4.com> <pan$966fb$92ec2f1c$291706f7$cf1b6c68@cox.net> <CAJCQCtRGxCr4GaVwkA0QpK8dYjhaBS0-rmi=ymPxycQiGUa_fg@mail.gmail.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:26126 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752847AbbFQNOU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 17 Jun 2015 09:14:20 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v5.3 24/27] Btrfs: free the stale device
+Date: Wed, 17 Jun 2015 21:10:48 +0800
+Message-Id: <1434546648-14105-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1432999945-4320-1-git-send-email-Anand.Jain@oracle.com>
+References: <1432999945-4320-1-git-send-email-Anand.Jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Anand Jain <Anand.Jain@oracle.com>
 
-> On Jun 16, 2015, at 8:14 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> 
-> On Tue, Jun 16, 2015 at 5:58 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> 
->> On a current kernel unlike older ones, btrfs actually automates entirely
->> empty chunk reclaim, so this problem doesn't occur anything close to near
->> as often as it used to.  However, it's still possible to have mostly but
->> not entirely empty chunks that btrfs won't automatically reclaim.  A
->> balance can be used to rewrite and combine these mostly empty chunks,
->> reclaiming the space saved.  This is what Hugo was recommending.
-> 
-> Yes, as little as a -dusage=5 (data chunks that are 5% or less full)
-> can clear the problem and is very fast, seconds. Possibly a bit
-> longer, many seconds o single digit minutes is -dusage=15. I haven't
-> done a full balance in forever.
+When btrfs on a device is overwritten with a new btrfs (mkfs),
+the old btrfs instance in the kernel becomes stale. So with this
+patch, if kernel finds device is overwritten then delete the stale
+fsid/uuid.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v5.2->v5.3: removed unnecessary return in retun void func
+v5.1->v5.2: accepts David's review comments with thanks. esp.ly the
+important rcu part
+v5->v5.1: since this deals with only devices in unmounted state, don't
+try to remove device link
 
-Yes, on this 80% full 6x4TB RAID10 -dusage=15 took 2 seconds and relocated "0 out of 3026 chunks”.
+ fs/btrfs/volumes.c | 61 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 61 insertions(+)
 
-Out of curiosity, I had to use -dusage=90 to have it relocate only 1 chunk and it took les than 30 seconds.
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e50005f..39d4d48 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -445,6 +445,61 @@ static void pending_bios_fn(struct btrfs_work *work)
+ 	run_scheduled_bios(device);
+ }
+ 
++
++void btrfs_free_stale_device(struct btrfs_device *cur_dev)
++{
++	struct btrfs_fs_devices *fs_devs;
++	struct btrfs_device *dev;
++
++	if (!cur_dev->name)
++		return;
++
++	list_for_each_entry(fs_devs, &fs_uuids, list) {
++		int del = 1;
++
++		if (fs_devs->opened)
++			continue;
++		if (fs_devs->seeding)
++			continue;
++
++		list_for_each_entry(dev, &fs_devs->devices, dev_list) {
++
++			if (dev == cur_dev)
++				continue;
++			if (!dev->name)
++				continue;
++
++			/*
++			 * Todo: This won't be enough. What if the same device
++			 * comes back (with new uuid and) with its mapper path?
++			 * But for now, this does help as mostly an admin will
++			 * either use mapper or non mapper path throughout.
++			 */
++			rcu_read_lock();
++			del = strcmp(rcu_str_deref(dev->name),
++						rcu_str_deref(cur_dev->name));
++			rcu_read_unlock();
++			if (!del)
++				break;
++		}
++
++		if (!del) {
++			/* delete the stale device */
++			if (fs_devs->num_devices == 1) {
++				btrfs_sysfs_remove_fsid(fs_devs);
++				list_del(&fs_devs->list);
++				free_fs_devices(fs_devs);
++			} else {
++				fs_devs->num_devices--;
++				list_del(&dev->dev_list);
++				rcu_string_free(dev->name);
++				kfree(dev);
++			}
++			break;
++		}
++	}
++}
++
+ /*
+  * Add new device to list of registered devices
+  *
+@@ -560,6 +615,12 @@ static noinline int device_list_add(const char *path,
+ 	if (!fs_devices->opened)
+ 		device->generation = found_transid;
+ 
++	/*
++	 * if there is new btrfs on an already registered device,
++	 * then remove the stale device entry.
++	 */
++	btrfs_free_stale_device(device);
++
+ 	*fs_devices_ret = fs_devices;
+ 
+ 	return ret;
+-- 
+2.4.1
 
-So I put a -dusage=25 in the weekly cron just before the scrub.
-
-FYI.
-
-Thanks for your help.

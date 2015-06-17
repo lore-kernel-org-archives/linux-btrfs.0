@@ -1,89 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:57331 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752384AbbFPNYe (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:35648 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750838AbbFQJAS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 16 Jun 2015 09:24:34 -0400
-Date: Tue, 16 Jun 2015 13:24:33 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Automatic balance after mkfs?
-Message-ID: <20150616132433.GJ9850@carfax.org.uk>
-References: <pan.2015.06.16.13.13.40@googlemail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="sdJFN6SSISdF2ksn"
-In-Reply-To: <pan.2015.06.16.13.13.40@googlemail.com>
+	Wed, 17 Jun 2015 05:00:18 -0400
+Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t5H90G6b024134
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 09:00:17 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+	by aserv0022.oracle.com (8.13.8/8.13.8) with ESMTP id t5H90Ghm003344
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 09:00:16 GMT
+Received: from abhmp0018.oracle.com (abhmp0018.oracle.com [141.146.116.24])
+	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t5H90GpV027522
+	for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 09:00:16 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/2] Btrfs: fix hang when failing to submit bio of directIO
+Date: Wed, 17 Jun 2015 16:59:57 +0800
+Message-Id: <1434531598-8607-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The hang is uncoverd by generic/019.
 
---sdJFN6SSISdF2ksn
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+btrfs_endio_direct_write() skips the "finish_ordered_fn" part when it hits
+an error, thus those added ordered extents will never get processed, which
+block processes that waiting for them via btrfs_start_ordered_extent().
 
-On Tue, Jun 16, 2015 at 01:13:40PM +0000, Holger Hoffst=E4tte wrote:
->=20
-> Forking from the other thread..
->=20
-> On Tue, 16 Jun 2015 12:25:45 +0000, Hugo Mills wrote:
->=20
-> >    Yes. It's an artefact of the way that mkfs works. If you run a
-> > balance on those chunks, they'll go away. (btrfs balance start
-> > -dusage=3D0 -musage=3D0 /mountpoint)
->=20
-> Since I had to explain this very same thing to a new btrfs-using friend
-> just yesterday I wondered if it might not make sense for mkfs to issue
-> a general balance after creating the fs? It should be simple enough
-> (just issue the balance ioctl?) and not have any negative side effects.
+This fixes the above, and meanwhile finish_ordered_fn will do the space
+accounting work.
 
-   Mount, balance, unmount... You can't balance on an unmounted FS.
-You'd also have to write something to the FS (see below).
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/inode.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-> Just doing such a post-mkfs cleanup automatically would certainly
-> reduce the number of times we have to explain the this. :)
->=20
-> Any reasons why we couldn't/shouldn't do this?
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8bb0136..7bf150a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7855,8 +7855,6 @@ static void btrfs_endio_direct_write(struct bio *bio, int err)
+ 	struct bio *dio_bio;
+ 	int ret;
+ 
+-	if (err)
+-		goto out_done;
+ again:
+ 	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+ 						   &ordered_offset,
+@@ -7879,7 +7877,6 @@ out_test:
+ 		ordered = NULL;
+ 		goto again;
+ 	}
+-out_done:
+ 	dio_bio = dip->dio_bio;
+ 
+ 	kfree(dip);
+-- 
+2.1.0
 
-   On an empty filesystem, it used to throw away the RAID
-configuration, which was identified from the existing chunks on the
-FS. With no chunks remaining, the RAID configuration reverted to
-single all round (IIRC). I don't know if that's been fixed since those
-days, but it's something to be wary of, at the very least.
-
-   I've added the question as an entry to the FAQ, anyway.
-
-   Hugo.
-
---=20
-Hugo Mills             | vi vi vi: the Editor of the Beast.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---sdJFN6SSISdF2ksn
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVgCOQAAoJEFheFHXiqx3kL8EP/ifrppYyU0ITyvEB5rJOmD6E
-2YDPPiFRy5mnnEw1QdyYkOJRlJMe5WbDElEHPzfRPK+qdubF5C01cPKe+PqlasVn
-HGN20SUw1nRj8IIibNRivKyzMz/Y3RTuRThfQWzEbWmKbl5qJxOFF4WzhbPUak2b
-4UIDuWaGnBl7xm9nqK3SQZapic6IOfMV7/OdWrekHwxC6IvtPUhumSn0OOYH7hzL
-U6kmzQPwIkbwVnI5WgXRwXcSnTT+sElTt1oSLG8BLCFhmYcowkBFpHjkG29HT3wx
-dJWlxGESh+oFAkI9UDwIMzNuZNvoXCyBJ5T6wKgbBbHWQ7xqf6UPGIQwI4BEJPlI
-yToSK1vRCcB5nrbOtEgwbbBUZAH1tWVNvagbJKTQjUvyO6zmHb8a78C47ctUHiXS
-b4QCKNcy5R4rvuQYsadFB6mL+A5HzpIUlgldxvcwds8XPCKBrrFNpdw9VsuxyvSe
-7ThbRYMEzgqnr8y/EAAlRVdiLPf47i7WIR0ZLljVV6OQSqFfWo01oXr5XjUI3Ff5
-piGalfkzBfULPuSQbuitZehnyCBJ4ABOl2IkKUEOX7CzENfXvBW2NHC7qe1UxXYl
-JuX8uYwT8VvN3l7k+JSZZ07XHrTjHTNRNHE6LnNEchGUlOJHLQMMcdIi/m/7UuTW
-jUhwVZ+bZlpMU9JZtZ7S
-=Jkxi
------END PGP SIGNATURE-----
-
---sdJFN6SSISdF2ksn--

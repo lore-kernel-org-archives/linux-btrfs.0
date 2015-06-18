@@ -1,65 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57067 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751274AbbFRQop (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Jun 2015 12:44:45 -0400
-Date: Thu, 18 Jun 2015 18:44:43 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Robert Marklund <robbelibobban@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] check: check so offset is not bigger then the leaf
-Message-ID: <20150618164443.GH6761@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1434585553-8697-1-git-send-email-robbelibobban@gmail.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:62159 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751674AbbFRRRA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Jun 2015 13:17:00 -0400
+Message-ID: <5582FD06.2010004@fb.com>
+Date: Thu, 18 Jun 2015 10:16:54 -0700
+From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1434585553-8697-1-git-send-email-robbelibobban@gmail.com>
+To: <dsterba@suse.cz>, Robert Marklund <robbelibobban@gmail.com>,
+        <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] check: check so offset is not bigger then the leaf
+References: <1434585553-8697-1-git-send-email-robbelibobban@gmail.com> <20150618164443.GH6761@twin.jikos.cz>
+In-Reply-To: <20150618164443.GH6761@twin.jikos.cz>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 18, 2015 at 01:59:13AM +0200, Robert Marklund wrote:
-> This could crash before because of dangerous dangling
-> offset of pointer.
+On 06/18/2015 09:44 AM, David Sterba wrote:
+> On Thu, Jun 18, 2015 at 01:59:13AM +0200, Robert Marklund wrote:
+>> This could crash before because of dangerous dangling
+>> offset of pointer.
+>
+> That's right, this can happen. There are more btrfs_item_ptr that would
+> be good to validate that way, namely in the checker as it's most likely
+> to see corrupted data.
+>
 
-That's right, this can happen. There are more btrfs_item_ptr that would
-be good to validate that way, namely in the checker as it's most likely
-to see corrupted data.
+The check_block stuff should be doing this, if it isn't that's where we 
+need to fix it.  Thanks,
 
-I think it's worth to add a wrapper macro for that, that would be like
+Josef
 
-(int) btrfs_item_ptr_validate(ei, leaf, slot, struct ..., *optional_key)
-
-and return 0 if it's ok, 1 if there's a problem and prints the details.
-
-> Signed-off-by: Robert Marklund <robbelibobban@gmail.com>
-> ---
->  cmds-check.c | 10 ++++++++++
->  1 file changed, 10 insertions(+)
-> 
-> diff --git a/cmds-check.c b/cmds-check.c
-> index 778f141..da36758 100644
-> --- a/cmds-check.c
-> +++ b/cmds-check.c
-> @@ -8906,6 +8906,16 @@ static int build_roots_info_cache(struct btrfs_fs_info *info)
->  			goto next;
->  
->  		ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
-> +
-> +		if ((long long)ei > info->extent_root->leafsize) {
-> +			 fprintf(stderr, "Bad leaf = %p, slot = %d\n", leaf, slot);
-> +			 fprintf(stderr, "item ptr = %p\n", ei);
-> +			 fprintf(stderr, "objectid = %llx\n", found_key.objectid);
-> +			 fprintf(stderr, "type     = %x\n", found_key.type);
-> +			 fprintf(stderr, "offset   = %llx\n", found_key.offset);
-
-Hm, I'm not sure whether to continue or fail at this point.
-
-Do you have a crafted filesystem image that can reproduce that or was
-that found by code inspection?
-
-> +			 goto next;
-> +		}
-> +
->  		flags = btrfs_extent_flags(leaf, ei);
->  
->  		if (found_key.type == BTRFS_EXTENT_ITEM_KEY &&

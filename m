@@ -1,59 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41379 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755024AbbFOOCj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 15 Jun 2015 10:02:39 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t5FE2dYd026030
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 14:02:39 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id t5FE2cw4001192
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 14:02:38 GMT
-Received: from abhmp0020.oracle.com (abhmp0020.oracle.com [141.146.116.26])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id t5FE2b5r026328
-	for <linux-btrfs@vger.kernel.org>; Mon, 15 Jun 2015 14:02:37 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix typo in the error log
-Date: Mon, 15 Jun 2015 22:02:23 +0800
-Message-Id: <1434376943-382-1-git-send-email-anand.jain@oracle.com>
+Received: from cantor2.suse.de ([195.135.220.15]:57067 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751274AbbFRQop (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Jun 2015 12:44:45 -0400
+Date: Thu, 18 Jun 2015 18:44:43 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Robert Marklund <robbelibobban@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] check: check so offset is not bigger then the leaf
+Message-ID: <20150618164443.GH6761@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1434585553-8697-1-git-send-email-robbelibobban@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1434585553-8697-1-git-send-email-robbelibobban@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
----
- fs/btrfs/disk-io.c | 2 +-
- fs/btrfs/super.c   | 2 +-
- 2 files changed, 2 insertions(+), 2 deletions(-)
+On Thu, Jun 18, 2015 at 01:59:13AM +0200, Robert Marklund wrote:
+> This could crash before because of dangerous dangling
+> offset of pointer.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 57d48f8..5147cb7 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2896,7 +2896,7 @@ retry_root_backup:
- 	     fs_info->num_tolerated_disk_barrier_failures &&
- 	    !(sb->s_flags & MS_RDONLY)) {
- 		printk(KERN_WARNING "BTRFS: "
--			"too many missing devices, writeable mount is not allowed\n");
-+			"too many missing devices, writable mount is not allowed\n");
- 		goto fail_sysfs;
- 	}
- 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 555c775..8888e39 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1545,7 +1545,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 		     fs_info->num_tolerated_disk_barrier_failures &&
- 		    !(*flags & MS_RDONLY)) {
- 			btrfs_warn(fs_info,
--				"too many missing devices, writeable remount is not allowed");
-+				"too many missing devices, writable remount is not allowed");
- 			ret = -EACCES;
- 			goto restore;
- 		}
--- 
-2.4.1
+That's right, this can happen. There are more btrfs_item_ptr that would
+be good to validate that way, namely in the checker as it's most likely
+to see corrupted data.
 
+I think it's worth to add a wrapper macro for that, that would be like
+
+(int) btrfs_item_ptr_validate(ei, leaf, slot, struct ..., *optional_key)
+
+and return 0 if it's ok, 1 if there's a problem and prints the details.
+
+> Signed-off-by: Robert Marklund <robbelibobban@gmail.com>
+> ---
+>  cmds-check.c | 10 ++++++++++
+>  1 file changed, 10 insertions(+)
+> 
+> diff --git a/cmds-check.c b/cmds-check.c
+> index 778f141..da36758 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -8906,6 +8906,16 @@ static int build_roots_info_cache(struct btrfs_fs_info *info)
+>  			goto next;
+>  
+>  		ei = btrfs_item_ptr(leaf, slot, struct btrfs_extent_item);
+> +
+> +		if ((long long)ei > info->extent_root->leafsize) {
+> +			 fprintf(stderr, "Bad leaf = %p, slot = %d\n", leaf, slot);
+> +			 fprintf(stderr, "item ptr = %p\n", ei);
+> +			 fprintf(stderr, "objectid = %llx\n", found_key.objectid);
+> +			 fprintf(stderr, "type     = %x\n", found_key.type);
+> +			 fprintf(stderr, "offset   = %llx\n", found_key.offset);
+
+Hm, I'm not sure whether to continue or fail at this point.
+
+Do you have a crafted filesystem image that can reproduce that or was
+that found by code inspection?
+
+> +			 goto next;
+> +		}
+> +
+>  		flags = btrfs_extent_flags(leaf, ei);
+>  
+>  		if (found_key.type == BTRFS_EXTENT_ITEM_KEY &&

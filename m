@@ -1,60 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-out13.tpgi.com.au ([220.244.226.123]:58251 "EHLO
-	mail13.tpgi.com.au" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750874AbbFRCkF (ORCPT
+Received: from mail-la0-f53.google.com ([209.85.215.53]:35019 "EHLO
+	mail-la0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750874AbbFRCkP convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 22:40:05 -0400
-From: Paul Jones <paul@pauljones.id.au>
-To: Christian <cdysthe@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: RE: trim not working and irreparable errors from btrfsck
-Date: Thu, 18 Jun 2015 02:20:20 +0000
-Message-ID: <B7F2379062E32745A8651FBDB20F64595D40C1BD@Server.waterlogic.com.au>
-References: <mlpb8i$dus$1@ger.gmane.org>
-	<CAJCQCtQGzwQ=L4Vh19tsqSqPoPJuNaLyTo7q0SsbMteb2=tdMw@mail.gmail.com>
-	<55816E7B.5040905@gmail.com>
- <CAJCQCtQnSSATHPkX-NgQVkXHB0Z+VJrt14sMk4bHaoQ4nS=Jcw@mail.gmail.com>
- <mls0gb$s7m$1@ger.gmane.org>
-In-Reply-To: <mls0gb$s7m$1@ger.gmane.org>
-Content-Type: text/plain; charset="utf-8"
+	Wed, 17 Jun 2015 22:40:15 -0400
+Received: by labko7 with SMTP id ko7so45644089lab.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 17 Jun 2015 19:40:13 -0700 (PDT)
+Date: Thu, 18 Jun 2015 05:40:11 +0300
+From: Andrei Borzenkov <arvidjaar@gmail.com>
+To: Lennart Poettering <lennart@poettering.net>
+Cc: kreijack@inwind.it,
+        systemd Mailing List <systemd-devel@lists.freedesktop.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [systemd-devel] [survey] BTRFS_IOC_DEVICES_READY return status
+Message-ID: <20150618054011.18959381@opensuse.site>
+In-Reply-To: <20150617210202.GA30833@gardel-login>
+References: <557ADBAE.9040407@oracle.com>
+	<20150612210453.3dee4563@opensuse.site>
+	<557B3C32.9030707@inwind.it>
+	<557BF979.9040106@oracle.com>
+	<557C479F.2070403@libero.it>
+	<20150615104618.GB25616@gardel-login>
+	<557F0A26.8070308@inwind.it>
+	<20150615173806.GB26366@gardel-login>
+	<5581C60A.6090505@libero.it>
+	<20150617210202.GA30833@gardel-login>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
-> owner@vger.kernel.org] On Behalf Of Christian
-> Sent: Thursday, 18 June 2015 12:34 AM
-> To: linux-btrfs@vger.kernel.org
-> Subject: Re: trim not working and irreparable errors from btrfsck
-> 
-> On 06/17/2015 10:22 AM, Chris Murphy wrote:
-> > On Wed, Jun 17, 2015 at 6:56 AM, Christian Dysthe <cdysthe@gmail.com>
-> wrote:
-> >> Hi,
-> >>
-> >> Sorry for asking more about this. I'm not a developer but trying to learn.
-> >> In my case I get several errors like this one:
-> >>
-> >> root 2625 inode 353819 errors 400, nbytes wrong
-> >>
-> >> Is it inode 353819 I should focus on and what is the number after
-> >> "root", in this case 2625?
-> >
-> > I'm going to guess it's tree root 2625, which is the same thing as fs
-> > tree, which is the same thing as subvolume. Each subvolume has its own
-> > inodes. So on a given Btrfs volume, an inode number can exist more
-> > than once, but in separate subvolumes. When you use btrfs inspect
-> > inode it will list all files with that inode number, but only the one
-> > in subvol ID 2625 is what you care about deleting and replacing.
-> >
-> Thanks! Deleting the file for that inode took care of it. No more errors.
-> Restored it from a backup.
-> 
-> However, fstrim still gives me "0 B (0 bytes) trimmed, so that may be another
-> problem. Is there a way to check if trim works?
+Ğ’ Wed, 17 Jun 2015 23:02:02 +0200
+Lennart Poettering <lennart@poettering.net> Ğ¿Ğ¸ÑˆĞµÑ‚:
 
-I've got the same problem. I've got 2 SSDs with 2 partitions in RAID1, fstrim always works on the 2nd partition but not the first. There are no errors on either filesystem that I know of, but the first one is root so I can't take it offline to run btrfs check.
+> On Wed, 17.06.15 21:10, Goffredo Baroncelli (kreijack@libero.it) wrote:
+> 
+> > > Well, /bin/mount is not a daemon, and it should not be one.
+> > 
+> > My helper is not a deamon; you was correct the first time: it blocks
+> > until all needed/enough devices are appeared.
+> > Anyway this should not be different from mounting a nfs
+> > filesystem. Even in this case the mount helper blocks until the
+> > connection happened. The block time is not negligible, even tough
+> > not long as a device timeout ...
+> 
+> Well, the mount tool doesn't wait for the network to be configured or
+> so. It just waits for a response from the server. That's quite a
+> difference.
+> 
+> > > Well, it's not really ugly. I mean, if the state or properties of a
+> > > device change, then udev should update its information about it, and
+> > > that's done via a retrigger. We do that all the time already, for
+> > > example when an existing loopback device gets a backing file assigned
+> > > or removed. I am pretty sure that loopback case is very close to what
+> > > you want to do here, hence retriggering (either from the kernel side,
+> > > or from userspace), appears like an OK thing to do.
+> > 
+> > What seems strange to me is that in this case the devices don't have changed their status.
+> > How this problem is managed in the md/dm raid cases ?
+> 
+> md has a daemon mdmon to my knowledge.
+> 
 
-Paul.
-ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm
+No, mdmon does something different. What mdadm does is to start timer
+when RAID is complete enough to be started in degraded mode. If
+notifications for missing devices appear after that, RAID is started
+normally. If no notification appears until timer is expired, RAID is
+started in degraded mode. 
+
+ACTION=="add|change", IMPORT{program}="BINDIR/mdadm --incremental --export $devnode --offroot ${DEVLINKS}"
+ACTION=="add|change", ENV{MD_STARTED}=="*unsafe*", ENV{MD_FOREIGN}=="no", ENV{SYSTEMD_WANTS}+="mdadm-last-resort@$env{MD_DEVICE}.timer"
+

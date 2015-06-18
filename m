@@ -1,58 +1,204 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9614 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751809AbbFRFlJ convert rfc822-to-8bit (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:18786 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754336AbbFRKUy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Jun 2015 01:41:09 -0400
-Subject: Re: Automatic balance after mkfs?
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>,
-        <linux-btrfs@vger.kernel.org>
-References: <pan.2015.06.16.13.13.40@googlemail.com>
- <558022E8.7070201@gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <558259F3.8060505@cn.fujitsu.com>
-Date: Thu, 18 Jun 2015 13:41:07 +0800
+	Thu, 18 Jun 2015 06:20:54 -0400
+Date: Thu, 18 Jun 2015 18:20:34 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
+        stable@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix fsync data loss after append write
+Message-ID: <20150618102032.GC8530@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1434541763-23753-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <558022E8.7070201@gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1434541763-23753-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jun 17, 2015 at 12:49:23PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If we do an append write to a file (which increases its inode's i_size)
+> that does not have the flag BTRFS_INODE_NEEDS_FULL_SYNC set in its inode,
+> and the previous transaction added a new hard link to the file, which sets
+> the flag BTRFS_INODE_COPY_EVERYTHING in the file's inode, and then fsync
+> the file, the inode's new i_size isn't logged. This has the consequence
+> that after the fsync log is replayed, the file size remains what it was
+> before the append write operation, which means users/applications will
+> not be able to read the data that was successsfully fsync'ed before.
+> 
+> This happens because neither the inode item nor the delayed inode get
+> their i_size updated when the append write is made - doing so would
+> require starting a transaction in the buffered write path, something that
+> we do not do intentionally for performance reasons.
+> 
+> Fix this by making sure that when the flag BTRFS_INODE_COPY_EVERYTHING is
+> set the inode is logged with its current i_size (log the in-memory inode
+> into the log tree).
 
+Looks good to me.
 
-Austin S Hemmelgarn wrote on 2015/06/16 09:21 -0400:
-> On 2015-06-16 09:13, Holger Hoffstätte wrote:
->>
->> Forking from the other thread..
->>
->> On Tue, 16 Jun 2015 12:25:45 +0000, Hugo Mills wrote:
->>
->>>     Yes. It's an artefact of the way that mkfs works. If you run a
->>> balance on those chunks, they'll go away. (btrfs balance start
->>> -dusage=0 -musage=0 /mountpoint)
->>
->> Since I had to explain this very same thing to a new btrfs-using friend
->> just yesterday I wondered if it might not make sense for mkfs to issue
->> a general balance after creating the fs? It should be simple enough
->> (just issue the balance ioctl?) and not have any negative side effects.
->>
->> Just doing such a post-mkfs cleanup automatically would certainly
->> reduce the number of times we have to explain the this. :)
->>
->> Any reasons why we couldn't/shouldn't do this?
->>
-> Following the same line of thinking, is there any reason we couldn't
-> just rewrite mkfs to get rid of this legacy behavior?
->
->
-Compared to the more complex auto balance, rewrite mkfs is a much better 
-idea.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-The original mkfs seems easy for developers, but bad for users.
+Thanks,
 
-I like the idea and I'll try to implment it if I have spare time.
-
-Thanks.
-Qu
+-liubo
+> 
+> This issue is not a recent regression and is easy to reproduce with the
+> following test case for fstests:
+> 
+>   seq=`basename $0`
+>   seqres=$RESULT_DIR/$seq
+>   echo "QA output created by $seq"
+> 
+>   here=`pwd`
+>   tmp=/tmp/$$
+>   status=1	# failure is the default!
+> 
+>   _cleanup()
+>   {
+>           _cleanup_flakey
+>           rm -f $tmp.*
+>   }
+>   trap "_cleanup; exit \$status" 0 1 2 3 15
+> 
+>   # get standard environment, filters and checks
+>   . ./common/rc
+>   . ./common/filter
+>   . ./common/dmflakey
+> 
+>   # real QA test starts here
+>   _supported_fs generic
+>   _supported_os Linux
+>   _need_to_be_root
+>   _require_scratch
+>   _require_dm_flakey
+>   _require_metadata_journaling $SCRATCH_DEV
+> 
+>   _crash_and_mount()
+>   {
+>           # Simulate a crash/power loss.
+>           _load_flakey_table $FLAKEY_DROP_WRITES
+>           _unmount_flakey
+>           # Allow writes again and mount. This makes the fs replay its fsync log.
+>           _load_flakey_table $FLAKEY_ALLOW_WRITES
+>           _mount_flakey
+>   }
+> 
+>   rm -f $seqres.full
+> 
+>   _scratch_mkfs >> $seqres.full 2>&1
+>   _init_flakey
+>   _mount_flakey
+> 
+>   # Create the test file with some initial data and then fsync it.
+>   # The fsync here is only needed to trigger the issue in btrfs, as it causes the
+>   # the flag BTRFS_INODE_NEEDS_FULL_SYNC to be removed from the btrfs inode.
+>   $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 32k" \
+>                   -c "fsync" \
+>                   $SCRATCH_MNT/foo | _filter_xfs_io
+>   sync
+> 
+>   # Add a hard link to our file.
+>   # On btrfs this sets the flag BTRFS_INODE_COPY_EVERYTHING on the btrfs inode,
+>   # which is a necessary condition to trigger the issue.
+>   ln $SCRATCH_MNT/foo $SCRATCH_MNT/bar
+> 
+>   # Sync the filesystem to force a commit of the current btrfs transaction, this
+>   # is a necessary condition to trigger the bug on btrfs.
+>   sync
+> 
+>   # Now append more data to our file, increasing its size, and fsync the file.
+>   # In btrfs because the inode flag BTRFS_INODE_COPY_EVERYTHING was set and the
+>   # write path did not update the inode item in the btree nor the delayed inode
+>   # item (in memory struture) in the current transaction (created by the fsync
+>   # handler), the fsync did not record the inode's new i_size in the fsync
+>   # log/journal. This made the data unavailable after the fsync log/journal is
+>   # replayed.
+>   $XFS_IO_PROG -c "pwrite -S 0xbb 32K 32K" \
+>                -c "fsync" \
+>                $SCRATCH_MNT/foo | _filter_xfs_io
+> 
+>   echo "File content after fsync and before crash:"
+>   od -t x1 $SCRATCH_MNT/foo
+> 
+>   _crash_and_mount
+> 
+>   echo "File content after crash and log replay:"
+>   od -t x1 $SCRATCH_MNT/foo
+> 
+>   status=0
+>   exit
+> 
+> The expected file output before and after the crash/power failure expects the
+> appended data to be available, which is:
+> 
+>   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+>   *
+>   0100000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+>   *
+>   0200000
+> 
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/tree-log.c | 14 +++++++++-----
+>  1 file changed, 9 insertions(+), 5 deletions(-)
+> 
+> diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+> index d049683..4920fce 100644
+> --- a/fs/btrfs/tree-log.c
+> +++ b/fs/btrfs/tree-log.c
+> @@ -4161,6 +4161,7 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+>  	u64 ino = btrfs_ino(inode);
+>  	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+>  	u64 logged_isize = 0;
+> +	bool need_log_inode_item = true;
+>  
+>  	path = btrfs_alloc_path();
+>  	if (!path)
+> @@ -4269,11 +4270,6 @@ static int btrfs_log_inode(struct btrfs_trans_handle *trans,
+>  		} else {
+>  			if (inode_only == LOG_INODE_ALL)
+>  				fast_search = true;
+> -			ret = log_inode_item(trans, log, dst_path, inode);
+> -			if (ret) {
+> -				err = ret;
+> -				goto out_unlock;
+> -			}
+>  			goto log_extents;
+>  		}
+>  
+> @@ -4296,6 +4292,9 @@ again:
+>  		if (min_key.type > max_key.type)
+>  			break;
+>  
+> +		if (min_key.type == BTRFS_INODE_ITEM_KEY)
+> +			need_log_inode_item = false;
+> +
+>  		src = path->nodes[0];
+>  		if (ins_nr && ins_start_slot + ins_nr == path->slots[0]) {
+>  			ins_nr++;
+> @@ -4366,6 +4365,11 @@ next_slot:
+>  log_extents:
+>  	btrfs_release_path(path);
+>  	btrfs_release_path(dst_path);
+> +	if (need_log_inode_item) {
+> +		err = log_inode_item(trans, log, dst_path, inode);
+> +		if (err)
+> +			goto out_unlock;
+> +	}
+>  	if (fast_search) {
+>  		/*
+>  		 * Some ordered extents started by fsync might have completed
+> -- 
+> 2.1.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

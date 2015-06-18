@@ -1,176 +1,199 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:43768 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752623AbbFJTFy (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:50186 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751821AbbFRGqQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 10 Jun 2015 15:05:54 -0400
-Received: from pps.filterd (m0044008 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t5AJ5epF001542
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 12:05:53 -0700
-Received: from maileast.thefacebook.com ([199.201.65.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 1uxsurr5nm-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 10 Jun 2015 12:05:53 -0700
-From: Josef Bacik <jbacik@fb.com>
+	Thu, 18 Jun 2015 02:46:16 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5I6icCG009954
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2015 14:44:38 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: make receive work inside of subvolumes
-Date: Wed, 10 Jun 2015 15:05:51 -0400
-Message-ID: <1433963151-18488-1-git-send-email-jbacik@fb.com>
+Subject: [PATCH 1/2] btrfs-progs: Allow "filesystem show" command to handle different units
+Date: Thu, 18 Jun 2015 14:46:11 +0800
+Message-ID: <1434609972-8513-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kind of a big feature of btrfs is being able to have a default subvol.  However
-the receive code generates the paths to the subvols from the root of the fs,
-even in the case of a default subvol.  So instead figure out if we're inside of
-a subvol, either because we have a different default or we've chroot'ed and are
-using -m.  Then strip this extra path off of the subvol we find so we can look
-up our parent properly.  Thanks
+Now "filesystem show" command can handle different units now.
 
-Reported-by: Neil Horman <nhorman@redhat.com>
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+This is handy for higher level programs to get accurate output from "fi
+show" command.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-receive.c | 89 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 87 insertions(+), 2 deletions(-)
+ cmds-filesystem.c | 66 +++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 52 insertions(+), 14 deletions(-)
 
-diff --git a/cmds-receive.c b/cmds-receive.c
-index 28ae8e9..9925b47 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -61,6 +61,7 @@ struct btrfs_receive
- 	char *root_path;
- 	char *dest_dir_path; /* relative to root_path */
- 	char *full_subvol_path;
-+	char *full_root_path;
- 	int dest_dir_chroot;
- 
- 	struct subvol_info *cur_subvol;
-@@ -240,6 +241,45 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
- 		goto out;
- 	}
- 
-+	/*
-+	 * The path is resolved from the root subvol, but we could be in some
-+	 * subvolume under the root subvolume, so try and adjust the path to be
-+	 * relative to our root path.
-+	 */
-+	if (r->full_root_path) {
-+		size_t root_len, sub_len;
-+
-+		root_len = strlen(r->full_root_path);
-+		sub_len = strlen(parent_subvol->path);
-+
-+		/* First make sure the parent subvol is actually in our path */
-+		if (sub_len < root_len ||
-+		    strstr(parent_subvol->path, r->full_root_path) == NULL) {
-+			fprintf(stderr, "ERROR: parent subvol is not reachable"
-+				" from inside the root subvol.\n");
-+			ret = -ENOENT;
-+			goto out;
-+		}
-+
-+		if (sub_len == root_len) {
-+			parent_subvol->path[0] = '/';
-+			parent_subvol->path[1] = '\0';
-+		} else {
-+			/*
-+			 * root path is foo/bar
-+			 * subvol path is foo/bar/baz
-+			 *
-+			 * we need to have baz be the path, so we need to move
-+			 * the bit after foo/bar/, so path + root_len + 1, and
-+			 * move the part we care about, so sub_len - root_len -
-+			 * 1.
-+			 */
-+			memmove(parent_subvol->path,
-+				parent_subvol->path + root_len + 1,
-+				sub_len - root_len - 1);
-+			parent_subvol->path[sub_len - root_len - 1] = '\0';
-+		}
-+	}
- 	/*if (rs_args.ctransid > rs_args.rtransid) {
- 		if (!r->force) {
- 			ret = -EINVAL;
-@@ -250,8 +290,11 @@ static int process_snapshot(const char *path, const u8 *uuid, u64 ctransid,
- 		}
- 	}*/
- 
--	args_v2.fd = openat(r->mnt_fd, parent_subvol->path,
--			O_RDONLY | O_NOATIME);
-+	if (strlen(parent_subvol->path) == 0)
-+		args_v2.fd = dup(r->mnt_fd);
-+	else
-+		args_v2.fd = openat(r->mnt_fd, parent_subvol->path,
-+				O_RDONLY | O_NOATIME);
- 	if (args_v2.fd < 0) {
- 		ret = -errno;
- 		if (errno != ENOENT)
-@@ -816,8 +859,10 @@ static struct btrfs_send_ops send_ops = {
- static int do_receive(struct btrfs_receive *r, const char *tomnt,
- 		      char *realmnt, int r_fd, u64 max_errors)
- {
-+	u64 subvol_id;
- 	int ret;
- 	char *dest_dir_full_path;
-+	char *root_subvol_path;
- 	int end = 0;
- 
- 	dest_dir_full_path = realpath(tomnt, NULL);
-@@ -863,6 +908,42 @@ static int do_receive(struct btrfs_receive *r, const char *tomnt,
- 		goto out;
- 	}
- 
-+	/*
-+	 * If we use -m or a default subvol we want to resolve the path to the
-+	 * subvolume we're sitting in so that we can adjust the paths of any
-+	 * subvols we want to receive in.
-+	 */
-+	ret = btrfs_list_get_path_rootid(r->mnt_fd, &subvol_id);
-+	if (ret) {
-+		fprintf(stderr, "ERROR: couldn't resolve our subvolid %d\n",
-+			ret);
-+		goto out;
-+	}
-+
-+	root_subvol_path = malloc(BTRFS_PATH_NAME_MAX);
-+	if (!root_subvol_path) {
-+		ret = -ENOMEM;
-+		fprintf(stderr, "ERROR: couldn't allocate buffer for the root "
-+			"subvol path\n");
-+		goto out;
-+	}
-+
-+	ret = btrfs_subvolid_resolve(r->mnt_fd, root_subvol_path,
-+				     BTRFS_PATH_NAME_MAX, subvol_id);
-+	if (ret) {
-+		fprintf(stderr, "ERROR: couldn't resolve our subvol path\n");
-+		goto out;
-+	}
-+
-+	/*
-+	 * Ok we're inside of a subvol off of the root subvol, we need to
-+	 * actually set full_root_path.
-+	 */
-+	if (strlen(root_subvol_path))
-+		r->full_root_path = root_subvol_path;
-+	else
-+		free(root_subvol_path);
-+
- 	if (r->dest_dir_chroot) {
- 		if (chroot(dest_dir_full_path)) {
- 			ret = -errno;
-@@ -940,6 +1021,10 @@ out:
- 		close(r->dest_dir_fd);
- 		r->dest_dir_fd = -1;
- 	}
-+	if (r->full_root_path) {
-+		free(r->full_root_path);
-+		r->full_root_path = NULL;
-+	}
- 	return ret;
+diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+index dcd3f47..a9dbcfe 100644
+--- a/cmds-filesystem.c
++++ b/cmds-filesystem.c
+@@ -375,7 +375,7 @@ static void splice_device_list(struct list_head *seed_devices,
  }
  
+ static void print_devices(struct btrfs_fs_devices *fs_devices,
+-			  u64 *devs_found)
++			  u64 *devs_found, unsigned unit_mode)
+ {
+ 	struct btrfs_device *device;
+ 	struct btrfs_fs_devices *cur_fs;
+@@ -393,14 +393,16 @@ static void print_devices(struct btrfs_fs_devices *fs_devices,
+ 	list_for_each_entry(device, all_devices, dev_list) {
+ 		printf("\tdevid %4llu size %s used %s path %s\n",
+ 		       (unsigned long long)device->devid,
+-		       pretty_size(device->total_bytes),
+-		       pretty_size(device->bytes_used), device->name);
++		       pretty_size_mode(device->total_bytes, unit_mode),
++		       pretty_size_mode(device->bytes_used, unit_mode),
++		       device->name);
+ 
+ 		(*devs_found)++;
+ 	}
+ }
+ 
+-static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
++static void print_one_uuid(struct btrfs_fs_devices *fs_devices,
++			   unsigned unit_mode)
+ {
+ 	char uuidbuf[BTRFS_UUID_UNPARSED_SIZE];
+ 	struct btrfs_device *device;
+@@ -421,9 +423,9 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices)
+ 	total = device->total_devs;
+ 	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
+ 	       (unsigned long long)total,
+-	       pretty_size(device->super_bytes_used));
++	       pretty_size_mode(device->super_bytes_used, unit_mode));
+ 
+-	print_devices(fs_devices, &devs_found);
++	print_devices(fs_devices, &devs_found, unit_mode);
+ 
+ 	if (devs_found < total) {
+ 		printf("\t*** Some devices missing\n");
+@@ -445,7 +447,7 @@ static u64 calc_used_bytes(struct btrfs_ioctl_space_args *si)
+ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 		struct btrfs_ioctl_dev_info_args *dev_info,
+ 		struct btrfs_ioctl_space_args *space_info,
+-		char *label, char *path)
++		char *label, char *path, unsigned unit_mode)
+ {
+ 	int i;
+ 	int fd;
+@@ -468,7 +470,8 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 
+ 	printf(" uuid: %s\n\tTotal devices %llu FS bytes used %s\n", uuidbuf,
+ 			fs_info->num_devices,
+-			pretty_size(calc_used_bytes(space_info)));
++			pretty_size_mode(calc_used_bytes(space_info),
++					 unit_mode));
+ 
+ 	for (i = 0; i < fs_info->num_devices; i++) {
+ 		char *canonical_path;
+@@ -485,8 +488,8 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 		canonical_path = canonicalize_path((char *)tmp_dev_info->path);
+ 		printf("\tdevid %4llu size %s used %s path %s\n",
+ 			tmp_dev_info->devid,
+-			pretty_size(tmp_dev_info->total_bytes),
+-			pretty_size(tmp_dev_info->bytes_used),
++			pretty_size_mode(tmp_dev_info->total_bytes, unit_mode),
++			pretty_size_mode(tmp_dev_info->bytes_used, unit_mode),
+ 			canonical_path);
+ 
+ 		free(canonical_path);
+@@ -498,7 +501,7 @@ static int print_one_fs(struct btrfs_ioctl_fs_info_args *fs_info,
+ 	return 0;
+ }
+ 
+-static int btrfs_scan_kernel(void *search)
++static int btrfs_scan_kernel(void *search, unsigned unit_mode)
+ {
+ 	int ret = 0, fd;
+ 	int found = 0;
+@@ -537,7 +540,8 @@ static int btrfs_scan_kernel(void *search)
+ 		fd = open(mnt->mnt_dir, O_RDONLY);
+ 		if ((fd != -1) && !get_df(fd, &space_info_arg)) {
+ 			print_one_fs(&fs_info_arg, dev_info_arg,
+-					space_info_arg, label, mnt->mnt_dir);
++				     space_info_arg, label, mnt->mnt_dir,
++				     unit_mode);
+ 			kfree(space_info_arg);
+ 			memset(label, 0, sizeof(label));
+ 			found = 1;
+@@ -833,6 +837,7 @@ static int cmd_show(int argc, char **argv)
+ 	char path[PATH_MAX];
+ 	__u8 fsid[BTRFS_FSID_SIZE];
+ 	char uuid_buf[BTRFS_UUID_UNPARSED_SIZE];
++	unsigned unit_mode = UNITS_DEFAULT;
+ 	int found = 0;
+ 
+ 	while (1) {
+@@ -840,6 +845,15 @@ static int cmd_show(int argc, char **argv)
+ 		static const struct option long_options[] = {
+ 			{ "all-devices", no_argument, NULL, 'd'},
+ 			{ "mounted", no_argument, NULL, 'm'},
++			{ "raw", no_argument, NULL, GETOPT_VAL_RAW},
++			{ "kbytes", no_argument, NULL, GETOPT_VAL_KBYTES},
++			{ "mbytes", no_argument, NULL, GETOPT_VAL_MBYTES},
++			{ "gbytes", no_argument, NULL, GETOPT_VAL_GBYTES},
++			{ "tbytes", no_argument, NULL, GETOPT_VAL_TBYTES},
++			{ "si", no_argument, NULL, GETOPT_VAL_SI},
++			{ "iec", no_argument, NULL, GETOPT_VAL_IEC},
++			{ "human-readable", no_argument, NULL,
++				GETOPT_VAL_HUMAN_READABLE},
+ 			{ NULL, 0, NULL, 0 }
+ 		};
+ 
+@@ -853,6 +867,30 @@ static int cmd_show(int argc, char **argv)
+ 		case 'm':
+ 			where = BTRFS_SCAN_MOUNTED;
+ 			break;
++		case GETOPT_VAL_RAW:
++			units_set_mode(&unit_mode, UNITS_RAW);
++			break;
++		case GETOPT_VAL_KBYTES:
++			units_set_base(&unit_mode, UNITS_KBYTES);
++			break;
++		case GETOPT_VAL_MBYTES:
++			units_set_base(&unit_mode, UNITS_MBYTES);
++			break;
++		case GETOPT_VAL_GBYTES:
++			units_set_base(&unit_mode, UNITS_GBYTES);
++			break;
++		case GETOPT_VAL_TBYTES:
++			units_set_base(&unit_mode, UNITS_TBYTES);
++			break;
++		case GETOPT_VAL_SI:
++			units_set_mode(&unit_mode, UNITS_DECIMAL);
++			break;
++		case GETOPT_VAL_IEC:
++			units_set_mode(&unit_mode, UNITS_BINARY);
++			break;
++		case GETOPT_VAL_HUMAN_READABLE:
++			units_set_mode(&unit_mode, UNITS_HUMAN_BINARY);
++			break;
+ 		default:
+ 			usage(cmd_show_usage);
+ 		}
+@@ -908,7 +946,7 @@ static int cmd_show(int argc, char **argv)
+ 		goto devs_only;
+ 
+ 	/* show mounted btrfs */
+-	ret = btrfs_scan_kernel(search);
++	ret = btrfs_scan_kernel(search, unit_mode);
+ 	if (search && !ret) {
+ 		/* since search is found we are done */
+ 		goto out;
+@@ -945,7 +983,7 @@ devs_only:
+ 	}
+ 
+ 	list_for_each_entry(fs_devices, &all_uuids, list)
+-		print_one_uuid(fs_devices);
++		print_one_uuid(fs_devices, unit_mode);
+ 
+ 	if (search && !found)
+ 		ret = 1;
 -- 
-1.8.3.1
+2.4.3
 

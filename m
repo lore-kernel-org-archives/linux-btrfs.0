@@ -1,231 +1,301 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:15031 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:22698 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1754234AbbFSSyE (ORCPT
+	by vger.kernel.org with ESMTP id S1752477AbbFSSyH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Jun 2015 14:54:04 -0400
+	Fri, 19 Jun 2015 14:54:07 -0400
 From: Omar Sandoval <osandov@fb.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Miao Xie <miaoxie@huawei.com>, Zhao Lei <zhaolei@cn.fujitsu.com>,
         wangyf <wangyf-fnst@cn.fujitsu.com>,
         Philip <bugzilla@philip-seeger.de>, Omar Sandoval <osandov@fb.com>
-Subject: [PATCH v2 4/5] Btrfs: fix device replace of a missing RAID 5/6 device
-Date: Fri, 19 Jun 2015 11:52:51 -0700
-Message-ID: <95c1a5d41185c3c263f85228535353e0bc21e755.1434739053.git.osandov@fb.com>
-In-Reply-To: <cover.1434739053.git.osandov@fb.com>
-References: <cover.1434739053.git.osandov@fb.com>
+Subject: [PATCH v2 0/5] Btrfs: RAID 5/6 missing device scrub+replace
+Date: Fri, 19 Jun 2015 11:52:47 -0700
+Message-ID: <cover.1434739053.git.osandov@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The original implementation of device replace on RAID 5/6 seems to have
-missed support for replacing a missing device. When this is attempted,
-we end up calling bio_add_page() on a bio with a NULL ->bi_bdev, which
-crashes when we try to dereference it. This happens because
-btrfs_map_block() has no choice but to return us the missing device
-because RAID 5/6 don't have any alternate mirrors to read from, and a
-missing device has a NULL bdev.
+Hi,
 
-The idea implemented here is to handle the missing device case
-separately, which better only happen when we're replacing a missing RAID
-5/6 device. We use the new BTRFS_RBIO_REBUILD_MISSING operation to
-reconstruct the data from parity, check it with
-scrub_recheck_block_checksum(), and write it out with
-scrub_write_block_to_dev_replace().
+Here's version 2 of the missing device RAID 5/6 fixes. The original
+problem was reported by a user on Bugzilla: the kernel crashed when
+attempting to replace a missing device in a RAID 6 filesystem. This is
+detailed and fixed in patch 4. After the initial posting, Zhao Lei
+reported a similar issue when doing a scrub on a RAID 5 filesystem with
+a missing device. This is fixed in the added patch 5.
 
-Reported-by: Philip <bugzilla@philip-seeger.de>
-Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=96141
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/scrub.c | 157 +++++++++++++++++++++++++++++++++++++++++++++++++++----
- 1 file changed, 147 insertions(+), 10 deletions(-)
+My new-and-improved-and-overengineered reproducer as well as Zhao Lei's
+reproducer can be found below.
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b94694d59de5..b75f1e9c6adc 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -125,6 +125,7 @@ struct scrub_block {
- 		/* It is for the data with checksum */
- 		unsigned int	data_corrected:1;
- 	};
-+	struct btrfs_work	work;
- };
- 
- /* Used for the chunks with parity stripe such RAID5/6 */
-@@ -2164,6 +2165,134 @@ again:
- 	return 0;
- }
- 
-+static void scrub_missing_raid56_end_io(struct bio *bio, int error)
-+{
-+	struct scrub_block *sblock = bio->bi_private;
-+	struct btrfs_fs_info *fs_info = sblock->sctx->dev_root->fs_info;
-+
-+	if (error)
-+		sblock->no_io_error_seen = 0;
-+
-+	btrfs_queue_work(fs_info->scrub_workers, &sblock->work);
-+}
-+
-+static void scrub_missing_raid56_worker(struct btrfs_work *work)
-+{
-+	struct scrub_block *sblock = container_of(work, struct scrub_block, work);
-+	struct scrub_ctx *sctx = sblock->sctx;
-+	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
-+	unsigned int is_metadata;
-+	unsigned int have_csum;
-+	u8 *csum;
-+	u64 generation;
-+	u64 logical;
-+	struct btrfs_device *dev;
-+
-+	is_metadata = !(sblock->pagev[0]->flags & BTRFS_EXTENT_FLAG_DATA);
-+	have_csum = sblock->pagev[0]->have_csum;
-+	csum = sblock->pagev[0]->csum;
-+	generation = sblock->pagev[0]->generation;
-+	logical = sblock->pagev[0]->logical;
-+	dev = sblock->pagev[0]->dev;
-+
-+	if (sblock->no_io_error_seen) {
-+		scrub_recheck_block_checksum(fs_info, sblock, is_metadata,
-+					     have_csum, csum, generation,
-+					     sctx->csum_size);
-+	}
-+
-+	if (!sblock->no_io_error_seen) {
-+		spin_lock(&sctx->stat_lock);
-+		sctx->stat.read_errors++;
-+		spin_unlock(&sctx->stat_lock);
-+		printk_ratelimited_in_rcu(KERN_ERR
-+			"BTRFS: I/O error rebulding logical %llu for dev %s\n",
-+			logical, rcu_str_deref(dev->name));
-+	} else if (sblock->header_error || sblock->checksum_error) {
-+		spin_lock(&sctx->stat_lock);
-+		sctx->stat.uncorrectable_errors++;
-+		spin_unlock(&sctx->stat_lock);
-+		printk_ratelimited_in_rcu(KERN_ERR
-+			"BTRFS: failed to rebuild valid logical %llu for dev %s\n",
-+			logical, rcu_str_deref(dev->name));
-+	} else {
-+		scrub_write_block_to_dev_replace(sblock);
-+	}
-+
-+	scrub_block_put(sblock);
-+
-+	if (sctx->is_dev_replace &&
-+	    atomic_read(&sctx->wr_ctx.flush_all_writes)) {
-+		mutex_lock(&sctx->wr_ctx.wr_lock);
-+		scrub_wr_submit(sctx);
-+		mutex_unlock(&sctx->wr_ctx.wr_lock);
-+	}
-+
-+	scrub_pending_bio_dec(sctx);
-+}
-+
-+static void scrub_missing_raid56_pages(struct scrub_block *sblock)
-+{
-+	struct scrub_ctx *sctx = sblock->sctx;
-+	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
-+	u64 length = sblock->page_count * PAGE_SIZE;
-+	u64 logical = sblock->pagev[0]->logical;
-+	struct btrfs_bio *bbio;
-+	struct bio *bio;
-+	struct btrfs_raid_bio *rbio;
-+	int ret;
-+	int i;
-+
-+	ret = btrfs_map_sblock(fs_info, REQ_GET_READ_MIRRORS, logical, &length,
-+			       &bbio, 0, 1);
-+	if (ret || !bbio || !bbio->raid_map)
-+		goto bbio_out;
-+
-+	if (WARN_ON(!sctx->is_dev_replace ||
-+		    !(bbio->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK))) {
-+		/*
-+		 * We shouldn't be scrubbing a missing device. Even for dev
-+		 * replace, we should only get here for RAID 5/6. We either
-+		 * managed to mount something with no mirrors remaining or
-+		 * there's a bug in scrub_remap_extent()/btrfs_map_block().
-+		 */
-+		goto bbio_out;
-+	}
-+
-+	bio = btrfs_io_bio_alloc(GFP_NOFS, 0);
-+	if (!bio)
-+		goto bbio_out;
-+
-+	bio->bi_iter.bi_sector = logical >> 9;
-+	bio->bi_private = sblock;
-+	bio->bi_end_io = scrub_missing_raid56_end_io;
-+
-+	rbio = raid56_alloc_missing_rbio(sctx->dev_root, bio, bbio, length);
-+	if (!rbio)
-+		goto rbio_out;
-+
-+	for (i = 0; i < sblock->page_count; i++) {
-+		struct scrub_page *spage = sblock->pagev[i];
-+
-+		raid56_add_scrub_pages(rbio, spage->page, spage->logical);
-+	}
-+
-+	btrfs_init_work(&sblock->work, btrfs_scrub_helper,
-+			scrub_missing_raid56_worker, NULL, NULL);
-+	scrub_block_get(sblock);
-+	scrub_pending_bio_inc(sctx);
-+	raid56_submit_missing_rbio(rbio);
-+	return;
-+
-+rbio_out:
-+	bio_put(bio);
-+bbio_out:
-+	btrfs_put_bbio(bbio);
-+	spin_lock(&sctx->stat_lock);
-+	sctx->stat.malloc_errors++;
-+	spin_unlock(&sctx->stat_lock);
-+}
-+
- static int scrub_pages(struct scrub_ctx *sctx, u64 logical, u64 len,
- 		       u64 physical, struct btrfs_device *dev, u64 flags,
- 		       u64 gen, int mirror_num, u8 *csum, int force,
-@@ -2227,19 +2356,27 @@ leave_nomem:
- 	}
- 
- 	WARN_ON(sblock->page_count == 0);
--	for (index = 0; index < sblock->page_count; index++) {
--		struct scrub_page *spage = sblock->pagev[index];
--		int ret;
-+	if (dev->missing) {
-+		/*
-+		 * This case should only be hit for RAID 5/6 device replace. See
-+		 * the comment in scrub_missing_raid56_pages() for details.
-+		 */
-+		scrub_missing_raid56_pages(sblock);
-+	} else {
-+		for (index = 0; index < sblock->page_count; index++) {
-+			struct scrub_page *spage = sblock->pagev[index];
-+			int ret;
- 
--		ret = scrub_add_page_to_rd_bio(sctx, spage);
--		if (ret) {
--			scrub_block_put(sblock);
--			return ret;
-+			ret = scrub_add_page_to_rd_bio(sctx, spage);
-+			if (ret) {
-+				scrub_block_put(sblock);
-+				return ret;
-+			}
- 		}
--	}
- 
--	if (force)
--		scrub_submit(sctx);
-+		if (force)
-+			scrub_submit(sctx);
-+	}
- 
- 	/* last one frees, either here or in bio completion for last page */
- 	scrub_block_put(sblock);
+Thanks!
+
+v1: http://article.gmane.org/gmane.comp.file-systems.btrfs/45045
+v1->v2:
+- Add missing scrub_wr_submit() in scrub_missing_raid56_worker()
+- Add clarifying comment in dev->missing case of scrub_stripe()
+  (Zhaolei)
+- Add fix for scrub with missing device (patch 5)
+
+Omar Sandoval (5):
+  Btrfs: remove misleading handling of missing device scrub
+  Btrfs: count devices correctly in readahead during RAID 5/6 replace
+  Btrfs: add RAID 5/6 BTRFS_RBIO_REBUILD_MISSING operation
+  Btrfs: fix device replace of a missing RAID 5/6 device
+  Btrfs: fix parity scrub of RAID 5/6 with missing device
+
+ fs/btrfs/raid56.c |  87 ++++++++++++++++++++---
+ fs/btrfs/raid56.h |  10 ++-
+ fs/btrfs/reada.c  |   4 +-
+ fs/btrfs/scrub.c  | 202 +++++++++++++++++++++++++++++++++++++++++++++---------
+ 4 files changed, 259 insertions(+), 44 deletions(-)
+
+Reproducer 1:
+
+----
+#!/bin/bash
+
+usage () {
+	USAGE_STRING="Usage: $0 [OPTION]...
+Options:
+  -m    failure mode; MODE is 'eio', 'missing', or 'corrupt' (defaults to
+        'missing')
+  -n    number of files to write, each twice as big as the last, the first
+        being 1M in size (defaults to 4)
+  -o    operation to perform; OP is 'replace' or 'scrub' (defaults to
+        'replace')
+  -r    RAID profile; RAID is 'raid0', 'raid1', 'raid10', 'raid5', or 'raid6'
+        (defaults to 'raid5')
+
+Miscellaneous:
+  -h    display this help message and exit"
+
+	case "$1" in
+		out)
+			echo "$USAGE_STRING"
+			exit 0
+			;;
+		err)
+			echo "$USAGE_STRING" >&2
+			exit 1
+			;;
+	esac
+}
+
+MODE=missing
+RAID=raid5
+OP=replace
+NUM_FILES=4
+
+while getopts "m:n:o:r:h" OPT; do
+	case "$OPT" in
+		m)
+			MODE="$OPTARG"
+			;;
+		r)
+			RAID="$OPTARG"
+			;;
+		o)
+			OP="$OPTARG"
+			;;
+		n)
+			NUM_FILES="$OPTARG"
+			if [[ ! "$NUM_FILES" =~ ^[0-9]+$ ]]; then
+				usage "err"
+			fi
+			;;
+		h)
+			usage "out"
+			;;
+		*)
+			usage "err"
+			;;
+	esac
+done
+
+case "$MODE" in
+	eio|missing|corrupt)
+		;;
+	*)
+		usage err
+		;;
+esac
+
+case "$RAID" in
+	raid[01])
+		NUM_RAID_DISKS=2
+		;;
+	raid10)
+		NUM_RAID_DISKS=4
+		;;
+	raid5)
+		NUM_RAID_DISKS=3
+		;;
+	raid6)
+		NUM_RAID_DISKS=4
+		;;
+	*)
+		usage err
+		;;
+esac
+
+case "$OP" in
+	replace)
+		NUM_DISKS=$((NUM_RAID_DISKS + 1))
+		;;
+	scrub)
+		NUM_DISKS=$NUM_RAID_DISKS
+		;;
+	*)
+		usage err
+		;;
+esac
+
+echo "Running $OP on $RAID with $MODE"
+
+SRC_DISK=$((NUM_RAID_DISKS - 1))
+TARGET_DISK=$((NUM_DISKS - 1))
+NUM_SECTORS=$((1024 * 1024))
+LOOP_DEVICES=()
+DM_DEVICES=()
+
+cleanup () {
+	echo "Done. Press enter to cleanup..."
+	read
+	if findmnt /mnt; then
+		umount /mnt
+	fi
+	for DM in "${DM_DEVICES[@]}"; do
+		dmsetup remove "$DM"
+	done
+	for LOOP in "${LOOP_DEVICES[@]}"; do
+		losetup --detach "$LOOP"
+	done
+	for ((i = 0; i < NUM_DISKS; i++)); do
+		rm -f disk${i}.img
+	done
+}
+trap 'cleanup; exit 1' ERR
+
+echo "Creating disk images..."
+for ((i = 0; i < NUM_DISKS; i++)); do
+	rm -f disk${i}.img
+	dd if=/dev/zero of=disk${i}.img bs=512 seek=$NUM_SECTORS count=0
+	LOOP_DEVICES+=("$(losetup --find --show disk${i}.img)")
+done
+
+echo "Creating loopback devices..."
+for LOOP in "${LOOP_DEVICES[@]}"; do
+	DM="${LOOP/\/dev\/loop/dm}"
+	dmsetup create "$DM" --table "0 $NUM_SECTORS linear $LOOP 0"
+	DM_DEVICES+=("$DM")
+done
+
+echo "Creating filesystem..."
+FS_DEVICES=("${DM_DEVICES[@]:0:$NUM_RAID_DISKS}")
+FS_DEVICES=("${FS_DEVICES[@]/#//dev/mapper/}")
+echo "${FS_DEVICES[@]}"
+MOUNT_DEVICE="${FS_DEVICES[$(((SRC_DISK + 1) % NUM_RAID_DISKS))]}"
+mkfs.btrfs -d "$RAID" -m "$RAID" "${FS_DEVICES[@]}"
+mount "$MOUNT_DEVICE" /mnt
+for ((i = 0; i < NUM_FILES; i++)); do
+	dd if=/dev/urandom of=/mnt/file$i bs=1M count=$((1 << $i))
+done
+sync
+
+case "$MODE" in
+	eio)
+		echo "Killing disk..."
+		dmsetup suspend "${DM_DEVICES[$SRC_DISK]}"
+		dmsetup reload "${DM_DEVICES[$SRC_DISK]}" --table "0 $NUM_SECTORS error"
+		dmsetup resume "${DM_DEVICES[$SRC_DISK]}"
+		;;
+	missing)
+		echo "Removing disk and remounting degraded..."
+		umount /mnt
+		dmsetup remove "${DM_DEVICES[$SRC_DISK]}"
+		unset DM_DEVICES[$SRC_DISK]
+		mount -o degraded "$MOUNT_DEVICE" /mnt
+		;;
+	corrupt)
+		echo "Corrupting disk and remounting degraded..."
+		umount /mnt
+		dd if=/dev/zero of=/dev/mapper/"${DM_DEVICES[$SRC_DISK]}" bs=1M count=1
+		mount -o degraded "$MOUNT_DEVICE" /mnt
+		;;
+esac
+
+case "$OP" in
+	replace)
+		echo "Replacing disk..."
+		btrfs replace start -B $((SRC_DISK + 1)) /dev/mapper/"${DM_DEVICES[$TARGET_DISK]}" /mnt
+		;;
+	scrub)
+		echo "Scrubbing filesystem..."
+		btrfs scrub start -B /mnt
+		;;
+esac
+
+echo "Scrubbing to double-check..."
+btrfs scrub start -Br /mnt
+
+cleanup
+----
+
+Reproducer 2:
+
+----
+#!/bin/bash
+
+FS_DEVS=(/dev/vdb /dev/vdc /dev/vdd)
+PRUNE_DEV=/dev/vdc
+MNT=/mnt
+
+do_cmd()
+{
+	echo "   $*"
+	local output
+	local ret
+	output=$("$@" 2>&1)
+	ret="$?"
+	[[ "$ret" != 0 ]] && {
+		echo "$output"
+	}
+	return "$ret"
+}
+
+mkdir -p "$MNT"
+for ((i = 0; i < 10; i++)); do
+	umount "$MNT" &>/dev/null
+done
+dmesg -c >/dev/null
+
+echo "1: Creating filesystem"
+do_cmd mkfs.btrfs -f -d raid5 -m raid5 "${FS_DEVS[@]}" || exit 1
+do_cmd mount "$FS_DEVS" "$MNT" || exit 1
+
+echo "2: Write some data"
+DATA_CNT=4
+for ((i = 0; i < DATA_CNT; i++)); do
+	size_m="$((1<<i))"
+	do_cmd dd bs=1M if=/dev/urandom of="$MNT"/file_"$i" count="$size_m" || exit 1
+done
+
+echo "3: Prune a disk in fs"
+do_cmd umount "$MNT" || exit 1
+do_cmd dd bs=1M if=/dev/zero of="$PRUNE_DEV" count=1
+do_cmd mount -o "degraded" "$FS_DEVS" "$MNT" || exit 1
+
+echo "4: Do scrub"
+do_cmd btrfs scrub start -B "$MNT"
+
+echo "5: Checking result"
+dmesg --color
+
+exit 0
+----
+
 -- 
 1.8.5.6
 

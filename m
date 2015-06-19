@@ -1,136 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58529 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753769AbbFSPry (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Jun 2015 11:47:54 -0400
-Date: Fri, 19 Jun 2015 17:47:53 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: fix deadlock with extent-same and readpage
-Message-ID: <20150619154752.GP6761@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1434661803-31188-1-git-send-email-mfasheh@suse.de>
- <1434661803-31188-3-git-send-email-mfasheh@suse.de>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:15047 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753219AbbFSSyC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Jun 2015 14:54:02 -0400
+From: Omar Sandoval <osandov@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Miao Xie <miaoxie@huawei.com>, Zhao Lei <zhaolei@cn.fujitsu.com>,
+        wangyf <wangyf-fnst@cn.fujitsu.com>,
+        Philip <bugzilla@philip-seeger.de>, Omar Sandoval <osandov@fb.com>
+Subject: [PATCH v2 1/5] Btrfs: remove misleading handling of missing device scrub
+Date: Fri, 19 Jun 2015 11:52:48 -0700
+Message-ID: <e04f4ab233652d2fd4e332b8293480f07837b39e.1434739053.git.osandov@fb.com>
+In-Reply-To: <cover.1434739053.git.osandov@fb.com>
+References: <cover.1434739053.git.osandov@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1434661803-31188-3-git-send-email-mfasheh@suse.de>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 18, 2015 at 02:10:03PM -0700, Mark Fasheh wrote:
-> So I split btrfs_cmp_data() into 3 parts with a small context structure that
-> is passed between them. The first, btrfs_cmp_data_prepare() gathers up the
-> pages needed (taking page lock as required) and puts them on our context
-> structure. At this point, we are safe to lock the extent range. Afterwards,
-> we use btrfs_cmp_data() to do the data compare as usual and btrfs_cmp_data_free()
-> to clean up our context.
+scrub_submit() claims that it can handle a bio with a NULL block device,
+but this is misleading, as calling bio_add_page() on a bio with a NULL
+->bi_bdev would've already crashed. Delete this, as we're about to
+properly handle a missing block device.
 
-Sounds good.
+Signed-off-by: Omar Sandoval <osandov@fb.com>
+---
+ fs/btrfs/scrub.c | 16 +---------------
+ 1 file changed, 1 insertion(+), 15 deletions(-)
 
-I see some inconsitencies in the double locking.
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index ab5811545a98..633fa7b19b7d 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2087,21 +2087,7 @@ static void scrub_submit(struct scrub_ctx *sctx)
+ 	sbio = sctx->bios[sctx->curr];
+ 	sctx->curr = -1;
+ 	scrub_pending_bio_inc(sctx);
+-
+-	if (!sbio->bio->bi_bdev) {
+-		/*
+-		 * this case should not happen. If btrfs_map_block() is
+-		 * wrong, it could happen for dev-replace operations on
+-		 * missing devices when no mirrors are available, but in
+-		 * this case it should already fail the mount.
+-		 * This case is handled correctly (but _very_ slowly).
+-		 */
+-		printk_ratelimited(KERN_WARNING
+-			"BTRFS: scrub_submit(bio bdev == NULL) is unexpected!\n");
+-		bio_endio(sbio->bio, -EIO);
+-	} else {
+-		btrfsic_submit_bio(READ, sbio->bio);
+-	}
++	btrfsic_submit_bio(READ, sbio->bio);
+ }
+ 
+ static int scrub_add_page_to_rd_bio(struct scrub_ctx *sctx,
+-- 
+1.8.5.6
 
-> @@ -2808,52 +2819,120 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
->  	}
->  }
->  
-> -static void btrfs_double_unlock(struct inode *inode1, u64 loff1,
-> -				struct inode *inode2, u64 loff2, u64 len)
-> +static void btrfs_double_inode_unlock(struct inode *inode1, struct inode *inode2)
->  {
-> -	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
-> -	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
-> -
->  	mutex_unlock(&inode1->i_mutex);
->  	mutex_unlock(&inode2->i_mutex);
-
-unlock parent lock first, child lock second -- should it be reversed?
-
->  }
->  
-> -static void btrfs_double_lock(struct inode *inode1, u64 loff1,
-> -			      struct inode *inode2, u64 loff2, u64 len)
-> +static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
-> +{
-> +	if (inode1 < inode2)
-> +		swap(inode1, inode2);
-
-after that, inode1 > inode2
-
-> +
-> +	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
-
-higher address, locked first, parent lock
-
-> +	if (inode1 != inode2)
-> +		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-
-lower address, locked second, child lock
-
-> +}
-> +
-> +static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
-> +				      struct inode *inode2, u64 loff2, u64 len)
-> +{
-> +	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
-> +	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
-
-reversed?
-
-> +}
-> +
-> +static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
-> +				     struct inode *inode2, u64 loff2, u64 len)
->  {
->  	if (inode1 < inode2) {
->  		swap(inode1, inode2);
->  		swap(loff1, loff2);
->  	}
-> -
-> -	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
->  	lock_extent_range(inode1, loff1, len);
-> -	if (inode1 != inode2) {
-> -		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-> +	if (inode1 != inode2)
->  		lock_extent_range(inode2, loff2, len);
-> +}
-
-higher address, locked first
-
-If the locking sequence is always the same, it's not a problem
-deadlock-wise, but see btrfs_ioctl_clone:
-
-3639                 if (inode < src) {
-3640                         mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
-3641                         mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
-3642                 } else {
-3643                         mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
-3644                         mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
-3645                 }
-
-lower address, locked first, parent lock
-
-different from the order in btrfs_double_inode_lock. What happens if we
-get the locks interleaved when extent same and clone are called in
-parallel?
-
-lock(i1)
-                lock(i2)
-
-lock(i2)                       <-- lockup?
-
-		lock(i1)
-
-I haven't looked further whether the locking classes (parent, child)
-could prevent that, but the code should be clear enough so that I don't
-have to dig into the locking code to see if it's ok.
-
-To fix it, the clone ioctl should use the same locking helper and we're
-set.
-
-Besides that,
-
-Reviewed-by: David Sterba <dsterba@suse.cz>
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

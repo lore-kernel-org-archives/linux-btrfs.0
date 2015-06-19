@@ -1,241 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:4382 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752477AbbFSSyC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Jun 2015 14:54:02 -0400
-From: Omar Sandoval <osandov@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Miao Xie <miaoxie@huawei.com>, Zhao Lei <zhaolei@cn.fujitsu.com>,
-        wangyf <wangyf-fnst@cn.fujitsu.com>,
-        Philip <bugzilla@philip-seeger.de>, Omar Sandoval <osandov@fb.com>
-Subject: [PATCH v2 3/5] Btrfs: add RAID 5/6 BTRFS_RBIO_REBUILD_MISSING operation
-Date: Fri, 19 Jun 2015 11:52:50 -0700
-Message-ID: <f0ad283e7d07df391d468003409ba3e894599372.1434739053.git.osandov@fb.com>
-In-Reply-To: <cover.1434739053.git.osandov@fb.com>
-References: <cover.1434739053.git.osandov@fb.com>
+Received: from cantor2.suse.de ([195.135.220.15]:39512 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755382AbbFSTTo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 19 Jun 2015 15:19:44 -0400
+Date: Fri, 19 Jun 2015 12:19:42 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: dsterba@suse.cz, Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: fix deadlock with extent-same and readpage
+Message-ID: <20150619191942.GS18148@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <1434661803-31188-1-git-send-email-mfasheh@suse.de>
+ <1434661803-31188-3-git-send-email-mfasheh@suse.de>
+ <20150619154752.GP6761@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150619154752.GP6761@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The current RAID 5/6 recovery code isn't quite prepared to handle
-missing devices. In particular, it expects a bio that we previously
-attempted to use in the read path, meaning that it has valid pages
-allocated. However, missing devices have a NULL blkdev, and we can't
-call bio_add_page() on a bio with a NULL blkdev. We could do manual
-manipulation of bio->bi_io_vec, but that's pretty gross. So instead, add
-a separate path that allows us to manually add pages to the rbio.
+On Fri, Jun 19, 2015 at 05:47:53PM +0200, David Sterba wrote:
+> On Thu, Jun 18, 2015 at 02:10:03PM -0700, Mark Fasheh wrote:
+> > So I split btrfs_cmp_data() into 3 parts with a small context structure that
+> > is passed between them. The first, btrfs_cmp_data_prepare() gathers up the
+> > pages needed (taking page lock as required) and puts them on our context
+> > structure. At this point, we are safe to lock the extent range. Afterwards,
+> > we use btrfs_cmp_data() to do the data compare as usual and btrfs_cmp_data_free()
+> > to clean up our context.
+> 
+> Sounds good.
+> 
+> I see some inconsitencies in the double locking.
+> 
+> > @@ -2808,52 +2819,120 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
+> >  	}
+> >  }
+> >  
+> > -static void btrfs_double_unlock(struct inode *inode1, u64 loff1,
+> > -				struct inode *inode2, u64 loff2, u64 len)
+> > +static void btrfs_double_inode_unlock(struct inode *inode1, struct inode *inode2)
+> >  {
+> > -	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
+> > -	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
+> > -
+> >  	mutex_unlock(&inode1->i_mutex);
+> >  	mutex_unlock(&inode2->i_mutex);
+> 
+> unlock parent lock first, child lock second -- should it be reversed?
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- fs/btrfs/raid56.c | 87 ++++++++++++++++++++++++++++++++++++++++++++++++-------
- fs/btrfs/raid56.h | 10 +++++--
- fs/btrfs/scrub.c  |  3 +-
- 3 files changed, 86 insertions(+), 14 deletions(-)
+Doesn't matter in terms of correctness, but we ought to make it consistent
+especially if I'm fixing actual bugs like you found below :)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index fa72068bd256..6fe2613ef288 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -61,9 +61,10 @@
- #define RBIO_CACHE_SIZE 1024
- 
- enum btrfs_rbio_ops {
--	BTRFS_RBIO_WRITE	= 0,
--	BTRFS_RBIO_READ_REBUILD	= 1,
--	BTRFS_RBIO_PARITY_SCRUB	= 2,
-+	BTRFS_RBIO_WRITE,
-+	BTRFS_RBIO_READ_REBUILD,
-+	BTRFS_RBIO_PARITY_SCRUB,
-+	BTRFS_RBIO_REBUILD_MISSING,
- };
- 
- struct btrfs_raid_bio {
-@@ -602,6 +603,10 @@ static int rbio_can_merge(struct btrfs_raid_bio *last,
- 	    cur->operation == BTRFS_RBIO_PARITY_SCRUB)
- 		return 0;
- 
-+	if (last->operation == BTRFS_RBIO_REBUILD_MISSING ||
-+	    cur->operation == BTRFS_RBIO_REBUILD_MISSING)
-+		return 0;
-+
- 	return 1;
- }
- 
-@@ -793,7 +798,10 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
- 
- 			if (next->operation == BTRFS_RBIO_READ_REBUILD)
- 				async_read_rebuild(next);
--			else if (next->operation == BTRFS_RBIO_WRITE) {
-+			else if (next->operation == BTRFS_RBIO_REBUILD_MISSING) {
-+				steal_rbio(rbio, next);
-+				async_read_rebuild(next);
-+			} else if (next->operation == BTRFS_RBIO_WRITE) {
- 				steal_rbio(rbio, next);
- 				async_rmw_stripe(next);
- 			} else if (next->operation == BTRFS_RBIO_PARITY_SCRUB) {
-@@ -1809,7 +1817,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 	faila = rbio->faila;
- 	failb = rbio->failb;
- 
--	if (rbio->operation == BTRFS_RBIO_READ_REBUILD) {
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
- 		spin_lock_irq(&rbio->bio_list_lock);
- 		set_bit(RBIO_RMW_LOCKED_BIT, &rbio->flags);
- 		spin_unlock_irq(&rbio->bio_list_lock);
-@@ -1834,7 +1843,8 @@ static void __raid_recover_end_io(struct btrfs_raid_bio *rbio)
- 			 * if we're rebuilding a read, we have to use
- 			 * pages from the bio list
- 			 */
--			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
-+			if ((rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+			     rbio->operation == BTRFS_RBIO_REBUILD_MISSING) &&
- 			    (stripe == faila || stripe == failb)) {
- 				page = page_in_rbio(rbio, stripe, pagenr, 0);
- 			} else {
-@@ -1943,7 +1953,8 @@ pstripe:
- 			 * if we're rebuilding a read, we have to use
- 			 * pages from the bio list
- 			 */
--			if (rbio->operation == BTRFS_RBIO_READ_REBUILD &&
-+			if ((rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+			     rbio->operation == BTRFS_RBIO_REBUILD_MISSING) &&
- 			    (stripe == faila || stripe == failb)) {
- 				page = page_in_rbio(rbio, stripe, pagenr, 0);
- 			} else {
-@@ -1965,6 +1976,8 @@ cleanup_io:
- 			clear_bit(RBIO_CACHE_READY_BIT, &rbio->flags);
- 
- 		rbio_orig_end_io(rbio, err, err == 0);
-+	} else if (rbio->operation == BTRFS_RBIO_REBUILD_MISSING) {
-+		rbio_orig_end_io(rbio, err, err == 0);
- 	} else if (err == 0) {
- 		rbio->faila = -1;
- 		rbio->failb = -1;
-@@ -2101,7 +2114,8 @@ out:
- 	return 0;
- 
- cleanup:
--	if (rbio->operation == BTRFS_RBIO_READ_REBUILD)
-+	if (rbio->operation == BTRFS_RBIO_READ_REBUILD ||
-+	    rbio->operation == BTRFS_RBIO_REBUILD_MISSING)
- 		rbio_orig_end_io(rbio, -EIO, 0);
- 	return -EIO;
- }
-@@ -2232,8 +2246,9 @@ raid56_parity_alloc_scrub_rbio(struct btrfs_root *root, struct bio *bio,
- 	return rbio;
- }
- 
--void raid56_parity_add_scrub_pages(struct btrfs_raid_bio *rbio,
--				   struct page *page, u64 logical)
-+/* Used for both parity scrub and missing. */
-+void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
-+			    u64 logical)
- {
- 	int stripe_offset;
- 	int index;
-@@ -2668,3 +2683,55 @@ void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
- 	if (!lock_stripe_add(rbio))
- 		async_scrub_parity(rbio);
- }
-+
-+/* The following code is used for dev replace of a missing RAID 5/6 device. */
-+
-+struct btrfs_raid_bio *
-+raid56_alloc_missing_rbio(struct btrfs_root *root, struct bio *bio,
-+			  struct btrfs_bio *bbio, u64 length)
-+{
-+	struct btrfs_raid_bio *rbio;
-+
-+	rbio = alloc_rbio(root, bbio, length);
-+	if (IS_ERR(rbio))
-+		return NULL;
-+
-+	rbio->operation = BTRFS_RBIO_REBUILD_MISSING;
-+	bio_list_add(&rbio->bio_list, bio);
-+	/*
-+	 * This is a special bio which is used to hold the completion handler
-+	 * and make the scrub rbio is similar to the other types
-+	 */
-+	ASSERT(!bio->bi_iter.bi_size);
-+
-+	rbio->faila = find_logical_bio_stripe(rbio, bio);
-+	if (rbio->faila == -1) {
-+		BUG();
-+		kfree(rbio);
-+		return NULL;
-+	}
-+
-+	return rbio;
-+}
-+
-+static void missing_raid56_work(struct btrfs_work *work)
-+{
-+	struct btrfs_raid_bio *rbio;
-+
-+	rbio = container_of(work, struct btrfs_raid_bio, work);
-+	__raid56_parity_recover(rbio);
-+}
-+
-+static void async_missing_raid56(struct btrfs_raid_bio *rbio)
-+{
-+	btrfs_init_work(&rbio->work, btrfs_rmw_helper,
-+			missing_raid56_work, NULL, NULL);
-+
-+	btrfs_queue_work(rbio->fs_info->rmw_workers, &rbio->work);
-+}
-+
-+void raid56_submit_missing_rbio(struct btrfs_raid_bio *rbio)
-+{
-+	if (!lock_stripe_add(rbio))
-+		async_missing_raid56(rbio);
-+}
-diff --git a/fs/btrfs/raid56.h b/fs/btrfs/raid56.h
-index 2b5d7977d83b..8b694699d502 100644
---- a/fs/btrfs/raid56.h
-+++ b/fs/btrfs/raid56.h
-@@ -48,15 +48,21 @@ int raid56_parity_recover(struct btrfs_root *root, struct bio *bio,
- int raid56_parity_write(struct btrfs_root *root, struct bio *bio,
- 			       struct btrfs_bio *bbio, u64 stripe_len);
- 
-+void raid56_add_scrub_pages(struct btrfs_raid_bio *rbio, struct page *page,
-+			    u64 logical);
-+
- struct btrfs_raid_bio *
- raid56_parity_alloc_scrub_rbio(struct btrfs_root *root, struct bio *bio,
- 			       struct btrfs_bio *bbio, u64 stripe_len,
- 			       struct btrfs_device *scrub_dev,
- 			       unsigned long *dbitmap, int stripe_nsectors);
--void raid56_parity_add_scrub_pages(struct btrfs_raid_bio *rbio,
--				   struct page *page, u64 logical);
- void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio);
- 
-+struct btrfs_raid_bio *
-+raid56_alloc_missing_rbio(struct btrfs_root *root, struct bio *bio,
-+			  struct btrfs_bio *bbio, u64 length);
-+void raid56_submit_missing_rbio(struct btrfs_raid_bio *rbio);
-+
- int btrfs_alloc_stripe_hash_table(struct btrfs_fs_info *info);
- void btrfs_free_stripe_hash_table(struct btrfs_fs_info *info);
- #endif
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 633fa7b19b7d..b94694d59de5 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2699,8 +2699,7 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
- 		goto rbio_out;
- 
- 	list_for_each_entry(spage, &sparity->spages, list)
--		raid56_parity_add_scrub_pages(rbio, spage->page,
--					      spage->logical);
-+		raid56_add_scrub_pages(rbio, spage->page, spage->logical);
- 
- 	scrub_pending_bio_inc(sctx);
- 	raid56_parity_submit_scrub_rbio(rbio);
--- 
-1.8.5.6
 
+> > -static void btrfs_double_lock(struct inode *inode1, u64 loff1,
+> > -			      struct inode *inode2, u64 loff2, u64 len)
+> > +static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
+> > +{
+> > +	if (inode1 < inode2)
+> > +		swap(inode1, inode2);
+> 
+> after that, inode1 > inode2
+> 
+> > +
+> > +	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
+> 
+> higher address, locked first, parent lock
+> 
+> > +	if (inode1 != inode2)
+> > +		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
+> 
+> lower address, locked second, child lock
+> 
+> > +}
+> > +
+> > +static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
+> > +				      struct inode *inode2, u64 loff2, u64 len)
+> > +{
+> > +	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
+> > +	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
+> 
+> reversed?
+> 
+> > +}
+> > +
+> > +static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
+> > +				     struct inode *inode2, u64 loff2, u64 len)
+> >  {
+> >  	if (inode1 < inode2) {
+> >  		swap(inode1, inode2);
+> >  		swap(loff1, loff2);
+> >  	}
+> > -
+> > -	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
+> >  	lock_extent_range(inode1, loff1, len);
+> > -	if (inode1 != inode2) {
+> > -		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
+> > +	if (inode1 != inode2)
+> >  		lock_extent_range(inode2, loff2, len);
+> > +}
+> 
+> higher address, locked first
+> 
+> If the locking sequence is always the same, it's not a problem
+> deadlock-wise, but see btrfs_ioctl_clone:
+> 
+> 3639                 if (inode < src) {
+> 3640                         mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
+> 3641                         mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
+> 3642                 } else {
+> 3643                         mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
+> 3644                         mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
+> 3645                 }
+> 
+> lower address, locked first, parent lock
+> 
+> different from the order in btrfs_double_inode_lock. What happens if we
+> get the locks interleaved when extent same and clone are called in
+> parallel?
+> 
+> lock(i1)
+>                 lock(i2)
+> 
+> lock(i2)                       <-- lockup?
+> 
+> 		lock(i1)
+> 
+> I haven't looked further whether the locking classes (parent, child)
+> could prevent that, but the code should be clear enough so that I don't
+> have to dig into the locking code to see if it's ok.
+
+Nope it looks like you found a deadlock scenario. We've probably had this
+for a while, I'll do a patch to update clone() with the locking helper.
+
+
+> To fix it, the clone ioctl should use the same locking helper and we're
+> set.
+
+Yeah, I agree. Thanks for the helpful review David!
+	--Mark
+
+--
+Mark Fasheh
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

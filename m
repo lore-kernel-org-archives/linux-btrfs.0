@@ -1,15 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linuxfoundation.org ([140.211.169.12]:51327 "EHLO
-	mail.linuxfoundation.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932359AbbFSUbc (ORCPT
+Received: from out5-smtp.messagingengine.com ([66.111.4.29]:48014 "EHLO
+	out5-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752174AbbFSUcL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Jun 2015 16:31:32 -0400
-Date: Fri, 19 Jun 2015 13:31:31 -0700
-From: Greg KH <gregkh@linuxfoundation.org>
+	Fri, 19 Jun 2015 16:32:11 -0400
+Received: from compute6.internal (compute6.nyi.internal [10.202.2.46])
+	by mailout.nyi.internal (Postfix) with ESMTP id CE885205FD
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Jun 2015 16:32:10 -0400 (EDT)
+Date: Fri, 19 Jun 2015 13:32:09 -0700
+From: Greg KH <greg@kroah.com>
 To: David Sterba <dsterba@suse.cz>
 Cc: stable@vger.kernel.org, linux-btrfs@vger.kernel.org, clm@fb.com
 Subject: Re: Btrfs stable updates for 4.0
-Message-ID: <20150619203131.GC22717@kroah.com>
+Message-ID: <20150619203209.GD22717@kroah.com>
 References: <cover.1434037853.git.dsterba@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -40,10 +43,10 @@ On Thu, Jun 11, 2015 at 06:06:32PM +0200, David Sterba wrote:
 > 	Btrfs: fix regression in raid level conversion
 > Commits:
 > 	5cc2b17e80cf5770f2e585c2d90fd8af1b901258 # 3.14+
+> 	2f1f465ae6da244099af55c066e5355abd8ff620 # 3.14+
 
-Does not build on 3.14+, sorry.  Please provide a backported version if
-you want to see it there.
-
-greg k-h
+Because 5cc2b17e80cf5770f2e585c2d90fd8af1b901258 breaks the build,
+2f1f465ae6da244099af55c066e5355abd8ff620 does not apply to 3.14 either
+:(
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

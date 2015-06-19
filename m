@@ -1,63 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15921 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752266AbbFSBko (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:26283 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752228AbbFSCLg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 18 Jun 2015 21:40:44 -0400
-Subject: Re: btrfs-progs 4.1-rc1: btrfstune -u reporting incorrect current
- fsid?
-To: <dsterba@suse.cz>, Mike Fleetwood <mike.fleetwood@googlemail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAMU1PDjKbbXPrr5uPgPUEzfN+RWxi9McvRLS02N7N9JJ39q2ug@mail.gmail.com>
- <20150618173332.GJ6761@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55837315.90109@cn.fujitsu.com>
-Date: Fri, 19 Jun 2015 09:40:37 +0800
+	Thu, 18 Jun 2015 22:11:36 -0400
+Received: from pps.filterd (m0004060 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t5J2Bajx021089
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2015 19:11:36 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1v47jm8gp6-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 18 Jun 2015 19:11:36 -0700
+From: Omar Sandoval <osandov@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Omar Sandoval <osandov@fb.com>
+Subject: [PATCH] Btrfs: add autodefrag inode flag
+Date: Thu, 18 Jun 2015 19:10:47 -0700
+Message-ID: <49b5df0f2a140a18386d794447aae87e165e6559.1434679740.git.osandov@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20150618173332.GJ6761@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In some cases, we may not want to enable automatic defragmentation for
+the whole filesystem with the "autodefrag" mount option but we still
+want to defragment specific files or directories. Add an inode flag
+which allows us to do specify that.
 
-
-David Sterba wrote on 2015/06/18 19:33 +0200:
-> On Wed, Jun 17, 2015 at 10:21:45PM +0100, Mike Fleetwood wrote:
->> It also upper cases the UUID where as btrfs fi sh and blkid don't.
->
-> Ok, I'll switch that to lowercase so it's consistent with the rest.
->
->> I've done a quick test on changing the UUID of a btrfs.  It worked, but
->> btrfstune -u didn't print the same current uuid that btrfs fi sh does.
->
-> Seems that the reporting is broken in the btrfstune side. I've
-> reproduced it here. I've used btrfs-show-super in the tests and did not
-> notice that the 'current fsid' is wrong. Thanks.
-
-Just a little tip to take less time on the bug:
+Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
---- a/btrfstune.c
-+++ b/btrfstune.c
-@@ -349,7 +349,7 @@ static int change_uuid(struct btrfs_fs_info 
-*fs_info, const char *new_fsid_str)
-         fs_info->new_fsid = new_fsid;
-         fs_info->new_chunk_tree_uuid = new_chunk_id;
+ fs/btrfs/ctree.h        |  1 +
+ fs/btrfs/file.c         | 18 ++++++++++--------
+ fs/btrfs/ioctl.c        | 13 +++++++++++--
+ include/uapi/linux/fs.h |  1 +
+ 4 files changed, 23 insertions(+), 10 deletions(-)
 
--       uuid_parse((const char*)fs_info->fsid, old_fsid);
-+       memcpy(old_fsid, fs_info->fsid, BTRFS_UUID_SIZE);
-         uuid_unparse_upper(old_fsid, uuid_buf);
-         printf("Current fsid: %s\n", uuid_buf);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6f364e1d8d3d..e898bb2822ef 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2234,6 +2234,7 @@ do {                                                                   \
+ #define BTRFS_INODE_NOATIME		(1 << 9)
+ #define BTRFS_INODE_DIRSYNC		(1 << 10)
+ #define BTRFS_INODE_COMPRESS		(1 << 11)
++#define BTRFS_INODE_AUTODEFRAG		(1 << 12)
+ 
+ #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
+ 
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b072e17479aa..33bead79da7a 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -129,15 +129,17 @@ static int __btrfs_add_inode_defrag(struct inode *inode,
+ 	return 0;
+ }
+ 
+-static inline int __need_auto_defrag(struct btrfs_root *root)
++static inline int __need_auto_defrag(struct btrfs_root *root,
++				     struct inode *inode)
+ {
+-	if (!btrfs_test_opt(root, AUTO_DEFRAG))
+-		return 0;
+-
+ 	if (btrfs_fs_closing(root->fs_info))
+ 		return 0;
+ 
+-	return 1;
++	if (btrfs_test_opt(root, AUTO_DEFRAG))
++		return 1;
++	if (BTRFS_I(inode)->flags & BTRFS_INODE_AUTODEFRAG)
++		return 1;
++	return 0;
+ }
+ 
+ /*
+@@ -152,7 +154,7 @@ int btrfs_add_inode_defrag(struct btrfs_trans_handle *trans,
+ 	u64 transid;
+ 	int ret;
+ 
+-	if (!__need_auto_defrag(root))
++	if (!__need_auto_defrag(root, inode))
+ 		return 0;
+ 
+ 	if (test_bit(BTRFS_INODE_IN_DEFRAG, &BTRFS_I(inode)->runtime_flags))
+@@ -199,7 +201,7 @@ static void btrfs_requeue_inode_defrag(struct inode *inode,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	int ret;
+ 
+-	if (!__need_auto_defrag(root))
++	if (!__need_auto_defrag(root, inode))
+ 		goto out;
+ 
+ 	/*
+@@ -372,7 +374,7 @@ int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
+ 			     &fs_info->fs_state))
+ 			break;
+ 
+-		if (!__need_auto_defrag(fs_info->tree_root))
++		if (btrfs_fs_closing(fs_info))
+ 			break;
+ 
+ 		/* find an inode to defrag */
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 1c22c6518504..c1a45d507613 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -121,6 +121,8 @@ static unsigned int btrfs_flags_to_ioctl(unsigned int flags)
+ 		iflags |= FS_DIRSYNC_FL;
+ 	if (flags & BTRFS_INODE_NODATACOW)
+ 		iflags |= FS_NOCOW_FL;
++	if (flags & BTRFS_INODE_AUTODEFRAG)
++		iflags |= FS_AUTODEFRAG_FL;
+ 
+ 	if ((flags & BTRFS_INODE_COMPRESS) && !(flags & BTRFS_INODE_NOCOMPRESS))
+ 		iflags |= FS_COMPR_FL;
+@@ -157,7 +159,7 @@ void btrfs_update_iflags(struct inode *inode)
+ /*
+  * Inherit flags from the parent inode.
+  *
+- * Currently only the compression flags and the cow flags are inherited.
++ * Currently only the compression, cow, and autodefrag flags are inherited.
+  */
+ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+ {
+@@ -182,6 +184,9 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+ 	}
+ 
++	if (flags & BTRFS_INODE_AUTODEFRAG)
++		BTRFS_I(inode)->flags |= BTRFS_INODE_AUTODEFRAG;
++
+ 	btrfs_update_iflags(inode);
+ }
+ 
+@@ -201,7 +206,7 @@ static int check_flags(unsigned int flags)
+ 		      FS_NOATIME_FL | FS_NODUMP_FL | \
+ 		      FS_SYNC_FL | FS_DIRSYNC_FL | \
+ 		      FS_NOCOMP_FL | FS_COMPR_FL |
+-		      FS_NOCOW_FL))
++		      FS_NOCOW_FL | FS_AUTODEFRAG_FL))
+ 		return -EOPNOTSUPP;
+ 
+ 	if ((flags & FS_NOCOMP_FL) && (flags & FS_COMPR_FL))
+@@ -278,6 +283,10 @@ static int btrfs_ioctl_setflags(struct file *file, void __user *arg)
+ 		ip->flags |= BTRFS_INODE_DIRSYNC;
+ 	else
+ 		ip->flags &= ~BTRFS_INODE_DIRSYNC;
++	if (flags & FS_AUTODEFRAG_FL)
++		ip->flags |= BTRFS_INODE_AUTODEFRAG;
++	else
++		ip->flags &= ~BTRFS_INODE_AUTODEFRAG;
+ 	if (flags & FS_NOCOW_FL) {
+ 		if (S_ISREG(mode)) {
+ 			/*
+diff --git a/include/uapi/linux/fs.h b/include/uapi/linux/fs.h
+index 9b964a5920af..8c7e8c7a0236 100644
+--- a/include/uapi/linux/fs.h
++++ b/include/uapi/linux/fs.h
+@@ -197,6 +197,7 @@ struct inodes_stat_t {
+ #define FS_EXTENT_FL			0x00080000 /* Extents */
+ #define FS_DIRECTIO_FL			0x00100000 /* Use direct i/o */
+ #define FS_NOCOW_FL			0x00800000 /* Do not cow file */
++#define FS_AUTODEFRAG_FL		0x01000000 /* Auto-defragment file */
+ #define FS_RESERVED_FL			0x80000000 /* reserved for ext2 lib */
+ 
+ #define FS_FL_USER_VISIBLE		0x0003DFFF /* User visible flags */
+-- 
+1.8.5.6
 
----
-
-Also, you can remove the old_fsid variant if you want and just use 
-fs_info->fsid.
-
-Thanks,
-Qu
-
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

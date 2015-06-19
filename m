@@ -1,59 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55947 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750821AbbF3JPG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 05:15:06 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Z9rdA-0004md-ML
-	for linux-btrfs@vger.kernel.org; Tue, 30 Jun 2015 11:15:04 +0200
-Received: from HSI-KBW-217-008-058-175.hsi.kabelbw.de ([217.8.58.175])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2015 11:15:04 +0200
-Received: from wb by HSI-KBW-217-008-058-175.hsi.kabelbw.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2015 11:15:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: David Weber <wb@munzinger.de>
-Subject: Re: WARNING:  at /fs/btrfs/extent-tree.c:4029 =?utf-8?b?YnRyZnNfZnJlZV9yZXNlcnZlZF9kYXRhX3NwYWNl?=
-Date: Tue, 30 Jun 2015 09:10:53 +0000 (UTC)
-Message-ID: <loom.20150630T110709-722@post.gmane.org>
-References: <6617728.KSCQs1dauk@o3-3> <mmr75d$vbi$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from cn.fujitsu.com ([59.151.112.132]:42065 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752601AbbFSDvc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 18 Jun 2015 23:51:32 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5J3nqxW028642
+	for <linux-btrfs@vger.kernel.org>; Fri, 19 Jun 2015 11:49:53 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 2/2] btrfs-progs: Add repair function for I_ERR_FILE_WRONG_NBYTES.
+Date: Fri, 19 Jun 2015 11:49:20 +0800
+Message-ID: <1434685760-2013-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1434685760-2013-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1434685760-2013-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lutz Vieweg <lvml <at> 5t9.de> writes:
+Some unknown kernel bug makes inode nbytes modification out of sync with
+file extent update.
 
-> 
-> On 06/29/2015 11:35 AM, David Weber wrote:
-> > we are testing Btrfs as a kvm storage system with
-> > "defaults,space_cache,nodatacow" mount options and regular snapshots.
-> 
-> That sounds brave - even with "nodatacow" it appeared to me
-> that using btrfs with often partially overwritten files like
-> VM images results in excessively fragmented files.
-> And taking snapshots kind of counteracts "nodatacow".
-> 
-> What does "filefrag" tell about your VM images on btrfs?
-> 
-> (As much as I like btrfs for other purposes, I currently stay
-> with XFS for VM images, database files and alike.)
+But it's quite easy to fix in btrfs-progs anyway.
 
-Fragmentation can create a performance hit and you have to ponder if the 
-features are worth it.
-I use Btrfs with regular snapshots on my workstation with Virtualbox since 
-years. Running filefrag on the image doesn't complete after hours but the 
-IO of the VM is still "fast enough". But the definition of "fast enough" 
-can vary heavily.
-If it becomes to slow I will try a btrfs fi deframent or just recreate the 
-image with a no reflink copy.
+So just fix it by adding a new function repair_inode_nbytes by using the
+found_size in inode_record.
 
-Cheers,
-David
+Reported-by: Christian <cdysthe@gmail.com>
+Reported-by: Chris Murphy <lists@colorremedies.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ cmds-check.c | 38 +++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 37 insertions(+), 1 deletion(-)
 
-
-
+diff --git a/cmds-check.c b/cmds-check.c
+index db121b1..80accee 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -1918,6 +1918,39 @@ static int repair_inode_orphan_item(struct btrfs_trans_handle *trans,
+ 	return ret;
+ }
+ 
++static int repair_inode_nbytes(struct btrfs_trans_handle *trans,
++			       struct btrfs_root *root,
++			       struct btrfs_path *path,
++			       struct inode_record *rec)
++{
++	struct btrfs_inode_item *ei;
++	struct btrfs_key key;
++	int ret = 0;
++
++	key.objectid = rec->ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
++
++	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
++	if (ret) {
++		if (ret > 0)
++			ret = -ENOENT;
++		goto out;
++	}
++
++	/* Since ret == 0, no need to check anything */
++	ei = btrfs_item_ptr(path->nodes[0], path->slots[0],
++			    struct btrfs_inode_item);
++	btrfs_set_inode_nbytes(path->nodes[0], ei, rec->found_size);
++	btrfs_mark_buffer_dirty(path->nodes[0]);
++	rec->errors &= ~I_ERR_FILE_NBYTES_WRONG;
++	printf("reset nbytes for ino %llu root %llu\n",
++	       rec->ino, root->root_key.objectid);
++out:
++	btrfs_release_path(path);
++	return ret;
++}
++
+ static int add_missing_dir_index(struct btrfs_root *root,
+ 				 struct cache_tree *inode_cache,
+ 				 struct inode_record *rec,
+@@ -2661,7 +2694,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+ 			     I_ERR_LINK_COUNT_WRONG |
+ 			     I_ERR_NO_INODE_ITEM |
+ 			     I_ERR_FILE_EXTENT_ORPHAN |
+-			     I_ERR_FILE_EXTENT_DISCOUNT)))
++			     I_ERR_FILE_EXTENT_DISCOUNT|
++			     I_ERR_FILE_NBYTES_WRONG)))
+ 		return rec->errors;
+ 
+ 	path = btrfs_alloc_path();
+@@ -2693,6 +2727,8 @@ static int try_repair_inode(struct btrfs_root *root, struct inode_record *rec)
+ 		ret = repair_inode_orphan_item(trans, root, path, rec);
+ 	if (!ret && rec->errors & I_ERR_LINK_COUNT_WRONG)
+ 		ret = repair_inode_nlinks(trans, root, path, rec);
++	if (!ret && rec->errors & I_ERR_FILE_NBYTES_WRONG)
++		ret = repair_inode_nbytes(trans, root, path, rec);
+ 	btrfs_commit_transaction(trans, root);
+ 	btrfs_free_path(path);
+ 	return ret;
+-- 
+2.4.4
 

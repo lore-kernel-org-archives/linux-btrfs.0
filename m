@@ -1,284 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:60190 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751060AbbFSXtj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 19 Jun 2015 19:49:39 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: fix fsync xattr loss in the fast fsync path
-Date: Sat, 20 Jun 2015 00:44:51 +0100
-Message-Id: <1434757491-28325-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1434541789-27941-1-git-send-email-fdmanana@kernel.org>
-References: <1434541789-27941-1-git-send-email-fdmanana@kernel.org>
+Received: from relay4-d.mail.gandi.net ([217.70.183.196]:37219 "EHLO
+	relay4-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751790AbbFURNR convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 21 Jun 2015 13:13:17 -0400
+Received: from mfilter45-d.gandi.net (mfilter45-d.gandi.net [217.70.178.176])
+	by relay4-d.mail.gandi.net (Postfix) with ESMTP id E0179172074
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Jun 2015 19:13:15 +0200 (CEST)
+Received: from relay4-d.mail.gandi.net ([IPv6:::ffff:217.70.183.196])
+	by mfilter45-d.gandi.net (mfilter45-d.gandi.net [::ffff:10.0.15.180]) (amavisd-new, port 10024)
+	with ESMTP id Em0pn0ubYUak for <linux-btrfs@vger.kernel.org>;
+	Sun, 21 Jun 2015 19:13:14 +0200 (CEST)
+Received: from zafu.localnet (AMontpellier-656-1-387-187.w90-0.abo.wanadoo.fr [90.0.115.187])
+	(Authenticated sender: michel@bouissou.net)
+	by relay4-d.mail.gandi.net (Postfix) with ESMTPSA id 8E01A172081
+	for <linux-btrfs@vger.kernel.org>; Sun, 21 Jun 2015 19:13:14 +0200 (CEST)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Is there a "nossd" option ?
+Date: Sun, 21 Jun 2015 19:13:10 +0200
+Message-ID: <1586648.BNplRrhkhg@zafu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi,
 
-After commit 4f764e515361 ("Btrfs: remove deleted xattrs on fsync log
-replay"), we can end up in a situation where during log replay we end up
-deleting xattrs that were never deleted when their file was last fsynced.
+Running a 3.19 Ubuntu kernel,
 
-This happens in the fast fsync path (flag BTRFS_INODE_NEEDS_FULL_SYNC is
-not set in the inode) if the inode has the flag BTRFS_INODE_COPY_EVERYTHING
-set, the xattr was added in a past transaction and the leaf where the
-xattr is located was not updated (COWed or created) in the current
-transaction. In this scenario the xattr item never ends up in the log
-tree and therefore at log replay time, which makes the replay code delete
-the xattr from the fs/subvol tree as it thinks that xattr was deleted
-prior to the last fsync.
+I'm currently budling a RAID-1 BTRFS set for which every underlying device is 
+a LUKS-encrypted device itself built out of a bcache device comprised of a 
+mechanical HD partition + an SSD cache partition.
 
-Fix this by always logging all xattrs, which is the simplest and most
-reliable way to detect deleted xattrs and replay the deletes at log replay
-time.
+Looks like it's working.
 
-This issue is reproducible with the following test case for fstests:
+BUT I see that BTRFS decides by itself to mount with the "ssd" option as  
+bcache makes it think the device is not "rotational".
 
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
+However I feel that a mechanical HD plus SSD bcache should probably not be 
+"SSD-optimized" as the underlying storage is indeed mechanical and bcache 
+already manages the SSD part optimization by itself - and I'm afraid the "SSD 
+optimization" could actually cause the mechanical storage to end up being much 
+more fragmented than it should...
 
-  here=`pwd`
-  tmp=/tmp/$$
-  status=1	# failure is the default!
+So the question is : Is there a mount option such as "nossd" that I could use 
+to inhibit the automatic SSD "choice" that BTRFS makes ?
 
-  _cleanup()
-  {
-      _cleanup_flakey
-      rm -f $tmp.*
-  }
-  trap "_cleanup; exit \$status" 0 1 2 3 15
+TIA, kind regards.
 
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-  . ./common/dmflakey
-  . ./common/attr
-
-  # real QA test starts here
-
-  # We create a lot of xattrs for a single file. Only btrfs and xfs are currently
-  # able to store such a large mount of xattrs per file, other filesystems such
-  # as ext3/4 and f2fs for example, fail with ENOSPC even if we attempt to add
-  # less than 1000 xattrs with very small values.
-  _supported_fs btrfs xfs
-  _supported_os Linux
-  _need_to_be_root
-  _require_scratch
-  _require_dm_flakey
-  _require_attrs
-  _require_metadata_journaling $SCRATCH_DEV
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >> $seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
-
-  # Create the test file with some initial data and make sure everything is
-  # durably persisted.
-  $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 32k" $SCRATCH_MNT/foo | _filter_xfs_io
-  sync
-
-  # Add many small xattrs to our file.
-  # We create such a large amount because it's needed to trigger the issue found
-  # in btrfs - we need to have an amount that causes the fs to have at least 3
-  # btree leafs with xattrs stored in them, and it must work on any leaf size
-  # (maximum leaf/node size is 64Kb).
-  num_xattrs=2000
-  for ((i = 1; i <= $num_xattrs; i++)); do
-      name="user.attr_$(printf "%04d" $i)"
-      $SETFATTR_PROG -n $name -v "val_$(printf "%04d" $i)" $SCRATCH_MNT/foo
-  done
-
-  # Sync the filesystem to force a commit of the current btrfs transaction, this
-  # is a necessary condition to trigger the bug on btrfs.
-  sync
-
-  # Now update our file's data and fsync the file.
-  # After a successful fsync, if the fsync log/journal is replayed we expect to
-  # see all the xattrs we added before with the same values (and the updated file
-  # data of course). Btrfs used to delete some of these xattrs when it replayed
-  # its fsync log/journal.
-  $XFS_IO_PROG -c "pwrite -S 0xbb 8K 16K" \
-               -c "fsync" \
-               $SCRATCH_MNT/foo | _filter_xfs_io
-
-  # Simulate a crash/power loss.
-  _load_flakey_table $FLAKEY_DROP_WRITES
-  _unmount_flakey
-
-  # Allow writes again and mount. This makes the fs replay its fsync log.
-  _load_flakey_table $FLAKEY_ALLOW_WRITES
-  _mount_flakey
-
-  echo "File content after crash and log replay:"
-  od -t x1 $SCRATCH_MNT/foo
-
-  echo "File xattrs after crash and log replay:"
-  for ((i = 1; i <= $num_xattrs; i++)); do
-      name="user.attr_$(printf "%04d" $i)"
-      echo -n "$name="
-      $GETFATTR_PROG --absolute-names -n $name --only-values $SCRATCH_MNT/foo
-      echo
-  done
-
-  status=0
-  exit
-
-The golden output expects all xattrs to be available, and with the correct
-values, after the fsync log is replayed.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Updated reproducer test, no code changes.
-    The first version of the test actually only failed if my other
-    unrelated patch titled "Btrfs: fix fsync data loss after append write"
-    was applied. That's because it forced logging the inode item which
-    is necessary to trigger the xattr deletion replay code. So updated
-    the test such that it fails without that patch applied too.
-
-V3: Changed to a simpler approach which doesn't require a new key type,
-    as the previous solution would make an older kernel not do the
-    xattr deletion replay for log trees created by a more recent kernel
-    with this patch.
-
- fs/btrfs/tree-log.c | 104 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 104 insertions(+)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 4920fce..7ac45cf 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4123,6 +4123,86 @@ static int logged_inode_size(struct btrfs_root *log, struct inode *inode,
- 	return 0;
- }
- 
-+/*
-+ * At the moment we always log all xattrs. This is to figure out at log replay
-+ * time which xattrs must have their deletion replayed. If a xattr is missing
-+ * in the log tree and exists in the fs/subvol tree, we delete it. This is
-+ * because if a xattr is deleted, the inode is fsynced and a power failure
-+ * happens, causing the log to be replayed the next time the fs is mounted,
-+ * we want the xattr to not exist anymore (same behaviour as other filesystems
-+ * with a journal, ext3/4, xfs, f2fs, etc).
-+ */
-+static int btrfs_log_all_xattrs(struct btrfs_trans_handle *trans,
-+				struct btrfs_root *root,
-+				struct inode *inode,
-+				struct btrfs_path *path,
-+				struct btrfs_path *dst_path)
-+{
-+	int ret;
-+	struct btrfs_key key;
-+	const u64 ino = btrfs_ino(inode);
-+	int ins_nr = 0;
-+	int start_slot = 0;
-+
-+	key.objectid = ino;
-+	key.type = BTRFS_XATTR_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		return ret;
-+
-+	while (true) {
-+		int slot = path->slots[0];
-+		struct extent_buffer *leaf = path->nodes[0];
-+		int nritems = btrfs_header_nritems(leaf);
-+
-+		if (slot >= nritems) {
-+			if (ins_nr > 0) {
-+				u64 last_extent = 0;
-+
-+				ret = copy_items(trans, inode, dst_path, path,
-+						 &last_extent, start_slot,
-+						 ins_nr, 1, 0);
-+				/* can't be 1, extent items aren't processed */
-+				ASSERT(ret <= 0);
-+				if (ret < 0)
-+					return ret;
-+				ins_nr = 0;
-+			}
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				return ret;
-+			else if (ret > 0)
-+				break;
-+			continue;
-+		}
-+
-+		btrfs_item_key_to_cpu(leaf, &key, slot);
-+		if (key.objectid != ino || key.type != BTRFS_XATTR_ITEM_KEY)
-+			break;
-+
-+		if (ins_nr == 0)
-+			start_slot = slot;
-+		ins_nr++;
-+		path->slots[0]++;
-+		cond_resched();
-+	}
-+	if (ins_nr > 0) {
-+		u64 last_extent = 0;
-+
-+		ret = copy_items(trans, inode, dst_path, path,
-+				 &last_extent, start_slot,
-+				 ins_nr, 1, 0);
-+		/* can't be 1, extent items aren't processed */
-+		ASSERT(ret <= 0);
-+		if (ret < 0)
-+			return ret;
-+	}
-+
-+	return 0;
-+}
-+
- /* log a single inode in the tree log.
-  * At least one parent directory for this inode must exist in the tree
-  * or be logged already.
-@@ -4295,6 +4375,25 @@ again:
- 		if (min_key.type == BTRFS_INODE_ITEM_KEY)
- 			need_log_inode_item = false;
- 
-+		/* Skip xattrs, we log them later with btrfs_log_all_xattrs() */
-+		if (min_key.type == BTRFS_XATTR_ITEM_KEY) {
-+			if (ins_nr == 0)
-+				goto next_slot;
-+			ret = copy_items(trans, inode, dst_path, path,
-+					 &last_extent, ins_start_slot,
-+					 ins_nr, inode_only, logged_isize);
-+			if (ret < 0) {
-+				err = ret;
-+				goto out_unlock;
-+			}
-+			ins_nr = 0;
-+			if (ret) {
-+				btrfs_release_path(path);
-+				continue;
-+			}
-+			goto next_slot;
-+		}
-+
- 		src = path->nodes[0];
- 		if (ins_nr && ins_start_slot + ins_nr == path->slots[0]) {
- 			ins_nr++;
-@@ -4362,6 +4461,11 @@ next_slot:
- 		ins_nr = 0;
- 	}
- 
-+	btrfs_release_path(path);
-+	btrfs_release_path(dst_path);
-+	err = btrfs_log_all_xattrs(trans, root, inode, path, dst_path);
-+	if (err)
-+		goto out_unlock;
- log_extents:
- 	btrfs_release_path(path);
- 	btrfs_release_path(dst_path);
 -- 
-2.1.3
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

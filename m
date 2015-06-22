@@ -1,278 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38853 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:38860 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751702AbbFVWrz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jun 2015 18:47:55 -0400
+	id S1752319AbbFVWr4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Jun 2015 18:47:56 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: Chris Mason <clm@fb.com>
 Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
         linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 2/5] btrfs: fix deadlock with extent-same and readpage
-Date: Mon, 22 Jun 2015 15:47:39 -0700
-Message-Id: <1435013262-23252-3-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 3/5] btrfs: fix clone / extent-same deadlocks
+Date: Mon, 22 Jun 2015 15:47:40 -0700
+Message-Id: <1435013262-23252-4-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1435013262-23252-1-git-send-email-mfasheh@suse.de>
 References: <1435013262-23252-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-->readpage() does page_lock() before extent_lock(), we do the opposite in
-extent-same. We want to reverse the order in btrfs_extent_same() but it's
-not quite straightforward since the page locks are taken inside btrfs_cmp_data().
+Clone and extent same lock their source and target inodes in opposite order.
+In addition to this, the range locking in clone doesn't take ordering into
+account. Fix this by having clone use the same locking helpers as
+btrfs-extent-same.
 
-So I split btrfs_cmp_data() into 3 parts with a small context structure that
-is passed between them. The first, btrfs_cmp_data_prepare() gathers up the
-pages needed (taking page lock as required) and puts them on our context
-structure. At this point, we are safe to lock the extent range. Afterwards,
-we use btrfs_cmp_data() to do the data compare as usual and btrfs_cmp_data_free()
-to clean up our context.
+In addition, I do a small cleanup of the locking helpers, removing a case
+(both inodes being the same) which was poorly accounted for and never
+actually used by the callers.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
-Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ioctl.c | 148 +++++++++++++++++++++++++++++++++++++++++++------------
- 1 file changed, 117 insertions(+), 31 deletions(-)
+ fs/btrfs/ioctl.c | 34 ++++++++--------------------------
+ 1 file changed, 8 insertions(+), 26 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2deea1f..b899584 100644
+index b899584..8d6887d 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2755,14 +2755,11 @@ out:
- 	return ret;
- }
- 
--static struct page *extent_same_get_page(struct inode *inode, u64 off)
-+static struct page *extent_same_get_page(struct inode *inode, pgoff_t index)
- {
- 	struct page *page;
--	pgoff_t index;
- 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
- 
--	index = off >> PAGE_CACHE_SHIFT;
--
- 	page = grab_cache_page(inode->i_mapping, index);
- 	if (!page)
- 		return NULL;
-@@ -2783,6 +2780,20 @@ static struct page *extent_same_get_page(struct inode *inode, u64 off)
- 	return page;
- }
- 
-+static int gather_extent_pages(struct inode *inode, struct page **pages,
-+			       int num_pages, u64 off)
-+{
-+	int i;
-+	pgoff_t index = off >> PAGE_CACHE_SHIFT;
-+
-+	for (i = 0; i < num_pages; i++) {
-+		pages[i] = extent_same_get_page(inode, index + i);
-+		if (!pages[i])
-+			return -ENOMEM;
-+	}
-+	return 0;
-+}
-+
- static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
- {
- 	/* do any pending delalloc/csum calc on src, one way or
-@@ -2808,52 +2819,120 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
- 	}
- }
- 
--static void btrfs_double_unlock(struct inode *inode1, u64 loff1,
--				struct inode *inode2, u64 loff2, u64 len)
-+static void btrfs_double_inode_unlock(struct inode *inode1, struct inode *inode2)
- {
--	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
--	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
--
- 	mutex_unlock(&inode1->i_mutex);
- 	mutex_unlock(&inode2->i_mutex);
- }
- 
--static void btrfs_double_lock(struct inode *inode1, u64 loff1,
--			      struct inode *inode2, u64 loff2, u64 len)
-+static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
-+{
-+	if (inode1 < inode2)
-+		swap(inode1, inode2);
-+
-+	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
-+	if (inode1 != inode2)
-+		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-+}
-+
-+static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
-+				      struct inode *inode2, u64 loff2, u64 len)
-+{
-+	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
-+	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
-+}
-+
-+static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
-+				     struct inode *inode2, u64 loff2, u64 len)
- {
- 	if (inode1 < inode2) {
+@@ -2831,8 +2831,7 @@ static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
  		swap(inode1, inode2);
+ 
+ 	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
+-	if (inode1 != inode2)
+-		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
++	mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
+ }
+ 
+ static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
+@@ -2850,8 +2849,7 @@ static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
  		swap(loff1, loff2);
  	}
--
--	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
  	lock_extent_range(inode1, loff1, len);
--	if (inode1 != inode2) {
--		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-+	if (inode1 != inode2)
- 		lock_extent_range(inode2, loff2, len);
-+}
-+
-+struct cmp_pages {
-+	int		num_pages;
-+	struct page	**src_pages;
-+	struct page	**dst_pages;
-+};
-+
-+static void btrfs_cmp_data_free(struct cmp_pages *cmp)
-+{
-+	int i;
-+	struct page *pg;
-+
-+	for (i = 0; i < cmp->num_pages; i++) {
-+		pg = cmp->src_pages[i];
-+		if (pg)
-+			page_cache_release(pg);
-+		pg = cmp->dst_pages[i];
-+		if (pg)
-+			page_cache_release(pg);
-+	}
-+	kfree(cmp->src_pages);
-+	kfree(cmp->dst_pages);
-+}
-+
-+static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
-+				  struct inode *dst, u64 dst_loff,
-+				  u64 len, struct cmp_pages *cmp)
-+{
-+	int ret;
-+	int num_pages = PAGE_CACHE_ALIGN(len) >> PAGE_CACHE_SHIFT;
-+	struct page **src_pgarr, **dst_pgarr;
-+
-+	/*
-+	 * We must gather up all the pages before we initiate our
-+	 * extent locking. We use an array for the page pointers. Size
-+	 * of the array is bounded by len, which is in turn bounded by
-+	 * BTRFS_MAX_DEDUPE_LEN.
-+	 */
-+	src_pgarr = kzalloc(num_pages * sizeof(struct page *), GFP_NOFS);
-+	dst_pgarr = kzalloc(num_pages * sizeof(struct page *), GFP_NOFS);
-+	if (!src_pgarr || !dst_pgarr) {
-+		kfree(src_pgarr);
-+		kfree(dst_pgarr);
-+		return -ENOMEM;
- 	}
-+	cmp->num_pages = num_pages;
-+	cmp->src_pages = src_pgarr;
-+	cmp->dst_pages = dst_pgarr;
-+
-+	ret = gather_extent_pages(src, cmp->src_pages, cmp->num_pages, loff);
-+	if (ret)
-+		goto out;
-+
-+	ret = gather_extent_pages(dst, cmp->dst_pages, cmp->num_pages, dst_loff);
-+
-+out:
-+	if (ret)
-+		btrfs_cmp_data_free(cmp);
-+	return 0;
+-	if (inode1 != inode2)
+-		lock_extent_range(inode2, loff2, len);
++	lock_extent_range(inode2, loff2, len);
  }
  
- static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
--			  u64 dst_loff, u64 len)
-+			  u64 dst_loff, u64 len, struct cmp_pages *cmp)
- {
- 	int ret = 0;
-+	int i;
- 	struct page *src_page, *dst_page;
- 	unsigned int cmp_len = PAGE_CACHE_SIZE;
- 	void *addr, *dst_addr;
+ struct cmp_pages {
+@@ -3713,13 +3711,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 		goto out_fput;
  
-+	i = 0;
- 	while (len) {
- 		if (len < PAGE_CACHE_SIZE)
- 			cmp_len = len;
- 
--		src_page = extent_same_get_page(src, loff);
--		if (!src_page)
--			return -EINVAL;
--		dst_page = extent_same_get_page(dst, dst_loff);
--		if (!dst_page) {
--			page_cache_release(src_page);
--			return -EINVAL;
+ 	if (!same_inode) {
+-		if (inode < src) {
+-			mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
+-			mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
+-		} else {
+-			mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
+-			mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
 -		}
-+		BUG_ON(i >= cmp->num_pages);
-+
-+		src_page = cmp->src_pages[i];
-+		dst_page = cmp->dst_pages[i];
-+
- 		addr = kmap_atomic(src_page);
- 		dst_addr = kmap_atomic(dst_page);
++		btrfs_double_inode_lock(src, inode);
+ 	} else {
+ 		mutex_lock(&src->i_mutex);
+ 	}
+@@ -3769,8 +3761,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
  
-@@ -2865,15 +2944,12 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
- 
- 		kunmap_atomic(addr);
- 		kunmap_atomic(dst_addr);
--		page_cache_release(src_page);
--		page_cache_release(dst_page);
- 
- 		if (ret)
- 			break;
- 
--		loff += cmp_len;
--		dst_loff += cmp_len;
- 		len -= cmp_len;
-+		i++;
+ 		lock_extent_range(src, lock_start, lock_len);
+ 	} else {
+-		lock_extent_range(src, off, len);
+-		lock_extent_range(inode, destoff, len);
++		btrfs_double_extent_lock(src, off, inode, destoff, len);
  	}
  
- 	return ret;
-@@ -2904,6 +2980,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- {
- 	int ret;
- 	u64 len = olen;
-+	struct cmp_pages cmp;
+ 	ret = btrfs_clone(src, inode, off, olen, len, destoff);
+@@ -3781,9 +3772,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
  
+ 		unlock_extent(&BTRFS_I(src)->io_tree, lock_start, lock_end);
+ 	} else {
+-		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+-		unlock_extent(&BTRFS_I(inode)->io_tree, destoff,
+-			      destoff + len - 1);
++		btrfs_double_extent_unlock(src, off, inode, destoff, len);
+ 	}
  	/*
- 	 * btrfs_clone() can't handle extents in the same file
-@@ -2916,7 +2993,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	if (len == 0)
- 		return 0;
- 
--	btrfs_double_lock(src, loff, dst, dst_loff, len);
-+	btrfs_double_inode_lock(src, dst);
- 
- 	ret = extent_same_check_offsets(src, loff, &len, olen);
- 	if (ret)
-@@ -2933,13 +3010,22 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 		goto out_unlock;
- 	}
- 
-+	ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, &cmp);
-+	if (ret)
-+		goto out_unlock;
-+
-+	btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
-+
- 	/* pass original length for comparison so we stay within i_size */
--	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen);
-+	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
- 	if (ret == 0)
- 		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
- 
-+	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
-+
-+	btrfs_cmp_data_free(&cmp);
+ 	 * Truncate page cache pages so that future reads will see the cloned
+@@ -3792,17 +3781,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	truncate_inode_pages_range(&inode->i_data, destoff,
+ 				   PAGE_CACHE_ALIGN(destoff + len) - 1);
  out_unlock:
--	btrfs_double_unlock(src, loff, dst, dst_loff, len);
-+	btrfs_double_inode_unlock(src, dst);
- 
- 	return ret;
- }
+-	if (!same_inode) {
+-		if (inode < src) {
+-			mutex_unlock(&src->i_mutex);
+-			mutex_unlock(&inode->i_mutex);
+-		} else {
+-			mutex_unlock(&inode->i_mutex);
+-			mutex_unlock(&src->i_mutex);
+-		}
+-	} else {
++	if (!same_inode)
++		btrfs_double_inode_unlock(src, inode);
++	else
+ 		mutex_unlock(&src->i_mutex);
+-	}
+ out_fput:
+ 	fdput(src_file);
+ out_drop_write:
 -- 
 2.1.2
 

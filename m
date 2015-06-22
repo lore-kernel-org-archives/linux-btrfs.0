@@ -1,169 +1,122 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:27298 "EHLO
+Received: from mail.synology.com ([59.124.41.242]:37501 "EHLO
 	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754480AbbFVJJA (ORCPT
+	with ESMTP id S932164AbbFVJJB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jun 2015 05:09:00 -0400
+	Mon, 22 Jun 2015 05:09:01 -0400
 From: Robbie Ko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v2 1/7] Revert "Btrfs: incremental send, remove dead code"
-Date: Mon, 22 Jun 2015 17:08:42 +0800
-Message-Id: <1434964128-31757-2-git-send-email-robbieko@synology.com>
+Subject: [PATCH v2 6/7] Btrfs: incremental send, don't send utimes for non-existing directory
+Date: Mon, 22 Jun 2015 17:08:47 +0800
+Message-Id: <1434964128-31757-7-git-send-email-robbieko@synology.com>
 In-Reply-To: <1434964128-31757-1-git-send-email-robbieko@synology.com>
 References: <1434964128-31757-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This reverts commit 5f806c3ae2ff6263a10a6901f97abb74dac03d36.
+There's one case where we can't issue a utimes operation for a directory.
+First, 261 can't move to d/item1 without the rename of inode 265. So as 262.
+Thus 261 and 262 need to wait for rename.
+Second, since 263 will be deleted and there are two waiting sub-directory
+261 and 262, rmdir_ino of 261 will set to 263 and rmdir_ino of 262 is not set.
+If 262 is processed earlier than 261, utime of both 263 and 264 will be
+updated. However, 263 should not update since it will vanish.
 
-Btrfs: incremental send, avoid ancestor rename to descendant
+I've found that the following case is the main cause of such error
+and it's fs tree is shown via btrfs-debug-tress as below.
 
-There's one more case where we can't issue a rename operation for a directory
-as soon as we process it. We move a directory from ancestor to descendant.
+file tree key (459 ROOT_ITEM 20487)
+node 132988928 level 1 items 3 free 490 generation 20487 owner 459
+fs uuid b451ae42-3b03-4003-b0a4-45dce324557f
+chunk uuid d8831db3-2e42-4b32-9a5c-3efdf50d36bc
+        key (256 INODE_ITEM 0) block 132710400 (8100) gen 20486
+        key (264 INODE_ITEM 0) block 130695168 (7977) gen 20480
+        key (266 XATTR_ITEM 952319794) block 126042112 (7693) gen 20464
+leaf 132710400 items 166 free space 3639 generation 20486 owner 455
+fs uuid b451ae42-3b03-4003-b0a4-45dce324557f
+chunk uuid d8831db3-2e42-4b32-9a5c-3efdf50d36bc
+        item 0 key (256 INODE_ITEM 0) itemoff 16123 itemsize 160
+                inode generation 20425 transid 20442 size 32 block
+group 0 mode 40755 links 1 uid 0 gid 0 rdev 0 flags 0x0
+        item 1 key (256 INODE_REF 256) itemoff 16111 itemsize 12
+                inode ref index 0 namelen 2 name: ..
+...
+        item 165 key (262 XATTR_ITEM 1100961104) itemoff 7789 itemsize 39
+                location key (0 UNKNOWN.0 0) type XATTR
+                namelen 8 datalen 1 name: user.a78
+                data a
+                binary 61
+leaf 130695168 items 133 free space 7332 generation 20480 owner 455
+fs uuid b451ae42-3b03-4003-b0a4-45dce324557f
+chunk uuid d8831db3-2e42-4b32-9a5c-3efdf50d36bc
+        item 0 key (264 INODE_ITEM 0) itemoff 16123 itemsize 160
+                inode generation 20428 transid 20434 size 10 block
+group 0 mode 40755 links 1 uid 0 gid 0 rdev 0 flags 0x0
+        item 1 key (264 INODE_REF 256) itemoff 16112 itemsize 11
+                inode ref index 11 namelen 1 name: c
+...
 
-|---- a
-    |---- b
-        |---- c
-             |---- d
-"Move a directory from ancestor to descendant" means moving dir. a into dir. c
+We can see that inode 262 is right at the end of leaf. Then send_utime() will
+use btrfs_search_slot() to find a appropriate place to put 262 where is at the
+back of 262. However, that place is uninitialized on disk. Suppose we read
+atime tv_sec:576469548413222912, tv_nsec:1919251317 and then send it out.
+Receiving side will  got EINVAL since tv_nsec:1919251317 is greater
+than 999,999,999.
 
-This case will happen after applying "[PATCH] Btrfs: incremental send,
-don't delay directory renames unnecessarily".
-Because, that patch changes behavior of wait_for_parent_move function.
+So fix this by don't send utimes for non-existing directory for this case.
+
+Example:
 
 Parent snapshot:
-|---- @tmp/ (ino 257)
-|---- pre/ (ino 259)
-    |---- wait_dir (ino 260)
-      |---- finish_dir2/ (ino 261)
-|---- ance/ (ino 263)
-    |---- finish_dir1/ (ino 258)
-|---- desc/ (ino 262)
-|---- other_dir/ (ino 264)
+|---- a/ (ino 259)
+    |---- c (ino 264)
+|---- b/ (ino 260)
+    |---- d (ino 265)
+|---- del/ (ino 263)
+    |---- item1/ (ino 261)
+    |---- item2/ (ino 262)
 
 Send snapshot:
-|---- @tmp/ (ino 257)
-    |---- other_dir/ (ino 264)
-        |---- wait_dir/ (ino 260)
-            |---- finish_dir2/ (ino 261)
-                |---- desc/ (ino 262)
-                    |---- ance/ (ino 263)
-                        |---- finish_dir1/ (ino 258)
-                            |---- pre/ (ino 259)
-
-1. 259 can not move under 258 because 263 needs to move to 263 first.
-So 259 is waiting on ance(263).
-
-2. 260 must move to @tmp/other_dir, so it is waiting on other_dir(264).
-
-3. 262 is able to rename as pre/wait_dir/finish_dir2(261)/desc since
-wait_dir(260) is waiting and 262 is not the ancestor of wait_dir(260).
-
-4.263 is able to rename as pre/wait_dir/finish_dir2(261)/ance since
-wait_dir(260) is waiting and 263 is not the ancestor of wait_dir(260).
-
-5. After wait_dir(263) is finished, all pending dirs. start to run.
-    /pre(259) in apply_dir_move() renames /pre as
-pre/wait_dir/finish_dir2/desc/ance/finish_dir1/pre
-  At the same time, receiving side will encounter error.
-  If anyone calls get_cur_path() to any element in
-pre/wait_dir/finish_dir2/desc/ance/finish_dir1/pre like wait_dir(260)
-,
-  there will cause path building loop like this : 260 -> 259 -> 258 ->
-263 -> 262 -> 261 -> 260
-
-So fix the problem by check path_loop for this case.
+|---- a/ (ino 259)
+|---- b/ (ino 260)
+|---- c/ (ino 264)
+    |---- item2 (ino 262)
+|---- d/ (ino 265)
+    |---- item1/ (ino 261)
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- fs/btrfs/send.c | 59 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 59 insertions(+)
+
+V2:don't send utimes for non-existing directory
+
+ fs/btrfs/send.c | 12 +++++++++++-
+ 1 file changed, 11 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index 1c1f161..257753b 100644
+index cd22f7d..579a4c8 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -3080,6 +3080,48 @@ static struct pending_dir_move *get_pending_dir_moves(struct send_ctx *sctx,
- 	return NULL;
- }
- 
-+static int path_loop(struct send_ctx *sctx, struct fs_path *name,
-+		     u64 ino, u64 gen, u64 *ancestor_ino)
-+{
-+	int ret = 0;
-+	u64 parent_inode = 0;
-+	u64 parent_gen = 0;
-+	u64 start_ino = ino;
-+
-+	*ancestor_ino = 0;
-+	while (ino != BTRFS_FIRST_FREE_OBJECTID) {
-+		fs_path_reset(name);
-+
-+		if (is_waiting_for_rm(sctx, ino))
-+			break;
-+		if (is_waiting_for_move(sctx, ino)) {
-+			if (*ancestor_ino == 0)
-+				*ancestor_ino = ino;
-+			ret = get_first_ref(sctx->parent_root, ino,
-+					    &parent_inode, &parent_gen, name);
-+		} else {
-+			ret = __get_cur_name_and_parent(sctx, ino, gen,
-+							&parent_inode,
-+							&parent_gen, name);
-+			if (ret > 0) {
-+				ret = 0;
-+				break;
-+			}
+@@ -3243,8 +3243,18 @@ finish:
+ 	 * and old parent(s).
+ 	 */
+ 	list_for_each_entry(cur, &pm->update_refs, list) {
+-		if (cur->dir == rmdir_ino)
++		/*
++		 * don't send utimes for non-existing directory
++		 */
++		ret = get_inode_info(sctx->send_root, cur->dir, NULL,
++			     NULL , NULL, NULL, NULL, NULL);
++		if (ret == -ENOENT) {
++			ret = 0;
+ 			continue;
 +		}
-+		if (ret < 0)
-+			break;
-+		if (parent_inode == start_ino) {
-+			ret = 1;
-+			if (*ancestor_ino == 0)
-+				*ancestor_ino = ino;
-+			break;
-+		}
-+		ino = parent_inode;
-+		gen = parent_gen;
-+	}
-+	return ret;
-+}
-+
- static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- {
- 	struct fs_path *from_path = NULL;
-@@ -3091,6 +3133,7 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 	struct waiting_dir_move *dm = NULL;
- 	u64 rmdir_ino = 0;
- 	int ret;
-+	u64 ancestor = 0;
- 
- 	name = fs_path_alloc();
- 	from_path = fs_path_alloc();
-@@ -3122,6 +3165,22 @@ static int apply_dir_move(struct send_ctx *sctx, struct pending_dir_move *pm)
- 		goto out;
- 
- 	sctx->send_progress = sctx->cur_ino + 1;
-+	ret = path_loop(sctx, name, pm->ino, pm->gen, &ancestor);
-+	if (ret) {
-+		LIST_HEAD(deleted_refs);
-+		ASSERT(ancestor > BTRFS_FIRST_FREE_OBJECTID);
-+		ret = add_pending_dir_move(sctx, pm->ino, pm->gen, ancestor,
-+					   &pm->update_refs, &deleted_refs,
-+					   pm->is_orphan);
 +		if (ret < 0)
 +			goto out;
-+		if (rmdir_ino) {
-+			dm = get_waiting_dir_move(sctx, pm->ino);
-+			ASSERT(dm);
-+			dm->rmdir_ino = rmdir_ino;
-+		}
-+		goto out;
-+	}
- 	fs_path_reset(name);
- 	to_path = name;
- 	name = NULL;
++
+ 		ret = send_utimes(sctx, cur->dir, cur->dir_gen);
+ 		if (ret < 0)
+ 			goto out;
 -- 
 1.9.1
 

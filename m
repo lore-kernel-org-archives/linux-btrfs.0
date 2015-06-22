@@ -1,20 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from dragon.async.com.br ([208.70.149.241]:47921 "EHLO
+Received: from dragon.async.com.br ([208.70.149.241]:47968 "EHLO
 	dragon.async.com.br" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753002AbbFVUwj (ORCPT
+	with ESMTP id S1751094AbbFVVKQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jun 2015 16:52:39 -0400
-Received: from anthem.async.com.br (189-19-234-109.dsl.telesp.net.br [189.19.234.109])
-	by dragon.async.com.br (Postfix) with ESMTPS id 955E44540C8
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2015 15:52:37 -0500 (CDT)
-Received: from localhost.localdomain (gasolinux.internal [192.168.99.14])
-	by anthem.async.com.br (8.14.4/8.14.4/Debian-2ubuntu2.1) with ESMTP id t5MKqWVM024486
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2015 17:52:32 -0300
-Message-Id: <201506222052.t5MKqWVM024486@anthem.async.com.br>
+	Mon, 22 Jun 2015 17:10:16 -0400
 Date: Mon, 22 Jun 2015 15:18:35 -0300
-From: Christian Robottom Reis <kiko@async.com.br>
+From: Christian Robottom Reis <kiko@canonical.com>
 To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
 Subject: qgroup limit clearing, was Re: Btrfs progs release 4.1
+Message-ID: <20150622181835.GR13079@async.com.br>
 References: <20150622150023.GX6761@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
@@ -67,7 +61,7 @@ I end up with:
 
 Is that expected?
 -- 
-Christian Robottom Reis | [+55 16] 3376 0125   | http://async.com.br/~kiko
-CEO, Async Open Source  | [+55 16] 9 9112 6430 | http://launchpad.net/~kiko
+Christian Robottom Reis   | [+1] 612 888 4935    | http://launchpad.net/~kiko
+Canonical VP Hyperscale   | [+55 16] 9 9112 6430
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

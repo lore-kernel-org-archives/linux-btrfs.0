@@ -1,38 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:6582 "EHLO mail.synology.com"
+Received: from mail.synology.com ([59.124.41.242]:1272 "EHLO mail.synology.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752521AbbFVJI4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jun 2015 05:08:56 -0400
+	id S1752521AbbFVJI7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Jun 2015 05:08:59 -0400
 From: Robbie Ko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v2 0/7] Btrfs incremental send fix serval case for rename and rm directory
-Date: Mon, 22 Jun 2015 17:08:41 +0800
-Message-Id: <1434964128-31757-1-git-send-email-robbieko@synology.com>
+Subject: [PATCH v2 3/7] Btrfs: incremental send, avoid ancestor rename to descendant
+Date: Mon, 22 Jun 2015 17:08:44 +0800
+Message-Id: <1434964128-31757-4-git-send-email-robbieko@synology.com>
+In-Reply-To: <1434964128-31757-1-git-send-email-robbieko@synology.com>
+References: <1434964128-31757-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patch for fix btrfs send receive. These patches base on v4.1
-plus following patches.
-[PATCH] Btrfs: incremental send, don't delay directory renames unnecessarily
-[PATCH] Btrfs: incremental send, check if orphanized dir inode needs delayed rename
+There's one more case where we can't issue a rename operation for a directory
+as soon as we process it. We move a directory from ancestor to descendant.
 
-Thanks.
+|---- a
+    |---- b
+        |---- c
+             |---- d
+"Move a directory from ancestor to descendant" means moving dir. a into dir. c
 
-Robbie Ko (7):
-  Revert "Btrfs: incremental send, remove dead code"
-  Btrfs: incremental send, avoid circular waiting and descendant
-    overwrite ancestor need to update path
-  Btrfs: incremental send, avoid ancestor rename to descendant
-  Btrfs: incremental send, fix orphan_dir_info leak
-  Btrfs: incremental send, fix rmdir but dir have a unprocess item
-  Btrfs: incremental send, don't send utimes for non-existing directory
-  Btrfs: incremental send, avoid the overhead of allocating an
-    orphan_dir_info object unnecessarily
+This case will happen after applying "[PATCH] Btrfs: incremental send,
+don't delay directory renames unnecessarily".
+Because, that patch changes behavior of wait_for_parent_move function.
 
- fs/btrfs/send.c | 167 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 153 insertions(+), 14 deletions(-)
+Example:
+Parent snapshot:
+|---- @tmp/ (ino 257)
+|---- pre/ (ino 260)
+    |---- wait_dir (ino 261)
+|---- ance/ (ino 263)
+    |---- wait_at_below_ance/ (ino 259)
+|---- desc/ (ino 262)
+|---- other_dir/ (ino 264)
 
+Send snapshot:
+|---- @tmp/ (ino 257)
+    |---- other_dir/ (ino 264)
+        |---- wait_at_below_ance/ (ino 259)
+            |---- pre/ (ino 260)
+        |---- wait_dir/ (ino 261)
+            |---- desc/ (ino 262)
+                |---- ance/ (ino 263)
+
+1. 259 must move to @tmp/other_dir, so it is waiting on other_dir(264).
+
+2. 260 is able to rename as ance/wait_at_below_ance/pre since
+wait_at_below_ance(259) is waiting and 260 is not the ancestor of wait_at_below_ance(259).
+
+3. 261 must move to @tmp/other_dir, so it is waiting on other_dir(264).
+
+4. 262 is able to rename as ance/wait_at_below_ance/pre/wait_dir/desc since
+wait_dir(261) is waiting and 262 is not the ancestor of wait_dir(261).
+
+5. 263 is rename as ance/wait_at_below_ance/pre/wait_dir/desc/ance since
+wait_dir(261) is waiting and 263 is not the ancestor of wait_dir(261).
+  At the same time, receiving side will encounter error.
+  If anyone calls get_cur_path() to any element in
+ance/wait_at_below_ance/pre/wait_dir/desc/ance like wait_dir(260),
+  there will cause path building loop like this : 261 -> 260 -> 259 ->
+263 -> 262 -> 261
+
+So fix the problem by check path_loop for this case.
+
+Signed-off-by: Robbie Ko <robbieko@synology.com>
+---
+
+V2: Always check path_loop, and check Allocation ret value.
+
+ fs/btrfs/send.c | 46 +++++++++++++++++++++++++++++++++++++++++++---
+ 1 file changed, 43 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index 44ad144..b946067 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -3088,15 +3088,23 @@ static int path_loop(struct send_ctx *sctx, struct fs_path *name,
+ 
+ 	*ancestor_ino = 0;
+ 	while (ino != BTRFS_FIRST_FREE_OBJECTID) {
++		struct waiting_dir_move *wdm;
+ 		fs_path_reset(name);
+ 
+ 		if (is_waiting_for_rm(sctx, ino))
+ 			break;
+-		if (is_waiting_for_move(sctx, ino)) {
++
++		wdm = get_waiting_dir_move(sctx, ino);
++		if (wdm) {
+ 			if (*ancestor_ino == 0)
+ 				*ancestor_ino = ino;
+-			ret = get_first_ref(sctx->parent_root, ino,
+-					    &parent_inode, &parent_gen, name);
++			if (wdm->orphanized) {
++				ret = gen_unique_name(sctx, ino, gen, name);
++				break;
++			} else {
++				ret = get_first_ref(sctx->parent_root, ino,
++									&parent_inode, &parent_gen, name);
++			}
+ 		} else {
+ 			ret = __get_cur_name_and_parent(sctx, ino, gen,
+ 							&parent_inode,
+@@ -3743,6 +3751,38 @@ verbose_printk("btrfs: process_recorded_refs %llu\n", sctx->cur_ino);
+ 		}
+ 
+ 		/*
++		 * if cur_ino is cur ancestor, can't move now,
++		 * find descendant who is waiting, waiting it.
++		 */
++		if(can_rename) {
++			struct fs_path *name = NULL;
++			u64 ancestor;
++			u64 old_send_progress = sctx->send_progress;
++
++			name = fs_path_alloc();
++			if (!valid_path) {
++				ret = -ENOMEM;
++				goto out;
++			}
++
++			sctx->send_progress = sctx->cur_ino + 1;
++			ret = path_loop(sctx, name, sctx->cur_ino, sctx->cur_inode_gen, &ancestor);
++			if (ret) {
++				ret = add_pending_dir_move(sctx, sctx->cur_ino, sctx->cur_inode_gen,
++							ancestor, &sctx->new_refs, &sctx->deleted_refs, is_orphan);
++				if (ret < 0) {
++					sctx->send_progress = old_send_progress;
++					fs_path_free(name);
++					goto out;
++				}
++				can_rename = false;
++				*pending_move = 1;
++			}
++			sctx->send_progress = old_send_progress;
++			fs_path_free(name);
++		}
++
++		/*
+ 		 * link/move the ref to the new place. If we have an orphan
+ 		 * inode, move it and update valid_path. If not, link or move
+ 		 * it depending on the inode mode.
 -- 
 1.9.1
 

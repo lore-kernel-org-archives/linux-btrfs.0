@@ -1,121 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from c.mail.sonic.net ([64.142.111.80]:35246 "EHLO c.mail.sonic.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751945AbbFVXmb convert rfc822-to-8bit (ORCPT
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:42505 "EHLO
+	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750921AbbFWAFh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jun 2015 19:42:31 -0400
-Received: from mail-vn0-f53.google.com (mail-vn0-f53.google.com [209.85.216.53])
-	(authenticated bits=0)
-	by c.mail.sonic.net (8.15.1/8.15.1) with ESMTPSA id t5MNgTqP032511
-	(version=TLSv1.2 cipher=DHE-RSA-AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2015 16:42:30 -0700
-Received: by vnbg1 with SMTP id g1so10462207vnb.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2015 16:42:29 -0700 (PDT)
+	Mon, 22 Jun 2015 20:05:37 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id AA224AC0E0E
+	for <linux-btrfs@vger.kernel.org>; Tue, 23 Jun 2015 08:55:23 +0900 (JST)
+Message-ID: <5588A056.2080003@jp.fujitsu.com>
+Date: Tue, 23 Jun 2015 08:55:02 +0900
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CA+WRLO9fnZNezbthL8QmMtZXA5U+AU0NfKmVdKDZQGgL6ehmwA@mail.gmail.com>
-References: <CAEko1BnVkHrZPR9O1-CX_DwuN0ZEfrzTHFQsr3XJxt85BpG5qQ@mail.gmail.com>
-	<CA+WRLO9fnZNezbthL8QmMtZXA5U+AU0NfKmVdKDZQGgL6ehmwA@mail.gmail.com>
-Date: Mon, 22 Jun 2015 16:42:29 -0700
-Message-ID: <CAPF83mvYDtwOuX7iGUNGw4wVK15Sg4F1uOfB-RikrF17fV8XNQ@mail.gmail.com>
-Subject: Re: raid 1 to 10 conversion
-From: Suman Chakravartula <suman@rockstor.com>
-To: Gareth Pye <gareth@cerberos.id.au>
-Cc: =?UTF-8?Q?Guilherme_Gon=C3=A7alves?= <agamennon@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Christian Robottom Reis <kiko@async.com.br>
+CC: dsterba@suse.cz, linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
+Subject: Re: qgroup limit clearing, was Re: Btrfs progs release 4.1
+References: <20150622150023.GX6761@twin.jikos.cz> <201506222052.t5MKqWVM024486@anthem.async.com.br>
+In-Reply-To: <201506222052.t5MKqWVM024486@anthem.async.com.br>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I can confirm that convert works now with 4.1 kernel and btrfs-progs
+On 2015/06/23 3:18, Christian Robottom Reis wrote:
+> On Mon, Jun 22, 2015 at 05:00:23PM +0200, David Sterba wrote:
+>>    - qgroup:
+>>      - show: distinguish no limits and 0 limit value
+>>      - limit: ability to clear the limit
+>
+> I'm using kernel 4.1-rc7 as per:
+>
+>      root@riff:/var/lib/lxc/juju-trusty-lxc-template/rootfs# uname -a
+>      Linux riff 4.1.0-040100rc7-generic #201506080035 SMP Mon Jun 8 04:36:20 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+>
+> But apart from still having major issues with qgroups (quota enforcement
+> triggers even when there seems to be plenty of free space) clearing
+> limits with btrfs-progs 4.1 doesn't revert back to 'none', instead
+> confusingly setting the quota to 16EiB. Using:
+>
+>      root@riff:/var/lib/lxc/juju-trusty-lxc-template/rootfs# btrfs version
+>      btrfs-progs v4.1
+>
+> I start from:
+>
+>      qgroupid         rfer         excl     max_rfer     max_excl
+>      --------         ----         ----     --------     --------
+>      0/5           2.15GiB      1.95GiB         none         none
+>      0/261         1.42GiB      1.11GiB         none    100.00GiB
+>      0/265         1.09GiB    600.59MiB         none    100.00GiB
+>      0/271       793.32MiB    366.40MiB         none    100.00GiB
+>      0/274       514.96MiB    142.92MiB         none    100.00GiB
+>
+> I then issue:
+>
+>      root@riff# btrfs qgroup limit -e none 261 /var
+>      root@riff# btrfs qgroup limit none 261 /var
+>
+> I end up with:
+>
+>      qgroupid         rfer         excl     max_rfer     max_excl
+>      --------         ----         ----     --------     --------
+>      0/5           2.15GiB      1.95GiB         none         none
+>      0/261         1.42GiB      1.11GiB     16.00EiB     16.00EiB
+>      0/265         1.09GiB    600.59MiB         none    100.00GiB
+>      0/271       793.32MiB    366.40MiB         none    100.00GiB
+>      0/274       514.96MiB    142.92MiB         none    100.00GiB
+>
+> Is that expected?
+>
 
-Suman
+The following fix is necessary for the kernel to display it correctly.
 
-On Tue, Jun 9, 2015 at 10:31 PM, Gareth Pye <gareth@cerberos.id.au> wrote:
-> btrfs has a small bug at the moment where balance can't convert raid
-> levels (it just does nothing), it is meant to be fixed with the next
-> kernel release.
->
-> On Wed, Jun 10, 2015 at 3:28 PM, Guilherme Gonçalves
-> <agamennon@gmail.com> wrote:
->> Hello!, i think i made a mistake
->> i had two 3tb drivre on a raid 1 setup, i bought two aditional 3tb
->> drives to make my raid 10 array
->> i used this commands
->>
->> btrfs -f device add /dev/sdc /mnt/nas/    (i used -f because i
->> formatted my new drives using gpt)
->> btrfs -f device add /dev/sdf /mnt/nas/
->>
->> finally:
->> btrfs balance start -dconvert=raid10 -mconvert=raid10 /mnt/nas/
->>
->> after a couple of hours i ran:
->>
->> btrfs filesystem  df /mnt/nas/
->>
->> Data, RAID1: total=963.00GiB, used=962.69GiB
->> System, RAID1: total=32.00MiB, used=176.00KiB
->> Metadata, RAID1: total=6.00GiB, used=4.59GiB
->> GlobalReserve, single: total=512.00MiB, used=0.00B
->>
->> should that not read raid 10 ?
->>
->> output for btrfs fi usage /mnt/nas
->>
->> Overall:
->>     Device size:  10.92TiB
->>     Device allocated:   1.89TiB
->>     Device unallocated:   9.02TiB
->>     Device missing:     0.00B
->>     Used:   1.89TiB
->>     Free (estimated):   4.51TiB (min: 4.51TiB)
->>     Data ratio:      2.00
->>     Metadata ratio:      2.00
->>     Global reserve: 512.00MiB (used: 0.00B)
->>
->> Data,RAID1: Size:963.00GiB, Used:962.69GiB
->>    /dev/sdc 481.00GiB
->>    /dev/sdd1 482.00GiB
->>    /dev/sde1 482.00GiB
->>    /dev/sdf 481.00GiB
->>
->> Metadata,RAID1: Size:6.00GiB, Used:4.59GiB
->>    /dev/sdc   4.00GiB
->>    /dev/sdd1   2.00GiB
->>    /dev/sde1   2.00GiB
->>    /dev/sdf   4.00GiB
->>
->> System,RAID1: Size:32.00MiB, Used:176.00KiB
->>    /dev/sdd1  32.00MiB
->>    /dev/sde1  32.00MiB
->>
->> Unallocated:
->>    /dev/sdc   2.25TiB
->>    /dev/sdd1   2.26TiB
->>    /dev/sde1   2.26TiB
->>    /dev/sdf   2.25TiB
->>
->>
->> I think i made a mess here...  why is system only on two drives? why
->> is it not showing raid 10?
->> If i actually failed how do i acheive this? i want all four drives in
->> a raid 10 setup.
->>
->> Thanks in advance
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
->
-> --
-> Gareth Pye
-> Level 2 MTG Judge, Melbourne, Australia
-> "Dear God, I would like to file a bug report"
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+  [PATCH] btrfs: qgroup: allow user to clear the limitation on qgroup
+  http://marc.info/?l=linux-btrfs&m=143331495409594&w=2
+
+Thanks,
+Tsutomu
+
+
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

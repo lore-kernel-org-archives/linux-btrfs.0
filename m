@@ -1,156 +1,234 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:36424 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933381AbbFVMlB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jun 2015 08:41:01 -0400
-Received: by wicnd19 with SMTP id nd19so75388817wic.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2015 05:41:00 -0700 (PDT)
-Received: from [192.168.0.18] ([78.194.205.2])
-        by mx.google.com with ESMTPSA id y19sm17061398wia.15.2015.06.22.05.40.58
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 22 Jun 2015 05:40:58 -0700 (PDT)
-Message-ID: <55880259.9070707@stroebel.fr>
-Date: Mon, 22 Jun 2015 14:40:57 +0200
-From: Vianney Stroebel <vianney@stroebel.fr>
-Reply-To: vianney@stroebel.fr
-MIME-Version: 1.0
+Received: from cantor2.suse.de ([195.135.220.15]:48610 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751022AbbFVPAZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Jun 2015 11:00:25 -0400
+Date: Mon, 22 Jun 2015 17:00:23 +0200
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Corrupted btrfs partition (converted from ext4) after balance
-References: <55835A55.7000308@stroebel.fr> <pan$f0b29$47b8cb68$f88267b2$c1dce0e4@cox.net>
-In-Reply-To: <pan$f0b29$47b8cb68$f88267b2$c1dce0e4@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.1
+Message-ID: <20150622150023.GX6761@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So, in the btrfs mailing list, nobody will help a user who has had a whole partition corrupted? I think my report was clear and complete.
+Hi,
 
-In IRC, the only answer I got was: "format your partition, there's nothing you can do and there's nothing to understand from this" (from nice people I should say).
+btrfs-progs 4.1 have been released (in time with kernel 4.1). Unusual load of
+changes.
 
-What I understood from this experience is that btrfs is far from production-ready. How many people every day around the world are losing a lot of time because the "unstable" warning was removed? And losing data too: only a perfect backup system could allow someone to avoid data loss after a crash in a production system. It would require instantaneous replication + instantaneous versioning (without btrfs obviously) + instantaneous restore, which afaik no backup system has.
+Fixed since rc1:
+  - uuid rewrite prints the correct original UUID
+  - map-logical updated
+  - fi show size units
+  - typos
 
-Thank you Ducan for your reply about btrfs' stability. But frankly, we shouldn't have to speculate how stable btrfs is.
+* bugfixes
+  - fsck.btrfs: no bash-isms
+  - bugzilla 97171: invalid memory access (with tests)
+  - receive:
+    - cloning works with --chroot
+    - capabilities not lost
+  - mkfs: do not try to register bare file images
+  - option --help accepted by the standalone utilities
 
-I don't get how people in this mailing list and in IRC find this situation acceptable. A file system is too critical to be treated this lightly.
+* enhancements
+  - corrupt block: ability to remove csums
+  - mkfs:
+    - warn if metadata redundancy is lower than for data
+    - options to make the output quiet (only errors)
+    - mixed case names of raid profiles accepted
+    - rework the output:
+      - more comprehensive, 'key: value' format
+  - subvol:
+    - show:
+      - print received uuid
+      - update the output
+      - new options to specify size units
+    - sync:
+      - grab all deleted ids and print them as they're removed,
+	previous implementation only checked if there are any
+	to be deleted - change in command semantics
+  - scrub: print timestamps in days HMS format
+  - receive:
+    - can specify mount point, do not rely on /proc
+    - can work inside subvolumes
+  - send:
+    - new option to send stream without data (NO_FILE_DATA)
+  - convert:
+    - specify incompat features on the new fs
+  - qgroup:
+    - show: distinguish no limits and 0 limit value
+    - limit: ability to clear the limit
+  - help for 'btrfs' is shorter, 1st level command overview
+  - debug tree: print key names according to their C name
 
-I'm going back to ext4 for the moment and from now on I will only trust reputable third-party sources as to when btrfs is production-ready.
+* new
+  - rescure zero-log
+  - btrfsune:
+    - rewrite uuid on a filesystem image
+    - new option to turn on NO_HOLES incompat feature
 
-Sorry for the tone. I hope nobody found this message disrespectful.
+* deprecated
+  - standalone btrfs-zero-log
 
-Vianney
+* other
+  - testing framework updates
+    - uuid rewrite test
+    - btrfstune feature setting test
+    - zero-log tests
+    - more testing image formats
+  - manual page updates
+  - ioctl.h synced with current kernel uapi version
+  - convert: preparatory works for more filesystems (reiserfs pending)
+  - use static buffers for path handling where possible
+  - add new helpers for send uilts that check memory allocations,
+    switch all users, deprecate old helpers
+  - Makefile: fix build dependency generation
+  - map-logical: make it work again
 
-Le 19/06/2015 09:53, Duncan a écrit :
-> Vianney Stroebel posted on Fri, 19 Jun 2015 01:55:01 +0200 as excerpted:
->
->> I could copy the data on another freshly formatted disk and reformat
->> this one but I am wondering if btrfs is stable enough to be used on my
->> professional laptop (where I cannot afford such downtime)or if I should
->> go back to ext4.
-> As a btrfs-using admin and list regular, not a dev, I'll reply to just
-> the above more general question, letting others deal with the specific
-> technical issue...
->
-> Good question, on which there's apparently a bit of controversy.
->
-> My own opinion, TL;DR summary?  If you're asking the question and are
-> unlikely to be going ahead anyway, regardless of the answer you get, then
-> btrfs is unlikely to be what you'd call "stable enough", at this point.
->
-> The longer version...
->
-> The devs have applied patches that have removed most of the warnings, and
-> some distros are now using btrfs by default, generally for the system
-> partitions in ordered to take advantage of btrfs snapshotting to enable
-> rollback, so it's obviously "stable enough" for them.
->
-> But actual non-dev btrfs user and list regular opinion on this list seems
-> to be somewhere between "Are you kidding?  After I just got thru dealing
-> with bug XXXX, no way, Jose!", and "It's definitely stabilizing and
-> maturing, and is noticeably better than six months ago, which was
-> noticeably better than six months before that, but it's equally
-> definitely not something I'd characterize as fully stable and mature just
-> yet."
->
-> An arguably more practical way of stating the latter position, which
-> happens to be my own, is by reference to the sysadmin's rule of backups.
-> This rule says that if a particular set of files isn't backed up, then by
-> definition, you don't care about losing it, despite any claims, possibly
-> after said loss, to the contrary.  Additionally, a would-be backup that
-> hasn't passed restorability tests isn't yet complete, and therefore
-> cannot be called a backup for purposes of the above rule.  If it isn't
-> backed up, you don't care about losing it.  Full stop.  But, because
-> btrfs isn't yet fully stable and mature, that rule applies double.
->
-> I'd argue that for anyone that accepts that principle, including the
-> doubling, and is still willing to use btrfs, it's "stable enough".
-> Otherwise, better look somewhere else, as what you're looking for isn't
-> found here.
->
-> That's the sysadmin-speak test, and result.  But there's another way of
-> putting it that's more developer-speak.
->
-> As any good developer will tell you, premature optimization is bad, very
-> bad, in no small part because optimization is a LOT of work, and
-> premature optimization either severely limits post-optimization
-> flexibility in ordered to retain that work, or must be repeated over and
-> over again as the problem and solution space becomes more defined by
-> early trial and mid-stage implementations and better solutions become
-> known.
->
-> For reasonably good developers, then (and if you don't consider them good
-> developers, why are you trusting their filesystem work?), developer's own
-> REAL opinion of the stability and maturity of a project is how much it
-> has been optimized, vs. where optimization remains on the TODO list.
-> Once developers are focusing on optimization, arguably they too believe
-> the general solution to be relatively stable and mature.  By contrast, if
-> major parts of the code remain unoptimized, particularly where the
-> current code works well enough but is known to be LESS than optimum,
-> developers self-evidently consider it still maturing and subject to
-> change that could possibly undo any current efforts at optimization.
->
-> Arguably, that's about as technically reasonable and unbiased as a
-> measure gets, so for those concerned about stability the optimization
-> level is a valid question, quite apart from the direct efficiency answer
-> one might expect as motivation for the question.
->
-> OK, so where's btrfs on this scale?
->
-> In answer let's consider just one well known case, the raid1 read-
-> scheduler device-choice algorithm.  The ideal case is that given two
-> devices in raid1 so each has a copy of the data and an otherwise idle
-> system so there's nothing else trying to do reads or writes as well,
-> because the actual read off spinning rust is the bottleneck, for any read
-> of significant size, the scheduler should make use of both devices by
-> reading half the data from one device, and half from the other.
->
-> OK, so what does btrfs actually do?  It assigns read device based on the
-> PID, even/odd.  While this does provide a very easy way to test things by
-> arranging the number of processes and their PIDs to either balance reads
-> or to force reads to only one device or the other, and should balance
-> things reasonably well with a large enough set of random processes trying
-> to read at the same time, for a single process doing read access on an
-> otherwise I/O idle system, it's worst-case, since 100% of all reads will
-> be to one device, bottlenecking on it while the other device remains 100%
-> idle!
->
-> Obviously, they did a quick implementation that is easy to implement and
-> troubleshoot, and dead easy to test, but doesn't prioritize actual
-> efficiency or optimization at all.
->
-> And they haven't optimized it from that, despite it being a well known
-> case that has much better optimized and well tested solutions in the form
-> of mdraid's raid1 scheduler, in the same Linux kernel.
->
-> It can well be argued from just that, that the developers themselves
-> consider btrfs still subject to enough change that even well known low-
-> hanging-fruit optimization would be premature, and that btrfs code is
-> anything /but/ "stable and mature".  Were it otherwise, at least the
-> really obvious low-hanging-fruit optimizations with known better
-> scheduler optimization code already very well tested in other areas,
-> would be implemented here, as well.  Since they haven't been... well, the
-> code and its optimization state speaks for itself.
->
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
+Shortlog:
+
+Anand Jain (2):
+      btrfs-progs: add info about list-all to the help
+      btrfs-progs: use function is_block_device() instead
+
+Dimitri John Ledkov (1):
+      btrfs-progs: fsck.btrfs: Fix bashism and bad getopts processing
+
+Dongsheng Yang (4):
+      btrfs-progs: qgroup: show 'none' when we did not limit it on this qgroup
+      btrfs-progs: qgroup: allow user to clear some limitation on qgroup.
+      btrfs-progs: qgroup limit: error out if input value is negative
+      btrfs-progs: qgroup limit: add a check for invalid input of 'T/G/M/K'
+
+Emil Karlson (1):
+      btrfs-progs: use openat for process_clone in receive
+
+Goffredo Baroncelli (4):
+      btrfs-progs: add strdup in btrfs_add_to_fsid() to track the device path
+      btrfs-progs: return the fsid from make_btrfs()
+      btrfs-progs: mkfs: track sizes of created block groups
+      btrfs-progs: mkfs: print the summary
+
+Jeff Mahoney (8):
+      btrfs-progs: convert: clean up blk_iterate_data handling wrt record_file_blocks
+      btrfs-progs: convert: remove unused fs argument from block_iterate_proc
+      btrfs-progs: convert: remove unused inode_key in copy_single_inode
+      btrfs-progs: convert: rename ext2_root to image_root
+      btrfs-progs: compat: define DIV_ROUND_UP if not already defined
+      btrfs-progs: convert: fix typo in btrfs_insert_dir_item call
+      btrfs-progs: convert: factor out adding dirent into convert_insert_dirent
+      btrfs-progs: convert: factor out block iteration callback
+
+Josef Bacik (3):
+      Btrfs-progs: corrupt-block: add the ability to remove csums
+      btrfs-progs: specify mountpoint for recieve
+      btrfs-progs: make receive work inside of subvolumes
+
+Qu Wenruo (13):
+      btrfs-progs: Enhance read_tree_block to avoid memory corruption
+      btrfs-progs: btrfstune: rework change_uuid
+      btrfs-progs: btrfstune: add ability to restore unfinished fsid change
+      btrfs-progs: btrfstune: add '-U' and '-u' option to change fsid
+      btrfs-progs: Documentation: uuid change
+      btrfs-progs: btrfstune: fix a bug which makes unfinished fsid change unrecoverable
+      btrfs-progs: export read_extent_data function
+      btrfs-progs: map-logical: introduce map_one_extent function
+      Btrfs-progs: map-logical: introduce print_mapping_info function
+      Btrfs-progs: map-logical: introduce write_extent_content function
+      btrfs-progs: map-logical: Rework map-logical logics
+      btrfs-progs: Allow "filesystem show" command to handle different units
+      btrfs-progs: docs: new size options for fi show
+
+Sam Tygier (1):
+      btrfs-progs: mkfs: check metadata redundancy
+
+David Sterba (79):
+      btrfs-progs: tests: log the test name in results file
+      btrfs-progs: tests: support more formats of test images
+      btrfs-progs: tests: use readlink -f to resolve path
+      btrfs-progs: tests: sort image files
+      btrfs-progs: test: 015-check-bad-memory-access
+      btrfs-progs: tests: add script to clean intermediate images
+      btrfs-progs: receive: restore capabilities after chown
+      btrfs-progs: tests: add driver script for misc tests
+      btrfs-progs: tests: common: add helper run_check_stdout
+      btrfs-progs: tests: add misc test for fs features
+      btrfs-progs: update .gitignore
+      btrfs-progs: subvol show: print received uuid
+      btrfs-progs: subvol show: tweak output
+      btrfs-progs: btrfstune: rework option handling
+      btrfs-progs: btrfstune: add option to enable NO_HOLES
+      btrfs-progs: doc: update btrfstune manpage
+      btrfs-progs: tests: add misc tests for uuid rewrite
+      btrfs-progs: btrfstune: make uuid rewrite progress more verbose
+      btrfs-progs: ioctl.h: reorder to match kernel uapi header
+      btrfs-progs: ioctl.h: copy commented version of scrub_progress structure
+      btrfs-progs: ioctl.h: copy commented version of balance structures
+      btrfs-progs: ioctl.h: add EXTENT_SAME ioctl and structures
+      btrfs-progs: ioctl.h: add send flag mask
+      btrfs-progs: ioctl.h: update type annotations
+      btrfs-progs: ioctl.h: update btrfs_ioctl_fs_info_args
+      btrfs-progs: ioctl.h: add btrfs_ioctl_feature_flags struct
+      btrfs-progs: doc: update btrfs-rescue page and drop btrfs-zero-log
+      btrfs-progs: scrub: more friendly duration format in status
+      btrfs-progs: add function to stringify filesystem features
+      btrfs-progs: convert: allow to set filesystem features
+      btrfs-progs: tests: update convert tests to set fs features
+      btrfs-progs: cleanup and deprecate btrfs-zero-log
+      btrfs-progs: tests: add test for zero-log
+      btrfs-progs: mkfs: add option to make it quiet
+      btrfs-progs: mkfs: accept mixed case for profile names
+      btrfs-progs: mkfs: move info message out of btrfs_add_to_fsid
+      btrfs-progs: mkfs: do not try to register non-block-devices
+      btrfs-progs: mkfs, move uuid to the end of device summary
+      btrfs-progs: mkfs, drop UUID from device summary
+      btrfs-progs: mkfs: drop mixed from summary
+      btrfs-progs: mkfs: make the summary more compact
+      btrfs-progs: remove stray deprecation notice
+      btrfs-progs: fix argv0_buf handling
+      btrfs-progs: add command group info strings
+      btrfs-progs: print compact help for btrfs
+      btrfs-progs: receive: fix minor resource leak
+      btrfs-progs: cleanup after errors in open_file_or_dir3
+      btrfs-progs: subvol: let sync check only current deletions
+      btrfs-progs: add helper to wait for subvolume cleaning
+      btrfs-progs: add missing includes to header files
+      btrfs-progs: accept --help as option in the standalone utilities
+      btrfs-progs: print error within test_dev_for_mkfs
+      btrfs-progs: print error within test_num_disk_vs_raid
+      btrfs-progs: use less memory for pretty_size_mode buffers
+      btrfs-progs: receive: implement the update_extent callback
+      btrfs-progs: send: add option to for the no-data mode
+      btrfs-progs: use PATH_MAX instead of BTRFS_PATH_NAME_MAX
+      btrfs-progs: properly set up ioctl arguments
+      btrfs-progs: receive: use static buffer for cur_subvol
+      btrfs-progs: add helper for copying paths
+      btrfs-progs: receive: use static buffer for mount point option argument
+      btrfs-progs: receive: use static buffer for source file
+      btrfs-progs: send: use static buffer for output file name
+      btrfs-progs: and new path_cat helpers to send utils
+      btrfs-progs: send utils: switch callbacks to new helpers
+      btrfs-progs: unify naming of key types in print-tree
+      btrfs-progs: receive: use static buffer for root_subvol_path
+      btrfs-progs: receive: use static buffer for write_path
+      btrfs-progs: send utils: switch callbacks to patch_cat3_out
+      btrfs-progs: receive: use static buffer for cur_subvol path
+      btrfs-progs: send utils: deprecate path_cat and path_cat3
+      btrfs-progs: Makefile: fix typo, dependencies for cmds-* files
+      Btrfs progs v4.1-rc1
+      btrfs-progs: tests: verify btrfstune output during uuid-rewrite
+      btrfs-progs: btrfstune: print lowercase uuid during uuid rewrite
+      btrfs-progs: btrfstune: print correct current uuid during rewrite
+      btrfs-progs: configure: fix typo in summary
+      btrfs-progs: INSTALL: fix typos
+      Btrfs progs v4.1
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

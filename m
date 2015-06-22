@@ -1,192 +1,251 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vn0-f53.google.com ([209.85.216.53]:36763 "EHLO
-	mail-vn0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751807AbbFVQDZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 22 Jun 2015 12:03:25 -0400
-Received: by vnbg1 with SMTP id g1so8723472vnb.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 22 Jun 2015 09:03:25 -0700 (PDT)
+Received: from smtp-16.italiaonline.it ([212.48.25.144]:56354 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751953AbbFVQSj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 22 Jun 2015 12:18:39 -0400
+Message-ID: <5588355B.1040109@libero.it>
+Date: Mon, 22 Jun 2015 18:18:35 +0200
+From: Goffredo Baroncelli <kreijack@libero.it>
+Reply-To: kreijack@inwind.it
 MIME-Version: 1.0
-In-Reply-To: <CAGqmi757StwNda-8y-zvjB-8cVrWLd=R8xuZnvzdwhhmxbTuXw@mail.gmail.com>
-References: <556457b8.e72b980a.ee08.ffffce60@mx.google.com>
-	<CAJCQCtQFyCEn3kdeYOrOyk_vqekNH_MiOyA=WSOxLCoQS6PV1w@mail.gmail.com>
-	<CAGqmi75OK8ofM7p0SqUsy8WhW3ZveQ_3NMtQCAchmHnUP7KoPg@mail.gmail.com>
-	<CAGqmi757StwNda-8y-zvjB-8cVrWLd=R8xuZnvzdwhhmxbTuXw@mail.gmail.com>
-Date: Mon, 22 Jun 2015 10:03:24 -0600
-Message-ID: <CAJCQCtROb83vdCcv=GHG+eOB99u+LAgSUARPX0FedL8hn2Be2w@mail.gmail.com>
-Subject: Re: RAID1: system stability
-From: Chris Murphy <lists@colorremedies.com>
-To: Timofey Titovets <nefelim4ag@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Re: Btrfs progs release 4.1
+References: <20150622150023.GX6761@twin.jikos.cz>
+In-Reply-To: <20150622150023.GX6761@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 22, 2015 at 5:35 AM, Timofey Titovets <nefelim4ag@gmail.com> wrote:
-> Okay, logs, i did release disk /dev/sde1 and get:
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: Read(10): 28 00 11 1d 69
-> 00 00 00 08 00
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: blk_update_request: I/O
-> error, dev sde, sector 287140096
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: mptbase: ioc0:
-> LogInfo(0x31010011): Originator={PL}, Code={Open Failure},
-> SubCode(0x0011) cb_idx mptscsih_io_done
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: sd 0:0:5:0: [sde] FAILED
-> Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: sd 0:0:5:0: [sde] CDB:
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: Read(10): 28 00 11 1d 69
-> 00 00 00 08 00
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: blk_update_request: I/O
-> error, dev sde, sector 287140096
+On 2015-06-22 17:00, David Sterba wrote:
+> Hi,
 
-So what's up with this? This only happens after you try to (software)
-remove /dev/sde1? Or is it happening also before that? Because this
-looks like some kind of hardware problem when the drive is reporting
-an error for a particular sector on read, as if it's a bad sector.
+Many thanks for your work.
+BTW just for curiosity: is it a coincidence that both Torvalds and you released the kernel 4.1/btrfs-progs 4.1 in the same day ? I know that the version are coupled, but also the same day....
 
+BR
+G.Baronelli
 
+> 
+> btrfs-progs 4.1 have been released (in time with kernel 4.1). Unusual load of
+> changes.
+> 
+> Fixed since rc1:
+>   - uuid rewrite prints the correct original UUID
+>   - map-logical updated
+>   - fi show size units
+>   - typos
+> 
+> * bugfixes
+>   - fsck.btrfs: no bash-isms
+>   - bugzilla 97171: invalid memory access (with tests)
+>   - receive:
+>     - cloning works with --chroot
+>     - capabilities not lost
+>   - mkfs: do not try to register bare file images
+>   - option --help accepted by the standalone utilities
+> 
+> * enhancements
+>   - corrupt block: ability to remove csums
+>   - mkfs:
+>     - warn if metadata redundancy is lower than for data
+>     - options to make the output quiet (only errors)
+>     - mixed case names of raid profiles accepted
+>     - rework the output:
+>       - more comprehensive, 'key: value' format
+>   - subvol:
+>     - show:
+>       - print received uuid
+>       - update the output
+>       - new options to specify size units
+>     - sync:
+>       - grab all deleted ids and print them as they're removed,
+> 	previous implementation only checked if there are any
+> 	to be deleted - change in command semantics
+>   - scrub: print timestamps in days HMS format
+>   - receive:
+>     - can specify mount point, do not rely on /proc
+>     - can work inside subvolumes
+>   - send:
+>     - new option to send stream without data (NO_FILE_DATA)
+>   - convert:
+>     - specify incompat features on the new fs
+>   - qgroup:
+>     - show: distinguish no limits and 0 limit value
+>     - limit: ability to clear the limit
+>   - help for 'btrfs' is shorter, 1st level command overview
+>   - debug tree: print key names according to their C name
+> 
+> * new
+>   - rescure zero-log
+>   - btrfsune:
+>     - rewrite uuid on a filesystem image
+>     - new option to turn on NO_HOLES incompat feature
+> 
+> * deprecated
+>   - standalone btrfs-zero-log
+> 
+> * other
+>   - testing framework updates
+>     - uuid rewrite test
+>     - btrfstune feature setting test
+>     - zero-log tests
+>     - more testing image formats
+>   - manual page updates
+>   - ioctl.h synced with current kernel uapi version
+>   - convert: preparatory works for more filesystems (reiserfs pending)
+>   - use static buffers for path handling where possible
+>   - add new helpers for send uilts that check memory allocations,
+>     switch all users, deprecate old helpers
+>   - Makefile: fix build dependency generation
+>   - map-logical: make it work again
+> 
+> Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+> Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+> 
+> Shortlog:
+> 
+> Anand Jain (2):
+>       btrfs-progs: add info about list-all to the help
+>       btrfs-progs: use function is_block_device() instead
+> 
+> Dimitri John Ledkov (1):
+>       btrfs-progs: fsck.btrfs: Fix bashism and bad getopts processing
+> 
+> Dongsheng Yang (4):
+>       btrfs-progs: qgroup: show 'none' when we did not limit it on this qgroup
+>       btrfs-progs: qgroup: allow user to clear some limitation on qgroup.
+>       btrfs-progs: qgroup limit: error out if input value is negative
+>       btrfs-progs: qgroup limit: add a check for invalid input of 'T/G/M/K'
+> 
+> Emil Karlson (1):
+>       btrfs-progs: use openat for process_clone in receive
+> 
+> Goffredo Baroncelli (4):
+>       btrfs-progs: add strdup in btrfs_add_to_fsid() to track the device path
+>       btrfs-progs: return the fsid from make_btrfs()
+>       btrfs-progs: mkfs: track sizes of created block groups
+>       btrfs-progs: mkfs: print the summary
+> 
+> Jeff Mahoney (8):
+>       btrfs-progs: convert: clean up blk_iterate_data handling wrt record_file_blocks
+>       btrfs-progs: convert: remove unused fs argument from block_iterate_proc
+>       btrfs-progs: convert: remove unused inode_key in copy_single_inode
+>       btrfs-progs: convert: rename ext2_root to image_root
+>       btrfs-progs: compat: define DIV_ROUND_UP if not already defined
+>       btrfs-progs: convert: fix typo in btrfs_insert_dir_item call
+>       btrfs-progs: convert: factor out adding dirent into convert_insert_dirent
+>       btrfs-progs: convert: factor out block iteration callback
+> 
+> Josef Bacik (3):
+>       Btrfs-progs: corrupt-block: add the ability to remove csums
+>       btrfs-progs: specify mountpoint for recieve
+>       btrfs-progs: make receive work inside of subvolumes
+> 
+> Qu Wenruo (13):
+>       btrfs-progs: Enhance read_tree_block to avoid memory corruption
+>       btrfs-progs: btrfstune: rework change_uuid
+>       btrfs-progs: btrfstune: add ability to restore unfinished fsid change
+>       btrfs-progs: btrfstune: add '-U' and '-u' option to change fsid
+>       btrfs-progs: Documentation: uuid change
+>       btrfs-progs: btrfstune: fix a bug which makes unfinished fsid change unrecoverable
+>       btrfs-progs: export read_extent_data function
+>       btrfs-progs: map-logical: introduce map_one_extent function
+>       Btrfs-progs: map-logical: introduce print_mapping_info function
+>       Btrfs-progs: map-logical: introduce write_extent_content function
+>       btrfs-progs: map-logical: Rework map-logical logics
+>       btrfs-progs: Allow "filesystem show" command to handle different units
+>       btrfs-progs: docs: new size options for fi show
+> 
+> Sam Tygier (1):
+>       btrfs-progs: mkfs: check metadata redundancy
+> 
+> David Sterba (79):
+>       btrfs-progs: tests: log the test name in results file
+>       btrfs-progs: tests: support more formats of test images
+>       btrfs-progs: tests: use readlink -f to resolve path
+>       btrfs-progs: tests: sort image files
+>       btrfs-progs: test: 015-check-bad-memory-access
+>       btrfs-progs: tests: add script to clean intermediate images
+>       btrfs-progs: receive: restore capabilities after chown
+>       btrfs-progs: tests: add driver script for misc tests
+>       btrfs-progs: tests: common: add helper run_check_stdout
+>       btrfs-progs: tests: add misc test for fs features
+>       btrfs-progs: update .gitignore
+>       btrfs-progs: subvol show: print received uuid
+>       btrfs-progs: subvol show: tweak output
+>       btrfs-progs: btrfstune: rework option handling
+>       btrfs-progs: btrfstune: add option to enable NO_HOLES
+>       btrfs-progs: doc: update btrfstune manpage
+>       btrfs-progs: tests: add misc tests for uuid rewrite
+>       btrfs-progs: btrfstune: make uuid rewrite progress more verbose
+>       btrfs-progs: ioctl.h: reorder to match kernel uapi header
+>       btrfs-progs: ioctl.h: copy commented version of scrub_progress structure
+>       btrfs-progs: ioctl.h: copy commented version of balance structures
+>       btrfs-progs: ioctl.h: add EXTENT_SAME ioctl and structures
+>       btrfs-progs: ioctl.h: add send flag mask
+>       btrfs-progs: ioctl.h: update type annotations
+>       btrfs-progs: ioctl.h: update btrfs_ioctl_fs_info_args
+>       btrfs-progs: ioctl.h: add btrfs_ioctl_feature_flags struct
+>       btrfs-progs: doc: update btrfs-rescue page and drop btrfs-zero-log
+>       btrfs-progs: scrub: more friendly duration format in status
+>       btrfs-progs: add function to stringify filesystem features
+>       btrfs-progs: convert: allow to set filesystem features
+>       btrfs-progs: tests: update convert tests to set fs features
+>       btrfs-progs: cleanup and deprecate btrfs-zero-log
+>       btrfs-progs: tests: add test for zero-log
+>       btrfs-progs: mkfs: add option to make it quiet
+>       btrfs-progs: mkfs: accept mixed case for profile names
+>       btrfs-progs: mkfs: move info message out of btrfs_add_to_fsid
+>       btrfs-progs: mkfs: do not try to register non-block-devices
+>       btrfs-progs: mkfs, move uuid to the end of device summary
+>       btrfs-progs: mkfs, drop UUID from device summary
+>       btrfs-progs: mkfs: drop mixed from summary
+>       btrfs-progs: mkfs: make the summary more compact
+>       btrfs-progs: remove stray deprecation notice
+>       btrfs-progs: fix argv0_buf handling
+>       btrfs-progs: add command group info strings
+>       btrfs-progs: print compact help for btrfs
+>       btrfs-progs: receive: fix minor resource leak
+>       btrfs-progs: cleanup after errors in open_file_or_dir3
+>       btrfs-progs: subvol: let sync check only current deletions
+>       btrfs-progs: add helper to wait for subvolume cleaning
+>       btrfs-progs: add missing includes to header files
+>       btrfs-progs: accept --help as option in the standalone utilities
+>       btrfs-progs: print error within test_dev_for_mkfs
+>       btrfs-progs: print error within test_num_disk_vs_raid
+>       btrfs-progs: use less memory for pretty_size_mode buffers
+>       btrfs-progs: receive: implement the update_extent callback
+>       btrfs-progs: send: add option to for the no-data mode
+>       btrfs-progs: use PATH_MAX instead of BTRFS_PATH_NAME_MAX
+>       btrfs-progs: properly set up ioctl arguments
+>       btrfs-progs: receive: use static buffer for cur_subvol
+>       btrfs-progs: add helper for copying paths
+>       btrfs-progs: receive: use static buffer for mount point option argument
+>       btrfs-progs: receive: use static buffer for source file
+>       btrfs-progs: send: use static buffer for output file name
+>       btrfs-progs: and new path_cat helpers to send utils
+>       btrfs-progs: send utils: switch callbacks to new helpers
+>       btrfs-progs: unify naming of key types in print-tree
+>       btrfs-progs: receive: use static buffer for root_subvol_path
+>       btrfs-progs: receive: use static buffer for write_path
+>       btrfs-progs: send utils: switch callbacks to patch_cat3_out
+>       btrfs-progs: receive: use static buffer for cur_subvol path
+>       btrfs-progs: send utils: deprecate path_cat and path_cat3
+>       btrfs-progs: Makefile: fix typo, dependencies for cmds-* files
+>       Btrfs progs v4.1-rc1
+>       btrfs-progs: tests: verify btrfstune output during uuid-rewrite
+>       btrfs-progs: btrfstune: print lowercase uuid during uuid rewrite
+>       btrfs-progs: btrfstune: print correct current uuid during rewrite
+>       btrfs-progs: configure: fix typo in summary
+>       btrfs-progs: INSTALL: fix typos
+>       Btrfs progs v4.1
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> 
 
-
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: Buffer I/O error on dev
-> sde1, logical block 35892256, async page read
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: mptbase: ioc0:
-> LogInfo(0x31010011): Originator={PL}, Code={Open Failure},
-> SubCode(0x0011) cb_idx mptscsih_io_done
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: mptbase: ioc0:
-> LogInfo(0x31010011): Originator={PL}, Code={Open Failure},
-> SubCode(0x0011) cb_idx mptscsih_io_done
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: sd 0:0:5:0: [sde] FAILED
-> Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: sd 0:0:5:0: [sde] CDB:
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: Read(10): 28 00 11 1d 69
-> 00 00 00 08 00
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: blk_update_request: I/O
-> error, dev sde, sector 287140096
-
-Again same sector as before. This is not a Btrfs error message, it's
-coming from the block layer.
-
-
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: Buffer I/O error on dev
-> sde1, logical block 35892256, async page read
-
-I'm not a dev so take it with a grain of salt but because this
-references a logical block, this is the layer in between Btrfs and the
-physical device. Btrfs works on logical blocks and those have to be
-translated to device and physical sector. Maybe what's happening is
-there's confusion somewhere about this device not actually being
-unavailable so Btrfs or something else is trying to read this logical
-block again, which causes a read attempt to happen instead of a flat
-out "this device doesn't exist" type of error. So I don't know if this
-is a problem strictly in Btrfs missing device error handling, or if
-there's something else that's not really working correctly.
-
-You could test by physically removing the device, if you have hot plug
-support (be certain all the hardware components support it), you can
-see if you get different results. Or you could try to reproduce the
-software delete of the device with mdraid or lvm raid with XFS and no
-Btrfs at all, and see if you get different results.
-
-It's known that the btrfs multiple device failure use case is weak
-right now. Data isn't lost, but the error handling, notification, all
-that is almost non-existent compared to mdadm.
-
-
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: mptbase: ioc0:
-> LogInfo(0x31010011): Originator={PL}, Code={Open Failure},
-> SubCode(0x0011) cb_idx mptscsih_io_done
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: mptbase: ioc0:
-> LogInfo(0x31010011): Originator={PL}, Code={Open Failure},
-> SubCode(0x0011) cb_idx mptscsih_io_done
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: sd 0:0:5:0: [sde] FAILED
-> Result: hostbyte=DID_NO_CONNECT driverbyte=DRIVER_OK
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: sd 0:0:5:0: [sde] CDB:
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: Read(10): 28 00 11 1d 69
-> 00 00 00 08 00
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: blk_update_request: I/O
-> error, dev sde, sector 287140096
-> Jun 22 14:28:40 srv-lab-ceph-node-01 kernel: Buffer I/O error on dev
-> sde1, logical block 35892256, async page read
-> Jun 22 14:28:41 srv-lab-ceph-node-01 kernel: mptbase: ioc0:
-> LogInfo(0x31010011): Originator={PL}, Code={Open Failure},
-> SubCode(0x0011) cb_idx mptscsih_io_done
-> Jun 22 14:28:41 srv-lab-ceph-node-01 kernel:  end_device-0:0:6:
-> mptsas: ioc0: removing ssp device: fw_channel 0, fw_id 16, phy
-> 5,sas_addr 0x5000cca00d0514bd
-> Jun 22 14:28:41 srv-lab-ceph-node-01 kernel:  phy-0:0:9: mptsas: ioc0:
-> delete phy 5, phy-obj (0xffff880449541400)
-> Jun 22 14:28:41 srv-lab-ceph-node-01 kernel:  port-0:0:6: mptsas:
-> ioc0: delete port 6, sas_addr (0x5000cca00d0514bd)
-> Jun 22 14:28:41 srv-lab-ceph-node-01 kernel: scsi target0:0:5: mptsas:
-> ioc0: delete device: fw_channel 0, fw_id 16, phy 5, sas_addr
-> 0x5000cca00d0514bd
-
-OK it looks like not until here does it actually get deleted (?) and
-then that results in piles of write errors to this device by btrfs:
-
-
-> Jun 22 14:28:44 srv-lab-ceph-node-01 kernel: BTRFS: lost page write
-> due to I/O error on /dev/sde1
-> Jun 22 14:28:44 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 1, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:28:44 srv-lab-ceph-node-01 kernel: BTRFS: lost page write
-> due to I/O error on /dev/sde1
-> Jun 22 14:28:44 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 2, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 4, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 5, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 6, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 7, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 8, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 9, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 10, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 11, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 12, rd 0, flush 0, corrupt 0, gen 0
-> Jun 22 14:29:13 srv-lab-ceph-node-01 kernel: BTRFS: bdev /dev/sde1
-> errs: wr 13, rd 0, flush 0, corrupt 0, gen 0
-
-So this makes sense in that it tries to write but can't because the
-device is now missing. So it's a case of Btrfs not doing very well
-handling suddenly missing device, I think.
-
-
-
-> Jun 22 14:29:22 srv-lab-ceph-node-01 kernel: BTRFS info (device
-> md127): csum failed ino 1039 extent 390332416 csum 2059524288 wanted
-> 343582415 mirror 0
-> Jun 22 14:29:22 srv-lab-ceph-node-01 kernel: BUG: unable to handle
-> kernel paging request at ffff87fa7ff53430
-> Jun 22 14:29:22 srv-lab-ceph-node-01 kernel: IP: [<ffffffffc04709d9>]
-> __btrfs_map_block+0x2d9/0x1180 [btrfs]
-> Jun 22 14:29:22 srv-lab-ceph-node-01 kernel: PGD 0
-> Jun 22 14:29:22 srv-lab-ceph-node-01 kernel: Oops: 0000 [#1] SMP
-
-
-And then oops. Not good. So yeah it's definitely a Btrfs bug that it
-oopses instead of gracefully handling the failure. The question is
-whether (and what) other mitigating circumstances contribute to this
-bad handling, there may be other bugs that instigate this. I've tested
-this in a ridiculously rudimentary way (with USB drives) just by
-hanging them during usage, and I don't get an oops. But I do get piles
-of read and or write errors and it seems Btrfs never really becomes
-aware of the fact there's a missing device until there's a remount or
-even a reboot. I haven't quantified what amount of data is lost, but
-the file system itself still works degraded in this case with the
-remaining drive (actually both drives work fine, but once they're each
-written to separately with degraded mount option, they can't be
-rejoined together; if you try it, serious fs corruption results.)
 
 -- 
-Chris Murphy
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in

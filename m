@@ -1,62 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.synology.com ([59.124.41.242]:45713 "EHLO
-	mail.synology.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754525AbbFWKkB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jun 2015 06:40:01 -0400
+Received: from mail.synology.com ([59.124.41.242]:1618 "EHLO mail.synology.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754387AbbFWKkA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jun 2015 06:40:00 -0400
 From: Robbie Ko <robbieko@synology.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Robbie Ko <robbieko@synology.com>
-Subject: [PATCH v3 7/7] Btrfs: incremental send, avoid the overhead of allocating an orphan_dir_info object unnecessarily
-Date: Tue, 23 Jun 2015 18:39:51 +0800
-Message-Id: <1435055991-10109-8-git-send-email-robbieko@synology.com>
+Subject: [PATCH v3 4/7] Btrfs: incremental send, fix orphan_dir_info leak
+Date: Tue, 23 Jun 2015 18:39:48 +0800
+Message-Id: <1435055991-10109-5-git-send-email-robbieko@synology.com>
 In-Reply-To: <1435055991-10109-1-git-send-email-robbieko@synology.com>
 References: <1435055991-10109-1-git-send-email-robbieko@synology.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Avoid the overhead of allocating an orphan_dir_info object unnecessarily.
+There's one case where we leak a orphan_dir_info structure.
+
+Example:
+
+Parent snapshot:
+|---- a/ (ino 279)
+    |---- c (ino 282)
+|---- del/ (ino 281)
+    |---- tmp/ (ino 280)
+    |---- long/ (ino 283)
+    |---- longlong/ (ino 284)
+
+Send snapshot:
+|---- a/ (ino 279)
+    |---- long (ino 283)
+    |---- longlong (ino 284)
+|---- c/ (ino 282)
+    |---- tmp/ (ino 280)
+
+Freeing an existing orphan_dir_info for a directory, when we realize
+we can't rmdir the directory because it has a descendant that wasn't
+yet processed, and the orphan_dir_info was created because it had a
+descendant that had its rename operation delayed.
 
 Signed-off-by: Robbie Ko <robbieko@synology.com>
 ---
- fs/btrfs/send.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ fs/btrfs/send.c | 5 +++++
+ 1 file changed, 5 insertions(+)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index dcf384d..7c61365 100644
+index ca8cb87..194df76 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -2786,12 +2786,6 @@ add_orphan_dir_info(struct send_ctx *sctx, u64 dir_ino)
- 	struct rb_node *parent = NULL;
- 	struct orphan_dir_info *entry, *odi;
- 
--	odi = kmalloc(sizeof(*odi), GFP_NOFS);
--	if (!odi)
--		return ERR_PTR(-ENOMEM);
--	odi->ino = dir_ino;
--	odi->gen = 0;
--
- 	while (*p) {
- 		parent = *p;
- 		entry = rb_entry(parent, struct orphan_dir_info, node);
-@@ -2800,11 +2794,16 @@ add_orphan_dir_info(struct send_ctx *sctx, u64 dir_ino)
- 		} else if (dir_ino > entry->ino) {
- 			p = &(*p)->rb_right;
- 		} else {
--			kfree(odi);
- 			return entry;
+@@ -2914,6 +2914,11 @@ static int can_rmdir(struct send_ctx *sctx, u64 dir, u64 dir_gen,
  		}
- 	}
  
-+	odi = kmalloc(sizeof(*odi), GFP_NOFS);
-+	if (!odi)
-+		return ERR_PTR(-ENOMEM);
-+	odi->ino = dir_ino;
-+	odi->gen = 0;
+ 		if (loc.objectid > send_progress) {
++			struct orphan_dir_info *odi;
 +
- 	rb_link_node(&odi->node, parent, p);
- 	rb_insert_color(&odi->node, &sctx->orphan_dirs);
- 	return odi;
++			odi = get_orphan_dir_info(sctx, dir);
++			if (odi)
++				free_orphan_dir_info(sctx, odi);
+ 			ret = 0;
+ 			goto out;
+ 		}
 -- 
 1.9.1
 

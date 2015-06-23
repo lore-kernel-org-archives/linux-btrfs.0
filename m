@@ -1,38 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52554 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:53289 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932203AbbFWMmW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jun 2015 08:42:22 -0400
-Date: Tue, 23 Jun 2015 14:42:19 +0200
+	id S932485AbbFWMxW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jun 2015 08:53:22 -0400
+Date: Tue, 23 Jun 2015 14:53:20 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Cc: Christian Robottom Reis <kiko@async.com.br>, linux-btrfs@vger.kernel.org,
-        Chris Mason <clm@fb.com>
-Subject: Re: qgroup limit clearing, was Re: Btrfs progs release 4.1
-Message-ID: <20150623124219.GC6761@suse.cz>
+To: Martin Steigerwald <martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Re: Btrfs progs release 4.1
+Message-ID: <20150623125320.GD6761@suse.cz>
 Reply-To: dsterba@suse.cz
 References: <20150622150023.GX6761@twin.jikos.cz>
- <201506222052.t5MKqWVM024486@anthem.async.com.br>
- <5588A056.2080003@jp.fujitsu.com>
+ <10252396.qecnRWx3hc@merkaba>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5588A056.2080003@jp.fujitsu.com>
+In-Reply-To: <10252396.qecnRWx3hc@merkaba>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2015 at 08:55:02AM +0900, Tsutomu Itoh wrote:
-> >      qgroupid         rfer         excl     max_rfer     max_excl
-> >      --------         ----         ----     --------     --------
-> >      0/261         1.42GiB      1.11GiB     16.00EiB     16.00EiB
-> >
-> > Is that expected?
+On Mon, Jun 22, 2015 at 10:45:32PM +0200, Martin Steigerwald wrote:
+> Wow, nice collection of changes!
 
-No, thanks for the report.
+Thanks.
 
-> The following fix is necessary for the kernel to display it correctly.
+> Am Montag, 22. Juni 2015, 17:00:23 schrieb David Sterba:
+> > * new
+> >   - rescure zero-log
+> >   - btrfsune:
+> >     - rewrite uuid on a filesystem image
+> >     - new option to turn on NO_HOLES incompat feature
 > 
->   [PATCH] btrfs: qgroup: allow user to clear the limitation on qgroup
->   http://marc.info/?l=linux-btrfs&m=143331495409594&w=2
+> Did you think about folding btrfstune into btrfs command as well?
 
-I missed that it depended on a kernel change, so we should fix it in
-userspace, but it's merely a cosmetic fix.
+I'm a long-time proponent of deprecating standalone btrfstune utility,
+but so far there's no satisfactory replacement in terms of user
+interface.
+
+We've tried to do the uuid rewrite through the properties but it was
+kind of blocking the whole feature just because the interface was not
+settled.
+
+I'd like to avoid simply adding 'btrfs filesystem tune' with all the
+functionality of btrfstune. The thoughts go towards a more generic
+command group that could do active opertaions on the filesystem, eg.
+similar the 'inspect-internal' to query various stuff.

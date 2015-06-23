@@ -1,186 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52124 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:52120 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755012AbbFWV27 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jun 2015 17:28:59 -0400
+	id S1755009AbbFWV25 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jun 2015 17:28:57 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: Chris Mason <clm@fb.com>
 Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
         linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 5/5] btrfs: add no_mtime flag to btrfs-extent-same
-Date: Tue, 23 Jun 2015 14:28:40 -0700
-Message-Id: <1435094920-22442-6-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 4/5] btrfs: allow dedupe of same inode
+Date: Tue, 23 Jun 2015 14:28:39 -0700
+Message-Id: <1435094920-22442-5-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1435094920-22442-1-git-send-email-mfasheh@suse.de>
 References: <1435094920-22442-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One issue users have reported is that dedupe changes mtime on files,
-resulting in tools like rsync thinking that their contents have changed when
-in fact the data is exactly the same. Clone still wants an mtime change, so
-we special case this in the code.
-
-With this patch an application can pass the BTRFS_SAME_NO_MTIME flag to a
-dedupe request and the kernel will honor it by only changing ctime.
-
-I have an updated version of the btrfs-extent-same test program with a
-switch to provide this flag at the 'no_time' branch of:
-
-https://github.com/markfasheh/duperemove/
+clone() supports cloning within an inode so extent-same can do
+the same now. This patch fixes up the locking in extent-same to
+know about the single-inode case. In addition to that, we add a
+check for overlapping ranges, which clone does not allow.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ioctl.c           | 37 +++++++++++++++++++++++++------------
- include/uapi/linux/btrfs.h |  5 ++++-
- 2 files changed, 29 insertions(+), 13 deletions(-)
+ fs/btrfs/ioctl.c | 76 ++++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 60 insertions(+), 16 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 83f4679..ad717c8 100644
+index 8d6887d..83f4679 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -87,7 +87,8 @@ struct btrfs_ioctl_received_subvol_args_32 {
- 
- 
- static int btrfs_clone(struct inode *src, struct inode *inode,
--		       u64 off, u64 olen, u64 olen_aligned, u64 destoff);
-+		       u64 off, u64 olen, u64 olen_aligned, u64 destoff,
-+		       int flags);
- 
- /* Mask out flags that are inappropriate for the given type of inode. */
- static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
-@@ -2974,7 +2975,7 @@ static int extent_same_check_offsets(struct inode *inode, u64 off, u64 *plen,
- }
- 
- static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
--			     struct inode *dst, u64 dst_loff)
-+			     struct inode *dst, u64 dst_loff, int flags)
- {
+@@ -2979,27 +2979,61 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
  	int ret;
  	u64 len = olen;
-@@ -3054,7 +3055,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 	struct cmp_pages cmp;
++	int same_inode = 0;
++	u64 same_lock_start = 0;
++	u64 same_lock_len = 0;
+ 
+-	/*
+-	 * btrfs_clone() can't handle extents in the same file
+-	 * yet. Once that works, we can drop this check and replace it
+-	 * with a check for the same inode, but overlapping extents.
+-	 */
+ 	if (src == dst)
+-		return -EINVAL;
++		same_inode = 1;
+ 
+ 	if (len == 0)
+ 		return 0;
+ 
+-	btrfs_double_inode_lock(src, dst);
++	if (same_inode) {
++		mutex_lock(&src->i_mutex);
+ 
+-	ret = extent_same_check_offsets(src, loff, &len, olen);
+-	if (ret)
+-		goto out_unlock;
++		ret = extent_same_check_offsets(src, loff, &len, olen);
++		if (ret)
++			goto out_unlock;
+ 
+-	ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
+-	if (ret)
+-		goto out_unlock;
++		/*
++		 * Single inode case wants the same checks, except we
++		 * don't want our length pushed out past i_size as
++		 * comparing that data range makes no sense.
++		 *
++		 * extent_same_check_offsets() will do this for an
++		 * unaligned length at i_size, so catch it here and
++		 * reject the request.
++		 *
++		 * This effectively means we require aligned extents
++		 * for the single-inode case, whereas the other cases
++		 * allow an unaligned length so long as it ends at
++		 * i_size.
++		 */
++		if (len != olen) {
++			ret = -EINVAL;
++			goto out_unlock;
++		}
++
++		/* Check for overlapping ranges */
++		if (dst_loff + len > loff && dst_loff < loff + len) {
++			ret = -EINVAL;
++			goto out_unlock;
++		}
++
++		same_lock_start = min_t(u64, loff, dst_loff);
++		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
++	} else {
++		btrfs_double_inode_lock(src, dst);
++
++		ret = extent_same_check_offsets(src, loff, &len, olen);
++		if (ret)
++			goto out_unlock;
++
++		ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
++		if (ret)
++			goto out_unlock;
++	}
+ 
+ 	/* don't make the dst file partly checksummed */
+ 	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+@@ -3012,18 +3046,28 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 	if (ret)
+ 		goto out_unlock;
+ 
+-	btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
++	if (same_inode)
++		lock_extent_range(src, same_lock_start, same_lock_len);
++	else
++		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
+ 
  	/* pass original length for comparison so we stay within i_size */
  	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
  	if (ret == 0)
--		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
-+		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff,
-+				  flags);
+ 		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
  
- 	if (same_inode)
- 		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
-@@ -3088,6 +3090,7 @@ static long btrfs_ioctl_file_extent_same(struct file *file,
- 	u64 bs = BTRFS_I(src)->root->fs_info->sb->s_blocksize;
- 	bool is_admin = capable(CAP_SYS_ADMIN);
- 	u16 count;
-+	int flags = 0;
- 
- 	if (!(file->f_mode & FMODE_READ))
- 		return -EINVAL;
-@@ -3139,6 +3142,11 @@ static long btrfs_ioctl_file_extent_same(struct file *file,
- 	if (!S_ISREG(src->i_mode))
- 		goto out;
- 
-+	ret = -EINVAL;
-+	if (same->flags & ~BTRFS_EXTENT_SAME_FLAG_MASK)
-+		goto out;
-+	flags = same->flags;
-+
- 	/* pre-format output fields to sane values */
- 	for (i = 0; i < count; i++) {
- 		same->info[i].bytes_deduped = 0ULL;
-@@ -3164,7 +3172,8 @@ static long btrfs_ioctl_file_extent_same(struct file *file,
- 			info->status = -EACCES;
- 		} else {
- 			info->status = btrfs_extent_same(src, off, len, dst,
--							info->logical_offset);
-+							 info->logical_offset,
-+							 flags);
- 			if (info->status == 0)
- 				info->bytes_deduped += len;
- 		}
-@@ -3219,13 +3228,17 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
- 				     struct inode *inode,
- 				     u64 endoff,
- 				     const u64 destoff,
--				     const u64 olen)
-+				     const u64 olen,
-+				     int flags)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret;
- 
- 	inode_inc_iversion(inode);
--	inode->i_mtime = inode->i_ctime = CURRENT_TIME;
-+	if (flags & BTRFS_EXTENT_SAME_NO_MTIME)
-+		inode->i_ctime = CURRENT_TIME;
+-	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
++	if (same_inode)
++		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
++			      same_lock_start + same_lock_len - 1);
 +	else
-+		inode->i_mtime = inode->i_ctime = CURRENT_TIME;
- 	/*
- 	 * We round up to the block size at eof when determining which
- 	 * extents to clone above, but shouldn't round up the file size.
-@@ -3310,13 +3323,13 @@ static void clone_update_extent_map(struct inode *inode,
-  * @inode: Inode to clone to
-  * @off: Offset within source to start clone from
-  * @olen: Original length, passed by user, of range to clone
-- * @olen_aligned: Block-aligned value of olen, extent_same uses
-- *               identical values here
-+ * @olen_aligned: Block-aligned value of olen
-  * @destoff: Offset within @inode to start clone
-+ * @flags: clone flags from extent-same
-  */
- static int btrfs_clone(struct inode *src, struct inode *inode,
- 		       const u64 off, const u64 olen, const u64 olen_aligned,
--		       const u64 destoff)
-+		       const u64 destoff, int flags)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_path *path = NULL;
-@@ -3640,7 +3653,7 @@ process_slot:
- 					      root->sectorsize);
- 			ret = clone_finish_inode_update(trans, inode,
- 							last_dest_end,
--							destoff, olen);
-+							destoff, olen, flags);
- 			if (ret)
- 				goto out;
- 			if (new_key.offset + datal >= destoff + len)
-@@ -3678,7 +3691,7 @@ process_slot:
- 		clone_update_extent_map(inode, trans, NULL, last_dest_end,
- 					destoff + len - last_dest_end);
- 		ret = clone_finish_inode_update(trans, inode, destoff + len,
--						destoff, olen);
-+						destoff, olen, flags);
- 	}
++		btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
  
- out:
-@@ -3808,7 +3821,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 		btrfs_double_extent_lock(src, off, inode, destoff, len);
- 	}
+ 	btrfs_cmp_data_free(&cmp);
+ out_unlock:
+-	btrfs_double_inode_unlock(src, dst);
++	if (same_inode)
++		mutex_unlock(&src->i_mutex);
++	else
++		btrfs_double_inode_unlock(src, dst);
  
--	ret = btrfs_clone(src, inode, off, olen, len, destoff);
-+	ret = btrfs_clone(src, inode, off, olen, len, destoff, 0);
- 
- 	if (same_inode) {
- 		u64 lock_start = min_t(u64, off, destoff);
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b6dec05..e2ab01e 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -342,11 +342,14 @@ struct btrfs_ioctl_same_extent_info {
- 	__u32 reserved;
- };
- 
-+#define	BTRFS_EXTENT_SAME_NO_MTIME	0x1
-+#define	BTRFS_EXTENT_SAME_FLAG_MASK	(BTRFS_EXTENT_SAME_NO_MTIME)
-+
- struct btrfs_ioctl_same_args {
- 	__u64 logical_offset;	/* in - start of extent in source */
- 	__u64 length;		/* in - length of extent */
- 	__u16 dest_count;	/* in - total elements in info array */
--	__u16 reserved1;
-+	__u16 flags;		/* in - see BTRFS_SAME_FLAGS */
- 	__u32 reserved2;
- 	struct btrfs_ioctl_same_extent_info info[0];
- };
+ 	return ret;
+ }
 -- 
 2.1.2
 

@@ -1,53 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52756 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932139AbbFWJSb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jun 2015 05:18:31 -0400
-Subject: Re: Btrfs progs release 4.1
-To: Sjoerd <sjoerd@sjomar.eu>, <linux-btrfs@vger.kernel.org>
-References: <20150622150023.GX6761@twin.jikos.cz> <7324923.Sa0lmcTP0G@hoefnix>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55892466.50107@cn.fujitsu.com>
-Date: Tue, 23 Jun 2015 17:18:30 +0800
+Received: from cantor2.suse.de ([195.135.220.15]:52554 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932203AbbFWMmW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jun 2015 08:42:22 -0400
+Date: Tue, 23 Jun 2015 14:42:19 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: Christian Robottom Reis <kiko@async.com.br>, linux-btrfs@vger.kernel.org,
+        Chris Mason <clm@fb.com>
+Subject: Re: qgroup limit clearing, was Re: Btrfs progs release 4.1
+Message-ID: <20150623124219.GC6761@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20150622150023.GX6761@twin.jikos.cz>
+ <201506222052.t5MKqWVM024486@anthem.async.com.br>
+ <5588A056.2080003@jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <7324923.Sa0lmcTP0G@hoefnix>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5588A056.2080003@jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Jun 23, 2015 at 08:55:02AM +0900, Tsutomu Itoh wrote:
+> >      qgroupid         rfer         excl     max_rfer     max_excl
+> >      --------         ----         ----     --------     --------
+> >      0/261         1.42GiB      1.11GiB     16.00EiB     16.00EiB
+> >
+> > Is that expected?
 
+No, thanks for the report.
 
-Sjoerd wrote on 2015/06/23 11:03 +0200:
-> On Monday 22 June 2015 17:00:23 David Sterba wrote:
->> Hi,
->>
->> btrfs-progs 4.1 have been released (in time with kernel 4.1). Unusual load
->> of changes.
->
-> Would it be beneficial to update when using older kernels (3.19.x in my case)?
-Part(most) of.
+> The following fix is necessary for the kernel to display it correctly.
+> 
+>   [PATCH] btrfs: qgroup: allow user to clear the limitation on qgroup
+>   http://marc.info/?l=linux-btrfs&m=143331495409594&w=2
 
-Some one like qgroup limit needs kernel support.
-UI and offline tools change won't depend on kernel version.
-But the UI change is most obvious one, so upgrade user-tool should give 
-your a quite fresh feel.
-
-> I can't upgrade to kernel 4.1 since my nvidia (propriety) drivers won't
-> support it (yet) :(
-
-Same Nvidia binary driver here, but I just need to wait the kernel and 
-nvidia package enter testing repo of Arch. :)
-
-Thanks,
-Qu
-
->
-> Cheers,
-> Sjoerd
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+I missed that it depended on a kernel change, so we should fix it in
+userspace, but it's merely a cosmetic fix.

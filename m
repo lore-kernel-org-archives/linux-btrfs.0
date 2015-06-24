@@ -1,146 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f46.google.com ([74.125.82.46]:33188 "EHLO
-	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750868AbbFXI2L (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 04:28:11 -0400
-Received: by wgck11 with SMTP id k11so29690948wgc.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 01:28:09 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150624032008.GF20517@merlins.org>
+Received: from plane.gmane.org ([80.91.229.3]:39595 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752163AbbFXKqg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Jun 2015 06:46:36 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Z7iCN-00073r-6k
+	for linux-btrfs@vger.kernel.org; Wed, 24 Jun 2015 12:46:31 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 12:46:31 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 12:46:31 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: counting fragments takes more time than defragmenting
+Date: Wed, 24 Jun 2015 10:46:22 +0000 (UTC)
+Message-ID: <pan$5335b$94315604$8405c6ac$de90de30@cox.net>
 References: <20150604084245.GR23272@merlins.org>
 	<20150624032008.GF20517@merlins.org>
-Date: Wed, 24 Jun 2015 10:28:09 +0200
-Message-ID: <CAA7pwKOA1yyA8kyB+a3iTOp8TnkRzAErF1Mo=2t5M3pFn2tjUw@mail.gmail.com>
-Subject: Re: counting fragments takes more time than defragmenting
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+	<CAA7pwKOA1yyA8kyB+a3iTOp8TnkRzAErF1Mo=2t5M3pFn2tjUw@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 24 June 2015 at 05:20, Marc MERLIN <marc@merlins.org> wrote:
->
-> Hello again,
->
-> Just curious, is anyone seeing similar things with big VM images or other
-> DBs?
-> I forgot to mention that my vdi file is 88GB.
->
-> It's surprising that it took longer to count the fragments than to actually
-> defragment the file.
-> Or that it took 3 defrag runs to get down to 11K extents from 104K.
->
-> Are others seeing similar things?
+Patrik Lundquist posted on Wed, 24 Jun 2015 10:28:09 +0200 as excerpted:
 
-Filefrag is pretty much instant for my 30GB (150 extents) virtual
-disk, no CoW on file, no snapshots on volume.
+> But what doesn't make sense to me is btrfs fi defrag; the -t option says
+> 
+>            -t <size>
+>                defragment only files at least <size> bytes big
+> 
+> The -t value goes into struct
+> btrfs_ioctl_defrag_range_args.extent_thresh which is documented as
+> 
+>        /*
+>          * any extent bigger than this will be considered * already
+>          defragged.  Use 0 to take the kernel default * Use 1 to say
+>          every single extent must be rewritten */
+> 
+> Default extent_thresh is 256K. I can't see how 1 would say every single
+> extent must be rewritten. On the contrary; 1 skips every extent. The
+> compress flag even sets extent_thresh=(u32)-1 to force a rewrite.
+> 
+> Marc, try btrfs fi defrag -t 4294967295 Win7.vdi for maximum defrag and
+> time filefrag again with fewer extents.
 
-But what doesn't make sense to me is btrfs fi defrag; the -t option says
+The manpage wording for btrfs fi defrag -t has been debated on-list 
+several times, and I believe remains (as of btrfs-progs v4.1) confusing 
+still.
 
-           -t <size>
-               defragment only files at least <size> bytes big
+First, under the general defragment description, before the individual 
+options, it says:
 
-The -t value goes into struct
-btrfs_ioctl_defrag_range_args.extent_thresh which is documented as
+>>>> Any extent bigger than threshold given by -t option, will be
+>>>> considered already defragged. Use 0 to take the kernel default.
 
-       /*
-         * any extent bigger than this will be considered
-         * already defragged.  Use 0 to take the kernel default
-         * Use 1 to say every single extent must be rewritten
-         */
+So according to that, an extent BIGGER than -t is treated as already 
+defragged (it defrags SMALLER extents)
 
-Default extent_thresh is 256K. I can't see how 1 would say every
-single extent must be rewritten. On the contrary; 1 skips every
-extent. The compress flag even sets extent_thresh=(u32)-1 to force a
-rewrite.
+But, under the -t option, it says:
 
-Marc, try btrfs fi defrag -t 4294967295 Win7.vdi for maximum defrag
-and time filefrag again with fewer extents.
+>>>> -t <size>[kKmMgGtTpPeE]
+>>>>     defragment only files at least <size> bytes big
 
-/Patrik
+So according to that, only extents BIGGER than -t are defragged (smaller 
+is ignored).
+
+Again, that's the btrfs-filesystem (8) manpage as of -progs 4.1.
+
+So which is it?  The manpage itself can't make up its mind.
 
 
-> Marc
->
-> On Thu, Jun 04, 2015 at 05:42:45PM +0900, Marc MERLIN wrote:
-> > Hi Chris,
-> >
-> > After our quick chat, I gave it a shot on 3.19.6, and things are better
-> > than last time I tried.
-> >
-> > legolas:/var/local/nobck/VirtualBox VMs# lsattr Win7/
-> > ---------------C Win7/Logs
-> > ---------------C Win7/Snapshots
-> > ---------------C Win7/Win7.vdi
-> > ---------------C Win7/Win7.png
-> > ---------------C Win7/autotune1.png
-> > ---------------C Win7/new_autotune2.png
-> > ---------------C Win7/Win7.vbox-prev
-> > ---------------C Win7/Win7.vbox
-> >
-> > But I have snapshots of that subvolume, so obviously that gets
-> > in the way of disabling COW.
-> >
-> > I had a look, and I have 100K fragments. That took 10mn to figure out:
-> >
-> > legolas:/var/local/nobck/VirtualBox VMs/Win7# filefrag Win7.vdi
-> > Win7.vdi: 104306 extents found
-> >
-> > This first filefrag run took about 10mn to count all the fragments on my
-> > SSD. That feels a bit slow, but maybe the userland tool is doing things
-> > in suboptimal ways.
-> >
-> > Defrag actually worked (mostly) and wasn't too slow. It used to take hours
-> > not to finish, and now it worked in 3mn:
-> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi
-> > real  3m43.807s
-> > user  0m0.000s
-> > sys   0m44.044s
-> >
-> > This is defintely better than before.
-> > Note that it's not fully defragged, but close enough. Each subsequent
-> > run, filefrag is faster, and defrag is still faster than filefrag:
-> >
-> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
-> > Win7.vdi: 11428 extents found
-> > real  2m42.090s
-> > user  0m0.000s
-> > sys   2m37.308s
-> >
-> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi
-> > real  0m7.483s
-> > user  0m0.000s
-> > sys   0m2.672s
-> >
-> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
-> > Win7.vdi: 11132 extents found
-> > real  0m22.525s
-> > user  0m0.000s
-> > sys   0m22.264s
-> >
-> > It's a bit unexpected that I still have 10k fragments after 2 defrag
-> > runs, but it's better than 100k :)
-> >
-> > Marc
-> > --
-> > "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> > Microsoft is to operating systems ....
-> >                                       .... what McDonalds is to gourmet cooking
-> > Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> > the body of a message to majordomo@vger.kernel.org
-> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> >
->
-> --
-> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-> Microsoft is to operating systems ....
->                                       .... what McDonalds is to gourmet cooking
-> Home page: http://marc.merlins.org/
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+AFAIK, it's set huge to defrag everything, but last time I posted on this 
+I got it wrong, and I don't remember for sure what I said then, so... try 
+it and see to be sure, which is what I'd do.
+
+Meanwhile, it's worth noting that btrfs data chunks are normally 1 GiB 
+(tho apparently they can be bigger under certain circumstances).  1 
+extent per chunk is the best btrfs normally does, which means 1 GiB per 
+extent is nominally the best that can be done, with the first and last 
+extent possibly less than a gig (the first taking up the remainder of a 
+partially used chunk and the last finishing up the file, which probably 
+won't end on an even chunk boundary).
+
+Assuming "set a huge -t to defrag to the maximum extent possible" is 
+correct, that means -t 1G should be exactly as effective as -t 1T...
+
+Regardless of whether 1 or huge -t means maximum defrag, however, the 
+nominal data chunk size of 1 GiB means that 30 GiB file you mentioned 
+should be considered ideally defragged at 31 extents.  This is a 
+departure from ext4, which AFAIK in theory has no extent upper limit, so 
+should be able to do that 30 GiB file in a single extent.
+
+But btrfs or ext4, 31 extents ideal or a single extent ideal, 150 extents 
+still indicates at least some remaining fragmentation.
+
+Finally, last I remember, filefrag didn't understand btrfs compression 
+(which is off for nocow, so this shouldn't apply there), which uses 128 
+KiB blocks IIRC.  Until it does, large btrfs-compressed files will always 
+show many extents 8/MiB, so thousands on anything even close to a GiB, 
+tens of thousands on multiple GiBs).  But I believe there had been some 
+work to teach filefrag about btrfs compression, tho I don't know if it 
+has made it into an e2fsprogs release, yet.  If so, it'll be pretty close 
+to the latest release.  So anything but the latest filefrag won't be 
+accurate with btrfs-compressed files, while the latest may now be 
+accurate, or not, I'm not sure.  I guess one could check e2fsprogs' 
+release notes...
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

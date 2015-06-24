@@ -1,142 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:52120 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755009AbbFWV25 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jun 2015 17:28:57 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 4/5] btrfs: allow dedupe of same inode
-Date: Tue, 23 Jun 2015 14:28:39 -0700
-Message-Id: <1435094920-22442-5-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1435094920-22442-1-git-send-email-mfasheh@suse.de>
-References: <1435094920-22442-1-git-send-email-mfasheh@suse.de>
+Received: from magic.merlins.org ([209.81.13.136]:50292 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751341AbbFXDYY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 23 Jun 2015 23:24:24 -0400
+Date: Tue, 23 Jun 2015 20:24:23 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Cao jin <caoj.fnst@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Question about "btrfs send/receive"
+Message-ID: <20150624032423.GH20517@merlins.org>
+References: <5589078B.2090806@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5589078B.2090806@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-clone() supports cloning within an inode so extent-same can do
-the same now. This patch fixes up the locking in extent-same to
-know about the single-inode case. In addition to that, we add a
-check for overlapping ranges, which clone does not allow.
+On Tue, Jun 23, 2015 at 03:15:23PM +0800, Cao jin wrote:
+> Hi all,
+>     I am considering implement the btrfs send/receive command in 
+> libguestfs(http://libguestfs.org/), and found that incremental send 
+> seems pretty complicated. So my questions is:
+> 1. What is the most usually usage of btrfs send/receive?
+> 2. Does it make sense to implement the simplest form?
+>      $ btrfs send -f sent_file subvol
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
-Reviewed-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/ioctl.c | 76 ++++++++++++++++++++++++++++++++++++++++++++------------
- 1 file changed, 60 insertions(+), 16 deletions(-)
+Sure, have a look at this:
+http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Doing-Fast-Incremental-Backups-With-Btrfs-Send-and-Receive
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8d6887d..83f4679 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2979,27 +2979,61 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	int ret;
- 	u64 len = olen;
- 	struct cmp_pages cmp;
-+	int same_inode = 0;
-+	u64 same_lock_start = 0;
-+	u64 same_lock_len = 0;
- 
--	/*
--	 * btrfs_clone() can't handle extents in the same file
--	 * yet. Once that works, we can drop this check and replace it
--	 * with a check for the same inode, but overlapping extents.
--	 */
- 	if (src == dst)
--		return -EINVAL;
-+		same_inode = 1;
- 
- 	if (len == 0)
- 		return 0;
- 
--	btrfs_double_inode_lock(src, dst);
-+	if (same_inode) {
-+		mutex_lock(&src->i_mutex);
- 
--	ret = extent_same_check_offsets(src, loff, &len, olen);
--	if (ret)
--		goto out_unlock;
-+		ret = extent_same_check_offsets(src, loff, &len, olen);
-+		if (ret)
-+			goto out_unlock;
- 
--	ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
--	if (ret)
--		goto out_unlock;
-+		/*
-+		 * Single inode case wants the same checks, except we
-+		 * don't want our length pushed out past i_size as
-+		 * comparing that data range makes no sense.
-+		 *
-+		 * extent_same_check_offsets() will do this for an
-+		 * unaligned length at i_size, so catch it here and
-+		 * reject the request.
-+		 *
-+		 * This effectively means we require aligned extents
-+		 * for the single-inode case, whereas the other cases
-+		 * allow an unaligned length so long as it ends at
-+		 * i_size.
-+		 */
-+		if (len != olen) {
-+			ret = -EINVAL;
-+			goto out_unlock;
-+		}
-+
-+		/* Check for overlapping ranges */
-+		if (dst_loff + len > loff && dst_loff < loff + len) {
-+			ret = -EINVAL;
-+			goto out_unlock;
-+		}
-+
-+		same_lock_start = min_t(u64, loff, dst_loff);
-+		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
-+	} else {
-+		btrfs_double_inode_lock(src, dst);
-+
-+		ret = extent_same_check_offsets(src, loff, &len, olen);
-+		if (ret)
-+			goto out_unlock;
-+
-+		ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
-+		if (ret)
-+			goto out_unlock;
-+	}
- 
- 	/* don't make the dst file partly checksummed */
- 	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
-@@ -3012,18 +3046,28 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	if (ret)
- 		goto out_unlock;
- 
--	btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
-+	if (same_inode)
-+		lock_extent_range(src, same_lock_start, same_lock_len);
-+	else
-+		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
- 
- 	/* pass original length for comparison so we stay within i_size */
- 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
- 	if (ret == 0)
- 		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
- 
--	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
-+	if (same_inode)
-+		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
-+			      same_lock_start + same_lock_len - 1);
-+	else
-+		btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
- 
- 	btrfs_cmp_data_free(&cmp);
- out_unlock:
--	btrfs_double_inode_unlock(src, dst);
-+	if (same_inode)
-+		mutex_unlock(&src->i_mutex);
-+	else
-+		btrfs_double_inode_unlock(src, dst);
- 
- 	return ret;
- }
+Cheers,
+Marc
 -- 
-2.1.2
-
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

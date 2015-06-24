@@ -1,78 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:53223 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54293 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752810AbbFXSCS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 14:02:18 -0400
-Date: Wed, 24 Jun 2015 20:02:15 +0200
+	id S1752620AbbFXSVc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Jun 2015 14:21:32 -0400
+Date: Wed, 24 Jun 2015 20:21:30 +0200
 From: David Sterba <dsterba@suse.cz>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
-        fdmanana@suse.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org,
-        viro@zeniv.linux.org.uk, linux-nfs@vger.kernel.org,
-        chuck.lever@oracle.com, mingming.cao@oracle.com
-Subject: Re: i_version vs iversion (Was: Re: [RFC PATCH v2 1/2] Btrfs: add
- noi_version option to disable MS_I_VERSION)
-Message-ID: <20150624180215.GC726@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, fdmanana@suse.com
+Subject: Re: [RFC PATCH v2 2/2] Btrfs: improve fsync for nocow file
+Message-ID: <20150624182130.GD726@suse.cz>
 Reply-To: dsterba@suse.cz
 References: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
- <20150617153306.GY6761@twin.jikos.cz>
- <20150617155234.GB7773@localhost.localdomain>
- <20150617170118.GA6761@twin.jikos.cz>
- <20150618024607.GA8530@localhost.localdomain>
- <20150618143856.GG6761@suse.cz>
- <20150623163241.GA6645@thunk.org>
+ <1434527672-5762-2-git-send-email-bo.li.liu@oracle.com>
+ <20150617155836.GZ6761@twin.jikos.cz>
+ <20150618032722.GB8530@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150623163241.GA6645@thunk.org>
+In-Reply-To: <20150618032722.GB8530@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2015 at 12:32:41PM -0400, Theodore Ts'o wrote:
-> This has caused pain for the nfsv4 folks since it means that they need
-> to tell people to use a special mount option for ext4 if they are
-> actually using this for nfsv4, and I suspect they won't be all that
-> eager to hear that btrfs is going to go the same way.
-
-I did not mean to change the default behaviour with respect to nfs, that
-would be a regression.
-
-> This however got us thinking --- even in if NFSv4 is depending on
-> i_version, it doesn't actually _look_ at that field all that often.
-> It's only going to look at it in a response to a client's getattr
-> call, and that in turn is used to so the client can do its local disk
-> cache invalidation if anby of the data blocks of the inode has changed.
+On Thu, Jun 18, 2015 at 11:27:24AM +0800, Liu Bo wrote:
+> > >  #define BTRFS_INODE_IN_DELALLOC_LIST		9
+> > >  #define BTRFS_INODE_READDIO_NEED_LOCK		10
+> > >  #define BTRFS_INODE_HAS_PROPS		        11
+> > > +#define BTRFS_INODE_NOTIMESTAMP			12
+> > > +#define BTRFS_INODE_NOISIZE			13
+> > 
+> > It's not clear what the flags mean and that they're related to syncing
+> > under some conditions.
 > 
-> So what if we have a per-inode flag which "don't update I_VERSION",
-> which is off by default, but after the i_version has been updated at
-> least once, is set, so the i_version field won't be updated again ---
-> at least until something has actually looked at the i_version field,
-> when the "don't update I_VERSOIN" flag will get cleared again.
+> What do you think about BTRFS_ILOG_NOTIMESTAMP and BTRFS_ILOG_NOISIZE? 
 
-This sounds similar to what Dave proposed, a per-inode I_VERSION
-attribute that can be changed through chattr. Though the negated meaning
-of the flag could be confusing, I had to reread the paragraph again.
+I'd say BTRFS_INODE_FSYNC_NOTIMESTAMP and BTRFS_INODE_FSYNC_NOSIZE
 
-> This should significantly improve the performance of using the
-> i_version field if the file system is being exported via NFSv4, and if
-> NFSv4 is not in use, no one will be looking at the i_version field, so
-> the performance impact will be very slight, and thus we could enable
-> i_version updates by default for btrfs and ext4.
-
-Btrfs default is to update i_version and the uscecase gets fixed by the
-per-inode attribute. But from your description above I think that this
-might not be enough for ext4. The reason I see are the different
-defaults. You want to turn it on by default but not impose any
-performance penalty for that, while for our usecase it's sufficient to
-selectively turn it off.
-
-I've tried to locate the source of performance drop for ext4 + iversion,
-but was not successful so I don't know if the proposed fix is complete.
-
-> And this should make the distribution folks happy, since it will unify
-> the behavior of all file systems, and make life easier for users who
-> won't need to set certain magic mount options depending on what file
-> system they are using and whether they are using NFSv4 or not.
+> > > @@ -1983,6 +2001,32 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+> > >  		goto out;
+> > >  	}
+> > >  
+> > > +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) {
+> > > +		if (test_and_clear_bit(BTRFS_INODE_NOTIMESTAMP,
+> > > +					&BTRFS_I(inode)->runtime_flags) &&
+> > > +		    test_and_clear_bit(BTRFS_INODE_NOISIZE,
+> > > +					&BTRFS_I(inode)->runtime_flags)) {
+> > > +
+> > > +			/* make sure data is on disk and catch error */
+> > > +			if (!full_sync)
+> > > +				ret = filemap_fdatawait_range(inode->i_mapping,
+> > > +							      start, end);
+> > > +
+> > > +			if (!ret && !btrfs_test_opt(root, NOBARRIER)) {
+> > > +				mutex_lock(&root->fs_info->
+> > > +					   fs_devices->device_list_mutex);
+> > > +				ret = barrier_all_devices(root->fs_info);
+> > 
+> > Calling barrier devices at this point looks very fishy, taking global
+> > device locks to sync one file as well. All files in the filesystem will
+> > pay the penalty for just one nodatacow file that's being synced.
 > 
-> Does this sound reasonable?
+> Well, I'm afraid this is necessary as this is a fsync, an expensive operation,
+> in the normal case, each fsync issues a superblock flush which calls barrier devices.
+> 
+> I was expecting to not take the global device lock but btrfs is able to
+> manage multiple devices which requires us to do so.
 
-It does, the unified behaviour wrt NFS is definitely a good thing.
+I've read the code again and came to the same conclusion, objections
+withdrawn.
+
+> > I'm not sure that handling the NOISIZE bit is safe regarding size
+> > extending and sync, ie. if it's properly synchronized with i_mutex from
+> > all contexts.
+> 
+> That's also my concern, but the worst case is that someone clears
+> NOISIZE bit and we continue on the normal fsync path.
+
+Sounds safe.
+
+> And this NOISIZE bit not only stands for i_size change, but also will be
+> cleared when we do COW, I'm not sure if we need to use another bit for
+> the COW change or not.
+
+I'm not sure I understand, you mean split the NOISIZE into two bits and
+use NOISIZE just for inode size change and the other one for the
+cow_file_range case?
+
+Btw, shouln't the NOISIZE bit get cleared inside cow_file_range? Both
+calls are in run_delalloc_nocow, this makes sense, but I'm a bit worried
+that we could forget to add it somewhere else. I don't think this would
+hurt performance, cow_file_range is pretty big.

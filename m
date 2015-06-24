@@ -1,99 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:37233 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750970AbbFXIX5 (ORCPT
+Received: from mail-wg0-f46.google.com ([74.125.82.46]:33188 "EHLO
+	mail-wg0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750868AbbFXI2L (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 04:23:57 -0400
-Date: Wed, 24 Jun 2015 16:23:40 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, fdmanana@suse.com,
-        kzak@redhat.com, linux-fsdevel@vger.kernel.org,
-        viro@zeniv.linux.org.uk, linux-nfs@vger.kernel.org,
-        chuck.lever@oracle.com, mingming.cao@oracle.com
-Subject: Re: i_version vs iversion (Was: Re: [RFC PATCH v2 1/2] Btrfs: add
- noi_version option to disable MS_I_VERSION)
-Message-ID: <20150624082339.GB21094@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
- <20150617153306.GY6761@twin.jikos.cz>
- <20150617155234.GB7773@localhost.localdomain>
- <20150617170118.GA6761@twin.jikos.cz>
- <20150618024607.GA8530@localhost.localdomain>
- <20150618143856.GG6761@suse.cz>
- <20150623163241.GA6645@thunk.org>
+	Wed, 24 Jun 2015 04:28:11 -0400
+Received: by wgck11 with SMTP id k11so29690948wgc.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 01:28:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150623163241.GA6645@thunk.org>
+In-Reply-To: <20150624032008.GF20517@merlins.org>
+References: <20150604084245.GR23272@merlins.org>
+	<20150624032008.GF20517@merlins.org>
+Date: Wed, 24 Jun 2015 10:28:09 +0200
+Message-ID: <CAA7pwKOA1yyA8kyB+a3iTOp8TnkRzAErF1Mo=2t5M3pFn2tjUw@mail.gmail.com>
+Subject: Re: counting fragments takes more time than defragmenting
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+To: Marc MERLIN <marc@merlins.org>
+Cc: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2015 at 12:32:41PM -0400, Theodore Ts'o wrote:
-> On Thu, Jun 18, 2015 at 04:38:56PM +0200, David Sterba wrote:
-> > Moving the discussion to fsdevel.
-> > 
-> > Summary: disabling MS_I_VERSION brings some speedups to btrfs, but the
-> > generic 'noiversion' option cannot be used to achieve that. It is
-> > processed before it reaches btrfs superblock callback, where
-> > MS_I_VERSION is forced.
-> > 
-> > The proposed fix is to add btrfs-specific i_version/noi_version to btrfs,
-> > to which I object.
-> 
-> I was talking to Mingming about this on today's ext4 conference call,
-> and one of the reasons why ext4 turns off i_version update by default
-> is because it does a real number on our performance as well --- and
-> furthermore, the only real user of the field from what we can tell is
-> NFSv4, which not all that many ext4 users actually care about.
-> 
-> This has caused pain for the nfsv4 folks since it means that they need
-> to tell people to use a special mount option for ext4 if they are
-> actually using this for nfsv4, and I suspect they won't be all that
-> eager to hear that btrfs is going to go the same way.
-> 
-> This however got us thinking --- even in if NFSv4 is depending on
-> i_version, it doesn't actually _look_ at that field all that often.
-> It's only going to look at it in a response to a client's getattr
-> call, and that in turn is used to so the client can do its local disk
-> cache invalidation if anby of the data blocks of the inode has changed.
-> 
-> So what if we have a per-inode flag which "don't update I_VERSION",
-> which is off by default, but after the i_version has been updated at
-> least once, is set, so the i_version field won't be updated again ---
-> at least until something has actually looked at the i_version field,
-> when the "don't update I_VERSOIN" flag will get cleared again.
-> 
-> So basically, if we know there are no microphones in the forest, we
-> don't need to make the tree fall.  However, if someone has sampled the
-> i_version field, then the next time the inode gets updated, we will
-> update the i_version field so the NFSv4 client can hear the sound of
-> the tree crashing to the forst floor and so it can invalidate its
-> local cache of the file.  :-)
-> 
-> This should significantly improve the performance of using the
-> i_version field if the file system is being exported via NFSv4, and if
-> NFSv4 is not in use, no one will be looking at the i_version field, so
-> the performance impact will be very slight, and thus we could enable
-> i_version updates by default for btrfs and ext4.
-> 
-> And this should make the distribution folks happy, since it will unify
-> the behavior of all file systems, and make life easier for users who
-> won't need to set certain magic mount options depending on what file
-> system they are using and whether they are using NFSv4 or not.
-> 
-> Does this sound reasonable?
+On 24 June 2015 at 05:20, Marc MERLIN <marc@merlins.org> wrote:
+>
+> Hello again,
+>
+> Just curious, is anyone seeing similar things with big VM images or other
+> DBs?
+> I forgot to mention that my vdi file is 88GB.
+>
+> It's surprising that it took longer to count the fragments than to actually
+> defragment the file.
+> Or that it took 3 defrag runs to get down to 11K extents from 104K.
+>
+> Are others seeing similar things?
 
-I agree, this's a promising way to fix the whole thing.
+Filefrag is pretty much instant for my 30GB (150 extents) virtual
+disk, no CoW on file, no snapshots on volume.
 
-Regarding to client's getattr, I found that inode->i_version is not read by
-calling generic_fillattr(), so I'm a bit missing on how we get to
-change the flag...
+But what doesn't make sense to me is btrfs fi defrag; the -t option says
 
-Thanks,
+           -t <size>
+               defragment only files at least <size> bytes big
 
--liubo
+The -t value goes into struct
+btrfs_ioctl_defrag_range_args.extent_thresh which is documented as
 
-> 
-> Cheers,
-> 
-> 						- Ted
+       /*
+         * any extent bigger than this will be considered
+         * already defragged.  Use 0 to take the kernel default
+         * Use 1 to say every single extent must be rewritten
+         */
+
+Default extent_thresh is 256K. I can't see how 1 would say every
+single extent must be rewritten. On the contrary; 1 skips every
+extent. The compress flag even sets extent_thresh=(u32)-1 to force a
+rewrite.
+
+Marc, try btrfs fi defrag -t 4294967295 Win7.vdi for maximum defrag
+and time filefrag again with fewer extents.
+
+/Patrik
+
+
+> Marc
+>
+> On Thu, Jun 04, 2015 at 05:42:45PM +0900, Marc MERLIN wrote:
+> > Hi Chris,
+> >
+> > After our quick chat, I gave it a shot on 3.19.6, and things are better
+> > than last time I tried.
+> >
+> > legolas:/var/local/nobck/VirtualBox VMs# lsattr Win7/
+> > ---------------C Win7/Logs
+> > ---------------C Win7/Snapshots
+> > ---------------C Win7/Win7.vdi
+> > ---------------C Win7/Win7.png
+> > ---------------C Win7/autotune1.png
+> > ---------------C Win7/new_autotune2.png
+> > ---------------C Win7/Win7.vbox-prev
+> > ---------------C Win7/Win7.vbox
+> >
+> > But I have snapshots of that subvolume, so obviously that gets
+> > in the way of disabling COW.
+> >
+> > I had a look, and I have 100K fragments. That took 10mn to figure out:
+> >
+> > legolas:/var/local/nobck/VirtualBox VMs/Win7# filefrag Win7.vdi
+> > Win7.vdi: 104306 extents found
+> >
+> > This first filefrag run took about 10mn to count all the fragments on my
+> > SSD. That feels a bit slow, but maybe the userland tool is doing things
+> > in suboptimal ways.
+> >
+> > Defrag actually worked (mostly) and wasn't too slow. It used to take hours
+> > not to finish, and now it worked in 3mn:
+> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi
+> > real  3m43.807s
+> > user  0m0.000s
+> > sys   0m44.044s
+> >
+> > This is defintely better than before.
+> > Note that it's not fully defragged, but close enough. Each subsequent
+> > run, filefrag is faster, and defrag is still faster than filefrag:
+> >
+> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
+> > Win7.vdi: 11428 extents found
+> > real  2m42.090s
+> > user  0m0.000s
+> > sys   2m37.308s
+> >
+> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi
+> > real  0m7.483s
+> > user  0m0.000s
+> > sys   0m2.672s
+> >
+> > legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
+> > Win7.vdi: 11132 extents found
+> > real  0m22.525s
+> > user  0m0.000s
+> > sys   0m22.264s
+> >
+> > It's a bit unexpected that I still have 10k fragments after 2 defrag
+> > runs, but it's better than 100k :)
+> >
+> > Marc
+> > --
+> > "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> > Microsoft is to operating systems ....
+> >                                       .... what McDonalds is to gourmet cooking
+> > Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> > the body of a message to majordomo@vger.kernel.org
+> > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >
+>
+> --
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

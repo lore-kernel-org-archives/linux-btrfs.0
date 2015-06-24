@@ -1,55 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63582 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933554AbbFXAay (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:50241 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751754AbbFXDUa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 23 Jun 2015 20:30:54 -0400
-Subject: Re: Corrupted btrfs partition (converted from ext4) after balance
-To: Chris Murphy <lists@colorremedies.com>
-References: <55835A55.7000308@stroebel.fr> <5588BA12.4010104@cn.fujitsu.com>
- <CAJCQCtQF3H37tKKYWzUW9R3S9h+18Dzpg22hWViAahm2_ttZtQ@mail.gmail.com>
-CC: Vianney Stroebel <capsule@likwid.fr>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5589FA3E.4010205@cn.fujitsu.com>
-Date: Wed, 24 Jun 2015 08:30:54 +0800
+	Tue, 23 Jun 2015 23:20:30 -0400
+Date: Tue, 23 Jun 2015 20:20:08 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: counting fragments takes more time than defragmenting
+Message-ID: <20150624032008.GF20517@merlins.org>
+References: <20150604084245.GR23272@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQF3H37tKKYWzUW9R3S9h+18Dzpg22hWViAahm2_ttZtQ@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150604084245.GR23272@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello again,
 
+Just curious, is anyone seeing similar things with big VM images or other
+DBs?
+I forgot to mention that my vdi file is 88GB.
 
-Chris Murphy wrote on 2015/06/23 11:30 -0600:
-> On Mon, Jun 22, 2015 at 7:44 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> Without the full output of btrfsck, it's quite hard to call it a clear bug
->> report if you want to save your data in the corrupted partition.
->
-> What I read was that he included everything btrfs check reported,
-> which wasn't a lot. It
->
->
->> The command Konsole output "btrfs check /dev/sdb1" outputs :
->> "Checking filesystem on /dev/sdb1
->> UUID: 21873ba7-438a-4fbf-a051-ace28bffd264
->> checking extents"
->> and stops after a few minutes with no other output.
->
-> Since he's using btrfs-progs 3.19, I think he should upgrade to
-> btrfs-progs 4.1, try check again, and report the complete results.
->
+It's surprising that it took longer to count the fragments than to actually
+defragment the file.
+Or that it took 3 defrag runs to get down to 11K extents from 104K.
 
-If it stopped without further output, it has a high possibility that 
-btrfsck encounters a segfault or assert.
-If it's assert, backtrace (need to enable at compile time) should be 
-provided.
+Are others seeing similar things?
 
-If core dump, gdb backtrace is better provided if possible.
+Marc
 
-Anyway, advice from Chris is quite useful.
-Upgrade to latest 4.1 btrfs-progs (better to compile from source) should 
-solve the two cases above and provide enough information.
+On Thu, Jun 04, 2015 at 05:42:45PM +0900, Marc MERLIN wrote:
+> Hi Chris,
+> 
+> After our quick chat, I gave it a shot on 3.19.6, and things are better
+> than last time I tried.
+> 
+> legolas:/var/local/nobck/VirtualBox VMs# lsattr Win7/
+> ---------------C Win7/Logs
+> ---------------C Win7/Snapshots
+> ---------------C Win7/Win7.vdi
+> ---------------C Win7/Win7.png
+> ---------------C Win7/autotune1.png
+> ---------------C Win7/new_autotune2.png
+> ---------------C Win7/Win7.vbox-prev
+> ---------------C Win7/Win7.vbox
+> 
+> But I have snapshots of that subvolume, so obviously that gets
+> in the way of disabling COW.
+> 
+> I had a look, and I have 100K fragments. That took 10mn to figure out:
+> 
+> legolas:/var/local/nobck/VirtualBox VMs/Win7# filefrag Win7.vdi
+> Win7.vdi: 104306 extents found
+> 
+> This first filefrag run took about 10mn to count all the fragments on my
+> SSD. That feels a bit slow, but maybe the userland tool is doing things
+> in suboptimal ways.
+> 
+> Defrag actually worked (mostly) and wasn't too slow. It used to take hours
+> not to finish, and now it worked in 3mn:
+> legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi 
+> real	3m43.807s
+> user	0m0.000s
+> sys	0m44.044s
+> 
+> This is defintely better than before.
+> Note that it's not fully defragged, but close enough. Each subsequent
+> run, filefrag is faster, and defrag is still faster than filefrag:
+> 
+> legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
+> Win7.vdi: 11428 extents found
+> real	2m42.090s
+> user	0m0.000s
+> sys	2m37.308s
+> 
+> legolas:/var/local/nobck/VirtualBox VMs/Win7# time btrfs fi defrag Win7.vdi 
+> real	0m7.483s
+> user	0m0.000s
+> sys	0m2.672s
+> 
+> legolas:/var/local/nobck/VirtualBox VMs/Win7# time filefrag Win7.vdi
+> Win7.vdi: 11132 extents found
+> real	0m22.525s
+> user	0m0.000s
+> sys	0m22.264s
+> 
+> It's a bit unexpected that I still have 10k fragments after 2 defrag
+> runs, but it's better than 100k :)
+> 
+> Marc
+> -- 
+> "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+> Microsoft is to operating systems ....
+>                                       .... what McDonalds is to gourmet cooking
+> Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
 
-Thanks,
-Qu
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

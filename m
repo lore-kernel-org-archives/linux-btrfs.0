@@ -1,47 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:50740 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750767AbbFXEVz (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:45821 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752765AbbFXOc4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 00:21:55 -0400
-Date: Tue, 23 Jun 2015 21:21:30 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Cao jin <caoj.fnst@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20150624042130.GV16468@merlins.org>
-References: <5589078B.2090806@cn.fujitsu.com>
- <20150624032423.GH20517@merlins.org>
- <558A26A5.4050105@cn.fujitsu.com>
+	Wed, 24 Jun 2015 10:32:56 -0400
+Date: Wed, 24 Jun 2015 17:32:33 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: Chris Mason <clm@fb.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
+        linux-btrfs@vger.kernel.org, kernel-janitors@vger.kernel.org
+Subject: [patch] btrfs: delayed-ref: double free in
+ btrfs_add_delayed_tree_ref()
+Message-ID: <20150624143233.GF1702@mwanda>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <558A26A5.4050105@cn.fujitsu.com>
-Subject: Re: Question about "btrfs send/receive"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 24, 2015 at 11:40:21AM +0800, Cao jin wrote:
-> Hi Marc,
->     I can`t access /perso/btrfs/2014-03.html on that server. But I
-> guess it has similar content as
-> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup ?
->     If so, I am afraid incremental backup not suitable for a API
-> implementation in libguestfs.
->     Is the simplest form a usual condition people will use for
-> subvolume backup? Is the simplest form make sense in daily life?
+There is a cut and paste error so instead of freeing "head_ref", we free
+"ref" twice.
+
+Fixes: 3368d001ba5d ('btrfs: qgroup: Record possible quota-related extent for qgroup.')
+Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index fd64fd0..ac3e81d 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -650,18 +650,13 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 		return -ENOMEM;
  
-Argh, you're probably trying to connect from China. If so, my apologies,
-after repeated abuse and attacks from too many Chinese netblocks and
-netblocks owners who never replied to any Email or did anything to
-address the issues reported, I was forced to block all of China.
-
-You'll find a copy here:
-https://web.archive.org/web/20150619002831/http://marc.merlins.org/perso/btrfs/2014-03.html
-Scroll down to 	2014/03/22
-
-Cheers,
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+ 	head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
+-	if (!head_ref) {
+-		kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+-		return -ENOMEM;
+-	}
++	if (!head_ref)
++		goto free_ref;
+ 
+ 	if (fs_info->quota_enabled && is_fstree(ref_root)) {
+ 		record = kmalloc(sizeof(*record), GFP_NOFS);
+-		if (!record) {
+-			kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
+-			kmem_cache_free(btrfs_delayed_ref_head_cachep, ref);
+-			return -ENOMEM;
+-		}
++		if (!record)
++			goto free_head_ref;
+ 	}
+ 
+ 	head_ref->extent_op = extent_op;
+@@ -682,6 +677,13 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
+ 	spin_unlock(&delayed_refs->lock);
+ 
+ 	return 0;
++
++free_head_ref:
++	kmem_cache_free(btrfs_delayed_ref_head_cachep, head_ref);
++free_ref:
++	kmem_cache_free(btrfs_delayed_tree_ref_cachep, ref);
++
++	return -ENOMEM;
+ }
+ 
+ /*

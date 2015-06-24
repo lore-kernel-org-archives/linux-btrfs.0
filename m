@@ -1,43 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f172.google.com ([209.85.212.172]:35230 "EHLO
-	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751203AbbFXMGS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 08:06:18 -0400
-Received: by wiga1 with SMTP id a1so133594357wig.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 05:06:16 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:51820 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753480AbbFXR2H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 24 Jun 2015 13:28:07 -0400
+Date: Wed, 24 Jun 2015 19:28:04 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Dave Chinner <david@fromorbit.com>
+Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org,
+        fdmanana@suse.com, kzak@redhat.com, linux-fsdevel@vger.kernel.org,
+        viro@zeniv.linux.org.uk
+Subject: Re: i_version vs iversion (Was: Re: [RFC PATCH v2 1/2] Btrfs: add
+ noi_version option to disable MS_I_VERSION)
+Message-ID: <20150624172804.GB726@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
+ <20150617153306.GY6761@twin.jikos.cz>
+ <20150617155234.GB7773@localhost.localdomain>
+ <20150617170118.GA6761@twin.jikos.cz>
+ <20150618024607.GA8530@localhost.localdomain>
+ <20150618143856.GG6761@suse.cz>
+ <20150622204215.GA1557@dastard>
 MIME-Version: 1.0
-In-Reply-To: <pan$5335b$94315604$8405c6ac$de90de30@cox.net>
-References: <20150604084245.GR23272@merlins.org> <20150624032008.GF20517@merlins.org>
- <CAA7pwKOA1yyA8kyB+a3iTOp8TnkRzAErF1Mo=2t5M3pFn2tjUw@mail.gmail.com> <pan$5335b$94315604$8405c6ac$de90de30@cox.net>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Wed, 24 Jun 2015 14:05:57 +0200
-Message-ID: <CAA7pwKPQfkns_rO0wWkvJsNM3yxHA7neyCH=_jeEY1nHA4Ysfw@mail.gmail.com>
-Subject: Re: counting fragments takes more time than defragmenting
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150622204215.GA1557@dastard>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 24 June 2015 at 12:46, Duncan <1i5t5.duncan@cox.net> wrote:
-> Patrik Lundquist posted on Wed, 24 Jun 2015 10:28:09 +0200 as excerpted:
->
-> AFAIK, it's set huge to defrag everything,
+On Tue, Jun 23, 2015 at 06:42:15AM +1000, Dave Chinner wrote:
+> On Thu, Jun 18, 2015 at 04:38:56PM +0200, David Sterba wrote:
+> > Moving the discussion to fsdevel.
+> > 
+> > Summary: disabling MS_I_VERSION brings some speedups to btrfs, but the
+> > generic 'noiversion' option cannot be used to achieve that. It is
+> > processed before it reaches btrfs superblock callback, where
+> > MS_I_VERSION is forced.
+> > 
+> > The proposed fix is to add btrfs-specific i_version/noi_version to btrfs,
+> > to which I object.
+> 
+> The issue is that you can't overide IS_I_VERSION(inode) because it
+> looks at the superblock flag, yes?
 
-It's set to 256K by default.
+Effectively, yes.
 
+> So perhaps IS_I_VERSION should become an inode flag, set by the
+> filesystem at inode instantiation time, and hence filesystems can
+> choose on a per-inode basis if they want I_VERSION behaviour or not.
 
-> Assuming "set a huge -t to defrag to the maximum extent possible" is
-> correct, that means -t 1G should be exactly as effective as -t 1T...
+Sounds good, I like that. Looking at the proposed usecase again, the
+performance speedup needs the NODATACOW bit set as well, so setting
+one more bit is not a big deal.
 
-1G is actually more effective because 1T overflows the uint32
-extent_thresh field, so 1T, 0, and 256K are currently the same.
+Besides, the global 'noi_version' does not have the expected effect
+because inode::i_version is incremented unconditionally everywhere
+(except 1 call site).  From that perspective I think that the
+inode-specific bit is the right approach.
 
-3G is the largest value that works with -t as expected (disregarding
-the man page) and is easy to type.
+> At that point, the behaviour of MS_I_VERSION becomes irrelevant to
+> the discussion, doesn't it?
 
+Agreed.
 
-> But btrfs or ext4, 31 extents ideal or a single extent ideal, 150 extents
-> still indicates at least some remaining fragmentation.
+> > xfs also forces I_VERSION if it detects the superblock version 5, so it
+> > could use the same fix that would work for btrfs.
+> 
+> XFS is a special snowflake - it updates the I_VERSION only when an
+> inode is otherwise modified in a transaction, so turning it off
+> saves nothing. (And yes, timestamp updates are transactional in
+> XFS). Hence XFS behaviour is irrelevant to the discussion, because
+> we aren't ever going to turn it off....
 
-I gave it another shot but I've now got 154 extents instead. :-)
+Understood.
+
+Thanks for the feedback.

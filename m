@@ -1,48 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:57067 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:60452 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751546AbbFYPbL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 11:31:11 -0400
-Date: Thu, 25 Jun 2015 17:31:09 +0200
+	id S1751558AbbFYQKK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 12:10:10 -0400
+Date: Thu, 25 Jun 2015 18:10:08 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: dsterba@suse.cz, Facebook <clm@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RFC] btrfs: csum: Introduce partial csum for tree block.
-Message-ID: <20150625153109.GJ726@twin.jikos.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, fdmanana@suse.com
+Subject: Re: [RFC PATCH v2 2/2] Btrfs: improve fsync for nocow file
+Message-ID: <20150625161008.GL726@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1434078015-8868-1-git-send-email-quwenruo@cn.fujitsu.com>
- <557B076B.7050500@fb.com>
- <557E86A9.8040207@cn.fujitsu.com>
- <20150615131507.GL6761@twin.jikos.cz>
- <557F7A5F.5010206@cn.fujitsu.com>
- <557F8C78.7080304@cn.fujitsu.com>
- <55822008.1090305@cn.fujitsu.com>
- <1434643066.28534.0@mail.thefacebook.com>
- <20150618170632.GI6761@suse.cz>
- <55836FB3.1060704@cn.fujitsu.com>
+References: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
+ <1434527672-5762-2-git-send-email-bo.li.liu@oracle.com>
+ <20150617155836.GZ6761@twin.jikos.cz>
+ <20150618032722.GB8530@localhost.localdomain>
+ <20150624182130.GD726@suse.cz>
+ <20150625022424.GA23794@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55836FB3.1060704@cn.fujitsu.com>
+In-Reply-To: <20150625022424.GA23794@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 19, 2015 at 09:26:11AM +0800, Qu Wenruo wrote:
-> > I agree with that. I'm still not convinced that adding all the kernel
-> > code to repair the data is justified, compared to the block-level
-> > redundancy alternatives.
+On Thu, Jun 25, 2015 at 10:24:25AM +0800, Liu Bo wrote:
+> > I'm not sure I understand, you mean split the NOISIZE into two bits and
+> > use NOISIZE just for inode size change and the other one for the
+> > cow_file_range case?
 > 
-> Totally agree with this.
-> That's why we have support for RAID1/5/6/10.
-> 
-> I also hate to add complexity to kernel codes, especially when the scrub 
-> codes are already quite complex.
-> 
-> But in fact, my teammate Zhao Lei is already doing some work to make 
-> scrub codes clean and neat.
+> Yes, for now it has mixed meanings, either changing i_size or doing Cow.
+> But I think it'd better to leave it mixed if we document it well.
 
-Doing cleanups is a good thing regardless of new features, please don't
-hesitate to post them even if we do not agree to implement the partial
-csum/repair.
-
-I'm not against adding the partial csums & repair, but at the moment I'm
-not convinced.
+Agreed, please also comment the new fsync code that actually uses the
+nocow + notimestamp + noisize bits.

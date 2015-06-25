@@ -1,63 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:13168 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752113AbbFXX7E (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:25765 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750903AbbFYCYm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 19:59:04 -0400
-Date: Thu, 25 Jun 2015 09:59:00 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org, fdmanana@suse.com, kzak@redhat.com,
-        linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
-        linux-nfs@vger.kernel.org, chuck.lever@oracle.com,
-        mingming.cao@oracle.com
-Subject: Re: i_version vs iversion (Was: Re: [RFC PATCH v2 1/2] Btrfs: add
- noi_version option to disable MS_I_VERSION)
-Message-ID: <20150624235900.GC7943@dastard>
+	Wed, 24 Jun 2015 22:24:42 -0400
+Date: Thu, 25 Jun 2015 10:24:25 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, fdmanana@suse.com
+Subject: Re: [RFC PATCH v2 2/2] Btrfs: improve fsync for nocow file
+Message-ID: <20150625022424.GA23794@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
- <20150617153306.GY6761@twin.jikos.cz>
- <20150617155234.GB7773@localhost.localdomain>
- <20150617170118.GA6761@twin.jikos.cz>
- <20150618024607.GA8530@localhost.localdomain>
- <20150618143856.GG6761@suse.cz>
- <20150623163241.GA6645@thunk.org>
- <20150624180215.GC726@suse.cz>
- <20150624231750.GE14324@thunk.org>
+ <1434527672-5762-2-git-send-email-bo.li.liu@oracle.com>
+ <20150617155836.GZ6761@twin.jikos.cz>
+ <20150618032722.GB8530@localhost.localdomain>
+ <20150624182130.GD726@suse.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150624231750.GE14324@thunk.org>
+In-Reply-To: <20150624182130.GD726@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 24, 2015 at 07:17:50PM -0400, Theodore Ts'o wrote:
-> On Wed, Jun 24, 2015 at 08:02:15PM +0200, David Sterba wrote:
+On Wed, Jun 24, 2015 at 08:21:30PM +0200, David Sterba wrote:
+> On Thu, Jun 18, 2015 at 11:27:24AM +0800, Liu Bo wrote:
+> > > >  #define BTRFS_INODE_IN_DELALLOC_LIST		9
+> > > >  #define BTRFS_INODE_READDIO_NEED_LOCK		10
+> > > >  #define BTRFS_INODE_HAS_PROPS		        11
+> > > > +#define BTRFS_INODE_NOTIMESTAMP			12
+> > > > +#define BTRFS_INODE_NOISIZE			13
+> > > 
+> > > It's not clear what the flags mean and that they're related to syncing
+> > > under some conditions.
 > > 
-> > This sounds similar to what Dave proposed, a per-inode I_VERSION
-> > attribute that can be changed through chattr. Though the negated meaning
-> > of the flag could be confusing, I had to reread the paragraph again.
+> > What do you think about BTRFS_ILOG_NOTIMESTAMP and BTRFS_ILOG_NOISIZE? 
 > 
-> Dave did not specify an I_VERSION attribute that would be stored on
-> disk.  Instead he talked about a inode flag that would be set when the
-> struct inode is created by the file system.
+> I'd say BTRFS_INODE_FSYNC_NOTIMESTAMP and BTRFS_INODE_FSYNC_NOSIZE
 
-Right.
+Looks good.
 
-> This would allow file systems to permanently configure (on a per-inode
-> basis) whether or not a particular inode would require a forced
-> i_version update any time the inode's data or metadata is modified.  I
-> suppose you could initialized the inode flag from an on-disk
-> attribute, but that wasn't implied by Dave's proposal, at least as I
-> understood it.
+> 
+> > > > @@ -1983,6 +2001,32 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+> > > >  		goto out;
+> > > >  	}
+> > > >  
+> > > > +	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW) {
+> > > > +		if (test_and_clear_bit(BTRFS_INODE_NOTIMESTAMP,
+> > > > +					&BTRFS_I(inode)->runtime_flags) &&
+> > > > +		    test_and_clear_bit(BTRFS_INODE_NOISIZE,
+> > > > +					&BTRFS_I(inode)->runtime_flags)) {
+> > > > +
+> > > > +			/* make sure data is on disk and catch error */
+> > > > +			if (!full_sync)
+> > > > +				ret = filemap_fdatawait_range(inode->i_mapping,
+> > > > +							      start, end);
+> > > > +
+> > > > +			if (!ret && !btrfs_test_opt(root, NOBARRIER)) {
+> > > > +				mutex_lock(&root->fs_info->
+> > > > +					   fs_devices->device_list_mutex);
+> > > > +				ret = barrier_all_devices(root->fs_info);
+> > > 
+> > > Calling barrier devices at this point looks very fishy, taking global
+> > > device locks to sync one file as well. All files in the filesystem will
+> > > pay the penalty for just one nodatacow file that's being synced.
+> > 
+> > Well, I'm afraid this is necessary as this is a fsync, an expensive operation,
+> > in the normal case, each fsync issues a superblock flush which calls barrier devices.
+> > 
+> > I was expecting to not take the global device lock but btrfs is able to
+> > manage multiple devices which requires us to do so.
+> 
+> I've read the code again and came to the same conclusion, objections
+> withdrawn.
+> 
+> > > I'm not sure that handling the NOISIZE bit is safe regarding size
+> > > extending and sync, ie. if it's properly synchronized with i_mutex from
+> > > all contexts.
+> > 
+> > That's also my concern, but the worst case is that someone clears
+> > NOISIZE bit and we continue on the normal fsync path.
+> 
+> Sounds safe.
+> 
+> > And this NOISIZE bit not only stands for i_size change, but also will be
+> > cleared when we do COW, I'm not sure if we need to use another bit for
+> > the COW change or not.
+> 
+> I'm not sure I understand, you mean split the NOISIZE into two bits and
+> use NOISIZE just for inode size change and the other one for the
+> cow_file_range case?
 
-It enables filesystems to do this. If btrfs want to add an on-disk
-flag to turn off I_VERSION on a per-inode basis, or imply it from
-some other on-disk flag, then they are welcome to do so and the
-above infrastructure change will support it.
+Yes, for now it has mixed meanings, either changing i_size or doing Cow.
+But I think it'd better to leave it mixed if we document it well.
 
-Cheers,
+> 
+> Btw, shouln't the NOISIZE bit get cleared inside cow_file_range? Both
+> calls are in run_delalloc_nocow, this makes sense, but I'm a bit worried
+> that we could forget to add it somewhere else. I don't think this would
+> hurt performance, cow_file_range is pretty big.
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+That sounds be better.
+
+Thanks,
+
+-liubo

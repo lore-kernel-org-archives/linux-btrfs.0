@@ -1,106 +1,273 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:58806 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:58884 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751213AbbFYNwx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 09:52:53 -0400
+	id S1751213AbbFYNxU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 09:53:20 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix shrinking truncate when the no_holes feature is enabled
-Date: Thu, 25 Jun 2015 04:17:16 +0100
-Message-Id: <1435202236-23472-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix fsync after truncate when no_holes feature is enabled
+Date: Thu, 25 Jun 2015 04:17:46 +0100
+Message-Id: <1435202266-23526-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If the no_holes feature is enabled, we attempt to shrink a file to a size
-that ends up in the middle of a hole and we don't have any file extent
-items in the fs/subvol tree that go beyond the new file size (or any
-ordered extents that will insert such file extent items), we end up not
-updating the inode's disk_i_size, we only update the inode's i_size.
+When we have the no_holes feature enabled, if a we truncate a file to a
+smaller size, truncate it again but to a size greater than or equals to
+its original size and fsync it, the log tree will not have any information
+about the hole covering the range [truncate_1_offset, new_file_size[.
+Which means if the fsync log is replayed, the file will remain with the
+state it had before both truncate operations.
 
-This means that after unmounting and mounting the filesystem, or after
-the inode is evicted and reloaded, its i_size ends up being incorrect
-(an inode's i_size is set to the disk_i_size field when an inode is
-loaded). This happens when btrfs_truncate_inode_items() doesn't find
-any file extent items to drop - in this case it never makes a call to
-btrfs_ordered_update_i_size() in order to update the inode's disk_i_size.
+Without the no_holes feature this does not happen, since when the inode
+is logged (full sync flag is set) it will find in the fs/subvol tree a
+leaf with a generation matching the current transaction id that has an
+explicit extent item representing the hole.
 
-Example reproducer:
+Fix this by adding an explicit extent item representing a hole between
+the last extent and the inode's i_size if we are doing a full sync.
 
-  $ mkfs.btrfs -O no-holes -f /dev/sdd
-  $ mount /dev/sdd /mnt
+The issue is easy to reproduce with the following test case for fstests:
 
-  # Create our test file with some data and durably persist it.
-  $ xfs_io -f -c "pwrite -S 0xaa 0 128K" /mnt/foo
-  $ sync
+  . ./common/rc
+  . ./common/filter
+  . ./common/dmflakey
 
-  # Append some data to the file, increasing its size, and leave a hole
-  # between the old size and the start offset if the following write. So
-  # our file gets a hole in the range [128Kb, 256Kb[.
-  $ xfs_io -c "truncate 160K" /mnt/foo
+  _need_to_be_root
+  _supported_fs generic
+  _supported_os Linux
+  _require_scratch
+  _require_dm_flakey
 
-  # We expect to see our file with a size of 160Kb, with the first 128Kb
-  # of data all having the value 0xaa and the remaining 32Kb of data all
-  # having the value 0x00.
-  $ od -t x1 /mnt/foo
+  # This test was motivated by an issue found in btrfs when the btrfs
+  # no-holes feature is enabled (introduced in kernel 3.14). So enable
+  # the feature if the fs being tested is btrfs.
+  if [ $FSTYP == "btrfs" ]; then
+      _require_btrfs_fs_feature "no_holes"
+      _require_btrfs_mkfs_feature "no-holes"
+      MKFS_OPTIONS="$MKFS_OPTIONS -O no-holes"
+  fi
+
+  rm -f $seqres.full
+
+  _scratch_mkfs >>$seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create our test files and make sure everything is durably persisted.
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 64K"         \
+                  -c "pwrite -S 0xbb 64K 61K"       \
+                  $SCRATCH_MNT/foo | _filter_xfs_io
+  $XFS_IO_PROG -f -c "pwrite -S 0xee 0 64K"         \
+                  -c "pwrite -S 0xff 64K 61K"       \
+                  $SCRATCH_MNT/bar | _filter_xfs_io
+  sync
+
+  # Now truncate our file foo to a smaller size (64Kb) and then truncate
+  # it to the size it had before the shrinking truncate (125Kb). Then
+  # fsync our file. If a power failure happens after the fsync, we expect
+  # our file to have a size of 125Kb, with the first 64Kb of data having
+  # the value 0xaa and the second 61Kb of data having the value 0x00.
+  $XFS_IO_PROG -c "truncate 64K" \
+               -c "truncate 125K" \
+               -c "fsync" \
+               $SCRATCH_MNT/foo
+
+  # Do something similar to our file bar, but the first truncation sets
+  # the file size to 0 and the second truncation expands the size to the
+  # double of what it was initially.
+  $XFS_IO_PROG -c "truncate 0" \
+               -c "truncate 253K" \
+               -c "fsync" \
+               $SCRATCH_MNT/bar
+
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  # Allow writes again, mount to trigger log replay and validate file
+  # contents.
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # We expect foo to have a size of 125Kb, the first 64Kb of data all
+  # having the value 0xaa and the remaining 61Kb to be a hole (all bytes
+  # with value 0x00).
+  echo "File foo content after log replay:"
+  od -t x1 $SCRATCH_MNT/foo
+
+  # We expect bar to have a size of 253Kb and no extents (any byte read
+  # from bar has the value 0x00).
+  echo "File bar content after log replay:"
+  od -t x1 $SCRATCH_MNT/bar
+
+  status=0
+  exit
+
+The expected file contents in the golden output are:
+
+  File foo content after log replay:
   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
   *
-  0400000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  0200000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
   *
-  0500000
+  0372000
+  File bar content after log replay:
+  0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  *
+  0772000
 
-  # Now cleanly unmount and mount again the filesystem.
-  $ umount /mnt
-  $ mount /dev/sdd /mnt
+Without this fix, their contents are:
 
-  # We expect to get the same result as before, a file with a size of
-  # 160Kb, with the first 128Kb of data all having the value 0xaa and the
-  # remaining 32Kb of data all having the value 0x00.
-  $ od -t x1 /mnt/foo
+  File foo content after log replay:
   0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
   *
-  0400000
+  0200000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+  *
+  0372000
+  File bar content after log replay:
+  0000000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
+  *
+  0200000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+  *
+  0372000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  *
+  0772000
 
-In the example above the file size/data do not match what they were before
-the remount.
-
-Fix this by always calling btrfs_ordered_update_i_size() with a size
-matching the size the file was truncated to if btrfs_truncate_inode_items()
-is not called for a log tree and no file extent items were dropped. This
-ensures the same behaviour as when the no_holes feature is not enabled.
-
-A test case for fstests follows soon.
+A test case submission for fstests follows soon.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/tree-log.c | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 108 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index a21ad34..1225330 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4209,7 +4209,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
- 	u64 extent_num_bytes = 0;
- 	u64 extent_offset = 0;
- 	u64 item_end = 0;
--	u64 last_size = (u64)-1;
-+	u64 last_size = new_size;
- 	u32 found_type = (u8)-1;
- 	int found_extent;
- 	int del_item;
-@@ -4493,8 +4493,7 @@ out:
- 			btrfs_abort_transaction(trans, root, ret);
- 	}
- error:
--	if (last_size != (u64)-1 &&
--	    root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
-+	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
- 		btrfs_ordered_update_i_size(inode, last_size, NULL);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 7ac45cf..ac90336 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -4203,6 +4203,107 @@ static int btrfs_log_all_xattrs(struct btrfs_trans_handle *trans,
+ 	return 0;
+ }
  
- 	btrfs_free_path(path);
++/*
++ * If the no holes feature is enabled we need to make sure any hole between the
++ * last extent and the i_size of our inode is explicitly marked in the log. This
++ * is to make sure that doing something like:
++ *
++ *      1) create file with 128Kb of data
++ *      2) truncate file to 64Kb
++ *      3) truncate file to 256Kb
++ *      4) fsync file
++ *      5) <crash/power failure>
++ *      6) mount fs and trigger log replay
++ *
++ * Will give us a file with a size of 256Kb, the first 64Kb of data match what
++ * the file had in its first 64Kb of data at step 1 and the last 192Kb of the
++ * file correspond to a hole. The presence of explicit holes in a log tree is
++ * what guarantees that log replay will remove/adjust file extent items in the
++ * fs/subvol tree.
++ *
++ * Here we do not need to care about holes between extents, that is already done
++ * by copy_items(). We also only need to do this in the full sync path, where we
++ * lookup for extents from the fs/subvol tree only. In the fast path case, we
++ * lookup the list of modified extent maps and if any represents a hole, we
++ * insert a corresponding extent representing a hole in the log tree.
++ */
++static int btrfs_log_trailing_hole(struct btrfs_trans_handle *trans,
++				   struct btrfs_root *root,
++				   struct inode *inode,
++				   struct btrfs_path *path)
++{
++	int ret;
++	struct btrfs_key key;
++	u64 hole_start;
++	u64 hole_size;
++	struct extent_buffer *leaf;
++	struct btrfs_root *log = root->log_root;
++	const u64 ino = btrfs_ino(inode);
++	const u64 i_size = i_size_read(inode);
++
++	if (!btrfs_fs_incompat(root->fs_info, NO_HOLES))
++		return 0;
++
++	key.objectid = ino;
++	key.type = BTRFS_EXTENT_DATA_KEY;
++	key.offset = (u64)-1;
++
++	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
++	ASSERT(ret != 0);
++	if (ret < 0)
++		return ret;
++
++	ASSERT(path->slots[0] > 0);
++	path->slots[0]--;
++	leaf = path->nodes[0];
++	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
++
++	if (key.objectid != ino || key.type != BTRFS_EXTENT_DATA_KEY) {
++		/* inode does not have any extents */
++		hole_start = 0;
++		hole_size = i_size;
++	} else {
++		struct btrfs_file_extent_item *extent;
++		u64 len;
++
++		/*
++		 * If there's an extent beyond i_size, an explicit hole was
++		 * already inserted by copy_items().
++		 */
++		if (key.offset >= i_size)
++			return 0;
++
++		extent = btrfs_item_ptr(leaf, path->slots[0],
++					struct btrfs_file_extent_item);
++
++		if (btrfs_file_extent_type(leaf, extent) ==
++		    BTRFS_FILE_EXTENT_INLINE) {
++			len = btrfs_file_extent_inline_len(leaf,
++							   path->slots[0],
++							   extent);
++			ASSERT(len == i_size);
++			return 0;
++		}
++
++		len = btrfs_file_extent_num_bytes(leaf, extent);
++		/* Last extent goes beyond i_size, no need to log a hole. */
++		if (key.offset + len > i_size)
++			return 0;
++		hole_start = key.offset + len;
++		hole_size = i_size - hole_start;
++	}
++	btrfs_release_path(path);
++
++	/* Last extent ends at i_size. */
++	if (hole_size == 0)
++		return 0;
++
++	hole_size = ALIGN(hole_size, root->sectorsize);
++	ret = btrfs_insert_file_extent(trans, log, ino, hole_start, 0, 0,
++				       hole_size, 0, hole_size, 0, 0, 0);
++	return ret;
++}
++
+ /* log a single inode in the tree log.
+  * At least one parent directory for this inode must exist in the tree
+  * or be logged already.
+@@ -4466,6 +4567,13 @@ next_slot:
+ 	err = btrfs_log_all_xattrs(trans, root, inode, path, dst_path);
+ 	if (err)
+ 		goto out_unlock;
++	if (max_key.type >= BTRFS_EXTENT_DATA_KEY && !fast_search) {
++		btrfs_release_path(path);
++		btrfs_release_path(dst_path);
++		err = btrfs_log_trailing_hole(trans, root, inode, path);
++		if (err)
++			goto out_unlock;
++	}
+ log_extents:
+ 	btrfs_release_path(path);
+ 	btrfs_release_path(dst_path);
 -- 
 2.1.3
 

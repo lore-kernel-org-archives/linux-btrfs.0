@@ -1,105 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f177.google.com ([209.85.220.177]:35434 "EHLO
-	mail-qk0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751718AbbFYNKm (ORCPT
+Received: from h218.18.88.75.static.ip.windstream.net ([75.88.18.218]:49826
+	"EHLO suse102.ad.techspace.cc" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751874AbbFYOli (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 09:10:42 -0400
-Received: by qkbp125 with SMTP id p125so38062873qkb.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2015 06:10:41 -0700 (PDT)
-Message-ID: <558BFDC7.1090800@gmail.com>
-Date: Thu, 25 Jun 2015 09:10:31 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+	Thu, 25 Jun 2015 10:41:38 -0400
+Received: from esilinux2.ad.techspace.cc (esilinux2.ad.techspace.cc [192.168.10.56])
+	(authenticated bits=0)
+	by suse102.ad.techspace.cc (8.14.9/8.14.4/SuSE Linux 0.8) with ESMTP id t5PEfGj9007032
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2015 09:41:16 -0500
+Reply-To: moby@mobsternet.com
+Subject: Re: BTRFS balance fails with -dusage=100
+References: <5588D855.2080701@mobsternet.com>
+ <558AEA05.2070901@mobsternet.com>
+To: linux-btrfs@vger.kernel.org
+From: Moby <moby@mobsternet.com>
+Message-ID: <558C130C.5010207@mobsternet.com>
+Date: Thu, 25 Jun 2015 09:41:16 -0500
 MIME-Version: 1.0
-To: dsterba@suse.cz, Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Mark Fasheh <mfasheh@suse.de>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/5] btrfs: add no_mtime flag to btrfs-extent-same
-References: <1435013262-23252-1-git-send-email-mfasheh@suse.de> <1435013262-23252-6-git-send-email-mfasheh@suse.de> <20150623151156.GI6761@twin.jikos.cz> <20150624201732.GA14931@hungrycats.org> <20150625125250.GF726@twin.jikos.cz>
-In-Reply-To: <20150625125250.GF726@twin.jikos.cz>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms000809010500060401030402"
+In-Reply-To: <558AEA05.2070901@mobsternet.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
 
---------------ms000809010500060401030402
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
 
-On 2015-06-25 08:52, David Sterba wrote:
-> On Wed, Jun 24, 2015 at 04:17:32PM -0400, Zygo Blaxell wrote:
->> Is there any sane use case where we would _want_ EXTENT_SAME to change=
-
->> the mtime?  We do a lot of work to make sure that none of the files
->> involved have any sort of content change.  Why do we need the flag at =
-all?
+On 06/24/2015 12:33 PM, Moby wrote:
 >
-> Good point, I don't see the usecase for updating MTIME.
-Was the original intent possibly to make certain the CTIME got updated?=20
-  Because EXTENT_SAME _does_ update the metadata, and by logical=20
-extension that means that the CTIME should change.
+>
+> On 06/22/2015 10:53 PM, Moby wrote:
+>> OpenSuSE 13.2 system with single BTRFS / mounted on top of /dev/md1. 
+>> /dev/md1 is md raid5 across 4 SATA disks.
+>>
+>> System details are:
+>>
+>> Linux suse132 4.0.5-4.g56152db-default #1 SMP Thu Jun 18 15:11:06 UTC 
+>> 2015 (56152db) x86_64 x86_64 x86_64 GNU/Linux
+>>
+>> btrfs-progs v4.1+20150622
+>>
+>> Label: none  uuid: 33b98d97-606b-4968-a266-24a48a9fe50d
+>>     Total devices 1 FS bytes used 884.21GiB
+>>     devid    1 size 1.36TiB used 889.06GiB path /dev/md1
+>>
+>>
+>> Data, single: total=885.00GiB, used=883.12GiB
+>> System, DUP: total=32.00MiB, used=144.00KiB
+>> Metadata, DUP: total=2.00GiB, used=1.09GiB
+>> GlobalReserve, single: total=384.00MiB, used=0.00B
+>>
+>>
+>> Relevant entries from log are:
+>> 2015-06-22T22:46:32.238011-05:00 suse132 kernel: [90193.446128] 
+>> BTRFS: bdev /dev/md1 errs: wr 9977, rd 0, flush 0, corrupt 0, gen 0
+>> 2015-06-22T22:46:32.238050-05:00 suse132 kernel: [90193.446158] 
+>> BTRFS: bdev /dev/md1 errs: wr 9978, rd 0, flush 0, corrupt 0, gen 0
+>> 2015-06-22T22:46:32.238054-05:00 suse132 kernel: [90193.446179] 
+>> BTRFS: bdev /dev/md1 errs: wr 9979, rd 0, flush 0, corrupt 0, gen 0
+>>
+>> System was (still is - other than btrfs balance) running fine. Then I 
+>> did massive data I/O, copying and deleting and massive amounts of 
+>> data to bring the system into it's present state. Once I was done 
+>> with the I/O, kicked off btrfs balance start /.
+>> Above command failed.  Then I started doing btrfs balance -dusage=XX /
+>> This command succeeds  with XX upto and including 99.  It fails when 
+>> I set XX to 100.  btrfs balance also fails if I omit the -dusage option.
+>> The errors in the log make no sense to me since the md raid device is 
+>> not reporting any errors at all.  Also running btrfs scrub reports no 
+>> errors at all.
+>>
+>> Any ideas on how to get btrfs balance to succeed without errors would 
+>> be welcome.
+>>
+>> Regards,
+>>
+>> --Moby
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe 
+>> linux-btrfs" in
+>>
+>>
+>
+> On another run with -duage=95, I am now seeing the following (negative 
+> percentage left value!)
+>
+> Every 15.0s: sh -c date;btrfs balance status -v /       Wed Jun 24 
+> 12:29:12 2015
+>
+> Wed Jun 24 12:29:12 CDT 2015
+> Balance on '/' is running
+> 306 out of about 145 chunks balanced (312 considered), -111% left
+> Dumping filters: flags 0x1, state 0x1, force is off
+>   DATA (flags 0x2): balancing, usage=95
+>
+> --Moby
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+Upgrading to kernel 4.1.0-1.gfcf8349-default and btrfs-progs 
+v4.1+20150622 seems to have fixed the problem.  btrfs balance now 
+completes without any errors.
 
+-- 
+--Moby
 
+They that can give up essential liberty to obtain a little temporary safety deserve neither liberty nor safety.  -- Benjamin Franklin
 
---------------ms000809010500060401030402
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIGuDCC
-BrQwggScoAMCAQICAxBuVTANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNTAz
-MjUxOTM0MzhaFw0xNTA5MjExOTM0MzhaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCdD/zW
-2rRAFCLnDfXpWxU1+ODqRVUgzHvrRO7ADUxRo1CBDc3JSX5TIW2OGmQ3DAKGOACp8Z0sgxMc
-B05tzAZ/M7m4jajVrwwdVCdrwVGxTdAai7Kwg4ZCVfyMVhcwo8R2eW3QahBx34G0RKumK9sZ
-ZQSQ+zULAzpY6uz7T1sAk/erMoivRXF6u8WvOsLkOD1F/Xyv1ZccSUG5YeDgZgc0nZUBvyIp
-zXSHjgWerFkrxEM3y2z/Ff3eL1sgGYecV/I1F+I5S01V7Kclt/qRW10c/4JEGRcI1FmrJBPu
-BtMYPbg/3Y9LZROYN+mVIFxZxOfrmjfFZ96xt/TaMXo8vcEKtWcNEjhGBjEbfMUEm4aq8ygQ
-4MuEcpJc8DJCHBkg2KBk13DkbU2qNepTD6Uip1C+g+KMr0nd6KOJqSH27ZuNY4xqV4hIxFHp
-ex0zY7mq6fV2o6sKBGQzRdI20FDYmNjsLJwjH6qJ8laxFphZnPRpBThmu0AjuBWE72GnI1oA
-aO+bs92MQGJernt7hByCnDO82W/ykbVz+Ge3Sax8NY0m2Xdvp6WFDY/PjD9CdaJ9nwQGsUSa
-N54lrZ2qMTeCI9Vauwf6U69BA42xgk65VvxvTNqji+tZ4aZbarZ7el2/QDHOb/rRwlCFplS/
-z4l1f1nOrE6bnDl5RBJyW3zi74P6GwIDAQABo4IBWTCCAVUwDAYDVR0TAQH/BAIwADBWBglg
-hkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQg
-b3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYDVR0PAQH/BAQDAgOoMEAGA1UdJQQ5
-MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYKKwYBBAGCNwoDAwYJYIZIAYb4
-QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDovL29jc3AuY2FjZXJ0Lm9y
-ZzAxBgNVHR8EKjAoMCagJKAihiBodHRwOi8vY3JsLmNhY2VydC5vcmcvcmV2b2tlLmNybDA0
-BgNVHREELTArgRRhaGZlcnJvaW43QGdtYWlsLmNvbYETYWhlbW1lbGdAb2hpb2d0LmNvbTAN
-BgkqhkiG9w0BAQ0FAAOCAgEAGvl7xb42JMRH5D/vCIDYvFY3dR2FPd5kmOqpKU/fvQ8ovmJa
-p5N/FDrsCL+YdslxPY+AAn78PYmL5pFHTdRadT++07DPIMtQyy2qd+XRmz6zP8Il7vGcEDmO
-WmMLYMq4xV9s/N7t7JJp6ftdIYUcoTVChUgilDaRWMLidtslCdRsBVfUjPb1bF5Ua31diKDP
-e0M9/e2CU36rbcTtiNCXhptMigzuL3zJXUf2B9jyUV8pnqNEQH36fqJ7YTBLcpq3aYa2XbAH
-Hgx9GehJBIqwspDmhPCFZ/QmqUXCkt+XfvinQ2NzKR6P3+OdYbwqzVX8BdMeojh7Ig8x/nIx
-mQ+/ufstL1ZYp0bg13fyK/hPYSIBpayaC76vzWovkIm70DIDRIFLi20p/qTd7rfDYy831Hjm
-+lDdCECF9bIXEWFk33kA97dgQIMbf5chEmlFg8S0e4iw7LMjvRqMX3eCD8GJ2+oqyZUwzZxy
-S0Mx+rBld5rrN7LsXwZ671HsGqNeYbYeU25e7t7/Gcc6Bd/kPfA+adEuUGFcvUKH3trDYqNq
-6mOkAd8WO/mQadlc3ztS++XDMhmIpfBre9MPAr6usqf+wc+R8Nk9KLK39kEgrqVfzc/fgf8L
-MaD4rHnusdg4gca6Yi+kNrm99anw7SwaBrBvULYBp7ixNRUhaYiNW4YjTrYxggShMIIEnQIB
-ATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
-cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
-EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5VMAkGBSsOAwIaBQCgggH1MBgGCSqGSIb3DQEJAzEL
-BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDYyNTEzMTAzMVowIwYJKoZIhvcNAQkE
-MRYEFDWP7qruAXkATsYH/nWoCH3mZDVAMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
-MAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwIC
-AUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYD
-VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
-GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
-ZXJ0Lm9yZwIDEG5VMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENB
-MR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2ln
-bmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5V
-MA0GCSqGSIb3DQEBAQUABIICACYpBclOuao1ZDuFqGBBoZZj3GWqPnuPF4Q6InYoJ7boR+T0
-lOvAQmds137xyUKZo1Qmf4Vi4E+8Ex1SCh6sZRIF5w7xH8DDgghQiFh3gMnoe9ZRCVvyRFrF
-If7GO6IRvhkm+OsNU3zScZXUQ0OuIDX9OyP9ezACP9Yvs7EjjD4m0kfwApjIaPUyZ4X1CLkh
-x8UT4icMGhNnsDRgz8IGZg+1X1y4RQHK1ab7fzKoybetgDj+vyqZf1FUsZ7iKXr2V5Ce1+Oz
-gGRdZbJmlqAtKwlm4k7nLM8s+ztiKvcRLaEUb+ENpvfCJAyLy/dV+enQNUK9he0mFPG7S1iH
-Ahx+MIxvKeTNDHIGDpoSWJJZp6cw+ZpDIzbA8njBOZ5Xkqez16s8R+6rOBW/0jCNja8VdcUq
-hAN607NIcxLcgl/ekC91nQuWqCnjzzN2Qfa/xyoWRj7U34rloDD4nH6gaBriJoMuMOUeBCHX
-eB0X9WOEW6xF8Nbky31j94f+FLi35Pl9BtfQ+D+dvPuZfJdif+Fq7LDkWoqcX0lo3azy/lts
-ekVWIA7tFsLsqLzqCNS3LnQThgaMZxdnsXm136VwN93Dln1d40s0nAnXjHhrnfG9C7Mig0lG
-rl/6a7zf7+9kC0zlm1hCVq+cJ70JIcfGY+2nTfaD6sU4S/geUe5AETUHiHE8AAAAAAAA
---------------ms000809010500060401030402--

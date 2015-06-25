@@ -1,53 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:34433 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750831AbbFYEQZ (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:33019 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751046AbbFYGaZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 00:16:25 -0400
-Date: Wed, 24 Jun 2015 21:16:20 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Robert Munteanu <robert.munteanu@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20150625041620.GK16468@merlins.org>
-References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
- <20150617174630.GM16468@merlins.org>
- <CAC8ULPb2XCniELiuJtEajf=8usGTW14xzyfZLP9kxo3-fQ01dA@mail.gmail.com>
+	Thu, 25 Jun 2015 02:30:25 -0400
+Received: by wiwl6 with SMTP id l6so8079940wiw.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 23:30:24 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAC8ULPb2XCniELiuJtEajf=8usGTW14xzyfZLP9kxo3-fQ01dA@mail.gmail.com>
-Subject: Re: btrfs partition converted from ext4 becomes read-only minutes
- after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260
- __btrfs_abort_transaction+0x4b/0x120
+In-Reply-To: <pan$c46c7$e4c53f76$44d37440$be0c7aec@cox.net>
+References: <20150604084245.GR23272@merlins.org> <20150624032008.GF20517@merlins.org>
+ <CAA7pwKOA1yyA8kyB+a3iTOp8TnkRzAErF1Mo=2t5M3pFn2tjUw@mail.gmail.com>
+ <pan$5335b$94315604$8405c6ac$de90de30@cox.net> <CAA7pwKPQfkns_rO0wWkvJsNM3yxHA7neyCH=_jeEY1nHA4Ysfw@mail.gmail.com>
+ <pan$c46c7$e4c53f76$44d37440$be0c7aec@cox.net>
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+Date: Thu, 25 Jun 2015 08:30:05 +0200
+Message-ID: <CAA7pwKPh9b-dWK7FwsgiA0voWV++Avi=Nj7f82NW4KzDVB8Gkg@mail.gmail.com>
+Subject: Re: counting fragments takes more time than defragmenting
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 18, 2015 at 02:05:04PM +0300, Robert Munteanu wrote:
-> On Wed, Jun 17, 2015 at 8:46 PM, Marc MERLIN <marc@merlins.org> wrote:
-> > On Fri, Jun 12, 2015 at 03:19:06PM +0300, Robert Munteanu wrote:
-> >> Hi,
-> >
-> > Note to others: kernel 4.0.4
-> >
-> > Reply to you:
-> > I tried ext4 to btrfs once a year ago and it severely mangled my
-> > filesystem.
-> > I looked at it as a cool feature/hack that may have worked some time ago, but
-> > that no one really uses anymore, and that may not work right at this
-> > point.
-> >
-> > Unless you hear back from a developer interested in debugging/fixing
-> > this, I would assume that this feature is broken and dead.
-> 
-> I did hear, but in case the general consensus is that this feature is
-> broken/experimental/unsafe, it would be great to mention it in the
-> wiki page.
+On 25 June 2015 at 06:01, Duncan <1i5t5.duncan@cox.net> wrote:
+>
+> Patrik Lundquist posted on Wed, 24 Jun 2015 14:05:57 +0200 as excerpted:
+>
+> > On 24 June 2015 at 12:46, Duncan <1i5t5.duncan@cox.net> wrote:
+>
+> If it's uint32 limited, either kill everything above that in both the
+> documentation and code, or alias everything above that to 3G (your next
+> paragraph) or whatever.
 
-Done
-https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
+My simple overflow patch yesterday fixes the problem, so 4G or larger
+is max instead of 0.
 
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+
+> >> But btrfs or ext4, 31 extents ideal or a single extent ideal, 150
+> >> extents still indicates at least some remaining fragmentation.
+> >
+> > I gave it another shot but I've now got 154 extents instead. :-)
+>
+> Is it possible there's simply no gig-size free-space holes in the
+> filesystem allocation, so it simply /can't/ defrag further than that,
+> because there's no place to allocate whole-gig data chunks at a time?
+
+I would guess so, without allocating new chunks. Defrag can probably
+be smarter and avoid rewriting extents if it means splitting them
+(unless the compression flag is set and it must rewrite everything).

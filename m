@@ -1,24 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:49120 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:36241 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753366AbbFQOFC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 17 Jun 2015 10:05:02 -0400
-Date: Wed, 17 Jun 2015 16:05:00 +0200
+	id S1751481AbbFYR3S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 13:29:18 -0400
+Date: Thu, 25 Jun 2015 19:29:16 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: Adam Borowski <kilobyte@angband.pl>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/5] Rework/enhance btrfs-map-logical
-Message-ID: <20150617140500.GX6761@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: man mkfs.btrfs: document -O^
+Message-ID: <20150625172916.GP726@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1434527344-314-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1435099573-26222-1-git-send-email-kilobyte@angband.pl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1434527344-314-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1435099573-26222-1-git-send-email-kilobyte@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jun 17, 2015 at 03:48:59PM +0800, Qu Wenruo wrote:
-> Although btrfs-map-logical is mainly a tool for developers, but even as
-> a developer, I feel quite frustrated about the bug I found:
+On Wed, Jun 24, 2015 at 12:46:13AM +0200, Adam Borowski wrote:
+> Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 
-Thanks, I'll queue it for 4.1.
+Applied, thanks.

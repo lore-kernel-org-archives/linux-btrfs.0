@@ -1,67 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7372 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750868AbbFIJBw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 9 Jun 2015 05:01:52 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t597wBdd015717
-	for <linux-btrfs@vger.kernel.org>; Tue, 9 Jun 2015 15:58:12 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] btrfs-progs: convert: Print different error message if convert partly failed.
-Date: Tue, 9 Jun 2015 15:57:40 +0800
-Message-ID: <1433836660-1163-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-yh0-f45.google.com ([209.85.213.45]:33006 "EHLO
+	mail-yh0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751136AbbFYRzV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 13:55:21 -0400
+Received: by yhpn97 with SMTP id n97so33031471yhp.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2015 10:55:20 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <CADob98RbfYyiyyw+15cdhou1=fcGtB2kGypvLLKyirkd=e8Jzw@mail.gmail.com>
+References: <1428383355-1686-1-git-send-email-dccitaliano@gmail.com>
+	<1428383355-1686-2-git-send-email-dccitaliano@gmail.com>
+	<CADob98RbfYyiyyw+15cdhou1=fcGtB2kGypvLLKyirkd=e8Jzw@mail.gmail.com>
+Date: Thu, 25 Jun 2015 10:55:20 -0700
+Message-ID: <CADob98RxO6=OuFDtYC=3_N98jZgxgiByLta0CyahQfo76Jk2=A@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: Improve FL_KEEP_SIZE handling in fallocate.
+From: Davide Italiano <dccitaliano@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Davide Italiano <dccitaliano@gmail.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When testing under libguestfs, btrfs-convert will never succeed to fix
-chunk map, and always fails.
+On Mon, Apr 20, 2015 at 1:49 PM, Davide Italiano <dccitaliano@gmail.com> wrote:
+> On Mon, Apr 6, 2015 at 10:09 PM, Davide Italiano <dccitaliano@gmail.com> wrote:
+>> - We call inode_size_ok() only if FL_KEEP_SIZE isn't specified.
+>> - As an optimisation we can skip the call if (off + len)
+>>   isn't greater than the current size of the file. This operation
+>>   is called under the lock so the less work we do, the better.
+>> - If we call inode_size_ok() pass to it the correct value rather
+>>   than a more conservative estimation.
+>>
+>> Signed-off-by: Davide Italiano <dccitaliano@gmail.com>
+>> ---
+>>  fs/btrfs/file.c | 10 +++++++---
+>>  1 file changed, 7 insertions(+), 3 deletions(-)
+>>
+>> diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+>> index 30982bb..f649bfc 100644
+>> --- a/fs/btrfs/file.c
+>> +++ b/fs/btrfs/file.c
+>> @@ -2586,9 +2586,13 @@ static long btrfs_fallocate(struct file *file, int mode,
+>>         }
+>>
+>>         mutex_lock(&inode->i_mutex);
+>> -       ret = inode_newsize_ok(inode, alloc_end);
+>> -       if (ret)
+>> -               goto out;
+>> +
+>> +       if (!(mode & FALLOC_FL_KEEP_SIZE) &&
+>> +           offset + len > inode->i_size) {
+>> +               ret = inode_newsize_ok(inode, offset + len);
+>> +               if (ret)
+>> +                       goto out;
+>> +       }
+>>
+>>         if (alloc_start > inode->i_size) {
+>>                 ret = btrfs_cont_expand(inode, i_size_read(inode),
+>> --
+>> 2.3.4
+>>
+>
+> Any comment on this?
 
-But in that case, it's already a mountable btrfs.
-So better to info user with different error message for that case.
-
-The root cause of it is still under investigation.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- btrfs-convert.c | 8 +++++++-
- 1 file changed, 7 insertions(+), 1 deletion(-)
-
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 9a9d619..5606156 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2286,6 +2286,7 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- {
- 	int i, ret, blocks_per_node;
- 	int fd = -1;
-+	int is_btrfs = 0;
- 	u32 blocksize;
- 	u64 blocks[7];
- 	u64 total_bytes;
-@@ -2435,6 +2436,7 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- 		fprintf(stderr, "unable to migrate super block\n");
- 		goto fail;
- 	}
-+	is_btrfs = 1;
- 
- 	root = open_ctree_fd(fd, devname, 0, OPEN_CTREE_WRITES);
- 	if (!root) {
-@@ -2455,7 +2457,11 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- fail:
- 	if (fd != -1)
- 		close(fd);
--	fprintf(stderr, "conversion aborted.\n");
-+	if (is_btrfs)
-+		fprintf(stderr,
-+			"some error happened, but still converted to btrfs\n");
-+	else
-+		fprintf(stderr, "conversion aborted\n");
- 	return -1;
- }
- 
--- 
-2.4.2
-
+Very gentle ping after couple of months.

@@ -1,116 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([173.255.197.46]:53702 "EHLO fieldses.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752389AbbFYSqp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 14:46:45 -0400
-Date: Thu, 25 Jun 2015 14:46:44 -0400
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org, fdmanana@suse.com, kzak@redhat.com,
-        linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
-        linux-nfs@vger.kernel.org, chuck.lever@oracle.com,
-        mingming.cao@oracle.com
-Subject: Re: i_version vs iversion (Was: Re: [RFC PATCH v2 1/2] Btrfs: add
- noi_version option to disable MS_I_VERSION)
-Message-ID: <20150625184644.GA12300@fieldses.org>
-References: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
- <20150617153306.GY6761@twin.jikos.cz>
- <20150617155234.GB7773@localhost.localdomain>
- <20150617170118.GA6761@twin.jikos.cz>
- <20150618024607.GA8530@localhost.localdomain>
- <20150618143856.GG6761@suse.cz>
- <20150623163241.GA6645@thunk.org>
+Received: from magic.merlins.org ([209.81.13.136]:42664 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751585AbbFYVJP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 17:09:15 -0400
+Date: Thu, 25 Jun 2015 14:09:12 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Ruslanas =?utf-8?Q?G=C5=BEibovskis?= <ruslanas@lpic.lt>
+Cc: Vytautas D <vytdau@gmail.com>, Robert Munteanu <robert.munteanu@gmail.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: btrfs partition converted from ext4 becomes read-only minutes after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120
+Message-ID: <20150625210912.GD16565@merlins.org>
+References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com> <20150617174630.GM16468@merlins.org> <CAC8ULPb2XCniELiuJtEajf=8usGTW14xzyfZLP9kxo3-fQ01dA@mail.gmail.com> <20150625041620.GK16468@merlins.org> <CAO5K3OeQTi4U02uJu+Df-00ci+P7E4HLw3x8CH3j0Uq937tQ6w@mail.gmail.com> <CABE5tBasBsycy_+q=RZj1dpqsLTREJTA72F-ZwNLt=kLX6wXhg@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150623163241.GA6645@thunk.org>
-From: bfields@fieldses.org (J. Bruce Fields)
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <CABE5tBasBsycy_+q=RZj1dpqsLTREJTA72F-ZwNLt=kLX6wXhg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2015 at 12:32:41PM -0400, Theodore Ts'o wrote:
-> On Thu, Jun 18, 2015 at 04:38:56PM +0200, David Sterba wrote:
-> > Moving the discussion to fsdevel.
-> > 
-> > Summary: disabling MS_I_VERSION brings some speedups to btrfs, but the
-> > generic 'noiversion' option cannot be used to achieve that. It is
-> > processed before it reaches btrfs superblock callback, where
-> > MS_I_VERSION is forced.
-> > 
-> > The proposed fix is to add btrfs-specific i_version/noi_version to btrfs,
-> > to which I object.
-> 
-> I was talking to Mingming about this on today's ext4 conference call,
-> and one of the reasons why ext4 turns off i_version update by default
-> is because it does a real number on our performance as well --- and
-> furthermore, the only real user of the field from what we can tell is
-> NFSv4, which not all that many ext4 users actually care about.
-> 
-> This has caused pain for the nfsv4 folks since it means that they need
-> to tell people to use a special mount option for ext4 if they are
-> actually using this for nfsv4, and I suspect they won't be all that
-> eager to hear that btrfs is going to go the same way.
+On Thu, Jun 25, 2015 at 08:17:12PM +0000, Ruslanas Gžibovskis wrote:
+> nope. started from scratch! never upgrade from old running fs. Better to
+> move 1 file and extend , move another files, extend and so on then just
+> convert... It's like moving from windows and only boot partition to have on
+> ext2 and other system on ntfs... all my friends do the same. And by the way
+> does anyone still use ext3/4? isn't it dead?  Even rhel now goes with
+> default xfs...
 
-Yes, thanks for looking into this!
+Yes, plenty of people use ext4, it's not dead :)
+It also just added built in encryption in the filesystem, which no other
+filesystem has AFAIK.
 
-> This however got us thinking --- even in if NFSv4 is depending on
-> i_version, it doesn't actually _look_ at that field all that often.
+Due to how btrfs works with block layouts, it shouldn't be hard to encrypt
+blocks as they are written just like they can be compressed currently, but
+no one has sponsored that work yet.
+Because Google uses ext4 and they (we) care about encrypting data to
+protect user data from things like possible hardware theft or maybe even
+a datacenter being raided in some country, that's how ext4 got encryption
+built in.
 
-Most clients will query it on every write.  (I just took a quick look at
-the code and I believe the Linux client's requesting it immediately
-after every write, except in the O_DIRECT and delegated cases.)
-
-> It's only going to look at it in a response to a client's getattr
-> call, and that in turn is used to so the client can do its local disk
-> cache invalidation if anby of the data blocks of the inode has changed.
-> 
-> So what if we have a per-inode flag which "don't update I_VERSION",
-> which is off by default, but after the i_version has been updated at
-> least once, is set, so the i_version field won't be updated again ---
-> at least until something has actually looked at the i_version field,
-> when the "don't update I_VERSOIN" flag will get cleared again.
-> 
-> So basically, if we know there are no microphones in the forest, we
-> don't need to make the tree fall.  However, if someone has sampled the
-> i_version field, then the next time the inode gets updated, we will
-> update the i_version field so the NFSv4 client can hear the sound of
-> the tree crashing to the forst floor and so it can invalidate its
-> local cache of the file.  :-)
-> 
-> This should significantly improve the performance of using the
-> i_version field if the file system is being exported via NFSv4, and if
-> NFSv4 is not in use, no one will be looking at the i_version field, so
-> the performance impact will be very slight, and thus we could enable
-> i_version updates by default for btrfs and ext4.
-> 
-> And this should make the distribution folks happy, since it will unify
-> the behavior of all file systems, and make life easier for users who
-> won't need to set certain magic mount options depending on what file
-> system they are using and whether they are using NFSv4 or not.
-> 
-> Does this sound reasonable?
-
-Just to make sure I understand, the logic is something like:
-
-	to read the i_version:
-
-		inode->i_version_seen = true;
-		return inode->i_version
-
-	to update the i_version:
-
-		/*
-		 * If nobody's seen this value of i_version then we can
-		 * keep using it, otherwise we need a new one:
-		 */
-		if (inode->i_version_seen)
-			inode->i_version++;
-		inode->i_version_seen = false;
-
-Looks OK to me.  As I say I'd expect i_version_seen == true to end up
-being the common case in a lot of v4 workloads, so I'm more skeptical of
-the claim of a performance improvement in the v4 case.
-
-Could maintaining the new flag be a significant drag in itself?  If not,
-then I guess we're not making things any worse there, so fine.
-
---b.
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

@@ -1,49 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:5376 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752885AbbFXQJv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 12:09:51 -0400
-Received: from pps.filterd (m0044010 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t5OG9nbs012962
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 09:09:50 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 1v7yn200v4-3
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 09:09:50 -0700
-From: Omar Sandoval <osandov@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Omar Sandoval <osandov@fb.com>
-Subject: [PATCH 0/2] btrfs device remove alias
-Date: Wed, 24 Jun 2015 09:09:15 -0700
-Message-ID: <cover.1435161735.git.osandov@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:44253 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751195AbbFYEHF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 00:07:05 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Z7yRL-0008My-Is
+	for linux-btrfs@vger.kernel.org; Thu, 25 Jun 2015 06:07:03 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2015 06:07:03 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 25 Jun 2015 06:07:03 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH 0/2] btrfs device remove alias
+Date: Thu, 25 Jun 2015 04:06:54 +0000 (UTC)
+Message-ID: <pan$aa275$4c7e2262$e0ed9a01$2b442c12@cox.net>
+References: <cover.1435161735.git.osandov@fb.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The opposite of btrfs device add is btrfs device delete. This really
-should be btrfs device remove.
+Omar Sandoval posted on Wed, 24 Jun 2015 09:09:15 -0700 as excerpted:
 
-Changes from v1:
-- Add support for flags to cmd_struct and a CMD_ALIAS flag which only
-  prints the one-line usage string
-- Rearrange the command wrappers in a way that could be made generic if
-  needed
+> The opposite of btrfs device add is btrfs device delete. This really
+> should be btrfs device remove.
 
-Thanks!
-
-Omar Sandoval (2):
-  btrfs-progs: replace struct cmd_group->hidden with flags
-  btrfs-progs: alias btrfs device delete to btrfs device remove
-
- Documentation/btrfs-device.asciidoc |  5 ++++-
- cmds-device.c                       | 35 ++++++++++++++++++++++++++---------
- cmds-filesystem.c                   |  2 +-
- commands.h                          |  9 +++++++--
- help.c                              | 12 +++++++-----
- 5 files changed, 45 insertions(+), 18 deletions(-)
+What about btrfs device subtract?  That's what _I_'d call the opposite of 
+add.  Otherwise, add/remove instead of add/delete seems fine to me. Six 
+of one, half dozen of the other.  [shrug]
 
 -- 
-2.4.4
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

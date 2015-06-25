@@ -1,291 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:38811 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752721AbbFYDQ1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 23:16:27 -0400
-Date: Thu, 25 Jun 2015 11:16:16 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/5] btrfs: fix deadlock with extent-same and readpage
-Message-ID: <20150625031615.GD23794@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1435094920-22442-1-git-send-email-mfasheh@suse.de>
- <1435094920-22442-3-git-send-email-mfasheh@suse.de>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1435094920-22442-3-git-send-email-mfasheh@suse.de>
+Received: from mail.kernel.org ([198.145.29.136]:58806 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751213AbbFYNwx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 09:52:53 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix shrinking truncate when the no_holes feature is enabled
+Date: Thu, 25 Jun 2015 04:17:16 +0100
+Message-Id: <1435202236-23472-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 23, 2015 at 02:28:37PM -0700, Mark Fasheh wrote:
-> ->readpage() does page_lock() before extent_lock(), we do the opposite in
-> extent-same. We want to reverse the order in btrfs_extent_same() but it's
-> not quite straightforward since the page locks are taken inside btrfs_cmp_data().
-> 
-> So I split btrfs_cmp_data() into 3 parts with a small context structure that
-> is passed between them. The first, btrfs_cmp_data_prepare() gathers up the
-> pages needed (taking page lock as required) and puts them on our context
-> structure. At this point, we are safe to lock the extent range. Afterwards,
-> we use btrfs_cmp_data() to do the data compare as usual and btrfs_cmp_data_free()
-> to clean up our context.
+From: Filipe Manana <fdmanana@suse.com>
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+If the no_holes feature is enabled, we attempt to shrink a file to a size
+that ends up in the middle of a hole and we don't have any file extent
+items in the fs/subvol tree that go beyond the new file size (or any
+ordered extents that will insert such file extent items), we end up not
+updating the inode's disk_i_size, we only update the inode's i_size.
 
-> 
-> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
-> Reviewed-by: David Sterba <dsterba@suse.cz>
-> ---
->  fs/btrfs/ioctl.c | 148 +++++++++++++++++++++++++++++++++++++++++++------------
->  1 file changed, 117 insertions(+), 31 deletions(-)
-> 
-> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> index 2deea1f..b899584 100644
-> --- a/fs/btrfs/ioctl.c
-> +++ b/fs/btrfs/ioctl.c
-> @@ -2755,14 +2755,11 @@ out:
->  	return ret;
->  }
->  
-> -static struct page *extent_same_get_page(struct inode *inode, u64 off)
-> +static struct page *extent_same_get_page(struct inode *inode, pgoff_t index)
->  {
->  	struct page *page;
-> -	pgoff_t index;
->  	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
->  
-> -	index = off >> PAGE_CACHE_SHIFT;
-> -
->  	page = grab_cache_page(inode->i_mapping, index);
->  	if (!page)
->  		return NULL;
-> @@ -2783,6 +2780,20 @@ static struct page *extent_same_get_page(struct inode *inode, u64 off)
->  	return page;
->  }
->  
-> +static int gather_extent_pages(struct inode *inode, struct page **pages,
-> +			       int num_pages, u64 off)
-> +{
-> +	int i;
-> +	pgoff_t index = off >> PAGE_CACHE_SHIFT;
-> +
-> +	for (i = 0; i < num_pages; i++) {
-> +		pages[i] = extent_same_get_page(inode, index + i);
-> +		if (!pages[i])
-> +			return -ENOMEM;
-> +	}
-> +	return 0;
-> +}
-> +
->  static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
->  {
->  	/* do any pending delalloc/csum calc on src, one way or
-> @@ -2808,52 +2819,120 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
->  	}
->  }
->  
-> -static void btrfs_double_unlock(struct inode *inode1, u64 loff1,
-> -				struct inode *inode2, u64 loff2, u64 len)
-> +static void btrfs_double_inode_unlock(struct inode *inode1, struct inode *inode2)
->  {
-> -	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
-> -	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
-> -
->  	mutex_unlock(&inode1->i_mutex);
->  	mutex_unlock(&inode2->i_mutex);
->  }
->  
-> -static void btrfs_double_lock(struct inode *inode1, u64 loff1,
-> -			      struct inode *inode2, u64 loff2, u64 len)
-> +static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
-> +{
-> +	if (inode1 < inode2)
-> +		swap(inode1, inode2);
-> +
-> +	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
-> +	if (inode1 != inode2)
-> +		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-> +}
-> +
-> +static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
-> +				      struct inode *inode2, u64 loff2, u64 len)
-> +{
-> +	unlock_extent(&BTRFS_I(inode1)->io_tree, loff1, loff1 + len - 1);
-> +	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
-> +}
-> +
-> +static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
-> +				     struct inode *inode2, u64 loff2, u64 len)
->  {
->  	if (inode1 < inode2) {
->  		swap(inode1, inode2);
->  		swap(loff1, loff2);
->  	}
-> -
-> -	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
->  	lock_extent_range(inode1, loff1, len);
-> -	if (inode1 != inode2) {
-> -		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
-> +	if (inode1 != inode2)
->  		lock_extent_range(inode2, loff2, len);
-> +}
-> +
-> +struct cmp_pages {
-> +	int		num_pages;
-> +	struct page	**src_pages;
-> +	struct page	**dst_pages;
-> +};
-> +
-> +static void btrfs_cmp_data_free(struct cmp_pages *cmp)
-> +{
-> +	int i;
-> +	struct page *pg;
-> +
-> +	for (i = 0; i < cmp->num_pages; i++) {
-> +		pg = cmp->src_pages[i];
-> +		if (pg)
-> +			page_cache_release(pg);
-> +		pg = cmp->dst_pages[i];
-> +		if (pg)
-> +			page_cache_release(pg);
-> +	}
-> +	kfree(cmp->src_pages);
-> +	kfree(cmp->dst_pages);
-> +}
-> +
-> +static int btrfs_cmp_data_prepare(struct inode *src, u64 loff,
-> +				  struct inode *dst, u64 dst_loff,
-> +				  u64 len, struct cmp_pages *cmp)
-> +{
-> +	int ret;
-> +	int num_pages = PAGE_CACHE_ALIGN(len) >> PAGE_CACHE_SHIFT;
-> +	struct page **src_pgarr, **dst_pgarr;
-> +
-> +	/*
-> +	 * We must gather up all the pages before we initiate our
-> +	 * extent locking. We use an array for the page pointers. Size
-> +	 * of the array is bounded by len, which is in turn bounded by
-> +	 * BTRFS_MAX_DEDUPE_LEN.
-> +	 */
-> +	src_pgarr = kzalloc(num_pages * sizeof(struct page *), GFP_NOFS);
-> +	dst_pgarr = kzalloc(num_pages * sizeof(struct page *), GFP_NOFS);
-> +	if (!src_pgarr || !dst_pgarr) {
-> +		kfree(src_pgarr);
-> +		kfree(dst_pgarr);
-> +		return -ENOMEM;
->  	}
-> +	cmp->num_pages = num_pages;
-> +	cmp->src_pages = src_pgarr;
-> +	cmp->dst_pages = dst_pgarr;
-> +
-> +	ret = gather_extent_pages(src, cmp->src_pages, cmp->num_pages, loff);
-> +	if (ret)
-> +		goto out;
-> +
-> +	ret = gather_extent_pages(dst, cmp->dst_pages, cmp->num_pages, dst_loff);
-> +
-> +out:
-> +	if (ret)
-> +		btrfs_cmp_data_free(cmp);
-> +	return 0;
->  }
->  
->  static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
-> -			  u64 dst_loff, u64 len)
-> +			  u64 dst_loff, u64 len, struct cmp_pages *cmp)
->  {
->  	int ret = 0;
-> +	int i;
->  	struct page *src_page, *dst_page;
->  	unsigned int cmp_len = PAGE_CACHE_SIZE;
->  	void *addr, *dst_addr;
->  
-> +	i = 0;
->  	while (len) {
->  		if (len < PAGE_CACHE_SIZE)
->  			cmp_len = len;
->  
-> -		src_page = extent_same_get_page(src, loff);
-> -		if (!src_page)
-> -			return -EINVAL;
-> -		dst_page = extent_same_get_page(dst, dst_loff);
-> -		if (!dst_page) {
-> -			page_cache_release(src_page);
-> -			return -EINVAL;
-> -		}
-> +		BUG_ON(i >= cmp->num_pages);
-> +
-> +		src_page = cmp->src_pages[i];
-> +		dst_page = cmp->dst_pages[i];
-> +
->  		addr = kmap_atomic(src_page);
->  		dst_addr = kmap_atomic(dst_page);
->  
-> @@ -2865,15 +2944,12 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
->  
->  		kunmap_atomic(addr);
->  		kunmap_atomic(dst_addr);
-> -		page_cache_release(src_page);
-> -		page_cache_release(dst_page);
->  
->  		if (ret)
->  			break;
->  
-> -		loff += cmp_len;
-> -		dst_loff += cmp_len;
->  		len -= cmp_len;
-> +		i++;
->  	}
->  
->  	return ret;
-> @@ -2904,6 +2980,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->  {
->  	int ret;
->  	u64 len = olen;
-> +	struct cmp_pages cmp;
->  
->  	/*
->  	 * btrfs_clone() can't handle extents in the same file
-> @@ -2916,7 +2993,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->  	if (len == 0)
->  		return 0;
->  
-> -	btrfs_double_lock(src, loff, dst, dst_loff, len);
-> +	btrfs_double_inode_lock(src, dst);
->  
->  	ret = extent_same_check_offsets(src, loff, &len, olen);
->  	if (ret)
-> @@ -2933,13 +3010,22 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->  		goto out_unlock;
->  	}
->  
-> +	ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, &cmp);
-> +	if (ret)
-> +		goto out_unlock;
-> +
-> +	btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
-> +
->  	/* pass original length for comparison so we stay within i_size */
-> -	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen);
-> +	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
->  	if (ret == 0)
->  		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
->  
-> +	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
-> +
-> +	btrfs_cmp_data_free(&cmp);
->  out_unlock:
-> -	btrfs_double_unlock(src, loff, dst, dst_loff, len);
-> +	btrfs_double_inode_unlock(src, dst);
->  
->  	return ret;
->  }
-> -- 
-> 2.1.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This means that after unmounting and mounting the filesystem, or after
+the inode is evicted and reloaded, its i_size ends up being incorrect
+(an inode's i_size is set to the disk_i_size field when an inode is
+loaded). This happens when btrfs_truncate_inode_items() doesn't find
+any file extent items to drop - in this case it never makes a call to
+btrfs_ordered_update_i_size() in order to update the inode's disk_i_size.
+
+Example reproducer:
+
+  $ mkfs.btrfs -O no-holes -f /dev/sdd
+  $ mount /dev/sdd /mnt
+
+  # Create our test file with some data and durably persist it.
+  $ xfs_io -f -c "pwrite -S 0xaa 0 128K" /mnt/foo
+  $ sync
+
+  # Append some data to the file, increasing its size, and leave a hole
+  # between the old size and the start offset if the following write. So
+  # our file gets a hole in the range [128Kb, 256Kb[.
+  $ xfs_io -c "truncate 160K" /mnt/foo
+
+  # We expect to see our file with a size of 160Kb, with the first 128Kb
+  # of data all having the value 0xaa and the remaining 32Kb of data all
+  # having the value 0x00.
+  $ od -t x1 /mnt/foo
+  0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+  *
+  0400000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+  *
+  0500000
+
+  # Now cleanly unmount and mount again the filesystem.
+  $ umount /mnt
+  $ mount /dev/sdd /mnt
+
+  # We expect to get the same result as before, a file with a size of
+  # 160Kb, with the first 128Kb of data all having the value 0xaa and the
+  # remaining 32Kb of data all having the value 0x00.
+  $ od -t x1 /mnt/foo
+  0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+  *
+  0400000
+
+In the example above the file size/data do not match what they were before
+the remount.
+
+Fix this by always calling btrfs_ordered_update_i_size() with a size
+matching the size the file was truncated to if btrfs_truncate_inode_items()
+is not called for a log tree and no file extent items were dropped. This
+ensures the same behaviour as when the no_holes feature is not enabled.
+
+A test case for fstests follows soon.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a21ad34..1225330 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4209,7 +4209,7 @@ int btrfs_truncate_inode_items(struct btrfs_trans_handle *trans,
+ 	u64 extent_num_bytes = 0;
+ 	u64 extent_offset = 0;
+ 	u64 item_end = 0;
+-	u64 last_size = (u64)-1;
++	u64 last_size = new_size;
+ 	u32 found_type = (u8)-1;
+ 	int found_extent;
+ 	int del_item;
+@@ -4493,8 +4493,7 @@ out:
+ 			btrfs_abort_transaction(trans, root, ret);
+ 	}
+ error:
+-	if (last_size != (u64)-1 &&
+-	    root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
++	if (root->root_key.objectid != BTRFS_TREE_LOG_OBJECTID)
+ 		btrfs_ordered_update_i_size(inode, last_size, NULL);
+ 
+ 	btrfs_free_path(path);
+-- 
+2.1.3
+

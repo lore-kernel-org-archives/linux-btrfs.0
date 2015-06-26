@@ -1,67 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([173.255.197.46]:52310 "EHLO fieldses.org"
+Received: from plane.gmane.org ([80.91.229.3]:51749 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751784AbbFZNcw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jun 2015 09:32:52 -0400
-Date: Fri, 26 Jun 2015 09:32:42 -0400
-From: "J. Bruce Fields" <bfields@fieldses.org>
-To: "Theodore Ts'o" <tytso@mit.edu>
-Cc: dsterba@suse.cz, Liu Bo <bo.li.liu@oracle.com>,
-        linux-btrfs@vger.kernel.org, fdmanana@suse.com, kzak@redhat.com,
-        linux-fsdevel@vger.kernel.org, viro@zeniv.linux.org.uk,
-        linux-nfs@vger.kernel.org, chuck.lever@oracle.com,
-        mingming.cao@oracle.com
-Subject: Re: i_version vs iversion (Was: Re: [RFC PATCH v2 1/2] Btrfs: add
- noi_version option to disable MS_I_VERSION)
-Message-ID: <20150626133242.GA3179@fieldses.org>
-References: <1434527672-5762-1-git-send-email-bo.li.liu@oracle.com>
- <20150617153306.GY6761@twin.jikos.cz>
- <20150617155234.GB7773@localhost.localdomain>
- <20150617170118.GA6761@twin.jikos.cz>
- <20150618024607.GA8530@localhost.localdomain>
- <20150618143856.GG6761@suse.cz>
- <20150623163241.GA6645@thunk.org>
- <20150625184644.GA12300@fieldses.org>
- <20150625221257.GD13380@thunk.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150625221257.GD13380@thunk.org>
+	id S1751919AbbFZQXu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Jun 2015 12:23:50 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Z8WPq-00064q-55
+	for linux-btrfs@vger.kernel.org; Fri, 26 Jun 2015 18:23:46 +0200
+Received: from barriere.frankfurter-softwarefabrik.de ([217.11.197.1])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2015 18:23:46 +0200
+Received: from lvml by barriere.frankfurter-softwarefabrik.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2015 18:23:46 +0200
+To: linux-btrfs@vger.kernel.org
+From: Lutz Vieweg <lvml@5t9.de>
+Subject: fuser fails to list processes that have a directory on a btrfs filesystem
+ as their current working directory
+Date: Fri, 26 Jun 2015 18:23:37 +0200
+Message-ID: <mmjua9$bjp$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 25, 2015 at 06:12:57PM -0400, Theodore Ts'o wrote:
-> On Thu, Jun 25, 2015 at 02:46:44PM -0400, J. Bruce Fields wrote:
-> > Looks OK to me.  As I say I'd expect i_version_seen == true to end up
-> > being the common case in a lot of v4 workloads, so I'm more skeptical of
-> > the claim of a performance improvement in the v4 case.
-> 
-> Well, so long as we require i_version to be committed to disk on every
-> single disk write, we're going to be trading off:
-> 
-> 	* client-side performance of the advanced NFSv4 cacheing for reads
-> 	* server-side performance for writes
-> 	* data robustness in case of the server crashing and the client-side cache
-> 	  getting out of sync with the server after the crash
-> 
-> I don't see any way around that.  (So for example, with lazy mtime
-> updates we wouldn't be updating the inode after every single
-> non-allocating write; enabling i_version updates will trash that
-> optimization.)
-> 
-> I just want to reduce to a bare minimum the performance hit in the
-> case where NFSv4 exports are not being used (since that is true in a
-> very *large* number of ext4 deployments --- i.e., every single Android
-> handset using ext4 :-), such that we can leave i_version updates
-> turned on by default.
+JFYI: Not a btrfs bug, but a btrfs-specific misbehaviour of "fuser" that
+might easily be misinterpreted as a btrfs bug:
 
-Definitely understood.  I think it's a good idea.
+http://bugzilla.centos.org/view.php?id=8966
 
-> > Could maintaining the new flag be a significant drag in itself?  If not,
-> > then I guess we're not making things any worse there, so fine.
-> 
-> I don't think so; it's a bit in the in-memory inode, so I don't think
-> that should be an issue.
+> /usr/sbin/fuser (from psmisc-22.20-8.el7.x86_64) does not list any processes that have a directory on a btrfs file system as their current working directory.
+>
+> (For file systems other than btrfs, this works.)
 
-OK!
+> Steps To Reproduce:
+> mkdir /some/btrfs/testdir
+> cd /some/btrfs/testdir
+> fuser -v -m /some/btrfs
+>
+> This should list your current shell as one of the processes using the /some/btrfs file system, but it doesn't
+>
+> The same on /some/xfs/testdir works fine.
 
---b.
+> This bug is not present in upstream "psmisc" sources as of current master in
+> git://git.code.sf.net/p/psmisc/code
+>
+> An fuser executable compiled from the current upstream sources works fine also for btrfs.
+
+Regards,
+
+Lutz Vieweg
+

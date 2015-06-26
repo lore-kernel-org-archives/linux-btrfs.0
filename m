@@ -1,49 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f50.google.com ([209.85.215.50]:34410 "EHLO
-	mail-la0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752527AbbFXOWW (ORCPT
+Received: from mail-lb0-f180.google.com ([209.85.217.180]:35914 "EHLO
+	mail-lb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752571AbbFZIpP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 24 Jun 2015 10:22:22 -0400
-Received: by lagx9 with SMTP id x9so27062821lag.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 24 Jun 2015 07:22:21 -0700 (PDT)
+	Fri, 26 Jun 2015 04:45:15 -0400
+Received: by lbbpo10 with SMTP id po10so60224572lbb.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2015 01:45:14 -0700 (PDT)
 From: Patrik Lundquist <patrik.lundquist@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Patrik Lundquist <patrik.lundquist@gmail.com>
-Subject: [PATCH] btrfs-progs: Fix defrag threshold overflow
-Date: Wed, 24 Jun 2015 16:21:06 +0200
-Message-Id: <1435155666-11214-1-git-send-email-patrik.lundquist@gmail.com>
+Subject: [PATCH] btrfs-progs: inspect: Fix out of bounds string termination.
+Date: Fri, 26 Jun 2015 10:43:56 +0200
+Message-Id: <1435308236-7931-1-git-send-email-patrik.lundquist@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs fi defrag -t 1T overflows the u32 thresh variable and default, instead of max, threshold is used.
-
 Signed-off-by: Patrik Lundquist <patrik.lundquist@gmail.com>
 ---
- cmds-filesystem.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ cmds-inspect.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 530f815..72bb45b 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -1127,7 +1127,7 @@ static int cmd_defrag(int argc, char **argv)
- 	int flush = 0;
- 	u64 start = 0;
- 	u64 len = (u64)-1;
--	u32 thresh = 0;
-+	u64 thresh = 0;
- 	int i;
- 	int recursive = 0;
- 	int ret = 0;
-@@ -1186,7 +1186,7 @@ static int cmd_defrag(int argc, char **argv)
- 	memset(&defrag_global_range, 0, sizeof(range));
- 	defrag_global_range.start = start;
- 	defrag_global_range.len = len;
--	defrag_global_range.extent_thresh = thresh;
-+	defrag_global_range.extent_thresh = thresh > (u32)-1 ? (u32)-1 : (u32)thresh;
- 	if (compress_type) {
- 		defrag_global_range.flags |= BTRFS_DEFRAG_RANGE_COMPRESS;
- 		defrag_global_range.compress_type = compress_type;
+diff --git a/cmds-inspect.c b/cmds-inspect.c
+index 053cf8e..aafe37d 100644
+--- a/cmds-inspect.c
++++ b/cmds-inspect.c
+@@ -293,7 +293,7 @@ static int cmd_subvolid_resolve(int argc, char **argv)
+ 		goto out;
+ 	}
+ 
+-	path[PATH_MAX] = '\0';
++	path[PATH_MAX-1] = '\0';
+ 	printf("%s\n", path);
+ 
+ out:
 -- 
 2.1.4
 

@@ -1,50 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34537 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751195AbbFZBLH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 21:11:07 -0400
-Message-ID: <558CA6A0.20401@oracle.com>
-Date: Fri, 26 Jun 2015 09:10:56 +0800
-From: Anand Jain <anand.jain@oracle.com>
-MIME-Version: 1.0
-To: Omar Sandoval <osandov@fb.com>, linux-btrfs@vger.kernel.org
-CC: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>
+Received: from plane.gmane.org ([80.91.229.3]:42182 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751317AbbFZEV4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 26 Jun 2015 00:21:56 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Z8L9A-0002rn-HU
+	for linux-btrfs@vger.kernel.org; Fri, 26 Jun 2015 06:21:48 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2015 06:21:48 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2015 06:21:48 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [PATCH 0/2] btrfs device remove alias
+Date: Fri, 26 Jun 2015 04:21:43 +0000 (UTC)
+Message-ID: <pan$8773$4ae88d92$9e16c06b$550d1efe@cox.net>
 References: <cover.1435161735.git.osandov@fb.com>
-In-Reply-To: <cover.1435161735.git.osandov@fb.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+	<558CA6A0.20401@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Anand Jain posted on Fri, 26 Jun 2015 09:10:56 +0800 as excerpted:
 
-while on this. its also good idea to create alias for
+> while on this. its also good idea to create alias for
+> 
+>    btrfs replace start -> btrfs device replace.
+> 
+> any comments ?
 
-   btrfs replace start -> btrfs device replace.
+That's actually the one that makes more sense to me.  Delete/remove/
+subtract, all about the same to me, so while I'm not opposed to alias for 
+that, I don't really see the need.  But with btrfs device add/remove, 
+having btrfs replace instead of btrfs device replace, makes absolutely no 
+sense to me, so I'm all for that alias.
 
-any comments ?
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-On 06/25/2015 12:09 AM, Omar Sandoval wrote:
-> The opposite of btrfs device add is btrfs device delete. This really
-> should be btrfs device remove.
->
-> Changes from v1:
-> - Add support for flags to cmd_struct and a CMD_ALIAS flag which only
->    prints the one-line usage string
-> - Rearrange the command wrappers in a way that could be made generic if
->    needed
->
-> Thanks!
->
-> Omar Sandoval (2):
->    btrfs-progs: replace struct cmd_group->hidden with flags
->    btrfs-progs: alias btrfs device delete to btrfs device remove
->
->   Documentation/btrfs-device.asciidoc |  5 ++++-
->   cmds-device.c                       | 35 ++++++++++++++++++++++++++---------
->   cmds-filesystem.c                   |  2 +-
->   commands.h                          |  9 +++++++--
->   help.c                              | 12 +++++++-----
->   5 files changed, 45 insertions(+), 18 deletions(-)
->

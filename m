@@ -1,40 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38439 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751239AbbFYSMZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 14:12:25 -0400
-Date: Thu, 25 Jun 2015 11:12:23 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: dsterba@suse.cz, Zygo Blaxell <ce3g8jdj@umail.furryterror.org>,
-        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 5/5] btrfs: add no_mtime flag to btrfs-extent-same
-Message-ID: <20150625181223.GA10324@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <1435013262-23252-1-git-send-email-mfasheh@suse.de>
- <1435013262-23252-6-git-send-email-mfasheh@suse.de>
- <20150623151156.GI6761@twin.jikos.cz>
- <20150624201732.GA14931@hungrycats.org>
- <20150625125250.GF726@twin.jikos.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:22819 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753017AbbFZCIG convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 25 Jun 2015 22:08:06 -0400
+Message-ID: <558CB3F2.70509@cn.fujitsu.com>
+Date: Fri, 26 Jun 2015 10:07:46 +0800
+From: wangyf <wangyf-fnst@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150625125250.GF726@twin.jikos.cz>
+To: Omar Sandoval <osandov@fb.com>
+CC: Ed Tomlinson <edt@aei.ca>, <linux-btrfs@vger.kernel.org>,
+        Miao Xie <miaoxie@huawei.com>, Zhao Lei <zhaolei@cn.fujitsu.com>,
+        Philip <bugzilla@philip-seeger.de>
+Subject: Re: [PATCH v2 0/5] Btrfs: RAID 5/6 missing device scrub+replace
+References: <cover.1434739053.git.osandov@fb.com> <5588CD54.9050405@cn.fujitsu.com> <20150624041310.GA26148@huxley.DHCP.TheFacebook.com> <5cfdd3e8-e9ba-4b3a-a858-49f6a36f18de@aei.ca> <558B8BBD.2010004@cn.fujitsu.com> <20150625163507.GA24394@huxley.DHCP.TheFacebook.com>
+In-Reply-To: <20150625163507.GA24394@huxley.DHCP.TheFacebook.com>
+Content-Type: text/plain; charset="UTF-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 25, 2015 at 02:52:50PM +0200, David Sterba wrote:
-> On Wed, Jun 24, 2015 at 04:17:32PM -0400, Zygo Blaxell wrote:
-> > Is there any sane use case where we would _want_ EXTENT_SAME to change
-> > the mtime?  We do a lot of work to make sure that none of the files
-> > involved have any sort of content change.  Why do we need the flag at all?
-> 
-> Good point, I don't see the usecase for updating MTIME.
+No problem.
 
-Yeah there isn't one and I doubt anyone will be upset if we just always
-ignore the mtime update. I'll send some new patches shortly.
+Wang Yanfeng <wangyf-fnst@cn.fujitsu.com>
 
-Thanks for the suggestion Zygo.
-	--Mark
+cheers
+wangyf
+在 2015年06月26日 00:35, Omar Sandoval 写道:
+> On Thu, Jun 25, 2015 at 01:03:57PM +0800, wangyf wrote:
+>>   I confirmed this bug report, and found the reason is that
+>>   I compiled the patched module with a dirty kernel.
+>>   This morning I tested this patch again, and didn't see above error, this
+>> patch is OK.
+>>   Sorry for this bug report. : (
+> It's no problem! Do either of you feel like providing your Tested-by?
+>
 
---
-Mark Fasheh

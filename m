@@ -1,35 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:27322 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751023AbbFYNpv (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:34537 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751195AbbFZBLH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 25 Jun 2015 09:45:51 -0400
-Date: Thu, 25 Jun 2015 09:45:45 -0400
-From: Chris Mason <clm@fb.com>
-To: <dsterba@suse.cz>, Omar Sandoval <osandov@fb.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 0/2] btrfs device remove alias
-Message-ID: <20150625134545.GC3920@ret.masoncoding.com>
-References: <cover.1435161735.git.osandov@fb.com>
- <20150625134151.GH726@twin.jikos.cz>
+	Thu, 25 Jun 2015 21:11:07 -0400
+Message-ID: <558CA6A0.20401@oracle.com>
+Date: Fri, 26 Jun 2015 09:10:56 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20150625134151.GH726@twin.jikos.cz>
+To: Omar Sandoval <osandov@fb.com>, linux-btrfs@vger.kernel.org
+CC: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>
+Subject: Re: [PATCH 0/2] btrfs device remove alias
+References: <cover.1435161735.git.osandov@fb.com>
+In-Reply-To: <cover.1435161735.git.osandov@fb.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 25, 2015 at 03:41:51PM +0200, David Sterba wrote:
-> On Wed, Jun 24, 2015 at 09:09:15AM -0700, Omar Sandoval wrote:
-> > The opposite of btrfs device add is btrfs device delete. This really
-> > should be btrfs device remove.
-> 
-> I think people got used to the 'delete' command over time, but for
-> convenience I don't mind to add the alias. Also you delete files by 'rm'
-> which is short for 'remove' and probably don't mind either.
 
-I do agree that people got used to delete, but its one of those things
-that new users are likely to trip over.  And since we're highly unlikely
-to ever use 'rm' for something other than deletion, it makes sense to
-just alias them.
+while on this. its also good idea to create alias for
 
--chris
+   btrfs replace start -> btrfs device replace.
+
+any comments ?
+
+
+On 06/25/2015 12:09 AM, Omar Sandoval wrote:
+> The opposite of btrfs device add is btrfs device delete. This really
+> should be btrfs device remove.
+>
+> Changes from v1:
+> - Add support for flags to cmd_struct and a CMD_ALIAS flag which only
+>    prints the one-line usage string
+> - Rearrange the command wrappers in a way that could be made generic if
+>    needed
+>
+> Thanks!
+>
+> Omar Sandoval (2):
+>    btrfs-progs: replace struct cmd_group->hidden with flags
+>    btrfs-progs: alias btrfs device delete to btrfs device remove
+>
+>   Documentation/btrfs-device.asciidoc |  5 ++++-
+>   cmds-device.c                       | 35 ++++++++++++++++++++++++++---------
+>   cmds-filesystem.c                   |  2 +-
+>   commands.h                          |  9 +++++++--
+>   help.c                              | 12 +++++++-----
+>   5 files changed, 45 insertions(+), 18 deletions(-)
+>

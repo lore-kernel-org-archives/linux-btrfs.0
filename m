@@ -1,62 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54146 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752143AbbFZRAi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jun 2015 13:00:38 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Z8WzR-0005X1-0r
-	for linux-btrfs@vger.kernel.org; Fri, 26 Jun 2015 19:00:33 +0200
-Received: from barriere.frankfurter-softwarefabrik.de ([217.11.197.1])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2015 19:00:32 +0200
-Received: from lvml by barriere.frankfurter-softwarefabrik.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 26 Jun 2015 19:00:32 +0200
+Received: from smtp121.ord1c.emailsrvr.com ([108.166.43.121]:46872 "EHLO
+	smtp121.ord1c.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752917AbbF0OEk convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 27 Jun 2015 10:04:40 -0400
+Received: from smtp8.relay.ord1c.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp8.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id 37EFE80227
+	for <linux-btrfs@vger.kernel.org>; Sat, 27 Jun 2015 10:04:39 -0400 (EDT)
+Received: from smtp8.relay.ord1c.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp8.relay.ord1c.emailsrvr.com (SMTP Server) with ESMTP id 3357580223
+	for <linux-btrfs@vger.kernel.org>; Sat, 27 Jun 2015 10:04:39 -0400 (EDT)
+Received: by smtp8.relay.ord1c.emailsrvr.com (Authenticated sender: vincent-AT-up4.tv) with ESMTPSA id C24F78025C
+	for <linux-btrfs@vger.kernel.org>; Sat, 27 Jun 2015 10:04:35 -0400 (EDT)
+From: Vincent Olivier <vincent@up4.com>
+Content-Type: text/plain; charset=utf-8
+Subject: Send/Receive Use Case
+Message-Id: <F2771637-3D78-4332-AB96-993069114030@up4.com>
+Date: Sat, 27 Jun 2015 10:04:28 -0400
 To: linux-btrfs@vger.kernel.org
-From: Lutz Vieweg <lvml@5t9.de>
-Subject: btrfs filesystem defrag fails with "Resource temporarily unavailable"
- when strace'd
-Date: Fri, 26 Jun 2015 19:00:27 +0200
-Message-ID: <mmk0fb$jpn$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2098\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I started...
-   btrfs filesystem defragment -v /some/directory
-and this took (unexpectedly, for just 150M of data) a long time (minutes).
+Hi,
 
-So I wondered whether I could see via "strace -p PID" what was going on with the process.
+There are 4 things I’m not sure about re:send/receive.
 
-Immediately when strace tries to attach, the btrfs process dies with this error message:
+1) Is it possible to first copy things on a file system using rsync and then use send-receive ? And to subsequently mix rsync and send-receive ? Provided that snapshots are made accordingly.
 
-> ERROR: defrag failed on /some/directory - Resource temporarily unavailable
+2) Is possible to “send" a snapshot diff to disk and then “receive" it from the said disk into a remote filesystem ? I have two very large and physically distant btrfs filesystems. It would be more economical to juste dump snapshot diffs to disk for transport instead of the network.
 
-This is 100% reproducable.
+3) How are “conflicts” handled by send-receive if at all ?
 
-The strace output looks like this:
-> Process 1402 attached
-> brk(0)                                  = 0x1468000
-> brk(0)                                  = 0x1468000
-> brk(0x1460000)                          = 0x1460000
-> brk(0)                                  = 0x1460000
-> close(3)                                = 0
-> write(2, "ERROR: defrag failed on /some/d"..., 84) = 84
-> write(1, "btrfs-progs v4.1\n", 17)      = 17
-> write(2, "total 1 failures\n", 17)      = 17
-> exit_group(1)                           = ?
-> +++ exited with 1 +++
+4) If a file is created, modified and then deleted in-between two snapshots is it ignored by send/receive or does send/receive "re-enacts” the journal exactly ?
 
-This is the first time I see a prozess crash upon strace being attached -
-is this intended behaviour? If so... why?
+Thanks,
 
-(Tried again without strace, "the btrfs filesystem defragment" command later
-finished ok, albeight after a loong time.)
-
-Regards,
-
-Lutz Vieweg
-
+Vincent

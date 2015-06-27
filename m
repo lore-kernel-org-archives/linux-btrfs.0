@@ -1,56 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from h218.18.88.75.static.ip.windstream.net ([75.88.18.218]:40547
-	"EHLO suse102.ad.techspace.cc" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751217AbbF0Pp2 (ORCPT
+Received: from meiko.romanrm.net ([195.154.92.155]:34557 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752786AbbF0Pvy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 27 Jun 2015 11:45:28 -0400
-Received: from esilinux2.ad.techspace.cc (esilinux2.ad.techspace.cc [192.168.10.56])
-	(authenticated bits=0)
-	by suse102.ad.techspace.cc (8.14.9/8.14.4/SuSE Linux 0.8) with ESMTP id t5RFj4QA002593
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
-	for <linux-btrfs@vger.kernel.org>; Sat, 27 Jun 2015 10:45:05 -0500
-Reply-To: moby@mobsternet.com
+	Sat, 27 Jun 2015 11:51:54 -0400
+Date: Sat, 27 Jun 2015 20:51:48 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Stefan Priebe <s.priebe@profihost.ag>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>, clm@fb.com
 Subject: Re: kernel 4.1: no space left on device
-References: <558EC1F4.1050301@profihost.ag>
-To: linux-btrfs@vger.kernel.org
-From: Moby <moby@mobsternet.com>
-Message-ID: <558EC500.9080907@mobsternet.com>
-Date: Sat, 27 Jun 2015 10:45:04 -0500
-MIME-Version: 1.0
+Message-ID: <20150627205148.284ff359@natsu>
 In-Reply-To: <558EC1F4.1050301@profihost.ag>
-Content-Type: text/plain; charset=utf-8; format=flowed
+References: <558EC1F4.1050301@profihost.ag>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/qGTa02aejN0YgRuRL2h0QVU"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/qGTa02aejN0YgRuRL2h0QVU
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
+On Sat, 27 Jun 2015 17:32:04 +0200
+Stefan Priebe <s.priebe@profihost.ag> wrote:
 
-On 06/27/2015 10:32 AM, Stefan Priebe wrote:
 > Hi,
->
+>=20
 > while having some big btrfs volumes (44TB + 37TB).
->
-> I see on a regular basis the "no space left on device" message. I'm 
-> only able to "fix" this. By running btrfs balance AND unmounting and 
+>=20
+> I see on a regular basis the "no space left on device" message. I'm only=
+=20
+> able to "fix" this. By running btrfs balance AND unmounting and=20
 > remounting the btrfs volume.
->
+>=20
 > Is there any way to debug / workaround this one?
->
-> Greets,
-> Stefan
-> -- 
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-Assuming you ruled out accumulation of snapshots?
 
--- 
---Moby
+You should post your 'df', 'btrfs fi df' and 'btrfs fi show' for both devic=
+es.
 
+--=20
+With respect,
+Roman
 
-First they came for the Jews and I did not speak out because I was not a Jew.
-Then they came for the Communists and I did not speak out because I was not a Communist.
-Then they came for the trade unionists and I did not speak out because I was not a trade unionist.
-Then they came for me and there was no one left to speak out for me.  --  Pastor Martin Niemöller
+--Sig_/qGTa02aejN0YgRuRL2h0QVU
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlWOxpQACgkQTLKSvz+PZwi2EwCfXBtyaZ+G+5/48ttXUG+mL3hT
+IxwAniaAr1Qx7UB0kbZhE+ZAUQkELLEv
+=FNrA
+-----END PGP SIGNATURE-----
+
+--Sig_/qGTa02aejN0YgRuRL2h0QVU--

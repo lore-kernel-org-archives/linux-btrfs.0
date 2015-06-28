@@ -1,80 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:31927 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752350AbbF1I4p (ORCPT
+Received: from mail-la0-f49.google.com ([209.85.215.49]:35365 "EHLO
+	mail-la0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752514AbbF1Qbf convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 28 Jun 2015 04:56:45 -0400
-Message-ID: <558FB6CF.40507@profihost.ag>
-Date: Sun, 28 Jun 2015 10:56:47 +0200
-From: Stefan Priebe <s.priebe@profihost.ag>
+	Sun, 28 Jun 2015 12:31:35 -0400
+Received: by lagh6 with SMTP id h6so29399849lag.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 28 Jun 2015 09:31:31 -0700 (PDT)
 MIME-Version: 1.0
-To: =?UTF-8?B?UnVzbGFuYXMgR8W+aWJvdnNraXM=?= <ruslanas@lpic.lt>,
-        Roman Mamedov <rm@romanrm.net>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>, clm@fb.com
-Subject: Re: kernel 4.1: no space left on device
-References: <558EC1F4.1050301@profihost.ag> <20150627205148.284ff359@natsu> <558ECB0B.3060505@profihost.ag> <CABE5tBY0fbL5tGRnTOB+eMeQxHJRWBWXiwQiEQNHShLPnq0rpw@mail.gmail.com>
-In-Reply-To: <CABE5tBY0fbL5tGRnTOB+eMeQxHJRWBWXiwQiEQNHShLPnq0rpw@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CA+xOVSNu547eo6TY_mwLypTGWuE5AmyMqC6GwR06Sir1282vqA@mail.gmail.com>
+References: <CA+xOVSOD1YY-=Cm+vmzTUV9cHe9idtDkRr0RmpRP5a0Z6eC4YQ@mail.gmail.com>
+	<CA+xOVSNu547eo6TY_mwLypTGWuE5AmyMqC6GwR06Sir1282vqA@mail.gmail.com>
+Date: Sun, 28 Jun 2015 19:31:31 +0300
+Message-ID: <CA+xOVSO+Lx09CnwCP8nvTf-1JOAvzLsgZubP-QF16wtMSzqLhQ@mail.gmail.com>
+Subject: Re: btrfs replace seems to corrupt the file system
+From: Mordechay Kaganer <mkaganer@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 27.06.2015 um 23:50 schrieb Ruslanas Gžibovskis:
-> Hi,
+On Sun, Jun 28, 2015 at 2:17 AM, Mordechay Kaganer <mkaganer@gmail.com> wrote:
+> B.H.
 >
-> df -i ?
-> Maybe inode?
+> Hello. I'm running our backup archive on btrfs. We have MD-based RAID5
+> array with 4 6TB disks then LVM on top of it, and btrfs volume on the
+> LV (we don't use btrfs's own RAID features because we want RAID5 and
+> as far as i understand the support is only partial).
+>
+> I wanted to move the archive to another MD array of 4 8TB drives (this
+> time without LVM). So i did:
+>
+> btrfs replace start 1 /dev/md1 <mount_point>
+>
+> Where 1 is the only devid that was present and /dev/md1 is the new array.
+>
+> The replace run successfully until finished after more than 5 days.
+> The system downloaded some fresh backups and created new snapshots
+> during the ongoing replace. I've go 2 kernel warnings about replace
+> task waiting for more than 120 seconds in the middle, but process
+> seamed to go on anyway.
+>
+> After the replace have finished i did btrfs fi resize 1:max
+> <mount_point> then unmounted and mounted again using the new drive.
+>
+> Then i've run a scrub on the FS - and got a lot of checksum errors.
+> Messages like this:
+>
+> BTRFS: checksum error at logical 5398405586944 on dev /dev/md1, sector
+> 10576283152, root 12788, inode 4512290, offset 23
+> 592960, length 4096, links 1 (path: XXXXXXXXX)
+> BTRFS: bdev /dev/md1 errs: wr 0, rd 0, flush 0, corrupt 67165, gen 0
+> BTRFS: unable to fixup (regular) error at logical 5398405586944 on dev /dev/md1
+>
+> Is there any way to fix this? I still have the old array available but
+> replace have wiped out it's superblock so it's not mountable.
+>
+> # uname -a
+> Linux <hostname> 3.16.0-41-generic #57~14.04.1-Ubuntu SMP Thu Jun 18
+> 18:01:13 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+>
+> # btrfs --version
+> Btrfs v3.12
 
-df -i for btrfs?
-# df -i |grep vmbackup
-/dev/md50              0      0        0     - /vmbackup
+I'm trying to recover the original data from before the replace
+operation. What i did so far is restoring the superblock of the
+original (replaced) device from a backup copy, like this:
+btrfs-select-super -s 2 /dev/mapper/XXXXXX
 
->
-> Have a nice $day_time.
->
->
-> On Sat, 27 Jun 2015 19:11 Stefan Priebe <s.priebe@profihost.ag
-> <mailto:s.priebe@profihost.ag>> wrote:
->
->     Am 27.06.2015 um 17:51 schrieb Roman Mamedov:
->      > On Sat, 27 Jun 2015 17:32:04 +0200
->      > Stefan Priebe <s.priebe@profihost.ag
->     <mailto:s.priebe@profihost.ag>> wrote:
->      >
->      >> Hi,
->      >>
->      >> while having some big btrfs volumes (44TB + 37TB).
->      >>
->      >> I see on a regular basis the "no space left on device" message.
->     I'm only
->      >> able to "fix" this. By running btrfs balance AND unmounting and
->      >> remounting the btrfs volume.
->      >>
->      >> Is there any way to debug / workaround this one?
->      >
->      > You should post your 'df', 'btrfs fi df' and 'btrfs fi show' for
->     both devices.
->
->     sorry - here for one server:
->     [ ~]# btrfs filesystem df /vmbackup/
->     Data, single: total=7.58TiB, used=7.58TiB
->     System, DUP: total=8.00MiB, used=1.19MiB
->     System, single: total=4.00MiB, used=0.00B
->     Metadata, DUP: total=69.00GiB, used=38.25GiB
->     Metadata, single: total=8.00MiB, used=0.00B
->     GlobalReserve, single: total=512.00MiB, used=3.30MiB
->
->     [ ~]# btrfs fi show /vmbackup/
->     Label: none  uuid: 0df5ed87-07da-4c15-9a2b-1d0ff6ec208d
->               Total devices 1 FS bytes used 7.62TiB
->               devid    1 size 43.66TiB used 7.72TiB path /dev/md50
->
->     btrfs-progs v4.0.1
->
->     Stefan
->     --
->     To unsubscribe from this list: send the line "unsubscribe
->     linux-btrfs" in
->     the body of a message to majordomo@vger.kernel.org
->     <mailto:majordomo@vger.kernel.org>
->     More majordomo info at http://vger.kernel.org/majordomo-info.html
->
+This worked, so btrfs tools now recognize the device as having btrfs
+volume on it. I did full btrfs check on the partition - didn't find
+any errors, at least per my understanding.
+
+But it's impossible to mount the volume. When trying to mount the
+volume i get the following messages in dmesg:
+
+[109989.432274] BTRFS warning (device dm-2): cannot mount because
+device replace operation is ongoing and
+[109989.432280] BTRFS warning (device dm-2): tgtdev (devid 0) is
+missing, need to run 'btrfs dev scan'?
+[109989.432282] BTRFS: failed to init dev_replace: -5
+[109989.459719] BTRFS: open_ctree failed
+
+On the other hand, the the "replaced" device mounts OK, but btrfs
+scrub returns lots of checksum errors so i fear the data is probably
+corrupt. The volume is about 15TB and has many subvolumes and
+snapshots so finding what exactly is corrupt will be very tricky.
+
+Any idea what can I do to recover the data?
+
+-- 
+משיח NOW!
+Moshiach is coming very soon, prepare yourself!
+יחי אדוננו מורינו ורבינו מלך המשיח לעולם ועד!

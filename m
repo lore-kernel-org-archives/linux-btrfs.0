@@ -1,47 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx3.munzinger.de ([195.226.116.139]:7852 "EHLO mx3.munzinger.de"
+Received: from plane.gmane.org ([80.91.229.3]:40653 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752641AbbF2JlW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jun 2015 05:41:22 -0400
-Received: from imap2.munzinger.de (imap2.munzinger.de [192.168.0.106])
-	by mx3.munzinger.de (Postfix) with ESMTP id 2121047AC0
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 11:35:13 +0200 (CEST)
-Received: from o3-3.localnet (o3-3.munzinger.de [192.168.100.225])
-	by imap2.munzinger.de (Postfix) with ESMTPSA id 1A42263665
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 11:35:13 +0200 (CEST)
-From: David Weber <wb@munzinger.de>
+	id S1751034AbbF2KZw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Jun 2015 06:25:52 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Z9WFv-0007Hn-Kk
+	for linux-btrfs@vger.kernel.org; Mon, 29 Jun 2015 12:25:39 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 12:25:39 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 12:25:39 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: WARNING:  at /fs/btrfs/extent-tree.c:4029 btrfs_free_reserved_data_space
-Date: Mon, 29 Jun 2015 11:35:12 +0200
-Message-ID: <6617728.KSCQs1dauk@o3-3>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Scrub errors but no errors ?!?
+Date: Mon, 29 Jun 2015 10:25:31 +0000 (UTC)
+Message-ID: <pan$f19c8$49dbc00a$e7c9c955$478b9691@cox.net>
+References: <3095967.p5MQJjsH62@zafu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Swâmi Petaramesh posted on Mon, 29 Jun 2015 10:42:14 +0200 as excerpted:
 
-we are testing Btrfs as a kvm storage system with 
-"defaults,space_cache,nodatacow" mount options and regular snapshots. While 
-testing we sometimes get these warnings:
-WARNING: CPU: 5 PID: 11335 at /home/kernel/COD/linux/fs/btrfs/extent-
-tree.c:4029 btrfs_free_reserved_data_space+0x102/0x110 [btrfs]()
+> Using kernel 3.19 on Ubuntu 15.04
+> 
+> I have a BTRFS Raid-1 FS made from 2 Luks-encrypted devices, each one
+> built atop a bcache device.
+> 
+> The machine runs smoothly from this setup.
+> 
+> When I scrub said FS, it ends by spitting a message on console stating
+> that "Scrub found errors but corrected them"
+> 
+> However if I then type :
+> 
+> # btrfs scrub stat /
+> scrub status for 53a35066-1a7b-4fe1-9f94-a923a7f9e3af
+>         scrub started at Sun Jun 28 11:17:50 2015 and finished after
+>         30657 seconds
+>         total bytes scrubbed: 3.01TiB with 0 errors
 
-Full log:
-https://gist.github.com/anonymous/5f672f72899a3d52c20c
 
-Once they start, they flood dmesg with several messages per second. After a 
-reboot, it takes a while until they start to appear again. 
-We have seen them with Linux 4.0.6 and 4.1
+FWIW, I've seeing (and wondering) the same thing, tho with newer kernel 
+(v4.1.0) and userspace (also v4.1)
 
-This was already reported a few times:
-https://bugzilla.opensuse.org/show_bug.cgi?id=904023
-https://bugzilla.redhat.com/show_bug.cgi?id=1173937
-http://www.spinics.net/lists/linux-btrfs/msg39069.html
-https://lkml.org/lkml/2014/10/22/899
+I'm running pair-device raid1 mode (both data/metadata) but one of the 
+two devices is slowly relocating sectors, so I thought it /might/ be 
+btrfs detecting some oddness due to that.
 
-Always with no solution
-Is this a real problem or can we safely ignore this?
+But if you're seeing it too, that's unlikely.  So indeed, what's this 
+found errors and corrected them bit, with no errors shown as found?
 
-Cheers,
-David
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

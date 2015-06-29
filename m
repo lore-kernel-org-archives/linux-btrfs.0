@@ -1,66 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from relay6-d.mail.gandi.net ([217.70.183.198]:41073 "EHLO
-	relay6-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752547AbbF2Imt convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jun 2015 04:42:49 -0400
-Received: from mfilter20-d.gandi.net (mfilter20-d.gandi.net [217.70.178.148])
-	by relay6-d.mail.gandi.net (Postfix) with ESMTP id 0AD1AFB8D6
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 10:42:48 +0200 (CEST)
-Received: from relay6-d.mail.gandi.net ([217.70.183.198])
-	by mfilter20-d.gandi.net (mfilter20-d.gandi.net [10.0.15.180]) (amavisd-new, port 10024)
-	with ESMTP id GwRSr4i4lB6h for <linux-btrfs@vger.kernel.org>;
-	Mon, 29 Jun 2015 10:42:15 +0200 (CEST)
-Received: from zafu.localnet (AMontpellier-656-1-305-139.w86-202.abo.wanadoo.fr [86.202.105.139])
-	(Authenticated sender: michel@bouissou.net)
-	by relay6-d.mail.gandi.net (Postfix) with ESMTPSA id 5266DFB8A1
-	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 10:42:15 +0200 (CEST)
-From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Scrub errors but no errors ?!?
-Date: Mon, 29 Jun 2015 10:42:14 +0200
-Message-ID: <3095967.p5MQJjsH62@zafu>
+Received: from mx3.munzinger.de ([195.226.116.139]:7852 "EHLO mx3.munzinger.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752641AbbF2JlW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Jun 2015 05:41:22 -0400
+Received: from imap2.munzinger.de (imap2.munzinger.de [192.168.0.106])
+	by mx3.munzinger.de (Postfix) with ESMTP id 2121047AC0
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 11:35:13 +0200 (CEST)
+Received: from o3-3.localnet (o3-3.munzinger.de [192.168.100.225])
+	by imap2.munzinger.de (Postfix) with ESMTPSA id 1A42263665
+	for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 11:35:13 +0200 (CEST)
+From: David Weber <wb@munzinger.de>
+To: linux-btrfs@vger.kernel.org
+Subject: WARNING:  at /fs/btrfs/extent-tree.c:4029 btrfs_free_reserved_data_space
+Date: Mon, 29 Jun 2015 11:35:12 +0200
+Message-ID: <6617728.KSCQs1dauk@o3-3>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi,
 
-Using kernel 3.19 on Ubuntu 15.04
+we are testing Btrfs as a kvm storage system with 
+"defaults,space_cache,nodatacow" mount options and regular snapshots. While 
+testing we sometimes get these warnings:
+WARNING: CPU: 5 PID: 11335 at /home/kernel/COD/linux/fs/btrfs/extent-
+tree.c:4029 btrfs_free_reserved_data_space+0x102/0x110 [btrfs]()
 
-I have a BTRFS Raid-1 FS made from 2 Luks-encrypted devices, each one built 
-atop a bcache device.
+Full log:
+https://gist.github.com/anonymous/5f672f72899a3d52c20c
 
-The machine runs smoothly from this setup.
+Once they start, they flood dmesg with several messages per second. After a 
+reboot, it takes a while until they start to appear again. 
+We have seen them with Linux 4.0.6 and 4.1
 
-When I scrub said FS, it ends by spitting a message on console stating that 
-"Scrub found errors but corrected them"
+This was already reported a few times:
+https://bugzilla.opensuse.org/show_bug.cgi?id=904023
+https://bugzilla.redhat.com/show_bug.cgi?id=1173937
+http://www.spinics.net/lists/linux-btrfs/msg39069.html
+https://lkml.org/lkml/2014/10/22/899
 
-However if I then type :
+Always with no solution
+Is this a real problem or can we safely ignore this?
 
-# btrfs scrub stat /
-scrub status for 53a35066-1a7b-4fe1-9f94-a923a7f9e3af
-        scrub started at Sun Jun 28 11:17:50 2015 and finished after 30657 
-seconds
-        total bytes scrubbed: 3.01TiB with 0 errors
-
-# btrfs dev stat /
-[/dev/mapper/c_b].write_io_errs   0
-[/dev/mapper/c_b].read_io_errs    0
-[/dev/mapper/c_b].flush_io_errs   0
-[/dev/mapper/c_b].corruption_errs 0
-[/dev/mapper/c_b].generation_errs 0
-[/dev/mapper/c_a].write_io_errs   0
-[/dev/mapper/c_a].read_io_errs    0
-[/dev/mapper/c_a].flush_io_errs   0
-[/dev/mapper/c_a].corruption_errs 0
-[/dev/mapper/c_a].generation_errs 0
-
-...How comes ?
-
-TIA for any insight.
-
--- 
-Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
-
+Cheers,
+David

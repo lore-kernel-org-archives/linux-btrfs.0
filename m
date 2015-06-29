@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wg0-f51.google.com ([74.125.82.51]:35994 "EHLO
-	mail-wg0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752882AbbF2LXD (ORCPT
+Received: from mail-la0-f43.google.com ([209.85.215.43]:34710 "EHLO
+	mail-la0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752120AbbF2Lj0 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jun 2015 07:23:03 -0400
-Received: by wguu7 with SMTP id u7so138552305wgu.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 04:23:01 -0700 (PDT)
+	Mon, 29 Jun 2015 07:39:26 -0400
+Received: by lagx9 with SMTP id x9so121872305lag.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 04:39:25 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <pan$36112$278c5ce$95ee5224$7ba3d78f@cox.net>
 References: <CA+xOVSOD1YY-=Cm+vmzTUV9cHe9idtDkRr0RmpRP5a0Z6eC4YQ@mail.gmail.com>
@@ -17,26 +17,55 @@ References: <CA+xOVSOD1YY-=Cm+vmzTUV9cHe9idtDkRr0RmpRP5a0Z6eC4YQ@mail.gmail.com>
 	<CAJCQCtTv+yAQAQsBrbWEFo4_i0_tUUtbxwU1R4xDDhPTzQNGAQ@mail.gmail.com>
 	<CA+xOVSMgqwOGxdhAjEZQHOCNhaJs-g2ieDE7qss8skyF4=shkw@mail.gmail.com>
 	<pan$36112$278c5ce$95ee5224$7ba3d78f@cox.net>
-Date: Mon, 29 Jun 2015 12:23:01 +0100
-Message-ID: <CAMU1PDgjf54Cqq4cjnWEup4Z2Ri+Fvrd1WqoBkaXqYkmEZds1w@mail.gmail.com>
+Date: Mon, 29 Jun 2015 14:39:25 +0300
+Message-ID: <CA+xOVSNnHn+H+QHVxE4Le7CY4cfddeRV2UEB87iq4ocEQDqRTg@mail.gmail.com>
 Subject: Re: btrfs replace seems to corrupt the file system
-From: Mike Fleetwood <mike.fleetwood@googlemail.com>
+From: Mordechay Kaganer <mkaganer@gmail.com>
 To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 29 June 2015 at 09:08, Duncan <1i5t5.duncan@cox.net> wrote:
-> Meanwhile, unlike many filesystems, btrfs uses the UUID as part of the
-> metadata, so changing the UUID isn't as simple as rewriting a superblock;
-> the metadata must be rewritten to the new UUID.  There's actually a tool
-> now available to do just that, but it's new enough I'm not even sure it's
-> available in release form yet; if so, it'll be latest releases.
-> Otherwise, it'd be in integration branch.
+B.H.
 
-FYI, btrfstune with changing file system UUID capability, was included
-in btrfs-progs 4.1 released last week, Mon, 22 Jun 2015.
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg44182.html
+Regarding the main issue, the drive that was "recovered" using Noah's
+trick (mount -o degraded then btrfs replace cancel) appears to be
+clean. At least, it passes scrub without any errors. It even contains
+all changes that were made during the replace was ongoing. Also i've
+run MD's consistency check on the destination drive which contains the
+corrupt FS and it appears to be clean from MD's point of view, so i
+think it can be considered a "proof" the btrfs replace was actually
+the source of the corruption. I'll try to reproduce the situation
+before trying to upgrade the kernel/btrfs-progs with smaller loopback
+devices. Not sure if it is reproducible so easily. The original
+replace operation took more than 5 days and i'm not going to play with
+the actual data again ;-).
 
-Mike
+If the "corrupt" version of the FS may help in debugging the issue,
+please contact me today, before we have wiped it out.
+
+
+On Mon, Jun 29, 2015 at 11:08 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Mordechay Kaganer posted on Mon, 29 Jun 2015 08:02:01 +0300 as excerpted:
+>> 1. btrfs replace - as far as i understand, it's primarily intended for
+>> replacing the member disks under btrfs's raid.
+>
+> It seems this /can/ work.  You demonstrated that much.  But I'm not sure
+> whether btrfs replace was actually designed to do the single-device
+> replace.  If not, it almost certainly hasn't been tested for it.  Even if
+> so, I'm sure I'm not the only one who hadn't thought of using it that
+> way, so while it might have been development-tested for single-device-
+> replace, it's unlikely to have had the same degree of broader testing of
+> actual usage, simply because few even thought of using it that way.
+
+*If* replace is usable for single-drive FS, this method has the
+advantage that it can be cancelled in the middle and (for single
+drive, using Noah's trick) even after the operation has finished. For
+multi-drive FS, the trick wouldn't help as soon as any changes were
+made the the FS after the replace.
+
+-- 
+משיח NOW!
+Moshiach is coming very soon, prepare yourself!
+יחי אדוננו מורינו ורבינו מלך המשיח לעולם ועד!

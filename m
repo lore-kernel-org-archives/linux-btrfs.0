@@ -1,79 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:34204 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753451AbbF2JDq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jun 2015 05:03:46 -0400
-Received: by igcsj18 with SMTP id sj18so74839132igc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 29 Jun 2015 02:03:45 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:45161 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753420AbbF2Rwn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 29 Jun 2015 13:52:43 -0400
+Date: Mon, 29 Jun 2015 10:52:41 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 5/5] btrfs: don't update mtime on deduped inodes
+Message-ID: <20150629175240.GB7507@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <1435352461-17689-1-git-send-email-mfasheh@suse.de>
+ <1435352461-17689-6-git-send-email-mfasheh@suse.de>
+ <20150627214427.GC14931@hungrycats.org>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1435528041-20878-3-git-send-email-dccitaliano@gmail.com>
-References: <1435528041-20878-1-git-send-email-dccitaliano@gmail.com>
-	<1435528041-20878-3-git-send-email-dccitaliano@gmail.com>
-Date: Mon, 29 Jun 2015 10:03:45 +0100
-Message-ID: <CAL3q7H6_VXn2E_4ydTW3jhJ8wK1Pi7RG-K4J9TxiT+R67PBaeA@mail.gmail.com>
-Subject: Re: [PATCH 2/2] [btrfs] btrfs_rename(): don't ignore
- btrfs_end_transaction() return
-From: Filipe David Manana <fdmanana@gmail.com>
-To: "Davide C. C. Italiano" <dccitaliano@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150627214427.GC14931@hungrycats.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jun 28, 2015 at 10:47 PM, Davide C. C. Italiano
-<dccitaliano@gmail.com> wrote:
-> From: Davide Italiano <dccitaliano@gmail.com>
->
-> btrfs_end_transaction() can return an error -- this happens, e.g.
-> if it tries to commit and the transaction was aborted in the meanhwile.
-> Swallowing the error is wrong, so explicitly return it.
->
-> Signed-off-by: Davide Italiano <dccitaliano@gmail.com>
-> ---
->  fs/btrfs/inode.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 59c475c..7764132 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9199,7 +9199,7 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
->                 btrfs_end_log_trans(root);
->         }
->  out_fail:
-> -       btrfs_end_transaction(trans, root);
-> +       ret = btrfs_end_transaction(trans, root);
+On Sat, Jun 27, 2015 at 05:44:28PM -0400, Zygo Blaxell wrote:
+> On Fri, Jun 26, 2015 at 02:01:01PM -0700, Mark Fasheh wrote:
+> > One issue users have reported is that dedupe changes mtime on files,
+> > resulting in tools like rsync thinking that their contents have changed when
+> > in fact the data is exactly the same. Clone still wants an mtime change, so
+> > we special case this in the code.
+> > 
+> > This was tested with the btrfs-extent-same tool.
+> > 
+> > Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+> > ---
+> >  fs/btrfs/ioctl.c | 25 +++++++++++++++----------
+> >  1 file changed, 15 insertions(+), 10 deletions(-)
+> > 
+> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> > index 83f4679..0af0f13 100644
+> > --- a/fs/btrfs/ioctl.c
+> > +++ b/fs/btrfs/ioctl.c
+> > @@ -87,7 +87,8 @@ struct btrfs_ioctl_received_subvol_args_32 {
+> >  
+> >  
+> >  static int btrfs_clone(struct inode *src, struct inode *inode,
+> > -		       u64 off, u64 olen, u64 olen_aligned, u64 destoff);
+> > +		       u64 off, u64 olen, u64 olen_aligned, u64 destoff,
+> > +		       int no_mtime);
+> >  
+> >  /* Mask out flags that are inappropriate for the given type of inode. */
+> >  static inline __u32 btrfs_mask_flags(umode_t mode, __u32 flags)
+> > @@ -3054,7 +3055,7 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+> >  	/* pass original length for comparison so we stay within i_size */
+> >  	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
+> >  	if (ret == 0)
+> > -		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
+> > +		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+> >  
+> >  	if (same_inode)
+> >  		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
+> > @@ -3219,13 +3220,17 @@ static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
+> >  				     struct inode *inode,
+> >  				     u64 endoff,
+> >  				     const u64 destoff,
+> > -				     const u64 olen)
+> > +				     const u64 olen,
+> > +				     int no_mtime)
+> >  {
+> >  	struct btrfs_root *root = BTRFS_I(inode)->root;
+> >  	int ret;
+> >  
+> >  	inode_inc_iversion(inode);
+> > -	inode->i_mtime = inode->i_ctime = CURRENT_TIME;
+> > +	if (no_mtime)
+> > +		inode->i_ctime = CURRENT_TIME;
+> 
+> I don't see a good reason to modify the ctime either.  Again, nothing
+> is changing here.  All we are doing is shuffling physical storage around.
+> 
+> Defrag and balance (which also move physical extents around) don't
+> touch ctime, mtime, or even atime.
 
-Hi,
+To be fair, those may actually be oversights, it's not uncommon to update
+ctime on metadata changes.
 
-Good intention but it's now swallowing errors from earlier places in
-the code that jump to the out_fail label. For e.g. if the call to
-btrfs_set_inode_index() fails, we jump to out_fail and we lose the
-error value that it returned (btrfs_end_transaction() returns 0 for
-e.g.), so userspace thinks everything succeed when it didn't.
-Correct fix is to set ret to the return value of
-btrfs_end_transaction() only if ret is currently zero.
+Does a ctime change hurt any backup software (the reason for my first
+patch)? I guess it could cause revaluation of meta data, but does that
+actually happen? From what I can tell stuff like rsync is using mtime +
+i_size to see if an inode changed.
 
-thanks
+Is there any software out there that monitors an inodes extent state which
+might *want* ctime updates when this happens? Is that kind of usage a
+stretch (or even something we care about?).
 
->  out_notrans:
->         if (old_ino == BTRFS_FIRST_FREE_OBJECTID)
->                 up_read(&root->fs_info->subvol_sem);
-> --
-> 2.4.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+So my thinking is if it doesn't hurt anything, leave it in. Obviously if it
+*is* causing issues then we should take it right out :)
 
+Thanks for the discussion and review btw,
+	--Mark
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+--
+Mark Fasheh

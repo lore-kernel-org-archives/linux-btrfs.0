@@ -1,68 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f45.google.com ([209.85.220.45]:35343 "EHLO
-	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752102AbbF3C0B (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:29743 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752412AbbF3C0m (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jun 2015 22:26:01 -0400
-From: Naohiro Aota <naota@elisp.net>
-To: linux-btrfs@vger.kernel.org
-Cc: Naohiro Aota <naota@elisp.net>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-kernel@vger.kernel.org (open list)
-Subject: [PATCH][RESEND] btrfs: fix search key advancing condition
-Date: Tue, 30 Jun 2015 11:25:43 +0900
-Message-Id: <1435631143-12247-1-git-send-email-naota@elisp.net>
+	Mon, 29 Jun 2015 22:26:42 -0400
+Subject: Re: [PATCH 4/4] btrfs: Fix data checksum error cause by replace with
+ io-load.
+To: Zhaolei <zhaolei@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>
+References: <5c5c914dad20c018cfe74174827219c418839f39.1432900529.git.zhaolei@cn.fujitsu.com>
+ <33ad2c0da35681e20afdc6a75ecb19ff2b09f767.1432900529.git.zhaolei@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5591FE4A.9060406@cn.fujitsu.com>
+Date: Tue, 30 Jun 2015 10:26:18 +0800
+MIME-Version: 1.0
+In-Reply-To: <33ad2c0da35681e20afdc6a75ecb19ff2b09f767.1432900529.git.zhaolei@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The search key advancing condition used in copy_to_sk() is loose. It can
-advance the key even if it reaches sk->max_*: e.g. when the max key = (512,
-1024, -1) and the current key = (512, 1025, 10), it increments the
-offset by 1, continues hopeless search from (512, 1025, 11). This issue
-make ioctl() to take unexpectedly long time scanning all the leaf a blocks
-one by one.
+To Chris:
 
-This commit fix the problem using standard way of key comparison:
-btrfs_comp_cpu_keys()
+Would you consider merging these patchset for late 4.2 merge window?
+If it's OK to merge it into 4.2 late rc, we'll start our test and send 
+pull request after our test, eta this Friday or next Monday.
 
-Signed-off-by: Naohiro Aota <naota@elisp.net>
----
- fs/btrfs/ioctl.c | 12 +++++++++---
- 1 file changed, 9 insertions(+), 3 deletions(-)
+I know normally we should submit it early especially when such fix is 
+not small.
+But the bug is long-standing and is quite annoying (possibility 
+involved), also Zhao Lei has quite a good idea to cleanup the scrub 
+codes based on the patchset.
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1c22c65..07dc01d 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1932,6 +1932,7 @@ static noinline int copy_to_sk(struct btrfs_root *root,
- 	u64 found_transid;
- 	struct extent_buffer *leaf;
- 	struct btrfs_ioctl_search_header sh;
-+	struct btrfs_key test;
- 	unsigned long item_off;
- 	unsigned long item_len;
- 	int nritems;
-@@ -2015,12 +2016,17 @@ static noinline int copy_to_sk(struct btrfs_root *root,
- 	}
- advance_key:
- 	ret = 0;
--	if (key->offset < (u64)-1 && key->offset < sk->max_offset)
-+	test.objectid = sk->max_objectid;
-+	test.type = sk->max_type;
-+	test.offset = sk->max_offset;
-+	if (btrfs_comp_cpu_keys(key, &test) >= 0)
-+		ret = 1;
-+	else if (key->offset < (u64)-1)
- 		key->offset++;
--	else if (key->type < (u8)-1 && key->type < sk->max_type) {
-+	else if (key->type < (u8)-1) {
- 		key->offset = 0;
- 		key->type++;
--	} else if (key->objectid < (u64)-1 && key->objectid < sk->max_objectid) {
-+	} else if (key->objectid < (u64)-1) {
- 		key->offset = 0;
- 		key->type = 0;
- 		key->objectid++;
--- 
-2.4.4
+So it would be quite nice if we have any chance to merge it into 4.2
 
+Would it be OK for you?
+
+Thanks,
+Qu
+
+Zhaolei wrote on 2015/05/29 19:55 +0800:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+>
+> xfstests btrfs/070 sometimes failed.
+> In my test machine, its fail rate is about 30%.
+> In another vm(vmware), its fail rate is about 50%.
+>
+> Reason:
+>    btrfs/070 do replace and defrag with fsstress simultaneously,
+>    after above operation, checksum error is found by scrub.
+>
+>    Actually, it have no relationship with defrag operation, only
+>    replace with fsstress can trigger this bug.
+>
+>    New data writen to target device have possibility rewrited by
+>    old data from source device by replace code in debug, to avoid
+>    above problem, we can set target block group to readonly in
+>    replace period, so new data requested by other operation will
+>    not write to same place with replace code.
+>
+>    Before patch(4.1-rc3):
+>      30% failed in 100 xfstests.
+>    After patch:
+>      0% failed in 300 xfstests.
+>
+> Changelog v1->v2:
+> 1: Update subject to reflect the problem being fixed.
+> 2: Update description to say reason why set read-only can fix the
+>     problem.
+> 3: Use a helper function to avoid duplicated code block for set
+>     chunk ro.
+> All of above are suggested by: David Sterba <dsterba@suse.cz>
+>
+> Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Suggested-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> ---
+>   fs/btrfs/scrub.c | 12 ++++++++++++
+>   1 file changed, 12 insertions(+)
+>
+> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+> index 8da3459..e1ebf43 100644
+> --- a/fs/btrfs/scrub.c
+> +++ b/fs/btrfs/scrub.c
+> @@ -3455,6 +3455,18 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+>   		if (!cache)
+>   			goto skip;
+>
+> +		/*
+> +		 * we need call btrfs_inc_block_group_ro() with scrubs_paused,
+> +		 * to avoid deadlock caused by:
+> +		 * btrfs_inc_block_group_ro()
+> +		 * -> btrfs_wait_for_commit()
+> +		 * -> btrfs_commit_transaction()
+> +		 * -> btrfs_scrub_pause()
+> +		 */
+> +		scrub_pause_on(fs_info);
+> +		btrfs_inc_block_group_ro(root, cache);
+> +		scrub_pause_off(fs_info);
+> +
+>   		dev_replace->cursor_right = found_key.offset + length;
+>   		dev_replace->cursor_left = found_key.offset;
+>   		dev_replace->item_needs_writeback = 1;
+>

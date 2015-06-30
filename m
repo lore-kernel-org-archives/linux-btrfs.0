@@ -1,105 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29743 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752412AbbF3C0m (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 29 Jun 2015 22:26:42 -0400
-Subject: Re: [PATCH 4/4] btrfs: Fix data checksum error cause by replace with
- io-load.
-To: Zhaolei <zhaolei@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>
-References: <5c5c914dad20c018cfe74174827219c418839f39.1432900529.git.zhaolei@cn.fujitsu.com>
- <33ad2c0da35681e20afdc6a75ecb19ff2b09f767.1432900529.git.zhaolei@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5591FE4A.9060406@cn.fujitsu.com>
-Date: Tue, 30 Jun 2015 10:26:18 +0800
-MIME-Version: 1.0
-In-Reply-To: <33ad2c0da35681e20afdc6a75ecb19ff2b09f767.1432900529.git.zhaolei@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:55947 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750821AbbF3JPG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 05:15:06 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Z9rdA-0004md-ML
+	for linux-btrfs@vger.kernel.org; Tue, 30 Jun 2015 11:15:04 +0200
+Received: from HSI-KBW-217-008-058-175.hsi.kabelbw.de ([217.8.58.175])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2015 11:15:04 +0200
+Received: from wb by HSI-KBW-217-008-058-175.hsi.kabelbw.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2015 11:15:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: David Weber <wb@munzinger.de>
+Subject: Re: WARNING:  at /fs/btrfs/extent-tree.c:4029 =?utf-8?b?YnRyZnNfZnJlZV9yZXNlcnZlZF9kYXRhX3NwYWNl?=
+Date: Tue, 30 Jun 2015 09:10:53 +0000 (UTC)
+Message-ID: <loom.20150630T110709-722@post.gmane.org>
+References: <6617728.KSCQs1dauk@o3-3> <mmr75d$vbi$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To Chris:
+Lutz Vieweg <lvml <at> 5t9.de> writes:
 
-Would you consider merging these patchset for late 4.2 merge window?
-If it's OK to merge it into 4.2 late rc, we'll start our test and send 
-pull request after our test, eta this Friday or next Monday.
+> 
+> On 06/29/2015 11:35 AM, David Weber wrote:
+> > we are testing Btrfs as a kvm storage system with
+> > "defaults,space_cache,nodatacow" mount options and regular snapshots.
+> 
+> That sounds brave - even with "nodatacow" it appeared to me
+> that using btrfs with often partially overwritten files like
+> VM images results in excessively fragmented files.
+> And taking snapshots kind of counteracts "nodatacow".
+> 
+> What does "filefrag" tell about your VM images on btrfs?
+> 
+> (As much as I like btrfs for other purposes, I currently stay
+> with XFS for VM images, database files and alike.)
 
-I know normally we should submit it early especially when such fix is 
-not small.
-But the bug is long-standing and is quite annoying (possibility 
-involved), also Zhao Lei has quite a good idea to cleanup the scrub 
-codes based on the patchset.
+Fragmentation can create a performance hit and you have to ponder if the 
+features are worth it.
+I use Btrfs with regular snapshots on my workstation with Virtualbox since 
+years. Running filefrag on the image doesn't complete after hours but the 
+IO of the VM is still "fast enough". But the definition of "fast enough" 
+can vary heavily.
+If it becomes to slow I will try a btrfs fi deframent or just recreate the 
+image with a no reflink copy.
 
-So it would be quite nice if we have any chance to merge it into 4.2
+Cheers,
+David
 
-Would it be OK for you?
 
-Thanks,
-Qu
 
-Zhaolei wrote on 2015/05/29 19:55 +0800:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
->
-> xfstests btrfs/070 sometimes failed.
-> In my test machine, its fail rate is about 30%.
-> In another vm(vmware), its fail rate is about 50%.
->
-> Reason:
->    btrfs/070 do replace and defrag with fsstress simultaneously,
->    after above operation, checksum error is found by scrub.
->
->    Actually, it have no relationship with defrag operation, only
->    replace with fsstress can trigger this bug.
->
->    New data writen to target device have possibility rewrited by
->    old data from source device by replace code in debug, to avoid
->    above problem, we can set target block group to readonly in
->    replace period, so new data requested by other operation will
->    not write to same place with replace code.
->
->    Before patch(4.1-rc3):
->      30% failed in 100 xfstests.
->    After patch:
->      0% failed in 300 xfstests.
->
-> Changelog v1->v2:
-> 1: Update subject to reflect the problem being fixed.
-> 2: Update description to say reason why set read-only can fix the
->     problem.
-> 3: Use a helper function to avoid duplicated code block for set
->     chunk ro.
-> All of above are suggested by: David Sterba <dsterba@suse.cz>
->
-> Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Suggested-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> ---
->   fs/btrfs/scrub.c | 12 ++++++++++++
->   1 file changed, 12 insertions(+)
->
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index 8da3459..e1ebf43 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3455,6 +3455,18 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
->   		if (!cache)
->   			goto skip;
->
-> +		/*
-> +		 * we need call btrfs_inc_block_group_ro() with scrubs_paused,
-> +		 * to avoid deadlock caused by:
-> +		 * btrfs_inc_block_group_ro()
-> +		 * -> btrfs_wait_for_commit()
-> +		 * -> btrfs_commit_transaction()
-> +		 * -> btrfs_scrub_pause()
-> +		 */
-> +		scrub_pause_on(fs_info);
-> +		btrfs_inc_block_group_ro(root, cache);
-> +		scrub_pause_off(fs_info);
-> +
->   		dev_replace->cursor_right = found_key.offset + length;
->   		dev_replace->cursor_left = found_key.offset;
->   		dev_replace->item_needs_writeback = 1;
->
+

@@ -1,44 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55413 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751447AbbF3VmT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 17:42:19 -0400
-From: Mark Fasheh <mfasheh@suse.de>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 1/5] btrfs: pass unaligned length to btrfs_cmp_data()
-Date: Tue, 30 Jun 2015 14:42:04 -0700
-Message-Id: <1435700528-14141-2-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
-References: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:60167 "EHLO
+	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752130AbbF3VpX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 17:45:23 -0400
+Date: Wed, 1 Jul 2015 07:45:19 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: Omar Sandoval <osandov@fb.com>
+Cc: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org
+Subject: Re: [PATCH RESEND] Btrfs: add autodefrag inode flag
+Message-ID: <20150630214519.GN22807@dastard>
+References: <85de09b87ad7b2847ea001f5bb03c044e8b419aa.1435681574.git.osandov@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <85de09b87ad7b2847ea001f5bb03c044e8b419aa.1435681574.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the case that we dedupe the tail of a file, we might expand the dedupe
-len out to the end of our last block. We don't want to compare data past
-i_size however, so pass the original length to btrfs_cmp_data().
+On Tue, Jun 30, 2015 at 09:32:20AM -0700, Omar Sandoval wrote:
+> In some cases, we may not want to enable automatic defragmentation for
+> the whole filesystem with the "autodefrag" mount option but we still
+> want to defragment specific files or directories. Add an inode flag
+> which allows us to do specify that.
+> 
+> Signed-off-by: Omar Sandoval <osandov@fb.com>
+> ---
+> Resending this because I didn't send it to fsdevel or linux-api last
+> time and I'm adding a new user-facing inode flag.
 
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
-Reviewed-by: David Sterba <dsterba@suse.cz>
----
- fs/btrfs/ioctl.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+XFS has a "no defrag" inode flag to tell the defragmenter not to
+defrag the file. (XFS_XFLAG_NODEFRAG, see xfsctl(3)). With the ext4
+project quota work, this flag and interface is being pulled up to
+the VFS, so perhaps it would be a good idea to turn this around the
+other way?  i.e. autodefrag is the default behaviour, and the inode
+contains an inheritable  "no defrag" flag to prevent defrag so that
+we have the same flag, API and behaviour across filesystems?
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 2d24ff4..2deea1f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2933,7 +2933,8 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 		goto out_unlock;
- 	}
- 
--	ret = btrfs_cmp_data(src, loff, dst, dst_loff, len);
-+	/* pass original length for comparison so we stay within i_size */
-+	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen);
- 	if (ret == 0)
- 		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
- 
+Cheers,
+
+Dave.
 -- 
-2.1.2
-
+Dave Chinner
+david@fromorbit.com

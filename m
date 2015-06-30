@@ -1,86 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:52560 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751568AbbFZIna (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jun 2015 04:43:30 -0400
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: generic test for fsync after file truncations
-Date: Thu, 25 Jun 2015 13:00:24 +0100
-Message-Id: <1435233624-32338-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1435202295-23619-1-git-send-email-fdmanana@kernel.org>
-References: <1435202295-23619-1-git-send-email-fdmanana@kernel.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:31537 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753431AbbF3EQk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 00:16:40 -0400
+Subject: [PATCH 11/11] reflink: test what happens when we hit resource limits
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: david@fromorbit.com, darrick.wong@oracle.com
+Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        fstests@vger.kernel.org, xfs@oss.sgi.com
+Date: Mon, 29 Jun 2015 21:16:35 -0700
+Message-ID: <20150630041635.2476.40863.stgit@birch.djwong.org>
+In-Reply-To: <20150630041519.2476.23059.stgit@birch.djwong.org>
+References: <20150630041519.2476.23059.stgit@birch.djwong.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
-
-Test that if we truncate a file to a smaller size, then truncate it to
-its original size or a larger size, then fsyncing it and a power failure
-happens, the file will have the range [first_truncate_size, last_size[
-with all bytes having a value of 0x00 if we read it the next time the
-filesystem is mounted.
-
-This test is motivated by a bug found in btrfs, which is fixed by a patch
-titled: "Btrfs: fix fsync after truncate when no_holes feature is enabled"
-
-Tested against ext3/4, xfs, btrfs (with and without the fix, and with the
-no_holes feature disabled), f2fs, reiserfs and nilfs2.
-
-All filesystems pass the test except for unpatched btrfs with the
-no_holes feature enabled (as expected) and f2fs. Both produce the
-following file contents that differ from the golden output:
-
-  File foo content after log replay:
-  0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-  *
-  0200000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-  *
-  0372000
-  File bar content after log replay:
-  0000000 ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee ee
-  *
-  0200000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
-  *
-  0372000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-  *
-  0772000
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Eryu Guan <eguan@redhat.com>
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
+ tests/generic/840     |  107 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/840.out |    0 
+ tests/generic/841     |   87 ++++++++++++++++++++++++++++++++++++++++
+ tests/generic/841.out |    5 ++
+ tests/generic/group   |    2 +
+ 5 files changed, 201 insertions(+)
+ create mode 100755 tests/generic/840
+ create mode 100644 tests/generic/840.out
+ create mode 100755 tests/generic/841
+ create mode 100644 tests/generic/841.out
 
-V2: Added missing call to _require_metadata_journaling and Eryu's
-    reviewed-by tag.
 
- tests/generic/095     | 117 ++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/095.out |  19 ++++++++
- tests/generic/group   |   1 +
- 3 files changed, 137 insertions(+)
- create mode 100755 tests/generic/095
- create mode 100644 tests/generic/095.out
-
-diff --git a/tests/generic/095 b/tests/generic/095
+diff --git a/tests/generic/840 b/tests/generic/840
 new file mode 100755
-index 0000000..95f8b44
+index 0000000..498e3a2
 --- /dev/null
-+++ b/tests/generic/095
-@@ -0,0 +1,117 @@
++++ b/tests/generic/840
+@@ -0,0 +1,107 @@
 +#! /bin/bash
-+# FSQA Test No. 095
++# FS QA Test No. 840
 +#
-+# Test that if we truncate a file to a smaller size, then truncate it to its
-+# original size or a larger size, then fsyncing it and a power failure happens,
-+# the file will have the range [first_truncate_size, last_size[ with all bytes
-+# having a value of 0x00 if we read it the next time the filesystem is mounted.
++# Try to hit the maximum reference count (eek!)
 +#
-+# This test is motivated by a bug found in btrfs.
++# This test runs extremely slowly, so it's not automatically run anywhere.
 +#
 +#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
++# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -95,132 +61,205 @@ index 0000000..95f8b44
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
-+#
 +
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
++
++here=`pwd`
 +tmp=/tmp/$$
-+status=1	# failure is the default!
++status=1    # failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
 +
 +_cleanup()
 +{
-+	_cleanup_flakey
-+	rm -f $tmp.*
++    cd /
++    rm -rf $tmp.* $TESTDIR1
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/dmflakey
++. ./common/attr
 +
 +# real QA test starts here
-+_need_to_be_root
-+_supported_fs generic
-+_supported_os Linux
++_require_test
 +_require_scratch
-+_require_dm_flakey
-+_require_metadata_journaling $SCRATCH_DEV
++_require_scratch_reflink
++_require_test_reflink
++_supported_os Linux
 +
-+# This test was motivated by an issue found in btrfs when the btrfs no-holes
-+# feature is enabled (introduced in kernel 3.14). So enable the feature if the
-+# fs being tested is btrfs.
-+if [ $FSTYP == "btrfs" ]; then
-+	_require_btrfs_fs_feature "no_holes"
-+	_require_btrfs_mkfs_feature "no-holes"
-+	MKFS_OPTIONS="$MKFS_OPTIONS -O no-holes"
-+fi
++_require_xfs_io_command "reflink"
++_require_xfs_io_command "fiemap"
++_require_cp_reflink
 +
 +rm -f $seqres.full
 +
-+_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
++echo "Format and mount"
++_scratch_mkfs > $seqres.full 2>&1
++_scratch_mount >> $seqres.full 2>&1
 +
-+# Create our test files and make sure everything is durably persisted.
-+$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 64K"         \
-+		-c "pwrite -S 0xbb 64K 61K"       \
-+		$SCRATCH_MNT/foo | _filter_xfs_io
-+$XFS_IO_PROG -f -c "pwrite -S 0xee 0 64K"         \
-+		-c "pwrite -S 0xff 64K 61K"       \
-+		$SCRATCH_MNT/bar | _filter_xfs_io
-+sync
++TESTDIR=$SCRATCH_MNT/test-$seq
++rm -rf $TESTDIR
++mkdir $TESTDIR
 +
-+# Now truncate our file foo to a smaller size (64Kb) and then truncate it to the
-+# size it had before the shrinking truncate (125Kb). Then fsync our file. If a
-+# power failure happens after the fsync, we expect our file to have a size of
-+# 125Kb, with the first 64Kb of data having the value 0xaa and the second 61Kb
-+# of data having the value 0x00.
-+$XFS_IO_PROG -c "truncate 64K" \
-+		-c "truncate 125K" \
-+		-c "fsync" \
-+		$SCRATCH_MNT/foo
++# Well let's hope the maximum reflink count is (less than (ha!)) 2^32...
 +
-+# Do something similar to our file bar, but the first truncation sets the file
-+# size to 0 and the second truncation expands the size to the double of what it
-+# was initially.
-+$XFS_IO_PROG -c "truncate 0" \
-+		-c "truncate 253K" \
-+		-c "fsync" \
-+		$SCRATCH_MNT/bar
++echo "Create a one block file"
++BLKSZ="$(stat -f $TESTDIR -c '%S')"
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $BLKSZ" $TESTDIR/file1 >> $seqres.full
++$XFS_IO_PROG -f -c "pwrite -S 0x62 0 $BLKSZ" $TESTDIR/file2 >> $seqres.full
 +
-+_load_flakey_table $FLAKEY_DROP_WRITES
-+_unmount_flakey
++$XFS_IO_PROG -f -c "reflink $TESTDIR/file1 0 0 $BLKSZ" $TESTDIR/file2 >> $seqres.full
 +
-+# Allow writes again, mount to trigger log replay and validate file contents.
-+_load_flakey_table $FLAKEY_ALLOW_WRITES
-+_mount_flakey
++nr=32
++fnr=18
++for i in $(seq 0 $fnr); do
++	echo " ++ Reflink size $i, $(( (2 ** i) * BLKSZ)) bytes" | tee -a $seqres.full
++	$XFS_IO_PROG -f -c "reflink $TESTDIR/file1 0 $(( (2 ** i) * BLKSZ)) $(( (2 ** i) * BLKSZ ))" $TESTDIR/file1 >> $seqres.full || break
++done
 +
-+# We expect foo to have a size of 125Kb, the first 64Kb of data all having the
-+# value 0xaa and the remaining 61Kb to be a hole (all bytes with value 0x00).
-+echo "File foo content after log replay:"
-+od -t x1 $SCRATCH_MNT/foo
++nrf=$((nr - fnr))
++echo "Clone $((2 ** nrf)) files"
++for i in $(seq 0 $((2 ** nrf)) ); do
++	cp --reflink=always $TESTDIR/file1 $TESTDIR/file1-$i
++done
 +
-+# We expect bar to have a size of 253Kb and no extents (any byte read from bar
-+# has the value 0x00).
-+echo "File bar content after log replay:"
-+od -t x1 $SCRATCH_MNT/bar
++echo "Check scratch fs"
++umount $SCRATCH_MNT
++$XFS_DB_PROG -c 'agf 0' -c 'addr rlroot' -c p $SCRATCH_DEV
++_check_scratch_fs
 +
++echo "Remove big file and recheck"
++_scratch_mount >> $seqres.full 2>&1
++#rm -rf $TESTDIR/file1
++umount $SCRATCH_MNT
++_check_scratch_fs
++
++echo "Remove all files and recheck"
++_scratch_mount >> $seqres.full 2>&1
++#rm -rf $TESTDIR/file2
++umount $SCRATCH_MNT
++_check_scratch_fs
++
++# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/095.out b/tests/generic/095.out
+diff --git a/tests/generic/840.out b/tests/generic/840.out
 new file mode 100644
-index 0000000..89586fe
+index 0000000..e69de29
+diff --git a/tests/generic/841 b/tests/generic/841
+new file mode 100755
+index 0000000..3bf025c
 --- /dev/null
-+++ b/tests/generic/095.out
-@@ -0,0 +1,19 @@
-+QA output created by 095
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 62464/62464 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 62464/62464 bytes at offset 65536
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File foo content after log replay:
-+0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+0200000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0372000
-+File bar content after log replay:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0772000
++++ b/tests/generic/841
+@@ -0,0 +1,87 @@
++#! /bin/bash
++# FS QA Test No. 841
++#
++# Try to run out of space while cloning?
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf $tmp.* $TESTDIR1
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/attr
++
++# real QA test starts here
++_require_test
++_require_scratch
++_require_scratch_reflink
++_require_test_reflink
++_supported_os Linux
++
++_require_xfs_io_command "reflink"
++_require_xfs_io_command "fiemap"
++_require_cp_reflink
++
++rm -f $seqres.full
++
++echo "Format and mount"
++_scratch_mkfs > $seqres.full 2>&1
++_scratch_mount >> $seqres.full 2>&1
++
++TESTDIR=$SCRATCH_MNT/test-$seq
++rm -rf $TESTDIR
++mkdir $TESTDIR
++
++BLKSZ="$(stat -f $TESTDIR -c '%S')"
++NR_FREE="$(stat -f -c '%f' $TESTDIR)"
++echo "Create a big file"
++touch $TESTDIR/file0 $TESTDIR/file1
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $((BLKSZ * NR_FREE))" $TESTDIR/bigfile >> $seqres.full 2>&1
++sz="$(stat -c '%s' $TESTDIR/bigfile)"
++sync
++
++blks="$((sz / BLKSZ))"
++echo "Try to reflink"
++seq 0 $blks | while read lblk; do
++	fname="$TESTDIR/file$((lblk % 2))"
++	out="$($XFS_IO_PROG -f -c "reflink $TESTDIR/bigfile $((lblk * BLKSZ)) $((lblk * BLKSZ)) $BLKSZ" $fname 2>&1)"
++	echo "$out" >> $seqres.full
++	test "$out" = "reflink: No space left on device" && break
++done
++
++echo "Check scratch fs"
++umount $SCRATCH_MNT
++_check_scratch_fs
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/841.out b/tests/generic/841.out
+new file mode 100644
+index 0000000..33c46fd
+--- /dev/null
++++ b/tests/generic/841.out
+@@ -0,0 +1,5 @@
++QA output created by 841
++Format and mount
++Create a big file
++Try to reflink
++Check scratch fs
 diff --git a/tests/generic/group b/tests/generic/group
-index c14ddb9..1f1a0b0 100644
+index af22ccb..b4cb2b7 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -97,6 +97,7 @@
- 092 auto quick prealloc
- 093 attr cap udf auto
- 094 auto quick metadata
-+095 auto quick metadata
- 097 udf auto
- 099 udf auto
- 100 udf auto
--- 
-2.1.3
+@@ -234,3 +234,5 @@
+ 837 auto quick clone
+ 838 auto quick clone
+ 839 auto quick clone
++840
++841 auto quick clone
 

@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:31518 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753419AbbF3EQe (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:35974 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753387AbbF3EQ2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 00:16:34 -0400
-Subject: [PATCH 10/11] test xfs-specific reflink pieces
+	Tue, 30 Jun 2015 00:16:28 -0400
+Subject: [PATCH 09/11] test error conditions on reflink
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Mon, 29 Jun 2015 21:16:28 -0700
-Message-ID: <20150630041628.2476.50781.stgit@birch.djwong.org>
+Date: Mon, 29 Jun 2015 21:16:22 -0700
+Message-ID: <20150630041622.2476.66516.stgit@birch.djwong.org>
 In-Reply-To: <20150630041519.2476.23059.stgit@birch.djwong.org>
 References: <20150630041519.2476.23059.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -18,32 +18,28 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check that growfs and xfs_fsr still work properly on reflinked fses.
+Check that we can feed bad inputs to reflink and it'll reject them.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/xfs/800     |   77 ++++++++++++++++++++++++++++++++++++
- tests/xfs/800.out |    5 ++
- tests/xfs/801     |  114 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/xfs/801.out |   15 +++++++
- tests/xfs/group   |    2 +
- 5 files changed, 213 insertions(+)
- create mode 100755 tests/xfs/800
- create mode 100644 tests/xfs/800.out
- create mode 100755 tests/xfs/801
- create mode 100644 tests/xfs/801.out
+ tests/generic/839     |  123 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/839.out |   30 ++++++++++++
+ tests/generic/group   |    1 
+ 3 files changed, 154 insertions(+)
+ create mode 100755 tests/generic/839
+ create mode 100644 tests/generic/839.out
 
 
-diff --git a/tests/xfs/800 b/tests/xfs/800
+diff --git a/tests/generic/839 b/tests/generic/839
 new file mode 100755
-index 0000000..62b431a
+index 0000000..61532df
 --- /dev/null
-+++ b/tests/xfs/800
-@@ -0,0 +1,77 @@
++++ b/tests/generic/839
+@@ -0,0 +1,123 @@
 +#! /bin/bash
-+# FS QA Test No. 800
++# FS QA Test No. 839
 +#
-+# Tests xfs_growfs on a reflinked filesystem
++# Check that cross-device reflink and dedupe are rejected
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
@@ -61,7 +57,6 @@ index 0000000..62b431a
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
-+#
 +
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq
@@ -75,171 +70,87 @@ index 0000000..62b431a
 +_cleanup()
 +{
 +    cd /
-+    rm -f $tmp.*
++    rm -rf $tmp.* $TESTDIR1
 +}
 +
 +# get standard environment, filters and checks
-+. common/rc
-+. common/filter
++. ./common/rc
++. ./common/filter
++. ./common/attr
 +
 +# real QA test starts here
-+_supported_fs xfs
++_require_test
 +_require_scratch
 +_require_scratch_reflink
++_require_test_reflink
 +_supported_os Linux
 +
 +_require_xfs_io_command "fiemap"
-+_require_cp_reflink
++_require_xfs_io_command "reflink"
++_require_xfs_io_command "dedupe"
 +
-+echo "Format and mount"
-+_scratch_mkfs -d size=$((2 * 4096 * 4096)) -l size=4194304 > $seqres.full 2>&1
-+_scratch_mount >> $seqres.full 2>&1
-+
-+TESTDIR=$SCRATCH_MNT/test-$seq
-+rm -rf $TESTDIR
-+mkdir $TESTDIR
-+
-+echo "Create the original file and reflink to copy1, copy2"
-+$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR/original \
-+    >> $seqres.full 2>&1
-+cp --reflink $TESTDIR/original $TESTDIR/copy1
-+cp --reflink $TESTDIR/copy1 $TESTDIR/copy2
-+
-+echo "Grow fs"
-+$XFS_GROWFS_PROG $SCRATCH_MNT 2>&1 |  _filter_growfs >> $seqres.full
-+
-+xfs_info $SCRATCH_MNT >> $seqres.full
-+
-+echo "Check scratch fs"
-+umount $SCRATCH_MNT
-+_check_scratch_fs
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/xfs/800.out b/tests/xfs/800.out
-new file mode 100644
-index 0000000..280daa5
---- /dev/null
-+++ b/tests/xfs/800.out
-@@ -0,0 +1,5 @@
-+QA output created by 800
-+Format and mount
-+Create the original file and reflink to copy1, copy2
-+Grow fs
-+Check scratch fs
-diff --git a/tests/xfs/801 b/tests/xfs/801
-new file mode 100755
-index 0000000..5a75e5f
---- /dev/null
-+++ b/tests/xfs/801
-@@ -0,0 +1,114 @@
-+#! /bin/bash
-+# FS QA Test No. 801
-+#
-+# Ensure that xfs_fsr un-reflinks files while defragmenting
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. common/rc
-+. common/filter
-+
-+# real QA test starts here
-+_supported_fs xfs
-+_require_scratch
-+_require_scratch_reflink
-+_supported_os Linux
-+
-+_require_xfs_io_command "fiemap"
-+_require_cp_reflink
++rm -f $seqres.full
 +
 +echo "Format and mount"
 +_scratch_mkfs > $seqres.full 2>&1
 +_scratch_mount >> $seqres.full 2>&1
 +
-+TESTDIR=$SCRATCH_MNT/test-$seq
-+rm -rf $TESTDIR
-+mkdir $TESTDIR
++TESTDIR1=$TEST_DIR/test-$seq
++rm -rf $TESTDIR1
++mkdir $TESTDIR1
 +
-+echo "Create the original file and reflink to copy1, copy2"
-+$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 66000' $TESTDIR/original \
-+    >> $seqres.full 2>&1
-+cp --reflink $TESTDIR/original $TESTDIR/copy1
-+cp --reflink $TESTDIR/copy1 $TESTDIR/copy2
-+cp --reflink $TESTDIR/copy2 $TESTDIR/copy3
++TESTDIR2=$SCRATCH_MNT/test-$seq
++rm -rf $TESTDIR2
++mkdir $TESTDIR2
 +
-+echo "CoW the reflink copies"
-+$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 4096' $TESTDIR/copy1 >> $seqres.full
-+$XFS_IO_PROG -f -c 'pwrite -S 0x63 0 4096' $TESTDIR/copy2 >> $seqres.full
++echo "Create the original files"
++BLKSZ="$(stat -f $TESTDIR1 -c '%S')"
++BLKS=1000
++MARGIN=50
++SZ=$((BLKSZ * BLKS))
++FREE_BLOCKS0=$(stat -f $TESTDIR1 -c '%f')
++NR=4
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $SZ" $TESTDIR1/file1 >> $seqres.full
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $SZ" $TESTDIR1/file2 >> $seqres.full
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $SZ" $TESTDIR2/file1 >> $seqres.full
 +sync
 +
-+echo "Defragment"
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/original >> $seqres.full
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy1 >> $seqres.full
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy2 >> $seqres.full
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy3 >> $seqres.full
-+lsattr -l $TESTDIR/ | sed -e "s,$SCRATCH_MNT,SCRATCH_MNT,g"
-+xfs_fsr -v -d $TESTDIR/original >> $seqres.full
-+xfs_fsr -v -d $TESTDIR/copy1 >> $seqres.full
-+xfs_fsr -v -d $TESTDIR/copy2 >> $seqres.full
-+xfs_fsr -v -d $TESTDIR/copy3 >> $seqres.full
++echo "Try cross-device reflink"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR2/file1
++echo "Try cross-device dedupe"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR2/file1
 +
-+echo "Check fiemap"
-+lsattr -l $TESTDIR/ | sed -e "s,$SCRATCH_MNT,SCRATCH_MNT,g"
-+cmp -s <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/original | tail -n +2) \
-+       <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy3 | tail -n +2) \
-+       || echo "Sections should match"
-+cmp -s <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/original | tail -n +2) \
-+       <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy1 | tail -n +2) \
-+       && echo "Sections shouldn't match"
-+cmp -s <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/original | tail -n +2) \
-+       <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy2 | tail -n +2) \
-+       && echo "Sections shouldn't match"
-+cmp -s <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy1 | tail -n +2) \
-+       <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy2 | tail -n +2) \
-+       && echo "Sections shouldn't match"
-+cmp -s <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy1 | tail -n +2) \
-+       <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy3 | tail -n +2) \
-+       && echo "Sections shouldn't match"
-+cmp -s <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy2 | tail -n +2) \
-+       <($XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy3 | tail -n +2) \
-+       && echo "Sections shouldn't match"
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/original >> $seqres.full
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy1 >> $seqres.full
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy2 >> $seqres.full
-+$XFS_IO_PROG -f -c 'fiemap -v' $TESTDIR/copy3 >> $seqres.full
++echo "Try unaligned reflink"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 37 59 23" $TESTDIR1/file2
++echo "Try unaligned dedupe"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file1 37 59 23" $TESTDIR1/file2
++
++echo "Try overlapping reflink"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR1/file1
++echo "Try overlapping dedupe"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file2 0 0 $BLKSZ" $TESTDIR1/file2
++
++echo "Try reflink past EOF"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 $(( (BLKS + 1000) * BLKSZ)) 0 $BLKSZ" $TESTDIR1/file1
++echo "Try dedupe past EOF"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file2 $(( (BLKS + 1000) * BLKSZ)) 0 $BLKSZ" $TESTDIR1/file2
++
++chattr +i $TESTDIR1/file1 $TESTDIR1/file2
++echo "Try reflink on immutable files"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR1/file2 > $seqres.full
++echo "Try dedupe on immutable files"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 $BLKSZ $BLKSZ $BLKSZ" $TESTDIR1/file2 > $seqres.full
++chattr -i $TESTDIR1/file1 $TESTDIR1/file2
++
++echo "Reflink two files"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR1/file2 > $seqres.full
++$XFS_IO_PROG -f -c "reflink $TESTDIR2/file1 0 0 $BLKSZ" $TESTDIR2/file2 > $seqres.full
++echo "Dedupe two files"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file1 $BLKSZ $BLKSZ $BLKSZ" $TESTDIR1/file2 > $seqres.full
++$XFS_IO_PROG -f -c "dedupe $TESTDIR2/file1 $BLKSZ $BLKSZ $BLKSZ" $TESTDIR2/file2 > $seqres.full
++
++lsattr -l $TESTDIR1/ | _filter_test_dir
++lsattr -l $TESTDIR2/ | sed -e "s,$SCRATCH_MNT,SCRATCH_MNT,g"
 +
 +echo "Check scratch fs"
 +umount $SCRATCH_MNT
@@ -248,35 +159,49 @@ index 0000000..5a75e5f
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/xfs/801.out b/tests/xfs/801.out
+diff --git a/tests/generic/839.out b/tests/generic/839.out
 new file mode 100644
-index 0000000..74e7757
+index 0000000..91a2425
 --- /dev/null
-+++ b/tests/xfs/801.out
-@@ -0,0 +1,15 @@
-+QA output created by 801
++++ b/tests/generic/839.out
+@@ -0,0 +1,30 @@
++QA output created by 839
 +Format and mount
-+Create the original file and reflink to copy1, copy2
-+CoW the reflink copies
-+Defragment
-+SCRATCH_MNT/test-801/original       ---
-+SCRATCH_MNT/test-801/copy1          ---
-+SCRATCH_MNT/test-801/copy2          ---
-+SCRATCH_MNT/test-801/copy3          ---
-+Check fiemap
-+SCRATCH_MNT/test-801/original       ---
-+SCRATCH_MNT/test-801/copy1          No_COW
-+SCRATCH_MNT/test-801/copy2          No_COW
-+SCRATCH_MNT/test-801/copy3          ---
++Create the original files
++Try cross-device reflink
++reflink: Invalid cross-device link
++Try cross-device dedupe
++dedupe: Invalid cross-device link
++Try unaligned reflink
++reflink: Invalid argument
++Try unaligned dedupe
++dedupe: Invalid argument
++Try overlapping reflink
++reflink: Invalid argument
++Try overlapping dedupe
++dedupe: Invalid argument
++Try reflink past EOF
++reflink: Invalid argument
++Try dedupe past EOF
++dedupe: Invalid argument
++Try reflink on immutable files
++/mnt/test-839/file2: Permission denied
++Try dedupe on immutable files
++/mnt/test-839/file2: Permission denied
++Reflink two files
++Dedupe two files
++TEST_DIR/test-839/file1          ---
++TEST_DIR/test-839/file2          ---
++SCRATCH_MNT/test-839/file1          ---
++SCRATCH_MNT/test-839/file2          ---
 +Check scratch fs
-diff --git a/tests/xfs/group b/tests/xfs/group
-index c12b90a..db0694e 100644
---- a/tests/xfs/group
-+++ b/tests/xfs/group
-@@ -193,3 +193,5 @@
- 304 auto quick quota
- 305 auto quota
- 700 fuzzers
-+800 auto quick clone
-+801 auto quick clone
+diff --git a/tests/generic/group b/tests/generic/group
+index c0a508d..af22ccb 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -233,3 +233,4 @@
+ 836 auto quick clone
+ 837 auto quick clone
+ 838 auto quick clone
++839 auto quick clone
 

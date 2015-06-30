@@ -1,142 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55429 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:55422 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752865AbbF3VmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 17:42:24 -0400
+	id S1750940AbbF3VmW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 17:42:22 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: Chris Mason <clm@fb.com>
 Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
         linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 4/5] btrfs: allow dedupe of same inode
-Date: Tue, 30 Jun 2015 14:42:07 -0700
-Message-Id: <1435700528-14141-5-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 3/5] btrfs: fix clone / extent-same deadlocks
+Date: Tue, 30 Jun 2015 14:42:06 -0700
+Message-Id: <1435700528-14141-4-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
 References: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-clone() supports cloning within an inode so extent-same can do
-the same now. This patch fixes up the locking in extent-same to
-know about the single-inode case. In addition to that, we add a
-check for overlapping ranges, which clone does not allow.
+Clone and extent same lock their source and target inodes in opposite order.
+In addition to this, the range locking in clone doesn't take ordering into
+account. Fix this by having clone use the same locking helpers as
+btrfs-extent-same.
+
+In addition, I do a small cleanup of the locking helpers, removing a case
+(both inodes being the same) which was poorly accounted for and never
+actually used by the callers.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 Reviewed-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ioctl.c | 76 ++++++++++++++++++++++++++++++++++++++++++++------------
- 1 file changed, 60 insertions(+), 16 deletions(-)
+ fs/btrfs/ioctl.c | 34 ++++++++--------------------------
+ 1 file changed, 8 insertions(+), 26 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8d6887d..83f4679 100644
+index b899584..8d6887d 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -2979,27 +2979,61 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	int ret;
- 	u64 len = olen;
- 	struct cmp_pages cmp;
-+	int same_inode = 0;
-+	u64 same_lock_start = 0;
-+	u64 same_lock_len = 0;
+@@ -2831,8 +2831,7 @@ static void btrfs_double_inode_lock(struct inode *inode1, struct inode *inode2)
+ 		swap(inode1, inode2);
  
--	/*
--	 * btrfs_clone() can't handle extents in the same file
--	 * yet. Once that works, we can drop this check and replace it
--	 * with a check for the same inode, but overlapping extents.
--	 */
- 	if (src == dst)
--		return -EINVAL;
-+		same_inode = 1;
- 
- 	if (len == 0)
- 		return 0;
- 
--	btrfs_double_inode_lock(src, dst);
-+	if (same_inode) {
-+		mutex_lock(&src->i_mutex);
- 
--	ret = extent_same_check_offsets(src, loff, &len, olen);
--	if (ret)
--		goto out_unlock;
-+		ret = extent_same_check_offsets(src, loff, &len, olen);
-+		if (ret)
-+			goto out_unlock;
- 
--	ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
--	if (ret)
--		goto out_unlock;
-+		/*
-+		 * Single inode case wants the same checks, except we
-+		 * don't want our length pushed out past i_size as
-+		 * comparing that data range makes no sense.
-+		 *
-+		 * extent_same_check_offsets() will do this for an
-+		 * unaligned length at i_size, so catch it here and
-+		 * reject the request.
-+		 *
-+		 * This effectively means we require aligned extents
-+		 * for the single-inode case, whereas the other cases
-+		 * allow an unaligned length so long as it ends at
-+		 * i_size.
-+		 */
-+		if (len != olen) {
-+			ret = -EINVAL;
-+			goto out_unlock;
-+		}
-+
-+		/* Check for overlapping ranges */
-+		if (dst_loff + len > loff && dst_loff < loff + len) {
-+			ret = -EINVAL;
-+			goto out_unlock;
-+		}
-+
-+		same_lock_start = min_t(u64, loff, dst_loff);
-+		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
-+	} else {
-+		btrfs_double_inode_lock(src, dst);
-+
-+		ret = extent_same_check_offsets(src, loff, &len, olen);
-+		if (ret)
-+			goto out_unlock;
-+
-+		ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
-+		if (ret)
-+			goto out_unlock;
-+	}
- 
- 	/* don't make the dst file partly checksummed */
- 	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
-@@ -3012,18 +3046,28 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 	if (ret)
- 		goto out_unlock;
- 
--	btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
-+	if (same_inode)
-+		lock_extent_range(src, same_lock_start, same_lock_len);
-+	else
-+		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
- 
- 	/* pass original length for comparison so we stay within i_size */
- 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
- 	if (ret == 0)
- 		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
- 
--	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
-+	if (same_inode)
-+		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
-+			      same_lock_start + same_lock_len - 1);
-+	else
-+		btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
- 
- 	btrfs_cmp_data_free(&cmp);
- out_unlock:
--	btrfs_double_inode_unlock(src, dst);
-+	if (same_inode)
-+		mutex_unlock(&src->i_mutex);
-+	else
-+		btrfs_double_inode_unlock(src, dst);
- 
- 	return ret;
+ 	mutex_lock_nested(&inode1->i_mutex, I_MUTEX_PARENT);
+-	if (inode1 != inode2)
+-		mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
++	mutex_lock_nested(&inode2->i_mutex, I_MUTEX_CHILD);
  }
+ 
+ static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
+@@ -2850,8 +2849,7 @@ static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
+ 		swap(loff1, loff2);
+ 	}
+ 	lock_extent_range(inode1, loff1, len);
+-	if (inode1 != inode2)
+-		lock_extent_range(inode2, loff2, len);
++	lock_extent_range(inode2, loff2, len);
+ }
+ 
+ struct cmp_pages {
+@@ -3713,13 +3711,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 		goto out_fput;
+ 
+ 	if (!same_inode) {
+-		if (inode < src) {
+-			mutex_lock_nested(&inode->i_mutex, I_MUTEX_PARENT);
+-			mutex_lock_nested(&src->i_mutex, I_MUTEX_CHILD);
+-		} else {
+-			mutex_lock_nested(&src->i_mutex, I_MUTEX_PARENT);
+-			mutex_lock_nested(&inode->i_mutex, I_MUTEX_CHILD);
+-		}
++		btrfs_double_inode_lock(src, inode);
+ 	} else {
+ 		mutex_lock(&src->i_mutex);
+ 	}
+@@ -3769,8 +3761,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 
+ 		lock_extent_range(src, lock_start, lock_len);
+ 	} else {
+-		lock_extent_range(src, off, len);
+-		lock_extent_range(inode, destoff, len);
++		btrfs_double_extent_lock(src, off, inode, destoff, len);
+ 	}
+ 
+ 	ret = btrfs_clone(src, inode, off, olen, len, destoff);
+@@ -3781,9 +3772,7 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 
+ 		unlock_extent(&BTRFS_I(src)->io_tree, lock_start, lock_end);
+ 	} else {
+-		unlock_extent(&BTRFS_I(src)->io_tree, off, off + len - 1);
+-		unlock_extent(&BTRFS_I(inode)->io_tree, destoff,
+-			      destoff + len - 1);
++		btrfs_double_extent_unlock(src, off, inode, destoff, len);
+ 	}
+ 	/*
+ 	 * Truncate page cache pages so that future reads will see the cloned
+@@ -3792,17 +3781,10 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
+ 	truncate_inode_pages_range(&inode->i_data, destoff,
+ 				   PAGE_CACHE_ALIGN(destoff + len) - 1);
+ out_unlock:
+-	if (!same_inode) {
+-		if (inode < src) {
+-			mutex_unlock(&src->i_mutex);
+-			mutex_unlock(&inode->i_mutex);
+-		} else {
+-			mutex_unlock(&inode->i_mutex);
+-			mutex_unlock(&src->i_mutex);
+-		}
+-	} else {
++	if (!same_inode)
++		btrfs_double_inode_unlock(src, inode);
++	else
+ 		mutex_unlock(&src->i_mutex);
+-	}
+ out_fput:
+ 	fdput(src_file);
+ out_drop_write:
 -- 
 2.1.2
 

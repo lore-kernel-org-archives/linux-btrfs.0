@@ -1,61 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:55408 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:55429 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752114AbbF3VmR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 17:42:17 -0400
+	id S1752865AbbF3VmY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 17:42:24 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: Chris Mason <clm@fb.com>
 Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.cz>,
-        linux-btrfs@vger.kernel.org
-Subject: [PATCH 0/5] btrfs: dedupe fixes, features V5
-Date: Tue, 30 Jun 2015 14:42:03 -0700
-Message-Id: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
+        linux-btrfs@vger.kernel.org, Mark Fasheh <mfasheh@suse.de>
+Subject: [PATCH 4/5] btrfs: allow dedupe of same inode
+Date: Tue, 30 Jun 2015 14:42:07 -0700
+Message-Id: <1435700528-14141-5-git-send-email-mfasheh@suse.de>
+In-Reply-To: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
+References: <1435700528-14141-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+clone() supports cloning within an inode so extent-same can do
+the same now. This patch fixes up the locking in extent-same to
+know about the single-inode case. In addition to that, we add a
+check for overlapping ranges, which clone does not allow.
 
-   The following patches are based on top of my patch titled "btrfs:
-Handle unaligned length in extent_same" which you have in your
-'integration-4.2' branch:
+Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Reviewed-by: David Sterba <dsterba@suse.cz>
+---
+ fs/btrfs/ioctl.c | 76 ++++++++++++++++++++++++++++++++++++++++++++------------
+ 1 file changed, 60 insertions(+), 16 deletions(-)
 
-https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/?id=e1d227a42ea2b4664f94212bd1106b9a3413ffb8
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8d6887d..83f4679 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2979,27 +2979,61 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 	int ret;
+ 	u64 len = olen;
+ 	struct cmp_pages cmp;
++	int same_inode = 0;
++	u64 same_lock_start = 0;
++	u64 same_lock_len = 0;
+ 
+-	/*
+-	 * btrfs_clone() can't handle extents in the same file
+-	 * yet. Once that works, we can drop this check and replace it
+-	 * with a check for the same inode, but overlapping extents.
+-	 */
+ 	if (src == dst)
+-		return -EINVAL;
++		same_inode = 1;
+ 
+ 	if (len == 0)
+ 		return 0;
+ 
+-	btrfs_double_inode_lock(src, dst);
++	if (same_inode) {
++		mutex_lock(&src->i_mutex);
+ 
+-	ret = extent_same_check_offsets(src, loff, &len, olen);
+-	if (ret)
+-		goto out_unlock;
++		ret = extent_same_check_offsets(src, loff, &len, olen);
++		if (ret)
++			goto out_unlock;
+ 
+-	ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
+-	if (ret)
+-		goto out_unlock;
++		/*
++		 * Single inode case wants the same checks, except we
++		 * don't want our length pushed out past i_size as
++		 * comparing that data range makes no sense.
++		 *
++		 * extent_same_check_offsets() will do this for an
++		 * unaligned length at i_size, so catch it here and
++		 * reject the request.
++		 *
++		 * This effectively means we require aligned extents
++		 * for the single-inode case, whereas the other cases
++		 * allow an unaligned length so long as it ends at
++		 * i_size.
++		 */
++		if (len != olen) {
++			ret = -EINVAL;
++			goto out_unlock;
++		}
++
++		/* Check for overlapping ranges */
++		if (dst_loff + len > loff && dst_loff < loff + len) {
++			ret = -EINVAL;
++			goto out_unlock;
++		}
++
++		same_lock_start = min_t(u64, loff, dst_loff);
++		same_lock_len = max_t(u64, loff, dst_loff) + len - same_lock_start;
++	} else {
++		btrfs_double_inode_lock(src, dst);
++
++		ret = extent_same_check_offsets(src, loff, &len, olen);
++		if (ret)
++			goto out_unlock;
++
++		ret = extent_same_check_offsets(dst, dst_loff, &len, olen);
++		if (ret)
++			goto out_unlock;
++	}
+ 
+ 	/* don't make the dst file partly checksummed */
+ 	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
+@@ -3012,18 +3046,28 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 	if (ret)
+ 		goto out_unlock;
+ 
+-	btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
++	if (same_inode)
++		lock_extent_range(src, same_lock_start, same_lock_len);
++	else
++		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
+ 
+ 	/* pass original length for comparison so we stay within i_size */
+ 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
+ 	if (ret == 0)
+ 		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff);
+ 
+-	btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
++	if (same_inode)
++		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
++			      same_lock_start + same_lock_len - 1);
++	else
++		btrfs_double_extent_unlock(src, loff, dst, dst_loff, len);
+ 
+ 	btrfs_cmp_data_free(&cmp);
+ out_unlock:
+-	btrfs_double_inode_unlock(src, dst);
++	if (same_inode)
++		mutex_unlock(&src->i_mutex);
++	else
++		btrfs_double_inode_unlock(src, dst);
+ 
+ 	return ret;
+ }
+-- 
+2.1.2
 
-The series contains three fixes and two features.
-
-The first patch in the series fixes a bug where we were sometimes
-passing the aligned length to our comparison function. We actually can
-stop at the user passed length for this as we don't need to compare
-data past i_size (and we only align if the extents go out to i_size).
-
-The 2nd patch fixes a deadlock between btrfs readpage and
-btrfs_extent_same. This was reported on the list some months ago -
-basically we had the page and extent locking reversed. My patch fixes
-up the locking to be in the right order.
-
-The 3rd patch fixes a deadlocks in clone() (wrt extent-same) which
-David found while reviewing my fixes. I also found that clone doesn't
-lock extent ranges in any particular order which could obvioulsy be a
-problem so that is fixed there too.
-
-The last two patches add features which have been requested often by
-users - the 4th adds the ability to dedupe within the same inode, and
-the last patch fixes up the clone code to skip updating mtime and
-ctime when called from extent-same (this helps with backup software
-which is being confused into re-backing up deduped files).
-
-
-Changes from V4 to V5:
-  - don't update ctime either in patch #5
-
-Changes from V3 to V4:
-  - change mtime patch from a flag to default behavior
-
-Changes from V2 to V3:
-  - better flag naming in patch #5, thanks to David
-
-Changes from V1 to V2:
-  - added patches 3-5
-
-Thanks,
-   --Mark

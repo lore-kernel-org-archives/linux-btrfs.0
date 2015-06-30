@@ -1,196 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:41120 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752194AbbF3ITP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 04:19:15 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix memory corruption on failure to submit bio for direct IO
-Date: Mon, 29 Jun 2015 23:43:33 +0100
-Message-Id: <1435617813-20659-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-ie0-f177.google.com ([209.85.223.177]:34890 "EHLO
+	mail-ie0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751754AbbF3IYc (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 04:24:32 -0400
+Received: by iecuq6 with SMTP id uq6so7280770iec.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2015 01:24:32 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1435637715-16332-1-git-send-email-dccitaliano@gmail.com>
+References: <1435528041-20878-3-git-send-email-dccitaliano@gmail.com>
+	<1435637715-16332-1-git-send-email-dccitaliano@gmail.com>
+Date: Tue, 30 Jun 2015 09:24:32 +0100
+Message-ID: <CAL3q7H7uA=JoYbK1H_1mURrNDMyg2A=T+e57QAa98pRgwjt01Q@mail.gmail.com>
+Subject: Re: [PATCH 2/2] [btrfs] btrfs_rename(): don't ignore
+ btrfs_end_transaction() return
+From: Filipe David Manana <fdmanana@gmail.com>
+To: "Davide C. C. Italiano" <dccitaliano@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Jun 30, 2015 at 5:15 AM, Davide C. C. Italiano
+<dccitaliano@gmail.com> wrote:
+> From: Davide Italiano <dccitaliano@gmail.com>
+>
+> btrfs_end_transaction() can return an error -- this happens, e.g.
+> if it tries to commit and the transaction was aborted in the meanhwile.
+> Swallowing the error is wrong, so explicitly return it.
+>
+> Signed-off-by: Davide Italiano <dccitaliano@gmail.com>
+> ---
+>  fs/btrfs/inode.c | 3 ++-
+>  1 file changed, 2 insertions(+), 1 deletion(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 59c475c..61b26be 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -9199,7 +9199,8 @@ static int btrfs_rename(struct inode *old_dir, struct dentry *old_dentry,
+>                 btrfs_end_log_trans(root);
+>         }
+>  out_fail:
+> -       btrfs_end_transaction(trans, root);
+> +       if (!ret)
+> +               ret = btrfs_end_transaction(trans, root);
 
-If we fail to submit a bio for a direct IO request, we were grabbing the
-corresponding ordered extent and decrementing its reference count twice,
-once for our lookup reference and once for the ordered tree reference.
-This was a problem because it caused the ordered extent to be freed
-without removing it from the ordered tree and any lists it might be
-attached to, leaving dangling pointers to the ordered extent around.
-Example trace with CONFIG_DEBUG_PAGEALLOC=y:
+So it an error happened before, we still want to call
+btrfs_end_transaction(), otherwise the transaction's refcount never
+drops to 0 and its resources are never freed (memory).
 
-[161779.858707] BUG: unable to handle kernel paging request at 0000000087654330
-[161779.859983] IP: [<ffffffff8124ca68>] rb_prev+0x22/0x3b
-[161779.860636] PGD 34d818067 PUD 0
-[161779.860636] Oops: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-(...)
-[161779.860636] Call Trace:
-[161779.860636]  [<ffffffffa06b36a6>] __tree_search+0xd9/0xf9 [btrfs]
-[161779.860636]  [<ffffffffa06b3708>] tree_search+0x42/0x63 [btrfs]
-[161779.860636]  [<ffffffffa06b4868>] ? btrfs_lookup_ordered_range+0x2d/0xa5 [btrfs]
-[161779.860636]  [<ffffffffa06b4873>] btrfs_lookup_ordered_range+0x38/0xa5 [btrfs]
-[161779.860636]  [<ffffffffa06aab8e>] btrfs_get_blocks_direct+0x11b/0x615 [btrfs]
-[161779.860636]  [<ffffffff8119727f>] do_blockdev_direct_IO+0x5ff/0xb43
-[161779.860636]  [<ffffffffa06aaa73>] ? btrfs_page_exists_in_range+0x1ad/0x1ad [btrfs]
-[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
-[161779.860636]  [<ffffffff811977f5>] __blockdev_direct_IO+0x32/0x34
-[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
-[161779.860636]  [<ffffffffa06a10ae>] btrfs_direct_IO+0x198/0x21f [btrfs]
-[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
-[161779.860636]  [<ffffffff81112ca1>] generic_file_direct_write+0xb3/0x128
-[161779.860636]  [<ffffffffa06affaa>] ? btrfs_file_write_iter+0x15f/0x3e0 [btrfs]
-[161779.860636]  [<ffffffffa06b004c>] btrfs_file_write_iter+0x201/0x3e0 [btrfs]
-(...)
+Something like this:
 
-We were also not freeing the btrfs_dio_private we allocated previously,
-which kmemleak reported with the following trace in its sysfs file:
+if (ret)
+    btrfs_end_transaction(trans, root);
+else
+    ret = btrfs_end_transaction(trans, root);
 
-unreferenced object 0xffff8803f553bf80 (size 96):
-  comm "xfs_io", pid 4501, jiffies 4295039588 (age 173.936s)
-  hex dump (first 32 bytes):
-    88 6c 9b f5 02 88 ff ff 00 00 00 00 00 00 00 00  .l..............
-    00 00 00 00 00 00 00 00 00 00 c4 00 00 00 00 00  ................
-  backtrace:
-    [<ffffffff81161ffe>] create_object+0x172/0x29a
-    [<ffffffff8145870f>] kmemleak_alloc+0x25/0x41
-    [<ffffffff81154e64>] kmemleak_alloc_recursive.constprop.40+0x16/0x18
-    [<ffffffff811579ed>] kmem_cache_alloc_trace+0xfb/0x148
-    [<ffffffffa03d8cff>] btrfs_submit_direct+0x65/0x16a [btrfs]
-    [<ffffffff811968dc>] dio_bio_submit+0x62/0x8f
-    [<ffffffff811975fe>] do_blockdev_direct_IO+0x97e/0xb43
-    [<ffffffff811977f5>] __blockdev_direct_IO+0x32/0x34
-    [<ffffffffa03d70ae>] btrfs_direct_IO+0x198/0x21f [btrfs]
-    [<ffffffff81112ca1>] generic_file_direct_write+0xb3/0x128
-    [<ffffffffa03e604d>] btrfs_file_write_iter+0x201/0x3e0 [btrfs]
-    [<ffffffff8116586a>] __vfs_write+0x7c/0xa5
-    [<ffffffff81165da9>] vfs_write+0xa0/0xe4
-    [<ffffffff81166675>] SyS_pwrite64+0x64/0x82
-    [<ffffffff81464fd7>] system_call_fastpath+0x12/0x6f
-    [<ffffffffffffffff>] 0xffffffffffffffff
+or
 
-For read requests we weren't doing any cleanup either (none of the work
-done by btrfs_endio_direct_read()).
+int ret2;
 
-So fix this by making sure we do the same cleanup that we do for the case
-where the bio submission succeeds.
+ret2 = btrfs_end_transaction(trans, root);
+if (!ret)
+    ret = ret2;
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c        | 55 +++++++++++++++++++++++++++++++++----------------
- fs/btrfs/ordered-data.c |  5 +++++
- 2 files changed, 42 insertions(+), 18 deletions(-)
+Also don't forget to target your patches with V<number> and describe
+and what changed between patch versions (see
+https://btrfs.wiki.kernel.org/index.php/Writing_patch_for_btrfs for
+instructions about how to do it).
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f569d26..52d02c9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8161,9 +8161,8 @@ out_err:
- static void btrfs_submit_direct(int rw, struct bio *dio_bio,
- 				struct inode *inode, loff_t file_offset)
- {
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_dio_private *dip;
--	struct bio *io_bio;
-+	struct btrfs_dio_private *dip = NULL;
-+	struct bio *io_bio = NULL;
- 	struct btrfs_io_bio *btrfs_bio;
- 	int skip_sum;
- 	int write = rw & REQ_WRITE;
-@@ -8180,7 +8179,7 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
- 	dip = kzalloc(sizeof(*dip), GFP_NOFS);
- 	if (!dip) {
- 		ret = -ENOMEM;
--		goto free_io_bio;
-+		goto free_ordered;
- 	}
- 
- 	dip->private = dio_bio->bi_private;
-@@ -8208,25 +8207,45 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
- 
- 	if (btrfs_bio->end_io)
- 		btrfs_bio->end_io(btrfs_bio, ret);
--free_io_bio:
--	bio_put(io_bio);
- 
- free_ordered:
- 	/*
--	 * If this is a write, we need to clean up the reserved space and kill
--	 * the ordered extent.
-+	 * If we arrived here it means either we failed to submit the dip
-+	 * or we either failed to clone the dio_bio or failed to allocate the
-+	 * dip. If we cloned the dio_bio and allocated the dip, we can just
-+	 * call bio_endio against our io_bio so that we get proper resource
-+	 * cleanup if we fail to submit the dip, otherwise, we must do the
-+	 * same as btrfs_endio_direct_[write|read] because we can't call these
-+	 * callbacks - they require an allocated dip and a clone of dio_bio.
- 	 */
--	if (write) {
--		struct btrfs_ordered_extent *ordered;
--		ordered = btrfs_lookup_ordered_extent(inode, file_offset);
--		if (!test_bit(BTRFS_ORDERED_PREALLOC, &ordered->flags) &&
--		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
--			btrfs_free_reserved_extent(root, ordered->start,
--						   ordered->disk_len, 1);
--		btrfs_put_ordered_extent(ordered);
--		btrfs_put_ordered_extent(ordered);
-+	if (io_bio && dip) {
-+		bio_endio(io_bio, ret);
-+		io_bio = NULL;
-+		dip = NULL;
-+	} else {
-+		if (write) {
-+			struct btrfs_ordered_extent *ordered;
-+
-+			ordered = btrfs_lookup_ordered_extent(inode,
-+							      file_offset);
-+			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
-+			/*
-+			 * Decrements our ref on the ordered extent and removes
-+			 * the ordered extent from the inode's ordered tree,
-+			 * doing all the proper resource cleanup such as for the
-+			 * reserved space.
-+			 */
-+			btrfs_finish_ordered_io(ordered);
-+		} else {
-+			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
-+			      file_offset + dio_bio->bi_iter.bi_size - 1);
-+		}
-+		clear_bit(BIO_UPTODATE, &dio_bio->bi_flags);
-+		dio_end_io(dio_bio, ret);
- 	}
--	bio_endio(dio_bio, ret);
-+	if (io_bio)
-+		bio_put(io_bio);
-+	kfree(dip);
- }
- 
- static ssize_t check_direct_IO(struct btrfs_root *root, struct kiocb *iocb,
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 8f391fd..6c095ad 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -559,6 +559,10 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
- 	trace_btrfs_ordered_extent_put(entry->inode, entry);
- 
- 	if (atomic_dec_and_test(&entry->refs)) {
-+		ASSERT(list_empty(&entry->log_list));
-+		ASSERT(list_empty(&entry->trans_list));
-+		ASSERT(list_empty(&entry->root_extent_list));
-+		ASSERT(RB_EMPTY_NODE(&entry->rb_node));
- 		if (entry->inode)
- 			btrfs_add_delayed_iput(entry->inode);
- 		while (!list_empty(&entry->list)) {
-@@ -586,6 +590,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
- 	spin_lock_irq(&tree->lock);
- 	node = &entry->rb_node;
- 	rb_erase(node, &tree->tree);
-+	RB_CLEAR_NODE(node);
- 	if (tree->last == node)
- 		tree->last = NULL;
- 	set_bit(BTRFS_ORDERED_COMPLETE, &entry->flags);
+thanks
+
+>  out_notrans:
+>         if (old_ino == BTRFS_FIRST_FREE_OBJECTID)
+>                 up_read(&root->fs_info->subvol_sem);
+> --
+> 2.4.3
+>
+
+
+
 -- 
-2.1.3
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

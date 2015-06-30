@@ -1,254 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:53966 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:54035 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752321AbbF3WSC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 18:18:02 -0400
+	id S1751496AbbF3WUr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 18:20:47 -0400
 From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org, clm@fb.com
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix memory corruption on failure to submit bio for direct IO
-Date: Tue, 30 Jun 2015 23:17:36 +0100
-Message-Id: <1435702656-16995-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1435617813-20659-1-git-send-email-fdmanana@kernel.org>
-References: <1435617813-20659-1-git-send-email-fdmanana@kernel.org>
+Subject: [GIT PULL] Btrfs bug fixes
+Date: Tue, 30 Jun 2015 23:20:31 +0100
+Message-Id: <1435702831-25334-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-If we fail to submit a bio for a direct IO request, we were grabbing the
-corresponding ordered extent and decrementing its reference count twice,
-once for our lookup reference and once for the ordered tree reference.
-This was a problem because it caused the ordered extent to be freed
-without removing it from the ordered tree and any lists it might be
-attached to, leaving dangling pointers to the ordered extent around.
-Example trace with CONFIG_DEBUG_PAGEALLOC=y:
+Hi Chris,
 
-[161779.858707] BUG: unable to handle kernel paging request at 0000000087654330
-[161779.859983] IP: [<ffffffff8124ca68>] rb_prev+0x22/0x3b
-[161779.860636] PGD 34d818067 PUD 0
-[161779.860636] Oops: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-(...)
-[161779.860636] Call Trace:
-[161779.860636]  [<ffffffffa06b36a6>] __tree_search+0xd9/0xf9 [btrfs]
-[161779.860636]  [<ffffffffa06b3708>] tree_search+0x42/0x63 [btrfs]
-[161779.860636]  [<ffffffffa06b4868>] ? btrfs_lookup_ordered_range+0x2d/0xa5 [btrfs]
-[161779.860636]  [<ffffffffa06b4873>] btrfs_lookup_ordered_range+0x38/0xa5 [btrfs]
-[161779.860636]  [<ffffffffa06aab8e>] btrfs_get_blocks_direct+0x11b/0x615 [btrfs]
-[161779.860636]  [<ffffffff8119727f>] do_blockdev_direct_IO+0x5ff/0xb43
-[161779.860636]  [<ffffffffa06aaa73>] ? btrfs_page_exists_in_range+0x1ad/0x1ad [btrfs]
-[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
-[161779.860636]  [<ffffffff811977f5>] __blockdev_direct_IO+0x32/0x34
-[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
-[161779.860636]  [<ffffffffa06a10ae>] btrfs_direct_IO+0x198/0x21f [btrfs]
-[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
-[161779.860636]  [<ffffffff81112ca1>] generic_file_direct_write+0xb3/0x128
-[161779.860636]  [<ffffffffa06affaa>] ? btrfs_file_write_iter+0x15f/0x3e0 [btrfs]
-[161779.860636]  [<ffffffffa06b004c>] btrfs_file_write_iter+0x201/0x3e0 [btrfs]
-(...)
+Please consider the following changes (or a subset at your will in case
+they are too many or too large) for the kernel 4.2 release. All these
+patches have been available in the mailing list for at least 2 weeks.
 
-We were also not freeing the btrfs_dio_private we allocated previously,
-which kmemleak reported with the following trace in its sysfs file:
+They are all bug fixes and deal with races, crashes, memory corruption,
+hangs and data loss on fsync. No cleanups, refactorings or other cosmetic
+changes that don't affect users, except for a change that updates a
+comment added in a change that was already sent to Linus (but that can
+hardly introduce any regression).
 
-unreferenced object 0xffff8803f553bf80 (size 96):
-  comm "xfs_io", pid 4501, jiffies 4295039588 (age 173.936s)
-  hex dump (first 32 bytes):
-    88 6c 9b f5 02 88 ff ff 00 00 00 00 00 00 00 00  .l..............
-    00 00 00 00 00 00 00 00 00 00 c4 00 00 00 00 00  ................
-  backtrace:
-    [<ffffffff81161ffe>] create_object+0x172/0x29a
-    [<ffffffff8145870f>] kmemleak_alloc+0x25/0x41
-    [<ffffffff81154e64>] kmemleak_alloc_recursive.constprop.40+0x16/0x18
-    [<ffffffff811579ed>] kmem_cache_alloc_trace+0xfb/0x148
-    [<ffffffffa03d8cff>] btrfs_submit_direct+0x65/0x16a [btrfs]
-    [<ffffffff811968dc>] dio_bio_submit+0x62/0x8f
-    [<ffffffff811975fe>] do_blockdev_direct_IO+0x97e/0xb43
-    [<ffffffff811977f5>] __blockdev_direct_IO+0x32/0x34
-    [<ffffffffa03d70ae>] btrfs_direct_IO+0x198/0x21f [btrfs]
-    [<ffffffff81112ca1>] generic_file_direct_write+0xb3/0x128
-    [<ffffffffa03e604d>] btrfs_file_write_iter+0x201/0x3e0 [btrfs]
-    [<ffffffff8116586a>] __vfs_write+0x7c/0xa5
-    [<ffffffff81165da9>] vfs_write+0xa0/0xe4
-    [<ffffffff81166675>] SyS_pwrite64+0x64/0x82
-    [<ffffffff81464fd7>] system_call_fastpath+0x12/0x6f
-    [<ffffffffffffffff>] 0xffffffffffffffff
+I have included 2 fixes from Liu related to error handling of direct IO
+writes because not only they seem important to me, I also tested and
+reviewed them. My recent patch for direct IO error handling (not included
+in this pull request because it's too fresh) does not depend on Liu's
+fixes, it's for a different error case (when we fail to submit the bios),
+and can be tested/applied with or without his fixes.
 
-For read requests we weren't doing any cleanup either (none of the work
-done by btrfs_endio_direct_read()), so a failure submitting a bio for a
-read request would leave a range in the inode's io_tree locked forever,
-blocking any future operations (both reads and writes) against that range.
+Finally I have included a fix from Shilong that has been around since
+April and didn't got any attention, despite being correct, trivial and
+useful.
 
-We were also doing an extra bio_put() call against io_bio in some cases -
-btrfs_submit_direct_hook() often does that final bio_put() against our
-io_bio (pointed to by dip->orig_bio).
+I have added Reviewed-By and Tested-by tags to all the patches that got
+such tags from people through the mailing list. Some patches are also
+tagged for stable.
 
-So fix this by making sure we do the same cleanup that we do for the case
-where the bio submission succeeds.
+I have rebased them on top of your current integration-4.2 branch and
+re-tested them with xfstests, LTP and some custom tests. Some of these
+fixes have new test cases for xfstest submitted recently as well (but
+not yet merged as of today, only reviewed).
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+Thanks.
 
-V2: Fixed a case where it's possible to do an extra bio_put() against
-    io_bio, which results in a use-after-free bug.
+The following changes since commit 5a5003df98d5a7f6834227885b7c9728f767cc27:
 
- fs/btrfs/inode.c        | 70 +++++++++++++++++++++++++++++++++----------------
- fs/btrfs/ordered-data.c |  5 ++++
- 2 files changed, 53 insertions(+), 22 deletions(-)
+  btrfs: delayed-ref: double free in btrfs_add_delayed_tree_ref() (2015-06-24 12:28:03 -0700)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f569d26..6ec1b34 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8046,7 +8046,7 @@ err:
- }
- 
- static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
--				    int skip_sum)
-+				    int skip_sum, bool *end_io_done)
- {
- 	struct inode *inode = dip->inode;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -8143,7 +8143,9 @@ submit:
- 	if (!ret)
- 		return 0;
- 
--	bio_put(bio);
-+	/* Our caller is responsible for doing the final put for orig_bio. */
-+	if (bio != orig_bio)
-+		bio_put(bio);
- out_err:
- 	dip->errors = 1;
- 	/*
-@@ -8151,8 +8153,10 @@ out_err:
- 	 * make sure dip->errors is perceived to be set.
- 	 */
- 	smp_mb__before_atomic();
--	if (atomic_dec_and_test(&dip->pending_bios))
-+	if (atomic_dec_and_test(&dip->pending_bios)) {
- 		bio_io_error(dip->orig_bio);
-+		*end_io_done = true;
-+	}
- 
- 	/* bio_end_io() will handle error, so we needn't return it */
- 	return 0;
-@@ -8161,13 +8165,13 @@ out_err:
- static void btrfs_submit_direct(int rw, struct bio *dio_bio,
- 				struct inode *inode, loff_t file_offset)
- {
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_dio_private *dip;
--	struct bio *io_bio;
-+	struct btrfs_dio_private *dip = NULL;
-+	struct bio *io_bio = NULL;
- 	struct btrfs_io_bio *btrfs_bio;
- 	int skip_sum;
- 	int write = rw & REQ_WRITE;
- 	int ret = 0;
-+	bool end_io_done = false;
- 
- 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
- 
-@@ -8180,7 +8184,7 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
- 	dip = kzalloc(sizeof(*dip), GFP_NOFS);
- 	if (!dip) {
- 		ret = -ENOMEM;
--		goto free_io_bio;
-+		goto free_ordered;
- 	}
- 
- 	dip->private = dio_bio->bi_private;
-@@ -8202,31 +8206,53 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
- 		dip->subio_endio = btrfs_subio_endio_read;
- 	}
- 
--	ret = btrfs_submit_direct_hook(rw, dip, skip_sum);
-+	ret = btrfs_submit_direct_hook(rw, dip, skip_sum, &end_io_done);
- 	if (!ret)
- 		return;
- 
- 	if (btrfs_bio->end_io)
- 		btrfs_bio->end_io(btrfs_bio, ret);
--free_io_bio:
--	bio_put(io_bio);
- 
- free_ordered:
- 	/*
--	 * If this is a write, we need to clean up the reserved space and kill
--	 * the ordered extent.
-+	 * If we arrived here it means either we failed to submit the dip
-+	 * or we either failed to clone the dio_bio or failed to allocate the
-+	 * dip. If we cloned the dio_bio and allocated the dip, we can just
-+	 * call bio_endio against our io_bio so that we get proper resource
-+	 * cleanup if we fail to submit the dip, otherwise, we must do the
-+	 * same as btrfs_endio_direct_[write|read] because we can't call these
-+	 * callbacks - they require an allocated dip and a clone of dio_bio.
- 	 */
--	if (write) {
--		struct btrfs_ordered_extent *ordered;
--		ordered = btrfs_lookup_ordered_extent(inode, file_offset);
--		if (!test_bit(BTRFS_ORDERED_PREALLOC, &ordered->flags) &&
--		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
--			btrfs_free_reserved_extent(root, ordered->start,
--						   ordered->disk_len, 1);
--		btrfs_put_ordered_extent(ordered);
--		btrfs_put_ordered_extent(ordered);
-+	if (io_bio && dip) {
-+		if (!end_io_done)
-+			bio_endio(io_bio, ret);
-+		/* end io callbacks free our dip and do final put on io_bio */
-+		dip = NULL;
-+		io_bio = NULL;
-+	} else {
-+		if (write) {
-+			struct btrfs_ordered_extent *ordered;
-+
-+			ordered = btrfs_lookup_ordered_extent(inode,
-+							      file_offset);
-+			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
-+			/*
-+			 * Decrements our ref on the ordered extent and removes
-+			 * the ordered extent from the inode's ordered tree,
-+			 * doing all the proper resource cleanup such as for the
-+			 * reserved space.
-+			 */
-+			btrfs_finish_ordered_io(ordered);
-+		} else {
-+			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
-+			      file_offset + dio_bio->bi_iter.bi_size - 1);
-+		}
-+		clear_bit(BIO_UPTODATE, &dio_bio->bi_flags);
-+		dio_end_io(dio_bio, ret);
- 	}
--	bio_endio(dio_bio, ret);
-+	if (io_bio)
-+		bio_put(io_bio);
-+	kfree(dip);
- }
- 
- static ssize_t check_direct_IO(struct btrfs_root *root, struct kiocb *iocb,
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 8f391fd..6c095ad 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -559,6 +559,10 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
- 	trace_btrfs_ordered_extent_put(entry->inode, entry);
- 
- 	if (atomic_dec_and_test(&entry->refs)) {
-+		ASSERT(list_empty(&entry->log_list));
-+		ASSERT(list_empty(&entry->trans_list));
-+		ASSERT(list_empty(&entry->root_extent_list));
-+		ASSERT(RB_EMPTY_NODE(&entry->rb_node));
- 		if (entry->inode)
- 			btrfs_add_delayed_iput(entry->inode);
- 		while (!list_empty(&entry->list)) {
-@@ -586,6 +590,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
- 	spin_lock_irq(&tree->lock);
- 	node = &entry->rb_node;
- 	rb_erase(node, &tree->tree);
-+	RB_CLEAR_NODE(node);
- 	if (tree->last == node)
- 		tree->last = NULL;
- 	set_bit(BTRFS_ORDERED_COMPLETE, &entry->flags);
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git integration-4.2
+
+for you to fetch changes up to 9ac2b7cb4755cb3311bb7d1ccf0eb51d0e006fba:
+
+  Btrfs: fix wrong check for btrfs_force_chunk_alloc() (2015-06-30 05:00:49 +0100)
+
+----------------------------------------------------------------
+Filipe Manana (7):
+      Btrfs: fix a comment in inode.c:evict_inode_truncate_pages()
+      Btrfs: fix race between balance and unused block group deletion
+      Btrfs: use kmem_cache_free when freeing entry in inode cache
+      Btrfs: fix race between caching kthread and returning inode to inode cache
+      Btrfs: fix crash on close_ctree() if cleaner starts new transaction
+      Btrfs: fix fsync data loss after append write
+      Btrfs: fix fsync xattr loss in the fast fsync path
+
+Liu Bo (2):
+      Btrfs: fix hang when failing to submit bio of directIO
+      Btrfs: fix warning of bytes_may_use
+
+Shilong Wang (1):
+      Btrfs: fix wrong check for btrfs_force_chunk_alloc()
+
+ fs/btrfs/btrfs_inode.h |   2 ++
+ fs/btrfs/ctree.h       |   1 +
+ fs/btrfs/disk-io.c     |  41 ++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/extent-tree.c |   3 +++
+ fs/btrfs/inode-map.c   |  17 ++++++++++++-----
+ fs/btrfs/inode.c       |  24 ++++++++++++++++--------
+ fs/btrfs/relocation.c  |   2 +-
+ fs/btrfs/tree-log.c    | 118 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ fs/btrfs/volumes.c     |  48 +++++++++++++++++++++++++++++++++++++++++++-----
+ 9 files changed, 231 insertions(+), 25 deletions(-)
+
 -- 
 2.1.3
 

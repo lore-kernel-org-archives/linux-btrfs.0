@@ -1,53 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:34054 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752201AbbFZNoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 26 Jun 2015 09:44:12 -0400
-Date: Fri, 26 Jun 2015 15:44:09 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: Automatic balance after mkfs?
-Message-ID: <20150626134409.GT726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <pan.2015.06.16.13.13.40@googlemail.com>
- <558022E8.7070201@gmail.com>
- <558259F3.8060505@cn.fujitsu.com>
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:34180 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750718AbbF3IUD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 04:20:03 -0400
+Received: by iebmu5 with SMTP id mu5so7212139ieb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2015 01:20:02 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <558259F3.8060505@cn.fujitsu.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1434531598-8607-1-git-send-email-bo.li.liu@oracle.com>
+References: <1434531598-8607-1-git-send-email-bo.li.liu@oracle.com>
+Date: Tue, 30 Jun 2015 09:20:02 +0100
+Message-ID: <CAL3q7H4J+gYknRsmycK9zFcMNzxavY9m2CQgX9uwiFV=gA74Aw@mail.gmail.com>
+Subject: Re: [PATCH 1/2] Btrfs: fix hang when failing to submit bio of directIO
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jun 18, 2015 at 01:41:07PM +0800, Qu Wenruo wrote:
-> >>>     Yes. It's an artefact of the way that mkfs works. If you run a
-> >>> balance on those chunks, they'll go away. (btrfs balance start
-> >>> -dusage=0 -musage=0 /mountpoint)
-> >>
-> >> Since I had to explain this very same thing to a new btrfs-using friend
-> >> just yesterday I wondered if it might not make sense for mkfs to issue
-> >> a general balance after creating the fs? It should be simple enough
-> >> (just issue the balance ioctl?) and not have any negative side effects.
-> >>
-> >> Just doing such a post-mkfs cleanup automatically would certainly
-> >> reduce the number of times we have to explain the this. :)
-> >>
-> >> Any reasons why we couldn't/shouldn't do this?
-> >>
-> > Following the same line of thinking, is there any reason we couldn't
-> > just rewrite mkfs to get rid of this legacy behavior?
+On Wed, Jun 17, 2015 at 9:59 AM, Liu Bo <bo.li.liu@oracle.com> wrote:
+> The hang is uncoverd by generic/019.
+>
+> btrfs_endio_direct_write() skips the "finish_ordered_fn" part when it hits
+> an error, thus those added ordered extents will never get processed, which
+> block processes that waiting for them via btrfs_start_ordered_extent().
+>
+> This fixes the above, and meanwhile finish_ordered_fn will do the space
+> accounting work.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Tested-by: Filipe Manana <fdmanana@suse.com>
 
-The 'single' blockgroups on multidevice filesystem are considered a bug
-in mkfs, an annoying and long running one.
+> ---
+>  fs/btrfs/inode.c | 3 ---
+>  1 file changed, 3 deletions(-)
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index 8bb0136..7bf150a 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7855,8 +7855,6 @@ static void btrfs_endio_direct_write(struct bio *bio, int err)
+>         struct bio *dio_bio;
+>         int ret;
+>
+> -       if (err)
+> -               goto out_done;
+>  again:
+>         ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+>                                                    &ordered_offset,
+> @@ -7879,7 +7877,6 @@ out_test:
+>                 ordered = NULL;
+>                 goto again;
+>         }
+> -out_done:
+>         dio_bio = dip->dio_bio;
+>
+>         kfree(dip);
+> --
+> 2.1.0
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-> Compared to the more complex auto balance, rewrite mkfs is a much better 
-> idea.
 
-Balance is a workaround besides that it requires mouting.
 
-> The original mkfs seems easy for developers, but bad for users.
+-- 
+Filipe David Manana,
 
-I'd argue that mkfs is primarily for users.
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

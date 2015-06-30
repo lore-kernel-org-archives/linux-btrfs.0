@@ -1,33 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:50942 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752430AbbF3Mky (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 30 Jun 2015 08:40:54 -0400
-Date: Tue, 30 Jun 2015 14:40:52 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Amr El-Sharnoby <amr.elsharnoby@horizontechs.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-progs 4.1 failed to compile on CentOS 6.x
-Message-ID: <20150630124052.GF726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAGMys1p9=p-22mfSMCtMXgrmA=1mOs0mzRBTDmt_67q8D4OJEw@mail.gmail.com>
+Received: from mail-ob0-f175.google.com ([209.85.214.175]:34560 "EHLO
+	mail-ob0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751737AbbF3MoT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 30 Jun 2015 08:44:19 -0400
+Received: by obbkm3 with SMTP id km3so5495210obb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 30 Jun 2015 05:44:19 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAGMys1p9=p-22mfSMCtMXgrmA=1mOs0mzRBTDmt_67q8D4OJEw@mail.gmail.com>
+In-Reply-To: <20150630124052.GF726@twin.jikos.cz>
+References: <CAGMys1p9=p-22mfSMCtMXgrmA=1mOs0mzRBTDmt_67q8D4OJEw@mail.gmail.com>
+ <20150630124052.GF726@twin.jikos.cz>
+From: Amr El-Sharnoby <amr.elsharnoby@horizontechs.com>
+Date: Tue, 30 Jun 2015 15:43:49 +0300
+Message-ID: <CAGMys1q-u=3bvp7REnzvEa0zsPk_VgNDruwWqHHJ5G2a2pnuow@mail.gmail.com>
+Subject: Re: btrfs-progs 4.1 failed to compile on CentOS 6.x
+To: dsterba@suse.cz, Amr El-Sharnoby <amr.elsharnoby@horizontechs.com>,
+        linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 30, 2015 at 11:59:50AM +0300, Amr El-Sharnoby wrote:
-> Compilation of btrfs-progs 4.1 failed on CentOS 6.6 with latest
-> updated packages with the folllowing error,
-> In file included from cmds-inspect.c:28:
-> send-utils.h:97: error: wrong number of arguments specified for
-> ‘deprecated’ attribute
-> send-utils.h:99: error: wrong number of arguments specified for
-> ‘deprecated’ attribute
-> make: *** [cmds-inspect.o] Error 1
-> 
-> Previous version compile successfully.
+rpm -q gcc
+gcc-4.4.7-11.el6.x86_64
 
-What's the version of gcc ? It works on my test setup with 4.5 and
-afaics this is the first version where the optional argument appeared.
+It's the latest available.

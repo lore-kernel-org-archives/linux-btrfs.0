@@ -1,74 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8134 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751119AbbFLHHj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 12 Jun 2015 03:07:39 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t5C763ql032686
-	for <linux-btrfs@vger.kernel.org>; Fri, 12 Jun 2015 15:06:03 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: [RFC] Don't use workqueue for raid56 parity scrub
-Date: Fri, 12 Jun 2015 15:06:00 +0800
-Message-ID: <e11384e9d3f8a3d87ca1f4c57ac699d15153c3a9.1434092619.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:56516 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752500AbbGAMfh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Jul 2015 08:35:37 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZAHEh-0003mE-Ai
+	for linux-btrfs@vger.kernel.org; Wed, 01 Jul 2015 14:35:31 +0200
+Received: from barriere.frankfurter-softwarefabrik.de ([217.11.197.1])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Jul 2015 14:35:31 +0200
+Received: from lvml by barriere.frankfurter-softwarefabrik.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Jul 2015 14:35:31 +0200
+To: linux-btrfs@vger.kernel.org
+From: Lutz Vieweg <lvml@5t9.de>
+Subject: Re: WARNING:  at /fs/btrfs/extent-tree.c:4029 btrfs_free_reserved_data_space
+Date: Wed, 01 Jul 2015 14:35:24 +0200
+Message-ID: <mn0mqd$7pu$1@ger.gmane.org>
+References: <6617728.KSCQs1dauk@o3-3> <mmr75d$vbi$1@ger.gmane.org> <loom.20150630T110709-722@post.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <loom.20150630T110709-722@post.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On 06/30/2015 11:10 AM, David Weber wrote:
+> I use Btrfs with regular snapshots on my workstation with Virtualbox since
+> years. Running filefrag on the image doesn't complete after hours but the
+> IO of the VM is still "fast enough". But the definition of "fast enough"
+> can vary heavily.
 
-The code in workqueue only do fast initialization and submit a bio
-in end, plus, it will not called in interrupe context, no need to
-queue a work for this type of work.
+How do you backup the VM images? If filefrag takes hours to complete,
+I'd assume that attempting a sequential read of the whole file (from a
+backup software) takes just as long.
 
-Call it directly will make code simple, easy to debug and reduce
-potential problem.
+> If it becomes to slow I will try a btrfs fi deframent or just recreate the
+> image with a no reflink copy.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/raid56.c | 19 +------------------
- 1 file changed, 1 insertion(+), 18 deletions(-)
+Chances are this will also take hours.
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index fa72068..eea86d1 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -2557,7 +2557,7 @@ static void raid56_parity_scrub_end_io(struct bio *bio, int err)
- 	validate_rbio_for_parity_scrub(rbio);
- }
- 
--static void raid56_parity_scrub_stripe(struct btrfs_raid_bio *rbio)
-+static void async_scrub_parity(struct btrfs_raid_bio *rbio)
- {
- 	int bios_to_read = 0;
- 	struct bio_list bio_list;
-@@ -2646,23 +2646,6 @@ finish:
- 	validate_rbio_for_parity_scrub(rbio);
- }
- 
--static void scrub_parity_work(struct btrfs_work *work)
--{
--	struct btrfs_raid_bio *rbio;
--
--	rbio = container_of(work, struct btrfs_raid_bio, work);
--	raid56_parity_scrub_stripe(rbio);
--}
--
--static void async_scrub_parity(struct btrfs_raid_bio *rbio)
--{
--	btrfs_init_work(&rbio->work, btrfs_rmw_helper,
--			scrub_parity_work, NULL, NULL);
--
--	btrfs_queue_work(rbio->fs_info->rmw_workers,
--			 &rbio->work);
--}
--
- void raid56_parity_submit_scrub_rbio(struct btrfs_raid_bio *rbio)
- {
- 	if (!lock_stripe_add(rbio))
--- 
-1.8.5.1
+Regards,
+
+Lutz Vieweg
 

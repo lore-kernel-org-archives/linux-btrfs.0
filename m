@@ -1,115 +1,219 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f42.google.com ([209.85.192.42]:35066 "EHLO
-	mail-qg0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753278AbbGALHU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jul 2015 07:07:20 -0400
-Message-ID: <5593C9D6.8000909@gmail.com>
-Date: Wed, 01 Jul 2015 07:07:02 -0400
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-MIME-Version: 1.0
-To: Dave Chinner <david@fromorbit.com>, Omar Sandoval <osandov@fb.com>
-CC: linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org
-Subject: Re: [PATCH RESEND] Btrfs: add autodefrag inode flag
-References: <85de09b87ad7b2847ea001f5bb03c044e8b419aa.1435681574.git.osandov@fb.com> <20150630214519.GN22807@dastard>
-In-Reply-To: <20150630214519.GN22807@dastard>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090900080903010501030906"
+Received: from mail.kernel.org ([198.145.29.136]:58269 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753902AbbGALNS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Jul 2015 07:13:18 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v3] Btrfs: fix memory corruption on failure to submit bio for direct IO
+Date: Wed,  1 Jul 2015 12:13:10 +0100
+Message-Id: <1435749190-5419-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1435617813-20659-1-git-send-email-fdmanana@kernel.org>
+References: <1435617813-20659-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+From: Filipe Manana <fdmanana@suse.com>
 
---------------ms090900080903010501030906
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
+If we fail to submit a bio for a direct IO request, we were grabbing the
+corresponding ordered extent and decrementing its reference count twice,
+once for our lookup reference and once for the ordered tree reference.
+This was a problem because it caused the ordered extent to be freed
+without removing it from the ordered tree and any lists it might be
+attached to, leaving dangling pointers to the ordered extent around.
+Example trace with CONFIG_DEBUG_PAGEALLOC=y:
 
-On 2015-06-30 17:45, Dave Chinner wrote:
-> On Tue, Jun 30, 2015 at 09:32:20AM -0700, Omar Sandoval wrote:
->> In some cases, we may not want to enable automatic defragmentation for=
+[161779.858707] BUG: unable to handle kernel paging request at 0000000087654330
+[161779.859983] IP: [<ffffffff8124ca68>] rb_prev+0x22/0x3b
+[161779.860636] PGD 34d818067 PUD 0
+[161779.860636] Oops: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+(...)
+[161779.860636] Call Trace:
+[161779.860636]  [<ffffffffa06b36a6>] __tree_search+0xd9/0xf9 [btrfs]
+[161779.860636]  [<ffffffffa06b3708>] tree_search+0x42/0x63 [btrfs]
+[161779.860636]  [<ffffffffa06b4868>] ? btrfs_lookup_ordered_range+0x2d/0xa5 [btrfs]
+[161779.860636]  [<ffffffffa06b4873>] btrfs_lookup_ordered_range+0x38/0xa5 [btrfs]
+[161779.860636]  [<ffffffffa06aab8e>] btrfs_get_blocks_direct+0x11b/0x615 [btrfs]
+[161779.860636]  [<ffffffff8119727f>] do_blockdev_direct_IO+0x5ff/0xb43
+[161779.860636]  [<ffffffffa06aaa73>] ? btrfs_page_exists_in_range+0x1ad/0x1ad [btrfs]
+[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
+[161779.860636]  [<ffffffff811977f5>] __blockdev_direct_IO+0x32/0x34
+[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
+[161779.860636]  [<ffffffffa06a10ae>] btrfs_direct_IO+0x198/0x21f [btrfs]
+[161779.860636]  [<ffffffffa06a2c9a>] ? btrfs_get_extent_fiemap+0x1bc/0x1bc [btrfs]
+[161779.860636]  [<ffffffff81112ca1>] generic_file_direct_write+0xb3/0x128
+[161779.860636]  [<ffffffffa06affaa>] ? btrfs_file_write_iter+0x15f/0x3e0 [btrfs]
+[161779.860636]  [<ffffffffa06b004c>] btrfs_file_write_iter+0x201/0x3e0 [btrfs]
+(...)
 
->> the whole filesystem with the "autodefrag" mount option but we still
->> want to defragment specific files or directories. Add an inode flag
->> which allows us to do specify that.
->>
->> Signed-off-by: Omar Sandoval <osandov@fb.com>
->> ---
->> Resending this because I didn't send it to fsdevel or linux-api last
->> time and I'm adding a new user-facing inode flag.
->
-> XFS has a "no defrag" inode flag to tell the defragmenter not to
-> defrag the file. (XFS_XFLAG_NODEFRAG, see xfsctl(3)). With the ext4
-> project quota work, this flag and interface is being pulled up to
-> the VFS, so perhaps it would be a good idea to turn this around the
-> other way?  i.e. autodefrag is the default behaviour, and the inode
-> contains an inheritable  "no defrag" flag to prevent defrag so that
-> we have the same flag, API and behaviour across filesystems?
->
-+! on this suggestion, I find that there are only a few files that I=20
-don't want autodefrag enabled for, and I do want it on pretty much=20
-everything else.  Furthermore, userspace API consistency is a Good Thing.=
+We were also not freeing the btrfs_dio_private we allocated previously,
+which kmemleak reported with the following trace in its sysfs file:
 
+unreferenced object 0xffff8803f553bf80 (size 96):
+  comm "xfs_io", pid 4501, jiffies 4295039588 (age 173.936s)
+  hex dump (first 32 bytes):
+    88 6c 9b f5 02 88 ff ff 00 00 00 00 00 00 00 00  .l..............
+    00 00 00 00 00 00 00 00 00 00 c4 00 00 00 00 00  ................
+  backtrace:
+    [<ffffffff81161ffe>] create_object+0x172/0x29a
+    [<ffffffff8145870f>] kmemleak_alloc+0x25/0x41
+    [<ffffffff81154e64>] kmemleak_alloc_recursive.constprop.40+0x16/0x18
+    [<ffffffff811579ed>] kmem_cache_alloc_trace+0xfb/0x148
+    [<ffffffffa03d8cff>] btrfs_submit_direct+0x65/0x16a [btrfs]
+    [<ffffffff811968dc>] dio_bio_submit+0x62/0x8f
+    [<ffffffff811975fe>] do_blockdev_direct_IO+0x97e/0xb43
+    [<ffffffff811977f5>] __blockdev_direct_IO+0x32/0x34
+    [<ffffffffa03d70ae>] btrfs_direct_IO+0x198/0x21f [btrfs]
+    [<ffffffff81112ca1>] generic_file_direct_write+0xb3/0x128
+    [<ffffffffa03e604d>] btrfs_file_write_iter+0x201/0x3e0 [btrfs]
+    [<ffffffff8116586a>] __vfs_write+0x7c/0xa5
+    [<ffffffff81165da9>] vfs_write+0xa0/0xe4
+    [<ffffffff81166675>] SyS_pwrite64+0x64/0x82
+    [<ffffffff81464fd7>] system_call_fastpath+0x12/0x6f
+    [<ffffffffffffffff>] 0xffffffffffffffff
 
+For read requests we weren't doing any cleanup either (none of the work
+done by btrfs_endio_direct_read()), so a failure submitting a bio for a
+read request would leave a range in the inode's io_tree locked forever,
+blocking any future operations (both reads and writes) against that range.
 
+So fix this by making sure we do the same cleanup that we do for the case
+where the bio submission succeeds.
 
---------------ms090900080903010501030906
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExCzAJBgUrDgMCGgUAMIAGCSqGSIb3DQEHAQAAoIIGuDCC
-BrQwggScoAMCAQICAxBuVTANBgkqhkiG9w0BAQ0FADB5MRAwDgYDVQQKEwdSb290IENBMR4w
-HAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmlu
-ZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0xNTAz
-MjUxOTM0MzhaFw0xNTA5MjExOTM0MzhaMGMxGDAWBgNVBAMTD0NBY2VydCBXb1QgVXNlcjEj
-MCEGCSqGSIb3DQEJARYUYWhmZXJyb2luN0BnbWFpbC5jb20xIjAgBgkqhkiG9w0BCQEWE2Fo
-ZW1tZWxnQG9oaW9ndC5jb20wggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIKAoICAQCdD/zW
-2rRAFCLnDfXpWxU1+ODqRVUgzHvrRO7ADUxRo1CBDc3JSX5TIW2OGmQ3DAKGOACp8Z0sgxMc
-B05tzAZ/M7m4jajVrwwdVCdrwVGxTdAai7Kwg4ZCVfyMVhcwo8R2eW3QahBx34G0RKumK9sZ
-ZQSQ+zULAzpY6uz7T1sAk/erMoivRXF6u8WvOsLkOD1F/Xyv1ZccSUG5YeDgZgc0nZUBvyIp
-zXSHjgWerFkrxEM3y2z/Ff3eL1sgGYecV/I1F+I5S01V7Kclt/qRW10c/4JEGRcI1FmrJBPu
-BtMYPbg/3Y9LZROYN+mVIFxZxOfrmjfFZ96xt/TaMXo8vcEKtWcNEjhGBjEbfMUEm4aq8ygQ
-4MuEcpJc8DJCHBkg2KBk13DkbU2qNepTD6Uip1C+g+KMr0nd6KOJqSH27ZuNY4xqV4hIxFHp
-ex0zY7mq6fV2o6sKBGQzRdI20FDYmNjsLJwjH6qJ8laxFphZnPRpBThmu0AjuBWE72GnI1oA
-aO+bs92MQGJernt7hByCnDO82W/ykbVz+Ge3Sax8NY0m2Xdvp6WFDY/PjD9CdaJ9nwQGsUSa
-N54lrZ2qMTeCI9Vauwf6U69BA42xgk65VvxvTNqji+tZ4aZbarZ7el2/QDHOb/rRwlCFplS/
-z4l1f1nOrE6bnDl5RBJyW3zi74P6GwIDAQABo4IBWTCCAVUwDAYDVR0TAQH/BAIwADBWBglg
-hkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNlcnRpZmljYXRlIGZvciBGUkVFIGhlYWQg
-b3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYDVR0PAQH/BAQDAgOoMEAGA1UdJQQ5
-MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYKKwYBBAGCNwoDAwYJYIZIAYb4
-QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDovL29jc3AuY2FjZXJ0Lm9y
-ZzAxBgNVHR8EKjAoMCagJKAihiBodHRwOi8vY3JsLmNhY2VydC5vcmcvcmV2b2tlLmNybDA0
-BgNVHREELTArgRRhaGZlcnJvaW43QGdtYWlsLmNvbYETYWhlbW1lbGdAb2hpb2d0LmNvbTAN
-BgkqhkiG9w0BAQ0FAAOCAgEAGvl7xb42JMRH5D/vCIDYvFY3dR2FPd5kmOqpKU/fvQ8ovmJa
-p5N/FDrsCL+YdslxPY+AAn78PYmL5pFHTdRadT++07DPIMtQyy2qd+XRmz6zP8Il7vGcEDmO
-WmMLYMq4xV9s/N7t7JJp6ftdIYUcoTVChUgilDaRWMLidtslCdRsBVfUjPb1bF5Ua31diKDP
-e0M9/e2CU36rbcTtiNCXhptMigzuL3zJXUf2B9jyUV8pnqNEQH36fqJ7YTBLcpq3aYa2XbAH
-Hgx9GehJBIqwspDmhPCFZ/QmqUXCkt+XfvinQ2NzKR6P3+OdYbwqzVX8BdMeojh7Ig8x/nIx
-mQ+/ufstL1ZYp0bg13fyK/hPYSIBpayaC76vzWovkIm70DIDRIFLi20p/qTd7rfDYy831Hjm
-+lDdCECF9bIXEWFk33kA97dgQIMbf5chEmlFg8S0e4iw7LMjvRqMX3eCD8GJ2+oqyZUwzZxy
-S0Mx+rBld5rrN7LsXwZ671HsGqNeYbYeU25e7t7/Gcc6Bd/kPfA+adEuUGFcvUKH3trDYqNq
-6mOkAd8WO/mQadlc3ztS++XDMhmIpfBre9MPAr6usqf+wc+R8Nk9KLK39kEgrqVfzc/fgf8L
-MaD4rHnusdg4gca6Yi+kNrm99anw7SwaBrBvULYBp7ixNRUhaYiNW4YjTrYxggShMIIEnQIB
-ATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
-cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
-EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5VMAkGBSsOAwIaBQCgggH1MBgGCSqGSIb3DQEJAzEL
-BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDcwMTExMDcwMlowIwYJKoZIhvcNAQkE
-MRYEFOScn4M2QGshg908i7ys3HfbsvnZMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
-MAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwIC
-AUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYD
-VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
-GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
-ZXJ0Lm9yZwIDEG5VMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENB
-MR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2ln
-bmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5V
-MA0GCSqGSIb3DQEBAQUABIICAAsrT0Y1NCMRBYO+qV5UavZehJZ1TSKdJZLFAf695df11E5a
-M+cmSG4N50N+8iJ0ZgRs0/Nca/2vBGqtXzks7puQDqTNSe5RCMco8ZOOx8EymFwfuj6UTP9i
-jRfdwtarqMNAOstigohagfqrVWg1imbauPlDElPOcc4+SYrCrMf6omg6/+TVUyln9RJI9z1i
-nMyfoqu4g8mLyLwuQ4MW2KSq+sSKH+eXua4Mdb+eJ6TTurvXjY+60sxftHDhxKugB9bunFdp
-FDwhHo4f8z+awFewgiekQD22UXq+5QZITeQoG2j8kWD119wPUSX6WhuV37GgXQ82e6PuEsOh
-ejyLJHaNK2gF05vrnBCu9KBFiEfvs7wW785kmit8J19MBdZt+agtipsmuLyrvNvFO01+IaTm
-WK09CtelZt9cxmwCAqnMKzD1p2LdX+Xoy7lyg1TYOprePKo0M9wHNkKvskmwQNEZB6jf/eVZ
-amj78TNRDbgLtGwJpLrxjcilwaCIQ2bvZGPmJ5KRbhE2186z096zwk8jPNYpOhG8NiF3pREC
-md7vANOTR/KJ9wNk2ciEuRWwV0cbFpfkBN3yulY/PmY3Ey6jBmQuqE+2+zWiCst2B2lLS6zb
-PITDTpnXvCMxfgmksr46GxrlSZamFGcjM8FGcO35KS1jtQ/zcqgyOgS2ZS4vAAAAAAAA
---------------ms090900080903010501030906--
+V2: Fixed a case where it's possible to do an extra bio_put() against
+    io_bio, which results in a use-after-free bug.
+
+V3: Moved back to V1 but with more comments explaining what's going on.
+    The problem in V2 couldn't actually happen due to subtle details
+    in btrfs_submit_direct_hook(), as dip->pending_bios is 0 if bio
+    is set to orig_bio.
+
+ fs/btrfs/inode.c        | 65 +++++++++++++++++++++++++++++++++++--------------
+ fs/btrfs/ordered-data.c |  5 ++++
+ 2 files changed, 52 insertions(+), 18 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index f569d26..e33dff3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8161,9 +8161,8 @@ out_err:
+ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
+ 				struct inode *inode, loff_t file_offset)
+ {
+-	struct btrfs_root *root = BTRFS_I(inode)->root;
+-	struct btrfs_dio_private *dip;
+-	struct bio *io_bio;
++	struct btrfs_dio_private *dip = NULL;
++	struct bio *io_bio = NULL;
+ 	struct btrfs_io_bio *btrfs_bio;
+ 	int skip_sum;
+ 	int write = rw & REQ_WRITE;
+@@ -8180,7 +8179,7 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
+ 	dip = kzalloc(sizeof(*dip), GFP_NOFS);
+ 	if (!dip) {
+ 		ret = -ENOMEM;
+-		goto free_io_bio;
++		goto free_ordered;
+ 	}
+ 
+ 	dip->private = dio_bio->bi_private;
+@@ -8208,25 +8207,55 @@ static void btrfs_submit_direct(int rw, struct bio *dio_bio,
+ 
+ 	if (btrfs_bio->end_io)
+ 		btrfs_bio->end_io(btrfs_bio, ret);
+-free_io_bio:
+-	bio_put(io_bio);
+ 
+ free_ordered:
+ 	/*
+-	 * If this is a write, we need to clean up the reserved space and kill
+-	 * the ordered extent.
++	 * If we arrived here it means either we failed to submit the dip
++	 * or we either failed to clone the dio_bio or failed to allocate the
++	 * dip. If we cloned the dio_bio and allocated the dip, we can just
++	 * call bio_endio against our io_bio so that we get proper resource
++	 * cleanup if we fail to submit the dip, otherwise, we must do the
++	 * same as btrfs_endio_direct_[write|read] because we can't call these
++	 * callbacks - they require an allocated dip and a clone of dio_bio.
+ 	 */
+-	if (write) {
+-		struct btrfs_ordered_extent *ordered;
+-		ordered = btrfs_lookup_ordered_extent(inode, file_offset);
+-		if (!test_bit(BTRFS_ORDERED_PREALLOC, &ordered->flags) &&
+-		    !test_bit(BTRFS_ORDERED_NOCOW, &ordered->flags))
+-			btrfs_free_reserved_extent(root, ordered->start,
+-						   ordered->disk_len, 1);
+-		btrfs_put_ordered_extent(ordered);
+-		btrfs_put_ordered_extent(ordered);
++	if (io_bio && dip) {
++		bio_endio(io_bio, ret);
++		/*
++		 * The end io callbacks free our dip, do the final put on io_bio
++		 * and all the cleanup and final put for dio_bio (through
++		 * dio_end_io()).
++		 */
++		dip = NULL;
++		io_bio = NULL;
++	} else {
++		if (write) {
++			struct btrfs_ordered_extent *ordered;
++
++			ordered = btrfs_lookup_ordered_extent(inode,
++							      file_offset);
++			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
++			/*
++			 * Decrements our ref on the ordered extent and removes
++			 * the ordered extent from the inode's ordered tree,
++			 * doing all the proper resource cleanup such as for the
++			 * reserved space and waking up any waiters for this
++			 * ordered extent (through btrfs_remove_ordered_extent).
++			 */
++			btrfs_finish_ordered_io(ordered);
++		} else {
++			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
++			      file_offset + dio_bio->bi_iter.bi_size - 1);
++		}
++		clear_bit(BIO_UPTODATE, &dio_bio->bi_flags);
++		/*
++		 * Releases and cleans up our dio_bio, no need to bio_put()
++		 * nor bio_endio()/bio_io_error() against dio_bio.
++		 */
++		dio_end_io(dio_bio, ret);
+ 	}
+-	bio_endio(dio_bio, ret);
++	if (io_bio)
++		bio_put(io_bio);
++	kfree(dip);
+ }
+ 
+ static ssize_t check_direct_IO(struct btrfs_root *root, struct kiocb *iocb,
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 89656d7..52170cf 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -552,6 +552,10 @@ void btrfs_put_ordered_extent(struct btrfs_ordered_extent *entry)
+ 	trace_btrfs_ordered_extent_put(entry->inode, entry);
+ 
+ 	if (atomic_dec_and_test(&entry->refs)) {
++		ASSERT(list_empty(&entry->log_list));
++		ASSERT(list_empty(&entry->trans_list));
++		ASSERT(list_empty(&entry->root_extent_list));
++		ASSERT(RB_EMPTY_NODE(&entry->rb_node));
+ 		if (entry->inode)
+ 			btrfs_add_delayed_iput(entry->inode);
+ 		while (!list_empty(&entry->list)) {
+@@ -579,6 +583,7 @@ void btrfs_remove_ordered_extent(struct inode *inode,
+ 	spin_lock_irq(&tree->lock);
+ 	node = &entry->rb_node;
+ 	rb_erase(node, &tree->tree);
++	RB_CLEAR_NODE(node);
+ 	if (tree->last == node)
+ 		tree->last = NULL;
+ 	set_bit(BTRFS_ORDERED_COMPLETE, &entry->flags);
+-- 
+2.1.3
+

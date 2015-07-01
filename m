@@ -1,46 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:4416 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752739AbbG1AZr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 20:25:47 -0400
-Subject: Re: [PATCH 0/7] btrfs-progs: qgroup related enhance.
-To: <dsterba@suse.com>, <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <1425025599-30048-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20150323233803.GP20767@twin.jikos.cz> <5510B191.1010402@cn.fujitsu.com>
- <20150727143509.GF6306@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55B6CC07.5000301@cn.fujitsu.com>
-Date: Tue, 28 Jul 2015 08:25:43 +0800
+Received: from cantor2.suse.de ([195.135.220.15]:44816 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751614AbbGAN1Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 1 Jul 2015 09:27:16 -0400
+Date: Wed, 1 Jul 2015 15:27:15 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: doc: fix short explanation of restore in
+ btrfs
+Message-ID: <20150701132715.GL726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201506302356.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150727143509.GF6306@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201506302356.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, Jul 01, 2015 at 08:56:52AM +0900, Tsutomu Itoh wrote:
+> Short explanation of restore is wrong. Fix it.
+> 
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
-
-David Sterba wrote on 2015/07/27 16:35 +0200:
-> On Tue, Mar 24, 2015 at 08:36:33AM +0800, Qu Wenruo wrote:
->>> All of the above merged.
->>>
->>>>     btrfs-progs: Schedule quota rescan if qgroup assign caused
->>>>       inconsistence.
->>>
->>> The rescan can be a long running operation and touches a lot of
->>> metadata, so I'd rather avoid starting the rescan automatically. Right
->>> now the user may start rescan manually, or please add an commandline
->>> option (eg. --rescan) to do the rescan in one go with the 'assign'
->>> command. Thanks.
->>>
->> Makes sense, I'll update the last patch soon.
->
-> I've merged your patch without changes and implemented the --rescan
-> option myself.
->
-Oh, I forgot to update this one...
-
-Thanks a lot for implement --rescan option.
-
-Thanks,
-Qu
+Applied, thanks.

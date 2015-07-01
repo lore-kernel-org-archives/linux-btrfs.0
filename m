@@ -1,89 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frodo.1stsolutions.be ([192.168.250.215])
-	by SC01.hds.spamcleaner.be  with ESMTP id t61HFQZv019100-t61HFQZw019100
-	for <linux-btrfs@vger.kernel.org>; Wed, 1 Jul 2015 19:15:26 +0200
-Message-Id: <55943C4A020000AF000DA3F7@frodo.1stsolutions.be>
-Date: Wed, 01 Jul 2015 19:15:22 +0200
-From: "Roel Niesen" <Roel.Niesen@1stsolutions.be>
-To: <linux-btrfs@vger.kernel.org>
-Subject: urgent: disk space problem
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from mail-ob0-f176.google.com ([209.85.214.176]:34121 "EHLO
+	mail-ob0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753292AbbGAS6i (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 1 Jul 2015 14:58:38 -0400
+Received: by obbkm3 with SMTP id km3so34564832obb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 01 Jul 2015 11:58:37 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAC=t97BiPjTf7yjWoSaoTgjvPZFgyEHdEJzFCG1Mu+nnJGoNoA@mail.gmail.com>
+References: <CAC=t97D=Dmq3cu-z2PNjREQn5690+R9NBQsjr5KZ4grYnYr4WA@mail.gmail.com>
+ <CAJCQCtSjxs2ZZUgUfrp9q5y+x0fFA7fSnQPgeEXTjsLKZ6DPKw@mail.gmail.com> <CAC=t97BiPjTf7yjWoSaoTgjvPZFgyEHdEJzFCG1Mu+nnJGoNoA@mail.gmail.com>
+From: Donald Pearson <donaldwhpearson@gmail.com>
+Date: Wed, 1 Jul 2015 13:58:18 -0500
+Message-ID: <CAC=t97Bg3STrTn86HBNYJJm-FT7aiR6tc51tjVnPiArpPgd9XQ@mail.gmail.com>
+Subject: Re: Any hope of pool recovery?
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Small update on this, with no idea if this is useful information or not.
 
-I'm using 8 2TB disk  in RAID10 for data and meta.
-Zo a native usable spavce of 7.3TB is acceptable (logical).
+At some point within the last hour iostat shows that /dev/sdg is no
+longer under heavy reads.
 
-I created 1 volume with all disk and mount them on /btrfs.
+The other 9 drives however are still reading as fast as they are able.
+There is no new output on the `btrfs rescue chunk-recover` screen so I
+expect it's still running.
 
-2 folders are created:
-iscsi = containing iscsi volumes
-samba= contiing folders for Samba.
+There are 4 other drives with the same total capacity as sdg so I
+would have expected then to normally all complete at about the same
+time.
 
-When I do a du -h /btfs I use 4.8TB of disk, but btrfs is telling me the filesystem is full.
+Regards,
+Donald
 
-btrfs fi sh:
-root@sanos1:~# btrfs fi sh
-Label: none  uuid: f07e804e-c5a8-468c-8d84-5e3cc92991e9
-        Total devices 8 FS bytes used 7.19TiB
-        devid    1 size 1.82TiB used 1.82TiB path /dev/sdb
-        devid    2 size 1.82TiB used 1.82TiB path /dev/sdc
-        devid    3 size 1.82TiB used 1.82TiB path /dev/sdd
-        devid    4 size 1.82TiB used 1.82TiB path /dev/sde
-        devid    5 size 1.82TiB used 1.82TiB path /dev/sdf
-        devid    6 size 1.82TiB used 1.82TiB path /dev/sdg
-        devid    7 size 1.82TiB used 1.82TiB path /dev/sdh
-        devid    8 size 1.82TiB used 1.82TiB path /dev/sdi
-
-Btrfs v3.18.2
-
-btrfs fi df /btrfs:
-root@sanos1:~# btrfs fi df /btrfs
-Data, RAID10: total=7.26TiB, used=7.18TiB
-System, RAID10: total=43.75MiB, used=2.09MiB
-Metadata, RAID10: total=11.61GiB, used=10.75GiB
-GlobalReserve, single: total=512.00MiB, used=2.33MiB
-
-df -h:
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sda1       455G  4.2G  428G   1% /
-none            4.0K     0  4.0K   0% /sys/fs/cgroup
-udev            1.9G   12K  1.9G   1% /dev
-tmpfs           382M   12M  370M   4% /run
-none            5.0M     0  5.0M   0% /run/lock
-none            1.9G     0  1.9G   0% /run/shm
-none            100M     0  100M   0% /run/user
-/dev/sdb        7.3T  7.2T   91G  99% /btrfs
-
-
-du -h /btrfs:
-4.8T    /btrfs
-
-uname:
-Linux sanos1 3.18.5 #2 SMP Thu Feb 5 08:06:40 CET 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-btrfs -version:
-Btrfs v3.18.2
-
-distribution:
-14.04.2 LTS, Trusty Tahr
-
-Question:
-Where is mu 2.4TB disk space and because btrfs is full, everything is slow now?
-
-Thanks.
-
-
-
--- 
-Met vriendelijke groeten,
-Best regards,
- 
-Roel Niesen
-1st Solutions
-Become One
-
-
+On Wed, Jul 1, 2015 at 11:09 AM, Donald Pearson
+<donaldwhpearson@gmail.com> wrote:
+> Thanks Chris,
+>
+> To my shame it turns out darkling didn't drop off IRC after all; I'm
+> new to all this and learning quickly that I need to sit on my hands.
+> I admit despite darkling's suggestion that my usertools are probably
+> fine I pulled down a newer kernel from elrepo so currently I'm running
+> 4.1.1-1.el7.elrepo.x86_64
+>
+> I started with 4.0.2-1.el7.elrepo.x86_64
+>
+> I also do have btrfs-progs 4.1 that I got from git.
+>
+> Here is the 4.0 output
+> [root@san01 btrfs-progs]# btrfs check /dev/sdc
+> checksum verify failed on 21364736 found E4E3BDB6 wanted 00000000
+> checksum verify failed on 21364736 found E4E3BDB6 wanted 00000000
+> checksum verify failed on 21364736 found EC809498 wanted 0863292E
+> checksum verify failed on 21364736 found 925303CE wanted 09150E74
+> checksum verify failed on 21364736 found 925303CE wanted 09150E74
+> bytenr mismatch, want=21364736, have=1065943040
+> Couldn't read chunk tree
+> Couldn't open file system
+>
+> Here is the 4.1 output
+> [root@san01 btrfs-progs]# ./btrfs check /dev/sdc
+> checksum verify failed on 21364736 found E4E3BDB6 wanted 00000000
+> checksum verify failed on 21364736 found E4E3BDB6 wanted 00000000
+> checksum verify failed on 21364736 found EC809498 wanted 0863292E
+> checksum verify failed on 21364736 found 925303CE wanted 09150E74
+> checksum verify failed on 21364736 found 925303CE wanted 09150E74
+> bytenr mismatch, want=21364736, have=1065943040
+> Couldn't read chunk tree
+> Couldn't open file system
+>
+> Finally, before I learned of this mailing list I started a run of
+> btrfs rescue chunk-recover
+> [root@san01 btrfs-progs]# ./btrfs rescue chunk-recover -v /dev/sdc
+>
+> I can see now through iostat that all 10 drives are reading as fast as
+> they can and my understanding is this will take a long time, but I've
+> since learned (not only that darkling was still alive on IRC) that
+> this probably won't solve my problem.
+>
+> Regards,
+> Donald (seijirou)
+>
+> On Wed, Jul 1, 2015 at 10:50 AM, Chris Murphy <lists@colorremedies.com> wrote:
+>> btrfs-progs version is 4.0, what is the kernel versions you've tried
+>> to mount with?
+>>
+>> I suggest running btrfs check (without --repair) and including the
+>> full output. There are a lot of changes in btrfs-progs 4.1, but off
+>> hand I don't know that they'd affect btrfs check results.
+>>
+>>
+>> Chris Murphy
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

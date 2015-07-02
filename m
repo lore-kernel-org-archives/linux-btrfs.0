@@ -1,204 +1,322 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f48.google.com ([209.85.218.48]:36671 "EHLO
-	mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751263AbbGBOtX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2015 10:49:23 -0400
-Received: by oiaf66 with SMTP id f66so25890439oia.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2015 07:49:23 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSB+29V-UdL5JZAHu3Zv3-XH0SyL8E5MwHgyeoVQ46Wvg@mail.gmail.com>
-References: <CAC=t97D=Dmq3cu-z2PNjREQn5690+R9NBQsjr5KZ4grYnYr4WA@mail.gmail.com>
- <CAJCQCtSjxs2ZZUgUfrp9q5y+x0fFA7fSnQPgeEXTjsLKZ6DPKw@mail.gmail.com>
- <CAC=t97BiPjTf7yjWoSaoTgjvPZFgyEHdEJzFCG1Mu+nnJGoNoA@mail.gmail.com>
- <CAC=t97Bg3STrTn86HBNYJJm-FT7aiR6tc51tjVnPiArpPgd9XQ@mail.gmail.com>
- <CAC=t97CS5As+3SqZy-sHM4U2JZ0bi_AEq=34bNXu0yBmh8QRjg@mail.gmail.com>
- <CAC=t97AQaDTRinVg9crdAG8zaoj_--L_PLDY3M4_HKHZotnVVg@mail.gmail.com>
- <CAJCQCtRpRg=XdMtAerHfxCWXO74s34=b9LLuk9mvfRhKz8hjFQ@mail.gmail.com>
- <CAC=t97AERgJ06P_Q8vbz=-yC=H3ODUkTt7ZD1Zpimr_jft+S6g@mail.gmail.com> <CAJCQCtSB+29V-UdL5JZAHu3Zv3-XH0SyL8E5MwHgyeoVQ46Wvg@mail.gmail.com>
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Thu, 2 Jul 2015 09:49:03 -0500
-Message-ID: <CAC=t97BOYQJAanPc_EFzxwwakFrY4ALd0sX-n9w_e9JHodU27Q@mail.gmail.com>
-Subject: Re: Any hope of pool recovery?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mailgw-01.dd24.net ([193.46.215.41]:46119 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753669AbbGBQMQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2015 12:12:16 -0400
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id 69B505FBF0
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2015 16:12:13 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+	with ESMTP id Q-dsjKhA7rko for <linux-btrfs@vger.kernel.org>;
+	Thu,  2 Jul 2015 16:12:11 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-118-60.dynamic.mnet-online.de [93.104.118.60])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-01.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Thu,  2 Jul 2015 16:12:11 +0000 (UTC)
+Message-ID: <1435853528.6153.3.camel@scientia.net>
+Subject: strange corruptions found during btrfs check
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Thu, 02 Jul 2015 18:12:08 +0200
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-ZuHVGojEc5sQ0rb9KCut"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
 
-At the bottom of this email are the results of the latest
-chunk-recover.  I only included one example of the output that was
-printed prior to the summary information but it went up to the end of
-my screen buffer and beyond.
+--=-ZuHVGojEc5sQ0rb9KCut
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-So it looks like the command executed properly when none of the drives
-give up on a read.  That said my issue with mounting still exists
-unfortunately.  The errors in dmesg now complain about /dev/sdd.
+Hi.
 
-[56496.014539] BTRFS (device sdd): bad tree block start 0 21364736
+This is on a btrfs created and used with a 4.0 kernel.
 
-Which is curious because this is device id 2, where previously the
-complaint was about device id 1.  So can I believe dmesg about which
-drive is actually the issue or is the drive that's printed in dmesg
-just whichever drive happens to be the last in some loop of code?
-Theoretically I should be able to kick another drive out of the pool
-safely, but I'm not sure which one to actually kick out or if that is
-the appropriate next step.
+Not much was done on it, apart from send/receive snapshots from another
+btrfs (with -p).
+Some of the older snapshots (that were used as parents before) have
+been removed in the meantime).
 
-I do see plenty of complaints about the sdg drive (previously sde) in
-/var/log/messages from the 28th which is when I started noticing
-issues.  Nothing is jumping out at me claiming the btrfs is taking
-action but I may not know what to look for.
+Now a btrfs check gives this:
+# btrfs check /dev/mapper/image
+Checking filesystem on /dev/mapper/data-b
+UUID: 250ddae1-7b37-4b22-89e9-4dc5886c810f
+checking extents
+ref mismatch on [468697088 16384] extent item 0, found 1
+Backref 468697088 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [468697088 16384]
+owner ref check failed [468697088 16384]
+ref mismatch on [1002373120 16384] extent item 0, found 1
+Backref 1002373120 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1002373120 16384]
+ref mismatch on [1013940224 16384] extent item 0, found 1
+Backref 1013940224 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1013940224 16384]
+ref mismatch on [525281738752 16384] extent item 0, found 1
+Backref 525281738752 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [525281738752 16384]
+owner ref check failed [525281738752 16384]
+ref mismatch on [525317095424 16384] extent item 0, found 1
+Backref 525317095424 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [525317095424 16384]
+owner ref check failed [525317095424 16384]
+ref mismatch on [525404700672 16384] extent item 0, found 1
+Backref 525404700672 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [525404700672 16384]
+owner ref check failed [525404700672 16384]
+ref mismatch on [525438025728 16384] extent item 0, found 1
+Backref 525438025728 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [525438025728 16384]
+owner ref check failed [525438025728 16384]
+ref mismatch on [525554302976 16384] extent item 0, found 1
+Backref 525554302976 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [525554302976 16384]
+owner ref check failed [525554302976 16384]
+ref mismatch on [525585235968 16384] extent item 0, found 1
+Backref 525585235968 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [525585235968 16384]
+owner ref check failed [525585235968 16384]
+ref mismatch on [830810521600 16384] extent item 0, found 1
+Backref 830810521600 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [830810521600 16384]
+owner ref check failed [830810521600 16384]
+ref mismatch on [830895620096 16384] extent item 0, found 1
+Backref 830895620096 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [830895620096 16384]
+owner ref check failed [830895620096 16384]
+ref mismatch on [1038383448064 16384] extent item 0, found 1
+Backref 1038383448064 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1038383448064 16384]
+owner ref check failed [1038383448064 16384]
+ref mismatch on [1391733161984 16384] extent item 0, found 1
+Backref 1391733161984 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1391733161984 16384]
+ref mismatch on [1392008445952 16384] extent item 0, found 1
+Backref 1392008445952 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1392008445952 16384]
+ref mismatch on [1392058843136 16384] extent item 0, found 1
+Backref 1392058843136 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1392058843136 16384]
+ref mismatch on [1392058925056 16384] extent item 0, found 1
+Backref 1392058925056 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1392058925056 16384]
+ref mismatch on [1466625753088 16384] extent item 0, found 1
+Backref 1466625753088 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [1466625753088 16384]
+owner ref check failed [1466625753088 16384]
+ref mismatch on [2857092792320 16384] extent item 0, found 1
+Backref 2857092792320 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857092792320 16384]
+owner ref check failed [2857092792320 16384]
+ref mismatch on [2857095610368 16384] extent item 0, found 1
+Backref 2857095610368 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857095610368 16384]
+owner ref check failed [2857095610368 16384]
+ref mismatch on [2857125183488 16384] extent item 0, found 1
+Backref 2857125183488 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857125183488 16384]
+owner ref check failed [2857125183488 16384]
+ref mismatch on [2857127591936 16384] extent item 0, found 1
+Backref 2857127591936 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857127591936 16384]
+owner ref check failed [2857127591936 16384]
+ref mismatch on [2857130393600 16384] extent item 0, found 1
+Backref 2857130393600 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857130393600 16384]
+owner ref check failed [2857130393600 16384]
+ref mismatch on [2857138421760 16384] extent item 0, found 1
+Backref 2857138421760 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857138421760 16384]
+owner ref check failed [2857138421760 16384]
+ref mismatch on [2857140436992 16384] extent item 0, found 1
+Backref 2857140436992 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857140436992 16384]
+owner ref check failed [2857140436992 16384]
+ref mismatch on [2857153970176 16384] extent item 0, found 1
+Backref 2857153970176 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857153970176 16384]
+owner ref check failed [2857153970176 16384]
+ref mismatch on [2857155837952 16384] extent item 0, found 1
+Backref 2857155837952 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857155837952 16384]
+owner ref check failed [2857155837952 16384]
+ref mismatch on [2857157509120 16384] extent item 0, found 1
+Backref 2857157509120 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857157509120 16384]
+owner ref check failed [2857157509120 16384]
+ref mismatch on [2857157836800 16384] extent item 0, found 1
+Backref 2857157836800 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857157836800 16384]
+owner ref check failed [2857157836800 16384]
+ref mismatch on [2857160605696 16384] extent item 0, found 1
+Backref 2857160605696 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857160605696 16384]
+owner ref check failed [2857160605696 16384]
+ref mismatch on [2857164636160 16384] extent item 0, found 1
+Backref 2857164636160 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857164636160 16384]
+owner ref check failed [2857164636160 16384]
+ref mismatch on [2857167716352 16384] extent item 0, found 1
+Backref 2857167716352 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857167716352 16384]
+owner ref check failed [2857167716352 16384]
+ref mismatch on [2857168977920 16384] extent item 0, found 1
+Backref 2857168977920 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857168977920 16384]
+owner ref check failed [2857168977920 16384]
+ref mismatch on [2857175269376 16384] extent item 0, found 1
+Backref 2857175269376 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857175269376 16384]
+owner ref check failed [2857175269376 16384]
+ref mismatch on [2857239904256 16384] extent item 0, found 1
+Backref 2857239904256 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857239904256 16384]
+owner ref check failed [2857239904256 16384]
+ref mismatch on [2857241640960 16384] extent item 0, found 1
+Backref 2857241640960 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857241640960 16384]
+owner ref check failed [2857241640960 16384]
+ref mismatch on [2857244409856 16384] extent item 0, found 1
+Backref 2857244409856 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [2857244409856 16384]
+owner ref check failed [2857244409856 16384]
+ref mismatch on [3955758170112 16384] extent item 0, found 1
+Backref 3955758170112 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [3955758170112 16384]
+ref mismatch on [3955758563328 16384] extent item 0, found 1
+Backref 3955758563328 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [3955758563328 16384]
+owner ref check failed [3955758563328 16384]
+ref mismatch on [3955758678016 16384] extent item 0, found 1
+Backref 3955758678016 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [3955758678016 16384]
+ref mismatch on [4420194156544 16384] extent item 0, found 1
+Backref 4420194156544 parent 4159 root 4159 not found in extent tree
+backpointer mismatch on [4420194156544 16384]
+Errors found in extent allocation tree or chunk allocation
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 4945849393671 bytes used err is 0
+total csum bytes: 4821697620
+total tree bytes: 8430518272
+total fs tree bytes: 2181136384
+total extent tree bytes: 740294656
+btree space waste bytes: 955676550
+file data blocks allocated: 7672438157312
+ referenced 7740136660992
+btrfs-progs v4.0
 
-journalctl I'm not familiar with.  journalctl -bX returns with "failed
-to parse relative boot ID number 'X'" but perhaps you meant X to be a
-variable of some value?    journalctl -b does run, but I'm not sure
-what to look for.
 
-So, what does the audience suggest?  Shall I compile a newer kernel,
-kick out another drive (which?), or take what's behind door #3 (which
-is...?)
+Any ideas?
 
-Thanks again everybody,
-Donald
+Cheers,
+Chris.
+--=-ZuHVGojEc5sQ0rb9KCut
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
-  Chunk: start = 6643489177600, len = 1073741824, type = 104, num_stripes = 10
-      Stripes list:
-      [ 0] Stripe: devid = 8, offset = 817549672448
-      [ 1] Stripe: devid = 7, offset = 817549672448
-      [ 2] Stripe: devid = 10, offset = 817549672448
-      [ 3] Stripe: devid = 9, offset = 817549672448
-      [ 4] Stripe: devid = 3, offset = 817549672448
-      [ 5] Stripe: devid = 0, offset = 0
-      [ 6] Stripe: devid = 0, offset = 0
-      [ 7] Stripe: devid = 0, offset = 0
-      [ 8] Stripe: devid = 0, offset = 0
-      [ 9] Stripe: devid = 0, offset = 0
-      Block Group: start = 6643489177600, len = 1073741824, flag = 104
-      Device extent list:
-          [ 0]Device extent: devid = 3, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 1]Device extent: devid = 9, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 2]Device extent: devid = 10, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 3]Device extent: devid = 7, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 4]Device extent: devid = 8, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 5]Device extent: devid = 4, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 6]Device extent: devid = 2, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 7]Device extent: devid = 1, start = 817569595392, len =
-134217728, chunk offset = 6643489177600
-          [ 8]Device extent: devid = 6, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-          [ 9]Device extent: devid = 5, start = 817549672448, len =
-134217728, chunk offset = 6643489177600
-  Chunk: start = 6886154829824, len = 8589934592, type = 101, num_stripes = 0
-      Stripes list:
-      Block Group: start = 6886154829824, len = 8589934592, flag = 101
-      No device extent.
-  Chunk: start = 6894744764416, len = 8589934592, type = 101, num_stripes = 0
-      Stripes list:
-      Block Group: start = 6894744764416, len = 8589934592, flag = 101
-      No device extent.
-  Chunk: start = 6903334699008, len = 8589934592, type = 101, num_stripes = 0
-      Stripes list:
-      Block Group: start = 6903334699008, len = 8589934592, flag = 101
-      No device extent.
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++hxTb78VbTE97+9+105MP2mBd1IZ/imt0P7berZi+lqU4LOvanzIIlk1UE8zEA/iYvTc4SS1fNrj
+CiGoCZx5cp8ZQ3BEYFo++0gac+ukuEJD7ZgkODyDVQSyTbdsrJmUlZ4onJWo4GwMmaNoGw3+oqFA
+Wdq/7NB2oaEx5pKKwX/neYPeDJViDYlGXXxqmAZuDfaTIuaiaprQluGdjcNzcVW1l974/6zYLJ6n
+elUq8V6vaWVGgabxPCtobliHLHw6r/WoROmy2NtREk5UEsMJXgCM4RSPRmcT+0Sj8MrJ7GAZpWI2
++On4hl0V0mFiaxWPDhDe8bs7Sl+wuJgTJCN4OCM0RYN9rn8y58/LAh/HMIIGCDCCA/CgAwIBAgIB
+ATANBgkqhkiG9w0BAQQFADB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3
+LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG
+9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0wNTEwMTQwNzM2NTVaFw0zMzAzMjgwNzM2NTVa
+MFQxFDASBgNVBAoTC0NBY2VydCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcx
+HDAaBgNVBAMTE0NBY2VydCBDbGFzcyAzIFJvb3QwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK
+AoICAQCrSTURSHzSJn5TlM9Dqd0o10Iqi/OHeBlYfA+e2ol94fvrcpANdKGWZKufoCSZc9riVXbH
+F3v1BKxGuMO+f2SNEGwk82GcwPKQ+lHm9WkBY8MPVuJKQs/iRIwlKKjFeQl9RrmK8+nzNCkIReQc
+n8uUBByBqBSzmGXEQ+xOgo0J0b2qW42S0OzekMV/CsLj6+YxWl50PpczWejDAz1gM7/30W9HxM3u
+YoNSbi4ImqTZFRiRpoWSR7CuSOtttyHshRpocjWr//AQXcD0lKdq1TuSfkyQBX6TwSyLpI5idBVx
+bgtxA+qvFTia1NIFcm+M+SvrWnIl+TlG43IbPgTDZCciECqKT1inA62+tC4T7V2qSNfVfdQqe1z6
+RgRQ5MwOQluM7dvyz/yWk+DbETZUYjQ4jwxgmzuXVjit89Jbi6Bb6k6WuHzX1aCGcEDTkSm3ojyt
+9Yy7zxqSiuQ0e8DYbF/pCsLDpyCaWt8sXVJcukfVm+8kKHA4IC/VfynAskEDaJLM4JzMl0tF7zoQ
+CqtwOpiVcK01seqFK6QcgCExqa5geoAmSAC4AcCTY1UikTxW56/bOiXzjzFU6iaLgVn5odFTEcV7
+nQP2dBHgbbEsPyyGkZlxmqZ3izRg0RS0LKydr4wQ05/EavhvE/xzWfdmQnQeiuP43NJvmJzLR5iV
+QAX76QIDAQABo4G/MIG8MA8GA1UdEwEB/wQFMAMBAf8wXQYIKwYBBQUHAQEEUTBPMCMGCCsGAQUF
+BzABhhdodHRwOi8vb2NzcC5DQWNlcnQub3JnLzAoBggrBgEFBQcwAoYcaHR0cDovL3d3dy5DQWNl
+cnQub3JnL2NhLmNydDBKBgNVHSAEQzBBMD8GCCsGAQQBgZBKMDMwMQYIKwYBBQUHAgEWJWh0dHA6
+Ly93d3cuQ0FjZXJ0Lm9yZy9pbmRleC5waHA/aWQ9MTAwDQYJKoZIhvcNAQEEBQADggIBAH8IiKHa
+GlBJ2on7oQhy84r3HsQ6tHlbIDCxRd7CXdNlafHCXVRUPIVfuXtCkcKZ/RtRm6tGpaEQU55tiKxz
+biwzpvD0nuB1wT6IRanhZkP+VlrRekF490DaSjrxC1uluxYG5sLnk7mFTZdPsR44Q4Dvmw2M77in
+YACHV30eRBzLI++bPJmdr7UpHEV5FpZNJ23xHGzDwlVks7wU4vOkHx4y/CcVBc/dLq4+gmF78CEQ
+GPZE6lM5+dzQmiDgxrvgu1pPxJnIB721vaLbLmINQjRBvP+LivVRIqqIMADisNS8vmW61QNXeZvo
+3MhN+FDtkaVSKKKs+zZYPumUK5FQhxvWXtaMzPcPEAxSTtAWYeXlCmy/F8dyRlecmPVsYGN6b165
+Ti/Iubm7aoW8mA3t+T6XhDSUrgCvoeXnkm5OvfPi2RSLXNLrAWygF6UtEOucekq9ve7O/e0iQKtw
+OIj1CodqwqsFYMlIBdpTwd5Ed2qz8zw87YC8pjhKKSRf/lk7myV6VmMAZLldpGJ9VzZPrYPvH5JT
+oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
+sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDcwMjE2MTIw
+OFowTwYJKoZIhvcNAQkEMUIEQETjYnbF5LNeb7IAPOrf1uRoupGAihr7EiLkpT/Oy5uugtY7YRMx
+kw7lkTDWj3jXSJMYUIVZvT2b3HFDq+X4bvcwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCiITF05kV8L3NI79eBTpUeC1TsGx/1
+MWvMCVMfTN8zu887I5NQx9PZcrCJmkyIUJn4Mv70eVI8Qjql1xApdtyyZLB1rws70R6Sk7kNgJMq
+NTjfwDP+cmdJkRgNFuIiG1y8uOR4pFNVB1bUM5TtMi9IljSRH9kFV9u6lU5HD7/JnBfWOb5K+a+D
+2HSwUxvAX3y77bmEUqIbuTZWjvvN1PPj5LAEFO5VxxQv2FbAmhaEVbBOfqBABzGHc4B/bJedfLFm
+3kkG/X0ZGvRIUi9AdHD10WSRWSHtZwLagldgtm3cwigwswvIsbYDK3Ro2VIvRLqw6XQSD6mhgEd3
+OA4O8N4HAAAAAAAA
 
-Total Chunks:           805
-  Recoverable:          567
-  Unrecoverable:        238
 
-Orphan Block Groups:
+--=-ZuHVGojEc5sQ0rb9KCut--
 
-Orphan Device Extents:
-  Device extent: devid = 4, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 2, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 1, start = 819851296768, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 9, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 10, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 8, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 7, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 3, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 6, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-  Device extent: devid = 5, start = 819831373824, len = 1073741824,
-chunk offset = 6661742788608
-
-open with broken chunk error
-Fail to recover the chunk tree.
-
-On Wed, Jul 1, 2015 at 9:31 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Wed, Jul 1, 2015 at 7:38 PM, Donald Pearson
-> <donaldwhpearson@gmail.com> wrote:
->
->> Here's the drive vomiting in my logs after it got halfway through the
->> dd image attempt.
->>
->> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] FAILED Result:
->> hostbyte=DID_OK driverbyte=DRIVER_SENSE
->> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] Sense Key : Medium
->> Error [current]
->> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] Add. Sense:
->> Unrecovered read error
->> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] CDB: Read(10) 28 00 5a
->> 5b f1 e0 00 01 00 00
->> Jul  1 17:05:51 san01 kernel: blk_update_request: critical medium
->> error, dev sdg, sector 1515975136
->> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] FAILED Result:
->> hostbyte=DID_OK driverbyte=DRIVER_SENSE
->> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] Sense Key : Medium
->> Error [current]
->> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] Add. Sense:
->> Unrecovered read error
->> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] CDB: Read(10) 28 00 5a
->> 5b f2 e0 00 01 00 00
->
-> This looks like a typical URE. There are a number of reasons why a
-> sector can be bad, but basically the drive ECC has given up being able
-> to correct the problem, and it reports the command, the error, and the
-> sector involved. What *should* happen is Btrfs reconstructs the data
-> (or metadata) on that sector, and then writes it (since kernel 3.19)
-> back to the bad sector LBA. The drive tries to write to that bad
-> sector, and verifies. If there is a persistent failure then that LBA
-> is mapped to a different physical sector and the bad one is removed
-> (has no LBA) - there will be no kernel messages for this it's all
-> handled in the drive itself.
->
-> But this sounds like a dd read of the raw device, where Btrfs is not
-> involved (because you can't mount the volume) so none of this
-> correction happens. What I wonder though it in the much earlier logs,
-> if this same problem happened when the volume was mounted, did Btrfs
-> try to fix the problem and were there problems fixing it?
->
-> So it might be useful if there's something in /var/log/messages or
-> journalctl -bX at the time the original problem was first developing.
->
-> Bad sectors are completely ordinary. They're not really common, out of
-> maybe 50 drives I've had two exhibit this. But the drive's are
-> designed to take this into account, and so are hardware, and linux
-> kernel md raid, and LVM raid, and Btrfs, and ZFS. So... it's kinda
-> important to know more about this edge case to find out where the
-> problem is.
->
->
->
-> --
-> Chris Murphy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

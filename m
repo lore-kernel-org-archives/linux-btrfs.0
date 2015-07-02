@@ -1,43 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f180.google.com ([209.85.212.180]:36102 "EHLO
-	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753232AbbGVRpo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jul 2015 13:45:44 -0400
-Received: by wicgb10 with SMTP id gb10so108766039wic.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2015 10:45:42 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:41598 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752670AbbGBOnv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 2 Jul 2015 10:43:51 -0400
+Date: Thu, 2 Jul 2015 16:43:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 11/18] btrfs: qgroup: Add new qgroup calculation
+ function btrfs_qgroup_account_extents().
+Message-ID: <20150702144349.GN726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1430274551-9277-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1430274551-9277-12-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150626140823.GU726@twin.jikos.cz>
-References: <1428383355-1686-1-git-send-email-dccitaliano@gmail.com>
-	<1428383355-1686-2-git-send-email-dccitaliano@gmail.com>
-	<20150626140823.GU726@twin.jikos.cz>
-Date: Wed, 22 Jul 2015 10:45:42 -0700
-Message-ID: <CADob98SbbLfLorGX0W4MRWMYe_uWFVQA88k7VRJLkv0nhANReg@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: Improve FL_KEEP_SIZE handling in fallocate.
-From: Davide Italiano <dccitaliano@gmail.com>
-To: Davide Italiano <dccitaliano@gmail.com>, linux-btrfs@vger.kernel.org,
-        clm@fb.com
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1430274551-9277-12-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jun 26, 2015 at 7:08 AM, David Sterba <dsterba@suse.cz> wrote:
-> On Mon, Apr 06, 2015 at 10:09:15PM -0700, Davide Italiano wrote:
->> - We call inode_size_ok() only if FL_KEEP_SIZE isn't specified.
->> - As an optimisation we can skip the call if (off + len)
->>   isn't greater than the current size of the file. This operation
->>   is called under the lock so the less work we do, the better.
->> - If we call inode_size_ok() pass to it the correct value rather
->>   than a more conservative estimation.
->>
->> Signed-off-by: Davide Italiano <dccitaliano@gmail.com>
->
-> Reviewed-by: David Sterba <dsterba@suse.cz>
+On Wed, Apr 29, 2015 at 10:29:04AM +0800, Qu Wenruo wrote:
+> The new btrfs_qgroup_account_extents() function should be called in
+> btrfs_commit_transaction() and it will update all the qgroup according
+> to delayed_ref_root->dirty_extent_root.
+> 
+> The new function can handle both normal operation during
+> commit_transaction() or in rescan in a unified method with clearer
+> logic.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> v2:
+>   Also free ulist even quota is disabled to avoid possible memory leak.
+> ---
+>  fs/btrfs/extent-tree.h |   0
 
-Hi Chris, this has been around for a while and it's been reviewed by
-multiple people. Any chances you can pull in your branch?
-
-Thanks,
-
---
-Davide
+Surprise, this adds an empty file. What was the intention?

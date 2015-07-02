@@ -1,81 +1,204 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:29911 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753846AbbGBMmb (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jul 2015 08:42:31 -0400
-Date: Thu, 2 Jul 2015 08:42:21 -0400
-From: Chris Mason <clm@fb.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-CC: Zhaolei <zhaolei@cn.fujitsu.com>, <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 4/4] btrfs: Fix data checksum error cause by replace with
- io-load.
-Message-ID: <20150702124221.GI23627@ret.masoncoding.com>
-References: <5c5c914dad20c018cfe74174827219c418839f39.1432900529.git.zhaolei@cn.fujitsu.com>
- <33ad2c0da35681e20afdc6a75ecb19ff2b09f767.1432900529.git.zhaolei@cn.fujitsu.com>
- <5591FE4A.9060406@cn.fujitsu.com>
+Received: from mail-oi0-f48.google.com ([209.85.218.48]:36671 "EHLO
+	mail-oi0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751263AbbGBOtX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2015 10:49:23 -0400
+Received: by oiaf66 with SMTP id f66so25890439oia.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2015 07:49:23 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <5591FE4A.9060406@cn.fujitsu.com>
+In-Reply-To: <CAJCQCtSB+29V-UdL5JZAHu3Zv3-XH0SyL8E5MwHgyeoVQ46Wvg@mail.gmail.com>
+References: <CAC=t97D=Dmq3cu-z2PNjREQn5690+R9NBQsjr5KZ4grYnYr4WA@mail.gmail.com>
+ <CAJCQCtSjxs2ZZUgUfrp9q5y+x0fFA7fSnQPgeEXTjsLKZ6DPKw@mail.gmail.com>
+ <CAC=t97BiPjTf7yjWoSaoTgjvPZFgyEHdEJzFCG1Mu+nnJGoNoA@mail.gmail.com>
+ <CAC=t97Bg3STrTn86HBNYJJm-FT7aiR6tc51tjVnPiArpPgd9XQ@mail.gmail.com>
+ <CAC=t97CS5As+3SqZy-sHM4U2JZ0bi_AEq=34bNXu0yBmh8QRjg@mail.gmail.com>
+ <CAC=t97AQaDTRinVg9crdAG8zaoj_--L_PLDY3M4_HKHZotnVVg@mail.gmail.com>
+ <CAJCQCtRpRg=XdMtAerHfxCWXO74s34=b9LLuk9mvfRhKz8hjFQ@mail.gmail.com>
+ <CAC=t97AERgJ06P_Q8vbz=-yC=H3ODUkTt7ZD1Zpimr_jft+S6g@mail.gmail.com> <CAJCQCtSB+29V-UdL5JZAHu3Zv3-XH0SyL8E5MwHgyeoVQ46Wvg@mail.gmail.com>
+From: Donald Pearson <donaldwhpearson@gmail.com>
+Date: Thu, 2 Jul 2015 09:49:03 -0500
+Message-ID: <CAC=t97BOYQJAanPc_EFzxwwakFrY4ALd0sX-n9w_e9JHodU27Q@mail.gmail.com>
+Subject: Re: Any hope of pool recovery?
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jun 30, 2015 at 10:26:18AM +0800, Qu Wenruo wrote:
-> To Chris:
-> 
-> Would you consider merging these patchset for late 4.2 merge window?
-> If it's OK to merge it into 4.2 late rc, we'll start our test and send pull
-> request after our test, eta this Friday or next Monday.
-> 
-> I know normally we should submit it early especially when such fix is not
-> small.
-> But the bug is long-standing and is quite annoying (possibility involved),
-> also Zhao Lei has quite a good idea to cleanup the scrub codes based on the
-> patchset.
-> 
-> So it would be quite nice if we have any chance to merge it into 4.2
-> 
-> Would it be OK for you?
-> 
+Hello,
 
-I can still take these patches in a later RC, but with this set applied,
-I'm getting this during xfstests (btrfs/073 and btrfs/066):
+At the bottom of this email are the results of the latest
+chunk-recover.  I only included one example of the output that was
+printed prior to the summary information but it went up to the end of
+my screen buffer and beyond.
 
-[11185.853152] ------------[ cut here ]------------                           
-[11185.862659] WARNING: CPU: 7 PID: 580363 at fs/btrfs/extent-tree.c:9460 btrfs_create_pending_block_groups+0x161/0x1f0 [btrfs]()
-[11185.885804] Modules linked in: dm_flakey btrfs raid6_pq zlib_deflate lzo_compress xor xfs exportfs libcrc32c tcp_diag inet_diag nfsv4 fuse loop k10temp coretemp hwmon ip6table_filter ip6_tables xt_NFLOG nfnetlink_log nfnetlink xt_comment xt_statistic iptable_filter ip_tables x_tables mptctl nfsv3 nfs lockd grace netconsole autofs4 rpcsec_gss_krb5 auth_rpcgss oid_registry sunrpc ipv6 ext3 jbd iTCO_wdt iTCO_vendor_support pcspkr rtc_cmos ipmi_si ipmi_msghandler i2c_i801 i2c_core lpc_ich mfd_core shpchp ehci_pci ehci_hcd mlx4_en ptp pps_core mlx4_core sg ses enclosure button dm_mod megaraid_sas
-[11185.994338] CPU: 7 PID: 580363 Comm: btrfs Tainted: G        W       4.1.0-rc6-mason+ #82
-[11186.011074] Hardware name: ZTSYSTEMS Echo Ridge T4  /A9DRPF-10D, BIOS 1.07 05/10/2012
-[11186.027107]  00000000000024f4 ffff880894b539c8 ffffffff816c48c5 ffffffffa06dbe8d
-[11186.042442]  ffff880894b53a18 ffff880894b53a08 ffffffff8105ba75 ffff881053ad4000
-[11186.057769]  ffff88085417c9a8 ffff88085417c800 ffff8806335a8858 00000000ffffffe5
-[11186.073128] Call Trace:                                                    
-[11186.078233]  [<ffffffff816c48c5>] dump_stack+0x4f/0x6a                     
-[11186.088713]  [<ffffffff8105ba75>] warn_slowpath_common+0x95/0xe0           
-[11186.100926]  [<ffffffff8105bb76>] warn_slowpath_fmt+0x46/0x70              
-[11186.112627]  [<ffffffffa062c551>] btrfs_create_pending_block_groups+0x161/0x1f0 [btrfs]
-[11186.129039]  [<ffffffffa064f6ec>] __btrfs_end_transaction+0xac/0x400 [btrfs]
-[11186.143325]  [<ffffffffa064fa70>] btrfs_end_transaction+0x10/0x20 [btrfs]  
-[11186.157092]  [<ffffffffa063bdf6>] btrfs_inc_block_group_ro+0x116/0x1d0 [btrfs]
-[11186.171941]  [<ffffffffa06b8962>] scrub_enumerate_chunks+0x2f2/0x5e0 [btrfs]
-[11186.186233]  [<ffffffff8108cf4d>] ? ttwu_stat+0x4d/0x250                   
-[11186.197045]  [<ffffffff810a4100>] ? bit_waitqueue+0x80/0xa0                
-[11186.208392]  [<ffffffff810af1fd>] ? trace_hardirqs_on+0xd/0x10             
-[11186.220271]  [<ffffffffa06b8e16>] btrfs_scrub_dev+0x1c6/0x5d0 [btrfs]      
-[11186.233350]  [<ffffffff811fd4f9>] ? __mnt_want_write_file+0x29/0x30        
-[11186.246083]  [<ffffffffa068c991>] btrfs_ioctl_scrub+0xb1/0x130 [btrfs]     
-[11186.259348]  [<ffffffffa068f408>] btrfs_ioctl+0xa68/0x11d0 [btrfs]         
-[11186.271908]  [<ffffffff811ef57f>] do_vfs_ioctl+0x8f/0x580                  
-[11186.282903]  [<ffffffff811fcb50>] ? __fget+0x110/0x200                     
-[11186.293377]  [<ffffffff811fca40>] ? get_close_on_exec+0x180/0x180          
-[11186.305764]  [<ffffffff811fcc6a>] ? __fget_light+0x2a/0x90                 
-[11186.316928]  [<ffffffff811efb11>] SyS_ioctl+0xa1/0xb0                      
-[11186.327233]  [<ffffffff8110de5c>] ? __audit_syscall_entry+0xac/0x110       
-[11186.340133]  [<ffffffff816cb7d7>] system_call_fastpath+0x12/0x6f           
-[11186.352346] ---[ end trace 720cebad3201fcad ]---
-[11186.361785] BTRFS: error (device sdi) in btrfs_create_pending_block_groups:9460: errno=-27 unknown^M
+So it looks like the command executed properly when none of the drives
+give up on a read.  That said my issue with mounting still exists
+unfortunately.  The errors in dmesg now complain about /dev/sdd.
 
-I've removed them for now.
+[56496.014539] BTRFS (device sdd): bad tree block start 0 21364736
 
--chris
+Which is curious because this is device id 2, where previously the
+complaint was about device id 1.  So can I believe dmesg about which
+drive is actually the issue or is the drive that's printed in dmesg
+just whichever drive happens to be the last in some loop of code?
+Theoretically I should be able to kick another drive out of the pool
+safely, but I'm not sure which one to actually kick out or if that is
+the appropriate next step.
 
+I do see plenty of complaints about the sdg drive (previously sde) in
+/var/log/messages from the 28th which is when I started noticing
+issues.  Nothing is jumping out at me claiming the btrfs is taking
+action but I may not know what to look for.
+
+journalctl I'm not familiar with.  journalctl -bX returns with "failed
+to parse relative boot ID number 'X'" but perhaps you meant X to be a
+variable of some value?    journalctl -b does run, but I'm not sure
+what to look for.
+
+So, what does the audience suggest?  Shall I compile a newer kernel,
+kick out another drive (which?), or take what's behind door #3 (which
+is...?)
+
+Thanks again everybody,
+Donald
+
+  Chunk: start = 6643489177600, len = 1073741824, type = 104, num_stripes = 10
+      Stripes list:
+      [ 0] Stripe: devid = 8, offset = 817549672448
+      [ 1] Stripe: devid = 7, offset = 817549672448
+      [ 2] Stripe: devid = 10, offset = 817549672448
+      [ 3] Stripe: devid = 9, offset = 817549672448
+      [ 4] Stripe: devid = 3, offset = 817549672448
+      [ 5] Stripe: devid = 0, offset = 0
+      [ 6] Stripe: devid = 0, offset = 0
+      [ 7] Stripe: devid = 0, offset = 0
+      [ 8] Stripe: devid = 0, offset = 0
+      [ 9] Stripe: devid = 0, offset = 0
+      Block Group: start = 6643489177600, len = 1073741824, flag = 104
+      Device extent list:
+          [ 0]Device extent: devid = 3, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 1]Device extent: devid = 9, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 2]Device extent: devid = 10, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 3]Device extent: devid = 7, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 4]Device extent: devid = 8, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 5]Device extent: devid = 4, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 6]Device extent: devid = 2, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 7]Device extent: devid = 1, start = 817569595392, len =
+134217728, chunk offset = 6643489177600
+          [ 8]Device extent: devid = 6, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+          [ 9]Device extent: devid = 5, start = 817549672448, len =
+134217728, chunk offset = 6643489177600
+  Chunk: start = 6886154829824, len = 8589934592, type = 101, num_stripes = 0
+      Stripes list:
+      Block Group: start = 6886154829824, len = 8589934592, flag = 101
+      No device extent.
+  Chunk: start = 6894744764416, len = 8589934592, type = 101, num_stripes = 0
+      Stripes list:
+      Block Group: start = 6894744764416, len = 8589934592, flag = 101
+      No device extent.
+  Chunk: start = 6903334699008, len = 8589934592, type = 101, num_stripes = 0
+      Stripes list:
+      Block Group: start = 6903334699008, len = 8589934592, flag = 101
+      No device extent.
+
+Total Chunks:           805
+  Recoverable:          567
+  Unrecoverable:        238
+
+Orphan Block Groups:
+
+Orphan Device Extents:
+  Device extent: devid = 4, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 2, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 1, start = 819851296768, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 9, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 10, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 8, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 7, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 3, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 6, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+  Device extent: devid = 5, start = 819831373824, len = 1073741824,
+chunk offset = 6661742788608
+
+open with broken chunk error
+Fail to recover the chunk tree.
+
+On Wed, Jul 1, 2015 at 9:31 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Wed, Jul 1, 2015 at 7:38 PM, Donald Pearson
+> <donaldwhpearson@gmail.com> wrote:
+>
+>> Here's the drive vomiting in my logs after it got halfway through the
+>> dd image attempt.
+>>
+>> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] FAILED Result:
+>> hostbyte=DID_OK driverbyte=DRIVER_SENSE
+>> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] Sense Key : Medium
+>> Error [current]
+>> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] Add. Sense:
+>> Unrecovered read error
+>> Jul  1 17:05:51 san01 kernel: sd 0:0:6:0: [sdg] CDB: Read(10) 28 00 5a
+>> 5b f1 e0 00 01 00 00
+>> Jul  1 17:05:51 san01 kernel: blk_update_request: critical medium
+>> error, dev sdg, sector 1515975136
+>> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] FAILED Result:
+>> hostbyte=DID_OK driverbyte=DRIVER_SENSE
+>> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] Sense Key : Medium
+>> Error [current]
+>> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] Add. Sense:
+>> Unrecovered read error
+>> Jul  1 17:05:57 san01 kernel: sd 0:0:6:0: [sdg] CDB: Read(10) 28 00 5a
+>> 5b f2 e0 00 01 00 00
+>
+> This looks like a typical URE. There are a number of reasons why a
+> sector can be bad, but basically the drive ECC has given up being able
+> to correct the problem, and it reports the command, the error, and the
+> sector involved. What *should* happen is Btrfs reconstructs the data
+> (or metadata) on that sector, and then writes it (since kernel 3.19)
+> back to the bad sector LBA. The drive tries to write to that bad
+> sector, and verifies. If there is a persistent failure then that LBA
+> is mapped to a different physical sector and the bad one is removed
+> (has no LBA) - there will be no kernel messages for this it's all
+> handled in the drive itself.
+>
+> But this sounds like a dd read of the raw device, where Btrfs is not
+> involved (because you can't mount the volume) so none of this
+> correction happens. What I wonder though it in the much earlier logs,
+> if this same problem happened when the volume was mounted, did Btrfs
+> try to fix the problem and were there problems fixing it?
+>
+> So it might be useful if there's something in /var/log/messages or
+> journalctl -bX at the time the original problem was first developing.
+>
+> Bad sectors are completely ordinary. They're not really common, out of
+> maybe 50 drives I've had two exhibit this. But the drive's are
+> designed to take this into account, and so are hardware, and linux
+> kernel md raid, and LVM raid, and Btrfs, and ZFS. So... it's kinda
+> important to know more about this edge case to find out where the
+> problem is.
+>
+>
+>
+> --
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

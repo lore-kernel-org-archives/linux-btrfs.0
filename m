@@ -1,101 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:27556 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:24915 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753800AbbG0ODj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 10:03:39 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6RE1j3t026017
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 22:01:45 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
+	with ESMTP id S1754279AbbGCBT7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2015 21:19:59 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t631IH62024005
+	for <linux-btrfs@vger.kernel.org>; Fri, 3 Jul 2015 09:18:17 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs-progs-tests: Fix mount fail of 013-extent-tree-rebuild
-Date: Mon, 27 Jul 2015 22:01:59 +0800
-Message-ID: <af0bb4ec01e3e29b59028de8ab76d6241ba050c6.1438005661.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <faa118527b0436377f6a452948350b0700b73584.1438005660.git.zhaolei@cn.fujitsu.com>
-References: <faa118527b0436377f6a452948350b0700b73584.1438005660.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: remove empty header file extent-tree.h
+Date: Fri, 3 Jul 2015 09:17:54 +0800
+Message-ID: <1435886274-8309-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+The empty file is introduced as an careless 'git add', remove it.
 
-When using loop device for test, fsck-tests/013-extent-tree-rebuild
-failed with following error message:
-  # ./fsck-tests.sh
-  ...
-    [TEST]   013-extent-tree-rebuild
-  failed: mount /data/btrfsprogs/tests/test.img /data/btrfsprogs/tests/mnt
-  test failed for case 013-extent-tree-rebuild
-  #
-
-Considering that $TEST_DEV can be block or loop device, we need determine
-our mount option in a condition for both case.
-
-This patch make above request to a common function, to solve current
-problem in 013-extent-tree-rebuild, and support similar request in future.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/common                                     | 24 ++++++++++++++++++++++++
- tests/fsck-tests/013-extent-tree-rebuild/test.sh |  4 ++--
- 2 files changed, 26 insertions(+), 2 deletions(-)
+ fs/btrfs/extent-tree.h | 0
+ 1 file changed, 0 insertions(+), 0 deletions(-)
+ delete mode 100644 fs/btrfs/extent-tree.h
 
-diff --git a/tests/common b/tests/common
-index ba0b78a..381ff96 100644
---- a/tests/common
-+++ b/tests/common
-@@ -165,3 +165,27 @@ init_env()
- 	mkdir -p "$TEST_MNT" || { echo "Failed mkdir -p $TEST_MNT"; exit 1; }
- }
- init_env
-+
-+mount_test_dev()
-+{
-+	local loop_opt
-+	if [[ -b "$TEST_DEV" ]]; then
-+		loop_opt=()
-+	elif [[ -f "$TEST_DEV" ]]; then
-+		loop_opt=(-o loop)
-+	else
-+		_fail "Invalid \$TEST_DEV: $TEST_DEV"
-+	fi
-+
-+	[[ -d "$TEST_MNT" ]] || {
-+		_fail "Invalid \$TEST_MNT: $TEST_MNT"
-+	}
-+
-+	mount "${loop_opt[@]}" "$TEST_DEV" "$TEST_MNT" || _fail "mount $TEST_DEV to $TEST_MNT failed"
-+}
-+
-+umount_test_dev()
-+{
-+	umount "$TEST_DEV"
-+}
-+
-diff --git a/tests/fsck-tests/013-extent-tree-rebuild/test.sh b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-index b7909d2..ff3c922 100755
---- a/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-+++ b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
-@@ -12,14 +12,14 @@ test_extent_tree_rebuild()
- {
- 	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
- 
--	run_check $SUDO_HELPER mount $TEST_DEV $TEST_MNT
-+	run_check $SUDO_HELPER mount_test_dev
- 	run_check $SUDO_HELPER cp -aR /lib/modules/`uname -r`/ $TEST_MNT
- 
- 	for i in `seq 1 100`;do
- 		run_check $SUDO_HELPER $TOP/btrfs sub snapshot $TEST_MNT \
- 			$TEST_MNT/snapaaaaaaa_$i
- 	done
--	run_check $SUDO_HELPER umount $TEST_DEV
-+	run_check $SUDO_HELPER umount_test_dev
- 
- 	# get extent root bytenr
- 	extent_root_bytenr=`$SUDO_HELPER $TOP/btrfs-debug-tree -r $TEST_DEV | \
+diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
+deleted file mode 100644
+index e69de29..0000000
 -- 
-1.8.5.1
+2.4.4
 

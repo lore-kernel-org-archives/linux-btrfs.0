@@ -1,38 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41598 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752670AbbGBOnv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 2 Jul 2015 10:43:51 -0400
-Date: Thu, 2 Jul 2015 16:43:49 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from cn.fujitsu.com ([59.151.112.132]:20405 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753018AbbGCAb7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2015 20:31:59 -0400
 Subject: Re: [PATCH v2 11/18] btrfs: qgroup: Add new qgroup calculation
  function btrfs_qgroup_account_extents().
-Message-ID: <20150702144349.GN726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
 References: <1430274551-9277-1-git-send-email-quwenruo@cn.fujitsu.com>
  <1430274551-9277-12-git-send-email-quwenruo@cn.fujitsu.com>
+ <20150702144349.GN726@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5595D7FC.60807@cn.fujitsu.com>
+Date: Fri, 3 Jul 2015 08:31:56 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1430274551-9277-12-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <20150702144349.GN726@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Apr 29, 2015 at 10:29:04AM +0800, Qu Wenruo wrote:
-> The new btrfs_qgroup_account_extents() function should be called in
-> btrfs_commit_transaction() and it will update all the qgroup according
-> to delayed_ref_root->dirty_extent_root.
-> 
-> The new function can handle both normal operation during
-> commit_transaction() or in rescan in a unified method with clearer
-> logic.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> v2:
->   Also free ulist even quota is disabled to avoid possible memory leak.
-> ---
->  fs/btrfs/extent-tree.h |   0
 
-Surprise, this adds an empty file. What was the intention?
+
+David Sterba wrote on 2015/07/02 16:43 +0200:
+> On Wed, Apr 29, 2015 at 10:29:04AM +0800, Qu Wenruo wrote:
+>> The new btrfs_qgroup_account_extents() function should be called in
+>> btrfs_commit_transaction() and it will update all the qgroup according
+>> to delayed_ref_root->dirty_extent_root.
+>>
+>> The new function can handle both normal operation during
+>> commit_transaction() or in rescan in a unified method with clearer
+>> logic.
+>>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>> v2:
+>>    Also free ulist even quota is disabled to avoid possible memory leak.
+>> ---
+>>   fs/btrfs/extent-tree.h |   0
+>
+> Surprise, this adds an empty file. What was the intention?
+My fault, it seems I opened the non-existing file and saved it...
+Do I need to submit a patch to remove it?
+
+Thanks,
+Qu
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

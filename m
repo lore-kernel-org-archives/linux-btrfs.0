@@ -1,68 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:45231 "EHLO mail.kernel.org"
+Received: from cantor2.suse.de ([195.135.220.15]:35912 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751479AbbGCKg7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 3 Jul 2015 06:36:59 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix memory leak in the extent_same ioctl
-Date: Fri,  3 Jul 2015 11:36:49 +0100
-Message-Id: <1435919809-8348-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1435909702-2094-1-git-send-email-fdmanana@kernel.org>
+	id S1755326AbbGCQPn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Jul 2015 12:15:43 -0400
+Date: Fri, 3 Jul 2015 09:15:41 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org, ritter.marcel@gmail.com,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] Btrfs: fix memory leak in the extent_same ioctl
+Message-ID: <20150703161541.GD7507@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 References: <1435909702-2094-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1435909702-2094-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+That looks great, thanks for fixing this Filipe.
 
-We were allocating memory with memdup_user() but we were never releasing
-that memory. This affected pretty much every call to the ioctl, whether
-it deduplicated extents or not.
+On Fri, Jul 03, 2015 at 08:48:22AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> We were allocating memory with memdup_user() but we were never releasing
+> that memory. This affected pretty much every call to the ioctl, whether
+> it deduplicated extents or not.
+> 
+> This issue was reported on IRC by Julian Taylor and on the mailing list
+> by Marcel Ritter, credit goes to them for finding the issue.
+> 
+> Reported-by: Julian Taylor (jtaylor@IRC)
+> Reported-by: Marcel Ritter <ritter.marcel@gmail.com>
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-This issue was reported on IRC by Julian Taylor and on the mailing list
-by Marcel Ritter, credit goes to them for finding the issue.
+Reviewed-by: Mark Fasheh <mfasheh@suse.de>
+	--Mark
 
-Reported-by: Julian Taylor <jtaylor.debian@googlemail.com>
-Reported-by: Marcel Ritter <ritter.marcel@gmail.com>
-Cc: stable@vger.kernel.org
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Added cc to stable, forgotten in v1, and Julian's mail address.
-
- fs/btrfs/ioctl.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index c86b835..78e6a28 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2958,7 +2958,7 @@ out_unlock:
- static long btrfs_ioctl_file_extent_same(struct file *file,
- 			struct btrfs_ioctl_same_args __user *argp)
- {
--	struct btrfs_ioctl_same_args *same;
-+	struct btrfs_ioctl_same_args *same = NULL;
- 	struct btrfs_ioctl_same_extent_info *info;
- 	struct inode *src = file_inode(file);
- 	u64 off;
-@@ -2988,6 +2988,7 @@ static long btrfs_ioctl_file_extent_same(struct file *file,
- 
- 	if (IS_ERR(same)) {
- 		ret = PTR_ERR(same);
-+		same = NULL;
- 		goto out;
- 	}
- 
-@@ -3058,6 +3059,7 @@ static long btrfs_ioctl_file_extent_same(struct file *file,
- 
- out:
- 	mnt_drop_write_file(file);
-+	kfree(same);
- 	return ret;
- }
- 
--- 
-2.1.3
-
+--
+Mark Fasheh

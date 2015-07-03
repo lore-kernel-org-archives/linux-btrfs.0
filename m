@@ -1,52 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vn0-f43.google.com ([209.85.216.43]:34146 "EHLO
-	mail-vn0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754894AbbGCRvZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jul 2015 13:51:25 -0400
-Received: by vnbf7 with SMTP id f7so10349320vnb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jul 2015 10:51:24 -0700 (PDT)
+Received: from mail-vn0-f42.google.com ([209.85.216.42]:45505 "EHLO
+	mail-vn0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755113AbbGCSET (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jul 2015 14:04:19 -0400
+Received: by vnbg7 with SMTP id g7so16831909vnb.12
+        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jul 2015 11:04:19 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAC=t97D07H1LaE=Qa=jUtwGp16oyh6YWEL7YbOKNTU9jBbaL+Q@mail.gmail.com>
-References: <CAC=t97D=Dmq3cu-z2PNjREQn5690+R9NBQsjr5KZ4grYnYr4WA@mail.gmail.com>
-	<CAC=t97A4JtSzXpn9Yr3vhe6Z5JCfKEFB1GfwSLsfYPOWhZ+Zrw@mail.gmail.com>
-	<pan$d53e4$45e2ddf7$2a88de7f$b02d251@cox.net>
-	<1477911.JnaWx19SzT@merkaba>
-	<CAC=t97D07H1LaE=Qa=jUtwGp16oyh6YWEL7YbOKNTU9jBbaL+Q@mail.gmail.com>
-Date: Fri, 3 Jul 2015 11:51:24 -0600
-Message-ID: <CAJCQCtTvb8dqeMsnxGZeU7A1rUDZV5mvRmZ3u=DF2uAZMGoiSw@mail.gmail.com>
-Subject: Re: Any hope of pool recovery?
+In-Reply-To: <CAG+QAKUuwVSr8wibFi3zdwu1gR72YEjXEV1JFK126juWzDFvDg@mail.gmail.com>
+References: <CAG+QAKX1eSmarBn+YXq5dkZ0zTWsSDM6cfwTtDg-43-nTRSXWQ@mail.gmail.com>
+	<CAC=t97Dy57JMBZ-exzCytMMUUhrV_zh7W9L+fQR_G_LOqfhWhA@mail.gmail.com>
+	<CAG+QAKWZ-jTGkK7btiHziDf9LhW31QUSFbJ9DpLy1xqmk7vUCQ@mail.gmail.com>
+	<CAG+QAKW1ZH_6AN3CSmXxiQr9xmR_ha=erfruSHxvKYKH6w3WiA@mail.gmail.com>
+	<CAG+QAKUuwVSr8wibFi3zdwu1gR72YEjXEV1JFK126juWzDFvDg@mail.gmail.com>
+Date: Fri, 3 Jul 2015 12:04:18 -0600
+Message-ID: <CAJCQCtQmppYhavcOcef2Nv3ZmpVYe+4b6LLSAvfAMdCD5bTvGw@mail.gmail.com>
+Subject: Re: btrfs full, but not full, can't rebalance
 From: Chris Murphy <lists@colorremedies.com>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 3, 2015 at 9:05 AM, Donald Pearson
-<donaldwhpearson@gmail.com> wrote:
+What kernel version are you using?
 
-> I did some more digging and found that I had a lot of errors basically
-> every drive.
+I suggest reading the whole thread but in particular this note about
+CentOS 7 and Btrfs.
+http://www.spinics.net/lists/linux-btrfs/msg40850.html
 
-Ick. Sucks for you but then makes this less of a Btrfs problem because
-it can really only do so much if more than the number of spares have
-problems. It does suggest a more aggressive need for the volume to go
-read only in such cases though, before it gets this corrupt.
+So kernel 3.16 isn't necessarily too old, but I know there's been a
+lot of on-going balance related work that's not in that kernel and
+thus won't be in the CentOS 7.1 kernel either. And then there's also
+some possibility the older btrfs-progs contributes to the problem,
+even though I think most of the balance code is actually in the
+kernel.
 
-Multiple disk problems like this though suggest a shared hardware
-problem like a controller or expander.
+While the CentOS 7.1 kernel is going to be more stable/predictable
+overall (not with respect to Btrfs but everything the kernel does):
+a.) Btrfs is a tech preview
+b.) To unwind the problems you've having with this volume right now,
+I'd really suggest a much newer kernel.
+
+>         Total devices 2 FS bytes used 17.06GiB
+>         devid    1 size 111.11GiB used 22.03GiB path /dev/sdf3
+>         devid    2 size 111.11GiB used 22.03GiB path /dev/sdg3
+
+There's tons of unallocated space for new data or metadata chunks.
+
+> Data, RAID1: total=18.00GiB, used=16.36GiB
+> System, RAID1: total=32.00MiB, used=16.00KiB
+> Metadata, RAID1: total=4.00GiB, used=711.34MiB
+> GlobalReserve, single: total=240.00MiB, used=128.00KiB
+> ERROR: error during balancing '/' - No space left on device
+
+And there's tons of space in already created data and metadata chunks.
+So something is wrong, and I really wouldn't persist on trying to make
+this work with an older kernel and progs. So I suggest putting the
+volume on a system with a 4.1 kernel and 4.1 progs, and running a
+btrfs check without --repair and report back with the full output.
+
+Once you get things fixed up, it seems going back to the CentOS 7.1
+kernel is fine. But periodically you might have to revert to a newer
+kernel for some maintenance, at least until the fix for the problem
+makes it into a future CentOS kernel.
 
 
-> So one particularly bad drive + multiple raid56 caveats + all the
-> other drives behaving a little funny + a guy who didn't read as well
-> as he should, and I really can't be surprised at the result.
->
-> So I've decided to cash in the pool for some valueable lessons and
-> move on.  Thanks to everybody for your thoughts and help here and on
-> IRC (a responsive IRC, that's a refereshing difference) and I'll see
-> what adventures btrfs round 2 brings.
-
-Yep!
-
-
--- 
 Chris Murphy

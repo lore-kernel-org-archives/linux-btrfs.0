@@ -1,68 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ie0-f182.google.com ([209.85.223.182]:36571 "EHLO
-	mail-ie0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752177AbbGCHvp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 3 Jul 2015 03:51:45 -0400
-Received: by iecvh10 with SMTP id vh10so72289450iec.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 03 Jul 2015 00:51:45 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CADurGxx719dLB5my02r0ssM16BdW8kL5U5DrVM5PjA=u6zAcBA@mail.gmail.com>
-References: <CADurGxx719dLB5my02r0ssM16BdW8kL5U5DrVM5PjA=u6zAcBA@mail.gmail.com>
-Date: Fri, 3 Jul 2015 08:51:45 +0100
-Message-ID: <CAL3q7H7xyuDNXeb97qkE+mxW7mMixcfyw=Fo5cADhbdH8e7OiA@mail.gmail.com>
-Subject: Re: linux 4.1 - memory leak (possibly dedup related)
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Marcel Ritter <ritter.marcel@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.kernel.org ([198.145.29.136]:45231 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751479AbbGCKg7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 3 Jul 2015 06:36:59 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
+Subject: [PATCH v2] Btrfs: fix memory leak in the extent_same ioctl
+Date: Fri,  3 Jul 2015 11:36:49 +0100
+Message-Id: <1435919809-8348-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1435909702-2094-1-git-send-email-fdmanana@kernel.org>
+References: <1435909702-2094-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 3, 2015 at 7:58 AM, Marcel Ritter <ritter.marcel@gmail.com> wrote:
-> Hi,
->
-> I've been running some btrfs tests (mainly duperemove related) with
-> linux kernel 4.1 for the last few days.
->
-> Now I noticed by accident (dying processes), that all my memory (128
-> GB!) is gone.
-> "Gone" meaning, there's no user space process allocating this memory.
->
-> Digging deeper I found the missing memory using slabtop (see output of
-> /proc/slabinfo is attached): Looks like I got a lot of kernel memory
-> allocated by kmalloc-1024 (memory leak?).
-> Given the fact that the test machine does little more than btrfs
-> testing I think this may be btrfs related.
->
-> I was running duperemove on a 1.5 TB volume around the time the first
-> "Out of memory" error were logged, so maybe the memory leak can be
-> found somewhere in this code path.
->
-> I'm still waiting for a scrub run to finish, after that I'll reboot
-> the machine and try to reproduce this behaviour with a fresh btrfs
-> filesystem.
->
-> Have there been any fixes concerning memory leaks since 4.1 release I could try?
-> Any other ideas how to track down this potential memory leak?
+From: Filipe Manana <fdmanana@suse.com>
 
-Hi,
+We were allocating memory with memdup_user() but we were never releasing
+that memory. This affected pretty much every call to the ioctl, whether
+it deduplicated extents or not.
 
-We had Julian Taylor reporting the same on IRC a couple days ago (he
-also found what was being leaked). I just sent a fix and cc'ed you
-(https://patchwork.kernel.org/patch/6713301/).
+This issue was reported on IRC by Julian Taylor and on the mailing list
+by Marcel Ritter, credit goes to them for finding the issue.
 
-thanks
+Reported-by: Julian Taylor <jtaylor.debian@googlemail.com>
+Reported-by: Marcel Ritter <ritter.marcel@gmail.com>
+Cc: stable@vger.kernel.org
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
 
->
-> Bye,
->    Marcel
+V2: Added cc to stable, forgotten in v1, and Julian's mail address.
 
+ fs/btrfs/ioctl.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index c86b835..78e6a28 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -2958,7 +2958,7 @@ out_unlock:
+ static long btrfs_ioctl_file_extent_same(struct file *file,
+ 			struct btrfs_ioctl_same_args __user *argp)
+ {
+-	struct btrfs_ioctl_same_args *same;
++	struct btrfs_ioctl_same_args *same = NULL;
+ 	struct btrfs_ioctl_same_extent_info *info;
+ 	struct inode *src = file_inode(file);
+ 	u64 off;
+@@ -2988,6 +2988,7 @@ static long btrfs_ioctl_file_extent_same(struct file *file,
+ 
+ 	if (IS_ERR(same)) {
+ 		ret = PTR_ERR(same);
++		same = NULL;
+ 		goto out;
+ 	}
+ 
+@@ -3058,6 +3059,7 @@ static long btrfs_ioctl_file_extent_same(struct file *file,
+ 
+ out:
+ 	mnt_drop_write_file(file);
++	kfree(same);
+ 	return ret;
+ }
+ 
 -- 
-Filipe David Manana,
+2.1.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

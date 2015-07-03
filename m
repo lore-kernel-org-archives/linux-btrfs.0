@@ -1,112 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f46.google.com ([209.85.218.46]:33457 "EHLO
-	mail-oi0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753571AbbGBSy3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2015 14:54:29 -0400
-Received: by oiyy130 with SMTP id y130so62858890oiy.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 02 Jul 2015 11:54:28 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:42415 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754099AbbGCAZD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 2 Jul 2015 20:25:03 -0400
+Subject: Re: [PATCH 4/4] btrfs: Fix data checksum error cause by replace with
+ io-load.
+To: Chris Mason <clm@fb.com>, Zhaolei <zhaolei@cn.fujitsu.com>,
+        <linux-btrfs@vger.kernel.org>
+References: <5c5c914dad20c018cfe74174827219c418839f39.1432900529.git.zhaolei@cn.fujitsu.com>
+ <33ad2c0da35681e20afdc6a75ecb19ff2b09f767.1432900529.git.zhaolei@cn.fujitsu.com>
+ <5591FE4A.9060406@cn.fujitsu.com>
+ <20150702124221.GI23627@ret.masoncoding.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5595D65B.5000004@cn.fujitsu.com>
+Date: Fri, 3 Jul 2015 08:24:59 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAC=t97Dc9hqQauXb8VqAua-ppZ5J33Ak+VKUtNUSEAct2=r+Lw@mail.gmail.com>
-References: <CAC=t97D=Dmq3cu-z2PNjREQn5690+R9NBQsjr5KZ4grYnYr4WA@mail.gmail.com>
- <CAJCQCtSjxs2ZZUgUfrp9q5y+x0fFA7fSnQPgeEXTjsLKZ6DPKw@mail.gmail.com>
- <CAC=t97BiPjTf7yjWoSaoTgjvPZFgyEHdEJzFCG1Mu+nnJGoNoA@mail.gmail.com>
- <CAC=t97Bg3STrTn86HBNYJJm-FT7aiR6tc51tjVnPiArpPgd9XQ@mail.gmail.com>
- <CAC=t97CS5As+3SqZy-sHM4U2JZ0bi_AEq=34bNXu0yBmh8QRjg@mail.gmail.com>
- <CAC=t97AQaDTRinVg9crdAG8zaoj_--L_PLDY3M4_HKHZotnVVg@mail.gmail.com>
- <CAJCQCtRpRg=XdMtAerHfxCWXO74s34=b9LLuk9mvfRhKz8hjFQ@mail.gmail.com>
- <CAC=t97AERgJ06P_Q8vbz=-yC=H3ODUkTt7ZD1Zpimr_jft+S6g@mail.gmail.com>
- <CAJCQCtSB+29V-UdL5JZAHu3Zv3-XH0SyL8E5MwHgyeoVQ46Wvg@mail.gmail.com>
- <CAC=t97BOYQJAanPc_EFzxwwakFrY4ALd0sX-n9w_e9JHodU27Q@mail.gmail.com>
- <CAJCQCtTE2QKQij5ziq_wWM=M0bhVKcxAbWVGOPD=R_1ZkvqWPA@mail.gmail.com>
- <CAC=t97A4JtSzXpn9Yr3vhe6Z5JCfKEFB1GfwSLsfYPOWhZ+Zrw@mail.gmail.com>
- <CAJCQCtTPGDmbACtNpXgF-bFbbkLwuNMJyDzP72BsgOL=aREmWQ@mail.gmail.com>
- <CAC=t97BtoARcnda7aS0QBAerVgYb5z1boXAaJv6CEr9KTkj1ug@mail.gmail.com>
- <CAJCQCtRFdeOJFn_Ree1dRL04L5SHDOBL87QXZ0beidUhwJCLLQ@mail.gmail.com> <CAC=t97Dc9hqQauXb8VqAua-ppZ5J33Ak+VKUtNUSEAct2=r+Lw@mail.gmail.com>
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Thu, 2 Jul 2015 13:54:08 -0500
-Message-ID: <CAC=t97C8SfqyKTDv_mVTr6MR+ZpLqjmVMd3aFhC3SiRapig_qw@mail.gmail.com>
-Subject: Re: Any hope of pool recovery?
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20150702124221.GI23627@ret.masoncoding.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Yes it works with raid6 as well.
 
-[root@san01 btrfs-progs]# ./btrfs fi show
-Label: 'rockstor_rockstor'  uuid: 08d14b6f-18df-4b1b-a91e-4b33e7c90c29
-        Total devices 1 FS bytes used 19.25GiB
-        devid    1 size 457.40GiB used 457.40GiB path /dev/sdt3
 
-warning, device 4 is missing
-warning, device 2 is missing
-warning devid 2 not found already
-warning devid 4 not found already
-checksum verify failed on 21364736 found 925303CE wanted 09150E74
-checksum verify failed on 21364736 found 925303CE wanted 09150E74
-bytenr mismatch, want=21364736, have=1065943040
-Couldn't read chunk tree
-Label: 'backup'  uuid: 68be4632-93ba-4478-9098-2ecb23ee6c94
-        Total devices 5 FS bytes used 978.72MiB
-        devid    1 size 2.73TiB used 1.62GiB path /dev/sdb
-        devid    3 size 2.73TiB used 1.62GiB path /dev/sdi
-        devid    4 size 2.73TiB used 1.62GiB path /dev/sdj
-        devid    5 size 2.73TiB used 1.62GiB path /dev/sdn
-        devid    6 size 2.73TiB used 1.62GiB path /dev/sdq
-
-Label: 'tank'  uuid: 8a03f8e8-8b84-4d1b-b27d-e23ef8ebe21d
-        Total devices 10 FS bytes used 5.67TiB
-        devid    1 size 1.36TiB used 792.67GiB path /dev/sdc
-        devid    3 size 1.82TiB used 792.65GiB path /dev/sdf
-        devid    5 size 1.36TiB used 792.65GiB path /dev/sdg
-        devid    6 size 1.36TiB used 792.65GiB path /dev/sdh
-        devid    7 size 1.82TiB used 792.65GiB path /dev/sdk
-        devid    8 size 1.82TiB used 792.65GiB path /dev/sdl
-        devid    9 size 1.82TiB used 792.65GiB path /dev/sdm
-        devid   10 size 1.82TiB used 792.65GiB path /dev/sdp
-        *** Some devices missing
-
-btrfs-progs v4.1
-[root@san01 btrfs-progs]# mount /dev/sdb /mnt2/backup
-[root@san01 btrfs-progs]# ./btrfs fi df /mnt2/backup
-Data, RAID6: total=3.00GiB, used=977.56MiB
-System, RAID6: total=96.00MiB, used=16.00KiB
-Metadata, RAID6: total=1.03GiB, used=1.14MiB
-GlobalReserve, single: total=16.00MiB, used=0.00B
-[root@san01 btrfs-progs]# ll /mnt2/backup
-total 1000000
--rw-r--r-- 1 root root 1024000000 Jul  2 13:48 test_file_1gb
-[root@san01 btrfs-progs]# umount /mnt2/backup
-[root@san01 btrfs-progs]# ./btrfs restore -xmv /dev/sdb ~
-Restoring /root/test_file_1gb
-Done searching
-[root@san01 btrfs-progs]# ll ~
-total 1000004
--rw-------. 1 root root       1101 Jun 20 23:18 anaconda-ks.cfg
-drwxr-xr-x  1 root root         22 Jul  1 09:48 git
--rw-r--r--  1 root root 1024000000 Jul  2 13:48 test_file_1gb
-[root@san01 btrfs-progs]#
-
-On Thu, Jul 2, 2015 at 1:45 PM, Donald Pearson
-<donaldwhpearson@gmail.com> wrote:
-> That is correct.  I'm going to rebalance my raid5 pool as raid6 and
-> re-test just because.
+Chris Mason wrote on 2015/07/02 08:42 -0400:
+> On Tue, Jun 30, 2015 at 10:26:18AM +0800, Qu Wenruo wrote:
+>> To Chris:
+>>
+>> Would you consider merging these patchset for late 4.2 merge window?
+>> If it's OK to merge it into 4.2 late rc, we'll start our test and send pull
+>> request after our test, eta this Friday or next Monday.
+>>
+>> I know normally we should submit it early especially when such fix is not
+>> small.
+>> But the bug is long-standing and is quite annoying (possibility involved),
+>> also Zhao Lei has quite a good idea to cleanup the scrub codes based on the
+>> patchset.
+>>
+>> So it would be quite nice if we have any chance to merge it into 4.2
+>>
+>> Would it be OK for you?
+>>
 >
-> On Thu, Jul 2, 2015 at 1:37 PM, Chris Murphy <lists@colorremedies.com> wrote:
->> On Thu, Jul 2, 2015 at 12:32 PM, Donald Pearson
->> <donaldwhpearson@gmail.com> wrote:
->>> I think it is.  I have another raid5 pool that I've created to test
->>> the restore function on, and it worked.
->>
->> So you have all devices for this raid6 available, and yet when you use
->> restore, you get missing device message for all devices except the one
->> specified? But that doesn't happen with the raid5 volume?
->>
->>
->> --
->> Chris Murphy
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> I can still take these patches in a later RC, but with this set applied,
+> I'm getting this during xfstests (btrfs/073 and btrfs/066):
+We also found that problem.
+In our investigation, this seems to be a mistake when rebasing the patchset.
+
+We will resend the patchset for review when we fix them all.
+And only after that, we will send a pull request.
+
+Thanks,
+Qu
+>
+> [11185.853152] ------------[ cut here ]------------
+> [11185.862659] WARNING: CPU: 7 PID: 580363 at fs/btrfs/extent-tree.c:9460 btrfs_create_pending_block_groups+0x161/0x1f0 [btrfs]()
+> [11185.885804] Modules linked in: dm_flakey btrfs raid6_pq zlib_deflate lzo_compress xor xfs exportfs libcrc32c tcp_diag inet_diag nfsv4 fuse loop k10temp coretemp hwmon ip6table_filter ip6_tables xt_NFLOG nfnetlink_log nfnetlink xt_comment xt_statistic iptable_filter ip_tables x_tables mptctl nfsv3 nfs lockd grace netconsole autofs4 rpcsec_gss_krb5 auth_rpcgss oid_registry sunrpc ipv6 ext3 jbd iTCO_wdt iTCO_vendor_support pcspkr rtc_cmos ipmi_si ipmi_msghandler i2c_i801 i2c_core lpc_ich mfd_core shpchp ehci_pci ehci_hcd mlx4_en ptp pps_core mlx4_core sg ses enclosure button dm_mod megaraid_sas
+> [11185.994338] CPU: 7 PID: 580363 Comm: btrfs Tainted: G        W       4.1.0-rc6-mason+ #82
+> [11186.011074] Hardware name: ZTSYSTEMS Echo Ridge T4  /A9DRPF-10D, BIOS 1.07 05/10/2012
+> [11186.027107]  00000000000024f4 ffff880894b539c8 ffffffff816c48c5 ffffffffa06dbe8d
+> [11186.042442]  ffff880894b53a18 ffff880894b53a08 ffffffff8105ba75 ffff881053ad4000
+> [11186.057769]  ffff88085417c9a8 ffff88085417c800 ffff8806335a8858 00000000ffffffe5
+> [11186.073128] Call Trace:
+> [11186.078233]  [<ffffffff816c48c5>] dump_stack+0x4f/0x6a
+> [11186.088713]  [<ffffffff8105ba75>] warn_slowpath_common+0x95/0xe0
+> [11186.100926]  [<ffffffff8105bb76>] warn_slowpath_fmt+0x46/0x70
+> [11186.112627]  [<ffffffffa062c551>] btrfs_create_pending_block_groups+0x161/0x1f0 [btrfs]
+> [11186.129039]  [<ffffffffa064f6ec>] __btrfs_end_transaction+0xac/0x400 [btrfs]
+> [11186.143325]  [<ffffffffa064fa70>] btrfs_end_transaction+0x10/0x20 [btrfs]
+> [11186.157092]  [<ffffffffa063bdf6>] btrfs_inc_block_group_ro+0x116/0x1d0 [btrfs]
+> [11186.171941]  [<ffffffffa06b8962>] scrub_enumerate_chunks+0x2f2/0x5e0 [btrfs]
+> [11186.186233]  [<ffffffff8108cf4d>] ? ttwu_stat+0x4d/0x250
+> [11186.197045]  [<ffffffff810a4100>] ? bit_waitqueue+0x80/0xa0
+> [11186.208392]  [<ffffffff810af1fd>] ? trace_hardirqs_on+0xd/0x10
+> [11186.220271]  [<ffffffffa06b8e16>] btrfs_scrub_dev+0x1c6/0x5d0 [btrfs]
+> [11186.233350]  [<ffffffff811fd4f9>] ? __mnt_want_write_file+0x29/0x30
+> [11186.246083]  [<ffffffffa068c991>] btrfs_ioctl_scrub+0xb1/0x130 [btrfs]
+> [11186.259348]  [<ffffffffa068f408>] btrfs_ioctl+0xa68/0x11d0 [btrfs]
+> [11186.271908]  [<ffffffff811ef57f>] do_vfs_ioctl+0x8f/0x580
+> [11186.282903]  [<ffffffff811fcb50>] ? __fget+0x110/0x200
+> [11186.293377]  [<ffffffff811fca40>] ? get_close_on_exec+0x180/0x180
+> [11186.305764]  [<ffffffff811fcc6a>] ? __fget_light+0x2a/0x90
+> [11186.316928]  [<ffffffff811efb11>] SyS_ioctl+0xa1/0xb0
+> [11186.327233]  [<ffffffff8110de5c>] ? __audit_syscall_entry+0xac/0x110
+> [11186.340133]  [<ffffffff816cb7d7>] system_call_fastpath+0x12/0x6f
+> [11186.352346] ---[ end trace 720cebad3201fcad ]---
+> [11186.361785] BTRFS: error (device sdi) in btrfs_create_pending_block_groups:9460: errno=-27 unknown^M
+>
+> I've removed them for now.
+>
+> -chris
+>

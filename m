@@ -1,80 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:47108 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753344AbbGFWeG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jul 2015 18:34:06 -0400
-Date: Mon, 6 Jul 2015 15:34:04 -0700
-From: Mark Fasheh <mfasheh@suse.de>
-To: Mordechay Kaganer <mkaganer@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: running duperemove but no free space gain
-Message-ID: <20150706223404.GF7507@wotan.suse.de>
-Reply-To: Mark Fasheh <mfasheh@suse.de>
-References: <CA+xOVSO2Cd1aYxAnA_Aq32oBTiMTbuo1YQo2cqEY_5WONQV=qA@mail.gmail.com>
+Received: from mail-ob0-f181.google.com ([209.85.214.181]:35952 "EHLO
+	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755381AbbGFW7i convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jul 2015 18:59:38 -0400
+Received: by obdbs4 with SMTP id bs4so117395424obd.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 06 Jul 2015 15:59:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CA+xOVSO2Cd1aYxAnA_Aq32oBTiMTbuo1YQo2cqEY_5WONQV=qA@mail.gmail.com>
+In-Reply-To: <000f4242.05e425492a977c7b@friedels.name>
+References: <000f4242.05e425492a977c7b@friedels.name>
+From: Donald Pearson <donaldwhpearson@gmail.com>
+Date: Mon, 6 Jul 2015 17:59:18 -0500
+Message-ID: <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com>
+Subject: Re: size 2.73TiB used 240.97GiB after balance
+To: "hendrik@friedels.name" <hendrik@friedels.name>
+Cc: osandov@fb.com, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 07, 2015 at 12:54:01AM +0300, Mordechay Kaganer wrote:
-> I have a btrfs volume which is used as a backup using rsync from the
-> main servers. It contains many duplicate files across different
-> subvolumes and i have some read only snapshots of each subvolume,
-> which are created every time after the backup completes.
-> 
-> I'm was trying to gain some free space using duperemove (compiled from
-> git master of this repo: https://github.com/markfasheh/duperemove).
-> 
-> Executed like this:
-> 
-> duperemove -rdAh <first_dir> <second_dir>
-> 
-> Both directories point to the most recent read only snapshots of the
-> corresponding subvolumes, but not to the subvolumes themselves, so i
-> had to add -r option. AFAIK, they should point to exactly the same
-> data because nothing was changed since the snapshots were taken.
-> 
-> It runs successfully for several hours and prints out many files which
-> are indeed duplicate like this:
-> 
-> Showing 4 identical extents with id 5164bb47
-> Start           Length          Filename
-> 0.0     4.8M    "...."
-> 0.0     4.8M    "...."
-> 0.0     4.8M    "...."
-> 0.0     4.8M    "...."
-> ....skip...
-> [0x78dee80] Try to dedupe extents with id 5164bb47
-> [0x78dee80] Dedupe 3 extents (id: 5164bb47) with target: (0.0, 4.8M), "...."
-> 
-> But the actual free space reported by "df" or by "btrfs fi df" doesn't
-> seem to change. Used space and metadata space even increases slightly.
+Anything in dmesg?
 
-There were some patches for 4.2 which are both on the list and upstream that
-fix an issue where the unligned tail of extents wasn't being deduplicated.
-It sounds like you may have hit this. So we can tell, can you run the
-'show-shared-extents' program that comes with duperemove (or 'filefrag -e')
-against two of the files that should have been deduped together and provide
-the output here. If most of the extent is showing deduped but there's a
-not-deduped tail extent then that's most likely what you're seeing.
-
-
-> I thought that doing deduplication on a file in one snapshot would
-> affect all snapshots/subvolumes that contain this (exact version of
-> the) file because they all actually should point to the same data
-> extents, am i wrong?
-
-Well the case you're describing is one where dedupe wouldn't work - the
-extent would already be considered deduplicated since there is only one of
-them.
-
-If the data has changed from one snapshot to another, we've created new
-extents (for the new data) and it can be deduped against any other extent.
-For duperemove to discover it though you have to provide it a path which
-will eventually resolve to those extents (that is, duperemove has to find it
-in the file scan stage).
-	--Mark
-
---
-Mark Fasheh
+On Mon, Jul 6, 2015 at 5:07 PM, hendrik@friedels.name
+<hendrik@friedels.name> wrote:
+> Hallo,
+>
+> It seems, that mounting works, but the System locks completely soon after I
+> backing up.
+>
+>
+> Greetings,
+>
+> Hendrik
+>
+>
+> ------ Originalnachricht------
+>
+> Von: Donald Pearson
+>
+> Datum: Mo., 6. Juli 2015 23:49
+>
+> An: Hendrik Friedel;
+>
+> Cc: Omar Sandoval;Hugo Mills;Btrfs BTRFS;
+>
+> Betreff:Re: size 2.73TiB used 240.97GiB after balance
+>
+>
+> If you can mount it RO, first thing to do is back up any data that youcare
+> about.According to the bug that Omar posted you should not try a
+> devicereplace and you should not try a scrub with a missing device.You may
+> be able to just do a device delete missing, then separately doa device add
+> of a new drive, or rebalance back in to raid1.On Mon, Jul 6, 2015 at 4:12
+> PM, Hendrik Friedel  wrote:> Hello,>> oh dear, I fear I am in trouble:>
+> recovery-mounted, I tried to save some data, but the system hung.> So I
+> re-booted and sdc is now physically disconnected.>> Label: none  uuid:
+> b4a6cce6-dc9c-4a13-80a4-ed6bc5b40bb8>         Total devices 3 FS bytes used
+> 4.67TiB>         devid    1 size 2.73TiB used 2.67TiB path /dev/sdc>
+> devid    2 size 2.73TiB used 2.67TiB path /dev/sdb>         *** Some devices
+> missing>> I try to mount the rest again:> mount -o recovery,ro /dev/sdb
+> /mnt/__Complete_Disk> mount: wrong fs type, bad option, bad superblock on
+> /dev/sdb,>        missing codepage or helper program, or other error>
+> In some cases useful info is found in syslog - try>        dmesg | tail  or
+> so>> root@homeserver:~# dmesg | tail> [  447.059275] BTRFS info (device
+> sdc): enabling auto recovery> [  447.059280] BTRFS info (device sdc): disk
+> space caching is enabled> [  447.086844] BTRFS: failed to read chunk tree on
+> sdc> [  447.110588] BTRFS: open_ctree failed> [  474.496778] BTRFS info
+> (device sdc): enabling auto recovery> [  474.496781] BTRFS info (device
+> sdc): disk space caching is enabled> [  474.519005] BTRFS: failed to read
+> chunk tree on sdc> [  474.540627] BTRFS: open_ctree failed>>> mount -o
+> degraded,ro /dev/sdb /mnt/__Complete_Disk> Does work now though.>> So, how
+> can I remove the reference to the failed disk and check the data for>
+> consistency (scrub I suppose, but is it safe?)?>> Regards,> Hendrik>>>>> On
+> 06.07.2015 22:52, Omar Sandoval wrote:>>>> On 07/06/2015 01:01 PM, Donald
+> Pearson wrote:>>>>>> Based on my experience Hugo's advice is critical, get
+> the bad drive>>> out of the pool when in raid56 and do not try to replace or
+> delete it>>> while it's still attached and recognized.>>>>>> If you add a
+> new device, mount degraded and rebalance.  If you don't,>>> mount degraded
+> then device delete missing.>>>>>>> Watch out, replacing a missing device in
+> RAID 5/6 currently doesn't work>> and will cause a kernel BUG(). See my
+> patch series here:>>
+> http://www.spinics.net/lists/linux-btrfs/msg44874.html>>>>> --> Hendrik
+> Friedel> Auf dem Brink 12> 28844 Weyhe> Tel. 04203 8394854> Mobil 0178
+> 1874363>>> ---> Diese E-Mail wurde von Avast Antivirus-Software auf Viren
+> geprüft.> https://www.avast.com/antivirus>

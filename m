@@ -1,126 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.130]:63502 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751021AbbGGFmr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 01:42:47 -0400
-Message-ID: <559B66C9.6060606@friedels.name>
-Date: Tue, 07 Jul 2015 07:42:33 +0200
-From: Hendrik Friedel <hendrik@friedels.name>
+Received: from server1.design-company.com.au ([103.18.108.111]:58494 "EHLO
+	server1.design-company.com.au" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753615AbbGGHXK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Jul 2015 03:23:10 -0400
+Received: from ful1143003.lnk.telstra.net ([110.143.62.99]:63947 helo=hostd49a20ff8a0a.local)
+	by server1.design-company.com.au with esmtpsa (TLSv1.2:DHE-RSA-AES128-SHA:128)
+	(Exim 4.85)
+	(envelope-from <hub@spotprint.com.au>)
+	id 1ZCMMI-0008HO-3Y
+	for linux-btrfs@vger.kernel.org; Tue, 07 Jul 2015 16:27:58 +1000
+Message-ID: <559B7158.6050404@spotprint.com.au>
+Date: Tue, 07 Jul 2015 16:27:36 +1000
+From: Ryan Bourne <hub@spotprint.com.au>
 MIME-Version: 1.0
-To: Donald Pearson <donaldwhpearson@gmail.com>
-CC: osandov@fb.com, Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: size 2.73TiB used 240.97GiB after balance
-References: <000f4242.05e425492a977c7b@friedels.name> <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com>
-In-Reply-To: <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: linux-btrfs@vger.kernel.org
+Subject: Re: running duperemove but no free space gain
+References: <CA+xOVSO2Cd1aYxAnA_Aq32oBTiMTbuo1YQo2cqEY_5WONQV=qA@mail.gmail.com> <20150706223404.GF7507@wotan.suse.de> <CA+xOVSNrX4yT=+0Xre8qpRrsA=+Nu0w5+fUa0oAbvXf0CFr35w@mail.gmail.com> <20150706230725.GG7507@wotan.suse.de>
+In-Reply-To: <20150706230725.GG7507@wotan.suse.de>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-
-while mounting works with the recovery option, the system locks after 
-reading.
-dmesg shows:
-[  684.258246] ata6.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x0
-[  684.258249] ata6.00: irq_stat 0x40000001
-[  684.258252] ata6.00: failed command: DATA SET MANAGEMENT
-[  684.258255] ata6.00: cmd 06/01:01:00:00:00/00:00:00:00:00/a0 tag 26 
-dma 512 out
-[  684.258255]          res 51/04:01:01:00:00/00:00:00:00:00/a0 Emask 
-0x1 (device error)
-[  684.258256] ata6.00: status: { DRDY ERR }
-[  684.258258] ata6.00: error: { ABRT }
-[  684.258266] sd 5:0:0:0: [sdd] tag#26 FAILED Result: hostbyte=DID_OK 
-driverbyte=DRIVER_SENSE
-[  684.258268] sd 5:0:0:0: [sdd] tag#26 Sense Key : Illegal Request 
-[current] [descriptor]
-[  684.258270] sd 5:0:0:0: [sdd] tag#26 Add. Sense: Unaligned write command
-[  684.258272] sd 5:0:0:0: [sdd] tag#26 CDB: Write same(16) 93 08 00 00 
-00 00 00 01 d3 80 00 00 00 80 00 00
-
-
-So, also this drive is failing?!
-
-Regards,
-Hendrik
-
-On 07.07.2015 00:59, Donald Pearson wrote:
-> Anything in dmesg?
+On 7/07/15 9:07 AM, Mark Fasheh wrote:
 >
-> On Mon, Jul 6, 2015 at 5:07 PM, hendrik@friedels.name
-> <hendrik@friedels.name> wrote:
->> Hallo,
->>
->> It seems, that mounting works, but the System locks completely soon after I
->> backing up.
->>
->>
->> Greetings,
->>
->> Hendrik
->>
->>
->> ------ Originalnachricht------
->>
->> Von: Donald Pearson
->>
->> Datum: Mo., 6. Juli 2015 23:49
->>
->> An: Hendrik Friedel;
->>
->> Cc: Omar Sandoval;Hugo Mills;Btrfs BTRFS;
->>
->> Betreff:Re: size 2.73TiB used 240.97GiB after balance
->>
->>
->> If you can mount it RO, first thing to do is back up any data that youcare
->> about.According to the bug that Omar posted you should not try a
->> devicereplace and you should not try a scrub with a missing device.You may
->> be able to just do a device delete missing, then separately doa device add
->> of a new drive, or rebalance back in to raid1.On Mon, Jul 6, 2015 at 4:12
->> PM, Hendrik Friedel  wrote:> Hello,>> oh dear, I fear I am in trouble:>
->> recovery-mounted, I tried to save some data, but the system hung.> So I
->> re-booted and sdc is now physically disconnected.>> Label: none  uuid:
->> b4a6cce6-dc9c-4a13-80a4-ed6bc5b40bb8>         Total devices 3 FS bytes used
->> 4.67TiB>         devid    1 size 2.73TiB used 2.67TiB path /dev/sdc>
->> devid    2 size 2.73TiB used 2.67TiB path /dev/sdb>         *** Some devices
->> missing>> I try to mount the rest again:> mount -o recovery,ro /dev/sdb
->> /mnt/__Complete_Disk> mount: wrong fs type, bad option, bad superblock on
->> /dev/sdb,>        missing codepage or helper program, or other error>
->> In some cases useful info is found in syslog - try>        dmesg | tail  or
->> so>> root@homeserver:~# dmesg | tail> [  447.059275] BTRFS info (device
->> sdc): enabling auto recovery> [  447.059280] BTRFS info (device sdc): disk
->> space caching is enabled> [  447.086844] BTRFS: failed to read chunk tree on
->> sdc> [  447.110588] BTRFS: open_ctree failed> [  474.496778] BTRFS info
->> (device sdc): enabling auto recovery> [  474.496781] BTRFS info (device
->> sdc): disk space caching is enabled> [  474.519005] BTRFS: failed to read
->> chunk tree on sdc> [  474.540627] BTRFS: open_ctree failed>>> mount -o
->> degraded,ro /dev/sdb /mnt/__Complete_Disk> Does work now though.>> So, how
->> can I remove the reference to the failed disk and check the data for>
->> consistency (scrub I suppose, but is it safe?)?>> Regards,> Hendrik>>>>> On
->> 06.07.2015 22:52, Omar Sandoval wrote:>>>> On 07/06/2015 01:01 PM, Donald
->> Pearson wrote:>>>>>> Based on my experience Hugo's advice is critical, get
->> the bad drive>>> out of the pool when in raid56 and do not try to replace or
->> delete it>>> while it's still attached and recognized.>>>>>> If you add a
->> new device, mount degraded and rebalance.  If you don't,>>> mount degraded
->> then device delete missing.>>>>>>> Watch out, replacing a missing device in
->> RAID 5/6 currently doesn't work>> and will cause a kernel BUG(). See my
->> patch series here:>>
->> http://www.spinics.net/lists/linux-btrfs/msg44874.html>>>>> --> Hendrik
->> Friedel> Auf dem Brink 12> 28844 Weyhe> Tel. 04203 8394854> Mobil 0178
->> 1874363>>> ---> Diese E-Mail wurde von Avast Antivirus-Software auf Viren
->> geprüft.> https://www.avast.com/antivirus>
+> Yes I forgot about that but in your case almost everything will be reported
+> shared. Btw, I have to leave my office now but will get to the rest of your e-mail
+> later.
+>
+> --
+> Mark Fasheh
+> --
 
+To clarify, if I did the following:
 
--- 
-Hendrik Friedel
-Auf dem Brink 12
-28844 Weyhe
-Tel. 04203 8394854
-Mobil 0178 1874363
+# btrfs subvolume create a
+# dd bs=1M count=10 if=/dev/urandom of=a/1
+# dd if=a/1 of=a/2
+# btrfs subvolume snapshot a b
 
----
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-https://www.avast.com/antivirus
+then I have four files containing the same data. a/1, b/1 share extents 
+and a/2, b/2 share extents.
+
+If I then deduplicate a/1 and a/2 will all four files be sharing 
+extents, or only three? (Assuming I have the patches for 4.2)
 

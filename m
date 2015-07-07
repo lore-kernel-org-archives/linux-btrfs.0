@@ -1,135 +1,303 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp08.in.ibm.com ([122.248.162.8]:59035 "EHLO
-	e28smtp08.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754471AbbGFKt0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jul 2015 06:49:26 -0400
+Received: from e23smtp04.au.ibm.com ([202.81.31.146]:42909 "EHLO
+	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757307AbbGGNja (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 09:39:30 -0400
 Received: from /spool/local
-	by e28smtp08.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 6 Jul 2015 16:19:22 +0530
-Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id CD3BC1258056
-	for <linux-btrfs@vger.kernel.org>; Mon,  6 Jul 2015 16:22:05 +0530 (IST)
-Received: from d28av03.in.ibm.com (d28av03.in.ibm.com [9.184.220.65])
-	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t66AnERU6095268
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jul 2015 16:19:15 +0530
-Received: from d28av03.in.ibm.com (localhost [127.0.0.1])
-	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t669edCr028155
-	for <linux-btrfs@vger.kernel.org>; Mon, 6 Jul 2015 15:10:41 +0530
+	Tue, 7 Jul 2015 23:39:27 +1000
+Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
+	by d23dlp02.au.ibm.com (Postfix) with ESMTP id B6FEC2BB004D
+	for <linux-btrfs@vger.kernel.org>; Tue,  7 Jul 2015 23:39:23 +1000 (EST)
+Received: from d23av01.au.ibm.com (d23av01.au.ibm.com [9.190.234.96])
+	by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t67DdF3E37486762
+	for <linux-btrfs@vger.kernel.org>; Tue, 7 Jul 2015 23:39:23 +1000
+Received: from d23av01.au.ibm.com (localhost [127.0.0.1])
+	by d23av01.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t67DcoUH003629
+	for <linux-btrfs@vger.kernel.org>; Tue, 7 Jul 2015 23:38:51 +1000
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: bo.li.liu@oracle.com
 Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org,
         chandan@mykolab.com
-Subject: Re: [RFC PATCH V11 12/21] Btrfs: subpagesize-blocksize: Search for all ordered extents that could span across a page.
-Date: Mon, 06 Jul 2015 16:19:09 +0530
-Message-ID: <8890972.reN3iamvyz@localhost.localdomain>
-In-Reply-To: <20150706025900.GA6105@localhost.localdomain>
-References: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com> <1662899.ajn0RKgkkt@localhost.localdomain> <20150706025900.GA6105@localhost.localdomain>
+Subject: Re: [RFC PATCH V11 13/21] Btrfs: subpagesize-blocksize: Deal with partial ordered extent allocations.
+Date: Tue, 07 Jul 2015 19:08:31 +0530
+Message-ID: <32668308.c3o97L3Tz8@localhost.localdomain>
+In-Reply-To: <20150706100631.GC6105@localhost.localdomain>
+References: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com> <1433172176-8742-14-git-send-email-chandan@linux.vnet.ibm.com> <20150706100631.GC6105@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 06 Jul 2015 11:17:38 Liu Bo wrote:
-> On Fri, Jul 03, 2015 at 03:38:00PM +0530, Chandan Rajendra wrote:
-> > On Wednesday 01 Jul 2015 22:47:10 Liu Bo wrote:
-> > > On Mon, Jun 01, 2015 at 08:52:47PM +0530, Chandan Rajendra wrote:
-> > > > In subpagesize-blocksize scenario it is not sufficient to search using
-> > > > the
-> > > > first byte of the page to make sure that there are no ordered extents
-> > > > present across the page. Fix this.
-> > > > 
-> > > > Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-> > > > ---
-> > > > 
-> > > >  fs/btrfs/extent_io.c | 3 ++-
-> > > >  fs/btrfs/inode.c     | 4 ++--
-> > > >  2 files changed, 4 insertions(+), 3 deletions(-)
-> > > > 
-> > > > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> > > > index 14b4e05..0b017e1 100644
-> > > > --- a/fs/btrfs/extent_io.c
-> > > > +++ b/fs/btrfs/extent_io.c
-> > > > @@ -3244,7 +3244,8 @@ static int __extent_read_full_page(struct
-> > > > extent_io_tree *tree,>
-> > > > 
-> > > >  	while (1) {
-> > > >  	
-> > > >  		lock_extent(tree, start, end);
-> > > > 
-> > > > -		ordered = btrfs_lookup_ordered_extent(inode, start);
-> > > > +		ordered = btrfs_lookup_ordered_range(inode, start,
-> > > > +						PAGE_CACHE_SIZE);
-> > > 
-> > > A minor suggestion, it'd be better to include the new prototype in the
-> > > same patch, which will be benefit to later cherry-picking or reverting.
+On Monday 06 Jul 2015 18:06:33 Liu Bo wrote:
+> On Mon, Jun 01, 2015 at 08:52:48PM +0530, Chandan Rajendra wrote:
+> > In subpagesize-blocksize scenario, extent allocations for only some of the
+> > dirty blocks of a page can succeed, while allocation for rest of the
+> > blocks
+> > can fail. This patch allows I/O against such partially allocated ordered
+> > extents to be submitted.
 > > 
-> > Liu, The definition of btrfs_lookup_ordered_range() is already part of
-> > the mainline kernel.
-> 
-> Ah, I didn't recognize the difference of btrfs_lookup_ordered_extent and
-> btrfs_lookup_ordered_range, sorry.
-> 
-> > > >  		if (!ordered)
-> > > >  		
-> > > >  			break;
-> > > >  		
-> > > >  		unlock_extent(tree, start, end);
-> > > > 
-> > > > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > > > index e9bab73..8b4aaed 100644
-> > > > --- a/fs/btrfs/inode.c
-> > > > +++ b/fs/btrfs/inode.c
-> > > > 
-> > > > @@ -1976,7 +1976,7 @@ again:
-> > > >  	if (PagePrivate2(page))
-> > > >  	
-> > > >  		goto out;
-> > > > 
-> > > > -	ordered = btrfs_lookup_ordered_extent(inode, page_start);
-> > > > +	ordered = btrfs_lookup_ordered_range(inode, page_start,
-> > > > PAGE_CACHE_SIZE);
-> > > > 
-> > > >  	if (ordered) {
-> > > >  	
-> > > >  		unlock_extent_cached(&BTRFS_I(inode)->io_tree, 
-page_start,
-> > > >  		
-> > > >  				     page_end, &cached_state, 
-GFP_NOFS);
-> > > > 
-> > > > @@ -8513,7 +8513,7 @@ static void btrfs_invalidatepage(struct page
-> > > > *page,
-> > > > unsigned int offset,>
-> > > > 
-> > > >  	if (!inode_evicting)
-> > > >  	
-> > > >  		lock_extent_bits(tree, page_start, page_end, 0,
+> > Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+> > ---
 > > 
-> > &cached_state);
+> >  fs/btrfs/extent_io.c | 27 ++++++++++++++-------------
+> >  fs/btrfs/inode.c     | 35 ++++++++++++++++++++++-------------
+> >  2 files changed, 36 insertions(+), 26 deletions(-)
 > > 
-> > > > -	ordered = btrfs_lookup_ordered_extent(inode, page_start);
-> > > > +	ordered = btrfs_lookup_ordered_range(inode, page_start,
-> > > > PAGE_CACHE_SIZE);
+> > diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> > index 0b017e1..0110abc 100644
+> > --- a/fs/btrfs/extent_io.c
+> > +++ b/fs/btrfs/extent_io.c
+> > @@ -1850,17 +1850,23 @@ int extent_clear_unlock_delalloc(struct inode
+> > *inode, u64 start, u64 end,> 
+> >  			if (page_ops & PAGE_SET_PRIVATE2)
+> >  			
+> >  				SetPagePrivate2(pages[i]);
+> > 
+> > +			if (page_ops & PAGE_SET_ERROR)
+> > +				SetPageError(pages[i]);
+> > +
+> > 
+> >  			if (pages[i] == locked_page) {
+> >  			
+> >  				page_cache_release(pages[i]);
+> >  				continue;
+> >  			
+> >  			}
+> > 
+> > -			if (page_ops & PAGE_CLEAR_DIRTY)
+> > +
+> > +			if ((page_ops & PAGE_CLEAR_DIRTY)
+> > +				&& !PagePrivate2(pages[i]))
+> > 
+> >  				clear_page_dirty_for_io(pages[i]);
+> > 
+> > -			if (page_ops & PAGE_SET_WRITEBACK)
+> > +			if ((page_ops & PAGE_SET_WRITEBACK)
+> > +				&& !PagePrivate2(pages[i]))
+> > 
+> >  				set_page_writeback(pages[i]);
+> > 
+> > -			if (page_ops & PAGE_SET_ERROR)
+> > -				SetPageError(pages[i]);
+> > -			if (page_ops & PAGE_END_WRITEBACK)
+> > +
+> > +			if ((page_ops & PAGE_END_WRITEBACK)
+> > +				&& !PagePrivate2(pages[i]))
+> > 
+> >  				end_page_writeback(pages[i]);
+> >  			
+> >  			if (page_ops & PAGE_UNLOCK)
+> >  			
+> >  				unlock_page(pages[i]);
+> > 
+> > @@ -2550,7 +2556,7 @@ int end_extent_writepage(struct page *page, int err,
+> > u64 start, u64 end)> 
+> >  			uptodate = 0;
+> >  	
+> >  	}
+> > 
+> > -	if (!uptodate) {
+> > +	if (!uptodate || PageError(page)) {
+> > 
+> >  		ClearPageUptodate(page);
+> >  		SetPageError(page);
+> >  		ret = ret < 0 ? ret : -EIO;
+> > 
+> > @@ -3340,7 +3346,6 @@ static noinline_for_stack int
+> > writepage_delalloc(struct inode *inode,> 
+> >  					       nr_written);
+> >  		
+> >  		/* File system has been set read-only */
+> >  		if (ret) {
+> > 
+> > -			SetPageError(page);
+> > 
+> >  			/* fill_delalloc should be return < 0 for error
+> >  			
+> >  			 * but just in case, we use > 0 here meaning the
+> >  			 * IO is started, so we don't want to return > 0
+> > 
+> > @@ -3561,7 +3566,6 @@ static int __extent_writepage(struct page *page,
+> > struct writeback_control *wbc,> 
+> >  	struct inode *inode = page->mapping->host;
+> >  	struct extent_page_data *epd = data;
+> >  	u64 start = page_offset(page);
+> > 
+> > -	u64 page_end = start + PAGE_CACHE_SIZE - 1;
+> > 
+> >  	int ret;
+> >  	int nr = 0;
+> >  	size_t pg_offset = 0;
+> > 
+> > @@ -3606,7 +3610,7 @@ static int __extent_writepage(struct page *page,
+> > struct writeback_control *wbc,> 
+> >  	ret = writepage_delalloc(inode, page, wbc, epd, start, &nr_written);
+> >  	if (ret == 1)
+> >  	
+> >  		goto done_unlocked;
+> > 
+> > -	if (ret)
+> > +	if (ret && !PagePrivate2(page))
+> > 
+> >  		goto done;
+> >  	
+> >  	ret = __extent_writepage_io(inode, page, wbc, epd,
+> > 
+> > @@ -3620,10 +3624,7 @@ done:
+> >  		set_page_writeback(page);
+> >  		end_page_writeback(page);
+> >  	
+> >  	}
+> > 
+> > -	if (PageError(page)) {
+> > -		ret = ret < 0 ? ret : -EIO;
+> > -		end_extent_writepage(page, ret, start, page_end);
+> > -	}
+> > +
+> > 
+> >  	unlock_page(page);
+> >  	return ret;
+> > 
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 8b4aaed..bff60c6 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -925,6 +925,8 @@ static noinline int cow_file_range(struct inode
+> > *inode,
+> > 
+> >  	struct btrfs_key ins;
+> >  	struct extent_map *em;
+> >  	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
+> > 
+> > +	struct btrfs_ordered_extent *ordered;
+> > +	unsigned long page_ops, extent_ops;
+> > 
+> >  	int ret = 0;
+> >  	
+> >  	if (btrfs_is_free_space_inode(inode)) {
+> > 
+> > @@ -969,8 +971,6 @@ static noinline int cow_file_range(struct inode
+> > *inode,
+> > 
+> >  	btrfs_drop_extent_cache(inode, start, start + num_bytes - 1, 0);
+> >  	
+> >  	while (disk_num_bytes > 0) {
+> > 
+> > -		unsigned long op;
+> > -
+> > 
+> >  		cur_alloc_size = disk_num_bytes;
+> >  		ret = btrfs_reserve_extent(root, cur_alloc_size,
+> >  		
+> >  					   root->sectorsize, 0, alloc_hint,
+> > 
+> > @@ -1023,7 +1023,7 @@ static noinline int cow_file_range(struct inode
+> > *inode,> 
+> >  			ret = btrfs_reloc_clone_csums(inode, start,
+> >  			
+> >  						      cur_alloc_size);
+> >  			
+> >  			if (ret)
+> > 
+> > -				goto out_drop_extent_cache;
+> > +				goto out_remove_ordered_extent;
+> > 
+> >  		}
+> >  		
+> >  		if (disk_num_bytes < cur_alloc_size)
+> > 
+> > @@ -1036,13 +1036,12 @@ static noinline int cow_file_range(struct inode
+> > *inode,> 
+> >  		 * Do set the Private2 bit so we know this page was properly
+> >  		 * setup for writepage
+> >  		 */
+> > 
+> > -		op = unlock ? PAGE_UNLOCK : 0;
+> > -		op |= PAGE_SET_PRIVATE2;
+> > -
+> > +		page_ops = unlock ? PAGE_UNLOCK : 0;
+> > +		page_ops |= PAGE_SET_PRIVATE2;
+> > +		extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC;
+> > 
+> >  		extent_clear_unlock_delalloc(inode, start,
+> > 
+> > -					     start + ram_size - 1, 
+locked_page,
+> > -					     EXTENT_LOCKED | EXTENT_DELALLOC,
+> > -					     op);
+> > +					start + ram_size - 1, locked_page,
+> > +					extent_ops, page_ops);
+> > 
+> >  		disk_num_bytes -= cur_alloc_size;
+> >  		num_bytes -= cur_alloc_size;
+> >  		alloc_hint = ins.objectid + ins.offset;
+> > 
+> > @@ -1051,16 +1050,26 @@ static noinline int cow_file_range(struct inode
+> > *inode,> 
+> >  out:
+> >  	return ret;
+> > 
+> > +out_remove_ordered_extent:
+> > +	ordered = btrfs_lookup_ordered_extent(inode, ins.objectid);
+> > +	BUG_ON(!ordered);
+> > +	btrfs_remove_ordered_extent(inode, ordered);
+> > +
 > 
-> It's possible for a page to hold two (or more) ordered extents here, a
-> while loop is necessary to ensure that every ordered extent is processed
-> properly.
+> Two problems here,
+> 
+> 1. ins.objectid refers to block address while
+> btrfs_lookup_ordered_extent() expects a file offset.
 >
-Liu, Sorry, I had introduced the loop in the patch
-"[RFC PATCH V11 14/21] Btrfs: subpagesize-blocksize: Explicitly Track I/O
-status of blocks of an ordered extent". I will pull the loop to this patch for
-the next version of that patchset. 
+Ah, That has most probably saved me from hours of debugging. Thanks a lot for
+pointing it out.
+
+> 2. Removing ordered extent is not enough for cleaning it up, not only
+> this ordered extent remains in memory, but our reserved space number
+> needs to be cleaned up.
+> 
+> If we have to do it this way, I'd copy what btrfs_finish_ordered_io()
+> does the cleanup job, however, I hope to call end_extent_writepage()
+> directly here to keep it simple as much as possible.
+>
+Yes, calling end_extent_writepage() looks to be the easiest and correct way to
+do this. I will test and include the change in the next version of the
+patchset.
 
 > Thanks,
 > 
 > -liubo
 > 
-> > > >  	if (ordered) {
-> > > >  	
-> > > >  		/*
-> > > >  		
-> > > >  		 * IO on this page will never be started, so we need
+> >  out_drop_extent_cache:
+> >  	btrfs_drop_extent_cache(inode, start, start + ram_size - 1, 0);
+> > 
+> > +
+> > 
+> >  out_reserve:
+> >  	btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
+> > 
+> > +
+> > 
+> >  out_unlock:
+> > +	page_ops = unlock ? PAGE_UNLOCK : 0;
+> > +	page_ops |= PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK
+> > +		| PAGE_SET_ERROR;
+> > +	extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING
+> > +		| EXTENT_DEFRAG;
+> > +
+> > 
+> >  	extent_clear_unlock_delalloc(inode, start, end, locked_page,
+> > 
+> > -				     EXTENT_LOCKED | EXTENT_DO_ACCOUNTING |
+> > -				     EXTENT_DELALLOC | EXTENT_DEFRAG,
+> > -				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
+> > -				     PAGE_SET_WRITEBACK | PAGE_END_WRITEBACK);
+> > +				extent_ops, page_ops);
+> > 
+> >  	goto out;
+> >  
+> >  }
 
 -- 
 chandan

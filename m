@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25001 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:55022 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756554AbbGGIPu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 04:15:50 -0400
+	with ESMTP id S1756573AbbGGIPv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 04:15:51 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH 6/7] btrfs-progs: extent-tree: Introduce btrfs_free_block_group function.
-Date: Tue, 7 Jul 2015 16:15:27 +0800
-Message-ID: <1436256928-23812-7-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 7/7] btrfs-progs: mkfs: Cleanup temporary chunk to avoid strange balance behavior.
+Date: Tue, 7 Jul 2015 16:15:28 +0800
+Message-ID: <1436256928-23812-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,120 +16,218 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This function will be used to free a empty chunk.
+[BUG]
+ # mkfs.btrfs /dev/sdb /dev/sdd -m raid0 -d raid0
+ # mount /dev/sdb /mnt/btrfs
+ # btrfs balance start /mnt/btrfs
+ # btrfs fi df /mnt/btrfs
+ Data, single: total=1.00GiB, used=320.00KiB
+ System, single: total=32.00MiB, used=16.00KiB
+ Metadata, RAID0: total=256.00MiB, used=112.00KiB
+ GlobalReserve, single: total=16.00MiB, used=0.00B
 
-This provides the basis for later temp chunk cleanup.
+Only metadata stay RAID0. Data and system goes from RAID0 to single.
+
+[REASON]
+The problem is caused by the temporary single chunk.
+In mkfs, it will always create single data/metadata/sys chunk and them
+add device into the temporary btrfs.
+
+When doing all chunk balance, for data and syschunk, they are almost
+empty, so balance will move them into the single chunk and remove the
+old RAID0 chunk.
+For metadata, it has more data and will kick the metadata chunk pre
+alloc, so new RAID0 chunk is allocated and the old metadata is move
+there. Old RAID0 and single chunks are removed.
+
+[FIX]
+Now we add a new function to cleanup the temporary chunks at the end of
+mkfs routine.
+It will cleanup the chunks which is empty and its profile differs from
+the mkfs profile.
+So in balance, btrfs will always alloc a new chunk to keep the profile,
+other than moving data into the single chunk.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- ctree.h       |  2 ++
- extent-tree.c | 80 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 2 files changed, 82 insertions(+)
+ mkfs.c | 150 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 150 insertions(+)
 
-diff --git a/ctree.h b/ctree.h
-index f14a795..5550d45 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2275,6 +2275,8 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
- 			      struct btrfs_inode_item *inode,
- 			      u64 file_pos, u64 disk_bytenr,
- 			      u64 num_bytes);
-+int btrfs_free_block_group(struct btrfs_trans_handle *trans,
-+			   struct btrfs_fs_info *fs_info, u64 bytenr, u64 len);
- /* ctree.c */
- int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2);
- int btrfs_del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-diff --git a/extent-tree.c b/extent-tree.c
-index 39d6288..358bd19 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -3743,6 +3743,86 @@ out:
- 	return ret;
+diff --git a/mkfs.c b/mkfs.c
+index b60fc5a..ee8a3cb 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1182,6 +1182,149 @@ static void list_all_devices(struct btrfs_root *root)
+ 	printf("\n");
  }
  
-+int btrfs_free_block_group(struct btrfs_trans_handle *trans,
-+			   struct btrfs_fs_info *fs_info, u64 bytenr, u64 len)
++static int is_temp_block_group(struct extent_buffer *node,
++			       struct btrfs_block_group_item *bgi,
++			       u64 data_profile, u64 meta_profile,
++			       u64 sys_profile)
 +{
-+	struct btrfs_root *extent_root = fs_info->extent_root;
-+	struct btrfs_path *path;
-+	struct btrfs_block_group_item *bgi;
++	u64 flag = btrfs_disk_block_group_flags(node, bgi);
++	u64 flag_type = flag & BTRFS_BLOCK_GROUP_TYPE_MASK;
++	u64 flag_profile = flag & BTRFS_BLOCK_GROUP_PROFILE_MASK;
++	u64 used = btrfs_disk_block_group_used(node, bgi);
++
++	/*
++	 * Chunks meets all the following conditions is a temp chunk
++	 * 1) Empty chunk
++	 * Temp chunk is always empty.
++	 *
++	 * 2) profile dismatch with mkfs profile.
++	 * Temp chunk is always in SINGLE
++	 *
++	 * 3) Size differs with mkfs_alloc
++	 * Special case for SINGLE/SINGLE btrfs.
++	 * In that case, temp data chunk and real data chunk are always empty.
++	 * So we need to use mkfs_alloc to be sure which chunk is the newly
++	 * allocated.
++	 *
++	 * Normally, new chunk size is equal to mkfs one (One chunk)
++	 * If it has multiple chunks, we just refuse to delete any one.
++	 * As they are all single, so no real problem will happen.
++	 * So only use condition 1) and 2) to judge them.
++	 */
++	if (used != 0)
++		return 0;
++	switch (flag_type) {
++	case BTRFS_BLOCK_GROUP_DATA:
++	case BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA:
++		data_profile &= BTRFS_BLOCK_GROUP_PROFILE_MASK;
++		if (flag_profile != data_profile)
++			return 1;
++		break;
++	case BTRFS_BLOCK_GROUP_METADATA:
++		meta_profile &= BTRFS_BLOCK_GROUP_PROFILE_MASK;
++		if (flag_profile != meta_profile)
++			return 1;
++		break;
++	case BTRFS_BLOCK_GROUP_SYSTEM:
++		sys_profile &= BTRFS_BLOCK_GROUP_PROFILE_MASK;
++		if (flag_profile != sys_profile)
++			return 1;
++		break;
++	}
++	return 0;
++}
++
++/* Note: if current is a block group, it will skip it anyway */
++static int next_block_group(struct btrfs_root *root,
++			    struct btrfs_path *path)
++{
 +	struct btrfs_key key;
 +	int ret = 0;
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
++	while (1) {
++		ret = btrfs_next_item(root, path);
++		if (ret)
++			goto out;
 +
-+	key.objectid = bytenr;
-+	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-+	key.offset = len;
-+
-+	/* Double check the block group to ensure it's empty */
-+	ret = btrfs_search_slot(trans, extent_root, &key, path, 0, 0);
-+	if (ret > 0) {
-+		ret = -ENONET;
-+		goto out;
++		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++		if (key.type == BTRFS_BLOCK_GROUP_ITEM_KEY)
++			goto out;
 +	}
-+	if (ret < 0)
-+		goto out;
-+
-+	bgi = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			     struct btrfs_block_group_item);
-+	if (btrfs_disk_block_group_used(path->nodes[0], bgi)) {
-+		fprintf(stderr,
-+			"warning: block group [%llu,%llu) is not empty to free\n",
-+			bytenr, bytenr + len);
-+		ret = -EINVAL;
-+		goto out;
-+	}
-+	btrfs_release_path(path);
-+
-+	/*
-+	 * Now pin all space in the block group, to prevent further transaction
-+	 * allocate space from it.
-+	 * Every operation needs a transaction must be in the range.
-+	 */
-+	btrfs_pin_extent(fs_info, bytenr, len);
-+
-+	/* delete block group item and chunk item */
-+	ret = free_block_group_item(trans, fs_info, bytenr, len);
-+	if (ret < 0) {
-+		fprintf(stderr,
-+			"failed to free block group item for [%llu,%llu)\n",
-+			bytenr, bytenr + len);
-+		btrfs_unpin_extent(fs_info, bytenr, len);
-+		goto out;
-+	}
-+
-+	ret = free_chunk_dev_extent_items(trans, fs_info, bytenr);
-+	if (ret < 0) {
-+		fprintf(stderr,
-+			"failed to dev extents belongs to [%llu,%llu)\n",
-+			bytenr, bytenr + len);
-+		btrfs_unpin_extent(fs_info, bytenr, len);
-+		goto out;
-+	}
-+	ret = free_chunk_item(trans, fs_info, bytenr, len);
-+	if (ret < 0) {
-+		fprintf(stderr,
-+			"failed to free chunk for [%llu,%llu)\n",
-+			bytenr, bytenr + len);
-+		btrfs_unpin_extent(fs_info, bytenr, len);
-+		goto out;
-+	}
-+
-+	/* Now release the block_group_cache */
-+	ret = free_block_group_cache(trans, fs_info, bytenr, len);
-+	btrfs_unpin_extent(fs_info, bytenr, len);
-+
 +out:
++	return ret;
++}
++
++/* This function will cleanup  */
++static int cleanup_temp_chunks(struct btrfs_fs_info *fs_info,
++			       struct mkfs_allocation *alloc,
++			       u64 data_profile, u64 meta_profile,
++			       u64 sys_profile)
++{
++	struct btrfs_trans_handle *trans = NULL;
++	struct btrfs_block_group_item *bgi;
++	struct btrfs_root *root = fs_info->extent_root;
++	struct btrfs_key key;
++	struct btrfs_key found_key;
++	struct btrfs_path *path;
++	int ret = 0;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	trans = btrfs_start_transaction(root, 1);
++
++	key.objectid = 0;
++	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
++	key.offset = 0;
++
++	while (1) {
++		/*
++		 * as the rest of the loop may modify the tree, we need to
++		 * start a new search each time.
++		 */
++		ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
++		if (ret < 0)
++			goto out;
++
++		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
++				      path->slots[0]);
++		if (found_key.objectid < key.objectid)
++			goto out;
++		if (found_key.type != BTRFS_BLOCK_GROUP_ITEM_KEY) {
++			ret = next_block_group(root, path);
++			if (ret < 0)
++				goto out;
++			if (ret > 0) {
++				ret = 0;
++				goto out;
++			}
++			btrfs_item_key_to_cpu(path->nodes[0], &found_key,
++					      path->slots[0]);
++		}
++
++		bgi = btrfs_item_ptr(path->nodes[0], path->slots[0],
++				     struct btrfs_block_group_item);
++		if (is_temp_block_group(path->nodes[0], bgi,
++					data_profile, meta_profile,
++					sys_profile)) {
++			ret = btrfs_free_block_group(trans, fs_info,
++					found_key.objectid, found_key.offset);
++			if (ret < 0)
++				goto out;
++		}
++		btrfs_release_path(path);
++		key.objectid = found_key.objectid + found_key.offset;
++	}
++out:
++	if (trans)
++		btrfs_commit_transaction(trans, root);
 +	btrfs_free_path(path);
 +	return ret;
 +}
 +
- /*
-  * Fixup block accounting. The initial block accounting created by
-  * make_block_groups isn't accuracy in this case.
+ int main(int ac, char **av)
+ {
+ 	char *file;
+@@ -1669,6 +1812,12 @@ skip_multidev:
+ 		ret = make_image(source_dir, root, fd);
+ 		BUG_ON(ret);
+ 	}
++	ret = cleanup_temp_chunks(root->fs_info, &allocation, data_profile,
++				  metadata_profile, metadata_profile);
++	if (ret < 0) {
++		fprintf(stderr, "Failed to cleanup temporary chunks\n");
++		goto out;
++	}
+ 
+ 	if (verbose) {
+ 		char features_buf[64];
+@@ -1703,6 +1852,7 @@ skip_multidev:
+ 		list_all_devices(root);
+ 	}
+ 
++out:
+ 	ret = close_ctree(root);
+ 	BUG_ON(ret);
+ 	free(label);
 -- 
 2.4.4
 

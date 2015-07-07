@@ -1,166 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42323 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750998AbbGGCIS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 6 Jul 2015 22:08:18 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZCIIy-0002QX-GJ
-	for linux-btrfs@vger.kernel.org; Tue, 07 Jul 2015 04:08:16 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2015 04:08:16 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2015 04:08:16 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: strange corruptions found during btrfs check
-Date: Tue, 7 Jul 2015 02:08:09 +0000 (UTC)
-Message-ID: <pan$65923$282e3e3b$de6298ea$18c9eea@cox.net>
-References: <1435853528.6153.3.camel@scientia.net>
-	<1436208023.7124.6.camel@scientia.net>
-	<pan$a2365$d81c3521$a3dbaee4$237d0b1c@cox.net>
-	<1436231005.7124.44.camel@scientia.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mout.kundenserver.de ([212.227.126.130]:63502 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751021AbbGGFmr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 01:42:47 -0400
+Message-ID: <559B66C9.6060606@friedels.name>
+Date: Tue, 07 Jul 2015 07:42:33 +0200
+From: Hendrik Friedel <hendrik@friedels.name>
+MIME-Version: 1.0
+To: Donald Pearson <donaldwhpearson@gmail.com>
+CC: osandov@fb.com, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: size 2.73TiB used 240.97GiB after balance
+References: <000f4242.05e425492a977c7b@friedels.name> <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com>
+In-Reply-To: <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer posted on Tue, 07 Jul 2015 03:03:25 +0200 as
-excerpted:
+Hello,
 
-> Well I haven't looked into any code, so the following is just
-> perception: It seemed that send/receive itself has always worked
-> correctly for me so far.
-> I.e. I ran some complete diff -qr over the source and target of an
-> already incrementally (-p) sent/received snapshot.
-> That brought no error.
-
-In general, the send/receive corner-cases are of the type where both the 
-send and the receive complete successfully, it should be reliable, but 
-sometimes it won't complete successfully.
-
-> The aforementioned btrfs check errors only occurred after I had removed
-> older snapshots on the receiving side, i.e. snapshots that btrfs, via
-> the -p <same-old-snapshot-on-the-send-side>, used for building together
-> the more recent snapshot.
-> 
-> The error messages seem to imply that some of that got lost,... or at
-> least that would be my first wild guess... as if refs in the newer
-> snapshot on the receiving side point into the void, as the older
-> snapshot's objects, they were pointing to, have been removed (or some of
-> them lost).
-
-That would imply either a general btrfs bug (see stability discussion 
-below) or perhaps a below-filesystem error, that happened to be exposed 
-by the snapshot deletion.
-
-It does look like a snapshot subsystem error, agreed, and conceivably 
-could even be one at some level.  However, the point I sort of made, but 
-not well, in the previous reply, was that the snapshot and subvolume 
-subsystem is so reliant on the core assumptions that btrfs itself makes 
-about copy-on-write, etc, that the two cores really can't be easily 
-separated, such that if deletion of a particular snapshot actually 
-deletes extents pointed to by another snapshot, it's not a problem with 
-the subvolume/snapshot system so much, as with btrfs itself.
-
-What /might/ be happening is that an extent usage reference count was 
-somehow too low, such that when the snapshot was removed, the reference 
-count decremented to zero and btrfs thus thought it safe to remove the 
-actual data extents as well.  However, shared-extents are actually a core 
-feature of btrfs itself, relied upon not just by snapshot/subvolumes, but 
-for instance used with cp --reflink=always when both instances of the 
-file are on the same subvolume.  So while such a reference count bug 
-could certainly trigger with snapshot deletion, it wouldn't be a snapshot 
-subsystem bug, but rather, a bug in core btrfs itself.
-
-The snapshot/subvolume subsystem, then, should be as stable as btrfs 
-itself is, the point I made in my original reply, but again, more on that 
-below.
-
-> Apart from that, I think it's quite an issue that the core developers
-> don't keep some well maintained list of working/experimental features...
-> that's nearly as problematic as the complete lack of good and extensive
-> end user (i.e. sysadmin) documentation.
-> btrfs is quite long around now, and people start using it... but when
-> they cannot really tell what's stable and what's not (respectively which
-> parts of e.g. raid56 still need polishing) and they then stumble over
-> problems, trust into btrfs is easily lost. :(
-
-Actually, that's a bit of a sore spot...
-
-Various warnings, in mkfs.btrfs, in the kernel config help text for 
-btrfs, etc, about btrfs being experimental, are indeed being removed, tho 
-some of us think it may be a bit premature.  And various distros are now 
-shipping btrfs as the default for one or more of their default 
-partitions.  OpenSuSE is for example shipping with btrfs for the system 
-partition, to enable update rollbacks via btrfs snapshotting, among other 
-things.
-
-But, btrfs itself remains under very heavy development.
-
-As I've expanded upon in previous posts, due to the dangers of premature 
-optimization, perhaps one of the most direct measures of when 
-_developers_ consider something stable, is whether they've done 
-production-level optimizations in areas where pre-production code may 
-well change, since if they optimize and then it does change, they lose 
-those optimizations and must recode them.  As an example, one reasonably 
-well known optimization point in btrfs is the raid1-mode read-mode device 
-scheduler.  Btrfs' current scheduler implementation is very simple and 
-very easy to test; it simply chooses the first or second copy of the data 
-based on even/odd PID.  That works well enough as an initial scheduler, 
-being very simple to implement, ensuring both copies of the data get read 
-over time, and being easy to test, since selectably loading either side 
-or both sides is as easy as even/odd PID for the read test.
-
-But for a single-read-task on an otherwise idle system, it's horrible, 
-50% of best-case throughput.  And if your use-case happens to spawn 
-multiple work threads such that they're all even-PID or all odd-PID, one 
-device is saturated, while the other sits entirely idle!  Simple and 
-easily understood case of obviously not yet production optimized!  But 
-kernel code already exists for a much better scheduler, one generally 
-agreed to be very well optimized, that used by mdraid for its raid1 
-mode.  So a well tested much better optimized solution is known and 
-actually in use elsewhere in the kernel.
-
-Which pretty well demonstrates that the developers /themselves/ don't 
-consider btrfs stable enough yet to do that sort of optimization.  Were 
-they to do so and the raid1 implementation to change, they'd have to redo 
-that optimization, so they haven't done it yet, despite distributions 
-already defaulting to btrfs and people already using it as if it were 
-stable and production-ready.
+while mounting works with the recovery option, the system locks after 
+reading.
+dmesg shows:
+[  684.258246] ata6.00: exception Emask 0x0 SAct 0x0 SErr 0x0 action 0x0
+[  684.258249] ata6.00: irq_stat 0x40000001
+[  684.258252] ata6.00: failed command: DATA SET MANAGEMENT
+[  684.258255] ata6.00: cmd 06/01:01:00:00:00/00:00:00:00:00/a0 tag 26 
+dma 512 out
+[  684.258255]          res 51/04:01:01:00:00/00:00:00:00:00/a0 Emask 
+0x1 (device error)
+[  684.258256] ata6.00: status: { DRDY ERR }
+[  684.258258] ata6.00: error: { ABRT }
+[  684.258266] sd 5:0:0:0: [sdd] tag#26 FAILED Result: hostbyte=DID_OK 
+driverbyte=DRIVER_SENSE
+[  684.258268] sd 5:0:0:0: [sdd] tag#26 Sense Key : Illegal Request 
+[current] [descriptor]
+[  684.258270] sd 5:0:0:0: [sdd] tag#26 Add. Sense: Unaligned write command
+[  684.258272] sd 5:0:0:0: [sdd] tag#26 CDB: Write same(16) 93 08 00 00 
+00 00 00 01 d3 80 00 00 00 80 00 00
 
 
-Really, the best that can be said is that btrfs isn't yet completely 
-stable, despite distros already shipping it by default.  However, that 
-isn't such a bad problem, as it's stable /enough/ for good admin use, 
-where a good admin by definition follows the admin's rule of backups, 
-that being that if the data isn't backed up, by definition, it's of less 
-value than the time and resources required to do that backup, despite any 
-claims to the contrary.  And of course the corollary, for purposes of the 
-above rule, a would-be backup that hasn't been tested restorable isn't 
-yet a backup, because a backup isn't complete until it has been tested.
+So, also this drive is failing?!
 
-Because btrfs isn't yet entirely stable, that rule applies double.  If 
-you don't have backups, you /might/ lose the data, so best be prepared 
-for it.  But with that in mind, btrfs is stable /enough/.  Many people 
-use and depend on it to function normally in their daily routine, and 
-btrfs is stable enough to do just that, as long as backups are available 
-for valuable data, to cover the /non-/routine case.
+Regards,
+Hendrik
 
+On 07.07.2015 00:59, Donald Pearson wrote:
+> Anything in dmesg?
+>
+> On Mon, Jul 6, 2015 at 5:07 PM, hendrik@friedels.name
+> <hendrik@friedels.name> wrote:
+>> Hallo,
+>>
+>> It seems, that mounting works, but the System locks completely soon after I
+>> backing up.
+>>
+>>
+>> Greetings,
+>>
+>> Hendrik
+>>
+>>
+>> ------ Originalnachricht------
+>>
+>> Von: Donald Pearson
+>>
+>> Datum: Mo., 6. Juli 2015 23:49
+>>
+>> An: Hendrik Friedel;
+>>
+>> Cc: Omar Sandoval;Hugo Mills;Btrfs BTRFS;
+>>
+>> Betreff:Re: size 2.73TiB used 240.97GiB after balance
+>>
+>>
+>> If you can mount it RO, first thing to do is back up any data that youcare
+>> about.According to the bug that Omar posted you should not try a
+>> devicereplace and you should not try a scrub with a missing device.You may
+>> be able to just do a device delete missing, then separately doa device add
+>> of a new drive, or rebalance back in to raid1.On Mon, Jul 6, 2015 at 4:12
+>> PM, Hendrik Friedel  wrote:> Hello,>> oh dear, I fear I am in trouble:>
+>> recovery-mounted, I tried to save some data, but the system hung.> So I
+>> re-booted and sdc is now physically disconnected.>> Label: none  uuid:
+>> b4a6cce6-dc9c-4a13-80a4-ed6bc5b40bb8>         Total devices 3 FS bytes used
+>> 4.67TiB>         devid    1 size 2.73TiB used 2.67TiB path /dev/sdc>
+>> devid    2 size 2.73TiB used 2.67TiB path /dev/sdb>         *** Some devices
+>> missing>> I try to mount the rest again:> mount -o recovery,ro /dev/sdb
+>> /mnt/__Complete_Disk> mount: wrong fs type, bad option, bad superblock on
+>> /dev/sdb,>        missing codepage or helper program, or other error>
+>> In some cases useful info is found in syslog - try>        dmesg | tail  or
+>> so>> root@homeserver:~# dmesg | tail> [  447.059275] BTRFS info (device
+>> sdc): enabling auto recovery> [  447.059280] BTRFS info (device sdc): disk
+>> space caching is enabled> [  447.086844] BTRFS: failed to read chunk tree on
+>> sdc> [  447.110588] BTRFS: open_ctree failed> [  474.496778] BTRFS info
+>> (device sdc): enabling auto recovery> [  474.496781] BTRFS info (device
+>> sdc): disk space caching is enabled> [  474.519005] BTRFS: failed to read
+>> chunk tree on sdc> [  474.540627] BTRFS: open_ctree failed>>> mount -o
+>> degraded,ro /dev/sdb /mnt/__Complete_Disk> Does work now though.>> So, how
+>> can I remove the reference to the failed disk and check the data for>
+>> consistency (scrub I suppose, but is it safe?)?>> Regards,> Hendrik>>>>> On
+>> 06.07.2015 22:52, Omar Sandoval wrote:>>>> On 07/06/2015 01:01 PM, Donald
+>> Pearson wrote:>>>>>> Based on my experience Hugo's advice is critical, get
+>> the bad drive>>> out of the pool when in raid56 and do not try to replace or
+>> delete it>>> while it's still attached and recognized.>>>>>> If you add a
+>> new device, mount degraded and rebalance.  If you don't,>>> mount degraded
+>> then device delete missing.>>>>>>> Watch out, replacing a missing device in
+>> RAID 5/6 currently doesn't work>> and will cause a kernel BUG(). See my
+>> patch series here:>>
+>> http://www.spinics.net/lists/linux-btrfs/msg44874.html>>>>> --> Hendrik
+>> Friedel> Auf dem Brink 12> 28844 Weyhe> Tel. 04203 8394854> Mobil 0178
+>> 1874363>>> ---> Diese E-Mail wurde von Avast Antivirus-Software auf Viren
+>> geprüft.> https://www.avast.com/antivirus>
 
-As for end-user/admin documentation, there is a reasonable amount, 
-available on the btrfs wiki (https://btrfs.wiki.kernel.org), as well as 
-all the articles in the Linux press that have covered btrfs over the 
-years.  Arguably, it's at an appropriate level for the state of btrfs 
-itself, again, that being "not yet fully stable, but stabilizing".  
-Between that and the btrfs list for questions not covered well enough on 
-the wiki...
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Hendrik Friedel
+Auf dem Brink 12
+28844 Weyhe
+Tel. 04203 8394854
+Mobil 0178 1874363
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
 

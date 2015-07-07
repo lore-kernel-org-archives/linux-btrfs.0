@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3656 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:25001 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756550AbbGGIPs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 04:15:48 -0400
+	with ESMTP id S1756554AbbGGIPu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 04:15:50 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH 5/7] btrfs-progs: extent-tree: Introduce functions to free in-memory block group cache
-Date: Tue, 7 Jul 2015 16:15:26 +0800
-Message-ID: <1436256928-23812-6-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 6/7] btrfs-progs: extent-tree: Introduce btrfs_free_block_group function.
+Date: Tue, 7 Jul 2015 16:15:27 +0800
+Message-ID: <1436256928-23812-7-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,129 +16,114 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce two functions, free_space_info and free_block_group_cache.
+This function will be used to free a empty chunk.
 
-The former will free the space of a empty block group.
-The latter will free the in memory block group cache along with its
-space in space_info and device space.
+This provides the basis for later temp chunk cleanup.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- extent-tree.c | 100 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 100 insertions(+)
+ ctree.h       |  2 ++
+ extent-tree.c | 80 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 82 insertions(+)
 
+diff --git a/ctree.h b/ctree.h
+index f14a795..5550d45 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -2275,6 +2275,8 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_inode_item *inode,
+ 			      u64 file_pos, u64 disk_bytenr,
+ 			      u64 num_bytes);
++int btrfs_free_block_group(struct btrfs_trans_handle *trans,
++			   struct btrfs_fs_info *fs_info, u64 bytenr, u64 len);
+ /* ctree.c */
+ int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2);
+ int btrfs_del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
 diff --git a/extent-tree.c b/extent-tree.c
-index 499838c..39d6288 100644
+index 39d6288..358bd19 100644
 --- a/extent-tree.c
 +++ b/extent-tree.c
-@@ -1801,6 +1801,30 @@ static struct btrfs_space_info *__find_space_info(struct btrfs_fs_info *info,
- 
- }
- 
-+static int free_space_info(struct btrfs_fs_info *fs_info, u64 flags,
-+                          u64 total_bytes, u64 bytes_used,
-+                          struct btrfs_space_info **space_info)
-+{
-+	struct btrfs_space_info *found;
-+	/* only support free block group which is empty */
-+	if (bytes_used)
-+		return -ENOTTY;
-+
-+	found = __find_space_info(fs_info, flags);
-+	if (!found)
-+		return -ENOENT;
-+	if (found->total_bytes < total_bytes) {
-+		fprintf(stderr,
-+			"warning, bad space info to free %llu only have %llu\n",
-+			total_bytes, found->total_bytes);
-+		return -EINVAL;
-+	}
-+	found->total_bytes -= total_bytes;
-+	if (space_info)
-+		*space_info = found;
-+	return 0;
-+}
-+
- static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 			     u64 total_bytes, u64 bytes_used,
- 			     struct btrfs_space_info **space_info)
-@@ -3643,6 +3667,82 @@ out:
+@@ -3743,6 +3743,86 @@ out:
  	return ret;
  }
  
-+static u64 get_dev_extent_len(struct map_lookup *map)
++int btrfs_free_block_group(struct btrfs_trans_handle *trans,
++			   struct btrfs_fs_info *fs_info, u64 bytenr, u64 len)
 +{
-+	int div;
++	struct btrfs_root *extent_root = fs_info->extent_root;
++	struct btrfs_path *path;
++	struct btrfs_block_group_item *bgi;
++	struct btrfs_key key;
++	int ret = 0;
 +
-+	switch (map->type & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
-+	case 0: /* Single */
-+	case BTRFS_BLOCK_GROUP_DUP:
-+	case BTRFS_BLOCK_GROUP_RAID1:
-+		div = 1;
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID5:
-+		div = (map->num_stripes - 1);
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID6:
-+		div = (map->num_stripes - 2);
-+		break;
-+	case BTRFS_BLOCK_GROUP_RAID10:
-+		div = (map->num_stripes / map->sub_stripes);
-+		break;
-+	default:
-+		/* normally, read chunk security hook should handled it */
-+		BUG_ON(1);
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	key.objectid = bytenr;
++	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
++	key.offset = len;
++
++	/* Double check the block group to ensure it's empty */
++	ret = btrfs_search_slot(trans, extent_root, &key, path, 0, 0);
++	if (ret > 0) {
++		ret = -ENONET;
++		goto out;
 +	}
-+	return map->ce.size / div;
-+}
-+
-+/* free block group/chunk related caches */
-+static int free_block_group_cache(struct btrfs_trans_handle *trans,
-+				  struct btrfs_fs_info *fs_info,
-+				  u64 bytenr, u64 len)
-+{
-+	struct btrfs_block_group_cache *cache;
-+	struct cache_extent *ce;
-+	struct map_lookup *map;
-+	int ret;
-+	int i;
-+	u64 flags;
-+
-+	/* Free block group cache first */
-+	cache = btrfs_lookup_block_group(fs_info, bytenr);
-+	if (!cache)
-+		return -ENOENT;
-+	flags = cache->flags;
-+	if (cache->free_space_ctl) {
-+		btrfs_remove_free_space_cache(cache);
-+		kfree(cache->free_space_ctl);
-+	}
-+	clear_extent_bits(&fs_info->block_group_cache, bytenr, bytenr + len,
-+			  (unsigned int)-1, GFP_NOFS);
-+	ret = free_space_info(fs_info, flags, len, 0, NULL);
 +	if (ret < 0)
 +		goto out;
-+	kfree(cache);
 +
-+	/* Then free mapping info and dev usage info */
-+	ce = search_cache_extent(&fs_info->mapping_tree.cache_tree, bytenr);
-+	if (!ce || ce->start != bytenr) {
-+		ret = -ENOENT;
++	bgi = btrfs_item_ptr(path->nodes[0], path->slots[0],
++			     struct btrfs_block_group_item);
++	if (btrfs_disk_block_group_used(path->nodes[0], bgi)) {
++		fprintf(stderr,
++			"warning: block group [%llu,%llu) is not empty to free\n",
++			bytenr, bytenr + len);
++		ret = -EINVAL;
 +		goto out;
 +	}
-+	map = container_of(ce, struct map_lookup, ce);
-+	for (i = 0; i < map->num_stripes; i++) {
-+		struct btrfs_device *device;
++	btrfs_release_path(path);
 +
-+		device = map->stripes[i].dev;
-+		device->bytes_used -= get_dev_extent_len(map);
-+		ret = btrfs_update_device(trans, device);
-+		if (ret < 0)
-+			goto out;
++	/*
++	 * Now pin all space in the block group, to prevent further transaction
++	 * allocate space from it.
++	 * Every operation needs a transaction must be in the range.
++	 */
++	btrfs_pin_extent(fs_info, bytenr, len);
++
++	/* delete block group item and chunk item */
++	ret = free_block_group_item(trans, fs_info, bytenr, len);
++	if (ret < 0) {
++		fprintf(stderr,
++			"failed to free block group item for [%llu,%llu)\n",
++			bytenr, bytenr + len);
++		btrfs_unpin_extent(fs_info, bytenr, len);
++		goto out;
 +	}
-+	remove_cache_extent(&fs_info->mapping_tree.cache_tree, ce);
-+	free(map);
++
++	ret = free_chunk_dev_extent_items(trans, fs_info, bytenr);
++	if (ret < 0) {
++		fprintf(stderr,
++			"failed to dev extents belongs to [%llu,%llu)\n",
++			bytenr, bytenr + len);
++		btrfs_unpin_extent(fs_info, bytenr, len);
++		goto out;
++	}
++	ret = free_chunk_item(trans, fs_info, bytenr, len);
++	if (ret < 0) {
++		fprintf(stderr,
++			"failed to free chunk for [%llu,%llu)\n",
++			bytenr, bytenr + len);
++		btrfs_unpin_extent(fs_info, bytenr, len);
++		goto out;
++	}
++
++	/* Now release the block_group_cache */
++	ret = free_block_group_cache(trans, fs_info, bytenr, len);
++	btrfs_unpin_extent(fs_info, bytenr, len);
++
 +out:
++	btrfs_free_path(path);
 +	return ret;
 +}
 +

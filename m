@@ -1,166 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:56558 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753238AbbGGBD3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 6 Jul 2015 21:03:29 -0400
-Message-ID: <1436231005.7124.44.camel@scientia.net>
+Received: from plane.gmane.org ([80.91.229.3]:42323 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750998AbbGGCIS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 6 Jul 2015 22:08:18 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZCIIy-0002QX-GJ
+	for linux-btrfs@vger.kernel.org; Tue, 07 Jul 2015 04:08:16 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2015 04:08:16 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2015 04:08:16 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: strange corruptions found during btrfs check
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Tue, 07 Jul 2015 03:03:25 +0200
-In-Reply-To: <pan$a2365$d81c3521$a3dbaee4$237d0b1c@cox.net>
+Date: Tue, 7 Jul 2015 02:08:09 +0000 (UTC)
+Message-ID: <pan$65923$282e3e3b$de6298ea$18c9eea@cox.net>
 References: <1435853528.6153.3.camel@scientia.net>
-	 <1436208023.7124.6.camel@scientia.net>
-	 <pan$a2365$d81c3521$a3dbaee4$237d0b1c@cox.net>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-PdqRlsp8GiNWj20TdXo4"
+	<1436208023.7124.6.camel@scientia.net>
+	<pan$a2365$d81c3521$a3dbaee4$237d0b1c@cox.net>
+	<1436231005.7124.44.camel@scientia.net>
 Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Christoph Anton Mitterer posted on Tue, 07 Jul 2015 03:03:25 +0200 as
+excerpted:
 
---=-PdqRlsp8GiNWj20TdXo4
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+> Well I haven't looked into any code, so the following is just
+> perception: It seemed that send/receive itself has always worked
+> correctly for me so far.
+> I.e. I ran some complete diff -qr over the source and target of an
+> already incrementally (-p) sent/received snapshot.
+> That brought no error.
 
-On Tue, 2015-07-07 at 00:47 +0000, Duncan wrote:
-> The interaction between send/receive and subvolumes/snapshots
-> is also a problem, but again, not so much on the subvolume/snapshot=20
-> side, as on the send/receive side.
+In general, the send/receive corner-cases are of the type where both the 
+send and the receive complete successfully, it should be reliable, but 
+sometimes it won't complete successfully.
 
-Well I haven't looked into any code, so the following is just
-perception:
-It seemed that send/receive itself has always worked correctly for me
-so far.
-I.e. I ran some complete diff -qr over the source and target of an
-already incrementally (-p) sent/received snapshot.
-That brought no error.
+> The aforementioned btrfs check errors only occurred after I had removed
+> older snapshots on the receiving side, i.e. snapshots that btrfs, via
+> the -p <same-old-snapshot-on-the-send-side>, used for building together
+> the more recent snapshot.
+> 
+> The error messages seem to imply that some of that got lost,... or at
+> least that would be my first wild guess... as if refs in the newer
+> snapshot on the receiving side point into the void, as the older
+> snapshot's objects, they were pointing to, have been removed (or some of
+> them lost).
 
-The aforementioned btrfs check errors only occurred after I had removed
-older snapshots on the receiving side, i.e. snapshots that btrfs, via
-the -p <same-old-snapshot-on-the-send-side>, used for building together
-the more recent snapshot.
+That would imply either a general btrfs bug (see stability discussion 
+below) or perhaps a below-filesystem error, that happened to be exposed 
+by the snapshot deletion.
 
-The error messages seem to imply that some of that got lost,... or at
-least that would be my first wild guess... as if refs in the newer
-snapshot on the receiving side point into the void, as the older
-snapshot's objects, they were pointing to, have been removed (or some
-of them lost).
+It does look like a snapshot subsystem error, agreed, and conceivably 
+could even be one at some level.  However, the point I sort of made, but 
+not well, in the previous reply, was that the snapshot and subvolume 
+subsystem is so reliant on the core assumptions that btrfs itself makes 
+about copy-on-write, etc, that the two cores really can't be easily 
+separated, such that if deletion of a particular snapshot actually 
+deletes extents pointed to by another snapshot, it's not a problem with 
+the subvolume/snapshot system so much, as with btrfs itself.
 
+What /might/ be happening is that an extent usage reference count was 
+somehow too low, such that when the snapshot was removed, the reference 
+count decremented to zero and btrfs thus thought it safe to remove the 
+actual data extents as well.  However, shared-extents are actually a core 
+feature of btrfs itself, relied upon not just by snapshot/subvolumes, but 
+for instance used with cp --reflink=always when both instances of the 
+file are on the same subvolume.  So while such a reference count bug 
+could certainly trigger with snapshot deletion, it wouldn't be a snapshot 
+subsystem bug, but rather, a bug in core btrfs itself.
 
+The snapshot/subvolume subsystem, then, should be as stable as btrfs 
+itself is, the point I made in my original reply, but again, more on that 
+below.
 
-Apart from that, I think it's quite an issue that the core developers
-don't keep some well maintained list of working/experimental
-features... that's nearly as problematic as the complete lack of good
-and extensive end user (i.e. sysadmin) documentation.
-btrfs is quite long around now, and people start using it... but when
-they cannot really tell what's stable and what's not (respectively
-which parts of e.g. raid56 still need polishing) and they then stumble
-over problems, trust into btrfs is easily lost. :(
+> Apart from that, I think it's quite an issue that the core developers
+> don't keep some well maintained list of working/experimental features...
+> that's nearly as problematic as the complete lack of good and extensive
+> end user (i.e. sysadmin) documentation.
+> btrfs is quite long around now, and people start using it... but when
+> they cannot really tell what's stable and what's not (respectively which
+> parts of e.g. raid56 still need polishing) and they then stumble over
+> problems, trust into btrfs is easily lost. :(
 
-Cheers,
-Chris.
---=-PdqRlsp8GiNWj20TdXo4
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+Actually, that's a bit of a sore spot...
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDcwNzAxMDMy
-NVowTwYJKoZIhvcNAQkEMUIEQFbRgv86qMPA0isV2w2nx4svZ32OL/Ap4y12+QERt91IVspKOefX
-6r1H7LDgYMC6rgeQ/2pFnWSTwnS1VwJZw6QwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQB9f3x3edJtHgiiLZlYcpcwTkDgNJs4
-ZRdwvwdwYSp+pHwvL1cMoYOPB0fSOWlq0K8L/GIVjasnLGiYwK6yp2jdeCvkg6E3LzTYFVfQBrEf
-97WCo1DHyh1PlN5Sl6y/IfKLj+4Sw2cfMpDZoPvzISkta3LX65h/0+vHnh9VvROv2Mcq0S7gw8p4
-JayOLUsVn4BopeAtb9eoK6GA3b8uc3ogmaHaMCej3AzbVi8sLOsnd1+v6ZMjtApVfskS4Z6EnoYc
-6yQrO4o8NTjx/FILggY7RPvlhM2fyx/3QcFc+1s70WBDFcf7YLG1aGF4xnxiwkfxn27AArVK0LVu
-WEwEIc/aAAAAAAAA
+Various warnings, in mkfs.btrfs, in the kernel config help text for 
+btrfs, etc, about btrfs being experimental, are indeed being removed, tho 
+some of us think it may be a bit premature.  And various distros are now 
+shipping btrfs as the default for one or more of their default 
+partitions.  OpenSuSE is for example shipping with btrfs for the system 
+partition, to enable update rollbacks via btrfs snapshotting, among other 
+things.
+
+But, btrfs itself remains under very heavy development.
+
+As I've expanded upon in previous posts, due to the dangers of premature 
+optimization, perhaps one of the most direct measures of when 
+_developers_ consider something stable, is whether they've done 
+production-level optimizations in areas where pre-production code may 
+well change, since if they optimize and then it does change, they lose 
+those optimizations and must recode them.  As an example, one reasonably 
+well known optimization point in btrfs is the raid1-mode read-mode device 
+scheduler.  Btrfs' current scheduler implementation is very simple and 
+very easy to test; it simply chooses the first or second copy of the data 
+based on even/odd PID.  That works well enough as an initial scheduler, 
+being very simple to implement, ensuring both copies of the data get read 
+over time, and being easy to test, since selectably loading either side 
+or both sides is as easy as even/odd PID for the read test.
+
+But for a single-read-task on an otherwise idle system, it's horrible, 
+50% of best-case throughput.  And if your use-case happens to spawn 
+multiple work threads such that they're all even-PID or all odd-PID, one 
+device is saturated, while the other sits entirely idle!  Simple and 
+easily understood case of obviously not yet production optimized!  But 
+kernel code already exists for a much better scheduler, one generally 
+agreed to be very well optimized, that used by mdraid for its raid1 
+mode.  So a well tested much better optimized solution is known and 
+actually in use elsewhere in the kernel.
+
+Which pretty well demonstrates that the developers /themselves/ don't 
+consider btrfs stable enough yet to do that sort of optimization.  Were 
+they to do so and the raid1 implementation to change, they'd have to redo 
+that optimization, so they haven't done it yet, despite distributions 
+already defaulting to btrfs and people already using it as if it were 
+stable and production-ready.
 
 
---=-PdqRlsp8GiNWj20TdXo4--
+Really, the best that can be said is that btrfs isn't yet completely 
+stable, despite distros already shipping it by default.  However, that 
+isn't such a bad problem, as it's stable /enough/ for good admin use, 
+where a good admin by definition follows the admin's rule of backups, 
+that being that if the data isn't backed up, by definition, it's of less 
+value than the time and resources required to do that backup, despite any 
+claims to the contrary.  And of course the corollary, for purposes of the 
+above rule, a would-be backup that hasn't been tested restorable isn't 
+yet a backup, because a backup isn't complete until it has been tested.
+
+Because btrfs isn't yet entirely stable, that rule applies double.  If 
+you don't have backups, you /might/ lose the data, so best be prepared 
+for it.  But with that in mind, btrfs is stable /enough/.  Many people 
+use and depend on it to function normally in their daily routine, and 
+btrfs is stable enough to do just that, as long as backups are available 
+for valuable data, to cover the /non-/routine case.
+
+
+As for end-user/admin documentation, there is a reasonable amount, 
+available on the btrfs wiki (https://btrfs.wiki.kernel.org), as well as 
+all the articles in the Linux press that have covered btrfs over the 
+years.  Arguably, it's at an appropriate level for the state of btrfs 
+itself, again, that being "not yet fully stable, but stabilizing".  
+Between that and the btrfs list for questions not covered well enough on 
+the wiki...
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

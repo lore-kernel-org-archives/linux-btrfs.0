@@ -1,30 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44790 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751090AbbGAN03 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 1 Jul 2015 09:26:29 -0400
-Date: Wed, 1 Jul 2015 15:26:27 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Trollkarlen Marklund <robbelibobban@gmail.com>
-Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] check: check so offset is not bigger then the leaf
-Message-ID: <20150701132627.GK726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1434585553-8697-1-git-send-email-robbelibobban@gmail.com>
- <20150618164443.GH6761@twin.jikos.cz>
- <3FC07E8E-F789-4C2A-9099-F649EFADCD1F@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:33339 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1756966AbbGHDfV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 23:35:21 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [GIT PULL] Fix for btrfs/070 checksum error
+To: Chris Mason <clm@fb.com>, btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <559C9A75.60506@cn.fujitsu.com>
+Date: Wed, 8 Jul 2015 11:35:17 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <3FC07E8E-F789-4C2A-9099-F649EFADCD1F@gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 29, 2015 at 02:16:28PM +0300, Trollkarlen Marklund wrote:
-> > Do you have a crafted filesystem image that can reproduce that or was
-> > that found by code inspection?
-> 
-> I have a failed filesystem caused by a failing disk that I tried to fix/recover.
-> Then i stumbled on this, and later on on some more places other then this.
-> Ill submit that also and in a nicer way when my filesystem is rescued. 
+Hi Chris,
 
-FYI, I've committed a patch based on the discussion in the thread.
+Sorry for the late pull request, this one should be sent on Monday. :(
+
+This patchset is meant to fix an annoying bug triggered by btrfs/070 and 
+some other concurrency scrub + IO load test.
+
+The bug itself is triggered by chance and took Zhao Lei quite a long 
+time to trace and debug it.
+
+Although previous patchset sent to mail-list has some problem, it turned 
+out that's rebasing typo, and can be fixed quite easy.
+
+We have spend a whole weekend running tests this time to ensure the 
+patch is OK.
+
+The fix itself is small enough and only fixes a long standing problem.
+IMHO it is OK for the late fix merge window.
+
+So please merge the following branch:
+https://github.com/adam900710/linux.git  for_chris_4.2_070_fix
+
+Thanks,
+Qu

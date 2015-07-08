@@ -1,13 +1,13 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35688 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933573AbbGHHmj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 03:42:39 -0400
+Received: from userp1040.oracle.com ([156.151.31.81]:35046 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933509AbbGHHme (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 03:42:34 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 5/6] Btrfs: rename super_kobj to fsid_kobj
-Date: Wed,  8 Jul 2015 15:32:53 +0800
-Message-Id: <1436340774-10909-6-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 1/6] Btrfs: rename btrfs_sysfs_add_one to btrfs_sysfs_add_mounted
+Date: Wed,  8 Jul 2015 15:32:49 +0800
+Message-Id: <1436340774-10909-2-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1436340774-10909-1-git-send-email-anand.jain@oracle.com>
 References: <1436340774-10909-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -15,163 +15,50 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/sysfs.c   | 36 ++++++++++++++++++------------------
- fs/btrfs/volumes.c |  2 +-
- fs/btrfs/volumes.h |  2 +-
- 3 files changed, 20 insertions(+), 20 deletions(-)
+ fs/btrfs/ctree.h   | 2 +-
+ fs/btrfs/disk-io.c | 2 +-
+ fs/btrfs/sysfs.c   | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 80a9aef..b6b2226 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4007,7 +4007,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+ /* sysfs.c */
+ int btrfs_init_sysfs(void);
+ void btrfs_exit_sysfs(void);
+-int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info);
++int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info);
+ void btrfs_sysfs_remove_one(struct btrfs_fs_info *fs_info);
+ 
+ /* xattr.c */
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index b977fc8..552dcbe 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2888,7 +2888,7 @@ retry_root_backup:
+ 		goto fail_fsdev_sysfs;
+ 	}
+ 
+-	ret = btrfs_sysfs_add_one(fs_info);
++	ret = btrfs_sysfs_add_mounted(fs_info);
+ 	if (ret) {
+ 		pr_err("BTRFS: failed to init sysfs interface: %d\n", ret);
+ 		goto fail_fsdev_sysfs;
 diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 52319d1..e0ac859 100644
+index 603b0cc..cabf840 100644
 --- a/fs/btrfs/sysfs.c
 +++ b/fs/btrfs/sysfs.c
-@@ -437,24 +437,24 @@ static const struct attribute *btrfs_attrs[] = {
- 	NULL,
- };
- 
--static void btrfs_release_super_kobj(struct kobject *kobj)
-+static void btrfs_release_fsid_kobj(struct kobject *kobj)
- {
- 	struct btrfs_fs_devices *fs_devs = to_fs_devs(kobj);
- 
--	memset(&fs_devs->super_kobj, 0, sizeof(struct kobject));
-+	memset(&fs_devs->fsid_kobj, 0, sizeof(struct kobject));
- 	complete(&fs_devs->kobj_unregister);
- }
- 
- static struct kobj_type btrfs_ktype = {
- 	.sysfs_ops	= &kobj_sysfs_ops,
--	.release	= btrfs_release_super_kobj,
-+	.release	= btrfs_release_fsid_kobj,
- };
- 
- static inline struct btrfs_fs_devices *to_fs_devs(struct kobject *kobj)
- {
- 	if (kobj->ktype != &btrfs_ktype)
- 		return NULL;
--	return container_of(kobj, struct btrfs_fs_devices, super_kobj);
-+	return container_of(kobj, struct btrfs_fs_devices, fsid_kobj);
- }
- 
- static inline struct btrfs_fs_info *to_fs_info(struct kobject *kobj)
-@@ -502,12 +502,12 @@ static int addrm_unknown_feature_attrs(struct btrfs_fs_info *fs_info, bool add)
- 			attrs[0] = &fa->kobj_attr.attr;
- 			if (add) {
- 				int ret;
--				ret = sysfs_merge_group(&fs_info->fs_devices->super_kobj,
-+				ret = sysfs_merge_group(&fs_info->fs_devices->fsid_kobj,
- 							&agroup);
- 				if (ret)
- 					return ret;
- 			} else
--				sysfs_unmerge_group(&fs_info->fs_devices->super_kobj,
-+				sysfs_unmerge_group(&fs_info->fs_devices->fsid_kobj,
- 						    &agroup);
- 		}
- 
-@@ -523,9 +523,9 @@ static void __btrfs_sysfs_remove_fsid(struct btrfs_fs_devices *fs_devs)
- 		fs_devs->device_dir_kobj = NULL;
- 	}
- 
--	if (fs_devs->super_kobj.state_initialized) {
--		kobject_del(&fs_devs->super_kobj);
--		kobject_put(&fs_devs->super_kobj);
-+	if (fs_devs->fsid_kobj.state_initialized) {
-+		kobject_del(&fs_devs->fsid_kobj);
-+		kobject_put(&fs_devs->fsid_kobj);
- 		wait_for_completion(&fs_devs->kobj_unregister);
- 	}
- }
-@@ -555,8 +555,8 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info)
- 		kobject_put(fs_info->space_info_kobj);
- 	}
- 	addrm_unknown_feature_attrs(fs_info, false);
--	sysfs_remove_group(&fs_info->fs_devices->super_kobj, &btrfs_feature_attr_group);
--	sysfs_remove_files(&fs_info->fs_devices->super_kobj, btrfs_attrs);
-+	sysfs_remove_group(&fs_info->fs_devices->fsid_kobj, &btrfs_feature_attr_group);
-+	sysfs_remove_files(&fs_info->fs_devices->fsid_kobj, btrfs_attrs);
- 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, NULL);
- }
- 
-@@ -675,7 +675,7 @@ int btrfs_sysfs_add_device(struct btrfs_fs_devices *fs_devs)
- {
- 	if (!fs_devs->device_dir_kobj)
- 		fs_devs->device_dir_kobj = kobject_create_and_add("devices",
--						&fs_devs->super_kobj);
-+						&fs_devs->fsid_kobj);
- 
- 	if (!fs_devs->device_dir_kobj)
- 		return -ENOMEM;
-@@ -730,8 +730,8 @@ int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs,
- 	int error;
- 
- 	init_completion(&fs_devs->kobj_unregister);
--	fs_devs->super_kobj.kset = btrfs_kset;
--	error = kobject_init_and_add(&fs_devs->super_kobj,
-+	fs_devs->fsid_kobj.kset = btrfs_kset;
-+	error = kobject_init_and_add(&fs_devs->fsid_kobj,
- 				&btrfs_ktype, parent, "%pU", fs_devs->fsid);
+@@ -736,7 +736,7 @@ int btrfs_sysfs_add_fsid(struct btrfs_fs_devices *fs_devs,
  	return error;
  }
-@@ -740,7 +740,7 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
+ 
+-int btrfs_sysfs_add_one(struct btrfs_fs_info *fs_info)
++int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
  {
  	int error;
  	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
--	struct kobject *super_kobj = &fs_devs->super_kobj;
-+	struct kobject *fsid_kobj = &fs_devs->fsid_kobj;
- 
- 	btrfs_set_fs_info_ptr(fs_info);
- 
-@@ -748,13 +748,13 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
- 	if (error)
- 		return error;
- 
--	error = sysfs_create_files(super_kobj, btrfs_attrs);
-+	error = sysfs_create_files(fsid_kobj, btrfs_attrs);
- 	if (error) {
- 		btrfs_sysfs_rm_device_link(fs_devs, NULL);
- 		return error;
- 	}
- 
--	error = sysfs_create_group(super_kobj,
-+	error = sysfs_create_group(fsid_kobj,
- 				   &btrfs_feature_attr_group);
- 	if (error)
- 		goto failure;
-@@ -764,7 +764,7 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
- 		goto failure;
- 
- 	fs_info->space_info_kobj = kobject_create_and_add("allocation",
--						  super_kobj);
-+						  fsid_kobj);
- 	if (!fs_info->space_info_kobj) {
- 		error = -ENOMEM;
- 		goto failure;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6483da1..90340d0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2336,7 +2336,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 		 */
- 		snprintf(fsid_buf, BTRFS_UUID_UNPARSED_SIZE, "%pU",
- 						root->fs_info->fsid);
--		if (kobject_rename(&root->fs_info->fs_devices->super_kobj,
-+		if (kobject_rename(&root->fs_info->fs_devices->fsid_kobj,
- 								fsid_buf))
- 			pr_warn("BTRFS: sysfs: failed to create fsid for sprout\n");
- 	}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 210a643..865d853 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -256,7 +256,7 @@ struct btrfs_fs_devices {
- 
- 	struct btrfs_fs_info *fs_info;
- 	/* sysfs kobjects */
--	struct kobject super_kobj;
-+	struct kobject fsid_kobj;
- 	struct kobject *device_dir_kobj;
- 	struct completion kobj_unregister;
- };
 -- 
 2.4.1
 

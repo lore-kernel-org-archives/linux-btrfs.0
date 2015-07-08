@@ -1,51 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:36286 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758919AbbGHUzC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 16:55:02 -0400
-Received: by pacgz10 with SMTP id gz10so64095724pac.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 13:55:02 -0700 (PDT)
+Received: from mout.kundenserver.de ([212.227.126.130]:49742 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758828AbbGHVaD convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 17:30:03 -0400
+Message-ID: <559D964C.8060502@friedels.name>
+Date: Wed, 08 Jul 2015 23:29:48 +0200
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-In-Reply-To: <CADfjVrhammqPo68TTckaGA8p+=G=zdno_LLiSZQj=9xLq14WVg@mail.gmail.com>
-References: <CAJCQCtSyf+ADvupbAoVi3BPN-TxdYr0n=-6gykWVe-U33rUNAQ@mail.gmail.com>
-	<CADfjVrhammqPo68TTckaGA8p+=G=zdno_LLiSZQj=9xLq14WVg@mail.gmail.com>
-Date: Wed, 8 Jul 2015 23:55:01 +0300
-Message-ID: <CAFdkf7PA36kC-E0yaGYjWoU9igkT+KC+OT-pDi1-KRPDE3B=Jg@mail.gmail.com>
-Subject: Re: [BUG] BTRFS: error in btrfs_run_delayed_refs:2821: errno=-5 IO failure
-From: =?UTF-8?B?0J3QuNC60L7Qu9Cw0Lkg0J7QstGH0LjQvdC90LjQutC+0LI=?=
-	<nik.ovchin@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+To: Donald Pearson <donaldwhpearson@gmail.com>
+CC: Omar Sandoval <osandov@fb.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: size 2.73TiB used 240.97GiB after balance
+References: <000f4242.05e425492a977c7b@friedels.name> <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com> <559B66C9.6060606@friedels.name> <CAC=t97Cm8nAhwfS3vYc802Xi2tmGuvzRzOfXzSkUgaF5y0zQWQ@mail.gmail.com> <559D7245.9030204@friedels.name> <CAC=t97CWsK1HLY9WMOQb7WxN9n2dS=FBE1PE+8bQ-Fa1VzNCQA@mail.gmail.com>
+In-Reply-To: <CAC=t97CWsK1HLY9WMOQb7WxN9n2dS=FBE1PE+8bQ-Fa1VzNCQA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Looks like my case.
-I also have some files over 1Gb ans skip defrag before balance.
+Hello Donald,
+
+thanks for your reply. I appreciate your help.
+
+ > I would use recover to get the data if at all possible, then you can
+> experiment with try to fix the degraded condition live.  If you have
+> any chance of getting data from the pool, you reduce that chance every
+> time you make a change.
+
+Ok, you assume that btrfs recover is the most likely way of recovering 
+data. But if mounting degraded, scrubbing, btrfsck, ... are more 
+successful, your proposal is more risky, isn't it? With a dd-image I can 
+always go back to todays status.
+
+> If btrfs did the balance like you said, it wouldn't be raid5.  What
+> you just described is raid4 where only one drive holds parity data.  I
+> can't say that I actually know for a fact that btrfs doesn't do this,
+> but I'd be shocked and some dev would need to eat their underware if
+> the balance job didn't distribute the parity also.
+
+Ok, I was not aware of the difference between raid4&5.
+
+So, I did try a btrs-recover:
+warning devid 3 not found already
+Check tree block failed, want=8300102483968, have=65536
+Check tree block failed, want=8300102483968, have=65536
+Check tree block failed, want=8300102483968, have=65536
+read block failed check_tree_block
+Couldn't setup extent tree
+[it is still running]
+
+btrfs-find-root gives me:
+http://paste.ubuntu.com/11844005/
+http://paste.ubuntu.com/11844009/
+(on the two disks)
 
 
-2015-07-08 23:02 GMT+03:00 Noah Massey <noah.massey@gmail.com>:
-> On Wed, Jul 8, 2015 at 10:01 AM, Chris Murphy <lists@colorremedies.com> wrote:
->> The short version: btrfs convert and subsequent balance will eat an
->> ext4 file system. I've reproduced this 6 for 6 times with both kernel
->> 4.1 and 4.2rc1, but I get different back traces for the two kernels.
->>
->> Kernel 4.1.0
->> Btrfs-progs 4.1
->>
->> New ext4 file system populated with several thousand files (Fedora 22
->> installation) and a 1.5GB ISO.
->>
->
-> Standard disclaimer: Not a developer, just a user.
-> The 1.5 GB ISO on a fresh ext4 system made me think of
-> http://thread.gmane.org/gmane.comp.file-systems.btrfs/36955
-> (ext4 extents over 1 GB causing ENOSPC).
->
-> Did the "btrfs filesystem balance" specify a "-t 900G" or similar?
->
-> Or has that issue been fixed?
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+btrfs-show-super:
+http://paste.ubuntu.com/11844016/
+
+Greetings,
+Hendrik
+
+
+
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
+

@@ -1,381 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f47.google.com ([209.85.220.47]:33739 "EHLO
-	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932845AbbGGVqu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 17:46:50 -0400
-Received: by pacws9 with SMTP id ws9so120886995pac.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 07 Jul 2015 14:46:49 -0700 (PDT)
-MIME-Version: 1.0
-Date: Wed, 8 Jul 2015 00:46:48 +0300
-Message-ID: <CAFdkf7Pqkjf=H11LaGQusDE_OT3zK1civwrHWeqmTS27uB4FPA@mail.gmail.com>
-Subject: Error while balance after convert from ext4
-From: =?UTF-8?B?0J3QuNC60L7Qu9Cw0Lkg0J7QstGH0LjQvdC90LjQutC+0LI=?=
-	<nik.ovchin@gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:58207 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753590AbbGHATJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 7 Jul 2015 20:19:09 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZCd4s-00067B-6n
+	for linux-btrfs@vger.kernel.org; Wed, 08 Jul 2015 02:19:06 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 02:19:06 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 02:19:06 +0200
 To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=047d7b10c801a1bdcb051a4ff550
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Error while balance after convert from ext4
+Date: Wed, 8 Jul 2015 00:18:59 +0000 (UTC)
+Message-ID: <pan$2e38c$aafcae5e$5b1bff88$546fb2b@cox.net>
+References: <CAFdkf7Pqkjf=H11LaGQusDE_OT3zK1civwrHWeqmTS27uB4FPA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---047d7b10c801a1bdcb051a4ff550
-Content-Type: text/plain; charset=UTF-8
-Content-Transfer-Encoding: quoted-printable
+Николай Овчинников posted on Wed, 08 Jul 2015 00:46:48 +0300 as excerpted:
 
-While balancing after succsecful converting from ext4 filesystem moved
-into read-only mode and balance aborted.
-Before balance df says about 6Gb freespace.
-Now filesystem can be mounted only in recovery mode with 1 dir and
-about 20 zero-sized files.
-Please find attached syslog
-btrfsck thrown abort
-btrfs-image failed
-btrfs restore of zero-sized files with different -t num from find-root fail=
-ed
-Is there a chance to recover these files?
+> While balancing after succsecful converting from ext4 filesystem moved
+> into read-only mode and balance aborted.
+> Before balance df says about 6Gb freespace.
+> Now filesystem can be mounted only in recovery mode with 1 dir and about
+> 20 zero-sized files.
 
-The sequence of my actions with timestamp to correlate with syslog:
+> Is there a chance to recover these files?
 
-         btrfs-convert /dev/sda7
-13:33 mount /dev/sda7 /mnt
-         btrfs sub del /mnt/ext2_saved
-13:35 btrfs balance start /mnt
-         btrfs balance cancel
-         umount /mnt
-13:40 mount /dev/sda7 /mnt -o compress-force=3Dzlib
-         btrfs balance start /mnt
-13:57 ***Error*** balance stop because fs changed to read-only
-14:02 mount /dev/sda7 /mnt -o compress-force=3Dzlib
-14:22 mount /dev/sda7 /mnt -o ro,recovery
+FWIW, there have been several other reports of conversion not going so 
+well recently.  The opinion of at least some users is that apparently, 
+btrfs has moved on from where it was when the conversion tool was built, 
+and the conversion tool hasn't kept up, causing problems with the 
+conversion in more cases, recently.  (FWIW, I've never particularly 
+trusted filesystem conversion tools in the first place.  As such,  I 
+always had a strong preference for doing a fresh mkfs, then copying 
+things over from the old filesystem.  That way, the old filesystem 
+becomes the backup you're restoring to a fresh filesystem from, and it 
+remains a backup, in case there are issues with the new filesystem, as 
+well as for all the other reasons, including fat-fingering, that valuing 
+the data is in practice defined as having a backup.)
 
-root@ovchin-eee:/home/ovchin/btrfs-progs# uname -a
-Linux ovchin-eee 4.0.0-2-amd64 #1 SMP Debian 4.0.7-1 (2015-07-06)
-x86_64 GNU/Linux
-root@ovchin-eee:/home/ovchin/btrfs-progs# ./btrfs --version
-btrfs-progs v4.1
-root@ovchin-eee:/home/ovchin/btrfs-progs# ./btrfs fi show
-Label: none  uuid: 489fb2ac-7f1a-46da-9fb8-964e483c8081
-        Total devices 1 FS bytes used 188.43GiB
-        devid    1 size 201.23GiB used 199.23GiB path /dev/sda7
 
-root@ovchin-eee:/home/ovchin/btrfs-progs# gdb ./btrfsck
-GNU gdb (Debian 7.7.1+dfsg-5) 7.7.1
-Copyright (C) 2014 Free Software Foundation, Inc.
-License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.htm=
-l>
-This is free software: you are free to change and redistribute it.
-There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
-and "show warranty" for details.
-This GDB was configured as "x86_64-linux-gnu".
-Type "show configuration" for configuration details.
-For bug reporting instructions, please see:
-<http://www.gnu.org/software/gdb/bugs/>.
-Find the GDB manual and other documentation resources online at:
-<http://www.gnu.org/software/gdb/documentation/>.
-For help, type "help".
-Type "apropos word" to search for commands related to "word"...
-Reading symbols from ./btrfsck...done.
-(gdb) run /dev/sda7
-Starting program: /home/ovchin/btrfs-progs/btrfsck /dev/sda7
-[Thread debugging using libthread_db enabled]
-Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
-Checking filesystem on /dev/sda7
-UUID: 489fb2ac-7f1a-46da-9fb8-964e483c8081
-checking extents
+Meanwhile, to answer your question, yes, the files can be recovered from 
+the backups you had if you valued the data.  If you didn't have them, the 
+data obviously wasn't important, and you simply had a bit of help 
+clearing your cache of unimportant junk-files. =:^)
 
-Program received signal SIGABRT, Aborted.
-0x00007ffff6fc6107 in __GI_raise (sig=3Dsig@entry=3D6)
-    at ../nptl/sysdeps/unix/sysv/linux/raise.c:56
-56      ../nptl/sysdeps/unix/sysv/linux/raise.c: =D0=9D=D0=B5=D1=82 =D1=82=
-=D0=B0=D0=BA=D0=BE=D0=B3=D0=BE =D1=84=D0=B0=D0=B9=D0=BB=D0=B0 =D0=B8=D0=BB=
-=D0=B8 =D0=BA=D0=B0=D1=82=D0=B0=D0=BB=D0=BE=D0=B3=D0=B0.
-(gdb) bt
-#0  0x00007ffff6fc6107 in __GI_raise (sig=3Dsig@entry=3D6)
-    at ../nptl/sysdeps/unix/sysv/linux/raise.c:56
-#1  0x00007ffff6fc74e8 in __GI_abort () at abort.c:89
-#2  0x000000000042cd25 in add_tree_backref
-(extent_cache=3D0x7fffffffe530, bytenr=3D7707766784,
-    parent=3D0, root=3D4, found_ref=3D1) at cmds-check.c:4421
-#3  0x00000000004309a2 in add_root_to_pending (buf=3D0x6dcd00,
-extent_cache=3D0x7fffffffe530,
-    pending=3D0x7fffffffe510, seen=3D0x7fffffffe520, nodes=3D0x7fffffffe4f0=
-,
-objectid=3D4)
-    at cmds-check.c:5961
-#4  0x0000000000434abb in deal_root_from_list (list=3D0x7fffffffe200,
-root=3D0x6eaa10,
-    bits=3D0x6f1170, bits_nr=3D1024, pending=3D0x7fffffffe510, seen=3D0x7ff=
-fffffe520,
-    reada=3D0x7fffffffe500, nodes=3D0x7fffffffe4f0, extent_cache=3D0x7fffff=
-ffe530,
-    chunk_cache=3D0x7fffffffe590, dev_cache=3D0x7fffffffe5a0,
-block_group_cache=3D0x7fffffffe570,
-    dev_extent_cache=3D0x7fffffffe540) at cmds-check.c:7803
-#5  0x0000000000434f95 in check_chunks_and_extents (root=3D0x6eaa10) at
-cmds-check.c:7973
-#6  0x00000000004381a0 in cmd_check (argc=3D1, argv=3D0x7fffffffe808) at
-cmds-check.c:9402
-#7  0x0000000000409dec in main (argc=3D2, argv=3D0x7fffffffe808) at btrfs.c=
-:245
+Seriously, the sysadmin's standard backup rule states that if you don't 
+have a backup, by definition, you value the data less than the time and 
+resources necessary to create the backup, no matter any claims to the 
+contrary.  Further, for purposes of this rule a would-be backup that 
+hasn't been tested restorable isn't yet a backup as a backup isn't 
+complete until it's tested.
 
-oot@ovchin-eee:/home/ovchin/btrfs-progs# ./btrfs-image -c9 -t4
-/dev/sda7 ../btrfs.image
-checksum verify failed on 36143104 found 79B018CB wanted B0E76697
-checksum verify failed on 36143104 found 79B018CB wanted B0E76697
-bytenr mismatch, want=3D36143104, have=3D13590450109232199243
-Error reading metadata block
-Error adding block -5
-checksum verify failed on 36143104 found 79B018CB wanted B0E76697
-checksum verify failed on 36143104 found 79B018CB wanted B0E76697
-bytenr mismatch, want=3D36143104, have=3D13590450109232199243
-Error reading metadata block
-Error flushing pending -5
-create failed (Success)
+Of course, the fact that btrfs isn't yet fully stable means the rule 
+applies double, compared to its normal application to a fully stable 
+filesystem.
 
-root@ovchin-eee:/home/ovchin/btrfs-progs# ./btrfs-image -c9 -t4 -w
-/dev/sda7 ../btrfs.image
-checksum verify failed on 38006784 found FD87CEC0 wanted E5015CC7
-checksum verify failed on 38006784 found FD87CEC0 wanted E5015CC7
-bytenr mismatch, want=3D38006784, have=3D671059430232024561
-Error reading log block
-create failed (Success)
+And of course, converting a filesystem without a backup is also something 
+that by definition is never done with data you actually care about, so at 
+/least/ double again (if not 4X on its own).
 
-root@ovchin-eee:/home/ovchin/btrfs-progs# btrfs restore --path-regex
-^/[^/]*dat$ /dev/sda7 ../rescue/
-checksum verify failed on 38006784 found FD87CEC0 wanted E5015CC7
-checksum verify failed on 38006784 found FD87CEC0 wanted E5015CC7
-bytenr mismatch, want=3D38006784, have=3D671059430232024561
-checksum verify failed on 38006784 found FD87CEC0 wanted E5015CC7
-checksum verify failed on 38006784 found FD87CEC0 wanted E5015CC7
-bytenr mismatch, want=3D38006784, have=3D671059430232024561
-Error searching -5
-Error copying data for ../rescue/cryptkey.dat
+Which means the rule applied at 4X-8X strength.  You REALLY had a backup 
+(and at 4-8X strength, probably more than one), or REALLY don't care 
+about the data.
 
---047d7b10c801a1bdcb051a4ff550
-Content-Type: application/x-bzip2; name="syslog.bz2"
-Content-Disposition: attachment; filename="syslog.bz2"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_ibtugllz0
 
-QlpoOTFBWSZTWX0+vsEAtPJfgGxcSG//973734q////wYE3e+8AA0AAhvlZg0bTVbaiMN4DoG0Rc
-9Lh09Ps+5JGldUuYADLx57qKBSigoiCTwx3MeVO4GWtKvHN3I3dXdWnbo466OZp3at3TjDnbi7uL
-toAMd3Mh0B0AFADSHvPeD0oAaFGdyczW6UACQpHHauClLboHG8PQbgAAAAZwgkkRKAUAUoUqqUEp
-AkoJAlTQab1SQSnkpoAANA0ANNAAAADVP0YhSUSmTDUAAAAAAAAABTz1Sqmo0P9VPSMRoDJk0xGg
-yNABhGCGQJT0iCFJKao/UaNCYAAAATCGAAIFKUIEBoBEyYmRMjTImmhppoA0zRNogVQQgJAmgmRq
-aJPTKMI2oAxHonqYQMenI8Gmeb9w01zybrYxEmKmWBaHwJJNfh/T/U3fwuoy/xTKqUr0+V3z7zP5
-0/7JTM1qa1x0+T485RLKAAEsoAAAAAAAEsoAAAAAASyhLKAAAAAAAOnm8zAEsiUAAAAAAASygAAA
-AAAAAJZXAwAAAAllAAAAAAAAAABLKEsssoAAAAAAAAAAAAAAAAAAAAOZm8zAAAAAAAAAAAAAAAAA
-AACcca45M6k1xN8bmpIYdf9bv7K7cu7EzEzE8ufTr4bufPnz7PDM7tHdWpvWe1y32c9sSygABLKA
-AAAAAABLKAAAAAAEsoSygAAAAAADn5vMwBLIlAAAAAAAEsoAAAAAAAACWVyjAAAACWUAAAAAAAAA
-AEsoSyyygAAAAAAAAAAAAAAC0gAAAA5mbzMAAAAAAAAAAAAAAAAAAAJxxrjkznTXE3xrW5vWdfg+
-Gd/h2dHPw340rvx5oqrqTElVWp+27ESfdYKqv3oQsCcFyBJ/Kfx/7/0RaTVlNRhaOt+VxGrzfzPD
-qImmETKXifg3tXqeDyeR5/Pme9uPA+w48RVTNRVSghDt7eyj8yUkpJSEQRBEEQRBEEEE/RAggiCI
-IgiCQIIIkICIIJglSX2KUSklJKSUkpPYREFEBEEEEQRBENEICIIgiYyYw99SqaGhjDGGMMYYxjDG
-GMMYaUkWhoYwxhiSUkpJSSk0pRKSqKJSe9KSyghCUoSlJL0S9W78FMMLWwwwwwpLDCVrUtbDDDDD
-DDDDDDDDC1rYWtalJSpa1rYUlKlMLWtbDDDDDDC1rWlLDDDDDDDDDDDDDBEwwwwwwwwwwwwwwwwp
-SmGFrWthhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhha1rYYYYWthKrmYpZJhhTLtanCkSpTGFP5Y
-ozZ2ZMyWZTMZlWZLMihRVAAWhaKWqFFqqWiloKHGZmKrpNxs3JZYpoxpMQa4k1XFh6mLYwbMPBg8
-itW9TBqlvDg2w5+ZRpJKTEokpi3BLSJbNVRNDDG9iwTGrfo0Y1SSSiSUolKVlKZIilEqERB8UIWh
-qmJvGObHo0NGGMMMhEEQRDCEBEEQRBEEQ6FFEpJSSklJK1LQiLUUItGhjDGHqSOR9poktGMYdbwf
-5noZjJ0Se8P8JPsZ/cx7PsYfluUgQLxSOyj+GUzE/hp6ek6m5j0Y9GGPP4HsOJuczkcvTM5HPif0
-P5qfgYKjvRbt56j+XSqJsWALvHkYcHaHF8z4Nj39Pz+vob+OXzeD0Pc7P0EnJ0PT/E+ZX5SduT/+
-Uc/I+oo1wc5haH8ZLz8ij/U+T1Yx8bX7PVX3PmyfzLS2S/W+DnaHpPQar9C0oJVUtf1mMJBUQGmg
-pQkjQtJSNUgotNNKiJSpkqoLSglVS1bGEgqIDTQUoSRoWkpGqQUWmmlREpUv9ftN6/edoOnr7eaJ
-PcXrPyGH4mpyPunzHqle10mxYLFj169PHr7ev3fd8CqqqqqqqqqqqzMzMyqqqqqqqqqqqqqqqqqq
-qqqqqqqqqqzMzMyqqqqqqqt73VVVVVVVVVVVVVVmZmZlVVVVVVVVVVVVVVVVVVVVVVVVVVVVmZmZ
-lVVVVVVVdREe4PgJQIEeyIghbLTZu3cOXTtw4cOCIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIi
-IiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiIiInJycnJyeg9Haq
-J8h5Hg8j5z6jpOZ57n6jp28z5EZJUfX4uPjM/iOOHviNeKT8976N1v35vZpmtVKaU3U0ppTU9HpS
-VNle98h1DZ2nM7HuNRzPBe16j1bMeSJOktuT8TkfUpzYVRs+JuN0EUSfQ2Hocng0fY/Yepwj8yzk
-pBHZ6w+5Trg6OHt9frUNnX77QR+g+h83Bg+xRu7PIk8z6mEfqgz6EnqN0e57T7DJAv2PLGe+fMlH
-oxSNWKpCfzZZEkP6dlmXlymEUswzLkxzBsUxjJiXCLMI/xSZBy5I6xpqRlWONYxMZtMrQlxu5kSN
-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
-nChIPp9fYIA=
---047d7b10c801a1bdcb051a4ff550--
+But, there does remain a glimmer of hope in case you had no backup.  
+There's the btrfs restore tool you can try.  I'm not sure how well it'll 
+work on an incompletely rebalanced after convert filesystem, but it's 
+worth a try.  You will need somewhere else to store the restored files, 
+since it works with an unmounted filesystem without writing to it (so at 
+least it can't make the problem worse).  If restore can't find a usable 
+root on its own, you can try using btrfs-find-root, and feed that (or 
+rather the corresponding bytenr) to btrfs restore using the -t option.  
+There's a somewhat dated but still useful writeup on the wiki about it.
+
+https://btrfs.wiki.kernel.org/index.php/Restore
+
+Note that generation and tranaction-id (transid) are different words for 
+the same thing, btrfs restore -t <bytenr> -l lists the various subtree 
+roots available from that root (the part of the writeup where it says 
+select the root with the most available trees in it), there's now a -D 
+dry-run option that will let you get at least some idea how many files 
+can be restored, and that the new -m (metadata, ownership/perms info) and 
+-S (symlinks) options allow restoring these, as they won't be restored by 
+default.
+
+Again, I'm not sure how well restore will do with a fresh conversion 
+where the balance died like that, but it's worth a shot, and has a couple 
+times restored newer versions of files than my backups had, working well 
+for me, tho with a filesystem that was btrfs all along, not converted.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

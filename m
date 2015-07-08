@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33647 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:6364 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757828AbbGHDqk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 23:46:40 -0400
+	with ESMTP id S1755532AbbGHDql (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 23:46:41 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t683is7X024535
-	for <linux-btrfs@vger.kernel.org>; Wed, 8 Jul 2015 11:44:54 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t683it6E024538
+	for <linux-btrfs@vger.kernel.org>; Wed, 8 Jul 2015 11:44:55 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 2/4] btrfs: Separate scrub_blocked_if_needed() to scrub_pause_on/off()
-Date: Wed, 8 Jul 2015 11:44:07 +0800
-Message-ID: <c18667e154f9ebcd3d12d268af77b0ce9cd8bfce.1436326244.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 3/4] btrfs: use scrub_pause_on/off() to reduce code in scrub_enumerate_chunks()
+Date: Wed, 8 Jul 2015 11:44:08 +0800
+Message-ID: <778526af4a289eb6022f62a2c801e9a3e1134bf9.1436326244.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1436326244.git.zhaolei@cn.fujitsu.com>
 References: <cover.1436326244.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -21,49 +21,42 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-It can reduce current duplicated code which is similar to
-scrub_blocked_if_needed() but can not call it because little
-different.
-It also used by my next patch which is in same case.
+Use new intruduced scrub_pause_on/off() can make this code block
+clean and more readable.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ fs/btrfs/scrub.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 94db0fa..cbfb8c7 100644
+index cbfb8c7..a882a34 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -332,11 +332,14 @@ static void __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
- 	}
- }
+@@ -3492,8 +3492,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
  
--static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-+static void scrub_pause_on(struct btrfs_fs_info *fs_info)
- {
- 	atomic_inc(&fs_info->scrubs_paused);
- 	wake_up(&fs_info->scrub_pause_wait);
-+}
- 
-+static void scrub_pause_off(struct btrfs_fs_info *fs_info)
-+{
- 	mutex_lock(&fs_info->scrub_lock);
- 	__scrub_blocked_if_needed(fs_info);
- 	atomic_dec(&fs_info->scrubs_paused);
-@@ -345,6 +348,12 @@ static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
- 	wake_up(&fs_info->scrub_pause_wait);
- }
- 
-+static void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-+{
-+	scrub_pause_on(fs_info);
-+	scrub_pause_off(fs_info);
-+}
+ 		wait_event(sctx->list_wait,
+ 			   atomic_read(&sctx->bios_in_flight) == 0);
+-		atomic_inc(&fs_info->scrubs_paused);
+-		wake_up(&fs_info->scrub_pause_wait);
 +
- /*
-  * used for workers that require transaction commits (i.e., for the
-  * NOCOW case)
++		scrub_pause_on(fs_info);
+ 
+ 		/*
+ 		 * must be called before we decrease @scrub_paused.
+@@ -3504,11 +3504,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 			   atomic_read(&sctx->workers_pending) == 0);
+ 		atomic_set(&sctx->wr_ctx.flush_all_writes, 0);
+ 
+-		mutex_lock(&fs_info->scrub_lock);
+-		__scrub_blocked_if_needed(fs_info);
+-		atomic_dec(&fs_info->scrubs_paused);
+-		mutex_unlock(&fs_info->scrub_lock);
+-		wake_up(&fs_info->scrub_pause_wait);
++		scrub_pause_off(fs_info);
+ 
+ 		btrfs_put_block_group(cache);
+ 		if (ret)
 -- 
 1.8.5.1
 

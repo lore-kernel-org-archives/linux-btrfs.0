@@ -1,17 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:6364 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755533AbbGHDqg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 23:46:36 -0400
+	with ESMTP id S1755532AbbGHDqi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 23:46:38 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t683iqde024529
-	for <linux-btrfs@vger.kernel.org>; Wed, 8 Jul 2015 11:44:52 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t683irhm024532
+	for <linux-btrfs@vger.kernel.org>; Wed, 8 Jul 2015 11:44:53 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 0/4] btrfs: Fix data checksum error cause by replace with io-load
-Date: Wed, 8 Jul 2015 11:44:05 +0800
-Message-ID: <cover.1436326244.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 1/4] btrfs: Use ref_cnt for set_block_group_ro()
+Date: Wed, 8 Jul 2015 11:44:06 +0800
+Message-ID: <6f8cfada17ea098c8a1d1ab29da5aaf2aa8f101d.1436326244.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <cover.1436326244.git.zhaolei@cn.fujitsu.com>
+References: <cover.1436326244.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,40 +21,240 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-This patchset is used to fix data checksum error cause by replace with io-load.
-It cause xfstests btrfs/070 and btrfs/071 sometimes failed.
+More than one code call set_block_group_ro() and restore rw in fail.
 
-See description in [PATCH 4/4] for detail.
+Old code use bool bit to save blockgroup's ro state, it can not
+support parallel case(it is confirmd exist in my debug log).
 
-Changelog v2->v3:
-1: Fix a typo(caused in rebase) which make xfstests failed in
-   btrfs/073 and btrfs/066.
-2: Rebase on top of integration-4.2
-3: Do full xfstests(generic and btrfs group with 10 mount options)
+This patch use ref count to store ro state, and rename
+set_block_group_ro/set_block_group_rw
+to
+inc_block_group_ro/dec_block_group_ro.
 
-Changelog v1->v2:
-1: Update subject to reflect the problem being fixed.
-2: Update description to say reason why set read-only can fix the
-   problem.
-3: Use a helper function to avoid duplicated code block for set
-   chunk ro.
-All of above are suggested by: David Sterba <dsterba@suse.cz>
-
-
-
-Zhao Lei (4):
-  btrfs: Use ref_cnt for set_block_group_ro()
-  btrfs: Separate scrub_blocked_if_needed() to scrub_pause_on/off()
-  btrfs: use scrub_pause_on/off() to reduce code in
-    scrub_enumerate_chunks()
-  btrfs: Fix data checksum error cause by replace with io-load.
-
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
  fs/btrfs/ctree.h       |  6 +++---
  fs/btrfs/extent-tree.c | 42 +++++++++++++++++++++---------------------
  fs/btrfs/relocation.c  | 14 ++++++--------
- fs/btrfs/scrub.c       | 35 +++++++++++++++++++++++++++--------
- 4 files changed, 57 insertions(+), 40 deletions(-)
+ 3 files changed, 30 insertions(+), 32 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index aac314e..f57e6ca 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1300,7 +1300,7 @@ struct btrfs_block_group_cache {
+ 	/* for raid56, this is a full stripe, without parity */
+ 	unsigned long full_stripe_len;
+ 
+-	unsigned int ro:1;
++	unsigned int ro;
+ 	unsigned int iref:1;
+ 	unsigned int has_caching_ctl:1;
+ 	unsigned int removed:1;
+@@ -3495,9 +3495,9 @@ int btrfs_cond_migrate_bytes(struct btrfs_fs_info *fs_info,
+ void btrfs_block_rsv_release(struct btrfs_root *root,
+ 			     struct btrfs_block_rsv *block_rsv,
+ 			     u64 num_bytes);
+-int btrfs_set_block_group_ro(struct btrfs_root *root,
++int btrfs_inc_block_group_ro(struct btrfs_root *root,
+ 			     struct btrfs_block_group_cache *cache);
+-void btrfs_set_block_group_rw(struct btrfs_root *root,
++void btrfs_dec_block_group_ro(struct btrfs_root *root,
+ 			      struct btrfs_block_group_cache *cache);
+ void btrfs_put_block_group_cache(struct btrfs_fs_info *info);
+ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1c2bd17..a436bd5 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8692,14 +8692,13 @@ static u64 update_block_group_flags(struct btrfs_root *root, u64 flags)
+ 	return flags;
+ }
+ 
+-static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
++static int inc_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ {
+ 	struct btrfs_space_info *sinfo = cache->space_info;
+ 	u64 num_bytes;
+ 	u64 min_allocable_bytes;
+ 	int ret = -ENOSPC;
+ 
+-
+ 	/*
+ 	 * We need some metadata space and system metadata space for
+ 	 * allocating chunks in some corner cases until we force to set
+@@ -8716,6 +8715,7 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ 	spin_lock(&cache->lock);
+ 
+ 	if (cache->ro) {
++		cache->ro++;
+ 		ret = 0;
+ 		goto out;
+ 	}
+@@ -8727,7 +8727,7 @@ static int set_block_group_ro(struct btrfs_block_group_cache *cache, int force)
+ 	    sinfo->bytes_may_use + sinfo->bytes_readonly + num_bytes +
+ 	    min_allocable_bytes <= sinfo->total_bytes) {
+ 		sinfo->bytes_readonly += num_bytes;
+-		cache->ro = 1;
++		cache->ro++;
+ 		list_add_tail(&cache->ro_list, &sinfo->ro_bgs);
+ 		ret = 0;
+ 	}
+@@ -8737,7 +8737,7 @@ out:
+ 	return ret;
+ }
+ 
+-int btrfs_set_block_group_ro(struct btrfs_root *root,
++int btrfs_inc_block_group_ro(struct btrfs_root *root,
+ 			     struct btrfs_block_group_cache *cache)
+ 
+ {
+@@ -8745,8 +8745,6 @@ int btrfs_set_block_group_ro(struct btrfs_root *root,
+ 	u64 alloc_flags;
+ 	int ret;
+ 
+-	BUG_ON(cache->ro);
+-
+ again:
+ 	trans = btrfs_join_transaction(root);
+ 	if (IS_ERR(trans))
+@@ -8789,7 +8787,7 @@ again:
+ 			goto out;
+ 	}
+ 
+-	ret = set_block_group_ro(cache, 0);
++	ret = inc_block_group_ro(cache, 0);
+ 	if (!ret)
+ 		goto out;
+ 	alloc_flags = get_alloc_profile(root, cache->space_info->flags);
+@@ -8797,7 +8795,7 @@ again:
+ 			     CHUNK_ALLOC_FORCE);
+ 	if (ret < 0)
+ 		goto out;
+-	ret = set_block_group_ro(cache, 0);
++	ret = inc_block_group_ro(cache, 0);
+ out:
+ 	if (cache->flags & BTRFS_BLOCK_GROUP_SYSTEM) {
+ 		alloc_flags = update_block_group_flags(root, cache->flags);
+@@ -8860,7 +8858,7 @@ u64 btrfs_account_ro_block_groups_free_space(struct btrfs_space_info *sinfo)
+ 	return free_bytes;
+ }
+ 
+-void btrfs_set_block_group_rw(struct btrfs_root *root,
++void btrfs_dec_block_group_ro(struct btrfs_root *root,
+ 			      struct btrfs_block_group_cache *cache)
+ {
+ 	struct btrfs_space_info *sinfo = cache->space_info;
+@@ -8870,11 +8868,13 @@ void btrfs_set_block_group_rw(struct btrfs_root *root,
+ 
+ 	spin_lock(&sinfo->lock);
+ 	spin_lock(&cache->lock);
+-	num_bytes = cache->key.offset - cache->reserved - cache->pinned -
+-		    cache->bytes_super - btrfs_block_group_used(&cache->item);
+-	sinfo->bytes_readonly -= num_bytes;
+-	cache->ro = 0;
+-	list_del_init(&cache->ro_list);
++	if (!--cache->ro) {
++		num_bytes = cache->key.offset - cache->reserved -
++			    cache->pinned - cache->bytes_super -
++			    btrfs_block_group_used(&cache->item);
++		sinfo->bytes_readonly -= num_bytes;
++		list_del_init(&cache->ro_list);
++	}
+ 	spin_unlock(&cache->lock);
+ 	spin_unlock(&sinfo->lock);
+ }
+@@ -9390,7 +9390,7 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 
+ 		set_avail_alloc_bits(root->fs_info, cache->flags);
+ 		if (btrfs_chunk_readonly(root, cache->key.objectid)) {
+-			set_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 		} else if (btrfs_block_group_used(&cache->item) == 0) {
+ 			spin_lock(&info->unused_bgs_lock);
+ 			/* Should always be true but just in case. */
+@@ -9418,11 +9418,11 @@ int btrfs_read_block_groups(struct btrfs_root *root)
+ 		list_for_each_entry(cache,
+ 				&space_info->block_groups[BTRFS_RAID_RAID0],
+ 				list)
+-			set_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 		list_for_each_entry(cache,
+ 				&space_info->block_groups[BTRFS_RAID_SINGLE],
+ 				list)
+-			set_block_group_ro(cache, 1);
++			inc_block_group_ro(cache, 1);
+ 	}
+ 
+ 	init_global_block_rsv(info);
+@@ -9910,7 +9910,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		spin_unlock(&block_group->lock);
+ 
+ 		/* We don't want to force the issue, only flip if it's ok. */
+-		ret = set_block_group_ro(block_group, 0);
++		ret = inc_block_group_ro(block_group, 0);
+ 		up_write(&space_info->groups_sem);
+ 		if (ret < 0) {
+ 			ret = 0;
+@@ -9924,7 +9924,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 		/* 1 for btrfs_orphan_reserve_metadata() */
+ 		trans = btrfs_start_transaction(root, 1);
+ 		if (IS_ERR(trans)) {
+-			btrfs_set_block_group_rw(root, block_group);
++			btrfs_dec_block_group_ro(root, block_group);
+ 			ret = PTR_ERR(trans);
+ 			goto next;
+ 		}
+@@ -9951,14 +9951,14 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ 				  EXTENT_DIRTY, GFP_NOFS);
+ 		if (ret) {
+ 			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+-			btrfs_set_block_group_rw(root, block_group);
++			btrfs_dec_block_group_ro(root, block_group);
+ 			goto end_trans;
+ 		}
+ 		ret = clear_extent_bits(&fs_info->freed_extents[1], start, end,
+ 				  EXTENT_DIRTY, GFP_NOFS);
+ 		if (ret) {
+ 			mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+-			btrfs_set_block_group_rw(root, block_group);
++			btrfs_dec_block_group_ro(root, block_group);
+ 			goto end_trans;
+ 		}
+ 		mutex_unlock(&fs_info->unused_bg_unpin_mutex);
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 88cbb59..52fe55a 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4215,14 +4215,12 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+ 	rc->block_group = btrfs_lookup_block_group(fs_info, group_start);
+ 	BUG_ON(!rc->block_group);
+ 
+-	if (!rc->block_group->ro) {
+-		ret = btrfs_set_block_group_ro(extent_root, rc->block_group);
+-		if (ret) {
+-			err = ret;
+-			goto out;
+-		}
+-		rw = 1;
++	ret = btrfs_inc_block_group_ro(extent_root, rc->block_group);
++	if (ret) {
++		err = ret;
++		goto out;
+ 	}
++	rw = 1;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path) {
+@@ -4294,7 +4292,7 @@ int btrfs_relocate_block_group(struct btrfs_root *extent_root, u64 group_start)
+ 	WARN_ON(btrfs_block_group_used(&rc->block_group->item) > 0);
+ out:
+ 	if (err && rw)
+-		btrfs_set_block_group_rw(extent_root, rc->block_group);
++		btrfs_dec_block_group_ro(extent_root, rc->block_group);
+ 	iput(rc->data_inode);
+ 	btrfs_put_block_group(rc->block_group);
+ 	kfree(rc);
 -- 
 1.8.5.1
 

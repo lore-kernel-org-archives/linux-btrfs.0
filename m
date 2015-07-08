@@ -1,87 +1,164 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:35076 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:19241 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933007AbbGHHmf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 03:42:35 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH 3/6] Btrfs: rename btrfs_kobj_add_device to btrfs_sysfs_add_device_link
-Date: Wed,  8 Jul 2015 15:32:51 +0800
-Message-Id: <1436340774-10909-4-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1436340774-10909-1-git-send-email-anand.jain@oracle.com>
-References: <1436340774-10909-1-git-send-email-anand.jain@oracle.com>
+	with ESMTP id S933028AbbGHJEM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 05:04:12 -0400
+Date: Wed, 8 Jul 2015 17:03:49 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Fix a lockdep warning when running xfstest.
+Message-ID: <20150708090348.GA17043@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1414659151-24777-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1414659151-24777-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- fs/btrfs/dev-replace.c | 2 +-
- fs/btrfs/sysfs.c       | 4 ++--
- fs/btrfs/sysfs.h       | 2 +-
- fs/btrfs/volumes.c     | 2 +-
- 4 files changed, 5 insertions(+), 5 deletions(-)
+On Thu, Oct 30, 2014 at 04:52:31PM +0800, Qu Wenruo wrote:
+> The following lockdep warning is triggered during xfstests:
+> 
+> [ 1702.980872] =========================================================
+> [ 1702.981181] [ INFO: possible irq lock inversion dependency detected ]
+> [ 1702.981482] 3.18.0-rc1 #27 Not tainted
+> [ 1702.981781] ---------------------------------------------------------
+> [ 1702.982095] kswapd0/77 just changed the state of lock:
+> [ 1702.982415]  (&delayed_node->mutex){+.+.-.}, at: [<ffffffffa03b0b51>] __btrfs_release_delayed_node+0x41/0x1f0 [btrfs]
+> [ 1702.982794] but this lock took another, RECLAIM_FS-unsafe lock in the past:
+> [ 1702.983160]  (&fs_info->dev_replace.lock){+.+.+.}
+> 
+> and interrupts could create inverse lock ordering between them.
+> 
+> [ 1702.984675]
+> other info that might help us debug this:
+> [ 1702.985524] Chain exists of:
+>   &delayed_node->mutex --> &found->groups_sem --> &fs_info->dev_replace.lock
+> 
+> [ 1702.986799]  Possible interrupt unsafe locking scenario:
+> 
+> [ 1702.987681]        CPU0                    CPU1
+> [ 1702.988137]        ----                    ----
+> [ 1702.988598]   lock(&fs_info->dev_replace.lock);
+> [ 1702.989069]                                local_irq_disable();
+> [ 1702.989534]                                lock(&delayed_node->mutex);
+> [ 1702.990038]                                lock(&found->groups_sem);
+> [ 1702.990494]   <Interrupt>
+> [ 1702.990938]     lock(&delayed_node->mutex);
+> [ 1702.991407]
+>  *** DEADLOCK ***
+> 
+> It is because the btrfs_kobj_{add/rm}_device() will call memory
+> allocation with GFP_KERNEL,
+> which may flush fs page cache to free space, waiting for it self to do
+> the commit, causing the deadlock.
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 862fbc2..f7c390b 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -376,7 +376,7 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	WARN_ON(!tgt_device);
- 	dev_replace->tgtdev = tgt_device;
- 
--	ret = btrfs_kobj_add_device(tgt_device->fs_devices, tgt_device);
-+	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
- 	if (ret)
- 		btrfs_error(root->fs_info, ret, "kobj add dev failed");
- 
-diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
-index 095a302..df67f6b 100644
---- a/fs/btrfs/sysfs.c
-+++ b/fs/btrfs/sysfs.c
-@@ -683,7 +683,7 @@ int btrfs_sysfs_add_device(struct btrfs_fs_devices *fs_devs)
- 	return 0;
- }
- 
--int btrfs_kobj_add_device(struct btrfs_fs_devices *fs_devices,
-+int btrfs_sysfs_add_device_link(struct btrfs_fs_devices *fs_devices,
- 				struct btrfs_device *one_device)
- {
- 	int error = 0;
-@@ -744,7 +744,7 @@ int btrfs_sysfs_add_mounted(struct btrfs_fs_info *fs_info)
- 
- 	btrfs_set_fs_info_ptr(fs_info);
- 
--	error = btrfs_kobj_add_device(fs_devs, NULL);
-+	error = btrfs_sysfs_add_device_link(fs_devs, NULL);
- 	if (error)
- 		return error;
- 
-diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
-index 6392527..6529680 100644
---- a/fs/btrfs/sysfs.h
-+++ b/fs/btrfs/sysfs.h
-@@ -82,7 +82,7 @@ char *btrfs_printable_features(enum btrfs_feature_set set, u64 flags);
- extern const char * const btrfs_feature_set_names[3];
- extern struct kobj_type space_info_ktype;
- extern struct kobj_type btrfs_raid_ktype;
--int btrfs_kobj_add_device(struct btrfs_fs_devices *fs_devices,
-+int btrfs_sysfs_add_device_link(struct btrfs_fs_devices *fs_devices,
- 		struct btrfs_device *one_device);
- int btrfs_kobj_rm_device(struct btrfs_fs_devices *fs_devices,
-                 struct btrfs_device *one_device);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8396699..cc1c8de 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2295,7 +2295,7 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 				    tmp + 1);
- 
- 	/* add sysfs device entry */
--	btrfs_kobj_add_device(root->fs_info->fs_devices, device);
-+	btrfs_sysfs_add_device_link(root->fs_info->fs_devices, device);
- 
- 	/*
- 	 * we've got more storage, clear any full flags on the space
--- 
-2.4.1
+I've seen the same one recently, but I'm not sure I understand this
+commig log correctly, do you mean that memory allocation forces kswapd
+thread to deadlock?  Can you elaborate upon this deadlock?
 
+Thanks,
+
+-liubo
+> 
+> To solve the problem, move btrfs_kobj_{add/rm}_device() out of the
+> dev_replace lock range, also involing split the
+> btrfs_rm_dev_replace_srcdev() function into remove and free parts.
+> 
+> Now only btrfs_rm_dev_replace_remove_srcdev() is called in dev_replace
+> lock range, and kobj_{add/rm} and btrfs_rm_dev_replace_free_srcdev() are
+> called out of the lock range.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>  fs/btrfs/dev-replace.c | 11 ++++++-----
+>  fs/btrfs/volumes.c     | 10 ++++++++--
+>  fs/btrfs/volumes.h     |  6 ++++--
+>  3 files changed, 18 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 6f662b3..6e3e885 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -571,15 +571,11 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>  	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
+>  	fs_info->fs_devices->rw_devices++;
+>  
+> -	/* replace the sysfs entry */
+> -	btrfs_kobj_rm_device(fs_info, src_device);
+> -	btrfs_kobj_add_device(fs_info, tgt_device);
+> -
+>  	btrfs_dev_replace_unlock(dev_replace);
+>  
+>  	btrfs_rm_dev_replace_blocked(fs_info);
+>  
+> -	btrfs_rm_dev_replace_srcdev(fs_info, src_device);
+> +	btrfs_rm_dev_replace_remove_srcdev(fs_info, src_device);
+>  
+>  	btrfs_rm_dev_replace_unblocked(fs_info);
+>  
+> @@ -594,6 +590,11 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+>  	mutex_unlock(&root->fs_info->fs_devices->device_list_mutex);
+>  	mutex_unlock(&uuid_mutex);
+>  
+> +	/* replace the sysfs entry */
+> +	btrfs_kobj_rm_device(fs_info, src_device);
+> +	btrfs_kobj_add_device(fs_info, tgt_device);
+> +	btrfs_rm_dev_replace_free_srcdev(fs_info, src_device);
+> +
+>  	/* write back the superblocks */
+>  	trans = btrfs_start_transaction(root, 0);
+>  	if (!IS_ERR(trans))
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index d47289c..0192051 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1800,8 +1800,8 @@ error_undo:
+>  	goto error_brelse;
+>  }
+>  
+> -void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+> -				 struct btrfs_device *srcdev)
+> +void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
+> +					struct btrfs_device *srcdev)
+>  {
+>  	struct btrfs_fs_devices *fs_devices;
+>  
+> @@ -1829,6 +1829,12 @@ void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+>  
+>  	if (srcdev->bdev)
+>  		fs_devices->open_devices--;
+> +}
+> +
+> +void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
+> +				      struct btrfs_device *srcdev)
+> +{
+> +	struct btrfs_fs_devices *fs_devices = srcdev->fs_devices;
+>  
+>  	call_rcu(&srcdev->rcu, free_device);
+>  
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index 08980fa..4cc00e6 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -448,8 +448,10 @@ void btrfs_init_devices_late(struct btrfs_fs_info *fs_info);
+>  int btrfs_init_dev_stats(struct btrfs_fs_info *fs_info);
+>  int btrfs_run_dev_stats(struct btrfs_trans_handle *trans,
+>  			struct btrfs_fs_info *fs_info);
+> -void btrfs_rm_dev_replace_srcdev(struct btrfs_fs_info *fs_info,
+> -				 struct btrfs_device *srcdev);
+> +void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
+> +					struct btrfs_device *srcdev);
+> +void btrfs_rm_dev_replace_free_srcdev(struct btrfs_fs_info *fs_info,
+> +				      struct btrfs_device *srcdev);
+>  void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>  				      struct btrfs_device *tgtdev);
+>  void btrfs_init_dev_replace_tgtdev_for_resume(struct btrfs_fs_info *fs_info,
+> -- 
+> 2.1.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

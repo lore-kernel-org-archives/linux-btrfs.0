@@ -1,107 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58207 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753590AbbGHATJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 7 Jul 2015 20:19:09 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZCd4s-00067B-6n
-	for linux-btrfs@vger.kernel.org; Wed, 08 Jul 2015 02:19:06 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 02:19:06 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 02:19:06 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Error while balance after convert from ext4
-Date: Wed, 8 Jul 2015 00:18:59 +0000 (UTC)
-Message-ID: <pan$2e38c$aafcae5e$5b1bff88$546fb2b@cox.net>
-References: <CAFdkf7Pqkjf=H11LaGQusDE_OT3zK1civwrHWeqmTS27uB4FPA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:35878 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755532AbbGHCrG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 22:47:06 -0400
+Date: Wed, 8 Jul 2015 10:45:53 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: David Weber <wb@munzinger.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: WARNING:  at /fs/btrfs/extent-tree.c:4029
+ btrfs_free_reserved_data_space
+Message-ID: <20150708024541.GA22583@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <6617728.KSCQs1dauk@o3-3>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <6617728.KSCQs1dauk@o3-3>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Николай Овчинников posted on Wed, 08 Jul 2015 00:46:48 +0300 as excerpted:
+On Mon, Jun 29, 2015 at 11:35:12AM +0200, David Weber wrote:
+> Hi,
+> 
+> we are testing Btrfs as a kvm storage system with 
+> "defaults,space_cache,nodatacow" mount options and regular snapshots. While 
+> testing we sometimes get these warnings:
+> WARNING: CPU: 5 PID: 11335 at /home/kernel/COD/linux/fs/btrfs/extent-
+> tree.c:4029 btrfs_free_reserved_data_space+0x102/0x110 [btrfs]()
+> 
+> Full log:
+> https://gist.github.com/anonymous/5f672f72899a3d52c20c
+> 
+> Once they start, they flood dmesg with several messages per second. After a 
+> reboot, it takes a while until they start to appear again. 
+> We have seen them with Linux 4.0.6 and 4.1
+> 
+> This was already reported a few times:
+> https://bugzilla.opensuse.org/show_bug.cgi?id=904023
+> https://bugzilla.redhat.com/show_bug.cgi?id=1173937
+> http://www.spinics.net/lists/linux-btrfs/msg39069.html
+> https://lkml.org/lkml/2014/10/22/899
+> 
+> Always with no solution
+> Is this a real problem or can we safely ignore this?
 
-> While balancing after succsecful converting from ext4 filesystem moved
-> into read-only mode and balance aborted.
-> Before balance df says about 6Gb freespace.
-> Now filesystem can be mounted only in recovery mode with 1 dir and about
-> 20 zero-sized files.
+Didn't notice this mail but it looks like thia patch is promising to fix
+your issue, worth giving a shot.
 
-> Is there a chance to recover these files?
+https://patchwork.kernel.org/patch/6623001/
+Btrfs: fix warning of bytes_may_use
 
-FWIW, there have been several other reports of conversion not going so 
-well recently.  The opinion of at least some users is that apparently, 
-btrfs has moved on from where it was when the conversion tool was built, 
-and the conversion tool hasn't kept up, causing problems with the 
-conversion in more cases, recently.  (FWIW, I've never particularly 
-trusted filesystem conversion tools in the first place.  As such,  I 
-always had a strong preference for doing a fresh mkfs, then copying 
-things over from the old filesystem.  That way, the old filesystem 
-becomes the backup you're restoring to a fresh filesystem from, and it 
-remains a backup, in case there are issues with the new filesystem, as 
-well as for all the other reasons, including fat-fingering, that valuing 
-the data is in practice defined as having a backup.)
+BTW, this's been queued for the next merge, so you can try the latest
+btrfs from integration-4.2 of the offical btrfs repo[1].
 
+[1]: https://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git
 
-Meanwhile, to answer your question, yes, the files can be recovered from 
-the backups you had if you valued the data.  If you didn't have them, the 
-data obviously wasn't important, and you simply had a bit of help 
-clearing your cache of unimportant junk-files. =:^)
+Thanks,
 
-Seriously, the sysadmin's standard backup rule states that if you don't 
-have a backup, by definition, you value the data less than the time and 
-resources necessary to create the backup, no matter any claims to the 
-contrary.  Further, for purposes of this rule a would-be backup that 
-hasn't been tested restorable isn't yet a backup as a backup isn't 
-complete until it's tested.
+-liubo
 
-Of course, the fact that btrfs isn't yet fully stable means the rule 
-applies double, compared to its normal application to a fully stable 
-filesystem.
-
-And of course, converting a filesystem without a backup is also something 
-that by definition is never done with data you actually care about, so at 
-/least/ double again (if not 4X on its own).
-
-Which means the rule applied at 4X-8X strength.  You REALLY had a backup 
-(and at 4-8X strength, probably more than one), or REALLY don't care 
-about the data.
-
-
-But, there does remain a glimmer of hope in case you had no backup.  
-There's the btrfs restore tool you can try.  I'm not sure how well it'll 
-work on an incompletely rebalanced after convert filesystem, but it's 
-worth a try.  You will need somewhere else to store the restored files, 
-since it works with an unmounted filesystem without writing to it (so at 
-least it can't make the problem worse).  If restore can't find a usable 
-root on its own, you can try using btrfs-find-root, and feed that (or 
-rather the corresponding bytenr) to btrfs restore using the -t option.  
-There's a somewhat dated but still useful writeup on the wiki about it.
-
-https://btrfs.wiki.kernel.org/index.php/Restore
-
-Note that generation and tranaction-id (transid) are different words for 
-the same thing, btrfs restore -t <bytenr> -l lists the various subtree 
-roots available from that root (the part of the writeup where it says 
-select the root with the most available trees in it), there's now a -D 
-dry-run option that will let you get at least some idea how many files 
-can be restored, and that the new -m (metadata, ownership/perms info) and 
--S (symlinks) options allow restoring these, as they won't be restored by 
-default.
-
-Again, I'm not sure how well restore will do with a fresh conversion 
-where the balance died like that, but it's worth a shot, and has a couple 
-times restored newer versions of files than my backups had, working well 
-for me, tho with a filesystem that was btrfs all along, not converted.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+> 
+> Cheers,
+> David
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

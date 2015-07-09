@@ -1,70 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47673 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751547AbbGINyu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 09:54:50 -0400
-Date: Thu, 9 Jul 2015 13:54:48 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:40339 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751885AbbGIO6Z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jul 2015 10:58:25 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZDDH9-0001mB-1d
+	for linux-btrfs@vger.kernel.org; Thu, 09 Jul 2015 16:58:11 +0200
+Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 16:58:11 +0200
+Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 16:58:11 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs subvolume clone or fork (btrfs-progs feature request)
-Message-ID: <20150709135448.GH10539@carfax.org.uk>
+Date: Thu, 9 Jul 2015 14:58:00 +0000 (UTC)
+Message-ID: <pan$80db3$57bc5aa6$1bb3a1f9$e86b9507@cox.net>
 References: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com>
- <CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
- <559E6411.6090109@gmail.com>
- <20150709124121.GA25033@panda>
- <559E6D80.7010607@gmail.com>
- <pan$808e5$18b28ebb$f039d1c6$8c98ba86@cox.net>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="rCwQ2Y43eQY6RBgR"
-In-Reply-To: <pan$808e5$18b28ebb$f039d1c6$8c98ba86@cox.net>
+	<CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
+	<559E6411.6090109@gmail.com> <20150709124121.GA25033@panda>
+	<559E6D80.7010607@gmail.com>
+	<pan$808e5$18b28ebb$f039d1c6$8c98ba86@cox.net>
+	<20150709135448.GH10539@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills posted on Thu, 09 Jul 2015 13:54:48 +0000 as excerpted:
 
---rCwQ2Y43eQY6RBgR
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+> On Thu, Jul 09, 2015 at 01:43:53PM +0000, Duncan wrote:
+>> I could have sworn btrfs property -t subvolume can get/set that
+>> snapshot bit.  I know I saw the discussion and I think patch for it go
+>> by, but again, as I don't use them, I haven't tracked closely enough to
+>> see if it ever got in.
+> 
+> Are you thinking of the read-only flag? That's not the same thing
+> as the various UUID properties (e.g. parent) which can be used to
+> detemine if a subvolume was made using a snapshot.
 
-On Thu, Jul 09, 2015 at 01:43:53PM +0000, Duncan wrote:
-> I could have sworn btrfs property -t subvolume can get/set that snapshot 
-> bit.  I know I saw the discussion and I think patch for it go by, but 
-> again, as I don't use them, I haven't tracked closely enough to see if it 
-> ever got in.
+Perhaps, but I was sure there was a snapshot property too, because I 
+remember discussion of being able to unset it in ordered to remove it 
+from the snapshot (only) list.
 
-   Are you thinking of the read-only flag? That's not the same thing
-as the various UUID properties (e.g. parent) which can be used to
-detemine if a subvolume was made using a snapshot.
-
-   Hugo.
+But maybe that's all it was, discussion, it wasn't implemented, and I 
+ended up conflating it with the read-only bit, which /can/ be set/unset 
+that way.  Like I said I can't check as I don't have any subvolumes/
+snapshots available to do a listing on and see, and the property manpage 
+doesn't have a properties list to check on, it wants you to use the list 
+option to get the list.
 
 -- 
-Hugo Mills             | Someone's been throwing dead sheep down my Fun Well
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                          Nick Gibbins
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---rCwQ2Y43eQY6RBgR
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVnn0nAAoJEFheFHXiqx3kVL8P/ArsVPZg62V69BL8gp19Zx0W
-gLtrJUuR9Js0zcV/s37DMzgnUpxM0/muYheNS71CRdwIAUP6mjBzOrmEuRPXdLv0
-aCO0KPemaGSclleV8fza8LxnLykwGR8Ur2zXdtsr28IV8xzyltlbMBzzMsdsIoMN
-4kVcy+OxtYPOcGpBFOlqclzAmlYgccGVEKfhdDuvIesIRpgYGthJo9gDUpr1p955
-k2koL68pdnfVL6lLlun3K0O8q7+3HImO8fvSKc1xFWMA4sR6DVe1JbPTNHUync/O
-Ks0pIZHZ4u3nq7LLDWOxZ09qOZSMzrwafxHj5+t2ANAjKmD1Am1ehPiqgXqbVqgV
-5Q1qy/R8pCPSa9yPcaAj39f+iMwIsJ2KPTXrqf0iBtGv6NesO0jUc/bap+tnMuvB
-QH7t1Xufsc5kH6kykKWDd9p0dGVqsw4IMkm3eFwwaN45lte+OeZIzVvRcol6L2OE
-5Sj4I72Q6hTaX4i0Fcy4pDNraYybHCflnre9xKwy0vHy9P3JDEKoO94PFV4PgT/p
-pt/iV58tKAs2xyv26UY0gg12tKLR+FsfEBWCY+oUeXUhg1VUIxLxnbu+tRUXy98D
-8DCgJNfG008WckJWZ+dShdbl8szPKXEPemnkuGI8KDWg/VaD7fUXvEYksjvKm133
-DeR1xTHEAxfWJiP/AS1q
-=MjWV
------END PGP SIGNATURE-----
-
---rCwQ2Y43eQY6RBgR--

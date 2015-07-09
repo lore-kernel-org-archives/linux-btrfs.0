@@ -1,39 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f51.google.com ([209.85.215.51]:32913 "EHLO
-	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751901AbbGIBUs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 21:20:48 -0400
-Received: by laar3 with SMTP id r3so236993462laa.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 18:20:46 -0700 (PDT)
+Received: from cantor2.suse.de ([195.135.220.15]:38730 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753529AbbGISd5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jul 2015 14:33:57 -0400
+Date: Thu, 9 Jul 2015 20:33:55 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: sander@humilis.net, "Fajar A. Nugraha" <list@fajar.net>,
+        james harvey <jamespharvey20@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs subvolume clone or fork (btrfs-progs feature request)
+Message-ID: <20150709183355.GA726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com>
+ <CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
+ <559E6411.6090109@gmail.com>
+ <20150709124121.GA25033@panda>
+ <559E6D80.7010607@gmail.com>
 MIME-Version: 1.0
-Date: Wed, 8 Jul 2015 21:20:46 -0400
-Message-ID: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com>
-Subject: btrfs subvolume clone or fork (btrfs-progs feature request)
-From: james harvey <jamespharvey20@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <559E6D80.7010607@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Request for new btrfs subvolume subcommand:
+On Thu, Jul 09, 2015 at 08:48:00AM -0400, Austin S Hemmelgarn wrote:
+> On 2015-07-09 08:41, Sander wrote:
+> > Austin S Hemmelgarn wrote (ao):
+> >>> What's wrong with "btrfs subvolume snapshot"?
+> >>
+> >> Well, personally I would say the fact that once something is tagged as
+> >> a snapshot, you can't change it to a regular subvolume without doing a
+> >> non-incremental send/receive.
+> >
+> > A snapshot is a subvolume. There is no such thing as "tagged as a
+> > snapshot".
+> >
+> No, there is a bit in the subvolume metadata that says whether it's 
+> considered a snapshot or not.
 
-clone or fork [-i <qgroupid] <source> [<dest>]<name>
-   Create a subvolume <name> in <dest>, which is a clone or fork of source.
-   If <dest> is not given, subvolume <name> will be created in the
-current directory.
-   Options
-   -i <qgroupid>
-      Add the newly created subvolume to a qgroup.  This option can be
-given multiple times.
+Technically it's not really a bit. The snapshot relation is determined
+by the parent uuid value of a subvolume.
 
-Would (I think):
-* btrfs subvolume create <dest-subvolume>
-* cp -ax --reflink=always <source-subvolume>/* <dest-subvolume>/
+> Internally, they are handled identically, 
+> but it does come into play when you consider things like btrfs subvolume 
+> show -s (which only lists snapshots),
 
+That was probably 'btrfs subvol list -s', though the 'subvol show'
+command prints all snapshots of a given subvolume.
 
-Particularly useful to avoid "Invalid cross-device link" when using cp
--ax, when source and dest are seen as different devices.
+> which in turn means that certain 
+> tasks are more difficult to script robustly.
 
-Such as if there is a top-level subvolume mounted as /, with others
-mounted elsewhere.  Required workaround is to mount with subvolid=0 to
-/mnt, cp -ax --reflink=always /mnt/...source /mnt/...dest
+I don't deny the interface/output is imperfect for scripting purposes,
+maybe we can provide filters that would satisfy your usecase.

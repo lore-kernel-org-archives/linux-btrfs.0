@@ -1,68 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53708 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750858AbbGIAAo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 8 Jul 2015 20:00:44 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZCzGc-0000P8-PQ
-	for linux-btrfs@vger.kernel.org; Thu, 09 Jul 2015 02:00:42 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 02:00:42 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 02:00:42 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [BUG] BTRFS: error in btrfs_run_delayed_refs:2821: errno=-5 IO
- failure
-Date: Thu, 9 Jul 2015 00:00:37 +0000 (UTC)
-Message-ID: <pan$6018e$695880fb$38368ff9$1523835b@cox.net>
-References: <CAJCQCtSyf+ADvupbAoVi3BPN-TxdYr0n=-6gykWVe-U33rUNAQ@mail.gmail.com>
-	<CADfjVrhammqPo68TTckaGA8p+=G=zdno_LLiSZQj=9xLq14WVg@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-vn0-f45.google.com ([209.85.216.45]:36748 "EHLO
+	mail-vn0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751432AbbGIAav (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 20:30:51 -0400
+Received: by vnbg129 with SMTP id g129so32982379vnb.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 17:30:50 -0700 (PDT)
+MIME-Version: 1.0
+Date: Wed, 8 Jul 2015 18:30:50 -0600
+Message-ID: <CAJCQCtT7Zx1Ys8m2PcXEK-sZJvL-wmYfb6V3j-QnoPMrtieAWA@mail.gmail.com>
+Subject: [BUG] ext4 to btrfs convert, balance results in kernel BUG at fs/btrfs/extent-tree.c:8078!
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Noah Massey posted on Wed, 08 Jul 2015 16:02:04 -0400 as excerpted:
+This is similar to previously reported ext4->btrfs convert success,
+but then failure on subsequent balance. But this is a different kernel
+version and totally different call traces, so I've filed it with a
+separate bug report and email thread.
 
-> Standard disclaimer: Not a developer, just a user.
+Kernel 4.2.0rc1
+Btrfs-progs 4.1
 
-Same here. =:^)
+New ext4 file system populated with several thousand files (Fedora 22
+installation) and a 1.5GB ISO.
 
-> The 1.5 GB ISO on a fresh ext4 system made me think of
-> http://thread.gmane.org/gmane.comp.file-systems.btrfs/36955 (ext4
-> extents over 1 GB causing ENOSPC).
-> 
-> Did the "btrfs filesystem balance" specify a "-t 900G" or similar?
-> 
-> Or has that issue been fixed?
+Conversion succeeds with no user space or kernel errors. Btrfs check
+comes up clean. Deletion of ext2_saved subvolume happens without
+error, as does defragment. After this btrfs check is still clean. Then
+major problems on btrfs balance with multiple back traces and the file
+system is broken, with multiple call traces in sequence ending with
+kernel BUG.
 
-Don't know about bug fixed, but that balance command syntax is definitely 
-very deprecated, and there's no -t option documented for btrfs balance 
-start, the current version.
 
-Did you mean btrfs filesystem defrag?  It has a -t option that looks like 
-it might have been what you were after.  However, until very recently (I 
-think it's in integration but don't know if it's in an actual release 
-yet), there was an integer overflow bug with the -t option, such that if 
-given a value above 3G, (I believe the cutoff is actually 4G, so 
-something like 3999M would work), it would behave as if -t0 had been 
-given. =:^(  
+balance fail following successful ext4 to btrfs conversion, BUG at
+fs/btrfs/extent-tree.c:8078!
+https://bugzilla.kernel.org/show_bug.cgi?id=101181
 
-But the effective high value is typically 1G anyway, so the workaround is 
-simple enough, just use -t 1G or -t 2G.  That's what the patch 
-effectively does anyway, reduce anything higher to 1G or 2G, IDR which.
 
-So if you meant btrfs filesystem defrag -t, a 2G value would be 
-preferable to a 900G value, with the latter very likely not working as 
-intended.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

@@ -1,154 +1,221 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f47.google.com ([209.85.215.47]:36348 "EHLO
-	mail-la0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751231AbbGaNiG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Jul 2015 09:38:06 -0400
-Received: by labiq1 with SMTP id iq1so9627492lab.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 31 Jul 2015 06:38:04 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <55BAD89A.8030203@cn.fujitsu.com>
-References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
-	<558CB0D4.8060401@cn.fujitsu.com>
-	<558CB404.8050300@cn.fujitsu.com>
-	<CAJCQCtTMdQG4EB8dNAYPq8H3V68TCb2YQztoXXYMkCYA3GBCXw@mail.gmail.com>
-	<CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
-	<CAJCQCtQ35xzMBjcUUTzWm3CjC1r=UNgkog2YbB0X1QcZofNj0g@mail.gmail.com>
-	<559F131B.30206@cn.fujitsu.com>
-	<CAC8ULPaOWS=WS-_oSkihrzi7bnWXuevyqL3R7FPFFQQCdjqdvA@mail.gmail.com>
-	<CAC8ULPaYmQNj_cvgGxqKtJ4w237J5vAJFTQMO1=o+y+eUYrPLg@mail.gmail.com>
-	<55BAD89A.8030203@cn.fujitsu.com>
-Date: Fri, 31 Jul 2015 16:38:04 +0300
-Message-ID: <CAC8ULPbe+E6JzGS-BYvjoLTN+Y9j6PYGC4U3f5cYhgz=eaaUOg@mail.gmail.com>
-Subject: Re: btrfs partition converted from ext4 becomes read-only minutes
- after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120
-From: Robert Munteanu <robert.munteanu@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Vytautas D <vytdau@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: multipart/mixed; boundary=089e013d100cefea6f051c2bed81
+Received: from mail.kernel.org ([198.145.29.136]:49654 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750927AbbGIXrd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jul 2015 19:47:33 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, quwenruo@cn.fujitsu.com,
+        Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: btrfs test to exercise shared extent reference accounting
+Date: Thu,  9 Jul 2015 15:51:13 +0100
+Message-Id: <1436453473-27509-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---089e013d100cefea6f051c2bed81
-Content-Type: text/plain; charset=UTF-8
+From: Filipe Manana <fdmanana@suse.com>
 
-On Fri, Jul 31, 2015 at 5:08 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> Any full output about it?
+Regression test for adding and dropping an equal number of references
+for file extents. Verify that if we drop N references for a file extent
+and we add too N new references for that same file extent in the same
+transaction, running the delayed references (which always happens at
+transaction commit time) does not fail.
 
-Please see the attached log. I left the process running for about 4
-hours, and after the first five minutes all it cared about was a
-single inode. I ended up stopping it as it looks like it's not making
-progress.
+The regression was introduced in the 4.2-rc1 Linux kernel and fixed by
+the patch titled: "Btrfs: fix order by which delayed references are run".
 
-> Not sure if it real loops, but maybe the inode number changed in later
-> output?
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/095     | 153 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/095.out |   9 ++++
+ tests/btrfs/group   |   1 +
+ 3 files changed, 163 insertions(+)
+ create mode 100755 tests/btrfs/095
+ create mode 100644 tests/btrfs/095.out
 
-Looks to me like it's the same inode
-
-  $ awk '/ for inode/ { print $7  } ' screenlog.0  | sort | uniq
-  14214570
-
-Thanks,
-
-Robert
-
-
-
-
-
-
-
+diff --git a/tests/btrfs/095 b/tests/btrfs/095
+new file mode 100755
+index 0000000..e68f2bf
+--- /dev/null
++++ b/tests/btrfs/095
+@@ -0,0 +1,153 @@
++#! /bin/bash
++# FSQA Test No. 095
++#
++# Regression test for adding and dropping an equal number of references for
++# file extents. Verify that if we drop N references for a file extent and we
++# add too N new references for that same file extent in the same transaction,
++# running the delayed references (always happens at transaction commit time)
++# does not fail.
++#
++# The regression was introduced in the 4.2-rc1 Linux kernel.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	_cleanup_flakey
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_require_dm_flakey
++_require_cloner
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++# Create prealloc extent covering range [160K, 620K[
++$XFS_IO_PROG -f -c "falloc 160K 460K" $SCRATCH_MNT/foo
++
++# Now write to the last 80K of the prealloc extent plus 40K to the unallocated
++# space that immediately follows it. This creates a new extent of 40K that spans
++# the range [620K, 660K[.
++$XFS_IO_PROG -c "pwrite -S 0xaa 540K 120K" $SCRATCH_MNT/foo | _filter_xfs_io
++
++# At this point, there are now 2 back references to the prealloc extent in our
++# extent tree. Both are for our file offset 160K and one relates to a file
++# extent item with a data offset of 0 and a length of 380K, while the other
++# relates to a file extent item with a data offset of 380K and a length of 80K.
++
++# Make sure everything done so far is durably persisted (all back references are
++# in the extent tree, etc).
++sync
++
++# Now clone all extents of our file that cover the offset 160K up to its eof
++# (660K at this point) into itself at offset 2M. This leaves a hole in the file
++# covering the range [660K, 2M[. The prealloc extent will now be referenced by
++# the file twice, once for offset 160K and once for offset 2M. The 40K extent
++# that follows the prealloc extent will also be referenced twice by our file,
++# once for offset 620K and once for offset 2M + 460K.
++$CLONER_PROG -s $((160 * 1024)) -d $((2 * 1024 * 1024)) -l 0 $SCRATCH_MNT/foo \
++	$SCRATCH_MNT/foo
++
++# Now create one new extent in our file with a size of 100Kb. It will span the
++# range [3M, 3M + 100K[. It also will cause creation of a hole spanning the
++# range [2M + 460K, 3M[. Our new file size is 3M + 100K.
++$XFS_IO_PROG -c "pwrite -S 0xbb 3M 100K" $SCRATCH_MNT/foo | _filter_xfs_io
++
++# At this point, there are now (in memory) 4 back references to the prealloc
++# extent.
++#
++# Two of them are for file offset 160K, related to file extent items
++# matching the file offsets 160K and 540K respectively, with data offsets of
++# 0 and 380K respectively, and with lengths of 380K and 80K respectively.
++#
++# The other two references are for file offset 2M, related to file extent items
++# matching the file offsets 2M and 2M + 380K respectively, with data offsets of
++# 0 and 380K respectively, and with lengths of 389K and 80K respectively.
++#
++# The 40K extent has 2 back references, one for file offset 620K and the other
++# for file offset 2M + 460K.
++#
++# The 100K extent has a single back reference and it relates to file offset 3M.
++
++# Now clone our 100K extent into offset 600K. That offset covers the last 20K
++# of the prealloc extent, the whole 40K extent and 40K of the hole starting at
++# offset 660K.
++$CLONER_PROG -s $((3 * 1024 * 1024)) -d $((600 * 1024)) -l $((100 * 1024)) \
++	$SCRATCH_MNT/foo $SCRATCH_MNT/foo
++
++# At this point there's only one reference to the 40K extent, at file offset
++# 2M + 460K, we have 4 references for the prealloc extent (2 for file offset
++# 160K and 2 for file offset 2M) and 2 references for the 100K extent (1 for
++# file offset 3M and a new one for file offset 600K).
++
++# Now fsync our file to make all its new data and metadata updates are durably
++# persisted and present if a power failure/crash happens after a successful
++# fsync and before the next transaction commit.
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++
++echo "File digest before power failure:"
++md5sum $SCRATCH_MNT/foo | _filter_scratch
++
++# Silently drop all writes and ummount to simulate a crash/power failure.
++_load_flakey_table $FLAKEY_DROP_WRITES
++_unmount_flakey
++
++# Allow writes again, mount to trigger log replay and validate file contents.
++# During log replay, the btrfs delayed references implementation used to run the
++# deletion of back references before the addition of new back references, which
++# made the addition fail as it didn't find the key in the extent tree that it
++# was looking for. The failure triggered by this test was related to the 40K
++# extent, which got 1 reference dropped and 1 reference added during the fsync
++# log replay - when running the delayed references at transaction commit time,
++# btrfs was applying the deletion before the insertion, resulting in a failure
++# of the insertion that ended up turning the fs into read-only mode.
++_load_flakey_table $FLAKEY_ALLOW_WRITES
++_mount_flakey
++
++echo "File digest after log replay:"
++md5sum $SCRATCH_MNT/foo | _filter_scratch
++
++_unmount_flakey
++
++status=0
++exit
+diff --git a/tests/btrfs/095.out b/tests/btrfs/095.out
+new file mode 100644
+index 0000000..e93435c
+--- /dev/null
++++ b/tests/btrfs/095.out
+@@ -0,0 +1,9 @@
++QA output created by 095
++wrote 122880/122880 bytes at offset 552960
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 102400/102400 bytes at offset 3145728
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++File digest before power failure:
++beaf47c36659ac29bb9363fb8ffa10a1  SCRATCH_MNT/foo
++File digest after log replay:
++beaf47c36659ac29bb9363fb8ffa10a1  SCRATCH_MNT/foo
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index ffe18bf..79feea9 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -96,3 +96,4 @@
+ 092 auto quick send
+ 093 auto quick clone
+ 094 auto quick send
++095 auto quick metadata
 -- 
-http://robert.muntea.nu/
+2.1.3
 
---089e013d100cefea6f051c2bed81
-Content-Type: application/x-gzip; name="screenlog.0.gz"
-Content-Disposition: attachment; filename="screenlog.0.gz"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_icro69r10
-
-H4sICLN4u1UAA3NjcmVlbmxvZy4wAO3QzW7TQBAA4HukvMPcuDQliZIG5YJQERIXbj0hkBx7k1o4
-dmU70Lw921aF8Ax8p/V65+ebSW2xa+r2EH16KOo+jl2VppOLS/yqmyb2XV+mGLsom1T00Z3GaLpD
-jH1KV/GhT3HuTjGc+vQ+vp7ffvm2jfN0cnufyh9Ptfd1k4bzMKZjdG0MVbG4ro+H6eTu7vPHbaxX
-VSoWy/Vssyqr2Wq3W87e3RTL2X6zK29W693mptxPJ+VrsfQ4pnYcppNP9WOqYh59143D9UXEPqti
-eCiyuCzy3/z0dETRVtn4kPo4pDb1xVhnTdW1b8Y4FmN5f3WZ9DL3LkXd/iyauirGVF32GF76vjKq
-eii7Uzs+z/pqfFpbzs9b3MZitVys1pt5vj9n5rnznvNHrF9C/kakvu/6IRbz+dVluT89cs98VP+8
-3Xd5xVsaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoaGhoa
-GhoaGhoaGhoaGhoaGhoaGhoamv9X8/12OvkNMlZn1cAeEQA=
---089e013d100cefea6f051c2bed81--

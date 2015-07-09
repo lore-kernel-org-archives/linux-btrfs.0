@@ -1,12 +1,12 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:33950 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752606AbbGIL7U (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 07:59:20 -0400
-Received: by igoe12 with SMTP id e12so12156301igo.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 04:59:19 -0700 (PDT)
-Message-ID: <559E6210.2020707@gmail.com>
-Date: Thu, 09 Jul 2015 07:59:12 -0400
+Received: from mail-ig0-f169.google.com ([209.85.213.169]:37157 "EHLO
+	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751404AbbGIMDD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 08:03:03 -0400
+Received: by igau2 with SMTP id u2so87550834iga.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 05:03:01 -0700 (PDT)
+Message-ID: <559E62F0.4060409@gmail.com>
+Date: Thu, 09 Jul 2015 08:02:56 -0400
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
 To: Donald Pearson <donaldwhpearson@gmail.com>,
@@ -14,43 +14,43 @@ To: Donald Pearson <donaldwhpearson@gmail.com>,
 CC: Omar Sandoval <osandov@fb.com>, Hugo Mills <hugo@carfax.org.uk>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: size 2.73TiB used 240.97GiB after balance
-References: <000f4242.05e425492a977c7b@friedels.name> <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com> <559B66C9.6060606@friedels.name> <CAC=t97Cm8nAhwfS3vYc802Xi2tmGuvzRzOfXzSkUgaF5y0zQWQ@mail.gmail.com> <559D7245.9030204@friedels.name> <CAC=t97CWsK1HLY9WMOQb7WxN9n2dS=FBE1PE+8bQ-Fa1VzNCQA@mail.gmail.com>
-In-Reply-To: <CAC=t97CWsK1HLY9WMOQb7WxN9n2dS=FBE1PE+8bQ-Fa1VzNCQA@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms070702020909030706080901"
+References: <000f4242.05e425492a977c7b@friedels.name> <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com> <559B66C9.6060606@friedels.name> <CAC=t97Cm8nAhwfS3vYc802Xi2tmGuvzRzOfXzSkUgaF5y0zQWQ@mail.gmail.com> <559D7245.9030204@friedels.name> <CAC=t97CWsK1HLY9WMOQb7WxN9n2dS=FBE1PE+8bQ-Fa1VzNCQA@mail.gmail.com> <559D964C.8060502@friedels.name> <CAC=t97CoEZgU4+bQXtJGFrgQfUgXdk0XqUBBVd-rQ=VW7bpxAQ@mail.gmail.com>
+In-Reply-To: <CAC=t97CoEZgU4+bQXtJGFrgQfUgXdk0XqUBBVd-rQ=VW7bpxAQ@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms080303080601010204010308"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms070702020909030706080901
+--------------ms080303080601010204010308
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-07-08 15:06, Donald Pearson wrote:
-> I wouldn't use dd.
+On 2015-07-08 18:16, Donald Pearson wrote:
+> Basically I wouldn't trust the drive that's already showing signs of
+> failure to survive a dd.  It isn't completely full, so the recover is
+> less load.  That's just the way I see it.  But I see your point of
+> trying to get drive images now to hedge against failures.
 >
-> I would use recover to get the data if at all possible, then you can
-> experiment with try to fix the degraded condition live.  If you have
-> any chance of getting data from the pool, you reduce that chance every
-> time you make a change.
+> Unfortunately those errors are over my head so hopefully someone else
+> has insights.
 >
-> If btrfs did the balance like you said, it wouldn't be raid5.  What
-> you just described is raid4 where only one drive holds parity data.  I
-> can't say that I actually know for a fact that btrfs doesn't do this,
-> but I'd be shocked and some dev would need to eat their underware if
-> the balance job didn't distribute the parity also.
->
-That is correct, it does distribute the parity among all the member=20
-drives.  That said, it would still have to modify the existing drives=20
-even if it did put the parity on just the new drive, because raid{4,5,6} =
+A better option if you want a block level copy would probably be=20
+ddrescue (it's available in almost every distro in a package of the same =
 
-are defined as _striped_ data with parity, not mirrored (ie, if you just =
+name), it's designed for recovering as much data as possible from failed =
 
-removed the parity, you'd have a raid0, not a raid1).
+disks (and gives a much nicer status display than plain old dd).  If you =
 
+do go for a block level copy however, make certain that no more than one =
+
+of the copies is visible to the system at any given time, especially=20
+when the filesystem is mounted, otherwise things _WILL_ get=20
+exponentially worse.
 
 
---------------ms070702020909030706080901
+
+--------------ms080303080601010204010308
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -92,8 +92,8 @@ MaD4rHnusdg4gca6Yi+kNrm99anw7SwaBrBvULYBp7ixNRUhaYiNW4YjTrYxggShMIIEnQIB
 ATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
 cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
 EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5VMAkGBSsOAwIaBQCgggH1MBgGCSqGSIb3DQEJAzEL
-BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDcwOTExNTkxMlowIwYJKoZIhvcNAQkE
-MRYEFLHKvDzhrhgPU2hEF47Q6nZijKYtMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
+BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDcwOTEyMDI1NlowIwYJKoZIhvcNAQkE
+MRYEFAWEskUbDq1Xn7roXiWw2MIBgBNWMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
 MAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwIC
 AUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYD
 VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
@@ -101,14 +101,14 @@ GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
 ZXJ0Lm9yZwIDEG5VMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENB
 MR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2ln
 bmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5V
-MA0GCSqGSIb3DQEBAQUABIICAGXq2DmfOSEv0lRaiHRaF286wIKVse5v9TolcODBdcPvr/+H
-yh8iyTahZFE+zdU/fuuB72y4c9Je8VEYZrAZR7nUuMea+uzyTsqyeShtT6ZJPzjQaQ2CkvXx
-uJf09OH73cJi/drV3TQhpy66iLCV8c8Cz5CCc1I2FKN+0JJmtalVDZVQESVmXF4H0KiUYuWb
-HGV3i4lXcGFrYFLP4ZhGo0+HEF+CNw0lT+fCa5qBSNt/7thVVHhi/SYoPQwJgSf13stwzh/2
-X+0cFIkLA+RJwEGrVgYB1gFwk1VfbFsi2lcz6u9JtSfM0JiDWsed9D1Hn+RyKi5g3EAW+fUu
-qoVr8/OfhK9/WDE7qeAdbJxc/ttanWGPDrImT8L8zczjz+zOwiGHF4u4oDT0z7WDLEz+htDj
-bO9INFFehrrelP4Kdey36aAM0nd1Y19ZIZqOa9Nz3WL0m0By08S2IwQKQwZqGF4mguYPKtoM
-/GJp7403YJks73Nn7SECIrHcL5Rj/qlhCVGcT5ThvT07pzI+B1bcSCCEt3uFtNeNShNaRaIo
-975cnAS78hukTuKjZe2cnzhj0wUOAoe7Lktv1iRRcSbTsDp52WUIjALj08T50ugnHPmMcIwG
-/PVhjZf4Dh4fCDTy/hVClw3qnLMpObe3yWLviSxW+BN/j8F/wX/IWErYJDSIAAAAAAAA
---------------ms070702020909030706080901--
+MA0GCSqGSIb3DQEBAQUABIICAAITKjLQF0ew55TMjPsPbGrZKwZn7fKCJOV5hUrYNV/jRIQ+
+6KVDDUnOIlowiOBBZGQ3GuivYlaYrvmuOoKzM94kl4M5K4/m4HxNBr03F+2CNaV5ZyJS/9mk
+CFhJlwBz9l+PqZKW2UK+0+7xMQZZqvsd6hAKse4Mmd8BJuD+c3UMuFTQfACyu0N8S2gVibU4
+/Oi8bwYrzuRdvOmp+lcK9wVviixuM4n0LOfVgHy0BTA3NYiCxpNGlw4TXFRyg20fRXF1YJfy
+YH9v0sNg/8yz8Ajm8Kb1tZ55gb0ZCo7p7rAZ+LIEmCa4Eb+UoSwunusUzhY3UZOGnnxonadK
+5wIZaNDSDH6pF5Apb+z2eJXZDJkD46gcVL64f6wisGCt/i1JPlQFOb6gvtBIWyZsgE2F901J
+6q4C4VYmq1zs9k7OGQhZpn16Rfu1Fb9qkgtENMfVpK+jhnUBDybI+mBb5gl2TMJ+1HXzbH0/
+dGwzjvV/WZqnuyMp6HFuZ+SgYNwkUbzoLKPerw/FCjOlsiZW2CzMu6mQ4Dc3zLFfOH2gATZ3
+2wgb6GdQ3kYBq1irzbuyO5TDLp4e5x39E1AFkzkx6e/QJdm+aYUmuLjs5uNE+mMGHgRMA7Sq
+RfQUCHSStYYfbv4007AYT/uC2TxZO77QB3OBNkhg3vN1NXrWUAPPnP60MkVBAAAAAAAA
+--------------ms080303080601010204010308--

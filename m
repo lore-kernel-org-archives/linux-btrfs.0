@@ -1,38 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:32809 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753145AbbGIM04 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 08:26:56 -0400
-Received: from merkaba.localnet (unknown [188.174.194.136])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id 392CEF3
-	for <linux-btrfs@vger.kernel.org>; Thu,  9 Jul 2015 14:26:55 +0200 (CEST)
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Anyone tried out btrbk yet?
-Date: Thu, 09 Jul 2015 14:26:55 +0200
-Message-ID: <11148188.L9vtSMaNHV@merkaba>
+Received: from www.humilis.net ([80.100.93.5]:59352 "EHLO panda.humilis.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751803AbbGIMlY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jul 2015 08:41:24 -0400
+Date: Thu, 9 Jul 2015 14:41:21 +0200
+From: Sander <sander@humilis.net>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: "Fajar A. Nugraha" <list@fajar.net>,
+        james harvey <jamespharvey20@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs subvolume clone or fork (btrfs-progs feature request)
+Message-ID: <20150709124121.GA25033@panda>
+Reply-To: sander@humilis.net
+References: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com>
+ <CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
+ <559E6411.6090109@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <559E6411.6090109@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi!
+Austin S Hemmelgarn wrote (ao):
+> >What's wrong with "btrfs subvolume snapshot"?
+>
+> Well, personally I would say the fact that once something is tagged as
+> a snapshot, you can't change it to a regular subvolume without doing a
+> non-incremental send/receive.
 
-I see Alex, the developer of btrbk posted here once about btrfs send and 
-receive, but well any other users of btrbk¹? What are your experiences?
+A snapshot is a subvolume. There is no such thing as "tagged as a
+snapshot".
 
-I consider switching to it from my home grown rsync based backup script to 
-it.
-
-Well I may try it for one of my BTRFS volumes in addition to the rsync 
-backup for now. I would like to give all options on command line, but well, 
-maybe it can completely replace my current script if I put everything in its 
-configuration.
-
-Any other handy BTRFS backup solutions?
-
-[1] http://www.digint.ch/btrbk/
-
-Thanks,
--- 
-Martin
+	Sander

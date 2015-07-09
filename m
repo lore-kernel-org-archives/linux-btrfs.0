@@ -1,47 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vn0-f51.google.com ([209.85.216.51]:33451 "EHLO
-	mail-vn0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754046AbbGIVik (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 17:38:40 -0400
-Received: by vnbf7 with SMTP id f7so24896932vnb.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 14:38:39 -0700 (PDT)
+Received: from mailout-afa65.mailout.artfiles.de ([212.72.176.65]:55638 "EHLO
+	mailout-afa65.mailout.artfiles.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752100AbbGIVzM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 9 Jul 2015 17:55:12 -0400
+Received: from [47.69.40.123] (helo=discus.localnet)
+	auth=Wolfgang_Mader@brain-frog.de
+	by mailout.artfiles.de with esmtpsa (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
+	(Exim 4.80.1)
+	id 1ZDJSs-0006EV-0u
+	for linux-btrfs@vger.kernel.org; Thu, 09 Jul 2015 23:34:42 +0200
+From: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Concurrent write access
+Date: Thu, 09 Jul 2015 23:34:40 +0200
+Message-ID: <2035607.hrq9oNetle@discus>
 MIME-Version: 1.0
-In-Reply-To: <CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
-References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
-	<558CB0D4.8060401@cn.fujitsu.com>
-	<558CB404.8050300@cn.fujitsu.com>
-	<CAJCQCtTMdQG4EB8dNAYPq8H3V68TCb2YQztoXXYMkCYA3GBCXw@mail.gmail.com>
-	<CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
-Date: Thu, 9 Jul 2015 15:38:39 -0600
-Message-ID: <CAJCQCtQ35xzMBjcUUTzWm3CjC1r=UNgkog2YbB0X1QcZofNj0g@mail.gmail.com>
-Subject: Re: btrfs partition converted from ext4 becomes read-only minutes
- after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120
-From: Chris Murphy <lists@colorremedies.com>
-To: Vytautas D <vytdau@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Robert Munteanu <robert.munteanu@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; boundary="nextPart4314683.4xueFkaVQx"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 9, 2015 at 4:52 AM, Vytautas D <vytdau@gmail.com> wrote:
-> <Slightly off topic>
->
-> does these bugs exist in systems that converted from ext4 to btrfs using
-> kernel 3.13 and then upgraded to kernel 4.1 ?
+--nextPart4314683.4xueFkaVQx
+Content-Transfer-Encoding: 7Bit
+Content-Type: text/plain; charset="us-ascii"
 
-I don't recall what btrfs-progs and kernel I last tested ext4
-conversion with. I know this is a regression, I just don't know how
-old it is. I think there's more than one bug here (obviously since
-I've filed 4 related bugs in ~24 hours), but I really don't know the
-scope of the problem. But the case where the recommended procedure not
-only fails but corrupts the file system and it can't be fixed or
-rolled back, is not good.
+Hi,
 
-Perhaps the wiki should provide a warning that this is currently
-broken, status unknown, or something?
+I have a btrfs raid10 which is connected to a server hosting multiple virtual 
+machine. Does btrfs support connecting the same subvolumes of the same raid to 
+multiple virtual machines for concurrent read and write? The situation would 
+be the same as, say, mounting user homes from the same nfs share on different 
+machines.
 
--- 
-Chris Murphy
+
+Thanks,
+Wolfgang
+--nextPart4314683.4xueFkaVQx
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAABCAAGBQJVnujwAAoJEGZtonfLCdqh1x8P/2ZQouqYTFmBj6J0BZK240Zd
+QihNAVOVYy08rMt4Ms3217tjVPHnFXY/UoYO2iGx7c+rqe3gOSmEvelc+BJAmOkb
+y+RymOsuAl84WOmIJghJZ+e62mPaAqCHcFPSvrmjKPPEvufkMgRGfudaQgmtDT1F
+UChwXySCcH5/renOAbmBr4rOnoVTr6RzgcLt6ib3fHKRTXiPkdjE2JGGDyU/Zv0x
+dBR3125n/J13zO/VCGJxIPQxDDdA5MO4AriXMh9jjoMDkFPvbQhDw9JmpHP+2rzo
+IX5fDFwzOi38nRgqYnTU34+L6lL2su4GQIEJBJtDKvyCOJmUZ0G5GIvU5kf60dxB
+/myCuScCZ89XnahKzX1NBuQogxYLyAnPWKXU6vo9CM1xQ3KbNZAOAUSINg+Un8ah
+8FPKGEGuVR1+RFLluQJgpRYqNtVdh9kXNoRFSig5F9PyjQqGJ8YMsevLZCKUiBi1
+p7ZauaXSKs0Uh8mupz5dt6OUQi3ZR1bEwrj0+c/+ENb63JNva9OZCslQRUxko/Ts
+JgB6kbU+PoIpsphX/Hx9UnnB77A3rDMWx2N389E62mYTRCMrRcKBNAcQAV+BH7at
+fmP1HQX/xKhqdqjU6uDSNM7F3fFAK/l5xQ/7oRNsyXjChWimMWoiw+60SjbiUjiT
+L52MqWKUXfPjDQUg85Kt
+=FtSR
+-----END PGP SIGNATURE-----
+
+--nextPart4314683.4xueFkaVQx--
+

@@ -1,38 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.digint.ch ([92.42.190.51]:55945 "EHLO mail.digint.ch"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753480AbbGJKyU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jul 2015 06:54:20 -0400
-Subject: Re: Anyone tried out btrbk yet?
-To: Martin Steigerwald <martin@lichtvoll.de>
-References: <11148188.L9vtSMaNHV@merkaba>
-From: Axel Burri <axel@tty0.ch>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <559FA280.8090309@tty0.ch>
-Date: Fri, 10 Jul 2015 12:46:24 +0200
+Received: from mail-la0-f44.google.com ([209.85.215.44]:35448 "EHLO
+	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751622AbbGIBV2 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 8 Jul 2015 21:21:28 -0400
+Received: by labgy5 with SMTP id gy5so84241417lab.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 08 Jul 2015 18:21:26 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <11148188.L9vtSMaNHV@merkaba>
-Content-Type: text/plain; charset=windows-1252
+Date: Wed, 8 Jul 2015 21:21:26 -0400
+Message-ID: <CA+X5Wn4nsbiG5=LgLq8zhS0X3SB3dGa28-9taABEpGFxQvX2kQ@mail.gmail.com>
+Subject: btrfs subvolume tree (btrfs-progs feature request)
+From: james harvey <jamespharvey20@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-07-09 14:26, Martin Steigerwald wrote:
+Request for new btrfs subvolume subcommand:
 
-> Well I may try it for one of my BTRFS volumes in addition to the rsync 
-> backup for now. I would like to give all options on command line, but well, 
-> maybe it can completely replace my current script if I put everything in its 
-> configuration.
+tree <path>
+   Display a depth indented listing of subvolumes present in the
+filesystem <path>.
 
-One reason why btrbk exists is that I wanted to have all my backups
-configured in a config file. I use btrbk to backup several hosts to
-several backup locations (around 20 subvolumes), which made setting
-everything up with command-line options very cumbersome.
+---or---
 
-For simpler setups you might be better off with command-line based tools
-(e.g. Marcs "btrfs-subvolume-backup", which I like for it's smallness).
+list ... --tree ...
+   ...
+   -tree
+      display subvolumes in a depth indented listing.
 
-Give it a try, there is a "dryrun" command in btrbk :)
-Ask on github if you need help.
+Would (I think):
+* Display each top-level subvolume
+* Recursively display each subvolume under its parent (using top level
+ID against ID)
 
+In the format:
+/
+├── a
+│   ├── 1
+├── b
+│   ├── 1
+│   └── 2
+└── c
+/other
+└── d
 
-- Axel
+The actual program "tree" does not work for this application.  It
+shows all directories and files, not just the subvolumes.  It has a
+"-d" option that only shows directories, which is better, but it still
+shows directories that are not subvolumes.
+
+"btrfs subvolume list /" can show 10 lines, with "tree -d" on a
+freshly installed system can show over 240,000 lines.
+
+I think it's more likely for btrfs-progs to be able to implement this,
+than asking tree to make btrfs-specific code.

@@ -1,55 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38730 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753529AbbGISd5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jul 2015 14:33:57 -0400
-Date: Thu, 9 Jul 2015 20:33:55 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: sander@humilis.net, "Fajar A. Nugraha" <list@fajar.net>,
-        james harvey <jamespharvey20@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs subvolume clone or fork (btrfs-progs feature request)
-Message-ID: <20150709183355.GA726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com>
- <CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
- <559E6411.6090109@gmail.com>
- <20150709124121.GA25033@panda>
- <559E6D80.7010607@gmail.com>
+Received: from mail-vn0-f51.google.com ([209.85.216.51]:33451 "EHLO
+	mail-vn0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754046AbbGIVik (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 17:38:40 -0400
+Received: by vnbf7 with SMTP id f7so24896932vnb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 14:38:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <559E6D80.7010607@gmail.com>
+In-Reply-To: <CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
+References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
+	<558CB0D4.8060401@cn.fujitsu.com>
+	<558CB404.8050300@cn.fujitsu.com>
+	<CAJCQCtTMdQG4EB8dNAYPq8H3V68TCb2YQztoXXYMkCYA3GBCXw@mail.gmail.com>
+	<CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
+Date: Thu, 9 Jul 2015 15:38:39 -0600
+Message-ID: <CAJCQCtQ35xzMBjcUUTzWm3CjC1r=UNgkog2YbB0X1QcZofNj0g@mail.gmail.com>
+Subject: Re: btrfs partition converted from ext4 becomes read-only minutes
+ after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120
+From: Chris Murphy <lists@colorremedies.com>
+To: Vytautas D <vytdau@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        Robert Munteanu <robert.munteanu@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 09, 2015 at 08:48:00AM -0400, Austin S Hemmelgarn wrote:
-> On 2015-07-09 08:41, Sander wrote:
-> > Austin S Hemmelgarn wrote (ao):
-> >>> What's wrong with "btrfs subvolume snapshot"?
-> >>
-> >> Well, personally I would say the fact that once something is tagged as
-> >> a snapshot, you can't change it to a regular subvolume without doing a
-> >> non-incremental send/receive.
-> >
-> > A snapshot is a subvolume. There is no such thing as "tagged as a
-> > snapshot".
-> >
-> No, there is a bit in the subvolume metadata that says whether it's 
-> considered a snapshot or not.
+On Thu, Jul 9, 2015 at 4:52 AM, Vytautas D <vytdau@gmail.com> wrote:
+> <Slightly off topic>
+>
+> does these bugs exist in systems that converted from ext4 to btrfs using
+> kernel 3.13 and then upgraded to kernel 4.1 ?
 
-Technically it's not really a bit. The snapshot relation is determined
-by the parent uuid value of a subvolume.
+I don't recall what btrfs-progs and kernel I last tested ext4
+conversion with. I know this is a regression, I just don't know how
+old it is. I think there's more than one bug here (obviously since
+I've filed 4 related bugs in ~24 hours), but I really don't know the
+scope of the problem. But the case where the recommended procedure not
+only fails but corrupts the file system and it can't be fixed or
+rolled back, is not good.
 
-> Internally, they are handled identically, 
-> but it does come into play when you consider things like btrfs subvolume 
-> show -s (which only lists snapshots),
+Perhaps the wiki should provide a warning that this is currently
+broken, status unknown, or something?
 
-That was probably 'btrfs subvol list -s', though the 'subvol show'
-command prints all snapshots of a given subvolume.
-
-> which in turn means that certain 
-> tasks are more difficult to script robustly.
-
-I don't deny the interface/output is imperfect for scripting purposes,
-maybe we can provide filters that would satisfy your usecase.
+-- 
+Chris Murphy

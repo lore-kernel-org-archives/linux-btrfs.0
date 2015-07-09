@@ -1,82 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from meiko.romanrm.net ([195.154.92.155]:38239 "EHLO
-	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751668AbbGIPEn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 11:04:43 -0400
-Date: Thu, 9 Jul 2015 20:04:41 +0500
-From: Roman Mamedov <rm@romanrm.net>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: sander@humilis.net, "Fajar A. Nugraha" <list@fajar.net>,
-        james harvey <jamespharvey20@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs subvolume clone or fork (btrfs-progs feature request)
-Message-ID: <20150709200441.111e3d64@natsu>
-In-Reply-To: <559E6D80.7010607@gmail.com>
-References: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com>
-	<CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
-	<559E6411.6090109@gmail.com>
-	<20150709124121.GA25033@panda>
-	<559E6D80.7010607@gmail.com>
-Mime-Version: 1.0
-Content-Type: multipart/signed; micalg=PGP-SHA1;
- boundary="Sig_/VwI97jRwithwgKNusth0Yx."; protocol="application/pgp-signature"
+Received: from magic.merlins.org ([209.81.13.136]:51169 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751619AbbGIRRk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 13:17:40 -0400
+Date: Thu, 9 Jul 2015 10:17:37 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Martin Steigerwald <martin@lichtvoll.de>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Anyone tried out btrbk yet?
+Message-ID: <20150709171737.GS17274@merlins.org>
+References: <11148188.L9vtSMaNHV@merkaba>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <11148188.L9vtSMaNHV@merkaba>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/VwI97jRwithwgKNusth0Yx.
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
+On Thu, Jul 09, 2015 at 02:26:55PM +0200, Martin Steigerwald wrote:
+> Hi!
+> 
+> I see Alex, the developer of btrbk posted here once about btrfs send and 
+> receive, but well any other users of btrbk¹? What are your experiences?
+> 
+> I consider switching to it from my home grown rsync based backup script to 
+> it.
+> 
+> Well I may try it for one of my BTRFS volumes in addition to the rsync 
+> backup for now. I would like to give all options on command line, but well, 
+> maybe it can completely replace my current script if I put everything in its 
+> configuration.
+> 
+> Any other handy BTRFS backup solutions?
 
-On Thu, 09 Jul 2015 08:48:00 -0400
-Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
+I use my own which I wrote :)
+http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Doing-Fast-Incremental-Backups-With-Btrfs-Send-and-Receive
+http://marc.merlins.org/linux/scripts/btrfs-subvolume-backup
 
-> On 2015-07-09 08:41, Sander wrote:
-> > Austin S Hemmelgarn wrote (ao):
-> >>> What's wrong with "btrfs subvolume snapshot"?
-> >>
-> >> Well, personally I would say the fact that once something is tagged as
-> >> a snapshot, you can't change it to a regular subvolume without doing a
-> >> non-incremental send/receive.
-> >
-> > A snapshot is a subvolume. There is no such thing as "tagged as a
-> > snapshot".
-> >
-> > 	Sander
-> >
-> No, there is a bit in the subvolume metadata that says whether it's=20
-> considered a snapshot or not.  Internally, they are handled identically,=
-=20
-> but it does come into play when you consider things like btrfs subvolume=
-=20
-> show -s (which only lists snapshots), which in turn means that certain=20
-> tasks are more difficult to script robustly.
-
-This sounds like a vestigial leftover from back when snapshots were
-conceptualized to be somehow functionally different from subvolumes... But =
-as
-you said, now there is effectively no difference, so that bit is used for
-what, only to track how a subvolume was created? And to output in the
-subvolume list if the user passes "-s"? I'd say that's a pretty oddball fea=
-ture
-to even have, since in any case if you want to distinguish and list only yo=
-ur
-snapshots, you would typically just name them in a certain way, e.g.
-"/snaps/originalname/<datetime>".
-
---=20
-With respect,
-Roman
-
---Sig_/VwI97jRwithwgKNusth0Yx.
-Content-Type: application/pgp-signature; name=signature.asc
-Content-Disposition: attachment; filename=signature.asc
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iEYEARECAAYFAlWejYkACgkQTLKSvz+PZwgrtgCgg0Y6jBpXeiQfWGnr/7ap0Yah
-QRwAoIMiw8U1He0do3XxwVXSWWggs4n5
-=JaYP
------END PGP SIGNATURE-----
-
---Sig_/VwI97jRwithwgKNusth0Yx.--
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

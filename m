@@ -1,56 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:37157 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751404AbbGIMDD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 08:03:03 -0400
-Received: by igau2 with SMTP id u2so87550834iga.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 05:03:01 -0700 (PDT)
-Message-ID: <559E62F0.4060409@gmail.com>
-Date: Thu, 09 Jul 2015 08:02:56 -0400
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:38472 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751775AbbGIMHv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 08:07:51 -0400
+Received: by igrv9 with SMTP id v9so191600764igr.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 05:07:51 -0700 (PDT)
+Message-ID: <559E6411.6090109@gmail.com>
+Date: Thu, 09 Jul 2015 08:07:45 -0400
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
 MIME-Version: 1.0
-To: Donald Pearson <donaldwhpearson@gmail.com>,
-        Hendrik Friedel <hendrik@friedels.name>
-CC: Omar Sandoval <osandov@fb.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: size 2.73TiB used 240.97GiB after balance
-References: <000f4242.05e425492a977c7b@friedels.name> <CAC=t97AcztZ9vKvMe8o70F3VsGR-_9TdFO4t=Rdt8q=9hDYm8A@mail.gmail.com> <559B66C9.6060606@friedels.name> <CAC=t97Cm8nAhwfS3vYc802Xi2tmGuvzRzOfXzSkUgaF5y0zQWQ@mail.gmail.com> <559D7245.9030204@friedels.name> <CAC=t97CWsK1HLY9WMOQb7WxN9n2dS=FBE1PE+8bQ-Fa1VzNCQA@mail.gmail.com> <559D964C.8060502@friedels.name> <CAC=t97CoEZgU4+bQXtJGFrgQfUgXdk0XqUBBVd-rQ=VW7bpxAQ@mail.gmail.com>
-In-Reply-To: <CAC=t97CoEZgU4+bQXtJGFrgQfUgXdk0XqUBBVd-rQ=VW7bpxAQ@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms080303080601010204010308"
+To: "Fajar A. Nugraha" <list@fajar.net>,
+        james harvey <jamespharvey20@gmail.com>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs subvolume clone or fork (btrfs-progs feature request)
+References: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com> <CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
+In-Reply-To: <CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha1; boundary="------------ms090709090908030305060607"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080303080601010204010308
+--------------ms090709090908030305060607
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-07-08 18:16, Donald Pearson wrote:
-> Basically I wouldn't trust the drive that's already showing signs of
-> failure to survive a dd.  It isn't completely full, so the recover is
-> less load.  That's just the way I see it.  But I see your point of
-> trying to get drive images now to hedge against failures.
+On 2015-07-09 02:22, Fajar A. Nugraha wrote:
+> On Thu, Jul 9, 2015 at 8:20 AM, james harvey <jamespharvey20@gmail.com>=
+ wrote:
+>> Request for new btrfs subvolume subcommand:
+>>
+>> clone or fork [-i <qgroupid] <source> [<dest>]<name>
+>>     Create a subvolume <name> in <dest>, which is a clone or fork of s=
+ource.
+>>     If <dest> is not given, subvolume <name> will be created in the
+>> current directory.
+>>     Options
+>>     -i <qgroupid>
+>>        Add the newly created subvolume to a qgroup.  This option can b=
+e
+>> given multiple times.
+>>
+>> Would (I think):
+>> * btrfs subvolume create <dest-subvolume>
+>> * cp -ax --reflink=3Dalways <source-subvolume>/* <dest-subvolume>/
 >
-> Unfortunately those errors are over my head so hopefully someone else
-> has insights.
+> What's wrong with "btrfs subvolume snapshot"?
 >
-A better option if you want a block level copy would probably be=20
-ddrescue (it's available in almost every distro in a package of the same =
+Well, personally I would say the fact that once something is tagged as a =
 
-name), it's designed for recovering as much data as possible from failed =
-
-disks (and gives a much nicer status display than plain old dd).  If you =
-
-do go for a block level copy however, make certain that no more than one =
-
-of the copies is visible to the system at any given time, especially=20
-when the filesystem is mounted, otherwise things _WILL_ get=20
-exponentially worse.
+snapshot, you can't change it to a regular subvolume without doing a=20
+non-incremental send/receive.
 
 
-
---------------ms080303080601010204010308
+--------------ms090709090908030305060607
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -92,8 +95,8 @@ MaD4rHnusdg4gca6Yi+kNrm99anw7SwaBrBvULYBp7ixNRUhaYiNW4YjTrYxggShMIIEnQIB
 ATCBgDB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5v
 cmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEW
 EnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5VMAkGBSsOAwIaBQCgggH1MBgGCSqGSIb3DQEJAzEL
-BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDcwOTEyMDI1NlowIwYJKoZIhvcNAQkE
-MRYEFAWEskUbDq1Xn7roXiWw2MIBgBNWMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
+BgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MDcwOTEyMDc0NVowIwYJKoZIhvcNAQkE
+MRYEFIcWQZQBDxoPqhXLMbEam8vQ6PBVMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEq
 MAsGCWCGSAFlAwQBAjAKBggqhkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwIC
 AUAwBwYFKw4DAgcwDQYIKoZIhvcNAwICASgwgZEGCSsGAQQBgjcQBDGBgzCBgDB5MRAwDgYD
 VQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMT
@@ -101,14 +104,14 @@ GUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2Fj
 ZXJ0Lm9yZwIDEG5VMIGTBgsqhkiG9w0BCRACCzGBg6CBgDB5MRAwDgYDVQQKEwdSb290IENB
 MR4wHAYDVQQLExVodHRwOi8vd3d3LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2ln
 bmluZyBBdXRob3JpdHkxITAfBgkqhkiG9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZwIDEG5V
-MA0GCSqGSIb3DQEBAQUABIICAAITKjLQF0ew55TMjPsPbGrZKwZn7fKCJOV5hUrYNV/jRIQ+
-6KVDDUnOIlowiOBBZGQ3GuivYlaYrvmuOoKzM94kl4M5K4/m4HxNBr03F+2CNaV5ZyJS/9mk
-CFhJlwBz9l+PqZKW2UK+0+7xMQZZqvsd6hAKse4Mmd8BJuD+c3UMuFTQfACyu0N8S2gVibU4
-/Oi8bwYrzuRdvOmp+lcK9wVviixuM4n0LOfVgHy0BTA3NYiCxpNGlw4TXFRyg20fRXF1YJfy
-YH9v0sNg/8yz8Ajm8Kb1tZ55gb0ZCo7p7rAZ+LIEmCa4Eb+UoSwunusUzhY3UZOGnnxonadK
-5wIZaNDSDH6pF5Apb+z2eJXZDJkD46gcVL64f6wisGCt/i1JPlQFOb6gvtBIWyZsgE2F901J
-6q4C4VYmq1zs9k7OGQhZpn16Rfu1Fb9qkgtENMfVpK+jhnUBDybI+mBb5gl2TMJ+1HXzbH0/
-dGwzjvV/WZqnuyMp6HFuZ+SgYNwkUbzoLKPerw/FCjOlsiZW2CzMu6mQ4Dc3zLFfOH2gATZ3
-2wgb6GdQ3kYBq1irzbuyO5TDLp4e5x39E1AFkzkx6e/QJdm+aYUmuLjs5uNE+mMGHgRMA7Sq
-RfQUCHSStYYfbv4007AYT/uC2TxZO77QB3OBNkhg3vN1NXrWUAPPnP60MkVBAAAAAAAA
---------------ms080303080601010204010308--
+MA0GCSqGSIb3DQEBAQUABIICAI0lavDsPzwONp9j0F9OA/yrJ1VZakIF1eA1vRJXyn49Vlwx
+2b9zberJAsaUVpa/dotJFQjxtXoNzeoJ+m8dBP2xva2w58BOfY6aIeujsPprpTNeQP+I0pbU
+/SvYIHt8A+i6zmwgXJscZDrvGx50AdlFKf6bpF5wDR3nuvVMYG9ZEtDqDv6vMbgkhXqZP8gL
+0bb6XRTEyBI6rbRhcMJ33oigGAOHWYjujTZd3VIrEazU8r+4Z7JSR1G2GSEzUCEkbmcdT5Kg
+YgckeG0s050U7uVv7Vnt+JQYYDMbREmFeALjXAZY6YQivhCTQOWfwpbitRSvjnW8GGuPXuUF
+KkIRDWYh5Fo1vnt5n3P07bNYoml/UJipwVjJp7O06gLPrBFoQ6qHYQDayvBUaFGey/DglBtb
+NIRwKrCFlA/6zDfO1wDUXLeYt3Kx8UYTnWoc020PWF3E6RpXLwh9lZnhdgmFppsGm/p3+9nU
+DaRton0uRJC0K3UAauYIXWfuEanrW2XqmxhUC2O8pE3kmOkLY/U/fDHyOHY0eyyjZdK01imi
+njs1B8WPNjxd0oqRjP0h4OvDpvin3h0+O/9PSSgpYvhyZrS9dvX78ytQPB+FFdWIoUlhcdWr
+S9yJIkxbaQohX/JxTj7ifpfQQM8XFN/35ULq7BY5D77w4uMt3ZyCRkp/qrcPAAAAAAAA
+--------------ms090709090908030305060607--

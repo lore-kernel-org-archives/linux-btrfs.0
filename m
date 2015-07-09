@@ -1,48 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.humilis.net ([80.100.93.5]:59362 "EHLO panda.humilis.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753357AbbGIM6U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 9 Jul 2015 08:58:20 -0400
-Date: Thu, 9 Jul 2015 14:58:17 +0200
-From: Sander <sander@humilis.net>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: sander@humilis.net, "Fajar A. Nugraha" <list@fajar.net>,
-        james harvey <jamespharvey20@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs subvolume clone or fork (btrfs-progs feature request)
-Message-ID: <20150709125817.GA29629@panda>
-Reply-To: sander@humilis.net
-References: <CA+X5Wn4YoAByr=OMHHmS5X86iCJos4O=AbwFuy+iH=OrKmVhNg@mail.gmail.com>
- <CAG1y0scpWEF=590bM6dxkOZLAtCMwZaPCtHRuQjTT5DMu5ATrQ@mail.gmail.com>
- <559E6411.6090109@gmail.com>
- <20150709124121.GA25033@panda>
- <559E6D80.7010607@gmail.com>
+Received: from mail-ie0-f174.google.com ([209.85.223.174]:34207 "EHLO
+	mail-ie0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752207AbbGINAH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 09:00:07 -0400
+Received: by iebmu5 with SMTP id mu5so175557785ieb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 06:00:06 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <559E6D80.7010607@gmail.com>
+In-Reply-To: <CAKhV5s5CzWNZUh8PXacc_QTkA4WXxb1sVFFSOL7iZT0CXRE84Q@mail.gmail.com>
+References: <CAKhV5s4=WR6t35Vo0JWekMKiv2ZOJF-py4sVSB4THZNd7cOe_Q@mail.gmail.com>
+ <CAKhV5s4M4fKgm+ZkCZHQL8QK20Oq19Nkj9CKOncjvFQbweY-Eg@mail.gmail.com>
+ <20150707155014.GF10539@carfax.org.uk> <CAKhV5s5CzWNZUh8PXacc_QTkA4WXxb1sVFFSOL7iZT0CXRE84Q@mail.gmail.com>
+From: David Wilhelm <thefeshy@gmail.com>
+Date: Thu, 9 Jul 2015 08:59:37 -0400
+Message-ID: <CAKhV5s5Cpryj9ivjTkpGJmrJry9hJ_cUy_MH1tJbgYb3BmLV2w@mail.gmail.com>
+Subject: Re: kernel crash on btrfs device delete missing
+To: David Wilhelm <thefeshy@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S Hemmelgarn wrote (ao):
-> On 2015-07-09 08:41, Sander wrote:
-> >Austin S Hemmelgarn wrote (ao):
-> >>>What's wrong with "btrfs subvolume snapshot"?
-> >>
-> >>Well, personally I would say the fact that once something is tagged as
-> >>a snapshot, you can't change it to a regular subvolume without doing a
-> >>non-incremental send/receive.
-> >
-> >A snapshot is a subvolume. There is no such thing as "tagged as a
-> >snapshot".
-> >
-> >	Sander
-> >
-> No, there is a bit in the subvolume metadata that says whether it's
-> considered a snapshot or not.  Internally, they are handled identically, but
-> it does come into play when you consider things like btrfs subvolume show -s
-> (which only lists snapshots), which in turn means that certain tasks are
-> more difficult to script robustly.
+I was finally able to remove the missing device.  I updated the bug
+report, but in case anyone else has this problem I wanted to update
+here as well.
 
-I stand corrected. Thanks for the info.
+I deleted all snapshot subvolumes on the pool (between 20 and 30), and
+was able to delete the missing device then without issue.  This took
+two tries, because the first time I did not wait for btrfs-cleanup to
+finish actually deleting the subvolumes (as it does this in the
+background.)  The second time I deleted the subvolumes then waited
+until all disk activity (reported by iotop) had ceased, and re-mounted
+the pool to be sure.  After that the rebalance/delete worked without
+issue.
 
-	Sander
+I am not certain if this is because of a bug with rebalancing
+snapshots or because the some bad data that was causing the segfault
+just happened to be in the snapshots.
+
+On Tue, Jul 7, 2015 at 12:45 PM, David Wilhelm <thefeshy@gmail.com> wrote:
+> Thanks.  I've submitted it as issue 101141
+>
+> https://bugzilla.kernel.org/show_bug.cgi?id=101141
+>
+>
+>>    That looks like the kind of thing you need a developer for. You've
+>> already reported it here, but sticking a copy of what you've
+>> discovered so far into bugzilla.kernel.org may help it not to get
+>> lost.
+>>
+>>    Hugo.
+>>
+>> --
+>> Hugo Mills             | "I don't like the look of it, I tell you."
+>> hugo@... carfax.org.uk | "Well, stop looking at it, then."
+>> http://carfax.org.uk/  |
+>> PGP: E2AB1DE4          |                                             The Goons

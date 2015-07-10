@@ -1,74 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63472 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751855AbbGJBh7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 9 Jul 2015 21:37:59 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6A1aEQP006781
-	for <linux-btrfs@vger.kernel.org>; Fri, 10 Jul 2015 09:36:14 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Remove noused chunk_tree and chunk_objectid from scrub_enumerate_chunks() and scrub_chunk()
-Date: Fri, 10 Jul 2015 09:35:31 +0800
-Message-ID: <11046df178f8b5d6697ea2a60691b37da8235108.1436490821.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <e11384e9d3f8a3d87ca1f4c57ac699d15153c3a9.1436490821.git.zhaolei@cn.fujitsu.com>
-References: <e11384e9d3f8a3d87ca1f4c57ac699d15153c3a9.1436490821.git.zhaolei@cn.fujitsu.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60040 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S932584AbbGJTPs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jul 2015 15:15:48 -0400
+Date: Fri, 10 Jul 2015 15:15:42 -0400
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20150710191542.GB10320@ret.masoncoding.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+Hi Linus,
 
-These variables are not used from introduced version , remove them.
+Please pull my for-linus-4.2 branch:
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 9 ++-------
- 1 file changed, 2 insertions(+), 7 deletions(-)
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.2
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index eb35176..f552937 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3321,7 +3321,6 @@ out:
- 
- static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
- 					  struct btrfs_device *scrub_dev,
--					  u64 chunk_tree, u64 chunk_objectid,
- 					  u64 chunk_offset, u64 length,
- 					  u64 dev_offset, int is_dev_replace)
- {
-@@ -3372,8 +3371,6 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 	struct btrfs_root *root = sctx->dev_root;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	u64 length;
--	u64 chunk_tree;
--	u64 chunk_objectid;
- 	u64 chunk_offset;
- 	int ret;
- 	int slot;
-@@ -3431,8 +3428,6 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		if (found_key.offset + length <= start)
- 			goto skip;
- 
--		chunk_tree = btrfs_dev_extent_chunk_tree(l, dev_extent);
--		chunk_objectid = btrfs_dev_extent_chunk_objectid(l, dev_extent);
- 		chunk_offset = btrfs_dev_extent_chunk_offset(l, dev_extent);
- 
- 		/*
-@@ -3449,8 +3444,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		dev_replace->cursor_right = found_key.offset + length;
- 		dev_replace->cursor_left = found_key.offset;
- 		dev_replace->item_needs_writeback = 1;
--		ret = scrub_chunk(sctx, scrub_dev, chunk_tree, chunk_objectid,
--				  chunk_offset, length, found_key.offset,
-+		ret = scrub_chunk(sctx, scrub_dev, chunk_offset, length,
-+				  found_key.offset,
- 				  is_dev_replace);
- 
- 		/*
--- 
-1.8.5.1
+This is an assortment of fixes.  Most of the commits are from Filipe
+(fsync, the inode allocation cache and a few others).  Mark kicked in a
+series fixing corners in the extent sharing ioctls, and everyone else
+fixed up on assorted other problems.
 
+Filipe Manana (9) commits (+375/-36):
+    Btrfs: fix race between caching kthread and returning inode to inode cache (+11/-4)
+    Btrfs: fix memory corruption on failure to submit bio for direct IO (+52/-18)
+    Btrfs: fix crash on close_ctree() if cleaner starts new transaction (+29/-0)
+    Btrfs: fix fsync after truncate when no_holes feature is enabled (+108/-0)
+    Btrfs: fix race between balance and unused block group deletion (+58/-6)
+    Btrfs: fix a comment in inode.c:evict_inode_truncate_pages() (+3/-2)
+    Btrfs: use kmem_cache_free when freeing entry in inode cache (+1/-1)
+    Btrfs: fix fsync xattr loss in the fast fsync path (+104/-0)
+    Btrfs: fix fsync data loss after append write (+9/-5)
+
+Mark Fasheh (4) commits (+193/-58):
+    btrfs: fix deadlock with extent-same and readpage (+117/-31)
+    btrfs: don't update mtime/ctime on deduped inodes (+14/-10)
+    btrfs: pass unaligned length to btrfs_cmp_data() (+2/-1)
+    btrfs: allow dedupe of same inode (+60/-16)
+
+Liu Bo (2) commits (+15/-6):
+    Btrfs: fix hang when failing to submit bio of directIO (+0/-3)
+    Btrfs: fix warning of bytes_may_use (+15/-3)
+
+Zhao Lei (2) commits (+21/-20):
+    btrfs: cleanup noused initialization of dev in btrfs_end_bio() (+1/-1)
+    btrfs: add error handling for scrub_workers_get() (+20/-19)
+
+Yang Dongsheng (1) commits (+41/-8):
+    btrfs: qgroup: allow user to clear the limitation on qgroup
+
+Shilong Wang (1) commits (+1/-1):
+    Btrfs: fix wrong check for btrfs_force_chunk_alloc()
+
+Total: (19) commits (+646/-129)
+
+ fs/btrfs/btrfs_inode.h  |   2 +
+ fs/btrfs/ctree.h        |   1 +
+ fs/btrfs/disk-io.c      |  41 +++++++-
+ fs/btrfs/extent-tree.c  |   3 +
+ fs/btrfs/inode-map.c    |  17 +++-
+ fs/btrfs/inode.c        |  89 ++++++++++++------
+ fs/btrfs/ioctl.c        | 241 +++++++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/ordered-data.c |   5 +
+ fs/btrfs/qgroup.c       |  49 ++++++++--
+ fs/btrfs/relocation.c   |   2 +-
+ fs/btrfs/scrub.c        |  39 ++++----
+ fs/btrfs/tree-log.c     | 226 ++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/volumes.c      |  50 ++++++++--
+ 13 files changed, 641 insertions(+), 124 deletions(-)

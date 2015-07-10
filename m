@@ -1,99 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f171.google.com ([209.85.212.171]:37130 "EHLO
-	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751170AbbG2Shm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jul 2015 14:37:42 -0400
-Received: by wibud3 with SMTP id ud3so38260963wib.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jul 2015 11:37:41 -0700 (PDT)
-From: Brendan Heading <brendanheading@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Brendan Heading <brendanheading@gmail.com>
-Subject: [PATCH 1/1] btrfs-progs: compilation errors when using musl libc
-Date: Wed, 29 Jul 2015 19:37:37 +0100
-Message-Id: <1438195057-9400-1-git-send-email-brendanheading@gmail.com>
+Received: from cantor2.suse.de ([195.135.220.15]:50849 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753812AbbGJLGz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 10 Jul 2015 07:06:55 -0400
+Date: Fri, 10 Jul 2015 13:06:54 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Byongho Lee <bhlee.kernel@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: remove unused mutex from struct 'btrfs_fs_info'
+Message-ID: <20150710110654.GB726@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1436501426-29202-1-git-send-email-bhlee.kernel@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1436501426-29202-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-- limits.h must be included to pick up PATH_MAX.
-- remove double declaration of BTRFS_DISABLE_BACKTRACE
+On Fri, Jul 10, 2015 at 01:10:26PM +0900, Byongho Lee wrote:
+> The code using 'ordered_extent_flush_mutex' mutex has removed by below
+> commit.
+>  - 8d875f95da43c6a8f18f77869f2ef26e9594fecc
+>    btrfs: disable strict file flushes for renames and truncates
+> But the mutex still lives in struct 'btrfs_fs_info'.
+> 
+> So, this patch removes the mutex from struct 'btrfs_fs_info' and its
+> initialization code.
+> 
+> Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
 
-kerncompat.h assumed that if __GLIBC__ was not defined,
-it could safely define BTRFS_DISABLE_BACKTRACE, however this can be
-defined by the configure script. Added a check to ensure it is not
-defined first.
-
-Signed-off-by: Brendan Heading <brendanheading@gmail.com>
----
- cmds-inspect.c | 1 +
- cmds-receive.c | 1 +
- cmds-scrub.c   | 1 +
- cmds-send.c    | 1 +
- kerncompat.h   | 2 ++
- 5 files changed, 6 insertions(+)
-
-diff --git a/cmds-inspect.c b/cmds-inspect.c
-index 71451fe..9712581 100644
---- a/cmds-inspect.c
-+++ b/cmds-inspect.c
-@@ -20,6 +20,7 @@
- #include <stdint.h>
- #include <sys/ioctl.h>
- #include <errno.h>
-+#include <limits.h>
- 
- #include "kerncompat.h"
- #include "ioctl.h"
-diff --git a/cmds-receive.c b/cmds-receive.c
-index 071bea9..d4b3103 100644
---- a/cmds-receive.c
-+++ b/cmds-receive.c
-@@ -28,6 +28,7 @@
- #include <wait.h>
- #include <assert.h>
- #include <getopt.h>
-+#include <limits.h>
- 
- #include <sys/stat.h>
- #include <sys/types.h>
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index b7aa809..5a85dc4 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -34,6 +34,7 @@
- #include <ctype.h>
- #include <signal.h>
- #include <stdarg.h>
-+#include <limits.h>
- 
- #include "ctree.h"
- #include "ioctl.h"
-diff --git a/cmds-send.c b/cmds-send.c
-index 20bba18..a0b7f95 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -33,6 +33,7 @@
- #include <assert.h>
- #include <getopt.h>
- #include <uuid/uuid.h>
-+#include <limits.h>
- 
- #include "ctree.h"
- #include "ioctl.h"
-diff --git a/kerncompat.h b/kerncompat.h
-index 5d92856..7c627ba 100644
---- a/kerncompat.h
-+++ b/kerncompat.h
-@@ -33,7 +33,9 @@
- #include <features.h>
- 
- #ifndef __GLIBC__
-+#ifndef BTRFS_DISABLE_BACKTRACE
- #define BTRFS_DISABLE_BACKTRACE
-+#endif
- #define __always_inline __inline __attribute__ ((__always_inline__))
- #endif
- 
--- 
-2.4.3
-
+Reviewed-by: David Sterba <dsterba@suse.com>

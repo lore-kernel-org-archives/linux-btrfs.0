@@ -1,61 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp08.au.ibm.com ([202.81.31.141]:58636 "EHLO
-	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752585AbbG0KC6 (ORCPT
+Received: from mail-pd0-f170.google.com ([209.85.192.170]:32992 "EHLO
+	mail-pd0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751420AbbGJEKf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 06:02:58 -0400
-Received: from /spool/local
-	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 27 Jul 2015 19:59:11 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 153F0357805D
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 19:58:40 +1000 (EST)
-Received: from d23av03.au.ibm.com (d23av03.au.ibm.com [9.190.234.97])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t6R9wV1B53149910
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 19:58:39 +1000
-Received: from d23av03.au.ibm.com (localhost [127.0.0.1])
-	by d23av03.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t6R9vAV3007588
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 19:57:10 +1000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+	Fri, 10 Jul 2015 00:10:35 -0400
+Received: by pdbqm3 with SMTP id qm3so33008634pdb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 09 Jul 2015 21:10:34 -0700 (PDT)
+Received: from arch-nb.localdomain ([211.106.186.1])
+        by smtp.gmail.com with ESMTPSA id sx5sm7745227pab.4.2015.07.09.21.10.32
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Thu, 09 Jul 2015 21:10:33 -0700 (PDT)
+From: Byongho Lee <bhlee.kernel@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, chandan@mykolab.com
-Subject: [PATCH] Btrfs: btrfs_submit_bio_hook: Use btrfs_wq_endio_type values instead of integer constants
-Date: Mon, 27 Jul 2015 15:26:43 +0530
-Message-Id: <1437991003-5901-1-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH] Btrfs: remove unused mutex from struct 'btrfs_fs_info'
+Date: Fri, 10 Jul 2015 13:10:26 +0900
+Message-Id: <1436501426-29202-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_submit_bio_hook() uses integer constants instead of values from "enum
-btrfs_wq_endio_type". Fix this.
+The code using 'ordered_extent_flush_mutex' mutex has removed by below
+commit.
+ - 8d875f95da43c6a8f18f77869f2ef26e9594fecc
+   btrfs: disable strict file flushes for renames and truncates
+But the mutex still lives in struct 'btrfs_fs_info'.
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+So, this patch removes the mutex from struct 'btrfs_fs_info' and its
+initialization code.
+
+Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
 ---
- fs/btrfs/inode.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h   | 6 ------
+ fs/btrfs/disk-io.c | 1 -
+ 2 files changed, 7 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e33dff3..0695a62 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1859,15 +1859,15 @@ static int btrfs_submit_bio_hook(struct inode *inode, int rw, struct bio *bio,
- 			  u64 bio_offset)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	enum btrfs_wq_endio_type metadata = BTRFS_WQ_ENDIO_DATA;
- 	int ret = 0;
- 	int skip_sum;
--	int metadata = 0;
- 	int async = !atomic_read(&BTRFS_I(inode)->sync_writers);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index aac314e14188..cdde6d541b3a 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1518,12 +1518,6 @@ struct btrfs_fs_info {
+ 	 */
+ 	struct mutex ordered_operations_mutex;
  
- 	skip_sum = BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM;
+-	/*
+-	 * Same as ordered_operations_mutex except this is for ordered extents
+-	 * and not the operations.
+-	 */
+-	struct mutex ordered_extent_flush_mutex;
+-
+ 	struct rw_semaphore commit_root_sem;
  
- 	if (btrfs_is_free_space_inode(inode))
--		metadata = 2;
-+		metadata = BTRFS_WQ_ENDIO_FREE_SPACE;
+ 	struct rw_semaphore cleanup_work_sem;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index e5aad7f535aa..6ba584714c51 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2608,7 +2608,6 @@ int open_ctree(struct super_block *sb,
  
- 	if (!(rw & REQ_WRITE)) {
- 		ret = btrfs_bio_wq_end_io(root->fs_info, bio, metadata);
+ 
+ 	mutex_init(&fs_info->ordered_operations_mutex);
+-	mutex_init(&fs_info->ordered_extent_flush_mutex);
+ 	mutex_init(&fs_info->tree_log_mutex);
+ 	mutex_init(&fs_info->chunk_mutex);
+ 	mutex_init(&fs_info->transaction_kthread_mutex);
 -- 
-2.1.0
+2.4.5
 

@@ -1,76 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60040 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932584AbbGJTPs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jul 2015 15:15:48 -0400
-Date: Fri, 10 Jul 2015 15:15:42 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20150710191542.GB10320@ret.masoncoding.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mail.kernel.org ([198.145.29.136]:47530 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751031AbbGMN7l (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jul 2015 09:59:41 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org, clm@fb.com
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] More btrfs bug fixes
+Date: Sun, 12 Jul 2015 02:50:47 +0100
+Message-Id: <1436665847-31883-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+From: Filipe Manana <fdmanana@suse.com>
 
-Please pull my for-linus-4.2 branch:
+Hi Chris,
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.2
+Please consider the following changes for the kernel 4.2 release. All
+these patches have been available in the mailing list for some time.
 
-This is an assortment of fixes.  Most of the commits are from Filipe
-(fsync, the inode allocation cache and a few others).  Mark kicked in a
-series fixing corners in the extent sharing ioctls, and everyone else
-fixed up on assorted other problems.
+One of the patches is a fix for a regression in the delayed references
+code that landed in 4.2-rc1. Two of them are for issues reported by users
+on the list and IRC recently (which I've cc'ed for stable) and the final
+one is just a missing update of an inode's on disk size after truncating
+a file if the no_holes feature is enabled, which I found some time ago.
 
-Filipe Manana (9) commits (+375/-36):
-    Btrfs: fix race between caching kthread and returning inode to inode cache (+11/-4)
-    Btrfs: fix memory corruption on failure to submit bio for direct IO (+52/-18)
-    Btrfs: fix crash on close_ctree() if cleaner starts new transaction (+29/-0)
-    Btrfs: fix fsync after truncate when no_holes feature is enabled (+108/-0)
-    Btrfs: fix race between balance and unused block group deletion (+58/-6)
-    Btrfs: fix a comment in inode.c:evict_inode_truncate_pages() (+3/-2)
-    Btrfs: use kmem_cache_free when freeing entry in inode cache (+1/-1)
-    Btrfs: fix fsync xattr loss in the fast fsync path (+104/-0)
-    Btrfs: fix fsync data loss after append write (+9/-5)
+I have rebased them on top of your current integration-4.2 branch,
+re-tested them and incorporated any tags people have added through the
+mailing list (Reviewed-by, Acked-by).
 
-Mark Fasheh (4) commits (+193/-58):
-    btrfs: fix deadlock with extent-same and readpage (+117/-31)
-    btrfs: don't update mtime/ctime on deduped inodes (+14/-10)
-    btrfs: pass unaligned length to btrfs_cmp_data() (+2/-1)
-    btrfs: allow dedupe of same inode (+60/-16)
+Thanks.
 
-Liu Bo (2) commits (+15/-6):
-    Btrfs: fix hang when failing to submit bio of directIO (+0/-3)
-    Btrfs: fix warning of bytes_may_use (+15/-3)
+The following changes since commit 9689457b5b0a2b69874c421a489d3fb50ca76b7b:
 
-Zhao Lei (2) commits (+21/-20):
-    btrfs: cleanup noused initialization of dev in btrfs_end_bio() (+1/-1)
-    btrfs: add error handling for scrub_workers_get() (+20/-19)
+  Btrfs: fix wrong check for btrfs_force_chunk_alloc() (2015-07-01 17:17:22 -0700)
 
-Yang Dongsheng (1) commits (+41/-8):
-    btrfs: qgroup: allow user to clear the limitation on qgroup
+are available in the git repository at:
 
-Shilong Wang (1) commits (+1/-1):
-    Btrfs: fix wrong check for btrfs_force_chunk_alloc()
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git integration-4.2
 
-Total: (19) commits (+646/-129)
+for you to fetch changes up to cffc3374e567ef42954f3c7070b3fa83f20f9684:
 
- fs/btrfs/btrfs_inode.h  |   2 +
- fs/btrfs/ctree.h        |   1 +
- fs/btrfs/disk-io.c      |  41 +++++++-
- fs/btrfs/extent-tree.c  |   3 +
- fs/btrfs/inode-map.c    |  17 +++-
- fs/btrfs/inode.c        |  89 ++++++++++++------
- fs/btrfs/ioctl.c        | 241 +++++++++++++++++++++++++++++++++++++-----------
- fs/btrfs/ordered-data.c |   5 +
- fs/btrfs/qgroup.c       |  49 ++++++++--
- fs/btrfs/relocation.c   |   2 +-
- fs/btrfs/scrub.c        |  39 ++++----
- fs/btrfs/tree-log.c     | 226 ++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.c      |  50 ++++++++--
- 13 files changed, 641 insertions(+), 124 deletions(-)
+  Btrfs: fix order by which delayed references are run (2015-07-11 22:36:44 +0100)
+
+----------------------------------------------------------------
+Filipe Manana (4):
+      Btrfs: fix shrinking truncate when the no_holes feature is enabled
+      Btrfs: fix memory leak in the extent_same ioctl
+      Btrfs: fix list transaction->pending_ordered corruption
+      Btrfs: fix order by which delayed references are run
+
+ fs/btrfs/extent-tree.c | 13 +++++++++++++
+ fs/btrfs/inode.c       |  5 ++---
+ fs/btrfs/ioctl.c       |  4 +++-
+ fs/btrfs/transaction.c |  4 ++--
+ 4 files changed, 20 insertions(+), 6 deletions(-)
+
+-- 
+2.1.3
+

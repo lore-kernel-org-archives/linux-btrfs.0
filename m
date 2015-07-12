@@ -1,58 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:48422 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751011AbbGLIyk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jul 2015 04:54:40 -0400
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: "erpo41@gmail.com" <erpo41@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Defrag operations sometimes don't work.
-Date: Sun, 12 Jul 2015 10:54:37 +0200
-Message-ID: <11405054.0T05W1bXEO@merkaba>
-In-Reply-To: <CAPQXdDTT5E3f3VqAuQYKp3FwHjU45CfGW35du3HxRCHdyuz5gA@mail.gmail.com>
-References: <CAPQXdDRKpp43M+by8wMGiMZa9VPD5XKs8CGpNLT=J41Q96E1Ug@mail.gmail.com> <3753681.2HYhjf7Zfa@merkaba> <CAPQXdDTT5E3f3VqAuQYKp3FwHjU45CfGW35du3HxRCHdyuz5gA@mail.gmail.com>
+Received: from mout.gmx.net ([212.227.15.18]:61958 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751280AbbGLM0N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 12 Jul 2015 08:26:13 -0400
+Received: from thetick ([93.181.44.4]) by mail.gmx.com (mrgmx001) with ESMTPSA
+ (Nemesis) id 0MgbTj-1ZazzA0amd-00NwXy for <linux-btrfs@vger.kernel.org>; Sun,
+ 12 Jul 2015 14:26:11 +0200
+Date: Sun, 12 Jul 2015 14:26:04 +0200
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Wiki suggestions
+Message-ID: <20150712142604.2a8200f0@thetick>
+Reply-To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/jJyD65fjLnjonkE1ULA+6EN"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 11. Juli 2015, 10:40:29 schrieb erpo41@gmail.com:
-> On Sat, Jul 11, 2015 at 4:12 AM, Martin Steigerwald <martin@lichtvoll.de> 
-wrote:
-> > Always do "sync" after a "btrfs fi defrag" and before measuring with
-> > "filefrag". The kernel may not have written everything. I have seen this
-> > repeatedly that the extent count drops further after a "sync", following
-> > "btrfs fi defrag".
-> 
-> First of all, thank you for your help. This fixed the problem for
-> defragging individual files.
+--Sig_/jJyD65fjLnjonkE1ULA+6EN
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Note however: Even without "sync" BTRFS will defragment the file. It may 
-just take a while till the new extents are written. So there is no need to 
-call "sync" after btrfs fi defrag.
+Hi,
 
-Why are you trying to defragment anyway? What are you trying to achieve / 
-solve?
+I hope it's not out of place, but I have a few suggestions for the Wiki:
 
-> I'm now seeing that recursive defragging doesn't work the way I expect.
-> Running
-> 
-> $ btrfs fi defrag -r /path/to
-> 
-> returns almost immediately and does not reduce the number of fragments
-> in /path/to/file. However, running
-> 
-> $ btrfs fi defrag /path/to/file
-> 
-> does reduce the number of fragments.
+- The presentation "NYLUG Presents: Chris Mason on Btrfs (May 14th 2015)" at
+  https://www.youtube.com/watch?v=3DW3QRWUfBua8 would make a nice addition =
+to the
+  "Articles, presentations, podcasts" section.
 
-Well, I have no idea about this one. I have the same behavior with
+- The same goes for "Why you should consider using btrfs ... like Google do=
+es."
+  at https://www.youtube.com/watch?v=3D6DplcPrQjvA.
 
-> >> btrfs --version: Btrfs v3.17
+- coreutils 8.24 was released early this month:
+  https://lists.gnu.org/archive/html/coreutils-announce/2015-07/msg00000.ht=
+ml.
 
-v4.0
+- While I'm at it: "hilights" should be "highlights" in the btrfs-progs 4.1=
+.1
+  news entry.
 
-Ciao,
--- 
-Martin
+- The Linux v4.1 news entry is still TBD ;-) .
+
+Greetings
+--=20
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--Sig_/jJyD65fjLnjonkE1ULA+6EN
+Content-Type: application/pgp-signature
+Content-Description: Digitale Signatur von OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJVolzhAAoJEL/Q5oYsiHj0ZnMQAIHDrgdon2+Tquj0AKxg2KMF
+HNCYgVxDWZ9D/P7MqAPo4kdrSwjkgcYAjteMerPllRap6xpNbkAwp3Uw5AREjapS
+iR4IQOBz0jWKn0vsXWYgIKetYpytlC9zlppuv6iuYewVqt9zZPs/RtIZobRfsyUh
+DyRYz6V4LMIn2Q4SWzOS+3NHxBWAB9eMI/Y3Kpu6s+xiQEtq6e1B6bX9DCiPGqKI
+Kx/DCipQIa+qhaB3UYrxs6NhzW30TtgHYAlPegoyFlXK5SbsygRwTDwfFNa7OnTg
+hMUDcRKxx3ep6FFOwIjCG+QfHzBaSaJhwP+6cA4bzdMpYN03irm0klTLpVriXQ6W
+KjuiVYX7iCmbS++66cy1Sx5ektvA5BJgwWa1767Zr3Zmp+wclfeInRj3Xk1q4Kr+
+9dofXqf9nq7Uoc2y5QsR8yZRklw0GNH/uTM21j7pxuTgRWuAVfH7ZVKTFRGrlRux
+8iLKP8evlgpDknTVORpNZOVLGglbVlznrc5tLXbhWT15zLG0fIVOMOn4ro8rhnUE
+Rq4IkImT5XZI//FSVv1qxjW5PS5hHI7Hnj7GdeDAsJy1IeC6cwIj6avgh1M614fS
+ptQecNzsKWjU1mOkOlFpy801lgFMaqShw6RiK9UfrUGNnocYI2fl3tKXWusYoERd
+Z33OcKuQ5IcSX1IJ7JWt
+=L53U
+-----END PGP SIGNATURE-----
+
+--Sig_/jJyD65fjLnjonkE1ULA+6EN--

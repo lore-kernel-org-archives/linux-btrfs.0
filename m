@@ -1,68 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:47620 "EHLO
+Received: from magic.merlins.org ([209.81.13.136]:47762 "EHLO
 	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752178AbbGLDaV (ORCPT
+	with ESMTP id S1752308AbbGLDzv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 11 Jul 2015 23:30:21 -0400
-Date: Sat, 11 Jul 2015 18:02:29 -0700
+	Sat, 11 Jul 2015 23:55:51 -0400
+Date: Sat, 11 Jul 2015 20:55:23 -0700
 From: Marc MERLIN <marc@merlins.org>
-To: dsterba@suse.com, linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: Btrfs progs release 4.1.1
-Message-ID: <20150712010229.GA5284@merlins.org>
+To: Axel Burri <axel@tty0.ch>
+Cc: Martin Steigerwald <martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
+Subject: Re: Anyone tried out btrbk yet?
+Message-ID: <20150712035523.GI5274@merlins.org>
+References: <11148188.L9vtSMaNHV@merkaba>
+ <559FA280.8090309@tty0.ch>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150706212156.GY17274@merlins.org>
- <20150710134348.GB15535@suse.cz>
+In-Reply-To: <559FA280.8090309@tty0.ch>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 10, 2015 at 03:43:48PM +0200, David Sterba wrote:
-> Hi,
+On Fri, Jul 10, 2015 at 12:46:24PM +0200, Axel Burri wrote:
+> On 2015-07-09 14:26, Martin Steigerwald wrote:
 > 
-> btrfs-progs 4.1.1 have been released, a few bugfixes and enhancements.
+> > Well I may try it for one of my BTRFS volumes in addition to the rsync 
+> > backup for now. I would like to give all options on command line, but well, 
+> > maybe it can completely replace my current script if I put everything in its 
+> > configuration.
 > 
-> * bugfixes
->   - defrag: threshold overflow fix
->   - fsck:
->     - check if items fit into the leaf space
->     - fix wrong nbytes
+> One reason why btrbk exists is that I wanted to have all my backups
+> configured in a config file. I use btrbk to backup several hosts to
+> several backup locations (around 20 subvolumes), which made setting
+> everything up with command-line options very cumbersome.
+> 
+> For simpler setups you might be better off with command-line based tools
+> (e.g. Marcs "btrfs-subvolume-backup", which I like for it's smallness).
 
-Are you interested in crash reports for fsck?
+I just had another look at btrbk, and it's obviously a lot more
+featureful. It's almost 10 times bigger in lines of code than
+btrfs-subvolume-backup :)
 
-If so, see my recent message:
+Anyway, to others, if you're happy using a tool that just does that you
+need without having to dig into it and without you caring how btrfs
+send/receive, works, btrbk looks like the better choice.
 
-On Mon, Jul 06, 2015 at 02:21:56PM -0700, Marc MERLIN wrote:
-> 
-> myth:~# btrfs check --repair /dev/mapper/crypt_sdd1 
-> enabling repair mode
-> Checking filesystem on /dev/mapper/crypt_sdd1
-> UUID: 024ba4d0-dacb-438d-9f1b-eeb34083fe49
-> checking extents
-> cmds-check.c:4486: add_data_backref: Assertion `back->bytes != max_size` failed.
-> btrfs[0x8066a73]
-> btrfs[0x8066aa4]
-> btrfs[0x8067991]
-> btrfs[0x806b4ab]
-> btrfs[0x806b9a3]
-> btrfs[0x806c5b2]
-> btrfs(cmd_check+0x1088)[0x806eddf]
-> btrfs(main+0x153)[0x80557c6]
-> /lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb75064d3]
-> btrfs[0x80557ec]
-> 
-> myth:~# btrfs --version
-> btrfs-progs v4.0
-> 
-> Is anyone interested in getting data off this filesystem or having me
-> try newer code/a patch?
-> 
-> filesystem is 10TB-ish, so sending an image isn't going to be easy though.
-> 
-> I can mount with -o ro without it crashing, but if I drop ro, it then
-> tries to do something and crashes, and unfortunately the error doesn't
-> make it to syslog
-> 
-> Screenshot: http://marc.merlins.org/tmp/btrfs_crash.jpg
+If you'd like something short-ish to look at and see how it works and/or
+want something simple in shell you can modify quickly, btrfs-subvolume-backup
+might be better for you.
+
+Hope that helps others.
+
+Marc
 -- 
 "A mouse is a device used to point at the xterm you want to type in" - A.S.R.
 Microsoft is to operating systems ....

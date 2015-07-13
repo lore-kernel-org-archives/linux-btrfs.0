@@ -1,92 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f50.google.com ([209.85.218.50]:32889 "EHLO
-	mail-oi0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752035AbbGMN0P (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jul 2015 09:26:15 -0400
-Received: by oiyy130 with SMTP id y130so253565066oiy.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2015 06:26:15 -0700 (PDT)
-MIME-Version: 1.0
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Mon, 13 Jul 2015 08:25:55 -0500
-Message-ID: <CAC=t97C-L0OecX8DVWSZ7dZwPo5hRAbtRg3D5dvc3cVAbfa91g@mail.gmail.com>
-Subject: kernel crash - btrfs check shows "extent buffer leak"; Suggestions?
+Received: from [77.244.242.186] ([77.244.242.186]:53336 "EHLO bastet.luchs.at"
+	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751267AbbGMOP0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jul 2015 10:15:26 -0400
+Date: Mon, 13 Jul 2015 16:14:07 +0200
+From: =?iso-8859-15?Q?Ren=E9?= Pfeiffer <lynx@luchs.at>
 To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Cc: Chris Murphy <lists@colorremedies.com>
+Subject: Re: Btrfs read-only after btrfs-convert from Ext4 & workaround
+Message-ID: <20150713141406.ZC4247@many.eyes.bnd.bund.de>
+References: <20150713012350.ZA6925@many.eyes.bnd.bund.de>
+ <CAJCQCtRtndhZXaQgZ9gLi+iRjWT9Aakgm43KAiTuO-wvsqrgHw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha512;
+	protocol="application/pgp-signature"; boundary="OROCMA9jn6tkzFBc"
+In-Reply-To: <CAJCQCtRtndhZXaQgZ9gLi+iRjWT9Aakgm43KAiTuO-wvsqrgHw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Last time something happened and I poked at it myself I ended up
-ruining the pool so I thought I'd ask here before doing anything.
 
-I'm not sure if this really indicates that anything needs doing or
-not.  The filesystem will mount like normal.
+--OROCMA9jn6tkzFBc
+Content-Type: multipart/mixed; boundary="PuGuTyElPB9bOcsM"
+Content-Disposition: inline
 
-It doesn't look like the core dump was written anywhere but I've never
-actually looked for it before.  I'm still Googling where it might be.
 
-[root@san01 ~]# btrfs check /dev/sdi
-Checking filesystem on /dev/sdi
-UUID: 6848df32-bd2a-49b8-b3b9-40038f98ef8a
+--PuGuTyElPB9bOcsM
+Content-Type: text/plain; charset=iso-8859-15
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
+
+On Jul 12, 2015 at 2026 -0600, Chris Murphy appeared and said:
+> On Sun, Jul 12, 2015 at 7:23 PM, Ren=E9 Pfeiffer <lynx@luchs.at> wrote:
+> >...
+> > Output of uname, btrfs, and the dmesg log is attached. Let me know if y=
+ou
+> > need anything else. The old Btrfs is still on another disk, and I can
+> > extract information from it.
+>=20
+> If you can run 'btrfs check' on it (without repair) using btrfs-progs
+> 4.0, and 3.19.1, and report the results of each, that would be really
+> useful.
+
+Here we go.
+
+Best,
+Ren=E9.
+
+--=20
+  )\._.,--....,'``.  fL  Let GNU/Linux work for you while you take a nap.
+ /,   _.. \   _\  (`._ ,. R. Pfeiffer <lynx at luchs.at> + http://web.luchs=
+=2Eat/
+`._.-(,_..'--(,_..'`-.;.'  - System administration + Consulting + Teaching -
+Got mail delivery problems?  http://web.luchs.at/information/blockedmail.php
+
+--PuGuTyElPB9bOcsM
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="btrfs_check_3.19.1.txt"
+
+Checking filesystem on /dev/mapper/oldcrypt
+UUID: 703fc8b4-b2b9-470b-af2f-9aae9536c2fb
 checking extents
 checking free space cache
+There is no free space entry for 163242479616-163242483712
+There is no free space entry for 163242479616-167537278976
+cache appears valid but isnt 162168569856
+found 358532382931 bytes used err is -22
+total csum bytes: 346644792
+total tree bytes: 3568107520
+total fs tree bytes: 3061465088
+total extent tree bytes: 50102272
+btree space waste bytes: 987626752
+file data blocks allocated: 355459522560
+ referenced 354990657536
+btrfs-progs v3.19.1
+
+--PuGuTyElPB9bOcsM
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: attachment; filename="btrfs_check_4.0.txt"
+
+Checking filesystem on /dev/mapper/oldcrypt
+UUID: 703fc8b4-b2b9-470b-af2f-9aae9536c2fb
+checking extents
+checking free space cache
+block group 162168569856 has wrong amount of free spacefailed to load free space cache for block group 162168569856
 checking fs roots
-checking csums
-checking root refs
-checking quota groups
-Counts for qgroup id: 352 are different
-our:            referenced 699122253824 referenced compressed 699122253824
-disk:           referenced 699151855616 referenced compressed 699151855616
-diff:           referenced -29601792 referenced compressed -29601792
-our:            exclusive 1279471616 exclusive compressed 1279471616
-disk:           exclusive 1279471616 exclusive compressed 1279471616
-Counts for qgroup id: 844 are different
-our:            referenced 699130273792 referenced compressed 699130273792
-disk:           referenced 699159875584 referenced compressed 699159875584
-diff:           referenced -29601792 referenced compressed -29601792
-our:            exclusive 81920 exclusive compressed 81920
-disk:           exclusive 81920 exclusive compressed 81920
-found 875663138891 bytes used err is 0
-total csum bytes: 790806028
-total tree bytes: 1950498816
-total fs tree bytes: 436994048
-total extent tree bytes: 526237696
-btree space waste bytes: 439941098
-file data blocks allocated: 981391929344
- referenced 1086835916800
-btrfs-progs v4.1
-extent buffer leak: start 3338550263808 len 16384
-extent buffer leak: start 3338550165504 len 16384
-extent buffer leak: start 3100998254592 len 16384
-extent buffer leak: start 3100998270976 len 16384
-extent buffer leak: start 3100998287360 len 16384
-extent buffer leak: start 3100998303744 len 16384
-extent buffer leak: start 3100998320128 len 16384
-extent buffer leak: start 3100998336512 len 16384
-extent buffer leak: start 3100998352896 len 16384
-extent buffer leak: start 3100998369280 len 16384
-extent buffer leak: start 3338550149120 len 16384
-extent buffer leak: start 3338550132736 len 16384
-extent buffer leak: start 2756246339584 len 16384
-extent buffer leak: start 2756284366848 len 16384
-extent buffer leak: start 3339485298688 len 16384
-extent buffer leak: start 3339485347840 len 16384
-extent buffer leak: start 3339485429760 len 16384
-extent buffer leak: start 3339485446144 len 16384
-extent buffer leak: start 3339485462528 len 16384
-extent buffer leak: start 3339485528064 len 16384
-extent buffer leak: start 3339485544448 len 16384
-extent buffer leak: start 3339485560832 len 16384
-extent buffer leak: start 3339488018432 len 16384
-extent buffer leak: start 3339489361920 len 16384
-extent buffer leak: start 3339504140288 len 16384
-extent buffer leak: start 3339504156672 len 16384
-extent buffer leak: start 3339504435200 len 16384
-extent buffer leak: start 3339504467968 len 16384
-extent buffer leak: start 3339504484352 len 16384
-extent buffer leak: start 3339505778688 len 16384
-extent buffer leak: start 3339505811456 len 16384
-extent buffer leak: start 3339507105792 len 16384
-extent buffer leak: start 3339507187712 len 16384
-extent buffer leak: start 3339507204096 len 16384
-extent buffer leak: start 3339518394368 len 16384
+root 5 inode 39321856 errors 200, dir isize wrong
+root 5 inode 40898635 errors 200, dir isize wrong
+found 358532382931 bytes used err is 1
+total csum bytes: 346644792
+total tree bytes: 3568107520
+total fs tree bytes: 3061465088
+total extent tree bytes: 50102272
+btree space waste bytes: 987626752
+file data blocks allocated: 355459522560
+ referenced 354990657536
+btrfs-progs v4.0
+
+--PuGuTyElPB9bOcsM--
+
+--OROCMA9jn6tkzFBc
+Content-Type: application/pgp-signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iF4EAREKAAYFAlWjx64ACgkQSPQ8C8rI6DuLAAD/cauzVbBTVst1capITN+dAmkD
+vL4IUk3XUGNpDvb2POUA/0zTo5OB1ldTTcEQbOFaRMReTHKYdzJuHHD9Uk3hXFtQ
+=Qi5T
+-----END PGP SIGNATURE-----
+
+--OROCMA9jn6tkzFBc--

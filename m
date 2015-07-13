@@ -1,50 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57604 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751551AbbGMG41 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 13 Jul 2015 02:56:27 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZEXf6-0007q7-6o
-	for linux-btrfs@vger.kernel.org; Mon, 13 Jul 2015 08:56:24 +0200
-Received: from ip68-231-22-224.ph.ph.cox.net ([68.231.22.224])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2015 08:56:24 +0200
-Received: from 1i5t5.duncan by ip68-231-22-224.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2015 08:56:24 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Wiki suggestions
-Date: Mon, 13 Jul 2015 06:56:17 +0000 (UTC)
-Message-ID: <pan$1b794$8f9a440d$aaeab356$618ebf0c@cox.net>
-References: <20150712142604.2a8200f0@thetick>
-Mime-Version: 1.0
+Received: from mail-wi0-f170.google.com ([209.85.212.170]:38830 "EHLO
+	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751272AbbGMH7z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jul 2015 03:59:55 -0400
+Received: by wicmv11 with SMTP id mv11so54408160wic.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 13 Jul 2015 00:59:53 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <freemail.20150710060521.7704.1@fmxmldata04.freemail.hu>
+References: <freemail.20150710060521.7704.1@fmxmldata04.freemail.hu>
+From: Patrik Lundquist <patrik.lundquist@gmail.com>
+Date: Mon, 13 Jul 2015 09:59:34 +0200
+Message-ID: <CAA7pwKPC=QjG6kTXsMqn+iTmLn20y7c4xWea+n948Yttbu9H0Q@mail.gmail.com>
+Subject: Re: Can't remove missing device
+To: None None <whocares0101@freemail.hu>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc Joliet posted on Sun, 12 Jul 2015 14:26:04 +0200 as excerpted:
+On 10 July 2015 at 06:05, None None <whocares0101@freemail.hu> wrote:
+> According to dmesg sda returns bad data but the smart values for it seem fine.
 
-> I hope it's not out of place, but I have a few suggestions for the Wiki:
+> # smartctl -a /dev/sda
+...
+> SMART Self-test log structure revision number 1
+> No self-tests have been logged.  [To run self-tests, use: smartctl -t]
 
-Just in case it wasn't obvious...  The wiki is open to user editing.  You 
-can, if you like, get an account and make the changes yourself. =:^)
-
-Of course, it's understandable if your reaction to web and wiki 
-technologies is similar to mine, newsgroups and mailing lists (in my case 
-via gmane.org's list2news service, so they too are presented as 
-newsgroups) are your primary domain, and you tend to treat the web as 
-read-only so rarely reply on a web forum, let alone edit a wiki.  I've 
-never gotten a wiki account here for that reason, either, or I'd have 
-probably gone ahead and made the suggested changes...
-
-But with a bit of luck someone with an existing (or even new) account 
-will be along to make the changes...
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Run smartctl -t long /dev/sda

@@ -1,97 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f171.google.com ([209.85.217.171]:35805 "EHLO
-	mail-lb0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751455AbbGLUfc (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:55575 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751287AbbGMAns (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jul 2015 16:35:32 -0400
-Received: by lblf12 with SMTP id f12so45050708lbl.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 12 Jul 2015 13:35:30 -0700 (PDT)
+	Sun, 12 Jul 2015 20:43:48 -0400
+Date: Sun, 12 Jul 2015 17:42:49 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Axel Burri <axel@tty0.ch>
+Cc: Martin Steigerwald <martin@lichtvoll.de>, linux-btrfs@vger.kernel.org
+Subject: Re: Anyone tried out btrbk yet?
+Message-ID: <20150713004249.GP5274@merlins.org>
+References: <11148188.L9vtSMaNHV@merkaba>
+ <559FA280.8090309@tty0.ch>
+ <20150712035523.GI5274@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <11405054.0T05W1bXEO@merkaba>
-References: <CAPQXdDRKpp43M+by8wMGiMZa9VPD5XKs8CGpNLT=J41Q96E1Ug@mail.gmail.com>
-	<3753681.2HYhjf7Zfa@merkaba>
-	<CAPQXdDTT5E3f3VqAuQYKp3FwHjU45CfGW35du3HxRCHdyuz5gA@mail.gmail.com>
-	<11405054.0T05W1bXEO@merkaba>
-Date: Sun, 12 Jul 2015 14:35:30 -0600
-Message-ID: <CAPQXdDT=T29uGvbWo6CXTuj-chDBAcr2ii5GCdhfrz35R-mEsQ@mail.gmail.com>
-Subject: Re: Defrag operations sometimes don't work.
-From: "erpo41@gmail.com" <erpo41@gmail.com>
-To: Martin Steigerwald <martin@lichtvoll.de>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150712035523.GI5274@merlins.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Jul 12, 2015 at 2:54 AM, Martin Steigerwald <martin@lichtvoll.de> wrote:
-> Note however: Even without "sync" BTRFS will defragment the file. It may
-> just take a while till the new extents are written. So there is no need to
-> call "sync" after btrfs fi defrag.
+On Sat, Jul 11, 2015 at 08:55:23PM -0700, Marc MERLIN wrote:
+> On Fri, Jul 10, 2015 at 12:46:24PM +0200, Axel Burri wrote:
+> > On 2015-07-09 14:26, Martin Steigerwald wrote:
+> > 
+> > > Well I may try it for one of my BTRFS volumes in addition to the rsync 
+> > > backup for now. I would like to give all options on command line, but well, 
+> > > maybe it can completely replace my current script if I put everything in its 
+> > > configuration.
+> > 
+> > One reason why btrbk exists is that I wanted to have all my backups
+> > configured in a config file. I use btrbk to backup several hosts to
+> > several backup locations (around 20 subvolumes), which made setting
+> > everything up with command-line options very cumbersome.
+> > 
+> > For simpler setups you might be better off with command-line based tools
+> > (e.g. Marcs "btrfs-subvolume-backup", which I like for it's smallness).
+> 
+> I just had another look at btrbk, and it's obviously a lot more
+> featureful. It's almost 10 times bigger in lines of code than
+> btrfs-subvolume-backup :)
+> 
+> Anyway, to others, if you're happy using a tool that just does that you
+> need without having to dig into it and without you caring how btrfs
+> send/receive, works, btrbk looks like the better choice.
+> 
+> If you'd like something short-ish to look at and see how it works and/or
+> want something simple in shell you can modify quickly, btrfs-subvolume-backup
+> might be better for you.
 
-My purpose in calling sync in that transcript was to ensure each
-invocation of filefrag returned the correct results.
+Actually there is one thing my backup script doesn't do and it looks
+like btrbk doesn't do either.
+When I travel I'm often on crappy hotel wireless and my incremental
+backups never succeed, and they just get bigger every day, so succeed
+even less next time.
+At the same time, I have an issue with btrfs where my backup server
+cause a backup over ssh on a local network to take 12H or more when the
+data to transfer isn't that much.
+>From what I can tell it's a problem where btrfs receive just pauses for
+one second or more, and kills the TCP flow.
+TCP restarts slowly and ramps up just to be stopped again. As a result,
+it takes forever to finish.
 
-> Why are you trying to defragment anyway? What are you trying to achieve /
-> solve?
+Since I don't know if this btrfs stall problem will get looked into or
+fixed anytime soon, it would be great for the incremental backup to go
+to a local spool directory, and then for the backup script to just copy
+it with rsync until it makes it to the other side. Only then is btrfs
+receive run with that file, and then the next incremental backup is
+tried.
 
-There are several reasons. Some are technical and some are emotional.
+But this is a fair amount of logic to get this right, and I just haven't
+taken the time to write it.
 
-Technical reason 1: I sometimes play computer games that are delivered
-through Steam. If you're not familiar with it, Steam is a sort of
-online storefront application for Linux and other platforms that--I
-believe--delivers game patches by overwriting selected ranges in each
-game's files. Lots of small overwrites are the main culprit behind
-small files with thousand or tens of thousands of fragments on btrfs.
-All I know for sure is that some game files have become heavily
-fragmented and load times seem excessive, especially given that
-they're older games compared to my hardware.
+Would it be helpful to others, or am I the only one with this problem?
 
-Technical reason 2: Whenever a new Ubuntu release comes out, I make
-sure to download and burn the ISO before I upgrade my OS. Usually I
-download the ISO using bittorrent, which uses lots of random writes
-creating heavily fragmented downloads that severely impact read speeds
-from my non-SSD hard disk. This increases my load quite a bit when I
-seed the download back to other people. I've solved this problem in
-the past by pausing the bittorrent client, copying the file to another
-location, deleting the original, moving the copy back into place with
-the same name, and resuming the client, but that's a pain. I'd rather
-defragment instead.
-
-Emotional reason 1: Heavily fragmented files on rotating media just
-feel slovenly to me, like a person wearing dirty clothes or a bathroom
-that hasn't been cleaned in a while.
-
-Emotional reason 2: I switched from Windows to Linux in the late 90s.
-At that time, RAM was expensive, so I often found myself in situations
-where my kernel was dropping pages from the filesystem cache to make
-room for application memory. Rereading those files later was very slow
-if they were fragmented, so I religiously defragmented my Windows 95
-and 98 machines every week. When I switched to Linux, I was dismayed
-to learn that ext2 had no defragmentation tool, and I was very
-skeptical of claims that "Linux doesn't need defragmentation",
-especially considering that most of the people making those claims
-probably had no idea how fragmented their own filesystems were. In the
-years that followed, I was continually disappointed as stable
-defragmentation tools did not appear for ext2 or any other popular
-Linux filesystems, so I'm relieved and excited not to be in that
-predicament anymore.
-
->> I'm now seeing that recursive defragging doesn't work the way I expect.
->> Running
->>
->> $ btrfs fi defrag -r /path/to
->>
->> returns almost immediately and does not reduce the number of fragments
->> in /path/to/file. However, running
->>
->> $ btrfs fi defrag /path/to/file
->>
->> does reduce the number of fragments.
->
-> Well, I have no idea about this one. I have the same behavior with
->
->> >> btrfs --version: Btrfs v3.17
->
-> v4.0
-
-Thanks for checking,
-Eric
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

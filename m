@@ -1,41 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:58254 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:54052 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932377AbbGJNDv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 10 Jul 2015 09:03:51 -0400
-Date: Fri, 10 Jul 2015 14:46:03 +0200
-From: David Sterba <dsterba@suse.cz>
+	id S1751886AbbGNLpN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jul 2015 07:45:13 -0400
+Date: Tue, 14 Jul 2015 13:45:11 +0200
+From: David Sterba <dsterba@suse.com>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH 0/7] mkfs: Remove temporary chunks
-Message-ID: <20150710124603.GF726@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Revert "btrfs-progs: mkfs: create only desired block
+ groups for single device"
+Message-ID: <20150714114511.GG15535@twin.jikos.cz>
+Reply-To: dsterba@suse.com
+References: <1436839981-20432-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1436839981-20432-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 07, 2015 at 04:15:21PM +0800, Qu Wenruo wrote:
-[...]
-> So I took current fix even it's not perfect, but most practice one.
+On Tue, Jul 14, 2015 at 10:13:01AM +0800, Qu Wenruo wrote:
+> This reverts commit 5f8232e5c8f0b0de0ef426274911385b0e877392.
 
-Thanks for working on the mkfs bug. Agreed on the approach.
+Thanks.  The revert is justified for the severity of the problem, I'll
+release 4.1.2 asap.
 
-> Qu Wenruo (7):
->   btrfs-progs: disk-io: Support commit transaction on chunk tree.
->   btrfs-progs: extent-tree: Introduce free_block_group_item function.
->   btrfs-progs: extent-tree: Introduce functions to free dev extents in a
->     chunk
->   btrfs-progs: extent-tree: Introduce functions to free chunk items
->   btrfs-progs: extent-tree: Introduce functions to free in-memory block 
->        group cache
->   btrfs-progs: extent-tree: Introduce btrfs_free_block_group function.
+> This commit causes a regression:
+> ---
 
-All of the above merged as they're only preparatory.
-
->   btrfs-progs: mkfs: Cleanup temporary chunk to avoid strange balance
->     behavior.
-
-Looks good.
+BTW, do not use --- in the changelog as 'git am' will ignore the text
+between that and the diff.

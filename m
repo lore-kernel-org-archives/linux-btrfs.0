@@ -1,233 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55022 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:24284 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756573AbbGGIPv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 7 Jul 2015 04:15:51 -0400
+	with ESMTP id S1751818AbbGNCNG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 13 Jul 2015 22:13:06 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6E2BIAe009972
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2015 10:11:18 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: <dsterba@suse.cz>
-Subject: [PATCH 7/7] btrfs-progs: mkfs: Cleanup temporary chunk to avoid strange balance behavior.
-Date: Tue, 7 Jul 2015 16:15:28 +0800
-Message-ID: <1436256928-23812-8-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1436256928-23812-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] Revert "btrfs-progs: mkfs: create only desired block groups for single device"
+Date: Tue, 14 Jul 2015 10:13:01 +0800
+Message-ID: <1436839981-20432-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[BUG]
- # mkfs.btrfs /dev/sdb /dev/sdd -m raid0 -d raid0
- # mount /dev/sdb /mnt/btrfs
- # btrfs balance start /mnt/btrfs
- # btrfs fi df /mnt/btrfs
- Data, single: total=1.00GiB, used=320.00KiB
- System, single: total=32.00MiB, used=16.00KiB
- Metadata, RAID0: total=256.00MiB, used=112.00KiB
- GlobalReserve, single: total=16.00MiB, used=0.00B
+This reverts commit 5f8232e5c8f0b0de0ef426274911385b0e877392.
 
-Only metadata stay RAID0. Data and system goes from RAID0 to single.
+This commit causes a regression:
+---
+$ mkfs.btrfs -f /dev/sda6
+$ btrfsck /dev/sda6
+Checking filesystem on /dev/sda6
+UUID: 2ebb483c-1986-4610-802a-c6f3e6ab4b76
+checking extents
+Chunk[256, 228, 0]: length(4194304), offset(0), type(2) mismatch with
+block group[0, 192, 4194304]: offset(4194304), objectid(0), flags(34)
+Chunk[256, 228, 4194304]: length(8388608), offset(4194304), type(4)
+mismatch with block group[4194304, 192, 8388608]: offset(8388608),
+objectid(4194304), flags(36)
+Block group[0, 4194304] (flags = 34) didn't find the relative chunk.
+Block group[4194304, 8388608] (flags = 36) didn't find the relative
+chunk.
+......
+---
 
-[REASON]
-The problem is caused by the temporary single chunk.
-In mkfs, it will always create single data/metadata/sys chunk and them
-add device into the temporary btrfs.
+The commit has the following bug causing the problem.
+1) Typo forgets to add meta/data_profile for alloc_chunk.
+Only meta/data_profile is added to allocate a block group, but not
+chunk.
 
-When doing all chunk balance, for data and syschunk, they are almost
-empty, so balance will move them into the single chunk and remove the
-old RAID0 chunk.
-For metadata, it has more data and will kick the metadata chunk pre
-alloc, so new RAID0 chunk is allocated and the old metadata is move
-there. Old RAID0 and single chunks are removed.
+2) Type for the first system chunk is impossible to modify yet.
+The type for the first chunk and its stripe is hard coded into
+make_btrfs() function.
+So even we try to modify the type of the block group, we are unable to
+change the type of the first chunk.
+Causing the chunk type mismatch problem.
 
-[FIX]
-Now we add a new function to cleanup the temporary chunks at the end of
-mkfs routine.
-It will cleanup the chunks which is empty and its profile differs from
-the mkfs profile.
-So in balance, btrfs will always alloc a new chunk to keep the profile,
-other than moving data into the single chunk.
+The 1st bug can be fixed quite easily but the second is not.
+The good news is, the last patch "btrfs-progs: mkfs: Cleanup temporary
+chunk to avoid strange balance behavior." from my patchset can handle it
+quite well alone.
+
+So just revert the patch.
+New bug fix for btrfsck(err is 0 even chunk/extent tree is corrupted) and
+new test cases for mkfs will follow soon.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- mkfs.c | 150 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 150 insertions(+)
+ mkfs.c | 34 +++++++---------------------------
+ 1 file changed, 7 insertions(+), 27 deletions(-)
 
 diff --git a/mkfs.c b/mkfs.c
-index b60fc5a..ee8a3cb 100644
+index ee8a3cb..afecf00 100644
 --- a/mkfs.c
 +++ b/mkfs.c
-@@ -1182,6 +1182,149 @@ static void list_all_devices(struct btrfs_root *root)
- 	printf("\n");
+@@ -59,9 +59,8 @@ struct mkfs_allocation {
+ 	u64 system;
+ };
+ 
+-static int create_metadata_block_groups(struct btrfs_root *root,
+-		u64 metadata_profile, int mixed,
+-		struct mkfs_allocation *allocation)
++static int create_metadata_block_groups(struct btrfs_root *root, int mixed,
++				struct mkfs_allocation *allocation)
+ {
+ 	struct btrfs_trans_handle *trans;
+ 	u64 bytes_used;
+@@ -74,7 +73,6 @@ static int create_metadata_block_groups(struct btrfs_root *root,
+ 
+ 	root->fs_info->system_allocs = 1;
+ 	ret = btrfs_make_block_group(trans, root, bytes_used,
+-				     metadata_profile |
+ 				     BTRFS_BLOCK_GROUP_SYSTEM,
+ 				     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+ 				     0, BTRFS_MKFS_SYSTEM_GROUP_SIZE);
+@@ -93,7 +91,6 @@ static int create_metadata_block_groups(struct btrfs_root *root,
+ 		}
+ 		BUG_ON(ret);
+ 		ret = btrfs_make_block_group(trans, root, 0,
+-					     metadata_profile |
+ 					     BTRFS_BLOCK_GROUP_METADATA |
+ 					     BTRFS_BLOCK_GROUP_DATA,
+ 					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+@@ -110,7 +107,6 @@ static int create_metadata_block_groups(struct btrfs_root *root,
+ 		}
+ 		BUG_ON(ret);
+ 		ret = btrfs_make_block_group(trans, root, 0,
+-					     metadata_profile |
+ 					     BTRFS_BLOCK_GROUP_METADATA,
+ 					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+ 					     chunk_start, chunk_size);
+@@ -126,7 +122,7 @@ err:
  }
  
-+static int is_temp_block_group(struct extent_buffer *node,
-+			       struct btrfs_block_group_item *bgi,
-+			       u64 data_profile, u64 meta_profile,
-+			       u64 sys_profile)
-+{
-+	u64 flag = btrfs_disk_block_group_flags(node, bgi);
-+	u64 flag_type = flag & BTRFS_BLOCK_GROUP_TYPE_MASK;
-+	u64 flag_profile = flag & BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+	u64 used = btrfs_disk_block_group_used(node, bgi);
-+
-+	/*
-+	 * Chunks meets all the following conditions is a temp chunk
-+	 * 1) Empty chunk
-+	 * Temp chunk is always empty.
-+	 *
-+	 * 2) profile dismatch with mkfs profile.
-+	 * Temp chunk is always in SINGLE
-+	 *
-+	 * 3) Size differs with mkfs_alloc
-+	 * Special case for SINGLE/SINGLE btrfs.
-+	 * In that case, temp data chunk and real data chunk are always empty.
-+	 * So we need to use mkfs_alloc to be sure which chunk is the newly
-+	 * allocated.
-+	 *
-+	 * Normally, new chunk size is equal to mkfs one (One chunk)
-+	 * If it has multiple chunks, we just refuse to delete any one.
-+	 * As they are all single, so no real problem will happen.
-+	 * So only use condition 1) and 2) to judge them.
-+	 */
-+	if (used != 0)
-+		return 0;
-+	switch (flag_type) {
-+	case BTRFS_BLOCK_GROUP_DATA:
-+	case BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA:
-+		data_profile &= BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+		if (flag_profile != data_profile)
-+			return 1;
-+		break;
-+	case BTRFS_BLOCK_GROUP_METADATA:
-+		meta_profile &= BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+		if (flag_profile != meta_profile)
-+			return 1;
-+		break;
-+	case BTRFS_BLOCK_GROUP_SYSTEM:
-+		sys_profile &= BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+		if (flag_profile != sys_profile)
-+			return 1;
-+		break;
-+	}
-+	return 0;
-+}
-+
-+/* Note: if current is a block group, it will skip it anyway */
-+static int next_block_group(struct btrfs_root *root,
-+			    struct btrfs_path *path)
-+{
-+	struct btrfs_key key;
-+	int ret = 0;
-+
-+	while (1) {
-+		ret = btrfs_next_item(root, path);
-+		if (ret)
-+			goto out;
-+
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+		if (key.type == BTRFS_BLOCK_GROUP_ITEM_KEY)
-+			goto out;
-+	}
-+out:
-+	return ret;
-+}
-+
-+/* This function will cleanup  */
-+static int cleanup_temp_chunks(struct btrfs_fs_info *fs_info,
-+			       struct mkfs_allocation *alloc,
-+			       u64 data_profile, u64 meta_profile,
-+			       u64 sys_profile)
-+{
-+	struct btrfs_trans_handle *trans = NULL;
-+	struct btrfs_block_group_item *bgi;
-+	struct btrfs_root *root = fs_info->extent_root;
-+	struct btrfs_key key;
-+	struct btrfs_key found_key;
-+	struct btrfs_path *path;
-+	int ret = 0;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	trans = btrfs_start_transaction(root, 1);
-+
-+	key.objectid = 0;
-+	key.type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-+	key.offset = 0;
-+
-+	while (1) {
-+		/*
-+		 * as the rest of the loop may modify the tree, we need to
-+		 * start a new search each time.
-+		 */
-+		ret = btrfs_search_slot(trans, root, &key, path, 0, 0);
-+		if (ret < 0)
-+			goto out;
-+
-+		btrfs_item_key_to_cpu(path->nodes[0], &found_key,
-+				      path->slots[0]);
-+		if (found_key.objectid < key.objectid)
-+			goto out;
-+		if (found_key.type != BTRFS_BLOCK_GROUP_ITEM_KEY) {
-+			ret = next_block_group(root, path);
-+			if (ret < 0)
-+				goto out;
-+			if (ret > 0) {
-+				ret = 0;
-+				goto out;
-+			}
-+			btrfs_item_key_to_cpu(path->nodes[0], &found_key,
-+					      path->slots[0]);
-+		}
-+
-+		bgi = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				     struct btrfs_block_group_item);
-+		if (is_temp_block_group(path->nodes[0], bgi,
-+					data_profile, meta_profile,
-+					sys_profile)) {
-+			ret = btrfs_free_block_group(trans, fs_info,
-+					found_key.objectid, found_key.offset);
-+			if (ret < 0)
-+				goto out;
-+		}
-+		btrfs_release_path(path);
-+		key.objectid = found_key.objectid + found_key.offset;
-+	}
-+out:
-+	if (trans)
-+		btrfs_commit_transaction(trans, root);
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- int main(int ac, char **av)
+ static int create_data_block_groups(struct btrfs_trans_handle *trans,
+-		struct btrfs_root *root, u64 data_profile, int mixed,
++		struct btrfs_root *root, int mixed,
+ 		struct mkfs_allocation *allocation)
  {
- 	char *file;
-@@ -1669,6 +1812,12 @@ skip_multidev:
- 		ret = make_image(source_dir, root, fd);
+ 	u64 chunk_start = 0;
+@@ -143,7 +139,6 @@ static int create_data_block_groups(struct btrfs_trans_handle *trans,
+ 		}
+ 		BUG_ON(ret);
+ 		ret = btrfs_make_block_group(trans, root, 0,
+-					     data_profile |
+ 					     BTRFS_BLOCK_GROUP_DATA,
+ 					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+ 					     chunk_start, chunk_size);
+@@ -1337,8 +1332,6 @@ int main(int ac, char **av)
+ 	u64 alloc_start = 0;
+ 	u64 metadata_profile = 0;
+ 	u64 data_profile = 0;
+-	u64 default_metadata_profile = 0;
+-	u64 default_data_profile = 0;
+ 	u32 nodesize = max_t(u32, sysconf(_SC_PAGESIZE),
+ 			BTRFS_MKFS_DEFAULT_NODE_SIZE);
+ 	u32 sectorsize = 4096;
+@@ -1697,19 +1690,7 @@ int main(int ac, char **av)
+ 	}
+ 	root->fs_info->alloc_start = alloc_start;
+ 
+-	if (dev_cnt == 0) {
+-		default_metadata_profile = metadata_profile;
+-		default_data_profile = data_profile;
+-	} else {
+-		/*
+-		 * Temporary groups to store new device entries
+-		 */
+-		default_metadata_profile = 0;
+-		default_data_profile = 0;
+-	}
+-
+-	ret = create_metadata_block_groups(root, default_metadata_profile,
+-			mixed, &allocation);
++	ret = create_metadata_block_groups(root, mixed, &allocation);
+ 	if (ret) {
+ 		fprintf(stderr, "failed to create default block groups\n");
+ 		exit(1);
+@@ -1718,8 +1699,7 @@ int main(int ac, char **av)
+ 	trans = btrfs_start_transaction(root, 1);
+ 	BUG_ON(!trans);
+ 
+-	ret = create_data_block_groups(trans, root, default_data_profile,
+-			mixed, &allocation);
++	ret = create_data_block_groups(trans, root, mixed, &allocation);
+ 	if (ret) {
+ 		fprintf(stderr, "failed to create default data block groups\n");
+ 		exit(1);
+@@ -1739,7 +1719,7 @@ int main(int ac, char **av)
+ 		btrfs_register_one_device(file);
+ 
+ 	if (dev_cnt == 0)
+-		goto skip_multidev;
++		goto raid_groups;
+ 
+ 	while (dev_cnt-- > 0) {
+ 		int old_mixed = mixed;
+@@ -1789,12 +1769,12 @@ int main(int ac, char **av)
+ 			btrfs_register_one_device(file);
+ 	}
+ 
++raid_groups:
+ 	if (!source_dir_set) {
+ 		ret = create_raid_groups(trans, root, data_profile,
+ 				 metadata_profile, mixed, &allocation);
  		BUG_ON(ret);
  	}
-+	ret = cleanup_temp_chunks(root->fs_info, &allocation, data_profile,
-+				  metadata_profile, metadata_profile);
-+	if (ret < 0) {
-+		fprintf(stderr, "Failed to cleanup temporary chunks\n");
-+		goto out;
-+	}
+-skip_multidev:
  
- 	if (verbose) {
- 		char features_buf[64];
-@@ -1703,6 +1852,7 @@ skip_multidev:
- 		list_all_devices(root);
- 	}
- 
-+out:
- 	ret = close_ctree(root);
+ 	ret = create_data_reloc_tree(trans, root);
  	BUG_ON(ret);
- 	free(label);
 -- 
-2.4.4
+2.4.5
 

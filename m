@@ -1,94 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vn0-f50.google.com ([209.85.216.50]:46817 "EHLO
-	mail-vn0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751146AbbGNXUP (ORCPT
+Received: from mail-vn0-f51.google.com ([209.85.216.51]:42241 "EHLO
+	mail-vn0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752277AbbGNX3V (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jul 2015 19:20:15 -0400
-Received: by vnbg190 with SMTP id g190so2710465vnb.13
-        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2015 16:20:14 -0700 (PDT)
+	Tue, 14 Jul 2015 19:29:21 -0400
+Received: by vnbf62 with SMTP id f62so2728912vnb.9
+        for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2015 16:29:20 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <55A50DBF.1080602@gmail.com>
-References: <55A4F74D.9000305@gmail.com>
-	<55A50DBF.1080602@gmail.com>
-Date: Tue, 14 Jul 2015 17:20:14 -0600
-Message-ID: <CAJCQCtSEk3cfwWTyzzQft1+eHcUDm_zFiBpYZM15rhZBzF3U2A@mail.gmail.com>
-Subject: Re: BTRFS raid6 unmountable after a couple of days of usage.
+In-Reply-To: <559F4DED.5020005@cn.fujitsu.com>
+References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
+	<558CB0D4.8060401@cn.fujitsu.com>
+	<558CB404.8050300@cn.fujitsu.com>
+	<CAJCQCtTMdQG4EB8dNAYPq8H3V68TCb2YQztoXXYMkCYA3GBCXw@mail.gmail.com>
+	<CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
+	<CAJCQCtQ35xzMBjcUUTzWm3CjC1r=UNgkog2YbB0X1QcZofNj0g@mail.gmail.com>
+	<559F131B.30206@cn.fujitsu.com>
+	<CAJCQCtQ4j7hjtwmXhmxAqVv6zzQ-PZs2kP5-NsdOKhyCK5P6pg@mail.gmail.com>
+	<559F4DED.5020005@cn.fujitsu.com>
+Date: Tue, 14 Jul 2015 17:29:20 -0600
+Message-ID: <CAJCQCtQC822+PF9eo9s9sQURG7gEaEnLz2CwREYaDrwXD4CG4Q@mail.gmail.com>
+Subject: Re: btrfs partition converted from ext4 becomes read-only minutes
+ after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120
 From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 14, 2015 at 7:25 AM, Austin S Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2015-07-14 07:49, Austin S Hemmelgarn wrote:
->>
->> So, after experiencing this same issue multiple times (on almost a dozen
->> different kernel versions since 4.0) and ruling out the possibility of it
->> being caused by my hardware (or at least, the RAM, SATA controller and disk
->> drives themselves), I've decided to report it here.
->>
->> The general symptom is that raid6 profile filesystems that I have are
->> working fine for multiple weeks, until I either reboot or otherwise try to
->> remount them, at which point the system refuses to mount them.
->>
->> I'm currently using btrfs-progs v4.1 with kernel 4.1.2, although I've been
->> seeing this with versions of both since 4.0.
->>
->> Output of 'btrfs fi show' for the most recent fs that I had this issue
->> with:
->>          Label: 'altroot'  uuid: 86eef6b9-febe-4350-a316-4cb00c40bbc5
->>         Total devices 4 FS bytes used 9.70GiB
->>         devid    1 size 24.00GiB used 6.03GiB path
->> /dev/mapper/vg-altroot.0
->>         devid    2 size 24.00GiB used 6.01GiB path
->> /dev/mapper/vg-altroot.1
->>         devid    3 size 24.00GiB used 6.01GiB path
->> /dev/mapper/vg-altroot.2
->>         devid    4 size 24.00GiB used 6.01GiB path
->> /dev/mapper/vg-altroot.3
->>
->>          btrfs-progs v4.1
->>
->> Each of the individual LVS that are in the FS is just a flat chunk of
->> space on a separate disk from the others.
->>
->> The FS itself passes btrfs check just fine (no reported errors, exit value
->> of 0), but the kernel refuses to mount it with the message 'open_ctree
->> failed'.
->>
->> I've run btrfs chunk recover and attached the output from that.
->>
->> Here's a link to an image from 'btrfs image -c9 -w':
->> https://www.dropbox.com/s/pl7gs305ej65u9q/altroot.btrfs.img?dl=0
->> (That link will expire in 30 days, let me know if you need access to it
->> beyond that).
->>
->> The filesystems in question all see relatively light but consistent usage
->> as targets for receiving daily incremental snapshots for on-system backups
->> (and because I know someone will mention it, yes, I do have other backups of
->> the data, these are just my online backups).
->>
-> Further updates, I just tried mounting the filesystem from the image above
-> again, this time passing device= options for each device in the FS, and it
-> seems to be working fine now.  I've tried this with the other filesystems
-> however, and they still won't mount.
+On Thu, Jul 9, 2015 at 10:45 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
+>
+> Chris Murphy wrote on 2015/07/09 18:45 -0600:
+>>
+>> On Thu, Jul 9, 2015 at 6:34 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>>
+>>> One of my patch addressed a problem that a converted btrfs can't pass
+>>> btrfsck.
+>>>
+>>> Not sure if that is the cause, but if you can try btrfs-progs v3.19.1,
+>>> the
+>>> one without my btrfs-progs patches and some other newer convert related
+>>> patches, and see the result?
+>>>
+>>> I think this would at least provide the base for bisect the btrfs-progs
+>>> if
+>>> the bug is in btrfs-progs.
+>>
+>>
+>> I'm happy to regression test with 3.19.1 but I'm confused. After
+>> conversion, btrfs check (4.1) finds no problems. After ext2_saved
+>> snapshot is deleted, btrfsck finds no problems. After defrag, again
+>> btrfsck finds no problems. After the failed balance, btrfsck finds no
+>> problems but crashes with "Aborted (core dump)".
+>
+> Even btrfsck reports no error, some btrfs-convert behavior change may lead
+> to kernel mis-function.
+>
+> But we are not sure it's btrfs-progs or kernel itself has bug.
+> Maybe btrfs convert did something wrong/different triggering the bug, or
+> just kernel regression?
+>
+> So hat I'd like to check is, with 3.19.1 progs (kernel version doesn't
+> change), whether the kernel still failes to do balance.
+>
+> If the problem still happens, then  we can focus on kernel part, or at
+> least, put at least less effort on btrfs-progs.
+>
+>>
+>> Should I still test 3.19.1?
 
-And it's the same message with the usual suspects: recovery,
-ro,recovery ? How about degraded even though it's not degraded? And
-what about 'btrfs rescue zero-log' ?
+I'm not able to reproduce this for reasons I don't understand. The
+setup is in a qemu-kvm VM, with the ext4 original as a qcow2. I had
+been using 'qemu-img create -f qcow2 -o nocow=on -b original.qcow2
+converted qcow2' and then doing the conversions with the
+converted.qcow2 file in the VM. I did this half a dozen times and
+always at the balance step it imploded (but differently for 4.1 and
+4.2). Now the balance completes with no errors. btrfs check doesn't
+complaint either. Very irritating as nothing else has changed with
+that VM.
 
-Of course it's weird that btrfs check doesn't complain, but mount
-does. I don't understand that, so it's good you've got an image. If
-either recovery or zero-log fix the problem, my understanding is this
-suggests hardware did something Btrfs didn't expect.
+There is another user who had this similar problem with the converted
+ext4 going read-only. They ran btrfs check with both 3.19.1 and 4.0.
+Their results are here, hopefully it's helpful until I can figure out
+how to get this reproducing again.
+http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg44701.html
 
-What about 'btrfs check --check-data-csum" which should act similar to
-a read-only scrub (different output though)? Hmm, nah. The thing is
-the failure to mount is failing on some aspect of metadata, not data.
-So the fact that check (on metadata) passes but mount fails is a bug
-somewhere...
+
 
 -- 
 Chris Murphy

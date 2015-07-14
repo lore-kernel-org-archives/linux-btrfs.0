@@ -1,35 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:37321 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751018AbbGNIJr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jul 2015 04:09:47 -0400
-Date: Tue, 14 Jul 2015 10:09:45 +0200
-From: David Sterba <dsterba@suse.com>
-To: Marc Joliet <marcec@gmx.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Wiki suggestions
-Message-ID: <20150714080945.GF15535@twin.jikos.cz>
-Reply-To: dsterba@suse.com
-References: <20150712142604.2a8200f0@thetick>
- <pan$1b794$8f9a440d$aaeab356$618ebf0c@cox.net>
- <20150713131827.5ee8f61d@thetick>
- <20150713163009.GE15535@twin.jikos.cz>
- <20150713192154.3465d3ae@thetick>
- <20150713193313.52e5f15b@thetick>
+Received: from mail.render-wahnsinn.de ([198.245.60.114]:50968 "EHLO
+	mail.render-wahnsinn.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753159AbbGNKXu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 14 Jul 2015 06:23:50 -0400
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by mail.render-wahnsinn.de (Postfix) with ESMTP id 61A8617EAEA9
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2015 12:14:15 +0200 (CEST)
+Received: from mail.render-wahnsinn.de ([127.0.0.1])
+	by localhost (render-wahnsinn.de [127.0.0.1]) (amavisd-new, port 10024)
+	with LMTP id 4ixW_2Z3E27a for <linux-btrfs@vger.kernel.org>;
+	Tue, 14 Jul 2015 12:14:14 +0200 (CEST)
+Received: from [192.168.192.249] (unknown [5.146.59.124])
+	by mail.render-wahnsinn.de (Postfix) with ESMTPSA id 645DD17EAEA1
+	for <linux-btrfs@vger.kernel.org>; Tue, 14 Jul 2015 12:14:14 +0200 (CEST)
+Message-ID: <55A4E0F4.2060708@render-wahnsinn.de>
+Date: Tue, 14 Jul 2015 12:14:12 +0200
+From: Robert Krig <robert.krig@render-wahnsinn.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150713193313.52e5f15b@thetick>
+To: linux-btrfs@vger.kernel.org
+Subject: Recreate Snapshots and their Parent Relationships on a second Server.
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 13, 2015 at 07:33:13PM +0200, Marc Joliet wrote:
-> Am Mon, 13 Jul 2015 19:21:54 +0200
-> schrieb Marc Joliet <marcec@gmx.de>:
-> 
-> > OK, I'll make the changes then (sans kernel log).
-> 
-> Just a heads up: I accepted the terms of service, but the link goes to a
-> non-existent wiki page.
+Hi.
 
-I have reported that to kernel.org admins some time ago (02/2014), but the
-ticket is still open. I'll ping it.
+I have an Old Server with a bunch of btrfs Snapshots.
+I'm setting up a new server and I would like to transfer those Snapshots
+as efficiently as possible, while still maintaining their parent<->child
+relationships for space efficient storage.
+
+Apart from manually using "btrfs send" and "btrfs send -p" where
+applicable, is there an easy way to transfer everything in one go?
+
+Can I identify Snapshot relationships via their ID or some other data
+that I can display using btrfs tools?

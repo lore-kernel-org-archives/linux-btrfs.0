@@ -1,110 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:39843 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751828AbbGOQPt (ORCPT
+Received: from mail-oi0-f42.google.com ([209.85.218.42]:35785 "EHLO
+	mail-oi0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752169AbbGOSCt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jul 2015 12:15:49 -0400
-Date: Wed, 15 Jul 2015 16:15:46 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS raid6 unmountable after a couple of days of usage.
-Message-ID: <20150715161546.GR10539@carfax.org.uk>
-References: <55A4F74D.9000305@gmail.com>
- <55A50DBF.1080602@gmail.com>
- <CAJCQCtSEk3cfwWTyzzQft1+eHcUDm_zFiBpYZM15rhZBzF3U2A@mail.gmail.com>
- <55A63F03.2080207@gmail.com>
- <CAJCQCtRWSvHtH0rjn2twd3yOPFMECE--UJxTUO0r_ydXQ7AhRQ@mail.gmail.com>
+	Wed, 15 Jul 2015 14:02:49 -0400
+Received: by oihq81 with SMTP id q81so34084643oih.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2015 11:02:48 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="zsAhXfiBV62A5hVr"
-In-Reply-To: <CAJCQCtRWSvHtH0rjn2twd3yOPFMECE--UJxTUO0r_ydXQ7AhRQ@mail.gmail.com>
+In-Reply-To: <CAC=t97CxDRoakqzoOAoHpN=1qS1jyvMEfOCe+RWvGTm6xSCqPQ@mail.gmail.com>
+References: <11148188.L9vtSMaNHV@merkaba> <559FA280.8090309@tty0.ch>
+ <20150712035523.GI5274@merlins.org> <20150713004249.GP5274@merlins.org>
+ <CAB3_QuKuTeT7t--=y917AASM9QQHSRin4ZKRm57A0b+z0m=yvA@mail.gmail.com>
+ <20150715031412.GZ5274@merlins.org> <20150715080057.GA15200@panda> <CAC=t97CxDRoakqzoOAoHpN=1qS1jyvMEfOCe+RWvGTm6xSCqPQ@mail.gmail.com>
+From: Donald Pearson <donaldwhpearson@gmail.com>
+Date: Wed, 15 Jul 2015 13:02:29 -0500
+Message-ID: <CAC=t97BS2gNNLZEatTRCmmiUHLH8m6NFbgtkbWnaqrEsCye1KQ@mail.gmail.com>
+Subject: Re: Anyone tried out btrbk yet?
+To: sander@humilis.net
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+BTW, is anybody else experiencing btrfs-cleaner consuming heavy
+resources for a very long time when snapshots are removed?
 
---zsAhXfiBV62A5hVr
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Note the TIME on one of these btrfs-cleaner processes.
 
-On Wed, Jul 15, 2015 at 09:45:17AM -0600, Chris Murphy wrote:
-> On Wed, Jul 15, 2015 at 5:07 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
-> > I've managed to get the other filesystems I was having issues with mounted
-> > again with the device= options and clear_cache after running btrfs dev scan
-> > a couple of times.  It seems to me (at least from what I'm seeing) that
-> > there is some metadata that isn't synchronized properly between the disks.
-> 
-> OK see if this logic follows without mistakes:
-> 
-> The fs metadata is raid6, and therefore is broken up across all
-> drives. Since you successfully captured an image of the file system
-> with btrfs-image, clearly user space tool is finding a minimum of n-2
-> drives. If it didn't complain of missing drives, it found n drives.
-> 
-> And yet the kernel is not finding n drives. And even with degraded it
-> still won't mount, therefore it's not finding n-2 drives.
-> 
-> By "drives" I mean either the physical device, or more likely whatever
-> minimal metadata is necessary for "assembling" all devices into a
-> volume. I don't know what that nugget of information is that's on each
-> physical device, separate from the superblocks (which I think is
-> distributed at logical addresses and therefore not on every physical
-> drive), and if we have any tools to extract just that and debug it.
+top - 13:01:15 up 21:09,  2 users,  load average: 5.30, 4.80, 3.83
+Tasks: 315 total,   3 running, 312 sleeping,   0 stopped,   0 zombie
+%Cpu(s):  0.7 us, 50.2 sy,  0.0 ni, 47.8 id,  1.2 wa,  0.0 hi,  0.0 si,  0.0 st
+KiB Mem : 16431800 total,   177448 free,  1411876 used, 14842476 buff/cache
+KiB Swap:  8257532 total,  8257316 free,      216 used. 14420732 avail Mem
 
-   There is at least one superblock on every device, usually two, and
-often three. Each superblock contains the virtual address of the roots
-of the root tree, the chunk tree and the log tree. Those are useless
-without having the chunk tree, so there's also some information about
-the chunk tree appended to the end of each superblock to bootstrap the
-virtual address space lookup.
+  PID USER      PR  NI    VIRT    RES    SHR S  %CPU %MEM     TIME+ COMMAND
+ 4134 root      20   0       0      0      0 R 100.0  0.0   2:41.40
+btrfs-cleaner
+ 4183 root      20   0       0      0      0 R  99.7  0.0 191:11.33
+btrfs-cleaner
 
-   The information at the end of the superblock seems to be a list of
-packed (key, struct btrfs_chunk) pairs for the System chunks. The
-struct btrfs_chunk contains info about the chunk as a whole, and each
-stripe making it up. The stripe information is a devid, an offset
-(presumably in physical address on the device), and a UUID.
-
-   So, from btrfs dev scan the kernel has all the devid to (major,
-minor) mappings for devices. From one device, it reads a superblock,
-gets the list of (devid, offset) for the System chunks at the end of
-that superblock, and can then identify the location of the System
-chunks to read the full chunk tree. Once it's got the chunk tree, it
-can do virtual->physical lookups, and the root tree and log tree
-locations make sense.
-
-   I don't know whether btrfs-image works any differently from that,
-or if so, how it differs.
-
-   Hugo.
-
--- 
-Hugo Mills             | Radio is superior to television: the pictures are
-hugo@... carfax.org.uk | better
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---zsAhXfiBV62A5hVr
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVpocxAAoJEFheFHXiqx3kpfQP/1XLfvyN60EnEK/vptoHh8Pf
-jn5d4qpw+qGRccITu0ynRR/cL3nkurNBd0tvkTaF1RN5v1MtMulp12ALAgoO3TZG
-I4VleyxN7hFV3hBh/zkn/jWli7QBjsMqce+TW9YuaS1VsfK5E4SzCGwrH2wrpcGY
-6pBc3Q4znOKAZqO48CAO0SYhnmGUwhzMtL8WyYZ0QZeVzzqJ6FO/mIe0NI/GKc90
-FzTxkrXkKoX215oYLipap586H5KQiy+vgXa6bQpmylaNQ9rjrxMoCn+t0t6dyBCw
-qq+H5F6vDdgO6fN0AzriG3i64dw+MDL6suZ+jGxy63kRg08ZHgKxeCwgUbFKN2Zi
-NmkQnFUO04orjaFeI7Ew/c3ggoRTAKocNFqhUw+S1+EnRiCxFgNPmhADTUvJq3i8
-/VFMSPmKh17rXhnkaskQ9Wp+zOzJfkjEUhMDYwbr5b9+HoSohePvqY4zEaJk/mUz
-VJViWaFCGWnNmRotnLPfIK6uKODymZpEKmEwtc2vRhKwijrIOXgkAMVcb8/k8ewI
-HpIIh/KNOlP3mdMZWF/WiR0I8Qt3OOPwXjwib4onYT5C1Y0K1Qv+yvvwBlOXJ0/t
-TFB0Iw/7natauvRPk8sERelqh2L8Yo4d852+TrHY+ByHenkxAHBfjgFI/ovQ+Pxy
-ATm4mxiqg3gLeOJ95SA4
-=ibJn
------END PGP SIGNATURE-----
-
---zsAhXfiBV62A5hVr--
+On Wed, Jul 15, 2015 at 9:42 AM, Donald Pearson
+<donaldwhpearson@gmail.com> wrote:
+> Implementation question about your scripts Marc..
+>
+> I've set up some routines for different backup and retention intervals
+> and periods in cron but quickly ran in to stepping on my own toes by
+> the locking mechanism.  I could just disable the locking but I'm not
+> sure if that's the best approach and I don't know what it was
+> implemented to prevent in the first place.
+>
+> Thoughts?
+>
+> Thanks,
+> Donald
+>
+> On Wed, Jul 15, 2015 at 3:00 AM, Sander <sander@humilis.net> wrote:
+>> Marc MERLIN wrote (ao):
+>>> On Wed, Jul 15, 2015 at 10:03:16AM +1000, Paul Harvey wrote:
+>>> > The way it works in snazzer (and btrbk and I think also btrfs-sxbackup
+>>> > as well), local snapshots continue to happen as normal (Eg. daily or
+>>> > hourly) and so when your backup media or backup server is finally
+>>> > available again, the size of each individual incremental is still the
+>>> > same as usual, it just has to perform more of them.
+>>>
+>>> Good point. My system is not as smart. Every night, it'll make a new
+>>> backup and only send one incremental and hope it gets there. It doesn't
+>>> make a bunch of incrementals and send multiple.
+>>>
+>>> The other options do a better job here.
+>>
+>> FWIW, I've written a bunch of scripts for making backups. The lot has
+>> grown over the past years to what is is now. Not very pretty to see, but
+>> reliable.
+>>
+>> The subvolumes backupadmin home root rootvolume and var are snapshotted
+>> every hour.
+>>
+>> Each subvolume has their own entry in crontab for the actual backup.
+>> For example rootvolume once a day, home and backupadmin every hour.
+>>
+>> The scripts uses tar to make a full backup every first backup of a
+>> subvolume that month, an incremental daily backup, and an incremental
+>> hourly backup if applicable.
+>>
+>> For a full backup the oldest available snapshot for that month is used,
+>> regardless of when the backup is started. This way the backup of each
+>> subvolume can be spread not to overload a system.
+>>
+>> Backups are running in the idle queue to not hinder other processes, are
+>> compressed with lbzip2 to utilize all cores, and are encrypted with gpg
+>> for obvious reasons. In my tests lbzip2 gives the best size/speed ratio
+>> compared to lzop, xz, bzip2, gzip, pxz and lz4(hc).
+>>
+>> The script outputs what files and directories are in the backup to the
+>> backupadmin subvolume. This data is compressed with lz4hc as lz4hc is
+>> the fastest to decompress (useful to determine which archive contains
+>> what you want restored).
+>>
+>> Archives get transfered to a remote server by ftp, as ftp is the leanest
+>> way of file transfer and supports resume. The initial connection is
+>> encrypted to hide username/password, but as the archive is already
+>> encrypted, the data channel is not. The ftp transfer is throttled to
+>> only use part of the available bandwith.
+>>
+>> A daily running script checks for archives which are not transfered yet
+>> due to remote server not available or failed connection or the like, and
+>> retransmits those archives.
+>>
+>> Snapshots and archives are pruned based on disk usage (yet another
+>> script).
+>>
+>> Restore can be done by hand from snapshots (obviously), or by a script
+>> from the locale archive if still available, or the remote archive.
+>>
+>> The restore script can search a specific date-time range, and checks
+>> both local and remote for the availability of an archive that contains
+>> the wanted.
+>>
+>> A bare metal restore can be done by fetching the archives from the
+>> remote host and pipe them directly into gpg/tar. No need for additional
+>> local storage and no delay. First the monthly full backup is restored,
+>> then every daily incremental since, and then every hourly since the
+>> youngest daily, if applicable. tar incremental restore is smart, and
+>> removes the files and directories that were removed between backups.
+>>
+>>         Sander
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

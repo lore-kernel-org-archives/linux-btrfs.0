@@ -1,163 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23927 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754808AbbGPIsO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jul 2015 04:48:14 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6G8kPkF021493
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2015 16:46:25 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Cleanup for btrfs_calc_num_tolerated_disk_barrier_failures()
-Date: Thu, 16 Jul 2015 16:46:36 +0800
-Message-ID: <dc3d9322c9c973ee2768414d2778e4f693490388.1437036273.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:39641 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753789AbbGPJSB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Jul 2015 05:18:01 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix stale directory entries after fsync log replay
+Date: Wed, 15 Jul 2015 23:58:56 +0100
+Message-Id: <1437001136-21460-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-1: Use ARRAY_SIZE(types) to replace a static-value variant:
-   int num_types = 4;
+We have another case where after an fsync log replay we get an inode with
+a wrong link count (smaller than it should be) and a number of directory
+entries greater than its link count. This happens when we add a new link
+hard link to our inode A and then we fsync some other inode B that has
+the side effect of logging the parent directory inode too. In this case
+at log replay time we add the new hard link to our inode (the item with
+key BTRFS_INODE_REF_KEY) when processing the parent directory but we
+never adjust the link count of our inode A. As a result we get stale dir
+entries for our inode A that can never be deleted and therefore it makes
+it impossible to remove the parent directory (as its i_size can never
+decrease back to 0).
 
-2: Use 'continue' on condition to reduce one level tab
-   if (!XXX) {
-       code;
-       ...
-   }
-   ->
-   if (XXX)
-       continue;
-   code;
-   ...
+A simple reproducer for fstests that triggers this issue:
 
-3: Put setting 'num_tolerated_disk_barrier_failures = 2' to
-   (num_tolerated_disk_barrier_failures > 2) condition to make
-   make logic neat.
-   if (num_tolerated_disk_barrier_failures > 0 && XXX)
-       num_tolerated_disk_barrier_failures = 0;
-   else if (num_tolerated_disk_barrier_failures > 1) {
-       if (XXX)
-           num_tolerated_disk_barrier_failures = 1;
-       else if (XXX)
-           num_tolerated_disk_barrier_failures = 2;
-   ->
-   if (num_tolerated_disk_barrier_failures > 0 && XXX)
-       num_tolerated_disk_barrier_failures = 0;
-   if (num_tolerated_disk_barrier_failures > 1 && XXX)
-       num_tolerated_disk_barrier_failures = ;
-   if (num_tolerated_disk_barrier_failures > 2 && XXX)
-       num_tolerated_disk_barrier_failures = 2;
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
 
-4: Remove comment of:
-   num_mirrors - 1: if RAID1 or RAID10 is configured and more
-   than 2 mirrors are used.
-   which is not fit with code.
+  _cleanup()
+  {
+      _cleanup_flakey
+      rm -f $tmp.*
+  }
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+  . ./common/dmflakey
+
+  # real QA test starts here
+  _need_to_be_root
+  _supported_fs generic
+  _supported_os Linux
+  _require_scratch
+  _require_dm_flakey
+  _require_metadata_journaling $SCRATCH_DEV
+
+  rm -f $seqres.full
+
+  _scratch_mkfs >>$seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create our test directory and files.
+  mkdir $SCRATCH_MNT/testdir
+  touch $SCRATCH_MNT/testdir/foo
+  touch $SCRATCH_MNT/testdir/bar
+
+  # Make sure everything done so far is durably persisted.
+  sync
+
+  # Create one hard link for file foo and another one for file bar. After
+  # that fsync only the file bar.
+  ln $SCRATCH_MNT/testdir/bar $SCRATCH_MNT/testdir/bar_link
+  ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/foo_link
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/bar
+
+  # Silently drop all writes on scratch device to simulate power failure.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  # Allow writes again and mount the fs to trigger log/journal replay.
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # Now verify both our files have a link count of 2.
+  echo "Link count for file foo: $(stat --format=%h $SCRATCH_MNT/testdir/foo)"
+  echo "Link count for file bar: $(stat --format=%h $SCRATCH_MNT/testdir/bar)"
+
+  # We should be able to remove all the links of our files in testdir, and
+  # after that the parent directory should become empty and therefore
+  # possible to remove it.
+  rm -f $SCRATCH_MNT/testdir/*
+  rmdir $SCRATCH_MNT/testdir
+
+  _unmount_flakey
+
+  # The fstests framework will call fsck against our filesystem which will verify
+  # that all metadata is in a consistent state.
+
+  status=0
+  exit
+
+The test fails with:
+
+ -Link count for file foo: 2
+ +Link count for file foo: 1
+  Link count for file bar: 2
+ +rm: cannot remove '/home/fdmanana/btrfs-tests/scratch_1/testdir/foo_link': Stale file handle
+ +rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/testdir': Directory not empty
+ (...)
+ _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
+
+And fsck's output:
+
+  (...)
+  checking fs roots
+  root 5 inode 258 errors 2001, no inode item, link count wrong
+      unresolved ref dir 257 index 5 namelen 8 name foo_link filetype 1 errors 4, no inode ref
+  Checking filesystem on /dev/sdc
+  (...)
+
+So fix this by marking inodes for link count fixup at log replay time
+whenever a directory entry is replayed if the entry was created in the
+transaction where the fsync was made and if it points to a non-directory
+inode.
+
+This isn't a new problem/regression, the issue exists for a long time,
+possibly since the log tree feature was added (2008).
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/disk-io.c | 73 ++++++++++++++++++++++++------------------------------
- 1 file changed, 33 insertions(+), 40 deletions(-)
+ fs/btrfs/tree-log.c | 53 +++++++++++++++++++++++++++++++++++++++++++++++++++--
+ 1 file changed, 51 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f556c37..2eda03b 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3448,13 +3448,12 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
- 		       BTRFS_BLOCK_GROUP_SYSTEM,
- 		       BTRFS_BLOCK_GROUP_METADATA,
- 		       BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA};
--	int num_types = 4;
- 	int i;
- 	int c;
- 	int num_tolerated_disk_barrier_failures =
- 		(int)fs_info->fs_devices->num_devices;
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9c45431..0cf189d 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1740,12 +1740,13 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
+ 					struct extent_buffer *eb, int slot,
+ 					struct btrfs_key *key)
+ {
+-	int ret;
++	int ret = 0;
+ 	u32 item_size = btrfs_item_size_nr(eb, slot);
+ 	struct btrfs_dir_item *di;
+ 	int name_len;
+ 	unsigned long ptr;
+ 	unsigned long ptr_end;
++	struct btrfs_path *fixup_path = NULL;
  
--	for (i = 0; i < num_types; i++) {
-+	for (i = 0; i < ARRAY_SIZE(types); i++) {
- 		struct btrfs_space_info *tmp;
- 
- 		sinfo = NULL;
-@@ -3472,44 +3471,38 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
- 
- 		down_read(&sinfo->groups_sem);
- 		for (c = 0; c < BTRFS_NR_RAID_TYPES; c++) {
--			if (!list_empty(&sinfo->block_groups[c])) {
--				u64 flags;
--
--				btrfs_get_block_group_info(
--					&sinfo->block_groups[c], &space);
--				if (space.total_bytes == 0 ||
--				    space.used_bytes == 0)
--					continue;
--				flags = space.flags;
--				/*
--				 * return
--				 * 0: if dup, single or RAID0 is configured for
--				 *    any of metadata, system or data, else
--				 * 1: if RAID5 is configured, or if RAID1 or
--				 *    RAID10 is configured and only two mirrors
--				 *    are used, else
--				 * 2: if RAID6 is configured, else
--				 * num_mirrors - 1: if RAID1 or RAID10 is
--				 *                  configured and more than
--				 *                  2 mirrors are used.
--				 */
--				if (num_tolerated_disk_barrier_failures > 0 &&
--				    ((flags & (BTRFS_BLOCK_GROUP_DUP |
--					       BTRFS_BLOCK_GROUP_RAID0)) ||
--				     ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK)
--				      == 0)))
--					num_tolerated_disk_barrier_failures = 0;
--				else if (num_tolerated_disk_barrier_failures > 1) {
--					if (flags & (BTRFS_BLOCK_GROUP_RAID1 |
--					    BTRFS_BLOCK_GROUP_RAID5 |
--					    BTRFS_BLOCK_GROUP_RAID10)) {
--						num_tolerated_disk_barrier_failures = 1;
--					} else if (flags &
--						   BTRFS_BLOCK_GROUP_RAID6) {
--						num_tolerated_disk_barrier_failures = 2;
--					}
--				}
--			}
-+			u64 flags;
+ 	ptr = btrfs_item_ptr_offset(eb, slot);
+ 	ptr_end = ptr + item_size;
+@@ -1759,8 +1760,56 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
+ 			return ret;
+ 		ptr = (unsigned long)(di + 1);
+ 		ptr += name_len;
 +
-+			if (list_empty(&sinfo->block_groups[c]))
-+				continue;
++		/*
++		 * If this entry refers to a non-directory (directories can not
++		 * have a link count > 1) and it was added in the transaction
++		 * that was not committed, make sure we fixup the link count of
++		 * the inode it the entry points to. Otherwise something like
++		 * the following would result in a directory pointing to an
++		 * inode with a wrong link that does not account for this dir
++		 * entry:
++		 *
++		 * mkdir testdir
++		 * touch testdir/foo
++		 * touch testdir/bar
++		 * sync
++		 *
++		 * ln testdir/bar testdir/bar_link
++		 * ln testdir/foo testdir/foo_link
++		 * xfs_io -c "fsync" testdir/bar
++		 *
++		 * <power failure>
++		 *
++		 * mount fs, log replay happens
++		 *
++		 * File foo would remain with a link count of 1 when it has two
++		 * entries pointing to it in the directory testdir. This would
++		 * make it impossible to ever delete the parent directory has
++		 * it would result in stale dentries that can never be deleted.
++		 */
++		if (btrfs_dir_type(eb, di) != BTRFS_FT_DIR &&
++		    btrfs_dir_transid(eb, di) >
++		    root->fs_info->last_trans_committed) {
++			struct btrfs_key di_key;
 +
-+			btrfs_get_block_group_info(&sinfo->block_groups[c],
-+						   &space);
-+			if (space.total_bytes == 0 || space.used_bytes == 0)
-+				continue;
-+			flags = space.flags;
-+			/*
-+			 * return
-+			 * 0: if dup, single or RAID0 is configured for
-+			 *    any of metadata, system or data, else
-+			 * 1: if RAID5 is configured, or if RAID1 or
-+			 *    RAID10 is configured and only two mirrors
-+			 *    are used, else
-+			 * 2: if RAID6 is configured
-+			 */
-+			if (num_tolerated_disk_barrier_failures > 0 &&
-+			    ((flags & (BTRFS_BLOCK_GROUP_DUP |
-+				       BTRFS_BLOCK_GROUP_RAID0)) ||
-+			     ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0)))
-+				num_tolerated_disk_barrier_failures = 0;
-+			else if (num_tolerated_disk_barrier_failures > 1 &&
-+				 (flags & (BTRFS_BLOCK_GROUP_RAID1 |
-+					   BTRFS_BLOCK_GROUP_RAID5 |
-+					   BTRFS_BLOCK_GROUP_RAID10)))
-+				num_tolerated_disk_barrier_failures = 1;
-+			else if (num_tolerated_disk_barrier_failures > 2 &&
-+				 (flags & BTRFS_BLOCK_GROUP_RAID6))
-+				num_tolerated_disk_barrier_failures = 2;
- 		}
- 		up_read(&sinfo->groups_sem);
++			if (!fixup_path) {
++				fixup_path = btrfs_alloc_path();
++				if (!fixup_path) {
++					ret = -ENOMEM;
++					break;
++				}
++			}
++
++			btrfs_dir_item_key_to_cpu(eb, di, &di_key);
++			ret = link_to_fixup_dir(trans, root, fixup_path,
++						di_key.objectid);
++			if (ret)
++				break;
++		}
  	}
+-	return 0;
++	btrfs_free_path(fixup_path);
++	return ret;
+ }
+ 
+ /*
 -- 
-1.8.5.1
+2.1.3
 

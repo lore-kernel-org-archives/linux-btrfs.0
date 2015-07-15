@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41292 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:33746 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751702AbbGODtx (ORCPT
+	with ESMTP id S1752149AbbGPCIf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jul 2015 23:49:53 -0400
+	Wed, 15 Jul 2015 22:08:35 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6F3m6Bf010235
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2015 11:48:06 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6FD2OeR008208
+	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2015 21:02:26 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Fix lockdep warning of btrfs_run_delayed_iputs()
-Date: Wed, 15 Jul 2015 11:48:14 +0800
-Message-ID: <0cfb4c4a8ecd33b57dc0c8af2561afbc11a1fe42.1436932019.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Avoid NULL pointer dereference of free_extent_buffer when read_tree_block() fail
+Date: Wed, 15 Jul 2015 21:02:09 +0800
+Message-ID: <3f7039329ae5c29de0e7ff844ac4f494b9df8e33.1436965054.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,78 +20,65 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Liu Bo <bo.li.liu@oracle.com> reported a lockdep warning of
-delayed_iput_sem in xfstests generic/241:
-  [ 2061.345955] =============================================
-  [ 2061.346027] [ INFO: possible recursive locking detected ]
-  [ 2061.346027] 4.1.0+ #268 Tainted: G        W
-  [ 2061.346027] ---------------------------------------------
-  [ 2061.346027] btrfs-cleaner/3045 is trying to acquire lock:
-  [ 2061.346027]  (&fs_info->delayed_iput_sem){++++..}, at:
-  [<ffffffff814063ab>] btrfs_run_delayed_iputs+0x6b/0x100
-  [ 2061.346027] but task is already holding lock:
-  [ 2061.346027]  (&fs_info->delayed_iput_sem){++++..}, at: [<ffffffff814063ab>] btrfs_run_delayed_iputs+0x6b/0x100
-  [ 2061.346027] other info that might help us debug this:
-  [ 2061.346027]  Possible unsafe locking scenario:
+When read_tree_block() failed, we can see following dmesg:
+ [  134.371389] BUG: unable to handle kernel NULL pointer dereference at 0000000000000063
+ [  134.372236] IP: [<ffffffff813a4a51>] free_extent_buffer+0x21/0x90
+ [  134.372236] PGD 0
+ [  134.372236] Oops: 0000 [#1] SMP
+ [  134.372236] Modules linked in:
+ [  134.372236] CPU: 0 PID: 2289 Comm: mount Not tainted 4.2.0-rc1_HEAD_c65b99f046843d2455aa231747b5a07a999a9f3d_+ #115
+ [  134.372236] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5.1-0-g8936dbb-20141113_115728-nilsson.home.kraxel.org 04/01/2014
+ [  134.372236] task: ffff88003b6e1a00 ti: ffff880011e60000 task.ti: ffff880011e60000
+ [  134.372236] RIP: 0010:[<ffffffff813a4a51>]  [<ffffffff813a4a51>] free_extent_buffer+0x21/0x90
+ ...
+ [  134.372236] Call Trace:
+ [  134.372236]  [<ffffffff81379aa1>] free_root_extent_buffers+0x91/0xb0
+ [  134.372236]  [<ffffffff81379c3d>] free_root_pointers+0x17d/0x190
+ [  134.372236]  [<ffffffff813801b0>] open_ctree+0x1ca0/0x25b0
+ [  134.372236]  [<ffffffff8144d017>] ? disk_name+0x97/0xb0
+ [  134.372236]  [<ffffffff813558aa>] btrfs_mount+0x8fa/0xab0
+ ...
 
-  [ 2061.346027]        CPU0
-  [ 2061.346027]        ----
-  [ 2061.346027]   lock(&fs_info->delayed_iput_sem);
-  [ 2061.346027]   lock(&fs_info->delayed_iput_sem);
-  [ 2061.346027]
-   *** DEADLOCK ***
-It is rarely happened, about 1/400 in my test env.
-
-The reason is recursion of btrfs_run_delayed_iputs():
-  cleaner_kthread
-  -> btrfs_run_delayed_iputs() *1
-  -> get delayed_iput_sem lock *2
-  -> iput()
-  -> ...
-  -> btrfs_commit_transaction()
-  -> btrfs_run_delayed_iputs() *1
-  -> get delayed_iput_sem lock (dead lock) *2
-  *1: recursion of btrfs_run_delayed_iputs()
-  *2: warning of lockdep about delayed_iput_sem
-
-When fs is in high stress, new iputs may added into fs_info->delayed_iputs
-list when btrfs_run_delayed_iputs() is running, which cause
-second btrfs_run_delayed_iputs() run into down_read(&fs_info->delayed_iput_sem)
-again, and cause above lockdep warning.
-
-Actually, it will not cause real problem because both locks are read lock,
-but to avoid lockdep warning, we can do a fix.
+Reason:
+ read_tree_block() changed to return error number on fail,
+ and this value(not NULL) is set to tree_root->node, then subsequent
+ code will run to:
+  free_root_pointers()
+  ->free_root_extent_buffers()
+  ->free_extent_buffer()
+  ->atomic_read((extent_buffer *)(-E_XXX)->refs);
+ and trigger above error.
 
 Fix:
-  Don't do btrfs_run_delayed_iputs() in btrfs_commit_transaction() for
-  cleaner_kthread thread to break above recursion path.
-  cleaner_kthread is calling btrfs_run_delayed_iputs() explicitly in code,
-  and don't need to call btrfs_run_delayed_iputs() again in
-  btrfs_commit_transaction(), it also give us a bonus to avoid stack overflow.
+ Set tree_root->node to NULL on fail to make error_handle code
+ happy.
 
-Test:
-  No above lockdep warning after patch in 1200 generic/241 tests.
-
-Reported-by: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/transaction.c | 3 ++-
+ fs/btrfs/disk-io.c | 3 ++-
  1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c0f18e7..31248ad 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -2152,7 +2152,8 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index a9aadb2..f556c37 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2842,6 +2842,7 @@ int open_ctree(struct super_block *sb,
+ 	    !extent_buffer_uptodate(chunk_root->node)) {
+ 		printk(KERN_ERR "BTRFS: failed to read chunk root on %s\n",
+ 		       sb->s_id);
++		chunk_root->node = NULL;
+ 		goto fail_tree_roots;
+ 	}
+ 	btrfs_set_root_node(&chunk_root->root_item, chunk_root->node);
+@@ -2879,7 +2880,7 @@ retry_root_backup:
+ 	    !extent_buffer_uptodate(tree_root->node)) {
+ 		printk(KERN_WARNING "BTRFS: failed to read tree root on %s\n",
+ 		       sb->s_id);
+-
++		tree_root->node = NULL;
+ 		goto recovery_tree_root;
+ 	}
  
- 	kmem_cache_free(btrfs_trans_handle_cachep, trans);
- 
--	if (current != root->fs_info->transaction_kthread)
-+	if (current != root->fs_info->transaction_kthread &&
-+	    current != root->fs_info->cleaner_kthread)
- 		btrfs_run_delayed_iputs(root);
- 
- 	return ret;
 -- 
 1.8.5.1
 

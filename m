@@ -1,66 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:44874 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:39726 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752380AbbGNPhX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 14 Jul 2015 11:37:23 -0400
+	id S1754599AbbGPJTE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Jul 2015 05:19:04 -0400
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: regression test for the btrfs clone ioctl
-Date: Tue, 14 Jul 2015 16:37:14 +0100
-Message-Id: <1436888234-16254-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] fstests: generic test for fsync after adding hard links
+Date: Wed, 15 Jul 2015 23:59:27 +0100
+Message-Id: <1437001167-21510-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-This tests that we can not clone an inline extent into a non-zero file
-offset. Inline extents at non-zero offsets is something btrfs is not
-prepared for and results in all sorts of corruption and crashes on
-future IO operations, such as the following BUG_ON() triggered by the
-last write operation done by this test:
+Test that if we add hard links (in the same directory) to two files and
+then fsync only one of the files, after the fsync log/journal is replayed
+all the links exist and the filesystem metadata (directory and file
+inodes) is in a consistent state.
 
-  [152154.035903] ------------[ cut here ]------------
-  [152154.036424] kernel BUG at mm/page-writeback.c:2286!
-  [152154.036424] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-  (...)
-  [152154.036424] RIP: 0010:[<ffffffff8111a9d5>]  [<ffffffff8111a9d5>] clear_page_dirty_for_io+0x1e/0x90
-  (...)
-  [152154.036424] Call Trace:
-  [152154.036424]  [<ffffffffa04e97c1>] lock_and_cleanup_extent_if_need+0x147/0x18d [btrfs]
-  [152154.036424]  [<ffffffffa04ea82c>] __btrfs_buffered_write+0x245/0x4c8 [btrfs]
-  [152154.036424]  [<ffffffffa04ed14b>] ? btrfs_file_write_iter+0x150/0x3e0 [btrfs]
-  [152154.036424]  [<ffffffffa04ed15a>] ? btrfs_file_write_iter+0x15f/0x3e0 [btrfs]
-  [152154.036424]  [<ffffffffa04ed2c7>] btrfs_file_write_iter+0x2cc/0x3e0 [btrfs]
-  [152154.036424]  [<ffffffff81165a4a>] __vfs_write+0x7c/0xa5
-  [152154.036424]  [<ffffffff81165f89>] vfs_write+0xa0/0xe4
-  [152154.036424]  [<ffffffff81166855>] SyS_pwrite64+0x64/0x82
-  [152154.036424]  [<ffffffff81465197>] system_call_fastpath+0x12/0x6f
-  (...)
-  [152154.242621] ---[ end trace e3d3376b23a57041 ]---
+This test is motivated by a bug found in btrfs that is fixed by linux
+kernel patch titled:
 
-This issue is addressed by the following linux kernel patch for btrfs:
-"Btrfs: fix file corruption after cloning inline extents".
+  "Btrfs: fix stale directory entries after fsync log replay"
+
+Verified against ext3/4, xfs, f2fs and reiserfs on a 4.1 linux kernel.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/096     | 80 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/096.out | 12 ++++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 93 insertions(+)
- create mode 100755 tests/btrfs/096
- create mode 100644 tests/btrfs/096.out
+ tests/generic/096     | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/096.out |  3 ++
+ tests/generic/group   |  1 +
+ 3 files changed, 103 insertions(+)
+ create mode 100755 tests/generic/096
+ create mode 100644 tests/generic/096.out
 
-diff --git a/tests/btrfs/096 b/tests/btrfs/096
+diff --git a/tests/generic/096 b/tests/generic/096
 new file mode 100755
-index 0000000..f5b3a7f
+index 0000000..877ea95
 --- /dev/null
-+++ b/tests/btrfs/096
-@@ -0,0 +1,80 @@
++++ b/tests/generic/096
+@@ -0,0 +1,99 @@
 +#! /bin/bash
 +# FSQA Test No. 096
 +#
-+# Test that we can not clone an inline extent into a non-zero file offset.
++# Test that if we add hard links (in the same directory) to two files and then
++# fsync only one of the files, after the fsync log/journal is replayed all the
++# links exist and the filesystem metadata (directory and file inodes) is in a
++# consistent state.
 +#
 +#-----------------------------------------------------------------------
 +#
@@ -91,79 +78,89 @@ index 0000000..f5b3a7f
 +
 +_cleanup()
 +{
++	_cleanup_flakey
 +	rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
++. ./common/dmflakey
 +
 +# real QA test starts here
 +_need_to_be_root
-+_supported_fs btrfs
++_supported_fs generic
 +_supported_os Linux
 +_require_scratch
-+_require_cloner
++_require_dm_flakey
++_require_metadata_journaling $SCRATCH_DEV
 +
 +rm -f $seqres.full
 +
 +_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
++_init_flakey
++_mount_flakey
 +
-+# Create our test files. File foo has the same 2K of data at offset 4K as file
-+# bar has at its offset 0.
-+$XFS_IO_PROG -f -s -c "pwrite -S 0xaa 0 4K" \
-+		-c "pwrite -S 0xbb 4k 2K" \
-+		-c "pwrite -S 0xcc 8K 4K" \
-+		$SCRATCH_MNT/foo | _filter_xfs_io
++# Create our test directory and files.
++mkdir $SCRATCH_MNT/testdir
++touch $SCRATCH_MNT/testdir/foo
++touch $SCRATCH_MNT/testdir/bar
 +
-+# File bar consists of a single inline extent (2K size).
-+$XFS_IO_PROG -f -s -c "pwrite -S 0xbb 0 2K" \
-+		$SCRATCH_MNT/bar | _filter_xfs_io
++# Make sure everything done so far is durably persisted.
++sync
 +
-+# Now call the clone ioctl to clone the extent of file bar into file foo at its
-+# offset 4K. This made file foo have an inline extent at offset 4K, something
-+# which the btrfs code can not deal with in future IO operations because all
-+# inline extents are supposed to start at an offset of 0, resulting in all sorts
-+# of chaos.
-+# So here we validate that the clone ioctl returns an EOPNOTSUPP, which is what
-+# it returns for other cases dealing with inlined extents.
-+$CLONER_PROG -s 0 -d $((4 * 1024)) -l $((2 * 1024)) \
-+	$SCRATCH_MNT/bar $SCRATCH_MNT/foo
++# Create one hard link for file foo and another one for file bar. After that
++# fsync only the file bar.
++ln $SCRATCH_MNT/testdir/bar $SCRATCH_MNT/testdir/bar_link
++ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/foo_link
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/bar
 +
-+# Because of the inline extent at offset 4K, the following write made the kernel
-+# crash with a BUG_ON().
-+$XFS_IO_PROG -c "pwrite -S 0xdd 6K 2K" $SCRATCH_MNT/foo | _filter_xfs_io
++# Silently drop all writes on our scratch device to simulate a power failure.
++_load_flakey_table $FLAKEY_DROP_WRITES
++_unmount_flakey
++
++# Allow writes again and mount the fs to trigger log/journal replay.
++_load_flakey_table $FLAKEY_ALLOW_WRITES
++_mount_flakey
++
++# Now verify both our files have a link count of 2.
++echo "Link count for file foo: $(stat --format=%h $SCRATCH_MNT/testdir/foo)"
++echo "Link count for file bar: $(stat --format=%h $SCRATCH_MNT/testdir/bar)"
++
++# We should be able to remove all the links of our files in testdir, and after
++# that the parent directory should become empty and therefore possible to
++# remove it.
++rm -f $SCRATCH_MNT/testdir/*
++rmdir $SCRATCH_MNT/testdir
++
++_unmount_flakey
++
++# The fstests framework will call fsck against our filesystem which will verify
++# that all metadata is in a consistent state.
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/096.out b/tests/btrfs/096.out
+diff --git a/tests/generic/096.out b/tests/generic/096.out
 new file mode 100644
-index 0000000..235198d
+index 0000000..09544ad
 --- /dev/null
-+++ b/tests/btrfs/096.out
-@@ -0,0 +1,12 @@
++++ b/tests/generic/096.out
+@@ -0,0 +1,3 @@
 +QA output created by 096
-+wrote 4096/4096 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2048/2048 bytes at offset 4096
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 4096/4096 bytes at offset 8192
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 2048/2048 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+wrote 2048/2048 bytes at offset 6144
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 79feea9..6ff5f3d 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -97,3 +97,4 @@
- 093 auto quick clone
- 094 auto quick send
++Link count for file foo: 2
++Link count for file bar: 2
+diff --git a/tests/generic/group b/tests/generic/group
+index 1f1a0b0..1e21d17 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -98,6 +98,7 @@
+ 093 attr cap udf auto
+ 094 auto quick metadata
  095 auto quick metadata
-+096 auto quick clone
++096 auto quick metadata
+ 097 udf auto
+ 099 udf auto
+ 100 udf auto
 -- 
 2.1.3
 

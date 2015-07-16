@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33746 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17274 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752149AbbGPCIf (ORCPT
+	with ESMTP id S1754104AbbGPIp4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jul 2015 22:08:35 -0400
+	Thu, 16 Jul 2015 04:45:56 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6FD2OeR008208
-	for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2015 21:02:26 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6G8i75X021353
+	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2015 16:44:07 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Avoid NULL pointer dereference of free_extent_buffer when read_tree_block() fail
-Date: Wed, 15 Jul 2015 21:02:09 +0800
-Message-ID: <3f7039329ae5c29de0e7ff844ac4f494b9df8e33.1436965054.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Show detail information when mount failed on missing devices
+Date: Thu, 16 Jul 2015 16:44:17 +0800
+Message-ID: <258b89aa6a4d0f3a46f205931a62ebb2d5656309.1437036246.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,63 +20,38 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-When read_tree_block() failed, we can see following dmesg:
- [  134.371389] BUG: unable to handle kernel NULL pointer dereference at 0000000000000063
- [  134.372236] IP: [<ffffffff813a4a51>] free_extent_buffer+0x21/0x90
- [  134.372236] PGD 0
- [  134.372236] Oops: 0000 [#1] SMP
- [  134.372236] Modules linked in:
- [  134.372236] CPU: 0 PID: 2289 Comm: mount Not tainted 4.2.0-rc1_HEAD_c65b99f046843d2455aa231747b5a07a999a9f3d_+ #115
- [  134.372236] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.7.5.1-0-g8936dbb-20141113_115728-nilsson.home.kraxel.org 04/01/2014
- [  134.372236] task: ffff88003b6e1a00 ti: ffff880011e60000 task.ti: ffff880011e60000
- [  134.372236] RIP: 0010:[<ffffffff813a4a51>]  [<ffffffff813a4a51>] free_extent_buffer+0x21/0x90
- ...
- [  134.372236] Call Trace:
- [  134.372236]  [<ffffffff81379aa1>] free_root_extent_buffers+0x91/0xb0
- [  134.372236]  [<ffffffff81379c3d>] free_root_pointers+0x17d/0x190
- [  134.372236]  [<ffffffff813801b0>] open_ctree+0x1ca0/0x25b0
- [  134.372236]  [<ffffffff8144d017>] ? disk_name+0x97/0xb0
- [  134.372236]  [<ffffffff813558aa>] btrfs_mount+0x8fa/0xab0
- ...
+When mount failed because missing device, we can see following
+dmesg:
+ [ 1060.267743] BTRFS: too many missing devices, writeable mount is not allowed
+ [ 1060.273158] BTRFS: open_ctree failed
 
-Reason:
- read_tree_block() changed to return error number on fail,
- and this value(not NULL) is set to tree_root->node, then subsequent
- code will run to:
-  free_root_pointers()
-  ->free_root_extent_buffers()
-  ->free_extent_buffer()
-  ->atomic_read((extent_buffer *)(-E_XXX)->refs);
- and trigger above error.
+This patch add missing_device_number and tolerated_missing_device_number
+to above output, to let user know what really happened, and helps
+bug-report and debug.
 
-Fix:
- Set tree_root->node to NULL on fail to make error_handle code
- happy.
+dmesg after patch:
+ [  127.912406] BTRFS: too many missing devices(1 > 0), writeable mount is not allowed
+ [  127.918128] BTRFS: open_ctree failed
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index a9aadb2..f556c37 100644
+index 2eda03b..b6600c7 100644
 --- a/fs/btrfs/disk-io.c
 +++ b/fs/btrfs/disk-io.c
-@@ -2842,6 +2842,7 @@ int open_ctree(struct super_block *sb,
- 	    !extent_buffer_uptodate(chunk_root->node)) {
- 		printk(KERN_ERR "BTRFS: failed to read chunk root on %s\n",
- 		       sb->s_id);
-+		chunk_root->node = NULL;
- 		goto fail_tree_roots;
- 	}
- 	btrfs_set_root_node(&chunk_root->root_item, chunk_root->node);
-@@ -2879,7 +2880,7 @@ retry_root_backup:
- 	    !extent_buffer_uptodate(tree_root->node)) {
- 		printk(KERN_WARNING "BTRFS: failed to read tree root on %s\n",
- 		       sb->s_id);
--
-+		tree_root->node = NULL;
- 		goto recovery_tree_root;
+@@ -2950,8 +2950,9 @@ retry_root_backup:
+ 	if (fs_info->fs_devices->missing_devices >
+ 	     fs_info->num_tolerated_disk_barrier_failures &&
+ 	    !(sb->s_flags & MS_RDONLY)) {
+-		printk(KERN_WARNING "BTRFS: "
+-			"too many missing devices, writeable mount is not allowed\n");
++		pr_warn("BTRFS: too many missing devices(%llu > %d), writeable mount is not allowed\n",
++			fs_info->fs_devices->missing_devices,
++			fs_info->num_tolerated_disk_barrier_failures);
+ 		goto fail_sysfs;
  	}
  
 -- 

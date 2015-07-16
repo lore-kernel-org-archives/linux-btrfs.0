@@ -1,44 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vn0-f43.google.com ([209.85.216.43]:40805 "EHLO
-	mail-vn0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752427AbbGOV3k (ORCPT
+Received: from mail-pd0-f182.google.com ([209.85.192.182]:32971 "EHLO
+	mail-pd0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754086AbbGPALM convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jul 2015 17:29:40 -0400
-Received: by vnbg1 with SMTP id g1so5998390vnb.7
-        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2015 14:29:39 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150715161546.GR10539@carfax.org.uk>
-References: <55A4F74D.9000305@gmail.com>
-	<55A50DBF.1080602@gmail.com>
-	<CAJCQCtSEk3cfwWTyzzQft1+eHcUDm_zFiBpYZM15rhZBzF3U2A@mail.gmail.com>
-	<55A63F03.2080207@gmail.com>
-	<CAJCQCtRWSvHtH0rjn2twd3yOPFMECE--UJxTUO0r_ydXQ7AhRQ@mail.gmail.com>
-	<20150715161546.GR10539@carfax.org.uk>
-Date: Wed, 15 Jul 2015 15:29:39 -0600
-Message-ID: <CAJCQCtQFBjbuBHXfZ831YAKQwNDh+kxugFE_iMW6VyRzSpio2Q@mail.gmail.com>
-Subject: Re: BTRFS raid6 unmountable after a couple of days of usage.
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Wed, 15 Jul 2015 20:11:12 -0400
+Received: by pdbqm3 with SMTP id qm3so33488244pdb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 15 Jul 2015 17:11:11 -0700 (PDT)
+Received: from sharpeth.aviatis.com (c-107-3-142-14.hsd1.ca.comcast.net. [107.3.142.14])
+        by smtp.gmail.com with ESMTPSA id fc3sm5874841pab.16.2015.07.15.17.11.10
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Wed, 15 Jul 2015 17:11:11 -0700 (PDT)
+From: Johannes Ernst <johannes.ernst@gmail.com>
+Content-Type: text/plain; charset=utf-8
+Subject: I'd like a -r flag on btrfs subvolume delete
+Message-Id: <0CF53779-ED80-4311-864F-CEF960C45ABA@gmail.com>
+Date: Wed, 15 Jul 2015 17:11:11 -0700
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2102\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 15, 2015 at 10:15 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+Rationale: cleaning up after containers, which may have created their own subvolumes.
 
->    There is at least one superblock on every device, usually two, and
-> often three. Each superblock contains the virtual address of the roots
-> of the root tree, the chunk tree and the log tree. Those are useless
-> without having the chunk tree, so there's also some information about
-> the chunk tree appended to the end of each superblock to bootstrap the
-> virtual address space lookup.
+E.g.
+	systemd-nspawn —boot —directory dir
 
-So maybe Austin can use btrfs-show-super -a on every device and see if
-there's anything different on some of the devices, that shouldn't be
-different? There must be something the kernel is tripping over that
-the use space tools aren't for some reason.
+where dir is a subvolume. When done with the container, deleting fir directly doesn’t work, because we now also have a subvolume at
+	dir/var/lib/machines
+and obviously there may be more that the container might have created.
+
+Cleaning this all up is a bit of pain, and
+	btrfs subvolume delete -r dir
+would solve it nicely.
+
+Cheers,
 
 
 
+Johannes Ernst
+Blog: http://upon2020.com/
+Twitter: @Johannes_Ernst
+GPG key: http://upon2020.com/public/pubkey.txt
+Check out UBOS, the Linux distro for personal servers I work on: http://ubos.net/
 
--- 
-Chris Murphy

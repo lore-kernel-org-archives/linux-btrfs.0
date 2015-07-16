@@ -1,166 +1,181 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:39726 "EHLO mail.kernel.org"
+Received: from mx1.redhat.com ([209.132.183.28]:35529 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754599AbbGPJTE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jul 2015 05:19:04 -0400
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: generic test for fsync after adding hard links
-Date: Wed, 15 Jul 2015 23:59:27 +0100
-Message-Id: <1437001167-21510-1-git-send-email-fdmanana@kernel.org>
+	id S1754317AbbGPJeI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 16 Jul 2015 05:34:08 -0400
+Date: Thu, 16 Jul 2015 17:34:02 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] fstests: generic test for fsync after adding hard links
+Message-ID: <20150716093402.GI3945@dhcp-13-216.nay.redhat.com>
+References: <1437001167-21510-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1437001167-21510-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Jul 15, 2015 at 11:59:27PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Test that if we add hard links (in the same directory) to two files and
+> then fsync only one of the files, after the fsync log/journal is replayed
+> all the links exist and the filesystem metadata (directory and file
+> inodes) is in a consistent state.
+> 
+> This test is motivated by a bug found in btrfs that is fixed by linux
+> kernel patch titled:
+> 
+>   "Btrfs: fix stale directory entries after fsync log replay"
+> 
+> Verified against ext3/4, xfs, f2fs and reiserfs on a 4.1 linux kernel.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Test that if we add hard links (in the same directory) to two files and
-then fsync only one of the files, after the fsync log/journal is replayed
-all the links exist and the filesystem metadata (directory and file
-inodes) is in a consistent state.
+Looks good to me.
 
-This test is motivated by a bug found in btrfs that is fixed by linux
-kernel patch titled:
+Reviewed-by: Eryu Guan <eguan@redhat.com>
 
-  "Btrfs: fix stale directory entries after fsync log replay"
-
-Verified against ext3/4, xfs, f2fs and reiserfs on a 4.1 linux kernel.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/generic/096     | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/096.out |  3 ++
- tests/generic/group   |  1 +
- 3 files changed, 103 insertions(+)
- create mode 100755 tests/generic/096
- create mode 100644 tests/generic/096.out
-
-diff --git a/tests/generic/096 b/tests/generic/096
-new file mode 100755
-index 0000000..877ea95
---- /dev/null
-+++ b/tests/generic/096
-@@ -0,0 +1,99 @@
-+#! /bin/bash
-+# FSQA Test No. 096
-+#
-+# Test that if we add hard links (in the same directory) to two files and then
-+# fsync only one of the files, after the fsync log/journal is replayed all the
-+# links exist and the filesystem metadata (directory and file inodes) is in a
-+# consistent state.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_need_to_be_root
-+_supported_fs generic
-+_supported_os Linux
-+_require_scratch
-+_require_dm_flakey
-+_require_metadata_journaling $SCRATCH_DEV
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
-+
-+# Create our test directory and files.
-+mkdir $SCRATCH_MNT/testdir
-+touch $SCRATCH_MNT/testdir/foo
-+touch $SCRATCH_MNT/testdir/bar
-+
-+# Make sure everything done so far is durably persisted.
-+sync
-+
-+# Create one hard link for file foo and another one for file bar. After that
-+# fsync only the file bar.
-+ln $SCRATCH_MNT/testdir/bar $SCRATCH_MNT/testdir/bar_link
-+ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/foo_link
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/bar
-+
-+# Silently drop all writes on our scratch device to simulate a power failure.
-+_load_flakey_table $FLAKEY_DROP_WRITES
-+_unmount_flakey
-+
-+# Allow writes again and mount the fs to trigger log/journal replay.
-+_load_flakey_table $FLAKEY_ALLOW_WRITES
-+_mount_flakey
-+
-+# Now verify both our files have a link count of 2.
-+echo "Link count for file foo: $(stat --format=%h $SCRATCH_MNT/testdir/foo)"
-+echo "Link count for file bar: $(stat --format=%h $SCRATCH_MNT/testdir/bar)"
-+
-+# We should be able to remove all the links of our files in testdir, and after
-+# that the parent directory should become empty and therefore possible to
-+# remove it.
-+rm -f $SCRATCH_MNT/testdir/*
-+rmdir $SCRATCH_MNT/testdir
-+
-+_unmount_flakey
-+
-+# The fstests framework will call fsck against our filesystem which will verify
-+# that all metadata is in a consistent state.
-+
-+status=0
-+exit
-diff --git a/tests/generic/096.out b/tests/generic/096.out
-new file mode 100644
-index 0000000..09544ad
---- /dev/null
-+++ b/tests/generic/096.out
-@@ -0,0 +1,3 @@
-+QA output created by 096
-+Link count for file foo: 2
-+Link count for file bar: 2
-diff --git a/tests/generic/group b/tests/generic/group
-index 1f1a0b0..1e21d17 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -98,6 +98,7 @@
- 093 attr cap udf auto
- 094 auto quick metadata
- 095 auto quick metadata
-+096 auto quick metadata
- 097 udf auto
- 099 udf auto
- 100 udf auto
--- 
-2.1.3
-
+> ---
+>  tests/generic/096     | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/generic/096.out |  3 ++
+>  tests/generic/group   |  1 +
+>  3 files changed, 103 insertions(+)
+>  create mode 100755 tests/generic/096
+>  create mode 100644 tests/generic/096.out
+> 
+> diff --git a/tests/generic/096 b/tests/generic/096
+> new file mode 100755
+> index 0000000..877ea95
+> --- /dev/null
+> +++ b/tests/generic/096
+> @@ -0,0 +1,99 @@
+> +#! /bin/bash
+> +# FSQA Test No. 096
+> +#
+> +# Test that if we add hard links (in the same directory) to two files and then
+> +# fsync only one of the files, after the fsync log/journal is replayed all the
+> +# links exist and the filesystem metadata (directory and file inodes) is in a
+> +# consistent state.
+> +#
+> +#-----------------------------------------------------------------------
+> +#
+> +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
+> +# Author: Filipe Manana <fdmanana@suse.com>
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	_cleanup_flakey
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +. ./common/dmflakey
+> +
+> +# real QA test starts here
+> +_need_to_be_root
+> +_supported_fs generic
+> +_supported_os Linux
+> +_require_scratch
+> +_require_dm_flakey
+> +_require_metadata_journaling $SCRATCH_DEV
+> +
+> +rm -f $seqres.full
+> +
+> +_scratch_mkfs >>$seqres.full 2>&1
+> +_init_flakey
+> +_mount_flakey
+> +
+> +# Create our test directory and files.
+> +mkdir $SCRATCH_MNT/testdir
+> +touch $SCRATCH_MNT/testdir/foo
+> +touch $SCRATCH_MNT/testdir/bar
+> +
+> +# Make sure everything done so far is durably persisted.
+> +sync
+> +
+> +# Create one hard link for file foo and another one for file bar. After that
+> +# fsync only the file bar.
+> +ln $SCRATCH_MNT/testdir/bar $SCRATCH_MNT/testdir/bar_link
+> +ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/foo_link
+> +$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/bar
+> +
+> +# Silently drop all writes on our scratch device to simulate a power failure.
+> +_load_flakey_table $FLAKEY_DROP_WRITES
+> +_unmount_flakey
+> +
+> +# Allow writes again and mount the fs to trigger log/journal replay.
+> +_load_flakey_table $FLAKEY_ALLOW_WRITES
+> +_mount_flakey
+> +
+> +# Now verify both our files have a link count of 2.
+> +echo "Link count for file foo: $(stat --format=%h $SCRATCH_MNT/testdir/foo)"
+> +echo "Link count for file bar: $(stat --format=%h $SCRATCH_MNT/testdir/bar)"
+> +
+> +# We should be able to remove all the links of our files in testdir, and after
+> +# that the parent directory should become empty and therefore possible to
+> +# remove it.
+> +rm -f $SCRATCH_MNT/testdir/*
+> +rmdir $SCRATCH_MNT/testdir
+> +
+> +_unmount_flakey
+> +
+> +# The fstests framework will call fsck against our filesystem which will verify
+> +# that all metadata is in a consistent state.
+> +
+> +status=0
+> +exit
+> diff --git a/tests/generic/096.out b/tests/generic/096.out
+> new file mode 100644
+> index 0000000..09544ad
+> --- /dev/null
+> +++ b/tests/generic/096.out
+> @@ -0,0 +1,3 @@
+> +QA output created by 096
+> +Link count for file foo: 2
+> +Link count for file bar: 2
+> diff --git a/tests/generic/group b/tests/generic/group
+> index 1f1a0b0..1e21d17 100644
+> --- a/tests/generic/group
+> +++ b/tests/generic/group
+> @@ -98,6 +98,7 @@
+>  093 attr cap udf auto
+>  094 auto quick metadata
+>  095 auto quick metadata
+> +096 auto quick metadata
+>  097 udf auto
+>  099 udf auto
+>  100 udf auto
+> -- 
+> 2.1.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

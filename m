@@ -1,214 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:39641 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753789AbbGPJSB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jul 2015 05:18:01 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix stale directory entries after fsync log replay
-Date: Wed, 15 Jul 2015 23:58:56 +0100
-Message-Id: <1437001136-21460-1-git-send-email-fdmanana@kernel.org>
+Received: from e28smtp06.in.ibm.com ([122.248.162.6]:48377 "EHLO
+	e28smtp06.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750796AbbGQE5G (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 17 Jul 2015 00:57:06 -0400
+Received: from /spool/local
+	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Fri, 17 Jul 2015 10:27:03 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: fstests@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
+        jbacik@fb.com
+Subject: [PATCH] generic/311: Disable dmesg check
+Date: Fri, 17 Jul 2015 00:56:43 -0400
+Message-Id: <1437109003-2357-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+When running generic/311 on Btrfs' subpagesize-blocksize patchset (on ppc64
+with 4k sectorsize and 16k node/leaf size) I noticed the following call trace,
 
-We have another case where after an fsync log replay we get an inode with
-a wrong link count (smaller than it should be) and a number of directory
-entries greater than its link count. This happens when we add a new link
-hard link to our inode A and then we fsync some other inode B that has
-the side effect of logging the parent directory inode too. In this case
-at log replay time we add the new hard link to our inode (the item with
-key BTRFS_INODE_REF_KEY) when processing the parent directory but we
-never adjust the link count of our inode A. As a result we get stale dir
-entries for our inode A that can never be deleted and therefore it makes
-it impossible to remove the parent directory (as its i_size can never
-decrease back to 0).
+BTRFS (device dm-0): parent transid verify failed on 29720576 wanted 160 found 158
+BTRFS (device dm-0): parent transid verify failed on 29720576 wanted 160 found 158
+BTRFS: Transaction aborted (error -5)
 
-A simple reproducer for fstests that triggers this issue:
+WARNING: at /root/repos/linux/fs/btrfs/super.c:260
+Modules linked in:
+CPU: 3 PID: 30769 Comm: umount Tainted: G        W    L 4.0.0-rc5-11671-g8b82e73e #63
+task: c000000079aaddb0 ti: c000000079a48000 task.ti: c000000079a48000
+NIP: c000000000499aa0 LR: c000000000499a9c CTR: c000000000779630
+REGS: c000000079a4b480 TRAP: 0700   Tainted: G        W   L   (4.0.0-rc5-11671-g8b82e73e)
+MSR: 8000000100029032 <SF,EE,ME,IR,DR,RI>  CR: 28008828  XER: 20000000
+CFAR: c000000000a23914 SOFTE: 1
+GPR00: c000000000499a9c c000000079a4b700 c00000000103bdf8 0000000000000025
+GPR04: 0000000000000001 0000000000000502 c00000000107e918 0000000000000cda
+GPR08: 0000000000000007 0000000000000007 0000000000000001 c0000000010f5044
+GPR12: 0000000028008822 c00000000fdc0d80 0000000020000000 0000000010152e00
+GPR16: 0000010002979380 0000000010140724 0000000000000000 0000000000000000
+GPR20: ffffffffffffffff 0000000000000000 0000000000000000 0000000000000000
+GPR24: c0000000151f61a8 0000000000000000 c000000055e5e800 c000000000aac270
+GPR28: 00000000000004a4 fffffffffffffffb c000000055e5e800 c0000000679204d0
+NIP [c000000000499aa0] .__btrfs_abort_transaction+0x180/0x190
+LR [c000000000499a9c] .__btrfs_abort_transaction+0x17c/0x190
+Call Trace:
+[c000000079a4b700] [c000000000499a9c] .__btrfs_abort_transaction+0x17c/0x190 (unreliable)
+[c000000079a4b7a0] [c000000000541678] .__btrfs_run_delayed_items+0xe8/0x220
+[c000000079a4b850] [c0000000004d5b3c] .btrfs_commit_transaction+0x37c/0xca0
+[c000000079a4b960] [c00000000049824c] .btrfs_sync_fs+0x6c/0x1a0
+[c000000079a4ba00] [c000000000255270] .sync_filesystem+0xd0/0x100
+[c000000079a4ba80] [c000000000218070] .generic_shutdown_super+0x40/0x170
+[c000000079a4bb10] [c000000000218598] .kill_anon_super+0x18/0x30
+[c000000079a4bb90] [c000000000498418] .btrfs_kill_super+0x18/0xc0
+[c000000079a4bc10] [c000000000218ac8] .deactivate_locked_super+0x98/0xe0
+[c000000079a4bc90] [c00000000023e744] .cleanup_mnt+0x54/0xa0
+[c000000079a4bd10] [c0000000000b7d14] .task_work_run+0x114/0x150
+[c000000079a4bdb0] [c000000000015f84] .do_notify_resume+0x74/0x80
+[c000000079a4be30] [c000000000009838] .ret_from_except_lite+0x64/0x68
+Instruction dump:
+ebc1fff0 ebe1fff8 4bfffb28 60000000 3ce2ffcd 38e7e818 4bffffbc 3c62ffd2
+7fa4eb78 3863b808 48589e1d 60000000 <0fe00000> 4bfffedc 60000000 60000000
+BTRFS: error (device dm-0) in __btrfs_run_delayed_items:1188: errno=-5 IO failure
 
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
 
-  _cleanup()
-  {
-      _cleanup_flakey
-      rm -f $tmp.*
-  }
+The call trace is seen when executing _run_test() for the 8th time.
+The above trace is actually a false-positive failure as indicated below,
+ fsync-tester
+   fsync(fd)
+   Write delayed inode item to fs tree
+     (assume transid to be 160)
+     (assume tree block to start at logical address 29720576)
+ md5sum $testfile
+   This causes a delayed inode to be added
+ Load flakey table
+   i.e. drop writes that are initiated from now onwards
+ Unmount filesystem
+   btrfs_sync_fs is invoked
+     Write 29720576 metadata block to disk
+     free_extent_buffer(29720576)
+       release_extent_buffer(29720576)
+   Start writing delayed inode
+     Traverse the fs tree
+       (assume the parent tree block of 29720576 is still in memory)
+       When reading 29720576 from disk, parent's blkptr will have generation
+       set to 160. But the on-disk tree block will have an older
+       generation (say, 158). Transid verification fails and hence the
+       transaction gets aborted
 
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-  . ./common/dmflakey
+The test only cares about the FS instance before the unmount
+operation (i.e. the synced FS). Hence to get the test to pass, ignore the
+false-positive trace that could be generated.
 
-  # real QA test starts here
-  _need_to_be_root
-  _supported_fs generic
-  _supported_os Linux
-  _require_scratch
-  _require_dm_flakey
-  _require_metadata_journaling $SCRATCH_DEV
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >>$seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
-
-  # Create our test directory and files.
-  mkdir $SCRATCH_MNT/testdir
-  touch $SCRATCH_MNT/testdir/foo
-  touch $SCRATCH_MNT/testdir/bar
-
-  # Make sure everything done so far is durably persisted.
-  sync
-
-  # Create one hard link for file foo and another one for file bar. After
-  # that fsync only the file bar.
-  ln $SCRATCH_MNT/testdir/bar $SCRATCH_MNT/testdir/bar_link
-  ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/foo_link
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/bar
-
-  # Silently drop all writes on scratch device to simulate power failure.
-  _load_flakey_table $FLAKEY_DROP_WRITES
-  _unmount_flakey
-
-  # Allow writes again and mount the fs to trigger log/journal replay.
-  _load_flakey_table $FLAKEY_ALLOW_WRITES
-  _mount_flakey
-
-  # Now verify both our files have a link count of 2.
-  echo "Link count for file foo: $(stat --format=%h $SCRATCH_MNT/testdir/foo)"
-  echo "Link count for file bar: $(stat --format=%h $SCRATCH_MNT/testdir/bar)"
-
-  # We should be able to remove all the links of our files in testdir, and
-  # after that the parent directory should become empty and therefore
-  # possible to remove it.
-  rm -f $SCRATCH_MNT/testdir/*
-  rmdir $SCRATCH_MNT/testdir
-
-  _unmount_flakey
-
-  # The fstests framework will call fsck against our filesystem which will verify
-  # that all metadata is in a consistent state.
-
-  status=0
-  exit
-
-The test fails with:
-
- -Link count for file foo: 2
- +Link count for file foo: 1
-  Link count for file bar: 2
- +rm: cannot remove '/home/fdmanana/btrfs-tests/scratch_1/testdir/foo_link': Stale file handle
- +rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/testdir': Directory not empty
- (...)
- _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
-
-And fsck's output:
-
-  (...)
-  checking fs roots
-  root 5 inode 258 errors 2001, no inode item, link count wrong
-      unresolved ref dir 257 index 5 namelen 8 name foo_link filetype 1 errors 4, no inode ref
-  Checking filesystem on /dev/sdc
-  (...)
-
-So fix this by marking inodes for link count fixup at log replay time
-whenever a directory entry is replayed if the entry was created in the
-transaction where the fsync was made and if it points to a non-directory
-inode.
-
-This isn't a new problem/regression, the issue exists for a long time,
-possibly since the log tree feature was added (2008).
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/tree-log.c | 53 +++++++++++++++++++++++++++++++++++++++++++++++++++--
- 1 file changed, 51 insertions(+), 2 deletions(-)
+ tests/generic/311 | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 9c45431..0cf189d 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -1740,12 +1740,13 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
- 					struct extent_buffer *eb, int slot,
- 					struct btrfs_key *key)
- {
--	int ret;
-+	int ret = 0;
- 	u32 item_size = btrfs_item_size_nr(eb, slot);
- 	struct btrfs_dir_item *di;
- 	int name_len;
- 	unsigned long ptr;
- 	unsigned long ptr_end;
-+	struct btrfs_path *fixup_path = NULL;
+diff --git a/tests/generic/311 b/tests/generic/311
+index d21b6eb..cd6391d 100755
+--- a/tests/generic/311
++++ b/tests/generic/311
+@@ -64,6 +64,8 @@ _require_xfs_io_command "falloc"
  
- 	ptr = btrfs_item_ptr_offset(eb, slot);
- 	ptr_end = ptr + item_size;
-@@ -1759,8 +1760,56 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
- 			return ret;
- 		ptr = (unsigned long)(di + 1);
- 		ptr += name_len;
-+
-+		/*
-+		 * If this entry refers to a non-directory (directories can not
-+		 * have a link count > 1) and it was added in the transaction
-+		 * that was not committed, make sure we fixup the link count of
-+		 * the inode it the entry points to. Otherwise something like
-+		 * the following would result in a directory pointing to an
-+		 * inode with a wrong link that does not account for this dir
-+		 * entry:
-+		 *
-+		 * mkdir testdir
-+		 * touch testdir/foo
-+		 * touch testdir/bar
-+		 * sync
-+		 *
-+		 * ln testdir/bar testdir/bar_link
-+		 * ln testdir/foo testdir/foo_link
-+		 * xfs_io -c "fsync" testdir/bar
-+		 *
-+		 * <power failure>
-+		 *
-+		 * mount fs, log replay happens
-+		 *
-+		 * File foo would remain with a link count of 1 when it has two
-+		 * entries pointing to it in the directory testdir. This would
-+		 * make it impossible to ever delete the parent directory has
-+		 * it would result in stale dentries that can never be deleted.
-+		 */
-+		if (btrfs_dir_type(eb, di) != BTRFS_FT_DIR &&
-+		    btrfs_dir_transid(eb, di) >
-+		    root->fs_info->last_trans_committed) {
-+			struct btrfs_key di_key;
-+
-+			if (!fixup_path) {
-+				fixup_path = btrfs_alloc_path();
-+				if (!fixup_path) {
-+					ret = -ENOMEM;
-+					break;
-+				}
-+			}
-+
-+			btrfs_dir_item_key_to_cpu(eb, di, &di_key);
-+			ret = link_to_fixup_dir(trans, root, fixup_path,
-+						di_key.objectid);
-+			if (ret)
-+				break;
-+		}
- 	}
--	return 0;
-+	btrfs_free_path(fixup_path);
-+	return ret;
- }
+ [ -x $here/src/fsync-tester ] || _notrun "fsync-tester not built"
  
- /*
++_disable_dmesg_check
++
+ rm -f $seqres.full
+ SEED=1
+ testfile=$SCRATCH_MNT/$seq.fsync
 -- 
-2.1.3
+2.1.0
 

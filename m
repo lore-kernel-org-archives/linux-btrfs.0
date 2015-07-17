@@ -1,166 +1,182 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:25242 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751565AbbGPMRR (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:40691 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757214AbbGQJMG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 16 Jul 2015 08:17:17 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6GCFRBU030571
-	for <linux-btrfs@vger.kernel.org>; Thu, 16 Jul 2015 20:15:27 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Add raid56 support for updating num_tolerated_disk_barrier_failures in btrfs_balance()
-Date: Thu, 16 Jul 2015 20:15:38 +0800
-Message-ID: <d950ef643a834a687164bfa6cc140fe5db3527cc.1437048934.git.zhaolei@cn.fujitsu.com>
+	Fri, 17 Jul 2015 05:12:06 -0400
+Message-ID: <55A8C6DB.80208@oracle.com>
+Date: Fri, 17 Jul 2015 17:11:55 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Zhaolei <zhaolei@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Add raid56 support for updating num_tolerated_disk_barrier_failures
+ in btrfs_balance()
+References: <d950ef643a834a687164bfa6cc140fe5db3527cc.1437048934.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <d950ef643a834a687164bfa6cc140fe5db3527cc.1437048934.git.zhaolei@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Code for updating fs_info->num_tolerated_disk_barrier_failures in
-btrfs_balance() lacks raid56 support.
 
-Reason:
- Above code was wroten in 2012-08-01, together with
- btrfs_calc_num_tolerated_disk_barrier_failures()'s first version.
+nice clean up thanks. but... more below.
 
- Then, btrfs_calc_num_tolerated_disk_barrier_failures() was updated
- later to support raid56, but code in btrfs_balance() was not
- updated together.
+On 07/16/2015 08:15 PM, Zhaolei wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+>
+> Code for updating fs_info->num_tolerated_disk_barrier_failures in
+> btrfs_balance() lacks raid56 support.
+>
+> Reason:
+>   Above code was wroten in 2012-08-01, together with
+>   btrfs_calc_num_tolerated_disk_barrier_failures()'s first version.
+>
+>   Then, btrfs_calc_num_tolerated_disk_barrier_failures() was updated
+>   later to support raid56, but code in btrfs_balance() was not
+>   updated together.
+>
+> Fix:
+>   Merge these similar code by adding a argument to
+>   btrfs_calc_num_tolerated_disk_barrier_failures() to make it
+>   support both case.
+>
+>   It can fix this bug with a bonus of cleanup, and make these code
+>   never in current no-sync state from now on.
+>
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> ---
+>   fs/btrfs/disk-io.c |  9 +++++----
+>   fs/btrfs/disk-io.h |  2 +-
+>   fs/btrfs/volumes.c | 28 +++++++++-------------------
+>   3 files changed, 15 insertions(+), 24 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index b6600c7..ac26111 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2946,7 +2946,7 @@ retry_root_backup:
+>   		goto fail_sysfs;
+>   	}
+>   	fs_info->num_tolerated_disk_barrier_failures =
+> -		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+> +		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info, 0);
+>   	if (fs_info->fs_devices->missing_devices >
+>   	     fs_info->num_tolerated_disk_barrier_failures &&
+>   	    !(sb->s_flags & MS_RDONLY)) {
+> @@ -3441,7 +3441,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+>   }
+>
+>   int btrfs_calc_num_tolerated_disk_barrier_failures(
+> -	struct btrfs_fs_info *fs_info)
+> +	struct btrfs_fs_info *fs_info, u64 extra_flags)
+>   {
 
-Fix:
- Merge these similar code by adding a argument to
- btrfs_calc_num_tolerated_disk_barrier_failures() to make it
- support both case.
+  extra_flags not required. since .. more below.
 
- It can fix this bug with a bonus of cleanup, and make these code
- never in current no-sync state from now on.
+>   	struct btrfs_ioctl_space_info space;
+>   	struct btrfs_space_info *sinfo;
+> @@ -3481,7 +3481,7 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
+>   						   &space);
+>   			if (space.total_bytes == 0 || space.used_bytes == 0)
+>   				continue;
+> -			flags = space.flags;
+> +			flags = space.flags | extra_flags;
+>   			/*
+>   			 * return
+>   			 * 0: if dup, single or RAID0 is configured for
+> @@ -3493,7 +3493,8 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
+>   			 */
+>   			if (num_tolerated_disk_barrier_failures > 0 &&
+>   			    ((flags & (BTRFS_BLOCK_GROUP_DUP |
+> -				       BTRFS_BLOCK_GROUP_RAID0)) ||
+> +				       BTRFS_BLOCK_GROUP_RAID0 |
+> +				       BTRFS_AVAIL_ALLOC_BIT_SINGLE)) ||
+>   			     ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0)))
+>   				num_tolerated_disk_barrier_failures = 0;
+>   			else if (num_tolerated_disk_barrier_failures > 1 &&
+> diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+> index d4cbfee..aceaa8d 100644
+> --- a/fs/btrfs/disk-io.h
+> +++ b/fs/btrfs/disk-io.h
+> @@ -140,7 +140,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
+>   int btree_lock_page_hook(struct page *page, void *data,
+>   				void (*flush_fn)(void *));
+>   int btrfs_calc_num_tolerated_disk_barrier_failures(
+> -	struct btrfs_fs_info *fs_info);
+> +	struct btrfs_fs_info *fs_info, u64 extra_flags);
+>   int __init btrfs_end_io_wq_init(void);
+>   void btrfs_end_io_wq_exit(void);
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index fbe7c10..d739915 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1812,7 +1812,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
+>   	}
+>
+>   	root->fs_info->num_tolerated_disk_barrier_failures =
+> -		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
+> +		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info,
+> +							       0);
+>
+>   	/*
+>   	 * at this point, the device is zero sized.  We want to
+> @@ -2342,7 +2343,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
+>   	}
+>
+>   	root->fs_info->num_tolerated_disk_barrier_failures =
+> -		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
+> +		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info,
+> +							       0);
+>   	ret = btrfs_commit_transaction(trans, root);
+>
+>   	if (seeding_dev) {
+> @@ -3573,23 +3575,10 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+>   	} while (read_seqretry(&fs_info->profiles_lock, seq));
+>
+>   	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+> -		int num_tolerated_disk_barrier_failures;
+> -		u64 target = bctl->sys.target;
+> -
+> -		num_tolerated_disk_barrier_failures =
+> -			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+> -		if (num_tolerated_disk_barrier_failures > 0 &&
+> -		    (target &
+> -		     (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID0 |
+> -		      BTRFS_AVAIL_ALLOC_BIT_SINGLE)))
+> -			num_tolerated_disk_barrier_failures = 0;
+> -		else if (num_tolerated_disk_barrier_failures > 1 &&
+> -			 (target &
+> -			  (BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID10)))
+> -			num_tolerated_disk_barrier_failures = 1;
+> -
+>   		fs_info->num_tolerated_disk_barrier_failures =
+> -			num_tolerated_disk_barrier_failures;
+> +			btrfs_calc_num_tolerated_disk_barrier_failures(
+> +				fs_info,
+> +				bctl->sys.target);
+>   	}
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/disk-io.c |  9 +++++----
- fs/btrfs/disk-io.h |  2 +-
- fs/btrfs/volumes.c | 28 +++++++++-------------------
- 3 files changed, 15 insertions(+), 24 deletions(-)
+  target is part of the user-end set item. please don't propagate
+  that to the function btrfs_calc_num_tolerated_disk_barrier_failures()
+  which is quite usefully used by many more functions. target must be
+  handled in here.
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b6600c7..ac26111 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2946,7 +2946,7 @@ retry_root_backup:
- 		goto fail_sysfs;
- 	}
- 	fs_info->num_tolerated_disk_barrier_failures =
--		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
-+		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info, 0);
- 	if (fs_info->fs_devices->missing_devices >
- 	     fs_info->num_tolerated_disk_barrier_failures &&
- 	    !(sb->s_flags & MS_RDONLY)) {
-@@ -3441,7 +3441,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- }
- 
- int btrfs_calc_num_tolerated_disk_barrier_failures(
--	struct btrfs_fs_info *fs_info)
-+	struct btrfs_fs_info *fs_info, u64 extra_flags)
- {
- 	struct btrfs_ioctl_space_info space;
- 	struct btrfs_space_info *sinfo;
-@@ -3481,7 +3481,7 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
- 						   &space);
- 			if (space.total_bytes == 0 || space.used_bytes == 0)
- 				continue;
--			flags = space.flags;
-+			flags = space.flags | extra_flags;
- 			/*
- 			 * return
- 			 * 0: if dup, single or RAID0 is configured for
-@@ -3493,7 +3493,8 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
- 			 */
- 			if (num_tolerated_disk_barrier_failures > 0 &&
- 			    ((flags & (BTRFS_BLOCK_GROUP_DUP |
--				       BTRFS_BLOCK_GROUP_RAID0)) ||
-+				       BTRFS_BLOCK_GROUP_RAID0 |
-+				       BTRFS_AVAIL_ALLOC_BIT_SINGLE)) ||
- 			     ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0)))
- 				num_tolerated_disk_barrier_failures = 0;
- 			else if (num_tolerated_disk_barrier_failures > 1 &&
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index d4cbfee..aceaa8d 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -140,7 +140,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- int btree_lock_page_hook(struct page *page, void *data,
- 				void (*flush_fn)(void *));
- int btrfs_calc_num_tolerated_disk_barrier_failures(
--	struct btrfs_fs_info *fs_info);
-+	struct btrfs_fs_info *fs_info, u64 extra_flags);
- int __init btrfs_end_io_wq_init(void);
- void btrfs_end_io_wq_exit(void);
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index fbe7c10..d739915 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1812,7 +1812,8 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 	}
- 
- 	root->fs_info->num_tolerated_disk_barrier_failures =
--		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
-+		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info,
-+							       0);
- 
- 	/*
- 	 * at this point, the device is zero sized.  We want to
-@@ -2342,7 +2343,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 	}
- 
- 	root->fs_info->num_tolerated_disk_barrier_failures =
--		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info);
-+		btrfs_calc_num_tolerated_disk_barrier_failures(root->fs_info,
-+							       0);
- 	ret = btrfs_commit_transaction(trans, root);
- 
- 	if (seeding_dev) {
-@@ -3573,23 +3575,10 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 	} while (read_seqretry(&fs_info->profiles_lock, seq));
- 
- 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
--		int num_tolerated_disk_barrier_failures;
--		u64 target = bctl->sys.target;
--
--		num_tolerated_disk_barrier_failures =
--			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
--		if (num_tolerated_disk_barrier_failures > 0 &&
--		    (target &
--		     (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID0 |
--		      BTRFS_AVAIL_ALLOC_BIT_SINGLE)))
--			num_tolerated_disk_barrier_failures = 0;
--		else if (num_tolerated_disk_barrier_failures > 1 &&
--			 (target &
--			  (BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID10)))
--			num_tolerated_disk_barrier_failures = 1;
--
- 		fs_info->num_tolerated_disk_barrier_failures =
--			num_tolerated_disk_barrier_failures;
-+			btrfs_calc_num_tolerated_disk_barrier_failures(
-+				fs_info,
-+				bctl->sys.target);
- 	}
- 
- 	ret = insert_balance_item(fs_info->tree_root, bctl);
-@@ -3616,7 +3605,8 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 
- 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
- 		fs_info->num_tolerated_disk_barrier_failures =
--			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
-+			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info,
-+								       0);
- 	}
- 
- 	if (bargs) {
--- 
-1.8.5.1
+  Also, while you are here it looks like this and
+   btrfs_chunk_max_errors() can be merged as well.
 
+Thanks. Anand
+
+
+>   	ret = insert_balance_item(fs_info->tree_root, bctl);
+> @@ -3616,7 +3605,8 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+>
+>   	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+>   		fs_info->num_tolerated_disk_barrier_failures =
+> -			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+> +			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info,
+> +								       0);
+>   	}
+>
+>   	if (bargs) {
+>

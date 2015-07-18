@@ -1,63 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:37959 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754797AbbGQSMe (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:37226 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753707AbbGRLfv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 17 Jul 2015 14:12:34 -0400
-Received: by iggf3 with SMTP id f3so42833106igg.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 17 Jul 2015 11:12:33 -0700 (PDT)
-Message-ID: <1437156751.22061.4.camel@kepstin.ca>
-Subject: Re: Concurrent write access
-From: Calvin Walton <calvin.walton@kepstin.ca>
-To: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>, linux-btrfs@vger.kernel.org
-Date: Fri, 17 Jul 2015 14:12:31 -0400
-In-Reply-To: <1598536.6uUjd689JJ@discus>
-References: <2035607.hrq9oNetle@discus>
-	 <20150709220609.GI10539@carfax.org.uk> <1598536.6uUjd689JJ@discus>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	Sat, 18 Jul 2015 07:35:51 -0400
+Date: Sat, 18 Jul 2015 19:35:31 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Strange data backref offset?
+Message-ID: <20150718113412.GA11450@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <55A86AA8.6010404@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55A86AA8.6010404@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 2015-07-10 at 00:13 +0200, Wolfgang Mader wrote:
-> On Thursday 09 July 2015 22:06:09 Hugo Mills wrote:
-> > On Thu, Jul 09, 2015 at 11:34:40PM +0200, Wolfgang Mader wrote:
-> > > Hi,
-> > > 
-> > > I have a btrfs raid10 which is connected to a server hosting
-> > > multiple virtual machine. Does btrfs support connecting the same
-> > > subvolumes of the same raid to multiple virtual machines for
-> > > concurrent read and write? The situation would be the same as, 
-> > > say,
-> > > mounting user homes from the same nfs share on different 
-> > > machines.
-> > 
-> >    It'll depend on the protocol you use to make the subvolumes 
-> > visible
-> > within the VMs.
-> > 
+On Fri, Jul 17, 2015 at 10:38:32AM +0800, Qu Wenruo wrote:
+> Hi all,
 > 
-> Thanks for the overview. It it qmeu/kvm in fact, to this is an 
-> option. Right 
-> now, however, I connect the discs as virtual discs and not the file 
-> system, 
-> but only to one virtual machine.
+> While I'm developing a new btrfs inband dedup mechanism, I found btrfsck and
+> kernel doing strange behavior for clone.
+> 
+> [Reproducer]
+> # mount /dev/sdc -t btrfs /mnt/test
+> # dd if=/dev/zero of=/mnt/test/file1 bs=4K count=4
+> # sync
+> # ~/xfstests/src/cloner -s 4096 -l 4096 /mnt/test/file1 /mnt/test/file2
+> # sync
+> 
+> Then btrfs-debug-tree gives quite strange result on the data backref:
+> ------
+> <EXTENT TREE>
+>         item 4 key (12845056 EXTENT_ITEM 16384) itemoff 16047 itemsize 111
+>                 extent refs 3 gen 6 flags DATA
+>                 extent data backref root 5 objectid 257 offset 0 count 1
+>                 extent data backref root 5 objectid 258 offset
+> 18446744073709547520 count 1
+> 
+> <FS TREE>
+>         item 8 key (257 EXTENT_DATA 0) itemoff 15743 itemsize 53
+>                 extent data disk byte 12845056 nr 16384
+>                 extent data offset 0 nr 16384 ram 16384
+>                 extent compression 0
+>         item 9 key (257 EXTENT_DATA 16384) itemoff 15690 itemsize 53
+>                 extent data disk byte 12845056 nr 16384
+>                 extent data offset 4096 nr 4096 ram 16384
+>                 extent compression 0
+> ------
+> 
+> The offset is file extent's key.offset - file exntent's offset,
+> Which is 0 - 4096, causing the overflow result.
+> 
+> Kernel and fsck all uses that behavior, so fsck can pass the strange thing.
+> 
+> But shouldn't the offset in data backref matches with the key.offset of the
+> file extent?
+> 
+> And I'm quite sure the change of behavior can hugely break the fsck and
+> kernel, but I'm wondering is this a known BUG or feature, and will it be
+> handled?
 
-btrfs is *not* a cluster filesystem, so one key thing it does not
-support is having the same block device being mounted by multiple
-computers at the same time (doesn't matter if they're hardware or
-virtual machines).
+Also found this before, one of the benefits is to save metadata in extent
+tree, that is, if we overwrite inside an extent, the extent ref count
+increases to 2 since both use (key.offset - extent_offset).
 
-Note that all the subvolumes on a btrfs filesystem share some core data
-structures, so mounting different subvolumes is not a way to work
-around this limitation.
+0k                  12k
+|-------------------|
+     |--------|
+     4k       8k
 
-If you mount the filesystem on the host machine then use a network
-protocol (like nfs,samba,9p mentioned earlier), everything will be ok.
+one EXTENT_DATA item is 0k and the other one is 8k, the corresponding
+refs will be (0k - 0) and (8k - 8k).
 
-If you actually want to mount a filesystem from the same block device
-on multiple VMs, you'll have to look into using a specially-designed
-cluster filesystem like OCFS or GFS.
+It's a format change so it won't be easy to make a change.  I'd prefer a
+workaround on clone side.
 
--- 
-Calvin Walton <calvin.walton@kepstin.ca>
+Thanks,
+
+-liubo

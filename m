@@ -1,145 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:35010 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754142AbbGTNeI (ORCPT
+Received: from mail-la0-f50.google.com ([209.85.215.50]:34492 "EHLO
+	mail-la0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754106AbbGTQUu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jul 2015 09:34:08 -0400
-Received: by obbop1 with SMTP id op1so101346341obb.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2015 06:34:06 -0700 (PDT)
+	Mon, 20 Jul 2015 12:20:50 -0400
+Received: by lahe2 with SMTP id e2so37844782lah.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2015 09:20:48 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$7f5c7$63eed743$33fa939$36f57317@cox.net>
-References: <11148188.L9vtSMaNHV@merkaba> <559FA280.8090309@tty0.ch>
- <20150712035523.GI5274@merlins.org> <20150713004249.GP5274@merlins.org>
- <CAB3_QuKuTeT7t--=y917AASM9QQHSRin4ZKRm57A0b+z0m=yvA@mail.gmail.com>
- <20150715031412.GZ5274@merlins.org> <20150715080057.GA15200@panda>
- <CAC=t97CxDRoakqzoOAoHpN=1qS1jyvMEfOCe+RWvGTm6xSCqPQ@mail.gmail.com>
- <CAC=t97BS2gNNLZEatTRCmmiUHLH8m6NFbgtkbWnaqrEsCye1KQ@mail.gmail.com>
- <20150715214913.GG5274@merlins.org> <CAC=t97CcemZzBjABSLS5etSF6B-67SvwL25q62hxv2de3zLPbw@mail.gmail.com>
- <pan$7f5c7$63eed743$33fa939$36f57317@cox.net>
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Mon, 20 Jul 2015 08:33:47 -0500
-Message-ID: <CAC=t97AK_4PMT4NAWiW_OwhGFidJOR6mrUh=9gnTqeRNHAjxRw@mail.gmail.com>
-Subject: Re: Anyone tried out btrbk yet?
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Tobias Holst <tobby@tobby.eu>
+Date: Mon, 20 Jul 2015 18:20:28 +0200
+Message-ID: <CAGwxe4j7J5ztPk-OyeOuX2YH6SO3G9_h6VU_1wWMdP4rHpqiew@mail.gmail.com>
+Subject: "free_raid_bio" crash on RAID6
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jul 20, 2015 at 3:28 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Donald Pearson posted on Mon, 20 Jul 2015 00:15:26 -0500 as excerpted:
->
->> I'm starting to think there's something wrong with creating and removing
->> snapshots that leaves btrfs-cleaner either locked up or nearly so.  If
->> the btrfs-cleaner process was hard-disk limited I should be seeing some
->> HDD I/O to coincide but I don't.
->>
->> So far btrfs-cleaner is has been using lots of CPU for 1900+ hours and
->> my disk I/O is basically idle.  My hourly snaps via cronjob stalled 11
->> hours ago.
->>
->> Otherwise attempts to read/write to the filesystem appear to be
->> perfectly normal.
->
-> Hourly snaps.  How many snapshots/subvolumes on the filesystem?  I assume
-> the snap removal you mention is scheduled thinning?
+Hi
 
-I'm using Marc's scripts currently which handles the creation and
-retention.  Including snapshots there are currently 94 subvolumes.
-The maximum possible with my settings is 118 after 3 months.
+My btrfs-RAID6 seems to be broken again :(
 
->
-> A general rule of thumb is under 2000 snapshots per filesystem total,
-> under 1000 if at all reasonable.  At 250 snapshots per subvolume, 2000
-> snapshots is eight subvolumes worth, and 250-ish snapshots per subvolume
-> is well within reason with reasonable thinning.
->
-> If you have lots of subvolumes, 3000 snapshots per filesystem isn't /too/
-> bad, but filesystem maintenance including snapshot deletion simply does
-> /not/ scale well, and you'll likely run into scalability issues if you
-> let it reach 10K snapshots on the filesystem.
->
-> If you're at 10K snapshots on the filesystem, it's quite likely the usual
-> scalability issue's you're seeing, almost certain at 100K+ snapshots.
-> OTOH, if you're under 1K or even 2K snapshots, it's very likely something
-> abnormal.  2K-10K, should be usable in most cases, but there are likely
-> corner-cases where it's bad.
->
-> Also, FWIW, the btrfs quota subsystem increases snapshot management
-> complexity dramatically, so if you're using that, aim for the low ends of
-> the above recommendation if at all possible, and/or consider either
-> turning off the quota stuff or using a filesystem other than btrfs, as in
-> addition to the scaling issues, the quota management code has been a
-> source of repeated bugs and isn't a feature I'd recommend relying on
-> until it has at least several kernel cycles worth of trouble-free history
-> behind it.
+When reading from it I get several of these:
+[  176.349943] BTRFS info (device dm-4): csum failed ino 1287707
+extent 21274957705216 csum 2830458701 wanted 426660650 mirror 2
 
-Thanks for the insight.  I just took a look at dmesg and found this.
-Is this coincidental or is this maybe the reason things appear to be
-stuck?  I'm not sure how to read this.
+then followed by a "free_raid_bio"-crash:
 
-[195400.023165] ------------[ cut here ]------------
-[195400.023199] WARNING: CPU: 2 PID: 16987 at fs/btrfs/qgroup.c:1028
-__qgroup_excl_accounting+0x1dc/0x270 [btrfs]()
-[195400.023201] Modules linked in: ext4(E) mbcache(E) jbd2(E) ppdev(E)
-snd_hda_codec_realtek(E) snd_hda_codec_generic(E) snd_hda_intel(E)
-snd_hda_controller(E) snd_hda_codec(E) snd_hda_core(E) snd_hwdep(E)
-snd_seq(E) snd_seq_device(E) kvm_amd(E) kvm(E) snd_pcm(E) pcspkr(E)
-serio_raw(E) k10temp(E) edac_mce_amd(E) edac_core(E) snd_timer(E)
-snd(E) soundcore(E) sp5100_tco(E) i2c_piix4(E) ses(E) enclosure(E)
-8250_fintek(E) parport_pc(E) parport(E) tpm_infineon(E) shpchp(E)
-acpi_cpufreq(E) nfsd(E) auth_rpcgss(E) nfs_acl(E) lockd(E) grace(E)
-sunrpc(E) btrfs(E) xor(E) raid6_pq(E) ata_generic(E) pata_acpi(E)
-sd_mod(E) nouveau(E) video(E) mxm_wmi(E) i2c_algo_bit(E)
-drm_kms_helper(E) ttm(E) drm(E) pata_atiixp(E) ahci(E) pata_jmicron(E)
-libahci(E) lpfc(E) scsi_transport_fc(E) firewire_ohci(E) libata(E)
-firewire_core(E)
-[195400.023225]  crc_itu_t(E) r8169(E) mii(E) mpt2sas(E) raid_class(E)
-scsi_transport_sas(E) wmi(E)
-[195400.023231] CPU: 2 PID: 16987 Comm: kworker/u12:5 Tainted: G
-     E   4.1.0-1.el7.elrepo.x86_64 #1
-[195400.023232] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD
-MS-7577/790FX-GD70(MS-7577), BIOS V1.16 12/01/2010
-[195400.023244] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-[195400.023246]  0000000000000000 0000000031fd5f58 ffff880368a03b68
-ffffffff816d4638
-[195400.023248]  0000000000000000 0000000000000000 ffff880368a03ba8
-ffffffff8107c51a
-[195400.023250]  c000000000000000 ffff880409018d60 ffff88040a28ec88
-ffffffffffff9000
-[195400.023252] Call Trace:
-[195400.023257]  [<ffffffff816d4638>] dump_stack+0x45/0x57
-[195400.023261]  [<ffffffff8107c51a>] warn_slowpath_common+0x8a/0xc0
-[195400.023263]  [<ffffffff8107c64a>] warn_slowpath_null+0x1a/0x20
-[195400.023274]  [<ffffffffa05b5bdc>]
-__qgroup_excl_accounting+0x1dc/0x270 [btrfs]
-[195400.023277]  [<ffffffff811dd8b9>] ? kmem_cache_alloc_trace+0x199/0x220
-[195400.023289]  [<ffffffffa05b8e37>]
-btrfs_delayed_qgroup_accounting+0x317/0xc60 [btrfs]
-[195400.023291]  [<ffffffff810afd68>] ? __enqueue_entity+0x78/0x80
-[195400.023293]  [<ffffffff811dd699>] ? kmem_cache_alloc+0x1a9/0x230
-[195400.023302]  [<ffffffffa053cb0a>]
-btrfs_run_delayed_refs.part.66+0x20a/0x270 [btrfs]
-[195400.023311]  [<ffffffffa053cc18>] delayed_ref_async_start+0x88/0xa0 [btrfs]
-[195400.023322]  [<ffffffffa0580562>] normal_work_helper+0xc2/0x280 [btrfs]
-[195400.023332]  [<ffffffffa0580952>] btrfs_extent_refs_helper+0x12/0x20 [btrfs]
-[195400.023335]  [<ffffffff810959cd>] process_one_work+0x14d/0x420
-[195400.023337]  [<ffffffff81096192>] worker_thread+0x112/0x520
-[195400.023339]  [<ffffffff81096080>] ? rescuer_thread+0x3e0/0x3e0
-[195400.023341]  [<ffffffff8109bee8>] kthread+0xd8/0xf0
-[195400.023342]  [<ffffffff8109be10>] ? kthread_create_on_node+0x1b0/0x1b0
-[195400.023344]  [<ffffffff816dc3a2>] ret_from_fork+0x42/0x70
-[195400.023346]  [<ffffffff8109be10>] ? kthread_create_on_node+0x1b0/0x1b0
-[195400.023347] ---[ end trace 1abc27647fe906a5 ]---
+[  176.349961] ------------[ cut here ]------------
+[  176.349981] WARNING: CPU: 6 PID: 110 at
+/home/kernel/COD/linux/fs/btrfs/raid56.c:831
+__free_raid_bio+0xfc/0x130 [btrfs]()
+[  176.349982] Modules linked in: iosf_mbi kvm_intel kvm ppdev
+crct10dif_pclmul crc32_pclmul dm_crypt ghash_clmulni_intel aesni_intel
+aes_x86_64 lrw gf128mul glue_helper ablk_helper serio_raw 8250_fintek
+i2c_piix4 pvpanic cryptd mac_hid virtio_rng parport_pc lp parport
+btrfs xor raid6_pq cirrus syscopyarea sysfillrect sysimgblt ttm
+drm_kms_helper mpt2sas drm raid_class psmouse floppy
+scsi_transport_sas pata_acpi
+[  176.349998] CPU: 6 PID: 110 Comm: kworker/u16:2 Not tainted
+4.1.2-040102-generic #201507101335
+[  176.349999] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
+BIOS Bochs 01/01/2011
+[  176.350007] Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
+[  176.350008]  ffffffffc026fc18 ffff8800baa4f978 ffffffff817d076c
+0000000000000000
+[  176.350010]  0000000000000000 ffff8800baa4f9b8 ffffffff81079b0a
+0000000000000246
+[  176.350011]  ffff88034e7baa68 ffff88008619b800 00000000fffffffb
+0000000000000000
+[  176.350013] Call Trace:
+[  176.350023]  [<ffffffff817d076c>] dump_stack+0x45/0x57
+[  176.350026]  [<ffffffff81079b0a>] warn_slowpath_common+0x8a/0xc0
+[  176.350029]  [<ffffffff81079bfa>] warn_slowpath_null+0x1a/0x20
+[  176.350036]  [<ffffffffc025e91c>] __free_raid_bio+0xfc/0x130 [btrfs]
+[  176.350041]  [<ffffffffc025f351>] rbio_orig_end_io+0x51/0xa0 [btrfs]
+[  176.350047]  [<ffffffffc02610e3>] __raid56_parity_recover+0x1d3/0x210 [btrfs]
+[  176.350052]  [<ffffffffc0261cb0>] raid56_parity_recover+0x110/0x180 [btrfs]
+[  176.350058]  [<ffffffffc0216cdb>] btrfs_map_bio+0xdb/0x4e0 [btrfs]
+[  176.350065]  [<ffffffffc0236024>]
+btrfs_submit_compressed_read+0x354/0x4e0 [btrfs]
+[  176.350070]  [<ffffffffc01ee681>] btrfs_submit_bio_hook+0x1d1/0x1e0 [btrfs]
+[  176.350076]  [<ffffffff81376dbe>] ? bio_add_page+0x5e/0x70
+[  176.350083]  [<ffffffffc020c176>] ?
+btrfs_create_repair_bio+0xe6/0x110 [btrfs]
+[  176.350089]  [<ffffffffc020c6ab>] end_bio_extent_readpage+0x50b/0x560 [btrfs]
+[  176.350094]  [<ffffffffc020c1a0>] ?
+btrfs_create_repair_bio+0x110/0x110 [btrfs]
+[  176.350096]  [<ffffffff8137934b>] bio_endio+0x5b/0xa0
+[  176.350103]  [<ffffffff811d9e19>] ? kmem_cache_free+0x1d9/0x1f0
+[  176.350104]  [<ffffffff813793a2>] bio_endio_nodec+0x12/0x20
+[  176.350109]  [<ffffffffc01e10df>] end_workqueue_fn+0x3f/0x50 [btrfs]
+[  176.350115]  [<ffffffffc021b522>] normal_work_helper+0xc2/0x2b0 [btrfs]
+[  176.350121]  [<ffffffffc021b7e2>] btrfs_endio_helper+0x12/0x20 [btrfs]
+[  176.350124]  [<ffffffff8109324f>] process_one_work+0x14f/0x420
+[  176.350127]  [<ffffffff81093a08>] worker_thread+0x118/0x530
+[  176.350128]  [<ffffffff810938f0>] ? rescuer_thread+0x3d0/0x3d0
+[  176.350129]  [<ffffffff81098f89>] kthread+0xc9/0xe0
+[  176.350130]  [<ffffffff81098ec0>] ? kthread_create_on_node+0x180/0x180
+[  176.350134]  [<ffffffff817d86a2>] ret_from_fork+0x42/0x70
+[  176.350135]  [<ffffffff81098ec0>] ? kthread_create_on_node+0x180/0x180
+[  176.350136] ---[ end trace 81289955f20d48ee ]---
+
+Did I found a kernel bug? What can/should I do?
+
+Don't worry about my data, I have tape-backups of the important data,
+I just want to help fixing RAID-related btrfs bugs.
+
+Hardware: KVM with all drives attached to a passed through SAS-controller
+System: Ubuntu 14.04.2
+Kernel: 4.1.2
+btrfs-tools: 4.0
+It's a btrfs-RAID-6 on top of 6 LUKS-encrypted volumes, created with
+"-O extref,raid56,skinny-metadata,no-holes". At normal it's mounted
+with "defaults,compress=lzo,space_cache,autodefrag,subvol=raid".
+One drive is broken, so at the moment it is mounted with "-O
+defaults,ro,degraded,recovery,compress=lzo,space_cache,subvol=raid".
+
+It's pretty much full, so "btrfs fi show" shows:
+Label: 't-raid'  uuid: 3938baeb-cb02-4909-8e75-6ec2f47d1d19
+        Total devices 6 FS bytes used 14.44TiB
+        devid    2 size 3.64TiB used 3.64TiB path /dev/mapper/sdb_crypt
+        devid    3 size 3.64TiB used 3.64TiB path /dev/mapper/sdc_crypt
+        devid    4 size 3.64TiB used 3.64TiB path /dev/mapper/sdd_crypt
+        devid    5 size 3.64TiB used 3.64TiB path /dev/mapper/sde_crypt
+        devid    6 size 3.64TiB used 3.64TiB path /dev/mapper/sdf_crypt
+        *** Some devices missing
+
+and "btrfs fi df /raid" shows:
+Data, RAID6: total=14.52TiB, used=14.42TiB
+System, RAID6: total=64.00MiB, used=1.00MiB
+Metadata, RAID6: total=24.00GiB, used=21.78GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
 
->
-> --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Regards,
+Tobias

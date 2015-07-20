@@ -1,167 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6510 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932512AbbGTJG2 (ORCPT
+Received: from mail-ob0-f181.google.com ([209.85.214.181]:35010 "EHLO
+	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754142AbbGTNeI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jul 2015 05:06:28 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6K94cbK019183
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2015 17:04:38 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs: Add raid56 support for updating num_tolerated_disk_barrier_failures in btrfs_balance()
-Date: Mon, 20 Jul 2015 17:04:49 +0800
-Message-ID: <5aaaa5a35953dc4a02b8bfe7e7d426b64831994f.1437382947.git.zhaolei@cn.fujitsu.com>
+	Mon, 20 Jul 2015 09:34:08 -0400
+Received: by obbop1 with SMTP id op1so101346341obb.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2015 06:34:06 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <pan$7f5c7$63eed743$33fa939$36f57317@cox.net>
+References: <11148188.L9vtSMaNHV@merkaba> <559FA280.8090309@tty0.ch>
+ <20150712035523.GI5274@merlins.org> <20150713004249.GP5274@merlins.org>
+ <CAB3_QuKuTeT7t--=y917AASM9QQHSRin4ZKRm57A0b+z0m=yvA@mail.gmail.com>
+ <20150715031412.GZ5274@merlins.org> <20150715080057.GA15200@panda>
+ <CAC=t97CxDRoakqzoOAoHpN=1qS1jyvMEfOCe+RWvGTm6xSCqPQ@mail.gmail.com>
+ <CAC=t97BS2gNNLZEatTRCmmiUHLH8m6NFbgtkbWnaqrEsCye1KQ@mail.gmail.com>
+ <20150715214913.GG5274@merlins.org> <CAC=t97CcemZzBjABSLS5etSF6B-67SvwL25q62hxv2de3zLPbw@mail.gmail.com>
+ <pan$7f5c7$63eed743$33fa939$36f57317@cox.net>
+From: Donald Pearson <donaldwhpearson@gmail.com>
+Date: Mon, 20 Jul 2015 08:33:47 -0500
+Message-ID: <CAC=t97AK_4PMT4NAWiW_OwhGFidJOR6mrUh=9gnTqeRNHAjxRw@mail.gmail.com>
+Subject: Re: Anyone tried out btrbk yet?
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Mon, Jul 20, 2015 at 3:28 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Donald Pearson posted on Mon, 20 Jul 2015 00:15:26 -0500 as excerpted:
+>
+>> I'm starting to think there's something wrong with creating and removing
+>> snapshots that leaves btrfs-cleaner either locked up or nearly so.  If
+>> the btrfs-cleaner process was hard-disk limited I should be seeing some
+>> HDD I/O to coincide but I don't.
+>>
+>> So far btrfs-cleaner is has been using lots of CPU for 1900+ hours and
+>> my disk I/O is basically idle.  My hourly snaps via cronjob stalled 11
+>> hours ago.
+>>
+>> Otherwise attempts to read/write to the filesystem appear to be
+>> perfectly normal.
+>
+> Hourly snaps.  How many snapshots/subvolumes on the filesystem?  I assume
+> the snap removal you mention is scheduled thinning?
 
-Code for updating fs_info->num_tolerated_disk_barrier_failures in
-btrfs_balance() lacks raid56 support.
+I'm using Marc's scripts currently which handles the creation and
+retention.  Including snapshots there are currently 94 subvolumes.
+The maximum possible with my settings is 118 after 3 months.
 
-Reason:
- Above code was wroten in 2012-08-01, together with
- btrfs_calc_num_tolerated_disk_barrier_failures()'s first version.
+>
+> A general rule of thumb is under 2000 snapshots per filesystem total,
+> under 1000 if at all reasonable.  At 250 snapshots per subvolume, 2000
+> snapshots is eight subvolumes worth, and 250-ish snapshots per subvolume
+> is well within reason with reasonable thinning.
+>
+> If you have lots of subvolumes, 3000 snapshots per filesystem isn't /too/
+> bad, but filesystem maintenance including snapshot deletion simply does
+> /not/ scale well, and you'll likely run into scalability issues if you
+> let it reach 10K snapshots on the filesystem.
+>
+> If you're at 10K snapshots on the filesystem, it's quite likely the usual
+> scalability issue's you're seeing, almost certain at 100K+ snapshots.
+> OTOH, if you're under 1K or even 2K snapshots, it's very likely something
+> abnormal.  2K-10K, should be usable in most cases, but there are likely
+> corner-cases where it's bad.
+>
+> Also, FWIW, the btrfs quota subsystem increases snapshot management
+> complexity dramatically, so if you're using that, aim for the low ends of
+> the above recommendation if at all possible, and/or consider either
+> turning off the quota stuff or using a filesystem other than btrfs, as in
+> addition to the scaling issues, the quota management code has been a
+> source of repeated bugs and isn't a feature I'd recommend relying on
+> until it has at least several kernel cycles worth of trouble-free history
+> behind it.
 
- Then, btrfs_calc_num_tolerated_disk_barrier_failures() got updated
- later to support raid56, but code in btrfs_balance() was not
- updated together.
+Thanks for the insight.  I just took a look at dmesg and found this.
+Is this coincidental or is this maybe the reason things appear to be
+stuck?  I'm not sure how to read this.
 
-Fix:
- Merge above similar code to a common function:
- btrfs_get_num_tolerated_disk_barrier_failures()
- and make it support both case.
+[195400.023165] ------------[ cut here ]------------
+[195400.023199] WARNING: CPU: 2 PID: 16987 at fs/btrfs/qgroup.c:1028
+__qgroup_excl_accounting+0x1dc/0x270 [btrfs]()
+[195400.023201] Modules linked in: ext4(E) mbcache(E) jbd2(E) ppdev(E)
+snd_hda_codec_realtek(E) snd_hda_codec_generic(E) snd_hda_intel(E)
+snd_hda_controller(E) snd_hda_codec(E) snd_hda_core(E) snd_hwdep(E)
+snd_seq(E) snd_seq_device(E) kvm_amd(E) kvm(E) snd_pcm(E) pcspkr(E)
+serio_raw(E) k10temp(E) edac_mce_amd(E) edac_core(E) snd_timer(E)
+snd(E) soundcore(E) sp5100_tco(E) i2c_piix4(E) ses(E) enclosure(E)
+8250_fintek(E) parport_pc(E) parport(E) tpm_infineon(E) shpchp(E)
+acpi_cpufreq(E) nfsd(E) auth_rpcgss(E) nfs_acl(E) lockd(E) grace(E)
+sunrpc(E) btrfs(E) xor(E) raid6_pq(E) ata_generic(E) pata_acpi(E)
+sd_mod(E) nouveau(E) video(E) mxm_wmi(E) i2c_algo_bit(E)
+drm_kms_helper(E) ttm(E) drm(E) pata_atiixp(E) ahci(E) pata_jmicron(E)
+libahci(E) lpfc(E) scsi_transport_fc(E) firewire_ohci(E) libata(E)
+firewire_core(E)
+[195400.023225]  crc_itu_t(E) r8169(E) mii(E) mpt2sas(E) raid_class(E)
+scsi_transport_sas(E) wmi(E)
+[195400.023231] CPU: 2 PID: 16987 Comm: kworker/u12:5 Tainted: G
+     E   4.1.0-1.el7.elrepo.x86_64 #1
+[195400.023232] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD
+MS-7577/790FX-GD70(MS-7577), BIOS V1.16 12/01/2010
+[195400.023244] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+[195400.023246]  0000000000000000 0000000031fd5f58 ffff880368a03b68
+ffffffff816d4638
+[195400.023248]  0000000000000000 0000000000000000 ffff880368a03ba8
+ffffffff8107c51a
+[195400.023250]  c000000000000000 ffff880409018d60 ffff88040a28ec88
+ffffffffffff9000
+[195400.023252] Call Trace:
+[195400.023257]  [<ffffffff816d4638>] dump_stack+0x45/0x57
+[195400.023261]  [<ffffffff8107c51a>] warn_slowpath_common+0x8a/0xc0
+[195400.023263]  [<ffffffff8107c64a>] warn_slowpath_null+0x1a/0x20
+[195400.023274]  [<ffffffffa05b5bdc>]
+__qgroup_excl_accounting+0x1dc/0x270 [btrfs]
+[195400.023277]  [<ffffffff811dd8b9>] ? kmem_cache_alloc_trace+0x199/0x220
+[195400.023289]  [<ffffffffa05b8e37>]
+btrfs_delayed_qgroup_accounting+0x317/0xc60 [btrfs]
+[195400.023291]  [<ffffffff810afd68>] ? __enqueue_entity+0x78/0x80
+[195400.023293]  [<ffffffff811dd699>] ? kmem_cache_alloc+0x1a9/0x230
+[195400.023302]  [<ffffffffa053cb0a>]
+btrfs_run_delayed_refs.part.66+0x20a/0x270 [btrfs]
+[195400.023311]  [<ffffffffa053cc18>] delayed_ref_async_start+0x88/0xa0 [btrfs]
+[195400.023322]  [<ffffffffa0580562>] normal_work_helper+0xc2/0x280 [btrfs]
+[195400.023332]  [<ffffffffa0580952>] btrfs_extent_refs_helper+0x12/0x20 [btrfs]
+[195400.023335]  [<ffffffff810959cd>] process_one_work+0x14d/0x420
+[195400.023337]  [<ffffffff81096192>] worker_thread+0x112/0x520
+[195400.023339]  [<ffffffff81096080>] ? rescuer_thread+0x3e0/0x3e0
+[195400.023341]  [<ffffffff8109bee8>] kthread+0xd8/0xf0
+[195400.023342]  [<ffffffff8109be10>] ? kthread_create_on_node+0x1b0/0x1b0
+[195400.023344]  [<ffffffff816dc3a2>] ret_from_fork+0x42/0x70
+[195400.023346]  [<ffffffff8109be10>] ? kthread_create_on_node+0x1b0/0x1b0
+[195400.023347] ---[ end trace 1abc27647fe906a5 ]---
 
- It can fix this bug with a bonus of cleanup, and make these code
- never in above no-sync state from now on.
 
-Changelog v1-v2:
- 1: Use a common function instead of adding extra argument to
-    btrfs_calc_num_tolerated_disk_barrier_failures(), which is quite
-    usefully used by many more functions, Suggested-by:
-    Anand Jain <anand.jain@oracle.com>
-
-Suggested-by: Anand Jain <anand.jain@oracle.com>
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/disk-io.c | 47 +++++++++++++++++++++++++----------------------
- fs/btrfs/disk-io.h |  1 +
- fs/btrfs/volumes.c | 21 ++++-----------------
- 3 files changed, 30 insertions(+), 39 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index b6600c7..1e5dcfd 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3440,6 +3440,26 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 	return 0;
- }
- 
-+int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags)
-+{
-+	if ((flags & (BTRFS_BLOCK_GROUP_DUP |
-+		      BTRFS_BLOCK_GROUP_RAID0 |
-+		      BTRFS_AVAIL_ALLOC_BIT_SINGLE)) ||
-+	    ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0))
-+		return 0;
-+
-+	if (flags & (BTRFS_BLOCK_GROUP_RAID1 |
-+		     BTRFS_BLOCK_GROUP_RAID5 |
-+		     BTRFS_BLOCK_GROUP_RAID10))
-+		return 1;
-+
-+	if (flags & BTRFS_BLOCK_GROUP_RAID6)
-+		return 2;
-+
-+	pr_warn("BTRFS: unknown raid type: %llu\n", flags);
-+	return 0;
-+}
-+
- int btrfs_calc_num_tolerated_disk_barrier_failures(
- 	struct btrfs_fs_info *fs_info)
- {
-@@ -3482,28 +3502,11 @@ int btrfs_calc_num_tolerated_disk_barrier_failures(
- 			if (space.total_bytes == 0 || space.used_bytes == 0)
- 				continue;
- 			flags = space.flags;
--			/*
--			 * return
--			 * 0: if dup, single or RAID0 is configured for
--			 *    any of metadata, system or data, else
--			 * 1: if RAID5 is configured, or if RAID1 or
--			 *    RAID10 is configured and only two mirrors
--			 *    are used, else
--			 * 2: if RAID6 is configured
--			 */
--			if (num_tolerated_disk_barrier_failures > 0 &&
--			    ((flags & (BTRFS_BLOCK_GROUP_DUP |
--				       BTRFS_BLOCK_GROUP_RAID0)) ||
--			     ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0)))
--				num_tolerated_disk_barrier_failures = 0;
--			else if (num_tolerated_disk_barrier_failures > 1 &&
--				   (flags & (BTRFS_BLOCK_GROUP_RAID1 |
--					     BTRFS_BLOCK_GROUP_RAID5 |
--					     BTRFS_BLOCK_GROUP_RAID10)))
--				num_tolerated_disk_barrier_failures = 1;
--			else if (num_tolerated_disk_barrier_failures > 2 &&
--				   (flags & BTRFS_BLOCK_GROUP_RAID6))
--				num_tolerated_disk_barrier_failures = 2;
-+
-+			num_tolerated_disk_barrier_failures = min(
-+				num_tolerated_disk_barrier_failures,
-+				btrfs_get_num_tolerated_disk_barrier_failures(
-+					flags));
- 		}
- 		up_read(&sinfo->groups_sem);
- 	}
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index d4cbfee..bdfb479 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -139,6 +139,7 @@ struct btrfs_root *btrfs_create_tree(struct btrfs_trans_handle *trans,
- 				     u64 objectid);
- int btree_lock_page_hook(struct page *page, void *data,
- 				void (*flush_fn)(void *));
-+int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags);
- int btrfs_calc_num_tolerated_disk_barrier_failures(
- 	struct btrfs_fs_info *fs_info);
- int __init btrfs_end_io_wq_init(void);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index fbe7c10..a4392ad 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3573,23 +3573,10 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 	} while (read_seqretry(&fs_info->profiles_lock, seq));
- 
- 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
--		int num_tolerated_disk_barrier_failures;
--		u64 target = bctl->sys.target;
--
--		num_tolerated_disk_barrier_failures =
--			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
--		if (num_tolerated_disk_barrier_failures > 0 &&
--		    (target &
--		     (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID0 |
--		      BTRFS_AVAIL_ALLOC_BIT_SINGLE)))
--			num_tolerated_disk_barrier_failures = 0;
--		else if (num_tolerated_disk_barrier_failures > 1 &&
--			 (target &
--			  (BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID10)))
--			num_tolerated_disk_barrier_failures = 1;
--
--		fs_info->num_tolerated_disk_barrier_failures =
--			num_tolerated_disk_barrier_failures;
-+		fs_info->num_tolerated_disk_barrier_failures = min(
-+			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
-+			btrfs_get_num_tolerated_disk_barrier_failures(
-+				bctl->sys.target));
- 	}
- 
- 	ret = insert_balance_item(fs_info->tree_root, bctl);
--- 
-1.8.5.1
-
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

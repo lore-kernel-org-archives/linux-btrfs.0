@@ -1,77 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8507 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754500AbbGTIMs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jul 2015 04:12:48 -0400
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6K8ArlX016581
-	for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2015 16:10:53 +0800
-Subject: Re: [RFC PATCH 0/2] Btrfs partial csum support
-To: <linux-btrfs@vger.kernel.org>
-References: <1436501343-2605-1-git-send-email-quwenruo@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55ACAD77.7040808@cn.fujitsu.com>
-Date: Mon, 20 Jul 2015 16:12:39 +0800
-MIME-Version: 1.0
-In-Reply-To: <1436501343-2605-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:55631 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755280AbbGTI3N (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 20 Jul 2015 04:29:13 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZH6Rj-0008AD-Ef
+	for linux-btrfs@vger.kernel.org; Mon, 20 Jul 2015 10:29:11 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2015 10:29:11 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 20 Jul 2015 10:29:11 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Anyone tried out btrbk yet?
+Date: Mon, 20 Jul 2015 08:28:53 +0000 (UTC)
+Message-ID: <pan$7f5c7$63eed743$33fa939$36f57317@cox.net>
+References: <11148188.L9vtSMaNHV@merkaba> <559FA280.8090309@tty0.ch>
+	<20150712035523.GI5274@merlins.org> <20150713004249.GP5274@merlins.org>
+	<CAB3_QuKuTeT7t--=y917AASM9QQHSRin4ZKRm57A0b+z0m=yvA@mail.gmail.com>
+	<20150715031412.GZ5274@merlins.org> <20150715080057.GA15200@panda>
+	<CAC=t97CxDRoakqzoOAoHpN=1qS1jyvMEfOCe+RWvGTm6xSCqPQ@mail.gmail.com>
+	<CAC=t97BS2gNNLZEatTRCmmiUHLH8m6NFbgtkbWnaqrEsCye1KQ@mail.gmail.com>
+	<20150715214913.GG5274@merlins.org>
+	<CAC=t97CcemZzBjABSLS5etSF6B-67SvwL25q62hxv2de3zLPbw@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ping
+Donald Pearson posted on Mon, 20 Jul 2015 00:15:26 -0500 as excerpted:
 
-Any comments?
+> I'm starting to think there's something wrong with creating and removing
+> snapshots that leaves btrfs-cleaner either locked up or nearly so.  If
+> the btrfs-cleaner process was hard-disk limited I should be seeing some
+> HDD I/O to coincide but I don't.
+> 
+> So far btrfs-cleaner is has been using lots of CPU for 1900+ hours and
+> my disk I/O is basically idle.  My hourly snaps via cronjob stalled 11
+> hours ago.
+> 
+> Otherwise attempts to read/write to the filesystem appear to be
+> perfectly normal.
 
-Thanks,
-Qu
+Hourly snaps.  How many snapshots/subvolumes on the filesystem?  I assume 
+the snap removal you mention is scheduled thinning?
 
-Qu Wenruo wrote on 2015/07/10 12:09 +0800:
-> This patchset will add partial csum support for btrfs.
->
-> Partial csum will take full advantage of the 32 bytes csum space inside
-> the tree block, while still maintain backward compatibility on old
-> kernels.
->
-> The overall idea is like the following on 16K leaf:
-> [Old tree block csum]
-> 0     4     8    12    16    20    24    28    32
-> -------------------------------------------------
-> |csum |   unused, all 0				|
-> -------------------------------------------------
-> Csum is the crc32 of the whole tree block data.
->
-> [New tree block csum]
-> -------------------------------------------------
-> |csum0|csum1|csum2|csum3|csum4|csum5|csum6|csum7|
-> -------------------------------------------------
-> Where csum0 is the same as the old one, crc32 of the whole tree block
-> data.
->
-> And csum1~csum7 will restore crc32 of each eighth part.
-> Take example of 16K leafsize, then:
-> csum1: crc32 of BTRFS_CSUM_SIZE~4K
-> csum2: crc32 of 4K~6K
-> ...
-> csum7: crc32 of 14K~16K
->
->
-> When nodesize is small, like 4K, partial csum is completely useless.
-> But when nodesize grows up, like 32K, each partial csum will just covers
-> a page, making scrub able to judge which page is OK even without reading
-> out the whole tree block.
->
-> And add the possibility to fix case like corruption happens at all
-> mirror but in different part.
-> Such case should be more possible if nodesize goes up beyond 16K.
->
-> Qu Wenruo (1):
->    btrfs: csum: Introduce partial csum for tree block.
->
-> Zhao Lei (1):
->    btrfs: scrub: Add support partial csum
->
->   fs/btrfs/disk-io.c |  74 ++++++++++++-------
->   fs/btrfs/scrub.c   | 207 ++++++++++++++++++++++++++++++++++++++++++++++++++++-
->   2 files changed, 255 insertions(+), 26 deletions(-)
->
+A general rule of thumb is under 2000 snapshots per filesystem total, 
+under 1000 if at all reasonable.  At 250 snapshots per subvolume, 2000 
+snapshots is eight subvolumes worth, and 250-ish snapshots per subvolume 
+is well within reason with reasonable thinning.
+
+If you have lots of subvolumes, 3000 snapshots per filesystem isn't /too/ 
+bad, but filesystem maintenance including snapshot deletion simply does 
+/not/ scale well, and you'll likely run into scalability issues if you 
+let it reach 10K snapshots on the filesystem.
+
+If you're at 10K snapshots on the filesystem, it's quite likely the usual 
+scalability issue's you're seeing, almost certain at 100K+ snapshots.  
+OTOH, if you're under 1K or even 2K snapshots, it's very likely something 
+abnormal.  2K-10K, should be usable in most cases, but there are likely 
+corner-cases where it's bad.
+
+Also, FWIW, the btrfs quota subsystem increases snapshot management 
+complexity dramatically, so if you're using that, aim for the low ends of 
+the above recommendation if at all possible, and/or consider either 
+turning off the quota stuff or using a filesystem other than btrfs, as in 
+addition to the scaling issues, the quota management code has been a 
+source of repeated bugs and isn't a feature I'd recommend relying on 
+until it has at least several kernel cycles worth of trouble-free history 
+behind it.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

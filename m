@@ -1,80 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:36804 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754937AbbGUPf3 (ORCPT
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:33184 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754533AbbGUVHB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jul 2015 11:35:29 -0400
-Received: by wicgb10 with SMTP id gb10so59403452wic.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2015 08:35:28 -0700 (PDT)
+	Tue, 21 Jul 2015 17:07:01 -0400
+Received: by wicmv11 with SMTP id mv11so55677423wic.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2015 14:07:00 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20150714191558.GM10539@carfax.org.uk>
-References: <20150604084245.GR23272@merlins.org> <20150624032008.GF20517@merlins.org>
- <CAA7pwKOA1yyA8kyB+a3iTOp8TnkRzAErF1Mo=2t5M3pFn2tjUw@mail.gmail.com>
- <pan$5335b$94315604$8405c6ac$de90de30@cox.net> <CAA7pwKNtS6UB+tXdB9c4D9J2gOk56gM-O1q+19A6SZcdcdFVtw@mail.gmail.com>
- <20150714184122.GL10539@carfax.org.uk> <CAA7pwKOytX18=mtPjfGmGgvd-x=nNpFYSsHX3m7uMJCCjZU8zg@mail.gmail.com>
- <20150714191558.GM10539@carfax.org.uk>
-From: Patrik Lundquist <patrik.lundquist@gmail.com>
-Date: Tue, 21 Jul 2015 17:35:08 +0200
-Message-ID: <CAA7pwKOF8Zfy2-BquOniuqju7bFEsx15ysx1v9HrLNkk4_TqOA@mail.gmail.com>
-Subject: Re: counting fragments takes more time than defragmenting
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+In-Reply-To: <55AE29DA.4050201@gmail.com>
+References: <CAEMJtDs=U5+YO9sbVvjxLthdxp6JvZO=07EMhcU5Smif_1m5QQ@mail.gmail.com>
+	<557A890D.8080306@cn.fujitsu.com>
+	<CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
+	<557E877E.2060704@cn.fujitsu.com>
+	<CAEMJtDusywPEnDcNcMvvFKQsuZyTmSMXXgJT=eBZX1F+R8RM8w@mail.gmail.com>
+	<557F7B82.2060203@cn.fujitsu.com>
+	<CAEMJtDv1Tm7-O2mU03kZhPDkaSj7nVi+VAZVhPfh7BN8AuF2Bg@mail.gmail.com>
+	<55A46473.8070106@cn.fujitsu.com>
+	<55AE04EF.6040807@cn.fujitsu.com>
+	<55AE29DA.4050201@gmail.com>
+Date: Tue, 21 Jul 2015 14:07:00 -0700
+Message-ID: <CAEMJtDuaOYPomha_VbTah521BZTYzmrg2D5tk6N4rd1Y8UPaog@mail.gmail.com>
+Subject: Re: Can't mount btrfs volume on rbd
+From: Steve Dainard <sdainard@spd1.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 14 July 2015 at 21:15, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Jul 14, 2015 at 09:09:00PM +0200, Patrik Lundquist wrote:
->> On 14 July 2015 at 20:41, Hugo Mills <hugo@carfax.org.uk> wrote:
->> > On Tue, Jul 14, 2015 at 01:57:07PM +0200, Patrik Lundquist wrote:
->> >> On 24 June 2015 at 12:46, Duncan <1i5t5.duncan@cox.net> wrote:
->> >> >
->> >> > Regardless of whether 1 or huge -t means maximum defrag, however, the
->> >> > nominal data chunk size of 1 GiB means that 30 GiB file you mentioned
->> >> > should be considered ideally defragged at 31 extents.  This is a
->> >> > departure from ext4, which AFAIK in theory has no extent upper limit, so
->> >> > should be able to do that 30 GiB file in a single extent.
->> >> >
->> >> > But btrfs or ext4, 31 extents ideal or a single extent ideal, 150 extents
->> >> > still indicates at least some remaining fragmentation.
->> >>
->> >> So I converted the VMware VMDK file to a VirtualBox VDI file:
->> >>
->> >> -rw------- 1 plu plu 28845539328 jul 13 13:36 Windows7-disk1.vmdk
->> >> -rw------- 1 plu plu 28993126400 jul 13 14:04 Windows7.vdi
->> >>
->> >> $ filefrag Windows7.vdi
->> >> Windows7.vdi: 15 extents found
->> >>
->> >> $ btrfs filesystem defragment -t 3g Windows7.vdi
->> >> $ filefrag Windows7.vdi
->> >> Windows7.vdi: 24 extents found
->> >>
->> >> How can it be less than 28 extents with a chunk size of 1 GiB?
->> >
->> >    I _think_ the fragment size will be limited by the block group
->> > size. This is not the same as the chunk size for some RAID levels --
->> > for example, RAID-0, a block group can be anything from 2 to n chunks
->> > (across the same number of devices), where each chunk is 1 GiB, so
->> > potentially you could have arbitrary-sized block groups. The same
->> > would apply to RAID-10, -5 and -6.
->> >
->> >    (Note, I haven't verified this, but it makes sense based on what I
->> > know of the internal data structures).
+On Tue, Jul 21, 2015 at 4:15 AM, Austin S Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2015-07-21 04:38, Qu Wenruo wrote:
 >>
->> It's a raid1 filesystem, so the block group ought to be the same size
->> as the chunk, right?
->
->    Yes.
->
->> A 2GiB block group would suffice to explain it though.
->
->    Not with RAID-1 -- I'd expect the block group size to be 1 GiB.
+>> Hi Steve,
+>>
+>> I checked your binary dump.
+>>
+>> Previously I was too focused on the assert error, but ignored some even
+>> larger bug...
+>>
+>> As for the btrfs-debug-tree output, subvol 257 and 5 are completely
+>> corrupted.
+>> Subvol 257 seems to contains a new tree root, and 5 seems to contains a
+>> new device tree.
+>>
+>> ------
+>> fs tree key (FS_TREE ROOT_ITEM 0)
+>> leaf 29409280 items 8 free space 15707 generation 9 owner 4
+>> fs uuid 1bb22a03-bc25-466f-b078-c66c6f6a6d28
+>> chunk uuid 11cca6df-e850-45d7-a928-cdff82c5f295
+>>          item 0 key (0 DEV_STATS 1) itemoff 16243 itemsize 40
+>>                  device stats
+>>          item 1 key (1 DEV_EXTENT 0) itemoff 16195 itemsize 48
+>>                  dev extent chunk_tree 3
+>>                  chunk objectid 256 chunk offset 0 length 4194304
+>>          item 2 key (1 DEV_EXTENT 4194304) itemoff 16147 itemsize 48
+>>                  dev extent chunk_tree 3
+>>                  chunk objectid 256 chunk offset 4194304 length 8388608
+>>          item 3 key (1 DEV_EXTENT 12582912) itemoff 16099 itemsize 48
+>>                  dev extent chunk_tree 3
+>> ......
+>> # DEV_EXTENT should never occur in fs tree. It should only occurs in
+>> # dev tree
+>>
+>> file tree key (257 ROOT_ITEM 0)
+>> leaf 29376512 items 13 free space 12844 generation 9 owner 1
+>> fs uuid 1bb22a03-bc25-466f-b078-c66c6f6a6d28
+>> chunk uuid 11cca6df-e850-45d7-a928-cdff82c5f295
+>>          item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
+>>                  root data bytenr 29392896 level 0 dirid 0 refs 1 gen 9
+>>                  uuid 00000000-0000-0000-0000-000000000000
+>>          item 1 key (DEV_TREE ROOT_ITEM 0) itemoff 15405 itemsize 439
+>>                  root data bytenr 29409280 level 0 dirid 0 refs 1 gen 9
+>>                  uuid 00000000-0000-0000-0000-000000000000
+>>          item 2 key (FS_TREE INODE_REF 6) itemoff 15388 itemsize 17
+>>                  inode ref index 0 namelen 7 name: default
+>>          item 3 key (FS_TREE ROOT_ITEM 0) itemoff 14949 itemsize 439
+>>                  root data bytenr 29360128 level 0 dirid 256 refs 1 gen 4
+>>                  uuid 00000000-0000-0000-0000-000000000000
+>>          item 4 key (ROOT_TREE_DIR INODE_ITEM 0) itemoff 14789 itemsize
+>> 160
+>>                  inode generation 3 transid 0 size 0 nbytes 16384
+>>                  block group 0 mode 40755 links 1 uid 0 gid 0
+>>                  rdev 0 flags 0x0
+>> # These things are only in tree root.
+>> ------
+>>
+>> So the problem is, the kernel you use has some bug (btrfs or rbd
+>> related), causing the btrfs write wrong tree blocks into existing tree
+>> blocks.
+>>
+>> For such case, btrfsck won't be able to fix the critical error.
+>> And I didn't even have an idea to fix the assert to change it into a
+>> normal error. As it's corrupting the whole structure of btrfs...
+>>
+>> I can't even recall such critical btrfs bug...
+>>
+>>
+>> Not familiar with rbd, but will it allow a block device to be mounted on
+>> different systems?
+>>
+>> Like exporting a device A to system B and system C, and both system B
+>> and system C mounting device A at the same time as btrfs?
+>>
+> Yes, it's a distributed SAN type system built on top of Ceph.  It does allow
+> having multiple systems mount the device.
 
-So I had a look at the filefrag source and filefrag actually doesn't
-print the number of extents but the number of disk fragments.
-Contiguously allocated extents counts as one fragment.
+This is accurate, but its a configured setting with the default being
+not shareable. The host which has mapped the block device should have
+a lock on it, so if another host attempts to map the same block device
+it should error out.
 
-"Windows7.vdi: 47 extents found" is really 213 extents over 47 disk fragments.
+The first time I had this occur was when it appeared pacemaker (HA
+daemon) couldn't fence one of two nodes, and somehow bypassed the ceph
+locking mechanism, mapping/mounting the block device on both nodes at
+the same time which would account for corruption.
 
-But I have one 2GiB extent, according to filefrag -v, so the question
-remains. :-)
+The last time this occurred (which is where the image you've analysed
+came from) pacemaker was not involved, and only one node was
+mapping/mounting the block device.
+
+>
+> Ideally, we really should put in some kind of protection against multiple
+> mounts (this would be a significant selling point of BTRFS in my opinion, as
+> the only other Linux native FS that has this is ext4), and make it _very_
+> obvious that mounting a BTRFS filesystem on multiple nodes concurrently
+> _WILL_ result in pretty much irreparable corruption.
+>
+
+
+I don't know if this has any bearing on the failure case, but the
+filesystem that I sent an image of was only ever created, subvol
+created, and mounted/unmounted several times. There was never any data
+written to that mount point.

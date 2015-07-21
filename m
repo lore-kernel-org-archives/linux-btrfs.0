@@ -1,20 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54124 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:46049 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750771AbbGUEYL (ORCPT
+	with ESMTP id S1751821AbbGUHoH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jul 2015 00:24:11 -0400
+	Tue, 21 Jul 2015 03:44:07 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6L4MKWj021615
-	for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2015 12:22:20 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6L7gFuX001139
+	for <linux-btrfs@vger.kernel.org>; Tue, 21 Jul 2015 15:42:15 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs: Free checksum list on scrub_extent() fail
-Date: Tue, 21 Jul 2015 12:22:30 +0800
-Message-ID: <30779428ff0fb63a4eb5b25905eb9b06e52266d6.1437452532.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <67a4b66d550b9e39940fbf242bbe901fc3f7671f.1437452532.git.zhaolei@cn.fujitsu.com>
-References: <67a4b66d550b9e39940fbf242bbe901fc3f7671f.1437452532.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Fix calculate typo caused by ambiguous meaning of logic_end
+Date: Tue, 21 Jul 2015 15:42:26 +0800
+Message-ID: <bab157a383cfc7a2f71757373aebfddd3e526c62.1437464526.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,50 +20,84 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-When scrub_extent() failed, we need to free previois created
-checksum list.
+For example, in scrub_raid56_parity(), following lines are used
+to judge is all data processed:
+ place1: if (key.objectid > logic_end) ...
+ place2: if (logic_start >= logic_end) ...
+ ...
+ (place2 is typo, is should be ">", it is copied from other
+  place, where logic_end's meaning is different, long story...)
+
+We can fix above typo directly, but the root reason is ambiguous
+meaning of logic_end in scrub raid56 parity.
+
+In other place, XXX_end is pointed to data which is not included,
+and we need to process segment of [XXX_start, XXX_end).
+
+But for scrub raid56 parity, logic_end is pointed to lattest data
+need to process, and introduced many "+ 1" and "- 1" in code as
+below:
+ length = sparity->logic_end - sparity->logic_start + 1
+ logic_end - logic_start + 1
+ stripe_logical + increment - 1
+
+This patch changed logic_end's meaning to make it in normal understanding
+in raid56 parity functions and data struct alone with above bugfix.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 8 ++++++--
- 1 file changed, 6 insertions(+), 2 deletions(-)
+ fs/btrfs/scrub.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index f8551b9..24720f6 100644
+index 24720f6..7f56603 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -2923,10 +2923,12 @@ again:
- 						      extent_dev, flags,
- 						      generation,
- 						      extent_mirror_num);
-+
-+			scrub_free_csums(sctx);
-+
- 			if (ret)
- 				goto out;
+@@ -2702,7 +2702,7 @@ static void scrub_parity_check_and_repair(struct scrub_parity *sparity)
+ 			   sparity->nsectors))
+ 		goto out;
  
--			scrub_free_csums(sctx);
- 			if (extent_logical + extent_len <
- 			    key.objectid + bytes) {
- 				logic_start += map->stripe_len;
-@@ -3259,10 +3261,12 @@ again:
- 					   extent_physical, extent_dev, flags,
- 					   generation, extent_mirror_num,
- 					   extent_logical - logical + physical);
-+
-+			scrub_free_csums(sctx);
-+
- 			if (ret)
- 				goto out;
+-	length = sparity->logic_end - sparity->logic_start + 1;
++	length = sparity->logic_end - sparity->logic_start;
+ 	ret = btrfs_map_sblock(sctx->dev_root->fs_info, WRITE,
+ 			       sparity->logic_start,
+ 			       &length, &bbio, 0, 1);
+@@ -2868,7 +2868,7 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
+ 			    key.type != BTRFS_METADATA_ITEM_KEY)
+ 				goto next;
  
--			scrub_free_csums(sctx);
- 			if (extent_logical + extent_len <
- 			    key.objectid + bytes) {
- 				if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+-			if (key.objectid > logic_end) {
++			if (key.objectid >= logic_end) {
+ 				stop_loop = 1;
+ 				break;
+ 			}
+@@ -2957,7 +2957,7 @@ next:
+ out:
+ 	if (ret < 0)
+ 		scrub_parity_mark_sectors_error(sparity, logic_start,
+-						logic_end - logic_start + 1);
++						logic_end - logic_start);
+ 	scrub_parity_put(sparity);
+ 	scrub_submit(sctx);
+ 	mutex_lock(&sctx->wr_ctx.wr_lock);
+@@ -3138,7 +3138,7 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 			logical += base;
+ 			if (ret) {
+ 				stripe_logical += base;
+-				stripe_end = stripe_logical + increment - 1;
++				stripe_end = stripe_logical + increment;
+ 				ret = scrub_raid56_parity(sctx, map, scrub_dev,
+ 							  ppath, stripe_logical,
+ 							  stripe_end);
+@@ -3284,7 +3284,7 @@ loop:
+ 					if (ret && physical < physical_end) {
+ 						stripe_logical += base;
+ 						stripe_end = stripe_logical +
+-								increment - 1;
++								increment;
+ 						ret = scrub_raid56_parity(sctx,
+ 							map, scrub_dev, ppath,
+ 							stripe_logical,
 -- 
 1.8.5.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

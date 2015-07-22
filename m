@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:26746 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S934001AbbGVL3E (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57466 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755045AbbGVMsG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jul 2015 07:29:04 -0400
-Message-ID: <55AF7E77.5020803@fb.com>
-Date: Wed, 22 Jul 2015 07:28:55 -0400
+	Wed, 22 Jul 2015 08:48:06 -0400
+Message-ID: <55AF90FA.8010208@fb.com>
+Date: Wed, 22 Jul 2015 08:47:54 -0400
 From: Josef Bacik <jbacik@fb.com>
 MIME-Version: 1.0
 To: Dave Chinner <david@fromorbit.com>
@@ -262,14 +262,6 @@ On 07/22/2015 01:27 AM, Dave Chinner wrote:
 > BTW, you'll know when I'm cranky - swearing is a real good
 > indication that I'm pissed off at something or someone.
 >
-
-Sorry, I didn't mean to come across angry or condescending.  Obviously I 
-appreciate your expertise and questions, I wasn't pissed or anything, 
-this is just how I normally talk, you know I use swearing as 
-punctuation.  I'm not going to keep arguing about the rest of this 
-because it's pointless now.  I'm sorry it came across as angry and 
-condescending, that was the furthest thing from my mind when I wrote it.
-
 >> write shit to fs
 >> fsync said shit
 >> drop all writes from this point onwards
@@ -289,41 +281,37 @@ condescending, that was the furthest thing from my mind when I wrote it.
 > mistakes all the time; don't you forget how things work after not
 > looking at them for months at a time?
 >
-> i.e.  asking "have you forgotten that dm-flakey completes writes
-> without errors?" would have been a much better reply than ranting,
-> shouting, swearing and treating people like they are idiots.
->
->> In Chandan's case his metadata is being evicted from memory so it
->> has to be read back during this point _after_ the drop all writes
->> stuff.
->
-> At last - a clear explanation of the root cause.  The patch
-> description makes no mention of read after memory reclaim, and you
-> only described the problem caused by dropping caches as a "race"
-> without actually explaining what the race was.
->
-> The above two lines is such a simple, obvious description of the
-> problem that is clear to most fs developers. If the patch had the
-> above description, then I don't think anyone would have
-> misunderstood it. However, it was completely obfuscated by
-> lots of nitty, gritty details about confusing btrfs symptoms and
-> behaviour and so left us needing to try to understand what btrfs
-> is doing or not doing.
->
-> A better description of the problem would have saved a lot of time
-> (and the rest of us from an unnecessary shouty rant).
->
->> This is part of the reason for dm-log-writes, to solve this kind of
->> shitty situation that dm-flakey introduces.
->
-> Which you've also never explained in any of the dm-log-write patches
-> you've posted in the past.  IOWs, get the dm-log-writes support code
-> reviewed and fix the dm-flakey tests to use it so this problem goes
-> away.
->
 
-The dm-log-writes target is already upstream, I sent the xfstests stuff 
-months ago, not sure if they ever made it in.  I'll check and get them 
-posted again if not.  Thanks,
+Ok one more thing I swear because honestly I feel like this right here 
+is the root of everybody's frustrations.  You are not a btrfs expert, so 
+I expect to explain btrfs behavior to you, that's what the bulk of our 
+emails were about.  You are Dave Chinner, when you speak people listen 
+because you have been here forever and done everything.  You are the 
+center piece for most LSF conversations, you are CC'ed on anything 
+remotely complicated in fs/ or mm related to fs stuff.  When you start 
+throwing around things like
+
+"Josef, Chris, is this really how btrfs handles metadata write
+failures? This handling of errors seems like a design flaw rather
+than a desireable behaviour to me..."
+
+it carries weight.  I know you are asking an honest question, but the 
+headlines of Phoronix will read "Btrfs: broken by design says long time 
+fs guru Dave Chinner", and I'll spend the next year answering stupid 
+assertions in email/reddit/person about how btrfs doesn't handle write 
+errors properly.  Remember that email from Edward Shishkin like 7 years 
+ago about how btrfs's btree was broken by design?  I _still_ have to 
+explain to people that he just found a bug and it really wasn't a design 
+problem, even though the bug was fixed in the same email thread.
+
+Your opinion matters greatly to me and the community at large, when you 
+start questioning btrfs's design I and everybody else takes that very 
+seriously.  The tone I took was a mistake, it came across as ranty and 
+angry, when I wanted more fun, light, and conversational.  I'm extremely 
+sorry for that and will ship you booze in payment.
+
+So yes it is completely legitimate that you didn't remember how 
+dm-flakey works, but we mere mortals sometimes forget that you are 
+mortal too ;).  Thanks,
 
 Josef

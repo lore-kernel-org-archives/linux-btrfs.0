@@ -1,240 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:33438 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752173AbbGVVqx (ORCPT
+Received: from mail-lb0-f179.google.com ([209.85.217.179]:36638 "EHLO
+	mail-lb0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753380AbbGVWGG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jul 2015 17:46:53 -0400
-Received: by wicmv11 with SMTP id mv11so98706311wic.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2015 14:46:51 -0700 (PDT)
-Received: from [192.168.178.26] (155-219-103-86.dynamic.dsl.tng.de. [86.103.219.155])
-        by smtp.googlemail.com with ESMTPSA id gw7sm23980887wib.15.2015.07.22.14.46.50
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Wed, 22 Jul 2015 14:46:51 -0700 (PDT)
-Message-ID: <55B00F4A.5040508@gmail.com>
-Date: Wed, 22 Jul 2015 23:46:50 +0200
-From: Thomas Rohwer <trohwer85@gmail.com>
+	Wed, 22 Jul 2015 18:06:06 -0400
+Received: by lbbqi7 with SMTP id qi7so65209644lbb.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 22 Jul 2015 15:06:04 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs send ioctl does not support 32 bit user space with 64 bit kernel
- in Linux 4.1.3 ; patch included
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CAGwxe4j7J5ztPk-OyeOuX2YH6SO3G9_h6VU_1wWMdP4rHpqiew@mail.gmail.com>
+References: <CAGwxe4j7J5ztPk-OyeOuX2YH6SO3G9_h6VU_1wWMdP4rHpqiew@mail.gmail.com>
+From: Tobias Holst <tobby@tobby.eu>
+Date: Thu, 23 Jul 2015 00:05:44 +0200
+Message-ID: <CAGwxe4jn0amq46Yw=KPwVH6eo_jE7KfxFnY3tvzNkQGOjR_MDw@mail.gmail.com>
+Subject: Re: "free_raid_bio" crash on RAID6
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi
 
-I am using as kernel Linux 4.1.3 (64bit) and btrfs-prog version 4.0 (32 bit user space).
-I wanted to use send/receive with btrfs for the first time today and I got the following error:
+Any ideas on this?
 
-humbur:~# btrfs send /snap > /dev/null
-At subvol /snap
-ERROR: send ioctl failed with -25: Inappropriate ioctl for device
-ERROR: failed to read stream from kernel. Bad file descriptor
+Regards,
+Tobias
 
 
-Investigating the source, I noticed that probably the problem is the member clone_sources in the structure
-
-struct btrfs_ioctl_send_args {
-   __s64 send_fd;      /* in */
-   __u64 clone_sources_count;  /* in */
-   __u64 __user *clone_sources;  /* in */
-   __u64 parent_root;    /* in */
-   __u64 flags;      /* in */
-   __u64 reserved[4];    /* in */
-};
-
-in include/uapi/linux/btrfs.h and the missing adaption code in fs/btrfs/ioctl.c. The member clone_sources is only 32 bit wide in case of 32 bit user space.
-For the ioctl RECEIVED_SUBVOL somebody already added code for the in this case also necessary translation. I took this as a template and
-wrote a patch (see below). The patch compiles and with the new kernel I seem to get valid data with send (I have to read it back yet,
-but I get about the expected amount and structure).
-
-This is a proof of concept patch; for example the compiler currently warns for
-  (args64->clone_sources = (__u64*)args32->clone_sources;
-and I would have to investigate how to properly convert the pointer. Further there are probably some issues with the formating of the source code.
-I also have not tested the 32bit/32bit 64bit/64bit userspace/kernel combinations.
-If there is interest, I can resubmit an improved patch. Please CC me in replies, since I have not subscribed to the list.
-
-
-Sincerely,
-
-Thomas Rohwer
-
-
-
-
-
-Signed-off-by: Thomas Rohwer <trohwer85@gmail.com>
-
- From e4156c38105200fa83913b6a94f07a41631c5f75 Mon Sep 17 00:00:00 2001
-From: Thomas <tr@humbur.fritz.box>
-Date: Wed, 22 Jul 2015 22:03:15 +0200
-Subject: [PATCH] add 32 bit adaption code for send ioctl
-
----
-  fs/btrfs/ioctl.c | 73 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-  fs/btrfs/send.c  | 11 +--------
-  fs/btrfs/send.h  |  2 +-
-  3 files changed, 75 insertions(+), 11 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 1c22c65..8b969c0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -83,6 +83,19 @@ struct btrfs_ioctl_received_subvol_args_32 {
-
-  #define BTRFS_IOC_SET_RECEIVED_SUBVOL_32 _IOWR(BTRFS_IOCTL_MAGIC, 37, \
-  				struct btrfs_ioctl_received_subvol_args_32)
-+
-+struct btrfs_ioctl_send_args_32 {
-+	__s64 send_fd;                  /* in */
-+	__u64 clone_sources_count;      /* in */
-+	__u32 clone_sources;            /* in */
-+	__u64 parent_root;              /* in */
-+	__u64 flags;                    /* in */
-+	__u64 reserved[4];              /* in */
-+} __attribute__ ((__packed__));
-+
-+#define BTRFS_IOC_SEND_32 _IOW(BTRFS_IOCTL_MAGIC, 38, \
-+				struct btrfs_ioctl_send_args_32)
-+
-  #endif
-
-
-@@ -4965,6 +4978,43 @@ out:
-  	kfree(args64);
-  	return ret;
-  }
-+
-+static long btrfs_ioctl_send_32(struct file *file,
-+						void __user *arg)
-+{
-+	struct btrfs_ioctl_send_args_32 *args32 = NULL;
-+	struct btrfs_ioctl_send_args *args64 = NULL;
-+	int ret = 0;
-+
-+	args32 = memdup_user(arg, sizeof(*args32));
-+	if (IS_ERR(args32)) {
-+		ret = PTR_ERR(args32);
-+		args32 = NULL;
-+		goto out;
-+	}
-+
-+	args64 = kmalloc(sizeof(*args64), GFP_NOFS);
-+	if (!args64) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	args64->send_fd = args32->send_fd;
-+	args64->clone_sources_count = args32->clone_sources_count;
-+	args64->clone_sources = (__u64*)args32->clone_sources;
-+	args64->parent_root = args32->parent_root;
-+	args64->flags = args32->flags;
-+
-+	ret = _btrfs_ioctl_send(file, args64);
-+	
-+	// only in arguments, so no copy back to args32
-+
-+out:
-+	kfree(args32);
-+	kfree(args64);
-+	return ret;
-+}
-+
-  #endif
-
-  static long btrfs_ioctl_set_received_subvol(struct file *file,
-@@ -4994,6 +5044,27 @@ out:
-  	return ret;
-  }
-
-+static long btrfs_ioctl_send(struct file *file,
-+					    void __user *arg)
-+{
-+	struct btrfs_ioctl_send_args *sa = NULL;
-+	int ret = 0;
-+
-+	sa = memdup_user(arg, sizeof(*sa));
-+	if (IS_ERR(sa)) {
-+		ret = PTR_ERR(sa);
-+		sa = NULL;
-+		goto out;
-+	}
-+
-+	ret = _btrfs_ioctl_send(file, sa);
-+
-+out:
-+	kfree(sa);
-+	return ret;
-+}
-+
-+
-  static int btrfs_ioctl_get_fslabel(struct file *file, void __user *arg)
-  {
-  	struct btrfs_root *root = BTRFS_I(file_inode(file))->root;
-@@ -5320,6 +5391,8 @@ long btrfs_ioctl(struct file *file, unsigned int
-  #ifdef CONFIG_64BIT
-  	case BTRFS_IOC_SET_RECEIVED_SUBVOL_32:
-  		return btrfs_ioctl_set_received_subvol_32(file, argp);
-+	case BTRFS_IOC_SEND_32:
-+		return btrfs_ioctl_send_32(file, argp);
-  #endif
-  	case BTRFS_IOC_SEND:
-  		return btrfs_ioctl_send(file, argp);
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index a1216f9..6838078 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -5663,13 +5663,12 @@ static void btrfs_root_dec_send_in_progress(struct btrfs_root* root)
-  	spin_unlock(&root->root_item_lock);
-  }
-
--long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
-+long _btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg)
-  {
-  	int ret = 0;
-  	struct btrfs_root *send_root;
-  	struct btrfs_root *clone_root;
-  	struct btrfs_fs_info *fs_info;
--	struct btrfs_ioctl_send_args *arg = NULL;
-  	struct btrfs_key key;
-  	struct send_ctx *sctx = NULL;
-  	u32 i;
-@@ -5707,13 +5706,6 @@ long btrfs_ioctl_send(struct file *mnt_file, void __user *arg_)
-  		goto out;
-  	}
-
--	arg = memdup_user(arg_, sizeof(*arg));
--	if (IS_ERR(arg)) {
--		ret = PTR_ERR(arg);
--		arg = NULL;
--		goto out;
--	}
--
-  	if (!access_ok(VERIFY_READ, arg->clone_sources,
-  			sizeof(*arg->clone_sources) *
-  			arg->clone_sources_count)) {
-@@ -5942,7 +5934,6 @@ out:
-  	if (sctx && !IS_ERR_OR_NULL(sctx->parent_root))
-  		btrfs_root_dec_send_in_progress(sctx->parent_root);
-
--	kfree(arg);
-  	vfree(clone_sources_tmp);
-
-  	if (sctx) {
-diff --git a/fs/btrfs/send.h b/fs/btrfs/send.h
-index 48d425a..fb43556 100644
---- a/fs/btrfs/send.h
-+++ b/fs/btrfs/send.h
-@@ -130,5 +130,5 @@ enum {
-  #define BTRFS_SEND_A_MAX (__BTRFS_SEND_A_MAX - 1)
-
-  #ifdef __KERNEL__
--long btrfs_ioctl_send(struct file *mnt_file, void __user *arg);
-+long _btrfs_ioctl_send(struct file *mnt_file, struct btrfs_ioctl_send_args *arg);
-  #endif
--- 
-2.1.4
-
-
+2015-07-20 18:20 GMT+02:00 Tobias Holst <tobby@tobby.eu>:
+> Hi
+>
+> My btrfs-RAID6 seems to be broken again :(
+>
+> When reading from it I get several of these:
+> [  176.349943] BTRFS info (device dm-4): csum failed ino 1287707
+> extent 21274957705216 csum 2830458701 wanted 426660650 mirror 2
+>
+> then followed by a "free_raid_bio"-crash:
+>
+> [  176.349961] ------------[ cut here ]------------
+> [  176.349981] WARNING: CPU: 6 PID: 110 at
+> /home/kernel/COD/linux/fs/btrfs/raid56.c:831
+> __free_raid_bio+0xfc/0x130 [btrfs]()
+> [  176.349982] Modules linked in: iosf_mbi kvm_intel kvm ppdev
+> crct10dif_pclmul crc32_pclmul dm_crypt ghash_clmulni_intel aesni_intel
+> aes_x86_64 lrw gf128mul glue_helper ablk_helper serio_raw 8250_fintek
+> i2c_piix4 pvpanic cryptd mac_hid virtio_rng parport_pc lp parport
+> btrfs xor raid6_pq cirrus syscopyarea sysfillrect sysimgblt ttm
+> drm_kms_helper mpt2sas drm raid_class psmouse floppy
+> scsi_transport_sas pata_acpi
+> [  176.349998] CPU: 6 PID: 110 Comm: kworker/u16:2 Not tainted
+> 4.1.2-040102-generic #201507101335
+> [  176.349999] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
+> BIOS Bochs 01/01/2011
+> [  176.350007] Workqueue: btrfs-endio btrfs_endio_helper [btrfs]
+> [  176.350008]  ffffffffc026fc18 ffff8800baa4f978 ffffffff817d076c
+> 0000000000000000
+> [  176.350010]  0000000000000000 ffff8800baa4f9b8 ffffffff81079b0a
+> 0000000000000246
+> [  176.350011]  ffff88034e7baa68 ffff88008619b800 00000000fffffffb
+> 0000000000000000
+> [  176.350013] Call Trace:
+> [  176.350023]  [<ffffffff817d076c>] dump_stack+0x45/0x57
+> [  176.350026]  [<ffffffff81079b0a>] warn_slowpath_common+0x8a/0xc0
+> [  176.350029]  [<ffffffff81079bfa>] warn_slowpath_null+0x1a/0x20
+> [  176.350036]  [<ffffffffc025e91c>] __free_raid_bio+0xfc/0x130 [btrfs]
+> [  176.350041]  [<ffffffffc025f351>] rbio_orig_end_io+0x51/0xa0 [btrfs]
+> [  176.350047]  [<ffffffffc02610e3>] __raid56_parity_recover+0x1d3/0x210 [btrfs]
+> [  176.350052]  [<ffffffffc0261cb0>] raid56_parity_recover+0x110/0x180 [btrfs]
+> [  176.350058]  [<ffffffffc0216cdb>] btrfs_map_bio+0xdb/0x4e0 [btrfs]
+> [  176.350065]  [<ffffffffc0236024>]
+> btrfs_submit_compressed_read+0x354/0x4e0 [btrfs]
+> [  176.350070]  [<ffffffffc01ee681>] btrfs_submit_bio_hook+0x1d1/0x1e0 [btrfs]
+> [  176.350076]  [<ffffffff81376dbe>] ? bio_add_page+0x5e/0x70
+> [  176.350083]  [<ffffffffc020c176>] ?
+> btrfs_create_repair_bio+0xe6/0x110 [btrfs]
+> [  176.350089]  [<ffffffffc020c6ab>] end_bio_extent_readpage+0x50b/0x560 [btrfs]
+> [  176.350094]  [<ffffffffc020c1a0>] ?
+> btrfs_create_repair_bio+0x110/0x110 [btrfs]
+> [  176.350096]  [<ffffffff8137934b>] bio_endio+0x5b/0xa0
+> [  176.350103]  [<ffffffff811d9e19>] ? kmem_cache_free+0x1d9/0x1f0
+> [  176.350104]  [<ffffffff813793a2>] bio_endio_nodec+0x12/0x20
+> [  176.350109]  [<ffffffffc01e10df>] end_workqueue_fn+0x3f/0x50 [btrfs]
+> [  176.350115]  [<ffffffffc021b522>] normal_work_helper+0xc2/0x2b0 [btrfs]
+> [  176.350121]  [<ffffffffc021b7e2>] btrfs_endio_helper+0x12/0x20 [btrfs]
+> [  176.350124]  [<ffffffff8109324f>] process_one_work+0x14f/0x420
+> [  176.350127]  [<ffffffff81093a08>] worker_thread+0x118/0x530
+> [  176.350128]  [<ffffffff810938f0>] ? rescuer_thread+0x3d0/0x3d0
+> [  176.350129]  [<ffffffff81098f89>] kthread+0xc9/0xe0
+> [  176.350130]  [<ffffffff81098ec0>] ? kthread_create_on_node+0x180/0x180
+> [  176.350134]  [<ffffffff817d86a2>] ret_from_fork+0x42/0x70
+> [  176.350135]  [<ffffffff81098ec0>] ? kthread_create_on_node+0x180/0x180
+> [  176.350136] ---[ end trace 81289955f20d48ee ]---
+>
+> Did I found a kernel bug? What can/should I do?
+>
+> Don't worry about my data, I have tape-backups of the important data,
+> I just want to help fixing RAID-related btrfs bugs.
+>
+> Hardware: KVM with all drives attached to a passed through SAS-controller
+> System: Ubuntu 14.04.2
+> Kernel: 4.1.2
+> btrfs-tools: 4.0
+> It's a btrfs-RAID-6 on top of 6 LUKS-encrypted volumes, created with
+> "-O extref,raid56,skinny-metadata,no-holes". At normal it's mounted
+> with "defaults,compress=lzo,space_cache,autodefrag,subvol=raid".
+> One drive is broken, so at the moment it is mounted with "-O
+> defaults,ro,degraded,recovery,compress=lzo,space_cache,subvol=raid".
+>
+> It's pretty much full, so "btrfs fi show" shows:
+> Label: 't-raid'  uuid: 3938baeb-cb02-4909-8e75-6ec2f47d1d19
+>         Total devices 6 FS bytes used 14.44TiB
+>         devid    2 size 3.64TiB used 3.64TiB path /dev/mapper/sdb_crypt
+>         devid    3 size 3.64TiB used 3.64TiB path /dev/mapper/sdc_crypt
+>         devid    4 size 3.64TiB used 3.64TiB path /dev/mapper/sdd_crypt
+>         devid    5 size 3.64TiB used 3.64TiB path /dev/mapper/sde_crypt
+>         devid    6 size 3.64TiB used 3.64TiB path /dev/mapper/sdf_crypt
+>         *** Some devices missing
+>
+> and "btrfs fi df /raid" shows:
+> Data, RAID6: total=14.52TiB, used=14.42TiB
+> System, RAID6: total=64.00MiB, used=1.00MiB
+> Metadata, RAID6: total=24.00GiB, used=21.78GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+>
+>
+> Regards,
+> Tobias

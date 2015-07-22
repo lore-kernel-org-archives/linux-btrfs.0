@@ -1,148 +1,225 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:38096 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754195AbbGVCBr (ORCPT
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:38909 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S932093AbbGVDti (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jul 2015 22:01:47 -0400
-Subject: Re: Can't mount btrfs volume on rbd
-To: Steve Dainard <sdainard@spd1.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <CAEMJtDs=U5+YO9sbVvjxLthdxp6JvZO=07EMhcU5Smif_1m5QQ@mail.gmail.com>
- <557A890D.8080306@cn.fujitsu.com>
- <CAEMJtDu2zZJc-dg9opj0xHaKyeL78H0ppivb8mJFhChJ4J63uA@mail.gmail.com>
- <557E877E.2060704@cn.fujitsu.com>
- <CAEMJtDusywPEnDcNcMvvFKQsuZyTmSMXXgJT=eBZX1F+R8RM8w@mail.gmail.com>
- <557F7B82.2060203@cn.fujitsu.com>
- <CAEMJtDv1Tm7-O2mU03kZhPDkaSj7nVi+VAZVhPfh7BN8AuF2Bg@mail.gmail.com>
- <55A46473.8070106@cn.fujitsu.com> <55AE04EF.6040807@cn.fujitsu.com>
- <55AE29DA.4050201@gmail.com>
- <CAEMJtDuaOYPomha_VbTah521BZTYzmrg2D5tk6N4rd1Y8UPaog@mail.gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55AEF984.9080706@cn.fujitsu.com>
-Date: Wed, 22 Jul 2015 10:01:40 +0800
+	Tue, 21 Jul 2015 23:49:38 -0400
+Date: Tue, 21 Jul 2015 23:49:37 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Liu Bo <bo.li.liu@oracle.com>, btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Discuss on inband dedup implement (Original "strange data
+ backref offset")
+Message-ID: <20150722034937.GB21995@hungrycats.org>
+References: <55A86AA8.6010404@cn.fujitsu.com>
+ <20150718113412.GA11450@localhost.localdomain>
+ <20150719072344.GA22025@hungrycats.org>
+ <55AC5BE6.90802@cn.fujitsu.com>
+ <20150721045505.GB22025@hungrycats.org>
+ <55ADEC36.1010504@cn.fujitsu.com>
+ <20150721221446.GC22025@hungrycats.org>
+ <55AEF6C0.5070207@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAEMJtDuaOYPomha_VbTah521BZTYzmrg2D5tk6N4rd1Y8UPaog@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="vkogqOf2sHV7VnPd"
+In-Reply-To: <55AEF6C0.5070207@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--vkogqOf2sHV7VnPd
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Steve Dainard wrote on 2015/07/21 14:07 -0700:
-> On Tue, Jul 21, 2015 at 4:15 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2015-07-21 04:38, Qu Wenruo wrote:
->>>
->>> Hi Steve,
->>>
->>> I checked your binary dump.
->>>
->>> Previously I was too focused on the assert error, but ignored some even
->>> larger bug...
->>>
->>> As for the btrfs-debug-tree output, subvol 257 and 5 are completely
->>> corrupted.
->>> Subvol 257 seems to contains a new tree root, and 5 seems to contains a
->>> new device tree.
->>>
->>> ------
->>> fs tree key (FS_TREE ROOT_ITEM 0)
->>> leaf 29409280 items 8 free space 15707 generation 9 owner 4
->>> fs uuid 1bb22a03-bc25-466f-b078-c66c6f6a6d28
->>> chunk uuid 11cca6df-e850-45d7-a928-cdff82c5f295
->>>           item 0 key (0 DEV_STATS 1) itemoff 16243 itemsize 40
->>>                   device stats
->>>           item 1 key (1 DEV_EXTENT 0) itemoff 16195 itemsize 48
->>>                   dev extent chunk_tree 3
->>>                   chunk objectid 256 chunk offset 0 length 4194304
->>>           item 2 key (1 DEV_EXTENT 4194304) itemoff 16147 itemsize 48
->>>                   dev extent chunk_tree 3
->>>                   chunk objectid 256 chunk offset 4194304 length 8388608
->>>           item 3 key (1 DEV_EXTENT 12582912) itemoff 16099 itemsize 48
->>>                   dev extent chunk_tree 3
->>> ......
->>> # DEV_EXTENT should never occur in fs tree. It should only occurs in
->>> # dev tree
->>>
->>> file tree key (257 ROOT_ITEM 0)
->>> leaf 29376512 items 13 free space 12844 generation 9 owner 1
->>> fs uuid 1bb22a03-bc25-466f-b078-c66c6f6a6d28
->>> chunk uuid 11cca6df-e850-45d7-a928-cdff82c5f295
->>>           item 0 key (EXTENT_TREE ROOT_ITEM 0) itemoff 15844 itemsize 439
->>>                   root data bytenr 29392896 level 0 dirid 0 refs 1 gen 9
->>>                   uuid 00000000-0000-0000-0000-000000000000
->>>           item 1 key (DEV_TREE ROOT_ITEM 0) itemoff 15405 itemsize 439
->>>                   root data bytenr 29409280 level 0 dirid 0 refs 1 gen 9
->>>                   uuid 00000000-0000-0000-0000-000000000000
->>>           item 2 key (FS_TREE INODE_REF 6) itemoff 15388 itemsize 17
->>>                   inode ref index 0 namelen 7 name: default
->>>           item 3 key (FS_TREE ROOT_ITEM 0) itemoff 14949 itemsize 439
->>>                   root data bytenr 29360128 level 0 dirid 256 refs 1 gen 4
->>>                   uuid 00000000-0000-0000-0000-000000000000
->>>           item 4 key (ROOT_TREE_DIR INODE_ITEM 0) itemoff 14789 itemsize
->>> 160
->>>                   inode generation 3 transid 0 size 0 nbytes 16384
->>>                   block group 0 mode 40755 links 1 uid 0 gid 0
->>>                   rdev 0 flags 0x0
->>> # These things are only in tree root.
->>> ------
->>>
->>> So the problem is, the kernel you use has some bug (btrfs or rbd
->>> related), causing the btrfs write wrong tree blocks into existing tree
->>> blocks.
->>>
->>> For such case, btrfsck won't be able to fix the critical error.
->>> And I didn't even have an idea to fix the assert to change it into a
->>> normal error. As it's corrupting the whole structure of btrfs...
->>>
->>> I can't even recall such critical btrfs bug...
->>>
->>>
->>> Not familiar with rbd, but will it allow a block device to be mounted on
->>> different systems?
->>>
->>> Like exporting a device A to system B and system C, and both system B
->>> and system C mounting device A at the same time as btrfs?
->>>
->> Yes, it's a distributed SAN type system built on top of Ceph.  It does allow
->> having multiple systems mount the device.
->
-> This is accurate, but its a configured setting with the default being
-> not shareable. The host which has mapped the block device should have
-> a lock on it, so if another host attempts to map the same block device
-> it should error out.
->
-> The first time I had this occur was when it appeared pacemaker (HA
-> daemon) couldn't fence one of two nodes, and somehow bypassed the ceph
-> locking mechanism, mapping/mounting the block device on both nodes at
-> the same time which would account for corruption.
->
-> The last time this occurred (which is where the image you've analysed
-> came from) pacemaker was not involved, and only one node was
-> mapping/mounting the block device.
->
->>
->> Ideally, we really should put in some kind of protection against multiple
->> mounts (this would be a significant selling point of BTRFS in my opinion, as
->> the only other Linux native FS that has this is ext4), and make it _very_
->> obvious that mounting a BTRFS filesystem on multiple nodes concurrently
->> _WILL_ result in pretty much irreparable corruption.
->>
->
->
-> I don't know if this has any bearing on the failure case, but the
-> filesystem that I sent an image of was only ever created, subvol
-> created, and mounted/unmounted several times. There was never any data
-> written to that mount point.
->
-Subvol creation and rw mount is enough to trigger 2~3 transaction with 
-DATA written into btrfs.
-As the first rw mount will create free space cache, which is counted as 
-data.
+On Wed, Jul 22, 2015 at 09:49:52AM +0800, Qu Wenruo wrote:
+> Change subject to reflect the core of the conversation.
+>=20
+> Zygo Blaxell wrote on 2015/07/21 18:14 -0400:
+> >On Tue, Jul 21, 2015 at 02:52:38PM +0800, Qu Wenruo wrote:
+> >>Zygo Blaxell wrote on 2015/07/21 00:55 -0400:
 
-But without multiple mount instants, I really can't consider another 
-method to destroy btrfs so badly but with all csum OK...
+> >There's already a read-and-compare in the extent-same ioctl.  :-/
+> Yes, but the extent same ioctl needs 2 inode. (one already provided by io=
+ctl
+> system call)
+> One for the source and one for the dest, which makes codes easy to implem=
+ent
+> as we can just use VFS calls to read the needed pages.
+>=20
+> But the problem is, for dedup, there is only hash <-> extent mapping.
+> We only know the corresponding bytenr of a hash, not a inode.
+>=20
+> If even using the read-compare method, which means at write routine, we w=
+ill
+> resuse read routine, causing more complicated read/write path combination=
+ to
+> test, and later read routine change will be quite dirty to avoid impact on
+> write routine.
+>=20
+> And what's worse is, an extent can be referred by several different inode=
+s,
+> so even for the best case, we need to find an inode using backref and then
+> use address space calls to read the neede pages.
+>=20
+> That will leads to the hell of delayed ref.
+> As at write time, backref is delayed, it needs not only search the extent
+> tree for backref item but also go through delayed refs. (Such things were
+> the reason causing crazy quota numbers before and I tried to fix in 4.2-r=
+c1)
+>=20
+> And that's what I feared to face, complicated read/write coupling with
+> backref search nightmare.
 
-Thanks,
-Qu
+Yes, putting a small-memory dedup into the write path on Linux does
+cause some challenging (some might say insurmountable ;) ) problems.
+
+A natural result of having a userspace daemon is that it can keep up
+with writes but it is not on the critical path for them, i.e. if we have
+memory pressure we just throw the blocks at the disk to free up some RAM,
+but remember the block addresses so they can be rescanned later when we're
+more idle.  A daemon with a persistent store and a find-new style scanner
+can be paused and allowed to run overnight if it's too heavy to run live.
+
+I could see such a facility living inside the kernel and being started and
+stopped by an admin...but it might be a better idea to just adjust the
+kernel's interface to communicate better with a dedup daemon.
+
+e.g. I have a wishlist item to have something like fanotify which gives me
+a file descriptor when a file is modified--but that also includes dirty
+block numbers.  I can connect those modified blocks with their duplicate
+on-disk counterparts almost immediately, before delalloc even considers
+writing them.
+
+> >That's precisely the tradeoff I made:  up to 0.1% more I/O for unique
+> >blocks, and duplicate writes would become reads instead (assuming I moved
+> >my dedup daemon into the kernel).  There is some extra seeking on writes
+> >to confirm duplicate pages--but when they are confirmed, the writes are
+> >no longer necessary and their I/O can be dropped.
+> >
+> >The payoff is that it requires 100 times less RAM, so it can coexist
+> >with other things on a medium-sized machine.
+>=20
+> Quite convincing trade off now.
+>=20
+> But the above extent reading problem is still here.
+> Although I may also be wrong as I'm not quite similar with VFS and filema=
+p.
+>=20
+> If there is any good kernel API to read pages directly by bytenr without
+> using filemap/address space infrastructure, I'll be quite happy to try it.
+
+I had assumed (but not checked) that the kernel can do it more easily than
+userspace.  The ugliest pieces of code for userspace dedup are the pieces
+that translate a block number into a path into a file descriptor, then have
+to verify that they ended up with the same physical block that was requeste=
+d.
+
+So another wishlist item would be an ioctl for "give me a file descriptor
+containing a ref to this blocknr without having to go through all this
+root-inode-path resolution crap."  ;)
+
+> >My target environment is a file server device where up to 75% of the
+> >system RAM might be devoted to dedup.  It is not something that is
+> >intended to run unnoticed on a smartphone.
+> The original thought on persist hash map is for database, hard to imagine
+> right?
+>=20
+> From what I read from Oracle datasheet, they claim their database can take
+> full use of ZFS deduplication, so I consider such persist hash map idea a=
+s a
+> supplement to the uncertain LRU drop.
+> But that's just a future idea yet...
+
+I looked at a number of databases, hash table structures, bloom filters,
+cuckoo tables, exotic modern C++ hashtable libraries from Google, and
+ancient articles on hash tables by Knuth.  In the end I gave up and
+rolled my own.
+
+I have a lot of duplicate data--almost half--so I can't use algorithms
+designed for a 10% hit rate (like bloom and cuckoo).  I don't want to
+scan the entire filesystem from scratch every time, so Bloom was out
+(no way to delete items, and the variations on Bloom that allow deletion
+require almost as much space as the hash table itself).  Indexing overhead
+for b-trees and most database engines would be larger than the hash table.
+
+With a 50% duplicate hit rate, _any_ algorithm that spilled out to
+disk would be hitting the disk with a random I/O for every 8K of data.
+This meant that any data that wasn't going to fit into RAM might as well
+be on the moon.  If I tried to keep it, I'd be swapping all the time.
+I found a way to work in constant space, because RAM was all the storage
+I'd ever be able to use.
+
+Persistence is trivial:  just dump the RAM out to disk every few hours.
+
+> BTW, is your userspace dedup daemon open-source?
+> It would be quite nice if we can refer it to improve further.
+
+It is open-source in as much as it is source at all, but it's not in
+a usable state yet.  Right now it is a pile of command-line utilities,
+several experimental test programs which perform different parts of the
+task, some ad-hoc Perl scripts to glue them together, and test-driven
+rework that I am slowly converting into a coherent working program
+that other human beings can read and use.  The "persistent" on-disk
+format changes every three weeks.  I'm on my fourth rewrite of the
+extent-matching loop because the first three ran into logical landmines
+in my test data.
+
+It was originally supposed to be a 1000-line replacement for
+faster-dupemerge to be finished in a week.  This is now month 14, it
+has crossed the 2000 line mark, and I'm hoping this month will be
+the first month that I rewrite _less_ than 30% of the code.  :-P
+
+> Thanks,
+> Qu
+> >
+> >>In fact, I can reduce the space usage by just(not so easy to call it ju=
+st
+> >>anyway) change dedup size to 512K. So just one btrfs_dedup_hash for 512K
+> >>other than original 128 dedup_hash for 512K.
+> >>That's also why Liu Bo uses tunable dedup_size.
+> >
+> >Anyone can increase the block size to make their dedup faster.  We lose
+> >100% of all duplicate extents that are smaller than (or just not aligned
+> >to) the block size.
+> >
+> >>Anyway, my dedup_hash struct is really huge...
+> >>It's 120 bytes with all overhead for one btrfs_dedup_hash (and one page
+> >>yet).
+> >
+> >I'm told ZFS is closer to 320.  ;)
+> >
+> >>>At about 157 bytes per 512K
+> >>>(the amount of RAM I have to run dedup) the dedup still covers 92%
+> >>>of duplicate extents with length 64K, with less coverage for smaller
+> >>>extents and more coverage for larger extents.  The size distribution
+> >>>of typical filesystems means I get 99% of all duplicate blocks.
+> >>>
+> >>Pretty impressive, but still a little worried about the code complexibi=
+lity
+> >>especially when it needs to go into kernel.
+> >>
+> >>At last, thanks for your impressive dedup ideas and test data.
+> >>
+> >>Thanks,
+> >>Qu
+> >>--
+> >>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" =
+in
+> >>the body of a message to majordomo@vger.kernel.org
+> >>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>=20
+
+--vkogqOf2sHV7VnPd
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlWvEtEACgkQgfmLGlazG5zHQwCeNLWcIPFZ5PN/+rnYYuvLPLla
+ZbkAnRWCT0FhROuGM/sigcaWkeJFusn+
+=CqmM
+-----END PGP SIGNATURE-----
+
+--vkogqOf2sHV7VnPd--

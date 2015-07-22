@@ -1,25 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:44639 "EHLO mx2.suse.de"
+Received: from cantor2.suse.de ([195.135.220.15]:47812 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752157AbbGUITL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jul 2015 04:19:11 -0400
-Message-ID: <55AE007C.9030807@suse.de>
-Date: Tue, 21 Jul 2015 10:19:08 +0200
-From: Hannes Reinecke <hare@suse.de>
-MIME-Version: 1.0
-To: device-mapper development <dm-devel@redhat.com>,
-        Jens Axboe <axboe@kernel.dk>
-CC: "Martin K. Petersen" <martin.petersen@oracle.com>,
-        linux-kernel@vger.kernel.org, linux-raid@vger.kernel.org,
-        Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [dm-devel] [PATCH] block: add a bi_error field to struct bio
-References: <1437398977-8492-1-git-send-email-hch@lst.de> <1437398977-8492-2-git-send-email-hch@lst.de>
+	id S1752203AbbGVFBM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 22 Jul 2015 01:01:12 -0400
+Date: Wed, 22 Jul 2015 15:00:47 +1000
+From: NeilBrown <neilb@suse.com>
+To: Christoph Hellwig <hch@lst.de>
+Cc: Jens Axboe <axboe@kernel.dk>,
+        "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Neil Brown <neilb@suse.de>, Liu Bo <bo.li.liu@oracle.com>,
+        linux-raid@vger.kernel.org, dm-devel@redhat.com,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] block: add a bi_error field to struct bio
+Message-ID: <20150722150047.5c5d59df@noble>
 In-Reply-To: <1437398977-8492-2-git-send-email-hch@lst.de>
-Content-Type: text/plain; charset=windows-1252
+References: <1437398977-8492-1-git-send-email-hch@lst.de>
+	<1437398977-8492-2-git-send-email-hch@lst.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 07/20/2015 03:29 PM, Christoph Hellwig wrote:
+On Mon, 20 Jul 2015 15:29:37 +0200 Christoph Hellwig <hch@lst.de> wrote:
+
 > Currently we have two different ways to signal an I/O error on a BIO:
 > 
 >  (1) by clearing the BIO_UPTODATE flag
@@ -39,15 +42,20 @@ On 07/20/2015 03:29 PM, Christoph Hellwig wrote:
 > 
 > Signed-off-by: Christoph Hellwig <hch@lst.de>
 > ---
-Very good improvement.
 
-Reviewed-by: Hannes Reinecke <hare@suse.de>
+Reviewed-by: NeilBrown <neilb@suse.com> (umem and md/raid).
 
-Cheers,
+i.e. these files.
+>  drivers/block/umem.c                |  4 +--
+>  drivers/md/faulty.c                 |  4 +--
+>  drivers/md/linear.c                 |  2 +-
+>  drivers/md/md.c                     | 18 +++++------
+>  drivers/md/multipath.c              | 12 +++----
+>  drivers/md/raid0.c                  |  2 +-
+>  drivers/md/raid1.c                  | 53 ++++++++++++++++---------------
+>  drivers/md/raid10.c                 | 55 +++++++++++++++-----------------
+>  drivers/md/raid5.c                  | 52 +++++++++++++++----------------
 
-Hannes
--- 
-Dr. Hannes Reinecke		      zSeries & Storage
-hare@suse.de			      +49 911 74053 688
-SUSE LINUX Products GmbH, Maxfeldstr. 5, 90409 Nürnberg
-GF: J. Hawn, J. Guild, F. Imendörffer, HRB 16746 (AG Nürnberg)
+
+Thanks,
+NeilBrown

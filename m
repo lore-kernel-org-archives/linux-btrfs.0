@@ -1,113 +1,269 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10079 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750698AbbGWEb1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jul 2015 00:31:27 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6N4TawA002552
-	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2015 12:29:36 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Fix scrub panic when leaf accross stripes
-Date: Thu, 23 Jul 2015 12:29:49 +0800
-Message-ID: <ad73b900e3183b8d7dccab6b1ad8ac754fd0c583.1437625769.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:56275 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751916AbbGWK2M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jul 2015 06:28:12 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix stale directory entries after fsync log replay
+Date: Wed, 22 Jul 2015 04:54:54 +0100
+Message-Id: <1437537294-3290-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1437001136-21460-1-git-send-email-fdmanana@kernel.org>
+References: <1437001136-21460-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Scrub panic in following operation:
-  mkfs.ext4 /dev/vdh
-  btrfs-convert /dev/vdh
-  mount /dev/vdh /mnt/tmp1
-  btrfs scrub start -B /dev/vdh
-  (panic)
+We have another case where after an fsync log replay we get an inode with
+a wrong link count (smaller than it should be) and a number of directory
+entries greater than its link count. This happens when we add a new link
+hard link to our inode A and then we fsync some other inode B that has
+the side effect of logging the parent directory inode too. In this case
+at log replay time we add the new hard link to our inode (the item with
+key BTRFS_INODE_REF_KEY) when processing the parent directory but we
+never adjust the link count of our inode A. As a result we get stale dir
+entries for our inode A that can never be deleted and therefore it makes
+it impossible to remove the parent directory (as its i_size can never
+decrease back to 0).
 
-Reason:
-  1: In some case, leaf created by btrfs-convert was splited into 2
-     strips.
-  2: Scrub bypassed part of above wrong leaf data, but remain data
-     caused panic in scrub_checksum_tree_block().
+A simple reproducer for fstests that triggers this issue:
 
-For reason 1:
-  we can get following information after some simple operation.
-  a. mkfs.ext4 /dev/vdh
-     btrfs-convert /dev/vdh
-  b. btrfs-debug-tree /dev/vdh
-     we can see following item in extent tree:
-     item 25 key (27054080 METADATA_ITEM 0) itemoff 15083 itemsize 33
-     Its logical address is [27054080, 27070464)
-     and acrossed 2 strips:
-     [27000832, 27066368)
-     [27066368, 27131904)
-  Will be fixed in btrfs-progs(btrfs-convert, btrfsck, ...)
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
 
-For reason 2:
-  Scrub is trying to do a "bypass" in this case, but the result is
-  "panic", because current code lacks of some condition in bypass,
-  and let some wrong leaf data escaped.
+  _cleanup()
+  {
+      _cleanup_flakey
+      rm -f $tmp.*
+  }
 
-This patch fixed above scrub code.
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+  . ./common/dmflakey
 
-Before patch:
-  # btrfs scrub start -B /dev/vdh
-  (panic)
+  # real QA test starts here
+  _need_to_be_root
+  _supported_fs generic
+  _supported_os Linux
+  _require_scratch
+  _require_dm_flakey
+  _require_metadata_journaling $SCRATCH_DEV
 
-After patch:
-  # btrfs scrub start -B /dev/vdh
-  scrub done for 353cec8f-da31-4a94-aa35-be72d997b06e
-  ...
-  # dmesg
-  ...
-  [   59.088697] BTRFS error (device vdh): scrub: tree block 27054080 spanning stripes, ignored. logical=27000832
-  [   59.089929] BTRFS error (device vdh): scrub: tree block 27054080 spanning stripes, ignored. logical=27066368
-  #
+  rm -f $seqres.full
 
-Reported-by: Chris Murphy <lists@colorremedies.com>
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+  _scratch_mkfs >>$seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create our test directory and files.
+  mkdir $SCRATCH_MNT/testdir
+  touch $SCRATCH_MNT/testdir/foo
+  touch $SCRATCH_MNT/testdir/bar
+
+  # Make sure everything done so far is durably persisted.
+  sync
+
+  # Create one hard link for file foo and another one for file bar. After
+  # that fsync only the file bar.
+  ln $SCRATCH_MNT/testdir/bar $SCRATCH_MNT/testdir/bar_link
+  ln $SCRATCH_MNT/testdir/foo $SCRATCH_MNT/testdir/foo_link
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/testdir/bar
+
+  # Silently drop all writes on scratch device to simulate power failure.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  # Allow writes again and mount the fs to trigger log/journal replay.
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  # Now verify both our files have a link count of 2.
+  echo "Link count for file foo: $(stat --format=%h $SCRATCH_MNT/testdir/foo)"
+  echo "Link count for file bar: $(stat --format=%h $SCRATCH_MNT/testdir/bar)"
+
+  # We should be able to remove all the links of our files in testdir, and
+  # after that the parent directory should become empty and therefore
+  # possible to remove it.
+  rm -f $SCRATCH_MNT/testdir/*
+  rmdir $SCRATCH_MNT/testdir
+
+  _unmount_flakey
+
+  # The fstests framework will call fsck against our filesystem which will verify
+  # that all metadata is in a consistent state.
+
+  status=0
+  exit
+
+The test fails with:
+
+ -Link count for file foo: 2
+ +Link count for file foo: 1
+  Link count for file bar: 2
+ +rm: cannot remove '/home/fdmanana/btrfs-tests/scratch_1/testdir/foo_link': Stale file handle
+ +rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/testdir': Directory not empty
+ (...)
+ _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
+
+And fsck's output:
+
+  (...)
+  checking fs roots
+  root 5 inode 258 errors 2001, no inode item, link count wrong
+      unresolved ref dir 257 index 5 namelen 8 name foo_link filetype 1 errors 4, no inode ref
+  Checking filesystem on /dev/sdc
+  (...)
+
+So fix this by marking inodes for link count fixup at log replay time
+whenever a directory entry is replayed if the entry was created in the
+transaction where the fsync was made and if it points to a non-directory
+inode.
+
+This isn't a new problem/regression, the issue exists for a long time,
+possibly since the log tree feature was added (2008).
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/scrub.c | 17 ++++++++++-------
- 1 file changed, 10 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 94db0fa..35d49b2 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -2881,11 +2881,12 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
- 			flags = btrfs_extent_flags(l, extent);
- 			generation = btrfs_extent_generation(l, extent);
+V2: Fixed path leak on error path. Made it mark a dentry's inode for link count
+    fixup only if the inode really exists (if the name was replayed), otherwise
+    this resulted in log replay failure for some scenarios:
+      touch foo
+      touch bar
+      mv bar abc
+      fsync abc
+      <power failure>
+      mount, log replay failed with -EIO (inode foo doesn't exist, but a dentry
+      points to it).
+
+ fs/btrfs/tree-log.c | 64 +++++++++++++++++++++++++++++++++++++++++++++++++----
+ 1 file changed, 60 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9c45431..cb5666e 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -1613,6 +1613,9 @@ static bool name_in_log_ref(struct btrfs_root *log_root,
+  * not exist in the FS, it is skipped.  fsyncs on directories
+  * do not force down inodes inside that directory, just changes to the
+  * names or unlinks in a directory.
++ *
++ * Returns < 0 on error, 0 if the name wasn't replayed (dentry points to a
++ * non-existing inode) and 1 if the name was replayed.
+  */
+ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
+ 				    struct btrfs_root *root,
+@@ -1631,6 +1634,7 @@ static noinline int replay_one_name(struct btrfs_trans_handle *trans,
+ 	int exists;
+ 	int ret = 0;
+ 	bool update_size = (key->type == BTRFS_DIR_INDEX_KEY);
++	bool name_added = false;
  
--			if (key.objectid < logic_start &&
--			    (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
--				btrfs_err(fs_info,
--					  "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
--					   key.objectid, logic_start);
-+			if ((flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
-+			    (key.objectid < logic_start ||
-+			     key.objectid + bytes >
-+			     logic_start + map->stripe_len)) {
-+				btrfs_err(fs_info, "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
-+					  key.objectid, logic_start);
- 				goto next;
- 			}
- again:
-@@ -3212,8 +3213,10 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 			flags = btrfs_extent_flags(l, extent);
- 			generation = btrfs_extent_generation(l, extent);
+ 	dir = read_one_inode(root, key->objectid);
+ 	if (!dir)
+@@ -1708,6 +1712,8 @@ out:
+ 	}
+ 	kfree(name);
+ 	iput(dir);
++	if (!ret && name_added)
++		ret = 1;
+ 	return ret;
  
--			if (key.objectid < logical &&
--			    (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
-+			if ((flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
-+			    (key.objectid < logical ||
-+			     key.objectid + bytes >
-+			     logical + map->stripe_len)) {
- 				btrfs_err(fs_info,
- 					   "scrub: tree block %llu spanning "
- 					   "stripes, ignored. logical=%llu",
+ insert:
+@@ -1723,6 +1729,8 @@ insert:
+ 			      name, name_len, log_type, &log_key);
+ 	if (ret && ret != -ENOENT && ret != -EEXIST)
+ 		goto out;
++	if (!ret)
++		name_added = true;
+ 	update_size = false;
+ 	ret = 0;
+ 	goto out;
+@@ -1740,12 +1748,13 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
+ 					struct extent_buffer *eb, int slot,
+ 					struct btrfs_key *key)
+ {
+-	int ret;
++	int ret = 0;
+ 	u32 item_size = btrfs_item_size_nr(eb, slot);
+ 	struct btrfs_dir_item *di;
+ 	int name_len;
+ 	unsigned long ptr;
+ 	unsigned long ptr_end;
++	struct btrfs_path *fixup_path = NULL;
+ 
+ 	ptr = btrfs_item_ptr_offset(eb, slot);
+ 	ptr_end = ptr + item_size;
+@@ -1755,12 +1764,59 @@ static noinline int replay_one_dir_item(struct btrfs_trans_handle *trans,
+ 			return -EIO;
+ 		name_len = btrfs_dir_name_len(eb, di);
+ 		ret = replay_one_name(trans, root, path, eb, di, key);
+-		if (ret)
+-			return ret;
++		if (ret < 0)
++			break;
+ 		ptr = (unsigned long)(di + 1);
+ 		ptr += name_len;
++
++		/*
++		 * If this entry refers to a non-directory (directories can not
++		 * have a link count > 1) and it was added in the transaction
++		 * that was not committed, make sure we fixup the link count of
++		 * the inode it the entry points to. Otherwise something like
++		 * the following would result in a directory pointing to an
++		 * inode with a wrong link that does not account for this dir
++		 * entry:
++		 *
++		 * mkdir testdir
++		 * touch testdir/foo
++		 * touch testdir/bar
++		 * sync
++		 *
++		 * ln testdir/bar testdir/bar_link
++		 * ln testdir/foo testdir/foo_link
++		 * xfs_io -c "fsync" testdir/bar
++		 *
++		 * <power failure>
++		 *
++		 * mount fs, log replay happens
++		 *
++		 * File foo would remain with a link count of 1 when it has two
++		 * entries pointing to it in the directory testdir. This would
++		 * make it impossible to ever delete the parent directory has
++		 * it would result in stale dentries that can never be deleted.
++		 */
++		if (ret == 1 && btrfs_dir_type(eb, di) != BTRFS_FT_DIR) {
++			struct btrfs_key di_key;
++
++			if (!fixup_path) {
++				fixup_path = btrfs_alloc_path();
++				if (!fixup_path) {
++					ret = -ENOMEM;
++					break;
++				}
++			}
++
++			btrfs_dir_item_key_to_cpu(eb, di, &di_key);
++			ret = link_to_fixup_dir(trans, root, fixup_path,
++						di_key.objectid);
++			if (ret)
++				break;
++		}
++		ret = 0;
+ 	}
+-	return 0;
++	btrfs_free_path(fixup_path);
++	return ret;
+ }
+ 
+ /*
 -- 
-1.8.5.1
+2.1.3
 

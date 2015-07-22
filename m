@@ -1,216 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16109 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:63279 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752299AbbGVGDM (ORCPT
+	with ESMTP id S1753882AbbGVHCk convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jul 2015 02:03:12 -0400
-Subject: Re: Discuss on inband dedup implement (Original "strange data backref
- offset")
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-References: <55A86AA8.6010404@cn.fujitsu.com>
- <20150718113412.GA11450@localhost.localdomain>
- <20150719072344.GA22025@hungrycats.org> <55AC5BE6.90802@cn.fujitsu.com>
- <20150721045505.GB22025@hungrycats.org> <55ADEC36.1010504@cn.fujitsu.com>
- <20150721221446.GC22025@hungrycats.org> <55AEF6C0.5070207@cn.fujitsu.com>
- <20150722034937.GB21995@hungrycats.org>
-CC: Liu Bo <bo.li.liu@oracle.com>, btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55AF321B.8000304@cn.fujitsu.com>
-Date: Wed, 22 Jul 2015 14:03:07 +0800
+	Wed, 22 Jul 2015 03:02:40 -0400
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: "'Taeha Kim'" <kthguru@gmail.com>, <linux-btrfs@vger.kernel.org>
+References: <loom.20150722T071610-642@post.gmane.org>
+In-Reply-To: <loom.20150722T071610-642@post.gmane.org>
+Subject: RE: resize: File too large
+Date: Wed, 22 Jul 2015 15:01:25 +0800
+Message-ID: <044601d0c44c$39cb7ca0$ad6275e0$@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150722034937.GB21995@hungrycats.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi, Taeha Kim
 
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org
+> [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Taeha Kim
+> Sent: Wednesday, July 22, 2015 1:20 PM
+> To: linux-btrfs@vger.kernel.org
+> Subject: resize: File too large
+> 
+> Hello,
+> 
+> I met a problem when resize btrfs as follows. The btrfs related sysinfo is
+> attached at the end of this mail[1].
+> 
+> $ dd if=/dev/zero of=btrfs_5gb.img bs=1024 count=5000000
+> 
+> $ mkfs.btrfs btrfs_5gb.img
+> 
+> $ sudo mkdir -p /mnt/btrfs_5gb
+> 
+> $ mount -t btrfs btrfs_5gb.img /mnt/btrfs_5gb
+> 
+> $ btrfs filesystem resize +10g /mnt/btrfs_5gb Resize '/mnt/btrfs_5gb' of '+10g'
+> ERROR: unable to resize '/mnt/btrfs_5gb' - File too large
+> 
 
-Zygo Blaxell wrote on 2015/07/21 23:49 -0400:
-> On Wed, Jul 22, 2015 at 09:49:52AM +0800, Qu Wenruo wrote:
->> Change subject to reflect the core of the conversation.
->>
->> Zygo Blaxell wrote on 2015/07/21 18:14 -0400:
->>> On Tue, Jul 21, 2015 at 02:52:38PM +0800, Qu Wenruo wrote:
->>>> Zygo Blaxell wrote on 2015/07/21 00:55 -0400:
->
->>> There's already a read-and-compare in the extent-same ioctl.  :-/
->> Yes, but the extent same ioctl needs 2 inode. (one already provided by ioctl
->> system call)
->> One for the source and one for the dest, which makes codes easy to implement
->> as we can just use VFS calls to read the needed pages.
->>
->> But the problem is, for dedup, there is only hash <-> extent mapping.
->> We only know the corresponding bytenr of a hash, not a inode.
->>
->> If even using the read-compare method, which means at write routine, we will
->> resuse read routine, causing more complicated read/write path combination to
->> test, and later read routine change will be quite dirty to avoid impact on
->> write routine.
->>
->> And what's worse is, an extent can be referred by several different inodes,
->> so even for the best case, we need to find an inode using backref and then
->> use address space calls to read the neede pages.
->>
->> That will leads to the hell of delayed ref.
->> As at write time, backref is delayed, it needs not only search the extent
->> tree for backref item but also go through delayed refs. (Such things were
->> the reason causing crazy quota numbers before and I tried to fix in 4.2-rc1)
->>
->> And that's what I feared to face, complicated read/write coupling with
->> backref search nightmare.
->
-> Yes, putting a small-memory dedup into the write path on Linux does
-> cause some challenging (some might say insurmountable ;) ) problems.
->
-> A natural result of having a userspace daemon is that it can keep up
-> with writes but it is not on the critical path for them, i.e. if we have
-> memory pressure we just throw the blocks at the disk to free up some RAM,
-> but remember the block addresses so they can be rescanned later when we're
-> more idle.  A daemon with a persistent store and a find-new style scanner
-> can be paused and allowed to run overnight if it's too heavy to run live.
->
-> I could see such a facility living inside the kernel and being started and
-> stopped by an admin...but it might be a better idea to just adjust the
-> kernel's interface to communicate better with a dedup daemon.
->
-> e.g. I have a wishlist item to have something like fanotify which gives me
-> a file descriptor when a file is modified--but that also includes dirty
-> block numbers.  I can connect those modified blocks with their duplicate
-> on-disk counterparts almost immediately, before delalloc even considers
-> writing them.
+Thanks for reporting above problem.
 
-If dedup daemon is only running at userspace, then I'm completely OK 
-with a better ioctl in kernel just for the daemon.
-(Not sure about other guys though).
+> Is it a misuse case of resize?
+> 
 
-But I don't have some good idea about the new ioctl interface though.
-I used to think a ioctl to info btrfs to read out the given range and 
-pin the hashes into memory is good enough, but that's just another ZFS 
-dedup supplement, will never be on par with your method anyway.
+Kernel return -EFBIG in this case(dev not big enouth),
+and btrfs-progs output corresponding standard error message for this return value:
+"File too large"
 
->
->>> That's precisely the tradeoff I made:  up to 0.1% more I/O for unique
->>> blocks, and duplicate writes would become reads instead (assuming I moved
->>> my dedup daemon into the kernel).  There is some extra seeking on writes
->>> to confirm duplicate pages--but when they are confirmed, the writes are
->>> no longer necessary and their I/O can be dropped.
->>>
->>> The payoff is that it requires 100 times less RAM, so it can coexist
->>> with other things on a medium-sized machine.
->>
->> Quite convincing trade off now.
->>
->> But the above extent reading problem is still here.
->> Although I may also be wrong as I'm not quite similar with VFS and filemap.
->>
->> If there is any good kernel API to read pages directly by bytenr without
->> using filemap/address space infrastructure, I'll be quite happy to try it.
->
-> I had assumed (but not checked) that the kernel can do it more easily than
-> userspace.  The ugliest pieces of code for userspace dedup are the pieces
-> that translate a block number into a path into a file descriptor, then have
-> to verify that they ended up with the same physical block that was requested.
->
-> So another wishlist item would be an ioctl for "give me a file descriptor
-> containing a ref to this blocknr without having to go through all this
-> root-inode-path resolution crap."  ;)
->
->>> My target environment is a file server device where up to 75% of the
->>> system RAM might be devoted to dedup.  It is not something that is
->>> intended to run unnoticed on a smartphone.
->> The original thought on persist hash map is for database, hard to imagine
->> right?
->>
->>  From what I read from Oracle datasheet, they claim their database can take
->> full use of ZFS deduplication, so I consider such persist hash map idea as a
->> supplement to the uncertain LRU drop.
->> But that's just a future idea yet...
->
-> I looked at a number of databases, hash table structures, bloom filters,
-> cuckoo tables, exotic modern C++ hashtable libraries from Google, and
-> ancient articles on hash tables by Knuth.  In the end I gave up and
-> rolled my own.
->
-> I have a lot of duplicate data--almost half--so I can't use algorithms
-> designed for a 10% hit rate (like bloom and cuckoo).  I don't want to
-> scan the entire filesystem from scratch every time, so Bloom was out
-> (no way to delete items, and the variations on Bloom that allow deletion
-> require almost as much space as the hash table itself).  Indexing overhead
-> for b-trees and most database engines would be larger than the hash table.
->
-> With a 50% duplicate hit rate, _any_ algorithm that spilled out to
-> disk would be hitting the disk with a random I/O for every 8K of data.
-> This meant that any data that wasn't going to fit into RAM might as well
-> be on the moon.  If I tried to keep it, I'd be swapping all the time.
-> I found a way to work in constant space, because RAM was all the storage
-> I'd ever be able to use.
->
-> Persistence is trivial:  just dump the RAM out to disk every few hours.
->
->> BTW, is your userspace dedup daemon open-source?
->> It would be quite nice if we can refer it to improve further.
->
-> It is open-source in as much as it is source at all, but it's not in
-> a usable state yet.  Right now it is a pile of command-line utilities,
-> several experimental test programs which perform different parts of the
-> task, some ad-hoc Perl scripts to glue them together, and test-driven
-> rework that I am slowly converting into a coherent working program
-> that other human beings can read and use.  The "persistent" on-disk
-> format changes every three weeks.  I'm on my fourth rewrite of the
-> extent-matching loop because the first three ran into logical landmines
-> in my test data.
->
-> It was originally supposed to be a 1000-line replacement for
-> faster-dupemerge to be finished in a week.  This is now month 14, it
-> has crossed the 2000 line mark, and I'm hoping this month will be
-> the first month that I rewrite _less_ than 30% of the code.  :-P
->
+This message is almost right for most case, but not for resize.
 
-I can't wait to see it release the first version.
- From what I read so far it would be quite impressive, especially the 
-daemon idea.
+> And I expected not the message "File too large" but different error message.
+> 
 
-Another impressive thing is the number of lines, which is much lower 
-than my expectation.
-I suppose it would be over 3000 lines to do the adjustment check logic.
+Good suggestion, I will change it to some accurate description.
 
-Thanks,
-Qu
+Thanks
+Zhaolei
 
+> Thanks.
+> 
+> 
+> Sincerely yours,
+> Taeha Kim,
+> Senior Engineer, Samsung Electronics
+> 
+> 
+> [1] The btrfs related sysinfo
+> 
+> $ btrfs --version
+> btrfs-progs v4.1.2
+> 
+> $ uname -r
+> 4.0.8-300.fc22.x86_64
+> 
+> $ btrfs fi show /mnt/btrfs_5g
+> btrfs-progs v4.1
+> 
+> $ btrfs fi df /mnt/btrfs_5g
+> Data, single: total=8.00MiB, used=64.00KiB System, DUP: total=8.00MiB,
+> used=16.00KiB System, single: total=4.00MiB, used=0.00B Metadata, DUP:
+> total=244.12MiB, used=112.00KiB Metadata, single: total=8.00MiB,
+> used=0.00B GlobalReserve, single: total=16.00MiB, used=0.00B
+> 
+> $ dmesg | grep BTRFS
+> BTRFS info (device loop0): disk space caching is enabled
+> BTRFS: has skinny extents
+> BTRFS: flagging fs with big metadata feature
+> BTRFS: creating UUID tree
+> BTRFS info (device loop0): disk space caching is enabled
+> BTRFS: has skinny extents.
+> 
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body
+> of a message to majordomo@vger.kernel.org More majordomo info at
+> http://vger.kernel.org/majordomo-info.html
 
->> Thanks,
->> Qu
->>>
->>>> In fact, I can reduce the space usage by just(not so easy to call it just
->>>> anyway) change dedup size to 512K. So just one btrfs_dedup_hash for 512K
->>>> other than original 128 dedup_hash for 512K.
->>>> That's also why Liu Bo uses tunable dedup_size.
->>>
->>> Anyone can increase the block size to make their dedup faster.  We lose
->>> 100% of all duplicate extents that are smaller than (or just not aligned
->>> to) the block size.
->>>
->>>> Anyway, my dedup_hash struct is really huge...
->>>> It's 120 bytes with all overhead for one btrfs_dedup_hash (and one page
->>>> yet).
->>>
->>> I'm told ZFS is closer to 320.  ;)
->>>
->>>>> At about 157 bytes per 512K
->>>>> (the amount of RAM I have to run dedup) the dedup still covers 92%
->>>>> of duplicate extents with length 64K, with less coverage for smaller
->>>>> extents and more coverage for larger extents.  The size distribution
->>>>> of typical filesystems means I get 99% of all duplicate blocks.
->>>>>
->>>> Pretty impressive, but still a little worried about the code complexibility
->>>> especially when it needs to go into kernel.
->>>>
->>>> At last, thanks for your impressive dedup ideas and test data.
->>>>
->>>> Thanks,
->>>> Qu
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>

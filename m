@@ -1,67 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:41258 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751325AbbGWL4I (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jul 2015 07:56:08 -0400
-Date: Thu, 23 Jul 2015 13:55:59 +0200
-From: David Sterba <dsterba@suse.com>
-To: Marc MERLIN <marc@merlins.org>
-Cc: clm@fb.com, linux-btrfs@vger.kernel.org, jbacik@fb.com
-Subject: Re: Btrfs progs release 4.1.1
-Message-ID: <20150723115558.GQ6306@suse.cz>
-Reply-To: dsterba@suse.com
-References: <20150706212156.GY17274@merlins.org>
- <20150710134348.GB15535@suse.cz>
- <20150712010229.GA5284@merlins.org>
+Received: from mail-la0-f50.google.com ([209.85.215.50]:35409 "EHLO
+	mail-la0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753907AbbGWTMk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jul 2015 15:12:40 -0400
+Received: by lahh5 with SMTP id h5so908228lah.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2015 12:12:38 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150712010229.GA5284@merlins.org>
+Date: Thu, 23 Jul 2015 19:12:38 +0000
+Message-ID: <CA+X5Wn57HuJEzp_iOMnsi7R5AHBvsCBDbAS0+gv4O2BP-+G4VQ@mail.gmail.com>
+Subject: INFO: task btrfs-transacti:204 blocked for more than 120 seconds.
+ (more like 8+min)
+From: james harvey <jamespharvey20@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jul 11, 2015 at 06:02:29PM -0700, Marc MERLIN wrote:
-> Are you interested in crash reports for fsck?
-> 
-> If so, see my recent message:
-> 
-> On Mon, Jul 06, 2015 at 02:21:56PM -0700, Marc MERLIN wrote:
-> > 
-> > myth:~# btrfs check --repair /dev/mapper/crypt_sdd1 
-> > enabling repair mode
-> > Checking filesystem on /dev/mapper/crypt_sdd1
-> > UUID: 024ba4d0-dacb-438d-9f1b-eeb34083fe49
-> > checking extents
-> > cmds-check.c:4486: add_data_backref: Assertion `back->bytes != max_size` failed.
+Up to date Arch.  linux kernel 4.1.2-2.  Fresh O/S install 12 days
+ago.  No where near full - 34G used on a 4.6T drive.   32GB memory.
 
-The bugon was added by Josef in commit 650e656a8b9c1fbe4e to
-(https://git.kernel.org/kdave/btrfs-progs/c/650e656a8b9c1fbe4ec)
+Installed bonnie++ 1.97-1.
 
-but I don't thing that your filesystem is affected by the described bug,
-rather that it tripped over some other inconsistency in backrefs.
+$ bonnie++ -d bonnie -m btrfs-disk -f -b
 
-> > I can mount with -o ro without it crashing, but if I drop ro, it then
-> > tries to do something and crashes, and unfortunately the error doesn't
-> > make it to syslog
-> > 
-> > Screenshot: http://marc.merlins.org/tmp/btrfs_crash.jpg
+I started trying to run with a "-s 4G" option, to use 4GB files for
+performance measuring.  It refused to run, and said "file size should
+be double RAM for good results".  I sighed, removed the option, and
+let it run, defaulting to **64GB files**.  So, yeah, big files.  But,
+I do work with Photoshop .PSB files that get that large.
 
-So it's 32bit system, 3.19.8, crashing during snapshot deletion and
-backref walking. EIP is in do_walk_down+0x142. I've tried to match it to
-the sources on a local 32bit build, but it does not point to the
-expected crash site:
+During the first two lines ("Writing intelligently..." and
+"Rewriting..." the filesystem seems to be completely locked out for
+anything other than bonnie++.  KDE stops being able to switch focus,
+change tasks.  Can switch to tty's and log in, do things like "ls",
+but attempting to write to the filesystem hangs.  Can switch back to
+KDE, but screen is black with cursor until bonnie++ completes.  top
+didn't show excessive CPU usage.
 
-(gdb) l *(do_walk_down+0x142)
-0x1cdc2 is in do_walk_down (fs/btrfs/extent-tree.c:7875).
-7870
-7871                            wc->stage = UPDATE_BACKREF;
-7872                            wc->shared_level = level - 1;
-7873                    }
-7874            } else {
-7875                    if (level == 1 &&
-7876                        (wc->flags[0] & BTRFS_BLOCK_FLAG_FULL_BACKREF))
-7877                            goto skip;
-7878            }
-7879
+My dmesg is at http://www.pastebin.ca/3072384  Attaching it seemed to
+make the message not go out to the list.
 
-There are other places where it could hit a bug-on. It would need more
-debugging to find out what's happening.
+Yes, my kernel is tained... See "[5.310093] nvidia: module license
+'NVIDIA' taints kernel."  Sigh, it's just that the nvidia module
+license isn't GPL...
+
+During later bonnie++ writing phases (start 'em", "Create files in
+sequential order...", "Create files in random order") show no
+detrimental effect on the system.
+
+I see some 1.5+ year old references to messages like "INFO: task
+btrfs... blocked for more than 120 seconds."  With the amount of
+development since then, figured I'd pretty much ignore those and bring
+up the issue again.
+
+I think the "Writing intelligently" phase is sequential, and the old
+references I saw were regarding many re-writes sporadically in the
+middle.
+
+What I did see from years ago seemed to be that you'd have to disable
+COW where you knew there would be large files.  I'm really hoping
+there's a way to avoid this type of locking, because I don't think I'd
+be comfortable knowing a non-root user could bomb the system with a
+large file in the wrong area.
+
+IF I do HAVE to disable COW, I know I can do it selectively.  But, if
+I did it everywhere... Which in that situation I would, because I
+can't afford to run into many minute long lockups on a mistake... I
+lose compression, right?  Do I lose snapshots?  (Assume so, but hope
+I'm wrong.)  What else do I lose?  Is there any advantage running
+btrfs without COW anywhere over other filesystems?
+
+How would one even know where the division is between a file small
+enough to allow on btrfs, vs one not to?
+
+=======
+bonnie++ -d bonnie -m kvm-one-disk -f -b
+Writing intelligently...done
+Rewriting...done
+Reading intelligently...done
+start 'em...done...done...done...done...done...
+Create files in sequential order...done.
+Stat files in sequential order...done.
+Delete files in sequential order...done.
+Create files in random order...done.
+Stat files in random order...done.
+Delete files in random order...done.
+Version  1.97       ------Sequential Output------ --Sequential Input- --Random-
+Concurrency   1     -Per Chr- --Block-- -Rewrite- -Per Chr- --Block-- --Seeks--
+Machine        Size K/sec %CP K/sec %CP K/sec %CP K/sec %CP K/sec %CP  /sec %CP
+kvm-one-disk    63G           204281   8 80195   6           239780
+10 197.7   5
+Latency                       15369us    8649ms               358ms    1153ms
+Version  1.97       ------Sequential Create------ --------Random Create--------
+kvm-one-disk        -Create-- --Read--- -Delete-- -Create-- --Read--- -Delete--
+              files  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP  /sec %CP
+                 16    17   8 +++++ +++    31  15    18   6 +++++ +++    26  25
+Latency              1450ms     198us     666ms     932ms     170us    1366ms
+1.97,1.97,kvm-one-disk,1,1437620483,63G,,,,204281,8,80195,6,,,239780,10,197.7,5,16,,,,,17,8,+++++,+++,31,15,18,6,+++++,+++,26,25,,15369us,8649ms,,358ms,1153ms,1450ms,198us,666ms,932ms,170us,1366ms

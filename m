@@ -1,40 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cantor2.suse.de ([195.135.220.15]:38707 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752219AbbGOLdQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 15 Jul 2015 07:33:16 -0400
-Date: Wed, 15 Jul 2015 13:33:15 +0200
-From: David Sterba <dsterba@suse.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Revert "btrfs-progs: mkfs: create only desired block
- groups for single device"
-Message-ID: <20150715113314.GE6306@suse.cz>
-Reply-To: dsterba@suse.com
-References: <1436839981-20432-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20150714114511.GG15535@twin.jikos.cz>
- <55A5AC0C.8080602@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:29728 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752176AbbGWJSV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jul 2015 05:18:21 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <dsterba@suse.com>
+Subject: [PATCH 0/4] Metadata crossing stripe boundary fixes
+Date: Thu, 23 Jul 2015 17:18:06 +0800
+Message-ID: <1437643090-13920-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55A5AC0C.8080602@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 15, 2015 at 08:40:44AM +0800, Qu Wenruo wrote:
-> BTW, for the mkfs test case, it will be delayed for a while as the 
-> following bugs are making things quite tricky.
+The problem is originally reported by Chris Murphy<lists@colorremedies.com>,
+and Zhao Lei digs out the root cause:
+Metadata extent in mixed block group may cross stripe boundary, causing
+scrub can't handle them.
 
-Good, thanks, no rush at the moment. The next release will be probably
-in line with kernel 4.2 with the usual exception of important bugfixes.
+For normal data/metadata separated case, as BTRFS_STRIPE_LEN(64K) can
+always be divided by nodesize (4~64K, power of 2), so metadata will
+never cross the stripe boundary.
+But for mixed block group, data is page size(4K) aligned, breaking the
+original metadata alignment, make metadata extent possible to cross
+stripe boundary.
 
-> 1) fsck ignore chunk errors and return 0.
-> Cause is known and easy to fix, but if fixed, most of fsck test won't pass.
-> As the following bug is causing problem.
-> 
-> 2) btrfs-image restore bug, causing missing dev_extent for DUP chunk.
-> Investigating. that's the reason causing a lot of dev extent missing in 
-> mkfs test.
+In the patchset, btrfsck will report such error and normal extent
+allocate routine along with btrfs-convert will be patched to fix such
+problem.
 
-The image dumps may be intentionally incomplete so not all reported
-errors are necessarily a problem. The restored filesystem should set the
-METADUMP bit in the superblock so this can help.
+I'd like to add a test case, but it is already covered by the existing
+convert test, and further more, btrfsck can only report the error with
+only the 2nd patch applied.
+So no good test case yet.
+
+Kernel also needs such check, I'll check kernel codes later.
+
+Qu Wenruo (4):
+  btrfs: print-tree: print stripe len of a chunk
+  btrfs: fsck: Check if a metadata tree block crossing stripe boundary
+  btrfs: extent-tree: Avoid allocating tree block that cross stripe    
+    boundary
+  btrfs: convert: Avoid allocating metadata extent crossing stripe    
+    boundary
+
+ btrfs-convert.c | 15 ++++++++++++---
+ cmds-check.c    | 28 +++++++++++++++++++++++++++-
+ ctree.h         |  2 +-
+ extent-tree.c   |  7 ++++++-
+ print-tree.c    |  4 +++-
+ volumes.h       | 10 ++++++++++
+ 6 files changed, 59 insertions(+), 7 deletions(-)
+
+-- 
+2.4.6
+

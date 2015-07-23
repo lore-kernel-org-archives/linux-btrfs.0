@@ -1,143 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:2761 "EHLO
-	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750779AbbGVXCx (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:10079 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750698AbbGWEb1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 22 Jul 2015 19:02:53 -0400
-Date: Thu, 23 Jul 2015 09:02:41 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
-        Brian Foster <bfoster@redhat.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] generic/311: Disable dmesg check
-Message-ID: <20150722230241.GA3902@dastard>
-References: <1437109003-2357-1-git-send-email-chandan@linux.vnet.ibm.com>
- <55ACEFC4.9040502@fb.com>
- <20150720221220.GU7943@dastard>
- <8410729.YTcdQ5sv7i@localhost.localdomain>
- <20150722000105.GX3902@dastard>
- <55AEE5D3.6020509@fb.com>
- <20150722052700.GY3902@dastard>
- <55AF90FA.8010208@fb.com>
+	Thu, 23 Jul 2015 00:31:27 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6N4TawA002552
+	for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2015 12:29:36 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Fix scrub panic when leaf accross stripes
+Date: Thu, 23 Jul 2015 12:29:49 +0800
+Message-ID: <ad73b900e3183b8d7dccab6b1ad8ac754fd0c583.1437625769.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55AF90FA.8010208@fb.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jul 22, 2015 at 08:47:54AM -0400, Josef Bacik wrote:
-> On 07/22/2015 01:27 AM, Dave Chinner wrote:
-> >On Tue, Jul 21, 2015 at 08:37:39PM -0400, Josef Bacik wrote:
-> >>This test is to verify that "said shit" is on disk after an fsync.
-> >>The "drop all writes from this point onwards" does this silently.
-> >>We assume when the device told us that any writes that we did
-> >>completed successfully that they actually completed successfully.
-> >
-> >Sorry, I forgot it dm-flakey didn't return errors. My mistake - I
-> >don't look at dm-flakey very often as the tests don't fail on XFS
-> >very often.
-> >
-> >BTW, doesn't such an obviously ludicrous mistake (in hindsight)
-> >indicate to you that I simply forgot how dm-flakey behaves? I make
-> >mistakes all the time; don't you forget how things work after not
-> >looking at them for months at a time?
-> 
-> Ok one more thing I swear because honestly I feel like this right
-> here is the root of everybody's frustrations.  You are not a btrfs
-> expert, so I expect to explain btrfs behavior to you, that's what
-> the bulk of our emails were about.  You are Dave Chinner, when you
-> speak people listen because you have been here forever and done
-> everything.  You are the center piece for most LSF conversations,
-> you are CC'ed on anything remotely complicated in fs/ or mm related
-> to fs stuff.  When you start throwing around things like
-> 
-> "Josef, Chris, is this really how btrfs handles metadata write
-> failures? This handling of errors seems like a design flaw rather
-> than a desireable behaviour to me..."
-> 
-> it carries weight.
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Yes, that's a big problem. First of all, I'd suggest that everyone
-read this:
+Scrub panic in following operation:
+  mkfs.ext4 /dev/vdh
+  btrfs-convert /dev/vdh
+  mount /dev/vdh /mnt/tmp1
+  btrfs scrub start -B /dev/vdh
+  (panic)
 
-http://www.ncbi.nlm.nih.gov/pmc/articles/PMC1118019/
+Reason:
+  1: In some case, leaf created by btrfs-convert was splited into 2
+     strips.
+  2: Scrub bypassed part of above wrong leaf data, but remain data
+     caused panic in scrub_checksum_tree_block().
 
-It was written 15 years ago - and I've been thinking about it ever
-since.  I came across it a couple of months ago here:
+For reason 1:
+  we can get following information after some simple operation.
+  a. mkfs.ext4 /dev/vdh
+     btrfs-convert /dev/vdh
+  b. btrfs-debug-tree /dev/vdh
+     we can see following item in extent tree:
+     item 25 key (27054080 METADATA_ITEM 0) itemoff 15083 itemsize 33
+     Its logical address is [27054080, 27070464)
+     and acrossed 2 strips:
+     [27000832, 27066368)
+     [27066368, 27131904)
+  Will be fixed in btrfs-progs(btrfs-convert, btrfsck, ...)
 
-http://pipeline.corante.com/archives/2015/05/26/the_curse_of_expertise.php
+For reason 2:
+  Scrub is trying to do a "bypass" in this case, but the result is
+  "panic", because current code lacks of some condition in bypass,
+  and let some wrong leaf data escaped.
 
-What you've just said encapsulates the problem of being considered
-an expert - people switch off their brain when the expert says
-something, regardless of whether they are right or wrong, simply
-because they are "the expert".
+This patch fixed above scrub code.
 
-I don't want the "Expert" status that I'm given, or the weight being
-a Maintainer conveys. I didn't choose to be either, they are just
-baggage I have accumulated along the way. And I still make just as
-many mistakes as I did years ago - probably more because I'm getting
-old and senile - and I rely on peers to catch the mistakes I
-make. If you guys are really switching your brains off rather
-than thinking properly about what an "expert" says, then we've got a
-wider perception problem we need to solve.
+Before patch:
+  # btrfs scrub start -B /dev/vdh
+  (panic)
 
->From that perspective, I can fully understand the premise in the
-above article that "if what you say is being given "expert"
-weighting, then it's time to move on".
+After patch:
+  # btrfs scrub start -B /dev/vdh
+  scrub done for 353cec8f-da31-4a94-aa35-be72d997b06e
+  ...
+  # dmesg
+  ...
+  [   59.088697] BTRFS error (device vdh): scrub: tree block 27054080 spanning stripes, ignored. logical=27000832
+  [   59.089929] BTRFS error (device vdh): scrub: tree block 27054080 spanning stripes, ignored. logical=27066368
+  #
 
-But, as Derek commented on the article:
+Reported-by: Chris Murphy <lists@colorremedies.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/scrub.c | 17 ++++++++++-------
+ 1 file changed, 10 insertions(+), 7 deletions(-)
 
-"We need more people for whom that could possibly become a problem,
-and more people who would notice that it had become one."
-
-As such, I'm not yet convinced that "move on" is the only solution
-to the problem - making people aware of their unconcious biases must
-help to some extent, as does making audiences acutely aware that the
-"experts" are just as fallable as any other developer in the
-project.....
-
-> I know you are asking an honest question, but
-> the headlines of Phoronix will read "Btrfs: broken by design says
-> long time fs guru Dave Chinner",
-
-s/Btrfs: broken by design/Phoronix Considered Harmful/
-
-But, somehow, I don't think they'd publish such an article.... ;)
-
-> and I'll spend the next year
-> answering stupid assertions in email/reddit/person about how btrfs
-> doesn't handle write errors properly.  Remember that email from
-> Edward Shishkin like 7 years ago about how btrfs's btree was broken
-> by design?  I _still_ have to explain to people that he just found a
-> bug and it really wasn't a design problem, even though the bug was
-> fixed in the same email thread.
-
-That's pretty normal for any long term project. It doesn't even have
-to be an Expert Opinion - google will elevate random blogs 
-
-> Your opinion matters greatly to me and the community at large, when
-> you start questioning btrfs's design I and everybody else takes that
-> very seriously.
-
-Which is exactly why I wanted you to clarify the situation - it did
-not seem right to me....
-
-> The tone I took was a mistake, it came across as
-> ranty and angry, when I wanted more fun, light, and conversational.
-> I'm extremely sorry for that and will ship you booze in payment.
-
-I don't need more encouragement to drink. :/
-
-> So yes it is completely legitimate that you didn't remember how
-> dm-flakey works, but we mere mortals sometimes forget that you are
-> mortal too ;).  Thanks,
-
-Heh. The resident btrfs expert considers himself a "mere mortal". ;)
-
-Cheers,
-
-Dave.
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 94db0fa..35d49b2 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -2881,11 +2881,12 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
+ 			flags = btrfs_extent_flags(l, extent);
+ 			generation = btrfs_extent_generation(l, extent);
+ 
+-			if (key.objectid < logic_start &&
+-			    (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
+-				btrfs_err(fs_info,
+-					  "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
+-					   key.objectid, logic_start);
++			if ((flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
++			    (key.objectid < logic_start ||
++			     key.objectid + bytes >
++			     logic_start + map->stripe_len)) {
++				btrfs_err(fs_info, "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
++					  key.objectid, logic_start);
+ 				goto next;
+ 			}
+ again:
+@@ -3212,8 +3213,10 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
+ 			flags = btrfs_extent_flags(l, extent);
+ 			generation = btrfs_extent_generation(l, extent);
+ 
+-			if (key.objectid < logical &&
+-			    (flags & BTRFS_EXTENT_FLAG_TREE_BLOCK)) {
++			if ((flags & BTRFS_EXTENT_FLAG_TREE_BLOCK) &&
++			    (key.objectid < logical ||
++			     key.objectid + bytes >
++			     logical + map->stripe_len)) {
+ 				btrfs_err(fs_info,
+ 					   "scrub: tree block %llu spanning "
+ 					   "stripes, ignored. logical=%llu",
 -- 
-Dave Chinner
-david@fromorbit.com
+1.8.5.1
+

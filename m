@@ -1,59 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vn0-f44.google.com ([209.85.216.44]:35870 "EHLO
-	mail-vn0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750934AbbGXTtF convert rfc822-to-8bit (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:46724 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752723AbbGYBXc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jul 2015 15:49:05 -0400
-Received: by vnk197 with SMTP id 197so12688601vnk.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jul 2015 12:49:04 -0700 (PDT)
+	Fri, 24 Jul 2015 21:23:32 -0400
+Date: Fri, 24 Jul 2015 09:24:46 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: dsterba@suse.com, clm@fb.com, linux-btrfs@vger.kernel.org, jbacik@fb.com
+Subject: Re: Btrfs progs release 4.1.1
+Message-ID: <20150724162446.GH30815@merlins.org>
+References: <20150706212156.GY17274@merlins.org>
+ <20150710134348.GB15535@suse.cz>
+ <20150712010229.GA5284@merlins.org>
+ <20150723115558.GQ6306@suse.cz>
 MIME-Version: 1.0
-In-Reply-To: <1437766634.808316031@apps.rackspace.com>
-References: <1437763277.673610371@apps.rackspace.com>
-	<CAJCQCtRBsKM9=yJ+Qj=aikW86+hqDkAZ08nRyjVLjmKRXW7HSA@mail.gmail.com>
-	<1437766634.808316031@apps.rackspace.com>
-Date: Fri, 24 Jul 2015 13:49:03 -0600
-Message-ID: <CAJCQCtR3nJidtsTzWsi-9fspUCzoH8qcQGHMZXXo5xGqJG2w5g@mail.gmail.com>
-Subject: =?UTF-8?Q?Re=3A_systemd_=3A_Timed_out_waiting_for_defice_dev=2Ddisk=2D?=
-	=?UTF-8?Q?by=E2=80=A6?=
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150723115558.GQ6306@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jul 24, 2015 at 1:37 PM, Vincent Olivier <vincent@up4.com> wrote:
-> On Jul 24, 2015, at 3:27 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> I'm not sure if its a systemd bug, a udev bug, or a btrfs device scan
-> bug, or a fast boot with slow spin up of the drives in the Btrfs.
->
-> This system doesn't boot from this 12 disk Btrfs, correct?
->
-> Most exact, yes.
->
->
->
->
-> You could try changing fstab mount options to include:
-> noauto,x-systemd.automount
->
-> I did and it worked. Isn’t it a tad ugly though ?
+On Thu, Jul 23, 2015 at 01:55:59PM +0200, David Sterba wrote:
+> On Sat, Jul 11, 2015 at 06:02:29PM -0700, Marc MERLIN wrote:
+> > Are you interested in crash reports for fsck?
+> > 
+> > If so, see my recent message:
+> > 
+> > On Mon, Jul 06, 2015 at 02:21:56PM -0700, Marc MERLIN wrote:
+> > > 
+> > > myth:~# btrfs check --repair /dev/mapper/crypt_sdd1 
+> > > enabling repair mode
+> > > Checking filesystem on /dev/mapper/crypt_sdd1
+> > > UUID: 024ba4d0-dacb-438d-9f1b-eeb34083fe49
+> > > checking extents
+> > > cmds-check.c:4486: add_data_backref: Assertion `back->bytes != max_size` failed.
+> 
+> The bugon was added by Josef in commit 650e656a8b9c1fbe4e to
+> (https://git.kernel.org/kdave/btrfs-progs/c/650e656a8b9c1fbe4ec)
+> 
+> but I don't thing that your filesystem is affected by the described bug,
+> rather that it tripped over some other inconsistency in backrefs.
+> 
+> > > I can mount with -o ro without it crashing, but if I drop ro, it then
+> > > tries to do something and crashes, and unfortunately the error doesn't
+> > > make it to syslog
+> > > 
+> > > Screenshot: http://marc.merlins.org/tmp/btrfs_crash.jpg
+> 
+> So it's 32bit system, 3.19.8, crashing during snapshot deletion and
+> backref walking. EIP is in do_walk_down+0x142. I've tried to match it to
+> the sources on a local 32bit build, but it does not point to the
+> expected crash site:
 
-No. The noauto is appropriate because you don't want this volume to
-cause basic.target to fail. By using noauto, the volume isn't added to
-local-fs.target.
+Thanks for looking.
+Unfortunately it's a mythtv where if I put a 64bit kernel, other things
+go wrong with the 32bit userland/64bit kernel split.
+But I'll put a newer 64bit kernel on it to see what happens and report
+back.
 
-You could experiment with x-systemd.device-timeout= but that's just
-going to cause your boot to delay waiting for it; and I'm not sure
-it'll actually work. You may have to iterate.
-
-> Mount time is very close to 10 seconds which is quite high I think, no ?
-
-Well that's a Btrfs thing, and it sounds like right now that's normal
-for a volume of this size. Since it has to find all the devices, read
-their superblocks, make sure the fs is minimally consistent, it
-doesn't sound too bad.
-
-
-
+Thanks,
+Marc
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

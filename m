@@ -1,20 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24888 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:58689 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751654AbbG0G3i (ORCPT
+	with ESMTP id S1753473AbbGXNSK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 02:29:38 -0400
+	Fri, 24 Jul 2015 09:18:10 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6R6Rkqe003823
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 14:27:46 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6ODGGqk028000
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jul 2015 21:16:16 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 7/7] btrfs-progs: Introduce a misc test for thread conflict in btrfs-convert
-Date: Mon, 27 Jul 2015 14:27:54 +0800
-Message-ID: <abc904b9241127365463ce444f918608cca1eefc.1437977968.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1437977968.git.zhaolei@cn.fujitsu.com>
-References: <cover.1437977968.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/5] btrfs-progs: Fix wrong address accessing by subthread in btrfs-convert
+Date: Fri, 24 Jul 2015 21:16:25 +0800
+Message-ID: <f664529a996a01479aa3ed14d33a1cf8d92afa8e.1437743468.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -22,77 +20,133 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Current code of btrfs-convert have a bug of thread conflict, which caused
-invalid memory accessing between threads, and make program panic.
+We can reproduce this bug by a simple script:
+  DEV=/dev/vdh
+  for ((i = 0; i < 100; i++)); do
+      echo "loop $i"
+      mkfs.ext4 "$DEV" &>/dev/null || { echo mkfs fail; break; }
+      btrfs-convert "$DEV" || break
+  done
 
-This patch add a test item for above bug, as:
- # ./misc-tests.sh
-    [TEST]   001-btrfstune-features
-    [TEST]   002-uuid-rewrite
-    [TEST]   003-zero-log
-    [TEST]   004-convert-thread-conflict
- failed: btrfs-convert /root/btrfsprogs/tests/test.img
- test failed for case 004-convert-thread-conflict
- #
- # cat misc-tests-results.txt
- ...
- ############### btrfs-convert /root/btrfsprogs/tests/test.img
- trans 7 running 5
- ctree.c:363: btrfs_cow_block: Assertion `1` failed.
- btrfs-convert(btrfs_cow_block+0x92)[0x40acaf]
- btrfs-convert(btrfs_search_slot+0x1cb)[0x40c50f]
- btrfs-convert(btrfs_csum_file_block+0x20f)[0x41d83a]
- btrfs-convert[0x43422d]
- btrfs-convert[0x4342cd]
- btrfs-convert[0x4345ca]
- btrfs-convert[0x434767]
- btrfs-convert[0x435770]
- btrfs-convert[0x439748]
- btrfs-convert(main+0x13f8)[0x43b09d]
- /lib64/libc.so.6(__libc_start_main+0xfd)[0x335e01ecdd]
- btrfs-convert[0x407649]
- create btrfs filesystem:
-         blocksize: 4096
-         nodesize:  16384
-         features:  extref, skinny-metadata (default)
- creating btrfs metadata.
+Result is like:
+  loop 0
+  ...
+  loop 1
+  ...
+  loop 3
+  create btrfs filesystem:
+          blocksize: 4096
+          nodesize:  16384
+          features:  extref, skinny-metadata (default)
+  creating btrfs metadata.
 
- creating ext2fs image file.
- failed: btrfs-convert /root/btrfsprogs/tests/test.img
- test failed for case 004-convert-thread-conflict
- #
+  creating ext2fs image file.
+  trans 7 running 5
+  ctree.c:363: btrfs_cow_block: Assertion `1` failed.
+  btrfs-convert(btrfs_cow_block+0x92)[0x40acaf]
+  btrfs-convert(btrfs_search_slot+0x1cb)[0x40c50f]
+  btrfs-convert(btrfs_csum_file_block+0x20f)[0x41d83a]
+  btrfs-convert[0x43422d]
+  btrfs-convert[0x4342cd]
+  btrfs-convert[0x4345ca]
+  btrfs-convert[0x434767]
+  btrfs-convert[0x435770]
+  btrfs-convert[0x439748]
+  btrfs-convert(main+0x13f8)[0x43b09d]
+  /lib64/libc.so.6(__libc_start_main+0xfd)[0x335e01ecdd]
+  btrfs-convert[0x407649]
 
-Note that this bug is not happened every time, especilly in slow
-device as loop(slow cpu with fast block device is likely to trigger).
-I set loop count to 20 to make bug happened in 90% tests.
+Reason is complex:
+1: main thread allocated a block of memory,
+   shared with sub thread
+2: main thread killed sub thread, and free above memory
+3: main thread malloc a new one(in same address),
+   and use it
+4: sub thread(which is not really quit), write into
+   this address, and caused this bug.
 
-Suggested-by: David Sterba <dsterba@suse.com>
+By adding some debug lines into code, we can see following output:
+  create btrfs filesystem:
+          blocksize: 4096
+          nodesize:  16384
+          features:  extref, skinny-metadata (default)
+  creating btrfs metadata.
+  1:  ctx(0x7ffe1abde230)->info=0xc65b80
+  2:  task_period_start: will create periodic.timer_fd
+  3:  task_stop: info->periodic.timer_fd = NULL
+  4:  task_stop: begin pthread_cancel info->id=-1746053376
+  5:  task_stop: done pthread_cancel ret=0
+  6:  task_stop: begin info->postfn
+  7:  task_period_stop: periodic.timer_fd NULL
+  8:  task_stop: done info->postfn
+  9:  task_stop: done all
+  10: creating ext2fs image file.
+  trans 7 running 5
+  11: task_period_start: create periodic.timer_fd done info->periodic.timer_fd(0xc65b80)=7
+  12: btrfs_cow_block: root->fs_info->generation(0xc63568) = 5 trans->transid(0xc65b80)=7
+  13: ctree.c:368: btrfs_cow_block: Assertion `1` failed.
+  ./btrfs-convert(btrfs_cow_block+0xda)[0x40ad37]
+  ./btrfs-convert(btrfs_search_slot+0x1cb)[0x40c5b4]
+  ./btrfs-convert(btrfs_insert_empty_items+0xac)[0x40d9f6]
+  ./btrfs-convert(btrfs_record_file_extent+0xc0)[0x4183fe]
+  ./btrfs-convert[0x435796]
+  ./btrfs-convert[0x439b0c]
+  ./btrfs-convert(main+0x13f8)[0x43b45d]
+  /lib64/libc.so.6(__libc_start_main+0xfd)[0x335e01ecdd]
+  ./btrfs-convert[0x407689]
+  Conclusion:
+  a: subthread should exit before step 5, but it is still running
+     in step 11
+  b: task_stop() hadn't close periodic.timer_fd in step3,
+     because periodic.timer_fd is not initialized yet.
+  c. address of 0xc65b80 is overwrited by subthread in step 11,
+     but this address is freed and re-malloc by main thread
+     before step 10, and used for trans->transid.
+  d: trans->transid which is overwrite by subthread caused error
+     in step 13.
+
+Fix:
+  pthread_cancel() only send a cancellation request to the thread,
+  thread will quit in next cancellation point by default.
+  To make sub thread quit in time, this patch add pthread_join()
+  after pthread_cancel() call.
+  And to make pthread_join() works, pthread_detach() is removed.
+
+Test result:
+  Passed 400 times of above script
+
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- tests/misc-tests/004-convert-thread-conflict/test.sh | 14 ++++++++++++++
- 1 file changed, 14 insertions(+)
- create mode 100755 tests/misc-tests/004-convert-thread-conflict/test.sh
+ task-utils.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/tests/misc-tests/004-convert-thread-conflict/test.sh b/tests/misc-tests/004-convert-thread-conflict/test.sh
-new file mode 100755
-index 0000000..d02e766
---- /dev/null
-+++ b/tests/misc-tests/004-convert-thread-conflict/test.sh
-@@ -0,0 +1,14 @@
-+#!/bin/bash
-+# test convert-thread-conflict
-+
-+source $TOP/tests/common
-+
-+check_prereq btrfs
-+mkfs.ext4 -V &>/dev/null || _not_run "mkfs.ext4 not found"
-+prepare_test_dev 1G
-+
-+for ((i = 0; i < 20; i++)); do
-+	echo "loop $i" >>$RESULTS
-+	mkfs.ext4 -F "$TEST_DEV" &>>$RESULTS || _not_run "mkfs.ext4 failed"
-+	run_check btrfs-convert "$TEST_DEV"
-+done
+diff --git a/task-utils.c b/task-utils.c
+index 10e3f0f..0390a69 100644
+--- a/task-utils.c
++++ b/task-utils.c
+@@ -50,9 +50,7 @@ int task_start(struct task_info *info)
+ 	ret = pthread_create(&info->id, NULL, info->threadfn,
+ 			     info->private_data);
+ 
+-	if (ret == 0)
+-		pthread_detach(info->id);
+-	else
++	if (ret)
+ 		info->id = -1;
+ 
+ 	return ret;
+@@ -66,8 +64,10 @@ void task_stop(struct task_info *info)
+ 	if (info->periodic.timer_fd)
+ 		close(info->periodic.timer_fd);
+ 
+-	if (info->id > 0)
++	if (info->id > 0) {
+ 		pthread_cancel(info->id);
++		pthread_join(info->id, NULL);
++	}
+ 
+ 	if (info->postfn)
+ 		info->postfn(info->private_data);
 -- 
 1.8.5.1
 

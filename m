@@ -1,172 +1,206 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:35292 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754006AbbGWTzE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 23 Jul 2015 15:55:04 -0400
-Received: by igr7 with SMTP id 7so99468088igr.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 23 Jul 2015 12:55:04 -0700 (PDT)
-Subject: Re: INFO: task btrfs-transacti:204 blocked for more than 120 seconds.
- (more like 8+min)
-To: james harvey <jamespharvey20@gmail.com>, linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:45384 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751821AbbGXBLp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 23 Jul 2015 21:11:45 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZIRWX-0003FZ-Ih
+	for linux-btrfs@vger.kernel.org; Fri, 24 Jul 2015 03:11:41 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jul 2015 03:11:41 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 24 Jul 2015 03:11:41 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: INFO: task btrfs-transacti:204 blocked for more than 120
+ seconds. (more like 8+min)
+Date: Fri, 24 Jul 2015 01:11:22 +0000 (UTC)
+Message-ID: <pan$c1082$a7d4ba34$a423d8b6$984e3578@cox.net>
 References: <CA+X5Wn57HuJEzp_iOMnsi7R5AHBvsCBDbAS0+gv4O2BP-+G4VQ@mail.gmail.com>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55B1468E.2010605@gmail.com>
-Date: Thu, 23 Jul 2015 15:54:54 -0400
-MIME-Version: 1.0
-In-Reply-To: <CA+X5Wn57HuJEzp_iOMnsi7R5AHBvsCBDbAS0+gv4O2BP-+G4VQ@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010708040407070500050408"
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+james harvey posted on Thu, 23 Jul 2015 19:12:38 +0000 as excerpted:
 
---------------ms010708040407070500050408
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-On 2015-07-23 15:12, james harvey wrote:
-> Up to date Arch.  linux kernel 4.1.2-2.  Fresh O/S install 12 days
-> ago.  No where near full - 34G used on a 4.6T drive.   32GB memory.
->
+> Up to date Arch.  linux kernel 4.1.2-2.  Fresh O/S install 12 days ago. 
+> No where near full - 34G used on a 4.6T drive.   32GB memory.
+> 
 > Installed bonnie++ 1.97-1.
->
+> 
 > $ bonnie++ -d bonnie -m btrfs-disk -f -b
->
+> 
 > I started trying to run with a "-s 4G" option, to use 4GB files for
-> performance measuring.  It refused to run, and said "file size should
-> be double RAM for good results".  I sighed, removed the option, and
-> let it run, defaulting to **64GB files**.  So, yeah, big files.  But,
+> performance measuring.  It refused to run, and said "file size should be
+> double RAM for good results".  I sighed, removed the option, and let it
+> run, defaulting to **64GB files**.  So, yeah, big files.  But,
 > I do work with Photoshop .PSB files that get that large.
->
-> During the first two lines ("Writing intelligently..." and
-> "Rewriting..." the filesystem seems to be completely locked out for
-> anything other than bonnie++.  KDE stops being able to switch focus,
-> change tasks.  Can switch to tty's and log in, do things like "ls",
-> but attempting to write to the filesystem hangs.  Can switch back to
-> KDE, but screen is black with cursor until bonnie++ completes.  top
-> didn't show excessive CPU usage.
->
-> My dmesg is at http://www.pastebin.ca/3072384  Attaching it seemed to
-> make the message not go out to the list.
->
+
+Not being a dev I won't attempt to address the btrfs problem itself, but 
+the below may be useful...
+
+FWIW, there's a kernel commandline option that can be used to tell the 
+kernel that you have less memory than you actually do, for testing in 
+memory-related cases such as this.  Of course it means rebooting with 
+that option, so it's not something you'd normally use in production, but 
+for testing it's an occasionally useful trick that sure beats physically 
+unplugging memory DIMMs! =:^)
+
+The option is mem=nn[KMG].  You may also need memmap=, presumably 
+memmap=nn[KMG]$ss[KMG], to reserve the unused memory area, preventing its 
+use for PCI address space, since that would collide with the physical 
+memory that's there but unused due to mem=.
+
+That should let you test with mem=2G, so double-memory becomes 4G. =:^)
+
+See $KERNDIR/Documentation/kernel-parameters.txt for the details on that 
+and the many other available kernel commandline options.
+
+
+Meanwhile, does bonnie do pre-allocation for its tests?  If so, that's 
+likely the problem, since pre-allocation on a cow-based filesystem 
+doesn't work the way people are used to overwrite-in-place based 
+filesystems.  If there's an option for that, try turning it off and see 
+if your results are different.
+
+Also, see the btrfs autodefrag mount option discussion below.  It works 
+best with under quarter-gig files, tho some people don't see issues to a 
+gig on spinning rust, more on fast ssd.  There's more detail in the 
+discussion below.
+
 > Yes, my kernel is tained... See "[5.310093] nvidia: module license
-> 'NVIDIA' taints kernel."  Sigh, it's just that the nvidia module
-> license isn't GPL...
->
-> During later bonnie++ writing phases (start 'em", "Create files in
-> sequential order...", "Create files in random order") show no
-> detrimental effect on the system.
->
-> I see some 1.5+ year old references to messages like "INFO: task
-> btrfs... blocked for more than 120 seconds."  With the amount of
-> development since then, figured I'd pretty much ignore those and bring
-> up the issue again.
->
-> I think the "Writing intelligently" phase is sequential, and the old
-> references I saw were regarding many re-writes sporadically in the
-> middle.
->
+> 'NVIDIA' taints kernel."  Sigh, it's just that the nvidia module license
+> isn't GPL...
+
+But it's more than that.  Kernel modules can do whatever the kernel can 
+do, and you're adding black-box code that for all the kernel devs know 
+could be doing /anything/ -- there must be a reason the nvidia folks 
+don't want to respect user rights and make the code transparent so people 
+can actually see what it's doing, after all, or there'd be no reason to 
+infringe those rights.
+
+For some people (devs or not), this is a big issue, because they are, 
+after all, expecting you to waive away your legal rights to damages, etc, 
+if it harms your system, without giving you (or devs you trust) the right 
+to actually examine the code to see what it's doing before asking you to 
+waive those rights.  As the sig below says, if you use those programs, 
+you're letting them be your master.
+
+So it's far from "just" being that the license isn't GPL.  There's 
+technical, legal and ethical reasons to insist on being able to examine 
+code (or let those you trust examine it) before waiving your rights to 
+damages should it harm you or your property, as well as to not worry so 
+much about trying to debug problems when such undebuggable black-box code 
+is deliberately inserted in the kernel and allowed to run.
+
+Tho in this particular case the existence of the black-box code likely 
+isn't interfering with the results.  But it would be useful if you could 
+duplicate the results without that blackbox code in the picture, instead 
+of expecting others to do it for you.  That's certainly doable at the 
+user level, preserving the time of the devs for actually fixing the bugs 
+found. =:^)
+
 > What I did see from years ago seemed to be that you'd have to disable
 > COW where you knew there would be large files.  I'm really hoping
 > there's a way to avoid this type of locking, because I don't think I'd
 > be comfortable knowing a non-root user could bomb the system with a
 > large file in the wrong area.
->
-> IF I do HAVE to disable COW, I know I can do it selectively.  But, if
-> I did it everywhere... Which in that situation I would, because I
-> can't afford to run into many minute long lockups on a mistake... I
-> lose compression, right?  Do I lose snapshots?  (Assume so, but hope
-> I'm wrong.)  What else do I lose?  Is there any advantage running
-> btrfs without COW anywhere over other filesystems?
->
+
+The problem with cow isn't large files in general, it's rewrites into the 
+middle of them (as opposed to append-writes).  If the writes are 
+sequential appends, or if it's write-one-read-many, cow on large files 
+doesn't tend to be an issue.
+
+But of course if you're allocating and fsyncing a file, then writing into 
+it, you're in effect rewriting into the middle of it, and cow again 
+becomes an issue.  As I mentioned above, this might be the case with 
+bonnie, since its default assumptions would be rewrite-in-place, where 
+pre-allocation tends to be an optimization, not the pessimization it can 
+be on cow-based filesystems.
+
+> IF I do HAVE to disable COW, I know I can do it selectively.  But, if I
+> did it everywhere... Which in that situation I would, because I can't
+> afford to run into many minute long lockups on a mistake...
+
+If you have to disable cow everywhere... there's far less reason to run 
+btrfs in the first place, since that kills many (but not all) of the 
+reasons you'd run it.  So while possible, it's obviously not the ideal.
+
+Tho personally, I'd rather use another filesystem for files I'd set nocow 
+on btrfs, in no small measure because btrfs really isn't fully stable and 
+mature yet, and the loss of features due to nocow is enough that I'd 
+rather simply forget it and use the more stable and mature filesystem as 
+opposed to additional risk of the not yet fully stable nocow-crippled 
+btrfs, in the first place.  But I tend to be far less partitioning-averse 
+than many already, so I already partition up my devices and another 
+partition to dedicate to some other filesystem to avoid nocow files on 
+btrfs isn't the big deal to me that it would be to people who want to 
+treat a single big btrfs as a big storage pool, using subvolumes instead 
+of partitions or lvm, and who thus run away screaming from the idea of 
+having to partition up and do a dedicated non-btrfs filesystem for the 
+files in question, when they can simply set them nocow and keep them on 
+their big btrfs storage pool.
+
+> I lose
+> compression, right?  Do I lose snapshots?  (Assume so, but hope I'm
+> wrong.)  What else do I lose?  Is there any advantage running btrfs
+> without COW anywhere over other filesystems?
+
+You lose compression, yes.
+
+You don't lose snapshots, altho they require COW since they work by 
+locking the existing extents in place just as they are, because in the 
+case of writes to nocow files after snapshots, the first write to a block 
+is cow anyway, since the existing block is locked in place.  Sometimes 
+this is referred to as cow1, since the first write after the snapshot 
+will cow, but after that, until the next snapshot at least, further 
+writes to the already cowed block will again rewrite-in-place.  So the 
+effect of snapshots on nocow is to reduce but not eliminate the effect of 
+nocow (which is generally set to avoid fragmentation), tho if you're 
+doing extreme snapshotting, say every minute, the fragmentation avoidance 
+of nocow is obviously close to nullified.
+
+You also lose checksumming and thus btrfs' data integrity features, altho 
+you'll still have metadata checksumming.
+
+You still have some other features, however.  As mentioned, snapshotting 
+still works, altho at the cost of not avoiding cow entirely (cow1).  
+Subvolumes still work.  And the multi-device features aren't affected 
+except that as mentioned you lose the data integrity feature and thus the 
+ability to repair a bad copy with a good copy, that normally comes with 
+btrfs raid1/10 (and corresponding parity-repair with raid5/6, tho it was 
+only fully implemented with 3.19, and thus isn't yet as stable and mature 
+as raid1/10).
+
+But basically, if you're doing global nocow, the remaining btrfs features 
+aren't anything special and you can get them elsewhere, say by layering 
+some other filesystem on top of mdraid or dmraid, and using either 
+partitioning or lvm in place of subvolumes.
+
 > How would one even know where the division is between a file small
 > enough to allow on btrfs, vs one not to?
->
-First off, you're running on a traditional hard disk, aren't you?=20
-That's almost certainly why the first few parts of bonnie++ effectively=20
-hung the system.  WRT that issue, there's nothing I can really give=20
-advice wise other than to either get more and faster RAM, or get an SSD=20
-to use for your system disk (and use the huge hard drive for data files=20
-only).
 
-As far as NOCOW, you can still do snapshots, although you lose=20
-compression, data integrity (without COW, BTRFS's built in RAID is=20
-actually _worse_ than other software RAID, because without COW being=20
-enabled, it can't use checksums on the filesystem blocks), and data=20
-de-duplication.  Overall, there are still advantages to using BTRFS even =
+The experience with btrfs' autodefrag mount option suggests that people 
+don't generally have any trouble with it at all to a quarter gig (256 
+MiB) or so, while at least on spinning rust, problems are usually 
+apparent at a GiB.  Half to three-quarter gig is the range at which most 
+people start seeing issues.  On a reasonably fast ssd, at a guess I'd say 
+the range is 2-10 GiB, or might not be hit at all, tho due to the per-gig 
+expense of ssd storage, in general people don't tend to use it for files 
+over a few GiB except in fast database use-cases where expense basically 
+doesn't figure in at all.
 
-with NOCOW (much easier data migration when upgrading storage for=20
-example, btrfs-replace is a wonderful thing :), but most of the biggest=20
-advantages are lost.
+But I'd guess autodefrag to hit the interactive issues before other usage 
+would.  So at a guess, I'd say you'd be good to a gig or two on spinning 
+rust, but would perhaps hit issues between 2-10 gig.
 
-Also, if you can deal with not having CUDA support, you should probably=20
-try using the noveau driver instead of NVIDIA's proprietary one, OpenGL=20
-(and almost every other rendering API as well) is horribly slow on the=20
-official NVIDIA driver.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-
---------------ms010708040407070500050408
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwNzIzMTk1NDU0WjBPBgkq
-hkiG9w0BCQQxQgRAELXgdDK1axHF8MwRJ4tfH0KGjzXF3PCpdK5JXvrugjixnSEJe4OFQkHH
-+aDSyCgRRZ0YRjQ1iQx7RqyiWmEXlzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgAUH31aRrnnSC6i5A5MTRt1DVKoK/SoYqAVGtdPYgHbzRXDlAGN
-iB8uuCJz4CBfCg9BsglqtWGNODxFmKwavtSY7RCK0dvAVCxqpY3dWuscVsKhxshF7jfevkYY
-lZZ/an7gmIB4CrjytT5vZhCCpho06RF3JIMAXU0PtqCRWh51ZTtsuyHGsSBryLx/ZLiu/nri
-YSN2MBSWZpQid7uCBrCxZuZOVQ6i+mF6zCWDC2P+LNW66VkAuV7ZR7RqK2qdSC40qsmEbQXo
-OscMCYmTqrxgEHDtV4hX2n+KhcfMPnaBd5GznEiFOnyaShUE/NTuCTOrTdQ+QTVp7iIYZTNX
-NF2pk5RYiksiWCrc9ETQV3m8+ivK3LLVM6PtW4zru4xPvxIXjKB8RO3PkdiPk7kvvR7bdHsq
-GnParP+9ijw1nVCYyiCAOVTK7PT2XEJc62IYwJRoViiJ3w+LSJqiNiw1DBUMPZ/Z2IJ8I1Fy
-TMRCAPsVRRslGR9xE7k9pNiPQe4aohiqUd8lWT7L2y7blLPoWHNkTEk5GJA4uie0Tm7CCwVw
-iGaVweqgAXoJotTG+ETF6aUrlf8fqwcyeJp6gZs+SpnKQ8NU0DqDKyBRAN931uKx+suB2J8A
-05anvU94u20ZGQP4OqqP5PrT/emNVlDABuzlGPCNgOX/l+igEisksB/8JgAAAAAAAA==
---------------ms010708040407070500050408--

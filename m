@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19547 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:58689 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754551AbbGXNSL (ORCPT
+	with ESMTP id S1753111AbbGXNSL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 24 Jul 2015 09:18:11 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6ODGI9I028009
-	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jul 2015 21:16:18 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6ODGJhd028012
+	for <linux-btrfs@vger.kernel.org>; Fri, 24 Jul 2015 21:16:19 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 3/5] btrfs-progs: Remove cleanup-timer code for btrfs-convert
-Date: Fri, 24 Jul 2015 21:16:27 +0800
-Message-ID: <e176fc7bbb88342793f2c856508fb3e444fee54e.1437743469.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 4/5] btrfs-progs: resst info->periodic.timer_fd's value after free
+Date: Fri, 24 Jul 2015 21:16:28 +0800
+Message-ID: <cd3c25b55f2688b0215a413cffecd162aea555f6.1437743469.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <f664529a996a01479aa3ed14d33a1cf8d92afa8e.1437743468.git.zhaolei@cn.fujitsu.com>
 References: <f664529a996a01479aa3ed14d33a1cf8d92afa8e.1437743468.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,31 +22,42 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-No need to close timer handle afain in subthread-close-callback,
-it is closed by task_stop() automatically.
+task_period_stop() is used to close a timer explicitly, to avoid
+the timer handle closed again by task_stop(), we should reset its
+value after close.
 
-This patch also add a fflush() to make log output on time.
+Also add value-reset for info->id for safe.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- btrfs-convert.c | 4 +---
- 1 file changed, 1 insertion(+), 3 deletions(-)
+ task-utils.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index b89c685..7dfab7d 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -71,10 +71,8 @@ static void *print_copied_inodes(void *p)
+diff --git a/task-utils.c b/task-utils.c
+index 17fd573..768be94 100644
+--- a/task-utils.c
++++ b/task-utils.c
+@@ -64,10 +64,13 @@ void task_stop(struct task_info *info)
+ 	if (info->id > 0) {
+ 		pthread_cancel(info->id);
+ 		pthread_join(info->id, NULL);
++		info->id = -1;
+ 	}
  
- static int after_copied_inodes(void *p)
- {
--	struct task_ctx *priv = p;
--
- 	printf("\n");
--	task_period_stop(priv->info);
-+	fflush(stdout);
+-	if (info->periodic.timer_fd)
++	if (info->periodic.timer_fd) {
+ 		close(info->periodic.timer_fd);
++		info->periodic.timer_fd = 0;
++	}
  
- 	return 0;
+ 	if (info->postfn)
+ 		info->postfn(info->private_data);
+@@ -130,5 +133,6 @@ void task_period_stop(struct task_info *info)
+ 	if (info->periodic.timer_fd) {
+ 		timerfd_settime(info->periodic.timer_fd, 0, NULL, NULL);
+ 		close(info->periodic.timer_fd);
++		info->periodic.timer_fd = -1;
+ 	}
  }
 -- 
 1.8.5.1

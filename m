@@ -1,65 +1,207 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41089 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751997AbbGUKNs (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:27556 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753722AbbG0ODi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 21 Jul 2015 06:13:48 -0400
-Message-ID: <55AE1B50.6030905@oracle.com>
-Date: Tue, 21 Jul 2015 18:13:36 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Mon, 27 Jul 2015 10:03:38 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6RE1iOi026014
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 22:01:44 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs-tests: Introduce init_env() to initialize common env variant
+Date: Mon, 27 Jul 2015 22:01:58 +0800
+Message-ID: <faa118527b0436377f6a452948350b0700b73584.1438005660.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-To: Zhaolei <zhaolei@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs: Show detail information when mount failed on
- missing devices
-References: <afa8fe22bb5c6e18046b6a950cea399d31ab5407.1437386077.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <afa8fe22bb5c6e18046b6a950cea399d31ab5407.1437386077.git.zhaolei@cn.fujitsu.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-  Reviewed-by: Anand Jain <anand.jain@oracle.com>
+For example, $TEST_DIR is common used in severial tests, and have
+duplicated code for initialize.
 
-On 07/20/2015 05:55 PM, Zhaolei wrote:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
->
-> When mount failed because missing device, we can see following
-> dmesg:
->   [ 1060.267743] BTRFS: too many missing devices, writeable mount is not allowed
->   [ 1060.273158] BTRFS: open_ctree failed
->
-> This patch add missing_device_number and tolerated_missing_device_number
-> to above output, to let user know what really happened, and helps
-> bug-report and debug.
->
-> dmesg after patch:
->   [  127.050367] BTRFS: missing devices(1) exceeds the limit(0), writeable mount is not allowed
->   [  127.056099] BTRFS: open_ctree failed
->
-> Changelog v1->v2:
-> 1: Changed to more clear description, suggested-by:
->     Anand Jain <anand.jain@oracle.com>
->
-> Suggested-by: Anand Jain <anand.jain@oracle.com>
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> ---
->   fs/btrfs/disk-io.c | 5 +++--
->   1 file changed, 3 insertions(+), 2 deletions(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 2eda03b..5b44e02 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -2950,8 +2950,9 @@ retry_root_backup:
->   	if (fs_info->fs_devices->missing_devices >
->   	     fs_info->num_tolerated_disk_barrier_failures &&
->   	    !(sb->s_flags & MS_RDONLY)) {
-> -		printk(KERN_WARNING "BTRFS: "
-> -			"too many missing devices, writeable mount is not allowed\n");
-> +		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
-> +			fs_info->fs_devices->missing_devices,
-> +			fs_info->num_tolerated_disk_barrier_failures);
->   		goto fail_sysfs;
->   	}
->
->
+These duplicated code not only benifits harddisk vendor, but have
+inconsistent details, as:
+  convert-tests.sh: lack of mkdir
+  fsck-tests/012-leaf-corruption/test.sh: unnecessary mkdir
+  fsck-tests/013-extent-tree-rebuild/test.sh: unnecessary init
+  misc-tests/XXX ...
+And severial error message:
+  _fail "unable to create mount point on $TEST_MNT"
+  _fail "failed to create mount point"
+  ...
+
+This patch move initizlizaton of $TEST_DIR to common init_env(),
+to avoid above problem, and init_env() can be used to add more
+things in future.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ tests/common                                     | 7 +++++++
+ tests/convert-tests.sh                           | 1 -
+ tests/fsck-tests.sh                              | 3 ---
+ tests/fsck-tests/012-leaf-corruption/test.sh     | 1 -
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh | 5 -----
+ tests/misc-tests.sh                              | 3 ---
+ tests/misc-tests/001-btrfstune-features/test.sh  | 5 -----
+ tests/misc-tests/002-uuid-rewrite/test.sh        | 5 -----
+ tests/misc-tests/003-zero-log/test.sh            | 5 -----
+ 9 files changed, 7 insertions(+), 28 deletions(-)
+
+diff --git a/tests/common b/tests/common
+index 2d337b0..ba0b78a 100644
+--- a/tests/common
++++ b/tests/common
+@@ -158,3 +158,10 @@ prepare_test_dev()
+ 	truncate -s "$size" "$TEST_DEV" || _not_run "create file for loop device failed"
+ }
+ 
++init_env()
++{
++	TEST_MNT="${TEST_MNT:-$TOP/tests/mnt}"
++	export TEST_MNT
++	mkdir -p "$TEST_MNT" || { echo "Failed mkdir -p $TEST_MNT"; exit 1; }
++}
++init_env
+diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
+index efed90b..4e8496a 100755
+--- a/tests/convert-tests.sh
++++ b/tests/convert-tests.sh
+@@ -9,7 +9,6 @@ unset LANG
+ LANG=C
+ SCRIPT_DIR=$(dirname $(readlink -f $0))
+ TOP=$(readlink -f $SCRIPT_DIR/../)
+-TEST_MNT=${TEST_MNT:-$TOP/tests/mnt}
+ RESULTS="$TOP/tests/convert-tests-results.txt"
+ IMAGE="$TOP/tests/test.img"
+ 
+diff --git a/tests/fsck-tests.sh b/tests/fsck-tests.sh
+index b0ded6a..46dd72d 100755
+--- a/tests/fsck-tests.sh
++++ b/tests/fsck-tests.sh
+@@ -11,7 +11,6 @@ LANG=C
+ SCRIPT_DIR=$(dirname $(readlink -f $0))
+ TOP=$(readlink -f $SCRIPT_DIR/../)
+ TEST_DEV=${TEST_DEV:-}
+-TEST_MNT=${TEST_MNT:-$TOP/tests/mnt}
+ RESULTS="$TOP/tests/fsck-tests-results.txt"
+ 
+ source $TOP/tests/common
+@@ -20,11 +19,9 @@ source $TOP/tests/common
+ export TOP
+ export RESULTS
+ # For custom script needs to verfiy recovery
+-export TEST_MNT
+ export LANG
+ 
+ rm -f $RESULTS
+-mkdir -p $TEST_MNT || _fail "unable to create mount point on $TEST_MNT"
+ 
+ # test rely on corrupting blocks tool
+ check_prereq btrfs-corrupt-block
+diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
+index f8701ad..a37ceda 100755
+--- a/tests/fsck-tests/012-leaf-corruption/test.sh
++++ b/tests/fsck-tests/012-leaf-corruption/test.sh
+@@ -85,7 +85,6 @@ check_inode()
+ check_leaf_corrupt_no_data_ext()
+ {
+ 	image=$1
+-	mkdir -p $TEST_MNT || _fail "failed to create mount point"
+ 	$SUDO_HELPER mount -o loop $image -o ro $TEST_MNT
+ 
+ 	i=0
+diff --git a/tests/fsck-tests/013-extent-tree-rebuild/test.sh b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+index 88a66cc..b7909d2 100755
+--- a/tests/fsck-tests/013-extent-tree-rebuild/test.sh
++++ b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+@@ -7,11 +7,6 @@ check_prereq mkfs.btrfs
+ setup_root_helper
+ prepare_test_dev 1G
+ 
+-if [ -z $TEST_MNT ];then
+-	echo "    [NOTRUN] extent tree rebuild, need TEST_MNT variant"
+-	exit 0
+-fi
+-
+ # test whether fsck can rebuild a corrupted extent tree
+ test_extent_tree_rebuild()
+ {
+diff --git a/tests/misc-tests.sh b/tests/misc-tests.sh
+index 5bbe914..cabe9c3 100755
+--- a/tests/misc-tests.sh
++++ b/tests/misc-tests.sh
+@@ -8,7 +8,6 @@ LANG=C
+ SCRIPT_DIR=$(dirname $(readlink -f $0))
+ TOP=$(readlink -f $SCRIPT_DIR/../)
+ TEST_DEV=${TEST_DEV:-}
+-TEST_MNT=${TEST_MNT:-$TOP/tests/mnt}
+ RESULTS="$TOP/tests/misc-tests-results.txt"
+ IMAGE="$TOP/tests/test.img"
+ 
+@@ -18,11 +17,9 @@ source $TOP/tests/common
+ export TOP
+ export RESULTS
+ # For custom script needs to verfiy recovery
+-export TEST_MNT
+ export LANG
+ 
+ rm -f $RESULTS
+-mkdir -p $TEST_MNT || _fail "unable to create mount point on $TEST_MNT"
+ 
+ # test rely on corrupting blocks tool
+ check_prereq btrfs-corrupt-block
+diff --git a/tests/misc-tests/001-btrfstune-features/test.sh b/tests/misc-tests/001-btrfstune-features/test.sh
+index ea33954..836e8d3 100755
+--- a/tests/misc-tests/001-btrfstune-features/test.sh
++++ b/tests/misc-tests/001-btrfstune-features/test.sh
+@@ -9,11 +9,6 @@ check_prereq mkfs.btrfs
+ setup_root_helper
+ prepare_test_dev
+ 
+-if [ -z $TEST_MNT ];then
+-	echo "    [NOTRUN] extent tree rebuild, need TEST_MNT variant"
+-	exit 0
+-fi
+-
+ # test whether fsck can rebuild a corrupted extent tree
+ # parameters:
+ # - option for mkfs.btrfs -O, empty for defaults
+diff --git a/tests/misc-tests/002-uuid-rewrite/test.sh b/tests/misc-tests/002-uuid-rewrite/test.sh
+index bffa9b8..9b103aa 100755
+--- a/tests/misc-tests/002-uuid-rewrite/test.sh
++++ b/tests/misc-tests/002-uuid-rewrite/test.sh
+@@ -9,11 +9,6 @@ check_prereq mkfs.btrfs
+ check_prereq btrfstune
+ prepare_test_dev
+ 
+-if [ -z $TEST_MNT ];then
+-	echo "    [NOTRUN] extent tree rebuild, need TEST_MNT variant"
+-	exit 0
+-fi
+-
+ get_fs_uuid() {
+ 	local image
+ 
+diff --git a/tests/misc-tests/003-zero-log/test.sh b/tests/misc-tests/003-zero-log/test.sh
+index edab5db..b650930 100755
+--- a/tests/misc-tests/003-zero-log/test.sh
++++ b/tests/misc-tests/003-zero-log/test.sh
+@@ -8,11 +8,6 @@ check_prereq mkfs.btrfs
+ check_prereq btrfs
+ prepare_test_dev
+ 
+-if [ -z $TEST_MNT ];then
+-	echo "    [NOTRUN] extent tree rebuild, need TEST_MNT variant"
+-	exit 0
+-fi
+-
+ get_log_root()
+ {
+ 	local image
+-- 
+1.8.5.1
+

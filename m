@@ -1,160 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:25638 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755175AbbGTOrB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 20 Jul 2015 10:47:01 -0400
-Date: Mon, 20 Jul 2015 22:46:38 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.cz, linux-btrfs@vger.kernel.org,
-        chandan@mykolab.com
-Subject: Re: [RFC PATCH V11 17/21] Btrfs: subpagesize-blocksize: Use
- (eb->start, seq) as search key for tree modification log.
-Message-ID: <20150720144636.GD16931@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1433172176-8742-1-git-send-email-chandan@linux.vnet.ibm.com>
- <1433172176-8742-18-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from mx2.suse.de ([195.135.220.15]:57468 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751262AbbG0OfV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jul 2015 10:35:21 -0400
+Date: Mon, 27 Jul 2015 16:35:09 +0200
+From: David Sterba <dsterba@suse.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 0/7] btrfs-progs: qgroup related enhance.
+Message-ID: <20150727143509.GF6306@twin.jikos.cz>
+Reply-To: dsterba@suse.com
+References: <1425025599-30048-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20150323233803.GP20767@twin.jikos.cz>
+ <5510B191.1010402@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1433172176-8742-18-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <5510B191.1010402@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jun 01, 2015 at 08:52:52PM +0530, Chandan Rajendra wrote:
-> In subpagesize-blocksize a page can map multiple extent buffers and hence
-> using (page index, seq) as the search key is incorrect. For example, searching
-> through tree modification log tree can return an entry associated with the
-> first extent buffer mapped by the page (if such an entry exists), when we are
-> actually searching for entries associated with extent buffers that are mapped
-> at position 2 or more in the page.
+On Tue, Mar 24, 2015 at 08:36:33AM +0800, Qu Wenruo wrote:
+> > All of the above merged.
+> >
+> >>    btrfs-progs: Schedule quota rescan if qgroup assign caused
+> >>      inconsistence.
+> >
+> > The rescan can be a long running operation and touches a lot of
+> > metadata, so I'd rather avoid starting the rescan automatically. Right
+> > now the user may start rescan manually, or please add an commandline
+> > option (eg. --rescan) to do the rescan in one go with the 'assign'
+> > command. Thanks.
+> >
+> Makes sense, I'll update the last patch soon.
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Thanks,
-
--liubo
-
-> 
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-> ---
->  fs/btrfs/ctree.c | 34 +++++++++++++++++-----------------
->  1 file changed, 17 insertions(+), 17 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
-> index ba6fbb0..47310d3 100644
-> --- a/fs/btrfs/ctree.c
-> +++ b/fs/btrfs/ctree.c
-> @@ -311,7 +311,7 @@ struct tree_mod_root {
->  
->  struct tree_mod_elem {
->  	struct rb_node node;
-> -	u64 index;		/* shifted logical */
-> +	u64 logical;
->  	u64 seq;
->  	enum mod_log_op op;
->  
-> @@ -435,11 +435,11 @@ void btrfs_put_tree_mod_seq(struct btrfs_fs_info *fs_info,
->  
->  /*
->   * key order of the log:
-> - *       index -> sequence
-> + *       node/leaf start address -> sequence
->   *
-> - * the index is the shifted logical of the *new* root node for root replace
-> - * operations, or the shifted logical of the affected block for all other
-> - * operations.
-> + * The 'start address' is the logical address of the *new* root node
-> + * for root replace operations, or the logical address of the affected
-> + * block for all other operations.
->   *
->   * Note: must be called with write lock (tree_mod_log_write_lock).
->   */
-> @@ -460,9 +460,9 @@ __tree_mod_log_insert(struct btrfs_fs_info *fs_info, struct tree_mod_elem *tm)
->  	while (*new) {
->  		cur = container_of(*new, struct tree_mod_elem, node);
->  		parent = *new;
-> -		if (cur->index < tm->index)
-> +		if (cur->logical < tm->logical)
->  			new = &((*new)->rb_left);
-> -		else if (cur->index > tm->index)
-> +		else if (cur->logical > tm->logical)
->  			new = &((*new)->rb_right);
->  		else if (cur->seq < tm->seq)
->  			new = &((*new)->rb_left);
-> @@ -523,7 +523,7 @@ alloc_tree_mod_elem(struct extent_buffer *eb, int slot,
->  	if (!tm)
->  		return NULL;
->  
-> -	tm->index = eb->start >> PAGE_CACHE_SHIFT;
-> +	tm->logical = eb->start;
->  	if (op != MOD_LOG_KEY_ADD) {
->  		btrfs_node_key(eb, &tm->key, slot);
->  		tm->blockptr = btrfs_node_blockptr(eb, slot);
-> @@ -588,7 +588,7 @@ tree_mod_log_insert_move(struct btrfs_fs_info *fs_info,
->  		goto free_tms;
->  	}
->  
-> -	tm->index = eb->start >> PAGE_CACHE_SHIFT;
-> +	tm->logical = eb->start;
->  	tm->slot = src_slot;
->  	tm->move.dst_slot = dst_slot;
->  	tm->move.nr_items = nr_items;
-> @@ -699,7 +699,7 @@ tree_mod_log_insert_root(struct btrfs_fs_info *fs_info,
->  		goto free_tms;
->  	}
->  
-> -	tm->index = new_root->start >> PAGE_CACHE_SHIFT;
-> +	tm->logical = new_root->start;
->  	tm->old_root.logical = old_root->start;
->  	tm->old_root.level = btrfs_header_level(old_root);
->  	tm->generation = btrfs_header_generation(old_root);
-> @@ -739,16 +739,15 @@ __tree_mod_log_search(struct btrfs_fs_info *fs_info, u64 start, u64 min_seq,
->  	struct rb_node *node;
->  	struct tree_mod_elem *cur = NULL;
->  	struct tree_mod_elem *found = NULL;
-> -	u64 index = start >> PAGE_CACHE_SHIFT;
->  
->  	tree_mod_log_read_lock(fs_info);
->  	tm_root = &fs_info->tree_mod_log;
->  	node = tm_root->rb_node;
->  	while (node) {
->  		cur = container_of(node, struct tree_mod_elem, node);
-> -		if (cur->index < index) {
-> +		if (cur->logical < start) {
->  			node = node->rb_left;
-> -		} else if (cur->index > index) {
-> +		} else if (cur->logical > start) {
->  			node = node->rb_right;
->  		} else if (cur->seq < min_seq) {
->  			node = node->rb_left;
-> @@ -1228,9 +1227,10 @@ __tree_mod_log_oldest_root(struct btrfs_fs_info *fs_info,
->  		return NULL;
->  
->  	/*
-> -	 * the very last operation that's logged for a root is the replacement
-> -	 * operation (if it is replaced at all). this has the index of the *new*
-> -	 * root, making it the very first operation that's logged for this root.
-> +	 * the very last operation that's logged for a root is the
-> +	 * replacement operation (if it is replaced at all). this has
-> +	 * the logical address of the *new* root, making it the very
-> +	 * first operation that's logged for this root.
->  	 */
->  	while (1) {
->  		tm = tree_mod_log_search_oldest(fs_info, root_logical,
-> @@ -1334,7 +1334,7 @@ __tree_mod_log_rewind(struct btrfs_fs_info *fs_info, struct extent_buffer *eb,
->  		if (!next)
->  			break;
->  		tm = container_of(next, struct tree_mod_elem, node);
-> -		if (tm->index != first_tm->index)
-> +		if (tm->logical != first_tm->logical)
->  			break;
->  	}
->  	tree_mod_log_read_unlock(fs_info);
-> -- 
-> 2.1.0
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I've merged your patch without changes and implemented the --rescan
+option myself.

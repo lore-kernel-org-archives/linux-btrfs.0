@@ -1,228 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:56844 "EHLO mail.kernel.org"
+Received: from fw11a.wadns.net ([196.220.39.53]:47658 "EHLO fw11a.wadns.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753174AbbGXVxO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jul 2015 17:53:14 -0400
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] fstests: btrfs test to exercise shared extent reference accounting
-Date: Fri, 24 Jul 2015 11:19:04 +0100
-Message-Id: <1437733144-10138-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1436453473-27509-1-git-send-email-fdmanana@kernel.org>
-References: <1436453473-27509-1-git-send-email-fdmanana@kernel.org>
+	id S1754855AbbG0Wjc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 27 Jul 2015 18:39:32 -0400
+Message-ID: <55B6AF40.5040107@swiftspirit.co.za>
+Date: Tue, 28 Jul 2015 00:22:56 +0200
+From: Brendan Hide <brendan@swiftspirit.co.za>
+MIME-Version: 1.0
+To: Omar Sandoval <osandov@fb.com>, dsterba@suse.com, fstests@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, Wang Yanfeng <wangyf-fnst@cn.fujitsu.com>
+Subject: Re: [PATCH 2/3] btrfs: add replace missing and replace RAID 5/6 to
+ profile configs
+References: <cover.1437683940.git.osandov@fb.com> <6d332e954da29e8418689cb49294a68da2fa5376.1437683940.git.osandov@fb.com> <20150724120946.GT6306@twin.jikos.cz> <20150724175043.GA14974@huxley.DHCP.TheFacebook.com>
+In-Reply-To: <20150724175043.GA14974@huxley.DHCP.TheFacebook.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Regression test for adding and dropping an equal number of references
-for file extents. Verify that if we drop N references for a file extent
-and we add too N new references for that same file extent in the same
-transaction, running the delayed references (which always happens at
-transaction commit time) does not fail.
+On 2015/07/24 07:50 PM, Omar Sandoval wrote:
+> On Fri, Jul 24, 2015 at 02:09:46PM +0200, David Sterba wrote:
+>> On Thu, Jul 23, 2015 at 01:51:50PM -0700, Omar Sandoval wrote:
+>>> +			# We can't do replace with these profiles because they +
+>>> # imply only one device ($SCRATCH_DEV), and we need to +			#
+>>> keep $SCRATCH_DEV around for _scratch_mount +			# and
+>>> _check_scratch_fs. +			local unsupported=( +				"single" +
+>>> "dup"
+>> 
+>> DUP does imply single device, but why does 'single' ?
+> 
+> It does not, I apparently forgot that you could use single to 
+> concatenate multiple devices. I'll fix that in v2.
+> 
+> Thanks for reviewing!
+> 
+Late to the party. DUP *implies* single device but there are cases
+where dup is used on a multi-device fs. Even if the use-cases aren't
+good or intended to be long-term, they are still valid, right?
 
-The regression was introduced in the 4.2-rc1 Linux kernel and fixed by
-the patch titled: "Btrfs: fix order by which delayed references are run".
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Omar Sandoval <osandov@fb.com>
----
+- -- 
+__________
+Brendan Hide
+http://swiftspirit.co.za/
+http://www.webafrica.co.za/?AFF1E97
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2.0.22 (MingW32)
 
-V2: Added missing call to _require_xfs_io_command "falloc" and fixed
-    a typo in a comment (389K -> 380K). Included Omar's review tag too.
-
- tests/btrfs/095     | 154 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/095.out |   9 +++
- tests/btrfs/group   |   1 +
- 3 files changed, 164 insertions(+)
- create mode 100755 tests/btrfs/095
- create mode 100644 tests/btrfs/095.out
-
-diff --git a/tests/btrfs/095 b/tests/btrfs/095
-new file mode 100755
-index 0000000..032d1ff
---- /dev/null
-+++ b/tests/btrfs/095
-@@ -0,0 +1,154 @@
-+#! /bin/bash
-+# FSQA Test No. 095
-+#
-+# Regression test for adding and dropping an equal number of references for
-+# file extents. Verify that if we drop N references for a file extent and we
-+# add too N new references for that same file extent in the same transaction,
-+# running the delayed references (always happens at transaction commit time)
-+# does not fail.
-+#
-+# The regression was introduced in the 4.2-rc1 Linux kernel.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	_cleanup_flakey
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/dmflakey
-+
-+# real QA test starts here
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_dm_flakey
-+_require_cloner
-+_require_metadata_journaling $SCRATCH_DEV
-+_require_xfs_io_command "falloc"
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_init_flakey
-+_mount_flakey
-+
-+# Create prealloc extent covering range [160K, 620K[
-+$XFS_IO_PROG -f -c "falloc 160K 460K" $SCRATCH_MNT/foo
-+
-+# Now write to the last 80K of the prealloc extent plus 40K to the unallocated
-+# space that immediately follows it. This creates a new extent of 40K that spans
-+# the range [620K, 660K[.
-+$XFS_IO_PROG -c "pwrite -S 0xaa 540K 120K" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# At this point, there are now 2 back references to the prealloc extent in our
-+# extent tree. Both are for our file offset 160K and one relates to a file
-+# extent item with a data offset of 0 and a length of 380K, while the other
-+# relates to a file extent item with a data offset of 380K and a length of 80K.
-+
-+# Make sure everything done so far is durably persisted (all back references are
-+# in the extent tree, etc).
-+sync
-+
-+# Now clone all extents of our file that cover the offset 160K up to its eof
-+# (660K at this point) into itself at offset 2M. This leaves a hole in the file
-+# covering the range [660K, 2M[. The prealloc extent will now be referenced by
-+# the file twice, once for offset 160K and once for offset 2M. The 40K extent
-+# that follows the prealloc extent will also be referenced twice by our file,
-+# once for offset 620K and once for offset 2M + 460K.
-+$CLONER_PROG -s $((160 * 1024)) -d $((2 * 1024 * 1024)) -l 0 $SCRATCH_MNT/foo \
-+	$SCRATCH_MNT/foo
-+
-+# Now create one new extent in our file with a size of 100Kb. It will span the
-+# range [3M, 3M + 100K[. It also will cause creation of a hole spanning the
-+# range [2M + 460K, 3M[. Our new file size is 3M + 100K.
-+$XFS_IO_PROG -c "pwrite -S 0xbb 3M 100K" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# At this point, there are now (in memory) 4 back references to the prealloc
-+# extent.
-+#
-+# Two of them are for file offset 160K, related to file extent items
-+# matching the file offsets 160K and 540K respectively, with data offsets of
-+# 0 and 380K respectively, and with lengths of 380K and 80K respectively.
-+#
-+# The other two references are for file offset 2M, related to file extent items
-+# matching the file offsets 2M and 2M + 380K respectively, with data offsets of
-+# 0 and 380K respectively, and with lengths of 380K and 80K respectively.
-+#
-+# The 40K extent has 2 back references, one for file offset 620K and the other
-+# for file offset 2M + 460K.
-+#
-+# The 100K extent has a single back reference and it relates to file offset 3M.
-+
-+# Now clone our 100K extent into offset 600K. That offset covers the last 20K
-+# of the prealloc extent, the whole 40K extent and 40K of the hole starting at
-+# offset 660K.
-+$CLONER_PROG -s $((3 * 1024 * 1024)) -d $((600 * 1024)) -l $((100 * 1024)) \
-+	$SCRATCH_MNT/foo $SCRATCH_MNT/foo
-+
-+# At this point there's only one reference to the 40K extent, at file offset
-+# 2M + 460K, we have 4 references for the prealloc extent (2 for file offset
-+# 160K and 2 for file offset 2M) and 2 references for the 100K extent (1 for
-+# file offset 3M and a new one for file offset 600K).
-+
-+# Now fsync our file to make all its new data and metadata updates are durably
-+# persisted and present if a power failure/crash happens after a successful
-+# fsync and before the next transaction commit.
-+$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-+
-+echo "File digest before power failure:"
-+md5sum $SCRATCH_MNT/foo | _filter_scratch
-+
-+# Silently drop all writes and ummount to simulate a crash/power failure.
-+_load_flakey_table $FLAKEY_DROP_WRITES
-+_unmount_flakey
-+
-+# Allow writes again, mount to trigger log replay and validate file contents.
-+# During log replay, the btrfs delayed references implementation used to run the
-+# deletion of back references before the addition of new back references, which
-+# made the addition fail as it didn't find the key in the extent tree that it
-+# was looking for. The failure triggered by this test was related to the 40K
-+# extent, which got 1 reference dropped and 1 reference added during the fsync
-+# log replay - when running the delayed references at transaction commit time,
-+# btrfs was applying the deletion before the insertion, resulting in a failure
-+# of the insertion that ended up turning the fs into read-only mode.
-+_load_flakey_table $FLAKEY_ALLOW_WRITES
-+_mount_flakey
-+
-+echo "File digest after log replay:"
-+md5sum $SCRATCH_MNT/foo | _filter_scratch
-+
-+_unmount_flakey
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/095.out b/tests/btrfs/095.out
-new file mode 100644
-index 0000000..e93435c
---- /dev/null
-+++ b/tests/btrfs/095.out
-@@ -0,0 +1,9 @@
-+QA output created by 095
-+wrote 122880/122880 bytes at offset 552960
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 102400/102400 bytes at offset 3145728
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File digest before power failure:
-+beaf47c36659ac29bb9363fb8ffa10a1  SCRATCH_MNT/foo
-+File digest after log replay:
-+beaf47c36659ac29bb9363fb8ffa10a1  SCRATCH_MNT/foo
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index ffe18bf..79feea9 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -96,3 +96,4 @@
- 092 auto quick send
- 093 auto quick clone
- 094 auto quick send
-+095 auto quick metadata
--- 
-2.1.3
-
+iQEcBAEBAgAGBQJVtq9AAAoJEE+uni74c4qN5eYIAJAGznsi3RD1tchbSLwhMXJk
+bJJ4ORB9taLXHykSfYTsHIaUoVpcVR6tT/I1jz5070DY3mKkQ16a8nwtSxPba4Lv
+QiS8YRegFiHMYzZbH1T7Tnm6R9g/RZsaU7GS3JhP9HUYG7hIWGRRuoiOjYn/hoLw
+uMXuIFOkPKGYDgyAhDIp3KDYlBjMHT6Oun7CcpvTjXiOnzJFFp3MSt3b6mmmdMVV
+YKWpWyKVh7qlENEoqKb4exqr1WGYKU+kBLXRs4wdm3xb66EcWYs0Er1u6v+K1trx
+nryFrfUxYtMJsSuR9ZJm88DOsXKAuX1LEdRKVOlq7krsIK8HlTizccMXAl10gKk=
+=ndkL
+-----END PGP SIGNATURE-----

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:24133 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751136AbbG0G3f (ORCPT
+	with ESMTP id S1750760AbbG0G3h (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 02:29:35 -0400
+	Mon, 27 Jul 2015 02:29:37 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6R6Rgwa003802
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 14:27:42 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6R6Rhsu003807
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 14:27:43 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 2/7] btrfs-progs: Move close timer handle code to line after sub process exit
-Date: Mon, 27 Jul 2015 14:27:49 +0800
-Message-ID: <11cd6dd1c443035bd449a2a721f96f2d5f2dff93.1437977968.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v2 3/7] btrfs-progs: Remove cleanup-timer code for btrfs-convert
+Date: Mon, 27 Jul 2015 14:27:50 +0800
+Message-ID: <321b85ad3c9aaeebf92ec41205aa7edcfd9194a3.1437977968.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1437977968.git.zhaolei@cn.fujitsu.com>
 References: <cover.1437977968.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,35 +22,31 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-The timer handle have possibility in using by sub thread,
-better to close it after sub process exit.
+No need to close timer handle afain in subthread-close-callback,
+it is closed by task_stop() automatically.
+
+This patch also add a fflush() to make log output on time.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- task-utils.c | 6 +++---
- 1 file changed, 3 insertions(+), 3 deletions(-)
+ btrfs-convert.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
 
-diff --git a/task-utils.c b/task-utils.c
-index 0390a69..17fd573 100644
---- a/task-utils.c
-+++ b/task-utils.c
-@@ -61,14 +61,14 @@ void task_stop(struct task_info *info)
- 	if (!info)
- 		return;
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index b89c685..7dfab7d 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -71,10 +71,8 @@ static void *print_copied_inodes(void *p)
  
--	if (info->periodic.timer_fd)
--		close(info->periodic.timer_fd);
+ static int after_copied_inodes(void *p)
+ {
+-	struct task_ctx *priv = p;
 -
- 	if (info->id > 0) {
- 		pthread_cancel(info->id);
- 		pthread_join(info->id, NULL);
- 	}
+ 	printf("\n");
+-	task_period_stop(priv->info);
++	fflush(stdout);
  
-+	if (info->periodic.timer_fd)
-+		close(info->periodic.timer_fd);
-+
- 	if (info->postfn)
- 		info->postfn(info->private_data);
+ 	return 0;
  }
 -- 
 1.8.5.1

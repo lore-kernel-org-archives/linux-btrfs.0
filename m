@@ -1,71 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45260 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:18666 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753244AbbGYBS7 (ORCPT
+	with ESMTP id S1751065AbbG0M0M (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 24 Jul 2015 21:18:59 -0400
-Subject: Re: [PATCH 4/4] btrfs: convert: Avoid allocating metadata extent
- crossing stripe boundary
-To: <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
-References: <1437643090-13920-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1437643090-13920-5-git-send-email-quwenruo@cn.fujitsu.com>
- <20150724123447.GX6306@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55B2E3FE.5060706@cn.fujitsu.com>
-Date: Sat, 25 Jul 2015 09:18:54 +0800
+	Mon, 27 Jul 2015 08:26:12 -0400
+Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6RCOH3K023254
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 20:24:17 +0800
+From: Zhaolei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 0/7] btrfs-progs: Fix wrong address accessing by subthread in btrfs-convert
+Date: Mon, 27 Jul 2015 20:24:25 +0800
+Message-ID: <cover.1437999624.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150724123447.GX6306@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
+It is v3 patchset of:
+ Fix wrong address accessing by subthread in btrfs-convert.
 
-David Sterba wrote on 2015/07/24 14:34 +0200:
-> On Thu, Jul 23, 2015 at 05:18:10PM +0800, Qu Wenruo wrote:
->> @@ -246,6 +247,14 @@ static int custom_alloc_extent(struct btrfs_root *root, u64 num_bytes,
->>   			continue;
->>   		}
->>
->> +		if (metadata) {
->> +			BUG_ON(num_bytes != root->nodesize);
->
-> This caught my attention and looking at possible values of num_bytes,
-> this can crash:
->
-> 1291         for (last_byte = 0; last_byte < first_free; last_byte += sectorsize) {
-> 1292                 ret = custom_alloc_extent(root, sectorsize, 0, &key, 0);
->
-> where sectorsize == num_bytes.
-For that case, the last 0 means that's a data block,
-and won't comes to the BUG_ON, as it is only designed for metadata.
-And for metadata allocation, the size will only be nodes/leafsize
+Changelog v2->v3:
+ 1: Add $TOP path prefix to btrfs-convert command in:
+    [PATCH v2 7/7] btrfs-progs: Introduce a misc test for thread conflict in
+    btrfs-convert
+    To check prog in btrfs source dir.
 
-Thanks,
-Qu
->
->> +			if (check_crossing_stripes(start, num_bytes)) {
->> +				last = round_down(start + num_bytes,
->> +						  BTRFS_STRIPE_LEN);
->> +				continue;
->> +			}
->> +		}
->>   		clear_extent_dirty(&root->fs_info->free_space_cache,
->>   				   start, start + num_bytes - 1, 0);
->>
->> @@ -1280,7 +1289,7 @@ static int create_ext2_image(struct btrfs_root *root, ext2_filsys ext2_fs,
->>   	 * special, we can't rely on relocate_extents_range to relocate it.
->>   	 */
->>   	for (last_byte = 0; last_byte < first_free; last_byte += sectorsize) {
->> -		ret = custom_alloc_extent(root, sectorsize, 0, &key);
->> +		ret = custom_alloc_extent(root, sectorsize, 0, &key, 0);
->
-> Same here.
->
->> -			ret = custom_alloc_extent(root, sectorsize, 0, &key);
->> +			ret = custom_alloc_extent(root, sectorsize, 0, &key, 0);
->
-> And here.
->
-> I hope there's a way how to avoid the BUG_ON at all.
->
+Changelog v1->v2:
+ 1: Move bug test script from patch description into a single script in
+    test/misc-tests, suggested-by: David Sterba <dsterba@suse.com>
+ 2: Move code for creating loop device to common [PATCH 6/7]
+
+Zhao Lei (7):
+  btrfs-progs: Fix wrong address accessing by subthread in btrfs-convert
+  btrfs-progs: Move close timer handle code to line after sub process
+    exit
+  btrfs-progs: Remove cleanup-timer code for btrfs-convert
+  btrfs-progs: resst info->periodic.timer_fd's value after free
+  btrfs-progs: Set info->periodic.timer_fd to 0 in init-fail
+  btrfs-progs: Move code to create loop device to common
+  btrfs-progs: Introduce a misc test for thread conflict in
+    btrfs-convert
+
+ btrfs-convert.c                                    |  4 +---
+ task-utils.c                                       | 22 ++++++++++++++--------
+ tests/common                                       | 16 ++++++++++++++++
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh   | 11 +----------
+ tests/misc-tests/001-btrfstune-features/test.sh    | 11 +----------
+ tests/misc-tests/002-uuid-rewrite/test.sh          | 11 +----------
+ tests/misc-tests/003-zero-log/test.sh              | 11 +----------
+ .../misc-tests/004-convert-thread-conflict/test.sh | 14 ++++++++++++++
+ 8 files changed, 49 insertions(+), 51 deletions(-)
+ create mode 100755 tests/misc-tests/004-convert-thread-conflict/test.sh
+
+-- 
+1.8.5.1
+

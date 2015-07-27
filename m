@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24133 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:4253 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750760AbbG0G3e (ORCPT
+	with ESMTP id S1751924AbbG0LeP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 02:29:34 -0400
+	Mon, 27 Jul 2015 07:34:15 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6R6RehG003795
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 14:27:40 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6RBWMM3021957
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 19:32:23 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 0/7] btrfs-progs: Fix wrong address accessing by subthread in btrfs-convert
-Date: Mon, 27 Jul 2015 14:27:47 +0800
-Message-ID: <cover.1437977968.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: Show detail error message when write sb failed in write_dev_supers()
+Date: Mon, 27 Jul 2015 19:32:37 +0800
+Message-ID: <8277e478b7947c957be606f17b5137ae8d78ee66.1437996746.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,36 +20,82 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-It is v2 patchset of:
- Fix wrong address accessing by subthread in btrfs-convert.
+fsck-tests.sh failed and show following message in my node:
+  # ./fsck-tests.sh
+     [TEST]   001-bad-file-extent-bytenr
+  disk-io.c:1444: write_dev_supers: Assertion `ret != BTRFS_SUPER_INFO_SIZE` failed.
+  /root/btrfsprogs/btrfs-image(write_all_supers+0x2d2)[0x41031c]
+  /root/btrfsprogs/btrfs-image(write_ctree_super+0xc5)[0x41042e]
+  /root/btrfsprogs/btrfs-image(btrfs_commit_transaction+0x208)[0x410976]
+  /root/btrfsprogs/btrfs-image[0x438780]
+  /root/btrfsprogs/btrfs-image(main+0x3d5)[0x438c5c]
+  /lib64/libc.so.6(__libc_start_main+0xfd)[0x335e01ecdd]
+  /root/btrfsprogs/btrfs-image[0x4074e9]
+  failed to restore image /root/btrfsprogs/tests/fsck-tests/001-bad-file-extent-bytenr/default_case.img
+  #
 
-Changelog:
- 1: Move bug test script from patch description into a single script in
-    test/misc-tests, suggested-by: David Sterba <dsterba@suse.com>
- 2: Move code for creating loop device to common [PATCH 6/7]
+  # cat fsck-tests-results.txt
+  === Entering /root/btrfsprogs/tests/fsck-tests/001-bad-file-extent-bytenr
+  restoring image default_case.img
+  failed to restore image /root/btrfsprogs/tests/fsck-tests/001-bad-file-extent-bytenr/default_case.img
+  #
 
-Zhao Lei (7):
-  btrfs-progs: Fix wrong address accessing by subthread in btrfs-convert
-  btrfs-progs: Move close timer handle code to line after sub process
-    exit
-  btrfs-progs: Remove cleanup-timer code for btrfs-convert
-  btrfs-progs: resst info->periodic.timer_fd's value after free
-  btrfs-progs: Set info->periodic.timer_fd to 0 in init-fail
-  btrfs-progs: Move code to create loop device to common
-  btrfs-progs: Introduce a misc test for thread conflict in
-    btrfs-convert
+Reason:
+  I run above test in a NFS mountpoint, it don't have enouth space to write
+  all superblock to image file, and don't support sparse file.
+  So write_dev_supers() failed in writing sb and output above message.
 
- btrfs-convert.c                                    |  4 +---
- task-utils.c                                       | 22 ++++++++++++++--------
- tests/common                                       | 16 ++++++++++++++++
- tests/fsck-tests/013-extent-tree-rebuild/test.sh   | 11 +----------
- tests/misc-tests/001-btrfstune-features/test.sh    | 11 +----------
- tests/misc-tests/002-uuid-rewrite/test.sh          | 11 +----------
- tests/misc-tests/003-zero-log/test.sh              | 11 +----------
- .../misc-tests/004-convert-thread-conflict/test.sh | 14 ++++++++++++++
- 8 files changed, 49 insertions(+), 51 deletions(-)
- create mode 100755 tests/misc-tests/004-convert-thread-conflict/test.sh
+It takes me quite of time to know what happened, we can save these time
+by output exact information in write-sb-fail case.
 
+After patch:
+  # ./fsck-tests.sh
+    [TEST]   001-bad-file-extent-bytenr
+  WARNING: Write sb failed: File too large
+  disk-io.c:1492: write_all_supers: Assertion `ret` failed.
+  ...
+  #
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ disk-io.c | 14 ++++++++++++--
+ 1 file changed, 12 insertions(+), 2 deletions(-)
+
+diff --git a/disk-io.c b/disk-io.c
+index fdcfd6d..607d4a1 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -1419,7 +1419,8 @@ static int write_dev_supers(struct btrfs_root *root,
+ 		ret = pwrite64(device->fd, root->fs_info->super_copy,
+ 				BTRFS_SUPER_INFO_SIZE,
+ 				root->fs_info->super_bytenr);
+-		BUG_ON(ret != BTRFS_SUPER_INFO_SIZE);
++		if (ret != BTRFS_SUPER_INFO_SIZE)
++			goto write_err;
+ 		return 0;
+ 	}
+ 
+@@ -1441,10 +1442,19 @@ static int write_dev_supers(struct btrfs_root *root,
+ 		 */
+ 		ret = pwrite64(device->fd, root->fs_info->super_copy,
+ 				BTRFS_SUPER_INFO_SIZE, bytenr);
+-		BUG_ON(ret != BTRFS_SUPER_INFO_SIZE);
++		if (ret != BTRFS_SUPER_INFO_SIZE)
++			goto write_err;
+ 	}
+ 
+ 	return 0;
++
++write_err:
++	if (ret > 0)
++		fprintf(stderr, "WARNING: Failed to write all sb data\n");
++	else
++		fprintf(stderr, "WARNING: Write sb failed: %s\n",
++			strerror(errno));
++	return ret;
+ }
+ 
+ int write_all_supers(struct btrfs_root *root)
 -- 
 1.8.5.1
 

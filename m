@@ -1,18 +1,20 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:19006 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:27556 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754483AbbG1C3v (ORCPT
+	with ESMTP id S1753800AbbG0ODj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 22:29:51 -0400
+	Mon, 27 Jul 2015 10:03:39 -0400
 Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6S2RwDw018725
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2015 10:27:58 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6RE1j3t026017
+	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 22:01:45 +0800
 From: Zhaolei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs-tests: Avoid outputting useless warning in ./fsck-tests.sh
-Date: Tue, 28 Jul 2015 10:28:13 +0800
-Message-ID: <da33d0fb2b6ac7f8a52a4550ec74293f9e2f1af9.1438050482.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs-progs-tests: Fix mount fail of 013-extent-tree-rebuild
+Date: Mon, 27 Jul 2015 22:01:59 +0800
+Message-ID: <af0bb4ec01e3e29b59028de8ab76d6241ba050c6.1438005661.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <faa118527b0436377f6a452948350b0700b73584.1438005660.git.zhaolei@cn.fujitsu.com>
+References: <faa118527b0436377f6a452948350b0700b73584.1438005660.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -20,54 +22,80 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-002-bad-transid outout 'transid verify failed' message in screen
-which is just a warning in btrfs-image in normal condition of this
-test.
-
-This patch move above warning into $RESULTS, to:
-1: Avoid trouble screen output
-2: Let user known detail if other error happened in btrfs-image
-
-Before patch:
+When using loop device for test, fsck-tests/013-extent-tree-rebuild
+failed with following error message:
   # ./fsck-tests.sh
-    [TEST]   001-bad-file-extent-bytenr
-    [TEST]   002-bad-transid
-  parent transid verify failed on 29360128 wanted 9 found 755944791
-  parent transid verify failed on 29360128 wanted 9 found 755944791
-  Ignoring transid failure
-    [TEST]   003-shift-offsets
-    [TEST]   004-no-dir-index
   ...
+    [TEST]   013-extent-tree-rebuild
+  failed: mount /data/btrfsprogs/tests/test.img /data/btrfsprogs/tests/mnt
+  test failed for case 013-extent-tree-rebuild
+  #
 
-After patch:
-  # ./fsck-tests.sh
-  [TEST]   001-bad-file-extent-bytenr
-  [TEST]   002-bad-transid
-  [TEST]   003-shift-offsets
-  [TEST]   004-no-dir-index
-  ...
+Considering that $TEST_DEV can be block or loop device, we need determine
+our mount option in a condition for both case.
+
+This patch make above request to a common function, to solve current
+problem in 013-extent-tree-rebuild, and support similar request in future.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- tests/common | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ tests/common                                     | 24 ++++++++++++++++++++++++
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh |  4 ++--
+ 2 files changed, 26 insertions(+), 2 deletions(-)
 
 diff --git a/tests/common b/tests/common
-index 381ff96..4d03ed8 100644
+index ba0b78a..381ff96 100644
 --- a/tests/common
 +++ b/tests/common
-@@ -87,8 +87,9 @@ check_all_images()
+@@ -165,3 +165,27 @@ init_env()
+ 	mkdir -p "$TEST_MNT" || { echo "Failed mkdir -p $TEST_MNT"; exit 1; }
+ }
+ init_env
++
++mount_test_dev()
++{
++	local loop_opt
++	if [[ -b "$TEST_DEV" ]]; then
++		loop_opt=()
++	elif [[ -f "$TEST_DEV" ]]; then
++		loop_opt=(-o loop)
++	else
++		_fail "Invalid \$TEST_DEV: $TEST_DEV"
++	fi
++
++	[[ -d "$TEST_MNT" ]] || {
++		_fail "Invalid \$TEST_MNT: $TEST_MNT"
++	}
++
++	mount "${loop_opt[@]}" "$TEST_DEV" "$TEST_MNT" || _fail "mount $TEST_DEV to $TEST_MNT failed"
++}
++
++umount_test_dev()
++{
++	umount "$TEST_DEV"
++}
++
+diff --git a/tests/fsck-tests/013-extent-tree-rebuild/test.sh b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+index b7909d2..ff3c922 100755
+--- a/tests/fsck-tests/013-extent-tree-rebuild/test.sh
++++ b/tests/fsck-tests/013-extent-tree-rebuild/test.sh
+@@ -12,14 +12,14 @@ test_extent_tree_rebuild()
+ {
+ 	run_check $SUDO_HELPER $TOP/mkfs.btrfs -f $TEST_DEV
  
- 		if ! [ -f $image.restored ]; then
- 			echo "restoring image $(basename $image)" >> $RESULTS
--			$TOP/btrfs-image -r $image $image.restored || \
--				_fail "failed to restore image $image"
-+			$TOP/btrfs-image -r $image $image.restored \
-+				&>> $RESULTS \
-+				|| _fail "failed to restore image $image"
- 		fi
+-	run_check $SUDO_HELPER mount $TEST_DEV $TEST_MNT
++	run_check $SUDO_HELPER mount_test_dev
+ 	run_check $SUDO_HELPER cp -aR /lib/modules/`uname -r`/ $TEST_MNT
  
- 		check_image $image.restored
+ 	for i in `seq 1 100`;do
+ 		run_check $SUDO_HELPER $TOP/btrfs sub snapshot $TEST_MNT \
+ 			$TEST_MNT/snapaaaaaaa_$i
+ 	done
+-	run_check $SUDO_HELPER umount $TEST_DEV
++	run_check $SUDO_HELPER umount_test_dev
+ 
+ 	# get extent root bytenr
+ 	extent_root_bytenr=`$SUDO_HELPER $TOP/btrfs-debug-tree -r $TEST_DEV | \
 -- 
 1.8.5.1
 

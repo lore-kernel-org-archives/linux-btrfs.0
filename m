@@ -1,160 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:51642 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752465AbbGMDZa (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:50448 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754069AbbG1Ic4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 12 Jul 2015 23:25:30 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-Subject: [PATCH 2/2 v2] btrfs-progs: device delete to accept devid
-Date: Mon, 13 Jul 2015 10:28:08 +0800
-Message-Id: <1436754488-10106-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1429525756-2727-4-git-send-email-anand.jain@oracle.com>
-References: <1429525756-2727-4-git-send-email-anand.jain@oracle.com>
+	Tue, 28 Jul 2015 04:32:56 -0400
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6S8V2RN019636
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2015 16:31:02 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH RFC 01/14] btrfs: file-item: Introduce btrfs_setup_file_extent function.
+Date: Tue, 28 Jul 2015 16:30:37 +0800
+Message-ID: <1438072250-2871-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1438072250-2871-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1438072250-2871-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduces new option <devid> for the command
+This new function is just used to fill the file extent with given
+numbers.
 
-  btrfs device delete <device_path|devid>[..]  <mnt>
+This is mainly used for later cleanup of duplicated file extent setup
+codes in inode.c, but also centralized the safety check for later
+expansion.
 
-In a user reported issue on a 3-disk-RAID1, one disk failed with its
-SB unreadable. Now with this patch user will have a choice to delete
-the device using devid.
-
-The other method we could do, is to match the input device_path
-to the available device_paths with in the kernel. But that won't
-work in all the cases, like what if user provided mapper path
-when the path within the kernel is a non-mapper path.
-
-This patch depends on the below kernel patch for the new feature to work,
-however it will fail-back to the old interface for the kernel without the
-patch
-
-  Btrfs: device delete by devid
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v1->v2: rebase on latest devel
+ fs/btrfs/ctree.h     |  5 +++++
+ fs/btrfs/file-item.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+)
 
- Documentation/btrfs-device.asciidoc |  2 +-
- cmds-device.c                       | 43 +++++++++++++++++++++++++++++--------
- ioctl.h                             |  8 +++++++
- 3 files changed, 43 insertions(+), 10 deletions(-)
-
-diff --git a/Documentation/btrfs-device.asciidoc b/Documentation/btrfs-device.asciidoc
-index 2827598..61ede6e 100644
---- a/Documentation/btrfs-device.asciidoc
-+++ b/Documentation/btrfs-device.asciidoc
-@@ -74,7 +74,7 @@ do not perform discard by default
- -f|--force::::
- force overwrite of existing filesystem on the given disk(s)
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index aac314e..68ffd26 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3825,6 +3825,11 @@ int btrfs_lookup_bio_sums(struct btrfs_root *root, struct inode *inode,
+ 			  struct bio *bio, u32 *dst);
+ int btrfs_lookup_bio_sums_dio(struct btrfs_root *root, struct inode *inode,
+ 			      struct bio *bio, u64 logical_offset);
++void btrfs_fill_file_extent(struct btrfs_trans_handle *trans,
++			    struct btrfs_path *path, u64 disk_bytenr,
++			    u64 disk_num_bytes, u64 offset, u64 num_bytes,
++			    u64 ram_bytes, u8 type, u8 compression,
++			    u8 encryption, u16 other_encoding);
+ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     u64 objectid, u64 pos,
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 58ece65..e1d7c03 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -37,6 +37,46 @@
+ 				   sizeof(struct btrfs_ordered_sum)) / \
+ 				   sizeof(u32) * (r)->sectorsize)
  
--*remove* <dev> [<dev>...] <path>::
-+*remove* <dev>|<devid> [<dev>|<devid>...] <path>::
- Remove device(s) from a filesystem identified by <path>.
- 
- *delete* <dev> [<dev>...] <path>::
-diff --git a/cmds-device.c b/cmds-device.c
-index 0e60500..4c9b19a 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -164,16 +164,34 @@ static int _cmd_rm_dev(int argc, char **argv, const char * const *usagestr)
- 		struct	btrfs_ioctl_vol_args arg;
- 		int	res;
- 
--		if (!is_block_device(argv[i])) {
-+		struct  btrfs_ioctl_vol_args_v3 argv3 = {0};
-+		int     its_num = false;
++/*
++ * Fill contents of the file extent.
++ *
++ * The file extent is indicated by path.
++ * It's mainlly used to reduce the duplicated codes, but also added some extra
++ * safety check.
++ */
++void btrfs_fill_file_extent(struct btrfs_trans_handle *trans,
++			    struct btrfs_path *path, u64 disk_bytenr,
++			    u64 disk_num_bytes, u64 offset, u64 num_bytes,
++			    u64 ram_bytes, u8 type, u8 compression,
++			    u8 encryption, u16 other_encoding)
++{
++	struct btrfs_key key;
++	struct extent_buffer *node = path->nodes[0];
++	struct btrfs_file_extent_item *item;
++	int slot = path->slots[0];
 +
-+		if (is_numerical(argv[i])) {
-+			argv3.devid = arg_strtou64(argv[i]);
-+			its_num = true;
-+		} else if (is_block_device(argv[i])) {
-+			strncpy_null(argv3.name, argv[i]);
-+		} else {
- 			fprintf(stderr,
--				"ERROR: %s is not a block device\n", argv[i]);
-+				"ERROR: %s is not a block device or devid\n", argv[i]);
- 			ret++;
- 			continue;
- 		}
--		memset(&arg, 0, sizeof(arg));
--		strncpy_null(arg.name, argv[i]);
--		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
-+		res = ioctl(fdmnt, BTRFS_IOC_RM_DEV_V2, &argv3);
- 		e = errno;
-+		if (res && e == ENOTTY) {
-+			if (its_num) {
-+				fprintf(stderr,
-+				"Error: Kernel does not support delete by devid\n");
-+				ret = 1;
-+				continue;
-+			}
-+			memset(&arg, 0, sizeof(arg));
-+			strncpy_null(arg.name, argv[i]);
-+			res = ioctl(fdmnt, BTRFS_IOC_RM_DEV, &arg);
-+			e = errno;
-+		}
- 		if (res) {
- 			const char *msg;
- 
-@@ -181,9 +199,16 @@ static int _cmd_rm_dev(int argc, char **argv, const char * const *usagestr)
- 				msg = btrfs_err_str(res);
- 			else
- 				msg = strerror(e);
--			fprintf(stderr,
--				"ERROR: error removing the device '%s' - %s\n",
--				argv[i], msg);
++	BUG_ON(encryption || other_encoding);
++	BUG_ON(type == BTRFS_FILE_EXTENT_INLINE);
 +
-+			if (its_num)
-+				fprintf(stderr,
-+					"ERROR: error removing the devid '%llu' - %s\n",
-+					argv3.devid, msg);
-+			else
-+				fprintf(stderr,
-+					"ERROR: error removing the device '%s' - %s\n",
-+					argv[i], msg);
++	btrfs_item_key_to_cpu(node, &key, slot);
++	WARN_ON(key.type != BTRFS_EXTENT_DATA_KEY);
 +
- 			ret++;
- 		}
- 	}
-@@ -193,7 +218,7 @@ static int _cmd_rm_dev(int argc, char **argv, const char * const *usagestr)
- }
- 
- static const char * const cmd_rm_dev_usage[] = {
--	"btrfs device remove <device> [<device>...] <path>",
-+	"btrfs device remove <device>|<devid> [<device>|<devid>...] <path>",
- 	"Remove a device from a filesystem",
- 	NULL
- };
-diff --git a/ioctl.h b/ioctl.h
-index dff015a..6870931 100644
---- a/ioctl.h
-+++ b/ioctl.h
-@@ -40,6 +40,12 @@ struct btrfs_ioctl_vol_args {
- 	char name[BTRFS_PATH_NAME_MAX + 1];
- };
- 
-+struct btrfs_ioctl_vol_args_v3 {
-+	__s64 fd;
-+	char name[BTRFS_PATH_NAME_MAX + 1];
-+	__u64 devid;
-+};
++	item = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
 +
- #define BTRFS_DEVICE_PATH_NAME_MAX 1024
- 
- #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
-@@ -683,6 +689,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
-                                   struct btrfs_ioctl_feature_flags[2])
- #define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
-                                   struct btrfs_ioctl_feature_flags[3])
-+#define BTRFS_IOC_RM_DEV_V2	_IOW(BTRFS_IOCTL_MAGIC, 58, \
-+				   struct btrfs_ioctl_vol_args_v3)
- #ifdef __cplusplus
- }
- #endif
++	btrfs_set_file_extent_generation(node, item, trans->transid);
++	btrfs_set_file_extent_disk_bytenr(node, item, disk_bytenr);
++	btrfs_set_file_extent_disk_num_bytes(node, item, disk_num_bytes);
++	btrfs_set_file_extent_offset(node, item, offset);
++	btrfs_set_file_extent_num_bytes(node, item, num_bytes);
++	btrfs_set_file_extent_ram_bytes(node, item, ram_bytes);
++	btrfs_set_file_extent_type(node, item, type);
++	btrfs_set_file_extent_compression(node, item, compression);
++	btrfs_set_file_extent_other_encoding(node, item, 0);
++	btrfs_set_file_extent_encryption(node, item, 0);
++
++	btrfs_mark_buffer_dirty(node);
++}
++
+ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     u64 objectid, u64 pos,
 -- 
-2.4.1
+2.4.6
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:55413 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755225AbbG1Ic7 (ORCPT
+	with ESMTP id S1750883AbbG1Ic6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jul 2015 04:32:59 -0400
+	Tue, 28 Jul 2015 04:32:58 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6S8V5LY019646
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2015 16:31:05 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6S8V3PH019639
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2015 16:31:03 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 04/14] btrfs: dedup: Add internal add/remove/search function for btrfs dedup.
-Date: Tue, 28 Jul 2015 16:30:40 +0800
-Message-ID: <1438072250-2871-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 02/14] btrfs: Use btrfs_fill_file_extent to reduce duplicated codes
+Date: Tue, 28 Jul 2015 16:30:38 +0800
+Message-ID: <1438072250-2871-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1438072250-2871-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1438072250-2871-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,198 +19,123 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add basic internal add/remove/search functions for btrfs_dedup.
-They are all internal use only as caller shouldn't call this low level
-functions
+Use btrfs_fill_file_extent() function to replace the hand-coded codes.
+As it has better check and takes less effort to maintain.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/dedup.c | 169 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 167 insertions(+), 2 deletions(-)
+ fs/btrfs/file-item.c | 20 ++++----------------
+ fs/btrfs/inode.c     | 38 ++++++--------------------------------
+ 2 files changed, 10 insertions(+), 48 deletions(-)
 
-diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
-index 41f70f5..2bce303 100644
---- a/fs/btrfs/dedup.c
-+++ b/fs/btrfs/dedup.c
-@@ -78,11 +78,176 @@ fail:
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index e1d7c03..87a8d85 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -88,7 +88,6 @@ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_file_extent_item *item;
+ 	struct btrfs_key file_key;
+ 	struct btrfs_path *path;
+-	struct extent_buffer *leaf;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -103,21 +102,10 @@ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 	if (ret < 0)
+ 		goto out;
+ 	BUG_ON(ret); /* Can't happen */
+-	leaf = path->nodes[0];
+-	item = btrfs_item_ptr(leaf, path->slots[0],
+-			      struct btrfs_file_extent_item);
+-	btrfs_set_file_extent_disk_bytenr(leaf, item, disk_offset);
+-	btrfs_set_file_extent_disk_num_bytes(leaf, item, disk_num_bytes);
+-	btrfs_set_file_extent_offset(leaf, item, offset);
+-	btrfs_set_file_extent_num_bytes(leaf, item, num_bytes);
+-	btrfs_set_file_extent_ram_bytes(leaf, item, ram_bytes);
+-	btrfs_set_file_extent_generation(leaf, item, trans->transid);
+-	btrfs_set_file_extent_type(leaf, item, BTRFS_FILE_EXTENT_REG);
+-	btrfs_set_file_extent_compression(leaf, item, compression);
+-	btrfs_set_file_extent_encryption(leaf, item, encryption);
+-	btrfs_set_file_extent_other_encoding(leaf, item, other_encoding);
+-
+-	btrfs_mark_buffer_dirty(leaf);
++	btrfs_fill_file_extent(trans, path, disk_offset, disk_num_bytes,
++			       offset, num_bytes, ram_bytes,
++			       BTRFS_FILE_EXTENT_REG, compression, encryption,
++			       other_encoding);
+ out:
+ 	btrfs_free_path(path);
  	return ret;
- }
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index e33dff3..3221010 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2052,7 +2052,6 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_file_extent_item *fi;
+ 	struct btrfs_path *path;
+-	struct extent_buffer *leaf;
+ 	struct btrfs_key ins;
+ 	int extent_inserted = 0;
+ 	int ret;
+@@ -2087,21 +2086,9 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			goto out;
+ 	}
+-	leaf = path->nodes[0];
+-	fi = btrfs_item_ptr(leaf, path->slots[0],
+-			    struct btrfs_file_extent_item);
+-	btrfs_set_file_extent_generation(leaf, fi, trans->transid);
+-	btrfs_set_file_extent_type(leaf, fi, extent_type);
+-	btrfs_set_file_extent_disk_bytenr(leaf, fi, disk_bytenr);
+-	btrfs_set_file_extent_disk_num_bytes(leaf, fi, disk_num_bytes);
+-	btrfs_set_file_extent_offset(leaf, fi, 0);
+-	btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
+-	btrfs_set_file_extent_ram_bytes(leaf, fi, ram_bytes);
+-	btrfs_set_file_extent_compression(leaf, fi, compression);
+-	btrfs_set_file_extent_encryption(leaf, fi, encryption);
+-	btrfs_set_file_extent_other_encoding(leaf, fi, other_encoding);
+-
+-	btrfs_mark_buffer_dirty(leaf);
++	btrfs_fill_file_extent(trans, path, disk_bytenr, disk_num_bytes, 0,
++			       num_bytes, ram_bytes, extent_type, compression,
++			       encryption, other_encoding);
+ 	btrfs_release_path(path);
  
-+static void __dedup_del_hash(struct btrfs_dedup_root *root,
-+			     struct btrfs_dedup_hash *hash)
-+{
-+	list_del(&hash->lru_list);
-+	rb_erase(&hash->hash_node, &root->hash_root);
-+	rb_erase(&hash->bytenr_node, &root->bytenr_root);
-+
-+	WARN_ON(root->current_nr == 0);
-+	root->current_nr--;
-+}
-+
- void btrfs_free_dedup(struct btrfs_fs_info *fs_info)
+ 	inode_add_bytes(inode, num_bytes);
+@@ -2391,7 +2378,6 @@ static noinline int relink_extent_backref(struct btrfs_path *path,
+ 				 struct sa_defrag_extent_backref *backref)
  {
--	if (!fs_info->dedup_root)
-+	struct btrfs_dedup_hash *entry, *tmp;
-+	struct btrfs_dedup_root *dedup_root = fs_info->dedup_root;
-+
-+	if (!dedup_root)
- 		return;
+ 	struct btrfs_file_extent_item *extent;
+-	struct btrfs_file_extent_item *item;
+ 	struct btrfs_ordered_extent *ordered;
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_fs_info *fs_info;
+@@ -2548,21 +2534,9 @@ again:
+ 		goto out_free_path;
+ 	}
  
--	kfree(fs_info->dedup_root);
-+	spin_lock(&dedup_root->lock);
-+	list_for_each_entry_safe(entry, tmp, &dedup_root->lru_list, lru_list) {
-+		__dedup_del_hash(dedup_root, entry);
-+		kmem_cache_free(btrfs_dedup_hash_cachep, entry);
-+	}
-+	spin_unlock(&dedup_root->lock);
-+	kfree(dedup_root);
- 	return;
- }
-+
-+static int __hash_page(struct btrfs_dedup_root *root, struct page *page,
-+		       char *out)
-+{
-+	struct crypto_shash *tfm = root->dedup_driver;
-+	struct {
-+		struct shash_desc desc;
-+		char ctx[crypto_shash_descsize(tfm)];
-+	} sdesc;
-+	char *kaddr;
-+	int ret = 0;
-+
-+	sdesc.desc.tfm = tfm;
-+	sdesc.desc.flags = 0;
-+
-+	kaddr = kmap_atomic(page);
-+	ret = crypto_shash_digest(&sdesc.desc, kaddr, PAGE_SIZE,
-+				  out);
-+	kunmap_atomic(kaddr);
-+
-+	return ret;
-+}
-+
-+/*
-+ * Return 1 when the extent already exists
-+ * Return 0 when inserted the one into bytenr tree.
-+ */
-+static int insert_bytenr(struct rb_root *root, struct btrfs_dedup_hash *hash)
-+{
-+	struct rb_node **p = &root->rb_node;
-+	struct rb_node *parent = NULL;
-+	struct btrfs_dedup_hash *entry = NULL;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct btrfs_dedup_hash,
-+				 bytenr_node);
-+		if (hash->bytenr + hash->offset < entry->bytenr + entry->offset)
-+			p = &(*p)->rb_left;
-+		else if (hash->bytenr + hash->offset > entry->bytenr +
-+			 entry->offset)
-+			p = &(*p)->rb_right;
-+		else
-+			return 1;
-+	}
-+	rb_link_node(&hash->bytenr_node, parent, p);
-+	rb_insert_color(&hash->bytenr_node, root);
-+	return 0;
-+}
-+
-+/*
-+ * Must ensure insert_bytenr is called before, ensure this dedup_hash
-+ * is not already in the tree
-+ */
-+static int insert_hash(struct rb_root *root, struct btrfs_dedup_hash *hash,
-+			int hash_len)
-+{
-+	struct rb_node **p = &root->rb_node;
-+	struct rb_node *parent = NULL;
-+	struct btrfs_dedup_hash *entry = NULL;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct btrfs_dedup_hash,
-+				 hash_node);
-+		if (memcmp(hash->hash, entry->hash, hash_len) < 0)
-+			p = &(*p)->rb_left;
-+		else if (memcmp(hash->hash, entry->hash, hash_len) > 0)
-+			p = &(*p)->rb_right;
-+		/* Now hash matches, still allow it to be inserted */
-+		else if (hash->bytenr + hash->offset < entry->bytenr +
-+			 entry->offset)
-+			p = &(*p)->rb_left;
-+		else if (hash->bytenr + hash->offset > entry->bytenr +
-+			 entry->offset)
-+			p = &(*p)->rb_right;
-+		else
-+			return 1;
-+	}
-+	rb_link_node(&hash->hash_node, parent, p);
-+	rb_insert_color(&hash->hash_node, root);
-+	return 0;
-+}
-+
-+static int dedup_add_hash(struct btrfs_dedup_root *root,
-+			  struct btrfs_dedup_hash *hash)
-+{
-+	int ret = 0;
-+
-+	WARN_ON(hash->bytenr == 0);
-+
-+	spin_lock(&root->lock);
-+
-+	ret = insert_bytenr(&root->bytenr_root, hash);
-+	/* Already in tree */
-+	if (ret > 0)
-+		goto out;
-+	insert_hash(&root->hash_root, hash,
-+		    btrfs_dedup_sizes[root->dedup_type]);
-+	list_add(&hash->lru_list, &root->lru_list);
-+
-+	root->current_nr++;
-+
-+	/* Remove the last dedup hash if we exceed limit */
-+	while (root->limit_nr && root->current_nr > root->limit_nr) {
-+		struct btrfs_dedup_hash *last;
-+
-+		last = list_entry(root->lru_list.prev, struct btrfs_dedup_hash,
-+				  lru_list);
-+		__dedup_del_hash(root, last);
-+		kmem_cache_free(btrfs_dedup_hash_cachep, last);
-+	}
-+out:
-+	spin_unlock(&root->lock);
-+	return ret;
-+}
-+
-+/*
-+ * Caller must hold lock on dedup_root->lock during the use of the hash.
-+ * As the dedup_hash hash can be freed at anytime.
-+ */
-+static struct btrfs_dedup_hash *
-+dedup_search_by_hash(struct btrfs_dedup_root *root, u8 *hash)
-+{
-+	struct rb_node **p = &root->hash_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct btrfs_dedup_hash *entry = NULL;
-+	int hash_len = btrfs_dedup_sizes[root->dedup_type];
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct btrfs_dedup_hash, hash_node);
-+		if (memcmp(hash, entry->hash, hash_len) < 0)
-+			p = &(*p)->rb_left;
-+		else if (memcmp(hash, entry->hash, hash_len) > 0)
-+			p = &(*p)->rb_right;
-+		else {
-+			/* Found, need to re-add it to LRU list head */
-+			list_del(&entry->lru_list);
-+			list_add(&entry->lru_list, &root->lru_list);
-+			return entry;
-+		}
-+	}
-+	return NULL;
-+}
+-	leaf = path->nodes[0];
+-	item = btrfs_item_ptr(leaf, path->slots[0],
+-				struct btrfs_file_extent_item);
+-	btrfs_set_file_extent_disk_bytenr(leaf, item, new->bytenr);
+-	btrfs_set_file_extent_disk_num_bytes(leaf, item, new->disk_len);
+-	btrfs_set_file_extent_offset(leaf, item, start - new->file_pos);
+-	btrfs_set_file_extent_num_bytes(leaf, item, len);
+-	btrfs_set_file_extent_ram_bytes(leaf, item, new->len);
+-	btrfs_set_file_extent_generation(leaf, item, trans->transid);
+-	btrfs_set_file_extent_type(leaf, item, BTRFS_FILE_EXTENT_REG);
+-	btrfs_set_file_extent_compression(leaf, item, new->compress_type);
+-	btrfs_set_file_extent_encryption(leaf, item, 0);
+-	btrfs_set_file_extent_other_encoding(leaf, item, 0);
+-
+-	btrfs_mark_buffer_dirty(leaf);
++	btrfs_fill_file_extent(trans, path, new->bytenr, new->disk_len,
++			       start - new->file_pos, len, new->len,
++			       BTRFS_FILE_EXTENT_REG, new->compress_type, 0, 0);
+ 	inode_add_bytes(inode, len);
+ 	btrfs_release_path(path);
+ 
 -- 
 2.4.6
 

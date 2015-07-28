@@ -1,127 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64851 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:51089 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753510AbbG1JRL (ORCPT
+	with ESMTP id S1750844AbbG1JRN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jul 2015 05:17:11 -0400
+	Tue, 28 Jul 2015 05:17:13 -0400
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6S9FIsn022599
-	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2015 17:15:18 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6S9FJgN022602
+	for <linux-btrfs@vger.kernel.org>; Tue, 28 Jul 2015 17:15:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 00/14] Yet Another In-band(online) deduplication implement
-Date: Tue, 28 Jul 2015 17:14:53 +0800
-Message-ID: <cover.1438074833.git.quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 01/14] btrfs: file-item: Introduce btrfs_setup_file_extent function.
+Date: Tue, 28 Jul 2015 17:14:54 +0800
+Message-ID: <9b3ad56c16210ec630d643471694754aadcccaac.1438074833.git.quwenruo@cn.fujitsu.com>
+In-Reply-To: <cover.1438074833.git.quwenruo@cn.fujitsu.com>
+References: <cover.1438074833.git.quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Although Liu Bo has already submitted a V10 version of his deduplication
-implement, here is another implement for it.
+This new function is just used to fill the file extent with given
+numbers.
 
-[[CORE FEATURES]]
-The main design concept is the following:
-1) Controllable memory usage
-2) No guarantee to dedup every duplication.
-3) No on-disk format change or new format
-4) Page size level deduplication
+This is mainly used for later cleanup of duplicated file extent setup
+codes in inode.c, but also centralized the safety check for later
+expansion.
 
-[[IMPLEMENT]]
-Implement details includes the following:
-1) LRU hash maps to limit the memory usage
-   The hash -> extent mapping is control by LRU (or unlimited), to
-   get a controllable memory usage (can be tuned by mount option)
-   alone with controllable read/write overhead used for hash searching.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.h     |  5 +++++
+ fs/btrfs/file-item.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 45 insertions(+)
 
-2) Reuse existing ordered_extent infrastructure
-   For duplicated page, it will still submit a ordered_extent(only one
-   page long), to make the full use of all existing infrastructure.
-   But only not submit a bio.
-   This can reduce the number of code lines.
-
-3) Mount option to control dedup behavior
-   Deduplication and its memory usage can be tuned by mount option.
-   No need to indicated ioctl interface.
-   And further more, it can easily support BTRFS_INODE flag like
-   compression, to allow further per file dedup fine tunning.
-
-[[TODO]]
-1. Add support for compressed extent
-   Shouldn't be quite hard.
-2. Try to merge dedup extent to reduce metadata size
-   Currently, dedup extent is always in 4K size, although its reference
-   source can be quite large.
-3. Add support for per file dedup flags
-   Much easier, just like compression flags.
-
-[[KNOWN BUG, NEED HELP!]]
-On the other hand, since it's still a RFC patch, it must has one or more
-problem:
-1) Race between __btrfs_free_extent() and dedup ordered_extent.
-   The hook in __btrfs_free_extent() will free the corresponding hashes
-   of a extent, even there is a dedup ordered_extent referring it.
-
-   The problem will happen like the following case:
-======================================================================
-   cow_file_range()
-     Submit dedup ordered_extent for extent A
-
-   commit_transaction()
-     Extent A needs freeing. As the its ref is decreased to 0.
-     And dedup ordered_extent can increase only when it hit endio time.
-
-   finish_ordered_io()
-     Add reference to Extent A for dedup ordered_extent.
-     But it is already freed in previous transaction.
-     Causing abort_transaction().
-======================================================================
-   I'd like to keep the current ordered_extent method, as it adds the
-   least number of code lines.
-   But I can't find a good idea to either delay transaction until dedup
-   ordered_extent is done or things like that.
-
-   Trans->ordered seems to be a good idea, but it seems to cause list
-   corruption without extra protection in tree log infrastructure.
-
-That's the only problem spotted yet.
-Any early review or advice/question on the design is welcomed.
-
-Thanks.
-
-Qu Wenruo (14):
-  btrfs: file-item: Introduce btrfs_setup_file_extent function.
-  btrfs: Use btrfs_fill_file_extent to reduce duplicated codes
-  btrfs: dedup: Add basic init/free functions for inband dedup.
-  btrfs: dedup: Add internal add/remove/search function for btrfs dedup.
-  btrfs: dedup: add ordered extent hook for inband dedup
-  btrfs: dedup: Apply dedup hook for write time dedup.
-  btrfs: extent_map: Add new dedup flag and corresponding hook.
-  btrfs: extent-map: Introduce orig_block_start member for extent-map.
-  btrfs: dedup: Add inband dedup hook for read extent.
-  btrfs: dedup: Introduce btrfs_dedup_free_extent_range function.
-  btrfs: dedup: Add hook to free dedup hash at extent free time.
-  btrfs: dedup: Add mount option support for btrfs inband deduplication.
-  Btrfs: dedup: Support dedup change at remount time.
-  btrfs: dedup: Add mount option output for inband dedup.
-
- fs/btrfs/Makefile       |   2 +-
- fs/btrfs/ctree.h        |  16 ++
- fs/btrfs/dedup.c        | 701 ++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/dedup.h        | 132 +++++++++
- fs/btrfs/disk-io.c      |   7 +
- fs/btrfs/extent-tree.c  |  10 +
- fs/btrfs/extent_io.c    |   6 +-
- fs/btrfs/extent_map.h   |   4 +
- fs/btrfs/file-item.c    |  61 +++--
- fs/btrfs/inode.c        | 228 ++++++++++++----
- fs/btrfs/ordered-data.c |  32 ++-
- fs/btrfs/ordered-data.h |   8 +
- fs/btrfs/super.c        |  39 ++-
- 13 files changed, 1163 insertions(+), 83 deletions(-)
- create mode 100644 fs/btrfs/dedup.c
- create mode 100644 fs/btrfs/dedup.h
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index aac314e..68ffd26 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3825,6 +3825,11 @@ int btrfs_lookup_bio_sums(struct btrfs_root *root, struct inode *inode,
+ 			  struct bio *bio, u32 *dst);
+ int btrfs_lookup_bio_sums_dio(struct btrfs_root *root, struct inode *inode,
+ 			      struct bio *bio, u64 logical_offset);
++void btrfs_fill_file_extent(struct btrfs_trans_handle *trans,
++			    struct btrfs_path *path, u64 disk_bytenr,
++			    u64 disk_num_bytes, u64 offset, u64 num_bytes,
++			    u64 ram_bytes, u8 type, u8 compression,
++			    u8 encryption, u16 other_encoding);
+ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     u64 objectid, u64 pos,
+diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+index 58ece65..e1d7c03 100644
+--- a/fs/btrfs/file-item.c
++++ b/fs/btrfs/file-item.c
+@@ -37,6 +37,46 @@
+ 				   sizeof(struct btrfs_ordered_sum)) / \
+ 				   sizeof(u32) * (r)->sectorsize)
+ 
++/*
++ * Fill contents of the file extent.
++ *
++ * The file extent is indicated by path.
++ * It's mainlly used to reduce the duplicated codes, but also added some extra
++ * safety check.
++ */
++void btrfs_fill_file_extent(struct btrfs_trans_handle *trans,
++			    struct btrfs_path *path, u64 disk_bytenr,
++			    u64 disk_num_bytes, u64 offset, u64 num_bytes,
++			    u64 ram_bytes, u8 type, u8 compression,
++			    u8 encryption, u16 other_encoding)
++{
++	struct btrfs_key key;
++	struct extent_buffer *node = path->nodes[0];
++	struct btrfs_file_extent_item *item;
++	int slot = path->slots[0];
++
++	BUG_ON(encryption || other_encoding);
++	BUG_ON(type == BTRFS_FILE_EXTENT_INLINE);
++
++	btrfs_item_key_to_cpu(node, &key, slot);
++	WARN_ON(key.type != BTRFS_EXTENT_DATA_KEY);
++
++	item = btrfs_item_ptr(node, slot, struct btrfs_file_extent_item);
++
++	btrfs_set_file_extent_generation(node, item, trans->transid);
++	btrfs_set_file_extent_disk_bytenr(node, item, disk_bytenr);
++	btrfs_set_file_extent_disk_num_bytes(node, item, disk_num_bytes);
++	btrfs_set_file_extent_offset(node, item, offset);
++	btrfs_set_file_extent_num_bytes(node, item, num_bytes);
++	btrfs_set_file_extent_ram_bytes(node, item, ram_bytes);
++	btrfs_set_file_extent_type(node, item, type);
++	btrfs_set_file_extent_compression(node, item, compression);
++	btrfs_set_file_extent_other_encoding(node, item, 0);
++	btrfs_set_file_extent_encryption(node, item, 0);
++
++	btrfs_mark_buffer_dirty(node);
++}
++
+ int btrfs_insert_file_extent(struct btrfs_trans_handle *trans,
+ 			     struct btrfs_root *root,
+ 			     u64 objectid, u64 pos,
 -- 
 2.4.6
 

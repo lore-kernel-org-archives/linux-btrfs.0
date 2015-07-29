@@ -1,158 +1,213 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12525 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751683AbbG2GTX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jul 2015 02:19:23 -0400
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-To: Georgi Georgiev <georgi-georgiev-btrfs@japannext.co.jp>,
-        <linux-btrfs@vger.kernel.org>
-References: <20150729054659.GD9039@jnext-0060.corp.japannext.co.jp>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55B87065.4060703@cn.fujitsu.com>
-Date: Wed, 29 Jul 2015 14:19:17 +0800
-MIME-Version: 1.0
-In-Reply-To: <20150729054659.GD9039@jnext-0060.corp.japannext.co.jp>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mail.kernel.org ([198.145.29.136]:51815 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752952AbbG2QXz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Jul 2015 12:23:55 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: teach backref walking about backrefs with underflowed offset values
+Date: Wed, 29 Jul 2015 17:23:37 +0100
+Message-Id: <1438187017-32630-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Filipe Manana <fdmanana@suse.com>
 
-Georgi Georgiev wrote on 2015/07/29 14:46 +0900:
-> Using BTRFS on a very large filesystem, and as we put and more data to
-> it, the time it takes to mount it grew to, presently, about 30 minutes.
-> Is there something wrong with the filesystem? Is there a way to bring
-> this time down?
->
-> ...
->
-> Here is a snippet from dmesg, showing how long it takes to mount (the
-> EXT4-fs line is the filesystem mounted next in the boot sequence):
->
->    $ dmesg | grep -A1 btrfs
->    [   12.215764] TECH PREVIEW: btrfs may not be fully supported.
->    [   12.215766] Please review provided documentation for limitations.
->    --
->    [   12.220266] btrfs: use zlib compression
->    [   12.220815] btrfs: disk space caching is enabled
->    [   22.427258] btrfs: bdev /dev/mapper/datavg-backuplv errs: wr 0, rd 0, flush 0, corrupt 0, gen 0
->    [ 2022.397318] EXT4-fs (dm-2): mounted filesystem with ordered data mode. Opts:
->
-Quite common, especial when it grows large.
-But it would be much better to use ftrace to show which btrfs operation 
-takes the most time.
+When cloning/deduplicating file extents (through the clone and extent_same
+ioctls) we can get data back references with offset values that are a
+result of an unsigned integer arithmetic underflow, that is, values that
+are much larger then they could be otherwise.
 
-We have some guess on this, from reading space cache to reading chunk info.
-But didn't know which takes the most of time.
-> The btrfs filesystem is quite large:
->
->    $ sudo btrfs filesystem usage /dev/mapper/datavg-backuplv
->    Overall:
->        Device size:                  82.58TiB
->        Device allocated:             82.58TiB
->        Device unallocated:              0.00B
->        Device missing:                  0.00B
->        Used:                         62.01TiB
->        Free (estimated):             17.76TiB      (min: 17.76TiB)
->        Data ratio:                       1.00
->        Metadata ratio:                   2.00
->        Global reserve:                  0.00B      (used: 0.00B)
->
->    Data,single: Size:79.28TiB, Used:61.52TiB
->       /dev/mapper/datavg-backuplv    79.28TiB
->
->    Metadata,single: Size:8.00MiB, Used:0.00B
->       /dev/mapper/datavg-backuplv     8.00MiB
->
->    Metadata,DUP: Size:1.65TiB, Used:252.68GiB
->       /dev/mapper/datavg-backuplv     3.30TiB
->
->    System,single: Size:4.00MiB, Used:0.00B
->       /dev/mapper/datavg-backuplv     4.00MiB
->
->    System,DUP: Size:40.00MiB, Used:8.66MiB
->       /dev/mapper/datavg-backuplv    80.00MiB
->
->    Unallocated:
->       /dev/mapper/datavg-backuplv       0.00B
-Wow, near 100T, that really huge now.
->
-> Other info about the filesystem is that it has a rather large number of
-> files and subvolumes and read only snapshots, which started from about
-> zero in March, and grew over to the current state of 3000 snapshots and
-> no idea how many files (filesystem usage is quite stable at the moment).
->
-> I also noticed that while the machine is rebooted on a weekly basis, the
-> time it takes to come up after a reboot has been growing. This is likely
-> correlated to how long it takes to mount the filesystem, and maybe
-> correlated to how much data there is on the filesystem.
->
-> Reboot time used to be normally about 3 minutes, then it jumped to 8
-> minutes on March 21 and the following weeks it went like this:
-> 8 minutes, 11 minutes, 15 minutes...
-> 19, 19, 19, 19, 23, 21, 22
-> 32, 33, 36, 42, 46, 37, 30
->
-> This is on CentOS 6.6, and while I understand that the version of btrfs
-> is definitely oldish, even trying to mount the filesystem on a much more
-> recent kernel (3.14.43) there is no improvement. Switching the regular
-> OS kernel from the CentOS one (2.6.32-504.12.2.el6.x86_64) to something
-> more recent is also feasible.
->
-> I wanted to check the sytem for problems, so tried an offline "btrfs
-> check" using the latest btrfs-progs (version 4.1.2 freshly compiled from
-> source), but "btrfs check" ran out of memory after about 30 minutes.
->
-> The only output I get is this (timestamps added by me):
->
->    2015-07-28 18:14:45 $ sudo btrfs check /dev/datavg/backuplv
->    2015-07-28 18:33:05 checking extents
->
-> And at 19:04:55 btrfs was killed by OOM: (abbreviated log below,
-> full excerpt as an attachment).
-Not surprised at all.
-As for extent/chunk tree checking, it will read all the the chunk and 
-extents, and restore needed info into memory, and then do cross 
-reference check.
+This is not a problem when decrementing or dropping the back references
+(happens when we overwrite the extents or punch a hole for example, through
+__btrfs_drop_extents()), since we compute the same too large offset value,
+but it is a problem for the backref walking code, used by an incremental
+send and the ioctls that are used by the btrfs tool "inspect-internal"
+commands, as it makes it miss the corresponding file extent items because
+the search key is set for an extent item that starts at an offset matching
+the exceptionally large offset value of the data back reference. For an
+incremental send this causes the send ioctl to fail with -EIO.
 
-The btrfsck process really takes a lot of memory.
-Maybe 1/10 or more of the metadata space.
-In your case, your metadata is about 250GB, so maybe 25GB memory is used 
-to hold the needed info.
+So teach the backref walking code to deal with these cases by setting the
+search key's offset to 0 if the backref's offset value is larger than
+LLONG_MAX (the largest possible file offset). This makes sure the backref
+walking code finds the corresponding file extent items at the expense of
+scanning more items and leafs in the btree.
 
-That's already known but we don't have some good idea or deveopler to 
-reduce the space usage yet.
+Fixing the clone/dedup ioctls to not produce such underflowed results would
+require major changes breaking backward compatibility, updating user space
+tools, etc.
 
-Maybe we can change the behavior to do chunk by chunk extent cross 
-checking to reduce memory usage, but not now...
+Simple reproducer case for fstests:
 
-Thanks,
-Qu
->
->    2015-07-28T19:04:55.224855+09:00 localhost kernel: [11689.692680] htop invoked oom-killer: gfp_mask=0x201da, order=0, oom_adj=0, oom_score_adj=0
->    ...
->    2015-07-28T19:04:55.225855+09:00 localhost kernel: [11689.801354] 631 total pagecache pages
->    2015-07-28T19:04:55.225857+09:00 localhost kernel: [11689.801829] 0 pages in swap cache
->    2015-07-28T19:04:55.225859+09:00 localhost kernel: [11689.802305] Swap cache stats: add 0, delete 0, find 0/0
->    2015-07-28T19:04:55.225861+09:00 localhost kernel: [11689.802781] Free swap  = 0kB
->    2015-07-28T19:04:55.225863+09:00 localhost kernel: [11689.803341] Total swap = 0kB
->    2015-07-28T19:04:55.225864+09:00 localhost kernel: [11689.946223] 16777215 pages RAM
->    2015-07-28T19:04:55.225867+09:00 localhost kernel: [11689.946724] 295175 pages reserved
->    2015-07-28T19:04:55.225869+09:00 localhost kernel: [11689.947223] 5173 pages shared
->    2015-07-28T19:04:55.225871+09:00 localhost kernel: [11689.947721] 16369184 pages non-shared
->    2015-07-28T19:04:55.225874+09:00 localhost kernel: [11689.948222] [ pid ]   uid  tgid total_vm      rss cpu oom_adj oom_score_adj name
->    ...
->    2015-07-28T19:04:55.225970+09:00 localhost kernel: [11689.994240] [16291]     0 16291    47166      177  18       0             0 sudo
->    2015-07-28T19:04:55.225972+09:00 localhost kernel: [11689.995232] [16292]  1000 16292      981       20   3       0             0 tai64n
->    2015-07-28T19:04:55.225974+09:00 localhost kernel: [11689.996241] [16293]     0 16293    47166      177  22       0             0 sudo
->    2015-07-28T19:04:55.225978+09:00 localhost kernel: [11689.997230] [16294]  1000 16294     1018       21   1       0             0 tai64nlocal
->    2015-07-28T19:04:55.225993+09:00 localhost kernel: [11689.998227] [16295]     0 16295 16122385 16118611   7       0             0 btrfs
->    2015-07-28T19:04:55.225995+09:00 localhost kernel: [11689.999210] [16296]     0 16296    25228       25   5       0             0 tee
->    2015-07-28T19:04:55.225997+09:00 localhost kernel: [11690.000201] [16297]  1000 16297    27133      162   1       0             0 bash
->    ...
->    2015-07-28T19:04:55.226030+09:00 localhost kernel: [11690.008288] Out of memory: Kill process 16295 (btrfs) score 949 or sacrifice child
->    2015-07-28T19:04:55.226031+09:00 localhost kernel: [11690.009300] Killed process 16295, UID 0, (btrfs) total-vm:64489540kB, anon-rss:64474408kB, file-rss:36kB
->
-> Thanks in advance for any advice,
->
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
+
+  _cleanup()
+  {
+      rm -fr $send_files_dir
+      rm -f $tmp.*
+  }
+
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+
+  # real QA test starts here
+  _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
+  _require_cloner
+  _need_to_be_root
+
+  send_files_dir=$TEST_DIR/btrfs-test-$seq
+
+  rm -f $seqres.full
+  rm -fr $send_files_dir
+  mkdir $send_files_dir
+
+  _scratch_mkfs >>$seqres.full 2>&1
+  _scratch_mount
+
+  # Create our test file with a single extent of 64K starting at file
+  # offset 128K.
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa 128K 64K" $SCRATCH_MNT/foo \
+      | _filter_xfs_io
+
+  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
+      $SCRATCH_MNT/mysnap1
+
+  # Now clone parts of the original extent into lower offsets of the file.
+  #
+  # The first clone operation adds a file extent item to file offset 0
+  # that points to our initial extent with a data offset of 16K. The
+  # corresponding data back reference in the extent tree has an offset of
+  # 18446744073709535232, which is the result of file_offset - data_offset
+  # = 0 - 16K.
+  #
+  # The second clone operation adds a file extent item to file offset 16K
+  # that points to our initial extent with a data offset of 48K. The
+  # corresponding data back reference in the extent tree has an offset of
+  # 18446744073709518848, which is the result of file_offset - data_offset
+  # = 16K - 48K.
+  #
+  # Those large back reference offsets (result of unsigned arithmetic
+  # underflow) confused the back reference walking code (used by an
+  # incremental send and the multiple inspect-internal ioctls) and made it
+  # miss the back references, which for the case of an incremental send it
+  # made it fail with -EIO and print a message like the following to
+  # dmesg:
+  #
+  # "BTRFS error (device sdc): did not find backref in send_root. \
+  #  inode=257, offset=0, disk_byte=12845056 found extent=12845056"
+  #
+  $CLONER_PROG -s $(((128 + 16) * 1024)) -d 0 -l $((16 * 1024)) \
+      $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+  $CLONER_PROG -s $(((128 + 48) * 1024)) -d $((16 * 1024)) \
+      -l $((16 * 1024)) $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+
+  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
+      $SCRATCH_MNT/mysnap2
+
+  _run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
+  _run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
+      -f $send_files_dir/2.snap
+
+  echo "File digest in the original filesystem:"
+  md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
+
+  # Now recreate the filesystem by receiving both send streams and verify
+  # we get the same file contents that the original filesystem had.
+  _scratch_unmount
+  _scratch_mkfs >>$seqres.full 2>&1
+  _scratch_mount
+
+  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
+  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
+
+  echo "File digest in the new filesystem:"
+  md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
+
+  status=0
+  exit
+
+The test's expected golden output is:
+
+  wrote 65536/65536 bytes at offset 131072
+  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+  File digest in the original filesystem:
+  6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
+  File digest in the new filesystem:
+  6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
+
+But it failed with:
+
+    (...)
+    @@ -1,7 +1,5 @@
+     QA output created by 097
+     wrote 65536/65536 bytes at offset 131072
+     XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+    -File digest in the original filesystem:
+    -6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
+    -File digest in the new filesystem:
+    -6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
+    ...
+
+  $ cat /home/fdmanana/git/hub/xfstests/results//btrfs/097.full
+  (...)
+  ERROR: send ioctl failed with -5: Input/output error
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/backref.c | 27 +++++++++++++++++++++++++--
+ 1 file changed, 25 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index 802fabb..a0ca575 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -206,10 +206,33 @@ static int __add_prelim_ref(struct list_head *head, u64 root_id,
+ 		return -ENOMEM;
+ 
+ 	ref->root_id = root_id;
+-	if (key)
++	if (key) {
+ 		ref->key_for_search = *key;
+-	else
++		/*
++		 * We can often find data backrefs with an offset that is too
++		 * large (>= LLONG_MAX, maximum allowed file offset) due to
++		 * underflows when subtracting a file's offset with the data
++		 * offset of its corresponding extent data item. This can
++		 * happen for example in the clone ioctl.
++		 * So if we detect such case we set the search key's offset to
++		 * zero to make sure we will find the matching file extent item
++		 * at add_all_parents(), otherwise we will miss it because the
++		 * offset taken form the backref is much larger then the offset
++		 * of the file extent item. This can make us scan a very large
++		 * number of file extent items, but at least it will not make
++		 * us miss any.
++		 * This is an ugly workaround for a behaviour that should have
++		 * never existed, but it does and a fix for the clone ioctl
++		 * would touch a lot of places, cause backwards incompatibility
++		 * and would not fix the problem for extents cloned with older
++		 * kernels.
++		 */
++		if (ref->key_for_search.type == BTRFS_EXTENT_DATA_KEY &&
++		    ref->key_for_search.offset >= LLONG_MAX)
++			ref->key_for_search.offset = 0;
++	} else {
+ 		memset(&ref->key_for_search, 0, sizeof(ref->key_for_search));
++	}
+ 
+ 	ref->inode_list = NULL;
+ 	ref->level = level;
+-- 
+2.1.3
+

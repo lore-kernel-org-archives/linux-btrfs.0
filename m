@@ -1,213 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:51815 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752952AbbG2QXz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 29 Jul 2015 12:23:55 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: teach backref walking about backrefs with underflowed offset values
-Date: Wed, 29 Jul 2015 17:23:37 +0100
-Message-Id: <1438187017-32630-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:34147 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753038AbbG2QYS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 29 Jul 2015 12:24:18 -0400
+Received: by igk11 with SMTP id 11so140036308igk.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 29 Jul 2015 09:24:17 -0700 (PDT)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <55A86AA8.6010404@cn.fujitsu.com>
+References: <55A86AA8.6010404@cn.fujitsu.com>
+Date: Wed, 29 Jul 2015 17:24:17 +0100
+Message-ID: <CAL3q7H4agirHifhevvf1R+KSCFrxEE5gWHVKysm1KpAJOh=nkw@mail.gmail.com>
+Subject: Re: Strange data backref offset?
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Fri, Jul 17, 2015 at 3:38 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> Hi all,
+>
+> While I'm developing a new btrfs inband dedup mechanism, I found btrfsck and
+> kernel doing strange behavior for clone.
+>
+> [Reproducer]
+> # mount /dev/sdc -t btrfs /mnt/test
+> # dd if=/dev/zero of=/mnt/test/file1 bs=4K count=4
+> # sync
+> # ~/xfstests/src/cloner -s 4096 -l 4096 /mnt/test/file1 /mnt/test/file2
+> # sync
+>
+> Then btrfs-debug-tree gives quite strange result on the data backref:
+> ------
+> <EXTENT TREE>
+>         item 4 key (12845056 EXTENT_ITEM 16384) itemoff 16047 itemsize 111
+>                 extent refs 3 gen 6 flags DATA
+>                 extent data backref root 5 objectid 257 offset 0 count 1
+>                 extent data backref root 5 objectid 258 offset
+> 18446744073709547520 count 1
+>
+> <FS TREE>
+>         item 8 key (257 EXTENT_DATA 0) itemoff 15743 itemsize 53
+>                 extent data disk byte 12845056 nr 16384
+>                 extent data offset 0 nr 16384 ram 16384
+>                 extent compression 0
+>         item 9 key (257 EXTENT_DATA 16384) itemoff 15690 itemsize 53
+>                 extent data disk byte 12845056 nr 16384
+>                 extent data offset 4096 nr 4096 ram 16384
+>                 extent compression 0
+> ------
+>
+> The offset is file extent's key.offset - file exntent's offset,
+> Which is 0 - 4096, causing the overflow result.
+>
+> Kernel and fsck all uses that behavior, so fsck can pass the strange thing.
+>
+> But shouldn't the offset in data backref matches with the key.offset of the
+> file extent?
+>
+> And I'm quite sure the change of behavior can hugely break the fsck and
+> kernel, but I'm wondering is this a known BUG or feature, and will it be
+> handled?
 
-When cloning/deduplicating file extents (through the clone and extent_same
-ioctls) we can get data back references with offset values that are a
-result of an unsigned integer arithmetic underflow, that is, values that
-are much larger then they could be otherwise.
+Obviously a bug.
 
-This is not a problem when decrementing or dropping the back references
-(happens when we overwrite the extents or punch a hole for example, through
-__btrfs_drop_extents()), since we compute the same too large offset value,
-but it is a problem for the backref walking code, used by an incremental
-send and the ioctls that are used by the btrfs tool "inspect-internal"
-commands, as it makes it miss the corresponding file extent items because
-the search key is set for an extent item that starts at an offset matching
-the exceptionally large offset value of the data back reference. For an
-incremental send this causes the send ioctl to fail with -EIO.
+I was recently investigating incremental send failures after
+cloning/deduping extents and that lead me to this as well.
+It's a bug but it's not too bad as it effects only backref walking,
+which can have a simple workaround (I just sent a patch for it). For
+the purposes of incrementing/decrementing the data backref's count we
+do the same calculation everywhere, always leading to the same large
+and unexpected value, so we don't get bogus backrefs added/left
+around.
 
-So teach the backref walking code to deal with these cases by setting the
-search key's offset to 0 if the backref's offset value is larger than
-LLONG_MAX (the largest possible file offset). This makes sure the backref
-walking code finds the corresponding file extent items at the expense of
-scanning more items and leafs in the btree.
+>
+> Thanks,
+> Qu
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Fixing the clone/dedup ioctls to not produce such underflowed results would
-require major changes breaking backward compatibility, updating user space
-tools, etc.
 
-Simple reproducer case for fstests:
 
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      rm -fr $send_files_dir
-      rm -f $tmp.*
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-
-  # real QA test starts here
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-  _require_cloner
-  _need_to_be_root
-
-  send_files_dir=$TEST_DIR/btrfs-test-$seq
-
-  rm -f $seqres.full
-  rm -fr $send_files_dir
-  mkdir $send_files_dir
-
-  _scratch_mkfs >>$seqres.full 2>&1
-  _scratch_mount
-
-  # Create our test file with a single extent of 64K starting at file
-  # offset 128K.
-  $XFS_IO_PROG -f -c "pwrite -S 0xaa 128K 64K" $SCRATCH_MNT/foo \
-      | _filter_xfs_io
-
-  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-      $SCRATCH_MNT/mysnap1
-
-  # Now clone parts of the original extent into lower offsets of the file.
-  #
-  # The first clone operation adds a file extent item to file offset 0
-  # that points to our initial extent with a data offset of 16K. The
-  # corresponding data back reference in the extent tree has an offset of
-  # 18446744073709535232, which is the result of file_offset - data_offset
-  # = 0 - 16K.
-  #
-  # The second clone operation adds a file extent item to file offset 16K
-  # that points to our initial extent with a data offset of 48K. The
-  # corresponding data back reference in the extent tree has an offset of
-  # 18446744073709518848, which is the result of file_offset - data_offset
-  # = 16K - 48K.
-  #
-  # Those large back reference offsets (result of unsigned arithmetic
-  # underflow) confused the back reference walking code (used by an
-  # incremental send and the multiple inspect-internal ioctls) and made it
-  # miss the back references, which for the case of an incremental send it
-  # made it fail with -EIO and print a message like the following to
-  # dmesg:
-  #
-  # "BTRFS error (device sdc): did not find backref in send_root. \
-  #  inode=257, offset=0, disk_byte=12845056 found extent=12845056"
-  #
-  $CLONER_PROG -s $(((128 + 16) * 1024)) -d 0 -l $((16 * 1024)) \
-      $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-  $CLONER_PROG -s $(((128 + 48) * 1024)) -d $((16 * 1024)) \
-      -l $((16 * 1024)) $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-
-  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-      $SCRATCH_MNT/mysnap2
-
-  _run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-  _run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
-      -f $send_files_dir/2.snap
-
-  echo "File digest in the original filesystem:"
-  md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-
-  # Now recreate the filesystem by receiving both send streams and verify
-  # we get the same file contents that the original filesystem had.
-  _scratch_unmount
-  _scratch_mkfs >>$seqres.full 2>&1
-  _scratch_mount
-
-  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-
-  echo "File digest in the new filesystem:"
-  md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
-
-  status=0
-  exit
-
-The test's expected golden output is:
-
-  wrote 65536/65536 bytes at offset 131072
-  XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-  File digest in the original filesystem:
-  6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
-  File digest in the new filesystem:
-  6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
-
-But it failed with:
-
-    (...)
-    @@ -1,7 +1,5 @@
-     QA output created by 097
-     wrote 65536/65536 bytes at offset 131072
-     XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-    -File digest in the original filesystem:
-    -6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
-    -File digest in the new filesystem:
-    -6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
-    ...
-
-  $ cat /home/fdmanana/git/hub/xfstests/results//btrfs/097.full
-  (...)
-  ERROR: send ioctl failed with -5: Input/output error
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/backref.c | 27 +++++++++++++++++++++++++--
- 1 file changed, 25 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 802fabb..a0ca575 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -206,10 +206,33 @@ static int __add_prelim_ref(struct list_head *head, u64 root_id,
- 		return -ENOMEM;
- 
- 	ref->root_id = root_id;
--	if (key)
-+	if (key) {
- 		ref->key_for_search = *key;
--	else
-+		/*
-+		 * We can often find data backrefs with an offset that is too
-+		 * large (>= LLONG_MAX, maximum allowed file offset) due to
-+		 * underflows when subtracting a file's offset with the data
-+		 * offset of its corresponding extent data item. This can
-+		 * happen for example in the clone ioctl.
-+		 * So if we detect such case we set the search key's offset to
-+		 * zero to make sure we will find the matching file extent item
-+		 * at add_all_parents(), otherwise we will miss it because the
-+		 * offset taken form the backref is much larger then the offset
-+		 * of the file extent item. This can make us scan a very large
-+		 * number of file extent items, but at least it will not make
-+		 * us miss any.
-+		 * This is an ugly workaround for a behaviour that should have
-+		 * never existed, but it does and a fix for the clone ioctl
-+		 * would touch a lot of places, cause backwards incompatibility
-+		 * and would not fix the problem for extents cloned with older
-+		 * kernels.
-+		 */
-+		if (ref->key_for_search.type == BTRFS_EXTENT_DATA_KEY &&
-+		    ref->key_for_search.offset >= LLONG_MAX)
-+			ref->key_for_search.offset = 0;
-+	} else {
- 		memset(&ref->key_for_search, 0, sizeof(ref->key_for_search));
-+	}
- 
- 	ref->inode_list = NULL;
- 	ref->level = level;
 -- 
-2.1.3
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

@@ -1,47 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:17879 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:5460 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753175AbbG0ND2 (ORCPT
+	with ESMTP id S1751520AbbG2CaX (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 27 Jul 2015 09:03:28 -0400
-Received: from G08CNEXCHPEKD03.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t6RD1Z3p024040
-	for <linux-btrfs@vger.kernel.org>; Mon, 27 Jul 2015 21:01:35 +0800
-From: Zhaolei <zhaolei@cn.fujitsu.com>
+	Tue, 28 Jul 2015 22:30:23 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs-tests: Add -o loop to fsck-tests/012-leaf-corruption for loop device
-Date: Mon, 27 Jul 2015 21:01:50 +0800
-Message-ID: <7d731282f5ddb1a3f1baedf6586772c4fe8838b9.1438002072.git.zhaolei@cn.fujitsu.com>
+CC: <jamespharvey20@gmail.com>
+Subject: [PATCH] btrfs-progs: Add missing exit for parse_profile function
+Date: Wed, 29 Jul 2015 10:28:17 +0800
+Message-ID: <1438136897-11590-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+In parse_profile() function, in error handling route, it output error
+message but forgot to exit(1), causing even profile is not valid, it
+will just fallback to single.
 
-To avoid following mount error in test:
-  mount: /root/btrfs/progs/tests/fsck-tests/012-leaf-corruption/test.img
-  is not a block device (maybe try `-o loop'?)
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: James Harvey <jamespharvey20@gmail.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/fsck-tests/012-leaf-corruption/test.sh | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ mkfs.c | 1 +
+ 1 file changed, 1 insertion(+)
 
-diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
-index 98e3185..f8701ad 100755
---- a/tests/fsck-tests/012-leaf-corruption/test.sh
-+++ b/tests/fsck-tests/012-leaf-corruption/test.sh
-@@ -86,7 +86,7 @@ check_leaf_corrupt_no_data_ext()
- {
- 	image=$1
- 	mkdir -p $TEST_MNT || _fail "failed to create mount point"
--	$SUDO_HELPER mount $image -o ro $TEST_MNT
-+	$SUDO_HELPER mount -o loop $image -o ro $TEST_MNT
- 
- 	i=0
- 	while [ $i -lt ${#leaf_no_data_ext_list[@]} ]; do
+diff --git a/mkfs.c b/mkfs.c
+index 9073f87..7d635dc 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -356,6 +356,7 @@ static u64 parse_profile(char *s)
+ 		return 0;
+ 	} else {
+ 		fprintf(stderr, "Unknown profile %s\n", s);
++		exit(1);
+ 	}
+ 	/* not reached */
+ 	return 0;
 -- 
-1.8.5.1
+2.4.6
 

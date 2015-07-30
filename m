@@ -1,53 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:55278 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754606AbbG3JJP (ORCPT
+Received: from mail-qg0-f53.google.com ([209.85.192.53]:35518 "EHLO
+	mail-qg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751182AbbG3LWN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jul 2015 05:09:15 -0400
-From: Russell Coker <russell@coker.com.au>
-To: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: INFO: task btrfs-transacti:204 blocked for more than 120 seconds. (more like 8+min)
-Date: Thu, 30 Jul 2015 19:09:11 +1000
-Cc: linux-btrfs@vger.kernel.org
-References: <CA+X5Wn57HuJEzp_iOMnsi7R5AHBvsCBDbAS0+gv4O2BP-+G4VQ@mail.gmail.com> <pan$c1082$a7d4ba34$a423d8b6$984e3578@cox.net>
-In-Reply-To: <pan$c1082$a7d4ba34$a423d8b6$984e3578@cox.net>
+	Thu, 30 Jul 2015 07:22:13 -0400
+Received: by qgii95 with SMTP id i95so21380850qgi.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2015 04:22:13 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201507301909.11061.russell@coker.com.au>
+In-Reply-To: <pan$a902b$10dd7fbd$f0ca0693$dc0cc8e3@cox.net>
+References: <1437763277.673610371@apps.rackspace.com>
+	<55B54568.5060902@googlemail.com>
+	<pan$a902b$10dd7fbd$f0ca0693$dc0cc8e3@cox.net>
+Date: Thu, 30 Jul 2015 07:22:12 -0400
+Message-ID: <CAGfcS_=Z=bRzMvFBDeYQDU8Vxa2UVha44nWogjQ_-_irrZD1xQ@mail.gmail.com>
+Subject: =?UTF-8?Q?Re=3A_systemd_=3A_Timed_out_waiting_for_defice_dev=2Ddisk=2D?=
+	=?UTF-8?Q?by=E2=80=A6?=
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, 24 Jul 2015 11:11:22 AM Duncan wrote:
-> The option is mem=nn[KMG].  You may also need memmap=, presumably
-> memmap=nn[KMG]$ss[KMG], to reserve the unused memory area, preventing its
-> use for PCI address space, since that would collide with the physical
-> memory that's there but unused due to mem=.
-> 
-> That should let you test with mem=2G, so double-memory becomes 4G. =:^)
+On Mon, Jul 27, 2015 at 1:20 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Philip Seeger posted on Sun, 26 Jul 2015 22:39:04 +0200 as excerpted:
+>
+>> Hi,
+>>
+>>> 50% of the time when booting, the system go in safe mode because my 12x
+>>> 4TB RAID10 btrfs is taking too long to mount from fstab.
+>>
+>> This won't help, but I've seen this exact behavior too (some time ago).
+>> Except that it wasn't 50% that it didn't work, more like almost
+>> everytime.
+>> Commenting out the fstab entry "fixed" it, mounting using a cronjob
+>> (@reboot) worked without a problem.
+>>
+>> (As far as I remember, options like x-systemd.device-timeout didn't
+>> change anything.)
+>>
+>> If someone has the answer, I'd be interested too.
+>
+> You mean something like a custom systemd *.service unit file?  That's
+> what I'd do here. =:^)
 
-That's a good thing to note.
+I'd have to play with it to work out the kinks, but I'm pretty sure
+you'd be better off with a mount unit instead of basically reinventing
+a mount unit using a service unit.
 
-> Meanwhile, does bonnie do pre-allocation for its tests?
+I'd also think that you could also use drop-ins to enhance the
+auto-generated units created by the fstab generator, if you just
+wanted to add a dependency or such to a mount unit.  However, I've
+never tried to create a drop-in for a generated unit.
 
-http://www.coker.com.au/bonnie++/readme.html
+Mount units should take any setting in systemd.unit which includes all
+the ordering/dependency/etc controls.
 
-No.  The above URL gives details on the tests.
-
-> > What I did see from years ago seemed to be that you'd have to disable
-> > COW where you knew there would be large files.  I'm really hoping
-> > there's a way to avoid this type of locking, because I don't think I'd
-> > be comfortable knowing a non-root user could bomb the system with a
-> > large file in the wrong area.
-> 
-> The problem with cow isn't large files in general, it's rewrites into the
-> middle of them (as opposed to append-writes).  If the writes are
-> sequential appends, or if it's write-one-read-many, cow on large files
-> doesn't tend to be an issue.
-
-The Bonnie++ rewrite test might be a pathological case for BTRFS.  But it's a 
-test that other filesystems have handled for decades.
-
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+--
+Rich

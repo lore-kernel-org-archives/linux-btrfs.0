@@ -1,73 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:34662 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752094AbbG3NQI (ORCPT
+Received: from mail-vn0-f52.google.com ([209.85.216.52]:36217 "EHLO
+	mail-vn0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751101AbbG3Rvm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jul 2015 09:16:08 -0400
-Received: by lbqc9 with SMTP id c9so1475504lbq.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2015 06:16:07 -0700 (PDT)
+	Thu, 30 Jul 2015 13:51:42 -0400
+Received: by vnk197 with SMTP id 197so5640754vnk.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2015 10:51:41 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAC8ULPaOWS=WS-_oSkihrzi7bnWXuevyqL3R7FPFFQQCdjqdvA@mail.gmail.com>
-References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
-	<558CB0D4.8060401@cn.fujitsu.com>
-	<558CB404.8050300@cn.fujitsu.com>
-	<CAJCQCtTMdQG4EB8dNAYPq8H3V68TCb2YQztoXXYMkCYA3GBCXw@mail.gmail.com>
-	<CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
-	<CAJCQCtQ35xzMBjcUUTzWm3CjC1r=UNgkog2YbB0X1QcZofNj0g@mail.gmail.com>
-	<559F131B.30206@cn.fujitsu.com>
-	<CAC8ULPaOWS=WS-_oSkihrzi7bnWXuevyqL3R7FPFFQQCdjqdvA@mail.gmail.com>
-Date: Thu, 30 Jul 2015 16:16:06 +0300
-Message-ID: <CAC8ULPaYmQNj_cvgGxqKtJ4w237J5vAJFTQMO1=o+y+eUYrPLg@mail.gmail.com>
-Subject: Re: btrfs partition converted from ext4 becomes read-only minutes
- after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260 __btrfs_abort_transaction+0x4b/0x120
-From: Robert Munteanu <robert.munteanu@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Vytautas D <vytdau@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CA+X5Wn57HuJEzp_iOMnsi7R5AHBvsCBDbAS0+gv4O2BP-+G4VQ@mail.gmail.com>
+References: <CA+X5Wn57HuJEzp_iOMnsi7R5AHBvsCBDbAS0+gv4O2BP-+G4VQ@mail.gmail.com>
+Date: Thu, 30 Jul 2015 11:51:41 -0600
+Message-ID: <CAJCQCtRvEU+2vt9vvkUSwPnEyP9ej_mxNOiY4wkWHSYHH1DM9Q@mail.gmail.com>
+Subject: Re: INFO: task btrfs-transacti:204 blocked for more than 120 seconds.
+ (more like 8+min)
+From: Chris Murphy <lists@colorremedies.com>
+To: james harvey <jamespharvey20@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> The disk image (still) contains sensitive data so I can't share it
-> unfortunately. What I can do is keep it untouched until Friday evening
-> EEST and run any debugging commands that you might think of to trace
-> down the source of the errors. Alternatively, if there's an easy and
-> safe fix and debugging is not worth it, I'm happy to apply that fix as
-> well.
+On Thu, Jul 23, 2015 at 1:12 PM, james harvey <jamespharvey20@gmail.com> wrote:
+> Up to date Arch.  linux kernel 4.1.2-2.  Fresh O/S install 12 days
+> ago.  No where near full - 34G used on a 4.6T drive.   32GB memory.
+>
+> Installed bonnie++ 1.97-1.
+>
+> $ bonnie++ -d bonnie -m btrfs-disk -f -b
+>
+> I started trying to run with a "-s 4G" option, to use 4GB files for
+> performance measuring.  It refused to run, and said "file size should
+> be double RAM for good results".  I sighed, removed the option, and
+> let it run, defaulting to **64GB files**.  So, yeah, big files.  But,
+> I do work with Photoshop .PSB files that get that large.
+>
+> During the first two lines ("Writing intelligently..." and
+> "Rewriting..." the filesystem seems to be completely locked out for
+> anything other than bonnie++.  KDE stops being able to switch focus,
+> change tasks.  Can switch to tty's and log in, do things like "ls",
+> but attempting to write to the filesystem hangs.  Can switch back to
+> KDE, but screen is black with cursor until bonnie++ completes.  top
+> didn't show excessive CPU usage.
+>
+> My dmesg is at http://www.pastebin.ca/3072384  Attaching it seemed to
+> make the message not go out to the list.
+
+I can't tell what actually instigates this, as there are several blocked tasks.
+
+INFO: task btrfs-cleaner:203 blocked for more than 120 seconds.
+ INFO: task btrfs-transacti:204 blocked for more than 120 seconds.
+
+My suggestion, is to file a bug. Include all of the system specs and a
+more concise set of reproduce steps from above; but then also include
+sysrq-w output. This will dump into kernel messages, it it's too big
+it might fill the kernel message buffer. So you can use log_buf_len=1M
+boot parameter to increase it or if this is a systemd system, then all
+of it is in journalctl -k and you don't need to worry about the buffer
+size.
+
+https://www.kernel.org/doc/Documentation/sysrq.txt
+
+So that'd be
+
+# echo 1 >/proc/sys/kernel/sysrq
+## reproduce the problem
+echo w > /proc/sysrq-trigger
+
+I never know if a developer wants w or t output, but for blocked tasks
+I do a w and post that as attachment; and then sometimes also a
+separate cut/paste attachment of t output.
 
 
-Based on the results of running btrfs check --repair on an image file
-taken from the actual disk I ran a btrfs check --repair on the
-physical partition
 
-The output was ( again, re-typed so might contain typos )
+> IF I do HAVE to disable COW, I know I can do it selectively.
 
-# btfrs check --repair /dev/sda1
-enabling repair mode
-repair mode will force to clear out log tree, Are you sure [y/N]: y
-Checking filesystem on /dev/sda1
-UUID: ...
-checking extents
-Fixed 0 roots.
-checking free space cache.
-cache and super generation don't match, space cache will be invalidated
-checking fs roots
-Fixed discount file extends for inode: 14214570 in root: 5
-root 5 inode 14214570 errors 100, file extend discount
-Found file extent holes:
-Fixed discount file extends for inode: 14214570 in root: 5
-root 5 inode 14214570 errors 100, file extend discount
-Found file extent holes:
+I don't think you need to worry about this for your use case. You're
+talking about big Photoshop files, it's good to COW those because if
+there's a crash of the file server while writing out a change, then
+the old file is available and not corrupt, since the write didn't
+finish. Of course you lost any chances since the last save, but that's
+always true. What happens in addition to that with non-COW file
+systems that overwrite, and if you set the files to nocow, is that a
+crash or hang on overwrite damages the file often irrecoverably. So
+here COW is good. And you should test with that too in order to have a
+fair test.
 
-The previous 3 lines repeat a lot, every 10 seconds maybe. After 30
-minutes I got bored and stopped the process, as it looks like it's
-looping at some condition that without making any progress. At any
-rate, something worked well and I can now mount the volume again from
-the rescue disk and boot from a read-only snapshot.
 
-Cheers,
-
-Robert
 
 -- 
-http://robert.muntea.nu/
+Chris Murphy

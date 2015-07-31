@@ -1,81 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1330 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:5992 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751136AbbGaCIb (ORCPT
+	with ESMTP id S1750991AbbGaCet (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 30 Jul 2015 22:08:31 -0400
-Subject: Re: btrfs partition converted from ext4 becomes read-only minutes
- after booting: WARNING: CPU: 2 PID: 2777 at ../fs/btrfs/super.c:260
- __btrfs_abort_transaction+0x4b/0x120
-To: Robert Munteanu <robert.munteanu@gmail.com>
-References: <CAC8ULPYHuqsZN1Lm_2TxGMw7z6n=4zAprqYr9uoi=3kjoiSxQw@mail.gmail.com>
- <558CB0D4.8060401@cn.fujitsu.com> <558CB404.8050300@cn.fujitsu.com>
- <CAJCQCtTMdQG4EB8dNAYPq8H3V68TCb2YQztoXXYMkCYA3GBCXw@mail.gmail.com>
- <CAO5K3OcA1_Z4-jvv_2C0StBkOr++_vUX4kOspY8cuhnX2t3z_A@mail.gmail.com>
- <CAJCQCtQ35xzMBjcUUTzWm3CjC1r=UNgkog2YbB0X1QcZofNj0g@mail.gmail.com>
- <559F131B.30206@cn.fujitsu.com>
- <CAC8ULPaOWS=WS-_oSkihrzi7bnWXuevyqL3R7FPFFQQCdjqdvA@mail.gmail.com>
- <CAC8ULPaYmQNj_cvgGxqKtJ4w237J5vAJFTQMO1=o+y+eUYrPLg@mail.gmail.com>
-CC: Chris Murphy <lists@colorremedies.com>, Vytautas D <vytdau@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Thu, 30 Jul 2015 22:34:49 -0400
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+To: John Ettedgui <john.ettedgui@gmail.com>, <linux-btrfs@vger.kernel.org>,
+        <georgi-georgiev-btrfs@japannext.co.jp>
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55BAD89A.8030203@cn.fujitsu.com>
-Date: Fri, 31 Jul 2015 10:08:26 +0800
+Message-ID: <55BADEC4.3020409@cn.fujitsu.com>
+Date: Fri, 31 Jul 2015 10:34:44 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAC8ULPaYmQNj_cvgGxqKtJ4w237J5vAJFTQMO1=o+y+eUYrPLg@mail.gmail.com>
+In-Reply-To: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Robert Munteanu wrote on 2015/07/30 16:16 +0300:
->> The disk image (still) contains sensitive data so I can't share it
->> unfortunately. What I can do is keep it untouched until Friday evening
->> EEST and run any debugging commands that you might think of to trace
->> down the source of the errors. Alternatively, if there's an easy and
->> safe fix and debugging is not worth it, I'm happy to apply that fix as
->> well.
+John Ettedgui wrote on 2015/07/29 18:55 +0000:
+> Hello,
+> I have the same issue and would like to add myself to this thread.
+> My btrfs partition is about 10tb on top of lvm2 and has been taking about a minute to mount in the past few months.
+>
+>> Qu Wenruo <quwenruo <at>cn.fujitsu.com <http://cn.fujitsu.com>> writes:
+>>
+>> Quite common, especial when it grows large.
+>> But it would be much better to use ftrace to show which btrfs operation
+>> takes the most time.
 >
 >
-> Based on the results of running btrfs check --repair on an image file
-> taken from the actual disk I ran a btrfs check --repair on the
-> physical partition
+> I have got a trace file running this command:
+> trace-cmd record -e btrfs mount <PARTITION>
 >
-> The output was ( again, re-typed so might contain typos )
+> Since it is fairly big for an email I have gzipped it.
 >
-> # btfrs check --repair /dev/sda1
-> enabling repair mode
-> repair mode will force to clear out log tree, Are you sure [y/N]: y
-> Checking filesystem on /dev/sda1
-> UUID: ...
-> checking extents
-> Fixed 0 roots.
-> checking free space cache.
-> cache and super generation don't match, space cache will be invalidated
-> checking fs roots
-> Fixed discount file extends for inode: 14214570 in root: 5
-> root 5 inode 14214570 errors 100, file extend discount
-> Found file extent holes:
-> Fixed discount file extends for inode: 14214570 in root: 5
-> root 5 inode 14214570 errors 100, file extend discount
-> Found file extent holes:
-Any full output about it?
+> Thanks!
+> John
+>
+Hi John,
+Thanks for the trace output.
 
-Not sure if it real loops, but maybe the inode number changed in later 
-output?
+But it seems that, your root partition is also btrfs, causing a lot of 
+btrfs trace from your systemd journal.
+
+Would you mind re-collecting the ftrace without such logging system 
+caused btrfs trace?
+
+BTW, although I'm not quite familiar with ftrace, would you please 
+consider collect ftrace with function_graph tracer?
+That would help a lot to find which takes the most time.
+But it may trace too much things and maybe hard to read.
 
 Thanks,
 Qu
-
->
-> The previous 3 lines repeat a lot, every 10 seconds maybe. After 30
-> minutes I got bored and stopped the process, as it looks like it's
-> looping at some condition that without making any progress. At any
-> rate, something worked well and I can now mount the volume again from
-> the rescue disk and boot from a read-only snapshot.
->
-> Cheers,
->
-> Robert
->

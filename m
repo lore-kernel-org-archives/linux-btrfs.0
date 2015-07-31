@@ -1,54 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f53.google.com ([209.85.192.53]:33029 "EHLO
-	mail-qg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750746AbbGaEK2 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:34684 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750789AbbGaEwN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 31 Jul 2015 00:10:28 -0400
-Received: by qged69 with SMTP id d69so38520379qge.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 30 Jul 2015 21:10:27 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <55BADEC4.3020409@cn.fujitsu.com>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
-	<55BADEC4.3020409@cn.fujitsu.com>
-Date: Thu, 30 Jul 2015 21:10:27 -0700
-Message-ID: <CAJ3TwYS_C9LDU4ffsqtih3Rus6HREuA+gkb0kPpV_JNSyL4Bmg@mail.gmail.com>
+	Fri, 31 Jul 2015 00:52:13 -0400
 Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-From: John Ettedgui <john.ettedgui@gmail.com>
-Cc: =?UTF-8?B?4oCcbGludXgtYnRyZnNAdmdlci5rZXJuZWwub3Jn4oCd?=
-	<linux-btrfs@vger.kernel.org>,
-        georgi-georgiev-btrfs@japannext.co.jp
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+To: John Ettedgui <john.ettedgui@gmail.com>,
+        btrfs <linux-btrfs@vger.kernel.org>
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
+ <55BADEC4.3020409@cn.fujitsu.com>
+ <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55BAFEF9.1070107@cn.fujitsu.com>
+Date: Fri, 31 Jul 2015 12:52:09 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jul 30, 2015 at 7:34 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->
->
-> Hi John,
-> Thanks for the trace output.
-You are welcome, thank you for looking at it!
->
-> But it seems that, your root partition is also btrfs, causing a lot of btrfs
-> trace from your systemd journal.
->
-Oh yes sorry about that.
-I actually have 3 partition in btrfs, the problematic one being the
-only big one.
-> Would you mind re-collecting the ftrace without such logging system caused
-> btrfs trace?
-Sure, how would I do that?
-This is my first time using ftrace.
->
-> BTW, although I'm not quite familiar with ftrace, would you please consider
-> collect ftrace with function_graph tracer?
-Sure, how would I do that one as well?
-(I'll look these up in the meantime, I just want to make sure to not
-give you something not useful again).
-> That would help a lot to find which takes the most time.
-> But it may trace too much things and maybe hard to read.
->
-> Thanks,
-> Qu
 
-Great, thank you!
+
+John Ettedgui wrote on 2015/07/30 21:09 -0700:
+> On Thu, Jul 30, 2015 at 7:34 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>
+>>
+>> Hi John,
+>> Thanks for the trace output.
+> You are welcome, thank you for looking at it!
+>>
+>> But it seems that, your root partition is also btrfs, causing a lot of btrfs
+>> trace from your systemd journal.
+>>
+> Oh yes sorry about that.
+> I actually have 3 partition in btrfs, the problematic one being the
+> only big one.
+>> Would you mind re-collecting the ftrace without such logging system caused
+>> btrfs trace?
+> Sure, how would I do that?
+> This is my first time using ftrace.
+
+I'm not familiar with ftrace either, but your trace is good enough 
+already, the only thing needed is to avoid using btrfs as root 
+partition(at least /var/).
+
+My personal recommendation is to use a liveCD or rescue media to do the 
+trace dump.
+
+Other recommendation is to enable all btrfs trace point, and it seems 
+that you have already done it while collecting the trace.
+>>
+>> BTW, although I'm not quite familiar with ftrace, would you please consider
+>> collect ftrace with function_graph tracer?
+> Sure, how would I do that one as well?
+> (I'll look these up in the meantime, I just want to make sure to not
+> give you something not useful again).
+
+This LWN article should help you, as I'm not so familiar with it either.
+
+https://lwn.net/Articles/370423/
+<The function_graph tracer> paragraph.
+
+And the graph_function is btrfs_mount.
+
+Thanks,
+Qu
+
+>> That would help a lot to find which takes the most time.
+>> But it may trace too much things and maybe hard to read.
+>>
+>> Thanks,
+>> Qu
+>
+> Great, thank you!
+> John
+>

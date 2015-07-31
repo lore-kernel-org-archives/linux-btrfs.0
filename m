@@ -1,66 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47013 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932139AbbG1KDq (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:8971 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751030AbbGaSVL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 28 Jul 2015 06:03:46 -0400
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@gmail.com
-Subject: [PATCH v2] Btrfs: fix warning in backref walking
-Date: Tue, 28 Jul 2015 18:03:30 +0800
-Message-Id: <1438077810-5618-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1437984953-453-1-git-send-email-bo.li.liu@oracle.com>
-References: <1437984953-453-1-git-send-email-bo.li.liu@oracle.com>
+	Fri, 31 Jul 2015 14:21:11 -0400
+Date: Fri, 31 Jul 2015 14:21:05 -0400
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-kernel <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20150731182105.GA19756@ret.masoncoding.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When we do backref walking, we search firstly in queued delayed refs
-and then the on-disk backrefs, but we parse differently for shared
-references, for delayed refs we also add 'ref->root' while for on-disk
-backrefs we don't, this can prevent us from merging refs indexed
-by the same bytenr and cause find_parent_nodes() to throw a warning at
-'WARN_ON(ref->count < 0)', for example, when we have a shared data extent
-with 'ref_cnt=1' and a delayed shared data with a BTRFS_DROP_DELAYED_REF,
-that happens.
+Hi Linus,
 
-For shared references, no matter if it's delayed or on-disk, ref->root is
-not at all used, instead it's ref->parent that really matters, so this has
-delayed refs handled as the same way as on-disk refs.
+Please pull the fixes from my for-linus-4.2 branch:
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
-v2: Fix typo of not deleting key.type and key.offset, credit goes to Filipe.
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.2
 
- fs/btrfs/backref.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
+Filipe fixed up a hard to trigger ENOSPC regression from our merge
+window pull, and we have a few other smaller fixes.
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index 802fabb..c306414 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -632,7 +632,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
- 			struct btrfs_delayed_tree_ref *ref;
- 
- 			ref = btrfs_delayed_node_to_tree_ref(node);
--			ret = __add_prelim_ref(prefs, ref->root, NULL,
-+			ret = __add_prelim_ref(prefs, 0, NULL,
- 					       ref->level + 1, ref->parent,
- 					       node->bytenr,
- 					       node->ref_mod * sgn, GFP_ATOMIC);
-@@ -664,11 +664,7 @@ static int __add_delayed_refs(struct btrfs_delayed_ref_head *head, u64 seq,
- 			struct btrfs_delayed_data_ref *ref;
- 
- 			ref = btrfs_delayed_node_to_data_ref(node);
--
--			key.objectid = ref->objectid;
--			key.type = BTRFS_EXTENT_DATA_KEY;
--			key.offset = ref->offset;
--			ret = __add_prelim_ref(prefs, ref->root, &key, 0,
-+			ret = __add_prelim_ref(prefs, 0, NULL, 0,
- 					       ref->parent, node->bytenr,
- 					       node->ref_mod * sgn, GFP_ATOMIC);
- 			break;
--- 
-2.1.0
+Zhao Lei (2) commits (+4/-2):
+    btrfs: Avoid NULL pointer dereference of free_extent_buffer when read_tree_block() fail (+2/-1)
+    btrfs: Fix lockdep warning of btrfs_run_delayed_iputs() (+2/-1)
+
+Anand Jain (1) commits (+1/-1):
+    btrfs: its btrfs_err() instead of btrfs_error()
+
+Filipe Manana (1) commits (+18/-0):
+    Btrfs: fix quick exhaustion of the system array in the superblock
+
+Total: (4) commits (+23/-3)
+
+ fs/btrfs/dev-replace.c |  2 +-
+ fs/btrfs/disk-io.c     |  3 ++-
+ fs/btrfs/extent-tree.c | 18 ++++++++++++++++++
+ fs/btrfs/transaction.c |  3 ++-
+ 4 files changed, 23 insertions(+), 3 deletions(-)
 

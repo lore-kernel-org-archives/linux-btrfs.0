@@ -1,38 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f41.google.com ([209.85.213.41]:35803 "EHLO
-	mail-vk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751115AbbHARcu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 13:32:50 -0400
-Received: by vkhg129 with SMTP id g129so30590136vkh.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2015 10:32:49 -0700 (PDT)
+Received: from mout.kundenserver.de ([212.227.126.130]:49481 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751524AbbHAUJl convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 16:09:41 -0400
+Received: from [127.0.0.1] ([92.77.1.248]) by mrelayeu.kundenserver.de
+ (mreue004) with ESMTPA (Nemesis) id 0McAfD-1ZcStZ2shL-00JdkU for
+ <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2015 22:09:38 +0200
+Message-ID: <55BD277F.2040201@friedels.name>
+Date: Sat, 01 Aug 2015 22:09:35 +0200
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-In-Reply-To: <CABozSb+L4iDwALP8=uvTM-CLTnN1otkW8vK0oHKU9UX8j74jWg@mail.gmail.com>
-References: <CABozSb+L4iDwALP8=uvTM-CLTnN1otkW8vK0oHKU9UX8j74jWg@mail.gmail.com>
-Date: Sat, 1 Aug 2015 11:26:14 -0600
-Message-ID: <CAJCQCtR_2+ufz4FEM5AmhgBYwJttHKbmJYv85n20iYjqJGG0ig@mail.gmail.com>
-Subject: Re: Filesystem unmountable
-From: Chris Murphy <lists@colorremedies.com>
-To: Cornelius van Rooyen <nexusdk@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Data single *and* raid?
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There appears to be some regressions in btrfs-convert that are in the
-list archive over the last month in particular - but I think the
-problems particularly started to surface about 6ish months ago. When I
-filed the bugs I was seeing with converted ext4 file systems, they
-were completely consistently reproducible. But then I went back a few
-days later to the same source qcow2 that I was snapshotting (qcow2
-snapshot, not a btrfs snapshot) to do the testing, and the problem did
-not always trigger. But fortunately Qu has reproduced this and is
-working on it.
+Hello,
 
-In your case it might be possible to mount with ro,recovery and get
-data off of it. Or you might have to resort to btrfs restore if it's
-badly broken and at least get /home data out of it.  If you have
-backups, it's easier to just obliterate it and start over, unless you
-want to experiment and learn more with btrfs restore...
+I converted an array to raid5 by
+btrfs device add /dev/sdd /mnt/new_storage
+btrfs device add /dev/sdc /mnt/new_storage
+btrfs balance start -dconvert=raid5 -mconvert=raid5 /mnt/new_storage/
 
+The Balance went through. But now:
+Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
+         Total devices 3 FS bytes used 5.28TiB
+         devid    1 size 2.73TiB used 2.57TiB path /dev/sde
+         devid    2 size 2.73TiB used 2.73TiB path /dev/sdc
+         devid    3 size 2.73TiB used 2.73TiB path /dev/sdd
+btrfs-progs v4.1.1
 
-Chris Murphy
+Already the 2.57TiB is a bit surprising:
+root@homeserver:/mnt# btrfs fi df /mnt/new_storage/
+Data, single: total=2.55TiB, used=2.55TiB
+Data, RAID5: total=2.73TiB, used=2.72TiB
+System, RAID5: total=32.00MiB, used=736.00KiB
+Metadata, RAID1: total=6.00GiB, used=5.33GiB
+Metadata, RAID5: total=3.00GiB, used=2.99GiB
+
+Why is there Data single and Raid?
+Why is Metadata RAID1 and Raid5?
+
+A scrub is currently running and showed no errors yet.
+
+Greetings,
+Hendrik
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
+

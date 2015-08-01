@@ -1,41 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:44258 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751207AbbHAKFx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 06:05:53 -0400
-From: Russell Coker <russell@coker.com.au>
-To: John Ettedgui <john.ettedgui@gmail.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-Date: Sat, 1 Aug 2015 20:05:48 +1000
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com> <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com> <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
-In-Reply-To: <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
+Received: from mail-wi0-f180.google.com ([209.85.212.180]:36133 "EHLO
+	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750926AbbHAOyN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 10:54:13 -0400
+Received: by wicgj17 with SMTP id gj17so52103991wic.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2015 07:54:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201508012005.48675.russell@coker.com.au>
+Date: Sat, 1 Aug 2015 14:54:11 +0000
+Message-ID: <CABozSb+L4iDwALP8=uvTM-CLTnN1otkW8vK0oHKU9UX8j74jWg@mail.gmail.com>
+Subject: Filesystem unmountable
+From: Cornelius van Rooyen <nexusdk@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 1 Aug 2015 02:35:39 PM John Ettedgui wrote:
-> >> It seems that you're using Chromium while doing the dump. :)
-> >> If no CD drive, I'll recommend to use Archlinux installation iso to make
-> >> a bootable USB stick and do the dump.
-> >> (just download and dd would do the trick)
-> >> As its kernel and tools is much newer than most distribution.
-> 
-> So I did not have any usb sticks large enough for this task (only 4Gb)
-> so I restarted into emergency runlevel with only / mounted and as ro,
-> I hope that'll do.
+Good day,
 
-The Debian/Jessie Netinst image is about 120M and allows you to launch a 
-shell.  If you want a newer kernel you could rebuild the Debian Netinst 
-yourself.
+This might be something you are already aware of, but I thought I should
+inform someone of what happened to my sytem.
 
-Also a basic text-only Linux installation takes a lot less than 4G of storage.  
-I have a couple of 1G USB sticks with Debian installed that I use to fix 
-things.
+I was running ArchLinux with kernel 4.1.3-1-ARCH #1 SMP PREEMPT x86_64
+GNU/Linux and executed btrfs-convert /mnt from an ArchLinux live disk to
+convert my ext4 filesystem to btrfs.
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+The conversion was seemingly successful, but after booting journalctl
+--verify reported some corrupt files. I saw on a an online post that I
+should try to do a btrfs balance start after converting from ext4, and so I
+executed the command and left the laptop to complete the task. The next
+morning however I found the system frozen and had to do a hard reset. After
+this the filesystem was unmountable.
+
+The initial boot after the hard reset left me in an emergency shell at
+which point I tried to mount the system and the shell stopped responding.
+Booting a live disk and running btrfsck exited with a segmentation fault.
+Attempts to mount the filesystem also exited with a segmentation fault or
+the shell seemed to be waiting for the command to complete for very long
+and did not respond to CTRL-C.
+
+I know nothing of kernels or filesystem drivers and I hope I am not
+waisting any body's time with something that was probably my own fault. I
+have since reinstalled my OS and in hindsight I should probably have
+attempted to save some of the kernel log files.
+
+Kind regards,
+Neels van Rooyen

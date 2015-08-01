@@ -1,31 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f53.google.com ([209.85.213.53]:36198 "EHLO
-	mail-vk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751115AbbHAR3l (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 13:29:41 -0400
-Received: by vkci6 with SMTP id i6so31176423vkc.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2015 10:29:41 -0700 (PDT)
+Received: from mail-vk0-f41.google.com ([209.85.213.41]:35803 "EHLO
+	mail-vk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751115AbbHARcu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 13:32:50 -0400
+Received: by vkhg129 with SMTP id g129so30590136vkh.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2015 10:32:49 -0700 (PDT)
 MIME-Version: 1.0
-Date: Sat, 1 Aug 2015 11:29:40 -0600
-Message-ID: <CAJCQCtQJpEVPk_qAUj68qRxoftUyPww0Pm0aYHhkaM51+uOO=g@mail.gmail.com>
-Subject: ext4 convert bugs, wiki warning?
+In-Reply-To: <CABozSb+L4iDwALP8=uvTM-CLTnN1otkW8vK0oHKU9UX8j74jWg@mail.gmail.com>
+References: <CABozSb+L4iDwALP8=uvTM-CLTnN1otkW8vK0oHKU9UX8j74jWg@mail.gmail.com>
+Date: Sat, 1 Aug 2015 11:26:14 -0600
+Message-ID: <CAJCQCtR_2+ufz4FEM5AmhgBYwJttHKbmJYv85n20iYjqJGG0ig@mail.gmail.com>
+Subject: Re: Filesystem unmountable
 From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Cornelius van Rooyen <nexusdk@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Does someone with wiki edit capability want to put up a warning about
-btrfs-convert problems? I don't think it needs to be a lengthy write
-up since the scope of the problem is not clear yet. But since there's
-definitely reproduced problems that have been going on for some time
-now maybe it'd be a good idea to put up a warning until this is more
-stable?
+There appears to be some regressions in btrfs-convert that are in the
+list archive over the last month in particular - but I think the
+problems particularly started to surface about 6ish months ago. When I
+filed the bugs I was seeing with converted ext4 file systems, they
+were completely consistently reproducible. But then I went back a few
+days later to the same source qcow2 that I was snapshotting (qcow2
+snapshot, not a btrfs snapshot) to do the testing, and the problem did
+not always trigger. But fortunately Qu has reproduced this and is
+working on it.
 
-I'm thinking of just a yellow warning "sidebar" like thing that maybe
-just says there's been a regression and it's breaking file systems,
-sometimes irreparably?
+In your case it might be possible to mount with ro,recovery and get
+data off of it. Or you might have to resort to btrfs restore if it's
+badly broken and at least get /home data out of it.  If you have
+backups, it's easier to just obliterate it and start over, unless you
+want to experiment and learn more with btrfs restore...
 
 
--- 
 Chris Murphy

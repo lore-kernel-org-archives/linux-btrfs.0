@@ -1,69 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:46840 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:46860 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751426AbbHAUdA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 16:33:00 -0400
-Date: Sat, 1 Aug 2015 20:32:58 +0000
+	with ESMTP id S1751426AbbHAUmv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 16:42:51 -0400
+Date: Sat, 1 Aug 2015 20:42:49 +0000
 From: Hugo Mills <hugo@carfax.org.uk>
-To: Hendrik Friedel <hendrik@friedels.name>
+To: Chris Murphy <lists@colorremedies.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Data single *and* raid?
-Message-ID: <20150801203258.GA14352@carfax.org.uk>
-References: <55BD277F.2040201@friedels.name>
+Subject: Re: ext4 convert bugs, wiki warning?
+Message-ID: <20150801204249.GB14352@carfax.org.uk>
+References: <CAJCQCtQJpEVPk_qAUj68qRxoftUyPww0Pm0aYHhkaM51+uOO=g@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="YZ5djTAD1cGYuMQK"
-In-Reply-To: <55BD277F.2040201@friedels.name>
+	protocol="application/pgp-signature"; boundary="O5XBE6gyVG5Rl6Rj"
+In-Reply-To: <CAJCQCtQJpEVPk_qAUj68qRxoftUyPww0Pm0aYHhkaM51+uOO=g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---YZ5djTAD1cGYuMQK
+--O5XBE6gyVG5Rl6Rj
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Sat, Aug 01, 2015 at 10:09:35PM +0200, Hendrik Friedel wrote:
-> Hello,
+On Sat, Aug 01, 2015 at 11:29:40AM -0600, Chris Murphy wrote:
+> Does someone with wiki edit capability want to put up a warning about
+> btrfs-convert problems? I don't think it needs to be a lengthy write
+> up since the scope of the problem is not clear yet. But since there's
+> definitely reproduced problems that have been going on for some time
+> now maybe it'd be a good idea to put up a warning until this is more
+> stable?
 > 
-> I converted an array to raid5 by
-> btrfs device add /dev/sdd /mnt/new_storage
-> btrfs device add /dev/sdc /mnt/new_storage
-> btrfs balance start -dconvert=raid5 -mconvert=raid5 /mnt/new_storage/
-> 
-> The Balance went through. But now:
-> Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
->         Total devices 3 FS bytes used 5.28TiB
->         devid    1 size 2.73TiB used 2.57TiB path /dev/sde
->         devid    2 size 2.73TiB used 2.73TiB path /dev/sdc
->         devid    3 size 2.73TiB used 2.73TiB path /dev/sdd
-> btrfs-progs v4.1.1
-> 
-> Already the 2.57TiB is a bit surprising:
-> root@homeserver:/mnt# btrfs fi df /mnt/new_storage/
-> Data, single: total=2.55TiB, used=2.55TiB
-> Data, RAID5: total=2.73TiB, used=2.72TiB
-> System, RAID5: total=32.00MiB, used=736.00KiB
-> Metadata, RAID1: total=6.00GiB, used=5.33GiB
-> Metadata, RAID5: total=3.00GiB, used=2.99GiB
+> I'm thinking of just a yellow warning "sidebar" like thing that maybe
+> just says there's been a regression and it's breaking file systems,
+> sometimes irreparably?
 
-   Looking at the btrfs fi show output, you've probably run out of
-space during the conversion, probably due to an uneven distribution of
-the original "single" chunks.
+   You mean a warning like the very first sentence, in bold, that's
+already on the wiki page?
 
-   I think I would suggest balancing the single chunks, and trying the
-conversion (of the unconverted parts) again:
-
-# btrfs balance start -dprofiles=single -mprofile=raid1 /mnt/new_storage/
-# btrfs balance start -dconvert=raid5,soft -mconvert=raid5,soft /mnt/new_storage/
-
-   You may have to do this more than once.
+https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
 
    Hugo.
-
-> Why is there Data single and Raid?
-> Why is Metadata RAID1 and Raid5?
-> 
-> A scrub is currently running and showed no errors yet.
 
 -- 
 Hugo Mills             | You've read the project plan. Forget that. We're
@@ -71,26 +47,26 @@ hugo@... carfax.org.uk | going to Do Stuff and Have Fun doing it.
 http://carfax.org.uk/  |
 PGP: E2AB1DE4          |                                           Jeremy Frey
 
---YZ5djTAD1cGYuMQK
+--O5XBE6gyVG5Rl6Rj
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJVvSz6AAoJEFheFHXiqx3k6j4QAKuP1zbOa1yPFbVh4nXnj/6z
-O4ZIW/v9sm01ZbuozNCeH8FjOBkCPHZllrSA+Nx78Y5bCjuv3JgnEXv4bBIuVmgX
-PTORRwYfZ2aIGrjQollJRwA5ZKkVqy1Hx8fQf3IMpq6qJnZHcL+C6b3XxAIgyMqI
-R4ZG2pVCrEoKI4lNfRz3GspkF4fasa5TBL5UrR7wOTD7tCSBh9tECIzYt3VjuXEx
-3s7buOwBQreskK67iE+YGDVsMalAHhd9k1tYiw3as3zF9RGO2sZAHW49r5VUV8GV
-TOCenL9miSsoX0BHBQvbjcs4KwN2HztidWWzwrLa5iedc1DmVk45kUfXJXw90vBU
-2Qfb0EteBg6JEYrthcOyW5/Er4NVvYoGW3RAdNxcSO+xBmRUQnyCIfESd/rKvDJm
-VMF/DTiOi1zQFEsSvA6coxqWdQfGvp5BJ2saxJIdY6PKFjygo4VZeAe6jr21vOvw
-LdOcVssgBK31nxWI8rGkeFqoVkWL6AHceRo/o/L8FiJpL5b7GjOTmofJPGuBPyFU
-dqGFjxGNsh9X2oHiI/SfTm3oaHJjv0eh3Swcf0UlokjEWS5Q5nhdM0EqpCooUGgw
-pemvZ3aMFgwRv0xVgdO2iXpp6SFYqwREcryyXOCv1T8/KrCqssauJFKEto7TTtye
-BgEFwTjHxKGj3/fzMGEr
-=zn0h
+iQIcBAEBAgAGBQJVvS9JAAoJEFheFHXiqx3kOjYQAKqjVpKAka0XUWW+ZY250pfe
+aSg+vcKJn6o+0vsP+bRYIbHEzchkFE/UQwDKGl4+PJkMyq3XfHvJutwZIldrByDl
+KQhOo+XwkduPajt4E4Xi/QqBYHO3q430eDUZA2+ca9SCaCjZI3Htg3HBY6sJSDAi
+OubXqcxLRjfTVyxkMb/b2R1ARZ3AVlCh0IY22Q8sLjTW/rm7vqEtZwnJj2oPRktm
+zmnp+Qnh29FdEso/0LKkZaAxJ1Rl9/sraSV6Lq67SEp/4LSkFKc7q7ZP/78kr8he
+9aLVZUfFcLe7MHAmOMSp1z4JP3WuP0cBq8nNfrMbiYcJLfxHW0fD0kgp06YME8P8
+E/ImANf09D3cDPCrJedjtspFU78f1notyT7hiqLcLyN6T0UZoGocyC7HxO9BIHDD
+H2H193pRawuER37JCubOjyAAd4Lb8a+ZFIQCxq6+im1oxoSQ/juTQhHdT3ASLrlG
+BTY8+l7HWpD+kfVMkm4EcqoSy03wbruH6JuU61yvt+pZEQjH8wg/F7SxFaLK5Sv4
+rxKRbysgP+tVd4wuToNEIrmol9nFPDeIcq6bOvx9Blu4l0nfLGJfh5pKm2i1166b
+jChN81dAfVzw9uLg9EB0ion42/xGQZz/HGzSDKQ0b+D5Hfhog2z4whxjc06IE/o2
+uhVe6JZa0UwucIqe48eX
+=TnbS
 -----END PGP SIGNATURE-----
 
---YZ5djTAD1cGYuMQK--
+--O5XBE6gyVG5Rl6Rj--

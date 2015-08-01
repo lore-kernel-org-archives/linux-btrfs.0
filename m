@@ -1,72 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:46860 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751426AbbHAUmv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 16:42:51 -0400
-Date: Sat, 1 Aug 2015 20:42:49 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: ext4 convert bugs, wiki warning?
-Message-ID: <20150801204249.GB14352@carfax.org.uk>
-References: <CAJCQCtQJpEVPk_qAUj68qRxoftUyPww0Pm0aYHhkaM51+uOO=g@mail.gmail.com>
+Received: from mail-vk0-f51.google.com ([209.85.213.51]:36550 "EHLO
+	mail-vk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751426AbbHAUox (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 16:44:53 -0400
+Received: by vkci6 with SMTP id i6so31933122vkc.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 01 Aug 2015 13:44:53 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="O5XBE6gyVG5Rl6Rj"
-In-Reply-To: <CAJCQCtQJpEVPk_qAUj68qRxoftUyPww0Pm0aYHhkaM51+uOO=g@mail.gmail.com>
+In-Reply-To: <20150801203258.GA14352@carfax.org.uk>
+References: <55BD277F.2040201@friedels.name>
+	<20150801203258.GA14352@carfax.org.uk>
+Date: Sat, 1 Aug 2015 14:44:52 -0600
+Message-ID: <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
+Subject: Re: Data single *and* raid?
+From: Chris Murphy <lists@colorremedies.com>
+To: Hugo Mills <hugo@carfax.org.uk>, Hendrik Friedel <hendrik@friedels.name>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Sat, Aug 1, 2015 at 2:32 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Sat, Aug 01, 2015 at 10:09:35PM +0200, Hendrik Friedel wrote:
+>> Hello,
+>>
+>> I converted an array to raid5 by
+>> btrfs device add /dev/sdd /mnt/new_storage
+>> btrfs device add /dev/sdc /mnt/new_storage
+>> btrfs balance start -dconvert=raid5 -mconvert=raid5 /mnt/new_storage/
+>>
+>> The Balance went through. But now:
+>> Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
+>>         Total devices 3 FS bytes used 5.28TiB
+>>         devid    1 size 2.73TiB used 2.57TiB path /dev/sde
+>>         devid    2 size 2.73TiB used 2.73TiB path /dev/sdc
+>>         devid    3 size 2.73TiB used 2.73TiB path /dev/sdd
+>> btrfs-progs v4.1.1
+>>
+>> Already the 2.57TiB is a bit surprising:
+>> root@homeserver:/mnt# btrfs fi df /mnt/new_storage/
+>> Data, single: total=2.55TiB, used=2.55TiB
+>> Data, RAID5: total=2.73TiB, used=2.72TiB
+>> System, RAID5: total=32.00MiB, used=736.00KiB
+>> Metadata, RAID1: total=6.00GiB, used=5.33GiB
+>> Metadata, RAID5: total=3.00GiB, used=2.99GiB
+>
+>    Looking at the btrfs fi show output, you've probably run out of
+> space during the conversion, probably due to an uneven distribution of
+> the original "single" chunks.
+>
+>    I think I would suggest balancing the single chunks, and trying the
+> conversion (of the unconverted parts) again:
+>
+> # btrfs balance start -dprofiles=single -mprofile=raid1 /mnt/new_storage/
+> # btrfs balance start -dconvert=raid5,soft -mconvert=raid5,soft /mnt/new_storage/
+>
 
---O5XBE6gyVG5Rl6Rj
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Yep I bet that's it also. btrfs fi usage might be better at exposing this case.
 
-On Sat, Aug 01, 2015 at 11:29:40AM -0600, Chris Murphy wrote:
-> Does someone with wiki edit capability want to put up a warning about
-> btrfs-convert problems? I don't think it needs to be a lengthy write
-> up since the scope of the problem is not clear yet. But since there's
-> definitely reproduced problems that have been going on for some time
-> now maybe it'd be a good idea to put up a warning until this is more
-> stable?
-> 
-> I'm thinking of just a yellow warning "sidebar" like thing that maybe
-> just says there's been a regression and it's breaking file systems,
-> sometimes irreparably?
-
-   You mean a warning like the very first sentence, in bold, that's
-already on the wiki page?
-
-https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
-
-   Hugo.
 
 -- 
-Hugo Mills             | You've read the project plan. Forget that. We're
-hugo@... carfax.org.uk | going to Do Stuff and Have Fun doing it.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                           Jeremy Frey
-
---O5XBE6gyVG5Rl6Rj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVvS9JAAoJEFheFHXiqx3kOjYQAKqjVpKAka0XUWW+ZY250pfe
-aSg+vcKJn6o+0vsP+bRYIbHEzchkFE/UQwDKGl4+PJkMyq3XfHvJutwZIldrByDl
-KQhOo+XwkduPajt4E4Xi/QqBYHO3q430eDUZA2+ca9SCaCjZI3Htg3HBY6sJSDAi
-OubXqcxLRjfTVyxkMb/b2R1ARZ3AVlCh0IY22Q8sLjTW/rm7vqEtZwnJj2oPRktm
-zmnp+Qnh29FdEso/0LKkZaAxJ1Rl9/sraSV6Lq67SEp/4LSkFKc7q7ZP/78kr8he
-9aLVZUfFcLe7MHAmOMSp1z4JP3WuP0cBq8nNfrMbiYcJLfxHW0fD0kgp06YME8P8
-E/ImANf09D3cDPCrJedjtspFU78f1notyT7hiqLcLyN6T0UZoGocyC7HxO9BIHDD
-H2H193pRawuER37JCubOjyAAd4Lb8a+ZFIQCxq6+im1oxoSQ/juTQhHdT3ASLrlG
-BTY8+l7HWpD+kfVMkm4EcqoSy03wbruH6JuU61yvt+pZEQjH8wg/F7SxFaLK5Sv4
-rxKRbysgP+tVd4wuToNEIrmol9nFPDeIcq6bOvx9Blu4l0nfLGJfh5pKm2i1166b
-jChN81dAfVzw9uLg9EB0ion42/xGQZz/HGzSDKQ0b+D5Hfhog2z4whxjc06IE/o2
-uhVe6JZa0UwucIqe48eX
-=TnbS
------END PGP SIGNATURE-----
-
---O5XBE6gyVG5Rl6Rj--
+Chris Murphy

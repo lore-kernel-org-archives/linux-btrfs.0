@@ -1,103 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47111 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751463AbbHAWeP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 1 Aug 2015 18:34:15 -0400
-Date: Sat, 1 Aug 2015 22:34:13 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:52000 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751885AbbHBA1g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 1 Aug 2015 20:27:36 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZLh7m-0001nz-Mc
+	for linux-btrfs@vger.kernel.org; Sun, 02 Aug 2015 02:27:34 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Aug 2015 02:27:34 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Aug 2015 02:27:34 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Data single *and* raid?
-Message-ID: <20150801223413.GC14352@carfax.org.uk>
+Date: Sun, 2 Aug 2015 00:27:29 +0000 (UTC)
+Message-ID: <pan$b8fa$cc3e43af$7e32a698$96ba80bb@cox.net>
 References: <55BD277F.2040201@friedels.name>
- <20150801203258.GA14352@carfax.org.uk>
- <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
- <pan$7fbcf$6323c57d$e51a436f$80a59676@cox.net>
- <CAJCQCtQOa8_fcX_O9zop=mT0ABp=3XtJZ5N2SE2nrX7-0TvSpw@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="m51xatjYGsM+13rf"
-In-Reply-To: <CAJCQCtQOa8_fcX_O9zop=mT0ABp=3XtJZ5N2SE2nrX7-0TvSpw@mail.gmail.com>
+	<20150801203258.GA14352@carfax.org.uk>
+	<CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
+	<pan$7fbcf$6323c57d$e51a436f$80a59676@cox.net>
+	<CAJCQCtQOa8_fcX_O9zop=mT0ABp=3XtJZ5N2SE2nrX7-0TvSpw@mail.gmail.com>
+	<20150801223413.GC14352@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills posted on Sat, 01 Aug 2015 22:34:13 +0000 as excerpted:
 
---m51xatjYGsM+13rf
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Sat, Aug 01, 2015 at 04:26:25PM -0600, Chris Murphy wrote:
-> On Sat, Aug 1, 2015 at 3:45 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> > Does fi usage deal with raid5 yet?
+>> Yes and that also puts it in the realm of kernels that weren't
+>> releasing/deallocating empty chunks; although I don't know if that's a
+>> factor, if dconvert forcibly deals with this..
 > 
-> Now that you mention it, I think it doesn't. But if it did, it would
-> show this problem better than df I think.
-> 
-> > But, somewhere along the line he got 6 GiB of raid1 metadata.  Either he
-> > added/rewrote a *BUNCH* of files after adding at least one device before
-> > the conversion that he didn't tell us about, or the conversion screwed
-> > up, because that's a lot of raid1 metadata coming out of nowhere!
-> 
-> Yeah it's a little confusing, that's why I asked about the kernel version.
+>    It does -- you only have to look at the btrfs fi df output to see
+> that there's no empty block groups (to within 0.1% or so)
 
-   It's 6 GiB of metadata for 5.7 GIB of data, or thereabouts. 0.1% is
-about the expected size.
+Exactly.  The allocations are all full.
 
-   Now, given the original description, it's not clear at all why the
-data has suddenly doubled in size -- unless there's some snapshots,
-and the OP did a defrag as well.
+And the fi show says there's little to no room to allocate more, as 
+well.  There's room on one device, but that's not going to help except 
+with single, which shouldn't be allocated any more.
 
-> > But I'm *strongly* suspecting a pre-full-raid56-support kernel, because
-> > btrfs-progs is certainly reasonably new (v4.1.1, as of yesterday 4.1.2 is
-> > the newest as I mention above), but the fi df doesn't report global
-> > reserve.  The only way I know of that it wouldn't report that with a new
-> > userspace is if the kernelspace is too old.
-> 
-> Yes and that also puts it in the realm of kernels that weren't
-> releasing/deallocating empty chunks; although I don't know if that's a
-> factor, if dconvert forcibly deals with this..
+I'd say...
 
-   It does -- you only have to look at the btrfs fi df output to see
-that there's no empty block groups (to within 0.1% or so)
+1) If this fs was created with btrfs-progs v4.1.1, get what you need to 
+retrieve off of it immediately, then blow it away and start over, as the 
+thing isn't stable and all data is at risk.
 
-> > Finally, that's btrfs-progs 4.1.1, the one that's blacklisted due to a
-> > buggy mkfs.btrfs.  If he created the filesystem with that mkfs.btrfs...
-> > maybe that explains the funky results, as well.
-> 
-> Good catch. That really ought to be filed as a bug with that distro to
-> flat out remove 4.1.1 from the repos.
+2) If it wasn't created with progs v4.1.1, the next issue is that kernel, 
+since it's obviously from before raid56 was fully functional (well either 
+that or there's a more serious bug going on).  Existing data should at 
+least be reasonably stable, but with raid56 mode being so new, the newer 
+the kernel you're using to work with it, the better.  4.1.x at LEAST, if 
+not 4.2-rc, as we're nearing the end of the 4.2 development cycle.  And 
+plan on keeping even better than normal backups and on current on kernels 
+for at least another several kernel cycles, if you're going to use raid56 
+mode, as while it's complete now, it's going to take a bit to stabilize 
+to the level of the rest of btrfs itself, which of course is stabilizing 
+now, but not really fully stable and mature yet, so the sysadmin's rule 
+that data with any value is backed up, or by definition it's throw-away 
+data, despite any claims to the contrary, continues to apply double on 
+btrfs, compared to more mature and stable filesystems.
 
-   If they picked up 4.1.1 fast enough, they should pick up 4.1.2 just
-as quickly...
+So definitely upgrade the kernel.  Then see where things stand.
 
-   Hugo.
+3) Meanwhile, based on raid56 mode's newness, I've been recommending that 
+people stay off it until 4.5-ish or so, basically a year after initial 
+nominal full support, unless of course their intent is to be a leading/
+bleeding edge testing and report deployment.  Otherwise, use raid1 or 
+raid10 mode until then, and evaluate raid56 mode stability around 4.5, 
+before deploying.
+
+And if you're one of the brave doing current raid56 deployment, testing 
+and bug reporting in full knowledge of its newness and lack of current 
+stability and maturity, THANKS, it's your work that's helping to 
+stabilize it for others, when they do switch to it. =:^)
 
 -- 
-Hugo Mills             | "What are we going to do tonight?"
-hugo@... carfax.org.uk | "The same thing we do every night, Pinky. Try to
-http://carfax.org.uk/  | take over the world!"
-PGP: E2AB1DE4          |
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---m51xatjYGsM+13rf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVvUllAAoJEFheFHXiqx3kKyMQAJWxaHRIqSLPA+/VeHB4wVzQ
-qgna/ol3VxJLnKfUk1K/vfZiSsp6vEjY/pZzVU45D53Hak2jwAKLltVRLmHbm/By
-pzQ/tDwVbVaVmarDvritkfCdXUPVeMDIz1LfgtTskKrRz5QrAcqdAtaOBh4JcgiU
-RmpQCSNwVS24/ucziwVQF/9ycoFZRU31tMjWs77nY+48nJIL0AN/e38rLIoTd/Sk
-yC2MoMH76rwp/METEat3HQfwW3BoVWe2t+H5jbBWAlm86ik+UV9fGLKF05BKndTE
-+lK2cqv7GJTc94L1C+v3ErqT1cFhLS6FJfoV42EwWltuFGwZJANWEiC3UOdgxzdq
-qew++yN/9InWP56MhIMD4Y6xncfEhIGPl2HmtWsIIHr7ZjUl+UpxDDCsiNhVqPap
-1A1j1OO2l8/sInQDKMC6es2y/4HejTgMiDr7a785Y0SMxrVg1ZVH4fBa5eOe9/RN
-5bTQLvnWlNtDJgv1J6b5daBTvYt7n1AoFTEyZSXfgsvu3cCq60Yd8S43QIDRBYDM
-NTag6WQTOhns0aQQRbW1AW857EzA2mc1tpP62rb3boZhJsVjomaaFbmKDimGrmMX
-tm19UweNC3PKFb4HRzhBw2ufdNfGZaM4fzBE3tKTGbCUMxtGs066b0+lfLJuXNbc
-F7L0mPRBlusCp5386Gdd
-=Kj93
------END PGP SIGNATURE-----
-
---m51xatjYGsM+13rf--

@@ -1,92 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f176.google.com ([209.85.160.176]:36833 "EHLO
-	mail-yk0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750972AbbHBRNm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Aug 2015 13:13:42 -0400
-Received: by ykeb10 with SMTP id b10so14053789yke.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 02 Aug 2015 10:13:41 -0700 (PDT)
+Received: from mail-vk0-f52.google.com ([209.85.213.52]:32911 "EHLO
+	mail-vk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751655AbbHBSbO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Aug 2015 14:31:14 -0400
+Received: by vkgc186 with SMTP id c186so35862515vkg.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 02 Aug 2015 11:31:13 -0700 (PDT)
 MIME-Version: 1.0
-Date: Sun, 2 Aug 2015 13:13:41 -0400
-Message-ID: <CAP5+4qewgAhZ=1qKyDMMAsHC39CH36VmuaEuyaaaTAWHeqzmYw@mail.gmail.com>
-Subject: BTRFS disaster (of my own making). Is this recoverable?
-From: Sonic <sonicsmith@gmail.com>
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <pan$2c3c8$edc30c0$3c253f51$8a661bd4@cox.net>
+References: <55BD277F.2040201@friedels.name>
+	<20150801203258.GA14352@carfax.org.uk>
+	<CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
+	<pan$7fbcf$6323c57d$e51a436f$80a59676@cox.net>
+	<CAJCQCtQOa8_fcX_O9zop=mT0ABp=3XtJZ5N2SE2nrX7-0TvSpw@mail.gmail.com>
+	<20150801223413.GC14352@carfax.org.uk>
+	<pan$b8fa$cc3e43af$7e32a698$96ba80bb@cox.net>
+	<CAJCQCtQqkUY=oRKFAx-0UaT-87STiDgD-vQ+gknkE5V2SzPb4A@mail.gmail.com>
+	<pan$2c3c8$edc30c0$3c253f51$8a661bd4@cox.net>
+Date: Sun, 2 Aug 2015 12:31:13 -0600
+Message-ID: <CAJCQCtSrt5OcUtURko3PjOtvCZBJ6quTn=AdT5P=+Ek3HuNuCQ@mail.gmail.com>
+Subject: Re: Data single *and* raid?
+From: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I have had bad dreams about this particular fat finger but after a few
-years it has finally happened.
+On Sat, Aug 1, 2015 at 9:46 PM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-Scenario: 2 drives in a raw btrfs array (no previous partitions and
-non-redundant) with various subvols as well. One was sdc the other was
-sde, although sde never displays with mount command and blkid is the
-same for both.
+> If it was setup with something earlier (not sure about 4.1.0, was it
+> affected?
 
-Thinking I was writing to a flash drive I sent 32MB via dd
-===========================
-dd if=file of=/dev/sde
-===========================
-to sde (instead of what I wanted - sdf) and now the volume nor any of
-it's subvol's can mount (of course that seems entirely reasonable,
-although you can imagine how unhappy I am).
+No.
 
-With:
-===========================
-mount -t btrfs /mnt/butter/
-===========================
-I get:
-===========================
-[ 3421.193103] BTRFS info (device sde): disk space caching is enabled
-[ 3421.193734] BTRFS (device sde): bad tree block start
-8330001001141004672 20971520
-[ 3421.193738] BTRFS: failed to read chunk root on sde
-[ 3421.203221] BTRFS: open_ctree failed
-===========================
+> but 4.0.x and earlier should be fine for setup), however, once
+> on a new kernel the usual ENOSPC workarounds can be given a try.  That
+> would include a first balance start -dusage=0 -musage=0, and if that
+> didn't free up at least a gig on a second device,
 
-If I specify /dev/sdc instead of relying on fstab I get:
-===========================
-mount -t btrfs -o degraded /dev/sdc /mnt/butter/
-===========================
-[ 3839.506766] BTRFS info (device sde): allowing degraded mounts
-[ 3839.506769] BTRFS info (device sde): disk space caching is enabled
-[ 3839.507154] BTRFS (device sde): bad tree block start
-8330001001141004672 20971520
-[ 3839.507159] BTRFS: failed to read chunk root on sde
-[ 3839.515023] BTRFS: open_ctree failed
-===========================
+If I'm following this correctly, the reproduce steps would be to
+create a single device Btrfs that's ~94% full, add two devices, then
+convert to raid5. I think what's going on here is empty single profile
+data chunks aren't being deallocated, and it's effectively a 2 device
+raid5.
 
-Obligatory details:
-===========================
-uname -a
-Linux sartre 4.1.3-gentoo #1 SMP Sat Jul 25 22:34:14 EDT 2015 x86_64
-Intel(R) Core(TM) i7-3770K CPU @ 3.50GHz GenuineIntel GNU/Linux
-===========================
-btrfs --version
-btrfs-progs v4.1.2
-===========================
-btrfs fi show
-Label: 'garage'  uuid: 896f615e-6437-41c6-8f2a-25f73ff1af7a
-        Total devices 1 FS bytes used 89.33GiB
-        devid    1 size 200.00GiB used 92.02GiB path /dev/sdb3
+So actually, you're right, either -dusage=0 might fix it, or better,
+newer kernel that automatically deallocated empty/converted single
+profile data chunks. But right now it will take another balance in the
+end because it looks like this is effectively a 2 device raid5, with
+the 3rd drive full of single only chunks (which might be empty?).
 
-warning, device 2 is missing
-bytenr mismatch, want=20971520, have=0
-Couldn't read chunk root
-Label: 'terrafirm'  uuid: 09024c28-7932-4ddb-960d-becc1ea839e5
-        Total devices 2 FS bytes used 6.40TiB
-        devid    1 size 3.64TiB used 3.21TiB path /dev/sdc
-        *** Some devices missing
 
-btrfs-progs v4.1.2
-===========================
-btrfs fi df /mnt/butter
-ERROR: couldn't get space info - Inappropriate ioctl for device
-ERROR: get_df failed Inappropriate ioctl for device
-===========================
-
-Please advise.
-
-Thank you,
-
-Chris
+-- 
+Chris Murphy

@@ -1,68 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from b.mail.japannext.co.jp ([106.186.104.146]:40357 "EHLO
-	b.mail.japannext.co.jp" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751801AbbHBFoH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Aug 2015 01:44:07 -0400
-Date: Sun, 2 Aug 2015 14:44:03 +0900
-From: Georgi Georgiev <georgi-georgiev-btrfs@japannext.co.jp>
-To: John Ettedgui <john.ettedgui@gmail.com>
-Cc: =?utf-8?B?4oCcbGludXgtYnRyZnNAdmdlci5rZXJuZWwub3Jn4oCd?=
-	<linux-btrfs@vger.kernel.org>
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-Message-ID: <20150802054403.GB15867@jnext-0060.corp.japannext.co.jp>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <55BADEC4.3020409@cn.fujitsu.com>
- <CAJ3TwYS_C9LDU4ffsqtih3Rus6HREuA+gkb0kPpV_JNSyL4Bmg@mail.gmail.com>
+Received: from mout.kundenserver.de ([212.227.126.131]:58521 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751281AbbHBMys convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 2 Aug 2015 08:54:48 -0400
+Message-ID: <55BE1310.20608@friedels.name>
+Date: Sun, 02 Aug 2015 14:54:40 +0200
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAJ3TwYS_C9LDU4ffsqtih3Rus6HREuA+gkb0kPpV_JNSyL4Bmg@mail.gmail.com>
+To: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Data single *and* raid?
+References: <55BD277F.2040201@friedels.name>	<20150801203258.GA14352@carfax.org.uk> <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
+In-Reply-To: <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Quoting John Ettedgui at 2015-07-30-21:10:27(-0700):
-> On Thu, Jul 30, 2015 at 7:34 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> >
-> > Hi John,
-> > Thanks for the trace output.
-> You are welcome, thank you for looking at it!
-> >
-> > But it seems that, your root partition is also btrfs, causing a lot of btrfs
-> > trace from your systemd journal.
-> >
-> Oh yes sorry about that.
-> I actually have 3 partition in btrfs, the problematic one being the
-> only big one.
-> > Would you mind re-collecting the ftrace without such logging system caused
-> > btrfs trace?
-> Sure, how would I do that?
-> This is my first time using ftrace.
-> >
-> > BTW, although I'm not quite familiar with ftrace, would you please consider
-> > collect ftrace with function_graph tracer?
-> Sure, how would I do that one as well?
+Hello,
 
-You can use set_ftrace_pid to trace only a single process (for example,
-the mount command). There is a sample script I found in the ftrace
-documentation that goes something like this:
+>>     Looking at the btrfs fi show output, you've probably run out of
+>> space during the conversion, probably due to an uneven distribution of
+>> the original "single" chunks.
+>>
+>>     I think I would suggest balancing the single chunks, and trying the
+>> conversion (of the unconverted parts) again:
+>>
+>> # btrfs balance start -dprofiles=single -mprofile=raid1 /mnt/new_storage/
+>> # btrfs balance start -dconvert=raid5,soft -mconvert=raid5,soft /mnt/new_storage/
+>>
+>
+> Yep I bet that's it also. btrfs fi usage might be better at exposing this case.
 
-# First disable tracing, to clear the trace buffer
-echo nop            > current_tracer
-echo 0              > tracing_on
-echo 0              > tracing_enabled
 
-# Then re-enable it after setting the filters
-echo $$             > set_ftrace_pid
-echo '*btrfs*'      > set_ftrace_filter
-echo function_graph > current_tracer
-echo 1              > tracing_enabled
-echo 1              > tracing_on
+Thanks for your hints.
+The balance is running now for about 11h:
+The status is a bit surprising to me:
+0 out of about 2619 chunks balanced (4165 considered), 100% left
 
-# And finally *exec* the command to trace:
-exec mount ....
+btrfs fi usage is also surprising:
+Overall:
+     Device size:                   8.19TiB
+     Device allocated:              2.56TiB
+     Device unallocated:            5.62TiB
+     Device missing:                  0.00B
+     Used:                          2.56TiB
+     Free (estimated):             11.65TiB      (min: 2.81TiB)
+     Data ratio:                       0.48
+     Metadata ratio:                   1.33
+     Global reserve:              512.00MiB      (used: 0.00B)
 
-I tried it, but the logs were way too large, and I was still fiddling
-with the trace_options to set. If someone has good advice, we can try it
-again
+Data,single: Size:2.55TiB, Used:2.55TiB
+    /dev/sdc        1.60TiB
+    /dev/sde      975.44GiB
 
--- 
-Georgi
+Data,RAID5: Size:2.73TiB, Used:2.72TiB
+    /dev/sdc        1.12TiB
+    /dev/sdd        2.73TiB
+    /dev/sde        1.61TiB
+
+Metadata,RAID1: Size:6.00GiB, Used:5.33GiB
+    /dev/sdc        5.00GiB
+    /dev/sdd        1.00GiB
+    /dev/sde        6.00GiB
+
+Metadata,RAID5: Size:3.00GiB, Used:2.99GiB
+    /dev/sdc        2.00GiB
+    /dev/sdd        1.00GiB
+    /dev/sde        3.00GiB
+
+System,RAID5: Size:32.00MiB, Used:736.00KiB
+    /dev/sdd       32.00MiB
+    /dev/sde       32.00MiB
+
+Unallocated:
+    /dev/sdc        1.02MiB
+    /dev/sdd        1.02MiB
+    /dev/sde      164.59GiB
+
+
+I hope, that is because Raid5 is not implemented yet?
+
+Regards,
+Hendrik
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
+

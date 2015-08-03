@@ -1,42 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from imap.thunk.org ([74.207.234.97]:56636 "EHLO imap.thunk.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752033AbbHaVJf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Aug 2015 17:09:35 -0400
-Date: Mon, 31 Aug 2015 17:09:27 -0400
-From: "Theodore Ts'o" <tytso@mit.edu>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        chandan@mykolab.com
-Subject: Re: [PATCH] generic/224: Increase filesystem instance size to 1.5 GiB
-Message-ID: <20150831210927.GD27040@thunk.org>
-References: <1440945981-323-1-git-send-email-chandan@linux.vnet.ibm.com>
- <20150831181127.GB7642@thunk.org>
- <55E4A8BA.2050908@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:19490 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752449AbbHCHS7 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Aug 2015 03:18:59 -0400
+Subject: Re: [PATCH RFC 00/14] Yet Another In-band(online) deduplication
+ implement
+To: <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <1438072250-2871-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <20150728145021.GI6306@twin.jikos.cz>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55BF15DF.9080805@cn.fujitsu.com>
+Date: Mon, 3 Aug 2015 15:18:55 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55E4A8BA.2050908@gmail.com>
+In-Reply-To: <20150728145021.GI6306@twin.jikos.cz>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 31, 2015 at 03:19:22PM -0400, Austin S Hemmelgarn wrote:
-> AFAIK, it shouldn't be failing that way, and should automatically switch to
-> mixed mode allocation.  A 1G filesystem should work fine for BTRFS, but
-> smaller ones will have higher chances of ENOSPC issues (inversely
-> proportional to the size of the FS).  I would advise against using BTRFS on
-> such a small disk (I avoid using it on anything smaller than 4G personally),
-> but I'm not one of the developers, and the fact that I feel it isn't a good
-> idea doesn't mean it shouldn't work.
 
-Instead of modifying generic/224, maybe it would be better to have a
-way to specify a minimum file system size on a per-file system basis.
-That way, if some file system does have a minimum size of say, 1G or
-4G, it can be configured in one place, instead of needing to modify
-every test that uses a small file system size, or forcing all file
-systems to use a larger file systems just for the benefit of a single
-file system?
 
-Or maybe just fix mkfs.btrfs?
+David Sterba wrote on 2015/07/28 16:50 +0200:
+> On Tue, Jul 28, 2015 at 04:30:36PM +0800, Qu Wenruo wrote:
+>> Although Liu Bo has already submitted a V10 version of his deduplication
+>> implement, here is another implement for it.
+>
+> What's the reason to start another implementation?
+>
+>> [[CORE FEATURES]]
+>> The main design concept is the following:
+>> 1) Controllable memory usage
+>> 2) No guarantee to dedup every duplication.
+>> 3) No on-disk format change or new format
+>> 4) Page size level deduplication
+>
+> 1 and 2) are good goals, allow usability tradeoffs
+>
+> 3) so the dedup hash is stored only for the mount life time. Though it
+> avoids the on-disk format changes, it also reduces the effectivity. It
+> is possible to "seed" the in-memory tree by reading all files that
+> contain potentially duplicate blocks but one would have to do that after
+> each mount.
+>
+> 4) page-sized dedup chunk is IMHO way too small. Although it can achieve
+> high dedup rate, the metadata can potentially explode and cause more
+> fragmentation.
+>
+>> Implement details includes the following:
+>> 1) LRU hash maps to limit the memory usage
+>>     The hash -> extent mapping is control by LRU (or unlimited), to
+>>     get a controllable memory usage (can be tuned by mount option)
+>>     alone with controllable read/write overhead used for hash searching.
+>
+> In Liu Bo's series, I rejected the mount options as an interface and
+> will do that here as well. His patches added a dedup ioctl to (at least)
+> enable/disable the dedup.
+BTW,　would you please give me some reason why that's not a good idea to 
+use mount option to trigger/change dedup options?
 
-						- Ted
+Thanks,
+Qu
+>
+>> 2) Reuse existing ordered_extent infrastructure
+>>     For duplicated page, it will still submit a ordered_extent(only one
+>>     page long), to make the full use of all existing infrastructure.
+>>     But only not submit a bio.
+>>     This can reduce the number of code lines.
+>
+>> 3) Mount option to control dedup behavior
+>>     Deduplication and its memory usage can be tuned by mount option.
+>>     No need to indicated ioctl interface.
+>
+> I'd say the other way around.
+>
+>>     And further more, it can easily support BTRFS_INODE flag like
+>>     compression, to allow further per file dedup fine tunning.
+>>
+>> [[TODO]]
+>> 3. Add support for per file dedup flags
+>>     Much easier, just like compression flags.
+>
+> How is that supposed to work? You mean add per-file flags/attributes to
+> mark a file so it fills the dedup hash tree and is actively going to be
+> deduped agains other files?
+>
+>> Any early review or advice/question on the design is welcomed.
+>
+> The implementation is looks simpler than the Liu Bo's, but (IMHO) at the
+> cost of reduced funcionality.
+>
+> Ideally, we merge one patchset with all desired functionality. Some kind
+> of control interface is needed not only to enable/dsiable the whole
+> feature but to affect the trade-offs (memory consumptin vs dedup
+> efficiency vs speed), and that in a way that's flexible according to
+> immediate needs.
+>
+> The persistent dedup hash storage is not mandatory in theory, so we
+> could implement an "in-memory tree only" mode, ie. what you're
+> proposing, on top of Liu Bo's patchset.
+>

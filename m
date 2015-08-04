@@ -1,63 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f173.google.com ([209.85.160.173]:34464 "EHLO
-	mail-yk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754499AbbHDCUj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Aug 2015 22:20:39 -0400
-Received: by ykax123 with SMTP id x123so126934560yka.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Aug 2015 19:20:38 -0700 (PDT)
+Received: from mail-qg0-f44.google.com ([209.85.192.44]:35993 "EHLO
+	mail-qg0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751074AbbHDCbd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Aug 2015 22:31:33 -0400
+Received: by qgeh16 with SMTP id h16so102072089qge.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 03 Aug 2015 19:31:33 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAP5+4qfLEqvGQhCkzQWPLy-dtAS7GjSfDy5Oo=6OXL1zohrc=Q@mail.gmail.com>
-References: <CAP5+4qewgAhZ=1qKyDMMAsHC39CH36VmuaEuyaaaTAWHeqzmYw@mail.gmail.com>
-	<pan$73c92$81fb65b9$3c60e540$cb422e6a@cox.net>
-	<CAP5+4qfi4UdfMmNdC2XizTG0au-btnKBqSmg1rUaW=EJApZkmA@mail.gmail.com>
-	<CAP5+4qdmjkniaoY6+FCL4OTAYQjpU=DOWBRv-3FkEvFN=TAeRw@mail.gmail.com>
-	<20150803152835.GF14352@carfax.org.uk>
-	<CAP5+4qfmXdMvBaVK1KqUfBRfM447ASJ4U0OqRxhsOw2r4WE1fQ@mail.gmail.com>
-	<CAP5+4qd2-kKEG5y2gEphQ=5A4+B+=2teMxiZJc-vDHZ1_-t8OQ@mail.gmail.com>
-	<CAP5+4qceVW2JbAteuRQUK+5mdwWcp8fF0QUk6Q87nqCw5P5wRw@mail.gmail.com>
-	<CAP5+4qfLEqvGQhCkzQWPLy-dtAS7GjSfDy5Oo=6OXL1zohrc=Q@mail.gmail.com>
-Date: Mon, 3 Aug 2015 22:20:38 -0400
-Message-ID: <CAP5+4qcdn9eeHk=EgpUjNC2T+fxwimRit+BRsxQDv6k1Bb=Gqg@mail.gmail.com>
-Subject: Re: BTRFS disaster (of my own making). Is this recoverable?
-From: Sonic <sonicsmith@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Sonic <sonicsmith@gmail.com>,
-        Duncan <1i5t5.duncan@cox.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
+	<55BADEC4.3020409@cn.fujitsu.com>
+	<CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
+	<55BAFEF9.1070107@cn.fujitsu.com>
+	<CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
+	<55BB0A39.1050208@cn.fujitsu.com>
+	<CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
+	<CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
+	<55C017E7.40704@cn.fujitsu.com>
+	<CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
+Date: Mon, 3 Aug 2015 19:31:32 -0700
+Message-ID: <CAJ3TwYQN4w4qj4FWiSmRsQ4-oxVWDH4vsu3b7=HqB2cCS5jpcQ@mail.gmail.com>
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+From: John Ettedgui <john.ettedgui@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 3, 2015 at 12:32 PM, Sonic <sonicsmith@gmail.com> wrote:
-> btrfs rescue chunk-recover
+On Mon, Aug 3, 2015 at 6:55 PM, John Ettedgui <john.ettedgui@gmail.com> wrote:
+> On Mon, Aug 3, 2015 at 6:39 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>
+>> Oh, you were using trace-cmd, that's why the data is so huge.
+> Oh, I thought it was just automating the work for me, but without any
+> sort of impact.
+>>
+>> I was originally hoping you just copy the trace file, which is human
+>> readable and not so huge.
+> If you mean something like the ouput of trace-cmd report, it was
+> actually bigger than the dat files (about twice the size) that's why I
+> shared the dats instead.
+> If you want the reports instead I'll gladly share them.
+In case it helps here are the reports instead of the dats:
+https://mega.co.nz/#!FwpwHQyL!m0dQHSfQSNGzw9yUwJ6l0eb7Mzta0pOSAf1JHDZ1zfo
+https://mega.co.nz/#!B1JgXLxZ!oI1bm0RyhqFbkCWnT95GNKohGozmvqxgJDSUtVdo77s
 
-Ran this:
-btrfs rescue chunk-recover -v /dev/sde |tee brcr.txt
-
-Got this (very end of output):
-==================================
-Unrecoverable Chunks:
-
-Total Chunks:           3292
-  Recoverable:          3292
-  Unrecoverable:        0
-
-Orphan Block Groups:
-
-Orphan Device Extents:
-
-Fail to recover the chunk tree.
-==================================
-If earlier output of this process might be helpful I can provide it
-(used tee to create a file).
-
-Didn't work - seems all chunks found were recoverable - it's
-apparently the missing chunks that are the problem.
-
-I'm thinking this is a lost cause. Also thinking I need to provide for
-some redundancy in the future :-)
-
-Any other suggestions before I give up the ghost on this?
+I guess once compressed the size difference is meaningless
 
 Thanks,
-
-Chris
+John

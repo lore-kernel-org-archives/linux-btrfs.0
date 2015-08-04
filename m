@@ -1,89 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51474 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932078AbbHCT0r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 3 Aug 2015 15:26:47 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZMLNl-0000Xs-SM
-	for linux-btrfs@vger.kernel.org; Mon, 03 Aug 2015 21:26:46 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Aug 2015 21:26:45 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 03 Aug 2015 21:26:45 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS disaster (of my own making). Is this recoverable?
-Date: Mon, 3 Aug 2015 19:26:35 +0000 (UTC)
-Message-ID: <pan$e7ee0$9d28e5c7$47347d3e$4171406f@cox.net>
-References: <CAP5+4qewgAhZ=1qKyDMMAsHC39CH36VmuaEuyaaaTAWHeqzmYw@mail.gmail.com>
-	<pan$73c92$81fb65b9$3c60e540$cb422e6a@cox.net>
-	<CAP5+4qfi4UdfMmNdC2XizTG0au-btnKBqSmg1rUaW=EJApZkmA@mail.gmail.com>
-	<CAP5+4qdmjkniaoY6+FCL4OTAYQjpU=DOWBRv-3FkEvFN=TAeRw@mail.gmail.com>
-	<20150803152835.GF14352@carfax.org.uk>
-	<CAP5+4qfmXdMvBaVK1KqUfBRfM447ASJ4U0OqRxhsOw2r4WE1fQ@mail.gmail.com>
-	<CAP5+4qd2-kKEG5y2gEphQ=5A4+B+=2teMxiZJc-vDHZ1_-t8OQ@mail.gmail.com>
-	<CAP5+4qceVW2JbAteuRQUK+5mdwWcp8fF0QUk6Q87nqCw5P5wRw@mail.gmail.com>
-	<CAP5+4qfLEqvGQhCkzQWPLy-dtAS7GjSfDy5Oo=6OXL1zohrc=Q@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:8798 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753214AbbHDBj5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 3 Aug 2015 21:39:57 -0400
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+To: John Ettedgui <john.ettedgui@gmail.com>
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
+ <55BADEC4.3020409@cn.fujitsu.com>
+ <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
+ <55BAFEF9.1070107@cn.fujitsu.com>
+ <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
+ <55BB0A39.1050208@cn.fujitsu.com>
+ <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
+ <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
+CC: btrfs <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55C017E7.40704@cn.fujitsu.com>
+Date: Tue, 4 Aug 2015 09:39:51 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sonic posted on Mon, 03 Aug 2015 12:32:21 -0400 as excerpted:
 
-> Are either one of these called for?
-> 
-> btrfs check --repair or btrfs check --repair --init-csum-tree
-> 
-> Seems like they might be a last ditch attempt. Is one preferred over the
-> other?
 
-The read-only check (without --repair) couldn't read the chunk tree, so 
-check --repair probably should run into the same issue and not be able to 
-do anything as well.
+John Ettedgui wrote on 2015/07/31 21:35 -0700:
+> On Thu, Jul 30, 2015 at 10:45 PM, John Ettedgui <john.ettedgui@gmail.com> wrote:
+>> On Thu, Jul 30, 2015 at 10:40 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>>
+>>> It seems that you're using Chromium while doing the dump. :)
+>>> If no CD drive, I'll recommend to use Archlinux installation iso to make a
+>>> bootable USB stick and do the dump.
+>>> (just download and dd would do the trick)
+>>> As its kernel and tools is much newer than most distribution.
+> So I did not have any usb sticks large enough for this task (only 4Gb)
+> so I restarted into emergency runlevel with only / mounted and as ro,
+> I hope that'll do.
+>>>
+>>> It's better to provide two trace.
+>>> One is the function tracer one, with "btrfs:*" as set_event.
+>>> The other is the function_graph one. with "btrfs_mount" as
+>>> set_graph_function.
+> So I got 2 new traces, and I am hoping that these are what you meant,
+> but I am still not sure.
+> Here are the commands I used in case...:
+>
+> trace-cmd record -o
+> trace-function_graph.dat -p function_graph -g btrfs_mount mount MountPoint
+>
+> and
+>
+> trace-function_graph.dat -p function -l 'btrfs_*' mount MountPoint
+> (using -e btrfs only lead to a crash but -l 'btrfs_*' passed, though I
+> am sure they have different purposes.. I hope that's the correct one)
+>
+> The first one was so big, 2Gb, I had to use xz to compress it and host
+> it somewhere else, the ML would most likely not take it.
+> The other one is quite small but I hosted it in the same place....
+> Here are the links:
+> https://mega.nz/#!8tgTjKyK!XJnWH05bsv9sJ3nANIxKsdkL20RePPS4cKgWSxit0eQ
+> https://mega.nz/#!xopkVA6L!z9xjo3us1Nv6wdOs05jNZdhNbiAP5yeLdneEp0huUzI
+>
+> I hope that was it this time!
+Oh, you were using trace-cmd, that's why the data is so huge.
 
-check --init-csum-tree reinitializes the checksums, but to do that you 
-have to have something to reinitialize on, so that's unlikely to do 
-anything, either.  (I did have that in mind as a possibility after the 
-superblock recovery and chunk-recover operations, tho, if necessary.  
-That's why I mentioned check at the end.  But the message was long enough 
-already and that would have been getting ahead of things, so...)
+I was originally hoping you just copy the trace file, which is human 
+readable and not so huge.
 
-> Is:
-> btrfs rescue chunk-recover a much less dangerous attempt (IOW it wont
-> hurt to try it first)?
+But that's OK anyway.
 
-I'd not call it less dangerous, but given that the chunk tree can't be 
-read, you're already dealing with dangerous.  That's what I'd try here 
-(tho Hugo's suggesting it won't help has me doubting, but that's where 
-things do point from what I see).
+I'll try to analyse it to find a clue if possible.
 
-Which is why I mentioned doing a raw device backup, before attempting 
-it.  Chunk-recover is pretty invasive, and if it doesn't work, it could 
-make the filesystem unrecoverable.  It's basically a one-shot deal.  A 
-raw device backup can be used to avoid it being one-shot, but of course 
-that does require that you have enough devices of sufficient size to 
-backup to, which certainly in the terabyte range, is a potential problem 
-unless you're a big-budget corporate user with a stack of spare devices 
-on hand.
-
-I believe Hugo's right on zero-log, tho.  That's a fix for a very 
-specific situation, seen most often due to a specific bug that was short 
-lived and has been fixed for quite some time, now, tho in certain very 
-narrow post-crash situations the same fix has been known to work too.  
-There's no evidence you're anywhere near that very specific situation, so 
-zero-log's just not the tool for this job.  And it could make things 
-slightly worse, too, tho in theory at least, all you're doing is cutting 
-off the last 30 seconds or so of activity, so the chances of it doing 
-major harm are small, unless you were actively rebalancing or something 
-when the filesystem was last unmounted (gracefully or not).
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks,
+Qu
+> Thanks,
+> John
+>

@@ -1,70 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45200 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:48025 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750735AbbHDFKP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 4 Aug 2015 01:10:15 -0400
+	id S1754432AbbHDGri (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 4 Aug 2015 02:47:38 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZMUUO-00023t-QB
-	for linux-btrfs@vger.kernel.org; Tue, 04 Aug 2015 07:10:12 +0200
+	id 1ZMW0e-0002hi-Go
+	for linux-btrfs@vger.kernel.org; Tue, 04 Aug 2015 08:47:36 +0200
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Aug 2015 07:10:12 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Aug 2015 08:47:36 +0200
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 04 Aug 2015 07:10:12 +0200
+        for <linux-btrfs@vger.kernel.org>; Tue, 04 Aug 2015 08:47:36 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS disaster (of my own making). Is this recoverable?
-Date: Tue, 4 Aug 2015 05:10:06 +0000 (UTC)
-Message-ID: <pan$f64e$1c059550$ef240e25$d6d81c77@cox.net>
-References: <CAP5+4qewgAhZ=1qKyDMMAsHC39CH36VmuaEuyaaaTAWHeqzmYw@mail.gmail.com>
-	<pan$73c92$81fb65b9$3c60e540$cb422e6a@cox.net>
-	<CAP5+4qfi4UdfMmNdC2XizTG0au-btnKBqSmg1rUaW=EJApZkmA@mail.gmail.com>
-	<CAP5+4qdmjkniaoY6+FCL4OTAYQjpU=DOWBRv-3FkEvFN=TAeRw@mail.gmail.com>
-	<20150803152835.GF14352@carfax.org.uk>
-	<CAP5+4qfmXdMvBaVK1KqUfBRfM447ASJ4U0OqRxhsOw2r4WE1fQ@mail.gmail.com>
-	<CAP5+4qd2-kKEG5y2gEphQ=5A4+B+=2teMxiZJc-vDHZ1_-t8OQ@mail.gmail.com>
-	<CAP5+4qceVW2JbAteuRQUK+5mdwWcp8fF0QUk6Q87nqCw5P5wRw@mail.gmail.com>
-	<CAP5+4qfLEqvGQhCkzQWPLy-dtAS7GjSfDy5Oo=6OXL1zohrc=Q@mail.gmail.com>
-	<CAP5+4qcdn9eeHk=EgpUjNC2T+fxwimRit+BRsxQDv6k1Bb=Gqg@mail.gmail.com>
+Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
+Date: Tue, 4 Aug 2015 06:47:28 +0000 (UTC)
+Message-ID: <pan$2aa9c$6f3b26db$628bcc6$ac147f6d@cox.net>
+References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
+	<55BADEC4.3020409@cn.fujitsu.com>
+	<CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
+	<55BAFEF9.1070107@cn.fujitsu.com>
+	<CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
+	<55BB0A39.1050208@cn.fujitsu.com>
+	<CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
+	<CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
+	<55C017E7.40704@cn.fujitsu.com>
+	<CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
+	<55C02AF9.3070600@cn.fujitsu.com>
+	<CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sonic posted on Mon, 03 Aug 2015 22:20:38 -0400 as excerpted:
+John Ettedgui posted on Mon, 03 Aug 2015 21:58:09 -0700 as excerpted:
 
-> I'm thinking this is a lost cause. Also thinking I need to provide for
-> some redundancy in the future :-)
-> 
-> Any other suggestions before I give up the ghost on this?
+> Current mount options in fstab:
+> defaults,noatime,compress=lzo,space_cache,autodefrag 0 0
 
-I don't remember you saying anything about trying btrfs restore.  I'm not 
-sure it can do anything for this case, and it definitely requires enough 
-additional space on some other filesystem to store the data it restores, 
-but if you had stuff on there you'd really like to get back, it's worth a 
-shot, and if you're going to be backing up in the future, you'll need the 
-additional devices for the backup in any case, so might as well get 'em 
-now, mkfs them to whatever (doesn't have to be btrfs since all you're 
-doing is using it as a place to store the files, it's the one you're 
-restoring /from/ that's btrfs), mount 'em, and try restoring to them.
 
-Worst-case, it doesn't work and you have your set of backup devices 
-already prepped and ready to go.  Best-case, it recovers pretty much 
-everything.
 
-But I am guessing restore won't be able to do anything on it's own, 
-you'll need to try btrfs-find-root, and feed the bytenr from roots it 
-finds into restore until you get something useful.  Take a look at the 
-link and brief instructions I posted in my first reply.
+Just a few hints for a tidier fstab.  Feel free to ignore if you don't 
+care, as the practical difference in mount options is nil.  =:^)
 
-Of course, if btrfs-find-root doesn't show you any roots (these are the 
-filesystem master roots), or if fed those roots using -t <bytenr>, btrfs 
-restore --list-roots (these are the various subtree roots) doesn't give 
-you anything worthwhile, then it /would/ appear you're looking at a lost-
-cause... unless anyone else has a bright idea at this point.
+1) You should be able to delete that space_cache option.  Btrfs has 
+defaulted to space_cache since at least 3.0 I think and probably way 
+before that, and even when it wasn't the absolute default, you only had 
+to enable it once, to have it on after that unless you turned it off 
+again.
+
+I know I've never specifically added space_cache to my mount options, 
+yet /proc/mounts always has said it was there, and I've been on btrfs 
+solidly since kernel 3.5 era, with tests before that (tho I do think I 
+had to turn it on once, after which it stayed on for that filesystem, 
+back in my earliest tests, which would have been late kernel 2.6 era).
+
+2) Similarly you can omit defaults, since that's only a field placeholder 
+in case you don't have any other options in that field.  As soon as you 
+have your first non-default option holding the place of that field, you 
+can omit defaults, since that's exactly what they are, defaults, 
+regardless of whether the kernel is told to use them or not.
+
+So all you really need there is noatime,compress=lzo,autodefrag.  FWIW, 
+that's what I use as my normal mount options, too.
+
+3) Actually, assuming you're running a half-way modern util-linux (which 
+you should be if you're not on an old enterprise distro), you can omit 
+the trailing 0 0 as well, since those fields are now optional and default 
+to 0 if they aren't there.
+
+See the fstab(5) manpage for more on the last two.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:34351 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752468AbbHEJvu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 05:51:50 -0400
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:38365 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752134AbbHEJvo (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 05:51:44 -0400
 From: mhocko@kernel.org
 To: LKML <linux-kernel@vger.kernel.org>
 Cc: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>,
@@ -11,165 +11,78 @@ Cc: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>,
         Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
         Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        Jan Kara <jack@suse.cz>, Michal Hocko <mhocko@suse.com>
-Subject: [RFC 2/8] mm: Allow GFP_IOFS for page_cache_read page cache allocation
-Date: Wed,  5 Aug 2015 11:51:18 +0200
-Message-Id: <1438768284-30927-3-git-send-email-mhocko@kernel.org>
-In-Reply-To: <1438768284-30927-1-git-send-email-mhocko@kernel.org>
-References: <1438768284-30927-1-git-send-email-mhocko@kernel.org>
+        Jan Kara <jack@suse.cz>
+Subject: [RFC 0/8] Allow GFP_NOFS allocation to fail
+Date: Wed,  5 Aug 2015 11:51:16 +0200
+Message-Id: <1438768284-30927-1-git-send-email-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Michal Hocko <mhocko@suse.com>
+Hi,
+small GFP_NOFS, like GFP_KERNEL, allocations have not been not failing
+traditionally even though their reclaim capabilities are restricted
+because the VM code cannot recurse into filesystems to clean dirty
+pages. At the same time these allocation requests do not allow to
+trigger the OOM killer because that would lead to pre-mature OOM killing
+during heavy fs metadata workloads.
 
-page_cache_read has been historically using page_cache_alloc_cold to
-allocate a new page. This means that mapping_gfp_mask is used as the
-base for the gfp_mask. Many filesystems are setting this mask to
-GFP_NOFS to prevent from fs recursion issues. page_cache_read is,
-however, not called from the fs layera directly so it doesn't need this
-protection normally.
+This leaves the VM code in an unfortunate situation where GFP_NOFS
+requests is looping inside the allocator relying on somebody else to
+make a progress on its behalf. This is prone to deadlocks when the
+request is holding resources which are necessary for other task to make
+a progress and release memory (e.g. OOM victim is blocked on the lock
+held by the NONFS request). Another drawback is that the caller of
+the allocator cannot define any fallback strategy because the request
+doesn't fail.
 
-ceph and ocfs2 which call filemap_fault from their fault handlers
-seem to be OK because they are not taking any fs lock before invoking
-generic implementation. xfs which takes XFS_MMAPLOCK_SHARED is safe
-from the reclaim recursion POV because this lock serializes truncate
-and punch hole with the page faults and it doesn't get involved in the
-reclaim.
+As the VM cannot do much about these requests we should face the reality
+and allow those allocations to fail. Johannes has already posted the
+patch which does that (http://marc.info/?l=linux-mm&m=142726428514236&w=2)
+but the discussion died pretty quickly.
 
-The GFP_NOFS protection might be even harmful. There is a push to fail
-GFP_NOFS allocations rather than loop within allocator indefinitely with
-a very limited reclaim ability. Once we start failing those requests
-the OOM killer might be triggered prematurely because the page cache
-allocation failure is propagated up the page fault path and end up in
-pagefault_out_of_memory.
+I was playing with this patch and xfs, ext[34] and btrfs for a while to
+see what is the effect under heavy memory pressure. As expected this led
+to some fallouts.
+My test consisted of a simple memory hog which allocates a lot of
+anonymous memory and writes to a fs mainly to trigger a fs activity on
+exit. In parallel there is a parallel fs metadata load (multiple tasks
+creating thousands of empty files and directories). All is running
+in a VM with small amount of memory to emulate an under provisioned
+system. The metadata load is triggering a sufficient load to invoke the
+direct reclaim even without the memory hog. The memory hog forks several
+tasks sharing the VM and OOM killer manages to kill it without locking
+up the system (this was based on the test case from Tetsuo Handa -
+http://www.spinics.net/lists/linux-fsdevel/msg82958.html - I just didn't
+want to kill my machine ;)).
+With all the patches applied none of the 4 filesystems gets aborted
+transactions and RO remount (well xfs didn't need any special
+treatment). This is obviously not sufficient to claim that failing
+GFP_NOFS is OK now but I think it is a good start for the further
+discussion. I would be grateful if FS people could have a look at those
+patches.  I have simply used __GFP_NOFAIL in the critical paths. This
+might be not the best strategy but it sounds like a good first step.
 
-We cannot play with mapping_gfp_mask directly because that would be racy
-wrt. parallel page faults and it might interfere with other users who
-really rely on NOFS semantic from the stored gfp_mask. The mask is also
-inode proper so it would even be a layering violation. What we can do
-instead is to push the gfp_mask into struct vm_fault and allow fs layer
-to overwrite it should the callback need to be called with a different
-allocation context.
+The first patch in the series also allows __GFP_NOFAIL allocations to
+access memory reserves when the system is OOM which should help those
+requests to make a forward progress - especially in combination with
+GFP_NOFS.
 
-Initialize the default to (mapping_gfp_mask | GFP_IOFS) because this
-should be safe from the page fault path normally. Why do we care
-about mapping_gfp_mask at all then? Because this doesn't hold only
-reclaim protection flags but it also might contain zone and movability
-restrictions (GFP_DMA32, __GFP_MOVABLE and others) so we have to respect
-those.
+The second patch tries to address a potential pre-mature OOM killer from
+the page fault path. I have posted it separately but it didn't get much
+traction.
 
-Reported-by: Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>
-Signed-off-by: Michal Hocko <mhocko@suse.com>
----
- include/linux/mm.h |  4 ++++
- mm/filemap.c       |  9 ++++-----
- mm/memory.c        | 17 +++++++++++++++++
- 3 files changed, 25 insertions(+), 5 deletions(-)
+The third patch allows GFP_NOFS to fail and I believe it should see much
+more testing coverage. It would be really great if it could sit in the
+mmotm tree for few release cycles so that we can catch more fallouts.
 
-diff --git a/include/linux/mm.h b/include/linux/mm.h
-index 7f471789781a..962e37c7cd6a 100644
---- a/include/linux/mm.h
-+++ b/include/linux/mm.h
-@@ -220,10 +220,14 @@ extern pgprot_t protection_map[16];
-  * ->fault function. The vma's ->fault is responsible for returning a bitmask
-  * of VM_FAULT_xxx flags that give details about how the fault was handled.
-  *
-+ * MM layer fills up gfp_mask for page allocations but fault handler might
-+ * alter it if its implementation requires a different allocation context.
-+ *
-  * pgoff should be used in favour of virtual_address, if possible.
-  */
- struct vm_fault {
- 	unsigned int flags;		/* FAULT_FLAG_xxx flags */
-+	gfp_t gfp_mask;			/* gfp mask to be used for allocations */
- 	pgoff_t pgoff;			/* Logical page offset based on vma */
- 	void __user *virtual_address;	/* Faulting virtual address */
- 
-diff --git a/mm/filemap.c b/mm/filemap.c
-index b63fb81df336..8a16a07bbe02 100644
---- a/mm/filemap.c
-+++ b/mm/filemap.c
-@@ -1774,19 +1774,18 @@ EXPORT_SYMBOL(generic_file_read_iter);
-  * This adds the requested page to the page cache if it isn't already there,
-  * and schedules an I/O to read in its contents from disk.
-  */
--static int page_cache_read(struct file *file, pgoff_t offset)
-+static int page_cache_read(struct file *file, pgoff_t offset, gfp_t gfp_mask)
- {
- 	struct address_space *mapping = file->f_mapping;
- 	struct page *page;
- 	int ret;
- 
- 	do {
--		page = page_cache_alloc_cold(mapping);
-+		page = __page_cache_alloc(gfp_mask|__GFP_COLD);
- 		if (!page)
- 			return -ENOMEM;
- 
--		ret = add_to_page_cache_lru(page, mapping, offset,
--				GFP_KERNEL & mapping_gfp_mask(mapping));
-+		ret = add_to_page_cache_lru(page, mapping, offset, GFP_KERNEL & gfp_mask);
- 		if (ret == 0)
- 			ret = mapping->a_ops->readpage(file, page);
- 		else if (ret == -EEXIST)
-@@ -1969,7 +1968,7 @@ int filemap_fault(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	 * We're only likely to ever get here if MADV_RANDOM is in
- 	 * effect.
- 	 */
--	error = page_cache_read(file, offset);
-+	error = page_cache_read(file, offset, vmf->gfp_mask);
- 
- 	/*
- 	 * The page we want has now been added to the page cache.
-diff --git a/mm/memory.c b/mm/memory.c
-index 8a2fc9945b46..25ab29560dca 100644
---- a/mm/memory.c
-+++ b/mm/memory.c
-@@ -1949,6 +1949,20 @@ static inline void cow_user_page(struct page *dst, struct page *src, unsigned lo
- 		copy_user_highpage(dst, src, va, vma);
- }
- 
-+static gfp_t __get_fault_gfp_mask(struct vm_area_struct *vma)
-+{
-+	struct file *vm_file = vma->vm_file;
-+
-+	if (vm_file)
-+		return mapping_gfp_mask(vm_file->f_mapping) | GFP_IOFS;
-+
-+	/*
-+	 * Special mappings (e.g. VDSO) do not have any file so fake
-+	 * a default GFP_KERNEL for them.
-+	 */
-+	return GFP_KERNEL;
-+}
-+
- /*
-  * Notify the address space that the page is about to become writable so that
-  * it can prohibit this or wait for the page to get into an appropriate state.
-@@ -1964,6 +1978,7 @@ static int do_page_mkwrite(struct vm_area_struct *vma, struct page *page,
- 	vmf.virtual_address = (void __user *)(address & PAGE_MASK);
- 	vmf.pgoff = page->index;
- 	vmf.flags = FAULT_FLAG_WRITE|FAULT_FLAG_MKWRITE;
-+	vmf.gfp_mask = __get_fault_gfp_mask(vma);
- 	vmf.page = page;
- 	vmf.cow_page = NULL;
- 
-@@ -2763,6 +2778,7 @@ static int __do_fault(struct vm_area_struct *vma, unsigned long address,
- 	vmf.pgoff = pgoff;
- 	vmf.flags = flags;
- 	vmf.page = NULL;
-+	vmf.gfp_mask = __get_fault_gfp_mask(vma);
- 	vmf.cow_page = cow_page;
- 
- 	ret = vma->vm_ops->fault(vma, &vmf);
-@@ -2929,6 +2945,7 @@ static void do_fault_around(struct vm_area_struct *vma, unsigned long address,
- 	vmf.pgoff = pgoff;
- 	vmf.max_pgoff = max_pgoff;
- 	vmf.flags = flags;
-+	vmf.gfp_mask = __get_fault_gfp_mask(vma);
- 	vma->vm_ops->map_pages(vma, &vmf);
- }
- 
--- 
-2.5.0
+The rest are the FS specific patches to fortify allocations
+requests which are really needed to finish transactions without RO
+remounts. There might be more needed but my test case survives with
+these in place.
+They would obviously need some rewording if they are going to be applied
+even without Patch3 and I will do that if respective maintainers will
+take them. Ext3 and JBD are going away soon so they might be dropped but
+they have been in the tree while I was testing so I've kept them.
+
+Thoughts? Opinions?
 

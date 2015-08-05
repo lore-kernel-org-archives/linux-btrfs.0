@@ -1,143 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f174.google.com ([209.85.223.174]:34215 "EHLO
-	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752050AbbHERcz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 13:32:55 -0400
-Received: by ioea135 with SMTP id a135so56501026ioe.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Aug 2015 10:32:54 -0700 (PDT)
-Subject: Re: RAID1: system stability
-To: Russell Coker <russell@coker.com.au>,
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:49345 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751712AbbHETAk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 15:00:40 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Russell Coker <russell@coker.com.au>,
         Chris Murphy <lists@colorremedies.com>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <556457b8.e72b980a.ee08.ffffce60@mx.google.com>
- <CAGqmi774WEukmUt9NAFZQ8R9kCCyOFm3M_TP2ULgvtgpDnMM1w@mail.gmail.com>
- <CAJCQCtTXiWWie+OtkdNhjmUEjPoyx565LZ15KC3Kfr7DC9ucpQ@mail.gmail.com>
- <201507222100.22471.russell@coker.com.au>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55C248B9.20003@gmail.com>
-Date: Wed, 5 Aug 2015 13:32:41 -0400
+Subject: Re: RAID1: system stability
+Date: Wed, 05 Aug 2015 21:00:25 +0200
+Message-ID: <21803065.MYkXLzliko@merkaba>
+In-Reply-To: <55C248B9.20003@gmail.com>
+References: <556457b8.e72b980a.ee08.ffffce60@mx.google.com> <201507222100.22471.russell@coker.com.au> <55C248B9.20003@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <201507222100.22471.russell@coker.com.au>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070402010403040405030204"
+Content-Type: multipart/signed; boundary="nextPart1454915.6KhYEC4KEt"; micalg="pgp-sha512"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
 
---------------ms070402010403040405030204
-Content-Type: text/plain; charset=utf-8; format=flowed
+--nextPart1454915.6KhYEC4KEt
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="iso-8859-1"
 
-On 2015-07-22 07:00, Russell Coker wrote:
-> On Tue, 23 Jun 2015 02:52:43 AM Chris Murphy wrote:
->> OK I actually don't know what the intended block layer behavior is
->> when unplugging a device, if it is supposed to vanish, or change state=
+Am Mittwoch, 5. August 2015, 13:32:41 schrieb Austin S Hemmelgarn:
+> On 2015-07-22 07:00, Russell Coker wrote:
+> > On Tue, 23 Jun 2015 02:52:43 AM Chris Murphy wrote:
+> >> OK I actually don't know what the intended block layer behavior is=
 
->> somehow so that thing that depend on it can know it's "missing" or
->> what. So the question here is, is this working as intended? If the
->> layer Btrfs depends on isn't working as intended, then Btrfs is
->> probably going to do wild and crazy things. And I don't know that the
->> part of the block layer Btrfs depends on for this is the same (or
->> different) as what the md driver depends on.
->
-> I disagree with that statement.  BTRFS should be expected to not do wil=
-d and
-> crazy things regardless of what happens with block devices.
-I would generally agree with this, although we really shouldn't be doing =
+> >> when unplugging a device, if it is supposed to vanish, or change s=
+tate
+> >> somehow so that thing that depend on it can know it's "missing" or=
 
-things like trying to handle hardware failures without user=20
-intervention.  If a block device disappears from under us, we should=20
-throw a warning and if it's the last device in the FS, kill anything=20
-that is trying to read or write to that FS.  At the very least, we=20
-should try to avoid hanging or panicking the system if all of the=20
-devices in an FS disappear out from under us.
->
-> A BTRFS RAID-1/5/6 array should cope with a single disk failing or retu=
-rning
-> any manner of corrupted data and should not lose data or panic the kern=
-el.
-It's debatable however whether the array should go read-only when=20
-degraded.  MD/DM RAID (at least, AFAIK) and most hardware RAID=20
-controllers I've seen will still accept writes to degraded arrays,=20
-although there are arguments for forcing it read-only as well.
-Personally, I think that should be controlled by a mount option, so the=20
-sysadmin can decide, as it really is a policy decision.
->
-> A BTRFS RAID-0 or single disk setup should cope with a disk giving erro=
-rs by
-> mounting read-only or failing all operations on the filesystem.  It sho=
-uld not
-> affect any other filesystem or have any significant impact on the syste=
-m unless
-> it's the root filesystem.
-Or some other critical filesystem (there are still people who put /usr=20
-and/or /var on separate filesystems).  Ideally, I'd love to see some=20
-some kind of warning from the kernel if a filesystem gets mounted that=20
-has the metadata/system profile set to raid0 (and possibly have some of=20
-the tools spit out such a warning also).
+> >> what. So the question here is, is this working as intended? If the=
 
+> >> layer Btrfs depends on isn't working as intended, then Btrfs is
+> >> probably going to do wild and crazy things. And I don't know that =
+the
+> >> part of the block layer Btrfs depends on for this is the same (or
+> >> different) as what the md driver depends on.
+> >=20
+> > I disagree with that statement.  BTRFS should be expected to not do=
+ wild
+> > and crazy things regardless of what happens with block devices.
+>=20
+> I would generally agree with this, although we really shouldn't be do=
+ing
+> things like trying to handle hardware failures without user
+> intervention.  If a block device disappears from under us, we should
+> throw a warning and if it's the last device in the FS, kill anything
+> that is trying to read or write to that FS.  At the very least, we
+> should try to avoid hanging or panicking the system if all of the
+> devices in an FS disappear out from under us.
 
+The best solution I have ever seen for removable media is with AmigaOS.=
+ You=20
+remove a disk (or nowadays an usb stick) while it is being written to a=
+nd=20
+AmigaDOS/AmigaOS pops up a dialog window saying "You MUST insert volume=
+=20
+$VOLUMENAME again". And if you did, it just continued writing. I bet th=
+is may=20
+be difficult for do for Linux for all devices as unwritten changes pile=
+ up in=20
+memory until dirty limits are reached, unless one says "Okay, disk gone=
+, we=20
+block all processes writing to it immediately or quite soon", but for=20=
 
---------------ms070402010403040405030204
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+removable media I never saw anything with that amount of sanity. There =
+was=20
+some GSoC for NetBSD once to implement this, but I don=B4t know whether=
+ its=20
+implemented in there now. For AmigaOS and floppy disks with back then=20=
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODA1MTczMjQxWjBPBgkq
-hkiG9w0BCQQxQgRADMN5CuEcDQsAMzcQsOftDxXKzSschMQT5BdoehzaEa1oA4Wy8tVSTihY
-2YwQbAPnz28t2nbAJGhFlJDqeW1nhjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgBoXrMlDD9/qpftuv1poFDS2uvn0n1K+VlNAZmYrPa7i/h+ESKf
-U74Q4DnEuxWrB0x1LeftkcxZuQFSTlo+Log0sSpUpOPrHOsOFZKa7MgYm8MRoi2ur3G3UnP3
-4RfZjIHAZppKHRvmattLFR2/RYvKa9rfRklmRUQ4ucJpEATBEuO5a+enI5nbkjaB4B2kpV0Y
-i9D+VDeZbzUJpkSBoavPt7u2e6XZY/BkVqtdE9f10EXI1dZjLgscXhrAFpLtCX0chXOFFmbh
-ehMpvHrGocjwddBULXYvtWP5YUl+2JHxYr1QLtUkVlMqUwGJvYo3GIVaNxJDSuz3+GHWY5cW
-//yovF/7TCHk7lYgtd8ykLfZG70A433SEFNmIBinVqPNo3y3l7UP3dQPSdXgPiNKuTEoj4eg
-v+l3u7UzqjkuWy6MxiJ+FszWc9GyYxbVBhGK7YO7mR/dPGZ3J25FuQjxMIJxiD1t0kZD8oRU
-O8dnqOww2bnMgjE0bx4paWNTCX/6/ajxCFZwonyFkK+K4S1SC8AODiKT4J5Vi0VKmvHRdrRW
-vyCq2UMk9zKJzGHJ7UFPPCwSlkC6/x/BkCEU+SbYLh1zp7VR0Ck/hcxlVUfr7iMRVXG70lOe
-nfwruAyZ8wGqWC6O+uW6pC5oIyJFTcOfoAXf93vNUfzD8GUtNOLtRhPXUQAAAAAAAA==
---------------ms070402010403040405030204--
+filesystem there was just one culprit: If you didn=B4t insert the disk =
+again, it=20
+was often broken beyond repair. For journaling or COW filesystem it wou=
+ld just=20
+be like in any other sudden stop to writes.
+
+On Linux with eSATA I saw I can also replug the disk if I didn=B4t yet =
+hit the=20
+timeouts in block layer. After that the disk is gone.
+
+Ciao,
+=2D-=20
+Martin
+--nextPart1454915.6KhYEC4KEt
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+
+iQIcBAABCgAGBQJVwl1VAAoJEHpbMXltm6AYLMsQAJnQ8bxp+XcDmiFAdG9sdXsR
+QIMG3HBLjLTKqoUu1sLBP5DKXDWkqXZ0hUkzr3RW+QqIr0J0GKPLcr/Vvv8ft2Or
+uZb78SrtHZMcmQEoMdS15XEfaKNhww9LMJENk7kakNE+vqDqsKNBzvREqS2/3pB6
+nJJnscWvioq9/fz09eCDDvIT4lmLtD8zb3fWmEnP0k9fmrHglkSNCkCtMh/2PVYu
+kIdxrQESLaSCtM/5vkwmoDFvN3aamUNrLp1g1MyyfeOOEbVNsM/T3kWnAAqQk3Nb
+pS6PBZc1bV5WxKHBFHZxp+aERYU/qe1zKoW4hDCBsIA5KwPZqwdstTAxwdqJ7OJZ
+E6XXO9enYT9xaKT3iJK4JE8s9GcpXrUIyw+8bIDXG+WYpYQh3BieyOM7BBX0o/JS
+trKNCXuNYclnyrEcxn4tGlkGBvfBhPhQ8SFG8YWCgIUhsVsPH5q2XjX75uOD5Zvv
+0tLr4Plxa3NB87xsSOHeV5RPjtHCf8AJ5IHsgE8gjq2Yg7u/dj2SWqLu+IbfD/w4
++8+f2K4M9w+sT7PGOjPXtNHaMO6SZLNpY0iFN0LZ41BNpeKfXiYvgPevr4rc5C/A
+EdJeYNO2ES0vDa8sKJ9de2wgEOWnHOYxGV/1AGR0iKqwfkgh2JmORYOjwtzwAfhB
+jlztKZr2blR/SfYvNwQA
+=BGiA
+-----END PGP SIGNATURE-----
+
+--nextPart1454915.6KhYEC4KEt--
+

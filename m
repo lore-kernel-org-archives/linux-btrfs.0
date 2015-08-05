@@ -1,33 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:39974 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752467AbbHaSsN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Aug 2015 14:48:13 -0400
-Date: Mon, 31 Aug 2015 14:48:04 -0400
-From: Chris Mason <clm@fb.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-CC: btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [GIT PULL] Fujitsu pull part1: cleanup
-Message-ID: <20150831184804.GA5136@ret.masoncoding.com>
-References: <55D68A6C.3010107@cn.fujitsu.com>
- <55DE63D2.2020508@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:11585 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750742AbbHEIDS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 04:03:18 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <robert.munteanu@gmail.com>
+Subject: [PATCH 0/3] Fix for infinite loop on non-empty inode but with no file extent
+Date: Wed, 5 Aug 2015 16:03:11 +0800
+Message-ID: <1438761794-32738-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <55DE63D2.2020508@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 27, 2015 at 09:11:46AM +0800, Qu Wenruo wrote:
-> Hi Chris,
-> 
-> Any comment on the git pull?
-> As it's not picked yet nor any objection here.
+A bug reported by Robert Munteanu, which btrfsck infinite loops on an
+inode with discount file extent.
 
-Hi Qu,
+This patchset includes a fix in printing file extent hole, fix the
+infinite loop, and corresponding test case.
 
-Some of these were already in integration, but I've picked the rest.
+BTW, thanks Robert Munteanu a lot for its detailed debug report, makes
+it super fast to reproduce the error.
 
-Thanks!
+Qu Wenruo (3):
+  btrfs-progs: fsck: Print correct file hole
+  btrfs-progs: fsck: Fix a infinite loop on discount file extent repair
+  btrfs-progs: fsck-tests: Add test case for inode lost all its file    
+    extent
 
--chris
+ cmds-check.c                                            |  16 +++++++++++++++-
+ .../017-missing-all-file-extent/default_case.img.xz     | Bin 0 -> 1104 bytes
+ 2 files changed, 15 insertions(+), 1 deletion(-)
+ create mode 100644 tests/fsck-tests/017-missing-all-file-extent/default_case.img.xz
+
+-- 
+2.5.0
+

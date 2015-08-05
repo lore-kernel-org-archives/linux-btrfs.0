@@ -1,41 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:37420 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751881AbbH1Bmr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Aug 2015 21:42:47 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] fstests: template: Add seqres.full cleanup
-Date: Fri, 28 Aug 2015 09:40:43 +0800
-Message-ID: <1440726043-17566-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:37653 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750735AbbHEHGl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 03:06:41 -0400
+Received: by wibhh20 with SMTP id hh20so10161308wib.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 05 Aug 2015 00:06:40 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain
+Date: Wed, 5 Aug 2015 09:06:40 +0200
+Message-ID: <CAK4jXzy8OpRMnF=hYEamZVxiumH9Xn_8uDo_xOQhYfLf3cA9dA@mail.gmail.com>
+Subject: Why subvolume and not just volume?
+From: Martin <sha256sum@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add cleanup for seqres.full for new test case template, as sometimes
-new testcase may forgot to cleanup seqres.full.
+Hi,
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- new | 3 +++
- 1 file changed, 3 insertions(+)
+Does anyone know the reason subvolumes are not called just volumes? I
+mean, the top subvolume is not called a volume, so there is nothing to
+be "sub" of.
 
-diff --git a/new b/new
-index c734bdc..ab2af69 100755
---- a/new
-+++ b/new
-@@ -200,6 +200,9 @@ _cleanup()
- . ./common/rc
- . ./common/filter
- 
-+# remove previous \$seqres.full before test
-+rm -f \$seqres.full
-+
- # real QA test starts here
- 
- # Modify as appropriate.
--- 
-1.8.3.1
+Also, what is the penalty of a subvolume compared to a directory? From
+a design perspective, couldn't all directories just be subvolumes?
 
+Martin

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:30607 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:10249 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751294AbbHEIpK (ORCPT
+	with ESMTP id S1751917AbbHEIpK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 04:45:10 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t758hE1O017029
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Aug 2015 16:43:14 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t758hFFY017032
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Aug 2015 16:43:15 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v4 3/4] btrfs: use scrub_pause_on/off() to reduce code in scrub_enumerate_chunks()
-Date: Wed, 5 Aug 2015 16:43:29 +0800
-Message-ID: <778526af4a289eb6022f62a2c801e9a3e1134bf9.1438763783.git.zhaolei@cn.fujitsu.com>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 4/4] btrfs: Fix data checksum error cause by replace with io-load.
+Date: Wed, 5 Aug 2015 16:43:30 +0800
+Message-ID: <b8bce0aee21523cf8f0792ee61bf2043d06e79e1.1438763783.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1438763783.git.zhaolei@cn.fujitsu.com>
 References: <cover.1438763783.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,42 +19,160 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use new intruduced scrub_pause_on/off() can make this code block
-clean and more readable.
+xfstests btrfs/070 sometimes failed.
+In my test machine, its fail rate is about 30%.
+In another vm(vmware), its fail rate is about 50%.
 
+Reason:
+  btrfs/070 do replace and defrag with fsstress simultaneously,
+  after above operation, checksum error is found by scrub.
+
+  Actually, it have no relationship with defrag operation, only
+  replace with fsstress can trigger this bug.
+
+  New data writen to target device have possibility rewrited by
+  old data from source device by replace code in debug, to avoid
+  above problem, we can set target block group to readonly in
+  replace period, so new data requested by other operation will
+  not write to same place with replace code.
+
+  Before patch(4.1-rc3):
+    30% failed in 100 xfstests.
+  After patch:
+    0% failed in 300 xfstests.
+
+It also happened in btrfs/071 as it's another scrub with IO load tests.
+
+Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+
 ---
- fs/btrfs/scrub.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+
+Changelog v3->v4:
+ Patch v3 cause xfstests/061 failed in some case, because
+ btrfs_inc_block_group_ro() include a btrfs_end_transaction()
+ option, which will change datas in reloc_ctl->data_inode,
+ and cause deadlock in relocate:
+ scrub                       relocate
+ ----                        ----
+                             relocate_file_extent_cluster()
+                             prealloc_file_extent_cluster()
+                             ...
+ btrfs_inc_block_group_ro()
+ btrfs_wait_for_commit()
+ insert_reserved_file_extent()
+ btrfs_set_file_extent_disk_num_bytes()
+ (modify reloc_ctl->data_inode)
+ ...
+                             do_relocation()
+                             get_new_location() ret -EINVAL
+                             (because data_inode's extent changed)
+                             __btrfs_cow_block() ret -EINVAL
+                             (without unlock eb)
+                             btrfs_search_slot() deadlock
+                             (try to lock eb again)
+
+Changelog v2->v3:
+ 1: Fix a typo(caused in rebase) which make xfstests failed in
+    btrfs/073 and btrfs/066.
+
+Changelog v1->v2:
+ Nothing for this patch.
+
+---
+ fs/btrfs/scrub.c   | 34 +++++++++++++++++++++++++++-------
+ fs/btrfs/volumes.c |  2 ++
+ 2 files changed, 29 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index cbfb8c7..a882a34 100644
+index a882a34..e04436f 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -3492,8 +3492,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+@@ -3396,7 +3396,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 	u64 chunk_tree;
+ 	u64 chunk_objectid;
+ 	u64 chunk_offset;
+-	int ret;
++	int ret = 0;
+ 	int slot;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+@@ -3424,8 +3424,14 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 			if (path->slots[0] >=
+ 			    btrfs_header_nritems(path->nodes[0])) {
+ 				ret = btrfs_next_leaf(root, path);
+-				if (ret)
++				if (ret < 0)
++					break;
++				if (ret > 0) {
++					ret = 0;
+ 					break;
++				}
++			} else {
++				ret = 0;
+ 			}
+ 		}
  
- 		wait_event(sctx->list_wait,
- 			   atomic_read(&sctx->bios_in_flight) == 0);
--		atomic_inc(&fs_info->scrubs_paused);
--		wake_up(&fs_info->scrub_pause_wait);
-+
+@@ -3467,6 +3473,22 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 		if (!cache)
+ 			goto skip;
+ 
++		/*
++		 * we need call btrfs_inc_block_group_ro() with scrubs_paused,
++		 * to avoid deadlock caused by:
++		 * btrfs_inc_block_group_ro()
++		 * -> btrfs_wait_for_commit()
++		 * -> btrfs_commit_transaction()
++		 * -> btrfs_scrub_pause()
++		 */
 +		scrub_pause_on(fs_info);
- 
- 		/*
- 		 * must be called before we decrease @scrub_paused.
-@@ -3504,11 +3504,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 			   atomic_read(&sctx->workers_pending) == 0);
- 		atomic_set(&sctx->wr_ctx.flush_all_writes, 0);
- 
--		mutex_lock(&fs_info->scrub_lock);
--		__scrub_blocked_if_needed(fs_info);
--		atomic_dec(&fs_info->scrubs_paused);
--		mutex_unlock(&fs_info->scrub_lock);
--		wake_up(&fs_info->scrub_pause_wait);
++		ret = btrfs_inc_block_group_ro(root, cache);
 +		scrub_pause_off(fs_info);
++		if (ret) {
++			btrfs_put_block_group(cache);
++			break;
++		}
++
+ 		dev_replace->cursor_right = found_key.offset + length;
+ 		dev_replace->cursor_left = found_key.offset;
+ 		dev_replace->item_needs_writeback = 1;
+@@ -3506,6 +3528,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
  
+ 		scrub_pause_off(fs_info);
+ 
++		btrfs_dec_block_group_ro(root, cache);
++
  		btrfs_put_block_group(cache);
  		if (ret)
+ 			break;
+@@ -3528,11 +3552,7 @@ skip:
+ 
+ 	btrfs_free_path(path);
+ 
+-	/*
+-	 * ret can still be 1 from search_slot or next_leaf,
+-	 * that's not an error
+-	 */
+-	return ret < 0 ? ret : 0;
++	return ret;
+ }
+ 
+ static noinline_for_stack int scrub_supers(struct scrub_ctx *sctx,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9b95503..66f5a15 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -2785,7 +2785,9 @@ static int btrfs_relocate_chunk(struct btrfs_root *root,
+ 		return -ENOSPC;
+ 
+ 	/* step one, relocate all the extents inside this chunk */
++	btrfs_scrub_pause(root);
+ 	ret = btrfs_relocate_block_group(extent_root, chunk_offset);
++	btrfs_scrub_continue(root);
+ 	if (ret)
+ 		return ret;
+ 
 -- 
 1.8.5.1
 

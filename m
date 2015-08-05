@@ -1,72 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56025 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751256AbbHEHX6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 03:23:58 -0400
+Received: from mx2.suse.de ([195.135.220.15]:46094 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752587AbbHEROO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Aug 2015 13:14:14 -0400
+Date: Wed, 5 Aug 2015 19:13:53 +0200
+From: David Sterba <dsterba@suse.com>
+To: Martin <sha256sum@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Why subvolume and not just volume?
-To: Martin <sha256sum@gmail.com>, <linux-btrfs@vger.kernel.org>
+Message-ID: <20150805171353.GH31669@twin.jikos.cz>
+Reply-To: dsterba@suse.com
 References: <CAK4jXzy8OpRMnF=hYEamZVxiumH9Xn_8uDo_xOQhYfLf3cA9dA@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55C1BA0A.8090804@cn.fujitsu.com>
-Date: Wed, 5 Aug 2015 15:23:54 +0800
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <CAK4jXzy8OpRMnF=hYEamZVxiumH9Xn_8uDo_xOQhYfLf3cA9dA@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-Martin wrote on 2015/08/05 09:06 +0200:
-> Hi,
->
-> Does anyone know the reason subvolumes are not called just volumes? I
-> mean, the top subvolume is not called a volume, so there is nothing to
-> be "sub" of.
-Because normally a volume is referred as a complete filesystem.
-So from this respect, subvolume is not a full filesystem, it still need 
-a lot of extra data from other trees to build its contents.
-
-So, that's why there is "sub" prefix.
-Although it acts much like a volume as it can be mounted like a 
-filesystem, but it's still not a full filesystem.
->
+On Wed, Aug 05, 2015 at 09:06:40AM +0200, Martin wrote:
 > Also, what is the penalty of a subvolume compared to a directory? From
 > a design perspective, couldn't all directories just be subvolumes?
-Yes, subvolume has its overhead, and when it comes as many as 
-directories, the overhead won't be small.
 
-The overhead that I can remember is shown below.
-Use empty tree as an example for its size, and default mkfs options.
-The '+' after number means it will increase with snapshots
+They could, but this would bring severe performance drop.
 
-1) Empty tree block: 16K
-    Of course takes more if its child file/dir grows
-2) ROOT_ITEM in tree root: 439bytes
-3) ROOT_BACKREF in tree root: 22+bytes
-5) extent backref for tree block:
-     33+bytes for skinny metadata
-     53+bytes without skinny metadata
+* creating a subvolume implies a transaction commit
+* the subvolumes act like a mountpoint boundary so it needs to resolve
+  the next subvolume root before directory traversal can descend to it
 
-Alone with other trees like log tree, one for each subvolume if fsync is 
-called.
-
-Not to mention other run-time overhead.
-For example, to search a inode in one subvolume.
-Search_slot would be enough to find the INODE_ITEM.
-
-But to search a inode across subvolume boundary, need to first found the 
-subvolume boundary and loop until we reach the subvolume containing the 
-inode, then do the above search_slot to locate the INODE_ITEM.
-
-Although the overhead is already small, but not that small to make all 
-directories to be subvolume.
-
-Thanks,
-Qu
->
-> Martin
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+You can try to create a deep hierarchy of directories and then do the
+same with subvolumes. The difference is too big for practical purposes.

@@ -1,88 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f182.google.com ([209.85.212.182]:38365 "EHLO
-	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752134AbbHEJvo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 05:51:44 -0400
-From: mhocko@kernel.org
-To: LKML <linux-kernel@vger.kernel.org>
-Cc: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>,
+Received: from mx2.suse.de ([195.135.220.15]:36505 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750980AbbHELmm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 5 Aug 2015 07:42:42 -0400
+Date: Wed, 5 Aug 2015 13:42:35 +0200
+From: Jan Kara <jack@suse.cz>
+To: mhocko@kernel.org
+Cc: LKML <linux-kernel@vger.kernel.org>, linux-mm@kvack.org,
+        linux-fsdevel@vger.kernel.org,
         Andrew Morton <akpm@linux-foundation.org>,
         Johannes Weiner <hannes@cmpxchg.org>,
         Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
         Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
         linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
-        Jan Kara <jack@suse.cz>
-Subject: [RFC 0/8] Allow GFP_NOFS allocation to fail
-Date: Wed,  5 Aug 2015 11:51:16 +0200
-Message-Id: <1438768284-30927-1-git-send-email-mhocko@kernel.org>
+        Jan Kara <jack@suse.cz>, Michal Hocko <mhocko@suse.com>
+Subject: Re: [RFC 4/8] jbd, jbd2: Do not fail journal because of
+ frozen_buffer allocation failure
+Message-ID: <20150805114235.GA5132@quack.suse.cz>
+References: <1438768284-30927-1-git-send-email-mhocko@kernel.org>
+ <1438768284-30927-5-git-send-email-mhocko@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1438768284-30927-5-git-send-email-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-small GFP_NOFS, like GFP_KERNEL, allocations have not been not failing
-traditionally even though their reclaim capabilities are restricted
-because the VM code cannot recurse into filesystems to clean dirty
-pages. At the same time these allocation requests do not allow to
-trigger the OOM killer because that would lead to pre-mature OOM killing
-during heavy fs metadata workloads.
+On Wed 05-08-15 11:51:20, mhocko@kernel.org wrote:
+> From: Michal Hocko <mhocko@suse.com>
+> 
+> Journal transaction might fail prematurely because the frozen_buffer
+> is allocated by GFP_NOFS request:
+> [   72.440013] do_get_write_access: OOM for frozen_buffer
+> [   72.440014] EXT4-fs: ext4_reserve_inode_write:4729: aborting transaction: Out of memory in __ext4_journal_get_write_access
+> [   72.440015] EXT4-fs error (device sda1) in ext4_reserve_inode_write:4735: Out of memory
+> (...snipped....)
+> [   72.495559] do_get_write_access: OOM for frozen_buffer
+> [   72.495560] EXT4-fs: ext4_reserve_inode_write:4729: aborting transaction: Out of memory in __ext4_journal_get_write_access
+> [   72.496839] do_get_write_access: OOM for frozen_buffer
+> [   72.496841] EXT4-fs: ext4_reserve_inode_write:4729: aborting transaction: Out of memory in __ext4_journal_get_write_access
+> [   72.505766] Aborting journal on device sda1-8.
+> [   72.505851] EXT4-fs (sda1): Remounting filesystem read-only
+> 
+> This wasn't a problem until "mm: page_alloc: do not lock up GFP_NOFS
+> allocations upon OOM" because small GPF_NOFS allocations never failed.
+> This allocation seems essential for the journal and GFP_NOFS is too
+> restrictive to the memory allocator so let's use __GFP_NOFAIL here to
+> emulate the previous behavior.
+> 
+> jbd code has the very same issue so let's do the same there as well.
 
-This leaves the VM code in an unfortunate situation where GFP_NOFS
-requests is looping inside the allocator relying on somebody else to
-make a progress on its behalf. This is prone to deadlocks when the
-request is holding resources which are necessary for other task to make
-a progress and release memory (e.g. OOM victim is blocked on the lock
-held by the NONFS request). Another drawback is that the caller of
-the allocator cannot define any fallback strategy because the request
-doesn't fail.
+The patch looks good. Btw, the patch 6 can be folded into this patch since
+it fixes the issue you fix for jbd2 here... But jbd parts will be dropped
+in the next merge window anyway so it doesn't really matter.
 
-As the VM cannot do much about these requests we should face the reality
-and allow those allocations to fail. Johannes has already posted the
-patch which does that (http://marc.info/?l=linux-mm&m=142726428514236&w=2)
-but the discussion died pretty quickly.
+You can add:
 
-I was playing with this patch and xfs, ext[34] and btrfs for a while to
-see what is the effect under heavy memory pressure. As expected this led
-to some fallouts.
-My test consisted of a simple memory hog which allocates a lot of
-anonymous memory and writes to a fs mainly to trigger a fs activity on
-exit. In parallel there is a parallel fs metadata load (multiple tasks
-creating thousands of empty files and directories). All is running
-in a VM with small amount of memory to emulate an under provisioned
-system. The metadata load is triggering a sufficient load to invoke the
-direct reclaim even without the memory hog. The memory hog forks several
-tasks sharing the VM and OOM killer manages to kill it without locking
-up the system (this was based on the test case from Tetsuo Handa -
-http://www.spinics.net/lists/linux-fsdevel/msg82958.html - I just didn't
-want to kill my machine ;)).
-With all the patches applied none of the 4 filesystems gets aborted
-transactions and RO remount (well xfs didn't need any special
-treatment). This is obviously not sufficient to claim that failing
-GFP_NOFS is OK now but I think it is a good start for the further
-discussion. I would be grateful if FS people could have a look at those
-patches.  I have simply used __GFP_NOFAIL in the critical paths. This
-might be not the best strategy but it sounds like a good first step.
+Reviewed-by: Jan Kara <jack@suse.com>
 
-The first patch in the series also allows __GFP_NOFAIL allocations to
-access memory reserves when the system is OOM which should help those
-requests to make a forward progress - especially in combination with
-GFP_NOFS.
-
-The second patch tries to address a potential pre-mature OOM killer from
-the page fault path. I have posted it separately but it didn't get much
-traction.
-
-The third patch allows GFP_NOFS to fail and I believe it should see much
-more testing coverage. It would be really great if it could sit in the
-mmotm tree for few release cycles so that we can catch more fallouts.
-
-The rest are the FS specific patches to fortify allocations
-requests which are really needed to finish transactions without RO
-remounts. There might be more needed but my test case survives with
-these in place.
-They would obviously need some rewording if they are going to be applied
-even without Patch3 and I will do that if respective maintainers will
-take them. Ext3 and JBD are going away soon so they might be dropped but
-they have been in the tree while I was testing so I've kept them.
-
-Thoughts? Opinions?
-
+								Honza
+> 
+> Signed-off-by: Michal Hocko <mhocko@suse.com>
+> ---
+>  fs/jbd/transaction.c  | 11 +----------
+>  fs/jbd2/transaction.c | 14 +++-----------
+>  2 files changed, 4 insertions(+), 21 deletions(-)
+> 
+> diff --git a/fs/jbd/transaction.c b/fs/jbd/transaction.c
+> index 1695ba8334a2..bf7474deda2f 100644
+> --- a/fs/jbd/transaction.c
+> +++ b/fs/jbd/transaction.c
+> @@ -673,16 +673,7 @@ do_get_write_access(handle_t *handle, struct journal_head *jh,
+>  				jbd_unlock_bh_state(bh);
+>  				frozen_buffer =
+>  					jbd_alloc(jh2bh(jh)->b_size,
+> -							 GFP_NOFS);
+> -				if (!frozen_buffer) {
+> -					printk(KERN_ERR
+> -					       "%s: OOM for frozen_buffer\n",
+> -					       __func__);
+> -					JBUFFER_TRACE(jh, "oom!");
+> -					error = -ENOMEM;
+> -					jbd_lock_bh_state(bh);
+> -					goto done;
+> -				}
+> +							 GFP_NOFS|__GFP_NOFAIL);
+>  				goto repeat;
+>  			}
+>  			jh->b_frozen_data = frozen_buffer;
+> diff --git a/fs/jbd2/transaction.c b/fs/jbd2/transaction.c
+> index ff2f2e6ad311..bff071e21553 100644
+> --- a/fs/jbd2/transaction.c
+> +++ b/fs/jbd2/transaction.c
+> @@ -923,16 +923,7 @@ do_get_write_access(handle_t *handle, struct journal_head *jh,
+>  				jbd_unlock_bh_state(bh);
+>  				frozen_buffer =
+>  					jbd2_alloc(jh2bh(jh)->b_size,
+> -							 GFP_NOFS);
+> -				if (!frozen_buffer) {
+> -					printk(KERN_ERR
+> -					       "%s: OOM for frozen_buffer\n",
+> -					       __func__);
+> -					JBUFFER_TRACE(jh, "oom!");
+> -					error = -ENOMEM;
+> -					jbd_lock_bh_state(bh);
+> -					goto done;
+> -				}
+> +							 GFP_NOFS|__GFP_NOFAIL);
+>  				goto repeat;
+>  			}
+>  			jh->b_frozen_data = frozen_buffer;
+> @@ -1157,7 +1148,8 @@ int jbd2_journal_get_undo_access(handle_t *handle, struct buffer_head *bh)
+>  
+>  repeat:
+>  	if (!jh->b_committed_data) {
+> -		committed_data = jbd2_alloc(jh2bh(jh)->b_size, GFP_NOFS);
+> +		committed_data = jbd2_alloc(jh2bh(jh)->b_size,
+> +					    GFP_NOFS|__GFP_NOFAIL);
+>  		if (!committed_data) {
+>  			printk(KERN_ERR "%s: No memory for committed data\n",
+>  				__func__);
+> -- 
+> 2.5.0
+> 
+-- 
+Jan Kara <jack@suse.com>
+SUSE Labs, CR

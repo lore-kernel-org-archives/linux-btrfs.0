@@ -1,64 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:33917 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751327AbbH1DJl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Aug 2015 23:09:41 -0400
-Received: by igui7 with SMTP id i7so8811874igu.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2015 20:09:40 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:28845 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751464AbbHEKBx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 06:01:53 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t759xldi021989
+	for <linux-btrfs@vger.kernel.org>; Wed, 5 Aug 2015 17:59:47 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/3] btrfs: Cleanup: Remove objectid's init-value in create_reloc_inode()
+Date: Wed, 5 Aug 2015 18:00:03 +0800
+Message-ID: <3fbb7f3239e285eb7d14b0f3c61944159b91813a.1438768766.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <f6eb7359bee352cc27f91d26bcffa6c6f8b1a5fe.1438768766.git.zhaolei@cn.fujitsu.com>
+References: <f6eb7359bee352cc27f91d26bcffa6c6f8b1a5fe.1438768766.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150826133723.GX10756@twin.jikos.cz>
-References: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
- <1440577010-122867-2-git-send-email-tao.peng@primarydata.com> <20150826133723.GX10756@twin.jikos.cz>
-From: Peng Tao <tao.peng@primarydata.com>
-Date: Fri, 28 Aug 2015 11:09:20 +0800
-Message-ID: <CAKVebiWCGNsrcUB8ZYbuD=bc6-kdb=sE0hUbSpAQHUZLfA_buA@mail.gmail.com>
-Subject: Re: [PATCH-RFC-RESEND 1/9] vfs: pull btrfs clone API to vfs layer
-To: dsterba@suse.cz, Peng Tao <tao.peng@primarydata.com>,
-        Devel FS Linux <linux-fsdevel@vger.kernel.org>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        Christoph Hellwig <hch@infradead.org>, Zach Brown <zab@zabbo.net>,
-        Darren Hart <dvhart@linux.intel.com>,
-        Bruce Fields <bfields@fieldses.org>,
-        Jeff Layton <jeff.layton@primarydata.com>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 26, 2015 at 9:37 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Wed, Aug 26, 2015 at 04:16:42PM +0800, Peng Tao wrote:
->> +struct file_clone_range {
->> +     __s64 src_fd;
->> +     __u64 src_offset;
->> +     __u64 src_length;
->> +     __u64 dest_offset;
->> +};
->
-> Might be a good idea to add some spare bytes to the structure.
->
->>  struct fstrim_range {
->>       __u64 start;
->>       __u64 len;
->> @@ -159,6 +166,8 @@ struct inodes_stat_t {
->>  #define FIFREEZE     _IOWR('X', 119, int)    /* Freeze */
->>  #define FITHAW               _IOWR('X', 120, int)    /* Thaw */
->>  #define FITRIM               _IOWR('X', 121, struct fstrim_range)    /* Trim */
->> +#define FICLONE              _IOW(0x94, 9, int)      /* Clone */
->> +#define FICLONERANGE _IOW(0x94, 13, struct file_clone_range) /* Clone range */
->
-> FICLONE is a special case of FICLONERANGE. The whole file clone had come
-> historically first and then was refined, I don't think this needs to be
-> copied to the generic API. A zeroed file_clone_range is simple to use
-> for that purpose.
-oh, sorry I missed this one...
+objectid's init-value is not used in any case, remove it.
 
-BTRFS_IOC_CLONE is being used by cp(1) and widely shipped with
-distros. So we cannot just abandon the API. And my intention is to
-keep the clone ioctl "JUST WORK" (TM) with cp(1).
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/relocation.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Cheers,
-Tao
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 1659c94..4698928 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -4144,7 +4144,7 @@ struct inode *create_reloc_inode(struct btrfs_fs_info *fs_info,
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_root *root;
+ 	struct btrfs_key key;
+-	u64 objectid = BTRFS_FIRST_FREE_OBJECTID;
++	u64 objectid;
+ 	int err = 0;
+ 
+ 	root = read_fs_root(fs_info, BTRFS_DATA_RELOC_TREE_OBJECTID);
+-- 
+1.8.5.1
+

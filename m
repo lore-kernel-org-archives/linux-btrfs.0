@@ -1,52 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:53680 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751631AbbHaBNf convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Aug 2015 21:13:35 -0400
-Subject: Re: [PATCH RFC 00/14] Yet Another In-band(online) deduplication
- implement
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <1438072250-2871-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20150728145021.GI6306@twin.jikos.cz> <55BF15DF.9080805@cn.fujitsu.com>
- <20150827091407.GB11834@suse.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55E3AA39.1060109@cn.fujitsu.com>
-Date: Mon, 31 Aug 2015 09:13:29 +0800
-MIME-Version: 1.0
-In-Reply-To: <20150827091407.GB11834@suse.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:35587 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752450AbbHEJvs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 05:51:48 -0400
+From: mhocko@kernel.org
+To: LKML <linux-kernel@vger.kernel.org>
+Cc: <linux-mm@kvack.org>, <linux-fsdevel@vger.kernel.org>,
+        Andrew Morton <akpm@linux-foundation.org>,
+        Johannes Weiner <hannes@cmpxchg.org>,
+        Tetsuo Handa <penguin-kernel@I-love.SAKURA.ne.jp>,
+        Dave Chinner <david@fromorbit.com>, "Theodore Ts'o" <tytso@mit.edu>,
+        linux-btrfs@vger.kernel.org, linux-ext4@vger.kernel.org,
+        Jan Kara <jack@suse.cz>, Michal Hocko <mhocko@suse.com>
+Subject: [RFC 1/8] mm, oom: Give __GFP_NOFAIL allocations access to memory reserves
+Date: Wed,  5 Aug 2015 11:51:17 +0200
+Message-Id: <1438768284-30927-2-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1438768284-30927-1-git-send-email-mhocko@kernel.org>
+References: <1438768284-30927-1-git-send-email-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+From: Michal Hocko <mhocko@suse.com>
 
+__GFP_NOFAIL is a big hammer used to ensure that the allocation
+request can never fail. This is a strong requirement and as such
+it also deserves a special treatment when the system is OOM. The
+primary problem here is that the allocation request might have
+come with some locks held and the oom victim might be blocked
+on the same locks. This is basically an OOM deadlock situation.
 
-David Sterba wrote on 2015/08/27 11:14 +0200:
-> On Mon, Aug 03, 2015 at 03:18:55PM +0800, Qu Wenruo wrote:
->>>> Implement details includes the following:
->>>> 1) LRU hash maps to limit the memory usage
->>>>      The hash -> extent mapping is control by LRU (or unlimited), to
->>>>      get a controllable memory usage (can be tuned by mount option)
->>>>      alone with controllable read/write overhead used for hash searching.
->>>
->>> In Liu Bo's series, I rejected the mount options as an interface and
->>> will do that here as well. His patches added a dedup ioctl to (at least)
->>> enable/disable the dedup.
->> BTW,　would you please give me some reason why that's not a good idea to
->> use mount option to trigger/change dedup options?
->
-> That's the wrong interface to use for such actions.
->
-But IMHO, deduplication is much like compression, we only need to 
-execution extra hook to handle data at run_delalloc_range().
+This patch tries to reduce the risk of such a deadlocks by giving
+__GFP_NOFAIL allocations a special treatment and let them dive into
+memory reserves after oom killer invocation. This should help them
+to make a progress and release resources they are holding. The OOM
+victim should compensate for the reserves consumption.
 
-And even better than compression, inline dedup won't even cause any 
-format change.
-So I'd prefer to use mount option other than introduce a new ioctl 
-interface.
+Signed-off-by: Michal Hocko <mhocko@suse.com>
+---
+ mm/page_alloc.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
 
-Would you please explain more about why mount option is not a good idea 
-in this use case?
+diff --git a/mm/page_alloc.c b/mm/page_alloc.c
+index 1f9ffbb087cb..ee69c338ca2a 100644
+--- a/mm/page_alloc.c
++++ b/mm/page_alloc.c
+@@ -2732,8 +2732,16 @@ __alloc_pages_may_oom(gfp_t gfp_mask, unsigned int order,
+ 	}
+ 	/* Exhausted what can be done so it's blamo time */
+ 	if (out_of_memory(ac->zonelist, gfp_mask, order, ac->nodemask, false)
+-			|| WARN_ON_ONCE(gfp_mask & __GFP_NOFAIL))
++			|| WARN_ON_ONCE(gfp_mask & __GFP_NOFAIL)) {
+ 		*did_some_progress = 1;
++
++		if (gfp_mask & __GFP_NOFAIL) {
++			page = get_page_from_freelist(gfp_mask, order,
++					ALLOC_NO_WATERMARKS|ALLOC_CPUSET, ac);
++			WARN_ONCE(!page, "Unable to fullfil gfp_nofail allocation."
++				    " Consider increasing min_free_kbytes.\n");
++		}
++	}
+ out:
+ 	mutex_unlock(&oom_lock);
+ 	return page;
+-- 
+2.5.0
 
-Thanks,
-Qu

@@ -1,111 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24044 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:65444 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750758AbbHFM7v (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 08:59:51 -0400
+	with ESMTP id S1750758AbbHFOSC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 10:18:02 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t76CvqBq019004
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Aug 2015 20:57:53 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t76EG4sj020893
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Aug 2015 22:16:04 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Remove unnecessary variants in relocation.c
-Date: Thu, 6 Aug 2015 20:58:11 +0800
-Message-ID: <eeff505b919e4c7fb09c234f6f5281699755b649.1438865884.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: Fix wrong comment of btrfs_alloc_tree_block()
+Date: Thu, 6 Aug 2015 22:16:23 +0800
+Message-ID: <ea1da7b70342496557bfc8f73fc25bdaf3729fa5.1438870557.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-These arguments are not used in functions, remove them for cleanup
-and make kernel stack happy.
+These wrong comment was copyed from another function(expired) from
+init, this patch fixed them.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       |  3 +--
- fs/btrfs/relocation.c  | 13 +++++--------
- fs/btrfs/transaction.c |  2 +-
- 3 files changed, 7 insertions(+), 11 deletions(-)
+ fs/btrfs/extent-tree.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f57e6ca..f335c18 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4185,8 +4185,7 @@ int btrfs_reloc_clone_csums(struct inode *inode, u64 file_pos, u64 len);
- int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root, struct extent_buffer *buf,
- 			  struct extent_buffer *cow);
--void btrfs_reloc_pre_snapshot(struct btrfs_trans_handle *trans,
--			      struct btrfs_pending_snapshot *pending,
-+void btrfs_reloc_pre_snapshot(struct btrfs_pending_snapshot *pending,
- 			      u64 *bytes_to_reserve);
- int btrfs_reloc_post_snapshot(struct btrfs_trans_handle *trans,
- 			      struct btrfs_pending_snapshot *pending);
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 4698928..303babe 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -2523,8 +2523,7 @@ struct btrfs_root *select_reloc_root(struct btrfs_trans_handle *trans,
-  * counted. return -ENOENT if the block is root of reloc tree.
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a436bd5..792247f 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7536,9 +7536,6 @@ static void unuse_block_rsv(struct btrfs_fs_info *fs_info,
+ 
+ /*
+  * finds a free extent and does all the dirty work required for allocation
+- * returns the key for the extent through ins, and a tree buffer for
+- * the first block of the extent through buf.
+- *
+  * returns the tree buffer or an ERR_PTR on error.
   */
- static noinline_for_stack
--struct btrfs_root *select_one_root(struct btrfs_trans_handle *trans,
--				   struct backref_node *node)
-+struct btrfs_root *select_one_root(struct backref_node *node)
- {
- 	struct backref_node *next;
- 	struct btrfs_root *root;
-@@ -2912,7 +2911,7 @@ static int relocate_tree_block(struct btrfs_trans_handle *trans,
- 		return 0;
- 
- 	BUG_ON(node->processed);
--	root = select_one_root(trans, node);
-+	root = select_one_root(node);
- 	if (root == ERR_PTR(-ENOENT)) {
- 		update_processed_blocks(rc, node);
- 		goto out;
-@@ -3755,8 +3754,7 @@ out:
-  * helper to find next unprocessed extent
-  */
- static noinline_for_stack
--int find_next_extent(struct btrfs_trans_handle *trans,
--		     struct reloc_control *rc, struct btrfs_path *path,
-+int find_next_extent(struct reloc_control *rc, struct btrfs_path *path,
- 		     struct btrfs_key *extent_key)
- {
- 	struct btrfs_key key;
-@@ -3951,7 +3949,7 @@ restart:
- 			continue;
- 		}
- 
--		ret = find_next_extent(trans, rc, path, &key);
-+		ret = find_next_extent(rc, path, &key);
- 		if (ret < 0)
- 			err = ret;
- 		if (ret != 0)
-@@ -4596,8 +4594,7 @@ int btrfs_reloc_cow_block(struct btrfs_trans_handle *trans,
-  * called before creating snapshot. it calculates metadata reservation
-  * requried for relocating tree blocks in the snapshot
-  */
--void btrfs_reloc_pre_snapshot(struct btrfs_trans_handle *trans,
--			      struct btrfs_pending_snapshot *pending,
-+void btrfs_reloc_pre_snapshot(struct btrfs_pending_snapshot *pending,
- 			      u64 *bytes_to_reserve)
- {
- 	struct btrfs_root *root;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index c0f18e7..049613c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1301,7 +1301,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	 */
- 	btrfs_set_skip_qgroup(trans, objectid);
- 
--	btrfs_reloc_pre_snapshot(trans, pending, &to_reserve);
-+	btrfs_reloc_pre_snapshot(pending, &to_reserve);
- 
- 	if (to_reserve > 0) {
- 		pending->error = btrfs_block_rsv_add(root,
+ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
 -- 
 1.8.5.1
 

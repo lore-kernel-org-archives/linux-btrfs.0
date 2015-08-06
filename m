@@ -1,109 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60816 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754873AbbHFImp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 04:42:45 -0400
-Subject: Re: [PATCH] btrfs: qgroup: Fix a regression in qgroup reserved space.
-To: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
-References: <1438584269-32634-1-git-send-email-quwenruo@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55C31E01.7010204@cn.fujitsu.com>
-Date: Thu, 6 Aug 2015 16:42:41 +0800
+Received: from mail-io0-f179.google.com ([209.85.223.179]:35617 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753378AbbHFLLB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 07:11:01 -0400
+Received: by iodd187 with SMTP id d187so77313339iod.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2015 04:11:00 -0700 (PDT)
+Subject: Re: bedup --defrag freezing
+To: Konstantin Svist <fry.kun@gmail.com>, linux-btrfs@vger.kernel.org
+References: <55C2840E.4030909@gmail.com>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <55C340B5.20005@gmail.com>
+Date: Thu, 6 Aug 2015 07:10:45 -0400
 MIME-Version: 1.0
-In-Reply-To: <1438584269-32634-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <55C2840E.4030909@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030403020700060808090003"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+This is a cryptographically signed message in MIME format.
 
-Would you please consider including this patch into v4.2 if it is still 
-possible?
+--------------ms030403020700060808090003
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-Although the fix is still not perfect and just a hotfix, as qgroup 
-reserve parts still have a lot of problems from design and a lot of 
-operations can still cause reserve space leak.
-
-But considering how easy it is to trigger, I still hope it to be merged 
-asap before 4.2.
-
-
-For the remaining qgroup reserve bugs(*), we hope to fix it in 4.3 with 
-a new per-inode reserve space map mechanism, and just like the new 
-qgroup codes, free reserved space at run delayed ref time.
-
-It's never a small change, so definitely not suitable for current 4.2.
-
-*: Known bugs
-1) fallocate with already allocated space.
-    Fallocate will reserve space for given range, even it is already
-    allocate.
-    So no way to release it and another source of leak.
-
-2) Compress/inband-dedup
-    Reserved space is before compression, but freed space is after
-    compression.
-    Inband-dedup is much the same.
-
-3) Overlap buffered write.
-    Buffered write will reserve space before write, but if two buffered
-    write overlaps, the overlapped part will cause leak.
-
-4) NODATACOW still cause EDQUOT even it's not beyond existing extent.
-    NODATACOW shouldn't cause EDQUOT if it's rewritten existing extent.
-    Although it doesn't increase rfer/excl counts, but it still reserve
-    space and causing leak.
-
-Thanks,
-Qu
-
-Qu Wenruo wrote on 2015/08/03 14:44 +0800:
-> During the change to new btrfs extent-oriented qgroup implement, due to
-> it doesn't use the old __qgroup_excl_accounting() for exclusive extent,
-> it didn't free the reserved bytes.
+On 2015-08-05 17:45, Konstantin Svist wrote:
+> Hi,
 >
-> The bug will cause limit function go crazy as the reserved space is
-> never freed, increasing limit will have no effect and still cause
-> EQOUT.
+> I've been running btrfs on Fedora for a while now, with bedup --defrag
+> running in a night-time cronjob.
+> Last few runs seem to have gotten stuck, without possibility of even
+> killing the process (kill -9 doesn't work) -- all I could do is hard
+> power cycle.
 >
-> The fix is easy, just free reserved bytes for newly created exclusive
-> extent as what it does before.
+> Did something change recently? Is bedup simply too out of date? What
+> should I use to de-duplicate across snapshots instead? Etc.?
 >
-> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> Signed-off-by: Yang Dongsheng <yangds.fnst@cn.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> To Chris:
->
-> Would you please consider merging this patch in the late v4.2 merge
-> window?
-> As it's a huge regression and the fix is small enough and just does
-> what it did before in __qgroup_excl_accounting() function.
->
-> The corresponding test case will follow soon.
->
-> And sorry for the regression I introduced.
->
-> Thanks,
-> Qu
-> ---
->   fs/btrfs/qgroup.c | 5 +++++
->   1 file changed, 5 insertions(+)
->
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index d5f1f03..1667567 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -1618,6 +1618,11 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
->   				/* Exclusive -> exclusive, nothing changed */
->   			}
->   		}
-> +
-> +		/* For exclusive extent, free its reserved bytes too */
-> +		if (nr_old_roots == 0 && nr_new_roots == 1 &&
-> +		    cur_new_count == nr_new_roots)
-> +			qg->reserved -= num_bytes;
->   		if (dirty)
->   			qgroup_dirty(fs_info, qg);
->   	}
->
+AFAIK, bedup hasn't been actively developed for quite a while (I'm=20
+actually kind of surprised it runs with the newest btrfs-progs).=20
+Personally, I'd suggest using duperemove=20
+(https://github.com/markfasheh/duperemove).
+
+
+
+--------------ms030403020700060808090003
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODA2MTExMDQ1WjBPBgkq
+hkiG9w0BCQQxQgRAFhlOvXX3T1/SmqXledAoZ94dkjtKVES/gI5MOAR/FNOe+G6xmaK1H2sN
+IvA3Pf9Fn7xEqFvpMiFAubEvbtf9TDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
+BgkqhkiG9w0BAQEFAASCAgB3LFDlhgOeXOt7+9QGqY/yx4is5c/S8Xw/WtJJbp+7L//R7XAa
+Zu2cru/ydo1mY/shNlB8QNSPqX+e3by31zdGG5UisOkN12K4XCWg9/LYXKeN6CiuW+/M77lm
+YoLme+q2TnVqz6g1WYJhTVG0hK1SOT70Q2P0+rsGi+L/eNMCM6sk/HZX3cXzkl/irE0QI+GK
+ud3XAkjK/oMfGr3RPn16GJQc6kxr6oGY9Z+Ge1//uyxwBgd4CdyGieUTN1DOHyt23amfrnnZ
+YkuuGxRKTwoHle+OATo7P4Mnk/q0/FYVbM45J0MejpnyYZARzz4dH9pnfnUeTmlSZNw6+Yal
+w8gJkRsQfIgq23GARfhLPS8fQGd9TibAbIY3a4GUGPm2fVDFGpYQ8FhAj59WsekWrM847uXc
+bjRKLTl8s4WT5SCJCDRZ/f7I3FobYjP0nX9W501CV4k6z/PHCowwX8YYK0+8IdEtPdsNbuan
+bnOBNrGdZScUQpPs5pHbPGpQLjrZjaIYoBvbdm4Y6GWvGu/4rE9OODM8ObXqgbXzlWIbj8wS
+kl4C2u/3Od8WpA5eC7L0MrkdV/Kz7Pp7zPHM+6Uv8nKLqK6+fh+7ts0Wt38PuPBZhceRAyW/
+4t6/CcD9Q3iX/s8wi1nv1JYGBJHLIXGEYyo0NNOH5NsVSiyCHp3GXu5IPAAAAAAAAA==
+--------------ms030403020700060808090003--

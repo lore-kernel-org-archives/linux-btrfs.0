@@ -1,49 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26074 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:51063 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753833AbbHFCLw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 22:11:52 -0400
+	with ESMTP id S1754364AbbHFDv4 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 23:51:56 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t763nunX023553
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Aug 2015 11:49:57 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <dsterba@suse.com>
-CC: <linux-btrfs@vger.kernel.org>
-References: <f6eb7359bee352cc27f91d26bcffa6c6f8b1a5fe.1438768766.git.zhaolei@cn.fujitsu.com> <20150805170244.GG31669@twin.jikos.cz>
-In-Reply-To: <20150805170244.GG31669@twin.jikos.cz>
-Subject: RE: [PATCH 1/3] btrfs: Error handle for get_ref_objectid_v0() in relocate_block_group()
-Date: Thu, 6 Aug 2015 10:11:28 +0800
-Message-ID: <0b9701d0cfed$34a6a680$9df3f380$@cn.fujitsu.com>
+To: "'Tsutomu Itoh'" <t-itoh@jp.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+References: <201508060305.AA00001@WIN-5MHF4RKU941.jp.fujitsu.com>
+In-Reply-To: <201508060305.AA00001@WIN-5MHF4RKU941.jp.fujitsu.com>
+Subject: RE: [PATCH] btrfs-progs: add newline to some error messages
+Date: Thu, 6 Aug 2015 11:51:27 +0800
+Message-ID: <0bab01d0cffb$2c558f10$8500ad30$@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, David Sterba
+Hi, Itoh
 
 > -----Original Message-----
-> From: David Sterba [mailto:dsterba@suse.com]
-> Sent: Thursday, August 06, 2015 1:03 AM
-> To: Zhao Lei
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 1/3] btrfs: Error handle for get_ref_objectid_v0() in
-> relocate_block_group()
+> From: linux-btrfs-owner@vger.kernel.org
+> [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Tsutomu Itoh
+> Sent: Thursday, August 06, 2015 11:06 AM
+> To: linux-btrfs@vger.kernel.org
+> Subject: [PATCH] btrfs-progs: add newline to some error messages
 > 
-> On Wed, Aug 05, 2015 at 06:00:02PM +0800, Zhao Lei wrote:
-> > We need error checking code for get_ref_objectid_v0() in
-> > relocate_block_group(), to avoid unpredictable result, especially for
-> > accessing uninitialized value(when function failed) after this line.
-> >
-> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Added a missing newline to some error messages.
 > 
-> Reviewed-by: David Sterba <dsterba@suse.com>
-> 
-Thanks for review!
+Good found!
 
-> Are there even filesystems with v0 refs?
-Rarely, I think.
-(Just a accidental found in debuging another problem)
-But for current code, we need hold correct code until
-we remove v0 refs support.
+Seems more code need to be fixed, as:
+
+# cat mkfs.c | tr -d '\n' | grep -o -w 'f\?printf([^(]*);' | sed 's/f\?printf[[:blank:]]*(\(stderr,\|\)[[:blank:]]*"\(.*\)"[,)].*/\2/g' | grep -v '\\n'                                  symlink too long for %s
+Incompat features:  %s
+#
+
+# cat utils.c | tr -d '\n' | grep -o -w 'f\?printf([^(]*);' | sed 's/f\?printf[[:blank:]]*(\(stderr,\|\)[[:blank:]]*"\(.*\)"[,)].*/\2/g' | grep -v '\\n'
+ERROR: DUP for data is allowed only in mixed mode
+%s [y/N]: *1
+#
+*1: It is not problem, should to be ignored
 
 Thanks
 Zhaolei
 
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> ---
+>  btrfs-corrupt-block.c | 2 +-
+>  cmds-check.c          | 4 ++--
+>  cmds-send.c           | 4 ++--
+>  dir-item.c            | 6 +++---
+>  mkfs.c                | 2 +-
+>  5 files changed, 9 insertions(+), 9 deletions(-)
+> 
+> diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c index 1a2aa23..ea871f4
+> 100644
+> --- a/btrfs-corrupt-block.c
+> +++ b/btrfs-corrupt-block.c
+> @@ -1010,7 +1010,7 @@ int find_chunk_offset(struct btrfs_root *root,
+>  		goto out;
+>  	}
+>  	if (ret < 0) {
+> -		fprintf(stderr, "Error searching chunk");
+> +		fprintf(stderr, "Error searching chunk\n");
+>  		goto out;
+>  	}
+>  out:
+> diff --git a/cmds-check.c b/cmds-check.c index dd2fce3..0ddf57c 100644
+> --- a/cmds-check.c
+> +++ b/cmds-check.c
+> @@ -2398,7 +2398,7 @@ static int repair_inode_nlinks(struct
+> btrfs_trans_handle *trans,
+>  				  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
+>  				  mode);
+>  		if (ret < 0) {
+> -			fprintf(stderr, "Failed to create '%s' dir: %s",
+> +			fprintf(stderr, "Failed to create '%s' dir: %s\n",
+>  				dir_name, strerror(-ret));
+>  			goto out;
+>  		}
+> @@ -2426,7 +2426,7 @@ static int repair_inode_nlinks(struct
+> btrfs_trans_handle *trans,
+>  		}
+>  		if (ret < 0) {
+>  			fprintf(stderr,
+> -				"Failed to link the inode %llu to %s dir: %s",
+> +				"Failed to link the inode %llu to %s dir: %s\n",
+>  				rec->ino, dir_name, strerror(-ret));
+>  			goto out;
+>  		}
+> diff --git a/cmds-send.c b/cmds-send.c
+> index 20bba18..78ee54c 100644
+> --- a/cmds-send.c
+> +++ b/cmds-send.c
+> @@ -192,13 +192,13 @@ static int write_buf(int fd, const void *buf, int size)
+>  		ret = write(fd, (char*)buf + pos, size - pos);
+>  		if (ret < 0) {
+>  			ret = -errno;
+> -			fprintf(stderr, "ERROR: failed to dump stream. %s",
+> +			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
+>  					strerror(-ret));
+>  			goto out;
+>  		}
+>  		if (!ret) {
+>  			ret = -EIO;
+> -			fprintf(stderr, "ERROR: failed to dump stream. %s",
+> +			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
+>  					strerror(-ret));
+>  			goto out;
+>  		}
+> diff --git a/dir-item.c b/dir-item.c
+> index a5bf861..f3ad98f 100644
+> --- a/dir-item.c
+> +++ b/dir-item.c
+> @@ -285,7 +285,7 @@ int verify_dir_item(struct btrfs_root *root,
+>  	u8 type = btrfs_dir_type(leaf, dir_item);
+> 
+>  	if (type >= BTRFS_FT_MAX) {
+> -		fprintf(stderr, "invalid dir item type: %d",
+> +		fprintf(stderr, "invalid dir item type: %d\n",
+>  		       (int)type);
+>  		return 1;
+>  	}
+> @@ -294,7 +294,7 @@ int verify_dir_item(struct btrfs_root *root,
+>  		namelen = XATTR_NAME_MAX;
+> 
+>  	if (btrfs_dir_name_len(leaf, dir_item) > namelen) {
+> -		fprintf(stderr, "invalid dir item name len: %u",
+> +		fprintf(stderr, "invalid dir item name len: %u\n",
+>  		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
+>  		return 1;
+>  	}
+> @@ -302,7 +302,7 @@ int verify_dir_item(struct btrfs_root *root,
+>  	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
+>  	if ((btrfs_dir_data_len(leaf, dir_item) +
+>  	     btrfs_dir_name_len(leaf, dir_item)) >
+> BTRFS_MAX_XATTR_SIZE(root)) {
+> -		fprintf(stderr, "invalid dir item name + data len: %u + %u",
+> +		fprintf(stderr, "invalid dir item name + data len: %u + %u\n",
+>  		       (unsigned)btrfs_dir_name_len(leaf, dir_item),
+>  		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
+>  		return 1;
+> diff --git a/mkfs.c b/mkfs.c
+> index dafd500..909b591 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -599,7 +599,7 @@ static int add_symbolic_link(struct btrfs_trans_handle
+> *trans,
+>  		goto fail;
+>  	}
+>  	if (ret >= sectorsize) {
+> -		fprintf(stderr, "symlink too long for %s", path_name);
+> +		fprintf(stderr, "symlink too long for %s\n", path_name);
+>  		ret = -1;
+>  		goto fail;
+>  	}
+> --
+> 2.4.5
+> 
+> ----
+> Tsutomu Itoh  t-itoh@jp.fujitsu.com
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body
+> of a message to majordomo@vger.kernel.org More majordomo info at
+> http://vger.kernel.org/majordomo-info.html
 

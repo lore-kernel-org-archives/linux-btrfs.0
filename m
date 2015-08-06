@@ -1,48 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:35617 "EHLO
-	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753378AbbHFLLB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 07:11:01 -0400
-Received: by iodd187 with SMTP id d187so77313339iod.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2015 04:11:00 -0700 (PDT)
-Subject: Re: bedup --defrag freezing
-To: Konstantin Svist <fry.kun@gmail.com>, linux-btrfs@vger.kernel.org
-References: <55C2840E.4030909@gmail.com>
+Received: from mail-io0-f171.google.com ([209.85.223.171]:35324 "EHLO
+	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754137AbbHFLNQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 07:13:16 -0400
+Received: by iodd187 with SMTP id d187so77360577iod.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2015 04:13:15 -0700 (PDT)
+Subject: Re: BTRFS disaster (of my own making). Is this recoverable?
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAP5+4qewgAhZ=1qKyDMMAsHC39CH36VmuaEuyaaaTAWHeqzmYw@mail.gmail.com>
+ <CAP5+4qfi4UdfMmNdC2XizTG0au-btnKBqSmg1rUaW=EJApZkmA@mail.gmail.com>
+ <CAP5+4qdmjkniaoY6+FCL4OTAYQjpU=DOWBRv-3FkEvFN=TAeRw@mail.gmail.com>
+ <20150803152835.GF14352@carfax.org.uk>
+ <CAP5+4qfmXdMvBaVK1KqUfBRfM447ASJ4U0OqRxhsOw2r4WE1fQ@mail.gmail.com>
+ <CAP5+4qd2-kKEG5y2gEphQ=5A4+B+=2teMxiZJc-vDHZ1_-t8OQ@mail.gmail.com>
+ <CAP5+4qceVW2JbAteuRQUK+5mdwWcp8fF0QUk6Q87nqCw5P5wRw@mail.gmail.com>
+ <CAP5+4qfLEqvGQhCkzQWPLy-dtAS7GjSfDy5Oo=6OXL1zohrc=Q@mail.gmail.com>
+ <CAP5+4qcdn9eeHk=EgpUjNC2T+fxwimRit+BRsxQDv6k1Bb=Gqg@mail.gmail.com>
+ <pan$f64e$1c059550$ef240e25$d6d81c77@cox.net>
+ <CAP5+4qcfn_nPwD0eeMGJGuB5nEkSg0rbjnV6AUnCmEnJ5qu20w@mail.gmail.com>
+ <CAP5+4qePXJuxv4FRdNSy-wsHTSr=iuJYrqdOwfYw4tOESiCCug@mail.gmail.com>
+ <CAJCQCtSFcXhC9xBLia0uns64PdLPQXwEPin=sxSOsdhW+tD2Yg@mail.gmail.com>
+ <B7F2379062E32745A8651FBDB20F64596115AB1F@Server.waterlogic.com.au>
+ <CAJCQCtTzV-YsBVRUAYqZVNP2M3QZfx9gGbOJ3ZY6ZrjEEWvvfQ@mail.gmail.com>
+Cc: Hugo Mills <hugo@carfax.org.uk>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55C340B5.20005@gmail.com>
-Date: Thu, 6 Aug 2015 07:10:45 -0400
+Message-ID: <55C3413D.6010202@gmail.com>
+Date: Thu, 6 Aug 2015 07:13:01 -0400
 MIME-Version: 1.0
-In-Reply-To: <55C2840E.4030909@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030403020700060808090003"
+In-Reply-To: <CAJCQCtTzV-YsBVRUAYqZVNP2M3QZfx9gGbOJ3ZY6ZrjEEWvvfQ@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080100070004000502050709"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms030403020700060808090003
-Content-Type: text/plain; charset=windows-1252; format=flowed
+--------------ms080100070004000502050709
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-05 17:45, Konstantin Svist wrote:
-> Hi,
+On 2015-08-05 22:13, Chris Murphy wrote:
+> On Wed, Aug 5, 2015 at 6:45 PM, Paul Jones <paul@pauljones.id.au> wrote=
+:
+>> Would it be possible to store this type of critical information twice =
+on each disk, at the beginning and end? I thought BTRFS already did that,=
+ but I might be thinking of some other filesystem. I've had my share of t=
+hese types of oops! moments as well.
 >
-> I've been running btrfs on Fedora for a while now, with bedup --defrag
-> running in a night-time cronjob.
-> Last few runs seem to have gotten stuck, without possibility of even
-> killing the process (kill -9 doesn't work) -- all I could do is hard
-> power cycle.
+> That option is metadata profile raid1. To do an automatic
+> -mconvert=3Draid1 when the user does 'btrfs device add' breaks any use
+> case where you want to temporarily add a small device, maybe a USB
+> stick, and now hundreds of MiBs possibly GiBs of metadata have to be
+> copied over to this device without warning. It could be made smart,
+> autoconvert to raid1 when the added device is at least 4x the size of
+> metadata allocation, but then that makes it inconsistent. OK so it
+> could be made interactive, but now that breaks scripts. So... where do
+> you draw the line?
 >
-> Did something change recently? Is bedup simply too out of date? What
-> should I use to de-duplicate across snapshots instead? Etc.?
+> Maybe this would work if the system chunk only was raid1? I don't know
+> what the minimum necessary information is for such a case.
 >
-AFAIK, bedup hasn't been actively developed for quite a while (I'm=20
-actually kind of surprised it runs with the newest btrfs-progs).=20
-Personally, I'd suggest using duperemove=20
-(https://github.com/markfasheh/duperemove).
+> Possibly it make more sense if 'btrfs device add' always does
+> -dconvert=3Draid1 unless a --quick option is passed?
+>
+Perhaps we could print out a big noisy warning that could be silenced?
 
 
-
---------------ms030403020700060808090003
+--------------ms080100070004000502050709
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -84,9 +108,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODA2MTExMDQ1WjBPBgkq
-hkiG9w0BCQQxQgRAFhlOvXX3T1/SmqXledAoZ94dkjtKVES/gI5MOAR/FNOe+G6xmaK1H2sN
-IvA3Pf9Fn7xEqFvpMiFAubEvbtf9TDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODA2MTExMzAxWjBPBgkq
+hkiG9w0BCQQxQgRAtSK8K+5yucZ61SiEKhno9MstsFsUWC1NjqJAAyJEFxt1UWKp0ncoB9cD
+A0YfmOPj/sNRLWn5QUpYwoql4iBjejBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -94,14 +118,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgB3LFDlhgOeXOt7+9QGqY/yx4is5c/S8Xw/WtJJbp+7L//R7XAa
-Zu2cru/ydo1mY/shNlB8QNSPqX+e3by31zdGG5UisOkN12K4XCWg9/LYXKeN6CiuW+/M77lm
-YoLme+q2TnVqz6g1WYJhTVG0hK1SOT70Q2P0+rsGi+L/eNMCM6sk/HZX3cXzkl/irE0QI+GK
-ud3XAkjK/oMfGr3RPn16GJQc6kxr6oGY9Z+Ge1//uyxwBgd4CdyGieUTN1DOHyt23amfrnnZ
-YkuuGxRKTwoHle+OATo7P4Mnk/q0/FYVbM45J0MejpnyYZARzz4dH9pnfnUeTmlSZNw6+Yal
-w8gJkRsQfIgq23GARfhLPS8fQGd9TibAbIY3a4GUGPm2fVDFGpYQ8FhAj59WsekWrM847uXc
-bjRKLTl8s4WT5SCJCDRZ/f7I3FobYjP0nX9W501CV4k6z/PHCowwX8YYK0+8IdEtPdsNbuan
-bnOBNrGdZScUQpPs5pHbPGpQLjrZjaIYoBvbdm4Y6GWvGu/4rE9OODM8ObXqgbXzlWIbj8wS
-kl4C2u/3Od8WpA5eC7L0MrkdV/Kz7Pp7zPHM+6Uv8nKLqK6+fh+7ts0Wt38PuPBZhceRAyW/
-4t6/CcD9Q3iX/s8wi1nv1JYGBJHLIXGEYyo0NNOH5NsVSiyCHp3GXu5IPAAAAAAAAA==
---------------ms030403020700060808090003--
+BgkqhkiG9w0BAQEFAASCAgAC+oMzIwsOuIuOBg1X9BlgLALlAb8rF9181z1boWtKMKb9jdfL
+qScCbKN2WdW0bD1RTQu0vHOhJx3dmKcD0DR5wXaVbsmGHbCbl9QVR8LqzuudmnWZgoG3E6s7
+Ggm3ui6/ZZeXPGgrhO7YcIMj1heLGfmvO2dPKXGtA1lATRzfdbwtzKVvymLb8AWwF36+8/1J
+hGaIqvDdkoPTzvqXn9LcOslDD2NI9vKkBbMVoGOKweVHHMJF7T1VWoH1thocS25H0DULuxQ6
+Z+/wspALq2EYMwuUd1JVtcTrTD2oIStOAU1I+CczKKNg4Pir35fWdInpeBHlggabidueKNMH
+7LFZQhwHDiEleMVu0fgLSOTygS9pWqYu347ZobMGUcTeJg9TJczv91BqERbg75rmumWv2gi8
+SjyQlf86fjXd1sx+do4tfrTMXrFfYcWooSku9kTokDSy2fhSOFH6egUyFZZoT0DwJvpOYqAs
+0+g7ipwQRbeMrBfMZzNVfSYXtVVLS2z652LAxz/8j1AAtSFKBe5C9HltwjtIlssgVoZKApbb
+UdWiREh+2OYwQOk2e5gFPkpM7gS5LcD42wNut7DMY+aoC6rvc7KzAJ92ODfOszcti/MUzhmg
+BNbIg/nfjyCgOeolKIQU59z5ZYAvfUx9cghx0yJ+9Cko77SqIAIl35tpAwAAAAAAAA==
+--------------ms080100070004000502050709--

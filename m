@@ -1,107 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.131]:61997 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751493AbbHFS6D convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 14:58:03 -0400
-Message-ID: <55C3AE34.8050804@friedels.name>
-Date: Thu, 06 Aug 2015 20:57:56 +0200
-From: Hendrik Friedel <hendrik@friedels.name>
+Received: from mail-qk0-f172.google.com ([209.85.220.172]:35982 "EHLO
+	mail-qk0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754663AbbHFWRY (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 18:17:24 -0400
+Received: by qkdv3 with SMTP id v3so31545337qkd.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2015 15:17:23 -0700 (PDT)
 MIME-Version: 1.0
-To: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Data single *and* raid?
-References: <55BD277F.2040201@friedels.name>	<20150801203258.GA14352@carfax.org.uk> <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
-In-Reply-To: <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+From: Peter Foley <pefoley2@pefoley.com>
+Date: Thu, 6 Aug 2015 15:17:04 -0700
+Message-ID: <CAOFdcFMnYfLzw+xH71eNNgZyhqrgH4qOccak0m4OAnH31V_H=A@mail.gmail.com>
+Subject: Removing bad hdd from btrfs volume
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello Hugo,
-hello Chris,
+Hi,
 
-thanks for your advice. Now I am here:
-btrfs balance start -dprofiles=single -mprofiles=raid1 /mnt/__Complete_Disk/
-Done, had to relocate 0 out of 3939 chunks
+I have an btrfs volume that spans multiple disks (no raid, just
+single), and earlier this morning I hit some hardware problems with
+one of the disks.
+I tried btrfs dev del /dev/sda1 /, but btrfs was unable to migrate the
+1gb that appears to be causing the read errors.
+See http://sprunge.us/aeZC
+Is there some way to figure out which file(s) are affected, and if
+they are stuff I don't care about, is there some way to force btrfs to
+"lose" the 1gb it can't copy off of the failing hdd?
 
+Thanks,
 
-root@homeserver:/mnt/__Complete_Disk# btrfs fi show
-Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
-         Total devices 3 FS bytes used 3.78TiB
-         devid    1 size 2.73TiB used 2.72TiB path /dev/sde
-         devid    2 size 2.73TiB used 2.23TiB path /dev/sdc
-         devid    3 size 2.73TiB used 2.73TiB path /dev/sdd
-
-btrfs-progs v4.1.1
-
-
-So, that looks good.
-
-But then:
-root@homeserver:/mnt/__Complete_Disk# btrfs fi df /mnt/__Complete_Disk/
-Data, RAID5: total=3.83TiB, used=3.78TiB
-System, RAID5: total=32.00MiB, used=576.00KiB
-Metadata, RAID5: total=6.46GiB, used=4.84GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-Is the RAID5 expected here?
-I did not yet run:
-btrfs balance start -dconvert=raid5,soft -mconvert=raid5,soft 
-/mnt/new_storage/
-
-Regards,
-Hendrik
-
-
-On 01.08.2015 22:44, Chris Murphy wrote:
-> On Sat, Aug 1, 2015 at 2:32 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->> On Sat, Aug 01, 2015 at 10:09:35PM +0200, Hendrik Friedel wrote:
->>> Hello,
->>>
->>> I converted an array to raid5 by
->>> btrfs device add /dev/sdd /mnt/new_storage
->>> btrfs device add /dev/sdc /mnt/new_storage
->>> btrfs balance start -dconvert=raid5 -mconvert=raid5 /mnt/new_storage/
->>>
->>> The Balance went through. But now:
->>> Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
->>>          Total devices 3 FS bytes used 5.28TiB
->>>          devid    1 size 2.73TiB used 2.57TiB path /dev/sde
->>>          devid    2 size 2.73TiB used 2.73TiB path /dev/sdc
->>>          devid    3 size 2.73TiB used 2.73TiB path /dev/sdd
->>> btrfs-progs v4.1.1
->>>
->>> Already the 2.57TiB is a bit surprising:
->>> root@homeserver:/mnt# btrfs fi df /mnt/new_storage/
->>> Data, single: total=2.55TiB, used=2.55TiB
->>> Data, RAID5: total=2.73TiB, used=2.72TiB
->>> System, RAID5: total=32.00MiB, used=736.00KiB
->>> Metadata, RAID1: total=6.00GiB, used=5.33GiB
->>> Metadata, RAID5: total=3.00GiB, used=2.99GiB
->>
->>     Looking at the btrfs fi show output, you've probably run out of
->> space during the conversion, probably due to an uneven distribution of
->> the original "single" chunks.
->>
->>     I think I would suggest balancing the single chunks, and trying the
->> conversion (of the unconverted parts) again:
->>
->> # btrfs balance start -dprofiles=single -mprofile=raid1 /mnt/new_storage/
->> # btrfs balance start -dconvert=raid5,soft -mconvert=raid5,soft /mnt/new_storage/
->>
->
-> Yep I bet that's it also. btrfs fi usage might be better at exposing this case.
->
->
-
-
--- 
-Hendrik Friedel
-Auf dem Brink 12
-28844 Weyhe
-Tel. 04203 8394854
-Mobil 0178 1874363
-
----
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-https://www.avast.com/antivirus
-
+Peter Foley

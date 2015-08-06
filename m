@@ -1,42 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37479 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755723AbbHFMbg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Aug 2015 08:31:36 -0400
-Date: Thu, 6 Aug 2015 14:31:14 +0200
-From: David Sterba <dsterba@suse.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: dsterba@suse.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/6] sysfs-part2 Add seed device representation on the
- sysfs
-Message-ID: <20150806123114.GJ31669@suse.cz>
-Reply-To: dsterba@suse.com
-References: <1436340774-10909-1-git-send-email-anand.jain@oracle.com>
- <20150805172908.GI31669@twin.jikos.cz>
- <55C28554.708@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:18104 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753601AbbHFN6g (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 09:58:36 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t76DudNU020380
+	for <linux-btrfs@vger.kernel.org>; Thu, 6 Aug 2015 21:56:39 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: abort transaction on btrfs_reloc_cow_block()
+Date: Thu, 6 Aug 2015 21:56:58 +0800
+Message-ID: <112f5da071c0d3446fedf7c7828c78ae586e11fb.1438869404.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55C28554.708@oracle.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 06, 2015 at 05:51:16AM +0800, Anand Jain wrote:
-...
->   these can go in.
-> 
-> >>    Btrfs: sysfs: support seed devices in the sysfs layout
-> >
-> > Sorry for late reply, the patches look good. I'm going to prepare a
-> > branch for pull into 4.3. Thanks.
-> 
-> I suggested if this can wait.
-> on the 2nd thought, I am preparing to conduct a survey to know most 
-> preferred sysfs layout for btrfs.
->   mainly between
->   one, less invasive overlays on the existing layout (current method).
->   the other, separates FS and Volume attributes (old method).
-> 
->   sorry that I am going back a bit, but i think its worth as these API 
-> are forever.
+When btrfs_reloc_cow_block() failed in __btrfs_cow_block(), current
+code just return a err-value to caller, but leave new_created extent
+buffer exist and locked.
 
-Understood.
+Then subsequent code (in relocate) try to lock above eb again,
+and caused deadlock without any dmesg.
+(eb lock use wait_event(), so no lockdep message)
+
+It is hard to do recover work in __btrfs_cow_block() at this error
+point, but we can abort transaction to avoid deadlock and operate on
+unstable state.a
+
+It also helps developer to find wrong place quickly.
+(better than a frozen fs without any dmesg before patch)
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/ctree.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 54114b4..5f745ea 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1159,8 +1159,10 @@ static noinline int __btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 
+ 	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state)) {
+ 		ret = btrfs_reloc_cow_block(trans, root, buf, cow);
+-		if (ret)
++		if (ret) {
++			btrfs_abort_transaction(trans, root, ret);
+ 			return ret;
++		}
+ 	}
+ 
+ 	if (buf == root->node) {
+-- 
+1.8.5.1
+

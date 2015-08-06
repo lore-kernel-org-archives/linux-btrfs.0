@@ -1,367 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:57783 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755135AbbHFKl1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Aug 2015 06:41:27 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix stale dir entries after removing a link and fsync
-Date: Thu,  6 Aug 2015 05:05:28 +0100
-Message-Id: <1438833928-30079-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-io0-f173.google.com ([209.85.223.173]:33001 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753998AbbHFLSA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 07:18:00 -0400
+Received: by ioii16 with SMTP id i16so77602823ioi.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 06 Aug 2015 04:17:59 -0700 (PDT)
+Subject: Re: Why subvolume and not just volume?
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <CAK4jXzy8OpRMnF=hYEamZVxiumH9Xn_8uDo_xOQhYfLf3cA9dA@mail.gmail.com>
+ <pan$26b5e$81e797b6$ee8aa3f0$e575c51a@cox.net>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <55C3425A.7030802@gmail.com>
+Date: Thu, 6 Aug 2015 07:17:46 -0400
+MIME-Version: 1.0
+In-Reply-To: <pan$26b5e$81e797b6$ee8aa3f0$e575c51a@cox.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070101010308080806020908"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+This is a cryptographically signed message in MIME format.
 
-We have one more case where after a log tree is replayed we get
-inconsistent metadata leading to stale directory entries, due to
-some directories having entries pointing to some inode while the
-inode does not have a matching BTRFS_INODE_[REF|EXTREF]_KEY item.
+--------------ms070101010308080806020908
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-To trigger the problem we need to have a file with multiple hard links
-belonging to different parent directories. Then if one of those hard
-links is removed and we fsync the file using one of its other links
-that belongs to a different parent directory, we end up not logging
-the fact that the removed hard link doesn't exists anymore in the
-parent directory.
+On 2015-08-06 03:23, Duncan wrote:
+> Martin posted on Wed, 05 Aug 2015 09:06:40 +0200 as excerpted:
+>
+>> [W]hat is the penalty of a subvolume compared to a directory? From a
+>> design perspective, couldn't all directories just be subvolumes?
+>
+> In addition to the performance issues mentioned by others, there's at
+> least one further practical reason as well.
+>
+> Snapshots stop at subvolume boundaries.  It's thus quite useful to use
+> subvolumes to delineate the limits of the snapshot, saying, in effect,
+> snapshot this dir (which happens to be a subvol not just a normal dir)
+> recursively, but don't snapshot the subtree starting with this nested
+> subdir (which again is a (different) subvol).
+>
+And for some people, this is very useful functionality.  I use it to=20
+specifically exclude subsets of trivially reproducible data from backups =
 
-Simple reproducer:
+(for example, I always clone public git repositories into individual=20
+subvolumes, and keep my local copy of the Portage tree on a separate one =
 
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
+(when it isn't on a separate filesystem that is)).
 
-  _cleanup()
-  {
-      _cleanup_flakey
-      rm -f $tmp.*
-  }
 
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-  . ./common/dmflakey
+--------------ms070101010308080806020908
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-  # real QA test starts here
-  _need_to_be_root
-  _supported_fs generic
-  _supported_os Linux
-  _require_scratch
-  _require_dm_flakey
-  _require_metadata_journaling $SCRATCH_DEV
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >>$seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
-
-  # Create our test directory and file.
-  mkdir $SCRATCH_MNT/testdir
-  touch $SCRATCH_MNT/foo
-  ln $SCRATCH_MNT/foo $SCRATCH_MNT/testdir/foo2
-  ln $SCRATCH_MNT/foo $SCRATCH_MNT/testdir/foo3
-
-  # Make sure everything done so far is durably persisted.
-  sync
-
-  # Now we remove one of our file's hardlinks in the directory testdir.
-  unlink $SCRATCH_MNT/testdir/foo3
-
-  # We now fsync our file using the "foo" link, which has a parent that
-  # is not the directory "testdir".
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-
-  # Silently drop all writes and unmount to simulate a crash/power
-  # failure.
-  _load_flakey_table $FLAKEY_DROP_WRITES
-  _unmount_flakey
-
-  # Allow writes again, mount to trigger journal/log replay.
-  _load_flakey_table $FLAKEY_ALLOW_WRITES
-  _mount_flakey
-
-  # After the journal/log is replayed we expect to not see the "foo3"
-  # link anymore and we should be able to remove all names in the
-  # directory "testdir" and then remove it (no stale directory entries
-  # left after the journal/log replay).
-  echo "Entries in testdir:"
-  ls -1 $SCRATCH_MNT/testdir
-
-  rm -f $SCRATCH_MNT/testdir/*
-  rmdir $SCRATCH_MNT/testdir
-
-  _unmount_flakey
-
-  status=0
-  exit
-
-The test fails with:
-
-  $ ./check generic/107
-  FSTYP         -- btrfs
-  PLATFORM      -- Linux/x86_64 debian3 4.1.0-rc6-btrfs-next-11+
-  MKFS_OPTIONS  -- /dev/sdc
-  MOUNT_OPTIONS -- /dev/sdc /home/fdmanana/btrfs-tests/scratch_1
-
-  generic/107 3s ... - output mismatch (see .../results/generic/107.out.bad)
-    --- tests/generic/107.out	2015-08-01 01:39:45.807462161 +0100
-    +++ /home/fdmanana/git/hub/xfstests/results//generic/107.out.bad
-    @@ -1,3 +1,5 @@
-     QA output created by 107
-     Entries in testdir:
-     foo2
-    +foo3
-    +rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/testdir': Directory not empty
-    ...
-    _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent \
-      (see /home/fdmanana/git/hub/xfstests/results//generic/107.full)
-    _check_dmesg: something found in dmesg (see .../results/generic/107.dmesg)
-  Ran: generic/107
-  Failures: generic/107
-  Failed 1 of 1 tests
-
-  $ cat /home/fdmanana/git/hub/xfstests/results//generic/107.full
-  (...)
-  checking fs roots
-  root 5 inode 257 errors 200, dir isize wrong
-	unresolved ref dir 257 index 3 namelen 4 name foo3 filetype 1 errors 5, no dir item, no inode ref
-  (...)
-
-And produces the following warning in dmesg:
-
-  [127298.759064] BTRFS info (device dm-0): failed to delete reference to foo3, inode 258 parent 257
-  [127298.762081] ------------[ cut here ]------------
-  [127298.763311] WARNING: CPU: 10 PID: 7891 at fs/btrfs/inode.c:3956 __btrfs_unlink_inode+0x182/0x35a [btrfs]()
-  [127298.767327] BTRFS: Transaction aborted (error -2)
-  (...)
-  [127298.788611] Call Trace:
-  [127298.789137]  [<ffffffff8145f077>] dump_stack+0x4f/0x7b
-  [127298.790090]  [<ffffffff81095de5>] ? console_unlock+0x356/0x3a2
-  [127298.791157]  [<ffffffff8104b3b0>] warn_slowpath_common+0xa1/0xbb
-  [127298.792323]  [<ffffffffa065ad09>] ? __btrfs_unlink_inode+0x182/0x35a [btrfs]
-  [127298.793633]  [<ffffffff8104b410>] warn_slowpath_fmt+0x46/0x48
-  [127298.794699]  [<ffffffffa065ad09>] __btrfs_unlink_inode+0x182/0x35a [btrfs]
-  [127298.797640]  [<ffffffffa065be8f>] btrfs_unlink_inode+0x1e/0x40 [btrfs]
-  [127298.798876]  [<ffffffffa065bf11>] btrfs_unlink+0x60/0x9b [btrfs]
-  [127298.800154]  [<ffffffff8116fb48>] vfs_unlink+0x9c/0xed
-  [127298.801303]  [<ffffffff81173481>] do_unlinkat+0x12b/0x1fb
-  [127298.802450]  [<ffffffff81253855>] ? lockdep_sys_exit_thunk+0x12/0x14
-  [127298.803797]  [<ffffffff81174056>] SyS_unlinkat+0x29/0x2b
-  [127298.805017]  [<ffffffff81465197>] system_call_fastpath+0x12/0x6f
-  [127298.806310] ---[ end trace bbfddacb7aaada7b ]---
-  [127298.807325] BTRFS warning (device dm-0): __btrfs_unlink_inode:3956: Aborting unused transaction(No such entry).
-
-So fix this by logging all parent inodes, current and old ones, to make
-sure we do not get stale entries after log replay. This is not a simple
-solution such as triggering a full transaction commit because it would
-imply full transaction commit when an inode is fsynced in the same
-transaction that modified it and reloaded it after eviction (because its
-last_unlink_trans is set to the same value as its last_trans as of the
-commit with the title "Btrfs: fix stale dir entries after unlink, inode
-eviction and fsync"), and it would also make fstest generic/066 fail
-since one of the fsyncs triggers a full commit and the next fsync will
-not find the inode in the log anymore (therefore not removing the xattr).
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/tree-log.c | 158 +++++++++++++++++++++++++++++++++++++++++++++-------
- 1 file changed, 138 insertions(+), 20 deletions(-)
-
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index cb5666e..9314ade 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -4960,6 +4960,94 @@ next_dir_inode:
- 	return ret;
- }
- 
-+static int btrfs_log_all_parents(struct btrfs_trans_handle *trans,
-+				 struct inode *inode,
-+				 struct btrfs_log_ctx *ctx)
-+{
-+	int ret;
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	const u64 ino = btrfs_ino(inode);
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+	path->skip_locking = 1;
-+	path->search_commit_root = 1;
-+
-+	key.objectid = ino;
-+	key.type = BTRFS_INODE_REF_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+
-+	while (true) {
-+		struct extent_buffer *leaf = path->nodes[0];
-+		int slot = path->slots[0];
-+		u32 cur_offset = 0;
-+		u32 item_size;
-+		unsigned long ptr;
-+
-+		if (slot >= btrfs_header_nritems(leaf)) {
-+			ret = btrfs_next_leaf(root, path);
-+			if (ret < 0)
-+				goto out;
-+			else if (ret > 0)
-+				break;
-+			continue;
-+		}
-+
-+		btrfs_item_key_to_cpu(leaf, &key, slot);
-+		/* BTRFS_INODE_EXTREF_KEY is BTRFS_INODE_REF_KEY + 1 */
-+		if (key.objectid != ino || key.type > BTRFS_INODE_EXTREF_KEY)
-+			break;
-+
-+		item_size = btrfs_item_size_nr(leaf, slot);
-+		ptr = btrfs_item_ptr_offset(leaf, slot);
-+		while (cur_offset < item_size) {
-+			struct btrfs_key inode_key;
-+			struct inode *dir_inode;
-+
-+			inode_key.type = BTRFS_INODE_ITEM_KEY;
-+			inode_key.offset = 0;
-+
-+			if (key.type == BTRFS_INODE_EXTREF_KEY) {
-+				struct btrfs_inode_extref *extref;
-+
-+				extref = (struct btrfs_inode_extref *)
-+					(ptr + cur_offset);
-+				inode_key.objectid = btrfs_inode_extref_parent(
-+					leaf, extref);
-+				cur_offset += sizeof(*extref);
-+				cur_offset += btrfs_inode_extref_name_len(leaf,
-+					extref);
-+			} else {
-+				inode_key.objectid = key.offset;
-+				cur_offset = item_size;
-+			}
-+
-+			dir_inode = btrfs_iget(root->fs_info->sb, &inode_key,
-+					       root, NULL);
-+			/* If parent inode was deleted, skip it. */
-+			if (IS_ERR(dir_inode))
-+				continue;
-+
-+			ret = btrfs_log_inode(trans, root, dir_inode,
-+					      LOG_INODE_ALL, 0, LLONG_MAX, ctx);
-+			iput(dir_inode);
-+			if (ret)
-+				goto out;
-+		}
-+		path->slots[0]++;
-+	}
-+	ret = 0;
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
- /*
-  * helper function around btrfs_log_inode to make sure newly created
-  * parent directories also end up in the log.  A minimal inode and backref
-@@ -4979,9 +5067,6 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	struct dentry *old_parent = NULL;
- 	int ret = 0;
- 	u64 last_committed = root->fs_info->last_trans_committed;
--	const struct dentry * const first_parent = parent;
--	const bool did_unlink = (BTRFS_I(inode)->last_unlink_trans >
--				 last_committed);
- 	bool log_dentries = false;
- 	struct inode *orig_inode = inode;
- 
-@@ -5042,6 +5127,53 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 	if (S_ISDIR(inode->i_mode) && ctx && ctx->log_new_dentries)
- 		log_dentries = true;
- 
-+	/*
-+	 * On unlink we must make sure all our current and old parent directores
-+	 * inodes are fully logged. This is to prevent leaving dangling
-+	 * directory index entries in directories that were our parents but are
-+	 * not anymore. Not doing this results in old parent directory being
-+	 * impossible to delete after log replay (rmdir will always fail with
-+	 * error -ENOTEMPTY).
-+	 *
-+	 * Example 1:
-+	 *
-+	 * mkdir testdir
-+	 * touch testdir/foo
-+	 * ln testdir/foo testdir/bar
-+	 * sync
-+	 * unlink testdir/bar
-+	 * xfs_io -c fsync testdir/foo
-+	 * <power failure>
-+	 * mount fs, triggers log replay
-+	 *
-+	 * If we don't log the parent directory (testdir), after log replay the
-+	 * directory still has an entry pointing to the file inode using the bar
-+	 * name, but a matching BTRFS_INODE_[REF|EXTREF]_KEY does not exist and
-+	 * the file inode has a link count of 1.
-+	 *
-+	 * Example 2:
-+	 *
-+	 * mkdir testdir
-+	 * touch foo
-+	 * ln foo testdir/foo2
-+	 * ln foo testdir/foo3
-+	 * sync
-+	 * unlink testdir/foo3
-+	 * xfs_io -c fsync foo
-+	 * <power failure>
-+	 * mount fs, triggers log replay
-+	 *
-+	 * Similar as the first example, after log replay the parent directory
-+	 * testdir still has an entry pointing to the inode file with name foo3
-+	 * but the file inode does not have a matching BTRFS_INODE_REF_KEY item
-+	 * and has a link count of 2.
-+	 */
-+	if (BTRFS_I(inode)->last_unlink_trans > last_committed) {
-+		ret = btrfs_log_all_parents(trans, orig_inode, ctx);
-+		if (ret)
-+			goto end_trans;
-+	}
-+
- 	while (1) {
- 		if (!parent || d_really_is_negative(parent) || sb != d_inode(parent)->i_sb)
- 			break;
-@@ -5050,23 +5182,9 @@ static int btrfs_log_inode_parent(struct btrfs_trans_handle *trans,
- 		if (root != BTRFS_I(inode)->root)
- 			break;
- 
--		/*
--		 * On unlink we must make sure our immediate parent directory
--		 * inode is fully logged. This is to prevent leaving dangling
--		 * directory index entries and a wrong directory inode's i_size.
--		 * Not doing so can result in a directory being impossible to
--		 * delete after log replay (rmdir will always fail with error
--		 * -ENOTEMPTY).
--		 */
--		if (did_unlink && parent == first_parent)
--			inode_only = LOG_INODE_ALL;
--		else
--			inode_only = LOG_INODE_EXISTS;
--
--		if (BTRFS_I(inode)->generation >
--		    root->fs_info->last_trans_committed ||
--		    inode_only == LOG_INODE_ALL) {
--			ret = btrfs_log_inode(trans, root, inode, inode_only,
-+		if (BTRFS_I(inode)->generation > last_committed) {
-+			ret = btrfs_log_inode(trans, root, inode,
-+					      LOG_INODE_EXISTS,
- 					      0, LLONG_MAX, ctx);
- 			if (ret)
- 				goto end_trans;
--- 
-2.1.3
-
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODA2MTExNzQ2WjBPBgkq
+hkiG9w0BCQQxQgRAmR+TQg4O+cPP13gkYL1KbI9iaYUANsbapIygz+e4N4QILJEmAgrqaND3
+EPNhKq8G4HVIZ7q3KjBMoQZC+1vInTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
+BgkqhkiG9w0BAQEFAASCAgBcKL8HEaB4dX8gRShqsvQF4eJw+PFMgkp1zguxPq1gXjcQUGN0
+7hkDP88goRFA+tJCiUWn6XEpOR3PLKSAhGJ8MYW0vfCY569Hf9To/wkccRPsLyUYN4zBnr7q
+Ebs4l6Itk9BRnWa7pYXidoNynKkv0Zfxf2pYM3XUtClbn/eSA+/fE8NGUvy7oQUTaNqwobFB
+khkkz6UuE4QxbdxuaO3M9BvWGhXDtFEzfPpL+CMYb53s6v0DusBkMx4hjceLbyLKSAeMtnDR
+cRnv9o2cOfiaB7cyGscrSBvjzDP7vIh2kMbXjOzzFltbE36zpmncX38uOUIE0/URfqju+ySs
+p1wkq+5ga5pvQywVLtrv8rjAjWHIdu/pgMq6tzxh1LkJPPkZjn9GlqCUM58ALVhjtWQQzLfY
+mnmr446m5fmRv0GJjh3VcDu8BpM4c4PWlBBTeoU1N9ZYNIE771wpAQi1hL1dWvl8WRNF41hg
+GAPFocWp0b+syuTzHuafUUBGxg+XohNt4yuSdzHuFQyjNnh5EuwdSgCRKr7CrbliUI4Y6PKd
+a0SK3+AIMX0TRh5DxERtMPwtLJ4GdY7nk7vtGtMj5UJfsADVh4nfai17y2BaPtXGrsL09bDa
+Nk2fBTgWCV02+yn/lRETgqb7G/G2zi2MZr9Nbwv2qapCpNw4tNwV0O9OowAAAAAAAA==
+--------------ms070101010308080806020908--

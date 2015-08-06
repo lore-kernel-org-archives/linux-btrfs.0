@@ -1,55 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f49.google.com ([209.85.213.49]:36079 "EHLO
-	mail-vk0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750827AbbHFCNQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 22:13:16 -0400
-Received: by vkci6 with SMTP id i6so22812612vkc.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 05 Aug 2015 19:13:15 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:60816 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754873AbbHFImp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 04:42:45 -0400
+Subject: Re: [PATCH] btrfs: qgroup: Fix a regression in qgroup reserved space.
+To: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
+References: <1438584269-32634-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55C31E01.7010204@cn.fujitsu.com>
+Date: Thu, 6 Aug 2015 16:42:41 +0800
 MIME-Version: 1.0
-In-Reply-To: <B7F2379062E32745A8651FBDB20F64596115AB1F@Server.waterlogic.com.au>
-References: <CAP5+4qewgAhZ=1qKyDMMAsHC39CH36VmuaEuyaaaTAWHeqzmYw@mail.gmail.com>
-	<pan$73c92$81fb65b9$3c60e540$cb422e6a@cox.net>
-	<CAP5+4qfi4UdfMmNdC2XizTG0au-btnKBqSmg1rUaW=EJApZkmA@mail.gmail.com>
-	<CAP5+4qdmjkniaoY6+FCL4OTAYQjpU=DOWBRv-3FkEvFN=TAeRw@mail.gmail.com>
-	<20150803152835.GF14352@carfax.org.uk>
-	<CAP5+4qfmXdMvBaVK1KqUfBRfM447ASJ4U0OqRxhsOw2r4WE1fQ@mail.gmail.com>
-	<CAP5+4qd2-kKEG5y2gEphQ=5A4+B+=2teMxiZJc-vDHZ1_-t8OQ@mail.gmail.com>
-	<CAP5+4qceVW2JbAteuRQUK+5mdwWcp8fF0QUk6Q87nqCw5P5wRw@mail.gmail.com>
-	<CAP5+4qfLEqvGQhCkzQWPLy-dtAS7GjSfDy5Oo=6OXL1zohrc=Q@mail.gmail.com>
-	<CAP5+4qcdn9eeHk=EgpUjNC2T+fxwimRit+BRsxQDv6k1Bb=Gqg@mail.gmail.com>
-	<pan$f64e$1c059550$ef240e25$d6d81c77@cox.net>
-	<CAP5+4qcfn_nPwD0eeMGJGuB5nEkSg0rbjnV6AUnCmEnJ5qu20w@mail.gmail.com>
-	<CAP5+4qePXJuxv4FRdNSy-wsHTSr=iuJYrqdOwfYw4tOESiCCug@mail.gmail.com>
-	<CAJCQCtSFcXhC9xBLia0uns64PdLPQXwEPin=sxSOsdhW+tD2Yg@mail.gmail.com>
-	<B7F2379062E32745A8651FBDB20F64596115AB1F@Server.waterlogic.com.au>
-Date: Wed, 5 Aug 2015 20:13:15 -0600
-Message-ID: <CAJCQCtTzV-YsBVRUAYqZVNP2M3QZfx9gGbOJ3ZY6ZrjEEWvvfQ@mail.gmail.com>
-Subject: Re: BTRFS disaster (of my own making). Is this recoverable?
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Cc: Hugo Mills <hugo@carfax.org.uk>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <1438584269-32634-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 5, 2015 at 6:45 PM, Paul Jones <paul@pauljones.id.au> wrote:
-> Would it be possible to store this type of critical information twice on each disk, at the beginning and end? I thought BTRFS already did that, but I might be thinking of some other filesystem. I've had my share of these types of oops! moments as well.
+Hi Chris,
 
-That option is metadata profile raid1. To do an automatic
--mconvert=raid1 when the user does 'btrfs device add' breaks any use
-case where you want to temporarily add a small device, maybe a USB
-stick, and now hundreds of MiBs possibly GiBs of metadata have to be
-copied over to this device without warning. It could be made smart,
-autoconvert to raid1 when the added device is at least 4x the size of
-metadata allocation, but then that makes it inconsistent. OK so it
-could be made interactive, but now that breaks scripts. So... where do
-you draw the line?
+Would you please consider including this patch into v4.2 if it is still 
+possible?
 
-Maybe this would work if the system chunk only was raid1? I don't know
-what the minimum necessary information is for such a case.
+Although the fix is still not perfect and just a hotfix, as qgroup 
+reserve parts still have a lot of problems from design and a lot of 
+operations can still cause reserve space leak.
 
-Possibly it make more sense if 'btrfs device add' always does
--dconvert=raid1 unless a --quick option is passed?
+But considering how easy it is to trigger, I still hope it to be merged 
+asap before 4.2.
 
--- 
-Chris Murphy
+
+For the remaining qgroup reserve bugs(*), we hope to fix it in 4.3 with 
+a new per-inode reserve space map mechanism, and just like the new 
+qgroup codes, free reserved space at run delayed ref time.
+
+It's never a small change, so definitely not suitable for current 4.2.
+
+*: Known bugs
+1) fallocate with already allocated space.
+    Fallocate will reserve space for given range, even it is already
+    allocate.
+    So no way to release it and another source of leak.
+
+2) Compress/inband-dedup
+    Reserved space is before compression, but freed space is after
+    compression.
+    Inband-dedup is much the same.
+
+3) Overlap buffered write.
+    Buffered write will reserve space before write, but if two buffered
+    write overlaps, the overlapped part will cause leak.
+
+4) NODATACOW still cause EDQUOT even it's not beyond existing extent.
+    NODATACOW shouldn't cause EDQUOT if it's rewritten existing extent.
+    Although it doesn't increase rfer/excl counts, but it still reserve
+    space and causing leak.
+
+Thanks,
+Qu
+
+Qu Wenruo wrote on 2015/08/03 14:44 +0800:
+> During the change to new btrfs extent-oriented qgroup implement, due to
+> it doesn't use the old __qgroup_excl_accounting() for exclusive extent,
+> it didn't free the reserved bytes.
+>
+> The bug will cause limit function go crazy as the reserved space is
+> never freed, increasing limit will have no effect and still cause
+> EQOUT.
+>
+> The fix is easy, just free reserved bytes for newly created exclusive
+> extent as what it does before.
+>
+> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+> Signed-off-by: Yang Dongsheng <yangds.fnst@cn.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> To Chris:
+>
+> Would you please consider merging this patch in the late v4.2 merge
+> window?
+> As it's a huge regression and the fix is small enough and just does
+> what it did before in __qgroup_excl_accounting() function.
+>
+> The corresponding test case will follow soon.
+>
+> And sorry for the regression I introduced.
+>
+> Thanks,
+> Qu
+> ---
+>   fs/btrfs/qgroup.c | 5 +++++
+>   1 file changed, 5 insertions(+)
+>
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index d5f1f03..1667567 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -1618,6 +1618,11 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
+>   				/* Exclusive -> exclusive, nothing changed */
+>   			}
+>   		}
+> +
+> +		/* For exclusive extent, free its reserved bytes too */
+> +		if (nr_old_roots == 0 && nr_new_roots == 1 &&
+> +		    cur_new_count == nr_new_roots)
+> +			qg->reserved -= num_bytes;
+>   		if (dirty)
+>   			qgroup_dirty(fs_info, qg);
+>   	}
+>

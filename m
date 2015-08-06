@@ -1,36 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53030 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752466AbbHFOoU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 6 Aug 2015 10:44:20 -0400
-Date: Thu, 6 Aug 2015 10:44:09 -0400
-From: Chris Mason <clm@fb.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] btrfs: qgroup: Fix a regression in qgroup reserved space.
-Message-ID: <20150806144409.GJ19756@ret.masoncoding.com>
-References: <1438584269-32634-1-git-send-email-quwenruo@cn.fujitsu.com>
- <55C31E01.7010204@cn.fujitsu.com>
+Received: from mout.kundenserver.de ([212.227.126.131]:61997 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751493AbbHFS6D convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 14:58:03 -0400
+Message-ID: <55C3AE34.8050804@friedels.name>
+Date: Thu, 06 Aug 2015 20:57:56 +0200
+From: Hendrik Friedel <hendrik@friedels.name>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <55C31E01.7010204@cn.fujitsu.com>
+To: Chris Murphy <lists@colorremedies.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Data single *and* raid?
+References: <55BD277F.2040201@friedels.name>	<20150801203258.GA14352@carfax.org.uk> <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
+In-Reply-To: <CAJCQCtTY0bWrFmm_6An9QcPm7ek53vCrFHjZjehHf-UotXJ7+A@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 06, 2015 at 04:42:41PM +0800, Qu Wenruo wrote:
-> Hi Chris,
-> 
-> Would you please consider including this patch into v4.2 if it is still
-> possible?
-> 
-> Although the fix is still not perfect and just a hotfix, as qgroup reserve
-> parts still have a lot of problems from design and a lot of operations can
-> still cause reserve space leak.
-> 
-> But considering how easy it is to trigger, I still hope it to be merged asap
-> before 4.2.
+Hello Hugo,
+hello Chris,
 
-Thanks Qu, I'll get this in.
+thanks for your advice. Now I am here:
+btrfs balance start -dprofiles=single -mprofiles=raid1 /mnt/__Complete_Disk/
+Done, had to relocate 0 out of 3939 chunks
 
--chris
+
+root@homeserver:/mnt/__Complete_Disk# btrfs fi show
+Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
+         Total devices 3 FS bytes used 3.78TiB
+         devid    1 size 2.73TiB used 2.72TiB path /dev/sde
+         devid    2 size 2.73TiB used 2.23TiB path /dev/sdc
+         devid    3 size 2.73TiB used 2.73TiB path /dev/sdd
+
+btrfs-progs v4.1.1
+
+
+So, that looks good.
+
+But then:
+root@homeserver:/mnt/__Complete_Disk# btrfs fi df /mnt/__Complete_Disk/
+Data, RAID5: total=3.83TiB, used=3.78TiB
+System, RAID5: total=32.00MiB, used=576.00KiB
+Metadata, RAID5: total=6.46GiB, used=4.84GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Is the RAID5 expected here?
+I did not yet run:
+btrfs balance start -dconvert=raid5,soft -mconvert=raid5,soft 
+/mnt/new_storage/
+
+Regards,
+Hendrik
+
+
+On 01.08.2015 22:44, Chris Murphy wrote:
+> On Sat, Aug 1, 2015 at 2:32 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+>> On Sat, Aug 01, 2015 at 10:09:35PM +0200, Hendrik Friedel wrote:
+>>> Hello,
+>>>
+>>> I converted an array to raid5 by
+>>> btrfs device add /dev/sdd /mnt/new_storage
+>>> btrfs device add /dev/sdc /mnt/new_storage
+>>> btrfs balance start -dconvert=raid5 -mconvert=raid5 /mnt/new_storage/
+>>>
+>>> The Balance went through. But now:
+>>> Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
+>>>          Total devices 3 FS bytes used 5.28TiB
+>>>          devid    1 size 2.73TiB used 2.57TiB path /dev/sde
+>>>          devid    2 size 2.73TiB used 2.73TiB path /dev/sdc
+>>>          devid    3 size 2.73TiB used 2.73TiB path /dev/sdd
+>>> btrfs-progs v4.1.1
+>>>
+>>> Already the 2.57TiB is a bit surprising:
+>>> root@homeserver:/mnt# btrfs fi df /mnt/new_storage/
+>>> Data, single: total=2.55TiB, used=2.55TiB
+>>> Data, RAID5: total=2.73TiB, used=2.72TiB
+>>> System, RAID5: total=32.00MiB, used=736.00KiB
+>>> Metadata, RAID1: total=6.00GiB, used=5.33GiB
+>>> Metadata, RAID5: total=3.00GiB, used=2.99GiB
+>>
+>>     Looking at the btrfs fi show output, you've probably run out of
+>> space during the conversion, probably due to an uneven distribution of
+>> the original "single" chunks.
+>>
+>>     I think I would suggest balancing the single chunks, and trying the
+>> conversion (of the unconverted parts) again:
+>>
+>> # btrfs balance start -dprofiles=single -mprofile=raid1 /mnt/new_storage/
+>> # btrfs balance start -dconvert=raid5,soft -mconvert=raid5,soft /mnt/new_storage/
+>>
+>
+> Yep I bet that's it also. btrfs fi usage might be better at exposing this case.
+>
+>
+
+
+-- 
+Hendrik Friedel
+Auf dem Brink 12
+28844 Weyhe
+Tel. 04203 8394854
+Mobil 0178 1874363
+
+---
+Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
+https://www.avast.com/antivirus
+

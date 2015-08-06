@@ -1,174 +1,221 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f176.google.com ([209.85.213.176]:35424 "EHLO
-	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750738AbbHEHqG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 03:46:06 -0400
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1438736914-28147-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1438736914-28147-1-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Wed, 5 Aug 2015 08:46:04 +0100
-Message-ID: <CAL3q7H5FdqyUyQrP2jU7JSAvS7gA-YhgsRyDQTOuJozzn1i30Q@mail.gmail.com>
-Subject: Re: [PATCH v2] fstests: btrfs: Add regression test for reserved space leak.
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        fstests@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.kernel.org ([198.145.29.136]:57875 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755135AbbHFKmB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 6 Aug 2015 06:42:01 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: generic test for fsync of file with multiple links
+Date: Thu,  6 Aug 2015 05:11:30 +0100
+Message-Id: <1438834290-30636-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 5, 2015 at 2:08 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> The regression is introduced in v4.2-rc1, with the big btrfs qgroup
-> change.
-> The problem is, qgroup reserved space is never freed, causing even we
-> increase the limit, we can still hit the EDQUOT much faster than it
-> should.
->
-> Reported-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Thanks!
+Test that when we have a file with multiple hard links belonging to
+different parent directories, if we remove one of those links, fsync the
+file using one of its other links (that has a parent directory different
+from the one we removed a link from), power fail and then replay the
+fsync log/journal, the hard link we removed is not available anymore and
+all the filesystem metadata is in a consistent state.
 
-> ---
->  tests/btrfs/089     | 88 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/089.out |  5 +++
->  tests/btrfs/group   |  1 +
->  3 files changed, 94 insertions(+)
->  create mode 100755 tests/btrfs/089
->  create mode 100644 tests/btrfs/089.out
->
-> diff --git a/tests/btrfs/089 b/tests/btrfs/089
-> new file mode 100755
-> index 0000000..82db96c
-> --- /dev/null
-> +++ b/tests/btrfs/089
-> @@ -0,0 +1,88 @@
-> +#! /bin/bash
-> +# FS QA Test 089
-> +#
-> +# Regression test for btrfs qgroup reserved space leak.
-> +#
-> +# Due to qgroup reserved space leak, EDQUOT can be trigged even it's not
-> +# over limit after previous write.
-> +#
-> +#-----------------------------------------------------------------------
-> +# Copyright (c) 2015 Fujitsu. All Rights Reserved.
-> +#
-> +# This program is free software; you can redistribute it and/or
-> +# modify it under the terms of the GNU General Public License as
-> +# published by the Free Software Foundation.
-> +#
-> +# This program is distributed in the hope that it would be useful,
-> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> +# GNU General Public License for more details.
-> +#
-> +# You should have received a copy of the GNU General Public License
-> +# along with this program; if not, write the Free Software Foundation,
-> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> +#-----------------------------------------------------------------------
-> +#
-> +
-> +seq=`basename $0`
-> +seqres=$RESULT_DIR/$seq
-> +echo "QA output created by $seq"
-> +
-> +here=`pwd`
-> +tmp=/tmp/$$
-> +status=1       # failure is the default!
-> +trap "_cleanup; exit \$status" 0 1 2 3 15
-> +
-> +_cleanup()
-> +{
-> +       cd /
-> +       rm -f $tmp.*
-> +}
-> +
-> +# get standard environment, filters and checks
-> +. ./common/rc
-> +. ./common/filter
-> +
-> +# real QA test starts here
-> +
-> +# Modify as appropriate.
-> +_supported_fs btrfs
-> +_supported_os Linux
-> +_require_scratch
-> +_need_to_be_root
-> +
-> +# Use big blocksize to ensure there is still enough space left
-> +# for metadata reserve after hitting EDQUOT
-> +BLOCKSIZE=$(( 2 * 1024 * 1024 ))
-> +FILESIZE=$(( 128 * 1024 * 1024 )) # 128Mbytes
-> +
-> +# The last block won't be able to finish write, as metadata takes
-> +# $NODESIZE space, causing the last block triggering EDQUOT
-> +LENGTH=$(( $FILESIZE - $BLOCKSIZE ))
-> +
-> +_scratch_mkfs >>$seqres.full 2>&1
-> +_scratch_mount
-> +_require_fs_space $SCRATCH_MNT $(($FILESIZE * 2 / 1024))
-> +
-> +_run_btrfs_util_prog quota enable $SCRATCH_MNT
-> +_run_btrfs_util_prog qgroup limit $FILESIZE 5 $SCRATCH_MNT
-> +
-> +$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE 0 $LENGTH" \
-> +       $SCRATCH_MNT/foo | _filter_xfs_io
-> +
-> +# A sync is needed to trigger a commit_transaction.
-> +# As the reserved space freeing happens at commit_transaction time,
-> +# without a transaction commit, no reserved space needs freeing and
-> +# won't trigger the bug.
-> +sync
-> +
-> +# Double the limit to allow further write
-> +_run_btrfs_util_prog qgroup limit $(($FILESIZE * 2)) 5 $SCRATCH_MNT
-> +
-> +# Test whether further write can succeed
-> +$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE $LENGTH $LENGTH" \
-> +       $SCRATCH_MNT/foo | _filter_xfs_io
-> +
-> +# success, all done
-> +status=0
-> +exit
-> diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
-> new file mode 100644
-> index 0000000..396888f
-> --- /dev/null
-> +++ b/tests/btrfs/089.out
-> @@ -0,0 +1,5 @@
-> +QA output created by 089
-> +wrote 132120576/132120576 bytes at offset 0
-> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> +wrote 132120576/132120576 bytes at offset 132120576
-> +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index ffe18bf..225b532 100644
-> --- a/tests/btrfs/group
-> +++ b/tests/btrfs/group
-> @@ -91,6 +91,7 @@
->  086 auto quick clone
->  087 auto quick send
->  088 auto quick metadata
-> +089 auto quick qgroup
->  090 auto quick metadata
->  091 auto quick qgroup
->  092 auto quick send
-> --
-> 1.8.3.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This test is motivated by an issue found in btrfs, where the test fails
+with:
 
+  generic/107 2s ... - output mismatch (see .../results/generic/107.out.bad)
+    --- tests/generic/107.out	2015-08-04 09:47:46.922131256 +0100
+    +++ /home/fdmanana/git/hub/xfstests/results//generic/107.out.bad
+    @@ -1,3 +1,5 @@
+     QA output created by 107
+     Entries in testdir:
+     foo2
+    +foo3
+    +rmdir: failed to remove '/home/fdmanana/btrfs-tests/scratch_1/testdir': Directory not empty
+    ...
+    (Run 'diff -u tests/generic/107.out .../generic/107.out.bad'  to see the entire diff)
+  _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent (see .../generic/107.full)
+  _check_dmesg: something found in dmesg (see .../generic/107.dmesg)
 
+  $ cat /home/fdmanana/git/hub/xfstests/results//generic/107.full
+  _check_btrfs_filesystem: filesystem on /dev/sdc is inconsistent
+  *** fsck.btrfs output ***
+  checking extents
+  checking free space cache
+  checking fs roots
+  root 5 inode 257 errors 200, dir isize wrong
+	unresolved ref dir 257 index 3 namelen 4 name foo3 filetype 1 \
+          errors 5, no dir item, no inode ref
 
+  $ cat /home/fdmanana/git/hub/xfstests/results//generic/107.dmesg
+  (...)
+  [188897.707311] BTRFS info (device dm-0): failed to delete reference to \
+    foo3, inode 258 parent 257
+  [188897.711345] ------------[ cut here ]------------
+  [188897.713369] WARNING: CPU: 10 PID: 19452 at fs/btrfs/inode.c:3956 \
+    __btrfs_unlink_inode+0x182/0x35a [btrfs]()
+  [188897.717661] BTRFS: Transaction aborted (error -2)
+  (...)
+  [188897.747898] Call Trace:
+  [188897.748519]  [<ffffffff8145f077>] dump_stack+0x4f/0x7b
+  [188897.749602]  [<ffffffff81095de5>] ? console_unlock+0x356/0x3a2
+  [188897.750682]  [<ffffffff8104b3b0>] warn_slowpath_common+0xa1/0xbb
+  [188897.751936]  [<ffffffffa04c5d09>] ? __btrfs_unlink_inode+0x182/0x35a [btrfs]
+  [188897.753485]  [<ffffffff8104b410>] warn_slowpath_fmt+0x46/0x48
+  [188897.754781]  [<ffffffffa04c5d09>] __btrfs_unlink_inode+0x182/0x35a [btrfs]
+  [188897.756295]  [<ffffffffa04c6e8f>] btrfs_unlink_inode+0x1e/0x40 [btrfs]
+  [188897.757692]  [<ffffffffa04c6f11>] btrfs_unlink+0x60/0x9b [btrfs]
+  [188897.758978]  [<ffffffff8116fb48>] vfs_unlink+0x9c/0xed
+  [188897.760151]  [<ffffffff81173481>] do_unlinkat+0x12b/0x1fb
+  [188897.761354]  [<ffffffff81253855>] ? lockdep_sys_exit_thunk+0x12/0x14
+  [188897.762692]  [<ffffffff81174056>] SyS_unlinkat+0x29/0x2b
+  [188897.763741]  [<ffffffff81465197>] system_call_fastpath+0x12/0x6f
+  [188897.764894] ---[ end trace bbfddacb7aaada8c ]---
+  [188897.765801] BTRFS warning (device dm-0): __btrfs_unlink_inode:3956: \
+    Aborting unused transaction(No such entry).
+
+Tested against ext3/4, xfs, reiserfs and f2fs too, and all these
+filesystems currently pass this test (on a 4.1 linux kernel at least).
+
+The btrfs issue is fixed by the linux kernel patch titled:
+"Btrfs: fix stale dir entries after removing a link and fsync".
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/generic/107     | 99 +++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/107.out |  3 ++
+ tests/generic/group   |  1 +
+ 3 files changed, 103 insertions(+)
+ create mode 100755 tests/generic/107
+ create mode 100644 tests/generic/107.out
+
+diff --git a/tests/generic/107 b/tests/generic/107
+new file mode 100755
+index 0000000..7d107d7
+--- /dev/null
++++ b/tests/generic/107
+@@ -0,0 +1,99 @@
++#! /bin/bash
++# FSQA Test No. 107
++#
++# Test that when we have a file with multiple hard links belonging to different
++# parent directories, if we remove one of those links, fsync the file using one
++# of its other links (that has a parent directory different from the one we
++# removed a link from), power fail and then replay the fsync log/journal, the
++# hard link we removed is not available anymore and all the filesystem metadata
++# is in a consistent state.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	_cleanup_flakey
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/dmflakey
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs generic
++_supported_os Linux
++_require_scratch
++_require_dm_flakey
++_require_metadata_journaling $SCRATCH_DEV
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++_init_flakey
++_mount_flakey
++
++# Create our test directory and file.
++mkdir $SCRATCH_MNT/testdir
++touch $SCRATCH_MNT/foo
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/testdir/foo2
++ln $SCRATCH_MNT/foo $SCRATCH_MNT/testdir/foo3
++
++# Make sure everything done so far is durably persisted.
++sync
++
++# Now we remove one of our file's hardlinks in the directory testdir.
++unlink $SCRATCH_MNT/testdir/foo3
++
++# We now fsync our file using the "foo" link, which has a parent that
++# is not the directory "testdir".
++$XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
++
++# Silently drop all writes and unmount to simulate a crash/power failure.
++_load_flakey_table $FLAKEY_DROP_WRITES
++_unmount_flakey
++
++# Allow writes again and mount the fs to trigger log/journal replay.
++_load_flakey_table $FLAKEY_ALLOW_WRITES
++_mount_flakey
++
++# After the journal/log is replayed we expect to not see the "foo3" link anymore
++# and we should be able to remove all names in the directory "testdir" and then
++# remove it (no stale directory entries left after the journal/log replay).
++echo "Entries in testdir:"
++ls -1 $SCRATCH_MNT/testdir
++
++rm -f $SCRATCH_MNT/testdir/*
++rmdir $SCRATCH_MNT/testdir
++
++_unmount_flakey
++
++status=0
++exit
+diff --git a/tests/generic/107.out b/tests/generic/107.out
+new file mode 100644
+index 0000000..5bb36ee
+--- /dev/null
++++ b/tests/generic/107.out
+@@ -0,0 +1,3 @@
++QA output created by 107
++Entries in testdir:
++foo2
+diff --git a/tests/generic/group b/tests/generic/group
+index a33536e..bc5150d 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -109,6 +109,7 @@
+ 104 auto quick metadata
+ 105 acl auto quick
+ 106 auto quick metadata
++107 auto quick metadata
+ 112 rw aio auto quick
+ 113 rw aio auto quick
+ 117 attr auto quick
 -- 
-Filipe David Manana,
+2.1.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

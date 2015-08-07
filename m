@@ -1,61 +1,218 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63963 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752100AbbHEIDU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 04:03:20 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <robert.munteanu@gmail.com>
-Subject: [PATCH 3/3] btrfs-progs: fsck-tests: Add test case for inode lost all its file extent
-Date: Wed, 5 Aug 2015 16:03:14 +0800
-Message-ID: <1438761794-32738-4-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1438761794-32738-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1438761794-32738-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:53325 "EHLO
+	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752098AbbHGAUr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 20:20:47 -0400
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id A92EDAC0259
+	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2015 09:20:44 +0900 (JST)
+Message-Id: <201508070020.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Fri, 07 Aug 2015 09:20:25 +0900
+To: linux-btrfs@vger.kernel.org
+Cc: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH V2] btrfs-progs: add newline to some error messages
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add test case with no file extents, but still non-zero inode size.
-To test whether fsck will infinite loop.
+Added a missing newline to some error messages.
+Also printf() was changed to fprintf(stderr) for error message.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- .../017-missing-all-file-extent/default_case.img.xz      | Bin 0 -> 1104 bytes
- 1 file changed, 0 insertions(+), 0 deletions(-)
- create mode 100644 tests/fsck-tests/017-missing-all-file-extent/default_case.img.xz
+ btrfs-corrupt-block.c |  2 +-
+ cmds-check.c          |  4 ++--
+ cmds-send.c           |  4 ++--
+ dir-item.c            |  6 +++---
+ free-space-cache.c    | 24 +++++++++++++++---------
+ mkfs.c                |  2 +-
+ 6 files changed, 24 insertions(+), 18 deletions(-)
 
-diff --git a/tests/fsck-tests/017-missing-all-file-extent/default_case.img.xz b/tests/fsck-tests/017-missing-all-file-extent/default_case.img.xz
-new file mode 100644
-index 0000000000000000000000000000000000000000..10cd4c786e1223d1d00eaeab81941b142135d97c
-GIT binary patch
-literal 1104
-zcmV-W1h4!3H+ooF000E$*0e?f03iVu0001VFXf})lm7${T>wRyj;C3^v%$$4d1rE0
-zjjaER49m*J$Ny#wkkW^{#)(qVu6jW@U&${Z!$pUxwR_2<M^&H7KU2hve~sxWXa?I<
-z%Nm>WQokys>I=scC%OAq$m&Z!a?Xa@3%R}h@8vWy-xl~qOuWtRg-R5!%XR;99;~oq
-zdk{P`R>yx4e(-g_fYI=#ZDobJ@0`2Gi5Z==2t%tsj$0@PK$0}7L`88Br(*1nkpN>K
-z_XxR>VtghToWQcwSZMnTkBh=v`!_jtFZnBcHm1>wf5wOm9i*QuB{`*iwt$@={jV)*
-z%}T2!cPnR{zgSI}F-k1(>|ItD#YU*lQ5caPRu;$454g#EI<MlP+@`=aT*A@LADD7u
-zk@V7c2kM}eBPO^Qu;ANX4!roj9d3LYnAteNtD<3soCJnDoNp54HZ4ZeX@naau}+a^
-zy|#?-`{(08Rl!wH-SY4?>wetPi2Qb(f`c45RskYyF)v;1`SlF<lxU5!p|~;ics;3^
-zBX%=|JUR^Ky(ynC=M7)sv&k~E4@16W$NYHYzCJ3;@@${p?4~ysw=fq^vz(x(PtElF
-zwf3WM-8M{A?g(sW#s;uPp5)F}4lhgs%K1q1nFGU`)GD9qPGir}B%j3$a3;A?Gq|tS
-zaDXnqJ{7yrj8iPECu)i;L_ouU|17}`kpGA2x2A0_<=e3S$bZ7H^DTsDQRGOZb@F;q
-z%#Y6-P@=P|nbod(i7Gd3Lvl9v<Vzd!)uy)eEr2h(pFvf<GR9gMp7SL=Ww6;c&>vzs
-zSIkg93uy516A@onIsCrvlQqwJlV~$<z#z)3I_GDFsRim|mp%_0{a_wo&v_H$C4TDq
-zwn7^>-kcft_F)4WPt0OV+n3W`nZ4>OC`z1a<gtXhR}#S0IqeJw$Lsxl>4BHy`9hHs
-zBtPA?RQYVy53b&CXwhyaxL;{eBnLK1F~EqXTP1;aSvcM5-y;6(p2G02#<C0S{EE=g
-zW>1iR3fbSs^zRyjGTuc(qgYeJO3yRzBq+JtviiuggemrKK5?gVyt|AD#<jSXzU4VQ
-zfop5yezs3WSr<m8QE|MhpJ<H!92~QSYE^Eq1p4jh$Idi{1`R>B5>jNvfrJ7h*)M7<
-zoMsb>cB?RsO4>P-LyY62_cY6mGWv~hlA;J%`X3cfL4vfPWRRidP0rp|UFe_14^R2I
-z{a1+AOJXzAm=7pkt%~NC1$Zx&1R?`MOxJIC_dRjwdc8K9d6>3f6rzoibNqCnp{u$U
-z+A~#XVza7Y=CSF*ohfxwwN9we2j*qrOWm@Z+eMws1MlfN_ibWsO<9Z^OTT^VoVw{S
-zPt09il30LPI_!MVdj_{j0W`{}1|)2jXtn*D`NB+JQbn9BfB*m@w2urGUN=kt0jmgr
-Wr~&{`ruvAn#Ao{g000001X)^bF)Hl<
-
-literal 0
-HcmV?d00001
-
+diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
+index 1a2aa23..ea871f4 100644
+--- a/btrfs-corrupt-block.c
++++ b/btrfs-corrupt-block.c
+@@ -1010,7 +1010,7 @@ int find_chunk_offset(struct btrfs_root *root,
+ 		goto out;
+ 	}
+ 	if (ret < 0) {
+-		fprintf(stderr, "Error searching chunk");
++		fprintf(stderr, "Error searching chunk\n");
+ 		goto out;
+ 	}
+ out:
+diff --git a/cmds-check.c b/cmds-check.c
+index 50bb6f3..d0ffc94 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -2399,7 +2399,7 @@ static int repair_inode_nlinks(struct btrfs_trans_handle *trans,
+ 				  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
+ 				  mode);
+ 		if (ret < 0) {
+-			fprintf(stderr, "Failed to create '%s' dir: %s",
++			fprintf(stderr, "Failed to create '%s' dir: %s\n",
+ 				dir_name, strerror(-ret));
+ 			goto out;
+ 		}
+@@ -2427,7 +2427,7 @@ static int repair_inode_nlinks(struct btrfs_trans_handle *trans,
+ 		}
+ 		if (ret < 0) {
+ 			fprintf(stderr,
+-				"Failed to link the inode %llu to %s dir: %s",
++				"Failed to link the inode %llu to %s dir: %s\n",
+ 				rec->ino, dir_name, strerror(-ret));
+ 			goto out;
+ 		}
+diff --git a/cmds-send.c b/cmds-send.c
+index a0b7f95..6f2f340 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -193,13 +193,13 @@ static int write_buf(int fd, const void *buf, int size)
+ 		ret = write(fd, (char*)buf + pos, size - pos);
+ 		if (ret < 0) {
+ 			ret = -errno;
+-			fprintf(stderr, "ERROR: failed to dump stream. %s",
++			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
+ 					strerror(-ret));
+ 			goto out;
+ 		}
+ 		if (!ret) {
+ 			ret = -EIO;
+-			fprintf(stderr, "ERROR: failed to dump stream. %s",
++			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
+ 					strerror(-ret));
+ 			goto out;
+ 		}
+diff --git a/dir-item.c b/dir-item.c
+index a5bf861..f3ad98f 100644
+--- a/dir-item.c
++++ b/dir-item.c
+@@ -285,7 +285,7 @@ int verify_dir_item(struct btrfs_root *root,
+ 	u8 type = btrfs_dir_type(leaf, dir_item);
+ 
+ 	if (type >= BTRFS_FT_MAX) {
+-		fprintf(stderr, "invalid dir item type: %d",
++		fprintf(stderr, "invalid dir item type: %d\n",
+ 		       (int)type);
+ 		return 1;
+ 	}
+@@ -294,7 +294,7 @@ int verify_dir_item(struct btrfs_root *root,
+ 		namelen = XATTR_NAME_MAX;
+ 
+ 	if (btrfs_dir_name_len(leaf, dir_item) > namelen) {
+-		fprintf(stderr, "invalid dir item name len: %u",
++		fprintf(stderr, "invalid dir item name len: %u\n",
+ 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
+ 		return 1;
+ 	}
+@@ -302,7 +302,7 @@ int verify_dir_item(struct btrfs_root *root,
+ 	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
+ 	if ((btrfs_dir_data_len(leaf, dir_item) +
+ 	     btrfs_dir_name_len(leaf, dir_item)) > BTRFS_MAX_XATTR_SIZE(root)) {
+-		fprintf(stderr, "invalid dir item name + data len: %u + %u",
++		fprintf(stderr, "invalid dir item name + data len: %u + %u\n",
+ 		       (unsigned)btrfs_dir_name_len(leaf, dir_item),
+ 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
+ 		return 1;
+diff --git a/free-space-cache.c b/free-space-cache.c
+index 67f00fd..19ab0c9 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -107,7 +107,8 @@ static int io_ctl_prepare_pages(struct io_ctl *io_ctl, struct btrfs_root *root,
+ 
+ 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
+ 	if (ret) {
+-		printf("Couldn't find file extent item for free space inode"
++		fprintf(stderr,
++		       "Couldn't find file extent item for free space inode"
+ 		       " %Lu\n", ino);
+ 		btrfs_release_path(path);
+ 		return -EINVAL;
+@@ -138,7 +139,7 @@ static int io_ctl_prepare_pages(struct io_ctl *io_ctl, struct btrfs_root *root,
+ 				    struct btrfs_file_extent_item);
+ 		if (btrfs_file_extent_type(path->nodes[0], fi) !=
+ 		    BTRFS_FILE_EXTENT_REG) {
+-			printf("Not the file extent type we wanted\n");
++			fprintf(stderr, "Not the file extent type we wanted\n");
+ 			ret = -EINVAL;
+ 			break;
+ 		}
+@@ -307,7 +308,7 @@ static int __load_free_space_cache(struct btrfs_root *root,
+ 
+ 	ret = btrfs_search_slot(NULL, root, &inode_location, path, 0, 0);
+ 	if (ret) {
+-		printf("Couldn't find free space inode %d\n", ret);
++		fprintf(stderr, "Couldn't find free space inode %d\n", ret);
+ 		return 0;
+ 	}
+ 
+@@ -322,7 +323,8 @@ static int __load_free_space_cache(struct btrfs_root *root,
+ 	}
+ 
+ 	if (btrfs_inode_generation(leaf, inode_item) != generation) {
+-		printf("free space inode generation (%llu) did not match "
++		fprintf(stderr,
++		       "free space inode generation (%llu) did not match "
+ 		       "free space cache generation (%llu)\n",
+ 		       (unsigned long long)btrfs_inode_generation(leaf,
+ 								  inode_item),
+@@ -372,7 +374,8 @@ static int __load_free_space_cache(struct btrfs_root *root,
+ 		if (type == BTRFS_FREE_SPACE_EXTENT) {
+ 			ret = link_free_space(ctl, e);
+ 			if (ret) {
+-				printf("Duplicate entries in free space cache, dumping");
++				fprintf(stderr,
++				       "Duplicate entries in free space cache\n");
+ 				free(e);
+ 				goto free_cache;
+ 			}
+@@ -387,7 +390,8 @@ static int __load_free_space_cache(struct btrfs_root *root,
+ 			ret = link_free_space(ctl, e);
+ 			ctl->total_bitmaps++;
+ 			if (ret) {
+-				printf("Duplicate entries in free space cache, dumping");
++				fprintf(stderr,
++				       "Duplicate entries in free space cache\n");
+ 				free(e->bitmap);
+ 				free(e);
+ 				goto free_cache;
+@@ -444,7 +448,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 				       block_group->bytes_super));
+ 	if (ret == 1 && !matched) {
+ 		__btrfs_remove_free_space_cache(ctl);
+-		printf("block group %llu has wrong amount of free space",
++		fprintf(stderr,
++		       "block group %llu has wrong amount of free space\n",
+ 		       block_group->key.objectid);
+ 		ret = -1;
+ 	}
+@@ -452,8 +457,9 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
+ 	if (ret < 0) {
+ 		ret = 0;
+ 
+-		printf("failed to load free space cache for block group %llu\n",
+-			block_group->key.objectid);
++		fprintf(stderr,
++		       "failed to load free space cache for block group %llu\n",
++		       block_group->key.objectid);
+ 	}
+ 
+ 	return ret;
+diff --git a/mkfs.c b/mkfs.c
+index 7d635dc..5cea8dd 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -600,7 +600,7 @@ static int add_symbolic_link(struct btrfs_trans_handle *trans,
+ 		goto fail;
+ 	}
+ 	if (ret >= sectorsize) {
+-		fprintf(stderr, "symlink too long for %s", path_name);
++		fprintf(stderr, "symlink too long for %s\n", path_name);
+ 		ret = -1;
+ 		goto fail;
+ 	}
 -- 
-2.5.0
+2.4.5
 

@@ -1,134 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp03.au.ibm.com ([202.81.31.145]:38308 "EHLO
-	e23smtp03.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754881AbbHGHH0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Aug 2015 03:07:26 -0400
-Received: from /spool/local
-	by e23smtp03.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Fri, 7 Aug 2015 17:07:24 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp02.au.ibm.com (Postfix) with ESMTP id 6295F2BB005E
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2015 17:07:23 +1000 (EST)
-Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t7777Euv34603184
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Aug 2015 17:07:22 +1000
-Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
-	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t7776ojp032025
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Aug 2015 17:06:51 +1000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, clm@fb.com, jbacik@fb.com,
-        bo.li.liu@oracle.com, dsterba@suse.cz, chandan@mykolab.com,
-        quwenruo@cn.fujitsu.com
-Subject: [PATCH V2 05/11] Btrfs: btrfs_page_mkwrite: Reserve space in sectorsized units
-Date: Fri,  7 Aug 2015 12:35:52 +0530
-Message-Id: <1438931158-20888-6-git-send-email-chandan@linux.vnet.ibm.com>
-In-Reply-To: <1438931158-20888-1-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1438931158-20888-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:27296 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1946113AbbHGSal (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Aug 2015 14:30:41 -0400
+Message-ID: <55C4F93D.3010605@fb.com>
+Date: Fri, 7 Aug 2015 14:30:21 -0400
+From: Josef Bacik <jbacik@fb.com>
+MIME-Version: 1.0
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        <linux-btrfs@vger.kernel.org>
+CC: <clm@fb.com>, <bo.li.liu@oracle.com>, <dsterba@suse.cz>,
+        <chandan@mykolab.com>, <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH V2 02/11] Btrfs: Compute and look up csums based on sectorsized
+ blocks
+References: <1438931158-20888-1-git-send-email-chandan@linux.vnet.ibm.com> <1438931158-20888-3-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1438931158-20888-3-git-send-email-chandan@linux.vnet.ibm.com>
+Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In subpagesize-blocksize scenario, if i_size occurs in a block which is not
-the last block in the page, then the space to be reserved should be calculated
-appropriately.
+On 08/07/2015 03:05 AM, Chandan Rajendra wrote:
+> Checksums are applicable to sectorsize units. The current code uses
+> bio->bv_len units to compute and look up checksums. This works on machines
+> where sectorsize == PAGE_SIZE. This patch makes the checksum computation and
+> look up code to work with sectorsize units.
+>
+> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+> ---
+>   fs/btrfs/file-item.c | 90 +++++++++++++++++++++++++++++++++-------------------
+>   1 file changed, 57 insertions(+), 33 deletions(-)
+>
+> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
+> index 58ece65..d752051 100644
+> --- a/fs/btrfs/file-item.c
+> +++ b/fs/btrfs/file-item.c
+> @@ -172,6 +172,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>   	u64 item_start_offset = 0;
+>   	u64 item_last_offset = 0;
+>   	u64 disk_bytenr;
+> +	u64 page_bytes_left;
+>   	u32 diff;
+>   	int nblocks;
+>   	int bio_index = 0;
+> @@ -220,6 +221,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>   	disk_bytenr = (u64)bio->bi_iter.bi_sector << 9;
+>   	if (dio)
+>   		offset = logical_offset;
+> +
+> +	page_bytes_left = bvec->bv_len;
+>   	while (bio_index < bio->bi_vcnt) {
+>   		if (!dio)
+>   			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+> @@ -243,7 +246,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>   				if (BTRFS_I(inode)->root->root_key.objectid ==
+>   				    BTRFS_DATA_RELOC_TREE_OBJECTID) {
+>   					set_extent_bits(io_tree, offset,
+> -						offset + bvec->bv_len - 1,
+> +						offset + root->sectorsize - 1,
+>   						EXTENT_NODATASUM, GFP_NOFS);
+>   				} else {
+>   					btrfs_info(BTRFS_I(inode)->root->fs_info,
+> @@ -281,11 +284,17 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
+>   found:
+>   		csum += count * csum_size;
+>   		nblocks -= count;
+> -		bio_index += count;
+> +
+>   		while (count--) {
+> -			disk_bytenr += bvec->bv_len;
+> -			offset += bvec->bv_len;
+> -			bvec++;
+> +			disk_bytenr += root->sectorsize;
+> +			offset += root->sectorsize;
+> +			page_bytes_left -= root->sectorsize;
+> +			if (!page_bytes_left) {
+> +				bio_index++;
+> +				bvec++;
+> +				page_bytes_left = bvec->bv_len;
+> +			}
+> +
+>   		}
+>   	}
+>   	btrfs_free_path(path);
+> @@ -432,6 +441,8 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+>   	struct bio_vec *bvec = bio->bi_io_vec;
+>   	int bio_index = 0;
+>   	int index;
+> +	int nr_sectors;
+> +	int i;
+>   	unsigned long total_bytes = 0;
+>   	unsigned long this_sum_bytes = 0;
+>   	u64 offset;
+> @@ -459,41 +470,54 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
+>   		if (!contig)
+>   			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
+>
+> -		if (offset >= ordered->file_offset + ordered->len ||
+> -		    offset < ordered->file_offset) {
+> -			unsigned long bytes_left;
+> -			sums->len = this_sum_bytes;
+> -			this_sum_bytes = 0;
+> -			btrfs_add_ordered_sum(inode, ordered, sums);
+> -			btrfs_put_ordered_extent(ordered);
+> +		data = kmap_atomic(bvec->bv_page);
+>
 
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/inode.c | 36 +++++++++++++++++++++++++++++++-----
- 1 file changed, 31 insertions(+), 5 deletions(-)
+I don't think we can have something kmap_atomic()'ed and then do 
+allocations under it right?  That's why we only kmap_atomic(), do the 
+copy, and then unmap, unless I'm forgetting something?  Thanks,
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index afb8d2b..b39273b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8626,11 +8626,24 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	loff_t size;
- 	int ret;
- 	int reserved = 0;
-+	u64 reserved_space;
- 	u64 page_start;
- 	u64 page_end;
-+	u64 end;
-+
-+	reserved_space = PAGE_CACHE_SIZE;
- 
- 	sb_start_pagefault(inode->i_sb);
--	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
-+
-+	/*
-+	  Reserving delalloc space after obtaining the page lock can lead to
-+	  deadlock. For example, if a dirty page is locked by this function
-+	  and the call to btrfs_delalloc_reserve_space() ends up triggering
-+	  dirty page write out, then the btrfs_writepage() function could
-+	  end up waiting indefinitely to get a lock on the page currently
-+	  being processed by btrfs_page_mkwrite() function.
-+	 */
-+	ret  = btrfs_delalloc_reserve_space(inode, reserved_space);
- 	if (!ret) {
- 		ret = file_update_time(vma->vm_file);
- 		reserved = 1;
-@@ -8651,6 +8664,7 @@ again:
- 	size = i_size_read(inode);
- 	page_start = page_offset(page);
- 	page_end = page_start + PAGE_CACHE_SIZE - 1;
-+	end = page_end;
- 
- 	if ((page->mapping != inode->i_mapping) ||
- 	    (page_start >= size)) {
-@@ -8666,7 +8680,7 @@ again:
- 	 * we can't set the delalloc bits if there are pending ordered
- 	 * extents.  Drop our locks and wait for them to finish
- 	 */
--	ordered = btrfs_lookup_ordered_extent(inode, page_start);
-+	ordered = btrfs_lookup_ordered_range(inode, page_start, page_end);
- 	if (ordered) {
- 		unlock_extent_cached(io_tree, page_start, page_end,
- 				     &cached_state, GFP_NOFS);
-@@ -8676,6 +8690,18 @@ again:
- 		goto again;
- 	}
- 
-+	if (page->index == ((size - 1) >> PAGE_CACHE_SHIFT)) {
-+		reserved_space = round_up(size - page_start, root->sectorsize);
-+		if (reserved_space < PAGE_CACHE_SIZE) {
-+			end = page_start + reserved_space - 1;
-+			spin_lock(&BTRFS_I(inode)->lock);
-+			BTRFS_I(inode)->outstanding_extents++;
-+			spin_unlock(&BTRFS_I(inode)->lock);
-+			btrfs_delalloc_release_space(inode,
-+						PAGE_CACHE_SIZE - reserved_space);
-+		}
-+	}
-+
- 	/*
- 	 * XXX - page_mkwrite gets called every time the page is dirtied, even
- 	 * if it was already dirty, so for space accounting reasons we need to
-@@ -8683,12 +8709,12 @@ again:
- 	 * is probably a better way to do this, but for now keep consistent with
- 	 * prepare_pages in the normal write path.
- 	 */
--	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, page_end,
-+	clear_extent_bit(&BTRFS_I(inode)->io_tree, page_start, end,
- 			  EXTENT_DIRTY | EXTENT_DELALLOC |
- 			  EXTENT_DO_ACCOUNTING | EXTENT_DEFRAG,
- 			  0, 0, &cached_state, GFP_NOFS);
- 
--	ret = btrfs_set_extent_delalloc(inode, page_start, page_end,
-+	ret = btrfs_set_extent_delalloc(inode, page_start, end,
- 					&cached_state);
- 	if (ret) {
- 		unlock_extent_cached(io_tree, page_start, page_end,
-@@ -8727,7 +8753,7 @@ out_unlock:
- 	}
- 	unlock_page(page);
- out:
--	btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
-+	btrfs_delalloc_release_space(inode, reserved_space);
- out_noreserve:
- 	sb_end_pagefault(inode->i_sb);
- 	return ret;
--- 
-2.1.0
-
+Josef

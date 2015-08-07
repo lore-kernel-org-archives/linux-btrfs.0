@@ -1,58 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from walhalla.sjomar.eu ([141.105.125.198]:43768 "EHLO
-	walhalla.sjomar.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753731AbbHGUHt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Aug 2015 16:07:49 -0400
-Received: from hoefnix.localnet (a83-163-227-207.adsl.xs4all.nl [83.163.227.207])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: sjoerd@sjomar.eu)
-	by walhalla.sjomar.eu (Postfix) with ESMTPSA id 1A2C8100573
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2015 22:07:44 +0200 (CEST)
-From: Sjoerd <sjoerd@sjomar.eu>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs raid1 metadata, single data
-Date: Fri, 07 Aug 2015 22:07:44 +0200
-Message-ID: <3420345.ZbC7yzDDA0@hoefnix>
-In-Reply-To: <CAMU1PDjvc-rBFONt9cxyUatFsKHPibid1F--swBAv6MhuVD3FQ@mail.gmail.com>
-References: <55C47136.2080402@render-wahnsinn.de> <1520215.AbHMhTRmNr@hoefnix> <CAMU1PDjvc-rBFONt9cxyUatFsKHPibid1F--swBAv6MhuVD3FQ@mail.gmail.com>
+Received: from baraddur.eliasprobst.eu ([78.47.157.163]:43904 "EHLO
+	eliasprobst.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1946411AbbHGXa5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 7 Aug 2015 19:30:57 -0400
+To: linux-btrfs@vger.kernel.org
+Date: Sat, 08 Aug 2015 01:29:57 +0200
+Subject: Re: Lockup in BTRFS_IOC_CLONE/Kernel 4.2.0-rc5
+References: <55C1C915.4070106@eliasprobst.eu> <20150807040119.GA8887@localhost.localdomain>
+Message-ID: <55C53F75.6060905@eliasprobst.eu>
+From: "Elias Probst" <mail@eliasprobst.eu>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: multipart/signed; micalg=pgp-sha512;
+ protocol="application/pgp-signature";
+ boundary="FtNskrpX8eb0FpHihFM0RseUh6Eiu9gf5"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 07 August 2015 11:40:24 Mike Fleetwood wrote:
-> On 7 August 2015 at 10:47, Sjoerd <sjoerd@sjomar.eu> wrote:
-> > While we're at it: any idea why the default for SSD's is single for meta
-> > data as described on the wiki?
-> > (https://btrfs.wiki.kernel.org/index.php/Using_Btrfs_with_Multiple_Devices
-> > #Filesystem_creation)
-> > 
-> > I was looking for an answer why my SSD just had single metadata, while I
-> > expected it to be DUP and stumbled on this wiki article. Can't find a
-> > reason for why a SSD would be different?
-> > 
-> > Cheers,
-> > Sjoerd
-> 
-> I would assume that it is because some SSD drives controllers
-> deduplicate by default [1].  The developers probably think that when
-> it comes to your data the truth, no mater how ugly, is preferable to a
-> false sense of security.  (Btrfs thinking it has 2 copies of metadata
-> when the SSD drive only actually has stored 1 copy).
-> 
-> [1] How SSDs can hose your data
-> http://www.zdnet.com/article/how-ssds-can-hose-your-data/
-> "Researchers found that at least 1 Sandforce SSD controller - the
-> SF1200 - does block-level deduplication by default. Which can be a
-> problem.
-> 
-> Many file systems - NTFS, most Unix/Linux FSs, ZFS are some - write
-> critical metadata to multiple blocks in case one copy gets corrupted.
-> But what if, unbeknownst to you, your SSD de-duplicates that block,
-> leaving your file system with only 1 copy? "
-> 
-> Thanks,
-> Mike
 
-Thanks for the explanation Mike...sounds plausible..
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--FtNskrpX8eb0FpHihFM0RseUh6Eiu9gf5
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+On 08/07/2015 06:01 AM, Liu Bo wrote:
+> Could you do 'echo w > /proc/sysrq-trigger' to gather the whole hang ca=
+ll stack?
+
+Thanks a lot for the feedback. Full call stack output is attached
+(pasting inline makes no sense due to the size of 2423 lines/135k).
+
+In case VGER will strip attachments of this size, I made it available as
+a pastebin here: https://bpaste.net/show/e5e0fd4bbb9f
+
+
+> Here's a quick patch that may address your problem, can you give it a s=
+hot after
+> getting sysrq-w output?
+
+Will rebuild now with your patch and keep you updated about the outcome.
+
+Thanks a lot again!
+
+- Elias
+
+
+
+
+--FtNskrpX8eb0FpHihFM0RseUh6Eiu9gf5
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCgAGBQJVxT9/AAoJEILFEoJlEbrb7AQP/1HyH4dJeT+iqVjPZNSUPcBM
+/w8z7qomxH1u8bO8QDI/1sbGQ0mYxwLXxA79ZpM7czIFEEUYM+k8NnJsSHvQw61N
+6fV2nabRt6LLyr+BKCe+oJjwbA7VuVrqlXG4FWQej/u0/8TmIJyVqSUayD+clI4p
+8eGIWebAKCLqkepiB25mOFfSvurCCYXQ4Z10VsJWC0n/Ra+ZfA9bRbvYh50RBS4b
+0R3sw/AUEfccWmsVQwLiJvRCVbP0vp6mQibKYLBR2jrmbgbgay6SIfEMyVVehwQt
+F6SnZr4duK8jsGQwe3WdYma0LWrW/AxvBl7zZG3vzChBeNQjS/ICvSH6pEsSgjMy
+bLixYZI3K1L74oPsB9yHj61QkqRV6GQoO03nq9ERu6aXxwiKapADEG6D6hbQ+Q3j
+9WeVZHjb1cRFy4PljQBzbMQF5M0v9M7MVg8qD8W2iqydYP5Ig7mES1Ndo5RJjp7D
+rQoBjF2nnj3qMhP1mETMQcHILMGmXSjQ/CGairIll81Fu6mBAFt5PgGkVSOSbiSQ
+fIUP0187nKmsVbRkQhkcF1++oHP8B6pyBYAmtdM+B/KN6THXdfItNaFlbx+iKOLA
+vm7HUKJ1Th4YbQmJq5hhjSQkqAUgJeJJMoPiO6o5rBwpn4bmXR0/+zXGYoDIQSMd
+J6vBd/gA5H66sPkZ9Txt
+=OCyn
+-----END PGP SIGNATURE-----
+
+--FtNskrpX8eb0FpHihFM0RseUh6Eiu9gf5--

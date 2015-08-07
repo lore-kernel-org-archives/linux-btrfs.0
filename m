@@ -1,17 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f170.google.com ([209.85.213.170]:33827 "EHLO
-	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750920AbbHGK0E (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Aug 2015 06:26:04 -0400
+Received: from mail-io0-f174.google.com ([209.85.223.174]:36180 "EHLO
+	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751898AbbHGK1t (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Aug 2015 06:27:49 -0400
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1437560043-336-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1437560043-336-3-git-send-email-anand.jain@oracle.com>
 References: <1430388527-16700-1-git-send-email-anand.jain@oracle.com>
 	<1437560043-336-1-git-send-email-anand.jain@oracle.com>
-	<1437560043-336-2-git-send-email-anand.jain@oracle.com>
-Date: Fri, 7 Aug 2015 11:26:03 +0100
-Message-ID: <CAL3q7H57aHmHnMsZqVOsT6T4vqp5ZDug4=8vSm9025ppGNiPJA@mail.gmail.com>
-Subject: Re: [PATCH v4 1/3] xfstests: btrfs: add functions to create dm-error device
+	<1437560043-336-3-git-send-email-anand.jain@oracle.com>
+Date: Fri, 7 Aug 2015 11:27:48 +0100
+Message-ID: <CAL3q7H5=Oy3qfFt4DTaxCRBNfBW5YfHmcRbCsW3BBbBO7Z3J3w@mail.gmail.com>
+Subject: Re: [PATCH v4 2/3] xfstests: btrfs: test device replace, with EIO on
+ the src dev
 From: Filipe David Manana <fdmanana@gmail.com>
 To: Anand Jain <anand.jain@oracle.com>
 Cc: fstests@vger.kernel.org,
@@ -25,37 +26,34 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On Wed, Jul 22, 2015 at 11:14 AM, Anand Jain <anand.jain@oracle.com> wrote:
 > From: Anand Jain <Anand.Jain@oracle.com>
 >
-> Controlled EIO from the device is achieved using the dm device.
-> Helper functions are at common/dmerror.
+> This test case will test to confirm the replace works when
+> the replacing source device has EIO errors.
 >
-> Broadly steps will include calling _init_dmerror().
-> _init_dmerror() will use SCRATCH_DEV to create dm linear device and assign
-> DMERROR_DEV to /dev/mapper/error-test.
->
-> When test script is ready to get EIO, the test cases can call
-> _load_dmerror_table() which then it will load the dm error.
-> so that reading DMERROR_DEV will cause EIO. After the test case is
-> complete, cleanup must be done by calling _cleanup_dmerror().
+> EIO condition is achieved using the DM device.
 >
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
 > v3->v4: rebase on latest xfstests code
-> v2.1->v3: accepts Filipe Manana's review comments, thanks
-> v2->v2.1: fixed missed typo error fixup in the commit.
+> v2->v3: accepts Filipe Manana's review comments, thanks
 > v1->v2: accepts Dave Chinner's review comments, thanks
 >
->  common/dmerror | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->  common/rc      | 15 +++++++++++++
->  2 files changed, 84 insertions(+)
->  create mode 100644 common/dmerror
+>  tests/btrfs/095     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/095.out | 10 +++++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 87 insertions(+)
+>  create mode 100755 tests/btrfs/095
+>  create mode 100644 tests/btrfs/095.out
 >
-> diff --git a/common/dmerror b/common/dmerror
-> new file mode 100644
-> index 0000000..f895d90
+> diff --git a/tests/btrfs/095 b/tests/btrfs/095
+> new file mode 100755
+> index 0000000..1da856f
 > --- /dev/null
-> +++ b/common/dmerror
-> @@ -0,0 +1,69 @@
-> +##/bin/bash
+> +++ b/tests/btrfs/095
+> @@ -0,0 +1,76 @@
+> +#! /bin/bash
+> +# FS QA Test No. btrfs/095
+> +#
+> +#test device replace works when the source device has EIO
 > +#
 > +# Copyright (c) 2015 Oracle.  All Rights Reserved.
 > +#
@@ -72,104 +70,119 @@ On Wed, Jul 22, 2015 at 11:14 AM, Anand Jain <anand.jain@oracle.com> wrote:
 > +# along with this program; if not, write the Free Software Foundation,
 > +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 > +#
-> +#
-> +# common functions for setting up and tearing down a dmerror device
 > +
-> +_init_dmerror()
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +
+> +status=1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +
+> +_cleanup()
 > +{
-> +       $DMSETUP_PROG remove error-test > /dev/null 2>&1
-> +
-> +       local BLK_DEV_SIZE=`blockdev --getsz $SCRATCH_DEV`
-> +
-> +       DMERROR_DEV='/dev/mapper/error-test'
-> +
-> +       DMLINEAR_TABLE="0 $BLK_DEV_SIZE linear $SCRATCH_DEV 0"
-> +
-> +       $DMSETUP_PROG create error-test --table "$DMLINEAR_TABLE" || \
-> +               _fatal "failed to create dm linear device"
-> +
-> +       DMERROR_TABLE="0 $BLK_DEV_SIZE error $SCRATCH_DEV 0"
+> +       _cleanup_dmerror
+> +       rm -f $tmp
 > +}
 > +
-> +_scratch_mkfs_dmerror()
-> +{
-> +       $MKFS_BTRFS_PROG $* $DMERROR_DEV >> $seqres.full 2>&1 || \
-> +                       _fatal "failed to create mkfs.btrfs $* $DMERROR_DEV"
-> +}
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +. ./common/filter.btrfs
+> +. ./common/dmerror
 > +
-> +_mount_dmerror()
-> +{
-> +       mount -t $FSTYP $MOUNT_OPTIONS $DMERROR_DEV $SCRATCH_MNT
-> +}
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_need_to_be_root
+> +_require_scratch_dev_pool 3
+> +_require_dmerror
 > +
-> +_unmount_dmerror()
-> +{
-> +       $UMOUNT_PROGS $SCRATCH_MNT
-> +}
+> +rm -f $seqres.full
 > +
-> +_cleanup_dmerror()
-> +{
-> +       $UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
-> +       $DMSETUP_PROG remove error-test > /dev/null 2>&1
-> +}
+> +dev1="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`"
+> +dev2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $3}'`"
 > +
-> +_load_dmerror_table()
-> +{
-> +       $DMSETUP_PROG suspend error-test
-> +       [ $? -ne 0 ] && _fatal  "failed to suspend error-test"
+> +_init_dmerror
+> +_scratch_mkfs_dmerror "-f -d raid1 -m raid1 $dev1"
+> +_mount_dmerror
 > +
-> +       $DMSETUP_PROG load error-test --table "$DMERROR_TABLE"
-> +       [ $? -ne 0 ] && _fatal "failed to load error table error-test"
+> +$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
 > +
-> +       $DMSETUP_PROG resume error-test
-> +       [ $? -ne 0 ] && _fatal  "failed to resume error-test"
-> +}
-> diff --git a/common/rc b/common/rc
-> index 610045e..ff0732a 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -1336,6 +1336,21 @@ _require_sane_bdev_flush()
->         fi
->  }
->
-> +# this test requires the device mapper error target
-> +#
-> +_require_dmerror()
-> +{
-> +    _require_command "$DMSETUP_PROG" dmsetup
+> +error_devid=`$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT |\
+> +                       egrep $DMERROR_DEV | $AWK_PROG '{print $2}'`
 > +
-> +    $DMSETUP_PROG targets | grep error >/dev/null 2>&1
-> +    if [ $? -eq 0 ]
-> +    then
-> +       :
-> +    else
-> +       _notrun "This test requires dm error support"
-> +    fi
+> +snapshot_cmd="$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT"
+> +snapshot_cmd="$snapshot_cmd $SCRATCH_MNT/snap_\`date +'%H_%M_%S_%N'\`"
+> +run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n 200 -p 8 $FSSTRESS_AVOID -x "$snapshot_cmd" -X 50 >&/dev/null
 
-Why not just:
+Please keep the line length up to 80 characters.
 
-[ $? -ne 0 ] && _notrun "This test requires dm error support"
+> +
+> +# now load the error into the DMERROR_DEV
+> +_load_dmerror_table
+> +
+> +_run_btrfs_util_prog replace start -B $error_devid $dev2 $SCRATCH_MNT
+> +
+> +$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
+> +
+> +status=0; exit
+> diff --git a/tests/btrfs/095.out b/tests/btrfs/095.out
+> new file mode 100644
+> index 0000000..9af70bb
+> --- /dev/null
+> +++ b/tests/btrfs/095.out
+> @@ -0,0 +1,10 @@
+> +QA output created by 095
+> +Label: none  uuid: <UUID>
 
-The empty branch doesn't make much sense.
+So the test always fails due to a mismatch with this expected golden output:
 
-Also, please indent the body of this function using an 8 spaces tab,
-which is the official style for fstests (just look at the surrounding
-functions for example).
+    -Label: none  uuid: <UUID>
+    +Label: none  uuid:  <UUID>
+      Total devices <NUM> FS bytes used <SIZE>
+      devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+      devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
 
-Other than that, it looks good to me. You can add:
+The extra space after "uuid:" comes from _filter_uuid:
+
+   sed -e "s/\(uuid[ :=]\+\) *[0-9a-f-][0-9a-f-]*/\1 <UUID>/ig"
+
+Which gets \1 with the string "uuid: " and then does "uuid: " + " " + "<UUID>".
+
+We need to either to fix the golden output here or _filter_uuid (and
+make sure it doesn't break any other tests using it directly or
+indirectly such as yours).
+
+Other than that, the test looks good and when fixed you can add:
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-> +}
+
+> +       Total devices <NUM> FS bytes used <SIZE>
+> +       devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+> +       devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
 > +
->  # this test requires the device mapper flakey target
->  #
->  _require_dm_flakey()
+> +Label: none  uuid: <UUID>
+> +       Total devices <NUM> FS bytes used <SIZE>
+> +       devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+> +
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index ffe18bf..ed9b3bb 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -96,3 +96,4 @@
+>  092 auto quick send
+>  093 auto quick clone
+>  094 auto quick send
+> +095 auto quick replace
 > --
 > 2.4.1
 >
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
 

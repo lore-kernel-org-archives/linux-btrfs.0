@@ -1,50 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:36741 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S2992578AbbHHTdP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 8 Aug 2015 15:33:15 -0400
-Received: by lbbpu9 with SMTP id pu9so49126461lbb.3
-        for <linux-btrfs@vger.kernel.org>; Sat, 08 Aug 2015 12:33:14 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150808190525.GM14352@carfax.org.uk>
-References: <CABL_Pd-Z6-raB3ngEDbj=-d+QVMohGQ9DHXqv0fVvVNy-HVxUA@mail.gmail.com>
- <20150808190525.GM14352@carfax.org.uk>
-From: Martin Tippmann <martin.tippmann@gmail.com>
-Date: Sat, 8 Aug 2015 21:32:55 +0200
-Message-ID: <CABL_Pd-Sgq-P-aknsGJkVCcN-9tG2j0rFy1SQv7iKJ2QrSEo8A@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:58376 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S2992842AbbHIC45 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 8 Aug 2015 22:56:57 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZOGn8-0006a1-Cf
+	for linux-btrfs@vger.kernel.org; Sun, 09 Aug 2015 04:56:54 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Aug 2015 04:56:54 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 09 Aug 2015 04:56:54 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: fs unreadable after powercycle: BTRFS (device sda): parent
  transid verify failed on 427084513280 wanted 390924 found 390922
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
+Date: Sun, 9 Aug 2015 02:56:49 +0000 (UTC)
+Message-ID: <pan$24874$5c494beb$ed9709e6$399a5c96@cox.net>
+References: <CABL_Pd-Z6-raB3ngEDbj=-d+QVMohGQ9DHXqv0fVvVNy-HVxUA@mail.gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2015-08-08 21:05 GMT+02:00 Hugo Mills <hugo@carfax.org.uk>:
->> Maybe someone can give some clues why does this happen in the first
->> place? Is it unfortunate timing due to the abrupt power cycle?
->> Shouldn't CoW protect against this somewhat?
->
->    Not "somewhat": it should protect it completely. There are two ways
-> that this can happen: it's a bug in btrfs, or there's something
-> stopping barriers from working. That latter case can be either a bug
-> in the kernel's block layer (pretty unlikely), or the hardware is
-> behaving badly and ignoring the barriers (more likely, particularly if
-> it's on a USB/SATA converter).
+Martin Tippmann posted on Sat, 08 Aug 2015 20:43:34 +0200 as excerpted:
 
-Thanks for the information. The setup is nothing out of the ordinary.
-The disks are HGST HUS724040ALA640 running on a Dell H310 SATA
-controller and configured as JBOD. It's all running on defaults on a
-Dell PowerEdge R720. SMART says the disk write cache is enabled -
-maybe that's part of the problem?
+> Hi, after a hard reboot (powercycle) a btrfs volume did not come up
+> again:
+> 
+> It's a single 4TB disk - only btrfs with lzo - data=single,metadata=dup
+> 
+> [  121.831814] BTRFS info (device sda): disk space caching is enabled [
+> 121.857820] BTRFS (device sda): parent transid verify failed on
+> 427084513280 wanted 390924 found 390922 [  121.861607] BTRFS (device
+> sda):
+> parent transid verify failed on 427084513280 wanted 390924 found 390922
+> [ 121.861715] BTRFS: failed to read tree root on sda [  121.878111]
+> BTRFS: open_ctree failed
+> 
+> btrfs-progs v4.0 Kernel: 4.1.4
+> 
+> I'm quite sure that the HDD is fine (no SMART Problems, Disk Errorlog is
+> empty, It's a new Enterprise-Drive that worked well in the past
+> days/weeks).
+> 
+> So I'm kind at loss what to do:
+> 
+> How can I recover from that problem? I've found just a note in the
+> FAQ[1] but no solution to the problem.
 
->    I don't think there's a good solution to transid failures, I'm
-> afraid. The best that I'm aware of is to use btrfs restore to grab the
-> pieces of your FS that aren't up to date in your backups, and then
-> restore from them.
+[The FAQ reference was to the wiki problem faq, transid failure 
+explanation, but it didn't say what to do about it.]
 
-Okay, fortunately can I dismiss the data - or is the broken Image of
-any use for anyone? It's a 4TB disk but I guess I could create a
-compressed (partial) image if it's of interest to anyone.
+Did you try the recovery mount option suggested earlier in the problem-faq 
+under mount problems?
 
-regards
-Martin
+https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#I_can.27t_mount_my_filesystem.2
+
+For transid failures, that's what I'd try first, since that scans 
+previous tree-roots and tries to use the first one it can read.  Since 
+the transid it wants (390924) is only a couple ahead of what it finds 
+(390922), and the recover mount option scans backward in the tree-root 
+history to see if it can find any that work, that could well solve the 
+problem.
+
+If not, as Hugo mentions, given find-tree-root looks good, btrfs restore 
+has a good chance of working.  I've used that myself to good effect a 
+couple times when a btrfs refused to mount (I have backups if I have to 
+use 'em, but recovery or restore, when they work, will normally leave me 
+with more current copies, since I tend to let my backups get somewhat 
+stale).  There's a page on the wiki for using it with find-root if 
+necessary, but the wiki page is a bit dated.  The btrfs-restore manpage 
+should be current, but doesn't have the detail about using it with find-
+root that the wiki page has.
+
+> Maybe someone can give some clues why does this happen in the first
+> place?
+> Is it unfortunate timing due to the abrupt power cycle?
+> Shouldn't CoW protect against this somewhat?
+
+As Hugo says, in theory cow should protect against this, but the 
+combination of possible bugs in a still not yet fully stable and mature 
+btrfs, and possibly buggy hardware, means theory and practice don't 
+always line up as well as they should, in theory. (How's that for an 
+ouroboros, aka snake eating it's tail circular-reference, explanation? 
+=:^)
+
+But the recovery mount option is a reasonable first recovery (now 
+ouroboroi =:^) option, and btrfs restore not too bad to work with if that 
+fails.
+
+Referencing the hardware write-caching option you mentioned later, yes, 
+turning that off can help... in theory... but it also tends to have a 
+DRAMATICALLY bad effect on spinning rust write performance (I don't know 
+enough about SSD write caching to venture a guess), and in some cases 
+voids warranties due to the additional thrashing it's likely to cause as 
+well, so do your research before turning it off.  In general, it's not a 
+good idea as it's simply not worth it.  Both Linux at the generic IO 
+level and the various filesystem stacks are designed to work around all 
+but the worst hardware IO barrier failures, and the write slowdown and 
+increased disk thrashing are simply not worth it, in most cases.  If the 
+hardware is actually bad enough that it's worth it, I'd strongly consider 
+different hardware.
+
+
+
+
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

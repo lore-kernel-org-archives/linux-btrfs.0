@@ -1,75 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38269 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:38877 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752312AbbHJDoY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 9 Aug 2015 23:44:24 -0400
+	id S1750698AbbHJENY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Aug 2015 00:13:24 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZOe0b-0004dJ-B1
-	for linux-btrfs@vger.kernel.org; Mon, 10 Aug 2015 05:44:21 +0200
+	id 1ZOeSg-0000Wa-22
+	for linux-btrfs@vger.kernel.org; Mon, 10 Aug 2015 06:13:22 +0200
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2015 05:44:21 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2015 06:13:22 +0200
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2015 05:44:21 +0200
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2015 06:13:22 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: raid1 on uneven-sized disks
-Date: Mon, 10 Aug 2015 03:44:16 +0000 (UTC)
-Message-ID: <pan$e2cc6$643f5894$c0cbb9c9$c1b6a393@cox.net>
+Date: Mon, 10 Aug 2015 04:13:15 +0000 (UTC)
+Message-ID: <pan$2bbc7$72b8aa61$ae5f57d7$55005ae7@cox.net>
 References: <CAMoY8LpmhQtSvW-sWbGKDFKNN3xaKPwe+QxU5wCMg2Wcz3ObWA@mail.gmail.com>
-	<20150809124725.GA5486@carfax.org.uk>
-	<CAGfcS_kZmWY8PkG8YH_Wp5nFuFygK=VWi7fcimPCubHwwm6M9Q@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rich Freeman posted on Sun, 09 Aug 2015 22:25:35 -0400 as excerpted:
+Jim MacBaine posted on Sun, 09 Aug 2015 14:29:53 +0200 as excerpted:
 
-> The key is that btrfs manages "raid" at the chunk level, not the
-> device level.  When btrfs needs more disk space it allocates a new
-> chunk from unallocated space on a device.  If it is in raid1 mode it
-> will allocate a pair of chunks from two different drives, storing the
-> same data in each.  The allocation algorithm is reasonably smart so if
-> you have 2x1TB drives and 1x3TB drive you'll end up with about 2TB of
-> data stored and not 1TB on each of the two 1TB drives and an empty
-> unusable 3TB drive.
-> 
-> This is also why you can switch between raid modes "on the fly"[. ...]
+> Traditionally I'm using rsync to create hardlinked backups on ext3/4 on
+> md-raid1. This setup has been working reliably for many years now,
+> including the survival of two disk failures. But it is quite cumbersome
+> to reshape the structure of the raids when I get a new disk, an old one
+> fails, or space requirements change. A single btrfs with snapshots would
+> be much easier to handle. I'm not aiming for absolute reliability here
+> -- all the really important stuff is backed up in a third place as well.
+> But I would rather not like my file system to be the weakest link in the
+> backup chain.
 
-Very good explanation, Rich. =:^)
+Others answered your raid1 question well, but left this, so let me tackle 
+it.
 
-> This also lets you do things like add a disk to a raid5.  If you have
-> 5 disks and add one more, existing chunks will be striped across 5
-> drives, and new chunks will be striped across 6, unless you balance
-> them.
+My standard answer to btrfs stability questions is that btrfs is "not yet 
+fully stable and mature", it's stabilizing, and definitely more stable 
+that it has been, but it has only been a few kernel cycles since some 
+really big bugs that hit a lot of people, and in fact, user-space side, 
+there was a critical bug in mkfs.btrfs in btrfs-progs v4.1.1 (with v4.1.2 
+being current), so they do still happen from time to time, tho that one 
+only affected people happening to do a mkfs.btrfs with the affected 
+version, which was only out a couple weeks or so.
 
-I'm actually posting to add a caveat to this.
+IOW, the standard sysadmin rule that if it's not backed up, by 
+definition, you don't care about it, still applies double to btrfs -- 
+really, keep your backups, or your actions demonstrate your lack of care 
+and you may see the results thereof.
 
-While btrfs itself is "getting stable", that is, good enough for daily 
-work, but not as mature and well tested as some of the other filesystems 
-so do keep things you don't want to lose backed up, btrfs raid56 mode 
-(that's raid5 and raid6, the same module, raid56, deals with both) was 
-only code-complete with kernel/progs 3.19, and is still quite immature 
-and not well tested compared to the rest of btrfs.  With 4.2 it should be 
-out of its most critical phase, but I've been warning people to give it a 
-year (after 3.19) before considering its stability to be close to the 
-rest of btrfs.  Since there's normally ~5 kernel cycles per year, that 
-would be 4.4.  Until then, if you're willing to be a guinea pig on it, 
-reporting any bugs and working with the devs to test fixes, THANKS, it's 
-people like you who help make it dependable for others.  Otherwise, stick 
-with the more stable raid1 or raid10 modes until 4.4 or so, and at that 
-point if you're still interested in raid56 mode, check the list to see 
-how it's doing, and assuming nothing exceptional is going on, /then/ do 
-the raid56 thing.
+That said, btrfs is working well in daily use for many people, and some 
+distros are shipping it as the default for at least some partitions 
+(often root, where the snapshot feature is used to manage update 
+rollbacks where necessary), so it's stable /enough/, as long as you do 
+have those backups and are prepared to use them, should it be necessary.
 
-Of course, since the OP question was about raid1, this is probably just 
-extra info for him, and mostly to cover anyone else that /might/ be 
-looking at raid56 mode at this time, and happens onto this thread.
+We do recommend that you stay relatively current on both kernel and 
+userspace, however.  So a current 4.1 series kernel and btrfs-progs 4.1.2 
+are excellent, but consider another filesystem if you're the type who was 
+still on a 2.x kernel thru 3.12 or so. =:^)  
 
+And... there's a couple btrfs features to avoid at this time.  As 
+mentioned elsewhere, raid56 mode is still quite new and not yet mature, 
+yet, so avoid it unless you intend to take on the risk of leading-edge 
+testing, and the btrfs quota code continues to be a source of issues, so 
+I recommend not using quotas on btrfs.  If you need quotas, you want 
+another filesystem anyway, because quotas simply aren't reliable on btrfs 
+yet.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

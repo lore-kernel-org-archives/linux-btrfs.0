@@ -1,80 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38877 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750698AbbHJENY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Aug 2015 00:13:24 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZOeSg-0000Wa-22
-	for linux-btrfs@vger.kernel.org; Mon, 10 Aug 2015 06:13:22 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2015 06:13:22 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2015 06:13:22 +0200
+Received: from mail-ig0-f181.google.com ([209.85.213.181]:35096 "EHLO
+	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754017AbbHJOwB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 10 Aug 2015 10:52:01 -0400
+Received: by igbjg10 with SMTP id jg10so2334053igb.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 10 Aug 2015 07:52:00 -0700 (PDT)
+MIME-Version: 1.0
+Date: Mon, 10 Aug 2015 10:52:00 -0400
+Message-ID: <CAK7bmU97q-oz8aSTQijHJR1MQRgOs+F9nHx2hMuqgPO6G5et9g@mail.gmail.com>
+Subject: Damaged filesystem, can read, can't repair, error says to contact devs
+From: Timothy Normand Miller <theosib@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: raid1 on uneven-sized disks
-Date: Mon, 10 Aug 2015 04:13:15 +0000 (UTC)
-Message-ID: <pan$2bbc7$72b8aa61$ae5f57d7$55005ae7@cox.net>
-References: <CAMoY8LpmhQtSvW-sWbGKDFKNN3xaKPwe+QxU5wCMg2Wcz3ObWA@mail.gmail.com>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jim MacBaine posted on Sun, 09 Aug 2015 14:29:53 +0200 as excerpted:
+Hi, everyone,
 
-> Traditionally I'm using rsync to create hardlinked backups on ext3/4 on
-> md-raid1. This setup has been working reliably for many years now,
-> including the survival of two disk failures. But it is quite cumbersome
-> to reshape the structure of the raids when I get a new disk, an old one
-> fails, or space requirements change. A single btrfs with snapshots would
-> be much easier to handle. I'm not aiming for absolute reliability here
-> -- all the really important stuff is backed up in a third place as well.
-> But I would rather not like my file system to be the weakest link in the
-> backup chain.
+I have a four-drive RAID1 array, and since yesterday, some problem has
+rendered it unmountable (read/write anyhow).  One drive reports a read
+error, so maybe the drive is failing, but I've had that happen before,
+and it was easy to swap in a new drive.  This time, two more drives
+are reporting that they "failed to read the system array."  I managed
+to mount it read-only (by specifying the node of the fourth drive) and
+rsync everything to a backup drive.  Now I'd like to try to repair.
+This is where I'm running into problems.  Since I can't mount it
+read-write, I can't do a scrub, so I tried "btrfs check --repair", and
+this is what I got:
 
-Others answered your raid1 question well, but left this, so let me tackle 
-it.
+# btrfs check --repair /dev/sde
+enabling repair mode
+Checking filesystem on /dev/sde
+UUID: ecdff84d-b4a2-4286-a1c1-cd7e5396901c
+checking extents
+ref mismatch on [1667931533312 524288] extent item 1, found 2
+attempting to repair backref discrepency for bytenr 1667931533312
+Ref doesn't match the record start and is compressed, please take a
+btrfs-image of this file system and send it to a btrfs developer so
+they can complete this functionality for bytenr 1667931639808
+failed to repair damaged filesystem, aborting
 
-My standard answer to btrfs stability questions is that btrfs is "not yet 
-fully stable and mature", it's stabilizing, and definitely more stable 
-that it has been, but it has only been a few kernel cycles since some 
-really big bugs that hit a lot of people, and in fact, user-space side, 
-there was a critical bug in mkfs.btrfs in btrfs-progs v4.1.1 (with v4.1.2 
-being current), so they do still happen from time to time, tho that one 
-only affected people happening to do a mkfs.btrfs with the affected 
-version, which was only out a couple weeks or so.
+Since this specifically told me to contact a developer, I figured this
+is something you guys want to know about.  :)
 
-IOW, the standard sysadmin rule that if it's not backed up, by 
-definition, you don't care about it, still applies double to btrfs -- 
-really, keep your backups, or your actions demonstrate your lack of care 
-and you may see the results thereof.
+Also, I was wondering if perhaps someone can help me figure out how to
+repair it.
 
-That said, btrfs is working well in daily use for many people, and some 
-distros are shipping it as the default for at least some partitions 
-(often root, where the snapshot feature is used to manage update 
-rollbacks where necessary), so it's stable /enough/, as long as you do 
-have those backups and are prepared to use them, should it be necessary.
+There are only two files that appear to be unrecoverable when I rsync,
+and I can restore those from an earlier backup.  Since I can't mount
+read/write, I can't go and delete those files, so I seem to be stuck.
 
-We do recommend that you stay relatively current on both kernel and 
-userspace, however.  So a current 4.1 series kernel and btrfs-progs 4.1.2 
-are excellent, but consider another filesystem if you're the type who was 
-still on a 2.x kernel thru 3.12 or so. =:^)  
 
-And... there's a couple btrfs features to avoid at this time.  As 
-mentioned elsewhere, raid56 mode is still quite new and not yet mature, 
-yet, so avoid it unless you intend to take on the risk of leading-edge 
-testing, and the btrfs quota code continues to be a source of issues, so 
-I recommend not using quotas on btrfs.  If you need quotas, you want 
-another filesystem anyway, because quotas simply aren't reliable on btrfs 
-yet.
+
+BTRFS works beautifully with single drive configurations.  I have
+multiple, and I've never had a problem.  On the other hand seem to
+have LOTS of trouble with 4-drive RAID1.  I get OOPSes regularly.
+I've tried reporting them on bugzilla.kernel.org, but it doesn't
+appear that btrfs devs actually use that.  Is this list a better place
+to report those?
+
+
+Thanks for the help!
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Timothy Normand Miller, PhD
+Assistant Professor of Computer Science, Binghamton University
+Open Graphics Project

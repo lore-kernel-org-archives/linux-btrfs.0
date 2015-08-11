@@ -1,94 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:36283 "EHLO
-	mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932421AbbHKUcC (ORCPT
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:35869 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753535AbbHKUnf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Aug 2015 16:32:02 -0400
-Received: by ioeg141 with SMTP id g141so214641558ioe.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2015 13:32:01 -0700 (PDT)
+	Tue, 11 Aug 2015 16:43:35 -0400
+Received: by wicja10 with SMTP id ja10so89505059wic.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2015 13:43:34 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ2L=s2KP8ttLkeA+pnOqePvToK-evsc9nA43Ewv3GgEw@mail.gmail.com>
-References: <CAK7bmU97q-oz8aSTQijHJR1MQRgOs+F9nHx2hMuqgPO6G5et9g@mail.gmail.com>
-	<CAJCQCtS=v+T-qGFLeaELn7Bt+Mb8ViK+8+YgontAE=1ucAnWZg@mail.gmail.com>
-	<CAK7bmU_d3RTU4HZVHB9Z7ZAOpQ8C-wZn7WpvYsJaXiGDJki7fg@mail.gmail.com>
-	<CAJCQCtQ9kxpuQD3k-rO84O+0jRpiWbCJAUdog+2_Da6EK5yGsQ@mail.gmail.com>
-	<CAK7bmU9X8cvPs2sn3eZRaOowoT2H5jthpessWMQSVgvojjJ5EA@mail.gmail.com>
-	<CAK7bmU_xV=2Mh0zj6c3Wj54HDi0vCWmon-Z9E6h14hGws2-YAg@mail.gmail.com>
-	<CAJCQCtQ2L=s2KP8ttLkeA+pnOqePvToK-evsc9nA43Ewv3GgEw@mail.gmail.com>
-Date: Tue, 11 Aug 2015 16:32:01 -0400
-Message-ID: <CAK7bmU8wyeX6THM=UB4_D3u-9j8hSuaZAY0uSASBXgcfkjfSTg@mail.gmail.com>
-Subject: Re: Damaged filesystem, can read, can't repair, error says to contact devs
-From: Timothy Normand Miller <theosib@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAMUoZtY7Or1+4-XmxWQjrmkAk-x62e13XMoTbWApRAn_zhd2DQ@mail.gmail.com>
+References: <CAMUoZtY7Or1+4-XmxWQjrmkAk-x62e13XMoTbWApRAn_zhd2DQ@mail.gmail.com>
+Date: Tue, 11 Aug 2015 20:43:34 +0000
+Message-ID: <CABRuA+gXqmE1vVWFpHFtS=rx3Tm6+o2n8Pn_G1uQmkcv6SYBpA@mail.gmail.com>
+Subject: Re: Scaling to 100k+ snapshots/subvolumes
+From: Michael Darling <darlingm@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 11, 2015 at 3:57 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Tue, Aug 11, 2015 at 12:04 PM, Timothy Normand Miller
-> <theosib@gmail.com> wrote:
+If someone can answer Tristan's question, can they also add in if
+large volumes of frequently created and destroyed snapshots/subvolumes
+will cause issues?  Or, if they're deleted quickly after being made,
+is it just the number that exists at any given time that matters?
+(Building source in chroot subvolumes with its "own" o/s install, as
+in Arch's devtools scripts, if used to create *separate* subvolumes
+under each source build, rather than a global shared one.)
+
+On Tue, Aug 11, 2015 at 6:33 PM, Tristan Zajonc <tristan@sense.io> wrote:
 >
->> https://bugzilla.kernel.org/show_bug.cgi?id=102691
+> Hi,
 >
-> [    7.729124] BTRFS: device fsid ecdff84d-b4a2-4286-a1c1-cd7e5396901c
-> devid 2 transid 226237 /dev/sdd
-> [    7.746115] BTRFS: device fsid ecdff84d-b4a2-4286-a1c1-cd7e5396901c
-> devid 4 transid 226237 /dev/sdb
-> [    7.826493] BTRFS: device fsid ecdff84d-b4a2-4286-a1c1-cd7e5396901c
-> devid 3 transid 226237 /dev/sdc
+> In an early thread Duncan mentioned that btrfs does not scale well in
+> the number of subvolumes (including snapshots).  He recommended
+> keeping the total number under 1000.  I just wanted to understand this
+> limitation further.  Is this something that has been resolved or will
+> be resolved in the future or is it something inherent to the design of
+> btrfs?
 >
-> What do you get for 'btrfs fi show'
-
-# btrfs fi show
-Label: none  uuid: 49ac9ad2-b529-4e6e-aef9-1c5b9e8a72f8
-Total devices 1 FS bytes used 28.33GiB
-devid    1 size 79.69GiB used 41.03GiB path /dev/sda3
-
-Label: none  uuid: ecdff84d-b4a2-4286-a1c1-cd7e5396901c
-Total devices 4 FS bytes used 1.46TiB
-devid    2 size 931.51GiB used 767.00GiB path /dev/sdd
-devid    3 size 931.51GiB used 760.03GiB path /dev/sdc
-devid    4 size 931.51GiB used 767.00GiB path /dev/sdb
-*** Some devices missing
-
-Label: none  uuid: f9331766-e50a-43d5-98dc-fabf5c68321d
-Total devices 1 FS bytes used 2.99TiB
-devid    1 size 3.64TiB used 3.01TiB path /dev/sde1
-
-btrfs-progs v4.1.2
-
+> We have an application that could easily generate 100k-1M snapshots
+> and 10s of thousands of subvolumes.  We use snapshots to track very
+> fine-grained filesystem histories and subvolumes to enforce quotas
+> across a large number of distinct projects.
 >
-> I see devid 2, 3, 4 only for this volume UUID. So you definitely
-> appear to have a failed device and that's why it doesn't mount
-> automatically at boot time. You just need to use -o degraded, and that
-> should work assuming no problems with the other three devices. If it
-> does work, 'btrfs replace start...' is the ideal way to replace the
-> failed drive.
-
-It's missing because I physically disconnected it.  Someone on IRC
-suggested I try this in case the drive with the bad sector was
-interfering.  Of course, now that I've done this and mounted
-read/write, we can't reintegrate the failing drive.
-
-If I lose the array, I won't cry.  The backup appears to be complete.
-But it would be convenient to avoid having to restore from scratch,
-and I'm hoping this might help you guys too in some way.  I really
-like btrfs, and I would like provide you with whatever info might
-contribute something.
-
+> Thanks,
+> Tristan
 >
-> Maybe someone else can say whether nodatacow as a subvolume mount
-> option will apply this to the entire volume.
-
-At the moment, I'm only trying to mount the whole volume, just so I
-could recover and scrub it, although as I mentioned in my earlier
-email, the scrub aborts with no report of why and with "0 errors."
-
-
-
--- 
-Timothy Normand Miller, PhD
-Assistant Professor of Computer Science, Binghamton University
-http://www.cs.binghamton.edu/~millerti/
-Open Graphics Project
+> Duncan >
+> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/43910
+>
+> The question of number of subvolumes normally occurs in the context of
+> snapshots, since snapshots are a special kind of subvolume.  Ideally,
+> you'll want to keep the total number of subvolumes (including snapshots)
+> to under 1000, with the number of snapshots of any single subvolume
+> limited to 250-ish (say under 300).  However, even just four subvolumes
+> being snapshotted to this level will reach the thousand, and 2000-3000
+> total isn't /too/ bad as long as it's no more than 250-300 snapshots per
+> subvolume.  But DEFINITELY try to keep it under 3000, and preferably
+> under 2000, as the scaling really does start to go badly as the number of
+> subvolumes increases beyond that.  If you're dealing with 10k subvolumes/
+> snapshots, that's too many and you ARE likely to find yourself with
+> problems.
+>
+> (With something like snapper, configuring it for say half-hour or hourly
+> snapshots at the shortest time, with twice-daily or daily being more
+> reasonable in many circumstances, and then thinning it down to say daily
+> after a few days and weekly after four weeks, goes quite a long way
+> toward reducing the number of snapshots per subvolume.  Keeping it near
+> 250-ish per subvolume is WELL within reason, and considering that a month
+> or a year out, you're not likely to /care/ whether it's this hour or
+> that, just pick a day or a week and if it's not what you want, go back or
+> forward a day or a week, is actually likely to be more practical than
+> having hundreds of half-hourly snapshots a year old to choose from.  And
+> 250-ish snapshots per subvolume really does turn out to be VERY
+> reasonable, provided you're doing reasonable thinning.)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

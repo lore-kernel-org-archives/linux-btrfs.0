@@ -1,63 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f181.google.com ([209.85.213.181]:36913 "EHLO
-	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751950AbbHKSdp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Aug 2015 14:33:45 -0400
-Received: by igbpg9 with SMTP id pg9so97640608igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2015 11:33:45 -0700 (PDT)
+Received: from mx2.suse.de ([195.135.220.15]:39852 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752525AbbHKS6n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 11 Aug 2015 14:58:43 -0400
+Date: Tue, 11 Aug 2015 11:58:42 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org, Chris Mason <clm@fb.com>
+Subject: Re: Missing dedupe/locking patch in integration-4.2 tree?
+Message-ID: <20150811185842.GN7507@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <55C46842.2000301@googlemail.com>
 MIME-Version: 1.0
-Date: Tue, 11 Aug 2015 11:33:45 -0700
-Message-ID: <CAMUoZtY7Or1+4-XmxWQjrmkAk-x62e13XMoTbWApRAn_zhd2DQ@mail.gmail.com>
-Subject: Scaling to 100k+ snapshots/subvolumes
-From: Tristan Zajonc <tristan@sense.io>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <55C46842.2000301@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Fri, Aug 07, 2015 at 10:11:46AM +0200, Holger Hoffstätte wrote:
+> 
+> Mark's patch titled
+> 
+>   "[PATCH 3/5] btrfs: fix clone / extent-same deadlocks" [1]
+> 
+> from his "btrfs: dedupe fixes, features" series is missing from the integration-4.2 tree and 4.2-rc5, where it still applies cleanly (as of 5 mins ago).
+> 
+> Any particular reason why this was silently dropped?
 
-In an early thread Duncan mentioned that btrfs does not scale well in
-the number of subvolumes (including snapshots).  He recommended
-keeping the total number under 1000.  I just wanted to understand this
-limitation further.  Is this something that has been resolved or will
-be resolved in the future or is it something inherent to the design of
-btrfs?
+Same question here, I noticed this shortly after everything went upstream
+and was planning a resend but it would be great if you could tell us whether
+something was wrong with the patch or if it just got lost in the shuffle (no
+big deal).
+	--Mark
 
-We have an application that could easily generate 100k-1M snapshots
-and 10s of thousands of subvolumes.  We use snapshots to track very
-fine-grained filesystem histories and subvolumes to enforce quotas
-across a large number of distinct projects.
-
-Thanks,
-Tristan
-
-Duncan >
-http://permalink.gmane.org/gmane.comp.file-systems.btrfs/43910
-
-The question of number of subvolumes normally occurs in the context of
-snapshots, since snapshots are a special kind of subvolume.  Ideally,
-you'll want to keep the total number of subvolumes (including snapshots)
-to under 1000, with the number of snapshots of any single subvolume
-limited to 250-ish (say under 300).  However, even just four subvolumes
-being snapshotted to this level will reach the thousand, and 2000-3000
-total isn't /too/ bad as long as it's no more than 250-300 snapshots per
-subvolume.  But DEFINITELY try to keep it under 3000, and preferably
-under 2000, as the scaling really does start to go badly as the number of
-subvolumes increases beyond that.  If you're dealing with 10k subvolumes/
-snapshots, that's too many and you ARE likely to find yourself with
-problems.
-
-(With something like snapper, configuring it for say half-hour or hourly
-snapshots at the shortest time, with twice-daily or daily being more
-reasonable in many circumstances, and then thinning it down to say daily
-after a few days and weekly after four weeks, goes quite a long way
-toward reducing the number of snapshots per subvolume.  Keeping it near
-250-ish per subvolume is WELL within reason, and considering that a month
-or a year out, you're not likely to /care/ whether it's this hour or
-that, just pick a day or a week and if it's not what you want, go back or
-forward a day or a week, is actually likely to be more practical than
-having hundreds of half-hourly snapshots a year old to choose from.  And
-250-ish snapshots per subvolume really does turn out to be VERY
-reasonable, provided you're doing reasonable thinning.)
+--
+Mark Fasheh

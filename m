@@ -1,85 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:7129 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S965062AbbHKPk7 (ORCPT
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:38418 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751712AbbHKR4Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 11 Aug 2015 11:40:59 -0400
-Message-ID: <55CA177D.1050004@fb.com>
-Date: Tue, 11 Aug 2015 11:40:45 -0400
-From: Josef Bacik <jbacik@fb.com>
+	Tue, 11 Aug 2015 13:56:24 -0400
+Received: by igfj19 with SMTP id j19so77569549igf.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 11 Aug 2015 10:56:24 -0700 (PDT)
 MIME-Version: 1.0
-To: Marc MERLIN <marc@merlins.org>, <dsterba@suse.com>, <clm@fb.com>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
-References: <20150706212156.GY17274@merlins.org> <20150710134348.GB15535@suse.cz> <20150712010229.GA5284@merlins.org> <20150723115558.GQ6306@suse.cz> <20150724162446.GH30815@merlins.org> <20150803035130.GL24824@merlins.org> <20150811050758.GF29259@merlins.org>
-In-Reply-To: <20150811050758.GF29259@merlins.org>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <CAJCQCtQ9kxpuQD3k-rO84O+0jRpiWbCJAUdog+2_Da6EK5yGsQ@mail.gmail.com>
+References: <CAK7bmU97q-oz8aSTQijHJR1MQRgOs+F9nHx2hMuqgPO6G5et9g@mail.gmail.com>
+	<CAJCQCtS=v+T-qGFLeaELn7Bt+Mb8ViK+8+YgontAE=1ucAnWZg@mail.gmail.com>
+	<CAK7bmU_d3RTU4HZVHB9Z7ZAOpQ8C-wZn7WpvYsJaXiGDJki7fg@mail.gmail.com>
+	<CAJCQCtQ9kxpuQD3k-rO84O+0jRpiWbCJAUdog+2_Da6EK5yGsQ@mail.gmail.com>
+Date: Tue, 11 Aug 2015 13:56:23 -0400
+Message-ID: <CAK7bmU9X8cvPs2sn3eZRaOowoT2H5jthpessWMQSVgvojjJ5EA@mail.gmail.com>
+Subject: Re: Damaged filesystem, can read, can't repair, error says to contact devs
+From: Timothy Normand Miller <theosib@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/11/2015 01:07 AM, Marc MERLIN wrote:
-> On Sun, Aug 02, 2015 at 08:51:30PM -0700, Marc MERLIN wrote:
->> On Fri, Jul 24, 2015 at 09:24:46AM -0700, Marc MERLIN wrote:
->>>>>> Screenshot: https://urldefense.proofpoint.com/v1/url?u=http://marc.merlins.org/tmp/btrfs_crash.jpg&k=ZVNjlDMF0FElm4dQtryO4A%3D%3D%0A&r=cKCbChRKsMpTX8ybrSkonQ%3D%3D%0A&m=BIMTuuT5G3PNqsD7rUX5Uzfyd1xL9vQIECC7sPpJh5U%3D%0A&s=5a4e737cf6e23a884121a0bd2c935edb9e7011394b6b59b109c11716a562000b
->>>>
->>>> So it's 32bit system, 3.19.8, crashing during snapshot deletion and
->>>> backref walking. EIP is in do_walk_down+0x142. I've tried to match it to
->>>> the sources on a local 32bit build, but it does not point to the
->>>> expected crash site:
->>>
->>> Thanks for looking.
->>> Unfortunately it's a mythtv where if I put a 64bit kernel, other things
->>> go wrong with the 32bit userland/64bit kernel split.
->>> But I'll put a newer 64bit kernel on it to see what happens and report
->>> back.
+On Tue, Aug 11, 2015 at 12:21 AM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Mon, Aug 10, 2015 at 7:23 PM, Timothy Normand Miller
+> <theosib@gmail.com> wrote:
+>> On Mon, Aug 10, 2015 at 6:52 PM, Chris Murphy <lists@colorremedies.com> wrote:
+>
+>>> - complete dmesg for the failed mount
 >>
->> I got home, built the last kernel and got netconsole working.
->> 4.1.3/64bit and 32bit crash the same way.
+>> It really doesn't say much.  I have things like this:
+>> [    8.643535] BTRFS info (device sdc): disk space caching is enabled
+>> [    8.643789] BTRFS: failed to read the system array on sdc
+>> [    8.706062] BTRFS: open_ctree failed
+>> [    8.707124] BTRFS info (device sdc): disk space caching is enabled
+>> [    8.710924] BTRFS: failed to read the system array on sdc
+>> [    8.766080] BTRFS: open_ctree failed
+>> [    8.766903] BTRFS info (device sdc): setting nodatacow, compression disabled
+>> [    8.766905] BTRFS info (device sdc): disk space caching is enabled
+>> [    8.767152] BTRFS: failed to read the system array on sdc
+>> [    8.936019] BTRFS: open_ctree failed
+>> [    8.936906] BTRFS info (device sdc): disk space caching is enabled
+>> [    8.939922] BTRFS: failed to read the system array on sdc
+>> [    8.995984] BTRFS: open_ctree failed
+>> [    8.996796] BTRFS info (device sdc): disk space caching is enabled
+>> [    8.997093] BTRFS: failed to read the system array on sdc
+>> [    9.125936] BTRFS: open_ctree failed
 >
-> So, it's been several weeks that I can't use this filesystem.
-> Is anyone interested in fixing the kernel bug before I wipe it?
-> (as in, even if the FS is corrupted, it should not crash the kernel)
+> It looks like there's not enough redundancy remaining to mount and in
+> such a case there's really not much to be done.
 >
+> I don't see nodatacow in your fstab, so I don't know why that's
+> happening. That means no checksumming for data.
+
+Sorry.  I was dumb.  I only showed you the entry for what I was trying
+to mount manually.  I have subvolumes, and this is what is in my
+fstab:
+
+UUID=ecdff84d-b4a2-4286-a1c1-cd7e5396901c /home btrfs
+compress=lzo,noatime,space_cache,subvol=home 0 2
+UUID=ecdff84d-b4a2-4286-a1c1-cd7e5396901c /mnt/btrfs btrfs
+compress=lzo,noatime,space_cache 0 2
+UUID=ecdff84d-b4a2-4286-a1c1-cd7e5396901c /mnt/vms btrfs
+noatime,nodatacow,space_cache,subvol=vms 0 2
+UUID=ecdff84d-b4a2-4286-a1c1-cd7e5396901c /mnt/oldfiles btrfs
+compress=lzo,noatime,space_cache,subvol=oldfiles 0 2
+UUID=ecdff84d-b4a2-4286-a1c1-cd7e5396901c /mnt/backup btrfs
+compress=lzo,noatime,space_cache,subvol=backup 0 2
 
 
- From a48cf7a9ae44a17d927df5542c8b0be287aee9ed Mon Sep 17 00:00:00 2001
-From: Josef Bacik <jbacik@fb.com>
-Date: Tue, 11 Aug 2015 11:39:37 -0400
-Subject: [PATCH] Btrfs: kill BUG_ON() in btrfs_lookup_extent_info()
+>
+>
+>>
+>> Also, when I manually try to mount, I get things like this:
+>>
+>> # mount /mnt/btrfs
+>> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+>>        missing codepage or helper program, or other error
+>
+> Have you tried to mount with -o degraded?
 
-Replace it with an ASSERT(0) for the developers and an error for not the
-developers.
+Ooh!  I can do that!
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
-  fs/btrfs/extent-tree.c | 7 +++++--
-  1 file changed, 5 insertions(+), 2 deletions(-)
+Mounting ro,degraded, I see this:
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5411f0a..f7fb120 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -818,7 +818,11 @@ search_again:
-  			BUG();
-  #endif
-  		}
--		BUG_ON(num_refs == 0);
-+		if (num_refs == 0) {
-+			ASSERT(0);
-+			ret = -EIO;
-+			goto out_free;
-+		}
-  	} else {
-  		num_refs = 0;
-  		extent_flags = 0;
-@@ -859,7 +863,6 @@ search_again:
-  	}
-  	spin_unlock(&delayed_refs->lock);
-  out:
--	WARN_ON(num_refs == 0);
-  	if (refs)
-  		*refs = num_refs;
-  	if (flags)
+[94197.902443] BTRFS info (device sdc): allowing degraded mounts
+[94197.902448] BTRFS info (device sdc): disk space caching is enabled
+[94198.240621] BTRFS: bdev (null) errs: wr 1724, rd 305, flush 45,
+corrupt 0, gen 2
+
+Mounting rw,degraded, I see this:
+
+[94312.091613] BTRFS info (device sdc): allowing degraded mounts
+[94312.091618] BTRFS info (device sdc): disk space caching is enabled
+[94312.194513] BTRFS: bdev (null) errs: wr 1724, rd 305, flush 45,
+corrupt 0, gen 2
+[94319.824563] BTRFS: checking UUID tree
+
+
+>
+>
+>
+>> Well, if I get something lengthy, I'll attach it to my bug report.
+>> Did the information I reported help at all?
+>
+> The entire dmesg is still useful because it should show libata errors
+> if these aren't fully failed drives. So you should file a bug and
+> include, literally, the entire unedited dmesg.
+
+Alright, I'll do that.  Thanks!
+
+>
+>
+> --
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
 -- 
-2.1.0
-
+Timothy Normand Miller, PhD
+Assistant Professor of Computer Science, Binghamton University
+http://www.cs.binghamton.edu/~millerti/
+Open Graphics Project

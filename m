@@ -1,36 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f48.google.com ([209.85.213.48]:34517 "EHLO
-	mail-vk0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753611AbbHLRDB (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:57442 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932153AbbHLRTT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 13:03:01 -0400
-Received: by vkhl6 with SMTP id l6so8285315vkh.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 10:03:00 -0700 (PDT)
+	Wed, 12 Aug 2015 13:19:19 -0400
+Date: Wed, 12 Aug 2015 10:19:12 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: dsterba@suse.com, clm@fb.com, linux-btrfs@vger.kernel.org
+Message-ID: <20150812171912.GL29259@merlins.org>
+References: <20150712010229.GA5284@merlins.org>
+ <20150723115558.GQ6306@suse.cz>
+ <20150724162446.GH30815@merlins.org>
+ <20150803035130.GL24824@merlins.org>
+ <20150811050758.GF29259@merlins.org>
+ <55CA177D.1050004@fb.com>
+ <20150812144749.GY24824@merlins.org>
+ <55CB631B.2080404@fb.com>
+ <20150812160936.GK29259@merlins.org>
+ <55CB71E5.1070302@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <20150812130758.GA26529@rus.uni-stuttgart.de>
-References: <20150812130758.GA26529@rus.uni-stuttgart.de>
-Date: Wed, 12 Aug 2015 11:03:00 -0600
-Message-ID: <CAJCQCtRTvn-Xu_ipM7pCTtVuxUm0m7kjqt=F=+q6cj0vOOhF7g@mail.gmail.com>
-Subject: Re: RAID0 wrong (raw) device?
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55CB71E5.1070302@fb.com>
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 12, 2015 at 7:07 AM, Ulli Horlacher
-<framstag@rus.uni-stuttgart.de> wrote:
+On Wed, Aug 12, 2015 at 12:18:45PM -0400, Josef Bacik wrote:
+> Going to need more info to figure this one out
+ 
+Thanks for the patch, here's the output:
+enabling repair mode
+Checking filesystem on /dev/mapper/crypt_sdd1
+UUID: 024ba4d0-dacb-438d-9f1b-eeb34083fe49
+checking extents
+wtf, parent 575708413952 <<<<<<
+cmds-check.c:4488: add_data_backref: Assertion `back->bytes != max_size` failed.
+/tmp/btrfs[0x8066a83]
+/tmp/btrfs[0x8066ab4]
+/tmp/btrfs[0x80679d8]
+/tmp/btrfs[0x806b4f2]
+/tmp/btrfs[0x806b9ea]
+/tmp/btrfs[0x806c5f9]
+/tmp/btrfs(cmd_check+0x1088)[0x806ee26]
+/tmp/btrfs(main+0x153)[0x80557d6]
+/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb75a54d3]
+/tmp/btrfs[0x80557fc]
 
-> /dev/sdb and /dev/sde are in reality the same physical disk!
-
-When does all of this confusion happen? Is it already confused before
-mkfs or only after mkfs or only after mount? I would find out what
-instigates it, wipe all signatures from everything, reboot, start from
-scratch, and then strace the command that causes the confusion. And
-attach that output as well as the entire dmesg to a bug report. Just
-my 2 cents, I have no idea what's going on but sounds like a block
-layer and/or drdb bug that's triggered by Btrfs multiple device
-setups.
-
+Marc
 -- 
-Chris Murphy
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

@@ -1,43 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:36517 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751073AbbHLSfY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 14:35:24 -0400
-Received: by igxp17 with SMTP id p17so5920713igx.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 11:35:23 -0700 (PDT)
+Received: from d.mail.sonic.net ([64.142.111.50]:59504 "EHLO d.mail.sonic.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751611AbbHLSpD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Aug 2015 14:45:03 -0400
+Subject: Re: bedup --defrag freezing
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
+References: <55C2840E.4030909@gmail.com> <55C340B5.20005@gmail.com>
+From: Konstantin Svist <fry.kun@gmail.com>
+Message-ID: <55CB942B.7050301@gmail.com>
+Date: Wed, 12 Aug 2015 11:44:59 -0700
 MIME-Version: 1.0
-In-Reply-To: <CAJwcFg-Y5q2xBGnoohy0zSzpjtFZAq9U+HWS+erTcskUDgdWRw@mail.gmail.com>
-References: <CAJwcFg-Y5q2xBGnoohy0zSzpjtFZAq9U+HWS+erTcskUDgdWRw@mail.gmail.com>
-From: Catalin <zrianc@gmail.com>
-Date: Wed, 12 Aug 2015 21:35:04 +0300
-Message-ID: <CAJwcFg8i7hcqRUkgw2gG2S02d1NfCR1f6UufrMc=iKtNTCmjbQ@mail.gmail.com>
-Subject: Re: btrfs-progs: btrfs balance returns enospc error on a system with
- 80% free space
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <55C340B5.20005@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 11, 2015 at 12:18 PM, Catalin wrote:
-> I have a recently installed an Arch Linux x86_64 system on a 50GB
-> btrfs partition and every time I try btrfs balance start it gives me
-> an enospc error even though I have less than 20% of the available
-> space full.
->
-> I have tried the recommended method (from
-> https://btrfs.wiki.kernel.org/index.php/Balance_Filters) and with
-> -dusage I can go up to -dusage=100 with no problems but with -musage
-> it works until 34 and then at musage=35 it fails with the enospc
-> error.
+On 08/06/2015 04:10 AM, Austin S Hemmelgarn wrote:
+> On 2015-08-05 17:45, Konstantin Svist wrote:
+>> Hi,
+>>
+>> I've been running btrfs on Fedora for a while now, with bedup --defrag
+>> running in a night-time cronjob.
+>> Last few runs seem to have gotten stuck, without possibility of even
+>> killing the process (kill -9 doesn't work) -- all I could do is hard
+>> power cycle.
+>>
+>> Did something change recently? Is bedup simply too out of date? What
+>> should I use to de-duplicate across snapshots instead? Etc.?
+>>
+> AFAIK, bedup hasn't been actively developed for quite a while (I'm
+> actually kind of surprised it runs with the newest btrfs-progs).
+> Personally, I'd suggest using duperemove
+> (https://github.com/markfasheh/duperemove)
 
-Today I tried to force all installed packages to reinstall but before
-that I deleted once again all the caches and existing snapshots and
-BEFORE trying to reinstall I run again btrfs balance and this time it
-worked even though I have more space occupied now than I had when the
-error first appeared!
+Thanks, good to know.
+Tried duperemove -- it looks like it builds a database of its own
+checksums every time it runs... why won't it use BTRFS internal
+checksums for fast rejection? Would run a LOT faster...
 
-So theoretically my problem is SOLVED but I still think there is
-either something wrong with balance since it should have be able to do
-it before or there is something wrong with scrub or check because they
-should have reported an error if there was one.
+

@@ -1,26 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:41914 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753129AbbHLOiw (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:50362 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753531AbbHLPUA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 10:38:52 -0400
-Message-ID: <55CB5A15.5020607@fb.com>
-Date: Wed, 12 Aug 2015 10:37:09 -0400
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
-CC: Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] Btrfs: check if previous transaction aborted to avoid
+	Wed, 12 Aug 2015 11:20:00 -0400
+Date: Wed, 12 Aug 2015 23:19:43 +0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
+        stable@vger.kernel.org
+Subject: Re: [PATCH v2] Btrfs: check if previous transaction aborted to avoid
  fs corruption
+Message-ID: <20150812151941.GC10939@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
 References: <1439388661-5316-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1439388661-5316-1-git-send-email-fdmanana@kernel.org>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+ <1439390691-5451-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1439390691-5451-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/12/2015 10:11 AM, fdmanana@kernel.org wrote:
+On Wed, Aug 12, 2015 at 03:44:51PM +0100, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
->
+> 
 > While we are committing a transaction, it's possible the previous one is
 > still finishing its commit and therefore we wait for it to finish first.
 > However we were not checking if that previous transaction ended up getting
@@ -29,79 +32,112 @@ On 08/12/2015 10:11 AM, fdmanana@kernel.org wrote:
 > superblock can point to trees that have had one or more nodes/leafs that
 > were never durably persisted.
 > The following sequence diagram exemplifies how this is possible:
->
->            CPU 0                                                        CPU 1
->
->    transaction N starts
->
->    (...)
->
->    btrfs_commit_transaction(N)
->
->      cur_trans->state = TRANS_STATE_COMMIT_START;
->      (...)
->      cur_trans->state = TRANS_STATE_COMMIT_DOING;
->      (...)
->
->      cur_trans->state = TRANS_STATE_UNBLOCKED;
->      root->fs_info->running_transaction = NULL;
->
->                                                                btrfs_start_transaction()
->                                                                   --> starts transaction N + 1
->
->      btrfs_write_and_wait_transaction(trans, root);
->        --> starts writing all new or COWed ebs created
->            at transaction N
->
->                                                                creates some new ebs, COWs some
->                                                                existing ebs but doesn't COW or
->                                                                deletes eb X
->
->                                                                btrfs_commit_transaction(N + 1)
->                                                                  (...)
->                                                                  cur_trans->state = TRANS_STATE_COMMIT_START;
->                                                                  (...)
->                                                                  wait_for_commit(root, prev_trans);
->                                                                    --> prev_trans == transaction N
->
->      btrfs_write_and_wait_transaction() continues
->      writing ebs
->         --> fails writing eb X, we abort transaction N
->             and set bit BTRFS_FS_STATE_ERROR on
->             fs_info->fs_state, so no new transactions
->             can start after setting that bit
->
->         cleanup_transaction()
->           btrfs_cleanup_one_transaction()
->             wakes up task at CPU 1
->
->                                                                  continues, doesn't abort because
->                                                                  cur_trans->aborted (transaction N + 1)
->                                                                  is zero, and no checks for bit
->                                                                  BTRFS_FS_STATE_ERROR in fs_info->fs_state
->                                                                  are made
->
->                                                                  btrfs_write_and_wait_transaction(trans, root);
->                                                                    --> succeeds, no errors during writeback
->
->                                                                  write_ctree_super(trans, root, 0);
->                                                                    --> succeeds
->                                                                    --> we have now a superblock that points us
->                                                                        to some root that uses eb X, which was
->                                                                        never written to disk
->
+> 
+>           CPU 0                                                        CPU 1
+> 
+>   transaction N starts
+> 
+>   (...)
+> 
+>   btrfs_commit_transaction(N)
+> 
+>     cur_trans->state = TRANS_STATE_COMMIT_START;
+>     (...)
+>     cur_trans->state = TRANS_STATE_COMMIT_DOING;
+>     (...)
+> 
+>     cur_trans->state = TRANS_STATE_UNBLOCKED;
+>     root->fs_info->running_transaction = NULL;
+> 
+>                                                               btrfs_start_transaction()
+>                                                                  --> starts transaction N + 1
+> 
+>     btrfs_write_and_wait_transaction(trans, root);
+>       --> starts writing all new or COWed ebs created
+>           at transaction N
+> 
+>                                                               creates some new ebs, COWs some
+>                                                               existing ebs but doesn't COW or
+>                                                               deletes eb X
+> 
+>                                                               btrfs_commit_transaction(N + 1)
+>                                                                 (...)
+>                                                                 cur_trans->state = TRANS_STATE_COMMIT_START;
+>                                                                 (...)
+>                                                                 wait_for_commit(root, prev_trans);
+>                                                                   --> prev_trans == transaction N
+> 
+>     btrfs_write_and_wait_transaction() continues
+>     writing ebs
+>        --> fails writing eb X, we abort transaction N
+>            and set bit BTRFS_FS_STATE_ERROR on
+>            fs_info->fs_state, so no new transactions
+>            can start after setting that bit
+> 
+>        cleanup_transaction()
+>          btrfs_cleanup_one_transaction()
+>            wakes up task at CPU 1
+> 
+>                                                                 continues, doesn't abort because
+>                                                                 cur_trans->aborted (transaction N + 1)
+>                                                                 is zero, and no checks for bit
+>                                                                 BTRFS_FS_STATE_ERROR in fs_info->fs_state
+>                                                                 are made
+> 
+>                                                                 btrfs_write_and_wait_transaction(trans, root);
+>                                                                   --> succeeds, no errors during writeback
+> 
+>                                                                 write_ctree_super(trans, root, 0);
+>                                                                   --> succeeds
+>                                                                   --> we have now a superblock that points us
+>                                                                       to some root that uses eb X, which was
+>                                                                       never written to disk
+> 
 > In this scenario future attempts to read eb X from disk results in an
 > error message like "parent transid verify failed on X wanted Y found Z".
->
+> 
 > So fix this by aborting the current transaction if after waiting for the
 > previous transaction we verify that it was aborted.
->
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Eesh good catch Filpe,
+Looks good to me.
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
 Thanks,
 
-Josef
+-liubo
+> 
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Reviewed-by: Josef Bacik <jbacik@fb.com>
+> ---
+> 
+> V2: Added missing cc to stable and included Josef's reviewed-by tag.
+>     No code changes.
+> 
+>  fs/btrfs/transaction.c | 3 +++
+>  1 file changed, 3 insertions(+)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 51e0f0d..d15a43f 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -1893,8 +1893,11 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+>  			spin_unlock(&root->fs_info->trans_lock);
+>  
+>  			wait_for_commit(root, prev_trans);
+> +			ret = prev_trans->aborted;
+>  
+>  			btrfs_put_transaction(prev_trans);
+> +			if (ret)
+> +				goto cleanup_transaction;
+>  		} else {
+>  			spin_unlock(&root->fs_info->trans_lock);
+>  		}
+> -- 
+> 2.1.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

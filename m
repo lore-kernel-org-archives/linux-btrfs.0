@@ -1,117 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:58728 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933463AbbHLHbH (ORCPT
+Received: from mx2.rus.uni-stuttgart.de ([129.69.192.2]:48929 "EHLO
+	mx2.rus.uni-stuttgart.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751967AbbHLNRq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 03:31:07 -0400
-Date: Wed, 12 Aug 2015 07:31:04 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Tristan Zajonc <tristan@sense.io>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Scaling to 100k+ snapshots/subvolumes
-Message-ID: <20150812073104.GL12976@carfax.org.uk>
-References: <CAMUoZtY7Or1+4-XmxWQjrmkAk-x62e13XMoTbWApRAn_zhd2DQ@mail.gmail.com>
+	Wed, 12 Aug 2015 09:17:46 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mx2.rus.uni-stuttgart.de (Postfix) with ESMTP id 0F089200CC
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 15:08:01 +0200 (CEST)
+Received: from mx2.rus.uni-stuttgart.de ([127.0.0.1])
+	by localhost (mx2.rus.uni-stuttgart.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Cq2bggvFNqcf for <linux-btrfs@vger.kernel.org>;
+	Wed, 12 Aug 2015 15:07:59 +0200 (CEST)
+Received: from diaspora.rus.uni-stuttgart.de (diaspora.rus.uni-stuttgart.de [129.69.13.139])
+	by mx2.rus.uni-stuttgart.de (Postfix) with SMTP
+	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 15:07:59 +0200 (CEST)
+Date: Wed, 12 Aug 2015 15:07:58 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: RAID0 wrong (raw) device?
+Message-ID: <20150812130758.GA26529@rus.uni-stuttgart.de>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="FYef6pHvFBuPZp1D"
-In-Reply-To: <CAMUoZtY7Or1+4-XmxWQjrmkAk-x62e13XMoTbWApRAn_zhd2DQ@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---FYef6pHvFBuPZp1D
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I have 2 identical servers with 2 x 2 Hitachi (HGST) SATA disks (and some
+other disks) which are mirrored with drbd.
+On top of this drbd setup I have created a btrfs RAID0 filesystem.
+The problem now is, that btrfs shows the raw device instead of the drbd
+device.
 
-On Tue, Aug 11, 2015 at 11:33:45AM -0700, Tristan Zajonc wrote:
-> In an early thread Duncan mentioned that btrfs does not scale well in
-> the number of subvolumes (including snapshots).  He recommended
-> keeping the total number under 1000.  I just wanted to understand this
-> limitation further.  Is this something that has been resolved or will
-> be resolved in the future or is it something inherent to the design of
-> btrfs?
+root@toy02:~# mkfs.btrfs /dev/drbd2 /dev/drbd3
+root@toy02:~# mount btrfs filesystem label /dev/drbd2 data
+root@toy02:~# mount /dev/drbd2 /data
 
-   We've already discussed this on IRC yesterday, but I was reminded
-this morning of one specific instance of poor scalability with lots of
-snapshots, which is that balancing metadata scales poorly as the
-number of copies of the same data increases. (So it's OK to have lots
-of unrelated subvolumes, but many subvolumes that are snapshots of the
-same thing would br problematic).
 
-   I don't know what the exact scaling is, but it's superlinear, and
-may be as bad as O(n^2).
+root@toy02:~# df -T /data
+Filesystem     Type   1K-blocks      Used  Available Use% Mounted on
+/dev/sdb       btrfs 3906909856 140031696 3765056176   4% /data
 
-> We have an application that could easily generate 100k-1M snapshots
-> and 10s of thousands of subvolumes.  We use snapshots to track very
-> fine-grained filesystem histories and subvolumes to enforce quotas
-> across a large number of distinct projects.
+root@toy02:~# btrfs filesystem show /data
+Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
+        Total devices 2 FS bytes used 129.81GiB
+        devid    3 size 1.82TiB used 67.03GiB path /dev/drbd2
+        devid    4 size 1.82TiB used 67.03GiB path /dev/sdb
 
-   1e4 subvolumes and 1e6 snapshots will probably be OK, although
-slow, when balancing. That's only 100 snapshots per subvolume, and
-I've got that kind of scale here on my home machine -- it's very slow
-(takes a couple of hours for some of the metadata chunks), but it's
-not unusable.
+Btrfs v3.12
 
-   Hugo.
+==> btrfs shows the wrong (raw) device /dev/sdb instead of /dev/drbd3 !
 
-> Thanks,
-> Tristan
-> 
-> Duncan >
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/43910
-> 
-> The question of number of subvolumes normally occurs in the context of
-> snapshots, since snapshots are a special kind of subvolume.  Ideally,
-> you'll want to keep the total number of subvolumes (including snapshots)
-> to under 1000, with the number of snapshots of any single subvolume
-> limited to 250-ish (say under 300).  However, even just four subvolumes
-> being snapshotted to this level will reach the thousand, and 2000-3000
-> total isn't /too/ bad as long as it's no more than 250-300 snapshots per
-> subvolume.  But DEFINITELY try to keep it under 3000, and preferably
-> under 2000, as the scaling really does start to go badly as the number of
-> subvolumes increases beyond that.  If you're dealing with 10k subvolumes/
-> snapshots, that's too many and you ARE likely to find yourself with
-> problems.
-> 
-> (With something like snapper, configuring it for say half-hour or hourly
-> snapshots at the shortest time, with twice-daily or daily being more
-> reasonable in many circumstances, and then thinning it down to say daily
-> after a few days and weekly after four weeks, goes quite a long way
-> toward reducing the number of snapshots per subvolume.  Keeping it near
-> 250-ish per subvolume is WELL within reason, and considering that a month
-> or a year out, you're not likely to /care/ whether it's this hour or
-> that, just pick a day or a week and if it's not what you want, go back or
-> forward a day or a week, is actually likely to be more practical than
-> having hundreds of half-hourly snapshots a year old to choose from.  And
-> 250-ish snapshots per subvolume really does turn out to be VERY
-> reasonable, provided you're doing reasonable thinning.)
+
+root@toy02:~# uname -a; lsb_release -a
+Linux toy02 3.13.0-61-generic #100-Ubuntu SMP Wed Jul 29 11:21:34 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+No LSB modules are available.
+Distributor ID: Ubuntu
+Description:    Ubuntu 14.04.3 LTS
+Release:        14.04
+Codename:       trusty
+
+
+root@toy02:~# find /dev -ls | grep drbd
+ 47453    0 brw-rw----   1 root     disk              Aug 12 14:51 /dev/drbd3
+ 47433    0 brw-rw----   1 root     disk              Aug 11 14:00 /dev/drbd2
+ 14706    0 drwxr-xr-x   4 root     root           80 Aug 10 14:17 /dev/drbd
+ 14713    0 drwxr-xr-x   2 root     root          100 Aug 12 13:40 /dev/drbd/by-res
+ 41685    0 lrwxrwxrwx   1 root     root           11 Aug 12 14:51 /dev/drbd/by-res/d3 -> ../../drbd3
+ 42759    0 lrwxrwxrwx   1 root     root           11 Aug 11 14:00 /dev/drbd/by-res/d2 -> ../../drbd2
+ 14707    0 drwxr-xr-x   3 root     root           60 Aug 10 14:17 /dev/drbd/by-disk
+ 14708    0 drwxr-xr-x   3 root     root           60 Aug 10 14:17 /dev/drbd/by-disk/disk
+ 14709    0 drwxr-xr-x   2 root     root          100 Aug 12 13:40 /dev/drbd/by-disk/disk/by-id
+ 41682    0 lrwxrwxrwx   1 root     root           17 Aug 12 14:51 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../../../drbd3
+ 42756    0 lrwxrwxrwx   1 root     root           17 Aug 11 14:00 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2XX -> ../../../../drbd2
+ 41681    0 lrwxrwxrwx   1 root     root            8 Aug 12 14:51 /dev/block/147:3 -> ../drbd3
+ 42755    0 lrwxrwxrwx   1 root     root            8 Aug 11 14:00 /dev/block/147:2 -> ../drbd2
+
+root@toy02:~# find /dev -ls | grep HGST
+ 41682    0 lrwxrwxrwx   1 root     root           17 Aug 12 14:51 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../../../drbd3
+ 42756    0 lrwxrwxrwx   1 root     root           17 Aug 11 14:00 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2XX -> ../../../../drbd2
+ 63889    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../sdb
+  7429    0 lrwxrwxrwx   1 root     root            9 Aug 10 16:45 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2XX -> ../../sdd
+
+
+
+root@toy02:~# hdparm -I /dev/sdb| grep Number:
+        Model Number: HGST HUS724020ALA640
+        Serial Number: PN2134P5G2P2AX
+
+root@toy02:~# hdparm -I /dev/sdd| grep Number:
+        Model Number: HGST HUS724020ALA640
+        Serial Number: PN2134P5G2P2XX
+
+root@toy02:~# hdparm -I /dev/sde| grep Number:
+        Model Number: HGST HUS724020ALA640
+        Serial Number: PN2134P5G2P2AX
+
+/dev/sdb and /dev/sde have the same serial number!
+But there are really only 2 HGST drives in the server (and some other
+seagate disks, non-relevant here).
+
+root@toy02:~# find /dev -ls | grep sde 
+ 10391    0 brw-rw----   1 root     disk              Aug 10 16:45 /dev/sde
+  8360    0 lrwxrwxrwx   1 root     root            9 Aug 10 16:45 /dev/disk/by-path/pci-0000:08:00.0-scsi-0:1:2:0 -> ../../sde
+  8355    0 lrwxrwxrwx   1 root     root            6 Aug 10 16:45 /dev/block/8:64 -> ../sde
+
+root@toy02:~# find /dev -ls | grep sdb
+ 10382    0 brw-rw----   1 root     disk              Aug 12 13:42 /dev/sdb
+ 68794    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-uuid/411af13f-6cae-4f03-99dc-5941acb3135b -> ../../sdb
+ 12410    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-path/pci-0000:08:00.0-sas-0x1221000002000000-lun-0 -> ../../sdb
+ 68791    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-label/data -> ../../sdb
+ 63890    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-id/wwn-0x5000cca24ec137db -> ../../sdb
+ 63889    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../sdb
+ 12403    0 lrwxrwxrwx   1 root     root            6 Aug 12 13:42 /dev/block/8:16 -> ../sdb
+
+/dev/sdb and /dev/sde are in reality the same physical disk!
+
 
 -- 
-Hugo Mills             | Some days, it's just not worth gnawing through the
-hugo@... carfax.org.uk | straps
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---FYef6pHvFBuPZp1D
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJVyvY4AAoJEFheFHXiqx3kOjUP/28xjG3E5mtB14shBycFumxu
-wZYWyp//yNoJRHdolF1qYCzdbDiA0rv3KYmjtH6XA68868SY7O0vRFjaJopxMwTS
-M3FxW1KM70jAY1tBGuFefNzZHLWUQYPSigfXJjy0XWxI1JU7pFNF01M5s/9E940s
-A59zcdCAQSeU99RAzkZQITU6FndQenPiSmZIPgsorZlk5V7G7Y8U+sfSNZl11DOt
-pMs6esavxHahDE9Il5GWIK8oEf6TR5AqQcfFLLaEC9fvTJETOGiuexMZASJ5+3kX
-UyY3dWjNDUmCQbFAXkeSxUvEjYyIUWl8j8Zn6JewnJvptUCvdwZRLK8TRp+chwwS
-gkvBsLFfLRHU9n65Q2czy32BoXQOa7L1zO0Z94fPb3Z4l6VIfkD5s/Lv28QRe7+a
-2D/dbJaMFIlLeqxTYJK2Pr/LHHJk/iKPVB6Cr3bSASMatQjngWNsFg0Ji1mr8BvJ
-O+KOMmmAYEO6a2VNsmTdNjtsD3YderXvAYuzefHbA7AtJosbMwmcWooasofebj3a
-LrA+gdzN3jgZCi+REpQ44g7MxemgU22jAB2vGw6FLHsG3Z3Lc2gKWmwFmj0Xkgny
-HitYMl92V2naPv/InNT/Roe8SdTLc/0ODMFPTcgXZmkn7zSdE9F/yVy22Y5ARL4+
-5LvKaQPN4BkAkCwFZtoS
-=mXfb
------END PGP SIGNATURE-----
-
---FYef6pHvFBuPZp1D--
+Ullrich Horlacher              Informationssysteme und Serverbetrieb
+IZUS/TIK                       E-Mail: horlacher@rus.uni-stuttgart.de
+Universitaet Stuttgart         Tel:    ++49-711-68565868
+Allmandring 30a                Fax:    ++49-711-682357
+70550 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<20150812130758.GA26529@rus.uni-stuttgart.de>

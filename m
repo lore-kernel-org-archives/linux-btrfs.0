@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:56011 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:57510 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753034AbbHLOZ4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 10:25:56 -0400
+	id S1753199AbbHLOo7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Aug 2015 10:44:59 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: check if previous transaction aborted to avoid fs corruption
-Date: Wed, 12 Aug 2015 15:11:01 +0100
-Message-Id: <1439388661-5316-1-git-send-email-fdmanana@kernel.org>
+Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
+Subject: [PATCH v2] Btrfs: check if previous transaction aborted to avoid fs corruption
+Date: Wed, 12 Aug 2015 15:44:51 +0100
+Message-Id: <1439390691-5451-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1439388661-5316-1-git-send-email-fdmanana@kernel.org>
+References: <1439388661-5316-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -89,8 +91,14 @@ error message like "parent transid verify failed on X wanted Y found Z".
 So fix this by aborting the current transaction if after waiting for the
 previous transaction we verify that it was aborted.
 
+Cc: stable@vger.kernel.org
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 ---
+
+V2: Added missing cc to stable and included Josef's reviewed-by tag.
+    No code changes.
+
  fs/btrfs/transaction.c | 3 +++
  1 file changed, 3 insertions(+)
 

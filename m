@@ -1,62 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f45.google.com ([209.85.213.45]:35666 "EHLO
-	mail-vk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752109AbbHLTap (ORCPT
+Received: from mail-qg0-f53.google.com ([209.85.192.53]:34869 "EHLO
+	mail-qg0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751161AbbHLTrz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 15:30:45 -0400
-Received: by vkfi73 with SMTP id i73so9988266vkf.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 12:30:44 -0700 (PDT)
+	Wed, 12 Aug 2015 15:47:55 -0400
+Received: by qgj62 with SMTP id 62so17959868qgj.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 12:47:54 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <55CB942B.7050301@gmail.com>
-References: <55C2840E.4030909@gmail.com>
-	<55C340B5.20005@gmail.com>
-	<55CB942B.7050301@gmail.com>
-Date: Wed, 12 Aug 2015 13:30:44 -0600
-Message-ID: <CAJCQCtSaO7jXeJKe+jkMWcRkG6zmUrc+T=jiSD-54ewfAZXV1A@mail.gmail.com>
-Subject: Re: bedup --defrag freezing
-From: Chris Murphy <lists@colorremedies.com>
-To: Konstantin Svist <fry.kun@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Austin Hemmelgarn <ahferroin7@gmail.com>
+In-Reply-To: <pan$2bbc7$72b8aa61$ae5f57d7$55005ae7@cox.net>
+References: <CAMoY8LpmhQtSvW-sWbGKDFKNN3xaKPwe+QxU5wCMg2Wcz3ObWA@mail.gmail.com>
+	<pan$2bbc7$72b8aa61$ae5f57d7$55005ae7@cox.net>
+Date: Wed, 12 Aug 2015 21:47:54 +0200
+Message-ID: <CAMoY8Lpivh5=uAD_8nz33gF-LFuDeOFPtEqjRxAbVTngskMv+A@mail.gmail.com>
+Subject: Re: raid1 on uneven-sized disks
+From: Jim MacBaine <jmacbaine@gmail.com>
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 12, 2015 at 12:44 PM, Konstantin Svist <fry.kun@gmail.com> wrote:
-> On 08/06/2015 04:10 AM, Austin S Hemmelgarn wrote:
->> On 2015-08-05 17:45, Konstantin Svist wrote:
->>> Hi,
->>>
->>> I've been running btrfs on Fedora for a while now, with bedup --defrag
->>> running in a night-time cronjob.
->>> Last few runs seem to have gotten stuck, without possibility of even
->>> killing the process (kill -9 doesn't work) -- all I could do is hard
->>> power cycle.
->>>
->>> Did something change recently? Is bedup simply too out of date? What
->>> should I use to de-duplicate across snapshots instead? Etc.?
->>>
->> AFAIK, bedup hasn't been actively developed for quite a while (I'm
->> actually kind of surprised it runs with the newest btrfs-progs).
->> Personally, I'd suggest using duperemove
->> (https://github.com/markfasheh/duperemove)
->
-> Thanks, good to know.
-> Tried duperemove -- it looks like it builds a database of its own
-> checksums every time it runs... why won't it use BTRFS internal
-> checksums for fast rejection? Would run a LOT faster...
+On Mon, Aug 10, 2015 at 6:13 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-I think the reason is duperremove does extent based deduplication.
-Where Btrfs checksums are 4KiB block based, not extent based. And so
-many 4KiB CRC32C checksums would need to be in memory, that could be
-kinda expensive. And also, I don't know if CRC32C checksums have
-essentially no practical chance of collision. If it's really rare,
-rather than "so improbable as to be impossible" then you could end up
-with "really rare" corruption where incorrect deduplication happens.
+> We do recommend that you stay relatively current on both kernel and
+> userspace, however.  So a current 4.1 series kernel and btrfs-progs 4.1.2
+> are excellent, but consider another filesystem if you're the type who was
+> still on a 2.x kernel thru 3.12 or so. =:^)
 
-There was a patch late last  year I think to re-introduce sha256 hash
-as the checksum, but as far as I know it's not in btrfs-progs yet. I
-forget if that's file, extent or block based.
+Thank you for the good reminder.
 
--- 
-Chris Murphy
+I'm using btrfs for a few years on less important systems. And it has
+been quite some time since I last had to throw away and restore an
+unrecoverable btrfs filesystem. And I am comfortable with building a
+custom kernel for my machines from kernel.org sources.
+
+But that backup system I was talking about is neither a playground
+nor the right place for experiments. It is deliberately a minimal system
+running Debian Stable (which is currently at a 3.16 kernel) without
+any modifications.
+
+Sacrificing ease of use, comfort or even availability is not a big deal.
+But sacrificing the durability of the data is not an option. The single
+purpose of this system is to keep the data reliably.
+
+So I think I'll start slow with easy-to-recover data. And give it some
+more time before I start storing the important stuff on btrfs.
+
+Cheers,
+Jim

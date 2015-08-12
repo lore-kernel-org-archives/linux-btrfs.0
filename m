@@ -1,125 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.rus.uni-stuttgart.de ([129.69.192.2]:48929 "EHLO
-	mx2.rus.uni-stuttgart.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751967AbbHLNRq (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:55958 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753473AbbHLOsM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 09:17:46 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mx2.rus.uni-stuttgart.de (Postfix) with ESMTP id 0F089200CC
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 15:08:01 +0200 (CEST)
-Received: from mx2.rus.uni-stuttgart.de ([127.0.0.1])
-	by localhost (mx2.rus.uni-stuttgart.de [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id Cq2bggvFNqcf for <linux-btrfs@vger.kernel.org>;
-	Wed, 12 Aug 2015 15:07:59 +0200 (CEST)
-Received: from diaspora.rus.uni-stuttgart.de (diaspora.rus.uni-stuttgart.de [129.69.13.139])
-	by mx2.rus.uni-stuttgart.de (Postfix) with SMTP
-	for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 15:07:59 +0200 (CEST)
-Date: Wed, 12 Aug 2015 15:07:58 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: RAID0 wrong (raw) device?
-Message-ID: <20150812130758.GA26529@rus.uni-stuttgart.de>
+	Wed, 12 Aug 2015 10:48:12 -0400
+Date: Wed, 12 Aug 2015 07:47:49 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Josef Bacik <jbacik@fb.com>
+Cc: dsterba@suse.com, clm@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
+Message-ID: <20150812144749.GY24824@merlins.org>
+References: <20150706212156.GY17274@merlins.org> <20150710134348.GB15535@suse.cz> <20150712010229.GA5284@merlins.org> <20150723115558.GQ6306@suse.cz> <20150724162446.GH30815@merlins.org> <20150803035130.GL24824@merlins.org> <20150811050758.GF29259@merlins.org> <55CA177D.1050004@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55CA177D.1050004@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, Aug 11, 2015 at 11:40:45AM -0400, Josef Bacik wrote:
+> From a48cf7a9ae44a17d927df5542c8b0be287aee9ed Mon Sep 17 00:00:00 2001
+> From: Josef Bacik <jbacik@fb.com>
+> Date: Tue, 11 Aug 2015 11:39:37 -0400
+> Subject: [PATCH] Btrfs: kill BUG_ON() in btrfs_lookup_extent_info()
+> 
+> Replace it with an ASSERT(0) for the developers and an error for not the
+> developers.
+ 
+Thanks. We knocked one down and now another BUG has been triggered :)
 
-I have 2 identical servers with 2 x 2 Hitachi (HGST) SATA disks (and some
-other disks) which are mirrored with drbd.
-On top of this drbd setup I have created a btrfs RAID0 filesystem.
-The problem now is, that btrfs shows the raw device instead of the drbd
-device.
+	if (unlikely(wc->refs[level - 1] == 0)) {
+		btrfs_err(root->fs_info, "Missing references.");
+		BUG();
+	}
 
-root@toy02:~# mkfs.btrfs /dev/drbd2 /dev/drbd3
-root@toy02:~# mount btrfs filesystem label /dev/drbd2 data
-root@toy02:~# mount /dev/drbd2 /data
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+>  fs/btrfs/extent-tree.c | 7 +++++--
+>  1 file changed, 5 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 5411f0a..f7fb120 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -818,7 +818,11 @@ search_again:
+>  			BUG();
+>  #endif
+>  		}
+> -		BUG_ON(num_refs == 0);
+> +		if (num_refs == 0) {
+> +			ASSERT(0);
+> +			ret = -EIO;
+> +			goto out_free;
+> +		}
+>  	} else {
+>  		num_refs = 0;
+>  		extent_flags = 0;
+> @@ -859,7 +863,6 @@ search_again:
+>  	}
+>  	spin_unlock(&delayed_refs->lock);
+>  out:
+> -	WARN_ON(num_refs == 0);
+>  	if (refs)
+>  		*refs = num_refs;
+>  	if (flags)
+> -- 
+> 
 
-
-root@toy02:~# df -T /data
-Filesystem     Type   1K-blocks      Used  Available Use% Mounted on
-/dev/sdb       btrfs 3906909856 140031696 3765056176   4% /data
-
-root@toy02:~# btrfs filesystem show /data
-Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
-        Total devices 2 FS bytes used 129.81GiB
-        devid    3 size 1.82TiB used 67.03GiB path /dev/drbd2
-        devid    4 size 1.82TiB used 67.03GiB path /dev/sdb
-
-Btrfs v3.12
-
-==> btrfs shows the wrong (raw) device /dev/sdb instead of /dev/drbd3 !
-
-
-root@toy02:~# uname -a; lsb_release -a
-Linux toy02 3.13.0-61-generic #100-Ubuntu SMP Wed Jul 29 11:21:34 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-No LSB modules are available.
-Distributor ID: Ubuntu
-Description:    Ubuntu 14.04.3 LTS
-Release:        14.04
-Codename:       trusty
-
-
-root@toy02:~# find /dev -ls | grep drbd
- 47453    0 brw-rw----   1 root     disk              Aug 12 14:51 /dev/drbd3
- 47433    0 brw-rw----   1 root     disk              Aug 11 14:00 /dev/drbd2
- 14706    0 drwxr-xr-x   4 root     root           80 Aug 10 14:17 /dev/drbd
- 14713    0 drwxr-xr-x   2 root     root          100 Aug 12 13:40 /dev/drbd/by-res
- 41685    0 lrwxrwxrwx   1 root     root           11 Aug 12 14:51 /dev/drbd/by-res/d3 -> ../../drbd3
- 42759    0 lrwxrwxrwx   1 root     root           11 Aug 11 14:00 /dev/drbd/by-res/d2 -> ../../drbd2
- 14707    0 drwxr-xr-x   3 root     root           60 Aug 10 14:17 /dev/drbd/by-disk
- 14708    0 drwxr-xr-x   3 root     root           60 Aug 10 14:17 /dev/drbd/by-disk/disk
- 14709    0 drwxr-xr-x   2 root     root          100 Aug 12 13:40 /dev/drbd/by-disk/disk/by-id
- 41682    0 lrwxrwxrwx   1 root     root           17 Aug 12 14:51 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../../../drbd3
- 42756    0 lrwxrwxrwx   1 root     root           17 Aug 11 14:00 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2XX -> ../../../../drbd2
- 41681    0 lrwxrwxrwx   1 root     root            8 Aug 12 14:51 /dev/block/147:3 -> ../drbd3
- 42755    0 lrwxrwxrwx   1 root     root            8 Aug 11 14:00 /dev/block/147:2 -> ../drbd2
-
-root@toy02:~# find /dev -ls | grep HGST
- 41682    0 lrwxrwxrwx   1 root     root           17 Aug 12 14:51 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../../../drbd3
- 42756    0 lrwxrwxrwx   1 root     root           17 Aug 11 14:00 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2XX -> ../../../../drbd2
- 63889    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../sdb
-  7429    0 lrwxrwxrwx   1 root     root            9 Aug 10 16:45 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2XX -> ../../sdd
-
-
-
-root@toy02:~# hdparm -I /dev/sdb| grep Number:
-        Model Number: HGST HUS724020ALA640
-        Serial Number: PN2134P5G2P2AX
-
-root@toy02:~# hdparm -I /dev/sdd| grep Number:
-        Model Number: HGST HUS724020ALA640
-        Serial Number: PN2134P5G2P2XX
-
-root@toy02:~# hdparm -I /dev/sde| grep Number:
-        Model Number: HGST HUS724020ALA640
-        Serial Number: PN2134P5G2P2AX
-
-/dev/sdb and /dev/sde have the same serial number!
-But there are really only 2 HGST drives in the server (and some other
-seagate disks, non-relevant here).
-
-root@toy02:~# find /dev -ls | grep sde 
- 10391    0 brw-rw----   1 root     disk              Aug 10 16:45 /dev/sde
-  8360    0 lrwxrwxrwx   1 root     root            9 Aug 10 16:45 /dev/disk/by-path/pci-0000:08:00.0-scsi-0:1:2:0 -> ../../sde
-  8355    0 lrwxrwxrwx   1 root     root            6 Aug 10 16:45 /dev/block/8:64 -> ../sde
-
-root@toy02:~# find /dev -ls | grep sdb
- 10382    0 brw-rw----   1 root     disk              Aug 12 13:42 /dev/sdb
- 68794    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-uuid/411af13f-6cae-4f03-99dc-5941acb3135b -> ../../sdb
- 12410    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-path/pci-0000:08:00.0-sas-0x1221000002000000-lun-0 -> ../../sdb
- 68791    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-label/data -> ../../sdb
- 63890    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-id/wwn-0x5000cca24ec137db -> ../../sdb
- 63889    0 lrwxrwxrwx   1 root     root            9 Aug 12 13:42 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../sdb
- 12403    0 lrwxrwxrwx   1 root     root            6 Aug 12 13:42 /dev/block/8:16 -> ../sdb
-
-/dev/sdb and /dev/sde are in reality the same physical disk!
-
+[  408.641308] BTRFS info (device dm-0): disk space caching is enabled
+[  448.528218] BTRFS error (device dm-0): Missing references.
+[  448.528247] ------------[ cut here ]------------
+[  448.529994] kernel BUG at fs/btrfs/extent-tree.c:8116!
+[  448.531747] invalid opcode: 0000 [#1] PREEMPT SMP 
+[  448.532002] Modules linked in: xts gf128mul configs rc_hauppauge ir_kbd_i2c cpufreq_userspace cpufreq_powersave cpufreq_conservative cpufreq_stats autofs4 tuner_simple tuner_types tda9887 tda8290 snd_hda_codec_hdmi snd_hda_codec_realtek snd_hda_codec_generic tuner firewire_sbp2 snd_hda_intel snd_hda_controller msp3400 hwmon_vid joydev snd_hda_codec dm_crypt snd_hda_core snd_hwdep snd_pcm_oss snd_mixer_oss saa7127 snd_pcm dm_mod snd_seq_midi snd_seq_midi_event hid_generic snd_rawmidi saa7115 bttv ivtv tea575x snd_seq tveeprom snd_seq_device videobuf_dma_sg cx2341x videobuf_core v4l2_common snd_timer snd videodev soundcore coretemp gpio_ich rc_imon_mce usbhid imon rc_core kvm_intel hid media lpc_ich ehci_pci ehci_hcd psmouse evdev asus_atk0110 acpi_cpufreq kvm sr_mod serio_raw cdrom microcode processor sg lp parport raid456 async_raid6_recov async_pq async_xor async_memcpy async_tx multipath floppy firewire_ohci firewire_core crc_itu_t uhci_hcd atl1 mii usbcore usb_common
+[  448.532002] CPU: 1 PID: 3756 Comm: btrfs-cleaner Not tainted 4.1.3-ia32-i915-volpreempt-20150421jb1 #3
+[  448.532002] Hardware name: System manufacturer P5E-VM HDMI/P5E-VM HDMI, BIOS 0604    07/16/2008
+[  448.532002] task: f499f1e0 ti: e1d44000 task.ti: e1d44000
+[  448.532002] EIP: 0060:[<c11aea88>] EFLAGS: 00010282 CPU: 1
+[  448.532002] EIP is at do_walk_down+0x142/0x65f
+[  448.532002] EAX: 0000002e EBX: f2d62a00 ECX: f5987310 EDX: 80000000
+[  448.532002] ESI: f44c5030 EDI: e3c5c000 EBP: e1d45ebc ESP: e1d45e40
+[  448.532002]  DS: 007b ES: 007b FS: 00d8 GS: 00e0 SS: 0068
+[  448.532002] CR0: 8005003b CR2: b0057e4c CR3: 31216000 CR4: 000006d0
+[  448.532002] Stack:
+[  448.532002]  f1bef000 c174d1ac f4a2e7c0 00000001 00000000 00004000 f44c5028 00000001
+[  448.532002]  00000286 f2d62a08 00000000 36598000 00000086 f44c5098 00000002 00008f48
+[  448.532002]  00000000 00000001 e7f80178 00000000 e7f80228 e1d45e9c c11a7a2b e1d45ebc
+[  448.532002] Call Trace:
+[  448.532002]  [<c11a7a2b>] ? btrfs_tree_unlock_rw+0x10/0x2e
+[  448.532002]  [<c11ac904>] ? walk_down_proc+0x110/0x1cb
+[  448.532002]  [<c11af017>] walk_down_tree+0x72/0x93
+[  448.532002]  [<c11b1901>] btrfs_drop_snapshot+0x278/0x591
+[  448.532002]  [<c11bfbe9>] btrfs_clean_one_deleted_snapshot+0x79/0x87
+[  448.532002]  [<c11b997c>] cleaner_kthread+0x74/0xdd
+[  448.532002]  [<c11b9908>] ? btrfs_need_cleaner_sleep.isra.20+0x2a/0x2a
+[  448.532002]  [<c104bccd>] kthread+0x88/0x8d
+[  448.532002]  [<c105013e>] ? mmdrop+0xe/0x1c
+[  448.532002]  [<c1050000>] ? check_same_owner+0x2c/0x43
+[  448.532002]  [<c1549841>] ret_from_kernel_thread+0x21/0x30
+[  448.532002]  [<c104bc45>] ? __kthread_parkme+0x50/0x50
+[  448.532002] Code: 45 cc e8 10 ff 03 00 8b 55 c8 89 d0 e9 2f 05 00 00 8b 4d a8 8b 41 04 0b 01 75 12 68 ac d1 74 c1 ff b7 dc 01 00 00 e8 0b f3 fe ff <0f> 0b 8b 45 0c c7 00 00 00 00 00 83 bb 94 00 00 00 01 0f 85 a5
+[  448.532002] EIP: [<c11aea88>] do_walk_down+0x142/0x65f SS:ESP 0068:e1d45e40
+[  448.640313] ---[ end trace 9ddb31ca62f7248d ]---
+[  448.640319] Kernel panic - not syncing: Fatal exception
+[  448.642259] Kernel Offset: disabled
 
 -- 
-Ullrich Horlacher              Informationssysteme und Serverbetrieb
-IZUS/TIK                       E-Mail: horlacher@rus.uni-stuttgart.de
-Universitaet Stuttgart         Tel:    ++49-711-68565868
-Allmandring 30a                Fax:    ++49-711-682357
-70550 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<20150812130758.GA26529@rus.uni-stuttgart.de>
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

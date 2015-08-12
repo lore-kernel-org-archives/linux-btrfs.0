@@ -1,59 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f53.google.com ([209.85.213.53]:33273 "EHLO
-	mail-vk0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750826AbbHLRxE (ORCPT
+Received: from mail-io0-f172.google.com ([209.85.223.172]:34769 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751050AbbHLRzr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 13:53:04 -0400
-Received: by vkbc123 with SMTP id c123so8866521vkb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 10:53:03 -0700 (PDT)
+	Wed, 12 Aug 2015 13:55:47 -0400
+Received: by iodb91 with SMTP id b91so27811323iod.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 10:55:46 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20150812174352.GN12976@carfax.org.uk>
-References: <20150812130758.GA26529@rus.uni-stuttgart.de>
-	<CAJCQCtRTvn-Xu_ipM7pCTtVuxUm0m7kjqt=F=+q6cj0vOOhF7g@mail.gmail.com>
-	<20150812174352.GN12976@carfax.org.uk>
-Date: Wed, 12 Aug 2015 11:53:03 -0600
-Message-ID: <CAJCQCtQcp36g1OC5Y5Wjz4Lnj1izNCWke2e4oZdEvhVOZYK=RQ@mail.gmail.com>
-Subject: Re: RAID0 wrong (raw) device?
-From: Chris Murphy <lists@colorremedies.com>
-To: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
-        Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+In-Reply-To: <CAJCQCtQLv83O2DD+J97Rw-i6FsLrANisSapjxydyx0kJT_vokA@mail.gmail.com>
+References: <CAK7bmU97q-oz8aSTQijHJR1MQRgOs+F9nHx2hMuqgPO6G5et9g@mail.gmail.com>
+	<CAJCQCtS=v+T-qGFLeaELn7Bt+Mb8ViK+8+YgontAE=1ucAnWZg@mail.gmail.com>
+	<CAK7bmU_d3RTU4HZVHB9Z7ZAOpQ8C-wZn7WpvYsJaXiGDJki7fg@mail.gmail.com>
+	<CAJCQCtQ9kxpuQD3k-rO84O+0jRpiWbCJAUdog+2_Da6EK5yGsQ@mail.gmail.com>
+	<CAK7bmU9X8cvPs2sn3eZRaOowoT2H5jthpessWMQSVgvojjJ5EA@mail.gmail.com>
+	<CAJCQCtQvkOr0WSOa_hUTCY72esF1euc_qz_FAEVEZ4c4cc+_dQ@mail.gmail.com>
+	<CAK7bmU-KrAVoj_2gVGetAyVBNyTuipi2f+VU5SNzEDWxmnizDA@mail.gmail.com>
+	<CAJCQCtSzYS=eDDLt_pMBbi8SY94wAXYnZCE_oppDtm8KEwqh1A@mail.gmail.com>
+	<CAK7bmU9DVmXoEUBd2dmQPuVUb-iohacHqXvF73uOdaiL1GwtnA@mail.gmail.com>
+	<CAJCQCtQLv83O2DD+J97Rw-i6FsLrANisSapjxydyx0kJT_vokA@mail.gmail.com>
+Date: Wed, 12 Aug 2015 13:55:46 -0400
+Message-ID: <CAK7bmU9SL7Fxqe+hAbe229Y7Fzegs2Dx42tLXyZ5Wttk+UeZDQ@mail.gmail.com>
+Subject: Re: Damaged filesystem, can read, can't repair, error says to contact devs
+From: Timothy Normand Miller <theosib@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 12, 2015 at 11:43 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> [adding Ulli back into the cc list]
->
-> On Wed, Aug 12, 2015 at 11:03:00AM -0600, Chris Murphy wrote:
->> On Wed, Aug 12, 2015 at 7:07 AM, Ulli Horlacher
->> <framstag@rus.uni-stuttgart.de> wrote:
->>
->> > /dev/sdb and /dev/sde are in reality the same physical disk!
->>
->> When does all of this confusion happen? Is it already confused before
->> mkfs or only after mkfs or only after mount? I would find out what
->> instigates it, wipe all signatures from everything, reboot, start from
->> scratch, and then strace the command that causes the confusion. And
->> attach that output as well as the entire dmesg to a bug report. Just
->> my 2 cents, I have no idea what's going on but sounds like a block
->> layer and/or drdb bug that's triggered by Btrfs multiple device
->> setups.
->
->    If (some of) the DRBD host devices are also physically present on
-> the machine to which the DRBDs are exported, then you're in the same
-> situation as having block-level snapshots or dd copies of the data --
-> the FS will see two devices (the backing store and the DRBD) which are
-> have the same UUID. It will pick an arbitrary one to write to, which
-> is probably not something that the DRBD driver will cope with very
-> well, I suspect.
->
->    I think the solution here would be to blacklist the backing store
-> from btrfs dev scan. I recall that there was such a capability at some
-> point -- I don't know if it made it into the userspace tools?
+I added a new device and then did a delete missing.  I lost the
+terminal (should have used gnu screen), so I didn't see the stdout,
+but the operation aborted at some point.  There's ton of output in
+dmesg related to this, along with some OOPSes, which I have attached
+as "dmesg2" here:
 
-That makes sense. But then this would also affect XFS also I'd think,
-except XFS will refuse to mount if the kernel sees two of the same fs
-UUID.
+https://bugzilla.kernel.org/show_bug.cgi?id=102691
+
 
 -- 
-Chris Murphy
+Timothy Normand Miller, PhD
+Assistant Professor of Computer Science, Binghamton University
+http://www.cs.binghamton.edu/~millerti/
+Open Graphics Project

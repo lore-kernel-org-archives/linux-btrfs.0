@@ -1,115 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:33593 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751191AbbHLUsa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 16:48:30 -0400
-Received: by igbpg9 with SMTP id pg9so120481764igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 12 Aug 2015 13:48:29 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.15.15]:56108 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751523AbbHLWe2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Aug 2015 18:34:28 -0400
+Received: from thetick ([93.181.44.4]) by mail.gmx.com (mrgmx003) with ESMTPSA
+ (Nemesis) id 0LgqQQ-1Z47oS2y7a-00oE1v for <linux-btrfs@vger.kernel.org>; Thu,
+ 13 Aug 2015 00:34:26 +0200
+Date: Thu, 13 Aug 2015 00:34:19 +0200
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Deleted files cause btrfs-send to fail
+Message-ID: <20150813003419.09f13c1a@thetick>
+Reply-To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-In-Reply-To: <CAK7bmU-qwKN7peYC+fZGJPosa+XBZCOnW4=LKMNrSPi5ZUeiQA@mail.gmail.com>
-References: <CAK7bmU97q-oz8aSTQijHJR1MQRgOs+F9nHx2hMuqgPO6G5et9g@mail.gmail.com>
-	<CAJCQCtS=v+T-qGFLeaELn7Bt+Mb8ViK+8+YgontAE=1ucAnWZg@mail.gmail.com>
-	<CAK7bmU_d3RTU4HZVHB9Z7ZAOpQ8C-wZn7WpvYsJaXiGDJki7fg@mail.gmail.com>
-	<CAJCQCtQ9kxpuQD3k-rO84O+0jRpiWbCJAUdog+2_Da6EK5yGsQ@mail.gmail.com>
-	<CAK7bmU9X8cvPs2sn3eZRaOowoT2H5jthpessWMQSVgvojjJ5EA@mail.gmail.com>
-	<CAJCQCtQvkOr0WSOa_hUTCY72esF1euc_qz_FAEVEZ4c4cc+_dQ@mail.gmail.com>
-	<CAK7bmU-KrAVoj_2gVGetAyVBNyTuipi2f+VU5SNzEDWxmnizDA@mail.gmail.com>
-	<CAJCQCtSzYS=eDDLt_pMBbi8SY94wAXYnZCE_oppDtm8KEwqh1A@mail.gmail.com>
-	<CAK7bmU9DVmXoEUBd2dmQPuVUb-iohacHqXvF73uOdaiL1GwtnA@mail.gmail.com>
-	<CAJCQCtQLv83O2DD+J97Rw-i6FsLrANisSapjxydyx0kJT_vokA@mail.gmail.com>
-	<CAK7bmU9SL7Fxqe+hAbe229Y7Fzegs2Dx42tLXyZ5Wttk+UeZDQ@mail.gmail.com>
-	<CAJCQCtTmdwbLYbCQviNETy_w6Rv8=cu_hWtpVSeUMkGX_SX1Yg@mail.gmail.com>
-	<CAK7bmU9onrSNnPhHu+3j1CsUozVU_WV2HM91k30r=CkhcGcgZw@mail.gmail.com>
-	<CAK7bmU-qwKN7peYC+fZGJPosa+XBZCOnW4=LKMNrSPi5ZUeiQA@mail.gmail.com>
-Date: Wed, 12 Aug 2015 16:48:29 -0400
-Message-ID: <CAK7bmU-QaT-f3Dc-N1-VOByO+RAVXXeQiADsXhLaCu8S3opwpg@mail.gmail.com>
-Subject: Re: Damaged filesystem, can read, can't repair, error says to contact devs
-From: Timothy Normand Miller <theosib@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/B_4Asc.7S=s5_hZwz9ne5st"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Actually, it didn't resume.  The "btrfs delete missing" was using 100%
-of the I/O bandwidth but wasn't actually doing any disk reads of
-writes.  I tried to reboot, but the system wouldn't go down, so after
-waiting 10 minutes, I power-cycled.  Now I can't mount at all and
-here's what dmesg says about that:
+--Sig_/B_4Asc.7S=s5_hZwz9ne5st
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-[  236.118419] BTRFS info (device sdb): allowing degraded mounts
-[  236.118421] BTRFS info (device sdb): disk space caching is enabled
-[  236.165470] BTRFS: bdev (null) errs: wr 1724, rd 305, flush 45,
-corrupt 0, gen 2
-[  245.883595] BTRFS: too many missing devices, writeable mount is not allowed
-[  245.946570] BTRFS: open_ctree failed
+Hi all,
 
-It thinks now that there should be five devices, and since there are
-only three available, it won't let me mount.
+Starting today I have an interesting problem: I deleted some files as part =
+(old
+fcrontabs), which now persistently causes btrfs-send to fail.  The error
+message I get is:
 
+Aug 12 23:32:24 thetick make_backups.sh[1059]: ERROR: send ioctl failed wit=
+h -2: No such file or directory
+Aug 12 23:32:25 thetick make_backups.sh[1059]: ERROR: unexpected EOF in str=
+eam.
+
+There is nothing in the dmesg output.
+
+Since this is the root file system, I haven't gotten a copy of the actual o=
+utput
+of "btrfs check", though I have run it from an initramfs rescue shell.  The
+output I saw there was much like the following (taken from an Email by Roman
+Mamedov from 2014-12-28):
+
+root 22730 inode 6236418 errors 2000, link count wrong unresolved ref dir 1=
+05512 index 586340 namelen 48 name [redacted].dat.bak filetype 0 errors 3, =
+no dir item, no dir index
+
+Only in my case, it's "root 5" and "root 4" (I think), and the file names
+(and other file system specifics) are of course different.  I definitely saw
+"errors 2000" (I take it that's supposed to be an error code?).
+
+Is this something that "btrfs check --repair" (or something else) can safely
+fix?
+
+# uname -a
+Linux thetick 4.1.4-gentoo #1 SMP PREEMPT Tue Aug 4 21:58:41 CEST 2015 x86_=
+64 AMD Athlon(tm) 64 X2 Dual Core Processor 4200+ AuthenticAMD GNU/Linux
+# btrfs --version
+btrfs-progs v4.1.2
 # btrfs filesystem show
-Label: none  uuid: 49ac9ad2-b529-4e6e-aef9-1c5b9e8a72f8
-        Total devices 1 FS bytes used 28.26GiB
-        devid    1 size 79.69GiB used 41.03GiB path /dev/sda3
+Label: 'MARCEC_ROOT'  uuid: 0267d8b3-a074-460a-832d-5d5fd36bae64
+        Total devices 1 FS bytes used 59.30GiB
+        devid    1 size 107.79GiB used 74.03GiB path /dev/sda1
 
-warning, device 1 is missing
-warning, device 1 is missing
-warning devid 1 not found already
-warning devid 5 not found already
-Label: none  uuid: ecdff84d-b4a2-4286-a1c1-cd7e5396901c
-        Total devices 5 FS bytes used 1.46TiB
-        devid    2 size 931.51GiB used 767.00GiB path /dev/sdd
-        devid    3 size 931.51GiB used 745.03GiB path /dev/sdc
-        devid    4 size 931.51GiB used 767.00GiB path /dev/sdb
-        *** Some devices missing
+Label: 'MARCEC_STORAGE'  uuid: 472c9290-3ff2-4096-9c47-0612d3a52cef
+        Total devices 2 FS bytes used 597.75GiB
+        devid    1 size 931.51GiB used 600.03GiB path /dev/sdc
+        devid    2 size 931.51GiB used 600.03GiB path /dev/sdb
+
+Label: 'MARCEC_BACKUP'  uuid: f97b3cda-15e8-418b-bb9b-235391ef2a38
+        Total devices 1 FS bytes used 810.35GiB
+        devid    1 size 976.56GiB used 837.06GiB path /dev/sdd2
 
 btrfs-progs v4.1.2
+# btrfs filesystem df /
+Data, single: total=3D70.00GiB, used=3D57.53GiB
+System, single: total=3D32.00MiB, used=3D16.00KiB
+Metadata, single: total=3D4.00GiB, used=3D1.77GiB
+GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
 
+Greetings
+--=20
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
 
+--Sig_/B_4Asc.7S=s5_hZwz9ne5st
+Content-Type: application/pgp-signature
+Content-Description: Digitale Signatur von OpenPGP
 
-On Wed, Aug 12, 2015 at 4:27 PM, Timothy Normand Miller
-<theosib@gmail.com> wrote:
-> It resumed on its own.  Weird.
->
-> On Wed, Aug 12, 2015 at 4:23 PM, Timothy Normand Miller
-> <theosib@gmail.com> wrote:
->> On Wed, Aug 12, 2015 at 2:10 PM, Chris Murphy <lists@colorremedies.com> wrote:
->>
->>>
->>> Anyway it looks like it's hardware related, but I don't know what
->>> device ata4.00 is, so maybe this helps:
->>> http://superuser.com/questions/617192/mapping-ata-device-number-to-logical-device-name
->>
->> # ata=4; ls -l /sys/block/sd* | grep $(grep $ata
->> /sys/class/scsi_host/host*/unique_id | awk -F'/' '{print $5}')
->> lrwxrwxrwx 1 root root 0 Aug 12 16:21 /sys/block/sde ->
->> ../devices/pci0000:00/0000:00:1f.5/ata4/host3/target3:0:0/3:0:0:0/block/sde
->>
->> sde is the newly attached drive, replacing the one that had appeared
->> to have bad sectors.  So it looks like either this new motherboard has
->> a bad connector, or the cable is bad.  I'm going to swap it out for a
->> different SATA cable.  How do I resume the failed operation?  And
->> should I reboot because of the OOPSes?
->>
->> --
->> Timothy Normand Miller, PhD
->> Assistant Professor of Computer Science, Binghamton University
->> http://www.cs.binghamton.edu/~millerti/
->> Open Graphics Project
->
->
->
-> --
-> Timothy Normand Miller, PhD
-> Assistant Professor of Computer Science, Binghamton University
-> http://www.cs.binghamton.edu/~millerti/
-> Open Graphics Project
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQIcBAEBAgAGBQJVy8nxAAoJEL/Q5oYsiHj01soQAJ6CUfWVH8GJLEJETnPnQPOv
+McBq7ive3qNL2U836h+xK6iIt6QW2mwLXoGIKyqcyo3Ex/6iqGFUx75hClhligD3
+8wjRaPIsiJmzm3+7eXJA57aNQOHqpn/fwhTRRD1z8osmnG6J2MtfONMSKpjYMHHg
+LDFR0QTLXDvCd19S+7GT2ya2ejkMyIWbSkqWNJOnK/i+uqd42Su39yQXba1l5pWp
+tHNoaJLXMjpmEV/lhOuyB5Iud6jGUKiXxW4gEA87gfn19Wgw79D7iNw9gZxlS5OM
+9xoiURVlAM3Si39UygA1BFA7djVngOw9WWcXEAOgFmRXMIYwUlQy7phJUsLQ1MRU
+B/fUHotXikC3Dhe4WcHlaWpBc6+5KnAoofbHw903gJMHSqF8tyjt2NQ2ZWpgOgYP
+pEQBoHCPgHNyLLSj8TiPPfhe6XXIiRWPAXJXUxZCJlgC7ocqBq+ZyuY+kpIJs8NO
+5f4JofEldZ4UqZAL2fGyHJONi8aGgZiKVrsL2fZ2M4yNw925rMOM4i0svD/Vi9OF
+vhn5De6ffHWas7xsfFvXljpkI5OtUQmEHgBCB03aF38OG5RV2KKUc24LK0r/Bu2v
+Yr8LxLhS1vzv37MyRTuwlqAdIbV6+I9yUH609uxMmUpq14iRUbJLK3yDoderB2yU
+b8fp0BuHuH5nf3AYgfam
+=iWET
+-----END PGP SIGNATURE-----
 
-
--- 
-Timothy Normand Miller, PhD
-Assistant Professor of Computer Science, Binghamton University
-http://www.cs.binghamton.edu/~millerti/
-Open Graphics Project
+--Sig_/B_4Asc.7S=s5_hZwz9ne5st--

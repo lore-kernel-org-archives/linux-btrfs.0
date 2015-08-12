@@ -1,197 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:60182 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752754AbbHJNwJ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 10 Aug 2015 09:52:09 -0400
-Message-ID: <55C8AC72.4020804@fb.com>
-Date: Mon, 10 Aug 2015 09:51:46 -0400
-From: Josef Bacik <jbacik@fb.com>
-MIME-Version: 1.0
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
-        <linux-btrfs@vger.kernel.org>
-CC: <clm@fb.com>, <bo.li.liu@oracle.com>, <dsterba@suse.cz>,
-        <quwenruo@cn.fujitsu.com>, <chandan@mykolab.com>
-Subject: Re: [PATCH V3 02/11] Btrfs: Compute and look up csums based on sectorsized
- blocks
-References: <1439132972-24321-1-git-send-email-chandan@linux.vnet.ibm.com> <1439132972-24321-3-git-send-email-chandan@linux.vnet.ibm.com>
-In-Reply-To: <1439132972-24321-3-git-send-email-chandan@linux.vnet.ibm.com>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Received: from mail.kernel.org ([198.145.29.136]:49453 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933581AbbHLHIM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 12 Aug 2015 03:08:12 -0400
+From: Ming Lin <mlin@kernel.org>
+To: linux-kernel@vger.kernel.org
+Cc: Christoph Hellwig <hch@lst.de>, Jens Axboe <axboe@kernel.dk>,
+        Kent Overstreet <kent.overstreet@gmail.com>,
+        Dongsu Park <dpark@posteo.net>, Mike Snitzer <snitzer@redhat.com>,
+        "Martin K. Petersen" <martin.petersen@oracle.com>,
+        Ming Lin <mlin@kernel.org>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        Ming Lin <ming.l@ssi.samsung.com>
+Subject: [PATCH v6 04/11] btrfs: remove bio splitting and merge_bvec_fn() calls
+Date: Wed, 12 Aug 2015 00:07:14 -0700
+Message-Id: <1439363241-31772-5-git-send-email-mlin@kernel.org>
+In-Reply-To: <1439363241-31772-1-git-send-email-mlin@kernel.org>
+References: <1439363241-31772-1-git-send-email-mlin@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/09/2015 11:09 AM, Chandan Rajendra wrote:
-> Checksums are applicable to sectorsize units. The current code uses
-> bio->bv_len units to compute and look up checksums. This works on machines
-> where sectorsize == PAGE_SIZE. This patch makes the checksum computation and
-> look up code to work with sectorsize units.
->
-> Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-> ---
->   fs/btrfs/file-item.c | 93 +++++++++++++++++++++++++++++++++-------------------
->   1 file changed, 59 insertions(+), 34 deletions(-)
->
-> diff --git a/fs/btrfs/file-item.c b/fs/btrfs/file-item.c
-> index 58ece65..818c859 100644
-> --- a/fs/btrfs/file-item.c
-> +++ b/fs/btrfs/file-item.c
-> @@ -172,6 +172,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
->   	u64 item_start_offset = 0;
->   	u64 item_last_offset = 0;
->   	u64 disk_bytenr;
-> +	u64 page_bytes_left;
->   	u32 diff;
->   	int nblocks;
->   	int bio_index = 0;
-> @@ -220,6 +221,8 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
->   	disk_bytenr = (u64)bio->bi_iter.bi_sector << 9;
->   	if (dio)
->   		offset = logical_offset;
-> +
-> +	page_bytes_left = bvec->bv_len;
->   	while (bio_index < bio->bi_vcnt) {
->   		if (!dio)
->   			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
-> @@ -243,7 +246,7 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
->   				if (BTRFS_I(inode)->root->root_key.objectid ==
->   				    BTRFS_DATA_RELOC_TREE_OBJECTID) {
->   					set_extent_bits(io_tree, offset,
-> -						offset + bvec->bv_len - 1,
-> +						offset + root->sectorsize - 1,
->   						EXTENT_NODATASUM, GFP_NOFS);
->   				} else {
->   					btrfs_info(BTRFS_I(inode)->root->fs_info,
-> @@ -281,11 +284,17 @@ static int __btrfs_lookup_bio_sums(struct btrfs_root *root,
->   found:
->   		csum += count * csum_size;
->   		nblocks -= count;
-> -		bio_index += count;
-> +
->   		while (count--) {
-> -			disk_bytenr += bvec->bv_len;
-> -			offset += bvec->bv_len;
-> -			bvec++;
-> +			disk_bytenr += root->sectorsize;
-> +			offset += root->sectorsize;
-> +			page_bytes_left -= root->sectorsize;
-> +			if (!page_bytes_left) {
-> +				bio_index++;
-> +				bvec++;
-> +				page_bytes_left = bvec->bv_len;
-> +			}
-> +
->   		}
->   	}
->   	btrfs_free_path(path);
-> @@ -432,6 +441,8 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
->   	struct bio_vec *bvec = bio->bi_io_vec;
->   	int bio_index = 0;
->   	int index;
-> +	int nr_sectors;
-> +	int i;
->   	unsigned long total_bytes = 0;
->   	unsigned long this_sum_bytes = 0;
->   	u64 offset;
-> @@ -451,7 +462,7 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
->   		offset = page_offset(bvec->bv_page) + bvec->bv_offset;
->
->   	ordered = btrfs_lookup_ordered_extent(inode, offset);
-> -	BUG_ON(!ordered); /* Logic error */
-> +	ASSERT(ordered); /* Logic error */
->   	sums->bytenr = (u64)bio->bi_iter.bi_sector << 9;
->   	index = 0;
->
-> @@ -459,41 +470,55 @@ int btrfs_csum_one_bio(struct btrfs_root *root, struct inode *inode,
->   		if (!contig)
->   			offset = page_offset(bvec->bv_page) + bvec->bv_offset;
->
-> -		if (offset >= ordered->file_offset + ordered->len ||
-> -		    offset < ordered->file_offset) {
-> -			unsigned long bytes_left;
-> -			sums->len = this_sum_bytes;
-> -			this_sum_bytes = 0;
-> -			btrfs_add_ordered_sum(inode, ordered, sums);
-> -			btrfs_put_ordered_extent(ordered);
-> +		data = kmap_atomic(bvec->bv_page);
->
-> -			bytes_left = bio->bi_iter.bi_size - total_bytes;
-> +		nr_sectors = (bvec->bv_len + root->sectorsize - 1)
-> +			>> inode->i_blkbits;
-> +
-> +		for (i = 0; i < nr_sectors; i++) {
-> +			if (offset >= ordered->file_offset + ordered->len ||
-> +				offset < ordered->file_offset) {
-> +				unsigned long bytes_left;
-> +
-> +				kunmap_atomic(data);
-> +				sums->len = this_sum_bytes;
-> +				this_sum_bytes = 0;
-> +				btrfs_add_ordered_sum(inode, ordered, sums);
-> +				btrfs_put_ordered_extent(ordered);
-> +
-> +				bytes_left = bio->bi_iter.bi_size - total_bytes;
-> +
-> +				sums = kzalloc(btrfs_ordered_sum_size(root, bytes_left),
-> +					GFP_NOFS);
-> +				BUG_ON(!sums); /* -ENOMEM */
-> +				sums->len = bytes_left;
-> +				ordered = btrfs_lookup_ordered_extent(inode,
-> +								offset);
-> +				ASSERT(ordered); /* Logic error */
-> +				sums->bytenr = ((u64)bio->bi_iter.bi_sector << 9)
-> +					+ total_bytes;
-> +				index = 0;
-> +
-> +				data = kmap_atomic(bvec->bv_page);
-> +			}
->
-> -			sums = kzalloc(btrfs_ordered_sum_size(root, bytes_left),
-> -				       GFP_NOFS);
-> -			BUG_ON(!sums); /* -ENOMEM */
-> -			sums->len = bytes_left;
-> -			ordered = btrfs_lookup_ordered_extent(inode, offset);
-> -			BUG_ON(!ordered); /* Logic error */
-> -			sums->bytenr = ((u64)bio->bi_iter.bi_sector << 9) +
-> -				       total_bytes;
-> -			index = 0;
-> +			sums->sums[index] = ~(u32)0;
-> +			sums->sums[index]
-> +				= btrfs_csum_data(data + bvec->bv_offset
-> +						+ (i * root->sectorsize),
-> +						sums->sums[index],
-> +						root->sectorsize);
-> +			btrfs_csum_final(sums->sums[index],
-> +					(char *)(sums->sums + index));
-> +			index++;
-> +			offset += root->sectorsize;
-> +			this_sum_bytes += root->sectorsize;
-> +			total_bytes += root->sectorsize;
->   		}
->
-> -		data = kmap_atomic(bvec->bv_page);
-> -		sums->sums[index] = ~(u32)0;
-> -		sums->sums[index] = btrfs_csum_data(data + bvec->bv_offset,
-> -						    sums->sums[index],
-> -						    bvec->bv_len);
->   		kunmap_atomic(data);
-> -		btrfs_csum_final(sums->sums[index],
-> -				 (char *)(sums->sums + index));
->
->   		bio_index++;
-> -		index++;
-> -		total_bytes += bvec->bv_len;
-> -		this_sum_bytes += bvec->bv_len;
-> -		offset += bvec->bv_len;
->   		bvec++;
->   	}
->   	this_sum_bytes = 0;
->
+From: Kent Overstreet <kent.overstreet@gmail.com>
 
-This is fine,
+Btrfs has been doing bio splitting from btrfs_map_bio(), by checking
+device limits as well as calling ->merge_bvec_fn() etc. That is not
+necessary any more, because generic_make_request() is now able to
+handle arbitrarily sized bios. So clean up unnecessary code paths.
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Signed-off-by: Kent Overstreet <kent.overstreet@gmail.com>
+Signed-off-by: Chris Mason <clm@fb.com>
+[dpark: add more description in commit message]
+Signed-off-by: Dongsu Park <dpark@posteo.net>
+Signed-off-by: Ming Lin <ming.l@ssi.samsung.com>
+---
+ fs/btrfs/volumes.c | 72 ------------------------------------------------------
+ 1 file changed, 72 deletions(-)
 
-Thanks,
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index fbe7c10..1b52313 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5871,34 +5871,6 @@ static noinline void btrfs_schedule_bio(struct btrfs_root *root,
+ 				 &device->work);
+ }
+ 
+-static int bio_size_ok(struct block_device *bdev, struct bio *bio,
+-		       sector_t sector)
+-{
+-	struct bio_vec *prev;
+-	struct request_queue *q = bdev_get_queue(bdev);
+-	unsigned int max_sectors = queue_max_sectors(q);
+-	struct bvec_merge_data bvm = {
+-		.bi_bdev = bdev,
+-		.bi_sector = sector,
+-		.bi_rw = bio->bi_rw,
+-	};
+-
+-	if (WARN_ON(bio->bi_vcnt == 0))
+-		return 1;
+-
+-	prev = &bio->bi_io_vec[bio->bi_vcnt - 1];
+-	if (bio_sectors(bio) > max_sectors)
+-		return 0;
+-
+-	if (!q->merge_bvec_fn)
+-		return 1;
+-
+-	bvm.bi_size = bio->bi_iter.bi_size - prev->bv_len;
+-	if (q->merge_bvec_fn(q, &bvm, prev) < prev->bv_len)
+-		return 0;
+-	return 1;
+-}
+-
+ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 			      struct bio *bio, u64 physical, int dev_nr,
+ 			      int rw, int async)
+@@ -5932,38 +5904,6 @@ static void submit_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+ 		btrfsic_submit_bio(rw, bio);
+ }
+ 
+-static int breakup_stripe_bio(struct btrfs_root *root, struct btrfs_bio *bbio,
+-			      struct bio *first_bio, struct btrfs_device *dev,
+-			      int dev_nr, int rw, int async)
+-{
+-	struct bio_vec *bvec = first_bio->bi_io_vec;
+-	struct bio *bio;
+-	int nr_vecs = bio_get_nr_vecs(dev->bdev);
+-	u64 physical = bbio->stripes[dev_nr].physical;
+-
+-again:
+-	bio = btrfs_bio_alloc(dev->bdev, physical >> 9, nr_vecs, GFP_NOFS);
+-	if (!bio)
+-		return -ENOMEM;
+-
+-	while (bvec <= (first_bio->bi_io_vec + first_bio->bi_vcnt - 1)) {
+-		if (bio_add_page(bio, bvec->bv_page, bvec->bv_len,
+-				 bvec->bv_offset) < bvec->bv_len) {
+-			u64 len = bio->bi_iter.bi_size;
+-
+-			atomic_inc(&bbio->stripes_pending);
+-			submit_stripe_bio(root, bbio, bio, physical, dev_nr,
+-					  rw, async);
+-			physical += len;
+-			goto again;
+-		}
+-		bvec++;
+-	}
+-
+-	submit_stripe_bio(root, bbio, bio, physical, dev_nr, rw, async);
+-	return 0;
+-}
+-
+ static void bbio_error(struct btrfs_bio *bbio, struct bio *bio, u64 logical)
+ {
+ 	atomic_inc(&bbio->error);
+@@ -6036,18 +5976,6 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
+ 			continue;
+ 		}
+ 
+-		/*
+-		 * Check and see if we're ok with this bio based on it's size
+-		 * and offset with the given device.
+-		 */
+-		if (!bio_size_ok(dev->bdev, first_bio,
+-				 bbio->stripes[dev_nr].physical >> 9)) {
+-			ret = breakup_stripe_bio(root, bbio, first_bio, dev,
+-						 dev_nr, rw, async_submit);
+-			BUG_ON(ret);
+-			continue;
+-		}
+-
+ 		if (dev_nr < total_devs - 1) {
+ 			bio = btrfs_bio_clone(first_bio, GFP_NOFS);
+ 			BUG_ON(!bio); /* -ENOMEM */
+-- 
+2.1.4
 
-Josef

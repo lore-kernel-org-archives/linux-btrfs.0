@@ -1,103 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:57907 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752256AbbHMIzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 04:55:10 -0400
+Received: from mout-xforward.gmx.net ([82.165.159.14]:57470 "EHLO
+	mout-xforward.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751962AbbHMJnq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Aug 2015 05:43:46 -0400
 Received: from thetick ([93.181.44.4]) by mail.gmx.com (mrgmx001) with ESMTPSA
- (Nemesis) id 0M3zT0-1YZd8r3QQc-00rUJ0 for <linux-btrfs@vger.kernel.org>; Thu,
- 13 Aug 2015 10:55:07 +0200
-Date: Thu, 13 Aug 2015 10:54:58 +0200
+ (Nemesis) id 0LmK3e-1YrIzp3qqo-00ZxdF for <linux-btrfs@vger.kernel.org>; Thu,
+ 13 Aug 2015 11:23:40 +0200
+Date: Thu, 13 Aug 2015 11:23:31 +0200
 From: Marc Joliet <marcec@gmx.de>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Deleted files cause btrfs-send to fail
-Message-ID: <20150813105458.676c884a@thetick>
-In-Reply-To: <pan$1dd35$9501221a$dce0e6ab$9d04fcea@cox.net>
-References: <20150813003419.09f13c1a@thetick>
-	<20150813090541.77f5c821@thetick>
-	<pan$1dd35$9501221a$dce0e6ab$9d04fcea@cox.net>
+Subject: Re: trim not working and irreparable errors from btrfsck
+Message-ID: <20150813112331.297d15f6@thetick>
+In-Reply-To: <B7F2379062E32745A8651FBDB20F64595D45D284@Server.waterlogic.com.au>
+References: <mlpb8i$dus$1@ger.gmane.org>
+	<CAJCQCtQGzwQ=L4Vh19tsqSqPoPJuNaLyTo7q0SsbMteb2=tdMw@mail.gmail.com>
+	<55816E7B.5040905@gmail.com>
+	<CAJCQCtQnSSATHPkX-NgQVkXHB0Z+VJrt14sMk4bHaoQ4nS=Jcw@mail.gmail.com>
+	<mls0gb$s7m$1@ger.gmane.org>
+	<B7F2379062E32745A8651FBDB20F64595D40C1BD@Server.waterlogic.com.au>
+	<5581ABA2.30906@gmail.com>
+	<21893.29830.540787.159202@localhost.localdomain>
+	<B7F2379062E32745A8651FBDB20F64595D45D284@Server.waterlogic.com.au>
 Reply-To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/YolRNH/4unkv+qpBIr+4zq5"; protocol="application/pgp-signature"
+ boundary="Sig_/3QldauDEbq+zaO60xq5ipyM"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/YolRNH/4unkv+qpBIr+4zq5
+--Sig_/3QldauDEbq+zaO60xq5ipyM
 Content-Type: text/plain; charset=US-ASCII
 Content-Transfer-Encoding: quoted-printable
 
-Am Thu, 13 Aug 2015 08:29:19 +0000 (UTC)
-schrieb Duncan <1i5t5.duncan@cox.net>:
+Am Sun, 21 Jun 2015 07:21:03 +0000
+schrieb Paul Jones <paul@pauljones.id.au>:
 
-> Marc Joliet posted on Thu, 13 Aug 2015 09:05:41 +0200 as excerpted:
->=20
-> > Here's the actual output now, obtained via btrfs-progs 4.0.1 from an
-> > initramfs emergency shell:
+> > -----Original Message-----
+> > From: Lutz Euler [mailto:lutz.euler@freenet.de]
+> > Sent: Sunday, 21 June 2015 12:11 AM
+> > To: Christian; Paul Jones; Austin S Hemmelgarn
+> > Cc: linux-btrfs@vger.kernel.org
+> > Subject: RE: trim not working and irreparable errors from btrfsck
 > >=20
-> > checking extents checking free space cache checking fs roots root 5
-> > inode 8338813 errors 2000, link count wrong
-> >         unresolved ref dir 26699 index 50500 namelen 4 name root
-> >         filetype 0 errors 3, no dir item, no dir index
-> > root 5 inode 8338814 errors 2000, link count wrong
-> >         unresolved ref dir 26699 index 50502 namelen 6 name marcec
-> >         filetype 0 errors 3, no dir item, no dir index
-> > root 5 inode 8338815 errors 2000, link count wrong
-> >         unresolved ref dir 26699 index 50504 namelen 6 name systab
-> >         filetype 0 errors 3, no dir item, no dir index
-> > root 5 inode 8710030 errors 2000, link count wrong
-> >         unresolved ref dir 26699 index 59588 namelen 6 name marcec
-> >         filetype 0 errors 3, no dir item, no dir index
-> > root 5 inode 8710031 errors 2000, link count wrong
-> >         unresolved ref dir 26699 index 59590 namelen 4 name root
-> >         filetype 0 errors 3, no dir item, no dir index
-> > Checking filesystem on /dev/sda1 UUID:
-> > 0267d8b3-a074-460a-832d-5d5fd36bae64 found 63467610172 bytes used err is
-> > 1 total csum bytes: 59475016 total tree bytes: 1903411200 total fs tree
-> > bytes: 1691504640 total extent tree bytes: 130322432 btree space waste
-> > bytes: 442495212 file data blocks allocated: 555097092096
-> >  referenced 72887840768
-> > btrfs-progs v4.0.1
+> > Hi Christian, Paul and Austin,
 > >=20
-> > Again: is this fixable?
+> > Christian wrote:
+> > > However, fstrim still gives me "0 B (0 bytes) trimmed, so that may be
+> > > another problem. Is there a way to check if trim works?
+> >=20
+> > Paul wrote:
+> > > I've got the same problem. I've got 2 SSDs with 2 partitions in RAID1,
+> > > fstrim always works on the 2nd partition but not the first. There are
+> > > no errors on either filesystem that I know of, but the first one is
+> > > root so I can't take it offline to run btrfs check.
+> >=20
+> > Austin wrote:
+> > > I'm seeing the same issue here, but with a Crucial brand SSD.
+> > > Somewhat interestingly, I don't see any issues like this with BTRFS on
+> > > top of LVM's thin-provisioning volumes, or with any other filesystems,
+> > > so I think it has something to do with how BTRFS is reporting unused
+> > > space or how it is submitting the discard requests.
+> >=20
+> > Probably you all suffer from the same problem I had a few years ago.
+> > It is a bug in how btrfs implements fstrim.
+> >=20
+> > To check whether you are a victim of this bug simply run:
+> >=20
+> > # btrfs-debug-tree /dev/whatever | grep 'FIRST_CHUNK_TREE
+> > CHUNK_ITEM'
+> >=20
+> > where /dev/whatever is a device of your filesystem, and interrupt after=
+ the
+> > first several output lines with C-c. (Officially the filesystem should =
+be
+> > unmounted when running btrfs-debug-tree, but that is not necessary as we
+> > only read from it and the relevant data doesn't change very often.)
+> >=20
+> > You get something like:
+> >=20
+> >   item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 0)
+> >   item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 12947816448)
+> >   item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 14021558272)
+> >   ...
+> >=20
+> > (This output is from an old version of btrfs-progs. I understand newer =
+version
+> > are more verbose, but you should nevertheless easily be able to interpr=
+et
+> > the output).
+> >=20
+> > If the first number different from 0 (here, the 12947816448) is larger =
+than the
+> > sum of the sizes of the devices the filesystem consists of, bingo.
+> >=20
+> > This has been discussed already in the past and there is a patch.
+> >=20
+> > Please see for the patch:
+> > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg40618.html
+> >=20
+> > and for the background:
+> > http://comments.gmane.org/gmane.comp.file-systems.btrfs/15597
+> >=20
+> > Kind regards,
+> >=20
+> > Lutz Euler
 >=20
-> FWIW, root 5 (which you asked about upthread) is the main filesystem=20
-> root.  So all these appear to be on the main filesystem, not on snapshots/
-> subvolumes.
-
-OK
-
-> As for the problem itself, noting that I'm not a dev, just a user/admin=20
-> following the list, I believe...
+> I tried the test and the numbers I was getting seemed reasonable, however=
+ I went ahead and applied the patch anyway. Trim now works correctly!
 >=20
-> There was a recent bug (early 4.0 or 4.1, IDR which) that (as I recall=20
-> understanding it) would fail to decrement link count and would thus leave=
-=20
-> unnamed inodes hanging around in directories with no way to delete them. =
-=20
-> That looks very much like what you're seeing.
+> Thanks,
+> Paul.
+>=20
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 
-Now that you mention it, I think I remember seeing that patch (series?).
+Speaking as a user, since "fstrim -av" still always outputs 0 bytes trimmed
+on my system: what's the status of this?  Did anybody ever file a bug repor=
+t?
+There was also that other thread, "fstrim not working on one of three BTRFS
+filesystems", that also never went anywhere.
 
-> The bug has indeed been=20
-> fixed in current, and a current btrfs check should fix it, but I don't=20
-> believe that v4.0.1 userspace from the initramfs is new enough to have=20
-> that fix.  The 4.1.2 userspace on your main system (from the first post)=
-=20
-> is current and should fix it, I believe, however.
+I take it from this that my SSD has been running untrimmed for quite a while
+now?
 
-I have updated the initramfs in the meantime.  (Funny: I *just* started usi=
-ng
-one, mainly to be able to use btrfstune on /, but now I have a genuine
-necessity for it.)
+(FWIW, queued trim is blocked by my kernel (it's "forced_unqueued"), but fs=
+trim
+should still start an unqueued trim, right?)
 
-> But if it's critical, you may wish to wait and have someone else confirm=
-=20
-> that before acting on it, just in case I have it wrong.
+# uname -a       =20
+Linux thetick 4.1.4-gentoo #1 SMP PREEMPT Tue Aug 4 21:58:41 CEST 2015 x86_=
+64 AMD Athlon(tm) 64 X2 Dual Core Processor 4200+ AuthenticAMD GNU/Linux
+# btrfs --version
+btrfs-progs v4.1.2
+# btrfs filesystem show=20
+Label: 'MARCEC_ROOT'  uuid: 0267d8b3-a074-460a-832d-5d5fd36bae64
+        Total devices 1 FS bytes used 56.59GiB
+        devid    1 size 107.79GiB used 69.03GiB path /dev/sda1
 
-I can wait until tonight, at least.  The FS still mounts, and it's just the=
- root
-subvolume that's affected; running btrfs-send on the /home subvolume still
-works.
+Label: 'MARCEC_STORAGE'  uuid: 472c9290-3ff2-4096-9c47-0612d3a52cef
+        Total devices 2 FS bytes used 597.75GiB
+        devid    1 size 931.51GiB used 600.03GiB path /dev/sdc
+        devid    2 size 931.51GiB used 600.03GiB path /dev/sdb
+
+Label: 'MARCEC_BACKUP'  uuid: f97b3cda-15e8-418b-bb9b-235391ef2a38
+        Total devices 1 FS bytes used 807.59GiB
+        devid    1 size 976.56GiB used 837.06GiB path /dev/sdd2
+
+btrfs-progs v4.1.2
+# btrfs filesystem df /
+Data, single: total=3D65.00GiB, used=3D54.83GiB
+System, single: total=3D32.00MiB, used=3D16.00KiB
+Metadata, single: total=3D4.00GiB, used=3D1.76GiB
+GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
 
 Greetings
 --=20
@@ -106,26 +161,26 @@ Marc Joliet
 "People who think they know everything really annoy those of us who know we
 don't" - Bjarne Stroustrup
 
---Sig_/YolRNH/4unkv+qpBIr+4zq5
+--Sig_/3QldauDEbq+zaO60xq5ipyM
 Content-Type: application/pgp-signature
 Content-Description: Digitale Signatur von OpenPGP
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQIcBAEBAgAGBQJVzFtqAAoJEL/Q5oYsiHj0xycP/i1svrvZ3pFg/KQmpkwQKzMg
-3IMEnBFu8VcMvMJBp+N+Co+bmrFv55QsaLNrbc0NL1sEjEdfO9VhKPZR/vzAlkg8
-uy8ybxhRkHM1fIAMewL6haRpp2fFBfta8PKhaklKWjfbYweaC4Fiqfc8PCMzfllC
-jXYkH0v5f4QQNaOfB/NY2ac2NdNXlZe9BhQDTng2ck0n2VKUGuHcdJnwIIc9n+Wb
-1dQ6avykpPb4KBB3Tt2pgquNzQ5ZU7cOoVQ47X4frEbAvJf8vPEn4i5T6jGUDpRk
-i26p0ESmB5pB062Q4nRBBFwoItxBbk+1ywkkMbWxF+vXkQtcKdZOr68yYO1im6R8
-tJgwAUUjsp45SbDWKfswmnrES4keUjeIuj1sh5TG1387GwjmczZubxUi2u2AOPsV
-xfCErxfDuvNSEKmKPW1/j3hMJeLdP2DeRKr+RKKtGU1lRSpo4LJvc5j/CsNCtEQE
-cwYvYfiOosLINPyBR9v6UoVw/AqgfvNbJHPtMQD764RlrvED8epc/vICMJ/45yOH
-AIGtWJEutPVTIoQhFgf3g5cRsJZNCLKtNsc3LiyqRlNg6BFynKuZ8gQm+1hb1/mY
-deHyGYhT6U/6ALwn6876qSKdSMJdPHq6WvTR9t/xsj039yBzsm2JAfT2lMdanXjL
-kM5WKs6PVjkyqQpFOtki
-=SUEh
+iQIcBAEBAgAGBQJVzGIaAAoJEL/Q5oYsiHj00bEP+gMz63rY4OSl0ZmkkqyW7FmN
+2u6jJw4C5UO9bN2OIfqnf76TG/3MQ3Ivdf4EPUq6upWe/dchfafhYQpEOmVwirmq
+myIcQ6XsHOpDc7ibvzCFVzGzUDdE3e5HjUiP/ZrzqaFwZmtkTTyHzkU24LiL6aeu
+VOD/nufH/ccpicdWZzVgaklO1C/D+IIuxrt/UO89c5EUnKWHxUNud0R2Z8rAgWU7
+l8RDHjYX81OfxGkUCx2Fhp/WxAgZjCZfFTYsU4vopQwnWNlDTbJRqXYmpBpK6b3Q
+oUHwDOBjEzyTd0Ij6UAnmAGodZVIfiBMusCzCSZKlrNYTU3u59IzmOjpa7wyp76z
+d0pxp49otNUDT7oPPQ01vI9clLvK3eyaMDY3wShjwlLCqYx3I0FlpBKrtkbfeW0G
+sApmGUunzTFknqedlgnCGAcx1c1ZLUo7H2UIZQuv+50GB7eSd4MCPGkBKZaxjztr
+00aBJtey+UyR5MVhvrYN0YB8IUxLytJcMGBQIm1p4QAUSbKdRoUYwJHvEQWL557N
+1ElMPCFsjJ5dE/+kzvZ+4bX7Oh8dJffVK6UfD+tCaakE/+rwLkwTajHc+l2SE9hA
+dv4IqMomBUaCiRyPBvlUmVUsWemLxm0gc9bL9wjlJkEYBdUyrFkKgBy5gNEgkvzW
+42uX3X6HZqca3403KrwV
+=NX3q
 -----END PGP SIGNATURE-----
 
---Sig_/YolRNH/4unkv+qpBIr+4zq5--
+--Sig_/3QldauDEbq+zaO60xq5ipyM--

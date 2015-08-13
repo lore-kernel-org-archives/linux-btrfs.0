@@ -1,186 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout-xforward.gmx.net ([82.165.159.14]:57470 "EHLO
-	mout-xforward.gmx.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751962AbbHMJnq (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:35017 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751373AbbHMJzM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 05:43:46 -0400
-Received: from thetick ([93.181.44.4]) by mail.gmx.com (mrgmx001) with ESMTPSA
- (Nemesis) id 0LmK3e-1YrIzp3qqo-00ZxdF for <linux-btrfs@vger.kernel.org>; Thu,
- 13 Aug 2015 11:23:40 +0200
-Date: Thu, 13 Aug 2015 11:23:31 +0200
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: trim not working and irreparable errors from btrfsck
-Message-ID: <20150813112331.297d15f6@thetick>
-In-Reply-To: <B7F2379062E32745A8651FBDB20F64595D45D284@Server.waterlogic.com.au>
-References: <mlpb8i$dus$1@ger.gmane.org>
-	<CAJCQCtQGzwQ=L4Vh19tsqSqPoPJuNaLyTo7q0SsbMteb2=tdMw@mail.gmail.com>
-	<55816E7B.5040905@gmail.com>
-	<CAJCQCtQnSSATHPkX-NgQVkXHB0Z+VJrt14sMk4bHaoQ4nS=Jcw@mail.gmail.com>
-	<mls0gb$s7m$1@ger.gmane.org>
-	<B7F2379062E32745A8651FBDB20F64595D40C1BD@Server.waterlogic.com.au>
-	<5581ABA2.30906@gmail.com>
-	<21893.29830.540787.159202@localhost.localdomain>
-	<B7F2379062E32745A8651FBDB20F64595D45D284@Server.waterlogic.com.au>
-Reply-To: linux-btrfs@vger.kernel.org
+	Thu, 13 Aug 2015 05:55:12 -0400
+Date: Thu, 13 Aug 2015 09:55:10 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: David Seikel <onefang@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Oddness with phantom device replacing real device.
+Message-ID: <20150813095510.GP12976@carfax.org.uk>
+References: <20150813133322.369c10af.onefang@gmail.com>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_/3QldauDEbq+zaO60xq5ipyM"; protocol="application/pgp-signature"
+	protocol="application/pgp-signature"; boundary="qndya+I13rh6QJ0p"
+In-Reply-To: <20150813133322.369c10af.onefang@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_/3QldauDEbq+zaO60xq5ipyM
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
 
-Am Sun, 21 Jun 2015 07:21:03 +0000
-schrieb Paul Jones <paul@pauljones.id.au>:
+--qndya+I13rh6QJ0p
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-> > -----Original Message-----
-> > From: Lutz Euler [mailto:lutz.euler@freenet.de]
-> > Sent: Sunday, 21 June 2015 12:11 AM
-> > To: Christian; Paul Jones; Austin S Hemmelgarn
-> > Cc: linux-btrfs@vger.kernel.org
-> > Subject: RE: trim not working and irreparable errors from btrfsck
-> >=20
-> > Hi Christian, Paul and Austin,
-> >=20
-> > Christian wrote:
-> > > However, fstrim still gives me "0 B (0 bytes) trimmed, so that may be
-> > > another problem. Is there a way to check if trim works?
-> >=20
-> > Paul wrote:
-> > > I've got the same problem. I've got 2 SSDs with 2 partitions in RAID1,
-> > > fstrim always works on the 2nd partition but not the first. There are
-> > > no errors on either filesystem that I know of, but the first one is
-> > > root so I can't take it offline to run btrfs check.
-> >=20
-> > Austin wrote:
-> > > I'm seeing the same issue here, but with a Crucial brand SSD.
-> > > Somewhat interestingly, I don't see any issues like this with BTRFS on
-> > > top of LVM's thin-provisioning volumes, or with any other filesystems,
-> > > so I think it has something to do with how BTRFS is reporting unused
-> > > space or how it is submitting the discard requests.
-> >=20
-> > Probably you all suffer from the same problem I had a few years ago.
-> > It is a bug in how btrfs implements fstrim.
-> >=20
-> > To check whether you are a victim of this bug simply run:
-> >=20
-> > # btrfs-debug-tree /dev/whatever | grep 'FIRST_CHUNK_TREE
-> > CHUNK_ITEM'
-> >=20
-> > where /dev/whatever is a device of your filesystem, and interrupt after=
- the
-> > first several output lines with C-c. (Officially the filesystem should =
-be
-> > unmounted when running btrfs-debug-tree, but that is not necessary as we
-> > only read from it and the relevant data doesn't change very often.)
-> >=20
-> > You get something like:
-> >=20
-> >   item 2 key (FIRST_CHUNK_TREE CHUNK_ITEM 0)
-> >   item 3 key (FIRST_CHUNK_TREE CHUNK_ITEM 12947816448)
-> >   item 4 key (FIRST_CHUNK_TREE CHUNK_ITEM 14021558272)
-> >   ...
-> >=20
-> > (This output is from an old version of btrfs-progs. I understand newer =
-version
-> > are more verbose, but you should nevertheless easily be able to interpr=
-et
-> > the output).
-> >=20
-> > If the first number different from 0 (here, the 12947816448) is larger =
-than the
-> > sum of the sizes of the devices the filesystem consists of, bingo.
-> >=20
-> > This has been discussed already in the past and there is a patch.
-> >=20
-> > Please see for the patch:
-> > http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg40618.html
-> >=20
-> > and for the background:
-> > http://comments.gmane.org/gmane.comp.file-systems.btrfs/15597
-> >=20
-> > Kind regards,
-> >=20
-> > Lutz Euler
->=20
-> I tried the test and the numbers I was getting seemed reasonable, however=
- I went ahead and applied the patch anyway. Trim now works correctly!
->=20
-> Thanks,
-> Paul.
->=20
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+On Thu, Aug 13, 2015 at 01:33:22PM +1000, David Seikel wrote:
+> I don't actually think that this is a BTRFS problem, but it's showing
+> symptoms within BTRFS, and I have no other clues, so maybe the BTRFS
+> experts can help me figure out what is actually going wrong.
+> 
+> I'm a sysadmin working for a company that does scientific modelling.
+> They have many TBs of data.  We use two servers running Ubuntu 14.04 LTS
+> to backup all of this data.  One of them includes 16 spinning rust
+> disks hooked to a RAID controller running in JBOD mode (in other words,
+> as far as Linux is concerned, they are just 16 ordinary disks).  They
+> are /dev/sdc to /dev/sdr, all being used as a single BTRFS file system.
+> 
+> I have been having no end of trouble with this system recently.  Keep
+> in mind that due to the huge amount of data we deal with, doing
+> anything takes a long time.  So "recently" means "in the last several
+> months".
+> 
+> My latest attempt to beat some sense into this server was to upgrade it
+> to the latest officially backported kernel from Ubuntu, and compile my
+> own copy of btrfs-progs from source code (latest release from github).
+> Then I recreated the 16 disk BTRFS file system, and started the backup
+> software running again, from scratch.  The next day, /dev/sdc has
+> vanished, to be replaced be a phantom /dev/sds.  There's no such disk
+> as /dev/sds.  /dev/sds is now included in the BTRFS file system
+> replacing /dev/sdc.  In /dev sdc does indeed vanish, and sds does
+> indeed appear.  This was happening before.  /dev/sds then starts to
+> fill up with errors, since no such disk actually exists.
 
-Speaking as a user, since "fstrim -av" still always outputs 0 bytes trimmed
-on my system: what's the status of this?  Did anybody ever file a bug repor=
-t?
-There was also that other thread, "fstrim not working on one of three BTRFS
-filesystems", that also never went anywhere.
+   Sounds like the kind of behaviour when the disk has vanished from
+the system for long enough to drop out and be recreated by the
+driver. The renaming may (possibly) be down to a poor error-handling
+path in btrfs -- we see this happening on USB sometimes, where the
+original device node is still hung on to by the FS on a hardware
+error, and so when the device comes back it's given a different name.
 
-I take it from this that my SSD has been running untrimmed for quite a while
-now?
+> I don't know what is actually causing the problem.  The disks are in a
+> hot swap backplane, and if I actually pulled sdc out, then it would
+> still be listed as part of the BTRFS file system, wouldn't it?
 
-(FWIW, queued trim is blocked by my kernel (it's "forced_unqueued"), but fs=
-trim
-should still start an unqueued trim, right?)
+   With btrfs fi show, no, you'd get ** some devices missing ** in the
+output.
 
-# uname -a       =20
-Linux thetick 4.1.4-gentoo #1 SMP PREEMPT Tue Aug 4 21:58:41 CEST 2015 x86_=
-64 AMD Athlon(tm) 64 X2 Dual Core Processor 4200+ AuthenticAMD GNU/Linux
-# btrfs --version
-btrfs-progs v4.1.2
-# btrfs filesystem show=20
-Label: 'MARCEC_ROOT'  uuid: 0267d8b3-a074-460a-832d-5d5fd36bae64
-        Total devices 1 FS bytes used 56.59GiB
-        devid    1 size 107.79GiB used 69.03GiB path /dev/sda1
+>  If I
+> then where to plug some new disk into the same spot, it would not be
+> recognised as part of the file system?
 
-Label: 'MARCEC_STORAGE'  uuid: 472c9290-3ff2-4096-9c47-0612d3a52cef
-        Total devices 2 FS bytes used 597.75GiB
-        devid    1 size 931.51GiB used 600.03GiB path /dev/sdc
-        devid    2 size 931.51GiB used 600.03GiB path /dev/sdb
+   Correct... Unless the device had a superblock with the same UUID in
+it (like, say, the new device is just the old one reappearing
+again). In that case, udev would trigger a btrfs dev scan, and the
+"new" device would rejoin the FS -- probably a little out of date, but
+that would be caught by checksums and be fixed if you have redundancy
+in the storage.
 
-Label: 'MARCEC_BACKUP'  uuid: f97b3cda-15e8-418b-bb9b-235391ef2a38
-        Total devices 1 FS bytes used 807.59GiB
-        devid    1 size 976.56GiB used 837.06GiB path /dev/sdd2
+>  So assuming that the RAID
+> controller is getting confused and thinking that sdc has been pulled,
+> then replaced by sds, it should not be showing up as part of the BTRFS
+> file system?  Or maybe there's a signature on sdc that BTRFS notices
+> makes it part of the file system, even though BTRFS is now confused
+> about it's location?
 
-btrfs-progs v4.1.2
-# btrfs filesystem df /
-Data, single: total=3D65.00GiB, used=3D54.83GiB
-System, single: total=3D32.00MiB, used=3D16.00KiB
-Metadata, single: total=3D4.00GiB, used=3D1.76GiB
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+   See above.
 
-Greetings
---=20
-Marc Joliet
---
-"People who think they know everything really annoy those of us who know we
-don't" - Bjarne Stroustrup
+> After a reboot, sdc returns and sds is gone again.
 
---Sig_/3QldauDEbq+zaO60xq5ipyM
-Content-Type: application/pgp-signature
-Content-Description: Digitale Signatur von OpenPGP
+   Expected.
+
+> The RAID controller has recently been replaced, but there where similar
+> problems with the old one as well.  A better model of RAID controller
+> was chosen this time.
+> 
+> I've also not been able to complete a scrub on this system recently.
+> The really odd thing is that I get messages that the scrub has aborted,
+> yet the scrub continues, then much later (days later) the scrub causes
+> a kernel panic.  The "aborted" happens some random time into the scrub,
+> but usually in the early part of the scrub.  Mind you, if BTRFS is
+> completely confused due to a problem elsewhere, then maybe this can be
+> excused.
+
+   I think that means that it's aborting on one device but continuing
+on all the others.
+
+> The other backup server is almost identical, though it has less disks
+> in the array.  It doesn't have any issues with the BTRFS file system.
+> 
+> Can any one help shed some light on this please?  Hopefully some
+> "quick" things to try, given my definition of "recently" above means
+> that most things take days or weeks, or even months for me to try.
+> 
+> I have attached the usual debugging info requested.  This is after the
+> bogus sds replaces sdc.
+> 
+
+   The first thing would be to check your system logs for signs of
+hardware problems (ATA errors). This sounds a lot like you've got a
+dodgy disk that needs to be replaced.
+
+   Hugo.
+
+-- 
+Hugo Mills             | A gentleman doesn't do damage unless he's paid for
+hugo@... carfax.org.uk | it.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |                                            Juri Papay
+
+--qndya+I13rh6QJ0p
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJVzGIaAAoJEL/Q5oYsiHj00bEP+gMz63rY4OSl0ZmkkqyW7FmN
-2u6jJw4C5UO9bN2OIfqnf76TG/3MQ3Ivdf4EPUq6upWe/dchfafhYQpEOmVwirmq
-myIcQ6XsHOpDc7ibvzCFVzGzUDdE3e5HjUiP/ZrzqaFwZmtkTTyHzkU24LiL6aeu
-VOD/nufH/ccpicdWZzVgaklO1C/D+IIuxrt/UO89c5EUnKWHxUNud0R2Z8rAgWU7
-l8RDHjYX81OfxGkUCx2Fhp/WxAgZjCZfFTYsU4vopQwnWNlDTbJRqXYmpBpK6b3Q
-oUHwDOBjEzyTd0Ij6UAnmAGodZVIfiBMusCzCSZKlrNYTU3u59IzmOjpa7wyp76z
-d0pxp49otNUDT7oPPQ01vI9clLvK3eyaMDY3wShjwlLCqYx3I0FlpBKrtkbfeW0G
-sApmGUunzTFknqedlgnCGAcx1c1ZLUo7H2UIZQuv+50GB7eSd4MCPGkBKZaxjztr
-00aBJtey+UyR5MVhvrYN0YB8IUxLytJcMGBQIm1p4QAUSbKdRoUYwJHvEQWL557N
-1ElMPCFsjJ5dE/+kzvZ+4bX7Oh8dJffVK6UfD+tCaakE/+rwLkwTajHc+l2SE9hA
-dv4IqMomBUaCiRyPBvlUmVUsWemLxm0gc9bL9wjlJkEYBdUyrFkKgBy5gNEgkvzW
-42uX3X6HZqca3403KrwV
-=NX3q
+iQIcBAEBAgAGBQJVzGl9AAoJEFheFHXiqx3kBrQP/jWA3WbRN1lNBXBlIFZfg32j
+YRGU3PFW1Em3Jf5E5PE1DMPS9FGPNs+ONCGC3UUlJaStfv+ZtrDwrjTyYsozkXho
+/HlzPOc6sC34DqsMqh9FRLvURgcc7nHAP1HBhV3Hy9br0cgzVpU6q0k58s+3ghj8
+I17oqeqnJDOSCaCKoNUpLKNrv2JDZbP/E7Ndl4RCC5ZQ21mRhWji/iT36T8hpSny
+yc4wym5983haGX9RPYrjXjenG5xIZwyiQLmxMSryGamlqrZLi5S6ZYmYKgG22Xp0
+Ofd/+uyuf5oXuSYoNzrHgu3txKUHxSsIZBXng5V5FOuKrYsu7a7gFb4uvZGXntVV
+QJAEi+qJ/w51eWvOWGmOal982XqOZX/T248YAjyzjbrSuiXgzVt3cQNe8o3KSlU0
+lbOJwzWLabeyIMLYfquiuIichepRmCF4tF/Gz4Is3/HnWHvaLX6TZR8i2mzoYX/Z
+a3KXl4eoz/Ok7lWzvZqQSTckw2BW6JLY+HhVFah2fvfDKwUnJLrQnb8ZW3VQsx/V
+67d2vbnvuUdTFajhDPXs4rnwVEhZ0Xytvv5dAhSPA4b+TG86Msff2Dc/gd308+s1
+NxpdBOz+AtXOKIZZZX8dPA9AiWk31/of0RdRf0Y3puk1uk/I9PofSmyXuZ4ltwfn
+eELxzFdeos/NgNPUgOAT
+=536X
 -----END PGP SIGNATURE-----
 
---Sig_/3QldauDEbq+zaO60xq5ipyM--
+--qndya+I13rh6QJ0p--

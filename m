@@ -1,114 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:35134 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751517AbbHMLoY (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 07:44:24 -0400
-Received: by iodt126 with SMTP id t126so49128481iod.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 04:44:24 -0700 (PDT)
+Received: from smtp2.belwue.de ([129.143.2.15]:43385 "EHLO smtp2.belwue.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752022AbbHMML4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Aug 2015 08:11:56 -0400
+Received: from fex.belwue.de (fex.belwue.de [129.143.4.198])
+	by smtp2.belwue.de with ESMTP id t7DCBtEO003634
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 14:11:55 +0200 (MEST)
+	env-from (framstag@rus.uni-stuttgart.de)
+Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
+	by fex.belwue.de (Postfix) with SMTP id 35EFD2036A
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 14:11:55 +0200 (CEST)
+Date: Thu, 13 Aug 2015 14:11:55 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: RAID0 wrong (raw) device?
-To: Ulli Horlacher <framstag@rus.uni-stuttgart.de>,
-        linux-btrfs@vger.kernel.org
+Message-ID: <20150813121155.GC24122@rus.uni-stuttgart.de>
 References: <20150812130758.GA26529@rus.uni-stuttgart.de>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55CC830D.2070304@gmail.com>
-Date: Thu, 13 Aug 2015 07:44:13 -0400
+ <CAJCQCtRTvn-Xu_ipM7pCTtVuxUm0m7kjqt=F=+q6cj0vOOhF7g@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <20150812130758.GA26529@rus.uni-stuttgart.de>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060405000104050706000102"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAJCQCtRTvn-Xu_ipM7pCTtVuxUm0m7kjqt=F=+q6cj0vOOhF7g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Wed 2015-08-12 (11:03), Chris Murphy wrote:
+> On Wed, Aug 12, 2015 at 7:07 AM, Ulli Horlacher
+> <framstag@rus.uni-stuttgart.de> wrote:
+> 
+> > /dev/sdb and /dev/sde are in reality the same physical disk!
+> 
+> When does all of this confusion happen? Is it already confused before
+> mkfs or only after mkfs or only after mount?
 
---------------ms060405000104050706000102
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-A couple of observations:
-1. BTRFS currently has no knowledge of multipath or anything like that.=20
-  In theory it should work fine as long as the multiple device instances =
-
-all point to the same storage directly (including having identical block =
-
-addresses), but we still need to add proper handling for it.
-
-2. Be _VERY_ careful using BTRFS on top of _ANY_ kind of shared storage. =
-
-  Most non-clustered filesystems will have issues if multiply mounted,=20
-but in almost all cases I've personally seen, it _WILL_ cause=20
-irreparable damage to a BTRFS filesystem (we really need to do something =
-
-like ext4's MMP in BTRFS).
-
-3. See the warnings about doing block level copies and LVM snapshots of=20
-BTRFS volumes, the same applies to using it on DRBD currently as well=20
-(with the possible exception of remote DRBD nodes (ie, ones without a=20
-local copy of the backing store) (in this case, we need to blacklist=20
-backing devices for stacked storage (I think the same issue may be=20
-present with BTRFS on a MD based RAID1 set).
+I have not looked closely before the mkfs.btrfs, because I noticed no
+problems.
 
 
---------------ms060405000104050706000102
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+> I would find out what instigates it, wipe all signatures from everything,
+> reboot, start from scratch
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODEzMTE0NDEzWjBPBgkq
-hkiG9w0BCQQxQgRArQBl6qEReZqNxcW25BegMiXUiAksvPCDNOx+ACdJ35b2mF5oObkS/OoR
-toHPy6kECw5y8JF4Dk9R3MjHYxy3KTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgBgNNJ0I+F5dRsFCNjPPYy+aX1SJjOJVMI5VQ51nfwdNncrJp9V
-Vj9/Cwm22vpjfImAgryV4j8vEBhDQWG4L/2MkOP/fA+GKCSAhxI08VwEp6tHb9Wr/tqMm8wp
-iQhZOdB43/ce4wAhORT8lCPwMBoqVNWIhOiwv7O/wALpOFi+u7YJ/VLX/aBkmh5MlSoUrxnd
-pAAuKXQtHcXsNYvWjXER+oty1BVxSOiVxYnPaQv0UyKoaEFOr4rVskGiLy30nO1xGY7+CzYw
-bl8iU/j6urRtwg9ZT9s/Eka5N3G/KOgsbSX9wCmn77REHRF7jWcafgWTUhv4M16j0vMlTA6n
-gLRp4e2X4B8zN2+WApwy/TXSFs/YedIPm8U3T3YhC1FFnZJoDt3/CfhG1bMbb65WEEmm9C6D
-/RLZPR7xhzpFVWQNVtsAB6rFAbNuMlQz4dqGW7vfP+YY0tJdjZJLXd77WbFKQFzLW3QfK1GK
-6vDBRAqIDZ4mGXRyrra2j9m5g/HpcAWHi1qH2M5KAFFcxjCBz+5HGAptCbNAgpGsoalgmO23
-md06F24kmZ3WUBPVKXPnUSwhCELloIyppBQ4k3AWdrWwBRsr13b18heecozu4RjkEOm8XcYQ
-S8zvbIvtwHnHO+DXO/n4DZysz8h5NsdwQ5StlCZTS+ZzlMgoiRTCm28h7QAAAAAAAA==
---------------ms060405000104050706000102--
+This is not an option for me, because this server (despite its name) is a
+production system.
+
+
+-- 
+Ullrich Horlacher              Server und Virtualisierung
+Rechenzentrum IZUS/TIK         E-Mail: horlacher@tik.uni-stuttgart.de
+Universitaet Stuttgart         Tel:    ++49-711-68565868
+Allmandring 30a                Fax:    ++49-711-682357
+70550 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<CAJCQCtRTvn-Xu_ipM7pCTtVuxUm0m7kjqt=F=+q6cj0vOOhF7g@mail.gmail.com>

@@ -1,83 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:42906 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751345AbbHMIiw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 04:38:52 -0400
-Message-ID: <55CC5799.3040504@profihost.ag>
-Date: Thu, 13 Aug 2015 10:38:49 +0200
-From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Received: from mout.gmx.net ([212.227.15.18]:57907 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752256AbbHMIzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Aug 2015 04:55:10 -0400
+Received: from thetick ([93.181.44.4]) by mail.gmx.com (mrgmx001) with ESMTPSA
+ (Nemesis) id 0M3zT0-1YZd8r3QQc-00rUJ0 for <linux-btrfs@vger.kernel.org>; Thu,
+ 13 Aug 2015 10:55:07 +0200
+Date: Thu, 13 Aug 2015 10:54:58 +0200
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Deleted files cause btrfs-send to fail
+Message-ID: <20150813105458.676c884a@thetick>
+In-Reply-To: <pan$1dd35$9501221a$dce0e6ab$9d04fcea@cox.net>
+References: <20150813003419.09f13c1a@thetick>
+	<20150813090541.77f5c821@thetick>
+	<pan$1dd35$9501221a$dce0e6ab$9d04fcea@cox.net>
+Reply-To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: 4.2-rc6: kernel BUG at fs/btrfs/inode.c:3230
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; micalg=pgp-sha1;
+ boundary="Sig_/YolRNH/4unkv+qpBIr+4zq5"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+--Sig_/YolRNH/4unkv+qpBIr+4zq5
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Seen today:
+Am Thu, 13 Aug 2015 08:29:19 +0000 (UTC)
+schrieb Duncan <1i5t5.duncan@cox.net>:
 
-[150110.712196] ------------[ cut here ]------------
-[150110.776995] kernel BUG at fs/btrfs/inode.c:3230!
-[150110.841067] invalid opcode: 0000 [#1] SMP
-[150110.904472] Modules linked in: dm_mod netconsole ipt_REJECT
-nf_reject_ipv4 xt_multiport iptable_filter ip_tables x_tables
-cpufreq_userspace cpufreq_stats cpufreq_powersave cpufreq_conservative
-bonding usbhid ext2 coretemp loop ehci_pci ehci_hcd sb_edac i2c_i801
-usbcore edac_core i2c_core usb_common ipmi_si shpchp ipmi_msghandler
-button btrfs lzo_compress raid0 raid456 async_raid6_recov async_memcpy
-async_pq async_xor async_tx xor raid6_pq raid1 md_mod sg sd_mod ixgbe(O)
-i40e(O) vxlan ip6_udp_tunnel udp_tunnel ahci ptp aacraid libahci pps_core
-[150111.236617] CPU: 27 PID: 5015 Comm: btrfs-cleaner Tainted: G
-   O   4.2-rc6 #1
-[150111.305690] Hardware name: Supermicro X10DRH/X10DRH-IT, BIOS 1.0c
-02/18/2015
-[150111.376185] task: ffff88104ec19d50 ti: ffff8810328bc000 task.ti:
-ffff8810328bc000
-[150111.446596] RIP: 0010:[<ffffffffa01caaa3>]  [<ffffffffa01caaa3>]
-btrfs_orphan_add+0x153/0x230 [btrfs]
-[150111.518909] RSP: 0018:ffff8810328bfbf8  EFLAGS: 00010286
-[150111.591117] RAX: 00000000ffffffe4 RBX: ffff88104bc0d000 RCX:
-ffff881052942000
-[150111.664479] RDX: 000000000000dc9e RSI: 0000000000040000 RDI:
-ffff881052942138
-[150111.737600] RBP: ffff8810328bfc38 R08: 000060ef80001fd0 R09:
-ffff880ec4c0f3f0
-[150111.810923] R10: ffffffffa01e1527 R11: ffffea0030914100 R12:
-ffff880a127477d0
-[150111.884381] R13: 0000000000000001 R14: ffff880d4c35fcc0 R15:
-0000000000000001
-[150111.957062] FS:  0000000000000000(0000) GS:ffff88107fd60000(0000)
-knlGS:0000000000000000
-[150112.031233] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[150112.104347] CR2: 0000000001262000 CR3: 0000000001c14000 CR4:
-00000000001407e0
-[150112.178463] Stack:
-[150112.251776]  ffff8810328bfc38 ffffffffa020ce17 ffff8810538aa000
-ffff880d4c35fcc0
-[150112.327874]  ffff8810538aa000 ffff880ec4c0f3f0 ffff880a127477d0
-ffff881037d26600
-[150112.404005]  ffff8810328bfcd8 ffffffffa01b3e06 ffff88104cf54c00
-ffff880d4c35fcc0
-[150112.480156] Call Trace:
-[150112.555499]  [<ffffffffa020ce17>] ?
-lookup_free_space_inode+0x47/0xf0 [btrfs]
-[150112.632958]  [<ffffffffa01b3e06>]
-btrfs_remove_block_group+0x246/0x930 [btrfs]
-[150112.709655]  [<ffffffffa01ed447>] btrfs_remove_chunk+0x6a7/0x950 [btrfs]
-[150112.785134]  [<ffffffffa01b4819>]
-btrfs_delete_unused_bgs+0x329/0x350 [btrfs]
-[150112.860907]  [<ffffffffa01bc396>] cleaner_kthread+0x196/0x200 [btrfs]
-[150112.936807]  [<ffffffffa01bc200>] ?
-btree_read_extent_buffer_pages.constprop.128+0x110/0x110 [btrfs]
-[150113.014224]  [<ffffffff81090d59>] kthread+0xc9/0xe0
-[150113.090363]  [<ffffffff81090c90>] ? kthread_worker_fn+0x150/0x150
-[150113.165866]  [<ffffffff815fb708>] ret_from_fork+0x58/0x90
-[150113.241276]  [<ffffffff81090c90>] ? kthread_worker_fn+0x150/0x150
-[150113.316909] Code: 0f 1f 84 00 00 00 00 00 49 8b 54 24 38 eb 8d 66 0f
-1f 84 00 00 00 00 00 4c 89 e6 4c 89 f7 e8 c5 05 fe ff 85 c0 0f 84 53 ff
-ff ff <0f> 0b 0f 1f 00 be 07 00 00 00 48 89 df e8 fb 02 fe ff 48 85 c0
-[150113.476216] RIP  [<ffffffffa01caaa3>] btrfs_orphan_add+0x153/0x230
-[btrfs]
-[150113.553676]  RSP <ffff8810328bfbf8>
-[150113.630868] ---[ end trace d01d42d1600e0787 ]---
+> Marc Joliet posted on Thu, 13 Aug 2015 09:05:41 +0200 as excerpted:
+>=20
+> > Here's the actual output now, obtained via btrfs-progs 4.0.1 from an
+> > initramfs emergency shell:
+> >=20
+> > checking extents checking free space cache checking fs roots root 5
+> > inode 8338813 errors 2000, link count wrong
+> >         unresolved ref dir 26699 index 50500 namelen 4 name root
+> >         filetype 0 errors 3, no dir item, no dir index
+> > root 5 inode 8338814 errors 2000, link count wrong
+> >         unresolved ref dir 26699 index 50502 namelen 6 name marcec
+> >         filetype 0 errors 3, no dir item, no dir index
+> > root 5 inode 8338815 errors 2000, link count wrong
+> >         unresolved ref dir 26699 index 50504 namelen 6 name systab
+> >         filetype 0 errors 3, no dir item, no dir index
+> > root 5 inode 8710030 errors 2000, link count wrong
+> >         unresolved ref dir 26699 index 59588 namelen 6 name marcec
+> >         filetype 0 errors 3, no dir item, no dir index
+> > root 5 inode 8710031 errors 2000, link count wrong
+> >         unresolved ref dir 26699 index 59590 namelen 4 name root
+> >         filetype 0 errors 3, no dir item, no dir index
+> > Checking filesystem on /dev/sda1 UUID:
+> > 0267d8b3-a074-460a-832d-5d5fd36bae64 found 63467610172 bytes used err is
+> > 1 total csum bytes: 59475016 total tree bytes: 1903411200 total fs tree
+> > bytes: 1691504640 total extent tree bytes: 130322432 btree space waste
+> > bytes: 442495212 file data blocks allocated: 555097092096
+> >  referenced 72887840768
+> > btrfs-progs v4.0.1
+> >=20
+> > Again: is this fixable?
+>=20
+> FWIW, root 5 (which you asked about upthread) is the main filesystem=20
+> root.  So all these appear to be on the main filesystem, not on snapshots/
+> subvolumes.
+
+OK
+
+> As for the problem itself, noting that I'm not a dev, just a user/admin=20
+> following the list, I believe...
+>=20
+> There was a recent bug (early 4.0 or 4.1, IDR which) that (as I recall=20
+> understanding it) would fail to decrement link count and would thus leave=
+=20
+> unnamed inodes hanging around in directories with no way to delete them. =
+=20
+> That looks very much like what you're seeing.
+
+Now that you mention it, I think I remember seeing that patch (series?).
+
+> The bug has indeed been=20
+> fixed in current, and a current btrfs check should fix it, but I don't=20
+> believe that v4.0.1 userspace from the initramfs is new enough to have=20
+> that fix.  The 4.1.2 userspace on your main system (from the first post)=
+=20
+> is current and should fix it, I believe, however.
+
+I have updated the initramfs in the meantime.  (Funny: I *just* started usi=
+ng
+one, mainly to be able to use btrfstune on /, but now I have a genuine
+necessity for it.)
+
+> But if it's critical, you may wish to wait and have someone else confirm=
+=20
+> that before acting on it, just in case I have it wrong.
+
+I can wait until tonight, at least.  The FS still mounts, and it's just the=
+ root
+subvolume that's affected; running btrfs-send on the /home subvolume still
+works.
+
+Greetings
+--=20
+Marc Joliet
+--
+"People who think they know everything really annoy those of us who know we
+don't" - Bjarne Stroustrup
+
+--Sig_/YolRNH/4unkv+qpBIr+4zq5
+Content-Type: application/pgp-signature
+Content-Description: Digitale Signatur von OpenPGP
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBAgAGBQJVzFtqAAoJEL/Q5oYsiHj0xycP/i1svrvZ3pFg/KQmpkwQKzMg
+3IMEnBFu8VcMvMJBp+N+Co+bmrFv55QsaLNrbc0NL1sEjEdfO9VhKPZR/vzAlkg8
+uy8ybxhRkHM1fIAMewL6haRpp2fFBfta8PKhaklKWjfbYweaC4Fiqfc8PCMzfllC
+jXYkH0v5f4QQNaOfB/NY2ac2NdNXlZe9BhQDTng2ck0n2VKUGuHcdJnwIIc9n+Wb
+1dQ6avykpPb4KBB3Tt2pgquNzQ5ZU7cOoVQ47X4frEbAvJf8vPEn4i5T6jGUDpRk
+i26p0ESmB5pB062Q4nRBBFwoItxBbk+1ywkkMbWxF+vXkQtcKdZOr68yYO1im6R8
+tJgwAUUjsp45SbDWKfswmnrES4keUjeIuj1sh5TG1387GwjmczZubxUi2u2AOPsV
+xfCErxfDuvNSEKmKPW1/j3hMJeLdP2DeRKr+RKKtGU1lRSpo4LJvc5j/CsNCtEQE
+cwYvYfiOosLINPyBR9v6UoVw/AqgfvNbJHPtMQD764RlrvED8epc/vICMJ/45yOH
+AIGtWJEutPVTIoQhFgf3g5cRsJZNCLKtNsc3LiyqRlNg6BFynKuZ8gQm+1hb1/mY
+deHyGYhT6U/6ALwn6876qSKdSMJdPHq6WvTR9t/xsj039yBzsm2JAfT2lMdanXjL
+kM5WKs6PVjkyqQpFOtki
+=SUEh
+-----END PGP SIGNATURE-----
+
+--Sig_/YolRNH/4unkv+qpBIr+4zq5--

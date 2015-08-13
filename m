@@ -1,92 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:37520 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753957AbbHMWyK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 18:54:10 -0400
-Date: Thu, 13 Aug 2015 22:54:06 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Gareth Pye <gareth@cerberos.id.au>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Ulli Horlacher <framstag@rus.uni-stuttgart.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: RAID0 wrong (raw) device?
-Message-ID: <20150813225406.GQ12976@carfax.org.uk>
-References: <20150812130758.GA26529@rus.uni-stuttgart.de>
- <55CC830D.2070304@gmail.com>
- <CA+WRLO9ZbjZyNnMM951xrkE5OqymO3E8gMeebOpkX1a4qCS+6g@mail.gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:48385 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752135AbbHMXNK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Aug 2015 19:13:10 -0400
+Date: Thu, 13 Aug 2015 16:13:08 -0700
+From: Mark Fasheh <mfasheh@suse.de>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, jbacik@fb.com, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Major qgroup regression in 4.2?
+Message-ID: <20150813231307.GA1145@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="FhxWStFQ84VXWhXs"
-In-Reply-To: <CA+WRLO9ZbjZyNnMM951xrkE5OqymO3E8gMeebOpkX1a4qCS+6g@mail.gmail.com>
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi I was looking at qgroups in linux 4.2 and noticed that the code to handle
+subvolume deletion was removed and replaced with a comment:
 
---FhxWStFQ84VXWhXs
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+/*
+ * TODO: Modify related function to add related node/leaf to
+ * dirty_extent_root,
+ * for later qgroup accounting.
+ *
+ * Current, this function does nothing.
+ */
 
-On Fri, Aug 14, 2015 at 08:32:46AM +1000, Gareth Pye wrote:
-> On Thu, Aug 13, 2015 at 9:44 PM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
-> > 3. See the warnings about doing block level copies and LVM snapshots of
-> > BTRFS volumes, the same applies to using it on DRBD currently as well (with
-> > the possible exception of remote DRBD nodes (ie, ones without a local copy
-> > of the backing store) (in this case, we need to blacklist backing devices
-> > for stacked storage (I think the same issue may be present with BTRFS on a
-> > MD based RAID1 set).
-> 
-> 
-> I've been using BTRFS on top of DRBD for several years now, what
-> specifically am I meant to avoid?
-> 
-> I have 6 drives mirrored across a local network, this is done with DRBD.
-> At any one time only a single server has the 6 drives mounted with btrfs.
-> Is this a ticking time bomb?
+The commit in question is 0ed4792af0e8346cb670b4bc540df7594f4b2020,
+"btrfs: qgroup: Switch to new extent-oriented qgroup mechanism."
 
-   There are two things which are potentially worrisome here:
 
- - Having the same filesystem mounted on more than one machine at a
-   time (which you're not doing).
+Sure enough, I can reproduce an inconsistency by just removing a subvolume
+with more than 1 level.  A script to reproduce this is attached to my e-mail
+(it's from the last time I fixed subvolume delete).  This does not happen
+with Kernel 4.1.
 
- - Having one or more of the DRBD backing store devices present on the
-   same machine that the DRBD filesystem is mounted on (which you may
-   be doing).
+I also found the following in an e-mail from Qu a few weeks ago on the list:
 
-   Of these, the first is definitely going to be dangerous. The second
-may or may not be, depending on how well DRBD copes with direct writes
-to its backing store, and how lucky you are about the kernel
-identifying the right devices to use for the FS.
+"And we still don't have a good idea to fix the snapshot deletion bug.
+(My patchset can only handle snapshot with up to 2 levels. With higher
+level, the qgroup number will still be wrong until related node/leaves are
+all COWed)"
 
-   Hugo.
+http://www.spinics.net/lists/linux-btrfs/msg45724.html
 
--- 
-Hugo Mills             | "Big data" doesn't just mean increasing the font
-hugo@... carfax.org.uk | size.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
 
---FhxWStFQ84VXWhXs
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+So did we just commit another qgroup rewrite while knowingly re-introducing a
+major regression without a plan to fix it, or am I crazy?
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+If there *is* a plan to make this all work again, can I please hear it? The
+comment mentions something about adding those nodes to a dirty_extent_root.
+Why wasn't that done?
 
-iQIcBAEBAgAGBQJVzSANAAoJEFheFHXiqx3k2DMP/3g7avCECNlMVzIGj/+ehhgd
-ulJrzT3CPBLaT2vdw+FKKZqwZj04vT4yusctPsLX8JEh7HjbDmtjBWpJUDs3LItA
-5uzj0Vb5YScJTRSlYYOvXKYCpWSvKAi5z6+pgk2eTwifDsD9NH3VH5/iRrxEUtmR
-wjoDNzP/35fGYGMGdMnJn0191Ky3Sd+CBYy2TG2lzKM57MSGctySz44xUF69ll+2
-vL+FYGFLJ2h6m9w9Mogo5i8g8H+o4o5vo1usr7UcRe6pEvYlhFkZqHCoBkJJU26F
-0JiBrlOKpGy9jmEOJE4vcqe4+XhH2wH8mpzWVe/sdETzKx4gFcyL9Bi4TkJqcVtz
-icKd++8OTy4jdSwLU3eXRiy4MNiACTljQBGzSElznUG5PzyuDQGDPXxve+8YA7ER
-BK5QMQ7ZNBTDoeAoNM9bL8mHR50rdAdJFvcgChm8e6Z/wZqSKQdOsqRGxiWbHLYj
-k/tnxndByEUqoCO0x3J//zxpZCPvWSXc0j/PV0MDC+h8CxBnf9S8BVUXq1oAE3Vo
-sX1ncvdvP2Ym3fH7yrpMbX0o+/w9G9U/fW6+ogtX35+5a1v4nuJvJ59hrJ36veKN
-tehca49xYkVJfZk/TxURs4MMQYtTsW8RmiSDD1D0MuuTsooP2i0E6T63Dthmopc0
-QtsC9eZmIkQDEK94IvaN
-=t22j
------END PGP SIGNATURE-----
+Thanks,
+	--Mark
 
---FhxWStFQ84VXWhXs--
+
+#! /bin/bash 
+
+SCRATCH_MNT="/btrfs"
+SCRATCH_DEV=/dev/vdb1
+BTRFS_UTIL_PROG=btrfs
+
+echo "format, mount fs"
+
+mkfs.btrfs -f $SCRATCH_DEV
+mount -t btrfs $SCRATCH_DEV $SCRATCH_MNT
+
+# This always reproduces level 1 trees
+maxfiles=100
+
+echo "create file set"
+
+# Make a bunch of small files in a directory. This is designed to expand
+# the filesystem tree to something more than zero levels.
+mkdir $SCRATCH_MNT/files
+for i in `seq -w 0 $maxfiles`;
+do
+    dd status=none if=/dev/zero of=$SCRATCH_MNT/files/file$i bs=4096 count=4
+done
+
+# create a snapshot of what we just did
+$BTRFS_UTIL_PROG fi sy $SCRATCH_MNT
+$BTRFS_UTIL_PROG su sna $SCRATCH_MNT $SCRATCH_MNT/snap1
+mv $SCRATCH_MNT/snap1/files $SCRATCH_MNT/snap1/old
+
+# same thing as before but on the snapshot. this way we can generate
+# some exclusively owned tree nodes.
+echo "create file set on snapshot"
+mkdir $SCRATCH_MNT/snap1/files
+for i in `seq -w 0 $maxfiles`;
+do
+    dd status=none if=/dev/zero of=$SCRATCH_MNT/snap1/files/file$i bs=4096 count=4
+done
+
+SECS=30
+echo "sleep for $SECS seconds"
+# Enable qgroups now that we have our filesystem prepared. This
+# will kick off a scan which we will have to wait for below.
+$BTRFS_UTIL_PROG qu en $SCRATCH_MNT
+sleep $SECS
+
+echo "unmount, remount fs to clear cache"
+umount $SCRATCH_MNT
+mount -t btrfs $SCRATCH_DEV $SCRATCH_MNT
+
+SECS=45
+echo "delete snapshot, sleep for $SECS seconds"
+
+# Ok, delete the snapshot we made previously. Since btrfs drop
+# snapshot is a delayed action with no way to force it, we have to
+# impose another sleep here.
+$BTRFS_UTIL_PROG su de $SCRATCH_MNT/snap1
+sleep $SECS
+
+echo "unmount"
+umount $SCRATCH_MNT
+
+# generate a qgroup report and look for inconsistent groups
+$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV
+
+exit

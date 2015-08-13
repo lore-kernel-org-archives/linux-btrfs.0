@@ -1,113 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:49929 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751141AbbHMHFq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 03:05:46 -0400
-Received: from thetick ([93.181.44.4]) by mail.gmx.com (mrgmx001) with ESMTPSA
- (Nemesis) id 0MPDaC-1ZUCQx2rYG-004UXs for <linux-btrfs@vger.kernel.org>; Thu,
- 13 Aug 2015 09:05:43 +0200
-Date: Thu, 13 Aug 2015 09:05:41 +0200
-From: Marc Joliet <marcec@gmx.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Deleted files cause btrfs-send to fail
-Message-ID: <20150813090541.77f5c821@thetick>
-In-Reply-To: <20150813003419.09f13c1a@thetick>
-References: <20150813003419.09f13c1a@thetick>
-Reply-To: linux-btrfs@vger.kernel.org
+Received: from mail-ph.de-nserver.de ([85.158.179.214]:46262 "EHLO
+	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751442AbbHMH0R (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 13 Aug 2015 03:26:17 -0400
+Message-ID: <55CC4697.4080102@profihost.ag>
+Date: Thu, 13 Aug 2015 09:26:15 +0200
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
- boundary="Sig_//Uz=eRncN=k+LV4/wdBbnhK"; protocol="application/pgp-signature"
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+CC: fdmanana@suse.com, mfasheh@suse.de
+Subject: 4.2-rc6: cp reflink call trace
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---Sig_//Uz=eRncN=k+LV4/wdBbnhK
-Content-Type: text/plain; charset=US-ASCII
-Content-Transfer-Encoding: quoted-printable
 
-Am Thu, 13 Aug 2015 00:34:19 +0200
-schrieb Marc Joliet <marcec@gmx.de>:
+I'm getting the following trace on a daily basis when stacking a lot of
+cp --reflink commands.
 
-[...]
-> Since this is the root file system, I haven't gotten a copy of the actual=
- output
-> of "btrfs check", though I have run it from an initramfs rescue shell.  T=
-he
-> output I saw there was much like the following (taken from an Email by Ro=
-man
-> Mamedov from 2014-12-28):
->=20
-> root 22730 inode 6236418 errors 2000, link count wrong unresolved ref dir=
- 105512 index 586340 namelen 48 name [redacted].dat.bak filetype 0 errors 3=
-, no dir item, no dir index
->=20
-> Only in my case, it's "root 5" and "root 4" (I think), and the file names
-> (and other file system specifics) are of course different.  I definitely =
-saw
-> "errors 2000" (I take it that's supposed to be an error code?).
-[...]
+Somethinkg like:
+File a 80GB
 
-Here's the actual output now, obtained via btrfs-progs 4.0.1 from an initra=
-mfs
-emergency shell:
+cp --reflink=always a b
+modify b
+cp --reflink=always b c
+modify c
+cp --reflink=always c d
+modify d
+...
 
-checking extents
-checking free space cache
-checking fs roots
-root 5 inode 8338813 errors 2000, link count wrong
-        unresolved ref dir 26699 index 50500 namelen 4 name root filetype 0=
- errors 3, no dir item, no dir index
-root 5 inode 8338814 errors 2000, link count wrong
-        unresolved ref dir 26699 index 50502 namelen 6 name marcec filetype=
- 0 errors 3, no dir item, no dir index
-root 5 inode 8338815 errors 2000, link count wrong
-        unresolved ref dir 26699 index 50504 namelen 6 name systab filetype=
- 0 errors 3, no dir item, no dir index
-root 5 inode 8710030 errors 2000, link count wrong
-        unresolved ref dir 26699 index 59588 namelen 6 name marcec filetype=
- 0 errors 3, no dir item, no dir index
-root 5 inode 8710031 errors 2000, link count wrong
-        unresolved ref dir 26699 index 59590 namelen 4 name root filetype 0=
- errors 3, no dir item, no dir index
-Checking filesystem on /dev/sda1
-UUID: 0267d8b3-a074-460a-832d-5d5fd36bae64
-found 63467610172 bytes used err is 1
-total csum bytes: 59475016
-total tree bytes: 1903411200
-total fs tree bytes: 1691504640
-total extent tree bytes: 130322432
-btree space waste bytes: 442495212
-file data blocks allocated: 555097092096
- referenced 72887840768
-btrfs-progs v4.0.1
 
-Again: is this fixable?
-
---=20
-Marc Joliet
---
-"People who think they know everything really annoy those of us who know we
-don't" - Bjarne Stroustrup
-
---Sig_//Uz=eRncN=k+LV4/wdBbnhK
-Content-Type: application/pgp-signature
-Content-Description: Digitale Signatur von OpenPGP
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBAgAGBQJVzEHGAAoJEL/Q5oYsiHj06REQAIx066EoG6sOEefW78GkXxLt
-rbjVjDD5ebiF3Qa4nM2iWKWz++1amZ0CwMkFdKl5rSaxn8X3FzHJeD1LlzfYZvVw
-Px6BAQrqmj0JqNgeuAyBB7r9pX2Te5wt2CG5lC4IKEREnh9gppQ7+KggiMUdTiuk
-NYXGm/feBRFqshFk6kW27q+e+ZHTPnLZNxNffWXSvr6/JSRXEUXEo4K4D5bTmfJ9
-fsGmGpTEtMfT7h5vCAWUvo9fp2U/JndVHCe+KVFfwmK46skNvI8N0oRhkhQGjFxb
-g9Nvmo3lD2uDPu39txOamP9qjlPMTb4LHTY+QWOj9Um8PvYUsWFLTqmy8F9a8eQw
-9G0iL4kiRPpv0K919+JNmrCWgBTjO9ED+Kf7Fts1Njq9pnFuHmNVBchXLtTZdcbj
-cwpFHUwd8zkB6vzE8WdUtL8OS8C9B/QybLEWdbEfkTF940QBZn5dAvgU8qfsOAEU
-exZQ1bYQlLWtBF/6dd8tYQWyMQmv0xTkXSE5LRBFh92DdcCi7nAsErRoUVxeMG15
-Sfw70nZ820LGdtsmH64Ml6ypMpJLHBWlXrmH9WKDtFX4hymol0X7cIF7PaERQwDv
-MEIK8OB4RaJgUrQaJbI//tBKfwzLwqv+2VIuiUrLi81+BTyLGMvmWG+jXePLddXV
-luJPTflwiRRtxq9euFfj
-=HYg2
------END PGP SIGNATURE-----
-
---Sig_//Uz=eRncN=k+LV4/wdBbnhK--
+[57623.099897] INFO: task cp:1319 blocked for more than 120 seconds.
+[57623.179331]       Tainted: G        W  O   4.2-rc6 #1
+[57623.259794] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+disables this message.
+[57623.343106] cp              D ffff88085fcd1cc0     0  1319   1237
+0x00000002
+[57623.425986]  ffff880040127798 0000000000000002 ffff880024590000
+0000000000011cc0
+[57623.507907]  ffff880040127fd8 0000000000011cc0 ffff880854018000
+ffff880024590000
+[57623.588682]  ffff880040127778 ffff8800401278b8 ffff8800401278c0
+7fffffffffffffff
+[57623.669714] Call Trace:
+[57623.747413]  [<ffffffff815f7ef9>] schedule+0x29/0x70
+[57623.821280]  [<ffffffff815fa91c>] schedule_timeout+0x1fc/0x260
+[57623.894211]  [<ffffffff8108beaa>] ? __queue_delayed_work+0xaa/0x1a0
+[57623.967373]  [<ffffffff8108b882>] ? try_to_grab_pending+0x102/0x150
+[57624.042693]  [<ffffffff815f91a6>] wait_for_completion+0x96/0x100
+[57624.113736]  [<ffffffff8109dd90>] ? try_to_wake_up+0x310/0x310
+[57624.185449]  [<ffffffff811cbd86>] writeback_inodes_sb_nr+0x86/0xb0
+[57624.255713]  [<ffffffffa01cd4a8>] flush_space+0x408/0x480 [btrfs]
+[57624.321342]  [<ffffffffa01c7aa0>] ? btrfs_get_alloc_profile+0x30/0x40
+[btrfs]
+[57624.389582]  [<ffffffffa01c7b0f>] ? can_overcommit+0x5f/0x100 [btrfs]
+[57624.454281]  [<ffffffffa01cd726>] reserve_metadata_bytes+0x206/0x490
+[btrfs]
+[57624.517303]  [<ffffffffa021cf34>] ?
+btrfs_clear_lock_blocking_rw+0x54/0x100 [btrfs]
+[57624.587297]  [<ffffffffa01cde78>] btrfs_block_rsv_add+0x38/0x60 [btrfs]
+[57624.656038]  [<ffffffffa01bcd8b>] ? btrfs_search_slot+0x89b/0xa10 [btrfs]
+[57624.722189]  [<ffffffffa01e2cf3>] start_transaction+0x473/0x5c0 [btrfs]
+[57624.794538]  [<ffffffffa01e316b>] btrfs_start_transaction+0x1b/0x20
+[btrfs]
+[57624.865341]  [<ffffffffa0216c14>] btrfs_clone+0x5b4/0x1070 [btrfs]
+[57624.935456]  [<ffffffffa0217b4f>] btrfs_ioctl_clone+0x47f/0x4f0 [btrfs]
+[57625.004768]  [<ffffffff811b0ec6>] ? do_last.isra.62+0x286/0xce0
+[57625.076043]  [<ffffffffa021beb1>] btrfs_ioctl+0x18e1/0x28f0 [btrfs]
+[57625.144157]  [<ffffffff811b23be>] ? path_openat+0xbe/0x600
+[57625.209512]  [<ffffffff810fbe12>] ? from_kgid+0x12/0x20
+[57625.275033]  [<ffffffff810fbe2e>] ? from_kgid_munged+0xe/0x20
+[57625.340483]  [<ffffffff811035fc>] ? acct_account_cputime+0x1c/0x20
+[57625.403169]  [<ffffffff811b6539>] do_vfs_ioctl+0x439/0x500
+[57625.463798]  [<ffffffff810a1b84>] ? vtime_account_user+0x44/0x60
+[57625.520728]  [<ffffffff81011528>] ? syscall_trace_enter_phase1+0xf8/0x160
+[57625.578309]  [<ffffffff811b664c>] SyS_ioctl+0x4c/0x90
+[57625.635960]  [<ffffffff815fc01d>] ? int_check_syscall_exit_work+0x34/0x3d
+[57625.694317]  [<ffffffff815fbdf2>] system_call_fastpath+0x12/0x17

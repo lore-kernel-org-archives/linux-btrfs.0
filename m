@@ -1,54 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f50.google.com ([209.85.213.50]:36635 "EHLO
-	mail-vk0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753955AbbHMXTm convert rfc822-to-8bit (ORCPT
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:35932 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754444AbbHMXZm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 19:19:42 -0400
-Received: by vkbf67 with SMTP id f67so23595273vkb.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 16:19:41 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1439505513.484813682@apps.rackspace.com>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
-	<55BADEC4.3020409@cn.fujitsu.com>
-	<CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
-	<55BAFEF9.1070107@cn.fujitsu.com>
-	<CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
-	<55BB0A39.1050208@cn.fujitsu.com>
-	<CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
-	<CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
-	<55C017E7.40704@cn.fujitsu.com>
-	<CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
-	<55C02AF9.3070600@cn.fujitsu.com>
-	<CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
-	<55C0A1ED.6020407@gmail.com>
-	<CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
-	<55C1F3DD.7020603@gmail.com>
-	<1439505513.484813682@apps.rackspace.com>
-Date: Thu, 13 Aug 2015 17:19:41 -0600
-Message-ID: <CAJCQCtQ2fK4S_RJRzg3EE+0qu4ipFtDVfshWuxjnF2nzpF8vLA@mail.gmail.com>
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Thu, 13 Aug 2015 19:25:42 -0400
+Received: by wicja10 with SMTP id ja10so1854619wic.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 16:25:41 -0700 (PDT)
+Received: from U64-desktop (smtp.infinitegrid.org. [46.182.105.104])
+        by smtp.gmail.com with ESMTPSA id eb3sm303156wib.24.2015.08.13.16.25.39
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=RC4-SHA bits=128/128);
+        Thu, 13 Aug 2015 16:25:40 -0700 (PDT)
+Date: Fri, 14 Aug 2015 09:25:34 +1000
+From: David Seikel <onefang@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Oddness with phantom device replacing real device.
+Message-ID: <20150814092534.29e08bde.onefang@gmail.com>
+In-Reply-To: <20150813095510.GP12976@carfax.org.uk>
+References: <20150813133322.369c10af.onefang@gmail.com>
+	<20150813095510.GP12976@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/fe6j_BWI8xwU_8yJ=CUrJ6L"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 13, 2015 at 4:38 PM, Vincent Olivier <vincent@up4.com> wrote:
-> Hi,
->
-> I think I might be having this problem too. 12 x 4TB RAID10 (original makefs, not converted from ext or whatnot). Says it has ~6TiB left. Centos 7. Dual Xeon CPU. 32GB RAM. ELRepo Kernel 4.1.5. Fstab options: noatime,autodefrag,compress=zlib,space_cache,nossd,noauto,x-systemd.automount
+--Sig_/fe6j_BWI8xwU_8yJ=CUrJ6L
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-Well I think others have suggested 3000 snapshots and quite a few
-things will get very slow. But then also you have autodefrag and I
-forget the interaction of this with many snapshots since the snapshot
-aware defrag code was removed.
+On Thu, 13 Aug 2015 09:55:10 +0000 Hugo Mills <hugo@carfax.org.uk>
+wrote:
 
-I'd say file a bug with the full details of the hardware from the
-ground up to the Btrfs file system. And include as an attachment,
-dmesg with sysrq+t during this "hang". Usually I see t asked if
-there's just slowness/delays, and w if there's already a kernel
-message saying there's a blocked task for 120 seconds.
+> On Thu, Aug 13, 2015 at 01:33:22PM +1000, David Seikel wrote:
+> > I don't actually think that this is a BTRFS problem, but it's
+> > showing symptoms within BTRFS, and I have no other clues, so maybe
+> > the BTRFS experts can help me figure out what is actually going
+> > wrong.
+> >=20
+> > I'm a sysadmin working for a company that does scientific modelling.
+> > They have many TBs of data.  We use two servers running Ubuntu
+> > 14.04 LTS to backup all of this data.  One of them includes 16
+> > spinning rust disks hooked to a RAID controller running in JBOD
+> > mode (in other words, as far as Linux is concerned, they are just
+> > 16 ordinary disks).  They are /dev/sdc to /dev/sdr, all being used
+> > as a single BTRFS file system.
+> >=20
+> > I have been having no end of trouble with this system recently.
+> > Keep in mind that due to the huge amount of data we deal with, doing
+> > anything takes a long time.  So "recently" means "in the last
+> > several months".
+> >=20
+> > My latest attempt to beat some sense into this server was to
+> > upgrade it to the latest officially backported kernel from Ubuntu,
+> > and compile my own copy of btrfs-progs from source code (latest
+> > release from github). Then I recreated the 16 disk BTRFS file
+> > system, and started the backup software running again, from
+> > scratch.  The next day, /dev/sdc has vanished, to be replaced be a
+> > phantom /dev/sds.  There's no such disk as /dev/sds.  /dev/sds is
+> > now included in the BTRFS file system replacing /dev/sdc.  In /dev
+> > sdc does indeed vanish, and sds does indeed appear.  This was
+> > happening before.  /dev/sds then starts to fill up with errors,
+> > since no such disk actually exists.
+>=20
+>    Sounds like the kind of behaviour when the disk has vanished from
+> the system for long enough to drop out and be recreated by the
+> driver. The renaming may (possibly) be down to a poor error-handling
+> path in btrfs -- we see this happening on USB sometimes, where the
+> original device node is still hung on to by the FS on a hardware
+> error, and so when the device comes back it's given a different name.
 
+So that part may need some fixing in BTRFS.
 
--- 
-Chris Murphy
+> > I don't know what is actually causing the problem.  The disks are
+> > in a hot swap backplane, and if I actually pulled sdc out, then it
+> > would still be listed as part of the BTRFS file system, wouldn't it?
+>=20
+>    With btrfs fi show, no, you'd get ** some devices missing ** in the
+> output.
+
+Which is different from what I'm getting.
+
+> >  If I
+> > then where to plug some new disk into the same spot, it would not be
+> > recognised as part of the file system?
+>=20
+>    Correct... Unless the device had a superblock with the same UUID in
+> it (like, say, the new device is just the old one reappearing
+> again). In that case, udev would trigger a btrfs dev scan, and the
+> "new" device would rejoin the FS -- probably a little out of date, but
+> that would be caught by checksums and be fixed if you have redundancy
+> in the storage.
+
+But btrfs is thinking it's a different device, hence all the errors as
+it gets confused.
+
+> >  So assuming that the RAID
+> > controller is getting confused and thinking that sdc has been
+> > pulled, then replaced by sds, it should not be showing up as part
+> > of the BTRFS file system?  Or maybe there's a signature on sdc that
+> > BTRFS notices makes it part of the file system, even though BTRFS
+> > is now confused about it's location?
+>=20
+>    See above.
+>=20
+> > After a reboot, sdc returns and sds is gone again.
+>=20
+>    Expected.
+>=20
+> > The RAID controller has recently been replaced, but there where
+> > similar problems with the old one as well.  A better model of RAID
+> > controller was chosen this time.
+> >=20
+> > I've also not been able to complete a scrub on this system recently.
+> > The really odd thing is that I get messages that the scrub has
+> > aborted, yet the scrub continues, then much later (days later) the
+> > scrub causes a kernel panic.  The "aborted" happens some random
+> > time into the scrub, but usually in the early part of the scrub.
+> > Mind you, if BTRFS is completely confused due to a problem
+> > elsewhere, then maybe this can be excused.
+>=20
+>    I think that means that it's aborting on one device but continuing
+> on all the others.
+
+Ah, would be useful for scrub to say so, and point out which device/s
+got aborted.
+
+> > The other backup server is almost identical, though it has less
+> > disks in the array.  It doesn't have any issues with the BTRFS file
+> > system.
+> >=20
+> > Can any one help shed some light on this please?  Hopefully some
+> > "quick" things to try, given my definition of "recently" above means
+> > that most things take days or weeks, or even months for me to try.
+> >=20
+> > I have attached the usual debugging info requested.  This is after
+> > the bogus sds replaces sdc.
+> >=20
+>=20
+>    The first thing would be to check your system logs for signs of
+> hardware problems (ATA errors). This sounds a lot like you've got a
+> dodgy disk that needs to be replaced.
+
+Just gotta figure out which one, I thought I already replaced the dodgy
+one.  Might be more than one.  sigh
+
+I'm guessing /dev/sdc.
+
+--=20
+A big old stinking pile of genius that no one wants
+coz there are too many silver coated monkeys in the world.
+
+--Sig_/fe6j_BWI8xwU_8yJ=CUrJ6L
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.11 (GNU/Linux)
+
+iEYEARECAAYFAlXNJ24ACgkQM4aCtK1wD2I8+wCgy6dgqK9iolUqINbQlidc2J8Y
+HnUAoOw1rL19uptMy929n5O+ATerXTrF
+=0spW
+-----END PGP SIGNATURE-----
+
+--Sig_/fe6j_BWI8xwU_8yJ=CUrJ6L--

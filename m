@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45031 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:47074 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751373AbbHMIpZ (ORCPT
+	with ESMTP id S1750769AbbHMIs1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 04:45:25 -0400
+	Thu, 13 Aug 2015 04:48:27 -0400
 From: Liu Bo <bo.li.liu@oracle.com>
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, fdmanana@gmail.com, david@fromorbit.com
-Subject: [PATCH] fstests: generic/018: expend "write backwards sync but contiguous" to test regression in btrfs
-Date: Thu, 13 Aug 2015 16:44:34 +0800
-Message-Id: <1439455474-20128-1-git-send-email-bo.li.liu@oracle.com>
-In-Reply-To: <1439194379-29290-1-git-send-email-bo.li.liu@oracle.com>
-References: <1439194379-29290-1-git-send-email-bo.li.liu@oracle.com>
+Subject: [PATCH v2] fstests: generic/018: expand "write backwards sync but contiguous" to test regression in btrfs
+Date: Thu, 13 Aug 2015 16:47:50 +0800
+Message-Id: <1439455670-21822-1-git-send-email-bo.li.liu@oracle.com>
+In-Reply-To: <1439455474-20128-1-git-send-email-bo.li.liu@oracle.com>
+References: <1439455474-20128-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -30,6 +30,8 @@ check these writes actually succeed.
 
 Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 ---
+v2: fix typo in title, s/expend/expand/g
+
  tests/generic/018     |  16 ++--
  tests/generic/018.out | 198 +++++++++++++++++++++++++++++++++++++++++++++++++-
  2 files changed, 203 insertions(+), 11 deletions(-)

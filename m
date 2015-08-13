@@ -1,80 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37819 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752604AbbHMQYP (ORCPT
+Received: from d.mail.sonic.net ([64.142.111.50]:52674 "EHLO d.mail.sonic.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752767AbbHMSeH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 12:24:15 -0400
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t7DGOEmE003133
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 16:24:14 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by userv0022.oracle.com (8.13.8/8.13.8) with ESMTP id t7DGOE2O021755
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 16:24:14 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id t7DGODAX002901
-	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 16:24:14 GMT
-Message-ID: <55CCC4AB.2080600@oracle.com>
-Date: Fri, 14 Aug 2015 00:24:11 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Thu, 13 Aug 2015 14:34:07 -0400
+Received: from mail-vk0-f41.google.com (mail-vk0-f41.google.com [209.85.213.41])
+	(authenticated bits=0)
+	by d.mail.sonic.net (8.15.1/8.15.1) with ESMTPSA id t7DIMCCa004493
+	(version=TLSv1.2 cipher=DHE-RSA-AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 11:22:12 -0700
+Received: by vkbg64 with SMTP id g64so8056805vkb.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 11:22:12 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: RAID0 wrong (raw) device?
-References: <20150812130758.GA26529@rus.uni-stuttgart.de> <55CC488D.4020203@oracle.com> <20150813120211.GA24122@rus.uni-stuttgart.de> <20150813145556.GA27405@rus.uni-stuttgart.de>
-In-Reply-To: <20150813145556.GA27405@rus.uni-stuttgart.de>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Date: Thu, 13 Aug 2015 11:22:12 -0700
+Message-ID: <CAPF83mvrEWSSRZhfXczHRtG2fW7tdE7OMysns_T6b=d5ZoPTMw@mail.gmail.com>
+Subject: weird qgroup behavior, possible bug? btrfs-progs 4.1.2 and 4.1.5 kernel.
+From: Suman Chakravartula <suman@rockstor.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
+
+I use qgroups for subvolumes in Rockstor and have been noticing this
+behavior for a while(at least from 3.18 days). The behavior is that I
+get "Disk quota exceeded" errors before even hitting 70% usage. Here's
+a simple demonstration of the problem.
+
+[root@rock-dev ~]# btrfs fi show singlepool
+Label: 'singlepool'  uuid: 77eb22bf-5f07-4f7e-83af-da183ceccd4d
+Total devices 1 FS bytes used 224.00KiB
+devid    1 size 3.00GiB used 276.00MiB path /dev/sdab
+
+btrfs-progs v4.1.2
+[root@rock-dev ~]# btrfs subvol list -p /mnt2/singlepool/
+ID 257 gen 9 parent 5 top level 5 path singleshare1
+[root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257        16.00KiB     16.00KiB         none         none 2015/1  ---
+2015/1       16.00KiB     16.00KiB      1.00GiB         none ---     0/257
+
+As you can see, the subvolume is part of the 2015/1 qgroup with a 1GiB
+max_rfer limit. Now I start writing to the it.
+
+[root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.1
+bs=1M count=256; sync
+256+0 records in
+256+0 records out
+268435456 bytes (268 MB) copied, 15.5902 s, 17.2 MB/s
+[root@rock-dev ~]# btrfs fi df /mnt2/singlepool/
+Data, single: total=328.00MiB, used=256.12MiB
+System, single: total=4.00MiB, used=16.00KiB
+Metadata, single: total=264.00MiB, used=432.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+[root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257       256.02MiB    256.02MiB         none         none 2015/1  ---
+2015/1      256.02MiB    256.02MiB      1.00GiB         none ---     0/257
+[root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.2
+bs=1M count=256; sync
+256+0 records in
+256+0 records out
+268435456 bytes (268 MB) copied, 15.7899 s, 17.0 MB/s
+[root@rock-dev ~]# btrfs fi df /mnt2/singlepool/
+Data, single: total=648.00MiB, used=512.19MiB
+System, single: total=4.00MiB, used=16.00KiB
+Metadata, single: total=264.00MiB, used=688.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+[root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257       512.02MiB    512.02MiB         none         none 2015/1  ---
+2015/1      512.02MiB    512.02MiB      1.00GiB         none ---     0/257
+
+Ok, so far so good. I've written 2 files, 512MiB in total and it's
+reflected accurately in the qgroup accounting. Now, I write a 3rd
+256MiB file.
+
+[root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.3
+bs=1M count=256; sync
+256+0 records in
+256+0 records out
+268435456 bytes (268 MB) copied, 15.6963 s, 17.1 MB/s
+[root@rock-dev ~]# sync
+[root@rock-dev ~]# btrfs fi df /mnt2/singlepool/
+Data, single: total=968.00MiB, used=768.25MiB
+System, single: total=4.00MiB, used=16.00KiB
+Metadata, single: total=264.00MiB, used=944.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+[root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+qgroupid         rfer         excl     max_rfer     max_excl parent  child
+--------         ----         ----     --------     -------- ------  -----
+0/5          16.00KiB     16.00KiB         none         none ---     ---
+0/257       662.00MiB    662.00MiB         none         none 2015/1  ---
+2015/1      662.00MiB    662.00MiB      1.00GiB         none ---     0/257
+
+I find it odd that the usage shows 662.00Mib, I was expecting to see
+768MiB(512+256). Is this because the third 256MiB file was compressed
+to 150MiB while the first two files were not compressible? Or is it
+something else, and if so, what is it?
+
+If I attempt to write another 256MiB file, i get this error:
+
+[root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.4
+bs=1M count=256; sync
+dd: failed to open ‘/mnt2/singleshare1/file.4’: Disk quota exceeded
+
+If I try to remove one of the three files written successfully, i get
+the same error:
+
+[root@rock-dev ~]# cd /mnt2/singleshare2/
+[root@rock-dev singleshare2]# ls
+file.1  file.2  file.3
+[root@rock-dev singleshare2]# ls -l
+total 786432
+-rw-r--r-- 1 root root 268435456 Aug 13 10:49 file.1
+-rw-r--r-- 1 root root 268435456 Aug 13 10:50 file.2
+-rw-r--r-- 1 root root 268435456 Aug 13 10:50 file.3
+[root@rock-dev singleshare2]# rm file.3
+rm: remove regular file ‘file.3’? y
+rm: cannot remove ‘file.3’: Disk quota exceeded
+
+I was able to reproduce this behavior with other raid profiles as well
+and recently, some of Rockstor users have also confirmed it with
+subvolume sizes small and large.
+
+I hope this is not a BTRFS bug and it's something that I am doing
+wrong. Can someone familiar with qgroups comment on this?
+
+I see that there are qgroup related patches going into 4.2. Are these
+problems addressed by them, perhaps?
 
 
-On 08/13/2015 10:55 PM, Ulli Horlacher wrote:
-> On Thu 2015-08-13 (14:02), Ulli Horlacher wrote:
->> On Thu 2015-08-13 (15:34), anand jain wrote:
->>
->>>> root@toy02:~# df -T /data
->>>> Filesystem     Type   1K-blocks      Used  Available Use% Mounted on
->>>> /dev/sdb       btrfs 3906909856 140031696 3765056176   4% /data
->>>>
->>>> root@toy02:~# btrfs filesystem show /data
->>>> Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
->>>>           Total devices 2 FS bytes used 129.81GiB
->>>>           devid    3 size 1.82TiB used 67.03GiB path /dev/drbd2
->>>>           devid    4 size 1.82TiB used 67.03GiB path /dev/sdb
->>>>
->>>> Btrfs v3.12
->>>>
->>>> ==> btrfs shows the wrong (raw) device /dev/sdb instead of /dev/drbd3 !
->>>
->>> Don't be too alarmed by that, progs do a bit of user land fabrication
->>> (wrong). kernel may /may-not be using sdb. try -m option.
->>
->> It is really weird: meanwhile (without any mount change or even reboot) I
->> get:
->>
->> root@toy02:~# btrfs filesystem show
->> Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
->>          Total devices 2 FS bytes used 106.51GiB
->>          devid    3 size 1.82TiB used 82.03GiB path /dev/drbd2
->>          devid    4 size 1.82TiB used 82.03GiB path /dev/drbd3
->
-> And now, after a reboot:
->
-> root@toy02:~/bin# btrfs filesystem show
-> Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
->          Total devices 2 FS bytes used 119.82GiB
->          devid    3 size 1.82TiB used 82.03GiB path /dev/drbd2
->          devid    4 size 1.82TiB used 82.03GiB path /dev/sde
->
-> GRMPF!
+-- 
+Suman Chakravartula
+Founder @ Rockstor
 
-pls use 'btrfs fi show -m' and just ignore no option or -d if fs is 
-mounted, as -m reads from the kernel.
-
-at mount you could assemble correct set of devices using mount -o device 
-option.
-
-Thanks, -Anand
-
-
+http://rockstor.com
+http://rockstor.com/blog
+http://forum.rockstor.com

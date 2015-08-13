@@ -1,110 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f181.google.com ([209.85.213.181]:34867 "EHLO
-	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751452AbbHMLaq (ORCPT
+Received: from mail-io0-f181.google.com ([209.85.223.181]:35134 "EHLO
+	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751517AbbHMLoY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 07:30:46 -0400
-Received: by igbjg10 with SMTP id jg10so61213442igb.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 04:30:45 -0700 (PDT)
-Subject: Re: bedup --defrag freezing
-To: Chris Murphy <lists@colorremedies.com>,
-        Konstantin Svist <fry.kun@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <55C2840E.4030909@gmail.com> <55C340B5.20005@gmail.com>
- <55CB942B.7050301@gmail.com>
- <CAJCQCtSaO7jXeJKe+jkMWcRkG6zmUrc+T=jiSD-54ewfAZXV1A@mail.gmail.com>
+	Thu, 13 Aug 2015 07:44:24 -0400
+Received: by iodt126 with SMTP id t126so49128481iod.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 04:44:24 -0700 (PDT)
+Subject: Re: RAID0 wrong (raw) device?
+To: Ulli Horlacher <framstag@rus.uni-stuttgart.de>,
+        linux-btrfs@vger.kernel.org
+References: <20150812130758.GA26529@rus.uni-stuttgart.de>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55CC7FDE.5000209@gmail.com>
-Date: Thu, 13 Aug 2015 07:30:38 -0400
+Message-ID: <55CC830D.2070304@gmail.com>
+Date: Thu, 13 Aug 2015 07:44:13 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSaO7jXeJKe+jkMWcRkG6zmUrc+T=jiSD-54ewfAZXV1A@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010908050600070502000202"
+In-Reply-To: <20150812130758.GA26529@rus.uni-stuttgart.de>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060405000104050706000102"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms010908050600070502000202
-Content-Type: text/plain; charset=utf-8; format=flowed
+--------------ms060405000104050706000102
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-12 15:30, Chris Murphy wrote:
-> On Wed, Aug 12, 2015 at 12:44 PM, Konstantin Svist <fry.kun@gmail.com> =
-wrote:
->> On 08/06/2015 04:10 AM, Austin S Hemmelgarn wrote:
->>> On 2015-08-05 17:45, Konstantin Svist wrote:
->>>> Hi,
->>>>
->>>> I've been running btrfs on Fedora for a while now, with bedup --defr=
-ag
->>>> running in a night-time cronjob.
->>>> Last few runs seem to have gotten stuck, without possibility of even=
+A couple of observations:
+1. BTRFS currently has no knowledge of multipath or anything like that.=20
+  In theory it should work fine as long as the multiple device instances =
 
->>>> killing the process (kill -9 doesn't work) -- all I could do is hard=
+all point to the same storage directly (including having identical block =
 
->>>> power cycle.
->>>>
->>>> Did something change recently? Is bedup simply too out of date? What=
+addresses), but we still need to add proper handling for it.
 
->>>> should I use to de-duplicate across snapshots instead? Etc.?
->>>>
->>> AFAIK, bedup hasn't been actively developed for quite a while (I'm
->>> actually kind of surprised it runs with the newest btrfs-progs).
->>> Personally, I'd suggest using duperemove
->>> (https://github.com/markfasheh/duperemove)
->>
->> Thanks, good to know.
->> Tried duperemove -- it looks like it builds a database of its own
->> checksums every time it runs... why won't it use BTRFS internal
->> checksums for fast rejection? Would run a LOT faster...
->
-> I think the reason is duperremove does extent based deduplication.
-> Where Btrfs checksums are 4KiB block based, not extent based. And so
-> many 4KiB CRC32C checksums would need to be in memory, that could be
-> kinda expensive. And also, I don't know if CRC32C checksums have
-> essentially no practical chance of collision. If it's really rare,
-> rather than "so improbable as to be impossible" then you could end up
-> with "really rare" corruption where incorrect deduplication happens.
-Yeah, duperemove doesn't use them because of the memory limitations.=20
-Theoretically it's possible to take the the CRC checksums of the=20
-individual blocks and then combine them to get a checksum of the blocks=20
-as a whold, but it really isn't worth it for that (it would take just=20
-about as long as the current hashing.
+2. Be _VERY_ careful using BTRFS on top of _ANY_ kind of shared storage. =
 
-As for the collision properties of CRC32C, it's actually almost trivial=20
-to construct collisions.  The reason that it is used in BTRFS is because =
+  Most non-clustered filesystems will have issues if multiply mounted,=20
+but in almost all cases I've personally seen, it _WILL_ cause=20
+irreparable damage to a BTRFS filesystem (we really need to do something =
 
-there is a functional guarantee that any single bit error in a block=20
-_will_ result in a different CRC, and most larger errors will also.  In=20
-other words, the usage of CRC32C in BTRFS is for error detection and=20
-because it's ridiculously fast on all modern processors.  As far as the=20
-possibility of incorrect deduplication, the kernel does a bytewise=20
-comparison of the extents submitted before actually deduplicating them,=20
-so there's no chance (barring hardware issues and/or external influence=20
-from a ill-intentioned third-party) of it happening.  Because of this,=20
-you could theoretically just call the ioctl on every possible=20
-combination of extents in the FS, but that would take a ridiculous=20
-amount of time (especially because calls involving the same byte ranges=20
-get internally serialized by the kernel), which is why we have programs=20
-like duperemove (while the hashing has to read all the data too, it's=20
-still a lot faster than just comparing all of it directly).
->
-> There was a patch late last  year I think to re-introduce sha256 hash
-> as the checksum, but as far as I know it's not in btrfs-progs yet. I
-> forget if that's file, extent or block based.
-I'm pretty sure that that patch never made it into the kernel (the=20
-original one was for the kernel, not the userspace programs, and it=20
-never got brought in because the argument for it (better protection=20
-against malicious intent) was inherently invalid for the usage of=20
-checksums in BTRFS (if someone can rewrite your data arbitrarily on=20
-disk, they can do so for the checksums also)), and that it was block=20
-based (and as such less useful for deduplication than the CRC32C that we =
+like ext4's MMP in BTRFS).
 
-are currently using).
+3. See the warnings about doing block level copies and LVM snapshots of=20
+BTRFS volumes, the same applies to using it on DRBD currently as well=20
+(with the possible exception of remote DRBD nodes (ie, ones without a=20
+local copy of the backing store) (in this case, we need to blacklist=20
+backing devices for stacked storage (I think the same issue may be=20
+present with BTRFS on a MD based RAID1 set).
 
 
-
---------------ms010908050600070502000202
+--------------ms060405000104050706000102
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -146,9 +91,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODEzMTEzMDM4WjBPBgkq
-hkiG9w0BCQQxQgRAW2jwMW3cEiFhNwfJT0Ckq7NI+vNc4YTTfZfLT76hyGfbE8wCDn3lmQx1
-ykvM5c5X45SRNOtFqpumsSnxJTzkozBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODEzMTE0NDEzWjBPBgkq
+hkiG9w0BCQQxQgRArQBl6qEReZqNxcW25BegMiXUiAksvPCDNOx+ACdJ35b2mF5oObkS/OoR
+toHPy6kECw5y8JF4Dk9R3MjHYxy3KTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -156,14 +101,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgBS9PiBJyTCy1VNIyVGnMJFekpFk+egWNaNcE7HWTYQuD18B7WO
-JRMAf1KX8dB9Pi/SD+q0FtqUfPSaiFg7GGoT7xhQTu1a+ju8g9T0dHrQuOOPc6nl+lziwJYc
-QQmqs3ygxVjLAmPH+oIYxQIqiDW3Ae/CWJndMbqmvWf/pvWdaOB0TYUmRFT/CXciC4zYgZT/
-9JdLMoExTFdQP7fDrmZvNdz+74cvIt+MklLQdsEG1ypNPYGQjiZ2h2Gw2s07n2jRKloowQy1
-LA09ulsMzsqUFnqkfoVEyQ7NAEmqyLe+Gg71BHNXsaTMdxII156WvDWLaXpWMHqXDJhGOjno
-7RUUD4MjpcgRtJu7l8ZY33soUbfFkKUseVFjRzPEZWfFBIBq8nb0t2frBGwC2U5YunblMOVR
-UE9kMoESTh3vfxP6Snov8fHlLIGebaaxl+o/ZTjtEi+aFKojzxOhyj5Me+Pr3B6me/BIrenq
-zjlUvZuhHCIKHC9gxjecWvxKgwah7QTanmzzyOLEj4WgLBbWgZBTT+39OF2NswVSinKZKlTk
-7lterkfCvU5iFJ0edW4gC7l7u5P+OSIAWlFzAZQN4ncKvAKhCkf4+Ug8tpHAIqmmt217q1Y5
-K03iNFZkVIjlmNoHXziR03J33N3sCJv5PmtSjzb62qTm7OKBo7IL6z48BQAAAAAAAA==
---------------ms010908050600070502000202--
+BgkqhkiG9w0BAQEFAASCAgBgNNJ0I+F5dRsFCNjPPYy+aX1SJjOJVMI5VQ51nfwdNncrJp9V
+Vj9/Cwm22vpjfImAgryV4j8vEBhDQWG4L/2MkOP/fA+GKCSAhxI08VwEp6tHb9Wr/tqMm8wp
+iQhZOdB43/ce4wAhORT8lCPwMBoqVNWIhOiwv7O/wALpOFi+u7YJ/VLX/aBkmh5MlSoUrxnd
+pAAuKXQtHcXsNYvWjXER+oty1BVxSOiVxYnPaQv0UyKoaEFOr4rVskGiLy30nO1xGY7+CzYw
+bl8iU/j6urRtwg9ZT9s/Eka5N3G/KOgsbSX9wCmn77REHRF7jWcafgWTUhv4M16j0vMlTA6n
+gLRp4e2X4B8zN2+WApwy/TXSFs/YedIPm8U3T3YhC1FFnZJoDt3/CfhG1bMbb65WEEmm9C6D
+/RLZPR7xhzpFVWQNVtsAB6rFAbNuMlQz4dqGW7vfP+YY0tJdjZJLXd77WbFKQFzLW3QfK1GK
+6vDBRAqIDZ4mGXRyrra2j9m5g/HpcAWHi1qH2M5KAFFcxjCBz+5HGAptCbNAgpGsoalgmO23
+md06F24kmZ3WUBPVKXPnUSwhCELloIyppBQ4k3AWdrWwBRsr13b18heecozu4RjkEOm8XcYQ
+S8zvbIvtwHnHO+DXO/n4DZysz8h5NsdwQ5StlCZTS+ZzlMgoiRTCm28h7QAAAAAAAA==
+--------------ms060405000104050706000102--

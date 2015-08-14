@@ -1,86 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:33924 "EHLO
-	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752212AbbHMX3b (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:43157 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753567AbbHNA00 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 19:29:31 -0400
-Received: by wicne3 with SMTP id ne3so2103497wic.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 13 Aug 2015 16:29:30 -0700 (PDT)
+	Thu, 13 Aug 2015 20:26:26 -0400
+Received: from athena.localnet (ns-local [10.10.10.1])
+	by smtp.sws.net.au (Postfix) with ESMTP id 71AA2ECEE
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2015 10:26:22 +1000 (AEST)
+From: Russell Coker <russell@coker.com.au>
+To: "=?utf-8?q?=E2=80=9Clinux-btrfs?=@
+	=?utf-8?q?vger=2Ekernel=2Eorg=E2=80=9D?="
+	<linux-btrfs@vger.kernel.org>
+Subject: lack of scrub error data
+Date: Fri, 14 Aug 2015 10:26:20 +1000
 MIME-Version: 1.0
-In-Reply-To: <20150813225406.GQ12976@carfax.org.uk>
-References: <20150812130758.GA26529@rus.uni-stuttgart.de>
-	<55CC830D.2070304@gmail.com>
-	<CA+WRLO9ZbjZyNnMM951xrkE5OqymO3E8gMeebOpkX1a4qCS+6g@mail.gmail.com>
-	<20150813225406.GQ12976@carfax.org.uk>
-Date: Fri, 14 Aug 2015 09:29:30 +1000
-Message-ID: <CA+WRLO9ub4gX1Rj9+f1APNujL7zk_p7NApUUS-ExkfbuPjMQDQ@mail.gmail.com>
-Subject: Re: RAID0 wrong (raw) device?
-From: Gareth Pye <gareth@cerberos.id.au>
-To: Hugo Mills <hugo@carfax.org.uk>, Gareth Pye <gareth@cerberos.id.au>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Ulli Horlacher <framstag@rus.uni-stuttgart.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;
+  charset="us-ascii"
+Message-Id: <201508141026.20762.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I would have been surprised if any generic file system copes well with
-being mounted in several locations at once, DRBD appears to fight
-really hard to avoid that happening :)
+Below is the result of testing a corrupted filesystem.  What's going on here?  
+The kernel message log and the btrfs output don't tell me how many errors 
+there were.  Also the data is RAID-0 (the default for a filesystem created with 
+2 devices) so if this was in a data area it should have lost data, but no data 
+was lost so apparently not.
 
-And yeah I'm doing the second thing, I've successfully switched which
-of the servers is active a few times with no ill effect (I would
-expect scrub to give me some significant warnings if one of the disks
-was a couple of months out of date) so I'm presuming that DRBD copes
-reasonably well or I've been very lucky. Either that luck is very
-deterministic, DRBD copes correctly, or I've been very very lucky.
+Debian kernel 4.0.8-2 and btrfs-tools 4.0-2.
 
-Very very lucky doesn't sound likely.
-
-On Fri, Aug 14, 2015 at 8:54 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Fri, Aug 14, 2015 at 08:32:46AM +1000, Gareth Pye wrote:
->> On Thu, Aug 13, 2015 at 9:44 PM, Austin S Hemmelgarn
->> <ahferroin7@gmail.com> wrote:
->> > 3. See the warnings about doing block level copies and LVM snapshots of
->> > BTRFS volumes, the same applies to using it on DRBD currently as well (with
->> > the possible exception of remote DRBD nodes (ie, ones without a local copy
->> > of the backing store) (in this case, we need to blacklist backing devices
->> > for stacked storage (I think the same issue may be present with BTRFS on a
->> > MD based RAID1 set).
->>
->>
->> I've been using BTRFS on top of DRBD for several years now, what
->> specifically am I meant to avoid?
->>
->> I have 6 drives mirrored across a local network, this is done with DRBD.
->> At any one time only a single server has the 6 drives mounted with btrfs.
->> Is this a ticking time bomb?
->
->    There are two things which are potentially worrisome here:
->
->  - Having the same filesystem mounted on more than one machine at a
->    time (which you're not doing).
->
->  - Having one or more of the DRBD backing store devices present on the
->    same machine that the DRBD filesystem is mounted on (which you may
->    be doing).
->
->    Of these, the first is definitely going to be dangerous. The second
-> may or may not be, depending on how well DRBD copes with direct writes
-> to its backing store, and how lucky you are about the kernel
-> identifying the right devices to use for the FS.
->
->    Hugo.
->
-> --
-> Hugo Mills             | "Big data" doesn't just mean increasing the font
-> hugo@... carfax.org.uk | size.
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
-
-
+# cp -r /lib /mnt/tmp
+# btrfs scrub start -B /mnt/tmp
+scrub done for c0992a26-3c7f-47b0-b8de-878dfe197469
+        scrub started at Fri Aug 14 10:17:53 2015 and finished after 0 seconds
+        total bytes scrubbed: 372.82MiB with 0 errors
+# dd if=/dev/zero of=/dev/loop0 bs=1024k count=20 seek=100
+20+0 records in
+20+0 records out
+20971520 bytes (21 MB) copied, 0.0267078 s, 785 MB/s
+# btrfs scrub start -B /mnt/tmp
+scrub done for c0992a26-3c7f-47b0-b8de-878dfe197469
+        scrub started at Fri Aug 14 10:19:15 2015 and finished after 0 seconds
+        total bytes scrubbed: 415.04MiB with 0 errors
+WARNING: errors detected during scrubbing, corrected.
+# btrfs scrub start -B /mnt/tmp
+scrub done for c0992a26-3c7f-47b0-b8de-878dfe197469 
+        scrub started at Fri Aug 14 10:20:25 2015 and finished after 0 seconds
+        total bytes scrubbed: 415.04MiB with 0 errors
+# btrfs fi df /mnt/tmp
+Data, RAID0: total=800.00MiB, used=400.23MiB
+System, RAID1: total=8.00MiB, used=16.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, RAID1: total=400.00MiB, used=7.39MiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=16.00MiB, used=0.00B
+# btrfs device stats /mnt/tmp
+[/dev/loop0].write_io_errs   0
+[/dev/loop0].read_io_errs    0
+[/dev/loop0].flush_io_errs   0
+[/dev/loop0].corruption_errs 0
+[/dev/loop0].generation_errs 0
+[/dev/loop1].write_io_errs   0
+[/dev/loop1].read_io_errs    0
+[/dev/loop1].flush_io_errs   0
+[/dev/loop1].corruption_errs 0
+[/dev/loop1].generation_errs 0
+# diff -ru /lib /mnt/tmp/lib
+#
 
 -- 
-Gareth Pye - blog.cerberos.id.au
-Level 2 MTG Judge, Melbourne, Australia
-"Dear God, I would like to file a bug report"
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

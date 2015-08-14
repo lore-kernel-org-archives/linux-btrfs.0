@@ -1,73 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp65.iad3a.emailsrvr.com ([173.203.187.65]:48363 "EHLO
-	smtp65.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932312AbbHNCm6 convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 13 Aug 2015 22:42:58 -0400
-Date: Thu, 13 Aug 2015 22:42:57 -0400 (EDT)
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
-From: "Vincent Olivier" <vincent@up4.com>
-To: "Duncan" <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
+Received: from mx2.rus.uni-stuttgart.de ([129.69.192.2]:40760 "EHLO
+	mx2.rus.uni-stuttgart.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751682AbbHNHcO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Aug 2015 03:32:14 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mx2.rus.uni-stuttgart.de (Postfix) with ESMTP id 1B8C7200B6
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2015 09:32:13 +0200 (CEST)
+Received: from mx2.rus.uni-stuttgart.de ([127.0.0.1])
+	by localhost (mx2.rus.uni-stuttgart.de [127.0.0.1]) (amavisd-new, port 10024)
+	with ESMTP id Ws3J3OyBmAy6 for <linux-btrfs@vger.kernel.org>;
+	Fri, 14 Aug 2015 09:32:11 +0200 (CEST)
+Received: from diaspora.rus.uni-stuttgart.de (diaspora.rus.uni-stuttgart.de [129.69.13.139])
+	by mx2.rus.uni-stuttgart.de (Postfix) with SMTP
+	for <linux-btrfs@vger.kernel.org>; Fri, 14 Aug 2015 09:32:11 +0200 (CEST)
+Date: Fri, 14 Aug 2015 09:32:11 +0200
+From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: RAID0 wrong (raw) device?
+Message-ID: <20150814073211.GA10650@rus.uni-stuttgart.de>
+References: <20150812130758.GA26529@rus.uni-stuttgart.de>
+ <55CC488D.4020203@oracle.com>
+ <20150813120211.GA24122@rus.uni-stuttgart.de>
+ <20150813145556.GA27405@rus.uni-stuttgart.de>
+ <55CCC4AB.2080600@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain;charset=UTF-8
-In-Reply-To: <pan$9bab3$33004c18$3a12cc04$86d0a7bb@cox.net>
-References: <CAJ3TwYQXqUZiKhYc5rciTmvGX1RLkHnkQb5SSYAJ7AD+kbudag@mail.gmail.com>
- <55BADEC4.3020409@cn.fujitsu.com>
- <CAJ3TwYRN+1tJY+paz=qZT0_XP=r9CcTKbBgX_kZRFOWj8vSK=w@mail.gmail.com>
- <55BAFEF9.1070107@cn.fujitsu.com>
- <CAJ3TwYR5g-JhjmGnZUXqLXc7qV1_=AN5_6sj54JQODbtgG9Aag@mail.gmail.com>
- <55BB0A39.1050208@cn.fujitsu.com>
- <CAJ3TwYS+yL8Tk8d3uigpXrfD+dcn2G4tWwbF7jcB=BCDZqs6+g@mail.gmail.com>
- <CAJ3TwYQc3d5R6r+tjY9mxUzptWA_MktUbZeaQebmNRBuqB7zYA@mail.gmail.com>
- <55C017E7.40704@cn.fujitsu.com>
- <CAJ3TwYTd_8-uwn-osNsf6UAuxGvoJCeWmxWYNHmzXoF_+yrABA@mail.gmail.com>
- <55C02AF9.3070600@cn.fujitsu.com>
- <CAJ3TwYQUX-CgqSXMxxU+6tcb0_0tuJbwKqHHPufCnsDBYuXycw@mail.gmail.com>
- <55C0A1ED.6020407@gmail.com>
- <CAJ3TwYQgm2f4SQFOO_vgGLP0V71q+oesbjFxTjhEJnrXYLe4fQ@mail.gmail.com>
- <55C1F3DD.7020603@gmail.com> <1439505513.484813682@apps.rackspace.com>
- <CAJCQCtQ2fK4S_RJRzg3EE+0qu4ipFtDVfshWuxjnF2nzpF8vLA@mail.gmail.com>
- <pan$9bab3$33004c18$3a12cc04$86d0a7bb@cox.net>
-Message-ID: <1439520177.42462515@apps.rackspace.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55CCC4AB.2080600@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'll try without autodefrag anyways tomorrow just to make sure.
+On Fri 2015-08-14 (00:24), Anand Jain wrote:
 
-And then file a bug report too with however it decides to behave.
+> >> root@toy02:~# btrfs filesystem show
+> >> Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
+> >>          Total devices 2 FS bytes used 106.51GiB
+> >>          devid    3 size 1.82TiB used 82.03GiB path /dev/drbd2
+> >>          devid    4 size 1.82TiB used 82.03GiB path /dev/drbd3
+> >
+> > And now, after a reboot:
+> >
+> > root@toy02:~/bin# btrfs filesystem show
+> > Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
+> >          Total devices 2 FS bytes used 119.82GiB
+> >          devid    3 size 1.82TiB used 82.03GiB path /dev/drbd2
+> >          devid    4 size 1.82TiB used 82.03GiB path /dev/sde
+> >
+> > GRMPF!
+> 
+> pls use 'btrfs fi show -m' and just ignore no option or -d if fs is 
+> mounted, as -m reads from the kernel.
 
-Vincent
+There is now a new behaviour: after the btrfs mount, I can see shortly the
+wrong raw device /dev/sde and a few seconds later there is the correct
+/dev/drbd3 :
 
------Original Message-----
-From: "Duncan" <1i5t5.duncan@cox.net>
-Sent: Thursday, August 13, 2015 20:30
-To: linux-btrfs@vger.kernel.org
-Subject: Re: mount btrfs takes 30 minutes, btrfs check runs out of memory
 
-Chris Murphy posted on Thu, 13 Aug 2015 17:19:41 -0600 as excerpted:
+root@toy02:/etc# umount /data
+root@toy02:/etc# mount /data
+root@toy02:/etc# btrfs filesystem show
+Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
+        Total devices 2 FS bytes used 109.56GiB
+        devid    3 size 1.82TiB used 63.03GiB path /dev/drbd2
+        devid    4 size 1.82TiB used 63.03GiB path /dev/sde
 
-> Well I think others have suggested 3000 snapshots and quite a few things
-> will get very slow. But then also you have autodefrag and I forget the
-> interaction of this with many snapshots since the snapshot aware defrag
-> code was removed.
+Btrfs v3.12
+root@toy02:/etc# btrfs filesystem show
+Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
+        Total devices 2 FS bytes used 109.56GiB
+        devid    3 size 1.82TiB used 63.03GiB path /dev/drbd2
+        devid    4 size 1.82TiB used 63.03GiB path /dev/drbd3
 
-Autodefrag shouldn't have any snapshots mount-time-related interaction, 
-with snapshot-aware-defrag disabled.  The interaction between defrag 
-(auto or not) and snapshots will be additional data space usage, since 
-with snapshot-aware disabled, defrag only works with the current copy, 
-thus forcing it to COW the extents elsewhere while not freeing the old 
-extents as they're still referenced by the snapshots, but it shouldn't 
-affect mount-time.
+Btrfs v3.12
+
+root@toy02:/etc# btrfs filesystem show -m
+Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
+        Total devices 2 FS bytes used 109.56GiB
+        devid    3 size 1.82TiB used 63.03GiB path /dev/drbd2
+        devid    4 size 1.82TiB used 63.03GiB path /dev/drbd3
+
+Btrfs v3.12
+
+
+Still, the kernel sees 3 instead of (really) 2 HGST drives:
+
+root@toy02:/etc# hdparm -I /dev/sdb | grep Number:
+        Model Number:       HGST HUS724020ALA640
+        Serial Number:      PN2134P5G2P2AX
+
+root@toy02:/etc# hdparm -I /dev/sde | grep Number:
+        Model Number:       HGST HUS724020ALA640
+        Serial Number:      PN2134P5G2P2AX
+
+root@toy02:/etc# hdparm -I /dev/sdd | grep Number:
+        Model Number:       HGST HUS724020ALA640
+        Serial Number:      PN2134P5G2P2XX
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+Ullrich Horlacher              Informationssysteme und Serverbetrieb
+IZUS/TIK                       E-Mail: horlacher@rus.uni-stuttgart.de
+Universitaet Stuttgart         Tel:    ++49-711-68565868
+Allmandring 30a                Fax:    ++49-711-682357
+70550 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
+REF:<55CCC4AB.2080600@oracle.com>

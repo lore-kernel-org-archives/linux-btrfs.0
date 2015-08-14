@@ -1,137 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwym02.jp.fujitsu.com ([211.128.242.41]:23125 "EHLO
-	mgwym02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753104AbbHFDGu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 23:06:50 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by yt-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id AB6C0AC0159
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2015 12:06:47 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-	by m3051.s.css.fujitsu.com (Postfix) with SMTP id 8FA58DC
-	for <linux-btrfs@vger.kernel.org>; Thu,  6 Aug 2015 12:06:47 +0900 (JST)
-Message-Id: <201508060305.AA00001@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Thu, 06 Aug 2015 12:05:55 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: add newline to some error messages
+Received: from aserp1040.oracle.com ([141.146.126.69]:42879 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753903AbbHNJ2h (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Aug 2015 05:28:37 -0400
+Date: Fri, 14 Aug 2015 12:28:26 +0300
+From: Dan Carpenter <dan.carpenter@oracle.com>
+To: miaox@cn.fujitsu.com
+Cc: linux-btrfs@vger.kernel.org
+Subject: re: Btrfs: don't start the log transaction if the log tree init fails
+Message-ID: <20150814092826.GA11685@mwanda>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Added a missing newline to some error messages.
+Hello Miao Xie,
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- btrfs-corrupt-block.c | 2 +-
- cmds-check.c          | 4 ++--
- cmds-send.c           | 4 ++--
- dir-item.c            | 6 +++---
- mkfs.c                | 2 +-
- 5 files changed, 9 insertions(+), 9 deletions(-)
+The patch e87ac1368700: "Btrfs: don't start the log transaction if
+the log tree init fails" from Feb 20, 2014, leads to the following
+static checker warning:
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 1a2aa23..ea871f4 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -1010,7 +1010,7 @@ int find_chunk_offset(struct btrfs_root *root,
- 		goto out;
- 	}
- 	if (ret < 0) {
--		fprintf(stderr, "Error searching chunk");
-+		fprintf(stderr, "Error searching chunk\n");
- 		goto out;
- 	}
- out:
-diff --git a/cmds-check.c b/cmds-check.c
-index dd2fce3..0ddf57c 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -2398,7 +2398,7 @@ static int repair_inode_nlinks(struct btrfs_trans_handle *trans,
- 				  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
- 				  mode);
- 		if (ret < 0) {
--			fprintf(stderr, "Failed to create '%s' dir: %s",
-+			fprintf(stderr, "Failed to create '%s' dir: %s\n",
- 				dir_name, strerror(-ret));
- 			goto out;
- 		}
-@@ -2426,7 +2426,7 @@ static int repair_inode_nlinks(struct btrfs_trans_handle *trans,
- 		}
- 		if (ret < 0) {
- 			fprintf(stderr,
--				"Failed to link the inode %llu to %s dir: %s",
-+				"Failed to link the inode %llu to %s dir: %s\n",
- 				rec->ino, dir_name, strerror(-ret));
- 			goto out;
- 		}
-diff --git a/cmds-send.c b/cmds-send.c
-index 20bba18..78ee54c 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -192,13 +192,13 @@ static int write_buf(int fd, const void *buf, int size)
- 		ret = write(fd, (char*)buf + pos, size - pos);
- 		if (ret < 0) {
- 			ret = -errno;
--			fprintf(stderr, "ERROR: failed to dump stream. %s",
-+			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
- 					strerror(-ret));
- 			goto out;
- 		}
- 		if (!ret) {
- 			ret = -EIO;
--			fprintf(stderr, "ERROR: failed to dump stream. %s",
-+			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
- 					strerror(-ret));
- 			goto out;
- 		}
-diff --git a/dir-item.c b/dir-item.c
-index a5bf861..f3ad98f 100644
---- a/dir-item.c
-+++ b/dir-item.c
-@@ -285,7 +285,7 @@ int verify_dir_item(struct btrfs_root *root,
- 	u8 type = btrfs_dir_type(leaf, dir_item);
- 
- 	if (type >= BTRFS_FT_MAX) {
--		fprintf(stderr, "invalid dir item type: %d",
-+		fprintf(stderr, "invalid dir item type: %d\n",
- 		       (int)type);
- 		return 1;
- 	}
-@@ -294,7 +294,7 @@ int verify_dir_item(struct btrfs_root *root,
- 		namelen = XATTR_NAME_MAX;
- 
- 	if (btrfs_dir_name_len(leaf, dir_item) > namelen) {
--		fprintf(stderr, "invalid dir item name len: %u",
-+		fprintf(stderr, "invalid dir item name len: %u\n",
- 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
- 		return 1;
- 	}
-@@ -302,7 +302,7 @@ int verify_dir_item(struct btrfs_root *root,
- 	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
- 	if ((btrfs_dir_data_len(leaf, dir_item) +
- 	     btrfs_dir_name_len(leaf, dir_item)) > BTRFS_MAX_XATTR_SIZE(root)) {
--		fprintf(stderr, "invalid dir item name + data len: %u + %u",
-+		fprintf(stderr, "invalid dir item name + data len: %u + %u\n",
- 		       (unsigned)btrfs_dir_name_len(leaf, dir_item),
- 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
- 		return 1;
-diff --git a/mkfs.c b/mkfs.c
-index dafd500..909b591 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -599,7 +599,7 @@ static int add_symbolic_link(struct btrfs_trans_handle *trans,
- 		goto fail;
- 	}
- 	if (ret >= sectorsize) {
--		fprintf(stderr, "symlink too long for %s", path_name);
-+		fprintf(stderr, "symlink too long for %s\n", path_name);
- 		ret = -1;
- 		goto fail;
- 	}
--- 
-2.4.5
+	fs/btrfs/tree-log.c:178 start_log_trans()
+	warn: we tested 'root->log_root' before and it was 'false'
 
-----
-Tsutomu Itoh  t-itoh@jp.fujitsu.com
+fs/btrfs/tree-log.c
+   147          if (root->log_root) {
 
+We test "root->log_root" here.
+
+   148                  if (btrfs_need_log_full_commit(root->fs_info, trans)) {
+   149                          ret = -EAGAIN;
+   150                          goto out;
+   151                  }
+   152                  if (!root->log_start_pid) {
+   153                          root->log_start_pid = current->pid;
+   154                          clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
+   155                  } else if (root->log_start_pid != current->pid) {
+   156                          set_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
+   157                  }
+   158  
+   159                  atomic_inc(&root->log_batch);
+   160                  atomic_inc(&root->log_writers);
+   161                  if (ctx) {
+   162                          index = root->log_transid % 2;
+   163                          list_add_tail(&ctx->list, &root->log_ctxs[index]);
+   164                          ctx->log_transid = root->log_transid;
+   165                  }
+   166                  mutex_unlock(&root->log_mutex);
+   167                  return 0;
+   168          }
+   169  
+   170          ret = 0;
+   171          mutex_lock(&root->fs_info->tree_log_mutex);
+   172          if (!root->fs_info->log_root_tree)
+   173                  ret = btrfs_init_log_root_tree(trans, root->fs_info);
+   174          mutex_unlock(&root->fs_info->tree_log_mutex);
+   175          if (ret)
+   176                  goto out;
+   177  
+   178          if (!root->log_root) {
+
+Couldn't we just remove this condition here?  This is a new Smatch thing
+I am working on and I am investigating false positives.
+
+   179                  ret = btrfs_add_log_tree(trans, root);
+   180                  if (ret)
+   181                          goto out;
+   182          }
+
+regards,
+dan carpenter

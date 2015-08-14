@@ -1,81 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:42236 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754135AbbHNLJY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Aug 2015 07:09:24 -0400
-Date: Fri, 14 Aug 2015 19:09:21 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, david@fromorbit.com
-Subject: Re: [PATCH v5 3/3] xfstests: btrfs: test device delete with EIO on
- src dev
-Message-ID: <20150814110921.GQ17933@dhcp-13-216.nay.redhat.com>
-References: <1439549224-29784-1-git-send-email-anand.jain@oracle.com>
- <1439549224-29784-4-git-send-email-anand.jain@oracle.com>
+Received: from mail-io0-f181.google.com ([209.85.223.181]:34778 "EHLO
+	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754009AbbHNLOG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Aug 2015 07:14:06 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1439549224-29784-4-git-send-email-anand.jain@oracle.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1439549224-29784-3-git-send-email-anand.jain@oracle.com>
+References: <1439549224-29784-1-git-send-email-anand.jain@oracle.com>
+	<1439549224-29784-3-git-send-email-anand.jain@oracle.com>
+Date: Fri, 14 Aug 2015 12:14:05 +0100
+Message-ID: <CAL3q7H61Zy_fESTeZaqE0PqBYGPQNKgUte1MCafOneiyaOprLA@mail.gmail.com>
+Subject: Re: [PATCH v5 2/3] xfstests: btrfs: test device replace, with EIO on
+ the src dev
+From: Filipe David Manana <fdmanana@gmail.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: fstests@vger.kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Dave Chinner <david@fromorbit.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 14, 2015 at 06:47:04PM +0800, Anand Jain wrote:
+On Fri, Aug 14, 2015 at 11:47 AM, Anand Jain <anand.jain@oracle.com> wrote:
 > From: Anand Jain <Anand.Jain@oracle.com>
-> 
-> This test case tests if the device delete works with
-> the failed (EIO) source device. EIO errors are achieved
-> usign the DM device.
-> 
-> This test would need following btrfs-progs and btrfs
-> kernel patch
->    btrfs-progs: device delete to accept devid
->    Btrfs: device delete by devid
-> 
-> However when btrfs-progs patch is not found this test will
-> not run, and when kernel patch is not found btrfs-progs
-> will fail gracefully and thus the test script.
-> 
+>
+> This test case will test to confirm the replace works with
+> the failed (EIO) replacing source device. EIO condition is
+> achieved using the DM device.
+>
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
 > ---
-> v4->v5: rebase on latest xfstests code, and accepts Filipe comment
+> v4->v5: rebase on latest xfstests code and accepts Filipe comment
 > v3->v4: rebase on latest xfstests code
 > v2->v3: accepts Filipe Manana's review comments, thanks
 > v1->v2: accepts Dave Chinner's review comments, thanks
->  common/rc           |  7 +++++
->  tests/btrfs/099     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
->  tests/btrfs/099.out | 11 +++++++
+>  tests/btrfs/098     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/098.out | 11 ++++++++
 >  tests/btrfs/group   |  1 +
->  4 files changed, 101 insertions(+)
->  create mode 100755 tests/btrfs/099
->  create mode 100644 tests/btrfs/099.out
-> 
-> diff --git a/common/rc b/common/rc
-> index 8d4da0e..31a0328 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -2737,6 +2737,13 @@ _require_meta_uuid()
->  	umount $SCRATCH_MNT
->  }
->  
-> +_require_btrfs_dev_del_by_devid()
-> +{
-> +	$BTRFS_UTIL_PROG device delete --help | egrep devid > /dev/null 2>&1
-> +	[ $? -eq 0 ] || _notrun "$BTRFS_UTIL_PROG too old "\
-> +			"(must support 'btrfs device delete <devid> /<mnt>')"
-> +}
-> +
->  _get_total_inode()
->  {
->  	if [ -z "$1" ]; then
-> diff --git a/tests/btrfs/099 b/tests/btrfs/099
+>  3 files changed, 93 insertions(+)
+>  create mode 100755 tests/btrfs/098
+>  create mode 100644 tests/btrfs/098.out
+>
+> diff --git a/tests/btrfs/098 b/tests/btrfs/098
 > new file mode 100755
-> index 0000000..4464e24
+> index 0000000..afb41d1
 > --- /dev/null
-> +++ b/tests/btrfs/099
-> @@ -0,0 +1,82 @@
+> +++ b/tests/btrfs/098
+> @@ -0,0 +1,81 @@
 > +#! /bin/bash
-> +# FS QA Test No. btrfs/099
+> +# FS QA Test No. btrfs/098
 > +#
-> +# test device delete when the source device has EIO
+> +#test device replace works when the source device has EIO
 > +#
 > +# Copyright (c) 2015 Oracle.  All Rights Reserved.
 > +#
@@ -100,16 +77,110 @@ On Fri, Aug 14, 2015 at 06:47:04PM +0800, Anand Jain wrote:
 > +here=`pwd`
 > +tmp=/tmp/$$
 > +
-> +status=1	# failure is the default!
+> +status=1       # failure is the default!
 > +trap "_cleanup; exit \$status" 0 1 2 3 15
 > +
 > +
 > +_cleanup()
 > +{
-> +	_cleanup_dmerror
-> +	rm -f $tmp
+> +       _cleanup_dmerror
+> +       rm -f $tmp
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +. ./common/filter.btrfs
+> +. ./common/dmerror
+> +
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_need_to_be_root
+> +_require_scratch_dev_pool 3
+> +_require_dmerror
+> +
+> +rm -f $seqres.full
+> +
+> +dev1="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`"
+> +dev2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $3}'`"
+> +
+> +_init_dmerror
+> +_scratch_mkfs_dmerror "-f -d raid1 -m raid1 $dev1"
+> +_mount_dmerror
+> +
+> +_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
+> +$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
+> +
+> +error_devid=`$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT |\
+> +                       egrep $DMERROR_DEV | $AWK_PROG '{print $2}'`
+> +
+> +snapshot_cmd="$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT"
+> +snapshot_cmd="$snapshot_cmd $SCRATCH_MNT/snap_\`date +'%H_%M_%S_%N'\`"
+> +run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n 200 -p 8 $FSSTRESS_AVOID -x \
+> +                                               "$snapshot_cmd" -X 50 >&/dev/null
 
-And here too, rm -f $tmp.*
+Sorry missed this before, but you don't need to redirect stdout/stderr
+to /dev/null.
+run_check redirects them to $seqres.full where it's actually useful -
+when we have the test failing, we can check $seqres.full to see what
+seed fsstress used (fsstress prints it to stdout/stderr). That's for
+the case where it's failing only for some seeds of course.
 
-Thanks,
-Eryu
+Same observation applies to the other test/patch.
+
+Thanks.
+
+> +
+> +# now load the error into the DMERROR_DEV
+> +_load_dmerror_table
+> +
+> +_run_btrfs_util_prog replace start -B $error_devid $dev2 $SCRATCH_MNT
+> +
+> +_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
+> +$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
+> +
+> +echo "=== device replace completed"
+> +
+> +status=0; exit
+> diff --git a/tests/btrfs/098.out b/tests/btrfs/098.out
+> new file mode 100644
+> index 0000000..eb2f87f
+> --- /dev/null
+> +++ b/tests/btrfs/098.out
+> @@ -0,0 +1,11 @@
+> +QA output created by 098
+> +Label: none  uuid:  <UUID>
+> +       Total devices <NUM> FS bytes used <SIZE>
+> +       devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+> +       devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
+> +
+> +Label: none  uuid:  <UUID>
+> +       Total devices <NUM> FS bytes used <SIZE>
+> +       devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+> +
+> +=== device replace completed
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index e13865a..c8a53b5 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -100,3 +100,4 @@
+>  095 auto quick metadata
+>  096 auto quick clone
+>  097 auto quick send clone
+> +098 auto quick replace
+> --
+> 2.4.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

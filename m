@@ -1,118 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34237 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932296AbbHNKdy (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:38066 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932296AbbHNKd5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Aug 2015 06:33:54 -0400
+	Fri, 14 Aug 2015 06:33:57 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 20/23] Btrfs: move device close to btrfs_close_one_device
-Date: Fri, 14 Aug 2015 18:33:05 +0800
-Message-Id: <1439548388-29686-21-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 22/23] Btrfs: move kobj stuff out of dev_replace lock range
+Date: Fri, 14 Aug 2015 18:33:07 +0800
+Message-Id: <1439548388-29686-23-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1439548388-29686-1-git-send-email-anand.jain@oracle.com>
 References: <1439548388-29686-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-this will help to add the proposed device offline RFE
----
- fs/btrfs/volumes.c | 66 +++++++++++++++++++++++++++++-------------------------
- fs/btrfs/volumes.h |  1 +
- 2 files changed, 37 insertions(+), 30 deletions(-)
+From: Liu Bo <bo.li.liu@oracle.com>
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index f3ca87d..00ca858 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -768,36 +768,7 @@ static int __btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+To avoid deadlock described in commit 084b6e7c7607 ("btrfs: Fix a lockdep warning when running xfstest."),
+we should move kobj stuff out of dev_replace lock range.
+
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/dev-replace.c | 8 ++++----
+ 1 file changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+index 0df3d9b..c326d51 100644
+--- a/fs/btrfs/dev-replace.c
++++ b/fs/btrfs/dev-replace.c
+@@ -369,10 +369,6 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 	WARN_ON(!tgt_device);
+ 	dev_replace->tgtdev = tgt_device;
  
- 	mutex_lock(&fs_devices->device_list_mutex);
- 	list_for_each_entry_safe(device, tmp, &fs_devices->devices, dev_list) {
--		struct btrfs_device *new_device;
--		struct rcu_string *name;
+-	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
+-	if (ret)
+-		btrfs_err(root->fs_info, "kobj add dev failed %d\n", ret);
 -
--		if (device->bdev)
--			fs_devices->open_devices--;
--
--		if (device->writeable &&
--		    device->devid != BTRFS_DEV_REPLACE_DEVID) {
--			list_del_init(&device->dev_alloc_list);
--			fs_devices->rw_devices--;
--		}
--
--		if (device->missing)
--			fs_devices->missing_devices--;
--
--		new_device = btrfs_alloc_device(NULL, &device->devid,
--						device->uuid);
--		BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
--
--		/* Safe because we are under uuid_mutex */
--		if (device->name) {
--			name = rcu_string_strdup(device->name->str, GFP_NOFS);
--			BUG_ON(!name); /* -ENOMEM */
--			rcu_assign_pointer(new_device->name, name);
--		}
--
--		list_replace_rcu(&device->dev_list, &new_device->dev_list);
--		new_device->fs_devices = device->fs_devices;
--
--		call_rcu(&device->rcu, free_device);
-+		btrfs_close_one_device(device);
- 	}
- 	mutex_unlock(&fs_devices->device_list_mutex);
+ 	printk_in_rcu(KERN_INFO
+ 		      "BTRFS: dev_replace from %s (devid %llu) to %s started\n",
+ 		      src_device->missing ? "<missing disk>" :
+@@ -395,6 +391,10 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
+ 	args->result = BTRFS_IOCTL_DEV_REPLACE_RESULT_NO_ERROR;
+ 	btrfs_dev_replace_unlock(dev_replace);
  
-@@ -6890,3 +6861,38 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
- 		fs_devices = fs_devices->seed;
- 	}
- }
++	ret = btrfs_sysfs_add_device_link(tgt_device->fs_devices, tgt_device);
++	if (ret)
++		btrfs_err(root->fs_info, "kobj add dev failed %d\n", ret);
 +
-+void btrfs_close_one_device(struct btrfs_device *device)
-+{
-+	struct btrfs_fs_devices *fs_devices = device->fs_devices;
-+	struct btrfs_device *new_device;
-+	struct rcu_string *name;
-+
-+	if (device->bdev)
-+		fs_devices->open_devices--;
-+
-+	if (device->writeable &&
-+	    device->devid != BTRFS_DEV_REPLACE_DEVID) {
-+		list_del_init(&device->dev_alloc_list);
-+		fs_devices->rw_devices--;
-+	}
-+
-+	if (device->missing)
-+		fs_devices->missing_devices--;
-+
-+	new_device = btrfs_alloc_device(NULL, &device->devid,
-+					device->uuid);
-+	BUG_ON(IS_ERR(new_device)); /* -ENOMEM */
-+
-+	/* Safe because we are under uuid_mutex */
-+	if (device->name) {
-+		name = rcu_string_strdup(device->name->str, GFP_NOFS);
-+		BUG_ON(!name); /* -ENOMEM */
-+		rcu_assign_pointer(new_device->name, name);
-+	}
-+
-+	list_replace_rcu(&device->dev_list, &new_device->dev_list);
-+	new_device->fs_devices = device->fs_devices;
-+
-+	call_rcu(&device->rcu, free_device);
-+}
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 32a66c7..5f4911a 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -550,5 +550,6 @@ static inline void unlock_chunks(struct btrfs_root *root)
- struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
-+void btrfs_close_one_device(struct btrfs_device *device);
+ 	btrfs_wait_ordered_roots(root->fs_info, -1);
  
- #endif
+ 	/* force writing the updated state information to disk */
 -- 
 2.4.1
 

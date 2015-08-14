@@ -1,81 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11950 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751093AbbHEIeG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 04:34:06 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t758W8la016291
-	for <linux-btrfs@vger.kernel.org>; Wed, 5 Aug 2015 16:32:08 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: Modify confuse error message in scrub
-Date: Wed, 5 Aug 2015 16:32:26 +0800
-Message-ID: <a2853778dc15eec5eb3b09ddcc3b3e911254c19a.1438763531.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from userp1040.oracle.com ([156.151.31.81]:39145 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754180AbbHNKhI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 14 Aug 2015 06:37:08 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, dsterba@suse.cz
+Subject: [PATCH 1/2] btrfs-progs: move is_numerical to utils-lib.h and make it non static
+Date: Fri, 14 Aug 2015 18:36:50 +0800
+Message-Id: <1439548611-29730-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1439548611-29730-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+References: <1439548611-29730-1-git-send-email-anand.jain@oracle.com>
 
-Scrub output following error message in my test:
-  ERROR: scrubbing /var/ltf/tester/scratch_mnt failed for device id 5 (Success)
-
-It is caused by a broken kernel and fs, but the we need to avoid
-outputting both "error and success" in oneline message as above.
-
-This patch modified above message to:
-  ERROR: scrubbing /var/ltf/tester/scratch_mnt failed for device id 5, ret=1, errno=0(Success)
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-scrub.c | 34 +++++++++++++++++++---------------
- 1 file changed, 19 insertions(+), 15 deletions(-)
+ cmds-replace.c | 11 -----------
+ utils-lib.c    | 11 +++++++++++
+ utils.h        |  1 +
+ 3 files changed, 12 insertions(+), 11 deletions(-)
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index 7c9318e..2529956 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1457,21 +1457,25 @@ static int scrub_start(int argc, char **argv, int resume)
- 			++err;
- 			continue;
- 		}
--		if (sp[i].ret && sp[i].ioctl_errno == ENODEV) {
--			if (do_print)
--				fprintf(stderr, "WARNING: device %lld not "
--					"present\n", devid);
--			continue;
--		}
--		if (sp[i].ret && sp[i].ioctl_errno == ECANCELED) {
--			++err;
--		} else if (sp[i].ret) {
--			if (do_print)
--				fprintf(stderr, "ERROR: scrubbing %s failed "
--					"for device id %lld (%s)\n", path,
--					devid, strerror(sp[i].ioctl_errno));
--			++err;
--			continue;
-+		if (sp[i].ret) {
-+			switch (sp[i].ioctl_errno) {
-+			case ENODEV:
-+				if (do_print)
-+					fprintf(stderr, "WARNING: device %lld not present\n",
-+						devid);
-+				continue;
-+			case ECANCELED:
-+				++err;
-+				break;
-+			default:
-+				if (do_print)
-+					fprintf(stderr, "ERROR: scrubbing %s failed for device id %lld, ret=%d, errno=%d(%s)\n",
-+						path, devid,
-+						sp[i].ret, sp[i].ioctl_errno,
-+						strerror(sp[i].ioctl_errno));
-+				++err;
-+				continue;
-+			}
- 		}
- 		if (sp[i].scrub_args.progress.uncorrectable_errors > 0)
- 			e_uncorrectable++;
+diff --git a/cmds-replace.c b/cmds-replace.c
+index 85365e3..e6a27e3 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -65,17 +65,6 @@ static const char * const replace_cmd_group_usage[] = {
+ 	NULL
+ };
+ 
+-static int is_numerical(const char *str)
+-{
+-	if (!(*str >= '0' && *str <= '9'))
+-		return 0;
+-	while (*str >= '0' && *str <= '9')
+-		str++;
+-	if (*str != '\0')
+-		return 0;
+-	return 1;
+-}
+-
+ static int dev_replace_cancel_fd = -1;
+ static void dev_replace_sigint_handler(int signal)
+ {
+diff --git a/utils-lib.c b/utils-lib.c
+index 79ef35e..9ac0b7b 100644
+--- a/utils-lib.c
++++ b/utils-lib.c
+@@ -38,3 +38,14 @@ u64 arg_strtou64(const char *str)
+ 	}
+ 	return value;
+ }
++
++int is_numerical(const char *str)
++{
++	if (!(*str >= '0' && *str <= '9'))
++		return 0;
++	while (*str >= '0' && *str <= '9')
++		str++;
++	if (*str != '\0')
++		return 0;
++	return 1;
++}
+diff --git a/utils.h b/utils.h
+index 94606ed..0975301 100644
+--- a/utils.h
++++ b/utils.h
+@@ -243,5 +243,6 @@ int btrfs_tree_search2_ioctl_supported(int fd);
+ int btrfs_check_nodesize(u32 nodesize, u32 sectorsize);
+ 
+ const char *get_argv0_buf(void);
++int is_numerical(const char *str);
+ 
+ #endif
 -- 
-1.8.5.1
+2.4.1
 

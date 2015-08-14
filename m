@@ -1,111 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37891 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754890AbbHNKdb (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:34065 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755000AbbHNKdc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 14 Aug 2015 06:33:31 -0400
+	Fri, 14 Aug 2015 06:33:32 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-Subject: [PATCH 06/23] Btrfs: SB read failure should return EIO for __bread failure
-Date: Fri, 14 Aug 2015 18:32:51 +0800
-Message-Id: <1439548388-29686-7-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 07/23] Btrfs: __btrfs_std_error() logic should be consistent w/out CONFIG_PRINTK defined
+Date: Fri, 14 Aug 2015 18:32:52 +0800
+Message-Id: <1439548388-29686-8-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1439548388-29686-1-git-send-email-anand.jain@oracle.com>
 References: <1439548388-29686-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This will return EIO when __bread() fails to read SB,
-instead of EINVAL.
+error handling logic behaves differently with or without
+CONFIG_PRINTK defined, since there are two copies of the same
+function which a bit of different logic
+
+One, when CONFIG_PRINTK is defined, code is
+
+__btrfs_std_error(..)
+{
+::
+       save_error_info(fs_info);
+       if (sb->s_flags & MS_BORN)
+               btrfs_handle_error(fs_info);
+}
+
+and two when CONFIG_PRINTK is not defined, the code is
+
+__btrfs_std_error(..)
+{
+::
+       if (sb->s_flags & MS_BORN) {
+               save_error_info(fs_info);
+               btrfs_handle_error(fs_info);
+        }
+}
+
+I doubt if this was intentional ? and appear to have caused since
+we maintain two copies of the same function and they got diverged
+with commits.
+
+Now to decide which logic is correct reviewed changes as below,
+
+ 533574c6bc30cf526cc1c41bde050c854a945efb
+Commit added two copies of this function
+
+ cf79ffb5b79e8a2b587fbf218809e691bb396c98
+Commit made change to only one copy of the function and to the
+copy when CONFIG_PRINTK is defined.
+
+To fix this, instead of maintaining two copies of same function
+approach, maintain single function, and just put the extra
+portion of the code under CONFIG_PRINTK define.
+
+This patch just does that. And keeps code of with CONFIG_PRINTK
+defined.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- fs/btrfs/disk-io.c | 18 +++++++++++++++---
- fs/btrfs/volumes.c |  8 ++++----
- 2 files changed, 19 insertions(+), 7 deletions(-)
+ fs/btrfs/super.c | 27 +++++----------------------
+ 1 file changed, 5 insertions(+), 22 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 8571025..faf5b8d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2648,8 +2648,8 @@ int open_ctree(struct super_block *sb,
- 	 * Read super block and check the signature bytes only
- 	 */
- 	bh = btrfs_read_dev_super(fs_devices->latest_bdev);
--	if (!bh) {
--		err = -EINVAL;
-+	if (IS_ERR(bh)) {
-+		err = PTR_ERR(bh);
- 		goto fail_alloc;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index c389c13..56c0174 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -130,7 +130,6 @@ static void btrfs_handle_error(struct btrfs_fs_info *fs_info)
  	}
- 
-@@ -3191,6 +3191,7 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
- 	int i;
- 	u64 transid = 0;
- 	u64 bytenr;
-+	int ret = -EINVAL;
- 
- 	/* we would like to check all the supers, but that would make
- 	 * a btrfs mount succeed after a mkfs from a different FS.
-@@ -3204,13 +3205,20 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
- 			break;
- 		bh = __bread(bdev, bytenr / 4096,
- 					BTRFS_SUPER_INFO_SIZE);
--		if (!bh)
-+		/*
-+		 * If we fail to read from the underlaying drivers, as of now
-+		 * the best option we have is to mark it EIO.
-+		 */
-+		if (!bh) {
-+			ret = -EIO;
- 			continue;
-+		}
- 
- 		super = (struct btrfs_super_block *)bh->b_data;
- 		if (btrfs_super_bytenr(super) != bytenr ||
- 		    btrfs_super_magic(super) != BTRFS_MAGIC) {
- 			brelse(bh);
-+			ret = -EINVAL;
- 			continue;
- 		}
- 
-@@ -3222,6 +3230,10 @@ struct buffer_head *btrfs_read_dev_super(struct block_device *bdev)
- 			brelse(bh);
- 		}
- 	}
-+
-+	if (!latest)
-+		return ERR_PTR(ret);
-+
- 	return latest;
  }
  
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8368393..a3fde18 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -211,8 +211,8 @@ btrfs_get_bdev_and_sb(const char *device_path, fmode_t flags, void *holder,
- 	}
- 	invalidate_bdev(*bdev);
- 	*bh = btrfs_read_dev_super(*bdev);
--	if (!*bh) {
--		ret = -EINVAL;
-+	if (IS_ERR(*bh)) {
-+		ret = PTR_ERR(*bh);
- 		blkdev_put(*bdev, flags);
- 		goto error;
- 	}
-@@ -6842,8 +6842,8 @@ int btrfs_scratch_superblock(struct btrfs_device *device)
- 	struct btrfs_super_block *disk_super;
+-#ifdef CONFIG_PRINTK
+ /*
+  * __btrfs_std_error decodes expected errors from the caller and
+  * invokes the approciate error response.
+@@ -140,7 +139,9 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ 		       unsigned int line, int errno, const char *fmt, ...)
+ {
+ 	struct super_block *sb = fs_info->sb;
++#ifdef CONFIG_PRINTK
+ 	const char *errstr;
++#endif
  
- 	bh = btrfs_read_dev_super(device->bdev);
--	if (!bh)
--		return -EINVAL;
-+	if (IS_ERR(bh))
-+		return PTR_ERR(bh);
- 	disk_super = (struct btrfs_super_block *)bh->b_data;
+ 	/*
+ 	 * Special case: if the error is EROFS, and we're already
+@@ -149,6 +150,7 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ 	if (errno == -EROFS && (sb->s_flags & MS_RDONLY))
+   		return;
  
- 	memset(&disk_super->magic, 0, sizeof(disk_super->magic));
++#ifdef CONFIG_PRINTK
+ 	errstr = btrfs_decode_error(errno);
+ 	if (fmt) {
+ 		struct va_format vaf;
+@@ -166,6 +168,7 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ 		printk(KERN_CRIT "BTRFS: error (device %s) in %s:%d: errno=%d %s\n",
+ 			sb->s_id, function, line, errno, errstr);
+ 	}
++#endif
+ 
+ 	/* Don't go through full error handling during mount */
+ 	save_error_info(fs_info);
+@@ -173,6 +176,7 @@ void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+ 		btrfs_handle_error(fs_info);
+ }
+ 
++#ifdef CONFIG_PRINTK
+ static const char * const logtypes[] = {
+ 	"emergency",
+ 	"alert",
+@@ -212,27 +216,6 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 
+ 	va_end(args);
+ }
+-
+-#else
+-
+-void __btrfs_std_error(struct btrfs_fs_info *fs_info, const char *function,
+-		       unsigned int line, int errno, const char *fmt, ...)
+-{
+-	struct super_block *sb = fs_info->sb;
+-
+-	/*
+-	 * Special case: if the error is EROFS, and we're already
+-	 * under MS_RDONLY, then it is safe here.
+-	 */
+-	if (errno == -EROFS && (sb->s_flags & MS_RDONLY))
+-		return;
+-
+-	/* Don't go through full error handling during mount */
+-	if (sb->s_flags & MS_BORN) {
+-		save_error_info(fs_info);
+-		btrfs_handle_error(fs_info);
+-	}
+-}
+ #endif
+ 
+ /*
 -- 
 2.4.1
 

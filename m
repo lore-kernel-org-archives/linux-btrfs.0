@@ -1,95 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp1.belwue.de ([129.143.2.12]:58914 "EHLO smtp1.belwue.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750932AbbHOKJ0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 15 Aug 2015 06:09:26 -0400
-Received: from fex.belwue.de (fex.belwue.de [129.143.4.198])
-	by smtp1.belwue.de with ESMTP id t7FA9OnZ013467
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2015 12:09:24 +0200 (MEST)
-	env-from (framstag@rus.uni-stuttgart.de)
-Received: from fex.rus.uni-stuttgart.de (fex.rus.uni-stuttgart.de [129.69.1.129])
-	by fex.belwue.de (Postfix) with SMTP id 198A61FF4B
-	for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2015 12:09:24 +0200 (CEST)
-Date: Sat, 15 Aug 2015 12:09:23 +0200
-From: Ulli Horlacher <framstag@rus.uni-stuttgart.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: RAID0 wrong (raw) device?
-Message-ID: <20150815100923.GA3877@rus.uni-stuttgart.de>
-References: <20150812130758.GA26529@rus.uni-stuttgart.de>
- <55CC488D.4020203@oracle.com>
- <20150813120211.GA24122@rus.uni-stuttgart.de>
- <20150813145556.GA27405@rus.uni-stuttgart.de>
- <55CCC4AB.2080600@oracle.com>
- <20150814073211.GA10650@rus.uni-stuttgart.de>
- <55CE81A6.5070305@oracle.com>
+Received: from mail-io0-f181.google.com ([209.85.223.181]:34980 "EHLO
+	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751319AbbHOMv2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 15 Aug 2015 08:51:28 -0400
+Received: by iodt126 with SMTP id t126so109918606iod.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 15 Aug 2015 05:51:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55CE81A6.5070305@oracle.com>
+In-Reply-To: <55CEC72D.4060503@oracle.com>
+References: <CAK7bmU9vTap5JdkhCDNB=6BC4_fsU-6MCmS3QiFP1Mu2C7yjng@mail.gmail.com>
+	<CAK7bmU-a6W1UaPf31WargEGzQdWH7-GDN9Vd1h_1GnQwv-_FsQ@mail.gmail.com>
+	<55CEC72D.4060503@oracle.com>
+Date: Sat, 15 Aug 2015 08:51:27 -0400
+Message-ID: <CAK7bmU9Hwz9ekQQhC+kzAJ_f1Jyzk5_=LLd4aPZN7f-Q2L3POw@mail.gmail.com>
+Subject: Re: "delete missing" with two missing devices doesn't delete both
+ missing, only does a partial reconstruction
+From: Timothy Normand Miller <theosib@gmail.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat 2015-08-15 (08:02), Anand Jain wrote:
+I didn't quite understand "profile and convert", since I can't find a
+profile option.  Is this something your patch adds?
 
-> First of all there is a known issue in handling multiple paths /
-> instances of the same device image in btrfs. Fixing this caused
-> regression earlier. And my survey
->     [survey]  BTRFS_IOC_DEVICES_READY return status
-> almost told me not to fix the bug.
+Before I do that, however, I have to deal with this:
 
-I have subscribed to this list this week, I am a newbie :-)
+compute0 ~ # btrfs device delete missing /mnt/btrfs
+ERROR: error removing the device 'missing' - Input/output error
+
+[13058.298763] BTRFS warning (device sdc): csum failed ino 596 off
+623218688 csum 2756583412 expected csum 4104700738
+[13058.298775] BTRFS warning (device sdc): csum failed ino 596 off
+623222784 csum 2568037276 expected csum 275151414
+[13058.298782] BTRFS warning (device sdc): csum failed ino 596 off
+623226880 csum 2227564114 expected csum 3824181799
+[13058.298788] BTRFS warning (device sdc): csum failed ino 596 off
+623230976 csum 3298529275 expected csum 1155389604
+[13058.298794] BTRFS warning (device sdc): csum failed ino 596 off
+623235072 csum 2603391790 expected csum 1861925401
+[13058.298801] BTRFS warning (device sdc): csum failed ino 596 off
+623239168 csum 2044148708 expected csum 3227559459
+[13058.298807] BTRFS warning (device sdc): csum failed ino 596 off
+623243264 csum 615351306 expected csum 2720021058
+[13058.329747] BTRFS warning (device sdc): csum failed ino 596 off
+623218688 csum 2756583412 expected csum 4104700738
+[13058.329759] BTRFS warning (device sdc): csum failed ino 596 off
+623222784 csum 2568037276 expected csum 275151414
+[13058.329770] BTRFS warning (device sdc): csum failed ino 596 off
+623226880 csum 2227564114 expected csum 3824181799
+
+Because of this, it won't delete the missing device.  How do I get
+past this?  I'm pretty sure the problem is in some files I want to
+delete anyhow.  Would deleting them solve the problem?
+
+On Sat, Aug 15, 2015 at 12:59 AM, Anand Jain <anand.jain@oracle.com> wrote:
+>
+>> BTW, when this is all over with, how do I make sure there are really
+>> two copies of everything?  Will a scrub verify this?  Should I run a
+>> balance operation?
+>
+> pls use 'btrfs bal profile and convert' to migrate single chunk (if any
+> created when there were lesser number of RW-able devices) back to your
+> desired raid1. Do this when all the devices are back online. Kindly note
+> there is a bug in the btrfs VM that you won't be able to bring a device
+> online with out unmount -> mount (I am working to fix). btrfs-progs will be
+> wrong in this case don't depend too much on that.
+> So to understand inside of btrfs kernel volume I generally use:
+>     https://patchwork.kernel.org/patch/5816011/
+>
+> In there if bdev is null it indicates device is scanned but not part of VM
+> yet. Then unmount -> mount will bring device back to be part of VM.
+>
+>>> After applying Anand's patch, I was able to mount my 4-drive RAID1
+>>> and bring a new fourth drive online.
+>
+>>> However, something weird happened
+>>> where the first "delete missing" only deleted one missing drive and
+>>> only did a partial duplication.  I've posted a bug report here:
+>
+> that seems to be normal to me. unless I am missing something else / clarity.
+>
+>
+> Thanks, Anand
 
 
-> > There is now a new behaviour: after the btrfs mount, I can see shortly the
-> > wrong raw device /dev/sde and a few seconds later there is the correct
-> > /dev/drbd3 :
-> 
-> yep possible. but it does not mean that btrfs kernel is using the new 
-> path its just a reporting (bug).
-
-What is the reporting bug: /dev/sde or /dev/drbd3?
-
-> > root@toy02:/etc# btrfs filesystem show -m
-> > Label: data  uuid: 411af13f-6cae-4f03-99dc-5941acb3135b
-> >          Total devices 2 FS bytes used 109.56GiB
-> >          devid    3 size 1.82TiB used 63.03GiB path /dev/drbd2
-> >          devid    4 size 1.82TiB used 63.03GiB path /dev/drbd3
-> 
-> 
-> > Still, the kernel sees 3 instead of (really) 2 HGST drives:
-> >
-> > root@toy02:/etc# hdparm -I /dev/sdb | grep Number:
-> >          Model Number:       HGST HUS724020ALA640
-> >          Serial Number:      PN2134P5G2P2AX
-> >
-> > root@toy02:/etc# hdparm -I /dev/sde | grep Number:
-> >          Model Number:       HGST HUS724020ALA640
-> >          Serial Number:      PN2134P5G2P2AX
-> 
-> This is important to know but not a btrfs issue. Do you have multiple 
-> host paths reaching this this device with serial # PN2134P5G2P2AX ?
-
-root@toy02:~# find /dev -ls | grep PN2134P5G2P2AX
- 14354    0 lrwxrwxrwx   1 root     root           17 Aug 14 09:00 /dev/drbd/by-disk/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../../../drbd3
- 13640    0 lrwxrwxrwx   1 root     root            9 Aug 13 16:25 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../sdb
-
-root@toy02:~# find /dev -ls | grep sdb
-  7417    0 brw-rw----   1 root     disk              Aug 13 16:25 /dev/sdb
- 12366    0 lrwxrwxrwx   1 root     root            9 Aug 13 16:25 /dev/disk/by-path/pci-0000:08:00.0-sas-0x1221000002000000-lun-0 -> ../../sdb
- 13641    0 lrwxrwxrwx   1 root     root            9 Aug 13 16:25 /dev/disk/by-id/wwn-0x5000cca24ec137db -> ../../sdb
- 13640    0 lrwxrwxrwx   1 root     root            9 Aug 13 16:25 /dev/disk/by-id/ata-HGST_HUS724020ALA640_PN2134P5G2P2AX -> ../../sdb
- 12356    0 lrwxrwxrwx   1 root     root            6 Aug 13 16:25 /dev/block/8:16 -> ../sdb
-
-root@toy02:~# find /dev -ls | grep sde
- 13353    0 brw-rw----   1 root     disk              Aug 13 16:24 /dev/sde
- 15725    0 lrwxrwxrwx   1 root     root            9 Aug 13 16:25 /dev/disk/by-uuid/411af13f-6cae-4f03-99dc-5941acb3135b -> ../../sde
- 15724    0 lrwxrwxrwx   1 root     root            9 Aug 13 16:25 /dev/disk/by-label/data -> ../../sde
-  9394    0 lrwxrwxrwx   1 root     root            9 Aug 13 16:24 /dev/disk/by-path/pci-0000:08:00.0-scsi-0:1:2:0 -> ../../sde
-  9387    0 lrwxrwxrwx   1 root     root            6 Aug 13 16:24 /dev/block/8:64 -> ../sde
 
 -- 
-Ullrich Horlacher              Server und Virtualisierung
-Rechenzentrum IZUS/TIK         E-Mail: horlacher@tik.uni-stuttgart.de
-Universitaet Stuttgart         Tel:    ++49-711-68565868
-Allmandring 30a                Fax:    ++49-711-682357
-70550 Stuttgart (Germany)      WWW:    http://www.tik.uni-stuttgart.de/
-REF:<55CE81A6.5070305@oracle.com>
+Timothy Normand Miller, PhD
+Assistant Professor of Computer Science, Binghamton University
+http://www.cs.binghamton.edu/~millerti/
+Open Graphics Project

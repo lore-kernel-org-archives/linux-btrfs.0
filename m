@@ -1,62 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:60209 "EHLO
+Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:50816 "EHLO
 	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751348AbbHPX1X (ORCPT
+	by vger.kernel.org with ESMTP id S1751452AbbHPXwo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Aug 2015 19:27:23 -0400
-Date: Mon, 17 Aug 2015 09:27:06 +1000
+	Sun, 16 Aug 2015 19:52:44 -0400
+Date: Mon, 17 Aug 2015 09:52:19 +1000
 From: Dave Chinner <david@fromorbit.com>
-To: Eric Sandeen <sandeen@sandeen.net>
-Cc: Liu Bo <bo.li.liu@oracle.com>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, fdmanana@gmail.com
-Subject: Re: [PATCH v2] fstests: generic/018: expand "write backwards sync
- but contiguous" to test regression in btrfs
-Message-ID: <20150816232706.GC20596@dastard>
-References: <1439455474-20128-1-git-send-email-bo.li.liu@oracle.com>
- <1439455670-21822-1-git-send-email-bo.li.liu@oracle.com>
- <55CE06F4.4000208@sandeen.net>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, eguan@redhat.com,
+        fdmanana@gmail.com
+Subject: Re: [PATCH v6 1/3] xfstests: btrfs: add functions to create dm-error
+ device
+Message-ID: <20150816235218.GD20596@dastard>
+References: <1439549224-29784-1-git-send-email-anand.jain@oracle.com>
+ <1439566305-12460-1-git-send-email-anand.jain@oracle.com>
+ <1439566305-12460-2-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55CE06F4.4000208@sandeen.net>
+In-Reply-To: <1439566305-12460-2-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 14, 2015 at 10:19:16AM -0500, Eric Sandeen wrote:
-> On 8/13/15 3:47 AM, Liu Bo wrote:
-> > Btrfs has a problem when defraging a file which has a large fragment'ed range,
-> > it'd leave the tail extent as a seperate extent instead of merging it with
-> > previous extents.
-> > 
-> > This makes generic/018 recognize the above regression.
+On Fri, Aug 14, 2015 at 11:31:43PM +0800, Anand Jain wrote:
+> From: Anand Jain <Anand.Jain@oracle.com>
 > 
-> Sorry for the late review, but here it is ;)
+> Controlled EIO from the device is achieved using the dm device.
+> Helper functions are at common/dmerror.
+> 
+> Broadly steps will include calling _init_dmerror().
+> _init_dmerror() will use SCRATCH_DEV to create dm linear device and assign
+> DMERROR_DEV to /dev/mapper/error-test.
+> 
+> When test script is ready to get EIO, the test cases can call
+> _load_dmerror_table() which then it will load the dm error.
+> so that reading DMERROR_DEV will cause EIO. After the test case is
+> complete, cleanup must be done by calling _cleanup_dmerror().
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> v5->v6: accepts Eryu's comments
+> v4->v5: No Change. keep up with the patch set
+> v3->v4: rebase on latest xfstests code
+> v2.1->v3: accepts Filipe Manana's review comments, thanks
+> v2->v2.1: fixed missed typo error fixup in the commit.
+> v1->v2: accepts Dave Chinner's review comments, thanks
+
+This is not a change log. A change log describes the changes that
+were made, not who asked for changes to be made. i.e. I have no idea
+what changes you actually made from the previous version in this
+patch set....
+
 ....
-> 3) You stop redirecting xfs_io to /dev/null, and save it to the golden output
-> file instead.
-> 
-> Honestly, I find hundreds of extra xfs_io output lines to be rather unhelpful,
-> because the old output file used to be quite easy to read, to see what's going on.
+> +# common functions for setting up and tearing down a dmerror device
+> +
+> +_init_dmerror()
 
-Yup, it should remain redirected to /dev/null. If writing a few
-small IOs to an otherwise empty filesystem fails, then you've got
-bigger problems. besides, we actually test that the writes worked by
-the count of extents before defrag. If any of the writes fail, we'll
-fail because the "before" extent count will be wrong.
+All these function names shoul dbe prefixed _dmerror_<blah> so that
+it is clear the namespace we are working on. (similar to
+_scratch-<blah>, _test_<blah>, etc).
 
-Besides, if the pwrite() fails, then all the paths in xfs_io that
-call do_pwrite() end up doing perror("pwrite64") and so it should
-output errors to stderr just fine.
+> +{
+> +	$DMSETUP_PROG remove error-test > /dev/null 2>&1
+> +
+> +	local BLK_DEV_SIZE=`blockdev --getsz $SCRATCH_DEV`
 
-> Today it only redirects stdout:
-> 
-> $XFS_IO_PROG -f -c "pwrite -b $((4 * bsize)) 0 $((4 * bsize))" $fragfile \
-> 					> /dev/null
-> 
-> so if a write fails, I *think* stderr will get output, and the test *should*
-> fail as a result.[1]  You could add a || _fail "xfs_io failed" for good measure...
+I think I've said this before - local variables are lower case,
+global/exported variables are upper case.
 
-_fail calls do not belong here - catch the error message, and if
-there isn't one on stderr then xfs_io need fixing...
+> +
+> +	DMERROR_DEV='/dev/mapper/error-test'
+> +
+> +	DMLINEAR_TABLE="0 $BLK_DEV_SIZE linear $SCRATCH_DEV 0"
+> +
+> +	$DMSETUP_PROG create error-test --table "$DMLINEAR_TABLE" || \
+> +		_fatal "failed to create dm linear device"
+
+That should be _fail...
+
+_fatal() is local to common/config (as it can be included in scripts
+without including common/rc). Tests include common/rc (and not
+common/config directly), so they should all use _fail...
+
+
+> +	DMERROR_TABLE="0 $BLK_DEV_SIZE error $SCRATCH_DEV 0"
+> +}
+> +
+> +_scratch_mkfs_dmerror()
+> +{
+> +	$MKFS_BTRFS_PROG $MKFS_OPTIONS $* $DMERROR_DEV >> $seqres.full 2>&1 || \
+> +			_fatal "failed to create mkfs.btrfs $* $DMERROR_DEV"
+> +}
+
+This has nothing to do with the scratch device. The test should
+simply call '_mkfs_dev $DMERROR_DEV' as there's no need for a
+wrapper here.
+
+
+
+> +
+> +_mount_dmerror()
+> +{
+> +	$MOUNT_PROG -t $FSTYP $MOUNT_OPTIONS $DMERROR_DEV $SCRATCH_MNT
+> +}
+
+Should mirror _scratch_mount.
+
+_mount -t $FSTYP `_scratch_mount_options` $DMERROR_DEV $SCRATCH_MNT
+
+> +
+> +_unmount_dmerror()
+> +{
+> +	$UMOUNT_PROG $SCRATCH_MNT
+> +}
+
+Doesn't need a wrapper.
+
+> +
+> +_cleanup_dmerror()
+> +{
+> +	$UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
+> +	$DMSETUP_PROG remove error-test > /dev/null 2>&1
+> +}
+> +
+> +_load_dmerror_table()
+> +{
+> +	$DMSETUP_PROG suspend error-test
+> +	[ $? -ne 0 ] && _fatal  "failed to suspend error-test"
+
+Error message makes no sense when read as the reason for a test
+failing. '_fail "dmsetup suspend failed"' makes more sense, as that is the
+command that failed.
+
+> +
+> +	$DMSETUP_PROG load error-test --table "$DMERROR_TABLE"
+> +	[ $? -ne 0 ] && _fatal "failed to load error table error-test"
+
+_fail "dmsetup failed to load error table"
+
+> +
+> +	$DMSETUP_PROG resume error-test
+> +	[ $? -ne 0 ] && _fatal  "failed to resume error-test"
+
+_fail "dmsetup resume failed"
+
+> +}
+> diff --git a/common/rc b/common/rc
+> index 70d2fa8..8d4da0e 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -1337,6 +1337,15 @@ _require_sane_bdev_flush()
+>  	fi
+>  }
+>  
+> +# this test requires the device mapper error target
+> +#
+> +_require_dmerror()
+> +{
+> +	_require_command "$DMSETUP_PROG" dmsetup
+> +	$DMSETUP_PROG targets | grep error >/dev/null 2>&1
+> +	[ $? -ne 0 ] && _notrun "This test requires dm error support"
+> +}
+
+Why isn't this in common/dmerror?
 
 Cheers,
 

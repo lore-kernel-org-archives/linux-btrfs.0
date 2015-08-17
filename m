@@ -1,23 +1,23 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2955 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17951 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750710AbbHQFnS (ORCPT
+	with ESMTP id S1750937AbbHQGJW (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Aug 2015 01:43:18 -0400
+	Mon, 17 Aug 2015 02:09:22 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] fstests: btrfs: Add reserved space leak check for rewrite dirty page
-Date: Mon, 17 Aug 2015 13:41:08 +0800
-Message-ID: <1439790068-24470-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2] fstests: btrfs: Add reserved space leak check for rewrite dirty page
+Date: Mon, 17 Aug 2015 14:07:17 +0800
+Message-ID: <1439791637-6517-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs qgroup reserve codes lacks check for rewrite dirty page, causing
+Btrfs qgroup reserve codes lacks check for rewriting dirty page, causing
 every write, even rewriting a uncommitted dirty page, to reserve space.
 
-But only written data will free the reserved space, causing reserved
+But only written data will free the reserved space, resulting reserved
 space leaking.
 
 The bug exists almost from the beginning of btrfs qgroup codes, but
@@ -37,7 +37,6 @@ reserved: 12K
 0	4K	8K	12K
 |<--------dirty-------->|
 reserved: 16K <<< Should be 12K
-As the dirty pages are not committed yet, we don't need to reserve extra space.
 
 3) Commit transaction
 Dirty pages [0,12) written to disk.
@@ -49,19 +48,24 @@ Kernel fix will need some huge change, so won't be soon.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- tests/btrfs/089     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/089.out | 13 +++++++++
+changelog:
+v2:
+  Reduce write size inside loop to ensure even commit happens, we can still
+  continue write.
+---
+ tests/btrfs/089     | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/089.out | 13 ++++++++
  tests/btrfs/group   |  1 +
- 3 files changed, 96 insertions(+)
+ 3 files changed, 99 insertions(+)
  create mode 100755 tests/btrfs/089
  create mode 100644 tests/btrfs/089.out
 
 diff --git a/tests/btrfs/089 b/tests/btrfs/089
 new file mode 100755
-index 0000000..76d733e
+index 0000000..d521910
 --- /dev/null
 +++ b/tests/btrfs/089
-@@ -0,0 +1,82 @@
+@@ -0,0 +1,85 @@
 +#! /bin/bash
 +# FS QA Test 089
 +#
@@ -127,13 +131,16 @@ index 0000000..76d733e
 +
 +# loop 5 times without sync to ensure reserved space leak will happen
 +for i in `seq 1 5`; do
-+	$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE 0 $(($FILESIZE / 2))" \
++	# Use 1/4 of the file size, to ensure even commit is trigger by
++	# dirty page threshold or commit interval, we should still be
++	# able to continue write
++	$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE 0 $(($FILESIZE / 4))" \
 +		$SCRATCH_MNT/foo | _filter_xfs_io
 +done
 +
 +# remove the file and sync, to ensure all space freed
 +sync
-+# shouldn't happen, as BLOCKSIZE is large enough for metdata cow
++# error shouldn't happen, as BLOCKSIZE is large enough for metdata cow
 +rm $SCRATCH_MNT/foo || _fail "reserved space leak detected"
 +sync
 +
@@ -146,20 +153,20 @@ index 0000000..76d733e
 +exit
 diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
 new file mode 100644
-index 0000000..2690191
+index 0000000..642bede
 --- /dev/null
 +++ b/tests/btrfs/089.out
 @@ -0,0 +1,13 @@
 +QA output created by 089
-+wrote 67108864/67108864 bytes at offset 0
++wrote 33554432/33554432 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 67108864/67108864 bytes at offset 0
++wrote 33554432/33554432 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 67108864/67108864 bytes at offset 0
++wrote 33554432/33554432 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 67108864/67108864 bytes at offset 0
++wrote 33554432/33554432 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 67108864/67108864 bytes at offset 0
++wrote 33554432/33554432 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 132120576/132120576 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
@@ -171,7 +178,7 @@ index ffe18bf..da37e46 100644
  086 auto quick clone
  087 auto quick send
  088 auto quick metadata
-+089 auto qgroup
++089 auto quick qgroup
  090 auto quick metadata
  091 auto quick qgroup
  092 auto quick send

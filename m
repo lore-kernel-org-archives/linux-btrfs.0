@@ -1,128 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:54476 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750892AbbHQOtM (ORCPT
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:37629 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751326AbbHQSwR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Aug 2015 10:49:12 -0400
-Date: Mon, 17 Aug 2015 07:49:04 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Josef Bacik <jbacik@fb.com>, dsterba@suse.com, clm@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
-Message-ID: <20150817144904.GT29259@merlins.org>
-References: <20150724162446.GH30815@merlins.org>
- <20150803035130.GL24824@merlins.org>
- <20150811050758.GF29259@merlins.org>
- <55CA177D.1050004@fb.com>
- <20150812144749.GY24824@merlins.org>
- <55CB631B.2080404@fb.com>
- <20150812160936.GK29259@merlins.org>
- <55CB71E5.1070302@fb.com>
- <20150812171912.GL29259@merlins.org>
- <55D1406C.9040607@cn.fujitsu.com>
+	Mon, 17 Aug 2015 14:52:17 -0400
+Received: by igui7 with SMTP id i7so62491344igu.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 11:52:17 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55D1406C.9040607@cn.fujitsu.com>
+In-Reply-To: <55D1C8D3.5090501@gmail.com>
+References: <CAK7bmU88ZfLJmFfMiV=q9RjS+=vAWbniu9w6MUTv_xSG+-hj_g@mail.gmail.com>
+	<55D1C8D3.5090501@gmail.com>
+Date: Mon, 17 Aug 2015 14:52:17 -0400
+Message-ID: <CAK7bmU_oXstgxwkWY_6tSc90aU-=WKh0TLH+1Xw+ec3YZogzbQ@mail.gmail.com>
+Subject: Re: So, wipe it out and start over or keep debugging?
+From: Timothy Normand Miller <theosib@gmail.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 17, 2015 at 10:01:16AM +0800, Qu Wenruo wrote:
-> Hi Marc,
- 
-Hi Qu, thanks for your answer and looking at this.
+I'm not sure if I'm doing this wrong.  Here's what I'm seeing:
 
-> Did btrfs-debug-tree also has the crash?
-> 
-> If not, would you please attach the output if it doesn't contain
-> classified data.
- 
-Sure thing:
-btrfs-debug-tree /dev/mapper/crypt_sdd1 > /tmp/tree.out
-parent transid verify failed on 2968115101696 wanted 34855 found 39533
-parent transid verify failed on 2968115101696 wanted 34855 found 39533
-parent transid verify failed on 2968115101696 wanted 34855 found 39533
-parent transid verify failed on 2968115101696 wanted 34855 found 39533
-Ignoring transid failure
-parent transid verify failed on 2968115134464 wanted 34855 found 39533
-parent transid verify failed on 2968115134464 wanted 34855 found 39533
-parent transid verify failed on 2968115134464 wanted 34855 found 39533
-parent transid verify failed on 2968115134464 wanted 34855 found 39533
-Ignoring transid failure
-parent transid verify failed on 2968115150848 wanted 34855 found 39533
-parent transid verify failed on 2968115150848 wanted 34855 found 39533
-parent transid verify failed on 2968115150848 wanted 34855 found 39533
-parent transid verify failed on 2968115150848 wanted 34855 found 39533
-Ignoring transid failure
-parent transid verify failed on 2968115691520 wanted 34855 found 39533
-parent transid verify failed on 2968115691520 wanted 34855 found 39533
-parent transid verify failed on 2968115691520 wanted 34855 found 39533
-parent transid verify failed on 2968115691520 wanted 34855 found 39533
-Ignoring transid failure
-parent transid verify failed on 1291597152256 wanted 35830 found 39530
-parent transid verify failed on 1291597152256 wanted 35830 found 39530
-parent transid verify failed on 1291597152256 wanted 35830 found 39530
-parent transid verify failed on 1291597152256 wanted 35830 found 39530
-Ignoring transid failure
-parent transid verify failed on 2968116592640 wanted 34855 found 39533
-parent transid verify failed on 2968116592640 wanted 34855 found 39533
-parent transid verify failed on 2968116592640 wanted 34855 found 39533
-parent transid verify failed on 2968116592640 wanted 34855 found 39533
-Ignoring transid failure
-parent transid verify failed on 2968116609024 wanted 34855 found 39533
-parent transid verify failed on 2968116609024 wanted 34855 found 39533
-parent transid verify failed on 2968116609024 wanted 34855 found 39533
-parent transid verify failed on 2968116609024 wanted 34855 found 39533
-Ignoring transid failure
-print-tree.c:1094: btrfs_print_tree: Assertion failed.
-btrfs-debug-tree[0x805ce93]
-btrfs-debug-tree(btrfs_print_tree+0x26d)[0x805eb51]
-btrfs-debug-tree(btrfs_print_tree+0x279)[0x805eb5d]
-btrfs-debug-tree(main+0x8b5)[0x804dfb7]
-/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb757c4d3]
-btrfs-debug-tree[0x804e221]
-
-Do you want the actual output?
-(it's 1.1GB uncompressed)
-
-Marc
+# btrfs-image -c9 -t4 -w /mnt/btrfs ~/btrfs_dump.z
+Superblock bytenr is larger than device size
+Open ctree failed
+create failed (No such file or directory)
 
 
-> Thanks,
-> Qu
-> 
-> Marc MERLIN wrote on 2015/08/12 10:19 -0700:
-> >On Wed, Aug 12, 2015 at 12:18:45PM -0400, Josef Bacik wrote:
-> >>Going to need more info to figure this one out
-> >
-> >Thanks for the patch, here's the output:
-> >enabling repair mode
-> >Checking filesystem on /dev/mapper/crypt_sdd1
-> >UUID: 024ba4d0-dacb-438d-9f1b-eeb34083fe49
-> >checking extents
-> >wtf, parent 575708413952 <<<<<<
-> >cmds-check.c:4488: add_data_backref: Assertion `back->bytes != max_size` failed.
-> >/tmp/btrfs[0x8066a83]
-> >/tmp/btrfs[0x8066ab4]
-> >/tmp/btrfs[0x80679d8]
-> >/tmp/btrfs[0x806b4f2]
-> >/tmp/btrfs[0x806b9ea]
-> >/tmp/btrfs[0x806c5f9]
-> >/tmp/btrfs(cmd_check+0x1088)[0x806ee26]
-> >/tmp/btrfs(main+0x153)[0x80557d6]
-> >/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb75a54d3]
-> >/tmp/btrfs[0x80557fc]
-> >
-> >Marc
-> >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+On Mon, Aug 17, 2015 at 7:43 AM, Austin S Hemmelgarn
+<ahferroin7@gmail.com> wrote:
+> On 2015-08-15 17:46, Timothy Normand Miller wrote:
+>>
+>> To those of you who have been helping out with my 4-drive RAID1
+>> situation, is there anything further we should do to investigate this,
+>> in case we can uncover any more bugs, or should I just wipe everything
+>> out and restore from backup?
+>>
+> If you need the system back online, then my suggestion would be to use
+> btrfs-image to get metadata images of the disks (there's an option to clear
+> out private data if need be), and then restore from backup.  That way, we
+> still have the problematic images to work with and examine.
+>
+
+
 
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Timothy Normand Miller, PhD
+Assistant Professor of Computer Science, Binghamton University
+http://www.cs.binghamton.edu/~millerti/
+Open Graphics Project

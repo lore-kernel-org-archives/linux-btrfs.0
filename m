@@ -1,128 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:52735 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750937AbbHQKqZ (ORCPT
+	with ESMTP id S1752767AbbHQKq1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Aug 2015 06:46:25 -0400
+	Mon, 17 Aug 2015 06:46:27 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7HAkKX2019731
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7HAkKWF019734
 	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 18:46:20 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/2] btrfs: Remove useless condition in start_log_trans()
-Date: Mon, 17 Aug 2015 18:44:45 +0800
-Message-ID: <d8deac5a146d24247cf7b65937a7b4f9811b06d9.1439808273.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs: Remove unused arguments in tree-log.c
+Date: Mon, 17 Aug 2015 18:44:46 +0800
+Message-ID: <3ddd9df578ad91835ac8d7167ea9b9e0ac1fbee9.1439808273.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <d8deac5a146d24247cf7b65937a7b4f9811b06d9.1439808273.git.zhaolei@cn.fujitsu.com>
+References: <d8deac5a146d24247cf7b65937a7b4f9811b06d9.1439808273.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dan Carpenter <dan.carpenter@oracle.com> reported a smatch warning
-for start_log_trans():
- fs/btrfs/tree-log.c:178 start_log_trans()
- warn: we tested 'root->log_root' before and it was 'false'
+Following arguments are not used in tree-log.c:
+ insert_one_name(): path, type
+ wait_log_commit(): trans
+ wait_for_writer(): trans
 
- fs/btrfs/tree-log.c
- 147          if (root->log_root) {
- We test "root->log_root" here.
- ...
+This patch remove them.
 
-Reason:
- Condition of:
- fs/btrfs/tree-log.c:178: if (!root->log_root) {
- is not necessary after commit: 7237f1833
-
- It caused a smatch warning, and no functionally error.
-
-Fix:
- Deleting above condition will make smatch shut up,
- but a better way is to do cleanup for start_log_trans()
- to remove duplicated code and make code more readable.
-
-Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/tree-log.c | 43 +++++++++++++++++--------------------------
- 1 file changed, 17 insertions(+), 26 deletions(-)
+ fs/btrfs/tree-log.c | 25 +++++++++++--------------
+ 1 file changed, 11 insertions(+), 14 deletions(-)
 
 diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 9c45431..66a8a58 100644
+index 66a8a58..5816a5d 100644
 --- a/fs/btrfs/tree-log.c
 +++ b/fs/btrfs/tree-log.c
-@@ -140,55 +140,46 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root,
- 			   struct btrfs_log_ctx *ctx)
+@@ -1540,9 +1540,8 @@ static noinline int link_to_fixup_dir(struct btrfs_trans_handle *trans,
+  */
+ static noinline int insert_one_name(struct btrfs_trans_handle *trans,
+ 				    struct btrfs_root *root,
+-				    struct btrfs_path *path,
+ 				    u64 dirid, u64 index,
+-				    char *name, int name_len, u8 type,
++				    char *name, int name_len,
+ 				    struct btrfs_key *location)
  {
--	int index;
--	int ret;
-+	int ret = 0;
- 
- 	mutex_lock(&root->log_mutex);
-+
- 	if (root->log_root) {
- 		if (btrfs_need_log_full_commit(root->fs_info, trans)) {
- 			ret = -EAGAIN;
- 			goto out;
- 		}
-+
- 		if (!root->log_start_pid) {
--			root->log_start_pid = current->pid;
- 			clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
-+			root->log_start_pid = current->pid;
- 		} else if (root->log_start_pid != current->pid) {
- 			set_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
- 		}
-+	} else {
-+		mutex_lock(&root->fs_info->tree_log_mutex);
-+		if (!root->fs_info->log_root_tree)
-+			ret = btrfs_init_log_root_tree(trans, root->fs_info);
-+		mutex_unlock(&root->fs_info->tree_log_mutex);
-+		if (ret)
-+			goto out;
- 
--		atomic_inc(&root->log_batch);
--		atomic_inc(&root->log_writers);
--		if (ctx) {
--			index = root->log_transid % 2;
--			list_add_tail(&ctx->list, &root->log_ctxs[index]);
--			ctx->log_transid = root->log_transid;
--		}
--		mutex_unlock(&root->log_mutex);
--		return 0;
--	}
--
--	ret = 0;
--	mutex_lock(&root->fs_info->tree_log_mutex);
--	if (!root->fs_info->log_root_tree)
--		ret = btrfs_init_log_root_tree(trans, root->fs_info);
--	mutex_unlock(&root->fs_info->tree_log_mutex);
--	if (ret)
--		goto out;
--
--	if (!root->log_root) {
- 		ret = btrfs_add_log_tree(trans, root);
- 		if (ret)
- 			goto out;
-+
-+		clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
-+		root->log_start_pid = current->pid;
+ 	struct inode *inode;
+@@ -1710,8 +1709,8 @@ insert:
+ 		goto out;
  	}
--	clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
--	root->log_start_pid = current->pid;
-+
- 	atomic_inc(&root->log_batch);
- 	atomic_inc(&root->log_writers);
- 	if (ctx) {
--		index = root->log_transid % 2;
-+		int index = root->log_transid % 2;
- 		list_add_tail(&ctx->list, &root->log_ctxs[index]);
- 		ctx->log_transid = root->log_transid;
- 	}
-+
- out:
- 	mutex_unlock(&root->log_mutex);
+ 	btrfs_release_path(path);
+-	ret = insert_one_name(trans, root, path, key->objectid, key->offset,
+-			      name, name_len, log_type, &log_key);
++	ret = insert_one_name(trans, root, key->objectid, key->offset,
++			      name, name_len, &log_key);
+ 	if (ret && ret != -ENOENT && ret != -EEXIST)
+ 		goto out;
+ 	update_size = false;
+@@ -2526,8 +2525,7 @@ static int update_log_root(struct btrfs_trans_handle *trans,
  	return ret;
+ }
+ 
+-static void wait_log_commit(struct btrfs_trans_handle *trans,
+-			    struct btrfs_root *root, int transid)
++static void wait_log_commit(struct btrfs_root *root, int transid)
+ {
+ 	DEFINE_WAIT(wait);
+ 	int index = transid % 2;
+@@ -2552,8 +2550,7 @@ static void wait_log_commit(struct btrfs_trans_handle *trans,
+ 		 atomic_read(&root->log_commit[index]));
+ }
+ 
+-static void wait_for_writer(struct btrfs_trans_handle *trans,
+-			    struct btrfs_root *root)
++static void wait_for_writer(struct btrfs_root *root)
+ {
+ 	DEFINE_WAIT(wait);
+ 
+@@ -2633,7 +2630,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 
+ 	index1 = log_transid % 2;
+ 	if (atomic_read(&root->log_commit[index1])) {
+-		wait_log_commit(trans, root, log_transid);
++		wait_log_commit(root, log_transid);
+ 		mutex_unlock(&root->log_mutex);
+ 		return ctx->log_ret;
+ 	}
+@@ -2642,7 +2639,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 
+ 	/* wait for previous tree log sync to complete */
+ 	if (atomic_read(&root->log_commit[(index1 + 1) % 2]))
+-		wait_log_commit(trans, root, log_transid - 1);
++		wait_log_commit(root, log_transid - 1);
+ 
+ 	while (1) {
+ 		int batch = atomic_read(&root->log_batch);
+@@ -2653,7 +2650,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 			schedule_timeout_uninterruptible(1);
+ 			mutex_lock(&root->log_mutex);
+ 		}
+-		wait_for_writer(trans, root);
++		wait_for_writer(root);
+ 		if (batch == atomic_read(&root->log_batch))
+ 			break;
+ 	}
+@@ -2750,7 +2747,7 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_wait_marked_extents(log, &log->dirty_log_pages,
+ 						mark);
+ 		btrfs_wait_logged_extents(trans, log, log_transid);
+-		wait_log_commit(trans, log_root_tree,
++		wait_log_commit(log_root_tree,
+ 				root_log_ctx.log_transid);
+ 		mutex_unlock(&log_root_tree->log_mutex);
+ 		if (!ret)
+@@ -2761,11 +2758,11 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	atomic_set(&log_root_tree->log_commit[index2], 1);
+ 
+ 	if (atomic_read(&log_root_tree->log_commit[(index2 + 1) % 2])) {
+-		wait_log_commit(trans, log_root_tree,
++		wait_log_commit(log_root_tree,
+ 				root_log_ctx.log_transid - 1);
+ 	}
+ 
+-	wait_for_writer(trans, log_root_tree);
++	wait_for_writer(log_root_tree);
+ 
+ 	/*
+ 	 * now that we've moved on to the tree of log tree roots,
 -- 
 1.8.5.1
 

@@ -1,43 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:36283 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752156AbbHQLn1 (ORCPT
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:36499 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755184AbbHQLs6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Aug 2015 07:43:27 -0400
-Received: by igxp17 with SMTP id p17so53490011igx.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 04:43:27 -0700 (PDT)
-Subject: Re: So, wipe it out and start over or keep debugging?
-To: Timothy Normand Miller <theosib@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <CAK7bmU88ZfLJmFfMiV=q9RjS+=vAWbniu9w6MUTv_xSG+-hj_g@mail.gmail.com>
+	Mon, 17 Aug 2015 07:48:58 -0400
+Received: by igxp17 with SMTP id p17so53575888igx.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 04:48:58 -0700 (PDT)
+Subject: Re: Btrfs is amazing! (a lack-of-bug report)
+To: Tyler Bletsch <tyler.bletsch@gmail.com>, linux-btrfs@vger.kernel.org
+References: <55D1567B.3030809@gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55D1C8D3.5090501@gmail.com>
-Date: Mon, 17 Aug 2015 07:43:15 -0400
+Message-ID: <55D1CA1E.1060103@gmail.com>
+Date: Mon, 17 Aug 2015 07:48:46 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAK7bmU88ZfLJmFfMiV=q9RjS+=vAWbniu9w6MUTv_xSG+-hj_g@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090806060903040802070707"
+In-Reply-To: <55D1567B.3030809@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms050701020301040007040903"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms090806060903040802070707
+--------------ms050701020301040007040903
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-15 17:46, Timothy Normand Miller wrote:
-> To those of you who have been helping out with my 4-drive RAID1
-> situation, is there anything further we should do to investigate this,
-> in case we can uncover any more bugs, or should I just wipe everything
-> out and restore from backup?
+On 2015-08-16 23:35, Tyler Bletsch wrote:
+> I just wanted to drop you guys a line to say that I am stunned with how=
+
+> excellent btrfs is. I did some testing, and the things that it did were=
+
+> amazing. I took a 4-disk RAID 5 and walked it all the way down to a
+> one-disk volume and back again, mixed in devices of different sizes in
+> different modes, balanced it in every direction, trashed data on drives=
+
+> without the OS knowing, and did every other form of torture I could
+> think of, all while looping file integrity tests, and it was perfect.
 >
-If you need the system back online, then my suggestion would be to use=20
-btrfs-image to get metadata images of the disks (there's an option to=20
-clear out private data if need be), and then restore from backup.  That=20
-way, we still have the problematic images to work with and examine.
+> The ease of use and simplicity were great.  I was dreading having to
+> administer ZFS in order to get snapshots and other features, but now I
+> don't have to. With the exception of enterprisey features like SSD
+> intent logs and stuff, it is hands down far better than ZFS.
+>
+> Thanks for the great work!
+>
+It's nice to hear success stories for once.  I would suggest being=20
+careful of using BTRFS raid5 or raid6 in production, there are probably=20
+still bugs that haven't yet been discovered.  Secondarily, if you can=20
+deal with slightly more setup and maintenance overhead, BTRFS works=20
+_very_ well on top of LVM (it makes online data migration much easier,=20
+and provides easy ways to do layered RAID setups).
 
 
---------------ms090806060903040802070707
+
+--------------ms050701020301040007040903
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -79,9 +94,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODE3MTE0MzE1WjBPBgkq
-hkiG9w0BCQQxQgRAQVtmsAJ+5HirRr4EDXYeNN/ffAiv/jogx8GCKpstQfoIkC+9+uyHdBsH
-lMdTBNBfAEeHBTJNcJXG6dkmfyLs5TBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODE3MTE0ODQ2WjBPBgkq
+hkiG9w0BCQQxQgRAV88QM8DTRP4gSJosY4DTJGAaQFspttUh3d2B2AWrND9MnombajlFP3dF
+0xvxtxdprtVMFoKTC4bL+BVeogQNFjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -89,14 +104,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgAoPrlqds5XaOTLASwynuLAQfIbxQRcNH7lnXcUJ2tRLD+jmbFm
-slqMtxjD0J6IMEzJIPQcX7UtQU3Paz1Ypofv3q68yuCm5jCdfaI0o7mOmQn9ZraBL43Nwl3d
-3PCr69DP9WWQSbYNNo+ostORetS/GfTLIgldqDANL8URpY7Lku2KO5VNQjXYBA/cf9Ywhg2k
-lvZB741lmt3ZEI7rY84PPW+7M/DQeullDPsiUpDAOczKRPIWOXFuRJ1Yr5L3a5E220C2pagC
-TmmO69fRIYRp3YZsyyU89S58MNbLvoabYYWGV1ZHOAY59/B2khr5STQQeAv1MW9yhsDF9kqu
-Na+geqWtd/kp137WuuW6iQbdTDx/6MKUcRVeQAJ7xduy7opPzYRrUBKwLrdiGfE/xkQKNHeK
-9aBAiDcW6IWGE7Cctwsqugx1tbj5+7U8hTEzXsw8us6QTCbXMdJijRE8H5zybNCKA5JxgLuS
-9FMrEn92C+lMqCOrAIv4pY3FNyoaRJPujqdguPyzkrOQ8EoNMzgYa+c6pJXJvKLqNAmYiprA
-zw32YoYloHKCqWdt7KEKwRgG1zkUNIzP/ERdySN1Prw1cDra5OldFVSYl+JGTi0rO8HsEIVy
-jOcZ8ksMX5rf7a8cOJTM3BaKkt5NQn+G3z9qeNpUYQ+DAmN2u3PoSmXcrQAAAAAAAA==
---------------ms090806060903040802070707--
+BgkqhkiG9w0BAQEFAASCAgCAL4xdFbW9Fx+UNTSTQDc8+oDrr8jKZzTdmHN9pbIyyigU54XS
+0K0ObEhpSMxsvUSdFNuFz+wMhQ0kSRb4lD0HWDdVg6LnrKpOlaDTz11iUMtzdJs42amrCl0n
+BN/MEuuXtCKRR0m5LDoH2HS5iM6ZfRZN988hmZRvTgQdzX/HPQqPTIJuL0lphmGar9JnhKeX
+vIylYOq4j+nm2z5GHcd4NhNdymG7ZGjZp9QVM3BqVH7WsQy7jnj1H6jS4HnTMkenTfS0HHp+
+g5Az4j+CTwe0uHUTHDeh5Nn/rB5odAyJOw8raOn74WUJKwj6uUHVSR+lc2cJPs+DX/LeNdcO
+TGIBx5IcDyuWIMMXf4/ASIRvOoqQ9gK8fL6oi6ZnB9bNVA2jqDi0EpFE0KEaB9BwiHiMQVyk
+gSL7H0omh/6Lch1xEvsB7zw/B8sV4eavdZJfKRlMKkkTYYCv3jS8wqpa1WStj2eYolFWWm3c
+oY5XZ46fzKWwwKxxW6dv/cqpz/piOw+HkT9M2Iq4cQQ2Jbx+nvQxxu3a1DgUwWFPHDFNph26
+XAeX71+R/tNO9Stwsz6PcZZrt6Pc3DKoQp/qSagq1sw1emJFoevWyZCHe6zqfxPGZBTBhwue
+38r0RqxKh1T/nGoiJ2sFCpKLkMiez9WOqdSwVgWiDZSMMKGpydm+9ZtGSAAAAAAAAA==
+--------------ms050701020301040007040903--

@@ -1,172 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail05.adl6.internode.on.net ([150.101.137.143]:50816 "EHLO
-	ipmail05.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751452AbbHPXwo (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:2955 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750710AbbHQFnS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Aug 2015 19:52:44 -0400
-Date: Mon, 17 Aug 2015 09:52:19 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, eguan@redhat.com,
-        fdmanana@gmail.com
-Subject: Re: [PATCH v6 1/3] xfstests: btrfs: add functions to create dm-error
- device
-Message-ID: <20150816235218.GD20596@dastard>
-References: <1439549224-29784-1-git-send-email-anand.jain@oracle.com>
- <1439566305-12460-1-git-send-email-anand.jain@oracle.com>
- <1439566305-12460-2-git-send-email-anand.jain@oracle.com>
+	Mon, 17 Aug 2015 01:43:18 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] fstests: btrfs: Add reserved space leak check for rewrite dirty page
+Date: Mon, 17 Aug 2015 13:41:08 +0800
+Message-ID: <1439790068-24470-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1439566305-12460-2-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 14, 2015 at 11:31:43PM +0800, Anand Jain wrote:
-> From: Anand Jain <Anand.Jain@oracle.com>
-> 
-> Controlled EIO from the device is achieved using the dm device.
-> Helper functions are at common/dmerror.
-> 
-> Broadly steps will include calling _init_dmerror().
-> _init_dmerror() will use SCRATCH_DEV to create dm linear device and assign
-> DMERROR_DEV to /dev/mapper/error-test.
-> 
-> When test script is ready to get EIO, the test cases can call
-> _load_dmerror_table() which then it will load the dm error.
-> so that reading DMERROR_DEV will cause EIO. After the test case is
-> complete, cleanup must be done by calling _cleanup_dmerror().
-> 
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> v5->v6: accepts Eryu's comments
-> v4->v5: No Change. keep up with the patch set
-> v3->v4: rebase on latest xfstests code
-> v2.1->v3: accepts Filipe Manana's review comments, thanks
-> v2->v2.1: fixed missed typo error fixup in the commit.
-> v1->v2: accepts Dave Chinner's review comments, thanks
+Btrfs qgroup reserve codes lacks check for rewrite dirty page, causing
+every write, even rewriting a uncommitted dirty page, to reserve space.
 
-This is not a change log. A change log describes the changes that
-were made, not who asked for changes to be made. i.e. I have no idea
-what changes you actually made from the previous version in this
-patch set....
+But only written data will free the reserved space, causing reserved
+space leaking.
 
-....
-> +# common functions for setting up and tearing down a dmerror device
-> +
-> +_init_dmerror()
+The bug exists almost from the beginning of btrfs qgroup codes, but
+nobody found it.
 
-All these function names shoul dbe prefixed _dmerror_<blah> so that
-it is clear the namespace we are working on. (similar to
-_scratch-<blah>, _test_<blah>, etc).
+For example:
 
-> +{
-> +	$DMSETUP_PROG remove error-test > /dev/null 2>&1
-> +
-> +	local BLK_DEV_SIZE=`blockdev --getsz $SCRATCH_DEV`
+1)Write [0, 12K) into file A
+  reserve 12K space
 
-I think I've said this before - local variables are lower case,
-global/exported variables are upper case.
+File A:
+0	4K	8K	12K
+|<--------dirty-------->|
+reserved: 12K
 
-> +
-> +	DMERROR_DEV='/dev/mapper/error-test'
-> +
-> +	DMLINEAR_TABLE="0 $BLK_DEV_SIZE linear $SCRATCH_DEV 0"
-> +
-> +	$DMSETUP_PROG create error-test --table "$DMLINEAR_TABLE" || \
-> +		_fatal "failed to create dm linear device"
+2)Write [0,4K) into file A
+0	4K	8K	12K
+|<--------dirty-------->|
+reserved: 16K <<< Should be 12K
+As the dirty pages are not committed yet, we don't need to reserve extra space.
 
-That should be _fail...
+3) Commit transaction
+Dirty pages [0,12) written to disk.
+Free 12K reserved space.
+reserved: 4K <<< Should be 0
 
-_fatal() is local to common/config (as it can be included in scripts
-without including common/rc). Tests include common/rc (and not
-common/config directly), so they should all use _fail...
+This testcase will test such problem.
+Kernel fix will need some huge change, so won't be soon.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/089     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/089.out | 13 +++++++++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 96 insertions(+)
+ create mode 100755 tests/btrfs/089
+ create mode 100644 tests/btrfs/089.out
 
-> +	DMERROR_TABLE="0 $BLK_DEV_SIZE error $SCRATCH_DEV 0"
-> +}
-> +
-> +_scratch_mkfs_dmerror()
-> +{
-> +	$MKFS_BTRFS_PROG $MKFS_OPTIONS $* $DMERROR_DEV >> $seqres.full 2>&1 || \
-> +			_fatal "failed to create mkfs.btrfs $* $DMERROR_DEV"
-> +}
-
-This has nothing to do with the scratch device. The test should
-simply call '_mkfs_dev $DMERROR_DEV' as there's no need for a
-wrapper here.
-
-
-
-> +
-> +_mount_dmerror()
-> +{
-> +	$MOUNT_PROG -t $FSTYP $MOUNT_OPTIONS $DMERROR_DEV $SCRATCH_MNT
-> +}
-
-Should mirror _scratch_mount.
-
-_mount -t $FSTYP `_scratch_mount_options` $DMERROR_DEV $SCRATCH_MNT
-
-> +
-> +_unmount_dmerror()
-> +{
-> +	$UMOUNT_PROG $SCRATCH_MNT
-> +}
-
-Doesn't need a wrapper.
-
-> +
-> +_cleanup_dmerror()
-> +{
-> +	$UMOUNT_PROG $SCRATCH_MNT > /dev/null 2>&1
-> +	$DMSETUP_PROG remove error-test > /dev/null 2>&1
-> +}
-> +
-> +_load_dmerror_table()
-> +{
-> +	$DMSETUP_PROG suspend error-test
-> +	[ $? -ne 0 ] && _fatal  "failed to suspend error-test"
-
-Error message makes no sense when read as the reason for a test
-failing. '_fail "dmsetup suspend failed"' makes more sense, as that is the
-command that failed.
-
-> +
-> +	$DMSETUP_PROG load error-test --table "$DMERROR_TABLE"
-> +	[ $? -ne 0 ] && _fatal "failed to load error table error-test"
-
-_fail "dmsetup failed to load error table"
-
-> +
-> +	$DMSETUP_PROG resume error-test
-> +	[ $? -ne 0 ] && _fatal  "failed to resume error-test"
-
-_fail "dmsetup resume failed"
-
-> +}
-> diff --git a/common/rc b/common/rc
-> index 70d2fa8..8d4da0e 100644
-> --- a/common/rc
-> +++ b/common/rc
-> @@ -1337,6 +1337,15 @@ _require_sane_bdev_flush()
->  	fi
->  }
->  
-> +# this test requires the device mapper error target
-> +#
-> +_require_dmerror()
-> +{
-> +	_require_command "$DMSETUP_PROG" dmsetup
-> +	$DMSETUP_PROG targets | grep error >/dev/null 2>&1
-> +	[ $? -ne 0 ] && _notrun "This test requires dm error support"
-> +}
-
-Why isn't this in common/dmerror?
-
-Cheers,
-
-Dave.
+diff --git a/tests/btrfs/089 b/tests/btrfs/089
+new file mode 100755
+index 0000000..76d733e
+--- /dev/null
++++ b/tests/btrfs/089
+@@ -0,0 +1,82 @@
++#! /bin/bash
++# FS QA Test 089
++#
++# Check for btrfs reserved space leaking caused by overlap dirty range.
++# This problem exists almost from qgroup function.
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 Fujitsu. All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++
++# Modify as appropriate.
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++
++# Use big blocksize to ensure there is still enough space left for metadata
++# space reserve.
++BLOCKSIZE=$(( 2 * 1024 * 1024 )) # 2M block size
++FILESIZE=$(( 128 * 1024 * 1024 )) # 128M file size
++
++_scratch_mkfs >> $seqres.full 2>&1
++_scratch_mount
++_require_fs_space $SCRATCH_MNT $(($FILESIZE * 2 / 1024))
++
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog qgroup limit $FILESIZE 5 $SCRATCH_MNT
++
++# loop 5 times without sync to ensure reserved space leak will happen
++for i in `seq 1 5`; do
++	$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE 0 $(($FILESIZE / 2))" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
++done
++
++# remove the file and sync, to ensure all space freed
++sync
++# shouldn't happen, as BLOCKSIZE is large enough for metdata cow
++rm $SCRATCH_MNT/foo || _fail "reserved space leak detected"
++sync
++
++# We should be able to write $FILESIZE - $BLOCKSIZE data
++$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE 0 $(($FILESIZE - $BLOCKSIZE))" \
++	$SCRATCH_MNT/foo | _filter_xfs_io
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
+new file mode 100644
+index 0000000..2690191
+--- /dev/null
++++ b/tests/btrfs/089.out
+@@ -0,0 +1,13 @@
++QA output created by 089
++wrote 67108864/67108864 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 67108864/67108864 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 67108864/67108864 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 67108864/67108864 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 67108864/67108864 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++wrote 132120576/132120576 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index ffe18bf..da37e46 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -91,6 +91,7 @@
+ 086 auto quick clone
+ 087 auto quick send
+ 088 auto quick metadata
++089 auto qgroup
+ 090 auto quick metadata
+ 091 auto quick qgroup
+ 092 auto quick send
 -- 
-Dave Chinner
-david@fromorbit.com
+1.8.3.1
+

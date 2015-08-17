@@ -1,52 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:37629 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751326AbbHQSwR (ORCPT
+Received: from mail-qk0-f176.google.com ([209.85.220.176]:35942 "EHLO
+	mail-qk0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750923AbbHQTSu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Aug 2015 14:52:17 -0400
-Received: by igui7 with SMTP id i7so62491344igu.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 11:52:17 -0700 (PDT)
+	Mon, 17 Aug 2015 15:18:50 -0400
+Received: by qkdv3 with SMTP id v3so50047378qkd.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 12:18:49 -0700 (PDT)
+From: Tyler Bletsch <tyler.bletsch@gmail.com>
+Subject: Re: Btrfs is amazing! (a lack-of-bug report)
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
+References: <55D1567B.3030809@gmail.com> <55D1CA1E.1060103@gmail.com>
+Message-ID: <55D23397.6090404@gmail.com>
+Date: Mon, 17 Aug 2015 15:18:47 -0400
 MIME-Version: 1.0
-In-Reply-To: <55D1C8D3.5090501@gmail.com>
-References: <CAK7bmU88ZfLJmFfMiV=q9RjS+=vAWbniu9w6MUTv_xSG+-hj_g@mail.gmail.com>
-	<55D1C8D3.5090501@gmail.com>
-Date: Mon, 17 Aug 2015 14:52:17 -0400
-Message-ID: <CAK7bmU_oXstgxwkWY_6tSc90aU-=WKh0TLH+1Xw+ec3YZogzbQ@mail.gmail.com>
-Subject: Re: So, wipe it out and start over or keep debugging?
-From: Timothy Normand Miller <theosib@gmail.com>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <55D1CA1E.1060103@gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm not sure if I'm doing this wrong.  Here's what I'm seeing:
+Thanks. I will be trying raid5 in production, but "production" in this 
+case just means my home file server, with btrfs snapshot+sync for all 
+data and appropriate offsite non-btrfs backups for critical data. If it 
+hoses up, I'll post a bug report.
 
-# btrfs-image -c9 -t4 -w /mnt/btrfs ~/btrfs_dump.z
-Superblock bytenr is larger than device size
-Open ctree failed
-create failed (No such file or directory)
+Going to try to avoid LVM, since half the appeal of btrfs for me is 
+getting away from the multiple duct-taped layers of indirection that I 
+you get currently with ext4/MD/LVM setups.
 
+- Tyler
 
-On Mon, Aug 17, 2015 at 7:43 AM, Austin S Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2015-08-15 17:46, Timothy Normand Miller wrote:
+On 8/17/2015 7:48 AM, Austin S Hemmelgarn wrote:
+> On 2015-08-16 23:35, Tyler Bletsch wrote:
+>> I just wanted to drop you guys a line to say that I am stunned with how
+>> excellent btrfs is. I did some testing, and the things that it did were
+>> amazing. I took a 4-disk RAID 5 and walked it all the way down to a
+>> one-disk volume and back again, mixed in devices of different sizes in
+>> different modes, balanced it in every direction, trashed data on drives
+>> without the OS knowing, and did every other form of torture I could
+>> think of, all while looping file integrity tests, and it was perfect.
 >>
->> To those of you who have been helping out with my 4-drive RAID1
->> situation, is there anything further we should do to investigate this,
->> in case we can uncover any more bugs, or should I just wipe everything
->> out and restore from backup?
+>> The ease of use and simplicity were great.  I was dreading having to
+>> administer ZFS in order to get snapshots and other features, but now I
+>> don't have to. With the exception of enterprisey features like SSD
+>> intent logs and stuff, it is hands down far better than ZFS.
 >>
-> If you need the system back online, then my suggestion would be to use
-> btrfs-image to get metadata images of the disks (there's an option to clear
-> out private data if need be), and then restore from backup.  That way, we
-> still have the problematic images to work with and examine.
+>> Thanks for the great work!
+>>
+> It's nice to hear success stories for once.  I would suggest being 
+> careful of using BTRFS raid5 or raid6 in production, there are 
+> probably still bugs that haven't yet been discovered. Secondarily, if 
+> you can deal with slightly more setup and maintenance overhead, BTRFS 
+> works _very_ well on top of LVM (it makes online data migration much 
+> easier, and provides easy ways to do layered RAID setups).
+>
 >
 
-
-
--- 
-Timothy Normand Miller, PhD
-Assistant Professor of Computer Science, Binghamton University
-http://www.cs.binghamton.edu/~millerti/
-Open Graphics Project

@@ -1,123 +1,128 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:57510 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753199AbbHLOo7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 12 Aug 2015 10:44:59 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH v2] Btrfs: check if previous transaction aborted to avoid fs corruption
-Date: Wed, 12 Aug 2015 15:44:51 +0100
-Message-Id: <1439390691-5451-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1439388661-5316-1-git-send-email-fdmanana@kernel.org>
-References: <1439388661-5316-1-git-send-email-fdmanana@kernel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:52735 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750937AbbHQKqZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 17 Aug 2015 06:46:25 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7HAkKX2019731
+	for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 18:46:20 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: Remove useless condition in start_log_trans()
+Date: Mon, 17 Aug 2015 18:44:45 +0800
+Message-ID: <d8deac5a146d24247cf7b65937a7b4f9811b06d9.1439808273.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Dan Carpenter <dan.carpenter@oracle.com> reported a smatch warning
+for start_log_trans():
+ fs/btrfs/tree-log.c:178 start_log_trans()
+ warn: we tested 'root->log_root' before and it was 'false'
 
-While we are committing a transaction, it's possible the previous one is
-still finishing its commit and therefore we wait for it to finish first.
-However we were not checking if that previous transaction ended up getting
-aborted after we waited for it to commit, so we ended up committing the
-current transaction which can lead to fs corruption because the new
-superblock can point to trees that have had one or more nodes/leafs that
-were never durably persisted.
-The following sequence diagram exemplifies how this is possible:
+ fs/btrfs/tree-log.c
+ 147          if (root->log_root) {
+ We test "root->log_root" here.
+ ...
 
-          CPU 0                                                        CPU 1
+Reason:
+ Condition of:
+ fs/btrfs/tree-log.c:178: if (!root->log_root) {
+ is not necessary after commit: 7237f1833
 
-  transaction N starts
+ It caused a smatch warning, and no functionally error.
 
-  (...)
+Fix:
+ Deleting above condition will make smatch shut up,
+ but a better way is to do cleanup for start_log_trans()
+ to remove duplicated code and make code more readable.
 
-  btrfs_commit_transaction(N)
-
-    cur_trans->state = TRANS_STATE_COMMIT_START;
-    (...)
-    cur_trans->state = TRANS_STATE_COMMIT_DOING;
-    (...)
-
-    cur_trans->state = TRANS_STATE_UNBLOCKED;
-    root->fs_info->running_transaction = NULL;
-
-                                                              btrfs_start_transaction()
-                                                                 --> starts transaction N + 1
-
-    btrfs_write_and_wait_transaction(trans, root);
-      --> starts writing all new or COWed ebs created
-          at transaction N
-
-                                                              creates some new ebs, COWs some
-                                                              existing ebs but doesn't COW or
-                                                              deletes eb X
-
-                                                              btrfs_commit_transaction(N + 1)
-                                                                (...)
-                                                                cur_trans->state = TRANS_STATE_COMMIT_START;
-                                                                (...)
-                                                                wait_for_commit(root, prev_trans);
-                                                                  --> prev_trans == transaction N
-
-    btrfs_write_and_wait_transaction() continues
-    writing ebs
-       --> fails writing eb X, we abort transaction N
-           and set bit BTRFS_FS_STATE_ERROR on
-           fs_info->fs_state, so no new transactions
-           can start after setting that bit
-
-       cleanup_transaction()
-         btrfs_cleanup_one_transaction()
-           wakes up task at CPU 1
-
-                                                                continues, doesn't abort because
-                                                                cur_trans->aborted (transaction N + 1)
-                                                                is zero, and no checks for bit
-                                                                BTRFS_FS_STATE_ERROR in fs_info->fs_state
-                                                                are made
-
-                                                                btrfs_write_and_wait_transaction(trans, root);
-                                                                  --> succeeds, no errors during writeback
-
-                                                                write_ctree_super(trans, root, 0);
-                                                                  --> succeeds
-                                                                  --> we have now a superblock that points us
-                                                                      to some root that uses eb X, which was
-                                                                      never written to disk
-
-In this scenario future attempts to read eb X from disk results in an
-error message like "parent transid verify failed on X wanted Y found Z".
-
-So fix this by aborting the current transaction if after waiting for the
-previous transaction we verify that it was aborted.
-
-Cc: stable@vger.kernel.org
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Reviewed-by: Josef Bacik <jbacik@fb.com>
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
+ fs/btrfs/tree-log.c | 43 +++++++++++++++++--------------------------
+ 1 file changed, 17 insertions(+), 26 deletions(-)
 
-V2: Added missing cc to stable and included Josef's reviewed-by tag.
-    No code changes.
-
- fs/btrfs/transaction.c | 3 +++
- 1 file changed, 3 insertions(+)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 51e0f0d..d15a43f 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1893,8 +1893,11 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 			spin_unlock(&root->fs_info->trans_lock);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 9c45431..66a8a58 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -140,55 +140,46 @@ static int start_log_trans(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *root,
+ 			   struct btrfs_log_ctx *ctx)
+ {
+-	int index;
+-	int ret;
++	int ret = 0;
  
- 			wait_for_commit(root, prev_trans);
-+			ret = prev_trans->aborted;
- 
- 			btrfs_put_transaction(prev_trans);
-+			if (ret)
-+				goto cleanup_transaction;
- 		} else {
- 			spin_unlock(&root->fs_info->trans_lock);
+ 	mutex_lock(&root->log_mutex);
++
+ 	if (root->log_root) {
+ 		if (btrfs_need_log_full_commit(root->fs_info, trans)) {
+ 			ret = -EAGAIN;
+ 			goto out;
  		}
++
+ 		if (!root->log_start_pid) {
+-			root->log_start_pid = current->pid;
+ 			clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
++			root->log_start_pid = current->pid;
+ 		} else if (root->log_start_pid != current->pid) {
+ 			set_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
+ 		}
++	} else {
++		mutex_lock(&root->fs_info->tree_log_mutex);
++		if (!root->fs_info->log_root_tree)
++			ret = btrfs_init_log_root_tree(trans, root->fs_info);
++		mutex_unlock(&root->fs_info->tree_log_mutex);
++		if (ret)
++			goto out;
+ 
+-		atomic_inc(&root->log_batch);
+-		atomic_inc(&root->log_writers);
+-		if (ctx) {
+-			index = root->log_transid % 2;
+-			list_add_tail(&ctx->list, &root->log_ctxs[index]);
+-			ctx->log_transid = root->log_transid;
+-		}
+-		mutex_unlock(&root->log_mutex);
+-		return 0;
+-	}
+-
+-	ret = 0;
+-	mutex_lock(&root->fs_info->tree_log_mutex);
+-	if (!root->fs_info->log_root_tree)
+-		ret = btrfs_init_log_root_tree(trans, root->fs_info);
+-	mutex_unlock(&root->fs_info->tree_log_mutex);
+-	if (ret)
+-		goto out;
+-
+-	if (!root->log_root) {
+ 		ret = btrfs_add_log_tree(trans, root);
+ 		if (ret)
+ 			goto out;
++
++		clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
++		root->log_start_pid = current->pid;
+ 	}
+-	clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
+-	root->log_start_pid = current->pid;
++
+ 	atomic_inc(&root->log_batch);
+ 	atomic_inc(&root->log_writers);
+ 	if (ctx) {
+-		index = root->log_transid % 2;
++		int index = root->log_transid % 2;
+ 		list_add_tail(&ctx->list, &root->log_ctxs[index]);
+ 		ctx->log_transid = root->log_transid;
+ 	}
++
+ out:
+ 	mutex_unlock(&root->log_mutex);
+ 	return ret;
 -- 
-2.1.3
+1.8.5.1
 

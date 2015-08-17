@@ -1,40 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f173.google.com ([209.85.160.173]:36657 "EHLO
-	mail-yk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751011AbbHQT5n (ORCPT
+Received: from mail-io0-f181.google.com ([209.85.223.181]:33940 "EHLO
+	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750847AbbHQUgo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Aug 2015 15:57:43 -0400
-Received: by ykfw73 with SMTP id w73so83890378ykf.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 12:57:43 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTXBYg2zZH3fs3S_kbYHtkvKSjcgoujZrLeTqNW1eRzEA@mail.gmail.com>
+	Mon, 17 Aug 2015 16:36:44 -0400
+Received: by iodb91 with SMTP id b91so165179889iod.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 17 Aug 2015 13:36:43 -0700 (PDT)
+Message-ID: <1439843801.24704.11.camel@kepstin.ca>
+Subject: Re: The performance is not as expected when used several disks on
+ raid0.
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: Eduardo Bach <hellbach@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Mon, 17 Aug 2015 16:36:41 -0400
+In-Reply-To: <CANCCtjk2+DevkJqZB2opVpx9EWRWSM7R1nTigs0z=3jWbH-VMg@mail.gmail.com>
 References: <CANCCtj=EDCU4dMRk3m7cJFPXk8D2Pse8yfqc4iaDGjPOQ5EORA@mail.gmail.com>
- <CAJCQCtTXBYg2zZH3fs3S_kbYHtkvKSjcgoujZrLeTqNW1eRzEA@mail.gmail.com>
-From: Eduardo Bach <hellbach@gmail.com>
-Date: Mon, 17 Aug 2015 16:57:23 -0300
-Message-ID: <CANCCtj=Sfnv47ECiZNF+bTGwLP+221D6StoB3qFjD0XoFFNKag@mail.gmail.com>
-Subject: Re: The performance is not as expected when used several disks on raid0.
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	 <1439569823.25646.11.camel@kepstin.ca>
+	 <1439570139.25646.13.camel@kepstin.ca>
+	 <CANCCtjk2+DevkJqZB2opVpx9EWRWSM7R1nTigs0z=3jWbH-VMg@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The bether xfs performance we got was using 32 disks and 128KB mdadm chunk size.
-Could the be the problem we are seen? if each disk get 4KB, 64KB will
-be optimal for just 16 disks when usint raid0 with btrfs?
+On Mon, 2015-08-17 at 16:44 -0300, Eduardo Bach wrote:
+> Based on previous testing with a smaller number of disk I'm
+> suspecting
+> that the 32 disks are not all being used. With 12 discs I got more
+> speed with btrfs thanmdadm+xfs. With, btrfs, 12 disks and large files
+> we got the entire theoretical speed, 12 x 200MB/s per disk. My hope
+> was to get some light from you guys to debug the problem so the btrfs
+> use the 32 discs (assuming this is the problem). Perhaps the debug
+> this problem may be of interest to devs?
 
-2015-08-14 15:31 GMT-03:00 Chris Murphy <lists@colorremedies.com>:
-> On Fri, Aug 14, 2015 at 9:16 AM, Eduardo Bach <hellbach@gmail.com> wrote:
->
->> With btrfs the result approaches 3.5GB/s. When using mdadm+xfs the
->> result reaches 6gb/s, which is the expected value when compared with
->> parallel dd made on discs.
->
-> mdadm with what chunk (strip) size? The default for mdadm is 512KiB.
-> On Btrfs it's fixed at 64KiB. While testing with 64KiB chunk with XFS
-> on md RAID might improve its performance relative to Btrfs, at least
-> it's a more apples to apples comparison.
->
-> --
-> Chris Murphy
+>From the sounds of this, you must be hitting some bottleneck in the
+btrfs code. One thing I'm actually curious about: How is the CPU usage
+during these tests?
+
+Btrfs can more work on the CPU than mdadm+xfs - in particular, data che
+cksums are enabled by default. If you have compression enabled, that
+would obviously be a major hit as well. Make sure you don't have
+compression enabled (it's off by default, or you can use the mount
+option "compress=no"). You could try with the "nodatasum" option to see
+if checksums make a difference.
+
+It could be possible that you're saturating the CPU, and that's why
+you're not seeing any additional gains over 3.5GB/s. Taking a look at
+top output while the test is running might be informative.
+
+On the other hand, if the CPU isn't saturated and the disk io isn't
+saturated, then it's probably a scaling issue in btrfs, possibly
+something like lock contention.
+
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>
+

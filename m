@@ -1,215 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13491 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:41092 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752117AbbHQC1m (ORCPT
+	with ESMTP id S1752385AbbHQCrP convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Aug 2015 22:27:42 -0400
-Subject: Re: fs unreadable after powercycle: BTRFS (device sda): parent
- transid verify failed on 427084513280 wanted 390924 found 390922
-To: Martin Tippmann <martin.tippmann@gmail.com>, <linux-btrfs@vger.kernel.org>
-References: <CABL_Pd-Z6-raB3ngEDbj=-d+QVMohGQ9DHXqv0fVvVNy-HVxUA@mail.gmail.com>
+	Sun, 16 Aug 2015 22:47:15 -0400
+Subject: Re: weird qgroup behavior, possible bug? btrfs-progs 4.1.2 and 4.1.5
+ kernel.
+To: Suman Chakravartula <suman@rockstor.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <CAPF83mvrEWSSRZhfXczHRtG2fW7tdE7OMysns_T6b=d5ZoPTMw@mail.gmail.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55D14694.1050507@cn.fujitsu.com>
-Date: Mon, 17 Aug 2015 10:27:32 +0800
+Message-ID: <55D14B28.1010502@cn.fujitsu.com>
+Date: Mon, 17 Aug 2015 10:47:04 +0800
 MIME-Version: 1.0
-In-Reply-To: <CABL_Pd-Z6-raB3ngEDbj=-d+QVMohGQ9DHXqv0fVvVNy-HVxUA@mail.gmail.com>
+In-Reply-To: <CAPF83mvrEWSSRZhfXczHRtG2fW7tdE7OMysns_T6b=d5ZoPTMw@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Martin Tippmann wrote on 2015/08/08 20:43 +0200:
-> Hi, after a hard reboot (powercycle) a btrfs volume did not come up again:
+Suman Chakravartula wrote on 2015/08/13 11:22 -0700:
+> Hi,
 >
-> It's a single 4TB disk - only btrfs with lzo - data=single,metadata=dup
+> I use qgroups for subvolumes in Rockstor and have been noticing this
+> behavior for a while(at least from 3.18 days). The behavior is that I
+> get "Disk quota exceeded" errors before even hitting 70% usage. Here's
+> a simple demonstration of the problem.
 >
-> [  121.831814] BTRFS info (device sda): disk space caching is enabled
-> [  121.857820] BTRFS (device sda): parent transid verify failed on
-> 427084513280 wanted 390924 found 390922
-> [  121.861607] BTRFS (device sda): parent transid verify failed on
-> 427084513280 wanted 390924 found 390922
-> [  121.861715] BTRFS: failed to read tree root on sda
-> [  121.878111] BTRFS: open_ctree failed
+> [root@rock-dev ~]# btrfs fi show singlepool
+> Label: 'singlepool'  uuid: 77eb22bf-5f07-4f7e-83af-da183ceccd4d
+> Total devices 1 FS bytes used 224.00KiB
+> devid    1 size 3.00GiB used 276.00MiB path /dev/sdab
 >
-> btrfs-progs v4.0
-> Kernel: 4.1.4
+> btrfs-progs v4.1.2
+> [root@rock-dev ~]# btrfs subvol list -p /mnt2/singlepool/
+> ID 257 gen 9 parent 5 top level 5 path singleshare1
+> [root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child
+> --------         ----         ----     --------     -------- ------  -----
+> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+> 0/257        16.00KiB     16.00KiB         none         none 2015/1  ---
+> 2015/1       16.00KiB     16.00KiB      1.00GiB         none ---     0/257
 >
-> I'm quite sure that the HDD is fine (no SMART Problems, Disk Errorlog
-> is empty, It's a new Enterprise-Drive that worked well in the past
-> days/weeks).
+> As you can see, the subvolume is part of the 2015/1 qgroup with a 1GiB
+> max_rfer limit. Now I start writing to the it.
 >
-> So I'm kind at loss what to do:
+> [root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.1
+> bs=1M count=256; sync
+> 256+0 records in
+> 256+0 records out
+> 268435456 bytes (268 MB) copied, 15.5902 s, 17.2 MB/s
+> [root@rock-dev ~]# btrfs fi df /mnt2/singlepool/
+> Data, single: total=328.00MiB, used=256.12MiB
+> System, single: total=4.00MiB, used=16.00KiB
+> Metadata, single: total=264.00MiB, used=432.00KiB
+> GlobalReserve, single: total=16.00MiB, used=0.00B
+> [root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child
+> --------         ----         ----     --------     -------- ------  -----
+> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+> 0/257       256.02MiB    256.02MiB         none         none 2015/1  ---
+> 2015/1      256.02MiB    256.02MiB      1.00GiB         none ---     0/257
+> [root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.2
+> bs=1M count=256; sync
+> 256+0 records in
+> 256+0 records out
+> 268435456 bytes (268 MB) copied, 15.7899 s, 17.0 MB/s
+> [root@rock-dev ~]# btrfs fi df /mnt2/singlepool/
+> Data, single: total=648.00MiB, used=512.19MiB
+> System, single: total=4.00MiB, used=16.00KiB
+> Metadata, single: total=264.00MiB, used=688.00KiB
+> GlobalReserve, single: total=16.00MiB, used=0.00B
+> [root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child
+> --------         ----         ----     --------     -------- ------  -----
+> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+> 0/257       512.02MiB    512.02MiB         none         none 2015/1  ---
+> 2015/1      512.02MiB    512.02MiB      1.00GiB         none ---     0/257
 >
-> How can I recover from that problem? I've found just a note in the
-> FAQ[1] but no solution to the problem.
+> Ok, so far so good. I've written 2 files, 512MiB in total and it's
+> reflected accurately in the qgroup accounting. Now, I write a 3rd
+> 256MiB file.
 >
-> Maybe someone can give some clues why does this happen in the first
-> place? Is it unfortunate timing due to the abrupt power cycle?
-> Shouldn't CoW protect against this somewhat?
+> [root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.3
+> bs=1M count=256; sync
+> 256+0 records in
+> 256+0 records out
+> 268435456 bytes (268 MB) copied, 15.6963 s, 17.1 MB/s
+> [root@rock-dev ~]# sync
+> [root@rock-dev ~]# btrfs fi df /mnt2/singlepool/
+> Data, single: total=968.00MiB, used=768.25MiB
+> System, single: total=4.00MiB, used=16.00KiB
+> Metadata, single: total=264.00MiB, used=944.00KiB
+> GlobalReserve, single: total=16.00MiB, used=0.00B
+> [root@rock-dev ~]# btrfs qgroup show -pcre /mnt2/singlepool
+> qgroupid         rfer         excl     max_rfer     max_excl parent  child
+> --------         ----         ----     --------     -------- ------  -----
+> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+> 0/257       662.00MiB    662.00MiB         none         none 2015/1  ---
+> 2015/1      662.00MiB    662.00MiB      1.00GiB         none ---     0/257
 >
-> Thanks for any hints!
->
-> Additional info:
->
-> # btrfs check /dev/sda
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> Ignoring transid failure
-> Couldn't setup extent tree
-Seems extent tree or tree root is corrupted.
+> I find it odd that the usage shows 662.00Mib, I was expecting to see
+> 768MiB(512+256). Is this because the third 256MiB file was compressed
+> to 150MiB while the first two files were not compressible? Or is it
+> something else, and if so, what is it?
+If you didn't mount it with compress mount option, it won't be compressed.
+So, this is definitely a bug.
 
-> Couldn't open file system
 >
-> Not sure what it does but it looks not too good:
+> If I attempt to write another 256MiB file, i get this error:
 >
-> # btrfs-find-root /dev/sda
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> parent transid verify failed on 427084513280 wanted 390924 found 390922
-> Ignoring transid failure
-> Couldn't setup extent tree
-> Couldn't setup device tree
-> Superblock thinks the generation is 390924
-> Superblock thinks the level is 1
->    Well block 427084988416(gen: 390923 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427084021760(gen: 390923 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-These two block seems to be good, but not sure why there will be two of 
-them.
+> [root@rock-dev ~]# dd if=/dev/urandom of=/mnt2/singleshare1/file.4
+> bs=1M count=256; sync
+> dd: failed to open ‘/mnt2/singleshare1/file.4’: Disk quota exceeded
+>
+> If I try to remove one of the three files written successfully, i get
+> the same error:
+>
+> [root@rock-dev ~]# cd /mnt2/singleshare2/
+> [root@rock-dev singleshare2]# ls
+> file.1  file.2  file.3
+> [root@rock-dev singleshare2]# ls -l
+> total 786432
+> -rw-r--r-- 1 root root 268435456 Aug 13 10:49 file.1
+> -rw-r--r-- 1 root root 268435456 Aug 13 10:50 file.2
+> -rw-r--r-- 1 root root 268435456 Aug 13 10:50 file.3
+> [root@rock-dev singleshare2]# rm file.3
+> rm: remove regular file ‘file.3’? y
+> rm: cannot remove ‘file.3’: Disk quota exceeded
+Known behavior, but still bug.
+Btrfs need to reserve space for metadata COW.
 
-Try "btrfsck --tree-root 427084988416" and "btrfsck --tree-root 
-427084021760" to see which produce the least number of error.
+But the real bug is, reserved space leaking, which needs quite a lot of 
+work to fix it.
+
+>
+> I was able to reproduce this behavior with other raid profiles as well
+> and recently, some of Rockstor users have also confirmed it with
+> subvolume sizes small and large.
+>
+> I hope this is not a BTRFS bug and it's something that I am doing
+> wrong. Can someone familiar with qgroups comment on this?
+>
+> I see that there are qgroup related patches going into 4.2. Are these
+> problems addressed by them, perhaps?
+
+4.2 will only improve the accounting number problem.
+For your case, the "btrfs qg show" command should gives exact number.
+
+But for the EQUOT error, it won't help a lot.
+As the preserved space bug is a long standing bug, and I'm trying to fix 
+it in next release.
+
+So, if you don't set limit of qgroup, 4.2 should be quite good for you.
+But if you set limit of qgroup, then 4.2 is still quite easy to trigger
+EQUOT. To avoid it, the only method would be umount and mount again.
 
 Thanks,
 Qu
-> Well block 427084431360(gen: 390915 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427084398592(gen: 390915 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427083988992(gen: 390915 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427038621696(gen: 390914 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427031035904(gen: 390913 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427285069824(gen: 390912 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427060887552(gen: 390912 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427013128192(gen: 390912 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 427001872384(gen: 390909 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426965237760(gen: 390906 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426965221376(gen: 390906 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426965188608(gen: 390906 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426965172224(gen: 390906 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426965155840(gen: 390906 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426964271104(gen: 390906 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426964156416(gen: 390906 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426950377472(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426944512000(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426940841984(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426940612608(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426940465152(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426940153856(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426939809792(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426939711488(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426939465728(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426939351040(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426939006976(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426938564608(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426938351616(gen: 390905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 426347577344(gen: 390904 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 168491106304(gen: 390903 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1340608053248(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1340295020544(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1264696688640(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1136507092992(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1136226516992(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 998473711616(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 998114721792(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 667127316480(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 667048116224(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 667041382400(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 667034255360(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 667028701184(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 667018526720(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 666950320128(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 23074570240(gen: 390902 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 22614048768(gen: 390813 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 22605398016(gen: 390812 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 22599712768(gen: 390811 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 22586949632(gen: 390809 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1340463906816(gen: 390808 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1340435660800(gen: 390808 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1340394799104(gen: 390808 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1264894115840(gen: 390808 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 1136142614528(gen: 390808 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 666915078144(gen: 390808 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
-> Well block 666902560768(gen: 390808 level: 1) seems good, but
-> generation/level doesn't match, want gen: 390924 level: 1
 >
->
-> regards
-> Martin
->
->
-> 1: https://btrfs.wiki.kernel.org/index.php/Problem_FAQ#parent_transid_verify_failed
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >

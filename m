@@ -1,78 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:35640 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751801AbbHRRlT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Aug 2015 13:41:19 -0400
-Received: by igbjg10 with SMTP id jg10so86201724igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2015 10:41:18 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAK7bmU8eJz+k7ZryS_d6Rx_64S87mm__w9OxeAO7Hx=a2jSQoA@mail.gmail.com>
-References: <CAK7bmU8CM59URzw1VzpbZEKCTKSakwaRyv0NJ9N0vV3dVyFC9g@mail.gmail.com>
-	<CAK7bmU8eJz+k7ZryS_d6Rx_64S87mm__w9OxeAO7Hx=a2jSQoA@mail.gmail.com>
-Date: Tue, 18 Aug 2015 13:41:18 -0400
-Message-ID: <CAK7bmU-TJG87yDEZA+45PUONnvnsmbhEyaTq-o3ZZ1hPYFwkrA@mail.gmail.com>
-Subject: Re: chattr +C on subvolume
-From: Timothy Normand Miller <theosib@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:45636 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752811AbbHRR4d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 18 Aug 2015 13:56:33 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZRl7a-0001pV-Qy
+	for linux-btrfs@vger.kernel.org; Tue, 18 Aug 2015 19:56:26 +0200
+Received: from cpc21-stap10-2-0-cust974.12-2.cable.virginm.net ([86.0.163.207])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2015 19:56:26 +0200
+Received: from m_btrfs by cpc21-stap10-2-0-cust974.12-2.cable.virginm.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2015 19:56:26 +0200
+To: linux-btrfs@vger.kernel.org
+From: Martin <m_btrfs@ml1.co.uk>
+Subject: Re: You guys do an amazing job - I am blown away!
+Date: Tue, 18 Aug 2015 18:56:21 +0100
+Message-ID: <mqvrk5$hh9$1@ger.gmane.org>
+References: <55D263BB.2020206@chinilu.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <55D263BB.2020206@chinilu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Never mind on that last lsattr question.  I needed a "-d" option.  Silly me.  :)
+George,
 
-On Tue, Aug 18, 2015 at 1:39 PM, Timothy Normand Miller
-<theosib@gmail.com> wrote:
-> Another weird thing I've noticed.  I did this:
->
-> chattr +C /mnt/btrfs/vms
->
-> But both of these report nothing:
->
-> lsattr /mnt/btrfs/vms
-> lsattr /mnt/vms
->
-> Shouldn't at least one show the C attribute?
->
->
-> On Tue, Aug 18, 2015 at 1:36 PM, Timothy Normand Miller
-> <theosib@gmail.com> wrote:
->> Maybe this is a dumb question, but there are always corner cases.
->>
->> I have a subvolume where I want to disable CoW for VM disks.  Maybe
->> that's a dumb idea, but that's a recommendation I've seen here and
->> there.  Now, in the docs I've seen, +C applies to a directory.  Does
->> it apply to subvolumes?  And do I apply it to the subvolume within the
->> main volume, or do I apply it to the mount point where I've mounted
->> the subvolume separately?  Are there any cases where the flag applies
->> or not depending on how you access the files?
->>
->> The same subvolume for me is accessible via /mnt/btrfs/vms (via the
->> /mnt/btrfs mount point) and /mnt/vms (where the subvolume is mounted).
->> I applied +C to /mnt/btrfs/vms.  So what I'm trying to find out is if
->> it also applies when files are accessed via /mnt/vms.
->>
->> Thanks.
->>
->>
->> --
->> Timothy Normand Miller, PhD
->> Assistant Professor of Computer Science, Binghamton University
->> http://www.cs.binghamton.edu/~millerti/
->> Open Graphics Project
->
->
->
-> --
-> Timothy Normand Miller, PhD
-> Assistant Professor of Computer Science, Binghamton University
-> http://www.cs.binghamton.edu/~millerti/
-> Open Graphics Project
+Always good to see the occasional very positive feedback.
+
+(Even from a non-developer such as myself! :-) )
+
+
+I've been using various versions of btrfs on both test and production
+systems for some time now. Always looks to be spectacular for the care
+for backwards compatibility/safety included.
+
+Never done a 32-bit -> 64-bit jump myself but there have been quite a
+few leaps made on various hardware/software setups and all without a
+hitch keeping the btrfs in place in-situ. Very much preferred compared
+to the chore of instead having to read-and-rewrite multiple TBytes of data!
+
+
+And all still 'experimental'... ;-)
+
+Carry on the good developments!
+
+Regards,
+Martin
 
 
 
--- 
-Timothy Normand Miller, PhD
-Assistant Professor of Computer Science, Binghamton University
-http://www.cs.binghamton.edu/~millerti/
-Open Graphics Project
+On 17/08/15 23:44, George Mitchell wrote:
+> Two years ago I installed btrfs across 8 hard drives on my desktop
+> system with the entire system ending up on btrfs RAID 1.  I did all of
+> this with btrfs-progs-0.20.  Since that time I have been dreading
+> updating my system because of fear that the old btrfs volumes would
+> become unstable in the process.  I was finally driven to update by
+> otherwise unresolvable security issues.  I went from 32bit OS to 64bit
+> OS with new btrfs-progs 3.19.1.  I simply cannot believe that everything
+> just worked without a hitch.  In terms of btrfs the upgrade from what
+> was then "experimental" to what is now "stable" was totally
+> transparent.  In the past two years I have had zero problems with btrfs
+> involving multiple TB of data.  I really appreciate all that you guys
+> have done to make btrfs such an amazing file system.
+
+
+

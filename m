@@ -1,102 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f181.google.com ([209.85.213.181]:37726 "EHLO
+Received: from mail-ig0-f181.google.com ([209.85.213.181]:36441 "EHLO
 	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750928AbbHRLeY (ORCPT
+	with ESMTP id S1750958AbbHRLnH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Aug 2015 07:34:24 -0400
-Received: by igui7 with SMTP id i7so77272777igu.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2015 04:34:23 -0700 (PDT)
-Subject: Re: The performance is not as expected when used several disks on
- raid0.
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <CANCCtj=EDCU4dMRk3m7cJFPXk8D2Pse8yfqc4iaDGjPOQ5EORA@mail.gmail.com>
- <CAJCQCtTXBYg2zZH3fs3S_kbYHtkvKSjcgoujZrLeTqNW1eRzEA@mail.gmail.com>
- <55CE4682.3080106@gmail.com>
- <CAJCQCtTTgiuNA7+bqd31CG1OHeDiZ=TwQEnVbUF2jNU7qBRRnA@mail.gmail.com>
- <55CE4866.6060207@gmail.com> <pan$82931$bcf5ef1b$88d8d18$c8aa5770@cox.net>
- <55D1C7A5.7050204@gmail.com> <pan$9af23$4fb7d57c$d76038f$6f4281af@cox.net>
+	Tue, 18 Aug 2015 07:43:07 -0400
+Received: by igxp17 with SMTP id p17so78288109igx.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2015 04:43:06 -0700 (PDT)
+Subject: Re: Btrfs is amazing! (a lack-of-bug report)
+To: Tyler Bletsch <tyler.bletsch@gmail.com>, linux-btrfs@vger.kernel.org
+References: <55D1567B.3030809@gmail.com> <55D1CA1E.1060103@gmail.com>
+ <55D23397.6090404@gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55D31831.1000404@gmail.com>
-Date: Tue, 18 Aug 2015 07:34:09 -0400
+Message-ID: <55D31A3C.3080208@gmail.com>
+Date: Tue, 18 Aug 2015 07:42:52 -0400
 MIME-Version: 1.0
-In-Reply-To: <pan$9af23$4fb7d57c$d76038f$6f4281af@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070702090704030400010005"
+In-Reply-To: <55D23397.6090404@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090603010503080504000002"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms070702090704030400010005
+--------------ms090603010503080504000002
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-17 19:06, Duncan wrote:
-> Austin S Hemmelgarn posted on Mon, 17 Aug 2015 07:38:13 -0400 as
-> excerpted:
+On 2015-08-17 15:18, Tyler Bletsch wrote:
+> Thanks. I will be trying raid5 in production, but "production" in this
+> case just means my home file server, with btrfs snapshot+sync for all
+> data and appropriate offsite non-btrfs backups for critical data. If it=
+
+> hoses up, I'll post a bug report.
+So far, that's been my use case for btrfs raid6, and (barring one bug I=20
+found involving an interaction between btrfs and thinly provisioned=20
+storage that shouldn't be an issue for you if you're not using LVM thin=20
+pools) I have yet to hit any bugs, although based on the lists, I've=20
+probably been _very_ lucky in that respect.  If you're willing to take a =
+
+marginal performance hit (about 1-3% in my experience, which is notably=20
+less than the performance difference between MD-RAID5 and MD-RAID6), and =
+
+have at least four disks, I'd suggest using btrfs's raid6 profile=20
+instead of raid5, they use exactly the same code, it's just that raid6=20
+has one more calculation involved and provides better protection against =
+
+data corruption due to the double parity.
 >
->> I've also found that BTRFS raid5/6 on top of MD RAID0 mitigates (to a
->> certain extent that is) the performance penalty of doing raid5/6 if yo=
-u
->> aren't on ridiculously fast storage, probably not something that shoul=
-d
->> be used in production yet, but it's how I've got the near-line backups=
-
->> setup on my home server system.
->
-> As should be clear from my previous posts on the subject, I'm
-> conservative enough not to be comfortable with the btrfs raid56
-> implementation yet.  My recommendation has been, and remains, unless
-> you're deliberately testing it in ordered to help find/report/workout
-> bugs, give it a year after the nominally full implementation (3.19, so
-> until 4.4), before expecting it to be reasonably as stable as the rest =
-of
-> btrfs (which itself isn't fully stable yet).
->
-> But the almost-released 4.2 does seem to be past the initial nominally
-> btrfs raid56 full-code bugs, and I'd call an intermediate level backup,=
-
-> with working copies in front and itself backed up in back, a reasonable=
-
-> first working (as opposed to testing) deployment.
-Yeah, I've been ridiculously luck to have not hit _any_ of the raid56=20
-related bugs.  In fact the only issue I've had with it was a result of a =
-
-btrfs interaction with dm-thinp (if dm-thinp isn't set to zero newly=20
-allocated blocks, btrfs sometimes loses it's mind during remount, which=20
-in turn reminds me that I meant to check if this was fixed or not).
-
-And the deployment you suggest is ironically how I use it, I've got my=20
-root filesystem on btrfs raid1 across 2 SSD's, with a btrfs raid6 on top =
-
-of LVM single volumes on a set of 4 1TB HDD's as a target for receive=20
-(and configured such that I can directly boot any of the backups there), =
-
-and then store compressed, encrypted tarballs of the Sunday backups on 3 =
-
-different cloud storage services and an external 4TB HDD (It's wonderful =
-
-how Gentoo lends itself so well to custom solutions).
->
-> And yes, btrfs raid5/6 over mdraid0  would have the same general
-> complementary nature as btrfs raid1/10 over mdraid0.
->
->> It may also be worth pointing out that
->> BTRFS raid6 lets you use 4 disks minimum, as opposed to most other rai=
-d6
->> implementations that (unnecessarily, as a 4 disk RAID6 is not a
->> degenerate form) require 5.
->
-> 4-device raid6, btrfs and mdraid both allow that, good point.  But of
-> course mdraid6 doesn't have the data integrity, only rebuild-parity.
->
-Huh, I didn't know that mdraid allowed that, I know dm-raid through LVM=20
-doesn't (which in turn is a large part of what caused me to try btrfs=20
-raid56 so soon, I had been going to do btrfs raid1 on top of LVM based=20
-raid6).
+> Going to try to avoid LVM, since half the appeal of btrfs for me is
+> getting away from the multiple duct-taped layers of indirection that I
+> you get currently with ext4/MD/LVM setups.
+Understandable, my main reasons for having LVM are storing virtual=20
+machine disk images and the fact that MD/DM raid is still ridiculously=20
+fast compared to btrfs raid (many of my btrfs raid volumes are=20
+themselves on top of LVM managed software raid0 or raid1 volumes).
 
 
 
---------------ms070702090704030400010005
+--------------ms090603010503080504000002
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -138,9 +98,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODE4MTEzNDA5WjBPBgkq
-hkiG9w0BCQQxQgRAMz0lV2BissYRE9mkDOe3aZt0xA9KHXmNAlTkZDFzdj0aVKvCzNWKb6tl
-9B8/TNbDNaqmu1WPXk2yUhkCT4DmSTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODE4MTE0MjUyWjBPBgkq
+hkiG9w0BCQQxQgRAsykLASHinjPdKk5EV+fG6fWeMHccAPQgXKSdGXYknABDKc91Z9FzRb3G
+vK0oHhsnHG0kGz4pmgwXiczta4dCWzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -148,14 +108,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgBqe4+IIW6d6BZam2xTOL3WAN8rVh8tPfWB3CbUNmHIKhLdVKIs
-jzYHH3m9BeyaA1ELeyh1Co60565PKMhAUpx4TVq7viZDfcsDpxSZNZBZ2VQq+6qM0nxtYUwL
-KkJPgAVPV3hDI7G+Pubvgj2pS0/PAPp5mnWhn1bqSb5zUXkRWfzvK0jZAhBwu1nr85kO23Nc
-aHZBmeeR3o2W68hEqT97gBK0PshX4jgXWsX3GzlFdP23HpfCJawb+LL5rfn/B/t6x0hdlHml
-qvx9maLwfWoU7P/bWw61PfU0ZScUZKw780e7d+d3CONHbdFvSvE63QxzklfbXkyg7sDQI8Ns
-WMpT903YscO6nbjWwlwZt8uw+Nqn5eKcxwC9Ev6Gk6dDed16zh4jvuSg3mnERzU2/O8FGIpR
-bXXdn2k9JWgrWPIna6CtW+pMaXGUQdWjY0rhlttCOxzmJrm286IsdEiGHjX7cVjMH0Zp0NRt
-s3AiNj5rpgUp4800mSCPT6Son/obryIZnX9oQn4N6kRZBs+ga523lralYz/yHoKRJsHr6m3d
-YlZV+5FL8o5i0TXcOA5d7ZQxNKFpDNpBCjQgMQTmrqKpTvNG7Qit+clG7+IclYhWfyeqSCDC
-WTohiHroqHUS4IEfPXkHedInL6n5SrAHZNQr3xy3uFtX0ra9qB1S2KeQnwAAAAAAAA==
---------------ms070702090704030400010005--
+BgkqhkiG9w0BAQEFAASCAgBkeIoGK4glOHzKWubJG4iAqLPkUShmLA4rkn7ayYuJpl8G6cKQ
+SjVvjQDtjH7oB9VoIYtsDXPTZHi83jS9UhG/GOYAySvh8cw9PYHZWdRvWqDWKI61VkSVVmJY
++8fBYZ7ORaRkVBAQwGSTQRZlMIlPJjjt7EBa2JtGLUGzxF83+Is191su7KVFAFj1OssMygzZ
+zEs2pF3+fFkD8LqLqRYIRK+ejSAA5TOThTh/zKYjk7/pn/UznvA74d2tY5HvT4tbfA01T58t
+YdTTrqfBMm3KQ2zFDf7enqBoMKe5UmX6nGv9wtme7xixcjJzhdTqiet9wNIunke6r610JcxJ
+27d2JbnreqfmzdGtclm0QIGqVSlyPOQx1ajR8AHFyB+StXSMlCko6eKqKWsADNTjMou9tqNH
+21hc4xGG2nxZZP5nNDo+8sX40ARCpOUzIlJoXiL/+Wqo1J2ANIxELs3hDeQKhWnw1qM0H1+l
+zcQTYuVNxhuLlqKM4cNNHRiCLtH9OItv5gaqGscwoqw/IUnTKslQiKV2fpABfBAvSE/kmvR7
+54Ym4mq1glShVSk7R2OEnZC3u3VFbyQ3P59AqdOyVoM2DTZZp7L57HdQq5xZlKms4mwmUnaD
+1gzQEZwEbOCOA4E5XxJ0ZvjxWCBl0SoAqTP0ZLq3GOlhxJdSco2R7aZUiAAAAAAAAA==
+--------------ms090603010503080504000002--

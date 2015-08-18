@@ -1,191 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12383 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750822AbbHRCGA (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:31781 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752102AbbHRE3c (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 17 Aug 2015 22:06:00 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3] fstests: btrfs: Add reserved space leak check for rewrite dirty page
-Date: Tue, 18 Aug 2015 10:03:53 +0800
-Message-ID: <1439863433-27017-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Tue, 18 Aug 2015 00:29:32 -0400
+Message-ID: <55D2B40E.5040801@oracle.com>
+Date: Tue, 18 Aug 2015 12:26:54 +0800
+From: anand jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Dave Chinner <david@fromorbit.com>
+CC: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, eguan@redhat.com,
+        fdmanana@gmail.com
+Subject: Re: [PATCH v6 1/3] xfstests: btrfs: add functions to create dm-error
+ device
+References: <1439549224-29784-1-git-send-email-anand.jain@oracle.com> <1439566305-12460-1-git-send-email-anand.jain@oracle.com> <1439566305-12460-2-git-send-email-anand.jain@oracle.com> <20150816235218.GD20596@dastard>
+In-Reply-To: <20150816235218.GD20596@dastard>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs qgroup reserve codes lacks check for rewrite dirty page, causing
-every write, even rewriting a uncommitted dirty page, to reserve space.
 
-But only written data will free the reserved space, causing reserved
-space leaking.
+Hi Dave,
 
-The bug exists almost from the beginning of btrfs qgroup codes, but
-nobody found it.
+  All comments accepted thanks. except for this.
 
-For example:
 
-1)Write [0, 12K) into file A
-  reserve 12K space
+>> +_mount_dmerror()
+>> +{
+>> +	$MOUNT_PROG -t $FSTYP $MOUNT_OPTIONS $DMERROR_DEV $SCRATCH_MNT
+>> +}
+>
+> Should mirror _scratch_mount.
+>
+> _mount -t $FSTYP `_scratch_mount_options` $DMERROR_DEV $SCRATCH_MNT
 
-File A:
-0	4K	8K	12K
-|<--------dirty-------->|
-reserved: 12K
 
-2)Write [0,4K) into file A
-0	4K	8K	12K
-|<--------dirty-------->|
-reserved: 16K <<< Should be 12K
+`_scratch_mount_options` also returns $SCRATCH_DEV.
+in case of tests involving dmerror module, dmerror_init would use 
+$SCRATCH_DEV as backing device and provide $DMERROR_DEV to be used 
+instead of $SCRATCH_DEV. So I am proposing..
 
-3) Commit transaction
-Dirty pages [0,12) written to disk.
-Free 12K reserved space.
-reserved: 4K <<< Should be 0
++	_mount -t $FSTYP $SCRATCH_OPTIONS $MOUNT_OPTIONS 
+$SELINUX_MOUNT_OPTIONS $* $DMERROR_DEV $SCRATCH_MNT
 
-This testcase will test such problem.
-Kernel fix will need some huge change, so won't be soon.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-Changelog:
-v2:
-  Use smaller write size inside loop, in case commit is trigger by dirty page
-  threshold, and ensure following write won't trigger EQUOT
-v3: 
-  Add more comments and fix some expression.
----
- tests/btrfs/089     | 87 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/089.out | 13 ++++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 101 insertions(+)
- create mode 100755 tests/btrfs/089
- create mode 100644 tests/btrfs/089.out
 
-diff --git a/tests/btrfs/089 b/tests/btrfs/089
-new file mode 100755
-index 0000000..afbb1e4
---- /dev/null
-+++ b/tests/btrfs/089
-@@ -0,0 +1,87 @@
-+#! /bin/bash
-+# FS QA Test 089
-+#
-+# Check for qgroup reserved space leaks caused by re-writing dirty ranges
-+# This bug has been present in btrfs qgroup for a long time
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu. All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+
-+# Modify as appropriate.
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_need_to_be_root
-+
-+# Use big blocksize to ensure there is still enough space left for metadata
-+# space reserve.
-+BLOCKSIZE=$(( 2 * 1024 * 1024 )) # 2M block size
-+FILESIZE=$(( 128 * 1024 * 1024 )) # 128M file size
-+
-+_scratch_mkfs >> $seqres.full 2>&1
-+_scratch_mount
-+_require_fs_space $SCRATCH_MNT $(($FILESIZE * 2 / 1024))
-+
-+_run_btrfs_util_prog quota enable $SCRATCH_MNT
-+_run_btrfs_util_prog qgroup limit $FILESIZE 5 $SCRATCH_MNT
-+
-+# loop 5 times without sync to ensure reserved space leak will happen
-+for i in `seq 1 5`; do
-+	# Use 1/4 of the file size, to ensure even commit is trigger by
-+	# dirty page threshold or commit interval, we should still be
-+	# able to continue write
-+	$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE 0 $(($FILESIZE / 4))" \
-+		$SCRATCH_MNT/foo | _filter_xfs_io
-+done
-+
-+# Sync to make sure all the dirty pages are written to disk, which should
-+# free all the reserved space
-+sync
-+
-+# remove the file and sync, to ensure all quota space freed
-+rm $SCRATCH_MNT/foo
-+sync
-+
-+# We should be able to write $FILESIZE - $BLOCKSIZE data now
-+$XFS_IO_PROG -f -c "pwrite -b $BLOCKSIZE 0 $(($FILESIZE - $BLOCKSIZE))" \
-+	$SCRATCH_MNT/foo | _filter_xfs_io
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/089.out b/tests/btrfs/089.out
-new file mode 100644
-index 0000000..642bede
---- /dev/null
-+++ b/tests/btrfs/089.out
-@@ -0,0 +1,13 @@
-+QA output created by 089
-+wrote 33554432/33554432 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 33554432/33554432 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 33554432/33554432 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 33554432/33554432 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 33554432/33554432 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 132120576/132120576 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index ffe18bf..da37e46 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -91,6 +91,7 @@
- 086 auto quick clone
- 087 auto quick send
- 088 auto quick metadata
-+089 auto qgroup
- 090 auto quick metadata
- 091 auto quick qgroup
- 092 auto quick send
--- 
-1.8.3.1
+Thanks, Anand
 

@@ -1,176 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37879 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752459AbbHRGsT (ORCPT
+Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:37386 "EHLO
+	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754157AbbHRWVs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Aug 2015 02:48:19 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, david@fromorbit.com, eguan@redhat.com,
+	Tue, 18 Aug 2015 18:21:48 -0400
+Date: Wed, 19 Aug 2015 08:11:57 +1000
+From: Dave Chinner <david@fromorbit.com>
+To: anand jain <anand.jain@oracle.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org, eguan@redhat.com,
         fdmanana@gmail.com
-Subject: [PATCH v7 2/3] xfstests: btrfs: test device replace, with EIO on the src dev
-Date: Tue, 18 Aug 2015 14:47:43 +0800
-Message-Id: <1439880464-23887-3-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1439880464-23887-1-git-send-email-anand.jain@oracle.com>
-References: <1439880464-23887-1-git-send-email-anand.jain@oracle.com>
+Subject: Re: [PATCH v6 1/3] xfstests: btrfs: add functions to create dm-error
+ device
+Message-ID: <20150818221157.GE3902@dastard>
+References: <1439549224-29784-1-git-send-email-anand.jain@oracle.com>
+ <1439566305-12460-1-git-send-email-anand.jain@oracle.com>
+ <1439566305-12460-2-git-send-email-anand.jain@oracle.com>
+ <20150816235218.GD20596@dastard>
+ <55D2B40E.5040801@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55D2B40E.5040801@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+On Tue, Aug 18, 2015 at 12:26:54PM +0800, anand jain wrote:
+> 
+> Hi Dave,
+> 
+>  All comments accepted thanks. except for this.
+> 
+> 
+> >>+_mount_dmerror()
+> >>+{
+> >>+	$MOUNT_PROG -t $FSTYP $MOUNT_OPTIONS $DMERROR_DEV $SCRATCH_MNT
+> >>+}
+> >
+> >Should mirror _scratch_mount.
+> >
+> >_mount -t $FSTYP `_scratch_mount_options` $DMERROR_DEV $SCRATCH_MNT
+> 
+> 
+> `_scratch_mount_options` also returns $SCRATCH_DEV.
+> in case of tests involving dmerror module, dmerror_init would use
+> $SCRATCH_DEV as backing device and provide $DMERROR_DEV to be used
+> instead of $SCRATCH_DEV. So I am proposing..
+> 
+> +	_mount -t $FSTYP $SCRATCH_OPTIONS $MOUNT_OPTIONS
+> $SELINUX_MOUNT_OPTIONS $* $DMERROR_DEV $SCRATCH_MNT
 
-This test case will test to confirm the replace works with
-the failed (EIO) replacing source device. EIO condition is
-achieved using the DM device.
+Ok, SCRATCH_OPTIONS might not be the best idea here, so feel free to
+drop it.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
----
-v6->v7: accepts Dave's comments
-    (. in line with changes as in 1/3)
+However, you've still missed the primary reason I suggested
+_scratch_mount_options in the first place: what do we do instead of
+copy'n'paste of random code fragments?
 
-v5->v6: accepts Eryu and Filipe's comments
-    (. commit update
-     . correct cleanup with tmp.*
-     .  don't redirect run_check $FSFTRESS_PROG to dev null
-    )
+Cheers,
 
-v4->v5: rebase on latest xfstests code and accepts Filipe comment
-    (. cut line length to 80 char
-     . accommodate to the regression introduced by a092363bbdfa6cc6e44353136bae9d3aa81baae2
-    )
-      
-v3->v4: rebase on latest xfstests code
-
-v2->v3: accepts Filipe Manana's review comments, thanks
-    (. induce FS load using FSSTRESS_PROG, actually I missed it in v2
-    )
-
-v1->v2: accepts Dave Chinner's review comments, thanks
-    (. move 'start with the clean devices' code to actually at the
-       start of the script - damn why I didn't think like this before.
-       Thanks Dave.
-     . add .out file to contain the logs to verify.
-    )
- tests/btrfs/098     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/098.out | 11 ++++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 93 insertions(+)
- create mode 100755 tests/btrfs/098
- create mode 100644 tests/btrfs/098.out
-
-diff --git a/tests/btrfs/098 b/tests/btrfs/098
-new file mode 100755
-index 0000000..8891655
---- /dev/null
-+++ b/tests/btrfs/098
-@@ -0,0 +1,81 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/098
-+#
-+# Test device replace works when the source device has EIO
-+#
-+# Copyright (c) 2015 Oracle.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+
-+_cleanup()
-+{
-+	_dmerror_cleanup
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/filter.btrfs
-+. ./common/dmerror
-+
-+_supported_fs btrfs
-+_supported_os Linux
-+_need_to_be_root
-+_require_scratch_dev_pool 3
-+_dmerror_required
-+
-+rm -f $seqres.full
-+
-+dev1="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`"
-+dev2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $3}'`"
-+
-+_dmerror_init
-+_mkfs_dev "-f -d raid1 -m raid1 $dev1 $DMERROR_DEV"
-+_dmerror_mount
-+
-+_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
-+$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
-+
-+error_devid=`$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT |\
-+			egrep $DMERROR_DEV | $AWK_PROG '{print $2}'`
-+
-+snapshot_cmd="$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT"
-+snapshot_cmd="$snapshot_cmd $SCRATCH_MNT/snap_\`date +'%H_%M_%S_%N'\`"
-+run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n 200 -p 8 $FSSTRESS_AVOID -x \
-+							"$snapshot_cmd" -X 50
-+
-+# now load the error into the DMERROR_DEV
-+_dmerror_load_table
-+
-+_run_btrfs_util_prog replace start -B $error_devid $dev2 $SCRATCH_MNT
-+
-+_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
-+$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
-+
-+echo "=== device replace completed"
-+
-+status=0; exit
-diff --git a/tests/btrfs/098.out b/tests/btrfs/098.out
-new file mode 100644
-index 0000000..eb2f87f
---- /dev/null
-+++ b/tests/btrfs/098.out
-@@ -0,0 +1,11 @@
-+QA output created by 098
-+Label: none  uuid:  <UUID>
-+	Total devices <NUM> FS bytes used <SIZE>
-+	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
-+	devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
-+
-+Label: none  uuid:  <UUID>
-+	Total devices <NUM> FS bytes used <SIZE>
-+	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
-+
-+=== device replace completed
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e13865a..c8a53b5 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -100,3 +100,4 @@
- 095 auto quick metadata
- 096 auto quick clone
- 097 auto quick send clone
-+098 auto quick replace
+Dave.
 -- 
-2.4.1
-
+Dave Chinner
+david@fromorbit.com

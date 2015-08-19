@@ -1,53 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:38685 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21234 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753958AbbHFDHg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 5 Aug 2015 23:07:36 -0400
+	with ESMTP id S1752101AbbHSHeH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Aug 2015 03:34:07 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7635dkB021083
-	for <linux-btrfs@vger.kernel.org>; Thu, 6 Aug 2015 11:05:39 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 2/2] btrfs-progs: Modify confuse error message in scrub
-Date: Thu, 6 Aug 2015 11:05:55 +0800
-Message-ID: <4d18a89d55f130df60c9c604881599172cde0459.1438830282.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <4779cd8de60a58c7e3d9ea2cf62595bd075638c2.1438830282.git.zhaolei@cn.fujitsu.com>
-References: <4779cd8de60a58c7e3d9ea2cf62595bd075638c2.1438830282.git.zhaolei@cn.fujitsu.com>
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7J7Y04i022803
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 15:34:00 +0800
+Subject: Re: [PATCH] Btrfs: cleanup: remove unnecessary check before
+ btrfs_free_path is called
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>, <linux-btrfs@vger.kernel.org>
+References: <201508190555.AA00003@WIN-5MHF4RKU941.jp.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55D43169.3030008@cn.fujitsu.com>
+Date: Wed, 19 Aug 2015 15:34:01 +0800
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <201508190555.AA00003@WIN-5MHF4RKU941.jp.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Scrub output following error message in my test:
-  ERROR: scrubbing /var/ltf/tester/scratch_mnt failed for device id 5 (Success)
 
-It is caused by a broken kernel and fs, but the we need to avoid
-outputting both "error and success" in oneline message as above.
 
-This patch modified above message to:
-  ERROR: scrubbing /var/ltf/tester/scratch_mnt failed for device id 5, ret=1, errno=0(Success)
+Tsutomu Itoh wrote on 2015/08/19 14:55 +0900:
+> We need not check path before btrfs_free_path() is called because
+> path is checked in btrfs_free_path().
+>
+> Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- cmds-scrub.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-diff --git a/cmds-scrub.c b/cmds-scrub.c
-index a40eecf..2529956 100644
---- a/cmds-scrub.c
-+++ b/cmds-scrub.c
-@@ -1469,8 +1469,9 @@ static int scrub_start(int argc, char **argv, int resume)
- 				break;
- 			default:
- 				if (do_print)
--					fprintf(stderr, "ERROR: scrubbing %s failed for device id %lld (%s)\n",
-+					fprintf(stderr, "ERROR: scrubbing %s failed for device id %lld, ret=%d, errno=%d(%s)\n",
- 						path, devid,
-+						sp[i].ret, sp[i].ioctl_errno,
- 						strerror(sp[i].ioctl_errno));
- 				++err;
- 				continue;
--- 
-1.8.5.1
+BTW, did you check btrfs-progs for the such cleanup?
 
+Thanks,
+Qu
+
+> ---
+>   fs/btrfs/dev-replace.c | 3 +--
+>   fs/btrfs/inode.c       | 3 +--
+>   fs/btrfs/tree-defrag.c | 3 +--
+>   3 files changed, 3 insertions(+), 6 deletions(-)
+>
+> diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
+> index 564a7de..e54dd59 100644
+> --- a/fs/btrfs/dev-replace.c
+> +++ b/fs/btrfs/dev-replace.c
+> @@ -183,8 +183,7 @@ no_valid_dev_replace_entry_found:
+>   	}
+>
+>   out:
+> -	if (path)
+> -		btrfs_free_path(path);
+> +	btrfs_free_path(path);
+>   	return ret;
+>   }
+>
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index e33dff3..21ba036 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -6876,8 +6876,7 @@ out:
+>
+>   	trace_btrfs_get_extent(root, em);
+>
+> -	if (path)
+> -		btrfs_free_path(path);
+> +	btrfs_free_path(path);
+>   	if (trans) {
+>   		ret = btrfs_end_transaction(trans, root);
+>   		if (!err)
+> diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
+> index a4b9c8b..f31db43 100644
+> --- a/fs/btrfs/tree-defrag.c
+> +++ b/fs/btrfs/tree-defrag.c
+> @@ -115,8 +115,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+>   		ret = -EAGAIN;
+>   	}
+>   out:
+> -	if (path)
+> -		btrfs_free_path(path);
+> +	btrfs_free_path(path);
+>   	if (ret == -EAGAIN) {
+>   		if (root->defrag_max.objectid > root->defrag_progress.objectid)
+>   			goto done;
+>

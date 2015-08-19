@@ -1,60 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f176.google.com ([209.85.223.176]:33575 "EHLO
-	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753401AbbHRVKo (ORCPT
+Received: from mail1.trendhosting.net ([195.8.117.5]:39630 "EHLO
+	mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750874AbbHSJCJ convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 18 Aug 2015 17:10:44 -0400
-Received: by iods203 with SMTP id s203so204955199iod.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 18 Aug 2015 14:10:44 -0700 (PDT)
+	Wed, 19 Aug 2015 05:02:09 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by mail1.trendhosting.net (Postfix) with ESMTP id B912F1511C
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 09:53:51 +0100 (BST)
+Received: from mail1.trendhosting.net ([127.0.0.1])
+	by localhost (thp003.trendhosting.net [127.0.0.1]) (amavisd-new, port 10024)
+	with LMTP id u-jbpw4bEGK6 for <linux-btrfs@vger.kernel.org>;
+	Wed, 19 Aug 2015 09:53:30 +0100 (BST)
+Message-ID: <55D44409.40100@pocock.pro>
+Date: Wed, 19 Aug 2015 10:53:29 +0200
+From: Daniel Pocock <daniel@pocock.pro>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtT3kGNZ3vcvhjP==6L402Zys=a3mHexErajTSDDbNBdNw@mail.gmail.com>
-References: <CAK7bmU88ZfLJmFfMiV=q9RjS+=vAWbniu9w6MUTv_xSG+-hj_g@mail.gmail.com>
-	<55D1C8D3.5090501@gmail.com>
-	<CAK7bmU_oXstgxwkWY_6tSc90aU-=WKh0TLH+1Xw+ec3YZogzbQ@mail.gmail.com>
-	<55D31533.4040409@gmail.com>
-	<CAJCQCtT3kGNZ3vcvhjP==6L402Zys=a3mHexErajTSDDbNBdNw@mail.gmail.com>
-Date: Tue, 18 Aug 2015 17:10:43 -0400
-Message-ID: <CAK7bmU9iREGMYAXaHU4ffpbCrBCGa_pBxgYEe6sMPdRAsU79VQ@mail.gmail.com>
-Subject: Re: So, wipe it out and start over or keep debugging?
-From: Timothy Normand Miller <theosib@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org
+Subject: disk failure but no alert
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was doing it on an unmounted volume anyhow.
-
-On Tue, Aug 18, 2015 at 5:09 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> On Tue, Aug 18, 2015 at 5:21 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2015-08-17 14:52, Timothy Normand Miller wrote:
->>>
->>> I'm not sure if I'm doing this wrong.  Here's what I'm seeing:
->>>
->>> # btrfs-image -c9 -t4 -w /mnt/btrfs ~/btrfs_dump.z
->>> Superblock bytenr is larger than device size
->>> Open ctree failed
->>> create failed (No such file or directory)
->>
->>
->> For the source, you need to specify the underlying block device, not the top
->> of the mounted filesystem.  It's trying to read the directory as a block
->> device and getting very confused.  We should probably add some kind of check
->> to btrfs-image to warn about that.
->
-> Should it even be possible to use btrfs-image on a mounted volume? If
-> it's written to at all, the collected image is going to be
-> inconsistent.
->
-> --
-> Chris Murphy
 
 
+There are two large disks, part of the disks partitioned for MD RAID1
+and the rest of the disks partitioned for BtrFs RAID1
 
--- 
-Timothy Normand Miller, PhD
-Assistant Professor of Computer Science, Binghamton University
-http://www.cs.binghamton.edu/~millerti/
-Open Graphics Project
+One of the disks (/dev/sdd) appears to have failed, there were plenty of
+alerts from MD (including dmesg and emails) but nothing from the BtrFs
+filesystem
+
+Could this just be a problem on a sector within the MD RAID1 partition
+(/dev/sdd2) or is BtrFs failing to alert?  If there is a failure on
+another partition on the same disk, should BtrFs be notified by the
+kernel in some way and should it consider the filesystem to be at risk?
+
+Should I do anything proactively to stop BtrFs using the /dev/sdd3
+partition now?  Unfortunately it is not possible to get a new disk to
+this server in the same day and it may just be shut down until the disk
+can be replaced.
+
+# uname -a
+Linux - 3.16.0-4-amd64 #1 SMP Debian 3.16.7-ckt11-1+deb8u3 (2015-08-04)
+x86_64 GNU/Linux
+
+# btrfs fi show /dev/sdd3
+Label: none  uuid: -----------------------------
+    Total devices 2 FS bytes used 1.74TiB
+    devid    1 size 4.55TiB used 1.75TiB path /dev/sdd3
+    devid    2 size 4.55TiB used 1.75TiB path /dev/sda3
+
+Btrfs v3.17
+
+
+Here is the dmesg output:
+
+[996932.734999] sd 0:0:3:0: [sdd] 
+[996932.735039] Result: hostbyte=DID_OK driverbyte=DRIVER_SENSE
+[996932.735047] sd 0:0:3:0: [sdd] 
+[996932.735053] Sense Key : Illegal Request [current]
+[996932.735062] Info fld=0x80808
+[996932.735069] sd 0:0:3:0: [sdd] 
+[996932.735078] Add. Sense: Logical block address out of range
+[996932.735085] sd 0:0:3:0: [sdd] CDB:
+[996932.735089] Write(16): 8a 00 00 00 00 00 00 08 08 08 00 00 00 02 00 00
+[996932.735110] end_request: critical target error, dev sdd, sector 526344
+[996932.735280] md: super_written gets error=-121, uptodate=0
+[996932.735290] md/raid1:md2: Disk failure on sdd2, disabling device.
+md/raid1:md2: Operation continuing on 1 devices.
+[996932.777853] RAID1 conf printout:
+[996932.777917]  --- wd:1 rd:2
+[996932.777925]  disk 0, wo:0, o:1, dev:sda2
+[996932.777931]  disk 1, wo:1, o:0, dev:sdd2
+[996932.794052] RAID1 conf printout:
+[996932.794063]  --- wd:1 rd:2
+[996932.794069]  disk 0, wo:0, o:1, dev:sda2
+
+

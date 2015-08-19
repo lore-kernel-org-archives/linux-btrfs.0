@@ -1,71 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.126.130]:57726 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750978AbbHSRiD convert rfc822-to-8bit (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46906 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750791AbbHSSmF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 13:38:03 -0400
-Message-ID: <55D4BEF2.4040107@friedels.name>
-Date: Wed, 19 Aug 2015 19:37:54 +0200
-From: Hendrik Friedel <hendrik@friedels.name>
+	Wed, 19 Aug 2015 14:42:05 -0400
+Date: Wed, 19 Aug 2015 11:41:55 -0700
+From: Omar Sandoval <osandov@fb.com>
+To: <kreijack@inwind.it>
+CC: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [BUG][v4.2-rc7] Problem replacing a "missing" disk for a
+ raid5-degraded filesystem
+Message-ID: <20150819184155.GA25918@huxley.event.rightround.com>
+References: <55D4B8B8.3000806@libero.it>
 MIME-Version: 1.0
-To: Hugo Mills <hugo@carfax.org.uk>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: understanding btrfs fi df
-References: <55D09F50.5070900@friedels.name> <20150816145719.GU12976@carfax.org.uk> <55D4AA5E.60306@friedels.name> <20150819161703.GZ12976@carfax.org.uk>
-In-Reply-To: <20150819161703.GZ12976@carfax.org.uk>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <55D4B8B8.3000806@libero.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Hugo,
+On Wed, Aug 19, 2015 at 07:11:20PM +0200, Goffredo Baroncelli wrote:
+> Hi all,
+> 
+> playing with raid5 and "btrfs replace" I found a BUG. Basically it seems that if I try to replace a "missing" disk of a "degraded" filesystem I got a kernel BUG. This is reproducible at 100% for me.
 
-thanks for your help.
+Hi, Goffredo, this is a known bug. I have a fix here:
+http://www.spinics.net/lists/linux-btrfs/msg44874.html
+I'll bug Chris to get this in for 4.3. Let me know if you feel like
+testing it out and I can add your Tested-by.
 
- >> Now the output is:
->> root@homeserver:/media# btrfs fi df /mnt/__Complete_Disk
->>
->> Data, RAID5: total=3.79TiB, used=3.78TiB
->> System, RAID5: total=32.00MiB, used=416.00KiB
->> Metadata, RAID5: total=6.46GiB, used=4.85GiB
->> GlobalReserve, single: total=512.00MiB, used=0.00B
->>
->> root@homeserver:/media# btrfs fi show
->> Label: none  uuid: a8af3832-48c7-4568-861f-e80380dd7e0b
->>          Total devices 3 FS bytes used 3.79TiB
->>          devid    1 size 2.73TiB used 2.43TiB path /dev/sdf
->>          devid    2 size 2.73TiB used 2.43TiB path /dev/sdd
->>          devid    3 size 2.73TiB used 1.38TiB path /dev/sde
->>
->> How can only 1.38TiB be used on devid 3?
->
->     It shouldn't happen, as I understand how the process works. Can you
-> show the output of "btrfs fi df /mnt/__Complete_Disk"? Let's just
-> check that everything is indeed RAID-5 still.
+Btw, just a heads up, Gmail is convinced that you're spam, it sounds
+like you're failing your domain's DMARC checks.
 
-Here we go:
-
-btrfs fi df /mnt/__Complete_Disk
-
-Data, RAID5: total=3.79TiB, used=3.78TiB
-System, RAID5: total=32.00MiB, used=416.00KiB
-Metadata, RAID5: total=6.46GiB, used=4.85GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-
-Greetings,
-Hendrik
-
-Greetings,
-Hendrik
-
-
+Thanks,
 -- 
-Hendrik Friedel
-Auf dem Brink 12
-28844 Weyhe
-Tel. 04203 8394854
-Mobil 0178 1874363
-
----
-Diese E-Mail wurde von Avast Antivirus-Software auf Viren geprüft.
-https://www.avast.com/antivirus
-
+Omar

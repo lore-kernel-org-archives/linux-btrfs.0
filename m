@@ -1,27 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16411 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751710AbbHSLgw (ORCPT
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:33151 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752706AbbHSM03 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 07:36:52 -0400
-Date: Wed, 19 Aug 2015 19:36:40 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] Btrfs: fix file read corruption after extent cloning and
- fsync
-Message-ID: <20150819113638.GC32452@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1439979115-14122-1-git-send-email-fdmanana@kernel.org>
+	Wed, 19 Aug 2015 08:26:29 -0400
+Received: by wijp15 with SMTP id p15so125374144wij.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 05:26:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <1439979115-14122-1-git-send-email-fdmanana@kernel.org>
+References: <1439979115-14122-1-git-send-email-fdmanana@kernel.org>
+Date: Wed, 19 Aug 2015 13:26:24 +0100
+Message-ID: <CAMU1PDjctOgrd3P2h2XDmKLQpM5XmSyZGqeDz8sqaZaOBg2JGw@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix file read corruption after extent cloning and fsync
+From: Mike Fleetwood <mike.fleetwood@googlemail.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 19, 2015 at 11:11:55AM +0100, fdmanana@kernel.org wrote:
+On 19 August 2015 at 11:11,  <fdmanana@kernel.org> wrote:
 > From: Filipe Manana <fdmanana@suse.com>
-> 
+>
 > If we partially clone one extent of a file into a lower offset of the
 > file, fsync the file, power fail and then mount the fs to trigger log
 > replay, we can get multiple checksum items in the csum tree that overlap
@@ -33,29 +34,29 @@ On Wed, Aug 19, 2015 at 11:11:55AM +0100, fdmanana@kernel.org wrote:
 > page with the value 0x01 (at fs/btrfs/inode.c:__readpage_endio_check()).
 > From a userspace perspective this is equivalent to file corruption
 > because we are not returning what was written to the file.
-> 
+>
 > Details about how this can happen, and why, are included inline in the
 > following reproducer test case for fstests and the comment added to
 > tree-log.c.
-> 
+>
 >   seq=`basename $0`
 >   seqres=$RESULT_DIR/$seq
 >   echo "QA output created by $seq"
 >   tmp=/tmp/$$
->   status=1	# failure is the default!
+>   status=1      # failure is the default!
 >   trap "_cleanup; exit \$status" 0 1 2 3 15
-> 
+>
 >   _cleanup()
 >   {
 >       _cleanup_flakey
 >       rm -f $tmp.*
 >   }
-> 
+>
 >   # get standard environment, filters and checks
 >   . ./common/rc
 >   . ./common/filter
 >   . ./common/dmflakey
-> 
+>
 >   # real QA test starts here
 >   _need_to_be_root
 >   _supported_fs btrfs
@@ -64,13 +65,13 @@ On Wed, Aug 19, 2015 at 11:11:55AM +0100, fdmanana@kernel.org wrote:
 >   _require_dm_flakey
 >   _require_cloner
 >   _require_metadata_journaling $SCRATCH_DEV
-> 
+>
 >   rm -f $seqres.full
-> 
+>
 >   _scratch_mkfs >>$seqres.full 2>&1
 >   _init_flakey
 >   _mount_flakey
-> 
+>
 >   # Create our test file with a single 100K extent starting at file
 >   # offset 800K. We fsync the file here to make the fsync log tree gets
 >   # a single csum item that covers the whole 100K extent, which causes
@@ -80,7 +81,7 @@ On Wed, Aug 19, 2015 at 11:11:55AM +0100, fdmanana@kernel.org wrote:
 >   $XFS_IO_PROG -f -c "pwrite -S 0xaa 800K 100K"  \
 >                   -c "fsync"                     \
 >                    $SCRATCH_MNT/foo | _filter_xfs_io
-> 
+>
 >   # Now clone part of our extent into file offset 400K. This adds a file
 >   # extent item to our inode's metadata that points to the 100K extent
 >   # we created before, using a data offset of 20K and a data length of
@@ -88,7 +89,7 @@ On Wed, Aug 19, 2015 at 11:11:55AM +0100, fdmanana@kernel.org wrote:
 >   # extent.
 >   $CLONER_PROG -s $((800 * 1024 + 20 * 1024)) -d $((400 * 1024)) \
 >       -l $((20 * 1024)) $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-> 
+>
 >   # Now fsync our file to make sure the extent cloning is durably
 >   # persisted. This fsync will not add a second csum item to the log
 >   # tree containing the checksums for the blocks in the sub-range
@@ -96,15 +97,15 @@ On Wed, Aug 19, 2015 at 11:11:55AM +0100, fdmanana@kernel.org wrote:
 >   # the log tree covering the whole extent, added by the first fsync
 >   # we did before.
 >   $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
-> 
+>
 >   echo "File digest before power failure:"
 >   md5sum $SCRATCH_MNT/foo | _filter_scratch
-> 
+>
 >   # Silently drop all writes and ummount to simulate a crash/power
 >   # failure.
 >   _load_flakey_table $FLAKEY_DROP_WRITES
 >   _unmount_flakey
-> 
+>
 >   # Allow writes again, mount to trigger log replay and validate file
 >   # contents.
 >   # The fsync log replay first processes the file extent item
@@ -131,106 +132,97 @@ On Wed, Aug 19, 2015 at 11:11:55AM +0100, fdmanana@kernel.org wrote:
 >   #
 >   _load_flakey_table $FLAKEY_ALLOW_WRITES
 >   _mount_flakey
-> 
+>
 >   echo "File digest after log replay:"
 >   # Must match the same digest he had after cloning the extent and
 >   # before the power failure happened.
 >   md5sum $SCRATCH_MNT/foo | _filter_scratch
-> 
+>
 >   _unmount_flakey
-> 
+>
 >   status=0
 >   exit
-
-Good catch.
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Thanks,
-
--liubo
-
-> 
+>
 > Signed-off-by: Filipe Manana <fdmanana@suse.com>
 > ---
 >  fs/btrfs/tree-log.c | 54 +++++++++++++++++++++++++++++++++++++++++++++++++++++
 >  1 file changed, 54 insertions(+)
-> 
+>
 > diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
 > index 9314ade..beb2c0a 100644
 > --- a/fs/btrfs/tree-log.c
 > +++ b/fs/btrfs/tree-log.c
 > @@ -731,12 +731,66 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
->  						&ordered_sums, 0);
->  			if (ret)
->  				goto out;
-> +			/*
-> +			 * Now delete all existing cums in the csum root that
-> +			 * cover our range. We do this because because we can
-> +			 * have an extent that is completely referenced by one
-> +			 * file extent item and partially referenced by another
-> +			 * file extent item (like after using the clone or
-> +			 * extent_same ioctls). In this case if we end up doing
-> +			 * the replay of the one that partially references the
-> +			 * extent first, and we do not do the csum deletion
-> +			 * below, we can get 2 csum items in the csum tree that
-> +			 * overlap each other. For example, imagine our log has
-> +			 * the two following file extent items:
-> +			 *
-> +			 * key (257 EXTENT_DATA 409600)
-> +			 *     extent data disk byte 12845056 nr 102400
-> +			 *     extent data offset 20480 nr 20480 ram 102400
-> +			 *
-> +			 * key (257 EXTENT_DATA 819200)
-> +			 *     extent data disk byte 12845056 nr 102400
-> +			 *     extent data offset 0 nr 102400 ram 102400
-> +			 *
-> +			 * Where the second one fully references the 100K extent
-> +			 * that starts at disk byte 12845056, and the log tree
-> +			 * has a single csum item that covers the entire range
-> +			 * of the extent:
-> +			 *
-> +			 * key (EXTENT_CSUM EXTENT_CSUM 12845056) itemsize 100
-> +			 *
-> +			 * After the first file extent item is replayed, the
-> +			 * csum tree gets the following csum item:
-> +			 *
-> +			 * key (EXTENT_CSUM EXTENT_CSUM 12865536) itemsize 20
-> +			 *
-> +			 * Which covers the 20K sub-range starting at offset 20K
-> +			 * of our extent. Now when we replay the second file
-> +			 * extent item, if we do not delete existing csum items
-> +			 * that cover any of its blocks, we end up getting two
-> +			 * csum items in our csum tree that overlap each other:
-> +			 *
-> +			 * key (EXTENT_CSUM EXTENT_CSUM 12845056) itemsize 100
-> +			 * key (EXTENT_CSUM EXTENT_CSUM 12865536) itemsize 20
-> +			 *
-> +			 * Which is a problem, because after this anyone trying
-> +			 * to lookup up for the checksum of any block of our
-> +			 * extent starting at an offset of 40K or higher, will
-> +			 * end up looking at the second csum item only, which
-> +			 * does not contain the checksum for any block starting
-> +			 * at offset 40K or higher of our extent.
-> +			 */
->  			while (!list_empty(&ordered_sums)) {
->  				struct btrfs_ordered_sum *sums;
->  				sums = list_entry(ordered_sums.next,
->  						struct btrfs_ordered_sum,
->  						list);
->  				if (!ret)
-> +					ret = btrfs_del_csums(trans,
-> +						      root->fs_info->csum_root,
-> +						      sums->bytenr,
-> +						      sums->len);
-> +				if (!ret)
->  					ret = btrfs_csum_file_blocks(trans,
->  						root->fs_info->csum_root,
->  						sums);
-> -- 
-> 2.1.3
-> 
+>                                                 &ordered_sums, 0);
+>                         if (ret)
+>                                 goto out;
+> +                       /*
+> +                        * Now delete all existing cums in the csum root that
+> +                        * cover our range. We do this because because we can
+Minor grammatical correction.  Remove second "because".
+
+> +                        * have an extent that is completely referenced by one
+> +                        * file extent item and partially referenced by another
+> +                        * file extent item (like after using the clone or
+> +                        * extent_same ioctls). In this case if we end up doing
+> +                        * the replay of the one that partially references the
+> +                        * extent first, and we do not do the csum deletion
+> +                        * below, we can get 2 csum items in the csum tree that
+> +                        * overlap each other. For example, imagine our log has
+> +                        * the two following file extent items:
+> +                        *
+> +                        * key (257 EXTENT_DATA 409600)
+> +                        *     extent data disk byte 12845056 nr 102400
+> +                        *     extent data offset 20480 nr 20480 ram 102400
+> +                        *
+> +                        * key (257 EXTENT_DATA 819200)
+> +                        *     extent data disk byte 12845056 nr 102400
+> +                        *     extent data offset 0 nr 102400 ram 102400
+> +                        *
+> +                        * Where the second one fully references the 100K extent
+> +                        * that starts at disk byte 12845056, and the log tree
+> +                        * has a single csum item that covers the entire range
+> +                        * of the extent:
+> +                        *
+> +                        * key (EXTENT_CSUM EXTENT_CSUM 12845056) itemsize 100
+> +                        *
+> +                        * After the first file extent item is replayed, the
+> +                        * csum tree gets the following csum item:
+> +                        *
+> +                        * key (EXTENT_CSUM EXTENT_CSUM 12865536) itemsize 20
+> +                        *
+> +                        * Which covers the 20K sub-range starting at offset 20K
+> +                        * of our extent. Now when we replay the second file
+> +                        * extent item, if we do not delete existing csum items
+> +                        * that cover any of its blocks, we end up getting two
+> +                        * csum items in our csum tree that overlap each other:
+> +                        *
+> +                        * key (EXTENT_CSUM EXTENT_CSUM 12845056) itemsize 100
+> +                        * key (EXTENT_CSUM EXTENT_CSUM 12865536) itemsize 20
+> +                        *
+> +                        * Which is a problem, because after this anyone trying
+> +                        * to lookup up for the checksum of any block of our
+> +                        * extent starting at an offset of 40K or higher, will
+> +                        * end up looking at the second csum item only, which
+> +                        * does not contain the checksum for any block starting
+> +                        * at offset 40K or higher of our extent.
+> +                        */
+>                         while (!list_empty(&ordered_sums)) {
+>                                 struct btrfs_ordered_sum *sums;
+>                                 sums = list_entry(ordered_sums.next,
+>                                                 struct btrfs_ordered_sum,
+>                                                 list);
+>                                 if (!ret)
+> +                                       ret = btrfs_del_csums(trans,
+> +                                                     root->fs_info->csum_root,
+> +                                                     sums->bytenr,
+> +                                                     sums->len);
+> +                               if (!ret)
+>                                         ret = btrfs_csum_file_blocks(trans,
+>                                                 root->fs_info->csum_root,
+>                                                 sums);
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 2.1.3
+
+Thanks,
+Mike

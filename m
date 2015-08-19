@@ -1,218 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:53325 "EHLO
-	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752098AbbHGAUr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 6 Aug 2015 20:20:47 -0400
-Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id A92EDAC0259
-	for <linux-btrfs@vger.kernel.org>; Fri,  7 Aug 2015 09:20:44 +0900 (JST)
-Message-Id: <201508070020.AA00002@WIN-5MHF4RKU941.jp.fujitsu.com>
+Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:49180 "EHLO
+	mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752612AbbHSIpV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Aug 2015 04:45:21 -0400
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 3E2E9AC0377
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 17:45:19 +0900 (JST)
+Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
+	by m3051.s.css.fujitsu.com (Postfix) with SMTP id 0F993DC
+	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 17:45:19 +0900 (JST)
+Message-Id: <201508190844.AA00004@WIN-5MHF4RKU941.jp.fujitsu.com>
 From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Fri, 07 Aug 2015 09:20:25 +0900
+Date: Wed, 19 Aug 2015 17:44:53 +0900
 To: linux-btrfs@vger.kernel.org
-Cc: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH V2] btrfs-progs: add newline to some error messages
+Subject: [PATCH] btrfs-progs: cleanup: remove unnecessary check before btrfs_free_path is called
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Added a missing newline to some error messages.
-Also printf() was changed to fprintf(stderr) for error message.
+We need not check path before btrfs_free_path() is called because
+path is checked in btrfs_free_path().
 
 Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 ---
- btrfs-corrupt-block.c |  2 +-
- cmds-check.c          |  4 ++--
- cmds-send.c           |  4 ++--
- dir-item.c            |  6 +++---
- free-space-cache.c    | 24 +++++++++++++++---------
- mkfs.c                |  2 +-
- 6 files changed, 24 insertions(+), 18 deletions(-)
+ cmds-check.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/btrfs-corrupt-block.c b/btrfs-corrupt-block.c
-index 1a2aa23..ea871f4 100644
---- a/btrfs-corrupt-block.c
-+++ b/btrfs-corrupt-block.c
-@@ -1010,7 +1010,7 @@ int find_chunk_offset(struct btrfs_root *root,
- 		goto out;
- 	}
- 	if (ret < 0) {
--		fprintf(stderr, "Error searching chunk");
-+		fprintf(stderr, "Error searching chunk\n");
- 		goto out;
- 	}
- out:
 diff --git a/cmds-check.c b/cmds-check.c
-index 50bb6f3..d0ffc94 100644
+index 4fa8709..8019fb0 100644
 --- a/cmds-check.c
 +++ b/cmds-check.c
-@@ -2399,7 +2399,7 @@ static int repair_inode_nlinks(struct btrfs_trans_handle *trans,
- 				  BTRFS_FIRST_FREE_OBJECTID, &lost_found_ino,
- 				  mode);
- 		if (ret < 0) {
--			fprintf(stderr, "Failed to create '%s' dir: %s",
-+			fprintf(stderr, "Failed to create '%s' dir: %s\n",
- 				dir_name, strerror(-ret));
- 			goto out;
- 		}
-@@ -2427,7 +2427,7 @@ static int repair_inode_nlinks(struct btrfs_trans_handle *trans,
- 		}
- 		if (ret < 0) {
- 			fprintf(stderr,
--				"Failed to link the inode %llu to %s dir: %s",
-+				"Failed to link the inode %llu to %s dir: %s\n",
- 				rec->ino, dir_name, strerror(-ret));
- 			goto out;
- 		}
-diff --git a/cmds-send.c b/cmds-send.c
-index a0b7f95..6f2f340 100644
---- a/cmds-send.c
-+++ b/cmds-send.c
-@@ -193,13 +193,13 @@ static int write_buf(int fd, const void *buf, int size)
- 		ret = write(fd, (char*)buf + pos, size - pos);
- 		if (ret < 0) {
- 			ret = -errno;
--			fprintf(stderr, "ERROR: failed to dump stream. %s",
-+			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
- 					strerror(-ret));
- 			goto out;
- 		}
- 		if (!ret) {
- 			ret = -EIO;
--			fprintf(stderr, "ERROR: failed to dump stream. %s",
-+			fprintf(stderr, "ERROR: failed to dump stream. %s\n",
- 					strerror(-ret));
- 			goto out;
- 		}
-diff --git a/dir-item.c b/dir-item.c
-index a5bf861..f3ad98f 100644
---- a/dir-item.c
-+++ b/dir-item.c
-@@ -285,7 +285,7 @@ int verify_dir_item(struct btrfs_root *root,
- 	u8 type = btrfs_dir_type(leaf, dir_item);
- 
- 	if (type >= BTRFS_FT_MAX) {
--		fprintf(stderr, "invalid dir item type: %d",
-+		fprintf(stderr, "invalid dir item type: %d\n",
- 		       (int)type);
- 		return 1;
- 	}
-@@ -294,7 +294,7 @@ int verify_dir_item(struct btrfs_root *root,
- 		namelen = XATTR_NAME_MAX;
- 
- 	if (btrfs_dir_name_len(leaf, dir_item) > namelen) {
--		fprintf(stderr, "invalid dir item name len: %u",
-+		fprintf(stderr, "invalid dir item name len: %u\n",
- 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
- 		return 1;
- 	}
-@@ -302,7 +302,7 @@ int verify_dir_item(struct btrfs_root *root,
- 	/* BTRFS_MAX_XATTR_SIZE is the same for all dir items */
- 	if ((btrfs_dir_data_len(leaf, dir_item) +
- 	     btrfs_dir_name_len(leaf, dir_item)) > BTRFS_MAX_XATTR_SIZE(root)) {
--		fprintf(stderr, "invalid dir item name + data len: %u + %u",
-+		fprintf(stderr, "invalid dir item name + data len: %u + %u\n",
- 		       (unsigned)btrfs_dir_name_len(leaf, dir_item),
- 		       (unsigned)btrfs_dir_data_len(leaf, dir_item));
- 		return 1;
-diff --git a/free-space-cache.c b/free-space-cache.c
-index 67f00fd..19ab0c9 100644
---- a/free-space-cache.c
-+++ b/free-space-cache.c
-@@ -107,7 +107,8 @@ static int io_ctl_prepare_pages(struct io_ctl *io_ctl, struct btrfs_root *root,
- 
- 	ret = btrfs_search_slot(NULL, root, &key, path, 0, 0);
- 	if (ret) {
--		printf("Couldn't find file extent item for free space inode"
-+		fprintf(stderr,
-+		       "Couldn't find file extent item for free space inode"
- 		       " %Lu\n", ino);
- 		btrfs_release_path(path);
- 		return -EINVAL;
-@@ -138,7 +139,7 @@ static int io_ctl_prepare_pages(struct io_ctl *io_ctl, struct btrfs_root *root,
- 				    struct btrfs_file_extent_item);
- 		if (btrfs_file_extent_type(path->nodes[0], fi) !=
- 		    BTRFS_FILE_EXTENT_REG) {
--			printf("Not the file extent type we wanted\n");
-+			fprintf(stderr, "Not the file extent type we wanted\n");
- 			ret = -EINVAL;
- 			break;
- 		}
-@@ -307,7 +308,7 @@ static int __load_free_space_cache(struct btrfs_root *root,
- 
- 	ret = btrfs_search_slot(NULL, root, &inode_location, path, 0, 0);
- 	if (ret) {
--		printf("Couldn't find free space inode %d\n", ret);
-+		fprintf(stderr, "Couldn't find free space inode %d\n", ret);
- 		return 0;
- 	}
- 
-@@ -322,7 +323,8 @@ static int __load_free_space_cache(struct btrfs_root *root,
- 	}
- 
- 	if (btrfs_inode_generation(leaf, inode_item) != generation) {
--		printf("free space inode generation (%llu) did not match "
-+		fprintf(stderr,
-+		       "free space inode generation (%llu) did not match "
- 		       "free space cache generation (%llu)\n",
- 		       (unsigned long long)btrfs_inode_generation(leaf,
- 								  inode_item),
-@@ -372,7 +374,8 @@ static int __load_free_space_cache(struct btrfs_root *root,
- 		if (type == BTRFS_FREE_SPACE_EXTENT) {
- 			ret = link_free_space(ctl, e);
- 			if (ret) {
--				printf("Duplicate entries in free space cache, dumping");
-+				fprintf(stderr,
-+				       "Duplicate entries in free space cache\n");
- 				free(e);
- 				goto free_cache;
- 			}
-@@ -387,7 +390,8 @@ static int __load_free_space_cache(struct btrfs_root *root,
- 			ret = link_free_space(ctl, e);
- 			ctl->total_bitmaps++;
- 			if (ret) {
--				printf("Duplicate entries in free space cache, dumping");
-+				fprintf(stderr,
-+				       "Duplicate entries in free space cache\n");
- 				free(e->bitmap);
- 				free(e);
- 				goto free_cache;
-@@ -444,7 +448,8 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 				       block_group->bytes_super));
- 	if (ret == 1 && !matched) {
- 		__btrfs_remove_free_space_cache(ctl);
--		printf("block group %llu has wrong amount of free space",
-+		fprintf(stderr,
-+		       "block group %llu has wrong amount of free space\n",
- 		       block_group->key.objectid);
- 		ret = -1;
- 	}
-@@ -452,8 +457,9 @@ int load_free_space_cache(struct btrfs_fs_info *fs_info,
- 	if (ret < 0) {
- 		ret = 0;
- 
--		printf("failed to load free space cache for block group %llu\n",
--			block_group->key.objectid);
-+		fprintf(stderr,
-+		       "failed to load free space cache for block group %llu\n",
-+		       block_group->key.objectid);
- 	}
- 
- 	return ret;
-diff --git a/mkfs.c b/mkfs.c
-index 7d635dc..5cea8dd 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -600,7 +600,7 @@ static int add_symbolic_link(struct btrfs_trans_handle *trans,
- 		goto fail;
- 	}
- 	if (ret >= sectorsize) {
--		fprintf(stderr, "symlink too long for %s", path_name);
-+		fprintf(stderr, "symlink too long for %s\n", path_name);
- 		ret = -1;
- 		goto fail;
- 	}
+@@ -9226,8 +9226,7 @@ next:
+ 	ret = 0;
+ out:
+ 	free_roots_info_cache();
+-	if (path)
+-		btrfs_free_path(path);
++	btrfs_free_path(path);
+ 	if (trans)
+ 		btrfs_commit_transaction(trans, info->tree_root);
+ 	if (ret < 0)
 -- 
 2.4.5
 

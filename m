@@ -1,207 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26429 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750874AbbHTBkO (ORCPT
+Received: from mail-wi0-f172.google.com ([209.85.212.172]:33326 "EHLO
+	mail-wi0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754100AbbHSMR7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 21:40:14 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <alex.btrfs@zadarastorage.com>
-Subject: [PATCH] btrfs: async_thread: Fix workqueue 'max_active' value when initializing
-Date: Thu, 20 Aug 2015 09:38:10 +0800
-Message-ID: <1440034690-27581-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Wed, 19 Aug 2015 08:17:59 -0400
+From: mhocko@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-kernel@vger.kernel.org,
+        Michal Hocko <mhocko@suse.com>
+Subject: [PATCH 1/2] btrfs: Prevent from early transaction abort
+Date: Wed, 19 Aug 2015 14:17:40 +0200
+Message-Id: <1439986661-15896-2-git-send-email-mhocko@kernel.org>
+In-Reply-To: <1439986661-15896-1-git-send-email-mhocko@kernel.org>
+References: <1439986661-15896-1-git-send-email-mhocko@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-At initializing time, for threshold-able workqueue, it's max_active
-of kernel workqueue should be 1 and grow if it hits threshold.
+From: Michal Hocko <mhocko@suse.com>
 
-But due to the bad naming, there is both 'max_active' for kernel
-workqueue and btrfs workqueue.
-So wrong value is given at workqueue initialization.
+Btrfs relies on GFP_NOFS allocation when committing the transaction but
+this allocation context is rather weak wrt. reclaim capabilities. The
+page allocator currently tries hard to not fail these allocations if
+they are small (<=PAGE_ALLOC_COSTLY_ORDER) so this is not a problem
+currently but there is an attempt to move away from the default no-fail
+behavior and allow these allocation to fail more eagerly. And this would
+lead to a pre-mature transaction abort as follows:
 
-This patch fixes it, and to avoid further misunderstanding, change the
-member name of btrfs_workqueue to 'current_active' and 'limit_active'.
+[   55.328093] Call Trace:
+[   55.328890]  [<ffffffff8154e6f0>] dump_stack+0x4f/0x7b
+[   55.330518]  [<ffffffff8108fa28>] ? console_unlock+0x334/0x363
+[   55.332738]  [<ffffffff8110873e>] __alloc_pages_nodemask+0x81d/0x8d4
+[   55.334910]  [<ffffffff81100752>] pagecache_get_page+0x10e/0x20c
+[   55.336844]  [<ffffffffa007d916>] alloc_extent_buffer+0xd0/0x350 [btrfs]
+[   55.338973]  [<ffffffffa0059d8c>] btrfs_find_create_tree_block+0x15/0x17 [btrfs]
+[   55.341329]  [<ffffffffa004f728>] btrfs_alloc_tree_block+0x18c/0x405 [btrfs]
+[   55.343566]  [<ffffffffa003fa34>] split_leaf+0x1e4/0x6a6 [btrfs]
+[   55.345577]  [<ffffffffa0040567>] btrfs_search_slot+0x671/0x831 [btrfs]
+[   55.347679]  [<ffffffff810682d7>] ? get_parent_ip+0xe/0x3e
+[   55.349434]  [<ffffffffa0041cb2>] btrfs_insert_empty_items+0x5d/0xa8 [btrfs]
+[   55.351681]  [<ffffffffa004ecfb>] __btrfs_run_delayed_refs+0x7a6/0xf35 [btrfs]
+[   55.353979]  [<ffffffffa00512ea>] btrfs_run_delayed_refs+0x6e/0x226 [btrfs]
+[   55.356212]  [<ffffffffa0060e21>] ? start_transaction+0x192/0x534 [btrfs]
+[   55.358378]  [<ffffffffa0060e21>] ? start_transaction+0x192/0x534 [btrfs]
+[   55.360626]  [<ffffffffa0060221>] btrfs_commit_transaction+0x4c/0xaba [btrfs]
+[   55.362894]  [<ffffffffa0060e21>] ? start_transaction+0x192/0x534 [btrfs]
+[   55.365221]  [<ffffffffa0073428>] btrfs_sync_file+0x29c/0x310 [btrfs]
+[   55.367273]  [<ffffffff81186808>] vfs_fsync_range+0x8f/0x9e
+[   55.369047]  [<ffffffff81186833>] vfs_fsync+0x1c/0x1e
+[   55.370654]  [<ffffffff81186869>] do_fsync+0x34/0x4e
+[   55.372246]  [<ffffffff81186ab3>] SyS_fsync+0x10/0x14
+[   55.373851]  [<ffffffff81554f97>] system_call_fastpath+0x12/0x6f
+[   55.381070] BTRFS: error (device hdb1) in btrfs_run_delayed_refs:2821: errno=-12 Out of memory
+[   55.382431] BTRFS warning (device hdb1): Skipping commit of aborted transaction.
+[   55.382433] BTRFS warning (device hdb1): cleanup_transaction:1692: Aborting unused transaction(IO failure).
+[   55.384280] ------------[ cut here ]------------
+[   55.384312] WARNING: CPU: 0 PID: 3010 at fs/btrfs/delayed-ref.c:438 btrfs_select_ref_head+0xd9/0xfe [btrfs]()
+[...]
+[   55.384337] Call Trace:
+[   55.384353]  [<ffffffff8154e6f0>] dump_stack+0x4f/0x7b
+[   55.384357]  [<ffffffff8107f717>] ? down_trylock+0x2d/0x37
+[   55.384359]  [<ffffffff81046977>] warn_slowpath_common+0xa1/0xbb
+[   55.384398]  [<ffffffffa00a1d6b>] ? btrfs_select_ref_head+0xd9/0xfe [btrfs]
+[   55.384400]  [<ffffffff81046a34>] warn_slowpath_null+0x1a/0x1c
+[   55.384423]  [<ffffffffa00a1d6b>] btrfs_select_ref_head+0xd9/0xfe [btrfs]
+[   55.384446]  [<ffffffffa004e5f7>] ? __btrfs_run_delayed_refs+0xa2/0xf35 [btrfs]
+[   55.384455]  [<ffffffffa004e600>] __btrfs_run_delayed_refs+0xab/0xf35 [btrfs]
+[   55.384476]  [<ffffffffa00512ea>] btrfs_run_delayed_refs+0x6e/0x226 [btrfs]
+[   55.384499]  [<ffffffffa0060e21>] ? start_transaction+0x192/0x534 [btrfs]
+[   55.384521]  [<ffffffffa0060e21>] ? start_transaction+0x192/0x534 [btrfs]
+[   55.384543]  [<ffffffffa0060221>] btrfs_commit_transaction+0x4c/0xaba [btrfs]
+[   55.384565]  [<ffffffffa0060e21>] ? start_transaction+0x192/0x534 [btrfs]
+[   55.384588]  [<ffffffffa0073428>] btrfs_sync_file+0x29c/0x310 [btrfs]
+[   55.384591]  [<ffffffff81186808>] vfs_fsync_range+0x8f/0x9e
+[   55.384592]  [<ffffffff81186833>] vfs_fsync+0x1c/0x1e
+[   55.384593]  [<ffffffff81186869>] do_fsync+0x34/0x4e
+[   55.384594]  [<ffffffff81186ab3>] SyS_fsync+0x10/0x14
+[   55.384595]  [<ffffffff81554f97>] system_call_fastpath+0x12/0x6f
+[...]
+[   55.384608] ---[ end trace c29799da1d4dd621 ]---
+[   55.437323] BTRFS info (device hdb1): forced readonly
+[   55.438815] BTRFS info (device hdb1): delayed_refs has NO entry
 
-Also corresponding comment is added for readability.
+Fix this by being explicit about the no-fail behavior of this allocation
+path and use __GFP_NOFAIL.
 
-Reported-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Michal Hocko <mhocko@suse.com>
 ---
- fs/btrfs/async-thread.c | 57 +++++++++++++++++++++++++++++--------------------
- fs/btrfs/async-thread.h |  2 +-
- 2 files changed, 35 insertions(+), 24 deletions(-)
+ fs/btrfs/extent_io.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
-index 1ce06c84..3e36e4a 100644
---- a/fs/btrfs/async-thread.c
-+++ b/fs/btrfs/async-thread.c
-@@ -42,8 +42,14 @@ struct __btrfs_workqueue {
- 
- 	/* Thresholding related variants */
- 	atomic_t pending;
--	int max_active;
--	int current_max;
-+
-+	/* Up limit of concurrency workers */
-+	int limit_active;
-+
-+	/* Current number of concurrency workers */
-+	int current_active;
-+
-+	/* Threshold to change current_active */
- 	int thresh;
- 	unsigned int count;
- 	spinlock_t thres_lock;
-@@ -88,7 +94,7 @@ BTRFS_WORK_HELPER(scrubnc_helper);
- BTRFS_WORK_HELPER(scrubparity_helper);
- 
- static struct __btrfs_workqueue *
--__btrfs_alloc_workqueue(const char *name, unsigned int flags, int max_active,
-+__btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
- 			 int thresh)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index c374e1e71e5f..f4d6eea975d7 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -4607,9 +4607,7 @@ __alloc_extent_buffer(struct btrfs_fs_info *fs_info, u64 start,
  {
- 	struct __btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
-@@ -96,26 +102,31 @@ __btrfs_alloc_workqueue(const char *name, unsigned int flags, int max_active,
- 	if (!ret)
+ 	struct extent_buffer *eb = NULL;
+ 
+-	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS);
+-	if (eb == NULL)
+-		return NULL;
++	eb = kmem_cache_zalloc(extent_buffer_cache, GFP_NOFS|__GFP_NOFAIL);
+ 	eb->start = start;
+ 	eb->len = len;
+ 	eb->fs_info = fs_info;
+@@ -4867,7 +4865,7 @@ struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
  		return NULL;
  
--	ret->max_active = max_active;
-+	ret->limit_active = limit_active;
- 	atomic_set(&ret->pending, 0);
- 	if (thresh == 0)
- 		thresh = DFT_THRESHOLD;
- 	/* For low threshold, disabling threshold is a better choice */
- 	if (thresh < DFT_THRESHOLD) {
--		ret->current_max = max_active;
-+		ret->current_active = limit_active;
- 		ret->thresh = NO_THRESHOLD;
- 	} else {
--		ret->current_max = 1;
-+		/*
-+		 * For threshold-able wq, let its concurrency grow on demand.
-+		 * Use minimal max_active at alloc time to reduce resource
-+		 * usage.
-+		 */
-+		ret->current_active = 1;
- 		ret->thresh = thresh;
- 	}
+ 	for (i = 0; i < num_pages; i++, index++) {
+-		p = find_or_create_page(mapping, index, GFP_NOFS);
++		p = find_or_create_page(mapping, index, GFP_NOFS|__GFP_NOFAIL);
+ 		if (!p)
+ 			goto free_eb;
  
- 	if (flags & WQ_HIGHPRI)
- 		ret->normal_wq = alloc_workqueue("%s-%s-high", flags,
--						 ret->max_active,
--						 "btrfs", name);
-+						 ret->current_active, "btrfs",
-+						 name);
- 	else
- 		ret->normal_wq = alloc_workqueue("%s-%s", flags,
--						 ret->max_active, "btrfs",
-+						 ret->current_active, "btrfs",
- 						 name);
- 	if (!ret->normal_wq) {
- 		kfree(ret);
-@@ -134,7 +145,7 @@ __btrfs_destroy_workqueue(struct __btrfs_workqueue *wq);
- 
- struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
- 					      unsigned int flags,
--					      int max_active,
-+					      int limit_active,
- 					      int thresh)
- {
- 	struct btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
-@@ -143,14 +154,14 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
- 		return NULL;
- 
- 	ret->normal = __btrfs_alloc_workqueue(name, flags & ~WQ_HIGHPRI,
--					      max_active, thresh);
-+					      limit_active, thresh);
- 	if (!ret->normal) {
- 		kfree(ret);
- 		return NULL;
- 	}
- 
- 	if (flags & WQ_HIGHPRI) {
--		ret->high = __btrfs_alloc_workqueue(name, flags, max_active,
-+		ret->high = __btrfs_alloc_workqueue(name, flags, limit_active,
- 						    thresh);
- 		if (!ret->high) {
- 			__btrfs_destroy_workqueue(ret->normal);
-@@ -180,7 +191,7 @@ static inline void thresh_queue_hook(struct __btrfs_workqueue *wq)
-  */
- static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
- {
--	int new_max_active;
-+	int new_current_active;
- 	long pending;
- 	int need_change = 0;
- 
-@@ -197,7 +208,7 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
- 	wq->count %= (wq->thresh / 4);
- 	if (!wq->count)
- 		goto  out;
--	new_max_active = wq->current_max;
-+	new_current_active = wq->current_active;
- 
- 	/*
- 	 * pending may be changed later, but it's OK since we really
-@@ -205,19 +216,19 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
- 	 */
- 	pending = atomic_read(&wq->pending);
- 	if (pending > wq->thresh)
--		new_max_active++;
-+		new_current_active++;
- 	if (pending < wq->thresh / 2)
--		new_max_active--;
--	new_max_active = clamp_val(new_max_active, 1, wq->max_active);
--	if (new_max_active != wq->current_max)  {
-+		new_current_active--;
-+	new_current_active = clamp_val(new_current_active, 1, wq->limit_active);
-+	if (new_current_active != wq->current_active)  {
- 		need_change = 1;
--		wq->current_max = new_max_active;
-+		wq->current_active = new_current_active;
- 	}
- out:
- 	spin_unlock(&wq->thres_lock);
- 
- 	if (need_change) {
--		workqueue_set_max_active(wq->normal_wq, wq->current_max);
-+		workqueue_set_max_active(wq->normal_wq, wq->current_active);
- 	}
- }
- 
-@@ -351,13 +362,13 @@ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq)
- 	kfree(wq);
- }
- 
--void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max)
-+void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int limit_active)
- {
- 	if (!wq)
- 		return;
--	wq->normal->max_active = max;
-+	wq->normal->limit_active = limit_active;
- 	if (wq->high)
--		wq->high->max_active = max;
-+		wq->high->limit_active = limit_active;
- }
- 
- void btrfs_set_work_high_priority(struct btrfs_work *work)
-diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
-index b0b093b..ad4d064 100644
---- a/fs/btrfs/async-thread.h
-+++ b/fs/btrfs/async-thread.h
-@@ -69,7 +69,7 @@ BTRFS_WORK_HELPER_PROTO(scrubparity_helper);
- 
- struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
- 					      unsigned int flags,
--					      int max_active,
-+					      int limit_active,
- 					      int thresh);
- void btrfs_init_work(struct btrfs_work *work, btrfs_work_func_t helper,
- 		     btrfs_func_t func,
 -- 
 2.5.0
 

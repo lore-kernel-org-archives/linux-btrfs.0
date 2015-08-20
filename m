@@ -1,42 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49259 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750874AbbHTDnM (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:29172 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750861AbbHTEJw convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 23:43:12 -0400
-From: Russell Coker <russell@coker.com.au>
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: Questions on use of NOCOW impact to subvolumes and snapshots
-Date: Thu, 20 Aug 2015 13:43:07 +1000
+	Thu, 20 Aug 2015 00:09:52 -0400
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: "'Chris Murphy'" <lists@colorremedies.com>,
+        "'Jonathan Panozzo'" <jonp@lime-technology.com>,
+        "'Btrfs BTRFS'" <linux-btrfs@vger.kernel.org>
 References: <D3CC3E72-929E-4ADF-826F-62DCB6BD827C@lime-technology.com> <CAJCQCtSVn7BSYY=Ofq6OsKfHyv_PTKGOg7uP=tUC4XTNQ42v0w@mail.gmail.com>
 In-Reply-To: <CAJCQCtSVn7BSYY=Ofq6OsKfHyv_PTKGOg7uP=tUC4XTNQ42v0w@mail.gmail.com>
+Subject: RE: Questions on use of NOCOW impact to subvolumes and snapshots
+Date: Thu, 20 Aug 2015 12:09:48 +0800
+Message-ID: <01e901d0dafe$0e6cbce0$2b4636a0$@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201508201343.07618.russell@coker.com.au>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, 20 Aug 2015 11:55:43 AM Chris Murphy wrote:
-> > Question 1:  If I apply the NOCOW attribute to a file or directory, how
-> > does that affect my ability to run btrfs scrub?
+Hi, Jonathan Panozzo,
+
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org
+> [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Chris Murphy
+> Sent: Thursday, August 20, 2015 9:56 AM
+> To: Jonathan Panozzo <jonp@lime-technology.com>; Btrfs BTRFS
+> <linux-btrfs@vger.kernel.org>
+> Subject: Re: Questions on use of NOCOW impact to subvolumes and snapshots
 > 
-> nodatacow includes nodatasum and no compression. So it means these
-> files are presently immune from scrub check and repair so long as it's
-> based on checksums. I don't know if raid56 scrub compares to parity
-> and recomputes parity (assumes data is correct), absent checksums,
-> which would be similar to how md raid 56 does it.
+> On Wed, Aug 19, 2015 at 6:44 PM, Jonathan Panozzo
+> <jonp@lime-technology.com> wrote:
+> > Hello btrfs mailing list!
+> >
+> > I have a two questions regarding the use of the NOCOW bit and how this
+> affects scrub and snapshots.
+> >
+> > Question 1:  If I apply the NOCOW attribute to a file or directory, how does
+> that affect my ability to run btrfs scrub?
+> 
+> nodatacow includes nodatasum and no compression. So it means these files
+> are presently immune from scrub check and repair so long as it's based on
+> checksums.
+>
+In nodatasum case, scrub only try to fix data with io-error.
 
-Linux Software RAID could recreate a mismatched block from RAID-6 parity but 
-doesn't do so.  It could be that a block was changed correctly but didn't get 
-the parity data written so such "correction" would be reverting a change.  So 
-Linux Software RAID only regenerates parity for a scrub and makes both disks 
-have the same data for RAID-1.
+> I don't know if raid56 scrub compares to parity and recomputes
+> parity (assumes data is correct), absent checksums, which would be similar to
+> how md raid 56 does it.
+> 
+For raid56 with no datasum, in current code:
+For data strip: If have io error: try to get right data from parity, and writeback
+For parity strip: check is the parity match data, and try to recovery
 
-There's no good solution to these problems without doing the sorts of things 
-that WAFL, ZFS, and BTRFS do.
+Thanks
+Zhaolei
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+> 
+> > Question 2:  If I apply the NOCOW attribute recursively to a btrfs
+> > subvolume I create,
+> 
+> There's no such thing as recursive application of this xattr to files.
+> Recursivity would only apply to directories (and probably nested subvolumes
+> but I haven't tested it).
+> 
+> 
+> > then take a snapshot of that subvolume, make changes to the files in the
+> snapshot, and then make changes to the files in the subvolume, does this cause
+> data in the snapshot to be corrupted?  It doesn’t appear so, but I’m
+> confused how it’s not if COW has been disabled using the NOCOW bit.
+> 
+> http://www.spinics.net/lists/linux-btrfs/msg31342.html
+> 
+> Any changes to a snapshot nocow file are cow. Any additional changes to those
+> extents are nocow until those extents are likewise snapshot (by the file being
+> reflink copied or subvolume is snapshot). So if the change to an extent will only
+> affect a particular instance of a nocow file, the write is overwrite (nocow). If it's
+> a shared extent, then the write is cow, and that extent is (initially) not shared
+> and thus additional writes are nocow.
+> 
+> 
+> --
+> Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body
+> of a message to majordomo@vger.kernel.org More majordomo info at
+> http://vger.kernel.org/majordomo-info.html
+

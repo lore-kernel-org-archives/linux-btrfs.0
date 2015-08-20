@@ -1,63 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f175.google.com ([209.85.223.175]:33963 "EHLO
-	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751203AbbHTLws (ORCPT
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:38867 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751161AbbHTMCU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Aug 2015 07:52:48 -0400
-Received: by iodb91 with SMTP id b91so42587755iod.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2015 04:52:48 -0700 (PDT)
+	Thu, 20 Aug 2015 08:02:20 -0400
+Received: by igfj19 with SMTP id j19so28665318igf.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2015 05:02:20 -0700 (PDT)
 Subject: Re: Btrfs is amazing! (a lack-of-bug report)
 To: Tyler Bletsch <tyler.bletsch@gmail.com>, linux-btrfs@vger.kernel.org
 References: <55D1567B.3030809@gmail.com> <55D1CA1E.1060103@gmail.com>
  <55D23397.6090404@gmail.com> <55D31A3C.3080208@gmail.com>
- <55D4BBBB.9000008@gmail.com>
+ <55D4BBBB.9000008@gmail.com> <55D5BF80.500@gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55D5BF80.500@gmail.com>
-Date: Thu, 20 Aug 2015 07:52:32 -0400
+Message-ID: <55D5C1BC.2080507@gmail.com>
+Date: Thu, 20 Aug 2015 08:02:04 -0400
 MIME-Version: 1.0
-In-Reply-To: <55D4BBBB.9000008@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000600080708020103060304"
+In-Reply-To: <55D5BF80.500@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060904090309010402060807"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms000600080708020103060304
+--------------ms060904090309010402060807
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-19 13:24, Tyler Bletsch wrote:
-> Thanks.  I'd consider raid6, but since I'll be backing up to a second
-> btrfs raid5 array, I think I have sufficient redundancy, since
-> equivalent to raid 5+1 on paper. I'm doing that rather than something
-> like raid10 in a single box because I want the redundancy of a second
-> physical server so I can failover in the event of a system-level
-> component failure.
+On 2015-08-20 07:52, Austin S Hemmelgarn wrote:
+> On 2015-08-19 13:24, Tyler Bletsch wrote:
+>> Thanks.  I'd consider raid6, but since I'll be backing up to a second
+>> btrfs raid5 array, I think I have sufficient redundancy, since
+>> equivalent to raid 5+1 on paper. I'm doing that rather than something
+>> like raid10 in a single box because I want the redundancy of a second
+>> physical server so I can failover in the event of a system-level
+>> component failure.
+>>
+>> (And of course, "failover" means "continue being able to watch TV show=
+s
+>> and stuff")
+>>
+>> A question about what you said -- when you say people have hit bugs in=
+
+>> the raid56 code, which flavor do these bugs tend to be? Are they
+>> "minding my own business and suddenly it falls over" bugs or "I tried =
+to
+>> do something weird with btrfs and it screwed up" bugs?
+> More along the lines of 'I tried to do something that works fine with
+> the other raid profiles and it kind of messed up the filesystem'.  In
+> general, you should be safe as long as you are using at least Linux 4.0=
+
+> and the most recent version of btrfs-progs.  It's been a while since I
+> saw any raid56 related bugs that caused actual data loss.  If you are
+> using this on SSD's though, I would wait, there are known issues with
+> DISCARD/TRIM not working correctly on btrfs right now (nothing involvin=
+g
+> data loss, just problems with it not properly trimming free space and
+> therefore causing issues with wear-leveling), and it looks like the fix=
+
+> won't be in 4.2 as of right now.
 >
-> (And of course, "failover" means "continue being able to watch TV shows=
-
-> and stuff")
 >
-> A question about what you said -- when you say people have hit bugs in
-> the raid56 code, which flavor do these bugs tend to be? Are they
-> "minding my own business and suddenly it falls over" bugs or "I tried t=
-o
-> do something weird with btrfs and it screwed up" bugs?
-More along the lines of 'I tried to do something that works fine with=20
-the other raid profiles and it kind of messed up the filesystem'.  In=20
-general, you should be safe as long as you are using at least Linux 4.0=20
-and the most recent version of btrfs-progs.  It's been a while since I=20
-saw any raid56 related bugs that caused actual data loss.  If you are=20
-using this on SSD's though, I would wait, there are known issues with=20
-DISCARD/TRIM not working correctly on btrfs right now (nothing involving =
-
-data loss, just problems with it not properly trimming free space and=20
-therefore causing issues with wear-leveling), and it looks like the fix=20
-won't be in 4.2 as of right now.
+On second thought, you might want to wait until 4.3, I just saw this thre=
+ad:
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/47321/focus=3D47325=
 
 
 
---------------ms000600080708020103060304
+--------------ms060904090309010402060807
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -99,9 +108,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODIwMTE1MjMyWjBPBgkq
-hkiG9w0BCQQxQgRAxtv20hS7eJajz/1m/xt2RMJoCDBXPa4RqbaMQrsKhSZQ5AUmH3wHFZw8
-dL09kv08ZfciP6vS4UeSpEz7TfjEdzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODIwMTIwMjA0WjBPBgkq
+hkiG9w0BCQQxQgRAtSOuaQngBW/3O0WQcS0kttndD2xagnRbxHXhn5+IHo89W0qXK5R7qRN6
+i3qJM47O6PWOlknrR3tCHOuja2vfEDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -109,14 +118,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgAFGqoBqFD1N945k6ZaUC9L+RZK0H4gpHcLp0F8WxnV6ZrkzxS+
-R7TSko06rOm6Kl4vWHdjkhj91h1IItAPo518hx/2oqWUzfB1oGVucqIBW4ZvsYAU1XXymE8E
-u5eI88EgUM8aFbd/Lh5k+1KKcAF3VoXW5+p1QIUjGQYbBvqeA0wCnOcWo3/+VTjhFTTEN6jE
-6gZgxwEG0lzWHmSvlEFGeBQZjEbBq/Bu9P/hIJo8FL+RxbW+C8EsByuxwBM1XItz/4UEBbCq
-z+LyG00TERrW1HnHdyN2fNRfX4YVE8KbW7LvwN/8SFDOcMrfiB+CogTAM5QhiJrBNr8M9ss1
-PvLVJmJ8pd2LmCpmrhseHv72x97BkDgwB+1NrZr6m3NIIoXgsP1j7TLmsXcDpDiXypWPvPwn
-8jMK4ydlCm9cgQMtyXxJM9k94Y5nB3YUbyXu6hXhdIOrLhHHj0WsN9iABN9Zd3Az1k6f1WUX
-uu8O3p8Tf8Hq8h9KotuN+nvjA0/+TtWpEhDTV1+9cUds8XRM9n/zXM6zstsUYJG5mVPRF/9d
-v1prDCeGt2KPVIpGbRXeaOL0KTAsuCWWsWHOf+V2NUJasZzCRuylAofmz6USCs3NGU93icyV
-6q69j9CXM1hNRelR/vxJu1m4+o9HhA9TRsiS6P3ZhlKhE8UxX7Dnrr97qQAAAAAAAA==
---------------ms000600080708020103060304--
+BgkqhkiG9w0BAQEFAASCAgAJPoXxtAJF4yWt7zALhc4pSJa60F6D2xhqalPiA5ls6zBbV6lc
+80A7YqFKrVyr4vVKyJZzyqRL0MJoYmHCLK+rGeTb07qoWCEJxyZUjshtcAin8GMm9v30J88c
+/m74pkk52dZL4NqFbSx203r6CJ9gvt/wvk00R010mEBi0P2G8Pwxra8eGEU4CZfW6sbfprXU
+eKHyRHPoMFWmBIQ9U+Z8D8fo/rBGHOFnfr4lS1Q+xLPiI+0SFc/PF6Nj85UrhoaLRPhHItMg
+lDZVvKh+1SfSOHBtxNtMc1t0tLU+6wAEeHflv3xwxq5FQpV6NM0+jZ3fqUYPMm5vrJgKZETx
+sIEG/vyYSO0+9daBitGkcttP295CeyaWtg4wxkvc6V9bgyxTvAvI0IrnmWi2h8qgIRcNgIfV
+fh4/tetledtcNXk+zMPaO63630tBSiZFmheLCforBY+gxzuNQid24GVL6LU/roG+Yn0SMYab
+9O4SbyBZ88GY0GahuwnH4KklUcNBiIRen0mg67vIGA2EgSHyz3au2VrSwx045ulyJFWF/uRL
+G7Asf6Yc9nBDUF+6kg7EOOz/K9ZHqC977SCImqE4ouBtEE+ly1YN+Pblcr3R3Tanb5xs5qU0
+1Scv2OwL4yUl+lD7rT99m/CW5ynldLxWTZAdz+mvphzEptT1/WEtdMSv+gAAAAAAAA==
+--------------ms060904090309010402060807--

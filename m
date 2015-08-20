@@ -1,46 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22286 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751944AbbHTDC0 (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:49732 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751189AbbHTDT7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 23:02:26 -0400
-Message-ID: <55D542A2.2020309@oracle.com>
-Date: Thu, 20 Aug 2015 10:59:46 +0800
+	Wed, 19 Aug 2015 23:19:59 -0400
+Message-ID: <55D546C5.7000202@oracle.com>
+Date: Thu, 20 Aug 2015 11:17:25 +0800
 From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Daniel Pocock <daniel@pocock.pro>
-CC: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
-Subject: Re: disk failure but no alert
-References: <55D44409.40100@pocock.pro>
-In-Reply-To: <55D44409.40100@pocock.pro>
+To: E V <eliventer@gmail.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: Kernel 4.1.4 btrfs forced read-only during rsync
+References: <CAJtFHUQukRC9m+Bq85CN7v_tCk6ybGvParax5ixcMJwKHRUFCQ@mail.gmail.com>
+In-Reply-To: <CAJtFHUQukRC9m+Bq85CN7v_tCk6ybGvParax5ixcMJwKHRUFCQ@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+two to dig more..
 
-> is BtrFs failing to alert?
+> Aug 16 04:41:31 [1082957.226817] BTRFS: error (device sdb) in
+> __btrfs_free_extent:6235: errno=-28 No space left
+> Aug 16 04:41:31 [1082957.226819] BTRFS info (device sdb): forced readonly
 
-  Yes. Btrfs does not do that. as of now.
+::
 
-  Only action that it takes is to put FS into readonly mode. That may
-  be fine for ext4 kind of FS but its not correct from the btrfs Volume
-  Manager perspective.
+> Aug 16 04:41:31 [1082957.289289] BTRFS: error (device sdb) in
+> cleanup_transaction:1692: errno=-5 IO failure
 
-  A work in progress at my end to fix that.
+1.
+  We probably need to understand what kicked in readonly. is it
+  -28 (No space left) OR -5 (EIO).
 
- > [996932.735110] end_request: critical target error, dev sdd, sector 
-526344
- > [996932.735280] md: super_written gets error=-121, uptodate=0
- > [996932.735290] md/raid1:md2: Disk failure on sdd2, disabling device.
- > md/raid1:md2: Operation continuing on 1 devices.
+2.
+  There are no media errors from the block layer, hope we are not
+  fabricating the EIO in the FS layer... thats wrong.
 
-  MD is a complete volume manager, Btrfs isn't yet.
+digging more.
 
-  My recent patch (below), is a step towards that. Its not yet
-  integrated.
-
-   [PATCH 3/3] Btrfs: introduce function to handle device offline
-
-
-HTH, Anand
+Thanks,  Anand

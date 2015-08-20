@@ -1,41 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:49732 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751189AbbHTDT7 (ORCPT
+Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:49259 "EHLO
+	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750874AbbHTDnM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 23:19:59 -0400
-Message-ID: <55D546C5.7000202@oracle.com>
-Date: Thu, 20 Aug 2015 11:17:25 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Wed, 19 Aug 2015 23:43:12 -0400
+From: Russell Coker <russell@coker.com.au>
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Questions on use of NOCOW impact to subvolumes and snapshots
+Date: Thu, 20 Aug 2015 13:43:07 +1000
+References: <D3CC3E72-929E-4ADF-826F-62DCB6BD827C@lime-technology.com> <CAJCQCtSVn7BSYY=Ofq6OsKfHyv_PTKGOg7uP=tUC4XTNQ42v0w@mail.gmail.com>
+In-Reply-To: <CAJCQCtSVn7BSYY=Ofq6OsKfHyv_PTKGOg7uP=tUC4XTNQ42v0w@mail.gmail.com>
 MIME-Version: 1.0
-To: E V <eliventer@gmail.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Kernel 4.1.4 btrfs forced read-only during rsync
-References: <CAJtFHUQukRC9m+Bq85CN7v_tCk6ybGvParax5ixcMJwKHRUFCQ@mail.gmail.com>
-In-Reply-To: <CAJtFHUQukRC9m+Bq85CN7v_tCk6ybGvParax5ixcMJwKHRUFCQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: Text/Plain;
+  charset="utf-8"
+Message-Id: <201508201343.07618.russell@coker.com.au>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Thu, 20 Aug 2015 11:55:43 AM Chris Murphy wrote:
+> > Question 1:  If I apply the NOCOW attribute to a file or directory, how
+> > does that affect my ability to run btrfs scrub?
+> 
+> nodatacow includes nodatasum and no compression. So it means these
+> files are presently immune from scrub check and repair so long as it's
+> based on checksums. I don't know if raid56 scrub compares to parity
+> and recomputes parity (assumes data is correct), absent checksums,
+> which would be similar to how md raid 56 does it.
 
-two to dig more..
+Linux Software RAID could recreate a mismatched block from RAID-6 parity but 
+doesn't do so.  It could be that a block was changed correctly but didn't get 
+the parity data written so such "correction" would be reverting a change.  So 
+Linux Software RAID only regenerates parity for a scrub and makes both disks 
+have the same data for RAID-1.
 
-> Aug 16 04:41:31 [1082957.226817] BTRFS: error (device sdb) in
-> __btrfs_free_extent:6235: errno=-28 No space left
-> Aug 16 04:41:31 [1082957.226819] BTRFS info (device sdb): forced readonly
+There's no good solution to these problems without doing the sorts of things 
+that WAFL, ZFS, and BTRFS do.
 
-::
-
-> Aug 16 04:41:31 [1082957.289289] BTRFS: error (device sdb) in
-> cleanup_transaction:1692: errno=-5 IO failure
-
-1.
-  We probably need to understand what kicked in readonly. is it
-  -28 (No space left) OR -5 (EIO).
-
-2.
-  There are no media errors from the block layer, hope we are not
-  fabricating the EIO in the FS layer... thats wrong.
-
-digging more.
-
-Thanks,  Anand
+-- 
+My Main Blog         http://etbe.coker.com.au/
+My Documents Blog    http://doc.coker.com.au/

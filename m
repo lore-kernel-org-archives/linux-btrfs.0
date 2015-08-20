@@ -1,17 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13878 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:26429 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753151AbbHXArx (ORCPT
+	with ESMTP id S1750874AbbHTBkO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Aug 2015 20:47:53 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7O0ljCa001836
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 08:47:45 +0800
+	Wed, 19 Aug 2015 21:40:14 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
+CC: <alex.btrfs@zadarastorage.com>
 Subject: [PATCH] btrfs: async_thread: Fix workqueue 'max_active' value when initializing
-Date: Mon, 24 Aug 2015 08:47:09 +0800
-Message-ID: <1440377229-17611-1-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Thu, 20 Aug 2015 09:38:10 +0800
+Message-ID: <1440034690-27581-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org

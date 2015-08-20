@@ -1,58 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f52.google.com ([209.85.213.52]:36175 "EHLO
-	mail-vk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751428AbbHTBzo convert rfc822-to-8bit (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:22286 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751944AbbHTDC0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 21:55:44 -0400
-Received: by vkif69 with SMTP id f69so4332793vki.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 18:55:43 -0700 (PDT)
+	Wed, 19 Aug 2015 23:02:26 -0400
+Message-ID: <55D542A2.2020309@oracle.com>
+Date: Thu, 20 Aug 2015 10:59:46 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <D3CC3E72-929E-4ADF-826F-62DCB6BD827C@lime-technology.com>
-References: <D3CC3E72-929E-4ADF-826F-62DCB6BD827C@lime-technology.com>
-Date: Wed, 19 Aug 2015 19:55:43 -0600
-Message-ID: <CAJCQCtSVn7BSYY=Ofq6OsKfHyv_PTKGOg7uP=tUC4XTNQ42v0w@mail.gmail.com>
-Subject: Re: Questions on use of NOCOW impact to subvolumes and snapshots
-From: Chris Murphy <lists@colorremedies.com>
-To: Jonathan Panozzo <jonp@lime-technology.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Daniel Pocock <daniel@pocock.pro>
+CC: linux-btrfs@vger.kernel.org, clm@fb.com, dsterba@suse.cz
+Subject: Re: disk failure but no alert
+References: <55D44409.40100@pocock.pro>
+In-Reply-To: <55D44409.40100@pocock.pro>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 19, 2015 at 6:44 PM, Jonathan Panozzo
-<jonp@lime-technology.com> wrote:
-> Hello btrfs mailing list!
->
-> I have a two questions regarding the use of the NOCOW bit and how this affects scrub and snapshots.
->
-> Question 1:  If I apply the NOCOW attribute to a file or directory, how does that affect my ability to run btrfs scrub?
-
-nodatacow includes nodatasum and no compression. So it means these
-files are presently immune from scrub check and repair so long as it's
-based on checksums. I don't know if raid56 scrub compares to parity
-and recomputes parity (assumes data is correct), absent checksums,
-which would be similar to how md raid 56 does it.
 
 
-> Question 2:  If I apply the NOCOW attribute recursively to a btrfs subvolume I create,
+> is BtrFs failing to alert?
 
-There's no such thing as recursive application of this xattr to files.
-Recursivity would only apply to directories (and probably nested
-subvolumes but I haven't tested it).
+  Yes. Btrfs does not do that. as of now.
+
+  Only action that it takes is to put FS into readonly mode. That may
+  be fine for ext4 kind of FS but its not correct from the btrfs Volume
+  Manager perspective.
+
+  A work in progress at my end to fix that.
+
+ > [996932.735110] end_request: critical target error, dev sdd, sector 
+526344
+ > [996932.735280] md: super_written gets error=-121, uptodate=0
+ > [996932.735290] md/raid1:md2: Disk failure on sdd2, disabling device.
+ > md/raid1:md2: Operation continuing on 1 devices.
+
+  MD is a complete volume manager, Btrfs isn't yet.
+
+  My recent patch (below), is a step towards that. Its not yet
+  integrated.
+
+   [PATCH 3/3] Btrfs: introduce function to handle device offline
 
 
-> then take a snapshot of that subvolume, make changes to the files in the snapshot, and then make changes to the files in the subvolume, does this cause data in the snapshot to be corrupted?  It doesn’t appear so, but I’m confused how it’s not if COW has been disabled using the NOCOW bit.
-
-http://www.spinics.net/lists/linux-btrfs/msg31342.html
-
-Any changes to a snapshot nocow file are cow. Any additional changes
-to those extents are nocow until those extents are likewise snapshot
-(by the file being reflink copied or subvolume is snapshot). So if the
-change to an extent will only affect a particular instance of a nocow
-file, the write is overwrite (nocow). If it's a shared extent, then
-the write is cow, and that extent is (initially) not shared and thus
-additional writes are nocow.
-
-
--- 
-Chris Murphy
+HTH, Anand

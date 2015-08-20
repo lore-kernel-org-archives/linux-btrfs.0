@@ -1,47 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm03.jp.fujitsu.com ([202.219.69.170]:49180 "EHLO
-	mgwkm03.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752612AbbHSIpV (ORCPT
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:36455 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751286AbbHTFY1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 04:45:21 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id 3E2E9AC0377
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 17:45:19 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-	by m3051.s.css.fujitsu.com (Postfix) with SMTP id 0F993DC
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 17:45:19 +0900 (JST)
-Message-Id: <201508190844.AA00004@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 19 Aug 2015 17:44:53 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: cleanup: remove unnecessary check before btrfs_free_path is called
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+	Thu, 20 Aug 2015 01:24:27 -0400
+Received: by wicja10 with SMTP id ja10so135571524wic.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 22:24:25 -0700 (PDT)
+From: Goffredo Baroncelli <kreijack@gmail.com>
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Cc: Goffredo Baroncelli <kreijack@inwind.it>
+Subject: [PATCH] btrfs-progs: Add further checks to btrfs replace start command
+Date: Thu, 20 Aug 2015 07:24:23 +0200
+Message-Id: <1440048263-6089-1-git-send-email-kreijack@inwind.it>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need not check path before btrfs_free_path() is called because
-path is checked in btrfs_free_path().
+Add further checks to btrfs replace start command.
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+The following tests where added in user space before calling
+the ioctl():
+1) check if the new disk is greather or equal to the old one
+2) check if the source device is or a block device or a
+numerical dev-id
+
+These checks are already performed in kernel space; however
+when "btrfs replace start" is ran in background is not possible
+to show any error returned by the ioctl(), so in case of fail 
+the user had to check dmesg to understand the what happened.
+
+Signed-off-by: Goffredo Baroncelli <kreijack@inwind.it>
 ---
- cmds-check.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ cmds-replace.c | 16 +++++++++++++++-
+ 1 file changed, 15 insertions(+), 1 deletion(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 4fa8709..8019fb0 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -9226,8 +9226,7 @@ next:
- 	ret = 0;
- out:
- 	free_roots_info_cache();
--	if (path)
--		btrfs_free_path(path);
-+	btrfs_free_path(path);
- 	if (trans)
- 		btrfs_commit_transaction(trans, info->tree_root);
- 	if (ret < 0)
+diff --git a/cmds-replace.c b/cmds-replace.c
+index 85365e3..45fe060 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -142,6 +142,8 @@ static int cmd_start_replace(int argc, char **argv)
+ 	int do_not_background = 0;
+ 	int mixed = 0;
+ 	DIR *dirstream = NULL;
++	u64 srcdev_size;
++	u64 dstdev_size;
+ 
+ 	while ((c = getopt(argc, argv, "Brf")) != -1) {
+ 		switch (c) {
+@@ -249,16 +251,28 @@ static int cmd_start_replace(int argc, char **argv)
+ 				srcdev, path);
+ 			goto leave_with_error;
+ 		}
+-	} else if (is_block_device(srcdev)) {
++		srcdev_size = di_args[i].total_bytes;
++	} else if (is_block_device(srcdev) > 0) {
+ 		strncpy((char *)start_args.start.srcdev_name, srcdev,
+ 			BTRFS_DEVICE_PATH_NAME_MAX);
+ 		start_args.start.srcdevid = 0;
++		srcdev_size = get_partition_size(srcdev);
++	} else {
++		fprintf(stderr, "ERROR: source device must be a block device or a devid\n");
++		goto leave_with_error;
+ 	}
+ 
+ 	ret = test_dev_for_mkfs(dstdev, force_using_targetdev);
+ 	if (ret)
+ 		goto leave_with_error;
+ 
++	dstdev_size = get_partition_size(dstdev);
++	if (srcdev_size > dstdev_size) {
++		fprintf(stderr, "ERROR: target device smaller than source device (required %llu bytes)\n",
++			srcdev_size);
++		goto leave_with_error;
++	}
++
+ 	fddstdev = open(dstdev, O_RDWR);
+ 	if (fddstdev < 0) {
+ 		fprintf(stderr, "Unable to open %s\n", dstdev);
 -- 
-2.4.5
+2.5.0
 

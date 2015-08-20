@@ -1,58 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-33-i2.italiaonline.it ([212.48.25.204]:51200 "EHLO
-	libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751558AbbHSUwm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 16:52:42 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [BUG][v4.2-rc7] Problem replacing a "missing" disk for a
- raid5-degraded filesystem
-References: <55D4B8B8.3000806@libero.it>
- <20150819184155.GA25918@huxley.event.rightround.com>
- <20150819202812.GA3294@huxley.event.rightround.com>
-To: Omar Sandoval <osandov@fb.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <55D4EC98.40609@inwind.it>
-Date: Wed, 19 Aug 2015 22:52:40 +0200
-MIME-Version: 1.0
-In-Reply-To: <20150819202812.GA3294@huxley.event.rightround.com>
-Content-Type: text/plain; charset=windows-1252
+Received: from mail-io0-f170.google.com ([209.85.223.170]:35599 "EHLO
+	mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751302AbbHTAoc convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 19 Aug 2015 20:44:32 -0400
+Received: by iodt126 with SMTP id t126so29042476iod.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 17:44:31 -0700 (PDT)
+Received: from [10.0.1.243] (172-11-78-36.lightspeed.cicril.sbcglobal.net. [172.11.78.36])
+        by smtp.gmail.com with ESMTPSA id j3sm2055921ige.0.2015.08.19.17.44.31
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1 cipher=ECDHE-RSA-RC4-SHA bits=128/128);
+        Wed, 19 Aug 2015 17:44:31 -0700 (PDT)
+From: Jonathan Panozzo <jonp@lime-technology.com>
+Content-Type: text/plain; charset=utf-8
+Subject: Questions on use of NOCOW impact to subvolumes and snapshots
+Message-Id: <D3CC3E72-929E-4ADF-826F-62DCB6BD827C@lime-technology.com>
+Date: Wed, 19 Aug 2015 19:44:29 -0500
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2104\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-08-19 22:28, Omar Sandoval wrote:
-> On Wed, Aug 19, 2015 at 11:41:55AM -0700, Omar Sandoval wrote:
->> On Wed, Aug 19, 2015 at 07:11:20PM +0200, Goffredo Baroncelli wrote:
->>> Hi all,
->>>
->>> playing with raid5 and "btrfs replace" I found a BUG. Basically it seems that if I try to replace a "missing" disk of a "degraded" filesystem I got a kernel BUG. This is reproducible at 100% for me.
->>
->> Hi, Goffredo, this is a known bug. I have a fix here:
->> http://www.spinics.net/lists/linux-btrfs/msg44874.html
->> I'll bug Chris to get this in for 4.3. Let me know if you feel like
->> testing it out and I can add your Tested-by.
-> 
-> Ah, I didn't notice, but it looks like he already pulled it into his
-> integration-4.3 branch.
+Hello btrfs mailing list!
 
-It solve; thanks for working on that so if you want you have my 
+I have a two questions regarding the use of the NOCOW bit and how this affects scrub and snapshots.
 
-Tested-by: Goffredo Baroncelli <kreijack@inwind.it>
+Question 1:  If I apply the NOCOW attribute to a file or directory, how does that affect my ability to run btrfs scrub?
 
+Question 2:  If I apply the NOCOW attribute recursively to a btrfs subvolume I create, then take a snapshot of that subvolume, make changes to the files in the snapshot, and then make changes to the files in the subvolume, does this cause data in the snapshot to be corrupted?  It doesn’t appear so, but I’m confused how it’s not if COW has been disabled using the NOCOW bit.
 
-> 
->> Btw, just a heads up, Gmail is convinced that you're spam, it sounds
->> like you're failing your domain's DMARC checks.
+Regards,
 
-It is not the first time that someone told me; I would like to use a gmail account, unfortunately gmail make a mess with the email (if I send an email to the mailing list and to me, gmail collapses the two....)
-
-> 
-> Thanks,
-> 
-
-
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Jonathan Panozzo
+Lime Technology, Inc.

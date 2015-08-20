@@ -1,68 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f174.google.com ([209.85.213.174]:37621 "EHLO
-	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751812AbbHTLfs (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:33963 "EHLO
+	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751203AbbHTLws (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Aug 2015 07:35:48 -0400
-Received: by igui7 with SMTP id i7so28108487igu.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2015 04:35:48 -0700 (PDT)
-Subject: Re: So, wipe it out and start over or keep debugging?
-To: Chris Murphy <lists@colorremedies.com>
-References: <CAK7bmU88ZfLJmFfMiV=q9RjS+=vAWbniu9w6MUTv_xSG+-hj_g@mail.gmail.com>
- <55D1C8D3.5090501@gmail.com>
- <CAK7bmU_oXstgxwkWY_6tSc90aU-=WKh0TLH+1Xw+ec3YZogzbQ@mail.gmail.com>
- <55D31533.4040409@gmail.com>
- <CAJCQCtT3kGNZ3vcvhjP==6L402Zys=a3mHexErajTSDDbNBdNw@mail.gmail.com>
-Cc: Timothy Normand Miller <theosib@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Thu, 20 Aug 2015 07:52:48 -0400
+Received: by iodb91 with SMTP id b91so42587755iod.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2015 04:52:48 -0700 (PDT)
+Subject: Re: Btrfs is amazing! (a lack-of-bug report)
+To: Tyler Bletsch <tyler.bletsch@gmail.com>, linux-btrfs@vger.kernel.org
+References: <55D1567B.3030809@gmail.com> <55D1CA1E.1060103@gmail.com>
+ <55D23397.6090404@gmail.com> <55D31A3C.3080208@gmail.com>
+ <55D4BBBB.9000008@gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55D5BB83.80203@gmail.com>
-Date: Thu, 20 Aug 2015 07:35:31 -0400
+Message-ID: <55D5BF80.500@gmail.com>
+Date: Thu, 20 Aug 2015 07:52:32 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtT3kGNZ3vcvhjP==6L402Zys=a3mHexErajTSDDbNBdNw@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020301050708030101090500"
+In-Reply-To: <55D4BBBB.9000008@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000600080708020103060304"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms020301050708030101090500
+--------------ms000600080708020103060304
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-18 17:09, Chris Murphy wrote:
-> On Tue, Aug 18, 2015 at 5:21 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2015-08-17 14:52, Timothy Normand Miller wrote:
->>>
->>> I'm not sure if I'm doing this wrong.  Here's what I'm seeing:
->>>
->>> # btrfs-image -c9 -t4 -w /mnt/btrfs ~/btrfs_dump.z
->>> Superblock bytenr is larger than device size
->>> Open ctree failed
->>> create failed (No such file or directory)
->>
->>
->> For the source, you need to specify the underlying block device, not t=
-he top
->> of the mounted filesystem.  It's trying to read the directory as a blo=
-ck
->> device and getting very confused.  We should probably add some kind of=
- check
->> to btrfs-image to warn about that.
+On 2015-08-19 13:24, Tyler Bletsch wrote:
+> Thanks.  I'd consider raid6, but since I'll be backing up to a second
+> btrfs raid5 array, I think I have sufficient redundancy, since
+> equivalent to raid 5+1 on paper. I'm doing that rather than something
+> like raid10 in a single box because I want the redundancy of a second
+> physical server so I can failover in the event of a system-level
+> component failure.
 >
-> Should it even be possible to use btrfs-image on a mounted volume? If
-> it's written to at all, the collected image is going to be
-> inconsistent.
+> (And of course, "failover" means "continue being able to watch TV shows=
+
+> and stuff")
 >
-In theory, it might be useful, but we would need to slap a big obnoxious =
+> A question about what you said -- when you say people have hit bugs in
+> the raid56 code, which flavor do these bugs tend to be? Are they
+> "minding my own business and suddenly it falls over" bugs or "I tried t=
+o
+> do something weird with btrfs and it screwed up" bugs?
+More along the lines of 'I tried to do something that works fine with=20
+the other raid profiles and it kind of messed up the filesystem'.  In=20
+general, you should be safe as long as you are using at least Linux 4.0=20
+and the most recent version of btrfs-progs.  It's been a while since I=20
+saw any raid56 related bugs that caused actual data loss.  If you are=20
+using this on SSD's though, I would wait, there are known issues with=20
+DISCARD/TRIM not working correctly on btrfs right now (nothing involving =
 
-warning on such functionality.  I don't think it's possible right now,=20
-and as such we should do something to account for the possibility of=20
-someone trying it.
+data loss, just problems with it not properly trimming free space and=20
+therefore causing issues with wear-leveling), and it looks like the fix=20
+won't be in 4.2 as of right now.
 
 
---------------ms020301050708030101090500
+
+--------------ms000600080708020103060304
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -104,9 +99,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODIwMTEzNTMxWjBPBgkq
-hkiG9w0BCQQxQgRAUx6tepU2aZQwewH/m2CoeLqTwQ8j4oIHZUZ2CM/wux42UpMQN2z2F2lN
-/aS7Agy6u/Bg2yThcSJtm9x8UZ8LBTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODIwMTE1MjMyWjBPBgkq
+hkiG9w0BCQQxQgRAxtv20hS7eJajz/1m/xt2RMJoCDBXPa4RqbaMQrsKhSZQ5AUmH3wHFZw8
+dL09kv08ZfciP6vS4UeSpEz7TfjEdzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -114,14 +109,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgBBhOUCG6F0qRRvGI9j2r7ELyJT2uF+dJlUmk+RN4MXujIEHWO5
-DOrjbYDq1FQTSIUPr20UmUtN4IfB/pgj7yZQl7gv6CyMei1rvL2gR0bN0tBH2aV6MTZswEbj
-c8LIWyqormqr7DQxvB4P6280+qnKwfVLcYCsFrQeM+VpNbGSd4ysNiPmlXzJGAKKazp37fOm
-zUZcxuv3+BRQvbbU/IU8TTs62qC+BaHgkJfKCRrShDZxuCS2pyIyvbARUMc36Xu5sorKgCoN
-6S23ALTlJyGaE8gY0MsbR5BIGbdv4aHJVJQyV9hsED3GE5315go/JnkahBT3kAxDL5cridNU
-PF2A0icVqj7mq/vX9c+ftsFCm3RCN7YUDOVZuZWn+ewmpevgDzP8VmnFiSHe3++zOZ74NDs4
-pqiM9+kfEOF/2Acp5rAM1BklQg0D30c/5jpF5DI0s/1o4yettx+OD0/Fe4ICsGgfzk15oeKK
-BgLs4AfQvC7LKLFDS8bdbS91sGZCtHrL0pnbwB10NZ+ppc2Dyp5USGu1ud9yfNqbTw8Czc/D
-FOppO3HOSI7/oH40ULTUs3EXH9m8BFVy/2ZZbJ60zUNuvWiP6C0Y5ngTjInwZ+hK2I2rwv0Q
-SNGtmbPZ/GHUBz0lF95DyC5jimGOAm80xG2jSXiR6EqdrBs5keAVTUpoVgAAAAAAAA==
---------------ms020301050708030101090500--
+BgkqhkiG9w0BAQEFAASCAgAFGqoBqFD1N945k6ZaUC9L+RZK0H4gpHcLp0F8WxnV6ZrkzxS+
+R7TSko06rOm6Kl4vWHdjkhj91h1IItAPo518hx/2oqWUzfB1oGVucqIBW4ZvsYAU1XXymE8E
+u5eI88EgUM8aFbd/Lh5k+1KKcAF3VoXW5+p1QIUjGQYbBvqeA0wCnOcWo3/+VTjhFTTEN6jE
+6gZgxwEG0lzWHmSvlEFGeBQZjEbBq/Bu9P/hIJo8FL+RxbW+C8EsByuxwBM1XItz/4UEBbCq
+z+LyG00TERrW1HnHdyN2fNRfX4YVE8KbW7LvwN/8SFDOcMrfiB+CogTAM5QhiJrBNr8M9ss1
+PvLVJmJ8pd2LmCpmrhseHv72x97BkDgwB+1NrZr6m3NIIoXgsP1j7TLmsXcDpDiXypWPvPwn
+8jMK4ydlCm9cgQMtyXxJM9k94Y5nB3YUbyXu6hXhdIOrLhHHj0WsN9iABN9Zd3Az1k6f1WUX
+uu8O3p8Tf8Hq8h9KotuN+nvjA0/+TtWpEhDTV1+9cUds8XRM9n/zXM6zstsUYJG5mVPRF/9d
+v1prDCeGt2KPVIpGbRXeaOL0KTAsuCWWsWHOf+V2NUJasZzCRuylAofmz6USCs3NGU93icyV
+6q69j9CXM1hNRelR/vxJu1m4+o9HhA9TRsiS6P3ZhlKhE8UxX7Dnrr97qQAAAAAAAA==
+--------------ms000600080708020103060304--

@@ -1,72 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:38867 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751161AbbHTMCU (ORCPT
+Received: from mail-io0-f173.google.com ([209.85.223.173]:33508 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752228AbbHTMJn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Aug 2015 08:02:20 -0400
-Received: by igfj19 with SMTP id j19so28665318igf.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2015 05:02:20 -0700 (PDT)
-Subject: Re: Btrfs is amazing! (a lack-of-bug report)
-To: Tyler Bletsch <tyler.bletsch@gmail.com>, linux-btrfs@vger.kernel.org
-References: <55D1567B.3030809@gmail.com> <55D1CA1E.1060103@gmail.com>
- <55D23397.6090404@gmail.com> <55D31A3C.3080208@gmail.com>
- <55D4BBBB.9000008@gmail.com> <55D5BF80.500@gmail.com>
+	Thu, 20 Aug 2015 08:09:43 -0400
+Received: by iods203 with SMTP id s203so43266520iod.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 20 Aug 2015 05:09:43 -0700 (PDT)
+Subject: Re: Questions on use of NOCOW impact to subvolumes and snapshots
+To: Jonathan Panozzo <jonp@lime-technology.com>,
+        Zhao Lei <zhaolei@cn.fujitsu.com>
+References: <D3CC3E72-929E-4ADF-826F-62DCB6BD827C@lime-technology.com>
+ <CAJCQCtSVn7BSYY=Ofq6OsKfHyv_PTKGOg7uP=tUC4XTNQ42v0w@mail.gmail.com>
+ <01e901d0dafe$0e6cbce0$2b4636a0$@cn.fujitsu.com>
+ <540B3004-C250-4C21-9E53-C38E20258DA9@lime-technology.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55D5C1BC.2080507@gmail.com>
-Date: Thu, 20 Aug 2015 08:02:04 -0400
+Message-ID: <55D5C376.9090809@gmail.com>
+Date: Thu, 20 Aug 2015 08:09:26 -0400
 MIME-Version: 1.0
-In-Reply-To: <55D5BF80.500@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060904090309010402060807"
+In-Reply-To: <540B3004-C250-4C21-9E53-C38E20258DA9@lime-technology.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060007060008080101000203"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms060904090309010402060807
+--------------ms060007060008080101000203
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-20 07:52, Austin S Hemmelgarn wrote:
-> On 2015-08-19 13:24, Tyler Bletsch wrote:
->> Thanks.  I'd consider raid6, but since I'll be backing up to a second
->> btrfs raid5 array, I think I have sufficient redundancy, since
->> equivalent to raid 5+1 on paper. I'm doing that rather than something
->> like raid10 in a single box because I want the redundancy of a second
->> physical server so I can failover in the event of a system-level
->> component failure.
->>
->> (And of course, "failover" means "continue being able to watch TV show=
-s
->> and stuff")
->>
->> A question about what you said -- when you say people have hit bugs in=
-
->> the raid56 code, which flavor do these bugs tend to be? Are they
->> "minding my own business and suddenly it falls over" bugs or "I tried =
-to
->> do something weird with btrfs and it screwed up" bugs?
-> More along the lines of 'I tried to do something that works fine with
-> the other raid profiles and it kind of messed up the filesystem'.  In
-> general, you should be safe as long as you are using at least Linux 4.0=
-
-> and the most recent version of btrfs-progs.  It's been a while since I
-> saw any raid56 related bugs that caused actual data loss.  If you are
-> using this on SSD's though, I would wait, there are known issues with
-> DISCARD/TRIM not working correctly on btrfs right now (nothing involvin=
-g
-> data loss, just problems with it not properly trimming free space and
-> therefore causing issues with wear-leveling), and it looks like the fix=
-
-> won't be in 4.2 as of right now.
+On 2015-08-20 00:40, Jonathan Panozzo wrote:
+> Zhao,
 >
+> Thank you for your response.  Two quick follow-up questions:
 >
-On second thought, you might want to wait until 4.3, I just saw this thre=
-ad:
-http://thread.gmane.org/gmane.comp.file-systems.btrfs/47321/focus=3D47325=
+> 1:  What happens on an unrecoverable data error case?  Does the volume =
+get put into read-only mode?
+Yes.
+>
+> 2:  Out of curiosity, why is data checksumming tied to COW?
+There's no safe way to sanely handle checksumming without COW, because=20
+there is no way (at least on current hardware) to ensure that the data=20
+block and the checksums both get written at the exact same time, and=20
+that one of the writes aborting will cause the other too do so as well.=20
+  In-place compression is disabled for nodatasum files for essentially=20
+the same reason (although compression can cause much worse data loss=20
+than a failed checksum).
 
 
 
---------------ms060904090309010402060807
+
+--------------ms060007060008080101000203
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -108,9 +93,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODIwMTIwMjA0WjBPBgkq
-hkiG9w0BCQQxQgRAtSOuaQngBW/3O0WQcS0kttndD2xagnRbxHXhn5+IHo89W0qXK5R7qRN6
-i3qJM47O6PWOlknrR3tCHOuja2vfEDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODIwMTIwOTI2WjBPBgkq
+hkiG9w0BCQQxQgRAnzzQ6u4QtZP7J2X1fqshMa3zpUL7QsT2MCWEhjhD02FGN84O4rVydPqU
+cbX+LSy7Gvhfsc12IJRH2qUEq+pJoTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -118,14 +103,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgAJPoXxtAJF4yWt7zALhc4pSJa60F6D2xhqalPiA5ls6zBbV6lc
-80A7YqFKrVyr4vVKyJZzyqRL0MJoYmHCLK+rGeTb07qoWCEJxyZUjshtcAin8GMm9v30J88c
-/m74pkk52dZL4NqFbSx203r6CJ9gvt/wvk00R010mEBi0P2G8Pwxra8eGEU4CZfW6sbfprXU
-eKHyRHPoMFWmBIQ9U+Z8D8fo/rBGHOFnfr4lS1Q+xLPiI+0SFc/PF6Nj85UrhoaLRPhHItMg
-lDZVvKh+1SfSOHBtxNtMc1t0tLU+6wAEeHflv3xwxq5FQpV6NM0+jZ3fqUYPMm5vrJgKZETx
-sIEG/vyYSO0+9daBitGkcttP295CeyaWtg4wxkvc6V9bgyxTvAvI0IrnmWi2h8qgIRcNgIfV
-fh4/tetledtcNXk+zMPaO63630tBSiZFmheLCforBY+gxzuNQid24GVL6LU/roG+Yn0SMYab
-9O4SbyBZ88GY0GahuwnH4KklUcNBiIRen0mg67vIGA2EgSHyz3au2VrSwx045ulyJFWF/uRL
-G7Asf6Yc9nBDUF+6kg7EOOz/K9ZHqC977SCImqE4ouBtEE+ly1YN+Pblcr3R3Tanb5xs5qU0
-1Scv2OwL4yUl+lD7rT99m/CW5ynldLxWTZAdz+mvphzEptT1/WEtdMSv+gAAAAAAAA==
---------------ms060904090309010402060807--
+BgkqhkiG9w0BAQEFAASCAgAvdQ1apoYOl3yKb8Nt3hZaApZ3SY/6x5Z1zoFXZxeYouARj0mm
+rvf+uof1sfsLXQx4Hz73gNxhrmx7d9Dz2xaguKNWJI3qLX7LT2Sac+icKQUz9hepx1Vfa4wA
+vSbuAY4RF/9iFQggHAoXYtLdm3ioXdXRnG1yWoC4c+xbLUW903xrl0EA+WsdjiZlKHhjgQsx
+k0/Pbvn1/Fcmf6MezgcaOPUdSodTCADITFO2fdk3OjcC5INdwKcN/ch4EvVWzgiVTVSEAXbK
+5f77aps7dCyIfvazCc6GQCzx05og3pxI9QQFuvQyIcqh+A6WKikuFQTYZpq3VQUoy0+ZksG8
+0bmPJMa1d+BlfFin5OLG6CQuLMsntUrsZ3v3tlz565OSTDgDbSRiyaRiIX2YQtBKQ3l14cRd
+5QDNBUxTuOuvK2+z/c6yGft/w0pP8lAXx+06edNfhRH1QoGQ9oz2bE7+nKP3TRIhvR2zRynx
+SlAiQDWWcnB/fOCNfxO/N1FdhAl4BeenyoZxSbsIxpPDEZONDcc7SH0YLNn5CEP0DgG8o9yX
+X1vharAwAPn/b6NBSHZGiJNDXgOFUr+72ZlNN/KM/lnh70rA80i3O9ULNZozOKDXSwX8bwy3
+g8YHJgOAJ9NWSHAdml4yvkpUGByZBlRdqJX0y4HuKL7vO/32E8d76FQC7AAAAAAAAA==
+--------------ms060007060008080101000203--

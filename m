@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:17211 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751432AbbHUPYw (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:30754 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752463AbbHUSGq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Aug 2015 11:24:52 -0400
-Date: Fri, 21 Aug 2015 11:23:40 -0400
+	Fri, 21 Aug 2015 14:06:46 -0400
+Date: Fri, 21 Aug 2015 14:06:41 -0400
 From: Chris Mason <clm@fb.com>
 To: Stephen Rothwell <sfr@canb.auug.org.au>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         LKML <linux-kernel@vger.kernel.org>
 Subject: Re: linux-next conflict resolution branch for btrfs
-Message-ID: <20150821152340.GA28016@ret>
+Message-ID: <20150821180641.GA30284@ret.event.rightround.com>
 References: <20150820173918.GA10637@ret.thefacebook.com>
  <20150821104524.2f759d74@canb.auug.org.au>
 MIME-Version: 1.0
@@ -34,8 +34,14 @@ On Fri, Aug 21, 2015 at 10:45:24AM +1000, Stephen Rothwell wrote:
 > about a build problem.  I will keep this example merge in mind for
 > later.
 
-Ok, sorry about that one.  We probably want the ifdefs up in Tejun's
-code, but I'll talk with him about it today and get it fixed up.
+Ok, I put the ifdefs in btrfs.  Really what I need to do is change
+bio_clone to do this work, but that means making sure its the right
+thing for dm/md first.
 
-Thanks,
-Chris
+I also added ifdefs for bio->bi_ioc in fs/btrfs/volumes.c, but
+another commit in linux-next actually deletes the whole function from
+btrfs.  I've redone the example merge:
+
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git next-merge
+
+-chris

@@ -1,103 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:38723 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752675AbbHUJpO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Aug 2015 05:45:14 -0400
-Date: Fri, 21 Aug 2015 09:45:09 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: =?iso-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS cannot remove empry directory pretending it is not empty
-Message-ID: <20150821094509.GB20571@carfax.org.uk>
-References: <2017000.AEG9PyVY17@zafu>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="hHWLQfXTYDoKhP50"
-In-Reply-To: <2017000.AEG9PyVY17@zafu>
+Received: from plane.gmane.org ([80.91.229.3]:53764 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752879AbbHUJyR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 21 Aug 2015 05:54:17 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZSj1T-0000SL-Ui
+	for linux-btrfs@vger.kernel.org; Fri, 21 Aug 2015 11:54:07 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2015 11:54:07 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2015 11:54:07 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs send/receive freezes a system
+Date: Fri, 21 Aug 2015 09:54:00 +0000 (UTC)
+Message-ID: <pan$cfe41$8e4e4add$ad942ea0$b8e86edd@cox.net>
+References: <20150821021146.eb0d8b756fe7f3600685ee53@reasonset.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+MASAKI Yuhsuke posted on Fri, 21 Aug 2015 02:11:46 +0900 as excerpted:
 
---hHWLQfXTYDoKhP50
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> I want to "soft" mirroring between two remote btrfs volumes.
+> I tried to use btrfs send/receive [but] it failed everytime.
+> 
+> 1st ) Pipe with SSH, to fresh filesystem. sender was flozen after
+> transfared 2.79TiB.
+> 2nd ) Delete snapshots and try again. sender was flozen after transfared
+> 1.34TiB.
 
-On Fri, Aug 21, 2015 at 10:19:54AM +0200, Sw=C3=A2mi Petaramesh wrote:
-> Hello,
->=20
-> BTRFS refuses to remove an empty dir and pretends it is not empty (and th=
-ere=20
-> is no BTRFS subvolume involved in there...)
->=20
-> # uname -r
-> 4.1.5-1-ARCH
->=20
->=20
-> # ls -alnR .dropbox-old/
-> .dropbox-old/:
-> total 0
-> drwx------ 1 1000 1000   18 21 ao=C3=BBt  09:59 .
-> drwxr-x--- 1 1000 1000 2624 21 ao=C3=BBt  10:09 ..
-> drwx------ 1 1000 1000  416 21 ao=C3=BBt  09:59 instance1
->=20
-> .dropbox-old/instance1:
-> total 0
-> drwx------ 1 1000 1000 416 21 ao=C3=BBt  09:59 .
-> drwx------ 1 1000 1000  18 21 ao=C3=BBt  09:59 ..
->=20
->=20
-> # rm -rf .dropbox-old
-> rm: cannot remove =E2=80=98.dropbox-old/instance1=E2=80=99: Directory not=
- empty
->=20
-> # ls -alnR .dropbox-old/instance1/
-> .dropbox-old/instance1/:
-> total 0
-> drwx------ 1 1000 1000 416 21 ao=C3=BBt  09:59 .
-> drwx------ 1 1000 1000  18 21 ao=C3=BBt  09:59 ..
->=20
-> # rm -rf .dropbox-old/instance1/
-> rm: cannot remove =E2=80=98.dropbox-old/instance1/=E2=80=99: Directory no=
-t empty
->=20
->=20
-> How could this be fixed ?
+[...] 
 
-   There was a bug long ago that produced subdirectories like
-that. btrfs check should be able to deal with them.
+> (Sender) ... Linux 4.1.5-1-MANJARO ...
+> (Receiver) ... Linux 3.10.0-229.11.1.el7.x86_64 ...
 
-   Hugo.
+On this list current kernels are strongly recommended, as btrfs remains 
+in heavy development and is still not entirely stable yet. Now redhat 
+(and presumably centos) does port many of the btrfs stability patches and 
+some of the functionality back, such that the btrfs above is probably 
+newer than the 3.10 would suggest, but there's still a rather large gap 
+between the 4.1 on the sender side and the 3.10 on the receiver, and a 
+lot of send/receive bugs have been found and fixed in the eleven 
+intervening kernel cycles... about two years worth of development on a 
+filesystem that as I said is under "heavy development"... between the two.
 
---=20
-Hugo Mills             | "What's so bad about being drunk?"
-hugo@... carfax.org.uk | "You ask a glass of water"
-http://carfax.org.uk/  |                                         Arthur & F=
-ord
-PGP: E2AB1DE4          |                 The Hitch-Hiker's Guide to the Gal=
-axy
+In fact, given that the "experimental" labels didn't even come off until 
+3.12, IIRC, a 3.10 kernel is still officially experimental btrfs where 
+even *more* stress was placed on keeping current as stable-patch backports 
+weren't yet routine and thus should be *WELL* out of service more than 
+two years and eleven kernel cycles later!
 
---hHWLQfXTYDoKhP50
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+So I'd suggest trying a relatively new kernel, closer to the 4.1 on the 
+receiver side, on the sender side as well, at least to test if it makes a 
+difference in your send/receive results.  If possible, I'd recommend 
+testing with the same kernel version, perhaps the latest longterm-stable 
+series 3.18 (with 3.18.20 now current according to kernel.org), or the 
+latest stable 4.1, on both.  You can try syncing up userspace versions as 
+well (4.1.2 being latest stable last I checked a week or so ago).
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Again, for testing, at least.  That way, you eliminate version 
+differences as a possible problem.
 
-iQIcBAEBAgAGBQJV1vMkAAoJEFheFHXiqx3kz5oQAJI7Nxyojd4RHh9MrU94EZMn
-7uzyRfUjljeP1ijsa8H6W1DoYD08yIOiw7ALtj7Xo/w3RESG0wmwWBXH39XAoMyb
-qCPY+yZ6k32UTqecq4Xe8o2et7HZey4Jzill9b3g/fsLOC7YCkiHuUobKHHHpYIL
-hIpajE+Fl2bZg9Bckl19rR7CNwH4w6aw31B/ESs1HPBm+aEnKhzmeEknqcO+Nwub
-vgd2e5clilVT5WBryc8cAtpGLiY2+Hg4nJm1h/svRiJgr8dotSN38WgNAvp4x4bQ
-3vDa+lXHZ97YQHmVpTGiuJf6n5D2+gfdG6+9zvk5nIEGcQVVSgR4voMtaChDvoUH
-L1Z16v8+j5Gq51scezZqeR/LBbcdeTjRFQceDWWAqnkXGyeZ8od55IqRQ2xxDppl
-fainDZanzx9P6VPSVRcaqQhEE8MpAsszr+kSx4EwtHndOyyqscQqLYiAFYDXbmFp
-TdIz3V0iijuGrWSB5wYeekfrJpjCE0cCTYc80ar6Mf2hVJHhSN6i7MoTw9T2s7B7
-E7bOR1/xfGJLgkfr6OKvMQWnMLxdYrH93PhJaKbhk50P1roOS/9eBk3PR7coS3Ni
-ePKsiQ057WTjRl0539FqRJeRoHBwuxwk3UNHLFR3eU10U0ICkQ0DMg7vW8SFNIRT
-gAMIOSVjBl2MP5ofyKVz
-=MbNx
------END PGP SIGNATURE-----
+If it works then, I'd suggest filing a bug with RH/CentOS, since their 
+supposedly stable-backported version isn't compatible with a newer 
+version, and that'd be a bug, due either to lack of appropriate 
+backporting or lack of keeping reasonably current versions with a still 
+in heavy development filesystem, one of the two.
 
---hHWLQfXTYDoKhP50--
+If it doesn't work with send/receive versions synced and either current 
+stable 4.1 series or latest current LTS 3.18 series, then it's a more 
+current bug and this is the right place to report it, updated with the 
+synced-current-version test results.
+
+Because I know that quite a few send/receive fixes actually did go in 
+over the last couple years, and while your distro may well have backported 
+them, this is the upstream list, not your distro list, and that version 
+number still says to us that you're using a more than two years outdated 
+kernel, where btrfs was in fact still experimental, and for all we know, 
+it's still lacking all those send/receive patches that have been applied 
+in the mean time, and is thus still crawling with bugs that have long 
+been exterminated in current stable.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

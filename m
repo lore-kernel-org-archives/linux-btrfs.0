@@ -1,112 +1,179 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34575 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751818AbbHUDXd (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:34720 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751895AbbHUIwB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 20 Aug 2015 23:23:33 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: <theosib@gmail.com>
-Subject: [PATCH 2/2] btrfs-progs: Use existing facility to replace read_data_extent function
-Date: Fri, 21 Aug 2015 11:21:27 +0800
-Message-ID: <1440127287-21368-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1440127287-21368-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1440127287-21368-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Fri, 21 Aug 2015 04:52:01 -0400
+Received: by padfo6 with SMTP id fo6so2668041pad.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 21 Aug 2015 01:52:01 -0700 (PDT)
+Received: from arch-nb.localdomain ([211.106.186.1])
+        by smtp.gmail.com with ESMTPSA id hy5sm1415645pac.22.2015.08.21.01.51.58
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Fri, 21 Aug 2015 01:52:00 -0700 (PDT)
+From: Byongho Lee <bhlee.kernel@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2] btrfs-progs: fix memory leaks in error path
+Date: Fri, 21 Aug 2015 17:51:52 +0900
+Message-Id: <1440147112-62543-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Function read_data_extent() in btrfs-image.c is using manual-and-read
-codes.
-Replace it with existing read_extent_data() to reduce duplication.
+This patch includes below fixes in error path:
+1. fix memory leaks if realloc() fails
+2. add missing call free_history() before return error in scrub_read_file()
 
-Also, now we can use other mirror to try our best to do the dump, just
-like read_tree_block().
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
 ---
- btrfs-image.c | 58 +++++++++++++++++++---------------------------------------
- 1 file changed, 19 insertions(+), 39 deletions(-)
+changelog:
+v2:
+  Add one more fix for memory leak when realloc() fails by Zhao Lei's comment.
+---
+ btrfs-list.c |  8 ++++++++
+ cmds-scrub.c | 18 ++++++++++++++----
+ cmds-send.c  |  7 ++++++-
+ qgroup.c     |  8 ++++++++
+ 4 files changed, 36 insertions(+), 5 deletions(-)
 
-diff --git a/btrfs-image.c b/btrfs-image.c
-index b225325..f48d81a 100644
---- a/btrfs-image.c
-+++ b/btrfs-image.c
-@@ -872,54 +872,34 @@ out:
- static int read_data_extent(struct metadump_struct *md,
- 			    struct async_work *async)
- {
--	struct btrfs_multi_bio *multi = NULL;
--	struct btrfs_device *device;
-+	struct btrfs_root *root = md->root;
- 	u64 bytes_left = async->size;
- 	u64 logical = async->start;
- 	u64 offset = 0;
--	u64 bytenr;
- 	u64 read_len;
--	ssize_t done;
--	int fd;
-+	int num_copies;
-+	int cur_mirror;
- 	int ret;
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 875a89dc4ef0..d54de61aec01 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -254,11 +254,15 @@ static int btrfs_list_setup_comparer(struct btrfs_list_comparer_set **comp_set,
+ 	BUG_ON(set->ncomps > set->total);
  
--	while (bytes_left) {
--		read_len = bytes_left;
--		ret = btrfs_map_block(&md->root->fs_info->mapping_tree, READ,
--				      logical, &read_len, &multi, 0, NULL);
--		if (ret) {
--			fprintf(stderr, "Couldn't map data block %d\n", ret);
--			return ret;
--		}
--
--		device = multi->stripes[0].dev;
--
--		if (device->fd <= 0) {
--			fprintf(stderr,
--				"Device we need to read from is not open\n");
--			free(multi);
--			return -EIO;
--		}
--		fd = device->fd;
--		bytenr = multi->stripes[0].physical;
--		free(multi);
-+	num_copies = btrfs_num_copies(&root->fs_info->mapping_tree, logical,
-+				      bytes_left);
- 
--		read_len = min(read_len, bytes_left);
--		done = pread64(fd, async->buffer+offset, read_len, bytenr);
--		if (done < read_len) {
--			if (done < 0)
--				fprintf(stderr, "Error reading extent %d\n",
--					errno);
--			else
--				fprintf(stderr, "Short read\n");
--			return -EIO;
-+	/* Try our best to read data, just like read_tree_block() */
-+	for (cur_mirror = 0; cur_mirror < num_copies; cur_mirror++) {
-+		while (bytes_left) {
-+			read_len = bytes_left;
-+			ret = read_extent_data(root,
-+					(char *)(async->buffer + offset),
-+					logical, &read_len, cur_mirror);
-+			if (ret < 0)
-+				break;
-+			offset += read_len;
-+			logical += read_len;
-+			bytes_left -= read_len;
+ 	if (set->ncomps == set->total) {
++		void *tmp;
++
+ 		size = set->total + BTRFS_LIST_NCOMPS_INCREASE;
+ 		size = sizeof(*set) + size * sizeof(struct btrfs_list_comparer);
++		tmp = set;
+ 		set = realloc(set, size);
+ 		if (!set) {
+ 			fprintf(stderr, "memory allocation failed\n");
++			free(tmp);
+ 			exit(1);
  		}
--
--		bytes_left -= done;
--		offset += done;
--		logical += done;
- 	}
--
-+	if (bytes_left)
-+		return -EIO;
- 	return 0;
- }
  
+@@ -1232,11 +1236,15 @@ int btrfs_list_setup_filter(struct btrfs_list_filter_set **filter_set,
+ 	BUG_ON(set->nfilters > set->total);
+ 
+ 	if (set->nfilters == set->total) {
++		void *tmp;
++
+ 		size = set->total + BTRFS_LIST_NFILTERS_INCREASE;
+ 		size = sizeof(*set) + size * sizeof(struct btrfs_list_filter);
++		tmp = set;
+ 		set = realloc(set, size);
+ 		if (!set) {
+ 			fprintf(stderr, "memory allocation failed\n");
++			free(tmp);
+ 			exit(1);
+ 		}
+ 
+diff --git a/cmds-scrub.c b/cmds-scrub.c
+index 5a85dc473c94..91cf67841849 100644
+--- a/cmds-scrub.c
++++ b/cmds-scrub.c
+@@ -502,12 +502,16 @@ again:
+ 		}
+ 		return p;
+ 	}
+-	if (avail == -1)
++	if (avail == -1) {
++		free_history(p);
+ 		return ERR_PTR(-errno);
++	}
+ 	avail += old_avail;
+ 
+ 	i = 0;
+ 	while (i < avail) {
++		void *tmp;
++
+ 		switch (state) {
+ 		case 0: /* start of file */
+ 			ret = scrub_kvread(&i,
+@@ -534,11 +538,17 @@ again:
+ 				continue;
+ 			}
+ 			++curr;
++			tmp = p;
+ 			p = realloc(p, (curr + 2) * sizeof(*p));
+-			if (p)
+-				p[curr] = malloc(sizeof(**p));
+-			if (!p || !p[curr])
++			if (!p) {
++				free_history(tmp);
+ 				return ERR_PTR(-errno);
++			}
++			p[curr] = malloc(sizeof(**p));
++			if (!p[curr]) {
++				free_history(p);
++				return ERR_PTR(-errno);
++			}
+ 			memset(p[curr], 0, sizeof(**p));
+ 			p[curr + 1] = NULL;
+ 			++state;
+diff --git a/cmds-send.c b/cmds-send.c
+index a0b7f95fa23a..95fd4aaacbf8 100644
+--- a/cmds-send.c
++++ b/cmds-send.c
+@@ -174,11 +174,16 @@ out:
+ 
+ static int add_clone_source(struct btrfs_send *s, u64 root_id)
+ {
++	void *tmp;
++
++	tmp = s->clone_sources;
+ 	s->clone_sources = realloc(s->clone_sources,
+ 		sizeof(*s->clone_sources) * (s->clone_sources_count + 1));
+ 
+-	if (!s->clone_sources)
++	if (!s->clone_sources) {
++		free(tmp);
+ 		return -ENOMEM;
++	}
+ 	s->clone_sources[s->clone_sources_count++] = root_id;
+ 
+ 	return 0;
+diff --git a/qgroup.c b/qgroup.c
+index dc04b033b145..327abd645f16 100644
+--- a/qgroup.c
++++ b/qgroup.c
+@@ -465,12 +465,16 @@ int btrfs_qgroup_setup_comparer(struct btrfs_qgroup_comparer_set  **comp_set,
+ 	BUG_ON(set->ncomps > set->total);
+ 
+ 	if (set->ncomps == set->total) {
++		void *tmp;
++
+ 		size = set->total + BTRFS_QGROUP_NCOMPS_INCREASE;
+ 		size = sizeof(*set) +
+ 		       size * sizeof(struct btrfs_qgroup_comparer);
++		tmp = set;
+ 		set = realloc(set, size);
+ 		if (!set) {
+ 			fprintf(stderr, "memory allocation failed\n");
++			free(tmp);
+ 			exit(1);
+ 		}
+ 
+@@ -836,12 +840,16 @@ int btrfs_qgroup_setup_filter(struct btrfs_qgroup_filter_set **filter_set,
+ 	BUG_ON(set->nfilters > set->total);
+ 
+ 	if (set->nfilters == set->total) {
++		void *tmp;
++
+ 		size = set->total + BTRFS_QGROUP_NFILTERS_INCREASE;
+ 		size = sizeof(*set) + size * sizeof(struct btrfs_qgroup_filter);
+ 
++		tmp = set;
+ 		set = realloc(set, size);
+ 		if (!set) {
+ 			fprintf(stderr, "memory allocation failed\n");
++			free(tmp);
+ 			exit(1);
+ 		}
+ 		memset(&set->filters[set->total], 0,
 -- 
 2.5.0
 

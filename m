@@ -1,61 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:33207 "EHLO
-	mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751866AbbH3KKb (ORCPT
+Received: from mail-io0-f173.google.com ([209.85.223.173]:35648 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752224AbbHUTXs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Aug 2015 06:10:31 -0400
-Received: by iods203 with SMTP id s203so132240330iod.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 30 Aug 2015 03:10:30 -0700 (PDT)
+	Fri, 21 Aug 2015 15:23:48 -0400
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <55E214DD.9070504@gmail.com>
-References: <55E214DD.9070504@gmail.com>
-Date: Sun, 30 Aug 2015 11:10:30 +0100
-Message-ID: <CAL3q7H6AeFVzXQeRPWdGnV4B9RDParRN2sTyr4=XT6SfFFekEA@mail.gmail.com>
-Subject: Re: 4.1.6 gentoo-hardened: Hang during rename
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Kenneth Lakin <kennethlakin@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Neal Gompa <ngompa@fedoraproject.org>
+Date: Fri, 21 Aug 2015 15:23:07 -0400
+Message-ID: <CAEg-Je9o6QTyjD7pnSiTeUgaZjN10vLRF8=EtqywCUyZmjW95Q@mail.gmail.com>
+Subject: Issue: With an OverlayFS that has Btrfs as the upper layer, removal
+ of directories silently fails
+To: miklos@szeredi.hu, Chris Mason <clm@fb.com>, jbacik@fb.com,
+        dsterba@suse.com, linux-unionfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Cc: Josh Boyer <jwboyer@redhat.com>, dhowells@redhat.com
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Aug 29, 2015 at 9:23 PM, Kenneth Lakin <kennethlakin@gmail.com> wrote:
-> Hey. It looks like I'm being bitten by:
-> http://article.gmane.org/gmane.comp.file-systems.btrfs/44987/ except I'm
-> hitting it during rename, rather than unlink. Dmesg spew here:
-> http://pastebin.ca/3137198 (That pastebin post includes the -unrelated-
-> source of the W taint.)
->
-> I'm running on Gentoo hardened-sources 4.1.6 on x86 (rather than amd64).
-> The affected volume is mounted with
-> "rw,relatime,ssd,discard,space_cache,autodefrag" and -AFAIK- has no
-> subvolumes.
->
-> emerge is the blocked program and is the Gentoo package manager. This
-> lockup happens occasionally during the "Updating Portage cache" step of
-> the emerge sync operation. The emerge task is unkillable and is blocked
-> in D status. Attempts to re-run the cache update task have it hang at
-> what appears to be the same place. Only a reboot can "fix" the problem.
-> The rest of the system works just fine; the only thing that appears to
-> be blocked is the Portage cache update.
->
-> I couldn't find an open bug for this, but my Google-fu may be weak
-> today. Did I miss the bug report, or is this a currently unknown or
-> unconfirmed issue? Let me know if I can help with diagnostics.
+Hello,
 
-The fix landed in 4.2-rc:
-https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=6ca0709756710c47ec604dd08b9fc45929d36390
+For those who have received this message twice already, I sincerely apologize.
 
-And it's not in 4.1 nor any other older releases.
->
->
+Yesterday I filed an issue in the CentOS bug tracker (#9297[1]) and
+the Red Hat Bugzilla (#1255512[2]) about OverlayFS with Btrfs as the
+upper layer.
 
+The issue was discovered by a colleague of mine, and we verified the
+issue exists in the EL7 kernel and mainline kernels (tested on Arch
+Linux). I additionally verified the problem exists in Fedora kernels.
 
+Rather than quoting the issue, I'll just note that the issue is
+described quite well in the filed bugs noted earlier. In the linked
+bugs, there's a simple Bash script that will reliably reproduce the
+problem. While the script uses tmpfs at the lower layer, we originally
+discovered the problem with ext4 as the lower layer and verified that
+it doesn't matter which lower layer filesystem it is, the problem
+exists. Additionally, the problem doesn't exist when using ext4 as the
+upper layer.
+
+I was advised by Josh Boyer to email you guys (and the mailing lists,
+to be sure to get everyone a chance to look over it) about the
+problem, since it affects mainline.
+
+[1]: https://bugs.centos.org/view.php?id=9297
+[2]: https://bugzilla.redhat.com/show_bug.cgi?id=1255512
 
 -- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+Neal Gompa (FAS: ngompa)

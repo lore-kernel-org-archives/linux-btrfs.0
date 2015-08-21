@@ -1,43 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f51.google.com ([209.85.215.51]:35873 "EHLO
-	mail-la0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932080AbbHGOXa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Aug 2015 10:23:30 -0400
-Received: by lagz9 with SMTP id z9so22971586lag.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 07 Aug 2015 07:23:29 -0700 (PDT)
+Received: from cn.fujitsu.com ([59.151.112.132]:22591 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752163AbbHUDvQ convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 20 Aug 2015 23:51:16 -0400
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: "'Byongho Lee'" <bhlee.kernel@gmail.com>, <linux-btrfs@vger.kernel.org>
+References: <1440126612-53381-1-git-send-email-bhlee.kernel@gmail.com>
+In-Reply-To: <1440126612-53381-1-git-send-email-bhlee.kernel@gmail.com>
+Subject: RE: [PATCH] btrfs-progs: fix memory leaks in error path
+Date: Fri, 21 Aug 2015 11:50:17 +0800
+Message-ID: <013101d0dbc4$7e5ab090$7b1011b0$@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150807141908.GB10756@suse.cz>
-References: <1438761794-32738-1-git-send-email-quwenruo@cn.fujitsu.com>
-	<20150805164057.GC31669@twin.jikos.cz>
-	<CAC8ULPad3LTcegecjV6s-HxK8Yn-k72Eh6=AN5VayeraUO4GzQ@mail.gmail.com>
-	<20150807140043.GA10756@suse.cz>
-	<CAC8ULPbMGFigOhP_NwwD4-qYWEBOwKwgxyzWA5V_su5UtO1-FQ@mail.gmail.com>
-	<20150807141908.GB10756@suse.cz>
-Date: Fri, 7 Aug 2015 17:23:29 +0300
-Message-ID: <CAC8ULPbq1VJk0ZaGACHS9o4KnJyAf_rN1D_dikn_ExF3op6T3w@mail.gmail.com>
-Subject: Re: [PATCH 0/3] Fix for infinite loop on non-empty inode but with no
- file extent
-From: Robert Munteanu <robert.munteanu@gmail.com>
-To: dsterba@suse.cz, Robert Munteanu <robert.munteanu@gmail.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 7, 2015 at 5:19 PM, David Sterba <dsterba@suse.cz> wrote:
-> On Fri, Aug 07, 2015 at 05:17:34PM +0300, Robert Munteanu wrote:
->> Thanks for the update. Reading it looks to me like the patches should be at
->>
->>   http://repo.or.cz/w/btrfs-progs-unstable/devel.git/shortlog/refs/heads/devel
->>
->> but they don't seem to be . Am I long in the wrong place again :-) ?
->
-> Doh, I forgot to push the branch, sorry.
+Hi, Byongho Lee
 
-Got them now, thank you.
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org
+> [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Byongho Lee
+> Sent: Friday, August 21, 2015 11:10 AM
+> To: linux-btrfs@vger.kernel.org
+> Subject: [PATCH] btrfs-progs: fix memory leaks in error path
+> 
+> This patch includes below fixes in error path:
+> 1. fix memory leaks if realloc() fails
+> 2. add missing call free_history() before return error in scrub_read_file()
+> 
+> Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
+> ---
+>  btrfs-list.c |  8 ++++++++
+>  cmds-scrub.c | 18 ++++++++++++++----
+>  qgroup.c     |  8 ++++++++
 
-Robert
 
--- 
-http://robert.muntea.nu/
+Similar problem in cmds-send.c:
+cmds-send.c:    s->clone_sources = realloc(s->clone_sources,
+
+Thanks
+Zhaolei
+
+>  3 files changed, 30 insertions(+), 4 deletions(-)
+> 
+> diff --git a/btrfs-list.c b/btrfs-list.c index 875a89dc4ef0..d54de61aec01 100644
+> --- a/btrfs-list.c
+> +++ b/btrfs-list.c
+> @@ -254,11 +254,15 @@ static int btrfs_list_setup_comparer(struct
+> btrfs_list_comparer_set **comp_set,
+>  	BUG_ON(set->ncomps > set->total);
+> 
+>  	if (set->ncomps == set->total) {
+> +		void *tmp;
+> +
+>  		size = set->total + BTRFS_LIST_NCOMPS_INCREASE;
+>  		size = sizeof(*set) + size * sizeof(struct btrfs_list_comparer);
+> +		tmp = set;
+>  		set = realloc(set, size);
+>  		if (!set) {
+>  			fprintf(stderr, "memory allocation failed\n");
+> +			free(tmp);
+>  			exit(1);
+>  		}
+> 
+> @@ -1232,11 +1236,15 @@ int btrfs_list_setup_filter(struct
+> btrfs_list_filter_set **filter_set,
+>  	BUG_ON(set->nfilters > set->total);
+> 
+>  	if (set->nfilters == set->total) {
+> +		void *tmp;
+> +
+>  		size = set->total + BTRFS_LIST_NFILTERS_INCREASE;
+>  		size = sizeof(*set) + size * sizeof(struct btrfs_list_filter);
+> +		tmp = set;
+>  		set = realloc(set, size);
+>  		if (!set) {
+>  			fprintf(stderr, "memory allocation failed\n");
+> +			free(tmp);
+>  			exit(1);
+>  		}
+> 
+> diff --git a/cmds-scrub.c b/cmds-scrub.c index 5a85dc473c94..91cf67841849
+> 100644
+> --- a/cmds-scrub.c
+> +++ b/cmds-scrub.c
+> @@ -502,12 +502,16 @@ again:
+>  		}
+>  		return p;
+>  	}
+> -	if (avail == -1)
+> +	if (avail == -1) {
+> +		free_history(p);
+>  		return ERR_PTR(-errno);
+> +	}
+>  	avail += old_avail;
+> 
+>  	i = 0;
+>  	while (i < avail) {
+> +		void *tmp;
+> +
+>  		switch (state) {
+>  		case 0: /* start of file */
+>  			ret = scrub_kvread(&i,
+> @@ -534,11 +538,17 @@ again:
+>  				continue;
+>  			}
+>  			++curr;
+> +			tmp = p;
+>  			p = realloc(p, (curr + 2) * sizeof(*p));
+> -			if (p)
+> -				p[curr] = malloc(sizeof(**p));
+> -			if (!p || !p[curr])
+> +			if (!p) {
+> +				free_history(tmp);
+>  				return ERR_PTR(-errno);
+> +			}
+> +			p[curr] = malloc(sizeof(**p));
+> +			if (!p[curr]) {
+> +				free_history(p);
+> +				return ERR_PTR(-errno);
+> +			}
+>  			memset(p[curr], 0, sizeof(**p));
+>  			p[curr + 1] = NULL;
+>  			++state;
+> diff --git a/qgroup.c b/qgroup.c
+> index dc04b033b145..327abd645f16 100644
+> --- a/qgroup.c
+> +++ b/qgroup.c
+> @@ -465,12 +465,16 @@ int btrfs_qgroup_setup_comparer(struct
+> btrfs_qgroup_comparer_set  **comp_set,
+>  	BUG_ON(set->ncomps > set->total);
+> 
+>  	if (set->ncomps == set->total) {
+> +		void *tmp;
+> +
+>  		size = set->total + BTRFS_QGROUP_NCOMPS_INCREASE;
+>  		size = sizeof(*set) +
+>  		       size * sizeof(struct btrfs_qgroup_comparer);
+> +		tmp = set;
+>  		set = realloc(set, size);
+>  		if (!set) {
+>  			fprintf(stderr, "memory allocation failed\n");
+> +			free(tmp);
+>  			exit(1);
+>  		}
+> 
+> @@ -836,12 +840,16 @@ int btrfs_qgroup_setup_filter(struct
+> btrfs_qgroup_filter_set **filter_set,
+>  	BUG_ON(set->nfilters > set->total);
+> 
+>  	if (set->nfilters == set->total) {
+> +		void *tmp;
+> +
+>  		size = set->total + BTRFS_QGROUP_NFILTERS_INCREASE;
+>  		size = sizeof(*set) + size * sizeof(struct btrfs_qgroup_filter);
+> 
+> +		tmp = set;
+>  		set = realloc(set, size);
+>  		if (!set) {
+>  			fprintf(stderr, "memory allocation failed\n");
+> +			free(tmp);
+>  			exit(1);
+>  		}
+>  		memset(&set->filters[set->total], 0,
+> --
+> 2.5.0
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body
+> of a message to majordomo@vger.kernel.org More majordomo info at
+> http://vger.kernel.org/majordomo-info.html
+

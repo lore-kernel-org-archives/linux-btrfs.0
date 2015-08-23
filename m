@@ -1,69 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f182.google.com ([209.85.212.182]:36681 "EHLO
-	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751367AbbH0UyD (ORCPT
+Received: from mail-wi0-f169.google.com ([209.85.212.169]:33077 "EHLO
+	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751769AbbHWNBz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Aug 2015 16:54:03 -0400
-Date: Thu, 27 Aug 2015 23:53:45 +0000
+	Sun, 23 Aug 2015 09:01:55 -0400
+Date: Sun, 23 Aug 2015 16:01:42 +0000
 From: Alexandru Moise <00moses.alexander00@gmail.com>
 To: clm@fb.com
 Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: trimming some start_transaction() code away
-Message-ID: <20150827235345.GA1373@gmail.com>
+Subject: [PATCH] btrfs: Fixed dsize and last_off declarations
+Message-ID: <20150823160142.GA4041@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just call kmem_cache_zalloc() instead of calling kmem_cache_alloc().
-We're just initializing most fields to 0, false and NULL later on
-_anyway_, so to make the code mode readable and potentially gain
-a bit of performance (completely untested claim), we should fill our
-btrfs_trans_handle with zeros on allocation then just initialize
-those five remaining fields (not counting the list_heads) as normal.
+The return values of btrfs_item_offset_nr and btrfs_item_size_nr are of
+type u32. To avoid mixing signed and unsigned integers we should also
+declare dsize and last_off to be of type u32.
 
 Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
 ---
- fs/btrfs/transaction.c | 15 +--------------
- 1 file changed, 1 insertion(+), 14 deletions(-)
+ fs/btrfs/ctree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f5021fc..d874ce25 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -468,7 +468,7 @@ start_transaction(struct btrfs_root *root, u64 num_items, unsigned int type,
- 			goto reserve_fail;
- 	}
- again:
--	h = kmem_cache_alloc(btrfs_trans_handle_cachep, GFP_NOFS);
-+	h = kmem_cache_zalloc(btrfs_trans_handle_cachep, GFP_NOFS);
- 	if (!h) {
- 		ret = -ENOMEM;
- 		goto alloc_fail;
-@@ -509,22 +509,9 @@ again:
- 
- 	h->transid = cur_trans->transid;
- 	h->transaction = cur_trans;
--	h->blocks_used = 0;
--	h->bytes_reserved = 0;
--	h->chunk_bytes_reserved = 0;
- 	h->root = root;
--	h->delayed_ref_updates = 0;
- 	h->use_count = 1;
--	h->adding_csums = 0;
--	h->block_rsv = NULL;
--	h->orig_rsv = NULL;
--	h->aborted = 0;
--	h->qgroup_reserved = 0;
--	h->delayed_ref_elem.seq = 0;
- 	h->type = type;
--	h->allocating_chunk = false;
--	h->reloc_reserved = false;
--	h->sync = false;
- 	INIT_LIST_HEAD(&h->qgroup_ref_list);
- 	INIT_LIST_HEAD(&h->new_bgs);
- 	INIT_LIST_HEAD(&h->ordered);
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index 54114b4..4ff739e 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -4938,8 +4938,8 @@ int btrfs_del_items(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ {
+ 	struct extent_buffer *leaf;
+ 	struct btrfs_item *item;
+-	int last_off;
+-	int dsize = 0;
++	u32 last_off;
++	u32 dsize = 0;
+ 	int ret = 0;
+ 	int wret;
+ 	int i;
 -- 
 2.5.0
 

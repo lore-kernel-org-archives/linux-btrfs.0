@@ -1,82 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.wth.in ([37.235.56.71]:53110 "EHLO mail.wth.in"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751475AbbHXLUn convert rfc822-to-8bit (ORCPT
+Received: from mail-ig0-f169.google.com ([209.85.213.169]:35893 "EHLO
+	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754136AbbHXNnr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 07:20:43 -0400
-Received: from wth.in (mail.wth.in [37.235.56.71])
-	(Authenticated sender: jan@wth.in)
-	by mail.wth.in (Postfix) with ESMTPSA id ABB1B80AE5
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 13:20:41 +0200 (CEST)
-Mime-Version: 1.0
-Date: Mon, 24 Aug 2015 11:20:41 +0000
-Content-Type: text/plain; charset="utf-8"
-Message-ID: <82aaa9565d7e4304b47cbccb63eddae4@wth.in>
-From: jan@wth.in
-Subject: Trying to balance/delete after drive failure
-To: linux-btrfs@vger.kernel.org
+	Mon, 24 Aug 2015 09:43:47 -0400
+Received: by igcse8 with SMTP id se8so47196717igc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 06:43:47 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CAJtFHURyckNtbeq0ifwSL6-53+x2M+3_2FcxJ6iCAVsHx-H8hQ@mail.gmail.com>
+References: <CAJtFHUQukRC9m+Bq85CN7v_tCk6ybGvParax5ixcMJwKHRUFCQ@mail.gmail.com>
+	<55D546C5.7000202@oracle.com>
+	<CAJtFHURyckNtbeq0ifwSL6-53+x2M+3_2FcxJ6iCAVsHx-H8hQ@mail.gmail.com>
+Date: Mon, 24 Aug 2015 09:43:47 -0400
+Message-ID: <CAJtFHUSrHBmW_vfucKTJ2igOP_K3QmcdMHN0+K1eqCV6qzx-ZA@mail.gmail.com>
+Subject: Re: Kernel 4.1.4 btrfs forced read-only during rsync
+From: E V <eliventer@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Guys,
+FYI, unmounted the filesystem and it checked clean:
+# btrfs check /dev/sdd
+Checking filesystem on /dev/sdd
+UUID: 550c0f77-8f75-40f3-a64e-42c87a0c8e8d
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 116808409085477 bytes used err is 0
+total csum bytes: 113927723420
+total tree bytes: 146420203520
+total fs tree bytes: 19490373632
+total extent tree bytes: 6762332160
+btree space waste bytes: 9826655374
+file data blocks allocated: 117763247816704
+ referenced 121374972489728
+btrfs-progs v4.1.2
 
-I am running a raid1 btrfs with 4 disks. One of my disks died the other day. So I replaced it with a new one. After that I tried to delete the failed (now missing) disk. This resulted in some but not much IO and some messages like these:
+mounted again no problems, deleted a couple of snapshots to make it
+free something and now rsync is running again fine.
 
-kernel: BTRFS info (device sdd): found 9 extents
-kernel: [22138.202334] BTRFS info (device sdd): relocating block group 10093403832320 flags 17
-
-Perf show this:
-  47.21%  [kernel]                    [k] rb_next
-  29.89%  [kernel]                    [k] comp_entry
-   9.54%  [kernel]                    [k] btrfs_merge_delayed_refs
-
-And top this:
-27742 root      20   0       0      0      0 R 100.0  0.0  19:22.90 kworker/u8:7
-
-But at one point no new messages appeared and no IO could be seen. I thought maybe the process hung. So I rebooted the machine. After that I tried a balance with the same result.
-
-Here some information that might be important:
-
-uname -a
-Linux thales 4.1.5-100.fc21.x86_64 #1 SMP Tue Aug 11 00:24:23 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-###
-
-btrfs --version
-btrfs-progs v4.1
-
-###
-
-btrfs --version
-btrfs-progs v4.1
-[root@thales ~]# btrfs fi show
-Label: 'data'  uuid: 1f7e44b4-39ed-475d-b341-93b2e44f8f89
-        Total devices 5 FS bytes used 3.40TiB
-        devid    1 size 2.73TiB used 2.58TiB path /dev/sdb
-        devid    4 size 931.51GiB used 779.00GiB path /dev/sde
-        devid    5 size 931.51GiB used 779.00GiB path /dev/sdd
-        devid    6 size 5.46TiB used 379.00GiB path /dev/sda
-        *** Some devices missing
-
-btrfs-progs v4.1
-
-###
-
-btrfs fi df /mnt/data/
-Data, RAID1: total=3.46TiB, used=3.40TiB
-System, RAID1: total=32.00MiB, used=528.00KiB
-Metadata, RAID1: total=9.00GiB, used=7.63GiB
-GlobalReserve, single: total=512.00MiB, used=15.74MiB
-
-###
-
-dmesg
-[...]
-[33209.949992] BTRFS info (device sdd): found 11 extents
-[33244.802181] BTRFS info (device sdd): found 11 extents
-[33247.178590] BTRFS info (device sdd): relocating block group 9826042118144 flags 20
-
-###
-
-Thanks for your help,
-Jan
+On Thu, Aug 20, 2015 at 10:07 AM, E V <eliventer@gmail.com> wrote:
+> Thanks for looking, let me know if you need any other info. I haven't
+> touched the system yet, but it appears I'll need to unmount to btrfs
+> check or mount rw,recovery to try and get it working again. Who knows
+> what will happen then? I can leave it as if for a few days if it will
+> help any diagnosis. Thanks again.
+>
+> On Wed, Aug 19, 2015 at 11:17 PM, Anand Jain <anand.jain@oracle.com> wrote:
+>>
+>> two to dig more..
+>>
+>>> Aug 16 04:41:31 [1082957.226817] BTRFS: error (device sdb) in
+>>> __btrfs_free_extent:6235: errno=-28 No space left
+>>> Aug 16 04:41:31 [1082957.226819] BTRFS info (device sdb): forced readonly
+>>
+>>
+>> ::
+>>
+>>> Aug 16 04:41:31 [1082957.289289] BTRFS: error (device sdb) in
+>>> cleanup_transaction:1692: errno=-5 IO failure
+>>
+>>
+>> 1.
+>>  We probably need to understand what kicked in readonly. is it
+>>  -28 (No space left) OR -5 (EIO).
+>>
+>> 2.
+>>  There are no media errors from the block layer, hope we are not
+>>  fabricating the EIO in the FS layer... thats wrong.
+>>
+>> digging more.
+>>
+>> Thanks,  Anand

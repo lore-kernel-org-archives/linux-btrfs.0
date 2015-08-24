@@ -1,59 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:46626 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932184AbbHXOKk (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:31850 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751061AbbHXPgB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 10:10:40 -0400
-Date: Mon, 24 Aug 2015 07:10:13 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Josef Bacik <jbacik@fb.com>, dsterba@suse.com, clm@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
-Message-ID: <20150824141013.GM5602@merlins.org>
-References: <55CB631B.2080404@fb.com>
- <20150812160936.GK29259@merlins.org>
- <55CB71E5.1070302@fb.com>
- <20150812171912.GL29259@merlins.org>
- <55D1406C.9040607@cn.fujitsu.com>
- <20150817144904.GT29259@merlins.org>
- <20150822143746.GG5602@merlins.org>
- <55DA6F06.7030605@cn.fujitsu.com>
- <20150824042800.GJ5602@merlins.org>
- <55DAA77E.10105@cn.fujitsu.com>
+	Mon, 24 Aug 2015 11:36:01 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7OFZpD0015989
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 23:35:51 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 0/5] btrfs: scrub: setup all fields for sblock_to_check
+Date: Mon, 24 Aug 2015 23:34:15 +0800
+Message-ID: <cover.1440430437.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55DAA77E.10105@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 24, 2015 at 01:11:26PM +0800, Qu Wenruo wrote:
-> So, my last bet will be, using "btrfs-find-root -a" to find the root
-> with highest generation, and use the new root to exec "btrfsck -b
-> <bytenr of highest gen root>".
- 
-> The latest btrfs-find-root would output possible tree root by
-> descending order of its generation. You'll find proper bytenr quite
-> easy.
-> But be prepared as "btrfs-find-root -a" will iterate all metadata
-> space, so it will takes a long long time to finish.
-> And until it scanned all the space, it won't output anything.
+scrub_setup_recheck_block() isn't setup all necessary fields for
+sblock_to_check because history reason.
 
-This is what I got:
+So current code need more arguments in severial functions,
+and more local variables, just to passing these lacked values to
+necessary place.
 
-myth:~# btrfs-find-root -a /dev/mapper/crypt_sdd1
-Superblock thinks the generation is 39538
-Superblock thinks the level is 1
-Well block 4243456(gen: 3 level: 0) seems good, but generation/level doesn't match, want gen: 39538 level: 1
-Well block 4194304(gen: 2 level: 0) seems good, but generation/level doesn't match, want gen: 39538 level: 1
-myth:~# 
+[PATCH 1/5] setup above fields for sblock_to_check, it makes other
+code simple(done in [PATCH 2..5]).
 
-Does it mean there is no other block I can/should use?
+Zhao Lei (5):
+  btrfs: scrub: setup all fields for sblock_to_check
+  btrfs: Reset sblock->xxx_error stats before calling
+    scrub_recheck_block_checksum
+  btrfs: Use scrub_checksum_data and scrub_checksum_tree_block for
+    scrub_recheck_block_checksum
+  btrfs: Reduce unnecessary arguments in scrub_recheck_block
+  btrfs: Remove len argument from scrub_find_csum
 
-Thanks,
-Marc
+ fs/btrfs/scrub.c | 169 +++++++++++++++++++------------------------------------
+ 1 file changed, 57 insertions(+), 112 deletions(-)
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+1.8.5.1
+

@@ -1,78 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:35893 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754136AbbHXNnr (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:46626 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932184AbbHXOKk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 09:43:47 -0400
-Received: by igcse8 with SMTP id se8so47196717igc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 06:43:47 -0700 (PDT)
+	Mon, 24 Aug 2015 10:10:40 -0400
+Date: Mon, 24 Aug 2015 07:10:13 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Josef Bacik <jbacik@fb.com>, dsterba@suse.com, clm@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
+Message-ID: <20150824141013.GM5602@merlins.org>
+References: <55CB631B.2080404@fb.com>
+ <20150812160936.GK29259@merlins.org>
+ <55CB71E5.1070302@fb.com>
+ <20150812171912.GL29259@merlins.org>
+ <55D1406C.9040607@cn.fujitsu.com>
+ <20150817144904.GT29259@merlins.org>
+ <20150822143746.GG5602@merlins.org>
+ <55DA6F06.7030605@cn.fujitsu.com>
+ <20150824042800.GJ5602@merlins.org>
+ <55DAA77E.10105@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJtFHURyckNtbeq0ifwSL6-53+x2M+3_2FcxJ6iCAVsHx-H8hQ@mail.gmail.com>
-References: <CAJtFHUQukRC9m+Bq85CN7v_tCk6ybGvParax5ixcMJwKHRUFCQ@mail.gmail.com>
-	<55D546C5.7000202@oracle.com>
-	<CAJtFHURyckNtbeq0ifwSL6-53+x2M+3_2FcxJ6iCAVsHx-H8hQ@mail.gmail.com>
-Date: Mon, 24 Aug 2015 09:43:47 -0400
-Message-ID: <CAJtFHUSrHBmW_vfucKTJ2igOP_K3QmcdMHN0+K1eqCV6qzx-ZA@mail.gmail.com>
-Subject: Re: Kernel 4.1.4 btrfs forced read-only during rsync
-From: E V <eliventer@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55DAA77E.10105@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-FYI, unmounted the filesystem and it checked clean:
-# btrfs check /dev/sdd
-Checking filesystem on /dev/sdd
-UUID: 550c0f77-8f75-40f3-a64e-42c87a0c8e8d
-checking extents
-checking free space cache
-checking fs roots
-checking csums
-checking root refs
-found 116808409085477 bytes used err is 0
-total csum bytes: 113927723420
-total tree bytes: 146420203520
-total fs tree bytes: 19490373632
-total extent tree bytes: 6762332160
-btree space waste bytes: 9826655374
-file data blocks allocated: 117763247816704
- referenced 121374972489728
-btrfs-progs v4.1.2
+On Mon, Aug 24, 2015 at 01:11:26PM +0800, Qu Wenruo wrote:
+> So, my last bet will be, using "btrfs-find-root -a" to find the root
+> with highest generation, and use the new root to exec "btrfsck -b
+> <bytenr of highest gen root>".
+ 
+> The latest btrfs-find-root would output possible tree root by
+> descending order of its generation. You'll find proper bytenr quite
+> easy.
+> But be prepared as "btrfs-find-root -a" will iterate all metadata
+> space, so it will takes a long long time to finish.
+> And until it scanned all the space, it won't output anything.
 
-mounted again no problems, deleted a couple of snapshots to make it
-free something and now rsync is running again fine.
+This is what I got:
 
-On Thu, Aug 20, 2015 at 10:07 AM, E V <eliventer@gmail.com> wrote:
-> Thanks for looking, let me know if you need any other info. I haven't
-> touched the system yet, but it appears I'll need to unmount to btrfs
-> check or mount rw,recovery to try and get it working again. Who knows
-> what will happen then? I can leave it as if for a few days if it will
-> help any diagnosis. Thanks again.
->
-> On Wed, Aug 19, 2015 at 11:17 PM, Anand Jain <anand.jain@oracle.com> wrote:
->>
->> two to dig more..
->>
->>> Aug 16 04:41:31 [1082957.226817] BTRFS: error (device sdb) in
->>> __btrfs_free_extent:6235: errno=-28 No space left
->>> Aug 16 04:41:31 [1082957.226819] BTRFS info (device sdb): forced readonly
->>
->>
->> ::
->>
->>> Aug 16 04:41:31 [1082957.289289] BTRFS: error (device sdb) in
->>> cleanup_transaction:1692: errno=-5 IO failure
->>
->>
->> 1.
->>  We probably need to understand what kicked in readonly. is it
->>  -28 (No space left) OR -5 (EIO).
->>
->> 2.
->>  There are no media errors from the block layer, hope we are not
->>  fabricating the EIO in the FS layer... thats wrong.
->>
->> digging more.
->>
->> Thanks,  Anand
+myth:~# btrfs-find-root -a /dev/mapper/crypt_sdd1
+Superblock thinks the generation is 39538
+Superblock thinks the level is 1
+Well block 4243456(gen: 3 level: 0) seems good, but generation/level doesn't match, want gen: 39538 level: 1
+Well block 4194304(gen: 2 level: 0) seems good, but generation/level doesn't match, want gen: 39538 level: 1
+myth:~# 
+
+Does it mean there is no other block I can/should use?
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

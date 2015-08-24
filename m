@@ -1,79 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:26245 "EHLO
-	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752458AbbHSFzk (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:5810 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752904AbbHXIqp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 19 Aug 2015 01:55:40 -0400
-Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by kw-mxoi2.gw.nic.fujitsu.com (Postfix) with ESMTP id 0B31EAC014B
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 14:55:38 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-	by m3050.s.css.fujitsu.com (Postfix) with SMTP id DA6BF8E
-	for <linux-btrfs@vger.kernel.org>; Wed, 19 Aug 2015 14:55:37 +0900 (JST)
-Message-Id: <201508190555.AA00003@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 19 Aug 2015 14:55:00 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: cleanup: remove unnecessary check before btrfs_free_path is called
+	Mon, 24 Aug 2015 04:46:45 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7O8kc2I002347
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 16:46:38 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs-progs: close all fs_devices before exit in some commands
+Date: Mon, 24 Aug 2015 16:45:03 +0800
+Message-ID: <d9ee6fee7b49a43f2ff6c24306f4cf69a7c45ae1.1440405874.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <9f0cf7c0a07faefb4f3af86f8e7c63b56a338b7a.1440405874.git.zhaolei@cn.fujitsu.com>
+References: <9f0cf7c0a07faefb4f3af86f8e7c63b56a338b7a.1440405874.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We need not check path before btrfs_free_path() is called because
-path is checked in btrfs_free_path().
+mkfs created more than one fs_devices in fs_uuids.
+1: one is for file system been created
+2: others are created in test_dev_for_mkfs for check mount point
+   test_dev_for_mkfs()-> ... -> btrfs_scan_one_device()
 
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Current code only close above 1, and this patch close above 2.
+
+Similar problem exist in other tools, for ex:
+ cmd-check.c: the function is:
+ cmd_check()->check_mounted()-> ... -> btrfs_scan_one_device()
+ ...
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/dev-replace.c | 3 +--
- fs/btrfs/inode.c       | 3 +--
- fs/btrfs/tree-defrag.c | 3 +--
- 3 files changed, 3 insertions(+), 6 deletions(-)
+ cmds-check.c   | 1 +
+ cmds-device.c  | 4 ++++
+ cmds-replace.c | 2 ++
+ mkfs.c         | 1 +
+ 4 files changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 564a7de..e54dd59 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -183,8 +183,7 @@ no_valid_dev_replace_entry_found:
- 	}
- 
- out:
--	if (path)
--		btrfs_free_path(path);
-+	btrfs_free_path(path);
+diff --git a/cmds-check.c b/cmds-check.c
+index 2e6dc68..9828ce2 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -9589,6 +9589,7 @@ out:
+ 	free_root_recs_tree(&root_cache);
+ close_out:
+ 	close_ctree(root);
++	btrfs_close_all_devices();
+ err_out:
  	return ret;
  }
+diff --git a/cmds-device.c b/cmds-device.c
+index 458c088..00e362a 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -28,6 +28,7 @@
+ #include "ctree.h"
+ #include "ioctl.h"
+ #include "utils.h"
++#include "volumes.h"
+ #include "cmds-fi-usage.h"
  
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e33dff3..21ba036 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -6876,8 +6876,7 @@ out:
+ #include "commands.h"
+@@ -140,6 +141,7 @@ static int cmd_device_add(int argc, char **argv)
  
- 	trace_btrfs_get_extent(root, em);
+ error_out:
+ 	close_file_or_dir(fdmnt, dirstream);
++	btrfs_close_all_devices();
+ 	return !!ret;
+ }
  
--	if (path)
--		btrfs_free_path(path);
-+	btrfs_free_path(path);
- 	if (trans) {
- 		ret = btrfs_end_transaction(trans, root);
- 		if (!err)
-diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
-index a4b9c8b..f31db43 100644
---- a/fs/btrfs/tree-defrag.c
-+++ b/fs/btrfs/tree-defrag.c
-@@ -115,8 +115,7 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
- 		ret = -EAGAIN;
+@@ -290,6 +292,7 @@ static int cmd_device_scan(int argc, char **argv)
  	}
+ 
  out:
--	if (path)
--		btrfs_free_path(path);
-+	btrfs_free_path(path);
- 	if (ret == -EAGAIN) {
- 		if (root->defrag_max.objectid > root->defrag_progress.objectid)
- 			goto done;
++	btrfs_close_all_devices();
+ 	return !!ret;
+ }
+ 
+@@ -465,6 +468,7 @@ static int cmd_device_stats(int argc, char **argv)
+ out:
+ 	free(di_args);
+ 	close_file_or_dir(fdmnt, dirstream);
++	btrfs_close_all_devices();
+ 
+ 	return err;
+ }
+diff --git a/cmds-replace.c b/cmds-replace.c
+index 2f123cb..ce91787 100644
+--- a/cmds-replace.c
++++ b/cmds-replace.c
+@@ -316,6 +316,7 @@ static int cmd_replace_start(int argc, char **argv)
+ 		}
+ 	}
+ 	close_file_or_dir(fdmnt, dirstream);
++	btrfs_close_all_devices();
+ 	return 0;
+ 
+ leave_with_error:
+@@ -325,6 +326,7 @@ leave_with_error:
+ 		close(fdmnt);
+ 	if (fddstdev != -1)
+ 		close(fddstdev);
++	btrfs_close_all_devices();
+ 	return 1;
+ }
+ 
+diff --git a/mkfs.c b/mkfs.c
+index 7d635dc..3e60965 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1843,6 +1843,7 @@ raid_groups:
+ out:
+ 	ret = close_ctree(root);
+ 	BUG_ON(ret);
++	btrfs_close_all_devices();
+ 	free(label);
+ 	return 0;
+ }
 -- 
-2.4.5
-
-
+1.8.5.1
 

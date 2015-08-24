@@ -1,50 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f169.google.com ([209.85.212.169]:36811 "EHLO
-	mail-wi0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751614AbbH2DEl (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:36942 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751179AbbHXS4o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Aug 2015 23:04:41 -0400
-Date: Sat, 29 Aug 2015 06:04:16 +0000
+	Mon, 24 Aug 2015 14:56:44 -0400
+Date: Mon, 24 Aug 2015 21:56:28 +0000
 From: Alexandru Moise <00moses.alexander00@gmail.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org, jbacik@fb.com,
-        clm@fb.com
-Subject: Re: [PATCH] btrfs: trimming some start_transaction() code away
-Message-ID: <20150829060416.GA996@gmail.com>
-References: <20150827235345.GA1373@gmail.com>
- <20150828173856.GM11834@twin.jikos.cz>
+To: clm@fb.com
+Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: Fixed declaration of old_len
+Message-ID: <20150824215628.GA18871@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150828173856.GM11834@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 28, 2015 at 07:38:56PM +0200, David Sterba wrote:
-> On Thu, Aug 27, 2015 at 11:53:45PM +0000, Alexandru Moise wrote:
-> > Just call kmem_cache_zalloc() instead of calling kmem_cache_alloc().
-> > We're just initializing most fields to 0, false and NULL later on
-> > _anyway_, so to make the code mode readable and potentially gain
-> > a bit of performance (completely untested claim), we should fill our
-> > btrfs_trans_handle with zeros on allocation then just initialize
-> > those five remaining fields (not counting the list_heads) as normal.
-> > 
-> > Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
-> 
-> The performance gain is arguable but the generated code should be
-> smaller, which counts.
-> 
-> Reviewed-by: David Sterba <dsterba@suse.com>
+old_len is used to store the return value of btrfs_item_size_nr().
+The return value of btrfs_item_size_nr() is of type u32.
+To improve code correctness and avoid mixing signed and unsigned
+integers I've changed old_len to be of type u32 as well.
 
-Yeah, I ran a few iozone benchmarks on a Samsung 850 PRO SSD 
-on 3 kernels, the latest archlinux kernel, my custom kernel which has:
-CONFIG_BTRFS_ASSERT=y
-CONFIG_BTRFS_DEBUG=y
-CONFIG_BTRFS_FS_RUN_SANITY_TESTS=y
-CONFIG_BTRFS_FS_POSIX_ACL=y
-with the patch, and my custom kernel without the patch.
-I ran iozone 5 times on each kernel, There were huge differences
-between my custom kernels and arch's kernel, but nothing conclusive
-between my custom kernel with or without the patch. So it's safe
-to say that it has not much of a visible effect on performance.
+Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+---
+ fs/btrfs/root-tree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-Thank you for your time!
+diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
+index 360a728..024ea4f 100644
+--- a/fs/btrfs/root-tree.c
++++ b/fs/btrfs/root-tree.c
+@@ -141,7 +141,7 @@ int btrfs_update_root(struct btrfs_trans_handle *trans, struct btrfs_root
+ 	int ret;
+ 	int slot;
+ 	unsigned long ptr;
+-	int old_len;
++	u32 old_len;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+-- 
+2.5.0
+

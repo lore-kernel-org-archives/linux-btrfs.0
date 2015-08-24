@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31850 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:56496 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751061AbbHXPgE (ORCPT
+	with ESMTP id S1754781AbbHXPgE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 24 Aug 2015 11:36:04 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7OFZrfx015998
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 23:35:53 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7OFZsLA016001
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 23:35:54 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 3/5] btrfs: Use scrub_checksum_data and scrub_checksum_tree_block for scrub_recheck_block_checksum
-Date: Mon, 24 Aug 2015 23:34:18 +0800
-Message-ID: <606d60eed0e585a60472ddfb38f0752d01bf7044.1440430437.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 4/5] btrfs: Reduce unnecessary arguments in scrub_recheck_block
+Date: Mon, 24 Aug 2015 23:34:19 +0800
+Message-ID: <41d954627c24c6f65faee7362463480bd7f158cc.1440430437.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1440430437.git.zhaolei@cn.fujitsu.com>
 References: <cover.1440430437.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,243 +20,111 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can use existing scrub_checksum_data() and scrub_checksum_tree_block()
-for scrub_recheck_block_checksum(), instead of write duplicated code.
-
-It is base on patch of:
-  setup all fields for sblock_to_check
-which make this merge possible.
+We don't need pass so many arguments for recheck sblock now,
+this patch cleans them.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 126 +++++++++++++++----------------------------------------
- 1 file changed, 34 insertions(+), 92 deletions(-)
+ fs/btrfs/scrub.c | 28 ++++++++--------------------
+ 1 file changed, 8 insertions(+), 20 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 4326e16..05dab4a 100644
+index 05dab4a..bdf44c9 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -251,11 +251,7 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 				struct scrub_block *sblock, int is_metadata,
- 				int have_csum, u8 *csum, u64 generation,
- 				u16 csum_size, int retry_failed_mirror);
--static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
--					 struct scrub_block *sblock,
--					 int is_metadata, int have_csum,
--					 const u8 *csum, u64 generation,
--					 u16 csum_size);
-+static void scrub_recheck_block_checksum(struct scrub_block *sblock);
+@@ -248,9 +248,8 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check);
+ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+ 				     struct scrub_block *sblocks_for_recheck);
+ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+-				struct scrub_block *sblock, int is_metadata,
+-				int have_csum, u8 *csum, u64 generation,
+-				u16 csum_size, int retry_failed_mirror);
++				struct scrub_block *sblock,
++				int retry_failed_mirror);
+ static void scrub_recheck_block_checksum(struct scrub_block *sblock);
  static int scrub_repair_block_from_good_copy(struct scrub_block *sblock_bad,
  					     struct scrub_block *sblock_good);
- static int scrub_repair_page_from_good_copy(struct scrub_block *sblock_bad,
-@@ -1506,9 +1502,6 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+@@ -898,11 +897,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 	struct btrfs_fs_info *fs_info;
+ 	u64 length;
+ 	u64 logical;
+-	u64 generation;
+ 	unsigned int failed_mirror_index;
+ 	unsigned int is_metadata;
+ 	unsigned int have_csum;
+-	u8 *csum;
+ 	struct scrub_block *sblocks_for_recheck; /* holds one for each mirror */
+ 	struct scrub_block *sblock_bad;
+ 	int ret;
+@@ -927,13 +924,11 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 	}
+ 	length = sblock_to_check->page_count * PAGE_SIZE;
+ 	logical = sblock_to_check->pagev[0]->logical;
+-	generation = sblock_to_check->pagev[0]->generation;
+ 	BUG_ON(sblock_to_check->pagev[0]->mirror_num < 1);
+ 	failed_mirror_index = sblock_to_check->pagev[0]->mirror_num - 1;
+ 	is_metadata = !(sblock_to_check->pagev[0]->flags &
+ 			BTRFS_EXTENT_FLAG_DATA);
+ 	have_csum = sblock_to_check->pagev[0]->have_csum;
+-	csum = sblock_to_check->pagev[0]->csum;
+ 	dev = sblock_to_check->pagev[0]->dev;
+ 
+ 	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
+@@ -996,8 +991,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+ 	sblock_bad = sblocks_for_recheck + failed_mirror_index;
+ 
+ 	/* build and submit the bios for the failed mirror, check checksums */
+-	scrub_recheck_block(fs_info, sblock_bad, is_metadata, have_csum,
+-			    csum, generation, sctx->csum_size, 1);
++	scrub_recheck_block(fs_info, sblock_bad, 1);
+ 
+ 	if (!sblock_bad->header_error && !sblock_bad->checksum_error &&
+ 	    sblock_bad->no_io_error_seen) {
+@@ -1110,9 +1104,7 @@ nodatasum_case:
+ 		sblock_other = sblocks_for_recheck + mirror_index;
+ 
+ 		/* build and submit the bios, check checksums */
+-		scrub_recheck_block(fs_info, sblock_other, is_metadata,
+-				    have_csum, csum, generation,
+-				    sctx->csum_size, 0);
++		scrub_recheck_block(fs_info, sblock_other, 0);
+ 
+ 		if (!sblock_other->header_error &&
+ 		    !sblock_other->checksum_error &&
+@@ -1224,9 +1216,7 @@ nodatasum_case:
+ 			 * is verified, but most likely the data comes out
+ 			 * of the page cache.
+ 			 */
+-			scrub_recheck_block(fs_info, sblock_bad,
+-					    is_metadata, have_csum, csum,
+-					    generation, sctx->csum_size, 1);
++			scrub_recheck_block(fs_info, sblock_bad, 1);
+ 			if (!sblock_bad->header_error &&
+ 			    !sblock_bad->checksum_error &&
+ 			    sblock_bad->no_io_error_seen)
+@@ -1495,9 +1485,8 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
+  * the pages that are errored in the just handled mirror can be repaired.
+  */
+ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+-				struct scrub_block *sblock, int is_metadata,
+-				int have_csum, u8 *csum, u64 generation,
+-				u16 csum_size, int retry_failed_mirror)
++				struct scrub_block *sblock,
++				int retry_failed_mirror)
+ {
  	int page_num;
  
- 	sblock->no_io_error_seen = 1;
--	sblock->header_error = 0;
--	sblock->checksum_error = 0;
--	sblock->generation_error = 0;
- 
- 	for (page_num = 0; page_num < sblock->page_count; page_num++) {
- 		struct bio *bio;
-@@ -1544,9 +1537,7 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	if (sblock->no_io_error_seen)
--		scrub_recheck_block_checksum(fs_info, sblock, is_metadata,
--					     have_csum, csum, generation,
--					     csum_size);
-+		scrub_recheck_block_checksum(sblock);
- 
- 	return;
- }
-@@ -1561,61 +1552,16 @@ static inline int scrub_check_fsid(u8 fsid[],
- 	return !ret;
- }
- 
--static void scrub_recheck_block_checksum(struct btrfs_fs_info *fs_info,
--					 struct scrub_block *sblock,
--					 int is_metadata, int have_csum,
--					 const u8 *csum, u64 generation,
--					 u16 csum_size)
-+static void scrub_recheck_block_checksum(struct scrub_block *sblock)
- {
--	int page_num;
--	u8 calculated_csum[BTRFS_CSUM_SIZE];
--	u32 crc = ~(u32)0;
--	void *mapped_buffer;
--
--	WARN_ON(!sblock->pagev[0]->page);
--	if (is_metadata) {
--		struct btrfs_header *h;
--
--		mapped_buffer = kmap_atomic(sblock->pagev[0]->page);
--		h = (struct btrfs_header *)mapped_buffer;
--
--		if (sblock->pagev[0]->logical != btrfs_stack_header_bytenr(h) ||
--		    !scrub_check_fsid(h->fsid, sblock->pagev[0]) ||
--		    memcmp(h->chunk_tree_uuid, fs_info->chunk_tree_uuid,
--			   BTRFS_UUID_SIZE)) {
--			sblock->header_error = 1;
--		} else if (generation != btrfs_stack_header_generation(h)) {
--			sblock->header_error = 1;
--			sblock->generation_error = 1;
--		}
--		csum = h->csum;
--	} else {
--		if (!have_csum)
--			return;
--
--		mapped_buffer = kmap_atomic(sblock->pagev[0]->page);
--	}
--
--	for (page_num = 0;;) {
--		if (page_num == 0 && is_metadata)
--			crc = btrfs_csum_data(
--				((u8 *)mapped_buffer) + BTRFS_CSUM_SIZE,
--				crc, PAGE_SIZE - BTRFS_CSUM_SIZE);
--		else
--			crc = btrfs_csum_data(mapped_buffer, crc, PAGE_SIZE);
--
--		kunmap_atomic(mapped_buffer);
--		page_num++;
--		if (page_num >= sblock->page_count)
--			break;
--		WARN_ON(!sblock->pagev[page_num]->page);
--
--		mapped_buffer = kmap_atomic(sblock->pagev[page_num]->page);
--	}
-+	sblock->header_error = 0;
-+	sblock->checksum_error = 0;
-+	sblock->generation_error = 0;
- 
--	btrfs_csum_final(crc, calculated_csum);
--	if (memcmp(calculated_csum, csum, csum_size))
--		sblock->checksum_error = 1;
-+	if (sblock->pagev[0]->flags & BTRFS_EXTENT_FLAG_DATA)
-+		scrub_checksum_data(sblock);
-+	else
-+		scrub_checksum_tree_block(sblock);
- }
- 
- static int scrub_repair_block_from_good_copy(struct scrub_block *sblock_bad,
-@@ -1859,6 +1805,18 @@ static int scrub_checksum(struct scrub_block *sblock)
- 	u64 flags;
- 	int ret;
- 
-+	/*
-+	 * No need to initialize these stats currently,
-+	 * because this function only use return value
-+	 * instead of these stats value.
-+	 *
-+	 * Todo:
-+	 * always use stats
-+	 */
-+	sblock->header_error = 0;
-+	sblock->generation_error = 0;
-+	sblock->checksum_error = 0;
-+
- 	WARN_ON(sblock->page_count < 1);
- 	flags = sblock->pagev[0]->flags;
- 	ret = 0;
-@@ -1884,7 +1842,6 @@ static int scrub_checksum_data(struct scrub_block *sblock)
- 	struct page *page;
- 	void *buffer;
- 	u32 crc = ~(u32)0;
--	int fail = 0;
- 	u64 len;
- 	int index;
- 
-@@ -1915,9 +1872,9 @@ static int scrub_checksum_data(struct scrub_block *sblock)
- 
- 	btrfs_csum_final(crc, csum);
- 	if (memcmp(csum, on_disk_csum, sctx->csum_size))
--		fail = 1;
-+		sblock->checksum_error = 1;
- 
--	return fail;
-+	return sblock->checksum_error;
- }
- 
- static int scrub_checksum_tree_block(struct scrub_block *sblock)
-@@ -1933,8 +1890,6 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
- 	u64 mapped_size;
- 	void *p;
- 	u32 crc = ~(u32)0;
--	int fail = 0;
--	int crc_fail = 0;
- 	u64 len;
- 	int index;
- 
-@@ -1949,19 +1904,20 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
- 	 * a) don't have an extent buffer and
- 	 * b) the page is already kmapped
- 	 */
--
- 	if (sblock->pagev[0]->logical != btrfs_stack_header_bytenr(h))
--		++fail;
-+		sblock->header_error = 1;
- 
--	if (sblock->pagev[0]->generation != btrfs_stack_header_generation(h))
--		++fail;
-+	if (sblock->pagev[0]->generation != btrfs_stack_header_generation(h)) {
-+		sblock->header_error = 1;
-+		sblock->generation_error = 1;
-+	}
- 
- 	if (!scrub_check_fsid(h->fsid, sblock->pagev[0]))
--		++fail;
-+		sblock->header_error = 1;
- 
- 	if (memcmp(h->chunk_tree_uuid, fs_info->chunk_tree_uuid,
- 		   BTRFS_UUID_SIZE))
--		++fail;
-+		sblock->header_error = 1;
- 
- 	len = sctx->nodesize - BTRFS_CSUM_SIZE;
- 	mapped_size = PAGE_SIZE - BTRFS_CSUM_SIZE;
-@@ -1986,9 +1942,9 @@ static int scrub_checksum_tree_block(struct scrub_block *sblock)
- 
- 	btrfs_csum_final(crc, calculated_csum);
- 	if (memcmp(calculated_csum, on_disk_csum, sctx->csum_size))
--		++crc_fail;
-+		sblock->checksum_error = 1;
- 
--	return fail || crc_fail;
-+	return sblock->header_error || sblock->checksum_error;
- }
- 
- static int scrub_checksum_super(struct scrub_block *sblock)
-@@ -2202,28 +2158,14 @@ static void scrub_missing_raid56_worker(struct btrfs_work *work)
- {
- 	struct scrub_block *sblock = container_of(work, struct scrub_block, work);
- 	struct scrub_ctx *sctx = sblock->sctx;
--	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
--	unsigned int is_metadata;
--	unsigned int have_csum;
--	u8 *csum;
--	u64 generation;
- 	u64 logical;
- 	struct btrfs_device *dev;
- 
--	is_metadata = !(sblock->pagev[0]->flags & BTRFS_EXTENT_FLAG_DATA);
--	have_csum = sblock->pagev[0]->have_csum;
--	csum = sblock->pagev[0]->csum;
--	generation = sblock->pagev[0]->generation;
+@@ -2164,9 +2153,8 @@ static void scrub_missing_raid56_worker(struct btrfs_work *work)
  	logical = sblock->pagev[0]->logical;
  	dev = sblock->pagev[0]->dev;
  
--	sblock->header_error = 0;
--	sblock->checksum_error = 0;
--	sblock->generation_error = 0;
- 	if (sblock->no_io_error_seen) {
--		scrub_recheck_block_checksum(fs_info, sblock, is_metadata,
--					     have_csum, csum, generation,
--					     sctx->csum_size);
-+		scrub_recheck_block_checksum(sblock);
- 	}
+-	if (sblock->no_io_error_seen) {
++	if (sblock->no_io_error_seen)
+ 		scrub_recheck_block_checksum(sblock);
+-	}
  
  	if (!sblock->no_io_error_seen) {
+ 		spin_lock(&sctx->stat_lock);
 -- 
 1.8.5.1
 

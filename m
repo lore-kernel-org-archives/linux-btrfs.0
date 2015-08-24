@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56496 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:59471 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754781AbbHXPgE (ORCPT
+	with ESMTP id S1754802AbbHXPgE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 24 Aug 2015 11:36:04 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7OFZsLA016001
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 23:35:54 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7OFZtwX016004
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 23:35:55 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 4/5] btrfs: Reduce unnecessary arguments in scrub_recheck_block
-Date: Mon, 24 Aug 2015 23:34:19 +0800
-Message-ID: <41d954627c24c6f65faee7362463480bd7f158cc.1440430437.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 5/5] btrfs: Remove len argument from scrub_find_csum
+Date: Mon, 24 Aug 2015 23:34:20 +0800
+Message-ID: <315d3649c18620fb6b421894f3d2d07ac034a3c4.1440430437.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1440430437.git.zhaolei@cn.fujitsu.com>
 References: <cover.1440430437.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,111 +20,45 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't need pass so many arguments for recheck sblock now,
-this patch cleans them.
+It is useless.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 28 ++++++++--------------------
- 1 file changed, 8 insertions(+), 20 deletions(-)
+ fs/btrfs/scrub.c | 7 +++----
+ 1 file changed, 3 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 05dab4a..bdf44c9 100644
+index bdf44c9..daf75ac 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -248,9 +248,8 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check);
- static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
- 				     struct scrub_block *sblocks_for_recheck);
- static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
--				struct scrub_block *sblock, int is_metadata,
--				int have_csum, u8 *csum, u64 generation,
--				u16 csum_size, int retry_failed_mirror);
-+				struct scrub_block *sblock,
-+				int retry_failed_mirror);
- static void scrub_recheck_block_checksum(struct scrub_block *sblock);
- static int scrub_repair_block_from_good_copy(struct scrub_block *sblock_bad,
- 					     struct scrub_block *sblock_good);
-@@ -898,11 +897,9 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	struct btrfs_fs_info *fs_info;
- 	u64 length;
- 	u64 logical;
--	u64 generation;
- 	unsigned int failed_mirror_index;
- 	unsigned int is_metadata;
- 	unsigned int have_csum;
--	u8 *csum;
- 	struct scrub_block *sblocks_for_recheck; /* holds one for each mirror */
- 	struct scrub_block *sblock_bad;
- 	int ret;
-@@ -927,13 +924,11 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
+@@ -2459,8 +2459,7 @@ static void scrub_block_complete(struct scrub_block *sblock)
  	}
- 	length = sblock_to_check->page_count * PAGE_SIZE;
- 	logical = sblock_to_check->pagev[0]->logical;
--	generation = sblock_to_check->pagev[0]->generation;
- 	BUG_ON(sblock_to_check->pagev[0]->mirror_num < 1);
- 	failed_mirror_index = sblock_to_check->pagev[0]->mirror_num - 1;
- 	is_metadata = !(sblock_to_check->pagev[0]->flags &
- 			BTRFS_EXTENT_FLAG_DATA);
- 	have_csum = sblock_to_check->pagev[0]->have_csum;
--	csum = sblock_to_check->pagev[0]->csum;
- 	dev = sblock_to_check->pagev[0]->dev;
+ }
  
- 	if (sctx->is_dev_replace && !is_metadata && !have_csum) {
-@@ -996,8 +991,7 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 	sblock_bad = sblocks_for_recheck + failed_mirror_index;
- 
- 	/* build and submit the bios for the failed mirror, check checksums */
--	scrub_recheck_block(fs_info, sblock_bad, is_metadata, have_csum,
--			    csum, generation, sctx->csum_size, 1);
-+	scrub_recheck_block(fs_info, sblock_bad, 1);
- 
- 	if (!sblock_bad->header_error && !sblock_bad->checksum_error &&
- 	    sblock_bad->no_io_error_seen) {
-@@ -1110,9 +1104,7 @@ nodatasum_case:
- 		sblock_other = sblocks_for_recheck + mirror_index;
- 
- 		/* build and submit the bios, check checksums */
--		scrub_recheck_block(fs_info, sblock_other, is_metadata,
--				    have_csum, csum, generation,
--				    sctx->csum_size, 0);
-+		scrub_recheck_block(fs_info, sblock_other, 0);
- 
- 		if (!sblock_other->header_error &&
- 		    !sblock_other->checksum_error &&
-@@ -1224,9 +1216,7 @@ nodatasum_case:
- 			 * is verified, but most likely the data comes out
- 			 * of the page cache.
- 			 */
--			scrub_recheck_block(fs_info, sblock_bad,
--					    is_metadata, have_csum, csum,
--					    generation, sctx->csum_size, 1);
-+			scrub_recheck_block(fs_info, sblock_bad, 1);
- 			if (!sblock_bad->header_error &&
- 			    !sblock_bad->checksum_error &&
- 			    sblock_bad->no_io_error_seen)
-@@ -1495,9 +1485,8 @@ static int scrub_submit_raid56_bio_wait(struct btrfs_fs_info *fs_info,
-  * the pages that are errored in the just handled mirror can be repaired.
-  */
- static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
--				struct scrub_block *sblock, int is_metadata,
--				int have_csum, u8 *csum, u64 generation,
--				u16 csum_size, int retry_failed_mirror)
-+				struct scrub_block *sblock,
-+				int retry_failed_mirror)
+-static int scrub_find_csum(struct scrub_ctx *sctx, u64 logical, u64 len,
+-			   u8 *csum)
++static int scrub_find_csum(struct scrub_ctx *sctx, u64 logical, u8 *csum)
  {
- 	int page_num;
+ 	struct btrfs_ordered_sum *sum = NULL;
+ 	unsigned long index;
+@@ -2524,7 +2523,7 @@ static int scrub_extent(struct scrub_ctx *sctx, u64 logical, u64 len,
  
-@@ -2164,9 +2153,8 @@ static void scrub_missing_raid56_worker(struct btrfs_work *work)
- 	logical = sblock->pagev[0]->logical;
- 	dev = sblock->pagev[0]->dev;
+ 		if (flags & BTRFS_EXTENT_FLAG_DATA) {
+ 			/* push csums to sbio */
+-			have_csum = scrub_find_csum(sctx, logical, l, csum);
++			have_csum = scrub_find_csum(sctx, logical, csum);
+ 			if (have_csum == 0)
+ 				++sctx->stat.no_csum;
+ 			if (sctx->is_dev_replace && !have_csum) {
+@@ -2662,7 +2661,7 @@ static int scrub_extent_for_parity(struct scrub_parity *sparity,
  
--	if (sblock->no_io_error_seen) {
-+	if (sblock->no_io_error_seen)
- 		scrub_recheck_block_checksum(sblock);
--	}
- 
- 	if (!sblock->no_io_error_seen) {
- 		spin_lock(&sctx->stat_lock);
+ 		if (flags & BTRFS_EXTENT_FLAG_DATA) {
+ 			/* push csums to sbio */
+-			have_csum = scrub_find_csum(sctx, logical, l, csum);
++			have_csum = scrub_find_csum(sctx, logical, csum);
+ 			if (have_csum == 0)
+ 				goto skip;
+ 		}
 -- 
 1.8.5.1
 

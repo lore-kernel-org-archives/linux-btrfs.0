@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:56496 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:31850 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754738AbbHXPgD (ORCPT
+	with ESMTP id S1754351AbbHXPgC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 11:36:03 -0400
+	Mon, 24 Aug 2015 11:36:02 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7OFZrLo015995
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 23:35:53 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7OFZqOJ015992
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 23:35:52 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/5] btrfs: Reset sblock->xxx_error stats before calling scrub_recheck_block_checksum
-Date: Mon, 24 Aug 2015 23:34:17 +0800
-Message-ID: <c078b25e1eb968d01424c283730d4620bdccfe11.1440430437.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/5] btrfs: scrub: setup all fields for sblock_to_check
+Date: Mon, 24 Aug 2015 23:34:16 +0800
+Message-ID: <65364226fea57a08e72a730487bb06aad09586d2.1440430437.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1440430437.git.zhaolei@cn.fujitsu.com>
 References: <cover.1440430437.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,39 +20,62 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should reset sblock->xxx_error stats before calling
-scrub_recheck_block_checksum().
+scrub_setup_recheck_block() isn't setup all necessary fields for
+sblock_to_check because history reason.
 
-Current code run correctly because all sblock are allocated by
-k[cz]alloc(), and the error stats are not got changed.
+So current code need more arguments in severial functions,
+and more local variables, just to passing these lacked values to
+necessary place.
+
+This patch setup above fields to sblock_to_check in
+scrub_setup_recheck_block(), for:
+1: more cleanup for function arg, local variable
+2: to make sblock_to_check complete, then we can use sblock_to_check
+   without concern about some uninitialized member.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/scrub.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ fs/btrfs/scrub.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index c8c16f4..4326e16 100644
+index d64f557..c8c16f4 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -1508,6 +1508,7 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
- 	sblock->no_io_error_seen = 1;
- 	sblock->header_error = 0;
- 	sblock->checksum_error = 0;
-+	sblock->generation_error = 0;
+@@ -1331,6 +1331,9 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
+ 	struct btrfs_fs_info *fs_info = sctx->dev_root->fs_info;
+ 	u64 length = original_sblock->page_count * PAGE_SIZE;
+ 	u64 logical = original_sblock->pagev[0]->logical;
++	u64 generation = original_sblock->pagev[0]->generation;
++	u64 flags = original_sblock->pagev[0]->flags;
++	u64 have_csum = original_sblock->pagev[0]->have_csum;
+ 	struct scrub_recover *recover;
+ 	struct btrfs_bio *bbio;
+ 	u64 sublen;
+@@ -1385,6 +1388,7 @@ static int scrub_setup_recheck_block(struct scrub_block *original_sblock,
  
- 	for (page_num = 0; page_num < sblock->page_count; page_num++) {
- 		struct bio *bio;
-@@ -2216,6 +2217,9 @@ static void scrub_missing_raid56_worker(struct btrfs_work *work)
- 	logical = sblock->pagev[0]->logical;
- 	dev = sblock->pagev[0]->dev;
+ 			sblock = sblocks_for_recheck + mirror_index;
+ 			sblock->sctx = sctx;
++
+ 			page = kzalloc(sizeof(*page), GFP_NOFS);
+ 			if (!page) {
+ leave_nomem:
+@@ -1396,7 +1400,15 @@ leave_nomem:
+ 			}
+ 			scrub_page_get(page);
+ 			sblock->pagev[page_index] = page;
++			page->sblock = sblock;
++			page->flags = flags;
++			page->generation = generation;
+ 			page->logical = logical;
++			page->have_csum = have_csum;
++			if (have_csum)
++				memcpy(page->csum,
++				       original_sblock->pagev[0]->csum,
++				       sctx->csum_size);
  
-+	sblock->header_error = 0;
-+	sblock->checksum_error = 0;
-+	sblock->generation_error = 0;
- 	if (sblock->no_io_error_seen) {
- 		scrub_recheck_block_checksum(fs_info, sblock, is_metadata,
- 					     have_csum, csum, generation,
+ 			scrub_stripe_index_and_offset(logical,
+ 						      bbio->map_type,
 -- 
 1.8.5.1
 

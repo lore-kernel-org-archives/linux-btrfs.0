@@ -1,82 +1,209 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:29243 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751796AbbHGIsz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 7 Aug 2015 04:48:55 -0400
-Received: from aserv0022.oracle.com (aserv0022.oracle.com [141.146.126.234])
-	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t778msqo011488
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Aug 2015 08:48:54 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by aserv0022.oracle.com (8.13.8/8.13.8) with ESMTP id t778ms5E012075
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Aug 2015 08:48:54 GMT
-Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id t778msvF007839
-	for <linux-btrfs@vger.kernel.org>; Fri, 7 Aug 2015 08:48:54 GMT
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix defrag to merge tail file extent
-Date: Fri,  7 Aug 2015 16:48:41 +0800
-Message-Id: <1438937321-19042-1-git-send-email-bo.li.liu@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:13878 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753151AbbHXArx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 23 Aug 2015 20:47:53 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7O0ljCa001836
+	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 08:47:45 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: async_thread: Fix workqueue 'max_active' value when initializing
+Date: Mon, 24 Aug 2015 08:47:09 +0800
+Message-ID: <1440377229-17611-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The file layout is
+At initializing time, for threshold-able workqueue, it's max_active
+of kernel workqueue should be 1 and grow if it hits threshold.
 
-[extent 1]...[extent n][4k extent][HOLE][extent x]
+But due to the bad naming, there is both 'max_active' for kernel
+workqueue and btrfs workqueue.
+So wrong value is given at workqueue initialization.
 
-extent 1~n and 4k extent can be merged during defrag, and the whole
-defrag bytes is larger than our defrag thresh(256k), 4k extent as a
-tail is left unmerged since we check if its next extent can be merged
-(the next one is a hole, so the check will fail), the layout thus can
-be
+This patch fixes it, and to avoid further misunderstanding, change the
+member name of btrfs_workqueue to 'current_active' and 'limit_active'.
 
-[new extent][4k extent][HOLE][extent x]
- (1~n)
+Also corresponding comment is added for readability.
 
-To fix it, beside looking at the next one, this also looks at the
-previous one by checking @defrag_end, which is set to 0 when we
-decide to stop merging contiguous extents, otherwise, we can merge
-the previous one with our extent.
-
-Also, this makes btrfs behave consistent with how xfs and ext4 do.
-
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Reported-by: Alex Lyakas <alex.btrfs@zadarastorage.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ fs/btrfs/async-thread.c | 57 +++++++++++++++++++++++++++++--------------------
+ fs/btrfs/async-thread.h |  2 +-
+ 2 files changed, 35 insertions(+), 24 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0770c91..0691b2b 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1030,6 +1030,7 @@ static int should_defrag_range(struct inode *inode, u64 start, u32 thresh,
- 	struct extent_map *em;
- 	int ret = 1;
- 	bool next_mergeable = true;
-+	bool prev_mergeable = true;
+diff --git a/fs/btrfs/async-thread.c b/fs/btrfs/async-thread.c
+index 1ce06c84..3e36e4a 100644
+--- a/fs/btrfs/async-thread.c
++++ b/fs/btrfs/async-thread.c
+@@ -42,8 +42,14 @@ struct __btrfs_workqueue {
  
- 	/*
- 	 * make sure that once we start defragging an extent, we keep on
-@@ -1050,13 +1051,16 @@ static int should_defrag_range(struct inode *inode, u64 start, u32 thresh,
- 		goto out;
+ 	/* Thresholding related variants */
+ 	atomic_t pending;
+-	int max_active;
+-	int current_max;
++
++	/* Up limit of concurrency workers */
++	int limit_active;
++
++	/* Current number of concurrency workers */
++	int current_active;
++
++	/* Threshold to change current_active */
+ 	int thresh;
+ 	unsigned int count;
+ 	spinlock_t thres_lock;
+@@ -88,7 +94,7 @@ BTRFS_WORK_HELPER(scrubnc_helper);
+ BTRFS_WORK_HELPER(scrubparity_helper);
+ 
+ static struct __btrfs_workqueue *
+-__btrfs_alloc_workqueue(const char *name, unsigned int flags, int max_active,
++__btrfs_alloc_workqueue(const char *name, unsigned int flags, int limit_active,
+ 			 int thresh)
+ {
+ 	struct __btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
+@@ -96,26 +102,31 @@ __btrfs_alloc_workqueue(const char *name, unsigned int flags, int max_active,
+ 	if (!ret)
+ 		return NULL;
+ 
+-	ret->max_active = max_active;
++	ret->limit_active = limit_active;
+ 	atomic_set(&ret->pending, 0);
+ 	if (thresh == 0)
+ 		thresh = DFT_THRESHOLD;
+ 	/* For low threshold, disabling threshold is a better choice */
+ 	if (thresh < DFT_THRESHOLD) {
+-		ret->current_max = max_active;
++		ret->current_active = limit_active;
+ 		ret->thresh = NO_THRESHOLD;
+ 	} else {
+-		ret->current_max = 1;
++		/*
++		 * For threshold-able wq, let its concurrency grow on demand.
++		 * Use minimal max_active at alloc time to reduce resource
++		 * usage.
++		 */
++		ret->current_active = 1;
+ 		ret->thresh = thresh;
  	}
  
-+	if (!*defrag_end)
-+		prev_mergeable = false;
-+
- 	next_mergeable = defrag_check_next_extent(inode, em);
+ 	if (flags & WQ_HIGHPRI)
+ 		ret->normal_wq = alloc_workqueue("%s-%s-high", flags,
+-						 ret->max_active,
+-						 "btrfs", name);
++						 ret->current_active, "btrfs",
++						 name);
+ 	else
+ 		ret->normal_wq = alloc_workqueue("%s-%s", flags,
+-						 ret->max_active, "btrfs",
++						 ret->current_active, "btrfs",
+ 						 name);
+ 	if (!ret->normal_wq) {
+ 		kfree(ret);
+@@ -134,7 +145,7 @@ __btrfs_destroy_workqueue(struct __btrfs_workqueue *wq);
+ 
+ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
+ 					      unsigned int flags,
+-					      int max_active,
++					      int limit_active,
+ 					      int thresh)
+ {
+ 	struct btrfs_workqueue *ret = kzalloc(sizeof(*ret), GFP_NOFS);
+@@ -143,14 +154,14 @@ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
+ 		return NULL;
+ 
+ 	ret->normal = __btrfs_alloc_workqueue(name, flags & ~WQ_HIGHPRI,
+-					      max_active, thresh);
++					      limit_active, thresh);
+ 	if (!ret->normal) {
+ 		kfree(ret);
+ 		return NULL;
+ 	}
+ 
+ 	if (flags & WQ_HIGHPRI) {
+-		ret->high = __btrfs_alloc_workqueue(name, flags, max_active,
++		ret->high = __btrfs_alloc_workqueue(name, flags, limit_active,
+ 						    thresh);
+ 		if (!ret->high) {
+ 			__btrfs_destroy_workqueue(ret->normal);
+@@ -180,7 +191,7 @@ static inline void thresh_queue_hook(struct __btrfs_workqueue *wq)
+  */
+ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
+ {
+-	int new_max_active;
++	int new_current_active;
+ 	long pending;
+ 	int need_change = 0;
+ 
+@@ -197,7 +208,7 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
+ 	wq->count %= (wq->thresh / 4);
+ 	if (!wq->count)
+ 		goto  out;
+-	new_max_active = wq->current_max;
++	new_current_active = wq->current_active;
+ 
  	/*
- 	 * we hit a real extent, if it is big or the next extent is not a
- 	 * real extent, don't bother defragging it
+ 	 * pending may be changed later, but it's OK since we really
+@@ -205,19 +216,19 @@ static inline void thresh_exec_hook(struct __btrfs_workqueue *wq)
  	 */
- 	if (!compress && (*last_len == 0 || *last_len >= thresh) &&
--	    (em->len >= thresh || !next_mergeable))
-+	    (em->len >= thresh || (!next_mergeable && !prev_mergeable)))
- 		ret = 0;
+ 	pending = atomic_read(&wq->pending);
+ 	if (pending > wq->thresh)
+-		new_max_active++;
++		new_current_active++;
+ 	if (pending < wq->thresh / 2)
+-		new_max_active--;
+-	new_max_active = clamp_val(new_max_active, 1, wq->max_active);
+-	if (new_max_active != wq->current_max)  {
++		new_current_active--;
++	new_current_active = clamp_val(new_current_active, 1, wq->limit_active);
++	if (new_current_active != wq->current_active)  {
+ 		need_change = 1;
+-		wq->current_max = new_max_active;
++		wq->current_active = new_current_active;
+ 	}
  out:
- 	/*
+ 	spin_unlock(&wq->thres_lock);
+ 
+ 	if (need_change) {
+-		workqueue_set_max_active(wq->normal_wq, wq->current_max);
++		workqueue_set_max_active(wq->normal_wq, wq->current_active);
+ 	}
+ }
+ 
+@@ -351,13 +362,13 @@ void btrfs_destroy_workqueue(struct btrfs_workqueue *wq)
+ 	kfree(wq);
+ }
+ 
+-void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int max)
++void btrfs_workqueue_set_max(struct btrfs_workqueue *wq, int limit_active)
+ {
+ 	if (!wq)
+ 		return;
+-	wq->normal->max_active = max;
++	wq->normal->limit_active = limit_active;
+ 	if (wq->high)
+-		wq->high->max_active = max;
++		wq->high->limit_active = limit_active;
+ }
+ 
+ void btrfs_set_work_high_priority(struct btrfs_work *work)
+diff --git a/fs/btrfs/async-thread.h b/fs/btrfs/async-thread.h
+index b0b093b..ad4d064 100644
+--- a/fs/btrfs/async-thread.h
++++ b/fs/btrfs/async-thread.h
+@@ -69,7 +69,7 @@ BTRFS_WORK_HELPER_PROTO(scrubparity_helper);
+ 
+ struct btrfs_workqueue *btrfs_alloc_workqueue(const char *name,
+ 					      unsigned int flags,
+-					      int max_active,
++					      int limit_active,
+ 					      int thresh);
+ void btrfs_init_work(struct btrfs_work *work, btrfs_work_func_t helper,
+ 		     btrfs_func_t func,
 -- 
-2.1.0
+2.5.0
 

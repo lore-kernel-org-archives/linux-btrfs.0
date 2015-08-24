@@ -1,89 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:36382 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751873AbbHXDws (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:42535 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751142AbbHXE2J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Aug 2015 23:52:48 -0400
-Received: by igcse8 with SMTP id se8so37713505igc.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 23 Aug 2015 20:52:48 -0700 (PDT)
+	Mon, 24 Aug 2015 00:28:09 -0400
+Date: Sun, 23 Aug 2015 21:28:00 -0700
+From: Marc MERLIN <marc@merlins.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Josef Bacik <jbacik@fb.com>, dsterba@suse.com, clm@fb.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
+Message-ID: <20150824042800.GJ5602@merlins.org>
+References: <55CA177D.1050004@fb.com>
+ <20150812144749.GY24824@merlins.org>
+ <55CB631B.2080404@fb.com>
+ <20150812160936.GK29259@merlins.org>
+ <55CB71E5.1070302@fb.com>
+ <20150812171912.GL29259@merlins.org>
+ <55D1406C.9040607@cn.fujitsu.com>
+ <20150817144904.GT29259@merlins.org>
+ <20150822143746.GG5602@merlins.org>
+ <55DA6F06.7030605@cn.fujitsu.com>
 MIME-Version: 1.0
-From: Ivan <ivan98@gmail.com>
-Date: Mon, 24 Aug 2015 11:52:08 +0800
-Message-ID: <CAM_GSFsAAtrGE7K3LYZKShnQN0yhm-b=s5itnsfWrukL8r66Hg@mail.gmail.com>
-Subject: Newbie: RAID5 available space
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55DA6F06.7030605@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm trying out RAID5 to understand its space usage. First off, I've 3
-devices of 2GB each, in RAID5. Old school RAID5 tells me I've 4GB of
-usable space. Actual fact: I've about 3.5GB, until it tells me I'm out
-of space. This is understandable, as Metadata and System took up some
-space.
+On Mon, Aug 24, 2015 at 09:10:30AM +0800, Qu Wenruo wrote:
+> Would you please take the following output?
+> 
+> 1) btrfs check output
+> With error message if it happens.
+ 
+myth:~# btrfs check /dev/mapper/crypt_sdd1
+Checking filesystem on /dev/mapper/crypt_sdd1
+UUID: 024ba4d0-dacb-438d-9f1b-eeb34083fe49
+checking extents
+cmds-check.c:4486: add_data_backref: Assertion `back->bytes != max_size` failed.
+btrfs[0x8066a73]
+btrfs[0x8066aa4]
+btrfs[0x8067991]
+btrfs[0x806b4ab]
+btrfs[0x806b9a3]
+btrfs[0x806c5b2]
+btrfs(cmd_check+0x1088)[0x806eddf]
+btrfs(main+0x153)[0x80557c6]
+/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb753a4d3]
+btrfs[0x80557ec]
 
-Next, I tried device add and remove.
+> 2) btrfs check --repair output
+> Full output until segfault.
+ 
+myth:~# btrfs check --repair /dev/mapper/crypt_sdd1
+enabling repair mode
+Checking filesystem on /dev/mapper/crypt_sdd1
+UUID: 024ba4d0-dacb-438d-9f1b-eeb34083fe49
+checking extents
+cmds-check.c:4486: add_data_backref: Assertion `back->bytes != max_size` failed.
+btrfs[0x8066a73]
+btrfs[0x8066aa4]
+btrfs[0x8067991]
+btrfs[0x806b4ab]
+btrfs[0x806b9a3]
+btrfs[0x806c5b2]
+btrfs(cmd_check+0x1088)[0x806eddf]
+btrfs(main+0x153)[0x80557c6]
+/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb75114d3]
+btrfs[0x80557ec]
 
-My "common sense" tells me, I should be able to remove a device of
-size equal or smaller than one I added. (isn't it simply move all
-blocks from old device to new?)
+Strangely I'm not getting a segfault anymore.
 
-So I proceeded to add a 4th device of 2GB, and remove the 2nd device (of 2GB).
-btrfs device delete tells me I'm out of space. Why?
+> 3) btrfs-debug-tree output
+> With assert output.
+ 
+The full output is multi gigabyte. Do you need this and if so, do I need to
+upload it somewhere and will you download the multi gigabyte file?
 
-Here are my steps:
-01. dd if=/dev/zero of=/root/btrfs-test-1 bs=1G count=2
-02. losetup /dev/loop1 /root/btrfs-test-1
-03. dd if=/dev/zero of=/root/btrfs-test-2 bs=1G count=2
-04. losetup /dev/loop2 /root/btrfs-test-2
-05. dd if=/dev/zero of=/root/btrfs-test-3 bs=1G count=2
-06. losetup /dev/loop3 /root/btrfs-test-3
-07. mkfs.btrfs --data raid5 --metadata raid5 --label testbtrfs2
---nodiscard -f /dev/loop1 /dev/loop2 /dev/loop3
-08. mount /dev/loop2 /mnt/b
-09. dd if=/dev/zero of=/mnt/b/test1g1 bs=1G count=1
-10. dd if=/dev/zero of=/mnt/b/test1g2 bs=1G count=1
-11. dd if=/dev/zero of=/mnt/b/test1g3 bs=1G count=1
-12. dd if=/dev/zero of=/mnt/b/test512M1 bs=512M count=1
-13. dd if=/dev/zero of=/root/btrfs-test-4 bs=1G count=2
-14. losetup /dev/loop4 /root/btrfs-test-4
-15. btrfs device add --nodiscard -f /dev/loop4 /mnt/b
-16. btrfs device delete /dev/loop2 /mnt/b
+The errors and assert, I already posted here:
 
-My kernel is 4.0.5-gentoo, btrfs-progs is 4.0.1 from Gentoo.
+> >>Sure thing:
+> >>btrfs-debug-tree /dev/mapper/crypt_sdd1 > /tmp/tree.out
+> >>parent transid verify failed on 2968115101696 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115101696 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115101696 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115101696 wanted 34855 found 39533
+> >>Ignoring transid failure
+> >>parent transid verify failed on 2968115134464 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115134464 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115134464 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115134464 wanted 34855 found 39533
+> >>Ignoring transid failure
+> >>parent transid verify failed on 2968115150848 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115150848 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115150848 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115150848 wanted 34855 found 39533
+> >>Ignoring transid failure
+> >>parent transid verify failed on 2968115691520 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115691520 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115691520 wanted 34855 found 39533
+> >>parent transid verify failed on 2968115691520 wanted 34855 found 39533
+> >>Ignoring transid failure
+> >>parent transid verify failed on 1291597152256 wanted 35830 found 39530
+> >>parent transid verify failed on 1291597152256 wanted 35830 found 39530
+> >>parent transid verify failed on 1291597152256 wanted 35830 found 39530
+> >>parent transid verify failed on 1291597152256 wanted 35830 found 39530
+> >>Ignoring transid failure
+> >>parent transid verify failed on 2968116592640 wanted 34855 found 39533
+> >>parent transid verify failed on 2968116592640 wanted 34855 found 39533
+> >>parent transid verify failed on 2968116592640 wanted 34855 found 39533
+> >>parent transid verify failed on 2968116592640 wanted 34855 found 39533
+> >>Ignoring transid failure
+> >>parent transid verify failed on 2968116609024 wanted 34855 found 39533
+> >>parent transid verify failed on 2968116609024 wanted 34855 found 39533
+> >>parent transid verify failed on 2968116609024 wanted 34855 found 39533
+> >>parent transid verify failed on 2968116609024 wanted 34855 found 39533
+> >>Ignoring transid failure
+> >>print-tree.c:1094: btrfs_print_tree: Assertion failed.
+> >>btrfs-debug-tree[0x805ce93]
+> >>btrfs-debug-tree(btrfs_print_tree+0x26d)[0x805eb51]
+> >>btrfs-debug-tree(btrfs_print_tree+0x279)[0x805eb5d]
+> >>btrfs-debug-tree(main+0x8b5)[0x804dfb7]
+> >>/lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb757c4d3]
+> >>btrfs-debug-tree[0x804e221]
 
-AFTER adding /dev/loop4. As can be seen, /dev/loop4 has lots of space,
-almost 2GB.
-# btrfs device usage /mnt/b
-/dev/loop1, ID: 1
-   Device size:             2.00GiB
-   Data,single:             8.00MiB
-   Data,RAID5:              1.76GiB
-   Data,RAID5:             10.50MiB
-   Metadata,single:         8.00MiB
-   Metadata,RAID5:        204.75MiB
-   System,single:           4.00MiB
-   System,RAID5:            8.00MiB
-   Unallocated:               0.00B
-
-/dev/loop2, ID: 2
-   Device size:             2.00GiB
-   Data,RAID5:              1.78GiB
-   Data,RAID5:             10.50MiB
-   Metadata,RAID5:        204.75MiB
-   System,RAID5:            8.00MiB
-   Unallocated:             1.00MiB
-
-/dev/loop3, ID: 3
-   Device size:             2.00GiB
-   Data,RAID5:              1.78GiB
-   Data,RAID5:             10.50MiB
-   Metadata,RAID5:        204.75MiB
-   System,RAID5:            8.00MiB
-   Unallocated:             1.00MiB
-
-/dev/loop4, ID: 4
-   Device size:             2.00GiB
-   Data,RAID5:             10.50MiB
-   Data,RAID5:             19.00MiB
-   Unallocated:             1.97GiB
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901

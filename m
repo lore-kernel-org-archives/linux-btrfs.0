@@ -1,109 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45315 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751502AbbHQDm6 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 16 Aug 2015 23:42:58 -0400
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: "'Dan Carpenter'" <dan.carpenter@oracle.com>, <miaox@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-References: <20150814092826.GA11685@mwanda>
-In-Reply-To: <20150814092826.GA11685@mwanda>
-Subject: RE: Btrfs: don't start the log transaction if the log tree init fails
-Date: Mon, 17 Aug 2015 11:42:52 +0800
-Message-ID: <000d01d0d89e$cc308a70$64919f50$@cn.fujitsu.com>
+Received: from c.mail.sonic.net ([64.142.111.80]:55278 "EHLO c.mail.sonic.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755151AbbHYXLO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Aug 2015 19:11:14 -0400
+Received: from mail-vk0-f51.google.com (mail-vk0-f51.google.com [209.85.213.51])
+	(authenticated bits=0)
+	by c.mail.sonic.net (8.15.1/8.15.1) with ESMTPSA id t7PNBBx7004116
+	(version=TLSv1.2 cipher=DHE-RSA-AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 16:11:12 -0700
+Received: by vkif69 with SMTP id f69so74816859vki.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 16:11:11 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Date: Tue, 25 Aug 2015 16:11:11 -0700
+Message-ID: <CAPF83muFko7uSz85GhO3Jj_-=rhwd3FCLjz7xGUWpYJiDz+skQ@mail.gmail.com>
+Subject: Thank you!
+From: Suman Chakravartula <suman@rockstor.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Dan Carpenter
+I need to get into the habit of thanking the btrfs community
+regularly, perhaps with every update of Rockstor. We just made the
+3.8-6 update yesterday and things are working pretty well. What a
+dramatic improvement even compared to just a few kernel versions ago.
+Many thanks! And this goes to btrfs-progs as well.
 
-Thanks for reporting this problem.
-Keeping code in good logic can reduce bug and make it easy to maintenance.
+We are running 4.1.x right now and looking forward to 4.2 goodness.
 
-> -----Original Message-----
-> From: linux-btrfs-owner@vger.kernel.org
-> [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Dan Carpenter
-> Sent: Friday, August 14, 2015 5:28 PM
-> To: miaox@cn.fujitsu.com
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: re: Btrfs: don't start the log transaction if the log tree init fails
-> 
-> Hello Miao Xie,
-> 
-> The patch e87ac1368700: "Btrfs: don't start the log transaction if the log tree
-> init fails" from Feb 20, 2014, leads to the following static checker warning:
-> 
-> 	fs/btrfs/tree-log.c:178 start_log_trans()
-> 	warn: we tested 'root->log_root' before and it was 'false'
-> 
-> fs/btrfs/tree-log.c
->    147          if (root->log_root) {
-> 
-> We test "root->log_root" here.
-> 
->    148                  if (btrfs_need_log_full_commit(root->fs_info,
-> trans)) {
->    149                          ret = -EAGAIN;
->    150                          goto out;
->    151                  }
->    152                  if (!root->log_start_pid) {
->    153                          root->log_start_pid = current->pid;
->    154
-> clear_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
->    155                  } else if (root->log_start_pid != current->pid) {
->    156
-> set_bit(BTRFS_ROOT_MULTI_LOG_TASKS, &root->state);
->    157                  }
->    158
->    159                  atomic_inc(&root->log_batch);
->    160                  atomic_inc(&root->log_writers);
->    161                  if (ctx) {
->    162                          index = root->log_transid % 2;
->    163                          list_add_tail(&ctx->list,
-> &root->log_ctxs[index]);
->    164                          ctx->log_transid = root->log_transid;
->    165                  }
->    166                  mutex_unlock(&root->log_mutex);
->    167                  return 0;
->    168          }
->    169
->    170          ret = 0;
->    171          mutex_lock(&root->fs_info->tree_log_mutex);
->    172          if (!root->fs_info->log_root_tree)
->    173                  ret = btrfs_init_log_root_tree(trans,
-> root->fs_info);
->    174          mutex_unlock(&root->fs_info->tree_log_mutex);
->    175          if (ret)
->    176                  goto out;
->    177
->    178          if (!root->log_root) {
-> 
-> Couldn't we just remove this condition here?  This is a new Smatch thing I am
-> working on and I am investigating false positives.
-> 
-Above problem was introduced by commit: 7237f1833,
-and this patch(e87ac1368700) make the problem easy to find out.
+-- 
+Suman Chakravartula
+Founder @ Rockstor
 
-We can remove above condition to make code pass smatch checking,
-but a better way is to do some cleanup to remove duplicated code
-in above function.
-
-I'll fix it.
-
-Thanks
-Zhaolei
-
->    179                  ret = btrfs_add_log_tree(trans, root);
->    180                  if (ret)
->    181                          goto out;
->    182          }
-> 
-> regards,
-> dan carpenter
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body
-> of a message to majordomo@vger.kernel.org More majordomo info at
-> http://vger.kernel.org/majordomo-info.html
-
+http://rockstor.com
+http://rockstor.com/blog
+http://forum.rockstor.com

@@ -1,31 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46455 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46526 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751726AbbHYPl0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 11:41:26 -0400
-Date: Tue, 25 Aug 2015 17:40:50 +0200
+	id S1755246AbbHYPnM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Aug 2015 11:43:12 -0400
+Date: Tue, 25 Aug 2015 17:42:37 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Byongho Lee <bhlee.kernel@gmail.com>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] btrfs-progs: fix memory leaks in error path
-Message-ID: <20150825154050.GK10756@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: Add initialztion of rec->crossing_stripes
+Message-ID: <20150825154237.GL10756@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1440147112-62543-1-git-send-email-bhlee.kernel@gmail.com>
+References: <3632be46c332732074edadc308bf0201b75cb6db.1440162456.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1440147112-62543-1-git-send-email-bhlee.kernel@gmail.com>
+In-Reply-To: <3632be46c332732074edadc308bf0201b75cb6db.1440162456.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 21, 2015 at 05:51:52PM +0900, Byongho Lee wrote:
-> This patch includes below fixes in error path:
-> 1. fix memory leaks if realloc() fails
-> 2. add missing call free_history() before return error in scrub_read_file()
+On Fri, Aug 21, 2015 at 09:07:43PM +0800, Zhao Lei wrote:
+> rec->crossing_stripes is not initialized in allocate place,
+> and have possibility causing wrong report for normal tree block.
 > 
-> Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
-> ---
-> changelog:
-> v2:
->   Add one more fix for memory leak when realloc() fails by Zhao Lei's comment.
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-Sorry I missed the v2, patch updated with Zhao Lei's reviewed-by.
+Applied, thanks.

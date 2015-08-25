@@ -1,33 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50640 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:50892 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751315AbbHYRMN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 13:12:13 -0400
-Date: Tue, 25 Aug 2015 19:11:37 +0200
+	id S1751924AbbHYRRW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Aug 2015 13:17:22 -0400
+Date: Tue, 25 Aug 2015 19:16:46 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: unified error handle for
- print_replace_status
-Message-ID: <20150825171137.GP10756@twin.jikos.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, marc@merlins.org
+Subject: Re: [PATCH 1/2] btrfs-progs: find-root: Output matched root when
+ searching all roots
+Message-ID: <20150825171646.GQ10756@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <8ecb18af6cff4e7f413bfeee8d66aa61dc1aa151.1440514191.git.zhaolei@cn.fujitsu.com>
+References: <1440470697-21177-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <8ecb18af6cff4e7f413bfeee8d66aa61dc1aa151.1440514191.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <1440470697-21177-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 25, 2015 at 10:50:08PM +0800, Zhao Lei wrote:
-> Current code of print_replace_status() mixed stdout and stderr in
-> error case, output a error string to stderr without "\n", then
-> output "\n" to stdout to end the line.
+On Tue, Aug 25, 2015 at 10:44:56AM +0800, Qu Wenruo wrote:
+> [Bug]
+> When given '-a' option, btrfs-find-root will output all possible tree
+> roots but the exact matched one.
 > 
-> This patch fixed above problem by using unified error handle way for 3
-> type of errors in print_replace_status().
+> [Reason]
+> Result printing skipes the exact match one, as it will normally be shown
+> before the alternative ones.
+> But when '-a' is given, that's not the case.
 > 
-> Also include some small logic cleanup.
+> [Fix]
+> Just show the exact match one for search all case.
 > 
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Reported-by: Marc Merlin <marc@merlins.org>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Applied, thanks. I've slighly reworded the error message.
+Applied, thanks.

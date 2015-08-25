@@ -1,64 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:56569 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751672AbbHYCrB (ORCPT
+	with ESMTP id S1751687AbbHYCrD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 22:47:01 -0400
+	Mon, 24 Aug 2015 22:47:03 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <marc@merlins.org>
-Subject: [PATCH 1/2] btrfs-progs: find-root: Output matched root when searching all roots
-Date: Tue, 25 Aug 2015 10:44:56 +0800
-Message-ID: <1440470697-21177-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs-progs: find-root: Fix a bug that will cause wrong result
+Date: Tue, 25 Aug 2015 10:44:57 +0800
+Message-ID: <1440470697-21177-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1440470697-21177-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1440470697-21177-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Bug]
-When given '-a' option, btrfs-find-root will output all possible tree
-roots but the exact matched one.
+[BUG]
+btrfs-find-root may not output desire result, as due to
+search_extent_cache() may return result which doesn't cover the desired
+range, generation cache can be screwed up if higher generation tree root
+is found before lower generation tree root.
 
-[Reason]
-Result printing skipes the exact match one, as it will normally be shown
-before the alternative ones.
-But when '-a' is given, that's not the case.
+For example:
+=======
+./btrfs-find-root  /dev/sda6  -a
+Superblock thinks the generation is 8
+Superblock thinks the level is 0
+adding bytenr: 4194304, gen: 8	<<< Debug output
+adding bytenr: 24715264, gen: 7 <<< gen is 7 at read_tree_block time
+Well block 4194304(gen: 8 level: 0) seems good, and it matches
+superblock
+Well block 24715264(gen: 8 level: 0) seems good, and it matches
+superblock  <<< But its gen is wrong at result output time
+=======
 
 [Fix]
-Just show the exact match one for search all case.
+Add a new judgment to make sure the search_extent_cache() is returning
+desired result.
 
 Reported-by: Marc Merlin <marc@merlins.org>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-find-root.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
+ find-root.c | 9 +++++++--
+ 1 file changed, 7 insertions(+), 2 deletions(-)
 
-diff --git a/btrfs-find-root.c b/btrfs-find-root.c
-index 1cb3085..01b3603 100644
---- a/btrfs-find-root.c
-+++ b/btrfs-find-root.c
-@@ -109,6 +109,9 @@ static void print_one_result(struct cache_extent *tree_block,
- 	       tree_block->start, generation, level);
- 	if (unsure)
- 		printf("but we are unsure about the correct generation/level\n");
-+	else if (level == filter->match_level &&
-+		 generation == filter->match_gen)
-+		printf("and it matches superblock\n");
- 	else
- 		printf("but generation/level doesn't match, want gen: %llu level: %u\n",
- 		       filter->match_gen, filter->match_level);
-@@ -129,8 +132,10 @@ static void print_find_root_result(struct cache_tree *result,
- 				struct btrfs_find_root_gen_cache, cache);
- 		level = gen_cache->highest_level;
- 		generation = cache->start;
-+		/* For exact found one, skip it as it's output before */
- 		if (level == filter->match_level &&
--		    generation == filter->match_gen)
-+		    generation == filter->match_gen &&
-+		    !filter->search_all)
- 			continue;
- 		for (tree_block = last_cache_extent(&gen_cache->eb_tree);
- 		     tree_block; tree_block = prev_cache_extent(tree_block))
+diff --git a/find-root.c b/find-root.c
+index 1af37b5..0eca0ab 100644
+--- a/find-root.c
++++ b/find-root.c
+@@ -46,9 +46,14 @@ static int add_eb_to_result(struct extent_buffer *eb,
+ 	    generation < filter->generation)
+ 		return ret;
+ 
+-	/* Get the generation cache or create one */
++	/*
++	 * Get the generation cache or create one
++	 *
++	 * NOTE: search_cache_extent() may return cache doesn't cover
++	 * the range. So need extra judgement to make sure it's a match.
++	 */
+ 	cache = search_cache_extent(result, generation);
+-	if (!cache) {
++	if (!cache || cache->start != generation) {
+ 		gen_cache = malloc(sizeof(*gen_cache));
+ 		BUG_ON(!gen_cache);
+ 		cache = &gen_cache->cache;
 -- 
 2.5.0
 

@@ -1,99 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:36044 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752370AbbHYSJj (ORCPT
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:37631 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751512AbbHYSMM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 14:09:39 -0400
-Received: by igcse8 with SMTP id se8so19724221igc.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 11:09:39 -0700 (PDT)
-Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.googlemail.com with ESMTPSA id r4sm1716433igh.14.2015.08.25.11.09.38
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 25 Aug 2015 11:09:38 -0700 (PDT)
+	Tue, 25 Aug 2015 14:12:12 -0400
+Received: by igui7 with SMTP id i7so17699946igu.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 11:12:12 -0700 (PDT)
 Subject: Re: BTRFS raid6 unmountable after a couple of days of usage.
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <55A4F74D.9000305@gmail.com> <55A79A67.8010408@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <55A4F74D.9000305@gmail.com> <55A50DBF.1080602@gmail.com>
+ <CAJCQCtSEk3cfwWTyzzQft1+eHcUDm_zFiBpYZM15rhZBzF3U2A@mail.gmail.com>
+ <55A63F03.2080207@gmail.com>
+ <CAJCQCtRWSvHtH0rjn2twd3yOPFMECE--UJxTUO0r_ydXQ7AhRQ@mail.gmail.com>
+ <20150715161546.GR10539@carfax.org.uk>
+ <CAJCQCtQFBjbuBHXfZ831YAKQwNDh+kxugFE_iMW6VyRzSpio2Q@mail.gmail.com>
+ <55A79854.6020309@gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55DCAF5D.5090906@gmail.com>
-Date: Tue, 25 Aug 2015 14:09:33 -0400
+Message-ID: <55DCAFF6.3020007@gmail.com>
+Date: Tue, 25 Aug 2015 14:12:06 -0400
 MIME-Version: 1.0
-In-Reply-To: <55A79A67.8010408@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020307090406070303000907"
+In-Reply-To: <55A79854.6020309@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020008010100050007090402"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms020307090406070303000907
-Content-Type: text/plain; charset=windows-1252; format=flowed
+--------------ms020008010100050007090402
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-07-16 07:49, Austin S Hemmelgarn wrote:
-> On 2015-07-14 07:49, Austin S Hemmelgarn wrote:
->> So, after experiencing this same issue multiple times (on almost a
->> dozen different kernel versions since 4.0) and ruling out the
->> possibility of it being caused by my hardware (or at least, the RAM,
->> SATA controller and disk drives themselves), I've decided to report it=
+On 2015-07-16 07:41, Austin S Hemmelgarn wrote:
+> On 2015-07-15 17:29, Chris Murphy wrote:
+>> On Wed, Jul 15, 2015 at 10:15 AM, Hugo Mills <hugo@carfax.org.uk> wrot=
+e:
+>>
+>>>     There is at least one superblock on every device, usually two, an=
+d
+>>> often three. Each superblock contains the virtual address of the root=
+s
+>>> of the root tree, the chunk tree and the log tree. Those are useless
+>>> without having the chunk tree, so there's also some information about=
 
->> here.
+>>> the chunk tree appended to the end of each superblock to bootstrap th=
+e
+>>> virtual address space lookup.
 >>
->> The general symptom is that raid6 profile filesystems that I have are
->> working fine for multiple weeks, until I either reboot or otherwise
->> try to remount them, at which point the system refuses to mount them.
->>
->> I'm currently using btrfs-progs v4.1 with kernel 4.1.2, although I've
->> been seeing this with versions of both since 4.0.
->>
->> Output of 'btrfs fi show' for the most recent fs that I had this issue=
+>> So maybe Austin can use btrfs-show-super -a on every device and see if=
 
->> with:
->>          Label: 'altroot'  uuid: 86eef6b9-febe-4350-a316-4cb00c40bbc5
->>     Total devices 4 FS bytes used 9.70GiB
->>     devid    1 size 24.00GiB used 6.03GiB path /dev/mapper/vg-altroot.=
-0
->>     devid    2 size 24.00GiB used 6.01GiB path /dev/mapper/vg-altroot.=
-1
->>     devid    3 size 24.00GiB used 6.01GiB path /dev/mapper/vg-altroot.=
-2
->>     devid    4 size 24.00GiB used 6.01GiB path /dev/mapper/vg-altroot.=
-3
+>> there's anything different on some of the devices, that shouldn't be
+>> different? There must be something the kernel is tripping over that
+>> the use space tools aren't for some reason.
 >>
->>          btrfs-progs v4.1
 >>
->> Each of the individual LVS that are in the FS is just a flat chunk of
->> space on a separate disk from the others.
 >>
->> The FS itself passes btrfs check just fine (no reported errors, exit
->> value of 0), but the kernel refuses to mount it with the message
->> 'open_ctree failed'.
 >>
->> I've run btrfs chunk recover and attached the output from that.
->>
->> Here's a link to an image from 'btrfs image -c9 -w':
->> https://www.dropbox.com/s/pl7gs305ej65u9q/altroot.btrfs.img?dl=3D0
->> (That link will expire in 30 days, let me know if you need access to
->> it beyond that).
->>
->> The filesystems in question all see relatively light but consistent
->> usage as targets for receiving daily incremental snapshots for
->> on-system backups (and because I know someone will mention it, yes, I
->> do have other backups of the data, these are just my online backups).
->>
-> Secondary but possibly related issue, I'm seeing similar issues with al=
-l
-> data/metadata profiles when using BTRFS on top of a dm-thinp volume wit=
-h
-> zeroing-mode turned off (that is, discard doesn't clear data from the
-> areas that were discarded).
+> I actually did do so when this happened most recently (I just didn't
+> think to mention it in the most recent e-mail), and nothing appeared to=
+
+> be different either between devices or within a given device (IIRC,
+> there's 2 sb per device in each of the filesystems in question).
 >
-Following up further on this specific issue, I've tracked this down to=20
-dm-thinp not clearing the discard_zeros_data flag on the devices when=20
-you turn off zeroing mode.  I'm going to do some more digging regarding=20
-that and probably send a patch to lkml to fix it.
+> I'm going to try and reproduce this in a VM for inspection as all the
+> filesystems I had this issue with now seem to be working fine (with the=
+
+> exception of some errors in the data blocks of one that got caught by
+> scrub).
+>
+After an a long time of trying to reproduce this in a Virtual Machine=20
+with no success, and increasing issues from the motherboard in the=20
+system in question culminating in it dying completely, I'm pretty sure=20
+now that this was in fact a hardware problem and not a bug in BTRFS.=20
+I've been unable to reproduce it at all after replacing the motherboard.
 
 
---------------ms020307090406070303000907
+--------------ms020008010100050007090402
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -135,9 +117,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODI1MTgwOTMzWjBPBgkq
-hkiG9w0BCQQxQgRAuHNhVn4teE7P3xwSSFZL0prdf87Lfu7dznuzDPeb6diw0pr9su0fKOzT
-6t5YerfuKrjb/aG1A1+3DijhPYDVMTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODI1MTgxMjA2WjBPBgkq
+hkiG9w0BCQQxQgRAMb7Z/JCLTI39Hdjhy91WerYcxA8hfZyrbkIKqn413WwxPP3x1UO7SX4S
+wDurTwf6tfNXhkd58pzGS7SIo1cbxTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -145,14 +127,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgA1k1pq1jw/h3qmcipWjE7U5wLB/pjWOSNJOmXX5IXj2tVkZ6Kw
-LsLmysRnQNi1bGShXwynx9R/6HT+v7djUAL3VEWlpG5ozX4V4hsBk/21xy5HF6lebEAxmvdv
-sDi4n9GAD9XZaEyKz2GJEMUEHU3ofgge9AVjxzP8KOKSzJd3LA0QqUUTnEEDnxPPO3i4psYT
-02k6JF6Mqu4EPkszIN0eACwah4M+DC4CbPghjx/rt2FV9RLZPjOmF9srXedn2zG0y8qPEqeD
-h35pYBo8vtHgkwclaxKxVNzN3XdUh5hf+v18bvSufGc+/+hpolg5zeYvhFwjHPtOvnwFITpV
-Rcr39COMESO9HoRlSMzaUrNRsihTcx7mx9iya4ybhV+5IhIJcVZjJPHI8HagqlUrvaPNGeYx
-HoEEFQjDux27dMdL0vKxYiRDX7xSRs2nMg7Sp79xjFepkgg0wWdp2K2SGJpNhj64wbNdX2nS
-e6yK6gGBgewBSRKnayGaWTzBk0WMbgydpxrt0SaMnjYVb8lBAk+6l90Y2cLgF0YrfrQD/lG2
-TXoR+YwVspWVmYZOVY/qRTmN/NalKH8EEq0z7d/U0YYBDQBKzHDjlFS+JDbN9CQjdro3fF2M
-5yI/tKkPE95zzKcAsQ/WlLY5Thkxb/H6NCJBXmoLXEJ4Ha/rAFlQlW6TWQAAAAAAAA==
---------------ms020307090406070303000907--
+BgkqhkiG9w0BAQEFAASCAgAqhG+Aw7nNEyapePn9GrGg7KAdmOCCvaxwle02yQx21G3GnkMp
+twGWT7mF0LEn2clQF+DBTkxJEJ6fYftacAs4Yuo2Zt4T/QG1pf85sCukhaaH4Coknk4SEFwv
+OHsTxcrnaRFM2t0cnpvgnpzRjCQYmKRz7m1VzKPfe8tIYs12ypgpgnKT1J3T1XfuhiuwyrUx
+npTmATYjAQNNe+nh/0tX4y385dDyFY0vZRe3HogawAfW8GiCE0vlFA1sk2MzWxokYPIzcN/G
+x3YyTZF7Wza1fpwCf3zbWZ9qMKkrO0iX/caslWU43zJPPvdZ/P9tWNahy5Lp6vb7PyHPjn7q
+45FLaisXp5GwoJrfchylO0O+w1o8A6QA4WiHo0c2S4XH+xR3VsDQ+JliOaBd/A95vsuerfMK
+X/2h6o5k8ZZWtP6DpdKxaaaD8rpZ/V7HVklpDGkbjfcucyk1xjhye7hqOVHc+Acyd4/0tyTs
+ZtCDWJ7rA8GOtBcUymI14RyDxDJEEx4BeX8e3L9foOUMMrYSvswUTRDYK++1DYHr829onupK
+9nuleXMc/kn0N64dHfqu36u3/2yBTXChFebxJvb0pLwm0QelIE7MrmC5IdDknr1j3zz6d5Bm
+CX7ynnIasM95gKiK10IVWMiUkBB8aylUeaVh3+jG9cbCekpz6IiY67brpAAAAAAAAA==
+--------------ms020008010100050007090402--

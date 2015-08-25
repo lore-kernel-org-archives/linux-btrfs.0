@@ -1,50 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f173.google.com ([209.85.223.173]:35648 "EHLO
-	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752224AbbHUTXs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 21 Aug 2015 15:23:48 -0400
+Received: from smtp121.iad3a.emailsrvr.com ([173.203.187.121]:32849 "EHLO
+	smtp121.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752059AbbHYPWe convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Aug 2015 11:22:34 -0400
+Received: from smtp16.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp16.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 29A79180811
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 11:22:34 -0400 (EDT)
+Received: from smtp16.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp16.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 25C10180A07
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 11:22:34 -0400 (EDT)
+Received: from app61.wa-webapps.iad3a (relay-webapps.rsapps.net [172.27.255.140])
+	by smtp16.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 1CA11180811
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 11:22:34 -0400 (EDT)
+Received: from up4.tv (localhost.localdomain [127.0.0.1])
+	by app61.wa-webapps.iad3a (Postfix) with ESMTP id 0A790180050
+	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 11:22:34 -0400 (EDT)
+Date: Tue, 25 Aug 2015 11:22:34 -0400 (EDT)
+Subject: Response to Bcachefs Claims
+From: "Vincent Olivier" <vincent@up4.com>
+To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-From: Neal Gompa <ngompa@fedoraproject.org>
-Date: Fri, 21 Aug 2015 15:23:07 -0400
-Message-ID: <CAEg-Je9o6QTyjD7pnSiTeUgaZjN10vLRF8=EtqywCUyZmjW95Q@mail.gmail.com>
-Subject: Issue: With an OverlayFS that has Btrfs as the upper layer, removal
- of directories silently fails
-To: miklos@szeredi.hu, Chris Mason <clm@fb.com>, jbacik@fb.com,
-        dsterba@suse.com, linux-unionfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Cc: Josh Boyer <jwboyer@redhat.com>, dhowells@redhat.com
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain;charset=UTF-8
+Message-ID: <1440516154.040713246@apps.rackspace.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+Hi,
 
-For those who have received this message twice already, I sincerely apologize.
+I have been using Btrfs for almost a year now with a 16x4TB RAID10 and its 8x4TB RAID0 backup (using incremental snapshots diffs). I have always tried to stay at the latest stable kernel (currently 4.1.6). But I might be moving to Fedora 22 because Centos 7 has significant incompatibilities with the 4.1.x kernel series.
 
-Yesterday I filed an issue in the CentOS bug tracker (#9297[1]) and
-the Red Hat Bugzilla (#1255512[2]) about OverlayFS with Btrfs as the
-upper layer.
+I have seen the news about Bcachefs aiming to be Btrfs-complete while being extX-stable.
 
-The issue was discovered by a colleague of mine, and we verified the
-issue exists in the EL7 kernel and mainline kernels (tested on Arch
-Linux). I additionally verified the problem exists in Fedora kernels.
+What are the chances Bcachefs beats Btrfs at being the Linux kernel's next "official" file system ? I chose Btrfs over ZFS because it seemed like the only "next-gen" heir to ext4/xfs.
 
-Rather than quoting the issue, I'll just note that the issue is
-described quite well in the filed bugs noted earlier. In the linked
-bugs, there's a simple Bash script that will reliably reproduce the
-problem. While the script uses tmpfs at the lower layer, we originally
-discovered the problem with ext4 as the lower layer and verified that
-it doesn't matter which lower layer filesystem it is, the problem
-exists. Additionally, the problem doesn't exist when using ext4 as the
-upper layer.
+I have been having a few problems with Btrfs myself. I have only one that remains unresolved : I haven't found the best way to mount Btrfs at boot time. "LABEL=" won't work for known reasons (I don't understand however why a mount can't do its own "device scan" transparently). "UUID=" won't work for unknown reasons (haven't got a reply on this, maybe it's the same as "LABEL="). And I will use /dev/* in fstab for stability reasons. Right now I'm mounting the fs manually after a "device scan" and picking up the first device that shows up in the "fi show" run. I can "live" with that but I suppose that things like this contribute to the feeling that Btrfs is actually still experimental contrarily to claims that it is production-ready.
 
-I was advised by Josh Boyer to email you guys (and the mailing lists,
-to be sure to get everyone a chance to look over it) about the
-problem, since it affects mainline.
+For my own sake and other's I would like to maintain (if nobody is already working on that nor needs any help) a centralized human-readable digest of known issues that would be featured prominently on top of the Btrfs wiki. I would merge the Gotchas page and the various known issues pages (including the various multi-device mount gotchas here and there).
 
-[1]: https://bugs.centos.org/view.php?id=9297
-[2]: https://bugzilla.redhat.com/show_bug.cgi?id=1255512
+Answers ? Comments ? Help ?
 
--- 
-Neal Gompa (FAS: ngompa)
+Thanks,
+
+Vincent
+

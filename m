@@ -1,58 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:38044 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752291AbbHYRzs (ORCPT
+Received: from mail-io0-f170.google.com ([209.85.223.170]:33447 "EHLO
+	mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751738AbbHYR7m (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 13:55:48 -0400
-Received: by igfj19 with SMTP id j19so17434359igf.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 10:55:48 -0700 (PDT)
+	Tue, 25 Aug 2015 13:59:42 -0400
+Received: by iods203 with SMTP id s203so196479761iod.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 10:59:41 -0700 (PDT)
 Subject: Re: Response to Bcachefs Claims
-To: Roman Mamedov <rm@romanrm.net>, Vincent Olivier <vincent@up4.com>
+To: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <1440516154.040713246@apps.rackspace.com>
- <20150825211318.4599ca6c@natsu>
-Cc: linux-btrfs@vger.kernel.org
+ <CAJCQCtTSU08EjVrYGyL5TuXsEtTEmkAkpZ4XjM5rMXVZLQsjPA@mail.gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55DCAC1E.5020000@gmail.com>
-Date: Tue, 25 Aug 2015 13:55:42 -0400
+Message-ID: <55DCAD07.1020500@gmail.com>
+Date: Tue, 25 Aug 2015 13:59:35 -0400
 MIME-Version: 1.0
-In-Reply-To: <20150825211318.4599ca6c@natsu>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070105040202040903030407"
+In-Reply-To: <CAJCQCtTSU08EjVrYGyL5TuXsEtTEmkAkpZ4XjM5rMXVZLQsjPA@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000808070603060805060602"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms070105040202040903030407
-Content-Type: text/plain; charset=windows-1252; format=flowed
+--------------ms000808070603060805060602
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-08-25 12:13, Roman Mamedov wrote:
-> On Tue, 25 Aug 2015 11:22:34 -0400 (EDT)
-> "Vincent Olivier" <vincent@up4.com> wrote:
+On 2015-08-25 12:39, Chris Murphy wrote:
+> On Tue, Aug 25, 2015 at 9:22 AM, Vincent Olivier <vincent@up4.com> wrot=
+e:
 >
->> "UUID=3D" won't work for unknown reasons (haven't got a reply on this,=
- maybe
->> it's the same as "LABEL=3D"). And I will use /dev/* in fstab for stabi=
-lity
->> reasons.
+>> For my own sake and other's I would like to maintain (if nobody is alr=
+eady working on that nor needs any help) a centralized human-readable dig=
+est of known issues that would be featured prominently on top of the Btrf=
+s wiki. I would merge the Gotchas page and the various known issues pages=
+ (including the various multi-device mount gotchas here and there).
 >
-> Take a look at the contents of /dev/disk/by-id/, specifically ata-*
-> These symlinks are made from HDD model and serial numbers, so can be re=
-lied on
-> to remain stable, no matter in which order your HDDs appear in the syst=
-em.
-> Maybe these will come handy for your fstab, I used them a lot and still=
- do,
-> especially for swap partitions.
+> Some way to organize problems by distribution would be needed to be com=
+plete.
 >
-Unless things have changed significantly recently, these are all created =
+> For example I don't have the discover & mount by label or uuid problem
+> you mention on Fedora, since forever. I haven't experienced it on
+> Fedora 19/20 which is approximately what CentOS 7 is based on. To
+> figure that out means using one or more boot parameters:
+> systemd.log_level=3Ddebug or rd.udev.debug or rd.debug to find out
+> what's happening.
+That would be because the Fedora initrd does a device scan before trying =
 
-by udev, and therefore useless unless you are using an initramfs or=20
-userspace is already up.  They are really useful however if you have to=20
-boot into a recovery system (which is 90% of where I use them).
+to mount root.  Most of the big distro's do this now, but of course you=20
+need to be using an initrd for it to work.
+> The one problem case I still have with the latest versions is multiple
+> device Btrfs volume UUID doesn't exist when 1 or more devices are
+> missing.
+I've seen this myself, but only sometimes.  Based on my own testing, it=20
+only seems to happen when one of the disks with a system chunk on it is=20
+missing (for example, in a 3 device raid1 setup, one of the disks won't=20
+have a system chunk on it, and if disk goes missing, I can still mount=20
+by UUID fine).
 
 
---------------ms070105040202040903030407
+
+--------------ms000808070603060805060602
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -94,9 +102,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODI1MTc1NTQyWjBPBgkq
-hkiG9w0BCQQxQgRAVxsh7VuXFXc0oyjri1ez0f0d8UCJcsdSkxj3P/jTQpZRSv8HxKXHZl9k
-Bxi/38mbdL5abHe+N7qK4R7kCLeJqTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwODI1MTc1OTM1WjBPBgkq
+hkiG9w0BCQQxQgRA10T/oZKS+RS2jnAbPuAVyMRV890CVzq4bmpA1soOR2mV0A3tfS0hABOz
+KDP6fbU6XUh4B3Qrf6fvgS2r8tB26DBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -104,14 +112,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgCAPK8XXeJif7hs5BuIGAeW1YxJz1MVkfP7OnlWorW1Szbr8p4J
-Ju6jBbW7Yt7t6vMhE1C8f2P3BKy3GZs6wAAf02aD0PS4bfMNihY7x2+zCGHwV0BW2hYfnh4k
-kx5keEX8O7qFbHVzRRaWNeHxog18NXo3J5i42V5P2lX89KxK38UAxQxfEs0Uv//iZD2PE6/J
-tOy8tBdVUPmIrIiy/3Blk2ab7K6J3FUMcHwT/p8i69NpzR6JH3BC0dgsvElPGcRGwmTVKGne
-PtLT18p28UI3Arp9gmtxGSHzBQIgbPjy0rZIlW17XofApwfLo3Eg3DNxn9L0bLll4pRfY4hA
-pVx1DymXfrXyGM3u8tALB2mPPgp+TLf32gWOQX/pAA1Gn8hVWgGLIktxNAE33MPZU4R6curj
-kjYNEN8LrZpWV/+D1a75PtKcGMbqpBdA1/unQGYh26G6WrIq9eI6IyhY8ITB9sW6lfoaEzLA
-Ev9ZjFLM6zoNb9BcOScym8KhHkyiUGst2Z1QfFD5CD1XIrJ0Jidp4p+zXbDsgd4fNPZdjD5I
-SRqlKJGQk4TVOXRGcawwIsSTlV+diWYz4wbLVHg3D5g5h4dXxzmDiO/NCFUtfeevdxLJMva/
-yKI1+I3MVcIIRDygeMTQtt5cZB6A4v9g5RgzbL0W7aPY/4p4QR2G4H6f2wAAAAAAAA==
---------------ms070105040202040903030407--
+BgkqhkiG9w0BAQEFAASCAgAFmOS9dEVWYNEqoTF/qX69yp1D9FNu6sEXJxjh1JoH4I9Nt4sj
+jbnGT8Lwvuyff5JAmC2c5w+cFoSv5PU6MRCHebZ4eNR1X0Vo8oRD2j1n1DnMchChlfysMnwI
+ha0k4mQDVCOQnw5ssnFZiRBy9kJI+IjRgBki/9rJgn8jZ8CgV1a0Ew353P5cF7r9r/ALQ+Xk
+xQD9BOQxyRUbLHziWV3FYHmrqA6sopXHQguDUJTZm9hZ9cz299e7l25FuvM67X3fVcYqKCr6
+PIG6YXXhxUGegYUUiDsSy4CnKi7247ysQXCVr02HiU25DUKPdrvW+aaJ51IcRlZfsOoaPrTF
+B8RxFfdVdgXmZQdP7As4+KQQPRFDWeziPnGcB2m+HA85ztSpZYxsnJT1+C65xaV739Yw01dn
+VawiboJHT+/v5hRHWPpCrHo7WDPXI4A8h/s+/2fi1/EFcCUdJ7G7DNiDeGHx9xPhiyCtnyDA
+Z9t03jqHKx1ru5gxtqols+RE3y4xK/t+qTPAILYtsMCXHBgLZn2L52cMBtEWziav6RlkNF0y
+14LG90KwH4SwtAC1VuRo1C+8OzvXueckJMSvvvieaDQOBeFOgyuOUrNcz2AlA4Eh5w4OYx6E
+0rFxeaVXrzpBHbTVhEZtSmJh460QXCvtb70IHYdKm+eHmlteScBXuP63OQAAAAAAAA==
+--------------ms000808070603060805060602--

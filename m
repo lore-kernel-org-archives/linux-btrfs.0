@@ -1,59 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:37286 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1755533AbbHYQ1I (ORCPT
+Received: from mail-vk0-f54.google.com ([209.85.213.54]:35037 "EHLO
+	mail-vk0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751780AbbHYQjk convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 12:27:08 -0400
-Date: Tue, 25 Aug 2015 12:27:03 -0400
-From: Chris Mason <clm@fb.com>
-To: Vincent Olivier <vincent@up4.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: Response to Bcachefs Claims
-Message-ID: <20150825162703.GA25661@ret.masoncoding.com>
-References: <1440516154.040713246@apps.rackspace.com>
+	Tue, 25 Aug 2015 12:39:40 -0400
+Received: by vkfi73 with SMTP id i73so76546105vkf.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 09:39:39 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
 In-Reply-To: <1440516154.040713246@apps.rackspace.com>
+References: <1440516154.040713246@apps.rackspace.com>
+Date: Tue, 25 Aug 2015 10:39:39 -0600
+Message-ID: <CAJCQCtTSU08EjVrYGyL5TuXsEtTEmkAkpZ4XjM5rMXVZLQsjPA@mail.gmail.com>
+Subject: Re: Response to Bcachefs Claims
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Aug 25, 2015 at 11:22:34AM -0400, Vincent Olivier wrote:
-> Hi,
-> 
-> I have been using Btrfs for almost a year now with a 16x4TB RAID10 and
-> its 8x4TB RAID0 backup (using incremental snapshots diffs). I have
-> always tried to stay at the latest stable kernel (currently 4.1.6).
-> But I might be moving to Fedora 22 because Centos 7 has significant
-> incompatibilities with the 4.1.x kernel series.
-> 
-> I have seen the news about Bcachefs aiming to be Btrfs-complete while
-> being extX-stable.
-> 
-> What are the chances Bcachefs beats Btrfs at being the Linux kernel's
-> next "official" file system ? I chose Btrfs over ZFS because it seemed
-> like the only "next-gen" heir to ext4/xfs.
+On Tue, Aug 25, 2015 at 9:22 AM, Vincent Olivier <vincent@up4.com> wrote:
 
-Kent is a smart guy, and I'm always glad to see more work in Linux
-filesystems.  We all work on the parts we think are important and people
-use the best tool they can find for their workloads.  Sometimes that'll
-be btrfs, sometimes not.  Btrfs has certainly come a long way and is
-continuing to improve pretty dramatically.
+> For my own sake and other's I would like to maintain (if nobody is already working on that nor needs any help) a centralized human-readable digest of known issues that would be featured prominently on top of the Btrfs wiki. I would merge the Gotchas page and the various known issues pages (including the various multi-device mount gotchas here and there).
 
-> 
-> I have been having a few problems with Btrfs myself. I have only one
-> that remains unresolved : I haven't found the best way to mount Btrfs
-> at boot time. "LABEL=" won't work for known reasons (I don't
-> understand however why a mount can't do its own "device scan"
-> transparently). "UUID=" won't work for unknown reasons (haven't got a
-> reply on this, maybe it's the same as "LABEL="). And I will use /dev/*
-> in fstab for stability reasons. Right now I'm mounting the fs manually
-> after a "device scan" and picking up the first device that shows up in
-> the "fi show" run. I can "live" with that but I suppose that things
-> like this contribute to the feeling that Btrfs is actually still
-> experimental contrarily to claims that it is production-ready.
-> 
+Some way to organize problems by distribution would be needed to be complete.
 
-LABEL= and UUID= both need a scan on multi device filesystems.  If your
-initrd does it, things will work fine.
+For example I don't have the discover & mount by label or uuid problem
+you mention on Fedora, since forever. I haven't experienced it on
+Fedora 19/20 which is approximately what CentOS 7 is based on. To
+figure that out means using one or more boot parameters:
+systemd.log_level=debug or rd.udev.debug or rd.debug to find out
+what's happening.
 
--chris
+The one problem case I still have with the latest versions is multiple
+device Btrfs volume UUID doesn't exist when 1 or more devices are
+missing.
+
+
+-- 
+Chris Murphy

@@ -1,51 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:48640 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753473AbbHXCd3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 23 Aug 2015 22:33:29 -0400
-Message-ID: <55DA81B8.1030301@oracle.com>
-Date: Mon, 24 Aug 2015 10:30:16 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from verein.lst.de ([213.95.11.211]:34980 "EHLO newverein.lst.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755290AbbHYJAb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 25 Aug 2015 05:00:31 -0400
+Date: Tue, 25 Aug 2015 11:00:30 +0200
+From: Christoph Hellwig <hch@lst.de>
+To: Stefan Priebe <s.priebe@profihost.ag>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel@vger.kernel.org, Christoph Hellwig <hch@lst.de>
+Subject: Re: btrfs regression since 4.X kernel NULL pointer dereference
+Message-ID: <20150825090030.GF31630@lst.de>
+References: <55D8B193.8010906@profihost.ag>
 MIME-Version: 1.0
-To: Stefan Behrens <sbehrens@giantdisaster.de>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, Chris Mason <clm@fb.com>,
-        btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: [GIT PULL] Fujitsu pull part1: cleanup
-References: <55D68A6C.3010107@cn.fujitsu.com> <55D775A0.8030207@giantdisaster.de>
-In-Reply-To: <55D775A0.8030207@giantdisaster.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <55D8B193.8010906@profihost.ag>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I think this is btrfs using a struct block_device that doesn't have
+a valid queue pointer in it's gendisk for ->s_bdev.  And there are
+some fishy looking ->s_bdev assignments in the code which I suspect
+are related to it:
 
-
-Stefan,
-
-> Please send your patches to the mailing list for reviews by everybody.
-
-   Do you see any patch below which wasn't posted to the mailing list. ?
-
-Thanks, Anand
-
-
->> Qu Wenruo (1):
->>    btrfs: async_thread: Fix workqueue 'max_active' value when
->>      initializing
->>
->> Tsutomu Itoh (1):
->>    Btrfs: cleanup: remove unnecessary check before btrfs_free_path is
->>      called
->>
->> Zhao Lei (6):
->>    btrfs: Update out-of-date "skip parity stripe" comment
->>    btrfs: Remove noused chunk_tree and chunk_objectid from
->>      scrub_enumerate_chunks and scrub_chunk
->>    btrfs: Cleanup for btrfs_calc_num_tolerated_disk_barrier_failures
->>    btrfs: Add raid56 support for updating
->>      num_tolerated_disk_barrier_failures in btrfs_balance
->>    btrfs: Remove useless condition in start_log_trans
->>    btrfs: Remove unused arguments in tree-log.c
-
-
-
+fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev == src_device->bdev)
+fs/btrfs/dev-replace.c:         fs_info->sb->s_bdev = tgt_device->bdev;
+fs/btrfs/volumes.c:     if (device->bdev == root->fs_info->sb->s_bdev)
+fs/btrfs/volumes.c:             root->fs_info->sb->s_bdev = next_device->bdev;
+fs/btrfs/volumes.c:     if (tgtdev->bdev == fs_info->sb->s_bdev)
+fs/btrfs/volumes.c:             fs_info->sb->s_bdev = next_device->bdev;

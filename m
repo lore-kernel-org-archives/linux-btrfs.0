@@ -1,79 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50602 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754657AbbHYNrG (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:9829 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751534AbbHYNwQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 09:47:06 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7PDkvN4003059
-	for <linux-btrfs@vger.kernel.org>; Tue, 25 Aug 2015 21:46:57 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: scrub: set error stats when tree block spanning stripes
-Date: Tue, 25 Aug 2015 21:45:27 +0800
-Message-ID: <981687019fcca4b4f7455b7a755e48888cbd24ff.1440510311.git.zhaolei@cn.fujitsu.com>
+	Tue, 25 Aug 2015 09:52:16 -0400
+Date: Tue, 25 Aug 2015 09:51:46 -0400
+From: Chris Mason <clm@fb.com>
+To: Christoph Hellwig <hch@lst.de>
+CC: Stefan Priebe <s.priebe@profihost.ag>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        <linux-fsdevel@vger.kernel.org>
+Subject: Re: btrfs regression since 4.X kernel NULL pointer dereference
+Message-ID: <20150825135146.GE7176@ret.masoncoding.com>
+References: <55D8B193.8010906@profihost.ag>
+ <20150825090030.GF31630@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20150825090030.GF31630@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-It is better to show error stats to user when we found tree block
-spanning stripes.
+On Tue, Aug 25, 2015 at 11:00:30AM +0200, Christoph Hellwig wrote:
+> I think this is btrfs using a struct block_device that doesn't have
+> a valid queue pointer in it's gendisk for ->s_bdev.  And there are
+> some fishy looking ->s_bdev assignments in the code which I suspect
+> are related to it:
+> 
+> fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev == src_device->bdev)
+> fs/btrfs/dev-replace.c:         fs_info->sb->s_bdev = tgt_device->bdev;
+> fs/btrfs/volumes.c:     if (device->bdev == root->fs_info->sb->s_bdev)
+> fs/btrfs/volumes.c:             root->fs_info->sb->s_bdev = next_device->bdev;
+> fs/btrfs/volumes.c:     if (tgtdev->bdev == fs_info->sb->s_bdev)
+> fs/btrfs/volumes.c:             fs_info->sb->s_bdev = next_device->bdev;
 
-On a btrfs created by old version of btrfs-convert:
-Before patch:
-  # btrfs scrub start -B /dev/vdh
-  scrub done for 8b342d35-2904-41ab-b3cb-2f929709cf47
-          scrub started at Tue Aug 25 21:19:09 2015 and finished after 00:00:00
-          total bytes scrubbed: 53.54MiB with 0 errors
-  # dmesg
-  ...
-  [  128.711434] BTRFS error (device vdh): scrub: tree block 27054080 spanning stripes, ignored. logical=27000832
-  [  128.712744] BTRFS error (device vdh): scrub: tree block 27054080 spanning stripes, ignored. logical=27066368
-  ...
+We've had trouble with this in the past, I'll take a look.
 
-After patch:
-  # btrfs scrub start -B /dev/vdh
-  scrub done for ff7f844b-7a4e-4b1a-88a9-8252ab25be1b
-          scrub started at Tue Aug 25 21:42:29 2015 and finished after 00:00:00
-          total bytes scrubbed: 53.60MiB with 2 errors
-          error details:
-          corrected errors: 0, uncorrectable errors: 2, unverified errors: 0
-  ERROR: There are uncorrectable errors.
-  # dmesg
-  ...omit...
-  #
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/scrub.c | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index c69c75e..81482e4 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3025,6 +3025,9 @@ static noinline_for_stack int scrub_raid56_parity(struct scrub_ctx *sctx,
- 			     logic_start + map->stripe_len)) {
- 				btrfs_err(fs_info, "scrub: tree block %llu spanning stripes, ignored. logical=%llu",
- 					  key.objectid, logic_start);
-+				spin_lock(&sctx->stat_lock);
-+				sctx->stat.uncorrectable_errors++;
-+				spin_unlock(&sctx->stat_lock);
- 				goto next;
- 			}
- again:
-@@ -3374,6 +3377,9 @@ static noinline_for_stack int scrub_stripe(struct scrub_ctx *sctx,
- 					   "scrub: tree block %llu spanning "
- 					   "stripes, ignored. logical=%llu",
- 				       key.objectid, logical);
-+				spin_lock(&sctx->stat_lock);
-+				sctx->stat.uncorrectable_errors++;
-+				spin_unlock(&sctx->stat_lock);
- 				goto next;
- 			}
- 
--- 
-1.8.5.1
+-chris
 

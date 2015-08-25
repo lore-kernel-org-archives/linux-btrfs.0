@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:41988 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:42000 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750726AbbHYEnA (ORCPT
+	with ESMTP id S1751478AbbHYEnD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 00:43:00 -0400
+	Tue, 25 Aug 2015 00:43:03 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: fstests@vger.kernel.org
 Cc: Anand Jain <Anand.Jain@oracle.com>, david@fromorbit.com,
         linux-btrfs@vger.kernel.org, eguan@redhat.com, fdmanana@gmail.com
-Subject: [PATCH v8 2/3] xfstests: btrfs: test device replace, with EIO on the src dev
-Date: Tue, 25 Aug 2015 12:39:27 +0800
-Message-Id: <1440477568-4614-3-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v8 3/3] xfstests: btrfs: test device delete with EIO on src dev
+Date: Tue, 25 Aug 2015 12:39:28 +0800
+Message-Id: <1440477568-4614-4-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1440477568-4614-1-git-send-email-anand.jain@oracle.com>
 References: <1440477568-4614-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,12 +18,20 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Anand Jain <Anand.Jain@oracle.com>
 
-This test case will test to confirm the replace works with
-the failed (EIO) replacing source device. EIO condition is
-achieved using the DM device.
+This test case tests if the device delete works with
+the failed (EIO) source device. EIO errors are achieved
+usign the DM device.
+
+This test would need following btrfs-progs and btrfs
+kernel patch
+   btrfs-progs: device delete to accept devid
+   Btrfs: device delete by devid
+
+However when btrfs-progs patch is not found this test will
+not run, and when kernel patch is not found btrfs-progs
+will fail gracefully and thus the test script.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 ---
 v7->v8:
  . Inline with the patch 1/3 v8 changes, use dmerror_mount()
@@ -31,43 +39,61 @@ v7->v8:
 v6->v7: accepts Dave's comments
  . in line with changes as in 1/3 mainly the renames
 
-v5->v6: accepts Eryu and Filipe's comments
- . commit update
+v5->v6: accepts Eryu and Filipe's comments, thanks
  . correct cleanup with tmp.*
  .  don't redirect run_check $FSFTRESS_PROG to dev null
 
-v4->v5: rebase on latest xfstests code and accepts Filipe comment
+v4->v5: rebase on latest xfstests code, and accepts Filipe comment
  . cut line length to 80 char
  . accommodate to the regression introduced by a092363bbdfa6cc6e44353136bae9d3aa81baae2
-      
+
 v3->v4: rebase on latest xfstests code
 
 v2->v3: accepts Filipe Manana's review comments, thanks
- . induce FS load using FSSTRESS_PROG, actually I missed it in v2
+ . induce FS load using FSSTRESS_PROG
 
 v1->v2: accepts Dave Chinner's review comments, thanks
  . move 'start with the clean devices' code to actually at the
-   start of the script - damn why I didn't think like this before.
-   Thanks Dave.
- . add .out file to contain the logs to verify.
+   start of the script - damn why I didn't think like this
+   before. Thanks Dave.
+ . update .out file to contain the logs to verify.
 
- tests/btrfs/098     | 81 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/098.out | 11 ++++++++
+ common/rc           |  7 +++++
+ tests/btrfs/099     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/099.out | 11 +++++++
  tests/btrfs/group   |  1 +
- 3 files changed, 93 insertions(+)
- create mode 100755 tests/btrfs/098
- create mode 100644 tests/btrfs/098.out
+ 4 files changed, 101 insertions(+)
+ create mode 100755 tests/btrfs/099
+ create mode 100644 tests/btrfs/099.out
 
-diff --git a/tests/btrfs/098 b/tests/btrfs/098
+diff --git a/common/rc b/common/rc
+index 7befa09..140ebd8 100644
+--- a/common/rc
++++ b/common/rc
+@@ -2737,6 +2737,13 @@ _require_meta_uuid()
+ 	umount $SCRATCH_MNT
+ }
+ 
++_require_btrfs_dev_del_by_devid()
++{
++	$BTRFS_UTIL_PROG device delete --help | egrep devid > /dev/null 2>&1
++	[ $? -eq 0 ] || _notrun "$BTRFS_UTIL_PROG too old "\
++			"(must support 'btrfs device delete <devid> /<mnt>')"
++}
++
+ _get_total_inode()
+ {
+ 	if [ -z "$1" ]; then
+diff --git a/tests/btrfs/099 b/tests/btrfs/099
 new file mode 100755
-index 0000000..8891655
+index 0000000..9793c9b
 --- /dev/null
-+++ b/tests/btrfs/098
-@@ -0,0 +1,81 @@
++++ b/tests/btrfs/099
+@@ -0,0 +1,82 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/098
++# FS QA Test No. btrfs/099
 +#
-+# Test device replace works when the source device has EIO
++# Test device delete when the source device has EIO
 +#
 +# Copyright (c) 2015 Oracle.  All Rights Reserved.
 +#
@@ -112,6 +138,7 @@ index 0000000..8891655
 +_supported_os Linux
 +_need_to_be_root
 +_require_scratch_dev_pool 3
++_require_btrfs_dev_del_by_devid
 +_dmerror_required
 +
 +rm -f $seqres.full
@@ -120,7 +147,7 @@ index 0000000..8891655
 +dev2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $3}'`"
 +
 +_dmerror_init
-+_mkfs_dev "-f -d raid1 -m raid1 $dev1 $DMERROR_DEV"
++_mkfs_dev -f -d raid1 -m raid1 $dev1 $dev2 $DMERROR_DEV
 +_dmerror_mount
 +
 +_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
@@ -137,21 +164,21 @@ index 0000000..8891655
 +# now load the error into the DMERROR_DEV
 +_dmerror_load_table
 +
-+_run_btrfs_util_prog replace start -B $error_devid $dev2 $SCRATCH_MNT
++_run_btrfs_util_prog device delete $error_devid $SCRATCH_MNT
 +
 +_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
 +$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
 +
-+echo "=== device replace completed"
++echo "=== device delete completed"
 +
 +status=0; exit
-diff --git a/tests/btrfs/098.out b/tests/btrfs/098.out
+diff --git a/tests/btrfs/099.out b/tests/btrfs/099.out
 new file mode 100644
-index 0000000..eb2f87f
+index 0000000..ec74e45
 --- /dev/null
-+++ b/tests/btrfs/098.out
++++ b/tests/btrfs/099.out
 @@ -0,0 +1,11 @@
-+QA output created by 098
++QA output created by 099
 +Label: none  uuid:  <UUID>
 +	Total devices <NUM> FS bytes used <SIZE>
 +	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
@@ -161,16 +188,16 @@ index 0000000..eb2f87f
 +	Total devices <NUM> FS bytes used <SIZE>
 +	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
 +
-+=== device replace completed
++=== device delete completed
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e13865a..c8a53b5 100644
+index c8a53b5..968ee63 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -100,3 +100,4 @@
- 095 auto quick metadata
+@@ -101,3 +101,4 @@
  096 auto quick clone
  097 auto quick send clone
-+098 auto quick replace
+ 098 auto quick replace
++099 auto quick replace
 -- 
 2.4.1
 

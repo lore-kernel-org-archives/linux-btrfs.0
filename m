@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10489 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:42968 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751990AbbHYA0z (ORCPT
+	with ESMTP id S1751672AbbHYCvD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 20:26:55 -0400
+	Mon, 24 Aug 2015 22:51:03 -0400
 Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:8113! (4.1.3 kernel)
 To: Marc MERLIN <marc@merlins.org>
 References: <55CB631B.2080404@fb.com> <20150812160936.GK29259@merlins.org>
@@ -15,8 +15,8 @@ References: <55CB631B.2080404@fb.com> <20150812160936.GK29259@merlins.org>
 CC: Josef Bacik <jbacik@fb.com>, <dsterba@suse.com>, <clm@fb.com>,
         <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55DBB64B.6040503@cn.fujitsu.com>
-Date: Tue, 25 Aug 2015 08:26:51 +0800
+Message-ID: <55DBD814.4000801@cn.fujitsu.com>
+Date: Tue, 25 Aug 2015 10:51:00 +0800
 MIME-Version: 1.0
 In-Reply-To: <20150824141013.GM5602@merlins.org>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -52,9 +52,10 @@ Marc MERLIN wrote on 2015/08/24 07:10 -0700:
 > Thanks,
 > Marc
 >
-Oh, it seems to be a new bug in btrfs-find-root.
+Patches sent and CCed to you.
 
-I'll fix it first then.
+Please try the two patches and see what's new.
+This time, I think the output will be much larger.
 
 Thanks,
 Qu

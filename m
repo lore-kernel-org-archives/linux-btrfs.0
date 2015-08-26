@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:15263 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:31219 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756236AbbHZJGD (ORCPT
+	with ESMTP id S1756417AbbHZJGF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 05:06:03 -0400
+	Wed, 26 Aug 2015 05:06:05 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7Q95sJo016061
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 17:05:54 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7Q95tTu016064
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 17:05:55 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 1/2] btrfs-progs: Introduce open_btrfs_dir wrapper
-Date: Wed, 26 Aug 2015 17:04:22 +0800
-Message-ID: <f1ac41c81d460158be008fa8a02a06b22495a221.1440579753.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v2 2/2] btrfs-progs: use open_btrfs_dir for btrfs device command
+Date: Wed, 26 Aug 2015 17:04:23 +0800
+Message-ID: <88fb97835205d1faa824e695128eeff5927eeda1.1440579753.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1440579753.git.zhaolei@cn.fujitsu.com>
 References: <cover.1440579753.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,103 +20,73 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch introduce open_btrfs_dir() to open a dir in btrfs
-filesystem.
+We can use open_btrfs_dir() to check whether target dir is
+in btrfs's mount point before open, instead of checking it in kernel
+space of ioctl, and return fuzzy error message.
 
-It can be used for several tools in btrfs-progs.
+Before patch:
+  # (/mnt/tmp is not btrfs mountpoint)
+  #
+  # btrfs device add -f /dev/sda13 /mnt/tmp
+  ERROR: error adding the device '/dev/sda13' - Inappropriate ioctl for device
+  #
+
+After patch:
+  # btrfs device add -f /dev/sda13 /mnt/tmp
+  ERROR: not btrfs filesystem: /mnt/tmp
+  #
+
+Similar fix for device remove and device usage.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- utils.c | 56 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.h |  1 +
- 2 files changed, 57 insertions(+)
+ cmds-device.c | 16 +++++-----------
+ 1 file changed, 5 insertions(+), 11 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index 1dfcc2d..eb9a605 100644
---- a/utils.c
-+++ b/utils.c
-@@ -36,6 +36,8 @@
- #include <limits.h>
- #include <blkid/blkid.h>
- #include <sys/vfs.h>
-+#include <sys/statfs.h>
-+#include <linux/magic.h>
+diff --git a/cmds-device.c b/cmds-device.c
+index 00e362a..2dba050 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -84,11 +84,9 @@ static int cmd_device_add(int argc, char **argv)
  
- #include "kerncompat.h"
- #include "radix-tree.h"
-@@ -1081,6 +1083,60 @@ int open_path_or_dev_mnt(const char *path, DIR **dirstream)
- 	return fdmnt;
- }
+ 	mntpnt = argv[optind + argc - 1];
  
-+/*
-+ * Do following check before open_file_or_dir():
-+ * 1: path is in a btrfs filesystem
-+ * 2: path is a dir
-+ */
-+int open_btrfs_dir(const char *path, DIR **dirstream, int output)
-+{
-+	struct statfs stfs;
-+	struct stat st;
-+	int ret;
-+
-+	if (statfs(path, &stfs) != 0) {
-+		if (output)
-+			fprintf(stderr,
-+				"ERROR: can't access '%s', %s\n",
-+				path, strerror(errno));
-+		return -1;
-+	}
-+
-+	if (stfs.f_type != BTRFS_SUPER_MAGIC) {
-+		if (output)
-+			fprintf(stderr,
-+				"ERROR: not btrfs filesystem: %s\n",
-+				path);
-+		return -2;
-+	}
-+
-+	if (stat(path, &st) != 0) {
-+		if (output)
-+			fprintf(stderr,
-+				"ERROR: can't access '%s', %s\n",
-+				path, strerror(errno));
-+		return -1;
-+	}
-+
-+	if (!S_ISDIR(st.st_mode)) {
-+		if (output)
-+			fprintf(stderr,
-+				"ERROR: not directory: %s\n",
-+				path);
-+		return -3;
-+	}
-+
-+	ret = open_file_or_dir(path, dirstream);
-+	if (ret < 0) {
-+		if (output)
-+			fprintf(stderr,
-+				"ERROR: can't access '%s', %s\n",
-+				path, strerror(errno));
-+	}
-+
-+	return ret;
-+}
-+
- /* checks if a device is a loop device */
- static int is_loop_device (const char* device) {
- 	struct stat statbuf;
-diff --git a/utils.h b/utils.h
-index 8ec23c9..87c0d08 100644
---- a/utils.h
-+++ b/utils.h
-@@ -158,6 +158,7 @@ int is_block_device(const char *file);
- int is_mount_point(const char *file);
- int check_arg_type(const char *input);
- int open_path_or_dev_mnt(const char *path, DIR **dirstream);
-+int open_btrfs_dir(const char *path, DIR **dirstream, int output);
- u64 btrfs_device_size(int fd, struct stat *st);
- /* Helper to always get proper size of the destination string */
- #define strncpy_null(dest, src) __strncpy__null(dest, src, sizeof(dest))
+-	fdmnt = open_file_or_dir(mntpnt, &dirstream);
+-	if (fdmnt < 0) {
+-		fprintf(stderr, "ERROR: can't access '%s'\n", mntpnt);
++	fdmnt = open_btrfs_dir(mntpnt, &dirstream, 1);
++	if (fdmnt < 0)
+ 		return 1;
+-	}
+ 
+ 	for (i = optind; i < optind + argc - 1; i++){
+ 		struct btrfs_ioctl_vol_args ioctl_args;
+@@ -157,11 +155,9 @@ static int _cmd_device_remove(int argc, char **argv,
+ 
+ 	mntpnt = argv[argc - 1];
+ 
+-	fdmnt = open_file_or_dir(mntpnt, &dirstream);
+-	if (fdmnt < 0) {
+-		fprintf(stderr, "ERROR: can't access '%s'\n", mntpnt);
++	fdmnt = open_btrfs_dir(mntpnt, &dirstream, 1);
++	if (fdmnt < 0)
+ 		return 1;
+-	}
+ 
+ 	for(i=1 ; i < argc - 1; i++ ){
+ 		struct	btrfs_ioctl_vol_args arg;
+@@ -586,10 +582,8 @@ int cmd_device_usage(int argc, char **argv)
+ 		if (more_than_one)
+ 			printf("\n");
+ 
+-		fd = open_file_or_dir(argv[i], &dirstream);
++		fd = open_btrfs_dir(argv[i], &dirstream, 1);
+ 		if (fd < 0) {
+-			fprintf(stderr, "ERROR: can't access '%s'\n",
+-				argv[1]);
+ 			ret = 1;
+ 			goto out;
+ 		}
 -- 
 1.8.5.1
 

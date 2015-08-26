@@ -1,92 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31219 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:64775 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756417AbbHZJGF (ORCPT
+	with ESMTP id S1756359AbbHZOFT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 05:06:05 -0400
+	Wed, 26 Aug 2015 10:05:19 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7Q95tTu016064
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 17:05:55 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7QE58NE026801
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 22:05:08 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 2/2] btrfs-progs: use open_btrfs_dir for btrfs device command
-Date: Wed, 26 Aug 2015 17:04:23 +0800
-Message-ID: <88fb97835205d1faa824e695128eeff5927eeda1.1440579753.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1440579753.git.zhaolei@cn.fujitsu.com>
-References: <cover.1440579753.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/4] btrfs-progs: Fix infinite loop of btrfs subvolumn sync
+Date: Wed, 26 Aug 2015 22:03:36 +0800
+Message-ID: <e7e430d22bb78d6ab8b28a514685cda221bfe379.1440597812.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can use open_btrfs_dir() to check whether target dir is
-in btrfs's mount point before open, instead of checking it in kernel
-space of ioctl, and return fuzzy error message.
+We can trigger the bug by following operation:
+  (no wait between commands 3~5)
+  btrfs subvolume create /mnt/btrfs/mysubvol
+  btrfs subvolume snapshot /mnt/btrfs/mysubvol /mnt/btrfs/mysubvol_snap
+  btrfs subvolume delete /mnt/btrfs/mysubvol_snap
+  btrfs subvolume delete /mnt/btrfs/mysubvol
+  btrfs subvolume sync /mnt/btrfs
+The last command will not exit.
 
-Before patch:
-  # (/mnt/tmp is not btrfs mountpoint)
-  #
-  # btrfs device add -f /dev/sda13 /mnt/tmp
-  ERROR: error adding the device '/dev/sda13' - Inappropriate ioctl for device
-  #
+Reason:
+  List of "deleted subvolumes" are not currectly set.
 
-After patch:
-  # btrfs device add -f /dev/sda13 /mnt/tmp
-  ERROR: not btrfs filesystem: /mnt/tmp
-  #
+  It caused by a typo of value assign, in detail:
+  *ids[idx] = sh->offset;
+  should be:
+  (*ids)[idx] = sh->offset;
+  So only first element is set to right memory address.
 
-Similar fix for device remove and device usage.
+  If there are multiple "deleted subvolumes", program will
+  keep wait.
+
+Above typo also caused some segment fault in my test.
+
+This patch fixed above bug.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- cmds-device.c | 16 +++++-----------
- 1 file changed, 5 insertions(+), 11 deletions(-)
+ cmds-subvolume.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index 00e362a..2dba050 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -84,11 +84,9 @@ static int cmd_device_add(int argc, char **argv)
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 61f08f5..8e8d019 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -1207,7 +1207,7 @@ static int enumerate_dead_subvols(int fd, int count, u64 **ids)
+ 			off += sizeof(*sh);
  
- 	mntpnt = argv[optind + argc - 1];
- 
--	fdmnt = open_file_or_dir(mntpnt, &dirstream);
--	if (fdmnt < 0) {
--		fprintf(stderr, "ERROR: can't access '%s'\n", mntpnt);
-+	fdmnt = open_btrfs_dir(mntpnt, &dirstream, 1);
-+	if (fdmnt < 0)
- 		return 1;
--	}
- 
- 	for (i = optind; i < optind + argc - 1; i++){
- 		struct btrfs_ioctl_vol_args ioctl_args;
-@@ -157,11 +155,9 @@ static int _cmd_device_remove(int argc, char **argv,
- 
- 	mntpnt = argv[argc - 1];
- 
--	fdmnt = open_file_or_dir(mntpnt, &dirstream);
--	if (fdmnt < 0) {
--		fprintf(stderr, "ERROR: can't access '%s'\n", mntpnt);
-+	fdmnt = open_btrfs_dir(mntpnt, &dirstream, 1);
-+	if (fdmnt < 0)
- 		return 1;
--	}
- 
- 	for(i=1 ; i < argc - 1; i++ ){
- 		struct	btrfs_ioctl_vol_args arg;
-@@ -586,10 +582,8 @@ int cmd_device_usage(int argc, char **argv)
- 		if (more_than_one)
- 			printf("\n");
- 
--		fd = open_file_or_dir(argv[i], &dirstream);
-+		fd = open_btrfs_dir(argv[i], &dirstream, 1);
- 		if (fd < 0) {
--			fprintf(stderr, "ERROR: can't access '%s'\n",
--				argv[1]);
- 			ret = 1;
- 			goto out;
- 		}
+ 			if (sh->type == BTRFS_ORPHAN_ITEM_KEY) {
+-				*ids[idx] = sh->offset;
++				(*ids)[idx] = sh->offset;
+ 				idx++;
+ 				if (idx >= count) {
+ 					u64 *newids;
 -- 
 1.8.5.1
 

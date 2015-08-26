@@ -1,44 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58146 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751608AbbHZTKD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 15:10:03 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZUg59-0001vc-OB
-	for linux-btrfs@vger.kernel.org; Wed, 26 Aug 2015 21:10:00 +0200
-Received: from wifi-ls-74-104.resnet.wisc.edu ([146.151.74.104])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 21:09:59 +0200
-Received: from jhe by wifi-ls-74-104.resnet.wisc.edu with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 21:09:59 +0200
+Received: from smtp105.iad3a.emailsrvr.com ([173.203.187.105]:55213 "EHLO
+	smtp105.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752268AbbHZTYr convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Aug 2015 15:24:47 -0400
+Received: from smtp22.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp22.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 7D754380332
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 15:24:46 -0400 (EDT)
+Received: from smtp22.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp22.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 79741380346
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 15:24:46 -0400 (EDT)
+Received: from app46.wa-webapps.iad3a (relay-webapps.rsapps.net [172.27.255.140])
+	by smtp22.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id 6F5F8380339
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 15:24:46 -0400 (EDT)
+Received: from up4.tv (localhost.localdomain [127.0.0.1])
+	by app46.wa-webapps.iad3a (Postfix) with ESMTP id 5E0C880071
+	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 15:24:46 -0400 (EDT)
+Date: Wed, 26 Aug 2015 15:24:46 -0400 (EDT)
+Subject: Re: Response to Bcachefs Claims
+From: "Vincent Olivier" <vincent@up4.com>
 To: linux-btrfs@vger.kernel.org
-From: Jun He <jhe@cs.wisc.edu>
-Subject: Re: btrfs -o discard bug in latest dev branches
-Date: Wed, 26 Aug 2015 19:09:50 +0000 (UTC)
-Message-ID: <loom.20150826T205442-520@post.gmane.org>
-References: <20150826040442.GC10927@Juns-MacBook-Pro.local> <pan$a3d06$a94167e8$2a203b5d$1ff3d7f1@cox.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+MIME-Version: 1.0
+Content-Type: text/plain;charset=UTF-8
+In-Reply-To: <pan$ac59$d5b01668$cfc6f266$3accc55c@cox.net>
+References: <1440516154.040713246@apps.rackspace.com>
+ <pan$ac59$d5b01668$cfc6f266$3accc55c@cox.net>
+Message-ID: <1440617086.383124909@apps.rackspace.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for the info. In the attached reproducer, I don't do sync after running
-the workload (but I've tried that before.). Just to be sure, I ran again with
-sync and waited for 60 seconds before collecting data. The behavior was the
-same. 
+I'm still parsing through the multi-device advices. Will be back on this when I'm done. And I'll probably switch distro to Archlinux which seems the way to go if one is using cutting-edge kernel features like Btrfs.
 
-Then I tried one more thing, which corrected btrfs behavior. I sync-ed after
-each write, which produced the following space-time graph: 
+As for the work on "Gotchas/Known Issues" on the Btrfs wiki, I also think that the best way is to start with the Gotchas page and put a more prominent link for it on the home page.
 
-https://gist.githubusercontent.com/junhe/b6ce39eeb6de8887e66a/raw/d31ac85559f83c
-d86aef8e4250b3d3d859226c8d/sync-after-each-write.png
+I would restructure the Gotchas page in the following ways :
 
-Each time a write is finished, the extent of the last write is discarded. 
+* Add the mention "Known Issues" close to the title;
 
+* Only keep current issues/gotchas (current stable kernel, current userspace utilities release), archive every other on a separate page;
 
+* Group by smallest feature encompassing the issue : multi-device, quotas, subvolumes, compression, conversion from extX, interactions with other things like LVM, MD, encryption, etc.;
 
+* Something that is "new" and not as thoroughly tested as other features should be listed there as well (I think) until there is a consensus (to be defined) on it being reliable enough to be taken out of the list. Or maybe that should go on another page ?
 
+* Provide links to HOWTOs or best practices for the features discussed (multi-device GOTCHAS should link to multi-device HOWTO).
+
+I will be thinking about it more before doing anything and still welcoming ideas.
+
+Thanks !
+
+Vincent
 

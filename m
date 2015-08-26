@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f54.google.com ([209.85.220.54]:33846 "EHLO
-	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756311AbbHZISz (ORCPT
+Received: from mail-pa0-f41.google.com ([209.85.220.41]:36132 "EHLO
+	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756579AbbHZITK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 04:18:55 -0400
-Received: by pabzx8 with SMTP id zx8so62573991pab.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 01:18:55 -0700 (PDT)
+	Wed, 26 Aug 2015 04:19:10 -0400
+Received: by pacgr6 with SMTP id gr6so1411133pac.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 01:19:09 -0700 (PDT)
 From: Peng Tao <tao.peng@primarydata.com>
 To: linux-fsdevel@vger.kernel.org
 Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
@@ -15,227 +15,129 @@ Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
         Jeff Layton <jeff.layton@primarydata.com>, linux-nfs@vger.kernel.org,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
         linux-btrfs@vger.kernel.org, Peng Tao <tao.peng@primarydata.com>
-Subject: [PATCH-RFC-RESEND 3/9] nfs42: add CLONE xdr functions
-Date: Wed, 26 Aug 2015 16:16:44 +0800
-Message-Id: <1440577010-122867-4-git-send-email-tao.peng@primarydata.com>
+Subject: [PATCH-RFC-RESEND 6/9] nfs: get clone_blksize when probing fsinfo
+Date: Wed, 26 Aug 2015 16:16:47 +0800
+Message-Id: <1440577010-122867-7-git-send-email-tao.peng@primarydata.com>
 In-Reply-To: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
 References: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-xdr definitions per draft-ietf-nfsv4-minorversion2-38.txt
+NFSv42 CLONE operation is supposed to respect it.
 
 Signed-off-by: Peng Tao <tao.peng@primarydata.com>
 ---
- fs/nfs/nfs42xdr.c       | 97 ++++++++++++++++++++++++++++++++++++++++++++++++-
- fs/nfs/nfs4xdr.c        |  1 +
- include/linux/nfs4.h    |  2 +
- include/linux/nfs_xdr.h | 19 ++++++++++
- 4 files changed, 118 insertions(+), 1 deletion(-)
+ fs/nfs/client.c           |  1 +
+ fs/nfs/nfs4proc.c         |  1 +
+ fs/nfs/nfs4xdr.c          | 25 +++++++++++++++++++++++++
+ include/linux/nfs4.h      |  1 +
+ include/linux/nfs_fs_sb.h |  1 +
+ include/linux/nfs_xdr.h   |  1 +
+ 6 files changed, 30 insertions(+)
 
-diff --git a/fs/nfs/nfs42xdr.c b/fs/nfs/nfs42xdr.c
-index a6bd27d..a761421 100644
---- a/fs/nfs/nfs42xdr.c
-+++ b/fs/nfs/nfs42xdr.c
-@@ -34,6 +34,12 @@
- 					1 /* opaque devaddr4 length */ + \
- 					XDR_QUADLEN(PNFS_LAYOUTSTATS_MAXSIZE))
- #define decode_layoutstats_maxsz	(op_decode_hdr_maxsz)
-+#define encode_clone_maxsz		(encode_stateid_maxsz + \
-+					encode_stateid_maxsz + \
-+					2 /* src offset */ + \
-+					2 /* dst offset */ + \
-+					2 /* count */)
-+#define decode_clone_maxsz		(op_decode_hdr_maxsz)
+diff --git a/fs/nfs/client.c b/fs/nfs/client.c
+index 57c5a02..d6d5d2a 100644
+--- a/fs/nfs/client.c
++++ b/fs/nfs/client.c
+@@ -764,6 +764,7 @@ static void nfs_server_set_fsinfo(struct nfs_server *server,
  
- #define NFS4_enc_allocate_sz		(compound_encode_hdr_maxsz + \
- 					 encode_putfh_maxsz + \
-@@ -65,7 +71,20 @@
- 					 decode_sequence_maxsz + \
- 					 decode_putfh_maxsz + \
- 					 PNFS_LAYOUTSTATS_MAXDEV * decode_layoutstats_maxsz)
--
-+#define NFS4_enc_clone_sz		(compound_encode_hdr_maxsz + \
-+					 encode_sequence_maxsz + \
-+					 encode_putfh_maxsz + \
-+					 encode_savefh_maxsz + \
-+					 encode_putfh_maxsz + \
-+					 encode_clone_maxsz + \
-+					 encode_getattr_maxsz)
-+#define NFS4_dec_clone_sz		(compound_decode_hdr_maxsz + \
-+					 decode_sequence_maxsz + \
-+					 decode_putfh_maxsz + \
-+					 decode_savefh_maxsz + \
-+					 decode_putfh_maxsz + \
-+					 decode_clone_maxsz + \
-+					 decode_getattr_maxsz)
+ 	server->time_delta = fsinfo->time_delta;
  
- static void encode_fallocate(struct xdr_stream *xdr,
- 			     struct nfs42_falloc_args *args)
-@@ -128,6 +147,21 @@ static void encode_layoutstats(struct xdr_stream *xdr,
- 		encode_uint32(xdr, 0);
++	server->clone_blksize = fsinfo->clone_blksize;
+ 	/* We're airborne Set socket buffersize */
+ 	rpc_setbufsize(server->client, server->wsize + 100, server->rsize + 100);
+ }
+diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
+index fb51b75..ecf792c 100644
+--- a/fs/nfs/nfs4proc.c
++++ b/fs/nfs/nfs4proc.c
+@@ -239,6 +239,7 @@ const u32 nfs4_fsinfo_bitmap[3] = { FATTR4_WORD0_MAXFILESIZE
+ 			FATTR4_WORD1_TIME_DELTA
+ 			| FATTR4_WORD1_FS_LAYOUT_TYPES,
+ 			FATTR4_WORD2_LAYOUT_BLKSIZE
++			| FATTR4_WORD2_CLONE_BLKSIZE
+ };
+ 
+ const u32 nfs4_fs_locations_bitmap[3] = {
+diff --git a/fs/nfs/nfs4xdr.c b/fs/nfs/nfs4xdr.c
+index a453bd1..f0dce533 100644
+--- a/fs/nfs/nfs4xdr.c
++++ b/fs/nfs/nfs4xdr.c
+@@ -4737,6 +4737,28 @@ static int decode_attr_layout_blksize(struct xdr_stream *xdr, uint32_t *bitmap,
+ 	return 0;
  }
  
-+static void encode_clone(struct xdr_stream *xdr,
-+			 struct nfs42_clone_args *args,
-+			 struct compound_hdr *hdr)
++/*
++ * The granularity of a CLONE operation.
++ */
++static int decode_attr_clone_blksize(struct xdr_stream *xdr, uint32_t *bitmap,
++				     uint32_t *res)
 +{
 +	__be32 *p;
 +
-+	encode_op_hdr(xdr, OP_CLONE, decode_clone_maxsz, hdr);
-+	encode_nfs4_stateid(xdr, &args->src_stateid);
-+	encode_nfs4_stateid(xdr, &args->dst_stateid);
-+	p = reserve_space(xdr, 3*8);
-+	p = xdr_encode_hyper(p, args->src_offset);
-+	p = xdr_encode_hyper(p, args->dst_offset);
-+	xdr_encode_hyper(p, args->count);
++	dprintk("%s: bitmap is %x\n", __func__, bitmap[2]);
++	*res = 0;
++	if (bitmap[2] & FATTR4_WORD2_CLONE_BLKSIZE) {
++		p = xdr_inline_decode(xdr, 4);
++		if (unlikely(!p)) {
++			print_overflow_msg(__func__, xdr);
++			return -EIO;
++		}
++		*res = be32_to_cpup(p);
++		bitmap[2] &= ~FATTR4_WORD2_CLONE_BLKSIZE;
++	}
++	return 0;
 +}
 +
- /*
-  * Encode ALLOCATE request
-  */
-@@ -206,6 +240,27 @@ static void nfs4_xdr_enc_layoutstats(struct rpc_rqst *req,
- 	encode_nops(&hdr);
- }
- 
-+/*
-+ * Encode CLONE request
-+ */
-+static void nfs4_xdr_enc_clone(struct rpc_rqst *req,
-+			       struct xdr_stream *xdr,
-+			       struct nfs42_clone_args *args)
-+{
-+	struct compound_hdr hdr = {
-+		.minorversion = nfs4_xdr_minorversion(&args->seq_args),
-+	};
-+
-+	encode_compound_hdr(xdr, req, &hdr);
-+	encode_sequence(xdr, &args->seq_args, &hdr);
-+	encode_putfh(xdr, args->src_fh, &hdr);
-+	encode_savefh(xdr, &hdr);
-+	encode_putfh(xdr, args->dst_fh, &hdr);
-+	encode_clone(xdr, args, &hdr);
-+	encode_getfattr(xdr, args->dst_bitmask, &hdr);
-+	encode_nops(&hdr);
-+}
-+
- static int decode_allocate(struct xdr_stream *xdr, struct nfs42_falloc_res *res)
+ static int decode_fsinfo(struct xdr_stream *xdr, struct nfs_fsinfo *fsinfo)
  {
- 	return decode_op_hdr(xdr, OP_ALLOCATE);
-@@ -244,6 +299,11 @@ static int decode_layoutstats(struct xdr_stream *xdr,
- 	return decode_op_hdr(xdr, OP_LAYOUTSTATS);
- }
+ 	unsigned int savep;
+@@ -4771,6 +4793,9 @@ static int decode_fsinfo(struct xdr_stream *xdr, struct nfs_fsinfo *fsinfo)
+ 	status = decode_attr_layout_blksize(xdr, bitmap, &fsinfo->blksize);
+ 	if (status)
+ 		goto xdr_error;
++	status = decode_attr_clone_blksize(xdr, bitmap, &fsinfo->clone_blksize);
++	if (status)
++		goto xdr_error;
  
-+static int decode_clone(struct xdr_stream *xdr)
-+{
-+	return decode_op_hdr(xdr, OP_CLONE);
-+}
-+
- /*
-  * Decode ALLOCATE request
-  */
-@@ -352,4 +412,39 @@ out:
- 	return status;
- }
- 
-+/*
-+ * Decode CLONE request
-+ */
-+static int nfs4_xdr_dec_clone(struct rpc_rqst *rqstp,
-+			      struct xdr_stream *xdr,
-+			      struct nfs42_clone_res *res)
-+{
-+	struct compound_hdr hdr;
-+	int status;
-+
-+	status = decode_compound_hdr(xdr, &hdr);
-+	if (status)
-+		goto out;
-+	status = decode_sequence(xdr, &res->seq_res, rqstp);
-+	if (status)
-+		goto out;
-+	status = decode_putfh(xdr);
-+	if (status)
-+		goto out;
-+	status = decode_savefh(xdr);
-+	if (status)
-+		goto out;
-+	status = decode_putfh(xdr);
-+	if (status)
-+		goto out;
-+	status = decode_clone(xdr);
-+	if (status)
-+		goto out;
-+	status = decode_getfattr(xdr, res->dst_fattr, res->server);
-+
-+out:
-+	res->rpc_status = status;
-+	return status;
-+}
-+
- #endif /* __LINUX_FS_NFS_NFS4_2XDR_H */
-diff --git a/fs/nfs/nfs4xdr.c b/fs/nfs/nfs4xdr.c
-index c42459e..a453bd1 100644
---- a/fs/nfs/nfs4xdr.c
-+++ b/fs/nfs/nfs4xdr.c
-@@ -7434,6 +7434,7 @@ struct rpc_procinfo	nfs4_procedures[] = {
- 	PROC(ALLOCATE,		enc_allocate,		dec_allocate),
- 	PROC(DEALLOCATE,	enc_deallocate,		dec_deallocate),
- 	PROC(LAYOUTSTATS,	enc_layoutstats,	dec_layoutstats),
-+	PROC(CLONE,		enc_clone,		dec_clone),
- #endif /* CONFIG_NFS_V4_2 */
- };
- 
+ 	status = verify_attr_len(xdr, savep, attrlen);
+ xdr_error:
 diff --git a/include/linux/nfs4.h b/include/linux/nfs4.h
-index 00121f2..c0c695b 100644
+index c0c695b..e7e7853 100644
 --- a/include/linux/nfs4.h
 +++ b/include/linux/nfs4.h
-@@ -130,6 +130,7 @@ enum nfs_opnum4 {
- 	OP_READ_PLUS = 68,
- 	OP_SEEK = 69,
- 	OP_WRITE_SAME = 70,
-+	OP_CLONE = 71,
+@@ -422,6 +422,7 @@ enum lock_type4 {
+ #define FATTR4_WORD2_LAYOUT_TYPES       (1UL << 0)
+ #define FATTR4_WORD2_LAYOUT_BLKSIZE     (1UL << 1)
+ #define FATTR4_WORD2_MDSTHRESHOLD       (1UL << 4)
++#define FATTR4_WORD2_CLONE_BLKSIZE	(1UL << 13)
+ #define FATTR4_WORD2_SECURITY_LABEL     (1UL << 16)
  
- 	OP_ILLEGAL = 10044,
- };
-@@ -501,6 +502,7 @@ enum {
- 	NFSPROC4_CLNT_ALLOCATE,
- 	NFSPROC4_CLNT_DEALLOCATE,
- 	NFSPROC4_CLNT_LAYOUTSTATS,
-+	NFSPROC4_CLNT_CLONE,
- };
+ /* MDS threshold bitmap bits */
+diff --git a/include/linux/nfs_fs_sb.h b/include/linux/nfs_fs_sb.h
+index 2fb163a..db00311 100644
+--- a/include/linux/nfs_fs_sb.h
++++ b/include/linux/nfs_fs_sb.h
+@@ -147,6 +147,7 @@ struct nfs_server {
+ 	unsigned int		acdirmax;
+ 	unsigned int		namelen;
+ 	unsigned int		options;	/* extra options enabled by mount */
++	unsigned int		clone_blksize;	/* granularity of a CLONE operation */
+ #define NFS_OPTION_FSCACHE	0x00000001	/* - local caching enabled */
+ #define NFS_OPTION_MIGRATION	0x00000002	/* - NFSv4 migration enabled */
  
- /* nfs41 types */
 diff --git a/include/linux/nfs_xdr.h b/include/linux/nfs_xdr.h
-index b9b5304..79918d6 100644
+index 79918d6..e89dafd 100644
 --- a/include/linux/nfs_xdr.h
 +++ b/include/linux/nfs_xdr.h
-@@ -359,6 +359,25 @@ struct nfs42_layoutstat_data {
- 	struct nfs42_layoutstat_res res;
+@@ -141,6 +141,7 @@ struct nfs_fsinfo {
+ 	__u32			lease_time; /* in seconds */
+ 	__u32			layouttype; /* supported pnfs layout driver */
+ 	__u32			blksize; /* preferred pnfs io block size */
++	__u32			clone_blksize; /* granularity of a CLONE operation */
  };
  
-+struct nfs42_clone_args {
-+	struct nfs4_sequence_args	seq_args;
-+	struct nfs_fh			*src_fh;
-+	struct nfs_fh			*dst_fh;
-+	nfs4_stateid			src_stateid;
-+	nfs4_stateid			dst_stateid;
-+	__u64				src_offset;
-+	__u64				dst_offset;
-+	__u64				count;
-+	const u32			*dst_bitmask;
-+};
-+
-+struct nfs42_clone_res {
-+	struct nfs4_sequence_res	seq_res;
-+	unsigned int			rpc_status;
-+	struct nfs_fattr		*dst_fattr;
-+	const struct nfs_server		*server;
-+};
-+
- struct stateowner_id {
- 	__u64	create_time;
- 	__u32	uniquifier;
+ struct nfs_fsstat {
 -- 
 1.8.3.1
 

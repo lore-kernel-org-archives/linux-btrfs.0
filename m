@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:34700 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756355AbbHZISr (ORCPT
+Received: from mail-pa0-f54.google.com ([209.85.220.54]:33846 "EHLO
+	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756311AbbHZISz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 04:18:47 -0400
-Received: by pabzx8 with SMTP id zx8so62570380pab.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 01:18:47 -0700 (PDT)
+	Wed, 26 Aug 2015 04:18:55 -0400
+Received: by pabzx8 with SMTP id zx8so62573991pab.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 01:18:55 -0700 (PDT)
 From: Peng Tao <tao.peng@primarydata.com>
 To: linux-fsdevel@vger.kernel.org
 Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
@@ -15,226 +15,227 @@ Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
         Jeff Layton <jeff.layton@primarydata.com>, linux-nfs@vger.kernel.org,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
         linux-btrfs@vger.kernel.org, Peng Tao <tao.peng@primarydata.com>
-Subject: [PATCH-RFC-RESEND 2/9] vfs/btrfs: add .clone_range file operation
-Date: Wed, 26 Aug 2015 16:16:43 +0800
-Message-Id: <1440577010-122867-3-git-send-email-tao.peng@primarydata.com>
+Subject: [PATCH-RFC-RESEND 3/9] nfs42: add CLONE xdr functions
+Date: Wed, 26 Aug 2015 16:16:44 +0800
+Message-Id: <1440577010-122867-4-git-send-email-tao.peng@primarydata.com>
 In-Reply-To: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
 References: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Also add vfs callers in do_vfs_ioctl(). Now btrfs CLONE
-ioctl goes through vfs_file_clone_range().
-
-One question to btrfs developers:
-Does btrfs_clone() ever return a positive value? If it does, what does it mean
-to users?
+xdr definitions per draft-ietf-nfsv4-minorversion2-38.txt
 
 Signed-off-by: Peng Tao <tao.peng@primarydata.com>
 ---
- fs/btrfs/ctree.h           |  2 ++
- fs/btrfs/file.c            |  1 +
- fs/btrfs/ioctl.c           | 68 +++++-----------------------------------------
- fs/ioctl.c                 |  6 ++++
- include/uapi/linux/btrfs.h | 10 -------
- 5 files changed, 16 insertions(+), 71 deletions(-)
+ fs/nfs/nfs42xdr.c       | 97 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/nfs/nfs4xdr.c        |  1 +
+ include/linux/nfs4.h    |  2 +
+ include/linux/nfs_xdr.h | 19 ++++++++++
+ 4 files changed, 118 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index aac314e..af3e224 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3969,6 +3969,8 @@ void btrfs_get_block_group_info(struct list_head *groups_list,
- 				struct btrfs_ioctl_space_info *space);
- void update_ioctl_balance_args(struct btrfs_fs_info *fs_info, int lock,
- 			       struct btrfs_ioctl_balance_args *bargs);
-+int btrfs_file_clone_range(struct file *src_file, struct file *dst_file,
-+			   loff_t off, size_t olen, loff_t destoff);
+diff --git a/fs/nfs/nfs42xdr.c b/fs/nfs/nfs42xdr.c
+index a6bd27d..a761421 100644
+--- a/fs/nfs/nfs42xdr.c
++++ b/fs/nfs/nfs42xdr.c
+@@ -34,6 +34,12 @@
+ 					1 /* opaque devaddr4 length */ + \
+ 					XDR_QUADLEN(PNFS_LAYOUTSTATS_MAXSIZE))
+ #define decode_layoutstats_maxsz	(op_decode_hdr_maxsz)
++#define encode_clone_maxsz		(encode_stateid_maxsz + \
++					encode_stateid_maxsz + \
++					2 /* src offset */ + \
++					2 /* dst offset */ + \
++					2 /* count */)
++#define decode_clone_maxsz		(op_decode_hdr_maxsz)
  
+ #define NFS4_enc_allocate_sz		(compound_encode_hdr_maxsz + \
+ 					 encode_putfh_maxsz + \
+@@ -65,7 +71,20 @@
+ 					 decode_sequence_maxsz + \
+ 					 decode_putfh_maxsz + \
+ 					 PNFS_LAYOUTSTATS_MAXDEV * decode_layoutstats_maxsz)
+-
++#define NFS4_enc_clone_sz		(compound_encode_hdr_maxsz + \
++					 encode_sequence_maxsz + \
++					 encode_putfh_maxsz + \
++					 encode_savefh_maxsz + \
++					 encode_putfh_maxsz + \
++					 encode_clone_maxsz + \
++					 encode_getattr_maxsz)
++#define NFS4_dec_clone_sz		(compound_decode_hdr_maxsz + \
++					 decode_sequence_maxsz + \
++					 decode_putfh_maxsz + \
++					 decode_savefh_maxsz + \
++					 decode_putfh_maxsz + \
++					 decode_clone_maxsz + \
++					 decode_getattr_maxsz)
  
- /* file.c */
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..c9170fd 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2813,6 +2813,7 @@ const struct file_operations btrfs_file_operations = {
- 	.fsync		= btrfs_sync_file,
- 	.fallocate	= btrfs_fallocate,
- 	.unlocked_ioctl	= btrfs_ioctl,
-+	.clone_range	= btrfs_file_clone_range,
- #ifdef CONFIG_COMPAT
- 	.compat_ioctl	= btrfs_ioctl,
- #endif
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0770c91..3d026c8 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3719,13 +3719,12 @@ out:
- 	return ret;
+ static void encode_fallocate(struct xdr_stream *xdr,
+ 			     struct nfs42_falloc_args *args)
+@@ -128,6 +147,21 @@ static void encode_layoutstats(struct xdr_stream *xdr,
+ 		encode_uint32(xdr, 0);
  }
  
--static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
--				       u64 off, u64 olen, u64 destoff)
-+int btrfs_file_clone_range(struct file *src_file, struct file *dst_file,
-+			   loff_t off, size_t olen, loff_t destoff)
- {
--	struct inode *inode = file_inode(file);
-+	struct inode *inode = file_inode(dst_file);
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct fd src_file;
--	struct inode *src;
-+	struct inode *src = file_inode(src_file);
- 	int ret;
- 	u64 len = olen;
- 	u64 bs = root->fs_info->sb->s_blocksize;
-@@ -3742,49 +3741,16 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 	 *   be either compressed or non-compressed.
- 	 */
- 
--	/* the destination must be opened for writing */
--	if (!(file->f_mode & FMODE_WRITE) || (file->f_flags & O_APPEND))
--		return -EINVAL;
--
- 	if (btrfs_root_readonly(root))
- 		return -EROFS;
- 
--	ret = mnt_want_write_file(file);
--	if (ret)
--		return ret;
--
--	src_file = fdget(srcfd);
--	if (!src_file.file) {
--		ret = -EBADF;
--		goto out_drop_write;
--	}
--
--	ret = -EXDEV;
--	if (src_file.file->f_path.mnt != file->f_path.mnt)
--		goto out_fput;
--
--	src = file_inode(src_file.file);
--
--	ret = -EINVAL;
--	if (src == inode)
--		same_inode = 1;
--
--	/* the src must be open for reading */
--	if (!(src_file.file->f_mode & FMODE_READ))
--		goto out_fput;
--
- 	/* don't make the dst file partly checksummed */
- 	if ((BTRFS_I(src)->flags & BTRFS_INODE_NODATASUM) !=
- 	    (BTRFS_I(inode)->flags & BTRFS_INODE_NODATASUM))
--		goto out_fput;
--
--	ret = -EISDIR;
--	if (S_ISDIR(src->i_mode) || S_ISDIR(inode->i_mode))
--		goto out_fput;
-+		return -EINVAL;
- 
--	ret = -EXDEV;
--	if (src->i_sb != inode->i_sb)
--		goto out_fput;
-+	if (src == inode)
-+		same_inode = 1;
- 
- 	if (!same_inode) {
- 		if (inode < src) {
-@@ -3800,8 +3766,6 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 
- 	/* determine range to clone */
- 	ret = -EINVAL;
--	if (off + len > src->i_size || off + len < off)
--		goto out_unlock;
- 	if (len == 0)
- 		olen = len = src->i_size - off;
- 	/* if we extend to eof, continue to block boundary */
-@@ -3877,23 +3841,9 @@ out_unlock:
- 	} else {
- 		mutex_unlock(&src->i_mutex);
- 	}
--out_fput:
--	fdput(src_file);
--out_drop_write:
--	mnt_drop_write_file(file);
- 	return ret;
- }
- 
--static long btrfs_ioctl_clone_range(struct file *file, void __user *argp)
--{
--	struct btrfs_ioctl_clone_range_args args;
--
--	if (copy_from_user(&args, argp, sizeof(args)))
--		return -EFAULT;
--	return btrfs_ioctl_clone(file, args.src_fd, args.src_offset,
--				 args.src_length, args.dest_offset);
--}
--
++static void encode_clone(struct xdr_stream *xdr,
++			 struct nfs42_clone_args *args,
++			 struct compound_hdr *hdr)
++{
++	__be32 *p;
++
++	encode_op_hdr(xdr, OP_CLONE, decode_clone_maxsz, hdr);
++	encode_nfs4_stateid(xdr, &args->src_stateid);
++	encode_nfs4_stateid(xdr, &args->dst_stateid);
++	p = reserve_space(xdr, 3*8);
++	p = xdr_encode_hyper(p, args->src_offset);
++	p = xdr_encode_hyper(p, args->dst_offset);
++	xdr_encode_hyper(p, args->count);
++}
++
  /*
-  * there are many ways the trans_start and trans_end ioctls can lead
-  * to deadlocks.  They should only be used by applications that
-@@ -5433,10 +5383,6 @@ long btrfs_ioctl(struct file *file, unsigned int
- 		return btrfs_ioctl_dev_info(root, argp);
- 	case BTRFS_IOC_BALANCE:
- 		return btrfs_ioctl_balance(file, NULL);
--	case BTRFS_IOC_CLONE:
--		return btrfs_ioctl_clone(file, arg, 0, 0, 0);
--	case BTRFS_IOC_CLONE_RANGE:
--		return btrfs_ioctl_clone_range(file, argp);
- 	case BTRFS_IOC_TRANS_START:
- 		return btrfs_ioctl_trans_start(file);
- 	case BTRFS_IOC_TRANS_END:
-diff --git a/fs/ioctl.c b/fs/ioctl.c
-index 726c5d7..41c6080 100644
---- a/fs/ioctl.c
-+++ b/fs/ioctl.c
-@@ -624,6 +624,12 @@ int do_vfs_ioctl(struct file *filp, unsigned int fd, unsigned int cmd,
- 	case FIGETBSZ:
- 		return put_user(inode->i_sb->s_blocksize, argp);
+  * Encode ALLOCATE request
+  */
+@@ -206,6 +240,27 @@ static void nfs4_xdr_enc_layoutstats(struct rpc_rqst *req,
+ 	encode_nops(&hdr);
+ }
  
-+	case FICLONE:
-+		return ioctl_file_clone(filp, arg, 0, 0, 0);
++/*
++ * Encode CLONE request
++ */
++static void nfs4_xdr_enc_clone(struct rpc_rqst *req,
++			       struct xdr_stream *xdr,
++			       struct nfs42_clone_args *args)
++{
++	struct compound_hdr hdr = {
++		.minorversion = nfs4_xdr_minorversion(&args->seq_args),
++	};
 +
-+	case FICLONERANGE:
-+		return ioctl_file_clone_range(filp, argp);
++	encode_compound_hdr(xdr, req, &hdr);
++	encode_sequence(xdr, &args->seq_args, &hdr);
++	encode_putfh(xdr, args->src_fh, &hdr);
++	encode_savefh(xdr, &hdr);
++	encode_putfh(xdr, args->dst_fh, &hdr);
++	encode_clone(xdr, args, &hdr);
++	encode_getfattr(xdr, args->dst_bitmask, &hdr);
++	encode_nops(&hdr);
++}
 +
- 	default:
- 		if (S_ISREG(inode->i_mode))
- 			error = file_ioctl(filp, cmd, arg);
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b6dec05..c3a23d3 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -316,12 +316,6 @@ struct btrfs_ioctl_search_args_v2 {
- 	__u64 buf[0];                       /* out - found items */
+ static int decode_allocate(struct xdr_stream *xdr, struct nfs42_falloc_res *res)
+ {
+ 	return decode_op_hdr(xdr, OP_ALLOCATE);
+@@ -244,6 +299,11 @@ static int decode_layoutstats(struct xdr_stream *xdr,
+ 	return decode_op_hdr(xdr, OP_LAYOUTSTATS);
+ }
+ 
++static int decode_clone(struct xdr_stream *xdr)
++{
++	return decode_op_hdr(xdr, OP_CLONE);
++}
++
+ /*
+  * Decode ALLOCATE request
+  */
+@@ -352,4 +412,39 @@ out:
+ 	return status;
+ }
+ 
++/*
++ * Decode CLONE request
++ */
++static int nfs4_xdr_dec_clone(struct rpc_rqst *rqstp,
++			      struct xdr_stream *xdr,
++			      struct nfs42_clone_res *res)
++{
++	struct compound_hdr hdr;
++	int status;
++
++	status = decode_compound_hdr(xdr, &hdr);
++	if (status)
++		goto out;
++	status = decode_sequence(xdr, &res->seq_res, rqstp);
++	if (status)
++		goto out;
++	status = decode_putfh(xdr);
++	if (status)
++		goto out;
++	status = decode_savefh(xdr);
++	if (status)
++		goto out;
++	status = decode_putfh(xdr);
++	if (status)
++		goto out;
++	status = decode_clone(xdr);
++	if (status)
++		goto out;
++	status = decode_getfattr(xdr, res->dst_fattr, res->server);
++
++out:
++	res->rpc_status = status;
++	return status;
++}
++
+ #endif /* __LINUX_FS_NFS_NFS4_2XDR_H */
+diff --git a/fs/nfs/nfs4xdr.c b/fs/nfs/nfs4xdr.c
+index c42459e..a453bd1 100644
+--- a/fs/nfs/nfs4xdr.c
++++ b/fs/nfs/nfs4xdr.c
+@@ -7434,6 +7434,7 @@ struct rpc_procinfo	nfs4_procedures[] = {
+ 	PROC(ALLOCATE,		enc_allocate,		dec_allocate),
+ 	PROC(DEALLOCATE,	enc_deallocate,		dec_deallocate),
+ 	PROC(LAYOUTSTATS,	enc_layoutstats,	dec_layoutstats),
++	PROC(CLONE,		enc_clone,		dec_clone),
+ #endif /* CONFIG_NFS_V4_2 */
  };
  
--struct btrfs_ioctl_clone_range_args {
--  __s64 src_fd;
--  __u64 src_offset, src_length;
--  __u64 dest_offset;
--};
--
- /* flags for the defrag range ioctl */
- #define BTRFS_DEFRAG_RANGE_COMPRESS 1
- #define BTRFS_DEFRAG_RANGE_START_IO 2
-@@ -548,7 +542,6 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- #define BTRFS_IOC_TRANS_END    _IO(BTRFS_IOCTL_MAGIC, 7)
- #define BTRFS_IOC_SYNC         _IO(BTRFS_IOCTL_MAGIC, 8)
+diff --git a/include/linux/nfs4.h b/include/linux/nfs4.h
+index 00121f2..c0c695b 100644
+--- a/include/linux/nfs4.h
++++ b/include/linux/nfs4.h
+@@ -130,6 +130,7 @@ enum nfs_opnum4 {
+ 	OP_READ_PLUS = 68,
+ 	OP_SEEK = 69,
+ 	OP_WRITE_SAME = 70,
++	OP_CLONE = 71,
  
--#define BTRFS_IOC_CLONE        _IOW(BTRFS_IOCTL_MAGIC, 9, int)
- #define BTRFS_IOC_ADD_DEV _IOW(BTRFS_IOCTL_MAGIC, 10, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_RM_DEV _IOW(BTRFS_IOCTL_MAGIC, 11, \
-@@ -556,9 +549,6 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
- #define BTRFS_IOC_BALANCE _IOW(BTRFS_IOCTL_MAGIC, 12, \
- 				   struct btrfs_ioctl_vol_args)
+ 	OP_ILLEGAL = 10044,
+ };
+@@ -501,6 +502,7 @@ enum {
+ 	NFSPROC4_CLNT_ALLOCATE,
+ 	NFSPROC4_CLNT_DEALLOCATE,
+ 	NFSPROC4_CLNT_LAYOUTSTATS,
++	NFSPROC4_CLNT_CLONE,
+ };
  
--#define BTRFS_IOC_CLONE_RANGE _IOW(BTRFS_IOCTL_MAGIC, 13, \
--				  struct btrfs_ioctl_clone_range_args)
--
- #define BTRFS_IOC_SUBVOL_CREATE _IOW(BTRFS_IOCTL_MAGIC, 14, \
- 				   struct btrfs_ioctl_vol_args)
- #define BTRFS_IOC_SNAP_DESTROY _IOW(BTRFS_IOCTL_MAGIC, 15, \
+ /* nfs41 types */
+diff --git a/include/linux/nfs_xdr.h b/include/linux/nfs_xdr.h
+index b9b5304..79918d6 100644
+--- a/include/linux/nfs_xdr.h
++++ b/include/linux/nfs_xdr.h
+@@ -359,6 +359,25 @@ struct nfs42_layoutstat_data {
+ 	struct nfs42_layoutstat_res res;
+ };
+ 
++struct nfs42_clone_args {
++	struct nfs4_sequence_args	seq_args;
++	struct nfs_fh			*src_fh;
++	struct nfs_fh			*dst_fh;
++	nfs4_stateid			src_stateid;
++	nfs4_stateid			dst_stateid;
++	__u64				src_offset;
++	__u64				dst_offset;
++	__u64				count;
++	const u32			*dst_bitmask;
++};
++
++struct nfs42_clone_res {
++	struct nfs4_sequence_res	seq_res;
++	unsigned int			rpc_status;
++	struct nfs_fattr		*dst_fattr;
++	const struct nfs_server		*server;
++};
++
+ struct stateowner_id {
+ 	__u64	create_time;
+ 	__u32	uniquifier;
 -- 
 1.8.3.1
 

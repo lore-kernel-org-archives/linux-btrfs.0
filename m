@@ -1,203 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:42000 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751478AbbHYEnD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 25 Aug 2015 00:43:03 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: fstests@vger.kernel.org
-Cc: Anand Jain <Anand.Jain@oracle.com>, david@fromorbit.com,
-        linux-btrfs@vger.kernel.org, eguan@redhat.com, fdmanana@gmail.com
-Subject: [PATCH v8 3/3] xfstests: btrfs: test device delete with EIO on src dev
-Date: Tue, 25 Aug 2015 12:39:28 +0800
-Message-Id: <1440477568-4614-4-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1440477568-4614-1-git-send-email-anand.jain@oracle.com>
-References: <1440477568-4614-1-git-send-email-anand.jain@oracle.com>
+Received: from mx1.redhat.com ([209.132.183.28]:37274 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751216AbbHZGlt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 26 Aug 2015 02:41:49 -0400
+Date: Wed, 26 Aug 2015 14:41:46 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v5] fstests: btrfs: Add reserved space leak check for
+ rewrite  dirty page
+Message-ID: <20150826064146.GS17933@dhcp-13-216.nay.redhat.com>
+References: <1440119834-31504-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1440119834-31504-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anand Jain <Anand.Jain@oracle.com>
+On Fri, Aug 21, 2015 at 09:17:14AM +0800, Qu Wenruo wrote:
+> Btrfs qgroup reserve codes lacks check for rewrite dirty page, causing
+> every write, even rewriting a uncommitted dirty page, to reserve space.
+> 
+> But only written data will free the reserved space, causing reserved
+> space leaking.
+> 
+> The bug exists almost from the beginning of btrfs qgroup codes, but
+> nobody found it.
+> 
+> For example:
+> 
+> 1)Write [0, 12K) into file A
+>   reserve 12K space
+> 
+> File A:
+> 0	4K	8K	12K
+> |<--------dirty-------->|
+> reserved: 12K
+> 
+> 2)Write [0,4K) into file A
+> 0	4K	8K	12K
+> |<--------dirty-------->|
+> reserved: 16K <<< Should be 12K
+> 
+> 3) Commit transaction
+> Dirty pages [0,12) written to disk.
+> Free 12K reserved space.
+> reserved: 4K <<< Should be 0
+> 
+> This testcase will test such problem.
+> Kernel fix will need some huge change, so won't be soon.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Reviewed-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> Changelog:
+> v2:
+>   Use smaller write size inside loop, in case commit is trigger by dirty
+>   page threshold, and ensure following write won't trigger EQUOT
+> v3:
+>   Add more comments and fix some expression.
+> v4:
+>   Rebase to latest fstests.
+> v5:
+>   Use larger number to avoid conflicts with the test from Filipe Manana.
+> ---
+>  tests/btrfs/099     | 86 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/099.out | 13 ++++++++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 100 insertions(+)
+>  create mode 100755 tests/btrfs/099
+>  create mode 100644 tests/btrfs/099.out
+> 
+> diff --git a/tests/btrfs/099 b/tests/btrfs/099
+> new file mode 100755
+> index 0000000..ba531e1
+> --- /dev/null
+> +++ b/tests/btrfs/099
+> @@ -0,0 +1,86 @@
+> +#! /bin/bash
+> +# FS QA Test 099
+> +#
+> +# Check for qgroup reserved space leaks caused by re-writing dirty ranges
+> +# This bug has been present in btrfs qgroup for a long time
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (c) 2015 Fujitsu. All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1	# failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +	cd /
+> +	rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +_need_to_be_root
+> +
+> +# Use big blocksize to ensure there is still enough space left for metadata
+> +# space reserve.
+> +BLOCKSIZE=$(( 2 * 1024 * 1024 )) # 2M block size
+> +FILESIZE=$(( 128 * 1024 * 1024 )) # 128M file size
+> +
+> +_scratch_mkfs >> $seqres.full 2>&1
 
-This test case tests if the device delete works with
-the failed (EIO) source device. EIO errors are achieved
-usign the DM device.
+Just one minor issue here, please remove $seqres.full before test,
+otherwise $seqres.full will keep growing.
 
-This test would need following btrfs-progs and btrfs
-kernel patch
-   btrfs-progs: device delete to accept devid
-   Btrfs: device delete by devid
-
-However when btrfs-progs patch is not found this test will
-not run, and when kernel patch is not found btrfs-progs
-will fail gracefully and thus the test script.
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-v7->v8:
- . Inline with the patch 1/3 v8 changes, use dmerror_mount()
-
-v6->v7: accepts Dave's comments
- . in line with changes as in 1/3 mainly the renames
-
-v5->v6: accepts Eryu and Filipe's comments, thanks
- . correct cleanup with tmp.*
- .  don't redirect run_check $FSFTRESS_PROG to dev null
-
-v4->v5: rebase on latest xfstests code, and accepts Filipe comment
- . cut line length to 80 char
- . accommodate to the regression introduced by a092363bbdfa6cc6e44353136bae9d3aa81baae2
-
-v3->v4: rebase on latest xfstests code
-
-v2->v3: accepts Filipe Manana's review comments, thanks
- . induce FS load using FSSTRESS_PROG
-
-v1->v2: accepts Dave Chinner's review comments, thanks
- . move 'start with the clean devices' code to actually at the
-   start of the script - damn why I didn't think like this
-   before. Thanks Dave.
- . update .out file to contain the logs to verify.
-
- common/rc           |  7 +++++
- tests/btrfs/099     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/099.out | 11 +++++++
- tests/btrfs/group   |  1 +
- 4 files changed, 101 insertions(+)
- create mode 100755 tests/btrfs/099
- create mode 100644 tests/btrfs/099.out
-
-diff --git a/common/rc b/common/rc
-index 7befa09..140ebd8 100644
---- a/common/rc
-+++ b/common/rc
-@@ -2737,6 +2737,13 @@ _require_meta_uuid()
- 	umount $SCRATCH_MNT
- }
- 
-+_require_btrfs_dev_del_by_devid()
-+{
-+	$BTRFS_UTIL_PROG device delete --help | egrep devid > /dev/null 2>&1
-+	[ $? -eq 0 ] || _notrun "$BTRFS_UTIL_PROG too old "\
-+			"(must support 'btrfs device delete <devid> /<mnt>')"
-+}
-+
- _get_total_inode()
- {
- 	if [ -z "$1" ]; then
-diff --git a/tests/btrfs/099 b/tests/btrfs/099
-new file mode 100755
-index 0000000..9793c9b
---- /dev/null
-+++ b/tests/btrfs/099
-@@ -0,0 +1,82 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/099
-+#
-+# Test device delete when the source device has EIO
-+#
-+# Copyright (c) 2015 Oracle.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+
-+_cleanup()
-+{
-+	_dmerror_cleanup
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/filter.btrfs
-+. ./common/dmerror
-+
-+_supported_fs btrfs
-+_supported_os Linux
-+_need_to_be_root
-+_require_scratch_dev_pool 3
-+_require_btrfs_dev_del_by_devid
-+_dmerror_required
-+
-+rm -f $seqres.full
-+
-+dev1="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $2}'`"
-+dev2="`echo $SCRATCH_DEV_POOL | $AWK_PROG '{print $3}'`"
-+
-+_dmerror_init
-+_mkfs_dev -f -d raid1 -m raid1 $dev1 $dev2 $DMERROR_DEV
-+_dmerror_mount
-+
-+_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
-+$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
-+
-+error_devid=`$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT |\
-+			egrep $DMERROR_DEV | $AWK_PROG '{print $2}'`
-+
-+snapshot_cmd="$BTRFS_UTIL_PROG subvolume snapshot -r $SCRATCH_MNT"
-+snapshot_cmd="$snapshot_cmd $SCRATCH_MNT/snap_\`date +'%H_%M_%S_%N'\`"
-+run_check $FSSTRESS_PROG -d $SCRATCH_MNT -n 200 -p 8 $FSSTRESS_AVOID -x \
-+							"$snapshot_cmd" -X 50
-+
-+# now load the error into the DMERROR_DEV
-+_dmerror_load_table
-+
-+_run_btrfs_util_prog device delete $error_devid $SCRATCH_MNT
-+
-+_run_btrfs_util_prog filesystem show -m $SCRATCH_MNT
-+$BTRFS_UTIL_PROG filesystem show -m $SCRATCH_MNT | _filter_btrfs_filesystem_show
-+
-+echo "=== device delete completed"
-+
-+status=0; exit
-diff --git a/tests/btrfs/099.out b/tests/btrfs/099.out
-new file mode 100644
-index 0000000..ec74e45
---- /dev/null
-+++ b/tests/btrfs/099.out
-@@ -0,0 +1,11 @@
-+QA output created by 099
-+Label: none  uuid:  <UUID>
-+	Total devices <NUM> FS bytes used <SIZE>
-+	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
-+	devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
-+
-+Label: none  uuid:  <UUID>
-+	Total devices <NUM> FS bytes used <SIZE>
-+	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
-+
-+=== device delete completed
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index c8a53b5..968ee63 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -101,3 +101,4 @@
- 096 auto quick clone
- 097 auto quick send clone
- 098 auto quick replace
-+099 auto quick replace
--- 
-2.4.1
-
+Thanks,
+Eryu

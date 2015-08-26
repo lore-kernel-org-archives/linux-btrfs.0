@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f41.google.com ([209.85.220.41]:36132 "EHLO
-	mail-pa0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756579AbbHZITK (ORCPT
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:35414 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756601AbbHZITU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 04:19:10 -0400
-Received: by pacgr6 with SMTP id gr6so1411133pac.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 01:19:09 -0700 (PDT)
+	Wed, 26 Aug 2015 04:19:20 -0400
+Received: by pacdd16 with SMTP id dd16so153148203pac.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 01:19:19 -0700 (PDT)
 From: Peng Tao <tao.peng@primarydata.com>
 To: linux-fsdevel@vger.kernel.org
 Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
@@ -14,130 +14,116 @@ Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
         Darren Hart <dvhart@linux.intel.com>, bfields@fieldses.org,
         Jeff Layton <jeff.layton@primarydata.com>, linux-nfs@vger.kernel.org,
         "Darrick J. Wong" <darrick.wong@oracle.com>,
-        linux-btrfs@vger.kernel.org, Peng Tao <tao.peng@primarydata.com>
-Subject: [PATCH-RFC-RESEND 6/9] nfs: get clone_blksize when probing fsinfo
-Date: Wed, 26 Aug 2015 16:16:47 +0800
-Message-Id: <1440577010-122867-7-git-send-email-tao.peng@primarydata.com>
+        linux-btrfs@vger.kernel.org,
+        Anna Schumaker <Anna.Schumaker@netapp.com>,
+        Anna Schumaker <Anna.Schumaker@netapp.com>
+Subject: [PATCH-RFC-RESEND 8/9] nfsd: Pass filehandle to nfs4_preprocess_stateid_op()
+Date: Wed, 26 Aug 2015 16:16:49 +0800
+Message-Id: <1440577010-122867-9-git-send-email-tao.peng@primarydata.com>
 In-Reply-To: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
 References: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-NFSv42 CLONE operation is supposed to respect it.
+From: Anna Schumaker <Anna.Schumaker@netapp.com>
 
-Signed-off-by: Peng Tao <tao.peng@primarydata.com>
+This will be needed so COPY can look up the saved_fh in addition to the
+current_fh.
+
+Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
 ---
- fs/nfs/client.c           |  1 +
- fs/nfs/nfs4proc.c         |  1 +
- fs/nfs/nfs4xdr.c          | 25 +++++++++++++++++++++++++
- include/linux/nfs4.h      |  1 +
- include/linux/nfs_fs_sb.h |  1 +
- include/linux/nfs_xdr.h   |  1 +
- 6 files changed, 30 insertions(+)
+ fs/nfsd/nfs4proc.c  | 16 +++++++++-------
+ fs/nfsd/nfs4state.c |  5 ++---
+ fs/nfsd/state.h     |  4 ++--
+ 3 files changed, 13 insertions(+), 12 deletions(-)
 
-diff --git a/fs/nfs/client.c b/fs/nfs/client.c
-index 57c5a02..d6d5d2a 100644
---- a/fs/nfs/client.c
-+++ b/fs/nfs/client.c
-@@ -764,6 +764,7 @@ static void nfs_server_set_fsinfo(struct nfs_server *server,
+diff --git a/fs/nfsd/nfs4proc.c b/fs/nfsd/nfs4proc.c
+index 90cfda7..d34c967 100644
+--- a/fs/nfsd/nfs4proc.c
++++ b/fs/nfsd/nfs4proc.c
+@@ -776,8 +776,9 @@ nfsd4_read(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 		clear_bit(RQ_SPLICE_OK, &rqstp->rq_flags);
  
- 	server->time_delta = fsinfo->time_delta;
+ 	/* check stateid */
+-	status = nfs4_preprocess_stateid_op(rqstp, cstate, &read->rd_stateid,
+-			RD_STATE, &read->rd_filp, &read->rd_tmp_file);
++	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
++					&read->rd_stateid, RD_STATE,
++					&read->rd_filp, &read->rd_tmp_file);
+ 	if (status) {
+ 		dprintk("NFSD: nfsd4_read: couldn't process stateid!\n");
+ 		goto out;
+@@ -923,7 +924,8 @@ nfsd4_setattr(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
  
-+	server->clone_blksize = fsinfo->clone_blksize;
- 	/* We're airborne Set socket buffersize */
- 	rpc_setbufsize(server->client, server->wsize + 100, server->rsize + 100);
- }
-diff --git a/fs/nfs/nfs4proc.c b/fs/nfs/nfs4proc.c
-index fb51b75..ecf792c 100644
---- a/fs/nfs/nfs4proc.c
-+++ b/fs/nfs/nfs4proc.c
-@@ -239,6 +239,7 @@ const u32 nfs4_fsinfo_bitmap[3] = { FATTR4_WORD0_MAXFILESIZE
- 			FATTR4_WORD1_TIME_DELTA
- 			| FATTR4_WORD1_FS_LAYOUT_TYPES,
- 			FATTR4_WORD2_LAYOUT_BLKSIZE
-+			| FATTR4_WORD2_CLONE_BLKSIZE
- };
+ 	if (setattr->sa_iattr.ia_valid & ATTR_SIZE) {
+ 		status = nfs4_preprocess_stateid_op(rqstp, cstate,
+-			&setattr->sa_stateid, WR_STATE, NULL, NULL);
++				&cstate->current_fh, &setattr->sa_stateid,
++				WR_STATE, NULL, NULL);
+ 		if (status) {
+ 			dprintk("NFSD: nfsd4_setattr: couldn't process stateid!\n");
+ 			return status;
+@@ -987,8 +989,8 @@ nfsd4_write(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	if (write->wr_offset >= OFFSET_MAX)
+ 		return nfserr_inval;
  
- const u32 nfs4_fs_locations_bitmap[3] = {
-diff --git a/fs/nfs/nfs4xdr.c b/fs/nfs/nfs4xdr.c
-index a453bd1..f0dce533 100644
---- a/fs/nfs/nfs4xdr.c
-+++ b/fs/nfs/nfs4xdr.c
-@@ -4737,6 +4737,28 @@ static int decode_attr_layout_blksize(struct xdr_stream *xdr, uint32_t *bitmap,
- 	return 0;
- }
+-	status = nfs4_preprocess_stateid_op(rqstp, cstate, stateid, WR_STATE,
+-			&filp, NULL);
++	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
++						stateid, WR_STATE, &filp, NULL);
+ 	if (status) {
+ 		dprintk("NFSD: nfsd4_write: couldn't process stateid!\n");
+ 		return status;
+@@ -1018,7 +1020,7 @@ nfsd4_fallocate(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	__be32 status = nfserr_notsupp;
+ 	struct file *file;
  
-+/*
-+ * The granularity of a CLONE operation.
-+ */
-+static int decode_attr_clone_blksize(struct xdr_stream *xdr, uint32_t *bitmap,
-+				     uint32_t *res)
-+{
-+	__be32 *p;
-+
-+	dprintk("%s: bitmap is %x\n", __func__, bitmap[2]);
-+	*res = 0;
-+	if (bitmap[2] & FATTR4_WORD2_CLONE_BLKSIZE) {
-+		p = xdr_inline_decode(xdr, 4);
-+		if (unlikely(!p)) {
-+			print_overflow_msg(__func__, xdr);
-+			return -EIO;
-+		}
-+		*res = be32_to_cpup(p);
-+		bitmap[2] &= ~FATTR4_WORD2_CLONE_BLKSIZE;
-+	}
-+	return 0;
-+}
-+
- static int decode_fsinfo(struct xdr_stream *xdr, struct nfs_fsinfo *fsinfo)
+-	status = nfs4_preprocess_stateid_op(rqstp, cstate,
++	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
+ 					    &fallocate->falloc_stateid,
+ 					    WR_STATE, &file, NULL);
+ 	if (status != nfs_ok) {
+@@ -1057,7 +1059,7 @@ nfsd4_seek(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
+ 	__be32 status;
+ 	struct file *file;
+ 
+-	status = nfs4_preprocess_stateid_op(rqstp, cstate,
++	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
+ 					    &seek->seek_stateid,
+ 					    RD_STATE, &file, NULL);
+ 	if (status) {
+diff --git a/fs/nfsd/nfs4state.c b/fs/nfsd/nfs4state.c
+index 61dfb33..7b0059d 100644
+--- a/fs/nfsd/nfs4state.c
++++ b/fs/nfsd/nfs4state.c
+@@ -4645,10 +4645,9 @@ nfs4_check_file(struct svc_rqst *rqstp, struct svc_fh *fhp, struct nfs4_stid *s,
+  */
+ __be32
+ nfs4_preprocess_stateid_op(struct svc_rqst *rqstp,
+-		struct nfsd4_compound_state *cstate, stateid_t *stateid,
+-		int flags, struct file **filpp, bool *tmp_file)
++		struct nfsd4_compound_state *cstate, struct svc_fh *fhp,
++		stateid_t *stateid, int flags, struct file **filpp, bool *tmp_file)
  {
- 	unsigned int savep;
-@@ -4771,6 +4793,9 @@ static int decode_fsinfo(struct xdr_stream *xdr, struct nfs_fsinfo *fsinfo)
- 	status = decode_attr_layout_blksize(xdr, bitmap, &fsinfo->blksize);
- 	if (status)
- 		goto xdr_error;
-+	status = decode_attr_clone_blksize(xdr, bitmap, &fsinfo->clone_blksize);
-+	if (status)
-+		goto xdr_error;
+-	struct svc_fh *fhp = &cstate->current_fh;
+ 	struct inode *ino = d_inode(fhp->fh_dentry);
+ 	struct net *net = SVC_NET(rqstp);
+ 	struct nfsd_net *nn = net_generic(net, nfsd_net_id);
+diff --git a/fs/nfsd/state.h b/fs/nfsd/state.h
+index 4874ce5..d3e81ce 100644
+--- a/fs/nfsd/state.h
++++ b/fs/nfsd/state.h
+@@ -584,8 +584,8 @@ struct nfsd4_compound_state;
+ struct nfsd_net;
  
- 	status = verify_attr_len(xdr, savep, attrlen);
- xdr_error:
-diff --git a/include/linux/nfs4.h b/include/linux/nfs4.h
-index c0c695b..e7e7853 100644
---- a/include/linux/nfs4.h
-+++ b/include/linux/nfs4.h
-@@ -422,6 +422,7 @@ enum lock_type4 {
- #define FATTR4_WORD2_LAYOUT_TYPES       (1UL << 0)
- #define FATTR4_WORD2_LAYOUT_BLKSIZE     (1UL << 1)
- #define FATTR4_WORD2_MDSTHRESHOLD       (1UL << 4)
-+#define FATTR4_WORD2_CLONE_BLKSIZE	(1UL << 13)
- #define FATTR4_WORD2_SECURITY_LABEL     (1UL << 16)
- 
- /* MDS threshold bitmap bits */
-diff --git a/include/linux/nfs_fs_sb.h b/include/linux/nfs_fs_sb.h
-index 2fb163a..db00311 100644
---- a/include/linux/nfs_fs_sb.h
-+++ b/include/linux/nfs_fs_sb.h
-@@ -147,6 +147,7 @@ struct nfs_server {
- 	unsigned int		acdirmax;
- 	unsigned int		namelen;
- 	unsigned int		options;	/* extra options enabled by mount */
-+	unsigned int		clone_blksize;	/* granularity of a CLONE operation */
- #define NFS_OPTION_FSCACHE	0x00000001	/* - local caching enabled */
- #define NFS_OPTION_MIGRATION	0x00000002	/* - NFSv4 migration enabled */
- 
-diff --git a/include/linux/nfs_xdr.h b/include/linux/nfs_xdr.h
-index 79918d6..e89dafd 100644
---- a/include/linux/nfs_xdr.h
-+++ b/include/linux/nfs_xdr.h
-@@ -141,6 +141,7 @@ struct nfs_fsinfo {
- 	__u32			lease_time; /* in seconds */
- 	__u32			layouttype; /* supported pnfs layout driver */
- 	__u32			blksize; /* preferred pnfs io block size */
-+	__u32			clone_blksize; /* granularity of a CLONE operation */
- };
- 
- struct nfs_fsstat {
+ extern __be32 nfs4_preprocess_stateid_op(struct svc_rqst *rqstp,
+-		struct nfsd4_compound_state *cstate, stateid_t *stateid,
+-		int flags, struct file **filp, bool *tmp_file);
++		struct nfsd4_compound_state *cstate, struct svc_fh *fhp,
++		stateid_t *stateid, int flags, struct file **filp, bool *tmp_file);
+ __be32 nfsd4_lookup_stateid(struct nfsd4_compound_state *cstate,
+ 		     stateid_t *stateid, unsigned char typemask,
+ 		     struct nfs4_stid **s, struct nfsd_net *nn);
 -- 
 1.8.3.1
 

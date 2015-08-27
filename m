@@ -1,57 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:38638 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932972AbbHZORv (ORCPT
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:35182 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753457AbbH0Pic (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 10:17:51 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7QEHhcC027056
-	for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 22:17:43 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: remove code for setup mntid in cmd_subvol_show
-Date: Wed, 26 Aug 2015 22:16:14 +0800
-Message-ID: <88362f08a12bcf5c094b57cca9424ef5438e3605.1440598568.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Thu, 27 Aug 2015 11:38:32 -0400
+Received: by pacdd16 with SMTP id dd16so29303815pac.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2015 08:38:32 -0700 (PDT)
+Received: from arch-nb.localdomain ([175.118.89.137])
+        by smtp.gmail.com with ESMTPSA id vw6sm2844831pab.14.2015.08.27.08.38.30
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Thu, 27 Aug 2015 08:38:31 -0700 (PDT)
+From: Byongho Lee <bhlee.kernel@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 1/3] btrfs-progs: fix memory leak in btrfs-convert main()
+Date: Fri, 28 Aug 2015 00:38:16 +0900
+Message-Id: <1440689898-35178-2-git-send-email-bhlee.kernel@gmail.com>
+In-Reply-To: <1440689898-35178-1-git-send-email-bhlee.kernel@gmail.com>
+References: <1440689898-35178-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't need to use value of mntid in cmd_subvol_show(), no need
-to get its value.
+In btrfs-convert main(), strdup() allocates memory to fslabel but that
+memory is not freed. We could fix it by adding free() calls to every
+return point, but that would make the code messy because there are
+several return paths.
+So I fix it by changing the code using strdup() with local array and
+strncpy().
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+And btrfs-convert main() guarantees that string length of fslabel is not
+to exceed 'BTRFS_LABEL_SIZE', so it's enough to use strcpy() instead of
+strncpy() to copy fslabel in do_convert().
+
+Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
 ---
- cmds-subvolume.c | 8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
+ btrfs-convert.c | 9 +++++----
+ 1 file changed, 5 insertions(+), 4 deletions(-)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 20e2c01..75ecd45 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -939,7 +939,7 @@ static int cmd_subvol_show(int argc, char **argv)
- 	char uuidparse[BTRFS_UUID_UNPARSED_SIZE];
- 	char *fullpath = NULL, *svpath = NULL, *mnt = NULL;
- 	char raw_prefix[] = "\t\t\t\t";
--	u64 sv_id, mntid;
-+	u64 sv_id;
- 	int fd = -1, mntfd = -1;
- 	int ret = 1;
- 	DIR *dirstream1 = NULL, *dirstream2 = NULL;
-@@ -999,12 +999,6 @@ static int cmd_subvol_show(int argc, char **argv)
- 		goto out;
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 917bbc1b74d2..25ae424ea73b 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -2428,7 +2428,7 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
+ 		fprintf(stderr, "copy label '%s'\n",
+ 				root->fs_info->super_copy->label);
+ 	} else if (copylabel == -1) {
+-		strncpy(root->fs_info->super_copy->label, fslabel, BTRFS_LABEL_SIZE);
++		strcpy(root->fs_info->super_copy->label, fslabel);
+ 		fprintf(stderr, "set label to '%s'\n", fslabel);
  	}
  
--	ret = btrfs_list_get_path_rootid(mntfd, &mntid);
--	if (ret) {
--		fprintf(stderr, "ERROR: can't get rootid for '%s'\n", mnt);
--		goto out;
--	}
--
- 	if (sv_id == BTRFS_FS_TREE_OBJECTID) {
- 		printf("%s is btrfs root\n", fullpath);
- 		goto out;
+@@ -2868,7 +2868,7 @@ int main(int argc, char *argv[])
+ 	int usage_error = 0;
+ 	int progress = 1;
+ 	char *file;
+-	char *fslabel = NULL;
++	char fslabel[BTRFS_LABEL_SIZE+1];
+ 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
+ 
+ 	while(1) {
+@@ -2910,8 +2910,9 @@ int main(int argc, char *argv[])
+ 				break;
+ 			case 'l':
+ 				copylabel = -1;
+-				fslabel = strdup(optarg);
+-				if (strlen(fslabel) > BTRFS_LABEL_SIZE) {
++				fslabel[BTRFS_LABEL_SIZE] = 0;
++				strncpy(fslabel, optarg, sizeof(fslabel));
++				if (fslabel[BTRFS_LABEL_SIZE]) {
+ 					fprintf(stderr,
+ 						"warning: label too long, trimmed to %d bytes\n",
+ 						BTRFS_LABEL_SIZE);
 -- 
-1.8.5.1
+2.5.0
 

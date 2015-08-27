@@ -1,80 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53623 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750773AbbH0C63 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 22:58:29 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZUnOU-0002EX-1E
-	for linux-btrfs@vger.kernel.org; Thu, 27 Aug 2015 04:58:26 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2015 04:58:26 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2015 04:58:26 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Understanding BTRFS storage
-Date: Thu, 27 Aug 2015 02:58:13 +0000 (UTC)
-Message-ID: <pan$7fd63$2b2fd6ee$53e6fc05$7a0aab72@cox.net>
-References: <CAG__1a4T=d_O49CnOw+0gtKr56xtrmcjRcmujtUff_s_-oL0Jw@mail.gmail.com>
-	<20150826165024.05af044f@natsu> <55DDAB1C.90406@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-ph.de-nserver.de ([85.158.179.214]:51850 "EHLO
+	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752869AbbH0GXm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 27 Aug 2015 02:23:42 -0400
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: linux-fsdevel@vger.kernel.org, jbacik@fb.com, cmason@fb.com
+From: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Subject: btrfs no space BTRFS: block rsv returned -28
+Message-ID: <55DEACEC.2010807@profihost.ag>
+Date: Thu, 27 Aug 2015 08:23:40 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S Hemmelgarn posted on Wed, 26 Aug 2015 08:03:40 -0400 as
-excerpted:
+Hi,
 
-> On 2015-08-26 07:50, Roman Mamedov wrote:
->> On Wed, 26 Aug 2015 10:56:03 +0200 George Duffield
->> <forumscollective@gmail.com> wrote:
->>
->>> I'm looking to switch from a 5x3TB mdadm raid5 array to a Btrfs based
->>> solution that will involve duplicating a data store on a second
->>> machine for backup purposes (the machine is only powered up for
->>> backups).
->>
->> What do you want to achieve by switching? As Btrfs RAID5/6 is not safe
->> yet, do you also plan to migrate to RAID10, losing in storage
->> efficiency?
->>
->> Why not use Btrfs in single-device mode on top of your mdadm RAID5/6?
->> Can even migrate without moving any data if you currently use Ext4, as
->> it can be converted to Btrfs in-place.
+today i had again the no space situation while having the device mounted
+with: enospc_debug
 
-Someone (IIRC it was Austin H) posted what I thought was an extremely 
-good setup, a few weeks ago.  Create two (or more) mdraid0s, and put 
-btrfs raid1 (or raid5/6 when it's a bit more mature, I've been 
-recommending waiting until 4.4 and see what the on-list reports for it 
-look like then) on top.  The btrfs raid on top lets you use btrfs' data 
-integrity features, while the mdraid0s beneath help counteract the fact 
-that btrfs isn't well optimized for speed yet, the way mdraid has been.  
-And the btrfs raid on top means all is not lost with a device going bad 
-in the mdraid0, as would normally be the case, since the other raid0(s), 
-functioning as the remaining btrfs devices, let you rebuild the missing 
-btrfs device, by recreating the missing raid0.
+# btrfs filesystem df /vmbackup/
+Data, single: total=18.54TiB, used=17.94TiB
+System, DUP: total=32.00MiB, used=2.83MiB
+Metadata, DUP: total=126.00GiB, used=99.45GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
 
-Normally, that sort of raid01 is discouraged in favor of raid10, with 
-raid1 at the lower level and raid0 on top, for more efficient rebuilds, 
-but btrfs' data integrity features change that story entirely. =:^)
+[180587.839969] use_block_rsv: 25370 callbacks suppressed
+[180587.839975] ------------[ cut here ]------------
+[180587.840009] WARNING: CPU: 8 PID: 22807 at
+fs/btrfs/extent-tree.c:7539 btrfs_alloc_tree_block+0x431/0x4c0 [btrfs]()
+[180587.840012] BTRFS: block rsv returned -28
+[180587.840014] Modules linked in: dm_mod netconsole ipt_REJECT
+nf_reject_ipv4 xt_multiport iptable_filter ip_tables x_tables
+cpufreq_userspace cpufreq_stats cpufreq_powersave cpufreq_conservative
+bonding ext2 usbhid coretemp loop ehci_pci sb_edac ehci_hcd edac_core
+i2c_i801 usbcore i2c_core shpchp usb_common ipmi_si ipmi_msghandler
+button btrfs lzo_compress raid0 raid456 async_raid6_recov async_memcpy
+async_pq async_xor async_tx xor raid6_pq raid1 md_mod sg sd_mod aacraid
+ahci i40e(O) libahci ixgbe vxlan ip6_udp_tunnel mdio udp_tunnel ptp pps_core
+[180587.840073] CPU: 8 PID: 22807 Comm: kworker/u66:19 Tainted: G
+ W  O    4.1.6+19-ph #1
+[180587.840076] Hardware name: Supermicro X10DRH/X10DRH-IT, BIOS 1.0c
+02/18/2015
+[180587.840099] Workqueue: btrfs-endio-write btrfs_endio_write_helper
+[btrfs]
+[180587.840115]  ffffffffc04593f3 ffff880fe6c4f848 ffffffff9f633a26
+0000000000000000
+[180587.840125]  ffff880fe6c4f898 ffff880fe6c4f888 ffffffff9f07dd17
+0000000000000000
+[180587.840128]  ffff88105b732148 0000000000000000 ffff88085bc95800
+0000000000004000
+[180587.840132] Call Trace:
+[180587.840148]  [<ffffffff9f633a26>] dump_stack+0x45/0x57
+[180587.840161]  [<ffffffff9f07dd17>] warn_slowpath_common+0x97/0xe0
+[180587.840168]  [<ffffffff9f07de16>] warn_slowpath_fmt+0x46/0x50
+[180587.840185]  [<ffffffffc03c1611>] btrfs_alloc_tree_block+0x431/0x4c0
+[btrfs]
+[180587.840200]  [<ffffffffc03cb340>] ?
+verify_parent_transid+0x200/0x200 [btrfs]
+[180587.840221]  [<ffffffffc03f87d9>] ? read_extent_buffer+0xb9/0x120
+[btrfs]
+[180587.840232]  [<ffffffffc03ab2fc>] __btrfs_cow_block+0x11c/0x540 [btrfs]
+[180587.840248]  [<ffffffffc03cec25>] ? btrfs_buffer_uptodate+0x65/0x80
+[btrfs]
+[180587.840259]  [<ffffffffc03ab8ea>] btrfs_cow_block+0x12a/0x1c0 [btrfs]
+[180587.840270]  [<ffffffffc03af800>] btrfs_search_slot+0x1d0/0xa10 [btrfs]
+[180587.840295]  [<ffffffffc03c77d9>] btrfs_lookup_csum+0x69/0x180 [btrfs]
+[180587.840314]  [<ffffffffc03c8c2c>] btrfs_csum_file_blocks+0xcc/0x6e0
+[btrfs]
+[180587.840325]  [<ffffffffc03aa84a>] ? btrfs_free_path+0x2a/0x40 [btrfs]
+[180587.840341]  [<ffffffffc03d835d>] ?
+insert_reserved_file_extent.constprop.68+0xbd/0x310 [btrfs]
+[180587.840362]  [<ffffffffc03d6bcd>]
+add_pending_csums.isra.39+0x4d/0x70 [btrfs]
+[180587.840382]  [<ffffffffc03de5b6>]
+btrfs_finish_ordered_io+0x2e6/0x5e0 [btrfs]
+[180587.840398]  [<ffffffffc03b4e63>] ? get_alloc_profile+0xc3/0x1f0 [btrfs]
+[180587.840418]  [<ffffffffc03de8c5>] finish_ordered_fn+0x15/0x20 [btrfs]
+[180587.840443]  [<ffffffffc0405d02>] normal_work_helper+0xc2/0x2a0 [btrfs]
+[180587.840464]  [<ffffffffc0406072>] btrfs_endio_write_helper+0x12/0x20
+[btrfs]
+[180587.840473]  [<ffffffff9f09563f>] process_one_work+0x14f/0x410
+[180587.840476]  [<ffffffff9f095a59>] worker_thread+0x119/0x510
+[180587.840480]  [<ffffffff9f6359b1>] ? __schedule+0x4f1/0x99f
+[180587.840489]  [<ffffffff9f095940>] ? process_scheduled_works+0x40/0x40
+[180587.840494]  [<ffffffff9f09c1a9>] kthread+0xc9/0xe0
+[180587.840499]  [<ffffffff9f09c0e0>] ? kthread_create_on_node+0x1a0/0x1a0
+[180587.840509]  [<ffffffff9f63a562>] ret_from_fork+0x42/0x70
+[180587.840513]  [<ffffffff9f09c0e0>] ? kthread_create_on_node+0x1a0/0x1a0
+[180587.840516] ---[ end trace 35a5e6cf972ae9a0 ]---
+[180766.073218] use_block_rsv: 20 callbacks suppressed
+[180766.073223] ------------[ cut here ]------------
 
-> As of right now, btrfs-convert does not work reliably or safely.  I
-> would strongly advise against using it unless you are trying to help get
-> it working again.
-
-Seconded.  Better to use your existing ext4 as a backup, which you should 
-have anyway if you value your data, and copy the data from that ext4 
-"backup" to the new btrfs you created with mkfs.btrfs using your 
-preferred options.  That leaves the existing ext4 in place /as/ a backup, 
-while starting with a fresh and clean btrfs, setup with exactly the 
-options you want.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Stefan

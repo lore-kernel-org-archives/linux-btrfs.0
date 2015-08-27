@@ -1,102 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50062 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:56417 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751383AbbH0BLt (ORCPT
+	with ESMTP id S1751511AbbH0Bpv convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 21:11:49 -0400
-Subject: Re: [GIT PULL] Fujitsu pull part1: cleanup
-To: Chris Mason <clm@fb.com>, btrfs <linux-btrfs@vger.kernel.org>
-References: <55D68A6C.3010107@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55DE63D2.2020508@cn.fujitsu.com>
-Date: Thu, 27 Aug 2015 09:11:46 +0800
+	Wed, 26 Aug 2015 21:45:51 -0400
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>
+References: <981687019fcca4b4f7455b7a755e48888cbd24ff.1440510311.git.zhaolei@cn.fujitsu.com> <20150826171949.GA11834@twin.jikos.cz>
+In-Reply-To: <20150826171949.GA11834@twin.jikos.cz>
+Subject: RE: [PATCH] btrfs: scrub: set error stats when tree block spanning stripes
+Date: Thu, 27 Aug 2015 09:44:05 +0800
+Message-ID: <03b601d0e069$ddd50ee0$997f2ca0$@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <55D68A6C.3010107@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+Hi, David Sterba
 
-Any comment on the git pull?
-As it's not picked yet nor any objection here.
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Thursday, August 27, 2015 1:20 AM
+> To: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Subject: Re: [PATCH] btrfs: scrub: set error stats when tree block spanning
+> stripes
+> 
+> On Tue, Aug 25, 2015 at 09:45:27PM +0800, Zhao Lei wrote:
+> > It is better to show error stats to user when we found tree block
+> > spanning stripes.
+> >
+> > On a btrfs created by old version of btrfs-convert:
+> > Before patch:
+> >   # btrfs scrub start -B /dev/vdh
+> >   scrub done for 8b342d35-2904-41ab-b3cb-2f929709cf47
+> >           scrub started at Tue Aug 25 21:19:09 2015 and finished after
+> 00:00:00
+> >           total bytes scrubbed: 53.54MiB with 0 errors
+> >   # dmesg
+> >   ...
+> >   [  128.711434] BTRFS error (device vdh): scrub: tree block 27054080
+> spanning stripes, ignored. logical=27000832
+> >   [  128.712744] BTRFS error (device vdh): scrub: tree block 27054080
+> spanning stripes, ignored. logical=27066368
+> >   ...
+> >
+> > After patch:
+> >   # btrfs scrub start -B /dev/vdh
+> >   scrub done for ff7f844b-7a4e-4b1a-88a9-8252ab25be1b
+> >           scrub started at Tue Aug 25 21:42:29 2015 and finished after
+> 00:00:00
+> >           total bytes scrubbed: 53.60MiB with 2 errors
+> >           error details:
+> >           corrected errors: 0, uncorrectable errors: 2, unverified errors: 0
+> >   ERROR: There are uncorrectable errors.
+> 
+> I agree that reporting that is a good thing so the syslog is consistent with the
+> status output. Is the error really uncorrectable? I'd have to re-read the reports
+> and root cause analysis again, but can we do it at least via checker?
+> 
+This type of error-filesystem is created by old btrfs-convert,
+Reported by: Chris Murphy <lists@colorremedies.com>
+In maillist, with title:
+[BUG] kernel BUG at fs/btrfs/scrub.c:1956!, when scrubbing freshly convert
 
-Thanks,
-Qu
+Then we get the reason: It is caused by bug in btrfs-convert.
+Detail is in maillist titled:
+RE: [BUG] kernel BUG at fs/btrfs/scrub.c:1956!, when scrubbing freshly converted ext
+In 2015-7-23
 
-Qu Wenruo wrote on 2015/08/21 10:18 +0800:
-> Hi Chris,
->
-> Would you please consider merging the following fixes for your
-> integration-4.3 branch?
->
-> https://github.com/adam900710/linux.git for_chris_4.3_part1_cleanup
->
-> Most of them are harmless cleanups, like removing unused
-> parameters/judgment, or comment/variant name change.
->
-> We have already tested them for about 2 days, and it would be safe.
->
-> Based on 46cd28555ffaa40162290dba203daad0ff6f7abd.
-> And can be merged with pull from Filipe automatically without any conflict.
->
-> P.S:
-> Schedule for rest pull:
-> Part2: btrfs/070 fix.
->    The patchset is already updated sometime ago, but we are using more
->    test to make sure it won't cause any new bug.
->
-> PartN: qgroup reserve space leak fix. (maybe for 4.4)
->    This one will involve some huge change in btrfs qgroup reserve
->    mechanism.
->
->    The idea is to keep a per-inode map for which range of space is
->    already reserved, to avoid double reserve for same range but only
->    freed once case.
->
->    It's still under development, and it may not be able to meet
->    current merge windows.
->    So it's will be for 4.4.
->
-> PartN+1: Metadata and data qgroup support. (maybe for 4.4 with PartN)
->    Some old patches from Yang, but needs some updates for new qgroup
->    accounting/reserve mechanism.
->
-> Thanks,
-> Qu
->
->
-> Qu Wenruo (1):
->    btrfs: async_thread: Fix workqueue 'max_active' value when
->      initializing
->
-> Tsutomu Itoh (1):
->    Btrfs: cleanup: remove unnecessary check before btrfs_free_path is
->      called
->
-> Zhao Lei (6):
->    btrfs: Update out-of-date "skip parity stripe" comment
->    btrfs: Remove noused chunk_tree and chunk_objectid from
->      scrub_enumerate_chunks and scrub_chunk
->    btrfs: Cleanup for btrfs_calc_num_tolerated_disk_barrier_failures
->    btrfs: Add raid56 support for updating
->      num_tolerated_disk_barrier_failures in btrfs_balance
->    btrfs: Remove useless condition in start_log_trans
->    btrfs: Remove unused arguments in tree-log.c
->
->   fs/btrfs/async-thread.c | 57 ++++++++++++++++++++++---------------
->   fs/btrfs/async-thread.h |  2 +-
->   fs/btrfs/dev-replace.c  |  3 +-
->   fs/btrfs/disk-io.c      | 76
-> +++++++++++++++++++++++--------------------------
->   fs/btrfs/disk-io.h      |  1 +
->   fs/btrfs/inode.c        |  3 +-
->   fs/btrfs/scrub.c        | 12 ++------
->   fs/btrfs/tree-defrag.c  |  3 +-
->   fs/btrfs/tree-log.c     | 68 ++++++++++++++++++-------------------------
->   fs/btrfs/volumes.c      | 21 +++-----------
->   10 files changed, 110 insertions(+), 136 deletions(-)
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+And fixed btrfs-progs, to avoid creating such a wrong filesystem
+with btrfs-convert, and report this type of error in fsck.
+With patch titled:
+[PATCH 0/4] Metadata crossing stripe boundary fixes
+[PATCH 1/4] btrfs: print-tree: print stripe len of a chunk
+[PATCH 2/4] btrfs: fsck: Check if a metadata tree block crossing stripe boundary
+[PATCH 3/4] btrfs: extent-tree: Avoid allocating tree block that cross stripe boundar
+[PATCH 4/4] btrfs: convert: Avoid allocating metadata extent crossing stripe boundary
+In 2015-7-23
+
+Also fixed kernel code to avoid panic with:
+[PATCH] btrfs: Fix scrub panic when leaf accross stripes in btrfs maillist.
+In 2015-7-23
+
+Above patchs are in current btrfs-progs and integration-4.3
+branch.
+
+But it is still uncorrectable because neither kernel nor btrfsck can fix
+it(only can report).
+
+In short, it is caused by old version of btrfs-convert, and already fixed,
+and this patch is used to make scrub report it in output.
+
+Thanks
+Zhaolei
+
+> The uncorrectable errors are especially worrisome so I'd like to know what kind
+> of answer should we give.
+

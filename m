@@ -1,40 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:14443 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751860AbbHZTG1 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:50062 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751383AbbH0BLt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 26 Aug 2015 15:06:27 -0400
-Message-ID: <55DE0E2D.6000001@fb.com>
-Date: Wed, 26 Aug 2015 15:06:21 -0400
-From: Josef Bacik <jbacik@fb.com>
+	Wed, 26 Aug 2015 21:11:49 -0400
+Subject: Re: [GIT PULL] Fujitsu pull part1: cleanup
+To: Chris Mason <clm@fb.com>, btrfs <linux-btrfs@vger.kernel.org>
+References: <55D68A6C.3010107@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55DE63D2.2020508@cn.fujitsu.com>
+Date: Thu, 27 Aug 2015 09:11:46 +0800
 MIME-Version: 1.0
-To: <bo.li.liu@oracle.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH] Btrfs: deal with error on secondary log properly
-References: <1440522583-32120-1-git-send-email-jbacik@fb.com> <20150826020609.GB5614@localhost.localdomain>
-In-Reply-To: <20150826020609.GB5614@localhost.localdomain>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+In-Reply-To: <55D68A6C.3010107@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 08/25/2015 10:06 PM, Liu Bo wrote:
-> On Tue, Aug 25, 2015 at 01:09:43PM -0400, Josef Bacik wrote:
->> If we have an fsync at the same time in two seperate subvolumes we could end up
->> with the tree log pointing at invalid blocks.  We need to notice if our writeout
->
-> Mind to share more details of the problem?
->
+Hi Chris,
 
-It's the problem Filipe was trying to solve.  Say we fsync() on two 
-different subvols, one of them will race in and be the one who commits 
-the log root tree.  So process A waits on process B to add its log to 
-the log root tree and write out its log.  If we get an IO error while 
-writing out the log the log root tree will be pointing to invalid crap, 
-and we also won't return an error back to userspace.  We need to notice 
-if there was an error, turn on the transaction commit stuff since we've 
-already updated the the log root tree with our subvol log so we don't 
-get garbage on the disk, and we need to return an error to process B. 
+Any comment on the git pull?
+As it's not picked yet nor any objection here.
+
 Thanks,
+Qu
 
-Josef
-
+Qu Wenruo wrote on 2015/08/21 10:18 +0800:
+> Hi Chris,
+>
+> Would you please consider merging the following fixes for your
+> integration-4.3 branch?
+>
+> https://github.com/adam900710/linux.git for_chris_4.3_part1_cleanup
+>
+> Most of them are harmless cleanups, like removing unused
+> parameters/judgment, or comment/variant name change.
+>
+> We have already tested them for about 2 days, and it would be safe.
+>
+> Based on 46cd28555ffaa40162290dba203daad0ff6f7abd.
+> And can be merged with pull from Filipe automatically without any conflict.
+>
+> P.S:
+> Schedule for rest pull:
+> Part2: btrfs/070 fix.
+>    The patchset is already updated sometime ago, but we are using more
+>    test to make sure it won't cause any new bug.
+>
+> PartN: qgroup reserve space leak fix. (maybe for 4.4)
+>    This one will involve some huge change in btrfs qgroup reserve
+>    mechanism.
+>
+>    The idea is to keep a per-inode map for which range of space is
+>    already reserved, to avoid double reserve for same range but only
+>    freed once case.
+>
+>    It's still under development, and it may not be able to meet
+>    current merge windows.
+>    So it's will be for 4.4.
+>
+> PartN+1: Metadata and data qgroup support. (maybe for 4.4 with PartN)
+>    Some old patches from Yang, but needs some updates for new qgroup
+>    accounting/reserve mechanism.
+>
+> Thanks,
+> Qu
+>
+>
+> Qu Wenruo (1):
+>    btrfs: async_thread: Fix workqueue 'max_active' value when
+>      initializing
+>
+> Tsutomu Itoh (1):
+>    Btrfs: cleanup: remove unnecessary check before btrfs_free_path is
+>      called
+>
+> Zhao Lei (6):
+>    btrfs: Update out-of-date "skip parity stripe" comment
+>    btrfs: Remove noused chunk_tree and chunk_objectid from
+>      scrub_enumerate_chunks and scrub_chunk
+>    btrfs: Cleanup for btrfs_calc_num_tolerated_disk_barrier_failures
+>    btrfs: Add raid56 support for updating
+>      num_tolerated_disk_barrier_failures in btrfs_balance
+>    btrfs: Remove useless condition in start_log_trans
+>    btrfs: Remove unused arguments in tree-log.c
+>
+>   fs/btrfs/async-thread.c | 57 ++++++++++++++++++++++---------------
+>   fs/btrfs/async-thread.h |  2 +-
+>   fs/btrfs/dev-replace.c  |  3 +-
+>   fs/btrfs/disk-io.c      | 76
+> +++++++++++++++++++++++--------------------------
+>   fs/btrfs/disk-io.h      |  1 +
+>   fs/btrfs/inode.c        |  3 +-
+>   fs/btrfs/scrub.c        | 12 ++------
+>   fs/btrfs/tree-defrag.c  |  3 +-
+>   fs/btrfs/tree-log.c     | 68 ++++++++++++++++++-------------------------
+>   fs/btrfs/volumes.c      | 21 +++-----------
+>   10 files changed, 110 insertions(+), 136 deletions(-)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

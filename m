@@ -1,22 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:34909 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752912AbbH0GYb (ORCPT
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:33917 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751327AbbH1DJl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Aug 2015 02:24:31 -0400
-Received: by igbjg10 with SMTP id jg10so59492898igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 26 Aug 2015 23:24:31 -0700 (PDT)
+	Thu, 27 Aug 2015 23:09:41 -0400
+Received: by igui7 with SMTP id i7so8811874igu.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2015 20:09:40 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20150826131156.GA9948@infradead.org>
-References: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com> <20150826131156.GA9948@infradead.org>
+In-Reply-To: <20150826133723.GX10756@twin.jikos.cz>
+References: <1440577010-122867-1-git-send-email-tao.peng@primarydata.com>
+ <1440577010-122867-2-git-send-email-tao.peng@primarydata.com> <20150826133723.GX10756@twin.jikos.cz>
 From: Peng Tao <tao.peng@primarydata.com>
-Date: Thu, 27 Aug 2015 14:24:11 +0800
-Message-ID: <CAKVebiVh2Aker6pL2krtt-ovqiC5tc3EV-ph8fO6q5Ui3dBF8w@mail.gmail.com>
-Subject: Re: [PATCH-RFC-RESEND 0/9] NFS/NFSD: add NFSv42 CLONE operation support
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Devel FS Linux <linux-fsdevel@vger.kernel.org>,
+Date: Fri, 28 Aug 2015 11:09:20 +0800
+Message-ID: <CAKVebiWCGNsrcUB8ZYbuD=bc6-kdb=sE0hUbSpAQHUZLfA_buA@mail.gmail.com>
+Subject: Re: [PATCH-RFC-RESEND 1/9] vfs: pull btrfs clone API to vfs layer
+To: dsterba@suse.cz, Peng Tao <tao.peng@primarydata.com>,
+        Devel FS Linux <linux-fsdevel@vger.kernel.org>,
         Trond Myklebust <trond.myklebust@primarydata.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>, Zach Brown <zab@zabbo.net>,
+        Anna Schumaker <anna.schumaker@netapp.com>,
+        Christoph Hellwig <hch@infradead.org>, Zach Brown <zab@zabbo.net>,
         Darren Hart <dvhart@linux.intel.com>,
         Bruce Fields <bfields@fieldses.org>,
         Jeff Layton <jeff.layton@primarydata.com>,
@@ -27,14 +29,36 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 26, 2015 at 9:11 PM, Christoph Hellwig <hch@infradead.org> wrote:
-> On Wed, Aug 26, 2015 at 04:16:41PM +0800, Peng Tao wrote:
->> 2. vfs_file_clone_range() does not expect file systems to do data copy, and thus
->> no rw_verify_area() required.
+On Wed, Aug 26, 2015 at 9:37 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Wed, Aug 26, 2015 at 04:16:42PM +0800, Peng Tao wrote:
+>> +struct file_clone_range {
+>> +     __s64 src_fd;
+>> +     __u64 src_offset;
+>> +     __u64 src_length;
+>> +     __u64 dest_offset;
+>> +};
 >
-> While there is no physical copy involved, the data logically is copied from
-> file A to file B.  So we still need all the checks from rw_verify_area.
-I see. Will add the checks.
+> Might be a good idea to add some spare bytes to the structure.
+>
+>>  struct fstrim_range {
+>>       __u64 start;
+>>       __u64 len;
+>> @@ -159,6 +166,8 @@ struct inodes_stat_t {
+>>  #define FIFREEZE     _IOWR('X', 119, int)    /* Freeze */
+>>  #define FITHAW               _IOWR('X', 120, int)    /* Thaw */
+>>  #define FITRIM               _IOWR('X', 121, struct fstrim_range)    /* Trim */
+>> +#define FICLONE              _IOW(0x94, 9, int)      /* Clone */
+>> +#define FICLONERANGE _IOW(0x94, 13, struct file_clone_range) /* Clone range */
+>
+> FICLONE is a special case of FICLONERANGE. The whole file clone had come
+> historically first and then was refined, I don't think this needs to be
+> copied to the generic API. A zeroed file_clone_range is simple to use
+> for that purpose.
+oh, sorry I missed this one...
+
+BTRFS_IOC_CLONE is being used by cp(1) and widely shipped with
+distros. So we cannot just abandon the API. And my intention is to
+keep the clone ioctl "JUST WORK" (TM) with cp(1).
 
 Cheers,
 Tao

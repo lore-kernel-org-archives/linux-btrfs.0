@@ -1,125 +1,249 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5810 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752904AbbHXIqp (ORCPT
+Received: from e28smtp01.in.ibm.com ([122.248.162.1]:49878 "EHLO
+	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752618AbbH1Pk3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 04:46:45 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7O8kc2I002347
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 16:46:38 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs-progs: close all fs_devices before exit in some commands
-Date: Mon, 24 Aug 2015 16:45:03 +0800
-Message-ID: <d9ee6fee7b49a43f2ff6c24306f4cf69a7c45ae1.1440405874.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <9f0cf7c0a07faefb4f3af86f8e7c63b56a338b7a.1440405874.git.zhaolei@cn.fujitsu.com>
-References: <9f0cf7c0a07faefb4f3af86f8e7c63b56a338b7a.1440405874.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Fri, 28 Aug 2015 11:40:29 -0400
+Received: from /spool/local
+	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Fri, 28 Aug 2015 21:10:26 +0530
+Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
+	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 547B4125805A
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 21:09:49 +0530 (IST)
+Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
+	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t7SFeNPq8650770
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 21:10:23 +0530
+Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t7SFeN02019502
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 21:10:23 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, bo.li.liu@oracle.com,
+        chandan@mykolab.com
+Subject: [PATCH V3] Btrfs: Direct I/O: Fix space accounting
+Date: Fri, 28 Aug 2015 21:10:13 +0530
+Message-Id: <1440776413-15591-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-mkfs created more than one fs_devices in fs_uuids.
-1: one is for file system been created
-2: others are created in test_dev_for_mkfs for check mount point
-   test_dev_for_mkfs()-> ... -> btrfs_scan_one_device()
+The following call trace is seen when generic/095 test is executed,
 
-Current code only close above 1, and this patch close above 2.
+WARNING: CPU: 3 PID: 2769 at /home/chandan/code/repos/linux/fs/btrfs/inode.c:8967 btrfs_destroy_inode+0x284/0x2a0()
+Modules linked in:
+CPU: 3 PID: 2769 Comm: umount Not tainted 4.2.0-rc5+ #31
+Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.7.5-20150306_163512-brownie 04/01/2014
+ ffffffff81c08150 ffff8802ec9cbce8 ffffffff81984058 ffff8802ffd8feb0
+ 0000000000000000 ffff8802ec9cbd28 ffffffff81050385 ffff8802ec9cbd38
+ ffff8802d12f8588 ffff8802d12f8588 ffff8802f15ab000 ffff8800bb96c0b0
+Call Trace:
+ [<ffffffff81984058>] dump_stack+0x45/0x57
+ [<ffffffff81050385>] warn_slowpath_common+0x85/0xc0
+ [<ffffffff81050465>] warn_slowpath_null+0x15/0x20
+ [<ffffffff81340294>] btrfs_destroy_inode+0x284/0x2a0
+ [<ffffffff8117ce07>] destroy_inode+0x37/0x60
+ [<ffffffff8117cf39>] evict+0x109/0x170
+ [<ffffffff8117cfd5>] dispose_list+0x35/0x50
+ [<ffffffff8117dd3a>] evict_inodes+0xaa/0x100
+ [<ffffffff81165667>] generic_shutdown_super+0x47/0xf0
+ [<ffffffff81165951>] kill_anon_super+0x11/0x20
+ [<ffffffff81302093>] btrfs_kill_super+0x13/0x110
+ [<ffffffff81165c99>] deactivate_locked_super+0x39/0x70
+ [<ffffffff811660cf>] deactivate_super+0x5f/0x70
+ [<ffffffff81180e1e>] cleanup_mnt+0x3e/0x90
+ [<ffffffff81180ebd>] __cleanup_mnt+0xd/0x10
+ [<ffffffff81069c06>] task_work_run+0x96/0xb0
+ [<ffffffff81003a3d>] do_notify_resume+0x3d/0x50
+ [<ffffffff8198cbc2>] int_signal+0x12/0x17
 
-Similar problem exist in other tools, for ex:
- cmd-check.c: the function is:
- cmd_check()->check_mounted()-> ... -> btrfs_scan_one_device()
- ...
+This means that the inode had non-zero "outstanding extents" during
+eviction. This occurs because, during direct I/O a task which successfully
+used up its reserved data space would set BTRFS_INODE_DIO_READY bit and does
+not clear the bit after finishing the DIO write. A future DIO write could
+actually fail and the unused reserve space won't be freed because of the
+previously set BTRFS_INODE_DIO_READY bit.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Clearing the BTRFS_INODE_DIO_READY bit in btrfs_direct_IO() caused the
+following issue,
+|-----------------------------------+-------------------------------------|
+| Task A                            | Task B                              |
+|-----------------------------------+-------------------------------------|
+| Start direct i/o write on inode X.|                                     |
+| reserve space                     |                                     |
+| Allocate ordered extent           |                                     |
+| release reserved space            |                                     |
+| Set BTRFS_INODE_DIO_READY bit.    |                                     |
+|                                   | splice()                            |
+|                                   | Transfer data from pipe buffer to   |
+|                                   | destination file.                   |
+|                                   | - kmap(pipe buffer page)            |
+|                                   | - Start direct i/o write on         |
+|                                   |   inode X.                          |
+|                                   |   - reserve space                   |
+|                                   |   - dio_refill_pages()              |
+|                                   |     - sdio->blocks_available == 0   |
+|                                   |     - Since a kernel address is     |
+|                                   |       being passed instead of a     |
+|                                   |       user space address,           |
+|                                   |       iov_iter_get_pages() returns  |
+|                                   |       -EFAULT.                      |
+|                                   |   - Since BTRFS_INODE_DIO_READY is  |
+|                                   |     set, we don't release reserved  |
+|                                   |     space.                          |
+|                                   |   - Clear BTRFS_INODE_DIO_READY bit.|
+| -EIOCBQUEUED is returned.         |                                     |
+|-----------------------------------+-------------------------------------|
+
+Hence this commit introduces "struct btrfs_dio_data" to track the usage of
+reserved data space. The remaining unused "reserve space" can now be freed
+reliably.
+
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- cmds-check.c   | 1 +
- cmds-device.c  | 4 ++++
- cmds-replace.c | 2 ++
- mkfs.c         | 1 +
- 4 files changed, 8 insertions(+)
+v2->v3
+1. As suggested by Liu Bo, provide more details regarding the reason for
+   failure when BTRFS_INODE_DIO_READY bit is cleared before returning from
+   btrfs_direct_IO.
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 2e6dc68..9828ce2 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -9589,6 +9589,7 @@ out:
- 	free_root_recs_tree(&root_cache);
- close_out:
- 	close_ctree(root);
-+	btrfs_close_all_devices();
- err_out:
+v1->v2
+1. Fix erroneous commit message. Thanks to Liu Bo for pointing it out.
+
+ fs/btrfs/btrfs_inode.h |  2 --
+ fs/btrfs/inode.c       | 42 +++++++++++++++++++++---------------------
+ 2 files changed, 21 insertions(+), 23 deletions(-)
+
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 81220b2..0ef5cc1 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -44,8 +44,6 @@
+ #define BTRFS_INODE_IN_DELALLOC_LIST		9
+ #define BTRFS_INODE_READDIO_NEED_LOCK		10
+ #define BTRFS_INODE_HAS_PROPS		        11
+-/* DIO is ready to submit */
+-#define BTRFS_INODE_DIO_READY		        12
+ /*
+  * The following 3 bits are meant only for the btree inode.
+  * When any of them is set, it means an error happened while writing an
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index bda3c41..83571603 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7405,6 +7405,10 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
+ 	return em;
+ }
+ 
++struct btrfs_dio_data {
++	u64 outstanding_extents;
++	u64 reserve;
++};
+ 
+ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 				   struct buffer_head *bh_result, int create)
+@@ -7412,10 +7416,10 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 	struct extent_map *em;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct extent_state *cached_state = NULL;
++	struct btrfs_dio_data *dio_data = NULL;
+ 	u64 start = iblock << inode->i_blkbits;
+ 	u64 lockstart, lockend;
+ 	u64 len = bh_result->b_size;
+-	u64 *outstanding_extents = NULL;
+ 	int unlock_bits = EXTENT_LOCKED;
+ 	int ret = 0;
+ 
+@@ -7433,7 +7437,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 		 * that anything that needs to check if there's a transction doesn't get
+ 		 * confused.
+ 		 */
+-		outstanding_extents = current->journal_info;
++		dio_data = current->journal_info;
+ 		current->journal_info = NULL;
+ 	}
+ 
+@@ -7565,17 +7569,18 @@ unlock:
+ 		 * within our reservation, otherwise we need to adjust our inode
+ 		 * counter appropriately.
+ 		 */
+-		if (*outstanding_extents) {
+-			(*outstanding_extents)--;
++		if (dio_data->outstanding_extents) {
++			(dio_data->outstanding_extents)--;
+ 		} else {
+ 			spin_lock(&BTRFS_I(inode)->lock);
+ 			BTRFS_I(inode)->outstanding_extents++;
+ 			spin_unlock(&BTRFS_I(inode)->lock);
+ 		}
+ 
+-		current->journal_info = outstanding_extents;
+ 		btrfs_free_reserved_data_space(inode, len);
+-		set_bit(BTRFS_INODE_DIO_READY, &BTRFS_I(inode)->runtime_flags);
++		WARN_ON(dio_data->reserve < len);
++		dio_data->reserve -= len;
++		current->journal_info = dio_data;
+ 	}
+ 
+ 	/*
+@@ -7598,8 +7603,8 @@ unlock:
+ unlock_err:
+ 	clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+ 			 unlock_bits, 1, 0, &cached_state, GFP_NOFS);
+-	if (outstanding_extents)
+-		current->journal_info = outstanding_extents;
++	if (dio_data)
++		current->journal_info = dio_data;
  	return ret;
  }
-diff --git a/cmds-device.c b/cmds-device.c
-index 458c088..00e362a 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -28,6 +28,7 @@
- #include "ctree.h"
- #include "ioctl.h"
- #include "utils.h"
-+#include "volumes.h"
- #include "cmds-fi-usage.h"
  
- #include "commands.h"
-@@ -140,6 +141,7 @@ static int cmd_device_add(int argc, char **argv)
+@@ -8329,7 +8334,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
+ {
+ 	struct file *file = iocb->ki_filp;
+ 	struct inode *inode = file->f_mapping->host;
+-	u64 outstanding_extents = 0;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_dio_data dio_data = { 0 };
+ 	size_t count = 0;
+ 	int flags = 0;
+ 	bool wakeup = true;
+@@ -8367,7 +8373,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
+ 		ret = btrfs_delalloc_reserve_space(inode, count);
+ 		if (ret)
+ 			goto out;
+-		outstanding_extents = div64_u64(count +
++		dio_data.outstanding_extents = div64_u64(count +
+ 						BTRFS_MAX_EXTENT_SIZE - 1,
+ 						BTRFS_MAX_EXTENT_SIZE);
  
- error_out:
- 	close_file_or_dir(fdmnt, dirstream);
-+	btrfs_close_all_devices();
- 	return !!ret;
- }
- 
-@@ -290,6 +292,7 @@ static int cmd_device_scan(int argc, char **argv)
- 	}
- 
- out:
-+	btrfs_close_all_devices();
- 	return !!ret;
- }
- 
-@@ -465,6 +468,7 @@ static int cmd_device_stats(int argc, char **argv)
- out:
- 	free(di_args);
- 	close_file_or_dir(fdmnt, dirstream);
-+	btrfs_close_all_devices();
- 
- 	return err;
- }
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 2f123cb..ce91787 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -316,6 +316,7 @@ static int cmd_replace_start(int argc, char **argv)
- 		}
- 	}
- 	close_file_or_dir(fdmnt, dirstream);
-+	btrfs_close_all_devices();
- 	return 0;
- 
- leave_with_error:
-@@ -325,6 +326,7 @@ leave_with_error:
- 		close(fdmnt);
- 	if (fddstdev != -1)
- 		close(fddstdev);
-+	btrfs_close_all_devices();
- 	return 1;
- }
- 
-diff --git a/mkfs.c b/mkfs.c
-index 7d635dc..3e60965 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1843,6 +1843,7 @@ raid_groups:
- out:
- 	ret = close_ctree(root);
- 	BUG_ON(ret);
-+	btrfs_close_all_devices();
- 	free(label);
- 	return 0;
- }
+@@ -8376,7 +8382,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
+ 		 * do the accounting properly if we go over the number we
+ 		 * originally calculated.  Abuse current->journal_info for this.
+ 		 */
+-		current->journal_info = &outstanding_extents;
++		dio_data.reserve = round_up(count, root->sectorsize);
++		current->journal_info = &dio_data;
+ 	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
+ 				     &BTRFS_I(inode)->runtime_flags)) {
+ 		inode_dio_end(inode);
+@@ -8391,16 +8398,9 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
+ 	if (iov_iter_rw(iter) == WRITE) {
+ 		current->journal_info = NULL;
+ 		if (ret < 0 && ret != -EIOCBQUEUED) {
+-			/*
+-			 * If the error comes from submitting stage,
+-			 * btrfs_get_blocsk_direct() has free'd data space,
+-			 * and metadata space will be handled by
+-			 * finish_ordered_fn, don't do that again to make
+-			 * sure bytes_may_use is correct.
+-			 */
+-			if (!test_and_clear_bit(BTRFS_INODE_DIO_READY,
+-				     &BTRFS_I(inode)->runtime_flags))
+-				btrfs_delalloc_release_space(inode, count);
++			if (dio_data.reserve)
++				btrfs_delalloc_release_space(inode,
++							dio_data.reserve);
+ 		} else if (ret >= 0 && (size_t)ret < count)
+ 			btrfs_delalloc_release_space(inode,
+ 						     count - (size_t)ret);
 -- 
-1.8.5.1
+2.1.0
 

@@ -1,88 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f45.google.com ([209.85.220.45]:33523 "EHLO
-	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753897AbbH0Pil (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:47321 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751210AbbH1DoK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Aug 2015 11:38:41 -0400
-Received: by pacti10 with SMTP id ti10so29976100pac.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2015 08:38:41 -0700 (PDT)
-Received: from arch-nb.localdomain ([175.118.89.137])
-        by smtp.gmail.com with ESMTPSA id vw6sm2844831pab.14.2015.08.27.08.38.39
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Thu, 27 Aug 2015 08:38:40 -0700 (PDT)
-From: Byongho Lee <bhlee.kernel@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/3] btrfs-progs: add memory allocation fail check in btrfs_add_to_fsid()
-Date: Fri, 28 Aug 2015 00:38:18 +0900
-Message-Id: <1440689898-35178-4-git-send-email-bhlee.kernel@gmail.com>
-In-Reply-To: <1440689898-35178-1-git-send-email-bhlee.kernel@gmail.com>
-References: <1440689898-35178-1-git-send-email-bhlee.kernel@gmail.com>
+	Thu, 27 Aug 2015 23:44:10 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7S3i0K8010343
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 11:44:00 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: tests: Introduce subvolume sync test
+Date: Fri, 28 Aug 2015 11:42:11 +0800
+Message-ID: <0375c5ddbbc6f00df7f67265df81d71cfd2ab0f8.1440733313.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In btrfs_add_to_fsid(), strdup() allocates memory to device->name, but
-the return value is not checked.
-So add the return value check and error handling code.
-And clean-up error handling code for ENOMEM case.
+Current code have following bug for subvolume sync:
+1: If there are more than 1 subvolume to sync, the program will
+   infinitely loop.
+2: return !0 in exit
 
-Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
+This patch add misc-tests/007-subvolume-sync for above case.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- utils.c | 20 ++++++++++++--------
- 1 file changed, 12 insertions(+), 8 deletions(-)
+ tests/misc-tests/007-subvolume-sync/test.sh | 32 +++++++++++++++++++++++++++++
+ 1 file changed, 32 insertions(+)
+ create mode 100755 tests/misc-tests/007-subvolume-sync/test.sh
 
-diff --git a/utils.c b/utils.c
-index 280637d896c1..160a8c273da8 100644
---- a/utils.c
-+++ b/utils.c
-@@ -729,21 +729,18 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 	struct btrfs_super_block *super = root->fs_info->super_copy;
- 	struct btrfs_device *device;
- 	struct btrfs_dev_item *dev_item;
--	char *buf;
-+	char *buf = NULL;
- 	u64 total_bytes;
- 	u64 num_devs;
- 	int ret;
- 
- 	device = kzalloc(sizeof(*device), GFP_NOFS);
- 	if (!device)
--		return -ENOMEM;
--	buf = kmalloc(sectorsize, GFP_NOFS);
--	if (!buf) {
--		kfree(device);
--		return -ENOMEM;
--	}
-+		goto err_nomem;
-+	buf = kzalloc(sectorsize, GFP_NOFS);
-+	if (!buf)
-+		goto err_nomem;
- 	BUG_ON(sizeof(*disk_super) > sectorsize);
--	memset(buf, 0, sectorsize);
- 
- 	disk_super = (struct btrfs_super_block *)buf;
- 	dev_item = &disk_super->dev_item;
-@@ -761,6 +758,8 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 	device->total_ios = 0;
- 	device->dev_root = root->fs_info->dev_root;
- 	device->name = strdup(path);
-+	if (!device->name)
-+		goto err_nomem;
- 
- 	ret = btrfs_add_device(trans, root, device);
- 	BUG_ON(ret);
-@@ -790,6 +789,11 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
- 	list_add(&device->dev_list, &root->fs_info->fs_devices->devices);
- 	device->fs_devices = root->fs_info->fs_devices;
- 	return 0;
+diff --git a/tests/misc-tests/007-subvolume-sync/test.sh b/tests/misc-tests/007-subvolume-sync/test.sh
+new file mode 100755
+index 0000000..d4019f4
+--- /dev/null
++++ b/tests/misc-tests/007-subvolume-sync/test.sh
+@@ -0,0 +1,32 @@
++#!/bin/bash
++# test btrfs subvolume run normally with more than one subvolume
++#
++# - btrfs subvolume must not loop indefinetelly
++# - btrfs subvolume return 0 in normal case
 +
-+err_nomem:
-+	kfree(device);
-+	kfree(buf);
-+	return -ENOMEM;
- }
- 
- static void btrfs_wipe_existing_sb(int fd)
++source $TOP/tests/common
++
++check_prereq mkfs.btrfs
++check_prereq btrfs
++
++setup_root_helper
++prepare_test_dev
++
++run_check $SUDO_HELPER $TOP/mkfs.btrfs -f "$TEST_DEV"
++run_check $SUDO_HELPER mount "$TEST_DEV" "$TEST_MNT"
++
++# to check following thing in both 1 and multiple subvolume case:
++# 1: is subvolume sync loop indefinetelly
++# 2: is return value right
++#
++run_check $SUDO_HELPER $TOP/btrfs subvolume create "$TEST_MNT"/mysubvol1
++run_check $SUDO_HELPER $TOP/btrfs subvolume create "$TEST_MNT"/mysubvol2
++run_check $SUDO_HELPER $TOP/btrfs subvolume delete "$TEST_MNT"/mysubvol1
++run_check $SUDO_HELPER $TOP/btrfs subvolume delete "$TEST_MNT"/mysubvol2
++run_check $SUDO_HELPER $TOP/btrfs subvolume sync "$TEST_MNT"
++
++run_check $SUDO_HELPER $TOP/btrfs subvolume create "$TEST_MNT"/mysubvol
++run_check $SUDO_HELPER $TOP/btrfs subvolume delete "$TEST_MNT"/mysubvol
++run_check $SUDO_HELPER $TOP/btrfs subvolume sync "$TEST_MNT"
++
++run_check $SUDO_HELPER umount $TEST_MNT
 -- 
-2.5.0
+1.8.5.1
 

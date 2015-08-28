@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from smtp-17-i2.italiaonline.it ([212.48.25.196]:33289 "EHLO
 	libero.it" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1752398AbbH1Q4t (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Aug 2015 12:56:49 -0400
-Reply-To: kreijack@inwind.it
+	id S1752398AbbH1Q5g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 28 Aug 2015 12:57:36 -0400
+From: Goffredo Baroncelli <kreijack@libero.it>
 Subject: Re: [PATCH 2/2] btrfs-progs: device delete to accept devid
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Reply-To: kreijack@inwind.it
+To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, dsterba@suse.cz
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <55E092CD.2050306@inwind.it>
-Date: Fri, 28 Aug 2015 18:56:45 +0200
+Message-ID: <55E092FF.4020609@libero.it>
+Date: Fri, 28 Aug 2015 18:57:35 +0200
 MIME-Version: 1.0
 In-Reply-To: <55E06D5E.90605@oracle.com>
 Content-Type: text/plain; charset=windows-1252

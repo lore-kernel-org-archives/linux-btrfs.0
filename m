@@ -1,43 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f50.google.com ([209.85.213.50]:34136 "EHLO
-	mail-vk0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751606AbbH0XEq (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:30412 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750962AbbH1CRH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Aug 2015 19:04:46 -0400
-Received: by vkhf67 with SMTP id f67so1977112vkh.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 27 Aug 2015 16:04:45 -0700 (PDT)
+	Thu, 27 Aug 2015 22:17:07 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t7S2H6QG011779
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 02:17:06 GMT
+Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
+	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id t7S2H6rY019814
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 02:17:06 GMT
+Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
+	by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t7S2H6CX029305
+	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 02:17:06 GMT
+Subject: Re: [PATCH 0/3] introduce function to handle device offline
+To: linux-btrfs@vger.kernel.org
+References: <1438699433-1581-1-git-send-email-anand.jain@oracle.com>
+From: Anand Jain <anand.jain@oracle.com>
+Message-ID: <55DFC497.9010107@oracle.com>
+Date: Fri, 28 Aug 2015 10:16:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAGa2bXYQSWdm_gQMFKDW1oMMeuaYhDdUJ0Fq3v9CS2x8+StYoA@mail.gmail.com>
-References: <CAGa2bXYQSWdm_gQMFKDW1oMMeuaYhDdUJ0Fq3v9CS2x8+StYoA@mail.gmail.com>
-Date: Thu, 27 Aug 2015 17:04:45 -0600
-Message-ID: <CAJCQCtSC1+NbtXKP6Y=tTQW7AqdjwmkfWLNBQoY7v-Xpkr6a7Q@mail.gmail.com>
-Subject: Re: Btrfs crash since 4.1.4
-From: Chris Murphy <lists@colorremedies.com>
-To: Yasuo Ohgaki <yohgaki@ohgaki.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <1438699433-1581-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Aug 27, 2015 at 4:03 PM, Yasuo Ohgaki <yohgaki@ohgaki.net> wrote:
-> Hi developers,
->
-> I'm start getting kernel crash/oops from btrfs since 4.1.4.
-> https://www.kernel.org/pub/linux/kernel/v4.x/ChangeLog-4.1.4
->
-> I'm using fedora 22, so I reported this to their bugzilla.
-> https://bugzilla.redhat.com/show_bug.cgi?id=1255509
->
-> If you need additional information to fix issue, please let me know.
 
-It's a bit tedious to read the traces in the bug report because
-they're wrapping badly. It's better to attach complete dmesg or
-'journalctl -b -o short-monotonic' as files. However, it looks like
-this is an md problem though, but I can't tell if it's related to what
-Austin mentioned earlier today about recent md additions causing
-problems.
-http://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg45826.html
+   Just a reminder. Any comments ?
+
+Thanks Anand
 
 
--- 
-Chris Murphy
+On 04/08/2015 22:43, Anand Jain wrote:
+> Here the patch 3/3 below adds a function to handle device offline,
+> also in this patch the device offline is triggred by the external
+> sysfs interface.
+> Patch 1/3 makes it possible to mount a or continue to be rw mounted
+> (if -o degraded option is set or if tolerated failure is more than
+> missing) when one of the device goes offline in midest of the mounted
+> FS.
+> Patch 2/3 fixes a bug.
+>
+> Anand Jain (3):
+>    Btrfs: allow -o rw,degraded for single group profile
+>    Btrfs: fix null pointer dereference when extent buffer is already
+>      freed
+>    Btrfs: introduce function to handle device offline
+>
+>   fs/btrfs/disk-io.c |   6 ++-
+>   fs/btrfs/super.c   |   3 +-
+>   fs/btrfs/sysfs.c   |  20 +++++++++-
+>   fs/btrfs/volumes.c | 113 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/volumes.h |   7 ++++
+>   5 files changed, 145 insertions(+), 4 deletions(-)
+>

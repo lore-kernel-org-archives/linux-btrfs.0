@@ -1,61 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29645 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751210AbbH1Dpe (ORCPT
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:33591 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751568AbbH2IqJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 27 Aug 2015 23:45:34 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7S3jPWA010434
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 11:45:25 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: tests: Add testcase filter for misc-tests
-Date: Fri, 28 Aug 2015 11:43:56 +0800
-Message-ID: <09dc1a986fea9d55b40095632d1efd8f4c050730.1440733418.git.zhaolei@cn.fujitsu.com>
+	Sat, 29 Aug 2015 04:46:09 -0400
+Date: Sat, 29 Aug 2015 11:45:53 +0000
+From: Alexandru Moise <00moses.alexander00@gmail.com>
+To: clm@fb.com
+Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, wangsl-fnst@cn.fujitsu.com
+Subject: [PATCH] btrfs: Remove unneeded cast to s64 for qgroup rfer state
+Message-ID: <20150829114553.GA7522@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add testcase filter for misc-tests, so we can select to run necessary
-test cases.
+This patch reverts commit: b4fcd6be6bbd702ae1a6545c9b413681850a9814
+Wang Shilong added those casts as a workaround for a bug reproduced
+using the following steps:
 
-For example:
- # ./misc-tests.sh 002
-    [TEST]   002-uuid-rewrite
- #
- # ./misc-tests.sh subvolume
-    [TEST]   007-subvolume-sync
- #
+Steps to reproduce:
+>    	mkfs.btrfs <disk>
+>    	mount <disk> <mnt>
+>    	dd if=/dev/zero of=/<mnt>/data bs=1M count=10
+>    	sync
+>    	btrfs quota enable <mnt>
+>    	btrfs qgroup create 0/5 <mnt>
+>    	btrfs qgroup limit 5M 0/5 <mnt>
+>    	rm -f /<mnt>/data
+>    	sync
+>    	btrfs qgroup show <mnt>
+>    	dd if=/dev/zero of=data bs=1M count=1
+>
+>    >From the perspective of users, qgroup's referenced or exclusive
+>    is negative,but user can not continue to write data! a workaround
+>    way is to cast u64 to s64 when doing qgroup reservation
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+I am unable to reproduce this problem without his modification.
+I could be wrong in reverting this, so I'm gonna CC Wang as well so
+he is aware of this patch.
+
+Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
 ---
- tests/misc-tests.sh | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/qgroup.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/tests/misc-tests.sh b/tests/misc-tests.sh
-index 1ed8850..f9c1152 100755
---- a/tests/misc-tests.sh
-+++ b/tests/misc-tests.sh
-@@ -12,6 +12,8 @@ TEST_MNT=${TEST_MNT:-$TOP/tests/mnt}
- RESULTS="$TOP/tests/misc-tests-results.txt"
- IMAGE="$TOP/tests/test.img"
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 8a82029..9c75e86 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2077,14 +2077,14 @@ int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
+ 		qg = u64_to_ptr(unode->aux);
  
-+TEST_FILTER="$1"
-+
- source $TOP/tests/common
+ 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_RFER) &&
+-		    qg->reserved + (s64)qg->rfer + num_bytes >
++		    qg->reserved + qg->rfer + num_bytes >
+ 		    qg->max_rfer) {
+ 			ret = -EDQUOT;
+ 			goto out;
+ 		}
  
- # Allow child test to use $TOP and $RESULTS
-@@ -35,7 +37,7 @@ check_prereq btrfs
- # The tests are driven by their custom script called 'test.sh'
- 
- for i in $(find $TOP/tests/misc-tests -maxdepth 1 -mindepth 1 -type d	\
--	${TEST:+-name "$TEST"} | sort)
-+	${TEST:+-name "$TEST"} | sort | grep -e "$TEST_FILTER")
- do
- 	echo "    [TEST]   $(basename $i)"
- 	cd $i
+ 		if ((qg->lim_flags & BTRFS_QGROUP_LIMIT_MAX_EXCL) &&
+-		    qg->reserved + (s64)qg->excl + num_bytes >
++		    qg->reserved + qg->excl + num_bytes >
+ 		    qg->max_excl) {
+ 			ret = -EDQUOT;
+ 			goto out;
 -- 
-1.8.5.1
+2.5.0
 

@@ -1,45 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static.3.12.4.46.clients.your-server.de ([46.4.12.3]:60703 "EHLO
+Received: from static.3.12.4.46.clients.your-server.de ([46.4.12.3]:52561 "EHLO
 	mx.mokrynskyi.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753252AbbH3He5 (ORCPT
+	with ESMTP id S1752010AbbH2Bdm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 30 Aug 2015 03:34:57 -0400
+	Fri, 28 Aug 2015 21:33:42 -0400
 Received: from localhost (localhost [127.0.0.1])
-	by mx.mokrynskyi.com (Postfix) with ESMTP id 839FB671F
-	for <linux-btrfs@vger.kernel.org>; Sun, 30 Aug 2015 07:34:55 +0000 (UTC)
+	by mx.mokrynskyi.com (Postfix) with ESMTP id 840E16362
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Aug 2015 01:25:36 +0000 (UTC)
 Received: from mx.mokrynskyi.com ([127.0.0.1])
 	by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id C5L31FEWku7t for <linux-btrfs@vger.kernel.org>;
-	Sun, 30 Aug 2015 07:34:55 +0000 (UTC)
-Subject: Re: Btrfs wiki account
-To: David Sterba <dave@jikos.cz>
-References: <55E10931.6030201@mokrynskyi.com>
- <20150829092426.GS26112@twin.jikos.cz>
+	with ESMTP id HOkhBA5_7Wcz for <linux-btrfs@vger.kernel.org>;
+	Sat, 29 Aug 2015 01:25:36 +0000 (UTC)
+Received: from [192.168.1.167] (user-31-175-208-35.play-internet.pl [31.175.208.35])
+	by mx.mokrynskyi.com (Postfix) with ESMTPSA id 04DE353D5
+	for <linux-btrfs@vger.kernel.org>; Sat, 29 Aug 2015 01:25:34 +0000 (UTC)
+To: linux-btrfs@vger.kernel.org
 From: Nazar Mokrynskyi <nazar@mokrynskyi.com>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <55E2B21B.8050707@mokrynskyi.com>
-Date: Sun, 30 Aug 2015 09:34:51 +0200
+Subject: Btrfs wiki account
+Message-ID: <55E10A0E.70405@mokrynskyi.com>
+Date: Sat, 29 Aug 2015 03:25:34 +0200
 MIME-Version: 1.0
-In-Reply-To: <20150829092426.GS26112@twin.jikos.cz>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms060706080206080304080403"
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms000905060209030806020307"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms060706080206080304080403
+--------------ms000905060209030806020307
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-Thanks Dave, I was finally approved, but with "Nazar Mokrynskyi2" usernam=
-e)
+I wanted to add one more tool for incremental backups to wiki, but=20
+accidentally had typo in email at registration.
+Now, more than one month after I still can't register, though=20
+registration request should expire already.
+Does anyone have access to fix that? Can't find any contacts of person=20
+who supports wiki.
+Accounts can be under names "Nazar Mokrynskyi" and "Nazar Mokrynskyi2"=20
+(yes, second trial).
+Sorry for a bit off-topic message.
 
-Any chance to update username to Nazar Mokrynskyi (without "2" at the end=
-)?
-I've already changed Real name.
-Tried to reply on admin's email, but it doesn't accept emails actually,=20
-so I have to ask here again.
-
+--=20
 Sincerely, Nazar Mokrynskyi
 github.com/nazar-pc
 Skype: nazar-pc
@@ -47,20 +48,9 @@ Diaspora: nazarpc@diaspora.mokrynskyi.com
 Tox: A9D95C9AA5F7A3ED75D83D0292E22ACE84BA40E912185939414475AF28FD2B2A5C8E=
 F5261249
 
-On 29.08.15 11:24, David Sterba wrote:
-> On Sat, Aug 29, 2015 at 03:21:53AM +0200, Nazar Mokrynskyi wrote:
->> I wanted to add one more tool for incremental backups to wiki, but
->> accidentally had typo in email at registration.
->> Now, more than one month after I still can't register, though
->> registration request should expire already.
->> Does anyone have access to fix that? Can't find any contacts of person=
-
->> who supports wiki.
-> Forwarded your request to mighty wiky admin.
 
 
-
---------------ms060706080206080304080403
+--------------ms000905060209030806020307
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -130,8 +120,8 @@ ATCBlDCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsT
 IlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29t
 IENsYXNzIDEgUHJpbWFyeSBJbnRlcm1lZGlhdGUgQ2xpZW50IENBAgMMUr4wDQYJYIZIAWUD
 BAIBBQCgggIpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-MDgzMDA3MzQ1MVowLwYJKoZIhvcNAQkEMSIEINAGjuCxxBIodawNVsTihHxle4n8wbXE85Zr
-8kNGJq09MGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggq
+MDgyOTAxMjUzNFowLwYJKoZIhvcNAQkEMSIEIHR8KOeiWEOnCy9827ztr62K5zdm8EAvkgD5
+wyOSYSixMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggq
 hkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYIKoZI
 hvcNAwICASgwgaUGCSsGAQQBgjcQBDGBlzCBlDCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
 DVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNp
@@ -139,10 +129,10 @@ Z25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNzIDEgUHJpbWFyeSBJbnRlcm1lZGlhdGUg
 Q2xpZW50IENBAgMMUr4wgacGCyqGSIb3DQEJEAILMYGXoIGUMIGMMQswCQYDVQQGEwJJTDEW
 MBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlm
 aWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVy
-bWVkaWF0ZSBDbGllbnQgQ0ECAwxSvjANBgkqhkiG9w0BAQEFAASCAQAlC7NCOUt/m5igDK8p
-3l+uzC0aci2NbKbenjNdVH9TQF5YNiU6Z0xjxBTkNWXumMcoUJDD6d9ZpKfqQh3bFvXGU1iW
-dvGaRxXY7BDzY859oDUPfhhN3ouuNf4l2lQkEmWP8v8TABjNKoDFt6JP3a4xTS5aMCleeR6C
-QG+C5y+wPUciqi4nlVLaSvNEWbtMWt7poaTvZdLSOTU5ESw520kAg7NGh9mYOa8dKPJSKkEi
-LLnUYqirN8sbtv/Y5DKOknWz6k4+lHYUHrYhgyLADOQ2AGldMrxJ21paDJkXfF/JZlU40IFO
-5pq5jHw+sn0pwl4F7TvtpIeAsZsHsvGoRuVpAAAAAAAA
---------------ms060706080206080304080403--
+bWVkaWF0ZSBDbGllbnQgQ0ECAwxSvjANBgkqhkiG9w0BAQEFAASCAQAeEMSQoFYfO/z9Qyyn
+PFVDFPsYXW6H/NG7+MH1YrRvEDOqHRHjy83LJKeR1ydr84ZSTTKbGezGCnakWt1QylkCITwf
+CvsltkqTC0haq5Cdg1v+xkTeOHUviMUvtmcykfBOZtzWl6pFEQ39nYusNQjBoNT2r11jk0+V
+cQbQqG9k4hAJFC2Gcylzih27Z1PRoXwVDxTlH6oJIkSDbDewfrGClL99Za2daNohz0p2fu0O
+ln/Qq67/0L3v9qlfU1R5gElfNL6zGG7ZadCT3FHE24x4Myqzk8BhFMMk6t4BfcBKBBoPoWqw
+elH1I8TCr0XBau2hJXGqMloZyEuH8p+kLpIcAAAAAAAA
+--------------ms000905060209030806020307--

@@ -1,138 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static.3.12.4.46.clients.your-server.de ([46.4.12.3]:52561 "EHLO
-	mx.mokrynskyi.com" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752010AbbH2Bdm (ORCPT
+Received: from mail1.trendhosting.net ([195.8.117.5]:57957 "EHLO
+	mail1.trendhosting.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753324AbbH3Mbl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Aug 2015 21:33:42 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mx.mokrynskyi.com (Postfix) with ESMTP id 840E16362
-	for <linux-btrfs@vger.kernel.org>; Sat, 29 Aug 2015 01:25:36 +0000 (UTC)
-Received: from mx.mokrynskyi.com ([127.0.0.1])
-	by localhost (mx.mokrynskyi.com [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id HOkhBA5_7Wcz for <linux-btrfs@vger.kernel.org>;
-	Sat, 29 Aug 2015 01:25:36 +0000 (UTC)
-Received: from [192.168.1.167] (user-31-175-208-35.play-internet.pl [31.175.208.35])
-	by mx.mokrynskyi.com (Postfix) with ESMTPSA id 04DE353D5
-	for <linux-btrfs@vger.kernel.org>; Sat, 29 Aug 2015 01:25:34 +0000 (UTC)
-To: linux-btrfs@vger.kernel.org
-From: Nazar Mokrynskyi <nazar@mokrynskyi.com>
-Subject: Btrfs wiki account
-Message-ID: <55E10A0E.70405@mokrynskyi.com>
-Date: Sat, 29 Aug 2015 03:25:34 +0200
+	Sun, 30 Aug 2015 08:31:41 -0400
+Message-ID: <55E2F791.80008@pocock.pro>
+Date: Sun, 30 Aug 2015 14:31:13 +0200
+From: Daniel Pocock <daniel@pocock.pro>
 MIME-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-256; boundary="------------ms000905060209030806020307"
+To: "Kok, Auke-jan H" <auke-jan.h.kok@intel.com>
+CC: Hugo Mills <hugo@carfax.org.uk>, cwillu <cwillu@cwillu.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: (renamed thread) btrfs metrics, free space reporting
+References: <4F01BF5D.2070801@pocock.com.au>	<CAE5mzviX5kJ70nG3bLPwE7E3ZjmdQvsKNUbs6XXqVhs+MEeSXw@mail.gmail.com>	<4F01C6DC.3040609@pocock.com.au>	<20120102151422.GA27122@carfax.org.uk>	<4F01DA85.4050107@pocock.com.au>	<20120102163944.GB27122@carfax.org.uk>	<4F043C75.1080204@pocock.com.au> <CABsxX9+J9XvBzV8OEHfKJSaYtB8RziysW4JDtYW75Qje7tt4vQ@mail.gmail.com> <4F0576C3.90502@pocock.com.au>
+In-Reply-To: <4F0576C3.90502@pocock.com.au>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
-
---------------ms000905060209030806020307
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-I wanted to add one more tool for incremental backups to wiki, but=20
-accidentally had typo in email at registration.
-Now, more than one month after I still can't register, though=20
-registration request should expire already.
-Does anyone have access to fix that? Can't find any contacts of person=20
-who supports wiki.
-Accounts can be under names "Nazar Mokrynskyi" and "Nazar Mokrynskyi2"=20
-(yes, second trial).
-Sorry for a bit off-topic message.
-
---=20
-Sincerely, Nazar Mokrynskyi
-github.com/nazar-pc
-Skype: nazar-pc
-Diaspora: nazarpc@diaspora.mokrynskyi.com
-Tox: A9D95C9AA5F7A3ED75D83D0292E22ACE84BA40E912185939414475AF28FD2B2A5C8E=
-F5261249
 
 
+On 05/01/12 11:09, Daniel Pocock wrote:
+> 
+>>
+>> From there on, one could potentially create a matrix: (proportional
+>> font art, apologies):
+>>
+>>           | subvol1  | subvol2  | subvol3  |
+>> ----------+----------+----------+----------+
+>>  subvol1  |   200M   |     20M  |     50M  |
+>> ----------+----------+----------+----------+
+>>  subvol2  |    20M   |    350M  |     22M  |
+>> ----------+----------+----------+----------+
+>>  subvol3  |    50M   |     22M  |    634M  |
+>> ----------+----------+----------+----------+
+>>
+>> The diagonal obviously shows the "unique" blocks, subvol2 and subvol1
+>> share 20M data, etc. Missing from this plot would be "how much is
+>> shared between subvol1, subvol2, and subvol3" together, but it's a
+>> start and not something that hard to understand. One might add a
+>> column for "total size" of each subvol, which may obviously not be an
+>> addition of the rest of the columns in this diagram.
+>>
+>> Anyway, something like this would be high on my list of `df` numbers
+>> I'd like to see - since I think they are useful numbers.
+>>
+> 
+> This is an interesting way to look at it
+> 
+> Ganglia typically records time series data, it is quite conceivable to
+> create a metric for every permutation in each and store that in rrdtool
+> 
+> The challenge would then be in reporting on the data: the rrdtool graphs
+> use time as an X-axis, and then it can display multiple Y values
+> 
+> However, now that I've started thinking about the type of data generated
+> from btrfs, I was wondering if some kind of rr3dtool is needed - a 3D
+> graphing solution - or potentially making graphs that do not include
+> time on any axis?
+> 
+> Has anyone seen anything similar for administering ZFS, for example?
+> 
 
---------------ms000905060209030806020307
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: ÐÑÑÐ¿ÑÐ¾Ð³ÑÐ°ÑÑÑÐ½Ð¸Ð¹ Ð¿ÑÐ´Ð¿Ð¸Ñ S/MIME
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgEFADCABgkqhkiG9w0BBwEAAKCC
-DGYwggYqMIIFEqADAgECAgMMUr4wDQYJKoZIhvcNAQELBQAwgYwxCzAJBgNVBAYTAklMMRYw
-FAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0aWZp
-Y2F0ZSBTaWduaW5nMTgwNgYDVQQDEy9TdGFydENvbSBDbGFzcyAxIFByaW1hcnkgSW50ZXJt
-ZWRpYXRlIENsaWVudCBDQTAeFw0xNDEyMTkyMjI1MjhaFw0xNTEyMjEwNzAzMzdaMEQxHTAb
-BgNVBAMMFG5hemFyQG1va3J5bnNreWkuY29tMSMwIQYJKoZIhvcNAQkBFhRuYXphckBtb2ty
-eW5za3lpLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK/fvf8UbJyMRND3
-DfoIEXg+AjA6JIKENyyZoR6yTyC5LqPc+hkvQ+Y8gC4WljuvtfHGbHG1J4Ro7Paxf1Ed9Z6b
-lqsIPSn95cUZIbJfXYoif3n6TRjlY91pHGVyF+eZI1j7kKiwm+i25Rz3rfVhW6tLVrN1mHRH
-qkpDaS4Zm3vUYHA/HpCElY7l9sQrOV0brksA8Yocy0byidrFsK1t/5UsfRB5U/j+OhMOi1aX
-kilDRNcgGENZWkuiPyzg0CDYnZ24+ByKqCToznbCYkHV3J+E2zceErCuzSUML9pt38C6kk5c
-iVK0auav4pACcL8cTi6Gyd2hyD/v9y2rD1f3PbcCAwEAAaOCAtowggLWMAkGA1UdEwQCMAAw
-CwYDVR0PBAQDAgSwMB0GA1UdJQQWMBQGCCsGAQUFBwMCBggrBgEFBQcDBDAdBgNVHQ4EFgQU
-iv5vyGwf5z8h0efMU+bx5iF9J5YwHwYDVR0jBBgwFoAUU3Ltkpzg2ssBXHx+ljVO8tS4UYIw
-HwYDVR0RBBgwFoEUbmF6YXJAbW9rcnluc2t5aS5jb20wggFMBgNVHSAEggFDMIIBPzCCATsG
-CysGAQQBgbU3AQIDMIIBKjAuBggrBgEFBQcCARYiaHR0cDovL3d3dy5zdGFydHNzbC5jb20v
-cG9saWN5LnBkZjCB9wYIKwYBBQUHAgIwgeowJxYgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBB
-dXRob3JpdHkwAwIBARqBvlRoaXMgY2VydGlmaWNhdGUgd2FzIGlzc3VlZCBhY2NvcmRpbmcg
-dG8gdGhlIENsYXNzIDEgVmFsaWRhdGlvbiByZXF1aXJlbWVudHMgb2YgdGhlIFN0YXJ0Q29t
-IENBIHBvbGljeSwgcmVsaWFuY2Ugb25seSBmb3IgdGhlIGludGVuZGVkIHB1cnBvc2UgaW4g
-Y29tcGxpYW5jZSBvZiB0aGUgcmVseWluZyBwYXJ0eSBvYmxpZ2F0aW9ucy4wNgYDVR0fBC8w
-LTAroCmgJ4YlaHR0cDovL2NybC5zdGFydHNzbC5jb20vY3J0dTEtY3JsLmNybDCBjgYIKwYB
-BQUHAQEEgYEwfzA5BggrBgEFBQcwAYYtaHR0cDovL29jc3Auc3RhcnRzc2wuY29tL3N1Yi9j
-bGFzczEvY2xpZW50L2NhMEIGCCsGAQUFBzAChjZodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9j
-ZXJ0cy9zdWIuY2xhc3MxLmNsaWVudC5jYS5jcnQwIwYDVR0SBBwwGoYYaHR0cDovL3d3dy5z
-dGFydHNzbC5jb20vMA0GCSqGSIb3DQEBCwUAA4IBAQA1yOen1X2mzdVRbjOwwkZjivQjvgH6
-IN2xATFltaX6TzmNyko8iKg1YHL5d1P3qFXP37IPPywALN7GXqrS49eM3/Tu7oRFVdzOJPFm
-BXY8Nt64gdV6O8VVC4czPBD0I7/2ojEiNl4QA9I+C0akBLb8jKg46OecjTmHKlU5msaZElfu
-M0zIN7sLaMRnOpbnr2Cn5d+MBmyKiTAWGc46e+7d3nx8alFquWy/g2fGvtEcOt1Bb/mPBBr7
-b/pVS78Nwiy22+kHA+4aNlHa/dt6EdFMoCVvi5Hi+AVJzx6vetnPH2hbOFfS25NgzvFsRUi1
-GhFuUK2uHYVV/nlGSOpF/K/PMIIGNDCCBBygAwIBAgIBHjANBgkqhkiG9w0BAQUFADB9MQsw
-CQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERp
-Z2l0YWwgQ2VydGlmaWNhdGUgU2lnbmluZzEpMCcGA1UEAxMgU3RhcnRDb20gQ2VydGlmaWNh
-dGlvbiBBdXRob3JpdHkwHhcNMDcxMDI0MjEwMTU1WhcNMTcxMDI0MjEwMTU1WjCBjDELMAkG
-A1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdp
-dGFsIENlcnRpZmljYXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNzIDEgUHJp
-bWFyeSBJbnRlcm1lZGlhdGUgQ2xpZW50IENBMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIB
-CgKCAQEAxwmDzM4t2BqxKaQuE6uWvooyg4ymiEGWVUet1G8SD+rqvyNH4QrvnEIaFHxOhESi
-p7vMz39ScLpNLbL1QpOlPW/tFIzNHS3qd2XRNYG5Sv9RcGE+T4qbLtsjjJbi6sL7Ls/f/X9f
-tTyhxvxWkf8KW37iKrueKsxw2HqolH7GM6FX5UfNAwAu4ZifkpmZzU1slBhyWwaQPEPPZRsW
-oTb7q8hmgv6Nv3Hg9rmA1/VPBIOQ6SKRkHXG0Hhmq1dOFoAFI411+a/9nWm5rcVjGcIWZ2v/
-43Yksq60jExipA4l5uv9/+Hm33mbgmCszdj/Dthf13tgAv2O83hLJ0exTqfrlwIDAQABo4IB
-rTCCAakwDwYDVR0TAQH/BAUwAwEB/zAOBgNVHQ8BAf8EBAMCAQYwHQYDVR0OBBYEFFNy7ZKc
-4NrLAVx8fpY1TvLUuFGCMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7yMGYGCCsG
-AQUFBwEBBFowWDAnBggrBgEFBQcwAYYbaHR0cDovL29jc3Auc3RhcnRzc2wuY29tL2NhMC0G
-CCsGAQUFBzAChiFodHRwOi8vd3d3LnN0YXJ0c3NsLmNvbS9zZnNjYS5jcnQwWwYDVR0fBFQw
-UjAnoCWgI4YhaHR0cDovL3d3dy5zdGFydHNzbC5jb20vc2ZzY2EuY3JsMCegJaAjhiFodHRw
-Oi8vY3JsLnN0YXJ0c3NsLmNvbS9zZnNjYS5jcmwwgYAGA1UdIAR5MHcwdQYLKwYBBAGBtTcB
-AgEwZjAuBggrBgEFBQcCARYiaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5LnBkZjA0
-BggrBgEFBQcCARYoaHR0cDovL3d3dy5zdGFydHNzbC5jb20vaW50ZXJtZWRpYXRlLnBkZjAN
-BgkqhkiG9w0BAQUFAAOCAgEACoMIfXirLAZcuGOMXq4cuSN3TaFx2H2GvD5VSy/6rV55BYHb
-WNaPeQn3oBSU8KgQZn/Kck1JxbLpAxVCNtsxeW1R87ifhsYZ0qjdrA9anrW2MAWCtosmAOT4
-OxK9QPoSjCMxM3HbkZCDJgnlE8jMopH21BbyAYr7b5EfGRQJNtgWcvqSXwKHnTutR08+Kkn0
-KAkXCzeQNLeA5LlYUzFyM7kPAp8pIRMQ+seHunmyG642S2+y/qHEdMuGIwpfz3eDF1PdctL0
-4qYK/zu+Qg1Bw0RwgigVZs/0c5HP2/e9DBHh7eSwtzYlk4AUr6yxLlcwSjOfOmKEQ/Q8tzh0
-IFiNu9IPuTGAPBn4CPxD0+Ru8T2wg8/s43R/PT3kd1OEqOJUl7q+h+r6fpvU0Fzxd2tC8Ga6
-fDEPme+1Nbi+03pVjuZQKbGwKJ66gEn06WqaxVZC+J8hh/jR0k9mST1iAZPNYulcNJ8tKmVt
-jYsv0L1TSm2+NwON58tO+pIVzu3DWwSEXSf+qkDavQam+QtEOZxLBXI++aMUEapSn+k3Lxm4
-8ZCYfAWLb/Xj7F5JQMbZvCexglAbYR0kIHqW5DnsYSdMD/IplJMojx0NBrxJ3fN9dvX2Y6BI
-XRsF1du4qESm4/3CKuyUV7p9DW3mPlHTGLvYxnyKQy7VFBkoLINszBrOUeIxggPtMIID6QIB
-ATCBlDCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsT
-IlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNpZ25pbmcxODA2BgNVBAMTL1N0YXJ0Q29t
-IENsYXNzIDEgUHJpbWFyeSBJbnRlcm1lZGlhdGUgQ2xpZW50IENBAgMMUr4wDQYJYIZIAWUD
-BAIBBQCgggIpMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1
-MDgyOTAxMjUzNFowLwYJKoZIhvcNAQkEMSIEIHR8KOeiWEOnCy9827ztr62K5zdm8EAvkgD5
-wyOSYSixMGwGCSqGSIb3DQEJDzFfMF0wCwYJYIZIAWUDBAEqMAsGCWCGSAFlAwQBAjAKBggq
-hkiG9w0DBzAOBggqhkiG9w0DAgICAIAwDQYIKoZIhvcNAwICAUAwBwYFKw4DAgcwDQYIKoZI
-hvcNAwICASgwgaUGCSsGAQQBgjcQBDGBlzCBlDCBjDELMAkGA1UEBhMCSUwxFjAUBgNVBAoT
-DVN0YXJ0Q29tIEx0ZC4xKzApBgNVBAsTIlNlY3VyZSBEaWdpdGFsIENlcnRpZmljYXRlIFNp
-Z25pbmcxODA2BgNVBAMTL1N0YXJ0Q29tIENsYXNzIDEgUHJpbWFyeSBJbnRlcm1lZGlhdGUg
-Q2xpZW50IENBAgMMUr4wgacGCyqGSIb3DQEJEAILMYGXoIGUMIGMMQswCQYDVQQGEwJJTDEW
-MBQGA1UEChMNU3RhcnRDb20gTHRkLjErMCkGA1UECxMiU2VjdXJlIERpZ2l0YWwgQ2VydGlm
-aWNhdGUgU2lnbmluZzE4MDYGA1UEAxMvU3RhcnRDb20gQ2xhc3MgMSBQcmltYXJ5IEludGVy
-bWVkaWF0ZSBDbGllbnQgQ0ECAwxSvjANBgkqhkiG9w0BAQEFAASCAQAeEMSQoFYfO/z9Qyyn
-PFVDFPsYXW6H/NG7+MH1YrRvEDOqHRHjy83LJKeR1ydr84ZSTTKbGezGCnakWt1QylkCITwf
-CvsltkqTC0haq5Cdg1v+xkTeOHUviMUvtmcykfBOZtzWl6pFEQ39nYusNQjBoNT2r11jk0+V
-cQbQqG9k4hAJFC2Gcylzih27Z1PRoXwVDxTlH6oJIkSDbDewfrGClL99Za2daNohz0p2fu0O
-ln/Qq67/0L3v9qlfU1R5gElfNL6zGG7ZadCT3FHE24x4Myqzk8BhFMMk6t4BfcBKBBoPoWqw
-elH1I8TCr0XBau2hJXGqMloZyEuH8p+kLpIcAAAAAAAA
---------------ms000905060209030806020307--
+I just wanted to follow up on this and see if anybody had any more
+comments or if the situation has changed?
+
+One other thing that came to mind for me is the idea of letting the
+local system administrator define views (similar to views in SQL) and
+also nominate which of the views should be used to return values for the
+standard df command.
+
+This would allow existing monitoring tools and scripts to continue
+getting some data that is considered sensible for a specific context.

@@ -1,135 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:18969 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751571AbbIBHvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:18 -0400
+	id S1752006AbbIBHvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:20 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC1031126
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:49 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC4031126
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:57 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 05/14] btrfs: qgroup: Introduce function to reserve data range per inode
-Date: Mon, 31 Aug 2015 16:54:36 +0800
-Message-Id: <1441011286-23733-6-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 08/14] btrfs: qgroup: Introduce function to release/free reserved data range
+Date: Mon, 31 Aug 2015 16:54:39 +0800
+Message-Id: <1441011286-23733-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function reserve_data_range().
-This function will find non-overlap range and to insert it into reserve
-map using previously introduced funtions.
+Introduce functions btrfs_qgroup_release/free_data() to release/free
+reserved data range.
 
-This provides the basis for later per inode reserve map implement.
+Release means, just remove the data range from data rsv map, but doesn't
+free the reserved space.
+Free means not only remove data range, but also free reserved space.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 92 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 92 insertions(+)
+ fs/btrfs/qgroup.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h |  2 ++
+ 2 files changed, 48 insertions(+)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 90f5c4b..3948882 100644
+index eee07c2..7ccbd4c 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2672,6 +2672,98 @@ static int insert_data_ranges(struct btrfs_qgroup_data_rsv_map *map,
+@@ -2941,6 +2941,52 @@ next:
+ 	return 0;
  }
  
- /*
-+ * Check qgroup limit and insert dirty range into reserve_map.
-+ *
-+ * Must be called with map->lock hold
-+ */
-+static int reserve_data_range(struct btrfs_root *root,
-+			      struct btrfs_qgroup_data_rsv_map *map,
-+			      struct data_rsv_range *tmp,
-+			      struct ulist *insert_list, u64 start, u64 len)
++static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
++				       int free_reserved)
 +{
-+	struct data_rsv_range *range;
-+	u64 cur_start = 0;
-+	u64 cur_len = 0;
-+	u64 reserve = 0;
-+	int ret = 0;
++	struct data_rsv_range *tmp;
++	struct btrfs_qgroup_data_rsv_map *map;
++	u64 reserved = 0;
++	int ret;
 +
-+	range = find_reserve_range(map, start);
-+	/* empty tree, insert the whole range */
-+	if (!range) {
-+		reserve = len;
-+		ret = ulist_add(insert_list, start, len, GFP_ATOMIC);
-+		if (ret < 0)
-+			return ret;
-+		goto insert;
-+	}
++	spin_lock(&BTRFS_I(inode)->qgroup_init_lock);
++	map = BTRFS_I(inode)->qgroup_rsv_map;
++	spin_unlock(&BTRFS_I(inode)->qgroup_init_lock);
++	if (!map)
++		return 0;
 +
-+	/* For case range is covering the leading part */
-+	if (range->start <= start && range->start + range->len > start)
-+		cur_start = range->start + range->len;
-+	else
-+		cur_start = start;
-+
-+	/*
-+	 * iterate until the end of the range.
-+	 * Like the following:
-+	 *
-+	 * 	|<--------desired---------------------->|
-+	 *|//1//|	|////2///|	|///3///|	<- exists
-+	 * Then we will need to insert the following
-+	 * 	|\\\4\\\|	 |\\\5\\|	|\\\6\\\|
-+	 * And only add qgroup->reserved for rang 4,5,6.
-+	 */
-+	while (cur_start < start + len) {
-+		struct rb_node *next_node;
-+		u64 next_start;
-+
-+		if (range->start + range->len <= cur_start) {
-+			/*
-+			 * Move to next range if current range is before
-+			 * cur_start
-+			 * e.g range is 1, cur_start is the end of range 1.
-+			 */
-+			next_node = rb_next(&range->node);
-+			if (!next_node) {
-+				/*
-+				 * no next range, fill the rest
-+				 * e.g range is 3, cur_start is end of range 3.
-+				 */
-+				cur_len = start + len - cur_start;
-+				next_start = start + len;
-+			} else {
-+				range = rb_entry(next_node,
-+						 struct data_rsv_range, node);
-+				cur_len = min(range->start, start + len) -
-+					  cur_start;
-+				next_start = range->start + range->len;
-+			}
-+		} else {
-+			/*
-+			 * current range is already after cur_start
-+			 * e.g range is 2, cur_start is end of range 1.
-+			 */
-+			cur_len = range->start - cur_len;
-+			next_start = range->start + range->len;
-+		}
-+		reserve += cur_len;
-+		ret = ulist_add(insert_list, cur_start, cur_len, GFP_ATOMIC);
-+		if (ret < 0)
-+			return ret;
-+
-+		cur_start = next_start;
-+	}
-+insert:
-+	ret = btrfs_qgroup_reserve(root, reserve);
-+	if (ret < 0)
-+		return ret;
-+	/* ranges must be inserted after we are sure it has enough space */
-+	ret = insert_data_ranges(map, tmp, insert_list);
-+	map->reserved += reserve;
-+	return ret;
++	tmp = kmalloc(sizeof(*tmp), GFP_NOFS);
++	if (!tmp)
++		return -ENOMEM;
++	ret = release_data_range(map, tmp, start, len, &reserved);
++	/* release_data_range() won't fail only check if memory is used */
++	if (ret == 0)
++		kfree(tmp);
++	if (free_reserved)
++		btrfs_qgroup_free(BTRFS_I(inode)->root, reserved);
++	return 0;
 +}
 +
 +/*
++ * Caller should be truncate/invalidate_page.
++ * As it will release the reserved data.
++ */
++int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len)
++{
++	return __btrfs_qgroup_release_data(inode, start, len, 1);
++}
++
++/*
++ * Caller should be finish_ordered_io
++ * As qgroup accouting happens at commit time, for data written to disk
++ * its reserved space should not be freed until commit.
++ * Or we may beyond the limit.
++ */
++int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
++{
++	return __btrfs_qgroup_release_data(inode, start, len, 0);
++}
++
+ /*
   * Init data_rsv_map for a given inode.
   *
-  * This is needed at write time as quota can be disabled and then enabled
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 366b853..8e69dc1 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -88,4 +88,6 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
+ int btrfs_qgroup_init_data_rsv_map(struct inode *inode);
+ void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
+ int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
++int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
++int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
+ #endif /* __BTRFS_QGROUP__ */
 -- 
 2.5.0
 

@@ -1,124 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:54809 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752466AbbIBHvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:20 -0400
+	id S1752617AbbIBHvW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:22 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC6031126
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:59 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udCA031126
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:57:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 10/14] btrfs: delayed_ref: release and free qgroup reserved at proper timing
-Date: Mon, 31 Aug 2015 16:54:41 +0800
-Message-Id: <1441011286-23733-11-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 14/14] btrfs: Use new check_data_free_space for buffered write
+Date: Mon, 31 Aug 2015 16:54:45 +0800
+Message-Id: <1441011286-23733-15-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qgroup reserved space needs to be released from inode dirty map and get
-freed at different timing:
+Use new check_data_free_space for buffered write.
 
-1) Release when the metadata is written into tree
-After corresponding metadata is written into tree, any newer write will
-be COWed(don't include NOCOW case yet).
-So we must release its range from inode dirty range map, or we will
-forget to reserve needed range, causing accounting exceeding the limit.
-
-2) Free reserved bytes when delayed ref is run
-When delayed refs are run, qgroup accounting will follow soon and turn
-the reserved bytes into rfer/excl numbers.
-As run_delayed_refs and qgroup accounting are all done at
-commit_transaction() time, we are safe to free reserved space in
-run_delayed_ref time().
-
-With these timing to release/free reserved space, we should be able to
-resolve the long existing qgroup reserve space leak problem.
+Because nodatacow write won't increase quota account, so unlike only
+behavior which does reserve before check nocow, here we check nocow
+first and then only reserve data if we can't do nocow write.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |  4 ++++
- fs/btrfs/inode.c       | 10 ++++++++++
- fs/btrfs/qgroup.c      |  5 ++---
- fs/btrfs/qgroup.h      |  8 +++++++-
- 4 files changed, 23 insertions(+), 4 deletions(-)
+ fs/btrfs/file.c | 22 +++++++++++++---------
+ 1 file changed, 13 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 38b76cc..4d9b01b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2277,6 +2277,10 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
- 						      node->num_bytes);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b823fac..c1eec4f 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1510,12 +1510,17 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		}
+ 
+ 		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+-		ret = btrfs_check_data_free_space(inode, reserve_bytes, write_bytes);
+-		if (ret == -ENOSPC &&
+-		    (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+-					      BTRFS_INODE_PREALLOC))) {
++
++		if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
++					     BTRFS_INODE_PREALLOC)) {
+ 			ret = check_can_nocow(inode, pos, &write_bytes);
++			if (ret < 0)
++				break;
+ 			if (ret > 0) {
++				/*
++				 * For nodata cow case, no need to reserve
++				 * data space.
++				 */
+ 				only_release_metadata = true;
+ 				/*
+ 				 * our prealloc extent may be smaller than
+@@ -1524,15 +1529,14 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 				num_pages = DIV_ROUND_UP(write_bytes + offset,
+ 							 PAGE_CACHE_SIZE);
+ 				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+-				ret = 0;
+-			} else {
+-				ret = -ENOSPC;
++				goto reserve_metadata;
  			}
  		}
-+
-+		/* Also free its reserved qgroup space */
-+		btrfs_qgroup_free_refroot(root->fs_info, head->qgroup_ref_root,
-+					  head->qgroup_reserved);
- 		return ret;
- 	}
+-
+-		if (ret)
++		ret = __btrfs_check_data_free_space(inode, pos, write_bytes);
++		if (ret < 0)
+ 			break;
  
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 763197f..37e45d5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2112,6 +2112,16 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	ret = btrfs_alloc_reserved_file_extent(trans, root,
- 					root->root_key.objectid,
- 					btrfs_ino(inode), file_pos, &ins);
-+	if (ret < 0)
-+		goto out;
-+	/*
-+	 * Release the reserved range from inode dirty range map, and
-+	 * move it to delayed ref codes, as now accounting only happens at
-+	 * commit_transaction() time.
-+	 */
-+	btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
-+	ret = btrfs_add_delayed_qgroup_reserve(root->fs_info, trans,
-+			root->objectid, disk_bytenr, ram_bytes);
- out:
- 	btrfs_free_path(path);
- 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 7ccbd4c..4ac2f84 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2141,14 +2141,13 @@ out:
- 	return ret;
- }
- 
--void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
-+void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-+			       u64 ref_root, u64 num_bytes)
- {
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
--	u64 ref_root = root->root_key.objectid;
- 	int ret = 0;
- 
- 	if (!is_fstree(ref_root))
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 8e69dc1..49fa15e 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -75,7 +75,13 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
- 			 struct btrfs_qgroup_inherit *inherit);
- int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
--void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes);
-+void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-+			       u64 ref_root, u64 num_bytes);
-+static inline void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
-+{
-+	return btrfs_qgroup_free_refroot(root->fs_info, root->objectid,
-+					 num_bytes);
-+}
- 
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
- 
++reserve_metadata:
+ 		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
+ 		if (ret) {
+ 			if (!only_release_metadata)
 -- 
 2.5.0
 

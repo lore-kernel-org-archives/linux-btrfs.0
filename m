@@ -1,80 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43994 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755356AbbIAI4Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 04:56:25 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t818uDja028054
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 16:56:13 +0800
+Received: from cn.fujitsu.com ([222.73.24.84]:42571 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1750806AbbIBHvM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:12 -0400
+Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udBu031126
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:40 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 14/14] btrfs: Use new check_data_free_space for buffered write
-Date: Tue, 1 Sep 2015 16:54:20 +0800
-Message-ID: <1441097660-13612-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH RFC 00/14] Qgroup reserved space fixing framework
+Date: Mon, 31 Aug 2015 16:54:31 +0800
+Message-Id: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use new check_data_free_space for buffered write.
+!!!!!!WARNING START!!!!!!
+These patch is just a WIP patchset, although it fixed a qgroup reserved
+space leaking bug in normal COW case, it still lacks fix for other
+corner case, like NODATACOW or prealloc case.
+And may still cause reserved space to overflow to minus.
 
-Because nodatacow write won't increase quota account, so unlike only
-behavior which does reserve before check nocow, here we check nocow
-first and then only reserve data if we can't do nocow write.
+The reason to send the WIP patchset is to check if the patchset has some
+deep structure bug, to avoid another rework after the whole patchset is
+finished
+!!!!!!WARNING END!!!!!!
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/file.c | 22 +++++++++++++---------
- 1 file changed, 13 insertions(+), 9 deletions(-)
+Although we have already reworked btrfs qgroup accounting part in
+v4.2-rc1, but qgroup reserve part still has a problem of leaking
+reserved space.
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..c1eec4f 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1510,12 +1510,17 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		}
- 
- 		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
--		ret = btrfs_check_data_free_space(inode, reserve_bytes, write_bytes);
--		if (ret == -ENOSPC &&
--		    (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
--					      BTRFS_INODE_PREALLOC))) {
-+
-+		if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-+					     BTRFS_INODE_PREALLOC)) {
- 			ret = check_can_nocow(inode, pos, &write_bytes);
-+			if (ret < 0)
-+				break;
- 			if (ret > 0) {
-+				/*
-+				 * For nodata cow case, no need to reserve
-+				 * data space.
-+				 */
- 				only_release_metadata = true;
- 				/*
- 				 * our prealloc extent may be smaller than
-@@ -1524,15 +1529,14 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 				num_pages = DIV_ROUND_UP(write_bytes + offset,
- 							 PAGE_CACHE_SIZE);
- 				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
--				ret = 0;
--			} else {
--				ret = -ENOSPC;
-+				goto reserve_metadata;
- 			}
- 		}
--
--		if (ret)
-+		ret = __btrfs_check_data_free_space(inode, pos, write_bytes);
-+		if (ret < 0)
- 			break;
- 
-+reserve_metadata:
- 		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
- 		if (ret) {
- 			if (!only_release_metadata)
+[[BUG]]
+One of the most common case to trigger the bug is the following method:
+1) Enable quota
+2) Limit excl of qgroup 5 to 16M
+3) Write [0,2M) of a file inside subvol 5 10 times without sync
+
+EQUOT will be triggered at about the 8th write.
+
+[[CAUSE]]
+The problem is caused by the fact that qgroup will reserve space even
+the data space is already reserved.
+
+In above reproducer, even time we buffered write [0,2M) qgroup will
+reserve 2M space, but in fact, at the 1st time, we have already reserved
+2M and from then on, we don't need to reserved any data space as we are
+only writing [0,2M).
+
+Also, the reserved space will only be freed *ONCE* when its backref is
+run at commit_transaction() time.
+
+That's causing the reserved space leaking.
+
+[[FIX]]
+The fix is not a simple one, as currently btrfs_qgroup_reserve() follow
+the very bad btrfs space allocating principle:
+  Allocate as much as you needed, even it's not fully used.
+
+So in the patchset, we introduce a lot of facilities:
+1) Per inode data rsv map
+   Record which range of a file has already been reserved.
+   Dirty range will be released when the range is written into disk.
+   And for any request to reserve space on already reserved range, just
+   skip it to avoid 
+
+2) Delayed ref head qgroup members
+   After a range of data is written into disk, we can't keep the dirty
+   range in data rsv map or just release reserved space.
+
+   If we keep dirty range in data rsv map, next write will consider
+   there is no need to reserve space, but new write will be cowed, and
+   cause another extent to take qgroup space.
+   So if keep dirty range, it'll cause qgroup accounting to exceed
+   limit.
+
+   On the other hand, if just release and free the reserved space, we
+   can still exceed the limit by allowing over-reserve.
+
+   So here, we must only release the range, but keep the reserved space
+   recorded in other place.
+   With the new qgroup accounting framework, only delayed_ref_head is
+   safe and will be run at the same time as btrfs qgroup accounting.
+
+3) New delalloc_reserve_space/check_data_free_space facilities to
+   support accurate reserve space.
+   Unlike old implement, which consider it enough by only using
+   num_bytes.
+   New facilities all need a exact range [start, start + len) to reserve
+   space.
+
+More detailed info can be found in each commit message and source
+commend.
+
+Qu Wenruo (14):
+  btrfs: qgroup: New function declaration for new reserve implement
+  btrfs: qgroup: Implement data_rsv_map init/free functions
+  btrfs: qgroup: Introduce new function to search most left reserve
+    range
+  btrfs: qgroup: Introduce function to insert non-overlap reserve range
+  btrfs: qgroup: Introduce function to reserve data range per inode
+  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
+  btrfs: qgroup: Introduce function to release reserved range
+  btrfs: qgroup: Introduce function to release/free reserved data range
+  btrfs: delayed_ref: Add new function to record reserved space into    
+    delayed ref
+  btrfs: delayed_ref: release and free qgroup reserved at proper timing
+  btrfs: qgroup: Introduce new functions to reserve/free metadata
+  btrfs: qgroup: Use new metadata reservation.
+  btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
+  btrfs: Use new check_data_free_space for buffered write
+
+ fs/btrfs/btrfs_inode.h |   6 +
+ fs/btrfs/ctree.h       |   5 +
+ fs/btrfs/delayed-ref.c |  29 +++
+ fs/btrfs/delayed-ref.h |  14 ++
+ fs/btrfs/disk-io.c     |   1 +
+ fs/btrfs/extent-tree.c |  68 +++--
+ fs/btrfs/file.c        |  22 +-
+ fs/btrfs/inode.c       |  20 ++
+ fs/btrfs/qgroup.c      | 658 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.h      |  21 +-
+ fs/btrfs/transaction.c |  15 +-
+ 11 files changed, 820 insertions(+), 39 deletions(-)
+
 -- 
-2.5.1
+2.5.0
 

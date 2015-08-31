@@ -1,101 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:18969 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:42571 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752006AbbIBHvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:20 -0400
+	id S1751571AbbIBHvV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:21 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC4031126
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:57 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC7031126
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:57:03 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 08/14] btrfs: qgroup: Introduce function to release/free reserved data range
-Date: Mon, 31 Aug 2015 16:54:39 +0800
-Message-Id: <1441011286-23733-9-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 11/14] btrfs: qgroup: Introduce new functions to reserve/free metadata
+Date: Mon, 31 Aug 2015 16:54:42 +0800
+Message-Id: <1441011286-23733-12-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce functions btrfs_qgroup_release/free_data() to release/free
-reserved data range.
-
-Release means, just remove the data range from data rsv map, but doesn't
-free the reserved space.
-Free means not only remove data range, but also free reserved space.
+Introduce new functions btrfs_qgroup_reserve/free_meta() to reserve/free
+metadata reserved space.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h |  2 ++
- 2 files changed, 48 insertions(+)
+ fs/btrfs/ctree.h   |  3 +++
+ fs/btrfs/disk-io.c |  1 +
+ fs/btrfs/qgroup.c  | 40 ++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h  |  4 ++++
+ 4 files changed, 48 insertions(+)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 80a9aef..9ce0df1 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1948,6 +1948,9 @@ struct btrfs_root {
+ 	int send_in_progress;
+ 	struct btrfs_subvolume_writers *subv_writers;
+ 	atomic_t will_be_snapshoted;
++
++	/* For qgroup metadata space reserve */
++	atomic_t qgroup_meta_rsv;
+ };
+ 
+ struct btrfs_ioctl_defrag_range_args {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 3f43bfea..b60a4ec 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1259,6 +1259,7 @@ static void __setup_root(u32 nodesize, u32 sectorsize, u32 stripesize,
+ 	atomic_set(&root->orphan_inodes, 0);
+ 	atomic_set(&root->refs, 1);
+ 	atomic_set(&root->will_be_snapshoted, 0);
++	atomic_set(&root->qgroup_meta_rsv, 0);
+ 	root->log_transid = 0;
+ 	root->log_transid_committed = -1;
+ 	root->last_log_commit = 0;
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index eee07c2..7ccbd4c 100644
+index 4ac2f84..f3a1047 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2941,6 +2941,52 @@ next:
- 	return 0;
+@@ -3065,3 +3065,43 @@ void btrfs_qgroup_free_data_rsv_map(struct inode *inode)
+ 	kfree(dirty_map);
+ 	binode->qgroup_rsv_map = NULL;
  }
- 
-+static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
-+				       int free_reserved)
++
++int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes)
 +{
-+	struct data_rsv_range *tmp;
-+	struct btrfs_qgroup_data_rsv_map *map;
-+	u64 reserved = 0;
 +	int ret;
 +
-+	spin_lock(&BTRFS_I(inode)->qgroup_init_lock);
-+	map = BTRFS_I(inode)->qgroup_rsv_map;
-+	spin_unlock(&BTRFS_I(inode)->qgroup_init_lock);
-+	if (!map)
++	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid) ||
++	    num_bytes == 0)
 +		return 0;
 +
-+	tmp = kmalloc(sizeof(*tmp), GFP_NOFS);
-+	if (!tmp)
-+		return -ENOMEM;
-+	ret = release_data_range(map, tmp, start, len, &reserved);
-+	/* release_data_range() won't fail only check if memory is used */
-+	if (ret == 0)
-+		kfree(tmp);
-+	if (free_reserved)
-+		btrfs_qgroup_free(BTRFS_I(inode)->root, reserved);
-+	return 0;
++	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
++	ret = btrfs_qgroup_reserve(root, num_bytes);
++	if (ret < 0)
++		return ret;
++	atomic_add(num_bytes, &root->qgroup_meta_rsv);
++	return ret;
 +}
 +
-+/*
-+ * Caller should be truncate/invalidate_page.
-+ * As it will release the reserved data.
-+ */
-+int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len)
++void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
 +{
-+	return __btrfs_qgroup_release_data(inode, start, len, 1);
++	int reserved;
++
++	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid))
++		return;
++
++	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
++	if (reserved == 0)
++		return;
++	btrfs_qgroup_free(root, reserved);
 +}
 +
-+/*
-+ * Caller should be finish_ordered_io
-+ * As qgroup accouting happens at commit time, for data written to disk
-+ * its reserved space should not be freed until commit.
-+ * Or we may beyond the limit.
-+ */
-+int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
++void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
 +{
-+	return __btrfs_qgroup_release_data(inode, start, len, 0);
-+}
++	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid))
++		return;
 +
- /*
-  * Init data_rsv_map for a given inode.
-  *
++	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
++	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
++	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
++	btrfs_qgroup_free(root, num_bytes);
++}
 diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 366b853..8e69dc1 100644
+index 49fa15e..2d507c8 100644
 --- a/fs/btrfs/qgroup.h
 +++ b/fs/btrfs/qgroup.h
-@@ -88,4 +88,6 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- int btrfs_qgroup_init_data_rsv_map(struct inode *inode);
- void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
+@@ -96,4 +96,8 @@ void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
  int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
-+int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
-+int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
+ int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
+ int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
++
++int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes);
++void btrfs_qgroup_free_meta_all(struct btrfs_root *root);
++void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes);
  #endif /* __BTRFS_QGROUP__ */
 -- 
 2.5.0

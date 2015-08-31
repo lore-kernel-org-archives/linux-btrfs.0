@@ -1,28 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55094 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59571 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751841AbbHaOHF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Aug 2015 10:07:05 -0400
-Date: Mon, 31 Aug 2015 16:06:25 +0200
+	id S1751982AbbHaPHW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 31 Aug 2015 11:07:22 -0400
+Date: Mon, 31 Aug 2015 17:06:42 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: Byongho Lee <bhlee.kernel@gmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/4] btrfs-progs: Use common function to parse unit
- arguments
-Message-ID: <20150831140625.GS11834@twin.jikos.cz>
+Subject: Re: [PATCH 1/3] btrfs-progs: fix memory leak in btrfs-convert main()
+Message-ID: <20150831150642.GW11834@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1441018814.git.zhaolei@cn.fujitsu.com>
+References: <1440689898-35178-1-git-send-email-bhlee.kernel@gmail.com>
+ <1440689898-35178-2-git-send-email-bhlee.kernel@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1441018814.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <1440689898-35178-2-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Aug 31, 2015 at 07:03:40PM +0800, Zhao Lei wrote:
-> Zhao Lei (4):
->   btrfs-progs: Introduce get_unit_mode_from_arg for common use
->   btrfs-progs: Use common unit parser for btrfs filesystem command
->   btrfs-progs: Use common unit parser for btrfs device command
->   btrfs-progs: Use common unit parser for btrfs qgroup command
+On Fri, Aug 28, 2015 at 12:38:16AM +0900, Byongho Lee wrote:
+> In btrfs-convert main(), strdup() allocates memory to fslabel but that
+> memory is not freed. We could fix it by adding free() calls to every
+> return point, but that would make the code messy because there are
+> several return paths.
+> So I fix it by changing the code using strdup() with local array and
+> strncpy().
+> 
+> And btrfs-convert main() guarantees that string length of fslabel is not
+> to exceed 'BTRFS_LABEL_SIZE', so it's enough to use strcpy() instead of
+> strncpy() to copy fslabel in do_convert().
+> 
+> Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
 
-Patches 1, 3 and 4 are applied, 2 needs an update. Thanks.
+Applied, thanks.

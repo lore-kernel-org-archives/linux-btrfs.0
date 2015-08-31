@@ -1,140 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:42571 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751571AbbIBHvO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:14 -0400
+	id S1752178AbbIBHvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:18 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udBv031126
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:41 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC3031126
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:53 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 01/14] btrfs: qgroup: New function declaration for new reserve implement
-Date: Mon, 31 Aug 2015 16:54:32 +0800
-Message-Id: <1441011286-23733-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 07/14] btrfs: qgroup: Introduce function to release reserved range
+Date: Mon, 31 Aug 2015 16:54:38 +0800
+Message-Id: <1441011286-23733-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add new structures and functions for new qgroup reserve implement dirty
-phase.
-Which will focus on avoiding over-reserve as in that case, which means
-for already reserved dirty space range, we won't reserve space again.
+Introduce new function release_data_range() to release reserved ranges.
+It will iterate through all existing ranges and remove/shrink them.
 
-This patch adds the needed structure declaration and comments.
+Note this function will not free reserved space, as the range can be
+released in the following conditions:
+1) The dirty range gets written to disk.
+   In this case, reserved range will be released but reserved bytes
+   will not be freed until the delayed_ref is run.
+
+2) Truncate
+   In this case, dirty ranges will be released and reserved bytes will
+   also be freed.
+
+So the new function won't free reserved space, but record them into
+parameter if called needs.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/btrfs_inode.h |  4 ++++
- fs/btrfs/qgroup.c      | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h      |  3 +++
- 3 files changed, 65 insertions(+)
+ fs/btrfs/qgroup.c | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 130 insertions(+)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 0ef5cc1..6d799b8 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -24,6 +24,7 @@
- #include "extent_io.h"
- #include "ordered-data.h"
- #include "delayed-inode.h"
-+#include "qgroup.h"
- 
- /*
-  * ordered_data_close is set by truncate when a file that used
-@@ -193,6 +194,9 @@ struct btrfs_inode {
- 	struct timespec i_otime;
- 
- 	struct inode vfs_inode;
-+
-+	/* qgroup dirty map for data space reserve */
-+	struct btrfs_qgroup_data_rsv_map *qgroup_rsv_map;
- };
- 
- extern unsigned char btrfs_filetype_table[];
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 1667567..640106a 100644
+index 31ddc6d..eee07c2 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -91,6 +91,64 @@ struct btrfs_qgroup {
- 	u64 new_refcnt;
- };
+@@ -2811,6 +2811,136 @@ out:
+ 	return ret;
+ }
  
-+/*
-+ * Record one range of reserved space.
-+ */
-+struct data_rsv_range {
-+	struct rb_node node;
-+	u64 start;
-+	u64 len;
-+};
++/* Small helper used in release_data_range() to update rsv map */
++static inline void __update_rsv(struct btrfs_qgroup_data_rsv_map *map,
++				u64 *reserved, u64 cur_rsv)
++{
++	if (reserved)
++		*reserved += cur_rsv;
++	if (WARN_ON(map->reserved < cur_rsv))
++		map->reserved = 0;
++	else
++		map->reserved -= cur_rsv;
++}
 +
 +/*
-+ * Record per inode reserved range.
-+ * This is mainly used to resolve reserved space leaking problem.
-+ * One of the cause is the mismatch with reserve and free.
++ * Release the range [start, start + len) from rsv map.
 + *
-+ * New qgroup will handle reserve in two phase.
-+ * 1) Dirty phase.
-+ *    Pages are just marked dirty, but not written to disk.
-+ * 2) Flushed phase
-+ *    Pages are written to disk, but transaction is not committed yet.
-+ *
-+ * At Diryt phase, we only need to focus on avoiding over-reserve.
-+ *
-+ * The idea is like below.
-+ * 1) Write [0,8K)
-+ * 0	4K	8K	12K	16K
-+ * |////////////|
-+ * Reserve +8K, total reserved: 8K
-+ *
-+ * 2) Write [0,4K)
-+ * 0	4K	8K	12K	16K
-+ * |////////////|
-+ * Reserve 0, total reserved 8K
-+ *
-+ * 3) Write [12K,16K)
-+ * 0	4K	8K	12K	16K
-+ * |////////////|	|///////|
-+ * Reserve +4K, tocal reserved 12K
-+ *
-+ * 4) Flush [0,8K)
-+ * Can happen without commit transaction, like fallocate will trigger the
-+ * write.
-+ * 0	4K	8K	12K	16K
-+ * 			|///////|
-+ * Reserve 0, tocal reserved 12K
-+ * As the extent is written to disk, not dirty any longer, the range get
-+ * removed.
-+ * But as its delayed_refs is not run, its reserved space will not be freed.
-+ * And things continue to Flushed phase.
-+ *
-+ * By this method, we can avoid over-reserve, which will lead to reserved
-+ * space leak.
++ * The behavior should be much like reserve_data_range().
++ * @tmp: the allocated memory for case which need to split existing
++ *       range into two.
++ * @reserved: the number of bytes that may need to free
++ * Return > 0 if 'tmp' memory is used and release range successfully
++ * Return 0 if 'tmp' memory is not used and release range successfully
++ * Return < 0 for error
 + */
-+struct btrfs_qgroup_data_rsv_map {
-+	struct rb_root root;
-+	u64 reserved;
-+	spinlock_t lock;
-+};
++static int release_data_range(struct btrfs_qgroup_data_rsv_map *map,
++			      struct data_rsv_range *tmp,
++			      u64 start, u64 len, u64 *reserved)
++{
++	struct data_rsv_range *range;
++	u64 cur_rsv;
++	int ret = 0;
 +
- static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
- 					   int mod)
- {
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 6387dcf..2f863a4 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -33,6 +33,9 @@ struct btrfs_qgroup_extent_record {
- 	struct ulist *old_roots;
- };
- 
-+/* For per-inode dirty range reserve */
-+struct btrfs_qgroup_data_rsv_map;
++	range = find_reserve_range(map, start);
++	/* empty tree, just return */
++	if (!range)
++		return 0;
++	/*
++	 * For split case
++	 * 		|<----desired---->|
++	 * |////////////////////////////////////////////|
++	 * In this case, we need to insert one new range.
++	 */
++	if (range->start < start && range->start + range->len > start + len) {
++		u64 new_start = start + len;
++		u64 new_len = range->start + range->len - start - len;
 +
- int btrfs_quota_enable(struct btrfs_trans_handle *trans,
- 		       struct btrfs_fs_info *fs_info);
- int btrfs_quota_disable(struct btrfs_trans_handle *trans,
++		cur_rsv = len;
++		if (reserved)
++			*reserved += cur_rsv;
++		map->reserved -= cur_rsv;
++
++		range->len = start - range->start;
++		ret = insert_data_range(map, tmp, new_start, new_len);
++		WARN_ON(ret <= 0);
++		return 1;
++	}
++
++	/*
++	 * Iterate until the end of the range and free release all
++	 * reserved data from map.
++	 * We iterate by existing range, as that will makes codes a
++	 * little more clean.
++	 *
++	 * 	|<---------desired------------------------>|
++	 * |//1//|	|//2//|		|//3//|		|//4//|
++	 */
++	while (range->start < start + len) {
++		struct rb_node *next = NULL;
++
++		/*
++		 * 		|<---desired---->|
++		 * |///////|
++		 */
++		if (unlikely(range->start + range->len <= start))
++			goto next;
++
++		/*
++		 * 	|<----desired---->|
++		 * |///////|
++		 */
++		if (range->start < start &&
++		    range->start + range->len > start) {
++			cur_rsv = range->start + range->len - start;
++			__update_rsv(map, reserved, cur_rsv);
++
++			range->len = start - range->start;
++			goto next;
++		}
++
++		/*
++		 * 	|<--desired-->|
++		 * 	   |/////|
++		 * Including same start/end case, so other case don't need
++		 * to check start/end equal case and don't need bother
++		 * deleting range.
++		 */
++		if (range->start >= start &&
++		    range->start + range->len <= start + len) {
++			cur_rsv = range->len;
++			__update_rsv(map, reserved, cur_rsv);
++
++			next = rb_next(&range->node);
++			rb_erase(&range->node, &map->root);
++			kfree(range);
++			goto next;
++
++		}
++
++		/*
++		 * 	|<--desired-->|
++		 * 		|///////|
++		 */
++		if (range->start < start + len &&
++		    range->start + range->len > start + len) {
++			cur_rsv = start + len - range->start;
++			__update_rsv(map, reserved, cur_rsv);
++
++			range->start = start + len;
++			range->len = range->start + range->len - start - len;
++			goto next;
++		}
++next:
++		if (!next)
++			next = rb_next(&range->node);
++		if (!next)
++			break;
++		range = rb_entry(next, struct data_rsv_range, node);
++	}
++	return 0;
++}
++
+ /*
+  * Init data_rsv_map for a given inode.
+  *
 -- 
 2.5.0
 

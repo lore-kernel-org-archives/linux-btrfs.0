@@ -1,72 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:59954 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750771AbbHaFGV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 31 Aug 2015 01:06:21 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V567HT019999
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 13:06:07 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 0/4] btrfs-progs: tests: umount TEST_MNT in clean-tests.sh
-Date: Mon, 31 Aug 2015 13:04:35 +0800
-Message-ID: <cover.1440997237.git.zhaolei@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:56925 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752798AbbHaOdh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 31 Aug 2015 10:33:37 -0400
+Date: Mon, 31 Aug 2015 16:32:57 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/4] btrfs-progs: tests: Introduce init_env to
+ initialize common env variant
+Message-ID: <20150831143257.GT11834@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1440997237.git.zhaolei@cn.fujitsu.com>
+ <d52589ea31baac23ebb0eae3b0950503d5c5d6e8.1440997237.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <d52589ea31baac23ebb0eae3b0950503d5c5d6e8.1440997237.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If a testcase failed, we can't run it(or other tests needs mount) again,
-  # ./misc-tests.sh 007
-   [TEST]   007-subvolume-sync
-   failed: fail
-   test failed for case 007-subvolume-sync
-  # ./misc-tests.sh 007
-   [TEST]   007-subvolume-sync
-   failed: mount /root/btrfs-progs/tests/test.img /root/btrfs-progs/tests/mnt
-   test failed for case 007-subvolume-sync
-  #
+On Mon, Aug 31, 2015 at 01:04:36PM +0800, Zhao Lei wrote:
+> For example, $TEST_DIR is common used in severial tests, and have
+> duplicated code for initialize.
+> 
+> These duplicated code not only benifits harddisk vendor, but have
+> inconsistent details, as:
+>   convert-tests.sh: lack of mkdir
+>   fsck-tests/012-leaf-corruption/test.sh: unnecessary mkdir
+>   fsck-tests/013-extent-tree-rebuild/test.sh: unnecessary init
+>   misc-tests/XXX ...
+> And severial error message:
+>   _fail "unable to create mount point on $TEST_MNT"
+>   _fail "failed to create mount point"
+>   ...
+> 
+> This patch move initizlizaton of $TEST_DIR to common init_env(),
+> to avoid above problem, and init_env() can be used to add more
+> things in future.
+> 
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-To solve this problem, I put umount command into test sctipt in v1,
-but it will change stat of failed-test in next test, and make it
-hard to debug, noticed by David Sterba <dsterba@suse.cz>:
- My expectation is that the testsuite will not fail and if it does,
- I wan't to keep the last stat so I can have a look.
- Would it be acceptable for you to enhance the clean-tests.sh
- script to unmount the TEST_DEV?
-
-Putting umount command into clean-tests.sh need a global $TEST_MNT,
-which already done in my previous patch.
-
-This patchset rebase my previous patch of "setting global $TEST_MNT"
-to git head in [PATCH 1..2/4], and add v2 of "umount TEST_MNT"
-in [PATCH 3/4].
-
-Thanks
-Zhaolei
-
-Zhao Lei (4):
-  btrfs-progs: tests: Introduce init_env() to initialize common env
-    variant
-  btrfs-progs: tests: Fix mount fail of 013-extent-tree-rebuild
-  btrfs-progs: tests: umount TEST_MNT in clean-tests.sh
-  btrfs-progs: Use mount_test_dev for misc-tests/007-subvolume-sync
-
- tests/clean-tests.sh                             |  7 ++++--
- tests/common                                     | 30 ++++++++++++++++++++++++
- tests/convert-tests.sh                           |  1 -
- tests/fsck-tests.sh                              |  3 ---
- tests/fsck-tests/012-leaf-corruption/test.sh     |  1 -
- tests/fsck-tests/013-extent-tree-rebuild/test.sh |  9 ++-----
- tests/misc-tests.sh                              |  3 ---
- tests/misc-tests/001-btrfstune-features/test.sh  |  5 ----
- tests/misc-tests/002-uuid-rewrite/test.sh        |  5 ----
- tests/misc-tests/003-zero-log/test.sh            |  5 ----
- tests/misc-tests/007-subvolume-sync/test.sh      |  4 ++--
- 11 files changed, 39 insertions(+), 34 deletions(-)
-
--- 
-1.8.5.1
-
+Applied, thanks.

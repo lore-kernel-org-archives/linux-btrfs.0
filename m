@@ -1,219 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp07.au.ibm.com ([202.81.31.140]:54270 "EHLO
-	e23smtp07.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754027AbbHXMFX (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:59954 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750771AbbHaFGV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 24 Aug 2015 08:05:23 -0400
-Received: from /spool/local
-	by e23smtp07.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 24 Aug 2015 22:05:20 +1000
-Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id 7AB7C3578047
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 22:05:16 +1000 (EST)
-Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
-	by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t7OC588T62521360
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 22:05:16 +1000
-Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
-	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t7OC4hnE011917
-	for <linux-btrfs@vger.kernel.org>; Mon, 24 Aug 2015 22:04:44 +1000
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, bo.li.liu@oracle.com,
-        chandan@mykolab.com
-Subject: [PATCH] Btrfs: Direct I/O: Fix space accounting
-Date: Mon, 24 Aug 2015 17:34:17 +0530
-Message-Id: <1440417857-22976-1-git-send-email-chandan@linux.vnet.ibm.com>
+	Mon, 31 Aug 2015 01:06:21 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V567HT019999
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 13:06:07 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v2 0/4] btrfs-progs: tests: umount TEST_MNT in clean-tests.sh
+Date: Mon, 31 Aug 2015 13:04:35 +0800
+Message-ID: <cover.1440997237.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following call trace is seen when generic/095 test is executed,
+If a testcase failed, we can't run it(or other tests needs mount) again,
+  # ./misc-tests.sh 007
+   [TEST]   007-subvolume-sync
+   failed: fail
+   test failed for case 007-subvolume-sync
+  # ./misc-tests.sh 007
+   [TEST]   007-subvolume-sync
+   failed: mount /root/btrfs-progs/tests/test.img /root/btrfs-progs/tests/mnt
+   test failed for case 007-subvolume-sync
+  #
 
-WARNING: CPU: 3 PID: 2769 at /home/chandan/code/repos/linux/fs/btrfs/inode.c:8967 btrfs_destroy_inode+0x284/0x2a0()
-Modules linked in:
-CPU: 3 PID: 2769 Comm: umount Not tainted 4.2.0-rc5+ #31
-Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.7.5-20150306_163512-brownie 04/01/2014
- ffffffff81c08150 ffff8802ec9cbce8 ffffffff81984058 ffff8802ffd8feb0
- 0000000000000000 ffff8802ec9cbd28 ffffffff81050385 ffff8802ec9cbd38
- ffff8802d12f8588 ffff8802d12f8588 ffff8802f15ab000 ffff8800bb96c0b0
-Call Trace:
- [<ffffffff81984058>] dump_stack+0x45/0x57
- [<ffffffff81050385>] warn_slowpath_common+0x85/0xc0
- [<ffffffff81050465>] warn_slowpath_null+0x15/0x20
- [<ffffffff81340294>] btrfs_destroy_inode+0x284/0x2a0
- [<ffffffff8117ce07>] destroy_inode+0x37/0x60
- [<ffffffff8117cf39>] evict+0x109/0x170
- [<ffffffff8117cfd5>] dispose_list+0x35/0x50
- [<ffffffff8117dd3a>] evict_inodes+0xaa/0x100
- [<ffffffff81165667>] generic_shutdown_super+0x47/0xf0
- [<ffffffff81165951>] kill_anon_super+0x11/0x20
- [<ffffffff81302093>] btrfs_kill_super+0x13/0x110
- [<ffffffff81165c99>] deactivate_locked_super+0x39/0x70
- [<ffffffff811660cf>] deactivate_super+0x5f/0x70
- [<ffffffff81180e1e>] cleanup_mnt+0x3e/0x90
- [<ffffffff81180ebd>] __cleanup_mnt+0xd/0x10
- [<ffffffff81069c06>] task_work_run+0x96/0xb0
- [<ffffffff81003a3d>] do_notify_resume+0x3d/0x50
- [<ffffffff8198cbc2>] int_signal+0x12/0x17
+To solve this problem, I put umount command into test sctipt in v1,
+but it will change stat of failed-test in next test, and make it
+hard to debug, noticed by David Sterba <dsterba@suse.cz>:
+ My expectation is that the testsuite will not fail and if it does,
+ I wan't to keep the last stat so I can have a look.
+ Would it be acceptable for you to enhance the clean-tests.sh
+ script to unmount the TEST_DEV?
 
-This means that the inode had non-zero "outstanding extents" during
-eviction. This occurs because during direct I/O, a task which successfully
-used up its reserved data space would set BTRFS_INODE_DIO_READY bit and does
-not clear the bit after finishing the DIO write. A future DIO write could
-actually fail and the unused reserve space won't be freed because of the
-previously set BTRFS_INODE_DIO_READY bit.
+Putting umount command into clean-tests.sh need a global $TEST_MNT,
+which already done in my previous patch.
 
-Clearing the BTRFS_INODE_DIO_READY bit in btrfs_direct_IO() caused another
-issue to pop up. In do_direct_IO(), get_more_blocks() could allocate an
-ordered extent that would partially map the originally requested length. Here
-we would have set the BTRFS_INODE_DIO_READY bit. While processing the
-remaining data to be written, dio_get_page() could return with -EFAULT (assume
-sdio->blocks_availlable had a value of zero). With -EFAULT as the return value
-from __blockdev_direct_IO(), btrfs_direct_IO would fail to release the rest of
-unused "reserve space" because BTRFS_INODE_DIO_READY was already set.
+This patchset rebase my previous patch of "setting global $TEST_MNT"
+to git head in [PATCH 1..2/4], and add v2 of "umount TEST_MNT"
+in [PATCH 3/4].
 
-Hence this commit introduces "struct btrfs_dio_data" to track the usage of
-reserved data space. The remaining unused "reserve space" can now be freed
-reliably.
+Thanks
+Zhaolei
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
- fs/btrfs/btrfs_inode.h |  2 --
- fs/btrfs/inode.c       | 42 +++++++++++++++++++++---------------------
- 2 files changed, 21 insertions(+), 23 deletions(-)
+Zhao Lei (4):
+  btrfs-progs: tests: Introduce init_env() to initialize common env
+    variant
+  btrfs-progs: tests: Fix mount fail of 013-extent-tree-rebuild
+  btrfs-progs: tests: umount TEST_MNT in clean-tests.sh
+  btrfs-progs: Use mount_test_dev for misc-tests/007-subvolume-sync
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 81220b2..0ef5cc1 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -44,8 +44,6 @@
- #define BTRFS_INODE_IN_DELALLOC_LIST		9
- #define BTRFS_INODE_READDIO_NEED_LOCK		10
- #define BTRFS_INODE_HAS_PROPS		        11
--/* DIO is ready to submit */
--#define BTRFS_INODE_DIO_READY		        12
- /*
-  * The following 3 bits are meant only for the btree inode.
-  * When any of them is set, it means an error happened while writing an
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bda3c41..83571603 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7405,6 +7405,10 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 	return em;
- }
- 
-+struct btrfs_dio_data {
-+	u64 outstanding_extents;
-+	u64 reserve;
-+};
- 
- static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 				   struct buffer_head *bh_result, int create)
-@@ -7412,10 +7416,10 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	struct extent_map *em;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct extent_state *cached_state = NULL;
-+	struct btrfs_dio_data *dio_data = NULL;
- 	u64 start = iblock << inode->i_blkbits;
- 	u64 lockstart, lockend;
- 	u64 len = bh_result->b_size;
--	u64 *outstanding_extents = NULL;
- 	int unlock_bits = EXTENT_LOCKED;
- 	int ret = 0;
- 
-@@ -7433,7 +7437,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 		 * that anything that needs to check if there's a transction doesn't get
- 		 * confused.
- 		 */
--		outstanding_extents = current->journal_info;
-+		dio_data = current->journal_info;
- 		current->journal_info = NULL;
- 	}
- 
-@@ -7565,17 +7569,18 @@ unlock:
- 		 * within our reservation, otherwise we need to adjust our inode
- 		 * counter appropriately.
- 		 */
--		if (*outstanding_extents) {
--			(*outstanding_extents)--;
-+		if (dio_data->outstanding_extents) {
-+			(dio_data->outstanding_extents)--;
- 		} else {
- 			spin_lock(&BTRFS_I(inode)->lock);
- 			BTRFS_I(inode)->outstanding_extents++;
- 			spin_unlock(&BTRFS_I(inode)->lock);
- 		}
- 
--		current->journal_info = outstanding_extents;
- 		btrfs_free_reserved_data_space(inode, len);
--		set_bit(BTRFS_INODE_DIO_READY, &BTRFS_I(inode)->runtime_flags);
-+		WARN_ON(dio_data->reserve < len);
-+		dio_data->reserve -= len;
-+		current->journal_info = dio_data;
- 	}
- 
- 	/*
-@@ -7598,8 +7603,8 @@ unlock:
- unlock_err:
- 	clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 			 unlock_bits, 1, 0, &cached_state, GFP_NOFS);
--	if (outstanding_extents)
--		current->journal_info = outstanding_extents;
-+	if (dio_data)
-+		current->journal_info = dio_data;
- 	return ret;
- }
- 
-@@ -8329,7 +8334,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file->f_mapping->host;
--	u64 outstanding_extents = 0;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_dio_data dio_data = { 0 };
- 	size_t count = 0;
- 	int flags = 0;
- 	bool wakeup = true;
-@@ -8367,7 +8373,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 		ret = btrfs_delalloc_reserve_space(inode, count);
- 		if (ret)
- 			goto out;
--		outstanding_extents = div64_u64(count +
-+		dio_data.outstanding_extents = div64_u64(count +
- 						BTRFS_MAX_EXTENT_SIZE - 1,
- 						BTRFS_MAX_EXTENT_SIZE);
- 
-@@ -8376,7 +8382,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 		 * do the accounting properly if we go over the number we
- 		 * originally calculated.  Abuse current->journal_info for this.
- 		 */
--		current->journal_info = &outstanding_extents;
-+		dio_data.reserve = round_up(count, root->sectorsize);
-+		current->journal_info = &dio_data;
- 	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
- 				     &BTRFS_I(inode)->runtime_flags)) {
- 		inode_dio_end(inode);
-@@ -8391,16 +8398,9 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 	if (iov_iter_rw(iter) == WRITE) {
- 		current->journal_info = NULL;
- 		if (ret < 0 && ret != -EIOCBQUEUED) {
--			/*
--			 * If the error comes from submitting stage,
--			 * btrfs_get_blocsk_direct() has free'd data space,
--			 * and metadata space will be handled by
--			 * finish_ordered_fn, don't do that again to make
--			 * sure bytes_may_use is correct.
--			 */
--			if (!test_and_clear_bit(BTRFS_INODE_DIO_READY,
--				     &BTRFS_I(inode)->runtime_flags))
--				btrfs_delalloc_release_space(inode, count);
-+			if (dio_data.reserve)
-+				btrfs_delalloc_release_space(inode,
-+							dio_data.reserve);
- 		} else if (ret >= 0 && (size_t)ret < count)
- 			btrfs_delalloc_release_space(inode,
- 						     count - (size_t)ret);
+ tests/clean-tests.sh                             |  7 ++++--
+ tests/common                                     | 30 ++++++++++++++++++++++++
+ tests/convert-tests.sh                           |  1 -
+ tests/fsck-tests.sh                              |  3 ---
+ tests/fsck-tests/012-leaf-corruption/test.sh     |  1 -
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh |  9 ++-----
+ tests/misc-tests.sh                              |  3 ---
+ tests/misc-tests/001-btrfstune-features/test.sh  |  5 ----
+ tests/misc-tests/002-uuid-rewrite/test.sh        |  5 ----
+ tests/misc-tests/003-zero-log/test.sh            |  5 ----
+ tests/misc-tests/007-subvolume-sync/test.sh      |  4 ++--
+ 11 files changed, 39 insertions(+), 34 deletions(-)
+
 -- 
-2.1.0
+1.8.5.1
 

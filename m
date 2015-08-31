@@ -1,249 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp01.in.ibm.com ([122.248.162.1]:49878 "EHLO
-	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752618AbbH1Pk3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 28 Aug 2015 11:40:29 -0400
-Received: from /spool/local
-	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Fri, 28 Aug 2015 21:10:26 +0530
-Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 547B4125805A
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 21:09:49 +0530 (IST)
-Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t7SFeNPq8650770
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 21:10:23 +0530
-Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t7SFeN02019502
-	for <linux-btrfs@vger.kernel.org>; Fri, 28 Aug 2015 21:10:23 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Received: from plane.gmane.org ([80.91.229.3]:42357 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754121AbbHaSsj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 31 Aug 2015 14:48:39 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZWU8B-0000RQ-Je
+	for linux-btrfs@vger.kernel.org; Mon, 31 Aug 2015 20:48:35 +0200
+Received: from host-78-149-214-125.as13285.net ([78.149.214.125])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 20:48:35 +0200
+Received: from samtygier by host-78-149-214-125.as13285.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 20:48:35 +0200
 To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, bo.li.liu@oracle.com,
-        chandan@mykolab.com
-Subject: [PATCH V3] Btrfs: Direct I/O: Fix space accounting
-Date: Fri, 28 Aug 2015 21:10:13 +0530
-Message-Id: <1440776413-15591-1-git-send-email-chandan@linux.vnet.ibm.com>
+From: sam tygier <samtygier@yahoo.co.uk>
+Subject: [PATCH] Btrfs: Check metadata redundancy on balance
+Date: Mon, 31 Aug 2015 19:48:24 +0100
+Message-ID: <ms27ho$tl7$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The following call trace is seen when generic/095 test is executed,
+Resending, as I received no comments on previous submission.
 
-WARNING: CPU: 3 PID: 2769 at /home/chandan/code/repos/linux/fs/btrfs/inode.c:8967 btrfs_destroy_inode+0x284/0x2a0()
-Modules linked in:
-CPU: 3 PID: 2769 Comm: umount Not tainted 4.2.0-rc5+ #31
-Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS 1.7.5-20150306_163512-brownie 04/01/2014
- ffffffff81c08150 ffff8802ec9cbce8 ffffffff81984058 ffff8802ffd8feb0
- 0000000000000000 ffff8802ec9cbd28 ffffffff81050385 ffff8802ec9cbd38
- ffff8802d12f8588 ffff8802d12f8588 ffff8802f15ab000 ffff8800bb96c0b0
-Call Trace:
- [<ffffffff81984058>] dump_stack+0x45/0x57
- [<ffffffff81050385>] warn_slowpath_common+0x85/0xc0
- [<ffffffff81050465>] warn_slowpath_null+0x15/0x20
- [<ffffffff81340294>] btrfs_destroy_inode+0x284/0x2a0
- [<ffffffff8117ce07>] destroy_inode+0x37/0x60
- [<ffffffff8117cf39>] evict+0x109/0x170
- [<ffffffff8117cfd5>] dispose_list+0x35/0x50
- [<ffffffff8117dd3a>] evict_inodes+0xaa/0x100
- [<ffffffff81165667>] generic_shutdown_super+0x47/0xf0
- [<ffffffff81165951>] kill_anon_super+0x11/0x20
- [<ffffffff81302093>] btrfs_kill_super+0x13/0x110
- [<ffffffff81165c99>] deactivate_locked_super+0x39/0x70
- [<ffffffff811660cf>] deactivate_super+0x5f/0x70
- [<ffffffff81180e1e>] cleanup_mnt+0x3e/0x90
- [<ffffffff81180ebd>] __cleanup_mnt+0xd/0x10
- [<ffffffff81069c06>] task_work_run+0x96/0xb0
- [<ffffffff81003a3d>] do_notify_resume+0x3d/0x50
- [<ffffffff8198cbc2>] int_signal+0x12/0x17
+Currently BTRFS allows you to make bad choices of data and 
+metadata levels. For example -d raid1 -m raid0 means you can
+only use half your total disk space, but will loose everything
+if 1 disk fails. It should give a warning in these cases.
 
-This means that the inode had non-zero "outstanding extents" during
-eviction. This occurs because, during direct I/O a task which successfully
-used up its reserved data space would set BTRFS_INODE_DIO_READY bit and does
-not clear the bit after finishing the DIO write. A future DIO write could
-actually fail and the unused reserve space won't be freed because of the
-previously set BTRFS_INODE_DIO_READY bit.
+This patch is a follow up to
+[PATCH v2] btrfs-progs: check metadata redundancy
+in order to cover the case of using balance to convert to such
+a set of raid levels.
 
-Clearing the BTRFS_INODE_DIO_READY bit in btrfs_direct_IO() caused the
-following issue,
-|-----------------------------------+-------------------------------------|
-| Task A                            | Task B                              |
-|-----------------------------------+-------------------------------------|
-| Start direct i/o write on inode X.|                                     |
-| reserve space                     |                                     |
-| Allocate ordered extent           |                                     |
-| release reserved space            |                                     |
-| Set BTRFS_INODE_DIO_READY bit.    |                                     |
-|                                   | splice()                            |
-|                                   | Transfer data from pipe buffer to   |
-|                                   | destination file.                   |
-|                                   | - kmap(pipe buffer page)            |
-|                                   | - Start direct i/o write on         |
-|                                   |   inode X.                          |
-|                                   |   - reserve space                   |
-|                                   |   - dio_refill_pages()              |
-|                                   |     - sdio->blocks_available == 0   |
-|                                   |     - Since a kernel address is     |
-|                                   |       being passed instead of a     |
-|                                   |       user space address,           |
-|                                   |       iov_iter_get_pages() returns  |
-|                                   |       -EFAULT.                      |
-|                                   |   - Since BTRFS_INODE_DIO_READY is  |
-|                                   |     set, we don't release reserved  |
-|                                   |     space.                          |
-|                                   |   - Clear BTRFS_INODE_DIO_READY bit.|
-| -EIOCBQUEUED is returned.         |                                     |
-|-----------------------------------+-------------------------------------|
+A simple example to hit this is to create a single device fs, 
+which will default to single:dup, then to add a second device and
+attempt to convert to raid1 with the command
+btrfs balance start -dconvert=raid1  /mnt
+this will result in a filesystem with raid1:dup, which will not
+survive the loss of one drive. I personally don't see why the tools
+should allow this, but in the previous thread a warning was
+considered sufficient.
 
-Hence this commit introduces "struct btrfs_dio_data" to track the usage of
-reserved data space. The remaining unused "reserve space" can now be freed
-reliably.
+Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+From: Sam Tygier <samtygier@yahoo.co.uk>
+Date: Sat, 13 Jun 2015 18:13:06 +0100
+Subject: [PATCH] Btrfs: Check metadata redundancy on balance
+
+When converting a filesystem via balance check that metadata mode
+is at least as redundant as the data mode. For example give warning
+when:
+-dconvert=raid1 -mconvert=single
 ---
-v2->v3
-1. As suggested by Liu Bo, provide more details regarding the reason for
-   failure when BTRFS_INODE_DIO_READY bit is cleared before returning from
-   btrfs_direct_IO.
+ fs/btrfs/volumes.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-v1->v2
-1. Fix erroneous commit message. Thanks to Liu Bo for pointing it out.
-
- fs/btrfs/btrfs_inode.h |  2 --
- fs/btrfs/inode.c       | 42 +++++++++++++++++++++---------------------
- 2 files changed, 21 insertions(+), 23 deletions(-)
-
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 81220b2..0ef5cc1 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -44,8 +44,6 @@
- #define BTRFS_INODE_IN_DELALLOC_LIST		9
- #define BTRFS_INODE_READDIO_NEED_LOCK		10
- #define BTRFS_INODE_HAS_PROPS		        11
--/* DIO is ready to submit */
--#define BTRFS_INODE_DIO_READY		        12
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index fbe7c10..a0ce1f7 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3454,6 +3454,24 @@ static void __cancel_balance(struct btrfs_fs_info *fs_info)
+ 	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
+ }
+ 
++static int group_profile_max_safe_loss(u64 flag)
++{
++	switch (flag & BTRFS_BLOCK_GROUP_PROFILE_MASK) {
++	case 0: /* single */
++	case BTRFS_BLOCK_GROUP_DUP:
++	case BTRFS_BLOCK_GROUP_RAID0:
++		return 0;
++	case BTRFS_BLOCK_GROUP_RAID1:
++	case BTRFS_BLOCK_GROUP_RAID5:
++	case BTRFS_BLOCK_GROUP_RAID10:
++		return 1;
++	case BTRFS_BLOCK_GROUP_RAID6:
++		return 2;
++	default:
++		return -1;
++	}
++}
++
  /*
-  * The following 3 bits are meant only for the btree inode.
-  * When any of them is set, it means an error happened while writing an
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bda3c41..83571603 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7405,6 +7405,10 @@ static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 	return em;
- }
- 
-+struct btrfs_dio_data {
-+	u64 outstanding_extents;
-+	u64 reserve;
-+};
- 
- static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 				   struct buffer_head *bh_result, int create)
-@@ -7412,10 +7416,10 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	struct extent_map *em;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct extent_state *cached_state = NULL;
-+	struct btrfs_dio_data *dio_data = NULL;
- 	u64 start = iblock << inode->i_blkbits;
- 	u64 lockstart, lockend;
- 	u64 len = bh_result->b_size;
--	u64 *outstanding_extents = NULL;
- 	int unlock_bits = EXTENT_LOCKED;
- 	int ret = 0;
- 
-@@ -7433,7 +7437,7 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 		 * that anything that needs to check if there's a transction doesn't get
- 		 * confused.
- 		 */
--		outstanding_extents = current->journal_info;
-+		dio_data = current->journal_info;
- 		current->journal_info = NULL;
- 	}
- 
-@@ -7565,17 +7569,18 @@ unlock:
- 		 * within our reservation, otherwise we need to adjust our inode
- 		 * counter appropriately.
- 		 */
--		if (*outstanding_extents) {
--			(*outstanding_extents)--;
-+		if (dio_data->outstanding_extents) {
-+			(dio_data->outstanding_extents)--;
- 		} else {
- 			spin_lock(&BTRFS_I(inode)->lock);
- 			BTRFS_I(inode)->outstanding_extents++;
- 			spin_unlock(&BTRFS_I(inode)->lock);
+  * Should be called with both balance and volume mutexes held
+  */
+@@ -3572,6 +3590,12 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
  		}
+ 	} while (read_seqretry(&fs_info->profiles_lock, seq));
  
--		current->journal_info = outstanding_extents;
- 		btrfs_free_reserved_data_space(inode, len);
--		set_bit(BTRFS_INODE_DIO_READY, &BTRFS_I(inode)->runtime_flags);
-+		WARN_ON(dio_data->reserve < len);
-+		dio_data->reserve -= len;
-+		current->journal_info = dio_data;
- 	}
- 
- 	/*
-@@ -7598,8 +7603,8 @@ unlock:
- unlock_err:
- 	clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 			 unlock_bits, 1, 0, &cached_state, GFP_NOFS);
--	if (outstanding_extents)
--		current->journal_info = outstanding_extents;
-+	if (dio_data)
-+		current->journal_info = dio_data;
- 	return ret;
- }
- 
-@@ -8329,7 +8334,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- {
- 	struct file *file = iocb->ki_filp;
- 	struct inode *inode = file->f_mapping->host;
--	u64 outstanding_extents = 0;
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_dio_data dio_data = { 0 };
- 	size_t count = 0;
- 	int flags = 0;
- 	bool wakeup = true;
-@@ -8367,7 +8373,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 		ret = btrfs_delalloc_reserve_space(inode, count);
- 		if (ret)
- 			goto out;
--		outstanding_extents = div64_u64(count +
-+		dio_data.outstanding_extents = div64_u64(count +
- 						BTRFS_MAX_EXTENT_SIZE - 1,
- 						BTRFS_MAX_EXTENT_SIZE);
- 
-@@ -8376,7 +8382,8 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 		 * do the accounting properly if we go over the number we
- 		 * originally calculated.  Abuse current->journal_info for this.
- 		 */
--		current->journal_info = &outstanding_extents;
-+		dio_data.reserve = round_up(count, root->sectorsize);
-+		current->journal_info = &dio_data;
- 	} else if (test_bit(BTRFS_INODE_READDIO_NEED_LOCK,
- 				     &BTRFS_I(inode)->runtime_flags)) {
- 		inode_dio_end(inode);
-@@ -8391,16 +8398,9 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 	if (iov_iter_rw(iter) == WRITE) {
- 		current->journal_info = NULL;
- 		if (ret < 0 && ret != -EIOCBQUEUED) {
--			/*
--			 * If the error comes from submitting stage,
--			 * btrfs_get_blocsk_direct() has free'd data space,
--			 * and metadata space will be handled by
--			 * finish_ordered_fn, don't do that again to make
--			 * sure bytes_may_use is correct.
--			 */
--			if (!test_and_clear_bit(BTRFS_INODE_DIO_READY,
--				     &BTRFS_I(inode)->runtime_flags))
--				btrfs_delalloc_release_space(inode, count);
-+			if (dio_data.reserve)
-+				btrfs_delalloc_release_space(inode,
-+							dio_data.reserve);
- 		} else if (ret >= 0 && (size_t)ret < count)
- 			btrfs_delalloc_release_space(inode,
- 						     count - (size_t)ret);
++	if (group_profile_max_safe_loss(bctl->meta.target) <
++		group_profile_max_safe_loss(bctl->data.target)){
++		btrfs_info(fs_info,
++			"Warning: metatdata has lower redundancy than data\n");
++	}
++
+ 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+ 		int num_tolerated_disk_barrier_failures;
+ 		u64 target = bctl->sys.target;
 -- 
-2.1.0
+2.4.3
+
 

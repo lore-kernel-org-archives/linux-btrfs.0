@@ -1,183 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:42571 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752178AbbIBHvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:18 -0400
+	id S1752218AbbIBHvU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:20 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC3031126
-	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:53 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t7V8udC5031126
+	for <linux-btrfs@vger.kernel.org>; Mon, 31 Aug 2015 16:56:58 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 07/14] btrfs: qgroup: Introduce function to release reserved range
-Date: Mon, 31 Aug 2015 16:54:38 +0800
-Message-Id: <1441011286-23733-8-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 09/14] btrfs: delayed_ref: Add new function to record reserved space into delayed ref
+Date: Mon, 31 Aug 2015 16:54:40 +0800
+Message-Id: <1441011286-23733-10-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441011286-23733-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function release_data_range() to release reserved ranges.
-It will iterate through all existing ranges and remove/shrink them.
+Add new function btrfs_add_delayed_qgroup_reserve() function to record
+how much space is reserved for that extent.
 
-Note this function will not free reserved space, as the range can be
-released in the following conditions:
-1) The dirty range gets written to disk.
-   In this case, reserved range will be released but reserved bytes
-   will not be freed until the delayed_ref is run.
+As btrfs only accounts qgroup at run_delayed_refs() time, so newly
+allocated extent should keep the reserved space until then.
 
-2) Truncate
-   In this case, dirty ranges will be released and reserved bytes will
-   also be freed.
-
-So the new function won't free reserved space, but record them into
-parameter if called needs.
+So add needed function with related members to do it.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 130 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 130 insertions(+)
+ fs/btrfs/delayed-ref.c | 29 +++++++++++++++++++++++++++++
+ fs/btrfs/delayed-ref.h | 14 ++++++++++++++
+ 2 files changed, 43 insertions(+)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 31ddc6d..eee07c2 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2811,6 +2811,136 @@ out:
- 	return ret;
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index ac3e81d..bd9b63b 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -476,6 +476,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	INIT_LIST_HEAD(&head_ref->ref_list);
+ 	head_ref->processing = 0;
+ 	head_ref->total_ref_mod = count_mod;
++	head_ref->qgroup_reserved = 0;
++	head_ref->qgroup_ref_root = 0;
+ 
+ 	/* Record qgroup extent info if provided */
+ 	if (qrecord) {
+@@ -746,6 +748,33 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	return 0;
  }
  
-+/* Small helper used in release_data_range() to update rsv map */
-+static inline void __update_rsv(struct btrfs_qgroup_data_rsv_map *map,
-+				u64 *reserved, u64 cur_rsv)
++int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
++				     struct btrfs_trans_handle *trans,
++				     u64 ref_root, u64 bytenr, u64 num_bytes)
 +{
-+	if (reserved)
-+		*reserved += cur_rsv;
-+	if (WARN_ON(map->reserved < cur_rsv))
-+		map->reserved = 0;
-+	else
-+		map->reserved -= cur_rsv;
-+}
-+
-+/*
-+ * Release the range [start, start + len) from rsv map.
-+ *
-+ * The behavior should be much like reserve_data_range().
-+ * @tmp: the allocated memory for case which need to split existing
-+ *       range into two.
-+ * @reserved: the number of bytes that may need to free
-+ * Return > 0 if 'tmp' memory is used and release range successfully
-+ * Return 0 if 'tmp' memory is not used and release range successfully
-+ * Return < 0 for error
-+ */
-+static int release_data_range(struct btrfs_qgroup_data_rsv_map *map,
-+			      struct data_rsv_range *tmp,
-+			      u64 start, u64 len, u64 *reserved)
-+{
-+	struct data_rsv_range *range;
-+	u64 cur_rsv;
++	struct btrfs_delayed_ref_root *delayed_refs;
++	struct btrfs_delayed_ref_head *ref_head;
 +	int ret = 0;
 +
-+	range = find_reserve_range(map, start);
-+	/* empty tree, just return */
-+	if (!range)
++	if (!fs_info->quota_enabled || !is_fstree(ref_root))
 +		return 0;
-+	/*
-+	 * For split case
-+	 * 		|<----desired---->|
-+	 * |////////////////////////////////////////////|
-+	 * In this case, we need to insert one new range.
-+	 */
-+	if (range->start < start && range->start + range->len > start + len) {
-+		u64 new_start = start + len;
-+		u64 new_len = range->start + range->len - start - len;
 +
-+		cur_rsv = len;
-+		if (reserved)
-+			*reserved += cur_rsv;
-+		map->reserved -= cur_rsv;
++	delayed_refs = &trans->transaction->delayed_refs;
 +
-+		range->len = start - range->start;
-+		ret = insert_data_range(map, tmp, new_start, new_len);
-+		WARN_ON(ret <= 0);
-+		return 1;
++	spin_lock(&delayed_refs->lock);
++	ref_head = find_ref_head(&delayed_refs->href_root, bytenr, 0);
++	if (!ref_head) {
++		ret = -ENOENT;
++		goto out;
 +	}
-+
-+	/*
-+	 * Iterate until the end of the range and free release all
-+	 * reserved data from map.
-+	 * We iterate by existing range, as that will makes codes a
-+	 * little more clean.
-+	 *
-+	 * 	|<---------desired------------------------>|
-+	 * |//1//|	|//2//|		|//3//|		|//4//|
-+	 */
-+	while (range->start < start + len) {
-+		struct rb_node *next = NULL;
-+
-+		/*
-+		 * 		|<---desired---->|
-+		 * |///////|
-+		 */
-+		if (unlikely(range->start + range->len <= start))
-+			goto next;
-+
-+		/*
-+		 * 	|<----desired---->|
-+		 * |///////|
-+		 */
-+		if (range->start < start &&
-+		    range->start + range->len > start) {
-+			cur_rsv = range->start + range->len - start;
-+			__update_rsv(map, reserved, cur_rsv);
-+
-+			range->len = start - range->start;
-+			goto next;
-+		}
-+
-+		/*
-+		 * 	|<--desired-->|
-+		 * 	   |/////|
-+		 * Including same start/end case, so other case don't need
-+		 * to check start/end equal case and don't need bother
-+		 * deleting range.
-+		 */
-+		if (range->start >= start &&
-+		    range->start + range->len <= start + len) {
-+			cur_rsv = range->len;
-+			__update_rsv(map, reserved, cur_rsv);
-+
-+			next = rb_next(&range->node);
-+			rb_erase(&range->node, &map->root);
-+			kfree(range);
-+			goto next;
-+
-+		}
-+
-+		/*
-+		 * 	|<--desired-->|
-+		 * 		|///////|
-+		 */
-+		if (range->start < start + len &&
-+		    range->start + range->len > start + len) {
-+			cur_rsv = start + len - range->start;
-+			__update_rsv(map, reserved, cur_rsv);
-+
-+			range->start = start + len;
-+			range->len = range->start + range->len - start - len;
-+			goto next;
-+		}
-+next:
-+		if (!next)
-+			next = rb_next(&range->node);
-+		if (!next)
-+			break;
-+		range = rb_entry(next, struct data_rsv_range, node);
-+	}
-+	return 0;
++	WARN_ON(ref_head->qgroup_reserved || ref_head->qgroup_ref_root);
++	ref_head->qgroup_ref_root = ref_root;
++	ref_head->qgroup_reserved = num_bytes;
++out:
++	spin_unlock(&delayed_refs->lock);
++	return ret;
 +}
 +
- /*
-  * Init data_rsv_map for a given inode.
-  *
+ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 				struct btrfs_trans_handle *trans,
+ 				u64 bytenr, u64 num_bytes,
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 13fb5e6..d4c41e2 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -113,6 +113,17 @@ struct btrfs_delayed_ref_head {
+ 	int total_ref_mod;
+ 
+ 	/*
++	 * For qgroup reserved space freeing.
++	 *
++	 * ref_root and reserved will be recorded after
++	 * BTRFS_ADD_DELAYED_EXTENT is called.
++	 * And will be used to free reserved qgroup space at
++	 * run_delayed_refs() time.
++	 */
++	u64 qgroup_ref_root;
++	u64 qgroup_reserved;
++
++	/*
+ 	 * when a new extent is allocated, it is just reserved in memory
+ 	 * The actual extent isn't inserted into the extent allocation tree
+ 	 * until the delayed ref is processed.  must_insert_reserved is
+@@ -242,6 +253,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       u64 owner, u64 offset, int action,
+ 			       struct btrfs_delayed_extent_op *extent_op,
+ 			       int no_quota);
++int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
++				     struct btrfs_trans_handle *trans,
++				     u64 ref_root, u64 bytenr, u64 num_bytes);
+ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 				struct btrfs_trans_handle *trans,
+ 				u64 bytenr, u64 num_bytes,
 -- 
 2.5.0
 

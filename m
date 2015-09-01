@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34546 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21284 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755214AbbIAIw3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 04:52:29 -0400
+	with ESMTP id S1755290AbbIAIwa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 04:52:30 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t818qHRR027654
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 16:52:18 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t818qIdg027663
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 16:52:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 09/14] btrfs: delayed_ref: Add new function to record reserved space into delayed ref
-Date: Tue, 1 Sep 2015 16:50:22 +0800
-Message-ID: <1441097425-8919-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 10/14] btrfs: delayed_ref: release and free qgroup reserved at proper timing
+Date: Tue, 1 Sep 2015 16:50:23 +0800
+Message-ID: <1441097425-8919-2-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,99 +18,109 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add new function btrfs_add_delayed_qgroup_reserve() function to record
-how much space is reserved for that extent.
+Qgroup reserved space needs to be released from inode dirty map and get
+freed at different timing:
 
-As btrfs only accounts qgroup at run_delayed_refs() time, so newly
-allocated extent should keep the reserved space until then.
+1) Release when the metadata is written into tree
+After corresponding metadata is written into tree, any newer write will
+be COWed(don't include NOCOW case yet).
+So we must release its range from inode dirty range map, or we will
+forget to reserve needed range, causing accounting exceeding the limit.
 
-So add needed function with related members to do it.
+2) Free reserved bytes when delayed ref is run
+When delayed refs are run, qgroup accounting will follow soon and turn
+the reserved bytes into rfer/excl numbers.
+As run_delayed_refs and qgroup accounting are all done at
+commit_transaction() time, we are safe to free reserved space in
+run_delayed_ref time().
+
+With these timing to release/free reserved space, we should be able to
+resolve the long existing qgroup reserve space leak problem.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/delayed-ref.c | 29 +++++++++++++++++++++++++++++
- fs/btrfs/delayed-ref.h | 14 ++++++++++++++
- 2 files changed, 43 insertions(+)
+ fs/btrfs/extent-tree.c |  4 ++++
+ fs/btrfs/inode.c       | 10 ++++++++++
+ fs/btrfs/qgroup.c      |  5 ++---
+ fs/btrfs/qgroup.h      |  8 +++++++-
+ 4 files changed, 23 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index ac3e81d..bd9b63b 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -476,6 +476,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
- 	INIT_LIST_HEAD(&head_ref->ref_list);
- 	head_ref->processing = 0;
- 	head_ref->total_ref_mod = count_mod;
-+	head_ref->qgroup_reserved = 0;
-+	head_ref->qgroup_ref_root = 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 38b76cc..4d9b01b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2277,6 +2277,10 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 						      node->num_bytes);
+ 			}
+ 		}
++
++		/* Also free its reserved qgroup space */
++		btrfs_qgroup_free_refroot(root->fs_info, head->qgroup_ref_root,
++					  head->qgroup_reserved);
+ 		return ret;
+ 	}
  
- 	/* Record qgroup extent info if provided */
- 	if (qrecord) {
-@@ -746,6 +748,33 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	return 0;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 763197f..37e45d5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2112,6 +2112,16 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_alloc_reserved_file_extent(trans, root,
+ 					root->root_key.objectid,
+ 					btrfs_ino(inode), file_pos, &ins);
++	if (ret < 0)
++		goto out;
++	/*
++	 * Release the reserved range from inode dirty range map, and
++	 * move it to delayed ref codes, as now accounting only happens at
++	 * commit_transaction() time.
++	 */
++	btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
++	ret = btrfs_add_delayed_qgroup_reserve(root->fs_info, trans,
++			root->objectid, disk_bytenr, ram_bytes);
+ out:
+ 	btrfs_free_path(path);
+ 
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 7ccbd4c..4ac2f84 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2141,14 +2141,13 @@ out:
+ 	return ret;
  }
  
-+int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
-+				     struct btrfs_trans_handle *trans,
-+				     u64 ref_root, u64 bytenr, u64 num_bytes)
-+{
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+	struct btrfs_delayed_ref_head *ref_head;
-+	int ret = 0;
-+
-+	if (!fs_info->quota_enabled || !is_fstree(ref_root))
-+		return 0;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+
-+	spin_lock(&delayed_refs->lock);
-+	ref_head = find_ref_head(&delayed_refs->href_root, bytenr, 0);
-+	if (!ref_head) {
-+		ret = -ENOENT;
-+		goto out;
-+	}
-+	WARN_ON(ref_head->qgroup_reserved || ref_head->qgroup_ref_root);
-+	ref_head->qgroup_ref_root = ref_root;
-+	ref_head->qgroup_reserved = num_bytes;
-+out:
-+	spin_unlock(&delayed_refs->lock);
-+	return ret;
-+}
-+
- int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- 				struct btrfs_trans_handle *trans,
- 				u64 bytenr, u64 num_bytes,
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 13fb5e6..d4c41e2 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -113,6 +113,17 @@ struct btrfs_delayed_ref_head {
- 	int total_ref_mod;
+-void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
++void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
++			       u64 ref_root, u64 num_bytes)
+ {
+ 	struct btrfs_root *quota_root;
+ 	struct btrfs_qgroup *qgroup;
+-	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct ulist_node *unode;
+ 	struct ulist_iterator uiter;
+-	u64 ref_root = root->root_key.objectid;
+ 	int ret = 0;
  
- 	/*
-+	 * For qgroup reserved space freeing.
-+	 *
-+	 * ref_root and reserved will be recorded after
-+	 * BTRFS_ADD_DELAYED_EXTENT is called.
-+	 * And will be used to free reserved qgroup space at
-+	 * run_delayed_refs() time.
-+	 */
-+	u64 qgroup_ref_root;
-+	u64 qgroup_reserved;
-+
-+	/*
- 	 * when a new extent is allocated, it is just reserved in memory
- 	 * The actual extent isn't inserted into the extent allocation tree
- 	 * until the delayed ref is processed.  must_insert_reserved is
-@@ -242,6 +253,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 			       u64 owner, u64 offset, int action,
- 			       struct btrfs_delayed_extent_op *extent_op,
- 			       int no_quota);
-+int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
-+				     struct btrfs_trans_handle *trans,
-+				     u64 ref_root, u64 bytenr, u64 num_bytes);
- int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- 				struct btrfs_trans_handle *trans,
- 				u64 bytenr, u64 num_bytes,
+ 	if (!is_fstree(ref_root))
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 8e69dc1..49fa15e 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -75,7 +75,13 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
+ 			 struct btrfs_qgroup_inherit *inherit);
+ int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
+-void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes);
++void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
++			       u64 ref_root, u64 num_bytes);
++static inline void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
++{
++	return btrfs_qgroup_free_refroot(root->fs_info, root->objectid,
++					 num_bytes);
++}
+ 
+ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
+ 
 -- 
 2.5.1
 

@@ -1,78 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:54809 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:33805 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752006AbbIBHv2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:28 -0400
+	id S1752814AbbIBHv0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:26 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t810XlIr023763
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 08:34:05 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t810XlIl023763
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 08:33:58 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 14/14] btrfs: Use new check_data_free_space for buffered write
-Date: Tue,  1 Sep 2015 08:31:54 +0800
-Message-Id: <1441067515-21105-15-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 08/14] btrfs: qgroup: Introduce function to release/free reserved data range
+Date: Tue,  1 Sep 2015 08:31:48 +0800
+Message-Id: <1441067515-21105-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441067515-21105-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441067515-21105-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use new check_data_free_space for buffered write.
+Introduce functions btrfs_qgroup_release/free_data() to release/free
+reserved data range.
 
-Because nodatacow write won't increase quota account, so unlike only
-behavior which does reserve before check nocow, here we check nocow
-first and then only reserve data if we can't do nocow write.
+Release means, just remove the data range from data rsv map, but doesn't
+free the reserved space.
+Free means not only remove data range, but also free reserved space.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/file.c | 22 +++++++++++++---------
- 1 file changed, 13 insertions(+), 9 deletions(-)
+ fs/btrfs/qgroup.c | 46 ++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h |  2 ++
+ 2 files changed, 48 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..c1eec4f 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1510,12 +1510,17 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		}
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index eee07c2..7ccbd4c 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2941,6 +2941,52 @@ next:
+ 	return 0;
+ }
  
- 		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
--		ret = btrfs_check_data_free_space(inode, reserve_bytes, write_bytes);
--		if (ret == -ENOSPC &&
--		    (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
--					      BTRFS_INODE_PREALLOC))) {
++static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
++				       int free_reserved)
++{
++	struct data_rsv_range *tmp;
++	struct btrfs_qgroup_data_rsv_map *map;
++	u64 reserved = 0;
++	int ret;
 +
-+		if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-+					     BTRFS_INODE_PREALLOC)) {
- 			ret = check_can_nocow(inode, pos, &write_bytes);
-+			if (ret < 0)
-+				break;
- 			if (ret > 0) {
-+				/*
-+				 * For nodata cow case, no need to reserve
-+				 * data space.
-+				 */
- 				only_release_metadata = true;
- 				/*
- 				 * our prealloc extent may be smaller than
-@@ -1524,15 +1529,14 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 				num_pages = DIV_ROUND_UP(write_bytes + offset,
- 							 PAGE_CACHE_SIZE);
- 				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
--				ret = 0;
--			} else {
--				ret = -ENOSPC;
-+				goto reserve_metadata;
- 			}
- 		}
--
--		if (ret)
-+		ret = __btrfs_check_data_free_space(inode, pos, write_bytes);
-+		if (ret < 0)
- 			break;
- 
-+reserve_metadata:
- 		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
- 		if (ret) {
- 			if (!only_release_metadata)
++	spin_lock(&BTRFS_I(inode)->qgroup_init_lock);
++	map = BTRFS_I(inode)->qgroup_rsv_map;
++	spin_unlock(&BTRFS_I(inode)->qgroup_init_lock);
++	if (!map)
++		return 0;
++
++	tmp = kmalloc(sizeof(*tmp), GFP_NOFS);
++	if (!tmp)
++		return -ENOMEM;
++	ret = release_data_range(map, tmp, start, len, &reserved);
++	/* release_data_range() won't fail only check if memory is used */
++	if (ret == 0)
++		kfree(tmp);
++	if (free_reserved)
++		btrfs_qgroup_free(BTRFS_I(inode)->root, reserved);
++	return 0;
++}
++
++/*
++ * Caller should be truncate/invalidate_page.
++ * As it will release the reserved data.
++ */
++int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len)
++{
++	return __btrfs_qgroup_release_data(inode, start, len, 1);
++}
++
++/*
++ * Caller should be finish_ordered_io
++ * As qgroup accouting happens at commit time, for data written to disk
++ * its reserved space should not be freed until commit.
++ * Or we may beyond the limit.
++ */
++int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
++{
++	return __btrfs_qgroup_release_data(inode, start, len, 0);
++}
++
+ /*
+  * Init data_rsv_map for a given inode.
+  *
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 366b853..8e69dc1 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -88,4 +88,6 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
+ int btrfs_qgroup_init_data_rsv_map(struct inode *inode);
+ void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
+ int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
++int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
++int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
+ #endif /* __BTRFS_QGROUP__ */
 -- 
 2.5.0
 

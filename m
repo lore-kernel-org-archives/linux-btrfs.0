@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:47175 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:47505 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752808AbbIAHYR (ORCPT
+	with ESMTP id S1753408AbbIAHYR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 03:24:17 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t817O5ff021455
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 15:24:05 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t817O6mu021463
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 15:24:06 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 02/14] btrfs: qgroup: Implement data_rsv_map init/free functions
-Date: Tue, 1 Sep 2015 15:21:59 +0800
-Message-ID: <1441092131-14088-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 04/14] btrfs: qgroup: Introduce function to insert non-overlap reserve range
+Date: Tue, 1 Sep 2015 15:22:01 +0800
+Message-ID: <1441092131-14088-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,161 +18,150 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-New functions btrfs_qgroup_init/free_data_rsv_map() to init/free data
-reserve map.
+New function insert_data_ranges() will insert non-overlap reserve ranges
+into reserve map.
 
-Data reserve map is used to mark which range already holds reserved
-space, to avoid current reserved space leak.
+It provides the basis for later qgroup reserve map implement.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/btrfs_inode.h |  2 ++
- fs/btrfs/inode.c       | 10 +++++++
- fs/btrfs/qgroup.c      | 80 ++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h      |  3 ++
- 4 files changed, 95 insertions(+)
+ fs/btrfs/qgroup.c | 123 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 123 insertions(+)
 
-diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-index 6d799b8..c2da3a9 100644
---- a/fs/btrfs/btrfs_inode.h
-+++ b/fs/btrfs/btrfs_inode.h
-@@ -197,6 +197,8 @@ struct btrfs_inode {
- 
- 	/* qgroup dirty map for data space reserve */
- 	struct btrfs_qgroup_data_rsv_map *qgroup_rsv_map;
-+	/* lock to ensure rsv_map will only be initialized once */
-+	spinlock_t qgroup_init_lock;
- };
- 
- extern unsigned char btrfs_filetype_table[];
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 855935f..763197f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -8871,6 +8871,14 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
- 	INIT_LIST_HEAD(&ei->delalloc_inodes);
- 	RB_CLEAR_NODE(&ei->rb_node);
- 
-+	/*
-+	 * Init qgroup info to empty, as they will be initialized at write
-+	 * time.
-+	 * This behavior is needed for enable quota later case.
-+	 */
-+	spin_lock_init(&ei->qgroup_init_lock);
-+	ei->qgroup_rsv_map = NULL;
-+
- 	return inode;
- }
- 
-@@ -8928,6 +8936,8 @@ void btrfs_destroy_inode(struct inode *inode)
- 			btrfs_put_ordered_extent(ordered);
- 		}
- 	}
-+	/* free and check data rsv map */
-+	btrfs_qgroup_free_data_rsv_map(inode);
- 	inode_tree_del(inode);
- 	btrfs_drop_extent_cache(inode, 0, (u64)-1, 0);
- free:
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 640106a..2e9a93f 100644
+index e19fe6a..90f5c4b 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2511,3 +2511,83 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
- 		btrfs_queue_work(fs_info->qgroup_rescan_workers,
- 				 &fs_info->qgroup_rescan_work);
+@@ -2549,6 +2549,129 @@ find_reserve_range(struct btrfs_qgroup_data_rsv_map *map, u64 start)
  }
+ 
+ /*
++ * Insert one data range
++ * [start,len) here won't overflap with each other.
++ *
++ * Return 0 if range is inserted and tmp is not used.
++ * Return > 0 if range is inserted and tmp is used.
++ * No catchable error case. Only possible error will cause BUG_ON() as
++ * that's logical error.
++ */
++static int insert_data_range(struct btrfs_qgroup_data_rsv_map *map,
++			     struct data_rsv_range *tmp,
++			     u64 start, u64 len)
++{
++	struct rb_node **p = &map->root.rb_node;
++	struct rb_node *parent = NULL;
++	struct rb_node *tmp_node = NULL;
++	struct data_rsv_range *range = NULL;
++	struct data_rsv_range *prev_range = NULL;
++	struct data_rsv_range *next_range = NULL;
++	int prev_merged = 0;
++	int next_merged = 0;
++	int ret = 0;
++
++	while (*p) {
++		parent = *p;
++		range = rb_entry(parent, struct data_rsv_range, node);
++		if (range->start < start)
++			p = &(*p)->rb_right;
++		else if (range->start > start)
++			p = &(*p)->rb_left;
++		else
++			BUG_ON(1);
++	}
++
++	/* Empty tree, goto isolated case */
++	if (!range)
++		goto insert_isolated;
++
++	/* get adjusted ranges */
++	if (range->start < start) {
++		prev_range = range;
++		tmp_node = rb_next(parent);
++		if (tmp)
++			next_range = rb_entry(tmp_node, struct data_rsv_range,
++					      node);
++	} else {
++		next_range = range;
++		tmp_node = rb_prev(parent);
++		if (tmp)
++			prev_range = rb_entry(tmp_node, struct data_rsv_range,
++					      node);
++	}
++
++	/* try to merge with previous and next ranges */
++	if (prev_range) {
++		if (prev_range->start + prev_range->len == start) {
++			prev_range->len += len;
++			prev_merged = 1;
++		}
++	}
++	if (next_range) {
++		/* prev and next with start,len can be merged */
++		if (prev_merged && start + len == next_range->start) {
++			prev_range->len += next_range->len;
++			next_merged = 1;
++		} else if (start + len == next_range->start) {
++			next_range->start = start;
++			next_range->len += len;
++			rb_erase(&next_range->node, &map->root);
++			kfree(next_range);
++			next_merged = 1;
++		}
++	}
++
++insert_isolated:
++	/* isolated case, need to insert range now */
++	if (!next_merged && !prev_merged) {
++		BUG_ON(!tmp);
++
++		tmp->start = start;
++		tmp->len = len;
++		rb_link_node(&tmp->node, parent, p);
++		rb_insert_color(&tmp->node, &map->root);
++		ret = 1;
++	}
++	return ret;
++}
 +
 +/*
-+ * Init data_rsv_map for a given inode.
++ * insert reserve range and merge them if possible
 + *
-+ * This is needed at write time as quota can be disabled and then enabled
++ * Return 0 if all inserted and tmp not used
++ * Return > 0 if all inserted and tmp used
++ * No catchable error return value.
 + */
-+int btrfs_qgroup_init_data_rsv_map(struct inode *inode)
++static int insert_data_ranges(struct btrfs_qgroup_data_rsv_map *map,
++			      struct data_rsv_range *tmp,
++			      struct ulist *insert_list)
 +{
-+	struct btrfs_inode *binode = BTRFS_I(inode);
-+	struct btrfs_root *root = binode->root;
-+	struct btrfs_qgroup_data_rsv_map *dirty_map;
++	struct ulist_node *unode;
++	struct ulist_iterator uiter;
++	int tmp_used = 0;
++	int ret = 0;
 +
-+	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid))
-+		return 0;
++	ULIST_ITER_INIT(&uiter);
++	while ((unode = ulist_next(insert_list, &uiter))) {
++		ret = insert_data_range(map, tmp, unode->val, unode->aux);
 +
-+	spin_lock(&binode->qgroup_init_lock);
-+	/* Quick route for init */
-+	if (likely(binode->qgroup_rsv_map))
-+		goto out;
-+	spin_unlock(&binode->qgroup_init_lock);
-+
-+	/*
-+	 * Slow allocation route
-+	 *
-+	 * TODO: Use kmem_cache to speedup allocation
-+	 */
-+	dirty_map = kmalloc(sizeof(*dirty_map), GFP_NOFS);
-+	if (!dirty_map)
-+		return -ENOMEM;
-+
-+	dirty_map->reserved = 0;
-+	dirty_map->root = RB_ROOT;
-+	spin_lock_init(&dirty_map->lock);
-+
-+	/* Lock again to ensure no one has already init it before */
-+	spin_lock(&binode->qgroup_init_lock);
-+	if (binode->qgroup_rsv_map) {
-+		spin_unlock(&binode->qgroup_init_lock);
-+		kfree(dirty_map);
-+		return 0;
++		/*
++		 * insert_data_range() won't return error return value,
++		 * no need to hanle <0 case.
++		 *
++		 * Also tmp should be used at most one time, so clear it to
++		 * NULL to cooperate with sanity check in insert_data_range().
++		 */
++		if (ret > 0) {
++			tmp_used = 1;
++			tmp = NULL;
++		}
 +	}
-+	binode->qgroup_rsv_map = dirty_map;
-+out:
-+	spin_unlock(&binode->qgroup_init_lock);
-+	return 0;
++	return tmp_used;
 +}
 +
-+void btrfs_qgroup_free_data_rsv_map(struct inode *inode)
-+{
-+	struct btrfs_inode *binode = BTRFS_I(inode);
-+	struct btrfs_root *root = binode->root;
-+	struct btrfs_qgroup_data_rsv_map *dirty_map = binode->qgroup_rsv_map;
-+	struct rb_node *node;
-+
-+	/*
-+	 * this function is called at inode destroy routine, so no concurrency
-+	 * will happen, no need to get the lock.
-+	 */
-+	if (!dirty_map)
-+		return;
-+
-+	/* insanity check */
-+	WARN_ON(!root->fs_info->quota_enabled || !is_fstree(root->objectid));
-+
-+	/* Did we leak some space? */
-+	WARN_ON(dirty_map->reserved || !RB_EMPTY_ROOT(&dirty_map->root));
-+
-+	btrfs_qgroup_free(root, dirty_map->reserved);
-+	spin_lock(&dirty_map->lock);
-+	while ((node = rb_first(&dirty_map->root)) != NULL) {
-+		struct data_rsv_range *range;
-+
-+		range = rb_entry(node, struct data_rsv_range, node);
-+		rb_erase(node, &dirty_map->root);
-+		kfree(range);
-+	}
-+	spin_unlock(&dirty_map->lock);
-+	kfree(dirty_map);
-+	binode->qgroup_rsv_map = NULL;
-+}
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 2f863a4..c87b7dc 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -84,4 +84,7 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- 			       u64 rfer, u64 excl);
- #endif
- 
-+/* for qgroup reserve */
-+int btrfs_qgroup_init_data_rsv_map(struct inode *inode);
-+void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
- #endif /* __BTRFS_QGROUP__ */
++/*
+  * Init data_rsv_map for a given inode.
+  *
+  * This is needed at write time as quota can be disabled and then enabled
 -- 
 2.5.1
 

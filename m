@@ -1,57 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46649 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754334AbbIAJyb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Sep 2015 05:54:31 -0400
-Date: Tue, 1 Sep 2015 11:53:51 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v3 1/2] btrfs-progs: Use common unit parser for btrfs
- filesystem command
-Message-ID: <20150901095350.GF11834@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1441091348.git.zhaolei@cn.fujitsu.com>
- <c7eb95221e37629936b19fe409cc0aeb2406cb7b.1441091348.git.zhaolei@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:8909 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755530AbbIAKFG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 06:05:06 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t81A4ti0032607
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 18:04:55 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v2 0/2] btrfs-progs: tests: Introduce run_check_mount_test_dev wrapper for mount loop device in old system
+Date: Tue, 1 Sep 2015 18:03:26 +0800
+Message-ID: <cover.1441101420.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <c7eb95221e37629936b19fe409cc0aeb2406cb7b.1441091348.git.zhaolei@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 01, 2015 at 03:12:06PM +0800, Zhao Lei wrote:
-> Move to use get_unit_mode_from_arg() for cmds-filesystem.c,
-> to make "btrfs filesystem df/show/usage"'s unit argument same.
-> 
-> Also have cleanup effect: 19 insertions(+), 181 deletions(-)
-> 
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+mount command in old system can not add -o loop option automatically
+for loop device, and make following test failed:
+  # ./fsck-tests.sh
+  ...
+    [TEST]   013-extent-tree-rebuild
+  failed: mount /data/btrfsprogs/tests/test.img /data/btrfsprogs/tests/mnt
+  test failed for case 013-extent-tree-rebuild
 
-Applied, thanks.
+This patchset add run_check_mount_test_dev for mount both block and loop
+device.
 
-> ---
->  cmds-fi-usage.c   |  63 ++++------------------------
->  cmds-filesystem.c | 121 ++++++------------------------------------------------
->  2 files changed, 20 insertions(+), 164 deletions(-)
-> 
-> diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-> index adf1c27..ea967d1 100644
-> --- a/cmds-fi-usage.c
-> +++ b/cmds-fi-usage.c
-> @@ -859,76 +859,29 @@ out:
->  const char * const cmd_filesystem_usage_usage[] = {
->  	"btrfs filesystem usage [options] <path> [<path>..]",
->  	"Show detailed information about internal filesystem usage .",
-> -	"-b|--raw           raw numbers in bytes",
-> -	"-h|--human-readable",
-> -	"                   human friendly numbers, base 1024 (default)",
-> -	"-H                 human friendly numbers, base 1000",
-> -	"--iec              use 1024 as a base (KiB, MiB, GiB, TiB)",
-> -	"--si               use 1000 as a base (kB, MB, GB, TB)",
-> -	"-k|--kbytes        show sizes in KiB, or kB with --si",
-> -	"-m|--mbytes        show sizes in MiB, or MB with --si",
-> -	"-g|--gbytes        show sizes in GiB, or GB with --si",
-> -	"-t|--tbytes        show sizes in TiB, or TB with --si",
-> +	HELPINFO_OUTPUT_UNIT,
+Changelog v1->v2:
+ 1: Use string for mount option instead of string array.
+ 2: Include "run_check $SUDO_HELPER" into wrapper function.
+ Both suggested by: David Sterba <dsterba@suse.cz>
 
-	HELPINFO_OUTPUT_UNIT_DF
+Zhao Lei (2):
+  btrfs-progs: tests: Fix mount fail of 013-extent-tree-rebuild
+  btrfs-progs: tests: Use mount_test_dev for
+    misc-tests/007-subvolume-sync
+
+ tests/common                                     | 26 ++++++++++++++++++++++++
+ tests/fsck-tests/013-extent-tree-rebuild/test.sh |  4 ++--
+ tests/misc-tests/007-subvolume-sync/test.sh      |  4 ++--
+ 3 files changed, 30 insertions(+), 4 deletions(-)
+
+-- 
+1.8.5.1
+

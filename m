@@ -1,19 +1,19 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:46363 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751092AbbIATtC (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:58352 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751057AbbIATvS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Sep 2015 15:49:02 -0400
-Subject: Re: [PATCH 5/6] Btrfs: wire up the free space tree to the extent tree
+	Tue, 1 Sep 2015 15:51:18 -0400
+Subject: Re: [PATCH 6/6] Btrfs: add free space tree mount option
 To: Omar Sandoval <osandov@osandov.com>, <linux-btrfs@vger.kernel.org>
 References: <cover.1441131625.git.osandov@fb.com>
- <5354d2ad80625f36be4032664a7d39f4c4874119.1441131625.git.osandov@fb.com>
+ <508d5b51b22371362ee49047afbfe536bee8ce84.1441131625.git.osandov@fb.com>
 CC: Omar Sandoval <osandov@fb.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <55E60129.3070009@fb.com>
-Date: Tue, 1 Sep 2015 15:48:57 -0400
+Message-ID: <55E6015A.2070104@fb.com>
+Date: Tue, 1 Sep 2015 15:49:46 -0400
 MIME-Version: 1.0
-In-Reply-To: <5354d2ad80625f36be4032664a7d39f4c4874119.1441131625.git.osandov@fb.com>
+In-Reply-To: <508d5b51b22371362ee49047afbfe536bee8ce84.1441131625.git.osandov@fb.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
@@ -21,82 +21,27 @@ List-ID: <linux-btrfs.vger.kernel.org>
 On 09/01/2015 03:05 PM, Omar Sandoval wrote:
 > From: Omar Sandoval <osandov@fb.com>
 >
-> The free space tree is updated in tandem with the extent tree. There are
-> only a handful of places where we need to hook in:
+> Now we can finally hook up everything so we can actually use free space
+> tree. On the first mount with the free_space_tree mount option, the free
+> space tree will be created and the FREE_SPACE_TREE read-only compat bit
+> will be set. Any time the filesystem is mounted from then on, we will
+> use the free space tree.
 >
-> 1. Block group creation
-> 2. Block group deletion
-> 3. Delayed refs (extent creation and deletion)
-> 4. Block group caching
+> Having both the free space cache and free space trees enabled is
+> nonsense, so we don't allow that to happen. Since mkfs sets the
+> superblock cache generation to -1, this means that the filesystem will
+> have to be mounted with nospace_cache,free_space_tree to create the free
+> space trees on first mount. Once the FREE_SPACE_TREE bit is set, the
+> cache generation is ignored when mounting. This is all a little more
+> complicated than would be ideal, but at some point we can presumably
+> make the free space tree the default and stop setting the cache
+> generation in mkfs.
 >
 > Signed-off-by: Omar Sandoval <osandov@fb.com>
-> ---
->   fs/btrfs/extent-tree.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++---
->   1 file changed, 70 insertions(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 37179a569f40..3f10df3932f0 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -33,6 +33,7 @@
->   #include "raid56.h"
->   #include "locking.h"
->   #include "free-space-cache.h"
-> +#include "free-space-tree.h"
->   #include "math.h"
->   #include "sysfs.h"
->   #include "qgroup.h"
-> @@ -589,7 +590,41 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
->   	cache->cached = BTRFS_CACHE_FAST;
->   	spin_unlock(&cache->lock);
->
-> -	if (fs_info->mount_opt & BTRFS_MOUNT_SPACE_CACHE) {
-> +	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-> +		if (load_cache_only) {
-> +			spin_lock(&cache->lock);
-> +			cache->caching_ctl = NULL;
-> +			cache->cached = BTRFS_CACHE_NO;
-> +			spin_unlock(&cache->lock);
-> +			wake_up(&caching_ctl->wait);
-> +		} else {
-> +			mutex_lock(&caching_ctl->mutex);
-> +			ret = load_free_space_tree(fs_info, cache);
-> +			if (ret) {
-> +				btrfs_warn(fs_info, "failed to load free space tree for %llu: %d",
-> +					   cache->key.objectid, ret);
-> +				spin_lock(&cache->lock);
-> +				cache->caching_ctl = NULL;
-> +				cache->cached = BTRFS_CACHE_ERROR;
-> +				spin_unlock(&cache->lock);
-> +				goto tree_out;
-> +			}
-> +
-> +			spin_lock(&cache->lock);
-> +			cache->caching_ctl = NULL;
-> +			cache->cached = BTRFS_CACHE_FINISHED;
-> +			cache->last_byte_to_unpin = (u64)-1;
-> +			caching_ctl->progress = (u64)-1;
-> +			spin_unlock(&cache->lock);
-> +			mutex_unlock(&caching_ctl->mutex);
-> +
-> +tree_out:
-> +			wake_up(&caching_ctl->wait);
-> +			put_caching_control(caching_ctl);
-> +			free_excluded_extents(fs_info->extent_root, cache);
-> +			return 0;
-> +		}
-> +	} else if (fs_info->mount_opt & BTRFS_MOUNT_SPACE_CACHE) {
->   		mutex_lock(&caching_ctl->mutex);
 
-So the reason we have this load_cache_only thing is because the free 
-space cache could be loaded almost instantaneously since it was 
-contiguously allocated.  This isn't the case with the free space tree, 
-and although it is better than the no space cache way of doing things, 
-we are still going to incur a bit of latency when seeking through a 
-large free space tree.  So break this out and make the caching kthread 
-either do the old style load or load the free space tree.  Then you can 
-use the add free space helpers that will wake anybody up waiting on 
-allocations and you incur less direct latency.  Thanks,
+Reviewed-by: Josef Bacik <jbacik@fb.com>
+
+Thanks,
 
 Josef
 

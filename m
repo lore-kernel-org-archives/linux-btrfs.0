@@ -1,124 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:54809 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:33805 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752830AbbIBHv0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:26 -0400
+	id S1752871AbbIBHv2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:28 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t810XlIn023763
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 08:34:00 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t810XlIq023763
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 08:34:04 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 10/14] btrfs: delayed_ref: release and free qgroup reserved at proper timing
-Date: Tue,  1 Sep 2015 08:31:50 +0800
-Message-Id: <1441067515-21105-11-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 13/14] btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
+Date: Tue,  1 Sep 2015 08:31:53 +0800
+Message-Id: <1441067515-21105-14-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441067515-21105-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441067515-21105-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qgroup reserved space needs to be released from inode dirty map and get
-freed at different timing:
+Add new function __btrfs_check_data_free_space() to do precious space
+reservation.
 
-1) Release when the metadata is written into tree
-After corresponding metadata is written into tree, any newer write will
-be COWed(don't include NOCOW case yet).
-So we must release its range from inode dirty range map, or we will
-forget to reserve needed range, causing accounting exceeding the limit.
+The new function will replace old btrfs_check_data_free_space(), but
+until all the change is done, let's just use the new name.
 
-2) Free reserved bytes when delayed ref is run
-When delayed refs are run, qgroup accounting will follow soon and turn
-the reserved bytes into rfer/excl numbers.
-As run_delayed_refs and qgroup accounting are all done at
-commit_transaction() time, we are safe to free reserved space in
-run_delayed_ref time().
+Also, export internal use function btrfs_alloc_data_chunk_ondemand(), as
+now qgroup reserve requires precious bytes, which can only be got in
+later loop(like fallocate).
+But data space info check and data chunk allocate doesn't need to be
+that accurate, and can be called at the beginning.
 
-With these timing to release/free reserved space, we should be able to
-resolve the long existing qgroup reserve space leak problem.
+So export it for later operations.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |  4 ++++
- fs/btrfs/inode.c       | 10 ++++++++++
- fs/btrfs/qgroup.c      |  5 ++---
- fs/btrfs/qgroup.h      |  8 +++++++-
- 4 files changed, 23 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.h       |  2 ++
+ fs/btrfs/extent-tree.c | 50 +++++++++++++++++++++++++++++++++++++++++---------
+ 2 files changed, 43 insertions(+), 9 deletions(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9ce0df1..cf5de9c 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3456,6 +3456,8 @@ enum btrfs_reserve_flush_enum {
+ };
+ 
+ int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes);
++int __btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
++int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes);
+ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes);
+ void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 38b76cc..4d9b01b 100644
+index ce78410..14c4135 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -2277,6 +2277,10 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
- 						      node->num_bytes);
- 			}
- 		}
-+
-+		/* Also free its reserved qgroup space */
-+		btrfs_qgroup_free_refroot(root->fs_info, head->qgroup_ref_root,
-+					  head->qgroup_reserved);
- 		return ret;
- 	}
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 763197f..37e45d5 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2112,6 +2112,16 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	ret = btrfs_alloc_reserved_file_extent(trans, root,
- 					root->root_key.objectid,
- 					btrfs_ino(inode), file_pos, &ins);
-+	if (ret < 0)
-+		goto out;
-+	/*
-+	 * Release the reserved range from inode dirty range map, and
-+	 * move it to delayed ref codes, as now accounting only happens at
-+	 * commit_transaction() time.
-+	 */
-+	btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
-+	ret = btrfs_add_delayed_qgroup_reserve(root->fs_info, trans,
-+			root->objectid, disk_bytenr, ram_bytes);
- out:
- 	btrfs_free_path(path);
- 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 7ccbd4c..4ac2f84 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2141,14 +2141,13 @@ out:
+@@ -3826,11 +3826,7 @@ u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data)
  	return ret;
  }
  
--void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
-+void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-+			       u64 ref_root, u64 num_bytes)
+-/*
+- * This will check the space that the inode allocates from to make sure we have
+- * enough space for bytes.
+- */
+-int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes)
++int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
  {
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct ulist_node *unode;
- 	struct ulist_iterator uiter;
--	u64 ref_root = root->root_key.objectid;
- 	int ret = 0;
+ 	struct btrfs_space_info *data_sinfo;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+@@ -3951,19 +3947,55 @@ commit_trans:
+ 					      data_sinfo->flags, bytes, 1);
+ 		return -ENOSPC;
+ 	}
+-	ret = btrfs_qgroup_reserve(root, write_bytes);
+-	if (ret)
+-		goto out;
+ 	data_sinfo->bytes_may_use += bytes;
+ 	trace_btrfs_space_reservation(root->fs_info, "space_info",
+ 				      data_sinfo->flags, bytes, 1);
+-out:
+ 	spin_unlock(&data_sinfo->lock);
  
- 	if (!is_fstree(ref_root))
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 8e69dc1..49fa15e 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -75,7 +75,13 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
- 			 struct btrfs_qgroup_inherit *inherit);
- int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
--void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes);
-+void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
-+			       u64 ref_root, u64 num_bytes);
-+static inline void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
+ 	return ret;
+ }
+ 
+ /*
++ * This will check the space that the inode allocates from to make sure we have
++ * enough space for bytes.
++ */
++int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes)
 +{
-+	return btrfs_qgroup_free_refroot(root->fs_info, root->objectid,
-+					 num_bytes);
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	int ret;
++
++	ret = btrfs_alloc_data_chunk_ondemand(inode, bytes);
++	if (ret < 0)
++		return ret;
++	ret = btrfs_qgroup_reserve(root, write_bytes);
++	return ret;
 +}
- 
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
- 
++
++/*
++ * New check_data_free_space() with ability for precious data reserveation
++ * Will replace old btrfs_check_data_free_space(), but for patch split,
++ * add a new function first and then replace it.
++ */
++int __btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
++{
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	int ret;
++
++	/* align the range */
++	len = round_up(start + len, root->sectorsize) -
++	      round_down(start, root->sectorsize);
++	start = round_down(start, root->sectorsize);
++
++	ret = btrfs_alloc_data_chunk_ondemand(inode, len);
++	if (ret < 0)
++		return ret;
++
++	/* Use new btrfs_qgroup_reserve_data to reserve precious data space */
++	ret = btrfs_qgroup_reserve_data(inode, start, len);
++	return ret;
++}
++
++/*
+  * Called if we need to clear a data reservation for this inode.
+  */
+ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
 -- 
 2.5.0
 

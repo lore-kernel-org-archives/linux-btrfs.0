@@ -1,50 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8909 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755530AbbIAKFI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 06:05:08 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t81A4vPi032614
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 18:04:57 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 2/2] btrfs-progs: tests: Use mount_test_dev for misc-tests/007-subvolume-sync
-Date: Tue, 1 Sep 2015 18:03:28 +0800
-Message-ID: <02e9c9db837d841a9f3791d7fe4c407451d91762.1441101420.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1441101420.git.zhaolei@cn.fujitsu.com>
-References: <cover.1441101420.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:35173 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751924AbbIATWy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 15:22:54 -0400
+Received: by pacfv12 with SMTP id fv12so5088147pac.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2015 12:22:54 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Omar Sandoval <osandov@fb.com>
+Subject: [PATCH 1/3] btrfs-progs: use calloc instead of malloc+memset for tree roots
+Date: Tue,  1 Sep 2015 12:22:44 -0700
+Message-Id: <e9100a40e112cfa0cd6228594893337a8c9444b9.1441133868.git.osandov@osandov.com>
+In-Reply-To: <cover.1441131625.git.osandov@fb.com>
+References: <cover.1441131625.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So this test can support both block device and loop device simply.
+From: Omar Sandoval <osandov@fb.com>
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- tests/misc-tests/007-subvolume-sync/test.sh | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ disk-io.c | 22 +++++++---------------
+ 1 file changed, 7 insertions(+), 15 deletions(-)
 
-diff --git a/tests/misc-tests/007-subvolume-sync/test.sh b/tests/misc-tests/007-subvolume-sync/test.sh
-index d4019f4..a745fb5 100755
---- a/tests/misc-tests/007-subvolume-sync/test.sh
-+++ b/tests/misc-tests/007-subvolume-sync/test.sh
-@@ -13,7 +13,7 @@ setup_root_helper
- prepare_test_dev
+diff --git a/disk-io.c b/disk-io.c
+index 1d4889322411..8496aded31c4 100644
+--- a/disk-io.c
++++ b/disk-io.c
+@@ -833,13 +833,13 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
  
- run_check $SUDO_HELPER $TOP/mkfs.btrfs -f "$TEST_DEV"
--run_check $SUDO_HELPER mount "$TEST_DEV" "$TEST_MNT"
-+run_check_mount_test_dev
+ 	memset(fs_info, 0, sizeof(struct btrfs_fs_info));
  
- # to check following thing in both 1 and multiple subvolume case:
- # 1: is subvolume sync loop indefinetelly
-@@ -29,4 +29,4 @@ run_check $SUDO_HELPER $TOP/btrfs subvolume create "$TEST_MNT"/mysubvol
- run_check $SUDO_HELPER $TOP/btrfs subvolume delete "$TEST_MNT"/mysubvol
- run_check $SUDO_HELPER $TOP/btrfs subvolume sync "$TEST_MNT"
+-	fs_info->tree_root = malloc(sizeof(struct btrfs_root));
+-	fs_info->extent_root = malloc(sizeof(struct btrfs_root));
+-	fs_info->chunk_root = malloc(sizeof(struct btrfs_root));
+-	fs_info->dev_root = malloc(sizeof(struct btrfs_root));
+-	fs_info->csum_root = malloc(sizeof(struct btrfs_root));
+-	fs_info->quota_root = malloc(sizeof(struct btrfs_root));
+-	fs_info->super_copy = malloc(BTRFS_SUPER_INFO_SIZE);
++	fs_info->tree_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->extent_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->chunk_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->dev_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->csum_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->quota_root = calloc(1, sizeof(struct btrfs_root));
++	fs_info->super_copy = calloc(1, BTRFS_SUPER_INFO_SIZE);
  
--run_check $SUDO_HELPER umount $TEST_MNT
-+run_check_umount_test_dev
+ 	if (!fs_info->tree_root || !fs_info->extent_root ||
+ 	    !fs_info->chunk_root || !fs_info->dev_root ||
+@@ -847,14 +847,6 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
+ 	    !fs_info->super_copy)
+ 		goto free_all;
+ 
+-	memset(fs_info->super_copy, 0, BTRFS_SUPER_INFO_SIZE);
+-	memset(fs_info->tree_root, 0, sizeof(struct btrfs_root));
+-	memset(fs_info->extent_root, 0, sizeof(struct btrfs_root));
+-	memset(fs_info->chunk_root, 0, sizeof(struct btrfs_root));
+-	memset(fs_info->dev_root, 0, sizeof(struct btrfs_root));
+-	memset(fs_info->csum_root, 0, sizeof(struct btrfs_root));
+-	memset(fs_info->quota_root, 0, sizeof(struct btrfs_root));
+-
+ 	extent_io_tree_init(&fs_info->extent_cache);
+ 	extent_io_tree_init(&fs_info->free_space_cache);
+ 	extent_io_tree_init(&fs_info->block_group_cache);
 -- 
-1.8.5.1
+2.5.1
 

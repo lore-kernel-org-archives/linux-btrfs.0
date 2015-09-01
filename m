@@ -1,295 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45179 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:19358 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752866AbbIAHNu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 03:13:50 -0400
+	with ESMTP id S1754659AbbIAKEx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 06:04:53 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t817Db6V020577
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 15:13:37 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t81A4f8v032596
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 18:04:41 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 1/2] btrfs-progs: Use common unit parser for btrfs filesystem command
-Date: Tue, 1 Sep 2015 15:12:06 +0800
-Message-ID: <c7eb95221e37629936b19fe409cc0aeb2406cb7b.1441091348.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1441091348.git.zhaolei@cn.fujitsu.com>
-References: <cover.1441091348.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: tests: Use --no-same-owner option for tar
+Date: Tue, 1 Sep 2015 18:03:14 +0800
+Message-ID: <11005b0b3385117fa772b223513cea16920ec7b9.1441101154.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Move to use get_unit_mode_from_arg() for cmds-filesystem.c,
-to make "btrfs filesystem df/show/usage"'s unit argument same.
+Some test failed in my nfs dir:
+  ...
+    [TEST]   006-bad-root-items
+  tar: test.img: Cannot change ownership to uid 1000, gid 1000: Invalid argument
+  tar: Exiting with failure status due to previous errors
+  failed to extract default_case.tar.xz
+  test failed for case 006-bad-root-items
 
-Also have cleanup effect: 19 insertions(+), 181 deletions(-)
+It is because the image file's owner is:
+ # tar tvf default_case.tar.xz
+ -rw-r--r-- fdmanana/fdmanana 2147483648 2014-10-17 17:59 test.img
+
+And make tar failed in chown in nfs.
+
+It is not a big issue because we don't use nfs commonly, but extract
+the image file with ownership of current user will be a better choice.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- cmds-fi-usage.c   |  63 ++++------------------------
- cmds-filesystem.c | 121 ++++++------------------------------------------------
- 2 files changed, 20 insertions(+), 164 deletions(-)
+ tests/fsck-tests/006-bad-root-items/test.sh  | 4 ++--
+ tests/fsck-tests/012-leaf-corruption/test.sh | 2 +-
+ 2 files changed, 3 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-index adf1c27..ea967d1 100644
---- a/cmds-fi-usage.c
-+++ b/cmds-fi-usage.c
-@@ -859,76 +859,29 @@ out:
- const char * const cmd_filesystem_usage_usage[] = {
- 	"btrfs filesystem usage [options] <path> [<path>..]",
- 	"Show detailed information about internal filesystem usage .",
--	"-b|--raw           raw numbers in bytes",
--	"-h|--human-readable",
--	"                   human friendly numbers, base 1024 (default)",
--	"-H                 human friendly numbers, base 1000",
--	"--iec              use 1024 as a base (KiB, MiB, GiB, TiB)",
--	"--si               use 1000 as a base (kB, MB, GB, TB)",
--	"-k|--kbytes        show sizes in KiB, or kB with --si",
--	"-m|--mbytes        show sizes in MiB, or MB with --si",
--	"-g|--gbytes        show sizes in GiB, or GB with --si",
--	"-t|--tbytes        show sizes in TiB, or TB with --si",
-+	HELPINFO_OUTPUT_UNIT,
- 	"-T                 show data in tabular format",
- 	NULL
- };
+diff --git a/tests/fsck-tests/006-bad-root-items/test.sh b/tests/fsck-tests/006-bad-root-items/test.sh
+index bfbfcfc..421e225 100755
+--- a/tests/fsck-tests/006-bad-root-items/test.sh
++++ b/tests/fsck-tests/006-bad-root-items/test.sh
+@@ -3,12 +3,12 @@
+ source $TOP/tests/common
  
- int cmd_filesystem_usage(int argc, char **argv)
+ echo "extracting image default_case.tar.xz" >> $RESULTS
+-tar xJf default_case.tar.xz || \
++tar --no-same-owner -xJf default_case.tar.xz || \
+ 	_fail "failed to extract default_case.tar.xz"
+ check_image test.img
+ 
+ echo "extracting image skinny_case.tar.xz" >> $RESULTS
+-tar xJf skinny_case.tar.xz || \
++tar --no-same-owner -xJf skinny_case.tar.xz || \
+ 	_fail "failed to extract skinny_case.tar.xz"
+ check_image test.img
+ 
+diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
+index a37ceda..6e23145 100755
+--- a/tests/fsck-tests/012-leaf-corruption/test.sh
++++ b/tests/fsck-tests/012-leaf-corruption/test.sh
+@@ -35,7 +35,7 @@ generate_leaf_corrupt_no_data_ext()
  {
--	unsigned unit_mode = UNITS_DEFAULT;
- 	int ret = 0;
--	int	i, more_than_one = 0;
--	int	tabular = 0;
-+	unsigned unit_mode;
-+	int i, more_than_one = 0;
-+	int tabular = 0;
-+
-+	unit_mode = get_unit_mode_from_arg(&argc, argv, 0);
- 
- 	optind = 1;
- 	while (1) {
- 		int c;
--		static const struct option long_options[] = {
--			{ "raw", no_argument, NULL, 'b'},
--			{ "kbytes", no_argument, NULL, 'k'},
--			{ "mbytes", no_argument, NULL, 'm'},
--			{ "gbytes", no_argument, NULL, 'g'},
--			{ "tbytes", no_argument, NULL, 't'},
--			{ "si", no_argument, NULL, GETOPT_VAL_SI},
--			{ "iec", no_argument, NULL, GETOPT_VAL_IEC},
--			{ "human-readable", no_argument, NULL,
--				GETOPT_VAL_HUMAN_READABLE},
--			{ NULL, 0, NULL, 0 }
--		};
--
--		c = getopt_long(argc, argv, "bhHkmgtT", long_options, NULL);
- 
-+		c = getopt(argc, argv, "T");
- 		if (c < 0)
- 			break;
-+
- 		switch (c) {
--		case 'b':
--			unit_mode = UNITS_RAW;
--			break;
--		case 'k':
--			units_set_base(&unit_mode, UNITS_KBYTES);
--			break;
--		case 'm':
--			units_set_base(&unit_mode, UNITS_MBYTES);
--			break;
--		case 'g':
--			units_set_base(&unit_mode, UNITS_GBYTES);
--			break;
--		case 't':
--			units_set_base(&unit_mode, UNITS_TBYTES);
--			break;
--		case GETOPT_VAL_HUMAN_READABLE:
--		case 'h':
--			unit_mode = UNITS_HUMAN_BINARY;
--			break;
--		case 'H':
--			unit_mode = UNITS_HUMAN_DECIMAL;
--			break;
--		case GETOPT_VAL_SI:
--			units_set_mode(&unit_mode, UNITS_DECIMAL);
--			break;
--		case GETOPT_VAL_IEC:
--			units_set_mode(&unit_mode, UNITS_BINARY);
--			break;
- 		case 'T':
- 			tabular = 1;
- 			break;
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index fa555b0..8822695 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -121,19 +121,10 @@ static const char * const filesystem_cmd_group_usage[] = {
- };
- 
- static const char * const cmd_filesystem_df_usage[] = {
--       "btrfs filesystem df [options] <path>",
--       "Show space usage information for a mount point",
--	"-b|--raw           raw numbers in bytes",
--	"-h|--human-readable",
--	"                   human friendly numbers, base 1024 (default)",
--	"-H                 human friendly numbers, base 1000",
--	"--iec              use 1024 as a base (KiB, MiB, GiB, TiB)",
--	"--si               use 1000 as a base (kB, MB, GB, TB)",
--	"-k|--kbytes        show sizes in KiB, or kB with --si",
--	"-m|--mbytes        show sizes in MiB, or MB with --si",
--	"-g|--gbytes        show sizes in GiB, or GB with --si",
--	"-t|--tbytes        show sizes in TiB, or TB with --si",
--       NULL
-+	"btrfs filesystem df [options] <path>",
-+	"Show space usage information for a mount point",
-+	HELPINFO_OUTPUT_UNIT_DF,
-+	NULL
- };
- 
- static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
-@@ -205,64 +196,14 @@ static int cmd_filesystem_df(int argc, char **argv)
- 	int fd;
- 	char *path;
- 	DIR *dirstream = NULL;
--	unsigned unit_mode = UNITS_DEFAULT;
-+	unsigned unit_mode;
- 
--	while (1) {
--		int c;
--		static const struct option long_options[] = {
--			{ "raw", no_argument, NULL, 'b'},
--			{ "kbytes", no_argument, NULL, 'k'},
--			{ "mbytes", no_argument, NULL, 'm'},
--			{ "gbytes", no_argument, NULL, 'g'},
--			{ "tbytes", no_argument, NULL, 't'},
--			{ "si", no_argument, NULL, GETOPT_VAL_SI},
--			{ "iec", no_argument, NULL, GETOPT_VAL_IEC},
--			{ "human-readable", no_argument, NULL,
--				GETOPT_VAL_HUMAN_READABLE},
--			{ NULL, 0, NULL, 0 }
--		};
--
--		c = getopt_long(argc, argv, "bhHkmgt", long_options, NULL);
--		if (c < 0)
--			break;
--		switch (c) {
--		case 'b':
--			unit_mode = UNITS_RAW;
--			break;
--		case 'k':
--			units_set_base(&unit_mode, UNITS_KBYTES);
--			break;
--		case 'm':
--			units_set_base(&unit_mode, UNITS_MBYTES);
--			break;
--		case 'g':
--			units_set_base(&unit_mode, UNITS_GBYTES);
--			break;
--		case 't':
--			units_set_base(&unit_mode, UNITS_TBYTES);
--			break;
--		case GETOPT_VAL_HUMAN_READABLE:
--		case 'h':
--			unit_mode = UNITS_HUMAN_BINARY;
--			break;
--		case 'H':
--			unit_mode = UNITS_HUMAN_DECIMAL;
--			break;
--		case GETOPT_VAL_SI:
--			units_set_mode(&unit_mode, UNITS_DECIMAL);
--			break;
--		case GETOPT_VAL_IEC:
--			units_set_mode(&unit_mode, UNITS_BINARY);
--			break;
--		default:
--			usage(cmd_filesystem_df_usage);
--		}
--	}
-+	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
- 
--	if (check_argc_exact(argc, optind + 1))
-+	if (argc != 2 || argv[1][0] == '-')
- 		usage(cmd_filesystem_df_usage);
- 
--	path = argv[optind];
-+	path = argv[1];
- 
- 	fd = open_file_or_dir(path, &dirstream);
- 	if (fd < 0) {
-@@ -820,14 +761,7 @@ static const char * const cmd_filesystem_show_usage[] = {
- 	"Show the structure of a filesystem",
- 	"-d|--all-devices   show only disks under /dev containing btrfs filesystem",
- 	"-m|--mounted       show only mounted btrfs",
--	"--raw              raw numbers in bytes",
--	"--human-readable   human friendly numbers, base 1024 (default)",
--	"--iec              use 1024 as a base (KiB, MiB, GiB, TiB)",
--	"--si               use 1000 as a base (kB, MB, GB, TB)",
--	"--kbytes           show sizes in KiB, or kB with --si",
--	"--mbytes           show sizes in MiB, or MB with --si",
--	"--gbytes           show sizes in GiB, or GB with --si",
--	"--tbytes           show sizes in TiB, or TB with --si",
-+	HELPINFO_OUTPUT_UNIT,
- 	"If no argument is given, structure of all present filesystems is shown.",
- 	NULL
- };
-@@ -845,23 +779,16 @@ static int cmd_filesystem_show(int argc, char **argv)
- 	char path[PATH_MAX];
- 	__u8 fsid[BTRFS_FSID_SIZE];
- 	char uuid_buf[BTRFS_UUID_UNPARSED_SIZE];
--	unsigned unit_mode = UNITS_DEFAULT;
-+	unsigned unit_mode;
- 	int found = 0;
- 
-+	unit_mode = get_unit_mode_from_arg(&argc, argv, 0);
-+
- 	while (1) {
- 		int c;
- 		static const struct option long_options[] = {
- 			{ "all-devices", no_argument, NULL, 'd'},
- 			{ "mounted", no_argument, NULL, 'm'},
--			{ "raw", no_argument, NULL, GETOPT_VAL_RAW},
--			{ "kbytes", no_argument, NULL, GETOPT_VAL_KBYTES},
--			{ "mbytes", no_argument, NULL, GETOPT_VAL_MBYTES},
--			{ "gbytes", no_argument, NULL, GETOPT_VAL_GBYTES},
--			{ "tbytes", no_argument, NULL, GETOPT_VAL_TBYTES},
--			{ "si", no_argument, NULL, GETOPT_VAL_SI},
--			{ "iec", no_argument, NULL, GETOPT_VAL_IEC},
--			{ "human-readable", no_argument, NULL,
--				GETOPT_VAL_HUMAN_READABLE},
- 			{ NULL, 0, NULL, 0 }
- 		};
- 
-@@ -875,30 +802,6 @@ static int cmd_filesystem_show(int argc, char **argv)
- 		case 'm':
- 			where = BTRFS_SCAN_MOUNTED;
- 			break;
--		case GETOPT_VAL_RAW:
--			units_set_mode(&unit_mode, UNITS_RAW);
--			break;
--		case GETOPT_VAL_KBYTES:
--			units_set_base(&unit_mode, UNITS_KBYTES);
--			break;
--		case GETOPT_VAL_MBYTES:
--			units_set_base(&unit_mode, UNITS_MBYTES);
--			break;
--		case GETOPT_VAL_GBYTES:
--			units_set_base(&unit_mode, UNITS_GBYTES);
--			break;
--		case GETOPT_VAL_TBYTES:
--			units_set_base(&unit_mode, UNITS_TBYTES);
--			break;
--		case GETOPT_VAL_SI:
--			units_set_mode(&unit_mode, UNITS_DECIMAL);
--			break;
--		case GETOPT_VAL_IEC:
--			units_set_mode(&unit_mode, UNITS_BINARY);
--			break;
--		case GETOPT_VAL_HUMAN_READABLE:
--			units_set_mode(&unit_mode, UNITS_HUMAN_BINARY);
--			break;
- 		default:
- 			usage(cmd_filesystem_show_usage);
- 		}
+ 	dest=$1
+ 	echo "generating leaf_corrupt_no_data_ext.btrfs-image" >> $RESULTS
+-	tar xJf ./no_data_extent.tar.xz || \
++	tar --no-same-owner -xJf ./no_data_extent.tar.xz || \
+ 		_fail "failed to extract leaf_corrupt_no_data_ext.btrfs-image"
+ 	$TOP/btrfs-image -r test.img.btrfs-image $dest || \
+ 		_fail "failed to extract leaf_corrupt_no_data_ext.btrfs-image"
 -- 
 1.8.5.1
 

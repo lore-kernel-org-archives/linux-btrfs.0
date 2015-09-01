@@ -1,48 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8909 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755530AbbIAKFG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 06:05:06 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t81A4ti0032607
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 18:04:55 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 0/2] btrfs-progs: tests: Introduce run_check_mount_test_dev wrapper for mount loop device in old system
-Date: Tue, 1 Sep 2015 18:03:26 +0800
-Message-ID: <cover.1441101420.git.zhaolei@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:56479 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751919AbbIAMdU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Sep 2015 08:33:20 -0400
+Date: Tue, 1 Sep 2015 14:32:40 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: tests: Use --no-same-owner option for tar
+Message-ID: <20150901123240.GI11834@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <11005b0b3385117fa772b223513cea16920ec7b9.1441101154.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <11005b0b3385117fa772b223513cea16920ec7b9.1441101154.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-mount command in old system can not add -o loop option automatically
-for loop device, and make following test failed:
-  # ./fsck-tests.sh
-  ...
-    [TEST]   013-extent-tree-rebuild
-  failed: mount /data/btrfsprogs/tests/test.img /data/btrfsprogs/tests/mnt
-  test failed for case 013-extent-tree-rebuild
+On Tue, Sep 01, 2015 at 06:03:14PM +0800, Zhao Lei wrote:
+> Some test failed in my nfs dir:
+>   ...
+>     [TEST]   006-bad-root-items
+>   tar: test.img: Cannot change ownership to uid 1000, gid 1000: Invalid argument
+>   tar: Exiting with failure status due to previous errors
+>   failed to extract default_case.tar.xz
+>   test failed for case 006-bad-root-items
+> 
+> It is because the image file's owner is:
+>  # tar tvf default_case.tar.xz
+>  -rw-r--r-- fdmanana/fdmanana 2147483648 2014-10-17 17:59 test.img
+> 
+> And make tar failed in chown in nfs.
+> 
+> It is not a big issue because we don't use nfs commonly, but extract
+> the image file with ownership of current user will be a better choice.
+> 
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-This patchset add run_check_mount_test_dev for mount both block and loop
-device.
-
-Changelog v1->v2:
- 1: Use string for mount option instead of string array.
- 2: Include "run_check $SUDO_HELPER" into wrapper function.
- Both suggested by: David Sterba <dsterba@suse.cz>
-
-Zhao Lei (2):
-  btrfs-progs: tests: Fix mount fail of 013-extent-tree-rebuild
-  btrfs-progs: tests: Use mount_test_dev for
-    misc-tests/007-subvolume-sync
-
- tests/common                                     | 26 ++++++++++++++++++++++++
- tests/fsck-tests/013-extent-tree-rebuild/test.sh |  4 ++--
- tests/misc-tests/007-subvolume-sync/test.sh      |  4 ++--
- 3 files changed, 30 insertions(+), 4 deletions(-)
-
--- 
-1.8.5.1
-
+Applied, thanks.

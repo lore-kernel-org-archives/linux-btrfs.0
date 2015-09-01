@@ -1,137 +1,140 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:29625 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753595AbbIAHZv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 03:25:51 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t817PewS021590
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 15:25:40 +0800
-Subject: Re: [PATCH RFC 00/14] Qgroup reserved space fixing framework
-To: <linux-btrfs@vger.kernel.org>
-References: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55E552FA.4050603@cn.fujitsu.com>
-Date: Tue, 1 Sep 2015 15:25:46 +0800
-MIME-Version: 1.0
-In-Reply-To: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mout.gmx.net ([212.227.15.15]:49544 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752712AbbIAH1a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Sep 2015 03:27:30 -0400
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 01/14] btrfs: qgroup: New function declaration for new reserve implement
+Date: Tue,  1 Sep 2015 15:27:07 +0800
+Message-Id: <1441092440-21208-2-git-send-email-quwenruo.btrfs@gmx.com>
+In-Reply-To: <1441092440-21208-1-git-send-email-quwenruo.btrfs@gmx.com>
+References: <1441092440-21208-1-git-send-email-quwenruo.btrfs@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Again, later patches are blocked by the Exchange mail server.....
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-I'll send it again using another mailbox(quwenruo.btrfs@gmx.com).
+Add new structures and functions for new qgroup reserve implement dirty
+phase.
+Which will focus on avoiding over-reserve as in that case, which means
+for already reserved dirty space range, we won't reserve space again.
 
-Thanks,
-Qu
+This patch adds the needed structure declaration and comments.
 
-Qu Wenruo wrote on 2015/09/01 15:21 +0800:
-> !!!!!!WARNING START!!!!!!
-> These patch is just a WIP patchset, although it fixed a qgroup reserved
-> space leaking bug in normal COW case, it still lacks fix for other
-> corner case, like NODATACOW or prealloc case, and a lot of old
-> facilities are not cleaned up yet.
->
-> The reason to send the WIP patchset is to check if the patchset has some
-> deep structure bug, to avoid another rework after the whole patchset is
-> finished
-> !!!!!!WARNING END!!!!!!
->
-> Although we have already reworked btrfs qgroup accounting part in
-> v4.2-rc1, but qgroup reserve part still has a problem of leaking
-> reserved space.
->
-> [[BUG]]
-> One of the most common case to trigger the bug is the following method:
-> 1) Enable quota
-> 2) Limit excl of qgroup 5 to 16M
-> 3) Write [0,2M) of a file inside subvol 5 10 times without sync
->
-> EQUOT will be triggered at about the 8th write.
->
-> [[CAUSE]]
-> The problem is caused by the fact that qgroup will reserve space even
-> the data space is already reserved.
->
-> In above reproducer, even time we buffered write [0,2M) qgroup will
-> reserve 2M space, but in fact, at the 1st time, we have already reserved
-> 2M and from then on, we don't need to reserved any data space as we are
-> only writing [0,2M).
->
-> Also, the reserved space will only be freed *ONCE* when its backref is
-> run at commit_transaction() time.
->
-> That's causing the reserved space leaking.
->
-> [[FIX]]
-> The fix is not a simple one, as currently btrfs_qgroup_reserve() follow
-> the very bad btrfs space allocating principle:
->    Allocate as much as you needed, even it's not fully used.
->
-> So in the patchset, we introduce a lot of facilities:
-> 1) Per inode data rsv map
->     Record which range of a file has already been reserved.
->     Dirty range will be released when the range is written into disk.
->     And for any request to reserve space on already reserved range, just
->     skip it to avoid
->
-> 2) Delayed ref head qgroup members
->     After a range of data is written into disk, we can't keep the dirty
->     range in data rsv map or just release reserved space.
->
->     If we keep dirty range in data rsv map, next write will consider
->     there is no need to reserve space, but new write will be cowed, and
->     cause another extent to take qgroup space.
->     So if keep dirty range, it'll cause qgroup accounting to exceed
->     limit.
->
->     On the other hand, if just release and free the reserved space, we
->     can still exceed the limit by allowing over-reserve.
->
->     So here, we must only release the range, but keep the reserved space
->     recorded in other place.
->     With the new qgroup accounting framework, only delayed_ref_head is
->     safe and will be run at the same time as btrfs qgroup accounting.
->
-> 3) New delalloc_reserve_space/check_data_free_space facilities to
->     support accurate reserve space.
->     Unlike old implement, which consider it enough by only using
->     num_bytes.
->     New facilities all need a exact range [start, start + len) to reserve
->     space.
->
-> More detailed info can be found in each commit message and source
-> commend.
->
-> Qu Wenruo (14):
->    btrfs: qgroup: New function declaration for new reserve implement
->    btrfs: qgroup: Implement data_rsv_map init/free functions
->    btrfs: qgroup: Introduce new function to search most left reserve
->      range
->    btrfs: qgroup: Introduce function to insert non-overlap reserve range
->    btrfs: qgroup: Introduce function to reserve data range per inode
->    btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
->    btrfs: qgroup: Introduce function to release reserved range
->    btrfs: qgroup: Introduce function to release/free reserved data range
->    btrfs: delayed_ref: Add new function to record reserved space into
->      delayed ref
->    btrfs: delayed_ref: release and free qgroup reserved at proper timing
->    btrfs: qgroup: Introduce new functions to reserve/free metadata
->    btrfs: qgroup: Use new metadata reservation.
->    btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
->    btrfs: Use new check_data_free_space for buffered write
->
->   fs/btrfs/btrfs_inode.h |   6 +
->   fs/btrfs/ctree.h       |   5 +
->   fs/btrfs/delayed-ref.c |  29 +++
->   fs/btrfs/delayed-ref.h |  14 ++
->   fs/btrfs/disk-io.c     |   1 +
->   fs/btrfs/extent-tree.c |  68 +++--
->   fs/btrfs/file.c        |  22 +-
->   fs/btrfs/inode.c       |  20 ++
->   fs/btrfs/qgroup.c      | 658 ++++++++++++++++++++++++++++++++++++++++++++++++-
->   fs/btrfs/qgroup.h      |  21 +-
->   fs/btrfs/transaction.c |  34 +--
->   fs/btrfs/transaction.h |   1 -
->   12 files changed, 820 insertions(+), 59 deletions(-)
->
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/btrfs_inode.h |  4 ++++
+ fs/btrfs/qgroup.c      | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h      |  3 +++
+ 3 files changed, 65 insertions(+)
+
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 0ef5cc1..6d799b8 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -24,6 +24,7 @@
+ #include "extent_io.h"
+ #include "ordered-data.h"
+ #include "delayed-inode.h"
++#include "qgroup.h"
+ 
+ /*
+  * ordered_data_close is set by truncate when a file that used
+@@ -193,6 +194,9 @@ struct btrfs_inode {
+ 	struct timespec i_otime;
+ 
+ 	struct inode vfs_inode;
++
++	/* qgroup dirty map for data space reserve */
++	struct btrfs_qgroup_data_rsv_map *qgroup_rsv_map;
+ };
+ 
+ extern unsigned char btrfs_filetype_table[];
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 1667567..640106a 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -91,6 +91,64 @@ struct btrfs_qgroup {
+ 	u64 new_refcnt;
+ };
+ 
++/*
++ * Record one range of reserved space.
++ */
++struct data_rsv_range {
++	struct rb_node node;
++	u64 start;
++	u64 len;
++};
++
++/*
++ * Record per inode reserved range.
++ * This is mainly used to resolve reserved space leaking problem.
++ * One of the cause is the mismatch with reserve and free.
++ *
++ * New qgroup will handle reserve in two phase.
++ * 1) Dirty phase.
++ *    Pages are just marked dirty, but not written to disk.
++ * 2) Flushed phase
++ *    Pages are written to disk, but transaction is not committed yet.
++ *
++ * At Diryt phase, we only need to focus on avoiding over-reserve.
++ *
++ * The idea is like below.
++ * 1) Write [0,8K)
++ * 0	4K	8K	12K	16K
++ * |////////////|
++ * Reserve +8K, total reserved: 8K
++ *
++ * 2) Write [0,4K)
++ * 0	4K	8K	12K	16K
++ * |////////////|
++ * Reserve 0, total reserved 8K
++ *
++ * 3) Write [12K,16K)
++ * 0	4K	8K	12K	16K
++ * |////////////|	|///////|
++ * Reserve +4K, tocal reserved 12K
++ *
++ * 4) Flush [0,8K)
++ * Can happen without commit transaction, like fallocate will trigger the
++ * write.
++ * 0	4K	8K	12K	16K
++ * 			|///////|
++ * Reserve 0, tocal reserved 12K
++ * As the extent is written to disk, not dirty any longer, the range get
++ * removed.
++ * But as its delayed_refs is not run, its reserved space will not be freed.
++ * And things continue to Flushed phase.
++ *
++ * By this method, we can avoid over-reserve, which will lead to reserved
++ * space leak.
++ */
++struct btrfs_qgroup_data_rsv_map {
++	struct rb_root root;
++	u64 reserved;
++	spinlock_t lock;
++};
++
+ static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
+ 					   int mod)
+ {
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 6387dcf..2f863a4 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -33,6 +33,9 @@ struct btrfs_qgroup_extent_record {
+ 	struct ulist *old_roots;
+ };
+ 
++/* For per-inode dirty range reserve */
++struct btrfs_qgroup_data_rsv_map;
++
+ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_fs_info *fs_info);
+ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+-- 
+2.5.1
+

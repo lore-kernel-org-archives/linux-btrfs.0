@@ -1,130 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64842 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:16818 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754659AbbIAIra (ORCPT
+	with ESMTP id S1755317AbbIAIra (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 04:47:30 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t818lI4u027288
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 16:47:18 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t818lJVr027291
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 16:47:19 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 05/14] btrfs: qgroup: Introduce function to reserve data range per inode
-Date: Tue, 1 Sep 2015 16:45:22 +0800
-Message-ID: <1441097125-2773-1-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 06/14] btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
+Date: Tue, 1 Sep 2015 16:45:23 +0800
+Message-ID: <1441097125-2773-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1441097125-2773-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441092131-14088-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1441097125-2773-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function reserve_data_range().
-This function will find non-overlap range and to insert it into reserve
-map using previously introduced funtions.
+This new function will do all the hard work to reserve precious space
+for a write.
 
-This provides the basis for later per inode reserve map implement.
+The overall work flow will be the following.
+
+File A already has some dirty pages:
+
+0	4K	8K	12K	16K
+|///////|	|///////|
+
+And then, someone want to write some data into range [4K, 16K).
+	|<------desired-------->|
+
+Unlike the old and wrong implement, which reserve 12K, this function
+will only reserve space for newly dirty part:
+	|\\\\\\\|	|\\\\\\\|
+Which only takes 8K reserve space, as other part has already allocated
+their own reserve space.
+
+So the final reserve map will be:
+|///////////////////////////////|
+
+This provides the basis to resolve the long existing qgroup limit bug.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 92 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 92 insertions(+)
+ fs/btrfs/qgroup.c | 48 ++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h |  1 +
+ 2 files changed, 49 insertions(+)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 90f5c4b..3948882 100644
+index 3948882..31ddc6d 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2672,6 +2672,98 @@ static int insert_data_ranges(struct btrfs_qgroup_data_rsv_map *map,
+@@ -2764,6 +2764,54 @@ insert:
  }
  
  /*
-+ * Check qgroup limit and insert dirty range into reserve_map.
-+ *
-+ * Must be called with map->lock hold
++ * TODO: to handle nocow case, like NODATACOW or write into prealloc space
++ * along with other mixed case.
++ * Like write 2M, first 1M can be nocowed, but next 1M is on hole and need COW.
 + */
-+static int reserve_data_range(struct btrfs_root *root,
-+			      struct btrfs_qgroup_data_rsv_map *map,
-+			      struct data_rsv_range *tmp,
-+			      struct ulist *insert_list, u64 start, u64 len)
++int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len)
 +{
-+	struct data_rsv_range *range;
-+	u64 cur_start = 0;
-+	u64 cur_len = 0;
-+	u64 reserve = 0;
-+	int ret = 0;
++	struct btrfs_inode *binode = BTRFS_I(inode);
++	struct btrfs_root *root = binode->root;
++	struct btrfs_qgroup_data_rsv_map *reserve_map;
++	struct data_rsv_range *tmp = NULL;
++	struct ulist *insert_list;
++	int ret;
 +
-+	range = find_reserve_range(map, start);
-+	/* empty tree, insert the whole range */
-+	if (!range) {
-+		reserve = len;
-+		ret = ulist_add(insert_list, start, len, GFP_ATOMIC);
++	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid) ||
++	    len == 0)
++		return 0;
++
++	if (!binode->qgroup_rsv_map) {
++		ret = btrfs_qgroup_init_data_rsv_map(inode);
 +		if (ret < 0)
 +			return ret;
-+		goto insert;
++	}
++	reserve_map = binode->qgroup_rsv_map;
++	insert_list = ulist_alloc(GFP_NOFS);
++	if (!insert_list)
++		return -ENOMEM;
++	tmp = kzalloc(sizeof(*tmp), GFP_NOFS);
++	if (!tmp) {
++		ulist_free(insert_list);
++		return -ENOMEM;
 +	}
 +
-+	/* For case range is covering the leading part */
-+	if (range->start <= start && range->start + range->len > start)
-+		cur_start = range->start + range->len;
-+	else
-+		cur_start = start;
-+
-+	/*
-+	 * iterate until the end of the range.
-+	 * Like the following:
-+	 *
-+	 * 	|<--------desired---------------------->|
-+	 *|//1//|	|////2///|	|///3///|	<- exists
-+	 * Then we will need to insert the following
-+	 * 	|\\\4\\\|	 |\\\5\\|	|\\\6\\\|
-+	 * And only add qgroup->reserved for rang 4,5,6.
-+	 */
-+	while (cur_start < start + len) {
-+		struct rb_node *next_node;
-+		u64 next_start;
-+
-+		if (range->start + range->len <= cur_start) {
-+			/*
-+			 * Move to next range if current range is before
-+			 * cur_start
-+			 * e.g range is 1, cur_start is the end of range 1.
-+			 */
-+			next_node = rb_next(&range->node);
-+			if (!next_node) {
-+				/*
-+				 * no next range, fill the rest
-+				 * e.g range is 3, cur_start is end of range 3.
-+				 */
-+				cur_len = start + len - cur_start;
-+				next_start = start + len;
-+			} else {
-+				range = rb_entry(next_node,
-+						 struct data_rsv_range, node);
-+				cur_len = min(range->start, start + len) -
-+					  cur_start;
-+				next_start = range->start + range->len;
-+			}
-+		} else {
-+			/*
-+			 * current range is already after cur_start
-+			 * e.g range is 2, cur_start is end of range 1.
-+			 */
-+			cur_len = range->start - cur_len;
-+			next_start = range->start + range->len;
-+		}
-+		reserve += cur_len;
-+		ret = ulist_add(insert_list, cur_start, cur_len, GFP_ATOMIC);
-+		if (ret < 0)
-+			return ret;
-+
-+		cur_start = next_start;
++	spin_lock(&reserve_map->lock);
++	ret = reserve_data_range(root, reserve_map, tmp, insert_list, start,
++				 len);
++	if (ret < 0) {
++		kfree(tmp);
++		goto out;
 +	}
-+insert:
-+	ret = btrfs_qgroup_reserve(root, reserve);
-+	if (ret < 0)
-+		return ret;
-+	/* ranges must be inserted after we are sure it has enough space */
-+	ret = insert_data_ranges(map, tmp, insert_list);
-+	map->reserved += reserve;
++	if (ret == 0)
++		kfree(tmp);
++out:
++	spin_unlock(&reserve_map->lock);
++	ulist_free(insert_list);
 +	return ret;
 +}
 +
@@ -132,6 +108,16 @@ index 90f5c4b..3948882 100644
   * Init data_rsv_map for a given inode.
   *
   * This is needed at write time as quota can be disabled and then enabled
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index c87b7dc..366b853 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -87,4 +87,5 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
+ /* for qgroup reserve */
+ int btrfs_qgroup_init_data_rsv_map(struct inode *inode);
+ void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
++int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
+ #endif /* __BTRFS_QGROUP__ */
 -- 
 2.5.1
 

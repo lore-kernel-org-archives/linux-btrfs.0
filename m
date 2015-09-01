@@ -1,46 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44923 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754262AbbI3Gmy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 02:42:54 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZhB6H-0000ne-FS
-	for linux-btrfs@vger.kernel.org; Wed, 30 Sep 2015 08:42:49 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 08:42:49 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 08:42:49 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [PATCH v2] fstests: generic: Check if a bull fallocate will
- change extent number
-Date: Wed, 30 Sep 2015 06:42:43 +0000 (UTC)
-Message-ID: <pan$59b34$7400fdb5$b216a68a$8bdcfb8f@cox.net>
-References: <1443519264-19184-1-git-send-email-quwenruo@cn.fujitsu.com>
-	<20150929100013.GD25907@carfax.org.uk> <560A6451.6050808@gmx.com>
-	<CAL3q7H4+xS7OOJd-Ny0zzA0a4JVrNHbhzCKStKcTReqriYyKrw@mail.gmail.com>
-	<560A6C85.2020809@gmx.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: fstests@vger.kernel.org
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:12186 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752601AbbIAAGU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 31 Aug 2015 20:06:20 -0400
+Date: Mon, 31 Aug 2015 20:06:10 -0400
+From: Chris Mason <clm@fb.com>
+To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+CC: Christoph Hellwig <hch@lst.de>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "<linux-fsdevel@vger.kernel.org>" <linux-fsdevel@vger.kernel.org>
+Subject: Re: btrfs regression since 4.X kernel NULL pointer dereference
+Message-ID: <20150901000610.GC5136@ret.masoncoding.com>
+References: <55D8B193.8010906@profihost.ag>
+ <20150825090030.GF31630@lst.de>
+ <20150825135146.GE7176@ret.masoncoding.com>
+ <590FB3C7-8BCA-4B04-BBB0-92863E02A89C@profihost.ag>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <590FB3C7-8BCA-4B04-BBB0-92863E02A89C@profihost.ag>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Tue, 29 Sep 2015 18:48:37 +0800 as excerpted:
+On Mon, Aug 31, 2015 at 07:32:09PM +0200, Stefan Priebe - Profihost AG wrote:
+> > Am 25.08.2015 um 15:51 schrieb Chris Mason <clm@fb.com>:
+> > 
+> >> On Tue, Aug 25, 2015 at 11:00:30AM +0200, Christoph Hellwig wrote:
+> >> I think this is btrfs using a struct block_device that doesn't have
+> >> a valid queue pointer in it's gendisk for ->s_bdev.  And there are
+> >> some fishy looking ->s_bdev assignments in the code which I suspect
+> >> are related to it:
+> >> 
+> >> fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev == src_device->bdev)
+> >> fs/btrfs/dev-replace.c:         fs_info->sb->s_bdev = tgt_device->bdev;
+> >> fs/btrfs/volumes.c:     if (device->bdev == root->fs_info->sb->s_bdev)
+> >> fs/btrfs/volumes.c:             root->fs_info->sb->s_bdev = next_device->bdev;
+> >> fs/btrfs/volumes.c:     if (tgtdev->bdev == fs_info->sb->s_bdev)
+> >> fs/btrfs/volumes.c:             fs_info->sb->s_bdev = next_device->bdev;
+> > 
+> > We've had trouble with this in the past, I'll take a look.
+> 
+> Any news?
 
-> Both gives quite good expression, I'll pick one of them.
+Haven't been able to reproduce yet, I'll try again in the morning.
 
-... And for the one-line title, /bull/bad/ should do it. =:^)
-
-People wanting details about bad /how/ can look at the fuller description 
-or source.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+-chris

@@ -1,127 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:33805 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:18969 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752717AbbIBHvX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Sep 2015 03:51:23 -0400
+	id S1752218AbbIBHvY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Sep 2015 03:51:24 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t810XlId023763
-	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 08:33:49 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t810XlIg023763
+	for <linux-btrfs@vger.kernel.org>; Tue, 1 Sep 2015 08:33:52 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 00/14] Qgroup reserved space fixing framework
-Date: Tue,  1 Sep 2015 08:31:40 +0800
-Message-Id: <1441067515-21105-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH RFC 03/14] btrfs: qgroup: Introduce new function to search most left reserve range
+Date: Tue,  1 Sep 2015 08:31:43 +0800
+Message-Id: <1441067515-21105-4-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1441067515-21105-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1441067515-21105-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-!!!!!!WARNING START!!!!!!
-These patch is just a WIP patchset, although it fixed a qgroup reserved
-space leaking bug in normal COW case, it still lacks fix for other
-corner case, like NODATACOW or prealloc case.
-And may still cause reserved space to overflow to minus.
+Introduce the new function to search the most left reserve range in a
+reserve map.
 
-The reason to send the WIP patchset is to check if the patchset has some
-deep structure bug, to avoid another rework after the whole patchset is
-finished
-!!!!!!WARNING END!!!!!!
+It provides the basis for later reserve map implement.
 
-Although we have already reworked btrfs qgroup accounting part in
-v4.2-rc1, but qgroup reserve part still has a problem of leaking
-reserved space.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/qgroup.c | 36 ++++++++++++++++++++++++++++++++++++
+ 1 file changed, 36 insertions(+)
 
-[[BUG]]
-One of the most common case to trigger the bug is the following method:
-1) Enable quota
-2) Limit excl of qgroup 5 to 16M
-3) Write [0,2M) of a file inside subvol 5 10 times without sync
-
-EQUOT will be triggered at about the 8th write.
-
-[[CAUSE]]
-The problem is caused by the fact that qgroup will reserve space even
-the data space is already reserved.
-
-In above reproducer, even time we buffered write [0,2M) qgroup will
-reserve 2M space, but in fact, at the 1st time, we have already reserved
-2M and from then on, we don't need to reserved any data space as we are
-only writing [0,2M).
-
-Also, the reserved space will only be freed *ONCE* when its backref is
-run at commit_transaction() time.
-
-That's causing the reserved space leaking.
-
-[[FIX]]
-The fix is not a simple one, as currently btrfs_qgroup_reserve() follow
-the very bad btrfs space allocating principle:
-  Allocate as much as you needed, even it's not fully used.
-
-So in the patchset, we introduce a lot of facilities:
-1) Per inode data rsv map
-   Record which range of a file has already been reserved.
-   Dirty range will be released when the range is written into disk.
-   And for any request to reserve space on already reserved range, just
-   skip it to avoid 
-
-2) Delayed ref head qgroup members
-   After a range of data is written into disk, we can't keep the dirty
-   range in data rsv map or just release reserved space.
-
-   If we keep dirty range in data rsv map, next write will consider
-   there is no need to reserve space, but new write will be cowed, and
-   cause another extent to take qgroup space.
-   So if keep dirty range, it'll cause qgroup accounting to exceed
-   limit.
-
-   On the other hand, if just release and free the reserved space, we
-   can still exceed the limit by allowing over-reserve.
-
-   So here, we must only release the range, but keep the reserved space
-   recorded in other place.
-   With the new qgroup accounting framework, only delayed_ref_head is
-   safe and will be run at the same time as btrfs qgroup accounting.
-
-3) New delalloc_reserve_space/check_data_free_space facilities to
-   support accurate reserve space.
-   Unlike old implement, which consider it enough by only using
-   num_bytes.
-   New facilities all need a exact range [start, start + len) to reserve
-   space.
-
-More detailed info can be found in each commit message and source
-commend.
-
-Qu Wenruo (14):
-  btrfs: qgroup: New function declaration for new reserve implement
-  btrfs: qgroup: Implement data_rsv_map init/free functions
-  btrfs: qgroup: Introduce new function to search most left reserve
-    range
-  btrfs: qgroup: Introduce function to insert non-overlap reserve range
-  btrfs: qgroup: Introduce function to reserve data range per inode
-  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
-  btrfs: qgroup: Introduce function to release reserved range
-  btrfs: qgroup: Introduce function to release/free reserved data range
-  btrfs: delayed_ref: Add new function to record reserved space into    
-    delayed ref
-  btrfs: delayed_ref: release and free qgroup reserved at proper timing
-  btrfs: qgroup: Introduce new functions to reserve/free metadata
-  btrfs: qgroup: Use new metadata reservation.
-  btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
-  btrfs: Use new check_data_free_space for buffered write
-
- fs/btrfs/btrfs_inode.h |   6 +
- fs/btrfs/ctree.h       |   5 +
- fs/btrfs/delayed-ref.c |  29 +++
- fs/btrfs/delayed-ref.h |  14 ++
- fs/btrfs/disk-io.c     |   1 +
- fs/btrfs/extent-tree.c |  68 +++--
- fs/btrfs/file.c        |  22 +-
- fs/btrfs/inode.c       |  20 ++
- fs/btrfs/qgroup.c      | 658 ++++++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/qgroup.h      |  21 +-
- fs/btrfs/transaction.c |  15 +-
- 11 files changed, 820 insertions(+), 39 deletions(-)
-
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 2e9a93f..e19fe6a 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2513,6 +2513,42 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
+ }
+ 
+ /*
++ * Return the nearest left range of given start
++ * No ensure about the range will cover start.
++ */
++static struct data_rsv_range *
++find_reserve_range(struct btrfs_qgroup_data_rsv_map *map, u64 start)
++{
++	struct rb_node **p = &map->root.rb_node;
++	struct rb_node *parent = NULL;
++	struct rb_node *prev = NULL;
++	struct data_rsv_range *range = NULL;
++
++	while (*p) {
++		parent = *p;
++		range = rb_entry(parent, struct data_rsv_range, node);
++		if (range->start < start)
++			p = &(*p)->rb_right;
++		else if (range->start > start)
++			p = &(*p)->rb_left;
++		else
++			return range;
++	}
++
++	/* empty tree */
++	if (!parent)
++		return NULL;
++	if (range->start <= start)
++		return range;
++
++	prev = rb_prev(parent);
++	/* Already most left one */
++	if (!prev)
++		return range;
++	return rb_entry(prev, struct data_rsv_range, node);
++}
++
++/*
+  * Init data_rsv_map for a given inode.
+  *
+  * This is needed at write time as quota can be disabled and then enabled
 -- 
 2.5.0
 

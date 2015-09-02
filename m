@@ -1,54 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f180.google.com ([209.85.212.180]:38224 "EHLO
-	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751133AbbIGNrv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Sep 2015 09:47:51 -0400
-Date: Mon, 7 Sep 2015 16:45:02 +0300
-From: Alexandru Moise <00moses.alexander00@gmail.com>
-To: clm@fb.com
-Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: memset cur_trans->delayed_refs to zero
-Message-ID: <20150907134502.GA19553@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:17084 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751451AbbIBJlh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 05:41:37 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t829fNwv023632
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Sep 2015 17:41:23 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 0/3] btrfs-progs: stat info for btrfs rescue chunk-recover
+Date: Wed, 2 Sep 2015 17:39:53 +0800
+Message-ID: <cover.1441186744.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use memset() to null out the btrfs_delayed_ref_root of
-btrfs_transaction instead of setting all the members to 0 by hand.
+chunk-recover need to use many many time in scan_devices(),
+and no output in screen:
+ # btrfs rescue chunk-recover /dev/sda6
+ (no output here, but need long time)
 
-Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
----
- fs/btrfs/transaction.c | 12 ++++++------
- 1 file changed, 6 insertions(+), 6 deletions(-)
+To notice user that "the command is not hang", this patch add
+dynamic updated stat information in above period:
+ # btrfs rescue chunk-recover /dev/sda6
+ Scanning: DONE in dev[0], 19998441472 in dev[1], DONE in dev[2]
+ (until)
+ Scanning: DONE in dev0, DONE in dev1, DONE in dev2
+ Check chunks successfully with no orphans
+ Recover the chunk tree successfully.
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8f259b3..0581fb4 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -224,15 +224,15 @@ loop:
- 	cur_trans->start_time = get_seconds();
- 	cur_trans->dirty_bg_run = 0;
- 
-+	memset(&cur_trans->delayed_refs, 0, sizeof(cur_trans->delayed_refs));
-+
-+	/*
-+	 * For now RB_ROOT means set to NULL but this could change in
-+	 * the future
-+	 */
- 	cur_trans->delayed_refs.href_root = RB_ROOT;
- 	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
- 	atomic_set(&cur_trans->delayed_refs.num_entries, 0);
--	cur_trans->delayed_refs.num_heads_ready = 0;
--	cur_trans->delayed_refs.pending_csums = 0;
--	cur_trans->delayed_refs.num_heads = 0;
--	cur_trans->delayed_refs.flushing = 0;
--	cur_trans->delayed_refs.run_delayed_start = 0;
--	cur_trans->delayed_refs.qgroup_to_skip = 0;
- 
- 	/*
- 	 * although the tree mod log is per file system and not per transaction,
+Zhao Lei (3):
+  btrfs-progs: use for loop for scan_devices
+  btrfs-progs: stat info for btrfs rescue chunk-recover
+  btrfs-progs: Fix some spelling typo in chunk-recover.c
+
+ chunk-recover.c | 80 ++++++++++++++++++++++++++++++++++++++++-----------------
+ 1 file changed, 57 insertions(+), 23 deletions(-)
+
 -- 
-1.9.1
+1.8.5.1
 

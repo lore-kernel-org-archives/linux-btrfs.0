@@ -1,71 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from tartarus.angband.pl ([89.206.35.136]:56085 "EHLO
-	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751541AbbIBDdQ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 23:33:16 -0400
-From: Adam Borowski <kilobyte@angband.pl>
-To: linux-btrfs@vger.kernel.org
-Cc: Adam Borowski <kilobyte@angband.pl>
-Subject: [PATCH] btrfs-progs: doc: document btrfs-select-super(8)
-Date: Wed,  2 Sep 2015 05:00:46 +0200
-Message-Id: <1441162846-1653-1-git-send-email-kilobyte@angband.pl>
+Received: from cn.fujitsu.com ([59.151.112.132]:25821 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754044AbbIBMYO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 08:24:14 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t82CO0fv030319
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Sep 2015 20:24:00 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 1/4] btrfs-progs: use for loop for scan_devices
+Date: Wed, 2 Sep 2015 20:22:29 +0800
+Message-ID: <62275c5073d7bb4bb2df00b9805ceeb3ef46a422.1441196519.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <cover.1441196519.git.zhaolei@cn.fujitsu.com>
+References: <cover.1441196519.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Adam Borowski <kilobyte@angband.pl>
----
- Documentation/Makefile.in                 |  1 +
- Documentation/btrfs-select-super.asciidoc | 29 +++++++++++++++++++++++++++++
- 2 files changed, 30 insertions(+)
- create mode 100644 Documentation/btrfs-select-super.asciidoc
+for() is more suitable than while() in this code block.
 
-diff --git a/Documentation/Makefile.in b/Documentation/Makefile.in
-index 0c8b5ba..b03eaf2 100644
---- a/Documentation/Makefile.in
-+++ b/Documentation/Makefile.in
-@@ -9,6 +9,7 @@ MAN8_TXT += btrfs-find-root.asciidoc
- MAN8_TXT += btrfs-image.asciidoc
- MAN8_TXT += btrfs-map-logical.asciidoc
- MAN8_TXT += btrfs-show-super.asciidoc
-+MAN8_TXT += btrfs-select-super.asciidoc
- MAN8_TXT += btrfstune.asciidoc
- MAN8_TXT += fsck.btrfs.asciidoc
- MAN8_TXT += mkfs.btrfs.asciidoc
-diff --git a/Documentation/btrfs-select-super.asciidoc b/Documentation/btrfs-select-super.asciidoc
-new file mode 100644
-index 0000000..a8d7ef0
---- /dev/null
-+++ b/Documentation/btrfs-select-super.asciidoc
-@@ -0,0 +1,29 @@
-+btrfs-select-super(8)
-+=====================
-+
-+NAME
-+----
-+btrfs-select-super - overwrite superblock with a backup
-+
-+SYNOPSIS
-+--------
-+*btrfs-select-super* -s number dev
-+
-+DESCRIPTION
-+-----------
-+*btrfs-select-super* destructively overwrites all copies of the superblock
-+with a specified copy.  This helps with certain cases of damage, especially
-+when barriers were disabled during a power failure.  You can find a valid
-+copy of the superblock with *btrfs check -s*.
-+
-+The filesystem specified by `dev` must not be mounted.
-+
-+OPTIONS
-+-------
-+-s|--super <superblock>::
-+use <superblock>th superblock copy, valid values are 0 up to 2 if the
-+respective superblock offset is within the filesystem
-+
-+SEE ALSO
-+--------
-+`btrfsck check`(8)
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ chunk-recover.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+diff --git a/chunk-recover.c b/chunk-recover.c
+index 832b3b1..66a4ce6 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -871,8 +871,7 @@ static int scan_devices(struct recover_control *rc)
+ 		devidx++;
+ 	}
+ 
+-	i = 0;
+-	while (i < devidx) {
++	for (i = 0; i < devidx; i++) {
+ 		ret = pthread_join(t_scans[i], (void **)&t_rets[i]);
+ 		if (ret || t_rets[i]) {
+ 			ret = 1;
+@@ -880,7 +879,6 @@ static int scan_devices(struct recover_control *rc)
+ 			cancel_to = devnr - 1;
+ 			goto out1;
+ 		}
+-		i++;
+ 	}
+ out1:
+ 	while (ret && (cancel_from <= cancel_to)) {
 -- 
-2.1.4
+1.8.5.1
 

@@ -1,68 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:35173 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751924AbbIATWy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 15:22:54 -0400
-Received: by pacfv12 with SMTP id fv12so5088147pac.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2015 12:22:54 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
+Received: from tartarus.angband.pl ([89.206.35.136]:56085 "EHLO
+	tartarus.angband.pl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751541AbbIBDdQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 23:33:16 -0400
+From: Adam Borowski <kilobyte@angband.pl>
 To: linux-btrfs@vger.kernel.org
-Cc: Omar Sandoval <osandov@fb.com>
-Subject: [PATCH 1/3] btrfs-progs: use calloc instead of malloc+memset for tree roots
-Date: Tue,  1 Sep 2015 12:22:44 -0700
-Message-Id: <e9100a40e112cfa0cd6228594893337a8c9444b9.1441133868.git.osandov@osandov.com>
-In-Reply-To: <cover.1441131625.git.osandov@fb.com>
-References: <cover.1441131625.git.osandov@fb.com>
+Cc: Adam Borowski <kilobyte@angband.pl>
+Subject: [PATCH] btrfs-progs: doc: document btrfs-select-super(8)
+Date: Wed,  2 Sep 2015 05:00:46 +0200
+Message-Id: <1441162846-1653-1-git-send-email-kilobyte@angband.pl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
-
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+Signed-off-by: Adam Borowski <kilobyte@angband.pl>
 ---
- disk-io.c | 22 +++++++---------------
- 1 file changed, 7 insertions(+), 15 deletions(-)
+ Documentation/Makefile.in                 |  1 +
+ Documentation/btrfs-select-super.asciidoc | 29 +++++++++++++++++++++++++++++
+ 2 files changed, 30 insertions(+)
+ create mode 100644 Documentation/btrfs-select-super.asciidoc
 
-diff --git a/disk-io.c b/disk-io.c
-index 1d4889322411..8496aded31c4 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -833,13 +833,13 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
- 
- 	memset(fs_info, 0, sizeof(struct btrfs_fs_info));
- 
--	fs_info->tree_root = malloc(sizeof(struct btrfs_root));
--	fs_info->extent_root = malloc(sizeof(struct btrfs_root));
--	fs_info->chunk_root = malloc(sizeof(struct btrfs_root));
--	fs_info->dev_root = malloc(sizeof(struct btrfs_root));
--	fs_info->csum_root = malloc(sizeof(struct btrfs_root));
--	fs_info->quota_root = malloc(sizeof(struct btrfs_root));
--	fs_info->super_copy = malloc(BTRFS_SUPER_INFO_SIZE);
-+	fs_info->tree_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->extent_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->chunk_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->dev_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->csum_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->quota_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->super_copy = calloc(1, BTRFS_SUPER_INFO_SIZE);
- 
- 	if (!fs_info->tree_root || !fs_info->extent_root ||
- 	    !fs_info->chunk_root || !fs_info->dev_root ||
-@@ -847,14 +847,6 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
- 	    !fs_info->super_copy)
- 		goto free_all;
- 
--	memset(fs_info->super_copy, 0, BTRFS_SUPER_INFO_SIZE);
--	memset(fs_info->tree_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->extent_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->chunk_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->dev_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->csum_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->quota_root, 0, sizeof(struct btrfs_root));
--
- 	extent_io_tree_init(&fs_info->extent_cache);
- 	extent_io_tree_init(&fs_info->free_space_cache);
- 	extent_io_tree_init(&fs_info->block_group_cache);
+diff --git a/Documentation/Makefile.in b/Documentation/Makefile.in
+index 0c8b5ba..b03eaf2 100644
+--- a/Documentation/Makefile.in
++++ b/Documentation/Makefile.in
+@@ -9,6 +9,7 @@ MAN8_TXT += btrfs-find-root.asciidoc
+ MAN8_TXT += btrfs-image.asciidoc
+ MAN8_TXT += btrfs-map-logical.asciidoc
+ MAN8_TXT += btrfs-show-super.asciidoc
++MAN8_TXT += btrfs-select-super.asciidoc
+ MAN8_TXT += btrfstune.asciidoc
+ MAN8_TXT += fsck.btrfs.asciidoc
+ MAN8_TXT += mkfs.btrfs.asciidoc
+diff --git a/Documentation/btrfs-select-super.asciidoc b/Documentation/btrfs-select-super.asciidoc
+new file mode 100644
+index 0000000..a8d7ef0
+--- /dev/null
++++ b/Documentation/btrfs-select-super.asciidoc
+@@ -0,0 +1,29 @@
++btrfs-select-super(8)
++=====================
++
++NAME
++----
++btrfs-select-super - overwrite superblock with a backup
++
++SYNOPSIS
++--------
++*btrfs-select-super* -s number dev
++
++DESCRIPTION
++-----------
++*btrfs-select-super* destructively overwrites all copies of the superblock
++with a specified copy.  This helps with certain cases of damage, especially
++when barriers were disabled during a power failure.  You can find a valid
++copy of the superblock with *btrfs check -s*.
++
++The filesystem specified by `dev` must not be mounted.
++
++OPTIONS
++-------
++-s|--super <superblock>::
++use <superblock>th superblock copy, valid values are 0 up to 2 if the
++respective superblock offset is within the filesystem
++
++SEE ALSO
++--------
++`btrfsck check`(8)
 -- 
-2.5.1
+2.1.4
 

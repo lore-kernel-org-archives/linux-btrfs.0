@@ -1,113 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f52.google.com ([209.85.220.52]:32792 "EHLO
-	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750717AbbIBEmy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 00:42:54 -0400
-Received: by paap5 with SMTP id p5so11508647paa.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2015 21:42:54 -0700 (PDT)
-Date: Tue, 1 Sep 2015 21:42:49 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: linux-btrfs@vger.kernel.org, Omar Sandoval <osandov@fb.com>
-Subject: Re: [PATCH 5/6] Btrfs: wire up the free space tree to the extent tree
-Message-ID: <20150902044249.GB14575@huxley.hsd1.ca.comcast.net>
-References: <cover.1441131625.git.osandov@fb.com>
- <5354d2ad80625f36be4032664a7d39f4c4874119.1441131625.git.osandov@fb.com>
- <55E60129.3070009@fb.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:46125 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753997AbbIBMYP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 08:24:15 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t82CNxYL030316
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Sep 2015 20:23:59 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 0/4] btrfs-progs: stat info for btrfs rescue chunk-recover
+Date: Wed, 2 Sep 2015 20:22:28 +0800
+Message-ID: <cover.1441196519.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55E60129.3070009@fb.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 01, 2015 at 03:48:57PM -0400, Josef Bacik wrote:
-> On 09/01/2015 03:05 PM, Omar Sandoval wrote:
-> >From: Omar Sandoval <osandov@fb.com>
-> >
-> >The free space tree is updated in tandem with the extent tree. There are
-> >only a handful of places where we need to hook in:
-> >
-> >1. Block group creation
-> >2. Block group deletion
-> >3. Delayed refs (extent creation and deletion)
-> >4. Block group caching
-> >
-> >Signed-off-by: Omar Sandoval <osandov@fb.com>
-> >---
-> >  fs/btrfs/extent-tree.c | 73 +++++++++++++++++++++++++++++++++++++++++++++++---
-> >  1 file changed, 70 insertions(+), 3 deletions(-)
-> >
-> >diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> >index 37179a569f40..3f10df3932f0 100644
-> >--- a/fs/btrfs/extent-tree.c
-> >+++ b/fs/btrfs/extent-tree.c
-> >@@ -33,6 +33,7 @@
-> >  #include "raid56.h"
-> >  #include "locking.h"
-> >  #include "free-space-cache.h"
-> >+#include "free-space-tree.h"
-> >  #include "math.h"
-> >  #include "sysfs.h"
-> >  #include "qgroup.h"
-> >@@ -589,7 +590,41 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
-> >  	cache->cached = BTRFS_CACHE_FAST;
-> >  	spin_unlock(&cache->lock);
-> >
-> >-	if (fs_info->mount_opt & BTRFS_MOUNT_SPACE_CACHE) {
-> >+	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-> >+		if (load_cache_only) {
-> >+			spin_lock(&cache->lock);
-> >+			cache->caching_ctl = NULL;
-> >+			cache->cached = BTRFS_CACHE_NO;
-> >+			spin_unlock(&cache->lock);
-> >+			wake_up(&caching_ctl->wait);
-> >+		} else {
-> >+			mutex_lock(&caching_ctl->mutex);
-> >+			ret = load_free_space_tree(fs_info, cache);
-> >+			if (ret) {
-> >+				btrfs_warn(fs_info, "failed to load free space tree for %llu: %d",
-> >+					   cache->key.objectid, ret);
-> >+				spin_lock(&cache->lock);
-> >+				cache->caching_ctl = NULL;
-> >+				cache->cached = BTRFS_CACHE_ERROR;
-> >+				spin_unlock(&cache->lock);
-> >+				goto tree_out;
-> >+			}
-> >+
-> >+			spin_lock(&cache->lock);
-> >+			cache->caching_ctl = NULL;
-> >+			cache->cached = BTRFS_CACHE_FINISHED;
-> >+			cache->last_byte_to_unpin = (u64)-1;
-> >+			caching_ctl->progress = (u64)-1;
-> >+			spin_unlock(&cache->lock);
-> >+			mutex_unlock(&caching_ctl->mutex);
-> >+
-> >+tree_out:
-> >+			wake_up(&caching_ctl->wait);
-> >+			put_caching_control(caching_ctl);
-> >+			free_excluded_extents(fs_info->extent_root, cache);
-> >+			return 0;
-> >+		}
-> >+	} else if (fs_info->mount_opt & BTRFS_MOUNT_SPACE_CACHE) {
-> >  		mutex_lock(&caching_ctl->mutex);
-> 
-> So the reason we have this load_cache_only thing is because the free space
-> cache could be loaded almost instantaneously since it was contiguously
-> allocated.  This isn't the case with the free space tree, and although it is
-> better than the no space cache way of doing things, we are still going to
-> incur a bit of latency when seeking through a large free space tree.  So
-> break this out and make the caching kthread either do the old style load or
-> load the free space tree.  Then you can use the add free space helpers that
-> will wake anybody up waiting on allocations and you incur less direct
-> latency.  Thanks,
-> 
-> Josef
+chunk-recover need to use many many time in scan_devices(),
+and no output in screen:
+ # btrfs rescue chunk-recover /dev/sda6
+ (no output here, but need long time)
 
-Okay, I'll do the load from caching_thread(). Do you think we're going
-to need the need_resched() || rwsem_is_contended(commit_root) check and
-retry for the free space tree like we do with the extent tree? It seems
-like it could get complicated since we would need to worry about the
-format changing underneath us.
+To notice user that "the command is not hang", this patch add
+dynamic updated stat information in above period:
+ # btrfs rescue chunk-recover /dev/sda6
+ Scanning: DONE in dev[0], 19998441472 in dev[1], DONE in dev[2]
+ (until)
+ Scanning: DONE in dev0, DONE in dev1, DONE in dev2
+ Check chunks successfully with no orphans
+ Recover the chunk tree successfully.
+
+
+Changelog v2->v3:
+ Add [PATCH 2/4] to fix a potential invalid memory access of pthread.
+
+Changelog v1->v2:
+ [PATCH 3/3] in v1 lost a little cleanup, added in v2.
+
+Zhao Lei (4):
+  btrfs-progs: use for loop for scan_devices
+  btrfs-progs: Use long type to get thread's return value
+  btrfs-progs: stat info for btrfs rescue chunk-recover
+  btrfs-progs: Fix some spelling typo in chunk-recover.c
+
+ chunk-recover.c | 89 +++++++++++++++++++++++++++++++++++++++------------------
+ 1 file changed, 61 insertions(+), 28 deletions(-)
 
 -- 
-Omar
+1.8.5.1
+

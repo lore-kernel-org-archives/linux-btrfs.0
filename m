@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46125 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:25821 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754044AbbIBMYQ (ORCPT
+	with ESMTP id S1754164AbbIBMYQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 08:24:16 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t82CO10J030326
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Sep 2015 20:24:01 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t82CO2Pk030329
+	for <linux-btrfs@vger.kernel.org>; Wed, 2 Sep 2015 20:24:02 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 3/4] btrfs-progs: stat info for btrfs rescue chunk-recover
-Date: Wed, 2 Sep 2015 20:22:31 +0800
-Message-ID: <3711e85cec33955bbd437d733b25aa02b87f0fa2.1441196519.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 4/4] btrfs-progs: Fix some spelling typo in chunk-recover.c
+Date: Wed, 2 Sep 2015 20:22:32 +0800
+Message-ID: <a20f03e1e16570796ec49f750f3303f85a02ae79.1441196519.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1441196519.git.zhaolei@cn.fujitsu.com>
 References: <cover.1441196519.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,138 +19,56 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-chunk-recover need to use many many time in scan_devices(),
-and no output in screen:
- # btrfs rescue chunk-recover /dev/sda6
- (no output here, but need long time)
+Only comment, not big issue.
 
-To notice user that "the command is not hang", this patch add
-dynamic updated stat information in above period:
- # btrfs rescue chunk-recover /dev/sda6
- Scanning: DONE in dev[0], 19998441472 in dev[1], DONE in dev[2]
- (until)
- Scanning: DONE in dev0, DONE in dev1, DONE in dev2
- Check chunks successfully with no orphans
- Recover the chunk tree successfully.
+And remove no-use aggument in block_group_free_all_extent().
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- chunk-recover.c | 72 ++++++++++++++++++++++++++++++++++++++++++---------------
- 1 file changed, 54 insertions(+), 18 deletions(-)
+ chunk-recover.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
 diff --git a/chunk-recover.c b/chunk-recover.c
-index 3cb22ae..562817b 100644
+index 562817b..962a72b 100644
 --- a/chunk-recover.c
 +++ b/chunk-recover.c
-@@ -76,6 +76,7 @@ struct device_scan {
- 	struct recover_control *rc;
- 	struct btrfs_device *dev;
- 	int fd;
-+	u64 bytenr;
- };
+@@ -259,7 +259,7 @@ again:
+ 		list_del_init(&exist->list);
+ 		free(exist);
+ 		/*
+-		 * We must do seach again to avoid the following cache.
++		 * We must do search again to avoid the following cache.
+ 		 * /--old bg 1--//--old bg 2--/
+ 		 *        /--new bg--/
+ 		 */
+@@ -1092,8 +1092,7 @@ err:
+ 	return ret;
+ }
  
- static struct extent_record *btrfs_new_extent_record(struct extent_buffer *eb)
-@@ -766,6 +767,8 @@ static int scan_one_device(void *dev_scan_struct)
+-static int block_group_free_all_extent(struct btrfs_trans_handle *trans,
+-				       struct btrfs_root *root,
++static int block_group_free_all_extent(struct btrfs_root *root,
+ 				       struct block_group_record *bg)
+ {
+ 	struct btrfs_block_group_cache *cache;
+@@ -1133,7 +1132,7 @@ static int remove_chunk_extent_item(struct btrfs_trans_handle *trans,
+ 		if (ret)
+ 			return ret;
  
- 	bytenr = 0;
- 	while (1) {
-+		dev_scan->bytenr = bytenr;
-+
- 		if (is_super_block_address(bytenr))
- 			bytenr += rc->sectorsize;
- 
-@@ -832,9 +835,8 @@ static int scan_devices(struct recover_control *rc)
- 	long *t_rets;
- 	int devnr = 0;
- 	int devidx = 0;
--	int cancel_from = 0;
--	int cancel_to = 0;
- 	int i;
-+	int all_done;
- 
- 	list_for_each_entry(dev, &rc->fs_devices->devices, dev_list)
- 		devnr++;
-@@ -860,30 +862,64 @@ static int scan_devices(struct recover_control *rc)
- 		dev_scans[devidx].rc = rc;
- 		dev_scans[devidx].dev = dev;
- 		dev_scans[devidx].fd = fd;
--		ret = pthread_create(&t_scans[devidx], NULL,
--				     (void *)scan_one_device,
--				     (void *)&dev_scans[devidx]);
--		if (ret) {
--			cancel_from = 0;
--			cancel_to = devidx - 1;
--			goto out1;
--		}
-+		dev_scans[devidx].bytenr = -1;
- 		devidx++;
+-		ret = block_group_free_all_extent(trans, root, chunk->bg_rec);
++		ret = block_group_free_all_extent(root, chunk->bg_rec);
+ 		if (ret)
+ 			return ret;
  	}
+@@ -2310,7 +2309,7 @@ static void validate_rebuild_chunks(struct recover_control *rc)
+ }
  
- 	for (i = 0; i < devidx; i++) {
--		ret = pthread_join(t_scans[i], (void **)&t_rets[i]);
--		if (ret || t_rets[i]) {
--			ret = 1;
--			cancel_from = i + 1;
--			cancel_to = devnr - 1;
-+		ret = pthread_create(&t_scans[i], NULL,
-+				     (void *)scan_one_device,
-+				     (void *)&dev_scans[i]);
-+		if (ret)
- 			goto out1;
-+
-+		dev_scans[i].bytenr = 0;
-+	}
-+
-+	while (1) {
-+		all_done = 1;
-+		for (i = 0; i < devidx; i++) {
-+			if (dev_scans[i].bytenr == -1)
-+				continue;
-+			ret = pthread_tryjoin_np(t_scans[i],
-+						 (void **)&t_rets[i]);
-+			if (ret == EBUSY) {
-+				all_done = 0;
-+				continue;
-+			}
-+			if (ret || t_rets[i]) {
-+				ret = 1;
-+				goto out1;
-+			}
-+			dev_scans[i].bytenr = -1;
-+		}
-+
-+		printf("\rScanning: ");
-+		for (i = 0; i < devidx; i++) {
-+			if (dev_scans[i].bytenr == -1)
-+				printf("%sDONE in dev%d",
-+				       i ? ", " : "", i);
-+			else
-+				printf("%s%llu in dev%d",
-+				       i ? ", " : "", dev_scans[i].bytenr, i);
- 		}
-+		/* clear chars if exist in tail */
-+		printf("                ");
-+		printf("\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b\b");
-+		fflush(stdout);
-+
-+		if (all_done) {
-+			printf("\n");
-+			break;
-+		}
-+
-+		sleep(1);
- 	}
- out1:
--	while (ret && (cancel_from <= cancel_to)) {
--		pthread_cancel(t_scans[cancel_from]);
--		cancel_from++;
-+	for (i = 0; i < devidx; i++) {
-+		if (dev_scans[i].bytenr == -1)
-+			continue;
-+		pthread_cancel(t_scans[i]);
- 	}
- out2:
- 	free(dev_scans);
+ /*
+- * Return 0 when succesful, < 0 on error and > 0 if aborted by user
++ * Return 0 when successful, < 0 on error and > 0 if aborted by user
+  */
+ int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
+ {
 -- 
 1.8.5.1
 

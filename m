@@ -1,268 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f47.google.com ([209.85.220.47]:35805 "EHLO
-	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752491AbbICToi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Sep 2015 15:44:38 -0400
-Received: by pacfv12 with SMTP id fv12so56813771pac.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2015 12:44:38 -0700 (PDT)
+Received: from mail-pa0-f54.google.com ([209.85.220.54]:32895 "EHLO
+	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756509AbbICToj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Sep 2015 15:44:39 -0400
+Received: by pacex6 with SMTP id ex6so20916pac.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2015 12:44:39 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v2 2/9] Btrfs: add extent buffer bitmap sanity tests
-Date: Thu,  3 Sep 2015 12:44:20 -0700
-Message-Id: <9224fb434561acae32d2bcf7f4ef701b637758f5.1441309178.git.osandov@fb.com>
+Subject: [PATCH v2 3/9] Btrfs: add helpers for read-only compat bits
+Date: Thu,  3 Sep 2015 12:44:21 -0700
+Message-Id: <499ed35312e2bb8f12e6931b3f8a8c675561dd96.1441309178.git.osandov@fb.com>
 In-Reply-To: <cover.1441309178.git.osandov@fb.com>
 In-Reply-To: <cover.1441309178.git.osandov@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 References: <cover.1441309178.git.osandov@fb.com>
 
-Sanity test the extent buffer bitmap operations (test, set, and clear)
-against the equivalent standard kernel operations.
+We're finally going to add one of these for the free space tree, so
+let's add the same nice helpers that we have for the incompat bits.
 
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c             |  34 ++++++----
- fs/btrfs/extent_io.h             |   4 +-
- fs/btrfs/tests/extent-io-tests.c | 138 ++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 160 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h | 34 ++++++++++++++++++++++++++++++++++
+ 1 file changed, 34 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index eae9175ff62b..f875e29e10e1 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4678,24 +4678,14 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
- 	return new;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index aac314e14188..10388ac041b6 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4113,6 +4113,40 @@ static inline int __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
+ 	return !!(btrfs_super_incompat_flags(disk_super) & flag);
  }
  
--struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
--						u64 start)
-+struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
-+						  u64 start, unsigned long len)
- {
- 	struct extent_buffer *eb;
--	unsigned long len;
- 	unsigned long num_pages;
- 	unsigned long i;
- 
--	if (!fs_info) {
--		/*
--		 * Called only from tests that don't always have a fs_info
--		 * available, but we know that nodesize is 4096
--		 */
--		len = 4096;
--	} else {
--		len = fs_info->tree_root->nodesize;
--	}
--	num_pages = num_extent_pages(0, len);
-+	num_pages = num_extent_pages(start, len);
- 
- 	eb = __alloc_extent_buffer(fs_info, start, len);
- 	if (!eb)
-@@ -4718,6 +4708,24 @@ err:
- 	return NULL;
- }
- 
-+struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
-+						u64 start)
++#define btrfs_set_fs_compat_ro(__fs_info, opt) \
++	__btrfs_set_fs_compat_ro((__fs_info), BTRFS_FEATURE_COMPAT_RO_##opt)
++
++static inline void __btrfs_set_fs_compat_ro(struct btrfs_fs_info *fs_info,
++					    u64 flag)
 +{
-+	unsigned long len;
++	struct btrfs_super_block *disk_super;
++	u64 features;
 +
-+	if (!fs_info) {
-+		/*
-+		 * Called only from tests that don't always have a fs_info
-+		 * available, but we know that nodesize is 4096
-+		 */
-+		len = 4096;
-+	} else {
-+		len = fs_info->tree_root->nodesize;
-+	}
-+
-+	return __alloc_dummy_extent_buffer(fs_info, start, len);
-+}
-+
- static void check_buffer_tree_ref(struct extent_buffer *eb)
- {
- 	int refs;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 9185a20081d7..9f8d7d1a7015 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -263,8 +263,10 @@ void set_page_extent_mapped(struct page *page);
- 
- struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 					  u64 start);
-+struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
-+						  u64 start, unsigned long len);
- struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
--		u64 start);
-+						u64 start);
- struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
- struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
- 					 u64 start);
-diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
-index 9e9f2368177d..71ab575e7633 100644
---- a/fs/btrfs/tests/extent-io-tests.c
-+++ b/fs/btrfs/tests/extent-io-tests.c
-@@ -18,6 +18,7 @@
- 
- #include <linux/pagemap.h>
- #include <linux/sched.h>
-+#include <linux/slab.h>
- #include "btrfs-tests.h"
- #include "../extent_io.h"
- 
-@@ -76,6 +77,8 @@ static int test_find_delalloc(void)
- 	u64 found;
- 	int ret = -EINVAL;
- 
-+	test_msg("Running find delalloc tests\n");
-+
- 	inode = btrfs_new_test_inode();
- 	if (!inode) {
- 		test_msg("Failed to allocate test inode\n");
-@@ -268,8 +271,139 @@ out:
- 	return ret;
- }
- 
-+static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
-+			     unsigned long len)
-+{
-+	unsigned long i, x;
-+
-+	memset(bitmap, 0, len);
-+	memset_extent_buffer(eb, 0, 0, len);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Bitmap was not zeroed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
-+	extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Setting all bits failed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
-+	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Clearing all bits failed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_set(bitmap, (PAGE_CACHE_SIZE - sizeof(long) / 2) * BITS_PER_BYTE,
-+		   sizeof(long) * BITS_PER_BYTE);
-+	extent_buffer_bitmap_set(eb, PAGE_CACHE_SIZE - sizeof(long) / 2, 0,
-+				 sizeof(long) * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Setting straddling pages failed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
-+	bitmap_clear(bitmap,
-+		     (PAGE_CACHE_SIZE - sizeof(long) / 2) * BITS_PER_BYTE,
-+		     sizeof(long) * BITS_PER_BYTE);
-+	extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
-+	extent_buffer_bitmap_clear(eb, PAGE_CACHE_SIZE - sizeof(long) / 2, 0,
-+				   sizeof(long) * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Clearing straddling pages failed\n");
-+		return -EINVAL;
-+	}
-+
-+	/*
-+	 * Generate a wonky pseudo-random bit pattern for the sake of not using
-+	 * something repetitive that could miss some hypothetical off-by-n bug.
-+	 */
-+	x = 0;
-+	for (i = 0; i < len / sizeof(long); i++) {
-+		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffUL;
-+		bitmap[i] = x;
-+	}
-+	write_extent_buffer(eb, bitmap, 0, len);
-+
-+	for (i = 0; i < len * BITS_PER_BYTE; i++) {
-+		int bit, bit1;
-+
-+		bit = !!test_bit(i, bitmap);
-+		bit1 = !!extent_buffer_test_bit(eb, 0, i);
-+		if (bit1 != bit) {
-+			test_msg("Testing bit pattern failed\n");
-+			return -EINVAL;
++	disk_super = fs_info->super_copy;
++	features = btrfs_super_compat_ro_flags(disk_super);
++	if (!(features & flag)) {
++		spin_lock(&fs_info->super_lock);
++		features = btrfs_super_compat_ro_flags(disk_super);
++		if (!(features & flag)) {
++			features |= flag;
++			btrfs_set_super_compat_ro_flags(disk_super, features);
++			btrfs_info(fs_info, "setting %llu ro feature flag",
++				   flag);
 +		}
-+
-+		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
-+						i % BITS_PER_BYTE);
-+		if (bit1 != bit) {
-+			test_msg("Testing bit pattern with offset failed\n");
-+			return -EINVAL;
-+		}
++		spin_unlock(&fs_info->super_lock);
 +	}
-+
-+	return 0;
 +}
 +
-+static int test_eb_bitmaps(void)
++#define btrfs_fs_compat_ro(fs_info, opt) \
++	__btrfs_fs_compat_ro((fs_info), BTRFS_FEATURE_COMPAT_RO_##opt)
++
++static inline int __btrfs_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag)
 +{
-+	unsigned long len = PAGE_CACHE_SIZE * 4;
-+	unsigned long *bitmap;
-+	struct extent_buffer *eb;
-+	int ret;
-+
-+	test_msg("Running extent buffer bitmap tests\n");
-+
-+	bitmap = kmalloc(len, GFP_NOFS);
-+	if (!bitmap) {
-+		test_msg("Couldn't allocate test bitmap\n");
-+		return -ENOMEM;
-+	}
-+
-+	eb = __alloc_dummy_extent_buffer(NULL, 0, len);
-+	if (!eb) {
-+		test_msg("Couldn't allocate test extent buffer\n");
-+		kfree(bitmap);
-+		return -ENOMEM;
-+	}
-+
-+	ret = __test_eb_bitmaps(bitmap, eb, len);
-+	if (ret)
-+		goto out;
-+
-+	/* Do it over again with an extent buffer which isn't page-aligned. */
-+	free_extent_buffer(eb);
-+	eb = __alloc_dummy_extent_buffer(NULL, PAGE_CACHE_SIZE / 2, len);
-+	if (!eb) {
-+		test_msg("Couldn't allocate test extent buffer\n");
-+		kfree(bitmap);
-+		return -ENOMEM;
-+	}
-+
-+	ret = __test_eb_bitmaps(bitmap, eb, len);
-+out:
-+	free_extent_buffer(eb);
-+	kfree(bitmap);
-+	return ret;
++	struct btrfs_super_block *disk_super;
++	disk_super = fs_info->super_copy;
++	return !!(btrfs_super_compat_ro_flags(disk_super) & flag);
 +}
 +
- int btrfs_test_extent_io(void)
- {
--	test_msg("Running find delalloc tests\n");
--	return test_find_delalloc();
-+	int ret;
-+
-+	test_msg("Running extent I/O tests\n");
-+
-+	ret = test_find_delalloc();
-+	if (ret)
-+		goto out;
-+
-+	ret = test_eb_bitmaps();
-+out:
-+	test_msg("Extent I/O tests finished\n");
-+	return ret;
- }
+ /*
+  * Call btrfs_abort_transaction as early as possible when an error condition is
+  * detected, that way the exact line number is reported.
 -- 
 2.5.1
 

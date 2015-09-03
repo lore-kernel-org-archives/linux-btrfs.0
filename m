@@ -1,74 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32895 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751233AbbIBJxF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 05:53:05 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t829qseG024412
-	for <linux-btrfs@vger.kernel.org>; Wed, 2 Sep 2015 17:52:54 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 3/3] btrfs-progs: Fix some spelling typo in chunk-recover.c
-Date: Wed, 2 Sep 2015 17:51:25 +0800
-Message-ID: <54cbdbd004a4880d60d378a0fb10dced288cb94b.1441187401.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1441187401.git.zhaolei@cn.fujitsu.com>
-References: <cover.1441187401.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-pa0-f42.google.com ([209.85.220.42]:35484 "EHLO
+	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755897AbbICAvw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 20:51:52 -0400
+Received: by pacfv12 with SMTP id fv12so28295771pac.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2015 17:51:52 -0700 (PDT)
+From: Justin Maggard <jmaggard10@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Justin Maggard <jmaggard@netgear.com>
+Subject: [PATCH] btrfs: qgroup: exit the rescan worker during umount
+Date: Wed,  2 Sep 2015 17:51:45 -0700
+Message-Id: <1441241505-16266-1-git-send-email-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Only comment, not big issue.
+I was hitting a consistent NULL pointer dereference during shutdown that
+showed the trace running through end_workqueue_bio().  I traced it back to
+the endio_meta_workers workqueue being poked after it had already been
+destroyed.
 
-And remove no-use aggument in block_group_free_all_extent().
+Eventually I found that the root cause was a qgroup rescan that was still
+in progress while we were stopping all the btrfs workers.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Currently we explicitly pause balance and scrub operations in
+close_ctree(), but we do nothing to stop the qgroup rescan.  We should
+probably be doing the same for qgroup rescan, but that's a much larger
+change.  This small change is good enough to allow me to unmount without
+crashing.
+
+Signed-off-by: Justin Maggard <jmaggard@netgear.com>
 ---
- chunk-recover.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ fs/btrfs/qgroup.c | 9 ++++++---
+ 1 file changed, 6 insertions(+), 3 deletions(-)
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 7698ee0..1d8fe81 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -259,7 +259,7 @@ again:
- 		list_del_init(&exist->list);
- 		free(exist);
- 		/*
--		 * We must do seach again to avoid the following cache.
-+		 * We must do search again to avoid the following cache.
- 		 * /--old bg 1--//--old bg 2--/
- 		 *        /--new bg--/
- 		 */
-@@ -1092,8 +1092,7 @@ err:
- 	return ret;
- }
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index d904ee1..5bfcee9 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2278,7 +2278,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 		goto out;
  
--static int block_group_free_all_extent(struct btrfs_trans_handle *trans,
--				       struct btrfs_root *root,
-+static int block_group_free_all_extent(struct btrfs_root *root,
- 				       struct block_group_record *bg)
- {
- 	struct btrfs_block_group_cache *cache;
-@@ -1133,7 +1132,7 @@ static int remove_chunk_extent_item(struct btrfs_trans_handle *trans,
- 		if (ret)
- 			return ret;
+ 	err = 0;
+-	while (!err) {
++	while (!err && !btrfs_fs_closing(fs_info)) {
+ 		trans = btrfs_start_transaction(fs_info->fs_root, 0);
+ 		if (IS_ERR(trans)) {
+ 			err = PTR_ERR(trans);
+@@ -2301,7 +2301,8 @@ out:
+ 	btrfs_free_path(path);
  
--		ret = block_group_free_all_extent(trans, root, chunk->bg_rec);
-+		ret = block_group_free_all_extent(root, chunk->bg_rec);
- 		if (ret)
- 			return ret;
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
+-	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
++	if (!btrfs_fs_closing(fs_info)) {
++		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+ 
+ 	if (err > 0 &&
+ 	    fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT) {
+@@ -2330,7 +2331,9 @@ out:
  	}
-@@ -2310,7 +2309,7 @@ static void validate_rebuild_chunks(struct recover_control *rc)
- }
+ 	btrfs_end_transaction(trans, fs_info->quota_root);
  
- /*
-- * Return 0 when succesful, < 0 on error and > 0 if aborted by user
-+ * Return 0 when successful, < 0 on error and > 0 if aborted by user
-  */
- int btrfs_recover_chunk_tree(char *path, int verbose, int yes)
- {
+-	if (err >= 0) {
++	if (btrfs_fs_closing(fs_info)) {
++		btrfs_info(fs_info, "qgroup scan paused");
++	} else if (err >= 0) {
+ 		btrfs_info(fs_info, "qgroup scan completed%s",
+ 			err > 0 ? " (inconsistency flag cleared)" : "");
+ 	} else {
 -- 
-1.8.5.1
+2.5.1
 

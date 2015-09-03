@@ -1,56 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:37933 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751264AbbIAElT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 00:41:19 -0400
-Subject: Re: btrfs regression since 4.X kernel NULL pointer dereference
-To: Chris Mason <clm@fb.com>, Christoph Hellwig <hch@lst.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "<linux-fsdevel@vger.kernel.org>" <linux-fsdevel@vger.kernel.org>
-References: <55D8B193.8010906@profihost.ag> <20150825090030.GF31630@lst.de>
- <20150825135146.GE7176@ret.masoncoding.com>
- <590FB3C7-8BCA-4B04-BBB0-92863E02A89C@profihost.ag>
- <20150901000610.GC5136@ret.masoncoding.com>
-From: Stefan Priebe <s.priebe@profihost.ag>
-Message-ID: <55E52C6D.6050504@profihost.ag>
-Date: Tue, 1 Sep 2015 06:41:17 +0200
+Received: from mx2.suse.de ([195.135.220.15]:51683 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754520AbbICNSC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Sep 2015 09:18:02 -0400
+Date: Thu, 3 Sep 2015 15:17:20 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: scrub: set error stats when tree block spanning
+ stripes
+Message-ID: <20150903131719.GR11834@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <981687019fcca4b4f7455b7a755e48888cbd24ff.1440510311.git.zhaolei@cn.fujitsu.com>
+ <20150826171949.GA11834@twin.jikos.cz>
+ <03b601d0e069$ddd50ee0$997f2ca0$@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150901000610.GC5136@ret.masoncoding.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <03b601d0e069$ddd50ee0$997f2ca0$@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 01.09.2015 um 02:06 schrieb Chris Mason:
-> On Mon, Aug 31, 2015 at 07:32:09PM +0200, Stefan Priebe - Profihost AG wrote:
->>> Am 25.08.2015 um 15:51 schrieb Chris Mason <clm@fb.com>:
->>>
->>>> On Tue, Aug 25, 2015 at 11:00:30AM +0200, Christoph Hellwig wrote:
->>>> I think this is btrfs using a struct block_device that doesn't have
->>>> a valid queue pointer in it's gendisk for ->s_bdev.  And there are
->>>> some fishy looking ->s_bdev assignments in the code which I suspect
->>>> are related to it:
->>>>
->>>> fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev == src_device->bdev)
->>>> fs/btrfs/dev-replace.c:         fs_info->sb->s_bdev = tgt_device->bdev;
->>>> fs/btrfs/volumes.c:     if (device->bdev == root->fs_info->sb->s_bdev)
->>>> fs/btrfs/volumes.c:             root->fs_info->sb->s_bdev = next_device->bdev;
->>>> fs/btrfs/volumes.c:     if (tgtdev->bdev == fs_info->sb->s_bdev)
->>>> fs/btrfs/volumes.c:             fs_info->sb->s_bdev = next_device->bdev;
->>>
->>> We've had trouble with this in the past, I'll take a look.
->>
->> Any news?
->
-> Haven't been able to reproduce yet, I'll try again in the morning.
+On Thu, Aug 27, 2015 at 09:44:05AM +0800, Zhao Lei wrote:
+[...]
 
-Thanks. We're using schroot like the user in this bugreport:
-https://bugzilla.kernel.org/show_bug.cgi?id=100911
+Thanks for the links and summary!
 
-But he also claims he found another way to reproduce using vfcgbackup 
-(last comment).
+> But it is still uncorrectable because neither kernel nor btrfsck can fix
+> it(only can report).
 
-Stefan
+I'm curious if it' is possible to write code that would fix the problem,
+eg. te relocate or shift the blocks. The 'btrfs rescue' command group is
+meant for this type of targeted fixes, unless it's easy to integrate it
+to the check & repair itself.
 
->
-> -chris
->
+> In short, it is caused by old version of btrfs-convert, and already fixed,
+> and this patch is used to make scrub report it in output.
+
+I assume there are people affected by this problem so it would be good
+to have a repair tool.

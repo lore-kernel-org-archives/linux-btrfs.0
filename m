@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:7682 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:27342 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933089AbbIDNZ6 (ORCPT
+	with ESMTP id S933091AbbIDNZ6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2015 09:25:58 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t84DPkHZ030022
-	for <linux-btrfs@vger.kernel.org>; Fri, 4 Sep 2015 21:25:46 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t84DPlIl030025
+	for <linux-btrfs@vger.kernel.org>; Fri, 4 Sep 2015 21:25:47 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/5] btrfs-progs: Introduce --extra-dev option
-Date: Fri, 4 Sep 2015 21:24:15 +0800
-Message-ID: <5ece0f3a4712a1ba0538e61bd4f45121da62a217.1441357933.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/5] btrfs-progs: Support extra-dev for btrfs rescue
+Date: Fri, 4 Sep 2015 21:24:16 +0800
+Message-ID: <9f20c44c6272eda068105d5ac9ae98c5ee767fcf.1441357933.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1441357933.git.zhaolei@cn.fujitsu.com>
 References: <cover.1441357933.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,165 +19,88 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Some command in current tools can't support filesystem with multiple
-loop device, for example:
- # truncate -s 200M ./1.img
- # truncate -s 200M ./2.img
- # mkfs.btrfs -f ./1.img ./2.img
- #
- # btrfs rescue chunk-recover -v ./1.img
- All Devices:
-        Device: id = 1, name = ./1.img
- ...
- # btrfs rescue super-recover -v ./1.img
- All Devices:
-        Device: id = 1, name = ./1.img
- ...
- # btrfs rescue zero-log ./1.img
- warning devid 2 not found already
- Clearing log on ./1.img, previous log_root 0, level 0
- ...
-
-As a workaround, we can bind all of above image files to loop device,
-but to make things simple, this patch introduce --extra-dev option,
-to specify non-block-device manually, as:
- # btrfs rescue chunk-recover -v --extra-device=./2.img ./1.img
- All Devices:
-        Device: id = 2, name = ./2.img
-        Device: id = 1, name = ./1.img
- ...
- # btrfs rescue super-recover --extra-dev=./2.img -v ./1.img
- All Devices:
-        Device: id = 2, name = ./2.img
-        Device: id = 1, name = ./1.img
- ...
- # btrfs rescue zero-log --extra-dev=./2.img ./1.img
- Clearing log on ./1.img, previous log_root 0, level 0
-
-We can add multiple extra-dev by:
- --extra-dev="1.img,2.img"
- or
- --extra-dev=1.img --extra-dev=2.img
+Make following command support --extra-dev:
+ btrfs rescue chunk-recover
+ btrfs rescue super-recover
+ btrfs rescue zero-log
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- utils.c | 70 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- utils.h |  5 +++++
- 2 files changed, 75 insertions(+)
+ cmds-rescue.c | 24 ++++++++++++++++++------
+ 1 file changed, 18 insertions(+), 6 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index 52791b5..ed1fb13 100644
---- a/utils.c
-+++ b/utils.c
-@@ -56,6 +56,8 @@ static int btrfs_scan_done = 0;
+diff --git a/cmds-rescue.c b/cmds-rescue.c
+index dd7c01e..163d0bb 100644
+--- a/cmds-rescue.c
++++ b/cmds-rescue.c
+@@ -37,9 +37,10 @@ const char * const cmd_rescue_chunk_recover_usage[] = {
+ 	"btrfs rescue chunk-recover [options] <device>",
+ 	"Recover the chunk tree by scanning the devices one by one.",
+ 	"",
+-	"-y	Assume an answer of `yes' to all questions",
+-	"-v	Verbose mode",
+-	"-h	Help",
++	HELPINFO_EXTRA_DEV,
++	"-y                 Assume an answer of `yes' to all questions",
++	"-v                 Verbose mode",
++	"-h                 Help",
+ 	NULL
+ };
  
- static char argv0_buf[ARGV0_BUF_SIZE] = "btrfs";
+@@ -47,8 +48,9 @@ const char * const cmd_rescue_super_recover_usage[] = {
+ 	"btrfs rescue super-recover [options] <device>",
+ 	"Recover bad superblocks from good copies",
+ 	"",
+-	"-y	Assume an answer of `yes' to all questions",
+-	"-v	Verbose mode",
++	HELPINFO_EXTRA_DEV,
++	"-y                 Assume an answer of `yes' to all questions",
++	"-v                 Verbose mode",
+ 	NULL
+ };
  
-+char btrfs_extra_devs[1024][PATH_MAX];
+@@ -59,6 +61,9 @@ int cmd_rescue_chunk_recover(int argc, char *argv[])
+ 	int yes = 0;
+ 	int verbose = 0;
+ 
++	if (set_extra_dev_from_arg(&argc, argv))
++		usage(cmd_rescue_chunk_recover_usage);
 +
- const char *get_argv0_buf(void)
- {
- 	return argv0_buf;
-@@ -2560,6 +2562,7 @@ int btrfs_scan_lblkid()
- 	blkid_dev dev = NULL;
- 	blkid_cache cache = NULL;
- 	char path[PATH_MAX];
-+	int i;
+ 	while (1) {
+ 		int c = getopt(argc, argv, "yvh");
+ 		if (c < 0)
+@@ -119,6 +124,9 @@ int cmd_rescue_super_recover(int argc, char **argv)
+ 	int yes = 0;
+ 	char *dname;
  
- 	if (btrfs_scan_done)
- 		return 0;
-@@ -2596,6 +2599,29 @@ int btrfs_scan_lblkid()
- 	blkid_dev_iterate_end(iter);
- 	blkid_put_cache(cache);
- 
-+	for (i = 0; i < ARRAY_SIZE(btrfs_extra_devs); i++) {
-+		if (btrfs_extra_devs[i][0] == 0)
-+			break;
++	if (set_extra_dev_from_arg(&argc, argv))
++		usage(cmd_rescue_super_recover_usage);
 +
-+		fd = open(btrfs_extra_devs[i], O_RDONLY);
-+		if (fd < 0) {
-+			printf("ERROR: could not open %s\n",
-+			       btrfs_extra_devs[i]);
-+			continue;
-+		}
-+		ret = btrfs_scan_one_device(fd, btrfs_extra_devs[i],
-+					    &tmp_devices, &num_devices,
-+					    BTRFS_SUPER_INFO_OFFSET, 0);
-+		if (ret) {
-+			printf("ERROR: could not scan %s\n",
-+			       btrfs_extra_devs[i]);
-+			close(fd);
-+			continue;
-+		}
-+
-+		close(fd);
-+	}
-+
- 	btrfs_scan_done = 1;
- 
- 	return 0;
-@@ -3069,3 +3095,47 @@ unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode)
- 
- 	return unit_mode;
+ 	while (1) {
+ 		int c = getopt(argc, argv, "vy");
+ 		if (c < 0)
+@@ -153,9 +161,10 @@ int cmd_rescue_super_recover(int argc, char **argv)
  }
-+
-+int set_extra_dev_from_arg(int *argc, char *argv[])
-+{
-+	int arg_i;
-+	int arg_end;
-+	int extra_dev_cnt = 0;
-+
-+	static const char opt_head[] = "--extra-dev=";
-+
-+	for (arg_i = 1; arg_i < *argc; arg_i++) {
-+		if (strncmp(argv[arg_i], opt_head, strlen(opt_head)))
-+			continue;
-+
-+		char *val_begin = argv[arg_i] + strlen(opt_head);
-+		char *val_end;
-+
-+		while (1) {
-+			val_end = strchrnul(val_begin, ',');
-+			if (val_end != val_begin) {
-+				memcpy(btrfs_extra_devs[extra_dev_cnt],
-+				       val_begin, val_end - val_begin);
-+				btrfs_extra_devs[extra_dev_cnt]
-+						[val_end - val_begin] = 0;
-+				extra_dev_cnt++;
-+			}
-+			if (*val_end == 0)
-+				break;
-+			val_begin = val_end + 1;
-+		}
-+		argv[arg_i] = NULL;
-+	}
-+	btrfs_extra_devs[extra_dev_cnt][0] = 0;
-+
-+	for (arg_i = 0, arg_end = 0; arg_i < *argc; arg_i++) {
-+		if (!argv[arg_i])
-+			continue;
-+		argv[arg_end] = argv[arg_i];
-+		arg_end++;
-+	}
-+
-+	*argc = arg_end;
-+
-+	return 0;
-+}
-diff --git a/utils.h b/utils.h
-index dce0a47..4070a1f 100644
---- a/utils.h
-+++ b/utils.h
-@@ -269,4 +269,9 @@ const char *get_argv0_buf(void);
  
- unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode);
+ const char * const cmd_rescue_zero_log_usage[] = {
+-	"btrfs rescue zero-log <device>",
++	"btrfs rescue zero-log [options] <device>",
+ 	"Clear the tree log. Usable if it's corrupted and prevents mount.",
+ 	"",
++	HELPINFO_EXTRA_DEV,
+ 	NULL
+ };
  
-+#define HELPINFO_EXTRA_DEV \
-+	"--extra-dev        set extra device to search"
+@@ -167,6 +176,9 @@ int cmd_rescue_zero_log(int argc, char **argv)
+ 	char *devname;
+ 	int ret;
+ 
++	if (set_extra_dev_from_arg(&argc, argv))
++		usage(cmd_rescue_zero_log_usage);
 +
-+int set_extra_dev_from_arg(int *argc, char *argv[]);
-+
- #endif
+ 	if (check_argc_exact(argc, 2))
+ 		usage(cmd_rescue_zero_log_usage);
+ 
 -- 
 1.8.5.1
 

@@ -1,94 +1,209 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx143.netapp.com ([216.240.21.24]:4465 "EHLO mx143.netapp.com"
+Received: from mx143.netapp.com ([216.240.21.24]:36322 "EHLO mx143.netapp.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932824AbbIDU0r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Sep 2015 16:26:47 -0400
+	id S933130AbbIDU0z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Sep 2015 16:26:55 -0400
 From: Anna Schumaker <Anna.Schumaker@netapp.com>
 To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
         <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
         <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
         <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
         <andros@netapp.com>, <hch@infradead.org>
-Subject: [PATCH v1 0/8] VFS: In-kernel copy system call
-Date: Fri, 4 Sep 2015 16:16:54 -0400
-Message-ID: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
+Subject: [PATCH v1 9/8] copy_file_range.2: New page documenting copy_file_range()
+Date: Fri, 4 Sep 2015 16:17:03 -0400
+Message-ID: <1441397823-1203-10-git-send-email-Anna.Schumaker@Netapp.com>
+In-Reply-To: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
+References: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Copy system calls came up during Plumbers a couple of weeks ago, because
-several filesystems (including NFS and XFS) are currently working on copy
-acceleration implementations.  We haven't heard from Zach Brown in a while,
-so I volunteered to push his patches upstream so individual filesystems
-don't need to keep writing their own ioctls.
+copy_file_range() is a new system call for copying ranges of data
+completely in the kernel.  This gives filesystems an opportunity to
+implement some kind of "copy acceleration", such as reflinks or
+server-side-copy (in the case of NFS).
 
-The first three patches are a simple reposting of Zach's patches from several
-months ago, with one minor error code fix.  The remaining patches add in a
-fallback mechanism when filesystems don't provide a copy function.  This is
-especially useful when doing a server-side copy on NFS (using the new COPY
-operation in NFS v4.2).  This fallback can be disabled by passing the flag
-COPY_REFLINK to the system call.
+Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
+---
+ man2/copy_file_range.2 | 168 +++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 168 insertions(+)
+ create mode 100644 man2/copy_file_range.2
 
-The last patch is a man page patch documenting this new system call,
-including an example program.
-
-I tested the fallback option by using /dev/urandom to generate files of
-varying sizes and copying them.  I compared the time to copy against that
-of `cp` just to see if there is a noticable difference.  I found that
-runtimes are roughly the same, but in-kernel copy tends to use less of
-the cpu.  Values in the tables below are averages across multiple trials.
-
-
- /usr/bin/cp |   512 MB  |   1024 MB |   1536 MB |   2048 MB
--------------|-----------|-----------|-----------|-----------
-       user  |   0.00s   |   0.00s   |   0.00s   |   0.00s
-     system  |   0.32s   |   0.52s   |   1.04s   |   1.04s
-        cpu  |     73%   |     69%   |     62%   |     62%
-      total  |   0.446   |   0.757   |   1.197   |   1.667
-
-
-   VFS copy  |   512 MB  |   1024 MB |   1536 MB |   2048 MB
--------------|-----------|-----------|-----------|-----------
-       user  |   0.00s   |   0.00s   |   0.00s   |  0.00s
-     system  |   0.33s   |   0.49s   |   0.76s   |  0.99s
-        cpu  |     77%   |     62%   |     60%   |    59%
-      total  |   0.422   |   0.777   |   1.267   |  1.655
-
-
-Questions?  Comments?  Thoughts?
-
-Anna
-
-
-Anna Schumaker (5):
-  btrfs: Add mountpoint checking during btrfs_copy_file_range
-  vfs: Remove copy_file_range mountpoint checks
-  vfs: Copy should check len after file open mode
-  vfs: Copy should use file_out rather than file_in
-  vfs: Fall back on splice if no copy function defined
-
-Zach Brown (3):
-  vfs: add copy_file_range syscall and vfs helper
-  x86: add sys_copy_file_range to syscall tables
-  btrfs: add .copy_file_range file operation
-
- arch/x86/entry/syscalls/syscall_32.tbl |   1 +
- arch/x86/entry/syscalls/syscall_64.tbl |   1 +
- fs/btrfs/ctree.h                       |   3 +
- fs/btrfs/file.c                        |   1 +
- fs/btrfs/ioctl.c                       |  95 ++++++++++++++----------
- fs/read_write.c                        | 132 +++++++++++++++++++++++++++++++++
- include/linux/copy.h                   |   6 ++
- include/linux/fs.h                     |   3 +
- include/uapi/asm-generic/unistd.h      |   4 +-
- include/uapi/linux/Kbuild              |   1 +
- include/uapi/linux/copy.h              |   6 ++
- kernel/sys_ni.c                        |   1 +
- 12 files changed, 214 insertions(+), 40 deletions(-)
- create mode 100644 include/linux/copy.h
- create mode 100644 include/uapi/linux/copy.h
-
+diff --git a/man2/copy_file_range.2 b/man2/copy_file_range.2
+new file mode 100644
+index 0000000..4a4cb73
+--- /dev/null
++++ b/man2/copy_file_range.2
+@@ -0,0 +1,168 @@
++.\"This manpage is Copyright (C) 2015 Anna Schumaker <Anna.Schumaker@Netapp.com>
++.TH COPY 2 2015-8-31 "Linux" "Linux Programmer's Manual"
++.SH NAME
++copy_file_range \- Copy a range of data from one file to another
++.SH SYNOPSIS
++.nf
++.B #include <linux/copy.h>
++.B #include <sys/syscall.h>
++.B #include <unistd.h>
++
++.BI "ssize_t syscall(__NR_copy_file_range, int " fd_in ", loff_t * " off_in ",
++.BI "                int " fd_out ", loff_t * " off_out ", size_t " len ",
++.BI "                unsigned int " flags );
++.fi
++.SH DESCRIPTION
++The
++.BR copy_file_range ()
++system call performs an in-kernel copy between two file descriptors
++without all that tedious mucking about in userspace.
++It copies up to
++.I len
++bytes of data from file descriptor
++.I fd_in
++to file descriptor
++.I fd_out
++at
++.IR off_out .
++The file descriptors must not refer to the same file.
++
++The following semantics apply for
++.IR fd_in ,
++and similar statements apply to
++.IR off_out :
++.IP * 3
++If
++.I off_in
++is NULL, then bytes are read from
++.I fd_in
++starting from the current file offset and the current
++file offset is adjusted appropriately.
++.IP *
++If
++.I off_in
++is not NULL, then
++.I off_in
++must point to a buffer that specifies the starting
++offset where bytes from
++.I fd_in
++will be read.  The current file offset of
++.I fd_in
++is not changed, but
++.I off_in
++is adjusted appropriately.
++.PP
++The default behavior of
++.BR copy_file_range ()
++is filesystem specific, and might result in creating a
++copy-on-write reflink.
++In the event that a given filesystem does not implement
++any form of copy acceleration, the kernel will perform
++a deep copy of the requested range by reading bytes from
++.I fd_in
++and writing them to
++.IR fd_out .
++
++Currently, Linux only supports the following flag:
++.TP 1.9i
++.B COPY_REFLINK
++Only perform the copy if the filesystem can do it as a reflink.
++Do not fall back on performing a deep copy.
++.SH RETURN VALUE
++Upon successful completion,
++.BR copy_file_range ()
++will return the number of bytes copied between files.
++This could be less than the length originally requested.
++
++On error,
++.BR copy_file_range ()
++returns \-1 and
++.I errno
++is set to indicate the error.
++.SH ERRORS
++.TP
++.B EBADF
++One or more file descriptors are not valid,
++or do not have proper read-write mode.
++.TP
++.B EINVAL
++Requested range extends beyond the end of the file;
++.I flags
++argument is set to an invalid value.
++.TP
++.B EOPNOTSUPP
++.B COPY_REFLINK
++was specified in
++.IR flags ,
++but the target filesystem does not support reflinks.
++.TP
++.B EXDEV
++Target filesystem doesn't support cross-filesystem copies.
++.SH VERSIONS
++The
++.BR copy_file_range ()
++system call first appeared in Linux 4.3.
++.SH CONFORMING TO
++The
++.BR copy_file_range ()
++system call is a nonstandard Linux extension.
++.SH EXAMPLE
++.nf
++
++#define _GNU_SOURCE
++#include <fcntl.h>
++#include <linux/copy.h>
++#include <stdio.h>
++#include <stdlib.h>
++#include <sys/stat.h>
++#include <sys/syscall.h>
++#include <unistd.h>
++
++
++int main(int argc, char **argv)
++{
++    int fd_in, fd_out;
++    struct stat stat;
++    loff_t len, ret;
++
++    if (argc != 3) {
++        fprintf(stderr, "Usage: %s <pathname> <pathname>\n", argv[0]);
++        exit(EXIT_FAILURE);
++    }
++
++    fd_in = open(argv[1], O_RDONLY);
++    if (fd_in == -1) {
++        perror("open (argv[1])");
++        exit(EXIT_FAILURE);
++    }
++
++    if (fstat(fd_in, &stat) == -1) {
++        perror("fstat");
++        exit(EXIT_FAILURE);
++    }
++    len = stat.st_size;
++
++    fd_out = open(argv[2], O_WRONLY | O_CREAT, 0644);
++    if (fd_out == -1) {
++        perror("open (argv[2])");
++        exit(EXIT_FAILURE);
++    }
++
++    do {
++        ret = syscall(__NR_copy_file_range, fd_in, NULL,
++                      fd_out, NULL, len, 0);
++        if (ret == -1) {
++            perror("copy_file_range");
++            exit(EXIT_FAILURE);
++        }
++
++        len -= ret;
++    } while (len > 0);
++
++    close(fd_in);
++    close(fd_out);
++    exit(EXIT_SUCCESS);
++}
++.fi
++.SH SEE ALSO
++.BR splice (2)
 -- 
 2.5.1
 

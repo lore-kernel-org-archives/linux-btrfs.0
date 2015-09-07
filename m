@@ -1,66 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx143.netapp.com ([216.240.21.24]:25346 "EHLO mx143.netapp.com"
+Received: from mail.kernel.org ([198.145.29.136]:44163 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932396AbbI3R1A (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 13:27:00 -0400
-From: Anna Schumaker <Anna.Schumaker@netapp.com>
-To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
-        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
-        <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
-        <andros@netapp.com>, <hch@infradead.org>
-Subject: [PATCH v5 0/9] VFS: In-kernel copy system call
-Date: Wed, 30 Sep 2015 13:26:44 -0400
-Message-ID: <1443634014-3026-1-git-send-email-Anna.Schumaker@Netapp.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	id S1750883AbbIGKJd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Sep 2015 06:09:33 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: add regression test for a btrfs enospc issue
+Date: Mon,  7 Sep 2015 11:09:26 +0100
+Message-Id: <1441620566-10624-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Copy system calls came up during Plumbers a while ago, mostly because several
-filesystems (including NFS and XFS) are currently working on copy acceleration
-implementations.  We haven't heard from Zach Brown in a while, so I volunteered
-to push his patches upstream so individual filesystems don't need to keep
-writing their own ioctls.
+From: Filipe Manana <fdmanana@suse.com>
 
-This posting fixes a few issues that popped up after I submitted v4 yesterday.
+Regression test for an ENOSPC issue when attempting to write to a file in
+a filesystem without any data block groups allocated.
 
-Changes in v5:
-- Bump syscall number (again)
-- Add sys_copy_file_range() to include/linux/syscalls.h
-- Change flags parameter on btrfs to an unsigned int
+The btrfs issue is fixed by the linux kernel patch titled
+"Btrfs: don't initialize a space info as full to prevent ENOSPC" and the
+regression was introduced by the patch titled
+"Btrfs: fix block group ->space_info null pointer dereference".
 
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/099     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/099.out |  2 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 85 insertions(+)
+ create mode 100755 tests/btrfs/099
+ create mode 100644 tests/btrfs/099.out
 
-Anna Schumaker (6):
-  vfs: Copy should check len after file open mode
-  vfs: Copy shouldn't forbid ranges inside the same file
-  vfs: Copy should use file_out rather than file_in
-  vfs: Remove copy_file_range mountpoint checks
-  vfs: Add vfs_copy_file_range() support for pagecache copies
-  btrfs: btrfs_copy_file_range() only supports reflinks
-
-Zach Brown (3):
-  vfs: add copy_file_range syscall and vfs helper
-  x86: add sys_copy_file_range to syscall tables
-  btrfs: add .copy_file_range file operation
-
- arch/x86/entry/syscalls/syscall_32.tbl |   1 +
- arch/x86/entry/syscalls/syscall_64.tbl |   1 +
- fs/btrfs/ctree.h                       |   3 +
- fs/btrfs/file.c                        |   1 +
- fs/btrfs/ioctl.c                       |  95 +++++++++++++---------
- fs/read_write.c                        | 141 +++++++++++++++++++++++++++++++++
- include/linux/copy.h                   |   6 ++
- include/linux/fs.h                     |   3 +
- include/linux/syscalls.h               |   3 +
- include/uapi/asm-generic/unistd.h      |   4 +-
- include/uapi/linux/Kbuild              |   1 +
- include/uapi/linux/copy.h              |   8 ++
- kernel/sys_ni.c                        |   1 +
- 13 files changed, 228 insertions(+), 40 deletions(-)
- create mode 100644 include/linux/copy.h
- create mode 100644 include/uapi/linux/copy.h
-
+diff --git a/tests/btrfs/099 b/tests/btrfs/099
+new file mode 100755
+index 0000000..0d6b269
+--- /dev/null
++++ b/tests/btrfs/099
+@@ -0,0 +1,82 @@
++#! /bin/bash
++# FSQA Test No. 099
++#
++# Regression test for an ENOSPC issue when attempting to write to a file in
++# a filesystem without any data block groups allocated.
++#
++#-----------------------------------------------------------------------
++#
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++# Author: Filipe Manana <fdmanana@suse.com>
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_need_to_be_root
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++
++rm -f $seqres.full
++
++_scratch_mkfs >>$seqres.full 2>&1
++
++# Mount our filesystem without space caches enabled so that we do not get any
++# space used from the initial data block group that mkfs creates (space caches
++# used space from data block groups).
++_scratch_mount "-o nospace_cache"
++
++# Need an fs with at least 2Gb to make sure mkfs.btrfs does not create an fs
++# using mixed block groups (used both for data and metadata). We really need
++# to have dedicated block groups for data to reproduce the issue and mkfs.btrfs
++# defaults to mixed block groups only for small filesystems (up to 1Gb).
++_require_fs_space $SCRATCH_MNT $((2 * 1024 * 1024))
++
++# Run balance with the purpose of deleting the unused data block group that
++# mkfs created. We could also wait for the background kthread to automatically
++# delete the unused block group, but we do not have a way to make it run and
++# wait for it to complete, so just do a balance instead of some unreliable sleep
++_run_btrfs_util_prog balance start -dusage=0 $SCRATCH_MNT
++
++# Now unmount the filesystem, mount it again (either with or with space caches
++# enabled, it does not matter to trigger the problem) and attempt to create a
++# file with some data - this used to fail with ENOSPC because there were no
++# data block groups when the filesystem was mounted and the data space info
++# object was marked as full when initialized (because it had 0 total bytes),
++# which prevented the file write path from attempting to allocate a data block
++# group and fail immediately with ENOSPC.
++_scratch_remount
++echo "hello world" > $SCRATCH_MNT/foobar
++
++echo "Silence is golden"
++status=0
++exit
+diff --git a/tests/btrfs/099.out b/tests/btrfs/099.out
+new file mode 100644
+index 0000000..4f36820
+--- /dev/null
++++ b/tests/btrfs/099.out
+@@ -0,0 +1,2 @@
++QA output created by 099
++Silence is golden
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 13cf0d7..a8f458a 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -101,3 +101,4 @@
+ 096 auto quick clone
+ 097 auto quick send clone
+ 098 auto quick metadata clone
++099 auto quick metadata enospc
 -- 
-2.6.0
+2.1.3
 

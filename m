@@ -1,141 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:44163 "EHLO mail.kernel.org"
+Received: from mx1.redhat.com ([209.132.183.28]:44871 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750883AbbIGKJd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Sep 2015 06:09:33 -0400
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: add regression test for a btrfs enospc issue
-Date: Mon,  7 Sep 2015 11:09:26 +0100
-Message-Id: <1441620566-10624-1-git-send-email-fdmanana@kernel.org>
+	id S1750777AbbIGKcH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Sep 2015 06:32:07 -0400
+Date: Mon, 7 Sep 2015 18:32:04 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] fstests: add regression test for a btrfs enospc issue
+Message-ID: <20150907103204.GD18060@dhcp-13-216.nay.redhat.com>
+References: <1441620566-10624-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1441620566-10624-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Mon, Sep 07, 2015 at 11:09:26AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Regression test for an ENOSPC issue when attempting to write to a file in
+> a filesystem without any data block groups allocated.
+> 
+> The btrfs issue is fixed by the linux kernel patch titled
+> "Btrfs: don't initialize a space info as full to prevent ENOSPC" and the
+> regression was introduced by the patch titled
+> "Btrfs: fix block group ->space_info null pointer dereference".
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
 
-Regression test for an ENOSPC issue when attempting to write to a file in
-a filesystem without any data block groups allocated.
+Looks good to me.
 
-The btrfs issue is fixed by the linux kernel patch titled
-"Btrfs: don't initialize a space info as full to prevent ENOSPC" and the
-regression was introduced by the patch titled
-"Btrfs: fix block group ->space_info null pointer dereference".
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/099     | 82 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/099.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 85 insertions(+)
- create mode 100755 tests/btrfs/099
- create mode 100644 tests/btrfs/099.out
-
-diff --git a/tests/btrfs/099 b/tests/btrfs/099
-new file mode 100755
-index 0000000..0d6b269
---- /dev/null
-+++ b/tests/btrfs/099
-@@ -0,0 +1,82 @@
-+#! /bin/bash
-+# FSQA Test No. 099
-+#
-+# Regression test for an ENOSPC issue when attempting to write to a file in
-+# a filesystem without any data block groups allocated.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+
-+# Mount our filesystem without space caches enabled so that we do not get any
-+# space used from the initial data block group that mkfs creates (space caches
-+# used space from data block groups).
-+_scratch_mount "-o nospace_cache"
-+
-+# Need an fs with at least 2Gb to make sure mkfs.btrfs does not create an fs
-+# using mixed block groups (used both for data and metadata). We really need
-+# to have dedicated block groups for data to reproduce the issue and mkfs.btrfs
-+# defaults to mixed block groups only for small filesystems (up to 1Gb).
-+_require_fs_space $SCRATCH_MNT $((2 * 1024 * 1024))
-+
-+# Run balance with the purpose of deleting the unused data block group that
-+# mkfs created. We could also wait for the background kthread to automatically
-+# delete the unused block group, but we do not have a way to make it run and
-+# wait for it to complete, so just do a balance instead of some unreliable sleep
-+_run_btrfs_util_prog balance start -dusage=0 $SCRATCH_MNT
-+
-+# Now unmount the filesystem, mount it again (either with or with space caches
-+# enabled, it does not matter to trigger the problem) and attempt to create a
-+# file with some data - this used to fail with ENOSPC because there were no
-+# data block groups when the filesystem was mounted and the data space info
-+# object was marked as full when initialized (because it had 0 total bytes),
-+# which prevented the file write path from attempting to allocate a data block
-+# group and fail immediately with ENOSPC.
-+_scratch_remount
-+echo "hello world" > $SCRATCH_MNT/foobar
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/099.out b/tests/btrfs/099.out
-new file mode 100644
-index 0000000..4f36820
---- /dev/null
-+++ b/tests/btrfs/099.out
-@@ -0,0 +1,2 @@
-+QA output created by 099
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 13cf0d7..a8f458a 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -101,3 +101,4 @@
- 096 auto quick clone
- 097 auto quick send clone
- 098 auto quick metadata clone
-+099 auto quick metadata enospc
--- 
-2.1.3
-
+Reviewed-by: Eryu Guan <eguan@redhat.com>

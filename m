@@ -1,43 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:32924 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750773AbbIAOgj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 10:36:39 -0400
-Received: by paczk9 with SMTP id zk9so31260842pac.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 01 Sep 2015 07:36:39 -0700 (PDT)
-Received: from arch-nb.localdomain ([175.118.89.137])
-        by smtp.gmail.com with ESMTPSA id hb1sm18387507pbd.36.2015.09.01.07.36.36
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Tue, 01 Sep 2015 07:36:38 -0700 (PDT)
-From: Byongho Lee <bhlee.kernel@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: remove unnecessary list_del
-Date: Tue,  1 Sep 2015 23:36:28 +0900
-Message-Id: <1441118188-63111-1-git-send-email-bhlee.kernel@gmail.com>
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:37201 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752456AbbIGO1Z (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Sep 2015 10:27:25 -0400
+Date: Mon, 7 Sep 2015 17:24:37 +0300
+From: Alexandru Moise <00moses.alexander00@gmail.com>
+To: clm@fb.com
+Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: memset cur_trans->delayed_refs to zero
+Message-ID: <20150907142437.GA21090@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can safely iterate whole list items, without using list_del macro.
-So remove the list_del call.
+Use memset() to null out the btrfs_delayed_ref_root of
+btrfs_transaction instead of setting all the members to 0 by hand.
 
-Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
+Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
 ---
- fs/btrfs/inode.c | 1 -
- 1 file changed, 1 deletion(-)
+Rather than setting each member of ->delayed_refs by hand we should
+adhere to the practice of using memset() calls to fill those memory
+locations with zeroes. We make an exception however for the rb_root
+and atomic_t variable to make room for change in future delayed_refs
+implementations.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bda3c41dc9d5..fe42e339efec 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2595,7 +2595,6 @@ static void free_sa_defrag_extent(struct new_sa_defrag_extent *new)
- 		return;
+ fs/btrfs/transaction.c | 8 ++------
+ 1 file changed, 2 insertions(+), 6 deletions(-)
+
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 8f259b3..e4f7dcb 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -224,15 +224,11 @@ loop:
+ 	cur_trans->start_time = get_seconds();
+ 	cur_trans->dirty_bg_run = 0;
  
- 	list_for_each_entry_safe(old, tmp, &new->head, list) {
--		list_del(&old->list);
- 		kfree(old);
- 	}
- 	kfree(new);
++	memset(&cur_trans->delayed_refs, 0, sizeof(cur_trans->delayed_refs));
++
+ 	cur_trans->delayed_refs.href_root = RB_ROOT;
+ 	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
+ 	atomic_set(&cur_trans->delayed_refs.num_entries, 0);
+-	cur_trans->delayed_refs.num_heads_ready = 0;
+-	cur_trans->delayed_refs.pending_csums = 0;
+-	cur_trans->delayed_refs.num_heads = 0;
+-	cur_trans->delayed_refs.flushing = 0;
+-	cur_trans->delayed_refs.run_delayed_start = 0;
+-	cur_trans->delayed_refs.qgroup_to_skip = 0;
+ 
+ 	/*
+ 	 * although the tree mod log is per file system and not per transaction,
 -- 
-2.5.1
+1.9.1
 

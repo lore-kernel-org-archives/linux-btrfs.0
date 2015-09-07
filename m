@@ -1,169 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:6574 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752295AbbIDT7l (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Sep 2015 15:59:41 -0400
-Date: Fri, 4 Sep 2015 15:59:36 -0400
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs for 4.3
-Message-ID: <20150904195936.GE5136@ret.masoncoding.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from mail.kernel.org ([198.145.29.136]:44146 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751004AbbIGKJY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Sep 2015 06:09:24 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: don't initialize a space info as full to prevent ENOSPC
+Date: Mon,  7 Sep 2015 11:09:13 +0100
+Message-Id: <1441620553-10580-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+From: Filipe Manana <fdmanana@suse.com>
 
-Please pull my for-linus-4.3 branch:
+Commit 2e6e518335f8 ("Btrfs: fix block group ->space_info null pointer
+dereference") accidently marked a space info as full when initializing
+it with a value of 0 total bytes. This introduces an ENOSPC problem when
+writing file data if we mount a filesystem that has no data block groups
+allocated, because the data space info is initialized with 0 total bytes,
+marked as full, and it never gets its total bytes incremented by a
+(positive) value to unmark it as full (because there are no data block
+groups loaded when the fs is mounted).
+For metadata and system spaces this issue can never happen since we always
+have at least one metadata block group and one system block group (even
+for an empty filesystem).
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.3
+So fix this by just not initializing a space info as full, reverting the
+offending part of the commit mentioned above.
 
-There are a few conflicts with Jens' pulls this time around, so I've put
-a sample merge resolution into:
+The following test case for fstests reproduces the issue:
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.3-merged
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
 
-This is the same resolution I sent to linux-next, and the conflicts were
-all pretty easy.  The only gotcha I found was this commit:
+  _cleanup()
+  {
+      rm -f $tmp.*
+  }
 
-commit 73ff61dbe5edeb1799d7e91c8b0641f87feb75fa
-Author: Omar Sandoval <osandov@fb.com>
-Date:   Fri Jun 19 11:52:51 2015 -0700
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
 
-Adds a new bio end_io callback to fs/btrfs/scrub.c:
+  # real QA test starts here
+  _need_to_be_root
+  _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
 
-+static void scrub_missing_raid56_end_io(struct bio *bio, int error)
-+{
-+       struct scrub_block *sblock = bio->bi_private;
-+       struct btrfs_fs_info *fs_info = sblock->sctx->dev_root->fs_info;
-+
-+       if (error)
-+               sblock->no_io_error_seen = 0;
-+
-+       btrfs_queue_work(fs_info->scrub_workers, &sblock->work);
-+}
-+
+  rm -f $seqres.full
 
-This needs to be converted to the new style bio->bi_error instead:
+  _scratch_mkfs >>$seqres.full 2>&1
 
-static void scrub_missing_raid56_end_io(struct bio *bio)
-                                        ^^^^^^^^^^^^^^^^^^^
-{
-        struct scrub_block *sblock = bio->bi_private;
-        struct btrfs_fs_info *fs_info = sblock->sctx->dev_root->fs_info;
+  # Mount our filesystem without space caches enabled so that we do not
+  # get any space used from the initial data block group that mkfs creates
+  # (space caches used space from data block groups).
+  _scratch_mount "-o nospace_cache"
 
-        if (bio->bi_error)
-	^^^^^^^^^^^^^^^^^^^^
-                sblock->no_io_error_seen = 0;
+  # Need an fs with at least 2Gb to make sure mkfs.btrfs does not create
+  # an fs using mixed block groups (used both for data and metadata). We
+  # really need to have dedicated block groups for data to reproduce the
+  # issue and mkfs.btrfs defaults to mixed block groups only for small
+  # filesystems (up to 1Gb).
+  _require_fs_space $SCRATCH_MNT $((2 * 1024 * 1024))
 
-        btrfs_queue_work(fs_info->scrub_workers, &sblock->work);
-}
+  # Run balance with the purpose of deleting the unused data block group
+  # that mkfs created. We could also wait for the background kthread to
+  # automatically delete the unused block group, but we do not have a way
+  # to make it run and wait for it to complete, so just do a balance
+  # instead of some unreliable sleep
+  _run_btrfs_util_prog balance start -dusage=0 $SCRATCH_MNT
 
-Conflicts aside, this has Jeff Mahoney's long standing trim patch that
-fixes corners where trims were missing.  Omar has some raid5/6 fixes,
-especially for using scrub and device replace when devices are missing.
+  # Now unmount the filesystem, mount it again (either with or with space
+  # caches enabled, it does not matter to trigger the problem) and attempt
+  # to create a file with some data - this used to fail with ENOSPC
+  # because there were no data block groups when the filesystem was
+  # mounted and the data space info object was marked as full when
+  # initialized (because it had 0 total bytes), which prevented the file
+  # write path from attempting to allocate a data block group and fail
+  # immediately with ENOSPC.
+  _scratch_remount
+  echo "hello world" > $SCRATCH_MNT/foobar
 
-Zhao Lie continues cleaning and fixing things, this series fixes some
-really hard to hit corners in xfstests.  I had to pull it last merge
-window due to some deadlocks, but those are now resolved.
+  echo "Silence is golden"
+  status=0
+  exit
 
-I added support for Tejun's new blkio controllers.  It seems to work
-well for single devices, we'll expand to multi-device as well.
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent-tree.c | 5 +----
+ 1 file changed, 1 insertion(+), 4 deletions(-)
 
-Zhaolei (14) commits (+120/-114):
-    btrfs: Cleanup: Remove chunk_objectid argument from btrfs_relocate_chunk() (+2/-8)
-    btrfs: use scrub_pause_on/off() to reduce code in scrub_enumerate_chunks() (+3/-7)
-    btrfs: Error handle for get_ref_objectid_v0() in relocate_block_group() (+4/-0)
-    btrfs: Cleanup: Remove objectid's init-value in create_reloc_inode() (+1/-1)
-    btrfs: Separate scrub_blocked_if_needed() to scrub_pause_on/off() (+10/-1)
-    btrfs: Fix data checksum error cause by replace with io-load. (+29/-7)
-    btrfs: Add WARN_ON() for double lock in btrfs_tree_lock() (+1/-0)
-    btrfs: Remove useless condition in start_log_trans() (+17/-26)
-    btrfs: Remove root argument in extent_data_ref_count() (+2/-3)
-    btrfs: Fix wrong comment of btrfs_alloc_tree_block() (+0/-3)
-    btrfs: abort transaction on btrfs_reloc_cow_block() (+3/-1)
-    btrfs: Remove unnecessary variants in relocation.c (+7/-11)
-    btrfs: Remove unused arguments in tree-log.c (+11/-14)
-    btrfs: Use ref_cnt for set_block_group_ro() (+30/-32)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5411f0a..3686315 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3742,10 +3742,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
+ 	found->bytes_reserved = 0;
+ 	found->bytes_readonly = 0;
+ 	found->bytes_may_use = 0;
+-	if (total_bytes > 0)
+-		found->full = 0;
+-	else
+-		found->full = 1;
++	found->full = 0;
+ 	found->force_alloc = CHUNK_ALLOC_NO_FORCE;
+ 	found->chunk_alloc = 0;
+ 	found->flush = 0;
+-- 
+2.1.3
 
-Zhao Lei (7) commits (+55/-43):
-    btrfs: Bypass unrelated items before accessing its contents in scrub (+8/-8)
-    btrfs: Show detail information when mount failed on missing devices (+3/-2)
-    btrfs: Fix calculate typo caused by ambiguous meaning of logic_end (+5/-5)
-    btrfs: Check cancel and pause in interval of scrub operation (+18/-16)
-    btrfs: Load only necessary csums into list in scrub (+5/-3)
-    btrfs: Fix scrub panic when leaf crosses stripes (+10/-7)
-    btrfs: Free checksum list on scrub_extent() fail (+6/-2)
-
-Filipe Manana (6) commits (+309/-26):
-    Btrfs: teach backref walking about backrefs with underflowed offset values (+25/-2)
-    Btrfs: fix stale dir entries after unlink, inode eviction and fsync (+29/-0)
-    Btrfs: check if previous transaction aborted to avoid fs corruption (+3/-0)
-    Btrfs: fix file read corruption after extent cloning and fsync (+54/-0)
-    Btrfs: fix stale dir entries after removing a link and fsync (+138/-20)
-    Btrfs: fix stale directory entries after fsync log replay (+60/-4)
-
-Jeff Mahoney (6) commits (+350/-66):
-    btrfs: btrfs_issue_discard ensure offset/length are aligned to sector boundaries (+13/-4)
-    btrfs: explictly delete unused block groups in close_ctree and ro-remount (+20/-0)
-    btrfs: add missing discards when unpinning extents with -o discard (+105/-29)
-    btrfs: make btrfs_issue_discard return bytes discarded (+14/-5)
-    btrfs: iterate over unused chunk space in FITRIM (+143/-24)
-    btrfs: skip superblocks during discard (+55/-4)
-
-Omar Sandoval (5) commits (+259/-44):
-    Btrfs: count devices correctly in readahead during RAID 5/6 replace (+3/-1)
-    Btrfs: add RAID 5/6 BTRFS_RBIO_REBUILD_MISSING operation (+86/-14)
-    Btrfs: remove misleading handling of missing device scrub (+1/-15)
-    Btrfs: fix device replace of a missing RAID 5/6 device (+147/-10)
-    Btrfs: fix parity scrub of RAID 5/6 with missing device (+22/-4)
-
-Michal Hocko (2) commits (+3/-7):
-    btrfs: Prevent from early transaction abort (+2/-4)
-    btrfs: use __GFP_NOFAIL in alloc_btrfs_bio (+1/-3)
-
-Liu Bo (2) commits (+7/-7):
-    Btrfs: fix defrag to merge tail file extent (+5/-1)
-    Btrfs: fix warning in backref walking (+2/-6)
-
-Chris Mason (2) commits (+33/-4):
-    btrfs: fix compile when block cgroups are not enabled (+5/-0)
-    Btrfs: add support for blkio controllers (+28/-4)
-
-Mark Fasheh (1) commits (+8/-26):
-    btrfs: fix clone / extent-same deadlocks
-
-Byongho Lee (1) commits (+0/-7):
-    Btrfs: remove unused mutex from struct 'btrfs_fs_info'
-
-Naohiro Aota (1) commits (+9/-3):
-    btrfs: fix search key advancing condition
-
-Total: (47) commits (+1153/-347)
-
- fs/btrfs/backref.c          |  35 ++++-
- fs/btrfs/ctree.c            |   4 +-
- fs/btrfs/ctree.h            |  18 +--
- fs/btrfs/disk-io.c          |  16 +-
- fs/btrfs/extent-tree.c      | 298 ++++++++++++++++++++++++++++++++-----
- fs/btrfs/extent_io.c        |  25 +++-
- fs/btrfs/free-space-cache.c |  57 +++++---
- fs/btrfs/inode.c            |  35 ++++-
- fs/btrfs/ioctl.c            |  52 +++----
- fs/btrfs/locking.c          |   1 +
- fs/btrfs/raid56.c           |  87 +++++++++--
- fs/btrfs/raid56.h           |  10 +-
- fs/btrfs/reada.c            |   4 +-
- fs/btrfs/relocation.c       |  33 ++---
- fs/btrfs/scrub.c            | 348 +++++++++++++++++++++++++++++++++-----------
- fs/btrfs/super.c            |  14 +-
- fs/btrfs/transaction.c      |   7 +-
- fs/btrfs/transaction.h      |   2 +
- fs/btrfs/tree-log.c         | 344 +++++++++++++++++++++++++++++++++++--------
- fs/btrfs/volumes.c          |  89 ++++++-----
- fs/btrfs/volumes.h          |   3 +
- 21 files changed, 1144 insertions(+), 338 deletions(-)

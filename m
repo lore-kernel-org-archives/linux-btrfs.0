@@ -1,117 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:44146 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:43845 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751004AbbIGKJY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Sep 2015 06:09:24 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: don't initialize a space info as full to prevent ENOSPC
-Date: Mon,  7 Sep 2015 11:09:13 +0100
-Message-Id: <1441620553-10580-1-git-send-email-fdmanana@kernel.org>
+	id S1752431AbbIGMZF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Sep 2015 08:25:05 -0400
+Date: Mon, 7 Sep 2015 14:24:20 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Alexandru Moise <00moses.alexander00@gmail.com>
+Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: memset cur_trans->delayed_refs to zero
+Message-ID: <20150907122419.GT11834@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <20150906122527.GA21685@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150906122527.GA21685@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Sun, Sep 06, 2015 at 12:25:27PM +0000, Alexandru Moise wrote:
+> Use memset() to null out the btrfs_delayed_ref_root of
+> btrfs_transaction instead of setting all the members to 0 by hand.
+> 
+> Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+> ---
+>  fs/btrfs/transaction.c | 10 +---------
+>  1 file changed, 1 insertion(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 8f259b3..faccc1b 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -224,15 +224,7 @@ loop:
+>  	cur_trans->start_time = get_seconds();
+>  	cur_trans->dirty_bg_run = 0;
+>  
+> -	cur_trans->delayed_refs.href_root = RB_ROOT;
+> -	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
+> -	atomic_set(&cur_trans->delayed_refs.num_entries, 0);
 
-Commit 2e6e518335f8 ("Btrfs: fix block group ->space_info null pointer
-dereference") accidently marked a space info as full when initializing
-it with a value of 0 total bytes. This introduces an ENOSPC problem when
-writing file data if we mount a filesystem that has no data block groups
-allocated, because the data space info is initialized with 0 total bytes,
-marked as full, and it never gets its total bytes incremented by a
-(positive) value to unmark it as full (because there are no data block
-groups loaded when the fs is mounted).
-For metadata and system spaces this issue can never happen since we always
-have at least one metadata block group and one system block group (even
-for an empty filesystem).
-
-So fix this by just not initializing a space info as full, reverting the
-offending part of the commit mentioned above.
-
-The following test case for fstests reproduces the issue:
-
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      rm -f $tmp.*
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-
-  # real QA test starts here
-  _need_to_be_root
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >>$seqres.full 2>&1
-
-  # Mount our filesystem without space caches enabled so that we do not
-  # get any space used from the initial data block group that mkfs creates
-  # (space caches used space from data block groups).
-  _scratch_mount "-o nospace_cache"
-
-  # Need an fs with at least 2Gb to make sure mkfs.btrfs does not create
-  # an fs using mixed block groups (used both for data and metadata). We
-  # really need to have dedicated block groups for data to reproduce the
-  # issue and mkfs.btrfs defaults to mixed block groups only for small
-  # filesystems (up to 1Gb).
-  _require_fs_space $SCRATCH_MNT $((2 * 1024 * 1024))
-
-  # Run balance with the purpose of deleting the unused data block group
-  # that mkfs created. We could also wait for the background kthread to
-  # automatically delete the unused block group, but we do not have a way
-  # to make it run and wait for it to complete, so just do a balance
-  # instead of some unreliable sleep
-  _run_btrfs_util_prog balance start -dusage=0 $SCRATCH_MNT
-
-  # Now unmount the filesystem, mount it again (either with or with space
-  # caches enabled, it does not matter to trigger the problem) and attempt
-  # to create a file with some data - this used to fail with ENOSPC
-  # because there were no data block groups when the filesystem was
-  # mounted and the data space info object was marked as full when
-  # initialized (because it had 0 total bytes), which prevented the file
-  # write path from attempting to allocate a data block group and fail
-  # immediately with ENOSPC.
-  _scratch_remount
-  echo "hello world" > $SCRATCH_MNT/foobar
-
-  echo "Silence is golden"
-  status=0
-  exit
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent-tree.c | 5 +----
- 1 file changed, 1 insertion(+), 4 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5411f0a..3686315 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3742,10 +3742,7 @@ static int update_space_info(struct btrfs_fs_info *info, u64 flags,
- 	found->bytes_reserved = 0;
- 	found->bytes_readonly = 0;
- 	found->bytes_may_use = 0;
--	if (total_bytes > 0)
--		found->full = 0;
--	else
--		found->full = 1;
-+	found->full = 0;
- 	found->force_alloc = CHUNK_ALLOC_NO_FORCE;
- 	found->chunk_alloc = 0;
- 	found->flush = 0;
--- 
-2.1.3
-
+Please keep these. Even if it means duplicated setting to 0, it's using
+the correct constructor, should it ever change (RB_ROOT) or does some
+extra work (atomic_set).

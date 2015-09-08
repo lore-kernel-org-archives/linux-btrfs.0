@@ -1,31 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from zeniv.linux.org.uk ([195.92.253.2]:59116 "EHLO
-	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751206AbbIEIdr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Sep 2015 04:33:47 -0400
-Date: Sat, 5 Sep 2015 09:33:42 +0100
-From: Al Viro <viro@ZenIV.linux.org.uk>
-To: Andreas Dilger <adilger@dilger.ca>
-Cc: Anna Schumaker <Anna.Schumaker@netapp.com>, linux-nfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, zab@zabbo.net, clm@fb.com,
-        darrick.wong@oracle.com, mtk.manpages@gmail.com, andros@netapp.com,
-        hch@infradead.org
-Subject: Re: [PATCH v1 0/8] VFS: In-kernel copy system call
-Message-ID: <20150905083342.GG22011@ZenIV.linux.org.uk>
-References: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
- <4B41043F-5D85-42D6-8F20-2DCC45930EF4@dilger.ca>
+Received: from cn.fujitsu.com ([59.151.112.132]:33243 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752232AbbIHI7A (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 04:59:00 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888wiTO009114
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:58:44 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH RFC 00/14] Accurate qgroup reserve framework
+Date: Tue, 8 Sep 2015 16:56:52 +0800
+Message-ID: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <4B41043F-5D85-42D6-8F20-2DCC45930EF4@dilger.ca>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 04, 2015 at 04:25:27PM -0600, Andreas Dilger wrote:
+[[BUG]]
+One of the most common case to trigger the bug is the following method:
+1) Enable quota
+2) Limit excl of qgroup 5 to 16M
+3) Write [0,2M) of a file inside subvol 5 10 times without sync
 
-> This is a bit of a surprising result, since in my testing in the
-> past, copy_{to/from}_user() is a major consumer of CPU time (50%
-> of a CPU core at 1GB/s).  What backing filesystem did you test on?
+EQUOT will be triggered at about the 8th write.
 
-While we are at it, was cp(1) using read(2)/write(2) loop or was it using
-something else (sendfile(2), for example)?
+[[CAUSE]]
+The problem is caused by the fact that qgroup will reserve space even
+the data space is already reserved.
+
+In above reproducer, each time we buffered write [0,2M) qgroup will
+reserve 2M space, but in fact, at the 1st time, we have already reserved
+2M and from then on, we don't need to reserved any data space as we are
+only writing [0,2M).
+
+Also, the reserved space will only be freed *ONCE* when its backref is
+run at commit_transaction() time.
+
+That's causing the reserved space leaking.
+
+[[FIX]]
+The fix is not a simple one, as currently btrfs_qgroup_reserve() follow
+the very bad btrfs space allocating principle:
+  Allocate as much as you needed, even it's not fully used.
+
+So for accurate qgroup reserve, we introduce a completely new framework
+for data and metadata.
+1) Per-inode data reserve map
+   Now, each inode will have a data reserve map, recording which range
+   of data is already reserved.
+   If we are writing a range which is already reserved, we won't need to
+   reserve space again.
+
+   Also, for the fact that qgroup is only accounted at commit_trans(),
+   for data commit into disc and its metadata is also inserted into
+   current tree, we should free the data reserved range, but still keep
+   the reserved space until commit_trans().
+
+   So delayed_ref_head will have new members to record how much space is
+   reserved and free them at commit_trans() time.
+
+2) Per-root metadata reserve counter
+   For metadata(tree block), it's impossible to know how much space it
+   will use exactly in advance.
+   And due to the new qgroup accounting framework, the old
+   free-at-end-trans may lead to exceeding limit.
+
+   So we record how much metadata space is reserved for each root, and
+   free them at commit_trans() time.
+   This method is not perfect, but thanks to the compared small size of
+   metadata, it should be quite good.
+
+More detailed info can be found in each commit message and source
+commend.
+
+Qu Wenruo (19):
+  btrfs: qgroup: New function declaration for new reserve implement
+  btrfs: qgroup: Implement data_rsv_map init/free functions
+  btrfs: qgroup: Introduce new function to search most left reserve
+    range
+  btrfs: qgroup: Introduce function to insert non-overlap reserve range
+  btrfs: qgroup: Introduce function to reserve data range per inode
+  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
+  btrfs: qgroup: Introduce function to release reserved range
+  btrfs: qgroup: Introduce function to release/free reserved data range
+  btrfs: delayed_ref: Add new function to record reserved space into    
+    delayed ref
+  btrfs: delayed_ref: release and free qgroup reserved at proper timing
+  btrfs: qgroup: Introduce new functions to reserve/free metadata
+  btrfs: qgroup: Use new metadata reservation.
+  btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
+  btrfs: Switch to new check_data_free_space
+  btrfs: fallocate: Add support to accurate qgroup reserve
+  btrfs: extent-tree: Add new version of btrfs_delalloc_reserve_space
+  btrfs: extent-tree: Use new __btrfs_delalloc_reserve_space function
+  btrfs: qgroup: Cleanup old inaccurate facilities
+  btrfs: qgroup: Add handler for NOCOW and inline
+
+ fs/btrfs/btrfs_inode.h |   6 +
+ fs/btrfs/ctree.h       |   8 +-
+ fs/btrfs/delayed-ref.c |  29 +++
+ fs/btrfs/delayed-ref.h |  14 +
+ fs/btrfs/disk-io.c     |   1 +
+ fs/btrfs/extent-tree.c |  99 +++++---
+ fs/btrfs/file.c        | 169 +++++++++----
+ fs/btrfs/inode-map.c   |   2 +-
+ fs/btrfs/inode.c       |  51 +++-
+ fs/btrfs/ioctl.c       |   3 +-
+ fs/btrfs/qgroup.c      | 674 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.h      |  18 +-
+ fs/btrfs/transaction.c |  34 +--
+ fs/btrfs/transaction.h |   1 -
+ 14 files changed, 979 insertions(+), 130 deletions(-)
+
+-- 
+2.5.1
+

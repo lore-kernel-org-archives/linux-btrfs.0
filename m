@@ -1,28 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45188 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934243AbbI2LlZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 07:41:25 -0400
-Date: Tue, 29 Sep 2015 13:40:24 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Juan Francisco Cantero Hurtado <iam@juanfra.info>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: mkfs.btrfs(8) --data outdated?
-Message-ID: <20150929114023.GW11442@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <mu9jpv$l25$1@ger.gmane.org>
- <56089651.6080803@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56089651.6080803@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([222.73.24.84]:47953 "EHLO song.cn.fujitsu.com"
+	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
+	id S1751071AbbIIFFR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Sep 2015 01:05:17 -0400
+Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQux019126
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:26 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH RFC 00/14] Accurate qgroup reserve framework
+Date: Tue,  8 Sep 2015 16:37:17 +0800
+Message-Id: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 28, 2015 at 09:22:25AM +0800, Qu Wenruo wrote:
-> We're planning to add support for -d dup on single disk case, and will 
-> update man page at that time.
+[[BUG]]
+One of the most common case to trigger the bug is the following method:
+1) Enable quota
+2) Limit excl of qgroup 5 to 16M
+3) Write [0,2M) of a file inside subvol 5 10 times without sync
 
-Is dup for data possible? IIRC long time ago Chris mentioned that this
-does not work due to some offsets that would cause corruption. I was not
-able to find the reference though.
+EQUOT will be triggered at about the 8th write.
+
+[[CAUSE]]
+The problem is caused by the fact that qgroup will reserve space even
+the data space is already reserved.
+
+In above reproducer, each time we buffered write [0,2M) qgroup will
+reserve 2M space, but in fact, at the 1st time, we have already reserved
+2M and from then on, we don't need to reserved any data space as we are
+only writing [0,2M).
+
+Also, the reserved space will only be freed *ONCE* when its backref is
+run at commit_transaction() time.
+
+That's causing the reserved space leaking.
+
+[[FIX]]
+The fix is not a simple one, as currently btrfs_qgroup_reserve() follow
+the very bad btrfs space allocating principle:
+  Allocate as much as you needed, even it's not fully used.
+
+So for accurate qgroup reserve, we introduce a completely new framework
+for data and metadata.
+1) Per-inode data reserve map
+   Now, each inode will have a data reserve map, recording which range
+   of data is already reserved.
+   If we are writing a range which is already reserved, we won't need to
+   reserve space again.
+
+   Also, for the fact that qgroup is only accounted at commit_trans(),
+   for data commit into disc and its metadata is also inserted into
+   current tree, we should free the data reserved range, but still keep
+   the reserved space until commit_trans().
+
+   So delayed_ref_head will have new members to record how much space is
+   reserved and free them at commit_trans() time.
+
+2) Per-root metadata reserve counter
+   For metadata(tree block), it's impossible to know how much space it
+   will use exactly in advance.
+   And due to the new qgroup accounting framework, the old
+   free-at-end-trans may lead to exceeding limit.
+
+   So we record how much metadata space is reserved for each root, and
+   free them at commit_trans() time.
+   This method is not perfect, but thanks to the compared small size of
+   metadata, it should be quite good.
+
+More detailed info can be found in each commit message and source
+commend.
+
+Qu Wenruo (19):
+  btrfs: qgroup: New function declaration for new reserve implement
+  btrfs: qgroup: Implement data_rsv_map init/free functions
+  btrfs: qgroup: Introduce new function to search most left reserve
+    range
+  btrfs: qgroup: Introduce function to insert non-overlap reserve range
+  btrfs: qgroup: Introduce function to reserve data range per inode
+  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
+  btrfs: qgroup: Introduce function to release reserved range
+  btrfs: qgroup: Introduce function to release/free reserved data range
+  btrfs: delayed_ref: Add new function to record reserved space into    
+    delayed ref
+  btrfs: delayed_ref: release and free qgroup reserved at proper timing
+  btrfs: qgroup: Introduce new functions to reserve/free metadata
+  btrfs: qgroup: Use new metadata reservation.
+  btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
+  btrfs: Switch to new check_data_free_space
+  btrfs: fallocate: Add support to accurate qgroup reserve
+  btrfs: extent-tree: Add new version of btrfs_delalloc_reserve_space
+  btrfs: extent-tree: Use new __btrfs_delalloc_reserve_space function
+  btrfs: qgroup: Cleanup old inaccurate facilities
+  btrfs: qgroup: Add handler for NOCOW and inline
+
+ fs/btrfs/btrfs_inode.h |   6 +
+ fs/btrfs/ctree.h       |   8 +-
+ fs/btrfs/delayed-ref.c |  29 +++
+ fs/btrfs/delayed-ref.h |  14 +
+ fs/btrfs/disk-io.c     |   1 +
+ fs/btrfs/extent-tree.c |  99 +++++---
+ fs/btrfs/file.c        | 169 +++++++++----
+ fs/btrfs/inode-map.c   |   2 +-
+ fs/btrfs/inode.c       |  51 +++-
+ fs/btrfs/ioctl.c       |   3 +-
+ fs/btrfs/qgroup.c      | 674 ++++++++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.h      |  18 +-
+ fs/btrfs/transaction.c |  34 +--
+ fs/btrfs/transaction.h |   1 -
+ 14 files changed, 979 insertions(+), 130 deletions(-)
+
+-- 
+2.5.1
+

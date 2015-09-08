@@ -1,82 +1,254 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47953 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:45567 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1752104AbbIIFF2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Sep 2015 01:05:28 -0400
+	id S1751870AbbIIFF1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Sep 2015 01:05:27 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQvI019126
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:52 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQvE019126
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:46 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 19/19] btrfs: qgroup: Add handler for NOCOW and inline
-Date: Tue,  8 Sep 2015 16:37:36 +0800
-Message-Id: <1441701456-8034-20-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 15/19] btrfs: fallocate: Add support to accurate qgroup reserve
+Date: Tue,  8 Sep 2015 16:37:32 +0800
+Message-Id: <1441701456-8034-16-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For NOCOW and inline case, there will be no delayed_ref created for
-them, so we should free their reserved data space at proper
-time(finish_ordered_io for NOCOW and cow_file_inline for inline).
+Now fallocate will do accurate qgroup reserve space check, unlike old
+method, which will always reserve the whole length of the range.
+
+With this patch, fallocate will:
+1) Iterate the desired range and mark in data rsv map
+   Only range which is going to be allocated will be recorded in data
+   rsv map and reserve the space.
+   For already allocated range (normal/prealloc extent) they will be
+   skipped.
+   Also, record the marked range into a new list for later use.
+
+2) If 1) succeeded, do real file extent allocate.
+   And at file extent allocation time, corresponding range will be
+   removed from the range in data rsv map.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |  7 ++++++-
- fs/btrfs/inode.c       | 15 +++++++++++++++
- 2 files changed, 21 insertions(+), 1 deletion(-)
+ fs/btrfs/file.c | 147 +++++++++++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 107 insertions(+), 40 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ab1b1a1..ca15bd3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4055,7 +4055,12 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
- 	if (ret < 0)
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index c1eec4f..26e59bc 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2545,17 +2545,61 @@ out_only_mutex:
+ 	return err;
+ }
+ 
++/* Helper structure to record which range is already reserved */
++struct falloc_range {
++	struct list_head list;
++	u64 start;
++	u64 len;
++};
++
++/*
++ * Helper function to add falloc range
++ *
++ * Caller should have locked the larger range of extent containing
++ * [start, len)
++ */
++static int add_falloc_range(struct list_head *head, u64 start, u64 len)
++{
++	struct falloc_range *prev = NULL;
++	struct falloc_range *range = NULL;
++
++	if (list_empty(head))
++		goto insert;
++
++	/*
++	 * As fallocate iterate by bytenr order, we only need to check
++	 * the last range.
++	 */
++	prev = list_entry(head->prev, struct falloc_range, list);
++	if (prev->start + prev->len == start) {
++		prev->len += len;
++		return 0;
++	}
++insert:
++	range = kmalloc(sizeof(*range), GFP_NOFS);
++	if (!range)
++		return -ENOMEM;
++	range->start = start;
++	range->len = len;
++	list_add_tail(&range->list, head);
++	return 0;
++}
++
+ static long btrfs_fallocate(struct file *file, int mode,
+ 			    loff_t offset, loff_t len)
+ {
+ 	struct inode *inode = file_inode(file);
+ 	struct extent_state *cached_state = NULL;
++	struct falloc_range *range;
++	struct falloc_range *tmp;
++	struct list_head reserve_list;
+ 	u64 cur_offset;
+ 	u64 last_byte;
+ 	u64 alloc_start;
+ 	u64 alloc_end;
+ 	u64 alloc_hint = 0;
+ 	u64 locked_end;
++	u64 actual_end = 0;
+ 	struct extent_map *em;
+ 	int blocksize = BTRFS_I(inode)->root->sectorsize;
+ 	int ret;
+@@ -2571,10 +2615,11 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		return btrfs_punch_hole(inode, offset, len);
+ 
+ 	/*
+-	 * Make sure we have enough space before we do the
+-	 * allocation.
++	 * Only trigger disk allocation, don't trigger qgroup reserve
++	 *
++	 * For qgroup space, it will be checked later.
+ 	 */
+-	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start, alloc_end - alloc_start);
++	ret = btrfs_alloc_data_chunk_ondemand(inode, alloc_end - alloc_start);
+ 	if (ret)
  		return ret;
  
--	/* Use new btrfs_qgroup_reserve_data to reserve precious data space */
-+	/*
-+	 * Use new btrfs_qgroup_reserve_data to reserve precious data space
-+	 *
-+	 * TODO: Find a good method to avoid reserve data space for NOCOW
-+	 * range, but don't impact performance on quota disable case.
-+	 */
- 	ret = btrfs_qgroup_reserve_data(inode, start, len);
- 	return ret;
- }
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8c09197..9b783e6 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -310,6 +310,13 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
- 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
- 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
- out:
-+	/*
-+	 * Don't forget to free the reserved space, as for inlined extent
-+	 * it won't count as data extent, free them directly here.
-+	 * And at reserve time, it's always aligned to page size, so
-+	 * just free one page here.
-+	 */
-+	btrfs_qgroup_free_data(inode, 0, PAGE_CACHE_SIZE);
- 	btrfs_free_path(path);
- 	btrfs_end_transaction(trans, root);
- 	return ret;
-@@ -2831,6 +2838,14 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
+@@ -2583,6 +2628,13 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	if (ret)
+ 		goto out;
  
- 	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags)) {
- 		BUG_ON(!list_empty(&ordered_extent->list)); /* Logic error */
++	/*
++	 * TODO: Move these two operations after we have checked
++	 * accurate reserved space, or fallocate can still fail but
++	 * with page truncated or size expanded.
++	 *
++	 * But that's a minor problem and won't do much harm BTW.
++	 */
+ 	if (alloc_start > inode->i_size) {
+ 		ret = btrfs_cont_expand(inode, i_size_read(inode),
+ 					alloc_start);
+@@ -2641,10 +2693,10 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		}
+ 	}
+ 
++	/* First, check if we exceed the qgroup limit */
++	INIT_LIST_HEAD(&reserve_list);
+ 	cur_offset = alloc_start;
+ 	while (1) {
+-		u64 actual_end;
+-
+ 		em = btrfs_get_extent(inode, NULL, 0, cur_offset,
+ 				      alloc_end - cur_offset, 0);
+ 		if (IS_ERR_OR_NULL(em)) {
+@@ -2657,54 +2709,69 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 		last_byte = min(extent_map_end(em), alloc_end);
+ 		actual_end = min_t(u64, extent_map_end(em), offset + len);
+ 		last_byte = ALIGN(last_byte, blocksize);
+-
+ 		if (em->block_start == EXTENT_MAP_HOLE ||
+ 		    (cur_offset >= inode->i_size &&
+ 		     !test_bit(EXTENT_FLAG_PREALLOC, &em->flags))) {
+-			ret = btrfs_prealloc_file_range(inode, mode, cur_offset,
+-							last_byte - cur_offset,
+-							1 << inode->i_blkbits,
+-							offset + len,
+-							&alloc_hint);
+-		} else if (actual_end > inode->i_size &&
+-			   !(mode & FALLOC_FL_KEEP_SIZE)) {
+-			struct btrfs_trans_handle *trans;
+-			struct btrfs_root *root = BTRFS_I(inode)->root;
+-
+-			/*
+-			 * We didn't need to allocate any more space, but we
+-			 * still extended the size of the file so we need to
+-			 * update i_size and the inode item.
+-			 */
+-			trans = btrfs_start_transaction(root, 1);
+-			if (IS_ERR(trans)) {
+-				ret = PTR_ERR(trans);
+-			} else {
+-				inode->i_ctime = CURRENT_TIME;
+-				i_size_write(inode, actual_end);
+-				btrfs_ordered_update_i_size(inode, actual_end,
+-							    NULL);
+-				ret = btrfs_update_inode(trans, root, inode);
+-				if (ret)
+-					btrfs_end_transaction(trans, root);
+-				else
+-					ret = btrfs_end_transaction(trans,
+-								    root);
++			ret = add_falloc_range(&reserve_list, cur_offset,
++					       last_byte - cur_offset);
++			if (ret < 0) {
++				free_extent_map(em);
++				goto out;
+ 			}
++			ret = btrfs_qgroup_reserve_data(inode, cur_offset,
++					last_byte - cur_offset);
+ 		}
+ 		free_extent_map(em);
+-		if (ret < 0)
+-			break;
+-
+ 		cur_offset = last_byte;
+-		if (cur_offset >= alloc_end) {
+-			ret = 0;
++		if (cur_offset >= alloc_end)
+ 			break;
++	}
++	if (ret < 0)
++		goto out;
++
++	/* Now we are sure qgroup reserved enough space now */
++	list_for_each_entry_safe(range, tmp, &reserve_list, list) {
++		ret = btrfs_prealloc_file_range(inode, mode, range->start,
++				range->len, 1 << inode->i_blkbits,
++				offset + len, &alloc_hint);
++		if (ret < 0)
++			goto out;
++	}
++	if (actual_end > inode->i_size &&
++	    !(mode & FALLOC_FL_KEEP_SIZE)) {
++		struct btrfs_trans_handle *trans;
++		struct btrfs_root *root = BTRFS_I(inode)->root;
 +
 +		/*
-+		 * For mwrite(mmap + memset to write) case, we still reserve
-+		 * space for NOCOW range.
-+		 * As NOCOW won't cause a new delayed ref, just free the space
++		 * We didn't need to allocate any more space, but we
++		 * still extended the size of the file so we need to
++		 * update i_size and the inode item.
 +		 */
-+		btrfs_qgroup_free_data(inode, ordered_extent->file_offset,
-+				       ordered_extent->len);
- 		btrfs_ordered_update_i_size(inode, 0, ordered_extent);
- 		if (nolock)
- 			trans = btrfs_join_transaction_nolock(root);
++		trans = btrfs_start_transaction(root, 1);
++		if (IS_ERR(trans)) {
++			ret = PTR_ERR(trans);
++		} else {
++			inode->i_ctime = CURRENT_TIME;
++			i_size_write(inode, actual_end);
++			btrfs_ordered_update_i_size(inode, actual_end, NULL);
++			ret = btrfs_update_inode(trans, root, inode);
++			if (ret)
++				btrfs_end_transaction(trans, root);
++			else
++				ret = btrfs_end_transaction(trans, root);
+ 		}
+ 	}
+ 	unlock_extent_cached(&BTRFS_I(inode)->io_tree, alloc_start, locked_end,
+ 			     &cached_state, GFP_NOFS);
+ out:
++	/*
++	 * As we waited the extent range, the data_rsv_map must be empty
++	 * in the range, as written data range will be released from it.
++	 * And for prelloacted extent, it will also be released when
++	 * its metadata is written.
++	 * So this is completely used as cleanup.
++	 */
++	btrfs_qgroup_free_data(inode, alloc_start, alloc_end - alloc_start);
+ 	mutex_unlock(&inode->i_mutex);
+ 	/* Let go of our reservation. */
+ 	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
 -- 
 2.5.1
 

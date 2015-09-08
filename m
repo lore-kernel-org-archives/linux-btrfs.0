@@ -1,117 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:33243 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:25146 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752232AbbIHI7A (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 04:59:00 -0400
+	with ESMTP id S1752383AbbIHI7B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 04:59:01 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888wiTO009114
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:58:44 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888wjTD009117
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:58:45 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH RFC 00/14] Accurate qgroup reserve framework
-Date: Tue, 8 Sep 2015 16:56:52 +0800
-Message-ID: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 01/19] btrfs: qgroup: New function declaration for new reserve implement
+Date: Tue, 8 Sep 2015 16:56:53 +0800
+Message-ID: <1441702615-18333-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[[BUG]]
-One of the most common case to trigger the bug is the following method:
-1) Enable quota
-2) Limit excl of qgroup 5 to 16M
-3) Write [0,2M) of a file inside subvol 5 10 times without sync
+Add new structures and functions for new qgroup reserve implement dirty
+phase.
+Which will focus on avoiding over-reserve as in that case, which means
+for already reserved dirty space range, we won't reserve space again.
 
-EQUOT will be triggered at about the 8th write.
+This patch adds the needed structure declaration and comments.
 
-[[CAUSE]]
-The problem is caused by the fact that qgroup will reserve space even
-the data space is already reserved.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/btrfs_inode.h |  4 ++++
+ fs/btrfs/qgroup.c      | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h      |  3 +++
+ 3 files changed, 65 insertions(+)
 
-In above reproducer, each time we buffered write [0,2M) qgroup will
-reserve 2M space, but in fact, at the 1st time, we have already reserved
-2M and from then on, we don't need to reserved any data space as we are
-only writing [0,2M).
-
-Also, the reserved space will only be freed *ONCE* when its backref is
-run at commit_transaction() time.
-
-That's causing the reserved space leaking.
-
-[[FIX]]
-The fix is not a simple one, as currently btrfs_qgroup_reserve() follow
-the very bad btrfs space allocating principle:
-  Allocate as much as you needed, even it's not fully used.
-
-So for accurate qgroup reserve, we introduce a completely new framework
-for data and metadata.
-1) Per-inode data reserve map
-   Now, each inode will have a data reserve map, recording which range
-   of data is already reserved.
-   If we are writing a range which is already reserved, we won't need to
-   reserve space again.
-
-   Also, for the fact that qgroup is only accounted at commit_trans(),
-   for data commit into disc and its metadata is also inserted into
-   current tree, we should free the data reserved range, but still keep
-   the reserved space until commit_trans().
-
-   So delayed_ref_head will have new members to record how much space is
-   reserved and free them at commit_trans() time.
-
-2) Per-root metadata reserve counter
-   For metadata(tree block), it's impossible to know how much space it
-   will use exactly in advance.
-   And due to the new qgroup accounting framework, the old
-   free-at-end-trans may lead to exceeding limit.
-
-   So we record how much metadata space is reserved for each root, and
-   free them at commit_trans() time.
-   This method is not perfect, but thanks to the compared small size of
-   metadata, it should be quite good.
-
-More detailed info can be found in each commit message and source
-commend.
-
-Qu Wenruo (19):
-  btrfs: qgroup: New function declaration for new reserve implement
-  btrfs: qgroup: Implement data_rsv_map init/free functions
-  btrfs: qgroup: Introduce new function to search most left reserve
-    range
-  btrfs: qgroup: Introduce function to insert non-overlap reserve range
-  btrfs: qgroup: Introduce function to reserve data range per inode
-  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
-  btrfs: qgroup: Introduce function to release reserved range
-  btrfs: qgroup: Introduce function to release/free reserved data range
-  btrfs: delayed_ref: Add new function to record reserved space into    
-    delayed ref
-  btrfs: delayed_ref: release and free qgroup reserved at proper timing
-  btrfs: qgroup: Introduce new functions to reserve/free metadata
-  btrfs: qgroup: Use new metadata reservation.
-  btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
-  btrfs: Switch to new check_data_free_space
-  btrfs: fallocate: Add support to accurate qgroup reserve
-  btrfs: extent-tree: Add new version of btrfs_delalloc_reserve_space
-  btrfs: extent-tree: Use new __btrfs_delalloc_reserve_space function
-  btrfs: qgroup: Cleanup old inaccurate facilities
-  btrfs: qgroup: Add handler for NOCOW and inline
-
- fs/btrfs/btrfs_inode.h |   6 +
- fs/btrfs/ctree.h       |   8 +-
- fs/btrfs/delayed-ref.c |  29 +++
- fs/btrfs/delayed-ref.h |  14 +
- fs/btrfs/disk-io.c     |   1 +
- fs/btrfs/extent-tree.c |  99 +++++---
- fs/btrfs/file.c        | 169 +++++++++----
- fs/btrfs/inode-map.c   |   2 +-
- fs/btrfs/inode.c       |  51 +++-
- fs/btrfs/ioctl.c       |   3 +-
- fs/btrfs/qgroup.c      | 674 ++++++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/qgroup.h      |  18 +-
- fs/btrfs/transaction.c |  34 +--
- fs/btrfs/transaction.h |   1 -
- 14 files changed, 979 insertions(+), 130 deletions(-)
-
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 81220b2..e3ece65 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -24,6 +24,7 @@
+ #include "extent_io.h"
+ #include "ordered-data.h"
+ #include "delayed-inode.h"
++#include "qgroup.h"
+ 
+ /*
+  * ordered_data_close is set by truncate when a file that used
+@@ -195,6 +196,9 @@ struct btrfs_inode {
+ 	struct timespec i_otime;
+ 
+ 	struct inode vfs_inode;
++
++	/* qgroup dirty map for data space reserve */
++	struct btrfs_qgroup_data_rsv_map *qgroup_rsv_map;
+ };
+ 
+ extern unsigned char btrfs_filetype_table[];
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index e9ace09..561c36d 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -91,6 +91,64 @@ struct btrfs_qgroup {
+ 	u64 new_refcnt;
+ };
+ 
++/*
++ * Record one range of reserved space.
++ */
++struct data_rsv_range {
++	struct rb_node node;
++	u64 start;
++	u64 len;
++};
++
++/*
++ * Record per inode reserved range.
++ * This is mainly used to resolve reserved space leaking problem.
++ * One of the cause is the mismatch with reserve and free.
++ *
++ * New qgroup will handle reserve in two phase.
++ * 1) Dirty phase.
++ *    Pages are just marked dirty, but not written to disk.
++ * 2) Flushed phase
++ *    Pages are written to disk, but transaction is not committed yet.
++ *
++ * At Diryt phase, we only need to focus on avoiding over-reserve.
++ *
++ * The idea is like below.
++ * 1) Write [0,8K)
++ * 0	4K	8K	12K	16K
++ * |////////////|
++ * Reserve +8K, total reserved: 8K
++ *
++ * 2) Write [0,4K)
++ * 0	4K	8K	12K	16K
++ * |////////////|
++ * Reserve 0, total reserved 8K
++ *
++ * 3) Write [12K,16K)
++ * 0	4K	8K	12K	16K
++ * |////////////|	|///////|
++ * Reserve +4K, tocal reserved 12K
++ *
++ * 4) Flush [0,8K)
++ * Can happen without commit transaction, like fallocate will trigger the
++ * write.
++ * 0	4K	8K	12K	16K
++ *			|///////|
++ * Reserve 0, tocal reserved 12K
++ * As the extent is written to disk, not dirty any longer, the range get
++ * removed.
++ * But as its delayed_refs is not run, its reserved space will not be freed.
++ * And things continue to Flushed phase.
++ *
++ * By this method, we can avoid over-reserve, which will lead to reserved
++ * space leak.
++ */
++struct btrfs_qgroup_data_rsv_map {
++	struct rb_root root;
++	u64 reserved;
++	spinlock_t lock;
++};
++
+ static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
+ 					   int mod)
+ {
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 6387dcf..2f863a4 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -33,6 +33,9 @@ struct btrfs_qgroup_extent_record {
+ 	struct ulist *old_roots;
+ };
+ 
++/* For per-inode dirty range reserve */
++struct btrfs_qgroup_data_rsv_map;
++
+ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_fs_info *fs_info);
+ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
 -- 
 2.5.1
 

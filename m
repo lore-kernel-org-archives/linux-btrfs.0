@@ -1,115 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:47953 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751071AbbIIFFR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Sep 2015 01:05:17 -0400
+	id S1751201AbbIIFF1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Sep 2015 01:05:27 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQux019126
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:26 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQvG019126
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:48 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH RFC 00/14] Accurate qgroup reserve framework
-Date: Tue,  8 Sep 2015 16:37:17 +0800
-Message-Id: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 17/19] btrfs: extent-tree: Use new __btrfs_delalloc_reserve_space function
+Date: Tue,  8 Sep 2015 16:37:34 +0800
+Message-Id: <1441701456-8034-18-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[[BUG]]
-One of the most common case to trigger the bug is the following method:
-1) Enable quota
-2) Limit excl of qgroup 5 to 16M
-3) Write [0,2M) of a file inside subvol 5 10 times without sync
+Use new __btrfs_delalloc_reserve_space to reserve space.
 
-EQUOT will be triggered at about the 8th write.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/inode-map.c |  2 +-
+ fs/btrfs/inode.c     | 16 ++++++++++------
+ fs/btrfs/ioctl.c     |  5 +++--
+ 3 files changed, 14 insertions(+), 9 deletions(-)
 
-[[CAUSE]]
-The problem is caused by the fact that qgroup will reserve space even
-the data space is already reserved.
-
-In above reproducer, each time we buffered write [0,2M) qgroup will
-reserve 2M space, but in fact, at the 1st time, we have already reserved
-2M and from then on, we don't need to reserved any data space as we are
-only writing [0,2M).
-
-Also, the reserved space will only be freed *ONCE* when its backref is
-run at commit_transaction() time.
-
-That's causing the reserved space leaking.
-
-[[FIX]]
-The fix is not a simple one, as currently btrfs_qgroup_reserve() follow
-the very bad btrfs space allocating principle:
-  Allocate as much as you needed, even it's not fully used.
-
-So for accurate qgroup reserve, we introduce a completely new framework
-for data and metadata.
-1) Per-inode data reserve map
-   Now, each inode will have a data reserve map, recording which range
-   of data is already reserved.
-   If we are writing a range which is already reserved, we won't need to
-   reserve space again.
-
-   Also, for the fact that qgroup is only accounted at commit_trans(),
-   for data commit into disc and its metadata is also inserted into
-   current tree, we should free the data reserved range, but still keep
-   the reserved space until commit_trans().
-
-   So delayed_ref_head will have new members to record how much space is
-   reserved and free them at commit_trans() time.
-
-2) Per-root metadata reserve counter
-   For metadata(tree block), it's impossible to know how much space it
-   will use exactly in advance.
-   And due to the new qgroup accounting framework, the old
-   free-at-end-trans may lead to exceeding limit.
-
-   So we record how much metadata space is reserved for each root, and
-   free them at commit_trans() time.
-   This method is not perfect, but thanks to the compared small size of
-   metadata, it should be quite good.
-
-More detailed info can be found in each commit message and source
-commend.
-
-Qu Wenruo (19):
-  btrfs: qgroup: New function declaration for new reserve implement
-  btrfs: qgroup: Implement data_rsv_map init/free functions
-  btrfs: qgroup: Introduce new function to search most left reserve
-    range
-  btrfs: qgroup: Introduce function to insert non-overlap reserve range
-  btrfs: qgroup: Introduce function to reserve data range per inode
-  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
-  btrfs: qgroup: Introduce function to release reserved range
-  btrfs: qgroup: Introduce function to release/free reserved data range
-  btrfs: delayed_ref: Add new function to record reserved space into    
-    delayed ref
-  btrfs: delayed_ref: release and free qgroup reserved at proper timing
-  btrfs: qgroup: Introduce new functions to reserve/free metadata
-  btrfs: qgroup: Use new metadata reservation.
-  btrfs: extent-tree: Add new verions of btrfs_check_data_free_space
-  btrfs: Switch to new check_data_free_space
-  btrfs: fallocate: Add support to accurate qgroup reserve
-  btrfs: extent-tree: Add new version of btrfs_delalloc_reserve_space
-  btrfs: extent-tree: Use new __btrfs_delalloc_reserve_space function
-  btrfs: qgroup: Cleanup old inaccurate facilities
-  btrfs: qgroup: Add handler for NOCOW and inline
-
- fs/btrfs/btrfs_inode.h |   6 +
- fs/btrfs/ctree.h       |   8 +-
- fs/btrfs/delayed-ref.c |  29 +++
- fs/btrfs/delayed-ref.h |  14 +
- fs/btrfs/disk-io.c     |   1 +
- fs/btrfs/extent-tree.c |  99 +++++---
- fs/btrfs/file.c        | 169 +++++++++----
- fs/btrfs/inode-map.c   |   2 +-
- fs/btrfs/inode.c       |  51 +++-
- fs/btrfs/ioctl.c       |   3 +-
- fs/btrfs/qgroup.c      | 674 ++++++++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/qgroup.h      |  18 +-
- fs/btrfs/transaction.c |  34 +--
- fs/btrfs/transaction.h |   1 -
- 14 files changed, 979 insertions(+), 130 deletions(-)
-
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index d4a582a..ab639d3 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -488,7 +488,7 @@ again:
+ 	/* Just to make sure we have enough space */
+ 	prealloc += 8 * PAGE_CACHE_SIZE;
+ 
+-	ret = btrfs_delalloc_reserve_space(inode, prealloc);
++	ret = __btrfs_delalloc_reserve_space(inode, 0, prealloc);
+ 	if (ret)
+ 		goto out_put;
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 1f7cac0..d70cb26 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1985,7 +1985,8 @@ again:
+ 		goto again;
+ 	}
+ 
+-	ret = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
++	ret = __btrfs_delalloc_reserve_space(inode, page_start,
++					     PAGE_CACHE_SIZE);
+ 	if (ret) {
+ 		mapping_set_error(page->mapping, ret);
+ 		end_extent_writepage(page, ret, page_start, page_end);
+@@ -4581,7 +4582,8 @@ int btrfs_truncate_page(struct inode *inode, loff_t from, loff_t len,
+ 	if ((offset & (blocksize - 1)) == 0 &&
+ 	    (!len || ((len & (blocksize - 1)) == 0)))
+ 		goto out;
+-	ret = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
++	ret = __btrfs_delalloc_reserve_space(inode,
++			round_down(from, PAGE_CACHE_SIZE), PAGE_CACHE_SIZE);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -8373,7 +8375,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
+ 			mutex_unlock(&inode->i_mutex);
+ 			relock = true;
+ 		}
+-		ret = btrfs_delalloc_reserve_space(inode, count);
++		ret = __btrfs_delalloc_reserve_space(inode, offset, count);
+ 		if (ret)
+ 			goto out;
+ 		outstanding_extents = div64_u64(count +
+@@ -8620,7 +8622,11 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ 	u64 page_end;
+ 
+ 	sb_start_pagefault(inode->i_sb);
+-	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
++	page_start = page_offset(page);
++	page_end = page_start + PAGE_CACHE_SIZE - 1;
++
++	ret = __btrfs_delalloc_reserve_space(inode, page_start,
++					     PAGE_CACHE_SIZE);
+ 	if (!ret) {
+ 		ret = file_update_time(vma->vm_file);
+ 		reserved = 1;
+@@ -8639,8 +8645,6 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
+ again:
+ 	lock_page(page);
+ 	size = i_size_read(inode);
+-	page_start = page_offset(page);
+-	page_end = page_start + PAGE_CACHE_SIZE - 1;
+ 
+ 	if ((page->mapping != inode->i_mapping) ||
+ 	    (page_start >= size)) {
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0adf542..e0291fc 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -1119,8 +1119,9 @@ static int cluster_pages_for_defrag(struct inode *inode,
+ 
+ 	page_cnt = min_t(u64, (u64)num_pages, (u64)file_end - start_index + 1);
+ 
+-	ret = btrfs_delalloc_reserve_space(inode,
+-					   page_cnt << PAGE_CACHE_SHIFT);
++	ret = __btrfs_delalloc_reserve_space(inode,
++			start_index << PAGE_CACHE_SHIFT,
++			page_cnt << PAGE_CACHE_SHIFT);
+ 	if (ret)
+ 		return ret;
+ 	i_done = 0;
 -- 
 2.5.1
 

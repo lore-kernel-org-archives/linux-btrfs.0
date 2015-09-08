@@ -1,49 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail2.unitix.de ([176.9.125.4]:48987 "EHLO mail2.unitix.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933992AbbIDXMw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Sep 2015 19:12:52 -0400
-From: Arnd Hannemann <arnd@arndnet.de>
-To: linux-btrfs@vger.kernel.org
-Cc: Arnd Hannemann <arnd@arndnet.de>
-Subject: [PATCH] btrfs-progs: makefile: drop u option from ar invocation
-Date: Sat,  5 Sep 2015 01:06:18 +0200
-Message-Id: <1441407978-23061-1-git-send-email-arnd@arndnet.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:2443 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754283AbbIHNSb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 09:18:31 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t88DIGc2018025
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 21:18:16 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/3] btrfs-progs: fix set_get typo of btrfs_inode_item->sequence
+Date: Tue, 8 Sep 2015 21:16:49 +0800
+Message-ID: <d4a8e4de36299596be2f85561a619346c7d70aa7.1441718128.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <cover.1441718128.git.zhaolei@cn.fujitsu.com>
+References: <cover.1441718128.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In newer distros (ubuntu 15.10, fedora rawhide) the binutils
-ar uses the new D flag per default to build deterministic
-binaries.
-Without this patch the following warning is issued, when
-building btrfs-progs:
+s/generation/sequence
+for BTRFS_SETGET_STACK_FUNCS(stack_inode_sequence, ...)
 
-    [AR]     libbtrfs.a
-/usr/bin/ar: `u' modifier ignored since `D' is the default (see `U')
-
-For libtrfs.a performance benefit of the u option can be neglected,
-so drop the u option and silence the warning.
-
-In the future one might want to explicitly add the D option anyway.
-
-Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- Makefile.in | 2 +-
+ ctree.h | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/Makefile.in b/Makefile.in
-index 665f83c..514a76f 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -199,7 +199,7 @@ $(libs_shared): $(libbtrfs_objects) $(lib_links) send.h
- 
- $(libs_static): $(libbtrfs_objects)
- 	@echo "    [AR]     $@"
--	$(Q)$(AR) cru libbtrfs.a $(libbtrfs_objects)
-+	$(Q)$(AR) cr libbtrfs.a $(libbtrfs_objects)
- 
- $(lib_links):
- 	@echo "    [LN]     $@"
+diff --git a/ctree.h b/ctree.h
+index bcad2b9..2061e1e 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1423,7 +1423,7 @@ BTRFS_SETGET_FUNCS(inode_flags, struct btrfs_inode_item, flags, 64);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_generation,
+ 			 struct btrfs_inode_item, generation, 64);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_sequence,
+-			 struct btrfs_inode_item, generation, 64);
++			 struct btrfs_inode_item, sequence, 64);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_size,
+ 			 struct btrfs_inode_item, size, 64);
+ BTRFS_SETGET_STACK_FUNCS(stack_inode_nbytes,
 -- 
-2.5.0
+1.8.5.1
 

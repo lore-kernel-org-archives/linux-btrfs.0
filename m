@@ -1,343 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41443 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751743AbbIHJ2C (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 05:28:02 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t889RlGa011248
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 17:27:47 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 18/19] btrfs: qgroup: Cleanup old inaccurate facilities
-Date: Tue, 8 Sep 2015 17:25:55 +0800
-Message-ID: <1441704356-1940-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx142.netapp.com ([216.240.21.19]:22487 "EHLO mx142.netapp.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754677AbbIHO5U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Sep 2015 10:57:20 -0400
+Subject: Re: [PATCH v1 8/8] vfs: Fall back on splice if no copy function
+ defined
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+References: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
+ <1441397823-1203-9-git-send-email-Anna.Schumaker@Netapp.com>
+ <20150904210813.GA30681@birch.djwong.org>
+CC: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
+        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
+        <mtk.manpages@gmail.com>, <andros@netapp.com>, <hch@infradead.org>
+From: Anna Schumaker <Anna.Schumaker@netapp.com>
+Message-ID: <55EEF749.6050605@Netapp.com>
+Date: Tue, 8 Sep 2015 10:57:13 -0400
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20150904210813.GA30681@birch.djwong.org>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cleanup the old facilities which use old btrfs_qgroup_reserve() function
-call, replace them with the newer version, and remove the "__" prefix in
-them.
+On 09/04/2015 05:08 PM, Darrick J. Wong wrote:
+> On Fri, Sep 04, 2015 at 04:17:02PM -0400, Anna Schumaker wrote:
+>> The NFS server will need a fallback for filesystems that don't have any
+>> kind of copy acceleration yet, and it should be generally useful to have
+>> an in-kernel copy to avoid lots of switches between kernel and
+>> user space.  Users who only want a reflink can pass the COPY_REFLINK
+>> flag to disable the fallback.
+>>
+>> Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
+>> ---
+>>  fs/read_write.c           | 16 ++++++++++++----
+>>  include/linux/copy.h      |  6 ++++++
+>>  include/uapi/linux/Kbuild |  1 +
+>>  include/uapi/linux/copy.h |  6 ++++++
+>>  4 files changed, 25 insertions(+), 4 deletions(-)
+>>  create mode 100644 include/linux/copy.h
+>>  create mode 100644 include/uapi/linux/copy.h
+>>
+>> diff --git a/fs/read_write.c b/fs/read_write.c
+>> index 9dafb7f..bd7e7e2 100644
+>> --- a/fs/read_write.c
+>> +++ b/fs/read_write.c
+>> @@ -7,6 +7,7 @@
+>>  #include <linux/slab.h> 
+>>  #include <linux/stat.h>
+>>  #include <linux/fcntl.h>
+>> +#include <linux/copy.h>
+>>  #include <linux/file.h>
+>>  #include <linux/uio.h>
+>>  #include <linux/fsnotify.h>
+>> @@ -1342,7 +1343,7 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+>>  	struct inode *inode_out;
+>>  	ssize_t ret;
+>>  
+>> -	if (flags)
+>> +	if (!((flags == 0) || (flags == COPY_REFLINK)))
+> 
+> I think it's a good idea for the copy_file_range flags to have the name of
+> the syscall in them at the beginning, both to try to avoid namespace collisions
+> and also to make it clear where the flag comes from.  So, could we prefix the
+> values with "COPY_FILE_RANGE_" instead of just "COPY_"?
 
-Also, make btrfs_qgroup_reserve/free() functions private, as they are
-now only used inside qgroup codes.
+Sure, that makes sense!
 
-Now, the whole btrfs qgroup is swithed to use the new reserve facilities.
+> 
+> Also... I'm confused by what the structure of check implies about 'flags' --
+> are each of 'flags's values supposed to be mutually exclusive, or is it a
+> straight bitset like flags arguments tend to be?
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h       |  6 ++----
- fs/btrfs/extent-tree.c | 56 ++++----------------------------------------------
- fs/btrfs/file.c        |  2 +-
- fs/btrfs/inode-map.c   |  2 +-
- fs/btrfs/inode.c       | 12 +++++------
- fs/btrfs/ioctl.c       |  2 +-
- fs/btrfs/qgroup.c      | 19 ++++++++++-------
- fs/btrfs/qgroup.h      |  7 -------
- 8 files changed, 27 insertions(+), 79 deletions(-)
+I was expecting this to be a bitset, but that's not the easiest to communicate when there is (currently) only one flag.  I'll take a look at other functions to see how I should be validating this!
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 12f14fd..8489419 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3452,8 +3452,7 @@ enum btrfs_reserve_flush_enum {
- 	BTRFS_RESERVE_FLUSH_ALL,
- };
- 
--int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes);
--int __btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
-+int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
- int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes);
- void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes);
- void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
-@@ -3471,8 +3470,7 @@ void btrfs_subvolume_release_metadata(struct btrfs_root *root,
- 				      u64 qgroup_reserved);
- int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes);
- void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes);
--int btrfs_delalloc_reserve_space(struct inode *inode, u64 num_bytes);
--int __btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len);
-+int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len);
- void btrfs_delalloc_release_space(struct inode *inode, u64 num_bytes);
- void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type);
- struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 07f45b7..ab1b1a1 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3352,7 +3352,7 @@ again:
- 	num_pages *= 16;
- 	num_pages *= PAGE_CACHE_SIZE;
- 
--	ret = __btrfs_check_data_free_space(inode, 0, num_pages);
-+	ret = btrfs_check_data_free_space(inode, 0, num_pages);
- 	if (ret)
- 		goto out_put;
- 
-@@ -4037,27 +4037,11 @@ commit_trans:
- }
- 
- /*
-- * This will check the space that the inode allocates from to make sure we have
-- * enough space for bytes.
-- */
--int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes)
--{
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	int ret;
--
--	ret = btrfs_alloc_data_chunk_ondemand(inode, bytes);
--	if (ret < 0)
--		return ret;
--	ret = btrfs_qgroup_reserve(root, write_bytes);
--	return ret;
--}
--
--/*
-  * New check_data_free_space() with ability for precious data reserveation
-  * Will replace old btrfs_check_data_free_space(), but for patch split,
-  * add a new function first and then replace it.
-  */
--int __btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
-+int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret;
-@@ -5710,11 +5694,11 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
-  * Return 0 for success
-  * Return <0 for error(-ENOSPC or -EQUOT)
-  */
--int __btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
-+int btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
- {
- 	int ret;
- 
--	ret = __btrfs_check_data_free_space(inode, start, len);
-+	ret = btrfs_check_data_free_space(inode, start, len);
- 	if (ret < 0)
- 		return ret;
- 	ret = btrfs_delalloc_reserve_metadata(inode, len);
-@@ -5724,38 +5708,6 @@ int __btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
- }
- 
- /**
-- * btrfs_delalloc_reserve_space - reserve data and metadata space for delalloc
-- * @inode: inode we're writing to
-- * @num_bytes: the number of bytes we want to allocate
-- *
-- * This will do the following things
-- *
-- * o reserve space in the data space info for num_bytes
-- * o reserve space in the metadata space info based on number of outstanding
-- *   extents and how much csums will be needed
-- * o add to the inodes ->delalloc_bytes
-- * o add it to the fs_info's delalloc inodes list.
-- *
-- * This will return 0 for success and -ENOSPC if there is no space left.
-- */
--int btrfs_delalloc_reserve_space(struct inode *inode, u64 num_bytes)
--{
--	int ret;
--
--	ret = btrfs_check_data_free_space(inode, num_bytes, num_bytes);
--	if (ret)
--		return ret;
--
--	ret = btrfs_delalloc_reserve_metadata(inode, num_bytes);
--	if (ret) {
--		btrfs_free_reserved_data_space(inode, num_bytes);
--		return ret;
--	}
--
--	return 0;
--}
--
--/**
-  * btrfs_delalloc_release_space - release data and metadata space for delalloc
-  * @inode: inode we're releasing space for
-  * @num_bytes: the number of bytes we want to free up
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 26e59bc..124c1d4 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1532,7 +1532,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 				goto reserve_metadata;
- 			}
- 		}
--		ret = __btrfs_check_data_free_space(inode, pos, write_bytes);
-+		ret = btrfs_check_data_free_space(inode, pos, write_bytes);
- 		if (ret < 0)
- 			break;
- 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index ab639d3..9a0ad27 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -488,7 +488,7 @@ again:
- 	/* Just to make sure we have enough space */
- 	prealloc += 8 * PAGE_CACHE_SIZE;
- 
--	ret = __btrfs_delalloc_reserve_space(inode, 0, prealloc);
-+	ret = btrfs_delalloc_reserve_space(inode, 0, prealloc);
- 	if (ret)
- 		goto out_put;
- 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index d70cb26..8c09197 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1985,8 +1985,8 @@ again:
- 		goto again;
- 	}
- 
--	ret = __btrfs_delalloc_reserve_space(inode, page_start,
--					     PAGE_CACHE_SIZE);
-+	ret = btrfs_delalloc_reserve_space(inode, page_start,
-+					   PAGE_CACHE_SIZE);
- 	if (ret) {
- 		mapping_set_error(page->mapping, ret);
- 		end_extent_writepage(page, ret, page_start, page_end);
-@@ -4582,7 +4582,7 @@ int btrfs_truncate_page(struct inode *inode, loff_t from, loff_t len,
- 	if ((offset & (blocksize - 1)) == 0 &&
- 	    (!len || ((len & (blocksize - 1)) == 0)))
- 		goto out;
--	ret = __btrfs_delalloc_reserve_space(inode,
-+	ret = btrfs_delalloc_reserve_space(inode,
- 			round_down(from, PAGE_CACHE_SIZE), PAGE_CACHE_SIZE);
- 	if (ret)
- 		goto out;
-@@ -8375,7 +8375,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 			mutex_unlock(&inode->i_mutex);
- 			relock = true;
- 		}
--		ret = __btrfs_delalloc_reserve_space(inode, offset, count);
-+		ret = btrfs_delalloc_reserve_space(inode, offset, count);
- 		if (ret)
- 			goto out;
- 		outstanding_extents = div64_u64(count +
-@@ -8625,8 +8625,8 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	page_start = page_offset(page);
- 	page_end = page_start + PAGE_CACHE_SIZE - 1;
- 
--	ret = __btrfs_delalloc_reserve_space(inode, page_start,
--					     PAGE_CACHE_SIZE);
-+	ret = btrfs_delalloc_reserve_space(inode, page_start,
-+					   PAGE_CACHE_SIZE);
- 	if (!ret) {
- 		ret = file_update_time(vma->vm_file);
- 		reserved = 1;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index e0291fc..c057317 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1119,7 +1119,7 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 
- 	page_cnt = min_t(u64, (u64)num_pages, (u64)file_end - start_index + 1);
- 
--	ret = __btrfs_delalloc_reserve_space(inode,
-+	ret = btrfs_delalloc_reserve_space(inode,
- 			start_index << PAGE_CACHE_SHIFT,
- 			page_cnt << PAGE_CACHE_SHIFT);
- 	if (ret)
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b759e96..5f7d7f5 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2088,7 +2088,7 @@ out:
- 	return ret;
- }
- 
--int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
-+static int qgroup_reserve(struct btrfs_root *root, u64 num_bytes)
- {
- 	struct btrfs_root *quota_root;
- 	struct btrfs_qgroup *qgroup;
-@@ -2221,6 +2221,11 @@ out:
- 	spin_unlock(&fs_info->qgroup_lock);
- }
- 
-+static inline void qgroup_free(struct btrfs_root *root, u64 num_bytes)
-+{
-+	return btrfs_qgroup_free_refroot(root->fs_info, root->objectid,
-+					 num_bytes);
-+}
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
- {
- 	if (list_empty(&trans->qgroup_ref_list) && !trans->delayed_ref_elem.seq)
-@@ -2782,7 +2787,7 @@ static int reserve_data_range(struct btrfs_root *root,
- 		cur_start = next_start;
- 	}
- insert:
--	ret = btrfs_qgroup_reserve(root, reserve);
-+	ret = qgroup_reserve(root, reserve);
- 	if (ret < 0)
- 		return ret;
- 	/* ranges must be inserted after we are sure it has enough space */
-@@ -3001,7 +3006,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
- 	if (ret == 0)
- 		kfree(tmp);
- 	if (free_reserved)
--		btrfs_qgroup_free(BTRFS_I(inode)->root, reserved);
-+		qgroup_free(BTRFS_I(inode)->root, reserved);
- 	spin_unlock(&map->lock);
- 	return 0;
- }
-@@ -3089,7 +3094,7 @@ void btrfs_qgroup_free_data_rsv_map(struct inode *inode)
- 	/* insanity check */
- 	WARN_ON(!root->fs_info->quota_enabled || !is_fstree(root->objectid));
- 
--	btrfs_qgroup_free(root, dirty_map->reserved);
-+	qgroup_free(root, dirty_map->reserved);
- 	spin_lock(&dirty_map->lock);
- 	while ((node = rb_first(&dirty_map->root)) != NULL) {
- 		struct data_rsv_range *range;
-@@ -3112,7 +3117,7 @@ int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes)
- 		return 0;
- 
- 	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
--	ret = btrfs_qgroup_reserve(root, num_bytes);
-+	ret = qgroup_reserve(root, num_bytes);
- 	if (ret < 0)
- 		return ret;
- 	atomic_add(num_bytes, &root->qgroup_meta_rsv);
-@@ -3129,7 +3134,7 @@ void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
- 	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
- 	if (reserved == 0)
- 		return;
--	btrfs_qgroup_free(root, reserved);
-+	qgroup_free(root, reserved);
- }
- 
- void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
-@@ -3140,5 +3145,5 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
- 	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
- 	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
- 	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
--	btrfs_qgroup_free(root, num_bytes);
-+	qgroup_free(root, num_bytes);
- }
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 2d507c8..da849db 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -74,15 +74,8 @@ int btrfs_run_qgroups(struct btrfs_trans_handle *trans,
- int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
- 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
- 			 struct btrfs_qgroup_inherit *inherit);
--int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
- void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
- 			       u64 ref_root, u64 num_bytes);
--static inline void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
--{
--	return btrfs_qgroup_free_refroot(root->fs_info, root->objectid,
--					 num_bytes);
--}
--
- void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
- 
- #ifdef CONFIG_BTRFS_FS_RUN_SANITY_TESTS
--- 
-2.5.1
+Thanks for the comments,
+Anna
+
+> 
+> Say we want to add dedupe and ponies as potential behavioral variants.  Then
+> we'd end up with something like:
+> 
+> /* raw flags */
+> #define	COPY_FILE_RANGE_SHARE_BLOCKS	(1)
+> #define COPY_FILE_RANGE_CHECK_SAME	(2)
+> #define COPY_FILE_RANGE_PONIES		(4)
+> 
+> /* syntactic sugar */
+> #define COPY_FILE_RANGE_DEDUPE		(COPY_FILE_RANGE_SHARE_BLOCKS | \
+> 					 COPY_FILE_RANGE_CHECK_SAME)
+> #define COPY_FILE_RANGE_ALL		(COPY_FILE_RANGE_SHARE_BLOCKS | \
+> 					 COPY_FILE_RANGE_CHECK_SAME | \
+> 					 COPY_FILE_RANGE_PONIES)
+> 
+> and in copy_file_range():
+> 
+> if (flags & ~COPY_FILE_RANGE_ALL)
+> 	return -EINVAL;
+> if ((flags & COPY_FILE_RANGE_CHECK_SAME) && 
+>     !(flags & COPY_FILE_RANGE_SHARE_BLOCKS))
+> 	return -EINVAL;	/* or is it return 0? */
+> 
+> if (flags & COPY_FILE_RANGE_PONIES)
+> 	panic();
+> if (flags & COPY_FILE_RANGE_CHECK_SAME)
+> 	check_same_contents(...);
+> err = vfs_copy_range(...);
+> if (err < 0 && !(flags & COPY_FILE_RANGE_SHARE_BLOCKS))
+> 	err = splice(...);
+> 
+> One hard part is figuring out just what actions we want userland to be able to
+> ask for.  I can think of three: "share blocks via remapping" (i.e.  reflink),
+> "share blocks via remapping but only if they're identical" (i.e. dedupe), and
+> "classic copy via pagecache".  I lean towards giving each variant its own bit
+> and only allowing through the cases that make sense, rather than giving each
+> valid combination its own unique number, but maybe I misinterpreted the intent
+> behind the code.
+> 
+> (I guess there could also be 'do it with hardware assist' but that's digging
+> myself a pretty deep hole.)
+> 
+> --D
+> 
+>>  		return -EINVAL;
+>>  
+>>  	/* copy_file_range allows full ssize_t len, ignoring MAX_RW_COUNT  */
+>> @@ -1355,7 +1356,7 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+>>  	if (!(file_in->f_mode & FMODE_READ) ||
+>>  	    !(file_out->f_mode & FMODE_WRITE) ||
+>>  	    (file_out->f_flags & O_APPEND) ||
+>> -	    !file_out->f_op || !file_out->f_op->copy_file_range)
+>> +	    !file_in->f_op)
+>>  		return -EBADF;
+>>  
+>>  	inode_in = file_inode(file_in);
+>> @@ -1377,8 +1378,15 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+>>  	if (ret)
+>>  		return ret;
+>>  
+>> -	ret = file_out->f_op->copy_file_range(file_in, pos_in, file_out, pos_out,
+>> -					      len, flags);
+>> +	ret = -EOPNOTSUPP;
+>> +	if (file_out->f_op->copy_file_range)
+>> +		ret = file_out->f_op->copy_file_range(file_in, pos_in, file_out,
+>> +						      pos_out, len, flags);
+>> +	if ((ret < 0) && !(flags & COPY_REFLINK)) {
+>> +		file_start_write(file_out);
+>> +		ret = do_splice_direct(file_in, &pos_in, file_out, &pos_out, len, 0);
+>> +		file_end_write(file_out);
+>> +	}
+>>  	if (ret > 0) {
+>>  		fsnotify_access(file_in);
+>>  		add_rchar(current, ret);
+>> diff --git a/include/linux/copy.h b/include/linux/copy.h
+>> new file mode 100644
+>> index 0000000..fd54543
+>> --- /dev/null
+>> +++ b/include/linux/copy.h
+>> @@ -0,0 +1,6 @@
+>> +#ifndef _LINUX_COPY_H
+>> +#define _LINUX_COPY_H
+>> +
+>> +#include <uapi/linux/copy.h>
+>> +
+>> +#endif /* _LINUX_COPY_H */
+>> diff --git a/include/uapi/linux/Kbuild b/include/uapi/linux/Kbuild
+>> index 1ff9942..b6109f3 100644
+>> --- a/include/uapi/linux/Kbuild
+>> +++ b/include/uapi/linux/Kbuild
+>> @@ -90,6 +90,7 @@ header-y += coda_psdev.h
+>>  header-y += coff.h
+>>  header-y += connector.h
+>>  header-y += const.h
+>> +header-y += copy.h
+>>  header-y += cramfs_fs.h
+>>  header-y += cuda.h
+>>  header-y += cyclades.h
+>> diff --git a/include/uapi/linux/copy.h b/include/uapi/linux/copy.h
+>> new file mode 100644
+>> index 0000000..68f3d65
+>> --- /dev/null
+>> +++ b/include/uapi/linux/copy.h
+>> @@ -0,0 +1,6 @@
+>> +#ifndef _UAPI_LINUX_COPY_H
+>> +#define _UAPI_LINUX_COPY_H
+>> +
+>> +#define COPY_REFLINK	1	/* only perform a reflink */
+>> +
+>> +#endif /* _UAPI_LINUX_COPY_H */
+>> -- 
+>> 2.5.1
+>>
 

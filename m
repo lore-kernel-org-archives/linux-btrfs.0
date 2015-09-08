@@ -1,41 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55708 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754089AbbIHLwX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Sep 2015 07:52:23 -0400
-Date: Tue, 8 Sep 2015 13:51:37 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Sheng Yong <shengyong1@huawei.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: trival fix of __btrfs_set_acl error handling
-Message-ID: <20150908115137.GA8891@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1441702002-109706-1-git-send-email-shengyong1@huawei.com>
- <55EEA159.5060306@cn.fujitsu.com>
- <55EEA428.4080006@huawei.com>
+Received: from mail-wi0-f170.google.com ([209.85.212.170]:35258 "EHLO
+	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753950AbbIHL7X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 07:59:23 -0400
+Received: by wicge5 with SMTP id ge5so113615643wic.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2015 04:59:22 -0700 (PDT)
+Received: from [192.168.0.107] (89-212-5-85.static.t-2.net. [89.212.5.85])
+        by smtp.googlemail.com with ESMTPSA id h8sm4463770wib.21.2015.09.08.04.59.20
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 08 Sep 2015 04:59:20 -0700 (PDT)
+To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?Q?Peter_Ke=c5=a1e?= <peter.kese@viidea.com>
+Subject: raid6 + hot spare question
+Message-ID: <55EECD97.7090109@viidea.com>
+Date: Tue, 8 Sep 2015 13:59:19 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55EEA428.4080006@huawei.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 08, 2015 at 05:02:32PM +0800, Sheng Yong wrote:
-> Hi, Qu
-> 
-> On 9/8/2015 4:50 PM, Qu Wenruo wrote:
-> > Sheng Yong wrote on 2015/09/08 08:46 +0000:
-> >> * If the allocation failed, don't free to free it, even though kfree
-> >>    allows to free a NULL pointer.
-> >> * If posix_acl_to_xattr() failed, cleanup the allocation and return
-> >>    the error directly.
-> > So, what's the point?
-> > For me, I didn't see the pros of the change.
-> > As kfree() allow NULL pointer, why not use it?
-> In fact, there is no semantic changes. It's just because when I walk through
-> the code, and find there is no need to call kfree(), and could be cleaned up.
-> It's fine to keep as it is :)
 
-I agree with Qu. In this case it's not performance critical and conforms
-to the widely used pattern of single return point from branches.
-However, the acl functions are not consistent in that respect. It's more
-a matter of style that gets unified eventually.
+I'm planning to set up a raid6 array with 4 x 4TB drives.
+Presumably that would result in 8TB of usable space + parity, which is 
+about enough for my data (my data is currently 5TB in raid1, slowly 
+growing at about 1 TB per year, but I often keep some additional backups 
+if space permits).
+
+However I'd like to be prepared for a disk failure. Because my server is 
+not easily accessible and disk replacement times can be long, I'm 
+considering the idea of making a 5-drive raid6, thus getting 12TB 
+useable space + parity. In this case, the extra 4TB drive would serve as 
+some sort of a hot spare.
+
+My assumption is that if one hard drive fails before the volume is more 
+than 8TB full, I can just rebalance and resize the volume from 12 TB 
+back to 8 TB essentially going from 5-drive raid6 to 4-drive raid6).
+
+Can anyone confirm my assumption? Can I indeed rebalance from 5-drive 
+raid6 to 4-drive raid6 if the volume is not too big?
+
+Thanks,
+     Peter

@@ -1,72 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47953 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:45567 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751419AbbIIFFU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Sep 2015 01:05:20 -0400
+	id S1751441AbbIIFFW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Sep 2015 01:05:22 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQv2019126
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:32 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQv4019126
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:34 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/19] btrfs: qgroup: Introduce new function to search most left reserve range
-Date: Tue,  8 Sep 2015 16:37:20 +0800
-Message-Id: <1441701456-8034-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 05/19] btrfs: qgroup: Introduce function to reserve data range per inode
+Date: Tue,  8 Sep 2015 16:37:22 +0800
+Message-Id: <1441701456-8034-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce the new function to search the most left reserve range in a
-reserve map.
+Introduce new function reserve_data_range().
+This function will find non-overlap range and to insert it into reserve
+map using previously introduced functions.
 
-It provides the basis for later reserve map implement.
+This provides the basis for later per inode reserve map implement.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ fs/btrfs/qgroup.c | 92 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 92 insertions(+)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index cf07c17..fc24fc3 100644
+index a4e3af4..77a2e07 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2541,6 +2541,42 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
+@@ -2701,6 +2701,98 @@ static int insert_data_ranges(struct btrfs_qgroup_data_rsv_map *map,
  }
  
  /*
-+ * Return the nearest left range of given start
-+ * No ensure about the range will cover start.
++ * Check qgroup limit and insert dirty range into reserve_map.
++ *
++ * Must be called with map->lock hold
 + */
-+static struct data_rsv_range *
-+find_reserve_range(struct btrfs_qgroup_data_rsv_map *map, u64 start)
++static int reserve_data_range(struct btrfs_root *root,
++			      struct btrfs_qgroup_data_rsv_map *map,
++			      struct data_rsv_range *tmp,
++			      struct ulist *insert_list, u64 start, u64 len)
 +{
-+	struct rb_node **p = &map->root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct rb_node *prev = NULL;
-+	struct data_rsv_range *range = NULL;
++	struct data_rsv_range *range;
++	u64 cur_start = 0;
++	u64 cur_len = 0;
++	u64 reserve = 0;
++	int ret = 0;
 +
-+	while (*p) {
-+		parent = *p;
-+		range = rb_entry(parent, struct data_rsv_range, node);
-+		if (range->start < start)
-+			p = &(*p)->rb_right;
-+		else if (range->start > start)
-+			p = &(*p)->rb_left;
-+		else
-+			return range;
++	range = find_reserve_range(map, start);
++	/* empty tree, insert the whole range */
++	if (!range) {
++		reserve = len;
++		ret = ulist_add(insert_list, start, len, GFP_ATOMIC);
++		if (ret < 0)
++			return ret;
++		goto insert;
 +	}
 +
-+	/* empty tree */
-+	if (!parent)
-+		return NULL;
-+	if (range->start <= start)
-+		return range;
++	/* For case range is covering the leading part */
++	if (range->start <= start && range->start + range->len > start)
++		cur_start = range->start + range->len;
++	else
++		cur_start = start;
 +
-+	prev = rb_prev(parent);
-+	/* Already most left one */
-+	if (!prev)
-+		return range;
-+	return rb_entry(prev, struct data_rsv_range, node);
++	/*
++	 * iterate until the end of the range.
++	 * Like the following:
++	 *
++	 *	|<--------desired---------------------->|
++	 *|//1//|	|////2//|	|///3///|	<- exists
++	 * Then we will need to insert the following
++	 *	|\\\4\\\|	|\\\5\\\|	|\\\6\\\|
++	 * And only add qgroup->reserved for rang 4,5,6.
++	 */
++	while (cur_start < start + len) {
++		struct rb_node *next_node;
++		u64 next_start;
++
++		if (range->start + range->len <= cur_start) {
++			/*
++			 * Move to next range if current range is before
++			 * cur_start
++			 * e.g range is 1, cur_start is the end of range 1.
++			 */
++			next_node = rb_next(&range->node);
++			if (!next_node) {
++				/*
++				 * no next range, fill the rest
++				 * e.g range is 3, cur_start is end of range 3.
++				 */
++				cur_len = start + len - cur_start;
++				next_start = start + len;
++			} else {
++				range = rb_entry(next_node,
++						 struct data_rsv_range, node);
++				cur_len = min(range->start, start + len) -
++					  cur_start;
++				next_start = range->start + range->len;
++			}
++		} else {
++			/*
++			 * current range is already after cur_start
++			 * e.g range is 2, cur_start is end of range 1.
++			 */
++			cur_len = min(range->start, start + len) - cur_start;
++			next_start = range->start + range->len;
++		}
++		reserve += cur_len;
++		ret = ulist_add(insert_list, cur_start, cur_len, GFP_ATOMIC);
++		if (ret < 0)
++			return ret;
++
++		cur_start = next_start;
++	}
++insert:
++	ret = btrfs_qgroup_reserve(root, reserve);
++	if (ret < 0)
++		return ret;
++	/* ranges must be inserted after we are sure it has enough space */
++	ret = insert_data_ranges(map, tmp, insert_list);
++	map->reserved += reserve;
++	return ret;
 +}
 +
 +/*

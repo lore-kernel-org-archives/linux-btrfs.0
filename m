@@ -1,83 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47817 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753703AbbIHMNA (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 08:13:00 -0400
-Date: Tue, 8 Sep 2015 12:12:58 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Peter =?utf-8?B?S2XFoWU=?= <peter.kese@viidea.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: raid6 + hot spare question
-Message-ID: <20150908121258.GM23944@carfax.org.uk>
-References: <55EECD97.7090109@viidea.com>
+Received: from mail-io0-f173.google.com ([209.85.223.173]:36498 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753367AbbIHM41 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 08:56:27 -0400
+Subject: Re: mkfs.btrfs cannot find rotational file for SSD detection for a
+ pmem device
+To: "Elliott, Robert (Persistent Memory)" <elliott@hpe.com>,
+        "dan.j.williams@intel.com" <dan.j.williams@intel.com>
+References: <94D0CD8314A33A4D9D801C0FE68B40295BD1BF1F@G4W3202.americas.hpqcorp.net>
+Cc: "linux-nvdimm@lists.01.org" <linux-nvdimm@ml01.01.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        "util-linux@vger.kernel.org" <util-linux@vger.kernel.org>,
+        "Kani, Toshimitsu" <toshi.kani@hpe.com>,
+        "Knippers, Linda" <linda.knippers@hpe.com>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <55EEDAE8.1060905@gmail.com>
+Date: Tue, 8 Sep 2015 08:56:08 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="NJSRbAqOy4NeGDns"
-In-Reply-To: <55EECD97.7090109@viidea.com>
+In-Reply-To: <94D0CD8314A33A4D9D801C0FE68B40295BD1BF1F@G4W3202.americas.hpqcorp.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070103030706090507060402"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
 
---NJSRbAqOy4NeGDns
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+--------------ms070103030706090507060402
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, Sep 08, 2015 at 01:59:19PM +0200, Peter Ke=C5=A1e wrote:
->=20
-> I'm planning to set up a raid6 array with 4 x 4TB drives.
-> Presumably that would result in 8TB of usable space + parity, which
-> is about enough for my data (my data is currently 5TB in raid1,
-> slowly growing at about 1 TB per year, but I often keep some
-> additional backups if space permits).
->=20
-> However I'd like to be prepared for a disk failure. Because my
-> server is not easily accessible and disk replacement times can be
-> long, I'm considering the idea of making a 5-drive raid6, thus
-> getting 12TB useable space + parity. In this case, the extra 4TB
-> drive would serve as some sort of a hot spare.
->=20
-> My assumption is that if one hard drive fails before the volume is
-> more than 8TB full, I can just rebalance and resize the volume from
-> 12 TB back to 8 TB essentially going from 5-drive raid6 to 4-drive
-> raid6).
->=20
-> Can anyone confirm my assumption? Can I indeed rebalance from
-> 5-drive raid6 to 4-drive raid6 if the volume is not too big?
+On 2015-09-06 13:51, Elliott, Robert (Persistent Memory) wrote:
+> mkfs.btrfs does not detect pmem devices as being SSDs in kernel 4.2.
+>
+> Label:              (null)
+> UUID:               46603efe-728c-43fe-8241-ffc125e1a7ed
+> Node size:          16384
+> Sector size:        4096
+> Filesystem size:    8.00GiB
+> Block group profiles:
+>    Data:             single            8.00MiB
+>    Metadata:         DUP             417.56MiB
+>    System:           DUP              12.00MiB
+> SSD detected:       no
+> Incompat features:  extref, skinny-metadata
+> Number of devices:  1
+> Devices:
+>     ID        SIZE  PATH
+>      1     8.00GiB  /dev/pmem0
+>
+> mkfs.btrfs opens "/sys/block/%s/queue/rotational" and looks for
+> 0 (non-rotational - an SSD) or non-zero (rotational - a HDD).
+While not directly related in this case, it's worth pointing out that=20
+there are lots of things that are not SSD's that get listed as=20
+non-rotational by default (and you can in fact change the value of this=20
+file from userspace), such as: virtualized block storage (xvdb and=20
+virtio at least, not sure about vmware or hyperv), and some networked=20
+block devices (NBD may or may not, depends on server side configuration, =
 
-   Yes, you can, provided, as you say, the data is small enough to fit
-into the reduced filesystem.
+ATAoE did at least at one point, RBD gets listed as non-rotational, DRBD =
 
-   Hugo.
+tracks underlying storage on the local node).
+>
+> However, strace shows it is having trouble creating that path.
+> The blkid_devno_to_wholedisk function from libblkid leads it to
+> this path:
+> 	/sys/block/LNXSY/queue/rotational
+> which doesn't exist.
+>
+> That is based on:
+> $ realpath /sys/block/pmem0
+> /sys/devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0012:00/ndbus1/region0/namespa=
+ce0.0/block/pmem0
+>
+> $ realpath /sys/dev/block/259:0
+> /sys/devices/LNXSYSTM:00/LNXSYBUS:00/ACPI0012:00/ndbus1/region0/namespa=
+ce0.0/block/pmem0
+>
+> The impact looks limited to the print and causing it to not
+> automatically disable "metadata duplication on a single device."
+This is an issue inherent in the current pmem driver however, it should=20
+be fixed there and not in mkfs.btrfs, as other filesystems make=20
+decisions based on this file also, as does the I/O scheduler, and some=20
+block storage servers.  This gets tricky though because pmem isn't=20
+technically a block device at the low level, and doesn't use some parts=20
+of the block layer that most other block devices do.
 
---=20
-Hugo Mills             | "What's so bad about being drunk?"
-hugo@... carfax.org.uk | "You ask a glass of water"
-http://carfax.org.uk/  |                                         Arthur & F=
-ord
-PGP: E2AB1DE4          |                 The Hitch-Hiker's Guide to the Gal=
-axy
+On that note however, if the pmem device is backed by actual RAM and not =
 
---NJSRbAqOy4NeGDns
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+flash storage (and most of them are from what I've seen), then the only=20
+advantage of using single metadata mode over dup is space savings, as=20
+RAM is not (usually) write limited.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJV7tDKAAoJEFheFHXiqx3kt/IP/31gx0s8xx275+brq//uu9lA
-Vw2qZsiwhWpZHmY60P9bahkihdG/2k/avG2lAkxdILD1laFTY6MayplZpyd1SgWi
-LZPbQXvKqrM9usY9Ob1hpv9aqlV/z/ci4bS7+GcIZZtEOEX7UkMwnrmA4dlVfAPP
-fEcLWEgBlHJxyzgMW7QNqgHcPnuU3yVRmAZdhAdMHxI0JDtntl3VwTNL2g7jnqcl
-XWPXUJA/TpwhNDg0c19aODv2SjdrfCw1A39WEUNODnsbFRtY+j3PA1da0Jfu0rIS
-vrJXXvnPeVXkCSQ0/G77pSLE5Ra4GwRnJ5/aO4GIHpToOCfK4tCqBmUmdLZBIFZC
-Pr9ywiXkV7e025kudLibNGtATeUtF+0+g/zhJsSXqDU+K85vK+34hDg7tYU81Ih+
-PsZn96R77Snrsk3Fd4RMBxjdILKddL5TJfcAIgI/MkDsQy0xx6M97uTH83xMUwAB
-fHApwW+0VRmXjAAu+wJAPakt13peocPHEK+wR7czA354TQ8BmDZwj+1SaJBpZYOn
-4fGWwtxUbXnj9uj09dT35vlvKpwGtUHNvvOdMo2/4ekZJp0u0hJmmzkY8L0ZwjAy
-sHkBqEpdEruRMezemzEW3nKLYGeDl2nwgNKfiTDaQL8UC2UNDrEniRDGbM+sglpL
-HGsCznUW+jDGmUMTX+Rf
-=Q3+4
------END PGP SIGNATURE-----
+--------------ms070103030706090507060402
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
---NJSRbAqOy4NeGDns--
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTA4MTI1NjA4WjBPBgkq
+hkiG9w0BCQQxQgRAoJpHF/879Qo46j8xZoxs/HYQ+CKOVq4xCVtodLKe60xAcUOwyq0OVDAP
+Zvkw0+W2bea0jJoC6M8dW4jd50nT7jBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
+BgkqhkiG9w0BAQEFAASCAgArTUig6jm5D1SHwTrJNKXVGARR5zrBtnjpYDcJr5tc+fafCmY4
+6wTOnQdoPVhKrqzWdaHhu8XW5S07ZpbBwNPwFt/KwKz0JrrB1kF7Nfbvf6ywF3/7TzEdoMRs
+WKG6vCpbbWwnThhbmMGW4Xz1gBD5amDPhd6w9k69E59JX0SPYtBX5PEz0mTjuMi7gQPYFF68
+tlFq5jVPxY8n876peYEy4n1gA6hSi9+2fesq2Ad4nfyluMCMMP4rJzaduR4LF4Rb/KjKkl8+
+25gqXL4G6KYCA4I3vomcsDU6NXi7PRKXvYxwzgysEu88NxVCxqen5JZ6FZO3mzqDnjpC+Nbl
+PSBxe/gnNH5JFMnF2Z+KSTlRKjeJXchtQ7jTTITS4jInH4zkdSAL8t5uO9HoplvZPdY3aHm9
+tXuixzGAR5IBcbsAboX2yKyCUvuQuBbx/y0ORifmeyR33xFaf6E6NpIkwx30GaGa+cfFTrt3
+y0aCXHVRZIBPL76My7h8Pc0N3KKObgu0F/XSq0JGz7/G3Xw671TuWYRZfDYsTXmjO5/+mjNW
+u9YowQ3h16na0wn/FsWAdJau6A3dDQX5ErFhOJTNQH8YI23FUccOApAvxe2stCwfCmYoMZcG
+YdyNZBFEpwqsJT0dcqLuuv2AtW/4xXhwCGGgfy6jqrPxeK/9QxQYyv3J8gAAAAAAAA==
+--------------ms070103030706090507060402--

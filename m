@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31553 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:22293 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752232AbbIHI7C (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 04:59:02 -0400
+	with ESMTP id S1754129AbbIHJEF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 05:04:05 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888wkbY009124
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:58:46 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8893nmD009478
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 17:03:50 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 03/19] btrfs: qgroup: Introduce new function to search most left reserve range
-Date: Tue, 8 Sep 2015 16:56:55 +0800
-Message-ID: <1441702615-18333-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 04/19] btrfs: qgroup: Introduce function to insert non-overlap reserve range
+Date: Tue, 8 Sep 2015 17:01:57 +0800
+Message-ID: <1441702920-21278-1-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,34 +18,45 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce the new function to search the most left reserve range in a
-reserve map.
+New function insert_data_ranges() will insert non-overlap reserve ranges
+into reserve map.
 
-It provides the basis for later reserve map implement.
+It provides the basis for later qgroup reserve map implement.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 36 ++++++++++++++++++++++++++++++++++++
- 1 file changed, 36 insertions(+)
+ fs/btrfs/qgroup.c | 124 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 124 insertions(+)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index cf07c17..fc24fc3 100644
+index fc24fc3..a4e3af4 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2541,6 +2541,42 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
+@@ -2577,6 +2577,130 @@ find_reserve_range(struct btrfs_qgroup_data_rsv_map *map, u64 start)
  }
  
  /*
-+ * Return the nearest left range of given start
-+ * No ensure about the range will cover start.
++ * Insert one data range
++ * [start,len) here won't overflap with each other.
++ *
++ * Return 0 if range is inserted and tmp is not used.
++ * Return > 0 if range is inserted and tmp is used.
++ * No catchable error case. Only possible error will cause BUG_ON() as
++ * that's logical error.
 + */
-+static struct data_rsv_range *
-+find_reserve_range(struct btrfs_qgroup_data_rsv_map *map, u64 start)
++static int insert_data_range(struct btrfs_qgroup_data_rsv_map *map,
++			     struct data_rsv_range *tmp,
++			     u64 start, u64 len)
 +{
 +	struct rb_node **p = &map->root.rb_node;
 +	struct rb_node *parent = NULL;
-+	struct rb_node *prev = NULL;
++	struct rb_node *tmp_node = NULL;
 +	struct data_rsv_range *range = NULL;
++	struct data_rsv_range *prev_range = NULL;
++	struct data_rsv_range *next_range = NULL;
++	int prev_merged = 0;
++	int next_merged = 0;
++	int ret = 0;
 +
 +	while (*p) {
 +		parent = *p;
@@ -55,20 +66,97 @@ index cf07c17..fc24fc3 100644
 +		else if (range->start > start)
 +			p = &(*p)->rb_left;
 +		else
-+			return range;
++			BUG_ON(1);
 +	}
 +
-+	/* empty tree */
-+	if (!parent)
-+		return NULL;
-+	if (range->start <= start)
-+		return range;
++	/* Empty tree, goto isolated case */
++	if (!range)
++		goto insert_isolated;
 +
-+	prev = rb_prev(parent);
-+	/* Already most left one */
-+	if (!prev)
-+		return range;
-+	return rb_entry(prev, struct data_rsv_range, node);
++	/* get adjusted ranges */
++	if (range->start < start) {
++		prev_range = range;
++		tmp_node = rb_next(parent);
++		if (tmp)
++			next_range = rb_entry(tmp_node, struct data_rsv_range,
++					      node);
++	} else {
++		next_range = range;
++		tmp_node = rb_prev(parent);
++		if (tmp)
++			prev_range = rb_entry(tmp_node, struct data_rsv_range,
++					      node);
++	}
++
++	/* try to merge with previous and next ranges */
++	if (prev_range && prev_range->start + prev_range->len == start) {
++		prev_merged = 1;
++		prev_range->len += len;
++	}
++	if (next_range && start + len == next_range->start) {
++		next_merged = 1;
++
++		/*
++		 * the range can be merged with adjusted two ranges into one,
++		 * remove the tailing range.
++		 */
++		if (prev_merged) {
++			prev_range->len += next_range->len;
++			rb_erase(&next_range->node, &map->root);
++			kfree(next_range);
++		} else {
++			next_range->start = start;
++			next_range->len += len;
++		}
++	}
++
++insert_isolated:
++	/* isolated case, need to insert range now */
++	if (!next_merged && !prev_merged) {
++		BUG_ON(!tmp);
++
++		tmp->start = start;
++		tmp->len = len;
++		rb_link_node(&tmp->node, parent, p);
++		rb_insert_color(&tmp->node, &map->root);
++		ret = 1;
++	}
++	return ret;
++}
++
++/*
++ * insert reserve range and merge them if possible
++ *
++ * Return 0 if all inserted and tmp not used
++ * Return > 0 if all inserted and tmp used
++ * No catchable error return value.
++ */
++static int insert_data_ranges(struct btrfs_qgroup_data_rsv_map *map,
++			      struct data_rsv_range *tmp,
++			      struct ulist *insert_list)
++{
++	struct ulist_node *unode;
++	struct ulist_iterator uiter;
++	int tmp_used = 0;
++	int ret = 0;
++
++	ULIST_ITER_INIT(&uiter);
++	while ((unode = ulist_next(insert_list, &uiter))) {
++		ret = insert_data_range(map, tmp, unode->val, unode->aux);
++
++		/*
++		 * insert_data_range() won't return error return value,
++		 * no need to hanle <0 case.
++		 *
++		 * Also tmp should be used at most one time, so clear it to
++		 * NULL to cooperate with sanity check in insert_data_range().
++		 */
++		if (ret > 0) {
++			tmp_used = 1;
++			tmp = NULL;
++		}
++	}
++	return tmp_used;
 +}
 +
 +/*

@@ -1,129 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([222.73.24.84]:47953 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751453AbbIIFFW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Sep 2015 01:05:22 -0400
+	id S1751545AbbIIFFX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Sep 2015 01:05:23 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQv5019126
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:35 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQv8019126
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:39 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 06/19] btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
-Date: Tue,  8 Sep 2015 16:37:23 +0800
-Message-Id: <1441701456-8034-7-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 09/19] btrfs: delayed_ref: Add new function to record reserved space into delayed ref
+Date: Tue,  8 Sep 2015 16:37:26 +0800
+Message-Id: <1441701456-8034-10-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This new function will do all the hard work to reserve precious space
-for a write.
+Add new function btrfs_add_delayed_qgroup_reserve() function to record
+how much space is reserved for that extent.
 
-The overall work flow will be the following.
+As btrfs only accounts qgroup at run_delayed_refs() time, so newly
+allocated extent should keep the reserved space until then.
 
-File A already has some dirty pages:
-
-0	4K	8K	12K	16K
-|///////|	|///////|
-
-And then, someone want to write some data into range [4K, 16K).
-	|<------desired-------->|
-
-Unlike the old and wrong implement, which reserve 12K, this function
-will only reserve space for newly dirty part:
-	|\\\\\\\|	|\\\\\\\|
-Which only takes 8K reserve space, as other part has already allocated
-their own reserve space.
-
-So the final reserve map will be:
-|///////////////////////////////|
-
-This provides the basis to resolve the long existing qgroup limit bug.
+So add needed function with related members to do it.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/qgroup.c | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h |  1 +
- 2 files changed, 58 insertions(+)
+ fs/btrfs/delayed-ref.c | 29 +++++++++++++++++++++++++++++
+ fs/btrfs/delayed-ref.h | 14 ++++++++++++++
+ 2 files changed, 43 insertions(+)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 77a2e07..337b784 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2793,6 +2793,63 @@ insert:
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index ac3e81d..bd9b63b 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -476,6 +476,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+ 	INIT_LIST_HEAD(&head_ref->ref_list);
+ 	head_ref->processing = 0;
+ 	head_ref->total_ref_mod = count_mod;
++	head_ref->qgroup_reserved = 0;
++	head_ref->qgroup_ref_root = 0;
+ 
+ 	/* Record qgroup extent info if provided */
+ 	if (qrecord) {
+@@ -746,6 +748,33 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	return 0;
  }
  
- /*
-+ * Make sure the data space for [start, start + len) is reserved.
-+ * It will either reserve new space from given qgroup or reuse the already
-+ * reserved space.
-+ *
-+ * Return 0 for successful reserve.
-+ * Return <0 for error.
-+ *
-+ * TODO: to handle nocow case, like NODATACOW or write into prealloc space
-+ * along with other mixed case.
-+ * Like write 2M, first 1M can be nocowed, but next 1M is on hole and need COW.
-+ */
-+int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len)
++int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
++				     struct btrfs_trans_handle *trans,
++				     u64 ref_root, u64 bytenr, u64 num_bytes)
 +{
-+	struct btrfs_inode *binode = BTRFS_I(inode);
-+	struct btrfs_root *root = binode->root;
-+	struct btrfs_qgroup_data_rsv_map *reserve_map;
-+	struct data_rsv_range *tmp = NULL;
-+	struct ulist *insert_list;
-+	int ret;
++	struct btrfs_delayed_ref_root *delayed_refs;
++	struct btrfs_delayed_ref_head *ref_head;
++	int ret = 0;
 +
-+	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid) ||
-+	    len == 0)
++	if (!fs_info->quota_enabled || !is_fstree(ref_root))
 +		return 0;
 +
-+	if (!binode->qgroup_rsv_map) {
-+		ret = btrfs_qgroup_init_data_rsv_map(inode);
-+		if (ret < 0)
-+			return ret;
-+	}
-+	reserve_map = binode->qgroup_rsv_map;
-+	insert_list = ulist_alloc(GFP_NOFS);
-+	if (!insert_list)
-+		return -ENOMEM;
-+	tmp = kzalloc(sizeof(*tmp), GFP_NOFS);
-+	if (!tmp) {
-+		ulist_free(insert_list);
-+		return -ENOMEM;
-+	}
++	delayed_refs = &trans->transaction->delayed_refs;
 +
-+	spin_lock(&reserve_map->lock);
-+	ret = reserve_data_range(root, reserve_map, tmp, insert_list, start,
-+				 len);
-+	/*
-+	 * For error and already exists case, free tmp memory.
-+	 * For tmp used case, set ret to 0, as some careless
-+	 * caller consider >0 as error.
-+	 */
-+	if (ret <= 0)
-+		kfree(tmp);
-+	else
-+		ret = 0;
-+	spin_unlock(&reserve_map->lock);
-+	ulist_free(insert_list);
++	spin_lock(&delayed_refs->lock);
++	ref_head = find_ref_head(&delayed_refs->href_root, bytenr, 0);
++	if (!ref_head) {
++		ret = -ENOENT;
++		goto out;
++	}
++	WARN_ON(ref_head->qgroup_reserved || ref_head->qgroup_ref_root);
++	ref_head->qgroup_ref_root = ref_root;
++	ref_head->qgroup_reserved = num_bytes;
++out:
++	spin_unlock(&delayed_refs->lock);
 +	return ret;
 +}
 +
-+/*
-  * Init data_rsv_map for a given inode.
-  *
-  * This is needed at write time as quota can be disabled and then enabled
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index c87b7dc..366b853 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -87,4 +87,5 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- /* for qgroup reserve */
- int btrfs_qgroup_init_data_rsv_map(struct inode *inode);
- void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
-+int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
- #endif /* __BTRFS_QGROUP__ */
+ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 				struct btrfs_trans_handle *trans,
+ 				u64 bytenr, u64 num_bytes,
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index 13fb5e6..d4c41e2 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -113,6 +113,17 @@ struct btrfs_delayed_ref_head {
+ 	int total_ref_mod;
+ 
+ 	/*
++	 * For qgroup reserved space freeing.
++	 *
++	 * ref_root and reserved will be recorded after
++	 * BTRFS_ADD_DELAYED_EXTENT is called.
++	 * And will be used to free reserved qgroup space at
++	 * run_delayed_refs() time.
++	 */
++	u64 qgroup_ref_root;
++	u64 qgroup_reserved;
++
++	/*
+ 	 * when a new extent is allocated, it is just reserved in memory
+ 	 * The actual extent isn't inserted into the extent allocation tree
+ 	 * until the delayed ref is processed.  must_insert_reserved is
+@@ -242,6 +253,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       u64 owner, u64 offset, int action,
+ 			       struct btrfs_delayed_extent_op *extent_op,
+ 			       int no_quota);
++int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
++				     struct btrfs_trans_handle *trans,
++				     u64 ref_root, u64 bytenr, u64 num_bytes);
+ int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+ 				struct btrfs_trans_handle *trans,
+ 				u64 bytenr, u64 num_bytes,
 -- 
 2.5.1
 

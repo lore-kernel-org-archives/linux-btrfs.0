@@ -1,37 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56107 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754346AbbIHL5o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Sep 2015 07:57:44 -0400
-Date: Tue, 8 Sep 2015 13:56:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Arnd Hannemann <arnd@arndnet.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: makefile: drop u option from ar invocation
-Message-ID: <20150908115656.GB8891@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1441407978-23061-1-git-send-email-arnd@arndnet.de>
+Received: from cn.fujitsu.com ([59.151.112.132]:43279 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753566AbbIHNSa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 09:18:30 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t88DIFYv018022
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 21:18:15 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 0/3] btrfs-progs: Avoid uninitialized data in output of btrfs-convert
+Date: Tue, 8 Sep 2015 21:16:48 +0800
+Message-ID: <cover.1441718128.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1441407978-23061-1-git-send-email-arnd@arndnet.de>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 05, 2015 at 01:06:18AM +0200, Arnd Hannemann wrote:
-> In newer distros (ubuntu 15.10, fedora rawhide) the binutils
-> ar uses the new D flag per default to build deterministic
-> binaries.
-> Without this patch the following warning is issued, when
-> building btrfs-progs:
-> 
->     [AR]     libbtrfs.a
-> /usr/bin/ar: `u' modifier ignored since `D' is the default (see `U')
-> 
-> For libtrfs.a performance benefit of the u option can be neglected,
-> so drop the u option and silence the warning.
-> 
-> In the future one might want to explicitly add the D option anyway.
-> 
-> Signed-off-by: Arnd Hannemann <arnd@arndnet.de>
+sequence, transid and reserved field of inode was write to disk
+with uninitizlized value, this patchset fixed it, also fixed some
+other typo.
 
-Applied, thanks.
+Zhao Lei (3):
+  btrfs-progs: fix set_get typo of btrfs_inode_item->sequence
+  btrfs-progs: Avoid uninitialized data in output of btrfs-convert
+  btrfs-progs: add ext2fs_close_inode_scan to copy_inodes
+
+ btrfs-convert.c | 5 +++++
+ ctree.h         | 4 +++-
+ 2 files changed, 8 insertions(+), 1 deletion(-)
+
+-- 
+1.8.5.1
+

@@ -1,182 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:47953 "EHLO song.cn.fujitsu.com"
+Received: from cn.fujitsu.com ([222.73.24.84]:48982 "EHLO song.cn.fujitsu.com"
 	rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751707AbbIIFFY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751626AbbIIFFY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 9 Sep 2015 01:05:24 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQvB019126
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:43 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t888dQv9019126
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 16:39:40 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 12/19] btrfs: qgroup: Use new metadata reservation.
-Date: Tue,  8 Sep 2015 16:37:29 +0800
-Message-Id: <1441701456-8034-13-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 10/19] btrfs: delayed_ref: release and free qgroup reserved at proper timing
+Date: Tue,  8 Sep 2015 16:37:27 +0800
+Message-Id: <1441701456-8034-11-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441701456-8034-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As we have the new metadata reservation functions, use them to replace
-the old btrfs_qgroup_reserve() call for metadata.
+Qgroup reserved space needs to be released from inode dirty map and get
+freed at different timing:
+
+1) Release when the metadata is written into tree
+After corresponding metadata is written into tree, any newer write will
+be COWed(don't include NOCOW case yet).
+So we must release its range from inode dirty range map, or we will
+forget to reserve needed range, causing accounting exceeding the limit.
+
+2) Free reserved bytes when delayed ref is run
+When delayed refs are run, qgroup accounting will follow soon and turn
+the reserved bytes into rfer/excl numbers.
+As run_delayed_refs and qgroup accounting are all done at
+commit_transaction() time, we are safe to free reserved space in
+run_delayed_ref time().
+
+With these timing to release/free reserved space, we should be able to
+resolve the long existing qgroup reserve space leak problem.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 14 ++++++--------
- fs/btrfs/transaction.c | 34 ++++++----------------------------
- fs/btrfs/transaction.h |  1 -
- 3 files changed, 12 insertions(+), 37 deletions(-)
+ fs/btrfs/extent-tree.c |  4 ++++
+ fs/btrfs/inode.c       | 10 ++++++++++
+ fs/btrfs/qgroup.c      |  5 ++---
+ fs/btrfs/qgroup.h      |  8 +++++++-
+ 4 files changed, 23 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 65e60eb..402415c 100644
+index 5411f0a..65e60eb 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -5343,7 +5343,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 	if (root->fs_info->quota_enabled) {
- 		/* One for parent inode, two for dir entries */
- 		num_bytes = 3 * root->nodesize;
--		ret = btrfs_qgroup_reserve(root, num_bytes);
-+		ret = btrfs_qgroup_reserve_meta(root, num_bytes);
- 		if (ret)
- 			return ret;
- 	} else {
-@@ -5361,10 +5361,8 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 	if (ret == -ENOSPC && use_global_rsv)
- 		ret = btrfs_block_rsv_migrate(global_rsv, rsv, num_bytes);
+@@ -2345,6 +2345,10 @@ static int run_one_delayed_ref(struct btrfs_trans_handle *trans,
+ 						      node->num_bytes);
+ 			}
+ 		}
++
++		/* Also free its reserved qgroup space */
++		btrfs_qgroup_free_refroot(root->fs_info, head->qgroup_ref_root,
++					  head->qgroup_reserved);
+ 		return ret;
+ 	}
  
--	if (ret) {
--		if (*qgroup_reserved)
--			btrfs_qgroup_free(root, *qgroup_reserved);
--	}
-+	if (ret && *qgroup_reserved)
-+		btrfs_qgroup_free_meta(root, *qgroup_reserved);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 61b2c17..1f7cac0 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -2112,6 +2112,16 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_alloc_reserved_file_extent(trans, root,
+ 					root->root_key.objectid,
+ 					btrfs_ino(inode), file_pos, &ins);
++	if (ret < 0)
++		goto out;
++	/*
++	 * Release the reserved range from inode dirty range map, and
++	 * move it to delayed ref codes, as now accounting only happens at
++	 * commit_transaction() time.
++	 */
++	btrfs_qgroup_release_data(inode, file_pos, ram_bytes);
++	ret = btrfs_add_delayed_qgroup_reserve(root->fs_info, trans,
++			root->objectid, disk_bytenr, ram_bytes);
+ out:
+ 	btrfs_free_path(path);
  
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index ba7888f..5a69a2d 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2169,14 +2169,13 @@ out:
  	return ret;
  }
-@@ -5525,15 +5523,15 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	spin_unlock(&BTRFS_I(inode)->lock);
  
- 	if (root->fs_info->quota_enabled) {
--		ret = btrfs_qgroup_reserve(root, nr_extents * root->nodesize);
-+		ret = btrfs_qgroup_reserve_meta(root,
-+				nr_extents * root->nodesize);
- 		if (ret)
- 			goto out_fail;
- 	}
+-void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
++void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
++			       u64 ref_root, u64 num_bytes)
+ {
+ 	struct btrfs_root *quota_root;
+ 	struct btrfs_qgroup *qgroup;
+-	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct ulist_node *unode;
+ 	struct ulist_iterator uiter;
+-	u64 ref_root = root->root_key.objectid;
+ 	int ret = 0;
  
- 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
- 	if (unlikely(ret)) {
--		if (root->fs_info->quota_enabled)
--			btrfs_qgroup_free(root, nr_extents * root->nodesize);
-+		btrfs_qgroup_free_meta(root, nr_extents * root->nodesize);
- 		goto out_fail;
- 	}
+ 	if (!is_fstree(ref_root))
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 8e69dc1..49fa15e 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -75,7 +75,13 @@ int btrfs_qgroup_inherit(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_fs_info *fs_info, u64 srcid, u64 objectid,
+ 			 struct btrfs_qgroup_inherit *inherit);
+ int btrfs_qgroup_reserve(struct btrfs_root *root, u64 num_bytes);
+-void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes);
++void btrfs_qgroup_free_refroot(struct btrfs_fs_info *fs_info,
++			       u64 ref_root, u64 num_bytes);
++static inline void btrfs_qgroup_free(struct btrfs_root *root, u64 num_bytes)
++{
++	return btrfs_qgroup_free_refroot(root->fs_info, root->objectid,
++					 num_bytes);
++}
  
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 68ad89e..707e8ea 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -446,13 +446,10 @@ start_transaction(struct btrfs_root *root, u64 num_items, unsigned int type,
- 	 * the appropriate flushing if need be.
- 	 */
- 	if (num_items > 0 && root != root->fs_info->chunk_root) {
--		if (root->fs_info->quota_enabled &&
--		    is_fstree(root->root_key.objectid)) {
--			qgroup_reserved = num_items * root->nodesize;
--			ret = btrfs_qgroup_reserve(root, qgroup_reserved);
--			if (ret)
--				return ERR_PTR(ret);
--		}
-+		qgroup_reserved = num_items * root->nodesize;
-+		ret = btrfs_qgroup_reserve_meta(root, qgroup_reserved);
-+		if (ret)
-+			return ERR_PTR(ret);
+ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
  
- 		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
- 		/*
-@@ -521,7 +518,6 @@ again:
- 	h->block_rsv = NULL;
- 	h->orig_rsv = NULL;
- 	h->aborted = 0;
--	h->qgroup_reserved = 0;
- 	h->delayed_ref_elem.seq = 0;
- 	h->type = type;
- 	h->allocating_chunk = false;
-@@ -546,7 +542,6 @@ again:
- 		h->bytes_reserved = num_bytes;
- 		h->reloc_reserved = reloc_reserved;
- 	}
--	h->qgroup_reserved = qgroup_reserved;
- 
- got_it:
- 	btrfs_record_root_in_trans(h, root);
-@@ -564,8 +559,7 @@ alloc_fail:
- 		btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
- 					num_bytes);
- reserve_fail:
--	if (qgroup_reserved)
--		btrfs_qgroup_free(root, qgroup_reserved);
-+	btrfs_qgroup_free_meta(root, qgroup_reserved);
- 	return ERR_PTR(ret);
- }
- 
-@@ -782,15 +776,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 			must_run_delayed_refs = 2;
- 	}
- 
--	if (trans->qgroup_reserved) {
--		/*
--		 * the same root has to be passed here between start_transaction
--		 * and end_transaction. Subvolume quota depends on this.
--		 */
--		btrfs_qgroup_free(trans->root, trans->qgroup_reserved);
--		trans->qgroup_reserved = 0;
--	}
--
- 	btrfs_trans_release_metadata(trans, root);
- 	trans->block_rsv = NULL;
- 
-@@ -1205,6 +1190,7 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans,
- 			spin_lock(&fs_info->fs_roots_radix_lock);
- 			if (err)
- 				break;
-+			btrfs_qgroup_free_meta_all(root);
- 		}
- 	}
- 	spin_unlock(&fs_info->fs_roots_radix_lock);
-@@ -1813,10 +1799,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_trans_release_metadata(trans, root);
- 	trans->block_rsv = NULL;
--	if (trans->qgroup_reserved) {
--		btrfs_qgroup_free(root, trans->qgroup_reserved);
--		trans->qgroup_reserved = 0;
--	}
- 
- 	cur_trans = trans->transaction;
- 
-@@ -2169,10 +2151,6 @@ cleanup_transaction:
- 	btrfs_trans_release_metadata(trans, root);
- 	btrfs_trans_release_chunk_metadata(trans);
- 	trans->block_rsv = NULL;
--	if (trans->qgroup_reserved) {
--		btrfs_qgroup_free(root, trans->qgroup_reserved);
--		trans->qgroup_reserved = 0;
--	}
- 	btrfs_warn(root->fs_info, "Skipping commit of aborted transaction.");
- 	if (current->journal_info == trans)
- 		current->journal_info = NULL;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index edc2fbc..6586ef1 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -105,7 +105,6 @@ struct btrfs_trans_handle {
- 	u64 transid;
- 	u64 bytes_reserved;
- 	u64 chunk_bytes_reserved;
--	u64 qgroup_reserved;
- 	unsigned long use_count;
- 	unsigned long blocks_reserved;
- 	unsigned long blocks_used;
 -- 
 2.5.1
 

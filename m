@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62308 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:41443 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754103AbbIHJYv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 05:24:51 -0400
+	with ESMTP id S1751743AbbIHJ17 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 05:27:59 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t889OYHd010840
-	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 17:24:34 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t889Rjv8011242
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Sep 2015 17:27:45 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 14/19] btrfs: Switch to new check_data_free_space
-Date: Tue, 8 Sep 2015 17:22:43 +0800
-Message-ID: <1441704164-353-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 16/19] btrfs: extent-tree: Add new version of btrfs_delalloc_reserve_space
+Date: Tue, 8 Sep 2015 17:25:53 +0800
+Message-ID: <1441704356-1940-1-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -18,77 +18,76 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use new check_data_free_space for buffered write and inode cache.
-
-For buffered write case, as nodatacow write won't increase quota account,
-so unlike old behavior which does reserve before check nocow, now we
-check nocow first and then only reserve data if we can't do nocow write.
+Add new version of btrfs_delalloc_reserve_space() function, which
+supports accurate qgroup reserve.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c |  2 +-
- fs/btrfs/file.c        | 22 +++++++++++++---------
- 2 files changed, 14 insertions(+), 10 deletions(-)
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/extent-tree.c | 38 ++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 39 insertions(+)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index c1a0aaf..12f14fd 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3472,6 +3472,7 @@ void btrfs_subvolume_release_metadata(struct btrfs_root *root,
+ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes);
+ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes);
+ int btrfs_delalloc_reserve_space(struct inode *inode, u64 num_bytes);
++int __btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len);
+ void btrfs_delalloc_release_space(struct inode *inode, u64 num_bytes);
+ void btrfs_init_block_rsv(struct btrfs_block_rsv *rsv, unsigned short type);
+ struct btrfs_block_rsv *btrfs_alloc_block_rsv(struct btrfs_root *root,
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 61366ca..2e3f19e 100644
+index 2e3f19e..07f45b7 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3352,7 +3352,7 @@ again:
- 	num_pages *= 16;
- 	num_pages *= PAGE_CACHE_SIZE;
+@@ -5686,6 +5686,44 @@ void btrfs_delalloc_release_metadata(struct inode *inode, u64 num_bytes)
+ }
  
--	ret = btrfs_check_data_free_space(inode, num_pages, num_pages);
-+	ret = __btrfs_check_data_free_space(inode, 0, num_pages);
- 	if (ret)
- 		goto out_put;
- 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..c1eec4f 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1510,12 +1510,17 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		}
- 
- 		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
--		ret = btrfs_check_data_free_space(inode, reserve_bytes, write_bytes);
--		if (ret == -ENOSPC &&
--		    (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
--					      BTRFS_INODE_PREALLOC))) {
+ /**
++ * __btrfs_delalloc_reserve_space - reserve data and metadata space for
++ * delalloc
++ * @inode: inode we're writing to
++ * @start: start range we are writing to
++ * @len: how long the range we are writing to
++ *
++ * TODO: This function will finally replace old btrfs_delalloc_reserve_space()
++ *
++ * This will do the following things
++ *
++ * o reserve space in data space info for num bytes
++ *   and reserve precious corresponding qgroup space
++ *   (Done in check_data_free_space)
++ *
++ * o reserve space for metadata space, based on the number of outstanding
++ *   extents and how much csums will be needed
++ *   also reserve metadata space in a per root over-reserve method.
++ * o add to the inodes->delalloc_bytes
++ * o add it to the fs_info's delalloc inodes list.
++ *   (Above 3 all done in delalloc_reserve_metadata)
++ *
++ * Return 0 for success
++ * Return <0 for error(-ENOSPC or -EQUOT)
++ */
++int __btrfs_delalloc_reserve_space(struct inode *inode, u64 start, u64 len)
++{
++	int ret;
 +
-+		if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-+					     BTRFS_INODE_PREALLOC)) {
- 			ret = check_can_nocow(inode, pos, &write_bytes);
-+			if (ret < 0)
-+				break;
- 			if (ret > 0) {
-+				/*
-+				 * For nodata cow case, no need to reserve
-+				 * data space.
-+				 */
- 				only_release_metadata = true;
- 				/*
- 				 * our prealloc extent may be smaller than
-@@ -1524,15 +1529,14 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 				num_pages = DIV_ROUND_UP(write_bytes + offset,
- 							 PAGE_CACHE_SIZE);
- 				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
--				ret = 0;
--			} else {
--				ret = -ENOSPC;
-+				goto reserve_metadata;
- 			}
- 		}
--
--		if (ret)
-+		ret = __btrfs_check_data_free_space(inode, pos, write_bytes);
-+		if (ret < 0)
- 			break;
- 
-+reserve_metadata:
- 		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
- 		if (ret) {
- 			if (!only_release_metadata)
++	ret = __btrfs_check_data_free_space(inode, start, len);
++	if (ret < 0)
++		return ret;
++	ret = btrfs_delalloc_reserve_metadata(inode, len);
++	if (ret < 0)
++		btrfs_free_reserved_data_space(inode, len);
++	return ret;
++}
++
++/**
+  * btrfs_delalloc_reserve_space - reserve data and metadata space for delalloc
+  * @inode: inode we're writing to
+  * @num_bytes: the number of bytes we want to allocate
 -- 
 2.5.1
 

@@ -1,44 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39092 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39814 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751464AbbIIJRo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Sep 2015 05:17:44 -0400
-Date: Wed, 9 Sep 2015 11:16:57 +0200
+	id S1752986AbbIIJT0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Sep 2015 05:19:26 -0400
+Date: Wed, 9 Sep 2015 11:18:39 +0200
 From: David Sterba <dsterba@suse.cz>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Anna Schumaker <Anna.Schumaker@netapp.com>, linux-nfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, zab@zabbo.net, viro@zeniv.linux.org.uk,
-        clm@fb.com, mtk.manpages@gmail.com, andros@netapp.com,
+To: Anna Schumaker <Anna.Schumaker@netapp.com>
+Cc: linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org,
+        zab@zabbo.net, viro@zeniv.linux.org.uk, clm@fb.com,
+        darrick.wong@oracle.com, mtk.manpages@gmail.com, andros@netapp.com,
         hch@infradead.org
-Subject: Re: [PATCH v1 9/8] copy_file_range.2: New page documenting
- copy_file_range()
-Message-ID: <20150909091657.GD8891@twin.jikos.cz>
+Subject: Re: [PATCH v1 4/8] btrfs: Add mountpoint checking during
+ btrfs_copy_file_range
+Message-ID: <20150909091838.GE8891@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
- <1441397823-1203-10-git-send-email-Anna.Schumaker@Netapp.com>
- <20150904213856.GC10391@birch.djwong.org>
- <55EEF8E3.8030501@Netapp.com>
- <20150908203918.GB30681@birch.djwong.org>
+ <1441397823-1203-5-git-send-email-Anna.Schumaker@Netapp.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150908203918.GB30681@birch.djwong.org>
+In-Reply-To: <1441397823-1203-5-git-send-email-Anna.Schumaker@Netapp.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 08, 2015 at 01:39:18PM -0700, Darrick J. Wong wrote:
-> > >> +The file descriptors must not refer to the same file.
-> > > 
-> > > Why?  btrfs (and XFS) reflink can handle the case of a file sharing blocks
-> > > with itself.
-> > 
-> > I've never really thought about it... Zach had that in his initial
-> > submission, so mentioned it in the man page.  Should I remove that bit?
+On Fri, Sep 04, 2015 at 04:16:58PM -0400, Anna Schumaker wrote:
+> We need to verify that both the source and the destination files are
+> part of the same filesystem, otherwise we can't create a reflink.
 > 
-> Yes, please!
+> Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
+> ---
+>  fs/btrfs/ioctl.c | 4 ++++
+>  1 file changed, 4 insertions(+)
 > 
-> I could be wrong, but I think btrfs only started supporting files that share
-> blocks with themselves relatively recently(?)
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 62ae286..9c0c955 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3856,6 +3856,10 @@ ssize_t btrfs_copy_file_range(struct file *file_in, loff_t pos_in,
+>  {
+>  	ssize_t ret;
+>  
+> +	if (inode_in->i_sb != inode_out->i_sb ||
+> +	    file_in->f_path.mnt != file_out->f_path.mnt)
+> +		return -EXDEV;
 
-The support was added into the cloning ioctl itself, otherwise same-file
-clones were always possible with a sidestep using another file.
+The same check exists in btrfs_clone_files (added in the previous
+patch), what's the reason to add it here again?
+
+> +
+>  	ret = btrfs_clone_files(file_out, file_in, pos_in, len, pos_out);

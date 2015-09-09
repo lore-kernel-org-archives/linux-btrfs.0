@@ -1,162 +1,180 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:46214 "EHLO
-	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751942AbbIIABq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 20:01:46 -0400
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:57033 "EHLO
+	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752599AbbIIAdS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 20:33:18 -0400
 Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 12658AC0290
-	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2015 09:01:43 +0900 (JST)
-Subject: Re: [PATCH 01/19] btrfs: qgroup: New function declaration for new
- reserve implement
+	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 72A3EAC00EB
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2015 09:33:15 +0900 (JST)
+Subject: Re: [PATCH 04/19] btrfs: qgroup: Introduce function to insert
+ non-overlap reserve range
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1441702615-18333-2-git-send-email-quwenruo@cn.fujitsu.com>
+ <1441702920-21278-1-git-send-email-quwenruo@cn.fujitsu.com>
 From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Message-ID: <55EF76D3.6000306@jp.fujitsu.com>
-Date: Wed, 9 Sep 2015 09:01:23 +0900
+Message-ID: <55EF7E34.9040601@jp.fujitsu.com>
+Date: Wed, 9 Sep 2015 09:32:52 +0900
 MIME-Version: 1.0
-In-Reply-To: <1441702615-18333-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1441702920-21278-1-git-send-email-quwenruo@cn.fujitsu.com>
 Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi, Qu,
 
-On 2015/09/08 17:56, Qu Wenruo wrote:
-> Add new structures and functions for new qgroup reserve implement dirty
-> phase.
-> Which will focus on avoiding over-reserve as in that case, which means
-> for already reserved dirty space range, we won't reserve space again.
+On 2015/09/08 18:01, Qu Wenruo wrote:
+> New function insert_data_ranges() will insert non-overlap reserve ranges
+> into reserve map.
 > 
-> This patch adds the needed structure declaration and comments.
+> It provides the basis for later qgroup reserve map implement.
 > 
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 > ---
->   fs/btrfs/btrfs_inode.h |  4 ++++
->   fs/btrfs/qgroup.c      | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++
->   fs/btrfs/qgroup.h      |  3 +++
->   3 files changed, 65 insertions(+)
+>   fs/btrfs/qgroup.c | 124 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   1 file changed, 124 insertions(+)
 > 
-> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
-> index 81220b2..e3ece65 100644
-> --- a/fs/btrfs/btrfs_inode.h
-> +++ b/fs/btrfs/btrfs_inode.h
-> @@ -24,6 +24,7 @@
->   #include "extent_io.h"
->   #include "ordered-data.h"
->   #include "delayed-inode.h"
-> +#include "qgroup.h"
->   
->   /*
->    * ordered_data_close is set by truncate when a file that used
-> @@ -195,6 +196,9 @@ struct btrfs_inode {
->   	struct timespec i_otime;
->   
->   	struct inode vfs_inode;
-> +
-> +	/* qgroup dirty map for data space reserve */
-> +	struct btrfs_qgroup_data_rsv_map *qgroup_rsv_map;
->   };
->   
->   extern unsigned char btrfs_filetype_table[];
 > diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index e9ace09..561c36d 100644
+> index fc24fc3..a4e3af4 100644
 > --- a/fs/btrfs/qgroup.c
 > +++ b/fs/btrfs/qgroup.c
-> @@ -91,6 +91,64 @@ struct btrfs_qgroup {
->   	u64 new_refcnt;
->   };
+> @@ -2577,6 +2577,130 @@ find_reserve_range(struct btrfs_qgroup_data_rsv_map *map, u64 start)
+>   }
 >   
-> +/*
-> + * Record one range of reserved space.
-> + */
-> +struct data_rsv_range {
-> +	struct rb_node node;
-> +	u64 start;
-> +	u64 len;
-> +};
-> +
-> +/*
-> + * Record per inode reserved range.
-> + * This is mainly used to resolve reserved space leaking problem.
-> + * One of the cause is the mismatch with reserve and free.
-> + *
-> + * New qgroup will handle reserve in two phase.
-> + * 1) Dirty phase.
-> + *    Pages are just marked dirty, but not written to disk.
-> + * 2) Flushed phase
-> + *    Pages are written to disk, but transaction is not committed yet.
-> + *
+>   /*
+> + * Insert one data range
 
-> + * At Diryt phase, we only need to focus on avoiding over-reserve.
+> + * [start,len) here won't overflap with each other.
 
-         dirty
-
-> + *
-> + * The idea is like below.
-> + * 1) Write [0,8K)
-> + * 0	4K	8K	12K	16K
-> + * |////////////|
-> + * Reserve +8K, total reserved: 8K
-> + *
-> + * 2) Write [0,4K)
-> + * 0	4K	8K	12K	16K
-> + * |////////////|
-> + * Reserve 0, total reserved 8K
-> + *
-> + * 3) Write [12K,16K)
-> + * 0	4K	8K	12K	16K
-
-> + * |////////////|	|///////|
-> + * Reserve +4K, tocal reserved 12K
-
-                   total
-
-> + *
-> + * 4) Flush [0,8K)
-> + * Can happen without commit transaction, like fallocate will trigger the
-> + * write.
-> + * 0	4K	8K	12K	16K
-> + *			|///////|
-
-> + * Reserve 0, tocal reserved 12K
-
-                 total
+                             overlap
 
 Thanks,
 Tsutomu
 
-> + * As the extent is written to disk, not dirty any longer, the range get
-> + * removed.
-> + * But as its delayed_refs is not run, its reserved space will not be freed.
-> + * And things continue to Flushed phase.
 > + *
-> + * By this method, we can avoid over-reserve, which will lead to reserved
-> + * space leak.
+> + * Return 0 if range is inserted and tmp is not used.
+> + * Return > 0 if range is inserted and tmp is used.
+> + * No catchable error case. Only possible error will cause BUG_ON() as
+> + * that's logical error.
 > + */
-> +struct btrfs_qgroup_data_rsv_map {
-> +	struct rb_root root;
-> +	u64 reserved;
-> +	spinlock_t lock;
-> +};
+> +static int insert_data_range(struct btrfs_qgroup_data_rsv_map *map,
+> +			     struct data_rsv_range *tmp,
+> +			     u64 start, u64 len)
+> +{
+> +	struct rb_node **p = &map->root.rb_node;
+> +	struct rb_node *parent = NULL;
+> +	struct rb_node *tmp_node = NULL;
+> +	struct data_rsv_range *range = NULL;
+> +	struct data_rsv_range *prev_range = NULL;
+> +	struct data_rsv_range *next_range = NULL;
+> +	int prev_merged = 0;
+> +	int next_merged = 0;
+> +	int ret = 0;
 > +
->   static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
->   					   int mod)
->   {
-> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-> index 6387dcf..2f863a4 100644
-> --- a/fs/btrfs/qgroup.h
-> +++ b/fs/btrfs/qgroup.h
-> @@ -33,6 +33,9 @@ struct btrfs_qgroup_extent_record {
->   	struct ulist *old_roots;
->   };
->   
-> +/* For per-inode dirty range reserve */
-> +struct btrfs_qgroup_data_rsv_map;
+> +	while (*p) {
+> +		parent = *p;
+> +		range = rb_entry(parent, struct data_rsv_range, node);
+> +		if (range->start < start)
+> +			p = &(*p)->rb_right;
+> +		else if (range->start > start)
+> +			p = &(*p)->rb_left;
+> +		else
+> +			BUG_ON(1);
+> +	}
 > +
->   int btrfs_quota_enable(struct btrfs_trans_handle *trans,
->   		       struct btrfs_fs_info *fs_info);
->   int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+> +	/* Empty tree, goto isolated case */
+> +	if (!range)
+> +		goto insert_isolated;
+> +
+> +	/* get adjusted ranges */
+> +	if (range->start < start) {
+> +		prev_range = range;
+> +		tmp_node = rb_next(parent);
+> +		if (tmp)
+> +			next_range = rb_entry(tmp_node, struct data_rsv_range,
+> +					      node);
+> +	} else {
+> +		next_range = range;
+> +		tmp_node = rb_prev(parent);
+> +		if (tmp)
+> +			prev_range = rb_entry(tmp_node, struct data_rsv_range,
+> +					      node);
+> +	}
+> +
+> +	/* try to merge with previous and next ranges */
+> +	if (prev_range && prev_range->start + prev_range->len == start) {
+> +		prev_merged = 1;
+> +		prev_range->len += len;
+> +	}
+> +	if (next_range && start + len == next_range->start) {
+> +		next_merged = 1;
+> +
+> +		/*
+> +		 * the range can be merged with adjusted two ranges into one,
+> +		 * remove the tailing range.
+> +		 */
+> +		if (prev_merged) {
+> +			prev_range->len += next_range->len;
+> +			rb_erase(&next_range->node, &map->root);
+> +			kfree(next_range);
+> +		} else {
+> +			next_range->start = start;
+> +			next_range->len += len;
+> +		}
+> +	}
+> +
+> +insert_isolated:
+> +	/* isolated case, need to insert range now */
+> +	if (!next_merged && !prev_merged) {
+> +		BUG_ON(!tmp);
+> +
+> +		tmp->start = start;
+> +		tmp->len = len;
+> +		rb_link_node(&tmp->node, parent, p);
+> +		rb_insert_color(&tmp->node, &map->root);
+> +		ret = 1;
+> +	}
+> +	return ret;
+> +}
+> +
+> +/*
+> + * insert reserve range and merge them if possible
+> + *
+> + * Return 0 if all inserted and tmp not used
+> + * Return > 0 if all inserted and tmp used
+> + * No catchable error return value.
+> + */
+> +static int insert_data_ranges(struct btrfs_qgroup_data_rsv_map *map,
+> +			      struct data_rsv_range *tmp,
+> +			      struct ulist *insert_list)
+> +{
+> +	struct ulist_node *unode;
+> +	struct ulist_iterator uiter;
+> +	int tmp_used = 0;
+> +	int ret = 0;
+> +
+> +	ULIST_ITER_INIT(&uiter);
+> +	while ((unode = ulist_next(insert_list, &uiter))) {
+> +		ret = insert_data_range(map, tmp, unode->val, unode->aux);
+> +
+> +		/*
+> +		 * insert_data_range() won't return error return value,
+> +		 * no need to hanle <0 case.
+> +		 *
+> +		 * Also tmp should be used at most one time, so clear it to
+> +		 * NULL to cooperate with sanity check in insert_data_range().
+> +		 */
+> +		if (ret > 0) {
+> +			tmp_used = 1;
+> +			tmp = NULL;
+> +		}
+> +	}
+> +	return tmp_used;
+> +}
+> +
+> +/*
+>    * Init data_rsv_map for a given inode.
+>    *
+>    * This is needed at write time as quota can be disabled and then enabled
 > 
 
 

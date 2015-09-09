@@ -1,159 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f182.google.com ([209.85.214.182]:35791 "EHLO
-	mail-ob0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752264AbbIHXJE convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 19:09:04 -0400
-Received: by obuk4 with SMTP id k4so97101756obu.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Sep 2015 16:09:03 -0700 (PDT)
+Received: from mgwkm01.jp.fujitsu.com ([202.219.69.168]:46214 "EHLO
+	mgwkm01.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751942AbbIIABq (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 20:01:46 -0400
+Received: from m3050.s.css.fujitsu.com (msm.b.css.fujitsu.com [10.134.21.208])
+	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 12658AC0290
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Sep 2015 09:01:43 +0900 (JST)
+Subject: Re: [PATCH 01/19] btrfs: qgroup: New function declaration for new
+ reserve implement
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <1441702615-18333-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1441702615-18333-2-git-send-email-quwenruo@cn.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Message-ID: <55EF76D3.6000306@jp.fujitsu.com>
+Date: Wed, 9 Sep 2015 09:01:23 +0900
 MIME-Version: 1.0
-In-Reply-To: <20150908223959.GE30681@birch.djwong.org>
-References: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
- <55EEFCEE.5090000@draigBrady.com> <55EF279B.3020101@Netapp.com>
- <CALCETrXxRB-LXVb+=nkwfj0zEjWuXXTctkSAc9Oec0fgyOQ5Yg@mail.gmail.com>
- <55EF3EFD.3080302@draigBrady.com> <20150908212907.GD30681@birch.djwong.org>
- <CALCETrWAotvN+MBsxq4QLQBr_WAyydqMnipcaTM88rM8sSx43w@mail.gmail.com> <20150908223959.GE30681@birch.djwong.org>
-From: Andy Lutomirski <luto@amacapital.net>
-Date: Tue, 8 Sep 2015 16:08:43 -0700
-Message-ID: <CALCETrVsWBdqvAgwxHcG=gbcWRNPG2ZziWUg1g=siKDrDu7S2Q@mail.gmail.com>
-Subject: Re: [PATCH v1 0/8] VFS: In-kernel copy system call
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: =?UTF-8?Q?P=C3=A1draig_Brady?= <P@draigbrady.com>,
-        Anna Schumaker <Anna.Schumaker@netapp.com>, linux-nfs@vger.kernel.org,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        Linux API <linux-api@vger.kernel.org>, Zach Brown <zab@zabbo.net>,
-        Al Viro <viro@zeniv.linux.org.uk>, Chris Mason <clm@fb.com>,
-        Michael Kerrisk-manpages <mtk.manpages@gmail.com>, andros@netapp.com,
-        Christoph Hellwig <hch@infradead.org>, Coreutils <coreutils@gnu.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <1441702615-18333-2-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=iso-2022-jp
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 8, 2015 at 3:39 PM, Darrick J. Wong <darrick.wong@oracle.com> wrote:
-> On Tue, Sep 08, 2015 at 02:45:39PM -0700, Andy Lutomirski wrote:
->> On Tue, Sep 8, 2015 at 2:29 PM, Darrick J. Wong <darrick.wong@oracle.com> wrote:
->> > On Tue, Sep 08, 2015 at 09:03:09PM +0100, Pádraig Brady wrote:
->> >> On 08/09/15 20:10, Andy Lutomirski wrote:
->> >> > On Tue, Sep 8, 2015 at 11:23 AM, Anna Schumaker
->> >> > <Anna.Schumaker@netapp.com> wrote:
->> >> >> On 09/08/2015 11:21 AM, Pádraig Brady wrote:
->> >> >>> I see copy_file_range() is a reflink() on BTRFS?
->> >> >>> That's a bit surprising, as it avoids the copy completely.
->> >> >>> cp(1) for example considered doing a BTRFS clone by default,
->> >> >>> but didn't due to expectations that users actually wanted
->> >> >>> the data duplicated on disk for resilience reasons,
->> >> >>> and for performance reasons so that write latencies were
->> >> >>> restricted to the copy operation, rather than being
->> >> >>> introduced at usage time as the dest file is CoW'd.
->> >> >>>
->> >> >>> If reflink() is a possibility for copy_file_range()
->> >> >>> then could it be done optionally with a flag?
->> >> >>
->> >> >> The idea is that filesystems get to choose how to handle copies in the
->> >> >> default case.  BTRFS could do a reflink, but NFS could do a server side
->> >
->> > Eww, different default behaviors depending on the filesystem. :)
->> >
->> >> >> copy instead.  I can change the default behavior to only do a data copy
->> >> >> (unless the reflink flag is specified) instead, if that is desirable.
->> >> >>
->> >> >> What does everybody think?
->> >> >
->> >> > I think the best you could do is to have a hint asking politely for
->> >> > the data to be deep-copied.  After all, some filesystems reserve the
->> >> > right to transparently deduplicate.
->> >> >
->> >> > Also, on a true COW filesystem (e.g. btrfs sometimes), there may be no
->> >> > advantage to deep copying unless you actually want two copies for
->> >> > locality reasons.
->> >>
->> >> Agreed. The relink and server side copy are separate things.
->> >> There's no advantage to not doing a server side copy,
->> >> but as mentioned there may be advantages to doing deep copies on BTRFS
->> >> (another reason not previous mentioned in this thread, would be
->> >> to avoid ENOSPC errors at some time in the future).
->> >>
->> >> So having control over the deep copy seems useful.
->> >> It's debatable whether ALLOW_REFLINK should be on/off by default
->> >> for copy_file_range().  I'd be inclined to have such a setting off by default,
->> >> but cp(1) at least will work with whatever is chosen.
->> >
->> > So far it looks like people are interested in at least these "make data appear
->> > in this other place" filesystem operations:
->> >
->> > 1. reflink
->> > 2. reflink, but only if the contents are the same (dedupe)
->>
->> What I meant by this was: if you ask for "regular copy", you may end
->> up with a reflink anyway.  Anyway, how can you reflink a range and
->> have the contents *not* be the same?
->
-> reflink forcibly remaps fd_dest's range to fd_src's range.  If they didn't
-> match before, they will afterwards.
->
-> dedupe remaps fd_dest's range to fd_src's range only if they match, of course.
->
-> Perhaps I should have said "...if the contents are the same before the call"?
->
+Hi, Qu,
 
-Oh, I see.
+On 2015/09/08 17:56, Qu Wenruo wrote:
+> Add new structures and functions for new qgroup reserve implement dirty
+> phase.
+> Which will focus on avoiding over-reserve as in that case, which means
+> for already reserved dirty space range, we won't reserve space again.
+> 
+> This patch adds the needed structure declaration and comments.
+> 
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   fs/btrfs/btrfs_inode.h |  4 ++++
+>   fs/btrfs/qgroup.c      | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++
+>   fs/btrfs/qgroup.h      |  3 +++
+>   3 files changed, 65 insertions(+)
+> 
+> diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+> index 81220b2..e3ece65 100644
+> --- a/fs/btrfs/btrfs_inode.h
+> +++ b/fs/btrfs/btrfs_inode.h
+> @@ -24,6 +24,7 @@
+>   #include "extent_io.h"
+>   #include "ordered-data.h"
+>   #include "delayed-inode.h"
+> +#include "qgroup.h"
+>   
+>   /*
+>    * ordered_data_close is set by truncate when a file that used
+> @@ -195,6 +196,9 @@ struct btrfs_inode {
+>   	struct timespec i_otime;
+>   
+>   	struct inode vfs_inode;
+> +
+> +	/* qgroup dirty map for data space reserve */
+> +	struct btrfs_qgroup_data_rsv_map *qgroup_rsv_map;
+>   };
+>   
+>   extern unsigned char btrfs_filetype_table[];
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index e9ace09..561c36d 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -91,6 +91,64 @@ struct btrfs_qgroup {
+>   	u64 new_refcnt;
+>   };
+>   
+> +/*
+> + * Record one range of reserved space.
+> + */
+> +struct data_rsv_range {
+> +	struct rb_node node;
+> +	u64 start;
+> +	u64 len;
+> +};
+> +
+> +/*
+> + * Record per inode reserved range.
+> + * This is mainly used to resolve reserved space leaking problem.
+> + * One of the cause is the mismatch with reserve and free.
+> + *
+> + * New qgroup will handle reserve in two phase.
+> + * 1) Dirty phase.
+> + *    Pages are just marked dirty, but not written to disk.
+> + * 2) Flushed phase
+> + *    Pages are written to disk, but transaction is not committed yet.
+> + *
 
-Can we have a clean way to figure out whether two file ranges are the
-same in a way that allows false negatives?  I.e. return 1 if the
-ranges are reflinks of each other and 0 if not?  Pretty please?  I've
-implemented that in the past on btrfs by syncing the ranges and then
-comparing FIEMAP output, but that's hideous.
+> + * At Diryt phase, we only need to focus on avoiding over-reserve.
 
->>
->> > 3. regular copy
->> > 4. regular copy, but make the hardware do it for us
->> > 5. regular copy, but require a second copy on the media (no-dedupe)
->>
->> If this comes from me, I have no desire to ever use this as a flag.
->
-> I meant (5) as a "disable auto-dedupe for this operation" flag, not as
-> a "reallocate all the shared blocks now" op...
+         dirty
 
-Hmm, interesting.  What effect does it have on systems that do
-deferred auto-dedupe?
+> + *
+> + * The idea is like below.
+> + * 1) Write [0,8K)
+> + * 0	4K	8K	12K	16K
+> + * |////////////|
+> + * Reserve +8K, total reserved: 8K
+> + *
+> + * 2) Write [0,4K)
+> + * 0	4K	8K	12K	16K
+> + * |////////////|
+> + * Reserve 0, total reserved 8K
+> + *
+> + * 3) Write [12K,16K)
+> + * 0	4K	8K	12K	16K
 
->>
->> I think we should focus on what the actual legit use cases might be.
->> Certainly we want to support a mode that's "reflink or fail".  We
->> could have these flags:
->>
->> COPY_FILE_RANGE_ALLOW_REFLINK
->> COPY_FILE_RANGE_ALLOW_COPY
->>
->> Setting neither gets -EINVAL.  Setting both works as is.  Setting just
->> ALLOW_REFLINK will fail if a reflink can't be supported.  Setting just
->> ALLOW_COPY will make a best-effort attempt not to reflink but
->> expressly permits reflinking in cases where either (a) plain old
->> write(2) might also result in a reflink or (b) there is no advantage
->> to not reflinking.
->
-> I don't agree with having a 'copy' flag that can reflink when we also have a
-> 'reflink' flag.  I guess I just don't like having a flag with different
-> meanings depending on context.
->
-> Users should be able to get the default behavior by passing '0' for flags, so
-> provide FORBID_REFLINK and FORBID_COPY flags to turn off those behaviors, with
-> an admonishment that one should only use them if they have a goooood reason.
-> Passing neither gets you reflink-xor-copy, which is what I think we both want
-> in the general case.
->
-> FORBID_REFLINK = 1
-> FORBID_COPY = 2
-> CHECK_SAME = 4
-> HW_COPY = 8
->
-> DEDUPE = (FORBID_COPY | CHECK_SAME)
->
-> What do you say to that?
+> + * |////////////|	|///////|
+> + * Reserve +4K, tocal reserved 12K
 
-What does HW_COPY mean?
+                   total
 
-If we have enough weird combinations, maybe having a mode instead of
-flags makes sense.
+> + *
+> + * 4) Flush [0,8K)
+> + * Can happen without commit transaction, like fallocate will trigger the
+> + * write.
+> + * 0	4K	8K	12K	16K
+> + *			|///////|
 
---Andy
+> + * Reserve 0, tocal reserved 12K
+
+                 total
+
+Thanks,
+Tsutomu
+
+> + * As the extent is written to disk, not dirty any longer, the range get
+> + * removed.
+> + * But as its delayed_refs is not run, its reserved space will not be freed.
+> + * And things continue to Flushed phase.
+> + *
+> + * By this method, we can avoid over-reserve, which will lead to reserved
+> + * space leak.
+> + */
+> +struct btrfs_qgroup_data_rsv_map {
+> +	struct rb_root root;
+> +	u64 reserved;
+> +	spinlock_t lock;
+> +};
+> +
+>   static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
+>   					   int mod)
+>   {
+> diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+> index 6387dcf..2f863a4 100644
+> --- a/fs/btrfs/qgroup.h
+> +++ b/fs/btrfs/qgroup.h
+> @@ -33,6 +33,9 @@ struct btrfs_qgroup_extent_record {
+>   	struct ulist *old_roots;
+>   };
+>   
+> +/* For per-inode dirty range reserve */
+> +struct btrfs_qgroup_data_rsv_map;
+> +
+>   int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+>   		       struct btrfs_fs_info *fs_info);
+>   int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+> 
+
+

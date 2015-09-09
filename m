@@ -1,56 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f182.google.com ([209.85.212.182]:37201 "EHLO
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:33244 "EHLO
 	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752456AbbIGO1Z (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Sep 2015 10:27:25 -0400
-Date: Mon, 7 Sep 2015 17:24:37 +0300
+	with ESMTP id S1752137AbbIHVTM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 17:19:12 -0400
+Date: Wed, 9 Sep 2015 00:18:50 +0000
 From: Alexandru Moise <00moses.alexander00@gmail.com>
 To: clm@fb.com
 Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: memset cur_trans->delayed_refs to zero
-Message-ID: <20150907142437.GA21090@gmail.com>
+        linux-kernel@vger.kernel.org, 00moses.alexander00@gmail.com
+Subject: [PATCH] btrfs: use a single if() statement for one outcome in
+ get_block_rsv()
+Message-ID: <20150909001850.GA892@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use memset() to null out the btrfs_delayed_ref_root of
-btrfs_transaction instead of setting all the members to 0 by hand.
+Rather than have three separate if() statements for the same outcome
+we should just OR them together in the same if() statement.
 
 Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
 ---
-Rather than setting each member of ->delayed_refs by hand we should
-adhere to the practice of using memset() calls to fill those memory
-locations with zeroes. We make an exception however for the rb_root
-and atomic_t variable to make room for change in future delayed_refs
-implementations.
+ fs/btrfs/extent-tree.c | 10 +++-------
+ 1 file changed, 3 insertions(+), 7 deletions(-)
 
- fs/btrfs/transaction.c | 8 ++------
- 1 file changed, 2 insertions(+), 6 deletions(-)
-
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8f259b3..e4f7dcb 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -224,15 +224,11 @@ loop:
- 	cur_trans->start_time = get_seconds();
- 	cur_trans->dirty_bg_run = 0;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5411f0a..e8f2c15 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4890,13 +4890,9 @@ static struct btrfs_block_rsv *get_block_rsv(
+ {
+ 	struct btrfs_block_rsv *block_rsv = NULL;
  
-+	memset(&cur_trans->delayed_refs, 0, sizeof(cur_trans->delayed_refs));
-+
- 	cur_trans->delayed_refs.href_root = RB_ROOT;
- 	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
- 	atomic_set(&cur_trans->delayed_refs.num_entries, 0);
--	cur_trans->delayed_refs.num_heads_ready = 0;
--	cur_trans->delayed_refs.pending_csums = 0;
--	cur_trans->delayed_refs.num_heads = 0;
--	cur_trans->delayed_refs.flushing = 0;
--	cur_trans->delayed_refs.run_delayed_start = 0;
--	cur_trans->delayed_refs.qgroup_to_skip = 0;
+-	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+-		block_rsv = trans->block_rsv;
+-
+-	if (root == root->fs_info->csum_root && trans->adding_csums)
+-		block_rsv = trans->block_rsv;
+-
+-	if (root == root->fs_info->uuid_root)
++	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
++	    (root == root->fs_info->csum_root && trans->adding_csums) ||
++	     (root == root->fs_info->uuid_root))
+ 		block_rsv = trans->block_rsv;
  
- 	/*
- 	 * although the tree mod log is per file system and not per transaction,
+ 	if (!block_rsv)
 -- 
-1.9.1
+2.5.1
 

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45126 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:8090 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754393AbbIJCgZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Sep 2015 22:36:25 -0400
+	with ESMTP id S1752666AbbIJCjl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Sep 2015 22:39:41 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: <dsterba@suse.cz>
-Subject: [PATCH v2 4/5] btrfs-progs: util: add parameter for btrfs_list_all_fs_features
-Date: Thu, 10 Sep 2015 10:34:17 +0800
-Message-ID: <1441852458-10289-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 5/5] btrfs-progs: convert-test: Disable different nodesize test
+Date: Thu, 10 Sep 2015 10:37:38 +0800
+Message-ID: <1441852658-11385-1-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1441852458-10289-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1441852458-10289-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -16,85 +16,59 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even we tried to make mkfs and btrfs-convert use the same features, but
-previous patch forced btrfs-convert to use mix-bg feature.
-
-So the default fs features is different for mkfs and btrfs-convert, add
-mask_default parameter for btrfs_list_all_fs_features() to handle the
-difference.
+As now btrfs-convert is forced to used mixed block group, only test
+pagesize as nodesize for convert.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-convert.c | 4 +++-
- mkfs.c          | 3 ++-
- utils.c         | 4 ++--
- utils.h         | 2 +-
- 4 files changed, 8 insertions(+), 5 deletions(-)
+ tests/convert-tests.sh | 36 +++++++++++++++++++++---------------
+ 1 file changed, 21 insertions(+), 15 deletions(-)
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index a60f380..e730e4b 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2950,7 +2950,9 @@ int main(int argc, char *argv[])
- 	}
- 	if (features & BTRFS_FEATURE_LIST_ALL) {
- 		btrfs_list_all_fs_features(
--			~BTRFS_CONVERT_ALLOWED_FEATURES);
-+			~BTRFS_CONVERT_ALLOWED_FEATURES,
-+			BTRFS_MKFS_DEFAULT_FEATURES |
-+			BTRFS_CONVERT_FORCE_FEATURES);
- 		exit(0);
- 	}
+diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
+index 68c03dc..f6f4679 100755
+--- a/tests/convert-tests.sh
++++ b/tests/convert-tests.sh
+@@ -57,19 +57,25 @@ if ! [ -z "$TEST" ]; then
+ fi
  
-diff --git a/mkfs.c b/mkfs.c
-index b8879fc..56ce381 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1430,7 +1430,8 @@ int main(int ac, char **av)
- 				}
- 				free(orig);
- 				if (features & BTRFS_FEATURE_LIST_ALL) {
--					btrfs_list_all_fs_features(0);
-+					btrfs_list_all_fs_features(0,
-+						BTRFS_MKFS_DEFAULT_FEATURES);
- 					exit(0);
- 				}
- 				break;
-diff --git a/utils.c b/utils.c
-index c0d1afa..78ba67b 100644
---- a/utils.c
-+++ b/utils.c
-@@ -633,7 +633,7 @@ void btrfs_process_fs_features(u64 flags)
- 	}
- }
- 
--void btrfs_list_all_fs_features(u64 mask_disallowed)
-+void btrfs_list_all_fs_features(u64 mask_disallowed, u64 mask_default)
- {
- 	int i;
- 
-@@ -643,7 +643,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed)
- 
- 		if (mkfs_features[i].flag & mask_disallowed)
- 			continue;
--		if (mkfs_features[i].flag & BTRFS_MKFS_DEFAULT_FEATURES)
-+		if (mkfs_features[i].flag & mask_default)
- 			is_default = ", default";
- 		fprintf(stderr, "%-20s- %s (0x%llx%s)\n",
- 				mkfs_features[i].name,
-diff --git a/utils.h b/utils.h
-index 7f1a128..f8fd745 100644
---- a/utils.h
-+++ b/utils.h
-@@ -112,7 +112,7 @@ void set_argv0(char **argv);
- void units_set_mode(unsigned *units, unsigned mode);
- void units_set_base(unsigned *units, unsigned base);
- 
--void btrfs_list_all_fs_features(u64 mask_disallowed);
-+void btrfs_list_all_fs_features(u64 mask_disallowed, u64 mask_default);
- char* btrfs_parse_fs_features(char *namelist, u64 *flags);
- void btrfs_process_fs_features(u64 flags);
- void btrfs_parse_features_to_string(char *buf, u64 flags);
+ for feature in '' 'extref' 'skinny-metadata' 'no-holes'; do
+-	convert_test "$feature" "ext2 4k nodesize" 4096 mke2fs -b 4096
+-	convert_test "$feature" "ext3 4k nodesize" 4096 mke2fs -j -b 4096
+-	convert_test "$feature" "ext4 4k nodesize" 4096 mke2fs -t ext4 -b 4096
+-	convert_test "$feature" "ext2 8k nodesize" 8192 mke2fs -b 4096
+-	convert_test "$feature" "ext3 8k nodesize" 8192 mke2fs -j -b 4096
+-	convert_test "$feature" "ext4 8k nodesize" 8192 mke2fs -t ext4 -b 4096
+-	convert_test "$feature" "ext2 16k nodesize" 16384 mke2fs -b 4096
+-	convert_test "$feature" "ext3 16k nodesize" 16384 mke2fs -j -b 4096
+-	convert_test "$feature" "ext4 16k nodesize" 16384 mke2fs -t ext4 -b 4096
+-	convert_test "$feature" "ext2 32k nodesize" 32768 mke2fs -b 4096
+-	convert_test "$feature" "ext3 32k nodesize" 32768 mke2fs -j -b 4096
+-	convert_test "$feature" "ext4 32k nodesize" 32768 mke2fs -t ext4 -b 4096
+-	convert_test "$feature" "ext2 64k nodesize" 65536 mke2fs -b 4096
+-	convert_test "$feature" "ext3 64k nodesize" 65536 mke2fs -j -b 4096
+-	convert_test "$feature" "ext4 64k nodesize" 65536 mke2fs -t ext4 -b 4096
++	# Btrfs-convert is forced to use mixed-bg, so must use pagesize
++	# for nodesize right now
++	nodesize=`getconf PAGESIZE`
++	convert_test "$feature" "ext2 4k nodesize" $nodesize mke2fs -b 4096
++	convert_test "$feature" "ext3 4k nodesize" $nodesize mke2fs -b 4096
++	convert_test "$feature" "ext4 4k nodesize" $nodesize mke2fs -b 4096
++#	convert_test "$feature" "ext2 4k nodesize" 4096 mke2fs -b 4096
++#	convert_test "$feature" "ext3 4k nodesize" 4096 mke2fs -j -b 4096
++#	convert_test "$feature" "ext4 4k nodesize" 4096 mke2fs -t ext4 -b 4096
++#	convert_test "$feature" "ext2 8k nodesize" 8192 mke2fs -b 4096
++#	convert_test "$feature" "ext3 8k nodesize" 8192 mke2fs -j -b 4096
++#	convert_test "$feature" "ext4 8k nodesize" 8192 mke2fs -t ext4 -b 4096
++#	convert_test "$feature" "ext2 16k nodesize" 16384 mke2fs -b 4096
++#	convert_test "$feature" "ext3 16k nodesize" 16384 mke2fs -j -b 4096
++#	convert_test "$feature" "ext4 16k nodesize" 16384 mke2fs -t ext4 -b 4096
++#	convert_test "$feature" "ext2 32k nodesize" 32768 mke2fs -b 4096
++#	convert_test "$feature" "ext3 32k nodesize" 32768 mke2fs -j -b 4096
++#	convert_test "$feature" "ext4 32k nodesize" 32768 mke2fs -t ext4 -b 4096
++#	convert_test "$feature" "ext2 64k nodesize" 65536 mke2fs -b 4096
++#	convert_test "$feature" "ext3 64k nodesize" 65536 mke2fs -j -b 4096
++#	convert_test "$feature" "ext4 64k nodesize" 65536 mke2fs -t ext4 -b 4096
+ done
 -- 
 2.5.1
 

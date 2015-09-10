@@ -1,91 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:36761 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752558AbbIJKat (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Sep 2015 06:30:49 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: remove unnecessary locking of cleaner_mutex to avoid deadlock
-Date: Thu, 10 Sep 2015 11:30:41 +0100
-Message-Id: <1441881041-10992-1-git-send-email-fdmanana@kernel.org>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:7027 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751835AbbIJNBM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Sep 2015 09:01:12 -0400
+Date: Thu, 10 Sep 2015 09:01:05 -0400
+From: Chris Mason <clm@fb.com>
+To: <fdmanana@kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] Btrfs: remove unnecessary locking of cleaner_mutex to
+ avoid deadlock
+Message-ID: <20150910130105.GI9511@ret.masoncoding.com>
+References: <1441881041-10992-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1441881041-10992-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Sep 10, 2015 at 11:30:41AM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> This issue was discussed (in the mailing list) during the review of
+> the patch titled "btrfs: explictly delete unused block groups in
+> close_ctree and ro-remount" and it was agreed that acquiring the
+> cleaner mutex had to be dropped after the patch titled
+> "Btrfs: fix race between balance and unused block group deletion"
+> got merged (both patches were submitted at about the same time, but
+> one landed in kernel 4.2 and the other in the 4.3 merge window).
 
-After commmit e44163e17796 ("btrfs: explictly delete unused block groups
-in close_ctree and ro-remount"), added in the 4.3 merge window, we have
-calls to btrfs_delete_unused_bgs() while holding the cleaner_mutex.
-This can cause a deadlock with a concurrent block group relocation (when
-a filesystem balance or shrink operation is in progress for example)
-because btrfs_delete_unused_bgs() locks delete_unused_bgs_mutex and the
-relocation path locks first delete_unused_bgs_mutex and then it locks
-cleaner_mutex, resulting in a classic ABBA deadlock:
+Thanks Filipe, hit the lockdep warning and was going to dig this out.
 
-         CPU 0                                        CPU 1
-
-lock fs_info->cleaner_mutex
-
-                                           __btrfs_balance() || btrfs_shrink_device()
-                                             lock fs_info->delete_unused_bgs_mutex
-                                             btrfs_relocate_chunk()
-                                               btrfs_relocate_block_group()
-                                                 lock fs_info->cleaner_mutex
-btrfs_delete_unused_bgs()
-  lock fs_info->delete_unused_bgs_mutex
-
-Fix this by not taking the cleaner_mutex before calling
-btrfs_delete_unused_bgs() because it's no longer needed after
-commit 67c5e7d464bc ("Btrfs: fix race between balance and unused block
-group deletion"). The mutex fs_info->delete_unused_bgs_mutex, the
-spinlock fs_info->unused_bgs_lock and a block group's spinlock are
-enough to get correct serialization between tasks running relocation
-and unused block group deletion (as well as between multiple tasks
-concurrently calling btrfs_delete_unused_bgs()).
-
-This issue was discussed (in the mailing list) during the review of
-the patch titled "btrfs: explictly delete unused block groups in
-close_ctree and ro-remount" and it was agreed that acquiring the
-cleaner mutex had to be dropped after the patch titled
-"Btrfs: fix race between balance and unused block group deletion"
-got merged (both patches were submitted at about the same time, but
-one landed in kernel 4.2 and the other in the 4.3 merge window).
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/disk-io.c | 2 --
- fs/btrfs/super.c   | 2 --
- 2 files changed, 4 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0b658d0..aa59871 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3762,9 +3762,7 @@ void close_ctree(struct btrfs_root *root)
- 		 * block groups queued for removal, the deletion will be
- 		 * skipped when we quit the cleaner thread.
- 		 */
--		mutex_lock(&root->fs_info->cleaner_mutex);
- 		btrfs_delete_unused_bgs(root->fs_info);
--		mutex_unlock(&root->fs_info->cleaner_mutex);
- 
- 		ret = btrfs_commit_super(root);
- 		if (ret)
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index c389c13..5a186d7 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1658,9 +1658,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
- 		 * groups on disk until we're mounted read-write again
- 		 * unless we clean them up here.
- 		 */
--		mutex_lock(&root->fs_info->cleaner_mutex);
- 		btrfs_delete_unused_bgs(fs_info);
--		mutex_unlock(&root->fs_info->cleaner_mutex);
- 
- 		btrfs_dev_replace_suspend_for_unmount(fs_info);
- 		btrfs_scrub_cancel(fs_info);
--- 
-2.1.3
-
+-chris

@@ -1,24 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:11500 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750786AbbIKA1U (ORCPT
+Received: from mail-vk0-f51.google.com ([209.85.213.51]:34364 "EHLO
+	mail-vk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752576AbbIKNYy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Sep 2015 20:27:20 -0400
-Subject: Re: [PATCH] btrfs-progs: fix cross stripe boundary check
-To: David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
-References: <1441897376-5572-1-git-send-email-dsterba@suse.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55F21FE5.2030008@cn.fujitsu.com>
-Date: Fri, 11 Sep 2015 08:27:17 +0800
+	Fri, 11 Sep 2015 09:24:54 -0400
+Received: by vkhf67 with SMTP id f67so26350971vkh.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2015 06:24:53 -0700 (PDT)
 MIME-Version: 1.0
 In-Reply-To: <1441897376-5572-1-git-send-email-dsterba@suse.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+References: <1441897376-5572-1-git-send-email-dsterba@suse.com>
+Date: Fri, 11 Sep 2015 15:24:53 +0200
+Message-ID: <CAHji150Jb5KrLoGJP6TmAPeGfexOC-wAXX7L1vUZ8EBxnM4wDA@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: fix cross stripe boundary check
+From: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+	<holger.hoffstaette@googlemail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-David Sterba wrote on 2015/09/10 17:02 +0200:
+On Thu, Sep 10, 2015 at 5:02 PM, David Sterba <dsterba@suse.com> wrote:
 > Commit 854437ca3c228d8ab3eb24d2efc1c21b5d56a635 ("btrfs-progs:
 > extent-tree: avoid allocating tree block that crosses stripe boundary")
 > does not work for 64k nodesize. Due to an off-by-one error, all queries
@@ -36,32 +37,11 @@ David Sterba wrote on 2015/09/10 17:02 +0200:
 > ./mkfs.btrfs(btrfs_insert_item+0x99)[0x40da5f]
 > ./mkfs.btrfs(btrfs_make_block_group+0x4d)[0x41705c]
 > ./mkfs.btrfs(main+0xeef)[0x434b56]
->
-> CC: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> Signed-off-by: David Sterba <dsterba@suse.com>
-Nice one, yep, my fault.
 
-BTW, any idea to add mkfs test?
+Am I correct that this also causes false positives with btrfs check? I just
+ran a sanity check on an fs that had no problems whatsoever and was
+definitely not converted (so 16k nodesize) and got thousands of
+cross-stripe complaints; repair didn't help. Applying the patch seems to
+have fixed those; it completes without problems now.
 
-Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
-Thanks,
-Qu
-> ---
->   volumes.h | 2 +-
->   1 file changed, 1 insertion(+), 1 deletion(-)
->
-> diff --git a/volumes.h b/volumes.h
-> index f7761311e8ce..4ecb99314a0c 100644
-> --- a/volumes.h
-> +++ b/volumes.h
-> @@ -156,7 +156,7 @@ struct map_lookup {
->   static inline int check_crossing_stripes(u64 start, u64 len)
->   {
->   	return (start / BTRFS_STRIPE_LEN) !=
-> -	       ((start + len) / BTRFS_STRIPE_LEN);
-> +	       ((start + len - 1) / BTRFS_STRIPE_LEN);
->   }
->
->   int __btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
->
+Holger

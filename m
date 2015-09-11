@@ -1,114 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:12862 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751064AbbIKEzk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Sep 2015 00:55:40 -0400
+Received: from mx2.suse.de ([195.135.220.15]:53038 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752163AbbIKSzX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Sep 2015 14:55:23 -0400
 Subject: Re: btrfs regression since 4.X kernel NULL pointer dereference
-To: Jeff Mahoney <jeffm@suse.com>, Chris Mason <clm@fb.com>,
-        Christoph Hellwig <hch@lst.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "<linux-fsdevel@vger.kernel.org>" <linux-fsdevel@vger.kernel.org>,
-        linux-kernel.bfrz@manchmal.in-ulm.de
+To: Christoph Hellwig <hch@lst.de>, Stefan Priebe <s.priebe@profihost.ag>
 References: <55D8B193.8010906@profihost.ag> <20150825090030.GF31630@lst.de>
- <20150825135146.GE7176@ret.masoncoding.com>
- <590FB3C7-8BCA-4B04-BBB0-92863E02A89C@profihost.ag>
- <20150901000610.GC5136@ret.masoncoding.com> <55F20276.1050209@suse.com>
-From: Stefan Priebe <s.priebe@profihost.ag>
-Message-ID: <55F25ED1.3060107@profihost.ag>
-Date: Fri, 11 Sep 2015 06:55:45 +0200
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel@vger.kernel.org, Chris Mason <clm@fb.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <55F32395.6030702@suse.com>
+Date: Fri, 11 Sep 2015 14:55:17 -0400
 MIME-Version: 1.0
-In-Reply-To: <55F20276.1050209@suse.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20150825090030.GF31630@lst.de>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Am 11.09.2015 um 00:21 schrieb Jeff Mahoney:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 8/31/15 8:06 PM, Chris Mason wrote:
->> On Mon, Aug 31, 2015 at 07:32:09PM +0200, Stefan Priebe -
->> Profihost AG wrote:
->>>> Am 25.08.2015 um 15:51 schrieb Chris Mason <clm@fb.com>:
->>>>
->>>>> On Tue, Aug 25, 2015 at 11:00:30AM +0200, Christoph Hellwig
->>>>> wrote: I think this is btrfs using a struct block_device
->>>>> that doesn't have a valid queue pointer in it's gendisk for
->>>>> ->s_bdev.  And there are some fishy looking ->s_bdev
->>>>> assignments in the code which I suspect are related to it:
->>>>>
->>>>> fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev ==
->>>>> src_device->bdev) fs/btrfs/dev-replace.c: fs_info->sb->s_bdev
->>>>> = tgt_device->bdev; fs/btrfs/volumes.c: if (device->bdev ==
->>>>> root->fs_info->sb->s_bdev) fs/btrfs/volumes.c:
->>>>> root->fs_info->sb->s_bdev = next_device->bdev;
->>>>> fs/btrfs/volumes.c:     if (tgtdev->bdev ==
->>>>> fs_info->sb->s_bdev) fs/btrfs/volumes.c: fs_info->sb->s_bdev
->>>>> = next_device->bdev;
->>>>
->>>> We've had trouble with this in the past, I'll take a look.
->>>
->>> Any news?
->>
->> Haven't been able to reproduce yet, I'll try again in the morning.
->
-> I'm unable to reproduce it as well and I'm hearing about people
-> hitting it in different forums.
->
-> Can you describe your storage configuration?   There's a gendisk
-> without a queue sneaking in somehow.  There are some spots in dm where
-> the mddev gets a new queue assigned to it but the old queue associated
-> with the gendisk is left behind so that's not it.
+On 8/25/15 5:00 AM, Christoph Hellwig wrote:
+> I think this is btrfs using a struct block_device that doesn't
+> have a valid queue pointer in it's gendisk for ->s_bdev.  And there
+> are some fishy looking ->s_bdev assignments in the code which I
+> suspect are related to it:
+> 
+> fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev ==
+> src_device->bdev) fs/btrfs/dev-replace.c:
+> fs_info->sb->s_bdev = tgt_device->bdev; fs/btrfs/volumes.c:     if
+> (device->bdev == root->fs_info->sb->s_bdev) fs/btrfs/volumes.c:
+> root->fs_info->sb->s_bdev = next_device->bdev; fs/btrfs/volumes.c:
+> if (tgtdev->bdev == fs_info->sb->s_bdev) fs/btrfs/volumes.c:
+> fs_info->sb->s_bdev = next_device->bdev;
 
-I'm hitting this inside a debian buil VM using schroot. So the disk is a 
-simple plain qemu emulated scsi disk (virtio-pci-scsi).
+The report at https://bugzilla.kernel.org/show_bug.cgi?id=100911
+tracks it down a bit further and it's bdev->bd_disk == NULL instead of
+the queue in the gendisk. I don't think that the s_bdev stuff is
+related, though I'd certainly love to see that bit go away.
 
- >  If you're able to
-> reproduce it reliably with this configuration, that's certainly
-> interesting.  I'm wondering if the case is that vgcfgbackup is
-> iterating over devices and causing something that might not have been
-> previously scanned to be scanned and added to the btrfs device list.
+If we're calling blk_get_backing_dev_info, that means we're already
+using an inode that has blockdev_superblock and the btrfs superblock
+isn't even involved.
 
-I'm not the guy from the kernel bug report - so i'm only using debian 
-schroot not vgcfgbackup.
+We're getting there because btrfs_evict_inode ->
+btrfs_wait_ordered_range -> btrfs_fdatawrite_range ->
+filemap_fdatawrite_range gets called with inode->i_mapping.  That
+mapping gets passed down through __filemap_fdatawrite_range to
+wbc_attach_fdatawrite_inode where the inode passed is mapping->host --
+which will be the block device inode rather than the btrfs device node
+inode.  That inode is the one ultimately checked in inode_to_bdi.
 
-I can trigger it 100% by using schroot with sbuild using debian or ubuntu.
+So it looks like we're causing writeback on an unrelated block device
+that was opened using a device node hosted on btrfs, which is
+obviously wrong.
 
-> Are there any messages above the oops indicating when a device is
-> added?  Could you post your complete dmesg somewhere?
+I don't think snapshot removal is even a requirement to trigger this.
+ I expect it's possible to trigger with two device nodes for the same
+block device where one is getting closed and cleaned up while the
+eviction of the other happens.  The device nodes wouldn't even need to
+be on the same fs.
 
-Sure:
-http://pastebin.com/raw.php?i=bG6bZUPA
+Other file systems use &inode->i_data in eviction.  Is it that simple
+here?
 
-Thanks!
+- -Jeff
 
-Greets,
-Stefan
+- -- 
+Jeff Mahoney
+SUSE Labs
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
 
-> Thanks,
->
-> - -Jeff
->
-> - --
-> Jeff Mahoney
-> SUSE Labs
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
->
-> iQIcBAEBAgAGBQJV8gJ2AAoJEB57S2MheeWyEP4QALvIXZGIqkXhUBZEYvLC+rnD
-> Q79chLpbt8x52xtFoav78i3nG24SMXV5NbhFlGNnr6xt/CQtKSzBuDyJ+nigkyy+
-> bTtHbwkMqNddrqKJ3r928nKwz1IOyU4J58l7hGyC0owSA3mDxyI7+yS16OXFwc1S
-> 6lxtV4ljf6nqobA+rVyC3n3BU6CF1aL45V2FpM/m4OHL/Xqv97Xg2tGlysnk8RPD
-> dRvz5fs2T75B0eBsK4xWHKEgKKWdVYaKqlySRXUJQpnNJTlJltW5HzL8RnR47brt
-> LLaOCD4jcLlEtGhTi6wEN6BlEYbgDx/1yjQs5zxLG0vbTUi5ZcTeT82d5+Hh4WMD
-> HyLfE4pwFUZXTHvcIoQ51wPLS/tWMVJXnleQKBrDT+WcsKPr5yuwUZpwfrOBfjol
-> Qan13/mIcmvFsz2yVWnoZJWU5osnhe+frBsVFlIFLNXp50QVXk+WvruPDOsoY2eQ
-> J8L20LhY5e0dgJseXWkAAy68mJ0/rrkX0iAdiED/WEsBdjy7QuOomJqPyQQEPplm
-> d+tIkDR77Biajket2tNEXK1m14f7QvFUFojI0NwegcmZT3iJ7BBWD6wjxIvh3KqE
-> LqHIcTaECU9XSg9x9E3N416hCbclC9xeosxaJB1iN+EvpaD7CBA+V+onkNMN6Fu4
-> J0aVUYlZuLcqkEs/BuNL
-> =BRtR
-> -----END PGP SIGNATURE-----
->
+iQIcBAEBAgAGBQJV8yOVAAoJEB57S2MheeWysvMP/0cIPCytKGzQqkNpzjfcBk4b
+a4s3xM3xnxZ0BayvAWIpSrCLp/5OR5N30Eu326LNZKIEnC7jbkQHePFLIftnhtJ/
+eGWlFe9kOsHGWtdA2HyZO9s6V/Nnh0t7vXKUBfqTjV71T66VL/FP9cfRVJ4Ov5Zb
+99dK58glhDuF0tOQhePdfaqw4zym+3YHkD+CJjTUKO9YnpTgr4CQFJ+6v6itGbIt
+QRY7qVY0S1nz0w/s8AsKu2g76thILtBvmwsEMik3TYSJI5gHxLgSpR0btk64o67+
+N50AGsO/TMJs6u9p8Ad4zMFF8AfylAgTV3g8uH6v2QLI3ILVMhjtqgOwWlT78Aca
+dmceWAfhBAdRizYqKQC6ZKq26Qf9GTSEoM0L/3TuBqN5scKtGYx0mvoDzj080i7p
+nmPJ955pWwxa2tsmo8wRoPXVjvOXegIyguyHvqTg0wrwzfm4aPtZGTtr7RU65lp2
+83fl2KJXan8V1vkOwmZ9n4e1G1g8Gggb+qCMAiv9cLWkfTus2HFdh5GNEZ+jSCJ1
+2+QzIjFzLqx0N3wQmneBfkdDiWpQkAbQJjJLPdJykivo4WytV/6Vtvcqbv39JCJj
+1awM2EpqB9rKV24BGDH86MiErvVT3HBLjSEEpIa41T8PlBXEsQOH1hsXTZSzyP9o
+iO8qclZgSIIUgiN4feV3
+=xPuq
+-----END PGP SIGNATURE-----

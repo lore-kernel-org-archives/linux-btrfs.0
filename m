@@ -1,44 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from manchmal.in-ulm.de ([217.10.9.201]:36681 "EHLO
-	manchmal.in-ulm.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754279AbbIKX25 (ORCPT
+Received: from mail-ph.de-nserver.de ([85.158.179.214]:33935 "EHLO
+	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754263AbbIKXbC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Sep 2015 19:28:57 -0400
-Date: Sat, 12 Sep 2015 01:21:54 +0200
-From: Christoph Biedl <linux-kernel.bfrz@manchmal.in-ulm.de>
-To: Stefan Priebe <s.priebe@profihost.ag>
-Cc: Chris Mason <clm@fb.com>, Christoph Hellwig <hch@lst.de>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        "<linux-fsdevel@vger.kernel.org>" <linux-fsdevel@vger.kernel.org>
+	Fri, 11 Sep 2015 19:31:02 -0400
 Subject: Re: btrfs regression since 4.X kernel NULL pointer dereference
-Message-ID: <1442013503@msgid.manchmal.in-ulm.de>
-References: <55D8B193.8010906@profihost.ag>
- <20150825090030.GF31630@lst.de>
- <20150825135146.GE7176@ret.masoncoding.com>
- <590FB3C7-8BCA-4B04-BBB0-92863E02A89C@profihost.ag>
- <20150901000610.GC5136@ret.masoncoding.com>
- <55E52C6D.6050504@profihost.ag>
+To: Jeff Mahoney <jeffm@suse.com>, Christoph Hellwig <hch@lst.de>
+References: <55D8B193.8010906@profihost.ag> <20150825090030.GF31630@lst.de>
+ <55F32395.6030702@suse.com> <55F32600.6080201@suse.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        linux-fsdevel@vger.kernel.org, Chris Mason <clm@fb.com>
+From: Stefan Priebe <s.priebe@profihost.ag>
+Message-ID: <55F3643C.3010700@profihost.ag>
+Date: Sat, 12 Sep 2015 01:31:08 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55E52C6D.6050504@profihost.ag>
+In-Reply-To: <55F32600.6080201@suse.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan Priebe wrote...
 
-> Thanks. We're using schroot like the user in this bugreport:
-> https://bugzilla.kernel.org/show_bug.cgi?id=100911
-> 
-> But he also claims he found another way to reproduce using vfcgbackup (last
-> comment).
+Am 11.09.2015 um 21:05 schrieb Jeff Mahoney:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+>
+> On 9/11/15 2:55 PM, Jeff Mahoney wrote:
+>> On 8/25/15 5:00 AM, Christoph Hellwig wrote:
+>>> I think this is btrfs using a struct block_device that doesn't
+>>> have a valid queue pointer in it's gendisk for ->s_bdev.  And
+>>> there are some fishy looking ->s_bdev assignments in the code
+>>> which I suspect are related to it:
+>>
+>>> fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev ==
+>>> src_device->bdev) fs/btrfs/dev-replace.c: fs_info->sb->s_bdev =
+>>> tgt_device->bdev; fs/btrfs/volumes.c:     if (device->bdev ==
+>>> root->fs_info->sb->s_bdev) fs/btrfs/volumes.c:
+>>> root->fs_info->sb->s_bdev = next_device->bdev;
+>>> fs/btrfs/volumes.c: if (tgtdev->bdev == fs_info->sb->s_bdev)
+>>> fs/btrfs/volumes.c: fs_info->sb->s_bdev = next_device->bdev;
+>>
+>> The report at https://bugzilla.kernel.org/show_bug.cgi?id=100911
+>> tracks it down a bit further and it's bdev->bd_disk == NULL instead
+>> of the queue in the gendisk. I don't think that the s_bdev stuff
+>> is related, though I'd certainly love to see that bit go away.
+>>
+>> If we're calling blk_get_backing_dev_info, that means we're
+>> already using an inode that has blockdev_superblock and the btrfs
+>> superblock isn't even involved.
+>>
+>> We're getting there because btrfs_evict_inode ->
+>> btrfs_wait_ordered_range -> btrfs_fdatawrite_range ->
+>> filemap_fdatawrite_range gets called with inode->i_mapping.  That
+>> mapping gets passed down through __filemap_fdatawrite_range to
+>> wbc_attach_fdatawrite_inode where the inode passed is mapping->host
+>> -- which will be the block device inode rather than the btrfs
+>> device node inode.  That inode is the one ultimately checked in
+>> inode_to_bdi.
+>>
+>> So it looks like we're causing writeback on an unrelated block
+>> device that was opened using a device node hosted on btrfs, which
+>> is obviously wrong.
+>>
+>> I don't think snapshot removal is even a requirement to trigger
+>> this. I expect it's possible to trigger with two device nodes for
+>> the same block device where one is getting closed and cleaned up
+>> while the eviction of the other happens.  The device nodes wouldn't
+>> even need to be on the same fs.
+>>
+>> Other file systems use &inode->i_data in eviction.  Is it that
+>> simple here?
 
-FWIW, this was still the same thing, just stripped down to get closer
-to the actual cause. It began with building a private Debian package
-that has lvm2 as build dependency. Daemons are disabled in the build
-chroot (via policy-rc.d) but the vfcgbackup invocation in lvm2's
-postinst is still run.
+Your patch works fine here. Did some simple tests already.
 
-Also, a quick test of Jeff's update to the Bugzilla ticket looks very
-good. More tests will follow.
+Thanks!
 
-    Christoph
+Stefan
+
+>
+> Incidentally, this explanation also covers why I was unable to
+> reproduce it locally.  SLES systems use devtmpfs and I just bind
+> mounted it into my chroot environment like I normally would.  When I
+> cp'd /dev into the test environment, I was able to reproduce immediately
+> .
+>
+> - -Jeff
+>
+> - --
+> Jeff Mahoney
+> SUSE Labs
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+>
+> iQIcBAEBAgAGBQJV8yYAAAoJEB57S2MheeWy2BwP+QGdpsErIfyHJcx95LLrvsxu
+> n0kBoI4Jd5yfNxp8m+Ll3xgUdsd6rKHJV2Muq8aRdNEdzf1E0DFrRcE0d1W5UrJy
+> lPzrA8QxCVaLf5jFysFp0xygKbLKHGmOAv2KnAGYFw6exIjb344UnZb6aiw5Uekm
+> DqrTmEq+0Yb/mE04GVpWMylK6pkDOhgkOzFVZa1Pff0eKY4E61G5GtmA2kNAUP9v
+> CsoZ0FO1WdF2Fc9ONSPjq7FdZLKH+OmIVakHnaELa8EEM3W7NU+mxLRabznBV25e
+> L/KPjr+awzkhV1ieyAAww/dddE3bN5nmDOq+OgvA9WPgaRvvwne2tHVTFaxHoiHg
+> d8oHDLkC1/Z1MqINLi5dZNsSuIWMvRhIMV9Th5F2rdWxrBCSRvID7N+Z2HHh6mJC
+> Q9rgSOyYKclTam6IF7yX8lDWIqkAnoA6OxvOKRccgr3hS/u4DzVtRmWHO9RblEi+
+> a9dF2FCP+v+Lgdb8C5n7XUixrtF5H6BWHhmArgjmxD6iyeXOmphyGrgqmSLdY1s9
+> sakvLrSB9i3O27CKoup2OHyF6MOdgsaa90FZLPLt6BDrCTWAscd0LDy8MbaKgKCR
+> kjfSTiwNydzZfkJixH71U/1mGbuB9nqf6jrNWCQdE5f57MSCEwiFqQvaD1KK+Uug
+> ZW2Bz1VQxkOvGbYiJ4HV
+> =ic4+
+> -----END PGP SIGNATURE-----
+>

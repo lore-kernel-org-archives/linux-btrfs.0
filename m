@@ -1,109 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:35966 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756582AbbIDFnE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2015 01:43:04 -0400
-Received: by pacwi10 with SMTP id wi10so13602266pac.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Sep 2015 22:43:03 -0700 (PDT)
-Date: Thu, 3 Sep 2015 22:43:01 -0700
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:32987 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751007AbbIKAwK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Sep 2015 20:52:10 -0400
+Received: by pacex6 with SMTP id ex6so58099805pac.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Sep 2015 17:52:09 -0700 (PDT)
+Date: Thu, 10 Sep 2015 17:52:07 -0700
 From: Omar Sandoval <osandov@osandov.com>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 0/9] free space B-tree
-Message-ID: <20150904054301.GA30813@huxley.hsd1.ca.comcast.net>
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 9/9] Btrfs: add free space tree mount option
+Message-ID: <20150911005207.GA7855@mew>
+References: <cover.1441309178.git.osandov@fb.com>
+ <de086134d128aad13d16b2aabc72918d7ec7637e.1441309178.git.osandov@fb.com>
+ <20150909120023.GF8891@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <029b01d0e6b1$2e605750$8b2105f0$@cn.fujitsu.com>
+In-Reply-To: <20150909120023.GF8891@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <cover.1441309178.git.osandov@fb.com>
- <029b01d0e6b1$2e605750$8b2105f0$@cn.fujitsu.com>
 
-On Fri, Sep 04, 2015 at 09:29:45AM +0800, Zhao Lei wrote:
-> Hi, Omar Sandoval
+On Wed, Sep 09, 2015 at 02:00:23PM +0200, David Sterba wrote:
+> On Thu, Sep 03, 2015 at 12:44:27PM -0700, Omar Sandoval wrote:
+> > Now we can finally hook up everything so we can actually use free space
+> > tree. On the first mount with the free_space_tree mount option, the free
+> > space tree will be created and the FREE_SPACE_TREE read-only compat bit
+> > will be set. Any time the filesystem is mounted from then on, we will
+> > use the free space tree.
+> > 
+> > Having both the free space cache and free space trees enabled is
+> > nonsense, so we don't allow that to happen. Since mkfs sets the
+> > superblock cache generation to -1, this means that the filesystem will
+> > have to be mounted with nospace_cache,free_space_tree to create the free
+> > space trees on first mount. Once the FREE_SPACE_TREE bit is set, the
+> > cache generation is ignored when mounting. This is all a little more
+> > complicated than would be ideal, but at some point we can presumably
+> > make the free space tree the default and stop setting the cache
+> > generation in mkfs.
 > 
-> [PATCH 7/9] have following compiler warning:
->  fs/btrfs/tests/free-space-tree-tests.c: In function '__check_free_space_extents':   
->  fs/btrfs/tests/free-space-tree-tests.c:45: warning: 'offset' may be used uninitialized in this function   
+> I have objections against introducing another options to do something
+> with space cache. As you write, it does not make sens to have
+> 'space_cache' and 'free_space_tree' enabled, and I agree. The b-tree
+> approach is an "implementation detail", an improved version of space
+> caching.
 > 
-> It is just a compiler warning, and will not happened in code logic,
-> but could you fix it to make output pretty?
+> Because of that I propose to do the following:
 > 
-> Thanks
-> Zhaolei
+> * use space_cache mount option, and add a value denoting the used
+>   implementation, eg. space_cache=btree or space_cache=v2 etc
+> 
+> * keep space_cache for backward compatibility for the current
+>   implementaion
+> 
+> * clear_cache should reset state for both
+> 
+> * nospace_cache prevents using any of the two versions of space cache
 
-Thanks, Zhaolei, I actually meant to use "end" where I used "offset" on
-line 94, that should get rid of the warning and be more correct. I'll
-fix it and send it out in v3.
+Okay, I like the idea of calling this space_cache=v2 and allowing
+clear_cache to clear the free space tree just in case. However, the free
+space tree doesn't use a cache generation like the old free space cache,
+so once it's created, we can't ever ignore it, so for nospace_cache, the
+best we could do would be to fail the mount (unless clear_cache is also
+set). The other option would be to add something like the cache
+generation for the free space tree, but I'd rather not do that since
+fixing an out-of-date free space tree is a little more involved than
+with the old cache (at that point, we might as well clear the tree and
+redo it all over again). What do you think of that? Is failing on
+nospace_cache okay with you?
 
-Omar
+Thanks.
 
+> On the mkfs side, we can add new incompat feature to the -O option that
+> will set the incompat bit to the superblock. Mounting such filesystem
+> would use the v2 cache automatically.
 > 
-> * From: linux-btrfs-owner@vger.kernel.org
-> > [mailto:linux-btrfs-owner@vger.kernel.org] On Behalf Of Omar Sandoval
-> > Sent: Friday, September 04, 2015 3:44 AM
-> > To: linux-btrfs@vger.kernel.org
-> > Cc: Omar Sandoval <osandov@osandov.com>
-> > Subject: [PATCH v2 0/9] free space B-tree
-> > 
-> > Here's version 2 of the the free space B-tree patches, addressing Josef's review
-> > from the last round, which you can find here:
-> > http://www.spinics.net/lists/linux-btrfs/msg46713.html
-> > 
-> > Changes from v1->v2:
-> > 
-> > - Cleaned up a bunch of unnecessary instances of "if (ret) goto out; ret = 0"
-> > - Added aborts in the free space tree code closer to the site the error
-> >   is encountered: where we add or remove block groups, add or remove
-> >   free space, and also when we convert formats
-> > - Moved loading of the free space tree into caching_thread() and added a
-> >   new patch 4 in preparation for it
-> > - Commented a bunch of stuff in the extent buffer bitmap operations and
-> >   refactored some of the complicated logic
-> > - Added sanity tests for the extent buffer bitmap operations and free
-> >   space tree (patches 2 and 6)
-> > - Added Josef's Reviewed-by tags
-> > 
-> > Omar Sandoval (9):
-> >   Btrfs: add extent buffer bitmap operations
-> >   Btrfs: add extent buffer bitmap sanity tests
-> >   Btrfs: add helpers for read-only compat bits
-> >   Btrfs: refactor caching_thread()
-> >   Btrfs: introduce the free space B-tree on-disk format
-> >   Btrfs: implement the free space B-tree
-> >   Btrfs: add free space tree sanity tests
-> >   Btrfs: wire up the free space tree to the extent tree
-> >   Btrfs: add free space tree mount option
-> > 
-> >  fs/btrfs/Makefile                      |    5 +-
-> >  fs/btrfs/ctree.h                       |  107 ++-
-> >  fs/btrfs/disk-io.c                     |   26 +
-> >  fs/btrfs/extent-tree.c                 |  112 ++-
-> >  fs/btrfs/extent_io.c                   |  183 +++-
-> >  fs/btrfs/extent_io.h                   |   10 +-
-> >  fs/btrfs/free-space-tree.c             | 1501
-> > ++++++++++++++++++++++++++++++++
-> >  fs/btrfs/free-space-tree.h             |   71 ++
-> >  fs/btrfs/super.c                       |   24 +-
-> >  fs/btrfs/tests/btrfs-tests.c           |   52 ++
-> >  fs/btrfs/tests/btrfs-tests.h           |   10 +
-> >  fs/btrfs/tests/extent-io-tests.c       |  138 ++-
-> >  fs/btrfs/tests/free-space-tests.c      |   35 +-
-> >  fs/btrfs/tests/free-space-tree-tests.c |  570 ++++++++++++
-> >  fs/btrfs/tests/qgroup-tests.c          |   20 +-
-> >  include/trace/events/btrfs.h           |    3 +-
-> >  16 files changed, 2763 insertions(+), 104 deletions(-)  create mode 100644
-> > fs/btrfs/free-space-tree.c  create mode 100644 fs/btrfs/free-space-tree.h
-> > create mode 100644 fs/btrfs/tests/free-space-tree-tests.c
-> > 
-> > --
-> > 2.5.1
-> > 
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in the body
-> > of a message to majordomo@vger.kernel.org More majordomo info at
-> > http://vger.kernel.org/majordomo-info.html
+> I'd like to see the b-tree space cache default in the future, until then
+> it'll be mkfs-time option or mount-time option.
 > 
+> For backward compatibility, mounting a free space v2 filesystem on older
+> kernel can be done with support of userspace tools: reset the cache
+> generation (as if clear_cache was used), drop all the free-space-tree
+> structures and unset the incompat bit. I think this kind of fallback is
+> desirable.
+> 
+> 
+> Other than that, I like the series and the improvements it's supposed to
+> bring.
 
 -- 
 Omar

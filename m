@@ -1,47 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f51.google.com ([209.85.213.51]:34364 "EHLO
-	mail-vk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752576AbbIKNYy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Sep 2015 09:24:54 -0400
-Received: by vkhf67 with SMTP id f67so26350971vkh.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Sep 2015 06:24:53 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1441897376-5572-1-git-send-email-dsterba@suse.com>
-References: <1441897376-5572-1-git-send-email-dsterba@suse.com>
-Date: Fri, 11 Sep 2015 15:24:53 +0200
-Message-ID: <CAHji150Jb5KrLoGJP6TmAPeGfexOC-wAXX7L1vUZ8EBxnM4wDA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs-progs: fix cross stripe boundary check
-From: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+Received: from mx2.suse.de ([195.135.220.15]:40578 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752365AbbIKOql (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Sep 2015 10:46:41 -0400
+Date: Fri, 11 Sep 2015 16:45:53 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
 	<holger.hoffstaette@googlemail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: fix cross stripe boundary check
+Message-ID: <20150911144553.GN8891@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1441897376-5572-1-git-send-email-dsterba@suse.com>
+ <CAHji1518hEv2_H08ucBYNmvGA2qA=fLs4J+FAFSXEHWv5G8KUA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <CAHji1518hEv2_H08ucBYNmvGA2qA=fLs4J+FAFSXEHWv5G8KUA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 10, 2015 at 5:02 PM, David Sterba <dsterba@suse.com> wrote:
-> Commit 854437ca3c228d8ab3eb24d2efc1c21b5d56a635 ("btrfs-progs:
-> extent-tree: avoid allocating tree block that crosses stripe boundary")
-> does not work for 64k nodesize. Due to an off-by-one error, all queries
-> to check_crossing_stripes will return that all extents cross a stripe
-> and this will lead to a false ENOSPC. This crashes later
->
-> $ ./mkfs.btrfs -n 64k image
->
-> ./mkfs.btrfs(btrfs_reserve_extent+0xb77)[0x417f38]
-> ./mkfs.btrfs(btrfs_alloc_free_block+0x57)[0x417fe0]
-> ./mkfs.btrfs(__btrfs_cow_block+0x163)[0x408eb7]
-> ./mkfs.btrfs(btrfs_cow_block+0xd0)[0x4097c4]
-> ./mkfs.btrfs(btrfs_search_slot+0x16f)[0x40be4d]
-> ./mkfs.btrfs(btrfs_insert_empty_items+0xc0)[0x40d5f9]
-> ./mkfs.btrfs(btrfs_insert_item+0x99)[0x40da5f]
-> ./mkfs.btrfs(btrfs_make_block_group+0x4d)[0x41705c]
-> ./mkfs.btrfs(main+0xeef)[0x434b56]
+On Fri, Sep 11, 2015 at 03:16:02PM +0200, Holger Hoffstätte wrote:
+> Am I correct that this also causes false positives with btrfs check? I just
+> ran a sanity check on an fs that had no problems whatsoever and was
+> definitely not converted (so 16k nodesize) and got thousands of
+> cross-stripe complaints; repair didn't help. Applying the patch seems to
+> have fixed those; it completes without problems now.
 
-Am I correct that this also causes false positives with btrfs check? I just
-ran a sanity check on an fs that had no problems whatsoever and was
-definitely not converted (so 16k nodesize) and got thousands of
-cross-stripe complaints; repair didn't help. Applying the patch seems to
-have fixed those; it completes without problems now.
-
-Holger
+Yes you are. If the node blocks end at the stripe boundary, they're
+incorrectly marked as stripe crossing. The 64k nodesize case was quick
+to detect that because this holds for all nodes. Thanks for your
+report, this means the bug is not that rare. I'll do a release within a
+few days including this patch.

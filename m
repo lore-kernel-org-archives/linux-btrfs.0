@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:22573 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751234AbbIKBZb (ORCPT
+	with ESMTP id S1751234AbbIKBZh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Sep 2015 21:25:31 -0400
+	Thu, 10 Sep 2015 21:25:37 -0400
 Subject: Re: [PATCH] Btrfs: keep dropped roots in cache until transaciton
  commit
 To: Josef Bacik <jbacik@fb.com>, <linux-btrfs@vger.kernel.org>,
         <kernel-team@fb.com>, <mfasheh@suse.de>
 References: <1441916850-19021-1-git-send-email-jbacik@fb.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55F22D85.8010004@cn.fujitsu.com>
-Date: Fri, 11 Sep 2015 09:25:25 +0800
+Message-ID: <55F22D8D.6090406@cn.fujitsu.com>
+Date: Fri, 11 Sep 2015 09:25:33 +0800
 MIME-Version: 1.0
 In-Reply-To: <1441916850-19021-1-git-send-email-jbacik@fb.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed

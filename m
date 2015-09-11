@@ -1,69 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:33477 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751030AbbINGI3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 02:08:29 -0400
-Received: by pacex6 with SMTP id ex6so134429544pac.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:08:29 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3 1/3] btrfs-progs: use calloc instead of malloc+memset for tree roots
-Date: Sun, 13 Sep 2015 23:08:22 -0700
-Message-Id: <0ed7db75e4bebd2b538d7c48c9f43c05c9b14f46.1442210847.git.osandov@osandov.com>
-In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
-References: <cover.1442209006.git.osandov@osandov.com>
+Received: from mx143.netapp.com ([216.240.21.24]:41381 "EHLO mx143.netapp.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751841AbbIKUab (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 11 Sep 2015 16:30:31 -0400
+From: Anna Schumaker <Anna.Schumaker@netapp.com>
+To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
+        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
+        <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
+        <andros@netapp.com>, <hch@infradead.org>
+Subject: [PATCH v2 2/9] x86: add sys_copy_file_range to syscall tables
+Date: Fri, 11 Sep 2015 16:30:15 -0400
+Message-ID: <1442003423-6884-3-git-send-email-Anna.Schumaker@Netapp.com>
+In-Reply-To: <1442003423-6884-1-git-send-email-Anna.Schumaker@Netapp.com>
+References: <1442003423-6884-1-git-send-email-Anna.Schumaker@Netapp.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+From: Zach Brown <zab@redhat.com>
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+Add sys_copy_file_range to the x86 syscall tables.
+
+Signed-off-by: Zach Brown <zab@redhat.com>
+[Anna Schumaker: Update syscall number in syscall_32.tbl]
+Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
 ---
- disk-io.c | 22 +++++++---------------
- 1 file changed, 7 insertions(+), 15 deletions(-)
+ arch/x86/entry/syscalls/syscall_32.tbl | 1 +
+ arch/x86/entry/syscalls/syscall_64.tbl | 1 +
+ 2 files changed, 2 insertions(+)
 
-diff --git a/disk-io.c b/disk-io.c
-index 1d4889322411..8496aded31c4 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -833,13 +833,13 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
+diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+index 477bfa6..6867783 100644
+--- a/arch/x86/entry/syscalls/syscall_32.tbl
++++ b/arch/x86/entry/syscalls/syscall_32.tbl
+@@ -381,3 +381,4 @@
+ 372	i386	recvmsg			sys_recvmsg			compat_sys_recvmsg
+ 373	i386	shutdown		sys_shutdown
+ 374	i386	userfaultfd		sys_userfaultfd
++375	i386	copy_file_range		sys_copy_file_range
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index 81c4906..23baaa5 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -330,6 +330,7 @@
+ 321	common	bpf			sys_bpf
+ 322	64	execveat		stub_execveat
+ 323	common	userfaultfd		sys_userfaultfd
++324	common	copy_file_range		sys_copy_file_range
  
- 	memset(fs_info, 0, sizeof(struct btrfs_fs_info));
- 
--	fs_info->tree_root = malloc(sizeof(struct btrfs_root));
--	fs_info->extent_root = malloc(sizeof(struct btrfs_root));
--	fs_info->chunk_root = malloc(sizeof(struct btrfs_root));
--	fs_info->dev_root = malloc(sizeof(struct btrfs_root));
--	fs_info->csum_root = malloc(sizeof(struct btrfs_root));
--	fs_info->quota_root = malloc(sizeof(struct btrfs_root));
--	fs_info->super_copy = malloc(BTRFS_SUPER_INFO_SIZE);
-+	fs_info->tree_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->extent_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->chunk_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->dev_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->csum_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->quota_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->super_copy = calloc(1, BTRFS_SUPER_INFO_SIZE);
- 
- 	if (!fs_info->tree_root || !fs_info->extent_root ||
- 	    !fs_info->chunk_root || !fs_info->dev_root ||
-@@ -847,14 +847,6 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
- 	    !fs_info->super_copy)
- 		goto free_all;
- 
--	memset(fs_info->super_copy, 0, BTRFS_SUPER_INFO_SIZE);
--	memset(fs_info->tree_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->extent_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->chunk_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->dev_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->csum_root, 0, sizeof(struct btrfs_root));
--	memset(fs_info->quota_root, 0, sizeof(struct btrfs_root));
--
- 	extent_io_tree_init(&fs_info->extent_cache);
- 	extent_io_tree_init(&fs_info->free_space_cache);
- 	extent_io_tree_init(&fs_info->block_group_cache);
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
 -- 
-2.5.2
+2.5.1
 

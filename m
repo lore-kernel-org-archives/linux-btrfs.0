@@ -1,142 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:38322 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751679AbbILWv6 (ORCPT
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:34879 "EHLO
+	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751056AbbIMEzd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Sep 2015 18:51:58 -0400
-Received: by igxx6 with SMTP id x6so60938828igx.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 12 Sep 2015 15:51:57 -0700 (PDT)
+	Sun, 13 Sep 2015 00:55:33 -0400
+Received: by pacfv12 with SMTP id fv12so113713911pac.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 12 Sep 2015 21:55:33 -0700 (PDT)
+Date: Sat, 12 Sep 2015 21:55:30 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Martin Bakiev <mbakiev@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Crash when trying to start a replace on missing device
+Message-ID: <20150913045530.GA24813@mew>
+References: <CAHs_hg33fkxpFzT881BGDOQNBaarcCiROHSG3Q2fCDn_SSLa-g@mail.gmail.com>
 MIME-Version: 1.0
-From: Martin Bakiev <mbakiev@gmail.com>
-Date: Sat, 12 Sep 2015 16:51:18 -0600
-Message-ID: <CAHs_hg33fkxpFzT881BGDOQNBaarcCiROHSG3Q2fCDn_SSLa-g@mail.gmail.com>
-Subject: Crash when trying to start a replace on missing device
-To: linux-btrfs@vger.kernel.org
-Content-Type: multipart/mixed; boundary=089e0122f016f62fd3051f94add7
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAHs_hg33fkxpFzT881BGDOQNBaarcCiROHSG3Q2fCDn_SSLa-g@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---089e0122f016f62fd3051f94add7
-Content-Type: text/plain; charset=UTF-8
+On Sat, Sep 12, 2015 at 04:51:18PM -0600, Martin Bakiev wrote:
+> Hi guys,
+> 
+> I'm just doing testing with btrfs and I ran into a crash when
+> simulating a failed drive. I yanked out one (/dev/sdc) of 4 drives and
+> tried to replace it with another (/dev/sdf) with this command:
+> 
+> btrfs replace start missing /dev/sdf /mount_point -f
+> 
+> That seemed to cause a crash, you can check out the attached dmesg
+> file for stack/more info. I was told to report the crash on from IRC.
+> I hope this helps.
+> 
+> Other info:
+> uname -a:
+> Linux fedora-nas 4.1.6-201.fc22.x86_64 #1 SMP Fri Sep 4 17:49:24 UTC
+> 2015 x86_64 x86_64 x86_64 GNU/Linux
+> 
+> btrfs --version
+> btrfs-progs v4.1
+> 
+> btrfs fi show
+> Label: 'raid5'  uuid: 8b17c1d2-4ef6-4946-b77f-eac57c4e23a6
+>        Total devices 5 FS bytes used 18.32GiB
+>        devid    0 size 4.55TiB used 7.38GiB path /dev/sdf
+>        devid    1 size 4.55TiB used 7.38GiB path /dev/sdb
+>        devid    3 size 4.55TiB used 7.38GiB path /dev/sdd
+>        devid    4 size 4.55TiB used 7.38GiB path /dev/sde
+>        *** Some devices missing
+> 
+> btrfs fi df
+> Data, RAID5: total=21.00GiB, used=18.30GiB
+> System, RAID5: total=96.00MiB, used=16.00KiB
+> Metadata, RAID5: total=1.03GiB, used=19.59MiB
+> GlobalReserve, single: total=16.00MiB, used=0.00B
+> 
+> dmesg attached.
+> 
+> Thanks,
+> Martin
 
-Hi guys,
+Thanks for the report, Martin. This should be fixed in v4.3-rc1 if you
+want to give that a spin. Specifically, you'll want these commits:
 
-I'm just doing testing with btrfs and I ran into a crash when
-simulating a failed drive. I yanked out one (/dev/sdc) of 4 drives and
-tried to replace it with another (/dev/sdf) with this command:
+4a770891d9dd Btrfs: fix parity scrub of RAID 5/6 with missing device
+73ff61dbe5ed Btrfs: fix device replace of a missing RAID 5/6 device
+b4ee1782686d Btrfs: add RAID 5/6 BTRFS_RBIO_REBUILD_MISSING operation
+7cb2c4202ed5 Btrfs: count devices correctly in readahead during RAID 5/6 replace
+03679ade86b2 Btrfs: remove misleading handling of missing device scrub
 
-btrfs replace start missing /dev/sdf /mount_point -f
-
-That seemed to cause a crash, you can check out the attached dmesg
-file for stack/more info. I was told to report the crash on from IRC.
-I hope this helps.
-
-Other info:
-uname -a:
-Linux fedora-nas 4.1.6-201.fc22.x86_64 #1 SMP Fri Sep 4 17:49:24 UTC
-2015 x86_64 x86_64 x86_64 GNU/Linux
-
-btrfs --version
-btrfs-progs v4.1
-
-btrfs fi show
-Label: 'raid5'  uuid: 8b17c1d2-4ef6-4946-b77f-eac57c4e23a6
-       Total devices 5 FS bytes used 18.32GiB
-       devid    0 size 4.55TiB used 7.38GiB path /dev/sdf
-       devid    1 size 4.55TiB used 7.38GiB path /dev/sdb
-       devid    3 size 4.55TiB used 7.38GiB path /dev/sdd
-       devid    4 size 4.55TiB used 7.38GiB path /dev/sde
-       *** Some devices missing
-
-btrfs fi df
-Data, RAID5: total=21.00GiB, used=18.30GiB
-System, RAID5: total=96.00MiB, used=16.00KiB
-Metadata, RAID5: total=1.03GiB, used=19.59MiB
-GlobalReserve, single: total=16.00MiB, used=0.00B
-
-dmesg attached.
-
-Thanks,
-Martin
-
---089e0122f016f62fd3051f94add7
-Content-Type: text/plain; charset=US-ASCII; name="dmesg.txt"
-Content-Disposition: attachment; filename="dmesg.txt"
-Content-Transfer-Encoding: base64
-X-Attachment-Id: f_ieho12zx0
-
-WyA0ODk2LjEyMzEyNF0gQlRSRlM6IGRldl9yZXBsYWNlIGZyb20gPG1pc3NpbmcgZGlzaz4gKGRl
-dmlkIDUpIHRvIC9kZXYvc2RmIHN0YXJ0ZWQKWyA0ODk2LjM4MDI3M10gQlVHOiB1bmFibGUgdG8g
-aGFuZGxlIGtlcm5lbCBOVUxMIHBvaW50ZXIgZGVyZWZlcmVuY2UgYXQgMDAwMDAwMDAwMDAwMDA5
-OApbIDQ4OTYuMzgwMzUxXSBJUDogWzxmZmZmZmZmZjgxMzc2NjUxPl0gYmlvX2FkZF9wYWdlKzB4
-MTEvMHhhMApbIDQ4OTYuMzgwNDA0XSBQR0QgMjc0NTA2MDY3IFBVRCAyNzQ1MDcwNjcgUE1EIDAg
-ClsgNDg5Ni4zODA0NDldIE9vcHM6IDAwMDAgWyMxXSBTTVAgClsgNDg5Ni4zODA0ODFdIE1vZHVs
-ZXMgbGlua2VkIGluOiBpcDZ0X3JwZmlsdGVyIGlwNnRfUkVKRUNUIG5mX3JlamVjdF9pcHY2IHh0
-X2Nvbm50cmFjayBlYnRhYmxlX25hdCBlYnRhYmxlX2Jyb3V0ZSBicmlkZ2Ugc3RwIGxsYyBlYnRh
-YmxlX2ZpbHRlciBlYnRhYmxlcyBpcDZ0YWJsZV9uYXQgbmZfY29ubnRyYWNrX2lwdjYgbmZfZGVm
-cmFnX2lwdjYgbmZfbmF0X2lwdjYgaXA2dGFibGVfbWFuZ2xlIGlwNnRhYmxlX3NlY3VyaXR5IGlw
-NnRhYmxlX3JhdyBpcDZ0YWJsZV9maWx0ZXIgaXA2X3RhYmxlcyBpcHRhYmxlX25hdCBuZl9jb25u
-dHJhY2tfaXB2NCBuZl9kZWZyYWdfaXB2NCBuZl9uYXRfaXB2NCBuZl9uYXQgbmZfY29ubnRyYWNr
-IGlwdGFibGVfbWFuZ2xlIGlwdGFibGVfc2VjdXJpdHkgaXB0YWJsZV9yYXcgY29yZXRlbXAga3Zt
-X2ludGVsIGt2bSBncGlvX2ljaCBpVENPX3dkdCBpVENPX3ZlbmRvcl9zdXBwb3J0IGlwbWlfc3Np
-ZiBjcmN0MTBkaWZfcGNsbXVsIGNyYzMyX3BjbG11bCBnaGFzaF9jbG11bG5pX2ludGVsIGpveWRl
-diBscGNfaWNoIGkyY19pODAxIG1mZF9jb3JlIGlwbWlfc2kgdHBtX3RpcyBpMmNfaXNtdCBpcG1p
-X21zZ2hhbmRsZXIgdHBtIHNocGNocCBhY3BpX2NwdWZyZXEgbmZzZCBhdXRoX3JwY2dzcyBuZnNf
-YWNsIGxvY2tkIGdyYWNlIHN1bnJwYyBidHJmcyB4b3IgcmFpZDZfcHEgYXN0IGRybV9rbXNfaGVs
-cGVyIGNyYzMyY19pbnRlbCB0dG0gc2VyaW9fcmF3IGlnYiBkcm0gbXB0MnNhcyBwdHAgcHBzX2Nv
-cmUgZGNhIGkyY19hbGdvX2JpdCByYWlkX2NsYXNzIHNjc2lfdHJhbnNwb3J0X3NhcwoKWyA0ODk2
-LjM4MTIxOV0gQ1BVOiAyIFBJRDogNjMzNyBDb21tOiBidHJmcyBOb3QgdGFpbnRlZCA0LjEuNi0y
-MDEuZmMyMi54ODZfNjQgIzEKWyA0ODk2LjM4MTI3NV0gSGFyZHdhcmUgbmFtZTogVG8gQmUgRmls
-bGVkIEJ5IE8uRS5NLiBUbyBCZSBGaWxsZWQgQnkgTy5FLk0uL0MyNTUwRDRJLCBCSU9TIFAyLjEw
-IDA4LzA2LzIwMTQKWyA0ODk2LjM4MTM0OF0gdGFzazogZmZmZjg4MDI3MzRjYjE2MCB0aTogZmZm
-Zjg4MDFmNmRlMDAwMCB0YXNrLnRpOiBmZmZmODgwMWY2ZGUwMDAwClsgNDg5Ni4zODE0MDZdIFJJ
-UDogMDAxMDpbPGZmZmZmZmZmODEzNzY2NTE+XSAgWzxmZmZmZmZmZjgxMzc2NjUxPl0gYmlvX2Fk
-ZF9wYWdlKzB4MTEvMHhhMApbIDQ4OTYuMzgxNDc2XSBSU1A6IDAwMTg6ZmZmZjg4MDFmNmRlMzc1
-OCAgRUZMQUdTOiAwMDAxMDI0NgpbIDQ4OTYuMzgxNTE1XSBSQVg6IDAwMDAwMDAwMDAwMDAwMDAg
-UkJYOiBmZmZmODgwMTdhYjJjNjAwIFJDWDogMDAwMDAwMDAwMDAwMDAwMApbIDQ4OTYuMzgxNTY3
-XSBSRFg6IDAwMDAwMDAwMDAwMDEwMDAgUlNJOiBmZmZmZWEwMDA1OGUwZGMwIFJESTogZmZmZjg4
-MDI1NjZiZjZlOApbIDQ4OTYuMzgxNjE4XSBSQlA6IGZmZmY4ODAxZjZkZTM3NTggUjA4OiBmZmZm
-ODgwMjdmZDFhYzAwIFIwOTogMDAwMDAwMDAwMDAwMDgwMApbIDQ4OTYuMzgxNjY5XSBSMTA6IGZm
-ZmZlYTAwMDljZDIxMDAgUjExOiAwMDAwMDAwMDAwMjgwMDAwIFIxMjogZmZmZjg4MDAwZjM0OGEx
-OApbIDQ4OTYuMzgxNzIwXSBSMTM6IGZmZmY4ODAxMWIwNDk3ODAgUjE0OiBmZmZmODgwMjczOTdl
-OTAwIFIxNTogZmZmZjg4MDAwZjM0ODgwMApbIDQ4OTYuMzgxNzcxXSBGUzogIDAwMDA3ZjVlMDc0
-Mjc4YzAoMDAwMCkgR1M6ZmZmZjg4MDI3ZmQwMDAwMCgwMDAwKSBrbmxHUzowMDAwMDAwMDAwMDAw
-MDAwClsgNDg5Ni4zODM1NDFdIENTOiAgMDAxMCBEUzogMDAwMCBFUzogMDAwMCBDUjA6IDAwMDAw
-MDAwODAwNTAwM2IKWyA0ODk2LjM4NTMxOF0gQ1IyOiAwMDAwMDAwMDAwMDAwMDk4IENSMzogMDAw
-MDAwMDI2NzcwMzAwMCBDUjQ6IDAwMDAwMDAwMDAxMDA2ZTAKWyA0ODk2LjM4NzEwOV0gU3RhY2s6
-ClsgNDg5Ni4zODg4ODFdICBmZmZmODgwMWY2ZGUzN2Q4IGZmZmZmZmZmYTAyNjI4MjggZmZmZjg4
-MDFmNmRlMzc5MCBmZmZmODgwMDBmMzQ4YTIwClsgNDg5Ni4zOTA2ODddICAwMDAwMDAwMDAwMDAw
-MDAwIDAwMDAwMDAwMDAwMDAwMDAgZmZmZjg4MDFmNmRlMzdkOCBmZmZmZmZmZjgxMjAwNDExClsg
-NDg5Ni4zOTI0NjddICBmZmZmODgwMjczNGNiMTYwIDAwMDAwMDAwZTk1ODc3OTUgZmZmZjg4MDAw
-ZjM0OGE0MCBmZmZmODgwMjczOTdlOTAwClsgNDg5Ni4zOTQyNzRdIENhbGwgVHJhY2U6ClsgNDg5
-Ni4zOTYxMThdICBbPGZmZmZmZmZmYTAyNjI4Mjg+XSBzY3J1Yl9hZGRfcGFnZV90b19yZF9iaW8r
-MHhjOC8weDJiMCBbYnRyZnNdClsgNDg5Ni4zOTc5NjFdICBbPGZmZmZmZmZmODEyMDA0MTE+XSA/
-IGFsbG9jX3BhZ2VzX2N1cnJlbnQrMHg5MS8weDExMApbIDQ4OTYuMzk5ODM2XSAgWzxmZmZmZmZm
-ZmEwMjY1MjU0Pl0gc2NydWJfcGFnZXMrMHgxZjQvMHgyODAgW2J0cmZzXQpbIDQ4OTYuNDAxNjky
-XSAgWzxmZmZmZmZmZmEwMjY1ZjJiPl0gc2NydWJfc3RyaXBlKzB4ODJiLzB4MTA5MCBbYnRyZnNd
-ClsgNDg5Ni40MDM1NzBdICBbPGZmZmZmZmZmYTAyNjY4YWI+XSBzY3J1Yl9jaHVuay5pc3JhLjE5
-KzB4MTFiLzB4MTQwIFtidHJmc10KWyA0ODk2LjQwNTQ3MF0gIFs8ZmZmZmZmZmZhMDI2NmI0OT5d
-IHNjcnViX2VudW1lcmF0ZV9jaHVua3MrMHgyNzkvMHg0ZjAgW2J0cmZzXQpbIDQ4OTYuNDA3Mzk3
-XSAgWzxmZmZmZmZmZmEwMjY1NjkxPl0gPyBzY3J1Yl9zZXR1cF9jdHguaXNyYS4xNysweDIzMS8w
-eDJhMCBbYnRyZnNdClsgNDg5Ni40MDkzMTddICBbPGZmZmZmZmZmYTAyNjg0YjA+XSBidHJmc19z
-Y3J1Yl9kZXYrMHgxYzAvMHg1NzAgW2J0cmZzXQpbIDQ4OTYuNDExMjQyXSAgWzxmZmZmZmZmZmEw
-MjdjZjUxPl0gYnRyZnNfZGV2X3JlcGxhY2Vfc3RhcnQrMHgzNTEvMHgzYjAgW2J0cmZzXQpbIDQ4
-OTYuNDEzMTczXSAgWzxmZmZmZmZmZmEwMjQwOThjPl0gYnRyZnNfaW9jdGwrMHgxYzZjLzB4Mjkz
-MCBbYnRyZnNdClsgNDg5Ni40MTUwNzFdICBbPGZmZmZmZmZmODExYWNiNzE+XSA/IHVubG9ja19w
-YWdlKzB4NzEvMHg5MApbIDQ4OTYuNDE2OTUwXSAgWzxmZmZmZmZmZjgxMWFkNjQ3Pl0gPyBmaWxl
-bWFwX21hcF9wYWdlcysweDJjNy8weDJlMApbIDQ4OTYuNDE4ODUzXSAgWzxmZmZmZmZmZjgxMWUw
-NGMyPl0gPyBoYW5kbGVfbW1fZmF1bHQrMHgxMTMyLzB4MTgyMApbIDQ4OTYuNDIwNzcyXSAgWzxm
-ZmZmZmZmZjgxMjMwNGI2Pl0gPyBjcF9uZXdfc3RhdCsweDE1Ni8weDE5MApbIDQ4OTYuNDIyNzEx
-XSAgWzxmZmZmZmZmZjgxMjNmY2Y2Pl0gZG9fdmZzX2lvY3RsKzB4MmM2LzB4NGQwClsgNDg5Ni40
-MjQ2MzJdICBbPGZmZmZmZmZmODEyM2ZmODE+XSBTeVNfaW9jdGwrMHg4MS8weGEwClsgNDg5Ni40
-MjY1NDddICBbPGZmZmZmZmZmODEwNjhlZmY+XSA/IGRvX3BhZ2VfZmF1bHQrMHgyZi8weDgwClsg
-NDg5Ni40Mjg0NjJdICBbPGZmZmZmZmZmODE3YTAwMmU+XSBzeXN0ZW1fY2FsbF9mYXN0cGF0aCsw
-eDEyLzB4NzEKWyA0ODk2LjQzMDM3OV0gQ29kZTogMWYgMDAgNTUgNDggODkgZTUgZTggNWYgZmQg
-ZmYgZmYgNWQgYzMgMGYgMWYgNDQgMDAgMDAgMzEgYzAgYzMgMGYgMWYgNDQgMDAgMDAgMGYgMWYg
-NDQgMDAgMDAgNTUgNDggOGIgNDcgMDggNGMgOGIgNGYgMjAgNDggODkgZTUgPDQ4PiA4YiA4MCA5
-OCAwMCAwMCAwMCA0YyA4YiA5MCA3OCAwMyAwMCAwMCA0MSA4YiA4MiBmYyAwNSAwMCAwMCAKWyA0
-ODk2LjQzNDQ5MF0gUklQICBbPGZmZmZmZmZmODEzNzY2NTE+XSBiaW9fYWRkX3BhZ2UrMHgxMS8w
-eGEwClsgNDg5Ni40MzY0ODJdICBSU1AgPGZmZmY4ODAxZjZkZTM3NTg+ClsgNDg5Ni40Mzg0NTld
-IENSMjogMDAwMDAwMDAwMDAwMDA5OApbIDQ4OTYuODM1MzY5XSAtLS1bIGVuZCB0cmFjZSA5MGM2
-OThiZjkwMTBkNmI3IF0tLS0K
---089e0122f016f62fd3051f94add7--
+-- 
+Omar

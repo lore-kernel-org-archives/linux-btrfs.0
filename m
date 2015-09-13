@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f176.google.com ([209.85.212.176]:35616 "EHLO
-	mail-wi0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752666AbbIMPe4 (ORCPT
+Received: from mail-wi0-f180.google.com ([209.85.212.180]:36529 "EHLO
+	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752701AbbIMPvQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Sep 2015 11:34:56 -0400
-Date: Sun, 13 Sep 2015 18:34:37 +0000
+	Sun, 13 Sep 2015 11:51:16 -0400
+Date: Sun, 13 Sep 2015 18:50:57 +0000
 From: Alexandru Moise <00moses.alexander00@gmail.com>
 To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
 	<holger.hoffstaette@googlemail.com>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
 Subject: Re: [PATCH 1/2] btrfs: avoid passing int param to start_transaction
  which takes u64
-Message-ID: <20150913183437.GA24975@gmail.com>
+Message-ID: <20150913185057.GA28831@gmail.com>
 References: <20150913142941.GA7154@gmail.com>
  <pan.2015.09.13.14.53.14@googlemail.com>
 MIME-Version: 1.0
@@ -57,5 +56,7 @@ On Sun, Sep 13, 2015 at 02:53:14PM +0000, Holger Hoffstätte wrote:
 > 
 > You need to update transaction.h as well.
 
-The heck? I pulled from linus' tree earlier today and it built, I'll check again.
-Thanks for telling me.
+Dammit, yes. I only added transaction.c when I commited. Serves me right.
+I am an idiot for not running git status after git commit. Thanks a
+lot for telling me.
+Just sent an amended patch.

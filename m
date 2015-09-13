@@ -1,102 +1,346 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx144.netapp.com ([216.240.21.25]:49777 "EHLO mx144.netapp.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754009AbbIKUa2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Sep 2015 16:30:28 -0400
-From: Anna Schumaker <Anna.Schumaker@netapp.com>
-To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
-        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
-        <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
-        <andros@netapp.com>, <hch@infradead.org>
-Subject: [PATCH v2 0/9] VFS: In-kernel copy system call
-Date: Fri, 11 Sep 2015 16:30:13 -0400
-Message-ID: <1442003423-6884-1-git-send-email-Anna.Schumaker@Netapp.com>
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:33242 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751139AbbIMHuZ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 13 Sep 2015 03:50:25 -0400
+Message-ID: <55F52ABA.9070908@gmail.com>
+Date: Sun, 13 Sep 2015 09:50:18 +0200
+From: "Michael Kerrisk (man-pages)" <mtk.manpages@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+To: Anna Schumaker <Anna.Schumaker@netapp.com>, linux-nfs@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org, zab@zabbo.net, viro@zeniv.linux.org.uk,
+        clm@fb.com, darrick.wong@oracle.com, andros@netapp.com,
+        hch@infradead.org
+CC: mtk.manpages@gmail.com
+Subject: Re: [PATCH v2 10/9] copy_file_range.2: New page documenting copy_file_range()
+References: <1442003423-6884-1-git-send-email-Anna.Schumaker@Netapp.com> <1442003423-6884-11-git-send-email-Anna.Schumaker@Netapp.com>
+In-Reply-To: <1442003423-6884-11-git-send-email-Anna.Schumaker@Netapp.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Copy system calls came up during Plumbers a couple of weeks ago, because
-several filesystems (including NFS and XFS) are currently working on copy
-acceleration implementations.  We haven't heard from Zach Brown in a while,
-so I volunteered to push his patches upstream so individual filesystems
-don't need to keep writing their own ioctls.
+Hi Anna,
 
-Changes in v2:
-- Update against the most recent Linus kernel
-  - Fix conflicts due to new system calls
-- Remove requirement that inode_in == inode_out
-- Drop patch to add mountpoint checking to btrfs
-  - btrfs already did this check
-- Rename COPY_REFLINK -> COPY_FR_REFLINK
-- Add COPY_FR_COPY flag
-- Expand flags == 0 to (COPY_FR_COPY | COPY_FR_REFLINK)
-- Remove checking for invalid flags
-- Create a new function for handling pagecache copies
-- Move rw_verify_area() checks into the new pagecache-copy function
-  - Use the return value from rw_verify_area() to set amount of data to copy
-- Update man page
+On 09/11/2015 10:30 PM, Anna Schumaker wrote:
+> copy_file_range() is a new system call for copying ranges of data
+> completely in the kernel.  This gives filesystems an opportunity to
+> implement some kind of "copy acceleration", such as reflinks or
+> server-side-copy (in the case of NFS).
+> 
+> Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
 
-I tested the COPY_FR_COPY flag by using /dev/urandom to generate files of
-varying sizes and copying them.  I compared the output from `time` against
-that of `cp` to see if there is any noticable difference.  I think there
-have been some libvirt changes since my first set of trials, because this
-time around cpu usage was down significantly.  This time around, VFS copy
-was slightly faster than /usr/bin/cp in all cases.  Values in the tables
-below are averages across multiple trials.
+Thanks for writing such a nice first draft man page! I have a few
+comments below. Would you be willing to revise and resubmit?
 
+> ---
+>  man2/copy_file_range.2 | 188 +++++++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 188 insertions(+)
+>  create mode 100644 man2/copy_file_range.2
+> 
+> diff --git a/man2/copy_file_range.2 b/man2/copy_file_range.2
+> new file mode 100644
+> index 0000000..84912b5
+> --- /dev/null
+> +++ b/man2/copy_file_range.2
+> @@ -0,0 +1,188 @@
+> +.\"This manpage is Copyright (C) 2015 Anna Schumaker <Anna.Schumaker@Netapp.com>
 
- /usr/bin/cp |   512  |  1024  |  1536  |  2048  |  2560  |  3072  |  5120
--------------|--------|--------|--------|--------|--------|--------|--------
-        user |  0.00s |  0.01s |  0.01s |  0.01s |  0.01s |  0.01s |  0.02s
-      system |  0.68s |  0.48s |  0.74s |  0.99s |  1.25s |  1.50s |  2.51s
-         cpu |    34% |    14% |    14% |    15% |    14% |    14% |    15%
-       total |  1.993 |  3.314 |  4.994 |  6.599 |  8.627 | 10.079 | 16.852
+We need a license for this page. Please see
+https://www.kernel.org/doc/man-pages/licenses.html
 
+> +.TH COPY 2 2015-8-31 "Linux" "Linux Programmer's Manual"
 
-    VFS copy |   512  |  1024  |  1536  |  2048  |  2560  |  3072  |  5120
--------------|--------|--------|--------|--------|--------|--------|--------
-        user |  0.00s |  0.00s |  0.00s |  0.00s |  0.00s |  0.00s |  0.00s
-      system |  0.65s |  0.46s |  0.70s |  0.93s |  1.18s |  1.41s |  2.37s
-         cpu |    35% |    14% |    15% |    14% |    14% |    14% |    14%
-       total |  1.870 |  3.084 |  4.613 |  6.206 |  7.884 |  9.372 | 15.904
+Make the month 2 digits (leading 0).
 
+> +.SH NAME
+> +copy_file_range \- Copy a range of data from one file to another
+> +.SH SYNOPSIS
+> +.nf
+> +.B #include <linux/copy.h>
+> +.B #include <sys/syscall.h>
+> +.B #include <unistd.h>
+> +
+> +.BI "ssize_t syscall(__NR_copy_file_range, int " fd_in ", loff_t * " off_in ",
+> +.BI "                int " fd_out ", loff_t * " off_out ", size_t " len ",
+> +.BI "                unsigned int " flags );
 
-Questions?  Comments?  Thoughts?
+Remove spaces following "*" in the lines above. (man-pages convention for code)
 
-Anna
+I know that the copy_file_range() (obviously) doesn't yet have a wrapper
+in glibc, but in the man pages we document all system calls as though there
+is a wrapper. See, for example, gettid(2), for an axample of how this is done
+(a note in the SYNOPSIS and then some further details in NOTES).
 
+> +.fi
+> +.SH DESCRIPTION
+> +The
+> +.BR copy_file_range ()
+> +system call performs an in-kernel copy between two file descriptors
+> +without all that tedious mucking about in userspace.
 
-Anna Schumaker (6):
-  vfs: Copy should check len after file open mode
-  vfs: Copy shouldn't forbid ranges inside the same file
-  vfs: Copy should use file_out rather than file_in
-  vfs: Remove copy_file_range mountpoint checks
-  vfs: copy_file_range() can do a pagecache copy with splice
-  btrfs: btrfs_copy_file_range() only supports reflinks
+I'd write that last piece as:
 
-Zach Brown (3):
-  vfs: add copy_file_range syscall and vfs helper
-  x86: add sys_copy_file_range to syscall tables
-  btrfs: add .copy_file_range file operation
+"without the cost of (a loop) transferring data from the kernel to a 
+user-space buffer and then back to the kernel again.
 
- arch/x86/entry/syscalls/syscall_32.tbl |   1 +
- arch/x86/entry/syscalls/syscall_64.tbl |   1 +
- fs/btrfs/ctree.h                       |   3 +
- fs/btrfs/file.c                        |   1 +
- fs/btrfs/ioctl.c                       |  95 ++++++++++++++----------
- fs/read_write.c                        | 132 +++++++++++++++++++++++++++++++++
- include/linux/copy.h                   |   6 ++
- include/linux/fs.h                     |   3 +
- include/uapi/asm-generic/unistd.h      |   4 +-
- include/uapi/linux/Kbuild              |   1 +
- include/uapi/linux/copy.h              |   7 ++
- kernel/sys_ni.c                        |   1 +
- 12 files changed, 215 insertions(+), 40 deletions(-)
- create mode 100644 include/linux/copy.h
- create mode 100644 include/uapi/linux/copy.h
+> +It copies up to
+> +.I len
+> +bytes of data from file descriptor
+> +.I fd_in
+> +to file descriptor
+> +.IR fd_out ,
+> +overwriting any data that exists within the requested range.
+
+s/.$/ of the target file./
+
+> +
+> +The following semantics apply for
+> +.IR off_in ,
+> +and similar statements apply to
+> +.IR off_out :
+> +.IP * 3
+> +If
+> +.I off_in
+> +is NULL, then bytes are read from
+> +.I fd_in
+> +starting from the current file offset and the current
+> +file offset is adjusted appropriately.
+> +.IP *
+> +If
+> +.I off_in
+> +is not NULL, then
+> +.I off_in
+> +must point to a buffer that specifies the starting
+> +offset where bytes from
+> +.I fd_in
+> +will be read.  The current file offset of
+> +.I fd_in
+> +is not changed, but
+> +.I off_in
+> +is adjusted appropriately.
+> +.PP
+> +
+> +The
+> +.I flags
+> +argument is a bit mask composed by OR-ing together zero
+> +or more of the following flags:
+> +.TP 1.9i
+> +.B COPY_FR_COPY
+> +Copy all the file data in the requested range.
+> +Some filesystems, like NFS, might be able to accelerate this copy
+> +to avoid unnecessary data transfers.
+> +.TP
+> +.B COPY_FR_REFLINK
+> +Create a lightweight "reflink", where data is not copied until
+> +one of the files is modified.
+> +.PP
+> +The default behavior
+> +.RI ( flags
+> +== 0) is to try creating a reflink,
+> +and if reflinking fails
+> +.BR copy_file_range ()
+> +will fall back on performing a full data copy.
+
+s/back on/back to/
+
+> +This is equivalent to setting
+> +.I flags
+> +equal to
+> +.RB ( COPY_FR_COPY | COPY_FR_REFLINK ).
+
+So, from an API deign perspective, the interoperation of these two
+flags appears odd. Bit flags are commonly (not always) orthogonal.
+I think here it could be pointed out a little more explicitly that
+these two flags are not orthogonal. In particular, perhaps after the
+last sentence, you could add another sentence:
+
+[[
+(This contrasts with specifying
+.I flags
+as just
+.BR COPY_FR_REFLINK ,
+which causes the call to create a reflink,
+and fail if that is not possible,
+rather than falling back to a full data copy.)
+]]
+
+Furthermore, I even wonder if explicitly specifying flags as
+COPY_FR_COPY | COPY_FR_REFLINK should just generate an EINVAL
+error. 0 already gives us the behavior described above,
+and allowing the combination COPY_FR_COPY | COPY_FR_REFLINK
+perhaps just contributes to misleading the user that these
+flags are orthogonal, when in reality they are not. What do
+you think?
+
+What are the semantics with respect to signals, especially if data 
+copying a very large file range? This info should be included in the 
+man page, probably under NOTES.
+
+> +.SH RETURN VALUE
+> +Upon successful completion,
+> +.BR copy_file_range ()
+> +will return the number of bytes copied between files.
+> +This could be less than the length originally requested.
+> +
+> +On error,
+> +.BR copy_file_range ()
+> +returns \-1 and
+> +.I errno
+> +is set to indicate the error.
+> +.SH ERRORS
+> +.TP
+> +.B EBADF
+> +One or more file descriptors are not valid,
+> +or do not have proper read-write mode;
+
+I think that last line can go. I mean, isn't this point (again)
+covered in the next few lines?
+
+> +.I fd_in
+> +is not open for reading; or
+> +.I fd_out
+> +is not open for writing.
+> +.TP
+> +.B EINVAL
+> +Requested range extends beyond the end of the file; or the
+
+s/file/source file/  (right?)
+
+> +.I flags
+> +argument is set to an invalid value.
+> +.TP
+> +.B EIO
+> +A low level I/O error occurred while copying.
+> +.TP
+> +.B ENOMEM
+> +Out of memory.
+> +.TP
+> +.B ENOSPC
+> +There is not enough space to complete the copy.
+
+Space where? On the filesystem?
+=> s/space/space on the target filesystem/
+
+> +.TP
+> +.B EOPNOTSUPP
+> +.B COPY_REFLINK
+> +was specified in
+> +.IR flags ,
+> +but the target filesystem does not support reflinks.
+> +.TP
+> +.B EXDEV
+> +Target filesystem doesn't support cross-filesystem copies.
+
+I'm curious. What are some examples of filesystems that produce this
+error?
+
+> +.SH VERSIONS
+> +The
+> +.BR copy_file_range ()
+> +system call first appeared in Linux 4.4.
+> +.SH CONFORMING TO
+> +The
+> +.BR copy_file_range ()
+> +system call is a nonstandard Linux extension.
+> +.SH EXAMPLE
+> +.nf
+> +
+> +#define _GNU_SOURCE
+> +#include <fcntl.h>
+> +#include <linux/copy.h>
+> +#include <stdio.h>
+> +#include <stdlib.h>
+> +#include <sys/stat.h>
+> +#include <sys/syscall.h>
+> +#include <unistd.h>
+> +
+> +
+> +int main(int argc, char **argv)
+> +{
+> +    int fd_in, fd_out;
+> +    struct stat stat;
+> +    loff_t len, ret;
+> +
+> +    if (argc != 3) {
+> +        fprintf(stderr, "Usage: %s <source> <destination>\\n", argv[0]);
+> +        exit(EXIT_FAILURE);
+> +    }
+> +
+> +    fd_in = open(argv[1], O_RDONLY);
+> +    if (fd_in == -1) {
+
+Please replace all "-" in code by "\-". (This is a groff
+detail.)
+
+> +        perror("open (argv[1])");
+> +        exit(EXIT_FAILURE);
+> +    }
+> +
+> +    if (fstat(fd_in, &stat) == -1) {
+> +        perror("fstat");
+> +        exit(EXIT_FAILURE);
+> +    }
+> +    len = stat.st_size;
+> +
+> +    fd_out = creat(argv[2], 0644);
+
+These days, I think we should discourage the use of creat(). Maybe 
+better to use open() instead here?
+
+> +    if (fd_out == -1) {
+> +        perror("creat (argv[2])");
+> +        exit(EXIT_FAILURE);
+> +    }
+> +
+> +    do {
+> +        ret = syscall(__NR_copy_file_range, fd_in, NULL,
+> +                      fd_out, NULL, len, 0);
+
+I'd rather see this as:
+
+int
+copy_file_range(int fd_in, loff_t *off_in,
+                int fd_out, loff_t *off_out, size_t len,
+                unsigned int flags)
+{
+    return(syscall(__NR_copy_file_range, fd_in, fd_out, off_out, len, flags);
+}
+
+...
+
+    copy_file_range(fd_in, fd_out, off_out, len, flags);
+
+ 
+> +        if (ret == -1) {
+> +            perror("copy_file_range");
+> +            exit(EXIT_FAILURE);
+> +        }
+> +
+> +        len -= ret;
+> +    } while (len > 0);
+> +
+> +    close(fd_in);
+> +    close(fd_out);
+> +    exit(EXIT_SUCCESS);
+> +}
+> +.fi
+> +.SH SEE ALSO
+> +.BR splice (2)
+> 
+
+In the next iteration of this patch, could you include a change to
+splice(2) so that copy_file_range(2) is added under SEE ALSO in
+that page. Also, are there any other pages that we should like
+to/from? (sendfile(2)?)
+
+Thanks,
+
+Michael
+
 
 -- 
-2.5.1
-
+Michael Kerrisk
+Linux man-pages maintainer; http://www.kernel.org/doc/man-pages/
+Linux/UNIX System Programming Training: http://man7.org/training/

@@ -1,352 +1,427 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62612 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755194AbbINJIm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 05:08:42 -0400
-Subject: Re: [PATCH] Btrfs: fix read corruption of compressed and shared
- extents
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
-References: <1442219346-14641-1-git-send-email-fdmanana@kernel.org>
-CC: Filipe Manana <fdmanana@suse.com>, <stable@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55F68E92.2000203@cn.fujitsu.com>
-Date: Mon, 14 Sep 2015 17:08:34 +0800
+Received: from mail.kernel.org ([198.145.29.136]:39176 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755019AbbINJWn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Sep 2015 05:22:43 -0400
 MIME-Version: 1.0
-In-Reply-To: <1442219346-14641-1-git-send-email-fdmanana@kernel.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <55F68E92.2000203@cn.fujitsu.com>
+References: <1442219346-14641-1-git-send-email-fdmanana@kernel.org>
+	<55F68E92.2000203@cn.fujitsu.com>
+Date: Mon, 14 Sep 2015 10:22:39 +0100
+Message-ID: <CAL3q7H4q_sw+01+LVYa7FszFHsUy2XFb13C8LfXuS4SJk3LuLA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix read corruption of compressed and shared extents
+From: Filipe Manana <fdmanana@kernel.org>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Filepe,
+On Mon, Sep 14, 2015 at 10:08 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> Hi Filepe,
+>
+>
+>  wrote on 2015/09/14 09:29 +0100:
+>>
+>> From: Filipe Manana <fdmanana@suse.com>
+>>
+>> If a file has a range pointing to a compressed extent, followed by
+>> another range that points to the same compressed extent and a read
+>> operation attempts to read both ranges (either completely or part of
+>> them), the pages that correspond to the second range are incorrectly
+>> filled with zeroes.
+>>
+>> Consider the following example:
+>>
+>>    File layout
+>>    [0 - 8K]                      [8K - 24K]
+>>        |                             |
+>>        |                             |
+>>     points to extent X,         points to extent X,
+>>     offset 4K, length of 8K     offset 0, length 16K
+>>
+>>    [extent X, compressed length = 4K uncompressed length = 16K]
+>>
+>> If a readpages() call spans the 2 ranges, a single bio to read the extent
+>> is submitted - extent_io.c:submit_extent_page() would only create a new
+>> bio to cover the second range pointing to the extent if the extent it
+>> points to had a different logical address than the extent associated with
+>> the first range. This has a consequence of the compressed read end io
+>> handler (compression.c:end_compressed_bio_read()) finish once the extent
+>> is decompressed into the pages covering the first range, leaving the
+>> remaining pages (belonging to the second range) filled with zeroes (done
+>> by compression.c:btrfs_clear_biovec_end()).
+>>
+>> So fix this by submitting the current bio whenever we find a range
+>> pointing to a compressed extent that was preceded by a range with a
+>> different extent map. This is the simplest solution for this corner
+>> case. Making the end io callback populate both ranges (or more, if we
+>> have multiple pointing to the same extent) is a much more complex
+>> solution since each bio is tightly coupled with a single extent map and
+>> the extent maps associated to the ranges pointing to the shared extent
+>> can have different offsets and lengths.
+>>
+>> The following test case for fstests triggers the issue:
+>>
+>>    seq=`basename $0`
+>>    seqres=$RESULT_DIR/$seq
+>>    echo "QA output created by $seq"
+>>    tmp=/tmp/$$
+>>    status=1     # failure is the default!
+>>    trap "_cleanup; exit \$status" 0 1 2 3 15
+>>
+>>    _cleanup()
+>>    {
+>>        rm -f $tmp.*
+>>    }
+>>
+>>    # get standard environment, filters and checks
+>>    . ./common/rc
+>>    . ./common/filter
+>>
+>>    # real QA test starts here
+>>    _need_to_be_root
+>>    _supported_fs btrfs
+>>    _supported_os Linux
+>>    _require_scratch
+>>    _require_cloner
+>>
+>>    rm -f $seqres.full
+>>
+>>    test_clone_and_read_compressed_extent()
+>>    {
+>>        local mount_opts=$1
+>>
+>>        _scratch_mkfs >>$seqres.full 2>&1
+>>        _scratch_mount $mount_opts
+>>
+>>        # Create a test file with a single extent that is compressed (the
+>>        # data we write into it is highly compressible no matter which
+>>        # compression algorithm is used, zlib or lzo).
+>>        $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 4K"        \
+>>                        -c "pwrite -S 0xbb 4K 8K"        \
+>>                        -c "pwrite -S 0xcc 12K 4K"       \
+>>                        $SCRATCH_MNT/foo | _filter_xfs_io
+>>
+>>        # Now clone our extent into an adjacent offset.
+>>        $CLONER_PROG -s $((4 * 1024)) -d $((16 * 1024)) -l $((8 * 1024)) \
+>>            $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+>>
+>>        # Same as before but for this file we clone the extent into a lower
+>>        # file offset.
+>>        $XFS_IO_PROG -f -c "pwrite -S 0xaa 8K 4K"         \
+>>                        -c "pwrite -S 0xbb 12K 8K"        \
+>>                        -c "pwrite -S 0xcc 20K 4K"        \
+>>                        $SCRATCH_MNT/bar | _filter_xfs_io
+>>
+>>        $CLONER_PROG -s $((12 * 1024)) -d 0 -l $((8 * 1024)) \
+>>            $SCRATCH_MNT/bar $SCRATCH_MNT/bar
+>>
+>>        echo "File digests before unmounting filesystem:"
+>>        md5sum $SCRATCH_MNT/foo | _filter_scratch
+>>        md5sum $SCRATCH_MNT/bar | _filter_scratch
+>>
+>>        # Evicting the inode or clearing the page cache before reading
+>>        # again the file would also trigger the bug - reads were returning
+>>        # all bytes in the range corresponding to the second reference to
+>>        # the extent with a value of 0, but the correct data was persisted
+>>        # (it was a bug exclusively in the read path). The issue happened
+>>        # only if the same readpages() call targeted pages belonging to the
+>>        # first and second ranges that point to the same compressed extent.
+>>        _scratch_remount
+>>
+>>        echo "File digests after mounting filesystem again:"
+>>        # Must match the same digests we got before.
+>>        md5sum $SCRATCH_MNT/foo | _filter_scratch
+>>        md5sum $SCRATCH_MNT/bar | _filter_scratch
+>>    }
+>>
+>>    echo -e "\nTesting with zlib compression..."
+>>    test_clone_and_read_compressed_extent "-o compress=zlib"
+>>
+>>    _scratch_unmount
+>>
+>>    echo -e "\nTesting with lzo compression..."
+>>    test_clone_and_read_compressed_extent "-o compress=lzo"
+>>
+>>    status=0
+>>    exit
+>>
+>> Cc: stable@vger.kernel.org
+>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>
+> Thanks for the fix.
+>
+> Most of it seems good for me.
+> Feel free to add "Reviewed-by: Qu Wenruo<quwenruo@cn.fujitsu.com>"
+>
+> But as mentioned by yourself, I personally consider the patch more as a hot
+> fix, other than a root fix.
+> Although it's good enough for now.
+>
+> One of the problem is the impact on read performance.
 
-  wrote on 2015/09/14 09:29 +0100:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> If a file has a range pointing to a compressed extent, followed by
-> another range that points to the same compressed extent and a read
-> operation attempts to read both ranges (either completely or part of
-> them), the pages that correspond to the second range are incorrectly
-> filled with zeroes.
->
-> Consider the following example:
->
->    File layout
->    [0 - 8K]                      [8K - 24K]
->        |                             |
->        |                             |
->     points to extent X,         points to extent X,
->     offset 4K, length of 8K     offset 0, length 16K
->
->    [extent X, compressed length = 4K uncompressed length = 16K]
->
-> If a readpages() call spans the 2 ranges, a single bio to read the extent
-> is submitted - extent_io.c:submit_extent_page() would only create a new
-> bio to cover the second range pointing to the extent if the extent it
-> points to had a different logical address than the extent associated with
-> the first range. This has a consequence of the compressed read end io
-> handler (compression.c:end_compressed_bio_read()) finish once the extent
-> is decompressed into the pages covering the first range, leaving the
-> remaining pages (belonging to the second range) filled with zeroes (done
-> by compression.c:btrfs_clear_biovec_end()).
->
-> So fix this by submitting the current bio whenever we find a range
-> pointing to a compressed extent that was preceded by a range with a
-> different extent map. This is the simplest solution for this corner
-> case. Making the end io callback populate both ranges (or more, if we
-> have multiple pointing to the same extent) is a much more complex
-> solution since each bio is tightly coupled with a single extent map and
-> the extent maps associated to the ranges pointing to the shared extent
-> can have different offsets and lengths.
->
-> The following test case for fstests triggers the issue:
->
->    seq=`basename $0`
->    seqres=$RESULT_DIR/$seq
->    echo "QA output created by $seq"
->    tmp=/tmp/$$
->    status=1	# failure is the default!
->    trap "_cleanup; exit \$status" 0 1 2 3 15
->
->    _cleanup()
->    {
->        rm -f $tmp.*
->    }
->
->    # get standard environment, filters and checks
->    . ./common/rc
->    . ./common/filter
->
->    # real QA test starts here
->    _need_to_be_root
->    _supported_fs btrfs
->    _supported_os Linux
->    _require_scratch
->    _require_cloner
->
->    rm -f $seqres.full
->
->    test_clone_and_read_compressed_extent()
->    {
->        local mount_opts=$1
->
->        _scratch_mkfs >>$seqres.full 2>&1
->        _scratch_mount $mount_opts
->
->        # Create a test file with a single extent that is compressed (the
->        # data we write into it is highly compressible no matter which
->        # compression algorithm is used, zlib or lzo).
->        $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 4K"        \
->                        -c "pwrite -S 0xbb 4K 8K"        \
->                        -c "pwrite -S 0xcc 12K 4K"       \
->                        $SCRATCH_MNT/foo | _filter_xfs_io
->
->        # Now clone our extent into an adjacent offset.
->        $CLONER_PROG -s $((4 * 1024)) -d $((16 * 1024)) -l $((8 * 1024)) \
->            $SCRATCH_MNT/foo $SCRATCH_MNT/foo
->
->        # Same as before but for this file we clone the extent into a lower
->        # file offset.
->        $XFS_IO_PROG -f -c "pwrite -S 0xaa 8K 4K"         \
->                        -c "pwrite -S 0xbb 12K 8K"        \
->                        -c "pwrite -S 0xcc 20K 4K"        \
->                        $SCRATCH_MNT/bar | _filter_xfs_io
->
->        $CLONER_PROG -s $((12 * 1024)) -d 0 -l $((8 * 1024)) \
->            $SCRATCH_MNT/bar $SCRATCH_MNT/bar
->
->        echo "File digests before unmounting filesystem:"
->        md5sum $SCRATCH_MNT/foo | _filter_scratch
->        md5sum $SCRATCH_MNT/bar | _filter_scratch
->
->        # Evicting the inode or clearing the page cache before reading
->        # again the file would also trigger the bug - reads were returning
->        # all bytes in the range corresponding to the second reference to
->        # the extent with a value of 0, but the correct data was persisted
->        # (it was a bug exclusively in the read path). The issue happened
->        # only if the same readpages() call targeted pages belonging to the
->        # first and second ranges that point to the same compressed extent.
->        _scratch_remount
->
->        echo "File digests after mounting filesystem again:"
->        # Must match the same digests we got before.
->        md5sum $SCRATCH_MNT/foo | _filter_scratch
->        md5sum $SCRATCH_MNT/bar | _filter_scratch
->    }
->
->    echo -e "\nTesting with zlib compression..."
->    test_clone_and_read_compressed_extent "-o compress=zlib"
->
->    _scratch_unmount
->
->    echo -e "\nTesting with lzo compression..."
->    test_clone_and_read_compressed_extent "-o compress=lzo"
->
->    status=0
->    exit
->
-> Cc: stable@vger.kernel.org
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Thanks for the fix.
+Most likely the block layer will do one read only of the extent often
+enough (i.e. multiple bios against same extent result in a single disk
+read). My basic testing didn't show actually any difference, but I
+didn't worry about that so much to be honest. I rather have it simple,
+correct and tested as of now. And this is a corner case that happens
+not only if the shared extents are consecutive in the file layout but
+they need to be large as well (a single readpages() call won't attempt
+to read 1Gb for e.g.).
 
-Most of it seems good for me.
-Feel free to add "Reviewed-by: Qu Wenruo<quwenruo@cn.fujitsu.com>"
+Lets worry first on correctness and decent testing. A lot of problems
+would likely be prevented if we pay more attention to these two
+aspects first.
 
-But as mentioned by yourself, I personally consider the patch more as a 
-hot fix, other than a root fix.
-Although it's good enough for now.
-
-One of the problem is the impact on read performance.
-
-It may not affect many people, but for people using off-band 
-deduplication and compression, it may bring obvious read performance impact.
-Although, without the patch, user won't read correct contents anyway.
-
-
-I think the problem will become more obvious if one day btrfs supports 
-in-band dedup.
-
-I know it's not a easy job, but would you please consider some further fix?
-For example, use list/rb_tree to record the (offset,len) reference to a 
-compressed extent, and still submit only one bio for the max needed range.
-
-And in your case:
-(With a little modification, decompressed length is 32K now)
-     File layout
-     [0 - 8K]                      [8K - 24K]
-         |                             |
-         |                             |
-      points to extent X,         points to extent X,
-      offset 4K, length of 8K     offset 0, length 16K
-
-     [extent X, compressed length = 4K uncompressed length = 32K]
-
-We want to read [4K,12K) and [0,16K) of uncompressed extent X,
-then the real needed max range will be [0,16K).
-
-So submit one bio to read the extent, then extract the first 16K.
-Then copy [4K,12K) into pages for first extent, and [0,16K) for 2nd.
-
-Any idea for such enhancement?
-
-Thanks,
-Qu
-
-> ---
->   fs/btrfs/extent_io.c | 65 +++++++++++++++++++++++++++++++++++++++++++++-------
->   1 file changed, 57 insertions(+), 8 deletions(-)
 >
-> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-> index fa19f2f..11aa8f7 100644
-> --- a/fs/btrfs/extent_io.c
-> +++ b/fs/btrfs/extent_io.c
-> @@ -2805,7 +2805,8 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
->   			      bio_end_io_t end_io_func,
->   			      int mirror_num,
->   			      unsigned long prev_bio_flags,
-> -			      unsigned long bio_flags)
-> +			      unsigned long bio_flags,
-> +			      bool force_bio_submit)
->   {
->   	int ret = 0;
->   	struct bio *bio;
-> @@ -2823,6 +2824,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
->   			contig = bio_end_sector(bio) == sector;
+> It may not affect many people, but for people using off-band deduplication
+> and compression, it may bring obvious read performance impact.
+> Although, without the patch, user won't read correct contents anyway.
 >
->   		if (prev_bio_flags != bio_flags || !contig ||
-> +		    force_bio_submit ||
->   		    merge_bio(rw, tree, page, offset, page_size, bio, bio_flags) ||
->   		    bio_add_page(bio, page, page_size, offset) < page_size) {
->   			ret = submit_one_bio(rw, bio, mirror_num,
-> @@ -2922,7 +2924,8 @@ static int __do_readpage(struct extent_io_tree *tree,
->   			 get_extent_t *get_extent,
->   			 struct extent_map **em_cached,
->   			 struct bio **bio, int mirror_num,
-> -			 unsigned long *bio_flags, int rw)
-> +			 unsigned long *bio_flags, int rw,
-> +			 u64 *prev_em_start)
->   {
->   	struct inode *inode = page->mapping->host;
->   	u64 start = page_offset(page);
-> @@ -2970,6 +2973,7 @@ static int __do_readpage(struct extent_io_tree *tree,
->   	}
->   	while (cur <= end) {
->   		unsigned long pnr = (last_byte >> PAGE_CACHE_SHIFT) + 1;
-> +		bool force_bio_submit = false;
 >
->   		if (cur >= last_byte) {
->   			char *userpage;
-> @@ -3020,6 +3024,49 @@ static int __do_readpage(struct extent_io_tree *tree,
->   		block_start = em->block_start;
->   		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
->   			block_start = EXTENT_MAP_HOLE;
-> +
-> +		/*
-> +		 * If we have a file range that points to a compressed extent
-> +		 * and it's followed by a consecutive file range that points to
-> +		 * to the same compressed extent (possibly with a different
-> +		 * offset and/or length, so it either points to the whole extent
-> +		 * or only part of it), we must make sure we do not submit a
-> +		 * single bio to populate the pages for the 2 ranges because
-> +		 * this makes the compressed extent read zero out the pages
-> +		 * belonging to the 2nd range. Imagine the following scenario:
-> +		 *
-> +		 *  File layout
-> +		 *  [0 - 8K]                     [8K - 24K]
-> +		 *    |                               |
-> +		 *    |                               |
-> +		 * points to extent X,         points to extent X,
-> +		 * offset 4K, length of 8K     offset 0, length 16K
-> +		 *
-> +		 * [extent X, compressed length = 4K uncompressed length = 16K]
-> +		 *
-> +		 * If the bio to read the compressed extent covers both ranges,
-> +		 * it will decompress extent X into the pages belonging to the
-> +		 * first range and then it will stop, zeroing out the remaining
-> +		 * pages that belong to the other range that points to extent X.
-> +		 * So here we make sure we submit 2 bios, one for the first
-> +		 * range and another one for the third range. Both will target
-> +		 * the same physical extent from disk, but we can't currently
-> +		 * make the compressed bio endio callback populate the pages
-> +		 * for both ranges because each compressed bio is tightly
-> +		 * coupled with a single extent map, and each range can have
-> +		 * an extent map with a different offset value relative to the
-> +		 * uncompressed data of our extent and different lengths. This
-> +		 * is a corner case so we prioritize correctness over
-> +		 * non-optimal behavior (submitting 2 bios for the same extent).
-> +		 */
-> +		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags) &&
-> +		    prev_em_start && *prev_em_start != (u64)-1 &&
-> +		    *prev_em_start != em->orig_start)
-> +			force_bio_submit = true;
-> +
-> +		if (prev_em_start)
-> +			*prev_em_start = em->orig_start;
-> +
->   		free_extent_map(em);
->   		em = NULL;
+> I think the problem will become more obvious if one day btrfs supports
+> in-band dedup.
 >
-> @@ -3069,7 +3116,8 @@ static int __do_readpage(struct extent_io_tree *tree,
->   					 bdev, bio, pnr,
->   					 end_bio_extent_readpage, mirror_num,
->   					 *bio_flags,
-> -					 this_bio_flag);
-> +					 this_bio_flag,
-> +					 force_bio_submit);
->   		if (!ret) {
->   			nr++;
->   			*bio_flags = this_bio_flag;
-> @@ -3101,6 +3149,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
->   	struct inode *inode;
->   	struct btrfs_ordered_extent *ordered;
->   	int index;
-> +	u64 prev_em_start = (u64)-1;
+> I know it's not a easy job, but would you please consider some further fix?
+> For example, use list/rb_tree to record the (offset,len) reference to a
+> compressed extent, and still submit only one bio for the max needed range.
+
+As mentioned above, getting some numbers/tests that really show it's
+worth the added complexity (with the possibility of introducing more
+bugs) would have to happen first.
+
 >
->   	inode = pages[0]->mapping->host;
->   	while (1) {
-> @@ -3116,7 +3165,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+> And in your case:
+> (With a little modification, decompressed length is 32K now)
+>     File layout
+>     [0 - 8K]                      [8K - 24K]
+>         |                             |
+>         |                             |
+>      points to extent X,         points to extent X,
+>      offset 4K, length of 8K     offset 0, length 16K
 >
->   	for (index = 0; index < nr_pages; index++) {
->   		__do_readpage(tree, pages[index], get_extent, em_cached, bio,
-> -			      mirror_num, bio_flags, rw);
-> +			      mirror_num, bio_flags, rw, &prev_em_start);
->   		page_cache_release(pages[index]);
->   	}
->   }
-> @@ -3184,7 +3233,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
->   	}
+>     [extent X, compressed length = 4K uncompressed length = 32K]
 >
->   	ret = __do_readpage(tree, page, get_extent, NULL, bio, mirror_num,
-> -			    bio_flags, rw);
-> +			    bio_flags, rw, NULL);
->   	return ret;
->   }
+> We want to read [4K,12K) and [0,16K) of uncompressed extent X,
+> then the real needed max range will be [0,16K).
 >
-> @@ -3210,7 +3259,7 @@ int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
->   	int ret;
+> So submit one bio to read the extent, then extract the first 16K.
+> Then copy [4K,12K) into pages for first extent, and [0,16K) for 2nd.
 >
->   	ret = __do_readpage(tree, page, get_extent, NULL, &bio, mirror_num,
-> -				      &bio_flags, READ);
-> +			    &bio_flags, READ, NULL);
->   	if (bio)
->   		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
->   	return ret;
-> @@ -3463,7 +3512,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
->   						 sector, iosize, pg_offset,
->   						 bdev, &epd->bio, max_nr,
->   						 end_bio_extent_writepage,
-> -						 0, 0, 0);
-> +						 0, 0, 0, false);
->   			if (ret)
->   				SetPageError(page);
->   		}
-> @@ -3765,7 +3814,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
->   		ret = submit_extent_page(rw, tree, wbc, p, offset >> 9,
->   					 PAGE_CACHE_SIZE, 0, bdev, &epd->bio,
->   					 -1, end_bio_extent_buffer_writepage,
-> -					 0, epd->bio_flags, bio_flags);
-> +					 0, epd->bio_flags, bio_flags, false);
->   		epd->bio_flags = bio_flags;
->   		if (ret) {
->   			set_btree_ioerr(p);
+> Any idea for such enhancement?
+
+Yes, but I really didn't like the complexity of such solution (I tried
+something similar) and didn't saw any significant overhead in my
+testing that justifies it.
+
+thanks
+
+>
+> Thanks,
+> Qu
+>
+>
+>> ---
+>>   fs/btrfs/extent_io.c | 65
+>> +++++++++++++++++++++++++++++++++++++++++++++-------
+>>   1 file changed, 57 insertions(+), 8 deletions(-)
+>>
+>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+>> index fa19f2f..11aa8f7 100644
+>> --- a/fs/btrfs/extent_io.c
+>> +++ b/fs/btrfs/extent_io.c
+>> @@ -2805,7 +2805,8 @@ static int submit_extent_page(int rw, struct
+>> extent_io_tree *tree,
+>>                               bio_end_io_t end_io_func,
+>>                               int mirror_num,
+>>                               unsigned long prev_bio_flags,
+>> -                             unsigned long bio_flags)
+>> +                             unsigned long bio_flags,
+>> +                             bool force_bio_submit)
+>>   {
+>>         int ret = 0;
+>>         struct bio *bio;
+>> @@ -2823,6 +2824,7 @@ static int submit_extent_page(int rw, struct
+>> extent_io_tree *tree,
+>>                         contig = bio_end_sector(bio) == sector;
+>>
+>>                 if (prev_bio_flags != bio_flags || !contig ||
+>> +                   force_bio_submit ||
+>>                     merge_bio(rw, tree, page, offset, page_size, bio,
+>> bio_flags) ||
+>>                     bio_add_page(bio, page, page_size, offset) <
+>> page_size) {
+>>                         ret = submit_one_bio(rw, bio, mirror_num,
+>> @@ -2922,7 +2924,8 @@ static int __do_readpage(struct extent_io_tree
+>> *tree,
+>>                          get_extent_t *get_extent,
+>>                          struct extent_map **em_cached,
+>>                          struct bio **bio, int mirror_num,
+>> -                        unsigned long *bio_flags, int rw)
+>> +                        unsigned long *bio_flags, int rw,
+>> +                        u64 *prev_em_start)
+>>   {
+>>         struct inode *inode = page->mapping->host;
+>>         u64 start = page_offset(page);
+>> @@ -2970,6 +2973,7 @@ static int __do_readpage(struct extent_io_tree
+>> *tree,
+>>         }
+>>         while (cur <= end) {
+>>                 unsigned long pnr = (last_byte >> PAGE_CACHE_SHIFT) + 1;
+>> +               bool force_bio_submit = false;
+>>
+>>                 if (cur >= last_byte) {
+>>                         char *userpage;
+>> @@ -3020,6 +3024,49 @@ static int __do_readpage(struct extent_io_tree
+>> *tree,
+>>                 block_start = em->block_start;
+>>                 if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+>>                         block_start = EXTENT_MAP_HOLE;
+>> +
+>> +               /*
+>> +                * If we have a file range that points to a compressed
+>> extent
+>> +                * and it's followed by a consecutive file range that
+>> points to
+>> +                * to the same compressed extent (possibly with a
+>> different
+>> +                * offset and/or length, so it either points to the whole
+>> extent
+>> +                * or only part of it), we must make sure we do not submit
+>> a
+>> +                * single bio to populate the pages for the 2 ranges
+>> because
+>> +                * this makes the compressed extent read zero out the
+>> pages
+>> +                * belonging to the 2nd range. Imagine the following
+>> scenario:
+>> +                *
+>> +                *  File layout
+>> +                *  [0 - 8K]                     [8K - 24K]
+>> +                *    |                               |
+>> +                *    |                               |
+>> +                * points to extent X,         points to extent X,
+>> +                * offset 4K, length of 8K     offset 0, length 16K
+>> +                *
+>> +                * [extent X, compressed length = 4K uncompressed length =
+>> 16K]
+>> +                *
+>> +                * If the bio to read the compressed extent covers both
+>> ranges,
+>> +                * it will decompress extent X into the pages belonging to
+>> the
+>> +                * first range and then it will stop, zeroing out the
+>> remaining
+>> +                * pages that belong to the other range that points to
+>> extent X.
+>> +                * So here we make sure we submit 2 bios, one for the
+>> first
+>> +                * range and another one for the third range. Both will
+>> target
+>> +                * the same physical extent from disk, but we can't
+>> currently
+>> +                * make the compressed bio endio callback populate the
+>> pages
+>> +                * for both ranges because each compressed bio is tightly
+>> +                * coupled with a single extent map, and each range can
+>> have
+>> +                * an extent map with a different offset value relative to
+>> the
+>> +                * uncompressed data of our extent and different lengths.
+>> This
+>> +                * is a corner case so we prioritize correctness over
+>> +                * non-optimal behavior (submitting 2 bios for the same
+>> extent).
+>> +                */
+>> +               if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags) &&
+>> +                   prev_em_start && *prev_em_start != (u64)-1 &&
+>> +                   *prev_em_start != em->orig_start)
+>> +                       force_bio_submit = true;
+>> +
+>> +               if (prev_em_start)
+>> +                       *prev_em_start = em->orig_start;
+>> +
+>>                 free_extent_map(em);
+>>                 em = NULL;
+>>
+>> @@ -3069,7 +3116,8 @@ static int __do_readpage(struct extent_io_tree
+>> *tree,
+>>                                          bdev, bio, pnr,
+>>                                          end_bio_extent_readpage,
+>> mirror_num,
+>>                                          *bio_flags,
+>> -                                        this_bio_flag);
+>> +                                        this_bio_flag,
+>> +                                        force_bio_submit);
+>>                 if (!ret) {
+>>                         nr++;
+>>                         *bio_flags = this_bio_flag;
+>> @@ -3101,6 +3149,7 @@ static inline void __do_contiguous_readpages(struct
+>> extent_io_tree *tree,
+>>         struct inode *inode;
+>>         struct btrfs_ordered_extent *ordered;
+>>         int index;
+>> +       u64 prev_em_start = (u64)-1;
+>>
+>>         inode = pages[0]->mapping->host;
+>>         while (1) {
+>> @@ -3116,7 +3165,7 @@ static inline void __do_contiguous_readpages(struct
+>> extent_io_tree *tree,
+>>
+>>         for (index = 0; index < nr_pages; index++) {
+>>                 __do_readpage(tree, pages[index], get_extent, em_cached,
+>> bio,
+>> -                             mirror_num, bio_flags, rw);
+>> +                             mirror_num, bio_flags, rw, &prev_em_start);
+>>                 page_cache_release(pages[index]);
+>>         }
+>>   }
+>> @@ -3184,7 +3233,7 @@ static int __extent_read_full_page(struct
+>> extent_io_tree *tree,
+>>         }
+>>
+>>         ret = __do_readpage(tree, page, get_extent, NULL, bio, mirror_num,
+>> -                           bio_flags, rw);
+>> +                           bio_flags, rw, NULL);
+>>         return ret;
+>>   }
+>>
+>> @@ -3210,7 +3259,7 @@ int extent_read_full_page_nolock(struct
+>> extent_io_tree *tree, struct page *page,
+>>         int ret;
+>>
+>>         ret = __do_readpage(tree, page, get_extent, NULL, &bio,
+>> mirror_num,
+>> -                                     &bio_flags, READ);
+>> +                           &bio_flags, READ, NULL);
+>>         if (bio)
+>>                 ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
+>>         return ret;
+>> @@ -3463,7 +3512,7 @@ static noinline_for_stack int
+>> __extent_writepage_io(struct inode *inode,
+>>                                                  sector, iosize,
+>> pg_offset,
+>>                                                  bdev, &epd->bio, max_nr,
+>>                                                  end_bio_extent_writepage,
+>> -                                                0, 0, 0);
+>> +                                                0, 0, 0, false);
+>>                         if (ret)
+>>                                 SetPageError(page);
+>>                 }
+>> @@ -3765,7 +3814,7 @@ static noinline_for_stack int write_one_eb(struct
+>> extent_buffer *eb,
+>>                 ret = submit_extent_page(rw, tree, wbc, p, offset >> 9,
+>>                                          PAGE_CACHE_SIZE, 0, bdev,
+>> &epd->bio,
+>>                                          -1,
+>> end_bio_extent_buffer_writepage,
+>> -                                        0, epd->bio_flags, bio_flags);
+>> +                                        0, epd->bio_flags, bio_flags,
+>> false);
+>>                 epd->bio_flags = bio_flags;
+>>                 if (ret) {
+>>                         set_btree_ioerr(p);
+>>
 >

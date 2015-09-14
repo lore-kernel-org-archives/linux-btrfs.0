@@ -1,48 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:60944 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753287AbbIWInQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Sep 2015 04:43:16 -0400
-Date: Wed, 23 Sep 2015 10:42:19 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Luis de Bethencourt <luisbg@osg.samsung.com>
-Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: reada: Fix returned errno code
-Message-ID: <20150923084219.GR12815@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1442939007.git.luis@debethencourt.com>
- <c4a7a8023880c4a11326a6f7d9cc07ae37c12b0d.1442939007.git.luis@debethencourt.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <c4a7a8023880c4a11326a6f7d9cc07ae37c12b0d.1442939007.git.luis@debethencourt.com>
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:34999 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750801AbbINGE0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Sep 2015 02:04:26 -0400
+Received: by pacfv12 with SMTP id fv12so136692333pac.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:25 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Omar Sandoval <osandov@osandov.com>
+Subject: [PATCH v3 0/9] Btrfs: free space B-tree
+Date: Sun, 13 Sep 2015 23:04:07 -0700
+Message-Id: <cover.1442209006.git.osandov@osandov.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 22, 2015 at 05:29:39PM +0100, Luis de Bethencourt wrote:
-> reada is using -1 instead of the -ENOMEM defined macro to specify that
-> a buffer allocation failed. Since the error number is propagated, the
-> caller will get a -EPERM which is the wrong error condition.
-> 
-> Smatch tool warning:
-> reada_add_block() warn: returning -1 instead of -ENOMEM is sloppy
-> 
-> Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
-> ---
->  fs/btrfs/reada.c | 2 +-
->  1 file changed, 1 insertion(+), 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-> index 4645cd1..5bfd3cd 100644
-> --- a/fs/btrfs/reada.c
-> +++ b/fs/btrfs/reada.c
-> @@ -569,7 +569,7 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
->  	rec = kzalloc(sizeof(*rec), GFP_NOFS);
->  	if (!rec) {
->  		reada_extent_put(root->fs_info, re);
-> -		return -1;
-> +		return -ENOMEM;
+Hi, everyone,
 
-When called from btrfs_reada_add, the return value is ignored and
-overriden as ENOMEM. Please also update the caller to return the exact
-value from reada_add_block.
+I went back and fixed the issues that came up since v2. Changes below. I
+removed Josef's Reviewed-by on patch 9 because it was completely
+rewritten to change the mount options like Dave suggested. These are
+still based on 4.2
+
+Thanks!
+
+Changes from v2->v3:
+
+- Fixed a warning in the free space tree sanity tests caught by Zhao Lei.
+- Moved the addition of a block group to the free space tree to occur either on
+  the first attempt to modify the free space for the block group or in
+  btrfs_create_pending_block_groups(), whichever happens first. This avoids a
+  deadlock (lock recursion) when modifying the free space tree requires
+  allocating a new block group. In order to do this, it was simpler to change
+  the on-disk semantics: the superblock stripes will now appear to be free space
+  according to the free space tree, but load_free_space_tree() will still
+  exclude them when building the in-memory free space cache.
+- Changed the free_space_tree option to space_cache=v2 and made clear_cache
+  clear the free space tree. If the free space tree has been created,
+  the mount will fail unless space_cache=v2 or nospace_cache,clear_cache
+  is given because we cannot allow the free space tree to get out of
+  date.
+- Did a once-over of the code and caught a couple of error handling typos.
+
+v2: http://www.spinics.net/lists/linux-btrfs/msg46796.html
+
+Changes from v1->v2:
+
+- Cleaned up a bunch of unnecessary instances of "if (ret) goto out; ret = 0"
+- Added aborts in the free space tree code closer to the site the error is
+  encountered: where we add or remove block groups, add or remove free space,
+  and also when we convert formats
+- Moved loading of the free space tree into caching_thread() and added a new
+  patch 3 in preparation for it
+- Commented a bunch of stuff in the extent buffer bitmap operations and
+  refactored some of the complicated logic
+
+v1: http://www.spinics.net/lists/linux-btrfs/msg46713.html
+
+Omar Sandoval (9):
+  Btrfs: add extent buffer bitmap operations
+  Btrfs: add extent buffer bitmap sanity tests
+  Btrfs: add helpers for read-only compat bits
+  Btrfs: refactor caching_thread()
+  Btrfs: introduce the free space B-tree on-disk format
+  Btrfs: implement the free space B-tree
+  Btrfs: add free space tree sanity tests
+  Btrfs: wire up the free space tree to the extent tree
+  Btrfs: add free space tree mount option
+
+ fs/btrfs/Makefile                      |    5 +-
+ fs/btrfs/ctree.h                       |  157 +++-
+ fs/btrfs/disk-io.c                     |   38 +
+ fs/btrfs/extent-tree.c                 |   98 +-
+ fs/btrfs/extent_io.c                   |  183 +++-
+ fs/btrfs/extent_io.h                   |   10 +-
+ fs/btrfs/free-space-tree.c             | 1581 ++++++++++++++++++++++++++++++++
+ fs/btrfs/free-space-tree.h             |   72 ++
+ fs/btrfs/super.c                       |   56 +-
+ fs/btrfs/tests/btrfs-tests.c           |   52 ++
+ fs/btrfs/tests/btrfs-tests.h           |   10 +
+ fs/btrfs/tests/extent-io-tests.c       |  138 ++-
+ fs/btrfs/tests/free-space-tests.c      |   35 +-
+ fs/btrfs/tests/free-space-tree-tests.c |  571 ++++++++++++
+ fs/btrfs/tests/qgroup-tests.c          |   20 +-
+ include/trace/events/btrfs.h           |    3 +-
+ 16 files changed, 2922 insertions(+), 107 deletions(-)
+ create mode 100644 fs/btrfs/free-space-tree.c
+ create mode 100644 fs/btrfs/free-space-tree.h
+ create mode 100644 fs/btrfs/tests/free-space-tree-tests.c
+
+-- 
+2.5.2
+

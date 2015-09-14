@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:34544 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751340AbbINGE0 (ORCPT
+Received: from mail-pa0-f50.google.com ([209.85.220.50]:33013 "EHLO
+	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751938AbbINGEe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 02:04:26 -0400
-Received: by padhy16 with SMTP id hy16so133930089pad.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:26 -0700 (PDT)
+	Mon, 14 Sep 2015 02:04:34 -0400
+Received: by pacex6 with SMTP id ex6so134324167pac.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:33 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3 1/9] Btrfs: add extent buffer bitmap operations
-Date: Sun, 13 Sep 2015 23:04:08 -0700
-Message-Id: <98a5cd3528b5a4e11c59ae0521feef8a0697c4d5.1442209006.git.osandov@osandov.com>
+Subject: [PATCH v3 9/9] Btrfs: add free space tree mount option
+Date: Sun, 13 Sep 2015 23:04:16 -0700
+Message-Id: <02e8d2e15a5a0449cd5f8c617224a72174e0c0f3.1442209006.git.osandov@osandov.com>
 In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
 References: <cover.1442209006.git.osandov@osandov.com>
 In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
@@ -21,191 +21,236 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-These are going to be used for the free space tree bitmap items.
+Now we can finally hook up everything so we can actually use free space
+tree. The free space tree is enabled by passing the space_cache=v2 mount
+option. On the first mount with the this option set, the free space tree
+will be created and the FREE_SPACE_TREE read-only compat bit will be
+set. Any time the filesystem is mounted from then on, we must use the
+free space tree. The clear_cache option will also clear the free space
+tree.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c | 149 +++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h |   6 +++
- 2 files changed, 155 insertions(+)
+ fs/btrfs/ctree.h   |  7 ++++++-
+ fs/btrfs/disk-io.c | 38 ++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/super.c   | 53 ++++++++++++++++++++++++++++++++++++++++++++---------
+ 3 files changed, 88 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 02d05817cbdf..eae9175ff62b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5475,6 +5475,155 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 	}
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 455a9016587b..d6e2d9cf41bf 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -531,7 +531,10 @@ struct btrfs_super_block {
+ #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
+ #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
+ #define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
+-#define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
++
++#define BTRFS_FEATURE_COMPAT_RO_SUPP			\
++	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)
++
+ #define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
+ #define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
+ 
+@@ -2209,6 +2212,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
+ #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
+ #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
++#define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 24)
+ 
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(8192)
+@@ -3748,6 +3752,7 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
+ 	kfree(fs_info->csum_root);
+ 	kfree(fs_info->quota_root);
+ 	kfree(fs_info->uuid_root);
++	kfree(fs_info->free_space_root);
+ 	kfree(fs_info->super_copy);
+ 	kfree(fs_info->super_for_commit);
+ 	security_free_mnt_opts(&fs_info->security_opts);
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index f556c3732c2c..31363675353f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -42,6 +42,7 @@
+ #include "locking.h"
+ #include "tree-log.h"
+ #include "free-space-cache.h"
++#include "free-space-tree.h"
+ #include "inode-map.h"
+ #include "check-integrity.h"
+ #include "rcu-string.h"
+@@ -1641,6 +1642,9 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
+ 	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
+ 		return fs_info->uuid_root ? fs_info->uuid_root :
+ 					    ERR_PTR(-ENOENT);
++	if (location->objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
++		return fs_info->free_space_root ? fs_info->free_space_root :
++						  ERR_PTR(-ENOENT);
+ again:
+ 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
+ 	if (root) {
+@@ -2138,6 +2142,7 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
+ 	free_root_extent_buffers(info->uuid_root);
+ 	if (chunk_root)
+ 		free_root_extent_buffers(info->chunk_root);
++	free_root_extent_buffers(info->free_space_root);
  }
  
-+/*
-+ * The extent buffer bitmap operations are done with byte granularity because
-+ * bitmap items are not guaranteed to be aligned to a word and therefore a
-+ * single word in a bitmap may straddle two pages in the extent buffer.
-+ */
-+#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
-+#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
-+#define BITMAP_FIRST_BYTE_MASK(start) \
-+	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
-+#define BITMAP_LAST_BYTE_MASK(nbits) \
-+	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
+ void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info)
+@@ -2439,6 +2444,15 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info,
+ 		fs_info->uuid_root = root;
+ 	}
+ 
++	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
++		location.objectid = BTRFS_FREE_SPACE_TREE_OBJECTID;
++		root = btrfs_read_tree_root(tree_root, &location);
++		if (IS_ERR(root))
++			return PTR_ERR(root);
++		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
++		fs_info->free_space_root = root;
++	}
 +
-+/*
-+ * eb_bitmap_offset() - calculate the page and offset of the byte containing the
-+ * given bit number
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @nr: bit number
-+ * @page_index: return index of the page in the extent buffer that contains the
-+ * given bit number
-+ * @page_offset: return offset into the page given by page_index
-+ *
-+ * This helper hides the ugliness of finding the byte in an extent buffer which
-+ * contains a given bit.
-+ */
-+static inline void eb_bitmap_offset(struct extent_buffer *eb,
-+				    unsigned long start, unsigned long nr,
-+				    unsigned long *page_index,
-+				    size_t *page_offset)
-+{
-+	size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
-+	size_t byte_offset = BIT_BYTE(nr);
-+	size_t offset;
-+
-+	/*
-+	 * The byte we want is the offset of the extent buffer + the offset of
-+	 * the bitmap item in the extent buffer + the offset of the byte in the
-+	 * bitmap item.
-+	 */
-+	offset = start_offset + start + byte_offset;
-+
-+	*page_index = offset >> PAGE_CACHE_SHIFT;
-+	*page_offset = offset & (PAGE_CACHE_SIZE - 1);
-+}
-+
-+/**
-+ * extent_buffer_test_bit - determine whether a bit in a bitmap item is set
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @nr: bit number to test
-+ */
-+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+			   unsigned long nr)
-+{
-+	char *kaddr;
-+	struct page *page;
-+	unsigned long i;
-+	size_t offset;
-+
-+	eb_bitmap_offset(eb, start, nr, &i, &offset);
-+	page = eb->pages[i];
-+	WARN_ON(!PageUptodate(page));
-+	kaddr = page_address(page);
-+	return 1U & (kaddr[offset] >> (nr & (BITS_PER_BYTE - 1)));
-+}
-+
-+/**
-+ * extent_buffer_bitmap_set - set an area of a bitmap
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @pos: bit number of the first bit
-+ * @len: number of bits to set
-+ */
-+void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-+			      unsigned long pos, unsigned long len)
-+{
-+	char *kaddr;
-+	struct page *page;
-+	unsigned long i;
-+	size_t offset;
-+	const unsigned int size = pos + len;
-+	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-+	unsigned int mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
-+
-+	eb_bitmap_offset(eb, start, pos, &i, &offset);
-+	page = eb->pages[i];
-+	WARN_ON(!PageUptodate(page));
-+	kaddr = page_address(page);
-+
-+	while (len >= bits_to_set) {
-+		kaddr[offset] |= mask_to_set;
-+		len -= bits_to_set;
-+		bits_to_set = BITS_PER_BYTE;
-+		mask_to_set = ~0U;
-+		if (++offset >= PAGE_CACHE_SIZE && len > 0) {
-+			offset = 0;
-+			page = eb->pages[++i];
-+			WARN_ON(!PageUptodate(page));
-+			kaddr = page_address(page);
+ 	return 0;
+ }
+ 
+@@ -3063,6 +3077,30 @@ retry_root_backup:
+ 
+ 	btrfs_qgroup_rescan_resume(fs_info);
+ 
++	if (btrfs_test_opt(tree_root, CLEAR_CACHE) &&
++	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
++		pr_info("BTRFS: clearing free space tree\n");
++		ret = btrfs_clear_free_space_tree(fs_info);
++		if (ret) {
++			pr_warn("BTRFS: failed to clear free space tree %d\n",
++				ret);
++			close_ctree(tree_root);
++			return ret;
 +		}
 +	}
-+	if (len) {
-+		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
-+		kaddr[offset] |= mask_to_set;
-+	}
-+}
 +
-+
-+/**
-+ * extent_buffer_bitmap_clear - clear an area of a bitmap
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @pos: bit number of the first bit
-+ * @len: number of bits to clear
-+ */
-+void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-+				unsigned long pos, unsigned long len)
-+{
-+	char *kaddr;
-+	struct page *page;
-+	unsigned long i;
-+	size_t offset;
-+	const unsigned int size = pos + len;
-+	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-+	unsigned int mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
-+
-+	eb_bitmap_offset(eb, start, pos, &i, &offset);
-+	page = eb->pages[i];
-+	WARN_ON(!PageUptodate(page));
-+	kaddr = page_address(page);
-+
-+	while (len >= bits_to_clear) {
-+		kaddr[offset] &= ~mask_to_clear;
-+		len -= bits_to_clear;
-+		bits_to_clear = BITS_PER_BYTE;
-+		mask_to_clear = ~0U;
-+		if (++offset >= PAGE_CACHE_SIZE && len > 0) {
-+			offset = 0;
-+			page = eb->pages[++i];
-+			WARN_ON(!PageUptodate(page));
-+			kaddr = page_address(page);
++	if (btrfs_test_opt(tree_root, FREE_SPACE_TREE) &&
++	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
++		pr_info("BTRFS: creating free space tree\n");
++		ret = btrfs_create_free_space_tree(fs_info);
++		if (ret) {
++			pr_warn("BTRFS: failed to create free space tree %d\n",
++				ret);
++			close_ctree(tree_root);
++			return ret;
 +		}
 +	}
-+	if (len) {
-+		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
-+		kaddr[offset] &= ~mask_to_clear;
-+	}
-+}
 +
- static inline bool areas_overlap(unsigned long src, unsigned long dst, unsigned long len)
- {
- 	unsigned long distance = (src > dst) ? src - dst : dst - src;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c668f36898d3..9185a20081d7 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -309,6 +309,12 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 			   unsigned long src_offset, unsigned long len);
- void memset_extent_buffer(struct extent_buffer *eb, char c,
- 			  unsigned long start, unsigned long len);
-+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+			   unsigned long pos);
-+void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-+			      unsigned long pos, unsigned long len);
-+void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-+				unsigned long pos, unsigned long len);
- void clear_extent_buffer_dirty(struct extent_buffer *eb);
- int set_extent_buffer_dirty(struct extent_buffer *eb);
- int set_extent_buffer_uptodate(struct extent_buffer *eb);
+ 	if (!fs_info->uuid_root) {
+ 		pr_info("BTRFS: creating UUID tree\n");
+ 		ret = btrfs_create_uuid_tree(fs_info);
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index b93f127c4bc8..cb179286e421 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -312,10 +312,11 @@ enum {
+ 	Opt_nossd, Opt_ssd_spread, Opt_thread_pool, Opt_noacl, Opt_compress,
+ 	Opt_compress_type, Opt_compress_force, Opt_compress_force_type,
+ 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
+-	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
+-	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
+-	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
+-	Opt_check_integrity, Opt_check_integrity_including_extent_data,
++	Opt_space_cache, Opt_space_cache_version, Opt_clear_cache,
++	Opt_user_subvol_rm_allowed, Opt_enospc_debug, Opt_subvolrootid,
++	Opt_defrag, Opt_inode_cache, Opt_no_space_cache, Opt_recovery,
++	Opt_skip_balance, Opt_check_integrity,
++	Opt_check_integrity_including_extent_data,
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+ 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+@@ -354,6 +355,7 @@ static match_table_t tokens = {
+ 	{Opt_discard, "discard"},
+ 	{Opt_nodiscard, "nodiscard"},
+ 	{Opt_space_cache, "space_cache"},
++	{Opt_space_cache_version, "space_cache=%s"},
+ 	{Opt_clear_cache, "clear_cache"},
+ 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
+ 	{Opt_enospc_debug, "enospc_debug"},
+@@ -392,7 +394,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 	bool compress_force = false;
+ 
+ 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
+-	if (cache_gen)
++	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE))
++		btrfs_set_opt(info->mount_opt, FREE_SPACE_TREE);
++	else if (cache_gen)
+ 		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
+ 
+ 	if (!options)
+@@ -626,15 +630,35 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 					     "turning off discard");
+ 			break;
+ 		case Opt_space_cache:
+-			btrfs_set_and_info(root, SPACE_CACHE,
+-					   "enabling disk space caching");
++		case Opt_space_cache_version:
++			if (token == Opt_space_cache ||
++			    strcmp(args[0].from, "v1") == 0) {
++				btrfs_clear_opt(root->fs_info->mount_opt,
++						FREE_SPACE_TREE);
++				btrfs_set_and_info(root, SPACE_CACHE,
++						   "enabling disk space caching");
++			} else if (strcmp(args[0].from, "v2") == 0) {
++				btrfs_clear_opt(root->fs_info->mount_opt,
++						SPACE_CACHE);
++				btrfs_set_and_info(root, FREE_SPACE_TREE,
++						   "enabling free space tree");
++			} else {
++				ret = -EINVAL;
++				goto out;
++			}
+ 			break;
+ 		case Opt_rescan_uuid_tree:
+ 			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
+ 			break;
+ 		case Opt_no_space_cache:
+-			btrfs_clear_and_info(root, SPACE_CACHE,
+-					     "disabling disk space caching");
++			if (btrfs_test_opt(root, SPACE_CACHE)) {
++				btrfs_clear_and_info(root, SPACE_CACHE,
++						     "disabling disk space caching");
++			}
++			if (btrfs_test_opt(root, FREE_SPACE_TREE)) {
++				btrfs_clear_and_info(root, FREE_SPACE_TREE,
++						     "disabling free space tree");
++			}
+ 			break;
+ 		case Opt_inode_cache:
+ 			btrfs_set_pending_and_info(info, INODE_MAP_CACHE,
+@@ -747,8 +771,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 		}
+ 	}
+ out:
++	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE) &&
++	    !btrfs_test_opt(root, FREE_SPACE_TREE) &&
++	    !btrfs_test_opt(root, CLEAR_CACHE)) {
++		btrfs_err(root->fs_info, "cannot disable free space tree");
++		ret = -EINVAL;
++
++	}
+ 	if (!ret && btrfs_test_opt(root, SPACE_CACHE))
+ 		btrfs_info(root->fs_info, "disk space caching is enabled");
++	if (!ret && btrfs_test_opt(root, FREE_SPACE_TREE))
++		btrfs_info(root->fs_info, "using free space tree");
+ 	kfree(orig);
+ 	return ret;
+ }
+@@ -1154,6 +1187,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
+ 		seq_puts(seq, ",noacl");
+ 	if (btrfs_test_opt(root, SPACE_CACHE))
+ 		seq_puts(seq, ",space_cache");
++	else if (btrfs_test_opt(root, FREE_SPACE_TREE))
++		seq_puts(seq, ",space_cache=v2");
+ 	else
+ 		seq_puts(seq, ",nospace_cache");
+ 	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
 -- 
 2.5.2
 

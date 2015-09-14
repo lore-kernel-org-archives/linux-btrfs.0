@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:32891 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750801AbbINGE1 (ORCPT
+Received: from mail-pa0-f52.google.com ([209.85.220.52]:34602 "EHLO
+	mail-pa0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750801AbbINGE3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 02:04:27 -0400
-Received: by pacex6 with SMTP id ex6so134321379pac.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:27 -0700 (PDT)
+	Mon, 14 Sep 2015 02:04:29 -0400
+Received: by padhy16 with SMTP id hy16so133931500pad.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:29 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3 2/9] Btrfs: add extent buffer bitmap sanity tests
-Date: Sun, 13 Sep 2015 23:04:09 -0700
-Message-Id: <9224fb434561acae32d2bcf7f4ef701b637758f5.1442209006.git.osandov@osandov.com>
+Subject: [PATCH v3 5/9] Btrfs: introduce the free space B-tree on-disk format
+Date: Sun, 13 Sep 2015 23:04:12 -0700
+Message-Id: <ce17993683f9d298a713a00e8f5080bac7c97d98.1442209006.git.osandov@osandov.com>
 In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
 References: <cover.1442209006.git.osandov@osandov.com>
 In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
@@ -21,252 +21,114 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-Sanity test the extent buffer bitmap operations (test, set, and clear)
-against the equivalent standard kernel operations.
+The on-disk format for the free space tree is straightforward. Each
+block group is represented in the free space tree by a free space info
+item that stores accounting information: whether the free space for this
+block group is stored as bitmaps or extents and how many extents of free
+space exist for this block group (regardless of which format is being
+used in the tree). Extents are (start, FREE_SPACE_EXTENT, length) keys
+with no corresponding item, and bitmaps instead have the
+FREE_SPACE_BITMAP type and have a bitmap item attached, which is just an
+array of bytes.
 
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c             |  34 ++++++----
- fs/btrfs/extent_io.h             |   4 +-
- fs/btrfs/tests/extent-io-tests.c | 138 ++++++++++++++++++++++++++++++++++++++-
- 3 files changed, 160 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h             | 38 ++++++++++++++++++++++++++++++++++++++
+ include/trace/events/btrfs.h |  3 ++-
+ 2 files changed, 40 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index eae9175ff62b..f875e29e10e1 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -4678,24 +4678,14 @@ struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src)
- 	return new;
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 7ad1bdb667db..b166e5c26afe 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -96,6 +96,9 @@ struct btrfs_ordered_sum;
+ /* for storing items that use the BTRFS_UUID_KEY* types */
+ #define BTRFS_UUID_TREE_OBJECTID 9ULL
  
--struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
--						u64 start)
-+struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
-+						  u64 start, unsigned long len)
++/* tracks free space in block groups. */
++#define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
++
+ /* for storing balance parameters in the root tree */
+ #define BTRFS_BALANCE_OBJECTID -4ULL
+ 
+@@ -500,6 +503,8 @@ struct btrfs_super_block {
+  * Compat flags that we support.  If any incompat flags are set other than the
+  * ones specified below then we will fail to mount
+  */
++#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
++
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
+ #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
+@@ -1061,6 +1066,13 @@ struct btrfs_block_group_item {
+ 	__le64 flags;
+ } __attribute__ ((__packed__));
+ 
++struct btrfs_free_space_info {
++	__le32 extent_count;
++	__le32 flags;
++} __attribute__ ((__packed__));
++
++#define BTRFS_FREE_SPACE_USING_BITMAPS (1ULL << 0)
++
+ #define BTRFS_QGROUP_LEVEL_SHIFT		48
+ static inline u64 btrfs_qgroup_level(u64 qgroupid)
  {
- 	struct extent_buffer *eb;
--	unsigned long len;
- 	unsigned long num_pages;
- 	unsigned long i;
+@@ -2064,6 +2076,27 @@ struct btrfs_ioctl_defrag_range_args {
+  */
+ #define BTRFS_BLOCK_GROUP_ITEM_KEY 192
  
--	if (!fs_info) {
--		/*
--		 * Called only from tests that don't always have a fs_info
--		 * available, but we know that nodesize is 4096
--		 */
--		len = 4096;
--	} else {
--		len = fs_info->tree_root->nodesize;
--	}
--	num_pages = num_extent_pages(0, len);
-+	num_pages = num_extent_pages(start, len);
++/*
++ * Every block group is represented in the free space tree by a free space info
++ * item, which stores some accounting information. It is keyed on
++ * (block_group_start, FREE_SPACE_INFO, block_group_length).
++ */
++#define BTRFS_FREE_SPACE_INFO_KEY 198
++
++/*
++ * A free space extent tracks an extent of space that is free in a block group.
++ * It is keyed on (start, FREE_SPACE_EXTENT, length).
++ */
++#define BTRFS_FREE_SPACE_EXTENT_KEY 199
++
++/*
++ * When a block group becomes very fragmented, we convert it to use bitmaps
++ * instead of extents. A free space bitmap is keyed on
++ * (start, FREE_SPACE_BITMAP, length); the corresponding item is a bitmap with
++ * (length / sectorsize) bits.
++ */
++#define BTRFS_FREE_SPACE_BITMAP_KEY 200
++
+ #define BTRFS_DEV_EXTENT_KEY	204
+ #define BTRFS_DEV_ITEM_KEY	216
+ #define BTRFS_CHUNK_ITEM_KEY	228
+@@ -2464,6 +2497,11 @@ BTRFS_SETGET_FUNCS(disk_block_group_flags,
+ BTRFS_SETGET_STACK_FUNCS(block_group_flags,
+ 			struct btrfs_block_group_item, flags, 64);
  
- 	eb = __alloc_extent_buffer(fs_info, start, len);
- 	if (!eb)
-@@ -4718,6 +4708,24 @@ err:
- 	return NULL;
- }
++/* struct btrfs_free_space_info */
++BTRFS_SETGET_FUNCS(free_space_extent_count, struct btrfs_free_space_info,
++		   extent_count, 32);
++BTRFS_SETGET_FUNCS(free_space_flags, struct btrfs_free_space_info, flags, 32);
++
+ /* struct btrfs_inode_ref */
+ BTRFS_SETGET_FUNCS(inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
+ BTRFS_SETGET_FUNCS(inode_ref_index, struct btrfs_inode_ref, index, 64);
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 0b73af9be12f..e6289e62a2a8 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -45,7 +45,8 @@ struct btrfs_qgroup_operation;
+ 		{ BTRFS_TREE_LOG_OBJECTID,	"TREE_LOG"	},	\
+ 		{ BTRFS_QUOTA_TREE_OBJECTID,	"QUOTA_TREE"	},	\
+ 		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
+-		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_RELOC"	},	\
++		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_TREE"	},	\
++		{ BTRFS_FREE_SPACE_TREE_OBJECTID, "FREE_SPACE_TREE" },	\
+ 		{ BTRFS_DATA_RELOC_TREE_OBJECTID, "DATA_RELOC_TREE" })
  
-+struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
-+						u64 start)
-+{
-+	unsigned long len;
-+
-+	if (!fs_info) {
-+		/*
-+		 * Called only from tests that don't always have a fs_info
-+		 * available, but we know that nodesize is 4096
-+		 */
-+		len = 4096;
-+	} else {
-+		len = fs_info->tree_root->nodesize;
-+	}
-+
-+	return __alloc_dummy_extent_buffer(fs_info, start, len);
-+}
-+
- static void check_buffer_tree_ref(struct extent_buffer *eb)
- {
- 	int refs;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 9185a20081d7..9f8d7d1a7015 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -263,8 +263,10 @@ void set_page_extent_mapped(struct page *page);
- 
- struct extent_buffer *alloc_extent_buffer(struct btrfs_fs_info *fs_info,
- 					  u64 start);
-+struct extent_buffer *__alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
-+						  u64 start, unsigned long len);
- struct extent_buffer *alloc_dummy_extent_buffer(struct btrfs_fs_info *fs_info,
--		u64 start);
-+						u64 start);
- struct extent_buffer *btrfs_clone_extent_buffer(struct extent_buffer *src);
- struct extent_buffer *find_extent_buffer(struct btrfs_fs_info *fs_info,
- 					 u64 start);
-diff --git a/fs/btrfs/tests/extent-io-tests.c b/fs/btrfs/tests/extent-io-tests.c
-index 9e9f2368177d..71ab575e7633 100644
---- a/fs/btrfs/tests/extent-io-tests.c
-+++ b/fs/btrfs/tests/extent-io-tests.c
-@@ -18,6 +18,7 @@
- 
- #include <linux/pagemap.h>
- #include <linux/sched.h>
-+#include <linux/slab.h>
- #include "btrfs-tests.h"
- #include "../extent_io.h"
- 
-@@ -76,6 +77,8 @@ static int test_find_delalloc(void)
- 	u64 found;
- 	int ret = -EINVAL;
- 
-+	test_msg("Running find delalloc tests\n");
-+
- 	inode = btrfs_new_test_inode();
- 	if (!inode) {
- 		test_msg("Failed to allocate test inode\n");
-@@ -268,8 +271,139 @@ out:
- 	return ret;
- }
- 
-+static int __test_eb_bitmaps(unsigned long *bitmap, struct extent_buffer *eb,
-+			     unsigned long len)
-+{
-+	unsigned long i, x;
-+
-+	memset(bitmap, 0, len);
-+	memset_extent_buffer(eb, 0, 0, len);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Bitmap was not zeroed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
-+	extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Setting all bits failed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_clear(bitmap, 0, len * BITS_PER_BYTE);
-+	extent_buffer_bitmap_clear(eb, 0, 0, len * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Clearing all bits failed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_set(bitmap, (PAGE_CACHE_SIZE - sizeof(long) / 2) * BITS_PER_BYTE,
-+		   sizeof(long) * BITS_PER_BYTE);
-+	extent_buffer_bitmap_set(eb, PAGE_CACHE_SIZE - sizeof(long) / 2, 0,
-+				 sizeof(long) * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Setting straddling pages failed\n");
-+		return -EINVAL;
-+	}
-+
-+	bitmap_set(bitmap, 0, len * BITS_PER_BYTE);
-+	bitmap_clear(bitmap,
-+		     (PAGE_CACHE_SIZE - sizeof(long) / 2) * BITS_PER_BYTE,
-+		     sizeof(long) * BITS_PER_BYTE);
-+	extent_buffer_bitmap_set(eb, 0, 0, len * BITS_PER_BYTE);
-+	extent_buffer_bitmap_clear(eb, PAGE_CACHE_SIZE - sizeof(long) / 2, 0,
-+				   sizeof(long) * BITS_PER_BYTE);
-+	if (memcmp_extent_buffer(eb, bitmap, 0, len) != 0) {
-+		test_msg("Clearing straddling pages failed\n");
-+		return -EINVAL;
-+	}
-+
-+	/*
-+	 * Generate a wonky pseudo-random bit pattern for the sake of not using
-+	 * something repetitive that could miss some hypothetical off-by-n bug.
-+	 */
-+	x = 0;
-+	for (i = 0; i < len / sizeof(long); i++) {
-+		x = (0x19660dULL * (u64)x + 0x3c6ef35fULL) & 0xffffffffUL;
-+		bitmap[i] = x;
-+	}
-+	write_extent_buffer(eb, bitmap, 0, len);
-+
-+	for (i = 0; i < len * BITS_PER_BYTE; i++) {
-+		int bit, bit1;
-+
-+		bit = !!test_bit(i, bitmap);
-+		bit1 = !!extent_buffer_test_bit(eb, 0, i);
-+		if (bit1 != bit) {
-+			test_msg("Testing bit pattern failed\n");
-+			return -EINVAL;
-+		}
-+
-+		bit1 = !!extent_buffer_test_bit(eb, i / BITS_PER_BYTE,
-+						i % BITS_PER_BYTE);
-+		if (bit1 != bit) {
-+			test_msg("Testing bit pattern with offset failed\n");
-+			return -EINVAL;
-+		}
-+	}
-+
-+	return 0;
-+}
-+
-+static int test_eb_bitmaps(void)
-+{
-+	unsigned long len = PAGE_CACHE_SIZE * 4;
-+	unsigned long *bitmap;
-+	struct extent_buffer *eb;
-+	int ret;
-+
-+	test_msg("Running extent buffer bitmap tests\n");
-+
-+	bitmap = kmalloc(len, GFP_NOFS);
-+	if (!bitmap) {
-+		test_msg("Couldn't allocate test bitmap\n");
-+		return -ENOMEM;
-+	}
-+
-+	eb = __alloc_dummy_extent_buffer(NULL, 0, len);
-+	if (!eb) {
-+		test_msg("Couldn't allocate test extent buffer\n");
-+		kfree(bitmap);
-+		return -ENOMEM;
-+	}
-+
-+	ret = __test_eb_bitmaps(bitmap, eb, len);
-+	if (ret)
-+		goto out;
-+
-+	/* Do it over again with an extent buffer which isn't page-aligned. */
-+	free_extent_buffer(eb);
-+	eb = __alloc_dummy_extent_buffer(NULL, PAGE_CACHE_SIZE / 2, len);
-+	if (!eb) {
-+		test_msg("Couldn't allocate test extent buffer\n");
-+		kfree(bitmap);
-+		return -ENOMEM;
-+	}
-+
-+	ret = __test_eb_bitmaps(bitmap, eb, len);
-+out:
-+	free_extent_buffer(eb);
-+	kfree(bitmap);
-+	return ret;
-+}
-+
- int btrfs_test_extent_io(void)
- {
--	test_msg("Running find delalloc tests\n");
--	return test_find_delalloc();
-+	int ret;
-+
-+	test_msg("Running extent I/O tests\n");
-+
-+	ret = test_find_delalloc();
-+	if (ret)
-+		goto out;
-+
-+	ret = test_eb_bitmaps();
-+out:
-+	test_msg("Extent I/O tests finished\n");
-+	return ret;
- }
+ #define show_root_type(obj)						\
 -- 
 2.5.2
 

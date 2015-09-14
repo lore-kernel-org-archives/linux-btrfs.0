@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:32919 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751340AbbINGE3 (ORCPT
+Received: from mail-pa0-f45.google.com ([209.85.220.45]:35132 "EHLO
+	mail-pa0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751421AbbINGEc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 02:04:29 -0400
-Received: by pacex6 with SMTP id ex6so134322084pac.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:28 -0700 (PDT)
+	Mon, 14 Sep 2015 02:04:32 -0400
+Received: by pacfv12 with SMTP id fv12so136695396pac.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:32 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3 4/9] Btrfs: refactor caching_thread()
-Date: Sun, 13 Sep 2015 23:04:11 -0700
-Message-Id: <35a1871019e42d2c753c1e3a8f7a2940023482c3.1442209006.git.osandov@osandov.com>
+Subject: [PATCH v3 8/9] Btrfs: wire up the free space tree to the extent tree
+Date: Sun, 13 Sep 2015 23:04:15 -0700
+Message-Id: <ce4a87fc5de699c8a636ae2531372d78577ef016.1442209006.git.osandov@osandov.com>
 In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
 References: <cover.1442209006.git.osandov@osandov.com>
 In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
@@ -21,158 +21,129 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-We're also going to load the free space tree from caching_thread(), so
-we should refactor some of the common code.
+The free space tree is updated in tandem with the extent tree. There are
+only a handful of places where we need to hook in:
+
+1. Block group creation
+2. Block group deletion
+3. Delayed refs (extent creation and deletion)
+4. Block group caching
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/ctree.h       |  3 +++
- fs/btrfs/extent-tree.c | 59 ++++++++++++++++++++++++++++----------------------
- 2 files changed, 36 insertions(+), 26 deletions(-)
+ fs/btrfs/extent-tree.c | 36 +++++++++++++++++++++++++++++++++---
+ 1 file changed, 33 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 83d760378c3c..7ad1bdb667db 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -1262,6 +1262,9 @@ struct btrfs_caching_control {
- 	atomic_t count;
- };
- 
-+/* Once caching_thread() finds this much free space, it will wake up waiters. */
-+#define CACHING_CTL_WAKE_UP (1024 * 1024 * 2)
-+
- struct btrfs_io_ctl {
- 	void *cur, *orig;
- 	struct page *page;
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 07204bf601ed..20b04edf1079 100644
+index 134a971bdbda..0178718ec7a1 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -375,11 +375,10 @@ static u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
- 	return total_added;
- }
+@@ -33,6 +33,7 @@
+ #include "raid56.h"
+ #include "locking.h"
+ #include "free-space-cache.h"
++#include "free-space-tree.h"
+ #include "math.h"
+ #include "sysfs.h"
+ #include "qgroup.h"
+@@ -518,7 +519,10 @@ static noinline void caching_thread(struct btrfs_work *work)
+ 	mutex_lock(&caching_ctl->mutex);
+ 	down_read(&fs_info->commit_root_sem);
  
--static noinline void caching_thread(struct btrfs_work *work)
-+static int load_extent_tree_free(struct btrfs_caching_control *caching_ctl)
- {
- 	struct btrfs_block_group_cache *block_group;
- 	struct btrfs_fs_info *fs_info;
--	struct btrfs_caching_control *caching_ctl;
- 	struct btrfs_root *extent_root;
- 	struct btrfs_path *path;
- 	struct extent_buffer *leaf;
-@@ -387,16 +386,15 @@ static noinline void caching_thread(struct btrfs_work *work)
- 	u64 total_found = 0;
- 	u64 last = 0;
- 	u32 nritems;
--	int ret = -ENOMEM;
-+	int ret;
+-	ret = load_extent_tree_free(caching_ctl);
++	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE))
++		ret = load_free_space_tree(caching_ctl);
++	else
++		ret = load_extent_tree_free(caching_ctl);
  
--	caching_ctl = container_of(work, struct btrfs_caching_control, work);
- 	block_group = caching_ctl->block_group;
- 	fs_info = block_group->fs_info;
- 	extent_root = fs_info->extent_root;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
--		goto out;
-+		return -ENOMEM;
- 
- 	last = max_t(u64, block_group->key.objectid, BTRFS_SUPER_INFO_OFFSET);
- 
-@@ -413,15 +411,11 @@ static noinline void caching_thread(struct btrfs_work *work)
- 	key.objectid = last;
- 	key.offset = 0;
- 	key.type = BTRFS_EXTENT_ITEM_KEY;
--again:
--	mutex_lock(&caching_ctl->mutex);
--	/* need to make sure the commit_root doesn't disappear */
--	down_read(&fs_info->commit_root_sem);
- 
- next:
- 	ret = btrfs_search_slot(NULL, extent_root, &key, path, 0, 0);
- 	if (ret < 0)
--		goto err;
-+		goto out;
- 
- 	leaf = path->nodes[0];
- 	nritems = btrfs_header_nritems(leaf);
-@@ -446,12 +440,14 @@ next:
- 				up_read(&fs_info->commit_root_sem);
- 				mutex_unlock(&caching_ctl->mutex);
- 				cond_resched();
--				goto again;
-+				mutex_lock(&caching_ctl->mutex);
-+				down_read(&fs_info->commit_root_sem);
-+				goto next;
- 			}
- 
- 			ret = btrfs_next_leaf(extent_root, path);
- 			if (ret < 0)
--				goto err;
-+				goto out;
- 			if (ret)
- 				break;
- 			leaf = path->nodes[0];
-@@ -489,7 +485,7 @@ next:
- 			else
- 				last = key.objectid + key.offset;
- 
--			if (total_found > (1024 * 1024 * 2)) {
-+			if (total_found > CACHING_CTL_WAKE_UP) {
- 				total_found = 0;
- 				wake_up(&caching_ctl->wait);
- 			}
-@@ -503,25 +499,36 @@ next:
- 					  block_group->key.offset);
- 	caching_ctl->progress = (u64)-1;
- 
-+out:
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
-+static noinline void caching_thread(struct btrfs_work *work)
-+{
-+	struct btrfs_block_group_cache *block_group;
-+	struct btrfs_fs_info *fs_info;
-+	struct btrfs_caching_control *caching_ctl;
-+	int ret;
-+
-+	caching_ctl = container_of(work, struct btrfs_caching_control, work);
-+	block_group = caching_ctl->block_group;
-+	fs_info = block_group->fs_info;
-+
-+	mutex_lock(&caching_ctl->mutex);
-+	down_read(&fs_info->commit_root_sem);
-+
-+	ret = load_extent_tree_free(caching_ctl);
-+
  	spin_lock(&block_group->lock);
  	block_group->caching_ctl = NULL;
--	block_group->cached = BTRFS_CACHE_FINISHED;
-+	block_group->cached = ret ? BTRFS_CACHE_ERROR : BTRFS_CACHE_FINISHED;
- 	spin_unlock(&block_group->lock);
+@@ -624,8 +628,8 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
+ 		}
+ 	} else {
+ 		/*
+-		 * We are not going to do the fast caching, set cached to the
+-		 * appropriate value and wakeup any waiters.
++		 * We're either using the free space tree or no caching at all.
++		 * Set cached to the appropriate value and wakeup any waiters.
+ 		 */
+ 		spin_lock(&cache->lock);
+ 		if (load_cache_only) {
+@@ -6383,6 +6387,13 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			}
+ 		}
  
--err:
--	btrfs_free_path(path);
- 	up_read(&fs_info->commit_root_sem);
--
--	free_excluded_extents(extent_root, block_group);
--
-+	free_excluded_extents(fs_info->extent_root, block_group);
- 	mutex_unlock(&caching_ctl->mutex);
--out:
--	if (ret) {
--		spin_lock(&block_group->lock);
--		block_group->caching_ctl = NULL;
--		block_group->cached = BTRFS_CACHE_ERROR;
--		spin_unlock(&block_group->lock);
--	}
++		ret = add_to_free_space_tree(trans, root->fs_info, bytenr,
++					     num_bytes);
++		if (ret) {
++			btrfs_abort_transaction(trans, extent_root, ret);
++			goto out;
++		}
 +
- 	wake_up(&caching_ctl->wait);
+ 		ret = update_block_group(trans, root, bytenr, num_bytes, 0);
+ 		if (ret) {
+ 			btrfs_abort_transaction(trans, extent_root, ret);
+@@ -7326,6 +7337,11 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(path->nodes[0]);
+ 	btrfs_free_path(path);
  
- 	put_caching_control(caching_ctl);
++	ret = remove_from_free_space_tree(trans, fs_info, ins->objectid,
++					  ins->offset);
++	if (ret)
++		return ret;
++
+ 	ret = update_block_group(trans, root, ins->objectid, ins->offset, 1);
+ 	if (ret) { /* -ENOENT, logic error */
+ 		btrfs_err(fs_info, "update block group failed for %llu %llu",
+@@ -7407,6 +7423,11 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_free_path(path);
+ 
++	ret = remove_from_free_space_tree(trans, fs_info, ins->objectid,
++					  num_bytes);
++	if (ret)
++		return ret;
++
+ 	ret = update_block_group(trans, root, ins->objectid, root->nodesize,
+ 				 1);
+ 	if (ret) { /* -ENOENT, logic error */
+@@ -9277,6 +9298,8 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
+ 	cache->full_stripe_len = btrfs_full_stripe_len(root,
+ 					       &root->fs_info->mapping_tree,
+ 					       start);
++	set_free_space_tree_thresholds(cache);
++
+ 	atomic_set(&cache->count, 1);
+ 	spin_lock_init(&cache->lock);
+ 	init_rwsem(&cache->data_rwsem);
+@@ -9497,6 +9520,8 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+ 					       key.objectid, key.offset);
+ 		if (ret)
+ 			btrfs_abort_transaction(trans, extent_root, ret);
++		add_block_group_free_space(trans, root->fs_info, block_group);
++		/* already aborted the transaction if it failed. */
+ next:
+ 		list_del_init(&block_group->bg_list);
+ 	}
+@@ -9526,6 +9551,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 	cache->flags = type;
+ 	cache->last_byte_to_unpin = (u64)-1;
+ 	cache->cached = BTRFS_CACHE_FINISHED;
++	cache->needs_free_space = 1;
+ 	ret = exclude_super_stripes(root, cache);
+ 	if (ret) {
+ 		/*
+@@ -9883,6 +9909,10 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 
+ 	unlock_chunks(root);
+ 
++	ret = remove_block_group_free_space(trans, root->fs_info, block_group);
++	if (ret)
++		goto out;
++
+ 	btrfs_put_block_group(block_group);
+ 	btrfs_put_block_group(block_group);
+ 
 -- 
 2.5.2
 

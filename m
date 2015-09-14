@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:36855 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751553AbbINGIa (ORCPT
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:35848 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751030AbbINGIb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 02:08:30 -0400
-Received: by padhk3 with SMTP id hk3so133946317pad.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:08:30 -0700 (PDT)
+	Mon, 14 Sep 2015 02:08:31 -0400
+Received: by padhk3 with SMTP id hk3so133946741pad.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:08:31 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3 2/3] btrfs-progs: add basic awareness of the free space tree
-Date: Sun, 13 Sep 2015 23:08:23 -0700
-Message-Id: <ee5dd7a04a3b0b908de9128af9633a3c22d58200.1442210847.git.osandov@osandov.com>
+Subject: [PATCH v3 3/3] btrfs-progs: check the free space tree in btrfsck
+Date: Sun, 13 Sep 2015 23:08:24 -0700
+Message-Id: <ba2cc3011b7d52c36b003f601f591a1feb53c063.1442210847.git.osandov@osandov.com>
 In-Reply-To: <0ed7db75e4bebd2b538d7c48c9f43c05c9b14f46.1442210847.git.osandov@osandov.com>
 References: <cover.1442209006.git.osandov@osandov.com>
  <0ed7db75e4bebd2b538d7c48c9f43c05c9b14f46.1442210847.git.osandov@osandov.com>
@@ -22,256 +22,597 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-To start, let's tell btrfs-progs to read the free space root and how to
-print the on-disk format of the free space tree. However, we're not
-adding the FREE_SPACE_TREE read-only compat bit to the set of supported
-bits because progs doesn't know how to keep the free space tree
-consistent.
+This reuses the existing code for checking the free space cache, we just
+need to load the free space tree. While we do that, we check a couple of
+invariants on the free space tree itself. This requires pulling in some
+code from the kernel to exclude the super stripes.
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- btrfs-debug-tree.c |  4 ++++
- ctree.h            | 49 ++++++++++++++++++++++++++++++++++++++++++++++++-
- disk-io.c          | 16 +++++++++++++++-
- print-tree.c       | 25 +++++++++++++++++++++++++
- 4 files changed, 92 insertions(+), 2 deletions(-)
+ Makefile.in        |   2 +-
+ cmds-check.c       |  32 ++++++-
+ ctree.h            |   6 ++
+ extent-tree.c      | 118 +++++++++++++++++++++++
+ extent_io.c        |   6 ++
+ extent_io.h        |   2 +
+ free-space-cache.c |   4 +-
+ free-space-cache.h |   2 +
+ free-space-tree.c  | 267 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ free-space-tree.h  |  25 +++++
+ 10 files changed, 457 insertions(+), 7 deletions(-)
+ create mode 100644 free-space-tree.c
+ create mode 100644 free-space-tree.h
 
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index 7d8e876f1a2d..2aa5bd11d1b6 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -375,6 +375,10 @@ again:
- 				if (!skip)
- 					printf("uuid");
- 				break;
-+			case BTRFS_FREE_SPACE_TREE_OBJECTID:
-+				if (!skip)
-+					printf("free space");
-+				break;
- 			case BTRFS_MULTIPLE_OBJECTIDS:
- 				if (!skip) {
- 					printf("multiple");
+diff --git a/Makefile.in b/Makefile.in
+index 665f83c04d00..cac9a269ee8f 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -38,7 +38,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
+ 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
+ 	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
+ 	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
+-	  inode.o file.o find-root.o
++	  inode.o file.o find-root.o free-space-tree.o
+ cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
+ 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
+ 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
+diff --git a/cmds-check.c b/cmds-check.c
+index 0694a3bc5646..04459750c783 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -34,6 +34,7 @@
+ #include "utils.h"
+ #include "commands.h"
+ #include "free-space-cache.h"
++#include "free-space-tree.h"
+ #include "btrfsck.h"
+ #include "qgroup-verify.h"
+ #include "rbtree-utils.h"
+@@ -5285,9 +5286,29 @@ static int check_space_cache(struct btrfs_root *root)
+ 			btrfs_remove_free_space_cache(cache);
+ 		}
+ 
+-		ret = load_free_space_cache(root->fs_info, cache);
+-		if (!ret)
+-			continue;
++		if (btrfs_fs_compat_ro(root->fs_info,
++				       BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)) {
++			ret = exclude_super_stripes(root, cache);
++			if (ret) {
++				fprintf(stderr, "could not exclude super stripes: %s\n",
++					strerror(-ret));
++				error++;
++				continue;
++			}
++			ret = load_free_space_tree(root->fs_info, cache);
++			free_excluded_extents(root, cache);
++			if (ret < 0) {
++				fprintf(stderr, "could not load free space tree: %s\n",
++					strerror(-ret));
++				error++;
++				continue;
++			}
++			error += ret;
++		} else {
++			ret = load_free_space_cache(root->fs_info, cache);
++			if (!ret)
++				continue;
++		}
+ 
+ 		ret = verify_space_cache(root, cache);
+ 		if (ret) {
+@@ -9495,7 +9516,10 @@ int cmd_check(int argc, char **argv)
+ 		goto close_out;
+ 	}
+ 
+-	fprintf(stderr, "checking free space cache\n");
++	if (btrfs_fs_compat_ro(info, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE))
++		fprintf(stderr, "checking free space tree\n");
++	else
++		fprintf(stderr, "checking free space cache\n");
+ 	ret = check_space_cache(root);
+ 	if (ret)
+ 		goto out;
 diff --git a/ctree.h b/ctree.h
-index bcad2b98d5c7..6339ad50a412 100644
+index 6339ad50a412..34037e882ace 100644
 --- a/ctree.h
 +++ b/ctree.h
-@@ -76,6 +76,9 @@ struct btrfs_free_space_ctl;
- /* for storing items that use the BTRFS_UUID_KEY* */
- #define BTRFS_UUID_TREE_OBJECTID 9ULL
- 
-+/* tracks free space in block groups. */
-+#define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
-+
- /* for storing balance parameters in the root tree */
- #define BTRFS_BALANCE_OBJECTID -4ULL
- 
-@@ -453,6 +456,8 @@ struct btrfs_super_block {
-  * Compat flags that we support.  If any incompat flags are set other than the
-  * ones specified below then we will fail to mount
-  */
-+#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
-+
- #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
- #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
- #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
-@@ -476,9 +481,10 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA	(1ULL << 8)
- #define BTRFS_FEATURE_INCOMPAT_NO_HOLES		(1ULL << 9)
- 
--
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
-+
- #define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-+
- #define BTRFS_FEATURE_INCOMPAT_SUPP			\
- 	(BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF |		\
- 	 BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL |	\
-@@ -898,6 +904,13 @@ struct btrfs_block_group_item {
- 	__le64 flags;
- } __attribute__ ((__packed__));
- 
-+struct btrfs_free_space_info {
-+	__le32 extent_count;
-+	__le32 flags;
-+} __attribute__ ((__packed__));
-+
-+#define BTRFS_FREE_SPACE_USING_BITMAPS (1ULL << 0)
-+
- struct btrfs_qgroup_info_item {
- 	__le64 generation;
- 	__le64 referenced;
-@@ -965,6 +978,7 @@ struct btrfs_fs_info {
- 	struct btrfs_root *dev_root;
- 	struct btrfs_root *csum_root;
- 	struct btrfs_root *quota_root;
-+	struct btrfs_root *free_space_root;
- 
- 	struct rb_root fs_root_tree;
- 
-@@ -1157,6 +1171,27 @@ struct btrfs_root {
-  */
- #define BTRFS_BLOCK_GROUP_ITEM_KEY 192
- 
-+/*
-+ * Every block group is represented in the free space tree by a free space info
-+ * item, which stores some accounting information. It is keyed on
-+ * (block_group_start, FREE_SPACE_INFO, block_group_length).
-+ */
-+#define BTRFS_FREE_SPACE_INFO_KEY 198
-+
-+/*
-+ * A free space extent tracks an extent of space that is free in a block group.
-+ * It is keyed on (start, FREE_SPACE_EXTENT, length).
-+ */
-+#define BTRFS_FREE_SPACE_EXTENT_KEY 199
-+
-+/*
-+ * When a block group becomes very fragmented, we convert it to use bitmaps
-+ * instead of extents. A free space bitmap is keyed on
-+ * (start, FREE_SPACE_BITMAP, length); the corresponding item is a bitmap with
-+ * (length / sectorsize) bits.
-+ */
-+#define BTRFS_FREE_SPACE_BITMAP_KEY 200
-+
- #define BTRFS_DEV_EXTENT_KEY	204
- #define BTRFS_DEV_ITEM_KEY	216
- #define BTRFS_CHUNK_ITEM_KEY	228
-@@ -1394,6 +1429,11 @@ BTRFS_SETGET_FUNCS(disk_block_group_flags,
- BTRFS_SETGET_STACK_FUNCS(block_group_flags,
- 			struct btrfs_block_group_item, flags, 64);
- 
-+/* struct btrfs_free_space_info */
-+BTRFS_SETGET_FUNCS(free_space_extent_count, struct btrfs_free_space_info,
-+		   extent_count, 32);
-+BTRFS_SETGET_FUNCS(free_space_flags, struct btrfs_free_space_info, flags, 32);
-+
- /* struct btrfs_inode_ref */
- BTRFS_SETGET_FUNCS(inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
- BTRFS_SETGET_STACK_FUNCS(stack_inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
-@@ -2191,6 +2231,13 @@ static inline int btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
- 	return !!(btrfs_super_incompat_flags(disk_super) & flag);
+@@ -2327,6 +2327,12 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
+ 			      u64 num_bytes);
+ int btrfs_free_block_group(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_fs_info *fs_info, u64 bytenr, u64 len);
++void free_excluded_extents(struct btrfs_root *root,
++			   struct btrfs_block_group_cache *cache);
++int exclude_super_stripes(struct btrfs_root *root,
++			  struct btrfs_block_group_cache *cache);
++u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
++		       struct btrfs_fs_info *info, u64 start, u64 end);
+ /* ctree.c */
+ int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2);
+ int btrfs_del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+diff --git a/extent-tree.c b/extent-tree.c
+index 0c8152a336b1..ffd2cf0c86b2 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -4001,3 +4001,121 @@ fail:
+ 	btrfs_release_path(&path);
+ 	return ret;
  }
- 
-+static inline int btrfs_fs_compat_ro(struct btrfs_fs_info *fs_info, u64 flag)
++
++
++static int add_excluded_extent(struct btrfs_root *root,
++			       u64 start, u64 num_bytes)
 +{
-+	struct btrfs_super_block *disk_super;
-+	disk_super = fs_info->super_copy;
-+	return !!(btrfs_super_compat_ro_flags(disk_super) & flag);
++	u64 end = start + num_bytes - 1;
++	set_extent_bits(&root->fs_info->pinned_extents,
++			start, end, EXTENT_UPTODATE, GFP_NOFS);
++	return 0;
 +}
 +
- /* helper function to cast into the data area of the leaf. */
- #define btrfs_item_ptr(leaf, slot, type) \
- 	((type *)(btrfs_leaf_data(leaf) + \
-diff --git a/disk-io.c b/disk-io.c
-index 8496aded31c4..ae9d6e1abb23 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -818,6 +818,7 @@ void btrfs_free_fs_info(struct btrfs_fs_info *fs_info)
- 	free(fs_info->dev_root);
- 	free(fs_info->csum_root);
- 	free(fs_info->quota_root);
-+	free(fs_info->free_space_root);
- 	free(fs_info->super_copy);
- 	free(fs_info->log_root_tree);
- 	free(fs_info);
-@@ -839,12 +840,13 @@ struct btrfs_fs_info *btrfs_new_fs_info(int writable, u64 sb_bytenr)
- 	fs_info->dev_root = calloc(1, sizeof(struct btrfs_root));
- 	fs_info->csum_root = calloc(1, sizeof(struct btrfs_root));
- 	fs_info->quota_root = calloc(1, sizeof(struct btrfs_root));
-+	fs_info->free_space_root = calloc(1, sizeof(struct btrfs_root));
- 	fs_info->super_copy = calloc(1, BTRFS_SUPER_INFO_SIZE);
- 
- 	if (!fs_info->tree_root || !fs_info->extent_root ||
- 	    !fs_info->chunk_root || !fs_info->dev_root ||
- 	    !fs_info->csum_root || !fs_info->quota_root ||
--	    !fs_info->super_copy)
-+	    !fs_info->free_space_root || !fs_info->super_copy)
- 		goto free_all;
- 
- 	extent_io_tree_init(&fs_info->extent_cache);
-@@ -1025,6 +1027,16 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
- 	if (ret == 0)
- 		fs_info->quota_enabled = 1;
- 
-+	if (btrfs_fs_compat_ro(fs_info, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)) {
-+		ret = find_and_setup_root(root, fs_info, BTRFS_FREE_SPACE_TREE_OBJECTID,
-+					  fs_info->free_space_root);
-+		if (ret) {
-+			printk("Couldn't read free space tree\n");
-+			return -EIO;
-+		}
-+		fs_info->free_space_root->track_dirty = 1;
++void free_excluded_extents(struct btrfs_root *root,
++			   struct btrfs_block_group_cache *cache)
++{
++	u64 start, end;
++
++	start = cache->key.objectid;
++	end = start + cache->key.offset - 1;
++
++	clear_extent_bits(&root->fs_info->pinned_extents,
++			  start, end, EXTENT_UPTODATE, GFP_NOFS);
++}
++
++int exclude_super_stripes(struct btrfs_root *root,
++			  struct btrfs_block_group_cache *cache)
++{
++	u64 bytenr;
++	u64 *logical;
++	int stripe_len;
++	int i, nr, ret;
++
++	if (cache->key.objectid < BTRFS_SUPER_INFO_OFFSET) {
++		stripe_len = BTRFS_SUPER_INFO_OFFSET - cache->key.objectid;
++		cache->bytes_super += stripe_len;
++		ret = add_excluded_extent(root, cache->key.objectid,
++					  stripe_len);
++		if (ret)
++			return ret;
 +	}
 +
- 	ret = find_and_setup_log_root(root, fs_info, sb);
- 	if (ret) {
- 		printk("Couldn't setup log root tree\n");
-@@ -1050,6 +1062,8 @@ int btrfs_setup_all_roots(struct btrfs_fs_info *fs_info, u64 root_tree_bytenr,
- 
- void btrfs_release_all_roots(struct btrfs_fs_info *fs_info)
++	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
++		bytenr = btrfs_sb_offset(i);
++		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
++				       cache->key.objectid, bytenr,
++				       0, &logical, &nr, &stripe_len);
++		if (ret)
++			return ret;
++
++		while (nr--) {
++			u64 start, len;
++
++			if (logical[nr] > cache->key.objectid +
++			    cache->key.offset)
++				continue;
++
++			if (logical[nr] + stripe_len <= cache->key.objectid)
++				continue;
++
++			start = logical[nr];
++			if (start < cache->key.objectid) {
++				start = cache->key.objectid;
++				len = (logical[nr] + stripe_len) - start;
++			} else {
++				len = min_t(u64, stripe_len,
++					    cache->key.objectid +
++					    cache->key.offset - start);
++			}
++
++			cache->bytes_super += len;
++			ret = add_excluded_extent(root, start, len);
++			if (ret) {
++				kfree(logical);
++				return ret;
++			}
++		}
++
++		kfree(logical);
++	}
++	return 0;
++}
++
++u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
++		       struct btrfs_fs_info *info, u64 start, u64 end)
++{
++	u64 extent_start, extent_end, size, total_added = 0;
++	int ret;
++
++	while (start < end) {
++		ret = find_first_extent_bit(&info->pinned_extents, start,
++					    &extent_start, &extent_end,
++					    EXTENT_DIRTY | EXTENT_UPTODATE);
++		if (ret)
++			break;
++
++		if (extent_start <= start) {
++			start = extent_end + 1;
++		} else if (extent_start > start && extent_start < end) {
++			size = extent_start - start;
++			total_added += size;
++			ret = btrfs_add_free_space(block_group->free_space_ctl,
++						   start, size);
++			BUG_ON(ret); /* -ENOMEM or logic error */
++			start = extent_end + 1;
++		} else {
++			break;
++		}
++	}
++
++	if (start < end) {
++		size = end - start;
++		total_added += size;
++		ret = btrfs_add_free_space(block_group->free_space_ctl, start,
++					   size);
++		BUG_ON(ret); /* -ENOMEM or logic error */
++	}
++
++	return total_added;
++}
+diff --git a/extent_io.c b/extent_io.c
+index 07695ef8a097..079ab7f2fb7d 100644
+--- a/extent_io.c
++++ b/extent_io.c
+@@ -885,3 +885,9 @@ void memset_extent_buffer(struct extent_buffer *eb, char c,
  {
-+	if (fs_info->free_space_root)
-+		free_extent_buffer(fs_info->free_space_root->node);
- 	if (fs_info->quota_root)
- 		free_extent_buffer(fs_info->quota_root->node);
- 	if (fs_info->csum_root)
-diff --git a/print-tree.c b/print-tree.c
-index dc1d2764ae91..9dc058b58bde 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -610,6 +610,15 @@ static void print_key_type(u64 objectid, u8 type)
- 	case BTRFS_BLOCK_GROUP_ITEM_KEY:
- 		printf("BLOCK_GROUP_ITEM");
- 		break;
-+	case BTRFS_FREE_SPACE_INFO_KEY:
-+		printf("FREE_SPACE_INFO");
-+		break;
-+	case BTRFS_FREE_SPACE_EXTENT_KEY:
-+		printf("FREE_SPACE_EXTENT");
-+		break;
-+	case BTRFS_FREE_SPACE_BITMAP_KEY:
-+		printf("FREE_SPACE_BITMAP");
-+		break;
- 	case BTRFS_CHUNK_ITEM_KEY:
- 		printf("CHUNK_ITEM");
- 		break;
-@@ -728,6 +737,9 @@ static void print_objectid(u64 objectid, u8 type)
- 	case BTRFS_UUID_TREE_OBJECTID:
- 		printf("UUID_TREE");
- 		break;
-+	case BTRFS_FREE_SPACE_TREE_OBJECTID:
-+		printf("FREE_SPACE_TREE");
-+		break;
- 	case BTRFS_MULTIPLE_OBJECTIDS:
- 		printf("MULTIPLE");
- 		break;
-@@ -810,6 +822,7 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 	struct btrfs_dev_extent *dev_extent;
- 	struct btrfs_disk_key disk_key;
- 	struct btrfs_block_group_item bg_item;
-+	struct btrfs_free_space_info *free_info;
- 	struct btrfs_dir_log_item *dlog;
- 	struct btrfs_qgroup_info_item *qg_info;
- 	struct btrfs_qgroup_limit_item *qg_limit;
-@@ -947,6 +960,18 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 			       (unsigned long long)btrfs_block_group_chunk_objectid(&bg_item),
- 			       flags_str);
- 			break;
-+		case BTRFS_FREE_SPACE_INFO_KEY:
-+			free_info = btrfs_item_ptr(l, i, struct btrfs_free_space_info);
-+			printf("\t\tfree space info extent count %u flags %u\n",
-+			       (unsigned)btrfs_free_space_extent_count(l, free_info),
-+			       (unsigned)btrfs_free_space_flags(l, free_info));
+ 	memset(eb->data + start, c, len);
+ }
++
++int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
++			   unsigned long nr)
++{
++	return test_bit(nr, (unsigned long *)(eb->data + start));
++}
+diff --git a/extent_io.h b/extent_io.h
+index 27c4b6931c97..a9a7353556a7 100644
+--- a/extent_io.h
++++ b/extent_io.h
+@@ -148,6 +148,8 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
+ 			   unsigned long src_offset, unsigned long len);
+ void memset_extent_buffer(struct extent_buffer *eb, char c,
+ 			  unsigned long start, unsigned long len);
++int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
++			   unsigned long nr);
+ int set_extent_buffer_dirty(struct extent_buffer *eb);
+ int clear_extent_buffer_dirty(struct extent_buffer *eb);
+ int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
+diff --git a/free-space-cache.c b/free-space-cache.c
+index 19ab0c904a71..d10a5f517b10 100644
+--- a/free-space-cache.c
++++ b/free-space-cache.c
+@@ -802,8 +802,8 @@ void btrfs_remove_free_space_cache(struct btrfs_block_group_cache *block_group)
+ 	__btrfs_remove_free_space_cache(block_group->free_space_ctl);
+ }
+ 
+-static int btrfs_add_free_space(struct btrfs_free_space_ctl *ctl, u64 offset,
+-				u64 bytes)
++int btrfs_add_free_space(struct btrfs_free_space_ctl *ctl, u64 offset,
++			 u64 bytes)
+ {
+ 	struct btrfs_free_space *info;
+ 	int ret = 0;
+diff --git a/free-space-cache.h b/free-space-cache.h
+index 85411a10e64b..9214077a1b27 100644
+--- a/free-space-cache.h
++++ b/free-space-cache.h
+@@ -57,4 +57,6 @@ int btrfs_init_free_space_ctl(struct btrfs_block_group_cache *block_group,
+ 			      int sectorsize);
+ void unlink_free_space(struct btrfs_free_space_ctl *ctl,
+ 		       struct btrfs_free_space *info);
++int btrfs_add_free_space(struct btrfs_free_space_ctl *ctl, u64 offset,
++			 u64 bytes);
+ #endif
+diff --git a/free-space-tree.c b/free-space-tree.c
+new file mode 100644
+index 000000000000..a323e8aae997
+--- /dev/null
++++ b/free-space-tree.c
+@@ -0,0 +1,267 @@
++/*
++ * Copyright (C) 2015 Facebook.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#include "ctree.h"
++#include "disk-io.h"
++#include "free-space-cache.h"
++#include "free-space-tree.h"
++
++static struct btrfs_free_space_info *
++search_free_space_info(struct btrfs_trans_handle *trans,
++		       struct btrfs_fs_info *fs_info,
++		       struct btrfs_block_group_cache *block_group,
++		       struct btrfs_path *path, int cow)
++{
++	struct btrfs_root *root = fs_info->free_space_root;
++	struct btrfs_key key;
++	int ret;
++
++	key.objectid = block_group->key.objectid;
++	key.type = BTRFS_FREE_SPACE_INFO_KEY;
++	key.offset = block_group->key.offset;
++
++	ret = btrfs_search_slot(trans, root, &key, path, 0, cow);
++	if (ret < 0)
++		return ERR_PTR(ret);
++	if (ret != 0)
++		return ERR_PTR(-ENOENT);
++
++	return btrfs_item_ptr(path->nodes[0], path->slots[0],
++			      struct btrfs_free_space_info);
++}
++
++static int free_space_test_bit(struct btrfs_block_group_cache *block_group,
++			       struct btrfs_path *path, u64 offset,
++			       u64 sectorsize)
++{
++	struct extent_buffer *leaf;
++	struct btrfs_key key;
++	u64 found_start, found_end;
++	unsigned long ptr, i;
++
++	leaf = path->nodes[0];
++	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
++	ASSERT(key.type == BTRFS_FREE_SPACE_BITMAP_KEY);
++
++	found_start = key.objectid;
++	found_end = key.objectid + key.offset;
++	ASSERT(offset >= found_start && offset < found_end);
++
++	ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
++	i = (offset - found_start) / sectorsize;
++	return !!extent_buffer_test_bit(leaf, ptr, i);
++}
++
++static int load_free_space_bitmaps(struct btrfs_fs_info *fs_info,
++				   struct btrfs_block_group_cache *block_group,
++				   struct btrfs_path *path,
++				   u32 expected_extent_count,
++				   int *errors)
++{
++	struct btrfs_root *root = fs_info->free_space_root;
++	struct btrfs_key key;
++	int prev_bit = 0, bit;
++	u64 extent_start = 0;
++	u64 start, end, offset;
++	u32 extent_count = 0;
++	int ret;
++
++	start = block_group->key.objectid;
++	end = block_group->key.objectid + block_group->key.offset;
++
++	while (1) {
++		ret = btrfs_next_item(root, path);
++		if (ret < 0)
++			goto out;
++		if (ret)
 +			break;
-+		case BTRFS_FREE_SPACE_EXTENT_KEY:
-+			printf("\t\tfree space extent\n");
++
++		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++
++		if (key.type == BTRFS_FREE_SPACE_INFO_KEY)
 +			break;
-+		case BTRFS_FREE_SPACE_BITMAP_KEY:
-+			printf("\t\tfree space bitmap\n");
++
++		if (key.type != BTRFS_FREE_SPACE_BITMAP_KEY) {
++			fprintf(stderr, "unexpected key of type %u\n", key.type);
++			(*errors)++;
 +			break;
- 		case BTRFS_CHUNK_ITEM_KEY:
- 			print_chunk(l, btrfs_item_ptr(l, i, struct btrfs_chunk));
- 			break;
++		}
++		if (key.objectid >= end) {
++			fprintf(stderr, "free space bitmap starts at %Lu, beyond end of block group %Lu-%Lu\n",
++				key.objectid, start, end);
++			(*errors)++;
++			break;
++		}
++		if (key.objectid + key.offset > end) {
++			fprintf(stderr, "free space bitmap ends at %Lu, beyond end of block group %Lu-%Lu\n",
++				key.objectid, start, end);
++			(*errors)++;
++			break;
++		}
++
++		offset = key.objectid;
++		while (offset < key.objectid + key.offset) {
++			bit = free_space_test_bit(block_group, path, offset,
++						  root->sectorsize);
++			if (prev_bit == 0 && bit == 1) {
++				extent_start = offset;
++			} else if (prev_bit == 1 && bit == 0) {
++				add_new_free_space(block_group, fs_info, extent_start, offset);
++				extent_count++;
++			}
++			prev_bit = bit;
++			offset += root->sectorsize;
++		}
++	}
++
++	if (prev_bit == 1) {
++		add_new_free_space(block_group, fs_info, extent_start, end);
++		extent_count++;
++	}
++
++	if (extent_count != expected_extent_count) {
++		fprintf(stderr, "free space info recorded %u extents, counted %u\n",
++			expected_extent_count, extent_count);
++		(*errors)++;
++	}
++
++	ret = 0;
++out:
++	return ret;
++}
++
++static int load_free_space_extents(struct btrfs_fs_info *fs_info,
++				   struct btrfs_block_group_cache *block_group,
++				   struct btrfs_path *path,
++				   u32 expected_extent_count,
++				   int *errors)
++{
++	struct btrfs_root *root = fs_info->free_space_root;
++	struct btrfs_key key, prev_key;
++	int have_prev = 0;
++	u64 start, end;
++	u32 extent_count = 0;
++	int ret;
++
++	start = block_group->key.objectid;
++	end = block_group->key.objectid + block_group->key.offset;
++
++	while (1) {
++		ret = btrfs_next_item(root, path);
++		if (ret < 0)
++			goto out;
++		if (ret)
++			break;
++
++		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++
++		if (key.type == BTRFS_FREE_SPACE_INFO_KEY)
++			break;
++
++		if (key.type != BTRFS_FREE_SPACE_EXTENT_KEY) {
++			fprintf(stderr, "unexpected key of type %u\n", key.type);
++			(*errors)++;
++			break;
++		}
++		if (key.objectid >= end) {
++			fprintf(stderr, "free space extent starts at %Lu, beyond end of block group %Lu-%Lu\n",
++				key.objectid, start, end);
++			(*errors)++;
++			break;
++		}
++		if (key.objectid + key.offset > end) {
++			fprintf(stderr, "free space extent ends at %Lu, beyond end of block group %Lu-%Lu\n",
++				key.objectid, start, end);
++			(*errors)++;
++			break;
++		}
++
++		if (have_prev) {
++			u64 cur_start = key.objectid;
++			u64 cur_end = cur_start + key.offset;
++			u64 prev_start = prev_key.objectid;
++			u64 prev_end = prev_start + prev_key.offset;
++
++			if (cur_start < prev_end) {
++				fprintf(stderr, "free space extent %Lu-%Lu overlaps with previous %Lu-%Lu\n",
++					cur_start, cur_end,
++					prev_start, prev_end);
++				(*errors)++;
++			} else if (cur_start == prev_end) {
++				fprintf(stderr, "free space extent %Lu-%Lu is unmerged with previous %Lu-%Lu\n",
++					cur_start, cur_end,
++					prev_start, prev_end);
++				(*errors)++;
++			}
++		}
++
++		add_new_free_space(block_group, fs_info, key.objectid, key.objectid + key.offset);
++		extent_count++;
++
++		prev_key = key;
++		have_prev = 1;
++	}
++
++	if (extent_count != expected_extent_count) {
++		fprintf(stderr, "free space info recorded %u extents, counted %u\n",
++			expected_extent_count, extent_count);
++		(*errors)++;
++	}
++
++	ret = 0;
++out:
++	return ret;
++}
++
++int load_free_space_tree(struct btrfs_fs_info *fs_info,
++			 struct btrfs_block_group_cache *block_group)
++{
++	struct btrfs_free_space_info *info;
++	struct btrfs_path *path;
++	u32 extent_count, flags;
++	int errors = 0;
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++	path->reada = 1;
++
++	info = search_free_space_info(NULL, fs_info, block_group, path, 0);
++	if (IS_ERR(info)) {
++		ret = PTR_ERR(info);
++		goto out;
++	}
++	extent_count = btrfs_free_space_extent_count(path->nodes[0], info);
++	flags = btrfs_free_space_flags(path->nodes[0], info);
++
++	if (flags & BTRFS_FREE_SPACE_USING_BITMAPS) {
++		ret = load_free_space_bitmaps(fs_info, block_group, path,
++					      extent_count, &errors);
++	} else {
++		ret = load_free_space_extents(fs_info, block_group, path,
++					      extent_count, &errors);
++	}
++	if (ret)
++		goto out;
++
++	ret = 0;
++out:
++	btrfs_free_path(path);
++	return ret ? ret : errors;
++}
+diff --git a/free-space-tree.h b/free-space-tree.h
+new file mode 100644
+index 000000000000..7529a46890da
+--- /dev/null
++++ b/free-space-tree.h
+@@ -0,0 +1,25 @@
++/*
++ * Copyright (C) 2015 Facebook.  All rights reserved.
++ *
++ * This program is free software; you can redistribute it and/or
++ * modify it under the terms of the GNU General Public
++ * License v2 as published by the Free Software Foundation.
++ *
++ * This program is distributed in the hope that it will be useful,
++ * but WITHOUT ANY WARRANTY; without even the implied warranty of
++ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
++ * General Public License for more details.
++ *
++ * You should have received a copy of the GNU General Public
++ * License along with this program; if not, write to the
++ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
++ * Boston, MA 021110-1307, USA.
++ */
++
++#ifndef __BTRFS_FREE_SPACE_TREE_H__
++#define __BTRFS_FREE_SPACE_TREE_H__
++
++int load_free_space_tree(struct btrfs_fs_info *fs_info,
++			 struct btrfs_block_group_cache *block_group);
++
++#endif
 -- 
 2.5.2
 

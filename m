@@ -1,256 +1,300 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:33013 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751938AbbINGEe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 02:04:34 -0400
-Received: by pacex6 with SMTP id ex6so134324167pac.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Sep 2015 23:04:33 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
+Received: from mail.kernel.org ([198.145.29.136]:35229 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751854AbbINI32 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Sep 2015 04:29:28 -0400
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v3 9/9] Btrfs: add free space tree mount option
-Date: Sun, 13 Sep 2015 23:04:16 -0700
-Message-Id: <02e8d2e15a5a0449cd5f8c617224a72174e0c0f3.1442209006.git.osandov@osandov.com>
-In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
-References: <cover.1442209006.git.osandov@osandov.com>
-In-Reply-To: <cover.1442209006.git.osandov@osandov.com>
-References: <cover.1442209006.git.osandov@osandov.com>
+Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] Btrfs: fix read corruption of compressed and shared extents
+Date: Mon, 14 Sep 2015 09:29:06 +0100
+Message-Id: <1442219346-14641-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Now we can finally hook up everything so we can actually use free space
-tree. The free space tree is enabled by passing the space_cache=v2 mount
-option. On the first mount with the this option set, the free space tree
-will be created and the FREE_SPACE_TREE read-only compat bit will be
-set. Any time the filesystem is mounted from then on, we must use the
-free space tree. The clear_cache option will also clear the free space
-tree.
+If a file has a range pointing to a compressed extent, followed by
+another range that points to the same compressed extent and a read
+operation attempts to read both ranges (either completely or part of
+them), the pages that correspond to the second range are incorrectly
+filled with zeroes.
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
+Consider the following example:
+
+  File layout
+  [0 - 8K]                      [8K - 24K]
+      |                             |
+      |                             |
+   points to extent X,         points to extent X,
+   offset 4K, length of 8K     offset 0, length 16K
+
+  [extent X, compressed length = 4K uncompressed length = 16K]
+
+If a readpages() call spans the 2 ranges, a single bio to read the extent
+is submitted - extent_io.c:submit_extent_page() would only create a new
+bio to cover the second range pointing to the extent if the extent it
+points to had a different logical address than the extent associated with
+the first range. This has a consequence of the compressed read end io
+handler (compression.c:end_compressed_bio_read()) finish once the extent
+is decompressed into the pages covering the first range, leaving the
+remaining pages (belonging to the second range) filled with zeroes (done
+by compression.c:btrfs_clear_biovec_end()).
+
+So fix this by submitting the current bio whenever we find a range
+pointing to a compressed extent that was preceded by a range with a
+different extent map. This is the simplest solution for this corner
+case. Making the end io callback populate both ranges (or more, if we
+have multiple pointing to the same extent) is a much more complex
+solution since each bio is tightly coupled with a single extent map and
+the extent maps associated to the ranges pointing to the shared extent
+can have different offsets and lengths.
+
+The following test case for fstests triggers the issue:
+
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
+
+  _cleanup()
+  {
+      rm -f $tmp.*
+  }
+
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+
+  # real QA test starts here
+  _need_to_be_root
+  _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
+  _require_cloner
+
+  rm -f $seqres.full
+
+  test_clone_and_read_compressed_extent()
+  {
+      local mount_opts=$1
+
+      _scratch_mkfs >>$seqres.full 2>&1
+      _scratch_mount $mount_opts
+
+      # Create a test file with a single extent that is compressed (the
+      # data we write into it is highly compressible no matter which
+      # compression algorithm is used, zlib or lzo).
+      $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 4K"        \
+                      -c "pwrite -S 0xbb 4K 8K"        \
+                      -c "pwrite -S 0xcc 12K 4K"       \
+                      $SCRATCH_MNT/foo | _filter_xfs_io
+
+      # Now clone our extent into an adjacent offset.
+      $CLONER_PROG -s $((4 * 1024)) -d $((16 * 1024)) -l $((8 * 1024)) \
+          $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+
+      # Same as before but for this file we clone the extent into a lower
+      # file offset.
+      $XFS_IO_PROG -f -c "pwrite -S 0xaa 8K 4K"         \
+                      -c "pwrite -S 0xbb 12K 8K"        \
+                      -c "pwrite -S 0xcc 20K 4K"        \
+                      $SCRATCH_MNT/bar | _filter_xfs_io
+
+      $CLONER_PROG -s $((12 * 1024)) -d 0 -l $((8 * 1024)) \
+          $SCRATCH_MNT/bar $SCRATCH_MNT/bar
+
+      echo "File digests before unmounting filesystem:"
+      md5sum $SCRATCH_MNT/foo | _filter_scratch
+      md5sum $SCRATCH_MNT/bar | _filter_scratch
+
+      # Evicting the inode or clearing the page cache before reading
+      # again the file would also trigger the bug - reads were returning
+      # all bytes in the range corresponding to the second reference to
+      # the extent with a value of 0, but the correct data was persisted
+      # (it was a bug exclusively in the read path). The issue happened
+      # only if the same readpages() call targeted pages belonging to the
+      # first and second ranges that point to the same compressed extent.
+      _scratch_remount
+
+      echo "File digests after mounting filesystem again:"
+      # Must match the same digests we got before.
+      md5sum $SCRATCH_MNT/foo | _filter_scratch
+      md5sum $SCRATCH_MNT/bar | _filter_scratch
+  }
+
+  echo -e "\nTesting with zlib compression..."
+  test_clone_and_read_compressed_extent "-o compress=zlib"
+
+  _scratch_unmount
+
+  echo -e "\nTesting with lzo compression..."
+  test_clone_and_read_compressed_extent "-o compress=lzo"
+
+  status=0
+  exit
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/ctree.h   |  7 ++++++-
- fs/btrfs/disk-io.c | 38 ++++++++++++++++++++++++++++++++++++++
- fs/btrfs/super.c   | 53 ++++++++++++++++++++++++++++++++++++++++++++---------
- 3 files changed, 88 insertions(+), 10 deletions(-)
+ fs/btrfs/extent_io.c | 65 +++++++++++++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 57 insertions(+), 8 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 455a9016587b..d6e2d9cf41bf 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -531,7 +531,10 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
--#define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-+
-+#define BTRFS_FEATURE_COMPAT_RO_SUPP			\
-+	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)
-+
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index fa19f2f..11aa8f7 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2805,7 +2805,8 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 			      bio_end_io_t end_io_func,
+ 			      int mirror_num,
+ 			      unsigned long prev_bio_flags,
+-			      unsigned long bio_flags)
++			      unsigned long bio_flags,
++			      bool force_bio_submit)
+ {
+ 	int ret = 0;
+ 	struct bio *bio;
+@@ -2823,6 +2824,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 			contig = bio_end_sector(bio) == sector;
  
-@@ -2209,6 +2212,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
- #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
- #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
-+#define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 24)
+ 		if (prev_bio_flags != bio_flags || !contig ||
++		    force_bio_submit ||
+ 		    merge_bio(rw, tree, page, offset, page_size, bio, bio_flags) ||
+ 		    bio_add_page(bio, page, page_size, offset) < page_size) {
+ 			ret = submit_one_bio(rw, bio, mirror_num,
+@@ -2922,7 +2924,8 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 			 get_extent_t *get_extent,
+ 			 struct extent_map **em_cached,
+ 			 struct bio **bio, int mirror_num,
+-			 unsigned long *bio_flags, int rw)
++			 unsigned long *bio_flags, int rw,
++			 u64 *prev_em_start)
+ {
+ 	struct inode *inode = page->mapping->host;
+ 	u64 start = page_offset(page);
+@@ -2970,6 +2973,7 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 	}
+ 	while (cur <= end) {
+ 		unsigned long pnr = (last_byte >> PAGE_CACHE_SHIFT) + 1;
++		bool force_bio_submit = false;
  
- #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
- #define BTRFS_DEFAULT_MAX_INLINE	(8192)
-@@ -3748,6 +3752,7 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
- 	kfree(fs_info->csum_root);
- 	kfree(fs_info->quota_root);
- 	kfree(fs_info->uuid_root);
-+	kfree(fs_info->free_space_root);
- 	kfree(fs_info->super_copy);
- 	kfree(fs_info->super_for_commit);
- 	security_free_mnt_opts(&fs_info->security_opts);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index f556c3732c2c..31363675353f 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -42,6 +42,7 @@
- #include "locking.h"
- #include "tree-log.h"
- #include "free-space-cache.h"
-+#include "free-space-tree.h"
- #include "inode-map.h"
- #include "check-integrity.h"
- #include "rcu-string.h"
-@@ -1641,6 +1642,9 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
- 		return fs_info->uuid_root ? fs_info->uuid_root :
- 					    ERR_PTR(-ENOENT);
-+	if (location->objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
-+		return fs_info->free_space_root ? fs_info->free_space_root :
-+						  ERR_PTR(-ENOENT);
- again:
- 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
- 	if (root) {
-@@ -2138,6 +2142,7 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
- 	free_root_extent_buffers(info->uuid_root);
- 	if (chunk_root)
- 		free_root_extent_buffers(info->chunk_root);
-+	free_root_extent_buffers(info->free_space_root);
+ 		if (cur >= last_byte) {
+ 			char *userpage;
+@@ -3020,6 +3024,49 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 		block_start = em->block_start;
+ 		if (test_bit(EXTENT_FLAG_PREALLOC, &em->flags))
+ 			block_start = EXTENT_MAP_HOLE;
++
++		/*
++		 * If we have a file range that points to a compressed extent
++		 * and it's followed by a consecutive file range that points to
++		 * to the same compressed extent (possibly with a different
++		 * offset and/or length, so it either points to the whole extent
++		 * or only part of it), we must make sure we do not submit a
++		 * single bio to populate the pages for the 2 ranges because
++		 * this makes the compressed extent read zero out the pages
++		 * belonging to the 2nd range. Imagine the following scenario:
++		 *
++		 *  File layout
++		 *  [0 - 8K]                     [8K - 24K]
++		 *    |                               |
++		 *    |                               |
++		 * points to extent X,         points to extent X,
++		 * offset 4K, length of 8K     offset 0, length 16K
++		 *
++		 * [extent X, compressed length = 4K uncompressed length = 16K]
++		 *
++		 * If the bio to read the compressed extent covers both ranges,
++		 * it will decompress extent X into the pages belonging to the
++		 * first range and then it will stop, zeroing out the remaining
++		 * pages that belong to the other range that points to extent X.
++		 * So here we make sure we submit 2 bios, one for the first
++		 * range and another one for the third range. Both will target
++		 * the same physical extent from disk, but we can't currently
++		 * make the compressed bio endio callback populate the pages
++		 * for both ranges because each compressed bio is tightly
++		 * coupled with a single extent map, and each range can have
++		 * an extent map with a different offset value relative to the
++		 * uncompressed data of our extent and different lengths. This
++		 * is a corner case so we prioritize correctness over
++		 * non-optimal behavior (submitting 2 bios for the same extent).
++		 */
++		if (test_bit(EXTENT_FLAG_COMPRESSED, &em->flags) &&
++		    prev_em_start && *prev_em_start != (u64)-1 &&
++		    *prev_em_start != em->orig_start)
++			force_bio_submit = true;
++
++		if (prev_em_start)
++			*prev_em_start = em->orig_start;
++
+ 		free_extent_map(em);
+ 		em = NULL;
+ 
+@@ -3069,7 +3116,8 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 					 bdev, bio, pnr,
+ 					 end_bio_extent_readpage, mirror_num,
+ 					 *bio_flags,
+-					 this_bio_flag);
++					 this_bio_flag,
++					 force_bio_submit);
+ 		if (!ret) {
+ 			nr++;
+ 			*bio_flags = this_bio_flag;
+@@ -3101,6 +3149,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+ 	struct inode *inode;
+ 	struct btrfs_ordered_extent *ordered;
+ 	int index;
++	u64 prev_em_start = (u64)-1;
+ 
+ 	inode = pages[0]->mapping->host;
+ 	while (1) {
+@@ -3116,7 +3165,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+ 
+ 	for (index = 0; index < nr_pages; index++) {
+ 		__do_readpage(tree, pages[index], get_extent, em_cached, bio,
+-			      mirror_num, bio_flags, rw);
++			      mirror_num, bio_flags, rw, &prev_em_start);
+ 		page_cache_release(pages[index]);
+ 	}
  }
- 
- void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info)
-@@ -2439,6 +2444,15 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info,
- 		fs_info->uuid_root = root;
+@@ -3184,7 +3233,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
  	}
  
-+	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		location.objectid = BTRFS_FREE_SPACE_TREE_OBJECTID;
-+		root = btrfs_read_tree_root(tree_root, &location);
-+		if (IS_ERR(root))
-+			return PTR_ERR(root);
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
-+		fs_info->free_space_root = root;
-+	}
-+
- 	return 0;
- }
- 
-@@ -3063,6 +3077,30 @@ retry_root_backup:
- 
- 	btrfs_qgroup_rescan_resume(fs_info);
- 
-+	if (btrfs_test_opt(tree_root, CLEAR_CACHE) &&
-+	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		pr_info("BTRFS: clearing free space tree\n");
-+		ret = btrfs_clear_free_space_tree(fs_info);
-+		if (ret) {
-+			pr_warn("BTRFS: failed to clear free space tree %d\n",
-+				ret);
-+			close_ctree(tree_root);
-+			return ret;
-+		}
-+	}
-+
-+	if (btrfs_test_opt(tree_root, FREE_SPACE_TREE) &&
-+	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		pr_info("BTRFS: creating free space tree\n");
-+		ret = btrfs_create_free_space_tree(fs_info);
-+		if (ret) {
-+			pr_warn("BTRFS: failed to create free space tree %d\n",
-+				ret);
-+			close_ctree(tree_root);
-+			return ret;
-+		}
-+	}
-+
- 	if (!fs_info->uuid_root) {
- 		pr_info("BTRFS: creating UUID tree\n");
- 		ret = btrfs_create_uuid_tree(fs_info);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index b93f127c4bc8..cb179286e421 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -312,10 +312,11 @@ enum {
- 	Opt_nossd, Opt_ssd_spread, Opt_thread_pool, Opt_noacl, Opt_compress,
- 	Opt_compress_type, Opt_compress_force, Opt_compress_force_type,
- 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
--	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
--	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
--	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
--	Opt_check_integrity, Opt_check_integrity_including_extent_data,
-+	Opt_space_cache, Opt_space_cache_version, Opt_clear_cache,
-+	Opt_user_subvol_rm_allowed, Opt_enospc_debug, Opt_subvolrootid,
-+	Opt_defrag, Opt_inode_cache, Opt_no_space_cache, Opt_recovery,
-+	Opt_skip_balance, Opt_check_integrity,
-+	Opt_check_integrity_including_extent_data,
- 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
- 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
- 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
-@@ -354,6 +355,7 @@ static match_table_t tokens = {
- 	{Opt_discard, "discard"},
- 	{Opt_nodiscard, "nodiscard"},
- 	{Opt_space_cache, "space_cache"},
-+	{Opt_space_cache_version, "space_cache=%s"},
- 	{Opt_clear_cache, "clear_cache"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
- 	{Opt_enospc_debug, "enospc_debug"},
-@@ -392,7 +394,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	bool compress_force = false;
- 
- 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
--	if (cache_gen)
-+	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE))
-+		btrfs_set_opt(info->mount_opt, FREE_SPACE_TREE);
-+	else if (cache_gen)
- 		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
- 
- 	if (!options)
-@@ -626,15 +630,35 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 					     "turning off discard");
- 			break;
- 		case Opt_space_cache:
--			btrfs_set_and_info(root, SPACE_CACHE,
--					   "enabling disk space caching");
-+		case Opt_space_cache_version:
-+			if (token == Opt_space_cache ||
-+			    strcmp(args[0].from, "v1") == 0) {
-+				btrfs_clear_opt(root->fs_info->mount_opt,
-+						FREE_SPACE_TREE);
-+				btrfs_set_and_info(root, SPACE_CACHE,
-+						   "enabling disk space caching");
-+			} else if (strcmp(args[0].from, "v2") == 0) {
-+				btrfs_clear_opt(root->fs_info->mount_opt,
-+						SPACE_CACHE);
-+				btrfs_set_and_info(root, FREE_SPACE_TREE,
-+						   "enabling free space tree");
-+			} else {
-+				ret = -EINVAL;
-+				goto out;
-+			}
- 			break;
- 		case Opt_rescan_uuid_tree:
- 			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
- 			break;
- 		case Opt_no_space_cache:
--			btrfs_clear_and_info(root, SPACE_CACHE,
--					     "disabling disk space caching");
-+			if (btrfs_test_opt(root, SPACE_CACHE)) {
-+				btrfs_clear_and_info(root, SPACE_CACHE,
-+						     "disabling disk space caching");
-+			}
-+			if (btrfs_test_opt(root, FREE_SPACE_TREE)) {
-+				btrfs_clear_and_info(root, FREE_SPACE_TREE,
-+						     "disabling free space tree");
-+			}
- 			break;
- 		case Opt_inode_cache:
- 			btrfs_set_pending_and_info(info, INODE_MAP_CACHE,
-@@ -747,8 +771,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 		}
- 	}
- out:
-+	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE) &&
-+	    !btrfs_test_opt(root, FREE_SPACE_TREE) &&
-+	    !btrfs_test_opt(root, CLEAR_CACHE)) {
-+		btrfs_err(root->fs_info, "cannot disable free space tree");
-+		ret = -EINVAL;
-+
-+	}
- 	if (!ret && btrfs_test_opt(root, SPACE_CACHE))
- 		btrfs_info(root->fs_info, "disk space caching is enabled");
-+	if (!ret && btrfs_test_opt(root, FREE_SPACE_TREE))
-+		btrfs_info(root->fs_info, "using free space tree");
- 	kfree(orig);
+ 	ret = __do_readpage(tree, page, get_extent, NULL, bio, mirror_num,
+-			    bio_flags, rw);
++			    bio_flags, rw, NULL);
  	return ret;
  }
-@@ -1154,6 +1187,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",noacl");
- 	if (btrfs_test_opt(root, SPACE_CACHE))
- 		seq_puts(seq, ",space_cache");
-+	else if (btrfs_test_opt(root, FREE_SPACE_TREE))
-+		seq_puts(seq, ",space_cache=v2");
- 	else
- 		seq_puts(seq, ",nospace_cache");
- 	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
+ 
+@@ -3210,7 +3259,7 @@ int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
+ 	int ret;
+ 
+ 	ret = __do_readpage(tree, page, get_extent, NULL, &bio, mirror_num,
+-				      &bio_flags, READ);
++			    &bio_flags, READ, NULL);
+ 	if (bio)
+ 		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
+ 	return ret;
+@@ -3463,7 +3512,7 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
+ 						 sector, iosize, pg_offset,
+ 						 bdev, &epd->bio, max_nr,
+ 						 end_bio_extent_writepage,
+-						 0, 0, 0);
++						 0, 0, 0, false);
+ 			if (ret)
+ 				SetPageError(page);
+ 		}
+@@ -3765,7 +3814,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
+ 		ret = submit_extent_page(rw, tree, wbc, p, offset >> 9,
+ 					 PAGE_CACHE_SIZE, 0, bdev, &epd->bio,
+ 					 -1, end_bio_extent_buffer_writepage,
+-					 0, epd->bio_flags, bio_flags);
++					 0, epd->bio_flags, bio_flags, false);
+ 		epd->bio_flags = bio_flags;
+ 		if (ret) {
+ 			set_btree_ioerr(p);
 -- 
-2.5.2
+2.1.3
 

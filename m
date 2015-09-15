@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:27067 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:19391 "EHLO
 	m0041696.ppops.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751665AbbIONx2 (ORCPT
+	with ESMTP id S1751644AbbIOOHl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 09:53:28 -0400
+	Tue, 15 Sep 2015 10:07:41 -0400
 Subject: Re: [GIT PULL] Btrfs bug fixes
 To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
 	<holger.hoffstaette@googlemail.com>,
@@ -15,8 +15,8 @@ References: <1442283778-2342-1-git-send-email-fdmanana@kernel.org>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Chris Mason <clm@fb.com>, Filipe Manana <fdmanana@suse.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <55F822C8.1070202@fb.com>
-Date: Tue, 15 Sep 2015 09:53:12 -0400
+Message-ID: <55F82620.8070103@fb.com>
+Date: Tue, 15 Sep 2015 10:07:28 -0400
 MIME-Version: 1.0
 In-Reply-To: <55F82079.50007@googlemail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -130,8 +130,7 @@ On 09/15/2015 09:43 AM, Holger Hoffstätte wrote:
 > Let me know what you think and how/when I can help or test.
 >
 
-This is my bug, sorry about that, I'll send something out to fix it 
-right away.  Thanks,
+Please give V2 a whirl.  Thanks,
 
 Josef
 

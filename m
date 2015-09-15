@@ -1,54 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f44.google.com ([209.85.215.44]:34608 "EHLO
-	mail-la0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751540AbbIOUvG (ORCPT
+Received: from mout.kundenserver.de ([212.227.126.187]:58090 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751272AbbIOVeI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 16:51:06 -0400
-Received: by lahg1 with SMTP id g1so86807120lah.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 13:51:05 -0700 (PDT)
+	Tue, 15 Sep 2015 17:34:08 -0400
+Received: from durkon.lan ([178.201.238.189]) by mrelayeu.kundenserver.de
+ (mreue004) with ESMTPSA (Nemesis) id 0MR97T-1ZBNdR1eaV-00Ud1A for
+ <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 23:34:06 +0200
+Received: from xykon.lan (xykon.lan [192.168.2.42])
+	by durkon.lan (Postfix) with ESMTPSA id 669D28323
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 23:34:04 +0200 (CEST)
+From: Gert Menke <gert@menke.ac>
+Subject: BTRFS as image store for KVM?
+To: linux-btrfs@vger.kernel.org
+Message-ID: <55F88ECC.1040604@menke.ac>
+Date: Tue, 15 Sep 2015 23:34:04 +0200
 MIME-Version: 1.0
-In-Reply-To: <20150915203815.GC28645@carfax.org.uk>
-References: <CAGqmi77Y3qiEs7aVwXQ-VT9b0yF4ViAA1szMicY5_GEXQaRYVw@mail.gmail.com>
- <20150915203815.GC28645@carfax.org.uk>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Tue, 15 Sep 2015 23:50:25 +0300
-Message-ID: <CAGqmi77_CyOvu7sqP0yNZjsuDP-NcuK691o=5x8o2hCU++1iJw@mail.gmail.com>
-Subject: Re: Csum I/O Error
-To: Hugo Mills <hugo@carfax.org.uk>, Timofey Titovets <nefelim4ag@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for tip hugo *_*
+Hi everybody,
 
-2015-09-15 23:38 GMT+03:00 Hugo Mills <hugo@carfax.org.uk>:
-> On Tue, Sep 15, 2015 at 10:59:48PM +0300, Timofey Titovets wrote:
->> Hi list,
->> i've catch a io error, caused by csum mismatch
->> Can i force fs to read data?
->> This is really not a cool, if only way is use btrfs restore.
->>
->> #Info vm machin, after power failure get 2 blocks with errors, and one
->> mysql table, can't be readed by mysql (and also, i can't just dump it)
->
->    The data is corrupt, or at the very least deeply untrustworthy. At
-> this point, the easiest thing to do is use dd_rescue or ddrescue on
-> it, which will skip the unreadable sectors and replace them with
-> zeroes -- which is no worse than the random data you're likely to
-> encounter from reading the broken data that the FS is (rightly)
-> protecting you from.
->
->    Hugo.
->
-> --
-> Hugo Mills             | A diverse working environment: Di longer you vork
-> hugo@... carfax.org.uk | here, di verse it gets
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
+first off, I'm not 100% sure if this is the right place to ask, so if 
+it's not, I apologize and I'd appreciate a pointer in the right direction.
 
+I want to build a virtualization server to replace my current home 
+server. I'm thinking about a Debian system with libvirt/KVM. The system 
+will have one or two SSDs and five harddisks with some kind of software 
+RAID5 for storage. I'd like to have a filesystem with data checksums, so 
+BTRFS seems like the right way to go. However, I read that BTRFS does 
+not perform well as storage for KVM disk images.
+(See here: http://www.linux-kvm.org/page/Tuning_KVM )
 
+Is this still true?
 
--- 
-Have a nice day,
-Timofey.
+I would appreciate any comments and/or tips you might have on this topic.
+
+Is anyone using BTRFS as an image store? Are there any special settings 
+I should be aware of to make it work well?
+
+Thanks,
+Gert

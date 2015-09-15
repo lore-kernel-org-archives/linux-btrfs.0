@@ -1,61 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f47.google.com ([209.85.220.47]:35197 "EHLO
-	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753271AbbIRS2G (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6624 "EHLO
+	m0001303.ppops.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752817AbbIOOHL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Sep 2015 14:28:06 -0400
-Received: by pacfv12 with SMTP id fv12so58412307pac.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 11:28:06 -0700 (PDT)
-Date: Fri, 18 Sep 2015 11:28:04 -0700
-From: Omar Sandoval <osandov@osandov.com>
-To: Josef Bacik <jbacik@fb.com>
-Cc: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH V2] Btrfs: keep dropped roots in cache until transaction
- commit
-Message-ID: <20150918182804.GB7341@mew>
-References: <1442326024-2536-1-git-send-email-jbacik@fb.com>
- <55F83E34.3090900@googlemail.com>
- <55F86CB1.5020503@googlemail.com>
- <55F86E63.8050300@fb.com>
- <55F92F20.2040603@googlemail.com>
- <55F97399.7000407@fb.com>
+	Tue, 15 Sep 2015 10:07:11 -0400
+Received: from pps.filterd (m0001303 [127.0.0.1])
+	by m0001303.ppops.net (8.14.5/8.14.5) with SMTP id t8FE1gfR028396
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 07:07:10 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by m0001303.ppops.net with ESMTP id 1wxmfn83g8-5
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 07:07:10 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH V2] Btrfs: keep dropped roots in cache until transaction commit
+Date: Tue, 15 Sep 2015 10:07:04 -0400
+Message-ID: <1442326024-2536-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <55F97399.7000407@fb.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 16, 2015 at 09:50:17AM -0400, Josef Bacik wrote:
-> On 09/16/2015 04:58 AM, Holger Hoffstätte wrote:
-> >On 09/15/15 21:15, Josef Bacik wrote:
-> >>On 09/15/2015 03:08 PM, Holger Hoffstätte wrote:
-> >>>On 09/15/15 17:50, Holger Hoffstätte wrote:
-> >>>>This V2 does indeed seem to fix the issues I reported with snapshot
-> >>>>deletion & concurrent sync. I've now created/filled/deleted countless
-> >>>>snapshots while issuing sync(s) in parallel, and the problem that I
-> >>>>saw fairly frequently with V1 no longer seems to occur here.
-> >>>
-> >>>Well..I may have spoken too soon:
-> >>
-> >>Huh this doesn't seem related to my stuff.  Can I have your script
-> >>you are running to reproduce this?  Thanks,
-> >>
-> >>Josef
-> >
-> >It seemed to be related to Omar's free-space-tree - I saw the same bug
-> >a bit later on a different device without snapshot deletion, just
-> >deleting two large files. Sorry for the false positive.
-> >
-> 
-> Omar, do you have time to look into this?  Were they highly fragmented files
-> or just giant contiguous files?  Thanks,
-> 
-> Josef
-> 
+When dropping a snapshot we need to account for the qgroup changes.  If we drop
+the snapshot in all one go then the backref code will fail to find blocks from
+the snapshot we dropped since it won't be able to find the root in the fs root
+cache.  This can lead to us failing to find refs from other roots that pointed
+at blocks in the now deleted root.  To handle this we need to not remove the fs
+roots from the cache until after we process the qgroup operations.  Do this by
+adding dropped roots to a list on the transaction, and letting the transaction
+remove the roots at the same time it drops the commit roots.  This will keep all
+of the backref searching code in sync properly, and fixes a problem Mark was
+seeing with snapshot delete and qgroups.  Thanks,
 
-Yeah, I'll take a look over the weekend or next week at the latest.
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+V1->V2:
+-clear the trans tag when we are finished dropping the subvol so we don't try to
+  update the root during commit.
 
+ fs/btrfs/extent-tree.c |  2 +-
+ fs/btrfs/transaction.c | 30 ++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.h |  5 ++++-
+ 3 files changed, 35 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index ab81135..2327d4c 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -8596,7 +8596,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
+ 	}
+ 
+ 	if (test_bit(BTRFS_ROOT_IN_RADIX, &root->state)) {
+-		btrfs_drop_and_free_fs_root(tree_root->fs_info, root);
++		btrfs_add_dropped_root(trans, root);
+ 	} else {
+ 		free_extent_buffer(root->node);
+ 		free_extent_buffer(root->commit_root);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index f5021fc..cd15f39 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -117,6 +117,16 @@ static noinline void switch_commit_roots(struct btrfs_transaction *trans,
+ 			btrfs_unpin_free_ino(root);
+ 		clear_btree_io_tree(&root->dirty_log_pages);
+ 	}
++
++	/* We can free old roots now. */
++	spin_lock(&trans->dropped_roots_lock);
++	while (!list_empty(&trans->dropped_roots)) {
++		root = list_first_entry(&trans->dropped_roots,
++					struct btrfs_root, root_list);
++		list_del_init(&root->root_list);
++		btrfs_drop_and_free_fs_root(fs_info, root);
++	}
++	spin_unlock(&trans->dropped_roots_lock);
+ 	up_write(&fs_info->commit_root_sem);
+ }
+ 
+@@ -255,9 +265,11 @@ loop:
+ 	INIT_LIST_HEAD(&cur_trans->pending_ordered);
+ 	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
+ 	INIT_LIST_HEAD(&cur_trans->io_bgs);
++	INIT_LIST_HEAD(&cur_trans->dropped_roots);
+ 	mutex_init(&cur_trans->cache_write_mutex);
+ 	cur_trans->num_dirty_bgs = 0;
+ 	spin_lock_init(&cur_trans->dirty_bgs_lock);
++	spin_lock_init(&cur_trans->dropped_roots_lock);
+ 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
+ 	extent_io_tree_init(&cur_trans->dirty_pages,
+ 			     fs_info->btree_inode->i_mapping);
+@@ -334,6 +346,24 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
+ }
+ 
+ 
++void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root)
++{
++	struct btrfs_transaction *cur_trans = trans->transaction;
++
++	/* Add ourselves to the transaction dropped list */
++	spin_lock(&cur_trans->dropped_roots_lock);
++	list_add_tail(&root->root_list, &cur_trans->dropped_roots);
++	spin_unlock(&cur_trans->dropped_roots_lock);
++
++	/* Make sure we don't try to update the root at commit time */
++	spin_lock(&root->fs_info->fs_roots_radix_lock);
++	radix_tree_tag_clear(&root->fs_info->fs_roots_radix,
++			     (unsigned long)root->root_key.objectid,
++			     BTRFS_ROOT_TRANS_TAG);
++	spin_unlock(&root->fs_info->fs_roots_radix_lock);
++}
++
+ int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
+ 			       struct btrfs_root *root)
+ {
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index eb09c20..ef4ff38 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -65,6 +65,7 @@ struct btrfs_transaction {
+ 	struct list_head switch_commits;
+ 	struct list_head dirty_bgs;
+ 	struct list_head io_bgs;
++	struct list_head dropped_roots;
+ 	u64 num_dirty_bgs;
+ 
+ 	/*
+@@ -74,6 +75,7 @@ struct btrfs_transaction {
+ 	 */
+ 	struct mutex cache_write_mutex;
+ 	spinlock_t dirty_bgs_lock;
++	spinlock_t dropped_roots_lock;
+ 	struct btrfs_delayed_ref_root delayed_refs;
+ 	int aborted;
+ 	int dirty_bg_run;
+@@ -214,5 +216,6 @@ int btrfs_transaction_blocked(struct btrfs_fs_info *info);
+ int btrfs_transaction_in_commit(struct btrfs_fs_info *info);
+ void btrfs_put_transaction(struct btrfs_transaction *transaction);
+ void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info);
+-
++void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
++			    struct btrfs_root *root);
+ #endif
 -- 
-Omar
+1.8.3.1
+

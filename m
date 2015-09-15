@@ -1,69 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:32718 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752714AbbIOIsI (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:13500 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754992AbbIOJX6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 04:48:08 -0400
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t8F8m8Ge009869
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 08:48:08 GMT
-Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
-	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id t8F8m8KX030495
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 08:48:08 GMT
-Received: from abhmp0015.oracle.com (abhmp0015.oracle.com [141.146.116.21])
-	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t8F8m7Lw024001
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 08:48:08 GMT
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 2/2] btrfs-progs: optimize not to scan repeated fsid mount points
-Date: Tue, 15 Sep 2015 16:46:23 +0800
-Message-Id: <1442306783-1288-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1442306783-1288-1-git-send-email-anand.jain@oracle.com>
-References: <1442306783-1288-1-git-send-email-anand.jain@oracle.com>
+	Tue, 15 Sep 2015 05:23:58 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8F9Negh008950
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 17:23:40 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH RESEND] btrfs-progs: tests: Add '-o loop' to mount command line in convert-tests.sh
+Date: Tue, 15 Sep 2015 17:22:17 +0800
+Message-ID: <b92776bec0a72128214ec931003869a36940e226.1442308835.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-fsid can be mounted multiple times, with different subvolid.
-And we don't have to scan a mount point if we already have
-that in the scanned list.
+To fix following bug:
+ # ./convert-tests.sh
+     [TEST]   ext2 4k nodesize, btrfs defaults
+ failed: mount /root/btrfsprogs/tests/test.img /root/btrfsprogs/tests/mnt
+ # tail convert-tests-results.txt
+ ...
+ ############### mount /root/btrfsprogs/tests/test.img /root/btrfsprogs/tests/mnt
+ mount: /root/btrfsprogs/tests/test.img is not a block device (maybe try `-o loop'?)
+ failed: mount /root/btrfsprogs/tests/test.img /root/btrfsprogs/tests/mnt
 
-And thus nicely avoids the following warning with multiple
-subvol mounts on older kernel like 2.6.32 where
-BTRFS_IOC_GET_FSLABEL ioctl does not exist.
-
-./btrfs fi show -m
-Label: none  uuid: 31845933-611e-422d-ae6f-386e57ad81aa
-	Total devices 2 FS bytes used 172.00KiB
-	devid    1 size 3.00GiB used 642.38MiB path /dev/sdd
-	devid    2 size 3.00GiB used 622.38MiB path /dev/sde
-
-warning, device 2 is missing
-warning devid 2 not found already
-warning, device 2 is missing
-warning devid 2 not found already
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- cmds-filesystem.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ tests/convert-tests.sh | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 793df0e..e2049cc 100644
---- a/cmds-filesystem.c
-+++ b/cmds-filesystem.c
-@@ -468,6 +468,10 @@ static int btrfs_scan_kernel(void *search, unsigned unit_mode)
- 			goto out;
- 		}
+diff --git a/tests/convert-tests.sh b/tests/convert-tests.sh
+index 68c03dc..4d99a61 100755
+--- a/tests/convert-tests.sh
++++ b/tests/convert-tests.sh
+@@ -42,7 +42,7 @@ convert_test() {
  
-+		/* skip all fs already shown as mounted fs */
-+		if (is_seen_fsid(fs_info_arg.fsid))
-+			continue;
-+
- 		ret = get_label_mounted(mnt->mnt_dir, label);
- 		/* provide backward kernel compatibility */
- 		if (ret == -ENOTTY)
+ 	# create a file to check btrfs-convert can convert regular file
+ 	# correct
+-	run_check $SUDO_HELPER mount $IMAGE $TEST_MNT
++	run_check $SUDO_HELPER mount -o loop $IMAGE $TEST_MNT
+ 	run_check $SUDO_HELPER dd if=/dev/zero of=$TEST_MNT/test bs=$nodesize \
+ 		count=1 1>/dev/null 2>&1
+ 	run_check $SUDO_HELPER umount $TEST_MNT
 -- 
-2.4.1
+1.8.5.1
 

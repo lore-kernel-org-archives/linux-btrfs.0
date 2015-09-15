@@ -1,50 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f182.google.com ([209.85.212.182]:33244 "EHLO
-	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752137AbbIHVTM (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Sep 2015 17:19:12 -0400
-Date: Wed, 9 Sep 2015 00:18:50 +0000
-From: Alexandru Moise <00moses.alexander00@gmail.com>
-To: clm@fb.com
-Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, 00moses.alexander00@gmail.com
-Subject: [PATCH] btrfs: use a single if() statement for one outcome in
- get_block_rsv()
-Message-ID: <20150909001850.GA892@gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:28579 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752108AbbIONJt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Sep 2015 09:09:49 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8FD9U8n016734
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 21:09:30 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/3] btrfs: Move btrfs_raid_array to public
+Date: Tue, 15 Sep 2015 21:08:06 +0800
+Message-ID: <c57e679873ccc4026f6ba4122fabe05ed3b2564e.1442322310.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <cover.1442322310.git.zhaolei@cn.fujitsu.com>
+References: <cover.1442322310.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rather than have three separate if() statements for the same outcome
-we should just OR them together in the same if() statement.
+This array is used to record attributes of each raid type,
+make it public, and many functions will benifit with this array.
 
-Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+For example, num_tolerated_disk_barrier_failures(), we can
+avoid complex conditions in this function, and get raid attribute
+simply by accessing above array.
+
+It can also make code logic simple, reduce duplication code, and
+increase maintainability.
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 10 +++-------
- 1 file changed, 3 insertions(+), 7 deletions(-)
+ fs/btrfs/volumes.c | 128 +++++++++++++++++++++++++++++------------------------
+ fs/btrfs/volumes.h |   4 ++
+ 2 files changed, 73 insertions(+), 59 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5411f0a..e8f2c15 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4890,13 +4890,9 @@ static struct btrfs_block_rsv *get_block_rsv(
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6fc73586..2a65d2d 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -42,6 +42,75 @@
+ #include "dev-replace.h"
+ #include "sysfs.h"
+ 
++const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
++	[BTRFS_RAID_RAID10] = {
++		.sub_stripes	= 2,
++		.dev_stripes	= 1,
++		.devs_max	= 0,	/* 0 == as many as possible */
++		.devs_min	= 4,
++		.devs_increment	= 2,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID1] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 2,
++		.devs_min	= 2,
++		.devs_increment	= 2,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_DUP] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 2,
++		.devs_max	= 1,
++		.devs_min	= 1,
++		.devs_increment	= 1,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID0] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 2,
++		.devs_increment	= 1,
++		.ncopies	= 1,
++	},
++	[BTRFS_RAID_SINGLE] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 1,
++		.devs_min	= 1,
++		.devs_increment	= 1,
++		.ncopies	= 1,
++	},
++	[BTRFS_RAID_RAID5] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 2,
++		.devs_increment	= 1,
++		.ncopies	= 2,
++	},
++	[BTRFS_RAID_RAID6] = {
++		.sub_stripes	= 1,
++		.dev_stripes	= 1,
++		.devs_max	= 0,
++		.devs_min	= 3,
++		.devs_increment	= 1,
++		.ncopies	= 3,
++	},
++};
++
++const u64 const btrfs_raid_group[BTRFS_NR_RAID_TYPES] = {
++	[BTRFS_RAID_RAID10] = BTRFS_BLOCK_GROUP_RAID10,
++	[BTRFS_RAID_RAID1]  = BTRFS_BLOCK_GROUP_RAID1,
++	[BTRFS_RAID_DUP]    = BTRFS_BLOCK_GROUP_DUP,
++	[BTRFS_RAID_RAID0]  = BTRFS_BLOCK_GROUP_RAID0,
++	[BTRFS_RAID_SINGLE] = 0,
++	[BTRFS_RAID_RAID5]  = BTRFS_BLOCK_GROUP_RAID5,
++	[BTRFS_RAID_RAID6]  = BTRFS_BLOCK_GROUP_RAID6,
++};
++
+ static int init_first_rw_device(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+ 				struct btrfs_device *device);
+@@ -4285,65 +4354,6 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
+ 	return 0;
+ }
+ 
+-static const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+-	[BTRFS_RAID_RAID10] = {
+-		.sub_stripes	= 2,
+-		.dev_stripes	= 1,
+-		.devs_max	= 0,	/* 0 == as many as possible */
+-		.devs_min	= 4,
+-		.devs_increment	= 2,
+-		.ncopies	= 2,
+-	},
+-	[BTRFS_RAID_RAID1] = {
+-		.sub_stripes	= 1,
+-		.dev_stripes	= 1,
+-		.devs_max	= 2,
+-		.devs_min	= 2,
+-		.devs_increment	= 2,
+-		.ncopies	= 2,
+-	},
+-	[BTRFS_RAID_DUP] = {
+-		.sub_stripes	= 1,
+-		.dev_stripes	= 2,
+-		.devs_max	= 1,
+-		.devs_min	= 1,
+-		.devs_increment	= 1,
+-		.ncopies	= 2,
+-	},
+-	[BTRFS_RAID_RAID0] = {
+-		.sub_stripes	= 1,
+-		.dev_stripes	= 1,
+-		.devs_max	= 0,
+-		.devs_min	= 2,
+-		.devs_increment	= 1,
+-		.ncopies	= 1,
+-	},
+-	[BTRFS_RAID_SINGLE] = {
+-		.sub_stripes	= 1,
+-		.dev_stripes	= 1,
+-		.devs_max	= 1,
+-		.devs_min	= 1,
+-		.devs_increment	= 1,
+-		.ncopies	= 1,
+-	},
+-	[BTRFS_RAID_RAID5] = {
+-		.sub_stripes	= 1,
+-		.dev_stripes	= 1,
+-		.devs_max	= 0,
+-		.devs_min	= 2,
+-		.devs_increment	= 1,
+-		.ncopies	= 2,
+-	},
+-	[BTRFS_RAID_RAID6] = {
+-		.sub_stripes	= 1,
+-		.dev_stripes	= 1,
+-		.devs_max	= 0,
+-		.devs_min	= 3,
+-		.devs_increment	= 1,
+-		.ncopies	= 3,
+-	},
+-};
+-
+ static u32 find_raid56_stripe_len(u32 data_devices, u32 dev_stripe_target)
  {
- 	struct btrfs_block_rsv *block_rsv = NULL;
+ 	/* TODO allow them to set a preferred stripe size */
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 2ca784a..75d6083 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -338,6 +338,10 @@ struct btrfs_raid_attr {
+ 	int ncopies;		/* how many copies to data has */
+ };
  
--	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
--		block_rsv = trans->block_rsv;
--
--	if (root == root->fs_info->csum_root && trans->adding_csums)
--		block_rsv = trans->block_rsv;
--
--	if (root == root->fs_info->uuid_root)
-+	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state) ||
-+	    (root == root->fs_info->csum_root && trans->adding_csums) ||
-+	     (root == root->fs_info->uuid_root))
- 		block_rsv = trans->block_rsv;
- 
- 	if (!block_rsv)
++extern const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES];
++
++extern const u64 btrfs_raid_group[BTRFS_NR_RAID_TYPES];
++
+ struct map_lookup {
+ 	u64 type;
+ 	int io_align;
 -- 
-2.5.1
+1.8.5.1
 

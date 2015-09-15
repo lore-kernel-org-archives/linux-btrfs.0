@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22360 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:28579 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752592AbbIONJt (ORCPT
+	with ESMTP id S1751766AbbIONJu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 09:09:49 -0400
+	Tue, 15 Sep 2015 09:09:50 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8FD9V6o016738
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 21:09:31 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8FD9WoW016741
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 21:09:32 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/3] btrfs: use btrfs_raid_array for btrfs_get_num_tolerated_disk_barrier_failures()
-Date: Tue, 15 Sep 2015 21:08:07 +0800
-Message-ID: <bea5cae2134583da7c2f2e936cecc8d95c3b7baf.1442322310.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 3/3] btrfs: use btrfs_raid_array in btrfs_reduce_alloc_profile
+Date: Tue, 15 Sep 2015 21:08:08 +0800
+Message-ID: <ba0f699bf154843d8fb3456156457b297197c749.1442322310.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1442322310.git.zhaolei@cn.fujitsu.com>
 References: <cover.1442322310.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,141 +20,83 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_raid_array[] is used to define all raid attributes, use it
-to get tolerated_failures in btrfs_get_num_tolerated_disk_barrier_failures(),
-instead of complex condition in function.
+btrfs_raid_array[] holds attributes of all raid types.
 
-It can make code simple and auto-support other possible raid-type in
-future.
+Use btrfs_raid_array[].devs_min is best way for request
+in btrfs_reduce_alloc_profile(), instead of use complex
+condition of each raid types.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/disk-io.c | 35 ++++++++++++++++++++++-------------
- fs/btrfs/volumes.c |  7 +++++++
- fs/btrfs/volumes.h |  1 +
- 3 files changed, 30 insertions(+), 13 deletions(-)
+ fs/btrfs/extent-tree.c | 48 ++++++++++++++++++++++--------------------------
+ 1 file changed, 22 insertions(+), 26 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 0d98aee..126baab 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3445,22 +3445,31 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
- 
- int btrfs_get_num_tolerated_disk_barrier_failures(u64 flags)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 5411f0a..0d93cad 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -3822,7 +3822,8 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
  {
--	if ((flags & (BTRFS_BLOCK_GROUP_DUP |
--		      BTRFS_BLOCK_GROUP_RAID0 |
--		      BTRFS_AVAIL_ALLOC_BIT_SINGLE)) ||
--	    ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0))
--		return 0;
-+	int raid_type;
-+	int min_tolerated = INT_MAX;
+ 	u64 num_devices = root->fs_info->fs_devices->rw_devices;
+ 	u64 target;
+-	u64 tmp;
++	u64 raid_type;
++	u64 allowed = 0;
  
--	if (flags & (BTRFS_BLOCK_GROUP_RAID1 |
--		     BTRFS_BLOCK_GROUP_RAID5 |
--		     BTRFS_BLOCK_GROUP_RAID10))
--		return 1;
-+	if ((flags & BTRFS_BLOCK_GROUP_PROFILE_MASK) == 0 ||
-+	    (flags & BTRFS_AVAIL_ALLOC_BIT_SINGLE))
-+		min_tolerated = min(min_tolerated,
-+				    btrfs_raid_array[BTRFS_RAID_SINGLE].
-+				    tolerated_failures);
+ 	/*
+ 	 * see if restripe for this chunk_type is in progress, if so
+@@ -3840,31 +3841,26 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
+ 	spin_unlock(&root->fs_info->balance_lock);
  
--	if (flags & BTRFS_BLOCK_GROUP_RAID6)
--		return 2;
+ 	/* First, mask out the RAID levels which aren't possible */
+-	if (num_devices == 1)
+-		flags &= ~(BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID0 |
+-			   BTRFS_BLOCK_GROUP_RAID5);
+-	if (num_devices < 3)
+-		flags &= ~BTRFS_BLOCK_GROUP_RAID6;
+-	if (num_devices < 4)
+-		flags &= ~BTRFS_BLOCK_GROUP_RAID10;
+-
+-	tmp = flags & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID0 |
+-		       BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID5 |
+-		       BTRFS_BLOCK_GROUP_RAID6 | BTRFS_BLOCK_GROUP_RAID10);
+-	flags &= ~tmp;
+-
+-	if (tmp & BTRFS_BLOCK_GROUP_RAID6)
+-		tmp = BTRFS_BLOCK_GROUP_RAID6;
+-	else if (tmp & BTRFS_BLOCK_GROUP_RAID5)
+-		tmp = BTRFS_BLOCK_GROUP_RAID5;
+-	else if (tmp & BTRFS_BLOCK_GROUP_RAID10)
+-		tmp = BTRFS_BLOCK_GROUP_RAID10;
+-	else if (tmp & BTRFS_BLOCK_GROUP_RAID1)
+-		tmp = BTRFS_BLOCK_GROUP_RAID1;
+-	else if (tmp & BTRFS_BLOCK_GROUP_RAID0)
+-		tmp = BTRFS_BLOCK_GROUP_RAID0;
+-
+-	return extended_to_chunk(flags | tmp);
 +	for (raid_type = 0; raid_type < BTRFS_NR_RAID_TYPES; raid_type++) {
-+		if (raid_type == BTRFS_RAID_SINGLE)
-+			continue;
-+		if (!(flags & btrfs_raid_group[raid_type]))
-+			continue;
-+		min_tolerated = min(min_tolerated,
-+				    btrfs_raid_array[raid_type].
-+				    tolerated_failures);
++		if (num_devices >= btrfs_raid_array[raid_type].devs_min)
++			allowed |= btrfs_raid_group[raid_type];
 +	}
- 
--	pr_warn("BTRFS: unknown raid type: %llu\n", flags);
--	return 0;
-+	if (min_tolerated == INT_MAX) {
-+		pr_warn("BTRFS: unknown raid flag: %llu\n", flags);
-+		min_tolerated = 0;
-+	}
++	allowed &= flags;
 +
-+	return min_tolerated;
++	if (allowed & BTRFS_BLOCK_GROUP_RAID6)
++		allowed = BTRFS_BLOCK_GROUP_RAID6;
++	else if (allowed & BTRFS_BLOCK_GROUP_RAID5)
++		allowed = BTRFS_BLOCK_GROUP_RAID5;
++	else if (allowed & BTRFS_BLOCK_GROUP_RAID10)
++		allowed = BTRFS_BLOCK_GROUP_RAID10;
++	else if (allowed & BTRFS_BLOCK_GROUP_RAID1)
++		allowed = BTRFS_BLOCK_GROUP_RAID1;
++	else if (allowed & BTRFS_BLOCK_GROUP_RAID0)
++		allowed = BTRFS_BLOCK_GROUP_RAID0;
++
++	flags &= ~BTRFS_BLOCK_GROUP_PROFILE_MASK;
++
++	return extended_to_chunk(flags | allowed);
  }
  
- int btrfs_calc_num_tolerated_disk_barrier_failures(
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 2a65d2d..7b53390 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -48,6 +48,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.dev_stripes	= 1,
- 		.devs_max	= 0,	/* 0 == as many as possible */
- 		.devs_min	= 4,
-+		.tolerated_failures = 1,
- 		.devs_increment	= 2,
- 		.ncopies	= 2,
- 	},
-@@ -56,6 +57,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.dev_stripes	= 1,
- 		.devs_max	= 2,
- 		.devs_min	= 2,
-+		.tolerated_failures = 1,
- 		.devs_increment	= 2,
- 		.ncopies	= 2,
- 	},
-@@ -64,6 +66,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.dev_stripes	= 2,
- 		.devs_max	= 1,
- 		.devs_min	= 1,
-+		.tolerated_failures = 0,
- 		.devs_increment	= 1,
- 		.ncopies	= 2,
- 	},
-@@ -72,6 +75,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.dev_stripes	= 1,
- 		.devs_max	= 0,
- 		.devs_min	= 2,
-+		.tolerated_failures = 0,
- 		.devs_increment	= 1,
- 		.ncopies	= 1,
- 	},
-@@ -80,6 +84,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.dev_stripes	= 1,
- 		.devs_max	= 1,
- 		.devs_min	= 1,
-+		.tolerated_failures = 0,
- 		.devs_increment	= 1,
- 		.ncopies	= 1,
- 	},
-@@ -88,6 +93,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.dev_stripes	= 1,
- 		.devs_max	= 0,
- 		.devs_min	= 2,
-+		.tolerated_failures = 1,
- 		.devs_increment	= 1,
- 		.ncopies	= 2,
- 	},
-@@ -96,6 +102,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
- 		.dev_stripes	= 1,
- 		.devs_max	= 0,
- 		.devs_min	= 3,
-+		.tolerated_failures = 2,
- 		.devs_increment	= 1,
- 		.ncopies	= 3,
- 	},
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 75d6083..04ff0ef 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -334,6 +334,7 @@ struct btrfs_raid_attr {
- 	int dev_stripes;	/* stripes per dev */
- 	int devs_max;		/* max devs to use */
- 	int devs_min;		/* min devs needed */
-+	int tolerated_failures; /* max tolerated fail devs */
- 	int devs_increment;	/* ndevs has to be a multiple of this */
- 	int ncopies;		/* how many copies to data has */
- };
+ static u64 get_alloc_profile(struct btrfs_root *root, u64 orig_flags)
 -- 
 1.8.5.1
 

@@ -1,62 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f54.google.com ([209.85.218.54]:35622 "EHLO
-	mail-oi0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751993AbbINRxn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 13:53:43 -0400
-Received: by oiww128 with SMTP id w128so81025221oiw.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Sep 2015 10:53:43 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <20150913232529.GT26895@dastard>
-References: <1441397823-1203-1-git-send-email-Anna.Schumaker@Netapp.com>
- <55EEFCEE.5090000@draigBrady.com> <55EF279B.3020101@Netapp.com>
- <CALCETrXxRB-LXVb+=nkwfj0zEjWuXXTctkSAc9Oec0fgyOQ5Yg@mail.gmail.com>
- <55EF3EFD.3080302@draigBrady.com> <20150908212907.GD30681@birch.djwong.org>
- <CALCETrWAotvN+MBsxq4QLQBr_WAyydqMnipcaTM88rM8sSx43w@mail.gmail.com>
- <20150908223959.GE30681@birch.djwong.org> <CALCETrVsWBdqvAgwxHcG=gbcWRNPG2ZziWUg1g=siKDrDu7S2Q@mail.gmail.com>
- <20150913232529.GT26895@dastard>
-From: Andy Lutomirski <luto@amacapital.net>
-Date: Mon, 14 Sep 2015 10:53:23 -0700
-Message-ID: <CALCETrUALh=tiK9S0LhvJuy4jK-1vk5bjnz2b0faWhw0mSLs=g@mail.gmail.com>
-Subject: Re: [PATCH v1 0/8] VFS: In-kernel copy system call
-To: Dave Chinner <david@fromorbit.com>
-Cc: Zach Brown <zab@zabbo.net>, Coreutils <coreutils@gnu.org>,
-        Al Viro <viro@zeniv.linux.org.uk>, linux-nfs@vger.kernel.org,
-        Anna Schumaker <Anna.Schumaker@netapp.com>, andros@netapp.com,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        =?UTF-8?Q?P=C3=A1draig_Brady?= <P@draigbrady.com>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Chris Mason <clm@fb.com>, Linux API <linux-api@vger.kernel.org>,
-        Christoph Hellwig <hch@infradead.org>,
-        Michael Kerrisk-manpages <mtk.manpages@gmail.com>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.kernel.org ([198.145.29.136]:33739 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751327AbbIOKkC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Sep 2015 06:40:02 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] Btrfs bug fixes
+Date: Tue, 15 Sep 2015 03:22:58 +0100
+Message-Id: <1442283778-2342-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sep 13, 2015 4:25 PM, "Dave Chinner" <david@fromorbit.com> wrote:
->
-> On Tue, Sep 08, 2015 at 04:08:43PM -0700, Andy Lutomirski wrote:
-> > Can we have a clean way to figure out whether two file ranges are the
-> > same in a way that allows false negatives?  I.e. return 1 if the
-> > ranges are reflinks of each other and 0 if not?  Pretty please?  I've
-> > implemented that in the past on btrfs by syncing the ranges and then
-> > comparing FIEMAP output, but that's hideous.
->
-> That fundamentally doesn't work for userspace, because the moment
-> the filesystem drops it's locks on the inodes in the kernel after
-> doing the comparison the mappings can change.  IOWs, by the time the
-> information gets back to userspace, it's already wrong. e.g. cp made
-> this mistake by trying to use FIEMAP to optimise hole detection in
-> files and ended up with corrupt copies.
->
-> It really doesn't matter what the syscall/ioctl interface is, trying
-> to make application logic decisions based on inode block mappings
-> from userspace is racy and not safe and will go wrong...
->
+From: Filipe Manana <fdmanana@suse.com>
 
-I agree, and that thing was just an experiment.  I'd love to see a
-sane and correct interface, though.
+Hi Chris,
 
+Please consider the following fixes for the 4.3 kernel release candidates.
+One of them addresses a deadlock introduced in 4.3, another is for a false
+enospc condition (which I introduced in a 4.2 commit) that can happen either
+on empty filesystems or filesystems with files having only inlined extents
+after mounting with "-o nospace_cache", a fix for read corruption of
+compressed and shared (cloned, deduped) extents that has been present
+possibly since the compression feature exists or since the clone/dedup
+ioctls exist, and finally, from Jeff, a fix for a long standing null
+pointer dereference during inode eviction that some users were running
+into very often.
 
---Andy
+They are all short and simple, the read corruption one is bigger only
+because it adds a big fat comment, and just like Jeff's fix, it was
+tagged for backporting to stable releases too.
+
+I included any Reviewed-by tags people added through the mailing list and
+two of these fixes have corresponding test cases for fstests that were
+submitted, along with the respective fixes, to the mailing list.
+
+Thanks.
+
+The following changes since commit 527afb4493c2892ce89fb74648e72a30b68ba120:
+
+  Btrfs: cleanup: remove unnecessary check before btrfs_free_path is called (2015-08-31 11:46:41 -0700)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git integration-4.3
+
+for you to fetch changes up to a30e577c96f59b1e1678ea5462432b09bf7d5cbc:
+
+  btrfs: skip waiting on ordered range for special files (2015-09-15 02:21:08 +0100)
+
+----------------------------------------------------------------
+Filipe Manana (3):
+      Btrfs: don't initialize a space info as full to prevent ENOSPC
+      Btrfs: remove unnecessary locking of cleaner_mutex to avoid deadlock
+      Btrfs: fix read corruption of compressed and shared extents
+
+Jeff Mahoney (1):
+      btrfs: skip waiting on ordered range for special files
+
+ fs/btrfs/disk-io.c     |  2 --
+ fs/btrfs/extent-tree.c |  5 +----
+ fs/btrfs/extent_io.c   | 65 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++--------
+ fs/btrfs/inode.c       |  3 ++-
+ fs/btrfs/super.c       |  2 --
+ 5 files changed, 60 insertions(+), 17 deletions(-)
+
+-- 
+2.1.3
+

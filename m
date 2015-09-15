@@ -1,496 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43286 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752289AbbIOPzs (ORCPT
+Received: from mail-yk0-f171.google.com ([209.85.160.171]:36244 "EHLO
+	mail-yk0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751960AbbIOSOP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 11:55:48 -0400
-Date: Tue, 15 Sep 2015 15:55:47 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: service@automatix.de
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Recovery possible on asynchronous transid ?
-Message-ID: <20150915155547.GB28645@carfax.org.uk>
-References: <55F82990.5050403@automatix.de>
+	Tue, 15 Sep 2015 14:14:15 -0400
+Received: by ykdt18 with SMTP id t18so174237921ykd.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 11:14:14 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Y7xTucakfITjPcLV"
-In-Reply-To: <55F82990.5050403@automatix.de>
+From: Tyler Williams <williams.tlr@gmail.com>
+Date: Tue, 15 Sep 2015 12:13:35 -0600
+Message-ID: <CALq_kZHBx8hR_6kfwYgJChdK2RKw1+up07pGGYe+RRGOb2rhKA@mail.gmail.com>
+Subject: btrfs kernel warning
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I've received several kernel warnings over the last few weeks. I
+checked on the #BTRFS irc channel and it was suggested that I post the
+relevant information here to see if this was something that I should
+be worried about.
 
---Y7xTucakfITjPcLV
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, Sep 15, 2015 at 04:22:08PM +0200, Juergen Sauer wrote:
-> Hi!
->=20
-> Due an hibernation event my BTRFS Raid56 failed and is not mountable
-> anymore. :(
->=20
-> For Debugging I moved the Devices to an test-hardware and booted this
-> system from an Arch Linux ISO, which I created for this purpose.
->=20
-> The Problem is:
-> [ 1086.714109] BTRFS (device sdd1): parent transid verify failed on
-> 209362944 wanted 293924 found 293922
+[root@tawilliams ~]# uname -a
+Linux tawilliams.williamstlr.net 4.1.6-201.fc22.x86_64 #1 SMP Fri Sep
+4 17:49:24 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
 
-   Try mounting with -o recovery, and see if that helps.
 
-   Hugo.
+[root@tawilliams ~]# btrfs --version
+btrfs-progs v4.1
 
-> Is there any posibility to recover any files from this desaster?
-> Is there any posibiolity to set the superblock to transid #293922 ?
->=20
-> See my tries to recover here as konsole log below.
->=20
->=20
->=20
->=20
-> ---------x----------x-----------x------------------x--------------
-> BTRFS Tools Version: btrfs-progs v4.2
->=20
-> Kernel: Linux archiso 4.1.6-1-ARCH #1 SMP PREEMPT Mon Aug 17 08:52:28
-> CEST 2015 x86_64 GNU/Linux
->=20
-> btrfs show
-> Label: 'archiv'  uuid: 48f71e09-6898-4665-bc61-bd7ca4ba4a24
-> 	Total devices 4 FS bytes used 3.35TiB
-> 	devid    1 size 1.70TiB used 726.69GiB path /dev/sdc3
-> 	devid    2 size 1.82TiB used 1.35TiB path /dev/sdb1
-> 	devid    3 size 1.82TiB used 1.35TiB path /dev/sda1
-> 	devid    4 size 1.82TiB used 1.35TiB path /dev/sdd1
->=20
-> mount LABEL=3Darchiv /mnt -o degraded,ro
-> # dmesg
-> [ 1086.691246] BTRFS info (device sdd1): allowing degraded mounts
-> [ 1086.691251] BTRFS info (device sdd1): disk space caching is enabled
-> [ 1086.714109] BTRFS (device sdd1): parent transid verify failed on
-> 209362944 wanted 293924 found 293922
-> [ 1086.752227] BTRFS (device sdd1): parent transid verify failed on
-> 244719616 wanted 293924 found 293922
-> [ 1086.754377] BTRFS: bdev /dev/sdb1 errs: wr 3, rd 0, flush 1, corrupt
-> 0, gen 0
-> [ 1086.754676] BTRFS (device sdd1): parent transid verify failed on
-> 209375232 wanted 293924 found 293914
-> [ 1086.770626] BTRFS (device sdd1): parent transid verify failed on
-> 245538816 wanted 293924 found 293922
-> [ 1086.912646] BTRFS (device sdd1): parent transid verify failed on
-> 253378560 wanted 293924 found 293914
-> [ 1086.942088] BTRFS (device sdd1): parent transid verify failed on
-> 253390848 wanted 293924 found 293914
-> [ 1086.944003] BTRFS (device sdd1): parent transid verify failed on
-> 253403136 wanted 293924 found 293914
-> [ 1087.262500] BTRFS (device sdd1): parent transid verify failed on
-> 253911040 wanted 293924 found 293914
-> [ 1087.264800] BTRFS (device sdd1): bad tree block start 0 253911040
-> [ 1087.266442] BTRFS: Failed to read block groups: -5
-> [ 1087.315127] BTRFS: open_ctree failed
->=20
-> # btrfs-find-root /dev/sda1
-> Superblock thinks the generation is 293924
-> Superblock thinks the level is 2
-> Found tree root at 244273152 gen 293924 level 2
-> Well block 238604288(gen: 293923 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199577600(gen: 293922 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199786496(gen: 293921 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199925760(gen: 293919 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 209240064(gen: 293914 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 182116352(gen: 293913 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 179388416(gen: 293912 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 238559232(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 237764608(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 175108096(gen: 293910 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 74981376(gen: 293909 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156815360(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156807168(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156803072(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156688384(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 153407488(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149504000(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149499904(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149078016(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149073920(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 147288064(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 107081728(gen: 293907 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61517824(gen: 293906 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 63414272(gen: 293905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 100290560(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61906944(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 99393536(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 79740928(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 47403008(gen: 293901 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 42622976(gen: 293899 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 40329216(gen: 293898 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 38137856(gen: 293897 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 36515840(gen: 293896 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
->=20
-> # btrfs-find-root /dev/sdb1
-> Ignoring transid failure
-> Superblock thinks the generation is 293924
-> Superblock thinks the level is 2
-> Found tree root at 244273152 gen 293924 level 2
-> Well block 238604288(gen: 293923 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199577600(gen: 293922 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199786496(gen: 293921 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199925760(gen: 293919 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 209240064(gen: 293914 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 182116352(gen: 293913 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 179388416(gen: 293912 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 238559232(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 237764608(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 175108096(gen: 293910 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 74981376(gen: 293909 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156815360(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156807168(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156803072(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156688384(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 153407488(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149504000(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149499904(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149078016(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149073920(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 147288064(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 107081728(gen: 293907 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61517824(gen: 293906 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 63414272(gen: 293905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 100290560(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61906944(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 99393536(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 79740928(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 47403008(gen: 293901 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 42622976(gen: 293899 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 40329216(gen: 293898 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 38137856(gen: 293897 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 36515840(gen: 293896 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
->=20
-> # btrfs-find-root /dev/sdc3
-> Ignoring transid failure
-> Superblock thinks the generation is 293924
-> Superblock thinks the level is 2
-> Found tree root at 244273152 gen 293924 level 2
-> Well block 238604288(gen: 293923 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199577600(gen: 293922 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199786496(gen: 293921 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199925760(gen: 293919 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 209240064(gen: 293914 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 182116352(gen: 293913 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 179388416(gen: 293912 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 238559232(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 237764608(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 175108096(gen: 293910 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 74981376(gen: 293909 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156815360(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156807168(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156803072(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156688384(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 153407488(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149504000(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149499904(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149078016(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149073920(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 147288064(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 107081728(gen: 293907 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61517824(gen: 293906 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 63414272(gen: 293905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 100290560(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61906944(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 99393536(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 79740928(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 47403008(gen: 293901 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 42622976(gen: 293899 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 40329216(gen: 293898 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 38137856(gen: 293897 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 36515840(gen: 293896 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> Ignoring transid failure
->=20
-> # btrfs-find-root /dev/sdd1
-> Superblock thinks the generation is 293924
-> Superblock thinks the level is 2
-> Found tree root at 244273152 gen 293924 level 2
-> Well block 238604288(gen: 293923 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199577600(gen: 293922 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199786496(gen: 293921 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199925760(gen: 293919 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 209240064(gen: 293914 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 182116352(gen: 293913 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 179388416(gen: 293912 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 238559232(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 237764608(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 175108096(gen: 293910 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 74981376(gen: 293909 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156815360(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156807168(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156803072(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156688384(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 153407488(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149504000(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149499904(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149078016(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149073920(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 147288064(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 107081728(gen: 293907 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61517824(gen: 293906 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 63414272(gen: 293905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 100290560(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61906944(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 99393536(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 79740928(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 47403008(gen: 293901 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 42622976(gen: 293899 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 40329216(gen: 293898 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 38137856(gen: 293897 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 36515840(gen: 293896 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> parent transid verify failed on 209362944 wanted 293924 found 293922
-> Ignoring transid failure
-> Superblock thinks the generation is 293924
-> Superblock thinks the level is 2
-> Found tree root at 244273152 gen 293924 level 2
-> Well block 238604288(gen: 293923 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199577600(gen: 293922 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199786496(gen: 293921 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 199925760(gen: 293919 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 209240064(gen: 293914 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 182116352(gen: 293913 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 179388416(gen: 293912 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 238559232(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 237764608(gen: 293911 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 175108096(gen: 293910 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 74981376(gen: 293909 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156815360(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156807168(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156803072(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 156688384(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 153407488(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149504000(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149499904(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149078016(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 149073920(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 147288064(gen: 293908 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 107081728(gen: 293907 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61517824(gen: 293906 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 63414272(gen: 293905 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 100290560(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 61906944(gen: 293904 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 99393536(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 79740928(gen: 293903 level: 0) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 47403008(gen: 293901 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 42622976(gen: 293899 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 40329216(gen: 293898 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 38137856(gen: 293897 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> Well block 36515840(gen: 293896 level: 2) seems good, but
-> generation/level doesn't match, want gen: 293924 level: 2
-> ---------x----------x-----------x------------------x--------------
->=20
-> Thanks in advance
->=20
->=20
-> mit freundlichen Gr=FC=DFen
-> J=FCrgen Sauer
 
---=20
-Hugo Mills             | vi: The core of evil.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+[root@tawilliams ~]# btrfs fi sh
+Label: 'fedora'  uuid: 1e37c117-d493-4d3e-a585-46b90de16569
+        Total devices 1 FS bytes used 3.70GiB
+        devid    1 size 47.31GiB used 6.04GiB path /dev/sda4
 
---Y7xTucakfITjPcLV
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Label: none  uuid: f9b38a56-44d4-4974-9640-95341bd8ae6a
+        Total devices 1 FS bytes used 424.23GiB
+        devid    1 size 931.51GiB used 428.04GiB path /dev/sdc1
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Label: none  uuid: 5266d71b-1d75-4b28-accc-95187f2d65a4
+        Total devices 1 FS bytes used 889.09GiB
+        devid    1 size 931.50GiB used 892.03GiB path /dev/sdb2
 
-iQIcBAEBAgAGBQJV+D+CAAoJEFheFHXiqx3kzgkQAJOfQsVQmE2jdgMTOYV85hh9
-/RojizmFNP7X5y1gFv33lZJmvmXXqZcnx8n5CyjU3FXiW/oPmQ06zoHhVv8fLTmo
-aQftmQXnFne830deXBJ0R8X8z2nHcnvxUkxQ1nYNL3gH7ONeZqpqF8mMK7dPjZVs
-2tI3pDx76mVML+LdPOwOP76t1pwVUhQEXdSQE2ikVMisXzWYDXJYe4zPZm7MdqVf
-7d4h4KtEt9CQiAqLHx1lWH+ZDvG7IWMNNhdIxCh6wuvWqB5LYDSKhaycePEcx752
-fjVawCcclM4RAnlkrxKU8PQIPvLnkVoxesQSxsMTU2HL39fvIGwX13fKUeILM5eU
-2cx4NyIPmmZOOc3nWvWoa0z3v0sdKTBOnzCtWUuaBK2PiEeC9WmooulTu9/FqvRQ
-L1HumtifV+r/NPbvOPBNWVSn+8ShJoHHcnPcb/e9Fe0RaWXhcUGrJBXrpkfmJf8r
-fc4R+f9ViDbMlOLPmEnpo710yitmQZQFq8B3IfR7ukjn+4162XEyFfh8c5zpRKE5
-Xk9ZIfmrwRMb8hqevXC8qbrssQCEoDMnR3jMnCZ7G/AbxUj+u8mVQYuV9amLkLhg
-By7y3n7XJi5VC7lXLDWngwX6euJG2yk+98hRRIC9H+BQA2up3xCj8JtPP5y2/baL
-goCackEw4z4bhBC8LUV9
-=5/75
------END PGP SIGNATURE-----
+Label: 'tawilliams'  uuid: 142b1866-f5e1-48b0-acd3-401e8eb4d219
+        Total devices 2 FS bytes used 1.10TiB
+        devid    1 size 1.82TiB used 1.16TiB path /dev/sdb1
+        devid    2 size 1.82TiB used 1.16TiB path /dev/sde
 
---Y7xTucakfITjPcLV--
+Label: 'fedora-server'  uuid: a5a82150-7ff3-43d4-a86b-a7f9d2df3737
+        Total devices 1 FS bytes used 27.09GiB
+        devid    1 size 47.51GiB used 38.81GiB path /dev/sdd3
+
+btrfs-progs v4.1
+
+[root@tawilliams ~]# btrfs fi df /media/btrfs-raid1/
+Data, RAID1: total=1.16TiB, used=1.10TiB
+System, RAID1: total=32.00MiB, used=208.00KiB
+Metadata, RAID1: total=5.00GiB, used=3.86GiB
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel: ------------[ cut
+here ]------------
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel: WARNING: CPU: 0
+PID: 544 at fs/btrfs/qgroup.c:1028
+__qgroup_excl_accounting+0x1cf/0x260 [btrfs]()
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Modules linked in:
+nf_conntrack_netbios_ns nf_conntrack_broadcast ip6t_rpfilter
+ip6t_REJECT nf_reject_ipv6 xt_conntrack ebtable_nat ebtable_broute
+bridg
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel: CPU: 0 PID: 544
+Comm: btrfs-cleaner Not tainted 4.1.6-201.fc22.x86_64 #1
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Hardware name:
+Microsoft Corporation Virtual Machine/Virtual Machine, BIOS Hyper-V
+UEFI Release v1.0 11/26/2012
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  0000000000000000
+000000005a7148da ffff8800383f7b38 ffffffff81799a6d
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  0000000000000000
+0000000000000000 ffff8800383f7b78 ffffffff810a165a
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  0000000000000000
+ffff880036e71048 ffff880022079960 ffffffffffffc000
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Call Trace:
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffff81799a6d>] dump_stack+0x45/0x57
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffff810a165a>] warn_slowpath_common+0x8a/0xc0
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffff810a178a>] warn_slowpath_null+0x1a/0x20
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa01341af>] __qgroup_excl_accounting+0x1cf/0x260 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa01372ec>] btrfs_delayed_qgroup_accounting+0x2dc/0xc70
+[btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00b6a67>] ? walk_up_proc+0xd7/0x500 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00ba85f>] btrfs_run_delayed_refs.part.68+0x20f/0x280
+[btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00ba8e5>] btrfs_run_delayed_refs+0x15/0x30 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00cb68a>] btrfs_should_end_transaction+0x5a/0x60 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00b8c85>] btrfs_drop_snapshot+0x455/0x8a0 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa01276cc>] ? btrfs_kill_all_delayed_nodes+0x5c/0x110 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00df11f>] ? btrfs_run_defrag_inodes+0x29f/0x360 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00cbb82>] btrfs_clean_one_deleted_snapshot+0xb2/0x110
+[btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00c3dc5>] cleaner_kthread+0xb5/0x1b0 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffffa00c3d10>] ? check_leaf+0x380/0x380 [btrfs]
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffff810c0bf8>] kthread+0xd8/0xf0
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffff810c0b20>] ? kthread_worker_fn+0x180/0x180
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffff817a0422>] ret_from_fork+0x42/0x70
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+[<ffffffff810c0b20>] ? kthread_worker_fn+0x180/0x180
+Sep 15 10:45:16 tawilliams.williamstlr.net kernel: ---[ end trace
+e8c2f252933902d6 ]---

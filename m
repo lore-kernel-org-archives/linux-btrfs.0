@@ -1,115 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:47448 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752559AbbINXyw (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:45543 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751414AbbIOBbh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Sep 2015 19:54:52 -0400
-Date: Tue, 15 Sep 2015 07:54:41 +0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: Horrible dbench performance
-Message-ID: <20150914235441.GA6243@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <20150914152820.GA25610@localhost.localdomain>
- <20150914193126.GC11307@ret.masoncoding.com>
+	Mon, 14 Sep 2015 21:31:37 -0400
+Subject: Re: unable to mount multi disk volume with recovery mode
+To: Anand Jain <anand.jain@oracle.com>
+References: <CAEyaVk+QnDb5sbfMtV_pGbkwA4BB9ODpVv-_hdMJWjuPbGG+Xg@mail.gmail.com>
+ <55F66855.4010000@cn.fujitsu.com> <55F696F9.7090708@oracle.com>
+CC: Ivan Petrovic <ivan@ipplus.rs>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55F774F0.2050001@cn.fujitsu.com>
+Date: Tue, 15 Sep 2015 09:31:28 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150914193126.GC11307@ret.masoncoding.com>
+In-Reply-To: <55F696F9.7090708@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Sep 14, 2015 at 03:31:27PM -0400, Chris Mason wrote:
-> On Mon, Sep 14, 2015 at 11:28:21PM +0800, Liu Bo wrote:
-> > Hi,
-> > 
-> > Both [1] and [2] had run dbench on btrfs with fast storage, and 
-> > showed bad numbers, I got an impression that after refractoring btree lock to
-> > smart rwlock, we have mitigated this issue..
-> > 
-> > Not got a fast-enough ssd handy, does anyone confirm the result showed
-> > in those link?
-> > 
-> > [1]:https://lkml.org/lkml/2015/4/29/793
-> > [2]:https://lkml.org/lkml/2015/8/21/22
-> > 
-> 
-> Taking a quick look, its not clear to me which operation the latency
-> number corresponds to.  I think the sources are picking the worst
-> latency that any of the children see, and since there are a number of
-> fsyncs as part of each run, my guess is that our fsync is ending up
-> slower than the others.
+Hi Aand,
 
-Yeah, that's right, it picks the worst latency among all children's
-running.
+Anand Jain wrote on 2015/09/14 17:44 +0800:
+>
+>
+> Hi Qu,
+>
+>> Unfortunately, single mode means no duplication.
+>> And degrade mount only works for RAID level with
+>> duplication(DUP,RAID1/5/6/10).
+>
+> further to the below commit.
+>
+>   commit 95669976bd7d30ae265db938ecb46a6b7f8cb893
+>      Btrfs: don't consider the missing device when allocating new chunks
+>
+> in case of 2-disk RAID1 mounted with only one good disk, we would create
+> Single profile and actually the created single profiles are still
+> workable with one disk failed.
 
-The above link [1] showed that btrfs + dbench produces cpu-bound workload
-with large number of children.
+Yep, that's the case, and Zhao Lei also found the problem and is still 
+working on it internally.
 
-> 
-> If you just run dbench with one writer on my machine, its ~2x faster
-> than XFS in tput with half the latency.
-> 
-> If you go up to 200 writers, xfs cruises along at 1,100MB/s and btrfs is
-> pegged at 281MB/s.  All the CPUs are at 100% system time, all hitting
-> lock contention on the root of the btree.
-> 
-> If you create a subvolume for each of the clients, btrfs goes up to
-> 3600MB/s and latencies about 3x of XFS.  It runs flat out that way until
-> it fills the drive.
+But we are doing it in a more flex amd robust method:
 
-Last time we talked about dbench, we also replaced directory with
-subvolume and got really nice results.
+No global missing device number check, but do per-chunk check against 
+its stripes at mount time, to ensure it meets the minimum number for 
+degradable condition.
 
-This result proves that lock contention contributes to most of latency,
-doesn't it?
+So for single/raid0 chunk, they still can't be degraded mounted, if any 
+of its stripe is missing.
 
-> 
-> If someone wants to dive into the latencies, that would be great.  It's
-> probably fsync, and it's probably CPU bound because Josef changed things
-> around to do inline crcs (which is the right answer imho).
+> And so the proposed patch below will let
+> single profile to be mount in this context..
+>    [PATCH 23/23] Btrfs: allow -o rw,degraded for single group profile
+>
+> to recover when missing disk is replaced balance convert can migrate
+> single profiles back to RAID1 profile.
+>
+> Also your explanation for degraded is correct, I am ok to use a new new
+> mount option (like auto-reduced-profile ?) if needed / confusing.
+Sorry for the confusion I caused.
+But for above case, IHMO "degraded" is still the proper term.
 
-Looks like we still behave the same with the old times on the lock
-contention.
+For 2 disks, 1 missing, single chunk case, if the chunk is in the good 
+disk, it should be a good chunk, no need to be degraded.
 
+>
+> Any comments / feedbacks are welcome.
 
-Here is my results with a 40G ssd partition (or should I use the whole disk
-directly?) , 8G ram and i5-2520M CPU, the scheduler is deadline and
-queue_depth is 32.
-
-[boliu@localhost dbench-4.0]$ for i in 8 16 32 64 128; do sudo sh test_dbench.sh ext4 $i | tail -1 ; done                                                                                       
-mke2fs 1.42.12 (29-Aug-2014)
-Throughput 268.655 MB/sec  8 clients  8 procs  max_latency=29.443 ms
-mke2fs 1.42.12 (29-Aug-2014)
-Throughput 500.605 MB/sec  16 clients  16 procs  max_latency=32.379 ms
-mke2fs 1.42.12 (29-Aug-2014)
-Throughput 669.413 MB/sec  32 clients  32 procs  max_latency=2078.969 ms
-mke2fs 1.42.12 (29-Aug-2014)
-Throughput 685.038 MB/sec  64 clients  64 procs  max_latency=1778.066 ms
-mke2fs 1.42.12 (29-Aug-2014)
-Throughput 349.329 MB/sec  128 clients  128 procs  max_latency=2595.917 ms
-
-[boliu@localhost dbench-4.0]$ sudo sysctl vm.drop_caches=3 && for i in 8 16 32 64 128; do sudo s h test_dbench.sh xfs $i | tail -1 ; done                                                        
-vm.drop_caches = 3
-Throughput 390.187 MB/sec  8 clients  8 procs  max_latency=46.202 ms
-Throughput 677.981 MB/sec  16 clients  16 procs  max_latency=51.046 ms
-Throughput 773.213 MB/sec  32 clients  32 procs  max_latency=2150.677 ms
-Throughput 756.338 MB/sec  64 clients  64 procs  max_latency=2664.716 ms
-Throughput 227.198 MB/sec  128 clients  128 procs  max_latency=7520.982 ms
-
-[boliu@localhost dbench-4.0]$ sudo sysctl vm.drop_caches=3 && for i in 8 16 32 64 128; do sudo sh test_dbench.sh btrfs $i | tail -1 ; done                                                      
-vm.drop_caches = 3
-Throughput 292.318 MB/sec  8 clients  8 procs  max_latency=229.759 ms
-Throughput 505.097 MB/sec  16 clients  16 procs  max_latency=28.868 ms
-Throughput 656.121 MB/sec  32 clients  32 procs  max_latency=2674.770 ms
-Throughput 622.782 MB/sec  64 clients  64 procs  max_latency=4312.870 ms
-Throughput 289.462 MB/sec  128 clients  128 procs  max_latency=7484.317 ms
-
-
-Ext4 and xfs also run to the similar long latency, 'perf top' shows
-__d_lookup_rcu() is very hot, while for btrfs, _raw_spin_lock(),
-btrfs_get_token_XX() and queue_read_lock_slowpath() are the hottest
-places.  So on my machine, lock contention is a reason, not just for btrfs.
+But for the patch, I'd like to do it in the manner I mentioned:
+Check every chunk for whether it's possible to be degraded,
+other than current whole fs missing device check.
 
 Thanks,
+Qu
 
--liubo
+>
+> Thanks, Anand

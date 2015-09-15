@@ -1,182 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f174.google.com ([209.85.223.174]:36513 "EHLO
-	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751827AbbIOSqd (ORCPT
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:38776 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751074AbbIOTDq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 14:46:33 -0400
-Received: by ioii196 with SMTP id i196so208913600ioi.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 11:46:32 -0700 (PDT)
+	Tue, 15 Sep 2015 15:03:46 -0400
+Received: by igxx6 with SMTP id x6so18778627igx.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 12:03:45 -0700 (PDT)
 Subject: Re: btrfs kernel warning
 To: Tyler Williams <williams.tlr@gmail.com>
 References: <CALq_kZHBx8hR_6kfwYgJChdK2RKw1+up07pGGYe+RRGOb2rhKA@mail.gmail.com>
  <55F8643F.5070701@gmail.com>
  <CALq_kZGHM2D7-XhrMbkhik2Hn=CWJGPBjbGrJWqS32k7nQEZ3g@mail.gmail.com>
+ <55F86784.6060707@gmail.com>
+ <CALq_kZEf9q9Lrbk32qKhdeuE4B=X2nah9Db9YmD6Y5Xk_Fg32w@mail.gmail.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55F86784.6060707@gmail.com>
-Date: Tue, 15 Sep 2015 14:46:28 -0400
+Message-ID: <55F86B8D.9050605@gmail.com>
+Date: Tue, 15 Sep 2015 15:03:41 -0400
 MIME-Version: 1.0
-In-Reply-To: <CALq_kZGHM2D7-XhrMbkhik2Hn=CWJGPBjbGrJWqS32k7nQEZ3g@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080805010401060500090402"
+In-Reply-To: <CALq_kZEf9q9Lrbk32qKhdeuE4B=X2nah9Db9YmD6Y5Xk_Fg32w@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080606060205080700090308"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080805010401060500090402
+--------------ms080606060205080700090308
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-09-15 14:42, Tyler Williams wrote:
-> So I only had qgroups enabled because at some point it seemed like it
-> gave me the size of individual snapshots. Would it be likely that if I
-> just removed qgroups from that volume that would prevent that message
-> in the future?
->
-Maybe, I'm not entirely certain if disabling qgroups on a volume removes =
+On 2015-09-15 14:53, Tyler Williams wrote:
+> I'll give that a shot. This will be a lame questions, but what address
+> to I need to reply to for these messages to make it to the mailing
+> list? It looks like I'm replying to you instead of to the mailing list
+> itself. Thanks
+It's not a lame question at all, it's a very sensible one.
+The easy option is to use 'Reply All' or 'Reply List' if your e-mail=20
+client supports it.  For some rather stupid reason, some mail clients=20
+don't support this properly, in which case you have to use the regular=20
+Reply button and add in the rest of the To and Cc addresses from the=20
+original mail (and then optionally complain to the developers of your=20
+e-mail client that it doesn't support functionality that's been standard =
 
-the qgroup metadata, and if the metadata is still there, it might still=20
-cause issues.  It's worth trying though because it shouldn't make=20
-anything worse than it already is.
-> On Tue, Sep 15, 2015 at 12:32 PM, Austin S Hemmelgarn
+since before the year 2000).
+> On Tue, Sep 15, 2015 at 12:46 PM, Austin S Hemmelgarn
 > <ahferroin7@gmail.com> wrote:
->> On 2015-09-15 14:13, Tyler Williams wrote:
+>> On 2015-09-15 14:42, Tyler Williams wrote:
 >>>
->>> I've received several kernel warnings over the last few weeks. I
->>> checked on the #BTRFS irc channel and it was suggested that I post th=
-e
->>> relevant information here to see if this was something that I should
->>> be worried about.
->>>
->>>
->>> [root@tawilliams ~]# uname -a
->>> Linux tawilliams.williamstlr.net 4.1.6-201.fc22.x86_64 #1 SMP Fri Sep=
+>>> So I only had qgroups enabled because at some point it seemed like it=
 
->>> 4 17:49:24 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
->>>
->>>
->>> [root@tawilliams ~]# btrfs --version
->>> btrfs-progs v4.1
->>>
->>>
->>> [root@tawilliams ~]# btrfs fi sh
->>> Label: 'fedora'  uuid: 1e37c117-d493-4d3e-a585-46b90de16569
->>>           Total devices 1 FS bytes used 3.70GiB
->>>           devid    1 size 47.31GiB used 6.04GiB path /dev/sda4
->>>
->>> Label: none  uuid: f9b38a56-44d4-4974-9640-95341bd8ae6a
->>>           Total devices 1 FS bytes used 424.23GiB
->>>           devid    1 size 931.51GiB used 428.04GiB path /dev/sdc1
->>>
->>> Label: none  uuid: 5266d71b-1d75-4b28-accc-95187f2d65a4
->>>           Total devices 1 FS bytes used 889.09GiB
->>>           devid    1 size 931.50GiB used 892.03GiB path /dev/sdb2
->>>
->>> Label: 'tawilliams'  uuid: 142b1866-f5e1-48b0-acd3-401e8eb4d219
->>>           Total devices 2 FS bytes used 1.10TiB
->>>           devid    1 size 1.82TiB used 1.16TiB path /dev/sdb1
->>>           devid    2 size 1.82TiB used 1.16TiB path /dev/sde
->>>
->>> Label: 'fedora-server'  uuid: a5a82150-7ff3-43d4-a86b-a7f9d2df3737
->>>           Total devices 1 FS bytes used 27.09GiB
->>>           devid    1 size 47.51GiB used 38.81GiB path /dev/sdd3
->>>
->>> btrfs-progs v4.1
->>>
->>> [root@tawilliams ~]# btrfs fi df /media/btrfs-raid1/
->>> Data, RAID1: total=3D1.16TiB, used=3D1.10TiB
->>> System, RAID1: total=3D32.00MiB, used=3D208.00KiB
->>> Metadata, RAID1: total=3D5.00GiB, used=3D3.86GiB
->>> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
->>>
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: ------------[ cut
->>> here ]------------
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: WARNING: CPU: 0
->>> PID: 544 at fs/btrfs/qgroup.c:1028
->>> __qgroup_excl_accounting+0x1cf/0x260 [btrfs]()
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Modules linked in:=
-
->>> nf_conntrack_netbios_ns nf_conntrack_broadcast ip6t_rpfilter
->>> ip6t_REJECT nf_reject_ipv6 xt_conntrack ebtable_nat ebtable_broute
->>> bridg
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: CPU: 0 PID: 544
->>> Comm: btrfs-cleaner Not tainted 4.1.6-201.fc22.x86_64 #1
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Hardware name:
->>> Microsoft Corporation Virtual Machine/Virtual Machine, BIOS Hyper-V
->>> UEFI Release v1.0 11/26/2012
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  0000000000000000
->>> 000000005a7148da ffff8800383f7b38 ffffffff81799a6d
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  0000000000000000
->>> 0000000000000000 ffff8800383f7b78 ffffffff810a165a
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  0000000000000000
->>> ffff880036e71048 ffff880022079960 ffffffffffffc000
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Call Trace:
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffff81799a6d>] dump_stack+0x45/0x57
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffff810a165a>] warn_slowpath_common+0x8a/0xc0
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffff810a178a>] warn_slowpath_null+0x1a/0x20
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa01341af>] __qgroup_excl_accounting+0x1cf/0x260 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa01372ec>] btrfs_delayed_qgroup_accounting+0x2dc/0xc70
->>> [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00b6a67>] ? walk_up_proc+0xd7/0x500 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00ba85f>] btrfs_run_delayed_refs.part.68+0x20f/0x280
->>> [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00ba8e5>] btrfs_run_delayed_refs+0x15/0x30 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00cb68a>] btrfs_should_end_transaction+0x5a/0x60 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00b8c85>] btrfs_drop_snapshot+0x455/0x8a0 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa01276cc>] ? btrfs_kill_all_delayed_nodes+0x5c/0x110 [btrfs=
-]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00df11f>] ? btrfs_run_defrag_inodes+0x29f/0x360 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00cbb82>] btrfs_clean_one_deleted_snapshot+0xb2/0x110
->>> [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00c3dc5>] cleaner_kthread+0xb5/0x1b0 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffffa00c3d10>] ? check_leaf+0x380/0x380 [btrfs]
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffff810c0bf8>] kthread+0xd8/0xf0
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffff810c0b20>] ? kthread_worker_fn+0x180/0x180
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffff817a0422>] ret_from_fork+0x42/0x70
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
->>> [<ffffffff810c0b20>] ? kthread_worker_fn+0x180/0x180
->>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: ---[ end trace
->>> e8c2f252933902d6 ]---
->>
->> While I can't provide any advice as to whether this is something to be=
-
->> worried about or not, I would like to point out that even in recent ke=
-rnel
->> versions, there are multiple known issues in the qgroup code.  I don't=
- think
->> there's anything currently known on 4.1.6 that has the possibility of =
-eating
->> your data, but I am by no means an expert on this particular subject (=
+>>> gave me the size of individual snapshots. Would it be likely that if =
 I
->> don't use quotas on most of my systems, and for those that I do, I jus=
-t use
->> separate thinly-provisioned partitions for the individual quota users =
-(which
->> in turn makes things much easier for everyone involved)).
+>>> just removed qgroups from that volume that would prevent that message=
+
+>>> in the future?
+>>>
+>> Maybe, I'm not entirely certain if disabling qgroups on a volume remov=
+es the
+>> qgroup metadata, and if the metadata is still there, it might still ca=
+use
+>> issues.  It's worth trying though because it shouldn't make anything w=
+orse
+>> than it already is.
+>>
+>>> On Tue, Sep 15, 2015 at 12:32 PM, Austin S Hemmelgarn
+>>> <ahferroin7@gmail.com> wrote:
+>>>>
+>>>> On 2015-09-15 14:13, Tyler Williams wrote:
+>>>>>
+>>>>>
+>>>>> I've received several kernel warnings over the last few weeks. I
+>>>>> checked on the #BTRFS irc channel and it was suggested that I post =
+the
+>>>>> relevant information here to see if this was something that I shoul=
+d
+>>>>> be worried about.
+>>>>>
+>>>>>
+>>>>> [root@tawilliams ~]# uname -a
+>>>>> Linux tawilliams.williamstlr.net 4.1.6-201.fc22.x86_64 #1 SMP Fri S=
+ep
+>>>>> 4 17:49:24 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+>>>>>
+>>>>>
+>>>>> [root@tawilliams ~]# btrfs --version
+>>>>> btrfs-progs v4.1
+>>>>>
+>>>>>
+>>>>> [root@tawilliams ~]# btrfs fi sh
+>>>>> Label: 'fedora'  uuid: 1e37c117-d493-4d3e-a585-46b90de16569
+>>>>>            Total devices 1 FS bytes used 3.70GiB
+>>>>>            devid    1 size 47.31GiB used 6.04GiB path /dev/sda4
+>>>>>
+>>>>> Label: none  uuid: f9b38a56-44d4-4974-9640-95341bd8ae6a
+>>>>>            Total devices 1 FS bytes used 424.23GiB
+>>>>>            devid    1 size 931.51GiB used 428.04GiB path /dev/sdc1
+>>>>>
+>>>>> Label: none  uuid: 5266d71b-1d75-4b28-accc-95187f2d65a4
+>>>>>            Total devices 1 FS bytes used 889.09GiB
+>>>>>            devid    1 size 931.50GiB used 892.03GiB path /dev/sdb2
+>>>>>
+>>>>> Label: 'tawilliams'  uuid: 142b1866-f5e1-48b0-acd3-401e8eb4d219
+>>>>>            Total devices 2 FS bytes used 1.10TiB
+>>>>>            devid    1 size 1.82TiB used 1.16TiB path /dev/sdb1
+>>>>>            devid    2 size 1.82TiB used 1.16TiB path /dev/sde
+>>>>>
+>>>>> Label: 'fedora-server'  uuid: a5a82150-7ff3-43d4-a86b-a7f9d2df3737
+>>>>>            Total devices 1 FS bytes used 27.09GiB
+>>>>>            devid    1 size 47.51GiB used 38.81GiB path /dev/sdd3
+>>>>>
+>>>>> btrfs-progs v4.1
+>>>>>
+>>>>> [root@tawilliams ~]# btrfs fi df /media/btrfs-raid1/
+>>>>> Data, RAID1: total=3D1.16TiB, used=3D1.10TiB
+>>>>> System, RAID1: total=3D32.00MiB, used=3D208.00KiB
+>>>>> Metadata, RAID1: total=3D5.00GiB, used=3D3.86GiB
+>>>>> GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+>>>>>
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: ------------[ cu=
+t
+>>>>> here ]------------
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: WARNING: CPU: 0
+>>>>> PID: 544 at fs/btrfs/qgroup.c:1028
+>>>>> __qgroup_excl_accounting+0x1cf/0x260 [btrfs]()
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Modules linked i=
+n:
+>>>>> nf_conntrack_netbios_ns nf_conntrack_broadcast ip6t_rpfilter
+>>>>> ip6t_REJECT nf_reject_ipv6 xt_conntrack ebtable_nat ebtable_broute
+>>>>> bridg
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: CPU: 0 PID: 544
+>>>>> Comm: btrfs-cleaner Not tainted 4.1.6-201.fc22.x86_64 #1
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Hardware name:
+>>>>> Microsoft Corporation Virtual Machine/Virtual Machine, BIOS Hyper-V=
+
+>>>>> UEFI Release v1.0 11/26/2012
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  000000000000000=
+0
+>>>>> 000000005a7148da ffff8800383f7b38 ffffffff81799a6d
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  000000000000000=
+0
+>>>>> 0000000000000000 ffff8800383f7b78 ffffffff810a165a
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:  000000000000000=
+0
+>>>>> ffff880036e71048 ffff880022079960 ffffffffffffc000
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: Call Trace:
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffff81799a6d>] dump_stack+0x45/0x57
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffff810a165a>] warn_slowpath_common+0x8a/0xc0
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffff810a178a>] warn_slowpath_null+0x1a/0x20
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa01341af>] __qgroup_excl_accounting+0x1cf/0x260 [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa01372ec>] btrfs_delayed_qgroup_accounting+0x2dc/0xc70
+>>>>> [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00b6a67>] ? walk_up_proc+0xd7/0x500 [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00ba85f>] btrfs_run_delayed_refs.part.68+0x20f/0x280
+>>>>> [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00ba8e5>] btrfs_run_delayed_refs+0x15/0x30 [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00cb68a>] btrfs_should_end_transaction+0x5a/0x60 [btrfs]=
+
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00b8c85>] btrfs_drop_snapshot+0x455/0x8a0 [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa01276cc>] ? btrfs_kill_all_delayed_nodes+0x5c/0x110 [btr=
+fs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00df11f>] ? btrfs_run_defrag_inodes+0x29f/0x360 [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00cbb82>] btrfs_clean_one_deleted_snapshot+0xb2/0x110
+>>>>> [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00c3dc5>] cleaner_kthread+0xb5/0x1b0 [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffffa00c3d10>] ? check_leaf+0x380/0x380 [btrfs]
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffff810c0bf8>] kthread+0xd8/0xf0
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffff810c0b20>] ? kthread_worker_fn+0x180/0x180
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffff817a0422>] ret_from_fork+0x42/0x70
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel:
+>>>>> [<ffffffff810c0b20>] ? kthread_worker_fn+0x180/0x180
+>>>>> Sep 15 10:45:16 tawilliams.williamstlr.net kernel: ---[ end trace
+>>>>> e8c2f252933902d6 ]---
+>>>>
+>>>>
+>>>> While I can't provide any advice as to whether this is something to =
+be
+>>>> worried about or not, I would like to point out that even in recent
+>>>> kernel
+>>>> versions, there are multiple known issues in the qgroup code.  I don=
+'t
+>>>> think
+>>>> there's anything currently known on 4.1.6 that has the possibility o=
+f
+>>>> eating
+>>>> your data, but I am by no means an expert on this particular subject=
+ (I
+>>>> don't use quotas on most of my systems, and for those that I do, I j=
+ust
+>>>> use
+>>>> separate thinly-provisioned partitions for the individual quota user=
+s
+>>>> (which
+>>>> in turn makes things much easier for everyone involved)).
+>>>>
+>>>>
 >>
 >>
 
 
 
---------------ms080805010401060500090402
+--------------ms080606060205080700090308
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -218,9 +259,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE1MTg0NjI4WjBPBgkq
-hkiG9w0BCQQxQgRAvd+I/q0TzU8bsdBUMm/qDy3w9XnY6gZUjGlzNMfw4JZcf8snl8GOeYm4
-VtwuZgKAqaIILg8ao1ULPiTCc84vpjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE1MTkwMzQxWjBPBgkq
+hkiG9w0BCQQxQgRAX6zVJOBIqQQHCy5UiWUHNf2cuizpbi8Jwx9apthUB5qVjLOOMWhVOC/V
+eRfSrTVZVxSRKsXaEI6AFDgsV9VPqDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -228,14 +269,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgBmzoMDwGxS6TGp0CtljTJJDqpNvzpzCgf4g9B9FIJXgStz4CbB
-aw+IUQmYu0rM1rhSeXvT7S3ibYAu0X43K2g2ZoRJAckUGb6g4BtuCzUi8HM+iwS8Ts4i/cKZ
-6snWY6VhlXyjggKHSqolakm+Q9OzqMBmhNxJJg0E5hQztl3ASFR2fb+9sZfZObQWwKV7SfyF
-WW6HqlwGyqxuL1Z+G30tp1s9Mm1ZPq9HkyEM7UG5AktLNPJ6ca89YwuOT6KoB1MPwnAfmRcG
-si1TL3DONEZE4dq76SCLgSYqsKM/TuSM6IJe4HMRW/9kdJgukLa4ZkDfIQ/01TdpOnH1YR1a
-lDHYb+QqILLtM3/LyYbbBN+BNM3kSmffetOlGALVpvuJPiAozRnT2+dWvH0yEuU+uyv6JN+E
-F9a+aLU301bY6CPYelOO9zvckgT4uEyHJjVSJAB9qbeXp2lKP2GnVgyd1nP4JlqG5eXtD9A5
-B/wrcVghwXk+Eh7CSDa/bjN8T3ZL9EZ++D34p9ZNNs48oipD5BKtRcSQTDBFDrUo3pZKl2XH
-vzUhh4sd8JxPa5oWeMeh3dBOuQlntjY89to5XU9huoYkI23UUkNbeHDyusaNs8Pvcb6APFQb
-gvAqKmGTCFD4lfOfYSlfMh4DglE1MladsPnOpE5hTcjPVp+k9PsNtmLTbAAAAAAAAA==
---------------ms080805010401060500090402--
+BgkqhkiG9w0BAQEFAASCAgAYYMXeRGz3Q9w3VQ8ZpgD0Q6ay8m2PQkvHz6Mmwd2a6sMdWB3f
+R5Yc3nTkKqCmfQTdU0VoMkZMQk5BtOENINKzn2o+vHwQs30rClnU4xu+uds8FDYauWsAU/Mq
+20B7VNcdmPVL1bU9YWYJ5cUS6g10WidTw/AKaiv7SydBUq3qjgs7iEzYDWQV20mWXJcHM1Fj
+tg/Mhr3Zx5m2xTbIWxHN3BZcgPTIccadAZHl7m2s8nNhJPhukUCyQmZ4lxRo/d6tW8hU7onj
+hDpeIymQUPkfc9u3dR4fTLiEOUNQUPooL9alnw0PaYjsux+1HcUdIb3SIy0+7MRuc4sKeN5E
+IzHXeWSvi+DI8ifTLEPd/AsnaY9SNk1DLPqk1PdgCQWr4Q1UXRqitLpCSxYduzsDJWH3s5iG
+JT9oQlUiG1jSOUwI4CIeY1BW90Px2A4fmfrHu+J8xjtnzecJd51SEkYl5+zrJ6z8tW7Jthl1
+uItKMXw4HaLuk29YL1yzEuqvuahvbugqOUXlP64XAED9xkO/ygp+uPk9zqwPD4KUD0If9TqZ
+RjX1lUQENKpmry0XSBIfIr5e//Z0gHBRri/S5YQ7ervA4SimO71oj559g+lYdTbBdnWSbM8W
+uihMnLQ76yrtRGbDF379E8Zp/gZAdWCkNMT9LYDkd8O+R/GabPN/YJt1QgAAAAAAAA==
+--------------ms080606060205080700090308--

@@ -1,104 +1,177 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:36853 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752392AbbIPTVd (ORCPT
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:36190 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752648AbbIPTgg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Sep 2015 15:21:33 -0400
-Received: by ioii196 with SMTP id i196so240418042ioi.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 12:21:32 -0700 (PDT)
+	Wed, 16 Sep 2015 15:36:36 -0400
+Received: by igcrk20 with SMTP id rk20so41627836igc.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 12:36:36 -0700 (PDT)
 Subject: Re: FYIO: A rant about btrfs
-To: Martin Tippmann <martin.tippmann@gmail.com>
+To: Vincent Olivier <vincent@up4.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 References: <20150916144355.GA1285@invalid> <55F988A6.8070109@gmail.com>
- <CABL_Pd8nOj7B1_64Us+goP=corZkCtw_WJW8eMQpiP6iQpw=HA@mail.gmail.com>
-Cc: linux-btrfs@vger.kernel.org
+ <A4269DC6-6CD6-4E8C-B3C9-5F5DDBE86911@up4.com> <55F9B357.4070505@gmail.com>
+ <54A9EC91-FDFD-44A8-97B9-7347A89FA415@up4.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55F9C136.3080800@gmail.com>
-Date: Wed, 16 Sep 2015 15:21:26 -0400
+Message-ID: <55F9C4BD.5040100@gmail.com>
+Date: Wed, 16 Sep 2015 15:36:29 -0400
 MIME-Version: 1.0
-In-Reply-To: <CABL_Pd8nOj7B1_64Us+goP=corZkCtw_WJW8eMQpiP6iQpw=HA@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080004020807080104080500"
+In-Reply-To: <54A9EC91-FDFD-44A8-97B9-7347A89FA415@up4.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060709030707020901070200"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080004020807080104080500
+--------------ms060709030707020901070200
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-09-16 12:45, Martin Tippmann wrote:
-> Hi,
+On 2015-09-16 15:04, Vincent Olivier wrote:
 >
-> 2015-09-16 17:20 GMT+02:00 Austin S Hemmelgarn <ahferroin7@gmail.com>:
-> [...]
->> 3. He's testing it for a workload is a known and documented problem fo=
-r
->> BTRFS, and claiming that that means that it isn't worth considering as=
- a
->> general usage filesystem.  Most people don't run RDBMS servers on thei=
-r
->> systems, and as such, such a workload is not worth considering for mos=
-t
->> people.
+>> On Sep 16, 2015, at 2:22 PM, Austin S Hemmelgarn <ahferroin7@gmail.com=
+> wrote:
 >>
->> His points about the degree of performance jitter are valid however, a=
-s are
->> the complaints of apparent CPU intensive stalls in the BTRFS code, and=
- I
->> occasionally see both on my own systems.
->
-> Are there any conceptual or design properties that make btrfs perform
-> worse in this workload compared to ZFS or F2FS that both do CoW and
-> share some similarity?
-ZFS has been around for much longer, it's been mature and feature=20
-complete for more than a decade, and has had a long time to improve=20
-performance wise.  It is important to note though, that on low-end=20
-hardware, BTRFS can (and often does in my experience) perform better=20
-than ZFS, because ZFS is a serious resource hog (I have yet to see a=20
-stable ZFS deployment with less than 16G of RAM, even with all the fancy =
+>> On 2015-09-16 12:51, Vincent Olivier wrote:
+>>> Hi,
+>>>
+>>>
+>>>> On Sep 16, 2015, at 11:20 AM, Austin S Hemmelgarn <ahferroin7@gmail.=
+com> wrote:
+>>>>
+>>>> On 2015-09-16 10:43, M G Berberich wrote:
+>>>>> Hello,
+>>>>>
+>>>>> just for information. I stumbled about a rant about btrfs-performan=
+ce:
+>>>>>
+>>>>>   http://blog.pgaddict.com/posts/friends-dont-let-friends-use-btrfs=
+-for-oltp
+>>> I read it too.
+>>>> It is worth noting a few things that were done incorrectly in this t=
+esting:
+>>>> 1. _NEVER_ turn off write barriers (nobarrier mount option), doing s=
+o subtly breaks the data integrity guarantees of _ALL_ filesystems, but e=
+specially so on COW filesystems like BTRFS.  With this off, you will have=
+ a much higher chance that a power loss will cause data loss.  It shouldn=
+'t be turned off unless you are also turning off write-caching in the har=
+dware or know for certain that no write-reordering is done by the hardwar=
+e (and almost all modern hardware does write-reordering for performance r=
+easons).
+>>> But can the =E2=80=9Cnobarrier=E2=80=9D mount option affect performan=
+ces negatively for Btrfs (and not only data integrity)?
+>> Using it improves performance for every filesystem on Linux that suppo=
+rts it.  This does not mean that it is _EVER_ a good idea to do so.  This=
+ mount option is one of the few things on my list of things that I will _=
+NEVER_ personally provide support to people for, because it almost guaran=
+tees that you will lose data if the system dies unexpectedly (even if it'=
+s for a reason other than power loss).
+> OK fine. Let it be clearer then (on the Btrfs wiki): nobarrier is an ab=
+solute no go. Case closed.
+ From the https://btrfs.wiki.kernel.org/index.php/Mount_options
+NOTE: Using this option greatly increases the chances of you=20
+experiencing data corruption during a power failure situation. This=20
+means full file-system corruption, and not just losing or corrupting=20
+data that was being written during a power cut or kernel panic.
 
-features turned off).
+It could be a bit clearer, but it's pretty well spelled out.
+>>>> 2. He provides no comparison of any other filesystem with TRIM suppo=
+rt turned on (it is very likely that all filesystems will demonstrate suc=
+h performance drops.  Based on that graph, it looks like the device doesn=
+'t support asynchronous trim commands).
+>>> I think he means by the text surrounding the only graph that mentions=
+ TRIM that this exact same test on the other filesystems he benchmarked y=
+ield much better results.
+>> Possibly, but there are also known issues with TRIM/DISCARD on BTRFS i=
+n 4.0.  And his claim is still baseless unless he actually provides refer=
+ence for it.
+> Same as above: TRIM/DISCARD officially not recommended in production un=
+til further notice?
+TRIM/DISCARD do work, it's just that they don't work to the degree they=20
+are expected to, there's some cases where BTRFS doesn't issue a discard=20
+when it should, and fstrim doesn't properly trim everything.
+>>>> 3. He's testing it for a workload is a known and documented problem =
+for BTRFS, and claiming that that means that it isn't worth considering a=
+s a general usage filesystem.  Most people don't run RDBMS servers on the=
+ir systems, and as such, such a workload is not worth considering for mos=
+t people.
+>>> Apparently RDBMS being a problem on Btrfs is neither known nor docume=
+nted enough (he=E2=80=99s right about the contrast with claiming publicly=
+ that Btrfs is indeed production ready).
+>> OK, maybe not documented, but RDBMS falls under 'Large files with high=
+ly random access patterns and heavy RMW usage', which is a known issue fo=
+r BTRFS, and also applies to VM images.
+> This guy is no idiot. If it wasn=E2=80=99t clear enough for him. It=E2=80=
+=99s not clear enough period.
+ From https://btrfs.wiki.kernel.org/index.php/Gotchas
+Fragmentation
+Files with a lot of random writes can become heavily fragmented (10000+=20
+extents) causing trashing on HDDs and excessive multi-second spikes of=20
+CPU load on systems with an SSD or large amount a RAM.
+On servers and workstations this affects databases and virtual machine=20
+images.
+The nodatacow mount option may be of use here, with associated gotchas.
+On desktops this primarily affects application databases (including=20
+Firefox and Chromium profiles, GNOME Zeitgeist, Ubuntu Desktop Couch,=20
+Banshee, and Evolution's datastore.)
+Workarounds include manually defragmenting your home directory using=20
+btrfs fi defragment. Auto-defragment (mount option autodefrag) should=20
+solve this problem in 3.0.
+Symptoms include btrfs-transacti and btrfs-endio-wri taking up a lot of=20
+CPU time (in spikes, possibly triggered by syncs). You can use filefrag=20
+to locate heavily fragmented files (may not work correctly with=20
+compression).
+>>>> His points about the degree of performance jitter are valid however,=
+ as are the complaints of apparent CPU intensive stalls in the BTRFS code=
+, and I occasionally see both on my own systems.
+>>> Me too. My two cents is that focusing on improving performances for B=
+trfs-optimal use cases is much more interesting than bringing new feature=
+s like automatically turning COW off for RDBMS usage or debugging TRIM su=
+pport.
+>> It depends, BTRFS is still not feature complete with the overall inten=
+t when it was started (raid56 and qgroups being the two big issues at the=
+ moment), and attempting to optimize things tends to introduce bugs, whic=
+h we have quite enough of already without people adding more (and they st=
+ill seem to be breeding like rabbits).
+> I would just like a clear statement from a dev-lead saying : until we a=
+re feature-complete (with a finite list of features to complete) the focu=
+s will be on feature-completion and not optimizing already-implemented fe=
+atures. Ideally with an ETA on when optimization will be more of a priori=
+ty than it is today.
+As of right now, the list as far as I know is (in no particular order):
+* working raid5/6
+* n-copy replication (ie, three or more copy replication)
+* qgroups
+* improved read-balancing (technically an optimization)
+* proper swap file support
+* better random-write performance (again, optimization)
+* online fsck (not scrub, but actual fsck)
+* in-band data de-duplication
+* various code cleanups
+* many more things listed on the wiki
+>> That said, my systems (which are usually doing mostly CPU or memory bo=
+und tasks, and not I/O bound like the aforementioned benchmarks were test=
+ing) run no slower than they did with ext4 as the main filesystem, and in=
+ some cases work much faster (even after averaging out the jitter in perf=
+ormance).  Based on this, I wouldn't advocate it for most server usage (e=
+xcept possibly as the root filesystem), but it does work very well for mo=
+st desktop usage patterns and a number of HPC usage patterns as well.
+> See, this is interesting: I=E2=80=99d rather have a super fast and disc=
+ardable SSD F2FS/ext4 root with a large Btrfs RAID for (NAS) server usage=
+=2E Does your non-advocacy of Btrfs for server usage include a <10 user S=
+amba NAS ?
+If it's light usage, and you keep the softwarae running it up to date=20
+(and make sure you have other backups), this should do just fine.  By=20
+server usage I meant large scale deployment with very big volumes of=20
+critical data.
+> Are more details about the Facebook deployment going to be available so=
+on ? I=E2=80=99m very curious about this.
+I really have no idea about this.
 
-As for F2FS, it was designed from the ground up for high performance and =
-
-efficiency.  BTRFS started (from what I understand) as more of an=20
-experiment, and as such the original code was not particularly optimized.=
-
->
-> If not then I still think (from a user perspective) it it still
-> interesting too look where the difference is coming from? There is
-> also a quite old talk with some unfortunate numbers for btrfs from the
-> XFS developer Dave Chinner:
-> https://www.youtube.com/watch?v=3DFegjLbCnoBw - is this already
-> resolved? 2012 is 3 years ago.
-That depends on what you mean by resolved.  In every test I've done that =
-
-wasn't a specialized benchmark designed to simulate a particular=20
-workload, I've gotten roughly equal performance between XFS and BTRFS=20
-(YMMV of course, especially because my usecase is not very typical of=20
-most people (primarily building software and running BOINC projects)).=20
-I use BTRFS mostly because it makes online reprovisioning much easier=20
-(you can't migrate an XFS filesystem to a new block device online, and=20
-you also can't shrink one).
-
-It's also worth noting that Dave Chinner usually comes forth with=20
-numbers extolling the value of XFS when a new filesystem gets proposed.=20
-  In my experience, for small scale usage, ext* gets better performance=20
-than almost anything else, including XFS.
->
->  From reading the list I understand that btrfs is still very much work
-> in progress and performance is not a top priority at this stage but I
-> don't see why it shouldn't perform at least equally good as ZFS/F2FS
-> on the same workloads. Is looking at performance problems on the
-> development roadmap?
-Performance is on the roadmap, but the roadmap is notoriously=20
-short-sighted when it comes to time-frame for completion of something.=20
-You have to understand also that the focus in BTRFS has also been more=20
-on data safety than performance, because that's the intended niche, and=20
-the area most people look to ZFS for.
 
 
---------------ms080004020807080104080500
+
+--------------ms060709030707020901070200
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -140,9 +213,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE2MTkyMTI2WjBPBgkq
-hkiG9w0BCQQxQgRAlX/P/cGuejz7YrnJEv3/CgaQg5n+OPHU4+LwZzJWcNZGr19ukfWofqwI
-NcuFNvgU1seFCBu9pZkEIoTvmJffKjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE2MTkzNjI5WjBPBgkq
+hkiG9w0BCQQxQgRAsVU5xS/gnHLiEYOhKG9Z5Bb9ZO5l38dZMsyAS/nbbi3Nffb2LZ+8B9BL
+AAH0uJ89dlFlYo4KEQxfOY0t9luDszBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -150,14 +223,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgCLozXZeezWlkq7kDHqL6/AV5FBqdpQ8z89SYILbB0PP2CCtCD9
-LTVDtjD3jTurE7hmJiIO10Ef6eMylLCMuU4TyJbO9N5r0sZ015WNPoaAoVTLMmIhYLQ1CYiw
-Rp/b7Kt3jq7gIgiA9tYMcW10/JTpK2IJKvSnrafdJZuULDZ5RpHs9u1gCMje033BroGgdQYX
-Wp7aURkhcLV+ouBGxvaiBUpSTFGzhx1bkATg460f5IZl6BogJWZJ+3VGpwZK5HISsLX8LSpz
-oWYS5uPZK+fwOLDtaXTtGpPhVNuImcNjlC2t683aBVpCaCv1x4hEsZIynARO6UwXICbV/fLM
-k6qZsEAc/RrCx7tWmVjDkU6DswXf2MDiQ+KZIEHIjcTb7sZRszEK9mweAwCW7YqBtt2U6V38
-mKPU9KshNQqm/6nPMPNWE+eHwV7XY7iAQQru8iiB5o9l0eNqBgQy/oK9RD5E6Mes9/sce8ZV
-a+OpSb5bzVGe/jdI0NgyLe2nXnPMAOeP0hYwiDU9bly2wW2LL2imqgthWrQ3WebTqglcAqbp
-ducLLOns1+XP7LZPecyyjoiKVzZ67P0O1VXQgxLGOcLUAOfnRYWwxgAi8YJ7TU4C+pT2LEfQ
-ZU9/nEkUcYqXHl22pR8RM2Hiqshoee5WIc7SFiWsSWEIm0qy8vgVIkCYogAAAAAAAA==
---------------ms080004020807080104080500--
+BgkqhkiG9w0BAQEFAASCAgAFyQVW+KbuwgDbowXXVsurAAjJDoTtcvPCvTHxem4QPvT/RZPV
+rgcCfDAgIeZX+85shDrsosL/r5rwmfxJ1SBQchc04HstA8CmJ/IbUILQgBQkMTceAPoh9wGJ
+ARtiB86o08cKsxfFfmq/4v6SPKFlr2n2mgW2z8Il1IKIhrY39X469os+6B6J0GS/CR1jpNAv
+oaohAC0v+eN0q+q2qU2O06DmYaYM0ZTN4aCnNo5SNhQ4Aa9otGUufLlqz2byeoeRtXmAncK8
+DRmjYtD7Y62wyOhgmHHDBpjSwTXEZYXnNwSA0ds08o2MzqA9SZRoQlt0uQBDGs9eQGM1QYCP
+yZRA/JeWT3/h1i71qNWWY5h9c+5L9sQXYgy63hPftFvkwRuDP4wHC9fXsOydePCeTTeUxxHo
+I2IqaxpK3kBglyTp14+Xda0v3/i4cUt+YRlcTUnB1evoOmhoO6byrVZRe4Bri84ibycyAcTo
+TkrjJgQE2jiLH4UTYbOOrhFxh7GnV8uBIb35glNgJYNg9mBCqSB40CBG0tiE6Vgk6yz1VT3D
+kSVhD2B6njZEwR1zAydYt1hFGHuxcaedWxESo9EZa5lzQKzppzknMEhhklk7OsDRGtFyNgw5
+S/EBsQzFHuT8GMGDFWsTKG/U7fs2Ww4HLkP0/gmG2C/Rjz8GN9wnwM+0ZAAAAAAAAA==
+--------------ms060709030707020901070200--

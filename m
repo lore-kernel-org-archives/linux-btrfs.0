@@ -1,78 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2777 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:11635 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751960AbbIPDnz (ORCPT
+	with ESMTP id S1752089AbbIPDn4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 23:43:55 -0400
+	Tue, 15 Sep 2015 23:43:56 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8G3hbR6012777
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 11:43:37 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8G3hcZ1012780
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 11:43:38 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 1/2] btrfs: Do per-chunk degrade mode check at mount time
-Date: Wed, 16 Sep 2015 11:43:50 +0800
-Message-ID: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs: Remove unneeded missing device number check
+Date: Wed, 16 Sep 2015 11:43:51 +0800
+Message-ID: <1442375031-18212-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs supports different raid profile for meta/data/sys, and as
-different profile support different tolerated missing device, it's
-better to check if it can be mounted degraded at a per-chunk base.
+As we do per-chunk missing device number check at read_one_chunk() time,
+it's not needed to do global missing device number check.
 
-So this patch will add check for read_one_chunk() against its profile,
-other than checking it against with the lowest duplication profile.
+Just remove it.
 
-Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-Reported-by: Anand Jain <anand.jain@oracle.com>
+Now btrfs can handle the following case:
+ # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+
+ Data chunk will be located in sdb, so we should be safe to wipe sdc
+ # wipefs -a /dev/sdc
+
+ # mount /dev/sdb /mnt/btrfs -o degraded
+
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
+ fs/btrfs/disk-io.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 644e070..3272187 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6164,12 +6164,15 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 			  struct btrfs_chunk *chunk)
- {
- 	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
-+	struct super_block *sb = root->fs_info->sb;
- 	struct map_lookup *map;
- 	struct extent_map *em;
- 	u64 logical;
- 	u64 length;
- 	u64 devid;
- 	u8 uuid[BTRFS_UUID_SIZE];
-+	int missing = 0;
-+	int max_tolerated;
- 	int num_stripes;
- 	int ret;
- 	int i;
-@@ -6238,7 +6241,21 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 			btrfs_warn(root->fs_info, "devid %llu uuid %pU is missing",
- 						devid, uuid);
- 		}
-+		if (map->stripes[i].dev->missing)
-+			missing++;
- 		map->stripes[i].dev->in_fs_metadata = 1;
-+
-+	}
-+
-+	/* XXX: Why the function name is SO LOOOOOOOOOOOOOOOOONG?! */
-+	max_tolerated =
-+		btrfs_get_num_tolerated_disk_barrier_failures(map->type);
-+	if (missing > max_tolerated && !(sb->s_flags & MS_RDONLY)) {
-+		free_extent_map(em);
-+		btrfs_error(root->fs_info, -EIO,
-+			"missing device(%d) exceeds the limit(%d), writeable mount is not allowed\n",
-+			missing, max_tolerated);
-+		return -EIO;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 0b658d0..ac640ea 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2947,14 +2947,6 @@ retry_root_backup:
  	}
+ 	fs_info->num_tolerated_disk_barrier_failures =
+ 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	if (fs_info->fs_devices->missing_devices >
+-	     fs_info->num_tolerated_disk_barrier_failures &&
+-	    !(sb->s_flags & MS_RDONLY)) {
+-		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
+-			fs_info->fs_devices->missing_devices,
+-			fs_info->num_tolerated_disk_barrier_failures);
+-		goto fail_sysfs;
+-	}
  
- 	write_lock(&map_tree->map_tree.lock);
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+ 					       "btrfs-cleaner");
 -- 
 2.5.2
 

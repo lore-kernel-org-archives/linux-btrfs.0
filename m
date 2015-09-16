@@ -1,40 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f52.google.com ([209.85.213.52]:33667 "EHLO
-	mail-vk0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751728AbbIPDAm (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:2777 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751960AbbIPDnz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 23:00:42 -0400
-Received: by vkgd64 with SMTP id d64so92903169vkg.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 20:00:42 -0700 (PDT)
+	Tue, 15 Sep 2015 23:43:55 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8G3hbR6012777
+	for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 11:43:37 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 1/2] btrfs: Do per-chunk degrade mode check at mount time
+Date: Wed, 16 Sep 2015 11:43:50 +0800
+Message-ID: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <55F88ECC.1040604@menke.ac>
-References: <55F88ECC.1040604@menke.ac>
-Date: Tue, 15 Sep 2015 21:00:41 -0600
-Message-ID: <CAJCQCtR-_=YEWNNZmVTjnv67toWrR-Lz4yH3xvJidA4nfV4wXg@mail.gmail.com>
-Subject: Re: BTRFS as image store for KVM?
-From: Chris Murphy <lists@colorremedies.com>
-To: Gert Menke <gert@menke.ac>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If you don't need image portability use an LVM logical volume for
-backing of the VM. That LV gets partitioned as if it were a disk, and
-you can use Btrfs for root home data or whatever.
+Btrfs supports different raid profile for meta/data/sys, and as
+different profile support different tolerated missing device, it's
+better to check if it can be mounted degraded at a per-chunk base.
 
-If you need image portability, e.g. qcow2, then I'd put it on ext4 or
-XFS, and you can use Btrfs within the VM for data integrity.
+So this patch will add check for read_one_chunk() against its profile,
+other than checking it against with the lowest duplication profile.
 
-If you put the qcow2 on Btrfs, you're advised (by FAQ and many threads
-on this topic in the list archives) to set the the image file with
-chattr +C, which is nocow and implies nodatasum, so no checksumming.
-And also I've run into this problem depending on the qemu cache
-setting.
+Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: Anand Jain <anand.jain@oracle.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/volumes.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-https://www.marc.info/?l=linux-btrfs&m=142714523110528&w=1
-https://bugzilla.redhat.com/show_bug.cgi?id=1204569
-
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 644e070..3272187 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6164,12 +6164,15 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 			  struct btrfs_chunk *chunk)
+ {
+ 	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
++	struct super_block *sb = root->fs_info->sb;
+ 	struct map_lookup *map;
+ 	struct extent_map *em;
+ 	u64 logical;
+ 	u64 length;
+ 	u64 devid;
+ 	u8 uuid[BTRFS_UUID_SIZE];
++	int missing = 0;
++	int max_tolerated;
+ 	int num_stripes;
+ 	int ret;
+ 	int i;
+@@ -6238,7 +6241,21 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 			btrfs_warn(root->fs_info, "devid %llu uuid %pU is missing",
+ 						devid, uuid);
+ 		}
++		if (map->stripes[i].dev->missing)
++			missing++;
+ 		map->stripes[i].dev->in_fs_metadata = 1;
++
++	}
++
++	/* XXX: Why the function name is SO LOOOOOOOOOOOOOOOOONG?! */
++	max_tolerated =
++		btrfs_get_num_tolerated_disk_barrier_failures(map->type);
++	if (missing > max_tolerated && !(sb->s_flags & MS_RDONLY)) {
++		free_extent_map(em);
++		btrfs_error(root->fs_info, -EIO,
++			"missing device(%d) exceeds the limit(%d), writeable mount is not allowed\n",
++			missing, max_tolerated);
++		return -EIO;
+ 	}
+ 
+ 	write_lock(&map_tree->map_tree.lock);
 -- 
-Chris Murphy
+2.5.2
+

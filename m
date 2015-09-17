@@ -1,153 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:57065 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751262AbbIQKlg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 06:41:36 -0400
-Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
- rebalance
-To: =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
- <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
- <532aadf0f92d08d3d2b274173548aee1@all.all>
- <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
- <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
- <0973de930ee87e102c533c719807b748@all.all>
- <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
- <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
- <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all> <55FA60C5.5090002@cn.fujitsu.com>
- <7a6f2d794fb6cbf7d598b92e3470201c@all.all> <55FA759E.6030707@cn.fujitsu.com>
- <3386a8bfa1a5796460306a53a668e47e@all.all>
-Cc: linux-btrfs@vger.kernel.org
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <55FA98D8.5010301@gmx.com>
-Date: Thu, 17 Sep 2015 18:41:28 +0800
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:34340 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751776AbbIQKoH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Sep 2015 06:44:07 -0400
+Received: by igcpb10 with SMTP id pb10so9369011igc.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2015 03:44:06 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <3386a8bfa1a5796460306a53a668e47e@all.all>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Date: Thu, 17 Sep 2015 12:44:06 +0200
+Message-ID: <CADPUUGHfiadVFxOpjH8bmvuznZ6+w+EP2xnyzGKtaFuW9vUSdw@mail.gmail.com>
+Subject: btrfs progs 4.1.1 & 4.2 segfault on chunk-recover
+From: Daniel Wiegert <daniel@thewiegerts.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello guys
+
+I think I might found a bug, Lots of text, I dont know what you want
+from me and not, so I try to get almost everything in one mail, please
+dont shoot me! :)
+
+To make a long store somewhat short, this is about what happend to me;
+(skip to **** if you dont care about history)
+
+Arch-linux, btrfs-progs 4.1.1 & 4.2, linux 4.1.6-1
+
+Data, RAID5: total=3.11TiB, used=0.00B <-- this one said the other day
+used=3.05TiB
+System, RAID1: total=32.00MiB, used=0.00B
+Metadata, RAID1: total=8.00GiB, used=144.00KiB
+GlobalReserve, single: total=16.00MiB, used=0.00B
+
+Label: 'Isolinear'  uuid: 9bb3f369-f2a9-46be-8dde-1106ae740e36
+        Total devices 9 FS bytes used 144.00KiB
+        devid    7 size 2.73TiB used 541.12GiB path /dev/sdi
+        devid    9 size 1.36TiB used 533.09GiB path /dev/sdd2
+        devid   10 size 1.36TiB used 533.09GiB path /dev/sdg2
+        devid   11 size 1.82TiB used 536.12GiB path /dev/sdj2
+        devid   12 size 1.82TiB used 538.09GiB path /dev/sdh2
+        devid   13 size 286.09GiB used 286.09GiB path /dev/sda3
+        devid   14 size 286.09GiB used 286.09GiB path /dev/sdb3
+        devid   15 size 372.61GiB used 372.61GiB path /dev/sdf1
+        *** Some devices missing
+
+drive 8 was a 1.36TiB
+drive 15 is the new drive I added to the system.
 
 
-在 2015年09月17日 18:08, Stéphane Lesimple 写道:
-> Le 2015-09-17 10:11, Qu Wenruo a écrit :
->> Stéphane Lesimple wrote on 2015/09/17 10:02 +0200:
->>> Le 2015-09-17 08:42, Qu Wenruo a écrit :
->>>> Stéphane Lesimple wrote on 2015/09/17 08:11 +0200:
->>>>> Le 2015-09-17 05:03, Qu Wenruo a écrit :
->>>>>> Stéphane Lesimple wrote on 2015/09/16 22:41 +0200:
->>>>>>> Le 2015-09-16 22:18, Duncan a écrit :
->>>>>>>> Stéphane Lesimple posted on Wed, 16 Sep 2015 15:04:20 +0200 as
->>>>>>>> excerpted:
->>>>>>>>
->>>>>>>
->>>>>>> Well actually it's the (d) option ;)
->>>>>>> I activate the quota feature for only one reason : being able to
->>>>>>> track
->>>>>>> down how much space my snapshots are taking.
->>>>>>
->>>>>> Yeah, that's completely one of the ideal use case of btrfs qgroup.
->>>>>>
->>>>>> But I'm quite curious about the btrfsck error report on qgroup.
->>>>>>
->>>>>> If btrfsck report such error, it means either I'm too confident about
->>>>>> the recent qgroup accounting rework, or btrfsck has some bug which I
->>>>>> didn't take much consideration during the kernel rework.
->>>>>>
->>>>>> Would you please provide the full result of previous btrfsck with
->>>>>> qgroup error?
->>>>>
->>>>> Sure, I've saved the log somewhere just in case, here your are :
->>>>>
->>>>> [...]
->>>> Thanks for your log, pretty interesting result.
->>>>
->>>> BTW, did you enabled qgroup from old kernel earlier than 4.2-rc1?
->>>> If so, I would be much relaxed as they can be the problem of old
->>>> kernels.
->>>
->>> The mkfs.btrfs was done under 3.19, but I'm almost sure I enabled quota
->>> under 4.2.0 precisely. My kern.log tends to confirm that (looking for
->>> 'qgroup scan completed').
->>
->> Emmm, seems I need to pay more attention on this case now.
->> Any info about the workload for this btrfs fs?
->>
->>>
->>>> If it's OK for you, would you please enable quota after reproducing
->>>> the bug and use for sometime and recheck it?
->>>
->>> Sure, I've just reproduced the bug twice as I wanted, and posted the
->>> info, so now I've cancelled the balance and I can reenable quota. Will
->>> do it under 4.3.0-rc1. I'll keep you posted if btrfsck complains about
->>> it in the following days.
->>>
->>> Regards,
->>>
->> Thanks for your patience and detailed report.
->
-> You're very welcome.
->
->> But I still have another question, did you do any snapshot deletion
->> after quota enabled?
->> (I'll assume you did it, as there are a lot of backup snapshot, old
->> ones should be already deleted)
->
-> Actually no : this btrfs system is quite new (less than a week old) as
-> I'm migrating from mdadm(raid1)+ext4 to btrfs. So those snapshots were
-> actually rsynced one by one from my hardlinks-based "snapshots" under
-> ext4 (those pseudo-snapshots are created using a program named
-> "rsnapshot", if you know it. This is basically a wrapper to cp -la). I
-> didn't activate yet an automatic snapshot/delete on my btrfs system, due
-> to the bugs I'm tripping on. So no snapshot was deleted.
+*one of 8 drives started to fail, smart saw error, I failed in my
+configure and I didn't get notified - Ran for 3-14 days before I
+realized.
+*I tried on active running system to btrfs dev del /dev/sd[failing] -
+Did not work (I think it was csum errors)
+*I added one new disk to raid, rebooted and added new disk to array,
+tried balancing. Power fail and ups fail after x hours
+*I rebooted realized the failing drive was now dead. I could mount
+system with degraded and some files gave me kernel panic (
+https://goo.gl/photos/UXrZj6YEUW3945b37 )- others were reading fine.
+-Was unable to dev del missing.
 
-Now things are getting tricky, as all known bugs are ruled out, it must 
-be another hidden bug, even we tried to rework the qgroup accounting code.
+At this point I knew the system was probobly broken beyond repair. so
+I just tried all commands I could think of. check repair, check
+init-csum-tree etc endless loop - First very fast text scrolling, lots
+of CPU not much diskIO, after ~48h text slow, lots of cpu, almost no
+diskIO same type of message repeating (with new numbers):
+-----
+ref mismatch on [17959857729536 4096] extent item 0, found 1
+adding new data backref on 17959857729536 parent 35277570539520 owner
+0 offset 0 found 1
+Backref 17959857729536 parent 35277570539520 owner 0 offset 0 num_refs
+0 not found in extent tree
+Incorrect local backref count on 17959857729536 parent 35277570539520
+owner 0 offset 0 found 1 wanted 0 back 0x145f7800
+backpointer mismatch on [17959857729536 4096]
+ref mismatch on [17959857733632 4096] extent item 0, found 1
+adding new data backref on 17959857733632 parent 35277570785280 owner
+0 offset 0 found 1
+Backref 17959857733632 parent 35277570785280 owner 0 offset 0 num_refs
+0 not found in extent tree
+Incorrect local backref count on 17959857733632 parent 35277570785280
+owner 0 offset 0 found 1 wanted 0 back 0x145f7b90
+backpointer mismatch on [17959857733632 4096]
+-----
 
->
->> That's one of the known bug and Mark is working on it actively.
->> If you delete non-empty snapshot a lot, then I'd better add a hot fix
->> to mark qgroup inconsistent after snapshot delete, and trigger a
->> rescan if possible.
->
-> I've made a btrfs-image of the filesystem just before disabling quotas
-> (which I did to get a clean btrfsck and eliminate quotas from the
-> equation trying to reproduce the bug I have). Would it be of any use if
-> I drop it somewhere for you to pick it up ? (2.9G in size).
+**** Found out that chunk-recover gave segfault.(4.1.1 & kdave 4.2)
+4.1.1 said in bt:
+#0  0x00000000004251bb in btrfs_new_device_extent_record ()
+#1  0x00000000004301cb in ?? ()
+#2  0x000000000043085d in ?? ()
+#3  0x00007fd8071074a4 in start_thread () from /usr/lib/libpthread.so.0
+#4  0x00007fd806e4513d in clone () from /usr/lib/libc.so.6
 
-For dismatch case, static btrfs-image dump won't really help.
-As the important point is, when and which operation caused qgroup 
-accounting to dismatch.
+not much help, but I compiled -> https://github.com/kdave/btrfs-progs
+and backtrace:
 
->
-> In the meantime, I've reactivated quotas, umounted the filesystem and
-> ran a btrfsck on it : as you would expect, there's no qgroup problem
-> reported so far.
+-->  http://pastebin.com/XqRrqAB5
 
-At least, rescan code is working without problem.
+I can repeat the segfault. I made two btrfs-image , one is around 4MB
+the other is around 300MB think it was.
 
-> I'll clear all my snapshots, run an quota rescan, then
-> re-create them one by one by rsyncing from my ext4 system I still have.
-> Maybe I'll run into the issue again.
->
+So, did I find a bug? I cant find my logs at the beginning of my
+failing drive, what it said when I tried to remove the broken drive. I
+might be able to try the setup again (Got one more
+drive-about-to-fail)
 
-Would you mind to do the following check for each subvolume rsync?
 
-1) Do 'sync; btrfs qgroup show -prce --raw' and save the output
-2) Create the needed snapshot
-3) Do 'sync; btrfs qgroup show -prce --raw' and save the output
-4) Avoid doing IO if possible until step 6)
-5) Do 'btrfs quota rescan -w' and save it
-6) Do 'sync; btrfs qgroup show -prce --raw' and save the output
-7) Rsync data from ext4 to the newly created snapshot
 
-The point is, as you mentioned, rescan is working fine, we can compare 
-output from 3), 6) and 1) to see which qgroup accounting number changes.
+ps;
+Ive tried to make alpine to work, but it wont accept my passwords, I
+hope gmail web client is ok for you guys, openwrt dev team rejected my
+posts just because of this email client
 
-And if differs, which means the qgroup update at write time OR snapshot 
-creation has something wrong, at least we can locate the problem to 
-qgroup update routine or snapshot creation.
+best regards
+Daniel
 
-Thanks,
-Qu
+end

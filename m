@@ -1,136 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:45370 "EHLO
+Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:45795 "EHLO
 	mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753077AbbIQGLZ (ORCPT
+	with ESMTP id S1752696AbbIQG3a (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 02:11:25 -0400
+	Thu, 17 Sep 2015 02:29:30 -0400
+Received: from rc.speed47.net (nginx [192.168.80.2])
+	by box.speed47.net (Postfix) with ESMTP id C73A4BC94
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2015 08:29:28 +0200 (CEST)
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
-Date: Thu, 17 Sep 2015 08:11:20 +0200
+Date: Thu, 17 Sep 2015 08:29:28 +0200
 From: =?UTF-8?Q?St=C3=A9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
 Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
  rebalance
-In-Reply-To: <55FA2D9A.1060405@cn.fujitsu.com>
+In-Reply-To: <0973de930ee87e102c533c719807b748@all.all>
 References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
  <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
  <532aadf0f92d08d3d2b274173548aee1@all.all>
  <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
  <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
  <0973de930ee87e102c533c719807b748@all.all>
- <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
- <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
-Message-ID: <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all>
+Message-ID: <dcac037d814833260d68ec58033a5e51@all.all>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 2015-09-17 05:03, Qu Wenruo a écrit :
-> Stéphane Lesimple wrote on 2015/09/16 22:41 +0200:
->> Le 2015-09-16 22:18, Duncan a écrit :
->>> Stéphane Lesimple posted on Wed, 16 Sep 2015 15:04:20 +0200 as 
->>> excerpted:
->>> 
->> 
->> Well actually it's the (d) option ;)
->> I activate the quota feature for only one reason : being able to track
->> down how much space my snapshots are taking.
-> 
-> Yeah, that's completely one of the ideal use case of btrfs qgroup.
-> 
-> But I'm quite curious about the btrfsck error report on qgroup.
-> 
-> If btrfsck report such error, it means either I'm too confident about
-> the recent qgroup accounting rework, or btrfsck has some bug which I
-> didn't take much consideration during the kernel rework.
-> 
-> Would you please provide the full result of previous btrfsck with 
-> qgroup error?
+Le 2015-09-16 15:04, Stéphane Lesimple a écrit :
+> I also disabled quota because it has almost for sure nothing
+> to do with the bug
 
-Sure, I've saved the log somewhere just in case, here your are :
+As it turns out, it seems that this assertion was completely wrong.
 
-Counts for qgroup id: 3359 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3361 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3362 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3363 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3361 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3362 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3363 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3364 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3365 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 49152 exclusive compressed 49152
-disk:           exclusive 32768 exclusive compressed 32768
-diff:           exclusive 16384 exclusive compressed 16384
-Counts for qgroup id: 3366 are different
-our:            referenced 7530119168 referenced compressed 7530119168
-disk:           referenced 7530086400 referenced compressed 7530086400
-diff:           referenced 32768 referenced compressed 32768
-our:            exclusive 16384 exclusive compressed 16384
-disk:           exclusive 16384 exclusive compressed 16384
+I've got balance running for more than 16 hours now, without a crash. 
+This is almost 50% of the work done without any issue. Before, a crash 
+would happen within minutes, sometimes 1 hour, but not much more. The 
+problem is, I didn't change anything to the filesystem, well, appart 
+from the benign quota disable. So Qu's question about the qgroups errors 
+in fsck made me wonder : if I activate quota again, it'll still continue 
+to balance flawlessly, right ?
 
-If you need the really complete log (even with the "crossing stripe 
-boundary" false positives), I can post it somewhere for you.
+Well, it doesn't. I just ran btrfs quota enable on my filesystem, it 
+completed successfully after some minutes (rescan -s said that no rescan 
+was pending). Then less than 5 minutes later, the kernel crashed, at the 
+same BUG_ON() than usually :
 
-I can't do a btrfs qgroup show because I've since disabled quota as 
-stated above. However you can find the IDs corresponding to subvolumes 
-and snapshots in my previous post.
+[60156.062082] BTRFS info (device dm-3): relocating block group 
+972839452672 flags 129
+[60185.203626] BTRFS info (device dm-3): found 1463 extents
+[60414.452890] {btrfs} in insert_inline_extent_backref, got owner < 
+BTRFS_FIRST_FREE_OBJECTID
+[60414.452894] {btrfs} with bytenr=5197436141568 num_bytes=16384 
+parent=5336636473344 root_objectid=3358 owner=1 offset=0 refs_to_add=1 
+BTRFS_FIRST_FREE_OBJECTID=256
+[60414.452924] ------------[ cut here ]------------
+[60414.452928] kernel BUG at fs/btrfs/extent-tree.c:1837!
 
-Don't hesitate to ask for more information if needed.
+owner is=1 again at this point in the code (this is still kernel 
+4.3.0-rc1 with my added printks).
 
-Thanks,
+So I'll disable quota, again, and resume the balance. If I'm right, it 
+should proceed without issue for 18 more hours !
+
+Qu, my filesystem is at your disposal :)
 
 -- 
 Stéphane.
+
 

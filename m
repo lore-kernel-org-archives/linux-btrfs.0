@@ -1,104 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35803 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751800AbbIQJiv (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:48758 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753268AbbIQJjE convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 05:38:51 -0400
-Message-ID: <55FA89CE.4040005@oracle.com>
-Date: Thu, 17 Sep 2015 17:37:18 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Thu, 17 Sep 2015 05:39:04 -0400
+Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
+ rebalance
+To: =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
+References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
+ <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
+ <532aadf0f92d08d3d2b274173548aee1@all.all>
+ <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
+ <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
+ <0973de930ee87e102c533c719807b748@all.all>
+ <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
+ <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
+ <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55FA60C5.5090002@cn.fujitsu.com>
+Date: Thu, 17 Sep 2015 14:42:13 +0800
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs: Do per-chunk degrade mode check at mount time
-References: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com> <55FA1BD5.7020400@cn.fujitsu.com>
-In-Reply-To: <55FA1BD5.7020400@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Hi Qu,
-
-On 09/17/2015 09:48 AM, Qu Wenruo wrote:
-> To Anand Jain,
+Stéphane Lesimple wrote on 2015/09/17 08:11 +0200:
+> Le 2015-09-17 05:03, Qu Wenruo a écrit :
+>> Stéphane Lesimple wrote on 2015/09/16 22:41 +0200:
+>>> Le 2015-09-16 22:18, Duncan a écrit :
+>>>> Stéphane Lesimple posted on Wed, 16 Sep 2015 15:04:20 +0200 as
+>>>> excerpted:
+>>>>
+>>>
+>>> Well actually it's the (d) option ;)
+>>> I activate the quota feature for only one reason : being able to track
+>>> down how much space my snapshots are taking.
+>>
+>> Yeah, that's completely one of the ideal use case of btrfs qgroup.
+>>
+>> But I'm quite curious about the btrfsck error report on qgroup.
+>>
+>> If btrfsck report such error, it means either I'm too confident about
+>> the recent qgroup accounting rework, or btrfsck has some bug which I
+>> didn't take much consideration during the kernel rework.
+>>
+>> Would you please provide the full result of previous btrfsck with
+>> qgroup error?
 >
-> Any feedback on this method to allow single chunk still be degraded
-> mountable?
+> Sure, I've saved the log somewhere just in case, here your are :
 >
-> It should be much better than allowing degraded mount for any missing
-> device case.
-
-yeah. this changes the way missing devices are counted and its more fine 
-grained. makes sense to me.
-
-
+> Counts for qgroup id: 3359 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3361 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3362 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3363 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3361 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3362 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3363 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3364 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3365 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 49152 exclusive compressed 49152
+> disk:           exclusive 32768 exclusive compressed 32768
+> diff:           exclusive 16384 exclusive compressed 16384
+> Counts for qgroup id: 3366 are different
+> our:            referenced 7530119168 referenced compressed 7530119168
+> disk:           referenced 7530086400 referenced compressed 7530086400
+> diff:           referenced 32768 referenced compressed 32768
+> our:            exclusive 16384 exclusive compressed 16384
+> disk:           exclusive 16384 exclusive compressed 16384
+>
+> If you need the really complete log (even with the "crossing stripe
+> boundary" false positives), I can post it somewhere for you.
+>
+> I can't do a btrfs qgroup show because I've since disabled quota as
+> stated above. However you can find the IDs corresponding to subvolumes
+> and snapshots in my previous post.
+>
+> Don't hesitate to ask for more information if needed.
+>
 > Thanks,
-> Qu
 >
-> Qu Wenruo wrote on 2015/09/16 11:43 +0800:
->> Btrfs supports different raid profile for meta/data/sys, and as
->> different profile support different tolerated missing device, it's
->> better to check if it can be mounted degraded at a per-chunk base.
->>
->> So this patch will add check for read_one_chunk() against its profile,
->> other than checking it against with the lowest duplication profile.
->>
->> Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
->> Reported-by: Anand Jain <anand.jain@oracle.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   fs/btrfs/volumes.c | 17 +++++++++++++++++
->>   1 file changed, 17 insertions(+)
->>
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index 644e070..3272187 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -6164,12 +6164,15 @@ static int read_one_chunk(struct btrfs_root
->> *root, struct btrfs_key *key,
->>                 struct btrfs_chunk *chunk)
->>   {
->>       struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
->> +    struct super_block *sb = root->fs_info->sb;
->>       struct map_lookup *map;
->>       struct extent_map *em;
->>       u64 logical;
->>       u64 length;
->>       u64 devid;
->>       u8 uuid[BTRFS_UUID_SIZE];
->> +    int missing = 0;
->> +    int max_tolerated;
->>       int num_stripes;
->>       int ret;
->>       int i;
->> @@ -6238,7 +6241,21 @@ static int read_one_chunk(struct btrfs_root
->> *root, struct btrfs_key *key,
->>               btrfs_warn(root->fs_info, "devid %llu uuid %pU is missing",
->>                           devid, uuid);
->>           }
->> +        if (map->stripes[i].dev->missing)
->> +            missing++;
->>           map->stripes[i].dev->in_fs_metadata = 1;
->> +
->> +    }
->> +
->> +    /* XXX: Why the function name is SO LOOOOOOOOOOOOOOOOONG?! */
->> +    max_tolerated =
->> +        btrfs_get_num_tolerated_disk_barrier_failures(map->type);
->> +    if (missing > max_tolerated && !(sb->s_flags & MS_RDONLY)) {
->> +        free_extent_map(em);
->> +        btrfs_error(root->fs_info, -EIO,
->> +            "missing device(%d) exceeds the limit(%d), writeable
->> mount is not allowed\n",
+Thanks for your log, pretty interesting result.
 
-  \n is not required.
+BTW, did you enabled qgroup from old kernel earlier than 4.2-rc1?
+If so, I would be much relaxed as they can be the problem of old kernels.
 
-Thanks, Anand
+If it's OK for you, would you please enable quota after reproducing the 
+bug and use for sometime and recheck it?
 
->> +            missing, max_tolerated);
->> +        return -EIO;
->>       }
->>
->>       write_lock(&map_tree->map_tree.lock);
->>
+Thanks,
+Qu

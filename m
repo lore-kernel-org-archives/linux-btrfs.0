@@ -1,67 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f51.google.com ([209.85.213.51]:33917 "EHLO
-	mail-vk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751260AbbIQUSd (ORCPT
+Received: from mout.kundenserver.de ([212.227.17.24]:63602 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751604AbbIQVdB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 16:18:33 -0400
-Received: by vkhf67 with SMTP id f67so18120157vkh.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2015 13:18:33 -0700 (PDT)
+	Thu, 17 Sep 2015 17:33:01 -0400
+Subject: Re: BTRFS as image store for KVM?
+References: <55F88ECC.1040604@menke.ac>
+ <pan$a7c37$760f233d$6b18271c$f9ac2029@cox.net> <55FAFEB8.6030404@menke.ac>
+ <CAJCQCtR_3eiWWmpJHC9RT4EJOzUb_AmrQkkm0X4R0OE4FYUHMQ@mail.gmail.com>
+From: Gert Menke <gert@menke.ac>
+Cc: linux-btrfs@vger.kernel.org
+To: Chris Murphy <lists@colorremedies.com>
+Message-ID: <55FB3188.2060909@menke.ac>
+Date: Thu, 17 Sep 2015 23:32:56 +0200
 MIME-Version: 1.0
-In-Reply-To: <20150918000205.6e8f3998@natsu>
-References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
-	<55FAD9CC.5060206@oracle.com>
-	<55FAF198.2060106@libero.it>
-	<20150918000205.6e8f3998@natsu>
-Date: Thu, 17 Sep 2015 14:18:32 -0600
-Message-ID: <CAJCQCtQ10SJAPca8quhdi-oK1rJV2rcfY0QZFqx11u9ntyDRYA@mail.gmail.com>
-Subject: Re: RAID1 storage server won't boot with one disk missing
-From: Chris Murphy <lists@colorremedies.com>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAJCQCtR_3eiWWmpJHC9RT4EJOzUb_AmrQkkm0X4R0OE4FYUHMQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 17, 2015 at 1:02 PM, Roman Mamedov <rm@romanrm.net> wrote:
-> On Thu, 17 Sep 2015 19:00:08 +0200
-> Goffredo Baroncelli <kreijack@libero.it> wrote:
->
->> On 2015-09-17 17:18, Anand Jain wrote:
->> >  it looks like -o degraded is going to be a very obvious feature,
->> >  I have plans of making it a default feature, and provide -o
->> >  nodegraded feature instead. Thanks for comments if any.
->> >
->> I am not sure if there is a "good" default for this kind of problem
->
-> Yes there is. It is whatever people came to expect from using other RAID
-> systems and/or generally expect from RAID as a concept.
->
-> Both mdadm software RAID, and I believe virtually any hardware RAID controller
-> out there will let you to successfully boot up and give read-write(!) access
-> to a RAID in a non-critical failure state, because that's kind of the whole
-> point of a RAID, to eliminate downtime. If the removed disk is later re-added,
-> then it is automatically resynced. Mdadm can also make use of its 'write
-> intent bitmap' to resync only those areas of the array which were in any way
-> touched during the absence of the newly re-added disk.
->
-> If you're concerned that the user "misses" the fact that they have a disk
-> down, then solve *that*, make some sort of a notify daemon, e.g. mdadm has a
-> built-in "monitor" mode which sends E-Mail on critical events with any of the
-> arrays.
+On 17.09.2015 at 20:35, Chris Murphy wrote:
+> You can use Btrfs in the guest to get at least notification of SDC.
+Yes, but I'd rather not depend on all potential guest OSes having btrfs 
+or something similar.
 
-Given the current state: no proposal and no work done yet, I think
-it's premature to change the default.
+> Another way is to put a conventional fs image on e.g. GlusterFS with
+> checksumming enabled (and at least distributed+replicated filtering).
+This sounds interesting! I'll have a look at this.
 
-It's an open question what a modern monitoring and notification
-mechanism should look like. At the moment it'd be a unique Btrfs thing
-because the mdadm and LVM methods aren't abstracted enough to reuse. I
-wonder if the storaged and/or openlmi folks have some input on what
-this would look like. Feedback from KDE and GNOME also, who rely on at
-least mdadm in order to present user space notifications. I think
-udisks2 is on the way out and storaged is on the way in, there's just
-too much stuff that udisks2 doesn't do and is getting confused about,
-including LVM thinly provisioned volumes, not just Btrfs stuff.
+> If you do this directly on Btrfs, maybe you can mitigate some of the
+> fragmentation issues with bcache or dmcache;
+Thanks, I did not know about these. bcache seems to be more or less what 
+"zpool add foo cache /dev/ssd" does. Definitely worth a look.
 
+ > and for persistent snapshotting, use qcow2 to do it instead of Btrfs. 
+You'd use Btrfs
+> snapshots to create a subvolume for doing backups of the images, and
+> then get rid of the Btrfs snapshot.
+Good idea.
 
--- 
-Chris Murphy
+Thanks!

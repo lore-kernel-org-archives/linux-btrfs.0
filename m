@@ -1,104 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:53135 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751838AbbIQDEA convert rfc822-to-8bit (ORCPT
+Received: from mail-vk0-f51.google.com ([209.85.213.51]:32851 "EHLO
+	mail-vk0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750974AbbIQET7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Sep 2015 23:04:00 -0400
-Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
- rebalance
-To: =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>,
-        <linux-btrfs@vger.kernel.org>
-References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
- <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
- <532aadf0f92d08d3d2b274173548aee1@all.all>
- <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
- <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
- <0973de930ee87e102c533c719807b748@all.all>
- <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
- <d2f30d85fa83b8b98af3c7e5a862044d@all.all>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55FA2D9A.1060405@cn.fujitsu.com>
-Date: Thu, 17 Sep 2015 11:03:54 +0800
+	Thu, 17 Sep 2015 00:19:59 -0400
+Received: by vkgd64 with SMTP id d64so3997696vkg.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 21:19:59 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <d2f30d85fa83b8b98af3c7e5a862044d@all.all>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <55F88ECC.1040604@menke.ac>
+References: <55F88ECC.1040604@menke.ac>
+From: Paul Harvey <csirac2@gmail.com>
+Date: Thu, 17 Sep 2015 14:19:39 +1000
+Message-ID: <CAB3_QuLRu70QhP6X+9ZUzTi2FKba__qThJ1uxKkuMRkk3UjEAQ@mail.gmail.com>
+Subject: Re: BTRFS as image store for KVM?
+To: Gert Menke <gert@menke.ac>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+As others have said here, it's probably not going to work for you
+especially if you want to use regular scheduled btrfs snapshots on the
+host (which I consider to be 50% of the reason why I use btrfs in the
+first place).
 
+Once I had learned this lesson the hard way, I had a xen server using
+libvirt configured to provision from LVM storage. I had some
+preseed/kickstart/ansible recipes for VM provisioning that configured
+btrfs in the guests with appropriate scheduled snapshotting and remote
+send/receive to backup hosts.
 
-Stéphane Lesimple wrote on 2015/09/16 22:41 +0200:
-> Le 2015-09-16 22:18, Duncan a écrit :
->> Stéphane Lesimple posted on Wed, 16 Sep 2015 15:04:20 +0200 as excerpted:
->>
->>> Le 2015-09-16 12:46, Holger Hoffstätte a écrit :
->>>>
->>> I also disabled quota because it has almost for sure nothing to
->>> do with the bug, and now btrsfck is 100% happy:
->>
->> Yes.  Quotas have been a continuing issue on btrfs.  AFAIK, they're on
->> the third rewrite now, and still have some bugs to work out.  So what
->> I've been recommending is unless you're (a) directly and specifically
->> working with the devs to find and fix the quota issues (in which case
->> please keep at it! =:^), either you (b) really depend on quotas working
->> and btrfs isn't appropriate for you at this time, since they're known to
->> be buggy, so use a more mature filesystem where they're known to work, or
->> (c) you don't actually need quotas at all, so disable them and remove the
->> quota tracking metadata, thus avoiding the bugs in the feature entirely.
->> =:^)
+This worked well for me but it's not for everyone. I'm a btrfs fan,
+but have talked a few admins out of naively using btrfs in the manner
+that you've described. Particularly busy Windows HVM guests on a
+file-backed image sitting on a btrfs host filesystem with regular
+scheduled snapshots will deteriorate depressingly quickly.
+
+Having said that, most of my current btrfs superstitions on this
+use-case were formed around kernel 3.12, a long time ago now.
+
+On 16 September 2015 at 07:34, Gert Menke <gert@menke.ac> wrote:
+> Hi everybody,
 >
-> Well actually it's the (d) option ;)
-> I activate the quota feature for only one reason : being able to track
-> down how much space my snapshots are taking.
-> I've been using ZFS in the past, and I was really missing the "zfs list"
-> command that is able to tell you how much space a given snapshot is
-> actually taking under btrfs.
-> With quota enabled, I was able to somehow mimic zfs list with a perl
-> script I wrote, btrfs-list :
+> first off, I'm not 100% sure if this is the right place to ask, so if it's
+> not, I apologize and I'd appreciate a pointer in the right direction.
 >
-> PATH                                    ID     TYPE     REFER      USED
-> 'tank'                                  -1       df         -     2.66T
-> (13.26G free)
->     /tank                                 5      vol    48.00K    48.00K
->     media                              1906   subvol     1.04T     1.04T
->     photos                             1909   subvol   116.37G   116.37G
->     main                               1911   subvol   973.23G   973.23G
->     bkp-slash                          3270   subvol    15.86G    15.86G
->     bkp-quasar                         3314   subvol    18.26G    16.00K
->        .snaps/bkp-quasar@2015-01-17    3317   rosnap    17.77G    40.76M
->        .snaps/bkp-quasar@2015-03-06    3318   rosnap    17.89G    88.88M
->        .snaps/bkp-quasar@2015-04-05    3319   rosnap    17.92G    90.97M
->        .snaps/bkp-quasar@2015-05-31    3320   rosnap    17.95G     1.02M
->        .snaps/bkp-quasar@2015-06-13    3321   rosnap    17.95G   760.00K
->        .snaps/bkp-quasar@2015-07-26    3322   rosnap    18.19G    17.88M
->        .snaps/bkp-quasar@2015-07-31    3323   rosnap    18.19G    14.58M
->        .snaps/bkp-quasar@2015-08-03    3324   rosnap    18.19G    17.43M
->     bkp-liznodisk                      3341   subvol     7.01G    16.00K
->        .snaps/bkp-liznodisk@2015-03-01 3342   rosnap     6.96G    75.37M
->        .snaps/bkp-liznodisk@2015-03-28 3343   rosnap     6.98G    84.93M
->        .snaps/bkp-liznodisk@2015-04-26 3344   rosnap     6.96G    67.14M
->        .snaps/bkp-liznodisk@2015-05-24 3345   rosnap     6.95G    47.67M
->        .snaps/bkp-liznodisk@2015-06-27 3346   rosnap     6.96G    67.97M
->        .snaps/bkp-liznodisk@2015-07-25 3347   rosnap     6.98G    60.30M
->        .snaps/bkp-liznodisk@2015-08-16 3348   rosnap     7.10G   159.44M
->     bkp-skyline                        3367   subvol    22.52G    22.52G
+> I want to build a virtualization server to replace my current home server.
+> I'm thinking about a Debian system with libvirt/KVM. The system will have
+> one or two SSDs and five harddisks with some kind of software RAID5 for
+> storage. I'd like to have a filesystem with data checksums, so BTRFS seems
+> like the right way to go. However, I read that BTRFS does not perform well
+> as storage for KVM disk images.
+> (See here: http://www.linux-kvm.org/page/Tuning_KVM )
 >
-> I just pushed it to https://github.com/speed47/btrfs-list, if anybody is
-> interested.
+> Is this still true?
 >
-> Anyway, balance is running again for 7+ hours, trying to reproduce the
-> bug twice, but no crash yet ... should happen soon now !
+> I would appreciate any comments and/or tips you might have on this topic.
 >
-Yeah, that's completely one of the ideal use case of btrfs qgroup.
-
-But I'm quite curious about the btrfsck error report on qgroup.
-
-If btrfsck report such error, it means either I'm too confident about 
-the recent qgroup accounting rework, or btrfsck has some bug which I 
-didn't take much consideration during the kernel rework.
-
-Would you please provide the full result of previous btrfsck with qgroup 
-error?
-
-Thanks,
-Qu
+> Is anyone using BTRFS as an image store? Are there any special settings I
+> should be aware of to make it work well?
+>
+> Thanks,
+> Gert
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

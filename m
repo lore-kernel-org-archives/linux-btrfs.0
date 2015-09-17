@@ -1,94 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:48213 "EHLO
+Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:48492 "EHLO
 	mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753833AbbIQHy4 (ORCPT
+	with ESMTP id S1753976AbbIQICR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 03:54:56 -0400
-Received: from rc.speed47.net (nginx [192.168.80.2])
-	by box.speed47.net (Postfix) with ESMTP id 2975D855
-	for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2015 09:54:54 +0200 (CEST)
+	Thu, 17 Sep 2015 04:02:17 -0400
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8;
  format=flowed
-Date: Thu, 17 Sep 2015 09:54:54 +0200
+Date: Thu, 17 Sep 2015 10:02:15 +0200
 From: =?UTF-8?Q?St=C3=A9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
-To: linux-btrfs@vger.kernel.org
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
  rebalance
-In-Reply-To: <dcac037d814833260d68ec58033a5e51@all.all>
+In-Reply-To: <55FA60C5.5090002@cn.fujitsu.com>
 References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
  <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
  <532aadf0f92d08d3d2b274173548aee1@all.all>
  <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
  <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
  <0973de930ee87e102c533c719807b748@all.all>
- <dcac037d814833260d68ec58033a5e51@all.all>
-Message-ID: <34ab5f206c418a325feea82b2a70222a@all.all>
+ <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
+ <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
+ <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all> <55FA60C5.5090002@cn.fujitsu.com>
+Message-ID: <7a6f2d794fb6cbf7d598b92e3470201c@all.all>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 2015-09-17 08:29, Stéphane Lesimple a écrit :
-> Le 2015-09-16 15:04, Stéphane Lesimple a écrit :
->> I also disabled quota because it has almost for sure nothing
->> to do with the bug
+Le 2015-09-17 08:42, Qu Wenruo a écrit :
+> Stéphane Lesimple wrote on 2015/09/17 08:11 +0200:
+>> Le 2015-09-17 05:03, Qu Wenruo a écrit :
+>>> Stéphane Lesimple wrote on 2015/09/16 22:41 +0200:
+>>>> Le 2015-09-16 22:18, Duncan a écrit :
+>>>>> Stéphane Lesimple posted on Wed, 16 Sep 2015 15:04:20 +0200 as
+>>>>> excerpted:
+>>>>> 
+>>>> 
+>>>> Well actually it's the (d) option ;)
+>>>> I activate the quota feature for only one reason : being able to 
+>>>> track
+>>>> down how much space my snapshots are taking.
+>>> 
+>>> Yeah, that's completely one of the ideal use case of btrfs qgroup.
+>>> 
+>>> But I'm quite curious about the btrfsck error report on qgroup.
+>>> 
+>>> If btrfsck report such error, it means either I'm too confident about
+>>> the recent qgroup accounting rework, or btrfsck has some bug which I
+>>> didn't take much consideration during the kernel rework.
+>>> 
+>>> Would you please provide the full result of previous btrfsck with
+>>> qgroup error?
+>> 
+>> Sure, I've saved the log somewhere just in case, here your are :
+>> 
+>> [...]
+> Thanks for your log, pretty interesting result.
 > 
-> As it turns out, it seems that this assertion was completely wrong.
-> 
-> I've got balance running for more than 16 hours now, without a crash.
-> This is almost 50% of the work done without any issue. Before, a crash
-> would happen within minutes, sometimes 1 hour, but not much more. The
-> problem is, I didn't change anything to the filesystem, well, appart
-> from the benign quota disable. So Qu's question about the qgroups
-> errors in fsck made me wonder : if I activate quota again, it'll still
-> continue to balance flawlessly, right ?
-> 
-> Well, it doesn't. I just ran btrfs quota enable on my filesystem, it
-> completed successfully after some minutes (rescan -s said that no
-> rescan was pending). Then less than 5 minutes later, the kernel
-> crashed, at the same BUG_ON() than usually :
-> 
-> [60156.062082] BTRFS info (device dm-3): relocating block group
-> 972839452672 flags 129
-> [60185.203626] BTRFS info (device dm-3): found 1463 extents
-> [60414.452890] {btrfs} in insert_inline_extent_backref, got owner <
-> BTRFS_FIRST_FREE_OBJECTID
-> [60414.452894] {btrfs} with bytenr=5197436141568 num_bytes=16384
-> parent=5336636473344 root_objectid=3358 owner=1 offset=0 refs_to_add=1
-> BTRFS_FIRST_FREE_OBJECTID=256
-> [60414.452924] ------------[ cut here ]------------
-> [60414.452928] kernel BUG at fs/btrfs/extent-tree.c:1837!
-> 
-> owner is=1 again at this point in the code (this is still kernel
-> 4.3.0-rc1 with my added printks).
-> 
-> So I'll disable quota, again, and resume the balance. If I'm right, it
-> should proceed without issue for 18 more hours !
+> BTW, did you enabled qgroup from old kernel earlier than 4.2-rc1?
+> If so, I would be much relaxed as they can be the problem of old 
+> kernels.
 
-Damn, wrong again. It just re-crashed without quota enabled :(
-The fact that it went perfectly well for 17+ hours and crashed minutes 
-after I reactivated quota might be by complete chance then ...
+The mkfs.btrfs was done under 3.19, but I'm almost sure I enabled quota 
+under 4.2.0 precisely. My kern.log tends to confirm that (looking for 
+'qgroup scan completed').
 
-[ 5487.706499] {btrfs} in insert_inline_extent_backref, got owner < 
-BTRFS_FIRST_FREE_OBJECTID
-[ 5487.706504] {btrfs} with bytenr=6906661109760 num_bytes=16384 
-parent=6905020874752 root_objectid=18446744073709551608 owner=1 offset=0 
-refs_to_add=1 BTRFS_FIRST_FREE_OBJECTID=256
-[ 5487.706536] ------------[ cut here ]------------
-[ 5487.706539] kernel BUG at fs/btrfs/extent-tree.c:1837!
+> If it's OK for you, would you please enable quota after reproducing
+> the bug and use for sometime and recheck it?
 
-For reference, the crash I had earlier this morning was as follows :
+Sure, I've just reproduced the bug twice as I wanted, and posted the 
+info, so now I've cancelled the balance and I can reenable quota. Will 
+do it under 4.3.0-rc1. I'll keep you posted if btrfsck complains about 
+it in the following days.
 
-[60414.452894] {btrfs} with bytenr=5197436141568 num_bytes=16384 
-parent=5336636473344 root_objectid=3358 owner=1 offset=0 refs_to_add=1 
-BTRFS_FIRST_FREE_OBJECTID=256
-
-So, this is a completely different part of the filesystem.
-The bug is always the same though, owner=1 where it shouldn't be < 256.
-
-Balance cancelled.
-
-To me, it sounds like some sort of race condition. But I'm out of ideas 
-on what to test now.
+Regards,
 
 -- 
 Stéphane.

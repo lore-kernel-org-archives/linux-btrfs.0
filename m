@@ -1,72 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:36598 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752424AbbIQCHl (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:53135 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751838AbbIQDEA convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Sep 2015 22:07:41 -0400
-Received: by igcrk20 with SMTP id rk20so46784809igc.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 19:07:41 -0700 (PDT)
+	Wed, 16 Sep 2015 23:04:00 -0400
+Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
+ rebalance
+To: =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>,
+        <linux-btrfs@vger.kernel.org>
+References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
+ <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
+ <532aadf0f92d08d3d2b274173548aee1@all.all>
+ <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
+ <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
+ <0973de930ee87e102c533c719807b748@all.all>
+ <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
+ <d2f30d85fa83b8b98af3c7e5a862044d@all.all>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55FA2D9A.1060405@cn.fujitsu.com>
+Date: Thu, 17 Sep 2015 11:03:54 +0800
 MIME-Version: 1.0
-In-Reply-To: <CABL_Pd8nOj7B1_64Us+goP=corZkCtw_WJW8eMQpiP6iQpw=HA@mail.gmail.com>
-References: <20150916144355.GA1285@invalid>
-	<55F988A6.8070109@gmail.com>
-	<CABL_Pd8nOj7B1_64Us+goP=corZkCtw_WJW8eMQpiP6iQpw=HA@mail.gmail.com>
-Date: Wed, 16 Sep 2015 22:07:40 -0400
-Message-ID: <CAGfcS_kuiUZCtydn51WXYP8OcwTpM0xzEZdErcCoaka+NxDnOg@mail.gmail.com>
-Subject: Re: FYIO: A rant about btrfs
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Martin Tippmann <martin.tippmann@gmail.com>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <d2f30d85fa83b8b98af3c7e5a862044d@all.all>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 16, 2015 at 12:45 PM, Martin Tippmann
-<martin.tippmann@gmail.com> wrote:
-> From reading the list I understand that btrfs is still very much work
-> in progress and performance is not a top priority at this stage but I
-> don't see why it shouldn't perform at least equally good as ZFS/F2FS
-> on the same workloads. Is looking at performance problems on the
-> development roadmap?
 
-My sense is that sufferings in comparison to ZFS just represent a lack
-of maturity - there just hasn't been as much focus on performance.
-I'm not aware of any fundamental design issues which are likely to
-make btrfs perform worse than ZFS in the long-term.
 
-F2FS is a fundamentally different beast.  It is a log-based filesystem
-as far as I'm aware, and on flash that gives it some substantial
-advantages, but it doesn't support snapshotting/etc as far as I'm
-aware.  I'm sure that in the long term some operations are just going
-to be faster on F2FS no matter what just due to its design, and other
-operations will always be slower on F2FS.
+Stéphane Lesimple wrote on 2015/09/16 22:41 +0200:
+> Le 2015-09-16 22:18, Duncan a écrit :
+>> Stéphane Lesimple posted on Wed, 16 Sep 2015 15:04:20 +0200 as excerpted:
+>>
+>>> Le 2015-09-16 12:46, Holger Hoffstätte a écrit :
+>>>>
+>>> I also disabled quota because it has almost for sure nothing to
+>>> do with the bug, and now btrsfck is 100% happy:
+>>
+>> Yes.  Quotas have been a continuing issue on btrfs.  AFAIK, they're on
+>> the third rewrite now, and still have some bugs to work out.  So what
+>> I've been recommending is unless you're (a) directly and specifically
+>> working with the devs to find and fix the quota issues (in which case
+>> please keep at it! =:^), either you (b) really depend on quotas working
+>> and btrfs isn't appropriate for you at this time, since they're known to
+>> be buggy, so use a more mature filesystem where they're known to work, or
+>> (c) you don't actually need quotas at all, so disable them and remove the
+>> quota tracking metadata, thus avoiding the bugs in the feature entirely.
+>> =:^)
+>
+> Well actually it's the (d) option ;)
+> I activate the quota feature for only one reason : being able to track
+> down how much space my snapshots are taking.
+> I've been using ZFS in the past, and I was really missing the "zfs list"
+> command that is able to tell you how much space a given snapshot is
+> actually taking under btrfs.
+> With quota enabled, I was able to somehow mimic zfs list with a perl
+> script I wrote, btrfs-list :
+>
+> PATH                                    ID     TYPE     REFER      USED
+> 'tank'                                  -1       df         -     2.66T
+> (13.26G free)
+>     /tank                                 5      vol    48.00K    48.00K
+>     media                              1906   subvol     1.04T     1.04T
+>     photos                             1909   subvol   116.37G   116.37G
+>     main                               1911   subvol   973.23G   973.23G
+>     bkp-slash                          3270   subvol    15.86G    15.86G
+>     bkp-quasar                         3314   subvol    18.26G    16.00K
+>        .snaps/bkp-quasar@2015-01-17    3317   rosnap    17.77G    40.76M
+>        .snaps/bkp-quasar@2015-03-06    3318   rosnap    17.89G    88.88M
+>        .snaps/bkp-quasar@2015-04-05    3319   rosnap    17.92G    90.97M
+>        .snaps/bkp-quasar@2015-05-31    3320   rosnap    17.95G     1.02M
+>        .snaps/bkp-quasar@2015-06-13    3321   rosnap    17.95G   760.00K
+>        .snaps/bkp-quasar@2015-07-26    3322   rosnap    18.19G    17.88M
+>        .snaps/bkp-quasar@2015-07-31    3323   rosnap    18.19G    14.58M
+>        .snaps/bkp-quasar@2015-08-03    3324   rosnap    18.19G    17.43M
+>     bkp-liznodisk                      3341   subvol     7.01G    16.00K
+>        .snaps/bkp-liznodisk@2015-03-01 3342   rosnap     6.96G    75.37M
+>        .snaps/bkp-liznodisk@2015-03-28 3343   rosnap     6.98G    84.93M
+>        .snaps/bkp-liznodisk@2015-04-26 3344   rosnap     6.96G    67.14M
+>        .snaps/bkp-liznodisk@2015-05-24 3345   rosnap     6.95G    47.67M
+>        .snaps/bkp-liznodisk@2015-06-27 3346   rosnap     6.96G    67.97M
+>        .snaps/bkp-liznodisk@2015-07-25 3347   rosnap     6.98G    60.30M
+>        .snaps/bkp-liznodisk@2015-08-16 3348   rosnap     7.10G   159.44M
+>     bkp-skyline                        3367   subvol    22.52G    22.52G
+>
+> I just pushed it to https://github.com/speed47/btrfs-list, if anybody is
+> interested.
+>
+> Anyway, balance is running again for 7+ hours, trying to reproduce the
+> bug twice, but no crash yet ... should happen soon now !
+>
+Yeah, that's completely one of the ideal use case of btrfs qgroup.
 
-To draw an analogy, imagine you have a 1TB ext4 filesystem and a 1TB
-btrfs filesystem.  On each you create a 900GB file, and then proceed
-to make millions of internal writes all over it.  The ext4 filesystem
-is just going to completely outperform btrfs at this job, and I
-suspect it would outperform zfs as well.  For such a use case you
-don't really even need a filesystem - you might as well just be
-reading/writing random blocks right off the disk, and ext4 is pretty
-close to that in behavior when it comes to internal file
-modifications.  The COW filesystems are going to be fragmenting the
-living daylights out of the file and its metadata.  Of course, if you
-pulled the plug in the middle of one of those operations the COW
-filesystems are more likely to end up in a sane state if you care
-about the order of file modifications, and if you're doing this on
-RAID both zfs and btrfs will be immune to any write hole issues.
-Also, if you go making reflink copies of large files on a btrfs
-filesystem it will perform MUCH better than doing the equivalent on
-ext4 (which requires copying all the data, at a cost of both time and
-space).
+But I'm quite curious about the btrfsck error report on qgroup.
 
-In the end you have to look at your application, and not just
-performance stats.  There are tradeoffs.  Personally, I've had enough
-hard drive failures that btrfs is worth it to me just for the
-assurance that when something goes wrong the filesystem knows what is
-good and what isn't.  As drives get bigger this becomes more and more
-important.
+If btrfsck report such error, it means either I'm too confident about 
+the recent qgroup accounting rework, or btrfsck has some bug which I 
+didn't take much consideration during the kernel rework.
 
---
-Rich
+Would you please provide the full result of previous btrfsck with qgroup 
+error?
+
+Thanks,
+Qu

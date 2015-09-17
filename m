@@ -1,79 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-la0-f49.google.com ([209.85.215.49]:35688 "EHLO
-	mail-la0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753005AbbIPX4o (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:25078 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752952AbbIQBsK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Sep 2015 19:56:44 -0400
-Received: by lagj9 with SMTP id j9so1163707lag.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Sep 2015 16:56:42 -0700 (PDT)
+	Wed, 16 Sep 2015 21:48:10 -0400
+Subject: Re: [PATCH 1/2] btrfs: Do per-chunk degrade mode check at mount time
+To: <linux-btrfs@vger.kernel.org>, Anand Jain <anand.jain@oracle.com>
+References: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55FA1BD5.7020400@cn.fujitsu.com>
+Date: Thu, 17 Sep 2015 09:48:05 +0800
 MIME-Version: 1.0
-Date: Wed, 16 Sep 2015 17:56:42 -0600
-Message-ID: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
-Subject: RAID1 storage server won't boot with one disk missing
-From: "erpo41@gmail.com" <erpo41@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Good afternoon,
+To Anand Jain,
 
-Earlier today, I tried to set up a storage server using btrfs but ran
-into some problems. The goal was to use two disks (4.0TB each) in a
-raid1 configuration.
+Any feedback on this method to allow single chunk still be degraded 
+mountable?
 
-What I did:
-1. Attached a single disk to a regular PC configured to boot with UEFI.
-2. Booted from a thumb drive that had been made from an Ubuntu 14.04
-Server x64 installation DVD.
-3. Ran the installation procedure. When it came time to partition the
-disk, I chose the guided partitioning option. The partitioning scheme
-it suggested was:
-
-* A 500MB EFI System Partition.
-* An ext4 root partition of nearly 4 TB in size.
-* A 4GB swap partition.
-
-4. Changed the type of the middle partition from ext4 to btrfs, but
-left everything else the same.
-5. Finalized the partitioning scheme, allowing changes to be written to disk.
-6. Continued the installation procedure until it finished. I was able
-to boot into a working server from the single disk.
-7. Attached the second disk.
-8. Used parted to create a GPT label on the second disk and a btrfs
-partition that was the same size as the btrfs partition on the first
-disk.
-
-# parted /dev/sdb
-(parted) mklabel gpt
-(parted) mkpart primary btrfs #####s ##########s
-(parted) quit
-
-9. Ran "btrfs device add /dev/sdb1 /" to add the second device to the
-filesystem.
-10. Ran "btrfs balance start -dconvert=raid1 -mconvert=raid1 /" and
-waited for it to finish. It reported that it finished successfully.
-11. Rebooted the system. At this point, everything appeared to be working.
-12. Shut down the system, temporarily disconnected the second disk
-(/dev/sdb) from the motherboard, and powered it back up.
-
-What I expected to happen:
-I expected that the system would either start as if nothing were
-wrong, or would warn me that one half of the mirror was missing and
-ask if I really wanted to start the system with the root array in a
-degraded state.
-
-What actually happened:
-During the boot process, a kernel message appeared indicating that the
-"system array" could not be found for the root filesystem (as
-identified by a UUID). It then dumped me to an initramfs prompt.
-Powering down the system, reattaching the second disk, and powering it
-on allowed me to boot successfully. Running "btrfs fi df /" showed
-that all System data was stored as RAID1.
-
-If I want to have a storage server where one of two drives can fail at
-any time without causing much down time, am I on the right track? If
-so, what should I try next to get the behavior I'm looking for?
+It should be much better than allowing degraded mount for any missing 
+device case.
 
 Thanks,
-Eric
+Qu
+
+Qu Wenruo wrote on 2015/09/16 11:43 +0800:
+> Btrfs supports different raid profile for meta/data/sys, and as
+> different profile support different tolerated missing device, it's
+> better to check if it can be mounted degraded at a per-chunk base.
+>
+> So this patch will add check for read_one_chunk() against its profile,
+> other than checking it against with the lowest duplication profile.
+>
+> Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Reported-by: Anand Jain <anand.jain@oracle.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   fs/btrfs/volumes.c | 17 +++++++++++++++++
+>   1 file changed, 17 insertions(+)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 644e070..3272187 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6164,12 +6164,15 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+>   			  struct btrfs_chunk *chunk)
+>   {
+>   	struct btrfs_mapping_tree *map_tree = &root->fs_info->mapping_tree;
+> +	struct super_block *sb = root->fs_info->sb;
+>   	struct map_lookup *map;
+>   	struct extent_map *em;
+>   	u64 logical;
+>   	u64 length;
+>   	u64 devid;
+>   	u8 uuid[BTRFS_UUID_SIZE];
+> +	int missing = 0;
+> +	int max_tolerated;
+>   	int num_stripes;
+>   	int ret;
+>   	int i;
+> @@ -6238,7 +6241,21 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+>   			btrfs_warn(root->fs_info, "devid %llu uuid %pU is missing",
+>   						devid, uuid);
+>   		}
+> +		if (map->stripes[i].dev->missing)
+> +			missing++;
+>   		map->stripes[i].dev->in_fs_metadata = 1;
+> +
+> +	}
+> +
+> +	/* XXX: Why the function name is SO LOOOOOOOOOOOOOOOOONG?! */
+> +	max_tolerated =
+> +		btrfs_get_num_tolerated_disk_barrier_failures(map->type);
+> +	if (missing > max_tolerated && !(sb->s_flags & MS_RDONLY)) {
+> +		free_extent_map(em);
+> +		btrfs_error(root->fs_info, -EIO,
+> +			"missing device(%d) exceeds the limit(%d), writeable mount is not allowed\n",
+> +			missing, max_tolerated);
+> +		return -EIO;
+>   	}
+>
+>   	write_lock(&map_tree->map_tree.lock);
+>

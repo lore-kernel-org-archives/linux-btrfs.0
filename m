@@ -1,75 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:33953 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751068AbbIRNKd (ORCPT
+Received: from mail-io0-f172.google.com ([209.85.223.172]:34472 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751659AbbIRNM5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Sep 2015 09:10:33 -0400
-Received: by igcpb10 with SMTP id pb10so35219900igc.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:10:32 -0700 (PDT)
+	Fri, 18 Sep 2015 09:12:57 -0400
+Received: by iofb144 with SMTP id b144so55877053iof.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:12:56 -0700 (PDT)
 Subject: Re: FYIO: A rant about btrfs
-To: Aneurin Price <aneurin.price@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 References: <20150916144355.GA1285@invalid> <55F988A6.8070109@gmail.com>
- <CABL_Pd8nOj7B1_64Us+goP=corZkCtw_WJW8eMQpiP6iQpw=HA@mail.gmail.com>
- <55F9C136.3080800@gmail.com>
- <CAHb+SPDaU-FBD2b2UN+ecubZcmzX=7KKk_7PgstCpUgmVb=YuQ@mail.gmail.com>
-Cc: Martin Tippmann <martin.tippmann@gmail.com>, linux-btrfs@vger.kernel.org
+ <A4269DC6-6CD6-4E8C-B3C9-5F5DDBE86911@up4.com> <55F9B357.4070505@gmail.com>
+ <54A9EC91-FDFD-44A8-97B9-7347A89FA415@up4.com>
+ <20150916220856.GA23830@hungrycats.org>
+ <pan$8db10$2ae04448$ef503df5$d1537993@cox.net>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55FC0D3B.9070805@gmail.com>
-Date: Fri, 18 Sep 2015 09:10:19 -0400
+Message-ID: <55FC0DCA.1080905@gmail.com>
+Date: Fri, 18 Sep 2015 09:12:42 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAHb+SPDaU-FBD2b2UN+ecubZcmzX=7KKk_7PgstCpUgmVb=YuQ@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060501070301000103030104"
+In-Reply-To: <pan$8db10$2ae04448$ef503df5$d1537993@cox.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010500010103050400010704"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms060501070301000103030104
+--------------ms010500010103050400010704
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-09-17 10:52, Aneurin Price wrote:
-> On 16 September 2015 at 20:21, Austin S Hemmelgarn <ahferroin7@gmail.co=
-m> wrote:
->> ZFS has been around for much longer, it's been mature and feature comp=
-lete for more than a decade, and has had a long time to improve performan=
-ce wise.  It is important to note though, that on low-end hardware, BTRFS=
- can (and often does in my experience) perform better than ZFS, because Z=
-FS is a serious resource hog (I have yet to see a stable ZFS deployment w=
-ith less than 16G of RAM, even with all the fancy features turned off).
+On 2015-09-17 20:34, Duncan wrote:
+> Zygo Blaxell posted on Wed, 16 Sep 2015 18:08:56 -0400 as excerpted:
 >
-> If you have a real example of ZFS becoming unstable with, say, 4 or
-> 8GB of memory, that doesn't involve attempting deduplication (which I
-> guess is what you mean by 'all the fancy features') on a many-TB pool,
-> I'd be interested to hear about it. (Psychic debugger says 'possibly
-> somebody trying to use a large L2ARC on a pool with many/large zvols')
+>> On Wed, Sep 16, 2015 at 03:04:38PM -0400, Vincent Olivier wrote:
+>>>
+>>> OK fine. Let it be clearer then (on the Btrfs wiki): nobarrier is an
+>>> absolute no go. Case closed.
+>>
+>> Sometimes it is useful to make an ephemeral filesystem, i.e. a btrfs o=
+n
+>> a dm-crypt device with a random key that is not stored.  This
+>> configuration intentionally and completely destroys the entire
+>> filesystem, and all data on it, in the event of a power failure.  It's=
+
+>> useful for things like temporary table storage, where ramfs is too
+>> small, swap-backed tmpfs is too slow, and/or there is a requirement th=
+at
+>> the data not be persisted across reboots.
+>>
+>> In other words, nobarrier is for a little better performance when you
+>> already want to _intentionally_ destroy your filesystem on power
+>> failure.
 >
-> My home fileserver has been running zfs for about 5 years, on a system
-> maxed out at 4GB RAM. Currently up to ~9TB of data. The only stability
-> problems I ever had were towards the beginning when I was using
-> zfs-fuse because zfsonlinux wasn't ready then, *and* I was trying out
-> deduplication.
+> Very good explanation of why it's useful to have such an otherwise
+> destructive mount option even available in the first place.  Thanks! =3D=
+:^)
 >
-> I have a couple of work machines with 2GB RAM and pools currently
-> around 2.5TB full; no problems with these either in the couple of
-> years they've been in use, though granted these are lightly loaded
-> machines since what they mostly do is receive backup streams.
->
-> Bear in mind that these are Linux machines, and zfsonlinux's memory
-> management is known to be inferior to ZFS on Solaris and FreeBSD
-> (because it does not integrate with the page cache and instead grabs a
-> [configurable] chunk of memory, and doesn't always do a great job of
-> dropping it in response to memory pressure).
->
-I should qualify this further, in particular I meant using ZFS on Linux=20
-(not *BSD, they did an amazing job WRT stability), and actually taking=20
-advantage of the volume-management (ie, not just storing files on it,=20
-but also using zvols).  In essence, A better way to put it is that I've=20
-never seen a truly stable system using zfsonlinux with less than 16G or=20
-RAM which is using it for volume-management as well as file storage.
+The other reason, as has been pointed out in a different sub-thread, is=20
+that if you have a guaranteed good hardware RAID controller, which has a =
+
+known good built in non-volatile write cache, and you turn off=20
+write-reordering, and you turn off the write-caches on all the connected =
+
+hard drives, then it is relatively safe.  Of course, the chances of most =
+
+people actually meeting all those conditions is pretty slim.
 
 
---------------ms060501070301000103030104
+--------------ms010500010103050400010704
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -111,9 +108,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMxMDE5WjBPBgkq
-hkiG9w0BCQQxQgRABKEWFC/wVpK+Gh/t6zMEXn5fZIsSarvGLUiOpoZv/Mtx/9bNyP4Nfnz9
-TG6oVEnS3xfju6HrU5AkB/cQUs024jBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMxMjQzWjBPBgkq
+hkiG9w0BCQQxQgRA1lq/g9Bx2wwEmcJO6DOB03Qs7wiJL/QuvETp2nV525TGLQYzzLXfhF1K
+nD+woDKkl5Apfi38Ofl7HHw3wN84pTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -121,14 +118,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgCFDmUpiYG35q3+F5TR0Hl5Ior93Jzw0uV0W6VvsyScfpiasf1U
-dJlprycfYhyg8vJhiUY0X1i+bg6lT7bvGGG4PUcKg7Qr65Nh5gNAtqdxAMD1vmAeibteluHH
-EKCuiANs1g4y7szkj4cYrHRvmZ4dvON38fXPrYWUZCt2IBnCoAkjgfDu4haJAV8pA+VYynDX
-XaD1hD9trOCKVVMGjpfi0um9UzzJVTWl6qVJKhRnKWrNdLzCWuht+c11eNbw0c0a3IoAUIBF
-MPqCwsQuZPw72wP5w+Os+okfa1ZdMLFclfUXa3hY2ZC/s6fMx9DX2FYkeZSxc15IXM2jvYEm
-lXQeKcoMzOY8xVsmKJzMalIbSAXk36RtiEyi5YNaS7FAvlazqY0+f+Pwy0NkgiZQYBz3MRap
-l/hzMQ18UwK+MkuOi03Tz3fihBwrAeL5EOoEgaodi1vx/7uLiZBEVH38nbj0xl+Bybdn8ORF
-CK2IqRv4v8+V48vqlNPIAKpp0gMQpfwTJZa7+nWlk4T5ZgBYdrksDyhjFg87UugX6XbmONL9
-xp3Uzn3FYd3xdOO43CZsDGEslbGSl0DGa+ZQXY7BivoMeWjp1x7Z9cm3p5O59xv7pg8udznU
-nDNO5Gnxm4rYIHYVByS4DnJLroBS7TcumEuViZCyKCts80EZj1AFWMuNcAAAAAAAAA==
---------------ms060501070301000103030104--
+BgkqhkiG9w0BAQEFAASCAgAQLlHqy1XcFrzWl41x9w+QSNpeAActpvkmnPtKigPSFZ7evMqD
+gfE7YguuiAOViZZbCKel6y3JaP61KC0iNg4sW0tUN16trnGn6BKiYddfdj3ivSdZ7rL0KoFj
+xlzvaNjZlGoff5V/kjR4ScTs+MrdFU2ldPUwYqjNqYRk9H5fyqy26jzn7i8KJAxLdv6sWRik
+Q7h+Ve/x4LNdiAr22Pbg0bOiRUegEGBQ2Bobs22WJyAPQ7E6SSUvCWOCflQHa+q0C5QX64l+
+Xcff4jPlj2vIYQ4j2oY9zgsUGnVdI95dki6tBBkxftM75opWw1n3s3xIdQ2tccNjUCBRhoyp
+M2kr15IEjOPbngDQfG+9wS7ol1wohgMAdeAqRCbchbCsE2RsYnKoKthkNMCATEw+0ott1UmZ
+TykP7rXsWtPQ5ntpZyNEZPJIN0nJi9zLNIYX/WP5Nz6eSMjhgD1CGH/yuvmS8McvIoiFO9jZ
+jMK8A3a99pad5QFWgORjImEW9SP3Xn9WfA67ckcOaEnNuih2zRWsMEel/92mK5V/0IfrkS8U
+yORlwz2PgqLicEaa71RPzTBS7TEnNl2DKDSKn79uFfqxEqAa+8scn6bb4OqbV9aKCsoAVULj
+M7nMGUefzzkIsVaK6WPpxFK9dGwioR0ee8EVtDInc/9/vXUOeMHVvg/cbwAAAAAAAA==
+--------------ms010500010103050400010704--

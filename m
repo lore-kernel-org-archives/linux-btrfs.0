@@ -1,65 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:41909 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750957AbbIRGqs (ORCPT
+Received: from mout.kundenserver.de ([212.227.126.130]:64703 "EHLO
+	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752822AbbIRHfC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Sep 2015 02:46:48 -0400
-Message-ID: <55FBB2F7.4040402@oracle.com>
-Date: Fri, 18 Sep 2015 14:45:11 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Fri, 18 Sep 2015 03:35:02 -0400
+Received: from durkon.lan ([178.201.238.189]) by mrelayeu.kundenserver.de
+ (mreue004) with ESMTPSA (Nemesis) id 0MRhLp-1Z9zje3zpp-00SuIf for
+ <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 09:34:59 +0200
+Received: from g.menke.ac (haley.lan [192.168.2.21])
+	by durkon.lan (Postfix) with ESMTPSA id 18ED387CA
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 09:34:59 +0200 (CEST)
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs: Remove unneeded missing device number check
-References: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com> <1442375031-18212-2-git-send-email-quwenruo@cn.fujitsu.com> <55FA8B31.9080604@oracle.com> <55FA8F8B.6060903@gmx.com> <55FB6D31.9030504@oracle.com> <55FB71A8.3000004@cn.fujitsu.com>
-In-Reply-To: <55FB71A8.3000004@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Fri, 18 Sep 2015 09:34:58 +0200
+From: Gert Menke <gert@menke.ac>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS as image store for KVM?
+In-Reply-To: <20150917224154.GA23636@wheatley.student.rit.edu>
+References: <55F88ECC.1040604@menke.ac>
+ <pan$a7c37$760f233d$6b18271c$f9ac2029@cox.net> <55FAFEB8.6030404@menke.ac>
+ <20150917224154.GA23636@wheatley.student.rit.edu>
+Message-ID: <27fbc341985fb6d11e40b43d10d93a33@durkon.lan>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2015-09-18 00:41, Sean Greenslade wrote:
 
-Hi Qu,
+> MD is emulating hardware RAID. In hardware RAID, you are doing
+> work at the block level. Block-level RAID has no understanding of the
+> filesystem(s) running on top of it. Therefore it would have to checksum
+> groups of blocks, and store those checksums on the physical disks
+> somewhere, perhaps by keeping some portion of the drive for itself.
 
-  Thanks for the comments on patch [1].
+Of course.
 
-> For example, if one use single metadata for 2 disks,
- > and each disk has one metadata chunk on it.
+> But
+> then this is not very efficient, since it is maintaining checksums for
+> data that may be useless (blocks the FS is not currently using).
 
-  how that can be achieved ?
+Correct. But when a disk needs to be swapped you have the same problem - 
+the whole disk needs to be rewritten, because the RAID controller (or 
+software) does not know about the filesystem. TRIM might help in this 
+case.
 
-> One device got missing later.
+> So then
+> you might make the RAID filesystem aware...and you now have BTRFS RAID.
 
-  it would surely depend on which one of the device ? (initial only 
-devid 1 mountable, with other missing)
+Right. As long as I don't want to turn off COW.
 
+> Simply put, the block level is probably not an appropriate place for
+> checksumming to occur. BTRFS can make checksumming work much more
+> effectively and efficiently by doing it at the filesystem level.
 
-Thanks, Anand
+Well, yes and no. The Block level needs checksums to identify silent 
+data corruption - without access to the block layer, the fs can only 
+detect a faulty block, but cannot recover it, even in a raid setting. 
+And without access to the fs, the block layer is inefficient, as you 
+said. So, BTRFS and ZFS are doing the right thing by sacrificing the 
+strict boundary between block and fs layer, imo.
 
-> Then your patch will allow the fs to be mounted as rw, even some tree
-> block can be in the missing device.
-> For RO case, it won't be too dangerous, but if we mounted it as RW, who
-> knows what will happen.
-> (Normal tree COW thing should fail before real write, but I'm not sure
-> about other RW operation like scrub/replace/balance and others)
->
-> And I think that's the original design concept behind the old missing
-> device number check, and it's not a bad idea to follow it anyway.
->
-> For the patch size, I find a good idea to handle it, and should make the
-> patch(set) size below 200 lines.
->
-> Further more, it's even possible to make btrfs change mount option to
-> degraded for runtime device missing.
->
-> Thanks,
-> Qu
->>
->>   I tried to break both the approaches (this patch set and [1]) but I
->> wasn't successful. sorry if I am missing something.
->>
->> Thanks, Anand
->>
->> [1] [PATCH 23/23] Btrfs: allow -o rw,degraded for single group profile
-
-
-
+Gert

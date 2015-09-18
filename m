@@ -1,41 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from wendy.routify.me ([192.3.10.38]:42555 "EHLO wendy.routify.me"
+Received: from plane.gmane.org ([80.91.229.3]:45950 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751630AbbIQWt2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 18:49:28 -0400
-Date: Thu, 17 Sep 2015 18:41:54 -0400
-From: Sean Greenslade <sean@seangreenslade.com>
+	id S1752009AbbIRAfD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Sep 2015 20:35:03 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Zcjdk-0007Ds-Av
+	for linux-btrfs@vger.kernel.org; Fri, 18 Sep 2015 02:35:00 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 02:35:00 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 02:35:00 +0200
 To: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS as image store for KVM?
-Message-ID: <20150917224154.GA23636@wheatley.student.rit.edu>
-References: <55F88ECC.1040604@menke.ac>
- <pan$a7c37$760f233d$6b18271c$f9ac2029@cox.net>
- <55FAFEB8.6030404@menke.ac>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <55FAFEB8.6030404@menke.ac>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: FYIO: A rant about btrfs
+Date: Fri, 18 Sep 2015 00:34:54 +0000 (UTC)
+Message-ID: <pan$8db10$2ae04448$ef503df5$d1537993@cox.net>
+References: <20150916144355.GA1285@invalid> <55F988A6.8070109@gmail.com>
+	<A4269DC6-6CD6-4E8C-B3C9-5F5DDBE86911@up4.com>
+	<55F9B357.4070505@gmail.com>
+	<54A9EC91-FDFD-44A8-97B9-7347A89FA415@up4.com>
+	<20150916220856.GA23830@hungrycats.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 17, 2015 at 07:56:08PM +0200, Gert Menke wrote:
-> MD+LVM is very close to what I want, but md has no way to cope with silent
-> data corruption. So if I'd want to use a guest filesystem that has no
-> checksums either, I'm out of luck.
-> I'm honestly a bit confused here - isn't checksumming one of the most
-> obvious things to want in a software RAID setup? Is it a feature that might
-> appear in the future? Maybe I should talk to the md guys...
+Zygo Blaxell posted on Wed, 16 Sep 2015 18:08:56 -0400 as excerpted:
 
-MD is emulating hardware RAID. In hardware RAID, you are doing
-work at the block level. Block-level RAID has no understanding of the
-filesystem(s) running on top of it. Therefore it would have to checksum
-groups of blocks, and store those checksums on the physical disks
-somewhere, perhaps by keeping some portion of the drive for itself. But
-then this is not very efficient, since it is maintaining checksums for
-data that may be useless (blocks the FS is not currently using). So then
-you might make the RAID filesystem aware...and you now have BTRFS RAID.
+> On Wed, Sep 16, 2015 at 03:04:38PM -0400, Vincent Olivier wrote:
+>> 
+>> OK fine. Let it be clearer then (on the Btrfs wiki): nobarrier is an
+>> absolute no go. Case closed.
+> 
+> Sometimes it is useful to make an ephemeral filesystem, i.e. a btrfs on
+> a dm-crypt device with a random key that is not stored.  This
+> configuration intentionally and completely destroys the entire
+> filesystem, and all data on it, in the event of a power failure.  It's
+> useful for things like temporary table storage, where ramfs is too
+> small, swap-backed tmpfs is too slow, and/or there is a requirement that
+> the data not be persisted across reboots.
+> 
+> In other words, nobarrier is for a little better performance when you
+> already want to _intentionally_ destroy your filesystem on power
+> failure.
 
-Simply put, the block level is probably not an appropriate place for
-checksumming to occur. BTRFS can make checksumming work much more
-effectively and efficiently by doing it at the filesystem level.
+Very good explanation of why it's useful to have such an otherwise 
+destructive mount option even available in the first place.  Thanks! =:^)
 
---Sean
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

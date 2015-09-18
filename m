@@ -1,44 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:55600
-	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752784AbbIPOsM (ORCPT
+Received: from mail-pa0-f47.google.com ([209.85.220.47]:35197 "EHLO
+	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753271AbbIRS2G (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Sep 2015 10:48:12 -0400
+	Fri, 18 Sep 2015 14:28:06 -0400
+Received: by pacfv12 with SMTP id fv12so58412307pac.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 11:28:06 -0700 (PDT)
+Date: Fri, 18 Sep 2015 11:28:04 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH V2] Btrfs: keep dropped roots in cache until transaction
  commit
-To: Glyn Normington <gnormington@pivotal.io>, linux-btrfs@vger.kernel.org
-References: <CAA-6JZq+bL31eD5sxaLjwt41G68BzPjt=MJi4hTEgwvMXy3_ZA@mail.gmail.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>
-Message-ID: <55F98128.9060509@googlemail.com>
-Date: Wed, 16 Sep 2015 16:48:08 +0200
+Message-ID: <20150918182804.GB7341@mew>
+References: <1442326024-2536-1-git-send-email-jbacik@fb.com>
+ <55F83E34.3090900@googlemail.com>
+ <55F86CB1.5020503@googlemail.com>
+ <55F86E63.8050300@fb.com>
+ <55F92F20.2040603@googlemail.com>
+ <55F97399.7000407@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <CAA-6JZq+bL31eD5sxaLjwt41G68BzPjt=MJi4hTEgwvMXy3_ZA@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <55F97399.7000407@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Glyn :)
-
-On 09/16/15 16:31, Glyn Normington wrote:
-> We are seeing a very similar problem fwiw. Unfortunately we can't
-> reproduce this reliably, but it is cropping up regularly. Here's a
-> chore we are using to track our work on this: [2].
+On Wed, Sep 16, 2015 at 09:50:17AM -0400, Josef Bacik wrote:
+> On 09/16/2015 04:58 AM, Holger Hoffstätte wrote:
+> >On 09/15/15 21:15, Josef Bacik wrote:
+> >>On 09/15/2015 03:08 PM, Holger Hoffstätte wrote:
+> >>>On 09/15/15 17:50, Holger Hoffstätte wrote:
+> >>>>This V2 does indeed seem to fix the issues I reported with snapshot
+> >>>>deletion & concurrent sync. I've now created/filled/deleted countless
+> >>>>snapshots while issuing sync(s) in parallel, and the problem that I
+> >>>>saw fairly frequently with V1 no longer seems to occur here.
+> >>>
+> >>>Well..I may have spoken too soon:
+> >>
+> >>Huh this doesn't seem related to my stuff.  Can I have your script
+> >>you are running to reproduce this?  Thanks,
+> >>
+> >>Josef
+> >
+> >It seemed to be related to Omar's free-space-tree - I saw the same bug
+> >a bit later on a different device without snapshot deletion, just
+> >deleting two large files. Sorry for the false positive.
+> >
 > 
-> Here's the kernel log:
+> Omar, do you have time to look into this?  Were they highly fragmented files
+> or just giant contiguous files?  Thanks,
 > 
-> [610194.395845] WARNING: CPU: 3 PID: 29166 at
-> /build/linux-lts-vivid-BZwsXG/linux-lts-vivid-3.19.0/fs/btrfs/super.c:260
-> __btrfs_abort_transaction+0x54/0x130 [btrfs]()
+> Josef
+> 
 
-This is an entirely different problem and may have long been fixed;
-I count at least 6 patches for tx aborts in my 4.1++ tree alone.
-We're talking about patches that I can guarantee you are not running.
+Yeah, I'll take a look over the weekend or next week at the latest.
 
-If Pivotal needs some help with stable btrfs backport fixes I might be
-able to resurrect my old 3.19 patch queue (check my Github!), but this
-is close to Zombie Olympics.. :)
-
-cheers
-Holger
-
+-- 
+Omar

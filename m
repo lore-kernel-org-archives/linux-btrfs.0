@@ -1,77 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48321 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752043AbbIRBhH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 21:37:07 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zckbo-0004Ew-VG
-	for linux-btrfs@vger.kernel.org; Fri, 18 Sep 2015 03:37:04 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 03:37:04 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 03:37:04 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID1 storage server won't boot with one disk missing
-Date: Fri, 18 Sep 2015 01:36:50 +0000 (UTC)
-Message-ID: <pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
-References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
-	<55FAD9CC.5060206@oracle.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:25624 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752415AbbIRBtC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Sep 2015 21:49:02 -0400
+Message-ID: <55FB6D31.9030504@oracle.com>
+Date: Fri, 18 Sep 2015 09:47:29 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: Remove unneeded missing device number check
+References: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com> <1442375031-18212-2-git-send-email-quwenruo@cn.fujitsu.com> <55FA8B31.9080604@oracle.com> <55FA8F8B.6060903@gmx.com>
+In-Reply-To: <55FA8F8B.6060903@gmx.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Anand Jain posted on Thu, 17 Sep 2015 23:18:36 +0800 as excerpted:
 
->> What I expected to happen:
->> I expected that the [btrfs raid1 data/metadata] system would either
->> start as if nothing were wrong, or would warn me that one half of the
->> mirror was missing and ask if I really wanted to start the system with
->> the root array in a degraded state.
-> 
-> as of now it would/should start normally only when there is an entry
-> -o degraded
-> 
-> it looks like -o degraded is going to be a very obvious feature,
-> I have plans of making it a default feature, and provide -o nodegraded
-> feature instead. Thanks for comments if any.
 
-As Chris Murphy, I have my doubts about this, and think it's likely to 
-cause as many unhappy users as it prevents.
+On 09/17/2015 06:01 PM, Qu Wenruo wrote:
+> Thanks for pointing this out.
 
-I'd definitely put -o nodegraded in my default options here, so it's not 
-about me, but about all those others that would end up running a silently 
-degraded system and have no idea until it's too late, as further devices 
-have failed or the one single other available copy of something important 
-(remember, still raid1 without N-mirrors option, unfortunately, so if a 
-device drops out, that's now data/metadata with only a single valid copy 
-regardless of the number of devices, and if it goes invalid...) fails 
-checksum for whatever reason.
 
-And since it only /allows/ degraded, not forcing it, if admins or distros 
-want it as the default, -o degraded can be added now.  Nothing's stopping 
-them except lack of knowledge of the option, the *same* lack of knowledge 
-that would potentially cause so much harm if the default were switched.
+> Although previous patch is small enough, but for remount case, we need
+> to iterate all the existing chunk cache.
 
-Put it this way.  With the current default, if it fails and people have 
-to ask about the unexpected failure here, no harm to existing data done, 
-just add -o degraded and get on with things.  If -o degraded were made 
-the default, failure mode would be *MUCH* worse, potential loss of the 
-entire filesystem due to silent and thus uncorrected device loss and 
-degraded mounting.
+  yes indeed.
 
-So despite the inconvenience of less knowledgeable people losing the 
-availability of the filesystem until they can read the wiki or ask about 
-it here, I don't believe changing the default to -o degraded is wise, at 
-all.
+  thinking hard on this - is there any test-case that these two patches 
+are solving, which the original patch [1] didn't solve ?
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+  I tried to break both the approaches (this patch set and [1]) but I 
+wasn't successful. sorry if I am missing something.
 
+Thanks, Anand
+
+[1] [PATCH 23/23] Btrfs: allow -o rw,degraded for single group profile
+
+
+> So fix for remount will take a little more time.
+
+> Thanks for reviewing.
+> Qu
+>
+> 在 2015年09月17日 17:43, Anand Jain 写道:
+>>
+>>
+>> On 09/16/2015 11:43 AM, Qu Wenruo wrote:
+>>> As we do per-chunk missing device number check at read_one_chunk() time,
+>>> it's not needed to do global missing device number check.
+>>>
+>>> Just remove it.
+>>
+>> However the missing device count, what we have during the remount is not
+>> fine grained per chunk.
+>> -----------
+>> btrfs_remount
+>> ::
+>>                   if (fs_info->fs_devices->missing_devices >
+>>                       fs_info->num_tolerated_disk_barrier_failures &&
+>>                      !(*flags & MS_RDONLY ||
+>>                          btrfs_test_opt(root, DEGRADED))) {
+>>                          btrfs_warn(fs_info,
+>>                                  "too many missing devices, writeable
+>> remount is not allowed");
+>>                          ret = -EACCES;
+>>                          goto restore;
+>>                  }
+>> ---------
+>>
+>> Thanks, Anand
+>>
+>>
+>>> Now btrfs can handle the following case:
+>>>   # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+>>>
+>>>   Data chunk will be located in sdb, so we should be safe to wipe sdc
+>>>   # wipefs -a /dev/sdc
+>>>
+>>>   # mount /dev/sdb /mnt/btrfs -o degraded
+>>>
+>>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>>> ---
+>>>   fs/btrfs/disk-io.c | 8 --------
+>>>   1 file changed, 8 deletions(-)
+>>>
+>>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+>>> index 0b658d0..ac640ea 100644
+>>> --- a/fs/btrfs/disk-io.c
+>>> +++ b/fs/btrfs/disk-io.c
+>>> @@ -2947,14 +2947,6 @@ retry_root_backup:
+>>>       }
+>>>       fs_info->num_tolerated_disk_barrier_failures =
+>>>           btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+>>> -    if (fs_info->fs_devices->missing_devices >
+>>> -         fs_info->num_tolerated_disk_barrier_failures &&
+>>> -        !(sb->s_flags & MS_RDONLY)) {
+>>> -        pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d),
+>>> writeable mount is not allowed\n",
+>>> -            fs_info->fs_devices->missing_devices,
+>>> -            fs_info->num_tolerated_disk_barrier_failures);
+>>> -        goto fail_sysfs;
+>>> -    }
+>>>
+>>>       fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+>>>                              "btrfs-cleaner");
+>>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

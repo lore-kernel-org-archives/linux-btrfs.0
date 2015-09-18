@@ -1,244 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18131 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752043AbbIRA71 convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 20:59:27 -0400
-Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
- rebalance
-To: =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
- <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
- <532aadf0f92d08d3d2b274173548aee1@all.all>
- <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
- <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
- <0973de930ee87e102c533c719807b748@all.all>
- <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
- <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
- <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all> <55FA60C5.5090002@cn.fujitsu.com>
- <7a6f2d794fb6cbf7d598b92e3470201c@all.all> <55FA759E.6030707@cn.fujitsu.com>
- <3386a8bfa1a5796460306a53a668e47e@all.all> <55FA98D8.5010301@gmx.com>
- <53a5553a9c5301789e246144bb264e43@all.all>
-CC: <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55FB61E9.4000300@cn.fujitsu.com>
-Date: Fri, 18 Sep 2015 08:59:21 +0800
-MIME-Version: 1.0
-In-Reply-To: <53a5553a9c5301789e246144bb264e43@all.all>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:48321 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752043AbbIRBhH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Sep 2015 21:37:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Zckbo-0004Ew-VG
+	for linux-btrfs@vger.kernel.org; Fri, 18 Sep 2015 03:37:04 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 03:37:04 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 03:37:04 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: RAID1 storage server won't boot with one disk missing
+Date: Fri, 18 Sep 2015 01:36:50 +0000 (UTC)
+Message-ID: <pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
+References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
+	<55FAD9CC.5060206@oracle.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Anand Jain posted on Thu, 17 Sep 2015 23:18:36 +0800 as excerpted:
 
+>> What I expected to happen:
+>> I expected that the [btrfs raid1 data/metadata] system would either
+>> start as if nothing were wrong, or would warn me that one half of the
+>> mirror was missing and ask if I really wanted to start the system with
+>> the root array in a degraded state.
+> 
+> as of now it would/should start normally only when there is an entry
+> -o degraded
+> 
+> it looks like -o degraded is going to be a very obvious feature,
+> I have plans of making it a default feature, and provide -o nodegraded
+> feature instead. Thanks for comments if any.
 
-Stéphane Lesimple wrote on 2015/09/17 20:47 +0200:
-> Le 2015-09-17 12:41, Qu Wenruo a écrit :
->>> In the meantime, I've reactivated quotas, umounted the filesystem and
->>> ran a btrfsck on it : as you would expect, there's no qgroup problem
->>> reported so far.
->>
->> At least, rescan code is working without problem.
->>
->>> I'll clear all my snapshots, run an quota rescan, then
->>> re-create them one by one by rsyncing from my ext4 system I still have.
->>> Maybe I'll run into the issue again.
->>>
->>
->> Would you mind to do the following check for each subvolume rsync?
->>
->> 1) Do 'sync; btrfs qgroup show -prce --raw' and save the output
->> 2) Create the needed snapshot
->> 3) Do 'sync; btrfs qgroup show -prce --raw' and save the output
->> 4) Avoid doing IO if possible until step 6)
->> 5) Do 'btrfs quota rescan -w' and save it
->> 6) Do 'sync; btrfs qgroup show -prce --raw' and save the output
->> 7) Rsync data from ext4 to the newly created snapshot
->>
->> The point is, as you mentioned, rescan is working fine, we can compare
->> output from 3), 6) and 1) to see which qgroup accounting number
->> changes.
->>
->> And if differs, which means the qgroup update at write time OR
->> snapshot creation has something wrong, at least we can locate the
->> problem to qgroup update routine or snapshot creation.
->
-> I was about to do that, but first there's something that sounds strange
-> : I've begun by trashing all my snapshots, then ran a quota rescan, and
-> waited for it to complete, to start on a sane base.
-> However, this is the output of qgroup show now :
+As Chris Murphy, I have my doubts about this, and think it's likely to 
+cause as many unhappy users as it prevents.
 
-By "trashing", did you mean deleting all the files inside the subvolume?
-Or "btrfs subv del"?
+I'd definitely put -o nodegraded in my default options here, so it's not 
+about me, but about all those others that would end up running a silently 
+degraded system and have no idea until it's too late, as further devices 
+have failed or the one single other available copy of something important 
+(remember, still raid1 without N-mirrors option, unfortunately, so if a 
+device drops out, that's now data/metadata with only a single valid copy 
+regardless of the number of devices, and if it goes invalid...) fails 
+checksum for whatever reason.
 
->
-> qgroupid          rfer                 excl     max_rfer     max_excl
-> parent  child
-> --------          ----                 ----     --------     --------
-> ------  -----
-> 0/5              16384                16384         none         none
-> ---     ---
-> 0/1906   1657848029184        1657848029184         none         none
-> ---     ---
-> 0/1909    124950921216         124950921216         none         none
-> ---     ---
-> 0/1911   1054587293696        1054587293696         none         none
-> ---     ---
-> 0/3270     23727300608          23727300608         none         none
-> ---     ---
-> 0/3314     23206055936          23206055936         none         none
-> ---     ---
-> 0/3317     18472996864                    0         none         none
-> ---     ---
-> 0/3318     22235709440 18446744073708421120         none         none
-> ---     ---
-> 0/3319     22240333824                    0         none         none
-> ---     ---
-> 0/3320     22289608704                    0         none         none
-> ---     ---
-> 0/3321     22289608704                    0         none         none
-> ---     ---
-> 0/3322     18461151232                    0         none         none
-> ---     ---
-> 0/3323     18423902208                    0         none         none
-> ---     ---
-> 0/3324     18423902208                    0         none         none
-> ---     ---
-> 0/3325     18463506432                    0         none         none
-> ---     ---
-> 0/3326     18463506432                    0         none         none
-> ---     ---
-> 0/3327     18463506432                    0         none         none
-> ---     ---
-> 0/3328     18463506432                    0         none         none
-> ---     ---
-> 0/3329     18585427968                    0         none         none
-> ---     ---
-> 0/3330     18621472768 18446744073251348480         none         none
-> ---     ---
-> 0/3331     18621472768                    0         none         none
-> ---     ---
-> 0/3332     18621472768                    0         none         none
-> ---     ---
-> 0/3333     18783076352                    0         none         none
-> ---     ---
-> 0/3334     18799804416                    0         none         none
-> ---     ---
-> 0/3335     18799804416                    0         none         none
-> ---     ---
-> 0/3336     18816217088                    0         none         none
-> ---     ---
-> 0/3337     18816266240                    0         none         none
-> ---     ---
-> 0/3338     18816266240                    0         none         none
-> ---     ---
-> 0/3339     18816266240                    0         none         none
-> ---     ---
-> 0/3340     18816364544                    0         none         none
-> ---     ---
-> 0/3341      7530119168           7530119168         none         none
-> ---     ---
-> 0/3342      4919283712                    0         none         none
-> ---     ---
-> 0/3343      4921724928                    0         none         none
-> ---     ---
-> 0/3344      4921724928                    0         none         none
-> ---     ---
-> 0/3345      6503317504 18446744073690902528         none         none
-> ---     ---
-> 0/3346      6503452672                    0         none         none
-> ---     ---
-> 0/3347      6509514752                    0         none         none
-> ---     ---
-> 0/3348      6515793920                    0         none         none
-> ---     ---
-> 0/3349      6515793920                    0         none         none
-> ---     ---
-> 0/3350      6518685696                    0         none         none
-> ---     ---
-> 0/3351      6521511936                    0         none         none
-> ---     ---
-> 0/3352      6521511936                    0         none         none
-> ---     ---
-> 0/3353      6521544704                    0         none         none
-> ---     ---
-> 0/3354      6597963776                    0         none         none
-> ---     ---
-> 0/3355      6598275072                    0         none         none
-> ---     ---
-> 0/3356      6635880448                    0         none         none
-> ---     ---
-> 0/3357      6635880448                    0         none         none
-> ---     ---
-> 0/3358      6635880448                    0         none         none
-> ---     ---
-> 0/3359      6635880448                    0         none         none
-> ---     ---
-> 0/3360      6635880448                    0         none         none
-> ---     ---
-> 0/3361      6635880448                    0         none         none
-> ---     ---
-> 0/3362      6635880448                    0         none         none
-> ---     ---
-> 0/3363      6635880448                    0         none         none
-> ---     ---
-> 0/3364      6635880448                    0         none         none
-> ---     ---
-> 0/3365      6635880448                    0         none         none
-> ---     ---
-> 0/3366      6635896832                    0         none         none
-> ---     ---
-> 0/3367     24185790464          24185790464         none         none
-> ---     ---
->
+And since it only /allows/ degraded, not forcing it, if admins or distros 
+want it as the default, -o degraded can be added now.  Nothing's stopping 
+them except lack of knowledge of the option, the *same* lack of knowledge 
+that would potentially cause so much harm if the default were switched.
 
-Nooooo!! What a wired result here!
-Qg 3345 is having minus number again, even after a qgroup rescan....
-IIRC, from the code, rescan is just passing old_roots as NULL, and use 
-correct new_roots to build up "rfer" and "excl".
-So in theory it should never go below zero in rescan.
+Put it this way.  With the current default, if it fails and people have 
+to ask about the unexpected failure here, no harm to existing data done, 
+just add -o degraded and get on with things.  If -o degraded were made 
+the default, failure mode would be *MUCH* worse, potential loss of the 
+entire filesystem due to silent and thus uncorrected device loss and 
+degraded mounting.
 
-The only hope for me is, that's a orphan qgroup.(mentioned below)
+So despite the inconvenience of less knowledgeable people losing the 
+availability of the filesystem until they can read the wiki or ask about 
+it here, I don't believe changing the default to -o degraded is wise, at 
+all.
 
-> I would have expected all these qgroupids to have been trashed with the
-> snapshots, but it seems not. It reminded me of the bug you were talking
-> about, where deleted snapshots don't always clear correctly their
-> qgroup, but as these don't disappear after a rescan either... I'm a bit
-> surprised.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-If you mean you "btrfs qgroup del" the subvolume, then it's known the 
-qgroup won't be deleted, and won't be associated to any subvolume.
-(It's possible later created subvolume uses the old subvolid, and be 
-associated to the qgroup again).
-
-If above qgroups with 0 or even minus "excl" number are orphan, I'll be 
-much relieved, as it'll be a minor orphan qgroup bug other than another 
-possible qgroup rework(or at least huge review).
-
->
-> I've just tried quota disable / quota enable, and not it seems OK. Just
-> wanted to let you know, in case it's not known behavior ...
-
-Thanks for your info a lot, which indeed expose something we didn't take 
-much consideration.
-
-And if the qgroups are the same with above description, would you mind 
-to remove these qgroups?
-
->
-> The procedure I'll use will be slighlty different from what you
-> proposed, but to my understanding it won't change the result :
->
->> 0) Rsync data from the next ext4 "snapshot" to the subvolume
->> 1) Do 'sync; btrfs qgroup show -prce --raw' and save the output
->> 2) Create the needed readonly snapshot on btrfs
->> 3) Do 'sync; btrfs qgroup show -prce --raw' and save the output
->> 4) Avoid doing IO if possible until step 6)
->> 5) Do 'btrfs quota rescan -w' and save it
->> 6) Do 'sync; btrfs qgroup show -prce --raw' and save the output
->
-> I'll post the results once this is done.
->
-
-Thanks a lot!
-Qu

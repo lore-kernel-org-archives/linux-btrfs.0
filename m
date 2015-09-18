@@ -1,94 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:33091 "EHLO
-	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751068AbbIRNGQ (ORCPT
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:33953 "EHLO
+	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751068AbbIRNKd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Sep 2015 09:06:16 -0400
-Received: by iofh134 with SMTP id h134so55465856iof.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:06:15 -0700 (PDT)
+	Fri, 18 Sep 2015 09:10:33 -0400
+Received: by igcpb10 with SMTP id pb10so35219900igc.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:10:32 -0700 (PDT)
 Subject: Re: FYIO: A rant about btrfs
-To: Martin Steigerwald <martin@lichtvoll.de>, Hugo Mills <hugo@carfax.org.uk>,
-        Zia Nayamuth <zedestructor@gmail.com>, linux-btrfs@vger.kernel.org
-References: <20150916144355.GA1285@invalid> <55F9BE3B.6070309@gmail.com>
- <20150916232930.GD28645@carfax.org.uk> <5147353.qIsJnOkqhM@merkaba>
+To: Aneurin Price <aneurin.price@gmail.com>
+References: <20150916144355.GA1285@invalid> <55F988A6.8070109@gmail.com>
+ <CABL_Pd8nOj7B1_64Us+goP=corZkCtw_WJW8eMQpiP6iQpw=HA@mail.gmail.com>
+ <55F9C136.3080800@gmail.com>
+ <CAHb+SPDaU-FBD2b2UN+ecubZcmzX=7KKk_7PgstCpUgmVb=YuQ@mail.gmail.com>
+Cc: Martin Tippmann <martin.tippmann@gmail.com>, linux-btrfs@vger.kernel.org
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55FC0C3A.9080702@gmail.com>
-Date: Fri, 18 Sep 2015 09:06:02 -0400
+Message-ID: <55FC0D3B.9070805@gmail.com>
+Date: Fri, 18 Sep 2015 09:10:19 -0400
 MIME-Version: 1.0
-In-Reply-To: <5147353.qIsJnOkqhM@merkaba>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080702060902050805090605"
+In-Reply-To: <CAHb+SPDaU-FBD2b2UN+ecubZcmzX=7KKk_7PgstCpUgmVb=YuQ@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060501070301000103030104"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080702060902050805090605
-Content-Type: text/plain; charset=windows-1252; format=flowed
+--------------ms060501070301000103030104
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-09-17 11:57, Martin Steigerwald wrote:
-> Am Mittwoch, 16. September 2015, 23:29:30 CEST schrieb Hugo Mills:
->>> but even then having write-barriers
->>> turned off is still not as safe as having them turned on.  Most of
->>> the time when I've tried testing with 'nobarrier' (not just on BTRFS
->>> but on ext* as well), I had just as many issues with data loss when
->>> the system crashed as when it (simlated via killing the virtual
->>> machine) lost power.  Both journaling and COW filesystems need to
->>> ensure ordering of certain write operations to be able to maintain
->>> consistency.  For example, the new/updated data blocks need to be on
->>> disk before the metadata is updated to point to them, otherwise you
->>> database can end up corrupted.
->>
->>     Indeed. The barriers are an ordering condition. The FS relies on
->> (i.e. *requires*) that ordering condition, in order to be truly
->> consistent. Running with "nobarrier" is a very strong signal that you
->> really don't care about the data on the FS.
->>
->>     This is not a case of me simply believing that because I've been
->> using btrfs for so long that I've got used to the peculiarities. The
->> first time I heard about the nobarrier option, something like 6 years
->> ago when I was first using btrfs, I thought "that's got to be a really=
-
->> silly idea". Any complex data structure, like a filesystem, is going
->> to rely on some kind of ordering guarantees, somewhere in its
->> structure. (The ordering might be strict, with a global clock, or
->> barrier-based, or lattice-like, as for example a vector clock, but
->> there's going to be _some_ concept of order). nobarrier allows the FS
->> to ignore those guarantees, and even without knowing anything about
->> the FS at all, doing so is a big red DANGER flag.
+On 2015-09-17 10:52, Aneurin Price wrote:
+> On 16 September 2015 at 20:21, Austin S Hemmelgarn <ahferroin7@gmail.co=
+m> wrote:
+>> ZFS has been around for much longer, it's been mature and feature comp=
+lete for more than a decade, and has had a long time to improve performan=
+ce wise.  It is important to note though, that on low-end hardware, BTRFS=
+ can (and often does in my experience) perform better than ZFS, because Z=
+FS is a serious resource hog (I have yet to see a stable ZFS deployment w=
+ith less than 16G of RAM, even with all the fancy features turned off).
 >
-> Official recommendation for XFS differs from that:
+> If you have a real example of ZFS becoming unstable with, say, 4 or
+> 8GB of memory, that doesn't involve attempting deduplication (which I
+> guess is what you mean by 'all the fancy features') on a many-TB pool,
+> I'd be interested to hear about it. (Psychic debugger says 'possibly
+> somebody trying to use a large L2ARC on a pool with many/large zvols')
 >
->   Q. Should barriers be enabled with storage which has a persistent wri=
-te
-> cache?
+> My home fileserver has been running zfs for about 5 years, on a system
+> maxed out at 4GB RAM. Currently up to ~9TB of data. The only stability
+> problems I ever had were towards the beginning when I was using
+> zfs-fuse because zfsonlinux wasn't ready then, *and* I was trying out
+> deduplication.
 >
-> Many hardware RAID have a persistent write cache which preserves it acr=
-oss
-> power failure, interface resets, system crashes, etc. Using write barri=
-ers in
-> this instance is not recommended and will in fact lower performance.
-> Therefore, it is recommended to turn off the barrier support and mount =
-the
-> filesystem with "nobarrier", assuming your RAID controller is infallibl=
-e and
-> not resetting randomly like some common ones do. But take care about th=
-e hard
-> disk write cache, which should be off.
+> I have a couple of work machines with 2GB RAM and pools currently
+> around 2.5TB full; no problems with these either in the couple of
+> years they've been in use, though granted these are lightly loaded
+> machines since what they mostly do is receive backup streams.
 >
-> http://xfs.org/index.php/
-> XFS_FAQ#Q._Should_barriers_be_enabled_with_storage_which_has_a_persiste=
-nt_write_cache.
-> 3F
-There's a difference there still, XFS isn't quite as dependent on=20
-ordering as BTRFS is, and they're also giving some other strict=20
-rquirements (hard-disk write-cache being off (which I see a rather large =
+> Bear in mind that these are Linux machines, and zfsonlinux's memory
+> management is known to be inferior to ZFS on Solaris and FreeBSD
+> (because it does not integrate with the page cache and instead grabs a
+> [configurable] chunk of memory, and doesn't always do a great job of
+> dropping it in response to memory pressure).
+>
+I should qualify this further, in particular I meant using ZFS on Linux=20
+(not *BSD, they did an amazing job WRT stability), and actually taking=20
+advantage of the volume-management (ie, not just storing files on it,=20
+but also using zvols).  In essence, A better way to put it is that I've=20
+never seen a truly stable system using zfsonlinux with less than 16G or=20
+RAM which is using it for volume-management as well as file storage.
 
-number of people ignore), and a high-end RAID controller).
 
-
-
---------------ms080702060902050805090605
+--------------ms060501070301000103030104
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -130,9 +111,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMwNjAyWjBPBgkq
-hkiG9w0BCQQxQgRAD3/bY11MdoFkHzH+SFlH1EEPvfVtcOyxc+j/gdt/LtH2BzTdDwRYKjFr
-ZpBwAlsP32PkGf0P7TEZt/vygVWZtTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMxMDE5WjBPBgkq
+hkiG9w0BCQQxQgRABKEWFC/wVpK+Gh/t6zMEXn5fZIsSarvGLUiOpoZv/Mtx/9bNyP4Nfnz9
+TG6oVEnS3xfju6HrU5AkB/cQUs024jBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -140,14 +121,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgAUVteoSmvCSISqw3+b3WpMtxGjtGSpuNNVchQv72HAbf8AGVYU
-ku9cbZ1WI1PtQpKje67UpYHD5Q1LKN+0WVTiA+VnLZ51PTsQshaVtLvCjfVZE5E81r0IYH2P
-wbFHzT3WOFGAatvLe9IkD1uoJQHv0ELIfQ/JjmxdbUqSn+WnkVx07onEkvVI3/5wMkHW0NqI
-joeOxKdskQzItNNCX7GhIwEMMIM4miS7LYxlY0zYUA8AeOFBPP2Cd2oRGY4ipCr72X9bfVP4
-jL164VUw1Yb8nlFNfH0p4CovSloim713yr9V3HpeudgdnQiUt1QIfjLN9bO+XhXrjyfP6k/T
-llOz10ltMvZIZap/u02JtNrAblrArHXwouXGlBDqtiH7Y8MoqZVhbTMEbfwIT6rznjO1AkkQ
-LDbblV/qbJqmJzmavYZaCPgJzytcdETXE5pAEKjAqQ4mg1gzQ30EJlp7NHFExXVr5bMzNSaM
-QeadrCeQmtCKC7C8XL1AcM+zFXsp1pcQMamUcxlnwK50xX8vUT5bspPKFjbvhlYKBLEGfpNa
-5x9qQRMupRwdO4vvsiEa1Dagqeb7n9zR6MhHM+QOl/0hJ5xDmb24UTL63ds/L9f44/vMdgkD
-ccUya18A+67uOjm1SPi4kEBtSN9iuTJ/LcLqHDNd4G/cjiZ0D1psCH+k/AAAAAAAAA==
---------------ms080702060902050805090605--
+BgkqhkiG9w0BAQEFAASCAgCFDmUpiYG35q3+F5TR0Hl5Ior93Jzw0uV0W6VvsyScfpiasf1U
+dJlprycfYhyg8vJhiUY0X1i+bg6lT7bvGGG4PUcKg7Qr65Nh5gNAtqdxAMD1vmAeibteluHH
+EKCuiANs1g4y7szkj4cYrHRvmZ4dvON38fXPrYWUZCt2IBnCoAkjgfDu4haJAV8pA+VYynDX
+XaD1hD9trOCKVVMGjpfi0um9UzzJVTWl6qVJKhRnKWrNdLzCWuht+c11eNbw0c0a3IoAUIBF
+MPqCwsQuZPw72wP5w+Os+okfa1ZdMLFclfUXa3hY2ZC/s6fMx9DX2FYkeZSxc15IXM2jvYEm
+lXQeKcoMzOY8xVsmKJzMalIbSAXk36RtiEyi5YNaS7FAvlazqY0+f+Pwy0NkgiZQYBz3MRap
+l/hzMQ18UwK+MkuOi03Tz3fihBwrAeL5EOoEgaodi1vx/7uLiZBEVH38nbj0xl+Bybdn8ORF
+CK2IqRv4v8+V48vqlNPIAKpp0gMQpfwTJZa7+nWlk4T5ZgBYdrksDyhjFg87UugX6XbmONL9
+xp3Uzn3FYd3xdOO43CZsDGEslbGSl0DGa+ZQXY7BivoMeWjp1x7Z9cm3p5O59xv7pg8udznU
+nDNO5Gnxm4rYIHYVByS4DnJLroBS7TcumEuViZCyKCts80EZj1AFWMuNcAAAAAAAAA==
+--------------ms060501070301000103030104--

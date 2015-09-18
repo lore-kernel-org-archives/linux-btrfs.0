@@ -1,109 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:33179 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751068AbbIRN3v (ORCPT
+Received: from mail-io0-f176.google.com ([209.85.223.176]:34793 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752031AbbIRONk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Sep 2015 09:29:51 -0400
-Received: by igbkq10 with SMTP id kq10so35613936igb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:29:50 -0700 (PDT)
-Subject: Re: RAID1 storage server won't boot with one disk missing
-To: Chris Murphy <lists@colorremedies.com>, Roman Mamedov <rm@romanrm.net>
-References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
- <55FAD9CC.5060206@oracle.com> <55FAF198.2060106@libero.it>
- <20150918000205.6e8f3998@natsu>
- <CAJCQCtQ10SJAPca8quhdi-oK1rJV2rcfY0QZFqx11u9ntyDRYA@mail.gmail.com>
+	Fri, 18 Sep 2015 10:13:40 -0400
+Received: by iofb144 with SMTP id b144so57817614iof.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 07:13:40 -0700 (PDT)
+Subject: Re: BTRFS as image store for KVM?
+To: Chris Murphy <lists@colorremedies.com>, Gert Menke <gert@menke.ac>
+References: <55F88ECC.1040604@menke.ac>
+ <pan$a7c37$760f233d$6b18271c$f9ac2029@cox.net> <55FAFEB8.6030404@menke.ac>
+ <CAJCQCtR_3eiWWmpJHC9RT4EJOzUb_AmrQkkm0X4R0OE4FYUHMQ@mail.gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55FC11C4.60506@gmail.com>
-Date: Fri, 18 Sep 2015 09:29:40 -0400
+Message-ID: <55FC1C09.7030006@gmail.com>
+Date: Fri, 18 Sep 2015 10:13:29 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQ10SJAPca8quhdi-oK1rJV2rcfY0QZFqx11u9ntyDRYA@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030007080401000505060808"
+In-Reply-To: <CAJCQCtR_3eiWWmpJHC9RT4EJOzUb_AmrQkkm0X4R0OE4FYUHMQ@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010402000408010803000508"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms030007080401000505060808
+--------------ms010402000408010803000508
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-09-17 16:18, Chris Murphy wrote:
-> On Thu, Sep 17, 2015 at 1:02 PM, Roman Mamedov <rm@romanrm.net> wrote:
->> On Thu, 17 Sep 2015 19:00:08 +0200
->> Goffredo Baroncelli <kreijack@libero.it> wrote:
+On 2015-09-17 14:35, Chris Murphy wrote:
+> On Thu, Sep 17, 2015 at 11:56 AM, Gert Menke <gert@menke.ac> wrote:
+>> Hi,
 >>
->>> On 2015-09-17 17:18, Anand Jain wrote:
->>>>   it looks like -o degraded is going to be a very obvious feature,
->>>>   I have plans of making it a default feature, and provide -o
->>>>   nodegraded feature instead. Thanks for comments if any.
->>>>
->>> I am not sure if there is a "good" default for this kind of problem
+>> thank you for your answers!
 >>
->> Yes there is. It is whatever people came to expect from using other RA=
-ID
->> systems and/or generally expect from RAID as a concept.
+>> So it seems there are several suboptimal alternatives here...
 >>
->> Both mdadm software RAID, and I believe virtually any hardware RAID co=
-ntroller
->> out there will let you to successfully boot up and give read-write(!) =
-access
->> to a RAID in a non-critical failure state, because that's kind of the =
-whole
->> point of a RAID, to eliminate downtime. If the removed disk is later r=
-e-added,
->> then it is automatically resynced. Mdadm can also make use of its 'wri=
-te
->> intent bitmap' to resync only those areas of the array which were in a=
-ny way
->> touched during the absence of the newly re-added disk.
->>
->> If you're concerned that the user "misses" the fact that they have a d=
-isk
->> down, then solve *that*, make some sort of a notify daemon, e.g. mdadm=
- has a
->> built-in "monitor" mode which sends E-Mail on critical events with any=
- of the
->> arrays.
+>> MD+LVM is very close to what I want, but md has no way to cope with si=
+lent
+>> data corruption. So if I'd want to use a guest filesystem that has no
+>> checksums either, I'm out of luck.
 >
-> Given the current state: no proposal and no work done yet, I think
-> it's premature to change the default.
+> You can use Btrfs in the guest to get at least notification of SDC. If
+> you want recovery also then that's a bit more challenging. The way
+> this has been done up until ZFS and Btrfs is T10 DIF (PI). There are
+> already checksums on the drive, but this adds more checksums that can
+> be confirmed through the entire storage stack, not just internal to
+> the drive hardware.
 >
-> It's an open question what a modern monitoring and notification
-> mechanism should look like. At the moment it'd be a unique Btrfs thing
-> because the mdadm and LVM methods aren't abstracted enough to reuse. I
-> wonder if the storaged and/or openlmi folks have some input on what
-> this would look like. Feedback from KDE and GNOME also, who rely on at
-> least mdadm in order to present user space notifications. I think
-> udisks2 is on the way out and storaged is on the way in, there's just
-> too much stuff that udisks2 doesn't do and is getting confused about,
-> including LVM thinly provisioned volumes, not just Btrfs stuff.
+> Another way is to put a conventional fs image on e.g. GlusterFS with
+> checksumming enabled (and at least distributed+replicated filtering).
+>
+> If you do this directly on Btrfs, maybe you can mitigate some of the
+> fragmentation issues with bcache or dmcache; and for persistent
+> snapshotting, use qcow2 to do it instead of Btrfs. You'd use Btrfs
+> snapshots to create a subvolume for doing backups of the images, and
+> then get rid of the Btrfs snapshot.
 >
 >
-The problem with that is that storaged (from what I understand) is=20
-systemd dependent, and there are too many people out there who don't=20
-want systemd.  udisks2 will almost certainly live on (just like=20
-consolekit has).  And if it's something systemd integrated, I can=20
-already tell you it will look like the OS X solution.  Now, what I think =
+The other option (which for some reason I almost never see anyone=20
+suggest), is to expose 2 disks to the guest (ideally stored on different =
 
-it should look like is a different story, I'd say that:
-1. It should give the option to either:
-     a. Refuse to boot degraded.
-     b. Ask the operator if he wants to boot degraded
-     c. Just automatically boot degraded, and probably send a=20
-notification about it.
-2. Provide some service (sadly probably dbus based) to schedule=20
-scrub/balance/re-sync operations and get info about ENOSPC/sync=20
-failure/parity mismatch/device failure/SMART status failure.
-3. Provide a consistent interface to such operations on hardware RAID=20
-controllers that support them.
-4. Provide the ability to notify via arbitrary means on any of the above =
-
-mentioned issues.
-5. Have the ability to turn anything not needed off on a given system.
+filesystems), and do BTRFS raid1 on top of that.  In general, this is=20
+what I do (except I use LVM for the storage back-end instead of a=20
+filesystem) when I have data integrity requirements in the guest.  On=20
+the other hand of course, most of my VM's are trivial for me to=20
+recreate, so I don't often need this and just use DM-RAID via LVm.
 
 
---------------ms030007080401000505060808
+--------------ms010402000408010803000508
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -145,9 +109,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMyOTQwWjBPBgkq
-hkiG9w0BCQQxQgRAqMteNDupid+g7wHJI8ndX7U6A239SDVyt+Nizi0u9ldKC3HO4BH95iV5
-pzaCI5wB10hjsozzjBHDqgt9GnY/lzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTQxMzI5WjBPBgkq
+hkiG9w0BCQQxQgRA06sV4SGcR7spP6hJCKKkVtvLMmjf5zD6ka6722c05UIYRo+rQw4n3Z1K
+rpe97dcQ3SCHUPbv0P+cOPd3WarGrjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -155,14 +119,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgBu7JOkWj+vb1pbNoOD9/nD9DRciYF4ULSZEN9lnfr5PPetdPXF
-BagGtXICQoqYQKALX9R432t2R2EanzqWnRJjP7cE7lRKhyj0cq9vni1p2dB6RMBA41oLM1dV
-EXDjSZG46kGNXUdAq+aQjVW3zENZSHmx+IuCfHjc58w+YZ5f2s93PWBEQS2jXbfYpHWb4c5n
-c9mxxDS/n+i3DY/UNVsq8nJrvZZ2gaFx66Zcm+ghDfbKqF5zjuboLTg39mY+NF62wetv6930
-5TllOKnVWXoUxLE1nNfss86jT3cVyvBteaH9cCe2sOp8o1HaLfwSv4AWoYWpcShd6JvOEFdx
-sxKtAfhiGsdiKqhmWfZdBw17HlEJo0TU8hR2RrZAtwlGVn1EOCVCM6E3zoSeeGPDLwNb4WoO
-hHfewdpkknHD73GIMNXVaXh+KK22zpsRAWLKT1q8TMNKqowTTQV3rrVC6DWGb0K0Dji2DOD/
-fzCizCCKvx3oo5EBdDDbmME+65SMBLlwI/NUyEDCXHL4nGq36zf969IXbzZoeR97IF2qGJTq
-6VF3TrSRdjRNyn6UekqzOGxmYQIz9ivQKwA4yT6AS24k+hQgaIXUgC27heiYThAFYkRe19uL
-KKWlCkJIlmppHGHOWXfS48mLNatlrDnn1v7Lb3my7Fd1C//WzJVvLTP3QQAAAAAAAA==
---------------ms030007080401000505060808--
+BgkqhkiG9w0BAQEFAASCAgBZmU4GXcqtf34podUcqiROmhJbPMf0tzw1Nd4AYFpi97QQL2Ky
+fo3TYatxA/ofL3bECTh1Ne6xtpHZOnKtKxSiu1qxk/kKeyvt5rY9qwn8vjExxE1/OK91kFGD
+8lKvKS7NncePmt7xgflqNVhKAxG0MHU434qF7IyRCjkq9vLuKpCUajjd5WmimV2EFuxOD4Ke
+oP0xBXsseqU4GIs0qQequuG0LfYgJWuc+MOFVZc6YMT14hQDBGOdEGnVkZMddmmTXOwwnKNP
+/UYkevP/vs4EjN7IOcRNN1a370yAE6AnaZLdFhYv3E4KlWpmCXEPdhRCxJ3ZZJtU1pqK/8FN
+aY4PiPt+FmlFRL4RoqHkM8xIRJGD9EQ/+motzF7v9bypozTnlGR1eefz/suPQjS66ZXjelPI
+uiK79GhJoG7GQlD3WEB3xQyZhqQ2Z6C5JiOr5867RhBSKA0j6XkKp9N2q2r6xa0u1LAE+7HM
+6OvA2qipBCzQzkgR2676AKeyZmkBgKo1WnfLytDM2IEERii5LY+2E1LiSxFeJEeWvcs6HHcX
++JPH2SDMOepybZYL2ZnVSVVrCRO9Ztpcw7BQyg89PCNLv4l1XhhbQQoM4GFq1bL9qS492P6c
+br7MX0NefCeDW4gqoGt1ej4uTsmaefxSiLTS0zE8DQZTzQiKJrLRSNYQEQAAAAAAAA==
+--------------ms010402000408010803000508--

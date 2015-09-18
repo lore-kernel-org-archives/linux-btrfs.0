@@ -1,313 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns211617.ip-188-165-215.eu ([188.165.215.42]:51898 "EHLO
-	mx.speed47.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750769AbbIRK0S (ORCPT
+Received: from mail-io0-f180.google.com ([209.85.223.180]:33091 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751068AbbIRNGQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Sep 2015 06:26:18 -0400
+	Fri, 18 Sep 2015 09:06:16 -0400
+Received: by iofh134 with SMTP id h134so55465856iof.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:06:15 -0700 (PDT)
+Subject: Re: FYIO: A rant about btrfs
+To: Martin Steigerwald <martin@lichtvoll.de>, Hugo Mills <hugo@carfax.org.uk>,
+        Zia Nayamuth <zedestructor@gmail.com>, linux-btrfs@vger.kernel.org
+References: <20150916144355.GA1285@invalid> <55F9BE3B.6070309@gmail.com>
+ <20150916232930.GD28645@carfax.org.uk> <5147353.qIsJnOkqhM@merkaba>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <55FC0C3A.9080702@gmail.com>
+Date: Fri, 18 Sep 2015 09:06:02 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8;
- format=flowed
-Date: Fri, 18 Sep 2015 12:26:16 +0200
-From: =?UTF-8?Q?St=C3=A9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
-To: =?UTF-8?Q?St=C3=A9phane_Lesimple?= <stephane_btrfs@lesimple.fr>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
- rebalance
-In-Reply-To: <c605d4d156f9a880b216e89ca0705269@all.all>
-References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
- <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
- <532aadf0f92d08d3d2b274173548aee1@all.all>
- <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
- <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
- <0973de930ee87e102c533c719807b748@all.all>
- <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
- <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
- <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all> <55FA60C5.5090002@cn.fujitsu.com>
- <7a6f2d794fb6cbf7d598b92e3470201c@all.all> <55FA759E.6030707@cn.fujitsu.com>
- <3386a8bfa1a5796460306a53a668e47e@all.all> <55FA98D8.5010301@gmx.com>
- <53a5553a9c5301789e246144bb264e43@all.all> <55FB61E9.4000300@cn.fujitsu.com>
- <2ce9b35f73732b145e0f80b18f230a52@all.all>
- <c605d4d156f9a880b216e89ca0705269@all.all>
-Message-ID: <762ec73d5389b5057be4d3c17f74e1f9@all.all>
+In-Reply-To: <5147353.qIsJnOkqhM@merkaba>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080702060902050805090605"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 2015-09-18 12:15, Stéphane Lesimple a écrit :
-> Le 2015-09-18 09:36, Stéphane Lesimple a écrit :
->> Sure, I did a quota disable / quota enable before running the snapshot
->> debug procedure, so the qgroups were clean again when I started :
->> 
->> qgroupid          rfer          excl     max_rfer     max_excl parent  
->> child
->> --------          ----          ----     --------     -------- ------  
->> -----
->> 0/5              16384         16384         none         none ---     
->> ---
->> 0/1906   1657848029184 1657848029184         none         none ---     
->> ---
->> 0/1909    124950921216  124950921216         none         none ---     
->> ---
->> 0/1911   1054587293696 1054587293696         none         none ---     
->> ---
->> 0/3270     23727300608   23727300608         none         none ---     
->> ---
->> 0/3314     23221784576   23221784576         none         none ---     
->> ---
->> 0/3341      7479275520    7479275520         none         none ---     
->> ---
->> 0/3367     24185790464   24185790464         none         none ---     
->> ---
->> 
->> The test is running, I expect to post the results within an hour or 
->> two.
-> 
-> Well, my system crashed twice while running the procedure...
-> By "crashed" I mean : the machine no longer pings, and nothing is
-> logged in kern.log unfortunately :
-> 
-> [ 7096.735731] BTRFS info (device dm-3): qgroup scan completed
-> (inconsistency flag cleared)
-> [ 7172.614851] BTRFS info (device dm-3): qgroup scan completed
-> (inconsistency flag cleared)
-> [ 7242.870259] BTRFS info (device dm-3): qgroup scan completed
-> (inconsistency flag cleared)
-> [ 7321.466931] BTRFS info (device dm-3): qgroup scan completed
-> (inconsistency flag cleared)
-> [    0.000000] Initializing cgroup subsys cpuset
-> 
-> The even stranger part is that the last 2 stdout dump files exist but
-> are empty :
-> 
-> -rw-r--r-- 1 root root   21 Sep 18 10:29 snap32.step5
-> -rw-r--r-- 1 root root 3.2K Sep 18 10:29 snap32.step6
-> -rw-r--r-- 1 root root 3.2K Sep 18 10:29 snap33.step1
-> -rw-r--r-- 1 root root 3.3K Sep 18 10:29 snap33.step3
-> -rw-r--r-- 1 root root   21 Sep 18 10:30 snap33.step5
-> -rw-r--r-- 1 root root 3.3K Sep 18 10:30 snap33.step6
-> -rw-r--r-- 1 root root 3.3K Sep 18 10:30 snap34.step1
-> -rw-r--r-- 1 root root    0 Sep 18 10:30 snap34.step3 <==
-> -rw-r--r-- 1 root root    0 Sep 18 10:30 snap34.step5 <==
-> 
-> The mentioned steps are as follows :
-> 
-> 0) Rsync data from the next ext4 "snapshot" to the subvolume
-> 1) Do 'sync; btrfs qgroup show -⁠prce -⁠-⁠raw' and save the output <==
-> 2) Create the needed readonly snapshot on btrfs
-> 3) Do 'sync; btrfs qgroup show -⁠prce -⁠-⁠raw' and save the output <==
-> 4) Avoid doing IO if possible until step 6)
-> 5) Do 'btrfs quota rescan -⁠w' and save it <==
-> 6) Do 'sync; btrfs qgroup show -⁠prce -⁠-⁠raw' and save the output <==
-> 
-> The resulting files are available here: 
-> http://speed47.net/tmp2/qgroup.tar.gz
-> The run2 is the more complete one, during run1 the machine crashed even 
-> faster.
-> It's interesting to note, however, that it seems to have crashed the
-> same way and at the same step in the process.
+This is a cryptographically signed message in MIME format.
 
-Actually about that, I forgot I did set up netconsole before starting 
-the second run after the first "muted" crash, and it did work : even if 
-I have no logs in kern.log, netconsole managed to send them to my other 
-machine before going down, so here it is :
+--------------ms080702060902050805090605
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
----
-[ 5738.172692] BUG: unable to handle kernel NULL pointer dereference at 
-00000000000001f0
-[ 5738.172702] IP: [<ffffffffc03150db>] start_transaction+0x1b/0x580 
-[btrfs]
-[ 5738.172719] PGD c0aa7067 PUD c0aa6067 PMD 0
-[ 5738.172723] Oops: 0000 [#1] SMP
-[ 5738.172726] Modules linked in: netconsole configfs xts gf128mul drbg 
-ansi_cprng xt_multiport xt_comment xt_conntrack xt_nat xt_tcpudp 
-nfnetlink_queue nfnetlink_log nfnetlink nf_conntrack_ftp 
-nf_conntrack_sane iptable_security iptable_filter iptable_mangle 
-iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat 
-nf_conntrack iptable_raw ip_tables x_tables nfsd auth_rpcgss nfs_acl nfs 
-cmac dm_crypt rfcomm bnep lockd grace sunrpc fscache binfmt_misc 
-intel_rapl snd_hda_codec_realtek iosf_mbi x86_pkg_temp_thermal 
-intel_powerclamp kvm_intel snd_hda_codec_generic snd_hda_intel 
-snd_hda_codec kvm eeepc_wmi asus_wmi snd_hda_core btusb sparse_keymap 
-btrtl snd_hwdep btbcm snd_pcm btintel 8021q bluetooth snd_seq_midi 
-dm_multipath snd_seq_midi_event garp snd_rawmidi mrp snd_seq stp llc 
-snd_seq_device snd_timer crct10dif_pclmul crc32_pclmul snd 
-ghash_clmulni_intel cryptd serio_raw soundcore mei_me mei lpc_ich shpchp 
-mac_hid parport_pc ppdev nct6775 hwmon_vid coretemp lp parport btrfs 
-raid10 raid456 async_raid6_recov async_memcpy async_pq async_xor 
-async_tx xor raid6_pq raid0 multipath linear nbd raid1 i915 e1000e 
-i2c_algo_bit drm_kms_helper syscopyarea ptp sysfillrect sysimgblt 
-fb_sys_fops psmouse ahci drm libahci pps_core wmi video [last unloaded: 
-netconsole]
-[ 5738.172831] CPU: 1 PID: 10932 Comm: kworker/u4:14 Not tainted 
-4.3.0-rc1 #1
-[ 5738.172833] Hardware name: ASUS All Series/H87I-PLUS, BIOS 1005 
-01/06/2014
-[ 5738.172843] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper 
-[btrfs]
-[ 5738.172845] task: ffff8800c7010000 ti: ffff88006acf4000 task.ti: 
-ffff88006acf4000
-[ 5738.172847] RIP: 0010:[<ffffffffc03150db>]  [<ffffffffc03150db>] 
-start_transaction+0x1b/0x580 [btrfs]
-[ 5738.172855] RSP: 0018:ffff88006acf7ca8  EFLAGS: 00010282
-[ 5738.172856] RAX: 0000000000000004 RBX: 0000000000000201 RCX: 
-0000000000000002
-[ 5738.172857] RDX: 0000000000000201 RSI: 0000000000000001 RDI: 
-0000000000000000
-[ 5738.172858] RBP: ffff88006acf7cf0 R08: ffff88010990eab0 R09: 
-00000001801c0017
-[ 5738.172860] R10: 000000000990e701 R11: ffffea0004264380 R12: 
-0000000000000000
-[ 5738.172861] R13: ffff8800c73a6e08 R14: ffff880027963800 R15: 
-0000160000000000
-[ 5738.172862] FS:  0000000000000000(0000) GS:ffff88011fb00000(0000) 
-knlGS:0000000000000000
-[ 5738.172863] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[ 5738.172864] CR2: 00000000000001f0 CR3: 0000000027a65000 CR4: 
-00000000000406e0
-[ 5738.172866] Stack:
-[ 5738.172867]  ffff8800c73a6e08 ffff880027963800 0000160000000000 
-ffff88006acf7ce8
-[ 5738.172871]  00000000000000be 00000000fffffffc ffff8800c73a6e08 
-ffff880027963800
-[ 5738.172875]  0000160000000000 ffff88006acf7d00 ffffffffc031565b 
-ffff88006acf7dc0
-[ 5738.172879] Call Trace:
-[ 5738.172887]  [<ffffffffc031565b>] btrfs_start_transaction+0x1b/0x20 
-[btrfs]
-[ 5738.172896]  [<ffffffffc0378038>] 
-btrfs_qgroup_rescan_worker+0x388/0x5a0 [btrfs]
-[ 5738.172904]  [<ffffffffc03444e0>] normal_work_helper+0xc0/0x270 
-[btrfs]
-[ 5738.172912]  [<ffffffffc03448a2>] 
-btrfs_qgroup_rescan_helper+0x12/0x20 [btrfs]
-[ 5738.172915]  [<ffffffff8109127e>] process_one_work+0x14e/0x3d0
-[ 5738.172917]  [<ffffffff8109192a>] worker_thread+0x11a/0x470
-[ 5738.172919]  [<ffffffff81091810>] ? rescuer_thread+0x310/0x310
-[ 5738.172921]  [<ffffffff81097059>] kthread+0xc9/0xe0
-[ 5738.172923]  [<ffffffff81096f90>] ? kthread_park+0x60/0x60
-[ 5738.172926]  [<ffffffff817aac4f>] ret_from_fork+0x3f/0x70
-[ 5738.172928]  [<ffffffff81096f90>] ? kthread_park+0x60/0x60
-[ 5738.172929] Code: 49 c1 e9 5c ff ff ff 66 0f 1f 84 00 00 00 00 00 0f 
-1f 44 00 00 55 48 89 e5 41 57 41 56 41 55 41 54 49 89 fc 53 89 d3 48 83 
-ec 20 <48> 8b 87 f0 01 00 00 48 8b 90 60 0e 00 00 83 e2 01 0f 85 86 00
-[ 5738.172973] RIP  [<ffffffffc03150db>] start_transaction+0x1b/0x580 
-[btrfs]
-[ 5738.172981]  RSP <ffff88006acf7ca8>
-[ 5738.172982] CR2: 00000000000001f0
-[ 5738.172984] ---[ end trace 9feb85def1327ee9 ]---
-[ 5738.173010] BUG: unable to handle kernel paging request at 
-ffffffffffffffd8
-[ 5738.173012] IP: [<ffffffff810977d0>] kthread_data+0x10/0x20
-[ 5738.173015] PGD 1c13067 PUD 1c15067 PMD 0
-[ 5738.173019] Oops: 0000 [#2] SMP
-[ 5738.173021] Modules linked in: netconsole configfs xts gf128mul drbg
----
+On 2015-09-17 11:57, Martin Steigerwald wrote:
+> Am Mittwoch, 16. September 2015, 23:29:30 CEST schrieb Hugo Mills:
+>>> but even then having write-barriers
+>>> turned off is still not as safe as having them turned on.  Most of
+>>> the time when I've tried testing with 'nobarrier' (not just on BTRFS
+>>> but on ext* as well), I had just as many issues with data loss when
+>>> the system crashed as when it (simlated via killing the virtual
+>>> machine) lost power.  Both journaling and COW filesystems need to
+>>> ensure ordering of certain write operations to be able to maintain
+>>> consistency.  For example, the new/updated data blocks need to be on
+>>> disk before the metadata is updated to point to them, otherwise you
+>>> database can end up corrupted.
+>>
+>>     Indeed. The barriers are an ordering condition. The FS relies on
+>> (i.e. *requires*) that ordering condition, in order to be truly
+>> consistent. Running with "nobarrier" is a very strong signal that you
+>> really don't care about the data on the FS.
+>>
+>>     This is not a case of me simply believing that because I've been
+>> using btrfs for so long that I've got used to the peculiarities. The
+>> first time I heard about the nobarrier option, something like 6 years
+>> ago when I was first using btrfs, I thought "that's got to be a really=
 
-Clearly this is during a rescan.
+>> silly idea". Any complex data structure, like a filesystem, is going
+>> to rely on some kind of ordering guarantees, somewhere in its
+>> structure. (The ordering might be strict, with a global clock, or
+>> barrier-based, or lattice-like, as for example a vector clock, but
+>> there's going to be _some_ concept of order). nobarrier allows the FS
+>> to ignore those guarantees, and even without knowing anything about
+>> the FS at all, doing so is a big red DANGER flag.
+>
+> Official recommendation for XFS differs from that:
+>
+>   Q. Should barriers be enabled with storage which has a persistent wri=
+te
+> cache?
+>
+> Many hardware RAID have a persistent write cache which preserves it acr=
+oss
+> power failure, interface resets, system crashes, etc. Using write barri=
+ers in
+> this instance is not recommended and will in fact lower performance.
+> Therefore, it is recommended to turn off the barrier support and mount =
+the
+> filesystem with "nobarrier", assuming your RAID controller is infallibl=
+e and
+> not resetting randomly like some common ones do. But take care about th=
+e hard
+> disk write cache, which should be off.
+>
+> http://xfs.org/index.php/
+> XFS_FAQ#Q._Should_barriers_be_enabled_with_storage_which_has_a_persiste=
+nt_write_cache.
+> 3F
+There's a difference there still, XFS isn't quite as dependent on=20
+ordering as BTRFS is, and they're also giving some other strict=20
+rquirements (hard-disk write-cache being off (which I see a rather large =
 
-> As the machine is now, qgroups seems OK :
-> 
-> ~# btrfs qgroup show -pcre --raw /tank/
-> qgroupid          rfer          excl     max_rfer     max_excl parent  
-> child
-> --------          ----          ----     --------     -------- ------  
-> -----
-> 0/5              32768         32768         none         none ---     
-> ---
-> 0/1906   3315696058368 3315696058368         none         none ---     
-> ---
-> 0/1909    249901842432  249901842432         none         none ---     
-> ---
-> 0/1911   2109174587392 2109174587392         none         none ---     
-> ---
-> 0/3270     47454601216   47454601216         none         none ---     
-> ---
-> 0/3314     46408499200         32768         none         none ---     
-> ---
-> 0/3341     14991097856         32768         none         none ---     
-> ---
-> 0/3367     48371580928   48371580928         none         none ---     
-> ---
-> 0/5335     56523751424     280592384         none         none ---     
-> ---
-> 0/5336     60175253504    2599960576         none         none ---     
-> ---
-> 0/5337     45751746560     250888192         none         none ---     
-> ---
-> 0/5338     45804650496     186531840         none         none ---     
-> ---
-> 0/5339     45875167232     190521344         none         none ---     
-> ---
-> 0/5340     45933486080        327680         none         none ---     
-> ---
-> 0/5341     45933502464        344064         none         none ---     
-> ---
-> 0/5342     46442815488      35454976         none         none ---     
-> ---
-> 0/5343     46442520576      30638080         none         none ---     
-> ---
-> 0/5344     46448312320      36495360         none         none ---     
-> ---
-> 0/5345     46425235456      86204416         none         none ---     
-> ---
-> 0/5346     46081941504     119398400         none         none ---     
-> ---
-> 0/5347     46402715648      55615488         none         none ---     
-> ---
-> 0/5348     46403534848      50528256         none         none ---     
-> ---
-> 0/5349     45486301184      91463680         none         none ---     
-> ---
-> 0/5351     46414635008        393216         none         none ---     
-> ---
-> 0/5352     46414667776        294912         none         none ---     
-> ---
-> 0/5353     46414667776        294912         none         none ---     
-> ---
-> 0/5354     46406148096      24829952         none         none ---     
-> ---
-> 0/5355     46415986688      33103872         none         none ---     
-> ---
-> 0/5356     46406262784      23216128         none         none ---     
-> ---
-> 0/5357     46408245248      17408000         none         none ---     
-> ---
-> 0/5358     46416052224      25280512         none         none ---     
-> ---
-> 0/5359     46406336512      23158784         none         none ---     
-> ---
-> 0/5360     46408335360      25157632         none         none ---     
-> ---
-> 0/5361     46406402048      24395776         none         none ---     
-> ---
-> 0/5362     46415273984      32260096         none         none ---     
-> ---
-> 0/5363     46408499200         32768         none         none ---     
-> ---
-> 0/5364     14949441536     139812864         none         none ---     
-> ---
-> 0/5365     14996299776     176889856         none         none ---     
-> ---
-> 0/5366     14958616576     143065088         none         none ---     
-> ---
-> 0/5367     14919172096     100171776         none         none ---     
-> ---
-> 0/5368     14945968128     142409728         none         none ---     
-> ---
-> 0/5369     14991097856         32768         none         none ---     
-> ---
-> 
-> 
-> But I'm pretty sure I can get that (u64)-1 value again by deleting
-> snapshots. Shall I ? Or do you have something else for me to run
-> before that ?
-> 
-> So, as a quick summary of this big thread, it seems I've been hitting
-> 3 bugs, all reproductible :
-> - kernel BUG on balance (this original thread)
-> - negative or zero "excl" qgroups
-> - hard freezes without kernel trace when playing with snapshots and 
-> quota
-> 
-> Still available to dig deeper where needed.
+number of people ignore), and a high-end RAID controller).
 
+
+
+--------------ms080702060902050805090605
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMwNjAyWjBPBgkq
+hkiG9w0BCQQxQgRAD3/bY11MdoFkHzH+SFlH1EEPvfVtcOyxc+j/gdt/LtH2BzTdDwRYKjFr
+ZpBwAlsP32PkGf0P7TEZt/vygVWZtTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
+BgkqhkiG9w0BAQEFAASCAgAUVteoSmvCSISqw3+b3WpMtxGjtGSpuNNVchQv72HAbf8AGVYU
+ku9cbZ1WI1PtQpKje67UpYHD5Q1LKN+0WVTiA+VnLZ51PTsQshaVtLvCjfVZE5E81r0IYH2P
+wbFHzT3WOFGAatvLe9IkD1uoJQHv0ELIfQ/JjmxdbUqSn+WnkVx07onEkvVI3/5wMkHW0NqI
+joeOxKdskQzItNNCX7GhIwEMMIM4miS7LYxlY0zYUA8AeOFBPP2Cd2oRGY4ipCr72X9bfVP4
+jL164VUw1Yb8nlFNfH0p4CovSloim713yr9V3HpeudgdnQiUt1QIfjLN9bO+XhXrjyfP6k/T
+llOz10ltMvZIZap/u02JtNrAblrArHXwouXGlBDqtiH7Y8MoqZVhbTMEbfwIT6rznjO1AkkQ
+LDbblV/qbJqmJzmavYZaCPgJzytcdETXE5pAEKjAqQ4mg1gzQ30EJlp7NHFExXVr5bMzNSaM
+QeadrCeQmtCKC7C8XL1AcM+zFXsp1pcQMamUcxlnwK50xX8vUT5bspPKFjbvhlYKBLEGfpNa
+5x9qQRMupRwdO4vvsiEa1Dagqeb7n9zR6MhHM+QOl/0hJ5xDmb24UTL63ds/L9f44/vMdgkD
+ccUya18A+67uOjm1SPi4kEBtSN9iuTJ/LcLqHDNd4G/cjiZ0D1psCH+k/AAAAAAAAA==
+--------------ms080702060902050805090605--

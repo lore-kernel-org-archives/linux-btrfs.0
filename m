@@ -1,58 +1,244 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45950 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752009AbbIRAfD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 20:35:03 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zcjdk-0007Ds-Av
-	for linux-btrfs@vger.kernel.org; Fri, 18 Sep 2015 02:35:00 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 02:35:00 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 02:35:00 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: FYIO: A rant about btrfs
-Date: Fri, 18 Sep 2015 00:34:54 +0000 (UTC)
-Message-ID: <pan$8db10$2ae04448$ef503df5$d1537993@cox.net>
-References: <20150916144355.GA1285@invalid> <55F988A6.8070109@gmail.com>
-	<A4269DC6-6CD6-4E8C-B3C9-5F5DDBE86911@up4.com>
-	<55F9B357.4070505@gmail.com>
-	<54A9EC91-FDFD-44A8-97B9-7347A89FA415@up4.com>
-	<20150916220856.GA23830@hungrycats.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:18131 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752043AbbIRA71 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Sep 2015 20:59:27 -0400
+Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
+ rebalance
+To: =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
+ <2c00c4b7c15e424659fb2e810170e32e@all.all> <55F83181.9010201@fb.com>
+ <532aadf0f92d08d3d2b274173548aee1@all.all>
+ <pan$e885$1290ceef$c5017ead$b38037f1@cox.net>
+ <f81878fadaf2980a72522e54010e0415@all.all> <55F9486F.4040302@googlemail.com>
+ <0973de930ee87e102c533c719807b748@all.all>
+ <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
+ <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
+ <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all> <55FA60C5.5090002@cn.fujitsu.com>
+ <7a6f2d794fb6cbf7d598b92e3470201c@all.all> <55FA759E.6030707@cn.fujitsu.com>
+ <3386a8bfa1a5796460306a53a668e47e@all.all> <55FA98D8.5010301@gmx.com>
+ <53a5553a9c5301789e246144bb264e43@all.all>
+CC: <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <55FB61E9.4000300@cn.fujitsu.com>
+Date: Fri, 18 Sep 2015 08:59:21 +0800
+MIME-Version: 1.0
+In-Reply-To: <53a5553a9c5301789e246144bb264e43@all.all>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zygo Blaxell posted on Wed, 16 Sep 2015 18:08:56 -0400 as excerpted:
 
-> On Wed, Sep 16, 2015 at 03:04:38PM -0400, Vincent Olivier wrote:
->> 
->> OK fine. Let it be clearer then (on the Btrfs wiki): nobarrier is an
->> absolute no go. Case closed.
-> 
-> Sometimes it is useful to make an ephemeral filesystem, i.e. a btrfs on
-> a dm-crypt device with a random key that is not stored.  This
-> configuration intentionally and completely destroys the entire
-> filesystem, and all data on it, in the event of a power failure.  It's
-> useful for things like temporary table storage, where ramfs is too
-> small, swap-backed tmpfs is too slow, and/or there is a requirement that
-> the data not be persisted across reboots.
-> 
-> In other words, nobarrier is for a little better performance when you
-> already want to _intentionally_ destroy your filesystem on power
-> failure.
 
-Very good explanation of why it's useful to have such an otherwise 
-destructive mount option even available in the first place.  Thanks! =:^)
+Stéphane Lesimple wrote on 2015/09/17 20:47 +0200:
+> Le 2015-09-17 12:41, Qu Wenruo a écrit :
+>>> In the meantime, I've reactivated quotas, umounted the filesystem and
+>>> ran a btrfsck on it : as you would expect, there's no qgroup problem
+>>> reported so far.
+>>
+>> At least, rescan code is working without problem.
+>>
+>>> I'll clear all my snapshots, run an quota rescan, then
+>>> re-create them one by one by rsyncing from my ext4 system I still have.
+>>> Maybe I'll run into the issue again.
+>>>
+>>
+>> Would you mind to do the following check for each subvolume rsync?
+>>
+>> 1) Do 'sync; btrfs qgroup show -prce --raw' and save the output
+>> 2) Create the needed snapshot
+>> 3) Do 'sync; btrfs qgroup show -prce --raw' and save the output
+>> 4) Avoid doing IO if possible until step 6)
+>> 5) Do 'btrfs quota rescan -w' and save it
+>> 6) Do 'sync; btrfs qgroup show -prce --raw' and save the output
+>> 7) Rsync data from ext4 to the newly created snapshot
+>>
+>> The point is, as you mentioned, rescan is working fine, we can compare
+>> output from 3), 6) and 1) to see which qgroup accounting number
+>> changes.
+>>
+>> And if differs, which means the qgroup update at write time OR
+>> snapshot creation has something wrong, at least we can locate the
+>> problem to qgroup update routine or snapshot creation.
+>
+> I was about to do that, but first there's something that sounds strange
+> : I've begun by trashing all my snapshots, then ran a quota rescan, and
+> waited for it to complete, to start on a sane base.
+> However, this is the output of qgroup show now :
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+By "trashing", did you mean deleting all the files inside the subvolume?
+Or "btrfs subv del"?
 
+>
+> qgroupid          rfer                 excl     max_rfer     max_excl
+> parent  child
+> --------          ----                 ----     --------     --------
+> ------  -----
+> 0/5              16384                16384         none         none
+> ---     ---
+> 0/1906   1657848029184        1657848029184         none         none
+> ---     ---
+> 0/1909    124950921216         124950921216         none         none
+> ---     ---
+> 0/1911   1054587293696        1054587293696         none         none
+> ---     ---
+> 0/3270     23727300608          23727300608         none         none
+> ---     ---
+> 0/3314     23206055936          23206055936         none         none
+> ---     ---
+> 0/3317     18472996864                    0         none         none
+> ---     ---
+> 0/3318     22235709440 18446744073708421120         none         none
+> ---     ---
+> 0/3319     22240333824                    0         none         none
+> ---     ---
+> 0/3320     22289608704                    0         none         none
+> ---     ---
+> 0/3321     22289608704                    0         none         none
+> ---     ---
+> 0/3322     18461151232                    0         none         none
+> ---     ---
+> 0/3323     18423902208                    0         none         none
+> ---     ---
+> 0/3324     18423902208                    0         none         none
+> ---     ---
+> 0/3325     18463506432                    0         none         none
+> ---     ---
+> 0/3326     18463506432                    0         none         none
+> ---     ---
+> 0/3327     18463506432                    0         none         none
+> ---     ---
+> 0/3328     18463506432                    0         none         none
+> ---     ---
+> 0/3329     18585427968                    0         none         none
+> ---     ---
+> 0/3330     18621472768 18446744073251348480         none         none
+> ---     ---
+> 0/3331     18621472768                    0         none         none
+> ---     ---
+> 0/3332     18621472768                    0         none         none
+> ---     ---
+> 0/3333     18783076352                    0         none         none
+> ---     ---
+> 0/3334     18799804416                    0         none         none
+> ---     ---
+> 0/3335     18799804416                    0         none         none
+> ---     ---
+> 0/3336     18816217088                    0         none         none
+> ---     ---
+> 0/3337     18816266240                    0         none         none
+> ---     ---
+> 0/3338     18816266240                    0         none         none
+> ---     ---
+> 0/3339     18816266240                    0         none         none
+> ---     ---
+> 0/3340     18816364544                    0         none         none
+> ---     ---
+> 0/3341      7530119168           7530119168         none         none
+> ---     ---
+> 0/3342      4919283712                    0         none         none
+> ---     ---
+> 0/3343      4921724928                    0         none         none
+> ---     ---
+> 0/3344      4921724928                    0         none         none
+> ---     ---
+> 0/3345      6503317504 18446744073690902528         none         none
+> ---     ---
+> 0/3346      6503452672                    0         none         none
+> ---     ---
+> 0/3347      6509514752                    0         none         none
+> ---     ---
+> 0/3348      6515793920                    0         none         none
+> ---     ---
+> 0/3349      6515793920                    0         none         none
+> ---     ---
+> 0/3350      6518685696                    0         none         none
+> ---     ---
+> 0/3351      6521511936                    0         none         none
+> ---     ---
+> 0/3352      6521511936                    0         none         none
+> ---     ---
+> 0/3353      6521544704                    0         none         none
+> ---     ---
+> 0/3354      6597963776                    0         none         none
+> ---     ---
+> 0/3355      6598275072                    0         none         none
+> ---     ---
+> 0/3356      6635880448                    0         none         none
+> ---     ---
+> 0/3357      6635880448                    0         none         none
+> ---     ---
+> 0/3358      6635880448                    0         none         none
+> ---     ---
+> 0/3359      6635880448                    0         none         none
+> ---     ---
+> 0/3360      6635880448                    0         none         none
+> ---     ---
+> 0/3361      6635880448                    0         none         none
+> ---     ---
+> 0/3362      6635880448                    0         none         none
+> ---     ---
+> 0/3363      6635880448                    0         none         none
+> ---     ---
+> 0/3364      6635880448                    0         none         none
+> ---     ---
+> 0/3365      6635880448                    0         none         none
+> ---     ---
+> 0/3366      6635896832                    0         none         none
+> ---     ---
+> 0/3367     24185790464          24185790464         none         none
+> ---     ---
+>
+
+Nooooo!! What a wired result here!
+Qg 3345 is having minus number again, even after a qgroup rescan....
+IIRC, from the code, rescan is just passing old_roots as NULL, and use 
+correct new_roots to build up "rfer" and "excl".
+So in theory it should never go below zero in rescan.
+
+The only hope for me is, that's a orphan qgroup.(mentioned below)
+
+> I would have expected all these qgroupids to have been trashed with the
+> snapshots, but it seems not. It reminded me of the bug you were talking
+> about, where deleted snapshots don't always clear correctly their
+> qgroup, but as these don't disappear after a rescan either... I'm a bit
+> surprised.
+
+If you mean you "btrfs qgroup del" the subvolume, then it's known the 
+qgroup won't be deleted, and won't be associated to any subvolume.
+(It's possible later created subvolume uses the old subvolid, and be 
+associated to the qgroup again).
+
+If above qgroups with 0 or even minus "excl" number are orphan, I'll be 
+much relieved, as it'll be a minor orphan qgroup bug other than another 
+possible qgroup rework(or at least huge review).
+
+>
+> I've just tried quota disable / quota enable, and not it seems OK. Just
+> wanted to let you know, in case it's not known behavior ...
+
+Thanks for your info a lot, which indeed expose something we didn't take 
+much consideration.
+
+And if the qgroups are the same with above description, would you mind 
+to remove these qgroups?
+
+>
+> The procedure I'll use will be slighlty different from what you
+> proposed, but to my understanding it won't change the result :
+>
+>> 0) Rsync data from the next ext4 "snapshot" to the subvolume
+>> 1) Do 'sync; btrfs qgroup show -prce --raw' and save the output
+>> 2) Create the needed readonly snapshot on btrfs
+>> 3) Do 'sync; btrfs qgroup show -prce --raw' and save the output
+>> 4) Avoid doing IO if possible until step 6)
+>> 5) Do 'btrfs quota rescan -w' and save it
+>> 6) Do 'sync; btrfs qgroup show -prce --raw' and save the output
+>
+> I'll post the results once this is done.
+>
+
+Thanks a lot!
+Qu

@@ -1,63 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51290 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751246AbbIRCWX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 22:22:23 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZclJd-00009e-Ej
-	for linux-btrfs@vger.kernel.org; Fri, 18 Sep 2015 04:22:21 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 04:22:21 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 04:22:21 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: BTRFS as image store for KVM?
-Date: Fri, 18 Sep 2015 02:22:09 +0000 (UTC)
-Message-ID: <pan$8e5ba$d0b208e1$ccdbec8$531e48c2@cox.net>
-References: <55F88ECC.1040604@menke.ac>
-	<pan$a7c37$760f233d$6b18271c$f9ac2029@cox.net> <55FAFEB8.6030404@menke.ac>
-	<20150917194314.GA29926@carfax.org.uk>
-Mime-Version: 1.0
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:38225 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752142AbbIRDCi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Sep 2015 23:02:38 -0400
+Received: by wiclk2 with SMTP id lk2so13706353wic.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2015 20:02:37 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
+References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
+	<55FAD9CC.5060206@oracle.com>
+	<pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
+Date: Fri, 18 Sep 2015 13:02:36 +1000
+Message-ID: <CA+WRLO94UekKmT1cy3+t4+pHSCMj=HRoEF4oqtJDimS=EWnbhA@mail.gmail.com>
+Subject: Re: RAID1 storage server won't boot with one disk missing
+From: Gareth Pye <gareth@cerberos.id.au>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Thu, 17 Sep 2015 19:43:14 +0000 as excerpted:
+I think you have stated that in a very polite and friendly way. I'm
+pretty sure I'd phrase it less politely :)
 
->> Is nodatacowbutkeepdatachecksums a feature that might turn up
->> in the future?
-> 
-> No. If you try doing that particular combination of features, you
-> end up with a filesystem that can be inconsistent: there's a race
-> condition between updating the data in a file and updating the csum
-> record for it, and the race can't be fixed.
+Following mdadm's example of an easy option to allow degraded
+mounting, but that shouldn't be the default. Anyone with the expertise
+to set that option can be expected to implement a way of knowing that
+the mount is degraded.
 
-...  Which is both why btrfs disables checksumming on nocow, and why
-more traditional in-place-overwrite filesystems don't normally offer a 
-checksumming feature -- it's only easily and reliably possible with copy-
-on-write, as in-place-overwrite introduces race issues that are basically 
-impossible to solve.
+People tend to be looking at BTRFS for a guarantee that data doesn't
+die when hardware does. Defaults that defeat that shouldn't be used.
 
-Logging can narrow the race, but consider, either they introduce some 
-level of copy-on-write themselves, or one way or another, you're going to 
-have to write two things, one a checksum of the other, and if they are in-
-place-overwrites, while the race can be narrowed, there's always going to 
-be a point at which either one or the other will have been written, while 
-the other hasn't been, and if failure occurs at that point...
+On Fri, Sep 18, 2015 at 11:36 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Anand Jain posted on Thu, 17 Sep 2015 23:18:36 +0800 as excerpted:
+>
+>>> What I expected to happen:
+>>> I expected that the [btrfs raid1 data/metadata] system would either
+>>> start as if nothing were wrong, or would warn me that one half of the
+>>> mirror was missing and ask if I really wanted to start the system with
+>>> the root array in a degraded state.
+>>
+>> as of now it would/should start normally only when there is an entry
+>> -o degraded
+>>
+>> it looks like -o degraded is going to be a very obvious feature,
+>> I have plans of making it a default feature, and provide -o nodegraded
+>> feature instead. Thanks for comments if any.
+>
+> As Chris Murphy, I have my doubts about this, and think it's likely to
+> cause as many unhappy users as it prevents.
+>
+> I'd definitely put -o nodegraded in my default options here, so it's not
+> about me, but about all those others that would end up running a silently
+> degraded system and have no idea until it's too late, as further devices
+> have failed or the one single other available copy of something important
+> (remember, still raid1 without N-mirrors option, unfortunately, so if a
+> device drops out, that's now data/metadata with only a single valid copy
+> regardless of the number of devices, and if it goes invalid...) fails
+> checksum for whatever reason.
+>
+> And since it only /allows/ degraded, not forcing it, if admins or distros
+> want it as the default, -o degraded can be added now.  Nothing's stopping
+> them except lack of knowledge of the option, the *same* lack of knowledge
+> that would potentially cause so much harm if the default were switched.
+>
+> Put it this way.  With the current default, if it fails and people have
+> to ask about the unexpected failure here, no harm to existing data done,
+> just add -o degraded and get on with things.  If -o degraded were made
+> the default, failure mode would be *MUCH* worse, potential loss of the
+> entire filesystem due to silent and thus uncorrected device loss and
+> degraded mounting.
+>
+> So despite the inconvenience of less knowledgeable people losing the
+> availability of the filesystem until they can read the wiki or ask about
+> it here, I don't believe changing the default to -o degraded is wise, at
+> all.
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-The only real way around that is /some/ form of copy-on-write, such that 
-both the change and its checksum can be written to a different location 
-than the old version, with a single, atomic write then updating a pointer 
-to point to the new version of both the data and its checksum, instead of 
-the old one.
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Gareth Pye - blog.cerberos.id.au
+Level 2 MTG Judge, Melbourne, Australia
+"Dear God, I would like to file a bug report"

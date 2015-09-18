@@ -1,72 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:34472 "EHLO
-	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751659AbbIRNM5 (ORCPT
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:33179 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751068AbbIRN3v (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Sep 2015 09:12:57 -0400
-Received: by iofb144 with SMTP id b144so55877053iof.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:12:56 -0700 (PDT)
-Subject: Re: FYIO: A rant about btrfs
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <20150916144355.GA1285@invalid> <55F988A6.8070109@gmail.com>
- <A4269DC6-6CD6-4E8C-B3C9-5F5DDBE86911@up4.com> <55F9B357.4070505@gmail.com>
- <54A9EC91-FDFD-44A8-97B9-7347A89FA415@up4.com>
- <20150916220856.GA23830@hungrycats.org>
- <pan$8db10$2ae04448$ef503df5$d1537993@cox.net>
+	Fri, 18 Sep 2015 09:29:51 -0400
+Received: by igbkq10 with SMTP id kq10so35613936igb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 18 Sep 2015 06:29:50 -0700 (PDT)
+Subject: Re: RAID1 storage server won't boot with one disk missing
+To: Chris Murphy <lists@colorremedies.com>, Roman Mamedov <rm@romanrm.net>
+References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
+ <55FAD9CC.5060206@oracle.com> <55FAF198.2060106@libero.it>
+ <20150918000205.6e8f3998@natsu>
+ <CAJCQCtQ10SJAPca8quhdi-oK1rJV2rcfY0QZFqx11u9ntyDRYA@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <55FC0DCA.1080905@gmail.com>
-Date: Fri, 18 Sep 2015 09:12:42 -0400
+Message-ID: <55FC11C4.60506@gmail.com>
+Date: Fri, 18 Sep 2015 09:29:40 -0400
 MIME-Version: 1.0
-In-Reply-To: <pan$8db10$2ae04448$ef503df5$d1537993@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010500010103050400010704"
+In-Reply-To: <CAJCQCtQ10SJAPca8quhdi-oK1rJV2rcfY0QZFqx11u9ntyDRYA@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030007080401000505060808"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms010500010103050400010704
+--------------ms030007080401000505060808
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-09-17 20:34, Duncan wrote:
-> Zygo Blaxell posted on Wed, 16 Sep 2015 18:08:56 -0400 as excerpted:
->
->> On Wed, Sep 16, 2015 at 03:04:38PM -0400, Vincent Olivier wrote:
->>>
->>> OK fine. Let it be clearer then (on the Btrfs wiki): nobarrier is an
->>> absolute no go. Case closed.
+On 2015-09-17 16:18, Chris Murphy wrote:
+> On Thu, Sep 17, 2015 at 1:02 PM, Roman Mamedov <rm@romanrm.net> wrote:
+>> On Thu, 17 Sep 2015 19:00:08 +0200
+>> Goffredo Baroncelli <kreijack@libero.it> wrote:
 >>
->> Sometimes it is useful to make an ephemeral filesystem, i.e. a btrfs o=
-n
->> a dm-crypt device with a random key that is not stored.  This
->> configuration intentionally and completely destroys the entire
->> filesystem, and all data on it, in the event of a power failure.  It's=
-
->> useful for things like temporary table storage, where ramfs is too
->> small, swap-backed tmpfs is too slow, and/or there is a requirement th=
-at
->> the data not be persisted across reboots.
+>>> On 2015-09-17 17:18, Anand Jain wrote:
+>>>>   it looks like -o degraded is going to be a very obvious feature,
+>>>>   I have plans of making it a default feature, and provide -o
+>>>>   nodegraded feature instead. Thanks for comments if any.
+>>>>
+>>> I am not sure if there is a "good" default for this kind of problem
 >>
->> In other words, nobarrier is for a little better performance when you
->> already want to _intentionally_ destroy your filesystem on power
->> failure.
+>> Yes there is. It is whatever people came to expect from using other RA=
+ID
+>> systems and/or generally expect from RAID as a concept.
+>>
+>> Both mdadm software RAID, and I believe virtually any hardware RAID co=
+ntroller
+>> out there will let you to successfully boot up and give read-write(!) =
+access
+>> to a RAID in a non-critical failure state, because that's kind of the =
+whole
+>> point of a RAID, to eliminate downtime. If the removed disk is later r=
+e-added,
+>> then it is automatically resynced. Mdadm can also make use of its 'wri=
+te
+>> intent bitmap' to resync only those areas of the array which were in a=
+ny way
+>> touched during the absence of the newly re-added disk.
+>>
+>> If you're concerned that the user "misses" the fact that they have a d=
+isk
+>> down, then solve *that*, make some sort of a notify daemon, e.g. mdadm=
+ has a
+>> built-in "monitor" mode which sends E-Mail on critical events with any=
+ of the
+>> arrays.
 >
-> Very good explanation of why it's useful to have such an otherwise
-> destructive mount option even available in the first place.  Thanks! =3D=
-:^)
+> Given the current state: no proposal and no work done yet, I think
+> it's premature to change the default.
 >
-The other reason, as has been pointed out in a different sub-thread, is=20
-that if you have a guaranteed good hardware RAID controller, which has a =
+> It's an open question what a modern monitoring and notification
+> mechanism should look like. At the moment it'd be a unique Btrfs thing
+> because the mdadm and LVM methods aren't abstracted enough to reuse. I
+> wonder if the storaged and/or openlmi folks have some input on what
+> this would look like. Feedback from KDE and GNOME also, who rely on at
+> least mdadm in order to present user space notifications. I think
+> udisks2 is on the way out and storaged is on the way in, there's just
+> too much stuff that udisks2 doesn't do and is getting confused about,
+> including LVM thinly provisioned volumes, not just Btrfs stuff.
+>
+>
+The problem with that is that storaged (from what I understand) is=20
+systemd dependent, and there are too many people out there who don't=20
+want systemd.  udisks2 will almost certainly live on (just like=20
+consolekit has).  And if it's something systemd integrated, I can=20
+already tell you it will look like the OS X solution.  Now, what I think =
 
-known good built in non-volatile write cache, and you turn off=20
-write-reordering, and you turn off the write-caches on all the connected =
+it should look like is a different story, I'd say that:
+1. It should give the option to either:
+     a. Refuse to boot degraded.
+     b. Ask the operator if he wants to boot degraded
+     c. Just automatically boot degraded, and probably send a=20
+notification about it.
+2. Provide some service (sadly probably dbus based) to schedule=20
+scrub/balance/re-sync operations and get info about ENOSPC/sync=20
+failure/parity mismatch/device failure/SMART status failure.
+3. Provide a consistent interface to such operations on hardware RAID=20
+controllers that support them.
+4. Provide the ability to notify via arbitrary means on any of the above =
 
-hard drives, then it is relatively safe.  Of course, the chances of most =
+mentioned issues.
+5. Have the ability to turn anything not needed off on a given system.
 
-people actually meeting all those conditions is pretty slim.
 
-
---------------ms010500010103050400010704
+--------------ms030007080401000505060808
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -108,9 +145,9 @@ w2KjaupjpAHfFjv5kGnZXN87UvvlwzIZiKXwa3vTDwK+rrKn/sHPkfDZPSiyt/ZBIK6lX83P
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMxMjQzWjBPBgkq
-hkiG9w0BCQQxQgRA1lq/g9Bx2wwEmcJO6DOB03Qs7wiJL/QuvETp2nV525TGLQYzzLXfhF1K
-nD+woDKkl5Apfi38Ofl7HHw3wN84pTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTE4MTMyOTQwWjBPBgkq
+hkiG9w0BCQQxQgRAqMteNDupid+g7wHJI8ndX7U6A239SDVyt+Nizi0u9ldKC3HO4BH95iV5
+pzaCI5wB10hjsozzjBHDqgt9GnY/lzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -118,14 +155,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxBuVTCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxBuVTAN
-BgkqhkiG9w0BAQEFAASCAgAQLlHqy1XcFrzWl41x9w+QSNpeAActpvkmnPtKigPSFZ7evMqD
-gfE7YguuiAOViZZbCKel6y3JaP61KC0iNg4sW0tUN16trnGn6BKiYddfdj3ivSdZ7rL0KoFj
-xlzvaNjZlGoff5V/kjR4ScTs+MrdFU2ldPUwYqjNqYRk9H5fyqy26jzn7i8KJAxLdv6sWRik
-Q7h+Ve/x4LNdiAr22Pbg0bOiRUegEGBQ2Bobs22WJyAPQ7E6SSUvCWOCflQHa+q0C5QX64l+
-Xcff4jPlj2vIYQ4j2oY9zgsUGnVdI95dki6tBBkxftM75opWw1n3s3xIdQ2tccNjUCBRhoyp
-M2kr15IEjOPbngDQfG+9wS7ol1wohgMAdeAqRCbchbCsE2RsYnKoKthkNMCATEw+0ott1UmZ
-TykP7rXsWtPQ5ntpZyNEZPJIN0nJi9zLNIYX/WP5Nz6eSMjhgD1CGH/yuvmS8McvIoiFO9jZ
-jMK8A3a99pad5QFWgORjImEW9SP3Xn9WfA67ckcOaEnNuih2zRWsMEel/92mK5V/0IfrkS8U
-yORlwz2PgqLicEaa71RPzTBS7TEnNl2DKDSKn79uFfqxEqAa+8scn6bb4OqbV9aKCsoAVULj
-M7nMGUefzzkIsVaK6WPpxFK9dGwioR0ee8EVtDInc/9/vXUOeMHVvg/cbwAAAAAAAA==
---------------ms010500010103050400010704--
+BgkqhkiG9w0BAQEFAASCAgBu7JOkWj+vb1pbNoOD9/nD9DRciYF4ULSZEN9lnfr5PPetdPXF
+BagGtXICQoqYQKALX9R432t2R2EanzqWnRJjP7cE7lRKhyj0cq9vni1p2dB6RMBA41oLM1dV
+EXDjSZG46kGNXUdAq+aQjVW3zENZSHmx+IuCfHjc58w+YZ5f2s93PWBEQS2jXbfYpHWb4c5n
+c9mxxDS/n+i3DY/UNVsq8nJrvZZ2gaFx66Zcm+ghDfbKqF5zjuboLTg39mY+NF62wetv6930
+5TllOKnVWXoUxLE1nNfss86jT3cVyvBteaH9cCe2sOp8o1HaLfwSv4AWoYWpcShd6JvOEFdx
+sxKtAfhiGsdiKqhmWfZdBw17HlEJo0TU8hR2RrZAtwlGVn1EOCVCM6E3zoSeeGPDLwNb4WoO
+hHfewdpkknHD73GIMNXVaXh+KK22zpsRAWLKT1q8TMNKqowTTQV3rrVC6DWGb0K0Dji2DOD/
+fzCizCCKvx3oo5EBdDDbmME+65SMBLlwI/NUyEDCXHL4nGq36zf969IXbzZoeR97IF2qGJTq
+6VF3TrSRdjRNyn6UekqzOGxmYQIz9ivQKwA4yT6AS24k+hQgaIXUgC27heiYThAFYkRe19uL
+KKWlCkJIlmppHGHOWXfS48mLNatlrDnn1v7Lb3my7Fd1C//WzJVvLTP3QQAAAAAAAA==
+--------------ms030007080401000505060808--

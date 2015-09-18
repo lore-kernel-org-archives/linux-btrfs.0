@@ -1,95 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f182.google.com ([209.85.212.182]:38225 "EHLO
-	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752142AbbIRDCi (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:41909 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750957AbbIRGqs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Sep 2015 23:02:38 -0400
-Received: by wiclk2 with SMTP id lk2so13706353wic.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Sep 2015 20:02:37 -0700 (PDT)
+	Fri, 18 Sep 2015 02:46:48 -0400
+Message-ID: <55FBB2F7.4040402@oracle.com>
+Date: Fri, 18 Sep 2015 14:45:11 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
-References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
-	<55FAD9CC.5060206@oracle.com>
-	<pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
-Date: Fri, 18 Sep 2015 13:02:36 +1000
-Message-ID: <CA+WRLO94UekKmT1cy3+t4+pHSCMj=HRoEF4oqtJDimS=EWnbhA@mail.gmail.com>
-Subject: Re: RAID1 storage server won't boot with one disk missing
-From: Gareth Pye <gareth@cerberos.id.au>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: Remove unneeded missing device number check
+References: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com> <1442375031-18212-2-git-send-email-quwenruo@cn.fujitsu.com> <55FA8B31.9080604@oracle.com> <55FA8F8B.6060903@gmx.com> <55FB6D31.9030504@oracle.com> <55FB71A8.3000004@cn.fujitsu.com>
+In-Reply-To: <55FB71A8.3000004@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I think you have stated that in a very polite and friendly way. I'm
-pretty sure I'd phrase it less politely :)
 
-Following mdadm's example of an easy option to allow degraded
-mounting, but that shouldn't be the default. Anyone with the expertise
-to set that option can be expected to implement a way of knowing that
-the mount is degraded.
+Hi Qu,
 
-People tend to be looking at BTRFS for a guarantee that data doesn't
-die when hardware does. Defaults that defeat that shouldn't be used.
+  Thanks for the comments on patch [1].
 
-On Fri, Sep 18, 2015 at 11:36 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Anand Jain posted on Thu, 17 Sep 2015 23:18:36 +0800 as excerpted:
+> For example, if one use single metadata for 2 disks,
+ > and each disk has one metadata chunk on it.
+
+  how that can be achieved ?
+
+> One device got missing later.
+
+  it would surely depend on which one of the device ? (initial only 
+devid 1 mountable, with other missing)
+
+
+Thanks, Anand
+
+> Then your patch will allow the fs to be mounted as rw, even some tree
+> block can be in the missing device.
+> For RO case, it won't be too dangerous, but if we mounted it as RW, who
+> knows what will happen.
+> (Normal tree COW thing should fail before real write, but I'm not sure
+> about other RW operation like scrub/replace/balance and others)
 >
->>> What I expected to happen:
->>> I expected that the [btrfs raid1 data/metadata] system would either
->>> start as if nothing were wrong, or would warn me that one half of the
->>> mirror was missing and ask if I really wanted to start the system with
->>> the root array in a degraded state.
+> And I think that's the original design concept behind the old missing
+> device number check, and it's not a bad idea to follow it anyway.
+>
+> For the patch size, I find a good idea to handle it, and should make the
+> patch(set) size below 200 lines.
+>
+> Further more, it's even possible to make btrfs change mount option to
+> degraded for runtime device missing.
+>
+> Thanks,
+> Qu
 >>
->> as of now it would/should start normally only when there is an entry
->> -o degraded
+>>   I tried to break both the approaches (this patch set and [1]) but I
+>> wasn't successful. sorry if I am missing something.
 >>
->> it looks like -o degraded is going to be a very obvious feature,
->> I have plans of making it a default feature, and provide -o nodegraded
->> feature instead. Thanks for comments if any.
->
-> As Chris Murphy, I have my doubts about this, and think it's likely to
-> cause as many unhappy users as it prevents.
->
-> I'd definitely put -o nodegraded in my default options here, so it's not
-> about me, but about all those others that would end up running a silently
-> degraded system and have no idea until it's too late, as further devices
-> have failed or the one single other available copy of something important
-> (remember, still raid1 without N-mirrors option, unfortunately, so if a
-> device drops out, that's now data/metadata with only a single valid copy
-> regardless of the number of devices, and if it goes invalid...) fails
-> checksum for whatever reason.
->
-> And since it only /allows/ degraded, not forcing it, if admins or distros
-> want it as the default, -o degraded can be added now.  Nothing's stopping
-> them except lack of knowledge of the option, the *same* lack of knowledge
-> that would potentially cause so much harm if the default were switched.
->
-> Put it this way.  With the current default, if it fails and people have
-> to ask about the unexpected failure here, no harm to existing data done,
-> just add -o degraded and get on with things.  If -o degraded were made
-> the default, failure mode would be *MUCH* worse, potential loss of the
-> entire filesystem due to silent and thus uncorrected device loss and
-> degraded mounting.
->
-> So despite the inconvenience of less knowledgeable people losing the
-> availability of the filesystem until they can read the wiki or ask about
-> it here, I don't believe changing the default to -o degraded is wise, at
-> all.
->
-> --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>> Thanks, Anand
+>>
+>> [1] [PATCH 23/23] Btrfs: allow -o rw,degraded for single group profile
 
 
 
--- 
-Gareth Pye - blog.cerberos.id.au
-Level 2 MTG Judge, Melbourne, Australia
-"Dear God, I would like to file a bug report"

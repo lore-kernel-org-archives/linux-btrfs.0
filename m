@@ -1,63 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.jrs-s.net ([173.230.137.22]:59495 "EHLO mail.jrs-s.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752986AbbITBbm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Sep 2015 21:31:42 -0400
-Subject: Re: BTRFS as image store for KVM?
-To: Gert Menke <gert@menke.ac>, linux-btrfs@vger.kernel.org
-References: <55F88ECC.1040604@menke.ac>
-From: Jim Salter <jim@jrs-s.net>
-Message-ID: <55FE0B42.50300@jrs-s.net>
-Date: Sat, 19 Sep 2015 21:26:26 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:21001 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752583AbbITFiH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 20 Sep 2015 01:38:07 -0400
+Message-ID: <55FE462D.2010503@oracle.com>
+Date: Sun, 20 Sep 2015 13:37:49 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <55F88ECC.1040604@menke.ac>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 2/2] btrfs: Remove unneeded missing device number check
+References: <1442375031-18212-1-git-send-email-quwenruo@cn.fujitsu.com> <1442375031-18212-2-git-send-email-quwenruo@cn.fujitsu.com> <55FA8B31.9080604@oracle.com> <55FA8F8B.6060903@gmx.com> <55FB6D31.9030504@oracle.com> <55FB71A8.3000004@cn.fujitsu.com> <55FBB2F7.4040402@oracle.com> <55FDFE46.40600@gmx.com>
+In-Reply-To: <55FDFE46.40600@gmx.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I can't recommend btrfs+KVM, and I speak from experience.
-
-Performance will be fantastic... except when it's completely abysmal.  
-When I tried it, I also ended up with a completely borked (btrfs-raid1) 
-filesystem that would only mount read-only and read at hideously reduced 
-speeds after about a year of usage in a small office environment.  Did 
-*not* make me happy.
-
-ZFS, by contrast, works like absolute gangbusters for KVM image 
-storage.  Just create a dataset, drop a .qcow2 file in it, and off to 
-the races.  I don't recommend messing about with zvols, it's a PITA and 
-isn't necessary.
-
-HTH.
 
 
-
-On 09/15/2015 05:34 PM, Gert Menke wrote:
-> Hi everybody,
+On 09/20/2015 08:31 AM, Qu Wenruo wrote:
 >
-> first off, I'm not 100% sure if this is the right place to ask, so if 
-> it's not, I apologize and I'd appreciate a pointer in the right 
-> direction.
 >
-> I want to build a virtualization server to replace my current home 
-> server. I'm thinking about a Debian system with libvirt/KVM. The 
-> system will have one or two SSDs and five harddisks with some kind of 
-> software RAID5 for storage. I'd like to have a filesystem with data 
-> checksums, so BTRFS seems like the right way to go. However, I read 
-> that BTRFS does not perform well as storage for KVM disk images.
-> (See here: http://www.linux-kvm.org/page/Tuning_KVM )
+> 在 2015年09月18日 14:45, Anand Jain 写道:
+>>
+>> Hi Qu,
+>>
+>>   Thanks for the comments on patch [1].
+>>
+>>> For example, if one use single metadata for 2 disks,
+>>  > and each disk has one metadata chunk on it.
+>>
+>>   how that can be achieved ?
+> By this, I mean, the metadata profile is SINGLE,
+> and there is 2 metadata chunks.
 >
-> Is this still true?
+> One on disk1 and one on disk2.
 >
-> I would appreciate any comments and/or tips you might have on this topic.
+> As btrfs chunk allocate will always use device by avaiable space order,
+> it should be quite easy to archieve that situation.
 >
-> Is anyone using BTRFS as an image store? Are there any special 
-> settings I should be aware of to make it work well?
+> In that case, any missing device will be a disaster,
+
+  in this case the read chunk would anyway fail, right ?
+  and that will lead to mount fail.
+
+Thanks, Anand
+
+> and it's better not
+> to allow RW mount.
 >
 > Thanks,
-> Gert
-> -- 
+> Qu
+>>
+>>> One device got missing later.
+>>
+>>   it would surely depend on which one of the device ? (initial only
+>> devid 1 mountable, with other missing)
+>>
+>>
+>> Thanks, Anand
+>>
+>>> Then your patch will allow the fs to be mounted as rw, even some tree
+>>> block can be in the missing device.
+>>> For RO case, it won't be too dangerous, but if we mounted it as RW, who
+>>> knows what will happen.
+>>> (Normal tree COW thing should fail before real write, but I'm not sure
+>>> about other RW operation like scrub/replace/balance and others)
+>>>
+>>> And I think that's the original design concept behind the old missing
+>>> device number check, and it's not a bad idea to follow it anyway.
+>>>
+>>> For the patch size, I find a good idea to handle it, and should make the
+>>> patch(set) size below 200 lines.
+>>>
+>>> Further more, it's even possible to make btrfs change mount option to
+>>> degraded for runtime device missing.
+>>>
+>>> Thanks,
+>>> Qu
+>>>>
+>>>>   I tried to break both the approaches (this patch set and [1]) but I
+>>>> wasn't successful. sorry if I am missing something.
+>>>>
+>>>> Thanks, Anand
+>>>>
+>>>> [1] [PATCH 23/23] Btrfs: allow -o rw,degraded for single group profile
+>>
+>>
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
-

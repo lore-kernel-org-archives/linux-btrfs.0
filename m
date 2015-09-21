@@ -1,66 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51779 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756520AbbIVFMK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 01:12:10 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZeFs7-0006HR-Rk
-	for linux-btrfs@vger.kernel.org; Tue, 22 Sep 2015 07:12:08 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2015 07:12:07 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2015 07:12:07 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID1 storage server won't boot with one disk missing
-Date: Tue, 22 Sep 2015 05:12:01 +0000 (UTC)
-Message-ID: <pan$24a4a$564d0ff7$8aab1bdc$6a9e65ab@cox.net>
-References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
-	<55FAD9CC.5060206@oracle.com>
-	<pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
-	<CA+WRLO94UekKmT1cy3+t4+pHSCMj=HRoEF4oqtJDimS=EWnbhA@mail.gmail.com>
-	<m49fv27cxyc.fsf@coffee.modeemi.fi>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from frost.carfax.org.uk ([85.119.82.111]:39983 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757159AbbIUPFv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Sep 2015 11:05:51 -0400
+Date: Mon, 21 Sep 2015 15:05:49 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org,
+        Incorporeal Waffle <0isavalidnumber@gmail.com>
+Subject: Re: Btrfs partition gets remounted as read only
+Message-ID: <20150921150549.GD5918@carfax.org.uk>
+References: <CAOTVeoEVxAMHJ8Rw-YfAUmuvNUs3pAcEGgA7bXgOC1fToW9HYQ@mail.gmail.com>
+ <pan$28fb6$e21baff8$67f806d3$ecee1b58@cox.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="BRE3mIcgqKzpedwo"
+In-Reply-To: <pan$28fb6$e21baff8$67f806d3$ecee1b58@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Erkki Seppala posted on Mon, 21 Sep 2015 23:35:39 +0300 as excerpted:
 
-> Gareth Pye <gareth@cerberos.id.au> writes:
+--BRE3mIcgqKzpedwo
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
+(Adding OP back to cc list -- I know from IRC they're not subscribed
+to the list)
+
+On Mon, Sep 21, 2015 at 03:02:23PM +0000, Duncan wrote:
+> Incorporeal Waffle posted on Mon, 21 Sep 2015 14:30:21 +0000 as excerpted:
 > 
->> People tend to be looking at BTRFS for a guarantee that data doesn't
->> die when hardware does. Defaults that defeat that shouldn't be used.
+> > I tried converting my root partition (originally ext4) to btrfs.
 > 
-> However, data is no more in danger at startup than it is at the moment
-> when btrfs notices a drive dropping, yet it permits IO to proceed. Is
-> there not a contradiction?
-
-The problem at runtime is that btrfs _doesn't_ really notice a device 
-dropping.  It simply continues writing to the existing devices, and 
-buffering the data for the now missing device.  The block device 
-management parts of the kernel know it's missing (the device node will 
-disappear from devtmpfs, etc), but the btrfs part carries on, oblivious.
-
-At mount, however, btrfs notices (since it must as it's trying to 
-assemble the filesystem at that point), and refuses to mount without the 
-degraded option if there's too many devices missing.
-
-I'd argue that noticing the problem and requiring admin intervention to 
-avoid risk to the data is a feature, not a misfeature, and that the 
-runtime behavior is therefore ultimately a lacking feature, ultimately a 
-bug which should be fixed, while you seem to be arguing that carrying on 
-oblivious is the feature, and requiring admin intervention when there's a 
-risk to data is a misfeature, ultimately a bug that should be fixed.
-
-=:^\
+> There's some known bugs with btrfs-convert currently, with current or 
+> very recent discussion on-list about how to fix it, if you check the 
+> archives.
+> 
+> In the more general case, while the present bugs will no doubt be fixed, 
+> I (a user, not a dev) don't recommend using convert, as in the best case, 
+> it's a compromise, with better results if you treat the existing ext* as 
+> a backup and start with a brand new btrfs using mkfs.btrfs.
+> 
+> The admin's rule of backups states that if you care about the data, it's 
+> backed up, and if it's not backed up, in practice, you're defining the 
+> data as not worth the time and resources to back up, any claims to the 
+> contrary not withstanding.  (Meanwhile, a would-be backup that hasn't 
+> been tested restorable isn't considered a backup, because the backup 
+> isn't defined as complete until it is tested.)
+> 
+> From that perspective, there's little reason to do a filesystem 
+> conversion, since if you care about the data, it's backed up and can be 
+> restored to a brand new filesystem, with a better layout than a 
+> filesystem that started as something else is likely to ever achieve, and 
+> if you don't care about the data, then there's no reason not to start out 
+> with a clean filesystem in the first place.
+> 
+> So while having a convert tool is "nice", even when it's working 
+> correctly, the best choice is to avoid using it, starting with brand new 
+> clean filesystem and copying existing data, if any, into it from backups 
+> so it is laid out ideally for the new filesystem, instead of the 
+> compromise of trying to work around the location of existing data and 
+> metadata, in a layout that should work, granted (and it's definitely a 
+> bug that it's not doing so today), but is unlikely to be ideal for a 
+> different filesystem than the one it started out as.
+> 
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Hugo Mills             | vi vi vi: the Editor of the Beast.
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
+--BRE3mIcgqKzpedwo
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJWABzNAAoJEFheFHXiqx3kF88P/i9bpRH4yFKnAT5XXOotMPbl
+FXrdiaCyuQGT0Mf8O7+fkcS9hVcGXfRSWOGim25tSpWNQpvcLL/orS2CoskYFB7v
+HevXzOouDYJJB6kRfXs4VHCmwuDsRsQyc2ewcx8+XU9HMicLYAp8Kx3kvqqLHVEY
+krftB1tzmOaYou06sQeV7cckkAgIY85gqTEtdrCdu2XXfSdGXV1JqeA9PkH1eN2l
+EINcxaXawkY64B/h+RReIGMc3IUSDuxvIiuijJf6Eud7ZYk1Xa5y4YgWyo/Lx+vb
+fg+hwnHCNcafogUQK17z4ENWDSCan3wqhLGXoWYVTODKMUZrKj7Y4YmC2spB9c76
+vaHXANQ8h2pHC5R+fhxQOeefFVVj/4cyL46Q/xuc0E2pe8rs7rQexNP0y8hx7sQ5
+BBequvwscRq/Ob6WF1COicEXtQAKQu3rm//+ccltZQOSDToI9YjE8dE9yJw5bGIJ
+h+Cut5ioBPciKL0TZQJT5Ed6/gdzkozSQ0crLLreZvz0se9uznJoY24etC5aFsYx
+Btbh/XsS006BOl9v3vlJuMmrxGmWzsBcrUkyQSRTN4foV52bda9kxcuqC+aS2b49
+02O2fqeHu9bvzpDWC+dcrnQHr5dJifV1EwOFDLQscYXDxFzO+sGZdGZkN6EBhrb4
+Sl/4CwsssWJk4/F4wZOC
+=FOvO
+-----END PGP SIGNATURE-----
+
+--BRE3mIcgqKzpedwo--

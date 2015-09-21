@@ -1,102 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:28579 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751766AbbIONJu (ORCPT
+Received: from blu004-omc1s7.hotmail.com ([65.55.116.18]:52356 "EHLO
+	BLU004-OMC1S7.hotmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755899AbbIUDqU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 09:09:50 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8FD9WoW016741
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 21:09:32 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs: use btrfs_raid_array in btrfs_reduce_alloc_profile
-Date: Tue, 15 Sep 2015 21:08:08 +0800
-Message-ID: <ba0f699bf154843d8fb3456156457b297197c749.1442322310.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1442322310.git.zhaolei@cn.fujitsu.com>
-References: <cover.1442322310.git.zhaolei@cn.fujitsu.com>
+	Sun, 20 Sep 2015 23:46:20 -0400
+Message-ID: <BLU437-SMTP103A5A3F35BD11388D6FC65FF460@phx.gbl>
+From: Shan Hai <haishan.bai@hotmail.com>
+To: linux-btrfs@vger.kernel.org
+CC: clm@fb.com, linux-kernel@vger.kernel.org
+Subject: [PATCH 1/1] btrfs/file.c: remove an unsed varialbe first_index
+Date: Mon, 21 Sep 2015 11:40:57 +0800
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <BLU437-SMTP103CD3FBBD84F09E5592AACFF460@phx.gbl>
 
-btrfs_raid_array[] holds attributes of all raid types.
+From: Shan Hai <shan.hai@windriver.com>
 
-Use btrfs_raid_array[].devs_min is best way for request
-in btrfs_reduce_alloc_profile(), instead of use complex
-condition of each raid types.
+The commit b37392ea86761 ("Btrfs: cleanup unnecessary parameter
+and variant of prepare_pages()") makes it redundant.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Shan Hai <haishan.bai@hotmail.com>
 ---
- fs/btrfs/extent-tree.c | 48 ++++++++++++++++++++++--------------------------
- 1 file changed, 22 insertions(+), 26 deletions(-)
+ fs/btrfs/file.c | 3 ---
+ 1 file changed, 3 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 5411f0a..0d93cad 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3822,7 +3822,8 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
- {
- 	u64 num_devices = root->fs_info->fs_devices->rw_devices;
- 	u64 target;
--	u64 tmp;
-+	u64 raid_type;
-+	u64 allowed = 0;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b823fac..b6695c4 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1469,7 +1469,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 	u64 release_bytes = 0;
+ 	u64 lockstart;
+ 	u64 lockend;
+-	unsigned long first_index;
+ 	size_t num_written = 0;
+ 	int nrptrs;
+ 	int ret = 0;
+@@ -1485,8 +1484,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 	if (!pages)
+ 		return -ENOMEM;
  
- 	/*
- 	 * see if restripe for this chunk_type is in progress, if so
-@@ -3840,31 +3841,26 @@ static u64 btrfs_reduce_alloc_profile(struct btrfs_root *root, u64 flags)
- 	spin_unlock(&root->fs_info->balance_lock);
- 
- 	/* First, mask out the RAID levels which aren't possible */
--	if (num_devices == 1)
--		flags &= ~(BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID0 |
--			   BTRFS_BLOCK_GROUP_RAID5);
--	if (num_devices < 3)
--		flags &= ~BTRFS_BLOCK_GROUP_RAID6;
--	if (num_devices < 4)
--		flags &= ~BTRFS_BLOCK_GROUP_RAID10;
+-	first_index = pos >> PAGE_CACHE_SHIFT;
 -
--	tmp = flags & (BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID0 |
--		       BTRFS_BLOCK_GROUP_RAID1 | BTRFS_BLOCK_GROUP_RAID5 |
--		       BTRFS_BLOCK_GROUP_RAID6 | BTRFS_BLOCK_GROUP_RAID10);
--	flags &= ~tmp;
--
--	if (tmp & BTRFS_BLOCK_GROUP_RAID6)
--		tmp = BTRFS_BLOCK_GROUP_RAID6;
--	else if (tmp & BTRFS_BLOCK_GROUP_RAID5)
--		tmp = BTRFS_BLOCK_GROUP_RAID5;
--	else if (tmp & BTRFS_BLOCK_GROUP_RAID10)
--		tmp = BTRFS_BLOCK_GROUP_RAID10;
--	else if (tmp & BTRFS_BLOCK_GROUP_RAID1)
--		tmp = BTRFS_BLOCK_GROUP_RAID1;
--	else if (tmp & BTRFS_BLOCK_GROUP_RAID0)
--		tmp = BTRFS_BLOCK_GROUP_RAID0;
--
--	return extended_to_chunk(flags | tmp);
-+	for (raid_type = 0; raid_type < BTRFS_NR_RAID_TYPES; raid_type++) {
-+		if (num_devices >= btrfs_raid_array[raid_type].devs_min)
-+			allowed |= btrfs_raid_group[raid_type];
-+	}
-+	allowed &= flags;
-+
-+	if (allowed & BTRFS_BLOCK_GROUP_RAID6)
-+		allowed = BTRFS_BLOCK_GROUP_RAID6;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID5)
-+		allowed = BTRFS_BLOCK_GROUP_RAID5;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID10)
-+		allowed = BTRFS_BLOCK_GROUP_RAID10;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID1)
-+		allowed = BTRFS_BLOCK_GROUP_RAID1;
-+	else if (allowed & BTRFS_BLOCK_GROUP_RAID0)
-+		allowed = BTRFS_BLOCK_GROUP_RAID0;
-+
-+	flags &= ~BTRFS_BLOCK_GROUP_PROFILE_MASK;
-+
-+	return extended_to_chunk(flags | allowed);
- }
- 
- static u64 get_alloc_profile(struct btrfs_root *root, u64 orig_flags)
+ 	while (iov_iter_count(i) > 0) {
+ 		size_t offset = pos & (PAGE_CACHE_SIZE - 1);
+ 		size_t write_bytes = min(iov_iter_count(i),
 -- 
-1.8.5.1
+2.1.4
 

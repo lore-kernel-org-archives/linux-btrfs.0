@@ -1,103 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:44245 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757711AbbIVOgE (ORCPT
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:34957 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757711AbbIVOnP convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 10:36:04 -0400
-Date: Tue, 22 Sep 2015 14:36:02 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: dsterba@suse.cz,
-        Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	Tue, 22 Sep 2015 10:43:15 -0400
+Received: by wicge5 with SMTP id ge5so164859346wic.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2015 07:43:14 -0700 (PDT)
+Date: Tue, 22 Sep 2015 16:43:12 +0200
+From: "S. Fricke" <silvio.fricke@gmail.com>
+To: Richard Michael <rmichael@edgeofthenet.org>
+Cc: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
 	<holger.hoffstaette@googlemail.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Fix no space bug caused by removing bg
-Message-ID: <20150922143602.GI5918@carfax.org.uk>
-References: <15fc8f8d002e4ffcdb46e769736f240ae7ace20b.1442839332.git.zhaolei@cn.fujitsu.com>
- <560150CD.6070301@suse.com>
- <5601596B.1020607@googlemail.com>
- <20150922134131.GH5918@carfax.org.uk>
- <20150922142333.GH12815@twin.jikos.cz>
+        Linux Btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: problem with long running btrfs mount operation
+Message-ID: <20150922144312.GB14395@sfserver>
+References: <20150922133813.GA14395@sfserver>
+ <56015D3F.8020406@googlemail.com>
+ <CABR0jERXQ9ydE+KAeQBrW5F0DzraePnAyz8m-uVStUCbeFt4WQ@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="gTY1JhLGodeuSBqf"
-In-Reply-To: <20150922142333.GH12815@twin.jikos.cz>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <CABR0jERXQ9ydE+KAeQBrW5F0DzraePnAyz8m-uVStUCbeFt4WQ@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---gTY1JhLGodeuSBqf
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> On Tue, Sep 22, 2015 at 9:53 AM, Holger Hoffstätte
+> <holger.hoffstaette@googlemail.com> wrote:
+> > On 09/22/15 15:38, S. Fricke wrote:
+> >> I have a problem with one of my btrfs hdds. If I mount it, it needs more than
+> >> 135 minutes for this operation. After the mounting it works normaly. This is
+> >> reproducible only with this hdd.
+> >>
+> >> Maybe someone has a clue what is going wrong here.
+> >
+> > On remount it tries to continue a previously started balance, which fails with
+> > an error (as can be seen at the end of your log). You should:
+> >
+> > a) immediately stop what you're doing on that fs and unmount it
+> > b) get btrfs-progs-4.2.1 (not 4.2) and see what it says
 
-On Tue, Sep 22, 2015 at 04:23:33PM +0200, David Sterba wrote:
-> On Tue, Sep 22, 2015 at 01:41:31PM +0000, Hugo Mills wrote:
-> > On Tue, Sep 22, 2015 at 03:36:43PM +0200, Holger Hoffst=E4tte wrote:
-> > > On 09/22/15 14:59, Jeff Mahoney wrote:
-> > > (snip)
-> > > > So if they way we want to prevent the loss of raid type info is by
-> > > > maintaining the last block group allocated with that raid type, fin=
-e,
-> > > > but that's a separate discussion.  Personally, I think keeping 1GB
-> > >=20
-> > > At this point I'm much more surprised to learn that the RAID type can
-> > > apparently get "lost" in the first place, and is not persisted
-> > > separately. I mean..wat?
-> >=20
-> >    It's always been like that, unfortunately.
-> >=20
-> >    The code tries to use the RAID type that's already present to work
-> > out what the next allocation should be. If there aren't any chunks in
-> > the FS, the configuration is lost, because it's not stored anywhere
-> > else. It's one of the things that tripped me up badly when I was
-> > failing to rewrite the chunk allocator last year.
->=20
-> Yeah, right now there's no persistent default for the allocator. I'm
-> still hoping that the object properties will magically solve that.
+What should it say to me? I have to send a command? Should I try to mount the
+device after I have unmount it? BTW: Is btrfs-progs needed for mounting?
 
-   There's no obvious place that filesystem-wide properties can be
-stored, though. There's a userspace tool to manipulate the few current
-FS-wide properties, but that's all special-cased to use the
-"historical" ioctls for those properties, with no generalisation of a
-property store, or even (IIRC) any external API for them.
+> >
+> > Depending on the outcome of b) you can use -o skip_balance on the next mount.
+> >
+> > -h
+> 
+> I'm curious, do the relevant INFO lines also appear earlier in the
+> log, near the time the mount began?
+> 
+> These:
+> 
+> BTRFS: checking UUID tree
+> [  +0.000076] BTRFS info (device sda1): continuing balance
+> 
+> 
+> Otherwise, it requires an unknown amount of patience to diagnose this
+> problem -- how long should I wait before giving up?
+> 
+> It seems to me, from a sysadmin's perspective, the log messages are
+> reversed (hung task, 2+ hrs later, BTRFS tells me what it's doing) .
+> I'd expect BTRFS to log a "continuing balance" message as soon as I
+> mount it, then it's blocked [for as long as I care to wait], but I can
+> immediately tell what's happened.
 
-   We're nominally using xattrs in the btrfs: namespace on directories
-and files, and presumably on the top directory of a subvolume for
-subvol-wide properties, but it's not clear where the FS-wide values
-should go: in the top directory of subvolid=3D5 would be confusing,
-because then you couldn't separate the properties for *that subvol*
-=66rom the ones for the whole FS (say, the default replication policy,
-where you might want the top subvol to have different properties from
-everything else).
+Thats my problem in general with btrfs, and other filesystems, I have a
+glitch; I have to wait, but I have no possibilities to look what is going on
+on drive X. Okay I could use sysemtaps, has someone good scripts for such
+usecase? Or maybe we have other toolings?
 
-   Hugo.
+Regards,
+Silvio
 
---=20
-Hugo Mills             | Putting U back in Honor, Valor, and Trth.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---gTY1JhLGodeuSBqf
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWAWdRAAoJEFheFHXiqx3kEowP/3jlzu/2C4LYF1VowB63MBWT
-Cd4pxLB90pOrrdUBJ9wsQPm8Cq/sjn+CoXAtc1Q5qzgDbfgNbZuhUfQqw+1/fi6C
-nOV1YP0wCQVBu4jc2bLlOdzcPK/ffpuVOXbi/GuRmd9zyqi4T7Ppxvd36tq+h/aY
-2gf7/O7KNM1rlCOvSgOQGR1t0HKPBuwtpDZfqS+geqYjimqqtYJXyNZ6+e1as0Sl
-ZKOrTWQ2CtTtUsnvaVlTYIqDFoUTuRebXp3mY30iXcz6YADlm73JqfqJYj//c7Ia
-ccWHnvNGTQvWOVaV4gKKoNx6XHzLWYfdtKwI2QYq6IQQbk8gP5QxubJ4ncTWhz1U
-6ZFip8l1wY+U/YRK/SUbA8X+vwLAqmSqRUNzGZ7/nR8LbLlcoVCh10bjexZoKr/d
-qtYKJGlMZ6ZI1aBC7nwd/UQqxJT4RdomarjW2nHtdK0QmOk0twq3+yc4EapGayp8
-TYqdW25Ljk2jYr7Yu3m4DbFmAmY6DkFfZx3MIMthDzc4a9KkEz1FBbyxxl0NqtN5
-zzBIqPLXhArfjrE4+UMokgb0hCjZ044EfLAIw7Qoaorzm6eTEitFfQjJbWSVvyv8
-0hANDSPu9GzMflUoIajmNjDOZDfNRZkjcdKaKx0QviUs+gWUKssx/gG7VoicHzb1
-BxHrPUGhBlsowOIIsJ6H
-=fYsD
------END PGP SIGNATURE-----
-
---gTY1JhLGodeuSBqf--
+-- 
+-- S. Fricke ---------------------------------------- silvio@port1024.net --
+   Diplom-Informatiker (FH)
+   Linux-Entwicklung             JABBER: silvio@conversation.port1024.net   
+----------------------------------------------------------------------------

@@ -1,74 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:35961 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754839AbbICBFZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Sep 2015 21:05:25 -0400
-Received: by pacwi10 with SMTP id wi10so28061785pac.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Sep 2015 18:05:25 -0700 (PDT)
-From: Justin Maggard <jmaggard10@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Justin Maggard <jmaggard@netgear.com>
-Subject: [PATCH v2] btrfs: qgroup: exit the rescan worker during umount
-Date: Wed,  2 Sep 2015 18:05:17 -0700
-Message-Id: <1441242317-16547-1-git-send-email-jmaggard@netgear.com>
+Received: from mx2.suse.de ([195.135.220.15]:53428 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S933295AbbIVNE2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 09:04:28 -0400
+Date: Tue, 22 Sep 2015 15:03:32 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Alexandru Moise <00moses.alexander00@gmail.com>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] btrfs: cleanup btrfs_balance profile validity checks
+Message-ID: <20150922130332.GA12815@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20150830214549.GA1409@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150830214549.GA1409@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-v2: Fix stupid error while making formatting changes...
+On Sun, Aug 30, 2015 at 09:45:49PM +0000, Alexandru Moise wrote:
+> Improve readability by generalizing the profile validity checks,
+> I had to read through those if statements half a dozen times on my
+> first try just to get an idea of what's happening there.
+> 
+> Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+> ---
+>  fs/btrfs/volumes.c | 21 ++++++++++++---------
+>  1 file changed, 12 insertions(+), 9 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index fbe7c10..d23bc26 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3454,6 +3454,15 @@ static void __cancel_balance(struct btrfs_fs_info *fs_info)
+>  	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
+>  }
+>  
+> +/* Non-zero return value signifies invalidity */
+> +static inline int balance_relocate_invalid(struct btrfs_balance_args *bctl_arg,
 
-I was hitting a consistent NULL pointer dereference during shutdown that
-showed the trace running through end_workqueue_bio().  I traced it back to
-the endio_meta_workers workqueue being poked after it had already been
-destroyed.
-
-Eventually I found that the root cause was a qgroup rescan that was still
-in progress while we were stopping all the btrfs workers.
-
-Currently we explicitly pause balance and scrub operations in
-close_ctree(), but we do nothing to stop the qgroup rescan.  We should
-probably be doing the same for qgroup rescan, but that's a much larger
-change.  This small change is good enough to allow me to unmount without
-crashing.
-
-Signed-off-by: Justin Maggard <jmaggard@netgear.com>
----
- fs/btrfs/qgroup.c | 9 ++++++---
- 1 file changed, 6 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index d904ee1..5bfcee9 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2278,7 +2278,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 		goto out;
- 
- 	err = 0;
--	while (!err) {
-+	while (!err && !btrfs_fs_closing(fs_info)) {
- 		trans = btrfs_start_transaction(fs_info->fs_root, 0);
- 		if (IS_ERR(trans)) {
- 			err = PTR_ERR(trans);
-@@ -2301,7 +2301,8 @@ out:
- 	btrfs_free_path(path);
- 
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
--	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
-+	if (!btrfs_fs_closing(fs_info))
-+		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
- 
- 	if (err > 0 &&
- 	    fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT) {
-@@ -2330,7 +2331,9 @@ out:
- 	}
- 	btrfs_end_transaction(trans, fs_info->quota_root);
- 
--	if (err >= 0) {
-+	if (btrfs_fs_closing(fs_info)) {
-+		btrfs_info(fs_info, "qgroup scan paused");
-+	} else if (err >= 0) {
- 		btrfs_info(fs_info, "qgroup scan completed%s",
- 			err > 0 ? " (inconsistency flag cleared)" : "");
- 	} else {
--- 
-2.5.1
-
+The function name is not very descriptive, I'd pick something like
+validate_convert_profile, otherwise ok.

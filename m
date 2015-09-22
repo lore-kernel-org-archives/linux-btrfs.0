@@ -1,119 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f173.google.com ([209.85.220.173]:35898 "EHLO
-	mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758557AbbIVTpG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 15:45:06 -0400
-Received: by qkcf65 with SMTP id f65so8804982qkc.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2015 12:45:05 -0700 (PDT)
-Subject: Re: RAID1 storage server won't boot with one disk missing
-To: Chris Murphy <lists@colorremedies.com>
-References: <CAPQXdDQzkQsJrRJH3+c0x93ogDPge_hjHyW1CZ-FQRAdoMaGoA@mail.gmail.com>
- <55FAD9CC.5060206@oracle.com> <pan$5cdb2$42505f02$e2b552bf$4a4e51e@cox.net>
- <CA+WRLO94UekKmT1cy3+t4+pHSCMj=HRoEF4oqtJDimS=EWnbhA@mail.gmail.com>
- <m49fv27cxyc.fsf@coffee.modeemi.fi> <56013C3C.6010005@gmail.com>
- <56014ECA.1050002@gmx.com> <560155C4.2080701@gmail.com>
- <CAJCQCtSK0AyjS8WX2V0K6nMgM3AmhFjTT6s5GcPF8EW8eKFN9Q@mail.gmail.com>
-Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, Erkki Seppala <flux-btrfs@inside.org>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5601AFC1.8070006@gmail.com>
-Date: Tue, 22 Sep 2015 15:45:05 -0400
+Received: from lost.in.psyced.org ([188.40.42.221]:52630 "EHLO lo.psyced.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758879AbbIVTvH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 15:51:07 -0400
+Received: from lo.psyced.org (localhost [127.0.0.1])
+	by lo.psyced.org (8.14.3/8.14.3/Debian-9.4) with ESMTP id t8MJqJBH027237
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Sep 2015 21:52:20 +0200
+Received: (from lynx@localhost)
+	by lo.psyced.org (8.14.3/8.14.3/Submit) id t8MJqJlp027236
+	for linux-btrfs@vger.kernel.org; Tue, 22 Sep 2015 21:52:19 +0200
+Date: Tue, 22 Sep 2015 21:52:19 +0200
+From: carlo von lynX <lynX@time.to.get.psyced.org>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs receive bigger than original snapshot?
+Message-ID: <20150922195219.GA23903@lo.psyced.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtSK0AyjS8WX2V0K6nMgM3AmhFjTT6s5GcPF8EW8eKFN9Q@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090005020004080207060303"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Hello, it's me again. This time I searched the web to make sure
+I'm not making another beginner's mistake. I'm still not on the
+list, so please keep me in cc: on replies.
 
---------------ms090005020004080207060303
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+I have optimized a btrfs subvolume with a script* that reflinks
+all files with identical contents, then I did a read-only snap
+and fed it to send/receive. The bad news: on the receiving
+side the same snapshot grew from 5.5G to 7.1G.
 
-On 2015-09-22 14:35, Chris Murphy wrote:
-> On Tue, Sep 22, 2015 at 7:21 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->
->> It's not a bad idea, except that it changes established usage, and the=
-re are
->> probably some people out there who depend on the current behavior. If =
-we do
->> go that way, mount needs to spit out a big obnoxious warning (as in, n=
-ot
->> through dmesg or mount options, but directly on stderr) if the filesys=
-tem
->> gets mounted degraded automatically.
->
-> Definitely there needs to be a user space message. Even now when
-> trying to mount a volume with a missing device without -o degraded the
-> generic fs type unrecognized message is misleading.
-I agree that it's confusing for many users, but from the point of view=20
-of someone who's been doing system administration for a few years, the=20
-'or incorrect mount options' bit does kind of make sense given the contex=
-t.
+I assume send/receive does not support one of the coolest
+btrfs features ever.. reflinks. Didn't find any mention on this
+on https://btrfs.wiki.kernel.org/index.php/Incremental_Backup
+or other pages. Is there any documentation that would explain
+to me why this has to be or is it just a missing feature that
+someone someday may find the time to add?
+
+Generally I find it odd that btrfs receive would not recreate
+an identical clone of the original snapshot, that would also
+allow me to continue working on a backup hard disk, then merge
+the changes back to the main disk. Instead I have to decide
+which device contains the master copy for all times and never
+make rw snapshots elsewhere. What if the master disk dies?
+Then I can turn a backup into the new master but I will have
+to re-bootstrap all other backups as they will not accept the
+non-identical parent snapshot.
+
+Apparently I'm not the only one that thought this to be a
+defect rather than a design choice:
+    http://www.spinics.net/lists/linux-btrfs/msg45175.html
+
+This actually confused me (in particular the absence of responses
+to that mail), that's why I have btrfs-progs 4.0 installed...
+but in the meantime I figured out that I expected send/receive
+to be bidirectional. So my question in this case.. is there a
+higher reasoning for the inexactness of send/receive transfers?
+
+And another classic: since the output size of the snapshot copy
+is unpredictable, running out of disk space can be frequent.
+Wouldn't it be cool if receive could resume rather than restarting
+from scratch?
+
+But maybe I still got it all wrong in my head. If these things
+are FAQs, please add them to the FAQ document. In particular some
+criteria to decide when rsync is actually a more suitable tool
+over send/receive, which apparently under some circumstances is
+the case. In some other cases, git can be the better suited tool.
+
+Still I am very glad that you created a new alternative for data
+organization between the extremes of reckless rsync and overly
+accurate git. It's just a steep learning mountain.
 
 
---------------ms090005020004080207060303
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+*) I used fdupes' output ran through a perl script that calls
+  "cp --reflink" for each match. Would "bedup" or "duperemove"
+ do a better job? bedup looks like a better long-term solution.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCC
-Brgwgga0MIIEnKADAgECAgMRLfgwDQYJKoZIhvcNAQENBQAweTEQMA4GA1UEChMHUm9vdCBD
-QTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNp
-Z25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcwHhcN
-MTUwOTIxMTEzNTEzWhcNMTYwMzE5MTEzNTEzWjBjMRgwFgYDVQQDEw9DQWNlcnQgV29UIFVz
-ZXIxIzAhBgkqhkiG9w0BCQEWFGFoZmVycm9pbjdAZ21haWwuY29tMSIwIAYJKoZIhvcNAQkB
-FhNhaGVtbWVsZ0BvaGlvZ3QuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA
-nQ/81tq0QBQi5w316VsVNfjg6kVVIMx760TuwA1MUaNQgQ3NyUl+UyFtjhpkNwwChjgAqfGd
-LIMTHAdObcwGfzO5uI2o1a8MHVQna8FRsU3QGouysIOGQlX8jFYXMKPEdnlt0GoQcd+BtESr
-pivbGWUEkPs1CwM6WOrs+09bAJP3qzKIr0VxervFrzrC5Dg9Rf18r9WXHElBuWHg4GYHNJ2V
-Ab8iKc10h44FnqxZK8RDN8ts/xX93i9bIBmHnFfyNRfiOUtNVeynJbf6kVtdHP+CRBkXCNRZ
-qyQT7gbTGD24P92PS2UTmDfplSBcWcTn65o3xWfesbf02jF6PL3BCrVnDRI4RgYxG3zFBJuG
-qvMoEODLhHKSXPAyQhwZINigZNdw5G1NqjXqUw+lIqdQvoPijK9J3eijiakh9u2bjWOMaleI
-SMRR6XsdM2O5qun1dqOrCgRkM0XSNtBQ2JjY7CycIx+qifJWsRaYWZz0aQU4ZrtAI7gVhO9h
-pyNaAGjvm7PdjEBiXq57e4QcgpwzvNlv8pG1c/hnt0msfDWNJtl3b6elhQ2Pz4w/QnWifZ8E
-BrFEmjeeJa2dqjE3giPVWrsH+lOvQQONsYJOuVb8b0zao4vrWeGmW2q2e3pdv0Axzm/60cJQ
-haZUv8+JdX9ZzqxOm5w5eUQSclt84u+D+hsCAwEAAaOCAVkwggFVMAwGA1UdEwEB/wQCMAAw
-VgYJYIZIAYb4QgENBEkWR1RvIGdldCB5b3VyIG93biBjZXJ0aWZpY2F0ZSBmb3IgRlJFRSBo
-ZWFkIG92ZXIgdG8gaHR0cDovL3d3dy5DQWNlcnQub3JnMA4GA1UdDwEB/wQEAwIDqDBABgNV
-HSUEOTA3BggrBgEFBQcDBAYIKwYBBQUHAwIGCisGAQQBgjcKAwQGCisGAQQBgjcKAwMGCWCG
-SAGG+EIEATAyBggrBgEFBQcBAQQmMCQwIgYIKwYBBQUHMAGGFmh0dHA6Ly9vY3NwLmNhY2Vy
-dC5vcmcwMQYDVR0fBCowKDAmoCSgIoYgaHR0cDovL2NybC5jYWNlcnQub3JnL3Jldm9rZS5j
-cmwwNAYDVR0RBC0wK4EUYWhmZXJyb2luN0BnbWFpbC5jb22BE2FoZW1tZWxnQG9oaW9ndC5j
-b20wDQYJKoZIhvcNAQENBQADggIBADMnxtSLiIunh/TQcjnRdf63yf2D8jMtYUm4yDoCF++J
-jCXbPQBGrpCEHztlNSGIkF3PH7ohKZvlqF4XePWxpY9dkr/pNyCF1PRkwxUURqvuHXbu8Lwn
-8D3U2HeOEU3KmrfEo65DcbanJCMTTW7+mU9lZICPP7ZA9/zB+L0Gm1UNFZ6AU50N/86vjQfY
-WgkCd6dZD4rQ5y8L+d/lRbJW7ZGEQw1bSFVTRpkxxDTOwXH4/GpQfnfqTAtQuJ1CsKT12e+H
-NSD/RUWGTr289dA3P4nunBlz7qfvKamxPymHeBEUcuICKkL9/OZrnuYnGROFwcdvfjGE5iLB
-kjp/ttrY4aaVW5EsLASNgiRmA6mbgEAMlw3RwVx0sVelbiIAJg9Twzk4Ct6U9uBKiJ8S0sS2
-8RCSyTmCRhJs0vvva5W9QUFGmp5kyFQEoSfBRJlbZfGX2ehI2Hi3U2/PMUm2ONuQG1E+a0AP
-u7I0NJc/Xil7rqR0gdbfkbWp0a+8dAvaM6J00aIcNo+HkcQkUgtfrw+C2Oyl3q8IjivGXZqT
-5UdGUb2KujLjqjG91Dun3/RJ/qgQlotH7WkVBs7YJVTCxfkdN36rToPcnMYOI30FWa0Q06gn
-F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
-BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTIyMTk0NTA1WjBPBgkq
-hkiG9w0BCQQxQgRAICcfwirerMd8GGHuGASuQObzI2z+V6sUEYaxdURHFPfrwkl8Ckpelw+s
-A8lnKrd3omMAHn3XBs1oO30JgReoXjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBJ4rdbb91gP+kDzdxetNeHnYqOO4VARG9lMKXUWqL4iRY2MhPl
-H4IfixUZhnAFNbazURneQZY9GG5KTycsteJ0BLUycqXzC5q6teequnZQ7o1xs3e449EOdOzX
-usHGlw/+EugU54jzUj48ryUzesL3u2s4TXanuyh1G8rripGnfex+bWX6qLYJv627TgeuRWqc
-8yBfYxAlVWSvWBtch//3iWfW3ADd+tgGYQTkVnHCCkKJJ0AaoAGNety4sim4dz2uOgaJxHZj
-BqY3s0yY31Lb4kmX66bHNsEp52XxqGF6kE8+rxWJnlfJxsfsvxTJBxJiwPUZm/IFUd2peCmm
-RBKihYcSviBBasuAeHif0kEV2B/PcvbNmNDVAXdGfOdobd42CBRMqQZs9dvTLBxHSDLbzfW+
-sRItWyTg/kmafkaWed5/zveYQ/KrTI6LVBcZhVptdFgzZ8UaCt46mkJH8yVu+PJzd6DBj6Wh
-8en+8WKQHSGuJ1OQWkUwnmFz9Z68e3VRuQHqS768cYPVpnIlTLicAEZKVJzZ4+UVkQ/JTeOR
-T9XzdJFaXZDA2CBNnh2SPBvCAGOV3HgxBrg2gW2DgMZtJnqDfkt1rsL9STK5JISxMqV1SkE6
-knkwuxh/Ut3sTyY3c1sBvrHXMlN9vbd2gOFE3wFd19zvP+8nLM6X9MGL+AAAAAAAAA==
---------------ms090005020004080207060303--
+
+-- 
+  E-mail is public! Talk to me in private using encryption:
+         http://loupsycedyglgamf.onion/LynX/
+          irc://loupsycedyglgamf.onion:67/lynX
+         https://psyced.org:34443/LynX/

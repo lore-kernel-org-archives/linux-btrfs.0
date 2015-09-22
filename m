@@ -1,40 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:46589 "EHLO
-	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755554AbbIUA3q (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Sep 2015 20:29:46 -0400
-Date: Mon, 21 Sep 2015 10:29:44 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v6] fstests: btrfs: Add reserved space leak check for
- rewrite  dirty page
-Message-ID: <20150921002944.GJ26895@dastard>
-References: <1440574257-1544-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1440574257-1544-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mail.kernel.org ([198.145.29.136]:57417 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751670AbbIVRAj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 13:00:39 -0400
+From: fdmanana@kernel.org
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: Fix golden output for the new btrfs device replace tests
+Date: Tue, 22 Sep 2015 17:58:53 +0100
+Message-Id: <1442941133-14482-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Aug 26, 2015 at 03:30:57PM +0800, Qu Wenruo wrote:
-> +# Use big blocksize to ensure there is still enough space left for metadata
-> +# space reserve.
-> +BLOCKSIZE=$(( 2 * 1024 * 1024 )) # 2M block size
-> +FILESIZE=$(( 128 * 1024 * 1024 )) # 128M file size
+From: Filipe Manana <fdmanana@suse.com>
 
-Little thing in terms of style here: global variables that come from
-the test harness use upper case, local test variabled should use
-lowercase. It just makes it easy to see what variables have come
-from the environment/test harness versus those that are used only by
-the test.
+As a workaround for a regression in the uuid filter introduced by
+a092363bbdfa ("xfs: test changing UUID on V5 superblock"), the btrfs
+100 and 101 tests included an extra white space before the uuid in their
+golden output files. However commit 48613832ad11 ("_filter_uuid: Fix
+output regression for btrfs/006"), which came later, fixed the regression
+in the uuid filter therefore making btrfs/100 and btrfs/101 fail due to
+the extra space in their expected golden output files. So just remove the
+extra white spaces from the golden output files.
 
-I'll change this when I commit the patch....
+  $ ./check btrfs/100
+  FSTYP         -- btrfs
+  PLATFORM      -- Linux/x86_64 debian3 4.2.0-rc5-btrfs-next-13+
+  MKFS_OPTIONS  -- /dev/sdc
+  MOUNT_OPTIONS -- /dev/sdc /home/fdmanana/btrfs-tests/scratch_1
 
-Cheers,
+  btrfs/100 4s ... - output mismatch (see .../results//btrfs/100.out.bad)
+    --- tests/btrfs/100.out	2015-09-22 02:56:35.031470334 +0100
+    +++ /home/fdmanana/git/hub/xfstests/results//btrfs/100.out.bad...
+    @@ -1,10 +1,10 @@
+     QA output created by 100
+    -Label: none  uuid:  <UUID>
+    +Label: none  uuid: <UUID>
+     	Total devices <NUM> FS bytes used <SIZE>
+     	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+     	devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
 
-Dave.
+    (...)
+  Failures: btrfs/100
+  Failed 1 of 1 tests
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ tests/btrfs/100.out | 4 ++--
+ tests/btrfs/101.out | 4 ++--
+ 2 files changed, 4 insertions(+), 4 deletions(-)
+
+diff --git a/tests/btrfs/100.out b/tests/btrfs/100.out
+index 2eeefa4..aa49291 100644
+--- a/tests/btrfs/100.out
++++ b/tests/btrfs/100.out
+@@ -1,10 +1,10 @@
+ QA output created by 100
+-Label: none  uuid:  <UUID>
++Label: none  uuid: <UUID>
+ 	Total devices <NUM> FS bytes used <SIZE>
+ 	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+ 	devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
+ 
+-Label: none  uuid:  <UUID>
++Label: none  uuid: <UUID>
+ 	Total devices <NUM> FS bytes used <SIZE>
+ 	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+ 
+diff --git a/tests/btrfs/101.out b/tests/btrfs/101.out
+index 4621902..e1b88c2 100644
+--- a/tests/btrfs/101.out
++++ b/tests/btrfs/101.out
+@@ -1,10 +1,10 @@
+ QA output created by 101
+-Label: none  uuid:  <UUID>
++Label: none  uuid: <UUID>
+ 	Total devices <NUM> FS bytes used <SIZE>
+ 	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+ 	devid <DEVID> size <SIZE> used <SIZE> path /dev/mapper/error-test
+ 
+-Label: none  uuid:  <UUID>
++Label: none  uuid: <UUID>
+ 	Total devices <NUM> FS bytes used <SIZE>
+ 	devid <DEVID> size <SIZE> used <SIZE> path SCRATCH_DEV
+ 
 -- 
-Dave Chinner
-david@fromorbit.com
+2.1.3
+

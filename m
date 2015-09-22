@@ -1,297 +1,251 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:62689 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752873AbbIVIvs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 04:51:48 -0400
-Subject: Re: kernel BUG at linux-4.2.0/fs/btrfs/extent-tree.c:1833 on
- rebalance
-To: =?UTF-8?Q?St=c3=a9phane_Lesimple?= <stephane_btrfs@lesimple.fr>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <9c864637fe7676a8b7badc5ddd7a4e0c@all.all>
- <55F9486F.4040302@googlemail.com> <0973de930ee87e102c533c719807b748@all.all>
- <pan$5599c$cb01bfb8$910004c8$d38ea6b6@cox.net>
- <d2f30d85fa83b8b98af3c7e5a862044d@all.all> <55FA2D9A.1060405@cn.fujitsu.com>
- <e80ea6421a1f6a5f84c5d1032fc6a3e8@all.all> <55FA60C5.5090002@cn.fujitsu.com>
- <7a6f2d794fb6cbf7d598b92e3470201c@all.all> <55FA759E.6030707@cn.fujitsu.com>
- <3386a8bfa1a5796460306a53a668e47e@all.all> <55FA98D8.5010301@gmx.com>
- <53a5553a9c5301789e246144bb264e43@all.all> <55FB61E9.4000300@cn.fujitsu.com>
- <2ce9b35f73732b145e0f80b18f230a52@all.all>
- <c605d4d156f9a880b216e89ca0705269@all.all>
- <762ec73d5389b5057be4d3c17f74e1f9@all.all> <55FE0A50.9060607@gmx.com>
- <3ba27cf5afd82cf4e3bde718386b7cc3@all.all> <55FE8FB6.4070509@gmx.com>
- <72b4368e7180a4d703ef3ea1112d7358@all.all>
- <4749d42363070fcd228af172781750df@all.all> <5600B0BF.604@cn.fujitsu.com>
- <0a4be8fab4876a245900e4833e8139e0@all.all> <560113EF.2090209@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5601169B.4060600@gmx.com>
-Date: Tue, 22 Sep 2015 16:51:39 +0800
+Received: from cn.fujitsu.com ([59.151.112.132]:15963 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753283AbbIVKGY convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 06:06:24 -0400
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <fdmanana@gmail.com>
+CC: <linux-btrfs@vger.kernel.org>
+References: <15fc8f8d002e4ffcdb46e769736f240ae7ace20b.1442839332.git.zhaolei@cn.fujitsu.com> <CAL3q7H5o-gprcTGz5hNGdvoQNR7h55+tOsiM9CK27fA_61_7KQ@mail.gmail.com>
+In-Reply-To: <CAL3q7H5o-gprcTGz5hNGdvoQNR7h55+tOsiM9CK27fA_61_7KQ@mail.gmail.com>
+Subject: RE: [PATCH] btrfs: Fix no space bug caused by removing bg
+Date: Tue, 22 Sep 2015 18:06:21 +0800
+Message-ID: <00fc01d0f51e$5528ddf0$ff7a99d0$@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <560113EF.2090209@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi, Filipe David Manana
 
+Thanks for review this patch.
 
-在 2015年09月22日 16:40, Qu Wenruo 写道:
->
->
-> 在 2015年09月22日 15:34, Stéphane Lesimple 写道:
->> Le 2015-09-22 03:37, Qu Wenruo a écrit :
->>> Stéphane Lesimple wrote on 2015/09/22 03:30 +0200:
->>>> Le 2015-09-20 13:14, Stéphane Lesimple a écrit :
->>>>> Le 2015-09-20 12:51, Qu Wenruo a écrit :
->>>>>>>> Would you please use gdb to show the codes of
->>>>>>>> "btrfs_qgroup_rescan_worker+0x388" ?
->>>>>>>> (Need kernel debuginfo)
->>>>>>>>
->>>>>>>> My guess is the following line:(pretty sure, but not 100% sure)
->>>>>>>> ------
->>>>>>>> /*
->>>>>>>>          * only update status, since the previous part has alreay
->>>>>>>> updated the
->>>>>>>>          * qgroup info.
->>>>>>>>          */
->>>>>>>>         trans =trfs_start_transaction(fs_info->quota_root, 1);
->>>>>>>> <<<<<
->>>>>>>>         if (IS_ERR(trans)) {
->>>>>>>>                 err =TR_ERR(trans);
->>>>>>>>                 btrfs_err(fs_info,
->>>>>>>>                           "fail to start transaction for status
->>>>>>>> update: %d\n",
->>>>>>>>                           err);
->>>>>>>>                 goto done;
->>>>>>>>         }
->>>>>>>> ------
->>>>>>>
->>>>>>> The kernel and modules were already compiled with debuginfo.
->>>>>>> However for some reason, I couldn't get gdb disassembly of
->>>>>>> /proc/kcore
->>>>>>> properly
->>>>>>> aligned with the source I compiled: the asm code doesn't match the C
->>>>>>> code shown
->>>>>>> by gdb. In any case, watching the source of this function, this is
->>>>>>> the
->>>>>>> only place
->>>>>>> btrfs_start_transaction is called, so we can be 100% sure it's where
->>>>>>> the
->>>>>>> crash
->>>>>>> happens indeed.
->>>>>>
->>>>>> Yep, that's the only caller.
->>>>>>
->>>>>> Here is some useful small hint to locate the code, if you are
->>>>>> interestied in kernel development.
->>>>>>
->>>>>> # Not sure about whether ubuntu gzipped modules, at least Arch does
->>>>>> # compress it
->>>>>> $ cp <kernel modules dir>/kernel/fs/btrfs/btrfs.ko.gz /tmp/
->>>>>> $ gunzip /tmp/btrfs.ko.gz
->>>>>> $ gdb /tmp/btrfs.ko
->>>>>> # Make sure gdb read all the needed debuginfo
->>>>>> $ gdb list *(btrfs_qgroup_rescan_worker+0x388)
->>>>>>
->>>>>> And gdb will find the code position for you.
->>>>>> Quite easy one, only backtrace info is needed.
->>>>>
->>>>> Ah, thanks for the tips, I was loading whole vmlinux and using
->>>>> /proc/kcore
->>>>> as the core info, then adding the module with "add-symbol-file".
->>>>> But as
->>>>> we're just looking for the code and not the variables, it was indeed
->>>>> completely overkill.
->>>>>
->>>>> (gdb) list *(btrfs_qgroup_rescan_worker+0x388)
->>>>> 0x98068 is in btrfs_qgroup_rescan_worker (fs/btrfs/qgroup.c:2328).
->>>>> 2323
->>>>> 2324            /*
->>>>> 2325             * only update status, since the previous part has
->>>>> alreay updated the
->>>>> 2326             * qgroup info.
->>>>> 2327             */
->>>>> 2328            trans =trfs_start_transaction(fs_info->quota_root,
->>>>> 1);
->>>>> 2329            if (IS_ERR(trans)) {
->>>>> 2330                    err =TR_ERR(trans);
->>>>> 2331                    btrfs_err(fs_info,
->>>>> 2332                              "fail to start transaction for
->>>>> status update: %d\n",
->>>>>
->>>>> So this just confirms what we were already 99% sure of.
->>>>>
->>>>>> Another hint is about how to collect the kernel crash info.
->>>>>> Your netconsole setup would be definitely one good practice.
->>>>>>
->>>>>> Another one I use to collect crash info is kdump.
->>>>>> Ubuntu should have a good wiki on it.
->>>>>
->>>>> I've already come across kdump a few times, but never really look into
->>>>> it.
->>>>> To debug the other complicated extend backref bug, it could be of some
->>>>> use.
->>>>>
->>>>>>>>>> So, as a quick summary of this big thread, it seems I've been
->>>>>>>>>> hitting
->>>>>>>>>> 3 bugs, all reproductible :
->>>>>>>>>> - kernel BUG on balance (this original thread)
->>>>>>>>
->>>>>>>> For this, I can't provide much help, as extent backref bug is quite
->>>>>>>> hard to debug, unless a developer is interested in it and find a
->>>>>>>> stable way to reproduce it.
->>>>>>>
->>>>>>> Yes, unfortunately as it looks so much like a race condition, I know
->>>>>>> I can
->>>>>>> reproduce it with my worflow, but it can take between 1 minute
->>>>>>> and 12
->>>>>>> hours,
->>>>>>> so I wouldn't call it a "stable way" to reproduce it
->>>>>>> unfortunately :(
->>>>>>>
->>>>>>> Still if any dev is interested in it, I can reproduce it, with a
->>>>>>> patched
->>>>>>> kernel if needed.
->>>>>>
->>>>>> Maybe you are already doing it, you can only compile the btrfs
->>>>>> modules, which will be far more faster than compile the whole kernel,
->>>>>> if and only if the compiled module can be loaded.
->>>>>
->>>>> Yes, I've compiled this 4.3.0-rc1 in a completely modular form, so
->>>>> I'll try to
->>>>> load the modified module and see if the running kernel accepts it. I
->>>>> have to rmmod
->>>>> the loaded module first, hence umounting any btrfs fs before that.
->>>>> Should be able
->>>>> to do it in a couple hours.
->>>>>
->>>>> I'll delete again all my snapshots and run my script. Should be easy
->>>>> to trigger
->>>>> the (hopefully worked-around) bug again.
->>>>
->>>> Well, I didn't trigger this exact bug, but another one, not less severe
->>>> though, as it also crashed the system:
->>>>
->>>> [92098.841309] general protection fault: 0000 [#1] SMP
->>>> [92098.841338] Modules linked in: ...
->>>> [92098.841814] CPU: 1 PID: 24655 Comm: kworker/u4:12 Not tainted
->>>> 4.3.0-rc1 #1
->>>> [92098.841834] Hardware name: ASUS All Series/H87I-PLUS, BIOS 1005
->>>> 01/06/2014
->>>> [92098.841868] Workqueue: btrfs-qgroup-rescan
->>>> btrfs_qgroup_rescan_helper
->>>> [btrfs]
->>>> [92098.841889] task: ffff8800b6cc4100 ti: ffff8800a3dc8000 task.ti:
->>>> ffff8800a3dc8000
->>>> [92098.841910] RIP: 0010:[<ffffffff813ae6c6>]  [<ffffffff813ae6c6>]
->>>> memcpy_erms+0x6/0x10
->>>> [92098.841935] RSP: 0018:ffff8800a3dcbcc8  EFLAGS: 00010207
->>>> [92098.841950] RAX: ffff8800a3dcbd67 RBX: 0000000000000009 RCX:
->>>> 0000000000000009
->>>> [92098.841970] RDX: 0000000000000009 RSI: 0005080000000000 RDI:
->>>> ffff8800a3dcbd67
->>>> [92098.841989] RBP: ffff8800a3dcbd00 R08: 0000000000019c60 R09:
->>>> ffff88011fb19c60
->>>> [92098.842009] R10: ffffea0003006480 R11: 0000000001000000 R12:
->>>> ffff8800b76c32c0
->>>> [92098.842028] R13: 0000160000000000 R14: ffff8800a3dcbd70 R15:
->>>> 0000000000000009
->>>> [92098.842048] FS:  0000000000000000(0000) GS:ffff88011fb00000(0000)
->>>> knlGS:0000000000000000
->>>> [92098.842070] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
->>>> [92098.842086] CR2: 00007fe1f2bd8000 CR3: 0000000001c10000 CR4:
->>>> 00000000000406e0
->>>> [92098.842105] Stack:
->>>> [92098.842111]  ffffffffc035a5d8 ffffffffc0396d00 000000000000028b
->>>> 0000000000000000
->>>> [92098.842212]  0000cc6c00000000 ffff8800b76c3200 0000160000000000
->>>> ffff8800a3dcbdc0
->>>> [92098.842237]  ffffffffc039af3d ffff8800c7196dc8 ffff8800c7196e08
->>>> ffff8800c7196da0
->>>> [92098.842261] Call Trace:
->>>> [92098.842277]  [<ffffffffc035a5d8>] ? read_extent_buffer+0xb8/0x110
->>>> [btrfs]
->>>> [92098.842304]  [<ffffffffc0396d00>] ? btrfs_find_all_roots+0x60/0x70
->>>> [btrfs]
->>>> [92098.842329]  [<ffffffffc039af3d>]
->>>> btrfs_qgroup_rescan_worker+0x28d/0x5a0 [btrfs]
->>>
->>> Would you please show the code of it?
->>> This one seems to be another stupid bug I made when rewriting the
->>> framework.
->>> Maybe I forgot to reinit some variants or I'm screwing memory...
->>
->> (gdb) list *(btrfs_qgroup_rescan_worker+0x28d)
->> 0x97f6d is in btrfs_qgroup_rescan_worker (fs/btrfs/ctree.h:2760).
->> 2755
->> 2756    static inline void btrfs_disk_key_to_cpu(struct btrfs_key *cpu,
->> 2757                                             struct btrfs_disk_key
->> *disk)
->> 2758    {
->> 2759            cpu->offset =e64_to_cpu(disk->offset);
->> 2760            cpu->type =isk->type;
->> 2761            cpu->objectid =e64_to_cpu(disk->objectid);
->> 2762    }
->> 2763
->> 2764    static inline void btrfs_cpu_key_to_disk(struct btrfs_disk_key
->> *disk,
->> (gdb)
->>
->>
->> Does it makes sense ?
-> So it seems that the memory of cpu key is being screwed up...
->
-> The code is be specific thin inline function, so what about other stack?
-> Like btrfs_qgroup_rescan_helper+0x12?
->
-> Thanks,
-> Qu
-Oh, I forgot that you can just change the number of 
-btrfs_qgroup_rescan_worker+0x28d to smaller value.
-Try +0x280 for example, which will revert to 14 bytes asm code back, 
-which may jump out of the inline function range, and may give you a good 
-hint.
+> -----Original Message-----
+> From: Filipe David Manana [mailto:fdmanana@gmail.com]
+> Sent: Monday, September 21, 2015 9:27 PM
+> To: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Subject: Re: [PATCH] btrfs: Fix no space bug caused by removing bg
+> 
+> On Mon, Sep 21, 2015 at 1:59 PM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
+> > btrfs in v4.3-rc1 failed many xfstests items with '-o nospace_cache'
+> > mount option.
+> >
+> > Failed cases are:
+> >
+> > btrfs/008,016,019,020,026,027,028,029,031,041,046,048,050,051,053,054,
+> >  077,083,084,087,092,094
+> 
+> Hi Zhao,
+> 
+> So far I tried a few of those against Chris' integration-4.3 branch (same btrfs
+> code as 4.3-rc1):
+> 
+> MOUNT_OPTIONS="-o nospace_cache" ./check btrfs/008 btrfs/016 btrfs/019
+> btrfs/020
+> FSTYP         -- btrfs
+> PLATFORM      -- Linux/x86_64 debian3 4.2.0-rc5-btrfs-next-12+
+> MKFS_OPTIONS  -- /dev/sdc
+> MOUNT_OPTIONS -- -o nospace_cache /dev/sdc
+> /home/fdmanana/btrfs-tests/scratch_1
+> 
+> btrfs/008 2s ... 1s
+> btrfs/016 4s ... 3s
+> btrfs/019 4s ... 2s
+> btrfs/020 2s ... 1s
+> Ran: btrfs/008 btrfs/016 btrfs/019 btrfs/020 Passed all 4 tests
+> 
+> And none of the tests failed...
+> 
+Sorry I hadn't paste detail of my test command.
 
-Or gdb may have a better mode for inline function, but I don't know...
+It is from a coincidence operation which is some different with standard
+steps(as yours), I mount fs with -o no_space_cache manually without set
+MOUNT_OPT, then xfstests entered into a special path, and triggered the bug:
+  export TEST_DEV='/dev/sdb5'
+  export TEST_DIR='/var/ltf/tester/mnt'
+  mkdir -p '/var/ltf/tester/mnt'
 
-Thanks,
-Qu
->>
->>
->>>> [92098.842351]  [<ffffffff810a1a0d>] ?
->>>> ttwu_do_activate.constprop.90+0x5d/0x70
->>>> [92098.842377]  [<ffffffffc03674e0>] normal_work_helper+0xc0/0x270
->>>> [btrfs]
->>>> [92098.842401]  [<ffffffffc03678a2>]
->>>> btrfs_qgroup_rescan_helper+0x12/0x20 [btrfs]
->>>> [92098.842421]  [<ffffffff8109127e>] process_one_work+0x14e/0x3d0
->>>> [92098.842438]  [<ffffffff8109192a>] worker_thread+0x11a/0x470
->>>> [92098.842454]  [<ffffffff81091810>] ? rescuer_thread+0x310/0x310
->>>> [92098.842471]  [<ffffffff81097059>] kthread+0xc9/0xe0
->>>> [92098.842485]  [<ffffffff81096f90>] ? kthread_park+0x60/0x60
->>>> [92098.842502]  [<ffffffff817aac4f>] ret_from_fork+0x3f/0x70
->>>> [92098.842517]  [<ffffffff81096f90>] ? kthread_park+0x60/0x60
->>>> [92098.842532] Code: ff eb eb 90 90 eb 1e 0f 1f 00 48 89 f8 48 89 d1 48
->>>> c1 e9 03 83 e2 07 f3 48 a5 89 d1 f3 a4 c3 66 0f 1f 44 00 00 48 89 f8 48
->>>> 89 d1 <f3> a4 c3 0f 1f 80 00 00 00 00 48 89 f8 48 83 fa 20 72 7e 40 38
->>>> [92098.842658] RIP  [<ffffffff813ae6c6>] memcpy_erms+0x6/0x10
->>>> [92098.842675]  RSP <ffff8800a3dcbcc8>
->>>> [92098.849594] ---[ end trace 9d5fb7931a3ec713 ]---
->>>>
->>>> I would definitely say that rescans should be avoided on current
->>>> kernels
->>>> as the possibility that it'll bring the system down shouldn't be
->>>> ignored.
->>>> It confirms that this code really needs a rewrite !
->>>>
->>>> Regards,
->>>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe
->>> linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
+  export SCRATCH_DEV_POOL='/dev/sdb6 /dev/sdb7 /dev/sdb8 /dev/sdb9 /dev/sdb10 /dev/sdb11'
+  export SCRATCH_MNT='/var/ltf/tester/scratch_mnt'
+  mkdir -p '/var/ltf/tester/scratch_mnt'
+
+  export DIFF_LENGTH=0
+  
+  mkfs.btrfs -f "$TEST_DEV"
+  mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
+
+  ./check generic/014
+
+Result:
+  FSTYP         -- btrfs
+  PLATFORM      -- Linux/x86_64 lenovo 4.3.0-rc2_HEAD_1f93e4a96c9109378204c147b3eec0d0e8100fde_
+  MKFS_OPTIONS  -- /dev/sdb6
+  MOUNT_OPTIONS -- /dev/sdb6 /var/ltf/tester/scratch_mnt
+
+  generic/014 0s ... - output mismatch (see /var/lib/xfstests/results//generic/014.out.bad)
+      --- tests/generic/014.out   2015-09-22 17:46:13.855391451 +0800
+      +++ /var/lib/xfstests/results//generic/014.out.bad  2015-09-22 17:57:06.446095748 +0800
+      @@ -3,4 +3,5 @@
+       ------
+       test 1
+       ------
+      -OK
+      +truncfile returned 1 : "write: No space left on device
+      +Seed = 1442915826 (use "-s 1442915826" to re-execute this test)"
+  Ran: generic/014
+  Failures: generic/014
+  Failed 1 of 1 tests
+
+And following script is from trace result of above test.
+Maybe I can remove the xfstest description because it is not standard steps.
+
+> >
+> > generic/004,010,014,023,024,074,075,080,086,087,089,091,092,100,112,12
+> > 3,
+> > 124,125,126,127,131,133,192,193,198,207,208,209,213,214,215,228,239,24
+> > 0,
+> >  246,247,248,255,263,285,306,313,316,323
+> >
+> > We can reproduce this bug with following simple command:
+> >  TEST_DEV=/dev/vdh
+> >  TEST_DIR=/mnt/tmp
+> >
+> >  umount "$TEST_DEV" >/dev/null
+> >  mkfs.btrfs -f "$TEST_DEV"
+> >  mount "$TEST_DEV" "$TEST_DIR"
+> >
+> >  umount "$TEST_DEV"
+> >  mount "$TEST_DEV" "$TEST_DIR"
+> >
+> >  cp /bin/bash $TEST_DIR
+> >
+> > Result is:
+> >  (omit previous commands)
+> >  # cp /bin/bash $TEST_DIR
+> >  cp: writing `/mnt/tmp/bash': No space left on device
+> >
+> > By bisect, we can see it is triggered by patch titled:
+> >  commit e44163e17796
+> >  ("btrfs: explictly delete unused block groups in close_ctree and
+> > ro-remount")
+> >
+> > But the wrong code is not in above patch, btrfs delete all chunks if
+> > no data in filesystem, and above patch just make it obviously.
+> >
+> > Detail reason:
+> >  1: mkfs a blank filesystem, or delete everything in filesystem
+> >  2: umount fs
+> >     (current code will delete all data chunks)
+> >  3: mount fs
+> >     Because no any data chunks, data's space_cache have no chance
+> >     to init, it means: space_info->total_bytes == 0, and
+> >     space_info->full == 1.
+> 
+> Right, and that's the problem. When the space_info is initialized it should never
+> be flagged as full, otherwise any buffered write attempts fail immediately with
+> enospc instead of trying to allocate a data block group (at
+> extent-tree.c:btrfs_check_data_free_space()).
+> 
+> That was fixed recently by:
+> 
+> https://patchwork.kernel.org/patch/7133451/
+> 
+> (with a respective test too, https://patchwork.kernel.org/patch/7133471/)
+> 
+
+It can fix problem in mount, but can not fix problem of "raid-level change",
+please see below.
+
+> >  4: do some write
+> >     Current code will ignore chunk allocate because space_info->full,
+> >     and return -ENOSPC.
+> >
+> > Fix:
+> >  Don't auto-delete last blockgroup for a raid type.
+> >  If we delete all blockgroup for a raidtype, it not only cause above
+> > bug,  but also may change filesystem to all-single in some case.
+> 
+> I don't get this. Can you mention in which cases that happens and why (in the
+> commit message)?
+> 
+> It isn't clear when reading the patch why we need to keep at least one block of
+> each type/profile, and seems to be a workaround for a different problem.
+> 
+Simply speaking, if we run following command after apply your patch:
+
+  TEST_DEV=(/dev/vdg /dev/vdh)
+  TEST_DIR=/mnt/tmp
+
+  umount "$TEST_DEV" >/dev/null
+  mkfs.btrfs -f -d raid1 "${TEST_DEV[@]}"
+  mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
+
+  umount "$TEST_DEV"
+  mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
+
+  btrfs filesystem usage $TEST_DIR
+
+The result is:
+  # btrfs filesystem usage $TEST_DIR
+  (omit)
+  Data,single: Size:8.00MiB, Used:0.00B
+     /dev/vdg        8.00MiB
+  ...
+
+We can see data chunk is changed from raid1 to single,
+because if we delete all data chunks before mount,
+there are raid-type information in filesystem, and btrfs
+will use raid-type of "0x0" for new data chunk after your patch.
+
+So, leave at least one data chunk is a simple workaround for
+above two bug.
+
+Thanks
+Zhaolei
+
+> thanks
+> 
+> >
+> > Test:
+> >  Test by above script, and confirmed the logic by debug output.
+> >
+> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> > ---
+> >  fs/btrfs/extent-tree.c | 3 ++-
+> >  1 file changed, 2 insertions(+), 1 deletion(-)
+> >
+> > diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c index
+> > 5411f0a..35cf7eb 100644
+> > --- a/fs/btrfs/extent-tree.c
+> > +++ b/fs/btrfs/extent-tree.c
+> > @@ -10012,7 +10012,8 @@ void btrfs_delete_unused_bgs(struct
+> btrfs_fs_info *fs_info)
+> >                                                bg_list);
+> >                 space_info = block_group->space_info;
+> >                 list_del_init(&block_group->bg_list);
+> > -               if (ret || btrfs_mixed_space_info(space_info)) {
+> > +               if (ret || btrfs_mixed_space_info(space_info) ||
+> > +                   block_group->list.next == block_group->list.prev)
+> > + {
+> >                         btrfs_put_block_group(block_group);
+> >                         continue;
+> >                 }
+> > --
+> > 1.8.5.1
+> >
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+> > in the body of a message to majordomo@vger.kernel.org More majordomo
+> > info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+> 
 > --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> Filipe David Manana,
+> 
+> "Reasonable men adapt themselves to the world.
+>  Unreasonable men adapt the world to themselves.
+>  That's why all progress depends on unreasonable men."
+

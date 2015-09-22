@@ -1,86 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f177.google.com ([209.85.212.177]:33899 "EHLO
-	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933877AbbIVR7j (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:36593 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932429AbbIVSAa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 13:59:39 -0400
-Date: Tue, 22 Sep 2015 20:59:15 +0000
+	Tue, 22 Sep 2015 14:00:30 -0400
+Date: Tue, 22 Sep 2015 21:00:07 +0000
 From: Alexandru Moise <00moses.alexander00@gmail.com>
 To: clm@fb.com
 Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org, 00moses.alexander00@gmail.com
-Subject: [PATCH v2 1/2] btrfs: change num_items type from u64 to unsigned int
-Message-ID: <20150922205915.GA27775@gmail.com>
+Subject: [PATCH v2 2/2] btrfs: declare rsv_count as unsigned int instead of
+ int
+Message-ID: <20150922210007.GA27786@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The value of num_items that start_transaction() ultimately
-always takes is a small one, so a 64 bit integer is overkill.
-
-Also change num_items for btrfs_start_transaction() and
-btrfs_start_transaction_lflush() as well.
+rsv_count ultimately gets passed to start_transaction() which
+now takes an unsigned int as its num_items parameter.
+The value of rsv_count should always be positive so declare it
+as being unsigned.
 
 Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
 ---
-v2: followed dave's suggestion of all num_items equivalents to be
+v2: followed dave's suggestions of all num_items equivalents to be
 unsigned ints.
 
- fs/btrfs/transaction.c | 9 +++++----
- fs/btrfs/transaction.h | 5 +++--
- 2 files changed, 8 insertions(+), 6 deletions(-)
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 8f259b3..cb8adaf 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -415,8 +415,8 @@ static inline bool need_reserve_reloc_root(struct btrfs_root *root)
- }
- 
- static struct btrfs_trans_handle *
--start_transaction(struct btrfs_root *root, u64 num_items, unsigned int type,
--		  enum btrfs_reserve_flush_enum flush)
-+start_transaction(struct btrfs_root *root, unsigned int num_items,
-+		  unsigned int type, enum btrfs_reserve_flush_enum flush)
- {
- 	struct btrfs_trans_handle *h;
- 	struct btrfs_transaction *cur_trans;
-@@ -570,14 +570,15 @@ reserve_fail:
- }
- 
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
--						   int num_items)
-+						   unsigned int num_items)
- {
- 	return start_transaction(root, num_items, TRANS_START,
- 				 BTRFS_RESERVE_FLUSH_ALL);
- }
- 
- struct btrfs_trans_handle *btrfs_start_transaction_lflush(
--					struct btrfs_root *root, int num_items)
-+					struct btrfs_root *root,
-+					unsigned int num_items)
- {
- 	return start_transaction(root, num_items, TRANS_START,
- 				 BTRFS_RESERVE_FLUSH_LIMIT);
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index edc2fbc..0849e3a 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -182,9 +182,10 @@ static inline void btrfs_clear_skip_qgroup(struct btrfs_trans_handle *trans)
- int btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
--						   int num_items);
-+						   unsigned int num_items);
- struct btrfs_trans_handle *btrfs_start_transaction_lflush(
--					struct btrfs_root *root, int num_items);
-+					struct btrfs_root *root,
-+					unsigned int num_items);
- struct btrfs_trans_handle *btrfs_join_transaction(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_join_transaction_nolock(struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_attach_transaction(struct btrfs_root *root);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b823fac..6af5103 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2266,7 +2266,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 	u64 drop_end;
+ 	int ret = 0;
+ 	int err = 0;
+-	int rsv_count;
++	unsigned int rsv_count;
+ 	bool same_page;
+ 	bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
+ 	u64 ino_size;
 -- 
 2.5.3
 

@@ -1,140 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58840 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58845 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934659AbbIVUQD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 16:16:03 -0400
+	id S933201AbbIVUQF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 16:16:05 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fb.com, clm@fb.com, quwenruo@cn.fujitsu.com,
         Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 2/4] Btrfs: keep dropped roots in cache until transaction commit, V2
-Date: Tue, 22 Sep 2015 13:15:46 -0700
-Message-Id: <1442952948-21389-3-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 3/4] btrfs: Add qgroup tracing
+Date: Tue, 22 Sep 2015 13:15:47 -0700
+Message-Id: <1442952948-21389-4-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
 References: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Josef Bacik <jbacik@fb.com>
+This patch adds tracepoints to the qgroup code on both the reporting side
+(insert_dirty_extents) and the accounting side. Taken together it allows us
+to see what qgroup operations have happened, and what their result was.
 
-When dropping a snapshot we need to account for the qgroup changes.  If we drop
-the snapshot in all one go then the backref code will fail to find blocks from
-the snapshot we dropped since it won't be able to find the root in the fs root
-cache.  This can lead to us failing to find refs from other roots that pointed
-at blocks in the now deleted root.  To handle this we need to not remove the fs
-roots from the cache until after we process the qgroup operations.  Do this by
-adding dropped roots to a list on the transaction, and letting the transaction
-remove the roots at the same time it drops the commit roots.  This will keep all
-of the backref searching code in sync properly, and fixes a problem Mark was
-seeing with snapshot delete and qgroups.  Thanks,
-
-Signed-off-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/extent-tree.c |  2 +-
- fs/btrfs/transaction.c | 30 ++++++++++++++++++++++++++++++
- fs/btrfs/transaction.h |  5 ++++-
- 3 files changed, 35 insertions(+), 2 deletions(-)
+ fs/btrfs/qgroup.c            | 10 +++++
+ include/trace/events/btrfs.h | 88 +++++++++++++++++++++++++++++++++++++++++++-
+ 2 files changed, 97 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 07204bf..3a70e6c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8576,7 +8576,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	}
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 8a82029..676202e 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -1461,6 +1461,8 @@ struct btrfs_qgroup_extent_record
+ 	struct btrfs_qgroup_extent_record *entry;
+ 	u64 bytenr = record->bytenr;
  
- 	if (test_bit(BTRFS_ROOT_IN_RADIX, &root->state)) {
--		btrfs_drop_and_free_fs_root(tree_root->fs_info, root);
-+		btrfs_add_dropped_root(trans, root);
- 	} else {
- 		free_extent_buffer(root->node);
- 		free_extent_buffer(root->commit_root);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f5021fc..cd15f39 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -117,6 +117,16 @@ static noinline void switch_commit_roots(struct btrfs_transaction *trans,
- 			btrfs_unpin_free_ino(root);
- 		clear_btree_io_tree(&root->dirty_log_pages);
- 	}
++	trace_btrfs_qgroup_insert_dirty_extent(record);
 +
-+	/* We can free old roots now. */
-+	spin_lock(&trans->dropped_roots_lock);
-+	while (!list_empty(&trans->dropped_roots)) {
-+		root = list_first_entry(&trans->dropped_roots,
-+					struct btrfs_root, root_list);
-+		list_del_init(&root->root_list);
-+		btrfs_drop_and_free_fs_root(fs_info, root);
-+	}
-+	spin_unlock(&trans->dropped_roots_lock);
- 	up_write(&fs_info->commit_root_sem);
- }
+ 	while (*p) {
+ 		parent_node = *p;
+ 		entry = rb_entry(parent_node, struct btrfs_qgroup_extent_record,
+@@ -1591,6 +1593,9 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
+ 		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
+ 		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
  
-@@ -255,9 +265,11 @@ loop:
- 	INIT_LIST_HEAD(&cur_trans->pending_ordered);
- 	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
- 	INIT_LIST_HEAD(&cur_trans->io_bgs);
-+	INIT_LIST_HEAD(&cur_trans->dropped_roots);
- 	mutex_init(&cur_trans->cache_write_mutex);
- 	cur_trans->num_dirty_bgs = 0;
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
-+	spin_lock_init(&cur_trans->dropped_roots_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
- 			     fs_info->btree_inode->i_mapping);
-@@ -334,6 +346,24 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
- }
- 
- 
-+void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
-+			    struct btrfs_root *root)
-+{
-+	struct btrfs_transaction *cur_trans = trans->transaction;
++		trace_qgroup_update_counters(qg->qgroupid, cur_old_count,
++					     cur_new_count);
 +
-+	/* Add ourselves to the transaction dropped list */
-+	spin_lock(&cur_trans->dropped_roots_lock);
-+	list_add_tail(&root->root_list, &cur_trans->dropped_roots);
-+	spin_unlock(&cur_trans->dropped_roots_lock);
-+
-+	/* Make sure we don't try to update the root at commit time */
-+	spin_lock(&root->fs_info->fs_roots_radix_lock);
-+	radix_tree_tag_clear(&root->fs_info->fs_roots_radix,
-+			     (unsigned long)root->root_key.objectid,
-+			     BTRFS_ROOT_TRANS_TAG);
-+	spin_unlock(&root->fs_info->fs_roots_radix_lock);
-+}
-+
- int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root)
- {
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index eb09c20..ef4ff38 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -65,6 +65,7 @@ struct btrfs_transaction {
- 	struct list_head switch_commits;
- 	struct list_head dirty_bgs;
- 	struct list_head io_bgs;
-+	struct list_head dropped_roots;
- 	u64 num_dirty_bgs;
+ 		/* Rfer update part */
+ 		if (cur_old_count == 0 && cur_new_count > 0) {
+ 			qg->rfer += num_bytes;
+@@ -1684,6 +1689,9 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
+ 		goto out_free;
+ 	BUG_ON(!fs_info->quota_root);
  
- 	/*
-@@ -74,6 +75,7 @@ struct btrfs_transaction {
- 	 */
- 	struct mutex cache_write_mutex;
- 	spinlock_t dirty_bgs_lock;
-+	spinlock_t dropped_roots_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
- 	int dirty_bg_run;
-@@ -214,5 +216,6 @@ int btrfs_transaction_blocked(struct btrfs_fs_info *info);
- int btrfs_transaction_in_commit(struct btrfs_fs_info *info);
- void btrfs_put_transaction(struct btrfs_transaction *transaction);
- void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info);
--
-+void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
-+			    struct btrfs_root *root);
- #endif
++	trace_btrfs_qgroup_account_extent(bytenr, num_bytes, nr_old_roots,
++					  nr_new_roots);
++
+ 	qgroups = ulist_alloc(GFP_NOFS);
+ 	if (!qgroups) {
+ 		ret = -ENOMEM;
+@@ -1753,6 +1761,8 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
+ 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
+ 				  node);
+ 
++		trace_btrfs_qgroup_account_extents(record);
++
+ 		if (!ret) {
+ 			/*
+ 			 * Use (u64)-1 as time_seq to do special search, which
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 0b73af9..9d7b545 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -23,7 +23,7 @@ struct map_lookup;
+ struct extent_buffer;
+ struct btrfs_work;
+ struct __btrfs_workqueue;
+-struct btrfs_qgroup_operation;
++struct btrfs_qgroup_extent_record;
+ 
+ #define show_ref_type(type)						\
+ 	__print_symbolic(type,						\
+@@ -1117,6 +1117,92 @@ DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
+ 	TP_ARGS(wq)
+ );
+ 
++DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
++	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++
++	TP_ARGS(rec),
++
++	TP_STRUCT__entry(
++		__field(	u64,  bytenr		)
++		__field(	u64,  num_bytes		)
++	),
++
++	TP_fast_assign(
++		__entry->bytenr		= rec->bytenr,
++		__entry->num_bytes	= rec->num_bytes;
++	),
++
++	TP_printk("bytenr = %llu, num_bytes = %llu",
++		  (unsigned long long)__entry->bytenr,
++		  (unsigned long long)__entry->num_bytes)
++);
++
++DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_account_extents,
++
++	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++
++	TP_ARGS(rec)
++);
++
++DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_insert_dirty_extent,
++
++	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
++
++	TP_ARGS(rec)
++);
++
++TRACE_EVENT(btrfs_qgroup_account_extent,
++
++	TP_PROTO(u64 bytenr, u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
++
++	TP_ARGS(bytenr, num_bytes, nr_old_roots, nr_new_roots),
++
++	TP_STRUCT__entry(
++		__field(	u64,  bytenr			)
++		__field(	u64,  num_bytes			)
++		__field(	u64,  nr_old_roots		)
++		__field(	u64,  nr_new_roots		)
++	),
++
++	TP_fast_assign(
++		__entry->bytenr		= bytenr;
++		__entry->num_bytes	= num_bytes;
++		__entry->nr_old_roots	= nr_old_roots;
++		__entry->nr_new_roots	= nr_new_roots;
++	),
++
++	TP_printk("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
++		  "nr_new_roots = %llu",
++		  __entry->bytenr,
++		  __entry->num_bytes,
++		  __entry->nr_old_roots,
++		  __entry->nr_new_roots)
++);
++
++TRACE_EVENT(qgroup_update_counters,
++
++	TP_PROTO(u64 qgid, u64 cur_old_count, u64 cur_new_count),
++
++	TP_ARGS(qgid, cur_old_count, cur_new_count),
++
++	TP_STRUCT__entry(
++		__field(	u64,  qgid			)
++		__field(	u64,  cur_old_count		)
++		__field(	u64,  cur_new_count		)
++	),
++
++	TP_fast_assign(
++		__entry->qgid		= qgid;
++		__entry->cur_old_count	= cur_old_count;
++		__entry->cur_new_count	= cur_new_count;
++	),
++
++	    TP_printk("	qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
++		  __entry->qgid,
++		  __entry->cur_old_count,
++		  __entry->cur_new_count)
++);
++
+ #endif /* _TRACE_BTRFS_H */
+ 
+ /* This part must be outside protection */
 -- 
 2.1.2
 

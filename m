@@ -1,67 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21492 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751069AbbIKBiq (ORCPT
+Received: from e28smtp04.in.ibm.com ([122.248.162.4]:57091 "EHLO
+	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756664AbbIVFSm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Sep 2015 21:38:46 -0400
+	Tue, 22 Sep 2015 01:18:42 -0400
+Received: from /spool/local
+	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Tue, 22 Sep 2015 10:48:39 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "Theodore Ts'o" <tytso@mit.edu>, fstests@vger.kernel.org,
+        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
+        chandan@mykolab.com
 Subject: Re: [PATCH] generic/224: Increase filesystem instance size to 1.5 GiB
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
-        "Theodore Ts'o" <tytso@mit.edu>
-References: <1440945981-323-1-git-send-email-chandan@linux.vnet.ibm.com>
- <160121092.hSkPuGCNnN@localhost.localdomain>
- <20150901021510.GE7642@thunk.org> <2500094.kBUgEuDpMB@localhost.localdomain>
-CC: <fstests@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <linux-fsdevel@vger.kernel.org>, <chandan@mykolab.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <55F230A3.2070300@cn.fujitsu.com>
-Date: Fri, 11 Sep 2015 09:38:43 +0800
+Date: Tue, 22 Sep 2015 10:48:32 +0530
+Message-ID: <2034993.iSlvTmyeNT@localhost.localdomain>
+In-Reply-To: <55F230A3.2070300@cn.fujitsu.com>
+References: <1440945981-323-1-git-send-email-chandan@linux.vnet.ibm.com> <2500094.kBUgEuDpMB@localhost.localdomain> <55F230A3.2070300@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <2500094.kBUgEuDpMB@localhost.localdomain>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Friday 11 Sep 2015 09:38:43 Qu Wenruo wrote:
 
+Qu, Sorry for the late response. My email client's filtering had broken and
+hence I did not see your response until now.
 
-Chandan Rajendra wrote on 2015/09/01 08:03 +0530:
-> On Monday 31 Aug 2015 22:15:10 Theodore Ts'o wrote:
->> On Tue, Sep 01, 2015 at 05:49:14AM +0530, Chandan Rajendra wrote:
->>> mkfs.btrfs when invoked on small filesystems by "not" specifying any block
->>> sizes (i.e. mkfs.btrfs -f /dev/sda1) will automatically create filesystem
->>> instance with "data block size" == "metadata block size". However in the
->>> subpagesize-blocksize scenario, we need to specify both data and metadata
->>> block size on the command line (For e.g. mkfs.btrfs -f -s 4096 -n 16384
->>> /dev/sda1). In this case, Since the user is forcing the block sizes and it
->>> is impossible to have mixed block groups with differing data and metadata
->>> block sizes, mkfs.btrfs will fail.
->>
->> Ok, so the issue is that for this particular test configuration, btrfs
->> has a minimum file system size.  What about changing
->> _scratch_mkfs_sized so that if MIN_FS_SIZE is set, the file system
->> created will be at least MIN_FS_SIZE in size.
->>
->> This way it sets the minimum file system size for all tests, not just
->> generic/224, and any test configuration, whether it be ext4, xfs, or
->> btrfs where the data and metadata block size are the same, don't have
->> to take extra time -- only the test configuration of btrfs with
->> data_block_size != metadata_block_size.
->>
-> I agree with the approach you have suggested. I will write up a patch and send
-> it across the mailing list. Thanks Ted.
->
-Hi Chandan,
+> Hi Chandan,
+> 
+> Although the reply may be a little late, but I think it's still better
+> to fix the bug in mkfs.btrfs.
+> 
+> The core problem is, why mkfs.btrfs is insisting on make the fs into
+> mixed-bg.
+> 
+> Auto detection for small device and make it into mixed-bg should be a
+> "OPTIONAL" feature, not a "mandatory" one.
+> 
+> So IMHO, the best method is to disable mixed-bg when nodesize/sectorsize
+> is given and differs and user doesn't force mkfs to create mixed-bg.
+> 
 
-Although the reply may be a little late, but I think it's still better 
-to fix the bug in mkfs.btrfs.
+My understanding of the chunk allocator (i.e. __btrfs_alloc_chunk()) was
+incomplete. Looking into the code more thoroughly I now realize that 'small 
+filesystem detection and mixed-bg creation' can be made optional. Thanks for
+the suggestion.
 
-The core problem is, why mkfs.btrfs is insisting on make the fs into 
-mixed-bg.
+-- 
+chandan
 
-Auto detection for small device and make it into mixed-bg should be a 
-"OPTIONAL" feature, not a "mandatory" one.
-
-So IMHO, the best method is to disable mixed-bg when nodesize/sectorsize 
-is given and differs and user doesn't force mkfs to create mixed-bg.
-
-Thanks,
-Qu

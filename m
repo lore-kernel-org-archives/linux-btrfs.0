@@ -1,31 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48255 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53736 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932086AbbIVL5M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 07:57:12 -0400
-Date: Tue, 22 Sep 2015 13:56:15 +0200
+	id S1757711AbbIVNK3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 09:10:29 -0400
+Date: Tue, 22 Sep 2015 15:09:33 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Anna Schumaker <Anna.Schumaker@netapp.com>
-Cc: linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org,
-        zab@zabbo.net, viro@zeniv.linux.org.uk, clm@fb.com,
-        darrick.wong@oracle.com, mtk.manpages@gmail.com, andros@netapp.com,
-        hch@infradead.org
-Subject: Re: [PATCH v2 9/9] btrfs: btrfs_copy_file_range() only supports
- reflinks
-Message-ID: <20150922115615.GJ8891@twin.jikos.cz>
+To: Alexandru Moise <00moses.alexander00@gmail.com>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, holger.hoffstaette@googlemail.com
+Subject: Re: [PATCH 1/2] btrfs: avoid passing int param to start_transaction
+ which takes u64
+Message-ID: <20150922130933.GD12815@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1442003423-6884-1-git-send-email-Anna.Schumaker@Netapp.com>
- <1442003423-6884-10-git-send-email-Anna.Schumaker@Netapp.com>
+References: <20150913184720.GA25846@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1442003423-6884-10-git-send-email-Anna.Schumaker@Netapp.com>
+In-Reply-To: <20150913184720.GA25846@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 11, 2015 at 04:30:22PM -0400, Anna Schumaker wrote:
-> Reject copies that don't have the COPY_FR_REFLINK flag set.
+On Sun, Sep 13, 2015 at 06:47:20PM +0000, Alexandru Moise wrote:
+> Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+> ---
+> v2: Forgot to add transaction.h when I made the commit, many thanks
+> Holger for pointing it out.
 > 
-> Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
+>  fs/btrfs/transaction.c | 2 +-
+>  fs/btrfs/transaction.h | 2 +-
+>  2 files changed, 2 insertions(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+> index 8f259b3..8a83acd 100644
+> --- a/fs/btrfs/transaction.c
+> +++ b/fs/btrfs/transaction.c
+> @@ -570,7 +570,7 @@ reserve_fail:
+>  }
+>  
+>  struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
+> -						   int num_items)
+> +						   u64 num_items)
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+I think it's better to do it the other way around, ie. let all the
+equivalents of 'num_items' be an int. We know that this is a small
+number, using u64 for that is an overkill. As the number is always
+positive, please make it 'unsigned'.

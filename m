@@ -1,52 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from blu004-omc1s7.hotmail.com ([65.55.116.18]:52356 "EHLO
-	BLU004-OMC1S7.hotmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755899AbbIUDqU (ORCPT
+Received: from mail-wi0-f182.google.com ([209.85.212.182]:32994 "EHLO
+	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752862AbbIVRCs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Sep 2015 23:46:20 -0400
-Message-ID: <BLU437-SMTP103A5A3F35BD11388D6FC65FF460@phx.gbl>
-From: Shan Hai <haishan.bai@hotmail.com>
-To: linux-btrfs@vger.kernel.org
-CC: clm@fb.com, linux-kernel@vger.kernel.org
-Subject: [PATCH 1/1] btrfs/file.c: remove an unsed varialbe first_index
-Date: Mon, 21 Sep 2015 11:40:57 +0800
+	Tue, 22 Sep 2015 13:02:48 -0400
+Date: Tue, 22 Sep 2015 20:02:25 +0000
+From: Alexandru Moise <00moses.alexander00@gmail.com>
+To: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, 00moses.alexander00@gmail.com
+Subject: [PATCH v2] btrfs: cleanup btrfs_balance profile validity checks
+Message-ID: <20150922200225.GA4138@gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-In-Reply-To: <BLU437-SMTP103CD3FBBD84F09E5592AACFF460@phx.gbl>
 
-From: Shan Hai <shan.hai@windriver.com>
+Improve readability by generalizing the profile validity checks.
 
-The commit b37392ea86761 ("Btrfs: cleanup unnecessary parameter
-and variant of prepare_pages()") makes it redundant.
-
-Signed-off-by: Shan Hai <haishan.bai@hotmail.com>
+Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
 ---
- fs/btrfs/file.c | 3 ---
- 1 file changed, 3 deletions(-)
+v2: Followed Dave's suggestion and renamed function to
+validate_convert_profile instead of balance_relocate_invalid
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..b6695c4 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1469,7 +1469,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	u64 release_bytes = 0;
- 	u64 lockstart;
- 	u64 lockend;
--	unsigned long first_index;
- 	size_t num_written = 0;
- 	int nrptrs;
- 	int ret = 0;
-@@ -1485,8 +1484,6 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 	if (!pages)
- 		return -ENOMEM;
+ fs/btrfs/volumes.c | 21 ++++++++++++---------
+ 1 file changed, 12 insertions(+), 9 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6fc73586..d2b8f08 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3466,6 +3466,15 @@ static void __cancel_balance(struct btrfs_fs_info *fs_info)
+ 	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
+ }
  
--	first_index = pos >> PAGE_CACHE_SHIFT;
--
- 	while (iov_iter_count(i) > 0) {
- 		size_t offset = pos & (PAGE_CACHE_SIZE - 1);
- 		size_t write_bytes = min(iov_iter_count(i),
++/* Non-zero return value signifies invalidity */
++static inline int validate_convert_profile(struct btrfs_balance_args *bctl_arg,
++		u64 allowed)
++{
++	return ((bctl_arg->flags & BTRFS_BALANCE_ARGS_CONVERT) &&
++		(!alloc_profile_is_valid(bctl_arg->target, 1) ||
++		 (bctl_arg->target & ~allowed)));
++}
++
+ /*
+  * Should be called with both balance and volume mutexes held
+  */
+@@ -3523,27 +3532,21 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 	if (num_devices > 3)
+ 		allowed |= (BTRFS_BLOCK_GROUP_RAID10 |
+ 			    BTRFS_BLOCK_GROUP_RAID6);
+-	if ((bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
+-	    (!alloc_profile_is_valid(bctl->data.target, 1) ||
+-	     (bctl->data.target & ~allowed))) {
++	if (validate_convert_profile(&bctl->data, allowed)) {
+ 		btrfs_err(fs_info, "unable to start balance with target "
+ 			   "data profile %llu",
+ 		       bctl->data.target);
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+-	if ((bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
+-	    (!alloc_profile_is_valid(bctl->meta.target, 1) ||
+-	     (bctl->meta.target & ~allowed))) {
++	if (validate_convert_profile(&bctl->meta, allowed)) {
+ 		btrfs_err(fs_info,
+ 			   "unable to start balance with target metadata profile %llu",
+ 		       bctl->meta.target);
+ 		ret = -EINVAL;
+ 		goto out;
+ 	}
+-	if ((bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
+-	    (!alloc_profile_is_valid(bctl->sys.target, 1) ||
+-	     (bctl->sys.target & ~allowed))) {
++	if (validate_convert_profile(&bctl->sys, allowed)) {
+ 		btrfs_err(fs_info,
+ 			   "unable to start balance with target system profile %llu",
+ 		       bctl->sys.target);
 -- 
-2.1.4
+2.5.3
 

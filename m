@@ -1,178 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58845 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58850 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933201AbbIVUQF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 16:16:05 -0400
+	id S934663AbbIVUQH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 16:16:07 -0400
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fb.com, clm@fb.com, quwenruo@cn.fujitsu.com,
         Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 3/4] btrfs: Add qgroup tracing
-Date: Tue, 22 Sep 2015 13:15:47 -0700
-Message-Id: <1442952948-21389-4-git-send-email-mfasheh@suse.de>
+Subject: [PATCH 4/4] btrfs: qgroup: account shared subtree during snapshot delete
+Date: Tue, 22 Sep 2015 13:15:48 -0700
+Message-Id: <1442952948-21389-5-git-send-email-mfasheh@suse.de>
 In-Reply-To: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
 References: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch adds tracepoints to the qgroup code on both the reporting side
-(insert_dirty_extents) and the accounting side. Taken together it allows us
-to see what qgroup operations have happened, and what their result was.
+Commit 0ed4792 ('btrfs: qgroup: Switch to new extent-oriented qgroup
+mechanism.') removed our qgroup accounting during
+btrfs_drop_snapshot(). Predictably, this results in qgroup numbers
+going bad shortly after a snapshot is removed.
+
+Fix this by adding a dirty extent record when we encounter extents during
+our shared subtree walk. This effectively restores the functionality we had
+with the original shared subtree walking code in 1152651 (btrfs: qgroup:
+account shared subtrees during snapshot delete).
+
+The idea with the original patch (and this one) is that shared subtrees can
+get skipped during drop_snapshot. The shared subtree walk then allows us a
+chance to visit those extents and add them to the qgroup work for later
+processing. This ultimately makes the accounting for drop snapshot work.
+
+The new qgroup code nicely handles all the other extents during the tree
+walk via the ref dec/inc functions so we don't have to add actions beyond
+what we had originally.
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/qgroup.c            | 10 +++++
- include/trace/events/btrfs.h | 88 +++++++++++++++++++++++++++++++++++++++++++-
- 2 files changed, 97 insertions(+), 1 deletion(-)
+ fs/btrfs/extent-tree.c | 41 ++++++++++++++++++++++++++++++++++-------
+ 1 file changed, 34 insertions(+), 7 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 8a82029..676202e 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -1461,6 +1461,8 @@ struct btrfs_qgroup_extent_record
- 	struct btrfs_qgroup_extent_record *entry;
- 	u64 bytenr = record->bytenr;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3a70e6c..89be620 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7757,17 +7757,37 @@ reada:
+ }
  
-+	trace_btrfs_qgroup_insert_dirty_extent(record);
+ /*
+- * TODO: Modify related function to add related node/leaf to dirty_extent_root,
+- * for later qgroup accounting.
+- *
+- * Current, this function does nothing.
++ * These may not be seen by the usual inc/dec ref code so we have to
++ * add them here.
+  */
++static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
++				     struct btrfs_root *root, u64 bytenr,
++				     u64 num_bytes)
++{
++	struct btrfs_qgroup_extent_record *qrecord;
++	struct btrfs_delayed_ref_root *delayed_refs;
 +
- 	while (*p) {
- 		parent_node = *p;
- 		entry = rb_entry(parent_node, struct btrfs_qgroup_extent_record,
-@@ -1591,6 +1593,9 @@ static int qgroup_update_counters(struct btrfs_fs_info *fs_info,
- 		cur_old_count = btrfs_qgroup_get_old_refcnt(qg, seq);
- 		cur_new_count = btrfs_qgroup_get_new_refcnt(qg, seq);
++	qrecord = kmalloc(sizeof(*qrecord), GFP_NOFS);
++	if (!qrecord)
++		return -ENOMEM;
++
++	qrecord->bytenr = bytenr;
++	qrecord->num_bytes = num_bytes;
++	qrecord->old_roots = NULL;
++
++	delayed_refs = &trans->transaction->delayed_refs;
++	if (btrfs_qgroup_insert_dirty_extent(delayed_refs, qrecord))
++		kfree(qrecord);
++
++	return 0;
++}
++
+ static int account_leaf_items(struct btrfs_trans_handle *trans,
+ 			      struct btrfs_root *root,
+ 			      struct extent_buffer *eb)
+ {
+ 	int nr = btrfs_header_nritems(eb);
+-	int i, extent_type;
++	int i, extent_type, ret;
+ 	struct btrfs_key key;
+ 	struct btrfs_file_extent_item *fi;
+ 	u64 bytenr, num_bytes;
+@@ -7790,6 +7810,10 @@ static int account_leaf_items(struct btrfs_trans_handle *trans,
+ 			continue;
  
-+		trace_qgroup_update_counters(qg->qgroupid, cur_old_count,
-+					     cur_new_count);
+ 		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
 +
- 		/* Rfer update part */
- 		if (cur_old_count == 0 && cur_new_count > 0) {
- 			qg->rfer += num_bytes;
-@@ -1684,6 +1689,9 @@ btrfs_qgroup_account_extent(struct btrfs_trans_handle *trans,
- 		goto out_free;
- 	BUG_ON(!fs_info->quota_root);
++		ret = record_one_subtree_extent(trans, root, bytenr, num_bytes);
++		if (ret)
++			return ret;
+ 	}
+ 	return 0;
+ }
+@@ -7858,8 +7882,6 @@ static int adjust_slots_upwards(struct btrfs_root *root,
  
-+	trace_btrfs_qgroup_account_extent(bytenr, num_bytes, nr_old_roots,
-+					  nr_new_roots);
+ /*
+  * root_eb is the subtree root and is locked before this function is called.
+- * TODO: Modify this function to mark all (including complete shared node)
+- * to dirty_extent_root to allow it get accounted in qgroup.
+  */
+ static int account_shared_subtree(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root,
+@@ -7937,6 +7959,11 @@ walk_down:
+ 			btrfs_tree_read_lock(eb);
+ 			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+ 			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
 +
- 	qgroups = ulist_alloc(GFP_NOFS);
- 	if (!qgroups) {
- 		ret = -ENOMEM;
-@@ -1753,6 +1761,8 @@ int btrfs_qgroup_account_extents(struct btrfs_trans_handle *trans,
- 		record = rb_entry(node, struct btrfs_qgroup_extent_record,
- 				  node);
++			ret = record_one_subtree_extent(trans, root, child_bytenr,
++							root->nodesize);
++			if (ret)
++				goto out;
+ 		}
  
-+		trace_btrfs_qgroup_account_extents(record);
-+
- 		if (!ret) {
- 			/*
- 			 * Use (u64)-1 as time_seq to do special search, which
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index 0b73af9..9d7b545 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -23,7 +23,7 @@ struct map_lookup;
- struct extent_buffer;
- struct btrfs_work;
- struct __btrfs_workqueue;
--struct btrfs_qgroup_operation;
-+struct btrfs_qgroup_extent_record;
- 
- #define show_ref_type(type)						\
- 	__print_symbolic(type,						\
-@@ -1117,6 +1117,92 @@ DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
- 	TP_ARGS(wq)
- );
- 
-+DECLARE_EVENT_CLASS(btrfs_qgroup_extent,
-+	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+
-+	TP_ARGS(rec),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  bytenr		)
-+		__field(	u64,  num_bytes		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->bytenr		= rec->bytenr,
-+		__entry->num_bytes	= rec->num_bytes;
-+	),
-+
-+	TP_printk("bytenr = %llu, num_bytes = %llu",
-+		  (unsigned long long)__entry->bytenr,
-+		  (unsigned long long)__entry->num_bytes)
-+);
-+
-+DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_account_extents,
-+
-+	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+
-+	TP_ARGS(rec)
-+);
-+
-+DEFINE_EVENT(btrfs_qgroup_extent, btrfs_qgroup_insert_dirty_extent,
-+
-+	TP_PROTO(struct btrfs_qgroup_extent_record *rec),
-+
-+	TP_ARGS(rec)
-+);
-+
-+TRACE_EVENT(btrfs_qgroup_account_extent,
-+
-+	TP_PROTO(u64 bytenr, u64 num_bytes, u64 nr_old_roots, u64 nr_new_roots),
-+
-+	TP_ARGS(bytenr, num_bytes, nr_old_roots, nr_new_roots),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  bytenr			)
-+		__field(	u64,  num_bytes			)
-+		__field(	u64,  nr_old_roots		)
-+		__field(	u64,  nr_new_roots		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->bytenr		= bytenr;
-+		__entry->num_bytes	= num_bytes;
-+		__entry->nr_old_roots	= nr_old_roots;
-+		__entry->nr_new_roots	= nr_new_roots;
-+	),
-+
-+	TP_printk("bytenr = %llu, num_bytes = %llu, nr_old_roots = %llu, "
-+		  "nr_new_roots = %llu",
-+		  __entry->bytenr,
-+		  __entry->num_bytes,
-+		  __entry->nr_old_roots,
-+		  __entry->nr_new_roots)
-+);
-+
-+TRACE_EVENT(qgroup_update_counters,
-+
-+	TP_PROTO(u64 qgid, u64 cur_old_count, u64 cur_new_count),
-+
-+	TP_ARGS(qgid, cur_old_count, cur_new_count),
-+
-+	TP_STRUCT__entry(
-+		__field(	u64,  qgid			)
-+		__field(	u64,  cur_old_count		)
-+		__field(	u64,  cur_new_count		)
-+	),
-+
-+	TP_fast_assign(
-+		__entry->qgid		= qgid;
-+		__entry->cur_old_count	= cur_old_count;
-+		__entry->cur_new_count	= cur_new_count;
-+	),
-+
-+	    TP_printk("	qgid = %llu, cur_old_count = %llu, cur_new_count = %llu",
-+		  __entry->qgid,
-+		  __entry->cur_old_count,
-+		  __entry->cur_new_count)
-+);
-+
- #endif /* _TRACE_BTRFS_H */
- 
- /* This part must be outside protection */
+ 		if (level == 0) {
 -- 
 2.1.2
 

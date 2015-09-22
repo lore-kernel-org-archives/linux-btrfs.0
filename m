@@ -1,123 +1,252 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:58850 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33033 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934663AbbIVUQH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 16:16:07 -0400
+	id S934656AbbIVVMx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Sep 2015 17:12:53 -0400
+Date: Tue, 22 Sep 2015 14:12:51 -0700
 From: Mark Fasheh <mfasheh@suse.de>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, clm@fb.com, quwenruo@cn.fujitsu.com,
-        Mark Fasheh <mfasheh@suse.de>
-Subject: [PATCH 4/4] btrfs: qgroup: account shared subtree during snapshot delete
-Date: Tue, 22 Sep 2015 13:15:48 -0700
-Message-Id: <1442952948-21389-5-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
+Cc: jbacik@fb.com, clm@fb.com, quwenruo@cn.fujitsu.com
+Subject: Re: [PATCH 0/4] btrfs: update qgroups in drop snapshot
+Message-ID: <20150922211251.GA17854@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
 References: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 0ed4792 ('btrfs: qgroup: Switch to new extent-oriented qgroup
-mechanism.') removed our qgroup accounting during
-btrfs_drop_snapshot(). Predictably, this results in qgroup numbers
-going bad shortly after a snapshot is removed.
+On Tue, Sep 22, 2015 at 01:15:44PM -0700, Mark Fasheh wrote:
+> The entire patch series can be tested with the following xfstests.git
+> patch, which will be sent to the appropriate list shortly)
+> 
+> https://github.com/markfasheh/xfstests/commit/b09ca51c012824e44546b13862ab1f93a6f2f675
 
-Fix this by adding a dirty extent record when we encounter extents during
-our shared subtree walk. This effectively restores the functionality we had
-with the original shared subtree walking code in 1152651 (btrfs: qgroup:
-account shared subtrees during snapshot delete).
+That xfstests patch doesn't apply against latest xfstests.git, attached is
+one that does. Git branch is at
 
-The idea with the original patch (and this one) is that shared subtrees can
-get skipped during drop_snapshot. The shared subtree walk then allows us a
-chance to visit those extents and add them to the qgroup work for later
-processing. This ultimately makes the accounting for drop snapshot work.
+git@github.com:markfasheh/xfstests.git qgroup-drop-snapshot
 
-The new qgroup code nicely handles all the other extents during the tree
-walk via the ref dec/inc functions so we don't have to add actions beyond
-what we had originally.
+Sorry about that.
+	--Mark
+
+--
+Mark Fasheh
+
+
+From: Mark Fasheh <mfasheh@suse.de>
+
+[PATCH] btrfs: add test for quota groups and drop snapshot
+
+Test btrfs quota group consistency operations during snapshot
+delete. Btrfs has had long standing issues with drop snapshot
+failing to properly account for quota groups. This test crafts
+several snapshot trees with shared and exclusive elements. One of
+the trees is removed and then quota group consistency is checked.
+
+This issue is fixed by the following linux kernel patches:
+   Btrfs: use btrfs_get_fs_root in resolve_indirect_ref
+   Btrfs: keep dropped roots in cache until transaciton commit
+   btrfs: qgroup: account shared subtree during snapshot delete
 
 Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 ---
- fs/btrfs/extent-tree.c | 41 ++++++++++++++++++++++++++++++++++-------
- 1 file changed, 34 insertions(+), 7 deletions(-)
+ tests/btrfs/104     | 166 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/104.out |   1 +
+ tests/btrfs/group   |   1 +
+ 3 files changed, 168 insertions(+)
+ create mode 100644 tests/btrfs/104
+ create mode 100644 tests/btrfs/104.out
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 3a70e6c..89be620 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7757,17 +7757,37 @@ reada:
- }
- 
- /*
-- * TODO: Modify related function to add related node/leaf to dirty_extent_root,
-- * for later qgroup accounting.
-- *
-- * Current, this function does nothing.
-+ * These may not be seen by the usual inc/dec ref code so we have to
-+ * add them here.
-  */
-+static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
-+				     struct btrfs_root *root, u64 bytenr,
-+				     u64 num_bytes)
+diff --git a/tests/btrfs/104 b/tests/btrfs/104
+new file mode 100644
+index 0000000..29dc3be
+--- /dev/null
++++ b/tests/btrfs/104
+@@ -0,0 +1,166 @@
++#! /bin/bash
++# FS QA Test No. btrfs/104
++#
++# Test btrfs quota group consistency operations during snapshot
++# delete. Btrfs has had long standing issues with drop snapshot
++# failing to properly account for quota groups. This test crafts
++# several snapshot trees with shared and exclusive elements. One of
++# the trees is removed and then quota group consistency is checked.
++#
++# This issue is fixed by the following linux kernel patches:
++#
++#    Btrfs: use btrfs_get_fs_root in resolve_indirect_ref
++#    Btrfs: keep dropped roots in cache until transaciton commit
++#    btrfs: qgroup: account shared subtree during snapshot delete
++#
++#-----------------------------------------------------------------------
++# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
 +{
-+	struct btrfs_qgroup_extent_record *qrecord;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+
-+	qrecord = kmalloc(sizeof(*qrecord), GFP_NOFS);
-+	if (!qrecord)
-+		return -ENOMEM;
-+
-+	qrecord->bytenr = bytenr;
-+	qrecord->num_bytes = num_bytes;
-+	qrecord->old_roots = NULL;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+	if (btrfs_qgroup_insert_dirty_extent(delayed_refs, qrecord))
-+		kfree(qrecord);
-+
-+	return 0;
++	rm -fr $tmp
 +}
 +
- static int account_leaf_items(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct extent_buffer *eb)
- {
- 	int nr = btrfs_header_nritems(eb);
--	int i, extent_type;
-+	int i, extent_type, ret;
- 	struct btrfs_key key;
- 	struct btrfs_file_extent_item *fi;
- 	u64 bytenr, num_bytes;
-@@ -7790,6 +7810,10 @@ static int account_leaf_items(struct btrfs_trans_handle *trans,
- 			continue;
- 
- 		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
 +
-+		ret = record_one_subtree_extent(trans, root, bytenr, num_bytes);
-+		if (ret)
-+			return ret;
- 	}
- 	return 0;
- }
-@@ -7858,8 +7882,6 @@ static int adjust_slots_upwards(struct btrfs_root *root,
- 
- /*
-  * root_eb is the subtree root and is locked before this function is called.
-- * TODO: Modify this function to mark all (including complete shared node)
-- * to dirty_extent_root to allow it get accounted in qgroup.
-  */
- static int account_shared_subtree(struct btrfs_trans_handle *trans,
- 				  struct btrfs_root *root,
-@@ -7937,6 +7959,11 @@ walk_down:
- 			btrfs_tree_read_lock(eb);
- 			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
- 			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
 +
-+			ret = record_one_subtree_extent(trans, root, child_bytenr,
-+							root->nodesize);
-+			if (ret)
-+				goto out;
- 		}
- 
- 		if (level == 0) {
++rm -f $seqres.full
++
++# Create an fs tree of a given height at a target location. This is
++# done by agressively creating inline extents to expand the number of
++# nodes required. We also add an traditional extent so that
++# drop_snapshot is forced to walk at least one extent that is not
++# stored in metadata.
++#
++# NOTE: The ability to vary tree height for this test is very useful
++# for debugging problems with drop_snapshot(). As a result we retain
++# that parameter even though the test below always does level 2 trees.
++_explode_fs_tree () {
++    local level=$1;
++    local loc="$2";
++    local bs=4095;
++    local cnt=1;
++    local n;
++
++    if [ -z $loc ]; then
++	echo "specify location for fileset"
++	exit 1;
++    fi
++
++    case $level in
++	1)# this always reproduces level 1 trees
++	    n=10;
++	    ;;
++	2)# this always reproduces level 2 trees
++	    n=1500
++	    ;;
++	3)# this always reproduces level 3 trees
++	    n=1000000;
++	    ;;
++	*)
++	    echo "Can't make level $level trees";
++	    exit 1;
++	    ;;
++    esac
++
++    mkdir -p $loc
++    for i in `seq -w 1 $n`;
++    do
++	dd status=none if=/dev/zero of=$loc/file$i bs=$bs count=$cnt
++    done
++
++    bs=131072
++    cnt=1
++    dd status=none if=/dev/zero of=$loc/extentfile bs=$bs count=$cnt
++}
++
++# Force the default leaf size as the calculations for making our btree
++# heights are based on that.
++run_check _scratch_mkfs "--nodesize 16384"
++_scratch_mount
++
++# populate the default subvolume and create a snapshot ('snap1')
++_explode_fs_tree 1 $SCRATCH_MNT/files
++_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap1
++
++# create new btree nodes in this snapshot. They will become shared
++# with the next snapshot we create.
++_explode_fs_tree 1 $SCRATCH_MNT/snap1/files-snap1
++
++# create our final snapshot ('snap2'), populate it with
++# exclusively owned nodes.
++#
++# As a result of this action, snap2 will get an implied ref to the
++# 128K extent created in the default subvolume.
++_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT/snap1 $SCRATCH_MNT/snap2
++_explode_fs_tree 1 $SCRATCH_MNT/snap2/files-snap2
++
++# Enable qgroups now that we have our filesystem prepared. This
++# will kick off a scan which we will have to wait for.
++_run_btrfs_util_prog quota enable $SCRATCH_MNT
++_run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
++
++# Remount to clear cache, force everything to disk
++_scratch_unmount
++_scratch_mount
++
++# Finally, delete snap1 to trigger btrfs_drop_snapshot(). This
++# snapshot is most interesting to delete because it will cause some
++# nodes to go exclusively owned for snap2, while some will stay shared
++# with the default subvolume. That exercises a maximum of the drop
++# snapshot/qgroup interactions.
++#
++# snap2s imlied ref from to the 128K extent in files/ can be lost by
++# the root finding code in qgroup accounting due to snap1 no longer
++# providing a path to it. This was fixed by the first two patches
++# referenced above.
++_run_btrfs_util_prog subvolume delete $SCRATCH_MNT/snap1
++
++# There is no way from userspace to force btrfs_drop_snapshot to run
++# at a given time (even via mount/unmount). We must wait for it to
++# start and complete. This is the shortest time on my tests systems I
++# have found which always allows drop_snapshot to run to completion.
++sleep 45
++
++_scratch_unmount
++
++# generate a qgroup report and look for inconsistent groups
++#  - don't use _run_btrfs_util_prog here as it captures the output and
++#    we need to grep it.
++$BTRFS_UTIL_PROG check --qgroup-report $SCRATCH_DEV 2>&1 | grep -E -q "Counts for qgroup.*are different"
++if [ $? -ne 0 ]; then
++    status=0
++fi
++
++exit
+diff --git a/tests/btrfs/104.out b/tests/btrfs/104.out
+new file mode 100644
+index 0000000..1ed84bc
+--- /dev/null
++++ b/tests/btrfs/104.out
+@@ -0,0 +1 @@
++QA output created by 104
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e92a65a..6218adf 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -106,3 +106,4 @@
+ 101 auto quick replace
+ 102 auto quick metadata enospc
+ 103 auto quick clone compress
++104 auto qgroup
 -- 
 2.1.2
 

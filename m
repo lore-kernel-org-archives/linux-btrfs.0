@@ -1,188 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:41507 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932174AbbI1I4g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Sep 2015 04:56:36 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] Btrfs: update fix for read corruption of compressed and shared extents
-Date: Mon, 28 Sep 2015 09:56:26 +0100
-Message-Id: <1443430586-18835-1-git-send-email-fdmanana@kernel.org>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:7447 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755397AbbIWVNs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Sep 2015 17:13:48 -0400
+Received: from pps.filterd (m0004060 [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t8NKR34n000327
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 14:13:48 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1x417p102y-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 14:13:48 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+Subject: [PATCH] Btrfs: fix prealloc under heavy fragmentation conditions
+Date: Wed, 23 Sep 2015 17:13:43 -0400
+Message-ID: <1443042823-4895-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+If we are heavily fragmented we will continually try to prealloc the largest
+extent size we can every time we call btrfs_reserve_extent.  This can be very
+expensive when we are heavily fragmented, burning lots of CPU cycles and loops
+through the allocator.  So instead notice when we get a smaller chunk from the
+allocator than what we specified and use this as the new maximum size we try to
+allocate.  Thanks,
 
-My previous fix in commit 005efedf2c7d ("Btrfs: fix read corruption of
-compressed and shared extents") was effective only if the compressed
-extents cover a file range with a length that is not a multiple of 16
-pages. That's because the detection of when we reached a different range
-of the file that shares the same compressed extent as the previously
-processed range was done at extent_io.c:__do_contiguous_readpages(),
-which covers subranges with a length up to 16 pages, because
-extent_readpages() groups the pages in clusters no larger than 16 pages.
-So fix this by tracking the start of the previously processed file
-range's extent map at extent_readpages().
-
-The following test case for fstests reproduces the issue:
-
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      rm -f $tmp.*
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-
-  # real QA test starts here
-  _need_to_be_root
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-  _require_cloner
-
-  rm -f $seqres.full
-
-  test_clone_and_read_compressed_extent()
-  {
-      local mount_opts=$1
-
-      _scratch_mkfs >>$seqres.full 2>&1
-      _scratch_mount $mount_opts
-
-      # Create our test file with a single extent of 64Kb that is going to
-      # be compressed no matter which compression algo is used (zlib/lzo).
-      $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 64K" \
-          $SCRATCH_MNT/foo | _filter_xfs_io
-
-      # Now clone the compressed extent into an adjacent file offset.
-      $CLONER_PROG -s 0 -d $((64 * 1024)) -l $((64 * 1024)) \
-          $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-
-      echo "File digest before unmount:"
-      md5sum $SCRATCH_MNT/foo | _filter_scratch
-
-      # Remount the fs or clear the page cache to trigger the bug in
-      # btrfs. Because the extent has an uncompressed length that is a
-      # multiple of 16 pages, all the pages belonging to the second range
-      # of the file (64K to 128K), which points to the same extent as the
-      # first range (0K to 64K), had their contents full of zeroes instead
-      # of the byte 0xaa. This was a bug exclusively in the read path of
-      # compressed extents, the correct data was stored on disk, btrfs
-      # just failed to fill in the pages correctly.
-      _scratch_remount
-
-      echo "File digest after remount:"
-      # Must match the digest we got before.
-      md5sum $SCRATCH_MNT/foo | _filter_scratch
-  }
-
-  echo -e "\nTesting with zlib compression..."
-  test_clone_and_read_compressed_extent "-o compress=zlib"
-
-  _scratch_unmount
-
-  echo -e "\nTesting with lzo compression..."
-  test_clone_and_read_compressed_extent "-o compress=lzo"
-
-  status=0
-  exit
-
-Cc: stable@vger.kernel.org
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent_io.c | 19 +++++++++++--------
- 1 file changed, 11 insertions(+), 8 deletions(-)
+ fs/btrfs/inode.c | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 11aa8f7..363726b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -3144,12 +3144,12 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
- 					     get_extent_t *get_extent,
- 					     struct extent_map **em_cached,
- 					     struct bio **bio, int mirror_num,
--					     unsigned long *bio_flags, int rw)
-+					     unsigned long *bio_flags, int rw,
-+					     u64 *prev_em_start)
- {
- 	struct inode *inode;
- 	struct btrfs_ordered_extent *ordered;
- 	int index;
--	u64 prev_em_start = (u64)-1;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 79d568f..424dab7 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9599,6 +9599,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 	u64 cur_offset = start;
+ 	u64 i_size;
+ 	u64 cur_bytes;
++	u64 last_alloc = (u64)-1;
+ 	int ret = 0;
+ 	bool own_trans = true;
  
- 	inode = pages[0]->mapping->host;
- 	while (1) {
-@@ -3165,7 +3165,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+@@ -9615,6 +9616,13 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
  
- 	for (index = 0; index < nr_pages; index++) {
- 		__do_readpage(tree, pages[index], get_extent, em_cached, bio,
--			      mirror_num, bio_flags, rw, &prev_em_start);
-+			      mirror_num, bio_flags, rw, prev_em_start);
- 		page_cache_release(pages[index]);
- 	}
- }
-@@ -3175,7 +3175,8 @@ static void __extent_readpages(struct extent_io_tree *tree,
- 			       int nr_pages, get_extent_t *get_extent,
- 			       struct extent_map **em_cached,
- 			       struct bio **bio, int mirror_num,
--			       unsigned long *bio_flags, int rw)
-+			       unsigned long *bio_flags, int rw,
-+			       u64 *prev_em_start)
- {
- 	u64 start = 0;
- 	u64 end = 0;
-@@ -3196,7 +3197,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
- 						  index - first_index, start,
- 						  end, get_extent, em_cached,
- 						  bio, mirror_num, bio_flags,
--						  rw);
-+						  rw, prev_em_start);
- 			start = page_start;
- 			end = start + PAGE_CACHE_SIZE - 1;
- 			first_index = index;
-@@ -3207,7 +3208,8 @@ static void __extent_readpages(struct extent_io_tree *tree,
- 		__do_contiguous_readpages(tree, &pages[first_index],
- 					  index - first_index, start,
- 					  end, get_extent, em_cached, bio,
--					  mirror_num, bio_flags, rw);
-+					  mirror_num, bio_flags, rw,
-+					  prev_em_start);
- }
+ 		cur_bytes = min(num_bytes, 256ULL * 1024 * 1024);
+ 		cur_bytes = max(cur_bytes, min_size);
++		/*
++		 * If we are severely fragmented we could end up with really
++		 * small allocations, so if the allocator is returning small
++		 * chunks lets make its job easier by only searching for those
++		 * sized chunks.
++		 */
++		cur_bytes = min(cur_bytes, last_alloc);
+ 		ret = btrfs_reserve_extent(root, cur_bytes, min_size, 0,
+ 					   *alloc_hint, &ins, 1, 0);
+ 		if (ret) {
+@@ -9623,6 +9631,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 			break;
+ 		}
  
- static int __extent_read_full_page(struct extent_io_tree *tree,
-@@ -4218,6 +4220,7 @@ int extent_readpages(struct extent_io_tree *tree,
- 	struct page *page;
- 	struct extent_map *em_cached = NULL;
- 	int nr = 0;
-+	u64 prev_em_start = (u64)-1;
- 
- 	for (page_idx = 0; page_idx < nr_pages; page_idx++) {
- 		page = list_entry(pages->prev, struct page, lru);
-@@ -4234,12 +4237,12 @@ int extent_readpages(struct extent_io_tree *tree,
- 		if (nr < ARRAY_SIZE(pagepool))
- 			continue;
- 		__extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
--				   &bio, 0, &bio_flags, READ);
-+				   &bio, 0, &bio_flags, READ, &prev_em_start);
- 		nr = 0;
- 	}
- 	if (nr)
- 		__extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
--				   &bio, 0, &bio_flags, READ);
-+				   &bio, 0, &bio_flags, READ, &prev_em_start);
- 
- 	if (em_cached)
- 		free_extent_map(em_cached);
++		last_alloc = ins.offset;
+ 		ret = insert_reserved_file_extent(trans, inode,
+ 						  cur_offset, ins.objectid,
+ 						  ins.offset, ins.offset,
 -- 
-2.1.3
+1.8.3.1
 

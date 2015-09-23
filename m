@@ -1,88 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:47691 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754819AbbIWN2c (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Sep 2015 09:28:32 -0400
-Date: Wed, 23 Sep 2015 13:28:27 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: dsterba@suse.cz,
+Received: from mx2.suse.de ([195.135.220.15]:53230 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754902AbbIWN30 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Sep 2015 09:29:26 -0400
+Date: Wed, 23 Sep 2015 15:28:29 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>, dsterba@suse.cz,
         Holger =?iso-8859-1?Q?Hoffst=E4tte?=
 	<holger.hoffstaette@googlemail.com>,
         linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] btrfs: Fix no space bug caused by removing bg
-Message-ID: <20150923132827.GM5918@carfax.org.uk>
+Message-ID: <20150923132829.GB12815@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <15fc8f8d002e4ffcdb46e769736f240ae7ace20b.1442839332.git.zhaolei@cn.fujitsu.com>
  <560150CD.6070301@suse.com>
  <5601596B.1020607@googlemail.com>
  <20150922134131.GH5918@carfax.org.uk>
  <20150922142333.GH12815@twin.jikos.cz>
  <20150922143602.GI5918@carfax.org.uk>
- <20150923131226.GA12815@twin.jikos.cz>
+ <56016BB5.6060101@gmail.com>
+ <20150922153930.GK5918@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="FxlYARId5dseejUu"
-In-Reply-To: <20150923131226.GA12815@twin.jikos.cz>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20150922153930.GK5918@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---FxlYARId5dseejUu
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Wed, Sep 23, 2015 at 03:12:26PM +0200, David Sterba wrote:
-> On Tue, Sep 22, 2015 at 02:36:02PM +0000, Hugo Mills wrote:
-> > > Yeah, right now there's no persistent default for the allocator. I'm
-> > > still hoping that the object properties will magically solve that.
-> > 
-> >    There's no obvious place that filesystem-wide properties can be
-> > stored, though. There's a userspace tool to manipulate the few current
-> > FS-wide properties, but that's all special-cased to use the
-> > "historical" ioctls for those properties, with no generalisation of a
-> > property store, or even (IIRC) any external API for them.
+On Tue, Sep 22, 2015 at 03:39:30PM +0000, Hugo Mills wrote:
+> > The way I would expect things to work is that a new subvolume
+> > inherits it's properties from it's parent (if it's a snapshot),
 > 
-> From the UI point, we proposed to add a specifier that would route the
-> property to either subvolume or the filesystem:
+>    Definitely this.
 > 
-> $ btrfs prop set -t filesystem bgtype raid0
-> $ btrfs prop set -t subvolume bgtype raid1
+> > or
+> > from the next higher subvolume it's nested in.
 > 
-> How this will get stored in the xattrs is another question. As there's
-> always only single instance of the filesystem properties, it coud be
-> something like 'btrfs.fs.bgtype' and be stored as a xattr of the
-> toplevel subvolume.
+>    I don't think I like this. I'm not quite sure why, though, at the
+> moment.
 
-   That's what Austin suggested as well. Makes sense to me.
+I don't like inheritance from other than the parent subvolume because
+this makes things less obvious.
 
-   Hugo.
+>    It definitely makes the process at the start of allocating a new
+> block group much more complex: you have to walk back up through an
+> arbitrary depth of nested subvols to find the one that's actually got
+> a replication policy record in it. (Because after this feature is
+> brought in, there will be lots of filesystems without per-subvol
+> replication policies in them, and we have to have some way of dealing
+> with those as well).
+> 
+>    With an FS default policy, you only need check the current subvol,
+> and then fall back to the FS default if that's not found.
 
--- 
-Hugo Mills             | 2 + 2 = 5, for sufficiently large values of 2.
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+That looks reasonable to me.
 
---FxlYARId5dseejUu
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+>    These things are, I think, likely to be lightly used: I would be
+> reasonably surprised to find more than two or possibly three storage
+> policies in use on any given system with a sane sysadmin.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Agreed. At the moment I'm thinking about all the configuration
+possibilites we want to give to the users. Eg. the inheritance can be
+configurable on the property level.
 
-iQIcBAEBAgAGBQJWAqj7AAoJEFheFHXiqx3ku3cQALZi+mpra0ebLgQU4zYuBdW5
-AmsU8BTgKtvw2PCrgmqcsRHXx8cw1HysChdgNfNvOutpT4iY35sd1POlxudZVLjF
-CxPl3S8ti5t7gMqp5/V7VN7D61e9njXOudx+D8bgCJtLHR1ZzgqZLE3iniuTS+lo
-izt1TvQdQm032Xf8NKWzxcpTD7wLg1DTuFUXCh1oCa5mRrRa9KI6V+26RNFyIvzU
-DgMHIuhNURzbcncvYTODRPtQ2dP/SFwc7ll4M2xMilHK+v0bkiySk3b35HIiclXM
-awdSLeL2uQAB4FlclUUkzaiXBkupnPscDu2U6Xpxadkod5YL+lSpkiZ3HzNgaK41
-H8RurJgv5dpikEiXW0nbZvZwWxXDGL1LTZeAvd6CCQNcyr6ZxDKgafstUPt0WTdB
-YwV/oidS/N86xLyZtBlYSemzNg3431fTGTcex7cvXCBNhQtm2JoMPfNxoQN209CN
-TcWzo8+T55MYg32tRErkAtisjnzQSAETxxYD41xZvY7l8O8I9ZROm6zGGIevdMyC
-g3GrqwMDeQsOf+XMd7dbahX1OgXXD1ewt5KYPgIb4PH9XWzcdWlbg7h/hh15muPm
-1wovL0sbQpT7/ChCzef3UvmzkJDVPmCfKUGMGytQdsd+AJAB/7C7jPkdslvOJHdu
-oeNpnEaIWhP05MTZdlp+
-=D9l3
------END PGP SIGNATURE-----
+The usecase: the toplevel has compression enabled but I don't want any
+new subvolume share this property automatically.
 
---FxlYARId5dseejUu--
+(The blockgroup type is probably a bad example for configurable
+inheritance as it would not work for shared extents if the type is
+different.)
+
+>    I'm actually not sure what the interactions of multiple storage
+> policies are going to be like. It's entirely possible, particularly
+> with some of the more exotic (but useful) suggestions I've thought of,
+> that the behaviour of the FS is dependent on the order in which the
+> block groups are allocated. (i.e. "20 GiB to subvol-A, then 20 GiB to
+> subvol-B" results in different behaviour than "1 GiB to subvol-A then
+> 1 GiB to subvol-B and repeat"). I tried some simple Monte-Carlo
+> simulations, but I didn't get any concrete results out of it before
+> the end of the train journey. :)
+> 
+> >  This would obviate
+> > the need for some special 'default' properties, and would be
+> > relatively intuitive behavior for a significant majority of people.
+> 
+>    Of course, you shouldn't be nesting subvolumes anyway. It makes
+> it much harder to manage them.
+
+Depends, there are valid usecases for nested subvolumes but yeah, the
+management is harder.

@@ -1,131 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f176.google.com ([209.85.213.176]:38147 "EHLO
-	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752527AbbIWIlW (ORCPT
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:37023
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752303AbbIWJgU (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Sep 2015 04:41:22 -0400
-Received: by igxx6 with SMTP id x6so24248102igx.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 01:41:21 -0700 (PDT)
+	Wed, 23 Sep 2015 05:36:20 -0400
+Subject: Re: problem with long running btrfs mount operation
+References: <20150923054216.GD14395@sfserver>
+To: Linux Btrfs <linux-btrfs@vger.kernel.org>,
+        "S. Fricke" <silvio.fricke@gmail.com>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <56027292.4010800@googlemail.com>
+Date: Wed, 23 Sep 2015 11:36:18 +0200
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <20150922200435.GL5918@carfax.org.uk>
-References: <20150922195219.GA23903@lo.psyced.org>
-	<20150922200435.GL5918@carfax.org.uk>
-Date: Wed, 23 Sep 2015 09:41:21 +0100
-Message-ID: <CAL3q7H7F2k3WYptw5+RQa8_DvmqWRM4Q-tDwHQOHY+FH7qtCVQ@mail.gmail.com>
-Subject: Re: btrfs receive bigger than original snapshot?
-From: Filipe David Manana <fdmanana@gmail.com>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        carlo von lynX <lynX@time.to.get.psyced.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20150923054216.GD14395@sfserver>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 22, 2015 at 9:04 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Tue, Sep 22, 2015 at 09:52:19PM +0200, carlo von lynX wrote:
->> Hello, it's me again. This time I searched the web to make sure
->> I'm not making another beginner's mistake. I'm still not on the
->> list, so please keep me in cc: on replies.
->>
->> I have optimized a btrfs subvolume with a script* that reflinks
->> all files with identical contents, then I did a read-only snap
->> and fed it to send/receive. The bad news: on the receiving
->> side the same snapshot grew from 5.5G to 7.1G.
+On 09/23/15 07:42, S. Fricke wrote:
+> 
+> the 'btrfs check' has took some time. Here is the printout. Some advises for me?
+> 
+> 
+> Best Regards,
+> Silvio
+> 
+> % sudo btrfs check /dev/sda1
+> Checking filesystem on /dev/sda1
+> UUID: 4db27f9b-d8fe-4341-985a-4ce55ea9fd25
+> checking extents
+> bad metadata [1634295414784, 1634295418880) crossing stripe boundary
+> bad metadata [1634394767360, 1634394771456) crossing stripe boundary
+> bad metadata [1634691842048, 1634691846144) crossing stripe boundary
+> bad metadata [1634770485248, 1634770489344) crossing stripe boundary
+> bad metadata [1634798141440, 1634798145536) crossing stripe boundary
+> [... many lines cutted ...]
 
-So that's likely because you have files with holes. Right now when a
-hole exists in a file the send stream will contain an instruction to
-write zeroes into the file instead of a punch hole instruction. So
-imagine a file with a 1Gb hole, the send stream makes the receiver
-write 1Gb of zeroes, wasting a lot of space (and time).
+Btw these messages are the reasons I wanted you to run progs-4.2.1,
+since 4.2(.0) would print them even if the problem wasn't there.
+But it looks like you really do have the problem. This is a converted fs,
+right?
 
-There's an over an year old patchset to add hole punching support to
-the send stream and a few other features, but it was never picked by
-Josef at the time (when he was maintaining the integration branch) nor
-Chris.
+Unfortunately this problem is currently only detected, but not yet
+really fixable (see [1] for details), so I don't think running check
+with --repair is going to help. However it might bring the rest of the
+fs back into a workable state (remember to use -o skip_balance!) so that
+you can backup whatever needs rescuing.
 
->
->    That's something I'd definitely expect it to be able to do. If it's
-> not doing it, I'd say there's something wrong. cc'ing Filipe, who is,
-> I think, currently the local expert on send/receive.
->
->> I assume send/receive does not support one of the coolest
->> btrfs features ever.. reflinks. Didn't find any mention on this
->> on https://btrfs.wiki.kernel.org/index.php/Incremental_Backup
->> or other pages. Is there any documentation that would explain
->> to me why this has to be or is it just a missing feature that
->> someone someday may find the time to add?
->>
->> Generally I find it odd that btrfs receive would not recreate
->> an identical clone of the original snapshot, that would also
->> allow me to continue working on a backup hard disk, then merge
->> the changes back to the main disk. Instead I have to decide
->> which device contains the master copy for all times and never
->> make rw snapshots elsewhere. What if the master disk dies?
->> Then I can turn a backup into the new master but I will have
->> to re-bootstrap all other backups as they will not accept the
->> non-identical parent snapshot.
->
->    That's a known drawback, and one that's been discussed on this list
-> already. It's fixable (within some limits), but requires a change to
-> the send stream format. (See my analysis below).
->
->> Apparently I'm not the only one that thought this to be a
->> defect rather than a design choice:
->>     http://www.spinics.net/lists/linux-btrfs/msg45175.html
->>
->> This actually confused me (in particular the absence of responses
->> to that mail), that's why I have btrfs-progs 4.0 installed...
->> but in the meantime I figured out that I expected send/receive
->> to be bidirectional. So my question in this case.. is there a
->> higher reasoning for the inexactness of send/receive transfers?
->
->    It's about tracking enough metadata to be sure that the send (or
-> the receive) is actually feasible. See
-> http://www.spinics.net/lists/linux-btrfs/msg44089.html for my analysis
-> of the problem, and (theoretical) suggestions for what the solution
-> should look like.
->
->> And another classic: since the output size of the snapshot copy
->> is unpredictable, running out of disk space can be frequent.
->> Wouldn't it be cool if receive could resume rather than restarting
->> from scratch?
->
->    Resuming is a bit tricky -- how do you know where to resume from?
-> Bear in mind that send simply writes its results to stdout, so it has
-> no knowledge of anything on the receiving side. In fact, the receiving
-> side may not even exist at the point that the send stream is created.
->
->    Hugo.
->
->> But maybe I still got it all wrong in my head. If these things
->> are FAQs, please add them to the FAQ document. In particular some
->> criteria to decide when rsync is actually a more suitable tool
->> over send/receive, which apparently under some circumstances is
->> the case. In some other cases, git can be the better suited tool.
->>
->> Still I am very glad that you created a new alternative for data
->> organization between the extremes of reckless rsync and overly
->> accurate git. It's just a steep learning mountain.
->>
->>
->> *) I used fdupes' output ran through a perl script that calls
->>   "cp --reflink" for each match. Would "bedup" or "duperemove"
->>  do a better job? bedup looks like a better long-term solution.
->>
->>
->
-> --
-> Hugo Mills             | Great oxymorons of the world, no. 3:
-> hugo@... carfax.org.uk | Military Intelligence
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
+Last resort would be to mount -ro, which will prevent the fs from COWing
+itself deeper into that particular hole.
+
+FWIW this particular bug with convert creating borked filesystems should
+be fixed now, so just try again. :)
+
+Maybe someone else has a better suggestion for recovery.
+
+-h
+
+[1] https://github.com/kdave/btrfs-progs/commit/595c57d2f4dd3199aacb23b4c68d6aff49f97d29
+
+> bad metadata [1908346978304, 1908346982400) crossing stripe boundary
+> bad metadata [1908597653504, 1908597657600) crossing stripe boundary
+> bad metadata [1908663386112, 1908663390208) crossing stripe boundary
+> bad metadata [1908664041472, 1908664045568) crossing stripe boundary
+> bad metadata [1908832010240, 1908832014336) crossing stripe boundary
+> bad metadata [1908848984064, 1908848988160) crossing stripe boundary
+> ref mismatch on [1908883419136 4096] extent item 1, found 0
+> Backref 1908883419136 parent 1890809671680 not referenced back 0x4fadc740
+> Incorrect global backref count on 1908883419136 found 1 wanted 0
+> backpointer mismatch on [1908883419136 4096]
+> owner ref check failed [1908883419136 4096]
+> bad metadata [1908961640448, 1908961644544) crossing stripe boundary
+> bad metadata [1909004566528, 1909004570624) crossing stripe boundary
+> bad metadata [1909015052288, 1909015056384) crossing stripe boundary
+> bad metadata [1909015183360, 1909015187456) crossing stripe boundary
+> Backref 1909016203264 parent 1890809671680 not referenced back 0x4fc37690
+> Backref 1909016203264 parent 5105 root 5105 not found in extent tree
+> Incorrect global backref count on 1909016203264 found 3 wanted 2
+> backpointer mismatch on [1909016203264 4096]
+> bad metadata [1909017804800, 1909017808896) crossing stripe boundary
+> bad metadata [1909144289280, 1909144293376) crossing stripe boundary
+> bad metadata [1909164539904, 1909164544000) crossing stripe boundary
+> bad metadata [1909445033984, 1909445038080) crossing stripe boundary
+> Errors found in extent allocation tree or chunk allocation
+> checking free space cache
+> cache and super generation don't match, space cache will be invalidated
+> checking fs roots
+> checking csums
+> checking root refs
+> found 716978874897 bytes used err is 0
+> total csum bytes: 662660776
+> total tree bytes: 39097315328
+> total fs tree bytes: 36827172864
+> total extent tree bytes: 1529536512
+> btree space waste bytes: 11582963983
+> file data blocks allocated: 1258206822400
+>  referenced 1158920425472
+> btrfs-progs v4.2.1
 
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

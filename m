@@ -1,45 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36436 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:22468 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752217AbbIWBkq (ORCPT
+	with ESMTP id S1752913AbbIWD7I (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 21:40:46 -0400
+	Tue, 22 Sep 2015 23:59:08 -0400
 Subject: Re: [PATCH 0/4] btrfs: update qgroups in drop snapshot
 To: Mark Fasheh <mfasheh@suse.de>, <linux-btrfs@vger.kernel.org>
 References: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
- <20150922211251.GA17854@wotan.suse.de>
 CC: <jbacik@fb.com>, <clm@fb.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5602031A.1080905@cn.fujitsu.com>
-Date: Wed, 23 Sep 2015 09:40:42 +0800
+Message-ID: <56022381.6030606@cn.fujitsu.com>
+Date: Wed, 23 Sep 2015 11:58:57 +0800
 MIME-Version: 1.0
-In-Reply-To: <20150922211251.GA17854@wotan.suse.de>
+In-Reply-To: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi Mark,
 
-Thanks for all your work on this.
-Comment on test case is inlined below.
+I'd like to test the patchset, but it seems to be a little out of date, 
+and failed to apply to integration-4.3.
 
-Mark Fasheh wrote on 2015/09/22 14:12 -0700:
-> On Tue, Sep 22, 2015 at 01:15:44PM -0700, Mark Fasheh wrote:
->> The entire patch series can be tested with the following xfstests.git
->> patch, which will be sent to the appropriate list shortly)
->>
->> https://github.com/markfasheh/xfstests/commit/b09ca51c012824e44546b13862ab1f93a6f2f675
+Would you please rebase it to integration-4.3?
+
+Thanks,
+Qu
+
+Mark Fasheh wrote on 2015/09/22 13:15 -0700:
+> Hi,
 >
-> That xfstests patch doesn't apply against latest xfstests.git, attached is
-> one that does. Git branch is at
+> The following 4 patches fix a regression introduced in Linux
+> 4.2 where btrfs_drop_snapshot() wasn't updating qgroups, resulting in
+> them going bad.
 >
-> git@github.com:markfasheh/xfstests.git qgroup-drop-snapshot
+> The original e-mail pointing this out is below:
 >
-> Sorry about that.
+> http://www.spinics.net/lists/linux-btrfs/msg46093.html
+>
+>
+> The first two patches are from Josef and fix bugs in our counting of
+> roots (which is critical for qgroups to work correctly). Both were
+> sent to the list already:
+>
+> http://www.spinics.net/lists/linux-btrfs/msg47035.html
+> http://www.spinics.net/lists/linux-btrfs/msg47150.html
+>
+> Truth be told, most of the time fixing this was spent figuring out
+> those two issues. Once I realized I was seeing a bug and we fixed it
+> correctly, my drop snapshot patch got dramatically smaller.
+>
+> I also re-added some of the tracing in qgroup.c that we recently
+> lost. It is again possible to debug qgroup operations on a live
+> system, allowing us to find issues like the two above by narrowing
+> down our operations and manually walking through them via
+> cat sys/debug/tracing.
+>
+> The entire patch series can be tested with the following xfstests.git
+> patch, which will be sent to the appropriate list shortly)
+>
+> https://github.com/markfasheh/xfstests/commit/b09ca51c012824e44546b13862ab1f93a6f2f675
+>
+> Thanks,
 > 	--Mark
->
-> --
-> Mark Fasheh
 >
 >
 > From: Mark Fasheh <mfasheh@suse.de>
@@ -59,21 +82,19 @@ Mark Fasheh wrote on 2015/09/22 14:12 -0700:
 >
 > Signed-off-by: Mark Fasheh <mfasheh@suse.de>
 > ---
->   tests/btrfs/104     | 166 ++++++++++++++++++++++++++++++++++++++++++++++++++++
->   tests/btrfs/104.out |   1 +
->   tests/btrfs/group   |   1 +
->   3 files changed, 168 insertions(+)
->   create mode 100644 tests/btrfs/104
->   create mode 100644 tests/btrfs/104.out
+>   tests/btrfs/098   | 166 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>   tests/btrfs/group |   1 +
+>   2 files changed, 167 insertions(+)
+>   create mode 100644 tests/btrfs/098
 >
-> diff --git a/tests/btrfs/104 b/tests/btrfs/104
+> diff --git a/tests/btrfs/098 b/tests/btrfs/098
 > new file mode 100644
-> index 0000000..29dc3be
+> index 0000000..7977a90
 > --- /dev/null
-> +++ b/tests/btrfs/104
+> +++ b/tests/btrfs/098
 > @@ -0,0 +1,166 @@
 > +#! /bin/bash
-> +# FS QA Test No. btrfs/104
+> +# FS QA Test No. btrfs/098
 > +#
 > +# Test btrfs quota group consistency operations during snapshot
 > +# delete. Btrfs has had long standing issues with drop snapshot
@@ -153,39 +174,11 @@ Mark Fasheh wrote on 2015/09/22 14:12 -0700:
 > +    fi
 > +
 > +    case $level in
-> +	1)# this always reproduces level 1 trees
+> +	1)# this always reproduces level 1 trees	
 > +	    n=10;
-
-I'd prefer a more accurate calculation based on nodesize.
-That would allow using any possible nodesize.
-For example for $nodesize larger than 4K
-l1_min_n = int(($nodesize - 101) / (4095 + 21 + 17)) + 1
-
-And for 4K nodesize,
-2 2K inline extent will cause the fs_tree to be 2 level.
-As 4K nodeize won't allow 4095 inline extent length.
-
-101 is sizeof(struct btrfs_header).
-So $nodesize - 101 is the available space for a leaf.
-And 4095 is the maximum inline extent length, 21 is the inline 
-file_extent header length,offsetof(struct btrfs_file_extent_item, 
-disk_bytenr).
-17 is sizeof(struct btrfs_disk_key).
-
-Above is the maximum value in theory, in fact leaf will be split more 
-early than hitting the number.
-So the max_n should be good enough to create desired tree level, and 
-make script run a little faster.
-
 > +	    ;;
 > +	2)# this always reproduces level 2 trees
 > +	    n=1500
-For level 2 and higher tree, it will be
-l2_min_n = l1_min_n * (($nodesize - 101) / 33 +1) ^ ($level - 1)
-
-101 is still header size.
-33 is sizeof(struct btrfs_key_ptr)
-
 > +	    ;;
 > +	3)# this always reproduces level 3 trees
 > +	    n=1000000;
@@ -210,21 +203,6 @@ l2_min_n = l1_min_n * (($nodesize - 101) / 33 +1) ^ ($level - 1)
 > +# Force the default leaf size as the calculations for making our btree
 > +# heights are based on that.
 > +run_check _scratch_mkfs "--nodesize 16384"
-
-When using given nodesize, it's better to consider other arch like AA64 
-or other arch which support 64K pagesize.
-(btrfs doesn't support subpage size nodesize, which means if using 
-nodesize smaller than pagesize, it won't be mounted)
-
-I got informed several times when submitting qgroup related test case.
-See btrfs/017 and btrfs/091.
-
-But on the other hand, using 64K nodesize is somewhat overkilled and 
-will make the test takes more time.
-
-If it's OK to ignore 64K pagesize case, I'd prefer to use 4K nodesize, 
-which will be much faster to create fs tree with 2~3 levels.
-
 > +_scratch_mount
 > +
 > +# populate the default subvolume and create a snapshot ('snap1')
@@ -251,9 +229,6 @@ which will be much faster to create fs tree with 2~3 levels.
 > +# Remount to clear cache, force everything to disk
 > +_scratch_unmount
 > +_scratch_mount
-
-Is there anything special that needs to use umount/mount other than sync?
-
 > +
 > +# Finally, delete snap1 to trigger btrfs_drop_snapshot(). This
 > +# snapshot is most interesting to delete because it will cause some
@@ -272,9 +247,6 @@ Is there anything special that needs to use umount/mount other than sync?
 > +# start and complete. This is the shortest time on my tests systems I
 > +# have found which always allows drop_snapshot to run to completion.
 > +sleep 45
-
-Does "btrfs subv delete -c" help here?
-
 > +
 > +_scratch_unmount
 > +
@@ -285,37 +257,15 @@ Does "btrfs subv delete -c" help here?
 > +if [ $? -ne 0 ]; then
 > +    status=0
 > +fi
-Quite a nice idea to use btrfsck to check qgroup validation.
-
-But I don't see the reason not to use _run_btrfS_util_progs, as I don't 
-think it's needed to grep.
-
-If there is a bug in return value of btrfsck, then I'm OK with it as a 
-workaround.
-
-But if btrfsck --qgroup-report will return non-zero when it finds a 
-qgroup mismatch, I think is better to just call _run_btrfs_util_prog, as 
-it has judgment for return value check.
-
-Thanks,
-Qu
-
 > +
 > +exit
-> diff --git a/tests/btrfs/104.out b/tests/btrfs/104.out
-> new file mode 100644
-> index 0000000..1ed84bc
-> --- /dev/null
-> +++ b/tests/btrfs/104.out
-> @@ -0,0 +1 @@
-> +QA output created by 104
 > diff --git a/tests/btrfs/group b/tests/btrfs/group
-> index e92a65a..6218adf 100644
+> index e13865a..d78a355 100644
 > --- a/tests/btrfs/group
 > +++ b/tests/btrfs/group
-> @@ -106,3 +106,4 @@
->   101 auto quick replace
->   102 auto quick metadata enospc
->   103 auto quick clone compress
-> +104 auto qgroup
+> @@ -100,3 +100,4 @@
+>   095 auto quick metadata
+>   096 auto quick clone
+>   097 auto quick send clone
+> +098 auto qgroup
 >

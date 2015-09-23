@@ -1,34 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mga14.intel.com ([192.55.52.115]:13625 "EHLO mga14.intel.com"
+Received: from mx2.suse.de ([195.135.220.15]:33044 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933635AbbIVRzR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 13:55:17 -0400
-Date: Wed, 23 Sep 2015 01:54:26 +0800
-From: kbuild test robot <fengguang.wu@intel.com>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: kbuild-all@01.org, Josef Bacik <jbacik@fb.com>,
+	id S1753309AbbIWIsp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Sep 2015 04:48:45 -0400
+Date: Wed, 23 Sep 2015 10:47:49 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Luis de Bethencourt <luisbg@osg.samsung.com>
+Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com,
         linux-btrfs@vger.kernel.org
-Subject: [josef-btrfs:enospc-rework 1/9] fs/btrfs/qgroup.c:1463:2-7: WARNING:
- NULL check before freeing functions like kfree, debugfs_remove,
- debugfs_remove_recursive or usb_free_urb is not needed. Maybe consider
- reorganizing relevant code to avoid passing NULL values.
-Message-ID: <201509230124.0LoGc02q%fengguang.wu@intel.com>
+Subject: Re: [PATCH 1/2] btrfs: check-integrity: Fix returned errno codes
+Message-ID: <20150923084749.GS12815@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1442939007.git.luis@debethencourt.com>
+ <311df0a5aadcb7578746ad7d0107045f6fcf43a1.1442939007.git.luis@debethencourt.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <311df0a5aadcb7578746ad7d0107045f6fcf43a1.1442939007.git.luis@debethencourt.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-tree:   https://git.kernel.org/pub/scm/linux/kernel/git/josef/btrfs-next.git enospc-rework
-head:   ea67b575b6cd2be0775ddd1ff66968d11288f2c6
-commit: 1aa3e6f33600e899b38591d9da156dfdb37ea325 [1/9] Major qgroup regression in 4.2?
+On Tue, Sep 22, 2015 at 05:29:38PM +0100, Luis de Bethencourt wrote:
+> check-integrity is using -1 instead of the -ENOMEM defined macro to
+> specify that a buffer allocation failed. Since the error number is
+> propagated, the caller will get a -EPERM which is the wrong error
+> condition.
 
+Agreed. btrfsic_process_superblock can be called from the mount path so
+getting EPERM would be confusing.
 
-coccinelle warnings: (new ones prefixed by >>)
+> Also, the smatch tool complains with the following warnings:
+> btrfsic_process_superblock() warn: returning -1 instead of -ENOMEM is sloppy
+> btrfsic_read_block() warn: returning -1 instead of -ENOMEM is sloppy
+> 
+> Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
 
->> fs/btrfs/qgroup.c:1463:2-7: WARNING: NULL check before freeing functions like kfree, debugfs_remove, debugfs_remove_recursive or usb_free_urb is not needed. Maybe consider reorganizing relevant code to avoid passing NULL values.
-
-Please review and possibly fold the followup patch.
-
----
-0-DAY kernel test infrastructure                Open Source Technology Center
-https://lists.01.org/pipermail/kbuild-all                   Intel Corporation
+Reviewed-by: David Sterba <dsterba@suse.com>

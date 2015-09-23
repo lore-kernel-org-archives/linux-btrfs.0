@@ -1,37 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:48808 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755101AbbIWUjW (ORCPT
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:33083 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755901AbbIWX3K (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Sep 2015 16:39:22 -0400
-Received: from pps.filterd (m0044008 [127.0.0.1])
-	by mx0a-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t8NKZM1D023505
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 13:39:21 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0a-00082601.pphosted.com with ESMTP id 1x41trrjkc-1
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 13:39:21 -0700
-Subject: Re: FYIO: A rant about btrfs
-To: <linux-btrfs@vger.kernel.org>
-References: <20150916144355.GA1285@invalid>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <56030DF7.3080400@fb.com>
-Date: Wed, 23 Sep 2015 16:39:19 -0400
+	Wed, 23 Sep 2015 19:29:10 -0400
+Received: by igbkq10 with SMTP id kq10so3416786igb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 16:29:09 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20150916144355.GA1285@invalid>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Date: Thu, 24 Sep 2015 01:29:09 +0200
+Message-ID: <CALest0f91kMWz_3wnaT=vvG3X_9KOcW8oumbZLYMZi8oymygcw@mail.gmail.com>
+Subject: kernel panic during btrfs balance, afterwards kernel panics during mount
+From: phire skyde <phireskyde@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/16/2015 10:43 AM, M G Berberich wrote:
-> Hello,
->
-> just for information. I stumbled about a rant about btrfs-performance:
->
+A few days ago, I added a 500GB drive to my RAID0 of two 1TB drives. I then ran
 
-Found this through reddit, I'm reproducing some of his issues 
-artificially, he's definitely run into some real bugs that aren't 
-related to "databases suck on btrfs."  Thanks,
+sudo btrfs fi balance start -dconvert=single .
 
-Josef
+after two minutes, my PC hung, not even SysRq worked.
 
+I rebooted, ran
+
+sudo mount /mnt/backup
+
+which hung for a few minutes and then hang my PC again completely
+(SysReq not working)
+
+Next day mounting worked, but some minutes later it panicked again.
+On one of these, I had this message in kernel log afterwards:
+
+kernel: ------------[ cut here ]------------
+kernel: kernel BUG at fs/btrfs/extent-tree.c:1833!
+(thats all)
+
+on another occasion, I left `dmesg -w` open and took this photo:
+http://i.imgur.com/Qemzlr9.png but the stack trace is cut off
+
+I also have some of these in my logs from when mounting/unmounting
+hung for longer times: http://i.imgur.com/I8moyYG.png
+
+At some point, I upgraded my kernel from 4.1.6 to
+Linux 4.2.1-1-ARCH #1 SMP PREEMPT Tue Sep 22 06:57:07 CEST 2015 x86_64 GNU/Linux
+and btrfs-progs v4.2.1
+but panics still happened afterwards.
+
+I also tried mounting with
+`mount /mnt/backup -o skip_balance` but that took 2 minutes and
+resulted in the same kernel panic.
+
+Now I tried to reproduce to get the full stack trace, but it did not
+kernel panic this time, instead I got this: http://sprunge.us/cACT
+crash, afterwards the drive is mounted readonly.
+
+What can I do?

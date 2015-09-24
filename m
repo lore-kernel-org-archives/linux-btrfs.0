@@ -1,43 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53428 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:35306 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933295AbbIVNE2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 09:04:28 -0400
-Date: Tue, 22 Sep 2015 15:03:32 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Alexandru Moise <00moses.alexander00@gmail.com>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: cleanup btrfs_balance profile validity checks
-Message-ID: <20150922130332.GA12815@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20150830214549.GA1409@gmail.com>
+	id S932095AbbIXCAg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Sep 2015 22:00:36 -0400
+From: Neil Brown <neilb@suse.de>
+To: dsterba@suse.cz
+Date: Thu, 24 Sep 2015 11:59:02 +1000
+Cc: Josef Bacik <jbacik@fb.com>, Chris Mason <clm@fb.com>,
+        Jan Kara <jack@suse.cz>,
+        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
+        linux-fsdevel@vger.kernel.org, linux-nfs@vger.kernel.org,
+        linux-nilfs@vger.kernel.org, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/3] BTRFS: support NFSv2 export
+In-Reply-To: <20150511081309.GI23255@suse.cz>
+References: <20150508001142.31129.7604.stgit@notabene.brown> <20150508001623.31129.91695.stgit@notabene.brown> <20150511081309.GI23255@suse.cz>
+Message-ID: <87r3lowpax.fsf@notabene.neil.brown.name>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150830214549.GA1409@gmail.com>
+Content-Type: multipart/signed; boundary="=-=-=";
+	micalg=pgp-sha256; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Aug 30, 2015 at 09:45:49PM +0000, Alexandru Moise wrote:
-> Improve readability by generalizing the profile validity checks,
-> I had to read through those if statements half a dozen times on my
-> first try just to get an idea of what's happening there.
-> 
-> Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
-> ---
->  fs/btrfs/volumes.c | 21 ++++++++++++---------
->  1 file changed, 12 insertions(+), 9 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index fbe7c10..d23bc26 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3454,6 +3454,15 @@ static void __cancel_balance(struct btrfs_fs_info *fs_info)
->  	atomic_set(&fs_info->mutually_exclusive_operation_running, 0);
->  }
->  
-> +/* Non-zero return value signifies invalidity */
-> +static inline int balance_relocate_invalid(struct btrfs_balance_args *bctl_arg,
+--=-=-=
+Content-Type: text/plain
+Content-Transfer-Encoding: quoted-printable
 
-The function name is not very descriptive, I'd pick something like
-validate_convert_profile, otherwise ok.
+David Sterba <dsterba@suse.cz> writes:
+
+> On Fri, May 08, 2015 at 10:16:23AM +1000, NeilBrown wrote:
+>> The "fh_len" passed to ->fh_to_* is not guaranteed to be that same as
+>> that returned by encode_fh - it may be larger.
+>>=20
+>> With NFSv2, the filehandle is fixed length, so it may appear longer
+>> than expected and be zero-padded.
+>>=20
+>> So we must test that fh_len is at least some value, not exactly equal
+>> to it.
+>>=20
+>> Signed-off-by: NeilBrown <neilb@suse.de>
+>
+> Acked-by: David Sterba <dsterba@suse.cz>
+
+Thanks.  However I just checked mainline and this still hasn't been
+applied.
+Should I resend it to someone?  Who?
+
+Thanks,
+NeilBrown
+
+--=-=-=
+Content-Type: application/pgp-signature; name="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAEBCAAGBQJWA1jnAAoJEDnsnt1WYoG5KSAP/1716nmLGCRjmTwtXVI5R3mL
+io6SgWlTwBJvZYAF+vFys7UO5bgLnATHysY56EV5Pj3Ky3dWVz5NGap+qjCuyHNX
+fyCsXgfwbACB9zoYlKqADDsNMa0hpnUC0sLYiDzG9OyjQDaJyDPlv5mNJCFWHnyE
+fAohkp+OzBwi+v+SxFjtA5NjwGxzmJ2EXdxy5+klwspMcdLlbSLwveSOYMLxsh2b
+ZA5px7VCs6+lPDPZyI1u7nmv3z1NEBB+JZMcJhP3GJGBlv/f2aTGlaCaCHfI77EV
+zGOgZeTz6vkSw8kQTzq70sBGQsCyOBwioA7QgAXfiiQlfhYQZTV6bLPgPF9Qauu4
+C5x+8TreFMjUvAtFIbt18W4tiWSZqSj8uEfcwZSMBN6L+J76GDbT38FUr6ZoeAfj
+FLk9CZQEEb+ZolaMUi9l0dMgFdXKnciU3C601bHJPgedQVyxlM7Tx1d6qNFunmzE
+f0UnbuuoQJViY3ILQETE7XUxRtBp+VZSMZHxXNa3MbPqkV4P8cPZhiSlXGX9OOyn
+IFoT2a3xfvD1tJm2Hf2E7xUmbu+i4RBQvwc1KJJVK+VZpShN1M/c+FsuN2smCmzV
+KMDxqGAVmLDeJRzaoe0/WCLaBkG2sQcSqTH+FQUBwaElC2lL4ouDxqw2m1NVB/6p
+I+nRdvvjXrX/s1Jrq3jd
+=Zrth
+-----END PGP SIGNATURE-----
+--=-=-=--

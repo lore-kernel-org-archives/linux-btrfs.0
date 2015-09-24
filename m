@@ -1,72 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:7447 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755397AbbIWVNs (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:18579 "EHLO
+	m0041696.ppops.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754771AbbIXOvf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Sep 2015 17:13:48 -0400
-Received: from pps.filterd (m0004060 [127.0.0.1])
-	by mx0b-00082601.pphosted.com (8.14.5/8.14.5) with SMTP id t8NKR34n000327
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 14:13:48 -0700
+	Thu, 24 Sep 2015 10:51:35 -0400
+Received: from pps.filterd (m0041696 [127.0.0.1])
+	by m0041696.ppops.net (8.14.5/8.14.5) with SMTP id t8OElKY3009915
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2015 07:51:32 -0700
 Received: from mail.thefacebook.com ([199.201.64.23])
-	by mx0b-00082601.pphosted.com with ESMTP id 1x417p102y-1
+	by m0041696.ppops.net with ESMTP id 1x4jah07ge-5
 	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Wed, 23 Sep 2015 14:13:48 -0700
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2015 07:51:32 -0700
 From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
-Subject: [PATCH] Btrfs: fix prealloc under heavy fragmentation conditions
-Date: Wed, 23 Sep 2015 17:13:43 -0400
-Message-ID: <1443042823-4895-1-git-send-email-jbacik@fb.com>
+To: <kernel-team@fb.com>, <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: add a flags field to btrfs_transaction
+Date: Thu, 24 Sep 2015 10:47:03 -0400
+Message-ID: <1443106023-2158-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-If we are heavily fragmented we will continually try to prealloc the largest
-extent size we can every time we call btrfs_reserve_extent.  This can be very
-expensive when we are heavily fragmented, burning lots of CPU cycles and loops
-through the allocator.  So instead notice when we get a smaller chunk from the
-allocator than what we specified and use this as the new maximum size we try to
-allocate.  Thanks,
+I want to set some per transaction flags, so instead of adding yet another int
+lets just convert the current two int indicators to flags and add a flags field
+for future use.  Thanks,
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/inode.c | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ fs/btrfs/extent-tree.c |  5 +++--
+ fs/btrfs/transaction.c | 18 ++++++++----------
+ fs/btrfs/transaction.h |  9 ++++-----
+ fs/btrfs/volumes.c     |  2 +-
+ 4 files changed, 16 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 79d568f..424dab7 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9599,6 +9599,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 	u64 cur_offset = start;
- 	u64 i_size;
- 	u64 cur_bytes;
-+	u64 last_alloc = (u64)-1;
- 	int ret = 0;
- 	bool own_trans = true;
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index eca1840..78a1504 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4024,7 +4024,8 @@ commit_trans:
+ 			if (IS_ERR(trans))
+ 				return PTR_ERR(trans);
+ 			if (have_pinned_space >= 0 ||
+-			    trans->transaction->have_free_bgs ||
++			    test_bit(BTRFS_TRANS_HAVE_FREE_BGS,
++				     &trans->transaction->flags) ||
+ 			    need_commit > 0) {
+ 				ret = btrfs_commit_transaction(trans, root);
+ 				if (ret)
+@@ -9049,7 +9050,7 @@ again:
+ 	 * back off and let this transaction commit
+ 	 */
+ 	mutex_lock(&root->fs_info->ro_block_group_mutex);
+-	if (trans->transaction->dirty_bg_run) {
++	if (test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags)) {
+ 		u64 transid = trans->transid;
  
-@@ -9615,6 +9616,13 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
+ 		mutex_unlock(&root->fs_info->ro_block_group_mutex);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index df1e61e..debfc99 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -230,9 +230,8 @@ loop:
+ 	 * commit the transaction.
+ 	 */
+ 	atomic_set(&cur_trans->use_count, 2);
+-	cur_trans->have_free_bgs = 0;
++	cur_trans->flags = 0;
+ 	cur_trans->start_time = get_seconds();
+-	cur_trans->dirty_bg_run = 0;
  
- 		cur_bytes = min(num_bytes, 256ULL * 1024 * 1024);
- 		cur_bytes = max(cur_bytes, min_size);
-+		/*
-+		 * If we are severely fragmented we could end up with really
-+		 * small allocations, so if the allocator is returning small
-+		 * chunks lets make its job easier by only searching for those
-+		 * sized chunks.
-+		 */
-+		cur_bytes = min(cur_bytes, last_alloc);
- 		ret = btrfs_reserve_extent(root, cur_bytes, min_size, 0,
- 					   *alloc_hint, &ins, 1, 0);
- 		if (ret) {
-@@ -9623,6 +9631,7 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 			break;
- 		}
+ 	cur_trans->delayed_refs.href_root = RB_ROOT;
+ 	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
+@@ -1846,7 +1845,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 	}
  
-+		last_alloc = ins.offset;
- 		ret = insert_reserved_file_extent(trans, inode,
- 						  cur_offset, ins.objectid,
- 						  ins.offset, ins.offset,
+-	if (!cur_trans->dirty_bg_run) {
++	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
+ 		int run_it = 0;
+ 
+ 		/* this mutex is also taken before trying to set
+@@ -1855,18 +1854,17 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		 * after a extents from that block group have been
+ 		 * allocated for cache files.  btrfs_set_block_group_ro
+ 		 * will wait for the transaction to commit if it
+-		 * finds dirty_bg_run = 1
++		 * finds BTRFS_TRANS_DIRTY_BG_RUN set.
+ 		 *
+-		 * The dirty_bg_run flag is also used to make sure only
+-		 * one process starts all the block group IO.  It wouldn't
++		 * The BTRFS_TRANS_DIRTY_BG_RUN flag is also used to make sure
++		 * only one process starts all the block group IO.  It wouldn't
+ 		 * hurt to have more than one go through, but there's no
+ 		 * real advantage to it either.
+ 		 */
+ 		mutex_lock(&root->fs_info->ro_block_group_mutex);
+-		if (!cur_trans->dirty_bg_run) {
++		if (!test_and_set_bit(BTRFS_TRANS_DIRTY_BG_RUN,
++				      &cur_trans->flags))
+ 			run_it = 1;
+-			cur_trans->dirty_bg_run = 1;
+-		}
+ 		mutex_unlock(&root->fs_info->ro_block_group_mutex);
+ 
+ 		if (run_it)
+@@ -2134,7 +2132,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_finish_extent_commit(trans, root);
+ 
+-	if (cur_trans->have_free_bgs)
++	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &cur_trans->flags))
+ 		btrfs_clear_space_info_full(root->fs_info);
+ 
+ 	root->fs_info->last_trans_committed = cur_trans->transid;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index f158ab4..02c6ca1 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -32,6 +32,9 @@ enum btrfs_trans_state {
+ 	TRANS_STATE_MAX			= 6,
+ };
+ 
++#define BTRFS_TRANS_HAVE_FREE_BGS	0
++#define BTRFS_TRANS_DIRTY_BG_RUN	1
++
+ struct btrfs_transaction {
+ 	u64 transid;
+ 	/*
+@@ -47,10 +50,7 @@ struct btrfs_transaction {
+ 	atomic_t num_writers;
+ 	atomic_t use_count;
+ 
+-	/*
+-	 * true if there is free bgs operations in this transaction
+-	 */
+-	int have_free_bgs;
++	unsigned long flags;
+ 
+ 	/* Be protected by fs_info->trans_lock when we want to change it. */
+ 	enum btrfs_trans_state state;
+@@ -78,7 +78,6 @@ struct btrfs_transaction {
+ 	spinlock_t dropped_roots_lock;
+ 	struct btrfs_delayed_ref_root delayed_refs;
+ 	int aborted;
+-	int dirty_bg_run;
+ };
+ 
+ #define __TRANS_FREEZABLE	(1U << 0)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ff64689..3f5a781 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1399,7 +1399,7 @@ again:
+ 		btrfs_error(root->fs_info, ret,
+ 			    "Failed to remove dev extent item");
+ 	} else {
+-		trans->transaction->have_free_bgs = 1;
++		set_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags);
+ 	}
+ out:
+ 	btrfs_free_path(path);
 -- 
 1.8.3.1
 

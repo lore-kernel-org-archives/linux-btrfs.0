@@ -1,165 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:18579 "EHLO
-	m0041696.ppops.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754771AbbIXOvf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Sep 2015 10:51:35 -0400
-Received: from pps.filterd (m0041696 [127.0.0.1])
-	by m0041696.ppops.net (8.14.5/8.14.5) with SMTP id t8OElKY3009915
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2015 07:51:32 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by m0041696.ppops.net with ESMTP id 1x4jah07ge-5
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2015 07:51:32 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <kernel-team@fb.com>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: add a flags field to btrfs_transaction
-Date: Thu, 24 Sep 2015 10:47:03 -0400
-Message-ID: <1443106023-2158-1-git-send-email-jbacik@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from lists.s-osg.org ([54.187.51.154]:39116 "EHLO lists.s-osg.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752684AbbIXTNm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Sep 2015 15:13:42 -0400
+From: Luis de Bethencourt <luisbg@osg.samsung.com>
+To: linux-kernel@vger.kernel.org
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        Luis de Bethencourt <luisbg@osg.samsung.com>
+Subject: [PATCH v2 2/2] btrfs: reada: Fix returned errno code
+Date: Thu, 24 Sep 2015 20:13:33 +0100
+Message-Id: <cae144357b99745472aad5d3e98acb8028bfb2ee.1443121865.git.luisbg@osg.samsung.com>
+In-Reply-To: <cover.1443121865.git.luisbg@osg.samsung.com>
+References: <cover.1443121865.git.luisbg@osg.samsung.com>
+In-Reply-To: <cover.1443121865.git.luisbg@osg.samsung.com>
+References: <cover.1443121865.git.luisbg@osg.samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I want to set some per transaction flags, so instead of adding yet another int
-lets just convert the current two int indicators to flags and add a flags field
-for future use.  Thanks,
+reada is using -1 instead of the -ENOMEM defined macro to specify that
+a buffer allocation failed. Since the error number is propagated, the
+caller will get a -EPERM which is the wrong error condition.
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
+Also, updating the caller to return the exact value from
+reada_add_block.
+
+Smatch tool warning:
+reada_add_block() warn: returning -1 instead of -ENOMEM is sloppy
+
+Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
 ---
- fs/btrfs/extent-tree.c |  5 +++--
- fs/btrfs/transaction.c | 18 ++++++++----------
- fs/btrfs/transaction.h |  9 ++++-----
- fs/btrfs/volumes.c     |  2 +-
- 4 files changed, 16 insertions(+), 18 deletions(-)
+ fs/btrfs/reada.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index eca1840..78a1504 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4024,7 +4024,8 @@ commit_trans:
- 			if (IS_ERR(trans))
- 				return PTR_ERR(trans);
- 			if (have_pinned_space >= 0 ||
--			    trans->transaction->have_free_bgs ||
-+			    test_bit(BTRFS_TRANS_HAVE_FREE_BGS,
-+				     &trans->transaction->flags) ||
- 			    need_commit > 0) {
- 				ret = btrfs_commit_transaction(trans, root);
- 				if (ret)
-@@ -9049,7 +9050,7 @@ again:
- 	 * back off and let this transaction commit
- 	 */
- 	mutex_lock(&root->fs_info->ro_block_group_mutex);
--	if (trans->transaction->dirty_bg_run) {
-+	if (test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags)) {
- 		u64 transid = trans->transid;
- 
- 		mutex_unlock(&root->fs_info->ro_block_group_mutex);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index df1e61e..debfc99 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -230,9 +230,8 @@ loop:
- 	 * commit the transaction.
- 	 */
- 	atomic_set(&cur_trans->use_count, 2);
--	cur_trans->have_free_bgs = 0;
-+	cur_trans->flags = 0;
- 	cur_trans->start_time = get_seconds();
--	cur_trans->dirty_bg_run = 0;
- 
- 	cur_trans->delayed_refs.href_root = RB_ROOT;
- 	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
-@@ -1846,7 +1845,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 		return ret;
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index 4645cd1..619f929 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -569,7 +569,7 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
+ 	rec = kzalloc(sizeof(*rec), GFP_NOFS);
+ 	if (!rec) {
+ 		reada_extent_put(root->fs_info, re);
+-		return -1;
++		return -ENOMEM;
  	}
  
--	if (!cur_trans->dirty_bg_run) {
-+	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
- 		int run_it = 0;
+ 	rec->rc = rc;
+@@ -918,6 +918,7 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+ 	u64 start;
+ 	u64 generation;
+ 	int level;
++	int ret;
+ 	struct extent_buffer *node;
+ 	static struct btrfs_key max_key = {
+ 		.objectid = (u64)-1,
+@@ -943,9 +944,10 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+ 	generation = btrfs_header_generation(node);
+ 	free_extent_buffer(node);
  
- 		/* this mutex is also taken before trying to set
-@@ -1855,18 +1854,17 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 		 * after a extents from that block group have been
- 		 * allocated for cache files.  btrfs_set_block_group_ro
- 		 * will wait for the transaction to commit if it
--		 * finds dirty_bg_run = 1
-+		 * finds BTRFS_TRANS_DIRTY_BG_RUN set.
- 		 *
--		 * The dirty_bg_run flag is also used to make sure only
--		 * one process starts all the block group IO.  It wouldn't
-+		 * The BTRFS_TRANS_DIRTY_BG_RUN flag is also used to make sure
-+		 * only one process starts all the block group IO.  It wouldn't
- 		 * hurt to have more than one go through, but there's no
- 		 * real advantage to it either.
- 		 */
- 		mutex_lock(&root->fs_info->ro_block_group_mutex);
--		if (!cur_trans->dirty_bg_run) {
-+		if (!test_and_set_bit(BTRFS_TRANS_DIRTY_BG_RUN,
-+				      &cur_trans->flags))
- 			run_it = 1;
--			cur_trans->dirty_bg_run = 1;
--		}
- 		mutex_unlock(&root->fs_info->ro_block_group_mutex);
- 
- 		if (run_it)
-@@ -2134,7 +2132,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
- 
- 	btrfs_finish_extent_commit(trans, root);
- 
--	if (cur_trans->have_free_bgs)
-+	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &cur_trans->flags))
- 		btrfs_clear_space_info_full(root->fs_info);
- 
- 	root->fs_info->last_trans_committed = cur_trans->transid;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index f158ab4..02c6ca1 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -32,6 +32,9 @@ enum btrfs_trans_state {
- 	TRANS_STATE_MAX			= 6,
- };
- 
-+#define BTRFS_TRANS_HAVE_FREE_BGS	0
-+#define BTRFS_TRANS_DIRTY_BG_RUN	1
-+
- struct btrfs_transaction {
- 	u64 transid;
- 	/*
-@@ -47,10 +50,7 @@ struct btrfs_transaction {
- 	atomic_t num_writers;
- 	atomic_t use_count;
- 
--	/*
--	 * true if there is free bgs operations in this transaction
--	 */
--	int have_free_bgs;
-+	unsigned long flags;
- 
- 	/* Be protected by fs_info->trans_lock when we want to change it. */
- 	enum btrfs_trans_state state;
-@@ -78,7 +78,6 @@ struct btrfs_transaction {
- 	spinlock_t dropped_roots_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
--	int dirty_bg_run;
- };
- 
- #define __TRANS_FREEZABLE	(1U << 0)
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index ff64689..3f5a781 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1399,7 +1399,7 @@ again:
- 		btrfs_error(root->fs_info, ret,
- 			    "Failed to remove dev extent item");
- 	} else {
--		trans->transaction->have_free_bgs = 1;
-+		set_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags);
+-	if (reada_add_block(rc, start, &max_key, level, generation)) {
++	ret = reada_add_block(rc, start, &max_key, level, generation);
++	if (ret) {
+ 		kfree(rc);
+-		return ERR_PTR(-ENOMEM);
++		return ERR_PTR(ret);
  	}
- out:
- 	btrfs_free_path(path);
+ 
+ 	reada_start_machine(root->fs_info);
 -- 
-1.8.3.1
+2.5.1
 

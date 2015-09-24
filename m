@@ -1,88 +1,115 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from efeu.mur.at ([89.106.208.66]:40283 "EHLO efeu.mur.at"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752027AbbIXOns (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Sep 2015 10:43:48 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by efeu.mur.at (Postfix) with ESMTP id D6EAB22275
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2015 16:34:16 +0200 (CEST)
-Received: from efeu.mur.at ([127.0.0.1])
-	by localhost (efeu.mur.at [127.0.0.1]) (amavisd-new, port 10026)
-	with ESMTP id T-j2aY0FjmcO for <linux-btrfs@vger.kernel.org>;
-	Thu, 24 Sep 2015 16:34:16 +0200 (CEST)
-Received: from [IPv6:2a02:3e0:201:0:6a68:68ff:fe00:79be] (unknown [IPv6:2a02:3e0:201:0:6a68:68ff:fe00:79be])
-	by efeu.mur.at (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2015 16:34:16 +0200 (CEST)
-Message-ID: <560409E7.5020500@mur.at>
-Date: Thu, 24 Sep 2015 16:34:15 +0200
-From: =?UTF-8?B?Sm9naSBIb2Ztw7xsbGVy?= <jogi@mur.at>
+Received: from mail-wi0-f171.google.com ([209.85.212.171]:34598 "EHLO
+	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752049AbbIXQia (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Sep 2015 12:38:30 -0400
+Received: by wicfx3 with SMTP id fx3so36391292wic.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Sep 2015 09:38:28 -0700 (PDT)
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: strange i/o errors with btrfs on raid/lvm
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="CPgHwcJh8figDuCPqwrESeg7S3MpHs6SM"
+In-Reply-To: <55FC0D3B.9070805@gmail.com>
+References: <20150916144355.GA1285@invalid>
+	<55F988A6.8070109@gmail.com>
+	<CABL_Pd8nOj7B1_64Us+goP=corZkCtw_WJW8eMQpiP6iQpw=HA@mail.gmail.com>
+	<55F9C136.3080800@gmail.com>
+	<CAHb+SPDaU-FBD2b2UN+ecubZcmzX=7KKk_7PgstCpUgmVb=YuQ@mail.gmail.com>
+	<55FC0D3B.9070805@gmail.com>
+Date: Thu, 24 Sep 2015 17:38:28 +0100
+Message-ID: <CAHb+SPCRWt7yOrOyaMhJK6JbKnT7y67Cqx5RG3c1mo5nWPBGYg@mail.gmail.com>
+Subject: Re: FYIO: A rant about btrfs
+From: Aneurin Price <aneurin.price@gmail.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Martin Tippmann <martin.tippmann@gmail.com>, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---CPgHwcJh8figDuCPqwrESeg7S3MpHs6SM
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+On 18 September 2015 at 14:10, Austin S Hemmelgarn <ahferroin7@gmail.com> wrote:
+> On 2015-09-17 10:52, Aneurin Price wrote:
+>>
+>> On 16 September 2015 at 20:21, Austin S Hemmelgarn <ahferroin7@gmail.com>
+>> wrote:
+>>>
+>>> ZFS has been around for much longer, it's been mature and feature
+>>> complete for more than a decade, and has had a long time to improve
+>>> performance wise.  It is important to note though, that on low-end hardware,
+>>> BTRFS can (and often does in my experience) perform better than ZFS, because
+>>> ZFS is a serious resource hog (I have yet to see a stable ZFS deployment
+>>> with less than 16G of RAM, even with all the fancy features turned off).
+>>
+>>
+>> If you have a real example of ZFS becoming unstable with, say, 4 or
+>> 8GB of memory, that doesn't involve attempting deduplication (which I
+>> guess is what you mean by 'all the fancy features') on a many-TB pool,
+>> I'd be interested to hear about it. (Psychic debugger says 'possibly
+>> somebody trying to use a large L2ARC on a pool with many/large zvols')
+>>
+>> My home fileserver has been running zfs for about 5 years, on a system
+>> maxed out at 4GB RAM. Currently up to ~9TB of data. The only stability
+>> problems I ever had were towards the beginning when I was using
+>> zfs-fuse because zfsonlinux wasn't ready then, *and* I was trying out
+>> deduplication.
+>>
+>> I have a couple of work machines with 2GB RAM and pools currently
+>> around 2.5TB full; no problems with these either in the couple of
+>> years they've been in use, though granted these are lightly loaded
+>> machines since what they mostly do is receive backup streams.
+>>
+>> Bear in mind that these are Linux machines, and zfsonlinux's memory
+>> management is known to be inferior to ZFS on Solaris and FreeBSD
+>> (because it does not integrate with the page cache and instead grabs a
+>> [configurable] chunk of memory, and doesn't always do a great job of
+>> dropping it in response to memory pressure).
+>>
+> I should qualify this further, in particular I meant using ZFS on Linux (not
+> *BSD, they did an amazing job WRT stability), and actually taking advantage
+> of the volume-management (ie, not just storing files on it, but also using
+> zvols).  In essence, A better way to put it is that I've never seen a truly
+> stable system using zfsonlinux with less than 16G or RAM which is using it
+> for volume-management as well as file storage.
+>
 
-Hi all,
+That's interesting, and I think it supports the 'large L2ARC on a pool
+with many/large zvols' theory.
 
-We experience strange Input/output errors on our mail server (dovecot
-pop/imap) that is using btrfs for its mailspool.
+Apologies that this is now so off-topic, but I really wish this were
+more widely known:
 
-The server uses software RAID10.  The RAID is split into LVMs.  The
-mailspool logical volume uses btrfs.  For several days now we see
-Input/output errors on different files.  We could pinpoint the first
-occurrence of the errors to a day when one of the RAID disks failed.
-More precisely it all started while the RAID was rebuilding.
+I've seen major problems using an L2ARC with zvols, and from reading
+various reports I get the impression that a lot of other people have
+too, though they may not always have diagnosed it.
 
-All affected files are files that are read/written frequently, like
-dovecot index files, maildirsize and the likes.
+It's easy to get the general impression that an L2ARC is a great thing
+to have, that has the potential to improve your read throughput with
+minimal downside, but in fact the downside can be pretty large - and
+it is much larger by default with volumes than filesystems. Whenever a
+chunk of data is stored in the L2ARC, a header for that data is stored
+in the ARC, where it must remain in memory (not sure if it's pinned to
+stop it being swapped out; I think it is, but if you're at the point
+where that makes a difference you're probably already having a bad
+day). For a filesystem, the header corresponds to a record which is,
+by default, a variable size up to 128k; for a volume, the header
+corresponds to a block which is, by default, 8k. Assuming that your
+records are mostly close to their maximum size, this means that the
+RAM overhead of having a given amount of data in L2ARC is *16x* higher
+for a volume than a filesystem.
 
-Most files return to a useful state after some time (sometimes days,
-sometimes minutes), which is why we didn't notice the errors right away.
+Unfortunately, if you're using volumes it's probably because you're
+running VMs or a dedicated storage server, and in those circumstances
+we naturally think "yes, some caching sounds like a great idea", and
+then proceed to wildly underestimate the amount of memory required.
+Consequently, as the L2ARC fills, ZFS fills its memory allowance with
+data that is basically pure overhead - often blowing past its
+configured limit without getting much mileage out of it, and becoming
+barely responsive. The effect is that the system seems fine when it
+first starts, and becomes slower and slower over time until it's
+unusable. Practically speaking, there's not too much difference
+between a storage server that spends three minutes thrashing in
+response to each read and one that's locked up hard.
 
-We do snapshot and send/receive backup of the mailspool via cron.  A
-file that is unreadable in the mailspool is totally OK on the backup
-volume, even the latest 'copy' that must have been taken from an
-otherwise unreadable file.  It is also possible to restore an unreadable
-file from backup without Input/output error.  The file is fine and
-useful then.
+Basically having an L2ARC of non-trivial size without a lot of RAM to
+back it up is a bad idea, so I think there's a good chance that the
+problems you've observed/heard about may well be due to inappropriate
+L2ARC usage without fully appreciating the memory requirements.
 
-All disks taking part in the RAID show now SMART errors btw and a btrfs
-scrub on the mailspool did not indicate any errors (I somehow expected
-that).
-
-All this runs on a virtual machine that uses kernel 4.1.3 (Debian build)
-and btrfs-progs v4.0.
-
-So finally I would ask what we can do to solve this problem?  I also
-appreciate comments to the situation and of course hints to what is
-going on.  This is over my head.
-
-Thanks and cheers,
---=20
-J.Hofm=C3=BCller
-
-Nisiti    -    Abie Nathan, 1927-2008
-
-
---CPgHwcJh8figDuCPqwrESeg7S3MpHs6SM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iF4EAREIAAYFAlYECegACgkQkaXhaapqItmtIQEAnkagUuIomRFDbfw23Qx+VI+8
-rxA9a5QkbfrkXsdqjxUBAJoUpSsXETs+IoyUBehHzeXR1pJ+MR+20HwiArXr2Q0O
-=V1am
------END PGP SIGNATURE-----
-
---CPgHwcJh8figDuCPqwrESeg7S3MpHs6SM--
+Nye

@@ -1,36 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47352 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754528AbbITMat (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Sep 2015 08:30:49 -0400
-Date: Sun, 20 Sep 2015 14:29:54 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RESEND] btrfs-progs: tests: Add '-o loop' to mount
- command line in convert-tests.sh
-Message-ID: <20150920122954.GV8891@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <b92776bec0a72128214ec931003869a36940e226.1442308835.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <b92776bec0a72128214ec931003869a36940e226.1442308835.git.zhaolei@cn.fujitsu.com>
+Received: from mail.data-modul.de ([212.184.205.171]:19474 "EHLO
+	mail2.data-modul.de" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752753AbbIXGSS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Sep 2015 02:18:18 -0400
+From: Silvio Fricke <silvio.fricke@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Silvio Fricke <silvio.fricke@gmail.com>
+Subject: [PATCH 0/2] progress indicator for btrfs-check
+Date: Thu, 24 Sep 2015 08:13:03 +0200
+Message-Id: <cover.1443074502.git.silvio.fricke@gmail.com>
+In-Reply-To: <cover.1443012156.git.silvio.fricke@gmail.com>
+References: <cover.1443012156.git.silvio.fricke@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 15, 2015 at 05:22:17PM +0800, Zhao Lei wrote:
-> To fix following bug:
->  # ./convert-tests.sh
->      [TEST]   ext2 4k nodesize, btrfs defaults
->  failed: mount /root/btrfsprogs/tests/test.img /root/btrfsprogs/tests/mnt
->  # tail convert-tests-results.txt
->  ...
->  ############### mount /root/btrfsprogs/tests/test.img /root/btrfsprogs/tests/mnt
->  mount: /root/btrfsprogs/tests/test.img is not a block device (maybe try `-o loop'?)
->  failed: mount /root/btrfsprogs/tests/test.img /root/btrfsprogs/tests/mnt
-> 
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Hello btrfs,
 
-For a reason that I don't remember, I marked the first posting of this
-patch to skip it. Looking at it again, it makes sense so I'm applying
-it, thanks.
+I have noticed that a long running process like "btrfs check" needs a progress
+indicator. Please look into these patches. Besides that I have found a problem
+with the task struct id value which is a pthread_t and not be set to -1.
+
+Thanks for the review and eventual inclusion of these patches,
+Silvio
+
+(Please include my mailaddress silvio.fricke@gmail.com as CC in replies, i'm
+not subscribed to linux-btrfs@vger.kernel.org)
+
+
+Silvio Fricke (2):
+  btrfs-progs: tasks info->id is a pthread_t and should not set to -1
+  btrfs-progs: check: add progress indicator
+
+ cmds-check.c | 93 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ task-utils.c |  4 +--
+ 2 files changed, 91 insertions(+), 6 deletions(-)
+
+-- 
+2.5.3
+

@@ -1,51 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f176.google.com ([209.85.223.176]:33817 "EHLO
-	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932594AbbIYRA2 (ORCPT
+Received: from mail-vk0-f46.google.com ([209.85.213.46]:35117 "EHLO
+	mail-vk0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932548AbbIYRRC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 13:00:28 -0400
-Received: by iofb144 with SMTP id b144so117604258iof.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2015 10:00:28 -0700 (PDT)
+	Fri, 25 Sep 2015 13:17:02 -0400
+Received: by vkao3 with SMTP id o3so60025355vka.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2015 10:17:01 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAEp_DRB7zaHmJnghJzVR++_OO+4mrM_+jCjrYAQJcNUXpM=bAQ@mail.gmail.com>
-References: <4362384.AA8xu4anSN@hoefnix>
-	<56052E0D.3090702@gmail.com>
-	<CAGfcS_nFn=AH6Y-4dFQEmy42KVJLBvLuaEHRtoYrBDUtNategw@mail.gmail.com>
-	<CAEp_DRB7zaHmJnghJzVR++_OO+4mrM_+jCjrYAQJcNUXpM=bAQ@mail.gmail.com>
-Date: Fri, 25 Sep 2015 13:00:28 -0400
-Message-ID: <CAGfcS_nnhJ5m4gcz=APY7boNj1d+oxGyKOedUxSWOgV0MH65dw@mail.gmail.com>
-Subject: Re: Latest kernel to use?
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Bostjan Skufca <bostjan@a2o.si>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>, Sjoerd <sjoerd@sjomar.eu>,
+In-Reply-To: <CAJCQCtQ3aSfHE3o4nyaKOJjDbxiw87GHW6_JdBC1vnDgQXgGKA@mail.gmail.com>
+References: <560409E7.5020500@mur.at>
+	<CAJCQCtQ3aSfHE3o4nyaKOJjDbxiw87GHW6_JdBC1vnDgQXgGKA@mail.gmail.com>
+Date: Fri, 25 Sep 2015 11:17:01 -0600
+Message-ID: <CAJCQCtRMumq4=QqujuOxu6nC0W+6dv1tWzqe8fCzzEEa-D+1ZQ@mail.gmail.com>
+Subject: Re: strange i/o errors with btrfs on raid/lvm
+From: Chris Murphy <lists@colorremedies.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: =?UTF-8?Q?Jogi_Hofm=C3=BCller?= <jogi@mur.at>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 25, 2015 at 9:25 AM, Bostjan Skufca <bostjan@a2o.si> wrote:
->
-> Similar here: I am sticking with 3.19.2 which has proven to work fine for me
+>From offlist host logs (the Btrfs errors happen in a VM guest), I
+think this is a hardware problem.
 
-I'd recommend still tracking SOME stable series.  I'm sure there were
-fixes in 3.19 for btrfs (to say nothing of other subsystems) that
-you're missing with that version.  3.19 is also unsupported at this
-time.  You might want to consider moving to either 3.18.21 or 4.1.8
-and tracking those series instead.  I doubt you'd give up much moving
-back to 3.18 and there have been a bunch of btrfs fixes in that series
-(though it seems to me that 3.18 has been slower to receive btrfs
-patches than some of the other series).
+Aug 28 07:04:22 host kernel: [41367948.153031] sas:
+sas_scsi_find_task: task 0xffff880e85c09c00 is done
+Aug 28 07:04:22 host kernel: [41367948.153033] sas:
+sas_eh_handle_sas_errors: task 0xffff880e85c09c00 is done
+Aug 28 07:04:22 host kernel: [41367948.153036] sas: ata7:
+end_device-0:0: cmd error handler
+Aug 28 07:04:22 host kernel: [41367948.153085] sas: ata7:
+end_device-0:0: dev error handler
+Aug 28 07:04:22 host kernel: [41367948.153094] ata7.00: exception
+Emask 0x0 SAct 0x7 SErr 0x0 action 0x6 frozen
+Aug 28 07:04:22 host kernel: [41367948.153119] sas: ata8:
+end_device-0:1: dev error handler
+Aug 28 07:04:22 host kernel: [41367948.153130] sas: ata9:
+end_device-0:2: dev error handler
+Aug 28 07:04:22 host kernel: [41367948.153134] sas: ata10:
+end_device-0:3: dev error handler
+Aug 28 07:04:22 host kernel: [41367948.153181] ata7.00: failed
+command: WRITE FPDMA QUEUED
+Aug 28 07:04:22 host kernel: [41367948.153234] ata7.00: cmd
+61/01:00:08:08:00/00:00:00:00:00/40 tag 0 ncq 512 out
+Aug 28 07:04:22 host kernel: [41367948.153234]          res
+40/00:00:01:4f:c2/00:00:00:00:00/00 Emask 0x4 (timeout)
+Aug 28 07:04:22 host kernel: [41367948.153393] ata7.00: status: { DRDY }
+Aug 28 07:04:22 host kernel: [41367948.153437] ata7.00: failed
+command: READ FPDMA QUEUED
+Aug 28 07:04:22 host kernel: [41367948.153490] ata7.00: cmd
+60/08:00:80:ac:15/00:00:00:00:00/40 tag 1 ncq 4096 in
+Aug 28 07:04:22 host kernel: [41367948.153490]          res
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Aug 28 07:04:22 host kernel: [41367948.153648] ata7.00: status: { DRDY }
+Aug 28 07:04:22 host kernel: [41367948.153693] ata7.00: failed
+command: READ FPDMA QUEUED
+Aug 28 07:04:22 host kernel: [41367948.153744] ata7.00: cmd
+60/30:00:90:ac:15/00:00:00:00:00/40 tag 2 ncq 24576 in
+Aug 28 07:04:22 host kernel: [41367948.153744]          res
+40/00:00:00:00:00/00:00:00:00:00/00 Emask 0x4 (timeout)
+Aug 28 07:04:22 host kernel: [41367948.153903] ata7.00: status: { DRDY }
+Aug 28 07:04:22 host kernel: [41367948.153950] ata7: hard resetting link
+Aug 28 07:04:22 host kernel: [41367948.320311] ata7.00: configured for
+UDMA/133 (device error ignored)
+Aug 28 07:04:22 host kernel: [41367948.320371] ata7.00: device
+reported invalid CHS sector 0
+Aug 28 07:04:22 host kernel: [41367948.320421] ata7.00: device
+reported invalid CHS sector 0
+Aug 28 07:04:22 host kernel: [41367948.320478] ata7: EH complete
+Aug 28 07:04:22 host kernel: [41367948.320558] sas: --- Exit
+sas_scsi_recover_host: busy: 0 failed: 0 tries: 1
 
-I'm on the fence right now about making the move to 4.1.  Maybe in a
-few releases I'll be there, depending on what the noise on the lists
-sounds like.
 
-There was a time when you were better off on bleeding-edge linux for
-btrfs.  If you REALLY want to run btrfs raid5 or something like that
-then I'd say that is still your best strategy.  However, if you stick
-with features that have been around for a year the longterm kernels
-seem a lot less likely to hit you with a regression, as long as you
-don't switch to a new one the day it is declared as such.
+So at the moment I don't think this is a Btrfs problem.
 
---
-Rich
+----
+Chris Murphy

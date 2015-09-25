@@ -1,42 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f180.google.com ([209.85.212.180]:34171 "EHLO
-	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933999AbbI2RLO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 13:11:14 -0400
-Received: by wicfx3 with SMTP id fx3so160631239wic.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:11:13 -0700 (PDT)
-From: Silvio Fricke <silvio.fricke@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Silvio Fricke <silvio.fricke@gmail.com>
-Subject: [PATCH 11/11] btrfs-progs: check: fix memset range
-Date: Tue, 29 Sep 2015 19:10:46 +0200
-Message-Id: <59828e2191068753dd166a5341ccf4d43a8a0370.1443546001.git.silvio.fricke@gmail.com>
-In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
-References: <cover.1443546000.git.silvio.fricke@gmail.com>
-In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
-References: <cover.1443459879.git.silvio.fricke@gmail.com> <cover.1443546000.git.silvio.fricke@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:45200 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932467AbbIYQkT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Sep 2015 12:40:19 -0400
+Date: Fri, 25 Sep 2015 18:39:21 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/2] btrfs-progs: use switch instead of a series of
+ ifs for output errormsg
+Message-ID: <20150925163921.GM11442@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <4779cd8de60a58c7e3d9ea2cf62595bd075638c2.1438830282.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <4779cd8de60a58c7e3d9ea2cf62595bd075638c2.1438830282.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Signed-off-by: Silvio Fricke <silvio.fricke@gmail.com>
----
- cmds-check.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+On Thu, Aug 06, 2015 at 11:05:54AM +0800, Zhao Lei wrote:
+> switch statement is more suitable for outputing currsponding message
+> for errno.
+> 
+> Suggested-by: David Sterba <dsterba@suse.com>
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 2923d05..2c32ff3 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -3021,7 +3021,7 @@ static struct root_backref *get_root_backref(struct root_record *rec,
- 	}
- 
- 	backref = malloc(sizeof(*backref) + namelen + 1);
--	memset(backref, 0, sizeof(*backref));
-+	memset(backref, 0, sizeof(*backref) + namelen + 1);
- 	backref->ref_root = ref_root;
- 	backref->dir = dir;
- 	backref->index = index;
--- 
-2.5.3
-
+Applied, thanks.

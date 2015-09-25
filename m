@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:22540 "EHLO
-	m0001303.ppops.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751514AbbIKSoI (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:19961 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751567AbbIYRfm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Sep 2015 14:44:08 -0400
-Date: Fri, 11 Sep 2015 14:44:03 -0400
+	Fri, 25 Sep 2015 13:35:42 -0400
+Date: Fri, 25 Sep 2015 13:35:37 -0400
 From: Chris Mason <clm@fb.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>,
         LKML <linux-kernel@vger.kernel.org>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: [GIT PULL] Btrfs
-Message-ID: <20150911184403.GL9511@ret.masoncoding.com>
+Message-ID: <20150925173537.GG25218@ret.masoncoding.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,42 +18,43 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi Linus,
 
-We have a few more for the btrfs tree in my for-linus-4.3 branch:
+My for-linus-4.3 branch has a few fixes:
 
 git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.3
 
-These are small cleanups, and also some fixes for our async worker
-thread initialization.
+This is an assorted set I've been queuing up:
 
-I was having some trouble testing these, but it ended up being a
-combination of changing around my test servers and a shiny new schedule
-while atomic from the new start/finish_plug in writeback_sb_inodes().
+Jeff Mahoney tracked down a tricky one where we ended up starting IO on
+the wrong mapping for special files in btrfs_evict_inode.  A few people
+reported this one on the list.
 
-That one only hits on btrfs raid5/6 or MD raid10, and if I wasn't
-changing a bunch of things in my test setup at once it would have
-been really clear.  Fix for writeback_sb_inodes() on the way as well.
+Filipe found (and provided a test for) a difficult bug in reading
+compressed extents, and Josef fixed up some quota record keeping with
+snapshot deletion.  Chandan killed off an accounting bug during DIO that
+lead to WARN_ONs as we freed inodes.
 
-Zhao Lei (4) commits (+66/-88):
-    btrfs: Remove noused chunk_tree and chunk_objectid from scrub_enumerate_chunks and scrub_chunk (+2/-8)
-    btrfs: Cleanup for btrfs_calc_num_tolerated_disk_barrier_failures (+33/-40)
-    btrfs: Update out-of-date "skip parity stripe" comment (+1/-1)
-    btrfs: Add raid56 support for updating (+30/-39)
+Filipe Manana (3) commits (+58/-16):
+    Btrfs: remove unnecessary locking of cleaner_mutex to avoid deadlock (+0/-4)
+    Btrfs: don't initialize a space info as full to prevent ENOSPC (+1/-4)
+    Btrfs: fix read corruption of compressed and shared extents (+57/-8)
 
-Qu Wenruo (1) commits (+35/-24):
-    btrfs: async_thread: Fix workqueue 'max_active' value when initializing
+Josef Bacik (1) commits (+37/-2):
+    Btrfs: keep dropped roots in cache until transaction commit
 
-Tsutomu Itoh (1) commits (+3/-6):
-    Btrfs: cleanup: remove unnecessary check before btrfs_free_path is called
+Jeff Mahoney (1) commits (+2/-1):
+    btrfs: skip waiting on ordered range for special files
 
-Total: (6) commits (+104/-118)
+chandan (1) commits (+21/-23):
+    Btrfs: Direct I/O: Fix space accounting
 
- fs/btrfs/async-thread.c | 57 ++++++++++++++++++++++---------------
- fs/btrfs/async-thread.h |  2 +-
- fs/btrfs/dev-replace.c  |  3 +-
- fs/btrfs/disk-io.c      | 76 +++++++++++++++++++++++--------------------------
- fs/btrfs/disk-io.h      |  1 +
- fs/btrfs/inode.c        |  3 +-
- fs/btrfs/scrub.c        | 12 ++------
- fs/btrfs/tree-defrag.c  |  3 +-
- fs/btrfs/volumes.c      | 21 +++-----------
- 9 files changed, 82 insertions(+), 96 deletions(-)
+Total: (6) commits (+118/-42)
+
+ fs/btrfs/btrfs_inode.h |  2 --
+ fs/btrfs/disk-io.c     |  2 --
+ fs/btrfs/extent-tree.c |  7 ++----
+ fs/btrfs/extent_io.c   | 65 +++++++++++++++++++++++++++++++++++++++++++-------
+ fs/btrfs/inode.c       | 45 +++++++++++++++++-----------------
+ fs/btrfs/super.c       |  2 --
+ fs/btrfs/transaction.c | 32 +++++++++++++++++++++++++
+ fs/btrfs/transaction.h |  5 +++-
+ 8 files changed, 118 insertions(+), 42 deletions(-)

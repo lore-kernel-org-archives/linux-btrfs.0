@@ -1,147 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:6624 "EHLO
-	m0001303.ppops.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752817AbbIOOHL (ORCPT
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:39509
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752880AbbIYLFH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Sep 2015 10:07:11 -0400
-Received: from pps.filterd (m0001303 [127.0.0.1])
-	by m0001303.ppops.net (8.14.5/8.14.5) with SMTP id t8FE1gfR028396
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 07:07:10 -0700
-Received: from mail.thefacebook.com ([199.201.64.23])
-	by m0001303.ppops.net with ESMTP id 1wxmfn83g8-5
-	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Sep 2015 07:07:10 -0700
-From: Josef Bacik <jbacik@fb.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V2] Btrfs: keep dropped roots in cache until transaction commit
-Date: Tue, 15 Sep 2015 10:07:04 -0400
-Message-ID: <1442326024-2536-1-git-send-email-jbacik@fb.com>
+	Fri, 25 Sep 2015 07:05:07 -0400
+Subject: Re: [PATCH] Btrfs: change how we wait for pending ordered extents
+To: Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        kernel-team@fb.com
+References: <1443128161-31200-1-git-send-email-jbacik@fb.com>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <56052A60.5000105@googlemail.com>
+Date: Fri, 25 Sep 2015 13:05:04 +0200
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <1443128161-31200-1-git-send-email-jbacik@fb.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When dropping a snapshot we need to account for the qgroup changes.  If we drop
-the snapshot in all one go then the backref code will fail to find blocks from
-the snapshot we dropped since it won't be able to find the root in the fs root
-cache.  This can lead to us failing to find refs from other roots that pointed
-at blocks in the now deleted root.  To handle this we need to not remove the fs
-roots from the cache until after we process the qgroup operations.  Do this by
-adding dropped roots to a list on the transaction, and letting the transaction
-remove the roots at the same time it drops the commit roots.  This will keep all
-of the backref searching code in sync properly, and fixes a problem Mark was
-seeing with snapshot delete and qgroups.  Thanks,
+On 09/24/15 22:56, Josef Bacik wrote:
+> We have a mechanism to make sure we don't lose updates for ordered extents that
+> were logged in the transaction that is currently running.  We add the ordered
+> extent to a transaction list and then the transaction waits on all the ordered
+> extents in that list.  However are substantially large file systems this list
+> can be extremely large, and can give us soft lockups, since the ordered extents
+> don't remove themselves from the list when they do complete.
+> 
+> To fix this we simply add a counter to the transaction that is incremented any
+> time we have a logged extent that needs to be completed in the current
+> transaction.  Then when the ordered extent finally completes it decrements the
+> per transaction counter and wakes up the transaction if we are the last ones.
+> This will eliminate the softlockup.  Thanks,
 
-Signed-off-by: Josef Bacik <jbacik@fb.com>
----
-V1->V2:
--clear the trans tag when we are finished dropping the subvol so we don't try to
-  update the root during commit.
+Tried this and unexpectedly didn't get any lockups or 'splosions during normal
+operation, but balance now seems very slow and sits idle most of the time.
 
- fs/btrfs/extent-tree.c |  2 +-
- fs/btrfs/transaction.c | 30 ++++++++++++++++++++++++++++++
- fs/btrfs/transaction.h |  5 ++++-
- 3 files changed, 35 insertions(+), 2 deletions(-)
+Running balance without filters on a previously balanced but empty fs:
+$time btrfs filesystem balance start /mnt/usb
+Done, had to relocate 3 out of 3 chunks
+btrfs filesystem balance start /mnt/usb  0.01s user 0.00s system 0% cpu 1:00.91 total
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index ab81135..2327d4c 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -8596,7 +8596,7 @@ int btrfs_drop_snapshot(struct btrfs_root *root,
- 	}
- 
- 	if (test_bit(BTRFS_ROOT_IN_RADIX, &root->state)) {
--		btrfs_drop_and_free_fs_root(tree_root->fs_info, root);
-+		btrfs_add_dropped_root(trans, root);
- 	} else {
- 		free_extent_buffer(root->node);
- 		free_extent_buffer(root->commit_root);
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index f5021fc..cd15f39 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -117,6 +117,16 @@ static noinline void switch_commit_roots(struct btrfs_transaction *trans,
- 			btrfs_unpin_free_ino(root);
- 		clear_btree_io_tree(&root->dirty_log_pages);
- 	}
-+
-+	/* We can free old roots now. */
-+	spin_lock(&trans->dropped_roots_lock);
-+	while (!list_empty(&trans->dropped_roots)) {
-+		root = list_first_entry(&trans->dropped_roots,
-+					struct btrfs_root, root_list);
-+		list_del_init(&root->root_list);
-+		btrfs_drop_and_free_fs_root(fs_info, root);
-+	}
-+	spin_unlock(&trans->dropped_roots_lock);
- 	up_write(&fs_info->commit_root_sem);
- }
- 
-@@ -255,9 +265,11 @@ loop:
- 	INIT_LIST_HEAD(&cur_trans->pending_ordered);
- 	INIT_LIST_HEAD(&cur_trans->dirty_bgs);
- 	INIT_LIST_HEAD(&cur_trans->io_bgs);
-+	INIT_LIST_HEAD(&cur_trans->dropped_roots);
- 	mutex_init(&cur_trans->cache_write_mutex);
- 	cur_trans->num_dirty_bgs = 0;
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
-+	spin_lock_init(&cur_trans->dropped_roots_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
- 			     fs_info->btree_inode->i_mapping);
-@@ -334,6 +346,24 @@ static int record_root_in_trans(struct btrfs_trans_handle *trans,
- }
- 
- 
-+void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
-+			    struct btrfs_root *root)
-+{
-+	struct btrfs_transaction *cur_trans = trans->transaction;
-+
-+	/* Add ourselves to the transaction dropped list */
-+	spin_lock(&cur_trans->dropped_roots_lock);
-+	list_add_tail(&root->root_list, &cur_trans->dropped_roots);
-+	spin_unlock(&cur_trans->dropped_roots_lock);
-+
-+	/* Make sure we don't try to update the root at commit time */
-+	spin_lock(&root->fs_info->fs_roots_radix_lock);
-+	radix_tree_tag_clear(&root->fs_info->fs_roots_radix,
-+			     (unsigned long)root->root_key.objectid,
-+			     BTRFS_ROOT_TRANS_TAG);
-+	spin_unlock(&root->fs_info->fs_roots_radix_lock);
-+}
-+
- int btrfs_record_root_in_trans(struct btrfs_trans_handle *trans,
- 			       struct btrfs_root *root)
- {
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index eb09c20..ef4ff38 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -65,6 +65,7 @@ struct btrfs_transaction {
- 	struct list_head switch_commits;
- 	struct list_head dirty_bgs;
- 	struct list_head io_bgs;
-+	struct list_head dropped_roots;
- 	u64 num_dirty_bgs;
- 
- 	/*
-@@ -74,6 +75,7 @@ struct btrfs_transaction {
- 	 */
- 	struct mutex cache_write_mutex;
- 	spinlock_t dirty_bgs_lock;
-+	spinlock_t dropped_roots_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
- 	int dirty_bg_run;
-@@ -214,5 +216,6 @@ int btrfs_transaction_blocked(struct btrfs_fs_info *info);
- int btrfs_transaction_in_commit(struct btrfs_fs_info *info);
- void btrfs_put_transaction(struct btrfs_transaction *transaction);
- void btrfs_apply_pending_changes(struct btrfs_fs_info *fs_info);
--
-+void btrfs_add_dropped_root(struct btrfs_trans_handle *trans,
-+			    struct btrfs_root *root);
- #endif
--- 
-1.8.3.1
+On a completely new fs:
+$mkfs.btrfs -L Test -msingle -dsingle -f /dev/sdf1
+$mount /dev/sdf1 /mnt/usb
+$time btrfs filesystem balance start /mnt/usb
+Done, had to relocate 4 out of 4 chunks
+btrfs filesystem balance start /mnt/usb  0.01s user 0.00s system 0% cpu 1:30.88 total
+
+Time seems suspiciously in tune with (#chunks) * (tx commits every 30 seconds),
+maybe needs a few more wakeups?
+
+hope this helps :)
+
+Holger
 

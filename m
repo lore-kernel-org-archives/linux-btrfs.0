@@ -1,140 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:51219 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753382AbbIYKGe (ORCPT
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:32987 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751424AbbIYLVe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 06:06:34 -0400
-Date: Fri, 25 Sep 2015 10:06:33 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: =?utf-8?B?VmFja8OhxZkgRnJhbnRpxaFlaw==?= <vackarf@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs check dont repair
-Message-ID: <20150925100633.GE3749@carfax.org.uk>
-References: <CAMH1C+r4yYU8hYfcZpFRyN1UWY8OPTs5Md7MdE=bm2RW9udREQ@mail.gmail.com>
- <20150923144334.GP5918@carfax.org.uk>
- <CAMH1C+qz76gDf=xPyph3C-PPHsHegc6L4o7LtOa7oY6QYtE8Gw@mail.gmail.com>
- <CAMH1C+qQkDrHxk1HLwqupjbrSNZvhZdOX0v78EQ=5pP+pc4R4Q@mail.gmail.com>
+	Fri, 25 Sep 2015 07:21:34 -0400
+Received: by igbkq10 with SMTP id kq10so9142600igb.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2015 04:21:33 -0700 (PDT)
+Subject: Re: Latest kernel to use?
+To: Sjoerd <sjoerd@sjomar.eu>, linux-btrfs@vger.kernel.org
+References: <4362384.AA8xu4anSN@hoefnix>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <56052E0D.3090702@gmail.com>
+Date: Fri, 25 Sep 2015 07:20:45 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="Rgf3q3z9SdmXC6oT"
-In-Reply-To: <CAMH1C+qQkDrHxk1HLwqupjbrSNZvhZdOX0v78EQ=5pP+pc4R4Q@mail.gmail.com>
+In-Reply-To: <4362384.AA8xu4anSN@hoefnix>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060701070007010003090503"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
 
---Rgf3q3z9SdmXC6oT
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+--------------ms060701070007010003090503
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, Sep 25, 2015 at 11:36:55AM +0200, Vack=C3=A1=C5=99 Franti=C5=A1ek w=
-rote:
-> Now I have memory ok.
->=20
-> I found this patch, but i am not sure, if its the correct one.
-> https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg33496.html
->=20
-> Cay you help me please, witch patch i should use?
+On 2015-09-24 17:07, Sjoerd wrote:
+> Maybe a silly question for most of you, but the wiki states to always t=
+ry to
+> use the latest kernel with btrfs. Which one would be best:
+> - 4.2.1 (currently latest stable and matches the btrfs-progs versioning=
+) or
+> - the 4.3.x (mainline)?
+>
+> Stable sounds more stable to me(hence the name ;) ), but the mainline k=
+ernel
+> seems to be in more active development?
+>
+Like Hugo said, 4.2.1 is what you want right now.  In general, go with=20
+the highest version number that isn't a -rc version (4.3 isn't actually=20
+released yet, IIRC they're up to 4.3-rc2 right now, and almost at -rc3)=20
+(we should probably be specific like this on the wiki).
 
-   Yes, that's the patch series (you'll need all three patches). David
-Sterba said it didn't apply cleanly any more; I don't know how hard
-it'll be to fix up the problems, though.
+As far as mainline being under more 'active development', that is=20
+correct, but to understand why, you have to understand the workflow in=20
+Linux development.  In general, it goes like this:
+1. People send in patches either fixing bugs or adding new features.
+2. These get picked up (hopefully) by the individual subsystem=20
+maintainers, who collect them in their local git repository.
+3. When Linus opens the merge window (IOW, right after they release a=20
+version with a new minor version number), the subsystem maintainers send =
 
-   Hugo.
+pull requests for him to merge into mainline the patches they've picked u=
+p.
+4. After the merge window closes, the first -rc (release candidate) for=20
+the next version gets released, and people start testing.
+5. After about a week of testing, people send in bug-fixes (and only bug =
 
-> Frantisek
->=20
-> 2015-09-23 17:22 GMT+02:00 Vack=C3=A1=C5=99 Franti=C5=A1ek <vackarf@gmail=
-=2Ecom>:
-> > Yes, I have bad ram. I ran memtest and memory is really bad.
-> >
-> > So a must buy new memory first.
-> >
-> > Thank you.
-> >
-> > Frantisek
-> >
-> > 2015-09-23 16:43 GMT+02:00 Hugo Mills <hugo@carfax.org.uk>:
-> >> On Wed, Sep 23, 2015 at 04:39:27PM +0200, Vack=C3=A1=C5=99 Franti=C5=
-=A1ek wrote:
-> >>> Hello,
-> >>>
-> >>> i have problem with my btrfs, can you help me, please? Its on my
-> >>> notebook. Sometimes it exhausted battery during sleep and died. But
-> >>> everytime FS was ok. But ones mount fail.
-> >>>
-> >>> Do you have any idea how repair it?
-> >> [snip]
-> >>> [root@rak ~]# dmesg | tail
-> >> [snip]
-> >>> [ 4108.444472] BTRFS critical (device sdb2): corrupt leaf, bad key
-> >>> order: block=3D3242455040,root=3D1, slot=3D0
-> >>
-> >>    You have bad RAM. You should run memtest and fix the hardware first.
-> >>
-> >>    After that, there's some patches that should allow btrfs repair to
-> >> fix bad key orders in most situations -- I think David was picking
-> >> them up again, but I don't know what state they're in right now.
-> >>
-> >>    Hugo.
-> >>
-> >>> [ 4108.444649] BTRFS critical (device sdb2): corrupt leaf, bad key
-> >>> order: block=3D3242455040,root=3D1, slot=3D0
-> >>> [ 4108.444681] BTRFS error (device sdb2): Error removing orphan entry,
-> >>> stopping orphan cleanup
-> >>> [ 4108.444684] BTRFS error (device sdb2): could not do orphan cleanup=
- -22
-> >>> [ 4111.047323] BTRFS: open_ctree failed
-> >>>
-> >>> [root@rak ~]# uname -a
-> >>> Linux rak 4.1.2-2-ARCH #1 SMP PREEMPT Wed Jul 15 08:30:32 UTC 2015
-> >>> x86_64 GNU/Linux
-> >>>
-> >>> [root@rak ~]# btrfs fi show /dev/sdb2
-> >>> Label: 'data'  uuid: 754a3186-c0ae-4680-ab28-864c8bdad8b5
-> >>>         Total devices 1 FS bytes used 1.23TiB
-> >>>         devid    1 size 1.72TiB used 1.24TiB path /dev/sdb2
-> >>>
-> >>> btrfs-progs v4.2
-> >>>
-> >>> [root@rak ~]# btrfs --version
-> >>> btrfs-progs v4.2
-> >>>
-> >>> [root@rak ~]#   btrfs fi show
-> >>> Label: 'data'  uuid: 754a3186-c0ae-4680-ab28-864c8bdad8b5
-> >>>         Total devices 1 FS bytes used 1.23TiB
-> >>>         devid    1 size 1.72TiB used 1.24TiB path /dev/sdb2
-> >>>
-> >>> btrfs-progs v4.2
-> >>
+fixes) that then get pulled into the next -rc version.
+6. After about 6 to 8 -rc releases, the official release comes out (and=20
+the merge window for the next version opens).
+While all that is happening, bug-fixes that end up in mainline (usually) =
 
---=20
-Hugo Mills             | Do not meddle in the affairs of wizards, for they
-hugo@... carfax.org.uk | are subtle, and quick to anger.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                                        J.R.R. Tolk=
-ein
+get back-ported to older kernel versions.  Each time one of these=20
+versions gets a batch of back-ported bug-fixes, the third number in the=20
+version gets incremented.  So, to sum it up, mainline is where things=20
+get developed, but the bug-fixes end up in the stable releases anyway.
 
---Rgf3q3z9SdmXC6oT
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJWBRypAAoJEFheFHXiqx3khZYP/2/yKhtY51jlZ2tfFeulY+ar
-8K3XN/Aa82RtjwTJtdYwufU86ZqC2VP/W6eBCVdS+TzarSNQFyjn9rFyOZVl19xu
-7SzzbVeAoIML1PJDvjYv8ZVxbGZLQ3mVNUKUyDl1ExacvIdTq4HXa6vcfWurQpJn
-g/P1Jnvego8AbdvHVpitf86We2OhL11H9V1JVEkWm4VBbnhDELotUgYTjxiPAdHL
-e5edzXsntk0R1ZG5TRDsZmMN6B5tZ6u5EFRVhMy+5cpJBR7wSUVmNRWeDKYeuwI4
-IcOKWIr28rxYxlSuuCcdrcKm+YieQsPJU+Nk8AOhJ2/jYG+T9zHSYFzqEpGFwW3T
-wffnypNxGo8oBjQ5I1CVkP5GjKACBfm/Q3AnQC3ZC4oqwrtUVLUkK3KC4sbB0NJJ
-FR+6TWz/+v5t9Kdu35HTWd54Ld7mPDQrieV5gvlhJyp37mLXjbEmqXHt5aFmtlAS
-Ppp2lDtqTr3JZSDCIopVCYga23814UXfJ9ETjqc1lRuUhcnENAp1qPh3r93Ink67
-OcKuuz4eGjMqESdfFFAuX7TjlLCuvpW+09fuf9122aHO/PhbfwCYXfrd5MRaAkab
-PM7LCPgfZZrBkg1l2IFt+cg0F6613fahIBbHAYV0lgyhX1ec4NBjSkp1xALlR/3L
-7Nd8q0rZ5ViVEPCSaMhF
-=nEJD
------END PGP SIGNATURE-----
+--------------ms060701070007010003090503
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
---Rgf3q3z9SdmXC6oT--
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUwOTI1MTEyMDQ1WjBPBgkq
+hkiG9w0BCQQxQgRAHNxekjtee0Z4DyRlium43iA/gFmrKk2gEv8HwFx3M5fI9R7NXuHsYnal
+qmLdrRuWGo1/f9Vgwug4+KixZKVnuzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgAUcb9iBxuMzt/h6Tm908vkaPl8fnnsUnP8buqTO6w3Uq9dDwp2
+2QeGc8KElVkyBczReVIXJtv3ArJGARY9eUPJX2Tc6zOwFmD6L2YcmjnvqILlPgk+l7qFRj7W
+aztGQuJEC4L2d7nF3Ft+Fn62YHWrnGK6TCjOr8FJZNvKXfTbGI7ECQEP4qtPcg2RX/Fgafvb
++Trs0cPrzN2NpAOwfqlvpP4dAA11FbTpjq0k1SkPNbJ5x11i9sAXYKUD4kXgcYG24bZ8KIEQ
+p93+hztgExEtmStT1Dy2rDQ2/qH+SUXYBFtuNS6Qqh9rG2MEzXJereGu2Y+Yr3LjqWuS14wF
+uAJRnl8FkSkF69kuXHZa6s+YA6QpWGOEi3tdPF3YYRtzT3LTHK4HshYS5w+DpFpXY5I7GcIN
+sJk8yvH167LSgpAL3cRJq7lJzQJe1AT1YBs828x+087mouc8QoUv48egweNi6j8ue2+iC63Y
+xyigcpuopQJ8t5+pRICDIMrwJPh/uQVM9XL1LQaRJT5sQryE5e2Azk2L3lJAQYh3gRJO3M5d
+ADis3O5iYlO/Hr6UYfV48Pwuv4VtnZxw9A5xifrqxF4J+CqOjkCxSr7mSW5bkwbkmThWDsvW
+CD06BufpxSDGhBGhRJZjqAVwkCkccri7JFi5tiq0UVobhwZczvxitaHOsgAAAAAAAA==
+--------------ms060701070007010003090503--

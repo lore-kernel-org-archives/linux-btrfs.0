@@ -1,41 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.data-modul.de ([212.184.205.171]:19474 "EHLO
-	mail2.data-modul.de" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752753AbbIXGSS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Sep 2015 02:18:18 -0400
-From: Silvio Fricke <silvio.fricke@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Silvio Fricke <silvio.fricke@gmail.com>
-Subject: [PATCH 0/2] progress indicator for btrfs-check
-Date: Thu, 24 Sep 2015 08:13:03 +0200
-Message-Id: <cover.1443074502.git.silvio.fricke@gmail.com>
-In-Reply-To: <cover.1443012156.git.silvio.fricke@gmail.com>
-References: <cover.1443012156.git.silvio.fricke@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:36147 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932323AbbIYN4a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Sep 2015 09:56:30 -0400
+Date: Fri, 25 Sep 2015 15:55:32 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/2] btrfs-progs: provide fail safe for
+ BTRFS_IOC_GET_FSLABEL ioctl
+Message-ID: <20150925135532.GG11442@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1442306783-1288-1-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1442306783-1288-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello btrfs,
+On Tue, Sep 15, 2015 at 04:46:22PM +0800, Anand Jain wrote:
+>  Old kernel like 2.6.32 does not provide ioctl BTRFS_IOC_GET_FSLABEL.
+>  So we need to provide a fail safe logic for btrfs-progs running
+>  on those kernel.
+> 
+>  In this patch when get_label_mounted() fails on the old kernel
+>  it will fail back to the old method and uses get_label_unmounted(),
+>  where it will read from the disk directly.
+> 
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
 
-I have noticed that a long running process like "btrfs check" needs a progress
-indicator. Please look into these patches. Besides that I have found a problem
-with the task struct id value which is a pthread_t and not be set to -1.
-
-Thanks for the review and eventual inclusion of these patches,
-Silvio
-
-(Please include my mailaddress silvio.fricke@gmail.com as CC in replies, i'm
-not subscribed to linux-btrfs@vger.kernel.org)
-
-
-Silvio Fricke (2):
-  btrfs-progs: tasks info->id is a pthread_t and should not set to -1
-  btrfs-progs: check: add progress indicator
-
- cmds-check.c | 93 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++---
- task-utils.c |  4 +--
- 2 files changed, 91 insertions(+), 6 deletions(-)
-
--- 
-2.5.3
-
+Applied, thanks. I've changed the reference to 3.9 where the label ioctl
+has been introduced.

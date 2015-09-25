@@ -1,50 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from walhalla.sjomar.eu ([141.105.125.198]:48429 "EHLO
-	mail.sjomar.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932171AbbIYOgB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 10:36:01 -0400
-Received: from hoefnix.localnet (a83-163-227-207.adsl.xs4all.nl [83.163.227.207])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: sjoerd@sjomar.eu)
-	by mail.sjomar.eu (Postfix) with ESMTPSA id BDBD13288A
-	for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2015 16:35:57 +0200 (CEST)
-From: Sjoerd <sjoerd@sjomar.eu>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Latest kernel to use?
-Date: Fri, 25 Sep 2015 16:35:55 +0200
-Message-ID: <2547790.9tRNNhiZP1@hoefnix>
-In-Reply-To: <20150925135134.GF3749@carfax.org.uk>
-References: <4362384.AA8xu4anSN@hoefnix> <3800342.Pn9bHBFuTx@hoefnix> <20150925135134.GF3749@carfax.org.uk>
+Received: from mail-io0-f176.google.com ([209.85.223.176]:33817 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932594AbbIYRA2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Sep 2015 13:00:28 -0400
+Received: by iofb144 with SMTP id b144so117604258iof.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2015 10:00:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <CAEp_DRB7zaHmJnghJzVR++_OO+4mrM_+jCjrYAQJcNUXpM=bAQ@mail.gmail.com>
+References: <4362384.AA8xu4anSN@hoefnix>
+	<56052E0D.3090702@gmail.com>
+	<CAGfcS_nFn=AH6Y-4dFQEmy42KVJLBvLuaEHRtoYrBDUtNategw@mail.gmail.com>
+	<CAEp_DRB7zaHmJnghJzVR++_OO+4mrM_+jCjrYAQJcNUXpM=bAQ@mail.gmail.com>
+Date: Fri, 25 Sep 2015 13:00:28 -0400
+Message-ID: <CAGfcS_nnhJ5m4gcz=APY7boNj1d+oxGyKOedUxSWOgV0MH65dw@mail.gmail.com>
+Subject: Re: Latest kernel to use?
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Bostjan Skufca <bostjan@a2o.si>
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>, Sjoerd <sjoerd@sjomar.eu>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 25 September 2015 13:51:34 Hugo Mills wrote:
-> On Fri, Sep 25, 2015 at 03:36:18PM +0200, Sjoerd wrote:
-> > Thanks all for the feedback. Still doubting though to go for 4.2.1 or not.
-> > Main reason is that I am currently running 4.1.7 on my laptop which seems
-> > to work fine and had some issues with the 4.2.0 kernel. No issues I thing
-> > that were btrfs related, but more related to my nvidia card. Anyway
-> > switching back to 4.1.7 resolved those, so I am a bit holding back to try
-> > the 4.2.1 version ;)
-> > Anyway I'll see and can always revert back if I don't like it ;)
-> 
->    If 4.1.7 is working OK for you, stick with it. It's getting much
-> less important now, as btrfs matures, to keep up with the _very_
-> latest. Purely on gut feeling about issues we see on IRC and here,
-> 3.19 or later would be reasonable at the moment.
-> 
+On Fri, Sep 25, 2015 at 9:25 AM, Bostjan Skufca <bostjan@a2o.si> wrote:
+>
+> Similar here: I am sticking with 3.19.2 which has proven to work fine for me
 
-OK i'll stick with the longterm 4.1.x branch then..
+I'd recommend still tracking SOME stable series.  I'm sure there were
+fixes in 3.19 for btrfs (to say nothing of other subsystems) that
+you're missing with that version.  3.19 is also unsupported at this
+time.  You might want to consider moving to either 3.18.21 or 4.1.8
+and tracking those series instead.  I doubt you'd give up much moving
+back to 3.18 and there have been a bunch of btrfs fixes in that series
+(though it seems to me that 3.18 has been slower to receive btrfs
+patches than some of the other series).
 
->    Compared to, say, 3 or 4 years ago when running late -rc kernels
-> was often preferable to running the latest stable, and things have
-> improved quite a bit. :)
+I'm on the fence right now about making the move to 4.1.  Maybe in a
+few releases I'll be there, depending on what the noise on the lists
+sounds like.
 
-Good to know and thanks for the feedback :)
+There was a time when you were better off on bleeding-edge linux for
+btrfs.  If you REALLY want to run btrfs raid5 or something like that
+then I'd say that is still your best strategy.  However, if you stick
+with features that have been around for a year the longterm kernels
+seem a lot less likely to hit you with a regression, as long as you
+don't switch to a new one the day it is declared as such.
 
-Cheers,
-Sjoerd
-
+--
+Rich

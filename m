@@ -1,128 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:54197 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754225AbbIYCi1 (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:40700 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754652AbbIYIYs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Sep 2015 22:38:27 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <stephane_btrfs@lesimple.fr>
-Subject: [PATCH 2/2] btrfs: qgroup: Don't copy extent buffer to do qgroup rescan
-Date: Fri, 25 Sep 2015 10:38:01 +0800
-Message-ID: <1443148681-3015-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1443148681-3015-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1443148681-3015-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+	Fri, 25 Sep 2015 04:24:48 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: quwenruo@cn.fujitsu.com
+Subject: [PATCH 1/1] btrfs: Do per-chunk check for mount time check
+Date: Fri, 25 Sep 2015 16:23:05 +0800
+Message-Id: <1443169385-18173-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1442801443-5132-3-git-send-email-quwenruo@cn.fujtsu.com>
+References: <1442801443-5132-3-git-send-email-quwenruo@cn.fujtsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ancient qgroup code call memcpy() on a extent buffer and use it for leaf
-iteration.
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-As extent buffer contains lock, pointers to pages, it's never sane to do
-such copy.
+Now use the btrfs_check_degraded() to do mount time degraded check.
 
-The following bug may be caused by this insane operation:
-[92098.841309] general protection fault: 0000 [#1] SMP
-[92098.841338] Modules linked in: ...
-[92098.841814] CPU: 1 PID: 24655 Comm: kworker/u4:12 Not tainted
-4.3.0-rc1 #1
-[92098.841868] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper
-[btrfs]
-[92098.842261] Call Trace:
-[92098.842277]  [<ffffffffc035a5d8>] ? read_extent_buffer+0xb8/0x110
-[btrfs]
-[92098.842304]  [<ffffffffc0396d00>] ? btrfs_find_all_roots+0x60/0x70
-[btrfs]
-[92098.842329]  [<ffffffffc039af3d>]
-btrfs_qgroup_rescan_worker+0x28d/0x5a0 [btrfs]
+With this patch, now we can mount with the following case:
+ # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+ # wipefs -a /dev/sdc
+ # mount /dev/sdb /mnt/btrfs -o degraded
+ As the single data chunk is only in sdb, so it's OK to mount as
+ degraded, as missing one device is OK for RAID1.
 
-Where btrfs_qgroup_rescan_worker+0x28d is btrfs_disk_key_to_cpu(),
-called in reading key from the memcpied extent_buffer.
+But still fail with the following case as expected:
+ # mkfs.btrfs -f -m raid1 -d single /dev/sdb /dev/sdc
+ # wipefs -a /dev/sdb
+ # mount /dev/sdc /mnt/btrfs -o degraded
+ As the data chunk is only in sdb, so it's not OK to mount it as
+ degraded.
 
-This patch will read the whole leaf into memory, and use newly
-introduced stack function to do qgroup rescan.
-
-Reported-by: Stephane Lesimple <stephane_btrfs@lesimple.fr>
+Reported-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: Anand Jain <anand.jain@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/qgroup.c | 22 ++++++++++++----------
- 1 file changed, 12 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index e9ace09..3b9221f 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2183,11 +2183,11 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
-  */
- static int
- qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
--		   struct btrfs_trans_handle *trans,
--		   struct extent_buffer *scratch_leaf)
-+		   struct btrfs_trans_handle *trans, char *stack_leaf)
- {
- 	struct btrfs_key found;
- 	struct ulist *roots = NULL;
-+	struct btrfs_header *header;
- 	struct seq_list tree_mod_seq_elem = SEQ_LIST_INIT(tree_mod_seq_elem);
- 	u64 num_bytes;
- 	int slot;
-@@ -2224,13 +2224,15 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
- 	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
- 
- 	btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
--	memcpy(scratch_leaf, path->nodes[0], sizeof(*scratch_leaf));
-+	read_extent_buffer(path->nodes[0], stack_leaf, 0,
-+			   fs_info->extent_root->nodesize);
-+	header = (struct btrfs_header *)stack_leaf;
- 	slot = path->slots[0];
- 	btrfs_release_path(path);
- 	mutex_unlock(&fs_info->qgroup_rescan_lock);
- 
--	for (; slot < btrfs_header_nritems(scratch_leaf); ++slot) {
--		btrfs_item_key_to_cpu(scratch_leaf, &found, slot);
-+	for (; slot < btrfs_stack_header_nritems(header); ++slot) {
-+		btrfs_stack_item_key_to_cpu(stack_leaf, &found, slot);
- 		if (found.type != BTRFS_EXTENT_ITEM_KEY &&
- 		    found.type != BTRFS_METADATA_ITEM_KEY)
- 			continue;
-@@ -2261,15 +2263,15 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 						     qgroup_rescan_work);
- 	struct btrfs_path *path;
- 	struct btrfs_trans_handle *trans = NULL;
--	struct extent_buffer *scratch_leaf = NULL;
-+	char *stack_leaf = NULL;
- 	int err = -ENOMEM;
- 	int ret = 0;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		goto out;
--	scratch_leaf = kmalloc(sizeof(*scratch_leaf), GFP_NOFS);
--	if (!scratch_leaf)
-+	stack_leaf = kmalloc(fs_info->extent_root->nodesize, GFP_NOFS);
-+	if (!stack_leaf)
- 		goto out;
- 
- 	err = 0;
-@@ -2283,7 +2285,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 			err = -EINTR;
- 		} else {
- 			err = qgroup_rescan_leaf(fs_info, path, trans,
--						 scratch_leaf);
-+						 stack_leaf);
- 		}
- 		if (err > 0)
- 			btrfs_commit_transaction(trans, fs_info->fs_root);
-@@ -2292,7 +2294,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+Btrfs: use btrfs_error instead of btrfs_err during mount
+
+fix up on top of the patch
+[PATCH 1/1] Btrfs: consolidate btrfs_error() to btrfs_std_error()
+
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/disk-io.c | 18 ++++++++++--------
+ 1 file changed, 10 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index ccb1f28..ae7b180 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2863,6 +2863,16 @@ int open_ctree(struct super_block *sb,
+ 		goto fail_tree_roots;
  	}
  
- out:
--	kfree(scratch_leaf);
-+	kfree(stack_leaf);
- 	btrfs_free_path(path);
++	ret = btrfs_check_degradable(fs_info, fs_info->sb->s_flags);
++	if (ret < 0) {
++		btrfs_err(fs_info, "degraded writable mount failed %d", ret);
++		goto fail_tree_roots;
++	} else if (ret > 0 && !btrfs_test_opt(chunk_root, DEGRADED)) {
++		btrfs_warn(fs_info,
++			"Some device missing, but still degraded mountable, please mount with -o degraded option");
++		ret = -EACCES;
++		goto fail_tree_roots;
++	}
+ 	/*
+ 	 * keep the device that is marked to be the target device for the
+ 	 * dev_replace procedure
+@@ -2940,14 +2950,6 @@ retry_root_backup:
+ 	}
+ 	fs_info->num_tolerated_disk_barrier_failures =
+ 		btrfs_calc_num_tolerated_disk_barrier_failures(fs_info);
+-	if (fs_info->fs_devices->missing_devices >
+-	     fs_info->num_tolerated_disk_barrier_failures &&
+-	    !(sb->s_flags & MS_RDONLY)) {
+-		pr_warn("BTRFS: missing devices(%llu) exceeds the limit(%d), writeable mount is not allowed\n",
+-			fs_info->fs_devices->missing_devices,
+-			fs_info->num_tolerated_disk_barrier_failures);
+-		goto fail_sysfs;
+-	}
  
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
+ 	fs_info->cleaner_kthread = kthread_run(cleaner_kthread, tree_root,
+ 					       "btrfs-cleaner");
 -- 
-2.5.3
+2.4.1
 

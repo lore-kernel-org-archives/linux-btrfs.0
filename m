@@ -1,35 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52341 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752442AbbIYKlz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 06:41:55 -0400
-Date: Fri, 25 Sep 2015 12:40:56 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Luis de Bethencourt <luisbg@osg.samsung.com>
-Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/2] btrfs: reada: Fix returned errno code
-Message-ID: <20150925104056.GD11442@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1443121865.git.luisbg@osg.samsung.com>
- <cae144357b99745472aad5d3e98acb8028bfb2ee.1443121865.git.luisbg@osg.samsung.com>
+Received: from mail-vk0-f43.google.com ([209.85.213.43]:34760 "EHLO
+	mail-vk0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755834AbbIYMar (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Sep 2015 08:30:47 -0400
+Received: by vkhf67 with SMTP id f67so55019861vkh.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2015 05:30:46 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cae144357b99745472aad5d3e98acb8028bfb2ee.1443121865.git.luisbg@osg.samsung.com>
+In-Reply-To: <1443106023-2158-1-git-send-email-jbacik@fb.com>
+References: <1443106023-2158-1-git-send-email-jbacik@fb.com>
+Date: Fri, 25 Sep 2015 14:30:46 +0200
+Message-ID: <CAHji153OssW8n0ukTeiYk+2dgSmB0Wcfzy=b7P5fnh370929bg@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: add a flags field to btrfs_transaction
+From: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
+	<holger.hoffstaette@googlemail.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: kernel-team@fb.com, linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 24, 2015 at 08:13:33PM +0100, Luis de Bethencourt wrote:
-> reada is using -1 instead of the -ENOMEM defined macro to specify that
-> a buffer allocation failed. Since the error number is propagated, the
-> caller will get a -EPERM which is the wrong error condition.
-> 
-> Also, updating the caller to return the exact value from
-> reada_add_block.
-> 
-> Smatch tool warning:
-> reada_add_block() warn: returning -1 instead of -ENOMEM is sloppy
-> 
-> Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
+Followup from my observation wrt. "Btrfs: change how we wait for
+pending ordered extents" and balance sitting idle:
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+On Thu, Sep 24, 2015 at 4:47 PM, Josef Bacik <jbacik@fb.com> wrote:
+> I want to set some per transaction flags, so instead of adding yet another int
+> lets just convert the current two int indicators to flags and add a flags field
+> for future use.  Thanks,
+
+..snip..
+
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index ff64689..3f5a781 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1399,7 +1399,7 @@ again:
+>                 btrfs_error(root->fs_info, ret,
+>                             "Failed to remove dev extent item");
+>         } else {
+> -               trans->transaction->have_free_bgs = 1;
+> +               set_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags);
+
+Judging from the rest of the code transformation TRANS_DIRTY_BG_RUN
+seems like the wrong bit to set here. A quick test with
+set_bit(BTRFS_TRANS_HAVE_FREE_BGS) confirms that it fixes the balance
+delays.
+
+cheers
+Holger

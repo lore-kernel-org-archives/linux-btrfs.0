@@ -1,59 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lists.s-osg.org ([54.187.51.154]:39114 "EHLO lists.s-osg.org"
+Received: from mx2.suse.de ([195.135.220.15]:52341 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752654AbbIXTNk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Sep 2015 15:13:40 -0400
-From: Luis de Bethencourt <luisbg@osg.samsung.com>
-To: linux-kernel@vger.kernel.org
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        Luis de Bethencourt <luisbg@osg.samsung.com>
-Subject: [PATCH v2 1/2] btrfs: check-integrity: Fix returned errno codes
-Date: Thu, 24 Sep 2015 20:13:32 +0100
-Message-Id: <325df4cd826f2a14b794450eee2458bc8f15ad2b.1443121865.git.luisbg@osg.samsung.com>
-In-Reply-To: <cover.1443121865.git.luisbg@osg.samsung.com>
+	id S1752442AbbIYKlz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 25 Sep 2015 06:41:55 -0400
+Date: Fri, 25 Sep 2015 12:40:56 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Luis de Bethencourt <luisbg@osg.samsung.com>
+Cc: linux-kernel@vger.kernel.org, clm@fb.com, jbacik@fb.com, dsterba@suse.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 2/2] btrfs: reada: Fix returned errno code
+Message-ID: <20150925104056.GD11442@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1443121865.git.luisbg@osg.samsung.com>
-In-Reply-To: <cover.1443121865.git.luisbg@osg.samsung.com>
-References: <cover.1443121865.git.luisbg@osg.samsung.com>
+ <cae144357b99745472aad5d3e98acb8028bfb2ee.1443121865.git.luisbg@osg.samsung.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <cae144357b99745472aad5d3e98acb8028bfb2ee.1443121865.git.luisbg@osg.samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-check-integrity is using -1 instead of the -ENOMEM defined macro to
-specify that a buffer allocation failed. Since the error number is
-propagated, the caller will get a -EPERM which is the wrong error
-condition.
+On Thu, Sep 24, 2015 at 08:13:33PM +0100, Luis de Bethencourt wrote:
+> reada is using -1 instead of the -ENOMEM defined macro to specify that
+> a buffer allocation failed. Since the error number is propagated, the
+> caller will get a -EPERM which is the wrong error condition.
+> 
+> Also, updating the caller to return the exact value from
+> reada_add_block.
+> 
+> Smatch tool warning:
+> reada_add_block() warn: returning -1 instead of -ENOMEM is sloppy
+> 
+> Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
 
-Also, the smatch tool complains with the following warnings:
-btrfsic_process_superblock() warn: returning -1 instead of -ENOMEM is sloppy
-btrfsic_read_block() warn: returning -1 instead of -ENOMEM is sloppy
-
-Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/check-integrity.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
-
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 541fbfa..9cacd06 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -667,7 +667,7 @@ static int btrfsic_process_superblock(struct btrfsic_state *state,
- 	selected_super = kzalloc(sizeof(*selected_super), GFP_NOFS);
- 	if (NULL == selected_super) {
- 		printk(KERN_INFO "btrfsic: error, kmalloc failed!\n");
--		return -1;
-+		return -ENOMEM;
- 	}
- 
- 	list_for_each_entry(device, dev_head, dev_list) {
-@@ -1660,7 +1660,7 @@ static int btrfsic_read_block(struct btrfsic_state *state,
- 					  sizeof(*block_ctx->pagev)) *
- 					 num_pages, GFP_NOFS);
- 	if (!block_ctx->mem_to_free)
--		return -1;
-+		return -ENOMEM;
- 	block_ctx->datav = block_ctx->mem_to_free;
- 	block_ctx->pagev = (struct page **)(block_ctx->datav + num_pages);
- 	for (i = 0; i < num_pages; i++) {
--- 
-2.5.1
-

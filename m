@@ -1,53 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:40863 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932260AbbIYNiI (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:42152 "EHLO
+	m0041696.ppops.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755528AbbIYOwt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 09:38:08 -0400
-Subject: Re: [PATCH] Btrfs: add a flags field to btrfs_transaction
-To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>
-References: <1443106023-2158-1-git-send-email-jbacik@fb.com>
- <CAHji153OssW8n0ukTeiYk+2dgSmB0Wcfzy=b7P5fnh370929bg@mail.gmail.com>
-CC: <kernel-team@fb.com>, <linux-btrfs@vger.kernel.org>
+	Fri, 25 Sep 2015 10:52:49 -0400
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <56054E39.4090407@fb.com>
-Date: Fri, 25 Sep 2015 09:38:01 -0400
+To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>,
+        <holger.hoffstaette@googlemail.com>
+Subject: [PATCH V2] Btrfs: add a flags field to btrfs_transaction
+Date: Fri, 25 Sep 2015 10:52:42 -0400
+Message-ID: <1443192762-6335-1-git-send-email-jbacik@fb.com>
+In-Reply-To: <1443106023-2158-1-git-send-email-jbacik@fb.com>
+References: <1443106023-2158-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-In-Reply-To: <CAHji153OssW8n0ukTeiYk+2dgSmB0Wcfzy=b7P5fnh370929bg@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/25/2015 08:30 AM, Holger Hoffstätte wrote:
-> Followup from my observation wrt. "Btrfs: change how we wait for
-> pending ordered extents" and balance sitting idle:
->
-> On Thu, Sep 24, 2015 at 4:47 PM, Josef Bacik <jbacik@fb.com> wrote:
->> I want to set some per transaction flags, so instead of adding yet another int
->> lets just convert the current two int indicators to flags and add a flags field
->> for future use.  Thanks,
->
-> ..snip..
->
->> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->> index ff64689..3f5a781 100644
->> --- a/fs/btrfs/volumes.c
->> +++ b/fs/btrfs/volumes.c
->> @@ -1399,7 +1399,7 @@ again:
->>                  btrfs_error(root->fs_info, ret,
->>                              "Failed to remove dev extent item");
->>          } else {
->> -               trans->transaction->have_free_bgs = 1;
->> +               set_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags);
->
-> Judging from the rest of the code transformation TRANS_DIRTY_BG_RUN
-> seems like the wrong bit to set here. A quick test with
-> set_bit(BTRFS_TRANS_HAVE_FREE_BGS) confirms that it fixes the balance
-> delays.
+I want to set some per transaction flags, so instead of adding yet another int
+lets just convert the current two int indicators to flags and add a flags field
+for future use.  Thanks,
 
-Haha oops, thanks for catching that, I'll fix it up locally and send out 
-an updated one in a bit.
+Signed-off-by: Josef Bacik <jbacik@fb.com>
+---
+V1->V2: set the wrong bit in my conversion
 
-Josef
+ fs/btrfs/extent-tree.c |  5 +++--
+ fs/btrfs/transaction.c | 18 ++++++++----------
+ fs/btrfs/transaction.h |  9 ++++-----
+ fs/btrfs/volumes.c     |  2 +-
+ 4 files changed, 16 insertions(+), 18 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index eca1840..78a1504 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4024,7 +4024,8 @@ commit_trans:
+ 			if (IS_ERR(trans))
+ 				return PTR_ERR(trans);
+ 			if (have_pinned_space >= 0 ||
+-			    trans->transaction->have_free_bgs ||
++			    test_bit(BTRFS_TRANS_HAVE_FREE_BGS,
++				     &trans->transaction->flags) ||
+ 			    need_commit > 0) {
+ 				ret = btrfs_commit_transaction(trans, root);
+ 				if (ret)
+@@ -9049,7 +9050,7 @@ again:
+ 	 * back off and let this transaction commit
+ 	 */
+ 	mutex_lock(&root->fs_info->ro_block_group_mutex);
+-	if (trans->transaction->dirty_bg_run) {
++	if (test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &trans->transaction->flags)) {
+ 		u64 transid = trans->transid;
+ 
+ 		mutex_unlock(&root->fs_info->ro_block_group_mutex);
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index df1e61e..debfc99 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -230,9 +230,8 @@ loop:
+ 	 * commit the transaction.
+ 	 */
+ 	atomic_set(&cur_trans->use_count, 2);
+-	cur_trans->have_free_bgs = 0;
++	cur_trans->flags = 0;
+ 	cur_trans->start_time = get_seconds();
+-	cur_trans->dirty_bg_run = 0;
+ 
+ 	cur_trans->delayed_refs.href_root = RB_ROOT;
+ 	cur_trans->delayed_refs.dirty_extent_root = RB_ROOT;
+@@ -1846,7 +1845,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		return ret;
+ 	}
+ 
+-	if (!cur_trans->dirty_bg_run) {
++	if (!test_bit(BTRFS_TRANS_DIRTY_BG_RUN, &cur_trans->flags)) {
+ 		int run_it = 0;
+ 
+ 		/* this mutex is also taken before trying to set
+@@ -1855,18 +1854,17 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 		 * after a extents from that block group have been
+ 		 * allocated for cache files.  btrfs_set_block_group_ro
+ 		 * will wait for the transaction to commit if it
+-		 * finds dirty_bg_run = 1
++		 * finds BTRFS_TRANS_DIRTY_BG_RUN set.
+ 		 *
+-		 * The dirty_bg_run flag is also used to make sure only
+-		 * one process starts all the block group IO.  It wouldn't
++		 * The BTRFS_TRANS_DIRTY_BG_RUN flag is also used to make sure
++		 * only one process starts all the block group IO.  It wouldn't
+ 		 * hurt to have more than one go through, but there's no
+ 		 * real advantage to it either.
+ 		 */
+ 		mutex_lock(&root->fs_info->ro_block_group_mutex);
+-		if (!cur_trans->dirty_bg_run) {
++		if (!test_and_set_bit(BTRFS_TRANS_DIRTY_BG_RUN,
++				      &cur_trans->flags))
+ 			run_it = 1;
+-			cur_trans->dirty_bg_run = 1;
+-		}
+ 		mutex_unlock(&root->fs_info->ro_block_group_mutex);
+ 
+ 		if (run_it)
+@@ -2134,7 +2132,7 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_finish_extent_commit(trans, root);
+ 
+-	if (cur_trans->have_free_bgs)
++	if (test_bit(BTRFS_TRANS_HAVE_FREE_BGS, &cur_trans->flags))
+ 		btrfs_clear_space_info_full(root->fs_info);
+ 
+ 	root->fs_info->last_trans_committed = cur_trans->transid;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index f158ab4..02c6ca1 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -32,6 +32,9 @@ enum btrfs_trans_state {
+ 	TRANS_STATE_MAX			= 6,
+ };
+ 
++#define BTRFS_TRANS_HAVE_FREE_BGS	0
++#define BTRFS_TRANS_DIRTY_BG_RUN	1
++
+ struct btrfs_transaction {
+ 	u64 transid;
+ 	/*
+@@ -47,10 +50,7 @@ struct btrfs_transaction {
+ 	atomic_t num_writers;
+ 	atomic_t use_count;
+ 
+-	/*
+-	 * true if there is free bgs operations in this transaction
+-	 */
+-	int have_free_bgs;
++	unsigned long flags;
+ 
+ 	/* Be protected by fs_info->trans_lock when we want to change it. */
+ 	enum btrfs_trans_state state;
+@@ -78,7 +78,6 @@ struct btrfs_transaction {
+ 	spinlock_t dropped_roots_lock;
+ 	struct btrfs_delayed_ref_root delayed_refs;
+ 	int aborted;
+-	int dirty_bg_run;
+ };
+ 
+ #define __TRANS_FREEZABLE	(1U << 0)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index ff64689..5908f02 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1399,7 +1399,7 @@ again:
+ 		btrfs_error(root->fs_info, ret,
+ 			    "Failed to remove dev extent item");
+ 	} else {
+-		trans->transaction->have_free_bgs = 1;
++		set_bit(BTRFS_TRANS_HAVE_FREE_BGS, &trans->transaction->flags);
+ 	}
+ out:
+ 	btrfs_free_path(path);
+-- 
+1.8.3.1
 

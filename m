@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:47554 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:34915 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752706AbbIZLj7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Sep 2015 07:39:59 -0400
+	id S1753419AbbIZTcP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Sep 2015 15:32:15 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: send, fix corner case for reference overwrite detection
-Date: Sat, 26 Sep 2015 12:39:45 +0100
-Message-Id: <1443267585-4843-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: send, fix corner case for reference overwrite detection
+Date: Sat, 26 Sep 2015 15:30:23 +0100
+Message-Id: <1443277823-9794-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1443267585-4843-1-git-send-email-fdmanana@kernel.org>
+References: <1443267585-4843-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -119,20 +121,31 @@ Reported-by: Martin Raiber <martin@urbackup.org>
 Fixes: 8b191a684968 ("Btrfs: incremental send, check if orphanized dir inode needs delayed rename")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/send.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+
+V2: Made the logic more robust by not assuming sctx->send_progress always
+    matches the current inode being processed (it usually matches, except
+    when processing delayed renames).
+
+ fs/btrfs/send.c | 8 +++++---
+ 1 file changed, 5 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index aa72bfd..7db5fc4 100644
+index aa72bfd..a739b82 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -1923,7 +1923,8 @@ static int did_overwrite_ref(struct send_ctx *sctx,
- 	 * inode 'ino' to be orphanized, therefore ow_inode can actually be the
- 	 * same as sctx->send_progress.
+@@ -1920,10 +1920,12 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 	/*
+ 	 * We know that it is or will be overwritten. Check this now.
+ 	 * The current inode being processed might have been the one that caused
+-	 * inode 'ino' to be orphanized, therefore ow_inode can actually be the
+-	 * same as sctx->send_progress.
++	 * inode 'ino' to be orphanized, therefore check if ow_inode matches
++	 * the current inode being processed.
  	 */
 -	if (ow_inode <= sctx->send_progress)
 +	if ((ow_inode < sctx->send_progress) ||
-+	    (ow_inode == sctx->send_progress && gen == sctx->cur_inode_gen))
++	    (ino != sctx->cur_ino && ow_inode == sctx->cur_ino &&
++	     gen == sctx->cur_inode_gen))
  		ret = 1;
  	else
  		ret = 0;

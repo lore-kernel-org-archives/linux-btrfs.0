@@ -1,55 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40076 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755180AbbIZCFU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 22:05:20 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZferM-0005fD-AE
-	for linux-btrfs@vger.kernel.org; Sat, 26 Sep 2015 04:05:08 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2015 04:05:08 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2015 04:05:08 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Latest kernel to use?
-Date: Sat, 26 Sep 2015 02:04:52 +0000 (UTC)
-Message-ID: <pan$9f488$3e7cc077$732442f6$c6dbba94@cox.net>
-References: <4362384.AA8xu4anSN@hoefnix> <3800342.Pn9bHBFuTx@hoefnix>
-	<20150925135134.GF3749@carfax.org.uk>
-	<CAEp_DRCiMRzuX8m9JoNO=8rtSWSP_Vqs4LfVW7JppDa2c4e_7w@mail.gmail.com>
+Received: from meiko.romanrm.net ([195.154.92.155]:42904 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751395AbbIZHq2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Sep 2015 03:46:28 -0400
+Date: Sat, 26 Sep 2015 12:46:26 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Marcel Bischoff <marcel@herrbischoff.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: Too many missing devices, writeable mount is not allowed
+Message-ID: <20150926124626.6aee7e52@natsu>
+In-Reply-To: <20150925214544.GB4639@herrbischoff.com>
+References: <20150925214544.GB4639@herrbischoff.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/H+R_XGZBD6iYoFEaiursNNL"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Bostjan Skufca posted on Fri, 25 Sep 2015 16:34:16 +0200 as excerpted:
+--Sig_/H+R_XGZBD6iYoFEaiursNNL
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> Similar here: I am sticking with 3.19.2 which has proven to work fine
-> for me (backup systems with btrfs on lvm, lots of snapshots/subvolumes
-> and occasional rebalance, no fancy/fresh stuff like btrfs-raid, online
-> compression or subvolume quota, though this last one is tempting in my
-> use case).
+On Fri, 25 Sep 2015 23:45:44 +0200
+Marcel Bischoff <marcel@herrbischoff.com> wrote:
 
-On that last one, subvolume quota, you've been following list discussion, 
-right?  Just in case you haven't...
+> Hello all,
+>=20
+> I have kind of a serious problem with one of my disks.
+>=20
+> The controller of one of my external drives died (WD Studio). The disk=20
+> is alright though. I cracked open the case, got the drive out and=20
+> connected it via a SATA-USB interface.
+>=20
+> Now, mounting the filesystem is not possible. Here's the message:
+>=20
+> $ btrfs fi show
+> warning devid 3 not found already
+> Label: none  uuid: bd6090df-5179-490e-a5f8-8fbad433657f
+>         Total devices 3 FS bytes used 3.02TiB
+>         devid    1 size 596.17GiB used 532.03GiB path /dev/sdd
+>         devid    2 size 931.51GiB used 867.03GiB path /dev/sde
+>         *** Some devices missing
+>=20
+> Yes, I did bundle up three drives with very different sizes with the=20
+> --single option on creating the file system.
+>=20
+> I have already asked for help on StackExchange but replies have been=20
+> few. Now I thought people on this list, close to btrfs development may=20
+> be able and willing to help. This would be so much appreciated.
+>=20
+> Here's the issue with lots of information and a record of what I/we have=
+=20
+> tried up until now:=20
+> http://unix.stackexchange.com/questions/231174/btrfs-too-many-missing-dev=
+ices-writeable-mount-is-not-allowed
 
-Btrfs quotas have been an incredibly tough feature to stabilize.  They're 
-on the third rewrite and still have some major bugs to fix, so I'd say at 
-least a couple more kernel cycles, then check again before using the 
-feature.
+What I find confusing about that post, is ...okay, sdd and sde are in the
+filesystem alright. But which drive is the problematic one? You never
+explicitly mention that. Then you proceed to post xxd dumps of sdb(!), and
+also "strings | grep" and partition listing of sdc(!!!). So which is it, sdb
+or sdc, or are you unsure at this point.
 
-So, unless you're actively testing and reporting bugs in that specific 
-feature (in which case, thanks and please continue! =:^), I continue to 
-strongly recommend leaving quotas off for now, as I have been for a year 
-or more, now.
+Also post stuff directly to the mailing list, as websites go away with time,
+whereas the mail archives can be more resilient. (Not to mention asking thi=
+ngs
+like these on "stackoverflow" is a bit like expecting a useful answer on
+Ubuntu Forums).
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+--=20
+With respect,
+Roman
 
+--Sig_/H+R_XGZBD6iYoFEaiursNNL
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iEYEARECAAYFAlYGTVIACgkQTLKSvz+PZwjUVwCdGW58Wmqos2ehmKTEK9F1jLit
+IYoAnikhlJsM+sVyXI1SvqApeJFJ8VTI
+=er6G
+-----END PGP SIGNATURE-----
+
+--Sig_/H+R_XGZBD6iYoFEaiursNNL--

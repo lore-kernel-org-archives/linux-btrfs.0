@@ -1,45 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f52.google.com ([209.85.218.52]:34395 "EHLO
-	mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751445AbbIZAPU (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 20:15:20 -0400
-Received: by oiev17 with SMTP id v17so66393905oie.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Sep 2015 17:15:19 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <1443214096-12769-9-git-send-email-Anna.Schumaker@Netapp.com>
-References: <1443214096-12769-1-git-send-email-Anna.Schumaker@Netapp.com> <1443214096-12769-9-git-send-email-Anna.Schumaker@Netapp.com>
-From: Andy Lutomirski <luto@amacapital.net>
-Date: Fri, 25 Sep 2015 17:14:59 -0700
-Message-ID: <CALCETrWLAwNVqAiTMOmaktVY0cQkM0bX2vztXzEHm3EFYDg6zA@mail.gmail.com>
-Subject: Re: [PATCH v3 8/9] vfs: copy_file_range() can do a pagecache copy
- with splice
-To: Anna Schumaker <Anna.Schumaker@netapp.com>
-Cc: linux-nfs@vger.kernel.org,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Linux FS Devel <linux-fsdevel@vger.kernel.org>,
-        Linux API <linux-api@vger.kernel.org>, Zach Brown <zab@zabbo.net>,
-        Al Viro <viro@zeniv.linux.org.uk>, Chris Mason <clm@fb.com>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Michael Kerrisk-manpages <mtk.manpages@gmail.com>, andros@netapp.com,
-        Christoph Hellwig <hch@infradead.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.kernel.org ([198.145.29.136]:47554 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752706AbbIZLj7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Sep 2015 07:39:59 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: send, fix corner case for reference overwrite detection
+Date: Sat, 26 Sep 2015 12:39:45 +0100
+Message-Id: <1443267585-4843-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Sep 25, 2015 at 1:48 PM, Anna Schumaker
-<Anna.Schumaker@netapp.com> wrote:
-> The NFS server will need some kind offallback for filesystems that don't
-> have any kind of copy acceleration, and it should be generally useful to
-> have an in-kernel copy to avoid lots of switches between kernel and user
-> space.
->
-> I make this configurable by adding two new flags.  Users who only want a
-> reflink can pass COPY_FR_REFLINK, and users who want a full data copy can
-> pass COPY_FR_COPY.  The default (flags=0) means to first attempt a
-> reflink, but use the pagecache if that fails.
->
+From: Filipe Manana <fdmanana@suse.com>
 
-Can you clarify how the subject line fits in?  I'm a bit lost.
+When the inode given to did_overwrite_ref() matches the current progress
+and has a reference that collides with the reference of other inode that
+has the same number as the current progress, we were always telling our
+caller that the inode's reference was overwritten, which is incorrect
+because the other inode might be a new inode (different generation number)
+in which case we must return false from did_overwrite_ref() so that its
+callers don't use an orphanized path for the inode (as it will never be
+orphanized, instead it will be unlinked and the new inode created later).
 
---Andy
+The following test case for fstests reproduces the issue:
+
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
+
+  _cleanup()
+  {
+      rm -fr $send_files_dir
+      rm -f $tmp.*
+  }
+
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+
+  # real QA test starts here
+  _supported_fs btrfs
+  _supported_os Linux
+  _require_scratch
+  _need_to_be_root
+
+  send_files_dir=$TEST_DIR/btrfs-test-$seq
+
+  rm -f $seqres.full
+  rm -fr $send_files_dir
+  mkdir $send_files_dir
+
+  _scratch_mkfs >>$seqres.full 2>&1
+  _scratch_mount
+
+  # Create our test file with a single extent of 64K.
+  mkdir -p $SCRATCH_MNT/foo
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa 0 64K" $SCRATCH_MNT/foo/bar \
+      | _filter_xfs_io
+
+  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
+      $SCRATCH_MNT/mysnap1
+  _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT \
+      $SCRATCH_MNT/mysnap2
+
+  echo "File digest before being replaced:"
+  md5sum $SCRATCH_MNT/mysnap1/foo/bar | _filter_scratch
+
+  # Remove the file and then create a new one in the same location with
+  # the same name but with different content. This new file ends up
+  # getting the same inode number as the previous one, because that inode
+  # number was the highest inode number used by the snapshot's root and
+  # therefore when attempting to find the a new inode number for the new
+  # file, we end up reusing the same inode number. This happens because
+  # currently btrfs uses the highest inode number summed by 1 for the
+  # first inode created once a snapshot's root is loaded (done at
+  # fs/btrfs/inode-map.c:btrfs_find_free_objectid in the linux kernel
+  # tree).
+  # Having these two different files in the snapshots with the same inode
+  # number (but different generation numbers) caused the btrfs send code
+  # to emit an incorrect path for the file when issuing an unlink
+  # operation because it failed to realize they were different files.
+  rm -f $SCRATCH_MNT/mysnap2/foo/bar
+  $XFS_IO_PROG -f -c "pwrite -S 0xbb 0 96K" \
+      $SCRATCH_MNT/mysnap2/foo/bar | _filter_xfs_io
+
+  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/mysnap2 \
+      $SCRATCH_MNT/mysnap2_ro
+
+  _run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
+  _run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 \
+      $SCRATCH_MNT/mysnap2_ro -f $send_files_dir/2.snap
+
+  echo "File digest in the original filesystem after being replaced:"
+  md5sum $SCRATCH_MNT/mysnap2_ro/foo/bar | _filter_scratch
+
+  # Now recreate the filesystem by receiving both send streams and verify
+  # we get the same file contents that the original filesystem had.
+  _scratch_unmount
+  _scratch_mkfs >>$seqres.full 2>&1
+  _scratch_mount
+
+  _run_btrfs_util_prog receive -vv $SCRATCH_MNT -f $send_files_dir/1.snap
+  _run_btrfs_util_prog receive -vv $SCRATCH_MNT -f $send_files_dir/2.snap
+
+  echo "File digest in the new filesystem:"
+  # Must match the digest from the new file.
+  md5sum $SCRATCH_MNT/mysnap2_ro/foo/bar | _filter_scratch
+
+  status=0
+  exit
+
+Reported-by: Martin Raiber <martin@urbackup.org>
+Fixes: 8b191a684968 ("Btrfs: incremental send, check if orphanized dir inode needs delayed rename")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/send.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
+index aa72bfd..7db5fc4 100644
+--- a/fs/btrfs/send.c
++++ b/fs/btrfs/send.c
+@@ -1923,7 +1923,8 @@ static int did_overwrite_ref(struct send_ctx *sctx,
+ 	 * inode 'ino' to be orphanized, therefore ow_inode can actually be the
+ 	 * same as sctx->send_progress.
+ 	 */
+-	if (ow_inode <= sctx->send_progress)
++	if ((ow_inode < sctx->send_progress) ||
++	    (ow_inode == sctx->send_progress && gen == sctx->cur_inode_gen))
+ 		ret = 1;
+ 	else
+ 		ret = 0;
+-- 
+2.1.3
+

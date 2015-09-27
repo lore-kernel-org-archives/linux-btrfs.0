@@ -1,53 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp04.in.ibm.com ([122.248.162.4]:57091 "EHLO
-	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756664AbbIVFSm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 01:18:42 -0400
-Received: from /spool/local
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 22 Sep 2015 10:48:39 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "Theodore Ts'o" <tytso@mit.edu>, fstests@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        chandan@mykolab.com
-Subject: Re: [PATCH] generic/224: Increase filesystem instance size to 1.5 GiB
-Date: Tue, 22 Sep 2015 10:48:32 +0530
-Message-ID: <2034993.iSlvTmyeNT@localhost.localdomain>
-In-Reply-To: <55F230A3.2070300@cn.fujitsu.com>
-References: <1440945981-323-1-git-send-email-chandan@linux.vnet.ibm.com> <2500094.kBUgEuDpMB@localhost.localdomain> <55F230A3.2070300@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Received: from plane.gmane.org ([80.91.229.3]:57816 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752873AbbI0VpH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Sep 2015 17:45:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZgJkl-0004LG-07
+	for linux-btrfs@vger.kernel.org; Sun, 27 Sep 2015 23:45:03 +0200
+Received: from 84.76.233.227 ([84.76.233.227])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Sep 2015 23:45:02 +0200
+Received: from iam by 84.76.233.227 with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Sep 2015 23:45:02 +0200
+To: linux-btrfs@vger.kernel.org
+From: Juan Francisco Cantero Hurtado <iam@juanfra.info>
+Subject: mkfs.btrfs(8) --data outdated?
+Date: Sun, 27 Sep 2015 22:33:01 +0200
+Message-ID: <mu9jpv$l25$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday 11 Sep 2015 09:38:43 Qu Wenruo wrote:
+kernel: 4.1.7
+btrfs-progs: 4.2
 
-Qu, Sorry for the late response. My email client's filtering had broken and
-hence I did not see your response until now.
+mkfs.btrfs(8) man page says:
+-d|--data <type>
+     Specify how the data must be spanned across the devices
+     specified. Valid values are raid0, raid1, raid5, raid6,
+     raid10 or single.
 
-> Hi Chandan,
-> 
-> Although the reply may be a little late, but I think it's still better
-> to fix the bug in mkfs.btrfs.
-> 
-> The core problem is, why mkfs.btrfs is insisting on make the fs into
-> mixed-bg.
-> 
-> Auto detection for small device and make it into mixed-bg should be a
-> "OPTIONAL" feature, not a "mandatory" one.
-> 
-> So IMHO, the best method is to disable mixed-bg when nodesize/sectorsize
-> is given and differs and user doesn't force mkfs to create mixed-bg.
-> 
+$ sudo mkfs.btrfs -d dup -m dup -M -O no-holes -f /dev/sdb1
+SMALL VOLUME: forcing mixed metadata/data groups
+btrfs-progs v4.2
+See http://btrfs.wiki.kernel.org for more information.
 
-My understanding of the chunk allocator (i.e. __btrfs_alloc_chunk()) was
-incomplete. Looking into the code more thoroughly I now realize that 'small 
-filesystem detection and mixed-bg creation' can be made optional. Thanks for
-the suggestion.
+Label:              (null)
+UUID:               29de8c3e-92da-4fe1-aa31-830c1068f532
+Node size:          4096
+Sector size:        4096
+Filesystem size:    3.00GiB
+Block group profiles:
+   Data+Metadata:    DUP             161.56MiB
+   System:           DUP              12.00MiB
+SSD detected:       no
+Incompat features:  mixed-bg, extref, skinny-metadata, no-holes
+Number of devices:  1
+Devices:
+    ID        SIZE  PATH
+     1     3.00GiB  /dev/sdb1
 
--- 
-chandan
+
+The man page doesn't mention the option "-d dup". Am I missing something 
+or the man page is outdated?. The partition will contain two copies of 
+the data blocks?
 

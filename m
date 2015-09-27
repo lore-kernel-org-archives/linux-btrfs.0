@@ -1,74 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:3071 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752159AbbIAHeH convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Sep 2015 03:34:07 -0400
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>
-References: <cover.1440997237.git.zhaolei@cn.fujitsu.com> <d5c6fc74720d36f78e378a8bfa50aea164751991.1440997237.git.zhaolei@cn.fujitsu.com> <20150831144821.GU11834@twin.jikos.cz>
-In-Reply-To: <20150831144821.GU11834@twin.jikos.cz>
-Subject: RE: [PATCH v2 2/4] btrfs-progs: tests: Fix mount fail of 013-extent-tree-rebuild
-Date: Tue, 1 Sep 2015 15:34:02 +0800
-Message-ID: <013601d0e488$9318ddf0$b94a99d0$@cn.fujitsu.com>
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:33947 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754054AbbI0AyN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 26 Sep 2015 20:54:13 -0400
+Received: by padhy16 with SMTP id hy16so139872613pad.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Sep 2015 17:54:12 -0700 (PDT)
+Date: Sat, 26 Sep 2015 17:54:11 -0700
+From: Omar Sandoval <osandov@osandov.com>
+To: Josef Bacik <jbacik@fb.com>
+Cc: linux-btrfs@vger.kernel.org, kernel-team@fb.com
+Subject: Re: [PATCH V2] Btrfs: end transaction if we abort when creating
+ qgroup root
+Message-ID: <20150927005411.GA3213@mew>
+References: <1443034603-5542-1-git-send-email-jbacik@fb.com>
+ <1443034837-1723-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1443034837-1723-1-git-send-email-jbacik@fb.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, David Sterba
+On Wed, Sep 23, 2015 at 03:00:37PM -0400, Josef Bacik wrote:
+> We still need to call btrfs_end_transaction if we call btrfs_abort_transaction,
+> otherwise we hang and make me super grumpy.  Thanks,
 
-Thanks for review.
+I made the same mistake in the free space tree, I'll fix that before I
+forget.
 
-> -----Original Message-----
-> From: David Sterba [mailto:dsterba@suse.cz]
-> Sent: Monday, August 31, 2015 10:48 PM
-> To: Zhao Lei <zhaolei@cn.fujitsu.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH v2 2/4] btrfs-progs: tests: Fix mount fail of
-> 013-extent-tree-rebuild
+> Signed-off-by: Josef Bacik <jbacik@fb.com>
+> ---
+> V1->V2: should have compiled before I hit send.
 > 
-> On Mon, Aug 31, 2015 at 01:04:37PM +0800, Zhao Lei wrote:
-> > +mount_test_dev()
-> > +{
-> > +	local loop_opt
-> > +	if [[ -b "$TEST_DEV" ]]; then
-> > +		loop_opt=()
-> > +	elif [[ -f "$TEST_DEV" ]]; then
-> > +		loop_opt=(-o loop)
-> > +	else
-> > +		_fail "Invalid \$TEST_DEV: $TEST_DEV"
-> > +	fi
-> > +
-> > +	[[ -d "$TEST_MNT" ]] || {
-> > +		_fail "Invalid \$TEST_MNT: $TEST_MNT"
-> > +	}
-> > +
-> > +	mount "${loop_opt[@]}" "$TEST_DEV" "$TEST_MNT" || _fail "mount
-> $TEST_DEV to $TEST_MNT failed"
+>  fs/btrfs/volumes.c | 1 +
+>  1 file changed, 1 insertion(+)
 > 
-> This needs the root helper,
->
-> besides I don't see a reason why to use the array to
-> pass the loop options.
-> 
-Only personal habit, will not use it in v2.
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index fbe7c10..ff64689 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -4028,6 +4028,7 @@ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info)
 
-> On newer systems the option 'loop' is not necessary and mount works with that
-> 
-Glad to hear it.
+The subject says the qgroup root but this is the uuid tree.
 
-> but I don't mind adding support for systems where this does not work. However,
-> this should not break current behaviour.
-> 
-> One thing that I find important is that the full commands are logged via the
-> run_check helpers. So I suggest to add run_check_mount_test_dev helper that
-> would wrapp all the commands. The combination of shell functions does not
-> work in all cases.
->
-Ok.
+>  	if (IS_ERR(uuid_root)) {
+>  		ret = PTR_ERR(uuid_root);
+>  		btrfs_abort_transaction(trans, tree_root, ret);
+> +		btrfs_end_transaction(trans, tree_root);
+>  		return ret;
+>  	}
+>  
+> -- 
+> 1.8.3.1
 
-Thanks
-Zhaolei
-
-
+-- 
+Omar

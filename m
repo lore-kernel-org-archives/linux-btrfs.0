@@ -1,617 +1,149 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f54.google.com ([209.85.220.54]:34813 "EHLO
-	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752997AbbI3Dvv (ORCPT
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:37540 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754998AbbI1R5K (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 23:51:51 -0400
-Received: by padhy16 with SMTP id hy16so26079530pad.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 20:51:51 -0700 (PDT)
-From: Omar Sandoval <osandov@osandov.com>
+	Mon, 28 Sep 2015 13:57:10 -0400
+Received: by wicfx3 with SMTP id fx3so112442915wic.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 10:57:08 -0700 (PDT)
+Received: from polarina ([2a01:348:1e9:0:e896:140e:378c:d578])
+        by smtp.gmail.com with ESMTPSA id kb9sm19527137wjb.49.2015.09.28.10.57.06
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 28 Sep 2015 10:57:07 -0700 (PDT)
+Message-ID: <1443463025.16163.6.camel@system.is>
+Subject: Add stripes filter
+From: =?ISO-8859-1?Q?Gabr=EDel_Arth=FAr_?= =?ISO-8859-1?Q?P=E9tursson?=
+	<gabriel@system.is>
 To: linux-btrfs@vger.kernel.org
-Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v4 2/2] btrfs-progs: check the free space tree in btrfsck
-Date: Tue, 29 Sep 2015 20:51:45 -0700
-Message-Id: <3dfd4002dc1fc6a8b78bc2b3be6596f1f9741b4c.1443583914.git.osandov@osandov.com>
-In-Reply-To: <cover.1443583874.git.osandov@osandov.com>
-References: <cover.1443583874.git.osandov@osandov.com>
-In-Reply-To: <892a99e13b712431a5fd917fa7ed88347986f102.1443583914.git.osandov@osandov.com>
-References: <892a99e13b712431a5fd917fa7ed88347986f102.1443583914.git.osandov@osandov.com>
+Date: Mon, 28 Sep 2015 17:57:05 +0000
+Content-Type: multipart/mixed; boundary="=-HY4yI+GIBqUBOoESG4iw"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Omar Sandoval <osandov@fb.com>
 
-This reuses the existing code for checking the free space cache, we just
-need to load the free space tree. While we do that, we check a couple of
-invariants on the free space tree itself. This requires pulling in some
-code from the kernel to exclude the super stripes.
+--=-HY4yI+GIBqUBOoESG4iw
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: 8bit
 
-Signed-off-by: Omar Sandoval <osandov@fb.com>
----
- Makefile.in        |   2 +-
- cmds-check.c       |  32 ++++++-
- ctree.h            |   6 ++
- extent-tree.c      | 118 +++++++++++++++++++++++
- extent_io.c        |   6 ++
- extent_io.h        |   2 +
- free-space-cache.c |   4 +-
- free-space-cache.h |   2 +
- free-space-tree.c  | 267 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- free-space-tree.h  |  25 +++++
- 10 files changed, 457 insertions(+), 7 deletions(-)
- create mode 100644 free-space-tree.c
- create mode 100644 free-space-tree.h
+Hello everyone!
 
-diff --git a/Makefile.in b/Makefile.in
-index 514a76f2a667..a4d353e54376 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -38,7 +38,7 @@ objects = ctree.o disk-io.o radix-tree.o extent-tree.o print-tree.o \
- 	  extent-cache.o extent_io.o volumes.o utils.o repair.o \
- 	  qgroup.o raid6.o free-space-cache.o list_sort.o props.o \
- 	  ulist.o qgroup-verify.o backref.o string-table.o task-utils.o \
--	  inode.o file.o find-root.o
-+	  inode.o file.o find-root.o free-space-tree.o
- cmds_objects = cmds-subvolume.o cmds-filesystem.o cmds-device.o cmds-scrub.o \
- 	       cmds-inspect.o cmds-balance.o cmds-send.o cmds-receive.o \
- 	       cmds-quota.o cmds-qgroup.o cmds-replace.o cmds-check.o \
-diff --git a/cmds-check.c b/cmds-check.c
-index fe3f782b2172..19e1a3fe083a 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -34,6 +34,7 @@
- #include "utils.h"
- #include "commands.h"
- #include "free-space-cache.h"
-+#include "free-space-tree.h"
- #include "btrfsck.h"
- #include "qgroup-verify.h"
- #include "rbtree-utils.h"
-@@ -5285,9 +5286,29 @@ static int check_space_cache(struct btrfs_root *root)
- 			btrfs_remove_free_space_cache(cache);
- 		}
- 
--		ret = load_free_space_cache(root->fs_info, cache);
--		if (!ret)
--			continue;
-+		if (btrfs_fs_compat_ro(root->fs_info,
-+				       BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)) {
-+			ret = exclude_super_stripes(root, cache);
-+			if (ret) {
-+				fprintf(stderr, "could not exclude super stripes: %s\n",
-+					strerror(-ret));
-+				error++;
-+				continue;
-+			}
-+			ret = load_free_space_tree(root->fs_info, cache);
-+			free_excluded_extents(root, cache);
-+			if (ret < 0) {
-+				fprintf(stderr, "could not load free space tree: %s\n",
-+					strerror(-ret));
-+				error++;
-+				continue;
-+			}
-+			error += ret;
-+		} else {
-+			ret = load_free_space_cache(root->fs_info, cache);
-+			if (!ret)
-+				continue;
-+		}
- 
- 		ret = verify_space_cache(root, cache);
- 		if (ret) {
-@@ -9495,7 +9516,10 @@ int cmd_check(int argc, char **argv)
- 		goto close_out;
- 	}
- 
--	fprintf(stderr, "checking free space cache\n");
-+	if (btrfs_fs_compat_ro(info, BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE))
-+		fprintf(stderr, "checking free space tree\n");
-+	else
-+		fprintf(stderr, "checking free space cache\n");
- 	ret = check_space_cache(root);
- 	if (ret)
- 		goto out;
-diff --git a/ctree.h b/ctree.h
-index a37f3d1fcc48..2e1e631728c1 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -2329,6 +2329,12 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
- 			      u64 num_bytes);
- int btrfs_free_block_group(struct btrfs_trans_handle *trans,
- 			   struct btrfs_fs_info *fs_info, u64 bytenr, u64 len);
-+void free_excluded_extents(struct btrfs_root *root,
-+			   struct btrfs_block_group_cache *cache);
-+int exclude_super_stripes(struct btrfs_root *root,
-+			  struct btrfs_block_group_cache *cache);
-+u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
-+		       struct btrfs_fs_info *info, u64 start, u64 end);
- /* ctree.c */
- int btrfs_comp_cpu_keys(struct btrfs_key *k1, struct btrfs_key *k2);
- int btrfs_del_ptr(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-diff --git a/extent-tree.c b/extent-tree.c
-index 0c8152a336b1..ffd2cf0c86b2 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -4001,3 +4001,121 @@ fail:
- 	btrfs_release_path(&path);
- 	return ret;
- }
-+
-+
-+static int add_excluded_extent(struct btrfs_root *root,
-+			       u64 start, u64 num_bytes)
-+{
-+	u64 end = start + num_bytes - 1;
-+	set_extent_bits(&root->fs_info->pinned_extents,
-+			start, end, EXTENT_UPTODATE, GFP_NOFS);
-+	return 0;
-+}
-+
-+void free_excluded_extents(struct btrfs_root *root,
-+			   struct btrfs_block_group_cache *cache)
-+{
-+	u64 start, end;
-+
-+	start = cache->key.objectid;
-+	end = start + cache->key.offset - 1;
-+
-+	clear_extent_bits(&root->fs_info->pinned_extents,
-+			  start, end, EXTENT_UPTODATE, GFP_NOFS);
-+}
-+
-+int exclude_super_stripes(struct btrfs_root *root,
-+			  struct btrfs_block_group_cache *cache)
-+{
-+	u64 bytenr;
-+	u64 *logical;
-+	int stripe_len;
-+	int i, nr, ret;
-+
-+	if (cache->key.objectid < BTRFS_SUPER_INFO_OFFSET) {
-+		stripe_len = BTRFS_SUPER_INFO_OFFSET - cache->key.objectid;
-+		cache->bytes_super += stripe_len;
-+		ret = add_excluded_extent(root, cache->key.objectid,
-+					  stripe_len);
-+		if (ret)
-+			return ret;
-+	}
-+
-+	for (i = 0; i < BTRFS_SUPER_MIRROR_MAX; i++) {
-+		bytenr = btrfs_sb_offset(i);
-+		ret = btrfs_rmap_block(&root->fs_info->mapping_tree,
-+				       cache->key.objectid, bytenr,
-+				       0, &logical, &nr, &stripe_len);
-+		if (ret)
-+			return ret;
-+
-+		while (nr--) {
-+			u64 start, len;
-+
-+			if (logical[nr] > cache->key.objectid +
-+			    cache->key.offset)
-+				continue;
-+
-+			if (logical[nr] + stripe_len <= cache->key.objectid)
-+				continue;
-+
-+			start = logical[nr];
-+			if (start < cache->key.objectid) {
-+				start = cache->key.objectid;
-+				len = (logical[nr] + stripe_len) - start;
-+			} else {
-+				len = min_t(u64, stripe_len,
-+					    cache->key.objectid +
-+					    cache->key.offset - start);
-+			}
-+
-+			cache->bytes_super += len;
-+			ret = add_excluded_extent(root, start, len);
-+			if (ret) {
-+				kfree(logical);
-+				return ret;
-+			}
-+		}
-+
-+		kfree(logical);
-+	}
-+	return 0;
-+}
-+
-+u64 add_new_free_space(struct btrfs_block_group_cache *block_group,
-+		       struct btrfs_fs_info *info, u64 start, u64 end)
-+{
-+	u64 extent_start, extent_end, size, total_added = 0;
-+	int ret;
-+
-+	while (start < end) {
-+		ret = find_first_extent_bit(&info->pinned_extents, start,
-+					    &extent_start, &extent_end,
-+					    EXTENT_DIRTY | EXTENT_UPTODATE);
-+		if (ret)
-+			break;
-+
-+		if (extent_start <= start) {
-+			start = extent_end + 1;
-+		} else if (extent_start > start && extent_start < end) {
-+			size = extent_start - start;
-+			total_added += size;
-+			ret = btrfs_add_free_space(block_group->free_space_ctl,
-+						   start, size);
-+			BUG_ON(ret); /* -ENOMEM or logic error */
-+			start = extent_end + 1;
-+		} else {
-+			break;
-+		}
-+	}
-+
-+	if (start < end) {
-+		size = end - start;
-+		total_added += size;
-+		ret = btrfs_add_free_space(block_group->free_space_ctl, start,
-+					   size);
-+		BUG_ON(ret); /* -ENOMEM or logic error */
-+	}
-+
-+	return total_added;
-+}
-diff --git a/extent_io.c b/extent_io.c
-index 07695ef8a097..079ab7f2fb7d 100644
---- a/extent_io.c
-+++ b/extent_io.c
-@@ -885,3 +885,9 @@ void memset_extent_buffer(struct extent_buffer *eb, char c,
- {
- 	memset(eb->data + start, c, len);
- }
-+
-+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+			   unsigned long nr)
-+{
-+	return test_bit(nr, (unsigned long *)(eb->data + start));
-+}
-diff --git a/extent_io.h b/extent_io.h
-index 27c4b6931c97..a9a7353556a7 100644
---- a/extent_io.h
-+++ b/extent_io.h
-@@ -148,6 +148,8 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 			   unsigned long src_offset, unsigned long len);
- void memset_extent_buffer(struct extent_buffer *eb, char c,
- 			  unsigned long start, unsigned long len);
-+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+			   unsigned long nr);
- int set_extent_buffer_dirty(struct extent_buffer *eb);
- int clear_extent_buffer_dirty(struct extent_buffer *eb);
- int read_data_from_disk(struct btrfs_fs_info *info, void *buf, u64 offset,
-diff --git a/free-space-cache.c b/free-space-cache.c
-index 19ab0c904a71..d10a5f517b10 100644
---- a/free-space-cache.c
-+++ b/free-space-cache.c
-@@ -802,8 +802,8 @@ void btrfs_remove_free_space_cache(struct btrfs_block_group_cache *block_group)
- 	__btrfs_remove_free_space_cache(block_group->free_space_ctl);
- }
- 
--static int btrfs_add_free_space(struct btrfs_free_space_ctl *ctl, u64 offset,
--				u64 bytes)
-+int btrfs_add_free_space(struct btrfs_free_space_ctl *ctl, u64 offset,
-+			 u64 bytes)
- {
- 	struct btrfs_free_space *info;
- 	int ret = 0;
-diff --git a/free-space-cache.h b/free-space-cache.h
-index 85411a10e64b..9214077a1b27 100644
---- a/free-space-cache.h
-+++ b/free-space-cache.h
-@@ -57,4 +57,6 @@ int btrfs_init_free_space_ctl(struct btrfs_block_group_cache *block_group,
- 			      int sectorsize);
- void unlink_free_space(struct btrfs_free_space_ctl *ctl,
- 		       struct btrfs_free_space *info);
-+int btrfs_add_free_space(struct btrfs_free_space_ctl *ctl, u64 offset,
-+			 u64 bytes);
- #endif
-diff --git a/free-space-tree.c b/free-space-tree.c
-new file mode 100644
-index 000000000000..a323e8aae997
---- /dev/null
-+++ b/free-space-tree.c
-@@ -0,0 +1,267 @@
-+/*
-+ * Copyright (C) 2015 Facebook.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#include "ctree.h"
-+#include "disk-io.h"
-+#include "free-space-cache.h"
-+#include "free-space-tree.h"
-+
-+static struct btrfs_free_space_info *
-+search_free_space_info(struct btrfs_trans_handle *trans,
-+		       struct btrfs_fs_info *fs_info,
-+		       struct btrfs_block_group_cache *block_group,
-+		       struct btrfs_path *path, int cow)
-+{
-+	struct btrfs_root *root = fs_info->free_space_root;
-+	struct btrfs_key key;
-+	int ret;
-+
-+	key.objectid = block_group->key.objectid;
-+	key.type = BTRFS_FREE_SPACE_INFO_KEY;
-+	key.offset = block_group->key.offset;
-+
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, cow);
-+	if (ret < 0)
-+		return ERR_PTR(ret);
-+	if (ret != 0)
-+		return ERR_PTR(-ENOENT);
-+
-+	return btrfs_item_ptr(path->nodes[0], path->slots[0],
-+			      struct btrfs_free_space_info);
-+}
-+
-+static int free_space_test_bit(struct btrfs_block_group_cache *block_group,
-+			       struct btrfs_path *path, u64 offset,
-+			       u64 sectorsize)
-+{
-+	struct extent_buffer *leaf;
-+	struct btrfs_key key;
-+	u64 found_start, found_end;
-+	unsigned long ptr, i;
-+
-+	leaf = path->nodes[0];
-+	btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-+	ASSERT(key.type == BTRFS_FREE_SPACE_BITMAP_KEY);
-+
-+	found_start = key.objectid;
-+	found_end = key.objectid + key.offset;
-+	ASSERT(offset >= found_start && offset < found_end);
-+
-+	ptr = btrfs_item_ptr_offset(leaf, path->slots[0]);
-+	i = (offset - found_start) / sectorsize;
-+	return !!extent_buffer_test_bit(leaf, ptr, i);
-+}
-+
-+static int load_free_space_bitmaps(struct btrfs_fs_info *fs_info,
-+				   struct btrfs_block_group_cache *block_group,
-+				   struct btrfs_path *path,
-+				   u32 expected_extent_count,
-+				   int *errors)
-+{
-+	struct btrfs_root *root = fs_info->free_space_root;
-+	struct btrfs_key key;
-+	int prev_bit = 0, bit;
-+	u64 extent_start = 0;
-+	u64 start, end, offset;
-+	u32 extent_count = 0;
-+	int ret;
-+
-+	start = block_group->key.objectid;
-+	end = block_group->key.objectid + block_group->key.offset;
-+
-+	while (1) {
-+		ret = btrfs_next_item(root, path);
-+		if (ret < 0)
-+			goto out;
-+		if (ret)
-+			break;
-+
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+
-+		if (key.type == BTRFS_FREE_SPACE_INFO_KEY)
-+			break;
-+
-+		if (key.type != BTRFS_FREE_SPACE_BITMAP_KEY) {
-+			fprintf(stderr, "unexpected key of type %u\n", key.type);
-+			(*errors)++;
-+			break;
-+		}
-+		if (key.objectid >= end) {
-+			fprintf(stderr, "free space bitmap starts at %Lu, beyond end of block group %Lu-%Lu\n",
-+				key.objectid, start, end);
-+			(*errors)++;
-+			break;
-+		}
-+		if (key.objectid + key.offset > end) {
-+			fprintf(stderr, "free space bitmap ends at %Lu, beyond end of block group %Lu-%Lu\n",
-+				key.objectid, start, end);
-+			(*errors)++;
-+			break;
-+		}
-+
-+		offset = key.objectid;
-+		while (offset < key.objectid + key.offset) {
-+			bit = free_space_test_bit(block_group, path, offset,
-+						  root->sectorsize);
-+			if (prev_bit == 0 && bit == 1) {
-+				extent_start = offset;
-+			} else if (prev_bit == 1 && bit == 0) {
-+				add_new_free_space(block_group, fs_info, extent_start, offset);
-+				extent_count++;
-+			}
-+			prev_bit = bit;
-+			offset += root->sectorsize;
-+		}
-+	}
-+
-+	if (prev_bit == 1) {
-+		add_new_free_space(block_group, fs_info, extent_start, end);
-+		extent_count++;
-+	}
-+
-+	if (extent_count != expected_extent_count) {
-+		fprintf(stderr, "free space info recorded %u extents, counted %u\n",
-+			expected_extent_count, extent_count);
-+		(*errors)++;
-+	}
-+
-+	ret = 0;
-+out:
-+	return ret;
-+}
-+
-+static int load_free_space_extents(struct btrfs_fs_info *fs_info,
-+				   struct btrfs_block_group_cache *block_group,
-+				   struct btrfs_path *path,
-+				   u32 expected_extent_count,
-+				   int *errors)
-+{
-+	struct btrfs_root *root = fs_info->free_space_root;
-+	struct btrfs_key key, prev_key;
-+	int have_prev = 0;
-+	u64 start, end;
-+	u32 extent_count = 0;
-+	int ret;
-+
-+	start = block_group->key.objectid;
-+	end = block_group->key.objectid + block_group->key.offset;
-+
-+	while (1) {
-+		ret = btrfs_next_item(root, path);
-+		if (ret < 0)
-+			goto out;
-+		if (ret)
-+			break;
-+
-+		btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
-+
-+		if (key.type == BTRFS_FREE_SPACE_INFO_KEY)
-+			break;
-+
-+		if (key.type != BTRFS_FREE_SPACE_EXTENT_KEY) {
-+			fprintf(stderr, "unexpected key of type %u\n", key.type);
-+			(*errors)++;
-+			break;
-+		}
-+		if (key.objectid >= end) {
-+			fprintf(stderr, "free space extent starts at %Lu, beyond end of block group %Lu-%Lu\n",
-+				key.objectid, start, end);
-+			(*errors)++;
-+			break;
-+		}
-+		if (key.objectid + key.offset > end) {
-+			fprintf(stderr, "free space extent ends at %Lu, beyond end of block group %Lu-%Lu\n",
-+				key.objectid, start, end);
-+			(*errors)++;
-+			break;
-+		}
-+
-+		if (have_prev) {
-+			u64 cur_start = key.objectid;
-+			u64 cur_end = cur_start + key.offset;
-+			u64 prev_start = prev_key.objectid;
-+			u64 prev_end = prev_start + prev_key.offset;
-+
-+			if (cur_start < prev_end) {
-+				fprintf(stderr, "free space extent %Lu-%Lu overlaps with previous %Lu-%Lu\n",
-+					cur_start, cur_end,
-+					prev_start, prev_end);
-+				(*errors)++;
-+			} else if (cur_start == prev_end) {
-+				fprintf(stderr, "free space extent %Lu-%Lu is unmerged with previous %Lu-%Lu\n",
-+					cur_start, cur_end,
-+					prev_start, prev_end);
-+				(*errors)++;
-+			}
-+		}
-+
-+		add_new_free_space(block_group, fs_info, key.objectid, key.objectid + key.offset);
-+		extent_count++;
-+
-+		prev_key = key;
-+		have_prev = 1;
-+	}
-+
-+	if (extent_count != expected_extent_count) {
-+		fprintf(stderr, "free space info recorded %u extents, counted %u\n",
-+			expected_extent_count, extent_count);
-+		(*errors)++;
-+	}
-+
-+	ret = 0;
-+out:
-+	return ret;
-+}
-+
-+int load_free_space_tree(struct btrfs_fs_info *fs_info,
-+			 struct btrfs_block_group_cache *block_group)
-+{
-+	struct btrfs_free_space_info *info;
-+	struct btrfs_path *path;
-+	u32 extent_count, flags;
-+	int errors = 0;
-+	int ret;
-+
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+	path->reada = 1;
-+
-+	info = search_free_space_info(NULL, fs_info, block_group, path, 0);
-+	if (IS_ERR(info)) {
-+		ret = PTR_ERR(info);
-+		goto out;
-+	}
-+	extent_count = btrfs_free_space_extent_count(path->nodes[0], info);
-+	flags = btrfs_free_space_flags(path->nodes[0], info);
-+
-+	if (flags & BTRFS_FREE_SPACE_USING_BITMAPS) {
-+		ret = load_free_space_bitmaps(fs_info, block_group, path,
-+					      extent_count, &errors);
-+	} else {
-+		ret = load_free_space_extents(fs_info, block_group, path,
-+					      extent_count, &errors);
-+	}
-+	if (ret)
-+		goto out;
-+
-+	ret = 0;
-+out:
-+	btrfs_free_path(path);
-+	return ret ? ret : errors;
-+}
-diff --git a/free-space-tree.h b/free-space-tree.h
-new file mode 100644
-index 000000000000..7529a46890da
---- /dev/null
-+++ b/free-space-tree.h
-@@ -0,0 +1,25 @@
-+/*
-+ * Copyright (C) 2015 Facebook.  All rights reserved.
-+ *
-+ * This program is free software; you can redistribute it and/or
-+ * modify it under the terms of the GNU General Public
-+ * License v2 as published by the Free Software Foundation.
-+ *
-+ * This program is distributed in the hope that it will be useful,
-+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
-+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
-+ * General Public License for more details.
-+ *
-+ * You should have received a copy of the GNU General Public
-+ * License along with this program; if not, write to the
-+ * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
-+ * Boston, MA 021110-1307, USA.
-+ */
-+
-+#ifndef __BTRFS_FREE_SPACE_TREE_H__
-+#define __BTRFS_FREE_SPACE_TREE_H__
-+
-+int load_free_space_tree(struct btrfs_fs_info *fs_info,
-+			 struct btrfs_block_group_cache *block_group);
-+
-+#endif
--- 
-2.6.0
+The attached patches to linux and btrfs-progs add support for filtering
+based on the number of strips in a block when balancing.
+
+This is my first attempt at kernel development, I'd love if you could
+please point out any mistakes that I've made.
+
+Thanks,
+Gabríel
+
+P.S. I could not figure out how to subscribe to this mailing list, so
+please remember to include me in your replies.
+--=-HY4yI+GIBqUBOoESG4iw
+Content-Disposition: attachment; filename="btrfs-progs.diff"
+Content-Type: text/x-patch; name="btrfs-progs.diff"; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+ZGlmZiAtLWdpdCBhL0RvY3VtZW50YXRpb24vYnRyZnMtYmFsYW5jZS5hc2NpaWRvYyBiL0RvY3Vt
+ZW50YXRpb24vYnRyZnMtYmFsYW5jZS5hc2NpaWRvYwppbmRleCA2ZDJmZDBjLi44NjYzODU1IDEw
+MDY0NAotLS0gYS9Eb2N1bWVudGF0aW9uL2J0cmZzLWJhbGFuY2UuYXNjaWlkb2MKKysrIGIvRG9j
+dW1lbnRhdGlvbi9idHJmcy1iYWxhbmNlLmFzY2lpZG9jCkBAIC0xMTAsNiArMTEwLDEwIEBAIFBy
+b2Nlc3Mgb25seSBnaXZlbiBudW1iZXIgb2YgY2h1bmtzLCBhZnRlciBhbGwgZmlsdGVycyBhcHBs
+eS4gVGhpcyBjYW4gYmUgdXNlZAogdG8gc3BlY2lmaWNhbGx5IHRhcmdldCBhIGNodW5rIGluIGNv
+bm5lY3Rpb24gd2l0aCBvdGhlciBmaWx0ZXJzIChkcmFuZ2UsCiB2cmFuZ2UpIG9yIGp1c3Qgc2lt
+cGx5IGxpbWl0IHRoZSBhbW91bnQgb2Ygd29yayBkb25lIGJ5IGEgc2luZ2xlIGJhbGFuY2UgcnVu
+LgogCisqc3RyaXBlcyo6OgorQmFsYW5jZXMgb25seSBibG9jayBncm91cHMgd2hpY2ggaGF2ZSB0
+aGUgZ2l2ZW4gbnVtYmVyIG9mIHN0cmlwZXMuIFRoZQorcGFyYW1ldGVyIGlzIGVpdGhlciBhIHJh
+bmdlIHNwZWNpZmllZCBhcyA8c3RhcnQuLmVuZD4sIG9yIGEgc2luZ2xlIGludGVnZXIuCisKICpz
+b2Z0Kjo6CiBUYWtlcyBubyBwYXJhbWV0ZXJzLiBPbmx5IGhhcyBtZWFuaW5nIHdoZW4gY29udmVy
+dGluZyBiZXR3ZWVuIHByb2ZpbGVzLgogV2hlbiBkb2luZyBjb252ZXJ0IGZyb20gb25lIHByb2Zp
+bGUgdG8gYW5vdGhlciBhbmQgc29mdCBtb2RlIGlzIG9uLApkaWZmIC0tZ2l0IGEvY21kcy1iYWxh
+bmNlLmMgYi9jbWRzLWJhbGFuY2UuYwppbmRleCA5YWYyMThiLi5jNDdmOGI3IDEwMDY0NAotLS0g
+YS9jbWRzLWJhbGFuY2UuYworKysgYi9jbWRzLWJhbGFuY2UuYwpAQCAtMjI2LDYgKzIyNiwyMSBA
+QCBzdGF0aWMgaW50IHBhcnNlX2ZpbHRlcnMoY2hhciAqZmlsdGVycywgc3RydWN0IGJ0cmZzX2Jh
+bGFuY2VfYXJncyAqYXJncykKIAkJCQlyZXR1cm4gMTsKIAkJCX0KIAkJCWFyZ3MtPmZsYWdzIHw9
+IEJUUkZTX0JBTEFOQ0VfQVJHU19MSU1JVDsKKwkJfSBlbHNlIGlmICghc3RyY21wKHRoaXNfY2hh
+ciwgInN0cmlwZXMiKSkgeworCQkJaWYgKCF2YWx1ZSB8fCAhKnZhbHVlKSB7CisJCQkJZnByaW50
+ZihzdGRlcnIsCisJCQkJCSJ0aGUgc3RyaXBlcyBmaWx0ZXIgcmVxdWlyZXMgYW4gYXJndW1lbnRc
+biIpOworCQkJCXJldHVybiAxOworCQkJfQorCQkJaWYgKHBhcnNlX3U2NCh2YWx1ZSwgJmFyZ3Mt
+PnNzdGFydCkpIHsKKwkJCQlpZiAocGFyc2VfcmFuZ2UodmFsdWUsICZhcmdzLT5zc3RhcnQsICZh
+cmdzLT5zZW5kKSkgeworCQkJCQlmcHJpbnRmKHN0ZGVyciwgIkludmFsaWQgc3RyaXBlcyBhcmd1
+bWVudFxuIik7CisJCQkJCXJldHVybiAxOworCQkJCX0KKwkJCX0gZWxzZSB7CisJCQkJYXJncy0+
+c2VuZCA9IGFyZ3MtPnNzdGFydDsKKwkJCX0KKwkJCWFyZ3MtPmZsYWdzIHw9IEJUUkZTX0JBTEFO
+Q0VfQVJHU19TVFJJUEVTOwogCQl9IGVsc2UgewogCQkJZnByaW50ZihzdGRlcnIsICJVbnJlY29n
+bml6ZWQgYmFsYW5jZSBvcHRpb24gJyVzJ1xuIiwKIAkJCQl0aGlzX2NoYXIpOwpAQCAtMjYyLDYg
+KzI3NywxNSBAQCBzdGF0aWMgdm9pZCBkdW1wX2JhbGFuY2VfYXJncyhzdHJ1Y3QgYnRyZnNfYmFs
+YW5jZV9hcmdzICphcmdzKQogCQkgICAgICAgKHVuc2lnbmVkIGxvbmcgbG9uZylhcmdzLT52ZW5k
+KTsKIAlpZiAoYXJncy0+ZmxhZ3MgJiBCVFJGU19CQUxBTkNFX0FSR1NfTElNSVQpCiAJCXByaW50
+ZigiLCBsaW1pdD0lbGx1IiwgKHVuc2lnbmVkIGxvbmcgbG9uZylhcmdzLT5saW1pdCk7CisJaWYg
+KGFyZ3MtPmZsYWdzICYgQlRSRlNfQkFMQU5DRV9BUkdTX1NUUklQRVMpIHsKKwkJaWYgKGFyZ3Mt
+PnNzdGFydCA9PSBhcmdzLT5zZW5kKSB7CisJCQlwcmludGYoIiwgc3RyaXBlcz0lbGx1IiwgKHVu
+c2lnbmVkIGxvbmcgbG9uZylhcmdzLT5zc3RhcnQpOworCQl9IGVsc2UgeworCQkJcHJpbnRmKCIs
+IHN0cmlwZXM9JWxsdS4uJWxsdSIsCisJCQkgICAgICAgICh1bnNpZ25lZCBsb25nIGxvbmcpYXJn
+cy0+c3N0YXJ0LAorCQkJICAgICAgICAodW5zaWduZWQgbG9uZyBsb25nKWFyZ3MtPnNlbmQpOwor
+CQl9CisJfQogCiAJcHJpbnRmKCJcbiIpOwogfQpkaWZmIC0tZ2l0IGEvaW9jdGwuaCBiL2lvY3Rs
+LmgKaW5kZXggZGZmMDE1YS4uYzFmNmFlYyAxMDA2NDQKLS0tIGEvaW9jdGwuaAorKysgYi9pb2N0
+bC5oCkBAIC0yMjgsNyArMjI4LDExIEBAIHN0cnVjdCBidHJmc19iYWxhbmNlX2FyZ3MgewogCV9f
+dTY0IGZsYWdzOwogCiAJX191NjQgbGltaXQ7CQkvKiBsaW1pdCBudW1iZXIgb2YgcHJvY2Vzc2Vk
+IGNodW5rcyAqLwotCV9fdTY0IHVudXNlZFs3XTsKKworCV9fdTY0IHNzdGFydDsKKwlfX3U2NCBz
+ZW5kOworCisJX191NjQgdW51c2VkWzVdOwogfSBfX2F0dHJpYnV0ZV9fICgoX19wYWNrZWRfXykp
+OwogCiAvKiByZXBvcnQgYmFsYW5jZSBwcm9ncmVzcyB0byB1c2Vyc3BhY2UgKi8KZGlmZiAtLWdp
+dCBhL3ZvbHVtZXMuaCBiL3ZvbHVtZXMuaAppbmRleCA0ZWNiOTkzLi5hODA5YTc4IDEwMDY0NAot
+LS0gYS92b2x1bWVzLmgKKysrIGIvdm9sdW1lcy5oCkBAIC0xMzYsNiArMTM2LDcgQEAgc3RydWN0
+IG1hcF9sb29rdXAgewogI2RlZmluZSBCVFJGU19CQUxBTkNFX0FSR1NfRFJBTkdFCSgxVUxMIDw8
+IDMpCiAjZGVmaW5lIEJUUkZTX0JBTEFOQ0VfQVJHU19WUkFOR0UJKDFVTEwgPDwgNCkKICNkZWZp
+bmUgQlRSRlNfQkFMQU5DRV9BUkdTX0xJTUlUCSgxVUxMIDw8IDUpCisjZGVmaW5lIEJUUkZTX0JB
+TEFOQ0VfQVJHU19TVFJJUEVTCSgxVUxMIDw8IDYpCiAKIC8qCiAgKiBQcm9maWxlIGNoYW5naW5n
+IGZsYWdzLiAgV2hlbiBTT0ZUIGlzIHNldCB3ZSB3b24ndCByZWxvY2F0ZSBjaHVuayBpZgo=
+
+
+--=-HY4yI+GIBqUBOoESG4iw
+Content-Disposition: attachment; filename="linux.diff"
+Content-Type: text/x-patch; name="linux.diff"; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+ZGlmZiAtLWdpdCBhL2ZzL2J0cmZzL2N0cmVlLmggYi9mcy9idHJmcy9jdHJlZS5oCmluZGV4IDkz
+OGVmZTMuLjc4NTczZTUgMTAwNjQ0Ci0tLSBhL2ZzL2J0cmZzL2N0cmVlLmgKKysrIGIvZnMvYnRy
+ZnMvY3RyZWUuaApAQCAtODQ5LDcgKzg0OSwxMSBAQCBzdHJ1Y3QgYnRyZnNfZGlza19iYWxhbmNl
+X2FyZ3MgewogCS8qIEJUUkZTX0JBTEFOQ0VfQVJHU19MSU1JVCB2YWx1ZSAqLwogCV9fbGU2NCBs
+aW1pdDsKIAotCV9fbGU2NCB1bnVzZWRbN107CisJLyogYnRyZnMgc3RyaXBlcyBmaWx0ZXIgKi8K
+KwlfX2xlNjQgc3N0YXJ0OworCV9fbGU2NCBzZW5kOworCisJX19sZTY0IHVudXNlZFs1XTsKIH0g
+X19hdHRyaWJ1dGVfXyAoKF9fcGFja2VkX18pKTsKIAogLyoKZGlmZiAtLWdpdCBhL2ZzL2J0cmZz
+L3ZvbHVtZXMuYyBiL2ZzL2J0cmZzL3ZvbHVtZXMuYwppbmRleCA2ZmM3MzU4Ni4uZGM2NWZiYiAx
+MDA2NDQKLS0tIGEvZnMvYnRyZnMvdm9sdW1lcy5jCisrKyBiL2ZzL2J0cmZzL3ZvbHVtZXMuYwpA
+QCAtMzE3MCw2ICszMTcwLDE4IEBAIHN0YXRpYyBpbnQgY2h1bmtfdnJhbmdlX2ZpbHRlcihzdHJ1
+Y3QgZXh0ZW50X2J1ZmZlciAqbGVhZiwKIAlyZXR1cm4gMTsKIH0KIAorc3RhdGljIGludCBjaHVu
+a19zdHJpcGVzX2ZpbHRlcihzdHJ1Y3QgZXh0ZW50X2J1ZmZlciAqbGVhZiwKKwkJCSAgICAgICBz
+dHJ1Y3QgYnRyZnNfY2h1bmsgKmNodW5rLAorCQkJICAgICAgIHN0cnVjdCBidHJmc19iYWxhbmNl
+X2FyZ3MgKmJhcmdzKQoreworCWludCBudW1fc3RyaXBlcyA9IGJ0cmZzX2NodW5rX251bV9zdHJp
+cGVzKGxlYWYsIGNodW5rKTsKKworCWlmIChiYXJncy0+c3N0YXJ0IDw9IG51bV9zdHJpcGVzICYm
+IG51bV9zdHJpcGVzIDw9IGJhcmdzLT5zZW5kKQorCQlyZXR1cm4gMDsKKworCXJldHVybiAxOwor
+fQorCiBzdGF0aWMgaW50IGNodW5rX3NvZnRfY29udmVydF9maWx0ZXIodTY0IGNodW5rX3R5cGUs
+CiAJCQkJICAgICBzdHJ1Y3QgYnRyZnNfYmFsYW5jZV9hcmdzICpiYXJncykKIHsKQEAgLTMyMzYs
+NiArMzI0OCwxMiBAQCBzdGF0aWMgaW50IHNob3VsZF9iYWxhbmNlX2NodW5rKHN0cnVjdCBidHJm
+c19yb290ICpyb290LAogCQlyZXR1cm4gMDsKIAl9CiAKKwkvKiBzdHJpcGVzIGZpbHRlciAqLwor
+CWlmICgoYmFyZ3MtPmZsYWdzICYgQlRSRlNfQkFMQU5DRV9BUkdTX1NUUklQRVMpICYmCisJICAg
+IGNodW5rX3N0cmlwZXNfZmlsdGVyKGxlYWYsIGNodW5rLCBiYXJncykpIHsKKwkJcmV0dXJuIDA7
+CisJfQorCiAJLyogc29mdCBwcm9maWxlIGNoYW5naW5nIG1vZGUgKi8KIAlpZiAoKGJhcmdzLT5m
+bGFncyAmIEJUUkZTX0JBTEFOQ0VfQVJHU19TT0ZUKSAmJgogCSAgICBjaHVua19zb2Z0X2NvbnZl
+cnRfZmlsdGVyKGNodW5rX3R5cGUsIGJhcmdzKSkgewpkaWZmIC0tZ2l0IGEvZnMvYnRyZnMvdm9s
+dW1lcy5oIGIvZnMvYnRyZnMvdm9sdW1lcy5oCmluZGV4IDJjYTc4NGEuLmZiNmI4OWEgMTAwNjQ0
+Ci0tLSBhL2ZzL2J0cmZzL3ZvbHVtZXMuaAorKysgYi9mcy9idHJmcy92b2x1bWVzLmgKQEAgLTM3
+NSw2ICszNzUsNyBAQCBzdHJ1Y3QgbWFwX2xvb2t1cCB7CiAjZGVmaW5lIEJUUkZTX0JBTEFOQ0Vf
+QVJHU19EUkFOR0UJKDFVTEwgPDwgMykKICNkZWZpbmUgQlRSRlNfQkFMQU5DRV9BUkdTX1ZSQU5H
+RQkoMVVMTCA8PCA0KQogI2RlZmluZSBCVFJGU19CQUxBTkNFX0FSR1NfTElNSVQJKDFVTEwgPDwg
+NSkKKyNkZWZpbmUgQlRSRlNfQkFMQU5DRV9BUkdTX1NUUklQRVMJKDFVTEwgPDwgNikKIAogLyoK
+ICAqIFByb2ZpbGUgY2hhbmdpbmcgZmxhZ3MuICBXaGVuIFNPRlQgaXMgc2V0IHdlIHdvbid0IHJl
+bG9jYXRlIGNodW5rIGlmCmRpZmYgLS1naXQgYS9pbmNsdWRlL3VhcGkvbGludXgvYnRyZnMuaCBi
+L2luY2x1ZGUvdWFwaS9saW51eC9idHJmcy5oCmluZGV4IGI2ZGVjMDUuLmE3ODE5ZDAgMTAwNjQ0
+Ci0tLSBhL2luY2x1ZGUvdWFwaS9saW51eC9idHJmcy5oCisrKyBiL2luY2x1ZGUvdWFwaS9saW51
+eC9idHJmcy5oCkBAIC0yMTgsNyArMjE4LDExIEBAIHN0cnVjdCBidHJmc19iYWxhbmNlX2FyZ3Mg
+ewogCV9fdTY0IGZsYWdzOwogCiAJX191NjQgbGltaXQ7CQkvKiBsaW1pdCBudW1iZXIgb2YgcHJv
+Y2Vzc2VkIGNodW5rcyAqLwotCV9fdTY0IHVudXNlZFs3XTsKKworCV9fdTY0IHNzdGFydDsKKwlf
+X3U2NCBzZW5kOworCisJX191NjQgdW51c2VkWzVdOwogfSBfX2F0dHJpYnV0ZV9fICgoX19wYWNr
+ZWRfXykpOwogCiAvKiByZXBvcnQgYmFsYW5jZSBwcm9ncmVzcyB0byB1c2Vyc3BhY2UgKi8K
+
+
+--=-HY4yI+GIBqUBOoESG4iw--
 

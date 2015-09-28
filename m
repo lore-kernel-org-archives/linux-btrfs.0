@@ -1,75 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:63975 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60151 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933129AbbIDNZh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Sep 2015 09:25:37 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t84DPJqv030002
-	for <linux-btrfs@vger.kernel.org>; Fri, 4 Sep 2015 21:25:19 +0800
+	with ESMTP id S1755321AbbI1OHm convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 10:07:42 -0400
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 3/3] btrfs-progs: tests: Introduce misc-tests/008-leaf-accross-stripes
-Date: Fri, 4 Sep 2015 21:23:51 +0800
-Message-ID: <87244a2006270f7f8a32680ce8ba7656e277a4bd.1441373012.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <154afcdd14c259551d843a157814fd0ff3589e8f.1441373012.git.zhaolei@cn.fujitsu.com>
-References: <154afcdd14c259551d843a157814fd0ff3589e8f.1441373012.git.zhaolei@cn.fujitsu.com>
+To: <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>, "'Qu Wenruo'" <quwenruo@cn.fujitsu.com>
+References: <cover.1442396165.git.zhaolei@cn.fujitsu.com> <e4768fb11c5e7584b2211559c26d974517e70171.1442396165.git.zhaolei@cn.fujitsu.com> <20150925105002.GE11442@twin.jikos.cz>
+In-Reply-To: <20150925105002.GE11442@twin.jikos.cz>
+Subject: RE: [PATCH v2 1/2] btrfs-progs: Introduce warning and error for common use
+Date: Mon, 28 Sep 2015 22:07:35 +0800
+Message-ID: <01c901d0f9f7$06769f20$1363dd60$@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-To check is btrfs-convert create bad filesystem with
-leaf accross stripes.
+Hi, David Sterba
 
-It is happened in progs version <=v4.1.2, and fixed by patch titled:
-btrfs: convert: Avoid allocating metadata extent crossing stripe boundary
-which was merged in v4.2.
+Thanks for review.
 
-Notice thar this testcase can not report error in old version of
-btrfs-progs, because "btrfs check" can't check this type of error
-in those version, but we have another testcase in fsck-tests, to
-check is "btrfs check" support this check.
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Friday, September 25, 2015 6:50 PM
+> To: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Cc: linux-btrfs@vger.kernel.org; Qu Wenruo <quwenruo@cn.fujitsu.com>
+> Subject: Re: [PATCH v2 1/2] btrfs-progs: Introduce warning and error for
+> common use
+> 
+> On Wed, Sep 16, 2015 at 05:40:46PM +0800, Zhao Lei wrote:
+> > +static inline void __veprintf(const char *prefix, const char *format,
+> > +			      va_list ap)
+> > +{
+> > +	if (prefix)
+> > +		fprintf(stderr, "%s", prefix);
+> > +	vfprintf(stderr, format, ap);
+> 
+> I'm not sure we need this helper. All it does it prints a fixed string, we can
+> simply add fputs("prefix", stderr) into warning/error functions.
+> 
+This wrapper is to support locale in future:
+Make all message output by one function, then we can put locale code into it
+simply.
 
-So, use above 2 testcase together can check out leaf-accross-stripes
-bug in all version.
+But now it is hard to introduce locale, because user-land tools
+changes output frequently, we need to wait the output about fixed.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- tests/misc-tests/008-leaf-accross-stripes/test.sh | 24 +++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
- create mode 100755 tests/misc-tests/008-leaf-accross-stripes/test.sh
+So I removed __veprintf() in v3, we can modify it when we need.
+ 
+> > +static inline int warning_on(int condition, const char *fmt, ...) {
+> > +	if (!condition)
+> > +		return 0;
+> > +
+> > +	va_list args;
+> 
+> Please do not put declaration(s) after statements.
+> 
+Fixed in v3.
 
-diff --git a/tests/misc-tests/008-leaf-accross-stripes/test.sh b/tests/misc-tests/008-leaf-accross-stripes/test.sh
-new file mode 100755
-index 0000000..4801dce
---- /dev/null
-+++ b/tests/misc-tests/008-leaf-accross-stripes/test.sh
-@@ -0,0 +1,24 @@
-+#!/bin/bash
-+# test btrfs subvolume run normally with more than one subvolume
-+#
-+# - btrfs subvolume must not loop indefinetelly
-+# - btrfs subvolume return 0 in normal case
-+
-+source $TOP/tests/common
-+
-+check_prereq btrfs-convert
-+check_prereq btrfs
-+
-+# In my test, it happened in 514M~560M, 737M~769M, 929M~917M,
-+# and HAVE_ERROR=((size + 1) / 2) % 2 if size >= 970
-+#
-+SIZE_FROM=514
-+SIZE_END=560
-+A_PRIME_NUM=17
-+for ((size = SIZE_FROM; size <= SIZE_END; size += A_PRIME_NUM)); do
-+	run_check truncate -s "$size"M "$IMAGE"
-+	run_check mkfs.ext4 -F "$IMAGE"
-+	run_check $TOP/btrfs-convert "$IMAGE"
-+	$TOP/btrfs check "$IMAGE" 2>&1 | grep "crossing stripe boundary" &&
-+		_fail "leaf accross stripes in btrfs-convert"
-+done
--- 
-1.8.5.1
+> > +static inline int error_on(int condition, const char *fmt, ...) {
+> > +	if (!condition)
+> > +		return 0;
+> > +
+> > +	va_list args;
+> 
+> dtto
+> 
+Fixed in v3.
+
+Thanks
+Zhaolei
+
+> > +
+> > +	va_start(args, fmt);
+> > +	__veprintf("ERROR: ", fmt, args);
+> > +	va_end(args);
+> > +
+> > +	return 1;
+> > +}
 

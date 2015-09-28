@@ -1,74 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:42791 "EHLO mail.bouton.name"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753791AbbI1Vzi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Sep 2015 17:55:38 -0400
-Subject: Re: btrfs fi defrag interfering (maybe) with Ceph OSD operation
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <56080C9A.6030102@bouton.name>
- <pan$be4b9$74318552$9c70286d$e18abb29@cox.net> <56090E83.4030708@bouton.name>
- <pan$a0ad5$3d2cb4dd$ab00a420$4a68e0c6@cox.net>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <5609B757.4080802@bouton.name>
-Date: Mon, 28 Sep 2015 23:55:35 +0200
-MIME-Version: 1.0
-In-Reply-To: <pan$a0ad5$3d2cb4dd$ab00a420$4a68e0c6@cox.net>
-Content-Type: text/plain; charset=utf-8
+Received: from mail-qg0-f52.google.com ([209.85.192.52]:33022 "EHLO
+	mail-qg0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752930AbbI1XLy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 19:11:54 -0400
+Received: by qgev79 with SMTP id v79so134548942qge.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 16:11:53 -0700 (PDT)
+Message-ID: <1443481911.12614.4.camel@kepstin.ca>
+Subject: Re: btrfs: obtain block checksums from user space
+From: Calvin Walton <calvin.walton@kepstin.ca>
+To: "Matwey V. Kornilov" <matwey.kornilov@gmail.com>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Date: Mon, 28 Sep 2015 19:11:51 -0400
+In-Reply-To: <CAJs94EbJV+VX16dnkFqH21OMV=uLYSCKnG9KNUCrs7B=rULYLg@mail.gmail.com>
+References: <mu1e38$io1$1@ger.gmane.org> <5604427D.1000708@gmail.com>
+	 <CAJs94EbJV+VX16dnkFqH21OMV=uLYSCKnG9KNUCrs7B=rULYLg@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 28/09/2015 22:52, Duncan a écrit :
-> Lionel Bouton posted on Mon, 28 Sep 2015 11:55:15 +0200 as excerpted:
->
->> From what I understood, filefrag doesn't known the length of each extent
->> on disk but should have its position. This is enough to have a rough
->> estimation of how badly fragmented the file is : it doesn't change the
->> result much when computing what a rotating disk must do (especially how
->> many head movements) to access the whole file.
-> AFAIK, it's the number of extents reported that's the problem with 
-> filefrag and btrfs compression.  Multiple 128 KiB compression blocks can 
-> be right next to each other, forming one longer extent on-device, but due 
-> to the compression, filefrag sees and reports them as one extent per 
-> compression block, making the file look like it has perhaps thousands or 
-> tens of thousands of extents when in actuality it's only a handful, 
-> single or double digits.
+On Thu, 2015-09-24 at 21:48 +0300, Matwey V. Kornilov wrote:
+> 2015-09-24 21:35 GMT+03:00 Austin S Hemmelgarn <ahferroin7@gmail.com>
+> :
+> > On 2015-09-24 14:06, Matwey V. Kornilov wrote:
 
-Yes but that's not a problem for our defragmentation scheduler: we
-compute the time needed to read the file based on a model of the disk
-where reading consecutive compressed blocks has no seek cost, only the
-same revolution cost as reading the larger block they form. The cost of
-fragmentation is defined as the ratio between this time and the time
-computed with our model if the blocks were purely sequential.
+> > It's worth noting that the way btrfs does checksums isn't per-file, 
+> > it's
+> > per-block. This means that:
+[...]
+> > All in all, this means that if you just want a checksum of the
+> > contents of
+> > the file, it's almost certainly better to just do it in userspace.
+> > If you're trying to figure out what changed, using send/receive and
+> > snapshots is more efficient (usually).
+> 
+> I want the checksums of the every block of the file to see which part
+> has been changed.
+> I cannot use send/receive because my other file replica is on the
+> remote host but not on the same filesystem. Compare with how rsync
+> works. It calculates checksums of the chunks of both versions of the
+> file and then syncs different chunks over the network. I just want to
+> utilize the fact that btrfs already has the data I need to calculate.
 
->
-> In that regard, length or position neither one matter, filefrag will 
-> simply report a number of extents orders of magnitude higher than what's 
-> actually there, on-device.
+The problem with trying to use btrfs checksums to compare two different
+files is that the blocks might not match up, if only due to
+fragmentation. E.g., the same 1gb file might be stored like this on one
+machine:
 
-Yes but filefrag -v reports the length and position and we can then find
-out based purely on the positions if extents are sequential or random.
+[ 256MB ][    512 MB    ][ 256MB ]
 
-If people are interested by the details I can discuss them in a separate
-thread (or a subthread with a different title). One thing in particular
-surprised me and could be an interesting separate discussion: according
-to the extents positions reported by filefrag -v, defragmentation can
-leave extents in several sequences at different positions on the disk
-leading to an average fragmentation cost for compressed files of 2.7x to
-3x compared to the ideal case (note that this is an approximation: we
-consider files compressed if more than half of their extents are
-compressed by checking for "encoded" in the extent flags). This is
-completely different for uncompressed files: here defragmentation is
-completely effective and we get a single extent most of the time. So
-there's at least 3 possibilities : an error in positions reported by
-filefrag (and the file is really defragmented), a good reason to leave
-these files fragmented or an opportunity for optimization.
+And like this on the other:
+[     512MB     ][     512MB     ]
 
-But let's remember our real problem: I'm still not sure if calling btrfs
-fi defrag <file> can interfere with any concurrent operation on <file>
-leading to an I/O error. As this has the potential to bring our platform
-down in our current setup the answer I really hope this will catch the
-attention of someone familiar with the technical details of btrfs fi defrag.
+Since the checksums are per block, and the blocks can be different
+arrangements on different machines, they're not really all that useful
+for doing comparisons like you want.
 
-Best regards,
+-- 
+Calvin Walton <calvin.walton@kepstin.ca>
 
-Lionel Bouton

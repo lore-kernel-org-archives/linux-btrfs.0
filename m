@@ -1,98 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46229 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752487AbbI3Pvb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 11:51:31 -0400
-Date: Wed, 30 Sep 2015 17:50:29 +0200
-From: David Sterba <dsterba@suse.cz>
-To: =?iso-8859-1?Q?Gabr=EDel_Arth=FAr_P=E9tursson?= <gabriel@system.is>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: add stripes filter
-Message-ID: <20150930155029.GL11442@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1443463025.16163.6.camel@system.is>
- <1443479561-785-1-git-send-email-gabriel@system.is>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <1443479561-785-1-git-send-email-gabriel@system.is>
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:38515 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754134AbbI1WdM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 18:33:12 -0400
+Received: by wiclk2 with SMTP id lk2so121501798wic.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 15:33:10 -0700 (PDT)
+From: =?UTF-8?q?Gabr=C3=ADel=20Arth=C3=BAr=20P=C3=A9tursson?=
+	<gabriel@system.is>
+To: linux-btrfs@vger.kernel.org
+Cc: =?UTF-8?q?Gabr=C3=ADel=20Arth=C3=BAr=20P=C3=A9tursson?=
+	<gabriel@system.is>
+Subject: [PATCH] btrfs-progs: add stripes filter
+Date: Mon, 28 Sep 2015 22:33:04 +0000
+Message-Id: <1443479584-869-1-git-send-email-gabriel@system.is>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
+In-Reply-To: <1443463025.16163.6.camel@system.is>
 
-Hi,
+---
+ Documentation/btrfs-balance.asciidoc |  4 ++++
+ cmds-balance.c                       | 24 ++++++++++++++++++++++++
+ ioctl.h                              |  6 +++++-
+ volumes.h                            |  1 +
+ 4 files changed, 34 insertions(+), 1 deletion(-)
 
-thanks for the patch. The stripe filter is really helpful. There are
-some minor comments below but otherwise the patch looks good.
+diff --git a/Documentation/btrfs-balance.asciidoc b/Documentation/btrfs-balance.asciidoc
+index 6d2fd0c..8663855 100644
+--- a/Documentation/btrfs-balance.asciidoc
++++ b/Documentation/btrfs-balance.asciidoc
+@@ -110,6 +110,10 @@ Process only given number of chunks, after all filters apply. This can be used
+ to specifically target a chunk in connection with other filters (drange,
+ vrange) or just simply limit the amount of work done by a single balance run.
+ 
++*stripes*::
++Balances only block groups which have the given number of stripes. The
++parameter is either a range specified as <start..end>, or a single integer.
++
+ *soft*::
+ Takes no parameters. Only has meaning when converting between profiles.
+ When doing convert from one profile to another and soft mode is on,
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 9af218b..c47f8b7 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -226,6 +226,21 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
+ 				return 1;
+ 			}
+ 			args->flags |= BTRFS_BALANCE_ARGS_LIMIT;
++		} else if (!strcmp(this_char, "stripes")) {
++			if (!value || !*value) {
++				fprintf(stderr,
++					"the stripes filter requires an argument\n");
++				return 1;
++			}
++			if (parse_u64(value, &args->sstart)) {
++				if (parse_range(value, &args->sstart, &args->send)) {
++					fprintf(stderr, "Invalid stripes argument\n");
++					return 1;
++				}
++			} else {
++				args->send = args->sstart;
++			}
++			args->flags |= BTRFS_BALANCE_ARGS_STRIPES;
+ 		} else {
+ 			fprintf(stderr, "Unrecognized balance option '%s'\n",
+ 				this_char);
+@@ -262,6 +277,15 @@ static void dump_balance_args(struct btrfs_balance_args *args)
+ 		       (unsigned long long)args->vend);
+ 	if (args->flags & BTRFS_BALANCE_ARGS_LIMIT)
+ 		printf(", limit=%llu", (unsigned long long)args->limit);
++	if (args->flags & BTRFS_BALANCE_ARGS_STRIPES) {
++		if (args->sstart == args->send) {
++			printf(", stripes=%llu", (unsigned long long)args->sstart);
++		} else {
++			printf(", stripes=%llu..%llu",
++			        (unsigned long long)args->sstart,
++			        (unsigned long long)args->send);
++		}
++	}
+ 
+ 	printf("\n");
+ }
+diff --git a/ioctl.h b/ioctl.h
+index dff015a..c1f6aec 100644
+--- a/ioctl.h
++++ b/ioctl.h
+@@ -228,7 +228,11 @@ struct btrfs_balance_args {
+ 	__u64 flags;
+ 
+ 	__u64 limit;		/* limit number of processed chunks */
+-	__u64 unused[7];
++
++	__u64 sstart;
++	__u64 send;
++
++	__u64 unused[5];
+ } __attribute__ ((__packed__));
+ 
+ /* report balance progress to userspace */
+diff --git a/volumes.h b/volumes.h
+index 4ecb993..a809a78 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -136,6 +136,7 @@ struct map_lookup {
+ #define BTRFS_BALANCE_ARGS_DRANGE	(1ULL << 3)
+ #define BTRFS_BALANCE_ARGS_VRANGE	(1ULL << 4)
+ #define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
++#define BTRFS_BALANCE_ARGS_STRIPES	(1ULL << 6)
+ 
+ /*
+  * Profile changing flags.  When SOFT is set we won't relocate chunk if
+-- 
+2.5.3
 
-On Mon, Sep 28, 2015 at 10:32:41PM +0000, Gabríel Arthúr Pétursson wrote:
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -849,7 +849,11 @@ struct btrfs_disk_balance_args {
->  	/* BTRFS_BALANCE_ARGS_LIMIT value */
->  	__le64 limit;
->  
-> -	__le64 unused[7];
-> +	/* btrfs stripes filter */
-> +	__le64 sstart;
-> +	__le64 send;
-
-Please be more descriptive, eg. min_stripes/max_stripes. The u64 type
-seems too much, I think we can fit the stripe count into a 32bit number.
-I made a mistake with u64 type for the 'limit' filter but I think that
-we can somehow extend it to be two u32 with the min/max meaning as well.
-Either way, this is independent of your patch.
-
-> +
-> +	__le64 unused[5];
->  } __attribute__ ((__packed__));
->  
->  /*
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3236,6 +3248,12 @@ static int should_balance_chunk(struct btrfs_root *root,
->  		return 0;
->  	}
->  
-> +	/* stripes filter */
-> +	if ((bargs->flags & BTRFS_BALANCE_ARGS_STRIPES) &&
-> +	    chunk_stripes_filter(leaf, chunk, bargs)) {
-> +		return 0;
-> +	}
-
-Ok, I think that this ordering of the filters is right.
-
-> +
->  	/* soft profile changing mode */
->  	if ((bargs->flags & BTRFS_BALANCE_ARGS_SOFT) &&
->  	    chunk_soft_convert_filter(chunk_type, bargs)) {
-> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-> index 2ca784a..fb6b89a 100644
-> --- a/fs/btrfs/volumes.h
-> +++ b/fs/btrfs/volumes.h
-> @@ -375,6 +375,7 @@ struct map_lookup {
->  #define BTRFS_BALANCE_ARGS_DRANGE	(1ULL << 3)
->  #define BTRFS_BALANCE_ARGS_VRANGE	(1ULL << 4)
->  #define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
-> +#define BTRFS_BALANCE_ARGS_STRIPES	(1ULL << 6)
->  
->  /*
->   * Profile changing flags.  When SOFT is set we won't relocate chunk if
-> diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-> index b6dec05..a7819d0 100644
-> --- a/include/uapi/linux/btrfs.h
-> +++ b/include/uapi/linux/btrfs.h
-> @@ -218,7 +218,11 @@ struct btrfs_balance_args {
->  	__u64 flags;
->  
->  	__u64 limit;		/* limit number of processed chunks */
-> -	__u64 unused[7];
-
-same comment from the ctree.h applies here
-
-> +
-> +	__u64 sstart;
-> +	__u64 send;
-> +
-> +	__u64 unused[5];
->  } __attribute__ ((__packed__));
->  
->  /* report balance progress to userspace */

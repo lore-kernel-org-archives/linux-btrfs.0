@@ -1,57 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:47651 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:41683 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752767AbbIZLkY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Sep 2015 07:40:24 -0400
+	id S932107AbbI1I6U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 04:58:20 -0400
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
-        Martin Raiber <martin@urbackup.org>
-Subject: [PATCH] fstests: test for btrfs incremental send after replacing a file
-Date: Sat, 26 Sep 2015 12:40:13 +0100
-Message-Id: <1443267613-9453-1-git-send-email-fdmanana@kernel.org>
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] fstests: btrfs, test read corruption of compressed extents differently
+Date: Mon, 28 Sep 2015 09:58:12 +0100
+Message-Id: <1443430692-4292-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test that an incremental send works after a file from the parent snapshot
-gets replaced in the send snapshot by another one at the same exact
-location, with the same name and with the same inode number.
+Regression test for file read corruption when using compressed extents
+that represent file ranges with a length that is a multiple of 16 pages
+and that are shared by multiple consecutive ranges of the same file.
 
-This test used to fail after the linux kernel commit 8b191a684968
-("Btrfs: incremental send, check if orphanized dir inode needs delayed
-rename") and it's fixed by patch titled:
+This is similar to the test added in commit 694db0c050d6 ("btrfs: read
+corruption of compressed extents"), but tests the special case where the
+extent's uncompressed length is a multiple of 16 pages. The first btrfs
+fix, tested by the test added in the commit mentioned before, failed to
+address this special case.
 
-  "Btrfs: send, fix corner case for reference overwrite detection"
+This btrfs issue is fixed by the linux kernel patch titled:
+"Btrfs: update fix for read corruption of compressed and shared extents"
 
-Signed-off-by: Martin Raiber <martin@urbackup.org>
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/104     | 112 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/104.out |  11 ++++++
- tests/btrfs/group   |   1 +
- 3 files changed, 124 insertions(+)
- create mode 100755 tests/btrfs/104
- create mode 100644 tests/btrfs/104.out
+ tests/btrfs/105     | 97 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/105.out | 17 ++++++++++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 115 insertions(+)
+ create mode 100755 tests/btrfs/105
+ create mode 100644 tests/btrfs/105.out
 
-diff --git a/tests/btrfs/104 b/tests/btrfs/104
+diff --git a/tests/btrfs/105 b/tests/btrfs/105
 new file mode 100755
-index 0000000..df4d813
+index 0000000..30e1a98
 --- /dev/null
-+++ b/tests/btrfs/104
-@@ -0,0 +1,112 @@
++++ b/tests/btrfs/105
+@@ -0,0 +1,97 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/104
++# FSQA Test No. 105
 +#
-+# Test that an incremental send works after a file from the parent snapshot
-+# gets replaced in the send snapshot by another one at the same exact location,
-+# with the same name and with the same inode number.
++# Regression test for file read corruption when using compressed extents
++# that represent file ranges with a length that is a multiple of 16 pages
++# and that are shared by multiple consecutive ranges of the same file.
 +#
 +#-----------------------------------------------------------------------
++#
 +# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
 +# Author: Filipe Manana <fdmanana@suse.com>
-+# Copyright (C) 2015 Martin Raiber <martin@urbackup.org>
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -71,7 +72,6 @@ index 0000000..df4d813
 +seq=`basename $0`
 +seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
-+
 +tmp=/tmp/$$
 +status=1	# failure is the default!
 +trap "_cleanup; exit \$status" 0 1 2 3 15
@@ -79,7 +79,6 @@ index 0000000..df4d813
 +_cleanup()
 +{
 +	cd /
-+	rm -fr $send_files_dir
 +	rm -f $tmp.*
 +}
 +
@@ -88,98 +87,90 @@ index 0000000..df4d813
 +. ./common/filter
 +
 +# real QA test starts here
++_need_to_be_root
 +_supported_fs btrfs
 +_supported_os Linux
 +_require_scratch
-+_need_to_be_root
-+
-+send_files_dir=$TEST_DIR/btrfs-test-$seq
++_require_cloner
 +
 +rm -f $seqres.full
-+rm -fr $send_files_dir
-+mkdir $send_files_dir
 +
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
++test_clone_and_read_compressed_extent()
++{
++	local mount_opts=$1
 +
-+# Create our test file with a single extent of 64K.
-+mkdir -p $SCRATCH_MNT/foo
-+$XFS_IO_PROG -f -c "pwrite -S 0xaa 0 64K" $SCRATCH_MNT/foo/bar | _filter_xfs_io
++	_scratch_mkfs >>$seqres.full 2>&1
++	_scratch_mount $mount_opts
 +
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
-+_run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/mysnap2
++	# Create our test file with a single extent of 64Kb that is going to be
++	# compressed no matter which compression algorithm is used (zlib/lzo).
++	$XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 64K" \
++		$SCRATCH_MNT/foo | _filter_xfs_io
 +
-+echo "File digest before being replaced:"
-+md5sum $SCRATCH_MNT/mysnap1/foo/bar | _filter_scratch
++	# Now clone the compressed extent into an adjacent file offset.
++	$CLONER_PROG -s 0 -d $((64 * 1024)) -l $((64 * 1024)) \
++		$SCRATCH_MNT/foo $SCRATCH_MNT/foo
 +
-+# Remove the file and then create a new one in the same location with the same
-+# name but with different content. This new file ends up getting the same inode
-+# number as the previous one, because that inode number was the highest inode
-+# number used by the snapshot's root and therefore when attempting to find the
-+# a new inode number for the new file, we end up reusing the same inode number.
-+# This happens because currently btrfs uses the highest inode number summed by 1
-+# for the first inode created once a snapshot's root is loaded (done at
-+# fs/btrfs/inode-map.c:btrfs_find_free_objectid in the linux kernel tree).
-+# Having these two different files in the snapshots with the same inode number
-+# (but different generation numbers) caused the btrfs send code to emit an
-+# incorrect path for the file when issuing an unlink operation because it failed
-+# to realize they were different files.
-+rm -f $SCRATCH_MNT/mysnap2/foo/bar
-+$XFS_IO_PROG -f -c "pwrite -S 0xbb 0 96K" \
-+	$SCRATCH_MNT/mysnap2/foo/bar | _filter_xfs_io
++	echo "File digest before unmount:"
++	md5sum $SCRATCH_MNT/foo | _filter_scratch
 +
-+_run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT/mysnap2 \
-+	$SCRATCH_MNT/mysnap2_ro
++	# Remount the fs or clear the page cache to trigger the bug in btrfs.
++	# Because the extent has an uncompressed length that is a multiple of
++	# 16 pages, all the pages belonging to the second range of the file
++	# (64K to 128K), which points to the same extent as the first range
++	# (0K to 64K), had their contents full of zeroes instead of the byte
++	# 0xaa. This was a bug exclusively in the read path of compressed
++	# extents, the correct data was stored on disk, btrfs just failed to
++	# fill in the pages correctly.
++	_scratch_remount
 +
-+_run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
-+_run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2_ro \
-+	-f $send_files_dir/2.snap
++	echo "File digest after remount:"
++	# Must match the digest we got before.
++	md5sum $SCRATCH_MNT/foo | _filter_scratch
++}
 +
-+echo "File digest in the original filesystem after being replaced:"
-+md5sum $SCRATCH_MNT/mysnap2_ro/foo/bar | _filter_scratch
++echo -e "\nTesting with zlib compression..."
++test_clone_and_read_compressed_extent "-o compress=zlib"
 +
-+# Now recreate the filesystem by receiving both send streams and verify we get
-+# the same file contents that the original filesystem had.
 +_scratch_unmount
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
 +
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
-+_run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
-+
-+echo "File digest in the new filesystem:"
-+# Must match the digest from the new file.
-+md5sum $SCRATCH_MNT/mysnap2_ro/foo/bar | _filter_scratch
++echo -e "\nTesting with lzo compression..."
++test_clone_and_read_compressed_extent "-o compress=lzo"
 +
 +status=0
 +exit
-\ No newline at end of file
-diff --git a/tests/btrfs/104.out b/tests/btrfs/104.out
+diff --git a/tests/btrfs/105.out b/tests/btrfs/105.out
 new file mode 100644
-index 0000000..ff3c001
+index 0000000..101da10
 --- /dev/null
-+++ b/tests/btrfs/104.out
-@@ -0,0 +1,11 @@
-+QA output created by 104
++++ b/tests/btrfs/105.out
+@@ -0,0 +1,17 @@
++QA output created by 105
++
++Testing with zlib compression...
 +wrote 65536/65536 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File digest before being replaced:
-+9802287a6faa01a1fd0e01732b732fca  SCRATCH_MNT/mysnap1/foo/bar
-+wrote 98304/98304 bytes at offset 0
++File digest before unmount:
++be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
++File digest after remount:
++be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
++
++Testing with lzo compression...
++wrote 65536/65536 bytes at offset 0
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File digest in the original filesystem after being replaced:
-+de277dfac706c359613033120349cf88  SCRATCH_MNT/mysnap2_ro/foo/bar
-+File digest in the new filesystem:
-+de277dfac706c359613033120349cf88  SCRATCH_MNT/mysnap2_ro/foo/bar
++File digest before unmount:
++be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
++File digest after remount:
++be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e92a65a..4d99714 100644
+index 4d99714..b9936f9 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -106,3 +106,4 @@
- 101 auto quick replace
+@@ -107,3 +107,4 @@
  102 auto quick metadata enospc
  103 auto quick clone compress
-+104 auto quick send
+ 104 auto quick send
++105 auto quick clone compress
 -- 
 2.1.3
 

@@ -1,171 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44929 "EHLO plane.gmane.org"
+Received: from efeu.mur.at ([89.106.208.66]:57347 "EHLO efeu.mur.at"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756464AbbI1Hwu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Sep 2015 03:52:50 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZgTEt-0004KI-Os
-	for linux-btrfs@vger.kernel.org; Mon, 28 Sep 2015 09:52:48 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 09:52:47 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 09:52:47 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: fstrim silently does nothing on dev add/dev rem'd filesystem
-Date: Mon, 28 Sep 2015 07:52:39 +0000 (UTC)
-Message-ID: <pan$aca60$e905a348$c86187f4$a2bdc65@cox.net>
-References: <20150927175252.GA24990@blind.goeswhere.com>
-	<pan$73c0$b0528a34$f375bb55$bda81535@cox.net>
-	<CAGfcS_n7czPgSomGo8wFFn8Zxoi4QWA0L+NtK+LreA0j3aewnQ@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1754941AbbI1Ij6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 04:39:58 -0400
+Received: from localhost (localhost [127.0.0.1])
+	by efeu.mur.at (Postfix) with ESMTP id BEC2922038
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 10:39:56 +0200 (CEST)
+Received: from efeu.mur.at ([127.0.0.1])
+	by localhost (efeu.mur.at [127.0.0.1]) (amavisd-new, port 10026)
+	with ESMTP id EDTXSVL71CIu for <linux-btrfs@vger.kernel.org>;
+	Mon, 28 Sep 2015 10:39:56 +0200 (CEST)
+Received: from [192.168.2.2] (85-126-169-193.work.xdsl-line.inode.at [85.126.169.193])
+	by efeu.mur.at (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 10:39:56 +0200 (CEST)
+Message-ID: <5608FCD9.2000902@mur.at>
+Date: Mon, 28 Sep 2015 10:39:53 +0200
+From: =?UTF-8?B?Sm9naSBIb2Ztw7xsbGVy?= <jogi@mur.at>
+MIME-Version: 1.0
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: strange i/o errors with btrfs on raid/lvm
+References: <560409E7.5020500@mur.at>	<CAJCQCtQ3aSfHE3o4nyaKOJjDbxiw87GHW6_JdBC1vnDgQXgGKA@mail.gmail.com>	<CAJCQCtRMumq4=QqujuOxu6nC0W+6dv1tWzqe8fCzzEEa-D+1ZQ@mail.gmail.com>	<5605ADE4.5090800@mur.at> <CAJCQCtTaagpqurnjLeN7Mw8oBv59uWYtMbOb5REo8NgiP+UjjA@mail.gmail.com>
+In-Reply-To: <CAJCQCtTaagpqurnjLeN7Mw8oBv59uWYtMbOb5REo8NgiP+UjjA@mail.gmail.com>
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Rich Freeman posted on Sun, 27 Sep 2015 23:08:49 -0400 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-> On Sun, Sep 27, 2015 at 10:45 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->> But I think part of reasoning behind the relatively low priority this
->> issue has received is that it's a low visibility issue not really
->> affecting most people running btrfs, either because they're not running
->> on ssd or because they simply don't have a particularly high awareness
->> of what trim does and thus about how it's failing to work here and what
->> that means to them.  If we get a rash of people posting on-list that
->> it's affecting them, that relative priority is likely to go up, and
->> with it the patch testing and integration schedule for the affected
->> patches.
-> 
-> I've never actually seen fstrim do anything on btrfs (0 bytes trimmed). 
-> I stopped using it a few months ago when the news came out about all the
-> issues with its implementation, and I believe my drive is still
-> blacklisted anyway.
-> 
-> It really should be fixed, but right now that goes all around - if btrfs
-> fixed it tomorrow I'd still be stuck until somebody figures out how to
-> reliably do it on a Samsung 850.
+Hi Chris, all,
 
-FWIW, just checked here, and fstrim -v says it trims rather more than I 
-expected, actually -- tho I should mention that I *am* on 4.3-rc2+, so I 
-should be running those patches mentioned as going into 4.3 that at least 
-partially address the problem.
+Am 2015-09-25 um 22:47 schrieb Chris Murphy:
+> On Fri, Sep 25, 2015 at 2:26 PM, Jogi Hofm=C3=BCller <jogi@mur.at> wrot=
+e:
+>=20
+>> That was right while the RAID was in degraded state and rebuilding.
+>=20
+> On the guest:
+>=20
+> Aug 28 05:17:01 vm kernel: [140683.741688] BTRFS info (device vdc):
+> disk space caching is enabled
+> Aug 28 05:17:13 vm kernel: [140695.575896] BTRFS warning (device vdc):
+> block group 13988003840 has wrong amount of free space
 
-On my home filesystem (actually /h here):
+The device vdc is the backup device.  That's where we collect snapshots
+of our mail spool.  I could fix that remounting with -o clear_cache as
+you suggested.  However it is not directly related to the I/O error
+problem.  The backup device sits on a different RAID than the mail spool.=
 
-Btrfs raid1 on two 20-gig partitions:
 
-# btrfs fi sh /h
-Label: 'hm0238gcnx+35l0'  uuid: c9f93efc-5ae1-4d89-b501-2d7944856e98
-        Total devices 2 FS bytes used 13.24GiB
-        devid    1 size 20.00GiB used 14.78GiB path /dev/sda6
-        devid    2 size 20.00GiB used 14.78GiB path /dev/sdb6
+> On the host, there are no messages that correspond to this time index,
+> but a bit over an hour and a half later are when there are sas error
+> messages, and the first reported write error.
+>=20
+> I see the rebuild event starting:
+>=20
+> Aug 28 07:04:23 host mdadm[2751]: RebuildStarted event detected on md
+> device /dev/md/0
+>=20
+> But there are subsequent sas errors still, including hard resetting of
+> the link, and additional read errors. This continues more than once...
 
-# btrfs fi usage /h
+That is smartd still trying to read the failed device (sda).
 
-Overall:
-    Device size:                  40.00GiB
-    Device allocated:             29.56GiB
-    Device unallocated:           10.44GiB
-    Device missing:                  0.00B
-    Used:                         26.48GiB
-    Free (estimated):              6.44GiB      (min: 6.44GiB)
-    Data ratio:                       2.00
-    Metadata ratio:                   2.00
-    Global reserve:              160.00MiB      (used: 0.00B)
+> And then
+>=20
+> Aug 28 17:06:49 host mdadm[2751]: RebuildFinished event detected on md
+> device /dev/md/0, component device  mismatches found: 2048 (on raid
+> level 10)
 
-Data,RAID1: Size:14.00GiB, Used:12.78GiB
-   /dev/sda6      14.00GiB
-   /dev/sdb6      14.00GiB
+Right.  I totally missed the 'mismatches found' part :(
 
-Metadata,RAID1: Size:768.00MiB, Used:476.02MiB
-   /dev/sda6     768.00MiB
-   /dev/sdb6     768.00MiB
+> and also a number of SMART warnings about seek error on another device
+>=20
+> Aug 28 17:35:55 host smartd[3146]: Device: /dev/sda [SAT], SMART Usage
+> Attribute: 7 Seek_Error_Rate changed from 180 to 179
 
-System,RAID1: Size:32.00MiB, Used:16.00KiB
-   /dev/sda6      32.00MiB
-   /dev/sdb6      32.00MiB
+Still the failed device.  These messages continue until we replaced the
+disk with a new one.
 
-Unallocated:
-   /dev/sda6       5.22GiB
-   /dev/sdb6       5.22GiB
+> But 2048 mismatches found after a rebuild is a problem. So there's
+> already some discrepancy in the mdadm raid10. And mdadm raid1 (or 10)
+> cannot resolve mismatches because which block is correct is ambiguous.
+> So that means something is definitely going to get corrupt. Btrfs, if
+> the metadata profile is DUP can recover from that. But data can't.
+> Normally this results in an explicit Btrfs message about a checksum
+> mismatch and no ability to fix it, but will still report the path to
+> affected file.  But I'm not finding that.
 
-# fstrim -v /h
-/h: 13.3 GiB (14255448064 bytes) trimmed
+I ran checkarray on md0 and that reduced the mismatch_cnt to 384.
 
-OK, so I'm used to thinking in per-device sizes, IOW ratio two, here.  
-And I guess that 13.3 GiB trimmed as reported by fstrim isn't divided by 
-two, which is why it looks so unexpectedly large to me on a filesystem of 
-20 GiB capacity, 2*20 GiB partitions in raid1.  That'd be 6.5+ GiB per 
-partition trimmed, on a 20 GiB partition that's 5.22 GiB unallocated.  
-That's not to bad, actually. =:^)
+What I still don't understand is why it is possible to make a backup of
+a file that is not accessible in the file system.  All files that
+produce an I/O error upon access are fine on the backup drive.  It's
+even possible to restore a file from the backup drive and then it is
+read/writable again.
 
-At first I was thinking wait a minute, 20 GiB per partition, 12.78 GiB of 
-actual data on each, and 13.3 GiB trimmed.  WTF?  That doesn't add up!  
-Of course not, because all those figures but trimmed are cut in half, per 
-partition numbers, while trimmed is total for the filesystem.  So either 
-trimmed needs cut in half too, or the other numbers need doubled to 
-reflect filesystem totals.  /Then/ it makes sense! =:^)
+Another thing I cannot explain is why the only files affected are those
+that get read/written lot's of times.
 
-FWIW, the SSDs are both Corsair Neutrons, 256 GB (238.5 GiB) capacity, 
-partitioned up with the largest partitions 24 GiB each, but only just 
-under 51% (121 GiB of the 238.5) actually partitioned, 117.5 GiB of 
-unpartitioned free space.  (Upthread I said about 55% partitioned, seems 
-I was a bit conservative.)
+And finally the question is why does none of the other logical volumes
+that reside on the same RAID experience any problems?  There are several
+other logical volumes containing btrfs and ext4 file systems.
 
-As I said upthread, that leaves the FTL plenty of room to do wear-
-leveling, even without active fstrim, so working fstrim is simply "nice 
-to have" for me, not anything like necessary.
+Anyhow, thanks for all the suggestions so far.
 
-So obviously my Corsair Neutrons aren't blacklisted. =:^)  I've actually 
-been rather pleasantly surprised indeed with 'em, as I didn't know half 
-what I do now about SSDs when I purchased them, but it seems I made a 
-pretty good choice.  The controllers don't do the invisible dedup/
-compression that sandforce controllers do so I can rely on what I write, 
-including dup-mode copies, actually being written; they're aimed at the 
-server market where consistent speed is more important than burst speed 
-and the behavior demonstrates exactly that, etc.
+Cheers,
 
-The one bad point, and it's probably luck of the draw, is that of the 
-three identical units I purchased together, from Fry's Electronics, one 
-was apparently returned by someone else and I too really should have 
-returned it, as it gave me problems almost from the beginning, but I 
-didn't.
+PS:  my messages with attached log files got forwarded to /dev/null
+because they exceeded the 100000 char limit :(
+--=20
+j.hofm=C3=BCller
 
-OTOH, I ran for several months with the bad one and one of the good ones 
-paired in the raid1, using btrfs' data integrity features and scrub to 
-repair the data as sectors went bad and the scrub forced the FTL to mark 
-a bad sector and replace it with one of the spares, and thus have far 
-more practical experience now with btrfs raid1 in failing-data 
-conditions, btrfs scrub restoring from the good copy, and the behavior of 
-ssds as more and more sectors go bad, along with how smartctl -A reports 
-the damage, than I ever would have gotten had I simply returned the 
-defective device.
+We are all idiots with deadlines.                       - Mike West
 
-In fact, I was able to watch as over time, smartctl -A dropped that stat 
-line cooked value from 255 "clean", to 100 immediately as the first spare 
-sector was swapped in, down thru several hundred sectors per percentage 
-point, until I finally decided I had enough, at 85 percent (with a 
-threshold of 36% for that value, so I was still nowhere near threshold 
-fail for that value, tho the more immediate per-session read-retry-rate 
-would go thru the roof and drop that cooked value to 1, with a threshold 
-of 6 so definitely failing right then, any time I did a big update or 
-balance and then a scrub).
 
-I just replaced it a few days ago, less than a week, I think, with the 
-still unused third one of the three, originally bought for a netbook I 
-never installed it in and eventually lost, with the third one so far 
-seemed every bit as healthy as the good one of the pair, no bad blocks 
-reported by scrub or spare sectors reported swapped in by smartctl -A, on 
-either one, so far.  Which of course was why I was able to let the bad 
-one go so long, since the good one of the pair was absolutely reliable. 
-=:^)
+--kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iF4EAREIAAYFAlYI/NoACgkQkaXhaapqItlGQAEAnHcbrBFalb5gRDE3snR7Y3i3
+zywOTRzUw/eJMaoZU6MA/irqHmWCgw3v0MipyCelFBsqHmoewE0Ky3ImMvuyMbX2
+=jYN6
+-----END PGP SIGNATURE-----
+
+--kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8--

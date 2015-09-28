@@ -1,135 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from efeu.mur.at ([89.106.208.66]:57347 "EHLO efeu.mur.at"
+Received: from ns.bouton.name ([109.74.195.142]:35837 "EHLO mail.bouton.name"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754941AbbI1Ij6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Sep 2015 04:39:58 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by efeu.mur.at (Postfix) with ESMTP id BEC2922038
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 10:39:56 +0200 (CEST)
-Received: from efeu.mur.at ([127.0.0.1])
-	by localhost (efeu.mur.at [127.0.0.1]) (amavisd-new, port 10026)
-	with ESMTP id EDTXSVL71CIu for <linux-btrfs@vger.kernel.org>;
-	Mon, 28 Sep 2015 10:39:56 +0200 (CEST)
-Received: from [192.168.2.2] (85-126-169-193.work.xdsl-line.inode.at [85.126.169.193])
-	by efeu.mur.at (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Sep 2015 10:39:56 +0200 (CEST)
-Message-ID: <5608FCD9.2000902@mur.at>
-Date: Mon, 28 Sep 2015 10:39:53 +0200
-From: =?UTF-8?B?Sm9naSBIb2Ztw7xsbGVy?= <jogi@mur.at>
+	id S932437AbbI1JzR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 05:55:17 -0400
+Subject: Re: btrfs fi defrag interfering (maybe) with Ceph OSD operation
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <56080C9A.6030102@bouton.name>
+ <pan$be4b9$74318552$9c70286d$e18abb29@cox.net>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <56090E83.4030708@bouton.name>
+Date: Mon, 28 Sep 2015 11:55:15 +0200
 MIME-Version: 1.0
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: strange i/o errors with btrfs on raid/lvm
-References: <560409E7.5020500@mur.at>	<CAJCQCtQ3aSfHE3o4nyaKOJjDbxiw87GHW6_JdBC1vnDgQXgGKA@mail.gmail.com>	<CAJCQCtRMumq4=QqujuOxu6nC0W+6dv1tWzqe8fCzzEEa-D+1ZQ@mail.gmail.com>	<5605ADE4.5090800@mur.at> <CAJCQCtTaagpqurnjLeN7Mw8oBv59uWYtMbOb5REo8NgiP+UjjA@mail.gmail.com>
-In-Reply-To: <CAJCQCtTaagpqurnjLeN7Mw8oBv59uWYtMbOb5REo8NgiP+UjjA@mail.gmail.com>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8"
+In-Reply-To: <pan$be4b9$74318552$9c70286d$e18abb29@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+Hi Duncan,
 
-Hi Chris, all,
+thanks for your answer, here is additional information.
 
-Am 2015-09-25 um 22:47 schrieb Chris Murphy:
-> On Fri, Sep 25, 2015 at 2:26 PM, Jogi Hofm=C3=BCller <jogi@mur.at> wrot=
-e:
->=20
->> That was right while the RAID was in degraded state and rebuilding.
->=20
-> On the guest:
->=20
-> Aug 28 05:17:01 vm kernel: [140683.741688] BTRFS info (device vdc):
-> disk space caching is enabled
-> Aug 28 05:17:13 vm kernel: [140695.575896] BTRFS warning (device vdc):
-> block group 13988003840 has wrong amount of free space
+Le 28/09/2015 02:18, Duncan a écrit :
+> [...]
+>> I decided to disable it and develop our own
+>> defragmentation scheduler. It is based on both a slow walk through the
+>> filesystem (which acts as a safety net over one week period) and a
+>> fatrace pipe (used to detect recent fragmentation). Fragmentation is
+>> computed from filefrag detailed outputs and it learns how much it can
+>> defragment files with calls to filefrag after defragmentation (we
+>> learned compressed files and uncompressed files don't behave the same
+>> way in the process so we ended up treating them separately).
+> Note that unless this has very recently changed, filefrag doesn't know 
+> how to calculate btrfs-compressed file fragmentation correctly.  Btrfs 
+> uses (IIRC) 128 KiB compression blocks, which filefrag will see (I'm not 
+> actually sure if it's 100% consistent or if it's conditional on something 
+> else) as separate extents.
+>
+> Bottom line, there's no easily accessible reliable way to get the 
+> fragmentation level of a btrfs-compressed file. =:^(  (Presumably
+> btrfs-debug-tree with the -e option to print extents info, with the 
+> output fed to some parsing script, could do it, but that's not what I'd 
+> call easily accessible, at least at a non-programmer admin level.)
+>
+> Again, there has been some discussion around teaching filefrag about 
+> btrfs compression, and it may well eventually happen, but I'm not aware 
+> of an e2fsprogs release doing it yet, nor of whether there's even actual 
+> patches for it yet, let alone merge status.
 
-The device vdc is the backup device.  That's where we collect snapshots
-of our mail spool.  I could fix that remounting with -o clear_cache as
-you suggested.  However it is not directly related to the I/O error
-problem.  The backup device sits on a different RAID than the mail spool.=
+>From what I understood, filefrag doesn't known the length of each extent
+on disk but should have its position. This is enough to have a rough
+estimation of how badly fragmented the file is : it doesn't change the
+result much when computing what a rotating disk must do (especially how
+many head movements) to access the whole file.
 
+>
+>> Simply excluding the journal from defragmentation and using some basic
+>> heuristics (don't defragment recently written files but keep them in a
+>> pool then queue them and don't defragment files below a given
+>> fragmentation "cost" were defragmentation becomes ineffective) gave us
+>> usable performance in the long run. Then we successively moved the
+>> journal to NoCoW files and SSDs and disabled Ceph's use of BTRFS
+>> snapshots which were too costly (removing snapshots generated 120MB of
+>> writes to the disks and this was done every 30s on our configuration).
+> It can be noted that there's an negative interaction between btrfs 
+> snapshots and nocow, sometimes called cow1.  The btrfs snapshot feature 
+> is predicated on cow, with a snapshot locking in place existing file 
+> extents, normally no big deal as ordinary cow files will have rewrites 
+> cowed elsewhere in any case.  Obviously, then, snapshots must by 
+> definition play havoc with nocow.  What actually happens is that with 
+> existing extents locked in place, the first post-snapshot change to a 
+> block must then be cowed into a new extent.  The nocow attribute remains 
+> on the file, however, and further writes to that block... until the next 
+> snapshot anyway... will be written in-place, to the (first-post-snapshot-
+> cowed) current extent.  When one list poster referred to that as cow1, I 
+> found the term so nicely descriptive that I adopted it for myself, altho 
+> for obvious reasons I have to explain it first in many posts.
+>
+> It should now be obvious why 30-second snapshots weren't working well on 
+> your nocow files, and why they seemed to become fragmented anyway, the 30-
+> second snapshots were effectively disabling nocow!
+>
+> In general, for nocow files, snapshotting should be disabled (as you 
+> ultimately did), or as low frequency as is practically possible.  Some 
+> list posters have, however, reported a good experience with a combination 
+> of lower frequency snapshotting (say daily, or maybe every six hours, but 
+> DEFINITELY not more frequent than half-hour), and periodic defrag, on the 
+> order of the weekly period you implied in a bit I snipped, to perhaps 
+> monthly.
 
-> On the host, there are no messages that correspond to this time index,
-> but a bit over an hour and a half later are when there are sas error
-> messages, and the first reported write error.
->=20
-> I see the rebuild event starting:
->=20
-> Aug 28 07:04:23 host mdadm[2751]: RebuildStarted event detected on md
-> device /dev/md/0
->=20
-> But there are subsequent sas errors still, including hard resetting of
-> the link, and additional read errors. This continues more than once...
+In the case of Ceph OSD, this isn't what causes the performance problem:
+the journal is on the main subvolume and snapshots are done on another
+subvolume.
 
-That is smartd still trying to read the failed device (sda).
+> [...]
+>> Given that the defragmentation scheduler treats file accesses the same
+>> on all replicas to decide when triggering a call to "btrfs fi defrag
+>> <file>", I suspect this manual call to defragment could have happened on
+>> the 2 OSDs affected for the same file at nearly the same time and caused
+>> the near simultaneous crashes.
+> ...  While what I /do/ know of ceph suggests that it should be protected 
+> against this sort of thing, perhaps there's a bug, because...
+>
+> I know for sure that btrfs itself is not intended for distributed access, 
+> from more than one system/kernel at a time.  Which assuming my ceph 
+> illiteracy isn't negatively affecting my reading of the above, seems to 
+> be more or less what you're suggesting happened, and I do know that *if* 
+> it *did* happen, it could indeed trigger all sorts of havoc!
 
-> And then
->=20
-> Aug 28 17:06:49 host mdadm[2751]: RebuildFinished event detected on md
-> device /dev/md/0, component device  mismatches found: 2048 (on raid
-> level 10)
+No: Ceph OSDs are normal local processes using a filesystem for storage
+(and optionally a dedicated journal out of the filesystem) as are the
+btrfs fi defrag commands run on the same host. What I'm interested in is
+how the btrfs fi defrag <file> command could interfere with any other
+process accessing <file> simultaneously. The answer could very well be
+"it never will" (for example because it doesn't use any operation that
+can before calling the defrag ioctl which is guaranteed to not interfere
+with other file operations too). I just need to know if there's a
+possibility so I can decide if these defragmentations are an operational
+risk or not in my context and if I found the cause for my slightly
+frightening morning.
 
-Right.  I totally missed the 'mismatches found' part :(
+>> It's not clear to me that "btrfs fi defrag <file>" can't interfere with
+>> another process trying to use the file. I assume basic reading and
+>> writing is OK but there might be restrictions on unlinking/locking/using
+>> other ioctls... Are there any I should be aware of and should look for
+>> in Ceph OSDs? This is on a 3.8.19 kernel (with Gentoo patches which
+>> don't touch BTRFS sources) with btrfs-progs 4.0.1. We have 5 servers on
+>> our storage network : 2 are running a 4.0.5 kernel and 3 are running
+>> 3.8.19. The 3.8.19 servers are waiting for an opportunity to reboot on
+>> 4.0.5 (or better if we have the time to test a more recent kernel before
+>> rebooting : 4.1.8 and 4.2.1 are our candidates for testing right now).
+> It's worth keeping in mind that the explicit warnings about btrfs being 
+> experimental weren't removed until 3.12, and while current status is no 
+> longer experimental or entirely unstable, it remains, as I characterize 
+> it, as "maturing and stabilizing, not yet entirely stable and mature."
+>
+> So 3.8 is very much still in btrfs-experimental land!  And so many bugs 
+> have been fixed since then that... well, just get off of it ASAP, which 
+> it seems you're already doing.
 
-> and also a number of SMART warnings about seek error on another device
->=20
-> Aug 28 17:35:55 host smartd[3146]: Device: /dev/sda [SAT], SMART Usage
-> Attribute: 7 Seek_Error_Rate changed from 180 to 179
+Oops, that was a typo : I meant 3.18.9, sorry :-(
 
-Still the failed device.  These messages continue until we replaced the
-disk with a new one.
+> [...]
+>
+>
+> Tying up a couple loose ends...
+>
+> Regarding nocow...
+>
+> Given that you had apparently missed much of the general list and wiki 
+> wisdom above (while at the same time eventually coming to the many of the 
+> same conclusions on your own),
 
-> But 2048 mismatches found after a rebuild is a problem. So there's
-> already some discrepancy in the mdadm raid10. And mdadm raid1 (or 10)
-> cannot resolve mismatches because which block is correct is ambiguous.
-> So that means something is definitely going to get corrupt. Btrfs, if
-> the metadata profile is DUP can recover from that. But data can't.
-> Normally this results in an explicit Btrfs message about a checksum
-> mismatch and no ability to fix it, but will still report the path to
-> affected file.  But I'm not finding that.
+In fact I was initially aware of (no)CoW/defragmentation/snapshots
+performance gotchas (I already used BTRFS for PostgreSQL slaves hosting
+for example...).
+But Ceph is filesystem aware: its OSDs detect if they are running on
+XFS/BTRFS and activate automatically some filesystem features. So even
+though I was aware of the problems that can happen on a CoW filesystem,
+I preferred to do actual testing with the default Ceph settings and
+filesystem mount options before tuning.
 
-I ran checkarray on md0 and that reduced the mismatch_cnt to 384.
+Best regards,
 
-What I still don't understand is why it is possible to make a backup of
-a file that is not accessible in the file system.  All files that
-produce an I/O error upon access are fine on the backup drive.  It's
-even possible to restore a file from the backup drive and then it is
-read/writable again.
-
-Another thing I cannot explain is why the only files affected are those
-that get read/written lot's of times.
-
-And finally the question is why does none of the other logical volumes
-that reside on the same RAID experience any problems?  There are several
-other logical volumes containing btrfs and ext4 file systems.
-
-Anyhow, thanks for all the suggestions so far.
-
-Cheers,
-
-PS:  my messages with attached log files got forwarded to /dev/null
-because they exceeded the 100000 char limit :(
---=20
-j.hofm=C3=BCller
-
-We are all idiots with deadlines.                       - Mike West
-
-
---kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iF4EAREIAAYFAlYI/NoACgkQkaXhaapqItlGQAEAnHcbrBFalb5gRDE3snR7Y3i3
-zywOTRzUw/eJMaoZU6MA/irqHmWCgw3v0MipyCelFBsqHmoewE0Ky3ImMvuyMbX2
-=jYN6
------END PGP SIGNATURE-----
-
---kxScw6e3D55Ta08DUW3x6P7hsWsxoCTH8--
+Lionel Bouton

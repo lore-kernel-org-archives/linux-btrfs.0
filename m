@@ -1,26 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39205 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933380AbbI2Jzv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 05:55:51 -0400
-Date: Tue, 29 Sep 2015 17:55:49 +0800
-From: Eryu Guan <eguan@redhat.com>
+Received: from frost.carfax.org.uk ([85.119.82.111]:38829 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933425AbbI2KAP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Sep 2015 06:00:15 -0400
+Date: Tue, 29 Sep 2015 10:00:13 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
 Subject: Re: [PATCH v2] fstests: generic: Check if a bull fallocate will
  change extent number
-Message-ID: <20150929095549.GH30949@dhcp-13-216.nay.redhat.com>
+Message-ID: <20150929100013.GD25907@carfax.org.uk>
 References: <1443519264-19184-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="fOHHtNG4YXGJ0yqR"
 In-Reply-To: <1443519264-19184-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+
+--fOHHtNG4YXGJ0yqR
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+
 On Tue, Sep 29, 2015 at 05:34:24PM +0800, Qu Wenruo wrote:
 > Normally, a bull fallocate call on a fully written and synced file
 > should not add an extent.
-> 
+
+   What's a "bull" fallocate call? Is it a typo, or simply something
+I'm not familiar with?
+
+   Hugo.
+
 > But not all filesystem follows the correct behavior.
 > 
 > Btrfs has a bug to always truncate the last page if the fallocate start
@@ -33,9 +45,6 @@ On Tue, Sep 29, 2015 at 05:34:24PM +0800, Qu Wenruo wrote:
 > v2:
 >   Add author info...
 >   Fix some comment typo
-
-(I was going to point these out then saw a v2 :)
-
 > ---
 >  tests/generic/110     | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++
 >  tests/generic/110.out |  3 ++
@@ -102,10 +111,6 @@ On Tue, Sep 29, 2015 at 05:34:24PM +0800, Qu Wenruo wrote:
 > +_supported_os IRIX Linux
 > +_require_scratch
 > +_need_to_be_root
-
-need a '_require_xfs_io_command "falloc"' here, so test _notrun
-correctly on ext2/3/NFS/CIFS that don't support fallocate.
-
 > +
 > +# Use 64K file size to match any sectorsize
 > +# And with a unaligned tailing range to ensure it will be at least 2 pages
@@ -127,14 +132,6 @@ correctly on ext2/3/NFS/CIFS that don't support fallocate.
 > +
 > +if [ "x$orig_extent_nr" != "x$new_extent_nr" ]; then
 > +	echo "number of extents mis-match after bull fallocate"
-
-print out the $orig_extent_nr and $new_extent_nr in this failure case? I
-think it's useful to see the difference just from the output diff, don't
-have to check the full file.
-
-Thanks,
-Eryu
-
 > +fi
 > +
 > +# success, all done
@@ -161,10 +158,33 @@ Eryu
 >  112 rw aio auto quick
 >  113 rw aio auto quick
 >  117 attr auto quick
-> -- 
-> 1.8.3.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+-- 
+Hugo Mills             | Mixing mathematics and alcohol is dangerous. Don't
+hugo@... carfax.org.uk | drink and derive.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--fOHHtNG4YXGJ0yqR
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJWCmEtAAoJEFheFHXiqx3kiEYQALdBZ1BVNMuIigVbKV9GsjDg
+rVHdZHrsvs6/XivBkSqL11URMxNsjgcayG3pQzuznfFz7BtRdf4ElE/sJK6+kYlZ
++y1m3d4W8nSvr5GIW3O60QESHahTB/mVfETqzDl2wug45sg6xQEdM4tx82263CJe
+n5j8WMJaYGfZ5JxEJAgIOoPFkNhVxi8HD4P+lK8omfPtcP+lkL8pQ8FT4jvYNYMv
+DHkkE+fZNCokaplWdGmsB8far6X0Ny23aaRfAkUX8ntXLHVqZTsaTeBmBummpycN
+fw2Qd6Wcr9HVUGm76CIMBk3ohNPY7+1d47eUjtQcTiKDjiXQPpUv9KrDc3G3P3Kh
+qMeTgxYA2goAtot5t5AaSRM6L79QfQsW/H481d4lqQw2Dl/VN5nY8daMvPGYLCZp
+A8rAK+xCOr2Q9+XZd++Zk0Rc0ezQ6HyaGGt/THn89KgR6cquWWLVvMFx8EHH47+f
+3EyN+hr7jPm2ZoqcrrRf0P8KbIfY4v6dt5X4SJydHyPJrqB63JpDeqv766NruJhx
+kbuAaAWwAOMVex0JVPseTFgbL4FMJJdumTvr4CfnFCSB5LGDl80RRjGdm3OMpTml
+pkbZ5RMAUjLrG17HA/a932NY97oW6NJxtvA/Ts685LOMR0dIBn0iPKhSya0P5/MQ
+Pmk60eUAuWXo/Z1RJ+sD
+=HjVB
+-----END PGP SIGNATURE-----
+
+--fOHHtNG4YXGJ0yqR--

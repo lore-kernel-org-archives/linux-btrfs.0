@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:33874 "EHLO
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:33917 "EHLO
 	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933971AbbI2RLB (ORCPT
+	with ESMTP id S933999AbbI2RLD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 13:11:01 -0400
-Received: by wicfx3 with SMTP id fx3so160622828wic.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:11:00 -0700 (PDT)
+	Tue, 29 Sep 2015 13:11:03 -0400
+Received: by wicfx3 with SMTP id fx3so160624002wic.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:11:02 -0700 (PDT)
 From: Silvio Fricke <silvio.fricke@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Silvio Fricke <silvio.fricke@gmail.com>
-Subject: [PATCH 02/11] btrfs-progs: use calloc instead of malloc+memset for btrfs-list.c
-Date: Tue, 29 Sep 2015 19:10:37 +0200
-Message-Id: <e9139a9dba401d7934fa061f9270903fa7ec68e1.1443546001.git.silvio.fricke@gmail.com>
+Subject: [PATCH 03/11] btrfs-progs: use calloc instead of malloc+memset for chunk-recover.c
+Date: Tue, 29 Sep 2015 19:10:38 +0200
+Message-Id: <c5aaa76ff11a328e0f07d76052b067d341aa097b.1443546001.git.silvio.fricke@gmail.com>
 In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
 References: <cover.1443546000.git.silvio.fricke@gmail.com>
 In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
@@ -37,57 +37,40 @@ This patch is generated from a coccinelle semantic patch:
 
 Signed-off-by: Silvio Fricke <silvio.fricke@gmail.com>
 ---
- btrfs-list.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ chunk-recover.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index d54de61..7529e11 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -226,13 +226,12 @@ struct btrfs_list_comparer_set *btrfs_list_alloc_comparer_set(void)
+diff --git a/chunk-recover.c b/chunk-recover.c
+index 1fb04f7..d0ca920 100644
+--- a/chunk-recover.c
++++ b/chunk-recover.c
+@@ -85,13 +85,12 @@ static struct extent_record *btrfs_new_extent_record(struct extent_buffer *eb)
+ {
+ 	struct extent_record *rec;
  
- 	size = sizeof(struct btrfs_list_comparer_set) +
- 	       BTRFS_LIST_NCOMPS_INCREASE * sizeof(struct btrfs_list_comparer);
--	set = malloc(size);
-+	set = calloc(1, size);
- 	if (!set) {
- 		fprintf(stderr, "memory allocation failed\n");
+-	rec = malloc(sizeof(*rec));
++	rec = calloc(1, sizeof(*rec));
+ 	if (!rec) {
+ 		fprintf(stderr, "Fail to allocate memory for extent record.\n");
  		exit(1);
  	}
  
--	memset(set, 0, size);
- 	set->total = BTRFS_LIST_NCOMPS_INCREASE;
- 
- 	return set;
-@@ -474,12 +473,11 @@ static int add_root(struct root_lookup *root_lookup,
- 	if (!ret)
- 		return 0;
- 
--	ri = malloc(sizeof(*ri));
-+	ri = calloc(1, sizeof(*ri));
- 	if (!ri) {
- 		printf("memory allocation failed\n");
- 		exit(1);
- 	}
--	memset(ri, 0, sizeof(*ri));
- 	ri->root_id = root_id;
- 
- 	if (name && name_len > 0) {
-@@ -1208,13 +1206,12 @@ struct btrfs_list_filter_set *btrfs_list_alloc_filter_set(void)
- 
- 	size = sizeof(struct btrfs_list_filter_set) +
- 	       BTRFS_LIST_NFILTERS_INCREASE * sizeof(struct btrfs_list_filter);
--	set = malloc(size);
-+	set = calloc(1, size);
- 	if (!set) {
- 		fprintf(stderr, "memory allocation failed\n");
- 		exit(1);
- 	}
- 
--	memset(set, 0, size);
- 	set->total = BTRFS_LIST_NFILTERS_INCREASE;
- 
- 	return set;
+-	memset(rec, 0, sizeof(*rec));
+ 	rec->cache.start = btrfs_header_bytenr(eb);
+ 	rec->cache.size = eb->len;
+ 	rec->generation = btrfs_header_generation(eb);
+@@ -2228,10 +2227,9 @@ static int btrfs_recover_chunks(struct recover_control *rc)
+ 		nstripes = btrfs_get_device_extents(bg->objectid,
+ 						    &rc->devext.no_chunk_orphans,
+ 						    &devexts);
+-		chunk = malloc(btrfs_chunk_record_size(nstripes));
++		chunk = calloc(1, btrfs_chunk_record_size(nstripes));
+ 		if (!chunk)
+ 			return -ENOMEM;
+-		memset(chunk, 0, btrfs_chunk_record_size(nstripes));
+ 		INIT_LIST_HEAD(&chunk->dextents);
+ 		chunk->bg_rec = bg;
+ 		chunk->cache.start = bg->objectid;
 -- 
 2.5.3
 

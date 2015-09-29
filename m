@@ -1,21 +1,21 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:47200 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:18040 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933035AbbI2J1D (ORCPT
+	with ESMTP id S933557AbbI2Jg3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 05:27:03 -0400
+	Tue, 29 Sep 2015 05:36:29 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH] fstests: generic: Check if a bull fallocate will change extent number
-Date: Tue, 29 Sep 2015 17:24:59 +0800
-Message-ID: <1443518699-11923-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2] fstests: generic: Check if a bull fallocate will change extent number
+Date: Tue, 29 Sep 2015 17:34:24 +0800
+Message-ID: <1443519264-19184-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Normally, a bull fallocate call on a fully written and synced file
-should not add a extent.
+should not add an extent.
 
 But not all filesystem follows the correct behavior.
 
@@ -26,6 +26,10 @@ So add this test case to detect such malfunction.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+v2:
+  Add author info...
+  Fix some comment typo
+---
  tests/generic/110     | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++
  tests/generic/110.out |  3 ++
  tests/generic/group   |  1 +
@@ -35,7 +39,7 @@ Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
 diff --git a/tests/generic/110 b/tests/generic/110
 new file mode 100755
-index 0000000..bd6b479
+index 0000000..b2b140c
 --- /dev/null
 +++ b/tests/generic/110
 @@ -0,0 +1,78 @@
@@ -45,7 +49,7 @@ index 0000000..bd6b479
 +# Test if fallocate will create uneeded extra tailing extent
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2015 YOUR NAME HERE.  All Rights Reserved.
++# Copyright (c) 2015 Fujitsu.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -103,7 +107,7 @@ index 0000000..bd6b479
 +orig_extent_nr=`_extent_count $SCRATCH_MNT/foo`
 +
 +# As all space are allocated and even written to disk, this falloc
-+# should do nothing with 
++# should do nothing with extent modification.
 +$XFS_IO_PROG -f -c "falloc 0 $filesize" $SCRATCH_MNT/foo
 +sync
 +new_extent_nr=`_extent_count $SCRATCH_MNT/foo`

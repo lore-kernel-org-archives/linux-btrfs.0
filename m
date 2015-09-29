@@ -1,55 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48364 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932672AbbIYRkV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 25 Sep 2015 13:40:21 -0400
-Date: Fri, 25 Sep 2015 19:39:23 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Zhaolei <zhaolei@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: Increase running state's priority in stat
- output
-Message-ID: <20150925173923.GO11442@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <7c723cfb3f6b2d792b832b96f2b6b0258a13044e.1438070027.git.zhaolei@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:24288 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1755109AbbI2BwD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 21:52:03 -0400
+Subject: Re: [PATCH] btrfs: remove empty header file extent-tree.h
+To: <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
+References: <1435886274-8309-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5609EEBF.2010804@cn.fujitsu.com>
+Date: Tue, 29 Sep 2015 09:51:59 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <7c723cfb3f6b2d792b832b96f2b6b0258a13044e.1438070027.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <1435886274-8309-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jul 28, 2015 at 03:53:58PM +0800, Zhaolei wrote:
-> From: Zhao Lei <zhaolei@cn.fujitsu.com>
-> 
-> Anthony Plack <anthony@plack.net> reported a output bug in maillist:
->   title: btrfs-progs SCRUB reporting aborted but still running - minor
-> 
-> btrfs scrub status report it was aborted but still runs to completion.
->   # btrfs scrub status /mnt/data
->   scrub status for f591ac13-1a69-476d-bd30-346f87a491da
-> 	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 1089 seconds
-> 	total bytes scrubbed: 1.02TiB with 0 errors
->   #
->   # btrfs scrub status /mnt/data
->   scrub status for f591ac13-1a69-476d-bd30-346f87a491da
-> 	scrub started at Mon Apr 27 06:48:44 2015 and was aborted after 1664 seconds
-> 	total bytes scrubbed: 1.53TiB with 0 errors
->   #
->   ...
-> 
-> Reason:
->   When scrub multi-device simultaneously, if some device canceled,
->   and some device is still running, cancel state have higher priority to
->   be outputed in global report.
->   So we can see "scrub aborted" in status line, with running-time keeps
->   increased.
-> 
-> Fix:
->   We can increase running state's priority in output, if there is
->   some device in scrub state, we output running state instead of
->   cancelled state.
-> 
-> Reported-by: Anthony Plack <anthony@plack.net>
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Hi Chris,
 
-Applied, thanks.
+Would you please merge this patch?
+
+The empty header is introduced by my qgroup accounting rework, and the 
+cleanup patch is missed in 4.2.
+
+Thanks,
+Qu
+
+Qu Wenruo wrote on 2015/07/03 09:17 +0800:
+> The empty file is introduced as an careless 'git add', remove it.
+>
+> Reported-by: David Sterba <dsterba@suse.cz>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   fs/btrfs/extent-tree.h | 0
+>   1 file changed, 0 insertions(+), 0 deletions(-)
+>   delete mode 100644 fs/btrfs/extent-tree.h
+>
+> diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
+> deleted file mode 100644
+> index e69de29..0000000
+>

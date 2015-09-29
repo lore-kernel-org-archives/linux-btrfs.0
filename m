@@ -1,66 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:12992 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751049AbbI1X3j (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Sep 2015 19:29:39 -0400
-Date: Tue, 29 Sep 2015 09:28:58 +1000
-From: Dave Chinner <david@fromorbit.com>
-To: Mark Fasheh <mfasheh@suse.de>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] fstests: btrfs: add test for quota groups and drop
- snapshot
-Message-ID: <20150928232858.GA27164@dastard>
-References: <20150922221649.GB17854@wotan.suse.de>
- <20150923024708.GK3902@dastard>
- <20150923210516.GC17854@wotan.suse.de>
+Received: from mx1.redhat.com ([209.132.183.28]:47124 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932337AbbI2DyT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Sep 2015 23:54:19 -0400
+Date: Tue, 29 Sep 2015 11:54:11 +0800
+From: Eryu Guan <eguan@redhat.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>, Martin Raiber <martin@urbackup.org>
+Subject: Re: [PATCH] fstests: test for btrfs incremental send after replacing
+ a file
+Message-ID: <20150929035411.GE30949@dhcp-13-216.nay.redhat.com>
+References: <1443267613-9453-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20150923210516.GC17854@wotan.suse.de>
+In-Reply-To: <1443267613-9453-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 23, 2015 at 02:05:16PM -0700, Mark Fasheh wrote:
-> Since the last time I sent this test, drop snapshot was broken again with
-> respect to qgroups. What practical step could I take to get a test for that
-> in here which I can beat the btrfs developers over the head with the next
-> time someone handwaves this problem away ;)
-
-I'll merge tests that break a filesystem as a reminder to developers
-that there is a problem that needs fixing. We do that from time to
-time for XFS issues that are either really hard to fix or not urgent
-but require significant amounts of work to correct...
-
-> From: Mark Fasheh <mfasheh@suse.de>
+On Sat, Sep 26, 2015 at 12:40:13PM +0100, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> [PATCH] btrfs: add test for quota groups and drop snapshot
-....
-> +# NOTE: The ability to vary tree height for this test is very useful
-> +# for debugging problems with drop_snapshot(). As a result we retain
-> +# that parameter even though the test below always does level 2 trees.
-> +_explode_fs_tree () {
-> +	local level=$1;
-> +	local loc="$2";
-> +	local n;
-> +
-> +	if [ -z $loc ]; then
-> +	    echo "specify location for fileset"
-> +	    exit 1;
-> +	fi
-> +
-> +	case $level in
-> +	    1)# this always reproduces level 1 trees
-> +		n=10;
-> +		;;
-> +	    2)# this always reproduces level 2 trees
-> +		n=1500
+> Test that an incremental send works after a file from the parent snapshot
+> gets replaced in the send snapshot by another one at the same exact
+> location, with the same name and with the same inode number.
+> 
+> This test used to fail after the linux kernel commit 8b191a684968
+> ("Btrfs: incremental send, check if orphanized dir inode needs delayed
+> rename") and it's fixed by patch titled:
+> 
+>   "Btrfs: send, fix corner case for reference overwrite detection"
 
-Still some minor whitespace issues, but I can fix that on commit
-as everything else looks fine.
+I got "btrfs receive" error when testing this, with 4.3-rc1 kernel and
+btrfs-progs v4.2, not sure if this is expected
 
-Cheers,
+At subvol /mnt/testarea/scratch/mysnap2_ro
+# /usr/bin/btrfs receive /mnt/testarea/scratch -f /mnt/testarea/test/btrfs-test-104/1.snap
+At subvol mysnap1
+# /usr/bin/btrfs receive /mnt/testarea/scratch -f /mnt/testarea/test/btrfs-test-104/2.snap
+ERROR: unlink o258-7-0 failed. No such file or directory
+At snapshot mysnap2_ro
+failed: '/usr/bin/btrfs receive /mnt/testarea/scratch -f /mnt/testarea/test/btrfs-test-104/2.snap'
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Thanks,
+Eryu

@@ -1,45 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:59741 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:60717 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755874AbbI2KN7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 06:13:59 -0400
+	id S934041AbbI2KQ0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Sep 2015 06:16:26 -0400
 Subject: Re: [PATCH v2] fstests: generic: Check if a bull fallocate will
  change extent number
-To: Hugo Mills <hugo@carfax.org.uk>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
+To: Eryu Guan <eguan@redhat.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
 References: <1443519264-19184-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20150929100013.GD25907@carfax.org.uk>
+ <20150929095549.GH30949@dhcp-13-216.nay.redhat.com>
+Cc: linux-btrfs@vger.kernel.org, fstests@vger.kernel.org
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <560A6451.6050808@gmx.com>
-Date: Tue, 29 Sep 2015 18:13:37 +0800
+Message-ID: <560A64EB.5070401@gmx.com>
+Date: Tue, 29 Sep 2015 18:16:11 +0800
 MIME-Version: 1.0
-In-Reply-To: <20150929100013.GD25907@carfax.org.uk>
+In-Reply-To: <20150929095549.GH30949@dhcp-13-216.nay.redhat.com>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-在 2015年09月29日 18:00, Hugo Mills 写道:
+在 2015年09月29日 17:55, Eryu Guan 写道:
 > On Tue, Sep 29, 2015 at 05:34:24PM +0800, Qu Wenruo wrote:
 >> Normally, a bull fallocate call on a fully written and synced file
 >> should not add an extent.
->
->     What's a "bull" fallocate call? Is it a typo, or simply something
-> I'm not familiar with?
->
->     Hugo.
-
-Oh, it should be null.
-But null still seems not appropriate here.
-
-I mean a fallocate call which doesn't really allocate any space...
-
-Any good ideas?
-
-Thanks,
-Qu
->
+>>
 >> But not all filesystem follows the correct behavior.
 >>
 >> Btrfs has a bug to always truncate the last page if the fallocate start
@@ -52,6 +37,9 @@ Qu
 >> v2:
 >>    Add author info...
 >>    Fix some comment typo
+>
+> (I was going to point these out then saw a v2 :)
+>
 >> ---
 >>   tests/generic/110     | 78 +++++++++++++++++++++++++++++++++++++++++++++++++++
 >>   tests/generic/110.out |  3 ++
@@ -118,6 +106,13 @@ Qu
 >> +_supported_os IRIX Linux
 >> +_require_scratch
 >> +_need_to_be_root
+>
+> need a '_require_xfs_io_command "falloc"' here, so test _notrun
+> correctly on ext2/3/NFS/CIFS that don't support fallocate.
+
+Will add it.
+
+>
 >> +
 >> +# Use 64K file size to match any sectorsize
 >> +# And with a unaligned tailing range to ensure it will be at least 2 pages
@@ -139,6 +134,25 @@ Qu
 >> +
 >> +if [ "x$orig_extent_nr" != "x$new_extent_nr" ]; then
 >> +	echo "number of extents mis-match after bull fallocate"
+>
+> print out the $orig_extent_nr and $new_extent_nr in this failure case? I
+> think it's useful to see the difference just from the output diff, don't
+> have to check the full file.
+
+The problem is, we can't ensure orig/new_extent_nr always be a constant 
+value(1 for btrfs case).
+
+Maybe there is some file system which can only allocate extent up to 
+64K, then the orig_extent_nr will be 2 and fails on that filesystem.
+
+So I follow the method used in btrfs/010 to do it.
+
+Thanks,
+Qu
+>
+> Thanks,
+> Eryu
+>
 >> +fi
 >> +
 >> +# success, all done
@@ -165,4 +179,15 @@ Qu
 >>   112 rw aio auto quick
 >>   113 rw aio auto quick
 >>   117 attr auto quick
+>> --
+>> 1.8.3.1
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe fstests" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:32893 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933971AbbI2RLL (ORCPT
+Received: from mail-wi0-f181.google.com ([209.85.212.181]:37743 "EHLO
+	mail-wi0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934899AbbI2RLN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 13:11:11 -0400
-Received: by wiclk2 with SMTP id lk2so161268189wic.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:11:10 -0700 (PDT)
+	Tue, 29 Sep 2015 13:11:13 -0400
+Received: by wicfx3 with SMTP id fx3so25954606wic.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:11:12 -0700 (PDT)
 From: Silvio Fricke <silvio.fricke@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Silvio Fricke <silvio.fricke@gmail.com>
-Subject: [PATCH 09/11] btrfs-progs: use calloc instead of malloc+memset for quick-test.c
-Date: Tue, 29 Sep 2015 19:10:44 +0200
-Message-Id: <760f5635a72bc03eb6ef8188c22a71b20bff81cc.1443546001.git.silvio.fricke@gmail.com>
+Subject: [PATCH 10/11] btrfs-progs: use calloc instead of malloc+memset for volumes.c
+Date: Tue, 29 Sep 2015 19:10:45 +0200
+Message-Id: <15a59eb69ae9db79ef8ad353b1570f1ed42342f9.1443546001.git.silvio.fricke@gmail.com>
 In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
 References: <cover.1443546000.git.silvio.fricke@gmail.com>
 In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
@@ -37,23 +37,25 @@ This patch is generated from a coccinelle semantic patch:
 
 Signed-off-by: Silvio Fricke <silvio.fricke@gmail.com>
 ---
- quick-test.c | 3 +--
+ volumes.c | 3 +--
  1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/quick-test.c b/quick-test.c
-index 5dfb2fe..ffde85d 100644
---- a/quick-test.c
-+++ b/quick-test.c
-@@ -46,8 +46,7 @@ int main(int ac, char **av) {
- 	struct btrfs_root *root;
- 	struct btrfs_trans_handle *trans;
+diff --git a/volumes.c b/volumes.c
+index ca50f1c..83ddd16 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1968,10 +1968,9 @@ static void split_eb_for_raid56(struct btrfs_fs_info *info,
+ 		if (raid_map[i] >= BTRFS_RAID5_P_STRIPE)
+ 			break;
  
--	buf = malloc(512);
--	memset(buf, 0, 512);
-+	buf = calloc(1, 512);
+-		eb = malloc(sizeof(struct extent_buffer) + stripe_len);
++		eb = calloc(1, sizeof(struct extent_buffer) + stripe_len);
+ 		if (!eb)
+ 			BUG();
+-		memset(eb, 0, sizeof(struct extent_buffer) + stripe_len);
  
- 	radix_tree_init();
- 
+ 		eb->start = raid_map[i];
+ 		eb->len = stripe_len;
 -- 
 2.5.3
 

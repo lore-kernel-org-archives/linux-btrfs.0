@@ -1,313 +1,199 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx142.netapp.com ([216.240.21.19]:30211 "EHLO mx142.netapp.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750901AbbI1Umz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Sep 2015 16:42:55 -0400
-Subject: Re: [PATCH v3 10/9] copy_file_range.2: New page documenting
- copy_file_range()
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-References: <1443214096-12769-1-git-send-email-Anna.Schumaker@Netapp.com>
- <1443214096-12769-11-git-send-email-Anna.Schumaker@Netapp.com>
- <20150928184034.GC850@birch.djwong.org>
-CC: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
-        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
-        <mtk.manpages@gmail.com>, <andros@netapp.com>, <hch@infradead.org>
-From: Anna Schumaker <Anna.Schumaker@netapp.com>
-Message-ID: <5609A64A.90304@Netapp.com>
-Date: Mon, 28 Sep 2015 16:42:50 -0400
+Received: from mail-la0-f41.google.com ([209.85.215.41]:35364 "EHLO
+	mail-la0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S935004AbbI2QYA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Sep 2015 12:24:00 -0400
 MIME-Version: 1.0
-In-Reply-To: <20150928184034.GC850@birch.djwong.org>
-Content-Type: text/plain; charset="utf-8"
+In-Reply-To: <1443430586-18835-1-git-send-email-fdmanana@kernel.org>
+References: <1443430586-18835-1-git-send-email-fdmanana@kernel.org>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Tue, 29 Sep 2015 19:23:18 +0300
+Message-ID: <CAGqmi75N_pi+15YEsAEakewFg4mVWtJrKzih4CVPL03KMjfJzg@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: update fix for read corruption of compressed and
+ shared extents
+To: fdmanana@kernel.org
+Cc: stable@vger.kernel.org, Filipe Manana <fdmanana@suse.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/28/2015 02:40 PM, Darrick J. Wong wrote:
-> On Fri, Sep 25, 2015 at 04:48:16PM -0400, Anna Schumaker wrote:
->> copy_file_range() is a new system call for copying ranges of data
->> completely in the kernel.  This gives filesystems an opportunity to
->> implement some kind of "copy acceleration", such as reflinks or
->> server-side-copy (in the case of NFS).
->>
->> Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
->> ---
->> v3:
->> - Added license information
->> - Updated splice(2)
->> - Various other edits after mailing list discussion
->> ---
->>  man2/copy_file_range.2 | 211 +++++++++++++++++++++++++++++++++++++++++++++++++
->>  man2/splice.2          |   1 +
->>  2 files changed, 212 insertions(+)
->>  create mode 100644 man2/copy_file_range.2
->>
->> diff --git a/man2/copy_file_range.2 b/man2/copy_file_range.2
->> new file mode 100644
->> index 0000000..6d66d4a
->> --- /dev/null
->> +++ b/man2/copy_file_range.2
->> @@ -0,0 +1,211 @@
->> +.\"This manpage is Copyright (C) 2015 Anna Schumaker <Anna.Schumaker@Netapp.com>
->> +.\"
->> +.\" %%%LICENSE_START(VERBATIM)
->> +.\" Permission is granted to make and distribute verbatim copies of this
->> +.\" manual provided the copyright notice and this permission notice are
->> +.\" preserved on all copies.
->> +.\"
->> +.\" Permission is granted to copy and distribute modified versions of
->> +.\" this manual under the conditions for verbatim copying, provided that
->> +.\" the entire resulting derived work is distributed under the terms of
->> +.\" a permission notice identical to this one.
->> +.\"
->> +.\" Since the Linux kernel and libraries are constantly changing, this
->> +.\" manual page may be incorrect or out-of-date.  The author(s) assume.
->> +.\" no responsibility for errors or omissions, or for damages resulting.
->> +.\" from the use of the information contained herein.  The author(s) may.
->> +.\" not have taken the same level of care in the production of this.
->> +.\" manual, which is licensed free of charge, as they might when working.
->> +.\" professionally.
->> +.\"
->> +.\" Formatted or processed versions of this manual, if unaccompanied by
->> +.\" the source, must acknowledge the copyright and authors of this work.
->> +.\" %%%LICENSE_END
->> +.\"
->> +.TH COPY 2 2015-08-31 "Linux" "Linux Programmer's Manual"
->> +.SH NAME
->> +copy_file_range \- Copy a range of data from one file to another
->> +.SH SYNOPSIS
->> +.nf
->> +.B #include <linux/copy.h>
->> +.B #include <sys/syscall.h>
->> +.B #include <unistd.h>
->> +
->> +.BI "ssize_t copy_file_range(int " fd_in ", loff_t *" off_in ", int " fd_out ",
->> +.BI "                        loff_t *" off_out ", size_t " len \
->> +", unsigned int " flags );
->> +.fi
->> +.SH DESCRIPTION
->> +The
->> +.BR copy_file_range ()
->> +system call performs an in-kernel copy between two file descriptors
->> +without the additional cost of transferring data from the kernel to userspace
->> +and then back into the kernel.
->> +It copies up to
->> +.I len
->> +bytes of data from file descriptor
->> +.I fd_in
->> +to file descriptor
->> +.IR fd_out ,
->> +overwriting any data that exists within the requested range of the target file.
->> +
->> +The following semantics apply for
->> +.IR off_in ,
->> +and similar statements apply to
->> +.IR off_out :
->> +.IP * 3
->> +If
->> +.I off_in
->> +is NULL, then bytes are read from
->> +.I fd_in
->> +starting from the current file offset, and the offset is
->> +adjusted by the number of bytes copied.
->> +.IP *
->> +If
->> +.I off_in
->> +is not NULL, then
->> +.I off_in
->> +must point to a buffer that specifies the starting
->> +offset where bytes from
->> +.I fd_in
->> +will be read.  The current file offset of
->> +.I fd_in
->> +is not changed, but
->> +.I off_in
->> +is adjusted appropriately.
->> +.PP
->> +
->> +The
->> +.I flags
->> +argument can have one of the following flags set:
->> +.TP 1.9i
->> +.B COPY_FR_COPY
->> +Copy all the file data in the requested range.
->> +Some filesystems might be able to accelerate this copy
->> +to avoid unnecessary data transfers.
->> +.TP
->> +.B COPY_FR_REFLINK
->> +Create a lightweight "reflink", where data is not copied until
->> +one of the files is modified.
-> 
-> .TP
-> .B COPY_FR_DEDUPE
-> Create a lightweight "reflink" with the same operational behavior as
-> COPY_FR_REFLINK, but only perform the reflink if the contents of both files'
-> byte ranges are identical.  This flag cannot be specified with COPY_FR_COPY or
-> COPY_FR_REFLINK.  If the ranges do not match, EILSEQ will be returned.
-> 
->> +.PP
->> +The default behavior
->> +.RI ( flags
->> +== 0) is to try creating a reflink,
->> +and if reflinking fails
->> +.BR copy_file_range ()
->> +will fall back to performing a full data copy.
->> +.SH RETURN VALUE
->> +Upon successful completion,
->> +.BR copy_file_range ()
->> +will return the number of bytes copied between files.
->> +This could be less than the length originally requested.
->> +
->> +On error,
->> +.BR copy_file_range ()
->> +returns \-1 and
->> +.I errno
->> +is set to indicate the error.
->> +.SH ERRORS
->> +.TP
->> +.B EBADF
->> +One or more file descriptors are not valid; or
->> +.I fd_in
->> +is not open for reading; or
->> +.I fd_out
->> +is not open for writing.
->> +.TP
->> +.B EINVAL
->> +Requested range extends beyond the end of the source file; or the
->> +.I flags
->> +argument is set to an invalid value.
-> 
-> .TP
-> .B EILSEQ
-> The contents of both files' byte ranges did not match.
-> 
->> +.TP
->> +.B EIO
->> +A low level I/O error occurred while copying.
->> +.TP
->> +.B ENOMEM
->> +Out of memory.
->> +.TP
->> +.B ENOSPC
->> +There is not enough space on the target filesystem to complete the copy.
->> +.TP
->> +.B EOPNOTSUPP
->> +.B COPY_REFLINK
-> 
-> .B COPY_FR_REFLINK
-> or
-> .B COPY_FR_DEDUPE
-> 
->> +was specified in
->> +.IR flags ,
->> +but the target filesystem does not support reflinks.
-> 
-> "does not support the given operation."
-> 
-> Otherwise you can add,
-> Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
+On Sep 28, 2015 11:57, <fdmanana@kernel.org> wrote:
+>
+> From: Filipe Manana <fdmanana@suse.com>
+>
+> My previous fix in commit 005efedf2c7d ("Btrfs: fix read corruption of
+> compressed and shared extents") was effective only if the compressed
+> extents cover a file range with a length that is not a multiple of 16
+> pages. That's because the detection of when we reached a different range
+> of the file that shares the same compressed extent as the previously
+> processed range was done at extent_io.c:__do_contiguous_readpages(),
+> which covers subranges with a length up to 16 pages, because
+> extent_readpages() groups the pages in clusters no larger than 16 pages.
+> So fix this by tracking the start of the previously processed file
+> range's extent map at extent_readpages().
+>
+> The following test case for fstests reproduces the issue:
+>
+>   seq=`basename $0`
+>   seqres=$RESULT_DIR/$seq
+>   echo "QA output created by $seq"
+>   tmp=/tmp/$$
+>   status=1      # failure is the default!
+>   trap "_cleanup; exit \$status" 0 1 2 3 15
+>
+>   _cleanup()
+>   {
+>       rm -f $tmp.*
+>   }
+>
+>   # get standard environment, filters and checks
+>   . ./common/rc
+>   . ./common/filter
+>
+>   # real QA test starts here
+>   _need_to_be_root
+>   _supported_fs btrfs
+>   _supported_os Linux
+>   _require_scratch
+>   _require_cloner
+>
+>   rm -f $seqres.full
+>
+>   test_clone_and_read_compressed_extent()
+>   {
+>       local mount_opts=$1
+>
+>       _scratch_mkfs >>$seqres.full 2>&1
+>       _scratch_mount $mount_opts
+>
+>       # Create our test file with a single extent of 64Kb that is going to
+>       # be compressed no matter which compression algo is used (zlib/lzo).
+>       $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 64K" \
+>           $SCRATCH_MNT/foo | _filter_xfs_io
+>
+>       # Now clone the compressed extent into an adjacent file offset.
+>       $CLONER_PROG -s 0 -d $((64 * 1024)) -l $((64 * 1024)) \
+>           $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+>
+>       echo "File digest before unmount:"
+>       md5sum $SCRATCH_MNT/foo | _filter_scratch
+>
+>       # Remount the fs or clear the page cache to trigger the bug in
+>       # btrfs. Because the extent has an uncompressed length that is a
+>       # multiple of 16 pages, all the pages belonging to the second range
+>       # of the file (64K to 128K), which points to the same extent as the
+>       # first range (0K to 64K), had their contents full of zeroes instead
+>       # of the byte 0xaa. This was a bug exclusively in the read path of
+>       # compressed extents, the correct data was stored on disk, btrfs
+>       # just failed to fill in the pages correctly.
+>       _scratch_remount
+>
+>       echo "File digest after remount:"
+>       # Must match the digest we got before.
+>       md5sum $SCRATCH_MNT/foo | _filter_scratch
+>   }
+>
+>   echo -e "\nTesting with zlib compression..."
+>   test_clone_and_read_compressed_extent "-o compress=zlib"
+>
+>   _scratch_unmount
+>
+>   echo -e "\nTesting with lzo compression..."
+>   test_clone_and_read_compressed_extent "-o compress=lzo"
+>
+>   status=0
+>   exit
+>
+> Cc: stable@vger.kernel.org
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/extent_io.c | 19 +++++++++++--------
+>  1 file changed, 11 insertions(+), 8 deletions(-)
+>
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 11aa8f7..363726b 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -3144,12 +3144,12 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+>                                              get_extent_t *get_extent,
+>                                              struct extent_map **em_cached,
+>                                              struct bio **bio, int mirror_num,
+> -                                            unsigned long *bio_flags, int rw)
+> +                                            unsigned long *bio_flags, int rw,
+> +                                            u64 *prev_em_start)
+>  {
+>         struct inode *inode;
+>         struct btrfs_ordered_extent *ordered;
+>         int index;
+> -       u64 prev_em_start = (u64)-1;
+>
+>         inode = pages[0]->mapping->host;
+>         while (1) {
+> @@ -3165,7 +3165,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
+>
+>         for (index = 0; index < nr_pages; index++) {
+>                 __do_readpage(tree, pages[index], get_extent, em_cached, bio,
+> -                             mirror_num, bio_flags, rw, &prev_em_start);
+> +                             mirror_num, bio_flags, rw, prev_em_start);
+>                 page_cache_release(pages[index]);
+>         }
+>  }
+> @@ -3175,7 +3175,8 @@ static void __extent_readpages(struct extent_io_tree *tree,
+>                                int nr_pages, get_extent_t *get_extent,
+>                                struct extent_map **em_cached,
+>                                struct bio **bio, int mirror_num,
+> -                              unsigned long *bio_flags, int rw)
+> +                              unsigned long *bio_flags, int rw,
+> +                              u64 *prev_em_start)
+>  {
+>         u64 start = 0;
+>         u64 end = 0;
+> @@ -3196,7 +3197,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
+>                                                   index - first_index, start,
+>                                                   end, get_extent, em_cached,
+>                                                   bio, mirror_num, bio_flags,
+> -                                                 rw);
+> +                                                 rw, prev_em_start);
+>                         start = page_start;
+>                         end = start + PAGE_CACHE_SIZE - 1;
+>                         first_index = index;
+> @@ -3207,7 +3208,8 @@ static void __extent_readpages(struct extent_io_tree *tree,
+>                 __do_contiguous_readpages(tree, &pages[first_index],
+>                                           index - first_index, start,
+>                                           end, get_extent, em_cached, bio,
+> -                                         mirror_num, bio_flags, rw);
+> +                                         mirror_num, bio_flags, rw,
+> +                                         prev_em_start);
+>  }
+>
+>  static int __extent_read_full_page(struct extent_io_tree *tree,
+> @@ -4218,6 +4220,7 @@ int extent_readpages(struct extent_io_tree *tree,
+>         struct page *page;
+>         struct extent_map *em_cached = NULL;
+>         int nr = 0;
+> +       u64 prev_em_start = (u64)-1;
+>
+>         for (page_idx = 0; page_idx < nr_pages; page_idx++) {
+>                 page = list_entry(pages->prev, struct page, lru);
+> @@ -4234,12 +4237,12 @@ int extent_readpages(struct extent_io_tree *tree,
+>                 if (nr < ARRAY_SIZE(pagepool))
+>                         continue;
+>                 __extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
+> -                                  &bio, 0, &bio_flags, READ);
+> +                                  &bio, 0, &bio_flags, READ, &prev_em_start);
+>                 nr = 0;
+>         }
+>         if (nr)
+>                 __extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
+> -                                  &bio, 0, &bio_flags, READ);
+> +                                  &bio, 0, &bio_flags, READ, &prev_em_start);
+>
+>         if (em_cached)
+>                 free_extent_map(em_cached);
+> --
+> 2.1.3
 
-Thanks, Darrick!
-
-I've added in your suggestions (and also renamed COPY_FR_DEDUPE -> COPY_FR_DEDUP). I'll send out a v4 tomorrow morning, once I see if any other comments trickle in.
-
-Anna
-
-> 
-> --D
-> 
->> +.TP
->> +.B EXDEV
->> +Target filesystem doesn't support cross-filesystem copies.
->> +.SH VERSIONS
->> +The
->> +.BR copy_file_range ()
->> +system call first appeared in Linux 4.4.
->> +.SH CONFORMING TO
->> +The
->> +.BR copy_file_range ()
->> +system call is a nonstandard Linux extension.
->> +.SH EXAMPLE
->> +.nf
->> +#define _GNU_SOURCE
->> +#include <fcntl.h>
->> +#include <linux/copy.h>
->> +#include <stdio.h>
->> +#include <stdlib.h>
->> +#include <sys/stat.h>
->> +#include <sys/syscall.h>
->> +#include <unistd.h>
->> +
->> +loff_t copy_file_range(int fd_in, loff_t *off_in, int fd_out,
->> +                       loff_t *off_out, size_t len, unsigned int flags)
->> +{
->> +    return syscall(__NR_copy_file_range, fd_in, off_in, fd_out,
->> +                   off_out, len, flags);
->> +}
->> +
->> +int main(int argc, char **argv)
->> +{
->> +    int fd_in, fd_out;
->> +    struct stat stat;
->> +    loff_t len, ret;
->> +    char buf[2];
->> +
->> +    if (argc != 3) {
->> +        fprintf(stderr, "Usage: %s <source> <destination>\\n", argv[0]);
->> +        exit(EXIT_FAILURE);
->> +    }
->> +
->> +    fd_in = open(argv[1], O_RDONLY);
->> +    if (fd_in == \-1) {
->> +        perror("open (argv[1])");
->> +        exit(EXIT_FAILURE);
->> +    }
->> +
->> +    if (fstat(fd_in, &stat) == \-1) {
->> +        perror("fstat");
->> +        exit(EXIT_FAILURE);
->> +    }
->> +    len = stat.st_size;
->> +
->> +    fd_out = open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0644);
->> +    if (fd_out == \-1) {
->> +        perror("open (argv[2])");
->> +        exit(EXIT_FAILURE);
->> +    }
->> +
->> +    do {
->> +        ret = copy_file_range(fd_in, NULL, fd_out, NULL, len, COPY_FR_COPY);
->> +        if (ret == \-1) {
->> +            perror("copy_file_range");
->> +            exit(EXIT_FAILURE);
->> +        }
->> +
->> +        len \-= ret;
->> +    } while (len > 0);
->> +
->> +    close(fd_in);
->> +    close(fd_out);
->> +    exit(EXIT_SUCCESS);
->> +}
->> +.fi
->> +.SH SEE ALSO
->> +.BR splice (2)
->> diff --git a/man2/splice.2 b/man2/splice.2
->> index b9b4f42..5c162e0 100644
->> --- a/man2/splice.2
->> +++ b/man2/splice.2
->> @@ -238,6 +238,7 @@ only pointers are copied, not the pages of the buffer.
->>  See
->>  .BR tee (2).
->>  .SH SEE ALSO
->> +.BR copy_file_range (2),
->>  .BR sendfile (2),
->>  .BR tee (2),
->>  .BR vmsplice (2)
->> -- 
->> 2.5.3
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-api" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
+Tested-by: Timofey Titovets <nefelim4ag@gmail.com>
+Thanks, Again, Filipe

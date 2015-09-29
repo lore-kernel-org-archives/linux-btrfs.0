@@ -1,57 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.kundenserver.de ([212.227.17.13]:62071 "EHLO
-	mout.kundenserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965055AbbI2OMS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 10:12:18 -0400
-Received: from durkon.lan ([178.201.238.189]) by mrelayeu.kundenserver.de
- (mreue101) with ESMTPSA (Nemesis) id 0MBkiF-1ZqaQR0sLv-00ArFp for
- <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 16:12:16 +0200
-Received: from g.menke.ac (haley.lan [192.168.2.21])
-	by durkon.lan (Postfix) with ESMTPSA id 193BA224C7
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 16:12:15 +0200 (CEST)
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII;
- format=flowed
-Date: Tue, 29 Sep 2015 16:12:15 +0200
-From: Gert Menke <gert@menke.ac>
+Received: from ns.bouton.name ([109.74.195.142]:41258 "EHLO mail.bouton.name"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754985AbbI2OtS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Sep 2015 10:49:18 -0400
+Received: from [192.168.0.32] (adsl.bouton.name [82.234.193.23])
+	by mail.bouton.name (Postfix) with ESMTP id BF726B84D
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 16:49:15 +0200 (CEST)
+Subject: Re: btrfs fi defrag interfering (maybe) with Ceph OSD operation
 To: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS as image store for KVM?
-In-Reply-To: <56055839.9000904@gmail.com>
-References: <55F88ECC.1040604@menke.ac> <55FE0B42.50300@jrs-s.net>
- <CAGfcS_=bst0S8YLsr6y4oGDu7Gy-ox9ow5+_nD4c3zFdj-Y6ug@mail.gmail.com>
- <56054665.1020608@gmail.com> <5605518B.2020103@jrs-s.net>
- <CAGqmi75-Wc-YOwCJhRD1ahgKhEM5tPPBVjCYmvgjMZNhEnk77w@mail.gmail.com>
- <56055839.9000904@gmail.com>
-Message-ID: <a5f26946b9bf488bfce46503de2b9495@durkon.lan>
+References: <56080C9A.6030102@bouton.name>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <560AA4EB.4050504@bouton.name>
+Date: Tue, 29 Sep 2015 16:49:15 +0200
+MIME-Version: 1.0
+In-Reply-To: <56080C9A.6030102@bouton.name>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Le 27/09/2015 17:34, Lionel Bouton a écrit :
+> [...]
+> It's not clear to me that "btrfs fi defrag <file>" can't interfere with
+> another process trying to use the file. I assume basic reading and
+> writing is OK but there might be restrictions on unlinking/locking/using
+> other ioctls... Are there any I should be aware of and should look for
+> in Ceph OSDs? This is on a 3.8.19 kernel (with Gentoo patches which
+> don't touch BTRFS sources) with btrfs-progs 4.0.1. We have 5 servers on
+> our storage network : 2 are running a 4.0.5 kernel and 3 are running
+> 3.8.19. The 3.8.19 servers are waiting for an opportunity to reboot on
+> 4.0.5 (or better if we have the time to test a more recent kernel before
+> rebooting : 4.1.8 and 4.2.1 are our candidates for testing right now).
 
-thank you all for your helpful comments.
+Apparently this isn't the problem : we just had another similar Ceph OSD
+crash without any concurrent defragmentation going on.
 
- From what I've read, I forged the following guidelines (for myself; 
-ymmv):
-- Use btrfs for generic data storage on spinning disks and for 
-everything on ssds.
-- Use zfs for spinning disks that may be used for cow-unfriendly 
-workloads, like vm images (if they are too big and/or too fast-changing 
-for a scheduled defrag to make sense).
+Best regards,
 
-For now I'm going with the following setup: a Debian system with root on 
-btrfs/raid1 on two ssds, and a raidz1 pool for storage and vm images. 
-However, those few vms that really should be fast would also fit on the 
-SSDs, so I might move them there and switch from ZFS to btrfs on the 
-storage pool at some point in the future.
-
-Some of the ideas presented here sound really interesting - for example 
-I think that improving the Linux page cache to be more "arc-like" will 
-probably benefit not only btrfs. Having both the page cache and the arc 
-in parallel when using ZoL does not feel like an elegant solution, so 
-maybe there's hope for that. (But I don't know if it is feasible for ZoL 
-to abandon the arc in favor of an improved Linux page cache; I imagine 
-it might be much work for little benefit.)
-
-Thanks again
-Gert
+Lionel Bouton

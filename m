@@ -1,47 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47480 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964843AbbI2M0W (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 08:26:22 -0400
-Date: Tue, 29 Sep 2015 14:25:22 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Ferry Toth <ftoth@exalondelft.nl>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Excessive slab use deteriorates performance
-Message-ID: <20150929122522.GY11442@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <mu61ah$iaa$1@ger.gmane.org>
+Received: from mail-la0-f41.google.com ([209.85.215.41]:36347 "EHLO
+	mail-la0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755467AbbI2Mi5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Sep 2015 08:38:57 -0400
+Received: by laclj5 with SMTP id lj5so6637395lac.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 05:38:55 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <mu61ah$iaa$1@ger.gmane.org>
+In-Reply-To: <CAGqmi76J4XWv+ureSG66Da_E-xq3MqGahbhsaTR6Sf2rSHd4Ug@mail.gmail.com>
+References: <CAGqmi76J4XWv+ureSG66Da_E-xq3MqGahbhsaTR6Sf2rSHd4Ug@mail.gmail.com>
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Tue, 29 Sep 2015 15:38:15 +0300
+Message-ID: <CAGqmi769jyGg0+y_Du45d5cvCNOtZ+46oi5hDu9Y244b-q-UOA@mail.gmail.com>
+Subject: Re: Btrfs duperemove corrupt data while dedup
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Sep 26, 2015 at 01:59:13PM +0200, Ferry Toth wrote:
-> Could there be any relation to btrfs causing the mentioned slabs to not be 
-> automatically freeed?
-> 
-> In the mean time we put:
-> vfs_cache_pressure = 10000 
-> 
-> And this seems to be keeping slabs total at 2.5GB (with btrfs_inode at 
-> 1.7GB).
-> 
-> Still, manually doing drop_caches, will reduce slabs total to 0.4GB, with 
-> btrfs_inode at 0.01GB.
-> 
-> I'm not sure, but just having a RO operation scanning all files on the disk 
-> causing kernel memory to be used to cache things that are almost not used 12 
-> hours later, while keeping more useful file caches from growing, seems not 
-> really optimal.
-> 
-> Has anybody else seen this behavior?
+FYI:
+Looks like patch:
+Btrfs: fix read corruption of compressed and shared extents
 
-Yes, a friend showed me almost identical situtation some time ago. Slab
-caches full, not reclaimed and dropping caches "fixed" that, likely
-caused by overnight cron jobs. At that time I was interested whether it
-was a leak but if the slab usage dropped and did not debug it further.
+Partial fixed my issue
 
-The sysctl vfs_cache_pressure should help to tune the system. The btrfs
-allocates slabs with the "reclaimable" flag on so there should not be
-any direct obstacle for that so there must be something else going on.
+2015-08-26 22:33 GMT+03:00 Timofey Titovets <nefelim4ag@gmail.com>:
+> Hello guys,
+> i like btrfs, and i want put it in production soon,
+> one of the feature that i want use, is a deduplication.
+>
+> i frequently testing duperemove on btrfs and already see this problem before.
+> i know what btrfs before, change mtime while deduping, but after dedup
+> fixes from Mark (https://github.com/markfasheh), i've try to get
+> checksums.
+>
+> As i know duperemove use kernel ioctl for deduping, i.e. it's not a
+> duperemove issue, kernel must keep data consistent.
+>
+> File system is fresh and btrfs check not show any metadata corruption.
+>
+> Github issue:
+> https://github.com/markfasheh/duperemove/issues/91
+>
+> System info:
+> $ uname -a
+> Linux titovetst-beplan 4.2.0-rc8-next-20150825-0959-ARCH #1 SMP Wed
+> Aug 26 10:27:18 MSK 2015 x86_64 GNU/Linux
+>
+> Mount options:
+> rw,relatime,compress=lzo,space_cache,subvolid=257,subvol=/@home
+>
+> Okay, how i find it:
+>
+> md5sum_recursive(){
+>         find $@ -type f -exec md5sum {} \;
+> }
+>
+> cp -av --reflink=always ~/<src> ~/<dest>
+> md5sum_recursive ~/<dest> > ~/dedup.before
+> duperemove -vhrdb 8k ~/<dest>
+> md5sum_recursive ~/<dest> > ~/dedup.after
+> diff -up ~/dedup.before ~/dedup.after
+>
+> what i've got (full diff in attach):
+> --- /home/nefelim4ag/dedup.after        2015-08-26 21:36:55.773452558 +0300
+> +++ /home/nefelim4ag/dedup.before       2015-08-26 21:21:01.203600761 +0300
+> @@ -25139,9 +25139,9 @@ caf9d41036e46b85d90a9541e8bc9ce1  /home/
+> ....
+> -0ccbc9c81a51f59dcf2ac0d102de37cb
+> /home/nefelim4ag/L4D2/left4dead2/pak01_003.vpk
+> +e665b502ee977dc1c619ecbd415c91b8
+> /home/nefelim4ag/L4D2/left4dead2/pak01_000.vpk
+> ....
+>
+> Files sizes not changed and it's > 1MB.
+>
+> Every time i've get a random data corruption.
+> Only dependencies what i've find it is what smallest block -> more
+> corruptions and vise versa, i.e. more data deduped -> more corrupted.
+>
+> Smart of the disk, it's not looks, like damaged. (attach)
+>
+> What i can provide to help fix this issue?
+> If it's needed, i can recompile kernel with some parameters if it can
+> help, of course.
+>
+> Thanks.
+>
+> --
+> Have a nice day,
+> Timofey.
+
+-- 
+Have a nice day,
+Timofey.

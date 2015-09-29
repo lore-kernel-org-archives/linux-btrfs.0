@@ -1,178 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:36178 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934553AbbI2Pri (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 11:47:38 -0400
-Received: by igcrk20 with SMTP id rk20so80517751igc.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 08:47:37 -0700 (PDT)
+Received: from mx142.netapp.com ([216.240.21.19]:45229 "EHLO mx142.netapp.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S935365AbbI2SFc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Sep 2015 14:05:32 -0400
+From: Anna Schumaker <Anna.Schumaker@netapp.com>
+To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
+        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
+        <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
+        <andros@netapp.com>, <hch@infradead.org>
+Subject: [PATCH v4 2/9] x86: add sys_copy_file_range to syscall tables
+Date: Tue, 29 Sep 2015 14:05:05 -0400
+Message-ID: <1443549913-8091-3-git-send-email-Anna.Schumaker@Netapp.com>
+In-Reply-To: <1443549913-8091-1-git-send-email-Anna.Schumaker@Netapp.com>
+References: <1443549913-8091-1-git-send-email-Anna.Schumaker@Netapp.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1a179aa4a1d534e4b31d0978e72a7a391f9b408d.1443534660.git.zhaolei@cn.fujitsu.com>
-References: <585889cfca0895674926445c0a8caa84f8fc6184.1443534660.git.zhaolei@cn.fujitsu.com>
-	<1a179aa4a1d534e4b31d0978e72a7a391f9b408d.1443534660.git.zhaolei@cn.fujitsu.com>
-Date: Tue, 29 Sep 2015 16:47:37 +0100
-Message-ID: <CAL3q7H7UU7vCGgo8+F8awHaTchVDCHnoBwXZ9H2C7c5j0h-RBw@mail.gmail.com>
-Subject: Re: [PATCH 2/2] btrfs: Fix lost-data-profile caused by balance bg
-From: Filipe Manana <fdmanana@gmail.com>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Sep 29, 2015 at 2:51 PM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
-> Reproduce:
->  (In integration-4.3 branch)
->
->  TEST_DEV=(/dev/vdg /dev/vdh)
->  TEST_DIR=/mnt/tmp
->
->  umount "$TEST_DEV" >/dev/null
->  mkfs.btrfs -f -d raid1 "${TEST_DEV[@]}"
->
->  mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
->  btrfs balance start -dusage=0 $TEST_DIR
->  btrfs filesystem usage $TEST_DIR
->
->  dd if=/dev/zero of="$TEST_DIR"/file count=100
->  btrfs filesystem usage $TEST_DIR
->
-> Result:
->  We can see "no data chunk" in first "btrfs filesystem usage":
->  # btrfs filesystem usage $TEST_DIR
->  Overall:
->     ...
->  Metadata,single: Size:8.00MiB, Used:0.00B
->     /dev/vdg        8.00MiB
->  Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
->     /dev/vdg      122.88MiB
->     /dev/vdh      122.88MiB
->  System,single: Size:4.00MiB, Used:0.00B
->     /dev/vdg        4.00MiB
->  System,RAID1: Size:8.00MiB, Used:16.00KiB
->     /dev/vdg        8.00MiB
->     /dev/vdh        8.00MiB
->  Unallocated:
->     /dev/vdg        1.06GiB
->     /dev/vdh        1.07GiB
->
->  And "data chunks changed from raid1 to single" in second
->  "btrfs filesystem usage":
->  # btrfs filesystem usage $TEST_DIR
->  Overall:
->     ...
->  Data,single: Size:256.00MiB, Used:0.00B
->     /dev/vdh      256.00MiB
->  Metadata,single: Size:8.00MiB, Used:0.00B
->     /dev/vdg        8.00MiB
->  Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
->     /dev/vdg      122.88MiB
->     /dev/vdh      122.88MiB
->  System,single: Size:4.00MiB, Used:0.00B
->     /dev/vdg        4.00MiB
->  System,RAID1: Size:8.00MiB, Used:16.00KiB
->     /dev/vdg        8.00MiB
->     /dev/vdh        8.00MiB
->  Unallocated:
->     /dev/vdg        1.06GiB
->     /dev/vdh      841.92MiB
->
-> Reason:
->  btrfs balance delete last data chunk in case of no data in
->  the filesystem, then we can see "no data chunk" by "fi usage"
->  command.
->
->  And when we do write operation to fs, the only available data
->  profile is 0x0, result is all new chunks are allocated single type.
->
-> Fix:
->  Allocate a data chunk explicitly in balance operation, to reserve
->  at least one data chunk in the filesystem.
+From: Zach Brown <zab@redhat.com>
 
-Allocate a data chunk explicitly to ensure we don't lose the raid
-profile for data.
+Add sys_copy_file_range to the x86 syscall tables.
 
->
-> Test:
->  Test by above script, and confirmed the logic by debug output.
->
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> ---
->  fs/btrfs/volumes.c | 19 +++++++++++++++++++
->  1 file changed, 19 insertions(+)
->
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 6fc73586..3d5e41e 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3277,6 +3277,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
->         u64 limit_data = bctl->data.limit;
->         u64 limit_meta = bctl->meta.limit;
->         u64 limit_sys = bctl->sys.limit;
-> +       int chunk_reserved = 0;
->
->         /* step one make some room on all the devices */
->         devices = &fs_info->fs_devices->devices;
-> @@ -3387,6 +3388,24 @@ again:
->                         goto loop;
->                 }
->
-> +               if (!chunk_reserved) {
-> +                       trans = btrfs_start_transaction(chunk_root, 0);
-> +                       if (IS_ERR(trans)) {
-> +                               mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-> +                               ret = PTR_ERR(trans);
-> +                               goto error;
-> +                       }
-> +
-> +                       ret = btrfs_force_chunk_alloc(trans, chunk_root, 1);
+Signed-off-by: Zach Brown <zab@redhat.com>
+[Anna Schumaker: Update syscall number in syscall_32.tbl]
+Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
+---
+ arch/x86/entry/syscalls/syscall_32.tbl | 1 +
+ arch/x86/entry/syscalls/syscall_64.tbl | 1 +
+ 2 files changed, 2 insertions(+)
 
-Can we please use the symbol BTRFS_BLOCK_GROUP_DATA instead of 1?
-
-> +                       if (ret < 0) {
-> +                               mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-> +                               goto error;
-> +                       }
-> +
-> +                       btrfs_end_transaction(trans, chunk_root);
-> +                       chunk_reserved = 1;
-> +               }
-
-Can we do this logic only if the block group is a data one? I.e. no
-point allocating a data block group if our balance only touches
-metadata ones (due to some filter for e.g.).
-
-Also, can't this be ineffective when the data block group we allocate
-ends up with a key  in the chunk_root that is lower than the key we
-found in the current iteration? I.e., key found in current iteration
-has object id B, we allocate a new block group which gets a  key with
-object id A, where A < B and the next iteration of our loop sees key
-A, deletes the respective block group A if it's empty. In the end we
-have no data block groups, assuming that before A there are no other
-non-empty data block groups.
-Your example works because there's no free space before the offset
-where the chunk starts in the device.
-
-thanks
-
-> +
->                 ret = btrfs_relocate_chunk(chunk_root,
->                                            found_key.offset);
->                 mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-> --
-> 1.8.5.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
+index 7663c45..0531270 100644
+--- a/arch/x86/entry/syscalls/syscall_32.tbl
++++ b/arch/x86/entry/syscalls/syscall_32.tbl
+@@ -382,3 +382,4 @@
+ 373	i386	shutdown		sys_shutdown
+ 374	i386	userfaultfd		sys_userfaultfd
+ 375	i386	membarrier		sys_membarrier
++376	i386	copy_file_range		sys_copy_file_range
+diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
+index 278842f..03a9396 100644
+--- a/arch/x86/entry/syscalls/syscall_64.tbl
++++ b/arch/x86/entry/syscalls/syscall_64.tbl
+@@ -331,6 +331,7 @@
+ 322	64	execveat		stub_execveat
+ 323	common	userfaultfd		sys_userfaultfd
+ 324	common	membarrier		sys_membarrier
++325	common	copy_file_range		sys_copy_file_range
+ 
+ #
+ # x32-specific system call numbers start at 512 to avoid cache impact
 -- 
-Filipe David Manana,
+2.5.3
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f171.google.com ([209.85.212.171]:32864 "EHLO
-	mail-wi0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S934840AbbI2RLK (ORCPT
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:32893 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933971AbbI2RLL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 13:11:10 -0400
-Received: by wiclk2 with SMTP id lk2so161267309wic.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:11:09 -0700 (PDT)
+	Tue, 29 Sep 2015 13:11:11 -0400
+Received: by wiclk2 with SMTP id lk2so161268189wic.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:11:10 -0700 (PDT)
 From: Silvio Fricke <silvio.fricke@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Silvio Fricke <silvio.fricke@gmail.com>
-Subject: [PATCH 08/11] btrfs-progs: use calloc instead of malloc+memset for qgroup.c
-Date: Tue, 29 Sep 2015 19:10:43 +0200
-Message-Id: <9951a5c05498bcf3cba532a639e8cda077b9bbc9.1443546001.git.silvio.fricke@gmail.com>
+Subject: [PATCH 09/11] btrfs-progs: use calloc instead of malloc+memset for quick-test.c
+Date: Tue, 29 Sep 2015 19:10:44 +0200
+Message-Id: <760f5635a72bc03eb6ef8188c22a71b20bff81cc.1443546001.git.silvio.fricke@gmail.com>
 In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
 References: <cover.1443546000.git.silvio.fricke@gmail.com>
 In-Reply-To: <cover.1443546000.git.silvio.fricke@gmail.com>
@@ -37,56 +37,23 @@ This patch is generated from a coccinelle semantic patch:
 
 Signed-off-by: Silvio Fricke <silvio.fricke@gmail.com>
 ---
- qgroup.c | 9 +++------
- 1 file changed, 3 insertions(+), 6 deletions(-)
+ quick-test.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/qgroup.c b/qgroup.c
-index ec9a3ac..99fddea 100644
---- a/qgroup.c
-+++ b/qgroup.c
-@@ -436,13 +436,12 @@ struct btrfs_qgroup_comparer_set *btrfs_qgroup_alloc_comparer_set(void)
- 	size = sizeof(struct btrfs_qgroup_comparer_set) +
- 	       BTRFS_QGROUP_NCOMPS_INCREASE *
- 	       sizeof(struct btrfs_qgroup_comparer);
--	set = malloc(size);
-+	set = calloc(1, size);
- 	if (!set) {
- 		fprintf(stderr, "memory allocation failed\n");
- 		exit(1);
- 	}
+diff --git a/quick-test.c b/quick-test.c
+index 5dfb2fe..ffde85d 100644
+--- a/quick-test.c
++++ b/quick-test.c
+@@ -46,8 +46,7 @@ int main(int ac, char **av) {
+ 	struct btrfs_root *root;
+ 	struct btrfs_trans_handle *trans;
  
--	memset(set, 0, size);
- 	set->total = BTRFS_QGROUP_NCOMPS_INCREASE;
+-	buf = malloc(512);
+-	memset(buf, 0, 512);
++	buf = calloc(1, 512);
  
- 	return set;
-@@ -644,12 +643,11 @@ static int add_qgroup(struct qgroup_lookup *qgroup_lookup, u64 qgroupid,
- 	if (!ret)
- 		return 0;
+ 	radix_tree_init();
  
--	bq = malloc(sizeof(*bq));
-+	bq = calloc(1, sizeof(*bq));
- 	if (!bq) {
- 		printf("memory allocation failed\n");
- 		exit(1);
- 	}
--	memset(bq, 0, sizeof(*bq));
- 	if (qgroupid) {
- 		bq->qgroupid = qgroupid;
- 		INIT_LIST_HEAD(&bq->qgroups);
-@@ -813,12 +811,11 @@ struct btrfs_qgroup_filter_set *btrfs_qgroup_alloc_filter_set(void)
- 	size = sizeof(struct btrfs_qgroup_filter_set) +
- 	       BTRFS_QGROUP_NFILTERS_INCREASE *
- 	       sizeof(struct btrfs_qgroup_filter);
--	set = malloc(size);
-+	set = calloc(1, size);
- 	if (!set) {
- 		fprintf(stderr, "memory allocation failed\n");
- 		exit(1);
- 	}
--	memset(set, 0, size);
- 	set->total = BTRFS_QGROUP_NFILTERS_INCREASE;
- 
- 	return set;
 -- 
 2.5.3
 

@@ -1,48 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:36593 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932429AbbIVSAa (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:3383 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S933267AbbI2Ikr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Sep 2015 14:00:30 -0400
-Date: Tue, 22 Sep 2015 21:00:07 +0000
-From: Alexandru Moise <00moses.alexander00@gmail.com>
-To: clm@fb.com
-Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org, 00moses.alexander00@gmail.com
-Subject: [PATCH v2 2/2] btrfs: declare rsv_count as unsigned int instead of
- int
-Message-ID: <20150922210007.GA27786@gmail.com>
+	Tue, 29 Sep 2015 04:40:47 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t8T8eMoi011519
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 16:40:22 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] btrfs: Avoid truncate tailing page if fallocate range doesn't exceed inode size
+Date: Tue, 29 Sep 2015 16:38:41 +0800
+Message-ID: <1443515921-22569-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-rsv_count ultimately gets passed to start_transaction() which
-now takes an unsigned int as its num_items parameter.
-The value of rsv_count should always be positive so declare it
-as being unsigned.
+Current code will always truncate tailing page if its alloc_start is
+smaller than inode size.
 
-Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+This behavior will cause a lot of unneeded COW page size extent.
+
+This patch will avoid such problem.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2: followed dave's suggestions of all num_items equivalents to be
-unsigned ints.
-
  fs/btrfs/file.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..6af5103 100644
+index b823fac..8c6f247 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -2266,7 +2266,7 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
- 	u64 drop_end;
- 	int ret = 0;
- 	int err = 0;
--	int rsv_count;
-+	unsigned int rsv_count;
- 	bool same_page;
- 	bool no_holes = btrfs_fs_incompat(root->fs_info, NO_HOLES);
- 	u64 ino_size;
+@@ -2584,7 +2584,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 					alloc_start);
+ 		if (ret)
+ 			goto out;
+-	} else {
++	} else if (offset + len > inode->i_size) {
+ 		/*
+ 		 * If we are fallocating from the end of the file onward we
+ 		 * need to zero out the end of the page if i_size lands in the
 -- 
 2.5.3
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:35482 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753250AbbI3Duq (ORCPT
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:33534 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753264AbbI3Duu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 23:50:46 -0400
-Received: by pacfv12 with SMTP id fv12so26672936pac.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 20:50:46 -0700 (PDT)
+	Tue, 29 Sep 2015 23:50:50 -0400
+Received: by pacex6 with SMTP id ex6so26196432pac.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 20:50:50 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v4 1/9] Btrfs: add extent buffer bitmap operations
-Date: Tue, 29 Sep 2015 20:50:30 -0700
-Message-Id: <ca673db3185da390ccb941ec0fdcacb19ff37918.1443583874.git.osandov@osandov.com>
+Subject: [PATCH v4 5/9] Btrfs: introduce the free space B-tree on-disk format
+Date: Tue, 29 Sep 2015 20:50:34 -0700
+Message-Id: <96036d8c9cc20251f72e0a952df5bd9b855d7617.1443583874.git.osandov@osandov.com>
 In-Reply-To: <cover.1443583874.git.osandov@osandov.com>
 References: <cover.1443583874.git.osandov@osandov.com>
 In-Reply-To: <cover.1443583874.git.osandov@osandov.com>
@@ -21,191 +21,114 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-These are going to be used for the free space tree bitmap items.
+The on-disk format for the free space tree is straightforward. Each
+block group is represented in the free space tree by a free space info
+item that stores accounting information: whether the free space for this
+block group is stored as bitmaps or extents and how many extents of free
+space exist for this block group (regardless of which format is being
+used in the tree). Extents are (start, FREE_SPACE_EXTENT, length) keys
+with no corresponding item, and bitmaps instead have the
+FREE_SPACE_BITMAP type and have a bitmap item attached, which is just an
+array of bytes.
 
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/extent_io.c | 149 +++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/extent_io.h |   6 +++
- 2 files changed, 155 insertions(+)
+ fs/btrfs/ctree.h             | 38 ++++++++++++++++++++++++++++++++++++++
+ include/trace/events/btrfs.h |  3 ++-
+ 2 files changed, 40 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index e2357e31609a..798a5ee3bd18 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5524,6 +5524,155 @@ void copy_extent_buffer(struct extent_buffer *dst, struct extent_buffer *src,
- 	}
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 60df67efef96..0e40d323f4e9 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -96,6 +96,9 @@ struct btrfs_ordered_sum;
+ /* for storing items that use the BTRFS_UUID_KEY* types */
+ #define BTRFS_UUID_TREE_OBJECTID 9ULL
+ 
++/* tracks free space in block groups. */
++#define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
++
+ /* for storing balance parameters in the root tree */
+ #define BTRFS_BALANCE_OBJECTID -4ULL
+ 
+@@ -500,6 +503,8 @@ struct btrfs_super_block {
+  * Compat flags that we support.  If any incompat flags are set other than the
+  * ones specified below then we will fail to mount
+  */
++#define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
++
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
+ #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
+ #define BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS	(1ULL << 2)
+@@ -1061,6 +1066,13 @@ struct btrfs_block_group_item {
+ 	__le64 flags;
+ } __attribute__ ((__packed__));
+ 
++struct btrfs_free_space_info {
++	__le32 extent_count;
++	__le32 flags;
++} __attribute__ ((__packed__));
++
++#define BTRFS_FREE_SPACE_USING_BITMAPS (1ULL << 0)
++
+ #define BTRFS_QGROUP_LEVEL_SHIFT		48
+ static inline u64 btrfs_qgroup_level(u64 qgroupid)
+ {
+@@ -2058,6 +2070,27 @@ struct btrfs_ioctl_defrag_range_args {
+  */
+ #define BTRFS_BLOCK_GROUP_ITEM_KEY 192
  
 +/*
-+ * The extent buffer bitmap operations are done with byte granularity because
-+ * bitmap items are not guaranteed to be aligned to a word and therefore a
-+ * single word in a bitmap may straddle two pages in the extent buffer.
++ * Every block group is represented in the free space tree by a free space info
++ * item, which stores some accounting information. It is keyed on
++ * (block_group_start, FREE_SPACE_INFO, block_group_length).
 + */
-+#define BIT_BYTE(nr) ((nr) / BITS_PER_BYTE)
-+#define BYTE_MASK ((1 << BITS_PER_BYTE) - 1)
-+#define BITMAP_FIRST_BYTE_MASK(start) \
-+	((BYTE_MASK << ((start) & (BITS_PER_BYTE - 1))) & BYTE_MASK)
-+#define BITMAP_LAST_BYTE_MASK(nbits) \
-+	(BYTE_MASK >> (-(nbits) & (BITS_PER_BYTE - 1)))
++#define BTRFS_FREE_SPACE_INFO_KEY 198
 +
 +/*
-+ * eb_bitmap_offset() - calculate the page and offset of the byte containing the
-+ * given bit number
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @nr: bit number
-+ * @page_index: return index of the page in the extent buffer that contains the
-+ * given bit number
-+ * @page_offset: return offset into the page given by page_index
-+ *
-+ * This helper hides the ugliness of finding the byte in an extent buffer which
-+ * contains a given bit.
++ * A free space extent tracks an extent of space that is free in a block group.
++ * It is keyed on (start, FREE_SPACE_EXTENT, length).
 + */
-+static inline void eb_bitmap_offset(struct extent_buffer *eb,
-+				    unsigned long start, unsigned long nr,
-+				    unsigned long *page_index,
-+				    size_t *page_offset)
-+{
-+	size_t start_offset = eb->start & ((u64)PAGE_CACHE_SIZE - 1);
-+	size_t byte_offset = BIT_BYTE(nr);
-+	size_t offset;
++#define BTRFS_FREE_SPACE_EXTENT_KEY 199
 +
-+	/*
-+	 * The byte we want is the offset of the extent buffer + the offset of
-+	 * the bitmap item in the extent buffer + the offset of the byte in the
-+	 * bitmap item.
-+	 */
-+	offset = start_offset + start + byte_offset;
-+
-+	*page_index = offset >> PAGE_CACHE_SHIFT;
-+	*page_offset = offset & (PAGE_CACHE_SIZE - 1);
-+}
-+
-+/**
-+ * extent_buffer_test_bit - determine whether a bit in a bitmap item is set
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @nr: bit number to test
++/*
++ * When a block group becomes very fragmented, we convert it to use bitmaps
++ * instead of extents. A free space bitmap is keyed on
++ * (start, FREE_SPACE_BITMAP, length); the corresponding item is a bitmap with
++ * (length / sectorsize) bits.
 + */
-+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+			   unsigned long nr)
-+{
-+	char *kaddr;
-+	struct page *page;
-+	unsigned long i;
-+	size_t offset;
++#define BTRFS_FREE_SPACE_BITMAP_KEY 200
 +
-+	eb_bitmap_offset(eb, start, nr, &i, &offset);
-+	page = eb->pages[i];
-+	WARN_ON(!PageUptodate(page));
-+	kaddr = page_address(page);
-+	return 1U & (kaddr[offset] >> (nr & (BITS_PER_BYTE - 1)));
-+}
+ #define BTRFS_DEV_EXTENT_KEY	204
+ #define BTRFS_DEV_ITEM_KEY	216
+ #define BTRFS_CHUNK_ITEM_KEY	228
+@@ -2458,6 +2491,11 @@ BTRFS_SETGET_FUNCS(disk_block_group_flags,
+ BTRFS_SETGET_STACK_FUNCS(block_group_flags,
+ 			struct btrfs_block_group_item, flags, 64);
+ 
++/* struct btrfs_free_space_info */
++BTRFS_SETGET_FUNCS(free_space_extent_count, struct btrfs_free_space_info,
++		   extent_count, 32);
++BTRFS_SETGET_FUNCS(free_space_flags, struct btrfs_free_space_info, flags, 32);
 +
-+/**
-+ * extent_buffer_bitmap_set - set an area of a bitmap
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @pos: bit number of the first bit
-+ * @len: number of bits to set
-+ */
-+void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-+			      unsigned long pos, unsigned long len)
-+{
-+	char *kaddr;
-+	struct page *page;
-+	unsigned long i;
-+	size_t offset;
-+	const unsigned int size = pos + len;
-+	int bits_to_set = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-+	unsigned int mask_to_set = BITMAP_FIRST_BYTE_MASK(pos);
-+
-+	eb_bitmap_offset(eb, start, pos, &i, &offset);
-+	page = eb->pages[i];
-+	WARN_ON(!PageUptodate(page));
-+	kaddr = page_address(page);
-+
-+	while (len >= bits_to_set) {
-+		kaddr[offset] |= mask_to_set;
-+		len -= bits_to_set;
-+		bits_to_set = BITS_PER_BYTE;
-+		mask_to_set = ~0U;
-+		if (++offset >= PAGE_CACHE_SIZE && len > 0) {
-+			offset = 0;
-+			page = eb->pages[++i];
-+			WARN_ON(!PageUptodate(page));
-+			kaddr = page_address(page);
-+		}
-+	}
-+	if (len) {
-+		mask_to_set &= BITMAP_LAST_BYTE_MASK(size);
-+		kaddr[offset] |= mask_to_set;
-+	}
-+}
-+
-+
-+/**
-+ * extent_buffer_bitmap_clear - clear an area of a bitmap
-+ * @eb: the extent buffer
-+ * @start: offset of the bitmap item in the extent buffer
-+ * @pos: bit number of the first bit
-+ * @len: number of bits to clear
-+ */
-+void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-+				unsigned long pos, unsigned long len)
-+{
-+	char *kaddr;
-+	struct page *page;
-+	unsigned long i;
-+	size_t offset;
-+	const unsigned int size = pos + len;
-+	int bits_to_clear = BITS_PER_BYTE - (pos % BITS_PER_BYTE);
-+	unsigned int mask_to_clear = BITMAP_FIRST_BYTE_MASK(pos);
-+
-+	eb_bitmap_offset(eb, start, pos, &i, &offset);
-+	page = eb->pages[i];
-+	WARN_ON(!PageUptodate(page));
-+	kaddr = page_address(page);
-+
-+	while (len >= bits_to_clear) {
-+		kaddr[offset] &= ~mask_to_clear;
-+		len -= bits_to_clear;
-+		bits_to_clear = BITS_PER_BYTE;
-+		mask_to_clear = ~0U;
-+		if (++offset >= PAGE_CACHE_SIZE && len > 0) {
-+			offset = 0;
-+			page = eb->pages[++i];
-+			WARN_ON(!PageUptodate(page));
-+			kaddr = page_address(page);
-+		}
-+	}
-+	if (len) {
-+		mask_to_clear &= BITMAP_LAST_BYTE_MASK(size);
-+		kaddr[offset] &= ~mask_to_clear;
-+	}
-+}
-+
- static inline bool areas_overlap(unsigned long src, unsigned long dst, unsigned long len)
- {
- 	unsigned long distance = (src > dst) ? src - dst : dst - src;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c668f36898d3..9185a20081d7 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -309,6 +309,12 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 			   unsigned long src_offset, unsigned long len);
- void memset_extent_buffer(struct extent_buffer *eb, char c,
- 			  unsigned long start, unsigned long len);
-+int extent_buffer_test_bit(struct extent_buffer *eb, unsigned long start,
-+			   unsigned long pos);
-+void extent_buffer_bitmap_set(struct extent_buffer *eb, unsigned long start,
-+			      unsigned long pos, unsigned long len);
-+void extent_buffer_bitmap_clear(struct extent_buffer *eb, unsigned long start,
-+				unsigned long pos, unsigned long len);
- void clear_extent_buffer_dirty(struct extent_buffer *eb);
- int set_extent_buffer_dirty(struct extent_buffer *eb);
- int set_extent_buffer_uptodate(struct extent_buffer *eb);
+ /* struct btrfs_inode_ref */
+ BTRFS_SETGET_FUNCS(inode_ref_name_len, struct btrfs_inode_ref, name_len, 16);
+ BTRFS_SETGET_FUNCS(inode_ref_index, struct btrfs_inode_ref, index, 64);
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 0b73af9be12f..e6289e62a2a8 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -45,7 +45,8 @@ struct btrfs_qgroup_operation;
+ 		{ BTRFS_TREE_LOG_OBJECTID,	"TREE_LOG"	},	\
+ 		{ BTRFS_QUOTA_TREE_OBJECTID,	"QUOTA_TREE"	},	\
+ 		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
+-		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_RELOC"	},	\
++		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_TREE"	},	\
++		{ BTRFS_FREE_SPACE_TREE_OBJECTID, "FREE_SPACE_TREE" },	\
+ 		{ BTRFS_DATA_RELOC_TREE_OBJECTID, "DATA_RELOC_TREE" })
+ 
+ #define show_root_type(obj)						\
 -- 
 2.6.0
 

@@ -1,111 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23647 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:23552 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750983AbbI3Fsm (ORCPT
+	with ESMTP id S1753319AbbI3Gbm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 01:48:42 -0400
-Subject: Re: [PATCH v2] fstests: generic: Check if a bull fallocate will
- change extent number
-To: Dave Chinner <david@fromorbit.com>
-References: <1443519264-19184-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20150929215135.GZ3902@dastard> <560B354B.9050400@cn.fujitsu.com>
- <20150930042018.GB3902@dastard>
-CC: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+	Wed, 30 Sep 2015 02:31:42 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <560B77B1.9040007@cn.fujitsu.com>
-Date: Wed, 30 Sep 2015 13:48:33 +0800
+To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
+Subject: [PATCH] fstests: btrfs: Check if fallocate re-truncates page beyond EOF
+Date: Wed, 30 Sep 2015 14:31:38 +0800
+Message-ID: <1443594698-5285-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20150930042018.GB3902@dastard>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Even the fallocate range doesn't cover the last page of a file, btrfs
+will still re-truncate the last page.
 
+Such behavior is completely duplicated and unneeded, and fixed by the
+following kernel patch:
 
-Dave Chinner wrote on 2015/09/30 14:20 +1000:
-> On Wed, Sep 30, 2015 at 09:05:15AM +0800, Qu Wenruo wrote:
->>
->>
->> Dave Chinner wrote on 2015/09/30 07:51 +1000:
->>> On Tue, Sep 29, 2015 at 05:34:24PM +0800, Qu Wenruo wrote:
->>>> Normally, a bull fallocate call on a fully written and synced file
->>>> should not add an extent.
->>>
->>> Why not? Filesystems can do whatever they want with extents during
->>> a fallocate call. e.g. if the blocks are shared, then fallocate
->>> might break the block sharing so future overwrites don't get
->>> ENOSPC. This is a requirement set down by posix_fallocate(3)
->>>
->>> "After a successful call to posix_fallocate(), subsequent writes to
->>> bytes in the specified range are guaranteed not  to fail because of
->>> lack of disk space."
->>>
->>> Hence if you've got a file with shared blocks, a "full fallocate"
->>> must change the extent layout to break the sharing. As such, the
->>> premise of this test is wrong.
->>
->> First, btrfs never meets the posix_fallocate requirement by its COW nature.
->>
->> Btrfs fallocate can only ensure at most next write will not cause ENOSPC.
->
-> Which, it can be successfully argued, meets the basic requirement of
-> posix_fallocate().  i.e. "subsequent writes" is "one or more" future
-> writes.
->
-> But in trying to explain how COW works you've completely missed the
-> point I was making about a fundamental principle that COW is based
-> on - overwrite requires allocation. Hence fallocate must be allowed
-> modify the underlying layout of a file, even if the file is already
-> full of allocated blocks and data.
->
-> This isn't just btrfs - any filesystem that does dedupe or reflink
-> or snapshots or compression or any other sort of operation that can
-> cause extent reallocation on overwrite *may* change the file layout
-> during a fallocate call to guarantee the next write succeeds.
->
->> It's OK not to consider it as a bug, at least data is not corrupted.
->> But IMO the btrfs behavior is not needed and need optimization.
->> So kernel patch is submitted to btrfs ml:
->> https://patchwork.kernel.org/patch/7284431/
->
-> That's a link to the fstests patch, not a btrfs kernel patch. :/
+btrfs: Avoid truncate tailing page if fallocate range doesn't exceed
+inode size
 
-Sorry, the real patch is https://patchwork.kernel.org/patch/7283461/
+Add this test case to check that malfunction.
 
->
->> And if fstests is not the proper place, any idea where such "test
->> case" should belong?
->
-> You still haven't understood what I said. If you want to test that
-> btrfs does not truncate extents beyond EOF when fallocate is called,
-> then it's a btrfs test. Yes, You can do whatever you want with
-> btrfs, but you've proposed a generic test that applies a constraint
-> to a generic operation that has no such constraint defined in it's
-> API. If you want to constrain fallocate behaviour like this, then
-> take it to linux-fsdevel and get everyone to agree on the
-> constraint, and then I'll take it as a generic test...
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ tests/btrfs/104     | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/104.out |  3 ++
+ tests/btrfs/group   |  1 +
+ 3 files changed, 87 insertions(+)
+ create mode 100755 tests/btrfs/104
+ create mode 100644 tests/btrfs/104.out
 
-Now, I think I understand the point.
-The test case is not for generic, but for Btrfs only.
+diff --git a/tests/btrfs/104 b/tests/btrfs/104
+new file mode 100755
+index 0000000..f3ddc15
+--- /dev/null
++++ b/tests/btrfs/104
+@@ -0,0 +1,83 @@
++#! /bin/bash
++# FS QA Test 104
++#
++# Test that calling fallocate against a range which is already
++# allocated does not truncate beyond EOF
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 Fujitsu. All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1	# failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/defrag
++
++# remove previous $seqres.full before test
++rm -f $seqres.full
++
++# real QA test starts here
++
++_supported_fs btrfs
++_supported_os Linux
++_require_scratch
++_need_to_be_root
++
++# Use 64K file size to match any sectorsize
++# And with a unaligned tailing range to ensure it will be at least 2 pages
++filesize=$(( 64 * 1024 + 1024 ))
++
++# Fallocate a range that will not cover the tailing page
++fallocrange=$(( 64 * 1024 ))
++
++_scratch_mkfs > /dev/null 2>&1
++_scratch_mount
++$XFS_IO_PROG -f -c "pwrite 0 $filesize" $SCRATCH_MNT/foo | _filter_xfs_io
++sync
++orig_extent_nr=`_extent_count $SCRATCH_MNT/foo`
++
++# As all space are allocated and even written to disk, this falloc
++# should do nothing with extent modification.
++$XFS_IO_PROG -f -c "falloc 0 $fallocrange" $SCRATCH_MNT/foo
++sync
++new_extent_nr=`_extent_count $SCRATCH_MNT/foo`
++
++echo "orig: $orig_extent_nr, new: $new_extent_nr" >> $seqres.full
++
++if [ "x$orig_extent_nr" != "x$new_extent_nr" ]; then
++	echo "Extent beyond EOF is re-truncated"
++	echo "orig_extent_nr: $orig_extent_nr new_extent_nr: $new_extent_nr"
++fi
++
++# success, all done
++status=0
++exit
+diff --git a/tests/btrfs/104.out b/tests/btrfs/104.out
+new file mode 100644
+index 0000000..4c43e17
+--- /dev/null
++++ b/tests/btrfs/104.out
+@@ -0,0 +1,3 @@
++QA output created by 104
++wrote 66560/66560 bytes at offset 0
++XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e92a65a..640336b 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -106,3 +106,4 @@
+ 101 auto quick replace
+ 102 auto quick metadata enospc
+ 103 auto quick clone compress
++104 auto quick prealloc
+-- 
+1.8.3.1
 
-The reason is:
-Fallocate should be able to change extent layout
-Even all extent is allocated, for its purpose.
-
-So the assumption for the test case is not valid, and how a filesystem 
-handle the last page truncate should follow its own standard.
-
-This is convincing now.
-
-I'll change it to btrfs test.
-
-BTW, at least xfs doesn't truncate beyond EOF, will xfs also need such test?
-
-Thanks,
-Qu
-
->
-> Cheers,
->
-> Dave.
->

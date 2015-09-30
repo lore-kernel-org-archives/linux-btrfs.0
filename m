@@ -1,118 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f177.google.com ([209.85.223.177]:36844 "EHLO
-	mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754057AbbI3QTF (ORCPT
+Received: from mail-pa0-f54.google.com ([209.85.220.54]:34665 "EHLO
+	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752635AbbI3Dup (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 12:19:05 -0400
-Received: by ioii196 with SMTP id i196so53525782ioi.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 09:19:03 -0700 (PDT)
+	Tue, 29 Sep 2015 23:50:45 -0400
+Received: by padhy16 with SMTP id hy16so26051679pad.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 20:50:45 -0700 (PDT)
+From: Omar Sandoval <osandov@osandov.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Omar Sandoval <osandov@osandov.com>
+Subject: [PATCH v4 0/9] Btrfs: free space B-tree
+Date: Tue, 29 Sep 2015 20:50:29 -0700
+Message-Id: <cover.1443583874.git.osandov@osandov.com>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <aaa2dcf7018bd29459e20f0571ff490fe1abee51.1443611403.git.zhaolei@cn.fujitsu.com>
-References: <aaa2dcf7018bd29459e20f0571ff490fe1abee51.1443611403.git.zhaolei@cn.fujitsu.com>
-Date: Wed, 30 Sep 2015 17:19:03 +0100
-Message-ID: <CAL3q7H5B=ByJBr819u_WM7Z3apd4fMG958vz6shDGv6T3vCYgQ@mail.gmail.com>
-Subject: Re: [PATCH v2 1/2] btrfs: Fix lost-data-profile caused by auto
- removing bg
-From: Filipe Manana <fdmanana@gmail.com>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Sep 30, 2015 at 12:11 PM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
-> Reproduce:
->  (In integration-4.3 branch)
->
->  TEST_DEV=(/dev/vdg /dev/vdh)
->  TEST_DIR=/mnt/tmp
->
->  umount "$TEST_DEV" >/dev/null
->  mkfs.btrfs -f -d raid1 "${TEST_DEV[@]}"
->
->  mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
->  umount "$TEST_DEV"
->
->  mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
->  btrfs filesystem usage $TEST_DIR
->
-> We can see the data chunk changed from raid1 to single:
->  # btrfs filesystem usage $TEST_DIR
->  Data,single: Size:8.00MiB, Used:0.00B
->     /dev/vdg        8.00MiB
->  #
->
-> Reason:
->  When a empty filesystem mount with -o nospace_cache, the last
->  data blockgroup will be auto-removed in umount.
->
->  Then if we mount it again, there is no data chunk in the
->  filesystem, so the only available data profile is 0x0, result
->  is all new chunks are created as single type.
->
-> Fix:
->  Don't auto-delete last blockgroup for a raid type.
->
-> Test:
->  Test by above script, and confirmed the logic by debug output.
->
-> Changelog v1->v2:
-> 1: Put code of checking block_group->list into
->    semaphore of space_info->groups_sem.
-> Noticed-by: Filipe Manana <fdmanana@gmail.com>
->
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Hi,
 
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+Here's one more reroll of the free space B-tree patches, a more scalable
+alternative to the free space cache. Minimal changes this time around, I
+mainly wanted to resend this after Holger and I cleared up his bug
+report here: http://www.spinics.net/lists/linux-btrfs/msg47165.html. It
+initially looked like it was a bug in a patch that Josef sent, then in
+this series, but finally Holger and I figured out that it was something
+else in the queue of patches he carries around, we just don't know what
+yet (I'm in the middle of looking into it). While trying to reproduce
+that bug, I ran xfstests about a trillion times and a bunch of stress
+tests, so this is fairly well tested now. Additionally, the last time
+around, Holger and Austin both bravely offered their Tested-bys on the
+series. I wasn't sure which patch(es) to tack them onto so here they
+are:
 
-I would have made the check in the "if" statement below that is
-already done while holding a write lock on the semaphore (smaller code
-diff), but this is equally correct.
+Tested-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
+Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 
-thanks
+Thanks, everyone!
 
-> ---
->  fs/btrfs/extent-tree.c | 12 +++++++++++-
->  1 file changed, 11 insertions(+), 1 deletion(-)
->
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 79a5bd9..ed9426c 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -10010,8 +10010,18 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
->                 block_group = list_first_entry(&fs_info->unused_bgs,
->                                                struct btrfs_block_group_cache,
->                                                bg_list);
-> -               space_info = block_group->space_info;
->                 list_del_init(&block_group->bg_list);
-> +
-> +               space_info = block_group->space_info;
-> +
-> +               down_read(&space_info->groups_sem);
-> +               if (block_group->list.next == block_group->list.prev) {
-> +                       up_read(&space_info->groups_sem);
-> +                       btrfs_put_block_group(block_group);
-> +                       continue;
-> +               }
-> +               up_read(&space_info->groups_sem);
-> +
->                 if (ret || btrfs_mixed_space_info(space_info)) {
->                         btrfs_put_block_group(block_group);
->                         continue;
-> --
-> 1.8.5.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Omar
 
+Changes from v3->v4:
 
+- Added a missing btrfs_end_transaction() to btrfs_create_free_space_tree() and
+  btrfs_clear_free_space_tree() in the error cases after we abort the
+  transaction (see http://www.spinics.net/lists/linux-btrfs/msg47545.html)
+- Rebased the kernel patches on v4.3-rc3
+- Rebased the progs patches on v4.2.1
+
+v3: http://www.spinics.net/lists/linux-btrfs/msg47095.html
+
+Changes from v2->v3:
+
+- Fixed a warning in the free space tree sanity tests caught by Zhao Lei.
+- Moved the addition of a block group to the free space tree to occur either on
+  the first attempt to modify the free space for the block group or in
+  btrfs_create_pending_block_groups(), whichever happens first. This avoids a
+  deadlock (lock recursion) when modifying the free space tree requires
+  allocating a new block group. In order to do this, it was simpler to change
+  the on-disk semantics: the superblock stripes will now appear to be free space
+  according to the free space tree, but load_free_space_tree() will still
+  exclude them when building the in-memory free space cache.
+- Changed the free_space_tree option to space_cache=v2 and made clear_cache
+  clear the free space tree. If the free space tree has been created,
+  the mount will fail unless space_cache=v2 or nospace_cache,clear_cache
+  is given because we cannot allow the free space tree to get out of
+  date.
+- Did a once-over of the code and caught a couple of error handling typos.
+
+v2: http://www.spinics.net/lists/linux-btrfs/msg46796.html
+
+Changes from v1->v2:
+
+- Cleaned up a bunch of unnecessary instances of "if (ret) goto out; ret = 0"
+- Added aborts in the free space tree code closer to the site the error is
+  encountered: where we add or remove block groups, add or remove free space,
+  and also when we convert formats
+- Moved loading of the free space tree into caching_thread() and added a new
+  patch 3 in preparation for it
+- Commented a bunch of stuff in the extent buffer bitmap operations and
+  refactored some of the complicated logic
+
+v1: http://www.spinics.net/lists/linux-btrfs/msg46713.html
+
+Omar Sandoval (9):
+  Btrfs: add extent buffer bitmap operations
+  Btrfs: add extent buffer bitmap sanity tests
+  Btrfs: add helpers for read-only compat bits
+  Btrfs: refactor caching_thread()
+  Btrfs: introduce the free space B-tree on-disk format
+  Btrfs: implement the free space B-tree
+  Btrfs: add free space tree sanity tests
+  Btrfs: wire up the free space tree to the extent tree
+  Btrfs: add free space tree mount option
+
+ fs/btrfs/Makefile                      |    5 +-
+ fs/btrfs/ctree.h                       |  157 +++-
+ fs/btrfs/disk-io.c                     |   38 +
+ fs/btrfs/extent-tree.c                 |   98 +-
+ fs/btrfs/extent_io.c                   |  183 +++-
+ fs/btrfs/extent_io.h                   |   10 +-
+ fs/btrfs/free-space-tree.c             | 1584 ++++++++++++++++++++++++++++++++
+ fs/btrfs/free-space-tree.h             |   72 ++
+ fs/btrfs/super.c                       |   56 +-
+ fs/btrfs/tests/btrfs-tests.c           |   52 ++
+ fs/btrfs/tests/btrfs-tests.h           |   10 +
+ fs/btrfs/tests/extent-io-tests.c       |  138 ++-
+ fs/btrfs/tests/free-space-tests.c      |   35 +-
+ fs/btrfs/tests/free-space-tree-tests.c |  571 ++++++++++++
+ fs/btrfs/tests/qgroup-tests.c          |   20 +-
+ include/trace/events/btrfs.h           |    3 +-
+ 16 files changed, 2925 insertions(+), 107 deletions(-)
+ create mode 100644 fs/btrfs/free-space-tree.c
+ create mode 100644 fs/btrfs/free-space-tree.h
+ create mode 100644 fs/btrfs/tests/free-space-tree-tests.c
 
 -- 
-Filipe David Manana,
+2.6.0
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

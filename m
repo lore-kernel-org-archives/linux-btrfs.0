@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f48.google.com ([209.85.220.48]:34811 "EHLO
+Received: from mail-pa0-f48.google.com ([209.85.220.48]:35603 "EHLO
 	mail-pa0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753250AbbI3Duy (ORCPT
+	with ESMTP id S1753356AbbI3Dux (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 23:50:54 -0400
-Received: by padhy16 with SMTP id hy16so26055061pad.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 20:50:53 -0700 (PDT)
+	Tue, 29 Sep 2015 23:50:53 -0400
+Received: by pacfv12 with SMTP id fv12so26675828pac.2
+        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 20:50:52 -0700 (PDT)
 From: Omar Sandoval <osandov@osandov.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Omar Sandoval <osandov@osandov.com>
-Subject: [PATCH v4 9/9] Btrfs: add free space tree mount option
-Date: Tue, 29 Sep 2015 20:50:38 -0700
-Message-Id: <9f79cf08caaf06498cbbc8ca157af26fc2a419c2.1443583874.git.osandov@osandov.com>
+Subject: [PATCH v4 8/9] Btrfs: wire up the free space tree to the extent tree
+Date: Tue, 29 Sep 2015 20:50:37 -0700
+Message-Id: <726e6f83f0c6a98e2b2bbd005900e063dce886a5.1443583874.git.osandov@osandov.com>
 In-Reply-To: <cover.1443583874.git.osandov@osandov.com>
 References: <cover.1443583874.git.osandov@osandov.com>
 In-Reply-To: <cover.1443583874.git.osandov@osandov.com>
@@ -21,236 +21,129 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Omar Sandoval <osandov@fb.com>
 
-Now we can finally hook up everything so we can actually use free space
-tree. The free space tree is enabled by passing the space_cache=v2 mount
-option. On the first mount with the this option set, the free space tree
-will be created and the FREE_SPACE_TREE read-only compat bit will be
-set. Any time the filesystem is mounted from then on, we must use the
-free space tree. The clear_cache option will also clear the free space
-tree.
+The free space tree is updated in tandem with the extent tree. There are
+only a handful of places where we need to hook in:
+
+1. Block group creation
+2. Block group deletion
+3. Delayed refs (extent creation and deletion)
+4. Block group caching
 
 Signed-off-by: Omar Sandoval <osandov@fb.com>
 ---
- fs/btrfs/ctree.h   |  7 ++++++-
- fs/btrfs/disk-io.c | 38 ++++++++++++++++++++++++++++++++++++++
- fs/btrfs/super.c   | 53 ++++++++++++++++++++++++++++++++++++++++++++---------
- 3 files changed, 88 insertions(+), 10 deletions(-)
+ fs/btrfs/extent-tree.c | 36 +++++++++++++++++++++++++++++++++---
+ 1 file changed, 33 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 0888c3e2cc7d..ed610f9c04b2 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -531,7 +531,10 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_COMPAT_SUPP		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_SET		0ULL
- #define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
--#define BTRFS_FEATURE_COMPAT_RO_SUPP		0ULL
-+
-+#define BTRFS_FEATURE_COMPAT_RO_SUPP			\
-+	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)
-+
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
- 
-@@ -2203,6 +2206,7 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_MOUNT_CHECK_INTEGRITY_INCLUDING_EXTENT_DATA (1 << 21)
- #define BTRFS_MOUNT_PANIC_ON_FATAL_ERROR	(1 << 22)
- #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
-+#define BTRFS_MOUNT_FREE_SPACE_TREE	(1 << 24)
- 
- #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
- #define BTRFS_DEFAULT_MAX_INLINE	(8192)
-@@ -3744,6 +3748,7 @@ static inline void free_fs_info(struct btrfs_fs_info *fs_info)
- 	kfree(fs_info->csum_root);
- 	kfree(fs_info->quota_root);
- 	kfree(fs_info->uuid_root);
-+	kfree(fs_info->free_space_root);
- 	kfree(fs_info->super_copy);
- 	kfree(fs_info->super_for_commit);
- 	security_free_mnt_opts(&fs_info->security_opts);
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 295795aebe0b..5295de1e3e2c 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -42,6 +42,7 @@
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index a3b84ee8a28d..4ff8aeb621cc 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -33,6 +33,7 @@
+ #include "raid56.h"
  #include "locking.h"
- #include "tree-log.h"
  #include "free-space-cache.h"
 +#include "free-space-tree.h"
- #include "inode-map.h"
- #include "check-integrity.h"
- #include "rcu-string.h"
-@@ -1647,6 +1648,9 @@ struct btrfs_root *btrfs_get_fs_root(struct btrfs_fs_info *fs_info,
- 	if (location->objectid == BTRFS_UUID_TREE_OBJECTID)
- 		return fs_info->uuid_root ? fs_info->uuid_root :
- 					    ERR_PTR(-ENOENT);
-+	if (location->objectid == BTRFS_FREE_SPACE_TREE_OBJECTID)
-+		return fs_info->free_space_root ? fs_info->free_space_root :
-+						  ERR_PTR(-ENOENT);
- again:
- 	root = btrfs_lookup_fs_root(fs_info, location->objectid);
- 	if (root) {
-@@ -2144,6 +2148,7 @@ static void free_root_pointers(struct btrfs_fs_info *info, int chunk_root)
- 	free_root_extent_buffers(info->uuid_root);
- 	if (chunk_root)
- 		free_root_extent_buffers(info->chunk_root);
-+	free_root_extent_buffers(info->free_space_root);
- }
+ #include "math.h"
+ #include "sysfs.h"
+ #include "qgroup.h"
+@@ -518,7 +519,10 @@ static noinline void caching_thread(struct btrfs_work *work)
+ 	mutex_lock(&caching_ctl->mutex);
+ 	down_read(&fs_info->commit_root_sem);
  
- void btrfs_free_fs_roots(struct btrfs_fs_info *fs_info)
-@@ -2445,6 +2450,15 @@ static int btrfs_read_roots(struct btrfs_fs_info *fs_info,
- 		fs_info->uuid_root = root;
- 	}
+-	ret = load_extent_tree_free(caching_ctl);
++	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE))
++		ret = load_free_space_tree(caching_ctl);
++	else
++		ret = load_extent_tree_free(caching_ctl);
  
-+	if (btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		location.objectid = BTRFS_FREE_SPACE_TREE_OBJECTID;
-+		root = btrfs_read_tree_root(tree_root, &location);
-+		if (IS_ERR(root))
-+			return PTR_ERR(root);
-+		set_bit(BTRFS_ROOT_TRACK_DIRTY, &root->state);
-+		fs_info->free_space_root = root;
-+	}
-+
- 	return 0;
- }
- 
-@@ -3069,6 +3083,30 @@ retry_root_backup:
- 
- 	btrfs_qgroup_rescan_resume(fs_info);
- 
-+	if (btrfs_test_opt(tree_root, CLEAR_CACHE) &&
-+	    btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		pr_info("BTRFS: clearing free space tree\n");
-+		ret = btrfs_clear_free_space_tree(fs_info);
-+		if (ret) {
-+			pr_warn("BTRFS: failed to clear free space tree %d\n",
-+				ret);
-+			close_ctree(tree_root);
-+			return ret;
-+		}
-+	}
-+
-+	if (btrfs_test_opt(tree_root, FREE_SPACE_TREE) &&
-+	    !btrfs_fs_compat_ro(fs_info, FREE_SPACE_TREE)) {
-+		pr_info("BTRFS: creating free space tree\n");
-+		ret = btrfs_create_free_space_tree(fs_info);
-+		if (ret) {
-+			pr_warn("BTRFS: failed to create free space tree %d\n",
-+				ret);
-+			close_ctree(tree_root);
-+			return ret;
-+		}
-+	}
-+
- 	if (!fs_info->uuid_root) {
- 		pr_info("BTRFS: creating UUID tree\n");
- 		ret = btrfs_create_uuid_tree(fs_info);
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 442bf434b783..bfdaf123f4e9 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -312,10 +312,11 @@ enum {
- 	Opt_nossd, Opt_ssd_spread, Opt_thread_pool, Opt_noacl, Opt_compress,
- 	Opt_compress_type, Opt_compress_force, Opt_compress_force_type,
- 	Opt_notreelog, Opt_ratio, Opt_flushoncommit, Opt_discard,
--	Opt_space_cache, Opt_clear_cache, Opt_user_subvol_rm_allowed,
--	Opt_enospc_debug, Opt_subvolrootid, Opt_defrag, Opt_inode_cache,
--	Opt_no_space_cache, Opt_recovery, Opt_skip_balance,
--	Opt_check_integrity, Opt_check_integrity_including_extent_data,
-+	Opt_space_cache, Opt_space_cache_version, Opt_clear_cache,
-+	Opt_user_subvol_rm_allowed, Opt_enospc_debug, Opt_subvolrootid,
-+	Opt_defrag, Opt_inode_cache, Opt_no_space_cache, Opt_recovery,
-+	Opt_skip_balance, Opt_check_integrity,
-+	Opt_check_integrity_including_extent_data,
- 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
- 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
- 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
-@@ -354,6 +355,7 @@ static match_table_t tokens = {
- 	{Opt_discard, "discard"},
- 	{Opt_nodiscard, "nodiscard"},
- 	{Opt_space_cache, "space_cache"},
-+	{Opt_space_cache_version, "space_cache=%s"},
- 	{Opt_clear_cache, "clear_cache"},
- 	{Opt_user_subvol_rm_allowed, "user_subvol_rm_allowed"},
- 	{Opt_enospc_debug, "enospc_debug"},
-@@ -392,7 +394,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	bool compress_force = false;
- 
- 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
--	if (cache_gen)
-+	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE))
-+		btrfs_set_opt(info->mount_opt, FREE_SPACE_TREE);
-+	else if (cache_gen)
- 		btrfs_set_opt(info->mount_opt, SPACE_CACHE);
- 
- 	if (!options)
-@@ -626,15 +630,35 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 					     "turning off discard");
- 			break;
- 		case Opt_space_cache:
--			btrfs_set_and_info(root, SPACE_CACHE,
--					   "enabling disk space caching");
-+		case Opt_space_cache_version:
-+			if (token == Opt_space_cache ||
-+			    strcmp(args[0].from, "v1") == 0) {
-+				btrfs_clear_opt(root->fs_info->mount_opt,
-+						FREE_SPACE_TREE);
-+				btrfs_set_and_info(root, SPACE_CACHE,
-+						   "enabling disk space caching");
-+			} else if (strcmp(args[0].from, "v2") == 0) {
-+				btrfs_clear_opt(root->fs_info->mount_opt,
-+						SPACE_CACHE);
-+				btrfs_set_and_info(root, FREE_SPACE_TREE,
-+						   "enabling free space tree");
-+			} else {
-+				ret = -EINVAL;
-+				goto out;
-+			}
- 			break;
- 		case Opt_rescan_uuid_tree:
- 			btrfs_set_opt(info->mount_opt, RESCAN_UUID_TREE);
- 			break;
- 		case Opt_no_space_cache:
--			btrfs_clear_and_info(root, SPACE_CACHE,
--					     "disabling disk space caching");
-+			if (btrfs_test_opt(root, SPACE_CACHE)) {
-+				btrfs_clear_and_info(root, SPACE_CACHE,
-+						     "disabling disk space caching");
-+			}
-+			if (btrfs_test_opt(root, FREE_SPACE_TREE)) {
-+				btrfs_clear_and_info(root, FREE_SPACE_TREE,
-+						     "disabling free space tree");
-+			}
- 			break;
- 		case Opt_inode_cache:
- 			btrfs_set_pending_and_info(info, INODE_MAP_CACHE,
-@@ -747,8 +771,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 	spin_lock(&block_group->lock);
+ 	block_group->caching_ctl = NULL;
+@@ -624,8 +628,8 @@ static int cache_block_group(struct btrfs_block_group_cache *cache,
  		}
- 	}
- out:
-+	if (btrfs_fs_compat_ro(root->fs_info, FREE_SPACE_TREE) &&
-+	    !btrfs_test_opt(root, FREE_SPACE_TREE) &&
-+	    !btrfs_test_opt(root, CLEAR_CACHE)) {
-+		btrfs_err(root->fs_info, "cannot disable free space tree");
-+		ret = -EINVAL;
+ 	} else {
+ 		/*
+-		 * We are not going to do the fast caching, set cached to the
+-		 * appropriate value and wakeup any waiters.
++		 * We're either using the free space tree or no caching at all.
++		 * Set cached to the appropriate value and wakeup any waiters.
+ 		 */
+ 		spin_lock(&cache->lock);
+ 		if (load_cache_only) {
+@@ -6475,6 +6479,13 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
+ 			}
+ 		}
+ 
++		ret = add_to_free_space_tree(trans, root->fs_info, bytenr,
++					     num_bytes);
++		if (ret) {
++			btrfs_abort_transaction(trans, extent_root, ret);
++			goto out;
++		}
 +
-+	}
- 	if (!ret && btrfs_test_opt(root, SPACE_CACHE))
- 		btrfs_info(root->fs_info, "disk space caching is enabled");
-+	if (!ret && btrfs_test_opt(root, FREE_SPACE_TREE))
-+		btrfs_info(root->fs_info, "using free space tree");
- 	kfree(orig);
- 	return ret;
- }
-@@ -1155,6 +1188,8 @@ static int btrfs_show_options(struct seq_file *seq, struct dentry *dentry)
- 		seq_puts(seq, ",noacl");
- 	if (btrfs_test_opt(root, SPACE_CACHE))
- 		seq_puts(seq, ",space_cache");
-+	else if (btrfs_test_opt(root, FREE_SPACE_TREE))
-+		seq_puts(seq, ",space_cache=v2");
- 	else
- 		seq_puts(seq, ",nospace_cache");
- 	if (btrfs_test_opt(root, RESCAN_UUID_TREE))
+ 		ret = update_block_group(trans, root, bytenr, num_bytes, 0);
+ 		if (ret) {
+ 			btrfs_abort_transaction(trans, extent_root, ret);
+@@ -7418,6 +7429,11 @@ static int alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(path->nodes[0]);
+ 	btrfs_free_path(path);
+ 
++	ret = remove_from_free_space_tree(trans, fs_info, ins->objectid,
++					  ins->offset);
++	if (ret)
++		return ret;
++
+ 	ret = update_block_group(trans, root, ins->objectid, ins->offset, 1);
+ 	if (ret) { /* -ENOENT, logic error */
+ 		btrfs_err(fs_info, "update block group failed for %llu %llu",
+@@ -7499,6 +7515,11 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
+ 	btrfs_mark_buffer_dirty(leaf);
+ 	btrfs_free_path(path);
+ 
++	ret = remove_from_free_space_tree(trans, fs_info, ins->objectid,
++					  num_bytes);
++	if (ret)
++		return ret;
++
+ 	ret = update_block_group(trans, root, ins->objectid, root->nodesize,
+ 				 1);
+ 	if (ret) { /* -ENOENT, logic error */
+@@ -9366,6 +9387,8 @@ btrfs_create_block_group_cache(struct btrfs_root *root, u64 start, u64 size)
+ 	cache->full_stripe_len = btrfs_full_stripe_len(root,
+ 					       &root->fs_info->mapping_tree,
+ 					       start);
++	set_free_space_tree_thresholds(cache);
++
+ 	atomic_set(&cache->count, 1);
+ 	spin_lock_init(&cache->lock);
+ 	init_rwsem(&cache->data_rwsem);
+@@ -9586,6 +9609,8 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+ 					       key.objectid, key.offset);
+ 		if (ret)
+ 			btrfs_abort_transaction(trans, extent_root, ret);
++		add_block_group_free_space(trans, root->fs_info, block_group);
++		/* already aborted the transaction if it failed. */
+ next:
+ 		list_del_init(&block_group->bg_list);
+ 	}
+@@ -9615,6 +9640,7 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+ 	cache->flags = type;
+ 	cache->last_byte_to_unpin = (u64)-1;
+ 	cache->cached = BTRFS_CACHE_FINISHED;
++	cache->needs_free_space = 1;
+ 	ret = exclude_super_stripes(root, cache);
+ 	if (ret) {
+ 		/*
+@@ -9977,6 +10003,10 @@ int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
+ 
+ 	unlock_chunks(root);
+ 
++	ret = remove_block_group_free_space(trans, root->fs_info, block_group);
++	if (ret)
++		goto out;
++
+ 	btrfs_put_block_group(block_group);
+ 	btrfs_put_block_group(block_group);
+ 
 -- 
 2.6.0
 

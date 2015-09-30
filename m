@@ -1,108 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:33935 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754263AbbIKXbC (ORCPT
+Received: from e28smtp02.in.ibm.com ([122.248.162.2]:54220 "EHLO
+	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755794AbbI3KS7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Sep 2015 19:31:02 -0400
-Subject: Re: btrfs regression since 4.X kernel NULL pointer dereference
-To: Jeff Mahoney <jeffm@suse.com>, Christoph Hellwig <hch@lst.de>
-References: <55D8B193.8010906@profihost.ag> <20150825090030.GF31630@lst.de>
- <55F32395.6030702@suse.com> <55F32600.6080201@suse.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        linux-fsdevel@vger.kernel.org, Chris Mason <clm@fb.com>
-From: Stefan Priebe <s.priebe@profihost.ag>
-Message-ID: <55F3643C.3010700@profihost.ag>
-Date: Sat, 12 Sep 2015 01:31:08 +0200
-MIME-Version: 1.0
-In-Reply-To: <55F32600.6080201@suse.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+	Wed, 30 Sep 2015 06:18:59 -0400
+Received: from /spool/local
+	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 30 Sep 2015 15:48:57 +0530
+Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 6F158394005E
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:55 +0530 (IST)
+Received: from d28av04.in.ibm.com (d28av04.in.ibm.com [9.184.220.66])
+	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t8UAIr9Q000320
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:53 +0530
+Received: from d28av04.in.ibm.com (localhost [127.0.0.1])
+	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t8UAImLi012092
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:50 +0530
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, jbacik@fb.com, clm@fb.com,
+        bo.li.liu@oracle.com, dsterba@suse.cz, quwenruo@cn.fujitsu.com,
+        chandan@mykolab.com
+Subject: [RFC PATCH V4 13/13] Btrfs: Return valid delalloc range when the page does not have PG_Dirty flag set or has been invalidated
+Date: Wed, 30 Sep 2015 15:48:29 +0530
+Message-Id: <1443608309-30154-14-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+The following issue was observed when running generic/095 test on
+subpagesize-blocksize patchset.
 
-Am 11.09.2015 um 21:05 schrieb Jeff Mahoney:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 9/11/15 2:55 PM, Jeff Mahoney wrote:
->> On 8/25/15 5:00 AM, Christoph Hellwig wrote:
->>> I think this is btrfs using a struct block_device that doesn't
->>> have a valid queue pointer in it's gendisk for ->s_bdev.  And
->>> there are some fishy looking ->s_bdev assignments in the code
->>> which I suspect are related to it:
->>
->>> fs/btrfs/dev-replace.c: if (fs_info->sb->s_bdev ==
->>> src_device->bdev) fs/btrfs/dev-replace.c: fs_info->sb->s_bdev =
->>> tgt_device->bdev; fs/btrfs/volumes.c:     if (device->bdev ==
->>> root->fs_info->sb->s_bdev) fs/btrfs/volumes.c:
->>> root->fs_info->sb->s_bdev = next_device->bdev;
->>> fs/btrfs/volumes.c: if (tgtdev->bdev == fs_info->sb->s_bdev)
->>> fs/btrfs/volumes.c: fs_info->sb->s_bdev = next_device->bdev;
->>
->> The report at https://bugzilla.kernel.org/show_bug.cgi?id=100911
->> tracks it down a bit further and it's bdev->bd_disk == NULL instead
->> of the queue in the gendisk. I don't think that the s_bdev stuff
->> is related, though I'd certainly love to see that bit go away.
->>
->> If we're calling blk_get_backing_dev_info, that means we're
->> already using an inode that has blockdev_superblock and the btrfs
->> superblock isn't even involved.
->>
->> We're getting there because btrfs_evict_inode ->
->> btrfs_wait_ordered_range -> btrfs_fdatawrite_range ->
->> filemap_fdatawrite_range gets called with inode->i_mapping.  That
->> mapping gets passed down through __filemap_fdatawrite_range to
->> wbc_attach_fdatawrite_inode where the inode passed is mapping->host
->> -- which will be the block device inode rather than the btrfs
->> device node inode.  That inode is the one ultimately checked in
->> inode_to_bdi.
->>
->> So it looks like we're causing writeback on an unrelated block
->> device that was opened using a device node hosted on btrfs, which
->> is obviously wrong.
->>
->> I don't think snapshot removal is even a requirement to trigger
->> this. I expect it's possible to trigger with two device nodes for
->> the same block device where one is getting closed and cleaned up
->> while the eviction of the other happens.  The device nodes wouldn't
->> even need to be on the same fs.
->>
->> Other file systems use &inode->i_data in eviction.  Is it that
->> simple here?
+Assume that we are trying to write a dirty page that is mapping file offset
+range [159744, 163839].
 
-Your patch works fine here. Did some simple tests already.
+writepage_delalloc()
+  find_lock_delalloc_range(*start = 159744, *end = 0)
+    find_delalloc_range()
+      Returns range [X, Y] where (X > 163839)
+    lock_delalloc_pages()
+      One of the pages in range [X, Y] has dirty flag cleared;
+      Loop once more restricting the delalloc range to span only
+      PAGE_CACHE_SIZE bytes;
+    find_delalloc_range()
+      Returns range [356352, 360447];
+    lock_delalloc_pages()
+      The page [356352, 360447] has dirty flag cleared;
+    Returns with *start = 159744 and *end = 0;
+  *start = *end + 1;
+  find_lock_delalloc_range(*start = 1, *end = 0)
+    Finds and returns delalloc range [1, 12288];
+  cow_file_range()
+    Clears delalloc range [1, 12288]
+    Create ordered extent for range [1, 12288]
 
-Thanks!
+The ordered extent thus created above breaks the rule that extents have to be
+aligned to the filesystem's block size.
 
-Stefan
+In cases where lock_delalloc_pages() fails (either due to PG_dirty flag being
+cleared or the page no longer being a member of the inode's page cache), this
+patch sets and returns the delalloc range that was found by
+find_delalloc_range().
 
->
-> Incidentally, this explanation also covers why I was unable to
-> reproduce it locally.  SLES systems use devtmpfs and I just bind
-> mounted it into my chroot environment like I normally would.  When I
-> cp'd /dev into the test environment, I was able to reproduce immediately
-> .
->
-> - -Jeff
->
-> - --
-> Jeff Mahoney
-> SUSE Labs
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
->
-> iQIcBAEBAgAGBQJV8yYAAAoJEB57S2MheeWy2BwP+QGdpsErIfyHJcx95LLrvsxu
-> n0kBoI4Jd5yfNxp8m+Ll3xgUdsd6rKHJV2Muq8aRdNEdzf1E0DFrRcE0d1W5UrJy
-> lPzrA8QxCVaLf5jFysFp0xygKbLKHGmOAv2KnAGYFw6exIjb344UnZb6aiw5Uekm
-> DqrTmEq+0Yb/mE04GVpWMylK6pkDOhgkOzFVZa1Pff0eKY4E61G5GtmA2kNAUP9v
-> CsoZ0FO1WdF2Fc9ONSPjq7FdZLKH+OmIVakHnaELa8EEM3W7NU+mxLRabznBV25e
-> L/KPjr+awzkhV1ieyAAww/dddE3bN5nmDOq+OgvA9WPgaRvvwne2tHVTFaxHoiHg
-> d8oHDLkC1/Z1MqINLi5dZNsSuIWMvRhIMV9Th5F2rdWxrBCSRvID7N+Z2HHh6mJC
-> Q9rgSOyYKclTam6IF7yX8lDWIqkAnoA6OxvOKRccgr3hS/u4DzVtRmWHO9RblEi+
-> a9dF2FCP+v+Lgdb8C5n7XUixrtF5H6BWHhmArgjmxD6iyeXOmphyGrgqmSLdY1s9
-> sakvLrSB9i3O27CKoup2OHyF6MOdgsaa90FZLPLt6BDrCTWAscd0LDy8MbaKgKCR
-> kjfSTiwNydzZfkJixH71U/1mGbuB9nqf6jrNWCQdE5f57MSCEwiFqQvaD1KK+Uug
-> ZW2Bz1VQxkOvGbYiJ4HV
-> =ic4+
-> -----END PGP SIGNATURE-----
->
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/extent_io.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 0ee486a..3912d1f 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1731,6 +1731,8 @@ again:
+ 			goto again;
+ 		} else {
+ 			found = 0;
++			*start = delalloc_start;
++			*end = delalloc_end;
+ 			goto out_failed;
+ 		}
+ 	}
+-- 
+2.1.0
+

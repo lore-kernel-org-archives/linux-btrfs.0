@@ -1,253 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp06.in.ibm.com ([122.248.162.6]:36137 "EHLO
+Received: from e28smtp06.in.ibm.com ([122.248.162.6]:36130 "EHLO
 	e28smtp06.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756042AbbI3KTN (ORCPT
+	with ESMTP id S1756046AbbI3KTM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 06:19:13 -0400
+	Wed, 30 Sep 2015 06:19:12 -0400
 Received: from /spool/local
 	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 30 Sep 2015 15:49:11 +0530
+	Wed, 30 Sep 2015 15:49:10 +0530
 Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
-	by d28dlp01.in.ibm.com (Postfix) with ESMTP id 647BFE0063
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:52 +0530 (IST)
+	by d28dlp01.in.ibm.com (Postfix) with ESMTP id 227B2E005C
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:51 +0530 (IST)
 Received: from d28av04.in.ibm.com (d28av04.in.ibm.com [9.184.220.66])
-	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t8UAIon919202262
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:52 +0530
+	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t8UAIqSC47579218
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:54 +0530
 Received: from d28av04.in.ibm.com (localhost [127.0.0.1])
-	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t8UAIlX8011905
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:49 +0530
+	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t8UAImFa012075
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:50 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, jbacik@fb.com, clm@fb.com,
         bo.li.liu@oracle.com, dsterba@suse.cz, quwenruo@cn.fujitsu.com,
         chandan@mykolab.com
-Subject: [RFC PATCH V4 03/13] Btrfs: Direct I/O read: Work on sectorsized blocks
-Date: Wed, 30 Sep 2015 15:48:19 +0530
-Message-Id: <1443608309-30154-4-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V4 12/13] Btrfs: prepare_pages: Retry adding a page to the page cache
+Date: Wed, 30 Sep 2015 15:48:28 +0530
+Message-Id: <1443608309-30154-13-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The direct I/O read's endio and corresponding repair functions work on
-page sized blocks. This commit adds the ability for direct I/O read to work on
-subpagesized blocks.
+When reading the page from the disk, we can race with Direct I/O which can get
+the page lock (before prepare_uptodate_page() gets it) and can go ahead and
+invalidate the page. Hence if the page is not found in the inode's address
+space, retry the operation of getting a page.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/inode.c | 96 ++++++++++++++++++++++++++++++++++++++++++--------------
- 1 file changed, 73 insertions(+), 23 deletions(-)
+ fs/btrfs/file.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index b7e439b..5a47731 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7664,9 +7664,9 @@ static int btrfs_check_dio_repairable(struct inode *inode,
- }
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 5715e29..76db77c 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1316,6 +1316,7 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 	int faili;
  
- static int dio_read_error(struct inode *inode, struct bio *failed_bio,
--			  struct page *page, u64 start, u64 end,
--			  int failed_mirror, bio_end_io_t *repair_endio,
--			  void *repair_arg)
-+			struct page *page, unsigned int pgoff,
-+			u64 start, u64 end, int failed_mirror,
-+			bio_end_io_t *repair_endio, void *repair_arg)
- {
- 	struct io_failure_record *failrec;
- 	struct bio *bio;
-@@ -7687,7 +7687,9 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
- 		return -EIO;
- 	}
- 
--	if (failed_bio->bi_vcnt > 1)
-+	if ((failed_bio->bi_vcnt > 1)
-+		|| (failed_bio->bi_io_vec->bv_len
-+			> BTRFS_I(inode)->root->sectorsize))
- 		read_mode = READ_SYNC | REQ_FAILFAST_DEV;
- 	else
- 		read_mode = READ_SYNC;
-@@ -7695,7 +7697,7 @@ static int dio_read_error(struct inode *inode, struct bio *failed_bio,
- 	isector = start - btrfs_io_bio(failed_bio)->logical;
- 	isector >>= inode->i_sb->s_blocksize_bits;
- 	bio = btrfs_create_repair_bio(inode, failed_bio, failrec, page,
--				      0, isector, repair_endio, repair_arg);
-+				pgoff, isector, repair_endio, repair_arg);
- 	if (!bio) {
- 		free_io_failure(inode, failrec);
- 		return -EIO;
-@@ -7725,12 +7727,17 @@ struct btrfs_retry_complete {
- static void btrfs_retry_endio_nocsum(struct bio *bio, int err)
- {
- 	struct btrfs_retry_complete *done = bio->bi_private;
-+	struct inode *inode;
- 	struct bio_vec *bvec;
- 	int i;
- 
- 	if (err)
- 		goto end;
- 
-+	ASSERT(bio->bi_vcnt == 1);
-+	inode = bio->bi_io_vec->bv_page->mapping->host;
-+	ASSERT(bio->bi_io_vec->bv_len == BTRFS_I(inode)->root->sectorsize);
+ 	for (i = 0; i < num_pages; i++) {
++again:
+ 		pages[i] = find_or_create_page(inode->i_mapping, index + i,
+ 					       mask | __GFP_WRITE);
+ 		if (!pages[i]) {
+@@ -1330,6 +1331,21 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 		if (i == num_pages - 1)
+ 			err = prepare_uptodate_page(pages[i],
+ 						    pos + write_bytes, false);
 +
- 	done->uptodate = 1;
- 	bio_for_each_segment_all(bvec, bio, i)
- 		clean_io_failure(done->inode, done->start, bvec->bv_page, 0);
-@@ -7745,22 +7752,30 @@ static int __btrfs_correct_data_nocsum(struct inode *inode,
- 	struct bio_vec *bvec;
- 	struct btrfs_retry_complete done;
- 	u64 start;
-+	unsigned int pgoff;
-+	u32 sectorsize;
-+	int nr_sectors;
- 	int i;
- 	int ret;
- 
-+	sectorsize = BTRFS_I(inode)->root->sectorsize;
-+
- 	start = io_bio->logical;
- 	done.inode = inode;
- 
- 	bio_for_each_segment_all(bvec, &io_bio->bio, i) {
--try_again:
-+		nr_sectors = bvec->bv_len >> inode->i_blkbits;
-+		pgoff = bvec->bv_offset;
-+
-+next_block_or_try_again:
- 		done.uptodate = 0;
- 		done.start = start;
- 		init_completion(&done.done);
- 
--		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page, start,
--				     start + bvec->bv_len - 1,
--				     io_bio->mirror_num,
--				     btrfs_retry_endio_nocsum, &done);
-+		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page,
-+				pgoff, start, start + sectorsize - 1,
-+				io_bio->mirror_num,
-+				btrfs_retry_endio_nocsum, &done);
- 		if (ret)
- 			return ret;
- 
-@@ -7768,10 +7783,15 @@ try_again:
- 
- 		if (!done.uptodate) {
- 			/* We might have another mirror, so try again */
--			goto try_again;
-+			goto next_block_or_try_again;
- 		}
- 
--		start += bvec->bv_len;
-+		start += sectorsize;
-+
-+		if (nr_sectors--) {
-+			pgoff += sectorsize;
-+			goto next_block_or_try_again;
++		/*
++		 * When reading the page from the disk, we can race
++		 * with direct i/o which can get the page lock (before
++		 * prepare_uptodate_page() gets it) and can go ahead
++		 * and invalidate the page. Hence if the page is found
++		 * to be not belonging to the inode's address space,
++		 * retry the operation of getting a page.
++		 */
++		if (unlikely(pages[i]->mapping != inode->i_mapping)) {
++			unlock_page(pages[i]);
++			page_cache_release(pages[i]);
++			goto again;
 +		}
- 	}
- 
- 	return 0;
-@@ -7781,7 +7801,9 @@ static void btrfs_retry_endio(struct bio *bio, int err)
- {
- 	struct btrfs_retry_complete *done = bio->bi_private;
- 	struct btrfs_io_bio *io_bio = btrfs_io_bio(bio);
-+	struct inode *inode;
- 	struct bio_vec *bvec;
-+	u64 start;
- 	int uptodate;
- 	int ret;
- 	int i;
-@@ -7790,13 +7812,20 @@ static void btrfs_retry_endio(struct bio *bio, int err)
- 		goto end;
- 
- 	uptodate = 1;
 +
-+	start = done->start;
-+
-+	ASSERT(bio->bi_vcnt == 1);
-+	inode = bio->bi_io_vec->bv_page->mapping->host;
-+	ASSERT(bio->bi_io_vec->bv_len == BTRFS_I(inode)->root->sectorsize);
-+
- 	bio_for_each_segment_all(bvec, bio, i) {
- 		ret = __readpage_endio_check(done->inode, io_bio, i,
--					     bvec->bv_page, 0,
--					     done->start, bvec->bv_len);
-+					bvec->bv_page, bvec->bv_offset,
-+					done->start, bvec->bv_len);
- 		if (!ret)
- 			clean_io_failure(done->inode, done->start,
--					 bvec->bv_page, 0);
-+					bvec->bv_page, bvec->bv_offset);
- 		else
- 			uptodate = 0;
- 	}
-@@ -7814,16 +7843,30 @@ static int __btrfs_subio_endio_read(struct inode *inode,
- 	struct btrfs_retry_complete done;
- 	u64 start;
- 	u64 offset = 0;
-+	u32 sectorsize;
-+	int nr_sectors;
-+	unsigned int pgoff;
-+	int csum_pos;
- 	int i;
- 	int ret;
-+	unsigned char blocksize_bits;
-+
-+	blocksize_bits = inode->i_blkbits;
-+	sectorsize = BTRFS_I(inode)->root->sectorsize;
- 
- 	err = 0;
- 	start = io_bio->logical;
- 	done.inode = inode;
- 
- 	bio_for_each_segment_all(bvec, &io_bio->bio, i) {
--		ret = __readpage_endio_check(inode, io_bio, i, bvec->bv_page,
--					     0, start, bvec->bv_len);
-+		nr_sectors = bvec->bv_len >> blocksize_bits;
-+		pgoff = bvec->bv_offset;
-+next_block:
-+		csum_pos = offset >> blocksize_bits;
-+
-+		ret = __readpage_endio_check(inode, io_bio, csum_pos,
-+					bvec->bv_page, pgoff, start,
-+					sectorsize);
- 		if (likely(!ret))
- 			goto next;
- try_again:
-@@ -7831,10 +7874,10 @@ try_again:
- 		done.start = start;
- 		init_completion(&done.done);
- 
--		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page, start,
--				     start + bvec->bv_len - 1,
--				     io_bio->mirror_num,
--				     btrfs_retry_endio, &done);
-+		ret = dio_read_error(inode, &io_bio->bio, bvec->bv_page,
-+				pgoff, start, start + sectorsize - 1,
-+				io_bio->mirror_num,
-+				btrfs_retry_endio, &done);
- 		if (ret) {
- 			err = ret;
- 			goto next;
-@@ -7847,8 +7890,15 @@ try_again:
- 			goto try_again;
- 		}
- next:
--		offset += bvec->bv_len;
--		start += bvec->bv_len;
-+		offset += sectorsize;
-+		start += sectorsize;
-+
-+		ASSERT(nr_sectors);
-+
-+		if (--nr_sectors) {
-+			pgoff += sectorsize;
-+			goto next_block;
-+		}
- 	}
- 
- 	return err;
+ 		if (err) {
+ 			page_cache_release(pages[i]);
+ 			faili = i - 1;
 -- 
 2.1.0
 

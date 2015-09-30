@@ -1,90 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp04.in.ibm.com ([122.248.162.4]:53052 "EHLO
-	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756529AbbI3KTM (ORCPT
+Received: from e28smtp02.in.ibm.com ([122.248.162.2]:54418 "EHLO
+	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756151AbbI3KTK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 06:19:12 -0400
+	Wed, 30 Sep 2015 06:19:10 -0400
 Received: from /spool/local
-	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 30 Sep 2015 15:49:10 +0530
+	Wed, 30 Sep 2015 15:49:08 +0530
 Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 2A530125801D
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:43 +0530 (IST)
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 65504394005E
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:49:06 +0530 (IST)
 Received: from d28av04.in.ibm.com (d28av04.in.ibm.com [9.184.220.66])
-	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t8UAIpdW2818076
+	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t8UAIpbR20054048
 	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:52 +0530
 Received: from d28av04.in.ibm.com (localhost [127.0.0.1])
-	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t8UAIlGb011902
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:48 +0530
+	by d28av04.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t8UAImsR012005
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 15:48:50 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, jbacik@fb.com, clm@fb.com,
         bo.li.liu@oracle.com, dsterba@suse.cz, quwenruo@cn.fujitsu.com,
         chandan@mykolab.com
-Subject: [RFC PATCH V4 00/13] Btrfs: Pre subpagesize-blocksize cleanups
-Date: Wed, 30 Sep 2015 15:48:16 +0530
-Message-Id: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V4 08/13] Btrfs: btrfs_submit_direct_hook: Handle map_length < bio vector length
+Date: Wed, 30 Sep 2015 15:48:24 +0530
+Message-Id: <1443608309-30154-9-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The patches posted along with this cover letter are cleanups made
-during the developement of subpagesize-blocksize patchset. I believe
-that they can be integrated with the mainline kernel. Hence I have
-posted them separately from the subpagesize-blocksize patchset.
+In subpagesize-blocksize scenario, map_length can be less than the length of a
+bio vector. Such a condition may cause btrfs_submit_direct_hook() to submit a
+zero length bio. Fix this by comparing map_length against block size rather
+than with bv_len.
 
-I have testsed the patchset by running xfstests on ppc64 and
-x86_64. On ppc64, some of the Btrfs specific tests and generic/255
-fail because they assume 4K as the filesystem's block size. I have
-fixed some of the test cases. I will fix the rest and mail them to the
-fstests mailing list in the near future.
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ fs/btrfs/inode.c | 25 +++++++++++++++++--------
+ 1 file changed, 17 insertions(+), 8 deletions(-)
 
-Changes from V3:
-Two new issues have been been fixed by the patches,
-1. Btrfs: prepare_pages: Retry adding a page to the page cache.
-2. Btrfs: Return valid delalloc range when the page does not have
-   PG_Dirty flag set or has been invalidated.
-IMHO, The above issues are also applicable to the "page size == block
-size" scenario but for reasons unknown to me they aren't seen even
-when the tests are run for a long time.
-
-Changes from V2:
-1. For detecting logical errors, Use ASSERT() calls instead of calls to
-   BUG_ON().
-2. In the patch "Btrfs: Compute and look up csums based on sectorsized
-   blocks", fix usage of kmap_atomic/kunmap_atomic such that between the
-   kmap_atomic() and kunmap_atomic() calls we do not invoke any function
-   that might cause the current task to sleep.
-   
-Changes from V1:
-1. Call round_[down,up]() functions instead of doing hard coded alignment.
-
-
-Chandan Rajendra (13):
-  Btrfs: __btrfs_buffered_write: Reserve/release extents aligned to
-    block size
-  Btrfs: Compute and look up csums based on sectorsized blocks
-  Btrfs: Direct I/O read: Work on sectorsized blocks
-  Btrfs: fallocate: Work with sectorsized blocks
-  Btrfs: btrfs_page_mkwrite: Reserve space in sectorsized units
-  Btrfs: Search for all ordered extents that could span across a page
-  Btrfs: Use (eb->start, seq) as search key for tree modification log
-  Btrfs: btrfs_submit_direct_hook: Handle map_length < bio vector length
-  Btrfs: Limit inline extents to root->sectorsize
-  Btrfs: Fix block size returned to user space
-  Btrfs: Clean pte corresponding to page straddling i_size
-  Btrfs: prepare_pages: Retry adding a page to the page cache
-  Btrfs: Return valid delalloc range when the page does not have
-    PG_Dirty flag set or has been invalidated
-
- fs/btrfs/ctree.c     |  34 ++++----
- fs/btrfs/ctree.h     |   2 +-
- fs/btrfs/extent_io.c |   5 +-
- fs/btrfs/file-item.c |  93 ++++++++++++--------
- fs/btrfs/file.c      | 119 +++++++++++++++++--------
- fs/btrfs/inode.c     | 239 ++++++++++++++++++++++++++++++++++++---------------
- 6 files changed, 331 insertions(+), 161 deletions(-)
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4fbe9de..b1ceba4 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8148,9 +8148,11 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 	u64 file_offset = dip->logical_offset;
+ 	u64 submit_len = 0;
+ 	u64 map_length;
+-	int nr_pages = 0;
+-	int ret;
++	u32 blocksize = root->sectorsize;
+ 	int async_submit = 0;
++	int nr_sectors;
++	int ret;
++	int i;
+ 
+ 	map_length = orig_bio->bi_iter.bi_size;
+ 	ret = btrfs_map_block(root->fs_info, rw, start_sector << 9,
+@@ -8180,9 +8182,12 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 	atomic_inc(&dip->pending_bios);
+ 
+ 	while (bvec <= (orig_bio->bi_io_vec + orig_bio->bi_vcnt - 1)) {
+-		if (map_length < submit_len + bvec->bv_len ||
+-		    bio_add_page(bio, bvec->bv_page, bvec->bv_len,
+-				 bvec->bv_offset) < bvec->bv_len) {
++		nr_sectors = bvec->bv_len >> inode->i_blkbits;
++		i = 0;
++next_block:
++		if (unlikely(map_length < submit_len + blocksize ||
++		    bio_add_page(bio, bvec->bv_page, blocksize,
++			    bvec->bv_offset + (i * blocksize)) < blocksize)) {
+ 			/*
+ 			 * inc the count before we submit the bio so
+ 			 * we know the end IO handler won't happen before
+@@ -8203,7 +8208,6 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 			file_offset += submit_len;
+ 
+ 			submit_len = 0;
+-			nr_pages = 0;
+ 
+ 			bio = btrfs_dio_bio_alloc(orig_bio->bi_bdev,
+ 						  start_sector, GFP_NOFS);
+@@ -8221,9 +8225,14 @@ static int btrfs_submit_direct_hook(int rw, struct btrfs_dio_private *dip,
+ 				bio_put(bio);
+ 				goto out_err;
+ 			}
++
++			goto next_block;
+ 		} else {
+-			submit_len += bvec->bv_len;
+-			nr_pages++;
++			submit_len += blocksize;
++			if (--nr_sectors) {
++				i++;
++				goto next_block;
++			}
+ 			bvec++;
+ 		}
+ 	}
 -- 
 2.1.0
 

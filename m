@@ -1,146 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23552 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753319AbbI3Gbm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 02:31:42 -0400
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>, <fstests@vger.kernel.org>
-Subject: [PATCH] fstests: btrfs: Check if fallocate re-truncates page beyond EOF
-Date: Wed, 30 Sep 2015 14:31:38 +0800
-Message-ID: <1443594698-5285-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:44923 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754262AbbI3Gmy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Sep 2015 02:42:54 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZhB6H-0000ne-FS
+	for linux-btrfs@vger.kernel.org; Wed, 30 Sep 2015 08:42:49 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 08:42:49 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 30 Sep 2015 08:42:49 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH v2] fstests: generic: Check if a bull fallocate will
+ change extent number
+Date: Wed, 30 Sep 2015 06:42:43 +0000 (UTC)
+Message-ID: <pan$59b34$7400fdb5$b216a68a$8bdcfb8f@cox.net>
+References: <1443519264-19184-1-git-send-email-quwenruo@cn.fujitsu.com>
+	<20150929100013.GD25907@carfax.org.uk> <560A6451.6050808@gmx.com>
+	<CAL3q7H4+xS7OOJd-Ny0zzA0a4JVrNHbhzCKStKcTReqriYyKrw@mail.gmail.com>
+	<560A6C85.2020809@gmx.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: fstests@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Even the fallocate range doesn't cover the last page of a file, btrfs
-will still re-truncate the last page.
+Qu Wenruo posted on Tue, 29 Sep 2015 18:48:37 +0800 as excerpted:
 
-Such behavior is completely duplicated and unneeded, and fixed by the
-following kernel patch:
+> Both gives quite good expression, I'll pick one of them.
 
-btrfs: Avoid truncate tailing page if fallocate range doesn't exceed
-inode size
+... And for the one-line title, /bull/bad/ should do it. =:^)
 
-Add this test case to check that malfunction.
+People wanting details about bad /how/ can look at the fuller description 
+or source.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- tests/btrfs/104     | 83 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/104.out |  3 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 87 insertions(+)
- create mode 100755 tests/btrfs/104
- create mode 100644 tests/btrfs/104.out
-
-diff --git a/tests/btrfs/104 b/tests/btrfs/104
-new file mode 100755
-index 0000000..f3ddc15
---- /dev/null
-+++ b/tests/btrfs/104
-@@ -0,0 +1,83 @@
-+#! /bin/bash
-+# FS QA Test 104
-+#
-+# Test that calling fallocate against a range which is already
-+# allocated does not truncate beyond EOF
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 Fujitsu. All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/defrag
-+
-+# remove previous $seqres.full before test
-+rm -f $seqres.full
-+
-+# real QA test starts here
-+
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_need_to_be_root
-+
-+# Use 64K file size to match any sectorsize
-+# And with a unaligned tailing range to ensure it will be at least 2 pages
-+filesize=$(( 64 * 1024 + 1024 ))
-+
-+# Fallocate a range that will not cover the tailing page
-+fallocrange=$(( 64 * 1024 ))
-+
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
-+$XFS_IO_PROG -f -c "pwrite 0 $filesize" $SCRATCH_MNT/foo | _filter_xfs_io
-+sync
-+orig_extent_nr=`_extent_count $SCRATCH_MNT/foo`
-+
-+# As all space are allocated and even written to disk, this falloc
-+# should do nothing with extent modification.
-+$XFS_IO_PROG -f -c "falloc 0 $fallocrange" $SCRATCH_MNT/foo
-+sync
-+new_extent_nr=`_extent_count $SCRATCH_MNT/foo`
-+
-+echo "orig: $orig_extent_nr, new: $new_extent_nr" >> $seqres.full
-+
-+if [ "x$orig_extent_nr" != "x$new_extent_nr" ]; then
-+	echo "Extent beyond EOF is re-truncated"
-+	echo "orig_extent_nr: $orig_extent_nr new_extent_nr: $new_extent_nr"
-+fi
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/btrfs/104.out b/tests/btrfs/104.out
-new file mode 100644
-index 0000000..4c43e17
---- /dev/null
-+++ b/tests/btrfs/104.out
-@@ -0,0 +1,3 @@
-+QA output created by 104
-+wrote 66560/66560 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index e92a65a..640336b 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -106,3 +106,4 @@
- 101 auto quick replace
- 102 auto quick metadata enospc
- 103 auto quick clone compress
-+104 auto quick prealloc
 -- 
-1.8.3.1
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

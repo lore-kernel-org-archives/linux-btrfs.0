@@ -1,54 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:36394 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932184AbbI2RK7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Sep 2015 13:10:59 -0400
-Received: by wicgb1 with SMTP id gb1so158778305wic.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Sep 2015 10:10:58 -0700 (PDT)
-From: Silvio Fricke <silvio.fricke@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Silvio Fricke <silvio.fricke@gmail.com>
-Subject: [PATCH 00/11] using of calloc instead of malloc+memset
-Date: Tue, 29 Sep 2015 19:10:35 +0200
-Message-Id: <cover.1443546000.git.silvio.fricke@gmail.com>
-In-Reply-To: <cover.1443459879.git.silvio.fricke@gmail.com>
-References: <cover.1443459879.git.silvio.fricke@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:47835 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752578AbbI3QVc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Sep 2015 12:21:32 -0400
+Date: Wed, 30 Sep 2015 18:20:31 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>
+Subject: Re: [PATCH v3 1/2] btrfs-progs: Introduce warning and error for
+ common use
+Message-ID: <20150930162030.GM11442@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <cover.1443448527.git.zhaolei@cn.fujitsu.com>
+ <58c06ee5bd98f3a92637eec20ecbc15f7abfa2ee.1443448527.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <58c06ee5bd98f3a92637eec20ecbc15f7abfa2ee.1443448527.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi btrfs,
+On Mon, Sep 28, 2015 at 09:58:13PM +0800, Zhao Lei wrote:
+> And sometimes, we forgot add tailed '\n',
 
-please review my patches about switching from malloc with memset to calloc.
-Thanks for that and eventual inclusion of my patches.
-
-Silvio
-
-Silvio Fricke (11):
-  btrfs-progs: use calloc instead of malloc+memset for btrfs-image.c
-  btrfs-progs: use calloc instead of malloc+memset for btrfs-list.c
-  btrfs-progs: use calloc instead of malloc+memset for chunk-recover.c
-  btrfs-progs: use calloc instead of malloc+memset for cmds-check.c
-  btrfs-progs: use calloc instead of malloc+memset for disk-io.c
-  btrfs-progs: use calloc instead of malloc+memset for extent_io.c
-  btrfs-progs: use calloc instead of malloc+memset for mkfs.c
-  btrfs-progs: use calloc instead of malloc+memset for qgroup.c
-  btrfs-progs: use calloc instead of malloc+memset for quick-test.c
-  btrfs-progs: use calloc instead of malloc+memset for volumes.c
-  btrfs-progs: check: fix memset range
-
- btrfs-image.c   |  3 +--
- btrfs-list.c    |  9 +++------
- chunk-recover.c |  6 ++----
- cmds-check.c    | 12 ++++--------
- disk-io.c       |  7 ++-----
- extent_io.c     |  3 +--
- mkfs.c          |  3 +--
- qgroup.c        |  9 +++------
- quick-test.c    |  3 +--
- volumes.c       |  3 +--
- 10 files changed, 19 insertions(+), 39 deletions(-)
-
--- 
-2.5.3
-
+This is actually a good point and we don't need to put the trailing
+newline to all the messages, similar to the btrfs_* macros used in
+kernel. I'll update the patches.

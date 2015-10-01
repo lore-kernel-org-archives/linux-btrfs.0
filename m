@@ -1,53 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:2366 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751530AbbJEOh3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Oct 2015 10:37:29 -0400
-Date: Mon, 5 Oct 2015 10:32:46 -0400
-From: Chris Mason <clm@fb.com>
-To: Neil Brown <neilb@suse.de>
-CC: <dsterba@suse.cz>, Josef Bacik <jbacik@fb.com>, Jan Kara <jack@suse.cz>,
-        Ryusuke Konishi <konishi.ryusuke@lab.ntt.co.jp>,
-        <linux-fsdevel@vger.kernel.org>, <linux-nfs@vger.kernel.org>,
-        <linux-nilfs@vger.kernel.org>, <linux-kernel@vger.kernel.org>,
-        <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/3] BTRFS: support NFSv2 export
-Message-ID: <20151005143246.GW25218@ret.masoncoding.com>
-References: <20150508001142.31129.7604.stgit@notabene.brown>
- <20150508001623.31129.91695.stgit@notabene.brown>
- <20150511081309.GI23255@suse.cz>
- <87r3lowpax.fsf@notabene.neil.brown.name>
+Received: from mx2.suse.de ([195.135.220.15]:45767 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756531AbbJAL6P (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 1 Oct 2015 07:58:15 -0400
+Date: Thu, 1 Oct 2015 13:57:13 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: linux-btrfs@vger.kernel.org, jbacik@fb.com, clm@fb.com,
+        chandan@mykolab.com
+Subject: Re: [PATCH] Btrfs: create_subvol: Commit the current transaction if
+ stale root entry exists.
+Message-ID: <20151001115712.GA5885@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1443696595-20641-1-git-send-email-chandan@linux.vnet.ibm.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <87r3lowpax.fsf@notabene.neil.brown.name>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1443696595-20641-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Sep 24, 2015 at 11:59:02AM +1000, Neil Brown wrote:
-> David Sterba <dsterba@suse.cz> writes:
+On Thu, Oct 01, 2015 at 04:19:55PM +0530, Chandan Rajendra wrote:
+> This occurs because,
 > 
-> > On Fri, May 08, 2015 at 10:16:23AM +1000, NeilBrown wrote:
-> >> The "fh_len" passed to ->fh_to_* is not guaranteed to be that same as
-> >> that returned by encode_fh - it may be larger.
-> >> 
-> >> With NFSv2, the filehandle is fixed length, so it may appear longer
-> >> than expected and be zero-padded.
-> >> 
-> >> So we must test that fh_len is at least some value, not exactly equal
-> >> to it.
-> >> 
-> >> Signed-off-by: NeilBrown <neilb@suse.de>
-> >
-> > Acked-by: David Sterba <dsterba@suse.cz>
-> 
-> Thanks.  However I just checked mainline and this still hasn't been
-> applied.
-> Should I resend it to someone?  Who?
+> Mount filesystem
+> Create subvol with ID 257
+> Unmount filesystem
+> Mount filesystem
+> Delete subvol with ID 257
+>   btrfs_drop_snapshot()
+>     Add root corresponding to subvol 257 into
+>     btrfs_transaction->dropped_roots list
+> Create new subvol (i.e. create_subvol())
+>   257 is returned as the next free objectid
 
+How is this possible? We do not intentionally reuse the subvol ids so
+this means that the bug is in the id assignment code.
 
-Sorry Neil, I thought you were pushing these after it was ack'd.  I'll
-put it in my pull this week.
-
--chris
-
+>   btrfs_read_fs_root_no_name()
+>     Finds the btrfs_root instance corresponding to the old subvol with ID 257
+>     in btrfs_fs_info->fs_roots_radix.
+>     Returns error since btrfs_root_item->refs has the value of 0.

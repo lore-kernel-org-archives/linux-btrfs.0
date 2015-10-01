@@ -1,87 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59662 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754773AbbJACVa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Sep 2015 22:21:30 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZhTUu-0000Xj-K5
-	for linux-btrfs@vger.kernel.org; Thu, 01 Oct 2015 04:21:28 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Oct 2015 04:21:28 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 01 Oct 2015 04:21:28 +0200
+Received: from userp1040.oracle.com ([156.151.31.81]:19501 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752709AbbJANzh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 1 Oct 2015 09:55:37 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t91Dta2Z027863
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Oct 2015 13:55:36 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id t91DtZB1023363
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Oct 2015 13:55:36 GMT
+Received: from abhmp0019.oracle.com (abhmp0019.oracle.com [141.146.116.25])
+	by userv0122.oracle.com (8.13.8/8.13.8) with ESMTP id t91DtZmL017372
+	for <linux-btrfs@vger.kernel.org>; Thu, 1 Oct 2015 13:55:35 GMT
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID5 doesn't mount on boot, but you can afterwards?
-Date: Thu, 1 Oct 2015 02:21:23 +0000 (UTC)
-Message-ID: <pan$b6f45$856590$f682594c$bd5aae60@cox.net>
-References: <1627746.fEEz2JqgZk@hoefnix>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: [RFC PATCH] Btrfs: fix fs logging for multi device
+Date: Thu,  1 Oct 2015 21:55:25 +0800
+Message-Id: <1443707725-1568-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sjoerd posted on Wed, 30 Sep 2015 18:49:21 +0200 as excerpted:
+In case of multi device btrfs fs, using one of device for
+the logging purpose it quite confusing, instead use the
+fsid. FSID is bit long, but the device path can be long
+as well in some cases.
 
-> A RAID5 setup on raw devices doesn't want to automount on boot. After I
-> skip mounting I can log in (Ubuntu server 14.04 on kernel 4.1.8) and
-> just do a "sudo mount -a" to get all mounted fine. So the array doesn't
-> seem to be broken. "btrfs fi show /data" doesn't show anything wrong
-> either.
-> 
-> The only weird thing I see in the syslog is :
-> 
-> BTRFS info (device sdd): disk space caching is enabled BTRFS: has skinny
-> extents BTRFS: failed to read the system array on sdd BTRFS: open_ctree
-> failed
->  
-> If I reboot the machine the drive in the log changed and looks random
-> (i've seen in 3 boots sda, sdc and sde passing by)
-> 
-> I am using btrfs-progs 4.2.1 if that matters in this case...
-> 
-> Anyone have a clue whyt it's not automounting? Or something I can do to
-> troubleshoot?
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+ fs/btrfs/super.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-That's very likely because unlike traditional single-device filesystems 
-(including single-device btrfs), multi-device btrfs has multiple devices 
-it must know about before it can mount the device, while mount only feeds 
-it one device.
-
-There are two ways to tell btrfs (the kernel side) about the other 
-devices.
-
-1) Do a btrfs device scan before trying to mount.
-
-2) Name the component devices in the mount options, using the device= 
-option (multiple times as necessary to list all devices).
-
-For various reasons including dynamic device discovery effectively 
-randomizing device sd* assignment, btrfs device scan is the normally used 
-option.
-
-What's probably happening is that at some point in the boot process, 
-btrfs device scan is being automatically run, but it's after the attempt 
-to mount the filesystem during boot, so the boot attempt to mount fails, 
-but doing a manual mount succeeds, because the scan has already been done 
-by the time you get a prompt in ordered to run the command.
-
-So what you need to do is find the service that runs the btrfs device 
-scan, and make the mount depend on it, so the scan is done before the 
-attempt to mount.  Then it should work.
-
-Or if it's easier, simply create a new service that runs the scan, and 
-have it run before the mount, since rerunning the scan twice won't hurt 
-anything, it simply needs to run before the mount is attempted in ordered 
-for btrfs to know what devices compose the filesystem, so it can be 
-mounted.
-
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 0bc61fb..181db38 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -190,12 +190,12 @@ static const char * const logtypes[] = {
+ 
+ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ {
+-	struct super_block *sb = fs_info->sb;
+ 	char lvl[4];
+ 	struct va_format vaf;
+ 	va_list args;
+ 	const char *type = logtypes[4];
+ 	int kern_level;
++	struct btrfs_fs_devices *fs_devs = fs_info->fs_devices;
+ 
+ 	va_start(args, fmt);
+ 
+@@ -212,7 +212,7 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 	vaf.fmt = fmt;
+ 	vaf.va = &args;
+ 
+-	printk("%sBTRFS %s (device %s): %pV\n", lvl, type, sb->s_id, &vaf);
++	printk("%sBTRFS: %pU %s: %pV\n", lvl, fs_devs->fsid, type, &vaf);
+ 
+ 	va_end(args);
+ }
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+2.4.1
 

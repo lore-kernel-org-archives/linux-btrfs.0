@@ -1,27 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:1514 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752908AbbJAOhL (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:39846 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1750899AbbJAOjp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 1 Oct 2015 10:37:11 -0400
-Subject: Re: [RFC PATCH V4 02/13] Btrfs: Compute and look up csums based on
+	Thu, 1 Oct 2015 10:39:45 -0400
+Subject: Re: [PATCH V5 02/13] Btrfs: Compute and look up csums based on
  sectorsized blocks
 To: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
         <linux-btrfs@vger.kernel.org>
-References: <1443608309-30154-1-git-send-email-chandan@linux.vnet.ibm.com>
- <1443608309-30154-3-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1443608912-31667-1-git-send-email-chandan@linux.vnet.ibm.com>
+ <1443608912-31667-3-git-send-email-chandan@linux.vnet.ibm.com>
 CC: <clm@fb.com>, <bo.li.liu@oracle.com>, <dsterba@suse.cz>,
         <quwenruo@cn.fujitsu.com>, <chandan@mykolab.com>
 From: Josef Bacik <jbacik@fb.com>
-Message-ID: <560D44F7.1050905@fb.com>
-Date: Thu, 1 Oct 2015 10:36:39 -0400
+Message-ID: <560D45A1.9020804@fb.com>
+Date: Thu, 1 Oct 2015 10:39:29 -0400
 MIME-Version: 1.0
-In-Reply-To: <1443608309-30154-3-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1443608912-31667-3-git-send-email-chandan@linux.vnet.ibm.com>
 Content-Type: text/plain; charset="windows-1252"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 09/30/2015 06:18 AM, Chandan Rajendra wrote:
+On 09/30/2015 06:28 AM, Chandan Rajendra wrote:
 > Checksums are applicable to sectorsize units. The current code uses
 > bio->bv_len units to compute and look up checksums. This works on machines
 > where sectorsize == PAGE_SIZE. This patch makes the checksum computation and
@@ -83,10 +83,6 @@ On 09/30/2015 06:18 AM, Chandan Rajendra wrote:
 > +				page_bytes_left = bvec->bv_len;
 > +			}
 > +
-
-I don't understand why this needs to be changed, bv_len is still the 
-amount we're copying, irrespective of the page size.
-
 >   		}
 >   	}
 >   	btrfs_free_path(path);
@@ -105,9 +101,6 @@ amount we're copying, irrespective of the page size.
 >   	ordered = btrfs_lookup_ordered_extent(inode, offset);
 > -	BUG_ON(!ordered); /* Logic error */
 > +	ASSERT(ordered); /* Logic error */
-
-Don't worry about converting existing BUG_ON()'s, just don't add new ones.
-
 >   	sums->bytenr = (u64)bio->bi_iter.bi_sector << 9;
 >   	index = 0;
 >
@@ -127,10 +120,6 @@ Don't worry about converting existing BUG_ON()'s, just don't add new ones.
 > -			bytes_left = bio->bi_iter.bi_size - total_bytes;
 > +		nr_sectors = (bvec->bv_len + root->sectorsize - 1)
 > +			>> inode->i_blkbits;
-
-So I've seen similar sort of math in the previous patch for this as 
-well, lets make this into a helper.
-
 > +
 > +		for (i = 0; i < nr_sectors; i++) {
 > +			if (offset >= ordered->file_offset + ordered->len ||
@@ -157,8 +146,33 @@ well, lets make this into a helper.
 > +				index = 0;
 > +
 > +				data = kmap_atomic(bvec->bv_page);
+> +			}
+>
+> -			sums = kzalloc(btrfs_ordered_sum_size(root, bytes_left),
+> -				       GFP_NOFS);
+> -			BUG_ON(!sums); /* -ENOMEM */
+> -			sums->len = bytes_left;
+> -			ordered = btrfs_lookup_ordered_extent(inode, offset);
+> -			BUG_ON(!ordered); /* Logic error */
+> -			sums->bytenr = ((u64)bio->bi_iter.bi_sector << 9) +
+> -				       total_bytes;
+> -			index = 0;
+> +			sums->sums[index] = ~(u32)0;
+> +			sums->sums[index]
+> +				= btrfs_csum_data(data + bvec->bv_offset
+> +						+ (i * root->sectorsize),
+> +						sums->sums[index],
+> +						root->sectorsize);
+> +			btrfs_csum_final(sums->sums[index],
+> +					(char *)(sums->sums + index));
+> +			index++;
+> +			offset += root->sectorsize;
+> +			this_sum_bytes += root->sectorsize;
+> +			total_bytes += root->sectorsize;
+>   		}
+>
 
-This will fall through and kzalloc under kmap_atomic which isn't ok. 
-Thanks,
+What I said about this area in the other email I sent just ignore, I 
+misread the patch.  The other stuff is still valid tho.  Thanks,
 
 Josef

@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.digint.ch ([92.42.190.51]:55836 "EHLO mail.digint.ch"
+Received: from www.digint.ch ([92.42.190.51]:37506 "EHLO mail.digint.ch"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752007AbbJBQuE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	id S1751512AbbJBQuE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
 	Fri, 2 Oct 2015 12:50:04 -0400
 From: axel@tty0.ch
 To: linux-btrfs@vger.kernel.org
 Cc: Axel Burri <axel@tty0.ch>
-Subject: [PATCH 1/4] btrfs-progs: add -A option for subvolume list (print all available information)
-Date: Fri,  2 Oct 2015 18:41:20 +0200
-Message-Id: <1443804083-876-2-git-send-email-axel@tty0.ch>
+Subject: [PATCH 2/4] btrfs-progs: add "flags" column for subvolume list (shows "readonly" flag with -A)
+Date: Fri,  2 Oct 2015 18:41:21 +0200
+Message-Id: <1443804083-876-3-git-send-email-axel@tty0.ch>
 In-Reply-To: <1443804083-876-1-git-send-email-axel@tty0.ch>
 References: <1443804083-876-1-git-send-email-axel@tty0.ch>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,54 +16,54 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: Axel Burri <axel@tty0.ch>
 ---
- Documentation/btrfs-subvolume.asciidoc | 2 ++
- cmds-subvolume.c                       | 6 +++++-
- 2 files changed, 7 insertions(+), 1 deletion(-)
+ btrfs-list.c | 14 ++++++++++++++
+ btrfs-list.h |  1 +
+ 2 files changed, 15 insertions(+)
 
-diff --git a/Documentation/btrfs-subvolume.asciidoc b/Documentation/btrfs-subvolume.asciidoc
-index c187fd8..afbec83 100644
---- a/Documentation/btrfs-subvolume.asciidoc
-+++ b/Documentation/btrfs-subvolume.asciidoc
-@@ -114,6 +114,8 @@ print the UUID of the subvolume.
- print the parent uuid of subvolumes (and snapshots).
- -R::::
- print the UUID of the sent subvolume, where the subvolume is the result of a receive operation
-+-A::::
-+print all available subvolume information.
- -t::::
- print the result as a table.
- -s::::
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 82173c0..26a08f1 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -428,6 +428,7 @@ static const char * const cmd_subvol_list_usage[] = {
- 	"-u           print the uuid of subvolumes (and snapshots)",
- 	"-q           print the parent uuid of the snapshots",
- 	"-R           print the uuid of the received snapshots",
-+	"-A           print all available subvolume information",
- 	"-t           print the result as a table",
- 	"-s           list snapshots only in the filesystem",
- 	"-r           list readonly subvolumes (including snapshots)",
-@@ -471,7 +472,7 @@ static int cmd_subvol_list(int argc, char **argv)
- 		};
- 
- 		c = getopt_long(argc, argv,
--				    "acdgopqsurRG:C:t", long_options, NULL);
-+				    "acdgopqsurRAG:C:t", long_options, NULL);
- 		if (c < 0)
- 			break;
- 
-@@ -515,6 +516,9 @@ static int cmd_subvol_list(int argc, char **argv)
- 		case 'R':
- 			btrfs_list_setup_print_column(BTRFS_LIST_RUUID);
- 			break;
-+		case 'A':
-+			btrfs_list_setup_print_column(BTRFS_LIST_ALL);
-+			break;
- 		case 'r':
- 			flags |= BTRFS_ROOT_SUBVOL_RDONLY;
- 			break;
+diff --git a/btrfs-list.c b/btrfs-list.c
+index 7529e11..ff337f9 100644
+--- a/btrfs-list.c
++++ b/btrfs-list.c
+@@ -80,6 +80,11 @@ static struct {
+ 		.need_print	= 0,
+ 	},
+ 	{
++		.name		= "flags",
++		.column_name	= "Flags",
++		.need_print	= 0,
++	},
++	{
+ 		.name		= "parent_uuid",
+ 		.column_name	= "Parent UUID",
+ 		.need_print	= 0,
+@@ -1388,6 +1393,15 @@ static void print_subvolume_column(struct root_info *subv,
+ 			uuid_unparse(subv->ruuid, uuidparse);
+ 		printf("%s", uuidparse);
+ 		break;
++	case BTRFS_LIST_FLAGS:
++		if (subv->flags == 0) {
++			printf("-");
++		} else {
++			/* comma-separated list of all available flags */
++			if(subv->flags & BTRFS_ROOT_SUBVOL_RDONLY)
++				printf("readonly");
++		}
++		break;
+ 	case BTRFS_LIST_PATH:
+ 		BUG_ON(!subv->full_path);
+ 		printf("%s", subv->full_path);
+diff --git a/btrfs-list.h b/btrfs-list.h
+index 13f44c3..397eb3e 100644
+--- a/btrfs-list.h
++++ b/btrfs-list.h
+@@ -119,6 +119,7 @@ enum btrfs_list_column_enum {
+ 	BTRFS_LIST_PARENT,
+ 	BTRFS_LIST_TOP_LEVEL,
+ 	BTRFS_LIST_OTIME,
++	BTRFS_LIST_FLAGS,
+ 	BTRFS_LIST_PUUID,
+ 	BTRFS_LIST_RUUID,
+ 	BTRFS_LIST_UUID,
 -- 
 2.4.9
 

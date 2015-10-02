@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17647 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750967AbbJBKjv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Oct 2015 06:39:51 -0400
+Received: from aserp1040.oracle.com ([141.146.126.69]:51313 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750709AbbJBK5l (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Oct 2015 06:57:41 -0400
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
-Subject: [PATCH] Btrfs: pass the error code to the btrfs_std_error and log ret
-Date: Fri,  2 Oct 2015 18:40:41 +0800
-Message-Id: <1443782441-31233-1-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2] Btrfs: pass the error code to the btrfs_std_error and log ret
+Date: Fri,  2 Oct 2015 18:58:40 +0800
+Message-Id: <1443783520-1211-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1443782441-31233-1-git-send-email-anand.jain@oracle.com>
+References: <1443782441-31233-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -17,11 +19,13 @@ and pass the err code of btrfs_run_qgroups to the btrfs_std_error().
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
+v2: fix the forgotten git commit amend, to take in compile fail, sorry
+
  fs/btrfs/ioctl.c | 7 ++++++-
  1 file changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index f704d1c..043ad64 100644
+index f704d1c..f43a104 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
 @@ -4803,10 +4803,15 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
@@ -30,7 +34,7 @@ index f704d1c..043ad64 100644
  
 +	if (ret)
 +		btrfs_err(root->fs_info,
-+			add/del qgroup relation failed, assign %llu ret %d",
++			"add/del qgroup relation failed, assign %llu ret %d",
 +			sa->assign, ret);
 +
  	/* update qgroup status and info */

@@ -1,61 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f45.google.com ([209.85.218.45]:35447 "EHLO
-	mail-oi0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751613AbbJLPhy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 11:37:54 -0400
-Received: by oiao187 with SMTP id o187so28272138oia.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2015 08:37:54 -0700 (PDT)
+Received: from aserp1040.oracle.com ([141.146.126.69]:29057 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751628AbbJBHmd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Oct 2015 03:42:33 -0400
+Message-ID: <560E3510.1070403@oracle.com>
+Date: Fri, 02 Oct 2015 15:41:04 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <CAEg-Je9o6QTyjD7pnSiTeUgaZjN10vLRF8=EtqywCUyZmjW95Q@mail.gmail.com>
-References: <CAEg-Je9o6QTyjD7pnSiTeUgaZjN10vLRF8=EtqywCUyZmjW95Q@mail.gmail.com>
-Date: Mon, 12 Oct 2015 17:37:53 +0200
-Message-ID: <CAJfpeguQvARzwaUmKkQhuAL99S-JEeTQ8SiEujgcncyzg9x8-w@mail.gmail.com>
-Subject: Re: Issue: With an OverlayFS that has Btrfs as the upper layer,
- removal of directories silently fails
-From: Miklos Szeredi <miklos@szeredi.hu>
-To: Neal Gompa <ngompa@fedoraproject.org>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>, dsterba@suse.com,
-        "linux-unionfs@vger.kernel.org" <linux-unionfs@vger.kernel.org>,
-        linux-btrfs@vger.kernel.org,
-        Kernel Mailing List <linux-kernel@vger.kernel.org>,
-        Josh Boyer <jwboyer@redhat.com>, David Howells <dhowells@redhat.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs@vger.kernel.org, Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: dsterba@suse.cz
+Subject: Re: [PATCH 1/1] Btrfs: consolidate btrfs_error() to btrfs_std_error()
+References: <1443163381-12332-1-git-send-email-anand.jain@oracle.com> <20150925103128.GC11442@twin.jikos.cz>
+In-Reply-To: <20150925103128.GC11442@twin.jikos.cz>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Aug 21, 2015 at 9:23 PM, Neal Gompa <ngompa@fedoraproject.org> wrote:
-> Hello,
->
-> For those who have received this message twice already, I sincerely apologize.
->
-> Yesterday I filed an issue in the CentOS bug tracker (#9297[1]) and
-> the Red Hat Bugzilla (#1255512[2]) about OverlayFS with Btrfs as the
-> upper layer.
->
-> The issue was discovered by a colleague of mine, and we verified the
-> issue exists in the EL7 kernel and mainline kernels (tested on Arch
-> Linux). I additionally verified the problem exists in Fedora kernels.
->
-> Rather than quoting the issue, I'll just note that the issue is
-> described quite well in the filed bugs noted earlier. In the linked
-> bugs, there's a simple Bash script that will reliably reproduce the
-> problem. While the script uses tmpfs at the lower layer, we originally
-> discovered the problem with ext4 as the lower layer and verified that
-> it doesn't matter which lower layer filesystem it is, the problem
-> exists. Additionally, the problem doesn't exist when using ext4 as the
-> upper layer.
->
-> I was advised by Josh Boyer to email you guys (and the mailing lists,
-> to be sure to get everyone a chance to look over it) about the
-> problem, since it affects mainline.
->
-> [1]: https://bugs.centos.org/view.php?id=9297
-> [2]: https://bugzilla.redhat.com/show_bug.cgi?id=1255512
 
-AFAICS btrfs doesn't support RENAME_EXCHANGE and RENAME_WHITEOUT.
-These flags are needed for any filesystem that wants to be a fully
-functional  overlayfs upper layer.
 
-Thanks,
-Miklos
+On 09/25/2015 06:31 PM, David Sterba wrote:
+> On Fri, Sep 25, 2015 at 02:43:01PM +0800, Anand Jain wrote:
+>> btrfs_error() and btrfs_std_error() does the same thing
+>> and calls _btrfs_std_error(), so consolidate them together.
+>> And the main motivation is that btrfs_error() is closely
+>> named with btrfs_err(), one handles error action the other
+>> is to log the error, so don't closely name them.
+>>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+>> Suggested-by: David Sterba <dsterba@suse.com>
+>
+> Reviewed-by: David Sterba <dsterba@suse.com>
+>
+> I guess we can live with the extra NULL argument, in some cases it does
+> not make sense to put a string there.
+>
+>> --- a/fs/btrfs/ioctl.c
+>> +++ b/fs/btrfs/ioctl.c
+>> @@ -4852,7 +4852,7 @@ static long btrfs_ioctl_qgroup_assign(struct file *file, void __user *arg)
+>>   	/* update qgroup status and info */
+>>   	err = btrfs_run_qgroups(trans, root->fs_info);
+>>   	if (err < 0)
+>> -		btrfs_error(root->fs_info, ret,
+>> +		btrfs_std_error(root->fs_info, ret,
+>
+> This looks like a bug, ret instead of err. The value of 'ret' is set by
+> add/del qgroup relation which might fail if the relations are there, but
+> we do not care. We're likely interested in the return code of
+> btrfs_run_qgroups, ie. err. Can you please send a new patch on top of this?
+
+
+  I think the original code intended to log the error (btrfs_err())
+  instead of handle the error (btrfs_error()->btrfs_std_error()).
+
+  Qu, Any idea ?
+
+Thanks, Anand
+
+
+>>   			    "failed to update qgroup status and info\n");
+>>   	err = btrfs_end_transaction(trans, root);
+>>   	if (err && !ret)
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

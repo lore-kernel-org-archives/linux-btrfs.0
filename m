@@ -1,116 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.digint.ch ([92.42.190.51]:38440 "EHLO mail.digint.ch"
+Received: from www.digint.ch ([92.42.190.51]:50792 "EHLO mail.digint.ch"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751494AbbJBQuE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 2 Oct 2015 12:50:04 -0400
-From: axel@tty0.ch
-To: linux-btrfs@vger.kernel.org
-Cc: Axel Burri <axel@tty0.ch>
-Subject: [PATCH 4/4] btrfs-progs: change -t option for subvolume list to print a simple space-separated table (making it machine-readable)
-Date: Fri,  2 Oct 2015 18:41:23 +0200
-Message-Id: <1443804083-876-5-git-send-email-axel@tty0.ch>
-In-Reply-To: <1443804083-876-1-git-send-email-axel@tty0.ch>
-References: <1443804083-876-1-git-send-email-axel@tty0.ch>
+	id S1751807AbbJCM3C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 3 Oct 2015 08:29:02 -0400
+Received: from [10.0.1.10] (77-59-134-149.dclient.hispeed.ch [77.59.134.149])
+	by mail.digint.ch (Postfix) with ESMTPSA id A2F752F70056
+	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2015 14:28:59 +0200 (CEST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Axel Burri <axel@tty0.ch>
+Subject: btrfs-progs: bugs in "subvolume list" command
+Message-ID: <560FCA35.7010100@tty0.ch>
+Date: Sat, 3 Oct 2015 14:29:41 +0200
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Old implementation used tabs "\t", and tried to work around problems
-by guessing amount of tabs needed (e.g. "\t\t" after top level", with
-buggy output as soon as empty uuids are printed). This will never work
-correctly, as tab width is a user-defined setting in the terminal.
+While digging deeper into the "subvolume list" command, I found
+some flaws which I'm addressing here:
 
-Keep it simple and don't reimplement the wheel, for nice tabular
-output we have the "column" command from util-linux:
 
-    btrfs subvolume list -t <path> | column -t
+1. The "parent id" seems to be a relict of old days.
+btrfs-subvolume(8) states:
 
-Signed-off-by: Axel Burri <axel@tty0.ch>
----
- btrfs-list.c | 40 ++++++++++++----------------------------
- 1 file changed, 12 insertions(+), 28 deletions(-)
+  "If -p is given, then parent <ID> is added to the output between
+  ID and top level. The parent's ID may be used at mount time via
+  the subvolrootid= option."
 
-diff --git a/btrfs-list.c b/btrfs-list.c
-index f8396e7..c09257a 100644
---- a/btrfs-list.c
-+++ b/btrfs-list.c
-@@ -45,12 +45,12 @@ struct root_lookup {
- };
- 
- static struct {
--	char	*name;
-+	char	*name;  /* machine-readable column identifier: [a-z_]+ */
- 	char	*column_name;
- 	int	need_print;
- } btrfs_list_columns[] = {
- 	{
--		.name		= "ID",
-+		.name		= "id",
- 		.column_name	= "ID",
- 		.need_print	= 0,
- 	},
-@@ -70,7 +70,7 @@ static struct {
- 		.need_print	= 0,
- 	},
- 	{
--		.name		= "top level",
-+		.name		= "top_level",
- 		.column_name	= "Top Level",
- 		.need_print	= 0,
- 	},
-@@ -1465,13 +1465,10 @@ static void print_single_volume_info_table(struct root_info *subv)
- 		if (!btrfs_list_columns[i].need_print)
- 			continue;
- 
--		print_subvolume_column(subv, i);
--
--		if (i != BTRFS_LIST_PATH)
--			printf("\t");
-+		if (i != 0)
-+			printf(" ");
- 
--		if (i == BTRFS_LIST_TOP_LEVEL)
--			printf("\t");
-+		print_subvolume_column(subv, i);
- 	}
- 	printf("\n");
- }
-@@ -1496,30 +1493,17 @@ static void print_single_volume_info_default(struct root_info *subv)
- static void print_all_volume_info_tab_head(void)
- {
- 	int i;
--	int len;
--	char barrier[20];
--
--	for (i = 0; i < BTRFS_LIST_ALL; i++) {
--		if (btrfs_list_columns[i].need_print)
--			printf("%s\t", btrfs_list_columns[i].name);
--
--		if (i == BTRFS_LIST_ALL-1)
--			printf("\n");
--	}
- 
- 	for (i = 0; i < BTRFS_LIST_ALL; i++) {
--		memset(barrier, 0, sizeof(barrier));
-+		if (!btrfs_list_columns[i].need_print)
-+			continue;
- 
--		if (btrfs_list_columns[i].need_print) {
--			len = strlen(btrfs_list_columns[i].name);
--			while (len--)
--				strcat(barrier, "-");
-+		if (i != 0)
-+			printf(" ");
- 
--			printf("%s\t", barrier);
--		}
--		if (i == BTRFS_LIST_ALL-1)
--			printf("\n");
-+		printf(btrfs_list_columns[i].name);
- 	}
-+	printf("\n");
- }
- 
- static void print_all_volume_info(struct root_lookup *sorted_tree,
--- 
-2.4.9
+The "Mount Options" site [1] tells me that the "subvolrootid="
+mount option is deprecated since kernel 3.2. A quick check on my
+system (kernel 4.2.2) shows that "parent" is equal to "top level"
+for all subvolumes. Is this always true for kernels >3.2 ?
 
+Furthermore, the output is confusing, as "parent" is not related
+at all to "parent_uuid".
+
+Note that this is also true for "subvolume show", which
+prints "parent" as "Parent ID".
+
+Suggestion: drop the '-p' option and don't print "parent"
+anymore. I don't know the "backwards compatibility policy" the
+btrfs-devs have here, but my impression is that kernel 3.2 is not
+really supported anymore.
+
+
+2. The output of -a option (as well as -o) is inconsistent. Given
+/tmp/btr_test is mounted with subvolid=0:
+
+  # btrfs subvolume create /tmp/btr_test/vol0
+  # btrfs subvolume create /tmp/btr_test/vol0/vol1
+  # btrfs subvolume create /tmp/btr_test/vol0/vol1/vol2
+  # list_path=/tmp/btr_test
+  # btrfs subvolume list -a $list_path
+  ID 256 gen 8 top level 5 path vol0
+  ID 257 gen 9 top level 256 path <FS_TREE>/vol0/vol1
+  ID 258 gen 9 top level 257 path <FS_TREE>/vol0/vol1/vol2
+
+The only relative path shown is "vol0", which is
+at "$list_path/vol0", as expected. But then "vol0/vol1" are
+printed as absolute, while they are relative to $list_path.
+
+  # list_path=/tmp/btr_test/vol0
+  # btrfs subvolume list -a $list_path
+  ID 256 gen 8 top level 5 path <FS_TREE>/vol0
+  ID 257 gen 9 top level 256 path vol0/vol1
+  ID 258 gen 9 top level 257 path <FS_TREE>/vol0/vol1/vol2
+
+But if $list_path points to a subvolume, the relative path shown
+is now "vol0/vol1", which is actually at "$list_path/../vol0/vol1".
+
+Things get even more confusing when subvolumes are within
+directories:
+
+  # mkdir /tmp/btr_test/vol0/dir1
+  # btrfs subvolume create /tmp/btr_test/vol0/dir1/vol3
+  # list_path=/tmp/btr_test/vol0/dir1
+  # btrfs subvolume list -a $list_path
+  ID 256 gen 11 top level 5 path <FS_TREE>/vol0
+  ID 257 gen 9 top level 256 path vol0/vol1
+  ID 258 gen 9 top level 257 path <FS_TREE>/vol0/vol1/vol2
+  ID 259 gen 11 top level 256 path vol0/dir1/vol3
+
+I know that handling "real" directories is very tricky to handle
+correctly (involving symlinks et all), and is probably not a
+feature that "subvolume list" command should handle.
+
+
+Suggestions:
+
+- Fix '-a' option to also print sub-subvolumes as relative, or
+  drop it (there is the -o option for this purpose).
+- Fix output of '-o' option, by always printing relative
+  paths ("vol1" instead of "vol0/vol1" in the example above).
+
+
+Regards,
+
+- Axel
+
+  [1] https://btrfs.wiki.kernel.org/index.php/Mount_options

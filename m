@@ -1,167 +1,222 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [59.151.112.132] ([59.151.112.132]:20713 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-FAIL-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1752213AbbJCQan (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Oct 2015 12:30:43 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t93GTumb017034
-	for <linux-btrfs@vger.kernel.org>; Sun, 4 Oct 2015 00:29:56 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v3 2/2] btrfs: Fix lost-data-profile caused by balance bg
-Date: Sun, 4 Oct 2015 00:28:40 +0800
-Message-ID: <63bf3b9bd8d52d057805573a8543ed6a5f164558.1443889301.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1443889301.git.zhaolei@cn.fujitsu.com>
-References: <cover.1443889301.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:55197 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751492AbbJDOYK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 4 Oct 2015 10:24:10 -0400
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: jbacik@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH v2] Btrfs: fix deadlock when finalizing block group creation
+Date: Sat,  3 Oct 2015 13:13:13 +0100
+Message-Id: <1443874393-29659-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1443807808-26424-1-git-send-email-fdmanana@kernel.org>
+References: <1443807808-26424-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reproduce:
- (In integration-4.3 branch)
+From: Filipe Manana <fdmanana@suse.com>
 
- TEST_DEV=(/dev/vdg /dev/vdh)
- TEST_DIR=/mnt/tmp
+Josef ran into a deadlock while a transaction handle was finalizing the
+creation of its block groups, which produced the following trace:
 
- umount "$TEST_DEV" >/dev/null
- mkfs.btrfs -f -d raid1 "${TEST_DEV[@]}"
+  [260445.593112] fio             D ffff88022a9df468     0  8924   4518 0x00000084
+  [260445.593119]  ffff88022a9df468 ffffffff81c134c0 ffff880429693c00 ffff88022a9df488
+  [260445.593126]  ffff88022a9e0000 ffff8803490d7b00 ffff8803490d7b18 ffff88022a9df4b0
+  [260445.593132]  ffff8803490d7af8 ffff88022a9df488 ffffffff8175a437 ffff8803490d7b00
+  [260445.593137] Call Trace:
+  [260445.593145]  [<ffffffff8175a437>] schedule+0x37/0x80
+  [260445.593189]  [<ffffffffa0850f37>] btrfs_tree_lock+0xa7/0x1f0 [btrfs]
+  [260445.593197]  [<ffffffff810db7c0>] ? prepare_to_wait_event+0xf0/0xf0
+  [260445.593225]  [<ffffffffa07eac44>] btrfs_lock_root_node+0x34/0x50 [btrfs]
+  [260445.593253]  [<ffffffffa07eff6b>] btrfs_search_slot+0x88b/0xa00 [btrfs]
+  [260445.593295]  [<ffffffffa08389df>] ? free_extent_buffer+0x4f/0x90 [btrfs]
+  [260445.593324]  [<ffffffffa07f1a06>] btrfs_insert_empty_items+0x66/0xc0 [btrfs]
+  [260445.593351]  [<ffffffffa07ea94a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
+  [260445.593394]  [<ffffffffa08403b9>] btrfs_finish_chunk_alloc+0x1c9/0x570 [btrfs]
+  [260445.593427]  [<ffffffffa08002ab>] btrfs_create_pending_block_groups+0x11b/0x200 [btrfs]
+  [260445.593459]  [<ffffffffa0800964>] do_chunk_alloc+0x2a4/0x2e0 [btrfs]
+  [260445.593491]  [<ffffffffa0803815>] find_free_extent+0xa55/0xd90 [btrfs]
+  [260445.593524]  [<ffffffffa0803c22>] btrfs_reserve_extent+0xd2/0x220 [btrfs]
+  [260445.593532]  [<ffffffff8119fe5d>] ? account_page_dirtied+0xdd/0x170
+  [260445.593564]  [<ffffffffa0803e78>] btrfs_alloc_tree_block+0x108/0x4a0 [btrfs]
+  [260445.593597]  [<ffffffffa080c9de>] ? btree_set_page_dirty+0xe/0x10 [btrfs]
+  [260445.593626]  [<ffffffffa07eb5cd>] __btrfs_cow_block+0x12d/0x5b0 [btrfs]
+  [260445.593654]  [<ffffffffa07ebbff>] btrfs_cow_block+0x11f/0x1c0 [btrfs]
+  [260445.593682]  [<ffffffffa07ef8c7>] btrfs_search_slot+0x1e7/0xa00 [btrfs]
+  [260445.593724]  [<ffffffffa08389df>] ? free_extent_buffer+0x4f/0x90 [btrfs]
+  [260445.593752]  [<ffffffffa07f1a06>] btrfs_insert_empty_items+0x66/0xc0 [btrfs]
+  [260445.593830]  [<ffffffffa07ea94a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
+  [260445.593905]  [<ffffffffa08403b9>] btrfs_finish_chunk_alloc+0x1c9/0x570 [btrfs]
+  [260445.593946]  [<ffffffffa08002ab>] btrfs_create_pending_block_groups+0x11b/0x200 [btrfs]
+  [260445.593990]  [<ffffffffa0815798>] btrfs_commit_transaction+0xa8/0xb40 [btrfs]
+  [260445.594042]  [<ffffffffa085abcd>] ? btrfs_log_dentry_safe+0x6d/0x80 [btrfs]
+  [260445.594089]  [<ffffffffa082bc84>] btrfs_sync_file+0x294/0x350 [btrfs]
+  [260445.594115]  [<ffffffff8123e29b>] vfs_fsync_range+0x3b/0xa0
+  [260445.594133]  [<ffffffff81023891>] ? syscall_trace_enter_phase1+0x131/0x180
+  [260445.594149]  [<ffffffff8123e35d>] do_fsync+0x3d/0x70
+  [260445.594169]  [<ffffffff81023bb8>] ? syscall_trace_leave+0xb8/0x110
+  [260445.594187]  [<ffffffff8123e600>] SyS_fsync+0x10/0x20
+  [260445.594204]  [<ffffffff8175de6e>] entry_SYSCALL_64_fastpath+0x12/0x71
 
- mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
- btrfs balance start -dusage=0 $TEST_DIR
- btrfs filesystem usage $TEST_DIR
+This happened because the same transaction handle created a large number
+of block groups and while finalizing their creation (inserting new items
+and updating existing items in the chunk and device trees) a new metadata
+extent had to be allocated and no free space was found in the current
+metadata block groups, which made find_free_extent() attempt to allocate
+a new block group via do_chunk_alloc(). However at do_chunk_alloc() we
+ended up allocating a new system chunk too and exceeded the threshold
+of 2Mb of reserved chunk bytes, which makes do_chunk_alloc() enter the
+final part of block group creation again (at
+btrfs_create_pending_block_groups()) and attempt to lock again the root
+of the chunk tree when it's already write locked by the same task.
 
- dd if=/dev/zero of="$TEST_DIR"/file count=100
- btrfs filesystem usage $TEST_DIR
+Similarly we can deadlock on extent tree nodes/leafs if while we are
+running delayed references we end up creating a new metadata block group
+in order to allocate a new node/leaf for the extent tree (as part of
+a CoW operation or growing the tree), as btrfs_create_pending_block_groups
+inserts items into the extent tree as well. In this case we get the
+following trace:
 
-Result:
- We can see "no data chunk" in first "btrfs filesystem usage":
- # btrfs filesystem usage $TEST_DIR
- Overall:
-    ...
- Metadata,single: Size:8.00MiB, Used:0.00B
-    /dev/vdg        8.00MiB
- Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
-    /dev/vdg      122.88MiB
-    /dev/vdh      122.88MiB
- System,single: Size:4.00MiB, Used:0.00B
-    /dev/vdg        4.00MiB
- System,RAID1: Size:8.00MiB, Used:16.00KiB
-    /dev/vdg        8.00MiB
-    /dev/vdh        8.00MiB
- Unallocated:
-    /dev/vdg        1.06GiB
-    /dev/vdh        1.07GiB
+  [14242.773581] fio             D ffff880428ca3418     0  3615   3100 0x00000084
+  [14242.773588]  ffff880428ca3418 ffff88042d66b000 ffff88042a03c800 ffff880428ca3438
+  [14242.773594]  ffff880428ca4000 ffff8803e4b20190 ffff8803e4b201a8 ffff880428ca3460
+  [14242.773600]  ffff8803e4b20188 ffff880428ca3438 ffffffff8175a437 ffff8803e4b20190
+  [14242.773606] Call Trace:
+  [14242.773613]  [<ffffffff8175a437>] schedule+0x37/0x80
+  [14242.773656]  [<ffffffffa057ff07>] btrfs_tree_lock+0xa7/0x1f0 [btrfs]
+  [14242.773664]  [<ffffffff810db7c0>] ? prepare_to_wait_event+0xf0/0xf0
+  [14242.773692]  [<ffffffffa0519c44>] btrfs_lock_root_node+0x34/0x50 [btrfs]
+  [14242.773720]  [<ffffffffa051ef6b>] btrfs_search_slot+0x88b/0xa00 [btrfs]
+  [14242.773750]  [<ffffffffa0520a06>] btrfs_insert_empty_items+0x66/0xc0 [btrfs]
+  [14242.773758]  [<ffffffff811ef4a2>] ? kmem_cache_alloc+0x1d2/0x200
+  [14242.773786]  [<ffffffffa0520ad1>] btrfs_insert_item+0x71/0xf0 [btrfs]
+  [14242.773818]  [<ffffffffa052f292>] btrfs_create_pending_block_groups+0x102/0x200 [btrfs]
+  [14242.773850]  [<ffffffffa052f96e>] do_chunk_alloc+0x2ae/0x2f0 [btrfs]
+  [14242.773934]  [<ffffffffa0532825>] find_free_extent+0xa55/0xd90 [btrfs]
+  [14242.773998]  [<ffffffffa0532c22>] btrfs_reserve_extent+0xc2/0x1d0 [btrfs]
+  [14242.774041]  [<ffffffffa0532e38>] btrfs_alloc_tree_block+0x108/0x4a0 [btrfs]
+  [14242.774078]  [<ffffffffa051a5cd>] __btrfs_cow_block+0x12d/0x5b0 [btrfs]
+  [14242.774118]  [<ffffffffa051abff>] btrfs_cow_block+0x11f/0x1c0 [btrfs]
+  [14242.774155]  [<ffffffffa051e8c7>] btrfs_search_slot+0x1e7/0xa00 [btrfs]
+  [14242.774194]  [<ffffffffa0528021>] ? __btrfs_free_extent.isra.70+0x2e1/0xcb0 [btrfs]
+  [14242.774235]  [<ffffffffa0520a06>] btrfs_insert_empty_items+0x66/0xc0 [btrfs]
+  [14242.774274]  [<ffffffffa051994a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
+  [14242.774318]  [<ffffffffa052c433>] __btrfs_run_delayed_refs+0xbb3/0x1020 [btrfs]
+  [14242.774358]  [<ffffffffa052f404>] btrfs_run_delayed_refs.part.78+0x74/0x280 [btrfs]
+  [14242.774391]  [<ffffffffa052f627>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+  [14242.774432]  [<ffffffffa05be236>] commit_cowonly_roots+0x8d/0x2bd [btrfs]
+  [14242.774474]  [<ffffffffa059d07f>] ? __btrfs_run_delayed_items+0x1cf/0x210 [btrfs]
+  [14242.774516]  [<ffffffffa05adac3>] ? btrfs_qgroup_account_extents+0x83/0x130 [btrfs]
+  [14242.774558]  [<ffffffffa0544c40>] btrfs_commit_transaction+0x590/0xb40 [btrfs]
+  [14242.774599]  [<ffffffffa0589b9d>] ? btrfs_log_dentry_safe+0x6d/0x80 [btrfs]
+  [14242.774642]  [<ffffffffa055ac54>] btrfs_sync_file+0x294/0x350 [btrfs]
+  [14242.774650]  [<ffffffff8123e29b>] vfs_fsync_range+0x3b/0xa0
+  [14242.774657]  [<ffffffff81023891>] ? syscall_trace_enter_phase1+0x131/0x180
+  [14242.774663]  [<ffffffff8123e35d>] do_fsync+0x3d/0x70
+  [14242.774669]  [<ffffffff81023bb8>] ? syscall_trace_leave+0xb8/0x110
+  [14242.774675]  [<ffffffff8123e600>] SyS_fsync+0x10/0x20
+  [14242.774681]  [<ffffffff8175de6e>] entry_SYSCALL_64_fastpath+0x12/0x71
 
- And "data chunks changed from raid1 to single" in second
- "btrfs filesystem usage":
- # btrfs filesystem usage $TEST_DIR
- Overall:
-    ...
- Data,single: Size:256.00MiB, Used:0.00B
-    /dev/vdh      256.00MiB
- Metadata,single: Size:8.00MiB, Used:0.00B
-    /dev/vdg        8.00MiB
- Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
-    /dev/vdg      122.88MiB
-    /dev/vdh      122.88MiB
- System,single: Size:4.00MiB, Used:0.00B
-    /dev/vdg        4.00MiB
- System,RAID1: Size:8.00MiB, Used:16.00KiB
-    /dev/vdg        8.00MiB
-    /dev/vdh        8.00MiB
- Unallocated:
-    /dev/vdg        1.06GiB
-    /dev/vdh      841.92MiB
+Fix this by never recursing into the finalization phase of block group
+creation and making sure we never trigger the finalization of block group
+creation while running delayed references.
 
-Reason:
- btrfs balance delete last data chunk in case of no data in
- the filesystem, then we can see "no data chunk" by "fi usage"
- command.
-
- And when we do write operation to fs, the only available data
- profile is 0x0, result is all new chunks are allocated single type.
-
-Fix:
- Allocate a data chunk explicitly to ensure we don't lose the
- raid profile for data.
-
-Test:
- Test by above script, and confirmed the logic by debug output.
-
-Changelog v1->v2:
-1: Update patch description of "Fix" field
-2: Use BTRFS_BLOCK_GROUP_DATA for btrfs_force_chunk_alloc instead
-   of 1
-3: Only reserve chunk if balance data chunk.
-All suggested-by: Filipe Manana <fdmanana@gmail.com>
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: Josef Bacik <jbacik@fb.com>
+Fixes: 00d80e342c0f ("Btrfs: fix quick exhaustion of the system array in the superblock")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/volumes.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc73586..cd9e5bd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3277,6 +3277,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	u64 limit_data = bctl->data.limit;
- 	u64 limit_meta = bctl->meta.limit;
- 	u64 limit_sys = bctl->sys.limit;
-+	int chunk_reserved = 0;
+V2: Account for the deadlock case where it happens on nodes/leafs of the
+    extent tree (running delayed references triggers block group creation
+    which triggers finalization of block group creation, which in turn
+    requires acquiring write locks on the extent tree that are already
+    held by the task when running delayed references).
+
+ fs/btrfs/extent-tree.c | 9 ++++++++-
+ fs/btrfs/transaction.c | 1 +
+ fs/btrfs/transaction.h | 1 +
+ 3 files changed, 10 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9f96042..601d7d4 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2828,6 +2828,7 @@ int btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+ 	struct btrfs_delayed_ref_head *head;
+ 	int ret;
+ 	int run_all = count == (unsigned long)-1;
++	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
  
- 	/* step one make some room on all the devices */
- 	devices = &fs_info->fs_devices->devices;
-@@ -3326,6 +3327,8 @@ again:
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
+ 	/* We'll clean this up in btrfs_cleanup_transaction */
+ 	if (trans->aborted)
+@@ -2844,6 +2845,7 @@ again:
+ #ifdef SCRAMBLE_DELAYED_REFS
+ 	delayed_refs->run_delayed_start = find_middle(&delayed_refs->root);
+ #endif
++	trans->can_flush_pending_bgs = false;
+ 	ret = __btrfs_run_delayed_refs(trans, root, count);
+ 	if (ret < 0) {
+ 		btrfs_abort_transaction(trans, root, ret);
+@@ -2893,6 +2895,7 @@ again:
+ 	}
+ out:
+ 	assert_qgroups_uptodate(trans);
++	trans->can_flush_pending_bgs = can_flush_pending_bgs;
+ 	return 0;
+ }
  
- 	while (1) {
-+		u64 chunk_type;
-+
- 		if ((!counting && atomic_read(&fs_info->balance_pause_req)) ||
- 		    atomic_read(&fs_info->balance_cancel_req)) {
- 			ret = -ECANCELED;
-@@ -3371,8 +3374,10 @@ again:
- 			spin_unlock(&fs_info->balance_lock);
- 		}
+@@ -4306,7 +4309,8 @@ out:
+ 	 * the block groups that were made dirty during the lifetime of the
+ 	 * transaction.
+ 	 */
+-	if (trans->chunk_bytes_reserved >= (2 * 1024 * 1024ull)) {
++	if (trans->can_flush_pending_bgs &&
++	    trans->chunk_bytes_reserved >= (2 * 1024 * 1024ull)) {
+ 		btrfs_create_pending_block_groups(trans, trans->root);
+ 		btrfs_trans_release_chunk_metadata(trans);
+ 	}
+@@ -9560,7 +9564,9 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+ 	struct btrfs_block_group_item item;
+ 	struct btrfs_key key;
+ 	int ret = 0;
++	bool can_flush_pending_bgs = trans->can_flush_pending_bgs;
  
-+		chunk_type = btrfs_chunk_type(leaf, chunk);
- 		ret = should_balance_chunk(chunk_root, leaf, chunk,
- 					   found_key.offset);
-+
- 		btrfs_release_path(path);
- 		if (!ret) {
- 			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-@@ -3387,6 +3392,25 @@ again:
- 			goto loop;
- 		}
++	trans->can_flush_pending_bgs = false;
+ 	list_for_each_entry_safe(block_group, tmp, &trans->new_bgs, bg_list) {
+ 		if (ret)
+ 			goto next;
+@@ -9581,6 +9587,7 @@ void btrfs_create_pending_block_groups(struct btrfs_trans_handle *trans,
+ next:
+ 		list_del_init(&block_group->bg_list);
+ 	}
++	trans->can_flush_pending_bgs = can_flush_pending_bgs;
+ }
  
-+		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) && !chunk_reserved) {
-+			trans = btrfs_start_transaction(chunk_root, 0);
-+			if (IS_ERR(trans)) {
-+				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+				ret = PTR_ERR(trans);
-+				goto error;
-+			}
-+
-+			ret = btrfs_force_chunk_alloc(trans, chunk_root,
-+						      BTRFS_BLOCK_GROUP_DATA);
-+			if (ret < 0) {
-+				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+				goto error;
-+			}
-+
-+			btrfs_end_transaction(trans, chunk_root);
-+			chunk_reserved = 1;
-+		}
-+
- 		ret = btrfs_relocate_chunk(chunk_root,
- 					   found_key.offset);
- 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index a2d6f7b..376191c 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -557,6 +557,7 @@ again:
+ 	h->delayed_ref_elem.seq = 0;
+ 	h->type = type;
+ 	h->allocating_chunk = false;
++	h->can_flush_pending_bgs = true;
+ 	h->reloc_reserved = false;
+ 	h->sync = false;
+ 	INIT_LIST_HEAD(&h->qgroup_ref_list);
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index 87964bf..a994bb0 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -118,6 +118,7 @@ struct btrfs_trans_handle {
+ 	short aborted;
+ 	short adding_csums;
+ 	bool allocating_chunk;
++	bool can_flush_pending_bgs;
+ 	bool reloc_reserved;
+ 	bool sync;
+ 	unsigned int type;
 -- 
-1.8.5.1
+2.1.3
 

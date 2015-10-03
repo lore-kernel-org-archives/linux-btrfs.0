@@ -1,151 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32.italiaonline.it ([212.48.25.160]:38291 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750947AbbJCRlg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Oct 2015 13:41:36 -0400
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH 4/4] btrfs-progs: change -t option for subvolume list to
- print a simple space-separated table (making it machine-readable)
-References: <1443804083-876-1-git-send-email-axel@tty0.ch>
- <1443804083-876-5-git-send-email-axel@tty0.ch> <560FA665.6000700@libero.it>
- <560FA944.3050606@digint.ch>
-To: Axel Burri <axel@digint.ch>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-ID: <5610134D.9070807@inwind.it>
-Date: Sat, 3 Oct 2015 19:41:33 +0200
+Received: from mout.gmx.net ([212.227.17.22]:60204 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750834AbbJCUxs convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Oct 2015 16:53:48 -0400
+Received: from guidonb ([91.45.89.230]) by mail.gmx.com (mrgmx101) with
+ ESMTPSA (Nemesis) id 0LcnRD-1aSa8z2VLb-00k6ds for
+ <linux-btrfs@vger.kernel.org>; Sat, 03 Oct 2015 22:53:46 +0200
+From: <guido_kuenne@gmx.de>
+To: <linux-btrfs@vger.kernel.org>
+References: <1627746.fEEz2JqgZk@hoefnix>	<pan$b6f45$856590$f682594c$bd5aae60@cox.net> <1787237.MVYq6GNlXh@hoefnix>	<20151001174615.GK25907@carfax.org.uk> <pan$f2728$e334692e$5f76fdfc$952e182b@cox.net>
+In-Reply-To: <pan$f2728$e334692e$5f76fdfc$952e182b@cox.net>
+Subject: RE: RAID5 doesn't mount on boot, but you can afterwards?
+Date: Sat, 3 Oct 2015 22:53:46 +0200
+Message-ID: <003401d0fe1d$999b41a0$ccd1c4e0$@gmx.de>
 MIME-Version: 1.0
-In-Reply-To: <560FA944.3050606@digint.ch>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: text/plain;
+	charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-10-03 12:09, Axel Burri wrote:
+
+
+> -----Original Message-----
+> From: linux-btrfs-owner@vger.kernel.org [mailto:linux-btrfs-
+> owner@vger.kernel.org] On Behalf Of Duncan
+> Sent: Friday, October 02, 2015 3:12 AM
+> To: linux-btrfs@vger.kernel.org
+> Subject: Re: RAID5 doesn't mount on boot, but you can afterwards?
 > 
+> Hugo Mills posted on Thu, 01 Oct 2015 17:46:15 +0000 as excerpted:
 > 
-> On 2015-10-03 11:56, Goffredo Baroncelli wrote:
->> On 2015-10-02 18:41, axel@tty0.ch wrote:
->>> Old implementation used tabs "\t", and tried to work around problems
->>> by guessing amount of tabs needed (e.g. "\t\t" after top level", with
->>> buggy output as soon as empty uuids are printed). This will never work
->>> correctly, as tab width is a user-defined setting in the terminal.
->>
->>
->> Why not use string_table() and table_*() functions  ? 
+> > On Thu, Oct 01, 2015 at 07:04:43PM +0200, Sjoerd wrote:
+> >> On Thursday 01 October 2015 02:21:23 Duncan wrote:
+> >>
+> >> > That's very likely because unlike traditional single-device
+> >> > filesystems (including single-device btrfs), multi-device btrfs has
+> >> > multiple devices it must know about before it can mount the device,
+> >> > while mount only feeds it one device.
+> >> >
+> >> > There are two ways to tell btrfs (the kernel side) about the other
+> >> > devices.
+> >> >
+> >> > 1) Do a btrfs device scan before trying to mount.
+> >> >
+> >> > 2) Name the component devices in the mount options, using the
+> >> > device= option (multiple times as necessary to list all devices).
+> >> >
+> >> Option 2 was to simplest to check and that works. Thanks for the tip!
+> >> Still weird that my single devide SSD BTRFS bootdisk just worked fine
+> >> (althought it's using the uuid offcourse)...But it would imply to me
+> >> that there's a btrfs device scan run before mounting it.
+> >
+> > Not really. A single deice FS doesn't need the scan.
 > 
-> string_table(), as well as all table functions by nature, needs to know
-> the maximum size of all cells in a row before printing, and therefore
-> buffers all the output before printing. It would eat up a lot of memory
-> for large tables (it is not unusual to have 1000+ subvolumes in btrfs if
-> you make heavy use of snapshotting). Furthermore, it would slow down
-> things by not printing the output linewise.
-
-
-Assuming 200bytes per row (== subvolume) x 1000 subvolumes = 200kB... I don't think that this could be a problem, nor in terms of memory used nor in terms of speed: if you have 1000+ subvolumes the most time consuming activity is traversing the filesystem looking at the snapshot...
-
-
-
+> Yes.
 > 
->>
->>>
->>> Keep it simple and don't reimplement the wheel, for nice tabular
->>> output we have the "column" command from util-linux:
->>>
->>>     btrfs subvolume list -t <path> | column -t
->>>
->>> Signed-off-by: Axel Burri <axel@tty0.ch>
->>> ---
->>>  btrfs-list.c | 40 ++++++++++++----------------------------
->>>  1 file changed, 12 insertions(+), 28 deletions(-)
->>>
->>> diff --git a/btrfs-list.c b/btrfs-list.c
->>> index f8396e7..c09257a 100644
->>> --- a/btrfs-list.c
->>> +++ b/btrfs-list.c
->>> @@ -45,12 +45,12 @@ struct root_lookup {
->>>  };
->>>  
->>>  static struct {
->>> -	char	*name;
->>> +	char	*name;  /* machine-readable column identifier: [a-z_]+ */
->>>  	char	*column_name;
->>>  	int	need_print;
->>>  } btrfs_list_columns[] = {
->>>  	{
->>> -		.name		= "ID",
->>> +		.name		= "id",
->>>  		.column_name	= "ID",
->>>  		.need_print	= 0,
->>>  	},
->>> @@ -70,7 +70,7 @@ static struct {
->>>  		.need_print	= 0,
->>>  	},
->>>  	{
->>> -		.name		= "top level",
->>> +		.name		= "top_level",
->>>  		.column_name	= "Top Level",
->>>  		.need_print	= 0,
->>>  	},
->>> @@ -1465,13 +1465,10 @@ static void print_single_volume_info_table(struct root_info *subv)
->>>  		if (!btrfs_list_columns[i].need_print)
->>>  			continue;
->>>  
->>> -		print_subvolume_column(subv, i);
->>> -
->>> -		if (i != BTRFS_LIST_PATH)
->>> -			printf("\t");
->>> +		if (i != 0)
->>> +			printf(" ");
->>>  
->>> -		if (i == BTRFS_LIST_TOP_LEVEL)
->>> -			printf("\t");
->>> +		print_subvolume_column(subv, i);
->>>  	}
->>>  	printf("\n");
->>>  }
->>> @@ -1496,30 +1493,17 @@ static void print_single_volume_info_default(struct root_info *subv)
->>>  static void print_all_volume_info_tab_head(void)
->>>  {
->>>  	int i;
->>> -	int len;
->>> -	char barrier[20];
->>> -
->>> -	for (i = 0; i < BTRFS_LIST_ALL; i++) {
->>> -		if (btrfs_list_columns[i].need_print)
->>> -			printf("%s\t", btrfs_list_columns[i].name);
->>> -
->>> -		if (i == BTRFS_LIST_ALL-1)
->>> -			printf("\n");
->>> -	}
->>>  
->>>  	for (i = 0; i < BTRFS_LIST_ALL; i++) {
->>> -		memset(barrier, 0, sizeof(barrier));
->>> +		if (!btrfs_list_columns[i].need_print)
->>> +			continue;
->>>  
->>> -		if (btrfs_list_columns[i].need_print) {
->>> -			len = strlen(btrfs_list_columns[i].name);
->>> -			while (len--)
->>> -				strcat(barrier, "-");
->>> +		if (i != 0)
->>> +			printf(" ");
->>>  
->>> -			printf("%s\t", barrier);
->>> -		}
->>> -		if (i == BTRFS_LIST_ALL-1)
->>> -			printf("\n");
->>> +		printf(btrfs_list_columns[i].name);
->>>  	}
->>> +	printf("\n");
->>>  }
->>>  
->>>  static void print_all_volume_info(struct root_lookup *sorted_tree,
->>>
->>
->>
+> A mount command takes a single device pointer either on the
+> commandline, or from fstab.  For traditional single-device filesystems, that
+> pointer, whether via traditional /dev/* path, or by (udev-mediated) LABEL=,
+> UUID=, etc, is all that's needed, one device, and the kernel knows what it
+> was because it was supplied in that pointer.
 > 
+> But for non-traditional multi-device filesystems, like btrfs in multi- device
+> mode (as opposed to btrfs used on only a single device where the single
+> device pointer works fine), a single device pointer only provides part of the
+> necessary information, the kernel has to figure out what other devices are
+> needed by some other method.  With btrfs, there are two such other
+> methods, btrfs device scan, or supplying the other devices via device=
+> mount option, with as many such device= options used as necessary to list
+> all filesystem component devices.
+> 
+> ... Which is what I was trying to explain in the earlier reply as well, when I
+> specifically included the "including single-device btrfs"
+> parenthetical in the traditional device class, contrasted with multi- device
+> btrfs, but apparently that specific bit didn't transfer.
+> 
+> Well, at least the practical solution, use device scan or name the devices in
+> mount options, did. =:^)
+> 
+Beginner here, so just if it helps: My two-device raid 1 mounts on boot in Fedora 22 (uuid in fstab, no further devices specified) but I mount the fs via uuid while Sjoerd mounted subvolumes. From what I understand (not much) it's either an subvolume issue or Fedora must then somehow perform a device scan before handling fstab. 
 
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

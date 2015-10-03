@@ -1,138 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.digint.ch ([92.42.190.51]:47909 "EHLO mail.digint.ch"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751198AbbJCKQw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Oct 2015 06:16:52 -0400
-Received: from [10.0.1.10] (77-59-134-149.dclient.hispeed.ch [77.59.134.149])
-	by mail.digint.ch (Postfix) with ESMTPSA id 74A042F70056
-	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2015 12:16:51 +0200 (CEST)
-Subject: Re: [PATCH 4/4] btrfs-progs: change -t option for subvolume list to
- print a simple space-separated table (making it machine-readable)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <1443804083-876-1-git-send-email-axel@tty0.ch>
- <1443804083-876-5-git-send-email-axel@tty0.ch> <560FA665.6000700@libero.it>
-From: Axel Burri <axel@tty0.ch>
-Message-ID: <560FAB3D.90700@tty0.ch>
-Date: Sat, 3 Oct 2015 12:17:33 +0200
+Received: from ninthfloor.org ([109.74.194.224]:52418 "EHLO
+	mail.ninthfloor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752071AbbJCMl0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 3 Oct 2015 08:41:26 -0400
+Received: from [192.168.1.2] (net-93-150-174-81.cust.dsl.teletu.it [93.150.174.81])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: pl)
+	by mail.ninthfloor.org (Postfix) with ESMTPSA id 9C6D41C101
+	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2015 12:41:24 +0000 (UTC)
+Subject: Re: btrfs send -c fails saying "parent determination failed"
+To: linux-btrfs@vger.kernel.org
+References: <560B0E9B.7020500@ninthfloor.org>
+From: Paride Legovini <pl@ninthfloor.org>
+Message-ID: <560FCCF3.9070008@ninthfloor.org>
+Date: Sat, 3 Oct 2015 14:41:23 +0200
 MIME-Version: 1.0
-In-Reply-To: <560FA665.6000700@libero.it>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <560B0E9B.7020500@ninthfloor.org>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2015-09-30 00:20, Paride Legovini wrote:
+> Hi,
+> 
+> btrfs send -c stopped working for me several months ago.
+[...]
 
+Hi again, my previous email didn't get any reply, maybe it was too long.
+I try to summarize:
 
-On 2015-10-03 11:56, Goffredo Baroncelli wrote:
-> On 2015-10-02 18:41, axel@tty0.ch wrote:
->> Old implementation used tabs "\t", and tried to work around problems
->> by guessing amount of tabs needed (e.g. "\t\t" after top level", with
->> buggy output as soon as empty uuids are printed). This will never work
->> correctly, as tab width is a user-defined setting in the terminal.
-> 
-> 
-> Why not use string_table() and table_*() functions  ? 
+btrfs send -c | btrfs receive
 
-string_table(), as well as all table functions by nature, needs to know
-the maximum size of all cells in a row before printing, and therefore
-buffers all the output before printing. It would eat up a lot of memory
-for large tables (it is not unusual to have 1000+ subvolumes in btrfs if
-you make heavy use of snapshotting). Furthermore, it would slow down
-things by not printing the output linewise.
+always fails for me with "parent determination failed" even if the UUIDs
+are correct, and indeed btrfs send -p works fine on the same subvols.
 
-> 
->>
->> Keep it simple and don't reimplement the wheel, for nice tabular
->> output we have the "column" command from util-linux:
->>
->>     btrfs subvolume list -t <path> | column -t
->>
->> Signed-off-by: Axel Burri <axel@tty0.ch>
->> ---
->>  btrfs-list.c | 40 ++++++++++++----------------------------
->>  1 file changed, 12 insertions(+), 28 deletions(-)
->>
->> diff --git a/btrfs-list.c b/btrfs-list.c
->> index f8396e7..c09257a 100644
->> --- a/btrfs-list.c
->> +++ b/btrfs-list.c
->> @@ -45,12 +45,12 @@ struct root_lookup {
->>  };
->>  
->>  static struct {
->> -	char	*name;
->> +	char	*name;  /* machine-readable column identifier: [a-z_]+ */
->>  	char	*column_name;
->>  	int	need_print;
->>  } btrfs_list_columns[] = {
->>  	{
->> -		.name		= "ID",
->> +		.name		= "id",
->>  		.column_name	= "ID",
->>  		.need_print	= 0,
->>  	},
->> @@ -70,7 +70,7 @@ static struct {
->>  		.need_print	= 0,
->>  	},
->>  	{
->> -		.name		= "top level",
->> +		.name		= "top_level",
->>  		.column_name	= "Top Level",
->>  		.need_print	= 0,
->>  	},
->> @@ -1465,13 +1465,10 @@ static void print_single_volume_info_table(struct root_info *subv)
->>  		if (!btrfs_list_columns[i].need_print)
->>  			continue;
->>  
->> -		print_subvolume_column(subv, i);
->> -
->> -		if (i != BTRFS_LIST_PATH)
->> -			printf("\t");
->> +		if (i != 0)
->> +			printf(" ");
->>  
->> -		if (i == BTRFS_LIST_TOP_LEVEL)
->> -			printf("\t");
->> +		print_subvolume_column(subv, i);
->>  	}
->>  	printf("\n");
->>  }
->> @@ -1496,30 +1493,17 @@ static void print_single_volume_info_default(struct root_info *subv)
->>  static void print_all_volume_info_tab_head(void)
->>  {
->>  	int i;
->> -	int len;
->> -	char barrier[20];
->> -
->> -	for (i = 0; i < BTRFS_LIST_ALL; i++) {
->> -		if (btrfs_list_columns[i].need_print)
->> -			printf("%s\t", btrfs_list_columns[i].name);
->> -
->> -		if (i == BTRFS_LIST_ALL-1)
->> -			printf("\n");
->> -	}
->>  
->>  	for (i = 0; i < BTRFS_LIST_ALL; i++) {
->> -		memset(barrier, 0, sizeof(barrier));
->> +		if (!btrfs_list_columns[i].need_print)
->> +			continue;
->>  
->> -		if (btrfs_list_columns[i].need_print) {
->> -			len = strlen(btrfs_list_columns[i].name);
->> -			while (len--)
->> -				strcat(barrier, "-");
->> +		if (i != 0)
->> +			printf(" ");
->>  
->> -			printf("%s\t", barrier);
->> -		}
->> -		if (i == BTRFS_LIST_ALL-1)
->> -			printf("\n");
->> +		printf(btrfs_list_columns[i].name);
->>  	}
->> +	printf("\n");
->>  }
->>  
->>  static void print_all_volume_info(struct root_lookup *sorted_tree,
->>
-> 
-> 
+My setup is quite standard (more details in the original email), so I'm
+prone to think that the problem is with btrfs-progs.
+
+I'll be happy to provide any information that could help to find where
+the problem lies. If there is no interest in this I'll live with -p, but
+with the uncomfortable feeling that a bug may be hiding somewhere...
+
+Paride
+

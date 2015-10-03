@@ -1,88 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:10259 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750933AbbJBTJd (ORCPT
+Received: from [59.151.112.132] ([59.151.112.132]:20713 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-FAIL-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1752213AbbJCQak (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 2 Oct 2015 15:09:33 -0400
-Subject: Re: [PATCH] Btrfs: fix deadlock when finalizing block group creation
-To: <fdmanana@kernel.org>, <linux-btrfs@vger.kernel.org>
-References: <1443807808-26424-1-git-send-email-fdmanana@kernel.org>
-CC: <jbacik@db.com>, Filipe Manana <fdmanana@suse.com>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <560ED538.5040902@fb.com>
-Date: Fri, 2 Oct 2015 15:04:24 -0400
+	Sat, 3 Oct 2015 12:30:40 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t93GTsAc017028
+	for <linux-btrfs@vger.kernel.org>; Sun, 4 Oct 2015 00:29:54 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 0/2] btrfs: Fix lost-data-profile caused by auto removing bg and balance bg
+Date: Sun, 4 Oct 2015 00:28:38 +0800
+Message-ID: <cover.1443889301.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <1443807808-26424-1-git-send-email-fdmanana@kernel.org>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/02/2015 01:43 PM, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
->
-> Josef ran into a deadlock while a transaction handle was finalizing the
-> creation of its block groups, which produced the following trace:
->
->    [260445.593112] fio             D ffff88022a9df468     0  8924   4518 0x00000084
->    [260445.593119]  ffff88022a9df468 ffffffff81c134c0 ffff880429693c00 ffff88022a9df488
->    [260445.593126]  ffff88022a9e0000 ffff8803490d7b00 ffff8803490d7b18 ffff88022a9df4b0
->    [260445.593132]  ffff8803490d7af8 ffff88022a9df488 ffffffff8175a437 ffff8803490d7b00
->    [260445.593137] Call Trace:
->    [260445.593145]  [<ffffffff8175a437>] schedule+0x37/0x80
->    [260445.593189]  [<ffffffffa0850f37>] btrfs_tree_lock+0xa7/0x1f0 [btrfs]
->    [260445.593197]  [<ffffffff810db7c0>] ? prepare_to_wait_event+0xf0/0xf0
->    [260445.593225]  [<ffffffffa07eac44>] btrfs_lock_root_node+0x34/0x50 [btrfs]
->    [260445.593253]  [<ffffffffa07eff6b>] btrfs_search_slot+0x88b/0xa00 [btrfs]
->    [260445.593295]  [<ffffffffa08389df>] ? free_extent_buffer+0x4f/0x90 [btrfs]
->    [260445.593324]  [<ffffffffa07f1a06>] btrfs_insert_empty_items+0x66/0xc0 [btrfs]
->    [260445.593351]  [<ffffffffa07ea94a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
->    [260445.593394]  [<ffffffffa08403b9>] btrfs_finish_chunk_alloc+0x1c9/0x570 [btrfs]
->    [260445.593427]  [<ffffffffa08002ab>] btrfs_create_pending_block_groups+0x11b/0x200 [btrfs]
->    [260445.593459]  [<ffffffffa0800964>] do_chunk_alloc+0x2a4/0x2e0 [btrfs]
->    [260445.593491]  [<ffffffffa0803815>] find_free_extent+0xa55/0xd90 [btrfs]
->    [260445.593524]  [<ffffffffa0803c22>] btrfs_reserve_extent+0xd2/0x220 [btrfs]
->    [260445.593532]  [<ffffffff8119fe5d>] ? account_page_dirtied+0xdd/0x170
->    [260445.593564]  [<ffffffffa0803e78>] btrfs_alloc_tree_block+0x108/0x4a0 [btrfs]
->    [260445.593597]  [<ffffffffa080c9de>] ? btree_set_page_dirty+0xe/0x10 [btrfs]
->    [260445.593626]  [<ffffffffa07eb5cd>] __btrfs_cow_block+0x12d/0x5b0 [btrfs]
->    [260445.593654]  [<ffffffffa07ebbff>] btrfs_cow_block+0x11f/0x1c0 [btrfs]
->    [260445.593682]  [<ffffffffa07ef8c7>] btrfs_search_slot+0x1e7/0xa00 [btrfs]
->    [260445.593724]  [<ffffffffa08389df>] ? free_extent_buffer+0x4f/0x90 [btrfs]
->    [260445.593752]  [<ffffffffa07f1a06>] btrfs_insert_empty_items+0x66/0xc0 [btrfs]
->    [260445.593830]  [<ffffffffa07ea94a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
->    [260445.593905]  [<ffffffffa08403b9>] btrfs_finish_chunk_alloc+0x1c9/0x570 [btrfs]
->    [260445.593946]  [<ffffffffa08002ab>] btrfs_create_pending_block_groups+0x11b/0x200 [btrfs]
->    [260445.593990]  [<ffffffffa0815798>] btrfs_commit_transaction+0xa8/0xb40 [btrfs]
->    [260445.594042]  [<ffffffffa085abcd>] ? btrfs_log_dentry_safe+0x6d/0x80 [btrfs]
->    [260445.594089]  [<ffffffffa082bc84>] btrfs_sync_file+0x294/0x350 [btrfs]
->    [260445.594115]  [<ffffffff8123e29b>] vfs_fsync_range+0x3b/0xa0
->    [260445.594133]  [<ffffffff81023891>] ? syscall_trace_enter_phase1+0x131/0x180
->    [260445.594149]  [<ffffffff8123e35d>] do_fsync+0x3d/0x70
->    [260445.594169]  [<ffffffff81023bb8>] ? syscall_trace_leave+0xb8/0x110
->    [260445.594187]  [<ffffffff8123e600>] SyS_fsync+0x10/0x20
->    [260445.594204]  [<ffffffff8175de6e>] entry_SYSCALL_64_fastpath+0x12/0x71
->
-> This happened because the same transaction handle created a large number
-> of block groups and while finalizing their creation (inserting new items
-> and updating existing items in the chunk and device trees) a new metadata
-> extent had to be allocated and no free space was found in the current
-> metadata block groups, which made find_free_extent() attempt to allocate
-> a new block group via do_chunk_alloc(). However at do_chunk_alloc() we
-> ended up allocating a new system chunk too and exceeded the threshold
-> of 2Mb of reserved chunk bytes, which makes do_chunk_alloc() enter the
-> final part of block group creation again (at
-> btrfs_create_pending_block_groups()) and attempt to lock again the root
-> of the chunk tree when it's already write locked by the same task.
->
-> Fix this by never recursing into the finalization phase of block group
-> creation.
->
-> Reported-by: Josef Bacik <jbacik@fb.com>
-> Fixes: 00d80e342c0f ("Btrfs: fix quick exhaustion of the system array in the superblock")
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Sorry for sending v3 late for I'm in my holiday(until 10/7).
 
-Still happens, just in a different way, we need to move this check 
-higher up to avoid these kind of deadlocks.  Thanks,
+But it is necessary to send out in time because I wish to
+end this bug in v4.3 release.
 
-Josef
+Changelog v2->v3:
+1: Use list_is_singular() instead of
+   block_group->list.next == block_group->list.prev
+   Suggested-by: Jeff Mahoney <jeffm@suse.com>
+2: Add Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Zhao Lei (2):
+  btrfs: Fix lost-data-profile caused by auto removing bg
+  btrfs: Fix lost-data-profile caused by balance bg
+
+ fs/btrfs/extent-tree.c | 12 +++++++++++-
+ fs/btrfs/volumes.c     | 24 ++++++++++++++++++++++++
+ 2 files changed, 35 insertions(+), 1 deletion(-)
+
+-- 
+1.8.5.1
 

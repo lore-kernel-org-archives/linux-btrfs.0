@@ -1,60 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:50714 "EHLO mail.bouton.name"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751412AbbJDMDl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 4 Oct 2015 08:03:41 -0400
-Subject: Re: BTRFS as image store for KVM?
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <55F88ECC.1040604@menke.ac>
- <201510021421.09558.russell@coker.com.au> <560E737C.7050206@gmail.com>
- <201510031832.17802.russell@coker.com.au>
- <pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <56111598.2080403@bouton.name>
-Date: Sun, 4 Oct 2015 14:03:36 +0200
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:36071 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751133AbbJDMVy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 4 Oct 2015 08:21:54 -0400
+Received: by igcrk20 with SMTP id rk20so44416482igc.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 04 Oct 2015 05:21:53 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <56111598.2080403@bouton.name>
+References: <55F88ECC.1040604@menke.ac>
+	<201510021421.09558.russell@coker.com.au>
+	<560E737C.7050206@gmail.com>
+	<201510031832.17802.russell@coker.com.au>
+	<pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net>
+	<56111598.2080403@bouton.name>
+Date: Sun, 4 Oct 2015 08:21:53 -0400
+Message-ID: <CAGfcS_=9uf359-uBHfEXhUC3HTpkjzE7vMwG1iOR2Ld0u3nFTg@mail.gmail.com>
+Subject: Re: BTRFS as image store for KVM?
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Lionel Bouton <lionel-subscription@bouton.name>
+Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
-
-Le 04/10/2015 04:09, Duncan a écrit :
-> Russell Coker posted on Sat, 03 Oct 2015 18:32:17 +1000 as excerpted:
+On Sun, Oct 4, 2015 at 8:03 AM, Lionel Bouton
+<lionel-subscription@bouton.name> wrote:
 >
->> Last time I checked a BTRFS RAID-1 filesystem would assign each process
->> to read from one disk based on it's PID.  Every RAID-1 implementation
->> that has any sort of performance optimisation will allow a single
->> process that's reading to use both disks to some extent.
->>
->> When the BTRFS developers spend some serious effort optimising for
->> performance it will be useful to compare BTRFS and ZFS.
-> This is the example I use as to why btrfs isn't really stable, as well.  
-> Devs tend to be very aware of the dangers of premature optimization, 
-> because done too early, it either means throwing that work away when a 
-> rewrite comes, or it severely limits options as to what can be rewritten, 
-> if necessary, in ordered to avoid throwing all that work that went into 
-> optimization away.
+> This focus on single reader RAID1 performance surprises me.
 >
-> So at least for devs that have been around awhile, that don't have some 
-> boss that's paying the bills saying optimize now, an actually really good 
-> mark of when the /devs/ consider something stable, is when they start 
-> focusing on that optimization.
+> 1/ AFAIK the kernel md RAID1 code behaves the same (last time I checked
+> you need 2 processes to read from 2 devices at once) and I've never seen
+> anyone arguing that the current md code is unstable.
 
-This focus on single reader RAID1 performance surprises me.
+Perhaps, but with btrfs it wouldn't be hard to get 1000 processes
+reading from a raid1 in btrfs and have every single request directed
+to the same disk with the other disk remaining completely idle.  I
+believe the algorithm is just whether the pid is even or odd, and
+doesn't take into account disk activity at all, let alone disk
+performance or anything more sophisticated than that.
 
-1/ AFAIK the kernel md RAID1 code behaves the same (last time I checked
-you need 2 processes to read from 2 devices at once) and I've never seen
-anyone arguing that the current md code is unstable.
+I'm sure md does a better job than that.
 
-2/ I'm not familiar with implementations taking advantage of several
-disks for single process reads but clearly they'll have more problems
-with seeks on rotating devices to solve. So are there really
-implementations with better performance across the spectrum or do they
-have to pay a performance penalty in the mutiple readers case to
-optimize the (arguably less frequent/important) single reader case ?
-
-Best regards,
-
-Lionel
+--
+Rich

@@ -1,53 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37760 "EHLO mx2.suse.de"
+Received: from m50-134.163.com ([123.125.50.134]:55444 "EHLO m50-134.163.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750750AbbJZS6f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 14:58:35 -0400
-Date: Mon, 26 Oct 2015 19:57:11 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, chandan@mykolab.com
-Subject: Re: [PATCH] Btrfs-progs: Prevent creation of filesystem with 'mixed
- bgs' and having differing sectorsize and nodesize.
-Message-ID: <20151026185710.GQ13624@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1444844438-20001-1-git-send-email-chandan@linux.vnet.ibm.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1444844438-20001-1-git-send-email-chandan@linux.vnet.ibm.com>
+	id S1751247AbbJDJGP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 4 Oct 2015 05:06:15 -0400
+From: Geliang Tang <geliangtang@163.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: Geliang Tang <geliangtang@163.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: fix a comment typo
+Date: Sun,  4 Oct 2015 17:05:32 +0800
+Message-Id: <336ea7cc85aeb2231eeb1766081b16303b17316a.1443949442.git.geliangtang@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 14, 2015 at 11:10:38PM +0530, Chandan Rajendra wrote:
-> mkfs.btrfs allows creation of Btrfs filesystem instances with mixed block
-> group feature enabled and having a sectorsize different from nodesize.
-> For e.g:
-> 
-> [root@localhost btrfs-progs]# mkfs.btrfs -f -M -s 4096 -n 16384  /dev/loop0
-> Forcing mixed metadata/data groups
-> btrfs-progs v3.19-rc2-404-gbbbd18e-dirty
-> See http://btrfs.wiki.kernel.org for more information.
-> 
-> Performing full device TRIM (4.00GiB) ...
-> Label:              (null)
-> UUID:               c82b5720-6d88-4fa1-ac05-d0d4cb797fd5
-> Node size:          16384
-> Sector size:        4096
-> Filesystem size:    4.00GiB
-> Block group profiles:
->   Data+Metadata:    single            8.00MiB
->   System:           single            4.00MiB
-> SSD detected:       no
-> Incompat features:  mixed-bg, extref, skinny-metadata
-> Number of devices:  1
-> Devices:
->   ID        SIZE  PATH
->    1     4.00GiB  /dev/loop6
-> 
-> This commit fixes the issue by setting BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS
-> feature bit before checking the validity of nodesize that was specified on the
-> command line.
-> 
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Just fix a typo in the code comment.
 
-Test added and applied, thanks.
+Signed-off-by: Geliang Tang <geliangtang@163.com>
+---
+ fs/btrfs/free-space-cache.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index abe3a66..7332995 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1215,7 +1215,7 @@ out:
+  * @offset - the offset for the key we'll insert
+  *
+  * This function writes out a free space cache struct to disk for quick recovery
+- * on mount.  This will return 0 if it was successfull in writing the cache out,
++ * on mount.  This will return 0 if it was successful in writing the cache out,
+  * or an errno if it was not.
+  */
+ static int __btrfs_write_out_cache(struct btrfs_root *root, struct inode *inode,
+-- 
+2.5.0
+
+

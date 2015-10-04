@@ -1,42 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from walhalla.sjomar.eu ([141.105.125.198]:51522 "EHLO
-	mail.sjomar.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751352AbbJDLvS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 4 Oct 2015 07:51:18 -0400
-Received: from hoefnix.localnet (a83-163-227-207.adsl.xs4all.nl [83.163.227.207])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
-	(No client certificate requested)
-	(Authenticated sender: sjoerd@sjomar.eu)
-	by mail.sjomar.eu (Postfix) with ESMTPSA id B808568ABE
-	for <linux-btrfs@vger.kernel.org>; Sun,  4 Oct 2015 13:51:13 +0200 (CEST)
-From: Sjoerd <sjoerd@sjomar.eu>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: RAID5 doesn't mount on boot, but you can afterwards?
-Date: Sun, 04 Oct 2015 13:51:12 +0200
-Message-ID: <3915563.6aU1oytTtV@hoefnix>
-In-Reply-To: <pan$3b7e2$ac9e4b37$ac602701$c91b77c@cox.net>
-References: <1627746.fEEz2JqgZk@hoefnix> <003401d0fe1d$999b41a0$ccd1c4e0$@gmx.de> <pan$3b7e2$ac9e4b37$ac602701$c91b77c@cox.net>
+Received: from ns.bouton.name ([109.74.195.142]:50714 "EHLO mail.bouton.name"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751412AbbJDMDl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 4 Oct 2015 08:03:41 -0400
+Subject: Re: BTRFS as image store for KVM?
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <55F88ECC.1040604@menke.ac>
+ <201510021421.09558.russell@coker.com.au> <560E737C.7050206@gmail.com>
+ <201510031832.17802.russell@coker.com.au>
+ <pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <56111598.2080403@bouton.name>
+Date: Sun, 4 Oct 2015 14:03:36 +0200
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday 04 October 2015 02:28:29 Duncan wrote:
-> guido_kuenne posted on Sat, 03 Oct 2015 22:53:46 +0200 as excerpted:
-> > Beginner here, so just if it helps: My two-device raid 1 mounts on boot
-> > in Fedora 22 (uuid in fstab, no further devices specified) but I mount
-> > the fs via uuid while Sjoerd mounted subvolumes. From what I understand
-> > (not much) it's either an subvolume issue or Fedora must then somehow
-> > perform a device scan before handling fstab.
-> 
-> I'm guessing fedora has btrfs device scan in its initr*.
+Hi,
 
-I think so too, since I was wondering why it did mount my multidevice JBOD 
-correctly before mounting it in the same way as written in the first mail.
-Later I found the probable answer that the JBOD setup was with Ubuntu 15.04 
-and most likely they also put a btrfs scan somewhere in the init before 
-mounting. So there're some approvements btrfs wise when not using the latest 
-LTS release..
+Le 04/10/2015 04:09, Duncan a écrit :
+> Russell Coker posted on Sat, 03 Oct 2015 18:32:17 +1000 as excerpted:
+>
+>> Last time I checked a BTRFS RAID-1 filesystem would assign each process
+>> to read from one disk based on it's PID.  Every RAID-1 implementation
+>> that has any sort of performance optimisation will allow a single
+>> process that's reading to use both disks to some extent.
+>>
+>> When the BTRFS developers spend some serious effort optimising for
+>> performance it will be useful to compare BTRFS and ZFS.
+> This is the example I use as to why btrfs isn't really stable, as well.  
+> Devs tend to be very aware of the dangers of premature optimization, 
+> because done too early, it either means throwing that work away when a 
+> rewrite comes, or it severely limits options as to what can be rewritten, 
+> if necessary, in ordered to avoid throwing all that work that went into 
+> optimization away.
+>
+> So at least for devs that have been around awhile, that don't have some 
+> boss that's paying the bills saying optimize now, an actually really good 
+> mark of when the /devs/ consider something stable, is when they start 
+> focusing on that optimization.
 
-Sjoerd
+This focus on single reader RAID1 performance surprises me.
 
+1/ AFAIK the kernel md RAID1 code behaves the same (last time I checked
+you need 2 processes to read from 2 devices at once) and I've never seen
+anyone arguing that the current md code is unstable.
+
+2/ I'm not familiar with implementations taking advantage of several
+disks for single process reads but clearly they'll have more problems
+with seeks on rotating devices to solve. So are there really
+implementations with better performance across the spectrum or do they
+have to pay a performance penalty in the mutiple readers case to
+optimize the (arguably less frequent/important) single reader case ?
+
+Best regards,
+
+Lionel

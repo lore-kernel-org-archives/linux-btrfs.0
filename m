@@ -1,148 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:33079 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751214AbbJEOTp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 10:19:45 -0400
-Received: by igbkq10 with SMTP id kq10so63732445igb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2015 07:19:44 -0700 (PDT)
-Subject: Re: Issues with unmountable BTRFS raid1 filesystem
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <56126D59.7070505@gmail.com>
- <20151005131426.GP25907@carfax.org.uk>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <561286F2.40607@gmail.com>
-Date: Mon, 5 Oct 2015 10:19:30 -0400
+Received: from eastrmfepi206.cox.net ([68.230.241.210]:39339 "EHLO
+	eastrmfepi206.cox.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751569AbbJEPDy (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 11:03:54 -0400
+Received: from eastrmimpo306 ([68.230.241.238]) by eastrmfepo103.cox.net
+          (InterMail vM.8.01.05.15 201-2260-151-145-20131218) with ESMTP
+          id <20151005135920.XVRA7677.eastrmfepo103.cox.net@eastrmimpo306>
+          for <linux-btrfs@vger.kernel.org>; Mon, 5 Oct 2015 09:59:20 -0400
+Date: Mon, 5 Oct 2015 07:04:55 -0700
+From: Duncan <1i5t5.duncan@cox.net>
+To: Lionel Bouton <lionel-subscription@bouton.name>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS as image store for KVM?
+Message-ID: <20151005070455.104464fe@ws>
+In-Reply-To: <RPG31r00t34oj7R01PG5Us>
+References: <55F88ECC.1040604@menke.ac>
+ <201510021421.09558.russell@coker.com.au>
+ <560E737C.7050206@gmail.com>
+ <201510031832.17802.russell@coker.com.au>
+ <pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net>
+ <56111598.2080403@bouton.name>
+ <RPG31r00t34oj7R01PG5Us>
 MIME-Version: 1.0
-In-Reply-To: <20151005131426.GP25907@carfax.org.uk>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030405080901090604010301"
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Mon, 5 Oct 2015 13:16:03 +0200
+Lionel Bouton <lionel-subscription@bouton.name> wrote:
 
---------------ms030405080901090604010301
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
+> To better illustrate my point.
+> 
+> According to Phoronix tests, BTRFS RAID-1 is even faster than md RAID1
+> most of the time.
+> 
+> http://www.phoronix.com/scan.php?page=article&item=btrfs_raid_mdadm&num=1
+> 
+> The only case where md RAID1 was noticeably faster is sequential reads
+> with FIO libaio.
+> 
+> So if you base your analysis on Phoronix tests
 
-On 2015-10-05 09:14, Hugo Mills wrote:
-> On Mon, Oct 05, 2015 at 08:30:17AM -0400, Austin S Hemmelgarn wrote:
->> I've been having issues recently with a relatively simple setup
->> using a two device BTRFS raid1 on top of two two device md RAID0's,
->> and every time I've rebooted since starting trying to use this
->> particular filesystem, I've found it unable to mount and had to
->> recreate it from scratch.  This is more of an inconvenience than
->> anything else (while I don't have backups of it, all the data is
->> trivial to recreate (in fact, so trivial that doing backups would be
->> more effort than just recreating the data by hand)), but it's still
->> something that I would like to try and fix.
->>
->> First off, general info:
->> Kernel version: 4.2.1-local+ (4.2.1 with minor modifications,
->> sources can be found here: https://github.com/ferroin/linux)
->> Btrfs-progs version: 4.2
->>
->> I would post output from btrfs fi show, but that's spouting
->> obviously wrong data (it's saying I'm using only 127MB with 2GB of
->> allocations on each 'disk',  I had been storing approximately 4-6GB
->> of actual data on the filesystem).
->>
->> This particular filesystem is composed of BTRFS raid1 across two LVM
->> managed DM/MD RAID0 devices, each of which spans 2 physical hard
->> drives.  I have a couple of other filesystems with the exact same
->> configuration that have not ever displayed this issue.
->>
->> When I run 'btrfs check' on the filesystem when it refuses to mount,
->> I get a number of lines like the following:
->> bad metadata [<bytenr>, <bytenr>) crossing stripe boundary
->>
->> followed eventually by:
->> Errors found in extent allocation tree or chunk allocation
->
->     I _think_ this is a bug in mkfs from 4.2.0, fixed in later
-> releases of the btrfs-progs.
-If so, that's good news (that is, that it's just a mkfs bug).  I guess=20
-it's time for me to quit waiting around for Gentoo to package the newest =
+[Oops.  Actually send to the list too this time.]
 
-version and build it myself.
->
->> As is typical of a failed mount, dmesg shows a 'failed to read the
->> system array on <device>' 'open_ctree failed'.
->>
->> I doubt that this is a hardware issue because:
->> 1. Memory is brand new, and I ran a 48 hour burn-in test that showed
->> no errors.
->> 2. A failing storage controller, PSU, or CPU would be manifesting
->> with many more issues than just this.
->> 3. A disk failure would mean that two different disks, from
->> different manufacturing lots, are encountering errors on exactly the
->> same LBA's at exactly the same time, which while possible is
->> astronomically unlikely for disks bigger than a few hundred
->> gigabytes (the disks in question are 1TB each).
->>
+FYI...
+
+1) It's worth noting that while I personally think Phoronix has more
+merit than sometimes given credit for, it does have a rather bad rep in
+kernel circles, due to how results are (claimed to be) misused in
+support of points they don't actually support at all, if you know how
+to read the results taking into account the configuration used.
+
+As such, Phoronix is about the last reference you want to be using if
+trying to support points with kernel folks, because rightly or wrongly,
+a lot of them will see that and simply shut down right there, having
+already decided based on previous experience that there's little use
+arguing with somebody quoting Phoronix, since they invariably don't
+know how to read the results based on what was /actually/ tested given
+the independent variable and the test configuration.
+
+Tho I personally actually do find quite some use for various Phoronix
+benchmark articles, reading them with the testing context in mind.  But
+I definitely wouldn't be pulling them out to demonstrate a point to
+kernel folks, unless it was near enough the end of a list of references
+making a similar point, after I've demonstrated my ability to keep the
+testing context in mind when looking at their results, because I know
+based on the history, quoting Phoronix in support of something simply
+isn't likely to get me anywhere with kernel folks.
 
 
+As for the specific test you referenced...
 
+2) At least the URL you pointed at was benchmarks for Intel
+SSDs, not spinning rust.  The issues and bottlenecks in the case of
+good SSDs are so entirely different than for spinning rust that it's an
+entirely different debate.  Among other things, good SATA-based SSDs
+are and have been for awhile now, so fast that if the tests really are
+I/O bound, SATA-bus speed (thru SATA 3.0, 600 MB/s, anyway, SATA 3.2
+aka SATA Express and M.2, 1969 MB/s, are fast enough to often put the
+bottleneck on the device, again), not device speed, tends to be the
+bottleneck. However, in many cases, because good SSDs and modern buses
+are so fast, the bottleneck actually ends up being CPU, once again.
 
---------------ms030405080901090604010301
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+So in the case of good reasonably current SSDs, CPU is likely to be the
+bottleneck.  Tho these aren't as current as might be expected...
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA1MTQxOTMwWjBPBgkq
-hkiG9w0BCQQxQgRA3LRJ42leqmysig1qPt2zxGUJMKBBoGJwKwao0viJJlgQXZ2RQ7TCr8+3
-1SrzxwsWYisuzvyGFmki8+kksAe3ETBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgCQk83+lVE82jxcKHJP1y1hPVoLh7ZS3xCf6Fh+VOlGak1xqJL0
-LlD690gd43SBILn+7etfA3TrZXvdd5DLdvXW1MJfVMb95onHPrb82ERu55eTDUXl+OEmbOmS
-QT5qznFj0caWUWNn9BGPJN+d9Sq8Tcf/6kSjPlbZenIWvVixoBZ0oy4GWYjlkKKg4PCWgWlF
-Ue+dsW11W1dgS2u2z1gq35KwhtF4r0XZCzJ4QEgi1qDEZUVpAmS1hc0qj7DKthV/JycHjGjo
-unwLAV2v+1xiDa//n/DP2KJmfvDYUn4zqZSw9VbOZtrPikvzJ2cY1e8Q11kTe5AadsWAjYs9
-0Jpftu+tIDk07LMbdRlZfHtYauUkSfNlMiA0cluucKizykTs7ZfA0/spMJHQHZkHkkFB77dt
-S6Bkz75fD2COCHN+3odnBViPLdfeeHlkEsz30uqXryJcPIckUABpIYEBboQ7Dk5GMxTJYD4l
-QU3z0+zHUOglEP0ek7eP3AUH3uW/DQ60Hp7is6C9Ctp9KygGmd1KumwMWSh8OM7h5a3JBLvl
-5aLX09FDwcdB9Z9kTUoafLP1d5aJ5CtOsNle2OsLpMrWTbK6gNtKd+nzaKE7vrqi6Nr9ss47
-qqA0q72dYspPhhBG28ZluaG/jP2K7bQj+JE2z/I4zrhivplrlkeo0nyfGwAAAAAAAA==
---------------ms030405080901090604010301--
+The actual devices tested here are SATA 2, 300 MB/s bus speed, and are
+rather dated given the Dec 2014 article date, as they're only rated 205
+MB/s read, 45 MB/s write, so only read is anything near bus speed,
+while bus speed itself is only SATA 2, 300 MB/s.
+
+Given that, it's likely that write speed is device-bound, and while
+raid isn't likely to slow it down despite the multi-time-writing
+because it /is/ device-bound, it's unlikely to be faster than
+single-device writing, either.
+
+But this thread was addressing read-speed.  Read-speed is much closer
+to the bus speed, and depending on the application, particularly for
+raid, may well be CPU-bound.  Where it's CPU-bound, because the device
+and bus speed are relatively high, the multiple devices of RAID aren't
+likely to be of much benefit at all.
+
+Meanwhile, what was the actual configuration on the devices themselves?
+
+Here, we see that in both cases it was actually btrfs, btrfs with
+defaults as installed (in single-device-mode, if reading between the
+lines) on top of md/raid of the tested level for the md/raid side,
+native btrfs raid of the tested level on the native btrfs raid side.
+
+But... there's already so much that isn't known -- he says defaults
+where not stated, but that's still ambiguous in some cases.
+
+For instance, he does specifically state that in native mode, btrfs
+detects the ssds, and activates ssd mode, but that it doesn't do so
+when installed on the md/raid.  So we know for sure that he took the
+detected ssd (or not) defaults there.
+
+But...  we do NOT know... does btrfs native raid level mean for both
+data and metadata, or only for (presumably) data, leaving metadata at
+the defaults (which is raid1 for multi-device), or perhaps the
+reverse, tested level metadata, defaults for data (which AFAIK is
+single mode for multi-device).
+
+And in single-device btrfs on top of md/raid mode, with the md/raid at
+the tested level, we already know that it didn't detect ssd and enable
+ssd mode, and he didn't enable it manually, but what we /don't/ know
+for sure is how it was installed at mkfs.btrfs time and whether that
+might have detected ssd.   If mkfs.btrfs detected ssd, it would have
+created single-mode metadata by default, otherwise, dup mode metadata,
+unless specifically told otherwise.
+
+If he /really/ meant /defaults/ unless stated otherwise, then the btrfs
+on top of md/raid was pretty obviously running with known
+deoptimizations compared to what one would sanely run in that case.
+For instance, the metadata will be dup on a single-device as far as
+btrfs is concerned, due to the non-detection of ssd, while for raid1
+and raid10 modes, that's actually duped again, *4*-way duped again, for
+8-way-duped total, in the 4-way-md/raid-1 case.
+
+And that's not even counting the effect of the lack of ssd on chunk
+placement.
+
+Meanwhile, on the native btrfs side, it's detecting ssd, and optimizing
+accordingly.
+
+So, it's /very/ /possible/ that the apparently bad for md/raid1 results
+you see for the btrfs on top of md/raid1 case, aren't really due to
+md/raid1 scheduling problems as compared to btrfs native raid1
+scheduling, in the first place, but rather, due to a combination of the
+obviously ssd-deoptimized btrfs defaults in that mode, and the
+relatively high per-device read-speeds of ssd (even those ancient sata
+2 ssds), along with zero-seek-time of ssd.
+
+The way to disprove that would obviously be to run the same set of
+tests, but with the btrfs configured for ssd mode at runtime so as not
+to use the default, and both data and metadata modes specified,
+presumably single for both, for the case where it's deployed over
+md/raid1.
+
+That in a thread where the previous context was spinning rust, with its
+definitely *not* zero seek-times, and generally rather slower sequential
+per-device I/O speeds, as well.  So even if there weren't massive
+issues with the Phoronix tests as displayed in that article, with btrfs
+so deoptimized in the on-md/raid case no real conclusions about a sane
+configuration can be made, the fact that the article was reporting on
+(rather old and slow for ssds, but still fast at reading compared to
+spinning rust) ssds, while the discussion was in the context of more
+traditional spinning rust, means that it shouldn't have been introduced
+here, at least without big caveats that it was dealing with the ssd
+use-case.
+
+Hmm... I think I've begun to see the kernel folks point about people
+quoting Phoronix in support of their points, when it's really not
+apropos at all.  Yes, I do still consider Phoronix reports in context
+to contain useful information, at some level.  However, one really must
+be aware of what was actually tested in ordered to understand what the
+results actually mean, and unfortunately, it seems most people quoting
+it, including here, really can't properly do so in context, and thus
+end up using it in support of points that simply are not supported by
+the given evidence in the Phoronix articles people are attempting to
+use.
+
+-- 
+Duncan - No HTML messages please; they are filtered as spam.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman

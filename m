@@ -1,75 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-16.italiaonline.it ([212.48.25.144]:56360 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751279AbbJEUJs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 5 Oct 2015 16:09:48 -0400
-Reply-To: kreijack@inwind.it
-Subject: btrfs machine readable output [was Re: btrfs patches]
-References: <1443804083-876-1-git-send-email-axel@tty0.ch>
- <1443804083-876-5-git-send-email-axel@tty0.ch> <560FA665.6000700@libero.it>
- <560FA944.3050606@digint.ch> <5610134D.9070807@inwind.it>
- <pan$c5775$3f0b408b$41f20753$9ede78d@cox.net> <561138F4.5090105@inwind.it>
- <56129171.4040200@digint.ch> <56129A7C.8060701@inwind.it>
- <5612B30A.9030308@tty0.ch>
-To: Axel Burri <axel@tty0.ch>, David Sterba <dsterba@suse.cz>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <5612D908.4000201@inwind.it>
-Date: Mon, 5 Oct 2015 22:09:44 +0200
+Received: from fep25.mx.upcmail.net ([62.179.121.45]:39862 "EHLO
+	fep25.mx.upcmail.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751871AbbJEUnp (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 16:43:45 -0400
+Received: from edge03.upcmail.net ([192.168.13.238])
+          by viefep13-int.chello.at
+          (InterMail vM.8.01.05.18 201-2260-151-151-20140610) with ESMTP
+          id <20151005202647.BYKZ6796.viefep13-int.chello.at@edge03.upcmail.net>
+          for <linux-btrfs@vger.kernel.org>; Mon, 5 Oct 2015 22:26:47 +0200
+From: Pavel Pisa <pisa@cmp.felk.cvut.cz>
+To: linux-btrfs@vger.kernel.org
+Subject: BTRFS RAID1 behavior after one drive temporal disconection
+Date: Mon, 5 Oct 2015 22:26:46 +0200
 MIME-Version: 1.0
-In-Reply-To: <5612B30A.9030308@tty0.ch>
-Content-Type: text/plain; charset=utf-8
+Content-Type: Text/Plain;
+  charset="us-ascii"
+Message-Id: <201510052226.47051.pisa@cmp.felk.cvut.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Axel,
+Hello everybody,
 
-I add CC:linux-btrfs because I think that what you are saying is important and it was discussed in ML.
+SATA connection/firmware of my drives (ST3000VN000-1H4167) failed.
+Disk has not responded to hdparm, smartctl and no SW reset,
+SATA controller rescan changed the situation.
 
-[we are talking about the Axel patches to "btrfs sub list" command]
-On 2015-10-05 19:27, Axel Burri wrote:
-> Hi Goffredo
-> 
-> Don't get me wrong, I don't want to blame you (or anyone), actually I'm
-> only arguing what I think is best for btrfs. I started to write those
-> patches because btrfs-scriptability is pretty bad (there is also "btrfs
-> sub show" which has pretty un-parseable output"), and I think this is
-> very important for the success of btrfs, and no-one seemed to address this.
+I have been able to restore communication by brute force
+power cable connectore removal and reconnection. I have been
+able to rescan device and partitions then.
 
-In the past, when I developed the "btrfs fi usage/btrfs dev usage" I put a lot of effort to have an output easily machine readable: one data per line, key without space; I remember the battle to have in the key "_" instead of space :-)
-However other people changed that to a more (human) readable output.
+There is high probability of time coincidence of problem start
+and next SMART report
 
-May be that I was wrong; I don't know. 
+  After command completion occurred, registers were:
+  ER ST SC SN CL CH DH
+  -- -- -- -- -- -- --
+  04 71 09 a9 00 80 40  Device Fault; Error: ABRT at LBA = 0x008000a9 = 8388777
 
-However for sure, if I look to other projects:
-- systemd: it uses some btrfs capability, but it uses the ioctl directly.
-- snapper: it uses ioctl directly
+  Commands leading to the command that caused the error were:
+  CR FR SC SN CL CH DH DC   Powered_Up_Time  Command/Feature_Name
+  -- -- -- -- -- -- -- --  ----------------  --------------------
+  61 00 18 00 09 01 46 00   4d+15:27:59.335  WRITE FPDMA QUEUED
+  61 00 80 80 08 01 46 00   4d+15:27:59.335  WRITE FPDMA QUEUED
+  61 00 80 00 08 01 46 00   4d+15:27:59.335  WRITE FPDMA QUEUED
+  61 00 80 80 07 01 46 00   4d+15:27:59.335  WRITE FPDMA QUEUED
+  61 00 68 18 07 01 46 00   4d+15:27:59.335  WRITE FPDMA QUEUED
 
-So I have to conclude that it is not common to use btrfs (as progs) directly.
-Few times I noticed somebodies are working on a libbtrfs. May be this is a better approach.
+Disk seems to be undamaged. The smartctl -t long finished without
+any error logged or reported. Some backup ext4 partition can be mounted
+and is writable.
 
-> 
-> I know that nowadays people expect to get shiny output from command-line
-> tools, but IMHO it is much more important to have consistent
-> machine-readable output before even thinking of human readability (since
-> there are so many unix commands to translate it, e.g. "columns"). Now
-> this is sadly not the case with btrfs-progs, and it's hard to change it
-> when people are used to it. Note that when writing the patches I was
-> also thinking of introducing some "--machine-readable" option, but this
-> seemed so wrong to me...
+BTRFS has recognized appearance of its partition (even that hanged
+from sdb5 to sde5 when disk "hotplugged" again).
+But it seems that RAID1 components are not in sync and BTRFS
+continues to report
 
-I think that "--machine-readable" (or similar) is a better approach: the output of the btrfs command in the past is changed even drastically (give a look to my work on the mkfs.btrfs); but we could force us to have an output "backward compatible" and machine (programmer) friendly if a switch like "--machine-readable" is used.
+BTRFS: lost page write due to I/O error on /dev/sde5
+BTRFS: bdev /dev/sde5 errs: wr 11021805, rd 8526080, flush 29099, corrupt 0, gen 
 
-[...]
-> 
-> Regards,
-> 
-> - Axel
+I have tried to find the best way to resync RAID1 BTRFS partitions.
+But problem is that filesystem is the root one of the system.
+So reboot to some rescue media is required to run btrfsck --repair
+which is intended for unmounted devices.
 
-BR
-Goffredo
+What is behavior of BTRFS in this situation?
+Is BTRFS able to use data from not up to date partition in these
+cases where data in respective files have not been modified?
+The main reason for question is if such (stable) data can be backuped
+by out of sync partition in the case of some random block is wear
+out on another device. Or is this situation equivalent to running
+with only one disk?
 
+Are there some parameters/solution to run some command
+(scrub balance) which makes devices to be in the sync again
+without unmount or reboot?
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+I believe than attaching one more drive and running "btrfs replace"
+would solve described situation. But is there some equivalent to
+run operation "inplace".
+
+Thanks for reply,
+
+                Pavel Pisa
+    e-mail:     pisa@cmp.felk.cvut.cz
+    www:        http://cmp.felk.cvut.cz/~pisa
+    university: http://dce.fel.cvut.cz/
+    company:    http://www.pikron.com/

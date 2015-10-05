@@ -1,88 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5639 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756377AbbJ2Jdm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Oct 2015 05:33:42 -0400
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9T9X7Xi015836
-	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2015 17:33:07 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 6/6] btrfs-progs: Avoid use pointer in handle_options
-Date: Thu, 29 Oct 2015 17:31:48 +0800
-Message-ID: <067592f9b350f23dbe4c255238bfebcc9e34964c.1446111097.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <e9288021adac2924ce1fdb637f61b9b924eff954.1446111097.git.zhaolei@cn.fujitsu.com>
-References: <e9288021adac2924ce1fdb637f61b9b924eff954.1446111097.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from aserp1040.oracle.com ([141.146.126.69]:44900 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752542AbbJEIt1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 04:49:27 -0400
+Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t958nQOv009174
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Oct 2015 08:49:26 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id t958nPLn009005
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Oct 2015 08:49:26 GMT
+Received: from abhmp0009.oracle.com (abhmp0009.oracle.com [141.146.116.15])
+	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t958nPro000724
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Oct 2015 08:49:25 GMT
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH V2 3/3] Btrfs: device path change must be logged
+Date: Mon,  5 Oct 2015 16:48:10 +0800
+Message-Id: <1444034890-9353-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1444034890-9353-1-git-send-email-anand.jain@oracle.com>
+References: <1444034890-9353-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We use pointer of argc and argv in handle_options() because they
-are necessary in very old code which are not exist now.
+>From the issue diagnosable point of view, log if the device path is
+changed.
 
-This patch move to use argc and argv directly in handle_options(),
-alone with following update:
-1: rename handle_options() to check_options()
-   to fit its function.
-2: cleanup for condition in handle_options() to make line short.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- btrfs.c | 30 ++++++++++++++++--------------
- 1 file changed, 16 insertions(+), 14 deletions(-)
+ V2: Accepts David's review comment and adds a new ret value 2
+     for device_list_add() and based on that the caller function
+     would indicate if the path is overwritten (thanks David).
 
-diff --git a/btrfs.c b/btrfs.c
-index 9416a29..f881c18 100644
---- a/btrfs.c
-+++ b/btrfs.c
-@@ -172,20 +172,22 @@ static int cmd_version(int argc, char **argv)
- 	return 0;
- }
+ fs/btrfs/volumes.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e76cad3..b8b1171 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -504,6 +504,7 @@ void btrfs_free_stale_device(struct btrfs_device *cur_dev)
+  *
+  * Returns:
+  * 1   - first time device is seen
++ * 2   - device already known but now is overwritten with new path
+  * 0   - device already known
+  * < 0 - error
+  */
+@@ -603,6 +604,7 @@ static noinline int device_list_add(const char *path,
+ 			fs_devices->missing_devices--;
+ 			device->missing = 0;
+ 		}
++		ret = 2;
+ 	}
  
--static void handle_options(int *argc, char ***argv)
-+static void check_options(int argc, char **argv)
- {
--	if (*argc > 0) {
--		const char *arg = (*argv)[0];
--		if (arg[0] != '-' ||
--		    !strcmp(arg, "--help") ||
--		    !strcmp(arg, "--version"))
--			return;
--		fprintf(stderr, "Unknown option: %s\n", arg);
--		fprintf(stderr, "usage: %s\n",
--			btrfs_cmd_group.usagestr[0]);
--		exit(129);
--	}
--	return;
-+	if (argc == 0)
-+		return;
-+
-+	const char *arg = argv[0];
-+
-+	if (arg[0] != '-' ||
-+	    !strcmp(arg, "--help") ||
-+	    !strcmp(arg, "--version"))
-+		return;
-+
-+	fprintf(stderr, "Unknown option: %s\n", arg);
-+	fprintf(stderr, "usage: %s\n",
-+		btrfs_cmd_group.usagestr[0]);
-+	exit(129);
- }
+ 	/*
+@@ -1033,8 +1035,9 @@ int btrfs_scan_one_device(const char *path, fmode_t flags, void *holder,
  
- static const struct cmd_group btrfs_cmd_group = {
-@@ -227,7 +229,7 @@ int main(int argc, char **argv)
- 	} else {
- 		argc--;
- 		argv++;
--		handle_options(&argc, &argv);
-+		check_options(argc, argv);
- 		if (argc > 0) {
- 			if (!prefixcmp(argv[0], "--"))
- 				argv[0] += 2;
+ 	ret = device_list_add(path, disk_super, devid, fs_devices_ret);
+ 	if (ret > 0) {
+-		printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s\n",
+-						disk_super->fsid, devid, transid, path);
++		printk(KERN_INFO "BTRFS: device fsid %pU devid %llu transid %llu %s %s\n",
++						disk_super->fsid, devid, transid, path,
++						ret == 2 ? "(overwritten)":"");
+ 		ret = 0;
+ 	}
+ 	if (!ret && fs_devices_ret)
 -- 
-1.8.5.1
+2.4.1
 

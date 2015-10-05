@@ -1,117 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:36106 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752534AbbJEQAI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 12:00:08 -0400
-Received: by igcrk20 with SMTP id rk20so64222545igc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2015 09:00:08 -0700 (PDT)
-Subject: Re: BTRFS as image store for KVM?
-To: Duncan <1i5t5.duncan@cox.net>,
-        Lionel Bouton <lionel-subscription@bouton.name>,
-        linux-btrfs@vger.kernel.org
-References: <55F88ECC.1040604@menke.ac>
- <201510021421.09558.russell@coker.com.au> <560E737C.7050206@gmail.com>
- <201510031832.17802.russell@coker.com.au>
- <pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net> <56111598.2080403@bouton.name>
- <RPG31r00t34oj7R01PG5Us> <20151005070455.104464fe@ws>
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:34373 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750761AbbJEQBx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 12:01:53 -0400
+Received: by igcpb10 with SMTP id pb10so66310918igc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2015 09:01:52 -0700 (PDT)
+Subject: Re: Issues with unmountable BTRFS raid1 filesystem
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <56126D59.7070505@gmail.com>
+ <20151005131426.GP25907@carfax.org.uk> <561286F2.40607@gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <56129E77.7020806@gmail.com>
-Date: Mon, 5 Oct 2015 11:59:51 -0400
+Message-ID: <56129EE0.6060709@gmail.com>
+Date: Mon, 5 Oct 2015 12:01:36 -0400
 MIME-Version: 1.0
-In-Reply-To: <20151005070455.104464fe@ws>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010807070906010304070802"
+In-Reply-To: <561286F2.40607@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000100000401030109080500"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms010807070906010304070802
+--------------ms000100000401030109080500
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-10-05 10:04, Duncan wrote:
-> On Mon, 5 Oct 2015 13:16:03 +0200
-> Lionel Bouton <lionel-subscription@bouton.name> wrote:
->
->> To better illustrate my point.
+On 2015-10-05 10:19, Austin S Hemmelgarn wrote:
+> On 2015-10-05 09:14, Hugo Mills wrote:
+>> On Mon, Oct 05, 2015 at 08:30:17AM -0400, Austin S Hemmelgarn wrote:
+>>> I've been having issues recently with a relatively simple setup
+>>> using a two device BTRFS raid1 on top of two two device md RAID0's,
+>>> and every time I've rebooted since starting trying to use this
+>>> particular filesystem, I've found it unable to mount and had to
+>>> recreate it from scratch.  This is more of an inconvenience than
+>>> anything else (while I don't have backups of it, all the data is
+>>> trivial to recreate (in fact, so trivial that doing backups would be
+>>> more effort than just recreating the data by hand)), but it's still
+>>> something that I would like to try and fix.
+>>>
+>>> First off, general info:
+>>> Kernel version: 4.2.1-local+ (4.2.1 with minor modifications,
+>>> sources can be found here: https://github.com/ferroin/linux)
+>>> Btrfs-progs version: 4.2
+>>>
+>>> I would post output from btrfs fi show, but that's spouting
+>>> obviously wrong data (it's saying I'm using only 127MB with 2GB of
+>>> allocations on each 'disk',  I had been storing approximately 4-6GB
+>>> of actual data on the filesystem).
+>>>
+>>> This particular filesystem is composed of BTRFS raid1 across two LVM
+>>> managed DM/MD RAID0 devices, each of which spans 2 physical hard
+>>> drives.  I have a couple of other filesystems with the exact same
+>>> configuration that have not ever displayed this issue.
+>>>
+>>> When I run 'btrfs check' on the filesystem when it refuses to mount,
+>>> I get a number of lines like the following:
+>>> bad metadata [<bytenr>, <bytenr>) crossing stripe boundary
+>>>
+>>> followed eventually by:
+>>> Errors found in extent allocation tree or chunk allocation
 >>
->> According to Phoronix tests, BTRFS RAID-1 is even faster than md RAID1=
-
->> most of the time.
->>
->> http://www.phoronix.com/scan.php?page=3Darticle&item=3Dbtrfs_raid_mdad=
-m&num=3D1
->>
->> The only case where md RAID1 was noticeably faster is sequential reads=
-
->> with FIO libaio.
->>
->> So if you base your analysis on Phoronix tests
->
-[...snip...]
->
-> Hmm... I think I've begun to see the kernel folks point about people
-> quoting Phoronix in support of their points, when it's really not
-> apropos at all.  Yes, I do still consider Phoronix reports in context
-> to contain useful information, at some level.  However, one really must=
-
-> be aware of what was actually tested in ordered to understand what the
-> results actually mean, and unfortunately, it seems most people quoting
-> it, including here, really can't properly do so in context, and thus
-> end up using it in support of points that simply are not supported by
-> the given evidence in the Phoronix articles people are attempting to
-> use.
->
-Even aside from the obvious past issues with Phoronix reports, people=20
-forget that they are news organization (regardless of what they claim,=20
-they _are_ a news organization), and as such their employees are not=20
-paid to verify existing results, they're paid to make impactful articles =
-
-that grab people's attention (I'd be willing to bet that this story=20
-started in response to the people who pointed out correctly that XFS or=20
-ext4 on top of mdraid beats the pants off of BTRFS performance wise, and =
-
-(incorrectly) assumed that this meant that mdraid was better than BTRFS=20
-raid).  This when combined with almost no evidence in many cases of=20
-actual statistical analysis, really hurts their credibility (at least,=20
-for me it does).
-
-The other issue is that so many people tout benchmarks as the pinnacle=20
-of testing, when they really aren't.  Benchmarks are by definition=20
-synthetic workloads, and as such only the _really_ good ones (which=20
-there aren't many of) give you more than a very basic idea what=20
-performance differences you can expect with a given workload.  On top of =
-
-that, people just accept results without trying to reproduce them=20
-themselves (Kernel folks tend to be much better about this than many=20
-other people though).
-
-A truly sane person, looking to determine the best configuration for a=20
-given workload, will:
-1. Look at a wide variety of sources to determine what configurations he =
-
-should even be testing.  (The author of the linked article obviously=20
-didn't do this, or just didn't care, the defaults on btrfs are=20
-unsuitable for a significant number of cases, including usage on top of=20
-mdraid).
-2. Using this information, run established benchmarks similar to his=20
-use-case to further narrow down the test candidates.
-3. Write his own benchmark to simulate to the greatest degree possible=20
-the actual workload he expects to run, and then use that for testing the =
-
-final candidates.
-4. Gather some reasonable number of samples with the above mentioned=20
-benchmark, and use _real_ statistical analysis to determine what he=20
-should be using.
-
-To put this in further perspective, most people just do step one, assume =
-
-that other people know what they're talking about, and don't do any=20
-further testing, and there are other people who just do step two, and=20
-then claim their results are infallible.
+>>     I _think_ this is a bug in mkfs from 4.2.0, fixed in later
+>> releases of the btrfs-progs.
+> If so, that's good news (that is, that it's just a mkfs bug).  I guess
+> it's time for me to quit waiting around for Gentoo to package the newes=
+t
+> version and build it myself.
+It looks like it was indeed a bug in mkfs from 4.2.0, I upgraded to the=20
+development branch and everything seems to be working correctly now.=20
+Thanks for the help!
 
 
---------------ms010807070906010304070802
+
+--------------ms000100000401030109080500
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -153,9 +113,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA1MTU1OTUxWjBPBgkq
-hkiG9w0BCQQxQgRAtNMQIDsEcoWMGbbw/UPN0YqRNKDR6n6dvpt6eMLebruzmfte78pOWGlh
-AXu9FMjGNJ1XVUX3DviWUp0bpXGSfjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA1MTYwMTM2WjBPBgkq
+hkiG9w0BCQQxQgRAMj9vM+IiVxhjksbs8tH5FJrv/UHdBs1uks2JNQYZqMEY0PF3jUwMxF4z
+7w/grVisyB+4Kr3RzCAb5Va29/k6sTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -163,14 +123,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgCAJ8MSF/JAQ2lfRV/b9vzckkuzgX6XDJUWxVqDv8U9O2b5O6Kl
-ReYLNl9U3Oqb4k7Td+qG5UpHgytaT39x8TKK0TGlBb6xU6ouL116N/A++VKDABDRT0FH952y
-k6IB8Dr83M4W3b9kiFYhLCNnV3O+ERfvBmKmLgrg3jyV14BE9ie0GK+7JLZt+d9NdZ+Qc4ko
-UlBrzRSeBD5CdYpa1FSt2p5wQqSXF/hpb6AiNKmsQN9W2UZma1OstiyetWbetyFfjlpLNm56
-e+85zrSK6Vu5mUqNpCZZ81iwH75aXPJ/XzHsRifjw+Kzyanw9/PMORCMeTeVtIkPV6Lv3W60
-0tfdYStjHrkSxP9wIBV2AOU9rBEYxsKS+eUJ2J5BDIFl0lcnXQtVf582dJXiGdjMjCLoFQOM
-UIgeD7ipp8LHM+yK+mtsiz4gT1v4IBb+4gFR7SnWdRLpVLWGSWCeVWPptZbm6CQq/G5TPfoA
-LQ/iEsb5IKfsvjbbTXu84A7J4sr1xArGkzrLnIxpfnJQZ6DNP4MUUv1+xRiM+BM8Jw79Dw89
-f9UPYhNJ4+jOlNXgvGaok4jO92aF+Umb3tdlI6BF5C47P/E9aaRUYz3lZq/2+QWS+8exESYH
-egXZrb92eYjOL8MIQWmHTb9PLlm69rpzfudUhhm4pXLbGdH2N5xwfCbGlAAAAAAAAA==
---------------ms010807070906010304070802--
+BgkqhkiG9w0BAQEFAASCAgApsA+/nYLQr17xNYWOICcwYrIGBj5+NpFOD/DKVK9yjvEf+OQ7
+9jeqtCjVcy1dyRidfVaEGTMcxuZPltZ95YrbB4wmYdTbIXYzdBsN752SJgIXC7UiUIOFUVH1
+ZPNpebVkb1PwWvSY98i82AMqz1VltVBD3aA0fccsmUQkSKaiD0EqJeYKfLdz4hnUmBX78zjI
+vqzKWBsVW0hoNIvVXLdobt+tYDkWhAMKcP2ClJT0ak0ChQUBNsodqePBCow2ri0ZSLkgBMU/
+f0Yod07jloXP4WmKlNrnNoerPDGCZH3u9aig3l1bMJnclGwyhnspVO2vLkM1K4HtPS/dHPtN
+1wLblLrEuycO0DA6hmF6hp62q3te08qMI544ZnH6F3Ap3nanVh7kgB6SMhCZLqggMR8g/DgY
+qhjTc3hsWcG+dcESVcO07P0V1P46zvzoAy5dRt+cV+iSAsWdDsw030igXtUJnPy8Ltz9Ke50
+ITimoTPcktK8udb9QbtR+009awIf1Kk9wpDZ4RZgpLnD3HG++lOatjoL0yu82/n45qjPBuzo
+ozMSlW+EOcGFNXLEKih0ZULFMKgVOd23G/o219EbH2IHqwrTRrLLGmTzrLVBCBDpNvCyUTKt
+YVBzYCyjmiUw5QIxbfDNTL4pmv8pGuDmCV/9x8ODHl96yfT38Gx3NdzdSwAAAAAAAA==
+--------------ms000100000401030109080500--

@@ -1,113 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f182.google.com ([209.85.220.182]:36345 "EHLO
-	mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751302AbbJELyf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 07:54:35 -0400
-Received: by qkcf65 with SMTP id f65so67210095qkc.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2015 04:54:34 -0700 (PDT)
-Subject: Re: BTRFS as image store for KVM?
-To: Lionel Bouton <lionel-subscription@bouton.name>,
-        Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <55F88ECC.1040604@menke.ac>
- <201510021421.09558.russell@coker.com.au> <560E737C.7050206@gmail.com>
- <201510031832.17802.russell@coker.com.au>
- <pan$e9b6$f764fa8a$deeffa51$be52ef68@cox.net> <56111598.2080403@bouton.name>
- <56125BF3.10700@bouton.name>
+Received: from mail-qg0-f49.google.com ([209.85.192.49]:35510 "EHLO
+	mail-qg0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751403AbbJEMa3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 08:30:29 -0400
+Received: by qgt47 with SMTP id 47so147485107qgt.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 05 Oct 2015 05:30:28 -0700 (PDT)
+Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.googlemail.com with ESMTPSA id q140sm11121382qha.5.2015.10.05.05.30.26
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 05 Oct 2015 05:30:26 -0700 (PDT)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <561264F0.4030207@gmail.com>
-Date: Mon, 5 Oct 2015 07:54:24 -0400
+Subject: Issues with unmountable BTRFS raid1 filesystem
+Message-ID: <56126D59.7070505@gmail.com>
+Date: Mon, 5 Oct 2015 08:30:17 -0400
 MIME-Version: 1.0
-In-Reply-To: <56125BF3.10700@bouton.name>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090105080006010400080302"
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030206000005070308080905"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms090105080006010400080302
+--------------ms030206000005070308080905
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-10-05 07:16, Lionel Bouton wrote:
-> Hi,
->
-> Le 04/10/2015 14:03, Lionel Bouton a =C3=A9crit :
->> [...]
->> This focus on single reader RAID1 performance surprises me.
->>
->> 1/ AFAIK the kernel md RAID1 code behaves the same (last time I checke=
-d
->> you need 2 processes to read from 2 devices at once) and I've never se=
-en
->> anyone arguing that the current md code is unstable.
->
-> To better illustrate my point.
->
-> According to Phoronix tests, BTRFS RAID-1 is even faster than md RAID1
-> most of the time.
->
-> http://www.phoronix.com/scan.php?page=3Darticle&item=3Dbtrfs_raid_mdadm=
-&num=3D1
->
-> The only case where md RAID1 was noticeably faster is sequential reads
-> with FIO libaio.
-Part of this is because BTRFS's built-in raid functionality is designed=20
-for COW workloads, whereas mdraid isn't.  On top of that, I would be=20
-willing to bet that they were using the dup profile for metadata when=20
-testing mdraid (which is the default when using a single disk), which=20
-isn't a fair comparison because it stores more data in that case than=20
-the BTRFS raid.
+I've been having issues recently with a relatively simple setup using a=20
+two device BTRFS raid1 on top of two two device md RAID0's, and every=20
+time I've rebooted since starting trying to use this particular=20
+filesystem, I've found it unable to mount and had to recreate it from=20
+scratch.  This is more of an inconvenience than anything else (while I=20
+don't have backups of it, all the data is trivial to recreate (in fact,=20
+so trivial that doing backups would be more effort than just recreating=20
+the data by hand)), but it's still something that I would like to try=20
+and fix.
 
-If you do the same thing with ZFS, I'd expect that you would see similar =
+First off, general info:
+Kernel version: 4.2.1-local+ (4.2.1 with minor modifications, sources=20
+can be found here: https://github.com/ferroin/linux)
+Btrfs-progs version: 4.2
 
-results (although probably with a bigger difference between ZFS and=20
-mdraid).  A much better comparison (which _will_ sway in mdraid's favor) =
+I would post output from btrfs fi show, but that's spouting obviously=20
+wrong data (it's saying I'm using only 127MB with 2GB of allocations on=20
+each 'disk',  I had been storing approximately 4-6GB of actual data on=20
+the filesystem).
 
-would be running XFS or ext4 (or even JFS) on top of mdraid, as that is=20
-the regular usage of mdraid.
+This particular filesystem is composed of BTRFS raid1 across two LVM=20
+managed DM/MD RAID0 devices, each of which spans 2 physical hard drives. =
 
-Furthermore, there is no sane reason to be running BTRFS on top of a=20
-single mdraid device, thus this was even less of a reasonable=20
-comparison.  It is worth noting however, that using BTRFS raid1 on top=20
-of two md RAID0 devices is significantly faster than BTRFS RAID10.
-> So if you base your analysis on Phoronix tests when serving large files=
+  I have a couple of other filesystems with the exact same configuration =
 
-> to a few clients maybe md could perform better. In all other cases BTRF=
-S
-> RAID1 seems to be a better place to start if you want performance.
-> According to the bad performance -> unstable logic, md would then be th=
-e
-> less stable RAID1 implementation which doesn't make sense to me.
-No reasonable person should be basing their analysis on results from=20
-someone else's testing without replicating said results themselves,=20
-especially when those results are based on benchmarks and not real=20
-workloads.  This goes double for Phoronix, as they are essentially paid=20
-to make whatever the newest technology on Linux is look good.
-> I'm not even saying that BTRFS performs better than md for most
-> real-world scenarios (these are only benchmarks), but that arguing that=
+that have not ever displayed this issue.
 
-> BTRFS is not stable because it has performance issues still doesn't mak=
-e
-> sense to me. Even synthetic benchmarks aren't enough to find the best
-> fit for real-world scenarios, so you could always find a very
-> restrictive situation where any filesystem, RAID implementation, volume=
+When I run 'btrfs check' on the filesystem when it refuses to mount, I=20
+get a number of lines like the following:
+bad metadata [<bytenr>, <bytenr>) crossing stripe boundary
 
-> manager could look bad even the most robust ones.
->
-> Of course if BTRFS RAID1 was always slower than md RAID1 the logic migh=
-t
-> make more sense. But clearly there were design decisions and performanc=
-e
-> tuning in BTRFS that led to better or similar performance in several
-> scenarios, if the remaining scenarios don't get attention it may be
-> because they represent a niche (at least from the point of view of the
-> developers) not a lack of polishing.
-Like I said above, a large part of this is probably because BTRFS raid=20
-was designed for COW workloads, and mdraid wasn't.
+followed eventually by:
+Errors found in extent allocation tree or chunk allocation
+
+As is typical of a failed mount, dmesg shows a 'failed to read the=20
+system array on <device>' 'open_ctree failed'.
+
+I doubt that this is a hardware issue because:
+1. Memory is brand new, and I ran a 48 hour burn-in test that showed no=20
+errors.
+2. A failing storage controller, PSU, or CPU would be manifesting with=20
+many more issues than just this.
+3. A disk failure would mean that two different disks, from different=20
+manufacturing lots, are encountering errors on exactly the same LBA's at =
+
+exactly the same time, which while possible is astronomically unlikely=20
+for disks bigger than a few hundred gigabytes (the disks in question are =
+
+1TB each).
 
 
-
---------------ms090105080006010400080302
+--------------ms030206000005070308080905
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -149,9 +119,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA1MTE1NDI0WjBPBgkq
-hkiG9w0BCQQxQgRA8+i5Q8lsd794W6tyK2modsN6aKoma8bN2uLBm3REXlpdZhNtjns2ArfI
-FrDEoNEOOBQ4HbtQl/37ra7DfzaxNjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA1MTIzMDE3WjBPBgkq
+hkiG9w0BCQQxQgRA/fdh9Jq/2g/y9W6inMlu6MpPgIHq6OnpDXWeuwsMP+ioPslbd3bgMmR+
+lNC/NRx4PvFlrGvd0DiUxpHgpiTKVjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -159,14 +129,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgA/xv6qAFWegQOj5D4REQ3CYe9crcsaUlMMSM0h3hW1ftAGXDru
-xXlxTxHXBQRR1Mbx9Dfw6LwZpFhZiIGm+E39jAXynsUmLJ8gTdBRpLhD4qJllksopuaFOai5
-p2zzDIPTHNnil9oSEfBTTMO9E6O22RX1Tdevv+NYSCce9W9rktM/GZTok6J4JQ5i+9+SBbh3
-LM6Q0P9ZDHpJTLGA9giFzhD5ZXaCT5fgMxk/is79a0dfejv9IC1N+DeYQtc+wI8SDYZH8ynC
-UxOvMG3rMZ7uYnd5n5Z/wveda3tA+q3NVqkMHYfxBOtoJ5DmmM+PRXEYNSfGICd/ngsoR/X2
-P85OHw9v5Pn4/+QdhH7Pn5fwsSJ0Xk71r3BoglwqYGbwS5VsoE6Ufx1/lT6VIB6U3Igftrvr
-wAl95nt1UQDUy4Z7OTnsEzcpCdTRF+t6cF4KdvQF1X7zc7vUqjb6/THzkC+6bf1lpCnnOoYl
-Xym4vH/h05YkLiCC7LgNgYigSYXHs/X3FAMgoRChpT8SriwkH57PJItwge1Erq/oPMPqa04K
-RBqThORUh2IJw8uroUulCoqyxEwRpOQnrTy1X9S0nTVJG0hbUKoGrwXkewgDb4h1X4tu67X3
-QeVDg91EIuhVkz7DxiKccWsao/rXCmhUGcKo9Gp+cj8Y394ikQVXCIUXJAAAAAAAAA==
---------------ms090105080006010400080302--
+BgkqhkiG9w0BAQEFAASCAgBRhQvZ5xTrFvI+xttFepMjT35jv6JkWbaoTmFW+2WhNxiIfyz5
+9vcXbzyU2F+89oGoQvXM37chmAvmGm3wedWp0nmLk6HGJdxvB3Q72z3xnbZ1jd44F0EVc8Eh
+M+Pe5xkZY+g0T6hbmb0d/x5yp+dRttCMQ06IkfrlbBRZ8ivxc9e/i262DOn6mNR2c8he0vIu
+6v6vhfWArJ2ZBzhwWfqQ2fyXetF01yDvt+3LNhyL1TMHdAuvqRxP0833/N4OSYJH7FJJcLXQ
+5LxwqgZgZH+Ytd3qpAhYd9o1r6Qa0hPA6/uPNyfJIFSWdV3TrnTiXSCzQLj5ZGD/4AfMwZ1O
+QQBZ5uzRRrE7VYv4xqprg+0HlsDB5nM7gotvR6SQs9XZgmED1jVllk08iRbH5ULgKXdC+u/t
+hbw4AkKKRaGnsnPku4S4ZzrWxXd2f5Avb9KMhv7mfDuZRwj14jw7PU4gj/YuwaRXE0jr8Frb
+vz3Dq0KIoC/xWQ5ZkVHKpo4+Yg9nJD5dxFEiFNbM+7AItZyL4V8B8hyWeAjGL+jfzsFAABzZ
+mIOeChEuFkyEPTSVYo2f/8yJRosCygTPeuTCwfQX+Vapa+h4lAKHexNr2CwrZDdLdNoi19Sy
+uhgUoXVOHfJew65pUPc1fcyKKFj5uyLv0VhBwQQI/YBHXQEU/SRwAnugeAAAAAAAAA==
+--------------ms030206000005070308080905--

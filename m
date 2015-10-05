@@ -1,109 +1,202 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp08.au.ibm.com ([202.81.31.141]:51754 "EHLO
-	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932812AbbJNRlo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 13:41:44 -0400
+Received: from e28smtp08.in.ibm.com ([122.248.162.8]:57242 "EHLO
+	e28smtp08.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752388AbbJEQol (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 5 Oct 2015 12:44:41 -0400
 Received: from /spool/local
-	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp08.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Thu, 15 Oct 2015 03:41:42 +1000
-Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
-	by d23dlp03.au.ibm.com (Postfix) with ESMTP id D74373578052
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2015 04:41:40 +1100 (EST)
-Received: from d23av02.au.ibm.com (d23av02.au.ibm.com [9.190.235.138])
-	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t9EHfR4W21102706
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2015 04:41:36 +1100
-Received: from d23av02.au.ibm.com (localhost [127.0.0.1])
-	by d23av02.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t9EHf7AF031720
-	for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2015 04:41:08 +1100
+	Mon, 5 Oct 2015 22:14:39 +0530
+Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 0C3D83940060
+	for <linux-btrfs@vger.kernel.org>; Mon,  5 Oct 2015 22:14:37 +0530 (IST)
+Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
+	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t95GiYA35767544
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Oct 2015 22:14:34 +0530
+Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
+	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t95GiX3l011236
+	for <linux-btrfs@vger.kernel.org>; Mon, 5 Oct 2015 22:14:33 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.com,
-        chandan@mykolab.com
-Subject: [PATCH] Btrfs-progs: Prevent creation of filesystem with 'mixed bgs' and having differing sectorsize and nodesize.
-Date: Wed, 14 Oct 2015 23:10:38 +0530
-Message-Id: <1444844438-20001-1-git-send-email-chandan@linux.vnet.ibm.com>
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, dsterba@suse.cz,
+        fdmanana@gmail.com, chandan@mykolab.com
+Subject: [PATCH] Btrfs: Intialize btrfs_root->highest_objectid when loading tree root and subvolume roots
+Date: Mon,  5 Oct 2015 22:14:24 +0530
+Message-Id: <1444063465-5641-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-mkfs.btrfs allows creation of Btrfs filesystem instances with mixed block
-group feature enabled and having a sectorsize different from nodesize.
-For e.g:
+The following call trace is seen when btrfs/031 test is executed in a loop,
 
-[root@localhost btrfs-progs]# mkfs.btrfs -f -M -s 4096 -n 16384  /dev/loop0
-Forcing mixed metadata/data groups
-btrfs-progs v3.19-rc2-404-gbbbd18e-dirty
-See http://btrfs.wiki.kernel.org for more information.
+[  120.577208] WARNING: CPU: 3 PID: 6202 at /home/chandan/repos/linux/fs/btrfs/ioctl.c:558 create_subvol+0x3e6/0x729()
+[  120.581521] BTRFS: Transaction aborted (error -2)
+[  120.585410] Modules linked in:
+[  120.587460] CPU: 3 PID: 6202 Comm: btrfs Not tainted 4.2.0-rc5+ #27
+[  120.591232] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+[  120.596134]  ffffffff81c009d0 ffff880c846ff918 ffffffff81988f34 0000000000000001
+[  120.600754]  ffff880c846ff968 ffff880c846ff958 ffffffff81050315 ffff880c846ff938
+[  120.605166]  ffff880c85ae6000 ffff8809b944e000 ffff880a96c5a448 0000000000000000
+[  120.609589] Call Trace:
+[  120.610936]  [<ffffffff81988f34>] dump_stack+0x45/0x57
+[  120.613868]  [<ffffffff81050315>] warn_slowpath_common+0x85/0xc0
+[  120.616812]  [<ffffffff81050391>] warn_slowpath_fmt+0x41/0x50
+[  120.619681]  [<ffffffff81985a84>] create_subvol+0x3e6/0x729
+[  120.622390]  [<ffffffff8112d977>] ? zone_statistics+0x77/0x90
+[  120.625111]  [<ffffffff8136577e>] btrfs_mksubvol.isra.30+0x37e/0x530
+[  120.628091]  [<ffffffff8111a248>] ? __alloc_pages_nodemask+0x1b8/0x950
+[  120.631091]  [<ffffffff81180f6a>] ? __mnt_want_write_file+0x1a/0x30
+[  120.635156]  [<ffffffff81365a31>] btrfs_ioctl_snap_create_transid+0x101/0x180
+[  120.639936]  [<ffffffff81365b02>] btrfs_ioctl_snap_create+0x52/0x70
+[  120.643942]  [<ffffffff813684ae>] btrfs_ioctl+0x46e/0x2450
+[  120.647204]  [<ffffffff8111f926>] ? lru_cache_add_active_or_unevictable+0x26/0x80
+[  120.651647]  [<ffffffff81174dd1>] do_vfs_ioctl+0x2c1/0x4a0
+[  120.655111]  [<ffffffff813be198>] ? selinux_file_ioctl+0x48/0xd0
+[  120.658500]  [<ffffffff813b875e>] ? security_file_ioctl+0x3e/0x60
+[  120.661680]  [<ffffffff81175024>] SyS_ioctl+0x74/0x80
+[  120.664464]  [<ffffffff819932d7>] entry_SYSCALL_64_fastpath+0x12/0x6a
+[  120.667824] ---[ end trace 13f2ab1e5917a256 ]---
+[  120.670159] BTRFS: error (device loop0) in create_subvol:558: errno=-2 No such entry
+[  120.673872] BTRFS info (device loop0): forced readonly
+[  120.701265] BTRFS info (device loop0): disk space caching is enabled
+[  120.704934] BTRFS error (device loop0): Remounting read-write after error is not allowed
+[  120.904385] BTRFS error (device loop0): cleaner transaction attach returned -30
 
-Performing full device TRIM (4.00GiB) ...
-Label:              (null)
-UUID:               c82b5720-6d88-4fa1-ac05-d0d4cb797fd5
-Node size:          16384
-Sector size:        4096
-Filesystem size:    4.00GiB
-Block group profiles:
-  Data+Metadata:    single            8.00MiB
-  System:           single            4.00MiB
-SSD detected:       no
-Incompat features:  mixed-bg, extref, skinny-metadata
-Number of devices:  1
-Devices:
-  ID        SIZE  PATH
-   1     4.00GiB  /dev/loop6
+This occurs because,
 
-This commit fixes the issue by setting BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS
-feature bit before checking the validity of nodesize that was specified on the
-command line.
+Mount filesystem
+Create subvol with ID 257
+Unmount filesystem
+Mount filesystem
+Delete subvol with ID 257
+  btrfs_drop_snapshot()
+    Add root corresponding to subvol 257 into
+    btrfs_transaction->dropped_roots list
+Create new subvol (i.e. create_subvol())
+  257 is returned as the next free objectid
+  btrfs_read_fs_root_no_name()
+    Finds the btrfs_root instance corresponding to the old subvol with ID 257
+    in btrfs_fs_info->fs_roots_radix.
+    Returns error since btrfs_root_item->refs has the value of 0.
+
+To fix the issue the commit initializes tree root's and subvolume root's
+highest_objectid when loading the roots from disk.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- mkfs.c | 25 +++++++++++++------------
- 1 file changed, 13 insertions(+), 12 deletions(-)
+ fs/btrfs/disk-io.c   | 35 +++++++++++++++++++++++++++++++++++
+ fs/btrfs/inode-map.c |  9 +--------
+ fs/btrfs/inode-map.h |  1 +
+ fs/btrfs/ioctl.c     |  4 ++++
+ 4 files changed, 41 insertions(+), 8 deletions(-)
 
-diff --git a/mkfs.c b/mkfs.c
-index dc70a9a..10016b2 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1541,6 +1541,19 @@ int main(int ac, char **av)
- 		if (!nodesize_forced)
- 			nodesize = best_nodesize;
- 	}
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 807f685..3b1abe7 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1573,8 +1573,27 @@ int btrfs_init_fs_root(struct btrfs_root *root)
+ 	ret = get_anon_bdev(&root->anon_dev);
+ 	if (ret)
+ 		goto free_writers;
 +
-+	/*
-+	 * FS features that can be set by other means than -O
-+	 * just set the bit here
-+	 */
-+	if (mixed)
-+		features |= BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
-+
-+	if ((data_profile | metadata_profile) &
-+	    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
-+		features |= BTRFS_FEATURE_INCOMPAT_RAID56;
++	mutex_lock(&root->objectid_mutex);
++	ret = btrfs_find_highest_objectid(root,
++					&root->highest_objectid);
++	if (ret) {
++		mutex_unlock(&root->objectid_mutex);
++		goto free_root_dev;
 +	}
 +
- 	if (btrfs_check_nodesize(nodesize, sectorsize,
- 				 features))
- 		exit(1);
-@@ -1648,18 +1661,6 @@ int main(int ac, char **av)
- 			"WARNING: metatdata has lower redundancy than data!\n\n");
- 	}
++	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
++		mutex_unlock(&root->objectid_mutex);
++		ret = -ENOSPC;
++		goto free_root_dev;
++	}
++
++	mutex_unlock(&root->objectid_mutex);
++
+ 	return 0;
  
--	/*
--	 * FS features that can be set by other means than -O
--	 * just set the bit here
--	 */
--	if (mixed)
--		features |= BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS;
--
--	if ((data_profile | metadata_profile) &
--	    (BTRFS_BLOCK_GROUP_RAID5 | BTRFS_BLOCK_GROUP_RAID6)) {
--		features |= BTRFS_FEATURE_INCOMPAT_RAID56;
++free_root_dev:
++	free_anon_bdev(root->anon_dev);
+ free_writers:
+ 	btrfs_free_subvolume_writers(root->subv_writers);
+ fail:
+@@ -2892,6 +2911,22 @@ retry_root_backup:
+ 	tree_root->commit_root = btrfs_root_node(tree_root);
+ 	btrfs_set_root_refs(&tree_root->root_item, 1);
+ 
++	mutex_lock(&tree_root->objectid_mutex);
++	ret = btrfs_find_highest_objectid(tree_root,
++					&tree_root->highest_objectid);
++	if (ret) {
++		mutex_unlock(&tree_root->objectid_mutex);
++		goto recovery_tree_root;
++	}
++
++	if (unlikely(tree_root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
++		mutex_unlock(&tree_root->objectid_mutex);
++		ret = -ENOSPC;
++		goto recovery_tree_root;
++	}
++
++	mutex_unlock(&tree_root->objectid_mutex);
++
+ 	ret = btrfs_read_roots(fs_info, tree_root);
+ 	if (ret)
+ 		goto recovery_tree_root;
+diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
+index d4a582a..9f06e8b 100644
+--- a/fs/btrfs/inode-map.c
++++ b/fs/btrfs/inode-map.c
+@@ -515,7 +515,7 @@ out:
+ 	return ret;
+ }
+ 
+-static int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid)
++int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid)
+ {
+ 	struct btrfs_path *path;
+ 	int ret;
+@@ -555,13 +555,6 @@ int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid)
+ 	int ret;
+ 	mutex_lock(&root->objectid_mutex);
+ 
+-	if (unlikely(root->highest_objectid < BTRFS_FIRST_FREE_OBJECTID)) {
+-		ret = btrfs_find_highest_objectid(root,
+-						  &root->highest_objectid);
+-		if (ret)
+-			goto out;
 -	}
 -
- 	mkfs_cfg.label = label;
- 	mkfs_cfg.fs_uuid = fs_uuid;
- 	memcpy(mkfs_cfg.blocks, blocks, sizeof(blocks));
+ 	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
+ 		ret = -ENOSPC;
+ 		goto out;
+diff --git a/fs/btrfs/inode-map.h b/fs/btrfs/inode-map.h
+index ddb347b..c8e864b 100644
+--- a/fs/btrfs/inode-map.h
++++ b/fs/btrfs/inode-map.h
+@@ -9,5 +9,6 @@ int btrfs_save_ino_cache(struct btrfs_root *root,
+ 			 struct btrfs_trans_handle *trans);
+ 
+ int btrfs_find_free_objectid(struct btrfs_root *root, u64 *objectid);
++int btrfs_find_highest_objectid(struct btrfs_root *root, u64 *objectid);
+ 
+ #endif
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 0adf542..ad7422b 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -568,6 +568,10 @@ static noinline int create_subvol(struct inode *dir,
+ 		goto fail;
+ 	}
+ 
++	mutex_lock(&new_root->objectid_mutex);
++	new_root->highest_objectid = new_dirid;
++	mutex_unlock(&new_root->objectid_mutex);
++
+ 	/*
+ 	 * insert the directory item
+ 	 */
 -- 
 2.1.0
 

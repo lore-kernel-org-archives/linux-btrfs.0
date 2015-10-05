@@ -1,57 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:22307 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750962AbbJFJqL (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Oct 2015 05:46:11 -0400
-Message-ID: <5613981E.7090404@oracle.com>
-Date: Tue, 06 Oct 2015 17:45:02 +0800
-From: Anand Jain <anand.jain@oracle.com>
+Received: from mx2.suse.de ([195.135.220.15]:50465 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750768AbbJELIs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 5 Oct 2015 07:08:48 -0400
+Date: Mon, 5 Oct 2015 13:07:44 +0200
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.2.2
+Message-ID: <20151005110744.GC14363@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 2/2] btrfs-progs: device delete to accept devid
-In-Reply-To: <20150930151411.GI11442@suse.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
-References: <1443564222-1641-1-git-send-email-anand.jain@oracle.com>
- <20150930151411.GI11442@suse.cz>
+
+Hi,
+
+here's a bugfix release of btrfs-progs, fixes picked from current devel
+branch.
+
+* fi label: use fallback if the label ioctl is not available
+* convert: check nodesize constraints against commandline features (-O)
+* scrub: report status 'running' until all devices are finished
+* device scanning might crash in some scenarios
+* fi usage: print summary for non-root users
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
 
-Thanks for the review..
+Shortlog:
 
-On 09/30/2015 11:14 PM, David Sterba wrote:
-> On Wed, Sep 30, 2015 at 06:03:42AM +0800, Anand Jain wrote:
->> +struct btrfs_ioctl_vol_args_v3 {
->
-> Can we use struct btrfs_ioctl_vol_args_v2 for that purpose? It contains
-> the 'flags' so we can abuse the name field to store the device id and
-> set the flags accordingly.
->
->> +	__s64 fd;
->> +	char name[BTRFS_PATH_NAME_MAX + 1];
->> +	__u64 devid;
->> +};
->> +
->>   #define BTRFS_DEVICE_PATH_NAME_MAX 1024
->>
->>   #define BTRFS_SUBVOL_CREATE_ASYNC	(1ULL << 0)
->> @@ -683,6 +689,8 @@ static inline char *btrfs_err_str(enum btrfs_err_code err_code)
->>                                     struct btrfs_ioctl_feature_flags[2])
->>   #define BTRFS_IOC_GET_SUPPORTED_FEATURES _IOR(BTRFS_IOCTL_MAGIC, 57, \
->>                                     struct btrfs_ioctl_feature_flags[3])
->> +#define BTRFS_IOC_RM_DEV_V2	_IOW(BTRFS_IOCTL_MAGIC, 58, \
->> +				   struct btrfs_ioctl_vol_args_v3)
->
-> And we can reuse the ioctl nmuber 11
->
-> #define BTRFS_IOC_RM_DEV_V2	_IOW(BTRFS_IOCTL_MAGIC, 11, \
-> 				   struct btrfs_ioctl_vol_args_v2)
->
-> The vol_v2 structure is extensible so we can add more functionality
-> there and then I think it justifies the V2 interface bump.
+Anand Jain (2):
+      btrfs-progs: provide fail safe for BTRFS_IOC_GET_FSLABEL ioctl
+      btrfs-progs: fix is_block_device() return checks
 
-    I have implemented it in V3 and sent out.
+David Sterba (3):
+      btrfs-progs: make sure that is_block_device will return only 0/1
+      btrfs-progs: fix double free during scanning
+      btrfs-progs: fix error checking in load_device_info
 
-Thanks, Anand
+Qu Wenruo (1):
+      btrfs-progs: utils: Check nodesize against features
 
+Silvio Fricke (2):
+      btrfs-progs: tasks info->id is a pthread_t and should not set to -1
+      btrfs-progs: check: fix memset range
 
+Zhao Lei (2):
+      btrfs-progs: Increase running state's priority in stat output
+      btrfs-progs: Show detail error message when write sb failed in write_dev_supers()

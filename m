@@ -1,138 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:55271 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751453AbbJDOZ1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 4 Oct 2015 10:25:27 -0400
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 018B4207B4
-	for <linux-btrfs@vger.kernel.org>; Sun,  4 Oct 2015 14:25:26 +0000 (UTC)
-Received: from mail-io0-f175.google.com (mail-io0-f175.google.com [209.85.223.175])
-	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 1652E20722
-	for <linux-btrfs@vger.kernel.org>; Sun,  4 Oct 2015 14:25:25 +0000 (UTC)
-Received: by iow1 with SMTP id 1so125461414iow.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 04 Oct 2015 07:25:24 -0700 (PDT)
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53466 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751709AbbJFNyP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Oct 2015 09:54:15 -0400
+Date: Tue, 6 Oct 2015 09:54:03 -0400
+From: Chris Mason <clm@fb.com>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH v3 1/2] btrfs: Fix lost-data-profile caused by auto
+ removing bg
+Message-ID: <20151006135403.GY25218@ret.masoncoding.com>
+References: <cover.1443889301.git.zhaolei@cn.fujitsu.com>
+ <a2ff95d73e0ccec4703c1f4d0b9af4c1a19fe4e2.1443889301.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <560ED538.5040902@fb.com>
-References: <1443807808-26424-1-git-send-email-fdmanana@kernel.org>
-	<560ED538.5040902@fb.com>
-Date: Sun, 4 Oct 2015 15:25:24 +0100
-Message-ID: <CAL3q7H7RnX8bn5A6=8+XCHxorqKUozQ6gGsCBwwmZU6W33NBOg@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix deadlock when finalizing block group creation
-From: Filipe Manana <fdmanana@kernel.org>
-To: Josef Bacik <jbacik@fb.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>, jbacik@db.com,
-        Filipe Manana <fdmanana@suse.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <a2ff95d73e0ccec4703c1f4d0b9af4c1a19fe4e2.1443889301.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Oct 2, 2015 at 8:04 PM, Josef Bacik <jbacik@fb.com> wrote:
-> On 10/02/2015 01:43 PM, fdmanana@kernel.org wrote:
->>
->> From: Filipe Manana <fdmanana@suse.com>
->>
->> Josef ran into a deadlock while a transaction handle was finalizing the
->> creation of its block groups, which produced the following trace:
->>
->>    [260445.593112] fio             D ffff88022a9df468     0  8924   4518
->> 0x00000084
->>    [260445.593119]  ffff88022a9df468 ffffffff81c134c0 ffff880429693c00
->> ffff88022a9df488
->>    [260445.593126]  ffff88022a9e0000 ffff8803490d7b00 ffff8803490d7b18
->> ffff88022a9df4b0
->>    [260445.593132]  ffff8803490d7af8 ffff88022a9df488 ffffffff8175a437
->> ffff8803490d7b00
->>    [260445.593137] Call Trace:
->>    [260445.593145]  [<ffffffff8175a437>] schedule+0x37/0x80
->>    [260445.593189]  [<ffffffffa0850f37>] btrfs_tree_lock+0xa7/0x1f0
->> [btrfs]
->>    [260445.593197]  [<ffffffff810db7c0>] ? prepare_to_wait_event+0xf0/0xf0
->>    [260445.593225]  [<ffffffffa07eac44>] btrfs_lock_root_node+0x34/0x50
->> [btrfs]
->>    [260445.593253]  [<ffffffffa07eff6b>] btrfs_search_slot+0x88b/0xa00
->> [btrfs]
->>    [260445.593295]  [<ffffffffa08389df>] ? free_extent_buffer+0x4f/0x90
->> [btrfs]
->>    [260445.593324]  [<ffffffffa07f1a06>]
->> btrfs_insert_empty_items+0x66/0xc0 [btrfs]
->>    [260445.593351]  [<ffffffffa07ea94a>] ? btrfs_alloc_path+0x1a/0x20
->> [btrfs]
->>    [260445.593394]  [<ffffffffa08403b9>]
->> btrfs_finish_chunk_alloc+0x1c9/0x570 [btrfs]
->>    [260445.593427]  [<ffffffffa08002ab>]
->> btrfs_create_pending_block_groups+0x11b/0x200 [btrfs]
->>    [260445.593459]  [<ffffffffa0800964>] do_chunk_alloc+0x2a4/0x2e0
->> [btrfs]
->>    [260445.593491]  [<ffffffffa0803815>] find_free_extent+0xa55/0xd90
->> [btrfs]
->>    [260445.593524]  [<ffffffffa0803c22>] btrfs_reserve_extent+0xd2/0x220
->> [btrfs]
->>    [260445.593532]  [<ffffffff8119fe5d>] ? account_page_dirtied+0xdd/0x170
->>    [260445.593564]  [<ffffffffa0803e78>]
->> btrfs_alloc_tree_block+0x108/0x4a0 [btrfs]
->>    [260445.593597]  [<ffffffffa080c9de>] ? btree_set_page_dirty+0xe/0x10
->> [btrfs]
->>    [260445.593626]  [<ffffffffa07eb5cd>] __btrfs_cow_block+0x12d/0x5b0
->> [btrfs]
->>    [260445.593654]  [<ffffffffa07ebbff>] btrfs_cow_block+0x11f/0x1c0
->> [btrfs]
->>    [260445.593682]  [<ffffffffa07ef8c7>] btrfs_search_slot+0x1e7/0xa00
->> [btrfs]
->>    [260445.593724]  [<ffffffffa08389df>] ? free_extent_buffer+0x4f/0x90
->> [btrfs]
->>    [260445.593752]  [<ffffffffa07f1a06>]
->> btrfs_insert_empty_items+0x66/0xc0 [btrfs]
->>    [260445.593830]  [<ffffffffa07ea94a>] ? btrfs_alloc_path+0x1a/0x20
->> [btrfs]
->>    [260445.593905]  [<ffffffffa08403b9>]
->> btrfs_finish_chunk_alloc+0x1c9/0x570 [btrfs]
->>    [260445.593946]  [<ffffffffa08002ab>]
->> btrfs_create_pending_block_groups+0x11b/0x200 [btrfs]
->>    [260445.593990]  [<ffffffffa0815798>]
->> btrfs_commit_transaction+0xa8/0xb40 [btrfs]
->>    [260445.594042]  [<ffffffffa085abcd>] ? btrfs_log_dentry_safe+0x6d/0x80
->> [btrfs]
->>    [260445.594089]  [<ffffffffa082bc84>] btrfs_sync_file+0x294/0x350
->> [btrfs]
->>    [260445.594115]  [<ffffffff8123e29b>] vfs_fsync_range+0x3b/0xa0
->>    [260445.594133]  [<ffffffff81023891>] ?
->> syscall_trace_enter_phase1+0x131/0x180
->>    [260445.594149]  [<ffffffff8123e35d>] do_fsync+0x3d/0x70
->>    [260445.594169]  [<ffffffff81023bb8>] ? syscall_trace_leave+0xb8/0x110
->>    [260445.594187]  [<ffffffff8123e600>] SyS_fsync+0x10/0x20
->>    [260445.594204]  [<ffffffff8175de6e>]
->> entry_SYSCALL_64_fastpath+0x12/0x71
->>
->> This happened because the same transaction handle created a large number
->> of block groups and while finalizing their creation (inserting new items
->> and updating existing items in the chunk and device trees) a new metadata
->> extent had to be allocated and no free space was found in the current
->> metadata block groups, which made find_free_extent() attempt to allocate
->> a new block group via do_chunk_alloc(). However at do_chunk_alloc() we
->> ended up allocating a new system chunk too and exceeded the threshold
->> of 2Mb of reserved chunk bytes, which makes do_chunk_alloc() enter the
->> final part of block group creation again (at
->> btrfs_create_pending_block_groups()) and attempt to lock again the root
->> of the chunk tree when it's already write locked by the same task.
->>
->> Fix this by never recursing into the finalization phase of block group
->> creation.
->>
->> Reported-by: Josef Bacik <jbacik@fb.com>
->> Fixes: 00d80e342c0f ("Btrfs: fix quick exhaustion of the system array in
->> the superblock")
->> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->
->
-> Still happens, just in a different way, we need to move this check higher up
-> to avoid these kind of deadlocks.  Thanks,
 
-Yeah, I ended up reproducing with a long duration fsstress a deadlock
-on the extent tree for similar reasons.
-V2 comming, thanks.
+Hi,
 
->
-> Josef
->
+On Sun, Oct 04, 2015 at 12:28:39AM +0800, Zhao Lei wrote:
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 79a5bd9..c05b975 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -10010,8 +10010,18 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+>  		block_group = list_first_entry(&fs_info->unused_bgs,
+>  					       struct btrfs_block_group_cache,
+>  					       bg_list);
+> -		space_info = block_group->space_info;
+>  		list_del_init(&block_group->bg_list);
+> +
+> +		space_info = block_group->space_info;
+> +
+> +		down_read(&space_info->groups_sem);
+
+Thanks for reworking this, are there other patches that I'm missing that
+are meant to go in before this one?
+
+The down_read() this patch adds is inside a spinlock().
+
+-chris
+

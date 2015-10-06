@@ -1,61 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52593 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:36808 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753015AbbJBPuL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 2 Oct 2015 11:50:11 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 974C1ACB8
-	for <linux-btrfs@vger.kernel.org>; Fri,  2 Oct 2015 15:50:09 +0000 (UTC)
+	id S1752166AbbJFJjr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 6 Oct 2015 05:39:47 -0400
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs-progs: fix error checking in load_device_info
-Date: Fri,  2 Oct 2015 17:49:08 +0200
-Message-Id: <1443800948-27933-1-git-send-email-dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>, Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: subvol sync: fix reversed condition
+Date: Tue,  6 Oct 2015 11:38:40 +0200
+Message-Id: <1444124320-6132-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-load_device_info queries the FS_INFO ioctl and this may fail with EPERM
-on older kernels. The check did not verify the ioctl return value and
-incorrectly returned EPERM if it was previously stored in errno.
+In my local change to 07cc891d1d9819d5cf0628af555e7727d289cf7b
+("btrfs-progs: Simplify all-subvolumn-clean condition for
+wait_for_subvolume_cleaning") that reversed the meaning of the variable
+dirty -> clean, I made a mistake and broke 'subvol sync' that will not
+wait as expected and ends prematurely. Zhao Lei's original patch worked.
 
-This fixes 'btrfs fi usage' that will print the overall summary for all
-users (provided that the FS_INFO ioctl is already unprivileged).
-
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- cmds-fi-usage.c | 9 ++++-----
- 1 file changed, 4 insertions(+), 5 deletions(-)
+ cmds-subvolume.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-index 54b8b1c1d996..50d633372023 100644
---- a/cmds-fi-usage.c
-+++ b/cmds-fi-usage.c
-@@ -504,7 +504,7 @@ static int cmp_device_info(const void *a, const void *b)
- static int load_device_info(int fd, struct device_info **device_info_ptr,
- 			   int *device_info_count)
- {
--	int ret, i, ndevs, e;
-+	int ret, i, ndevs;
- 	struct btrfs_ioctl_fs_info_args fi_args;
- 	struct btrfs_ioctl_dev_info_args dev_info;
- 	struct device_info *info;
-@@ -513,12 +513,11 @@ static int load_device_info(int fd, struct device_info **device_info_ptr,
- 	*device_info_ptr = 0;
- 
- 	ret = ioctl(fd, BTRFS_IOC_FS_INFO, &fi_args);
--	e = errno;
--	if (e == EPERM)
--		return -e;
- 	if (ret < 0) {
-+		if (errno == EPERM)
-+			return -errno;
- 		fprintf(stderr, "ERROR: cannot get filesystem info - %s\n",
--				strerror(e));
-+				strerror(errno));
- 		return 1;
+diff --git a/cmds-subvolume.c b/cmds-subvolume.c
+index 82173c0489a9..6f8675657417 100644
+--- a/cmds-subvolume.c
++++ b/cmds-subvolume.c
+@@ -89,7 +89,7 @@ static int wait_for_subvolume_cleaning(int fd, int count, u64 *ids,
+ 				clean = 0;
+ 			}
+ 		}
+-		if (clean == 0)
++		if (clean == 1)
+ 			break;
+ 		sleep(sleep_interval);
  	}
- 
 -- 
 2.1.3
 

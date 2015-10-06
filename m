@@ -1,101 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.digint.ch ([92.42.190.51]:50792 "EHLO mail.digint.ch"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751807AbbJCM3C (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 3 Oct 2015 08:29:02 -0400
-Received: from [10.0.1.10] (77-59-134-149.dclient.hispeed.ch [77.59.134.149])
-	by mail.digint.ch (Postfix) with ESMTPSA id A2F752F70056
-	for <linux-btrfs@vger.kernel.org>; Sat,  3 Oct 2015 14:28:59 +0200 (CEST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Axel Burri <axel@tty0.ch>
-Subject: btrfs-progs: bugs in "subvolume list" command
-Message-ID: <560FCA35.7010100@tty0.ch>
-Date: Sat, 3 Oct 2015 14:29:41 +0200
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from aserp1040.oracle.com ([141.146.126.69]:18981 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752443AbbJFPFs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Oct 2015 11:05:48 -0400
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, Anand Jain <Anand.Jain@oracle.com>
+Subject: [PATCH V3 2/2] Btrfs: create a framework to create pool attributes
+Date: Tue,  6 Oct 2015 23:05:32 +0800
+Message-Id: <1444143932-2139-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1444143932-2139-1-git-send-email-anand.jain@oracle.com>
+References: <1444143932-2139-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-While digging deeper into the "subvolume list" command, I found
-some flaws which I'm addressing here:
+From: Anand Jain <Anand.Jain@oracle.com>
 
+We need fsid kobject to hold pool attributes however
+its created only when fs is mounted. So, this patch
+changes the life cycle of the fsid and devices kobjects
+/sys/fs/btrfs/<fsid> and /sys/fs/btrfs/<fsid>/devices,
+from created and destroyed by mount and unmount event
+to created and destroyed by scanned and module-unload
+events respectively.
 
-1. The "parent id" seems to be a relict of old days.
-btrfs-subvolume(8) states:
+However this does not alter life cycle of fs attributes as such.
 
-  "If -p is given, then parent <ID> is added to the output between
-  ID and top level. The parent's ID may be used at mount time via
-  the subvolrootid= option."
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v3: changelog update. reworded subject from
+      Btrfs: create sys/fs/btrfs/fsid when scanned instead of when mounted
 
-The "Mount Options" site [1] tells me that the "subvolrootid="
-mount option is deprecated since kernel 3.2. A quick check on my
-system (kernel 4.2.2) shows that "parent" is equal to "top level"
-for all subvolumes. Is this always true for kernels >3.2 ?
+v2: when the open_tree fails the sysfs should clean up for seed devices
 
-Furthermore, the output is confusing, as "parent" is not related
-at all to "parent_uuid".
+ fs/btrfs/disk-io.c | 10 +++++-----
+ fs/btrfs/sysfs.c   |  7 ++++++-
+ fs/btrfs/sysfs.h   |  3 ++-
+ fs/btrfs/volumes.c |  7 ++++++-
+ 4 files changed, 19 insertions(+), 8 deletions(-)
 
-Note that this is also true for "subvolume show", which
-prints "parent" as "Parent ID".
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index ac1e168..ebeea0f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2937,7 +2937,7 @@ retry_root_backup:
+ 	ret = btrfs_sysfs_add_mounted(fs_info);
+ 	if (ret) {
+ 		pr_err("BTRFS: failed to init sysfs interface: %d\n", ret);
+-		goto fail_fsdev_sysfs;
++		goto fail_block_groups;
+ 	}
+ 
+ 	ret = btrfs_init_space_info(fs_info);
+@@ -3116,9 +3116,6 @@ fail_cleaner:
+ fail_sysfs:
+ 	btrfs_sysfs_remove_mounted(fs_info);
+ 
+-fail_fsdev_sysfs:
+-	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
+-
+ fail_block_groups:
+ 	btrfs_put_block_group_cache(fs_info);
+ 	btrfs_free_block_groups(fs_info);
+@@ -3815,7 +3812,10 @@ void close_ctree(struct btrfs_root *root)
+ 	}
+ 
+ 	btrfs_sysfs_remove_mounted(fs_info);
+-	btrfs_sysfs_remove_fsid(fs_info->fs_devices);
++	if (fs_info->fs_devices->seed) {
++		btrfs_sysfs_remove_fsid(fs_info->fs_devices->seed);
++		btrfs_sysfs_rm_seed_dir(fs_info->fs_devices);
++	}
+ 
+ 	btrfs_free_fs_roots(fs_info);
+ 
+diff --git a/fs/btrfs/sysfs.c b/fs/btrfs/sysfs.c
+index 3a45462..c155d34 100644
+--- a/fs/btrfs/sysfs.c
++++ b/fs/btrfs/sysfs.c
+@@ -880,6 +880,7 @@ out1:
+ void btrfs_exit_sysfs(void)
+ {
+ 	sysfs_remove_group(&btrfs_kset->kobj, &btrfs_feature_attr_group);
++	btrfs_sysfs_remove_fsid(NULL);
+ 	kset_unregister(btrfs_kset);
+ 	debugfs_remove_recursive(btrfs_debugfs_root_dentry);
+ }
+@@ -890,7 +891,8 @@ void btrfs_sysfs_prepare_sprout_reset(void)
+ }
+ 
+ void btrfs_sysfs_prepare_sprout(struct btrfs_fs_devices *fs_devices,
+-				struct btrfs_fs_devices *seed_devices)
++				struct btrfs_fs_devices *seed_devices,
++				struct btrfs_fs_devices *old_devices)
+ {
+ 	char fsid_buf[BTRFS_UUID_UNPARSED_SIZE];
+ 
+@@ -939,4 +941,7 @@ void btrfs_sysfs_prepare_sprout(struct btrfs_fs_devices *fs_devices,
+ 					seed_devices->seed_dir_kobj))
+ 			pr_warn("Btrfs: sysfs: kobject move failed\n");
+ 	}
++
++	btrfs_sysfs_add_fsid(old_devices, NULL, 0);
++	btrfs_sysfs_add_device(old_devices, 0);
+ }
+diff --git a/fs/btrfs/sysfs.h b/fs/btrfs/sysfs.h
+index 5ace289..0a592f2 100644
+--- a/fs/btrfs/sysfs.h
++++ b/fs/btrfs/sysfs.h
+@@ -93,5 +93,6 @@ int btrfs_sysfs_add_device(struct btrfs_fs_devices *fs_devs, int follow_seed);
+ int btrfs_sysfs_add_seed_dir(struct btrfs_fs_devices *fs_devs);
+ void btrfs_sysfs_rm_seed_dir(struct btrfs_fs_devices *fs_devs);
+ void btrfs_sysfs_prepare_sprout(struct btrfs_fs_devices *fs_devices,
+-				struct btrfs_fs_devices *seed_devices);
++				struct btrfs_fs_devices *seed_devices,
++				struct btrfs_fs_devices *old_devices);
+ #endif /* _BTRFS_SYSFS_H_ */
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 227f4be..4af0cf6 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -528,6 +528,10 @@ static noinline int device_list_add(const char *path,
+ 		list_add(&fs_devices->list, &fs_uuids);
+ 
+ 		device = NULL;
++		if (btrfs_sysfs_add_fsid(fs_devices, NULL, 0))
++			printk(KERN_WARNING "Btrfs: sysfs add fsid failed\n");
++		if (btrfs_sysfs_add_device(fs_devices, 0))
++			printk(KERN_WARNING "Btrfs: sysfs add device failed\n");
+ 	} else {
+ 		device = __find_device(&fs_devices->devices, devid,
+ 				       disk_super->dev_item.uuid);
+@@ -797,6 +801,7 @@ int btrfs_close_devices(struct btrfs_fs_devices *fs_devices)
+ 		fs_devices = seed_devices;
+ 		seed_devices = fs_devices->seed;
+ 		__btrfs_close_devices(fs_devices);
++		btrfs_sysfs_remove_fsid(fs_devices);
+ 		free_fs_devices(fs_devices);
+ 	}
+ 	/*
+@@ -2102,7 +2107,7 @@ static int btrfs_prepare_sprout(struct btrfs_root *root)
+ 		      ~BTRFS_SUPER_FLAG_SEEDING;
+ 	btrfs_set_super_flags(disk_super, super_flags);
+ 
+-	btrfs_sysfs_prepare_sprout(fs_devices, seed_devices);
++	btrfs_sysfs_prepare_sprout(fs_devices, seed_devices, old_devices);
+ 
+ 	return 0;
+ }
+-- 
+2.4.1
 
-Suggestion: drop the '-p' option and don't print "parent"
-anymore. I don't know the "backwards compatibility policy" the
-btrfs-devs have here, but my impression is that kernel 3.2 is not
-really supported anymore.
-
-
-2. The output of -a option (as well as -o) is inconsistent. Given
-/tmp/btr_test is mounted with subvolid=0:
-
-  # btrfs subvolume create /tmp/btr_test/vol0
-  # btrfs subvolume create /tmp/btr_test/vol0/vol1
-  # btrfs subvolume create /tmp/btr_test/vol0/vol1/vol2
-  # list_path=/tmp/btr_test
-  # btrfs subvolume list -a $list_path
-  ID 256 gen 8 top level 5 path vol0
-  ID 257 gen 9 top level 256 path <FS_TREE>/vol0/vol1
-  ID 258 gen 9 top level 257 path <FS_TREE>/vol0/vol1/vol2
-
-The only relative path shown is "vol0", which is
-at "$list_path/vol0", as expected. But then "vol0/vol1" are
-printed as absolute, while they are relative to $list_path.
-
-  # list_path=/tmp/btr_test/vol0
-  # btrfs subvolume list -a $list_path
-  ID 256 gen 8 top level 5 path <FS_TREE>/vol0
-  ID 257 gen 9 top level 256 path vol0/vol1
-  ID 258 gen 9 top level 257 path <FS_TREE>/vol0/vol1/vol2
-
-But if $list_path points to a subvolume, the relative path shown
-is now "vol0/vol1", which is actually at "$list_path/../vol0/vol1".
-
-Things get even more confusing when subvolumes are within
-directories:
-
-  # mkdir /tmp/btr_test/vol0/dir1
-  # btrfs subvolume create /tmp/btr_test/vol0/dir1/vol3
-  # list_path=/tmp/btr_test/vol0/dir1
-  # btrfs subvolume list -a $list_path
-  ID 256 gen 11 top level 5 path <FS_TREE>/vol0
-  ID 257 gen 9 top level 256 path vol0/vol1
-  ID 258 gen 9 top level 257 path <FS_TREE>/vol0/vol1/vol2
-  ID 259 gen 11 top level 256 path vol0/dir1/vol3
-
-I know that handling "real" directories is very tricky to handle
-correctly (involving symlinks et all), and is probably not a
-feature that "subvolume list" command should handle.
-
-
-Suggestions:
-
-- Fix '-a' option to also print sub-subvolumes as relative, or
-  drop it (there is the -o option for this purpose).
-- Fix output of '-o' option, by always printing relative
-  paths ("vol1" instead of "vol0/vol1" in the example above).
-
-
-Regards,
-
-- Axel
-
-  [1] https://btrfs.wiki.kernel.org/index.php/Mount_options

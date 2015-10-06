@@ -1,175 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46988 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752485AbbJTRPN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 13:15:13 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id CE3A9AB1A
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 17:15:10 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:30241 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751706AbbJFPTi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Oct 2015 11:19:38 -0400
+From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/3] btrfs: extend balance filter usage to take minimum and maximum
-Date: Tue, 20 Oct 2015 19:13:53 +0200
-Message-Id: <c0b33bea07c4e2ae6d4d9ed56b968e7c09b933c4.1445360598.git.dsterba@suse.com>
-In-Reply-To: <cover.1445360598.git.dsterba@suse.com>
-References: <cover.1445360598.git.dsterba@suse.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH 0/7] Introduce device delete by devid
+Date: Tue,  6 Oct 2015 23:19:17 +0800
+Message-Id: <1444144764-2384-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Similar to the 'limit' filter, we can enhance the 'usage' filter to
-accept a range. The change is backward compatible, the range is applied
-only in connection with the BTRFS_BALANCE_ARGS_USAGE_RANGE flag.
+The operation of device replace and device delete follows same steps
+upto some depths, however they don't share codes.
+This set of enhancement will help device replace and device delete to
+share codes.
+And at the end add support to delete device using devid.
 
-We don't have a usecase yet, the current syntax has been sufficient. The
-enhancement should provide parity with other range-like filters.
+Anand Jain (7):
+  Btrfs: create helper function __check_raid_min_devices()
+  Btrfs: clean up and optimize __check_raid_min_device()
+  Btrfs: create helper btrfs_find_device_by_user_input()
+  Btrfs: make use of btrfs_find_device_by_user_input()
+  Btrfs: enhance btrfs_find_device_by_user_input() to check device path
+  Btrfs: make use of btrfs_scratch_superblocks() in btrfs_rm_device()
+  Btrfs: Introduce device delete by devid
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/ctree.h           | 14 ++++++++++++--
- fs/btrfs/volumes.c         | 41 ++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/volumes.h         |  1 +
- include/uapi/linux/btrfs.h |  8 +++++++-
- 4 files changed, 60 insertions(+), 4 deletions(-)
+ fs/btrfs/dev-replace.c     |  28 +-----
+ fs/btrfs/ioctl.c           |  58 +++++++++++-
+ fs/btrfs/volumes.c         | 214 ++++++++++++++++++---------------------------
+ fs/btrfs/volumes.h         |   5 +-
+ include/uapi/linux/btrfs.h |  14 ++-
+ 5 files changed, 159 insertions(+), 160 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 76055a8317e9..31e5a3ed0a5c 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -823,8 +823,18 @@ struct btrfs_disk_balance_args {
- 	 */
- 	__le64 profiles;
- 
--	/* usage filter */
--	__le64 usage;
-+	/*
-+	 * usage filter
-+	 * BTRFS_BALANCE_ARGS_USAGE with a single value means '0..N'
-+	 * BTRFS_BALANCE_ARGS_USAGE_RANGE - range syntax, min..max
-+	 */
-+	union {
-+		__le64 usage;
-+		struct {
-+			__le32 usage_min;
-+			__le32 usage_max;
-+		};
-+	};
- 
- 	/* devid filter */
- 	__le64 devid;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 8d88a8737c79..61e49e0fd934 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3009,16 +3009,19 @@ static void update_balance_args(struct btrfs_balance_control *bctl)
- 	 * (albeit full) chunks.
- 	 */
- 	if (!(bctl->data.flags & BTRFS_BALANCE_ARGS_USAGE) &&
-+	    !(bctl->data.flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
- 	    !(bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT)) {
- 		bctl->data.flags |= BTRFS_BALANCE_ARGS_USAGE;
- 		bctl->data.usage = 90;
- 	}
- 	if (!(bctl->sys.flags & BTRFS_BALANCE_ARGS_USAGE) &&
-+	    !(bctl->sys.flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
- 	    !(bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT)) {
- 		bctl->sys.flags |= BTRFS_BALANCE_ARGS_USAGE;
- 		bctl->sys.usage = 90;
- 	}
- 	if (!(bctl->meta.flags & BTRFS_BALANCE_ARGS_USAGE) &&
-+	    !(bctl->meta.flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
- 	    !(bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT)) {
- 		bctl->meta.flags |= BTRFS_BALANCE_ARGS_USAGE;
- 		bctl->meta.usage = 90;
-@@ -3074,13 +3077,46 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
- 			      struct btrfs_balance_args *bargs)
- {
- 	struct btrfs_block_group_cache *cache;
-+	u64 chunk_used;
-+	u64 user_thresh_min;
-+	u64 user_thresh_max;
-+	int ret = 1;
-+
-+	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
-+	chunk_used = btrfs_block_group_used(&cache->item);
-+
-+	if (bargs->usage_min == 0)
-+		user_thresh_min = 0;
-+	else
-+		user_thresh_min = div_factor_fine(cache->key.offset,
-+					bargs->usage_min);
-+
-+	if (bargs->usage_max == 0)
-+		user_thresh_max = 1;
-+	else if (bargs->usage_max > 100)
-+		user_thresh_max = cache->key.offset;
-+	else
-+		user_thresh_max = div_factor_fine(cache->key.offset,
-+					bargs->usage_max);
-+
-+	if (user_thresh_min <= chunk_used && chunk_used < user_thresh_max)
-+		ret = 0;
-+
-+	btrfs_put_block_group(cache);
-+	return ret;
-+}
-+
-+static int chunk_usage_range_filter(struct btrfs_fs_info *fs_info,
-+		u64 chunk_offset, struct btrfs_balance_args *bargs)
-+{
-+	struct btrfs_block_group_cache *cache;
- 	u64 chunk_used, user_thresh;
- 	int ret = 1;
- 
- 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
- 	chunk_used = btrfs_block_group_used(&cache->item);
- 
--	if (bargs->usage == 0)
-+	if (bargs->usage_min == 0)
- 		user_thresh = 1;
- 	else if (bargs->usage > 100)
- 		user_thresh = cache->key.offset;
-@@ -3229,6 +3265,9 @@ static int should_balance_chunk(struct btrfs_root *root,
- 	if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE) &&
- 	    chunk_usage_filter(bctl->fs_info, chunk_offset, bargs)) {
- 		return 0;
-+	} else if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
-+	    chunk_usage_range_filter(bctl->fs_info, chunk_offset, bargs)) {
-+		return 0;
- 	}
- 
- 	/* devid filter */
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 1d823ad3b914..d2be0872ce2f 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -377,6 +377,7 @@ struct map_lookup {
- #define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
- #define BTRFS_BALANCE_ARGS_LIMIT_RANGE	(1ULL << 6)
- #define BTRFS_BALANCE_ARGS_STRIPES_RANGE (1ULL << 7)
-+#define BTRFS_BALANCE_ARGS_USAGE_RANGE	(1ULL << 8)
- 
- /*
-  * Profile changing flags.  When SOFT is set we won't relocate chunk if
-diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 17a94704b183..dea893199257 100644
---- a/include/uapi/linux/btrfs.h
-+++ b/include/uapi/linux/btrfs.h
-@@ -206,7 +206,13 @@ struct btrfs_ioctl_feature_flags {
-  */
- struct btrfs_balance_args {
- 	__u64 profiles;
--	__u64 usage;
-+	union {
-+		__le64 usage;
-+		struct {
-+			__le32 usage_min;
-+			__le32 usage_max;
-+		};
-+	};
- 	__u64 devid;
- 	__u64 pstart;
- 	__u64 pend;
 -- 
-2.6.2
+2.4.1
 

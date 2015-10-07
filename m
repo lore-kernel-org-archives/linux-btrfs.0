@@ -1,67 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:43602 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751553AbbJVHMM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Oct 2015 03:12:12 -0400
-Date: Thu, 22 Oct 2015 15:12:09 +0800
-From: Eryu Guan <eguan@redhat.com>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] xfstests: btrfs/012: add a regression test for deleting
- ext2_saved
-Message-ID: <20151022071209.GK3558@dhcp-13-216.nay.redhat.com>
-References: <1445340846-9774-1-git-send-email-bo.li.liu@oracle.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1445340846-9774-1-git-send-email-bo.li.liu@oracle.com>
+Received: from mail-pa0-f51.google.com ([209.85.220.51]:33292 "EHLO
+	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753227AbbJGPIx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Oct 2015 11:08:53 -0400
+From: Justin Maggard <jmaggard10@gmail.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, Justin Maggard <jmaggard@netgear.com>
+Subject: [PATCH] btrfs: test unmount during quota rescan
+Date: Wed,  7 Oct 2015 08:08:47 -0700
+Message-Id: <1444230527-4639-1-git-send-email-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 20, 2015 at 07:34:06PM +0800, Liu Bo wrote:
-> Btrfs now has changed to delete subvolume/snapshot asynchronously,
-> which means that after umount, if we've already deleted 'ext2_saved',
-> rollback can still be completed, which should not.
-> 
-> So this adds a regression test for this.
-> 
-> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+This test case tests if we are able to unmount a filesystem while
+a quota rescan is running.  Up to now (4.3-rc4) this would result
+in a kernel NULL pointer dereference.
 
-I'm not sure if this belongs to a new test, but given that this test
-has very similar steps to existing tests, so I think that's fine.
+Signed-off-by: Justin Maggard <jmaggard@netgear.com>
+---
+ tests/btrfs/104     | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/104.out |  1 +
+ tests/btrfs/group   |  1 +
+ 3 files changed, 87 insertions(+)
+ create mode 100755 tests/btrfs/104
+ create mode 100644 tests/btrfs/104.out
 
-Reviewed-by: Eryu Guan <eguan@redhat.com>
+diff --git a/tests/btrfs/104 b/tests/btrfs/104
+new file mode 100755
+index 0000000..7c51298
+--- /dev/null
++++ b/tests/btrfs/104
+@@ -0,0 +1,85 @@
++#! /bin/bash
++# FS QA Test No. btrfs/200
++#
++# btrfs quota scan/unmount sanity test
++#
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015 NETGEAR, Inc.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#
++#-----------------------------------------------------------------------
++#
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++
++status=1	# failure is the default!
++
++_cleanup()
++{
++	cd /
++	rm -f $tmp.*
++	$UMOUNT_PROG $loop_mnt >/dev/null 2>&1
++	_destroy_loop_device $loop_dev1
++	rm -rf $loop_mnt
++	rm -f $fs_img1
++}
++
++trap "_cleanup ; exit \$status" 0 1 2 3 15
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++
++# real QA test starts here
++_supported_fs btrfs
++_supported_os Linux
++_require_test
++
++rm -f $seqres.full
++
++loop_mnt=$TEST_DIR/$seq.$$.mnt
++fs_img1=$TEST_DIR/$seq.$$.img1
++mkdir $loop_mnt
++$XFS_IO_PROG -f -c "truncate 1G" $fs_img1 >>$seqres.full 2>&1
++
++loop_dev1=`_create_loop_device $fs_img1`
++
++_mkfs_dev $loop_dev1 >>$seqres.full 2>&1
++_mount $loop_dev1 $loop_mnt
++for i in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
++do
++  for j in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
++  do
++    for k in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
++    do
++      for l in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
++      do
++	touch $loop_mnt/${i}${j}${k}${l}
++      done
++    done
++  done
++done >>$seqres.full 2>&1
++echo 3 > /proc/sys/vm/drop_caches
++$BTRFS_UTIL_PROG quota enable $loop_mnt
++$UMOUNT_PROG $loop_mnt
++
++status=0
++exit
+diff --git a/tests/btrfs/104.out b/tests/btrfs/104.out
+new file mode 100644
+index 0000000..1ed84bc
+--- /dev/null
++++ b/tests/btrfs/104.out
+@@ -0,0 +1 @@
++QA output created by 104
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index e92a65a..6218adf 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -106,3 +106,4 @@
+ 101 auto quick replace
+ 102 auto quick metadata enospc
+ 103 auto quick clone compress
++104 auto qgroup
+-- 
+2.6.1
 
-> ---
->  tests/btrfs/012 | 12 ++++++++++++
->  1 file changed, 12 insertions(+)
-> 
-> diff --git a/tests/btrfs/012 b/tests/btrfs/012
-> index d513759..b39dec0 100755
-> --- a/tests/btrfs/012
-> +++ b/tests/btrfs/012
-> @@ -112,6 +112,18 @@ diff -r /lib/modules/`uname -r`/ $SCRATCH_MNT/`uname -r`/ 2>&1 | grep -vw "sourc
->  
->  _scratch_unmount
->  
-> +# Convert it to btrfs, mount it and delete "ext2_saved"
-> +$BTRFS_CONVERT_PROG $SCRATCH_DEV >> $seqres.full 2>&1 || \
-> +	_fail "btrfs-convert failed"
-> +_scratch_mount || _fail "Could not mount new btrfs fs"
-> +$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/ext2_saved >> $seqres.full 2>&1 ||
-> +	_fail "failed to delete ext2_saved subvolume"
-> +_scratch_unmount
-> +
-> +# Now restore the ext4 device, expecting a failure
-> +$BTRFS_CONVERT_PROG -r $SCRATCH_DEV >> $seqres.full 2>&1
-> +[ $? -eq 1 ] || _fail "Failure is expected, but btrfs-convert returns with rollback complete"
-> +
->  # success, all done
->  status=0
->  exit
-> -- 
-> 1.8.2.1
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

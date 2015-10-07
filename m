@@ -1,15 +1,15 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40641 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751219AbbJGFNR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Oct 2015 01:13:17 -0400
-Subject: [PATCH 01/12] xfs: fix merge errors in fuzzer tests
+Received: from userp1040.oracle.com ([156.151.31.81]:49220 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752693AbbJGFOO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Oct 2015 01:14:14 -0400
+Subject: [PATCH 09/12] reflink: test error conditions due to bad inputs
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: Anna.Schumaker@netapp.com, linux-ext4@vger.kernel.org,
         linux-btrfs@vger.kernel.org, fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Tue, 06 Oct 2015 22:13:04 -0700
-Message-ID: <20151007051304.3260.66605.stgit@birch.djwong.org>
+Date: Tue, 06 Oct 2015 22:14:04 -0700
+Message-ID: <20151007051404.3260.72531.stgit@birch.djwong.org>
 In-Reply-To: <20151007051257.3260.73072.stgit@birch.djwong.org>
 References: <20151007051257.3260.73072.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -17,80 +17,189 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Check that we can feed bad inputs to reflink and it'll reject them.
+
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/xfs/085.out |    2 --
- tests/xfs/098.out |    1 -
- tests/xfs/099.out |    2 +-
- tests/xfs/100.out |    2 +-
- tests/xfs/101.out |    2 +-
- tests/xfs/102.out |    2 +-
- 6 files changed, 4 insertions(+), 7 deletions(-)
+ tests/generic/839     |  122 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/839.out |   30 ++++++++++++
+ tests/generic/group   |    1 
+ 3 files changed, 153 insertions(+)
+ create mode 100755 tests/generic/839
+ create mode 100644 tests/generic/839.out
 
 
-diff --git a/tests/xfs/085.out b/tests/xfs/085.out
-index 6303081..ff3dccd 100644
---- a/tests/xfs/085.out
-+++ b/tests/xfs/085.out
-@@ -5,8 +5,6 @@ QA output created by 085
- + check fs
- + corrupt image
- + mount image
--+ modify files
--broken: 1
- + repair fs
- + mount image (2)
- + chattr -R -i
-diff --git a/tests/xfs/098.out b/tests/xfs/098.out
-index 84a2b4d..ef0554d 100644
---- a/tests/xfs/098.out
-+++ b/tests/xfs/098.out
-@@ -5,7 +5,6 @@ QA output created by 098
- + check fs
- + corrupt image
- + mount image
--broken: 1
- + repair fs
- + mount image (2)
- + chattr -R -i
-diff --git a/tests/xfs/099.out b/tests/xfs/099.out
-index 4426859..773200b 100644
---- a/tests/xfs/099.out
-+++ b/tests/xfs/099.out
-@@ -1,4 +1,4 @@
--QA output created by 016
-+QA output created by 099
- + create scratch fs
- + mount fs image
- + make some files
-diff --git a/tests/xfs/100.out b/tests/xfs/100.out
-index 98d8dbc..97dba7c 100644
---- a/tests/xfs/100.out
-+++ b/tests/xfs/100.out
-@@ -1,4 +1,4 @@
--QA output created by 017
-+QA output created by 100
- + create scratch fs
- + mount fs image
- + make some files
-diff --git a/tests/xfs/101.out b/tests/xfs/101.out
-index 49430f7..22ca620 100644
---- a/tests/xfs/101.out
-+++ b/tests/xfs/101.out
-@@ -1,4 +1,4 @@
--QA output created by 018
-+QA output created by 101
- + create scratch fs
- + mount fs image
- + make some files
-diff --git a/tests/xfs/102.out b/tests/xfs/102.out
-index 58f493c..d8a8fa1 100644
---- a/tests/xfs/102.out
-+++ b/tests/xfs/102.out
-@@ -1,4 +1,4 @@
--QA output created by 019
-+QA output created by 102
- + create scratch fs
- + mount fs image
- + make some files
+diff --git a/tests/generic/839 b/tests/generic/839
+new file mode 100755
+index 0000000..fe32cfb
+--- /dev/null
++++ b/tests/generic/839
+@@ -0,0 +1,122 @@
++#! /bin/bash
++# FS QA Test No. 839
++#
++# Check that cross-device reflink and dedupe are rejected
++#
++#-----------------------------------------------------------------------
++# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
++#
++# This program is free software; you can redistribute it and/or
++# modify it under the terms of the GNU General Public License as
++# published by the Free Software Foundation.
++#
++# This program is distributed in the hope that it would be useful,
++# but WITHOUT ANY WARRANTY; without even the implied warranty of
++# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++# GNU General Public License for more details.
++#
++# You should have received a copy of the GNU General Public License
++# along with this program; if not, write the Free Software Foundation,
++# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#-----------------------------------------------------------------------
++
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
++echo "QA output created by $seq"
++
++here=`pwd`
++tmp=/tmp/$$
++status=1    # failure is the default!
++trap "_cleanup; exit \$status" 0 1 2 3 15
++
++_cleanup()
++{
++    cd /
++    rm -rf $tmp.* $TESTDIR1
++}
++
++# get standard environment, filters and checks
++. ./common/rc
++. ./common/filter
++. ./common/attr
++
++# real QA test starts here
++_require_test
++_require_scratch
++_require_scratch_reflink
++_require_test_reflink
++_supported_os Linux
++
++_require_xfs_io_command "reflink"
++_require_xfs_io_command "dedupe"
++
++rm -f $seqres.full
++
++echo "Format and mount"
++_scratch_mkfs > $seqres.full 2>&1
++_scratch_mount >> $seqres.full 2>&1
++
++TESTDIR1=$TEST_DIR/test-$seq
++rm -rf $TESTDIR1
++mkdir $TESTDIR1
++
++TESTDIR2=$SCRATCH_MNT/test-$seq
++rm -rf $TESTDIR2
++mkdir $TESTDIR2
++
++echo "Create the original files"
++BLKSZ="$(stat -f $TESTDIR1 -c '%S')"
++BLKS=1000
++MARGIN=50
++SZ=$((BLKSZ * BLKS))
++FREE_BLOCKS0=$(stat -f $TESTDIR1 -c '%f')
++NR=4
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $SZ" $TESTDIR1/file1 >> $seqres.full
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $SZ" $TESTDIR1/file2 >> $seqres.full
++$XFS_IO_PROG -f -c "pwrite -S 0x61 0 $SZ" $TESTDIR2/file1 >> $seqres.full
++sync
++
++echo "Try cross-device reflink"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR2/file1
++echo "Try cross-device dedupe"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR2/file1
++
++echo "Try unaligned reflink"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 37 59 23" $TESTDIR1/file2
++echo "Try unaligned dedupe"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file1 37 59 23" $TESTDIR1/file2
++
++echo "Try overlapping reflink"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR1/file1
++echo "Try overlapping dedupe"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file2 0 0 $BLKSZ" $TESTDIR1/file2
++
++echo "Try reflink past EOF"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 $(( (BLKS + 1000) * BLKSZ)) 0 $BLKSZ" $TESTDIR1/file1
++echo "Try dedupe past EOF"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file2 $(( (BLKS + 1000) * BLKSZ)) 0 $BLKSZ" $TESTDIR1/file2
++
++chattr +i $TESTDIR1/file1 $TESTDIR1/file2
++echo "Try reflink on immutable files"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR1/file2 > $seqres.full
++echo "Try dedupe on immutable files"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 $BLKSZ $BLKSZ $BLKSZ" $TESTDIR1/file2 > $seqres.full
++chattr -i $TESTDIR1/file1 $TESTDIR1/file2
++
++echo "Reflink two files"
++$XFS_IO_PROG -f -c "reflink $TESTDIR1/file1 0 0 $BLKSZ" $TESTDIR1/file2 > $seqres.full
++$XFS_IO_PROG -f -c "reflink $TESTDIR2/file1 0 0 $BLKSZ" $TESTDIR2/file2 > $seqres.full
++echo "Dedupe two files"
++$XFS_IO_PROG -f -c "dedupe $TESTDIR1/file1 $BLKSZ $BLKSZ $BLKSZ" $TESTDIR1/file2 > $seqres.full
++$XFS_IO_PROG -f -c "dedupe $TESTDIR2/file1 $BLKSZ $BLKSZ $BLKSZ" $TESTDIR2/file2 > $seqres.full
++
++lsattr -l $TESTDIR1/ | _filter_test_dir
++lsattr -l $TESTDIR2/ | sed -e "s,$SCRATCH_MNT,SCRATCH_MNT,g"
++
++echo "Check scratch fs"
++umount $SCRATCH_MNT
++_check_scratch_fs
++
++# success, all done
++status=0
++exit
+diff --git a/tests/generic/839.out b/tests/generic/839.out
+new file mode 100644
+index 0000000..542a5b3
+--- /dev/null
++++ b/tests/generic/839.out
+@@ -0,0 +1,30 @@
++QA output created by 839
++Format and mount
++Create the original files
++Try cross-device reflink
++XFS_IOC_CLONE_RANGE: Invalid cross-device link
++Try cross-device dedupe
++dedupe: Invalid cross-device link
++Try unaligned reflink
++XFS_IOC_CLONE_RANGE: Invalid argument
++Try unaligned dedupe
++dedupe: Invalid argument
++Try overlapping reflink
++XFS_IOC_CLONE_RANGE: Invalid argument
++Try overlapping dedupe
++dedupe: Invalid argument
++Try reflink past EOF
++XFS_IOC_CLONE_RANGE: Invalid argument
++Try dedupe past EOF
++dedupe: Invalid argument
++Try reflink on immutable files
++/mnt/test-839/file2: Permission denied
++Try dedupe on immutable files
++/mnt/test-839/file2: Permission denied
++Reflink two files
++Dedupe two files
++TEST_DIR/test-839/file1          ---
++TEST_DIR/test-839/file2          ---
++SCRATCH_MNT/test-839/file1          ---
++SCRATCH_MNT/test-839/file2          ---
++Check scratch fs
+diff --git a/tests/generic/group b/tests/generic/group
+index 353e23c..daaf23a 100644
+--- a/tests/generic/group
++++ b/tests/generic/group
+@@ -245,3 +245,4 @@
+ 836 auto quick clone
+ 837 auto quick clone
+ 838 auto quick clone
++839 auto quick clone
 

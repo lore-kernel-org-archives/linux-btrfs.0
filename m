@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37623 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:38240 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750777AbbJBKSX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 2 Oct 2015 06:18:23 -0400
+	id S1754368AbbJGPku (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 Oct 2015 11:40:50 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: send, fix file corruption due to incorrect cloning operations
-Date: Fri,  2 Oct 2015 11:18:12 +0100
-Message-Id: <1443781092-18870-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: send, fix file corruption due to incorrect cloning operations
+Date: Wed,  7 Oct 2015 16:40:42 +0100
+Message-Id: <1444232442-11257-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1443781092-18870-1-git-send-email-fdmanana@kernel.org>
+References: <1443781092-18870-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -111,11 +113,15 @@ The following test case for fstests reproduces the problem.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+
+V2: Fixed implicit hole detection, use 'clone_root->offset' instead of
+    'offset' to track the next expected key offset.
+
  fs/btrfs/send.c | 182 ++++++++++++++++++++++++++++++++++++++++++++++++++------
  1 file changed, 165 insertions(+), 17 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index a739b82..1849fc7 100644
+index a739b82..becbd42 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
 @@ -4687,6 +4687,166 @@ tlv_put_failure:
@@ -155,7 +161,6 @@ index a739b82..1849fc7 100644
 +{
 +	struct btrfs_path *path;
 +	struct btrfs_key key;
-+	u64 last_end = offset;
 +	int ret;
 +
 +	path = alloc_path_for_send();
@@ -236,10 +241,12 @@ index a739b82..1849fc7 100644
 +		if (key.offset + ext_len <= clone_root->offset)
 +			goto next;
 +
-+		if (key.offset > last_end) {
++		if (key.offset > clone_root->offset) {
 +			/* Implicit hole, NO_HOLES feature enabled. */
-+			u64 hole_len = min_t(u64, key.offset - last_end, len);
++			u64 hole_len = key.offset - clone_root->offset;
 +
++			if (hole_len > len)
++				hole_len = len;
 +			ret = send_extent_data(sctx, offset, hole_len);
 +			if (ret < 0)
 +				goto out;
@@ -268,7 +275,6 @@ index a739b82..1849fc7 100644
 +			break;
 +		offset += clone_len;
 +		clone_root->offset += clone_len;
-+		last_end = key.offset + ext_len;
 +next:
 +		path->slots[0]++;
 +	}

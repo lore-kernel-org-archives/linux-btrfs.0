@@ -1,42 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36808 "EHLO mx2.suse.de"
+Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:56356
+	"EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752166AbbJFJjr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 6 Oct 2015 05:39:47 -0400
-From: David Sterba <dsterba@suse.com>
+	id S1751850AbbJGMOP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 7 Oct 2015 08:14:15 -0400
+Received: from [223.231.216.195] (port=34333 helo=giis)
+	by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:AES128-GCM-SHA256:128)
+	(Exim 4.85)
+	(envelope-from <Lakshmipathi.G@giis.co.in>)
+	id 1ZjnUa-0002vc-9d
+	for linux-btrfs@vger.kernel.org; Wed, 07 Oct 2015 05:06:45 -0700
+Date: Wed, 7 Oct 2015 17:36:38 +0530
+From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs-progs: subvol sync: fix reversed condition
-Date: Tue,  6 Oct 2015 11:38:40 +0200
-Message-Id: <1444124320-6132-1-git-send-email-dsterba@suse.com>
+Subject: [PATCH] btrfs-progs: print root item's last_snapshot value.
+Message-ID: <20151007120638.GA24461@giis>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In my local change to 07cc891d1d9819d5cf0628af555e7727d289cf7b
-("btrfs-progs: Simplify all-subvolumn-clean condition for
-wait_for_subvolume_cleaning") that reversed the meaning of the variable
-dirty -> clean, I made a mistake and broke 'subvol sync' that will not
-wait as expected and ends prematurely. Zhao Lei's original patch worked.
 
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Signed-off-by: David Sterba <dsterba@suse.com>
+
+Include last_snapshot value in print_root(). With btrfs-debug-tree, it 
+helps to identify whether its a snapshot-ed subvolume or not.
+
+Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
 ---
- cmds-subvolume.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ print-tree.c | 5 +++--
+ 1 file changed, 3 insertions(+), 2 deletions(-)
 
-diff --git a/cmds-subvolume.c b/cmds-subvolume.c
-index 82173c0489a9..6f8675657417 100644
---- a/cmds-subvolume.c
-+++ b/cmds-subvolume.c
-@@ -89,7 +89,7 @@ static int wait_for_subvolume_cleaning(int fd, int count, u64 *ids,
- 				clean = 0;
- 			}
- 		}
--		if (clean == 0)
-+		if (clean == 1)
- 			break;
- 		sleep(sleep_interval);
- 	}
+diff --git a/print-tree.c b/print-tree.c
+index dc1d276..7ddf400 100644
+--- a/print-tree.c
++++ b/print-tree.c
+@@ -481,12 +481,13 @@ static void print_root(struct extent_buffer *leaf, int slot)
+ 	memset(&root_item, 0, sizeof(root_item));
+ 	read_extent_buffer(leaf, &root_item, (unsigned long)ri, len);
+ 
+-	printf("\t\troot data bytenr %llu level %d dirid %llu refs %u gen %llu\n",
++	printf("\t\troot data bytenr %llu level %d dirid %llu refs %u gen %llu lastsnap %llu\n",
+ 		(unsigned long long)btrfs_root_bytenr(&root_item),
+ 		btrfs_root_level(&root_item),
+ 		(unsigned long long)btrfs_root_dirid(&root_item),
+ 		btrfs_root_refs(&root_item),
+-		(unsigned long long)btrfs_root_generation(&root_item));
++		(unsigned long long)btrfs_root_generation(&root_item),
++		(unsigned long long)btrfs_root_last_snapshot(&root_item));
+ 
+ 	if (root_item.generation == root_item.generation_v2) {
+ 		uuid_unparse(root_item.uuid, uuid_str);
 -- 
-2.1.3
+1.8.3.1
 

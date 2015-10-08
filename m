@@ -1,67 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:36777 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756531AbbJHL1J (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2015 07:27:09 -0400
-Received: by ioii196 with SMTP id i196so53828691ioi.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Oct 2015 04:27:09 -0700 (PDT)
-Subject: Re: Using BtrFS and backup tools for keeping two systems in sync
-To: Shriramana Sharma <samjnaa@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <CAH-HCWV2mO1FFRGPh+jh2TrZMYV-7w7MwytSV4WZ33-9PW=qRw@mail.gmail.com>
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:37572 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755252AbbJHLsb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2015 07:48:31 -0400
+Received: by igcpe7 with SMTP id pe7so10594446igc.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 08 Oct 2015 04:48:30 -0700 (PDT)
+Subject: Re: BTRFS RAID1 behavior after one drive temporal disconection
+To: Pavel Pisa <pisa@cmp.felk.cvut.cz>, linux-btrfs@vger.kernel.org
+References: <201510052226.47051.pisa@cmp.felk.cvut.cz>
+ <201510081028.02178.pisa@cmp.felk.cvut.cz>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <561652D3.1020606@gmail.com>
-Date: Thu, 8 Oct 2015 07:26:11 -0400
+Message-ID: <561657D5.1070809@gmail.com>
+Date: Thu, 8 Oct 2015 07:47:33 -0400
 MIME-Version: 1.0
-In-Reply-To: <CAH-HCWV2mO1FFRGPh+jh2TrZMYV-7w7MwytSV4WZ33-9PW=qRw@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000200050601080808060300"
+In-Reply-To: <201510081028.02178.pisa@cmp.felk.cvut.cz>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030004060100050809070605"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms000200050601080808060300
-Content-Type: text/plain; charset=utf-8; format=flowed
+--------------ms030004060100050809070605
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-10-07 22:35, Shriramana Sharma wrote:
-> Hello. I see there are some backup tools taking advantage of BtrFS's
-> incremental send/receive feature:
-> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup. [BTW Ames
-> Cornish's ButterSink (https://github.com/AmesCornish/buttersink) seems
-> to be missing from that page.]
+On 2015-10-08 04:28, Pavel Pisa wrote:
+> Hello everybody,
 >
-> Now I'd like to know if anyone has evolved some good practices w.r.t
-> maintaining the data of two systems in sync using this feature of
-> BtrFS. What I have in mind is: I work on my desktop by default, and
-> for ergonomics reasons only use my laptop when I need the mobility.
-> I'd like to keep the main data (documents I create, programs I write
-> etc) in sync between the two. (The profile data such as in the ~/.*
-> hidden folders had better stay separate though, I guess.)
+> On Monday 05 of October 2015 22:26:46 Pavel Pisa wrote:
+>> Hello everybody,
+> ...
+>> BTRFS has recognized appearance of its partition (even that hanged
+>> from sdb5 to sde5 when disk "hotplugged" again).
+>> But it seems that RAID1 components are not in sync and BTRFS
+>> continues to report
+>>
+>> BTRFS: lost page write due to I/O error on /dev/sde5
+>> BTRFS: bdev /dev/sde5 errs: wr 11021805, rd 8526080, flush 29099, corr=
+upt
+>> 0, gen
+>>
+>> I have tried to find the best way to resync RAID1 BTRFS partitions.
+>> But problem is that filesystem is the root one of the system.
+>> So reboot to some rescue media is required to run btrfsck --repair
+>> which is intended for unmounted devices.
+>>
+>> What is behavior of BTRFS in this situation?
+>> Is BTRFS able to use data from not up to date partition in these
+>> cases where data in respective files have not been modified?
+>> The main reason for question is if such (stable) data can be backuped
+>> by out of sync partition in the case of some random block is wear
+>> out on another device. Or is this situation equivalent to running
+>> with only one disk?
+>>
+>> Are there some parameters/solution to run some command
+>> (scrub balance) which makes devices to be in the sync again
+>> without unmount or reboot?
+>>
+>> I believe than attaching one more drive and running "btrfs replace"
+>> would solve described situation. But is there some equivalent to
+>> run operation "inplace".
 >
-> I figure with the existing tools it would not be too difficult to
-> maintain a synced set of snapshots between the two systems if I only
-> use the desktop vs laptop alternatingly and sync at each switchover,
-> but the potential problem only would come if I modify both (something
-> like having to do git merge, I guess).
+> It seems that SATA controller is not able to activate link which
+> has not been connected at BIOS POST time. This means that I cannot add =
+new drive
+> without reboot.
+Check your BIOS options, there should be some option to set SATA ports=20
+as either 'Hot-Plug' or 'External', which should allow you to hot-plug=20
+drives without needing a reboot (unless it's a Dell system, they have=20
+never properly implemented the SATA standard on their desktops).
 >
-> Has anyone come across this situation and evolved any policies to handl=
-e it?
+> Before reboot, the server bleeds with messages
 >
-Personally, while I use BTRFS on all of my systems, I usually use=20
-Dropbox for synchronizing data between them.  While the Linux client for =
+> BTRFS: bdev /dev/sde5 errs: wr 11715459, rd 8526080, flush 29099, corru=
+pt 0, gen 0
+> BTRFS: lost page write due to I/O error on /dev/sde5
+> BTRFS: bdev /dev/sde5 errs: wr 11715460, rd 8526080, flush 29099, corru=
+pt 0, gen 0
+> BTRFS: lost page write due to I/O error on /dev/sde5
+Even aside from the below mentioned issues, if your disk is showing that =
 
-it isn't perfect, it is significantly easier than something like a=20
-regularly scheduled rsync or btrfs send/receive.  It's also kind of nice =
+many errors, you should probably run a SMART self-test routine on it to=20
+determine whether this is just a transient issue or an indication of an=20
+impending disk failure.  The commands I'd suggest are:
+smartctl -t short /dev/sde
+That will tell you some time to wait for the test to complete, after=20
+waiting  that long, run:
+smartctl -H /dev/sde
+If that says the health check failed, replace the disk as soon as=20
+possible, and don't use it for storing any data you can't afford to lose.=
 
-because multiple clients bound to the same account will sync across the=20
-local network without needing to talk to the servers if they can avoid=20
-it.  Of course, it costs money if you want a decent amount of storage=20
-space, but it's pretty reasonable for the degree of reliability I've=20
-observed.
+>
+> that changed to next mesages after reboot
+>
+> Btrfs loaded
+> BTRFS: device label riki-pool devid 1 transid 282383 /dev/sda3
+> BTRFS: device label riki-pool devid 2 transid 249562 /dev/sdb5
+> BTRFS info (device sda3): disk space caching is enabled
+> BTRFS (device sda3): parent transid verify failed on 44623216640 wanted=
+ 263476 found 212766
+> BTRFS (device sda3): parent transid verify failed on 45201899520 wanted=
+ 282383 found 246891
+> BTRFS (device sda3): parent transid verify failed on 45202571264 wanted=
+ 282383 found 246890
+> BTRFS (device sda3): parent transid verify failed on 45201965056 wanted=
+ 282383 found 246889
+> BTRFS (device sda3): parent transid verify failed on 45202505728 wanted=
+ 282383 found 246890
+> BTRFS (device sda3): parent transid verify failed on 45202866176 wanted=
+ 282383 found 246890
+> BTRFS (device sda3): parent transid verify failed on 45207126016 wanted=
+ 282383 found 246894
+> BTRFS (device sda3): parent transid verify failed on 45202522112 wanted=
+ 282383 found 246890
+> BTRFS: bdev /dev/disk/by-uuid/1627e557-d063-40b6-9450-3694dd1fd1ba errs=
+: wr 11723314, rd 8526080, flush 2
+> BTRFS (device sda3): parent transid verify failed on 45206945792 wanted=
+ 282383 found 67960
+> BTRFS (device sda3): parent transid verify failed on 45204471808 wanted=
+ 282382 found 67960
+>
+> which looks really frightening to me. Temporary disconnected drive has =
+old transid
+> at start (OK). But what means the rest of the lines. If it means that f=
+iles with
+> older transaction ID are used from temporary disconnected drive (now /d=
+ev/sdb5)
+> and newer versions from /dev/sda3 are ignored and reported as invalid t=
+hen this means
+> severe data lost and may it be mitchmatch because all transactions afte=
+r disk disconnect
+> are lost (i.e. FS root has been taken from misbehaving drive at old ver=
+sion).
+>
+> BTRFS does not fall even to red-only/degraded mode after system restart=
+=2E
+This actually surprises me.
+>
+> On the other hand, from logs (all stored on the possibly damaged root F=
+S) it seems
+> that there there are not missing messages from days when discs has been=
+ out of sync,
+> so it looks like all data are OK. So should I expect that BTRFS managed=
+ problems
+> well and all data are consistent?
+I would be very careful in that situation, you may still have issues, at =
+
+the very least, make a backup of the system as soon as possible.
+>
+> I go to use "btrfs replace" because there has not been any reply to my =
+inplace correction
+> question. But I expect that clarification if possible/how to resync RAI=
+D1 after one
+> drive temporal disappear is really important to many of BTRFS users.
+As of right now, there is no way that I know of to safely re-sync a=20
+drive that's been disconnected for a while.  The best bet is probably to =
+
+use replace, but for that to work reliably, you would need to tell it to =
+
+ignore the now stale drive when trying to read each chunk.
+
+It is theoretically possible to wipe the FS signature on the out-of sync =
+
+drive, run a device scan, then run 'replace missing' pointing at the now =
+
+'blank' device, although going that route is really risky.
 
 
---------------ms000200050601080808060300
+--------------ms030004060100050809070605
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -103,9 +209,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA4MTEyNjExWjBPBgkq
-hkiG9w0BCQQxQgRAMMRQ9HmSq/9TkX9KNTxHR+jGSwfqO7o6x6K6vyr/jGKTNVSXQIsnB8Iz
-eGrO7zvl9Ah0jQszKl3i6OUaeDRyCTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA4MTE0NzMzWjBPBgkq
+hkiG9w0BCQQxQgRAeFwSYp92NLJsZsFH4dr+4FPGw5e1crnMWn7vKUbAUjaVjfCTjBF+cSzw
+pp0QrItGmiL1GASuEj8EbQNhw8UnZjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -113,14 +219,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgCKD4ESGsPTYWNRGC9567YBTQotQZ3PCp3tQ2FlJamqViHAxvkn
-Pm4G1niIH+T4Y5s3pwihv0MisCWKUzjyzH05U5Mkl3Sr+oTAYu53+6lhHfmmVvGMcX4cdx1s
-GVL5dsrkSooBe7Qpj0xbuYu+y2M/EPdI23+i0vzLJR9XJo5kwo+g6MP6mSqnJmsb+OtGARCU
-x2Imaxnidylyinxo1q/Bp8+g2jIwvXBReDtEQaIsEqugnEaBqLaf3XQqzakyUjc6BNgzL875
-C0sq74BDtmgCeyl44m9LCoKRO7lHjTFZuMJ8Gq1bopEkz7od6877idrMmyJGNpgsxusHhQSz
-TfNCP7vuyhtpSLlgzU3fSjJf/B+hM/xoO4rdB/QCP++n1ZEAaWa76NWFhzz4YJvIbMIug+ad
-KDY/r5h+xa7zPXnvYIuTLaEoa6yZ+tshfXOYAp9NXpHqjTiwu/oRMq4RAHb6en8cCcSdqHMP
-fTG7i4dlv9EJIe0OB21r/hmTvjo5e4E143NBZ0nH9aYZFvxd3+WDe39TtwYErUakSK1lF+w/
-lddEAxtTL5lnEcGHBccoyTILMIOBLw2WZHggT1reUqTqDCnotuQ7H4qLCkVZumkcCz9yZEIi
-Dmkg67weHRKixT0Fr8iFgaJV6a5lZal+jPNB3iusNLvzXDbwKkTIhJ7FFwAAAAAAAA==
---------------ms000200050601080808060300--
+BgkqhkiG9w0BAQEFAASCAgBB/V25xpyql5hhZJXTfpZxbxt6+RVGzItH/nbZHeWWsj2Ot1wL
+IJhDN51kykg1EYYgJalZbCZ5hJSkystFgdoC3swpRTRlh1r0bRqmKzn2e5IOZ9JALaWY31kS
+eXXS//AstQbA2L2gz2/V2T+4lYH3D8/gbiO29P/T5EfGEnK8J8yhbVJVvge7MTpJVSzp2UXP
+CHClzks1uJhI8hx8ZqI6Hsn1I8PuRLTFVhDa7f+o6g8nfuKanF/XjUeRhAAsnipoXqKK5Tka
+Crb9B5YqDg88mD7SjeMEJnFLknf+bzIAvYJn9FOGHjJrpYzWBNkIgVOUNOvJQkbMr2R29jwx
+/0aNh3GKJmpxOQ8dxmA2jb6qkkz0VkTMrFIE5FZNm5nR5StLsdvP39k3TBIkda6s2Ko/YutH
+9BVPDSLttsaYpvijECCx5G7GB+wPKWzqNVMaMbs+iSMB8UAwj3LK3vvnfOhdA5HdbXnC4k2I
+hXIUYz6JSkzfGCPExgoFfZYWRiHgoQ0zMF5YTCpnOB2YLw1JRbrk/HdW/RZeH+gGu41tttGR
+kcHfb8eE2HbYvMmJ6FmQcC+xKrCkrUBa/dK4G3+BQVIGAaugel/FeIwmpsZds9ibCxzBidVK
+yCEXCGkDvl90GHd6R5drINZrN+Pg0mtDzJgXUN6Ap/gKV7joEGVvOP+mGAAAAAAAAA==
+--------------ms030004060100050809070605--

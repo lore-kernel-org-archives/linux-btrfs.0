@@ -1,111 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:50230 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932145AbbJHWWZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2015 18:22:25 -0400
-Date: Thu, 8 Oct 2015 22:22:23 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Pavel Pisa <pisa@cmp.felk.cvut.cz>
-Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS RAID1 behavior after one drive temporal disconection
-Message-ID: <20151008222223.GD25907@carfax.org.uk>
-References: <201510052226.47051.pisa@cmp.felk.cvut.cz>
- <561657D5.1070809@gmail.com>
- <20151008211352.GC25907@carfax.org.uk>
- <201510090016.43759.pisa@cmp.felk.cvut.cz>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="zgr1mbP1ee4HJQ5m"
-In-Reply-To: <201510090016.43759.pisa@cmp.felk.cvut.cz>
+Received: from plane.gmane.org ([80.91.229.3]:57746 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754594AbbJHXSf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Oct 2015 19:18:35 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZkKSG-0000EY-Uv
+	for linux-btrfs@vger.kernel.org; Fri, 09 Oct 2015 01:18:33 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2015 01:18:32 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2015 01:18:32 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Using BtrFS and backup tools for keeping two systems in sync
+Date: Thu, 8 Oct 2015 23:18:25 +0000 (UTC)
+Message-ID: <pan$1460a$dca727ad$9f868710$44ab0973@cox.net>
+References: <CAH-HCWV2mO1FFRGPh+jh2TrZMYV-7w7MwytSV4WZ33-9PW=qRw@mail.gmail.com>
+	<20151008063745.GB25907@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hugo Mills posted on Thu, 08 Oct 2015 06:37:45 +0000 as excerpted:
 
---zgr1mbP1ee4HJQ5m
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+> On Thu, Oct 08, 2015 at 08:05:09AM +0530, Shriramana Sharma wrote:
+>> Hello. I see there are some backup tools taking advantage of BtrFS's
+>> incremental send/receive feature:
+>> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup. [BTW Ames
+>> Cornish's ButterSink (https://github.com/AmesCornish/buttersink) seems
+>> to be missing from that page.]
+>> 
+>> Now I'd like to know if anyone has evolved some good practices w.r.t
+>> maintaining the data of two systems in sync using this feature of
+>> BtrFS. What I have in mind is: I work on my desktop by default, and for
+>> ergonomics reasons only use my laptop when I need the mobility.
+>> I'd like to keep the main data (documents I create, programs I write
+>> etc) in sync between the two. (The profile data such as in the ~/.*
+>> hidden folders had better stay separate though, I guess.)
+>> 
+>> I figure with the existing tools it would not be too difficult to
+>> maintain a synced set of snapshots between the two systems if I only
+>> use the desktop vs laptop alternatingly and sync at each switchover,
+>> but the potential problem only would come if I modify both (something
+>> like having to do git merge, I guess).
+>> 
+>> Has anyone come across this situation and evolved any policies to
+>> handle it?
+> 
+>    You can't currently do this efficiently with send/receive. It
+> should be possible, but it needs a change to the send stream format.
 
-On Fri, Oct 09, 2015 at 12:16:43AM +0200, Pavel Pisa wrote:
-> Hello Hugo,
->=20
-> On Thursday 08 of October 2015 23:13:52 Hugo Mills wrote:
-> > On Thu, Oct 08, 2015 at 07:47:33AM -0400, Austin S Hemmelgarn wrote:
-> > > On 2015-10-08 04:28, Pavel Pisa wrote:
-> > > >I go to use "btrfs replace" because there has not been any reply to =
-my
-> > > > inplace correction question. But I expect that clarification if
-> > > > possible/how to resync RAID1 after one drive temporal disappear is
-> > > > really important to many of BTRFS users.
-> > >
-> > > As of right now, there is no way that I know of to safely re-sync a
-> > > drive that's been disconnected for a while.  The best bet is
-> > > probably to use replace, but for that to work reliably, you would
-> > > need to tell it to ignore the now stale drive when trying to read
-> > > each chunk.
-> >
-> >    Scrub is officially what you need there. I can confirm that it
-> > works correctly, having used it myself after accidentally unplugging
-> > the wrong drive.
-> >
->=20
-> Thanks for the reply.
->=20
-> I have tried to run scrub after reconnect but it counted errors in
-> its console output and write errors has been logged by kernel as crazy.
-> I have to admit I have not wait to finish it because I have not good
-> feeling from it.
+Elucidating somewhat...
 
-   If the scrub works OK, you will still get lots of scary-looking
-errors in the logs, but they'll usually say it's repaired the problem.
+AFAIK (as a list regular but not a dev or a user, personally, of the send/
+receive functionality), currently, btrfs send/receive incremental works 
+only one way.  That is, the send-stream format provides sufficient 
+information for incremental sends after an original send, but there's no 
+way to reverse the process and sync the other way, from the original 
+receiver back to the sender.  A full send can be done, but then it's no 
+longer linked to the the original.
 
-   Getting write errors at this point indicates that you have hardware
-problems of some kind, and (usually) that device needs to be replaced.
-(Or the controller, or the cabling).
+As Hugo says, the base functionality is available, but actually hooking 
+it up to work will require a bump to the send stream format, as the 
+required information simply isn't sent, ATM.  That send stream format 
+bump is likely to eventually happen, but there's a very strong interest 
+in keeping the number of formats that must be supported for backward 
+compatibility to a minimum, and thus in a minimum number of format 
+bumps.  So the devs want to delay the bump as long as possible, 
+identifying anything else that might need to change in the mean time, and 
+make, ideally, one final bump, including all changes discovered to be 
+needed since the last one, and then no more.
 
-> May it be it was result of not fully correct reconnect.
-> But other partition worked with ext4 has no problems to write.
->=20
-> But if mount/unmount (in my case requiring reboot) and then scrub
-> worked it would be much simpler than replaces series.
->=20
-> I hope I would not need that (at least soon/in years) but I
-> give try to scrub again.
->=20
-> May it be problem is my btrfs tools old version on the server --
-> Wheezy Btrfs v3.17 backport. Kernel is Linux 4.1.2 #1 SMP PREEMPT.
+So while this necessary change is known, it could be some time, yet, 
+before it's actually done, with hopefully no further changes necessary or 
+allowed after that.
 
-   No, the version of the tools has no effect on any of this. It
-really sounds like you have hardware issues.
+Which back on the reoccurring theme of btrfs stability...
 
-   Hugo.
+... is another point toward btrfs "definitely stabilizing now, but not 
+yet fully stable and mature."  When the devs decide there are likely no 
+further as-yet undiscovered necessary changes coming and finally do this 
+bump, we'll know they really do consider btrfs to be settling down into 
+stability.
 
---=20
-Hugo Mills             | =A91973 Unclear Research Ltd
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
---zgr1mbP1ee4HJQ5m
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWFuyfAAoJEFheFHXiqx3kQQoQALx9JK5puqEnmkcfwD4175lb
-jmocjx6FqQzNj8MFwBQ4/IHyG1szgxguurP/oPxKKiuMmXrGJEH1NFLx2l6ojr35
-ozv1542ZQGbrJzvtSWlvcdu4s3/6tbcjiO2Xh78XXO3tDmtHHFQ0cLwIbWPbU/ox
-ffCoGqKCw7HPYU7lR4z+1W2Nv6UmeyL/TEzmaGl68x+gpPswoOmD/1SJ9lEcG5Ld
-zd6H6SMv7bLp08tvuqp8kpEoe6OtnqAp9fdG5zWawXzX6EWO09oRoFLZyZlqrW1U
-GeDIiE/RDVSfwj4kVw5ZRLlol8oXRoBFvStf8jaqrIjwRNGIQvF7aggH0HPa6SMv
-G82YhjEUhnYtRcN8nbcjGLkqee22uuX/zueBi/aVNVe9wduH93ax5LDqeWPnbRWK
-BXIj/HH6eDu+AZujQq+l6arqmWwIaVK3K7Pc7ljxkGPLZbnyXlDIF4Zbt90+we9Q
-TPH/+rdJiEodlLcBrsoRylQnPfEFY1Bs/7NUQaTANgFB/ao+JTTl6LWBBdpsc1Gx
-RxLqwOVlqiw5iXPuiOLv1VyozpQ61JNoZpNTRq1KaeYmEonZt4rHaSRzD3ymSJ6B
-hdfD5xj9rr1r+hdVG2iApivf9cYXySHleVwDgqsUAbtlwebOjW2JF75HsLkQjFcl
-2cf7HNAGbsDES8Ug9oHA
-=HPxd
------END PGP SIGNATURE-----
-
---zgr1mbP1ee4HJQ5m--

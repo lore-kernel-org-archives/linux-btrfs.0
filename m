@@ -1,46 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:38160 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753243AbbJFXvR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Oct 2015 19:51:17 -0400
-Received: from svh-gw.merlins.org ([173.11.111.145]:37690 helo=legolas)
-	by mail1.merlins.org with esmtps
-	(Cipher TLS1.2:DHE_RSA_AES_128_CBC_SHA1:128) (Exim 4.80 #2)
-	id 1Zjc0m-0006P7-UF
-	for <linux-btrfs@vger.kernel.org>; Tue, 06 Oct 2015 16:51:16 -0700
-Received: from merlin by legolas with local (Exim 4.80)
-	(envelope-from <marc@merlins.org>)
-	id 1Zjc0l-0006I4-Vl
-	for linux-btrfs@vger.kernel.org; Tue, 06 Oct 2015 16:51:11 -0700
-Date: Tue, 6 Oct 2015 16:51:11 -0700
-From: Marc MERLIN <marc@merlins.org>
-To: linux-btrfs@vger.kernel.org
-Message-ID: <20151006235111.GO20745@merlins.org>
-References: <20151006054034.GA21376@merlins.org>
+Received: from mail-yk0-f180.google.com ([209.85.160.180]:33281 "EHLO
+	mail-yk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752497AbbJHCfK convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 7 Oct 2015 22:35:10 -0400
+Received: by ykft14 with SMTP id t14so36983512ykf.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 07 Oct 2015 19:35:09 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151006054034.GA21376@merlins.org>
-Subject: Re: btrfs kernel hang? (4.1.3)
+Date: Thu, 8 Oct 2015 08:05:09 +0530
+Message-ID: <CAH-HCWV2mO1FFRGPh+jh2TrZMYV-7w7MwytSV4WZ33-9PW=qRw@mail.gmail.com>
+Subject: Using BtrFS and backup tools for keeping two systems in sync
+From: Shriramana Sharma <samjnaa@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 05, 2015 at 10:40:34PM -0700, Marc MERLIN wrote:
-> I started doing multiple mencoder/ffmpeg commands, and as I ran one
-> more, the system froze up (as in everything froze, even running ssh
-> sessions not doing any IO)
-> 
-> sysrq-W output:
-> http://marc.merlins.org/tmp/sysrq_4.1.3.txt
-> 
-> I'm assuming btrfs is to blame, but I'm not certain.
-> Hopefully someone knowledgeable can have a look.
+Hello. I see there are some backup tools taking advantage of BtrFS's
+incremental send/receive feature:
+https://btrfs.wiki.kernel.org/index.php/Incremental_Backup. [BTW Ames
+Cornish's ButterSink (https://github.com/AmesCornish/buttersink) seems
+to be missing from that page.]
 
-Same exact bug/hang happened again, same condition. Started one ffmpeg
-too many, and everything stopped.
+Now I'd like to know if anyone has evolved some good practices w.r.t
+maintaining the data of two systems in sync using this feature of
+BtrFS. What I have in mind is: I work on my desktop by default, and
+for ergonomics reasons only use my laptop when I need the mobility.
+I'd like to keep the main data (documents I create, programs I write
+etc) in sync between the two. (The profile data such as in the ~/.*
+hidden folders had better stay separate though, I guess.)
 
-Marc
+I figure with the existing tools it would not be too difficult to
+maintain a synced set of snapshots between the two systems if I only
+use the desktop vs laptop alternatingly and sync at each switchover,
+but the potential problem only would come if I modify both (something
+like having to do git merge, I guess).
+
+Has anyone come across this situation and evolved any policies to handle it?
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+Shriramana Sharma ஶ்ரீரமணஶர்மா श्रीरमणशर्मा

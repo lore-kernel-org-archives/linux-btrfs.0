@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [59.151.112.132] ([59.151.112.132]:15337 "EHLO
+Received: from [59.151.112.132] ([59.151.112.132]:42637 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-FAIL-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753256AbbJHLCd (ORCPT
+	by vger.kernel.org with ESMTP id S1753256AbbJHLCs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Oct 2015 07:02:33 -0400
+	Thu, 8 Oct 2015 07:02:48 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t98B18MG030401
-	for <linux-btrfs@vger.kernel.org>; Thu, 8 Oct 2015 19:01:08 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t98B19dG030404
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Oct 2015 19:01:09 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v4 1/3] btrfs: Fix lost-data-profile caused by auto removing bg
-Date: Thu, 8 Oct 2015 18:59:53 +0800
-Message-ID: <3b7959e1293407ddf7ffe7c6ac2fe08197b93916.1444301652.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v4 2/3] btrfs: Fix lost-data-profile caused by balance bg
+Date: Thu, 8 Oct 2015 18:59:54 +0800
+Message-ID: <a27bed8be4d1a4554ccf5e4de31aacc84db28b35.1444301652.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1444301651.git.zhaolei@cn.fujitsu.com>
 References: <cover.1444301651.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -30,77 +30,138 @@ Reproduce:
  mkfs.btrfs -f -d raid1 "${TEST_DEV[@]}"
 
  mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
- umount "$TEST_DEV"
-
- mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
+ btrfs balance start -dusage=0 $TEST_DIR
  btrfs filesystem usage $TEST_DIR
 
-We can see the data chunk changed from raid1 to single:
+ dd if=/dev/zero of="$TEST_DIR"/file count=100
+ btrfs filesystem usage $TEST_DIR
+
+Result:
+ We can see "no data chunk" in first "btrfs filesystem usage":
  # btrfs filesystem usage $TEST_DIR
- Data,single: Size:8.00MiB, Used:0.00B
+ Overall:
+    ...
+ Metadata,single: Size:8.00MiB, Used:0.00B
     /dev/vdg        8.00MiB
- #
+ Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
+    /dev/vdg      122.88MiB
+    /dev/vdh      122.88MiB
+ System,single: Size:4.00MiB, Used:0.00B
+    /dev/vdg        4.00MiB
+ System,RAID1: Size:8.00MiB, Used:16.00KiB
+    /dev/vdg        8.00MiB
+    /dev/vdh        8.00MiB
+ Unallocated:
+    /dev/vdg        1.06GiB
+    /dev/vdh        1.07GiB
+
+ And "data chunks changed from raid1 to single" in second
+ "btrfs filesystem usage":
+ # btrfs filesystem usage $TEST_DIR
+ Overall:
+    ...
+ Data,single: Size:256.00MiB, Used:0.00B
+    /dev/vdh      256.00MiB
+ Metadata,single: Size:8.00MiB, Used:0.00B
+    /dev/vdg        8.00MiB
+ Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
+    /dev/vdg      122.88MiB
+    /dev/vdh      122.88MiB
+ System,single: Size:4.00MiB, Used:0.00B
+    /dev/vdg        4.00MiB
+ System,RAID1: Size:8.00MiB, Used:16.00KiB
+    /dev/vdg        8.00MiB
+    /dev/vdh        8.00MiB
+ Unallocated:
+    /dev/vdg        1.06GiB
+    /dev/vdh      841.92MiB
 
 Reason:
- When a empty filesystem mount with -o nospace_cache, the last
- data blockgroup will be auto-removed in umount.
+ btrfs balance delete last data chunk in case of no data in
+ the filesystem, then we can see "no data chunk" by "fi usage"
+ command.
 
- Then if we mount it again, there is no data chunk in the
- filesystem, so the only available data profile is 0x0, result
- is all new chunks are created as single type.
+ And when we do write operation to fs, the only available data
+ profile is 0x0, result is all new chunks are allocated single type.
 
 Fix:
- Don't auto-delete last blockgroup for a raid type.
+ Allocate a data chunk explicitly to ensure we don't lose the
+ raid profile for data.
 
 Test:
  Test by above script, and confirmed the logic by debug output.
 
-Changelog v3->v4:
-1: Avoid down_read() in spin_lock context.
-   Noticed-by: Chris Mason <clm@fb.com>
-
-Changelog v2->v3:
-1: Use list_is_singular() instead of
-   block_group->list.next == block_group->list.prev
-   Suggested-by: Jeff Mahoney <jeffm@suse.com>
-
 Changelog v1->v2:
-1: Put code of checking block_group->list into
-   semaphore of space_info->groups_sem.
-   Noticed-by: Filipe Manana <fdmanana@gmail.com>
+1: Update patch description of "Fix" field
+2: Use BTRFS_BLOCK_GROUP_DATA for btrfs_force_chunk_alloc instead
+   of 1
+3: Only reserve chunk when doing balance on data chunk.
+All suggested-by: Filipe Manana <fdmanana@gmail.com>
 
 Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 7 +++++--
- 1 file changed, 5 insertions(+), 2 deletions(-)
+ fs/btrfs/volumes.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 79a5bd9..00c621b 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10010,8 +10010,10 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		block_group = list_first_entry(&fs_info->unused_bgs,
- 					       struct btrfs_block_group_cache,
- 					       bg_list);
--		space_info = block_group->space_info;
- 		list_del_init(&block_group->bg_list);
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6fc73586..cd9e5bd 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3277,6 +3277,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 	u64 limit_data = bctl->data.limit;
+ 	u64 limit_meta = bctl->meta.limit;
+ 	u64 limit_sys = bctl->sys.limit;
++	int chunk_reserved = 0;
+ 
+ 	/* step one make some room on all the devices */
+ 	devices = &fs_info->fs_devices->devices;
+@@ -3326,6 +3327,8 @@ again:
+ 	key.type = BTRFS_CHUNK_ITEM_KEY;
+ 
+ 	while (1) {
++		u64 chunk_type;
 +
-+		space_info = block_group->space_info;
+ 		if ((!counting && atomic_read(&fs_info->balance_pause_req)) ||
+ 		    atomic_read(&fs_info->balance_cancel_req)) {
+ 			ret = -ECANCELED;
+@@ -3371,8 +3374,10 @@ again:
+ 			spin_unlock(&fs_info->balance_lock);
+ 		}
+ 
++		chunk_type = btrfs_chunk_type(leaf, chunk);
+ 		ret = should_balance_chunk(chunk_root, leaf, chunk,
+ 					   found_key.offset);
 +
- 		if (ret || btrfs_mixed_space_info(space_info)) {
- 			btrfs_put_block_group(block_group);
- 			continue;
-@@ -10025,7 +10027,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		spin_lock(&block_group->lock);
- 		if (block_group->reserved ||
- 		    btrfs_block_group_used(&block_group->item) ||
--		    block_group->ro) {
-+		    block_group->ro ||
-+		    list_is_singular(&block_group->list)) {
- 			/*
- 			 * We want to bail if we made new allocations or have
- 			 * outstanding allocations in this block group.  We do
+ 		btrfs_release_path(path);
+ 		if (!ret) {
+ 			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+@@ -3387,6 +3392,25 @@ again:
+ 			goto loop;
+ 		}
+ 
++		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) && !chunk_reserved) {
++			trans = btrfs_start_transaction(chunk_root, 0);
++			if (IS_ERR(trans)) {
++				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
++				ret = PTR_ERR(trans);
++				goto error;
++			}
++
++			ret = btrfs_force_chunk_alloc(trans, chunk_root,
++						      BTRFS_BLOCK_GROUP_DATA);
++			if (ret < 0) {
++				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
++				goto error;
++			}
++
++			btrfs_end_transaction(trans, chunk_root);
++			chunk_reserved = 1;
++		}
++
+ 		ret = btrfs_relocate_chunk(chunk_root,
+ 					   found_key.offset);
+ 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
 -- 
 1.8.5.1
 

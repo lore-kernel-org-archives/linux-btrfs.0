@@ -1,55 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from p3nlsmtpcp01-04.prod.phx3.secureserver.net ([184.168.200.145]:56356
-	"EHLO p3nlsmtpcp01-04.prod.phx3.secureserver.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751850AbbJGMOP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Oct 2015 08:14:15 -0400
-Received: from [223.231.216.195] (port=34333 helo=giis)
-	by p3plcpnl0639.prod.phx3.secureserver.net with esmtpsa (TLSv1.2:AES128-GCM-SHA256:128)
-	(Exim 4.85)
-	(envelope-from <Lakshmipathi.G@giis.co.in>)
-	id 1ZjnUa-0002vc-9d
-	for linux-btrfs@vger.kernel.org; Wed, 07 Oct 2015 05:06:45 -0700
-Date: Wed, 7 Oct 2015 17:36:38 +0530
-From: "Lakshmipathi.G" <Lakshmipathi.G@giis.co.in>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: print root item's last_snapshot value.
-Message-ID: <20151007120638.GA24461@giis>
+Received: from mail-by2on0133.outbound.protection.outlook.com ([207.46.100.133]:51254
+	"EHLO na01-by2-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1755356AbbJHJTh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Oct 2015 05:19:37 -0400
+From: =?UTF-8?q?Vincent=20Stehl=C3=A9?= <vincent.stehle@freescale.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: =?UTF-8?q?Vincent=20Stehl=C3=A9?= <vincent.stehle@freescale.com>
+Subject: [PATCH] btrfs-progs: restore: fix off-by-one len check
+Date: Thu, 8 Oct 2015 10:47:09 +0200
+Message-ID: <1444294029-23310-1-git-send-email-vincent.stehle@freescale.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Fix a check of len versus PATH_MAX in function copy_symlink(), to
+account for the terminating null byte.
 
-
-Include last_snapshot value in print_root(). With btrfs-debug-tree, it 
-helps to identify whether its a snapshot-ed subvolume or not.
-
-Signed-off-by: Lakshmipathi.G <Lakshmipathi.G@giis.co.in>
+Resolves-Coverity-CID: 1296749
+Signed-off-by: Vincent Stehlé <vincent.stehle@freescale.com>
 ---
- print-tree.c | 5 +++--
- 1 file changed, 3 insertions(+), 2 deletions(-)
+ cmds-restore.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/print-tree.c b/print-tree.c
-index dc1d276..7ddf400 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -481,12 +481,13 @@ static void print_root(struct extent_buffer *leaf, int slot)
- 	memset(&root_item, 0, sizeof(root_item));
- 	read_extent_buffer(leaf, &root_item, (unsigned long)ri, len);
+diff --git a/cmds-restore.c b/cmds-restore.c
+index 8fc8b2a..a1445d4 100644
+--- a/cmds-restore.c
++++ b/cmds-restore.c
+@@ -863,7 +863,7 @@ static int copy_symlink(struct btrfs_root *root, struct btrfs_key *key,
  
--	printf("\t\troot data bytenr %llu level %d dirid %llu refs %u gen %llu\n",
-+	printf("\t\troot data bytenr %llu level %d dirid %llu refs %u gen %llu lastsnap %llu\n",
- 		(unsigned long long)btrfs_root_bytenr(&root_item),
- 		btrfs_root_level(&root_item),
- 		(unsigned long long)btrfs_root_dirid(&root_item),
- 		btrfs_root_refs(&root_item),
--		(unsigned long long)btrfs_root_generation(&root_item));
-+		(unsigned long long)btrfs_root_generation(&root_item),
-+		(unsigned long long)btrfs_root_last_snapshot(&root_item));
- 
- 	if (root_item.generation == root_item.generation_v2) {
- 		uuid_unparse(root_item.uuid, uuid_str);
+ 	len = btrfs_file_extent_inline_item_len(leaf,
+ 			btrfs_item_nr(path->slots[0]));
+-	if (len > PATH_MAX) {
++	if (len >= PATH_MAX) {
+ 		fprintf(stderr, "Symlink '%s' target length %d is longer than PATH_MAX\n",
+ 				fs_name, len);
+ 		ret = -1;
 -- 
-1.8.3.1
+2.5.3
 

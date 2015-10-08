@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [59.151.112.132] ([59.151.112.132]:42637 "EHLO
+Received: from [59.151.112.132] ([59.151.112.132]:15337 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-FAIL-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753256AbbJHLCs (ORCPT
+	by vger.kernel.org with ESMTP id S1754173AbbJHLCt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Oct 2015 07:02:48 -0400
+	Thu, 8 Oct 2015 07:02:49 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t98B19dG030404
-	for <linux-btrfs@vger.kernel.org>; Thu, 8 Oct 2015 19:01:09 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t98B1AUi030407
+	for <linux-btrfs@vger.kernel.org>; Thu, 8 Oct 2015 19:01:10 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v4 2/3] btrfs: Fix lost-data-profile caused by balance bg
-Date: Thu, 8 Oct 2015 18:59:54 +0800
-Message-ID: <a27bed8be4d1a4554ccf5e4de31aacc84db28b35.1444301652.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v4 3/3] btrfs: Use fs_info directly in btrfs_delete_unused_bgs
+Date: Thu, 8 Oct 2015 18:59:55 +0800
+Message-ID: <cffab2f9d9e394568bdd21de211b171516d61c49.1444301652.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1444301651.git.zhaolei@cn.fujitsu.com>
 References: <cover.1444301651.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,148 +20,36 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Reproduce:
- (In integration-4.3 branch)
+No need to use root->fs_info in btrfs_delete_unused_bgs(),
+use fs_info directly instead.
 
- TEST_DEV=(/dev/vdg /dev/vdh)
- TEST_DIR=/mnt/tmp
-
- umount "$TEST_DEV" >/dev/null
- mkfs.btrfs -f -d raid1 "${TEST_DEV[@]}"
-
- mount -o nospace_cache "$TEST_DEV" "$TEST_DIR"
- btrfs balance start -dusage=0 $TEST_DIR
- btrfs filesystem usage $TEST_DIR
-
- dd if=/dev/zero of="$TEST_DIR"/file count=100
- btrfs filesystem usage $TEST_DIR
-
-Result:
- We can see "no data chunk" in first "btrfs filesystem usage":
- # btrfs filesystem usage $TEST_DIR
- Overall:
-    ...
- Metadata,single: Size:8.00MiB, Used:0.00B
-    /dev/vdg        8.00MiB
- Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
-    /dev/vdg      122.88MiB
-    /dev/vdh      122.88MiB
- System,single: Size:4.00MiB, Used:0.00B
-    /dev/vdg        4.00MiB
- System,RAID1: Size:8.00MiB, Used:16.00KiB
-    /dev/vdg        8.00MiB
-    /dev/vdh        8.00MiB
- Unallocated:
-    /dev/vdg        1.06GiB
-    /dev/vdh        1.07GiB
-
- And "data chunks changed from raid1 to single" in second
- "btrfs filesystem usage":
- # btrfs filesystem usage $TEST_DIR
- Overall:
-    ...
- Data,single: Size:256.00MiB, Used:0.00B
-    /dev/vdh      256.00MiB
- Metadata,single: Size:8.00MiB, Used:0.00B
-    /dev/vdg        8.00MiB
- Metadata,RAID1: Size:122.88MiB, Used:112.00KiB
-    /dev/vdg      122.88MiB
-    /dev/vdh      122.88MiB
- System,single: Size:4.00MiB, Used:0.00B
-    /dev/vdg        4.00MiB
- System,RAID1: Size:8.00MiB, Used:16.00KiB
-    /dev/vdg        8.00MiB
-    /dev/vdh        8.00MiB
- Unallocated:
-    /dev/vdg        1.06GiB
-    /dev/vdh      841.92MiB
-
-Reason:
- btrfs balance delete last data chunk in case of no data in
- the filesystem, then we can see "no data chunk" by "fi usage"
- command.
-
- And when we do write operation to fs, the only available data
- profile is 0x0, result is all new chunks are allocated single type.
-
-Fix:
- Allocate a data chunk explicitly to ensure we don't lose the
- raid profile for data.
-
-Test:
- Test by above script, and confirmed the logic by debug output.
-
-Changelog v1->v2:
-1: Update patch description of "Fix" field
-2: Use BTRFS_BLOCK_GROUP_DATA for btrfs_force_chunk_alloc instead
-   of 1
-3: Only reserve chunk when doing balance on data chunk.
-All suggested-by: Filipe Manana <fdmanana@gmail.com>
-
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ fs/btrfs/extent-tree.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc73586..cd9e5bd 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3277,6 +3277,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	u64 limit_data = bctl->data.limit;
- 	u64 limit_meta = bctl->meta.limit;
- 	u64 limit_sys = bctl->sys.limit;
-+	int chunk_reserved = 0;
- 
- 	/* step one make some room on all the devices */
- 	devices = &fs_info->fs_devices->devices;
-@@ -3326,6 +3327,8 @@ again:
- 	key.type = BTRFS_CHUNK_ITEM_KEY;
- 
- 	while (1) {
-+		u64 chunk_type;
-+
- 		if ((!counting && atomic_read(&fs_info->balance_pause_req)) ||
- 		    atomic_read(&fs_info->balance_cancel_req)) {
- 			ret = -ECANCELED;
-@@ -3371,8 +3374,10 @@ again:
- 			spin_unlock(&fs_info->balance_lock);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 00c621b..c93a77a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10020,7 +10020,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
  		}
+ 		spin_unlock(&fs_info->unused_bgs_lock);
  
-+		chunk_type = btrfs_chunk_type(leaf, chunk);
- 		ret = should_balance_chunk(chunk_root, leaf, chunk,
- 					   found_key.offset);
-+
- 		btrfs_release_path(path);
- 		if (!ret) {
- 			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-@@ -3387,6 +3392,25 @@ again:
- 			goto loop;
- 		}
+-		mutex_lock(&root->fs_info->delete_unused_bgs_mutex);
++		mutex_lock(&fs_info->delete_unused_bgs_mutex);
  
-+		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) && !chunk_reserved) {
-+			trans = btrfs_start_transaction(chunk_root, 0);
-+			if (IS_ERR(trans)) {
-+				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+				ret = PTR_ERR(trans);
-+				goto error;
-+			}
-+
-+			ret = btrfs_force_chunk_alloc(trans, chunk_root,
-+						      BTRFS_BLOCK_GROUP_DATA);
-+			if (ret < 0) {
-+				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
-+				goto error;
-+			}
-+
-+			btrfs_end_transaction(trans, chunk_root);
-+			chunk_reserved = 1;
-+		}
-+
- 		ret = btrfs_relocate_chunk(chunk_root,
- 					   found_key.offset);
- 		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 		/* Don't want to race with allocators so take the groups_sem */
+ 		down_write(&space_info->groups_sem);
+@@ -10144,7 +10144,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
+ end_trans:
+ 		btrfs_end_transaction(trans, root);
+ next:
+-		mutex_unlock(&root->fs_info->delete_unused_bgs_mutex);
++		mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 		btrfs_put_block_group(block_group);
+ 		spin_lock(&fs_info->unused_bgs_lock);
+ 	}
 -- 
 1.8.5.1
 

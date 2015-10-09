@@ -1,112 +1,146 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39634 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752670AbbJFPTj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 6 Oct 2015 11:19:39 -0400
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH V2 1/7] Btrfs: create helper function __check_raid_min_devices()
-Date: Tue,  6 Oct 2015 23:19:18 +0800
-Message-Id: <1444144764-2384-2-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1444144764-2384-1-git-send-email-anand.jain@oracle.com>
-References: <1444144764-2384-1-git-send-email-anand.jain@oracle.com>
+Received: from [59.151.112.132] ([59.151.112.132]:47522 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-FAIL-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753612AbbJICNm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 8 Oct 2015 22:13:42 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t992D1lX022439
+	for <linux-btrfs@vger.kernel.org>; Fri, 9 Oct 2015 10:13:01 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2 01/23] btrfs: qgroup: New function declaration for new reserve implement
+Date: Fri, 9 Oct 2015 10:11:23 +0800
+Message-ID: <1444356684-30162-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1444356684-30162-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1444356684-30162-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-move a section of btrfs_rm_device() code to check for min number
-of the devices into the function __check_raid_min_devices()
+Add new structures and functions for new qgroup reserve implement dirty
+phase.
+Which will focus on avoiding over-reserve as in that case, which means
+for already reserved dirty space range, we won't reserve space again.
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
+This patch adds the needed structure declaration and comments.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2: commit update and title renamed from
-    Btrfs: move check for min number of devices to a function
+v2:
+  Fix some comment spell
+---
+ fs/btrfs/btrfs_inode.h |  4 ++++
+ fs/btrfs/qgroup.c      | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h      |  3 +++
+ 3 files changed, 65 insertions(+)
 
- fs/btrfs/volumes.c | 51 ++++++++++++++++++++++++++++++++-------------------
- 1 file changed, 32 insertions(+), 19 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4af0cf6..6be21ff 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1629,23 +1629,20 @@ out:
- 	return ret;
- }
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 0ef5cc1..6d799b8 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -24,6 +24,7 @@
+ #include "extent_io.h"
+ #include "ordered-data.h"
+ #include "delayed-inode.h"
++#include "qgroup.h"
  
--int btrfs_rm_device(struct btrfs_root *root, char *device_path)
-+static int __check_raid_min_devices(struct btrfs_root *root)
+ /*
+  * ordered_data_close is set by truncate when a file that used
+@@ -193,6 +194,9 @@ struct btrfs_inode {
+ 	struct timespec i_otime;
+ 
+ 	struct inode vfs_inode;
++
++	/* qgroup dirty map for data space reserve */
++	struct btrfs_qgroup_data_rsv_map *qgroup_rsv_map;
+ };
+ 
+ extern unsigned char btrfs_filetype_table[];
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index e9ace09..607ace8 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -91,6 +91,64 @@ struct btrfs_qgroup {
+ 	u64 new_refcnt;
+ };
+ 
++/*
++ * Record one range of reserved space.
++ */
++struct data_rsv_range {
++	struct rb_node node;
++	u64 start;
++	u64 len;
++};
++
++/*
++ * Record per inode reserved range.
++ * This is mainly used to resolve reserved space leaking problem.
++ * One of the cause is the mismatch with reserve and free.
++ *
++ * New qgroup will handle reserve in two phase.
++ * 1) Dirty phase.
++ *    Pages are just marked dirty, but not written to disk.
++ * 2) Flushed phase
++ *    Pages are written to disk, but transaction is not committed yet.
++ *
++ * At Dirty phase, we only need to focus on avoiding over-reserve.
++ *
++ * The idea is like below.
++ * 1) Write [0,8K)
++ * 0	4K	8K	12K	16K
++ * |////////////|
++ * Reserve +8K, total reserved: 8K
++ *
++ * 2) Write [0,4K)
++ * 0	4K	8K	12K	16K
++ * |////////////|
++ * Reserve 0, total reserved 8K
++ *
++ * 3) Write [12K,16K)
++ * 0	4K	8K	12K	16K
++ * |////////////|	|///////|
++ * Reserve +4K, total reserved 12K
++ *
++ * 4) Flush [0,8K)
++ * Can happen without commit transaction, like fallocate will trigger the
++ * write.
++ * 0	4K	8K	12K	16K
++ *			|///////|
++ * Reserve 0, total reserved 12K
++ * As the extent is written to disk, not dirty any longer, the range get
++ * removed.
++ * But as its delayed_refs is not run, its reserved space will not be freed.
++ * And things continue to Flushed phase.
++ *
++ * By this method, we can avoid over-reserve, which will lead to reserved
++ * space leak.
++ */
++struct btrfs_qgroup_data_rsv_map {
++	struct rb_root root;
++	u64 reserved;
++	spinlock_t lock;
++};
++
+ static void btrfs_qgroup_update_old_refcnt(struct btrfs_qgroup *qg, u64 seq,
+ 					   int mod)
  {
--	struct btrfs_device *device;
--	struct btrfs_device *next_device;
--	struct block_device *bdev;
--	struct buffer_head *bh = NULL;
--	struct btrfs_super_block *disk_super;
--	struct btrfs_fs_devices *cur_devices;
- 	u64 all_avail;
--	u64 devid;
- 	u64 num_devices;
--	u8 *dev_uuid;
- 	unsigned seq;
- 	int ret = 0;
--	bool clear_super = false;
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index 6387dcf..2f863a4 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -33,6 +33,9 @@ struct btrfs_qgroup_extent_record {
+ 	struct ulist *old_roots;
+ };
  
--	mutex_lock(&uuid_mutex);
-+	num_devices = root->fs_info->fs_devices->num_devices;
-+	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
-+	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
-+		WARN_ON(num_devices < 1);
-+		num_devices--;
-+	}
-+	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
- 
- 	do {
- 		seq = read_seqbegin(&root->fs_info->profiles_lock);
-@@ -1655,14 +1652,6 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 			    root->fs_info->avail_metadata_alloc_bits;
- 	} while (read_seqretry(&root->fs_info->profiles_lock, seq));
- 
--	num_devices = root->fs_info->fs_devices->num_devices;
--	btrfs_dev_replace_lock(&root->fs_info->dev_replace);
--	if (btrfs_dev_replace_is_ongoing(&root->fs_info->dev_replace)) {
--		WARN_ON(num_devices < 1);
--		num_devices--;
--	}
--	btrfs_dev_replace_unlock(&root->fs_info->dev_replace);
--
- 	if ((all_avail & BTRFS_BLOCK_GROUP_RAID10) && num_devices <= 4) {
- 		ret = BTRFS_ERROR_DEV_RAID10_MIN_NOT_MET;
- 		goto out;
-@@ -1684,6 +1673,30 @@ int btrfs_rm_device(struct btrfs_root *root, char *device_path)
- 		goto out;
- 	}
- 
-+out:
-+	return ret;
-+}
++/* For per-inode dirty range reserve */
++struct btrfs_qgroup_data_rsv_map;
 +
-+int btrfs_rm_device(struct btrfs_root *root, char *device_path)
-+{
-+	struct btrfs_device *device;
-+	struct btrfs_device *next_device;
-+	struct block_device *bdev;
-+	struct buffer_head *bh = NULL;
-+	struct btrfs_super_block *disk_super;
-+	struct btrfs_fs_devices *cur_devices;
-+	u64 devid;
-+	u64 num_devices;
-+	u8 *dev_uuid;
-+	int ret = 0;
-+	bool clear_super = false;
-+
-+	mutex_lock(&uuid_mutex);
-+
-+	ret = __check_raid_min_devices(root);
-+	if (ret)
-+		goto out;
-+
- 	if (strcmp(device_path, "missing") == 0) {
- 		struct list_head *devices;
- 		struct btrfs_device *tmp;
+ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_fs_info *fs_info);
+ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
 -- 
-2.4.1
+2.6.1
 

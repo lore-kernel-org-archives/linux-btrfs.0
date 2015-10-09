@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [59.151.112.132] ([59.151.112.132]:46412 "EHLO
+Received: from [59.151.112.132] ([59.151.112.132]:19406 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-FAIL-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S932265AbbJICVG (ORCPT
+	by vger.kernel.org with ESMTP id S934789AbbJICZC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Oct 2015 22:21:06 -0400
+	Thu, 8 Oct 2015 22:25:02 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t992KA3b022959
-	for <linux-btrfs@vger.kernel.org>; Fri, 9 Oct 2015 10:20:10 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t992O3PB023202
+	for <linux-btrfs@vger.kernel.org>; Fri, 9 Oct 2015 10:24:03 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 06/23] btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
-Date: Fri, 9 Oct 2015 10:18:32 +0800
-Message-ID: <1444357115-32088-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 12/23] btrfs: qgroup: Use new metadata reservation.
+Date: Fri, 9 Oct 2015 10:22:24 +0800
+Message-ID: <1444357345-398-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444356684-30162-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444356684-30162-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,117 +19,167 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This new function will do all the hard work to reserve precious space
-for a write.
-
-The overall work flow will be the following.
-
-File A already has some dirty pages:
-
-0	4K	8K	12K	16K
-|///////|	|///////|
-
-And then, someone want to write some data into range [4K, 16K).
-	|<------desired-------->|
-
-Unlike the old and wrong implement, which reserve 12K, this function
-will only reserve space for newly dirty part:
-	|\\\\\\\|	|\\\\\\\|
-Which only takes 8K reserve space, as other part has already allocated
-their own reserve space.
-
-So the final reserve map will be:
-|///////////////////////////////|
-
-This provides the basis to resolve the long existing qgroup limit bug.
+As we have the new metadata reservation functions, use them to replace
+the old btrfs_qgroup_reserve() call for metadata.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2:
-  Add needed parameter for later trace functions
----
- fs/btrfs/qgroup.c | 57 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h |  1 +
- 2 files changed, 58 insertions(+)
+ fs/btrfs/extent-tree.c | 14 ++++++--------
+ fs/btrfs/transaction.c | 34 ++++++----------------------------
+ fs/btrfs/transaction.h |  1 -
+ 3 files changed, 12 insertions(+), 37 deletions(-)
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 3bdf28e..e840f5c 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2796,6 +2796,63 @@ insert:
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 4f6758b..22702bd 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5345,7 +5345,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
+ 	if (root->fs_info->quota_enabled) {
+ 		/* One for parent inode, two for dir entries */
+ 		num_bytes = 3 * root->nodesize;
+-		ret = btrfs_qgroup_reserve(root, num_bytes);
++		ret = btrfs_qgroup_reserve_meta(root, num_bytes);
+ 		if (ret)
+ 			return ret;
+ 	} else {
+@@ -5363,10 +5363,8 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
+ 	if (ret == -ENOSPC && use_global_rsv)
+ 		ret = btrfs_block_rsv_migrate(global_rsv, rsv, num_bytes);
+ 
+-	if (ret) {
+-		if (*qgroup_reserved)
+-			btrfs_qgroup_free(root, *qgroup_reserved);
+-	}
++	if (ret && *qgroup_reserved)
++		btrfs_qgroup_free_meta(root, *qgroup_reserved);
+ 
+ 	return ret;
+ }
+@@ -5527,15 +5525,15 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
+ 	spin_unlock(&BTRFS_I(inode)->lock);
+ 
+ 	if (root->fs_info->quota_enabled) {
+-		ret = btrfs_qgroup_reserve(root, nr_extents * root->nodesize);
++		ret = btrfs_qgroup_reserve_meta(root,
++				nr_extents * root->nodesize);
+ 		if (ret)
+ 			goto out_fail;
+ 	}
+ 
+ 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
+ 	if (unlikely(ret)) {
+-		if (root->fs_info->quota_enabled)
+-			btrfs_qgroup_free(root, nr_extents * root->nodesize);
++		btrfs_qgroup_free_meta(root, nr_extents * root->nodesize);
+ 		goto out_fail;
+ 	}
+ 
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index 376191c..5ed06b8 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -478,13 +478,10 @@ start_transaction(struct btrfs_root *root, u64 num_items, unsigned int type,
+ 	 * the appropriate flushing if need be.
+ 	 */
+ 	if (num_items > 0 && root != root->fs_info->chunk_root) {
+-		if (root->fs_info->quota_enabled &&
+-		    is_fstree(root->root_key.objectid)) {
+-			qgroup_reserved = num_items * root->nodesize;
+-			ret = btrfs_qgroup_reserve(root, qgroup_reserved);
+-			if (ret)
+-				return ERR_PTR(ret);
+-		}
++		qgroup_reserved = num_items * root->nodesize;
++		ret = btrfs_qgroup_reserve_meta(root, qgroup_reserved);
++		if (ret)
++			return ERR_PTR(ret);
+ 
+ 		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
+ 		/*
+@@ -553,7 +550,6 @@ again:
+ 	h->block_rsv = NULL;
+ 	h->orig_rsv = NULL;
+ 	h->aborted = 0;
+-	h->qgroup_reserved = 0;
+ 	h->delayed_ref_elem.seq = 0;
+ 	h->type = type;
+ 	h->allocating_chunk = false;
+@@ -579,7 +575,6 @@ again:
+ 		h->bytes_reserved = num_bytes;
+ 		h->reloc_reserved = reloc_reserved;
+ 	}
+-	h->qgroup_reserved = qgroup_reserved;
+ 
+ got_it:
+ 	btrfs_record_root_in_trans(h, root);
+@@ -597,8 +592,7 @@ alloc_fail:
+ 		btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
+ 					num_bytes);
+ reserve_fail:
+-	if (qgroup_reserved)
+-		btrfs_qgroup_free(root, qgroup_reserved);
++	btrfs_qgroup_free_meta(root, qgroup_reserved);
+ 	return ERR_PTR(ret);
  }
  
- /*
-+ * Make sure the data space for [start, start + len) is reserved.
-+ * It will either reserve new space from given qgroup or reuse the already
-+ * reserved space.
-+ *
-+ * Return 0 for successful reserve.
-+ * Return <0 for error.
-+ *
-+ * TODO: to handle nocow case, like NODATACOW or write into prealloc space
-+ * along with other mixed case.
-+ * Like write 2M, first 1M can be nocowed, but next 1M is on hole and need COW.
-+ */
-+int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len)
-+{
-+	struct btrfs_inode *binode = BTRFS_I(inode);
-+	struct btrfs_root *root = binode->root;
-+	struct btrfs_qgroup_data_rsv_map *reserve_map;
-+	struct data_rsv_range *tmp = NULL;
-+	struct ulist *insert_list;
-+	int ret;
-+
-+	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid) ||
-+	    len == 0)
-+		return 0;
-+
-+	if (!binode->qgroup_rsv_map) {
-+		ret = btrfs_qgroup_init_data_rsv_map(inode);
-+		if (ret < 0)
-+			return ret;
-+	}
-+	reserve_map = binode->qgroup_rsv_map;
-+	insert_list = ulist_alloc(GFP_NOFS);
-+	if (!insert_list)
-+		return -ENOMEM;
-+	tmp = kzalloc(sizeof(*tmp), GFP_NOFS);
-+	if (!tmp) {
-+		ulist_free(insert_list);
-+		return -ENOMEM;
-+	}
-+
-+	spin_lock(&reserve_map->lock);
-+	ret = reserve_data_range(root, reserve_map, tmp, insert_list, start,
-+				 len, NULL);
-+	/*
-+	 * For error and already exists case, free tmp memory.
-+	 * For tmp used case, set ret to 0, as some careless
-+	 * caller consider >0 as error.
-+	 */
-+	if (ret <= 0)
-+		kfree(tmp);
-+	else
-+		ret = 0;
-+	spin_unlock(&reserve_map->lock);
-+	ulist_free(insert_list);
-+	return ret;
-+}
-+
-+/*
-  * Init data_rsv_map for a given inode.
-  *
-  * This is needed at write time as quota can be disabled and then enabled
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index c87b7dc..366b853 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -87,4 +87,5 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- /* for qgroup reserve */
- int btrfs_qgroup_init_data_rsv_map(struct inode *inode);
- void btrfs_qgroup_free_data_rsv_map(struct inode *inode);
-+int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
- #endif /* __BTRFS_QGROUP__ */
+@@ -815,15 +809,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 			must_run_delayed_refs = 2;
+ 	}
+ 
+-	if (trans->qgroup_reserved) {
+-		/*
+-		 * the same root has to be passed here between start_transaction
+-		 * and end_transaction. Subvolume quota depends on this.
+-		 */
+-		btrfs_qgroup_free(trans->root, trans->qgroup_reserved);
+-		trans->qgroup_reserved = 0;
+-	}
+-
+ 	btrfs_trans_release_metadata(trans, root);
+ 	trans->block_rsv = NULL;
+ 
+@@ -1238,6 +1223,7 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans,
+ 			spin_lock(&fs_info->fs_roots_radix_lock);
+ 			if (err)
+ 				break;
++			btrfs_qgroup_free_meta_all(root);
+ 		}
+ 	}
+ 	spin_unlock(&fs_info->fs_roots_radix_lock);
+@@ -1846,10 +1832,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 
+ 	btrfs_trans_release_metadata(trans, root);
+ 	trans->block_rsv = NULL;
+-	if (trans->qgroup_reserved) {
+-		btrfs_qgroup_free(root, trans->qgroup_reserved);
+-		trans->qgroup_reserved = 0;
+-	}
+ 
+ 	cur_trans = trans->transaction;
+ 
+@@ -2202,10 +2184,6 @@ cleanup_transaction:
+ 	btrfs_trans_release_metadata(trans, root);
+ 	btrfs_trans_release_chunk_metadata(trans);
+ 	trans->block_rsv = NULL;
+-	if (trans->qgroup_reserved) {
+-		btrfs_qgroup_free(root, trans->qgroup_reserved);
+-		trans->qgroup_reserved = 0;
+-	}
+ 	btrfs_warn(root->fs_info, "Skipping commit of aborted transaction.");
+ 	if (current->journal_info == trans)
+ 		current->journal_info = NULL;
+diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
+index a994bb0..ce41bc9 100644
+--- a/fs/btrfs/transaction.h
++++ b/fs/btrfs/transaction.h
+@@ -107,7 +107,6 @@ struct btrfs_trans_handle {
+ 	u64 transid;
+ 	u64 bytes_reserved;
+ 	u64 chunk_bytes_reserved;
+-	u64 qgroup_reserved;
+ 	unsigned long use_count;
+ 	unsigned long blocks_reserved;
+ 	unsigned long blocks_used;
 -- 
 2.6.1
 

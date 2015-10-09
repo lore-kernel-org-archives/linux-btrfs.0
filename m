@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:34129 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:52527 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750908AbbJHAYL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 7 Oct 2015 20:24:11 -0400
+	id S964936AbbJIJRi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Oct 2015 05:17:38 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: send, fix file corruption due to incorrect cloning operations
-Date: Thu,  8 Oct 2015 01:23:57 +0100
-Message-Id: <1444263837-24717-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v4] Btrfs: send, fix file corruption due to incorrect cloning operations
+Date: Fri,  9 Oct 2015 02:11:55 +0100
+Message-Id: <1444353115-31825-1-git-send-email-fdmanana@kernel.org>
 In-Reply-To: <1443781092-18870-1-git-send-email-fdmanana@kernel.org>
 References: <1443781092-18870-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -111,10 +111,8 @@ The following test case for fstests reproduces the problem.
   status=0
   exit
 
-Another test case that exercises a different scenario, where the source
-range (the file we clone from) does not point to the beginning of the
-extent we intend to clone, that is, there's an offset against the shared
-extent, is the following:
+Another test case that reproduces the problem when we have compressed
+extents:
 
   seq=`basename $0`
   seqres=$RESULT_DIR/$seq
@@ -139,7 +137,7 @@ extent, is the following:
   _supported_os Linux
   _require_scratch
   _need_to_be_root
-  _require_cloner
+  _require_cp_reflink
 
   send_files_dir=$TEST_DIR/btrfs-test-$seq
 
@@ -150,37 +148,32 @@ extent, is the following:
   _scratch_mkfs >>$seqres.full 2>&1
   _scratch_mount "-o compress"
 
-  # Create file foo first, so that it has a lower inode number than file
-  # bar. Btrfs send processes inodes in ascending order.
-  touch $SCRATCH_MNT/foo
+  # Create our file with an extent of 100K starting at file offset 0K.
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 100K"       \
+                  -c "fsync"                        \
+                  $SCRATCH_MNT/foo | _filter_xfs_io
 
-  $XFS_IO_PROG -f -c "pwrite -S 0xaa 630K 20K" $SCRATCH_MNT/bar \
-     | _filter_xfs_io
+  # Rewrite part of the previous extent (its first 40K) and write a new
+  # 100K extent starting at file offset 100K.
+  $XFS_IO_PROG -c "pwrite -S 0xbb 0K 40K"    \
+          -c "pwrite -S 0xcc 100K 100K"      \
+          $SCRATCH_MNT/foo | _filter_xfs_io
 
-  # Clone the whole extent into file foo.
-  $CLONER_PROG -s $((540 * 1024)) -d $((200 * 1024)) -l 0 \
-      $SCRATCH_MNT/bar $SCRATCH_MNT/foo
+  # Our file foo now has 3 file extent items in its metadata:
+  #
+  # 1) One covering the file range 0 to 40K;
+  # 2) One covering the file range 40K to 100K, which points to the first
+  #    extent we wrote to the file and has a data offset field with value
+  #    40K (our file no longer uses the first 40K of data from that
+  #    extent);
+  # 3) One covering the file range 100K to 200K.
 
-  # After this write our file foo will reference the extent with a file
-  # extent item that starts at offset 300K, has a length of 8K and a data
-  # offset of 12K. So after this write file foo no longer refers to the
-  # first 12K of the extent we cloned before from file bar.
-  $XFS_IO_PROG -c "pwrite -S 0xcc 200K 100K" $SCRATCH_MNT/foo \
-      | _filter_xfs_io
+  # Now clone our file foo into file bar.
+  cp --reflink=always $SCRATCH_MNT/foo $SCRATCH_MNT/bar
 
-  # Append some data to file foo. This is just to verify later that the
-  # send stream does not include clone operations for any of these data
-  # for file bar.
-  $XFS_IO_PROG -c "pwrite -S 0xbb 400K 100K" $SCRATCH_MNT/foo \
-      | _filter_xfs_io
-
-  # Append some data to file bar. This is to verify later that the send
-  # stream included these data for file bar.
-  $XFS_IO_PROG -c "pwrite -S 0xdd 650K 100K" $SCRATCH_MNT/bar \
-      | _filter_xfs_io
-
+  # Create our snapshot for the send operation.
   _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT \
-      $SCRATCH_MNT/snap
+          $SCRATCH_MNT/snap
 
   echo "File digests in the original filesystem:"
   md5sum $SCRATCH_MNT/snap/foo | _filter_scratch
@@ -188,14 +181,13 @@ extent, is the following:
 
   _run_btrfs_util_prog send $SCRATCH_MNT/snap -f $send_files_dir/1.snap
 
-  # Now recreate the filesystem by receiving the send stream and verify
-  # we get the same file contents that the original filesystem had.
-  # Btrfs send had a bug where it sent a clone operation from file foo
-  # to bar that covered the range from file foo [300K, 308K[ into file
-  # bar's range [630K, 638K[ with the intention of cloning the whole
-  # extent that was cloned before. That was incorrect because file foo
-  # no longer pointed to the first 12K of the 20K extent that was
-  # originally cloned from file bar.
+  # Now recreate the filesystem by receiving the send stream and verify we
+  # get the same file contents that the original filesystem had.
+  # Btrfs send used to issue a clone operation from foo's range
+  # [80K, 140K[ to bar's range [40K, 100K[ when cloning the extent pointed
+  # to by foo's second file extent item, this was incorrect because of bad
+  # accounting of the file extent item's data offset field. The correct
+  # range to clone from should have been [40K, 100K[.
   _scratch_unmount
   _scratch_mkfs >>$seqres.full 2>&1
   _scratch_mount "-o compress"
@@ -223,14 +215,35 @@ V3: Deal with the case where the source file range we're cloning from
     but also their data offsets. Include a new test case to exercise
     this corner case.
 
- fs/btrfs/send.c | 190 +++++++++++++++++++++++++++++++++++++++++++++++++++-----
- 1 file changed, 173 insertions(+), 17 deletions(-)
+V4: Removed some no longer needed conditional in find_extent_clone(),
+    which made an updated version of the test for compressed files
+    fail. Updated the xfstest to account for this case and simplification.
+
+ fs/btrfs/send.c | 200 ++++++++++++++++++++++++++++++++++++++++++++++++--------
+ 1 file changed, 173 insertions(+), 27 deletions(-)
 
 diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index a739b82..13c6941 100644
+index a739b82..236aceb 100644
 --- a/fs/btrfs/send.c
 +++ b/fs/btrfs/send.c
-@@ -4687,6 +4687,171 @@ tlv_put_failure:
+@@ -1434,16 +1434,6 @@ verbose_printk(KERN_DEBUG "btrfs: find_extent_clone: data_offset=%llu, "
+ 	}
+ 
+ 	if (cur_clone_root) {
+-		if (compressed != BTRFS_COMPRESS_NONE) {
+-			/*
+-			 * Offsets given by iterate_extent_inodes() are relative
+-			 * to the start of the extent, we need to add logical
+-			 * offset from the file extent item.
+-			 * (See why at backref.c:check_extent_in_eb())
+-			 */
+-			cur_clone_root->offset += btrfs_file_extent_offset(eb,
+-									   fi);
+-		}
+ 		*found = cur_clone_root;
+ 		ret = 0;
+ 	} else {
+@@ -4687,6 +4677,171 @@ tlv_put_failure:
  	return ret;
  }
  
@@ -402,7 +415,7 @@ index a739b82..13c6941 100644
  static int send_write_or_clone(struct send_ctx *sctx,
  			       struct btrfs_path *path,
  			       struct btrfs_key *key,
-@@ -4695,9 +4860,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
+@@ -4695,9 +4850,7 @@ static int send_write_or_clone(struct send_ctx *sctx,
  	int ret = 0;
  	struct btrfs_file_extent_item *ei;
  	u64 offset = key->offset;
@@ -412,7 +425,7 @@ index a739b82..13c6941 100644
  	u8 type;
  	u64 bs = sctx->send_root->fs_info->sb->s_blocksize;
  
-@@ -4725,22 +4888,15 @@ static int send_write_or_clone(struct send_ctx *sctx,
+@@ -4725,22 +4878,15 @@ static int send_write_or_clone(struct send_ctx *sctx,
  	}
  
  	if (clone_root && IS_ALIGNED(offset + len, bs)) {

@@ -1,95 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57746 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754594AbbJHXSf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Oct 2015 19:18:35 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZkKSG-0000EY-Uv
-	for linux-btrfs@vger.kernel.org; Fri, 09 Oct 2015 01:18:33 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2015 01:18:32 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2015 01:18:32 +0200
+Received: from mail-wi0-f174.google.com ([209.85.212.174]:34654 "EHLO
+	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932809AbbJIHlz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Oct 2015 03:41:55 -0400
+Received: by wicfx3 with SMTP id fx3so58422165wic.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2015 00:41:54 -0700 (PDT)
+MIME-Version: 1.0
+Date: Fri, 9 Oct 2015 09:41:54 +0200
+Message-ID: <CAEtw4r3r-E1deboGDCfNkUL-ZKUdn4+B++oeu9M4H_7hHDj0TA@mail.gmail.com>
+Subject: kernel BUG at /linux/fs/btrfs/extent-tree.c:1833!
+From: Peter Becker <floyd.net@gmail.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Using BtrFS and backup tools for keeping two systems in sync
-Date: Thu, 8 Oct 2015 23:18:25 +0000 (UTC)
-Message-ID: <pan$1460a$dca727ad$9f868710$44ab0973@cox.net>
-References: <CAH-HCWV2mO1FFRGPh+jh2TrZMYV-7w7MwytSV4WZ33-9PW=qRw@mail.gmail.com>
-	<20151008063745.GB25907@carfax.org.uk>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Thu, 08 Oct 2015 06:37:45 +0000 as excerpted:
+At first i add a new device to my btrfs raid1 pool and start balance.
+After ~5 hours, balanace hangs and cpu-usage goes to 100% (kworker/u4
+use all cpu-power).
 
-> On Thu, Oct 08, 2015 at 08:05:09AM +0530, Shriramana Sharma wrote:
->> Hello. I see there are some backup tools taking advantage of BtrFS's
->> incremental send/receive feature:
->> https://btrfs.wiki.kernel.org/index.php/Incremental_Backup. [BTW Ames
->> Cornish's ButterSink (https://github.com/AmesCornish/buttersink) seems
->> to be missing from that page.]
->> 
->> Now I'd like to know if anyone has evolved some good practices w.r.t
->> maintaining the data of two systems in sync using this feature of
->> BtrFS. What I have in mind is: I work on my desktop by default, and for
->> ergonomics reasons only use my laptop when I need the mobility.
->> I'd like to keep the main data (documents I create, programs I write
->> etc) in sync between the two. (The profile data such as in the ~/.*
->> hidden folders had better stay separate though, I guess.)
->> 
->> I figure with the existing tools it would not be too difficult to
->> maintain a synced set of snapshots between the two systems if I only
->> use the desktop vs laptop alternatingly and sync at each switchover,
->> but the potential problem only would come if I modify both (something
->> like having to do git merge, I guess).
->> 
->> Has anyone come across this situation and evolved any policies to
->> handle it?
-> 
->    You can't currently do this efficiently with send/receive. It
-> should be possible, but it needs a change to the send stream format.
+What should i do now? Run "btrfs check --repair" on all devices?
 
-Elucidating somewhat...
+Kernel: 4.2.3-040203-generic
+Btrfs progs v4.2.1
 
-AFAIK (as a list regular but not a dev or a user, personally, of the send/
-receive functionality), currently, btrfs send/receive incremental works 
-only one way.  That is, the send-stream format provides sufficient 
-information for incremental sends after an original send, but there's no 
-way to reverse the process and sync the other way, from the original 
-receiver back to the sender.  A full send can be done, but then it's no 
-longer linked to the the original.
+Full Syslog: https://bugzilla.kernel.org/show_bug.cgi?id=105681
 
-As Hugo says, the base functionality is available, but actually hooking 
-it up to work will require a bump to the send stream format, as the 
-required information simply isn't sent, ATM.  That send stream format 
-bump is likely to eventually happen, but there's a very strong interest 
-in keeping the number of formats that must be supported for backward 
-compatibility to a minimum, and thus in a minimum number of format 
-bumps.  So the devs want to delay the bump as long as possible, 
-identifying anything else that might need to change in the mean time, and 
-make, ideally, one final bump, including all changes discovered to be 
-needed since the last one, and then no more.
+>From Syslog:
 
-So while this necessary change is known, it could be some time, yet, 
-before it's actually done, with hopefully no further changes necessary or 
-allowed after that.
-
-Which back on the reoccurring theme of btrfs stability...
-
-... is another point toward btrfs "definitely stabilizing now, but not 
-yet fully stable and mature."  When the devs decide there are likely no 
-further as-yet undiscovered necessary changes coming and finally do this 
-bump, we'll know they really do consider btrfs to be settling down into 
-stability.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+[16880.495586] kernel BUG at /home/kernel/COD/linux/fs/btrfs/extent-tree.c:1833!
+[16880.495603] invalid opcode: 0000 [#1] SMP
+[16880.495614] Modules linked in: xt_nat veth xt_conntrack xt_addrtype
+br_netfilter nvram dm_thin_pool dm_persistent_data msr dm_bio_prison
+dm_bufio libcrc32c ir_lirc_codec ir_xmp_decoder lirc_dev
+ir_mce_kbd_decoder ir_sharp_decoder ir_sony_decoder ir_sanyo_decoder
+ir_jvc_decoder ir_rc6_decoder ir_rc5_decoder ir_nec_decoder rc_rc6_mce
+xt_CHECKSUM iptable_mangle ipt_MASQUERADE nf_nat_masquerade_ipv4
+iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 mceusb nf_nat_ipv4
+rc_core nf_nat nf_conntrack input_leds joydev xt_tcpudp bridge stp llc
+iptable_filter ip_tables x_tables autofs4 eeepc_wmi asus_wmi
+sparse_keymap dm_multipath scsi_dh intel_rapl iosf_mbi
+x86_pkg_temp_thermal intel_powerclamp kvm crct10dif_pclmul
+crc32_pclmul snd_seq_midi snd_seq_midi_event snd_rawmidi
+ghash_clmulni_intel cryptd snd_hda_codec_hdmi rfcomm snd_seq serio_raw
+bnep snd_hda_codec_realtek snd_hda_codec_generic bluetooth
+snd_hda_intel snd_hda_codec snd_hda_core snd_hwdep snd_pcm
+snd_seq_device lpc_ich snd_timer mei_me mei snd shpchp mac_hid
+soundcore parport_pc ppdev nfsd nct6775 hwmon_vid coretemp auth_rpcgss
+nfs_acl nfs lockd grace binfmt_misc sunrpc lp parport fscache
+nls_iso8859_1 btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
+hid_generic usbhid hid uas usb_storage psmouse ahci libahci wmi i915
+video i2c_algo_bit drm_kms_helper drm e1000e ptp pps_core
+[16880.495944] CPU: 0 PID: 5967 Comm: btrfs Tainted: G     U
+4.2.3-040203-generic #201510030832
+[16880.495964] Hardware name: ASUS All Series/H87I-PLUS, BIOS 2003 11/05/2014
+[16880.495979] task: ffff8800a918b300 ti: ffff8800a9f00000 task.ti:
+ffff8800a9f00000
+[16880.495995] RIP: 0010:[<ffffffffc02db016>]  [<ffffffffc02db016>]
+insert_inline_extent_backref+0xc6/0xd0 [btrfs]
+[16880.496028] RSP: 0018:ffff8800a9f03718  EFLAGS: 00010293
+[16880.496042] RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffff8800a9f03750
+[16880.496060] RDX: 0000000000000001 RSI: 0000000000000001 RDI: 0000000000000000
+[16880.496077] RBP: ffff8800a9f03788 R08: 0000000000004000 R09: ffff8800a9f03608
+[16880.496093] R10: 0000000000000000 R11: 0000000000000002 R12: ffff880214b11000
+[16880.496109] R13: 000006a203798000 R14: 0000000000000000 R15: ffff8800d80c7990
+[16880.496125] FS:  00007fd9f02fa900(0000) GS:ffff88021fa00000(0000)
+knlGS:0000000000000000
+[16880.496146] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+[16880.496159] CR2: 00007f438fbc2000 CR3: 00000000a90ae000 CR4: 00000000000406f0
+[16880.496175] Stack:
+[16880.496180]  000006a203798000 0000000000000414 0000000000000000
+0000000000000000
+[16880.496200]  0000000000000001 ffffffffc02cef1a ffff8800a9f037f8
+0000000000002bbd
+[16880.496220]  ffff88016f19f2e0 ffff880214b10000 ffff88016f19f2e0
+ffff8800d80c7990
+[16880.496239] Call Trace:
+[16880.496251]  [<ffffffffc02cef1a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
+[16880.496271]  [<ffffffffc02db0b8>]
+__btrfs_inc_extent_ref.isra.51+0x98/0x250 [btrfs]
+[16880.496295]  [<ffffffffc02e0d0a>]
+__btrfs_run_delayed_refs+0xcfa/0x1070 [btrfs]
+[16880.496316]  [<ffffffff813bda85>] ? __percpu_counter_add+0x55/0x70
+[16880.496337]  [<ffffffffc02e3c3e>]
+btrfs_run_delayed_refs.part.73+0x6e/0x280 [btrfs]
+[16880.496360]  [<ffffffffc02e3e67>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+[16880.496383]  [<ffffffffc02f7dc9>]
+btrfs_should_end_transaction+0x49/0x60 [btrfs]
+[16880.496407]  [<ffffffffc02e2439>] btrfs_drop_snapshot+0x439/0x830 [btrfs]
+[16880.496431]  [<ffffffffc0346200>] ?
+invalidate_extent_cache+0x160/0x1a0 [btrfs]
+[16880.496455]  [<ffffffffc034b2e2>] merge_reloc_roots+0xd2/0x230 [btrfs]
+[16880.496475]  [<ffffffffc034b696>] relocate_block_group+0x256/0x600 [btrfs]
+[16880.496495]  [<ffffffffc034bc03>]
+btrfs_relocate_block_group+0x1c3/0x2d0 [btrfs]
+[16880.496517]  [<ffffffffc031f9be>]
+btrfs_relocate_chunk.isra.39+0x3e/0xc0 [btrfs]
+[16880.496537]  [<ffffffffc0320e3f>] __btrfs_balance+0x48f/0x8c0 [btrfs]
+[16880.496556]  [<ffffffffc03215ed>] btrfs_balance+0x37d/0x650 [btrfs]
+[16880.496575]  [<ffffffffc032d7b4>] ? btrfs_ioctl_balance+0x284/0x510 [btrfs]
+[16880.496594]  [<ffffffffc032d694>] btrfs_ioctl_balance+0x164/0x510 [btrfs]
+[16880.496613]  [<ffffffffc032fb8f>] btrfs_ioctl+0x56f/0x2470 [btrfs]
+[16880.496628]  [<ffffffff8118490b>] ?
+lru_cache_add_active_or_unevictable+0x2b/0xa0
+[16880.496645]  [<ffffffff811a4d9a>] ? handle_mm_fault+0xb8a/0x1810
+[16880.496658]  [<ffffffff811a8f39>] ? vma_link+0xb9/0xc0
+[16880.496670]  [<ffffffff811fc6fd>] do_vfs_ioctl+0x2cd/0x4b0
+[16880.496684]  [<ffffffff81063cc7>] ? __do_page_fault+0x1b7/0x430
+[16880.496697]  [<ffffffff811fc959>] SyS_ioctl+0x79/0x90
+[16880.496709]  [<ffffffff817a9b72>] entry_SYSCALL_64_fastpath+0x16/0x75
+[16880.496723] Code: 45 10 49 89 d9 48 8b 55 c8 4c 89 34 24 4c 89 e9
+4c 89 fe 4c 89 e7 48 89 44 24 10 8b 45 28 89 44 24 08 e8 4e e4 ff ff
+31 c0 eb bb <0f> 0b 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 55 48 89 e5
+41 57
+[16880.496802] RIP  [<ffffffffc02db016>]
+insert_inline_extent_backref+0xc6/0xd0 [btrfs]
+[16880.496823]  RSP <ffff8800a9f03718>
+[16880.502316] ---[ end trace bcd7d52a2c7cfdc7 ]---

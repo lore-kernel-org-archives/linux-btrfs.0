@@ -1,64 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:54563 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750944AbbJBUsD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 2 Oct 2015 16:48:03 -0400
-Date: Fri, 2 Oct 2015 20:48:02 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: "Matwey V. Kornilov" <matwey.kornilov@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs: user space tool to force compression
-Message-ID: <20151002204802.GO25907@carfax.org.uk>
-References: <mumq4s$g1c$1@ger.gmane.org>
+Received: from userp1040.oracle.com ([156.151.31.81]:29364 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753812AbbJIRtP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Oct 2015 13:49:15 -0400
+Message-ID: <5617FDF8.3050909@oracle.com>
+Date: Sat, 10 Oct 2015 01:48:40 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="keoAwTxaagou87Dg"
-In-Reply-To: <mumq4s$g1c$1@ger.gmane.org>
+To: David Sterba <dsterba@suse.cz>
+CC: Chris Mason <clm@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs device related fixes to support new features and
+ bug fixes
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---keoAwTxaagou87Dg
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+Hi David,
 
-On Fri, Oct 02, 2015 at 11:41:00PM +0300, Matwey V. Kornilov wrote:
-> Hello,
-> 
-> Is there a way (and appropriate user space tool) to force compression of
-> existing file? I mean there was directory with some content and then I
-> set compression attribute (property) to it. How to force data recompression?
+  Please consider the following fixes for your integration. These patches
+  provide bug fixes, framework changes to support new features, and 3
+  new features. They are mainly related to the device management like
+  delete device by devid, introduce sysfs for device and pool, and fix
+  the fs logging for multiple devices. All these patches has been sent
+  to the mailing list as individual patches before.
 
-   btrfs fi defrag -c <file>
+      https://github.com/asj/btrfs-devel.git for-dave4
 
-   Hugo.
+  (please note, the change log and subject line for some of the patches
+  may contain minor updates).
 
--- 
-Hugo Mills             | A cross? Oy vey, have you picked the wrong vampire!
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+  Anand Jain (16):
+   btrfs: Pass the error code to the btrfs_std_error and log ret
+   btrfs: Create a helper function to read the disk super
+   btrfs: Maintain consistency in logging to help debugging
+   btrfs: Device path change must be logged
+   btrfs: Add missing brelse when superblock checksum fails
+   btrfs: sysfs: Support seed devices in the sysfs layout
+   btrfs: Create a framework to create pool attributes
+   btrfs: Create helper function __check_raid_min_devices()
+   btrfs: Clean up and optimize __check_raid_min_device()
+   btrfs: Create helper btrfs_find_device_by_user_input()
+   btrfs: Make use of btrfs_find_device_by_user_input()
+   btrfs: Enhance btrfs_find_device_by_user_input() to check device path
+   btrfs: Make use of btrfs_scratch_superblocks() in btrfs_rm_device()
+   btrfs: Introduce device delete by devid
+   btrfs: Introduce device pool sysfs attributes
+   btrfs: Fix fs logging for multi device
 
---keoAwTxaagou87Dg
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWDu2CAAoJEFheFHXiqx3kRzAP/RG7V97e4tpJpLAQ6oW2o23S
-txHXeWnUO/zbnEb6jE1IACKdcnjfWU5h7xIBBHeYvhAjIDn7vZzgZ/OwrNXL7MPZ
-wzZurRMSOe7CPHbRi9zNoBPkuCCJ1Z1/obvFft4cHuockkLgGvL67OPT2gU/uCZp
-Pxc/+huGFwj8sKxG5Ux3E47z+2/grgV9WYhYX8fKdZMDManFH71jhfZRHY5TaLkQ
-kjxgWT1z1goq9pZyo4vssDy79v6qG+aMBeBeGsvsJ1+NW8DwzAaPG70xA4tOTP3x
-D5K14fC0PO31dbDyGddEX6srlt3sJCX2GxPaoqKNppp33E4249r2HGUdgn6+/OWb
-9+gEADAfIgIlAQJ8nOggjXCav7ZNwV47ChcIopZs525IFS0sHTEr7anXExyGYlkf
-a5a2rbpxE8bQFvIWJBJNO1GnmcwqTKjCp5k8ijLu+cnvHNtCZ+jAMpjtWuL1shYR
-NFDnUGP2GgDxHsaOMK+LlJzcEjYexIj72rKkifMxOjJ0p784/Nd8xXrQMrfEzYDY
-ORe28bJqI4z1skLv5Tu0M8BimHloNCKN8yTmhA6Xa4pwKuq6YJtoInfMkU59ZVUt
-IzCpTjEsu8wb0w78K9OGZpyBgAyJvX70NI01C8z7e9XzjBPbXYrSLFtB1+DXAu1p
-VB6c1CZG9UjkFbUQQPE1
-=HWqL
------END PGP SIGNATURE-----
-
---keoAwTxaagou87Dg--
+  fs/btrfs/dev-replace.c     |  41 +--
+  fs/btrfs/disk-io.c         |  23 +-
+  fs/btrfs/ioctl.c           |  65 ++++-
+  fs/btrfs/super.c           |   4 +-
+  fs/btrfs/sysfs.c           | 624 
+++++++++++++++++++++++++++++++++++++++++++++-
+  fs/btrfs/sysfs.h           |  21 +-
+  fs/btrfs/volumes.c         | 385 ++++++++++++++--------------
+  fs/btrfs/volumes.h         |  16 +-
+  include/uapi/linux/btrfs.h |  14 +-
+  9 files changed, 937 insertions(+), 256 deletions(-)

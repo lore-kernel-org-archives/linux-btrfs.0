@@ -1,37 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:3054 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:62815 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750732AbbJVBHW (ORCPT
+	by vger.kernel.org with ESMTP id S933417AbbJIRmf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 21:07:22 -0400
-Date: Wed, 21 Oct 2015 21:07:10 -0400
+	Fri, 9 Oct 2015 13:42:35 -0400
+Date: Fri, 9 Oct 2015 13:42:13 -0400
 From: Chris Mason <clm@fb.com>
-To: <dsterba@suse.cz>, Dan Carpenter <dan.carpenter@oracle.com>,
-        <linux-btrfs@vger.kernel.org>, Christian Engelmayer <cengelma@gmx.at>
-Subject: Re: btrfs: check unsupported filters in balance arguments
-Message-ID: <20151022010710.GB5300@ret.masoncoding.com>
-References: <20151021205500.GD9839@mwanda>
- <20151021225237.GJ13624@suse.cz>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        linux-kernel <linux-kernel@vger.kernel.org>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20151009174213.GA25218@ret.masoncoding.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20151021225237.GJ13624@suse.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 22, 2015 at 12:52:37AM +0200, David Sterba wrote:
-> On Wed, Oct 21, 2015 at 11:55:00PM +0300, Dan Carpenter wrote:
-> > Hello David Sterba,
-> > 
-> > The patch 8eb934591f8b: "btrfs: check unsupported filters in balance
-> > arguments" from Oct 12, 2015, leads to the following static checker
-> > warning:
-> > 
-> > 	fs/btrfs/ioctl.c:4673 btrfs_ioctl_balance()
-> > 	warn: possible memory leak of 'bctl'
-> 
-> Thanks for the report, the fix is on the way:
-> https://patchwork.kernel.org/patch/7453231/
+Hi Linus,
 
-Thanks, I've picked this up.
+I have a few fixes in my for-linus-4.3 branch:
 
--chris
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.3
+
+These are small and assorted.  Neil's is the oldest, I dropped the ball
+thinking he was going to send it in.
+
+Filipe Manana (3) commits (+26/-12):
+    Btrfs: update fix for read corruption of compressed and shared extents (+11/-8)
+    Btrfs: send, fix corner case for reference overwrite detection (+5/-3)
+    Btrfs: fix deadlock when finalizing block group creation (+10/-1)
+
+NeilBrown (1) commits (+5/-5):
+    BTRFS: support NFSv2 export
+
+chandan (1) commits (+4/-0):
+    Btrfs: open_ctree: Fix possible memory leak
+
+Total: (5) commits (+35/-17)
+
+ fs/btrfs/disk-io.c     |  4 ++++
+ fs/btrfs/export.c      | 10 +++++-----
+ fs/btrfs/extent-tree.c |  9 ++++++++-
+ fs/btrfs/extent_io.c   | 19 +++++++++++--------
+ fs/btrfs/send.c        |  8 +++++---
+ fs/btrfs/transaction.c |  1 +
+ fs/btrfs/transaction.h |  1 +
+ 7 files changed, 35 insertions(+), 17 deletions(-)

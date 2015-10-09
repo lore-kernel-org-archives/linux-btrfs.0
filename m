@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [59.151.112.132] ([59.151.112.132]:40499 "EHLO
+Received: from [59.151.112.132] ([59.151.112.132]:3482 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-FAIL-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1756054AbbJIC2Y (ORCPT
+	by vger.kernel.org with ESMTP id S1754216AbbJICcw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Oct 2015 22:28:24 -0400
+	Thu, 8 Oct 2015 22:32:52 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t992RWQK023470
-	for <linux-btrfs@vger.kernel.org>; Fri, 9 Oct 2015 10:27:32 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t992WDBF023742
+	for <linux-btrfs@vger.kernel.org>; Fri, 9 Oct 2015 10:32:14 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v2 16/23] btrfs: extent-tree: Switch to new delalloc space reserve and release
-Date: Fri, 9 Oct 2015 10:25:50 +0800
-Message-ID: <1444357551-1286-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 18/23] btrfs: qgroup: Add handler for NOCOW and inline
+Date: Fri, 9 Oct 2015 10:30:36 +0800
+Message-ID: <1444357837-2563-1-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444356684-30162-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444356684-30162-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,227 +19,67 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use new __btrfs_delalloc_reserve_space() and
-__btrfs_delalloc_release_space() to reserve and release space for
-delalloc.
+For NOCOW and inline case, there will be no delayed_ref created for
+them, so we should free their reserved data space at proper
+time(finish_ordered_io for NOCOW and cow_file_inline for inline).
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
-v2:
-  Also use __btrfs_delalloc_release_space() function.
----
- fs/btrfs/file.c      |  5 +++--
- fs/btrfs/inode-map.c |  6 +++---
- fs/btrfs/inode.c     | 38 +++++++++++++++++++++++---------------
- fs/btrfs/ioctl.c     | 14 +++++++++-----
- 4 files changed, 38 insertions(+), 25 deletions(-)
+ fs/btrfs/extent-tree.c |  7 ++++++-
+ fs/btrfs/inode.c       | 15 +++++++++++++++
+ 2 files changed, 21 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 142b217..bf4d5fb 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1611,7 +1611,7 @@ again:
- 				btrfs_delalloc_release_metadata(inode,
- 								release_bytes);
- 			else
--				btrfs_delalloc_release_space(inode,
-+				__btrfs_delalloc_release_space(inode, pos,
- 							     release_bytes);
- 		}
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1dadbba..765f7e0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4056,7 +4056,12 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
+ 	if (ret < 0)
+ 		return ret;
  
-@@ -1664,7 +1664,8 @@ again:
- 			btrfs_end_write_no_snapshoting(root);
- 			btrfs_delalloc_release_metadata(inode, release_bytes);
- 		} else {
--			btrfs_delalloc_release_space(inode, release_bytes);
-+			__btrfs_delalloc_release_space(inode, pos,
-+						       release_bytes);
- 		}
- 	}
- 
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index d4a582a..78bc09c 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -488,17 +488,17 @@ again:
- 	/* Just to make sure we have enough space */
- 	prealloc += 8 * PAGE_CACHE_SIZE;
- 
--	ret = btrfs_delalloc_reserve_space(inode, prealloc);
-+	ret = __btrfs_delalloc_reserve_space(inode, 0, prealloc);
- 	if (ret)
- 		goto out_put;
- 
- 	ret = btrfs_prealloc_file_range_trans(inode, trans, 0, 0, prealloc,
- 					      prealloc, prealloc, &alloc_hint);
- 	if (ret) {
--		btrfs_delalloc_release_space(inode, prealloc);
-+		__btrfs_delalloc_release_space(inode, 0, prealloc);
- 		goto out_put;
- 	}
--	btrfs_free_reserved_data_space(inode, prealloc);
-+	__btrfs_free_reserved_data_space(inode, 0, prealloc);
- 
- 	ret = btrfs_write_out_ino_cache(root, trans, path, inode);
- out_put:
+-	/* Use new btrfs_qgroup_reserve_data to reserve precious data space */
++	/*
++	 * Use new btrfs_qgroup_reserve_data to reserve precious data space
++	 *
++	 * TODO: Find a good method to avoid reserve data space for NOCOW
++	 * range, but don't impact performance on quota disable case.
++	 */
+ 	ret = btrfs_qgroup_reserve_data(inode, start, len);
+ 	return ret;
+ }
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 8ca2993..38a0fb9 100644
+index 84c31dd..ee0b239 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1766,7 +1766,8 @@ static void btrfs_clear_bit_hook(struct inode *inode,
- 
- 		if (root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
- 		    && do_list && !(state->state & EXTENT_NORESERVE))
--			btrfs_free_reserved_data_space(inode, len);
-+			__btrfs_free_reserved_data_space(inode, state->start,
-+							 len);
- 
- 		__percpu_counter_add(&root->fs_info->delalloc_bytes, -len,
- 				     root->fs_info->delalloc_batch);
-@@ -1985,7 +1986,8 @@ again:
- 		goto again;
- 	}
- 
--	ret = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
-+	ret = __btrfs_delalloc_reserve_space(inode, page_start,
-+					     PAGE_CACHE_SIZE);
- 	if (ret) {
- 		mapping_set_error(page->mapping, ret);
- 		end_extent_writepage(page, ret, page_start, page_end);
-@@ -4581,14 +4583,17 @@ int btrfs_truncate_page(struct inode *inode, loff_t from, loff_t len,
- 	if ((offset & (blocksize - 1)) == 0 &&
- 	    (!len || ((len & (blocksize - 1)) == 0)))
- 		goto out;
--	ret = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
-+	ret = __btrfs_delalloc_reserve_space(inode,
-+			round_down(from, PAGE_CACHE_SIZE), PAGE_CACHE_SIZE);
- 	if (ret)
- 		goto out;
- 
- again:
- 	page = find_or_create_page(mapping, index, mask);
- 	if (!page) {
--		btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
-+		__btrfs_delalloc_release_space(inode,
-+				round_down(from, PAGE_CACHE_SIZE),
-+				PAGE_CACHE_SIZE);
- 		ret = -ENOMEM;
- 		goto out;
- 	}
-@@ -4656,7 +4661,8 @@ again:
- 
- out_unlock:
- 	if (ret)
--		btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
-+		__btrfs_delalloc_release_space(inode, page_start,
-+					       PAGE_CACHE_SIZE);
- 	unlock_page(page);
- 	page_cache_release(page);
+@@ -310,6 +310,13 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
+ 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
  out:
-@@ -7587,7 +7593,7 @@ unlock:
- 			spin_unlock(&BTRFS_I(inode)->lock);
- 		}
++	/*
++	 * Don't forget to free the reserved space, as for inlined extent
++	 * it won't count as data extent, free them directly here.
++	 * And at reserve time, it's always aligned to page size, so
++	 * just free one page here.
++	 */
++	btrfs_qgroup_free_data(inode, 0, PAGE_CACHE_SIZE);
+ 	btrfs_free_path(path);
+ 	btrfs_end_transaction(trans, root);
+ 	return ret;
+@@ -2832,6 +2839,14 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
  
--		btrfs_free_reserved_data_space(inode, len);
-+		__btrfs_free_reserved_data_space(inode, start, len);
- 		WARN_ON(dio_data->reserve < len);
- 		dio_data->reserve -= len;
- 		current->journal_info = dio_data;
-@@ -8380,7 +8386,7 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 			mutex_unlock(&inode->i_mutex);
- 			relock = true;
- 		}
--		ret = btrfs_delalloc_reserve_space(inode, count);
-+		ret = __btrfs_delalloc_reserve_space(inode, offset, count);
- 		if (ret)
- 			goto out;
- 		dio_data.outstanding_extents = div64_u64(count +
-@@ -8409,11 +8415,11 @@ static ssize_t btrfs_direct_IO(struct kiocb *iocb, struct iov_iter *iter,
- 		current->journal_info = NULL;
- 		if (ret < 0 && ret != -EIOCBQUEUED) {
- 			if (dio_data.reserve)
--				btrfs_delalloc_release_space(inode,
--							dio_data.reserve);
-+				__btrfs_delalloc_release_space(inode, offset,
-+						dio_data.reserve);
- 		} else if (ret >= 0 && (size_t)ret < count)
--			btrfs_delalloc_release_space(inode,
--						     count - (size_t)ret);
-+			__btrfs_delalloc_release_space(inode, offset,
-+						       count - (size_t)ret);
- 	}
- out:
- 	if (wakeup)
-@@ -8621,7 +8627,11 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- 	u64 page_end;
- 
- 	sb_start_pagefault(inode->i_sb);
--	ret  = btrfs_delalloc_reserve_space(inode, PAGE_CACHE_SIZE);
-+	page_start = page_offset(page);
-+	page_end = page_start + PAGE_CACHE_SIZE - 1;
+ 	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags)) {
+ 		BUG_ON(!list_empty(&ordered_extent->list)); /* Logic error */
 +
-+	ret = __btrfs_delalloc_reserve_space(inode, page_start,
-+					     PAGE_CACHE_SIZE);
- 	if (!ret) {
- 		ret = file_update_time(vma->vm_file);
- 		reserved = 1;
-@@ -8640,8 +8650,6 @@ int btrfs_page_mkwrite(struct vm_area_struct *vma, struct vm_fault *vmf)
- again:
- 	lock_page(page);
- 	size = i_size_read(inode);
--	page_start = page_offset(page);
--	page_end = page_start + PAGE_CACHE_SIZE - 1;
- 
- 	if ((page->mapping != inode->i_mapping) ||
- 	    (page_start >= size)) {
-@@ -8718,7 +8726,7 @@ out_unlock:
- 	}
- 	unlock_page(page);
- out:
--	btrfs_delalloc_release_space(inode, PAGE_CACHE_SIZE);
-+	__btrfs_delalloc_release_space(inode, page_start, PAGE_CACHE_SIZE);
- out_noreserve:
- 	sb_end_pagefault(inode->i_sb);
- 	return ret;
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0adf542..3158b0f 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1119,8 +1119,9 @@ static int cluster_pages_for_defrag(struct inode *inode,
- 
- 	page_cnt = min_t(u64, (u64)num_pages, (u64)file_end - start_index + 1);
- 
--	ret = btrfs_delalloc_reserve_space(inode,
--					   page_cnt << PAGE_CACHE_SHIFT);
-+	ret = __btrfs_delalloc_reserve_space(inode,
-+			start_index << PAGE_CACHE_SHIFT,
-+			page_cnt << PAGE_CACHE_SHIFT);
- 	if (ret)
- 		return ret;
- 	i_done = 0;
-@@ -1209,8 +1210,9 @@ again:
- 		spin_lock(&BTRFS_I(inode)->lock);
- 		BTRFS_I(inode)->outstanding_extents++;
- 		spin_unlock(&BTRFS_I(inode)->lock);
--		btrfs_delalloc_release_space(inode,
--				     (page_cnt - i_done) << PAGE_CACHE_SHIFT);
-+		__btrfs_delalloc_release_space(inode,
-+				start_index << PAGE_CACHE_SHIFT,
-+				(page_cnt - i_done) << PAGE_CACHE_SHIFT);
- 	}
- 
- 
-@@ -1235,7 +1237,9 @@ out:
- 		unlock_page(pages[i]);
- 		page_cache_release(pages[i]);
- 	}
--	btrfs_delalloc_release_space(inode, page_cnt << PAGE_CACHE_SHIFT);
-+	__btrfs_delalloc_release_space(inode,
-+			start_index << PAGE_CACHE_SHIFT,
-+			page_cnt << PAGE_CACHE_SHIFT);
- 	return ret;
- 
- }
++		/*
++		 * For mwrite(mmap + memset to write) case, we still reserve
++		 * space for NOCOW range.
++		 * As NOCOW won't cause a new delayed ref, just free the space
++		 */
++		btrfs_qgroup_free_data(inode, ordered_extent->file_offset,
++				       ordered_extent->len);
+ 		btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+ 		if (nolock)
+ 			trans = btrfs_join_transaction_nolock(root);
 -- 
 2.6.1
 

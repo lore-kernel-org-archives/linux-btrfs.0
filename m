@@ -1,156 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:34269 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754471AbbJILOm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 9 Oct 2015 07:14:42 -0400
-Received: by iow1 with SMTP id 1so87922791iow.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 09 Oct 2015 04:14:42 -0700 (PDT)
-Subject: Re: BTRFS RAID1 behavior after one drive temporal disconection
-To: Hugo Mills <hugo@carfax.org.uk>, Pavel Pisa <pisa@cmp.felk.cvut.cz>,
-        linux-btrfs@vger.kernel.org
-References: <201510052226.47051.pisa@cmp.felk.cvut.cz>
- <561657D5.1070809@gmail.com> <20151008211352.GC25907@carfax.org.uk>
- <201510090016.43759.pisa@cmp.felk.cvut.cz>
- <20151008222223.GD25907@carfax.org.uk>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5617A175.9080300@gmail.com>
-Date: Fri, 9 Oct 2015 07:13:57 -0400
+Received: from blu004-omc1s28.hotmail.com ([65.55.116.39]:57300 "EHLO
+	BLU004-OMC1S28.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753477AbbJIN5l (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 9 Oct 2015 09:57:41 -0400
+Message-ID: <BLU436-SMTP21C3279F295A6811CDF2CEA9340@phx.gbl>
 MIME-Version: 1.0
-In-Reply-To: <20151008222223.GD25907@carfax.org.uk>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020203080208090905050001"
+In-Reply-To: <CAEtw4r3r-E1deboGDCfNkUL-ZKUdn4+B++oeu9M4H_7hHDj0TA@mail.gmail.com>
+References: <CAEtw4r3r-E1deboGDCfNkUL-ZKUdn4+B++oeu9M4H_7hHDj0TA@mail.gmail.com>
+Date: Fri, 9 Oct 2015 15:52:37 +0200
+Subject: Re: kernel BUG at /linux/fs/btrfs/extent-tree.c:1833!
+From: Henk Slager <hslager@hotmail.com>
+To: Peter Becker <floyd.net@gmail.com>
+CC: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Hi Peter,
 
---------------ms020203080208090905050001
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
+I would try to add the mount option   skip_balance   for your raid1
+pool first, then see if you can use your system as you normally would.
+I assume you can live without explicit (re-)balance for some time,
+i.e. that the original disks are not too full.
 
-On 2015-10-08 18:22, Hugo Mills wrote:
-> On Fri, Oct 09, 2015 at 12:16:43AM +0200, Pavel Pisa wrote:
->> Hello Hugo,
->>
->> On Thursday 08 of October 2015 23:13:52 Hugo Mills wrote:
->>> On Thu, Oct 08, 2015 at 07:47:33AM -0400, Austin S Hemmelgarn wrote:
->>>> On 2015-10-08 04:28, Pavel Pisa wrote:
->>>>> I go to use "btrfs replace" because there has not been any reply to=
- my
->>>>> inplace correction question. But I expect that clarification if
->>>>> possible/how to resync RAID1 after one drive temporal disappear is
->>>>> really important to many of BTRFS users.
->>>>
->>>> As of right now, there is no way that I know of to safely re-sync a
->>>> drive that's been disconnected for a while.  The best bet is
->>>> probably to use replace, but for that to work reliably, you would
->>>> need to tell it to ignore the now stale drive when trying to read
->>>> each chunk.
->>>
->>>     Scrub is officially what you need there. I can confirm that it
->>> works correctly, having used it myself after accidentally unplugging
->>> the wrong drive.
->>>
->>
->> Thanks for the reply.
->>
->> I have tried to run scrub after reconnect but it counted errors in
->> its console output and write errors has been logged by kernel as crazy=
-=2E
->> I have to admit I have not wait to finish it because I have not good
->> feeling from it.
+I recently did also some disks add/remove and also raid profile
+convert and found out that kernel 4.2.x did crash my system with
+various kernel bugs. So I switched back to 4.1.6 and although other
+bugs hit me (see https://bugzilla.kernel.org/show_bug.cgi?id=104371 )
+the actions I wanted did complete.
+
+Using "btrfs check --repair" has never resulted in succes for me (for
+some root filesystems (single profiles for s m d) on real and virual
+machines), so I would only use that once you have your files backed up
+on some other (cloned) filesystem.
+
+/Henk
+
+On Fri, Oct 9, 2015 at 9:41 AM, Peter Becker <floyd.net@gmail.com> wrote:
 >
->     If the scrub works OK, you will still get lots of scary-looking
-> errors in the logs, but they'll usually say it's repaired the problem.
+> At first i add a new device to my btrfs raid1 pool and start balance.
+> After ~5 hours, balanace hangs and cpu-usage goes to 100% (kworker/u4
+> use all cpu-power).
 >
->     Getting write errors at this point indicates that you have hardware=
-
-> problems of some kind, and (usually) that device needs to be replaced.
-> (Or the controller, or the cabling).
+> What should i do now? Run "btrfs check --repair" on all devices?
 >
->> May it be it was result of not fully correct reconnect.
->> But other partition worked with ext4 has no problems to write.
->>
->> But if mount/unmount (in my case requiring reboot) and then scrub
->> worked it would be much simpler than replaces series.
->>
->> I hope I would not need that (at least soon/in years) but I
->> give try to scrub again.
->>
->> May it be problem is my btrfs tools old version on the server --
->> Wheezy Btrfs v3.17 backport. Kernel is Linux 4.1.2 #1 SMP PREEMPT.
+> Kernel: 4.2.3-040203-generic
+> Btrfs progs v4.2.1
 >
->     No, the version of the tools has no effect on any of this. It
-> really sounds like you have hardware issues.
-I have to agree with Hugo here, it really sounds like you have hardware=20
-issues.  If the new HDD doesn't completely fix things, try replacing the =
-
-cabling (because that's the easy to fix without spending a lot of money, =
-
-and having spare cables is usually a good thing), then try the=20
-controller or RAM.
-
-
-
---------------ms020203080208090905050001
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDA5MTExMzU3WjBPBgkq
-hkiG9w0BCQQxQgRAmMU5+ZV5Hw57nmS2np7BeW3AxdBVGWPjkrSkl7TddjQrpQscS4K2I5hI
-SakHd/HtX0FDAFoJutT2ff0VD7FZejBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgAQWwf2hKi01Y+5vXeWXAE7iZH9T415VHndhy8m7bqsQ0wrvpMK
-zTWRZAr6eQcubLkxYUhMQ3ma9m/D/gIHZYC/+jiDvMUiq8y8t8d/Go0DbsmCe1mI5i7X7qak
-GTX8leY6QY20Anx9m+ytYCQuoTCwlJ15Q+Vf2qzypNZLGwVofWUxYx/kv4ZKmC2LZtW7ojZ2
-b+1kR7seOa623SeSskdGzg5g9Mwpx8ofj7pnL84xiY4BpfdMCW823+6GiIcKADce24VnY4xw
-qJzyPb7dRZaxb8RzG/DnW3XzQ0ExfaCGDZpgaUZZBGmw81epQdppkEVKhRn/WPyOThvtGLWN
-bbQzVgDKtVtNCWm2Ju29O3Qr2JmTfVDg3QKnWi0qgGMmmDRP9fcw/ZrN0UqKIsbMmL7BVNUV
-9Q+acigLv33JEgmW/5zbZwnQ0/2evIYTVG9S2+WrEzPgceDLEnAYKGq01CB04lWdxjM9GSI8
-WkaobCTkbtzmVLUHgOQ5Qh1QBnu1mqxCsL0z+e++pKow0sddtNhb50nFL2BKJG5XnSzZHeDw
-4eh50qY6pzzMNwcJxrQTMO6aKuE+M64BYLg3qbHEhQYssSlmlDEMCzf1DQ5NPVSvuE5yeUkI
-ZDkoRsgJvHArVrDsbk/sQm5U76rlPVQq8/2hl/dYPc5gmZwAY4kYRY2p9QAAAAAAAA==
---------------ms020203080208090905050001--
+> Full Syslog: https://bugzilla.kernel.org/show_bug.cgi?id=105681
+>
+> From Syslog:
+>
+> [16880.495586] kernel BUG at /home/kernel/COD/linux/fs/btrfs/extent-tree.c:1833!
+> [16880.495603] invalid opcode: 0000 [#1] SMP
+> [16880.495614] Modules linked in: xt_nat veth xt_conntrack xt_addrtype
+> br_netfilter nvram dm_thin_pool dm_persistent_data msr dm_bio_prison
+> dm_bufio libcrc32c ir_lirc_codec ir_xmp_decoder lirc_dev
+> ir_mce_kbd_decoder ir_sharp_decoder ir_sony_decoder ir_sanyo_decoder
+> ir_jvc_decoder ir_rc6_decoder ir_rc5_decoder ir_nec_decoder rc_rc6_mce
+> xt_CHECKSUM iptable_mangle ipt_MASQUERADE nf_nat_masquerade_ipv4
+> iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 mceusb nf_nat_ipv4
+> rc_core nf_nat nf_conntrack input_leds joydev xt_tcpudp bridge stp llc
+> iptable_filter ip_tables x_tables autofs4 eeepc_wmi asus_wmi
+> sparse_keymap dm_multipath scsi_dh intel_rapl iosf_mbi
+> x86_pkg_temp_thermal intel_powerclamp kvm crct10dif_pclmul
+> crc32_pclmul snd_seq_midi snd_seq_midi_event snd_rawmidi
+> ghash_clmulni_intel cryptd snd_hda_codec_hdmi rfcomm snd_seq serio_raw
+> bnep snd_hda_codec_realtek snd_hda_codec_generic bluetooth
+> snd_hda_intel snd_hda_codec snd_hda_core snd_hwdep snd_pcm
+> snd_seq_device lpc_ich snd_timer mei_me mei snd shpchp mac_hid
+> soundcore parport_pc ppdev nfsd nct6775 hwmon_vid coretemp auth_rpcgss
+> nfs_acl nfs lockd grace binfmt_misc sunrpc lp parport fscache
+> nls_iso8859_1 btrfs xor raid6_pq dm_mirror dm_region_hash dm_log
+> hid_generic usbhid hid uas usb_storage psmouse ahci libahci wmi i915
+> video i2c_algo_bit drm_kms_helper drm e1000e ptp pps_core
+> [16880.495944] CPU: 0 PID: 5967 Comm: btrfs Tainted: G     U
+> 4.2.3-040203-generic #201510030832
+> [16880.495964] Hardware name: ASUS All Series/H87I-PLUS, BIOS 2003 11/05/2014
+> [16880.495979] task: ffff8800a918b300 ti: ffff8800a9f00000 task.ti:
+> ffff8800a9f00000
+> [16880.495995] RIP: 0010:[<ffffffffc02db016>]  [<ffffffffc02db016>]
+> insert_inline_extent_backref+0xc6/0xd0 [btrfs]
+> [16880.496028] RSP: 0018:ffff8800a9f03718  EFLAGS: 00010293
+> [16880.496042] RAX: 0000000000000000 RBX: 0000000000000000 RCX: ffff8800a9f03750
+> [16880.496060] RDX: 0000000000000001 RSI: 0000000000000001 RDI: 0000000000000000
+> [16880.496077] RBP: ffff8800a9f03788 R08: 0000000000004000 R09: ffff8800a9f03608
+> [16880.496093] R10: 0000000000000000 R11: 0000000000000002 R12: ffff880214b11000
+> [16880.496109] R13: 000006a203798000 R14: 0000000000000000 R15: ffff8800d80c7990
+> [16880.496125] FS:  00007fd9f02fa900(0000) GS:ffff88021fa00000(0000)
+> knlGS:0000000000000000
+> [16880.496146] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [16880.496159] CR2: 00007f438fbc2000 CR3: 00000000a90ae000 CR4: 00000000000406f0
+> [16880.496175] Stack:
+> [16880.496180]  000006a203798000 0000000000000414 0000000000000000
+> 0000000000000000
+> [16880.496200]  0000000000000001 ffffffffc02cef1a ffff8800a9f037f8
+> 0000000000002bbd
+> [16880.496220]  ffff88016f19f2e0 ffff880214b10000 ffff88016f19f2e0
+> ffff8800d80c7990
+> [16880.496239] Call Trace:
+> [16880.496251]  [<ffffffffc02cef1a>] ? btrfs_alloc_path+0x1a/0x20 [btrfs]
+> [16880.496271]  [<ffffffffc02db0b8>]
+> __btrfs_inc_extent_ref.isra.51+0x98/0x250 [btrfs]
+> [16880.496295]  [<ffffffffc02e0d0a>]
+> __btrfs_run_delayed_refs+0xcfa/0x1070 [btrfs]
+> [16880.496316]  [<ffffffff813bda85>] ? __percpu_counter_add+0x55/0x70
+> [16880.496337]  [<ffffffffc02e3c3e>]
+> btrfs_run_delayed_refs.part.73+0x6e/0x280 [btrfs]
+> [16880.496360]  [<ffffffffc02e3e67>] btrfs_run_delayed_refs+0x17/0x20 [btrfs]
+> [16880.496383]  [<ffffffffc02f7dc9>]
+> btrfs_should_end_transaction+0x49/0x60 [btrfs]
+> [16880.496407]  [<ffffffffc02e2439>] btrfs_drop_snapshot+0x439/0x830 [btrfs]
+> [16880.496431]  [<ffffffffc0346200>] ?
+> invalidate_extent_cache+0x160/0x1a0 [btrfs]
+> [16880.496455]  [<ffffffffc034b2e2>] merge_reloc_roots+0xd2/0x230 [btrfs]
+> [16880.496475]  [<ffffffffc034b696>] relocate_block_group+0x256/0x600 [btrfs]
+> [16880.496495]  [<ffffffffc034bc03>]
+> btrfs_relocate_block_group+0x1c3/0x2d0 [btrfs]
+> [16880.496517]  [<ffffffffc031f9be>]
+> btrfs_relocate_chunk.isra.39+0x3e/0xc0 [btrfs]
+> [16880.496537]  [<ffffffffc0320e3f>] __btrfs_balance+0x48f/0x8c0 [btrfs]
+> [16880.496556]  [<ffffffffc03215ed>] btrfs_balance+0x37d/0x650 [btrfs]
+> [16880.496575]  [<ffffffffc032d7b4>] ? btrfs_ioctl_balance+0x284/0x510 [btrfs]
+> [16880.496594]  [<ffffffffc032d694>] btrfs_ioctl_balance+0x164/0x510 [btrfs]
+> [16880.496613]  [<ffffffffc032fb8f>] btrfs_ioctl+0x56f/0x2470 [btrfs]
+> [16880.496628]  [<ffffffff8118490b>] ?
+> lru_cache_add_active_or_unevictable+0x2b/0xa0
+> [16880.496645]  [<ffffffff811a4d9a>] ? handle_mm_fault+0xb8a/0x1810
+> [16880.496658]  [<ffffffff811a8f39>] ? vma_link+0xb9/0xc0
+> [16880.496670]  [<ffffffff811fc6fd>] do_vfs_ioctl+0x2cd/0x4b0
+> [16880.496684]  [<ffffffff81063cc7>] ? __do_page_fault+0x1b7/0x430
+> [16880.496697]  [<ffffffff811fc959>] SyS_ioctl+0x79/0x90
+> [16880.496709]  [<ffffffff817a9b72>] entry_SYSCALL_64_fastpath+0x16/0x75
+> [16880.496723] Code: 45 10 49 89 d9 48 8b 55 c8 4c 89 34 24 4c 89 e9
+> 4c 89 fe 4c 89 e7 48 89 44 24 10 8b 45 28 89 44 24 08 e8 4e e4 ff ff
+> 31 c0 eb bb <0f> 0b 0f 1f 84 00 00 00 00 00 0f 1f 44 00 00 55 48 89 e5
+> 41 57
+> [16880.496802] RIP  [<ffffffffc02db016>]
+> insert_inline_extent_backref+0xc6/0xd0 [btrfs]
+> [16880.496823]  RSP <ffff8800a9f03718>
+> [16880.502316] ---[ end trace bcd7d52a2c7cfdc7 ]---
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

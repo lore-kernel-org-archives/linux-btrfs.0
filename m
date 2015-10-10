@@ -1,67 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail0200.smtp25.com ([174.37.170.200]:48458 "EHLO
-	mail0200.smtp25.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750964AbbJJXdD convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Oct 2015 19:33:03 -0400
-From: covici@ccs.covici.com
-To: Lionel Bouton <lionel-subscription@bouton.name>
-cc: =?us-ascii?Q?=3D=3FUTF-8=3FQ=3FHolger=5FHoffst=3Dc3=3Da4tte=3F=3D?=
+Received: from ns.bouton.name ([109.74.195.142]:56992 "EHLO mail.bouton.name"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751009AbbJJX6R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Oct 2015 19:58:17 -0400
+Subject: Re: btrfs says no errors, but booting gives lots of errors
+To: covici@ccs.covici.com
+References: <8042.1444481164@ccs.covici.com> <56191CC2.9000505@googlemail.com>
+ <11640.1444488108@ccs.covici.com> <561932EF.2090005@bouton.name>
+ <5619385C.7040103@googlemail.com> <16953.1444496102@ccs.covici.com>
+ <56198B7B.90806@bouton.name> <27402.1444518173@ccs.covici.com>
+ <56199D79.4000204@bouton.name> <28329.1444519978@ccs.covici.com>
+Cc: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
 	<holger.hoffstaette@googlemail.com>,
         linux-btrfs@vger.kernel.org
-Subject: Re: btrfs says no errors, but booting gives lots of errors
-In-reply-to: <56199D79.4000204@bouton.name>
-References: <8042.1444481164@ccs.covici.com> <56191CC2.9000505@googlemail.com> <11640.1444488108@ccs.covici.com> <561932EF.2090005@bouton.name> <5619385C.7040103@googlemail.com> <16953.1444496102@ccs.covici.com> <56198B7B.90806@bouton.name> <27402.1444518173@ccs.covici.com> <56199D79.4000204@bouton.name>
+From: Lionel Bouton <lionel-subscription@bouton.name>
+Message-ID: <5619A615.3090503@bouton.name>
+Date: Sun, 11 Oct 2015 01:58:13 +0200
 MIME-Version: 1.0
+In-Reply-To: <28329.1444519978@ccs.covici.com>
 Content-Type: text/plain; charset=utf-8
-Date: Sat, 10 Oct 2015 19:32:58 -0400
-Message-ID: <28329.1444519978@ccs.covici.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lionel Bouton <lionel-subscription@bouton.name> wrote:
+Le 11/10/2015 01:32, covici@ccs.covici.com a écrit :
+> [...]
+> I don't know if the file in question had the correct data, I only did a
+> directory listing, but this makes no sense -- I did an rsync just before
+> booting and got all kinds of errors and the only difference is the file
+> system, this is what I am saying.
 
-> Le 11/10/2015 01:02, covici@ccs.covici.com a écrit :
-> > Lionel Bouton <lionel+ceph@bouton.name> wrote:
-> >
-> >> Le 10/10/2015 18:55, covici@ccs.covici.com a écrit :
-> >>> [...]
-> >>> But do you folks have any idea about my original question, this leads me
-> >>> to think that btrfs is too new or something.
-> >> I've seen a recent report of a problem with btrfs-progs 4.2 confirmed as
-> >> a bug in mkfs. As you created the filesystem with it, it could be the
-> >> problem.
-> >> Note that btrfs-progs 4.2 is marked ~amd64 on Gentoo: when you live on
-> >> the bleeding edge you shouldn't be surprised to bleed sometimes ;-)
-> >>
-> >> You might have more luck by better describing the errors. Your title
-> >> mentions lots of errors, but there's only one log extract in a zip file
-> >> for a filesystem being mounted and it's only a warning about lock
-> >> contention which from an educated guess seems unlikely to make programs
-> >> crash.
-> >> I'm not familiar with the 203 exit codes you mention. This seems a
-> >> systemd thing with unclear meaning from a quick Google search so it
-> >> isn't really helpful unless there are kernel oops or panics for these
-> >> errors too.
-> > These errors are not kernel panicks, they are just that systemd units
-> > are not starting and the programs that  are executed in the unit files
-> > are returning these errors such as the 203 with no other explanation.  I
-> > tried for instance to run /usr/bin/postgresql-9.4-check-db-dir and it
-> > said that postgresql.conf was missing, but I could do an ls on that file
-> > and got the name.
-> 
-> If you can list files and read them, your problems probably have nothing
-> to do with the filesystem itself.
+What makes no sense is that the same filesystem both shows the file is
+there and isn't. If there was data corruption or buggy behaviour at
+least it should be somehow consistent.
+What is more likely is that the rsync was incomplete and didn't transfer
+some data needed by systemd: did you transfer (from the top of my head)
+extended attributes, special files, device files ? By default rsync
+doesn't do that.
 
-I don't know if the file in question had the correct data, I only did a
-directory listing, but this makes no sense -- I did an rsync just before
-booting and got all kinds of errors and the only difference is the file
-system, this is what I am saying.
-
--- 
-Your life is like a penny.  You're going to lose it.  The question is:
-How do
-you spend it?
-
-         John Covici
-         covici@ccs.covici.com
+Lionel

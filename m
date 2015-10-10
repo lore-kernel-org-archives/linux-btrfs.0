@@ -1,194 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:36672 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750817AbbJNFFe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 01:05:34 -0400
-Received: by pacex6 with SMTP id ex6so42732254pac.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 22:05:33 -0700 (PDT)
-From: Byongho Lee <bhlee.kernel@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:51342 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751485AbbJJQBF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 10 Oct 2015 12:01:05 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id A210EACAD
+	for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2015 16:01:02 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz
-Subject: [PATCH v2] btrfs: compress: put variables defined per compress type in struct to make cache friendly
-Date: Wed, 14 Oct 2015 14:05:24 +0900
-Message-Id: <1444799124-12093-1-git-send-email-bhlee.kernel@gmail.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: statfs: report zero available if metadata are exhausted
+Date: Sat, 10 Oct 2015 17:59:53 +0200
+Message-Id: <1444492793-18228-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Below variables are defined per compress type.
- - struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES]
- - spinlock_t comp_workspace_lock[BTRFS_COMPRESS_TYPES]
- - int comp_num_workspace[BTRFS_COMPRESS_TYPES]
- - atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES]
- - wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES]
+There is one ENOSPC case that's very confusing. There's Available
+greater than zero but no file operation succeds (besides removing
+files). This happens when the metadata are exhausted and there's no
+possibility to allocate another chunk.
 
-BTW, while accessing one compress type of these variables, the next or
-before address is other compress types of it.
-So this patch puts these variables in a struct to make cache friendly.
+In this scenario it's normal that there's still some space in the data
+chunk and the calculation in df reflects that in the Avail value.
 
-Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
+To at least give some clue about the ENOSPC situation, let statfs report
+zero value in Avail, even if there's still data space available.
+
+Current:
+  /dev/sdb1             4.0G  3.3G  719M  83% /mnt/test
+
+New:
+  /dev/sdb1             4.0G  3.3G     0 100% /mnt/test
+
+We calculate the remaining metadata space minus global reserve. If this
+is (supposedly) smaller than zero, there's no space. But this does not
+hold in practice, the exhausted state happens where's still some
+positive delta. So we apply some guesswork and compare the delta to a 4M
+threshold. (Practically observed delta was 2M.)
+
+We probably cannot calculate the exact threshold value because this
+depends on the internal reservations requested by various operations, so
+some operations that consume a few metadata will succeed even if the
+Avail is zero. But this is better than the other way around.
+
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- V2: Apply David's review comment.
-     Rename struct comp to btrfs_comp_ws and trim it's members to 'ws'
-     instead of 'workspace'.
+ fs/btrfs/super.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
- fs/btrfs/compression.c | 94 ++++++++++++++++++++++++++------------------------
- 1 file changed, 48 insertions(+), 46 deletions(-)
-
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ce62324c78e7..8e94ae5fe732 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -744,11 +744,13 @@ out:
- 	return ret;
- }
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 11d1eab9234d..ea76a0272b01 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -1943,6 +1943,8 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
+  * there are other factors that may change the result (like a new metadata
+  * chunk).
+  *
++ * If metadata is exhausted, f_bavail will be 0.
++ *
+  * FIXME: not accurate for mixed block groups, total and free/used are ok,
+  * available appears slightly larger.
+  */
+@@ -1954,11 +1956,13 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	struct btrfs_space_info *found;
+ 	u64 total_used = 0;
+ 	u64 total_free_data = 0;
++	u64 total_free_meta = 0;
+ 	int bits = dentry->d_sb->s_blocksize_bits;
+ 	__be32 *fsid = (__be32 *)fs_info->fsid;
+ 	unsigned factor = 1;
+ 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
+ 	int ret;
++	u64 thresh = 0;
  
--static struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES];
--static spinlock_t comp_workspace_lock[BTRFS_COMPRESS_TYPES];
--static int comp_num_workspace[BTRFS_COMPRESS_TYPES];
--static atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES];
--static wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES];
-+static struct {
-+	struct list_head idle_ws;
-+	spinlock_t ws_lock;
-+	int num_ws;
-+	atomic_t alloc_ws;
-+	wait_queue_head_t ws_wait;
-+} btrfs_comp_ws[BTRFS_COMPRESS_TYPES];
- 
- static const struct btrfs_compress_op * const btrfs_compress_op[] = {
- 	&btrfs_zlib_compress,
-@@ -760,10 +762,10 @@ void __init btrfs_init_compress(void)
- 	int i;
- 
- 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
--		INIT_LIST_HEAD(&comp_idle_workspace[i]);
--		spin_lock_init(&comp_workspace_lock[i]);
--		atomic_set(&comp_alloc_workspace[i], 0);
--		init_waitqueue_head(&comp_workspace_wait[i]);
-+		INIT_LIST_HEAD(&btrfs_comp_ws[i].idle_ws);
-+		spin_lock_init(&btrfs_comp_ws[i].ws_lock);
-+		atomic_set(&btrfs_comp_ws[i].alloc_ws, 0);
-+		init_waitqueue_head(&btrfs_comp_ws[i].ws_wait);
- 	}
- }
- 
-@@ -777,38 +779,38 @@ static struct list_head *find_workspace(int type)
- 	int cpus = num_online_cpus();
- 	int idx = type - 1;
- 
--	struct list_head *idle_workspace	= &comp_idle_workspace[idx];
--	spinlock_t *workspace_lock		= &comp_workspace_lock[idx];
--	atomic_t *alloc_workspace		= &comp_alloc_workspace[idx];
--	wait_queue_head_t *workspace_wait	= &comp_workspace_wait[idx];
--	int *num_workspace			= &comp_num_workspace[idx];
-+	struct list_head *idle_ws	= &btrfs_comp_ws[idx].idle_ws;
-+	spinlock_t *ws_lock		= &btrfs_comp_ws[idx].ws_lock;
-+	atomic_t *alloc_ws		= &btrfs_comp_ws[idx].alloc_ws;
-+	wait_queue_head_t *ws_wait	= &btrfs_comp_ws[idx].ws_wait;
-+	int *num_ws			= &btrfs_comp_ws[idx].num_ws;
- again:
--	spin_lock(workspace_lock);
--	if (!list_empty(idle_workspace)) {
--		workspace = idle_workspace->next;
-+	spin_lock(ws_lock);
-+	if (!list_empty(idle_ws)) {
-+		workspace = idle_ws->next;
- 		list_del(workspace);
--		(*num_workspace)--;
--		spin_unlock(workspace_lock);
-+		(*num_ws)--;
-+		spin_unlock(ws_lock);
- 		return workspace;
- 
- 	}
--	if (atomic_read(alloc_workspace) > cpus) {
-+	if (atomic_read(alloc_ws) > cpus) {
- 		DEFINE_WAIT(wait);
- 
--		spin_unlock(workspace_lock);
--		prepare_to_wait(workspace_wait, &wait, TASK_UNINTERRUPTIBLE);
--		if (atomic_read(alloc_workspace) > cpus && !*num_workspace)
-+		spin_unlock(ws_lock);
-+		prepare_to_wait(ws_wait, &wait, TASK_UNINTERRUPTIBLE);
-+		if (atomic_read(alloc_ws) > cpus && !*num_ws)
- 			schedule();
--		finish_wait(workspace_wait, &wait);
-+		finish_wait(ws_wait, &wait);
- 		goto again;
- 	}
--	atomic_inc(alloc_workspace);
--	spin_unlock(workspace_lock);
-+	atomic_inc(alloc_ws);
-+	spin_unlock(ws_lock);
- 
- 	workspace = btrfs_compress_op[idx]->alloc_workspace();
- 	if (IS_ERR(workspace)) {
--		atomic_dec(alloc_workspace);
--		wake_up(workspace_wait);
-+		atomic_dec(alloc_ws);
-+		wake_up(ws_wait);
- 	}
- 	return workspace;
- }
-@@ -820,27 +822,27 @@ again:
- static void free_workspace(int type, struct list_head *workspace)
- {
- 	int idx = type - 1;
--	struct list_head *idle_workspace	= &comp_idle_workspace[idx];
--	spinlock_t *workspace_lock		= &comp_workspace_lock[idx];
--	atomic_t *alloc_workspace		= &comp_alloc_workspace[idx];
--	wait_queue_head_t *workspace_wait	= &comp_workspace_wait[idx];
--	int *num_workspace			= &comp_num_workspace[idx];
--
--	spin_lock(workspace_lock);
--	if (*num_workspace < num_online_cpus()) {
--		list_add(workspace, idle_workspace);
--		(*num_workspace)++;
--		spin_unlock(workspace_lock);
-+	struct list_head *idle_ws	= &btrfs_comp_ws[idx].idle_ws;
-+	spinlock_t *ws_lock		= &btrfs_comp_ws[idx].ws_lock;
-+	atomic_t *alloc_ws		= &btrfs_comp_ws[idx].alloc_ws;
-+	wait_queue_head_t *ws_wait	= &btrfs_comp_ws[idx].ws_wait;
-+	int *num_ws			= &btrfs_comp_ws[idx].num_ws;
-+
-+	spin_lock(ws_lock);
-+	if (*num_ws < num_online_cpus()) {
-+		list_add(workspace, idle_ws);
-+		(*num_ws)++;
-+		spin_unlock(ws_lock);
- 		goto wake;
- 	}
--	spin_unlock(workspace_lock);
-+	spin_unlock(ws_lock);
- 
- 	btrfs_compress_op[idx]->free_workspace(workspace);
--	atomic_dec(alloc_workspace);
-+	atomic_dec(alloc_ws);
- wake:
- 	smp_mb();
--	if (waitqueue_active(workspace_wait))
--		wake_up(workspace_wait);
-+	if (waitqueue_active(ws_wait))
-+		wake_up(ws_wait);
- }
- 
- /*
-@@ -852,11 +854,11 @@ static void free_workspaces(void)
- 	int i;
- 
- 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
--		while (!list_empty(&comp_idle_workspace[i])) {
--			workspace = comp_idle_workspace[i].next;
-+		while (!list_empty(&btrfs_comp_ws[i].idle_ws)) {
-+			workspace = btrfs_comp_ws[i].idle_ws.next;
- 			list_del(workspace);
- 			btrfs_compress_op[i]->free_workspace(workspace);
--			atomic_dec(&comp_alloc_workspace[i]);
-+			atomic_dec(&btrfs_comp_ws[i].alloc_ws);
+ 	/*
+ 	 * holding chunk_muext to avoid allocating new chunks, holding
+@@ -1984,6 +1988,8 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 				}
+ 			}
  		}
++		if (found->flags & BTRFS_BLOCK_GROUP_METADATA)
++			total_free_meta += found->disk_total - found->disk_used;
+ 
+ 		total_used += found->disk_used;
  	}
- }
+@@ -2006,6 +2012,24 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
+ 	buf->f_bavail += div_u64(total_free_data, factor);
+ 	buf->f_bavail = buf->f_bavail >> bits;
+ 
++	/*
++	 * We calculate the remaining metadata space minus global reserve. If
++	 * this is (supposedly) smaller than zero, there's no space. But this
++	 * does not hold in practice, the exhausted state happens where's still
++	 * some positive delta. So we apply some guesswork and compare the
++	 * delta to a 4M threshold.  (Practically observed delta was ~2M.)
++	 *
++	 * We probably cannot calculate the exact threshold value because this
++	 * depends on the internal reservations requested by various
++	 * operations, so some operations that consume a few metadata will
++	 * succeed even if the Avail is zero. But this is better than the other
++	 * way around.
++	 */
++	thresh = 4 * 1024 * 1024;
++
++	if (total_free_meta - thresh < block_rsv->size)
++		buf->f_bavail = 0;
++
+ 	buf->f_type = BTRFS_SUPER_MAGIC;
+ 	buf->f_bsize = dentry->d_sb->s_blocksize;
+ 	buf->f_namelen = BTRFS_NAME_LEN;
 -- 
-2.6.1
+1.8.4.5
 

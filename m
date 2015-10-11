@@ -1,47 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37040 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37043 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751679AbbJKRvc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 13:51:32 -0400
+	id S1751679AbbJKRvg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Oct 2015 13:51:36 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 885F0AC66
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 17:51:30 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id ED4CBAC66
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 17:51:33 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/6] btrfs: add barrier for waitqueue_active in clear_btree_io_tree
-Date: Sun, 11 Oct 2015 19:50:23 +0200
-Message-Id: <b666a9cd993c6a49c4bf23a1ed476359c978f60b.1444579885.git.dsterba@suse.com>
+Subject: [PATCH 3/6] btrfs: comment waitqueue_active implied by locks
+Date: Sun, 11 Oct 2015 19:50:27 +0200
+Message-Id: <33a9eca7e4a4c2c17aebbb11f0e506a48ebc30c9.1444579885.git.dsterba@suse.com>
 In-Reply-To: <cover.1444579885.git.dsterba@suse.com>
 References: <cover.1444579885.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-waitqueue_active should be preceded by a barrier, in this function we
-don't need to call it all the time.
-
+Suggested-by: Chris Mason <clm@fb.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/transaction.c | 6 ++++++
- 1 file changed, 6 insertions(+)
+ fs/btrfs/raid56.c   | 6 +++++-
+ fs/btrfs/tree-log.c | 6 ++++++
+ 2 files changed, 11 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 74bc3338418b..e8e5b5a10719 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -82,6 +82,12 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- static void clear_btree_io_tree(struct extent_io_tree *tree)
- {
- 	spin_lock(&tree->lock);
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index fcf7265ca46f..1a33d3eb36de 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -810,7 +810,11 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
+ 			}
+ 
+ 			goto done_nolock;
+-		} else  if (waitqueue_active(&h->wait)) {
++			/*
++			 * The barrier for this waitqueue_active is not needed,
++			 * we're protected by h->lock and can't miss a wakeup.
++			 */
++		} else if (waitqueue_active(&h->wait)) {
+ 			spin_unlock(&rbio->bio_list_lock);
+ 			spin_unlock_irqrestore(&h->lock, flags);
+ 			wake_up(&h->wait);
+diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
+index 1bbaace73383..d0deb4643502 100644
+--- a/fs/btrfs/tree-log.c
++++ b/fs/btrfs/tree-log.c
+@@ -2950,6 +2950,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	atomic_set(&log_root_tree->log_commit[index2], 0);
+ 	mutex_unlock(&log_root_tree->log_mutex);
+ 
 +	/*
-+	 * Do a single barrier for the waitqueue_active check here, the state
-+	 * of the waitqueue should not change once clear_btree_io_tree is
-+	 * called.
++	 * The barrier before waitqueue_active is implied by mutex_unlock
 +	 */
-+	smp_mb();
- 	while (!RB_EMPTY_ROOT(&tree->state)) {
- 		struct rb_node *node;
- 		struct extent_state *state;
+ 	if (waitqueue_active(&log_root_tree->log_commit_wait[index2]))
+ 		wake_up(&log_root_tree->log_commit_wait[index2]);
+ out:
+@@ -2961,6 +2964,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
+ 	atomic_set(&root->log_commit[index1], 0);
+ 	mutex_unlock(&root->log_mutex);
+ 
++	/*
++	 * The barrier before waitqueue_active is implied by mutex_unlock
++	 */
+ 	if (waitqueue_active(&root->log_commit_wait[index1]))
+ 		wake_up(&root->log_commit_wait[index1]);
+ 	return ret;
 -- 
 2.1.3
 

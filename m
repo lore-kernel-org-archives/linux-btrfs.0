@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37555 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37558 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751963AbbJKSFY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 14:05:24 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id BE1ABABBF
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 18:05:21 +0000 (UTC)
+	id S1752084AbbJKSF1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Oct 2015 14:05:27 -0400
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 141A3ABBF
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 18:05:25 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/7] btrfs: switch message printers to _in_rcu variants
-Date: Sun, 11 Oct 2015 20:04:14 +0200
-Message-Id: <ecaeb14b912a3be55530aeec4e81c7243f5ceb5d.1444585955.git.dsterba@suse.com>
+Subject: [PATCH 3/7] btrfs: introduce ratelimited _in_rcu variants of message printing functions
+Date: Sun, 11 Oct 2015 20:04:18 +0200
+Message-Id: <24aa6b41d4611b14ad0fb89fa0b899ae9ab7005c.1444585955.git.dsterba@suse.com>
 In-Reply-To: <cover.1444585955.git.dsterba@suse.com>
 References: <cover.1444585955.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,181 +19,75 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/check-integrity.c |  4 ++--
- fs/btrfs/dev-replace.c     | 16 ++++++++--------
- fs/btrfs/ioctl.c           |  2 +-
- fs/btrfs/scrub.c           | 14 +++++++-------
- fs/btrfs/volumes.c         | 18 +++++++++---------
- 5 files changed, 27 insertions(+), 27 deletions(-)
+ fs/btrfs/ctree.h | 38 ++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 38 insertions(+)
 
-diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
-index 541fbfaed276..3e20630db8aa 100644
---- a/fs/btrfs/check-integrity.c
-+++ b/fs/btrfs/check-integrity.c
-@@ -845,8 +845,8 @@ static int btrfsic_process_superblock_dev_mirror(
- 		superblock_tmp->never_written = 0;
- 		superblock_tmp->mirror_num = 1 + superblock_mirror_num;
- 		if (state->print_mask & BTRFSIC_PRINT_MASK_SUPERBLOCK_WRITE)
--			printk_in_rcu(KERN_INFO "New initial S-block (bdev %p, %s)"
--				     " @%llu (%s/%llu/%d)\n",
-+			btrfs_info_in_rcu(device->dev_root->fs_info,
-+				"new initial S-block (bdev %p, %s) @%llu (%s/%llu/%d)",
- 				     superblock_bdev,
- 				     rcu_str_deref(device->name), dev_bytenr,
- 				     dev_state->name, dev_bytenr,
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index e54dd5905cee..ede1c1ad0baf 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -379,8 +379,8 @@ int btrfs_dev_replace_start(struct btrfs_root *root,
- 	if (ret)
- 		btrfs_err(root->fs_info, "kobj add dev failed %d\n", ret);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 88acdffbe384..9c0fd901edbe 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4057,16 +4057,38 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ #define btrfs_info_in_rcu(fs_info, fmt, args...) \
+ 	btrfs_printk_in_rcu(fs_info, KERN_INFO fmt, ##args)
  
--	printk_in_rcu(KERN_INFO
--		      "BTRFS: dev_replace from %s (devid %llu) to %s started\n",
-+	btrfs_info_in_rcu(root->fs_info,
-+		      "dev_replace from %s (devid %llu) to %s started",
- 		      src_device->missing ? "<missing disk>" :
- 		        rcu_str_deref(src_device->name),
- 		      src_device->devid,
-@@ -523,8 +523,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 								src_device,
- 								tgt_device);
- 	} else {
--		printk_in_rcu(KERN_ERR
--			      "BTRFS: btrfs_scrub_dev(%s, %llu, %s) failed %d\n",
-+		btrfs_err_in_rcu(root->fs_info,
-+			      "btrfs_scrub_dev(%s, %llu, %s) failed %d",
- 			      src_device->missing ? "<missing disk>" :
- 			        rcu_str_deref(src_device->name),
- 			      src_device->devid,
-@@ -540,8 +540,8 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 		return scrub_ret;
- 	}
++/*
++ * Wrappers that use a ratelimited printk_in_rcu
++ */
++#define btrfs_emerg_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_EMERG fmt, ##args)
++#define btrfs_alert_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_ALERT fmt, ##args)
++#define btrfs_crit_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_CRIT fmt, ##args)
++#define btrfs_err_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_ERR fmt, ##args)
++#define btrfs_warn_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_WARNING fmt, ##args)
++#define btrfs_notice_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_NOTICE fmt, ##args)
++#define btrfs_info_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_INFO fmt, ##args)
++
+ #ifdef DEBUG
+ #define btrfs_debug(fs_info, fmt, args...) \
+ 	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_in_rcu(fs_info, fmt, args...) \
+ 	btrfs_printk_in_rcu(fs_info, KERN_DEBUG fmt, ##args)
++#define btrfs_debug_rl_in_rcu(fs_info, fmt, args...) \
++	btrfs_printk_rl_in_rcu(fs_info, KERN_DEBUG fmt, ##args)
+ #else
+ #define btrfs_debug(fs_info, fmt, args...) \
+     no_printk(KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_in_rcu(fs_info, fmt, args...) \
+ 	no_printk(KERN_DEBUG fmt, ##args)
++#define btrfs_debug_rl_in_rcu(fs_info, fmt, args...) \
++	no_printk(KERN_DEBUG fmt, ##args)
+ #endif
  
--	printk_in_rcu(KERN_INFO
--		      "BTRFS: dev_replace from %s (devid %llu) to %s finished\n",
-+	btrfs_info_in_rcu(root->fs_info,
-+		      "dev_replace from %s (devid %llu) to %s finished",
- 		      src_device->missing ? "<missing disk>" :
- 		        rcu_str_deref(src_device->name),
- 		      src_device->devid,
-@@ -809,8 +809,8 @@ static int btrfs_dev_replace_kthread(void *data)
- 		progress = status_args->status.progress_1000;
- 		kfree(status_args);
- 		progress = div_u64(progress, 10);
--		printk_in_rcu(KERN_INFO
--			"BTRFS: continuing dev_replace from %s (devid %llu) to %s @%u%%\n",
-+		btrfs_info_in_rcu(fs_info,
-+			"continuing dev_replace from %s (devid %llu) to %s @%u%%",
- 			dev_replace->srcdev->missing ? "<missing disk>" :
- 			rcu_str_deref(dev_replace->srcdev->name),
- 			dev_replace->srcdev->devid,
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 0adf5422fce9..8e9105af723e 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1579,7 +1579,7 @@ static noinline int btrfs_ioctl_resize(struct file *file,
- 	new_size = div_u64(new_size, root->sectorsize);
- 	new_size *= root->sectorsize;
+ #define btrfs_printk_in_rcu(fs_info, fmt, args...)	\
+@@ -4076,6 +4098,22 @@ do {							\
+ 	rcu_read_unlock();				\
+ } while (0)
  
--	printk_in_rcu(KERN_INFO "BTRFS: new size for %s is %llu\n",
-+	btrfs_info_in_rcu(root->fs_info, "new size for %s is %llu",
- 		      rcu_str_deref(device->name), new_size);
++#define btrfs_printk_ratelimited(fs_info, fmt, args...)		\
++do {								\
++	static DEFINE_RATELIMIT_STATE(_rs,			\
++		DEFAULT_RATELIMIT_INTERVAL,			\
++		DEFAULT_RATELIMIT_BURST);       		\
++	if (__ratelimit(&_rs))					\
++		btrfs_printk(fs_info, fmt, ##args);		\
++} while (0)
++
++#define btrfs_printk_rl_in_rcu(fs_info, fmt, args...)		\
++do {								\
++	rcu_read_lock();					\
++	btrfs_printk_ratelimited(fs_info, fmt, ##args);		\
++	rcu_read_unlock();					\
++} while (0)
++
+ #ifdef CONFIG_BTRFS_ASSERT
  
- 	if (new_size > old_size) {
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a39f5d1144e8..26cfbb0b867c 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -580,9 +580,9 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 	 * hold all of the paths here
- 	 */
- 	for (i = 0; i < ipath->fspath->elem_cnt; ++i)
--		printk_in_rcu(KERN_WARNING "BTRFS: %s at logical %llu on dev "
-+		btrfs_warn_in_rcu(fs_info, "%s at logical %llu on dev "
- 			"%s, sector %llu, root %llu, inode %llu, offset %llu, "
--			"length %llu, links %u (path: %s)\n", swarn->errstr,
-+			"length %llu, links %u (path: %s)", swarn->errstr,
- 			swarn->logical, rcu_str_deref(swarn->dev->name),
- 			(unsigned long long)swarn->sector, root, inum, offset,
- 			min(isize - offset, (u64)PAGE_SIZE), nlink,
-@@ -592,9 +592,9 @@ static int scrub_print_warning_inode(u64 inum, u64 offset, u64 root,
- 	return 0;
- 
- err:
--	printk_in_rcu(KERN_WARNING "BTRFS: %s at logical %llu on dev "
-+	btrfs_warn_in_rcu(fs_info, "%s at logical %llu on dev "
- 		"%s, sector %llu, root %llu, inode %llu, offset %llu: path "
--		"resolving failed with ret=%d\n", swarn->errstr,
-+		"resolving failed with ret=%d", swarn->errstr,
- 		swarn->logical, rcu_str_deref(swarn->dev->name),
- 		(unsigned long long)swarn->sector, root, inum, offset, ret);
- 
-@@ -649,10 +649,10 @@ static void scrub_print_warning(const char *errstr, struct scrub_block *sblock)
- 			ret = tree_backref_for_extent(&ptr, eb, &found_key, ei,
- 						      item_size, &ref_root,
- 						      &ref_level);
--			printk_in_rcu(KERN_WARNING
--				"BTRFS: %s at logical %llu on dev %s, "
-+			btrfs_warn_in_rcu(fs_info,
-+				"%s at logical %llu on dev %s, "
- 				"sector %llu: metadata %s (level %d) in tree "
--				"%llu\n", errstr, swarn.logical,
-+				"%llu", errstr, swarn.logical,
- 				rcu_str_deref(dev->name),
- 				(unsigned long long)swarn.sector,
- 				ref_level ? "node" : "leaf",
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc735869c18..b0dae14242e8 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6594,8 +6594,8 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
- 	BUG_ON(!path);
- 	ret = btrfs_search_slot(trans, dev_root, &key, path, -1, 1);
- 	if (ret < 0) {
--		printk_in_rcu(KERN_WARNING "BTRFS: "
--			"error %d while searching for dev_stats item for device %s!\n",
-+		btrfs_warn_in_rcu(dev_root->fs_info,
-+			"error %d while searching for dev_stats item for device %s",
- 			      ret, rcu_str_deref(device->name));
- 		goto out;
- 	}
-@@ -6605,8 +6605,8 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
- 		/* need to delete old one and insert a new one */
- 		ret = btrfs_del_item(trans, dev_root, path);
- 		if (ret != 0) {
--			printk_in_rcu(KERN_WARNING "BTRFS: "
--				"delete too small dev_stats item for device %s failed %d!\n",
-+			btrfs_warn_in_rcu(dev_root->fs_info,
-+				"delete too small dev_stats item for device %s failed %d",
- 				      rcu_str_deref(device->name), ret);
- 			goto out;
- 		}
-@@ -6619,9 +6619,9 @@ static int update_dev_stat_item(struct btrfs_trans_handle *trans,
- 		ret = btrfs_insert_empty_item(trans, dev_root, path,
- 					      &key, sizeof(*ptr));
- 		if (ret < 0) {
--			printk_in_rcu(KERN_WARNING "BTRFS: "
--					  "insert dev_stats item for device %s failed %d!\n",
--				      rcu_str_deref(device->name), ret);
-+			btrfs_warn_in_rcu(dev_root->fs_info,
-+				"insert dev_stats item for device %s failed %d",
-+				rcu_str_deref(device->name), ret);
- 			goto out;
- 		}
- 	}
-@@ -6695,8 +6695,8 @@ static void btrfs_dev_stat_print_on_load(struct btrfs_device *dev)
- 	if (i == BTRFS_DEV_STAT_VALUES_MAX)
- 		return; /* all values == 0, suppress message */
- 
--	printk_in_rcu(KERN_INFO "BTRFS: "
--		   "bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u\n",
-+	btrfs_info_in_rcu(dev->dev_root->fs_info,
-+		"bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u",
- 	       rcu_str_deref(dev->name),
- 	       btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
- 	       btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_READ_ERRS),
+ __cold
 -- 
 2.1.3
 

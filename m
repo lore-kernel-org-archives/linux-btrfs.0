@@ -1,196 +1,265 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f169.google.com ([209.85.214.169]:34377 "EHLO
-	mail-ob0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752039AbbJKQqe (ORCPT
+Received: from mail-wi0-f177.google.com ([209.85.212.177]:38446 "EHLO
+	mail-wi0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751616AbbJKSJh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 12:46:34 -0400
-Received: by obbda8 with SMTP id da8so93422100obb.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 09:46:33 -0700 (PDT)
+	Sun, 11 Oct 2015 14:09:37 -0400
+Received: by wiclk2 with SMTP id lk2so126595277wic.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 11:09:36 -0700 (PDT)
 MIME-Version: 1.0
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Sun, 11 Oct 2015 11:46:14 -0500
-Message-ID: <CAC=t97BtYg4W_Jxk6HdxbDmbJ1HFM1BbxTDPr+Y1KOd7M8W4gw@mail.gmail.com>
-Subject: filesystem goes ro trying to balance. "cpu stuck"
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <54AC65C2.8000801@jp.fujitsu.com>
+References: <1420473663-9315-1-git-send-email-naota@elisp.net>
+	<54AC65C2.8000801@jp.fujitsu.com>
+Date: Sun, 11 Oct 2015 20:09:36 +0200
+Message-ID: <CAOcd+r10Q08zhvjMawOrQ8jWBReD6dYxeEtiZSoqUEuHCeM27g@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: clear bio reference after submit_one_bio()
+From: Alex Lyakas <alex.btrfs@zadarastorage.com>
+To: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+Cc: Naohiro Aota <naota@elisp.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernel 4.2.2-1.el7.elrepo
-btrfs-progs v4.2.1
+Hi Naota,
 
-I'm attempting to convert a filesystem from raid6 to raid10.  I didn't
-have any functional problems with it, but performance is abysmal
-compared to basically the same arrangement in raid10 so I thought I'd
-just get away from raid56 for a while (I also saw something about
-parity raid code developed beyond 2-disk parity that was
-ignored/thrown away so I'm thinking the devs don't care much about
-about parity raid at least for now).
+What happens if btrfs_bio_alloc() in submit_extent_page fails? Then we
+return -ENOMEM to the caller, but we do not set *bio_ret to NULL. And
+if *bio_ret was non-NULL upon entry into submit_extent_page, then we
+had submitted this bio before getting to btrfs_bio_alloc(). So should
+btrfs_bio_alloc() failure be handled in the same way?
 
-Partway through the balance something goes wrong and filesystem is
-forced read-only stopping the balance.
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 3915c94..cd443bc 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -2834,8 +2834,11 @@ static int submit_extent_page(int rw, struct
+extent_io_tree *tree,
 
-I did a fschk and it didn't complain about/find any errors.  The
-drives aren't throwing any errors or incrementing any smart
-attributes.  This is a backup array, so it's not the end of the world
-if I have to just blow it away and rebuild as raid10 from scratch.
+        bio = btrfs_bio_alloc(bdev, sector, BIO_MAX_PAGES,
+                        GFP_NOFS | __GFP_HIGH);
+-       if (!bio)
++       if (!bio) {
++               if (bio_ret)
++                       *bio_ret = NULL;
+                return -ENOMEM;
++       }
 
-The console prints this error.
-NMI watchdog: BUG: soft lockup - CPU#0 stuck for 22s! [btrfs-balance:8015]
+        bio_add_page(bio, page, page_size, offset);
+        bio->bi_end_io = end_io_func;
 
-Here's the fun stuff out of dmesg
 
-[183120.853367] INFO: rcu_sched self-detected stall on CPU { 0}
-(t=7620235 jiffies g=3046202 c=3046201 q=0)
-[183120.856391] INFO: rcu_sched detected stalls on CPUs/tasks: { 0}
-(detected by 3, t=7620238 jiffies, g=3046202, c=3046201, q=0)
-[183120.856393] Task dump for CPU 0:
-[183120.856401] btrfs-balance   R  running task        0  8015      2 0x00000088
-[183120.856407]  ffff8800d8a6f8f8 ffffffff816c9b6f ffffffff81a2b500
-ffff880036f40000
-[183120.856411]  ffff88040d0d5140 ffff8800d8a70000 ffff8804094c4620
-ffff8804094c4618
-[183120.856414]  ffff880036f40000 ffff8800d0e8b1a0 ffff8800d8a6f918
-ffffffff816ca177
-[183120.856416] Call Trace:
-[183120.856428]  [<ffffffff816c9b6f>] ? __schedule+0x2af/0x880
-[183120.856435]  [<ffffffff816ca177>] schedule+0x37/0x80
-[183120.856441]  [<ffffffff816cce01>] schedule_timeout+0x201/0x2a0
-[183120.856448]  [<ffffffff8108e814>] ? wake_up_worker+0x24/0x30
-[183120.856451]  [<ffffffff8108f672>] ? insert_work+0x62/0xa0
-[183120.856457]  [<ffffffff81181b17>] ? __set_page_dirty_nobuffers+0xe7/0x140
-[183120.856463]  [<ffffffff81333401>] ? list_del+0x11/0x40
-[183120.856468]  [<ffffffff816cac71>] wait_for_completion+0x111/0x130
-[183120.856474]  [<ffffffff810a3d90>] ? wake_up_q+0x80/0x80
-[183120.856522]  [<ffffffffa0517963>]
-btrfs_async_run_delayed_refs+0x133/0x150 [btrfs]
-[183120.856527]  [<ffffffff816c4888>] ? __slab_free+0x11f/0x217
-[183120.856573]  [<ffffffffa0582099>] ?
-invalidate_extent_cache+0x49/0x1a0 [btrfs]
-[183120.856579]  [<ffffffff811d00e8>] ? kmem_cache_alloc+0x1c8/0x1f0
-[183120.856615]  [<ffffffffa051b44c>] ? btrfs_drop_snapshot+0x6c/0x850 [btrfs]
-[183120.856658]  [<ffffffffa0580ca9>] ? __del_reloc_root+0xb9/0xf0 [btrfs]
-[183120.856700]  [<ffffffffa0580c31>] ? __del_reloc_root+0x41/0xf0 [btrfs]
-[183120.856742]  [<ffffffffa0580c20>] ? __del_reloc_root+0x30/0xf0 [btrfs]
-[183120.856783]  [<ffffffffa0580d05>] ? free_reloc_roots+0x25/0x40 [btrfs]
-[183120.856825]  [<ffffffffa0587433>] ? merge_reloc_roots+0x173/0x240 [btrfs]
-[183120.856869]  [<ffffffffa0587765>] ? relocate_block_group+0x265/0x640 [btrfs]
-[183120.856912]  [<ffffffffa0587d03>] ?
-btrfs_relocate_block_group+0x1c3/0x2d0 [btrfs]
-[183120.856957]  [<ffffffffa055a75e>] ?
-btrfs_relocate_chunk.isra.39+0x3e/0xc0 [btrfs]
-[183120.857001]  [<ffffffffa055bcae>] ? __btrfs_balance+0x49e/0x8e0 [btrfs]
-[183120.857046]  [<ffffffffa055c46d>] ? btrfs_balance+0x37d/0x650 [btrfs]
-[183120.857090]  [<ffffffffa055c79d>] ? balance_kthread+0x5d/0x80 [btrfs]
-[183120.857134]  [<ffffffffa055c740>] ? btrfs_balance+0x650/0x650 [btrfs]
-[183120.857140]  [<ffffffff81097d08>] ? kthread+0xd8/0xf0
-[183120.857146]  [<ffffffff81097c30>] ? kthread_create_on_node+0x1b0/0x1b0
-[183120.857150]  [<ffffffff816ce05f>] ? ret_from_fork+0x3f/0x70
-[183120.857155]  [<ffffffff81097c30>] ? kthread_create_on_node+0x1b0/0x1b0
-[183120.882383] Task dump for CPU 0:
-[183120.882385] btrfs-balance   R  running task        0  8015      2 0x00000088
-[183120.882387]  ffff880036f40000 00000000d292fc58 ffff88041fc03d78
-ffffffff810a636f
-[183120.882390]  0000000000000000 ffffffff81a75300 ffff88041fc03d98
-ffffffff810a8c4d
-[183120.882392]  0000000000000083 0000000000000001 ffff88041fc03dc8
-ffffffff810da114
-[183120.882394] Call Trace:
-[183120.882396]  <IRQ>  [<ffffffff810a636f>] sched_show_task+0xaf/0x110
-[183120.882400]  [<ffffffff810a8c4d>] dump_cpu_task+0x3d/0x50
-[183120.882404]  [<ffffffff810da114>] rcu_dump_cpu_stacks+0x84/0xc0
-[183120.882406]  [<ffffffff810ddd52>] rcu_check_callbacks+0x4c2/0x7b0
-[183120.882409]  [<ffffffff811315dc>] ? acct_account_cputime+0x1c/0x20
-[183120.882412]  [<ffffffff810a9813>] ? account_system_time+0x83/0x120
-[183120.882414]  [<ffffffff810f2590>] ? tick_sched_do_timer+0x50/0x50
-[183120.882417]  [<ffffffff810e3009>] update_process_times+0x39/0x60
-[183120.882420]  [<ffffffff810f2345>] tick_sched_handle.isra.17+0x25/0x60
-[183120.882422]  [<ffffffff810f25d4>] tick_sched_timer+0x44/0x80
-[183120.882425]  [<ffffffff810e3bb3>] __hrtimer_run_queues+0xf3/0x220
-[183120.882428]  [<ffffffff810e4018>] hrtimer_interrupt+0xa8/0x1a0
-[183120.882430]  [<ffffffff8104fbf9>] local_apic_timer_interrupt+0x39/0x60
-[183120.882433]  [<ffffffff816d0975>] smp_apic_timer_interrupt+0x45/0x60
-[183120.882436]  [<ffffffff816ceb0b>] apic_timer_interrupt+0x6b/0x70
-[183120.882437]  <EOI>  [<ffffffffa0580ca9>] ?
-__del_reloc_root+0xb9/0xf0 [btrfs]
-[183120.882471]  [<ffffffffa0580c31>] ? __del_reloc_root+0x41/0xf0 [btrfs]
-[183120.882488]  [<ffffffffa0580c20>] ? __del_reloc_root+0x30/0xf0 [btrfs]
-[183120.882505]  [<ffffffffa0580d05>] free_reloc_roots+0x25/0x40 [btrfs]
-[183120.882521]  [<ffffffffa0587433>] merge_reloc_roots+0x173/0x240 [btrfs]
-[183120.882539]  [<ffffffffa0587765>] relocate_block_group+0x265/0x640 [btrfs]
-[183120.882556]  [<ffffffffa0587d03>]
-btrfs_relocate_block_group+0x1c3/0x2d0 [btrfs]
-[183120.882574]  [<ffffffffa055a75e>]
-btrfs_relocate_chunk.isra.39+0x3e/0xc0 [btrfs]
-[183120.882591]  [<ffffffffa055bcae>] __btrfs_balance+0x49e/0x8e0 [btrfs]
-[183120.882609]  [<ffffffffa055c46d>] btrfs_balance+0x37d/0x650 [btrfs]
-[183120.882627]  [<ffffffffa055c79d>] balance_kthread+0x5d/0x80 [btrfs]
-[183120.882644]  [<ffffffffa055c740>] ? btrfs_balance+0x650/0x650 [btrfs]
-[183120.882647]  [<ffffffff81097d08>] kthread+0xd8/0xf0
-[183120.882650]  [<ffffffff81097c30>] ? kthread_create_on_node+0x1b0/0x1b0
-[183120.882653]  [<ffffffff816ce05f>] ret_from_fork+0x3f/0x70
-[183120.882655]  [<ffffffff81097c30>] ? kthread_create_on_node+0x1b0/0x1b0
-[183145.314520] NMI watchdog: BUG: soft lockup - CPU#0 stuck for 22s!
-[btrfs-balance:8015]
-[183145.329314] Modules linked in: ext4 mbcache jbd2
-snd_hda_codec_realtek snd_hda_codec_generic snd_hda_intel
-snd_hda_codec snd_hda_core snd_hwdep snd_seq snd_seq_device kvm_amd
-ppdev edac_mce_amd snd_pcm sp5100_tco snd_timer kvm serio_raw pcspkr
-snd i2c_piix4 k10temp edac_core soundcore ses enclosure input_leds
-8250_fintek parport_pc tpm_infineon shpchp parport acpi_cpufreq nfsd
-auth_rpcgss nfs_acl lockd grace sunrpc btrfs xor raid6_pq ata_generic
-pata_acpi sd_mod nouveau video mxm_wmi i2c_algo_bit drm_kms_helper ttm
-drm pata_atiixp firewire_ohci lpfc ahci libahci scsi_transport_fc
-pata_jmicron firewire_core crc_itu_t libata r8169 mii mpt2sas
-raid_class scsi_transport_sas wmi
-[183145.329352] CPU: 0 PID: 8015 Comm: btrfs-balance Tainted: G
-W    L  4.2.2-1.el7.elrepo.x86_64 #1
-[183145.329353] Hardware name: MICRO-STAR INTERNATIONAL CO.,LTD
-MS-7577/790FX-GD70(MS-7577), BIOS V1.16 12/01/2010
-[183145.329355] task: ffff880036f40000 ti: ffff8800d8a6c000 task.ti:
-ffff8800d8a6c000
-[183145.329357] RIP: 0010:[<ffffffffa0580c45>]  [<ffffffffa0580c45>]
-__del_reloc_root+0x55/0xf0 [btrfs]
-[183145.329375] RSP: 0018:ffff8800d8a6fb78  EFLAGS: 00000246
-[183145.329377] RAX: ffff88001d0daf50 RBX: 00000000ffffffe2 RCX:
-0000000180400035
-[183145.329379] RDX: 000004c82b518000 RSI: ffffea000e787780 RDI:
-ffff88001b8d5570
-[183145.329381] RBP: ffff8800d8a6fb98 R08: ffff88039e1de980 R09:
-0000000180400035
-[183145.329382] R10: ffffea000e787780 R11: ffffffffa0580ca9 R12:
-000000001b8d5001
-[183145.329384] R13: ffff8800990e7000 R14: 0000000180400035 R15:
-ffffffffa051b44c
-[183145.329386] FS:  00007f10362a3700(0000) GS:ffff88041fc00000(0000)
-knlGS:0000000000000000
-[183145.329387] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[183145.329389] CR2: 00007fc759fae000 CR3: 0000000001a24000 CR4:
-00000000000006f0
-[183145.329390] Stack:
-[183145.329391]  ffff8800d8a6fbe0 ffff880003f80800 ffff88001b8d5000
-ffff8800d8a6fbe0
-[183145.329394]  ffff8800d8a6fbb8 ffffffffa0580d05 ffff8800990e7000
-ffff8800990e7000
-[183145.329396]  ffff8800d8a6fc28 ffffffffa0587433 ffff88001b8d5578
-ffffffe21b8d5578
-[183145.329398] Call Trace:
-[183145.329416]  [<ffffffffa0580d05>] free_reloc_roots+0x25/0x40 [btrfs]
-[183145.329433]  [<ffffffffa0587433>] merge_reloc_roots+0x173/0x240 [btrfs]
-[183145.329450]  [<ffffffffa0587765>] relocate_block_group+0x265/0x640 [btrfs]
-[183145.329467]  [<ffffffffa0587d03>]
-btrfs_relocate_block_group+0x1c3/0x2d0 [btrfs]
-[183145.329485]  [<ffffffffa055a75e>]
-btrfs_relocate_chunk.isra.39+0x3e/0xc0 [btrfs]
-[183145.329503]  [<ffffffffa055bcae>] __btrfs_balance+0x49e/0x8e0 [btrfs]
-[183145.329521]  [<ffffffffa055c46d>] btrfs_balance+0x37d/0x650 [btrfs]
-[183145.329539]  [<ffffffffa055c79d>] balance_kthread+0x5d/0x80 [btrfs]
-[183145.329556]  [<ffffffffa055c740>] ? btrfs_balance+0x650/0x650 [btrfs]
-[183145.329559]  [<ffffffff81097d08>] kthread+0xd8/0xf0
-[183145.329562]  [<ffffffff81097c30>] ? kthread_create_on_node+0x1b0/0x1b0
-[183145.329565]  [<ffffffff816ce05f>] ret_from_fork+0x3f/0x70
-[183145.329567]  [<ffffffff81097c30>] ? kthread_create_on_node+0x1b0/0x1b0
-[183145.329569] Code: f7 e8 90 cc 14 e1 49 8b 04 24 49 8b 9d 68 05 00
-00 48 8b 10 48 85 db 74 0f 48 3b 53 18 73 79 48 8b 5b 10 48 85 db 75
-f1 4c 89 f7 <c6> 07 00 0f 1f 40 00 48 85 db 74 58 4c 3b 63 20 75 7a 49
-8b 84
+Thanks,
+Alex.
+
+On Wed, Jan 7, 2015 at 12:46 AM, Satoru Takeuchi
+<takeuchi_satoru@jp.fujitsu.com> wrote:
+> Hi Naota,
+>
+> On 2015/01/06 1:01, Naohiro Aota wrote:
+>> After submit_one_bio(), `bio' can go away. However submit_extent_page()
+>> leave `bio' referable if submit_one_bio() failed (e.g. -ENOMEM on OOM).
+>> It will cause invalid paging request when submit_extent_page() is called
+>> next time.
+>>
+>> I reproduced ENOMEM case with the following script (need
+>> CONFIG_FAIL_PAGE_ALLOC, and CONFIG_FAULT_INJECTION_DEBUG_FS).
+>
+> I confirmed that this problem reproduce with 3.19-rc3 and
+> not reproduce with 3.19-rc3 with your patch.
+>
+> Tested-by: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+>
+> Thank you for reporting this problem with the reproducer
+> and fixing it too.
+>
+>   NOTE:
+>   I used v3.19-rc3's tools/testing/fault-injection/failcmd.sh
+>   for the following "./failcmd.sh".
+>
+>   >            ./failcmd.sh -p $percent -t $times -i $interval \
+>   >                    --ignore-gfp-highmem=N --ignore-gfp-wait=N --min-order=0 \
+>   >                    -- \
+>   >                    cat $directory/file > /dev/null
+>
+> * 3.19-rc1 + your patch
+>
+> ===============================================================================
+> # ./run
+> 512+0 records in
+> 512+0 records out
+> #
+> ===============================================================================
+>
+> * 3.19-rc3
+>
+> ===============================================================================
+> # ./run
+> 512+0 records in
+> 512+0 records out
+> [  188.433726] run (776): drop_caches: 1
+> [  188.682372] FAULT_INJECTION: forcing a failure.
+> name fail_page_alloc, interval 100, probability 111000, space 0, times 3
+> [  188.689986] CPU: 0 PID: 954 Comm: cat Not tainted 3.19.0-rc3-ktest #1
+> [  188.693834] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+> [  188.698466]  0000000000000064 ffff88007b343618 ffffffff816e5563 ffff88007fc0fc78
+> [  188.702730]  ffffffff81c655c0 ffff88007b343638 ffffffff813851b5 0000000000000010
+> [  188.707043]  0000000000000002 ffff88007b343768 ffffffff81188126 ffff88007b3435a8
+> [  188.711283] Call Trace:
+> [  188.712620]  [<ffffffff816e5563>] dump_stack+0x45/0x57
+> [  188.715330]  [<ffffffff813851b5>] should_fail+0x135/0x140
+> [  188.718218]  [<ffffffff81188126>] __alloc_pages_nodemask+0xd6/0xb30
+> [  188.721567]  [<ffffffff81339075>] ? blk_rq_map_sg+0x35/0x170
+> [  188.724558]  [<ffffffffa0010705>] ? virtio_queue_rq+0x145/0x2b0 [virtio_blk]
+> [  188.728191]  [<ffffffffa01bd00f>] ? btrfs_submit_compressed_read+0xcf/0x4d0 [btrfs]
+> [  188.732079]  [<ffffffff811d99fb>] ? kmem_cache_alloc+0x1cb/0x230
+> [  188.735153]  [<ffffffff81181265>] ? mempool_alloc_slab+0x15/0x20
+> [  188.738188]  [<ffffffff811cee1a>] alloc_pages_current+0x9a/0x120
+> [  188.741153]  [<ffffffffa01bd0e9>] btrfs_submit_compressed_read+0x1a9/0x4d0 [btrfs]
+> [  188.744835]  [<ffffffffa0178621>] btrfs_submit_bio_hook+0x1c1/0x1d0 [btrfs]
+> [  188.748225]  [<ffffffffa018b7b3>] ? lookup_extent_mapping+0x13/0x20 [btrfs]
+> [  188.751547]  [<ffffffffa0179c08>] ? btrfs_get_extent+0x98/0xad0 [btrfs]
+> [  188.754656]  [<ffffffffa01901d7>] submit_one_bio+0x67/0xa0 [btrfs]
+> [  188.757554]  [<ffffffffa0193f27>] submit_extent_page.isra.35+0xd7/0x1c0 [btrfs]
+> [  188.760981]  [<ffffffffa019509d>] __do_readpage+0x31d/0x7b0 [btrfs]
+> [  188.763920]  [<ffffffffa0195f10>] ? btrfs_create_repair_bio+0x110/0x110 [btrfs]
+> [  188.767382]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+> [  188.770671]  [<ffffffffa018f88d>] ? btrfs_lookup_ordered_range+0x13d/0x180 [btrfs]
+> [  188.774366]  [<ffffffffa01958ca>] __extent_readpages.constprop.42+0x2ba/0x2d0 [btrfs]
+> [  188.778031]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+> [  188.781241]  [<ffffffffa01969b9>] extent_readpages+0x169/0x1b0 [btrfs]
+> [  188.784322]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+> [  188.789014]  [<ffffffffa0176b0f>] btrfs_readpages+0x1f/0x30 [btrfs]
+> [  188.792028]  [<ffffffff8118bf5c>] __do_page_cache_readahead+0x18c/0x1f0
+> [  188.795078]  [<ffffffff8118c09f>] ondemand_readahead+0xdf/0x260
+> [  188.797702]  [<ffffffffa016c5df>] ? btrfs_congested_fn+0x5f/0xa0 [btrfs]
+> [  188.800718]  [<ffffffff8118c291>] page_cache_async_readahead+0x71/0xa0
+> [  188.803650]  [<ffffffff8118017f>] generic_file_read_iter+0x40f/0x5e0
+> [  188.806480]  [<ffffffff811f43be>] new_sync_read+0x7e/0xb0
+> [  188.808832]  [<ffffffff811f55d8>] __vfs_read+0x18/0x50
+> [  188.811068]  [<ffffffff811f569a>] vfs_read+0x8a/0x140
+> [  188.813298]  [<ffffffff811f5796>] SyS_read+0x46/0xb0
+> [  188.815486]  [<ffffffff81125806>] ? __audit_syscall_exit+0x1f6/0x2a0
+> [  188.818293]  [<ffffffff816eb8e9>] system_call_fastpath+0x12/0x17
+> [  188.821005] BUG: unable to handle kernel paging request at 000000010000000c
+> [  188.821984] IP: [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
+> [  188.821984] PGD 7bad3067 PUD 0
+> [  188.821984] Oops: 0000 [#1] SMP
+> [  188.821984] Modules linked in: ip6table_filter ip6_tables ebtable_nat ebtables bnep bluetooth rfkill btrfs xor raid6_pq microcode 8139too serio_raw virtio_balloon 8139cp mii nfsd auth_rpcgss nfs_acl lockd grace sunrpc virtio_blk ata_generic pata_acpi
+> [  188.821984] CPU: 1 PID: 954 Comm: cat Not tainted 3.19.0-rc3-ktest #1
+> [  188.821984] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS Bochs 01/01/2011
+> [  188.821984] task: ffff880037665220 ti: ffff88007b340000 task.ti: ffff88007b340000
+> [  188.821984] RIP: 0010:[<ffffffffa01901b3>]  [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
+> [  188.821984] RSP: 0018:ffff88007b3438c8  EFLAGS: 00010202
+> [  188.821984] RAX: 0000000000000000 RBX: ffff88007c282ba8 RCX: 0000000000010001
+> [  188.821984] RDX: 0000000000000000 RSI: 00000000fffffff4 RDI: 0000000000000000
+> [  188.821984] RBP: ffff88007b3438d8 R08: ffffea0001e33100 R09: 00000000000027df
+> [  188.821984] R10: ffff88007fd1c000 R11: 0000000000dbb000 R12: ffff88007b343b40
+> [  188.821984] R13: ffff88007c282ba8 R14: 0000000000006dd8 R15: ffff880071584f80
+> [  188.821984] FS:  00007fdf777c5740(0000) GS:ffff88007fd00000(0000) knlGS:0000000000000000
+> [  188.821984] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+> [  188.821984] CR2: 000000010000000c CR3: 000000007bf59000 CR4: 00000000000006e0
+> [  188.821984] Stack:
+> [  188.821984]  0000000000001000 ffff88007b343b40 ffff88007b343938 ffffffffa0193f27
+> [  188.821984]  ffff88007b343938 0000000000000001 0000000000000000 ffffea0001e33180
+> [  188.821984]  00000000027e0000 0000000000001000 ffff88007cc24680 ffff88007b343b50
+> [  188.821984] Call Trace:
+> [  188.821984]  [<ffffffffa0193f27>] submit_extent_page.isra.35+0xd7/0x1c0 [btrfs]
+> [  188.821984]  [<ffffffffa019509d>] __do_readpage+0x31d/0x7b0 [btrfs]
+> [  188.821984]  [<ffffffffa0195f10>] ? btrfs_create_repair_bio+0x110/0x110 [btrfs]
+> [  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+> [  188.821984]  [<ffffffffa018f88d>] ? btrfs_lookup_ordered_range+0x13d/0x180 [btrfs]
+> [  188.821984]  [<ffffffffa01958ca>] __extent_readpages.constprop.42+0x2ba/0x2d0 [btrfs]
+> [  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+> [  188.821984]  [<ffffffffa01969b9>] extent_readpages+0x169/0x1b0 [btrfs]
+> [  188.821984]  [<ffffffffa0179b70>] ? btrfs_submit_direct+0x7b0/0x7b0 [btrfs]
+> [  188.821984]  [<ffffffffa0176b0f>] btrfs_readpages+0x1f/0x30 [btrfs]
+> [  188.821984]  [<ffffffff8118bf5c>] __do_page_cache_readahead+0x18c/0x1f0
+> [  188.821984]  [<ffffffff8118c09f>] ondemand_readahead+0xdf/0x260
+> [  188.821984]  [<ffffffffa016c5df>] ? btrfs_congested_fn+0x5f/0xa0 [btrfs]
+> [  188.821984]  [<ffffffff8118c291>] page_cache_async_readahead+0x71/0xa0
+> [  188.821984]  [<ffffffff8118017f>] generic_file_read_iter+0x40f/0x5e0
+> [  188.821984]  [<ffffffff811f43be>] new_sync_read+0x7e/0xb0
+> [  188.821984]  [<ffffffff811f55d8>] __vfs_read+0x18/0x50
+> [  188.821984]  [<ffffffff811f569a>] vfs_read+0x8a/0x140
+> [  188.821984]  [<ffffffff811f5796>] SyS_read+0x46/0xb0
+> [  188.821984]  [<ffffffff81125806>] ? __audit_syscall_exit+0x1f6/0x2a0
+> [  188.821984]  [<ffffffff816eb8e9>] system_call_fastpath+0x12/0x17
+> [  188.821984] Code: c1 e0 04 48 8d 44 06 f0 48 8b 73 50 4c 8b 00 8b 40 0c 4d 8b 48 10 48 c7 43 50 00 00 00 00 f0 ff 43 74 48 8b 76 20 48 85 f6 74 4d <4c> 8b 56 18 4d 85 d2 74 44 4d 8b 58 08 49 c1 e1 0c 49 89 c8 89
+> [  188.821984] RIP  [<ffffffffa01901b3>] submit_one_bio+0x43/0xa0 [btrfs]
+> [  188.821984]  RSP <ffff88007b3438c8>
+> [  188.821984] CR2: 000000010000000c
+> [  188.953169] ---[ end trace 498f24be78e8baad ]---
+> #
+> ===============================================================================
+>
+> Thanks,
+> Satoru
+>
+>>
+>>    #!/bin/bash
+>>
+>>    dmesgout=dmesg.txt
+>>    start=100000
+>>    end=300000
+>>    step=1000
+>>
+>>    # btrfs options
+>>    device=/dev/vdb1
+>>    directory=/mnt/btrfs
+>>
+>>    # fault-injection options
+>>    percent=100
+>>    times=3
+>>
+>>    mkdir -p $directory || exit 1
+>>    mount -o compress $device $directory || exit 1
+>>
+>>    rm -f $directory/file || exit 1
+>>    dd if=/dev/zero of=$directory/file bs=1M count=512 || exit 1
+>>
+>>    for interval in `seq $start $step $end`; do
+>>            dmesg -C
+>>            echo 1 > /proc/sys/vm/drop_caches
+>>            sync
+>>            export FAILCMD_TYPE=fail_page_alloc
+>>            ./failcmd.sh -p $percent -t $times -i $interval \
+>>                    --ignore-gfp-highmem=N --ignore-gfp-wait=N --min-order=0 \
+>>                    -- \
+>>                    cat $directory/file > /dev/null
+>>            dmesg > ${dmesgout}
+>>            if grep -q BUG: ${dmesgout}; then
+>>                    cat ${dmesgout}
+>>                    exit 1
+>>            fi
+>>    done
+>>
+>>    umount $directory
+>>    exit 0
+>>
+>> Signed-off-by: Naohiro Aota <naota@elisp.net>
+>> ---
+>>   fs/btrfs/extent_io.c | 4 +++-
+>>   1 file changed, 3 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+>> index 4ebabd2..4421161 100644
+>> --- a/fs/btrfs/extent_io.c
+>> +++ b/fs/btrfs/extent_io.c
+>> @@ -2816,8 +2816,10 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+>>                   bio_add_page(bio, page, page_size, offset) < page_size) {
+>>                       ret = submit_one_bio(rw, bio, mirror_num,
+>>                                            prev_bio_flags);
+>> -                     if (ret < 0)
+>> +                     if (ret < 0) {
+>> +                             *bio_ret = NULL;
+>>                               return ret;
+>> +                     }
+>>                       bio = NULL;
+>>               } else {
+>>                       return 0;
+>>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

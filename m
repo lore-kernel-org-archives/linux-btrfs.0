@@ -1,97 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:38726 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:40038 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751262AbbJKL2o (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 07:28:44 -0400
+	id S1751855AbbJKMNw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Oct 2015 08:13:52 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZlEny-0005uQ-Ep
-	for linux-btrfs@vger.kernel.org; Sun, 11 Oct 2015 13:28:42 +0200
+	id 1ZlFVd-0001zL-C5
+	for linux-btrfs@vger.kernel.org; Sun, 11 Oct 2015 14:13:49 +0200
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 13:28:42 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 14:13:49 +0200
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 13:28:42 +0200
+        for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 14:13:49 +0200
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: kernel BUG at /linux/fs/btrfs/extent-tree.c:1833!
-Date: Sun, 11 Oct 2015 11:28:36 +0000 (UTC)
-Message-ID: <pan$79537$59fa2bae$d82578cd$79406a63@cox.net>
-References: <CAEtw4r3r-E1deboGDCfNkUL-ZKUdn4+B++oeu9M4H_7hHDj0TA@mail.gmail.com>
-	<BLU436-SMTP5651E81A1B27D60895E652A9340@phx.gbl>
-	<CAEtw4r3Qg-5cian-GjAuCmjaTnzea0OrHgxZO_VM1OwjoF2oxQ@mail.gmail.com>
-	<CAEtw4r2HMrJciX4tgC9d9qSVucCJng-tyJxWPFX7h-5oqePV_w@mail.gmail.com>
+Subject: Re: btrfs says no errors, but booting gives lots of errors
+Date: Sun, 11 Oct 2015 12:13:29 +0000 (UTC)
+Message-ID: <pan$d2df6$3d7eab24$5c921ac6$dfe0f628@cox.net>
+References: <8042.1444481164@ccs.covici.com>
+	<56191CC2.9000505@googlemail.com> <11640.1444488108@ccs.covici.com>
+	<561932EF.2090005@bouton.name> <5619385C.7040103@googlemail.com>
+	<16953.1444496102@ccs.covici.com> <56198B7B.90806@bouton.name>
+	<27402.1444518173@ccs.covici.com> <27611.1444518496@ccs.covici.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Peter Becker posted on Sat, 10 Oct 2015 21:48:31 +0200 as excerpted:
+covici posted on Sat, 10 Oct 2015 19:08:16 -0400 as excerpted:
 
-> btrfs balance start -m /media/RAID
+> covici@ccs.covici.com wrote:
 > 
-> complete with out any error but the resulte of device usage is confusing
-> me.
-> Metadata on sdb and sdc are 2 GiB, but on sdd (the new added device)
-> is 4 GiB. And the 2. one that's confusing me, is that sdd has a "System"
-> entry but sdb and sdc dosn't
+>> Lionel Bouton <lionel+ceph@bouton.name> wrote:
+>> 
+>> > Le 10/10/2015 18:55, covici@ccs.covici.com a écrit :
+>> > > [...]
+>> > > But do you folks have any idea about my original question, this
+>> > > leads me to think that btrfs is too new or something.
+>> > 
+>> > I've seen a recent report of a problem with btrfs-progs 4.2 confirmed
+>> > as a bug in mkfs. As you created the filesystem with it, it could be
+>> > the problem.
 > 
-> floyd@nas ~ $ sudo btrfs dev us /media/RAID/
-> /dev/sdb, ID: 1
->    Device size:             2.73TiB
->    Data,RAID1:              2.11TiB
->    Metadata,RAID1:          2.00GiB
->    System,RAID1:           32.00MiB
->    Unallocated:           628.49GiB
-> 
-> /dev/sdc, ID: 2
->    Device size:             2.73TiB
->    Data,RAID1:              2.11TiB
->    Metadata,RAID1:          2.00GiB
->    Unallocated:           628.52GiB
-> 
-> /dev/sdd, ID: 3
->    Device size:             2.73TiB
->    Data,RAID1:            792.00GiB
->    Metadata,RAID1:          4.00GiB
->    System,RAID1:           32.00MiB
->    Unallocated:             1.95TiB
+> I do have 4.2.2, I could go to, would that be better?
 
-FWIW, there's also btrfs fi usage, which prints a somewhat different 
-layout of pretty much the same statistics.  It may be useful to compare 
-output styles and choose the one you prefer.  I prefer fi usage to dev 
-usage in most cases, but YMMV.
+btrfs-progs-4.2.2 does indeed have the mkfs.btrfs fixes for the bug in 
+question.  You should be fine remaking the filesystem with it.
 
-The key thing to remember about btrfs raid1 on more than two devices is 
-that it's exactly two copies, not N copies, where N is the number of 
-devices.  In a three-device raid1, by definition, for each chunk that 
-will mean one copy each on two devices, with the third device not getting 
-a copy of that particular chunk, since btrfs raid1 is exactly two copies, 
-no more, no less.
+If you created the filesystem with the buggy mkfs.btrfs, AFAIK, current 
+4.2.2 btrfs check can detect the error, but can't fix it.  Blowing away 
+the filesystem and recreating is the only known fix at this time, and 
+filesystems created with the buggy version are not safe and could blow up 
+at any time, so it's best to be rid of them and onto something more 
+stable as soon as possible.
 
-So system is raid1, and sdb and sdd each have a copy of the (apparently 
-just one) system chunk, one copy each for two copies total, leaving no 
-system chunk to be placed on sdc, which is why it has none.
+I can't help with the subvolumes bit, however, because while I'm on 
+gentoo/~amd64 here too, also with systemd...
 
-And, given the stats, there are 4 GiB of raid1 metadata chunks comprising 
-two copies of 2 GiB worth of metadata.  Half that metadata has a copy 
-each on sdb and sdd, while the other half has a copy each on sdc and sdd.  
-IOW, sdd has a copy of all metadata, but sdb and sdc only have a copy of 
-half the metadata each.
+I don't use subvolumes, as to me it's simply putting too many eggs in one 
+filesystem basket.  Instead, I prefer multiple separate btrfs 
+filesystems, each on their own partitions.  My / includes most of what 
+packages install, including /usr and /var but not /var/log.  It's 8 GiB 
+in size, under half used.  /home is separate, the repos tree (gentoo and 
+overlays) along with ccache, binpackages, the kernel tree, etc, are 
+together on a separate partition, /var/log is separate (and tiny, half a 
+GiB), etc.  I keep / mounted read-only by default, so have the parts of /
+var/lib that must be runtime-writable symlinked to subdirs of /home/var, 
+with /home of course mounted writable, but other than that and some /var/
+log/ subdirs, anything that's installed by a package is on /, a lesson I 
+learned the hard way when I had to recover from backups where /, /usr 
+and /var were from backups taken on different dates and thus not 
+synchronized with what portage /thought/ was installed based on /var/db/
+pkg.
 
-Since the chunk allocator creates new chunks on the device with the most 
-available space, subject to the restriction that for raid1, there's two 
-copies and both copies cannot be on the same device, because sdd was 
-recently added and thus the one most empty, when you ran the metadata 
-balance, it created one copy of the raid1 two copies on the new device as 
-it had the most free space, and then had to select one of the other two 
-devices for the other copy.  Since the other two devices were basically 
-evenly filled, it alternated, selecting one and then the other, so each 
-one got the second copy of half of the metadata, while the new device 
-with the most free space got the first copy of all metadata as it was 
-rewritten by the balance.
+Not saying that's best for you, but it's a solution that I've found works 
+very well for me, and the relative small 8 GiB size of / makes it easy to 
+have backup copies of it that I can boot, should my working / take a 
+dump.  But if it's all on the same filesystem, as it is with subvolumes, 
+and that filesystem takes a dump... it's all gone at once!  That's not 
+something I want to happen, so I vastly prefer the independent 
+filesystems, but with everything (but the limited exceptions mentioned 
+above) the package manager deals with on the same one, so it all stays 
+synced and is backed up as a single unit, which after all remains 
+reasonably small, 8 GiB, less than half used.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

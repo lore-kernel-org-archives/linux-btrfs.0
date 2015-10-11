@@ -1,125 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37056 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37524 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751679AbbJKRvq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 13:51:46 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id AA123AC66
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 17:51:43 +0000 (UTC)
+	id S1751963AbbJKSFR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Oct 2015 14:05:17 -0400
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 6/6] btrfs: comment the rest of implicit barriers before waitqueue_active
-Date: Sun, 11 Oct 2015 19:50:37 +0200
-Message-Id: <ee86395458072760d62e66aad10a5e9e8902b8cf.1444579885.git.dsterba@suse.com>
-In-Reply-To: <cover.1444579885.git.dsterba@suse.com>
-References: <cover.1444579885.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com
+Subject: [PULL][PATCH 0/7] Updates in message printers and formatters
+Date: Sun, 11 Oct 2015 20:04:08 +0200
+Message-Id: <cover.1444585955.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are atomic operations that imply the barrier for waitqueue_active
-mixed in an if-condition.
+Hi,
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/delayed-inode.c | 4 ++++
- fs/btrfs/disk-io.c       | 3 +++
- fs/btrfs/inode.c         | 3 +++
- fs/btrfs/locking.c       | 9 +++++++++
- fs/btrfs/volumes.c       | 3 +++
- 5 files changed, 22 insertions(+)
+this was inspired by recent Anand's post to change the printing format of the
+btrfs_err etc. helpers to include UUID. We do not use the helpers everywhere,
+so I've introduced all the missing variants that require eg printing the
+rcu_string (device name), are ratelimited or are both ratelimited and using
+rcu_string.
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index a2ae42720a6a..e0941fbb913c 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -463,6 +463,10 @@ static int __btrfs_add_delayed_deletion_item(struct btrfs_delayed_node *node,
- static void finish_one_item(struct btrfs_delayed_root *delayed_root)
- {
- 	int seq = atomic_inc_return(&delayed_root->items_seq);
-+
-+	/*
-+	 * atomic_dec_return implies a barrier for waitqueue_active
-+	 */
- 	if ((atomic_dec_return(&delayed_root->items) <
- 	    BTRFS_DELAYED_BACKGROUND || seq % BTRFS_DELAYED_BATCH == 0) &&
- 	    waitqueue_active(&delayed_root->wait))
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 295795aebe0b..379526ffd84d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -802,6 +802,9 @@ static void run_one_async_done(struct btrfs_work *work)
- 	limit = btrfs_async_submit_limit(fs_info);
- 	limit = limit * 2 / 3;
- 
-+	/*
-+	 * atomic_dec_return implies a barrier for waitqueue_active
-+	 */
- 	if (atomic_dec_return(&fs_info->nr_async_submits) < limit &&
- 	    waitqueue_active(&fs_info->async_submit_wait))
- 		wake_up(&fs_info->async_submit_wait);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 611b66d73e80..7be4abe25e06 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -1096,6 +1096,9 @@ static noinline void async_cow_submit(struct btrfs_work *work)
- 	nr_pages = (async_cow->end - async_cow->start + PAGE_CACHE_SIZE) >>
- 		PAGE_CACHE_SHIFT;
- 
-+	/*
-+	 * atomic_sub_return implies a barrier for waitqueue_active
-+	 */
- 	if (atomic_sub_return(nr_pages, &root->fs_info->async_delalloc_pages) <
- 	    5 * 1024 * 1024 &&
- 	    waitqueue_active(&root->fs_info->async_submit_wait))
-diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
-index 03f8630dbaf2..8077461fc56a 100644
---- a/fs/btrfs/locking.c
-+++ b/fs/btrfs/locking.c
-@@ -79,6 +79,9 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
- 		write_lock(&eb->lock);
- 		WARN_ON(atomic_read(&eb->spinning_writers));
- 		atomic_inc(&eb->spinning_writers);
-+		/*
-+		 * atomic_dec_and_test implies a barrier for waitqueue_active
-+		 */
- 		if (atomic_dec_and_test(&eb->blocking_writers) &&
- 		    waitqueue_active(&eb->write_lock_wq))
- 			wake_up(&eb->write_lock_wq);
-@@ -86,6 +89,9 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
- 		BUG_ON(atomic_read(&eb->blocking_readers) == 0);
- 		read_lock(&eb->lock);
- 		atomic_inc(&eb->spinning_readers);
-+		/*
-+		 * atomic_dec_and_test implies a barrier for waitqueue_active
-+		 */
- 		if (atomic_dec_and_test(&eb->blocking_readers) &&
- 		    waitqueue_active(&eb->read_lock_wq))
- 			wake_up(&eb->read_lock_wq);
-@@ -229,6 +235,9 @@ void btrfs_tree_read_unlock_blocking(struct extent_buffer *eb)
- 	}
- 	btrfs_assert_tree_read_locked(eb);
- 	WARN_ON(atomic_read(&eb->blocking_readers) == 0);
-+	/*
-+	 * atomic_dec_and_test implies a barrier for waitqueue_active
-+	 */
- 	if (atomic_dec_and_test(&eb->blocking_readers) &&
- 	    waitqueue_active(&eb->read_lock_wq))
- 		wake_up(&eb->read_lock_wq);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc735869c18..ff3527192409 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -345,6 +345,9 @@ static noinline void run_scheduled_bios(struct btrfs_device *device)
- 		pending = pending->bi_next;
- 		cur->bi_next = NULL;
- 
-+		/*
-+		 * atomic_dec_return implies a barrier for waitqueue_active
-+		 */
- 		if (atomic_dec_return(&fs_info->nr_async_bios) < limit &&
- 		    waitqueue_active(&fs_info->async_submit_wait))
- 			wake_up(&fs_info->async_submit_wait);
--- 
-2.1.3
+First part introduces macros and switches existing users, the patch 7/7 converts
+some printks to the helpers (avoiding mostly debugging messages).
 
+In the end we should route all user-visile messages through some common
+formatter, this is preparatory work. The mount-time messages are still
+printk-based.
+
+Please consider for the 4.4 dev cycle. Thanks.
+
+----------------------------------------------------------------
+
+The following changes since commit 9ffecb10283508260936b96022d4ee43a7798b4c:
+
+  Linux 4.3-rc3 (2015-09-27 07:50:08 -0400)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git cleanup/messages
+
+for you to fetch changes up to f14d104dbdb5044dac9acd0e983ffb60f706c746:
+
+  btrfs: switch more printks to our helpers (2015-10-08 13:08:03 +0200)
+
+----------------------------------------------------------------
+David Sterba (7):
+      btrfs: introduce _in_rcu variants of message printing functions
+      btrfs: switch message printers to _in_rcu variants
+      btrfs: introduce ratelimited _in_rcu variants of message printing functions
+      btrfs: switch message printers to ratelimited _in_rcu variants
+      btrfs: introduce ratelimited variants of message printing functions
+      btrfs: switch message printers to ratelimited variants
+      btrfs: switch more printks to our helpers
+
+ fs/btrfs/check-integrity.c  |  4 +--
+ fs/btrfs/ctree.h            | 88 +++++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dev-replace.c      | 16 ++++-----
+ fs/btrfs/disk-io.c          | 37 ++++++++++---------
+ fs/btrfs/extent-tree.c      | 14 ++++----
+ fs/btrfs/extent_io.c        | 26 +++++++-------
+ fs/btrfs/free-space-cache.c | 10 +++---
+ fs/btrfs/inode.c            |  7 ++--
+ fs/btrfs/ioctl.c            |  8 ++---
+ fs/btrfs/root-tree.c        |  5 +--
+ fs/btrfs/scrub.c            | 42 +++++++++++-----------
+ fs/btrfs/send.c             |  2 +-
+ fs/btrfs/volumes.c          | 25 ++++++-------
+ 13 files changed, 187 insertions(+), 97 deletions(-)

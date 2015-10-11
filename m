@@ -1,70 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37043 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37047 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751679AbbJKRvg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 13:51:36 -0400
+	id S1751679AbbJKRvj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Oct 2015 13:51:39 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id ED4CBAC66
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 17:51:33 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 5532BAC66
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 17:51:37 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/6] btrfs: comment waitqueue_active implied by locks
-Date: Sun, 11 Oct 2015 19:50:27 +0200
-Message-Id: <33a9eca7e4a4c2c17aebbb11f0e506a48ebc30c9.1444579885.git.dsterba@suse.com>
+Subject: [PATCH 4/6] btrfs: add comments to barriers before waitqueue_active
+Date: Sun, 11 Oct 2015 19:50:30 +0200
+Message-Id: <a83342aa0c8f0ca90057d3837ae8d198186e5153.1444579885.git.dsterba@suse.com>
 In-Reply-To: <cover.1444579885.git.dsterba@suse.com>
 References: <cover.1444579885.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Suggested-by: Chris Mason <clm@fb.com>
+Reduce number of undocumented barriers out there.
+
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/raid56.c   | 6 +++++-
- fs/btrfs/tree-log.c | 6 ++++++
- 2 files changed, 11 insertions(+), 1 deletion(-)
+ fs/btrfs/compression.c  | 3 +++
+ fs/btrfs/extent-tree.c  | 3 +--
+ fs/btrfs/locking.c      | 3 +++
+ fs/btrfs/ordered-data.c | 6 ++++++
+ fs/btrfs/transaction.c  | 3 +++
+ 5 files changed, 16 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
-index fcf7265ca46f..1a33d3eb36de 100644
---- a/fs/btrfs/raid56.c
-+++ b/fs/btrfs/raid56.c
-@@ -810,7 +810,11 @@ static noinline void unlock_stripe(struct btrfs_raid_bio *rbio)
- 			}
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index 57ee8ca29b06..3a9317ce67f8 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -839,6 +839,9 @@ static void free_workspace(int type, struct list_head *workspace)
+ 	btrfs_compress_op[idx]->free_workspace(workspace);
+ 	atomic_dec(alloc_workspace);
+ wake:
++	/*
++	 * Make sure counter is updated before we wake up waiters.
++	 */
+ 	smp_mb();
+ 	if (waitqueue_active(workspace_wait))
+ 		wake_up(workspace_wait);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 9f9604201333..59eb92f65c62 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -10363,8 +10363,7 @@ void btrfs_end_write_no_snapshoting(struct btrfs_root *root)
+ {
+ 	percpu_counter_dec(&root->subv_writers->counter);
+ 	/*
+-	 * Make sure counter is updated before we wake up
+-	 * waiters.
++	 * Make sure counter is updated before we wake up waiters.
+ 	 */
+ 	smp_mb();
+ 	if (waitqueue_active(&root->subv_writers->wait))
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index d7e6baf1b205..03f8630dbaf2 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -280,6 +280,9 @@ void btrfs_tree_unlock(struct extent_buffer *eb)
+ 	if (blockers) {
+ 		WARN_ON(atomic_read(&eb->spinning_writers));
+ 		atomic_dec(&eb->blocking_writers);
++		/*
++		 * Make sure counter is updated before we wake up waiters.
++		 */
+ 		smp_mb();
+ 		if (waitqueue_active(&eb->write_lock_wq))
+ 			wake_up(&eb->write_lock_wq);
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 52170cf1757e..071005f008c1 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -345,6 +345,9 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
  
- 			goto done_nolock;
--		} else  if (waitqueue_active(&h->wait)) {
-+			/*
-+			 * The barrier for this waitqueue_active is not needed,
-+			 * we're protected by h->lock and can't miss a wakeup.
-+			 */
-+		} else if (waitqueue_active(&h->wait)) {
- 			spin_unlock(&rbio->bio_list_lock);
- 			spin_unlock_irqrestore(&h->lock, flags);
- 			wake_up(&h->wait);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1bbaace73383..d0deb4643502 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -2950,6 +2950,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	atomic_set(&log_root_tree->log_commit[index2], 0);
- 	mutex_unlock(&log_root_tree->log_mutex);
+ 	if (entry->bytes_left == 0) {
+ 		ret = test_and_set_bit(BTRFS_ORDERED_IO_DONE, &entry->flags);
++		/*
++		 * Implicit memory barrier after test_and_set_bit
++		 */
+ 		if (waitqueue_active(&entry->wait))
+ 			wake_up(&entry->wait);
+ 	} else {
+@@ -409,6 +412,9 @@ int btrfs_dec_test_ordered_pending(struct inode *inode,
+ 
+ 	if (entry->bytes_left == 0) {
+ 		ret = test_and_set_bit(BTRFS_ORDERED_IO_DONE, &entry->flags);
++		/*
++		 * Implicit memory barrier after test_and_set_bit
++		 */
+ 		if (waitqueue_active(&entry->wait))
+ 			wake_up(&entry->wait);
+ 	} else {
+diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
+index e8e5b5a10719..3fd70f797b7d 100644
+--- a/fs/btrfs/transaction.c
++++ b/fs/btrfs/transaction.c
+@@ -861,6 +861,9 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
+ 	atomic_dec(&cur_trans->num_writers);
+ 	extwriter_counter_dec(cur_trans, trans->type);
  
 +	/*
-+	 * The barrier before waitqueue_active is implied by mutex_unlock
++	 * Make sure counter is updated before we wake up waiters.
 +	 */
- 	if (waitqueue_active(&log_root_tree->log_commit_wait[index2]))
- 		wake_up(&log_root_tree->log_commit_wait[index2]);
- out:
-@@ -2961,6 +2964,9 @@ int btrfs_sync_log(struct btrfs_trans_handle *trans,
- 	atomic_set(&root->log_commit[index1], 0);
- 	mutex_unlock(&root->log_mutex);
- 
-+	/*
-+	 * The barrier before waitqueue_active is implied by mutex_unlock
-+	 */
- 	if (waitqueue_active(&root->log_commit_wait[index1]))
- 		wake_up(&root->log_commit_wait[index1]);
- 	return ret;
+ 	smp_mb();
+ 	if (waitqueue_active(&cur_trans->writer_wait))
+ 		wake_up(&cur_trans->writer_wait);
 -- 
 2.1.3
 

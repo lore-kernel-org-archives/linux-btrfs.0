@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37562 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:37570 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752009AbbJKSFa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 14:05:30 -0400
+	id S1752295AbbJKSFe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 11 Oct 2015 14:05:34 -0400
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 7D8D9AC66
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 18:05:28 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id C0883ABBF
+	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 18:05:31 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/7] btrfs: switch message printers to ratelimited _in_rcu variants
-Date: Sun, 11 Oct 2015 20:04:21 +0200
-Message-Id: <b14af3b46f214c5e927dacf58a994fa3c4cb20dc.1444585955.git.dsterba@suse.com>
+Subject: [PATCH 5/7] btrfs: introduce ratelimited variants of message printing functions
+Date: Sun, 11 Oct 2015 20:04:25 +0200
+Message-Id: <1dd6d7ca9d062721ae37388900a322a4b959e939.1444585955.git.dsterba@suse.com>
 In-Reply-To: <cover.1444585955.git.dsterba@suse.com>
 References: <cover.1444585955.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -19,114 +19,55 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c   |  4 ++--
- fs/btrfs/extent_io.c |  4 ++--
- fs/btrfs/scrub.c     | 20 ++++++++++----------
- fs/btrfs/volumes.c   |  4 ++--
- 4 files changed, 16 insertions(+), 16 deletions(-)
+ fs/btrfs/ctree.h | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 295795aebe0b..ba41faf623ce 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3175,8 +3175,8 @@ static void btrfs_end_buffer_write_sync(struct buffer_head *bh, int uptodate)
- 		struct btrfs_device *device = (struct btrfs_device *)
- 			bh->b_private;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 9c0fd901edbe..bca42c5733a1 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4075,6 +4075,23 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ #define btrfs_info_rl_in_rcu(fs_info, fmt, args...) \
+ 	btrfs_printk_rl_in_rcu(fs_info, KERN_INFO fmt, ##args)
  
--		printk_ratelimited_in_rcu(KERN_WARNING "BTRFS: lost page write due to "
--					  "I/O error on %s\n",
-+		btrfs_warn_rl_in_rcu(device->dev_root->fs_info,
-+				"lost page write due to IO error on %s",
- 					  rcu_str_deref(device->name));
- 		/* note, we dont' set_buffer_write_io_error because we have
- 		 * our own ways of dealing with the IO errors
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index e2357e31609a..58b9ccdfe2e9 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2078,8 +2078,8 @@ int repair_io_failure(struct inode *inode, u64 start, u64 length, u64 logical,
- 		return -EIO;
- 	}
++/*
++ * Wrappers that use a ratelimited printk
++ */
++#define btrfs_emerg_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_EMERG fmt, ##args)
++#define btrfs_alert_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_ALERT fmt, ##args)
++#define btrfs_crit_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_CRIT fmt, ##args)
++#define btrfs_err_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_ERR fmt, ##args)
++#define btrfs_warn_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_WARNING fmt, ##args)
++#define btrfs_notice_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_NOTICE fmt, ##args)
++#define btrfs_info_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_INFO fmt, ##args)
+ #ifdef DEBUG
+ #define btrfs_debug(fs_info, fmt, args...) \
+ 	btrfs_printk(fs_info, KERN_DEBUG fmt, ##args)
+@@ -4082,6 +4099,8 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 	btrfs_printk_in_rcu(fs_info, KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_rl_in_rcu(fs_info, fmt, args...) \
+ 	btrfs_printk_rl_in_rcu(fs_info, KERN_DEBUG fmt, ##args)
++#define btrfs_debug_rl(fs_info, fmt, args...) \
++	btrfs_printk_ratelimited(fs_info, KERN_DEBUG fmt, ##args)
+ #else
+ #define btrfs_debug(fs_info, fmt, args...) \
+     no_printk(KERN_DEBUG fmt, ##args)
+@@ -4089,6 +4108,8 @@ void btrfs_printk(const struct btrfs_fs_info *fs_info, const char *fmt, ...)
+ 	no_printk(KERN_DEBUG fmt, ##args)
+ #define btrfs_debug_rl_in_rcu(fs_info, fmt, args...) \
+ 	no_printk(KERN_DEBUG fmt, ##args)
++#define btrfs_debug_rl(fs_info, fmt, args...) \
++	no_printk(KERN_DEBUG fmt, ##args)
+ #endif
  
--	printk_ratelimited_in_rcu(KERN_INFO
--				  "BTRFS: read error corrected: ino %llu off %llu (dev %s sector %llu)\n",
-+	btrfs_info_rl_in_rcu(fs_info,
-+		"read error corrected: ino %llu off %llu (dev %s sector %llu)",
- 				  btrfs_ino(inode), start,
- 				  rcu_str_deref(dev->name), sector);
- 	bio_put(bio);
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 26cfbb0b867c..bce86f8772e1 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -850,8 +850,8 @@ static void scrub_fixup_nodatasum(struct btrfs_work *work)
- 		btrfs_dev_replace_stats_inc(
- 			&sctx->dev_root->fs_info->dev_replace.
- 			num_uncorrectable_read_errors);
--		printk_ratelimited_in_rcu(KERN_ERR "BTRFS: "
--		    "unable to fixup (nodatasum) error at logical %llu on dev %s\n",
-+		btrfs_err_rl_in_rcu(sctx->dev_root->fs_info,
-+		    "unable to fixup (nodatasum) error at logical %llu on dev %s",
- 			fixup->logical, rcu_str_deref(fixup->dev->name));
- 	}
- 
-@@ -1230,8 +1230,8 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 			sctx->stat.corrected_errors++;
- 			sblock_to_check->data_corrected = 1;
- 			spin_unlock(&sctx->stat_lock);
--			printk_ratelimited_in_rcu(KERN_ERR
--				"BTRFS: fixed up error at logical %llu on dev %s\n",
-+			btrfs_err_rl_in_rcu(fs_info,
-+				"fixed up error at logical %llu on dev %s",
- 				logical, rcu_str_deref(dev->name));
- 		}
- 	} else {
-@@ -1239,8 +1239,8 @@ static int scrub_handle_errored_block(struct scrub_block *sblock_to_check)
- 		spin_lock(&sctx->stat_lock);
- 		sctx->stat.uncorrectable_errors++;
- 		spin_unlock(&sctx->stat_lock);
--		printk_ratelimited_in_rcu(KERN_ERR
--			"BTRFS: unable to fixup (regular) error at logical %llu on dev %s\n",
-+		btrfs_err_rl_in_rcu(fs_info,
-+			"unable to fixup (regular) error at logical %llu on dev %s",
- 			logical, rcu_str_deref(dev->name));
- 	}
- 
-@@ -2201,15 +2201,15 @@ static void scrub_missing_raid56_worker(struct btrfs_work *work)
- 		spin_lock(&sctx->stat_lock);
- 		sctx->stat.read_errors++;
- 		spin_unlock(&sctx->stat_lock);
--		printk_ratelimited_in_rcu(KERN_ERR
--			"BTRFS: I/O error rebulding logical %llu for dev %s\n",
-+		btrfs_err_rl_in_rcu(fs_info,
-+			"IO error rebuilding logical %llu for dev %s",
- 			logical, rcu_str_deref(dev->name));
- 	} else if (sblock->header_error || sblock->checksum_error) {
- 		spin_lock(&sctx->stat_lock);
- 		sctx->stat.uncorrectable_errors++;
- 		spin_unlock(&sctx->stat_lock);
--		printk_ratelimited_in_rcu(KERN_ERR
--			"BTRFS: failed to rebuild valid logical %llu for dev %s\n",
-+		btrfs_err_rl_in_rcu(fs_info,
-+			"failed to rebuild valid logical %llu for dev %s",
- 			logical, rcu_str_deref(dev->name));
- 	} else {
- 		scrub_write_block_to_dev_replace(sblock);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b0dae14242e8..4f80986dbf3c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6675,8 +6675,8 @@ static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev)
- {
- 	if (!dev->dev_stats_valid)
- 		return;
--	printk_ratelimited_in_rcu(KERN_ERR "BTRFS: "
--			   "bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u\n",
-+	btrfs_err_rl_in_rcu(dev->dev_root->fs_info,
-+		"bdev %s errs: wr %u, rd %u, flush %u, corrupt %u, gen %u",
- 			   rcu_str_deref(dev->name),
- 			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_WRITE_ERRS),
- 			   btrfs_dev_stat_read(dev, BTRFS_DEV_STAT_READ_ERRS),
+ #define btrfs_printk_in_rcu(fs_info, fmt, args...)	\
 -- 
 2.1.3
 

@@ -1,106 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ph.de-nserver.de ([85.158.179.214]:25254 "EHLO
-	mail-ph.de-nserver.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751452AbbJLHAw (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:33906 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751329AbbJLIKO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 03:00:52 -0400
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-From: Stefan Priebe <s.priebe@profihost.ag>
-Subject: btrfs goes readonly + No space left on 4.3
-Message-ID: <561B5AA6.7040704@profihost.ag>
-Date: Mon, 12 Oct 2015 09:00:54 +0200
+	Mon, 12 Oct 2015 04:10:14 -0400
+Date: Mon, 12 Oct 2015 08:10:12 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: "Wang, Zhiye" <Zhiye.Wang@Arcserve.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: Re: Questions about FIEMAP
+Message-ID: <20151012081012.GF25907@carfax.org.uk>
+References: <CY1PR10MB04283CC6BA7D9AE8F3F0B984E4310@CY1PR10MB0428.namprd10.prod.outlook.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="yBd94+RIx/Fx7UDH"
+In-Reply-To: <CY1PR10MB04283CC6BA7D9AE8F3F0B984E4310@CY1PR10MB0428.namprd10.prod.outlook.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-while trying to write to my volume btrfs gets readonly:
+--yBd94+RIx/Fx7UDH
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-btrfs fi show /vmbackup/
-Label: none  uuid: f4afaac2-c587-4ff7-87b1-19e6a483215f
-         Total devices 1 FS bytes used 35.56TiB
-         devid    1 size 50.93TiB used 35.72TiB path 
-/dev/mapper/stripe0-vmbackup
+On Mon, Oct 12, 2015 at 04:37:55AM +0000, Wang, Zhiye wrote:
+> Hello everyone,
+> 
+> After googled a bit, I got information that btrfs supports FIEMAP (as "cp" needs it), but it's not valid for "write" operation.
+> 
+> I guess we cannot write to block device directly after get block list using FIEMAP. This is because:
+> 
+> 1. COW feature of btrfs (but this can be disabled using NOCOW)
+> 2. File system rebalance
+> 3. Defragmentation
+> 
+> Aren't item #2 and #3 also a problem for "read" operation? For example, after "cp" get block list using FIEMAP, file system rebalance occurs, So, previous result of FIEMAP is not valid anymore.
 
-btrfs-progs v4.1.2
+   That's correct. If you use FIEMAP to get the blocks of a file, and
+then balance the FS or defrag the file, then even without an explicit
+write to the file, the file's location will have changed. This is the
+same reason that btrfs doesn't support swap files (although I don't
+know if swapon uses FIEMAP directly, or if there's just some
+equivalent mechanism to get the blocks).
 
-btrfs fi df /vmbackup/
-Data, single: total=35.40TiB, used=35.40TiB
-System, DUP: total=8.00MiB, used=3.75MiB
-Metadata, DUP: total=162.00GiB, used=160.72GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
+   Hugo.
 
-This is 4.1.10 with all btrfs patches up to 4.3-rc3
+-- 
+Hugo Mills             | Have found Lost City of Atlantis. High Priest is
+hugo@... carfax.org.uk | winning at quoits
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
-[ 6230.406369] ------------[ cut here ]------------
-[ 6230.411594] BTRFS warning (device dm-0): 
-btrfs_finish_ordered_io:2840: Aborting unused transaction(No space left).
-[ 6230.463718] BTRFS warning (device dm-0): 
-btrfs_finish_ordered_io:2840: Aborting unused transaction(No space left).
-[ 6230.466681] BTRFS warning (device dm-0): 
-btrfs_finish_ordered_io:2840: Aborting unused transaction(No space left).
-[ 6230.475887] BTRFS warning (device dm-0): 
-btrfs_finish_ordered_io:2840: Aborting unused transaction(No space left).
-[ 6230.505852] BTRFS warning (device dm-0): 
-btrfs_finish_ordered_io:2840: Aborting unused transaction(No space left).
-[ 6230.525233] BTRFS warning (device dm-0): 
-btrfs_finish_ordered_io:2840: Aborting unused transaction(No space left).
-[ 6230.851050] WARNING: CPU: 8 PID: 8230 at fs/btrfs/extent-tree.c:6356 
-__btrfs_free_extent.isra.83+0x2cc/0xce0 [btrfs]()
-[ 6230.911727] BTRFS: Transaction aborted (error -28)
-[ 6230.911729] Modules linked in: netconsole ipt_REJECT nf_reject_ipv4 
-xt_multiport iptable_filter ip_tables x_tables bonding ext2 coretemp 
-loop usbhid ehci_pci ehci_hcd sb_edac i2c_i801 ipmi_si usbcore edac_core 
-i2c_core shpchp usb_common ipmi_msghandler button btrfs lzo_compress 
-dm_mod raid456 async_raid6_recov async_memcpy async_pq async_xor 
-async_tx xor raid6_pq raid1 md_mod i40e(O) ixgbe vxlan ip6_udp_tunnel 
-mdio udp_tunnel sg sd_mod ahci ptp aacraid libahci pps_core
-[ 6231.175922] CPU: 8 PID: 8230 Comm: btrfs-transacti Tainted: G 
-    O    4.1.10 #1
-[ 6231.243585] Hardware name: Supermicro X10DRH/X10DRH-IT, BIOS 1.0c 
-02/18/2015
-[ 6231.311584]  ffffffffc0433895 ffff88085a8db9b8 ffffffff8a639186 
-0000000000000001
-[ 6231.380600]  ffff88085a8dba08 ffff88085a8db9f8 ffffffff8a07fd57 
-ffff880800000850
-[ 6231.449888]  ffff880311fef2d0 00001fcbf2450000 0000000000000000 
-0000000000000000
-[ 6231.519402] Call Trace:
-[ 6231.586837]  [<ffffffff8a639186>] dump_stack+0x45/0x57
-[ 6231.654260]  [<ffffffff8a07fd57>] warn_slowpath_common+0x97/0xe0
-[ 6231.721958]  [<ffffffff8a07fe56>] warn_slowpath_fmt+0x46/0x50
-[ 6231.789246]  [<ffffffffc038fbdc>] 
-__btrfs_free_extent.isra.83+0x2cc/0xce0 [btrfs]
-[ 6231.857732]  [<ffffffffc038aa68>] ? 
-block_group_cache_tree_search+0x98/0xf0 [btrfs]
-[ 6231.926972]  [<ffffffffc03f7b8c>] ? find_ref_head+0x6c/0x90 [btrfs]
-[ 6231.995254]  [<ffffffffc03946a0>] 
-__btrfs_run_delayed_refs+0x730/0x11a0 [btrfs]
-[ 6232.062995]  [<ffffffffc039a06f>] btrfs_run_delayed_refs+0x7f/0x290 
-[btrfs]
-[ 6232.130929]  [<ffffffffc039a383>] 
-btrfs_write_dirty_block_groups+0x103/0x2a0 [btrfs]
-[ 6232.199577]  [<ffffffffc04259c1>] commit_cowonly_roots+0x225/0x2cf 
-[btrfs]
-[ 6232.268690]  [<ffffffffc03ac498>] 
-btrfs_commit_transaction+0x538/0xa90 [btrfs]
-[ 6232.338554]  [<ffffffffc03a9b95>] transaction_kthread+0x1c5/0x240 [btrfs]
-[ 6232.407982]  [<ffffffffc03a99d0>] ? open_ctree+0x2390/0x2390 [btrfs]
-[ 6232.476521]  [<ffffffff8a09e1e9>] kthread+0xc9/0xe0
-[ 6232.544430]  [<ffffffff8a09e120>] ? kthread_create_on_node+0x1a0/0x1a0
-[ 6232.612249]  [<ffffffff8a63fda2>] ret_from_fork+0x42/0x70
-[ 6232.680322]  [<ffffffff8a09e120>] ? kthread_create_on_node+0x1a0/0x1a0
-[ 6232.748832] ---[ end trace 4977add5c48cdc47 ]---
-[ 6232.816367] BTRFS: error (device dm-0) in __btrfs_free_extent:6356: 
-errno=-28 No space left
-[ 6232.885109] BTRFS info (device dm-0): forced readonly
-[ 6232.953994] BTRFS: error (device dm-0) in 
-btrfs_run_delayed_refs:2854: errno=-28 No space left
-[ 6233.027127] BTRFS warning (device dm-0): Skipping commit of aborted 
-transaction.
-[ 6233.098974] BTRFS: error (device dm-0) in cleanup_transaction:1726: 
-errno=-28 No space left
+--yBd94+RIx/Fx7UDH
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-Stefan
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJWG2rkAAoJEFheFHXiqx3k3M8QAKRrmzwZ53aSL+vlZTMNTeLt
+x7Xm5dnVi1TfGf7o5tUOrkTzeuV32KXtpwwzrTUvw/S3COk7xTuZTqDPMhf9o10S
+Dmsd87QkkeBEUTYEc4rrr7IhNKTtsqcrXTHXno+21K05XOnC4XnG5yUjWwJkf9ua
+aQdrr5NHznnQ5Dfu8mrgYAycC9YTgrK1bOgTF6sPfJDoVlximP06EcveBXPCpJDN
+YuIOR7v1lhWK2SNWr075Q45N6v28IzBSB88iL0nTa3JZi53eX0WOhWAjglivXELl
+ldisLGks7gfRTPbSCjoeweXXaJf0BC1t0QNsP1EiGvUczxffR8rnYpsPRL+MZTrp
+Tb7TU492bYbJ/1A2FrJ1bfCFwV4xtCiqUEORn3D+Pou/DIEfIhq8M7NV1irDCO9R
+lRr93h7+JCR3wAVv45v1Io3yE1QYzZb3rj96/VZ+aK9xAkNymCgJExHZq96DzCGQ
+7zrZrZuqDd4WVfZJT5O1zZOkp6HAd6g520iFRfJJBDtxOL1Aix2KnOYuNpVeQo2k
+l1y8DCSuk3tvkUiOWMV7co6HImOQKglZQl1k5Jf6p2azxjg8E/NUa57cvhZs61Oe
+MxzcWtnmE/O4mBBE7USPpmJR63qbqD1Fy7FiF7uNH7Oun9kgKFwTzH0raEmG5fvi
+ZTJfc/FiQbqAAw5QGIQL
+=yDkc
+-----END PGP SIGNATURE-----
+
+--yBd94+RIx/Fx7UDH--

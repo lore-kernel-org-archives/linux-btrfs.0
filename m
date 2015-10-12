@@ -1,190 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f179.google.com ([209.85.214.179]:33367 "EHLO
-	mail-ob0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752456AbbJLNke (ORCPT
+Received: from blu004-omc1s20.hotmail.com ([65.55.116.31]:53117 "EHLO
+	BLU004-OMC1S20.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751857AbbJLQZ5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 09:40:34 -0400
-Received: by obbbh8 with SMTP id bh8so106883641obb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 12 Oct 2015 06:40:34 -0700 (PDT)
+	Mon, 12 Oct 2015 12:25:57 -0400
+Message-ID: <BLU436-SMTP165112E5F4D118F381D47A4A9310@phx.gbl>
 MIME-Version: 1.0
-In-Reply-To: <pan$121e9$47325977$22468ecf$501b7fa2@cox.net>
-References: <CAC=t97BtYg4W_Jxk6HdxbDmbJ1HFM1BbxTDPr+Y1KOd7M8W4gw@mail.gmail.com>
- <pan$121e9$47325977$22468ecf$501b7fa2@cox.net>
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Mon, 12 Oct 2015 08:40:14 -0500
-Message-ID: <CAC=t97DRjCDtOsiBV5iBr=csvQwfDgJHqw5SdnuuS1U1LC7T4Q@mail.gmail.com>
-Subject: Re: filesystem goes ro trying to balance. "cpu stuck"
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20151012132136.GE27761@twin.jikos.cz>
+References: <CA+wwUFBKOxHSXOn9rcG+k5CTaKMPWGnx2a5dNo=CCfzawRLKGg@mail.gmail.com>
+	<20151012132136.GE27761@twin.jikos.cz>
+Date: Mon, 12 Oct 2015 18:25:52 +0200
+Subject: Re: BTRFS with 8TB SMR drives
+From: Henk Slager <hslager@hotmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 12, 2015 at 12:33 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> Donald Pearson posted on Sun, 11 Oct 2015 11:46:14 -0500 as excerpted:
->
->> Kernel 4.2.2-1.el7.elrepo btrfs-progs v4.2.1
+Hi Warren,
+
+from your dmesg I see:
+Oct 10 07:42:36 cloud.warrenhughes.net kernel: scsi 0:0:1:0:
+Direct-Access     ATA      ST8000AS0002-1NA AR13 PQ: 0 ANSI: 5
+Oct 10 07:42:36 cloud.warrenhughes.net kernel: sd 0:0:1:0: [sdb]
+15628053168 512-byte logical blocks: (8.00 TB/7.27 TiB)
+
+Oct 11 23:57:56 cloud.warrenhughes.net kernel: scsi 0:0:1:0:
+Direct-Access     ATA      ST8000AS0002-1NA AR13 PQ: 0 ANSI: 5
+Oct 11 23:57:56 cloud.warrenhughes.net kernel: sd 0:0:1:0: [sdo]
+15628053168 512-byte logical blocks: (8.00 TB/7.27 TiB)
+
+and looking at this spec:
+http://www.seagate.com/files/www-content/product-content/hdd-fam/seagate-archive-hdd/en-us/docs/archive-hdd-dS1834-3-1411us.pdf
+
+it seems that it is a drive-managed SMR disk. I am not sure why David
+assumes it is host-managed, maybe drive firmware/functionality can be
+bypassed.
+
+As far as I can see, the drive should not have a problem with btrfs as
+such, but I read quite worrying stories w.r.t. raid. I think the write
+characteristics of the balance operation, in combination with the
+connection via the LSI controller, are not really compatible with
+'archive' use case of the drive. 'Simple', 'relaxed' write operation
+should be OK, but beyond that, it might fail. See also:
+http://www.storagereview.com/seagate_archive_hdd_review_8tb
+
+How much data is already on the drive? Is it an option to mount with
+skip_balance and try to remove the device and then do some tests on it
+in single independent mode?
+
+/Henk
+
+
+On Mon, Oct 12, 2015 at 3:21 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Mon, Oct 12, 2015 at 07:43:50AM +1300, Warren Hughes wrote:
+>> Hi guys, just added a new Seagate Archive 8TB drive to my BTRFS volume
+>> and I'm getting a tonne of errors when balancing or scrubbing.
 >>
->> I'm attempting to convert a filesystem from raid6 to raid10.  I didn't
->> have any functional problems with it, but performance is abysmal
->> compared to basically the same arrangement in raid10 so I thought I'd
->> just get away from raid56 for a while (I also saw something about parity
->> raid code developed beyond 2-disk parity that was ignored/thrown away so
->> I'm thinking the devs don't care much about about parity raid at least
->> for now).
->
-> Note on the parity-raid story:  AFAIK at least the btrfs folks aren't
-> ignoring it (I don't know about the mdraid/dmraid folks).  There's simply
-> more opportunities for new features than there are coders to code them
-> up, and while progress is indeed occurring, some of these features may
-> well take years.
->
-> Consider, even standard raid56 support was originally planned for IIRC
-> 3.5, but it wasn't actually added until (IIRC) 3.9, and that was only
-> partial/runtime support (the parities were being calculated and written,
-> but the tools to rebuild from parity were incomplete/broken/non-existent,
-> so it was effectively a slow raid0 in terms of reliability, that would be
-> upgraded to raid56 "for free" once the tools were done).  Complete raid56
-> support wasn't even nominally there until 3.19, with the initial bugs
-> still being worked out thru 4.0 and into 4.1.  So it took about /three/
-> /years/ longer than initially planned.
->
-> This sort of longer-to-implement-than-planned pattern has repeated
-> multiple times over the life of btrfs, which is why it's taking so long
-> to mature and stabilize.
->
-> So it's not that multi-parity-raid is being rejected or ignored, it's
-> simply that there's way more to do than people to do it, and btrfs as a
-> cow-based filesystem isn't exactly the simplest thing to implement
-> correctly, so initial plans turned out to be /wildly/ optimistic, and
-> honestly, some of these features, while not rejected, could well be a
-> decade out.  Obviously others will be implemented before then, but
-> there's just so many, and so few devs working on what really is a complex
-> project, so something ends up being shoved back to that decade out, and
-> that's the way it's going to be unless btrfs suddenly gets way more
-> developer resources working on it than it has now.
->
-
-"Don't care" was a poor choose of words on my part and I apologize to
-the group.  I understand that it's a matter of priority and resources,
-and not about lack of caring.
-
->> Partway through the balance something goes wrong and filesystem is
->> forced read-only stopping the balance.
+>> A short smartctl test reports fine, running a long one now. Will also
+>> run seatools from a bootable DOS USB while at work today.
 >>
->> I did a fschk and it didn't complain about/find any errors.  The drives
->> aren't throwing any errors or incrementing any smart attributes.  This
->> is a backup array, so it's not the end of the world if I have to just
->> blow it away and rebuild as raid10 from scratch.
+>> Running latest firmware on my 9240-8i which explicitly supports this drive.
 >>
->> The console prints this error.
->> NMI watchdog: BUG: soft lockup - CPU#0 stuck for 22s!
->> [btrfs-balance:8015]
+>> I'm finding it very hard to tell if SMR drives are OK with BTRFS
+>> currently - anyone chime in?
 >
-> I'm a user not a dev, tho I am a regular on this list, and backtraces
-> don't mean a lot to me, so take this FWIW...
+> I assume you have the host-managed SMR drives. This type needs tweaks to
+> the operating system so the write patterns play well with the SMR
+> constraints. Btrfs does not support that out of the box, but my
+> colleague Hannes Reinecke managed to get it working with some minor
+> changes to the allocator and disabled writing of superblock copies.
 >
-> 1) How old is the filesystem?  It isn't quite new, created with
-> mkfs.btrfs from btrfs-progs v4.2.0 or v4.2.1, is it?  There's a known
-> mkfs.btrfs bug along in there, that I don't remember whether it's fixed
-> by 4.2.1 or only the latest 4.2.2, but it creates invalid filesystems.
-> Btrfs check from 4.2.2 can detect the problem, but can't fix it, and as
-> the filesystems as they are are unstable, it's best to get what you need
-> off of them and recreate them with a non-buggy mkfs.btrfs ASAP.
+> For full support of SMR we'd have to change more than that, currently
+> nothing prevents to write "backwards" in a given chunk that is allowed
+> to be written only in the append way. So you can get mixed results when
+> trying to use the SMR devices but I'd say it will mostly not work.
 >
-> 2) Since you're on progs v4.2.1 ATM, that may apply to its mkfs.btrfs as
-> well.  Please upgrade to 4.2.2 before creating any further btrfs, or
-> failing that, downgrade to 4.1.3 or whatever the last in the progs 4.1
-> series was.
+> But, btrfs has all the fundamental features in place, we'd have to make
+> adjustments to follow the SMR constraints:
 >
-> 3) Are you running btrfs quotas on the filesystem?  Unfortunately, btrfs
-> quota handling code remains an unstable sore spot, tho they're continuing
-> to work hard on fixing it.  I'm continuing to recommend, as I have for
-> some time now, that people don't use it unless they're willing to deal
-> with the problems and are actively working with the devs to fix them.
-> Otherwise, either they need quota support and should really choose a
-> filesystem where the feature is mature and stable, or they don't, in
-> which case just leaving it off (or turning it off if on) avoids the
-> problem.
+> * we can map the blockgroups to the SMR chunks (in some multiples)
+> * remember the write pointers and do only append writes (easy with COW)
+> * if the chunk is getting full, mark it read-only, rebalance the live
+>   data somewhere else and reset the chunk and the pointer
 >
-> There's at least two confirmed reasonably recent cases where turning off
-> btrfs quota support eliminated the issues people were reporting, so this
-> isn't an idle recommendation, it really does help in at least some
-> cases.  If you don't really need quotas, leave (or turn) them off.  If
-> you do, you really should be using a filesystem where the quota feature
-> is mature and stable enough to rely on.  Yes, it does make a difference.
->
-> 4) Snapshots (scaling).  While snapshots are a reasonably mature feature,
-> they do remain a scaling challenge.  My recommendation is that you try to
-> keep to about 250-ish snapshots per subvolume, no more than 3000
-> snapshots worst-case total, and better no more than 1000 or 2000 (with
-> 1000, at the 250-per number, obviously letting you do that for four
-> subvolumes).  If you're doing scheduled snapshotting, setup a scheduled
-> thinning script as well, to keep your snapshots to around 250 or less per
-> subvolume.  With reasonably thinning, that's actually a very reasonable
-> number, even for those starting at multiple snapshots per hour.
->
-> Keeping the number of snapshots below 3000 at worst, and preferably to
-> 1000 or less, should dramatically speed up maintenance operations such as
-> balance.  We sometimes see people with hundreds of thousands of
-> snapshots, and then on top of that running quotas, and for them,
-> balancing TiB-scale filesystems really can take not hours or days, but
-> weeks or months, making it entirely unworkable in practice.  Keeping to a
-> couple thousand snapshots, with quotas turned off, should at least keep
-> that in the semi-reasonable days range (assuming the absence of bugs like
-> the one you unfortunately seem to have, of course).
->
-> 5) Snapshots (as a feature that can lock in place various not directly
-> related bugs).  Despite the fact that snapshots are a reasonably stable
-> feature, btrfs itself isn't yet entirely stable, and there remain bugs
-> from time to time.  When a bug occurs and some part of the filesystem
-> breaks, because of the way snapshots work to lock down older file extents
-> that would be deleted or rewritten on a normal filesystem or on btrfs
-> without snapshots, people often find that the problem isn't actually in
-> the current copy of some file, but in some subset of their snapshots of
-> that file.  If they simply delete all the snapshots that reference that
-> bad bit of the filesystem, it frees it, and the balance that was hanging
-> before, suddenly works.
->
-> Again, this isn't a snapshot bug directly, it's simply that on a
-> filesystem with a snapshot history going back some time, often whatever
-> filesystem bug or physical media defect occurred, happens to affect only
-> the older extents that haven't been changed in awhile, and if the file
-> has changed over time, often the newer version is no longer using the
-> block that's bad, so deleting the snapshots that are still referencing
-> it, suddenly eliminates the problem.
->
-> There have been several posters who reported various problems with
-> balance, that went away when they deleted either their oldest, or all,
-> snapshots.  It's by no means everyone, but it's a significant enough
-> number that if you do have a bunch of old snapshots and can afford to
-> delete them, often because you have the same files actually backed up
-> elsewhere, it's worth a shot.
->
-> 6) That's the obvious stuff.  If it's nothing there, then with luck
-> somebody will recognize the trace and match it to a bug, or a dev with
-> have the time to look at it.  Give it a couple days if you like to see if
-> that happens, and if not, then I'd say, blow it away and start over,
-> since it's backups anyway, so you can.
->
-
-These are snapshot based backups.  The filesystem was created before
-that bug was introduced and the total number of snapshots is pretty
-low.  That said I can definitely afford to start eliminating them
-starting from the oldest.  I've also experienced issues with qgroups
-and disabled them for now.
-
-I'll update progs and see what happens.  Thanks for your reply.
-
-Regards,
-Donald
-
-
-> --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
+> I have some notes at
+> https://github.com/kdave/drafts/blob/master/btrfs/smr-mode.txt
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

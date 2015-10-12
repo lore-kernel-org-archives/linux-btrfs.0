@@ -1,42 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39681 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:42035 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752065AbbJLNGE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 09:06:04 -0400
-Date: Mon, 12 Oct 2015 15:04:54 +0200
+	id S1752010AbbJLNWq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 12 Oct 2015 09:22:46 -0400
+Date: Mon, 12 Oct 2015 15:21:36 +0200
 From: David Sterba <dsterba@suse.cz>
-To: "Wang, Zhiye" <Zhiye.Wang@Arcserve.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Questions about FIEMAP
-Message-ID: <20151012130454.GD27761@twin.jikos.cz>
+To: Warren Hughes <wsh@warrenhughes.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS with 8TB SMR drives
+Message-ID: <20151012132136.GE27761@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <CY1PR10MB04283CC6BA7D9AE8F3F0B984E4310@CY1PR10MB0428.namprd10.prod.outlook.com>
+References: <CA+wwUFBKOxHSXOn9rcG+k5CTaKMPWGnx2a5dNo=CCfzawRLKGg@mail.gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CY1PR10MB04283CC6BA7D9AE8F3F0B984E4310@CY1PR10MB0428.namprd10.prod.outlook.com>
+In-Reply-To: <CA+wwUFBKOxHSXOn9rcG+k5CTaKMPWGnx2a5dNo=CCfzawRLKGg@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 12, 2015 at 04:37:55AM +0000, Wang, Zhiye wrote:
-> After googled a bit, I got information that btrfs supports FIEMAP (as
-> "cp" needs it), but it's not valid for "write" operation.
-
-The FIEMAP output is informative, there's no guarantee that the extent
-information does not change before it reaches the caller.
-
-> I guess we cannot write to block device directly after get block list
-> using FIEMAP.
-
-Beware that there's another layer of translation that maps the logical
-offsets to physical offsets, basically the RAID layer. So even if you
-get 'physical offset' from FIEMAP, it's still the 'logical' offset from
-the POV of the filesytem and has no correspondence to the block device
-offset.
-
-> This is because:
+On Mon, Oct 12, 2015 at 07:43:50AM +1300, Warren Hughes wrote:
+> Hi guys, just added a new Seagate Archive 8TB drive to my BTRFS volume
+> and I'm getting a tonne of errors when balancing or scrubbing.
 > 
-> 1. COW feature of btrfs (but this can be disabled using NOCOW)
-> 2. File system rebalance
-> 3. Defragmentation
+> A short smartctl test reports fine, running a long one now. Will also
+> run seatools from a bootable DOS USB while at work today.
+> 
+> Running latest firmware on my 9240-8i which explicitly supports this drive.
+> 
+> I'm finding it very hard to tell if SMR drives are OK with BTRFS
+> currently - anyone chime in?
 
-This always reflects the 'logical' offset from the filesystem POV.
+I assume you have the host-managed SMR drives. This type needs tweaks to
+the operating system so the write patterns play well with the SMR
+constraints. Btrfs does not support that out of the box, but my
+colleague Hannes Reinecke managed to get it working with some minor
+changes to the allocator and disabled writing of superblock copies.
+
+For full support of SMR we'd have to change more than that, currently
+nothing prevents to write "backwards" in a given chunk that is allowed
+to be written only in the append way. So you can get mixed results when
+trying to use the SMR devices but I'd say it will mostly not work.
+
+But, btrfs has all the fundamental features in place, we'd have to make
+adjustments to follow the SMR constraints:
+
+* we can map the blockgroups to the SMR chunks (in some multiples)
+* remember the write pointers and do only append writes (easy with COW)
+* if the chunk is getting full, mark it read-only, rebalance the live
+  data somewhere else and reset the chunk and the pointer
+
+I have some notes at
+https://github.com/kdave/drafts/blob/master/btrfs/smr-mode.txt

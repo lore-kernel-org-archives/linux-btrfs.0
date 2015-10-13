@@ -1,128 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:64609 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932324AbbJMCUm (ORCPT
+	with ESMTP id S932270AbbJMCUk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 22:20:42 -0400
+	Mon, 12 Oct 2015 22:20:40 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QK012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:12 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QG012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:11 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 20/21] btrfs: qgroup: Avoid calling btrfs_free_reserved_data_space in clear_bit_hook
-Date: Tue, 13 Oct 2015 10:20:26 +0800
-Message-Id: <1444702827-18169-21-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 16/21] btrfs: Add handler for invalidate page
+Date: Tue, 13 Oct 2015 10:20:22 +0800
+Message-Id: <1444702827-18169-17-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In clear_bit_hook, qgroup reserved data is already handled quite well,
-either released by finish_ordered_io or invalidatepage.
+For btrfs_invalidatepage() and its variant evict_inode_truncate_page(),
+there will be pages don't reach disk.
+In that case, their reserved space won't be release nor freed by
+finish_ordered_io() nor delayed_ref handler.
 
-So calling btrfs_qgroup_free_data() here is completely meaningless, and
-since btrfs_qgroup_free_data() will lock io_tree, so it can't be called
-with io_tree lock hold.
+So we must free their qgroup reserved space, or we will leaking reserved
+space again.
 
-This patch will add a new function
-btrfs_free_reserved_data_space_noquota() for clear_bit_hook() to cease
-the lockdep warning.
+So this will patch will call btrfs_qgroup_free_data() for
+invalidatepage() and its variant evict_inode_truncate_page().
+
+And due to the nature of new btrfs_qgroup_reserve/free_data() reserved
+space will only be reserved or freed once, so for pages which are
+already flushed to disk, their reserved space will be released and freed
+by delayed_ref handler.
+
+Double free won't be a problem.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 v2:
-  None
+  Newly introduced
 v3:
-  Update commit message as now it will cause a deadlock instead of
-  lockdep warning
+  None
 ---
- fs/btrfs/ctree.h       |  2 ++
- fs/btrfs/extent-tree.c | 28 ++++++++++++++++++----------
- fs/btrfs/inode.c       |  4 ++--
- 3 files changed, 22 insertions(+), 12 deletions(-)
+ fs/btrfs/inode.c | 24 ++++++++++++++++++++++++
+ 1 file changed, 24 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index f20b901..3970426 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3455,6 +3455,8 @@ enum btrfs_reserve_flush_enum {
- int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
- int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes);
- void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len);
-+void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
-+					    u64 len);
- void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root);
- void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 765f7e0..af221eb 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4070,10 +4070,12 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
-  * Called if we need to clear a data reservation for this inode
-  * Normally in a error case.
-  *
-- * This one will handle the per-indoe data rsv map for accurate reserved
-- * space framework.
-+ * This one will *NOT* use accurate qgroup reserved space API, just for case
-+ * which we can't sleep and is sure it won't affect qgroup reserved space.
-+ * Like clear_bit_hook().
-  */
--void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
-+void btrfs_free_reserved_data_space_noquota(struct inode *inode, u64 start,
-+					    u64 len)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_space_info *data_sinfo;
-@@ -4083,13 +4085,6 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
- 	      round_down(start, root->sectorsize);
- 	start = round_down(start, root->sectorsize);
- 
--	/*
--	 * Free any reserved qgroup data space first
--	 * As it will alloc memory, we can't do it with data sinfo
--	 * spinlock hold.
--	 */
--	btrfs_qgroup_free_data(inode, start, len);
--
- 	data_sinfo = root->fs_info->data_sinfo;
- 	spin_lock(&data_sinfo->lock);
- 	if (WARN_ON(data_sinfo->bytes_may_use < len))
-@@ -4101,6 +4096,19 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
- 	spin_unlock(&data_sinfo->lock);
- }
- 
-+/*
-+ * Called if we need to clear a data reservation for this inode
-+ * Normally in a error case.
-+ *
-+ * This one will handle the per-indoe data rsv map for accurate reserved
-+ * space framework.
-+ */
-+void btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
-+{
-+	btrfs_free_reserved_data_space_noquota(inode, start, len);
-+	btrfs_qgroup_free_data(inode, start, len);
-+}
-+
- static void force_metadata_allocation(struct btrfs_fs_info *info)
- {
- 	struct list_head *head = &info->space_info;
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index fee54b6..39c9191 100644
+index 2fe95f0..fee54b6 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1773,8 +1773,8 @@ static void btrfs_clear_bit_hook(struct inode *inode,
+@@ -5075,6 +5075,18 @@ static void evict_inode_truncate_pages(struct inode *inode)
+ 		spin_unlock(&io_tree->lock);
  
- 		if (root->root_key.objectid != BTRFS_DATA_RELOC_TREE_OBJECTID
- 		    && do_list && !(state->state & EXTENT_NORESERVE))
--			btrfs_free_reserved_data_space(inode, state->start,
--						       len);
-+			btrfs_free_reserved_data_space_noquota(inode,
-+					state->start, len);
+ 		lock_extent_bits(io_tree, start, end, 0, &cached_state);
++
++		/*
++		 * If still has DELALLOC flag, the extent didn't reach disk,
++		 * and its reserved space won't be freed by delayed_ref.
++		 * So we need to free its reserved space here.
++		 * (Refer to comment in btrfs_invalidatepage, case 2)
++		 *
++		 * Note, end is the bytenr of last byte, so we need + 1 here.
++		 */
++		if (state->state & EXTENT_DELALLOC)
++			btrfs_qgroup_free_data(inode, start, end - start + 1);
++
+ 		clear_extent_bit(io_tree, start, end,
+ 				 EXTENT_LOCKED | EXTENT_DIRTY |
+ 				 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
+@@ -8592,6 +8604,18 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
+ 		}
+ 	}
  
- 		__percpu_counter_add(&root->fs_info->delalloc_bytes, -len,
- 				     root->fs_info->delalloc_batch);
++	/*
++	 * Qgroup reserved space handler
++	 * Page here will be either
++	 * 1) Already written to disk
++	 *    In this case, its reserved space is released from data rsv map
++	 *    and will be freed by delayed_ref handler finally.
++	 *    So even we call qgroup_free_data(), it won't decrease reserved
++	 *    space.
++	 * 2) Not written to disk
++	 *    This means the reserved space should be freed here.
++	 */
++	btrfs_qgroup_free_data(inode, page_start, PAGE_CACHE_SIZE);
+ 	if (!inode_evicting) {
+ 		clear_extent_bit(tree, page_start, page_end,
+ 				 EXTENT_LOCKED | EXTENT_DIRTY |
 -- 
 2.6.1
 

@@ -1,185 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22173 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:2671 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932270AbbJMCUg (ORCPT
+	with ESMTP id S932122AbbJMCUi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 22:20:36 -0400
+	Mon, 12 Oct 2015 22:20:38 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QA012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:05 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QB012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:06 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 10/21] btrfs: extent-tree: Add new version of btrfs_check_data_free_space and btrfs_free_reserved_data_space.
-Date: Tue, 13 Oct 2015 10:20:16 +0800
-Message-Id: <1444702827-18169-11-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 11/21] btrfs: extent-tree: Switch to new check_data_free_space and free_reserved_data_space
+Date: Tue, 13 Oct 2015 10:20:17 +0800
+Message-Id: <1444702827-18169-12-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add new functions __btrfs_check_data_free_space() and
-__btrfs_free_reserved_data_space() to work with new accurate qgroup
-reserved space framework.
+Use new reserve/free for buffered write and inode cache.
 
-The new function will replace old btrfs_check_data_free_space() and
-btrfs_free_reserved_data_space() respectively, but until all the change
-is done, let's just use the new name.
-
-Also, export internal use function btrfs_alloc_data_chunk_ondemand(), as
-now qgroup reserve requires precious bytes, some operation can't get the
-accurate number in advance(like fallocate).
-But data space info check and data chunk allocate doesn't need to be
-that accurate, and can be called at the beginning.
-
-So export it for later operations.
+For buffered write case, as nodatacow write won't increase quota account,
+so unlike old behavior which does reserve before check nocow, now we
+check nocow first and then only reserve data if we can't do nocow write.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 v2:
-  Fix comment typo
-  Add __btrfs_free_reserved_data_space() function, or we will leak
-  reserved space at EQUOT error handle routine.
+  Add call for new free function too. Or we will leak reserved space in
+  case of data reservation succeeded but metadata reservation failed.
 v3:
   None
 ---
- fs/btrfs/ctree.h       |  3 ++
- fs/btrfs/extent-tree.c | 85 ++++++++++++++++++++++++++++++++++++++++++++------
- 2 files changed, 79 insertions(+), 9 deletions(-)
+ fs/btrfs/extent-tree.c |  4 ++--
+ fs/btrfs/file.c        | 34 +++++++++++++++++++++-------------
+ fs/btrfs/relocation.c  |  8 ++++----
+ 3 files changed, 27 insertions(+), 19 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index ae86025..19450a1 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3453,7 +3453,10 @@ enum btrfs_reserve_flush_enum {
- };
- 
- int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes);
-+int __btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len);
-+int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes);
- void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes);
-+void __btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len);
- void btrfs_trans_release_metadata(struct btrfs_trans_handle *trans,
- 				struct btrfs_root *root);
- void btrfs_trans_release_chunk_metadata(struct btrfs_trans_handle *trans);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 22702bd..0cd6baa 100644
+index 0cd6baa..f4b9db8 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -3908,11 +3908,7 @@ u64 btrfs_get_alloc_profile(struct btrfs_root *root, int data)
+@@ -3356,7 +3356,7 @@ again:
+ 	num_pages *= 16;
+ 	num_pages *= PAGE_CACHE_SIZE;
+ 
+-	ret = btrfs_check_data_free_space(inode, num_pages, num_pages);
++	ret = __btrfs_check_data_free_space(inode, 0, num_pages);
+ 	if (ret)
+ 		goto out_put;
+ 
+@@ -3365,7 +3365,7 @@ again:
+ 					      &alloc_hint);
+ 	if (!ret)
+ 		dcs = BTRFS_DC_SETUP;
+-	btrfs_free_reserved_data_space(inode, num_pages);
++	__btrfs_free_reserved_data_space(inode, 0, num_pages);
+ 
+ out_put:
+ 	iput(inode);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b823fac..142b217 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1510,12 +1510,17 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 		}
+ 
+ 		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+-		ret = btrfs_check_data_free_space(inode, reserve_bytes, write_bytes);
+-		if (ret == -ENOSPC &&
+-		    (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
+-					      BTRFS_INODE_PREALLOC))) {
++
++		if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
++					     BTRFS_INODE_PREALLOC)) {
+ 			ret = check_can_nocow(inode, pos, &write_bytes);
++			if (ret < 0)
++				break;
+ 			if (ret > 0) {
++				/*
++				 * For nodata cow case, no need to reserve
++				 * data space.
++				 */
+ 				only_release_metadata = true;
+ 				/*
+ 				 * our prealloc extent may be smaller than
+@@ -1524,20 +1529,19 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
+ 				num_pages = DIV_ROUND_UP(write_bytes + offset,
+ 							 PAGE_CACHE_SIZE);
+ 				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
+-				ret = 0;
+-			} else {
+-				ret = -ENOSPC;
++				goto reserve_metadata;
+ 			}
+ 		}
+-
+-		if (ret)
++		ret = __btrfs_check_data_free_space(inode, pos, write_bytes);
++		if (ret < 0)
+ 			break;
+ 
++reserve_metadata:
+ 		ret = btrfs_delalloc_reserve_metadata(inode, reserve_bytes);
+ 		if (ret) {
+ 			if (!only_release_metadata)
+-				btrfs_free_reserved_data_space(inode,
+-							       reserve_bytes);
++				__btrfs_free_reserved_data_space(inode, pos,
++							         write_bytes);
+ 			else
+ 				btrfs_end_write_no_snapshoting(root);
+ 			break;
+@@ -2569,8 +2573,11 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 	/*
+ 	 * Make sure we have enough space before we do the
+ 	 * allocation.
++	 * XXX: The behavior must be changed to do accurate check first
++	 * and then check data reserved space.
+ 	 */
+-	ret = btrfs_check_data_free_space(inode, alloc_end - alloc_start, alloc_end - alloc_start);
++	ret = btrfs_check_data_free_space(inode, alloc_start,
++					  alloc_end - alloc_start);
+ 	if (ret)
+ 		return ret;
+ 
+@@ -2703,7 +2710,8 @@ static long btrfs_fallocate(struct file *file, int mode,
+ out:
+ 	mutex_unlock(&inode->i_mutex);
+ 	/* Let go of our reservation. */
+-	btrfs_free_reserved_data_space(inode, alloc_end - alloc_start);
++	__btrfs_free_reserved_data_space(inode, alloc_start,
++					 alloc_end - alloc_start);
  	return ret;
  }
  
--/*
-- * This will check the space that the inode allocates from to make sure we have
-- * enough space for bytes.
-- */
--int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes)
-+int btrfs_alloc_data_chunk_ondemand(struct inode *inode, u64 bytes)
- {
- 	struct btrfs_space_info *data_sinfo;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
-@@ -4033,19 +4029,55 @@ commit_trans:
- 					      data_sinfo->flags, bytes, 1);
- 		return -ENOSPC;
+diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
+index 303babe..f4621c5 100644
+--- a/fs/btrfs/relocation.c
++++ b/fs/btrfs/relocation.c
+@@ -3034,8 +3034,8 @@ int prealloc_file_extent_cluster(struct inode *inode,
+ 	BUG_ON(cluster->start != cluster->boundary[0]);
+ 	mutex_lock(&inode->i_mutex);
+ 
+-	ret = btrfs_check_data_free_space(inode, cluster->end +
+-					  1 - cluster->start, 0);
++	ret = __btrfs_check_data_free_space(inode, cluster->start,
++					    cluster->end + 1 - cluster->start);
+ 	if (ret)
+ 		goto out;
+ 
+@@ -3056,8 +3056,8 @@ int prealloc_file_extent_cluster(struct inode *inode,
+ 			break;
+ 		nr++;
  	}
--	ret = btrfs_qgroup_reserve(root, write_bytes);
--	if (ret)
--		goto out;
- 	data_sinfo->bytes_may_use += bytes;
- 	trace_btrfs_space_reservation(root->fs_info, "space_info",
- 				      data_sinfo->flags, bytes, 1);
--out:
- 	spin_unlock(&data_sinfo->lock);
- 
+-	btrfs_free_reserved_data_space(inode, cluster->end +
+-				       1 - cluster->start);
++	__btrfs_free_reserved_data_space(inode, cluster->start,
++					 cluster->end + 1 - cluster->start);
+ out:
+ 	mutex_unlock(&inode->i_mutex);
  	return ret;
- }
- 
- /*
-+ * This will check the space that the inode allocates from to make sure we have
-+ * enough space for bytes.
-+ */
-+int btrfs_check_data_free_space(struct inode *inode, u64 bytes, u64 write_bytes)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	int ret;
-+
-+	ret = btrfs_alloc_data_chunk_ondemand(inode, bytes);
-+	if (ret < 0)
-+		return ret;
-+	ret = btrfs_qgroup_reserve(root, write_bytes);
-+	return ret;
-+}
-+
-+/*
-+ * New check_data_free_space() with ability for precious data reservation
-+ * Will replace old btrfs_check_data_free_space(), but for patch split,
-+ * add a new function first and then replace it.
-+ */
-+int __btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	int ret;
-+
-+	/* align the range */
-+	len = round_up(start + len, root->sectorsize) -
-+	      round_down(start, root->sectorsize);
-+	start = round_down(start, root->sectorsize);
-+
-+	ret = btrfs_alloc_data_chunk_ondemand(inode, len);
-+	if (ret < 0)
-+		return ret;
-+
-+	/* Use new btrfs_qgroup_reserve_data to reserve precious data space */
-+	ret = btrfs_qgroup_reserve_data(inode, start, len);
-+	return ret;
-+}
-+
-+/*
-  * Called if we need to clear a data reservation for this inode.
-  */
- void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
-@@ -4065,6 +4097,41 @@ void btrfs_free_reserved_data_space(struct inode *inode, u64 bytes)
- 	spin_unlock(&data_sinfo->lock);
- }
- 
-+/*
-+ * Called if we need to clear a data reservation for this inode
-+ * Normally in a error case.
-+ *
-+ * This one will handle the per-indoe data rsv map for accurate reserved
-+ * space framework.
-+ */
-+void __btrfs_free_reserved_data_space(struct inode *inode, u64 start, u64 len)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_space_info *data_sinfo;
-+
-+	/* Make sure the range is aligned to sectorsize */
-+	len = round_up(start + len, root->sectorsize) -
-+	      round_down(start, root->sectorsize);
-+	start = round_down(start, root->sectorsize);
-+
-+	/*
-+	 * Free any reserved qgroup data space first
-+	 * As it will alloc memory, we can't do it with data sinfo
-+	 * spinlock hold.
-+	 */
-+	btrfs_qgroup_free_data(inode, start, len);
-+
-+	data_sinfo = root->fs_info->data_sinfo;
-+	spin_lock(&data_sinfo->lock);
-+	if (WARN_ON(data_sinfo->bytes_may_use < len))
-+		data_sinfo->bytes_may_use = 0;
-+	else
-+		data_sinfo->bytes_may_use -= len;
-+	trace_btrfs_space_reservation(root->fs_info, "space_info",
-+				      data_sinfo->flags, len, 0);
-+	spin_unlock(&data_sinfo->lock);
-+}
-+
- static void force_metadata_allocation(struct btrfs_fs_info *info)
- {
- 	struct list_head *head = &info->space_info;
 -- 
 2.6.1
 

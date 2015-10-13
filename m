@@ -1,513 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37588 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:37643 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752714AbbJMOaD (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 10:30:03 -0400
+	id S932158AbbJMOaV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 10:30:21 -0400
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 1/2] fstests: btrfs test for cloning of inline extents
-Date: Tue, 13 Oct 2015 15:29:55 +0100
-Message-Id: <1444746595-20883-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 2/2] fstests: update btrfs/035 to check for data loss
+Date: Tue, 13 Oct 2015 15:30:11 +0100
+Message-Id: <1444746611-20931-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Test several cases of cloning inline extents that used to lead to file
-corruption or data loss.
+The test currently verifies that cloning one file with an inline extent
+with a size of 10 bytes into a file with an inline extent that has a size
+of 20 bytes succeeds. But this results in data loss, because the btrfs
+clone operation drops the 20 bytes inline extent from the destination
+inode and then copies the 10 bytes inline extent from the source file
+into the destination file, resulting in data loss of the last 10 bytes
+of data that the destination file had.
 
-These file corruption and data loss cases are fixed by the linux kernel
-patch titled:
+Fixing btrfs to correctly operate for this case (not resulting in data
+loss) is actually a lot of work and brings a lot of complexity, specially
+considering that any of the inline extents can be compressed. For the
+moment there's a fix to make the clone operation return the errno
+EOPNOTSUPP and not touch any of the inodes. This is the same approach
+we do for other cases involving operation against inline extents, so
+this just adds one more case that should have never been allowed.
+Cloning inline extents is a rare operation and pointless, since it
+involves copying them and not doing any actual deduplication or saving
+space.
+
+The btrfs patch for the linux kernel that prevents this data loss,
+and fixes some file corruption cases, is titled:
 
   "Btrfs: fix file corruption and data loss after cloning inline extents"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/110     | 199 ++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/110.out | 257 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/group   |   1 +
- 3 files changed, 457 insertions(+)
- create mode 100755 tests/btrfs/110
- create mode 100644 tests/btrfs/110.out
+ tests/btrfs/035     | 14 ++++++++++++++
+ tests/btrfs/035.out |  9 +++++++++
+ 2 files changed, 23 insertions(+)
 
-diff --git a/tests/btrfs/110 b/tests/btrfs/110
-new file mode 100755
-index 0000000..327c8c0
---- /dev/null
-+++ b/tests/btrfs/110
-@@ -0,0 +1,199 @@
-+#! /bin/bash
-+# FSQA Test No. 110
-+#
-+# Test several cases of cloning inline extents that used to lead to file
-+# corruption or data loss.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2015 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
+diff --git a/tests/btrfs/035 b/tests/btrfs/035
+index 35ddfce..0f8a70d 100755
+--- a/tests/btrfs/035
++++ b/tests/btrfs/035
+@@ -67,9 +67,23 @@ echo "attempting ioctl (src.clone1 src)"
+ $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
+ 	$SCRATCH_MNT/src.clone1 $SCRATCH_MNT/src
+ 
++# The clone operation should have failed. If it did not it meant we had data
++# loss, because file "src.clone1" has an inline extent which is 10 bytes long
++# while file "src" has an inline extent which is 20 bytes long. The clone
++# operation would remove the inline extent of "src" and then copy the inline
++# extent from "src.clone1" into "src", which means we would lose the last 10
++# bytes of data from "src" (on read we would get 0x00 as the value for any
++# of those 10 bytes, because the file's size remains as 20 bytes).
++echo "File src data after attempt to clone from src.clone1 into src:"
++od -t x1 $SCRATCH_MNT/src
 +
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
+ snap_src_sz=`ls -lah $SCRATCH_MNT/src.clone2 | awk '{print $5}'`
+ echo "attempting ioctl (src.clone2 src)"
+ $CLONER_PROG -s 0 -d 0 -l ${snap_src_sz} \
+ 	$SCRATCH_MNT/src.clone2 $SCRATCH_MNT/src
+ 
++# The clone operation should have succeeded.
++echo "File src data after attempt to clone from src.clone2 into src:"
++od -t x1 $SCRATCH_MNT/src
 +
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+_require_cloner
-+_require_btrfs_fs_feature "no_holes"
-+_require_btrfs_mkfs_feature "no-holes"
-+
-+rm -f $seqres.full
-+
-+test_cloning_inline_extents()
-+{
-+	local mkfs_opts=$1
-+	local mount_opts=$2
-+
-+	_scratch_mkfs $mkfs_opts >>$seqres.full 2>&1
-+	_scratch_mount $mount_opts
-+
-+	# File bar, the source for all the following clone operations, consists
-+        # of a # single inline extent (50 bytes).
-+	$XFS_IO_PROG -f -c "pwrite -S 0xbb 0 50" $SCRATCH_MNT/bar \
-+		| _filter_xfs_io
-+
-+	# Test cloning into a file with an extent (non-inlined) where the
-+	# destination offset overlaps that extent. It should not be possible to
-+	# clone the inline extent from file bar into this file.
-+	$XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 16K" $SCRATCH_MNT/foo \
-+		| _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo
-+
-+	# Doing IO against any range in the first 4K of the file should work.
-+	# Due to a past clone ioctl bug which allowed cloning the inline extent,
-+	# these operations resulted in EIO errors.
-+	echo "File foo data after clone operation:"
-+	# All bytes should have the value 0xaa (clone operation failed and did
-+	# not modify our file).
-+	od -t x1 $SCRATCH_MNT/foo
-+	$XFS_IO_PROG -c "pwrite -S 0xcc 0 100" $SCRATCH_MNT/foo | _filter_xfs_io
-+
-+	# Test cloning the inline extent against a file which has a hole in its
-+	# first 4K followed by a non-inlined extent. It should not be possible
-+	# as well to clone the inline extent from file bar into this file.
-+	$XFS_IO_PROG -f -c "pwrite -S 0xdd 4K 12K" $SCRATCH_MNT/foo2 \
-+		| _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo2
-+
-+	# Doing IO against any range in the first 4K of the file should work.
-+	# Due to a past clone ioctl bug which allowed cloning the inline extent,
-+	# these operations resulted in EIO errors.
-+	echo "File foo2 data after clone operation:"
-+	# All bytes should have the value 0x00 (clone operation failed and did
-+	# not modify our file).
-+	od -t x1 $SCRATCH_MNT/foo2
-+	$XFS_IO_PROG -c "pwrite -S 0xee 0 90" $SCRATCH_MNT/foo2 | _filter_xfs_io
-+
-+	# Test cloning the inline extent against a file which has a size of zero
-+	# but has a prealloc extent. It should not be possible as well to clone
-+	# the inline extent from file bar into this file.
-+	$XFS_IO_PROG -f -c "falloc -k 0 1M" $SCRATCH_MNT/foo3 | _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo3
-+
-+	# Doing IO against any range in the first 4K of the file should work.
-+	# Due to a past clone ioctl bug which allowed cloning the inline extent,
-+	# these operations resulted in EIO errors.
-+	echo "First 50 bytes of foo3 after clone operation:"
-+	# Should not be able to read any bytes, file has 0 bytes i_size (the
-+	# clone operation failed and did not modify our file).
-+	od -t x1 $SCRATCH_MNT/foo3
-+	$XFS_IO_PROG -c "pwrite -S 0xff 0 90" $SCRATCH_MNT/foo3 | _filter_xfs_io
-+
-+	# Test cloning the inline extent against a file which consists of a
-+	# single inline extent that has a size not greater than the size of
-+	# bar's inline extent (40 < 50).
-+	# It should be possible to do the extent cloning from bar to this file.
-+	$XFS_IO_PROG -f -c "pwrite -S 0x01 0 40" $SCRATCH_MNT/foo4 \
-+		| _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo4
-+
-+	# Doing IO against any range in the first 4K of the file should work.
-+	echo "File foo4 data after clone operation:"
-+	# Must match file bar's content.
-+	od -t x1 $SCRATCH_MNT/foo4
-+	$XFS_IO_PROG -c "pwrite -S 0x02 0 90" $SCRATCH_MNT/foo4 | _filter_xfs_io
-+
-+	# Test cloning the inline extent against a file which consists of a
-+	# single inline extent that has a size greater than the size of bar's
-+	# inline extent (60 > 50).
-+	# It should not be possible to clone the inline extent from file bar
-+	# into this file.
-+	$XFS_IO_PROG -f -c "pwrite -S 0x03 0 60" $SCRATCH_MNT/foo5 \
-+		| _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo5
-+
-+	# Reading the file should not fail.
-+	echo "File foo5 data after clone operation:"
-+	# Must have a size of 60 bytes, with all bytes having a value of 0x03
-+	# (the clone operation failed and did not modify our file).
-+	od -t x1 $SCRATCH_MNT/foo5
-+
-+	# Test cloning the inline extent against a file which has no extents but
-+	# has a size greater than bar's inline extent (16K > 50).
-+	# It should not be possible to clone the inline extent from file bar
-+	# into this file.
-+	$XFS_IO_PROG -f -c "truncate 16K" $SCRATCH_MNT/foo6 | _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo6
-+
-+	# Reading the file should not fail.
-+	echo "File foo6 data after clone operation:"
-+	# Must have a size of 16K, with all bytes having a value of 0x00 (the
-+	# clone operation failed and did not modify our file).
-+	od -t x1 $SCRATCH_MNT/foo6
-+
-+	# Test cloning the inline extent against a file which has no extents but
-+	# has a size not greater than bar's inline extent (30 < 50).
-+	# It should be possible to clone the inline extent from file bar into
-+	# this file.
-+	$XFS_IO_PROG -f -c "truncate 30" $SCRATCH_MNT/foo7 | _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo7
-+
-+	# Reading the file should not fail.
-+	echo "File foo7 data after clone operation:"
-+	# Must have a size of 50 bytes, with all bytes having a value of 0xbb.
-+	od -t x1 $SCRATCH_MNT/foo7
-+
-+	# Test cloning the inline extent against a file which has a size not
-+	# greater than the size of bar's inline extent (20 < 50) but has
-+	# a prealloc extent that goes beyond the file's size. It should not be
-+	# possible to clone the inline extent from bar into this file.
-+	$XFS_IO_PROG -f -c "falloc -k 0 1M" \
-+			-c "pwrite -S 0x88 0 20" \
-+			$SCRATCH_MNT/foo8 | _filter_xfs_io
-+	$CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/bar $SCRATCH_MNT/foo8
-+
-+	echo "File foo8 data after clone operation:"
-+	# Must have a size of 20 bytes, with all bytes having a value of 0x88
-+	# (the clone operation did not modify our file).
-+	od -t x1 $SCRATCH_MNT/foo8
-+
-+	_scratch_unmount
-+}
-+
-+echo -e "\nTesting without compression and without the no-holes feature...\n"
-+test_cloning_inline_extents
-+
-+echo -e "\nTesting with compression and without the no-holes feature...\n"
-+test_cloning_inline_extents "" "-o compress"
-+
-+echo -e "\nTesting without compression and with the no-holes feature...\n"
-+test_cloning_inline_extents "-O no-holes" ""
-+
-+echo -e "\nTesting with compression and with the no-holes feature...\n"
-+test_cloning_inline_extents "-O no-holes" "-o compress"
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/110.out b/tests/btrfs/110.out
-new file mode 100644
-index 0000000..0b9b0ad
---- /dev/null
-+++ b/tests/btrfs/110.out
-@@ -0,0 +1,257 @@
-+QA output created by 110
-+
-+Testing without compression and without the no-holes feature...
-+
-+wrote 50/50 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 16384/16384 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+ status=0 ; exit
+diff --git a/tests/btrfs/035.out b/tests/btrfs/035.out
+index f86cadf..3ea7d77 100644
+--- a/tests/btrfs/035.out
++++ b/tests/btrfs/035.out
+@@ -1,3 +1,12 @@
+ QA output created by 035
+ attempting ioctl (src.clone1 src)
 +clone failed: Operation not supported
-+File foo data after clone operation:
-+0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+0040000
-+wrote 100/100 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 12288/12288 bytes at offset 4096
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo2 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0010000 dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd
-+*
-+0040000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+First 50 bytes of foo3 after clone operation:
-+0000000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 40/40 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File foo4 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 60/60 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo5 data after clone operation:
-+0000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+*
-+0000060 03 03 03 03 03 03 03 03 03 03 03 03
-+0000074
-+clone failed: Operation not supported
-+File foo6 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0040000
-+File foo7 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 20/20 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo8 data after clone operation:
-+0000000 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88
-+0000020 88 88 88 88
++File src data after attempt to clone from src.clone1 into src:
++0000000 62 62 62 62 62 62 62 62 62 62 63 63 63 63 63 63
++0000020 63 63 63 63
 +0000024
-+
-+Testing with compression and without the no-holes feature...
-+
-+wrote 50/50 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 16384/16384 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo data after clone operation:
-+0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+0040000
-+wrote 100/100 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 12288/12288 bytes at offset 4096
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo2 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0010000 dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd
-+*
-+0040000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+First 50 bytes of foo3 after clone operation:
-+0000000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 40/40 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File foo4 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 60/60 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo5 data after clone operation:
-+0000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+*
-+0000060 03 03 03 03 03 03 03 03 03 03 03 03
-+0000074
-+clone failed: Operation not supported
-+File foo6 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0040000
-+File foo7 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 20/20 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo8 data after clone operation:
-+0000000 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88
-+0000020 88 88 88 88
+ attempting ioctl (src.clone2 src)
++File src data after attempt to clone from src.clone2 into src:
++0000000 62 62 62 62 62 62 62 62 62 62 63 63 63 63 63 63
++0000020 63 63 63 63
 +0000024
-+
-+Testing without compression and with the no-holes feature...
-+
-+wrote 50/50 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 16384/16384 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo data after clone operation:
-+0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+0040000
-+wrote 100/100 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 12288/12288 bytes at offset 4096
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo2 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0010000 dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd
-+*
-+0040000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+First 50 bytes of foo3 after clone operation:
-+0000000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 40/40 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File foo4 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 60/60 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo5 data after clone operation:
-+0000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+*
-+0000060 03 03 03 03 03 03 03 03 03 03 03 03
-+0000074
-+clone failed: Operation not supported
-+File foo6 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0040000
-+File foo7 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 20/20 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo8 data after clone operation:
-+0000000 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88
-+0000020 88 88 88 88
-+0000024
-+
-+Testing with compression and with the no-holes feature...
-+
-+wrote 50/50 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 16384/16384 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo data after clone operation:
-+0000000 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+0040000
-+wrote 100/100 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 12288/12288 bytes at offset 4096
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo2 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0010000 dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd dd
-+*
-+0040000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+First 50 bytes of foo3 after clone operation:
-+0000000
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 40/40 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+File foo4 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 90/90 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 60/60 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo5 data after clone operation:
-+0000000 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03 03
-+*
-+0000060 03 03 03 03 03 03 03 03 03 03 03 03
-+0000074
-+clone failed: Operation not supported
-+File foo6 data after clone operation:
-+0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+0040000
-+File foo7 data after clone operation:
-+0000000 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+0000060 bb bb
-+0000062
-+wrote 20/20 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+clone failed: Operation not supported
-+File foo8 data after clone operation:
-+0000000 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88 88
-+0000020 88 88 88 88
-+0000024
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 6effd1e..26408e3 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -112,3 +112,4 @@
- 107 auto quick send clone compress
- 108 auto quick send
- 109 auto quick send
-+110 auto quick clone
 -- 
 2.1.3
 

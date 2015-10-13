@@ -1,50 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail001.aei.ca ([206.123.6.130]:36052 "EHLO mail001.aei.ca"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752009AbbJMAbg convert rfc822-to-8bit (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:33933 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752020AbbJMKjO convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 20:31:36 -0400
-From: Ed Tomlinson <edt@aei.ca>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: Robin Ruede <r.ruede@gmail.com>, <linux-btrfs@vger.kernel.org>,
-        Robin Ruede <rruede+git@gmail.com>
-Subject: Re: [PATCH] btrfs: fix resending received snapshot with parent
-Date: Mon, 12 Oct 2015 20:31:33 -0400
+	Tue, 13 Oct 2015 06:39:14 -0400
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Cc: Martin Steigerwald <martin.steigerwald@teamix.de>
+Subject: behavior of BTRFS in relation to inodes when moving/copying files between filesystems
+Date: Tue, 13 Oct 2015 12:39:12 +0200
+Message-ID: <11290984.HMVNobY9No@merkaba>
 MIME-Version: 1.0
-Message-ID: <466cad37-fdc5-42d7-ad6c-69f93d55208a@aei.ca>
-In-Reply-To: <CAL3q7H7AYV_BEkT+_gg5qYK1Yvk=dMo9Xoi5cnZx97g=w7qKpQ@mail.gmail.com>
-References: <1443641013-26765-1-git-send-email-rruede+git@gmail.com>
- <CAL3q7H7AYV_BEkT+_gg5qYK1Yvk=dMo9Xoi5cnZx97g=w7qKpQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, October 9, 2015 4:24:10 PM EDT, Filipe Manana wrote:
-> On Wed, Sep 30, 2015 at 8:23 PM, Robin Ruede <r.ruede@gmail.com> wrote:
->> This fixes a regression introduced by 37b8d27d between v4.1 and v4.2.
->> 
->> When a snapshot is received, its received_uuid is set to the original
->> uuid of the subvolume. When that snapshot is then resent to a third
->> filesystem, it's received_uuid is set to the second uuid
->> instead of the original one. The same was true for the parent_uuid. ...
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
->
-> Thanks for fixing this.
-> I've added this to my integration branch [1] and will send soon a pull
-> request to Chris for 4.4, including this fix plus a few others for
-> send/receive, after some more testing.
->
-> I've also made an xfstest for it [1, 2]
+Hi!
 
-Another thanks for this fix.  It fixes things here.  I am runing 4.2.3 with 
-the 4.3 btrfs tree pulled on top of it along with this fix.  Incremental 
-sends
-are now working again.  
+With BTRFS to XFS/Ext4 the inode number of the target file stays the same in 
+with both cp and mv case (/mnt/zeit is a freshly created XFS in this example):
 
-Tested-by: Ed Tomlinson <edt@aei.ca>
+merkaba:~> ls -li foo /mnt/zeit/moo
+6609270  foo
+     99  /mnt/zeit/moo
+merkaba:~> cp foo /mnt/zeit/moo
+merkaba:~> ls -li foo /mnt/zeit/moo
+6609270 8 foo
+     99  /mnt/zeit/moo
+merkaba:~> cp -p foo /mnt/zeit/moo  
+merkaba:~> ls -li foo /mnt/zeit/moo
+6609270 foo
+     99 /mnt/zeit/moo
+merkaba:~> mv foo /mnt/zeit/moo
+merkaba:~> ls -lid /mnt/zeit/moo
+99 -rw-r--r-- 1 root root 6 Okt 13 12:28 /mnt/zeit/moo
 
-This fixes a regression, can we please get into 4.3?
 
-Thanks
-Ed Tomlinson
+With BTRFS as target filesystem however in the mv case I get a new inode:
 
+merkaba:~> ls -li foo /home/moo
+ 6609289 -rw-r--r-- 1 root root 6 Okt 13 12:34 foo
+16476276 -rw-r--r-- 1 root root 6 Okt 13 12:34 /home/moo
+merkaba:~> cp foo /home/moo
+merkaba:~> ls -li foo /home/moo
+ 6609289 -rw-r--r-- 1 root root 6 Okt 13 12:34 foo
+16476276 -rw-r--r-- 1 root root 6 Okt 13 12:34 /home/moo
+merkaba:~> cp -p foo /home/moo 
+merkaba:~> ls -li foo /home/moo
+ 6609289 -rw-r--r-- 1 root root 6 Okt 13 12:34 foo
+16476276 -rw-r--r-- 1 root root 6 Okt 13 12:34 /home/moo
+merkaba:~> mv foo /home/moo
+merkaba:~> ls -li /home/moo 
+16476280 -rw-r--r-- 1 root root 6 Okt 13 12:34 /home/moo
+
+
+Is this intentional and/or somehow related to the copy on write specifics of 
+the filesystem?
+
+I think even with COW it can just overwrite the existing file instead of 
+removing the old one and creating a new one – but it wouldn´t give much of a 
+benefit unless the target file is nocow.
+
+(Also I thought only certain other utilities had supercow powers, but well 
+BTRFS seems to have them as well :)
+
+Thanks,
+-- 
+Martin

@@ -1,75 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:34704 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752301AbbJMTHA (ORCPT
+Received: from mail-wi0-f173.google.com ([209.85.212.173]:37941 "EHLO
+	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932069AbbJMVVw convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 15:07:00 -0400
-Received: by igbni9 with SMTP id ni9so64252545igb.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 12:07:00 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <466cad37-fdc5-42d7-ad6c-69f93d55208a@aei.ca>
-References: <1443641013-26765-1-git-send-email-rruede+git@gmail.com>
-	<CAL3q7H7AYV_BEkT+_gg5qYK1Yvk=dMo9Xoi5cnZx97g=w7qKpQ@mail.gmail.com>
-	<466cad37-fdc5-42d7-ad6c-69f93d55208a@aei.ca>
-Date: Tue, 13 Oct 2015 20:07:00 +0100
-Message-ID: <CAL3q7H5J-hpr=4gqmHSh0WwTHnkOcX1807wY4TW8b5FRxx5GCA@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: fix resending received snapshot with parent
-From: Filipe Manana <fdmanana@gmail.com>
-To: Ed Tomlinson <edt@aei.ca>
-Cc: Robin Ruede <r.ruede@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Robin Ruede <rruede+git@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+	Tue, 13 Oct 2015 17:21:52 -0400
+Received: by wieq12 with SMTP id q12so52664308wie.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 14:21:51 -0700 (PDT)
+Received: from [192.168.0.182] (dhcp-077-250-162-252.chello.nl. [77.250.162.252])
+        by smtp.gmail.com with ESMTPSA id pk7sm5937088wjb.2.2015.10.13.14.21.50
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Tue, 13 Oct 2015 14:21:50 -0700 (PDT)
+From: Carmine Paolino <carmine@paolino.me>
+Content-Type: text/plain; charset=utf-8
+Subject: System completely unresponsive after `btrfs balance start -dconvert=raid0 /` and `btrfs fi show /`
+Message-Id: <C1BFF62A-9C2E-4A5D-86F9-7F01DDDF8BF6@paolino.me>
+Date: Tue, 13 Oct 2015 23:21:49 +0200
+To: linux-btrfs@vger.kernel.org
+Mime-Version: 1.0 (Mac OS X Mail 9.0 \(3094\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 13, 2015 at 1:31 AM, Ed Tomlinson <edt@aei.ca> wrote:
-> On Friday, October 9, 2015 4:24:10 PM EDT, Filipe Manana wrote:
->>
->> On Wed, Sep 30, 2015 at 8:23 PM, Robin Ruede <r.ruede@gmail.com> wrote:
->>>
->>> This fixes a regression introduced by 37b8d27d between v4.1 and v4.2.
->>>
->>> When a snapshot is received, its received_uuid is set to the original
->>> uuid of the subvolume. When that snapshot is then resent to a third
->>> filesystem, it's received_uuid is set to the second uuid
->>> instead of the original one. The same was true for the parent_uuid. ...
->>
->> Reviewed-by: Filipe Manana <fdmanana@suse.com>
->>
->> Thanks for fixing this.
->> I've added this to my integration branch [1] and will send soon a pull
->> request to Chris for 4.4, including this fix plus a few others for
->> send/receive, after some more testing.
->>
->> I've also made an xfstest for it [1, 2]
->
->
-> Another thanks for this fix.  It fixes things here.  I am runing 4.2.3 with
-> the 4.3 btrfs tree pulled on top of it along with this fix.  Incremental
-> sends
-> are now working again.
-> Tested-by: Ed Tomlinson <edt@aei.ca>
->
-> This fixes a regression, can we please get into 4.3?
+Hi all,
 
-I've tagged it for stable backports in my 4.4 integration branch [1].
-Thanks.
+I have an home server with 3 hard drives that I added to the same btrfs filesystem. Several hours ago I run `btrfs balance start -dconvert=raid0 /` and as soon as I run `btrfs fi show /` I lost my ssh connection to the machine. The machine is still on, but it doesn’t even respond to ping: I always get a request timeout and sometimes even an host is down message. Its fans are spinning at full blast and the hard drives’s led are registering activity all the time. I run Plex Home Theater too there and the display output is stuck at the time when I run those two commands. I left it running because I fear to lose everything by powering it down manually.
 
-[1] http://git.kernel.org/cgit/linux/kernel/git/fdmanana/linux.git/log/?h=integration-4.4
+Should I leave it like this and let it finish? How long it might take? (I have a 250gb internal hard drive, a 120gb usb 2.0 one and a 2TB usb 2.0 one so the transfer speeds are pretty low) Is it safe to power it off manually? Should I file a bug after it?
 
-thanks
->
-> Thanks
-> Ed Tomlinson
->
+Any help would be appreciated.
 
-
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+Thanks,
+Carmine

@@ -1,176 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl6.internode.on.net ([150.101.137.145]:58901 "EHLO
-	ipmail06.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755911AbbJHWdM (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:22173 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S932122AbbJMCUc (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Oct 2015 18:33:12 -0400
-Date: Fri, 9 Oct 2015 09:33:09 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Filipe Manana <fdmanana@gmail.com>
-Cc: Justin Maggard <jmaggard10@gmail.com>, fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Justin Maggard <jmaggard@netgear.com>
-Subject: Re: [PATCH] btrfs: test unmount during quota rescan
-Message-ID: <20151008223309.GW27164@dastard>
-References: <1444230527-4639-1-git-send-email-jmaggard@netgear.com>
- <CAL3q7H72PVQRXrWhT=uZcww2K+Y7-bZE5u5K4OMnz-FAKT3-ZA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAL3q7H72PVQRXrWhT=uZcww2K+Y7-bZE5u5K4OMnz-FAKT3-ZA@mail.gmail.com>
+	Mon, 12 Oct 2015 22:20:32 -0400
+Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q0012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:01 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v3 00/21] Rework btrfs qgroup reserved space framework
+Date: Tue, 13 Oct 2015 10:20:06 +0800
+Message-Id: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 08, 2015 at 10:39:48AM +0100, Filipe Manana wrote:
-> On Wed, Oct 7, 2015 at 4:08 PM, Justin Maggard <jmaggard10@gmail.com> wrote:
-> > This test case tests if we are able to unmount a filesystem while
-> > a quota rescan is running.  Up to now (4.3-rc4) this would result
-> > in a kernel NULL pointer dereference.
-> 
-> Please mention here the title of the patch that fixes this problem
-> ("btrfs: qgroup: exit the rescan worker during umount").
-> 
-> >
-> > Signed-off-by: Justin Maggard <jmaggard@netgear.com>
-> > ---
-> >  tests/btrfs/104     | 85 +++++++++++++++++++++++++++++++++++++++++++++++++++++
-> >  tests/btrfs/104.out |  1 +
-> >  tests/btrfs/group   |  1 +
-> >  3 files changed, 87 insertions(+)
-> >  create mode 100755 tests/btrfs/104
-> >  create mode 100644 tests/btrfs/104.out
-> >
-> > diff --git a/tests/btrfs/104 b/tests/btrfs/104
-> > new file mode 100755
-> > index 0000000..7c51298
-> > --- /dev/null
-> > +++ b/tests/btrfs/104
-> > @@ -0,0 +1,85 @@
-> > +#! /bin/bash
-> > +# FS QA Test No. btrfs/200
-> 
-> 104 (should match the file name)
-> 
-> > +#
-> > +# btrfs quota scan/unmount sanity test
-> > +#
-> > +#
-> > +#-----------------------------------------------------------------------
-> > +# Copyright (c) 2015 NETGEAR, Inc.  All Rights Reserved.
-> > +#
-> > +# This program is free software; you can redistribute it and/or
-> > +# modify it under the terms of the GNU General Public License as
-> > +# published by the Free Software Foundation.
-> > +#
-> > +# This program is distributed in the hope that it would be useful,
-> > +# but WITHOUT ANY WARRANTY; without even the implied warranty of
-> > +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-> > +# GNU General Public License for more details.
-> > +#
-> > +# You should have received a copy of the GNU General Public License
-> > +# along with this program; if not, write the Free Software Foundation,
-> > +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-> > +#
-> > +#-----------------------------------------------------------------------
-> > +#
-> > +
-> > +seq=`basename $0`
-> > +seqres=$RESULT_DIR/$seq
-> > +echo "QA output created by $seq"
-> > +
-> > +here=`pwd`
-> > +tmp=/tmp/$$
-> > +
-> > +status=1       # failure is the default!
-> > +
-> > +_cleanup()
-> > +{
-> > +       cd /
-> > +       rm -f $tmp.*
-> > +       $UMOUNT_PROG $loop_mnt >/dev/null 2>&1
-> > +       _destroy_loop_device $loop_dev1
-> > +       rm -rf $loop_mnt
-> > +       rm -f $fs_img1
-> > +}
-> > +
-> > +trap "_cleanup ; exit \$status" 0 1 2 3 15
-> > +
-> > +# get standard environment, filters and checks
-> > +. ./common/rc
-> > +. ./common/filter
-> > +
-> > +# real QA test starts here
-> > +_supported_fs btrfs
-> > +_supported_os Linux
-> > +_require_test
-> > +
-> > +rm -f $seqres.full
-> > +
-> > +loop_mnt=$TEST_DIR/$seq.$$.mnt
-> > +fs_img1=$TEST_DIR/$seq.$$.img1
-> > +mkdir $loop_mnt
-> > +$XFS_IO_PROG -f -c "truncate 1G" $fs_img1 >>$seqres.full 2>&1
-> 
-> Don't redirect stdout/stderr here. If the truncate fails, xfs_io
-> prints something to stderr, resulting in a test failure due to
-> mismatch with the golden output.
-> 
-> > +
-> > +loop_dev1=`_create_loop_device $fs_img1`
-> > +
-> > +_mkfs_dev $loop_dev1 >>$seqres.full 2>&1
-> > +_mount $loop_dev1 $loop_mnt
-> 
-> Any reason to use a loop device on not the scratch device as most
-> other tests do?
-> 
-> > +for i in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
-> > +do
-> > +  for j in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
-> 
-> Coding style in xfstests is:
-> 
-> for ... ; do
-> done
-> 
-> Also use 8 spaces tabs for indentation.
-> 
-> > +  do
-> > +    for k in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
-> > +    do
-> > +      for l in 0 1 2 3 4 5 6 7 8 9 a b c d e f g h i j k l m n o p
-> > +      do
-> > +       touch $loop_mnt/${i}${j}${k}${l}
-> > +      done
-> > +    done
-> > +  done
-> > +done >>$seqres.full 2>&1
+In previous rework of qgroup, we succeeded in fixing qgroup accounting
+part, making the rfer/excl numbers accurate.
 
-And, well, it's a strange way of creating 26**4 files.
+But that's just part of qgroup work, another part of qgroup still has
+quite a lot problem, that's qgroup reserve space part which will lead to
+EQUOT even we are far from the limit.
 
-Why not just:
+[[BUG]]
+The easiest way to trigger the bug is,
+1) Enable quota
+2) Limit excl of qgroup 5 to 16M
+3) Write [0,2M) of a file inside subvol 5 10 times without sync
 
-for i in `seq 0 1 450000`; do
-	echo -n > $SCRATCH_MNT/file.$i
-done
+EQUOT will be triggered at about the 8th write.
+But after remount, we can still write until about 15M.
 
-note that the use of 'echo -n' rather than touch means the test
-does not need to fork a new process just to create each file and
-so runs much, much faster...
+[[CAUSE]]
+The problem is caused by the fact that qgroup will reserve space even
+the data space is already reserved.
 
-> > +echo 3 > /proc/sys/vm/drop_caches
-> > +$BTRFS_UTIL_PROG quota enable $loop_mnt
-> > +$UMOUNT_PROG $loop_mnt
-> > +
-> > +status=0
+In above reproducer, each time we buffered write [0,2M) qgroup will
+reserve 2M space, but in fact, at the 1st time, we have already reserved
+2M and from then on, we don't need to reserved any data space as we are
+only writing [0,2M).
 
-What's the failure criteria here?
+Also, the reserved space will only be freed *ONCE* when its backref is
+run at commit_transaction() time.
 
-i.e. shouldn't you at least do a quota report and check that it
-reports the correct number of inodes in the quota group?
+That's causing the reserved space leaking.
 
-Cheers,
+[[FIX]]
+Reuse the existing io_tree facilities to record which range is already
+reserved for qgroup.
 
-Dave.
+Although qgroup reserved space behavior is quite similar with already
+existing DELALLOC flag, but since fallocate don't go through DELALLOC
+flag, we introduce a new extent flag, EXTENT_QGROUP_RESERVED for our own
+purpose, without interfering any existing flag.
+
+The new API itself is quite safe, any stupid caller reserve or free a
+range twice or more won't cause any problem, due to the nature of the
+design.
+
+[[PATCH STRUCTURE]]
+As the patchset is a little huge, it can be spilt into different parts:
+1) Accurate reserve space framework API(Patch 1 ~ 8)
+   Use io_tree to implement the needed data reserve API.
+   And slightly change the metadata reserve API
+
+2) Apply needed hooks to related callers(Pathc 9 ~ 18)
+   The following functions need to be converted to using new qgroup
+   reserve API:
+   btrfs_check_free_data_space()
+   btrfs_free_reserved_data_space()
+   btrfs_delalloc_reserve_space()
+   btrfs_delalloc_release_space()
+
+   And the following function need to change its behavior for accurate
+   qgroup reserve space:
+   btrfs_fallocate()
+
+   Also add ftrace support for new APIs in patch 17.
+
+3) Minor enhancement and fix(Patch 19~21)
+   Avoid unneeded page truncating (Patch 19)
+   Fix a deadlock due to lock io_tree with io_tree lock hold in
+   set_bit_hook() (Patch 20)
+   And finally, makes qgroup reserved space much more obvious for
+   further debugging (Patch 21)
+
+[[Changelog]]
+v2:
+  Add new handlers to avoid reserved space leaking for buffered write
+  followed by a truncate:
+    btrfs_invalidatepage()
+    evict_inode_truncate_page()
+  Add new handlers to avoid reserved space leaking for error handle
+  routine:
+    btrfs_free_reserved_data_space()
+    btrfs_delalloc_release_space()
+
+v3:
+  Use io_tree to implement data reserve map, which hugely reduced the
+  patchset size, from 1300+ lines net insert to 600+ lines net insert.
+  Suggested-by: Josef Bacik<jbacik@fb.com>
+
+Qu Wenruo (21):
+  btrfs: extent_io: Introduce needed structure for recoding set/clear
+    bits
+  btrfs: extent_io: Introduce new function set_record_extent_bits
+  btrfs: extent_io: Introduce new function clear_record_extent_bits()
+  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
+  btrfs: qgroup: Introduce functions to release/free qgroup reserve data
+        space
+  btrfs: delayed_ref: Add new function to record reserved space into
+    delayed ref
+  btrfs: delayed_ref: release and free qgroup reserved at proper timing
+  btrfs: qgroup: Introduce new functions to reserve/free metadata
+  btrfs: qgroup: Use new metadata reservation.
+  btrfs: extent-tree: Add new version of btrfs_check_data_free_space and
+    btrfs_free_reserved_data_space.
+  btrfs: extent-tree: Switch to new check_data_free_space and
+    free_reserved_data_space
+  btrfs: extent-tree: Add new version of
+    btrfs_delalloc_reserve/release_space
+  btrfs: extent-tree: Switch to new delalloc space reserve and release
+  btrfs: qgroup: Cleanup old inaccurate facilities
+  btrfs: qgroup: Add handler for NOCOW and inline
+  btrfs: Add handler for invalidate page
+  btrfs: qgroup: Add new trace point for qgroup data reserve
+  btrfs: fallocate: Add support to accurate qgroup reserve
+  btrfs: Avoid truncate tailing page if fallocate range doesn't exceed
+    inode size
+  btrfs: qgroup: Avoid calling btrfs_free_reserved_data_space in
+    clear_bit_hook
+  btrfs: qgroup: Check if qgroup reserved space leaked
+
+ fs/btrfs/ctree.h             |  14 ++-
+ fs/btrfs/delayed-ref.c       |  29 +++++++
+ fs/btrfs/delayed-ref.h       |  14 +++
+ fs/btrfs/disk-io.c           |   1 +
+ fs/btrfs/extent-tree.c       | 149 ++++++++++++++++++++++----------
+ fs/btrfs/extent_io.c         | 121 +++++++++++++++++++-------
+ fs/btrfs/extent_io.h         |  19 +++++
+ fs/btrfs/file.c              | 193 +++++++++++++++++++++++++++++------------
+ fs/btrfs/inode-map.c         |   6 +-
+ fs/btrfs/inode.c             |  86 ++++++++++++++++---
+ fs/btrfs/ioctl.c             |  10 ++-
+ fs/btrfs/qgroup.c            | 199 ++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.h            |  31 ++++++-
+ fs/btrfs/relocation.c        |   8 +-
+ fs/btrfs/transaction.c       |  34 ++------
+ fs/btrfs/transaction.h       |   1 -
+ include/trace/events/btrfs.h | 113 ++++++++++++++++++++++++
+ 17 files changed, 832 insertions(+), 196 deletions(-)
+
 -- 
-Dave Chinner
-david@fromorbit.com
+2.6.1
+

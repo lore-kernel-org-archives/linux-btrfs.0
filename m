@@ -1,198 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:37586 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56955 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752362AbbJKSFl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 11 Oct 2015 14:05:41 -0400
+	id S1752623AbbJMJIX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 05:08:23 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id ACA31ABBF
-	for <linux-btrfs@vger.kernel.org>; Sun, 11 Oct 2015 18:05:38 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 15413ABF7
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 09:08:21 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 7/7] btrfs: switch more printks to our helpers
-Date: Sun, 11 Oct 2015 20:04:31 +0200
-Message-Id: <f14d104dbdb5044dac9acd0e983ffb60f706c746.1444585955.git.dsterba@suse.com>
-In-Reply-To: <cover.1444585955.git.dsterba@suse.com>
-References: <cover.1444585955.git.dsterba@suse.com>
+Subject: [PATCH 0/2] Balance filters: stripes, enhanced limit
+Date: Tue, 13 Oct 2015 11:07:13 +0200
+Message-Id: <cover.1444664601.git.dsterba@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Convert the simple cases, not all functions provide a way to reach the
-fs_info. Also skipped debugging messages (print-tree, integrity
-checker and pr_debug) and messages that are printed from possibly
-unfinished mount.
+Update to balance filters, intended fro 4.4:
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/disk-io.c   | 12 ++++++------
- fs/btrfs/extent_io.c | 18 ++++++++++--------
- fs/btrfs/ioctl.c     |  6 +++---
- fs/btrfs/root-tree.c |  5 +++--
- fs/btrfs/send.c      |  2 +-
- fs/btrfs/volumes.c   |  3 ++-
- 6 files changed, 25 insertions(+), 21 deletions(-)
+* new 'stripes=<range>' - process only stripes that cross given number of
+  devices, specified by a range
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 72553cd9ed14..5bc94d2d5699 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2347,8 +2347,7 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
- 	u64 bytenr = btrfs_super_log_root(disk_super);
- 
- 	if (fs_devices->rw_devices == 0) {
--		printk(KERN_WARNING "BTRFS: log replay required "
--		       "on RO media\n");
-+		btrfs_warn(fs_info, "log replay required on RO media");
- 		return -EIO;
- 	}
- 
-@@ -2363,12 +2362,12 @@ static int btrfs_replay_log(struct btrfs_fs_info *fs_info,
- 	log_tree_root->node = read_tree_block(tree_root, bytenr,
- 			fs_info->generation + 1);
- 	if (IS_ERR(log_tree_root->node)) {
--		printk(KERN_ERR "BTRFS: failed to read log tree\n");
-+		btrfs_warn(fs_info, "failed to read log tree");
- 		ret = PTR_ERR(log_tree_root->node);
- 		kfree(log_tree_root);
- 		return ret;
- 	} else if (!extent_buffer_uptodate(log_tree_root->node)) {
--		printk(KERN_ERR "BTRFS: failed to read log tree\n");
-+		btrfs_err(fs_info, "failed to read log tree");
- 		free_extent_buffer(log_tree_root->node);
- 		kfree(log_tree_root);
- 		return -EIO;
-@@ -3294,8 +3293,9 @@ static int write_dev_supers(struct btrfs_device *device,
- 			bh = __getblk(device->bdev, bytenr / 4096,
- 				      BTRFS_SUPER_INFO_SIZE);
- 			if (!bh) {
--				printk(KERN_ERR "BTRFS: couldn't get super "
--				       "buffer head for bytenr %Lu\n", bytenr);
-+				btrfs_err(device->dev_root->fs_info,
-+				    "couldn't get super buffer head for bytenr %llu",
-+				    bytenr);
- 				errors++;
- 				continue;
- 			}
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bb318b4e5dd0..c7a33913188b 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -5563,13 +5563,15 @@ void memcpy_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 	unsigned long src_i;
- 
- 	if (src_offset + len > dst->len) {
--		printk(KERN_ERR "BTRFS: memmove bogus src_offset %lu move "
--		       "len %lu dst len %lu\n", src_offset, len, dst->len);
-+		btrfs_err(dst->fs_info,
-+			"memmove bogus src_offset %lu move "
-+		       "len %lu dst len %lu", src_offset, len, dst->len);
- 		BUG_ON(1);
- 	}
- 	if (dst_offset + len > dst->len) {
--		printk(KERN_ERR "BTRFS: memmove bogus dst_offset %lu move "
--		       "len %lu dst len %lu\n", dst_offset, len, dst->len);
-+		btrfs_err(dst->fs_info,
-+			"memmove bogus dst_offset %lu move "
-+		       "len %lu dst len %lu", dst_offset, len, dst->len);
- 		BUG_ON(1);
- 	}
- 
-@@ -5609,13 +5611,13 @@ void memmove_extent_buffer(struct extent_buffer *dst, unsigned long dst_offset,
- 	unsigned long src_i;
- 
- 	if (src_offset + len > dst->len) {
--		printk(KERN_ERR "BTRFS: memmove bogus src_offset %lu move "
--		       "len %lu len %lu\n", src_offset, len, dst->len);
-+		btrfs_err(dst->fs_info, "memmove bogus src_offset %lu move "
-+		       "len %lu len %lu", src_offset, len, dst->len);
- 		BUG_ON(1);
- 	}
- 	if (dst_offset + len > dst->len) {
--		printk(KERN_ERR "BTRFS: memmove bogus dst_offset %lu move "
--		       "len %lu len %lu\n", dst_offset, len, dst->len);
-+		btrfs_err(dst->fs_info, "memmove bogus dst_offset %lu move "
-+		       "len %lu len %lu", dst_offset, len, dst->len);
- 		BUG_ON(1);
- 	}
- 	if (dst_offset < src_offset) {
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 8e9105af723e..2e520c635709 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -1342,7 +1342,7 @@ int btrfs_defrag_file(struct inode *inode, struct file *file,
- 			break;
- 
- 		if (btrfs_defrag_cancelled(root->fs_info)) {
--			printk(KERN_DEBUG "BTRFS: defrag_file cancelled\n");
-+			btrfs_debug(root->fs_info, "defrag_file cancelled");
- 			ret = -EAGAIN;
- 			break;
- 		}
-@@ -2081,7 +2081,7 @@ static noinline int search_ioctl(struct inode *inode,
- 		key.offset = (u64)-1;
- 		root = btrfs_read_fs_root_no_name(info, &key);
- 		if (IS_ERR(root)) {
--			printk(KERN_ERR "BTRFS: could not find root %llu\n",
-+			btrfs_err(info, "could not find root %llu",
- 			       sk->tree_id);
- 			btrfs_free_path(path);
- 			return -ENOENT;
-@@ -2221,7 +2221,7 @@ static noinline int btrfs_search_path_in_tree(struct btrfs_fs_info *info,
- 	key.offset = (u64)-1;
- 	root = btrfs_read_fs_root_no_name(info, &key);
- 	if (IS_ERR(root)) {
--		printk(KERN_ERR "BTRFS: could not find root %llu\n", tree_id);
-+		btrfs_err(info, "could not find root %llu", tree_id);
- 		ret = -ENOENT;
- 		goto out;
- 	}
-diff --git a/fs/btrfs/root-tree.c b/fs/btrfs/root-tree.c
-index 360a728a639f..42267d37bb94 100644
---- a/fs/btrfs/root-tree.c
-+++ b/fs/btrfs/root-tree.c
-@@ -45,12 +45,13 @@ static void btrfs_read_root_item(struct extent_buffer *eb, int slot,
- 	if (!need_reset && btrfs_root_generation(item)
- 		!= btrfs_root_generation_v2(item)) {
- 		if (btrfs_root_generation_v2(item) != 0) {
--			printk(KERN_WARNING "BTRFS: mismatching "
-+			btrfs_warn(eb->fs_info,
-+					"mismatching "
- 					"generation and generation_v2 "
- 					"found in root item. This root "
- 					"was probably mounted with an "
- 					"older kernel. Resetting all "
--					"new fields.\n");
-+					"new fields.");
- 		}
- 		need_reset = 1;
- 	}
-diff --git a/fs/btrfs/send.c b/fs/btrfs/send.c
-index aa72bfd28f7d..4ea07c8cd6c2 100644
---- a/fs/btrfs/send.c
-+++ b/fs/btrfs/send.c
-@@ -2562,7 +2562,7 @@ verbose_printk("btrfs: send_create_inode %llu\n", ino);
- 	} else if (S_ISSOCK(mode)) {
- 		cmd = BTRFS_SEND_C_MKSOCK;
- 	} else {
--		printk(KERN_WARNING "btrfs: unexpected inode type %o",
-+		btrfs_warn(sctx->send_root->fs_info, "unexpected inode type %o",
- 				(int)(mode & S_IFMT));
- 		ret = -ENOTSUPP;
- 		goto out;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4f80986dbf3c..7ad310cc3efb 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2352,7 +2352,8 @@ int btrfs_init_new_device(struct btrfs_root *root, char *device_path)
- 						root->fs_info->fsid);
- 		if (kobject_rename(&root->fs_info->fs_devices->super_kobj,
- 								fsid_buf))
--			pr_warn("BTRFS: sysfs: failed to create fsid for sprout\n");
-+			btrfs_warn(root->fs_info,
-+				"sysfs: failed to create fsid for sprout");
- 	}
- 
- 	root->fs_info->num_tolerated_disk_barrier_failures =
+* updated 'limit=<range>' - previously a single number was accepted, it's a
+  range so now we can specify a minimum number of chunks to process
+
+There will be more documentation about the use in the btrfs-progs patches, the
+kernel side just applies the ranges. The update to 'limit' is backward
+compatible, reuses the previous struct member.
+
+Can be pulled from
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/balance-filters
+
+I'm finalizing the progs patches and haven't tested that them extensively.
+
+
+David Sterba (1):
+  btrfs: extend balance filter limit to take minimum and maximum
+
+Gabríel Arthúr Pétursson (1):
+  btrfs: add balance filter for stripes
+
+ fs/btrfs/ctree.h           | 23 ++++++++++++++++++++---
+ fs/btrfs/volumes.c         | 33 +++++++++++++++++++++++++++++++++
+ fs/btrfs/volumes.h         |  2 ++
+ include/uapi/linux/btrfs.h | 23 +++++++++++++++++++++--
+ 4 files changed, 76 insertions(+), 5 deletions(-)
+
 -- 
-2.1.3
+2.6.1
 

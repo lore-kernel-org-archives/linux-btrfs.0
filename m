@@ -1,39 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64609 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:22173 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932270AbbJMCUk (ORCPT
+	with ESMTP id S932300AbbJMCUk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 12 Oct 2015 22:20:40 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QG012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:11 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QF012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:10 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 16/21] btrfs: Add handler for invalidate page
-Date: Tue, 13 Oct 2015 10:20:22 +0800
-Message-Id: <1444702827-18169-17-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 15/21] btrfs: qgroup: Add handler for NOCOW and inline
+Date: Tue, 13 Oct 2015 10:20:21 +0800
+Message-Id: <1444702827-18169-16-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For btrfs_invalidatepage() and its variant evict_inode_truncate_page(),
-there will be pages don't reach disk.
-In that case, their reserved space won't be release nor freed by
-finish_ordered_io() nor delayed_ref handler.
-
-So we must free their qgroup reserved space, or we will leaking reserved
-space again.
-
-So this will patch will call btrfs_qgroup_free_data() for
-invalidatepage() and its variant evict_inode_truncate_page().
-
-And due to the nature of new btrfs_qgroup_reserve/free_data() reserved
-space will only be reserved or freed once, so for pages which are
-already flushed to disk, their reserved space will be released and freed
-by delayed_ref handler.
-
-Double free won't be a problem.
+For NOCOW and inline case, there will be no delayed_ref created for
+them, so we should free their reserved data space at proper
+time(finish_ordered_io for NOCOW and cow_file_inline for inline).
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
@@ -42,51 +28,61 @@ v2:
 v3:
   None
 ---
- fs/btrfs/inode.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ fs/btrfs/extent-tree.c |  7 ++++++-
+ fs/btrfs/inode.c       | 15 +++++++++++++++
+ 2 files changed, 21 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 1dadbba..765f7e0 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -4056,7 +4056,12 @@ int btrfs_check_data_free_space(struct inode *inode, u64 start, u64 len)
+ 	if (ret < 0)
+ 		return ret;
+ 
+-	/* Use new btrfs_qgroup_reserve_data to reserve precious data space */
++	/*
++	 * Use new btrfs_qgroup_reserve_data to reserve precious data space
++	 *
++	 * TODO: Find a good method to avoid reserve data space for NOCOW
++	 * range, but don't impact performance on quota disable case.
++	 */
+ 	ret = btrfs_qgroup_reserve_data(inode, start, len);
+ 	return ret;
+ }
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2fe95f0..fee54b6 100644
+index ef0f8cd..2fe95f0 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -5075,6 +5075,18 @@ static void evict_inode_truncate_pages(struct inode *inode)
- 		spin_unlock(&io_tree->lock);
+@@ -310,6 +310,13 @@ static noinline int cow_file_range_inline(struct btrfs_root *root,
+ 	btrfs_delalloc_release_metadata(inode, end + 1 - start);
+ 	btrfs_drop_extent_cache(inode, start, aligned_end - 1, 0);
+ out:
++	/*
++	 * Don't forget to free the reserved space, as for inlined extent
++	 * it won't count as data extent, free them directly here.
++	 * And at reserve time, it's always aligned to page size, so
++	 * just free one page here.
++	 */
++	btrfs_qgroup_free_data(inode, 0, PAGE_CACHE_SIZE);
+ 	btrfs_free_path(path);
+ 	btrfs_end_transaction(trans, root);
+ 	return ret;
+@@ -2832,6 +2839,14 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
  
- 		lock_extent_bits(io_tree, start, end, 0, &cached_state);
+ 	if (test_bit(BTRFS_ORDERED_NOCOW, &ordered_extent->flags)) {
+ 		BUG_ON(!list_empty(&ordered_extent->list)); /* Logic error */
 +
 +		/*
-+		 * If still has DELALLOC flag, the extent didn't reach disk,
-+		 * and its reserved space won't be freed by delayed_ref.
-+		 * So we need to free its reserved space here.
-+		 * (Refer to comment in btrfs_invalidatepage, case 2)
-+		 *
-+		 * Note, end is the bytenr of last byte, so we need + 1 here.
++		 * For mwrite(mmap + memset to write) case, we still reserve
++		 * space for NOCOW range.
++		 * As NOCOW won't cause a new delayed ref, just free the space
 +		 */
-+		if (state->state & EXTENT_DELALLOC)
-+			btrfs_qgroup_free_data(inode, start, end - start + 1);
-+
- 		clear_extent_bit(io_tree, start, end,
- 				 EXTENT_LOCKED | EXTENT_DIRTY |
- 				 EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING |
-@@ -8592,6 +8604,18 @@ static void btrfs_invalidatepage(struct page *page, unsigned int offset,
- 		}
- 	}
- 
-+	/*
-+	 * Qgroup reserved space handler
-+	 * Page here will be either
-+	 * 1) Already written to disk
-+	 *    In this case, its reserved space is released from data rsv map
-+	 *    and will be freed by delayed_ref handler finally.
-+	 *    So even we call qgroup_free_data(), it won't decrease reserved
-+	 *    space.
-+	 * 2) Not written to disk
-+	 *    This means the reserved space should be freed here.
-+	 */
-+	btrfs_qgroup_free_data(inode, page_start, PAGE_CACHE_SIZE);
- 	if (!inode_evicting) {
- 		clear_extent_bit(tree, page_start, page_end,
- 				 EXTENT_LOCKED | EXTENT_DIRTY |
++		btrfs_qgroup_free_data(inode, ordered_extent->file_offset,
++				       ordered_extent->len);
+ 		btrfs_ordered_update_i_size(inode, 0, ordered_extent);
+ 		if (nolock)
+ 			trans = btrfs_join_transaction_nolock(root);
 -- 
 2.6.1
 

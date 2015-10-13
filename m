@@ -1,130 +1,124 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64609 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:2671 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932122AbbJMCUe (ORCPT
+	with ESMTP id S932262AbbJMCUg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 22:20:34 -0400
+	Mon, 12 Oct 2015 22:20:36 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q5012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:03 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q8012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:05 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 05/21] btrfs: qgroup: Introduce functions to release/free qgroup reserve data space
-Date: Tue, 13 Oct 2015 10:20:11 +0800
-Message-Id: <1444702827-18169-6-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 08/21] btrfs: qgroup: Introduce new functions to reserve/free metadata
+Date: Tue, 13 Oct 2015 10:20:14 +0800
+Message-Id: <1444702827-18169-9-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce functions btrfs_qgroup_release/free_data() to release/free
-reserved data range.
-
-Release means, just remove the data range from io_tree, but doesn't
-free the reserved space.
-This is for normal buffered write case, when data is written into disc
-and its metadata is added into tree, its reserved space should still be
-kept until commit_trans().
-So in that case, we only release dirty range, but keep the reserved
-space recorded some other place until commit_tran().
-
-Free means not only remove data range, but also free reserved space.
-This is used for case for cleanup and invalidate page.
+Introduce new functions btrfs_qgroup_reserve/free_meta() to reserve/free
+metadata reserved space.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 v2:
-  Fix comment typo
-  Update comment, to make it clear that the reserved space for any page
-  cache will either be released(it goes to disk) or freed directly
-  (truncated before reaching disk)
+  None
 v3:
-  Change to use io_tree facilities.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+  None
 ---
- fs/btrfs/qgroup.c | 60 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h |  2 ++
- 2 files changed, 62 insertions(+)
+ fs/btrfs/ctree.h   |  3 +++
+ fs/btrfs/disk-io.c |  1 +
+ fs/btrfs/qgroup.c  | 40 ++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/qgroup.h  |  4 ++++
+ 4 files changed, 48 insertions(+)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 938efe3..ae86025 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1943,6 +1943,9 @@ struct btrfs_root {
+ 	int send_in_progress;
+ 	struct btrfs_subvolume_writers *subv_writers;
+ 	atomic_t will_be_snapshoted;
++
++	/* For qgroup metadata space reserve */
++	atomic_t qgroup_meta_rsv;
+ };
+ 
+ struct btrfs_ioctl_defrag_range_args {
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 807f685..2b51705 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -1259,6 +1259,7 @@ static void __setup_root(u32 nodesize, u32 sectorsize, u32 stripesize,
+ 	atomic_set(&root->orphan_inodes, 0);
+ 	atomic_set(&root->refs, 1);
+ 	atomic_set(&root->will_be_snapshoted, 0);
++	atomic_set(&root->qgroup_meta_rsv, 0);
+ 	root->log_transid = 0;
+ 	root->log_transid_committed = -1;
+ 	root->last_log_commit = 0;
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 9ef8d73..a86d9c6 100644
+index a2678f6..b5d1850 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2530,3 +2530,63 @@ cleanup:
- 	ulist_free(changeset.range_changed);
- 	return ret;
+@@ -2589,3 +2589,43 @@ int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
+ {
+ 	return __btrfs_qgroup_release_data(inode, start, len, 0);
  }
 +
-+static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
-+				       int free)
++int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes)
 +{
-+	struct extent_changeset changeset;
 +	int ret;
 +
-+	changeset.bytes_changed = 0;
-+	changeset.range_changed = ulist_alloc(GFP_NOFS);
-+	if (!changeset.range_changed)
-+		return -ENOMEM;
++	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid) ||
++	    num_bytes == 0)
++		return 0;
 +
-+	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, start, 
-+			start + len -1, EXTENT_QGROUP_RESERVED, GFP_NOFS,
-+			&changeset);
++	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
++	ret = btrfs_qgroup_reserve(root, num_bytes);
 +	if (ret < 0)
-+		goto out;
-+
-+	if (free)
-+		btrfs_qgroup_free(BTRFS_I(inode)->root,
-+				  changeset.bytes_changed);
-+out:
-+	ulist_free(changeset.range_changed);
++		return ret;
++	atomic_add(num_bytes, &root->qgroup_meta_rsv);
 +	return ret;
 +}
 +
-+/*
-+ * Free a reserved space range from io_tree and related qgroups
-+ *
-+ * Should be called when a range of pages get invalidated before reaching disk.
-+ * Or for error cleanup case.
-+ *
-+ * For data written to disk, use btrfs_qgroup_release_data().
-+ *
-+ * NOTE: This function may sleep for memory allocation.
-+ */
-+int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len)
++void btrfs_qgroup_free_meta_all(struct btrfs_root *root)
 +{
-+	return __btrfs_qgroup_release_data(inode, start, len, 1);
++	int reserved;
++
++	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid))
++		return;
++
++	reserved = atomic_xchg(&root->qgroup_meta_rsv, 0);
++	if (reserved == 0)
++		return;
++	btrfs_qgroup_free(root, reserved);
 +}
 +
-+/*
-+ * Release a reserved space range from io_tree only.
-+ *
-+ * Should be called when a range of pages get written to disk and corresponding
-+ * FILE_EXTENT is inserted into corresponding root.
-+ *
-+ * Since new qgroup accounting framework will only update qgroup numbers at
-+ * commit_transaction() time, its reserved space shouldn't be freed from
-+ * related qgroups.
-+ *
-+ * But we should release the range from io_tree, to allow further write to be
-+ * COWed.
-+ *
-+ * NOTE: This function may sleep for memory allocation.
-+ */
-+int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len)
++void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
 +{
-+	return __btrfs_qgroup_release_data(inode, start, len, 0);
++	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid))
++		return;
++
++	BUG_ON(num_bytes != round_down(num_bytes, root->nodesize));
++	WARN_ON(atomic_read(&root->qgroup_meta_rsv) < num_bytes);
++	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
++	btrfs_qgroup_free(root, num_bytes);
 +}
 diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index bd17cc2..564eb21 100644
+index 80924ae..7d1c87c 100644
 --- a/fs/btrfs/qgroup.h
 +++ b/fs/btrfs/qgroup.h
-@@ -83,4 +83,6 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- 
- /* New io_tree based accurate qgroup reserve API */
+@@ -101,4 +101,8 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
  int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
-+int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
-+int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
+ int btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len);
+ int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
++
++int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes);
++void btrfs_qgroup_free_meta_all(struct btrfs_root *root);
++void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes);
  #endif /* __BTRFS_QGROUP__ */
 -- 
 2.6.1

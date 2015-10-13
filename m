@@ -1,26 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51167 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752552AbbJMMtS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 08:49:18 -0400
-Date: Tue, 13 Oct 2015 14:48:08 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: Re: [PATCH RESEND 0/3] btrfs-progs: Introduce device delete by devid
-Message-ID: <20151013124808.GJ27761@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1444487458-2988-1-git-send-email-anand.jain@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:61924 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752095AbbJMMyA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 08:54:00 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9DCrT99019602
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 20:53:29 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 0/3] btrfs-progs: mkfs: Fix different mixed type by argument sequence
+Date: Tue, 13 Oct 2015 20:52:16 +0800
+Message-ID: <cover.1444740703.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1444487458-2988-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Oct 10, 2015 at 10:30:55PM +0800, Anand Jain wrote:
-> This is the btrfs-progs part of the kernel patch
->    Btrfs: Introduce device delete by devid
+Given a 200G vdd1 and 1G vdd2:
 
-Thanks, now in next/delete-by-id-v3, I made some changes so please have
-a look. Notably, I've dropped the BTRFS_VOL_ARG_V2_FLAGS mask, this
-belongs to kernel only (unless you need it userspace of course).
+In current code:
+ mkfs.btrfs -f /dev/vdd1 /dev/vdd2
+ and
+ mkfs.btrfs -f /dev/vdd2 /dev/vdd1
+ will create different "mixed" type.
+
+See [PATCH 2/3] for detail.
+
+This patchset also include some small fixs.
+
+Zhao Lei (3):
+  btrfs-progs: mkfs: Remove saved_optind in mkfs.btrfs
+  btrfs-progs: mkfs: Fix different mixed type by argument sequence
+  btrfs-progs: mkfs: Fix inaccurate mixed information
+
+ mkfs.c | 43 ++++++++++++++++++++++---------------------
+ 1 file changed, 22 insertions(+), 21 deletions(-)
+
+-- 
+1.8.5.1
+

@@ -1,92 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38520 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38529 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932610AbbJMPnd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 11:43:33 -0400
+	id S932575AbbJMPnh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 11:43:37 -0400
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 9D79AABCC
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 15:43:31 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id CD3E5ABCC
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 15:43:34 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/7] btrfs-progs: extend parse_range API to accept a relaxed range
-Date: Tue, 13 Oct 2015 17:42:23 +0200
-Message-Id: <7edb64ff3707c11e1deaa2556db16f788fbc9011.1444750808.git.dsterba@suse.com>
+Subject: [PATCH 3/7] btrfs-progs: add helpers for parsing 32bit ranges
+Date: Tue, 13 Oct 2015 17:42:26 +0200
+Message-Id: <9232a2e4aac6c4b79124d06d047ebd7380b15104.1444750808.git.dsterba@suse.com>
 In-Reply-To: <cover.1444750808.git.dsterba@suse.com>
 References: <cover.1444750808.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In some cases we want to accept a range of type [a..a]. Add a new
-function to do the 'a < b' check for the caller and use it.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- cmds-balance.c | 30 +++++++++++++++++++++++++-----
- 1 file changed, 25 insertions(+), 5 deletions(-)
+ cmds-balance.c | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
 diff --git a/cmds-balance.c b/cmds-balance.c
-index 798b533aa7d6..62bee3cc78b6 100644
+index 62bee3cc78b6..72714b23b45c 100644
 --- a/cmds-balance.c
 +++ b/cmds-balance.c
-@@ -126,9 +126,10 @@ static int parse_range(const char *range, u64 *start, u64 *end)
- 			return 1;
- 	}
- 
--	if (*start >= *end) {
--		fprintf(stderr, "Range %llu..%llu doesn't make "
--			"sense\n", (unsigned long long)*start,
-+	if (*start > *end) {
-+		fprintf(stderr,
-+			"ERROR: range %llu..%llu doesn't make sense\n",
-+			(unsigned long long)*start,
- 			(unsigned long long)*end);
- 		return 1;
- 	}
-@@ -139,6 +140,25 @@ static int parse_range(const char *range, u64 *start, u64 *end)
+@@ -159,6 +159,37 @@ static int parse_range_strict(const char *range, u64 *start, u64 *end)
  	return 1;
  }
  
 +/*
-+ * Parse range and check if start < end
++ * Convert 64bit range to 32bit with boundary checkso
 + */
-+static int parse_range_strict(const char *range, u64 *start, u64 *end)
++static int range_to_u32(u64 start, u64 end, u32 *start32, u32 *end32)
 +{
-+	if (parse_range(range, start, end) == 0) {
-+		if (*start >= *end) {
-+			fprintf(stderr,
-+				"ERROR: range %llu..%llu not allowed\n",
-+				(unsigned long long)*start,
-+				(unsigned long long)*end);
-+			return 1;
-+		}
-+		return 0;
-+	}
++	if (start > (u32)-1)
++		return 1;
 +
-+	return 1;
++	if (end != (u64)-1 && end > (u32)-1)
++		return 1;
++
++	*start32 = (u32)start;
++	*end32 = (u32)end;
++
++	return 0;
++}
++
++static int parse_range_u32(const char *range, u32 *start, u32 *end)
++{
++	u64 tmp_start;
++	u64 tmp_end;
++
++	if (parse_range(range, &tmp_start, &tmp_end))
++		return 1;
++
++	if (range_to_u32(tmp_start, tmp_end, start, end))
++		return 1;
++
++	return 0;
 +}
 +
  static int parse_filters(char *filters, struct btrfs_balance_args *args)
  {
  	char *this_char;
-@@ -196,7 +216,7 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
- 				       "an argument\n");
- 				return 1;
- 			}
--			if (parse_range(value, &args->pstart, &args->pend)) {
-+			if (parse_range_strict(value, &args->pstart, &args->pend)) {
- 				fprintf(stderr, "Invalid drange argument\n");
- 				return 1;
- 			}
-@@ -207,7 +227,7 @@ static int parse_filters(char *filters, struct btrfs_balance_args *args)
- 				       "an argument\n");
- 				return 1;
- 			}
--			if (parse_range(value, &args->vstart, &args->vend)) {
-+			if (parse_range_strict(value, &args->vstart, &args->vend)) {
- 				fprintf(stderr, "Invalid vrange argument\n");
- 				return 1;
- 			}
 -- 
 2.6.1
 

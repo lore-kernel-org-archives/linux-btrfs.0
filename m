@@ -1,40 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41551 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:45742 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932603AbbJMQUX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 12:20:23 -0400
-Date: Tue, 13 Oct 2015 18:19:13 +0200
+	id S932332AbbJMQmU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 12:42:20 -0400
+Date: Tue, 13 Oct 2015 18:41:09 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: Henk Slager <hslager@hotmail.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 0/3] btrfs-progs: mkfs: Fix different mixed type by
- argument sequence
-Message-ID: <20151013161913.GL27761@twin.jikos.cz>
+Subject: Re: BTRFS with 8TB SMR drives
+Message-ID: <20151013164109.GN27761@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <cover.1444740703.git.zhaolei@cn.fujitsu.com>
+References: <CA+wwUFBKOxHSXOn9rcG+k5CTaKMPWGnx2a5dNo=CCfzawRLKGg@mail.gmail.com>
+ <20151012132136.GE27761@twin.jikos.cz>
+ <BLU436-SMTP165112E5F4D118F381D47A4A9310@phx.gbl>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1444740703.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <BLU436-SMTP165112E5F4D118F381D47A4A9310@phx.gbl>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 13, 2015 at 08:52:16PM +0800, Zhao Lei wrote:
-> Given a 200G vdd1 and 1G vdd2:
+On Mon, Oct 12, 2015 at 06:25:52PM +0200, Henk Slager wrote:
+> and looking at this spec:
+> http://www.seagate.com/files/www-content/product-content/hdd-fam/seagate-archive-hdd/en-us/docs/archive-hdd-dS1834-3-1411us.pdf
 > 
-> In current code:
->  mkfs.btrfs -f /dev/vdd1 /dev/vdd2
->  and
->  mkfs.btrfs -f /dev/vdd2 /dev/vdd1
->  will create different "mixed" type.
+> it seems that it is a drive-managed SMR disk. I am not sure why David
+> assumes it is host-managed, maybe drive firmware/functionality can be
+> bypassed.
 
-I think combining large and small devices was not intended use for the
-mixed-bg, nevertheless current behaviour is not right.
-
-Chandan is working on dropping the forced mixed-bg completely. We've
-discussed that on IRC, I'm ok with it but this needs more testing. So
-far it looks fine, small filesystems get created and usable, though some
-tuning might be needed.
-
-My intentions for 4.3 is to take Chandan's work provided that we test it
-enough. There are like 3 weeks left. In case of problems, I'll take this
-patchset so at least we get the inconsisten behaviour fixed.
+Because the drive-managed ones are not interesting from the filesystem POV.

@@ -1,40 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:58058 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752178AbbJMHav (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 03:30:51 -0400
-Date: Tue, 13 Oct 2015 00:30:50 -0700
-From: Christoph Hellwig <hch@infradead.org>
-To: Trond Myklebust <trond.myklebust@primarydata.com>
-Cc: "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Christoph Hellwig <hch@infradead.org>,
-        Anna Schumaker <Anna.Schumaker@netapp.com>,
-        Linux NFS Mailing List <linux-nfs@vger.kernel.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        Linux API Mailing List <linux-api@vger.kernel.org>,
-        Zach Brown <zab@zabbo.net>, Alexander Viro <viro@zeniv.linux.org.uk>,
-        Chris Mason <clm@fb.com>,
-        Michael Kerrisk-manpages <mtk.manpages@gmail.com>,
-        William Andros Adamson <andros@netapp.com>
+Received: from mx143.netapp.com ([216.240.21.24]:27094 "EHLO mx143.netapp.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752156AbbJMTpe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 15:45:34 -0400
 Subject: Re: [PATCH v5 8/9] vfs: Add vfs_copy_file_range() support for
  pagecache copies
-Message-ID: <20151013073050.GC10794@infradead.org>
+To: Neil Brown <nfbrown@novell.com>, <linux-nfs@vger.kernel.org>,
+        <linux-btrfs@vger.kernel.org>, <linux-fsdevel@vger.kernel.org>,
+        <linux-api@vger.kernel.org>, <zab@zabbo.net>,
+        <viro@zeniv.linux.org.uk>, <clm@fb.com>, <darrick.wong@oracle.com>,
+        <mtk.manpages@gmail.com>, <andros@netapp.com>, <hch@infradead.org>
 References: <1443634014-3026-1-git-send-email-Anna.Schumaker@Netapp.com>
  <1443634014-3026-9-git-send-email-Anna.Schumaker@Netapp.com>
- <20151011142203.GA31867@infradead.org>
- <20151012231749.GC11398@birch.djwong.org>
- <CAHQdGtQoV0g1p2FYC1vFtFwh=jNq5n+AYOxAuSORVfbfhRY1Hg@mail.gmail.com>
+ <87vbai6sud.fsf@notabene.neil.brown.name>
+From: Anna Schumaker <Anna.Schumaker@netapp.com>
+Message-ID: <561D5F58.8030105@Netapp.com>
+Date: Tue, 13 Oct 2015 15:45:28 -0400
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CAHQdGtQoV0g1p2FYC1vFtFwh=jNq5n+AYOxAuSORVfbfhRY1Hg@mail.gmail.com>
+In-Reply-To: <87vbai6sud.fsf@notabene.neil.brown.name>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 12, 2015 at 11:36:31PM -0400, Trond Myklebust wrote:
-> How is this supposed to be implemented on something like NFS without
-> protocol changes?
+On 10/07/2015 09:40 PM, Neil Brown wrote:
+> Anna Schumaker <Anna.Schumaker@netapp.com> writes:
+> 
+>> @@ -1338,34 +1362,26 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+>>  			    struct file *file_out, loff_t pos_out,
+>>  			    size_t len, unsigned int flags)
+>>  {
+>> -	struct inode *inode_in;
+>> -	struct inode *inode_out;
+>>  	ssize_t ret;
+>>  
+>> -	if (flags)
+>> +	/* Flags should only be used exclusively. */
+>> +	if ((flags & COPY_FR_COPY) && (flags & ~COPY_FR_COPY))
+>> +		return -EINVAL;
+>> +	if ((flags & COPY_FR_REFLINK) && (flags & ~COPY_FR_REFLINK))
+>> +		return -EINVAL;
+>> +	if ((flags & COPY_FR_DEDUP) && (flags & ~COPY_FR_DEDUP))
+>>  		return -EINVAL;
+>>  
+> 
+> Do you also need:
+> 
+>    if (flags & ~(COPY_FR_COPY | COPY_FR_REFLINK | COPY_FR_DEDUP))
+>    	return -EINVAL;
+> 
+> so that future user-space can test if the kernel supports new flags?
 
-Explicit dedup has no chance of working over NFS or other network
-protocols without protocol changes.
+Probably.  I'll add that in!
+
+Thanks,
+Anna
+
+> 
+> NeilBrown
+> 
+

@@ -1,66 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64609 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:22173 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932132AbbJMCUd (ORCPT
+	with ESMTP id S932193AbbJMCUe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 22:20:33 -0400
+	Mon, 12 Oct 2015 22:20:34 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q1012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:01 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q3012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:02 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 01/21] btrfs: extent_io: Introduce needed structure for recoding set/clear bits
-Date: Tue, 13 Oct 2015 10:20:07 +0800
-Message-Id: <1444702827-18169-2-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 03/21] btrfs: extent_io: Introduce new function clear_record_extent_bits()
+Date: Tue, 13 Oct 2015 10:20:09 +0800
+Message-Id: <1444702827-18169-4-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add a new structure, extent_change_set, to record how many bytes are
-changed in one set/clear_extent_bits() operation, with detailed changed
-ranges info.
+Introduce new function clear_record_extent_bits(), which will clear bits
+for given range and record the details about which ranges are cleared
+and how many bytes in total it changes.
 
-This provides the needed facilities for later qgroup reserve framework.
+This provides the basis for later qgroup reserve codes.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 v3:
-  Newly introduced, to reuse existing extent_io facilities.
+  Newly introduced
 ---
- fs/btrfs/extent_io.h | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ fs/btrfs/extent_io.c | 50 +++++++++++++++++++++++++++++++++++++++-----------
+ fs/btrfs/extent_io.h |  3 +++
+ 2 files changed, 42 insertions(+), 11 deletions(-)
 
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index f5efaa6..1c20f8be 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -141,6 +141,8 @@ static void add_extent_changeset(struct extent_state *state, unsigned bits,
+ 		return;
+ 	if (set && (state->state & bits) == bits)
+ 		return;
++	if (!set && (state->state & bits) == 0)
++		return;
+ 	changeset->bytes_changed += state->end - state->start + 1;
+ 	ret = ulist_add(changeset->range_changed, state->start, state->end,
+ 			GFP_ATOMIC);
+@@ -529,7 +531,8 @@ static struct extent_state *next_state(struct extent_state *state)
+  */
+ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+ 					    struct extent_state *state,
+-					    unsigned *bits, int wake)
++					    unsigned *bits, int wake,
++					    struct extent_changeset *changeset)
+ {
+ 	struct extent_state *next;
+ 	unsigned bits_to_clear = *bits & ~EXTENT_CTLBITS;
+@@ -540,6 +543,7 @@ static struct extent_state *clear_state_bit(struct extent_io_tree *tree,
+ 		tree->dirty_bytes -= range;
+ 	}
+ 	clear_state_cb(tree, state, bits);
++	add_extent_changeset(state, bits_to_clear, changeset, 0);
+ 	state->state &= ~bits_to_clear;
+ 	if (wake)
+ 		wake_up(&state->wq);
+@@ -587,10 +591,10 @@ static void extent_io_tree_panic(struct extent_io_tree *tree, int err)
+  *
+  * This takes the tree lock, and returns 0 on success and < 0 on error.
+  */
+-int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+-		     unsigned bits, int wake, int delete,
+-		     struct extent_state **cached_state,
+-		     gfp_t mask)
++static int __clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
++			      unsigned bits, int wake, int delete,
++			      struct extent_state **cached_state,
++			      gfp_t mask, struct extent_changeset *changeset)
+ {
+ 	struct extent_state *state;
+ 	struct extent_state *cached;
+@@ -689,7 +693,8 @@ hit_next:
+ 		if (err)
+ 			goto out;
+ 		if (state->end <= end) {
+-			state = clear_state_bit(tree, state, &bits, wake);
++			state = clear_state_bit(tree, state, &bits, wake,
++						changeset);
+ 			goto next;
+ 		}
+ 		goto search_again;
+@@ -710,13 +715,13 @@ hit_next:
+ 		if (wake)
+ 			wake_up(&state->wq);
+ 
+-		clear_state_bit(tree, prealloc, &bits, wake);
++		clear_state_bit(tree, prealloc, &bits, wake, changeset);
+ 
+ 		prealloc = NULL;
+ 		goto out;
+ 	}
+ 
+-	state = clear_state_bit(tree, state, &bits, wake);
++	state = clear_state_bit(tree, state, &bits, wake, changeset);
+ next:
+ 	if (last_end == (u64)-1)
+ 		goto out;
+@@ -1151,7 +1156,7 @@ hit_next:
+ 	if (state->start == start && state->end <= end) {
+ 		set_state_bits(tree, state, &bits, NULL);
+ 		cache_state(state, cached_state);
+-		state = clear_state_bit(tree, state, &clear_bits, 0);
++		state = clear_state_bit(tree, state, &clear_bits, 0, NULL);
+ 		if (last_end == (u64)-1)
+ 			goto out;
+ 		start = last_end + 1;
+@@ -1192,7 +1197,8 @@ hit_next:
+ 		if (state->end <= end) {
+ 			set_state_bits(tree, state, &bits, NULL);
+ 			cache_state(state, cached_state);
+-			state = clear_state_bit(tree, state, &clear_bits, 0);
++			state = clear_state_bit(tree, state, &clear_bits, 0,
++						NULL);
+ 			if (last_end == (u64)-1)
+ 				goto out;
+ 			start = last_end + 1;
+@@ -1254,7 +1260,7 @@ hit_next:
+ 
+ 		set_state_bits(tree, prealloc, &bits, NULL);
+ 		cache_state(prealloc, cached_state);
+-		clear_state_bit(tree, prealloc, &clear_bits, 0);
++		clear_state_bit(tree, prealloc, &clear_bits, 0, NULL);
+ 		prealloc = NULL;
+ 		goto out;
+ 	}
+@@ -1309,6 +1315,14 @@ int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 				changeset);
+ }
+ 
++int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
++		     unsigned bits, int wake, int delete,
++		     struct extent_state **cached, gfp_t mask)
++{
++	return __clear_extent_bit(tree, start, end, bits, wake, delete,
++				  cached, mask, NULL);
++}
++
+ int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 		      unsigned bits, gfp_t mask)
+ {
+@@ -1320,6 +1334,20 @@ int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 	return clear_extent_bit(tree, start, end, bits, wake, 0, NULL, mask);
+ }
+ 
++int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
++			     unsigned bits, gfp_t mask,
++			     struct extent_changeset *changeset)
++{
++	/*
++	 * Don't support EXTENT_LOCKED case, same reason as
++	 * set_record_extent_bits().
++	 */
++	BUG_ON(bits & EXTENT_LOCKED);
++
++	return __clear_extent_bit(tree, start, end, bits, 0, 0, NULL, mask,
++				  changeset);
++}
++
+ int set_extent_delalloc(struct extent_io_tree *tree, u64 start, u64 end,
+ 			struct extent_state **cached_state, gfp_t mask)
+ {
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index c668f36..3107a6e 100644
+index 4a7c9d9..51e1b71 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -2,6 +2,7 @@
- #define __EXTENTIO__
- 
- #include <linux/rbtree.h>
-+#include "ulist.h"
- 
- /* bits for the extent state */
- #define EXTENT_DIRTY		(1U << 0)
-@@ -161,6 +162,17 @@ struct extent_buffer {
- #endif
- };
- 
-+/*
-+ * Structure to record how many bytes and which ranges are set/cleared
-+ */
-+struct extent_changeset {
-+	/* How many bytes are set/cleared in this operation */
-+	u64 bytes_changed;
-+
-+	/* Changed ranges */
-+	struct ulist *range_changed;
-+};
-+
- static inline void extent_set_compress_type(unsigned long *bio_flags,
- 					    int compress_type)
- {
+@@ -222,6 +222,9 @@ int test_range_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		   struct extent_state *cached_state);
+ int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 		      unsigned bits, gfp_t mask);
++int clear_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
++			     unsigned bits, gfp_t mask,
++			     struct extent_changeset *changeset);
+ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		     unsigned bits, int wake, int delete,
+ 		     struct extent_state **cached, gfp_t mask);
 -- 
 2.6.1
 

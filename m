@@ -1,188 +1,227 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64609 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:2671 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932244AbbJMCUg (ORCPT
+	with ESMTP id S932244AbbJMCUl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 22:20:36 -0400
+	Mon, 12 Oct 2015 22:20:41 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q9012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:05 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QH012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:11 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 09/21] btrfs: qgroup: Use new metadata reservation.
-Date: Tue, 13 Oct 2015 10:20:15 +0800
-Message-Id: <1444702827-18169-10-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 17/21] btrfs: qgroup: Add new trace point for qgroup data reserve
+Date: Tue, 13 Oct 2015 10:20:23 +0800
+Message-Id: <1444702827-18169-18-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As we have the new metadata reservation functions, use them to replace
-the old btrfs_qgroup_reserve() call for metadata.
+Now each qgroup reserve for data will has its ftrace event for better
+debugging.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 v2:
-  None
+  Newly introduced
 v3:
   None
 ---
- fs/btrfs/extent-tree.c | 14 ++++++--------
- fs/btrfs/transaction.c | 34 ++++++----------------------------
- fs/btrfs/transaction.h |  1 -
- 3 files changed, 12 insertions(+), 37 deletions(-)
+ fs/btrfs/qgroup.c            |  11 ++++-
+ fs/btrfs/qgroup.h            |   8 +++
+ include/trace/events/btrfs.h | 113 +++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 130 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4f6758b..22702bd 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5345,7 +5345,7 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 	if (root->fs_info->quota_enabled) {
- 		/* One for parent inode, two for dir entries */
- 		num_bytes = 3 * root->nodesize;
--		ret = btrfs_qgroup_reserve(root, num_bytes);
-+		ret = btrfs_qgroup_reserve_meta(root, num_bytes);
- 		if (ret)
- 			return ret;
- 	} else {
-@@ -5363,10 +5363,8 @@ int btrfs_subvolume_reserve_metadata(struct btrfs_root *root,
- 	if (ret == -ENOSPC && use_global_rsv)
- 		ret = btrfs_block_rsv_migrate(global_rsv, rsv, num_bytes);
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 646a867..b3b485a 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2511,10 +2511,12 @@ int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len)
  
--	if (ret) {
--		if (*qgroup_reserved)
--			btrfs_qgroup_free(root, *qgroup_reserved);
--	}
-+	if (ret && *qgroup_reserved)
-+		btrfs_qgroup_free_meta(root, *qgroup_reserved);
- 
- 	return ret;
- }
-@@ -5527,15 +5525,15 @@ int btrfs_delalloc_reserve_metadata(struct inode *inode, u64 num_bytes)
- 	spin_unlock(&BTRFS_I(inode)->lock);
- 
- 	if (root->fs_info->quota_enabled) {
--		ret = btrfs_qgroup_reserve(root, nr_extents * root->nodesize);
-+		ret = btrfs_qgroup_reserve_meta(root,
-+				nr_extents * root->nodesize);
- 		if (ret)
- 			goto out_fail;
- 	}
- 
- 	ret = reserve_metadata_bytes(root, block_rsv, to_reserve, flush);
- 	if (unlikely(ret)) {
--		if (root->fs_info->quota_enabled)
--			btrfs_qgroup_free(root, nr_extents * root->nodesize);
-+		btrfs_qgroup_free_meta(root, nr_extents * root->nodesize);
- 		goto out_fail;
- 	}
- 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 376191c..5ed06b8 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -478,13 +478,10 @@ start_transaction(struct btrfs_root *root, u64 num_items, unsigned int type,
- 	 * the appropriate flushing if need be.
- 	 */
- 	if (num_items > 0 && root != root->fs_info->chunk_root) {
--		if (root->fs_info->quota_enabled &&
--		    is_fstree(root->root_key.objectid)) {
--			qgroup_reserved = num_items * root->nodesize;
--			ret = btrfs_qgroup_reserve(root, qgroup_reserved);
--			if (ret)
--				return ERR_PTR(ret);
--		}
-+		qgroup_reserved = num_items * root->nodesize;
-+		ret = btrfs_qgroup_reserve_meta(root, qgroup_reserved);
-+		if (ret)
-+			return ERR_PTR(ret);
- 
- 		num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
- 		/*
-@@ -553,7 +550,6 @@ again:
- 	h->block_rsv = NULL;
- 	h->orig_rsv = NULL;
- 	h->aborted = 0;
--	h->qgroup_reserved = 0;
- 	h->delayed_ref_elem.seq = 0;
- 	h->type = type;
- 	h->allocating_chunk = false;
-@@ -579,7 +575,6 @@ again:
- 		h->bytes_reserved = num_bytes;
- 		h->reloc_reserved = reloc_reserved;
- 	}
--	h->qgroup_reserved = qgroup_reserved;
- 
- got_it:
- 	btrfs_record_root_in_trans(h, root);
-@@ -597,8 +592,7 @@ alloc_fail:
- 		btrfs_block_rsv_release(root, &root->fs_info->trans_block_rsv,
- 					num_bytes);
- reserve_fail:
--	if (qgroup_reserved)
--		btrfs_qgroup_free(root, qgroup_reserved);
-+	btrfs_qgroup_free_meta(root, qgroup_reserved);
- 	return ERR_PTR(ret);
- }
- 
-@@ -815,15 +809,6 @@ static int __btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 			must_run_delayed_refs = 2;
- 	}
- 
--	if (trans->qgroup_reserved) {
--		/*
--		 * the same root has to be passed here between start_transaction
--		 * and end_transaction. Subvolume quota depends on this.
--		 */
--		btrfs_qgroup_free(trans->root, trans->qgroup_reserved);
--		trans->qgroup_reserved = 0;
--	}
+ 	changeset.bytes_changed = 0;
+ 	changeset.range_changed = ulist_alloc(GFP_NOFS);
 -
- 	btrfs_trans_release_metadata(trans, root);
- 	trans->block_rsv = NULL;
+ 	ret = set_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
+ 			start + len -1, EXTENT_QGROUP_RESERVED, GFP_NOFS,
+ 			&changeset);
++	trace_btrfs_qgroup_reserve_data(inode, start, len,
++					changeset.bytes_changed,
++					QGROUP_RESERVE);
+ 	if (ret < 0)
+ 		goto cleanup;
+ 	ret = qgroup_reserve(root, changeset.bytes_changed);
+@@ -2539,6 +2541,7 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
+ 				       int free)
+ {
+ 	struct extent_changeset changeset;
++	int trace_op = QGROUP_RELEASE;
+ 	int ret;
  
-@@ -1238,6 +1223,7 @@ static noinline int commit_fs_roots(struct btrfs_trans_handle *trans,
- 			spin_lock(&fs_info->fs_roots_radix_lock);
- 			if (err)
- 				break;
-+			btrfs_qgroup_free_meta_all(root);
- 		}
- 	}
- 	spin_unlock(&fs_info->fs_roots_radix_lock);
-@@ -1846,10 +1832,6 @@ int btrfs_commit_transaction(struct btrfs_trans_handle *trans,
+ 	changeset.bytes_changed = 0;
+@@ -2552,8 +2555,12 @@ static int __btrfs_qgroup_release_data(struct inode *inode, u64 start, u64 len,
+ 	if (ret < 0)
+ 		goto out;
  
- 	btrfs_trans_release_metadata(trans, root);
- 	trans->block_rsv = NULL;
--	if (trans->qgroup_reserved) {
--		btrfs_qgroup_free(root, trans->qgroup_reserved);
--		trans->qgroup_reserved = 0;
--	}
+-	if (free)
++	if (free) {
+ 		qgroup_free(BTRFS_I(inode)->root, changeset.bytes_changed);
++		trace_op = QGROUP_FREE;
++	}
++	trace_btrfs_qgroup_release_data(inode, start, len,
++					changeset.bytes_changed, trace_op);
+ out:
+ 	ulist_free(changeset.range_changed);
+ 	return ret;
+diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
+index adb03da..686b60f 100644
+--- a/fs/btrfs/qgroup.h
++++ b/fs/btrfs/qgroup.h
+@@ -33,6 +33,13 @@ struct btrfs_qgroup_extent_record {
+ 	struct ulist *old_roots;
+ };
  
- 	cur_trans = trans->transaction;
++/*
++ * For qgroup event trace points only
++ */
++#define QGROUP_RESERVE		(1<<0)
++#define QGROUP_RELEASE		(1<<1)
++#define QGROUP_FREE		(1<<2)
++
+ int btrfs_quota_enable(struct btrfs_trans_handle *trans,
+ 		       struct btrfs_fs_info *fs_info);
+ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+@@ -81,6 +88,7 @@ static inline void btrfs_qgroup_free_delayed_ref(struct btrfs_fs_info *fs_info,
+ 						 u64 ref_root, u64 num_bytes)
+ {
+ 	btrfs_qgroup_free_refroot(fs_info, ref_root, num_bytes);
++	trace_btrfs_qgroup_free_delayed_ref(ref_root, num_bytes);
+ }
+ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans);
  
-@@ -2202,10 +2184,6 @@ cleanup_transaction:
- 	btrfs_trans_release_metadata(trans, root);
- 	btrfs_trans_release_chunk_metadata(trans);
- 	trans->block_rsv = NULL;
--	if (trans->qgroup_reserved) {
--		btrfs_qgroup_free(root, trans->qgroup_reserved);
--		trans->qgroup_reserved = 0;
--	}
- 	btrfs_warn(root->fs_info, "Skipping commit of aborted transaction.");
- 	if (current->journal_info == trans)
- 		current->journal_info = NULL;
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index a994bb0..ce41bc9 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -107,7 +107,6 @@ struct btrfs_trans_handle {
- 	u64 transid;
- 	u64 bytes_reserved;
- 	u64 chunk_bytes_reserved;
--	u64 qgroup_reserved;
- 	unsigned long use_count;
- 	unsigned long blocks_reserved;
- 	unsigned long blocks_used;
+diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
+index 0b73af9..b4473da 100644
+--- a/include/trace/events/btrfs.h
++++ b/include/trace/events/btrfs.h
+@@ -1117,6 +1117,119 @@ DEFINE_EVENT(btrfs__workqueue_done, btrfs_workqueue_destroy,
+ 	TP_ARGS(wq)
+ );
+ 
++DECLARE_EVENT_CLASS(btrfs__qgroup_data_map,
++
++	TP_PROTO(struct inode *inode, u64 free_reserved),
++
++	TP_ARGS(inode, free_reserved),
++
++	TP_STRUCT__entry(
++		__field(	u64,		rootid		)
++		__field(	unsigned long,	ino		)
++		__field(	u64,		free_reserved	)
++	),
++
++	TP_fast_assign(
++		__entry->rootid		=	BTRFS_I(inode)->root->objectid;
++		__entry->ino		=	inode->i_ino;
++		__entry->free_reserved	=	free_reserved;
++	),
++
++	TP_printk("rootid=%llu, ino=%lu, free_reserved=%llu",
++		  __entry->rootid, __entry->ino, __entry->free_reserved)
++);
++
++DEFINE_EVENT(btrfs__qgroup_data_map, btrfs_qgroup_init_data_rsv_map,
++
++	TP_PROTO(struct inode *inode, u64 free_reserved),
++
++	TP_ARGS(inode, free_reserved)
++);
++
++DEFINE_EVENT(btrfs__qgroup_data_map, btrfs_qgroup_free_data_rsv_map,
++
++	TP_PROTO(struct inode *inode, u64 free_reserved),
++
++	TP_ARGS(inode, free_reserved)
++);
++
++#define BTRFS_QGROUP_OPERATIONS				\
++	{ QGROUP_RESERVE,	"reserve"	},	\
++	{ QGROUP_RELEASE,	"release"	},	\
++	{ QGROUP_FREE,		"free"		}
++
++DECLARE_EVENT_CLASS(btrfs__qgroup_rsv_data,
++
++	TP_PROTO(struct inode *inode, u64 start, u64 len, u64 reserved, int op),
++
++	TP_ARGS(inode, start, len, reserved, op),
++
++	TP_STRUCT__entry(
++		__field(	u64,		rootid		)
++		__field(	unsigned long,	ino		)
++		__field(	u64,		start		)
++		__field(	u64,		len		)
++		__field(	u64,		reserved	)
++		__field(	int,		op		)
++	),
++
++	TP_fast_assign(
++		__entry->rootid		= BTRFS_I(inode)->root->objectid;
++		__entry->ino		= inode->i_ino;
++		__entry->start		= start;
++		__entry->len		= len;
++		__entry->reserved	= reserved;
++		__entry->op		= op;
++	),
++
++	TP_printk("root=%llu, ino=%lu, start=%llu, len=%llu, reserved=%llu, op=%s",
++		  __entry->rootid, __entry->ino, __entry->start, __entry->len,
++		  __entry->reserved,
++		  __print_flags((unsigned long)__entry->op, "",
++				BTRFS_QGROUP_OPERATIONS)
++	)
++);
++
++DEFINE_EVENT(btrfs__qgroup_rsv_data, btrfs_qgroup_reserve_data,
++
++	TP_PROTO(struct inode *inode, u64 start, u64 len, u64 reserved, int op),
++
++	TP_ARGS(inode, start, len, reserved, op)
++);
++
++DEFINE_EVENT(btrfs__qgroup_rsv_data, btrfs_qgroup_release_data,
++
++	TP_PROTO(struct inode *inode, u64 start, u64 len, u64 reserved, int op),
++
++	TP_ARGS(inode, start, len, reserved, op)
++);
++
++DECLARE_EVENT_CLASS(btrfs__qgroup_delayed_ref,
++
++	TP_PROTO(u64 ref_root, u64 reserved),
++
++	TP_ARGS(ref_root, reserved),
++
++	TP_STRUCT__entry(
++		__field(	u64,		ref_root	)
++		__field(	u64,		reserved	)
++	),
++
++	TP_fast_assign(
++		__entry->ref_root	= ref_root;
++		__entry->reserved	= reserved;
++	),
++
++	TP_printk("root=%llu, reserved=%llu, op=free",
++		  __entry->ref_root, __entry->reserved)
++);
++
++DEFINE_EVENT(btrfs__qgroup_delayed_ref, btrfs_qgroup_free_delayed_ref,
++
++	TP_PROTO(u64 ref_root, u64 reserved),
++
++	TP_ARGS(ref_root, reserved)
++);
+ #endif /* _TRACE_BTRFS_H */
+ 
+ /* This part must be outside protection */
 -- 
 2.6.1
 

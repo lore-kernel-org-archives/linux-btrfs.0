@@ -1,97 +1,275 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:22173 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:2671 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932325AbbJMCUm (ORCPT
+	with ESMTP id S932320AbbJMCUm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Mon, 12 Oct 2015 22:20:42 -0400
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1QL012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:13 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q2012662
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:02 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 21/21] btrfs: qgroup: Check if qgroup reserved space leaked
-Date: Tue, 13 Oct 2015 10:20:27 +0800
-Message-Id: <1444702827-18169-22-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 02/21] btrfs: extent_io: Introduce new function set_record_extent_bits
+Date: Tue, 13 Oct 2015 10:20:08 +0800
+Message-Id: <1444702827-18169-3-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add check at btrfs_destroy_inode() time to detect qgroup reserved space
-leak.
+Introduce new function set_record_extent_bits(), which will not only set
+given bits, but also record how many bytes are changed, and detailed
+range info.
+
+This is quite important for later qgroup reserve framework.
+The number of bytes will be used to do qgroup reserve, and detailed
+range info will be used to cleanup for EQUOT case.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
 v3:
-  Separate from old btrfs_qgroup_free_data_rsv_map().
+  Newly introduced
 ---
- fs/btrfs/inode.c  |  1 +
- fs/btrfs/qgroup.c | 32 ++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h |  1 +
- 3 files changed, 34 insertions(+)
+ fs/btrfs/extent_io.c | 71 +++++++++++++++++++++++++++++++++++++++-------------
+ fs/btrfs/extent_io.h |  3 +++
+ 2 files changed, 56 insertions(+), 18 deletions(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 39c9191..15d6ee0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9054,6 +9054,7 @@ void btrfs_destroy_inode(struct inode *inode)
- 			btrfs_put_ordered_extent(ordered);
- 		}
- 	}
-+	btrfs_qgroup_check_reserved_leak(inode);
- 	inode_tree_del(inode);
- 	btrfs_drop_extent_cache(inode, 0, (u64)-1, 0);
- free:
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b3b485a..f452c85 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2640,3 +2640,35 @@ void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes)
- 	atomic_sub(num_bytes, &root->qgroup_meta_rsv);
- 	qgroup_free(root, num_bytes);
- }
-+
-+/*
-+ * Check qgroup reserved space leaking, normally at destory inode
-+ * time
-+ */
-+void btrfs_qgroup_check_reserved_leak(struct inode *inode)
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 363726b..f5efaa6 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -131,6 +131,23 @@ struct extent_page_data {
+ 	unsigned int sync_io:1;
+ };
+ 
++static void add_extent_changeset(struct extent_state *state, unsigned bits,
++				 struct extent_changeset *changeset,
++				 int set)
 +{
-+	struct extent_changeset changeset;
-+	struct ulist_node *unode;
-+	struct ulist_iterator iter;
 +	int ret;
 +
-+	changeset.bytes_changed = 0;
-+	changeset.range_changed = ulist_alloc(GFP_NOFS);
-+	if (WARN_ON(!changeset.range_changed))
++	if (!changeset)
 +		return;
-+
-+	ret = clear_record_extent_bits(&BTRFS_I(inode)->io_tree, 0, (u64)-1,
-+			EXTENT_QGROUP_RESERVED, GFP_NOFS, &changeset);
-+
-+	WARN_ON(ret < 0);
-+	if (WARN_ON(changeset.bytes_changed)) {
-+		ULIST_ITER_INIT(&iter);
-+		while ((unode = ulist_next(changeset.range_changed, &iter))) {
-+			btrfs_warn(BTRFS_I(inode)->root->fs_info,
-+				"leaking qgroup reserved space, ino: %lu, start: %llu, end: %llu",
-+				inode->i_ino, unode->val, unode->aux);
-+		}
-+		qgroup_free(BTRFS_I(inode)->root, changeset.bytes_changed);
-+	}
-+	ulist_free(changeset.range_changed);
++	if (set && (state->state & bits) == bits)
++		return;
++	changeset->bytes_changed += state->end - state->start + 1;
++	ret = ulist_add(changeset->range_changed, state->start, state->end,
++			GFP_ATOMIC);
++	/* ENOMEM */
++	BUG_ON(ret < 0);
 +}
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 686b60f..ecb2c14 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -105,4 +105,5 @@ int btrfs_qgroup_free_data(struct inode *inode, u64 start, u64 len);
- int btrfs_qgroup_reserve_meta(struct btrfs_root *root, int num_bytes);
- void btrfs_qgroup_free_meta_all(struct btrfs_root *root);
- void btrfs_qgroup_free_meta(struct btrfs_root *root, int num_bytes);
-+void btrfs_qgroup_check_reserved_leak(struct inode *inode);
- #endif /* __BTRFS_QGROUP__ */
++
+ static noinline void flush_write_bio(void *data);
+ static inline struct btrfs_fs_info *
+ tree_fs_info(struct extent_io_tree *tree)
+@@ -410,7 +427,8 @@ static void clear_state_cb(struct extent_io_tree *tree,
+ }
+ 
+ static void set_state_bits(struct extent_io_tree *tree,
+-			   struct extent_state *state, unsigned *bits);
++			   struct extent_state *state, unsigned *bits,
++			   struct extent_changeset *changeset);
+ 
+ /*
+  * insert an extent_state struct into the tree.  'bits' are set on the
+@@ -426,7 +444,7 @@ static int insert_state(struct extent_io_tree *tree,
+ 			struct extent_state *state, u64 start, u64 end,
+ 			struct rb_node ***p,
+ 			struct rb_node **parent,
+-			unsigned *bits)
++			unsigned *bits, struct extent_changeset *changeset)
+ {
+ 	struct rb_node *node;
+ 
+@@ -436,7 +454,7 @@ static int insert_state(struct extent_io_tree *tree,
+ 	state->start = start;
+ 	state->end = end;
+ 
+-	set_state_bits(tree, state, bits);
++	set_state_bits(tree, state, bits, changeset);
+ 
+ 	node = tree_insert(&tree->state, NULL, end, &state->rb_node, p, parent);
+ 	if (node) {
+@@ -789,7 +807,7 @@ out:
+ 
+ static void set_state_bits(struct extent_io_tree *tree,
+ 			   struct extent_state *state,
+-			   unsigned *bits)
++			   unsigned *bits, struct extent_changeset *changeset)
+ {
+ 	unsigned bits_to_set = *bits & ~EXTENT_CTLBITS;
+ 
+@@ -798,6 +816,7 @@ static void set_state_bits(struct extent_io_tree *tree,
+ 		u64 range = state->end - state->start + 1;
+ 		tree->dirty_bytes += range;
+ 	}
++	add_extent_changeset(state, bits_to_set, changeset, 1);
+ 	state->state |= bits_to_set;
+ }
+ 
+@@ -835,7 +854,7 @@ static int __must_check
+ __set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		 unsigned bits, unsigned exclusive_bits,
+ 		 u64 *failed_start, struct extent_state **cached_state,
+-		 gfp_t mask)
++		 gfp_t mask, struct extent_changeset *changeset)
+ {
+ 	struct extent_state *state;
+ 	struct extent_state *prealloc = NULL;
+@@ -873,7 +892,7 @@ again:
+ 		prealloc = alloc_extent_state_atomic(prealloc);
+ 		BUG_ON(!prealloc);
+ 		err = insert_state(tree, prealloc, start, end,
+-				   &p, &parent, &bits);
++				   &p, &parent, &bits, changeset);
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
+ 
+@@ -899,7 +918,7 @@ hit_next:
+ 			goto out;
+ 		}
+ 
+-		set_state_bits(tree, state, &bits);
++		set_state_bits(tree, state, &bits, changeset);
+ 		cache_state(state, cached_state);
+ 		merge_state(tree, state);
+ 		if (last_end == (u64)-1)
+@@ -945,7 +964,7 @@ hit_next:
+ 		if (err)
+ 			goto out;
+ 		if (state->end <= end) {
+-			set_state_bits(tree, state, &bits);
++			set_state_bits(tree, state, &bits, changeset);
+ 			cache_state(state, cached_state);
+ 			merge_state(tree, state);
+ 			if (last_end == (u64)-1)
+@@ -980,7 +999,7 @@ hit_next:
+ 		 * the later extent.
+ 		 */
+ 		err = insert_state(tree, prealloc, start, this_end,
+-				   NULL, NULL, &bits);
++				   NULL, NULL, &bits, changeset);
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
+ 
+@@ -1008,7 +1027,7 @@ hit_next:
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
+ 
+-		set_state_bits(tree, prealloc, &bits);
++		set_state_bits(tree, prealloc, &bits, changeset);
+ 		cache_state(prealloc, cached_state);
+ 		merge_state(tree, prealloc);
+ 		prealloc = NULL;
+@@ -1038,7 +1057,7 @@ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		   struct extent_state **cached_state, gfp_t mask)
+ {
+ 	return __set_extent_bit(tree, start, end, bits, 0, failed_start,
+-				cached_state, mask);
++				cached_state, mask, NULL);
+ }
+ 
+ 
+@@ -1111,7 +1130,7 @@ again:
+ 			goto out;
+ 		}
+ 		err = insert_state(tree, prealloc, start, end,
+-				   &p, &parent, &bits);
++				   &p, &parent, &bits, NULL);
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
+ 		cache_state(prealloc, cached_state);
+@@ -1130,7 +1149,7 @@ hit_next:
+ 	 * Just lock what we found and keep going
+ 	 */
+ 	if (state->start == start && state->end <= end) {
+-		set_state_bits(tree, state, &bits);
++		set_state_bits(tree, state, &bits, NULL);
+ 		cache_state(state, cached_state);
+ 		state = clear_state_bit(tree, state, &clear_bits, 0);
+ 		if (last_end == (u64)-1)
+@@ -1171,7 +1190,7 @@ hit_next:
+ 		if (err)
+ 			goto out;
+ 		if (state->end <= end) {
+-			set_state_bits(tree, state, &bits);
++			set_state_bits(tree, state, &bits, NULL);
+ 			cache_state(state, cached_state);
+ 			state = clear_state_bit(tree, state, &clear_bits, 0);
+ 			if (last_end == (u64)-1)
+@@ -1208,7 +1227,7 @@ hit_next:
+ 		 * the later extent.
+ 		 */
+ 		err = insert_state(tree, prealloc, start, this_end,
+-				   NULL, NULL, &bits);
++				   NULL, NULL, &bits, NULL);
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
+ 		cache_state(prealloc, cached_state);
+@@ -1233,7 +1252,7 @@ hit_next:
+ 		if (err)
+ 			extent_io_tree_panic(tree, err);
+ 
+-		set_state_bits(tree, prealloc, &bits);
++		set_state_bits(tree, prealloc, &bits, NULL);
+ 		cache_state(prealloc, cached_state);
+ 		clear_state_bit(tree, prealloc, &clear_bits, 0);
+ 		prealloc = NULL;
+@@ -1274,6 +1293,22 @@ int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 			      NULL, mask);
+ }
+ 
++int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
++			   unsigned bits, gfp_t mask,
++			   struct extent_changeset *changeset)
++{
++	/*
++	 * We don't support EXTENT_LOCKED yet, as current changeset will
++	 * record any bits changed, so for EXTENT_LOCKED case, it will
++	 * either fail with -EEXIST or changeset will record the whole
++	 * range.
++	 */
++	BUG_ON(bits & EXTENT_LOCKED);
++
++	return __set_extent_bit(tree, start, end, bits, 0, NULL, NULL, mask,
++				changeset);
++}
++
+ int clear_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 		      unsigned bits, gfp_t mask)
+ {
+@@ -1343,7 +1378,7 @@ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 	while (1) {
+ 		err = __set_extent_bit(tree, start, end, EXTENT_LOCKED | bits,
+ 				       EXTENT_LOCKED, &failed_start,
+-				       cached_state, GFP_NOFS);
++				       cached_state, GFP_NOFS, NULL);
+ 		if (err == -EEXIST) {
+ 			wait_extent_bit(tree, failed_start, end, EXTENT_LOCKED);
+ 			start = failed_start;
+@@ -1365,7 +1400,7 @@ int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
+ 	u64 failed_start;
+ 
+ 	err = __set_extent_bit(tree, start, end, EXTENT_LOCKED, EXTENT_LOCKED,
+-			       &failed_start, NULL, GFP_NOFS);
++			       &failed_start, NULL, GFP_NOFS, NULL);
+ 	if (err == -EEXIST) {
+ 		if (failed_start > start)
+ 			clear_extent_bit(tree, start, failed_start - 1,
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 3107a6e..4a7c9d9 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -227,6 +227,9 @@ int clear_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		     struct extent_state **cached, gfp_t mask);
+ int set_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
+ 		    unsigned bits, gfp_t mask);
++int set_record_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
++			   unsigned bits, gfp_t mask,
++			   struct extent_changeset *changeset);
+ int set_extent_bit(struct extent_io_tree *tree, u64 start, u64 end,
+ 		   unsigned bits, u64 *failed_start,
+ 		   struct extent_state **cached_state, gfp_t mask);
 -- 
 2.6.1
 

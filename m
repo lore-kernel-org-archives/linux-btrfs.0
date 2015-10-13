@@ -1,27 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50225 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:39670 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933103AbbJHQhV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 8 Oct 2015 12:37:21 -0400
-Date: Thu, 8 Oct 2015 18:36:13 +0200
+	id S932274AbbJMP7S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 11:59:18 -0400
+Date: Tue, 13 Oct 2015 17:58:07 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Vincent =?iso-8859-1?Q?Stehl=E9?= <vincent.stehle@freescale.com>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: restore: fix off-by-one len check
-Message-ID: <20151008163613.GA27761@twin.jikos.cz>
+Subject: Re: [PATCH 00/11] btrfs-progs: Use btrfs_open_dir to avoid show
+ error of ioctl or tree search
+Message-ID: <20151013155807.GK27761@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1444294029-23310-1-git-send-email-vincent.stehle@freescale.com>
+References: <cover.1444655800.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <1444294029-23310-1-git-send-email-vincent.stehle@freescale.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <cover.1444655800.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 08, 2015 at 10:47:09AM +0200, Vincent Stehlé wrote:
-> Fix a check of len versus PATH_MAX in function copy_symlink(), to
-> account for the terminating null byte.
+On Mon, Oct 12, 2015 at 09:22:53PM +0800, Zhao Lei wrote:
+> Use btrfs_open_dir() instead of open_file_or_dir(), to show error before
+> real action(in ioctl or tree search), to make the error message exact
+> and unified.
 > 
-> Resolves-Coverity-CID: 1296749
-> Signed-off-by: Vincent Stehlé <vincent.stehle@freescale.com>
+> Zhao Lei (11):
+>   btrfs-progs: subvolume: use btrfs_open_dir for btrfs subvolume command
+>   btrfs-progs: filesystem: use btrfs_open_dir for btrfs filesystem
+>     command
+>   btrfs-progs: balance: use btrfs_open_dir for btrfs balance command
+>   btrfs-progs: inspect: Bypass unnecessary clean function in open_error
+>   btrfs-progs: inspect: set return value of error case
+>   btrfs-progs: inspect: use btrfs_open_dir for btrfs inspect command
+>   btrfs-progs: qgroup: use btrfs_open_dir for btrfs qgroup command
+>   btrfs-progs: quota: use btrfs_open_dir for btrfs quota command
+>   btrfs-progs: use btrfs_open_dir in open_path_or_dev_mnt
+>   btrfs-progs: replace: use btrfs_open_dir for btrfs replace command
+>   btrfs-progs: fragments: use btrfs_open_dir for btrfs-fragments command
 
-Applied, thanks.
+All merged, thanks! I appreciate you took the time to test all the
+changes and the patch separation made review easy.

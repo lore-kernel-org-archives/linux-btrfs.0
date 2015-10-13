@@ -1,42 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38513 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:38517 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753042AbbJMPn1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 11:43:27 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id A3BF7ABCC
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 15:43:24 +0000 (UTC)
+	id S1752702AbbJMPna (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 13 Oct 2015 11:43:30 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 27750ABCC
+	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 15:43:28 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 0/7] Btrfs-progs, balance filters: stripes, limits
-Date: Tue, 13 Oct 2015 17:42:16 +0200
-Message-Id: <cover.1444750808.git.dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: [PATCH 1/7] btrfs-progs: cleanup and comment parse_range
+Date: Tue, 13 Oct 2015 17:42:20 +0200
+Message-Id: <4d4646c4a4938b58e4c5bd0ab57361b0261d202b.1444750808.git.dsterba@suse.com>
+In-Reply-To: <cover.1444750808.git.dsterba@suse.com>
+References: <cover.1444750808.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here's the userspace part that enables the use of stripes and enhanced limit
-filters.
+Simplify a check and unindent some code.
 
-David Sterba (6):
-  btrfs-progs: cleanup and comment parse_range
-  btrfs-progs: extend parse_range API to accept a relaxed range
-  btrfs-progs: add helpers for parsing 32bit ranges
-  btrfs-progs: add helpers to print ranges
-  btrfs-progs: extend balance args to take min/max limit filter
-  btrfs-progs: balance: enhance the limit fiter with range
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ cmds-balance.c | 63 ++++++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 37 insertions(+), 26 deletions(-)
 
-Gabríel Arthúr Pétursson (1):
-  btrfs-progs: balance: add stripes filter
-
- Documentation/btrfs-balance.asciidoc |   8 ++
- cmds-balance.c                       | 172 +++++++++++++++++++++++++++++------
- ioctl.h                              |  17 +++-
- volumes.h                            |   2 +
- 4 files changed, 168 insertions(+), 31 deletions(-)
-
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 9af218bbfa51..798b533aa7d6 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -88,43 +88,54 @@ static int parse_u64(const char *str, u64 *result)
+ 	return 0;
+ }
+ 
++/*
++ * Parse range that's missing some part that can be implicit:
++ * a..b	- exact range, a can be equal to b
++ * a..	- implicitly unbounded maximum (end == (u64)-1)
++ * ..b	- implicitly starting at 0
++ * a	- invalid; unclear semantics, use parse_u64 instead
++ *
++ * Returned values are u64, value validation and interpretation should be done
++ * by the caller.
++ */
+ static int parse_range(const char *range, u64 *start, u64 *end)
+ {
+ 	char *dots;
++	const char *rest;
++	int skipped = 0;
+ 
+ 	dots = strstr(range, "..");
+-	if (dots) {
+-		const char *rest = dots + 2;
+-		int skipped = 0;
+-
+-		*dots = 0;
++	if (!dots)
++		return 1;
+ 
+-		if (!*rest) {
+-			*end = (u64)-1;
+-			skipped++;
+-		} else {
+-			if (parse_u64(rest, end))
+-				return 1;
+-		}
+-		if (dots == range) {
+-			*start = 0;
+-			skipped++;
+-		} else {
+-			if (parse_u64(range, start))
+-				return 1;
+-		}
++	rest = dots + 2;
++	*dots = 0;
+ 
+-		if (*start >= *end) {
+-			fprintf(stderr, "Range %llu..%llu doesn't make "
+-				"sense\n", (unsigned long long)*start,
+-				(unsigned long long)*end);
++	if (!*rest) {
++		*end = (u64)-1;
++		skipped++;
++	} else {
++		if (parse_u64(rest, end))
+ 			return 1;
+-		}
++	}
++	if (dots == range) {
++		*start = 0;
++		skipped++;
++	} else {
++		if (parse_u64(range, start))
++			return 1;
++	}
+ 
+-		if (skipped <= 1)
+-			return 0;
++	if (*start >= *end) {
++		fprintf(stderr, "Range %llu..%llu doesn't make "
++			"sense\n", (unsigned long long)*start,
++			(unsigned long long)*end);
++		return 1;
+ 	}
+ 
++	if (skipped <= 1)
++		return 0;
++
+ 	return 1;
+ }
+ 
 -- 
 2.6.1
 

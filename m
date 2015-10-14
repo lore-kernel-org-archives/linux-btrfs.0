@@ -1,41 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:11656 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751608AbbJNClS (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:13334 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752429AbbJNH2W (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 22:41:18 -0400
-Date: Tue, 13 Oct 2015 22:41:10 -0400
-From: Chris Mason <clm@fb.com>
-To: Mark Fasheh <mfasheh@suse.de>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] btrfs: fix use after free iterating extrefs
-Message-ID: <20151014024110.GF4890@ret.masoncoding.com>
-References: <20151013180648.GC4890@ret.masoncoding.com>
- <20151013191755.GG1044@wotan.suse.de>
+	Wed, 14 Oct 2015 03:28:22 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
+Subject: [PATCH 2/2] btrfs: Avoid truncate tailing page if fallocate range doesn't exceed inode size
+Date: Wed, 14 Oct 2015 15:26:13 +0800
+Message-ID: <1444807573-29853-3-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20151013191755.GG1044@wotan.suse.de>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 13, 2015 at 12:17:55PM -0700, Mark Fasheh wrote:
-> On Tue, Oct 13, 2015 at 02:06:48PM -0400, Chris Mason wrote:
-> > The code for btrfs inode-resolve has never worked properly for
-> > files with enough hard links to trigger extrefs.  It was trying to
-> > get the leaf out of a path after freeing the path:
-> > 
-> > 	btrfs_release_path(path);
-> > 	leaf = path->nodes[0];
-> > 	item_size = btrfs_item_size_nr(leaf, slot);
-> > 
-> > The fix here is to use the extent buffer we cloned just a little higher
-> > up to avoid deadlocks caused by using the leaf in the path.
-> > 
-> > Signed-off-by: Chris Mason <clm@fb.com>
-> > cc: stable@vger.kernel.org # v3.7+
-> > cc: Mark Fasheh <mfasheh@suse.de>
-> Reviewed-by: Mark Fasheh <mfasheh@suse.de>
+Current code will always truncate tailing page if its alloc_start is
+smaller than inode size.
 
-Thanks Mark and Filipe, I've tested this and queued it up.
+For example, the file extent layout is like:
+0	4K	8K	16K	32K
+|<-----Extent A---------------->|
+|<--Inode size: 18K---------->|
 
--chris
+But if calling fallocate even for range [0,4K), it will cause btrfs to
+re-truncate the range [16,32K), causing COW and a new extent.
+
+0	4K	8K	16K	32K
+|///////|	<- Fallocate call range
+|<-----Extent A-------->|<--B-->|
+
+The cause is quite easy, just a careless btrfs_truncate_inode() in a
+else branch without extra judgment.
+Fix it by add judgment on whether the fallocate range is beyond isize.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ fs/btrfs/file.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b823fac..8c6f247 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2584,7 +2584,7 @@ static long btrfs_fallocate(struct file *file, int mode,
+ 					alloc_start);
+ 		if (ret)
+ 			goto out;
+-	} else {
++	} else if (offset + len > inode->i_size) {
+ 		/*
+ 		 * If we are fallocating from the end of the file onward we
+ 		 * need to zero out the end of the page if i_size lands in the
+-- 
+2.6.1
+

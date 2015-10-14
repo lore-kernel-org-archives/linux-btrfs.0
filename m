@@ -1,78 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f51.google.com ([209.85.220.51]:36558 "EHLO
-	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753926AbbJHLtm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 8 Oct 2015 07:49:42 -0400
-Received: by pablk4 with SMTP id lk4so53169924pab.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 08 Oct 2015 04:49:41 -0700 (PDT)
-Received: from arch-nb.localdomain ([211.106.186.1])
-        by smtp.gmail.com with ESMTPSA id qp5sm45081721pbc.43.2015.10.08.04.49.39
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Thu, 08 Oct 2015 04:49:40 -0700 (PDT)
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:36672 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750817AbbJNFFe (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Oct 2015 01:05:34 -0400
+Received: by pacex6 with SMTP id ex6so42732254pac.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 22:05:33 -0700 (PDT)
 From: Byongho Lee <bhlee.kernel@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: cleanup iterating over prop_handlers array
-Date: Thu,  8 Oct 2015 20:49:34 +0900
-Message-Id: <1444304974-30423-1-git-send-email-bhlee.kernel@gmail.com>
+Cc: dsterba@suse.cz
+Subject: [PATCH v2] btrfs: compress: put variables defined per compress type in struct to make cache friendly
+Date: Wed, 14 Oct 2015 14:05:24 +0900
+Message-Id: <1444799124-12093-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This patch eliminates the last item of prop_handlers array which is used
-to check end of array and instead uses ARRAY_SIZE macro.
-Though this is a very tiny optimization, using ARRAY_SIZE macro is a
-good practice to iterate array.
+Below variables are defined per compress type.
+ - struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES]
+ - spinlock_t comp_workspace_lock[BTRFS_COMPRESS_TYPES]
+ - int comp_num_workspace[BTRFS_COMPRESS_TYPES]
+ - atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES]
+ - wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES]
+
+BTW, while accessing one compress type of these variables, the next or
+before address is other compress types of it.
+So this patch puts these variables in a struct to make cache friendly.
 
 Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
 ---
- fs/btrfs/props.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ V2: Apply David's review comment.
+     Rename struct comp to btrfs_comp_ws and trim it's members to 'ws'
+     instead of 'workspace'.
 
-diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
-index dca137b04095..f9e60231f685 100644
---- a/fs/btrfs/props.c
-+++ b/fs/btrfs/props.c
-@@ -49,18 +49,16 @@ static struct prop_handler prop_handlers[] = {
- 		.extract = prop_compression_extract,
- 		.inheritable = 1
- 	},
--	{
--		.xattr_name = NULL
--	}
- };
+ fs/btrfs/compression.c | 94 ++++++++++++++++++++++++++------------------------
+ 1 file changed, 48 insertions(+), 46 deletions(-)
+
+diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
+index ce62324c78e7..8e94ae5fe732 100644
+--- a/fs/btrfs/compression.c
++++ b/fs/btrfs/compression.c
+@@ -744,11 +744,13 @@ out:
+ 	return ret;
+ }
  
- void __init btrfs_props_init(void)
+-static struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES];
+-static spinlock_t comp_workspace_lock[BTRFS_COMPRESS_TYPES];
+-static int comp_num_workspace[BTRFS_COMPRESS_TYPES];
+-static atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES];
+-static wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES];
++static struct {
++	struct list_head idle_ws;
++	spinlock_t ws_lock;
++	int num_ws;
++	atomic_t alloc_ws;
++	wait_queue_head_t ws_wait;
++} btrfs_comp_ws[BTRFS_COMPRESS_TYPES];
+ 
+ static const struct btrfs_compress_op * const btrfs_compress_op[] = {
+ 	&btrfs_zlib_compress,
+@@ -760,10 +762,10 @@ void __init btrfs_init_compress(void)
+ 	int i;
+ 
+ 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
+-		INIT_LIST_HEAD(&comp_idle_workspace[i]);
+-		spin_lock_init(&comp_workspace_lock[i]);
+-		atomic_set(&comp_alloc_workspace[i], 0);
+-		init_waitqueue_head(&comp_workspace_wait[i]);
++		INIT_LIST_HEAD(&btrfs_comp_ws[i].idle_ws);
++		spin_lock_init(&btrfs_comp_ws[i].ws_lock);
++		atomic_set(&btrfs_comp_ws[i].alloc_ws, 0);
++		init_waitqueue_head(&btrfs_comp_ws[i].ws_wait);
+ 	}
+ }
+ 
+@@ -777,38 +779,38 @@ static struct list_head *find_workspace(int type)
+ 	int cpus = num_online_cpus();
+ 	int idx = type - 1;
+ 
+-	struct list_head *idle_workspace	= &comp_idle_workspace[idx];
+-	spinlock_t *workspace_lock		= &comp_workspace_lock[idx];
+-	atomic_t *alloc_workspace		= &comp_alloc_workspace[idx];
+-	wait_queue_head_t *workspace_wait	= &comp_workspace_wait[idx];
+-	int *num_workspace			= &comp_num_workspace[idx];
++	struct list_head *idle_ws	= &btrfs_comp_ws[idx].idle_ws;
++	spinlock_t *ws_lock		= &btrfs_comp_ws[idx].ws_lock;
++	atomic_t *alloc_ws		= &btrfs_comp_ws[idx].alloc_ws;
++	wait_queue_head_t *ws_wait	= &btrfs_comp_ws[idx].ws_wait;
++	int *num_ws			= &btrfs_comp_ws[idx].num_ws;
+ again:
+-	spin_lock(workspace_lock);
+-	if (!list_empty(idle_workspace)) {
+-		workspace = idle_workspace->next;
++	spin_lock(ws_lock);
++	if (!list_empty(idle_ws)) {
++		workspace = idle_ws->next;
+ 		list_del(workspace);
+-		(*num_workspace)--;
+-		spin_unlock(workspace_lock);
++		(*num_ws)--;
++		spin_unlock(ws_lock);
+ 		return workspace;
+ 
+ 	}
+-	if (atomic_read(alloc_workspace) > cpus) {
++	if (atomic_read(alloc_ws) > cpus) {
+ 		DEFINE_WAIT(wait);
+ 
+-		spin_unlock(workspace_lock);
+-		prepare_to_wait(workspace_wait, &wait, TASK_UNINTERRUPTIBLE);
+-		if (atomic_read(alloc_workspace) > cpus && !*num_workspace)
++		spin_unlock(ws_lock);
++		prepare_to_wait(ws_wait, &wait, TASK_UNINTERRUPTIBLE);
++		if (atomic_read(alloc_ws) > cpus && !*num_ws)
+ 			schedule();
+-		finish_wait(workspace_wait, &wait);
++		finish_wait(ws_wait, &wait);
+ 		goto again;
+ 	}
+-	atomic_inc(alloc_workspace);
+-	spin_unlock(workspace_lock);
++	atomic_inc(alloc_ws);
++	spin_unlock(ws_lock);
+ 
+ 	workspace = btrfs_compress_op[idx]->alloc_workspace();
+ 	if (IS_ERR(workspace)) {
+-		atomic_dec(alloc_workspace);
+-		wake_up(workspace_wait);
++		atomic_dec(alloc_ws);
++		wake_up(ws_wait);
+ 	}
+ 	return workspace;
+ }
+@@ -820,27 +822,27 @@ again:
+ static void free_workspace(int type, struct list_head *workspace)
  {
--	struct prop_handler *p;
-+	int i;
+ 	int idx = type - 1;
+-	struct list_head *idle_workspace	= &comp_idle_workspace[idx];
+-	spinlock_t *workspace_lock		= &comp_workspace_lock[idx];
+-	atomic_t *alloc_workspace		= &comp_alloc_workspace[idx];
+-	wait_queue_head_t *workspace_wait	= &comp_workspace_wait[idx];
+-	int *num_workspace			= &comp_num_workspace[idx];
+-
+-	spin_lock(workspace_lock);
+-	if (*num_workspace < num_online_cpus()) {
+-		list_add(workspace, idle_workspace);
+-		(*num_workspace)++;
+-		spin_unlock(workspace_lock);
++	struct list_head *idle_ws	= &btrfs_comp_ws[idx].idle_ws;
++	spinlock_t *ws_lock		= &btrfs_comp_ws[idx].ws_lock;
++	atomic_t *alloc_ws		= &btrfs_comp_ws[idx].alloc_ws;
++	wait_queue_head_t *ws_wait	= &btrfs_comp_ws[idx].ws_wait;
++	int *num_ws			= &btrfs_comp_ws[idx].num_ws;
++
++	spin_lock(ws_lock);
++	if (*num_ws < num_online_cpus()) {
++		list_add(workspace, idle_ws);
++		(*num_ws)++;
++		spin_unlock(ws_lock);
+ 		goto wake;
+ 	}
+-	spin_unlock(workspace_lock);
++	spin_unlock(ws_lock);
  
- 	hash_init(prop_handlers_ht);
+ 	btrfs_compress_op[idx]->free_workspace(workspace);
+-	atomic_dec(alloc_workspace);
++	atomic_dec(alloc_ws);
+ wake:
+ 	smp_mb();
+-	if (waitqueue_active(workspace_wait))
+-		wake_up(workspace_wait);
++	if (waitqueue_active(ws_wait))
++		wake_up(ws_wait);
+ }
  
--	for (p = &prop_handlers[0]; p->xattr_name; p++) {
-+	for (i = 0; i < ARRAY_SIZE(prop_handlers); i++) {
-+		struct prop_handler *p = &prop_handlers[i];
- 		u64 h = btrfs_name_hash(p->xattr_name, strlen(p->xattr_name));
+ /*
+@@ -852,11 +854,11 @@ static void free_workspaces(void)
+ 	int i;
  
- 		hash_add(prop_handlers_ht, &p->node, h);
-@@ -301,15 +299,16 @@ static int inherit_props(struct btrfs_trans_handle *trans,
- 			 struct inode *inode,
- 			 struct inode *parent)
- {
--	const struct prop_handler *h;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	int ret;
-+	int i;
- 
- 	if (!test_bit(BTRFS_INODE_HAS_PROPS,
- 		      &BTRFS_I(parent)->runtime_flags))
- 		return 0;
- 
--	for (h = &prop_handlers[0]; h->xattr_name; h++) {
-+	for (i = 0; i < ARRAY_SIZE(prop_handlers); i++) {
-+		const struct prop_handler *h = &prop_handlers[i];
- 		const char *value;
- 		u64 num_bytes;
- 
+ 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
+-		while (!list_empty(&comp_idle_workspace[i])) {
+-			workspace = comp_idle_workspace[i].next;
++		while (!list_empty(&btrfs_comp_ws[i].idle_ws)) {
++			workspace = btrfs_comp_ws[i].idle_ws.next;
+ 			list_del(workspace);
+ 			btrfs_compress_op[i]->free_workspace(workspace);
+-			atomic_dec(&comp_alloc_workspace[i]);
++			atomic_dec(&btrfs_comp_ws[i].alloc_ws);
+ 		}
+ 	}
+ }
 -- 
-2.6.0
+2.6.1
 

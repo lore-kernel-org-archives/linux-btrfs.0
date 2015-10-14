@@ -1,97 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49938 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750807AbbJNFIa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 01:08:30 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZmEId-00070I-V7
-	for linux-btrfs@vger.kernel.org; Wed, 14 Oct 2015 07:08:27 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 07:08:27 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 07:08:27 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: System completely unresponsive after `btrfs balance start
- -dconvert=raid0 /` and `btrfs fi show /`
-Date: Wed, 14 Oct 2015 05:08:17 +0000 (UTC)
-Message-ID: <pan$39697$bacd3e0c$3e39ab12$ed8c21a7@cox.net>
-References: <C1BFF62A-9C2E-4A5D-86F9-7F01DDDF8BF6@paolino.me>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:37482 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1750769AbbJNFJS (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Oct 2015 01:09:18 -0400
+Date: Wed, 14 Oct 2015 01:09:16 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Rich Freeman <r-btrfs@thefreemanclan.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: State of Dedup / Defrag
+Message-ID: <20151014050916.GA4400@hungrycats.org>
+References: <CAGfcS_kADCxYy2yvTsHLdTTk=OEpx8FyspRfhvjLhbCQwdspKw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="CE+1k2dSO48ffgeK"
+In-Reply-To: <CAGfcS_kADCxYy2yvTsHLdTTk=OEpx8FyspRfhvjLhbCQwdspKw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Carmine Paolino posted on Tue, 13 Oct 2015 23:21:49 +0200 as excerpted:
 
-> I have an home server with 3 hard drives that I added to the same btrfs
-> filesystem. Several hours ago I run `btrfs balance start -dconvert=raid0
-> /` and as soon as I run `btrfs fi show /` I lost my ssh connection to
-> the machine. The machine is still on, but it doesn’t even respond to
-> ping[. ...]
-> 
-> (I have a 250gb internal hard drive, a 120gb usb 2.0 one and a 2TB usb
-> 2.0 one so the transfer speeds are pretty low)
+--CE+1k2dSO48ffgeK
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-I won't attempt to answer the primary question[1] directly, but can point 
-out that in many cases, USB-connected devices simply don't have a stable 
-enough connection to work reliably in a multi-device btrfs.  There's 
-several possibilities for failure, including flaky connections (sometimes 
-assisted by cats or kids), unstable USB host port drivers, and unstable 
-USB/ATA translators.  A number of folks have reported problems with such 
-filesystems with devices connected over USB, that simply disappear if 
-they direct-connect the exact same devices to a proper SATA port.  The 
-problem seems to be /dramatically/ worse with USB connected devices, than 
-it is with, for instance, PCIE-based SATA expansion cards.
+On Tue, Oct 13, 2015 at 02:59:59PM -0400, Rich Freeman wrote:
+> What is the current state of Dedup and Defrag in btrfs?  I seem to
+> recall there having been problems a few months ago and I've stopped
+> using it, but I haven't seen much news since.
 
-Single-device btrfs with USB-attached devices seem to work rather better, 
-because at least in that case, if the connection is flaky, the entire 
-filesystem appears and disappears at once, and btrfs' COW, atomic-commit 
-and data-integrity features, kick in to help deal with the connection's 
-instability.
+It has been 1 day since a kernel bug leading to data loss was fixed in the
+ioctl calls for dedup (commit 6e685a1e3e9054d43fac58f2bc0cd070df915079
+=66rom fdmanana yesterday); however, to hit that particular bug you'd
+need to be doing something unusual with the ioctls--in particular, a
+thing that makes no sense for dedup, and that dedup userspace programs
+intentionally avoid doing.  There was another bug for defrag 68 days ago.
 
-Arguably, a two-device raid1 (both data/metadata, with metadata including 
-system) should work reasonably well too, as long as scrubs are done after 
-reconnection when there's trouble with one of the pair, because in that 
-case, all data appears on both devices, but single and raid0 modes are 
-likely to have severe issues in that sort of environment, because even 
-temporary disconnection of a single device means loss of access to some 
-data/metadata on the filesystem.  Raid10, 3+-device-raid1, and raid5/6, 
-are more complex situations.  They should survive loss of at least one 
-device, but keeping the filesystem healthy in the presence of unstable 
-connections is... complex enough I'd hate to be the one having to deal 
-with it, which means I can't recommend it to others, either.
+I wouldn't try to use dedup on a kernel older than v4.1 because of these
+fixes in 4.1 and later:
 
-So I'd recommend either connecting all devices internally if possible, or 
-setting up the USB-connected devices with separate filesystems, if 
-internal direct-connection isn't possible.
+	- allow dedup of the ends of files when they are not aligned
+	to 4K.	Before this was fixed, up to 1GB of space could be wasted
+	per file.
 
----
-[1] Sysadmin's rule of backups.  If the data isn't backed up, by 
-definition it is of less value than the resource and hassle cost of 
-backup.  No exceptions -- post-loss claims to the contrary simply put the 
-lie to the claims, as actions spoke louder than words and they defined 
-the cost of the backup as more expensive than the data that would have 
-been backed up.  Worst-case is then loss of data that was by definition 
-of less value than the cost of backup, and the more valuable resource and 
-hassle cost of the backup was avoided, so the comparatively lower value 
-data loss is no big deal.
+	- no mtime update on extent-same.  With the update, rsync
+	and backup programs think all the deduped files are modified.
+	The next rsync after dedup would immediately un-dedup (redup?) all
+	the deduped files.
 
-So in a case like this, I'd simply power down and take my chances of 
-filesystem loss, strictly limiting the time and resources I'd devote to 
-any further attempt at recovery, because the data is by definition either 
-backed up, or of such low value that a backup was considered too 
-expensive to do, meaning there's a very real possibility of spending more 
-time in a recovery attempt that's iffy at best, than the data on the 
-filesystem is actually worth, either because there are backups, or 
-because it's throw-away data in the first place.
+	- fixes for deadlocks.	If dedup is running at the same time as
+	other readers of files (e.g. deduping /usr or a tree on a busy
+	file server), a deadlock was inevitable.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+IMHO these fixes really made dedup usable for the first time.
 
+There are some other fixes that appeared after v4.1, but they should
+not impact cases where mostly static data is deduped without concurrent
+modifications.  Do dedup a photo or video file collection.  Don't dedup
+a live database server on a filesystem with compression enabled...yet.
+
+Using dedup and defrag at the same time is still a bad idea.  The features
+work against each other:  autodefrag skips anything that has been deduped,
+while manual defrag un-dedups everything it touches.  The effect of
+defrag on dedup depends on the choice of dedup userspace strategy,
+so defrag can either be helpful or harmful.
+
+Autodefrag in my experience pushes write latencies up to insane levels.
+Data ends up making multiple round-trips to the disk _with_ extra
+constraints on the allocator on the second and later passes, and while
+this is happening any other writes on the filesystem block an absurdly
+long time.  It can easily cost more I/O time than it saves.  That said,
+there are some kernel patches floating around to fix the allocator,
+so at least we can hope autodefrag will be less bad someday.
+
+
+--CE+1k2dSO48ffgeK
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlYd43wACgkQgfmLGlazG5w6pQCg4r4HxFk3xysh7TrUhF5AolYV
+aMQAoI2wL9RzQMjBMPCahUv7Ix59+Vcv
+=y4HX
+-----END PGP SIGNATURE-----
+
+--CE+1k2dSO48ffgeK--

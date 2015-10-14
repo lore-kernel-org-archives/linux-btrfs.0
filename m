@@ -1,58 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13334 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:48668 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752429AbbJNH2W (ORCPT
+	with ESMTP id S1752448AbbJNH2U (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 03:28:22 -0400
+	Wed, 14 Oct 2015 03:28:20 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
-Subject: [PATCH 2/2] btrfs: Avoid truncate tailing page if fallocate range doesn't exceed inode size
-Date: Wed, 14 Oct 2015 15:26:13 +0800
-Message-ID: <1444807573-29853-3-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PULL REQUEST][PATCH 0/2] Small fixes for 4.3 merge windows
+Date: Wed, 14 Oct 2015 15:26:11 +0800
+Message-ID: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Current code will always truncate tailing page if its alloc_start is
-smaller than inode size.
+Hi Chris,
 
-For example, the file extent layout is like:
-0	4K	8K	16K	32K
-|<-----Extent A---------------->|
-|<--Inode size: 18K---------->|
+This pull is quite a small one, with 2 small and safe patches.
 
-But if calling fallocate even for range [0,4K), it will cause btrfs to
-re-truncate the range [16,32K), causing COW and a new extent.
+The first one is a fix that get missing in 4.2 merge windows.
+Just remove an empty header I created in qgroup rework.
 
-0	4K	8K	16K	32K
-|///////|	<- Fallocate call range
-|<-----Extent A-------->|<--B-->|
+The other one is found in qgroup reserve rework, but that's also very
+small and safe, with test case submitted:
+https://patchwork.kernel.org/patch/7292921/
 
-The cause is quite easy, just a careless btrfs_truncate_inode() in a
-else branch without extra judgment.
-Fix it by add judgment on whether the fallocate range is beyond isize.
+I was planning to include two qgroup rescan fix patches, but doesn't get
+further comment from David, so they may be delayed to 4.4, with qgroup
+reserve rework.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/file.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+Thanks,
+Qu
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..8c6f247 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2584,7 +2584,7 @@ static long btrfs_fallocate(struct file *file, int mode,
- 					alloc_start);
- 		if (ret)
- 			goto out;
--	} else {
-+	} else if (offset + len > inode->i_size) {
- 		/*
- 		 * If we are fallocating from the end of the file onward we
- 		 * need to zero out the end of the page if i_size lands in the
+Qu Wenruo (2):
+  btrfs: Remove empty header file extent-tree.h
+  btrfs: Avoid truncate tailing page if fallocate range doesn't exceed
+    inode size
+
+ fs/btrfs/extent-tree.h | 0
+ fs/btrfs/file.c        | 2 +-
+ 2 files changed, 1 insertion(+), 1 deletion(-)
+ delete mode 100644 fs/btrfs/extent-tree.h
+
 -- 
 2.6.1
 

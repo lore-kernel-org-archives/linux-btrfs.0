@@ -1,51 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f174.google.com ([209.85.214.174]:34465 "EHLO
-	mail-ob0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753385AbbJNUXx (ORCPT
+Received: from mail-wi0-f170.google.com ([209.85.212.170]:37834 "EHLO
+	mail-wi0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753636AbbJNU1g (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 16:23:53 -0400
-Received: by obbda8 with SMTP id da8so49194791obb.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 13:23:53 -0700 (PDT)
+	Wed, 14 Oct 2015 16:27:36 -0400
+Received: by wijq8 with SMTP id q8so99132284wij.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 13:27:35 -0700 (PDT)
+Message-ID: <561EBAB1.6030600@gmail.com>
+Date: Wed, 14 Oct 2015 22:27:29 +0200
+From: Dmitry Katsubo <dmitry.katsubo@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <2402569.dCkKzGyGNU@hoefnix>
-References: <2402569.dCkKzGyGNU@hoefnix>
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Wed, 14 Oct 2015 15:23:33 -0500
-Message-ID: <CAC=t97Awr6-pWGAXEMaRfFnPGKJiPyRH2g39oN+0WzhNYFrBNg@mail.gmail.com>
-Subject: Re: RAID6 stable enough for production?
-To: Sjoerd <sjoerd@sjomar.eu>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Anand Jain <anand.jain@oracle.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: Recover btrfs volume which can only be mounded in read-only mode
+References: <CAOGcOQE3_ROtk=2kQkjTUkGE1tz=HEzbeZnrWUOPziW=kNNXBQ@mail.gmail.com> <561E6969.40500@oracle.com>
+In-Reply-To: <561E6969.40500@oracle.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I would not use Raid56 in production.  I've tried using it a few
-different ways but have run in to trouble with stability and
-performance.  Raid10 has been working excellently for me.
+On 14/10/2015 16:40, Anand Jain wrote:
+>> # mount -o degraded /var
+>> Oct 11 18:20:15 kernel: BTRFS: too many missing devices, writeable
+>> mount is not allowed
+>>
+>> # mount -o degraded,ro /var
+>> # btrfs device add /dev/sdd1 /var
+>> ERROR: error adding the device '/dev/sdd1' - Read-only file system
+>>
+>> Now I am stuck: I cannot add device to the volume to satisfy raid
+>> pre-requisite.
+> 
+>  This is a known issue. Would you be able to test below set of patches
+>  and update us..
+> 
+>    [PATCH 0/5] Btrfs: Per-chunk degradable check
 
-On Wed, Oct 14, 2015 at 3:19 PM, Sjoerd <sjoerd@sjomar.eu> wrote:
-> Hi all,
->
-> Is RAID6 still considered unstable so I shouldn't use it in production?
-> The latest I could find about a test scenario is more than a year ago
-> (http://marc.merlins.org/perso/btrfs/post_2014-03-23_Btrfs-Raid5-Status.html)
->
-> I want to build a new NAS (6 disks of 4TB) on RAID6 and prefer to use btrfs
-> over zfs, but the latter is proven stable and I am unsure about btrfs...
-> Main usage for me would be to able to replace 1 or 2 failing (or going to
-> fail) drives and be able to extend it in the future with more disks. The data
-> on it shouldn't get corrupted unless the building were it's in is destroyed ;)
->
-> So should I go for btrfs?
->
-> NB: I am running happily a RAID5 btrfs with 4x2TB disks in it, but you'll just
-> know the value of the filesystem when something goes wrong. Yes I know RAID5/6
-> is not a backup ;)
->
-> Cheers,
-> Sjoerd
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Many thanks for the reply. Unfortunately I have no environment to
+recompile the kernel, and setting it up will perhaps take a day. Can the
+latest kernel be pushed to Debian sid?
+
+1. Is there any way to recover btrfs at the moment? Or the easiest I can
+do is to mount ro, copy all data to another drive, re-create btrfs
+volume and copy back?
+
+2. How to avoid such a trap in the future?
+
+3. How can I know what version of kernel the patch "Per-chunk degradable
+check" is targeting?
+
+4. What is the best way to express/vote for new features or suggestions
+(wikipage "Project_ideas" / bugzilla)?
+
+Thanks!
+
+-- 
+With best regards,
+Dmitry

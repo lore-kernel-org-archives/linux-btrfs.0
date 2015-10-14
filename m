@@ -1,93 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:52038 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750719AbbJNE2h convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 00:28:37 -0400
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: <linux-btrfs@vger.kernel.org>
-References: <cover.1444740703.git.zhaolei@cn.fujitsu.com> <20151013161913.GL27761@twin.jikos.cz>
-In-Reply-To: <20151013161913.GL27761@twin.jikos.cz>
-Subject: RE: [PATCH 0/3] btrfs-progs: mkfs: Fix different mixed type by argument sequence
-Date: Wed, 14 Oct 2015 12:28:03 +0800
-Message-ID: <00a101d10638$b763c7c0$262b5740$@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Received: from plane.gmane.org ([80.91.229.3]:49938 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750807AbbJNFIa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Oct 2015 01:08:30 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZmEId-00070I-V7
+	for linux-btrfs@vger.kernel.org; Wed, 14 Oct 2015 07:08:27 +0200
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 07:08:27 +0200
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 07:08:27 +0200
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: System completely unresponsive after `btrfs balance start
+ -dconvert=raid0 /` and `btrfs fi show /`
+Date: Wed, 14 Oct 2015 05:08:17 +0000 (UTC)
+Message-ID: <pan$39697$bacd3e0c$3e39ab12$ed8c21a7@cox.net>
+References: <C1BFF62A-9C2E-4A5D-86F9-7F01DDDF8BF6@paolino.me>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, David Sterba
+Carmine Paolino posted on Tue, 13 Oct 2015 23:21:49 +0200 as excerpted:
 
-> -----Original Message-----
-> From: David Sterba [mailto:dsterba@suse.cz]
-> Sent: Wednesday, October 14, 2015 12:19 AM
-> To: Zhao Lei <zhaolei@cn.fujitsu.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 0/3] btrfs-progs: mkfs: Fix different mixed type by
-> argument sequence
+> I have an home server with 3 hard drives that I added to the same btrfs
+> filesystem. Several hours ago I run `btrfs balance start -dconvert=raid0
+> /` and as soon as I run `btrfs fi show /` I lost my ssh connection to
+> the machine. The machine is still on, but it doesn’t even respond to
+> ping[. ...]
 > 
-> On Tue, Oct 13, 2015 at 08:52:16PM +0800, Zhao Lei wrote:
-> > Given a 200G vdd1 and 1G vdd2:
-> >
-> > In current code:
-> >  mkfs.btrfs -f /dev/vdd1 /dev/vdd2
-> >  and
-> >  mkfs.btrfs -f /dev/vdd2 /dev/vdd1
-> >  will create different "mixed" type.
-> 
-> I think combining large and small devices was not intended use for the
-> mixed-bg, nevertheless current behaviour is not right.
-> 
-> Chandan is working on dropping the forced mixed-bg completely. We've
-> discussed that on IRC, I'm ok with it but this needs more testing. So far it looks
-> fine, small filesystems get created and usable, though some tuning might be
-> needed.
-> 
-> My intentions for 4.3 is to take Chandan's work provided that we test it enough.
-> There are like 3 weeks left. In case of problems, I'll take this patchset so at
-> least we get the inconsisten behaviour fixed.
+> (I have a 250gb internal hard drive, a 120gb usb 2.0 one and a 2TB usb
+> 2.0 one so the transfer speeds are pretty low)
 
-Thanks for explanation.
+I won't attempt to answer the primary question[1] directly, but can point 
+out that in many cases, USB-connected devices simply don't have a stable 
+enough connection to work reliably in a multi-device btrfs.  There's 
+several possibilities for failure, including flaky connections (sometimes 
+assisted by cats or kids), unstable USB host port drivers, and unstable 
+USB/ATA translators.  A number of folks have reported problems with such 
+filesystems with devices connected over USB, that simply disappear if 
+they direct-connect the exact same devices to a proper SATA port.  The 
+problem seems to be /dramatically/ worse with USB connected devices, than 
+it is with, for instance, PCIE-based SATA expansion cards.
 
-If 4.3 released with dropping mixed-bg, the PATCH 1/3 maybe still
-necessary, I'll rebase after 4.3.
+Single-device btrfs with USB-attached devices seem to work rather better, 
+because at least in that case, if the connection is flaky, the entire 
+filesystem appears and disappears at once, and btrfs' COW, atomic-commit 
+and data-integrity features, kick in to help deal with the connection's 
+instability.
 
-And another problem:
-This time the vdh1 is changed to 100M:
+Arguably, a two-device raid1 (both data/metadata, with metadata including 
+system) should work reasonably well too, as long as scrubs are done after 
+reconnection when there's trouble with one of the pair, because in that 
+case, all data appears on both devices, but single and raid0 modes are 
+likely to have severe issues in that sort of environment, because even 
+temporary disconnection of a single device means loss of access to some 
+data/metadata on the filesystem.  Raid10, 3+-device-raid1, and raid5/6, 
+are more complex situations.  They should survive loss of at least one 
+device, but keeping the filesystem healthy in the presence of unstable 
+connections is... complex enough I'd hate to be the one having to deal 
+with it, which means I can't recommend it to others, either.
 
-[root@kerneldev progs]# ./mkfs.btrfs -f /dev/vdh1 /dev/vdh2
-btrfs-progs v4.2.2-25-gc6b29b6-dirty
-See http://btrfs.wiki.kernel.org for more information.
+So I'd recommend either connecting all devices internally if possible, or 
+setting up the USB-connected devices with separate filesystems, if 
+internal direct-connection isn't possible.
 
-Label:              (null)
-UUID:               4465aed7-d33c-4b76-9723-a76df74547fb
-Node size:          16384
-Sector size:        4096
-Filesystem size:    1.20GiB
-Block group profiles:
-  Data+Metadata:    RAID0            72.00MiB
-  System:           RAID1            12.00MiB
-SSD detected:       no
-Incompat features:  mixed-bg, extref, skinny-metadata
-Number of devices:  2
-Devices:
-   ID        SIZE  PATH
-    1   120.55MiB  /dev/vdh1
-    2     1.08GiB  /dev/vdh2
+---
+[1] Sysadmin's rule of backups.  If the data isn't backed up, by 
+definition it is of less value than the resource and hassle cost of 
+backup.  No exceptions -- post-loss claims to the contrary simply put the 
+lie to the claims, as actions spoke louder than words and they defined 
+the cost of the backup as more expensive than the data that would have 
+been backed up.  Worst-case is then loss of data that was by definition 
+of less value than the cost of backup, and the more valuable resource and 
+hassle cost of the backup was avoided, so the comparatively lower value 
+data loss is no big deal.
 
-[root@kerneldev progs]# ./mkfs.btrfs -f /dev/vdh2 /dev/vdh1
-btrfs-progs v4.2.2-25-gc6b29b6-dirty
-See http://btrfs.wiki.kernel.org for more information.
+So in a case like this, I'd simply power down and take my chances of 
+filesystem loss, strictly limiting the time and resources I'd devote to 
+any further attempt at recovery, because the data is by definition either 
+backed up, or of such low value that a backup was considered too 
+expensive to do, meaning there's a very real possibility of spending more 
+time in a recovery attempt that's iffy at best, than the data on the 
+filesystem is actually worth, either because there are backups, or 
+because it's throw-away data in the first place.
 
-not enough free space
-[root@kerneldev progs]#
-
-Can be fixed by checking raid support only based on "large disk count".
-
-This fix maybe conflict with Chandan's work, so I'll begin work after
-he finished.
-
-Thanks
-Zhaolei
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,47 +1,36 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:48668 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752448AbbJNH2U (ORCPT
+	with ESMTP id S1751501AbbJNH2V (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 03:28:20 -0400
+	Wed, 14 Oct 2015 03:28:21 -0400
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
-Subject: [PULL REQUEST][PATCH 0/2] Small fixes for 4.3 merge windows
-Date: Wed, 14 Oct 2015 15:26:11 +0800
-Message-ID: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: Remove empty header file extent-tree.h
+Date: Wed, 14 Oct 2015 15:26:12 +0800
+Message-ID: <1444807573-29853-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1444807573-29853-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+The empty file is introduced as an careless 'git add' during the qgroup
+accounting framework rework.
 
-This pull is quite a small one, with 2 small and safe patches.
+Just remove it.
 
-The first one is a fix that get missing in 4.2 merge windows.
-Just remove an empty header I created in qgroup rework.
-
-The other one is found in qgroup reserve rework, but that's also very
-small and safe, with test case submitted:
-https://patchwork.kernel.org/patch/7292921/
-
-I was planning to include two qgroup rescan fix patches, but doesn't get
-further comment from David, so they may be delayed to 4.4, with qgroup
-reserve rework.
-
-Thanks,
-Qu
-
-Qu Wenruo (2):
-  btrfs: Remove empty header file extent-tree.h
-  btrfs: Avoid truncate tailing page if fallocate range doesn't exceed
-    inode size
-
+Reported-by: David Sterba <dsterba@suse.cz>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
  fs/btrfs/extent-tree.h | 0
- fs/btrfs/file.c        | 2 +-
- 2 files changed, 1 insertion(+), 1 deletion(-)
+ 1 file changed, 0 insertions(+), 0 deletions(-)
  delete mode 100644 fs/btrfs/extent-tree.h
 
+diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
+deleted file mode 100644
+index e69de29..0000000
 -- 
 2.6.1
 

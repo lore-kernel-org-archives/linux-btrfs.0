@@ -1,86 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f182.google.com ([209.85.212.182]:32866 "EHLO
-	mail-wi0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754266AbbJNPqP convert rfc822-to-8bit (ORCPT
+Received: from ninthfloor.org ([109.74.194.224]:51415 "EHLO
+	mail.ninthfloor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753480AbbJNUPl (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 11:46:15 -0400
-Received: by wiyb4 with SMTP id b4so4253125wiy.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 08:46:13 -0700 (PDT)
+	Wed, 14 Oct 2015 16:15:41 -0400
+Received: from [192.168.1.5] (net-188-153-166-190.cust.dsl.teletu.it [188.153.166.190])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: pl)
+	by mail.ninthfloor.org (Postfix) with ESMTPSA id 1CEAF1C124
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 20:15:39 +0000 (UTC)
+From: Paride Legovini <pl@ninthfloor.org>
+Subject: btrfs send -c fails saying "parent determination failed"
+To: linux-btrfs@vger.kernel.org
+Message-ID: <561EB7EA.9060802@ninthfloor.org>
+Date: Wed, 14 Oct 2015 22:15:38 +0200
 MIME-Version: 1.0
-In-Reply-To: <530F6025.1030208@fb.com>
-References: <1390500472-15144-1-git-send-email-jbacik@fb.com>
-	<CAOfOLh-AoQ=+Zvk2LRx4frFD6005gXweY+EMVnZyen5jwGGv9Q@mail.gmail.com>
-	<530F6025.1030208@fb.com>
-Date: Wed, 14 Oct 2015 17:46:13 +0200
-Message-ID: <CAOcd+r2C0bvxk_d=qW1qk60YpK8TYQRq4KXsyGQZ_X-mAJF4YA@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: throttle delayed refs better
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: Josef Bacik <jbacik@fb.com>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: =?UTF-8?B?6ZKx5Yev?= <alanqk@gmail.com>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Josef,
-Looking at the latest Linus tree, I still see:
+[Repost with new SPF rules, should not be classified as spam now.]
 
-if (actual_count > 0) {
-    u64 runtime = ktime_to_ns(ktime_sub(ktime_get(), start));
-    ...
-    avg = fs_info->avg_delayed_ref_runtime * 3 + runtime;
-   avg = div64_u64(avg, 4);
+Hi,
 
-So we need to divide "runtime" by "actual_count" before accounting it
-in "avg_delayed_ref_runtime"?
+btrfs send -c stopped working for me several months ago. My setup is
+actually very simple. On the "send" side I have:
 
-Thanks,
-Alex.
+# btrfs sub list -u / | grep rootfs-snapshot-
+ID 2221 gen 93340 top level 5 uuid adf43113-0442-9847-9ce4-7d9c06e77602
+path rootfs-snapshot-20150923
+ID 2262 gen 96026 top level 5 uuid 49f34ca5-42da-7d4b-a159-c3027650d8e6
+path rootfs-snapshot-20150929
+
+Several other subvolumes also exist there, just in case it matters.
+On the receive side:
+
+# btrfs sub list -R /mnt/cryptobackup/ | grep rootfs-snapshot-20150923
+ID 1532 gen 3066 top level 5 received_uuid
+adf43113-0442-9847-9ce4-7d9c06e77602 path snapshots/rootfs-snapshot-20150923
+
+As you can see the uuids for rootfs-snapshot-20150923 are the same on
+both sides. If I try to send|receive /rootfs-snapshot-20150929 using
+rootfs-snapshot-20150923 as clone source it fails:
+
+# btrfs send -c /rootfs-snapshot-20150923 /rootfs-snapshot-20150929 |
+btrfs receive /mnt/cryptobackup/snapshots/
+At subvol /rootfs-snapshot-20150929
+ERROR: parent determination failed for 2221
+
+while it works fine if I use btrfs send -p. This is always reproducible,
+it fails every time across reboots and kernel upgrades; it works every
+time with -p.
+
+In both / and /mnt/cryptobackup I didn't mount any special subvolid:
+
+# btrfs sub get-default /
+ID 5 (FS_TREE)
+# btrfs inspect-internal rootid /
+5
+# btrfs sub get-default /mnt/cryptobackup/
+ID 5 (FS_TREE)
+# btrfs inspect-internal rootid /mnt/cryptobackup/
+5
+
+so nothing strange here. Some other possibly useful information:
+
+$ uname -a
+Linux mandragola 4.2.0-1-amd64 #1 SMP Debian 4.2.3-1 (2015-10-06) x86_64
+GNU/Linux
+
+so you have guessed that I'm running an up to date Debian system. Keep
+in mind that it is several kernel versions that I'm getting this
+problem, it's nothing specific to this one.
+
+$ btrfs --version
+btrfs-progs v4.1.2
+
+# btrfs fi show
+Label: none  uuid: 5651d651-5c48-425f-9fc9-56f2a9ad004f
+	Total devices 1 FS bytes used 118.24GiB
+	devid    1 size 237.97GiB used 218.02GiB path /dev/sda2
+
+Label: none  uuid: c4db7f4f-b976-4d36-bd76-76e818341cef
+	Total devices 1 FS bytes used 934.71GiB
+	devid    1 size 1.82TiB used 941.03GiB path /dev/mapper/cryptobackup
+
+$ btrfs fi df /
+Data, single: total=212.01GiB, used=116.98GiB
+System, single: total=4.00MiB, used=48.00KiB
+Metadata, single: total=6.01GiB, used=1.27GiB
+GlobalReserve, single: total=448.00MiB, used=0.00B
+
+$ btrfs fi df /mnt/cryptobackup/
+Data, single: total=932.00GiB, used=931.70GiB
+System, DUP: total=8.00MiB, used=128.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=4.50GiB, used=3.01GiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=512.00MiB, used=0.00B
+
+$ dmesg | grep -i btrfs | curl -F "sprunge=<-" http://sprunge.us
+http://sprunge.us/EiHE
+
+If I hit a bug I'll be happy to help in finding it, just tell me if you
+need further information. Otherwise, if I'm just missing something, I'll
+appreciate any hint.
+
+Thank you,
+
+Paride
 
 
-On Thu, Feb 27, 2014 at 5:56 PM, Josef Bacik <jbacik@fb.com> wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
->
-> On 02/27/2014 10:38 AM, 钱凯 wrote:
->> I'm a little confused of what "avg_delayed_ref_runtime" means.
->>
->> In __btrfs_run_delayed_refs(), "avg_delayed_ref_runtime" is set to
->> the runtime of all delayed refs processed in current transaction
->> commit. However, in btrfs_should_throttle_delayed_refs(), we based
->> on the following condition to decide whether throttle refs or not:
->> ***************************************** avg_runtime =
->> fs_info->avg_delayed_ref_runtime; if (num_entries * avg_runtime >=
->> NSEC_PER_SEC) return 1; *****************************************
->> It looks like "avg_delayed_ref_runtime" is used as runtime of each
->> delayed ref processed in average here. So what does it really
->> means?
->>
->
-> Yeah I screwed this up, I should have been dividing the total time by
-> the number of delayed refs I ran.  I have a patch locally to fix it
-> and I'll send it out after I finish my qgroup work.  Thanks,
->
-> Josef
->
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v1
-> Comment: Using GnuPG with Thunderbird - http://www.enigmail.net/
->
-> iQIcBAEBAgAGBQJTD2AlAAoJEANb+wAKly3BQkEP/0F/LGGDsO+x63SAFh/apRZo
-> ZVmzi1yJGiArFImFs8IwZHKgr/HpP9yYYFqyDCTSYrErI32bjpPbSDKlFDiIKYBq
-> 6mTptPlC6AJQcMJf3oV2SqUoQxI6Ea+04QaTtZwE5pDaTZsjD47QYfSyw/i+YwOr
-> Ds11ayDeU3FSj8JVYDKFg5ZBifv/mIHbh1fb8xc4R5XCWsbRzIL9LiQa9c56EEOq
-> vzXp57TIetbJdliK0cYQtPkA7R40us8TqVBH5MfcZPgITyBun3e0zrGxWmW6caTs
-> viejEbqDhyHLHCing+mMI6GX7w16duq5oG+w4nnjjyuMzWAyNN2pxloqQsWwOyv8
-> 7+33JZCtVG/txRMIXkvc3bqzetrUyPAruo+M3pstN7B2dph6TDV0QJSFnxee6mKf
-> 4/zseNOJtQqjHe5QJNcVJtkDaxgGBkSONHLm5Gz8rFU3XKcNZQcocV+0EtIjE7Zs
-> D5oDYCAyrxG1VKoFWhdaS883PDokRr75jcnFui4GhhFr5OAOdS3OOTLKVizWUag1
-> O11d9XsjnzLWiVTsZH+f4K0ONQcUwJFV0zADgYsXtU2LDHHNIPZX9+qSAa+L66hT
-> Ki6hocoZ4cXyGWcTZPtlGHxAmV2kEh8/Tr1ePfwy7FzTrg9hWUGLXY0DliQDPmIB
-> w3TdOa+Ghjl8dcaGc2rX
-> =kSsY
-> -----END PGP SIGNATURE-----
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

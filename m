@@ -1,181 +1,215 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f181.google.com ([209.85.213.181]:38348 "EHLO
-	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753230AbbJNNMq (ORCPT
+Received: from mail-lf0-f41.google.com ([209.85.215.41]:34745 "EHLO
+	mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753919AbbJNO3H convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 09:12:46 -0400
-Received: by igsu6 with SMTP id u6so16140245igs.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 06:12:45 -0700 (PDT)
-Subject: Re: System completely unresponsive after `btrfs balance start
- -dconvert=raid0 /` and `btrfs fi show /`
-To: Hugo Mills <hugo@carfax.org.uk>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-References: <C1BFF62A-9C2E-4A5D-86F9-7F01DDDF8BF6@paolino.me>
- <pan$39697$bacd3e0c$3e39ab12$ed8c21a7@cox.net>
- <20151014091325.GL25907@carfax.org.uk>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <561E54BD.4000402@gmail.com>
-Date: Wed, 14 Oct 2015 09:12:29 -0400
+	Wed, 14 Oct 2015 10:29:07 -0400
+Received: by lfaz124 with SMTP id z124so12786438lfa.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 07:29:05 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <20151014091325.GL25907@carfax.org.uk>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090409020806040502090908"
+From: Dmitry Katsubo <dmitry.katsubo@gmail.com>
+Date: Wed, 14 Oct 2015 16:28:46 +0200
+Message-ID: <CAOGcOQE3_ROtk=2kQkjTUkGE1tz=HEzbeZnrWUOPziW=kNNXBQ@mail.gmail.com>
+Subject: Recover btrfs volume which can only be mounded in read-only mode
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Dear btrfs community,
 
---------------ms090409020806040502090908
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+I am facing several problems regarding to btrfs, and I will be very
+thankful if someone can help me with. Also while playing with btrfs I
+have few suggestions – would be nice if one can comment on those.
 
-On 2015-10-14 05:13, Hugo Mills wrote:
-> On Wed, Oct 14, 2015 at 05:08:17AM +0000, Duncan wrote:
->> Carmine Paolino posted on Tue, 13 Oct 2015 23:21:49 +0200 as excerpted=
-:
->>
->>> I have an home server with 3 hard drives that I added to the same btr=
-fs
->>> filesystem. Several hours ago I run `btrfs balance start -dconvert=3D=
-raid0
->>> /` and as soon as I run `btrfs fi show /` I lost my ssh connection to=
+While starting the system, /var (which is btrfs volume) failed to be
+mounted. That btrfs volume was created with the following options:
 
->>> the machine. The machine is still on, but it doesn=E2=80=99t even res=
-pond to
->>> ping[. ...]
->>>
->>> (I have a 250gb internal hard drive, a 120gb usb 2.0 one and a 2TB us=
-b
->>> 2.0 one so the transfer speeds are pretty low)
->>
->> I won't attempt to answer the primary question[1] directly, but can po=
-int
->> out that in many cases, USB-connected devices simply don't have a stab=
-le
->> enough connection to work reliably in a multi-device btrfs.  There's
->> several possibilities for failure, including flaky connections (someti=
-mes
->> assisted by cats or kids), unstable USB host port drivers, and unstabl=
-e
->> USB/ATA translators.  A number of folks have reported problems with su=
-ch
->> filesystems with devices connected over USB, that simply disappear if
->> they direct-connect the exact same devices to a proper SATA port.  The=
+# mkfs.btrfs -d raid1 -m raid1 /dev/sdc2 /dev/sda /dev/sdd1
 
->> problem seems to be /dramatically/ worse with USB connected devices, t=
-han
->> it is with, for instance, PCIE-based SATA expansion cards.
->>
->> Single-device btrfs with USB-attached devices seem to work rather bett=
-er,
->> because at least in that case, if the connection is flaky, the entire
->> filesystem appears and disappears at once, and btrfs' COW, atomic-comm=
-it
->> and data-integrity features, kick in to help deal with the connection'=
-s
->> instability.
->>
->> Arguably, a two-device raid1 (both data/metadata, with metadata includ=
-ing
->> system) should work reasonably well too, as long as scrubs are done af=
-ter
->> reconnection when there's trouble with one of the pair, because in tha=
-t
->> case, all data appears on both devices, but single and raid0 modes are=
+Here comes what is recorded in systemd journal during the startup:
 
->> likely to have severe issues in that sort of environment, because even=
+[    2.931097] BTRFS: device fsid 57b828ee-5984-4f50-89ff-4c9be0fd3084
+devid 2 transid 394288 /dev/sda
+[    9.810439] BTRFS: device fsid 57b828ee-5984-4f50-89ff-4c9be0fd3084
+devid 1 transid 394288 /dev/sdc2
+Oct 11 13:00:22 systemd[1]: Job
+dev-disk-by\x2duuid-57b828ee\x2d5984\x2d4f50\x2d89ff\x2d4c9be0fd3084.device/start
+timed out.
+Oct 11 13:00:22 systemd[1]: Timed out waiting for device
+dev-disk-by\x2duuid-57b828ee\x2d5984\x2d4f50\x2d89ff\x2d4c9be0fd3084.device.
 
->> temporary disconnection of a single device means loss of access to som=
-e
->> data/metadata on the filesystem.  Raid10, 3+-device-raid1, and raid5/6=
-,
->> are more complex situations.  They should survive loss of at least one=
+After the system started on runlevel 1, I attempted to mount the filesystem:
 
->> device, but keeping the filesystem healthy in the presence of unstable=
+# mount /var
+Oct 11 13:53:55 kernel: BTRFS info (device sdc2): disk space caching is enabled
+Oct 11 13:53:55 kernel: BTRFS: failed to read chunk tree on sdc2
+Oct 11 13:53:55 kernel: BTRFS: open_ctree failed
 
->> connections is... complex enough I'd hate to be the one having to deal=
+When I google for "failed to read chunk tree" the feedback was that
+something really bad is happening, and it's time to restore the data /
+give up with btrfs. In fact, this message is misleading because it
+refers /dev/sdc2 which is a mount device in fstab but this is SSD
+drive, so it is very unlikely to cause "read" error. Literally I read
+the message as "BTRFS: tried to read something from sdc2 and failed".
+Maybe it is better to re-phrase the message to "failed to construct
+chunk tree on /var (sdc2,sda,sdd1)"?
 
->> with it, which means I can't recommend it to others, either.
->
->     Note also that RAID-0 is a poor choice for this configuration,
-> because you'll only get 640 GB usable space out of it. With single,
-> you'll get the full sum of 2370 GB usable. With RAID-1, you'll have
-> 320 GB usable. The low figures for the RAID-0 and -1 come from the
-> fact that you've got two small devices, and that both RAID-0 and
-> RAID-1 have a minimum of two devices per block group. You can play
-> around with the configurations at http://carfax.org.uk/btrfs-usage
->
->     But I second Duncan's advice about not using USB. It's really not a=
+Next I did a check:
 
-> reliable configuration with btrfs.
-I'd also second that statement, but go even further and say to not use=20
-USB for anything except backups and transferring data between computers=20
-unless you have absolutely no other option, and be wary of using any=20
-externally connected storage device for other use cases (I've seen=20
-similar issues with eSATA drives and BTRFS, and have heard of such=20
-issues with some Thunderbolt connected storage devices).
+# btrfs check /dev/sdc2
+warning devid 3 not found already
+checking extents
+checking free space cache
+Error reading 36818145280, -1
+checking fs roots
+checking csums
+checking root refs
+Checking filesystem on /dev/sdc2
+UUID: 57b828ee-5984-4f50-89ff-4c9be0fd3084
+failed to load free space cache for block group 36536582144
+found 29602081783 bytes used err is 0
+total csum bytes: 57681304
+total tree bytes: 1047363584
+total fs tree bytes: 843694080
+total extent tree bytes: 121159680
+btree space waste bytes: 207443742
+file data blocks allocated: 77774524416
+ referenced 60893913088
 
+The message "devid 3 not found already" does not tell much to me. If I
+understand correctly, btrfs does not store the list of devices in the
+metadata, but maybe it would be a good idea to save the last seen
+information about devices so that I would not need to guess what
+"devid 3" means?
 
+Next I tried to list all devices in my btrfs volume. I found this is
+not possible (unless volume is mounted). Would be nice if "btrfs
+device scan" outputs the detected volumes / devices to stdout (e.g.
+with "-v" option) or there is any other way to do that.
 
---------------ms090409020806040502090908
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+Then I have mounted the volume in degraded mode and only after that I
+could understand what the error message means:
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDE0MTMxMjI5WjBPBgkq
-hkiG9w0BCQQxQgRABL9yvsY6po8LQocW36XPG1Y77xsMWZpTyArH+aSRuqq43FKNY7gbti/S
-QMx1pWTtbwnjf8jkLTkhB8b7P6QzRTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgAsAf6ZGUqgBDsX1QlZhEYw0Kwyt2joziLWQmCFpA9IJjgV/8Q7
-h5oM8q0/kRGg8EO/XQdYYKi+g7W15Amwiv/IWzJ0js9ma1d8X6TGRqsaKWhczJZJ1e6iKWmv
-nB/6plQAaze629ixPeqXwZwbsb91jUntWLocroqBVVFIfBR/GdVaeMi3VNX7tzhwDSEXlkJ5
-xs/HL+uf9AUjdggTjCph/1jRi6gi3PqieCcDcYULBzy/2Aqi+Z/d5DJ7LZD55KRXz/kRc3H8
-fWkzd/PODTvXF7uBKjSd42aOQJlhMcAFrle8qGv6SAcp6fKikph4xRiTI31v4xgBC+qSGxHT
-Q2AExlfJ+KVVLMM8FC2/ynLccYDRQWDxESvU51A0vH8HPE97FxfCi2iduuBuoyw341/RNdIR
-NBnt3MD7UagArSRDOo/O4EtnHuldcUeC/LDJfgTghMKLsO20XaCkQ6k0+G//EWtZOyDlyYHR
-hR+07huyX2DdJ4pKQHyZPitjtMBy5Es4S/bTDqA2oWCg9WY7uWeIoXM9x1f6SsrGwrtWjVM7
-R2hxWnKM6tMqQ7NXDGhVX+4NIsR3zQ+DJOjbWQ4DHG6xGL7+SxV3XAOPT7op9jaoPKBBnJVa
-qvPS99yfTz4+MpZiyoGVbWoD/+EeVY3M+ZXMg0OBTsWlbaptJqKEA8JligAAAAAAAA==
---------------ms090409020806040502090908--
+# mount /var -o degraded
+# btrfs device stats /var
+btrfs device stats /var
+[/dev/sdc2].write_io_errs   0
+[/dev/sdc2].read_io_errs    0
+[/dev/sdc2].flush_io_errs   0
+[/dev/sdc2].corruption_errs 0
+[/dev/sdc2].generation_errs 0
+[/dev/sda].write_io_errs   0
+[/dev/sda].read_io_errs    0
+[/dev/sda].flush_io_errs   0
+[/dev/sda].corruption_errs 0
+[/dev/sda].generation_errs 0
+[].write_io_errs   3160958
+[].read_io_errs    0
+[].flush_io_errs   0
+[].corruption_errs 0
+[].generation_errs 0
+
+Now I can see that the device with devid 3 is actually /dev/sdd1,
+which btrfs found not ready. Is it possible to improve btrfs output
+and to list "last seen device" in that output, e.g.
+
+[/dev/sdd1*].write_io_errs   3160958
+[/dev/sdd1*].read_io_errs    0
+...
+
+where "*" means that device is missing.
+
+I have listed all partitions and /dev/sdd1 was among them. I have also run
+
+# badblocks /dev/sdd
+
+and it found no bad blocks. Why btrfs considers the device "not ready"
+– that is a question.
+
+Afterwards I have decided to run scrub:
+
+# btrfs scrub start /var
+# btrfs scrub status /var
+scrub status for 57b828ee-5984-4f50-89ff-4c9be0fd3084
+    scrub started at Sun Oct 11 14:55:45 2015 and was aborted after 1365 seconds
+    total bytes scrubbed: 89.52GiB with 0 errors
+
+I have noticed that btrfs always reports "was aborted after X
+seconds", even if scrub is still running (I check that X and number of
+bytes scrubbed is increasing). That is confusing. After scrub
+finished, I have no idea whether it scrubbed everything, or was really
+aborted. And if it was aborted, what is the reason? Also it would be
+nice if status displays the number of data bytes (without replicas)
+scrubbed because the number 89.52GiB includes all replicas (of raid1
+in my case):
+
+total bytes scrubbed: 89.52GiB (data 55.03GiB, system 16.00KiB,
+metadata 998.83MiB) with 0 errors
+
+Then I can compare this number with "filesystem df" output to answer
+the question: was all data successfully scrubbed?
+
+# btrfs filesystem df /var
+Data, RAID1: total=70.00GiB, used=55.03GiB
+Data, single: total=8.00MiB, used=0.00B
+System, RAID1: total=32.00MiB, used=16.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, RAID1: total=2.00GiB, used=998.83MiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=336.00MiB, used=0.00B
+
+Unfortunately, btrfs version I have (3.17) does not support "device
+delete missing" command (it printed help to console), so I just
+re-added /dev/sdd1 and started the balancing:
+
+# btrfs device add /dev/sdd1 /var
+# btrfs balance start /var
+Done, had to relocate 76 out of 76 chunks
+
+I assumed that last command should return the control quickly, but it
+tool quite some time it to perform the necessary relocations.
+Wishlist: "balance start" is truly asynchronous (initiates balancing
+on the background and exits). Also it would be nice if "balance
+status" remembers displays the status of last operation.
+
+After that the picture was the following:
+
+# btrfs fi show /var
+Label: none  uuid: 57b828ee-5984-4f50-89ff-4c9be0fd3084
+    Total devices 4 FS bytes used 55.99GiB
+    devid    1 size 52.91GiB used 0.00B path /dev/sdc2
+    devid    2 size 232.89GiB used 58.03GiB path /dev/sda
+    devid    4 size 111.79GiB used 58.03GiB path /dev/sdd1
+    *** Some devices missing
+
+I was surprised to see that balance operation has moved everything
+away from /dev/sdc2. That was not clever.
+
+I thought that the problem is solved and rebooted. Unfortunately
+/dev/sdd1 was again dropped off from the volume. This time I was not
+able to mount in degraded mode, only in read-only mode:
+
+# mount -o degraded /var
+Oct 11 18:20:15 kernel: BTRFS: too many missing devices, writeable
+mount is not allowed
+
+# mount -o degraded,ro /var
+# btrfs device add /dev/sdd1 /var
+ERROR: error adding the device '/dev/sdd1' - Read-only file system
+
+Now I am stuck: I cannot add device to the volume to satisfy raid pre-requisite.
+
+Please, advise.
+
+P.S. I know that sdd1 device is failing (the write error counter is
+3160958) and needs replacing.
+
+Extra information:
+Debian jessie
+Linux kernel v3.16.0-4-686-pae
+btrfs v3.17-1.1
+
+--
+With best regards,
+Dmitry

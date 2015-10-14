@@ -1,39 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24865 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751126AbbJNK4f (ORCPT
+Received: from mail-ig0-f169.google.com ([209.85.213.169]:34311 "EHLO
+	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752214AbbJNM3V (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 06:56:35 -0400
-Message-ID: <561E34DD.3090006@oracle.com>
-Date: Wed, 14 Oct 2015 18:56:29 +0800
-From: Anand Jain <anand.jain@oracle.com>
+	Wed, 14 Oct 2015 08:29:21 -0400
+Received: by igbni9 with SMTP id ni9so77807397igb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 05:29:21 -0700 (PDT)
 MIME-Version: 1.0
-To: dsterba@suse.cz
-CC: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH RESEND 0/3] btrfs-progs: Introduce device delete by devid
-References: <1444487458-2988-1-git-send-email-anand.jain@oracle.com> <20151013124808.GJ27761@twin.jikos.cz>
-In-Reply-To: <20151013124808.GJ27761@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+In-Reply-To: <20151014050916.GA4400@hungrycats.org>
+References: <CAGfcS_kADCxYy2yvTsHLdTTk=OEpx8FyspRfhvjLhbCQwdspKw@mail.gmail.com>
+	<20151014050916.GA4400@hungrycats.org>
+Date: Wed, 14 Oct 2015 08:29:20 -0400
+Message-ID: <CAGfcS_nBFR7-aBVcTgU=htQBDWjzQnB_ePpdWKESVx+x4nROpw@mail.gmail.com>
+Subject: Re: State of Dedup / Defrag
+From: Rich Freeman <r-btrfs@thefreemanclan.net>
+To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 10/13/2015 08:48 PM, David Sterba wrote:
-> On Sat, Oct 10, 2015 at 10:30:55PM +0800, Anand Jain wrote:
->> This is the btrfs-progs part of the kernel patch
->>     Btrfs: Introduce device delete by devid
+On Wed, Oct 14, 2015 at 1:09 AM, Zygo Blaxell
+<ce3g8jdj@umail.furryterror.org> wrote:
 >
-> Thanks, now in next/delete-by-id-v3, I made some changes so please have
-> a look. Notably, I've dropped the BTRFS_VOL_ARG_V2_FLAGS mask, this
-> belongs to kernel only (unless you need it userspace of course).
+> I wouldn't try to use dedup on a kernel older than v4.1 because of these
+> fixes in 4.1 and later:
 
-  sorry that was by oversight. yep no need.
+I would assume that these would be ported to the other longterm
+kernels like 3.18 at some point?
 
-Thanks, Anand
+> Do dedup a photo or video file collection.  Don't dedup
+> a live database server on a filesystem with compression enabled...yet.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+LIkewise.  Typically I just dedup the entire filesystem, so it sounds
+like we're not quite there yet.  Would it make sense to put this on
+the wiki in the gotchas section?
+
+> Using dedup and defrag at the same time is still a bad idea.  The features
+> work against each other
+
+You mentioned quite a bit about autodefrag.  I was thinking more in
+terms of using explicit defrag, as was done by dedup in the past.  It
+looks like duperemove doesn't actually do this, perhaps because it is
+also considered unsafe these days.
+
+Thanks, I was just trying to get a sense for where this was at.  It
+sounds like we're getting to the point where it could be used in
+general, but for now it is probably best to run it manually on stuff
+that isn't too busy.
+
+--
+Rich

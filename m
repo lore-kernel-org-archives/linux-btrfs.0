@@ -1,114 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ninthfloor.org ([109.74.194.224]:51415 "EHLO
-	mail.ninthfloor.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753480AbbJNUPl (ORCPT
+Received: from walhalla.sjomar.eu ([141.105.125.198]:50580 "EHLO
+	walhalla.sjomar.eu" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753605AbbJNUTz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 16:15:41 -0400
-Received: from [192.168.1.5] (net-188-153-166-190.cust.dsl.teletu.it [188.153.166.190])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	Wed, 14 Oct 2015 16:19:55 -0400
+Received: from hoefnix.localnet (a83-163-227-207.adsl.xs4all.nl [83.163.227.207])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	(Authenticated sender: pl)
-	by mail.ninthfloor.org (Postfix) with ESMTPSA id 1CEAF1C124
-	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 20:15:39 +0000 (UTC)
-From: Paride Legovini <pl@ninthfloor.org>
-Subject: btrfs send -c fails saying "parent determination failed"
+	(Authenticated sender: sjoerd@sjomar.eu)
+	by walhalla.sjomar.eu (Postfix) with ESMTPSA id 3C2981DFB9C
+	for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 22:19:51 +0200 (CEST)
+From: Sjoerd <sjoerd@sjomar.eu>
 To: linux-btrfs@vger.kernel.org
-Message-ID: <561EB7EA.9060802@ninthfloor.org>
-Date: Wed, 14 Oct 2015 22:15:38 +0200
+Subject: RAID6 stable enough for production?
+Date: Wed, 14 Oct 2015 22:19:50 +0200
+Message-ID: <2402569.dCkKzGyGNU@hoefnix>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-[Repost with new SPF rules, should not be classified as spam now.]
+Hi all,
 
-Hi,
+Is RAID6 still considered unstable so I shouldn't use it in production?
+The latest I could find about a test scenario is more than a year ago 
+(http://marc.merlins.org/perso/btrfs/post_2014-03-23_Btrfs-Raid5-Status.html)
 
-btrfs send -c stopped working for me several months ago. My setup is
-actually very simple. On the "send" side I have:
+I want to build a new NAS (6 disks of 4TB) on RAID6 and prefer to use btrfs 
+over zfs, but the latter is proven stable and I am unsure about btrfs...
+Main usage for me would be to able to replace 1 or 2 failing (or going to 
+fail) drives and be able to extend it in the future with more disks. The data 
+on it shouldn't get corrupted unless the building were it's in is destroyed ;)
 
-# btrfs sub list -u / | grep rootfs-snapshot-
-ID 2221 gen 93340 top level 5 uuid adf43113-0442-9847-9ce4-7d9c06e77602
-path rootfs-snapshot-20150923
-ID 2262 gen 96026 top level 5 uuid 49f34ca5-42da-7d4b-a159-c3027650d8e6
-path rootfs-snapshot-20150929
+So should I go for btrfs?
 
-Several other subvolumes also exist there, just in case it matters.
-On the receive side:
+NB: I am running happily a RAID5 btrfs with 4x2TB disks in it, but you'll just 
+know the value of the filesystem when something goes wrong. Yes I know RAID5/6 
+is not a backup ;)
 
-# btrfs sub list -R /mnt/cryptobackup/ | grep rootfs-snapshot-20150923
-ID 1532 gen 3066 top level 5 received_uuid
-adf43113-0442-9847-9ce4-7d9c06e77602 path snapshots/rootfs-snapshot-20150923
-
-As you can see the uuids for rootfs-snapshot-20150923 are the same on
-both sides. If I try to send|receive /rootfs-snapshot-20150929 using
-rootfs-snapshot-20150923 as clone source it fails:
-
-# btrfs send -c /rootfs-snapshot-20150923 /rootfs-snapshot-20150929 |
-btrfs receive /mnt/cryptobackup/snapshots/
-At subvol /rootfs-snapshot-20150929
-ERROR: parent determination failed for 2221
-
-while it works fine if I use btrfs send -p. This is always reproducible,
-it fails every time across reboots and kernel upgrades; it works every
-time with -p.
-
-In both / and /mnt/cryptobackup I didn't mount any special subvolid:
-
-# btrfs sub get-default /
-ID 5 (FS_TREE)
-# btrfs inspect-internal rootid /
-5
-# btrfs sub get-default /mnt/cryptobackup/
-ID 5 (FS_TREE)
-# btrfs inspect-internal rootid /mnt/cryptobackup/
-5
-
-so nothing strange here. Some other possibly useful information:
-
-$ uname -a
-Linux mandragola 4.2.0-1-amd64 #1 SMP Debian 4.2.3-1 (2015-10-06) x86_64
-GNU/Linux
-
-so you have guessed that I'm running an up to date Debian system. Keep
-in mind that it is several kernel versions that I'm getting this
-problem, it's nothing specific to this one.
-
-$ btrfs --version
-btrfs-progs v4.1.2
-
-# btrfs fi show
-Label: none  uuid: 5651d651-5c48-425f-9fc9-56f2a9ad004f
-	Total devices 1 FS bytes used 118.24GiB
-	devid    1 size 237.97GiB used 218.02GiB path /dev/sda2
-
-Label: none  uuid: c4db7f4f-b976-4d36-bd76-76e818341cef
-	Total devices 1 FS bytes used 934.71GiB
-	devid    1 size 1.82TiB used 941.03GiB path /dev/mapper/cryptobackup
-
-$ btrfs fi df /
-Data, single: total=212.01GiB, used=116.98GiB
-System, single: total=4.00MiB, used=48.00KiB
-Metadata, single: total=6.01GiB, used=1.27GiB
-GlobalReserve, single: total=448.00MiB, used=0.00B
-
-$ btrfs fi df /mnt/cryptobackup/
-Data, single: total=932.00GiB, used=931.70GiB
-System, DUP: total=8.00MiB, used=128.00KiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, DUP: total=4.50GiB, used=3.01GiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-$ dmesg | grep -i btrfs | curl -F "sprunge=<-" http://sprunge.us
-http://sprunge.us/EiHE
-
-If I hit a bug I'll be happy to help in finding it, just tell me if you
-need further information. Otherwise, if I'm just missing something, I'll
-appreciate any hint.
-
-Thank you,
-
-Paride
-
+Cheers,
+Sjoerd
 

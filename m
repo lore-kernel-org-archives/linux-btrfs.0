@@ -1,49 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:35516 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752266AbbJOQkh (ORCPT
+Received: from emh04.mail.saunalahti.fi ([62.142.5.110]:42073 "EHLO
+	emh04.mail.saunalahti.fi" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751661AbbJORyN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Oct 2015 12:40:37 -0400
-Received: by igbkq10 with SMTP id kq10so139754404igb.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2015 09:40:36 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtR2-q3NUcDi6bfQUTzChu6wEbozvYEB_eNuK8toMf7KQQ@mail.gmail.com>
-References: <2402569.dCkKzGyGNU@hoefnix>
-	<CAC=t97Awr6-pWGAXEMaRfFnPGKJiPyRH2g39oN+0WzhNYFrBNg@mail.gmail.com>
-	<561EBC3D.8060004@bouton.name>
-	<CAC=t97COVc4kQ+A-jSVr3ujGb-0WGNh2qCcohBvLFw=YtnObhA@mail.gmail.com>
-	<CAGfcS_nid0dz2V+H=gAb-diRxwfj4sdYgCp6hR+5wucCwQHAWw@mail.gmail.com>
-	<CAJCQCtR2-q3NUcDi6bfQUTzChu6wEbozvYEB_eNuK8toMf7KQQ@mail.gmail.com>
-Date: Thu, 15 Oct 2015 12:40:36 -0400
-Message-ID: <CAGfcS_mGHBzdevkaj8DHh=2Hkan8CVHmHrTak53UheaBH9pwLA@mail.gmail.com>
-Subject: Re: RAID6 stable enough for production?
-From: Rich Freeman <r-btrfs@thefreemanclan.net>
-To: Chris Murphy <lists@colorremedies.com>
+	Thu, 15 Oct 2015 13:54:13 -0400
+Date: Thu, 15 Oct 2015 20:54:11 +0300
+From: Pasi =?iso-8859-1?Q?K=E4rkk=E4inen?= <pasik@iki.fi>
+To: audio muze <audiomuze@gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: BTRFS raid 5/6 status
+Message-ID: <20151015175410.GD23835@reaktio.net>
+References: <CA+LE0jzBX8kN1NmQ-+8zUpxrB79oMEmpmzUGABYfeA_tX47jBA@mail.gmail.com>
+ <CAJCQCtT2zpaXRr+i3rqjwdPjmvfcVE-iG564Q6P_ZbY7MkLFqw@mail.gmail.com>
+ <CA+LE0jzQKu7Ujz6foYZL992W_R7HJdRS6_1gJ25DMUdQFy1=fA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CA+LE0jzQKu7Ujz6foYZL992W_R7HJdRS6_1gJ25DMUdQFy1=fA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 14, 2015 at 9:47 PM, Chris Murphy <lists@colorremedies.com> wrote:
+On Thu, Oct 15, 2015 at 07:39:20AM +0200, audio muze wrote:
+> Thanks Chris
+> 
+> I should've browsed recent threads, my apologies.  Terribly
+> frustrating though that the issues you refer to aren't documented in
+> the btrfs wiki.  Reading the wiki one is lead to believe that the only
+> real issue is the write hole that can occur as a result of a power
+> loss.  There I was thinking I've a UPS attached, no problem.
+> Notification and handling of device failures is fundamental to any
+> raid system, so it seems it's nowhere near ready.
 >
-> For that matter, now that GlusterFS has checksums and snapshots...
 
-Interesting - I haven't kept up with that.  Does it actually do
-end-to-end checksums?  That is, compute the checksum at the time of
-storage, store the checksum in the metadata somehow, and ensure the
-checksum matches when data is retrieved?
+Remember UPS does NOT protect against PSU failure, or a kernel crash..
 
-I forget whether it was glusterfs or ceph I was looking at, but some
-of those distributed filesystems will only checksum data while in
-transit, but not while it is at rest.  So, if a server claims it has a
-copy of the file, then it is assumed to be a good copy and you never
-realize that even though you have 5 copies of that file distributed
-around the server you ended up using differs from the other 4.
 
-I'm also not sure if it supports an n+1/2 model like raid5/6, or if it
-is just a 2*n model like raid1.  If I want to store 5TB of data with
-redundancy, I'd prefer to not need 10TB worth of drives to do it,
-regardless of how many systems they're spread across.
-
---
-Rich
+-- Pasi
+ 
+> On Thu, Oct 15, 2015 at 7:06 AM, Chris Murphy <lists@colorremedies.com> wrote:
+> > See the other recent thread on the list "RAID6 stable enough for production?"
+> >
+> > A lot of your questions have already been answered in recent previous threads.
+> >
+> > While there are advantages to Btrfs raid56, there are some missing
+> > parts that make it incomplete and possibly unworkable for certain use
+> > cases. For example there's no notification of device failures like md
+> > and LVM raid. If there's a device failure, and then also any other
+> > problem crops up, the whole file system can become unusable. So
+> > whatever your backup strategy is going to be, it needs to be even more
+> > bulletproof if you're going to depend on Btrfs for production.
+> >
+> >
+> > --
+> > Chris Murphy
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

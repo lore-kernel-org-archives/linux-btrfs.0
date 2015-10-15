@@ -1,125 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from james.kirk.hungrycats.org ([174.142.39.145]:33221 "EHLO
-	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1753533AbbJOCtd (ORCPT
+Received: from mail-wi0-f179.google.com ([209.85.212.179]:36560 "EHLO
+	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750714AbbJOELu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 22:49:33 -0400
-Date: Wed, 14 Oct 2015 22:47:49 -0400
-From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-To: Rich Freeman <r-btrfs@thefreemanclan.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: State of Dedup / Defrag
-Message-ID: <20151015024749.GB4400@hungrycats.org>
-References: <CAGfcS_kADCxYy2yvTsHLdTTk=OEpx8FyspRfhvjLhbCQwdspKw@mail.gmail.com>
- <20151014050916.GA4400@hungrycats.org>
- <CAGfcS_nBFR7-aBVcTgU=htQBDWjzQnB_ePpdWKESVx+x4nROpw@mail.gmail.com>
+	Thu, 15 Oct 2015 00:11:50 -0400
+Received: by wicgb1 with SMTP id gb1so254969885wic.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 21:11:49 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="XF85m9dhOBO43t/C"
-In-Reply-To: <CAGfcS_nBFR7-aBVcTgU=htQBDWjzQnB_ePpdWKESVx+x4nROpw@mail.gmail.com>
+Date: Thu, 15 Oct 2015 06:11:49 +0200
+Message-ID: <CA+LE0jzBX8kN1NmQ-+8zUpxrB79oMEmpmzUGABYfeA_tX47jBA@mail.gmail.com>
+Subject: BTRFS raid 5/6 status
+From: audio muze <audiomuze@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi
 
---XF85m9dhOBO43t/C
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+I've 6 x 3TB SATA drives available with a view to consolidating long
+term storage to a single raid array intended to be operational more or
+less 24/7.  I've done this a few times too many and run into the
+inevitable issues like waiting days to expand raid arrays whilst
+running the risk of disk failure in a rebuild, inability to detect bit
+rot etc. so I'd like to "future proof" as far as is economically
+plausible.
 
-On Wed, Oct 14, 2015 at 08:29:20AM -0400, Rich Freeman wrote:
-> On Wed, Oct 14, 2015 at 1:09 AM, Zygo Blaxell
-> <ce3g8jdj@umail.furryterror.org> wrote:
-> >
-> > I wouldn't try to use dedup on a kernel older than v4.1 because of these
-> > fixes in 4.1 and later:
->=20
-> I would assume that these would be ported to the other longterm
-> kernels like 3.18 at some point?
+I'm thinking btrfs as file system configured as raid6, yielding 12TB
+useable storage, protecting against two simultaneous disk failures.
+Rebuilds and/or expanding the array should be pretty quick given only
+actual data blocks are written on rebuild or expansion as opposed to
+traditional raid systems that write out the entire array.
 
-I wouldn't assume anything.  Backports seem to be kind of random.  ;)
-
-I think most (all?) of the relevant patches do apply to v3.18, but I
-haven't tested this kernel very much since v4.0 became usable.
-
-> > Do dedup a photo or video file collection.  Don't dedup
-> > a live database server on a filesystem with compression enabled...yet.
->=20
-> LIkewise.  Typically I just dedup the entire filesystem, so it sounds
-> like we're not quite there yet.  Would it make sense to put this on
-> the wiki in the gotchas section?
-
-Sounds good.
-
-> > Using dedup and defrag at the same time is still a bad idea.  The featu=
-res
-> > work against each other
->=20
-> You mentioned quite a bit about autodefrag.  I was thinking more in
-> terms of using explicit defrag, as was done by dedup in the past.  It
-> looks like duperemove doesn't actually do this, perhaps because it is
-> also considered unsafe these days.
-
-I wouldn't describe dedup+defrag as unsafe.  More like insane.  You won't
-lose any data, but running both will waste a lot of time and power.
-Either one is OK without the other, or applied to non-overlapping sets
-of files, but they are operations with opposite results.
-
-Explicit defrag always undoes dedup, so you never want to defrag a file
-after dedup has removed duplicate extents from it.  The btrfs command-line
-tool doesn't check for shared extents in defrag, and neither does the
-kernel ioctl.
-
-Defrag before dedup is a more complex situation that depends on the dedup
-strategy of whichever dedup tool you are using.  A file-based dedup tool
-doesn't have to care about extent boundaries, so you can just run defrag
-and then dedup--in that order.
-
-An extent-based dedup tool will become less efficient after defrag and
-some capabilities will be lost, e.g.  it will not be able to dedup
-data between VM image files or other files on the host filesystem.
-Extents with identical content but different boundaries cannot be deduped.
-There are fewer opportunities to find duplicate extents because defrag
-combines smaller extents into bigger ones.
-
-A block-based dedup tool explicitly arranges the data into extents
-by content, so extents become entirely duplicate or entirely unique.
-This is different from what defrag does.  If both are run on the same
-data they will disagree on physical data layout and constantly undo
-each other's work.
-
-When data is defragged, it appears in find-new output as "new" data
-(the same as if the data had been written to a file the usual way).
-An incremental dedup tool that integrates defrag and find-new at the
-same time has to carefully prevent itself from consuming its own output
-in an endless feedback loop.
-
-> Thanks, I was just trying to get a sense for where this was at.  It
-> sounds like we're getting to the point where it could be used in
-> general, but for now it is probably best to run it manually on stuff
-> that isn't too busy.
-
-IMHO the kernel part of dedup as of v4.1 is in a better state than some
-other features, e.g. balance or resize.  I can run dedup continuously
-for months without issues, but I plan for lockups and reboots every day
-when doing balances or resizes.  :-/
-
-> --
-> Rich
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
---XF85m9dhOBO43t/C
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iEYEARECAAYFAlYfE9UACgkQgfmLGlazG5zVVgCg6sEIoYxPritYVZm3izVmOY1H
-cWMAoM5YJtlRqqPsybF2L7Rx+6Qedaxa
-=ynWO
------END PGP SIGNATURE-----
-
---XF85m9dhOBO43t/C--
+Before I go down this road I'd appreciate thoughts/ suggestions/
+alternatives?  Have I left anything out?  Most importantly is btrfs
+raid6 now stable enough to use in this fashion?

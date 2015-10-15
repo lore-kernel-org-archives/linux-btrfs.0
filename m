@@ -1,37 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:36560 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750714AbbJOELu (ORCPT
+Received: from mail-wi0-f180.google.com ([209.85.212.180]:36302 "EHLO
+	mail-wi0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750744AbbJOESg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Oct 2015 00:11:50 -0400
-Received: by wicgb1 with SMTP id gb1so254969885wic.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 21:11:49 -0700 (PDT)
+	Thu, 15 Oct 2015 00:18:36 -0400
+Received: by wicgb1 with SMTP id gb1so255101068wic.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 14 Oct 2015 21:18:35 -0700 (PDT)
 MIME-Version: 1.0
-Date: Thu, 15 Oct 2015 06:11:49 +0200
-Message-ID: <CA+LE0jzBX8kN1NmQ-+8zUpxrB79oMEmpmzUGABYfeA_tX47jBA@mail.gmail.com>
-Subject: BTRFS raid 5/6 status
-From: audio muze <audiomuze@gmail.com>
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <CA+LE0jzBX8kN1NmQ-+8zUpxrB79oMEmpmzUGABYfeA_tX47jBA@mail.gmail.com>
+References: <CA+LE0jzBX8kN1NmQ-+8zUpxrB79oMEmpmzUGABYfeA_tX47jBA@mail.gmail.com>
+Date: Thu, 15 Oct 2015 15:18:35 +1100
+Message-ID: <CA+WRLO-0SMMuU61Mu94Kd5X2E9swT_eUgHf9eQNq9itz4D1xNg@mail.gmail.com>
+Subject: Re: BTRFS raid 5/6 status
+From: Gareth Pye <gareth@cerberos.id.au>
+To: audio muze <audiomuze@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi
+On Thu, Oct 15, 2015 at 3:11 PM, audio muze <audiomuze@gmail.com> wrote:
+> Rebuilds and/or expanding the array should be pretty quick given only
+> actual data blocks are written on rebuild or expansion as opposed to
+> traditional raid systems that write out the entire array.
 
-I've 6 x 3TB SATA drives available with a view to consolidating long
-term storage to a single raid array intended to be operational more or
-less 24/7.  I've done this a few times too many and run into the
-inevitable issues like waiting days to expand raid arrays whilst
-running the risk of disk failure in a rebuild, inability to detect bit
-rot etc. so I'd like to "future proof" as far as is economically
-plausible.
 
-I'm thinking btrfs as file system configured as raid6, yielding 12TB
-useable storage, protecting against two simultaneous disk failures.
-Rebuilds and/or expanding the array should be pretty quick given only
-actual data blocks are written on rebuild or expansion as opposed to
-traditional raid systems that write out the entire array.
+While that might be the intended final functionality I don't think
+balances are anywhere near that optimised currently.
 
-Before I go down this road I'd appreciate thoughts/ suggestions/
-alternatives?  Have I left anything out?  Most importantly is btrfs
-raid6 now stable enough to use in this fashion?
+Starting with a relatively green format isn't a great option for a
+file system you intend to use for ever.
+
+-- 
+Gareth Pye - blog.cerberos.id.au
+Level 2 MTG Judge, Melbourne, Australia
+"Dear God, I would like to file a bug report"

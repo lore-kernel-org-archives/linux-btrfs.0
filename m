@@ -1,67 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:44453 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751098AbbJOCKY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 14 Oct 2015 22:10:24 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZmXzp-0001LN-IW
-	for linux-btrfs@vger.kernel.org; Thu, 15 Oct 2015 04:10:21 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2015 04:10:21 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 15 Oct 2015 04:10:21 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs says no errors, but booting gives lots of errors
-Date: Thu, 15 Oct 2015 02:10:15 +0000 (UTC)
-Message-ID: <pan$76e30$947a020c$72d4d9dd$c47081a8@cox.net>
-References: <8042.1444481164@ccs.covici.com>
-	<56191CC2.9000505@googlemail.com> <11640.1444488108@ccs.covici.com>
-	<561932EF.2090005@bouton.name> <5619385C.7040103@googlemail.com>
-	<16953.1444496102@ccs.covici.com> <56198B7B.90806@bouton.name>
-	<27402.1444518173@ccs.covici.com> <27611.1444518496@ccs.covici.com>
-	<pan$d2df6$3d7eab24$5c921ac6$dfe0f628@cox.net>
-	<7505.1444566567@ccs.covici.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:33221 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1753533AbbJOCtd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 14 Oct 2015 22:49:33 -0400
+Date: Wed, 14 Oct 2015 22:47:49 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Rich Freeman <r-btrfs@thefreemanclan.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: State of Dedup / Defrag
+Message-ID: <20151015024749.GB4400@hungrycats.org>
+References: <CAGfcS_kADCxYy2yvTsHLdTTk=OEpx8FyspRfhvjLhbCQwdspKw@mail.gmail.com>
+ <20151014050916.GA4400@hungrycats.org>
+ <CAGfcS_nBFR7-aBVcTgU=htQBDWjzQnB_ePpdWKESVx+x4nROpw@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="XF85m9dhOBO43t/C"
+In-Reply-To: <CAGfcS_nBFR7-aBVcTgU=htQBDWjzQnB_ePpdWKESVx+x4nROpw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-covici posted on Sun, 11 Oct 2015 08:29:27 -0400 as excerpted:
 
-> Thanks, in the ext4 world, I have lvm and lots of things using separate
-> lvm's.  I don't want to go back to partitions, if btrfs is that fragile,
-> maybe I should waita while yet.  Or, I could use lvm and put btrfs on
-> top of that, but it seems strange to me.
+--XF85m9dhOBO43t/C
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-Taking the larger picture perspective, I'd suggest that while btrfs 
-arguably isn't "that fragile" if you're willing to work with it, it most 
-definitely is of a status I characterize as "stabilizing, but not yet 
-fully stable or mature", and as such, isn't likely to be the best choice 
-for people who just want "sufficiently stable that I don't have to mess 
-with it or worry about it", particularly if they're also the type that 
-prefer to run "enterprise stable" or "debian stable" grade distros, which 
-are, to put it mildly, not known for the up-to-dateness of the versions 
-of various packages they ship.  If that's a description of your comfort 
-zone, then there's a basic incompatibility between your comfort zone and 
-btrfs' current state, and btrfs probably isn't the right choice for you 
-at this point.
+On Wed, Oct 14, 2015 at 08:29:20AM -0400, Rich Freeman wrote:
+> On Wed, Oct 14, 2015 at 1:09 AM, Zygo Blaxell
+> <ce3g8jdj@umail.furryterror.org> wrote:
+> >
+> > I wouldn't try to use dedup on a kernel older than v4.1 because of these
+> > fixes in 4.1 and later:
+>=20
+> I would assume that these would be ported to the other longterm
+> kernels like 3.18 at some point?
 
-In which case, ext3/4, reiserfs (my old favorite, which I had very good 
-experience with even with not so reliable hardware), xfs, or possibly zfs 
-if you need the features and are willing to put the money into the 
-hardware it requires for stability, are more mature and arguably 
-appropriate choices.
+I wouldn't assume anything.  Backports seem to be kind of random.  ;)
 
-I had in mind to say something about the big-picture like that in an 
-earlier reply, but forgot...
+I think most (all?) of the relevant patches do apply to v3.18, but I
+haven't tested this kernel very much since v4.0 became usable.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+> > Do dedup a photo or video file collection.  Don't dedup
+> > a live database server on a filesystem with compression enabled...yet.
+>=20
+> LIkewise.  Typically I just dedup the entire filesystem, so it sounds
+> like we're not quite there yet.  Would it make sense to put this on
+> the wiki in the gotchas section?
 
+Sounds good.
+
+> > Using dedup and defrag at the same time is still a bad idea.  The featu=
+res
+> > work against each other
+>=20
+> You mentioned quite a bit about autodefrag.  I was thinking more in
+> terms of using explicit defrag, as was done by dedup in the past.  It
+> looks like duperemove doesn't actually do this, perhaps because it is
+> also considered unsafe these days.
+
+I wouldn't describe dedup+defrag as unsafe.  More like insane.  You won't
+lose any data, but running both will waste a lot of time and power.
+Either one is OK without the other, or applied to non-overlapping sets
+of files, but they are operations with opposite results.
+
+Explicit defrag always undoes dedup, so you never want to defrag a file
+after dedup has removed duplicate extents from it.  The btrfs command-line
+tool doesn't check for shared extents in defrag, and neither does the
+kernel ioctl.
+
+Defrag before dedup is a more complex situation that depends on the dedup
+strategy of whichever dedup tool you are using.  A file-based dedup tool
+doesn't have to care about extent boundaries, so you can just run defrag
+and then dedup--in that order.
+
+An extent-based dedup tool will become less efficient after defrag and
+some capabilities will be lost, e.g.  it will not be able to dedup
+data between VM image files or other files on the host filesystem.
+Extents with identical content but different boundaries cannot be deduped.
+There are fewer opportunities to find duplicate extents because defrag
+combines smaller extents into bigger ones.
+
+A block-based dedup tool explicitly arranges the data into extents
+by content, so extents become entirely duplicate or entirely unique.
+This is different from what defrag does.  If both are run on the same
+data they will disagree on physical data layout and constantly undo
+each other's work.
+
+When data is defragged, it appears in find-new output as "new" data
+(the same as if the data had been written to a file the usual way).
+An incremental dedup tool that integrates defrag and find-new at the
+same time has to carefully prevent itself from consuming its own output
+in an endless feedback loop.
+
+> Thanks, I was just trying to get a sense for where this was at.  It
+> sounds like we're getting to the point where it could be used in
+> general, but for now it is probably best to run it manually on stuff
+> that isn't too busy.
+
+IMHO the kernel part of dedup as of v4.1 is in a better state than some
+other features, e.g. balance or resize.  I can run dedup continuously
+for months without issues, but I plan for lockups and reboots every day
+when doing balances or resizes.  :-/
+
+> --
+> Rich
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+--XF85m9dhOBO43t/C
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlYfE9UACgkQgfmLGlazG5zVVgCg6sEIoYxPritYVZm3izVmOY1H
+cWMAoM5YJtlRqqPsybF2L7Rx+6Qedaxa
+=ynWO
+-----END PGP SIGNATURE-----
+
+--XF85m9dhOBO43t/C--

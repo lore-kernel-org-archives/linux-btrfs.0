@@ -1,79 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:49891 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752982AbbJONYW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Oct 2015 09:24:22 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org, clm@fb.com
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [GIT PULL] Btrfs fixes for 4.4 integration branch
-Date: Thu, 15 Oct 2015 14:23:22 +0100
-Message-Id: <1444915402-27170-1-git-send-email-fdmanana@kernel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:33862 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750754AbbJPEv3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Oct 2015 00:51:29 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>, <clm@fb.com>
+Subject: [GIT PULL][4.4] Qgroup reserve rework
+Date: Fri, 16 Oct 2015 10:35:38 +0800
+Message-ID: <1444962938-22224-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi Chris,
 
-Hi Chris.
+Please consider the following git pull for 4.4 merge window.
 
-Please consider the bug fixes listed below for the linux kernel 4.4 merge
-window (they were all previously sent to the mailing list).
+https://github.com/adam900710/linux.git
+for_chris_4.4_qgroup_reserve_rework
 
-Robin Ruede found and fixed a regression in send that was introduced by a
-commit added to the 4.2 kernel release (a few other people reported this
-regression too).
 
-There's also a small fix for reading a page through the extent_same ioctl
-when the page belongs to a file hole.
+These pull is based on the following commit:
+commit 6db4a7335dd701a0e20275440ee057d3db2a7ae3
+Merge: 62fb50a ee86395
+Author: Chris Mason <clm@fb.com>
+Date:   Mon Oct 12 16:24:40 2015 -0700
 
-Finally we have two data corruption/data loss fixes, one for send/receive
-and the other for the clone ioctl. Both issues have been around for a long
-time, since the very first commits that introduced send/receive and the
-clone ioctl.
+    Merge branch 'fix/waitqueue-barriers' of
+    git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into
+    for-linus-4.4
 
-I have tagged Robin's fix and the clone ioctl fix for stable, but not the
-one for the send/receive data corruption because it's quite a large change
-(stable backport rules forbid such large changes).
 
-I have sent test cases for xfstests for these corruption/data loss fixes
-and the send regression (as well as for the scenario that the offending
-commit fixed). They have all been merged upstream already:
+This rework for qgroup reserve framework provides accurate qgroup
+reserve and solves reserved space leak in old btrfs qgroup.
 
-  0e6ead559169260d0a2621ec22edcd0e63b84a88 btrfs/035: check for data loss
-  ddb4e4cfccfa5fc36975c12e9a66a24d3b7829bd btrfs: test for cloning of inline extents
-  be6122971fa08146ee531f84a7553aa15e2b63ec btrfs: test sending snapshots received from other filesystems
-  a2bfff4d6cc85af4a6403371b38cf720447c8be9 btrfs: send/receive across different filesystems
-  71d8215c197819bdccc3aa3658b59e09660133f9 btrfs: send with shared and compressed extents
-  f1b304ab9796458a076c7e22ce983c5bef0f16f4 fstests: test btrfs send for reflinked files
+The test case(btrfs/099) for reserved space leak is already merged in
+fstests.
+The reserved space leaking bug has already existed for a long time
+before the qgroup accounting rework arrived in 4.2.
 
-Thanks.
+We have tested the pull for 3 days based on 4.3-integration branch and
+found no bug.
+Although it's rebased today, the rebase shows no conflict, so I think
+the pull should be quite safe.
 
-The following changes since commit 6db4a7335dd701a0e20275440ee057d3db2a7ae3:
+We'll re-test it during the weekend again to ensure it's completely OK.
 
-  Merge branch 'fix/waitqueue-barriers' of git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux into for-linus-4.4 (2015-10-12 16:24:40 -0700)
+All the commits are the same as the v3 patchset submitted to mail list,
+except the 19th patch in patchset, as it's already included in another
+pull request for 4.3, so it's removed from this pull.
 
-are available in the git repository at:
+Thanks,
+Qu
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git integration-4.4
+Qu Wenruo (20):
+  btrfs: extent_io: Introduce needed structure for recoding set/clear
+    bits
+  btrfs: extent_io: Introduce new function set_record_extent_bits
+  btrfs: extent_io: Introduce new function clear_record_extent_bits()
+  btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
+  btrfs: qgroup: Introduce functions to release/free qgroup reserve data
+        space
+  btrfs: delayed_ref: Add new function to record reserved space into
+    delayed ref
+  btrfs: delayed_ref: release and free qgroup reserved at proper timing
+  btrfs: qgroup: Introduce new functions to reserve/free metadata
+  btrfs: qgroup: Use new metadata reservation.
+  btrfs: extent-tree: Add new version of btrfs_check_data_free_space and
+    btrfs_free_reserved_data_space.
+  btrfs: extent-tree: Switch to new check_data_free_space and
+    free_reserved_data_space
+  btrfs: extent-tree: Add new version of
+    btrfs_delalloc_reserve/release_space
+  btrfs: extent-tree: Switch to new delalloc space reserve and release
+  btrfs: qgroup: Cleanup old inaccurate facilities
+  btrfs: qgroup: Add handler for NOCOW and inline
+  btrfs: Add handler for invalidate page
+  btrfs: qgroup: Add new trace point for qgroup data reserve
+  btrfs: fallocate: Add support to accurate qgroup reserve
+  btrfs: qgroup: Avoid calling btrfs_free_reserved_data_space in
+    clear_bit_hook
+  btrfs: qgroup: Check if qgroup reserved space leaked
 
-for you to fetch changes up to 5e6ecb362bd5950a3d8ce19c32829e4f8c7917d9:
-
-  Btrfs: fix double range unlock of hole region when reading page (2015-10-14 04:37:00 +0100)
-
-----------------------------------------------------------------
-Filipe Manana (3):
-      Btrfs: send, fix file corruption due to incorrect cloning operations
-      Btrfs: fix file corruption and data loss after cloning inline extents
-      Btrfs: fix double range unlock of hole region when reading page
-
-Robin Ruede (1):
-      btrfs: fix resending received snapshot with parent
-
- fs/btrfs/extent_io.c |   8 ++++--
- fs/btrfs/ioctl.c     | 195 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++--------------------------------
- fs/btrfs/send.c      | 210 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++----------------------
- 3 files changed, 339 insertions(+), 74 deletions(-)
+ fs/btrfs/ctree.h             |  14 ++-
+ fs/btrfs/delayed-ref.c       |  29 +++++++
+ fs/btrfs/delayed-ref.h       |  14 +++
+ fs/btrfs/disk-io.c           |   1 +
+ fs/btrfs/extent-tree.c       | 149 ++++++++++++++++++++++----------
+ fs/btrfs/extent_io.c         | 121 +++++++++++++++++++-------
+ fs/btrfs/extent_io.h         |  19 +++++
+ fs/btrfs/file.c              | 191 +++++++++++++++++++++++++++++------------
+ fs/btrfs/inode-map.c         |   6 +-
+ fs/btrfs/inode.c             |  86 ++++++++++++++++---
+ fs/btrfs/ioctl.c             |  10 ++-
+ fs/btrfs/qgroup.c            | 199 ++++++++++++++++++++++++++++++++++++++++++-
+ fs/btrfs/qgroup.h            |  31 ++++++-
+ fs/btrfs/relocation.c        |   8 +-
+ fs/btrfs/transaction.c       |  34 ++------
+ fs/btrfs/transaction.h       |   1 -
+ include/trace/events/btrfs.h | 113 ++++++++++++++++++++++++
+ 17 files changed, 831 insertions(+), 195 deletions(-)
 
 -- 
-2.1.3
+2.6.1
 

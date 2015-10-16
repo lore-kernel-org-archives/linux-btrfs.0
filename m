@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:59296 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:54229 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753694AbbJPOHf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Oct 2015 10:07:35 -0400
+	id S1751401AbbJPS0X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Oct 2015 14:26:23 -0400
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] Btrfs: fix truncation of compressed and inlined extents
-Date: Fri, 16 Oct 2015 15:06:47 +0100
-Message-Id: <1445004407-11420-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix truncation of compressed and inlined extents
+Date: Fri, 16 Oct 2015 19:26:12 +0100
+Message-Id: <1445019972-4178-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1445004407-11420-1-git-send-email-fdmanana@kernel.org>
+References: <1445004407-11420-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -177,85 +179,61 @@ The following test case for fstests reproduces the problem:
 Cc: stable@vger.kernel.org
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 102 ++++++++++++++++++++++++++++++++++++++++++++-----------
- 1 file changed, 83 insertions(+), 19 deletions(-)
+
+V2: Simplified the approach. Instead of explicitly re-compressing, zero out
+    the remaining of the inline extent in the page cache only. Like this
+    don't have to deal with decompression, re-compression and then deal
+    with the fact that the new compressed size might not fit anymore in the
+    existing inline extent (and expand it etc).
+
+ fs/btrfs/inode.c | 83 ++++++++++++++++++++++++++++++++++++++++++++++----------
+ 1 file changed, 69 insertions(+), 14 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 208db4e..d21bf8c 100644
+index 208db4e..f887126 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -4217,6 +4217,78 @@ static int truncate_space_check(struct btrfs_trans_handle *trans,
+@@ -4217,6 +4217,47 @@ static int truncate_space_check(struct btrfs_trans_handle *trans,
  
  }
  
-+static int truncate_compressed_inline_extent(struct inode *inode,
-+					     struct extent_buffer *leaf,
-+					     const int slot,
-+					     struct btrfs_file_extent_item *fi,
-+					     const struct btrfs_key *found_key,
-+					     const u32 size,
-+					     unsigned long *total_out)
-+{
-+	struct page *pages[1] = { NULL };
-+	unsigned long out_pages;
-+	unsigned long total_in;
-+	int ret;
-+	char *page_ptr;
-+	unsigned long ptr;
-+
-+	ret = btrfs_compress_pages(btrfs_file_extent_compression(leaf, fi),
-+				   inode->i_mapping,
-+				   found_key->offset, size,
-+				   pages, 1, &out_pages,
-+				   &total_in, total_out, size);
-+	if (ret)
-+		goto out;
-+	ASSERT(total_in == size);
-+	ASSERT(out_pages == 1);
-+
-+	ptr = btrfs_file_extent_inline_start(fi);
-+	page_ptr = kmap_atomic(pages[0]);
-+	write_extent_buffer(leaf, page_ptr, ptr, *total_out);
-+	kunmap_atomic(page_ptr);
-+out:
-+	if (pages[0])
-+		page_cache_release(pages[0]);
-+
-+	return ret;
-+}
-+
 +static int truncate_inline_extent(struct inode *inode,
 +				  struct btrfs_path *path,
-+				  const struct btrfs_key *found_key,
++				  struct btrfs_key *found_key,
++				  const u64 item_end,
 +				  const u64 new_size)
 +{
 +	struct extent_buffer *leaf = path->nodes[0];
-+	const int slot = path->slots[0];
++	int slot = path->slots[0];
 +	struct btrfs_file_extent_item *fi;
 +	u32 size = (u32)(new_size - found_key->offset);
 +	struct btrfs_root *root = BTRFS_I(inode)->root;
 +
 +	fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
 +
-+	if (btrfs_file_extent_compression(leaf, fi) == BTRFS_COMPRESS_NONE) {
-+		btrfs_set_file_extent_ram_bytes(leaf, fi, size);
-+		size = btrfs_file_extent_calc_inline_size(size);
-+	} else {
-+		int ret;
-+		unsigned long total_out;
++	if (btrfs_file_extent_compression(leaf, fi) != BTRFS_COMPRESS_NONE) {
++		loff_t offset = new_size;
++		loff_t page_end = ALIGN(offset, PAGE_CACHE_SIZE);
 +
-+		btrfs_set_path_blocking(path);
-+		ret = truncate_compressed_inline_extent(inode, leaf, slot, fi,
-+							found_key, size,
-+							&total_out);
-+		btrfs_clear_path_blocking(path, NULL, 0);
-+		if (ret)
-+			return ret;
-+		btrfs_set_file_extent_ram_bytes(leaf, fi, size);
-+		size = btrfs_file_extent_calc_inline_size(total_out);
++		/*
++		 * Zero out the remaining of the last page of our inline extent,
++		 * instead of directly truncating our inline extent here - that
++		 * would be much more complex (decompressing all the data, then
++		 * compressing the truncated data, which might be bigger than
++		 * the size of the inline extent, resize the extent, etc).
++		 * We release the path because to get the page we might need to
++		 * read the extent item from disk (data not in the page cache).
++		 */
++		btrfs_release_path(path);
++		return btrfs_truncate_page(inode, offset, page_end - offset, 0);
 +	}
 +
++	btrfs_set_file_extent_ram_bytes(leaf, fi, size);
++	size = btrfs_file_extent_calc_inline_size(size);
 +	btrfs_truncate_item(root, path, size, 1);
++
++	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
++		inode_sub_bytes(inode, item_end + 1 - new_size);
 +
 +	return 0;
 +}
@@ -263,7 +241,7 @@ index 208db4e..d21bf8c 100644
  /*
   * this can truncate away extent items, csum items and directory items.
   * It starts at a high offset and removes keys until it can't find
-@@ -4411,28 +4483,20 @@ search_again:
+@@ -4411,28 +4452,42 @@ search_again:
  			 * special encodings
  			 */
  			if (!del_item &&
@@ -275,31 +253,48 @@ index 208db4e..d21bf8c 100644
 -				if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
 -					inode_sub_bytes(inode, item_end + 1 -
 -							new_size);
--
--				/*
+ 
+ 				/*
 -				 * update the ram bytes to properly reflect
 -				 * the new size of our item
--				 */
++				 * Need to release path in order to truncate a
++				 * compressed extent. So delete any accumulated
++				 * extent items so far.
+ 				 */
 -				btrfs_set_file_extent_ram_bytes(leaf, fi, size);
 -				size =
 -				    btrfs_file_extent_calc_inline_size(size);
 -				btrfs_truncate_item(root, path, size, 1);
--			} else if (test_bit(BTRFS_ROOT_REF_COWS,
--					    &root->state)) {
--				inode_sub_bytes(inode, item_end + 1 -
--						found_key.offset);
++				if (btrfs_file_extent_compression(leaf, fi) !=
++				    BTRFS_COMPRESS_NONE && pending_del_nr) {
++					err = btrfs_del_items(trans, root, path,
++							      pending_del_slot,
++							      pending_del_nr);
++					if (err) {
++						btrfs_abort_transaction(trans,
++									root,
++									err);
++						goto error;
++					}
++					pending_del_nr = 0;
++				}
++
 +				err = truncate_inline_extent(inode, path,
 +							     &found_key,
++							     item_end,
 +							     new_size);
 +				if (err) {
 +					btrfs_abort_transaction(trans,
 +								root, err);
 +					goto error;
 +				}
+ 			} else if (test_bit(BTRFS_ROOT_REF_COWS,
+ 					    &root->state)) {
+-				inode_sub_bytes(inode, item_end + 1 -
+-						found_key.offset);
++				inode_sub_bytes(inode, item_end + 1 - new_size);
  			}
 +
-+			if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+				inode_sub_bytes(inode, item_end + 1 - new_size);
  		}
  delete:
  		if (del_item) {

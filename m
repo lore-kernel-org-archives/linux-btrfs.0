@@ -1,117 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:2671 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932199AbbJMCUe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 12 Oct 2015 22:20:34 -0400
-Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9D2K1Q4012662
-	for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 10:20:02 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 04/21] btrfs: qgroup: Introduce btrfs_qgroup_reserve_data function
-Date: Tue, 13 Oct 2015 10:20:10 +0800
-Message-Id: <1444702827-18169-5-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx144.netapp.com ([216.240.21.25]:54627 "EHLO mx144.netapp.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932145AbbJPVIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Oct 2015 17:08:34 -0400
+From: Anna Schumaker <Anna.Schumaker@netapp.com>
+To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
+        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
+        <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
+        <andros@netapp.com>, <hch@infradead.org>
+Subject: [PATCH v6 0/4] VFS: In-kernel copy system call
+Date: Fri, 16 Oct 2015 17:08:22 -0400
+Message-ID: <1445029707-31549-1-git-send-email-Anna.Schumaker@Netapp.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, btrfs_qgroup_reserve_data(), which will use
-io_tree to accurate qgroup reserve, to avoid reserved space leaking.
+Copy system calls came up during Plumbers a while ago, mostly because several
+filesystems (including NFS and XFS) are currently working on copy acceleration
+implementations.  We haven't heard from Zach Brown in a while, so I volunteered
+to push his patches upstream so individual filesystems don't need to keep
+writing their own ioctls.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
-v2:
-  Add needed parameter for later trace functions
-v3:
-  Use io_tree facilities instead of data_rsv_map facilities
----
- fs/btrfs/extent_io.h |  1 +
- fs/btrfs/qgroup.c    | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/qgroup.h    |  2 ++
- 3 files changed, 52 insertions(+)
+This posting adresses Christoph's comments.  I'm pretty sure that splice() is
+already interruptible, so I don't know what else needs to be done for this
+system call.
 
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 51e1b71..f4c1ae1 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -19,6 +19,7 @@
- #define EXTENT_NEED_WAIT	(1U << 13)
- #define EXTENT_DAMAGED		(1U << 14)
- #define EXTENT_NORESERVE	(1U << 15)
-+#define EXTENT_QGROUP_RESERVED	(1U << 16)
- #define EXTENT_IOBITS		(EXTENT_LOCKED | EXTENT_WRITEBACK)
- #define EXTENT_CTLBITS		(EXTENT_DO_ACCOUNTING | EXTENT_FIRST_DELALLOC)
- 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index e9ace09..9ef8d73 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2481,3 +2481,52 @@ btrfs_qgroup_rescan_resume(struct btrfs_fs_info *fs_info)
- 		btrfs_queue_work(fs_info->qgroup_rescan_workers,
- 				 &fs_info->qgroup_rescan_work);
- }
-+
-+/*
-+ * Reserve qgroup space for range [start, start + len).
-+ *
-+ * This function will either reserve space from related qgroups or doing
-+ * nothing if the range is already reserved.
-+ *
-+ * Return 0 for successful reserve
-+ * Return <0 for error (including -EQUOT)
-+ *
-+ * NOTE: this function may sleep for memory allocation.
-+ */
-+int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct extent_changeset changeset;
-+	struct ulist_node *unode;
-+	struct ulist_iterator uiter;
-+	int ret;
-+
-+	if (!root->fs_info->quota_enabled || !is_fstree(root->objectid) ||
-+	    len == 0)
-+		return 0;
-+
-+	changeset.bytes_changed = 0;
-+	changeset.range_changed = ulist_alloc(GFP_NOFS);
-+
-+	ret = set_record_extent_bits(&BTRFS_I(inode)->io_tree, start,
-+			start + len -1, EXTENT_QGROUP_RESERVED, GFP_NOFS,
-+			&changeset);
-+	if (ret < 0)
-+		goto cleanup;
-+	ret = btrfs_qgroup_reserve(root, changeset.bytes_changed);
-+	if (ret < 0)
-+		goto cleanup;
-+
-+	ulist_free(changeset.range_changed);
-+	return ret;
-+
-+cleanup:
-+	/* cleanup already reserved ranges */
-+	ULIST_ITER_INIT(&uiter);
-+	while ((unode = ulist_next(changeset.range_changed, &uiter)))
-+		clear_extent_bit(&BTRFS_I(inode)->io_tree, unode->val,
-+				 unode->aux, EXTENT_QGROUP_RESERVED, 0, 0, NULL,
-+				 GFP_NOFS);
-+	ulist_free(changeset.range_changed);
-+	return ret;
-+}
-diff --git a/fs/btrfs/qgroup.h b/fs/btrfs/qgroup.h
-index 6387dcf..bd17cc2 100644
---- a/fs/btrfs/qgroup.h
-+++ b/fs/btrfs/qgroup.h
-@@ -81,4 +81,6 @@ int btrfs_verify_qgroup_counts(struct btrfs_fs_info *fs_info, u64 qgroupid,
- 			       u64 rfer, u64 excl);
- #endif
- 
-+/* New io_tree based accurate qgroup reserve API */
-+int btrfs_qgroup_reserve_data(struct inode *inode, u64 start, u64 len);
- #endif /* __BTRFS_QGROUP__ */
+I haven't started work on a "sparse" copy flag yet.  I would like to focus on
+the base system call first, and then add that later if it's still desired.
+
+Changes in v6:
+- Squash together most patches.
+- Drop all flags except COPY_FR_REFLINK.
+- Drop patch removing same mountpoint check.
+- Change default behavior (flags = 0) to a data copy.
+
+
+Anna Schumaker (1):
+  vfs: Add vfs_copy_file_range() support for pagecache copies
+
+Zach Brown (3):
+  vfs: add copy_file_range syscall and vfs helper
+  x86: add sys_copy_file_range to syscall tables
+  btrfs: add .copy_file_range file operation
+
+ arch/x86/entry/syscalls/syscall_32.tbl |   1 +
+ arch/x86/entry/syscalls/syscall_64.tbl |   1 +
+ fs/btrfs/ctree.h                       |   3 +
+ fs/btrfs/file.c                        |   1 +
+ fs/btrfs/ioctl.c                       |  94 +++++++++++++----------
+ fs/read_write.c                        | 133 +++++++++++++++++++++++++++++++++
+ include/linux/fs.h                     |   3 +
+ include/linux/syscalls.h               |   3 +
+ include/uapi/asm-generic/unistd.h      |   4 +-
+ include/uapi/linux/fs.h                |   2 +
+ kernel/sys_ni.c                        |   1 +
+ 11 files changed, 206 insertions(+), 40 deletions(-)
+
 -- 
 2.6.1
 

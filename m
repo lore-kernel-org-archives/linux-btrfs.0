@@ -1,63 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx144.netapp.com ([216.240.21.25]:54627 "EHLO mx144.netapp.com"
+Received: from mx144.netapp.com ([216.240.21.25]:27623 "EHLO mx144.netapp.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932145AbbJPVIe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Oct 2015 17:08:34 -0400
+	id S932145AbbJPVIl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Oct 2015 17:08:41 -0400
 From: Anna Schumaker <Anna.Schumaker@netapp.com>
 To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
         <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
         <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
         <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
         <andros@netapp.com>, <hch@infradead.org>
-Subject: [PATCH v6 0/4] VFS: In-kernel copy system call
-Date: Fri, 16 Oct 2015 17:08:22 -0400
-Message-ID: <1445029707-31549-1-git-send-email-Anna.Schumaker@Netapp.com>
+Subject: [PATCH v6 4/4] vfs: Add vfs_copy_file_range() support for pagecache copies
+Date: Fri, 16 Oct 2015 17:08:26 -0400
+Message-ID: <1445029707-31549-5-git-send-email-Anna.Schumaker@Netapp.com>
+In-Reply-To: <1445029707-31549-1-git-send-email-Anna.Schumaker@Netapp.com>
+References: <1445029707-31549-1-git-send-email-Anna.Schumaker@Netapp.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Copy system calls came up during Plumbers a while ago, mostly because several
-filesystems (including NFS and XFS) are currently working on copy acceleration
-implementations.  We haven't heard from Zach Brown in a while, so I volunteered
-to push his patches upstream so individual filesystems don't need to keep
-writing their own ioctls.
+This allows us to have an in-kernel copy mechanism that avoids frequent
+switches between kernel and user space.  This is especially useful so
+NFSD can support server-side copies.
 
-This posting adresses Christoph's comments.  I'm pretty sure that splice() is
-already interruptible, so I don't know what else needs to be done for this
-system call.
+The default (flags=0) means to first attempt copy acceleration, but use
+the pagecache if that fails.
 
-I haven't started work on a "sparse" copy flag yet.  I would like to focus on
-the base system call first, and then add that later if it's still desired.
+I moved the rw_verify_area() calls into the fallback code since some
+filesystems can handle reflinking a large range.
 
-Changes in v6:
-- Squash together most patches.
-- Drop all flags except COPY_FR_REFLINK.
-- Drop patch removing same mountpoint check.
-- Change default behavior (flags = 0) to a data copy.
+Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
+Reviewed-by: Darrick J. Wong <darrick.wong@oracle.com>
+Reviewed-by: Padraig Brady <P@draigBrady.com>
+---
+v6:
+- Don't reflink by default.
+- Reword commit message.
+---
+ fs/read_write.c | 36 ++++++++++++++++++++++++++----------
+ 1 file changed, 26 insertions(+), 10 deletions(-)
 
-
-Anna Schumaker (1):
-  vfs: Add vfs_copy_file_range() support for pagecache copies
-
-Zach Brown (3):
-  vfs: add copy_file_range syscall and vfs helper
-  x86: add sys_copy_file_range to syscall tables
-  btrfs: add .copy_file_range file operation
-
- arch/x86/entry/syscalls/syscall_32.tbl |   1 +
- arch/x86/entry/syscalls/syscall_64.tbl |   1 +
- fs/btrfs/ctree.h                       |   3 +
- fs/btrfs/file.c                        |   1 +
- fs/btrfs/ioctl.c                       |  94 +++++++++++++----------
- fs/read_write.c                        | 133 +++++++++++++++++++++++++++++++++
- include/linux/fs.h                     |   3 +
- include/linux/syscalls.h               |   3 +
- include/uapi/asm-generic/unistd.h      |   4 +-
- include/uapi/linux/fs.h                |   2 +
- kernel/sys_ni.c                        |   1 +
- 11 files changed, 206 insertions(+), 40 deletions(-)
-
+diff --git a/fs/read_write.c b/fs/read_write.c
+index 20f147d..1fd555c 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -1329,6 +1329,24 @@ COMPAT_SYSCALL_DEFINE4(sendfile64, int, out_fd, int, in_fd,
+ }
+ #endif
+ 
++static ssize_t vfs_copy_fr_copy(struct file *file_in, loff_t pos_in,
++				struct file *file_out, loff_t pos_out,
++				size_t len)
++{
++	ssize_t ret = rw_verify_area(READ, file_in, &pos_in, len);
++
++	if (ret >= 0) {
++		len = ret;
++		ret = rw_verify_area(WRITE, file_out, &pos_out, len);
++		if (ret >= 0)
++			len = ret;
++	}
++	if (ret < 0)
++		return ret;
++
++	return do_splice_direct(file_in, &pos_in, file_out, &pos_out, len, 0);
++}
++
+ /*
+  * copy_file_range() differs from regular file read and write in that it
+  * specifically allows return partial success.  When it does so is up to
+@@ -1345,17 +1363,10 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+ 	if (flags & ~(COPY_FR_REFLINK))
+ 		return -EINVAL;
+ 
+-	/* copy_file_range allows full ssize_t len, ignoring MAX_RW_COUNT  */
+-	ret = rw_verify_area(READ, file_in, &pos_in, len);
+-	if (ret >= 0)
+-		ret = rw_verify_area(WRITE, file_out, &pos_out, len);
+-	if (ret < 0)
+-		return ret;
+-
+ 	if (!(file_in->f_mode & FMODE_READ) ||
+ 	    !(file_out->f_mode & FMODE_WRITE) ||
+ 	    (file_out->f_flags & O_APPEND) ||
+-	    !file_out->f_op || !file_out->f_op->copy_file_range)
++	    !file_out->f_op)
+ 		return -EBADF;
+ 
+ 	/* this could be relaxed once a method supports cross-fs copies */
+@@ -1370,8 +1381,13 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+ 	if (ret)
+ 		return ret;
+ 
+-	ret = file_out->f_op->copy_file_range(file_in, pos_in, file_out, pos_out,
+-					      len, flags);
++	ret = -EOPNOTSUPP;
++	if (file_out->f_op->copy_file_range)
++		ret = file_out->f_op->copy_file_range(file_in, pos_in, file_out,
++						      pos_out, len, flags);
++	if ((ret == -EOPNOTSUPP) && !(flags & COPY_FR_REFLINK))
++		ret = vfs_copy_fr_copy(file_in, pos_in, file_out, pos_out, len);
++
+ 	if (ret > 0) {
+ 		fsnotify_access(file_in);
+ 		add_rchar(current, ret);
 -- 
 2.6.1
 

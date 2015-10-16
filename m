@@ -1,303 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:54229 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:34561 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751401AbbJPS0X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Oct 2015 14:26:23 -0400
-From: fdmanana@kernel.org
+	id S1751510AbbJPQTB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 16 Oct 2015 12:19:01 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 81117AAC8
+	for <linux-btrfs@vger.kernel.org>; Fri, 16 Oct 2015 16:18:59 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix truncation of compressed and inlined extents
-Date: Fri, 16 Oct 2015 19:26:12 +0100
-Message-Id: <1445019972-4178-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1445004407-11420-1-git-send-email-fdmanana@kernel.org>
-References: <1445004407-11420-1-git-send-email-fdmanana@kernel.org>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/8] btrfs-progs: cleanup and comment parse_range
+Date: Fri, 16 Oct 2015 18:17:49 +0200
+Message-Id: <4d4646c4a4938b58e4c5bd0ab57361b0261d202b.1445011409.git.dsterba@suse.com>
+In-Reply-To: <cover.1445011409.git.dsterba@suse.com>
+References: <cover.1445011409.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Simplify a check and unindent some code.
 
-When truncating a file to a smaller size which consists of an inline
-extent that is compressed, we did not discard (or made unusable) the
-data between the new file size and the old file size, wasting metadata
-space and allowing for the truncated data to be leaked and the data
-corruption/loss mentioned below.
-We were also not correctly decrementing the number of bytes used by the
-inode, we were setting it to zero, giving a wrong report for callers of
-the stat(2) syscall. The fsck tool also reported an error about a mismatch
-between the nbytes of the file versus the real space used by the file.
-
-Now because we weren't discarding the truncated region of the file, it
-was possible for a caller of the clone ioctl to actually read the data
-that was truncated, allowing for a security breach without requiring root
-access to the system, using only standard filesystem operations. The
-scenario is the following:
-
-   1) User A creates a file which consists of an inline and compressed
-      extent with a size of 2000 bytes - the file is not accessible to
-      any other users (no read, write or execution permission for anyone
-      else);
-
-   2) The user truncates the file to a size of 1000 bytes;
-
-   3) User A makes the file world readable;
-
-   4) User B creates a file consisting of an inline extent of 2000 bytes;
-
-   5) User B issues a clone operation from user A's file into its own
-      file (using a length argument of 0, clone the whole range);
-
-   6) User B now gets to see the 1000 bytes that user A truncated from
-      its file before it made its file world readbale. User B also lost
-      the bytes in the range [1000, 2000[ bytes from its own file, but
-      that might be ok if his/her intention was reading stale data from
-      user A that was never supposed to be public.
-
-Note that this contrasts with the case where we truncate a file from 2000
-bytes to 1000 bytes and then truncate it back from 1000 to 2000 bytes. In
-this case reading any byte from the range [1000, 2000[ will return a value
-of 0x00, instead of the original data.
-
-This problem exists since the clone ioctl was added and happens both with
-and without my recent data loss and file corruption fixes for the clone
-ioctl (patch "Btrfs: fix file corruption and data loss after cloning
-inline extents").
-
-So fix this by truncating the compressed inline extents as we do for the
-non-compressed case, which involves decompressing, if the data isn't already
-in the page cache, compressing the truncated version of the extent, writing
-the compressed content into the inline extent and then truncate it.
-
-The following test case for fstests reproduces the problem:
-
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      rm -f $tmp.*
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-
-  # real QA test starts here
-  _need_to_be_root
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-  _require_cloner
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >>$seqres.full 2>&1
-  _scratch_mount "-o compress"
-
-  # Create our test files. File foo is going to be the source of a clone operation
-  # and consists of a single inline extent with an uncompressed size of 512 bytes,
-  # while file bar consists of a single inline extent with an uncompressed size of
-  # 256 bytes. For our test's purpose, it's important that file bar has an inline
-  # extent with a size smaller than foo's inline extent.
-  $XFS_IO_PROG -f -c "pwrite -S 0xa1 0 128"   \
-          -c "pwrite -S 0x2a 128 384" \
-          $SCRATCH_MNT/foo | _filter_xfs_io
-  $XFS_IO_PROG -f -c "pwrite -S 0xbb 0 256" $SCRATCH_MNT/bar | _filter_xfs_io
-
-  # Now durably persist all metadata and data. We do this to make sure that we get
-  # on disk an inline extent with a size of 512 bytes for file foo.
-  sync
-
-  # Now truncate our file foo to a smaller size. Because it consists of a
-  # compressed and inline extent, btrfs did not shrink the inline extent to the
-  # new size (if the extent was not compressed, btrfs would shrink it to 128
-  # bytes), it only updates the inode's i_size to 128 bytes.
-  $XFS_IO_PROG -c "truncate 128" $SCRATCH_MNT/foo
-
-  # Now clone foo's inline extent into bar.
-  # This clone operation should fail with errno EOPNOTSUPP because the source
-  # file consists only of an inline extent and the file's size is smaller than
-  # the inline extent of the destination (128 bytes < 256 bytes). However the
-  # clone ioctl was not prepared to deal with a file that has a size smaller
-  # than the size of its inline extent (something that happens only for compressed
-  # inline extents), resulting in copying the full inline extent from the source
-  # file into the destination file.
-  #
-  # Note that btrfs' clone operation for inline extents consists of removing the
-  # inline extent from the destination inode and copy the inline extent from the
-  # source inode into the destination inode, meaning that if the destination
-  # inode's inline extent is larger (N bytes) than the source inode's inline
-  # extent (M bytes), some bytes (N - M bytes) will be lost from the destination
-  # file. Btrfs could copy the source inline extent's data into the destination's
-  # inline extent so that we would not lose any data, but that's currently not
-  # done due to the complexity that would be needed to deal with such cases
-  # (specially when one or both extents are compressed), returning EOPNOTSUPP, as
-  # it's normally not a very common case to clone very small files (only case
-  # where we get inline extents) and copying inline extents does not save any
-  # space (unlike for normal, non-inlined extents).
-  $CLONER_PROG -s 0 -d 0 -l 0 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
-
-  # Now because the above clone operation used to succeed, and due to foo's inline
-  # extent not being shinked by the truncate operation, our file bar got the whole
-  # inline extent copied from foo, making us lose the last 128 bytes from bar
-  # which got replaced by the bytes in range [128, 256[ from foo before foo was
-  # truncated - in other words, data loss from bar and being able to read old and
-  # stale data from foo that should not be possible to read anymore through normal
-  # filesystem operations. Contrast with the case where we truncate a file from a
-  # size N to a smaller size M, truncate it back to size N and then read the range
-  # [M, N[, we should always get the value 0x00 for all the bytes in that range.
-
-  # We expected the clone operation to fail with errno EOPNOTSUPP and therefore
-  # not modify our file's bar data/metadata. So its content should be 256 bytes
-  # long with all bytes having the value 0xbb.
-  #
-  # Without the btrfs bug fix, the clone operation succeeded and resulted in
-  # leaking truncated data from foo, the bytes that belonged to its range
-  # [128, 256[, and losing data from bar in that same range. So reading the
-  # file gave us the following content:
-  #
-  # 0000000 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1 a1
-  # *
-  # 0000200 2a 2a 2a 2a 2a 2a 2a 2a 2a 2a 2a 2a 2a 2a 2a 2a
-  # *
-  # 0000400
-  echo "File bar's content after the clone operation:"
-  od -t x1 $SCRATCH_MNT/bar
-
-  # Also because the foo's inline extent was not shrunk by the truncate
-  # operation, btrfs' fsck, which is run by the fstests framework everytime a
-  # test completes, failed reporting the following error:
-  #
-  #  root 5 inode 257 errors 400, nbytes wrong
-
-  status=0
-  exit
-
-Cc: stable@vger.kernel.org
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
+ cmds-balance.c | 63 ++++++++++++++++++++++++++++++++++------------------------
+ 1 file changed, 37 insertions(+), 26 deletions(-)
 
-V2: Simplified the approach. Instead of explicitly re-compressing, zero out
-    the remaining of the inline extent in the page cache only. Like this
-    don't have to deal with decompression, re-compression and then deal
-    with the fact that the new compressed size might not fit anymore in the
-    existing inline extent (and expand it etc).
-
- fs/btrfs/inode.c | 83 ++++++++++++++++++++++++++++++++++++++++++++++----------
- 1 file changed, 69 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 208db4e..f887126 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4217,6 +4217,47 @@ static int truncate_space_check(struct btrfs_trans_handle *trans,
- 
+diff --git a/cmds-balance.c b/cmds-balance.c
+index 9af218bbfa51..798b533aa7d6 100644
+--- a/cmds-balance.c
++++ b/cmds-balance.c
+@@ -88,43 +88,54 @@ static int parse_u64(const char *str, u64 *result)
+ 	return 0;
  }
  
-+static int truncate_inline_extent(struct inode *inode,
-+				  struct btrfs_path *path,
-+				  struct btrfs_key *found_key,
-+				  const u64 item_end,
-+				  const u64 new_size)
-+{
-+	struct extent_buffer *leaf = path->nodes[0];
-+	int slot = path->slots[0];
-+	struct btrfs_file_extent_item *fi;
-+	u32 size = (u32)(new_size - found_key->offset);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+
-+	fi = btrfs_item_ptr(leaf, slot, struct btrfs_file_extent_item);
-+
-+	if (btrfs_file_extent_compression(leaf, fi) != BTRFS_COMPRESS_NONE) {
-+		loff_t offset = new_size;
-+		loff_t page_end = ALIGN(offset, PAGE_CACHE_SIZE);
-+
-+		/*
-+		 * Zero out the remaining of the last page of our inline extent,
-+		 * instead of directly truncating our inline extent here - that
-+		 * would be much more complex (decompressing all the data, then
-+		 * compressing the truncated data, which might be bigger than
-+		 * the size of the inline extent, resize the extent, etc).
-+		 * We release the path because to get the page we might need to
-+		 * read the extent item from disk (data not in the page cache).
-+		 */
-+		btrfs_release_path(path);
-+		return btrfs_truncate_page(inode, offset, page_end - offset, 0);
-+	}
-+
-+	btrfs_set_file_extent_ram_bytes(leaf, fi, size);
-+	size = btrfs_file_extent_calc_inline_size(size);
-+	btrfs_truncate_item(root, path, size, 1);
-+
-+	if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
-+		inode_sub_bytes(inode, item_end + 1 - new_size);
-+
-+	return 0;
-+}
-+
- /*
-  * this can truncate away extent items, csum items and directory items.
-  * It starts at a high offset and removes keys until it can't find
-@@ -4411,28 +4452,42 @@ search_again:
- 			 * special encodings
- 			 */
- 			if (!del_item &&
--			    btrfs_file_extent_compression(leaf, fi) == 0 &&
- 			    btrfs_file_extent_encryption(leaf, fi) == 0 &&
- 			    btrfs_file_extent_other_encoding(leaf, fi) == 0) {
--				u32 size = new_size - found_key.offset;
--
--				if (test_bit(BTRFS_ROOT_REF_COWS, &root->state))
--					inode_sub_bytes(inode, item_end + 1 -
--							new_size);
++/*
++ * Parse range that's missing some part that can be implicit:
++ * a..b	- exact range, a can be equal to b
++ * a..	- implicitly unbounded maximum (end == (u64)-1)
++ * ..b	- implicitly starting at 0
++ * a	- invalid; unclear semantics, use parse_u64 instead
++ *
++ * Returned values are u64, value validation and interpretation should be done
++ * by the caller.
++ */
+ static int parse_range(const char *range, u64 *start, u64 *end)
+ {
+ 	char *dots;
++	const char *rest;
++	int skipped = 0;
  
- 				/*
--				 * update the ram bytes to properly reflect
--				 * the new size of our item
-+				 * Need to release path in order to truncate a
-+				 * compressed extent. So delete any accumulated
-+				 * extent items so far.
- 				 */
--				btrfs_set_file_extent_ram_bytes(leaf, fi, size);
--				size =
--				    btrfs_file_extent_calc_inline_size(size);
--				btrfs_truncate_item(root, path, size, 1);
-+				if (btrfs_file_extent_compression(leaf, fi) !=
-+				    BTRFS_COMPRESS_NONE && pending_del_nr) {
-+					err = btrfs_del_items(trans, root, path,
-+							      pending_del_slot,
-+							      pending_del_nr);
-+					if (err) {
-+						btrfs_abort_transaction(trans,
-+									root,
-+									err);
-+						goto error;
-+					}
-+					pending_del_nr = 0;
-+				}
+ 	dots = strstr(range, "..");
+-	if (dots) {
+-		const char *rest = dots + 2;
+-		int skipped = 0;
+-
+-		*dots = 0;
++	if (!dots)
++		return 1;
+ 
+-		if (!*rest) {
+-			*end = (u64)-1;
+-			skipped++;
+-		} else {
+-			if (parse_u64(rest, end))
+-				return 1;
+-		}
+-		if (dots == range) {
+-			*start = 0;
+-			skipped++;
+-		} else {
+-			if (parse_u64(range, start))
+-				return 1;
+-		}
++	rest = dots + 2;
++	*dots = 0;
+ 
+-		if (*start >= *end) {
+-			fprintf(stderr, "Range %llu..%llu doesn't make "
+-				"sense\n", (unsigned long long)*start,
+-				(unsigned long long)*end);
++	if (!*rest) {
++		*end = (u64)-1;
++		skipped++;
++	} else {
++		if (parse_u64(rest, end))
+ 			return 1;
+-		}
++	}
++	if (dots == range) {
++		*start = 0;
++		skipped++;
++	} else {
++		if (parse_u64(range, start))
++			return 1;
++	}
+ 
+-		if (skipped <= 1)
+-			return 0;
++	if (*start >= *end) {
++		fprintf(stderr, "Range %llu..%llu doesn't make "
++			"sense\n", (unsigned long long)*start,
++			(unsigned long long)*end);
++		return 1;
+ 	}
+ 
++	if (skipped <= 1)
++		return 0;
 +
-+				err = truncate_inline_extent(inode, path,
-+							     &found_key,
-+							     item_end,
-+							     new_size);
-+				if (err) {
-+					btrfs_abort_transaction(trans,
-+								root, err);
-+					goto error;
-+				}
- 			} else if (test_bit(BTRFS_ROOT_REF_COWS,
- 					    &root->state)) {
--				inode_sub_bytes(inode, item_end + 1 -
--						found_key.offset);
-+				inode_sub_bytes(inode, item_end + 1 - new_size);
- 			}
-+
- 		}
- delete:
- 		if (del_item) {
+ 	return 1;
+ }
+ 
 -- 
-2.1.3
+2.6.1
 

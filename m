@@ -1,112 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.commandict.com.au ([203.190.234.55]:49558 "EHLO
-	mascot.commandict.com.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932232AbbJPKmV convert rfc822-to-8bit (ORCPT
+Received: from blu004-omc1s3.hotmail.com ([65.55.116.14]:49351 "EHLO
+	BLU004-OMC1S3.hotmail.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932123AbbJPOfG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Oct 2015 06:42:21 -0400
-Received: from mascot.commandict.com.au (localhost [IPv6:::1])
-	by mascot.commandict.com.au (Postfix) with ESMTP id 94AD1681484
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Oct 2015 21:36:49 +1100 (AEDT)
-Subject: btrfs replace status >100%
-From: =?utf-8?Q?Brett_King?= <brett.king@commandict.com.au>
-To: =?utf-8?Q?linux-btrfs=40vger=2Ekernel=2Eorg?=
-	<linux-btrfs@vger.kernel.org>
-Date: Fri, 16 Oct 2015 21:36:49 +1100
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Message-Id: <zarafa.5620d341.12f4.4502d22b70e60c50@mascot.commandict.com.au>
+	Fri, 16 Oct 2015 10:35:06 -0400
+Message-ID: <BLU436-SMTP138EAB426D63216853C17A9A93D0@phx.gbl>
+MIME-Version: 1.0
+Date: Fri, 16 Oct 2015 16:35:01 +0200
+Subject: wrong message for succesful btrfs fi resize
+From: Henk Slager <hslager@hotmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi All,
-I am noticing some strange numbers when replacing a disk under RAID1:
+While resizing a filesystem a multiple times in a row (even when
+unmount,mount in between), the output of btrfs tools mentions error,
+no space left on device, while dmesg mentions the new size and the
+action was in fact succesful (no errors so far).
 
-[root@array ~]# btrfs replace status -1 /export/archive/
-367.2% done, 0 write errs, 0 uncorr. read errs
+It was quite confusing the first time I found this out, but was not
+sure if there was something else wrong maybe. Now, on another PC I see
+the same effect.
 
-The filesystem is currently at 6x 6TB + 2x 5TB, replacing the first of each 5TB with 8TB units:
+Additional resize commands (same size or smaller) have not resulted in
+a corrupted filesystem AFAIK.
+Some info w.r.t. the fault:
 
-[root@array ~]# btrfs fi df /export/archive/
-Data, RAID1: total=20.90TiB, used=20.62TiB
-System, RAID1: total=8.00MiB, used=2.91MiB
-System, single: total=4.00MiB, used=0.00B
-Metadata, RAID1: total=23.00GiB, used=22.13GiB
-Metadata, single: total=8.00MiB, used=0.00B
-GlobalReserve, single: total=512.00MiB, used=0.00B
-[root@array ~]# btrfs fi sh /export/archive/
-Label: 'archive'  uuid: 1b1f6bbb-0865-4752-bdaf-07ba30acb27e
-        Total devices 9 FS bytes used 20.64TiB
-        devid    0 size 4.55TiB used 4.55TiB path /dev/sdj
-        devid    1 size 5.46TiB used 5.46TiB path /dev/sdc
-        devid    2 size 5.46TiB used 5.46TiB path /dev/sdi
-        devid    3 size 5.46TiB used 5.46TiB path /dev/sdg
-        devid    4 size 5.46TiB used 5.46TiB path /dev/sdf
-        devid    5 size 4.55TiB used 4.55TiB path /dev/sdh
-        devid    6 size 4.55TiB used 4.55TiB path /dev/sdb
-        devid    7 size 5.46TiB used 5.46TiB path /dev/sde
-        devid    8 size 5.46TiB used 5.46TiB path /dev/sdd
+kernel 4.3.0-rc4
+btrfs-progs v4.2.2+20151005
 
-btrfs-progs v4.2.1
-[root@array ~]# btrfs device usage /export/archive/
-/dev/sdb, ID: 6
-   Device size:             4.55TiB
-   Data,RAID1:              4.55TiB
-   Metadata,RAID1:          1.00GiB
-   Unallocated:             1.02MiB
+fdisk info:
+/dev/sdf: 64.0 GB, 64023257088 bytes, 125045424 sectors
+/dev/sdf1   *        2048   115343359    57670656   83  Linux
 
-/dev/sdc, ID: 1
-   Device size:             5.46TiB
-   Data,RAID1:              5.45TiB
-   Metadata,single:         8.00MiB
-   Metadata,RAID1:         10.00GiB
-   System,single:           4.00MiB
-   Unallocated:             5.02MiB
+asus:/tmp # btrfs fi us /tmp/tumbleweed
+Overall:
+    Device size:                  55.00GiB
+    Device allocated:             55.00GiB
+    Device unallocated:            1.00MiB
+    Device missing:                  0.00B
+    Used:                         25.08GiB
+    Free (estimated):             28.78GiB      (min: 28.78GiB)
+    Data ratio:                       1.00
+    Metadata ratio:                   1.00
+    Global reserve:              320.00MiB      (used: 0.00B)
 
-/dev/sdd, ID: 8
-   Device size:             5.46TiB
-   Data,RAID1:              5.46TiB
-   Metadata,RAID1:          1.00GiB
-   Unallocated:             1.02MiB
+Data,single: Size:52.97GiB, Used:24.19GiB
+   /dev/sdf1      52.97GiB
 
-/dev/sde, ID: 7
-   Device size:             5.46TiB
-   Data,RAID1:              5.46TiB
-   Unallocated:             1.02MiB
+Metadata,single: Size:2.00GiB, Used:916.77MiB
+   /dev/sdf1       2.00GiB
 
-/dev/sdf, ID: 4
-   Device size:             5.46TiB
-   Data,RAID1:              5.45TiB
-   Metadata,RAID1:         11.00GiB
-   System,RAID1:            8.00MiB
-   Unallocated:             1.02MiB
+System,single: Size:32.00MiB, Used:16.00KiB
+   /dev/sdf1      32.00MiB
 
-/dev/sdg, ID: 3
-   Device size:             5.46TiB
-   Data,RAID1:              5.45TiB
-   Metadata,RAID1:         11.00GiB
-   System,RAID1:            8.00MiB
-   Unallocated:             1.02MiB
+Unallocated:
+   /dev/sdf1       1.00MiB
 
-/dev/sdh, ID: 5
-   Device size:             4.55TiB
-   Data,RAID1:              4.55TiB
-   Metadata,RAID1:          1.00GiB
-   Unallocated:             1.02MiB
+asus:/tmp # btrfs fi resize 29G /tmp/tumbleweed
+Resize '/tmp/tumbleweed' of '29G'
+asus:/tmp # btrfs fi resize 28G /tmp/tumbleweed
+Resize '/tmp/tumbleweed' of '28G'
+ERROR: unable to resize 'tw' - No space left on device
 
-/dev/sdi, ID: 2
-   Device size:             5.46TiB
-   Data,RAID1:              5.45TiB
-   Metadata,RAID1:         11.00GiB
-   Unallocated:             1.02MiB
-
-/dev/sdj, ID: 0
-   Device size:             7.28TiB
-   Unallocated:             4.55TiB
-
-[root@array ~]# uname -r
-4.1.10-200.fc22.x86_64
-
-Is this a problem ? And is there another way to see moved / total blocks from the running replace job ?
-
-Thanks,
-Brett.
+[cut]
+[ 5459.020806] BTRFS info (device sdf1): disk space caching is enabled
+[ 5459.020808] BTRFS: has skinny extents
+[ 5459.035919] BTRFS: detected SSD devices, enabling SSD mode
+[ 5459.036735] BTRFS: checking UUID tree
+[ 7606.071864] BTRFS: new size for /dev/sdf1 is 31138512896
+[ 7606.072860] BTRFS info (device sdf1): relocating block group
+62373494784 flags 4
+[ 7618.987497] BTRFS info (device sdf1): relocating block group
+51032096768 flags 1
+[ 7621.147040] BTRFS info (device sdf1): found 7911 extents
+[ 7629.754796] BTRFS info (device sdf1): found 7911 extents
+[ 7629.842370] BTRFS info (device sdf1): relocating block group
+49958354944 flags 1
+[ 7632.705118] BTRFS info (device sdf1): found 13248 extents
+[ 7642.427493] BTRFS info (device sdf1): found 13248 extents
+[ 7642.524090] BTRFS info (device sdf1): relocating block group
+71030538240 flags 1
+[ 7642.621854] BTRFS info (device sdf1): found 1 extents
+[ 7642.729459] BTRFS info (device sdf1): found 1 extents
+[ 7642.793593] BTRFS info (device sdf1): relocating block group
+48884613120 flags 1
+[ 7645.079250] BTRFS info (device sdf1): found 7628 extents
+[ 7654.246605] BTRFS info (device sdf1): found 7628 extents
+[ 7654.327323] BTRFS info (device sdf1): relocating block group
+47274000384 flags 1
+[ 7656.422451] BTRFS info (device sdf1): found 9595 extents
+[ 7663.991900] BTRFS info (device sdf1): found 9592 extents
+[ 7664.091894] BTRFS info (device sdf1): relocating block group
+46200258560 flags 1
+[ 7666.442398] BTRFS info (device sdf1): found 10892 extents
+[ 7676.297287] BTRFS info (device sdf1): found 10892 extents
+[ 7676.393986] BTRFS info (device sdf1): relocating block group
+62373494784 flags 4
+[ 7687.308804] BTRFS info (device sdf1): found 43036 extents
+[ 7710.564267] BTRFS: new size for /dev/sdf1 is 30064771072
+[cut]

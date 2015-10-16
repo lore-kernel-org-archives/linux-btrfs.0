@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:62815 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:60779 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S933417AbbJIRmf (ORCPT
+	by vger.kernel.org with ESMTP id S1754344AbbJPRe2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 9 Oct 2015 13:42:35 -0400
-Date: Fri, 9 Oct 2015 13:42:13 -0400
+	Fri, 16 Oct 2015 13:34:28 -0400
+Date: Fri, 16 Oct 2015 13:34:01 -0400
 From: Chris Mason <clm@fb.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-kernel <linux-kernel@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: [GIT PULL] Btrfs
-Message-ID: <20151009174213.GA25218@ret.masoncoding.com>
+Message-ID: <20151016173401.GD6874@ret.masoncoding.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -18,31 +18,26 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi Linus,
 
-I have a few fixes in my for-linus-4.3 branch:
+I have two more in my for-linus-4.3 branch
 
 git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.3
 
-These are small and assorted.  Neil's is the oldest, I dropped the ball
-thinking he was going to send it in.
+My commit fixes a bug we hit last week at FB, a combination of lots of
+hard links and an admin command to resolve inode numbers.
 
-Filipe Manana (3) commits (+26/-12):
-    Btrfs: update fix for read corruption of compressed and shared extents (+11/-8)
-    Btrfs: send, fix corner case for reference overwrite detection (+5/-3)
-    Btrfs: fix deadlock when finalizing block group creation (+10/-1)
+Dave is adding checks to make sure balance on current kernels ignores
+filters it doesn't understand.  The penalty for being wrong is just
+doing more work (not crashing etc), but it's a good fix.
 
-NeilBrown (1) commits (+5/-5):
-    BTRFS: support NFSv2 export
+Chris Mason (1) commits (+3/-5):
+    btrfs: fix use after free iterating extrefs
 
-chandan (1) commits (+4/-0):
-    Btrfs: open_ctree: Fix possible memory leak
+David Sterba (1) commits (+13/-0):
+    btrfs: check unsupported filters in balance arguments
 
-Total: (5) commits (+35/-17)
+Total: (2) commits (+16/-5)
 
- fs/btrfs/disk-io.c     |  4 ++++
- fs/btrfs/export.c      | 10 +++++-----
- fs/btrfs/extent-tree.c |  9 ++++++++-
- fs/btrfs/extent_io.c   | 19 +++++++++++--------
- fs/btrfs/send.c        |  8 +++++---
- fs/btrfs/transaction.c |  1 +
- fs/btrfs/transaction.h |  1 +
- 7 files changed, 35 insertions(+), 17 deletions(-)
+ fs/btrfs/backref.c | 8 +++-----
+ fs/btrfs/ioctl.c   | 5 +++++
+ fs/btrfs/volumes.h | 8 ++++++++
+ 3 files changed, 16 insertions(+), 5 deletions(-)

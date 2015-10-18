@@ -1,187 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp08.au.ibm.com ([202.81.31.141]:40120 "EHLO
-	e23smtp08.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752370AbbJRMGK (ORCPT
+Received: from e23smtp01.au.ibm.com ([202.81.31.143]:56897 "EHLO
+	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752967AbbJRMGq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 Oct 2015 08:06:10 -0400
-Received: from /spool/local
-	by e23smtp08.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	Sun, 18 Oct 2015 08:06:46 -0400
+Received: from localhost
+	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Sun, 18 Oct 2015 22:06:08 +1000
-Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
-	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 6B62A2CE8052
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:06:04 +1100 (EST)
+	Sun, 18 Oct 2015 22:06:43 +1000
+Received: from d23relay08.au.ibm.com (d23relay08.au.ibm.com [9.185.71.33])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id C54B93578052
+	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:06:41 +1100 (EST)
 Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
-	by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t9IC5t4b48627754
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:06:04 +1100
+	by d23relay08.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t9IC6Lpb30015716
+	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:06:29 +1100
 Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
-	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t9IC5UVN029122
-	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:05:31 +1100
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t9IC68Wa029603
+	for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:06:09 +1100
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, clm@fb.com, jbacik@fb.com,
         bo.li.liu@oracle.com, dsterba@suse.cz, quwenruo@cn.fujitsu.com,
         chandan@mykolab.com
-Subject: [PATCH V6 01/13] Btrfs: __btrfs_buffered_write: Reserve/release extents aligned to block size
-Date: Sun, 18 Oct 2015 17:34:51 +0530
-Message-Id: <1445169903-13915-2-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V6 12/13] Btrfs: prepare_pages: Retry adding a page to the page cache
+Date: Sun, 18 Oct 2015 17:35:02 +0530
+Message-Id: <1445169903-13915-13-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1445169903-13915-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1445169903-13915-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Currently, the code reserves/releases extents in multiples of PAGE_CACHE_SIZE
-units. Fix this by doing reservation/releases in block size units.
+When reading the page from the disk, we can race with Direct I/O which can get
+the page lock (before prepare_uptodate_page() gets it) and can go ahead and
+invalidate the page. Hence if the page is not found in the inode's address
+space, retry the operation of getting a page.
 
+Reported-by: Jakub Palider <jpa@semihalf.com>
+Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/ctree.h |  3 +++
- fs/btrfs/file.c  | 46 +++++++++++++++++++++++++++++++++-------------
- 2 files changed, 36 insertions(+), 13 deletions(-)
+ fs/btrfs/file.c | 16 ++++++++++++++++
+ 1 file changed, 16 insertions(+)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 938efe3..74a1439 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -2236,6 +2236,9 @@ struct btrfs_map_token {
- 	unsigned long offset;
- };
- 
-+#define BTRFS_BYTES_TO_BLKS(fs_info, bytes) \
-+				((bytes) >> (fs_info)->sb->s_blocksize_bits)
-+
- static inline void btrfs_init_map_token (struct btrfs_map_token *token)
- {
- 	token->kaddr = NULL;
 diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index b823fac..e16cb40 100644
+index bde222b..ded7a93 100644
 --- a/fs/btrfs/file.c
 +++ b/fs/btrfs/file.c
-@@ -499,7 +499,7 @@ int btrfs_dirty_pages(struct btrfs_root *root, struct inode *inode,
- 	loff_t isize = i_size_read(inode);
+@@ -1316,6 +1316,7 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 	int faili;
  
- 	start_pos = pos & ~((u64)root->sectorsize - 1);
--	num_bytes = ALIGN(write_bytes + pos - start_pos, root->sectorsize);
-+	num_bytes = round_up(write_bytes + pos - start_pos, root->sectorsize);
- 
- 	end_of_last_block = start_pos + num_bytes - 1;
- 	err = btrfs_set_extent_delalloc(inode, start_pos, end_of_last_block,
-@@ -1362,16 +1362,19 @@ fail:
- static noinline int
- lock_and_cleanup_extent_if_need(struct inode *inode, struct page **pages,
- 				size_t num_pages, loff_t pos,
-+				size_t write_bytes,
- 				u64 *lockstart, u64 *lockend,
- 				struct extent_state **cached_state)
- {
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 start_pos;
- 	u64 last_pos;
- 	int i;
- 	int ret = 0;
- 
--	start_pos = pos & ~((u64)PAGE_CACHE_SIZE - 1);
--	last_pos = start_pos + ((u64)num_pages << PAGE_CACHE_SHIFT) - 1;
-+	start_pos = round_down(pos, root->sectorsize);
-+	last_pos = start_pos
-+		+ round_up(pos + write_bytes - start_pos, root->sectorsize) - 1;
- 
- 	if (start_pos < inode->i_size) {
- 		struct btrfs_ordered_extent *ordered;
-@@ -1489,6 +1492,7 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 
- 	while (iov_iter_count(i) > 0) {
- 		size_t offset = pos & (PAGE_CACHE_SIZE - 1);
-+		size_t sector_offset;
- 		size_t write_bytes = min(iov_iter_count(i),
- 					 nrptrs * (size_t)PAGE_CACHE_SIZE -
- 					 offset);
-@@ -1497,6 +1501,8 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 		size_t reserve_bytes;
- 		size_t dirty_pages;
- 		size_t copied;
-+		size_t dirty_sectors;
-+		size_t num_sectors;
- 
- 		WARN_ON(num_pages > nrptrs);
- 
-@@ -1509,8 +1515,12 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 			break;
- 		}
- 
--		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
-+		sector_offset = pos & (root->sectorsize - 1);
-+		reserve_bytes = round_up(write_bytes + sector_offset,
-+				root->sectorsize);
+ 	for (i = 0; i < num_pages; i++) {
++again:
+ 		pages[i] = find_or_create_page(inode->i_mapping, index + i,
+ 					       mask | __GFP_WRITE);
+ 		if (!pages[i]) {
+@@ -1330,6 +1331,21 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
+ 		if (i == num_pages - 1)
+ 			err = prepare_uptodate_page(pages[i],
+ 						    pos + write_bytes, false);
 +
- 		ret = btrfs_check_data_free_space(inode, reserve_bytes, write_bytes);
++		/*
++		 * When reading the page from the disk, we can race
++		 * with direct i/o which can get the page lock (before
++		 * prepare_uptodate_page() gets it) and can go ahead
++		 * and invalidate the page. Hence if the page is found
++		 * to be not belonging to the inode's address space,
++		 * retry the operation of getting a page.
++		 */
++		if (unlikely(pages[i]->mapping != inode->i_mapping)) {
++			unlock_page(pages[i]);
++			page_cache_release(pages[i]);
++			goto again;
++		}
 +
- 		if (ret == -ENOSPC &&
- 		    (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
- 					      BTRFS_INODE_PREALLOC))) {
-@@ -1523,7 +1533,10 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 				 */
- 				num_pages = DIV_ROUND_UP(write_bytes + offset,
- 							 PAGE_CACHE_SIZE);
--				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
-+				reserve_bytes = round_up(write_bytes
-+							+ sector_offset,
-+							root->sectorsize);
-+
- 				ret = 0;
- 			} else {
- 				ret = -ENOSPC;
-@@ -1558,8 +1571,8 @@ again:
- 			break;
- 
- 		ret = lock_and_cleanup_extent_if_need(inode, pages, num_pages,
--						      pos, &lockstart, &lockend,
--						      &cached_state);
-+						pos, write_bytes, &lockstart,
-+						&lockend, &cached_state);
- 		if (ret < 0) {
- 			if (ret == -EAGAIN)
- 				goto again;
-@@ -1595,9 +1608,16 @@ again:
- 		 * we still have an outstanding extent for the chunk we actually
- 		 * managed to copy.
- 		 */
--		if (num_pages > dirty_pages) {
--			release_bytes = (num_pages - dirty_pages) <<
--				PAGE_CACHE_SHIFT;
-+		num_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
-+						reserve_bytes);
-+		dirty_sectors = round_up(copied + sector_offset,
-+					root->sectorsize);
-+		dirty_sectors = BTRFS_BYTES_TO_BLKS(root->fs_info,
-+						dirty_sectors);
-+
-+		if (num_sectors > dirty_sectors) {
-+			release_bytes = (write_bytes - copied)
-+				& ~((u64)root->sectorsize - 1);
- 			if (copied > 0) {
- 				spin_lock(&BTRFS_I(inode)->lock);
- 				BTRFS_I(inode)->outstanding_extents++;
-@@ -1611,7 +1631,8 @@ again:
- 							     release_bytes);
- 		}
- 
--		release_bytes = dirty_pages << PAGE_CACHE_SHIFT;
-+		release_bytes = round_up(copied + sector_offset,
-+					root->sectorsize);
- 
- 		if (copied > 0)
- 			ret = btrfs_dirty_pages(root, inode, pages,
-@@ -1632,8 +1653,7 @@ again:
- 
- 		if (only_release_metadata && copied > 0) {
- 			lockstart = round_down(pos, root->sectorsize);
--			lockend = lockstart +
--				(dirty_pages << PAGE_CACHE_SHIFT) - 1;
-+			lockend = round_up(pos + copied, root->sectorsize) - 1;
- 
- 			set_extent_bit(&BTRFS_I(inode)->io_tree, lockstart,
- 				       lockend, EXTENT_NORESERVE, NULL,
+ 		if (err) {
+ 			page_cache_release(pages[i]);
+ 			faili = i - 1;
 -- 
 2.1.0
 

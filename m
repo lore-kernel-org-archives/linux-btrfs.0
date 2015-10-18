@@ -1,41 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39670 "EHLO mx2.suse.de"
+Received: from mout.gmx.net ([212.227.15.15]:53049 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932274AbbJMP7S (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 11:59:18 -0400
-Date: Tue, 13 Oct 2015 17:58:07 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 00/11] btrfs-progs: Use btrfs_open_dir to avoid show
- error of ioctl or tree search
-Message-ID: <20151013155807.GK27761@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1444655800.git.zhaolei@cn.fujitsu.com>
+	id S1752365AbbJRLlk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 18 Oct 2015 07:41:40 -0400
+Subject: Re: [PATCH] Btrfs-progs: fix btrfs-convert rollback to check
+ ROOT_BACKREF
+To: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1445147081-13511-1-git-send-email-bo.li.liu@oracle.com>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <56238567.7060201@gmx.com>
+Date: Sun, 18 Oct 2015 19:41:27 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1444655800.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <1445147081-13511-1-git-send-email-bo.li.liu@oracle.com>
+Content-Type: text/plain; charset=gbk; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Oct 12, 2015 at 09:22:53PM +0800, Zhao Lei wrote:
-> Use btrfs_open_dir() instead of open_file_or_dir(), to show error before
-> real action(in ioctl or tree search), to make the error message exact
-> and unified.
-> 
-> Zhao Lei (11):
->   btrfs-progs: subvolume: use btrfs_open_dir for btrfs subvolume command
->   btrfs-progs: filesystem: use btrfs_open_dir for btrfs filesystem
->     command
->   btrfs-progs: balance: use btrfs_open_dir for btrfs balance command
->   btrfs-progs: inspect: Bypass unnecessary clean function in open_error
->   btrfs-progs: inspect: set return value of error case
->   btrfs-progs: inspect: use btrfs_open_dir for btrfs inspect command
->   btrfs-progs: qgroup: use btrfs_open_dir for btrfs qgroup command
->   btrfs-progs: quota: use btrfs_open_dir for btrfs quota command
->   btrfs-progs: use btrfs_open_dir in open_path_or_dev_mnt
->   btrfs-progs: replace: use btrfs_open_dir for btrfs replace command
->   btrfs-progs: fragments: use btrfs_open_dir for btrfs-fragments command
 
-All merged, thanks! I appreciate you took the time to test all the
-changes and the patch separation made review easy.
+
+在 2015年10月18日 13:44, Liu Bo 写道:
+> Btrfs has changed to delete subvolume/snapshot asynchronously, which means that
+> after umount itself, if we've already deleted 'ext2_saved', rollback can still
+> be completed.
+>
+> So this adds a check for ROOT_BACKREF before checking ROOT_ITEM since
+> ROOT_BACKREF is immediately not in the btree after ioctl(BTRFS_IOC_SNAP_DESTROY)
+> returns.
+>
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+
+Looks good to me.
+
+Although the error message for ret > 0 case can be improved a little, like:
+"unable to find convert image subvolume, maybe it's already deleted?\n".
+
+
+BTW, would you please submit a test case for fstests? It won't be a hard 
+one though.
+
+Thanks,
+Qu
+
+> ---
+>   btrfs-convert.c | 16 ++++++++++++++++
+>   1 file changed, 16 insertions(+)
+>
+> diff --git a/btrfs-convert.c b/btrfs-convert.c
+> index 802930c..f8a6c16 100644
+> --- a/btrfs-convert.c
+> +++ b/btrfs-convert.c
+> @@ -2591,6 +2591,22 @@ static int do_rollback(const char *devname)
+>   	btrfs_init_path(&path);
+>
+>   	key.objectid = CONV_IMAGE_SUBVOL_OBJECTID;
+> +	key.type = BTRFS_ROOT_BACKREF_KEY;
+> +	key.offset = BTRFS_FS_TREE_OBJECTID;
+> +	ret = btrfs_search_slot(NULL, root->fs_info->tree_root, &key, &path, 0,
+> +				0);
+> +	btrfs_release_path(&path);
+> +	if (ret > 0) {
+> +		fprintf(stderr, "unable to open subvol %llu\n",
+> +			(unsigned long long)key.objectid);
+> +		goto fail;
+> +	} else if (ret < 0) {
+> +		fprintf(stderr, "unable to open subvol %llu ret %d\n",
+> +			(unsigned long long)key.objectid, ret);
+> +		goto fail;
+> +	}
+> +
+> +	key.objectid = CONV_IMAGE_SUBVOL_OBJECTID;
+>   	key.type = BTRFS_ROOT_ITEM_KEY;
+>   	key.offset = (u64)-1;
+>   	image_root = btrfs_read_fs_root(root->fs_info, &key);
+>

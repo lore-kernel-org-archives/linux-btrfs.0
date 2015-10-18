@@ -1,114 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51342 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751485AbbJJQBF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 10 Oct 2015 12:01:05 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id A210EACAD
-	for <linux-btrfs@vger.kernel.org>; Sat, 10 Oct 2015 16:01:02 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: statfs: report zero available if metadata are exhausted
-Date: Sat, 10 Oct 2015 17:59:53 +0200
-Message-Id: <1444492793-18228-1-git-send-email-dsterba@suse.com>
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:38384 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750734AbbJRSgN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 18 Oct 2015 14:36:13 -0400
+Date: Sun, 18 Oct 2015 21:35:41 +0000
+From: Alexandru Moise <00moses.alexander00@gmail.com>
+To: clm@fb.com
+Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: switch __btrfs_fs_incompat return type from int to
+ bool
+Message-ID: <20151018213541.GA19850@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There is one ENOSPC case that's very confusing. There's Available
-greater than zero but no file operation succeds (besides removing
-files). This happens when the metadata are exhausted and there's no
-possibility to allocate another chunk.
+Conform to __btrfs_fs_incompat() cast-to-bool (!!) by explicitly
+returning boolean not int.
 
-In this scenario it's normal that there's still some space in the data
-chunk and the calculation in df reflects that in the Avail value.
-
-To at least give some clue about the ENOSPC situation, let statfs report
-zero value in Avail, even if there's still data space available.
-
-Current:
-  /dev/sdb1             4.0G  3.3G  719M  83% /mnt/test
-
-New:
-  /dev/sdb1             4.0G  3.3G     0 100% /mnt/test
-
-We calculate the remaining metadata space minus global reserve. If this
-is (supposedly) smaller than zero, there's no space. But this does not
-hold in practice, the exhausted state happens where's still some
-positive delta. So we apply some guesswork and compare the delta to a 4M
-threshold. (Practically observed delta was 2M.)
-
-We probably cannot calculate the exact threshold value because this
-depends on the internal reservations requested by various operations, so
-some operations that consume a few metadata will succeed even if the
-Avail is zero. But this is better than the other way around.
-
-Signed-off-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
 ---
- fs/btrfs/super.c | 24 ++++++++++++++++++++++++
- 1 file changed, 24 insertions(+)
+ fs/btrfs/ctree.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 11d1eab9234d..ea76a0272b01 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -1943,6 +1943,8 @@ static int btrfs_calc_avail_data_space(struct btrfs_root *root, u64 *free_bytes)
-  * there are other factors that may change the result (like a new metadata
-  * chunk).
-  *
-+ * If metadata is exhausted, f_bavail will be 0.
-+ *
-  * FIXME: not accurate for mixed block groups, total and free/used are ok,
-  * available appears slightly larger.
-  */
-@@ -1954,11 +1956,13 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	struct btrfs_space_info *found;
- 	u64 total_used = 0;
- 	u64 total_free_data = 0;
-+	u64 total_free_meta = 0;
- 	int bits = dentry->d_sb->s_blocksize_bits;
- 	__be32 *fsid = (__be32 *)fs_info->fsid;
- 	unsigned factor = 1;
- 	struct btrfs_block_rsv *block_rsv = &fs_info->global_block_rsv;
- 	int ret;
-+	u64 thresh = 0;
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 938efe3..f387e2d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -4103,7 +4103,7 @@ static inline void __btrfs_set_fs_incompat(struct btrfs_fs_info *fs_info,
+ #define btrfs_fs_incompat(fs_info, opt) \
+ 	__btrfs_fs_incompat((fs_info), BTRFS_FEATURE_INCOMPAT_##opt)
  
- 	/*
- 	 * holding chunk_muext to avoid allocating new chunks, holding
-@@ -1984,6 +1988,8 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 				}
- 			}
- 		}
-+		if (found->flags & BTRFS_BLOCK_GROUP_METADATA)
-+			total_free_meta += found->disk_total - found->disk_used;
- 
- 		total_used += found->disk_used;
- 	}
-@@ -2006,6 +2012,24 @@ static int btrfs_statfs(struct dentry *dentry, struct kstatfs *buf)
- 	buf->f_bavail += div_u64(total_free_data, factor);
- 	buf->f_bavail = buf->f_bavail >> bits;
- 
-+	/*
-+	 * We calculate the remaining metadata space minus global reserve. If
-+	 * this is (supposedly) smaller than zero, there's no space. But this
-+	 * does not hold in practice, the exhausted state happens where's still
-+	 * some positive delta. So we apply some guesswork and compare the
-+	 * delta to a 4M threshold.  (Practically observed delta was ~2M.)
-+	 *
-+	 * We probably cannot calculate the exact threshold value because this
-+	 * depends on the internal reservations requested by various
-+	 * operations, so some operations that consume a few metadata will
-+	 * succeed even if the Avail is zero. But this is better than the other
-+	 * way around.
-+	 */
-+	thresh = 4 * 1024 * 1024;
-+
-+	if (total_free_meta - thresh < block_rsv->size)
-+		buf->f_bavail = 0;
-+
- 	buf->f_type = BTRFS_SUPER_MAGIC;
- 	buf->f_bsize = dentry->d_sb->s_blocksize;
- 	buf->f_namelen = BTRFS_NAME_LEN;
+-static inline int __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
++static inline bool __btrfs_fs_incompat(struct btrfs_fs_info *fs_info, u64 flag)
+ {
+ 	struct btrfs_super_block *disk_super;
+ 	disk_super = fs_info->super_copy;
 -- 
-1.8.4.5
+2.6.1
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

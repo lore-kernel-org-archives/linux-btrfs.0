@@ -1,55 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail07.adl2.internode.on.net ([150.101.137.131]:62909 "EHLO
-	ipmail07.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752380AbbJRWV4 (ORCPT
+Received: from mail-vk0-f45.google.com ([209.85.213.45]:33289 "EHLO
+	mail-vk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750924AbbJSGE2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 18 Oct 2015 18:21:56 -0400
-Date: Mon, 19 Oct 2015 09:21:40 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: PaX Team <pageexec@freemail.hu>
-Cc: linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        Alexander Viro <viro@zeniv.linux.org.uk>, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        spender@grsecurity.net, re.emese@gmail.com
-Subject: Re: potential integer truncation issues on 32 bit archs
-Message-ID: <20151018222140.GB2786@dastard>
-References: <5623A3D7.2704.C319A60F@pageexec.freemail.hu>
+	Mon, 19 Oct 2015 02:04:28 -0400
+Received: by vkgy127 with SMTP id y127so1633537vkg.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:04:28 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <5623A3D7.2704.C319A60F@pageexec.freemail.hu>
+In-Reply-To: <pan$6489f$54c8fba2$f1fc6c81$81eac@cox.net>
+References: <56227910.7000208@gmail.com> <pan$6489f$54c8fba2$f1fc6c81$81eac@cox.net>
+From: Paul Harvey <csirac2@gmail.com>
+Date: Mon, 19 Oct 2015 17:04:08 +1100
+Message-ID: <CAB3_QuKWHUMEfDZEnJL5+VSfNA96D-ziOXTgJOC1DKydBiD7_A@mail.gmail.com>
+Subject: Re: btrfs autodefrag?
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 18, 2015 at 03:51:19PM +0200, PaX Team wrote:
-> Hi everyone,
-> 
-> while investigating some integer related error reports we got, i ran across
-> some code in both the VFS/MM and btrfs that i think raise a more generic problem.
-> 
-> in particular, when converting a file offset to a page cache index, the canonical
-> type of the latter is usually pgoff_t, typedef'ed to unsigned long (but i saw
-> unsigned long used directly as well). this can be problematic if the VFS or any
-> file system wants to support files over 16TB (say on i386) since after a shift
-> by PAGE_CACHE_SHIFT some MSBs will be lost on 32 bit archs (now this may not be
-> a supported use case but at least btrfs doesn't seem to exclude it). another
-> trigger seems to be vfs_fsync that passes LLONG_MAX and which can end up converted
-> to a page cache index (truncated on 32 bit archs).
+On 18 October 2015 at 16:46, Duncan <1i5t5.duncan@cox.net> wrote:
+> Xavier Gnata posted on Sat, 17 Oct 2015 18:36:32 +0200 as excerpted:
+>
+>> Hi,
+>>
+>> On a desktop equipped with an ssd with one 100GB virtual image used
+>> frequently, what do you recommend?
+>> 1) nothing special, it is all fine as long as you have a recent kernel
+>> (which I do)
+>> 2) Disabling copy-on-write for just the VM image directory.
+>> 3) autodefrag as a mount option.
+>> 4) something else.
+>>
+>> I don't think this usecase is well documented therefore I asked this
+>> question.
 
-Files larger than 16TB are not supported on 32 bit arches. Most
-filesystems limit fil size to 8TB (MAX_LFS_FILESIZE), though some
-(e.g. XFS) limit it to (16TB - 1 byte).  Filesystems currently
-enforce the 8/16TB file size limit on 32bit systems through
-sb->s_maxbytes.
+[snip]
 
-I very much doubt we'll ever change this because of all the
-infrastructure changes needed. e.g.  radix trees need to be
-converted to 64 bit indexes on 32 bit platforms. It's far easier for
-people to use a 64 bit CPU than it is for use to extend 32 bit
-system support....
+> So ssd or spinning rust, there's serious conflicts between nocow and
+> snapshotting that really must be taken into consideration if you're
+> planning to both snapshot and nocow.
 
-Cheers,
+This is all spot on advice, but I just wanted to chime in to mention:
+I've been experimenting with -
+- Active working copy of VM image files are hosted on non-btrfs filesystems
+- Regular scheduled rsync --inplace onto a btrfs subvol copy of the
+file that *is* snapshotted and part of regular send/receive runs.
 
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+rsync --inplace does what it says on the tin: it just rewrites those
+parts of a file which need to be updated. Thus it only gets written to
+once prior to each snapshot run, rather than continuously.
+
+So the theory is that I can retain CoW storage efficiency (hold lots
+of snapshots cheaply) but still keep decent performance (by running
+the active, in-use working copies outside of my normal snapshotted
+btrfs filesystems).
+
+The cost is obviously more filesystems than you'd normally have to
+run, more complex disaster recovery, not to mention storage sizing has
+to accommodate a working copy on a separate fs to the archived copies.
+Plus, this rsync approach has noticeably bigger I/O overhead than
+btrfs send/receive, although in my environment nobody is noticing.

@@ -1,143 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:20592 "EHLO
-	mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751860AbbJUHU0 (ORCPT
+Received: from mail-pa0-f53.google.com ([209.85.220.53]:36817 "EHLO
+	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751063AbbJSLjI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 03:20:26 -0400
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by kw-mxauth.gw.nic.fujitsu.com (Postfix) with ESMTP id 76A8CAC00C4
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 16:20:23 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-	by m3051.s.css.fujitsu.com (Postfix) with SMTP id 4B3A515C
-	for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 16:20:23 +0900 (JST)
-Message-Id: <201510210720.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 21 Oct 2015 16:20:00 +0900
+	Mon, 19 Oct 2015 07:39:08 -0400
+Received: by pacfv9 with SMTP id fv9so93540216pac.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 04:39:08 -0700 (PDT)
+From: Eryu Guan <guaneryu@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: add a check of whether fs_info->fs_root is NULL in btrfs_async_reclaim_metadata_space()
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: Eryu Guan <guaneryu@gmail.com>
+Subject: [PATCH 01/10] btrfs-progs: fix leak of "path" in btrfs_find_item() error paths
+Date: Mon, 19 Oct 2015 19:37:50 +0800
+Message-Id: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kernel panic occurred due to NULL pointer reference in can_overcommit().
-Because btrfs_async_reclaim_metadata_space() passed NULL pointer to
-btrfs_calc_reclaim_metadata_size().
+path needs to be freed before return.
 
-============================================================
-[ 3756.152833] BUG: unable to handle kernel NULL pointer dereference at 00000000000001f0
-[ 3756.152882] IP: [<ffffffffa01d9c21>] can_overcommit+0x21/0xf0 [btrfs]
-[ 3756.152936] PGD 0
-[ 3756.152949] Oops: 0000 [#1] SMP
-[ 3756.152969] Modules linked in: ip6t_rpfilter ip6t_REJECT nf_reject_ipv6 xt_conntrack ebtable_filter ebtable_broute bridge stp llc ebtable_nat 
-ebtables ip6table_mangle ip6table_raw ip6table_security ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 ip6table_filter ip6_tables 
-iptable_mangle iptable_raw iptable_security iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack coretemp kvm_intel kvm crc32
-_pclmul iTCO_wdt iTCO_vendor_support microcode ipmi_si lpc_ich mfd_core pcspkr acpi_power_meter ipmi_msghandler i2c_i801 i7core_edac shpchp edac_core 
-nfsd acpi_cpufreq auth_rpcgss nfs_acl lockd grace sunrpc sch_fq_codel btrfs xor raid6_pq usb_storage mgag200 drm_kms_helper syscopyarea sysfillrect 
-sysimgblt fb_sys_fops ttm drm igb ptp ata_generic pps_core pata_acpi crc32c_intel
-[ 3756.153397]  dca megaraid_sas i2c_algo_bit ata_piix i2c_core
-[ 3756.153433] CPU: 3 PID: 3004 Comm: kworker/u25:4 Tainted: G          I     4.3.0-rc6 #1
-[ 3756.153469] Hardware name: FUJITSU-SV                       PRIMERGY RX300 S6             /D2619, BIOS 6.00 Rev. 1.09.2619.N1           12/13/2010
-[ 3756.153537] Workqueue: events_unbound btrfs_async_reclaim_metadata_space [btrfs]
-[ 3756.153571] task: ffff88023581a400 ti: ffff880234648000 task.ti: ffff880234648000
-[ 3756.153604] RIP: 0010:[<ffffffffa01d9c21>]  [<ffffffffa01d9c21>] can_overcommit+0x21/0xf0 [btrfs]
-[ 3756.153655] RSP: 0018:ffff88023464bda8  EFLAGS: 00010282
-[ 3756.153679] RAX: 0000000001000000 RBX: ffff880431f68c00 RCX: 0000000000000002
-[ 3756.153711] RDX: 0000000000c00000 RSI: 0000000000000000 RDI: 0000000000000000
-[ 3756.153742] RBP: ffff88023464bde0 R08: 0000000000000101 R09: 000000000000000c
-[ 3756.153773] R10: ffffffff81d10060 R11: ffffffff81d10050 R12: ffff880431f68c00
-[ 3756.153804] R13: 0000000000000000 R14: ffff880035f67070 R15: 0000000000c00000
-[ 3756.153836] FS:  0000000000000000(0000) GS:ffff880237cc0000(0000) knlGS:0000000000000000
-[ 3756.153871] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-[ 3756.153897] CR2: 00000000000001f0 CR3: 0000000001c08000 CR4: 00000000000006e0
-[ 3756.153929] Stack:
-[ 3756.153940]  ffff880200000000 ffff880237cd2940 ffff880431f68c00 0000000000000000
-[ 3756.153979]  0000000000c00000 ffff880035f67070 0000000000000000 ffff88023464be20
-[ 3756.154016]  ffffffffa01e5404 ffff880431f68c80 ffff880234482240 ffff8802378a1800
-[ 3756.154054] Call Trace:
-[ 3756.154081]  [<ffffffffa01e5404>] btrfs_async_reclaim_metadata_space+0xb4/0x210 [btrfs]
-[ 3756.154119]  [<ffffffff8109158e>] process_one_work+0x19e/0x3d0
-[ 3756.154146]  [<ffffffff8109180e>] worker_thread+0x4e/0x450
-[ 3756.154174]  [<ffffffff816914c9>] ? __schedule+0x2b9/0x930
-[ 3756.154199]  [<ffffffff810917c0>] ? process_one_work+0x3d0/0x3d0
-[ 3756.154227]  [<ffffffff810917c0>] ? process_one_work+0x3d0/0x3d0
-[ 3756.154255]  [<ffffffff81096e59>] kthread+0xc9/0xe0
-[ 3756.154279]  [<ffffffff81096d90>] ? kthread_worker_fn+0x160/0x160
-[ 3756.154307]  [<ffffffff816956cf>] ret_from_fork+0x3f/0x70
-[ 3756.154333]  [<ffffffff81096d90>] ? kthread_worker_fn+0x160/0x160
-[ 3756.154361] Code: a5 66 0f 1f 84 00 00 00 00 00 66 66 66 66 90 55 48 89 e5 41 57 41 56 41 55 41 54 49 89 f4 53 31 f6 49 89 fd 49 89 d7 48 83 ec 10 
-<4c> 8b b7 f0 01 00 00 89 4d cc 49 3b 7e 30 40 0f 95 c6 48 8d 74
-[ 3756.156802] RIP  [<ffffffffa01d9c21>] can_overcommit+0x21/0xf0 [btrfs]
-[ 3756.157995]  RSP <ffff88023464bda8>
-[ 3756.159162] CR2: 00000000000001f0
-============================================================
-
-fs_info->fs_root is referred in btrfs_async_reclaim_metadata_space()
-when mount kicked kworker(btrfs_async_reclaim_metadata_space).
-
-But at this time, fs_info->fs_root had not been initialized yet,
-so NULL pointer passed to btrfs_calc_reclaim_metadata_size().
-
-============================================================
-PID: 3045   TASK: ffff8800bb06b000  CPU: 2   COMMAND: "mount"
-    [exception RIP: queued_spin_lock_slowpath+350]
-    RIP: ffffffff810be2de  RSP: ffff8800b9fdb738  RFLAGS: 00000202
-    RAX: 0000000000000101  RBX: ffff880431f68c00  RCX: 0000000000000001
-    RDX: 0000000000000101  RSI: 0000000000000001  RDI: ffff880431f68c00
-    RBP: ffff8800b9fdb738   R8: 0000000000000101   R9: 0000000000000000
-    R10: 0000000000004000  R11: 0000000000018e58  R12: 0000000000000001
-    R13: ffff8800b9fdb7c0  R14: ffff8800bb06b000  R15: 0000000000000001
-    CS: 0010  SS: 0018
- #0 [ffff8800b9fdb740] _raw_spin_lock at ffffffff81694ff0
- #1 [ffff8800b9fdb750] reserve_metadata_bytes at ffffffffa01e55cc [btrfs]
- #2 [ffff8800b9fdb800] btrfs_block_rsv_add at ffffffffa01e5a93 [btrfs]
- #3 [ffff8800b9fdb828] btrfs_truncate_inode_items at ffffffffa0202779 [btrfs]
- #4 [ffff8800b9fdb920] btrfs_evict_inode at ffffffffa02040ec [btrfs]
- #5 [ffff8800b9fdb990] evict at ffffffff811ed6ea
- #6 [ffff8800b9fdb9b8] iput at ffffffff811ed996
- #7 [ffff8800b9fdb9e8] btrfs_orphan_cleanup at ffffffffa0204c57 [btrfs]
- #8 [ffff8800b9fdba60] btrfs_recover_relocation at ffffffffa0247a8e [btrfs]
- #9 [ffff8800b9fdbaf0] open_ctree at ffffffffa01f576b [btrfs]
-#10 [ffff8800b9fdbbc8] btrfs_mount at ffffffffa01cc6a9 [btrfs]
-#11 [ffff8800b9fdbc90] mount_fs at ffffffff811d7ab8
-#12 [ffff8800b9fdbcd8] vfs_kern_mount at ffffffff811f1be7
-#13 [ffff8800b9fdbd10] btrfs_mount at ffffffffa01cbf57 [btrfs]
-#14 [ffff8800b9fdbdd8] mount_fs at ffffffff811d7ab8
-#15 [ffff8800b9fdbe20] vfs_kern_mount at ffffffff811f1be7
-#16 [ffff8800b9fdbe58] do_mount at ffffffff811f3f8d
-#17 [ffff8800b9fdbf08] sys_mount at ffffffff811f4e1c
-#18 [ffff8800b9fdbf50] entry_SYSCALL_64_fastpath at ffffffff8169536e
-    RIP: 00007f6250fc733a  RSP: 00007ffdcd40ba88  RFLAGS: 00000246
-    RAX: ffffffffffffffda  RBX: 00007f6251b2f42a  RCX: 00007f6250fc733a
-    RDX: 0000564b58511070  RSI: 0000564b5850e290  RDI: 0000564b5850e270
-    RBP: 0000564b5850e150   R8: 0000000000000000   R9: 0000000000000014
-    R10: 00000000c0ed0000  R11: 0000000000000246  R12: 00007f6251d3f1dc
-    R13: 00007ffdcd40bd88  R14: 0000000000000000  R15: 00000000ffffffff
-    ORIG_RAX: 00000000000000a5  CS: 0033  SS: 002b
-============================================================
-
-Therefore, check of whether fs_info->fs_root is NULL is added to
-btrfs_async_reclaim_metadata_space().
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Eryu Guan <guaneryu@gmail.com>
 ---
- fs/btrfs/extent-tree.c | 3 +++
- 1 file changed, 3 insertions(+)
+ ctree.c | 20 +++++++++++---------
+ 1 file changed, 11 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 601d7d4..a2621e3 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4694,6 +4694,9 @@ static void btrfs_async_reclaim_metadata_space(struct work_struct *work)
- 	fs_info = container_of(work, struct btrfs_fs_info, async_reclaim_work);
- 	space_info = __find_space_info(fs_info, BTRFS_BLOCK_GROUP_METADATA);
+diff --git a/ctree.c b/ctree.c
+index e6e5689..1434007 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -1058,26 +1058,28 @@ int btrfs_find_item(struct btrfs_root *fs_root, struct btrfs_path *found_path,
+ 		path = found_path;
  
-+	if (!fs_info->fs_root)
-+		return;
-+
- 	to_reclaim = btrfs_calc_reclaim_metadata_size(fs_info->fs_root,
- 						      space_info);
- 	if (!to_reclaim)
+ 	ret = btrfs_search_slot(NULL, fs_root, &key, path, 0, 0);
+-	if ((ret < 0) || (found_key == NULL)) {
+-		if (path != found_path)
+-			btrfs_free_path(path);
+-		return ret;
+-	}
++	if ((ret < 0) || (found_key == NULL))
++		goto out;
+ 
+ 	eb = path->nodes[0];
+ 	if (ret && path->slots[0] >= btrfs_header_nritems(eb)) {
+ 		ret = btrfs_next_leaf(fs_root, path);
+ 		if (ret)
+-			return ret;
++			goto out;
+ 		eb = path->nodes[0];
+ 	}
+ 
+ 	btrfs_item_key_to_cpu(eb, found_key, path->slots[0]);
+ 	if (found_key->type != key.type ||
+-			found_key->objectid != key.objectid)
+-		return 1;
++			found_key->objectid != key.objectid) {
++		ret = 1;
++		goto out;
++	}
+ 
+-	return 0;
++out:
++	if (path != found_path)
++		btrfs_free_path(path);
++	return ret;
+ }
+ 
+ /*
 -- 
-2.4.5
+2.4.3
 

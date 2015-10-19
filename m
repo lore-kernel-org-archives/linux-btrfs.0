@@ -1,42 +1,26 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f47.google.com ([209.85.220.47]:32879 "EHLO
-	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750819AbbJSLpt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Oct 2015 07:45:49 -0400
-Received: by pabrc13 with SMTP id rc13so189450031pab.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 04:45:48 -0700 (PDT)
-From: Eryu Guan <guaneryu@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Eryu Guan <guaneryu@gmail.com>
-Subject: [PATCH 06/10] btrfs-progs: vailidate pointer before dereferencing it in btrfs_cow_block()
-Date: Mon, 19 Oct 2015 19:37:56 +0800
-Message-Id: <1445254680-11102-7-git-send-email-guaneryu@gmail.com>
-In-Reply-To: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:54195 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751063AbbJSNtB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Oct 2015 09:49:01 -0400
+Date: Mon, 19 Oct 2015 15:47:47 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Eryu Guan <guaneryu@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 06/10] btrfs-progs: vailidate pointer before
+ dereferencing it in btrfs_cow_block()
+Message-ID: <20151019134746.GY27761@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
+ <1445254680-11102-7-git-send-email-guaneryu@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1445254680-11102-7-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check trans before dereferencing it.
+On Mon, Oct 19, 2015 at 07:37:56PM +0800, Eryu Guan wrote:
+> Check trans before dereferencing it.
 
-Signed-off-by: Eryu Guan <guaneryu@gmail.com>
----
- ctree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/ctree.c b/ctree.c
-index 1434007..f9d972a 100644
---- a/ctree.c
-+++ b/ctree.c
-@@ -356,7 +356,7 @@ int btrfs_cow_block(struct btrfs_trans_handle *trans,
- 		WARN_ON(1);
- 	}
- 	*/
--	if (trans->transid != root->fs_info->generation) {
-+	if (trans && trans->transid != root->fs_info->generation) {
- 		printk(KERN_CRIT "trans %llu running %llu\n",
- 			(unsigned long long)trans->transid,
- 			(unsigned long long)root->fs_info->generation);
--- 
-2.4.3
-
+Have you found a code path where 'trans' can be NULL? A quick search did
+not reveal anything.

@@ -1,52 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38527 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:33501 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754389AbbJPRf5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 16 Oct 2015 13:35:57 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id EF7E0AABE
-	for <linux-btrfs@vger.kernel.org>; Fri, 16 Oct 2015 17:35:54 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+	id S1753418AbbJSJsC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Oct 2015 05:48:02 -0400
+Date: Mon, 19 Oct 2015 11:46:47 +0200
+From: David Sterba <dsterba@suse.cz>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: add balance filters limits and stripes to supported mask
-Date: Fri, 16 Oct 2015 19:34:38 +0200
-Message-Id: <1445016878-14124-1-git-send-email-dsterba@suse.com>
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.2.3
+Message-ID: <20151019094647.GT27761@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+MIME-Version: 1.0
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Enable the extended 'limit' syntax (a range) and the new 'stripes'
-filter in the filters mask. The patch comes separate and not within the
-series that introduced the new filters because the patch adding the mask
-was merged in a late rc. The integration branch was based on an older rc
-and could not merge the patch due to the missing changes.
+Hi,
 
-Prerequisities:
-* btrfs: add balance filter for stripes
-* btrfs: extend balance filter limit to take minimum and maximum
-* btrfs: check unsupported filters in balance arguments
+here's another bugfix release of btrfs-progs. Updating is recommended.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
+* subvol sync: make it actually work again:
+  it's been broken since 4.1.2, due to a reversed condition it returned
+  immediatelly instead of waiting for
 
- fs/btrfs/volumes.h | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+* scanning: do not scan already discovered filesystems (minor optimization)
+* convert: better error message in case the filesystem is not finalized
+* restore: off-by-one symlink path check fix
 
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index cab89234842d..7773af56dfa9 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -384,7 +384,9 @@ struct map_lookup {
- 	 BTRFS_BALANCE_ARGS_DEVID | 		\
- 	 BTRFS_BALANCE_ARGS_DRANGE |		\
- 	 BTRFS_BALANCE_ARGS_VRANGE |		\
--	 BTRFS_BALANCE_ARGS_LIMIT)
-+	 BTRFS_BALANCE_ARGS_LIMIT |		\
-+	 BTRFS_BALANCE_ARGS_LIMITS |		\
-+	 BTRFS_BALANCE_ARGS_STRIPES)
- 
- /*
-  * Profile changing flags.  When SOFT is set we won't relocate chunk if
--- 
-2.6.1
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
+
+Shortlog:
+Anand Jain (1):
+      btrfs-progs: optimize not to scan repeated fsid mount points
+
+David Sterba (2):
+      btrfs-progs: subvol sync: fix reversed condition
+      Btrfs progs v4.2.3
+
+Qu Wenruo (1):
+      btrfs-progs: convert: Print different error message if convert partly failed.
+
+Vincent Stehlé (1):
+      btrfs-progs: restore: fix off-by-one len check

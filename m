@@ -1,34 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46993 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751004AbbJUL3D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 07:29:03 -0400
-Date: Wed, 21 Oct 2015 13:27:42 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: add a check of whether fs_info->fs_root is NULL
- in btrfs_async_reclaim_metadata_space()
-Message-ID: <20151021112742.GD13624@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <201510210720.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201510210720.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:35112 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751036AbbJSLlW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Oct 2015 07:41:22 -0400
+Received: by pasz6 with SMTP id z6so28617829pas.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 04:41:22 -0700 (PDT)
+From: Eryu Guan <guaneryu@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Eryu Guan <guaneryu@gmail.com>
+Subject: [PATCH 02/10] btrfs-progs: save error number correctly in check_chunks_and_extents
+Date: Mon, 19 Oct 2015 19:37:52 +0800
+Message-Id: <1445254680-11102-3-git-send-email-guaneryu@gmail.com>
+In-Reply-To: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
+References: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 21, 2015 at 04:20:00PM +0900, Tsutomu Itoh wrote:
-> Kernel panic occurred due to NULL pointer reference in can_overcommit().
-> Because btrfs_async_reclaim_metadata_space() passed NULL pointer to
-> btrfs_calc_reclaim_metadata_size().
+Coverity reports assigning value from "err" to "ret", but that stored
+value is overwritten by check_extent_refs() before it can be used.
 
-> fs_info->fs_root is referred in btrfs_async_reclaim_metadata_space()
-> when mount kicked kworker(btrfs_async_reclaim_metadata_space).
-> 
-> But at this time, fs_info->fs_root had not been initialized yet,
-> so NULL pointer passed to btrfs_calc_reclaim_metadata_size().
+Signed-off-by: Eryu Guan <guaneryu@gmail.com>
+---
+ cmds-check.c | 13 ++++++-------
+ 1 file changed, 6 insertions(+), 7 deletions(-)
 
-I don't think it's the right fix, the initialization sequence should
-take care of such situations. The fs_tree must exist at the time we
-reach the point where it crashed, the code expects it.
+diff --git a/cmds-check.c b/cmds-check.c
+index 4225b21..80a7c29 100644
+--- a/cmds-check.c
++++ b/cmds-check.c
+@@ -8066,13 +8066,12 @@ again:
+ 		goto out;
+ 	}
+ 
+-	err = check_chunks(&chunk_cache, &block_group_cache,
++	ret = check_chunks(&chunk_cache, &block_group_cache,
+ 			   &dev_extent_cache, NULL, NULL, NULL, 0);
+-	if (err) {
+-		if (err == -EAGAIN)
++	if (ret) {
++		if (ret == -EAGAIN)
+ 			goto loop;
+-		if (!ret)
+-			ret = err;
++		err = ret;
+ 	}
+ 
+ 	ret = check_extent_refs(root, &extent_cache);
+@@ -8082,8 +8081,8 @@ again:
+ 		goto out;
+ 	}
+ 
+-	err = check_devices(&dev_cache, &dev_extent_cache);
+-	if (err && !ret)
++	ret = check_devices(&dev_cache, &dev_extent_cache);
++	if (ret && err)
+ 		ret = err;
+ 
+ out:
+-- 
+2.4.3
+

@@ -1,63 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f45.google.com ([209.85.213.45]:33289 "EHLO
-	mail-vk0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750924AbbJSGE2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Oct 2015 02:04:28 -0400
-Received: by vkgy127 with SMTP id y127so1633537vkg.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 18 Oct 2015 23:04:28 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <pan$6489f$54c8fba2$f1fc6c81$81eac@cox.net>
-References: <56227910.7000208@gmail.com> <pan$6489f$54c8fba2$f1fc6c81$81eac@cox.net>
-From: Paul Harvey <csirac2@gmail.com>
-Date: Mon, 19 Oct 2015 17:04:08 +1100
-Message-ID: <CAB3_QuKWHUMEfDZEnJL5+VSfNA96D-ziOXTgJOC1DKydBiD7_A@mail.gmail.com>
+Received: from plane.gmane.org ([80.91.229.3]:49456 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750759AbbJSGT5 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 19 Oct 2015 02:19:57 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Zo3nW-0007Kq-Nw
+	for linux-btrfs@vger.kernel.org; Mon, 19 Oct 2015 08:19:54 +0200
+Received: from coffee.modeemi.fi ([130.230.72.140])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 08:19:54 +0200
+Received: from flux-btrfs by coffee.modeemi.fi with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 08:19:54 +0200
+To: linux-btrfs@vger.kernel.org
+From: Erkki Seppala <flux-btrfs@inside.org>
 Subject: Re: btrfs autodefrag?
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Date: Mon, 19 Oct 2015 09:19:48 +0300
+Message-ID: <m49zizfbcsb.fsf@coffee.modeemi.fi>
+References: <56227910.7000208@gmail.com>
+	<CAGfcS_kBeqT6bQKJNegjkcFNcEyqNF2ETg_KY64Y-7-2mc+9-g@mail.gmail.com>
+	<20151018144015.GV25907@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 18 October 2015 at 16:46, Duncan <1i5t5.duncan@cox.net> wrote:
-> Xavier Gnata posted on Sat, 17 Oct 2015 18:36:32 +0200 as excerpted:
->
->> Hi,
->>
->> On a desktop equipped with an ssd with one 100GB virtual image used
->> frequently, what do you recommend?
->> 1) nothing special, it is all fine as long as you have a recent kernel
->> (which I do)
->> 2) Disabling copy-on-write for just the VM image directory.
->> 3) autodefrag as a mount option.
->> 4) something else.
->>
->> I don't think this usecase is well documented therefore I asked this
->> question.
+Hugo Mills <hugo@carfax.org.uk> writes:
+>    It has to be disabled because if you enable it, there's a race
+> condition: since you're overwriting existing data (rather than CoWing
+> it), you can't update the checksums atomically. So, in the interests
+> of consistency, checksums are disabled.
 
-[snip]
+I suppose this has been suggested before, but couldn't it store both the
+new and the old checksums and be satisfied if either of them match?
 
-> So ssd or spinning rust, there's serious conflicts between nocow and
-> snapshotting that really must be taken into consideration if you're
-> planning to both snapshot and nocow.
+The user is probably not happy that a partial write is going to be
+difficult to read from the device due to a checksum error, but there is
+no promise of recently-overwritten data state with traditional
+filesystems either in case of sudden powerdown, assuming there is no
+data journaling..
 
-This is all spot on advice, but I just wanted to chime in to mention:
-I've been experimenting with -
-- Active working copy of VM image files are hosted on non-btrfs filesystems
-- Regular scheduled rsync --inplace onto a btrfs subvol copy of the
-file that *is* snapshotted and part of regular send/receive runs.
+-- 
+  _____________________________________________________________________
+     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
+    / /_ / // // /\ \/ /                                            \  /
+   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
 
-rsync --inplace does what it says on the tin: it just rewrites those
-parts of a file which need to be updated. Thus it only gets written to
-once prior to each snapshot run, rather than continuously.
-
-So the theory is that I can retain CoW storage efficiency (hold lots
-of snapshots cheaply) but still keep decent performance (by running
-the active, in-use working copies outside of my normal snapshotted
-btrfs filesystems).
-
-The cost is obviously more filesystems than you'd normally have to
-run, more complex disaster recovery, not to mention storage sizing has
-to accommodate a working copy on a separate fs to the archived copies.
-Plus, this rsync approach has noticeably bigger I/O overhead than
-btrfs send/receive, although in my environment nobody is noticing.

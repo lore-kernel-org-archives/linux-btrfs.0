@@ -1,63 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:34579 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750885AbbJSLkP (ORCPT
+Received: from mail-pa0-f47.google.com ([209.85.220.47]:32879 "EHLO
+	mail-pa0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750819AbbJSLpt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Oct 2015 07:40:15 -0400
-Received: by padhk11 with SMTP id hk11so28103911pad.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 04:40:15 -0700 (PDT)
+	Mon, 19 Oct 2015 07:45:49 -0400
+Received: by pabrc13 with SMTP id rc13so189450031pab.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 04:45:48 -0700 (PDT)
 From: Eryu Guan <guaneryu@gmail.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Eryu Guan <guaneryu@gmail.com>
-Subject: [PATCH 02/10] btrfs-progs: save and return error number correctly in check_chunks_and_extents
-Date: Mon, 19 Oct 2015 19:37:51 +0800
-Message-Id: <1445254680-11102-2-git-send-email-guaneryu@gmail.com>
+Subject: [PATCH 06/10] btrfs-progs: vailidate pointer before dereferencing it in btrfs_cow_block()
+Date: Mon, 19 Oct 2015 19:37:56 +0800
+Message-Id: <1445254680-11102-7-git-send-email-guaneryu@gmail.com>
 In-Reply-To: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
 References: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-"err" is assigned to "ret" then "ret" gets overwritten by
-check_extent_refs() before "ret" can be used.
+Check trans before dereferencing it.
 
 Signed-off-by: Eryu Guan <guaneryu@gmail.com>
 ---
- cmds-check.c | 13 ++++++-------
- 1 file changed, 6 insertions(+), 7 deletions(-)
+ ctree.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-check.c b/cmds-check.c
-index 4225b21..80a7c29 100644
---- a/cmds-check.c
-+++ b/cmds-check.c
-@@ -8066,13 +8066,12 @@ again:
- 		goto out;
+diff --git a/ctree.c b/ctree.c
+index 1434007..f9d972a 100644
+--- a/ctree.c
++++ b/ctree.c
+@@ -356,7 +356,7 @@ int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		WARN_ON(1);
  	}
- 
--	err = check_chunks(&chunk_cache, &block_group_cache,
-+	ret = check_chunks(&chunk_cache, &block_group_cache,
- 			   &dev_extent_cache, NULL, NULL, NULL, 0);
--	if (err) {
--		if (err == -EAGAIN)
-+	if (ret) {
-+		if (ret == -EAGAIN)
- 			goto loop;
--		if (!ret)
--			ret = err;
-+		err = ret;
- 	}
- 
- 	ret = check_extent_refs(root, &extent_cache);
-@@ -8082,8 +8081,8 @@ again:
- 		goto out;
- 	}
- 
--	err = check_devices(&dev_cache, &dev_extent_cache);
--	if (err && !ret)
-+	ret = check_devices(&dev_cache, &dev_extent_cache);
-+	if (ret && err)
- 		ret = err;
- 
- out:
+ 	*/
+-	if (trans->transid != root->fs_info->generation) {
++	if (trans && trans->transid != root->fs_info->generation) {
+ 		printk(KERN_CRIT "trans %llu running %llu\n",
+ 			(unsigned long long)trans->transid,
+ 			(unsigned long long)root->fs_info->generation);
 -- 
 2.4.3
 

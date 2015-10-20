@@ -1,60 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f173.google.com ([209.85.212.173]:36090 "EHLO
-	mail-wi0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751243AbbJYOsz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 25 Oct 2015 10:48:55 -0400
-Date: Sun, 25 Oct 2015 17:48:20 +0000
-From: Alexandru Moise <00moses.alexander00@gmail.com>
-To: clm@fb.com
-Cc: jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: zero out delayed node upon allocation
-Message-ID: <20151025174820.GA24972@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from mout.gmx.net ([212.227.17.21]:53394 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753210AbbJTWvH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Oct 2015 18:51:07 -0400
+From: Christian Engelmayer <cengelma@gmx.at>
+To: dsterba@suse.com
+Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        Christian Engelmayer <cengelma@gmx.at>
+Subject: [PATCH] btrfs: fix possible leak in btrfs_ioctl_balance()
+Date: Wed, 21 Oct 2015 00:50:06 +0200
+Message-Id: <1445381406-13475-1-git-send-email-cengelma@gmx.at>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This allows us to trim out half of btrfs_init_delayed_node()
-which is now reduntant.
+Commit 8eb934591f8b ("btrfs: check unsupported filters in balance
+arguments") adds a jump to exit label out_bargs in case the argument
+check fails. At this point in addition to the bargs memory, the
+memory for struct btrfs_balance_control has already been allocated.
+Ownership of bctl is passed to btrfs_balance() in the good case,
+thus the memory is not freed due to the introduced jump. Make sure
+that the memory gets freed in any case as necessary. Detected by
+Coverity CID 1328378.
 
-Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+Signed-off-by: Christian Engelmayer <cengelma@gmx.at>
 ---
- fs/btrfs/delayed-inode.c | 8 +-------
- 1 file changed, 1 insertion(+), 7 deletions(-)
+The proposed patch is only test compiled.
+---
+ fs/btrfs/ioctl.c | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index a2ae427..7aa84be 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -53,17 +53,11 @@ static inline void btrfs_init_delayed_node(
- {
- 	delayed_node->root = root;
- 	delayed_node->inode_id = inode_id;
--	atomic_set(&delayed_node->refs, 0);
--	delayed_node->count = 0;
--	delayed_node->flags = 0;
- 	delayed_node->ins_root = RB_ROOT;
- 	delayed_node->del_root = RB_ROOT;
- 	mutex_init(&delayed_node->mutex);
--	delayed_node->index_cnt = 0;
- 	INIT_LIST_HEAD(&delayed_node->n_list);
- 	INIT_LIST_HEAD(&delayed_node->p_list);
--	delayed_node->bytes_reserved = 0;
--	memset(&delayed_node->inode_item, 0, sizeof(delayed_node->inode_item));
- }
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3e3e6130637f..8d20f3b1cab0 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -4641,7 +4641,7 @@ locked:
  
- static inline int btrfs_is_continuous_delayed_item(
-@@ -132,7 +126,7 @@ again:
- 	if (node)
- 		return node;
+ 	if (bctl->flags & ~(BTRFS_BALANCE_ARGS_MASK | BTRFS_BALANCE_TYPE_MASK)) {
+ 		ret = -EINVAL;
+-		goto out_bargs;
++		goto out_bctl;
+ 	}
  
--	node = kmem_cache_alloc(delayed_node_cache, GFP_NOFS);
-+	node = kmem_cache_zalloc(delayed_node_cache, GFP_NOFS);
- 	if (!node)
- 		return ERR_PTR(-ENOMEM);
- 	btrfs_init_delayed_node(node, root, ino);
+ do_balance:
+@@ -4655,12 +4655,15 @@ do_balance:
+ 	need_unlock = false;
+ 
+ 	ret = btrfs_balance(bctl, bargs);
++	bctl = NULL;
+ 
+ 	if (arg) {
+ 		if (copy_to_user(arg, bargs, sizeof(*bargs)))
+ 			ret = -EFAULT;
+ 	}
+ 
++out_bctl:
++	kfree(bctl);
+ out_bargs:
+ 	kfree(bargs);
+ out_unlock:
 -- 
-2.6.2
+1.9.1
 

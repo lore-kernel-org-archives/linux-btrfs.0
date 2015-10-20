@@ -1,62 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:33812 "EHLO
-	mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751585AbbJTMqJ (ORCPT
+Received: from mail-ig0-f181.google.com ([209.85.213.181]:35086 "EHLO
+	mail-ig0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752352AbbJTNBj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 08:46:09 -0400
-Received: by iow1 with SMTP id 1so20280008iow.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 05:46:08 -0700 (PDT)
-Subject: Re: N-Way (traditional) RAID-1 development status
-To: james harvey <jamespharvey20@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CA+X5Wn7C-0O5TRn6fpBFdst6=-cJ2zdn0RPQD3n97MR7NrZxsg@mail.gmail.com>
+	Tue, 20 Oct 2015 09:01:39 -0400
+Received: by igbkq10 with SMTP id kq10so74034878igb.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 06:01:39 -0700 (PDT)
+Subject: Re: Expected behavior of bad sectors on one drive in a RAID1
+To: Russell Coker <russell@coker.com.au>,
+        james harvey <jamespharvey20@gmail.com>
+References: <CA+X5Wn6Wu3RfX6rM6fpp9b4ZQQNm5WCbSOzxyOnE=+jDb0xDoA@mail.gmail.com>
+ <201510201545.50705.russell@coker.com.au>
+Cc: linux-btrfs@vger.kernel.org
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <56263769.3030903@gmail.com>
-Date: Tue, 20 Oct 2015 08:45:29 -0400
+Message-ID: <56263B0B.4050502@gmail.com>
+Date: Tue, 20 Oct 2015 09:00:59 -0400
 MIME-Version: 1.0
-In-Reply-To: <CA+X5Wn7C-0O5TRn6fpBFdst6=-cJ2zdn0RPQD3n97MR7NrZxsg@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070409010700000709040405"
+In-Reply-To: <201510201545.50705.russell@coker.com.au>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000002070301080107030903"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms070409010700000709040405
+--------------ms000002070301080107030903
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-10-19 23:13, james harvey wrote:
-> Wanted to see if there's active development on N-Way (traditional) RAID=
--1.
+On 2015-10-20 00:45, Russell Coker wrote:
+> On Tue, 20 Oct 2015 03:16:15 PM james harvey wrote:
+>> sda appears to be going bad, with my low threshold of "going bad", and=
+
+>> will be replaced ASAP.  It just developed 16 reallocated sectors, and
+>> has 40 current pending sectors.
+>>
+>> I'm currently running a "btrfs scrub start -B -d -r /terra", which
+>> status on another term shows me has found 32 errors after running for
+>> an hour.
 >
-> By this, I mean that RAID-1 across "n" disks traditionally means "n"
-> copies of data, but btrfs currently implements RAID-1 as "2" copies of
-> data.  So, unlike traditional RAID-1, losing 2 drives in a many drive
-> array might cause data loss.  It's been mentioned before that N-Way
-> (traditional) RAID-1 should eventually be implemented through btrfs.
-Before I go any further, I would like to point out that most traditional =
+> https://www.gnu.org/software/ddrescue/
+>
+> At this stage I would use ddrescue or something similar to copy data fr=
+om the
+> failing disk to a fresh disk, then do a BTRFS scrub to regenerate the m=
+issing
+> data.
+>
+> I wouldn't remove the disk entirely because then you lose badly if you =
+get
+> another failure.  I wouldn't use a BTRFS replace because you already ha=
+ve the
+> system apart and I expect ddrescue could copy the data faster.  Also as=
+ the
+> drive has been causing system failures (I'm guessing a problem with the=
+ power
+> connector) you REALLY don't want BTRFS to corrupt data on the other dis=
+ks.  If
+> you have a system with the failing disk and a new disk attached then th=
+ere's
+> no risk of further contamination.
+BIG DISCLAIMER: For the filesystem to be safely mountable it is=20
+ABSOLUTELY NECESSARY to remove the old disk after doing a block level=20
+copy of it.  By all means, keep the disk around, but do not keep it=20
+visible to the kernel after doing a block level copy of it.  Also, you=20
+will probably have to run 'btrfs device scan' after copying the disk and =
 
-hardware RAID controllers only support two disks for RAID-1=20
-configurations, and the only one I've seen that doesn't does RAID-1 like =
+removing it for the filesystem to work right.  This is an inherent=20
+result of how BTRFS's multi-device functionality works, and also applies =
 
-BTRFS (two copies total of each block).  The whole 'RAID-1 on n disks is =
+to doing stuff like LVM snapshots of BTRFS filesystems.
+>
+>> Question 2 - Before having ran the scrub, booting off the raid with
+>> bad sectors, would btrfs "on the fly" recognize it was getting bad
+>> sector data with the checksum being off, and checking the other
+>> drives?  Or, is it expected that I could get a bad sector read in a
+>> critical piece of operating system and/or kernel, which could be
+>> causing my lockup issues?
+>
+> Unless you have disabled CoW then BTRFS will not return bad data.
+It is worth clarifying also that:
+a. While BTRFS will not return bad data in this case, it also won't=20
+automatically repair the corruption.
+b. In the unlikely event that both copies are bad, trying to read the=20
+data will return an IO error.
+c. It is theoretically possible (although statistically impossible) that =
 
-n copies' thing actually started with Linux's MD-RAID subsystem, and=20
-just happens to have been popular enough that other software RAID=20
-implementations adopted those semantics as well.
+the block could become corrupted, but the checksum could still be=20
+correct (CRC32c is good at detecting small errors, but it's not hard to=20
+generate a hash collision for any arbitrary value, so if a large portion =
 
-OK, with that historical rant out of the way, back to your actual=20
-question:  Based on what has been said in the past, N-way replication is =
+of the block goes bad, then it can theoretically still have a valid=20
+checksum).
+>
+>> Question 3 - Probably doesn't matter, but how can I see which files
+>> (or metadata to files) the 40 current bad sectors are in?  (On extX,
+>> I'd use tune2fs and debugfs to be able to see this information.)
+>
+> Read all the files in the system and syslog will report it.  But really=
+ don't
+> do that until after you have copied the disk.
+It may also be possible to use some of the debug tools from BTRFS to do=20
+this without hitting the disks so hard, but it will likely take a lot=20
+more effort.
 
-planned for development after the raid56 code is considered stable.=20
-Based on that and past experience, I'd say to expect it no sooner than=20
-4.8, or if we're _really_ lucky, 4.7.  On top of that, based on past=20
-experience with BTRFS\, I would not suggest actually trying it for=20
-anything other than testing until at least one release after the initial =
 
-release.
-
-
---------------ms070409010700000709040405
+--------------ms000002070301080107030903
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -98,9 +146,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDIwMTI0NTI5WjBPBgkq
-hkiG9w0BCQQxQgRAuvrDYgk8IY3uACZUAoPxmfNayEGoOdDmdIJtdN5skvU88k4OCQ01ojbX
-7N4XPSPhawvOZeceoLhmu424daK6cDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDIwMTMwMDU5WjBPBgkq
+hkiG9w0BCQQxQgRASXBX/WJpIZiy0GncUM4MGyWS7ncqoVrCHAe6rB5Yh0xRkEGNVoL3ySiO
+dhIoVISPOBXQ7ENbsjzxrhkdUeSM+jBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -108,14 +156,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgAYm3jH+qACbxCoQZyYx3UKJbxIjETAruQ+Fn/VGSBOBR87+tX5
-0kBj8xLjk9U+zSFBeqtuUZq8ErYfHAWKdNuTJg9AB6mbSSKr7f5vwYWSALDxx94tcGKP/129
-eSbHP8FKNxyoZPnAiG1fuqMVqAqYA0q+PeohYIJUDDDeZ8yDE9wYz2GeyUp0bvmLFhCkS+82
-d5SUDQ7RVWI+sVf6E9ho0lb5R7s/3sCnYU+wwku/vQhUZUxQd528L4Ab4Sf52+KhRJlAuejJ
-Atmklald0ivu6itf/odS32HX6K1Pw1ZvjRq4ElTu491P+sVFyOz/7nVvESOu5m21OjGiGWuZ
-JvuCNhkKQFIF0zzogrJzyuRP2mIs7Obvf+IgSugabem/QWvDPgcLIu38Pbza0LoYif/D+mLN
-kVDYkf+S0zPCgHi45SwthOhrFBOi1ZczFq/nZQF/rSn/opzwi6IUt8ErDegGv6prUr7Vbxoy
-XL7/qEww35t5/mCahpIR0exWSIgYzgI3F8PnVsnx846eEnl1xdSahOrN28rt4ChiIeI4ZhR0
-kOsbsT1CqwvvtFq68UKhc1CATM1XAu8UOelVuDt40tMktHwCui8cdsVNl9C8lGxJhLmgSjCX
-dXyDI0iKshuU3+dFbXk0ivAjwE3cOdN1KunlLIvV2yTflkqImR4QJZq9ugAAAAAAAA==
---------------ms070409010700000709040405--
+BgkqhkiG9w0BAQEFAASCAgBJfooW1UeKKhc24fvLmjBEnzQK5CValr1QofBsalAroHjZRUQy
+7BiU+G8Vjm4pJ1DzdHRohY/i3/X94wnk/JGwboOj2QqGPLGcxOrX1kt6lqdx5W2K4GtXJo6V
+55Ujikmjf1gidCNW3GJBQ9j6+IlC/ap4h1sZ7O59tGHtFx71gsoovYFoLwl0eyWaqtj1bZTi
+hXhWCJuk5OKt8T5s5Dlb2ByCUb7Pe4cx7YxqCSop3RYtSbF9INqd4h3J4jPt2X/i+dTGyqr5
+CilyrOZrocwkyLF1pxS/gHghckGv2de+wIANpGiCJW+qy24ujv3ZHxLSagHbytIXzqQz3FMk
+lJJsgkv0hqm+EV9/Wa4B3+iRaEMYVm+sWLJR+AfdzA0/6XuuezDa74kjfbgtdPVICOBmseUy
+Ej8F/AcCO81WbTcz5x/Mps0ueQn1i13bMBzPsB0dFuq0yEXjSTK/qpbcIjPumYSDi+9xYLrg
+05tD897Ynr5G2AUtuynmYdA2PcEaTQYePLozr4yxnDUGVTbJK/n32fbdqtA7WgZ0bPP0+2S/
+jyM+VE4ftWYIGhZMjwF92oMPhs6m6DvtdIplOFU4+7LzKg1Hbzft67rVisKFuyOcn1VkHK+F
+H/f4JOqgJX3FGKVg73+EsJretQxSe/wg4KtTA6d4hRaK0XUo80YGHXYg3QAAAAAAAA==
+--------------ms000002070301080107030903--

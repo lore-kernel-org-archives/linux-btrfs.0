@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62856 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750787AbbJTDzG (ORCPT
+Received: from mail-lb0-f169.google.com ([209.85.217.169]:34912 "EHLO
+	mail-lb0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751109AbbJTEQQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 19 Oct 2015 23:55:06 -0400
-Subject: Re: Non-RAID1 areas in RAID1, data 8MB, Metadata 8MB, System 4MB
-To: james harvey <jamespharvey20@gmail.com>, <linux-btrfs@vger.kernel.org>
-References: <CA+X5Wn7d3PLLn0qO9DeN4uWHsD3pnWprjD1BsVqw0pmq4gYKAw@mail.gmail.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5625BB16.8050303@cn.fujitsu.com>
-Date: Tue, 20 Oct 2015 11:55:02 +0800
+	Tue, 20 Oct 2015 00:16:16 -0400
+Received: by lbbes7 with SMTP id es7so5595593lbb.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 19 Oct 2015 21:16:15 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CA+X5Wn7d3PLLn0qO9DeN4uWHsD3pnWprjD1BsVqw0pmq4gYKAw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Date: Tue, 20 Oct 2015 00:16:15 -0400
+Message-ID: <CA+X5Wn6Wu3RfX6rM6fpp9b4ZQQNm5WCbSOzxyOnE=+jDb0xDoA@mail.gmail.com>
+Subject: Expected behavior of bad sectors on one drive in a RAID1
+From: james harvey <jamespharvey20@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Background -----
 
+My fileserver had a "bad event" last week.  Shut it down normally to
+add a new hard drive, and it would no longer post.  Tried about 50
+times, doing the typical everything non-essential unplugged, trying 1
+of 4 memory modules at a time, and 1 of 2 processors at a time.  Got
+no where.
 
-james harvey wrote on 2015/10/19 23:49 -0400:
-> The create RAID1 example illustrates my question, at:
->
-> https://btrfs.wiki.kernel.org/index.php/UseCases#How_do_I_create_a_RAID1_mirror_in_Btrfs.3F
->
-> It shows:
->
-> mkfs.btrfs -m raid1 -d raid1 /dev/sda1 /dev/sdb1
->
-> will result in:
->
-> btrfs fi df /mount
->
-> Data, RAID1: total=1.00GB, used=128.00KB
-> Data: total=8.00MB, used=0.00
-> System, RAID1: total=8.00MB, used=4.00KB
-> System: total=4.00MB, used=0.00
-> Metadata, RAID1: total=1.00GB, used=24.00KB
-> Metadata: total=8.00MB, used=0.00
->
->
-> What's the 8MB, System 4MB, and Metadata 8MB areas that appear not to
-> be redundant?
-That's the temporary data/metadata/system chunk made at mkfs time.
+Inexpensive HP workstation, so purchased a used identical model
+(complete other than hard drives) on eBay.  Replacement arrived today.
+Posts fine.  Moved hard drives over (again, identical model, and Arch
+Linux not Windows) and it started giving "Watchdog detected hard
+LOCKUP" type errors I've never seen before.
 
-And since you have RAID1, such temporary chunk will never be used.
-You can remove such chunk by a balance.
+Decided I'd diagnose which part in the original server was bad.  By
+sitting turned off for a week, it suddenly started posting just fine.
+But, with the hard drives back in it, I'm getting the same hard lockup
+errors.
 
-The behavior should be changed in v4.3 and new mkfs in v4.3 should 
-remove temporary chunks automatically.
+An Arch ISO DVD runs stress testing perfectly.
 
-Thanks,
-Qu
->
-> I'm seeing these small areas on my own RAID1, but using the example
-> for simplicity.
->
-> I'm sure it has to be OK those spaces aren't redundant, but I don't
-> get what could be there that wouldn't be critical...
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Btrfs-specific -----
+
+The current problem I'm having must be a bad hard drive or corrupted data.
+
+3 drive btrfs RAID1 (data and metadata.)  sda has 1GB of the 3GB of
+data, and 1GB of the 1GB of metadata.
+
+sda appears to be going bad, with my low threshold of "going bad", and
+will be replaced ASAP.  It just developed 16 reallocated sectors, and
+has 40 current pending sectors.
+
+I'm currently running a "btrfs scrub start -B -d -r /terra", which
+status on another term shows me has found 32 errors after running for
+an hour.
+
+Question 1 - I'm expecting if I re-run the scrub without the read-only
+option, that it will detect from the checksum data which sector is
+correct, and re-write to the drive with bad sectors the data to a new
+sector.  Correct?
+
+Question 2 - Before having ran the scrub, booting off the raid with
+bad sectors, would btrfs "on the fly" recognize it was getting bad
+sector data with the checksum being off, and checking the other
+drives?  Or, is it expected that I could get a bad sector read in a
+critical piece of operating system and/or kernel, which could be
+causing my lockup issues?
+
+Question 3 - Probably doesn't matter, but how can I see which files
+(or metadata to files) the 40 current bad sectors are in?  (On extX,
+I'd use tune2fs and debugfs to be able to see this information.)
+
+I do have hourly snapshots, from when it was properly running, so once
+I'm that far in the process, I can also compare the most recent
+snapshots, and see if there's any changes that happened to files that
+shouldn't have.

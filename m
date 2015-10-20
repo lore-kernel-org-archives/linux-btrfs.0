@@ -1,24 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52074 "EHLO mx2.suse.de"
+Received: from lists.s-osg.org ([54.187.51.154]:38303 "EHLO lists.s-osg.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752063AbbJ0JsM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 05:48:12 -0400
-Date: Tue, 27 Oct 2015 10:46:46 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Alexandru Moise <00moses.alexander00@gmail.com>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: pass proper enum type to start_transaction()
-Message-ID: <20151027094646.GR13624@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20151025193544.GA4829@gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151025193544.GA4829@gmail.com>
+	id S1752948AbbJTN4h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Oct 2015 09:56:37 -0400
+From: Luis de Bethencourt <luisbg@osg.samsung.com>
+To: linux-kernel@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, jbacik@fb.com, clm@fb.com,
+        Luis de Bethencourt <luisbg@osg.samsung.com>
+Subject: [RESEND PATCH 1/2] btrfs: check-integrity: Fix returned errno codes
+Date: Tue, 20 Oct 2015 14:56:22 +0100
+Message-Id: <1445349383-21722-2-git-send-email-luisbg@osg.samsung.com>
+In-Reply-To: <1445349383-21722-1-git-send-email-luisbg@osg.samsung.com>
+References: <1445349383-21722-1-git-send-email-luisbg@osg.samsung.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 25, 2015 at 07:35:44PM +0000, Alexandru Moise wrote:
-> Signed-off-by: Alexandru Moise <00moses.alexander00@gmail.com>
+check-integrity is using -1 instead of the -ENOMEM defined macro to
+specify that a buffer allocation failed. Since the error number is
+propagated, the caller will get a -EPERM which is the wrong error
+condition.
 
+Also, the smatch tool complains with the following warnings:
+btrfsic_process_superblock() warn: returning -1 instead of -ENOMEM is sloppy
+btrfsic_read_block() warn: returning -1 instead of -ENOMEM is sloppy
+
+Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
 Reviewed-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/check-integrity.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 541fbfa..9cacd06 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -667,7 +667,7 @@ static int btrfsic_process_superblock(struct btrfsic_state *state,
+ 	selected_super = kzalloc(sizeof(*selected_super), GFP_NOFS);
+ 	if (NULL == selected_super) {
+ 		printk(KERN_INFO "btrfsic: error, kmalloc failed!\n");
+-		return -1;
++		return -ENOMEM;
+ 	}
+ 
+ 	list_for_each_entry(device, dev_head, dev_list) {
+@@ -1660,7 +1660,7 @@ static int btrfsic_read_block(struct btrfsic_state *state,
+ 					  sizeof(*block_ctx->pagev)) *
+ 					 num_pages, GFP_NOFS);
+ 	if (!block_ctx->mem_to_free)
+-		return -1;
++		return -ENOMEM;
+ 	block_ctx->datav = block_ctx->mem_to_free;
+ 	block_ctx->pagev = (struct page **)(block_ctx->datav + num_pages);
+ 	for (i = 0; i < num_pages; i++) {
+-- 
+2.5.3
+

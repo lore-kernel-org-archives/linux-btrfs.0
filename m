@@ -1,71 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:55935 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751400AbbJTEpx (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:37198 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751213AbbJTLdZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 00:45:53 -0400
-From: Russell Coker <russell@coker.com.au>
-To: james harvey <jamespharvey20@gmail.com>
-Subject: Re: Expected behavior of bad sectors on one drive in a RAID1
-Date: Tue, 20 Oct 2015 15:45:50 +1100
-Cc: linux-btrfs@vger.kernel.org
-References: <CA+X5Wn6Wu3RfX6rM6fpp9b4ZQQNm5WCbSOzxyOnE=+jDb0xDoA@mail.gmail.com>
-In-Reply-To: <CA+X5Wn6Wu3RfX6rM6fpp9b4ZQQNm5WCbSOzxyOnE=+jDb0xDoA@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201510201545.50705.russell@coker.com.au>
+	Tue, 20 Oct 2015 07:33:25 -0400
+Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id t9KBXPFd002317
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 11:33:25 GMT
+Received: from userv0121.oracle.com (userv0121.oracle.com [156.151.31.72])
+	by userv0022.oracle.com (8.13.8/8.13.8) with ESMTP id t9KBXOdu010993
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 11:33:24 GMT
+Received: from abhmp0013.oracle.com (abhmp0013.oracle.com [141.146.116.19])
+	by userv0121.oracle.com (8.13.8/8.13.8) with ESMTP id t9KBXNue007077
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 11:33:23 GMT
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [RFC PATCH] Btrfs-progs: remove compressed option from 'qgroup limit'
+Date: Tue, 20 Oct 2015 19:32:59 +0800
+Message-Id: <1445340779-9084-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 20 Oct 2015 03:16:15 PM james harvey wrote:
-> sda appears to be going bad, with my low threshold of "going bad", and
-> will be replaced ASAP.  It just developed 16 reallocated sectors, and
-> has 40 current pending sectors.
-> 
-> I'm currently running a "btrfs scrub start -B -d -r /terra", which
-> status on another term shows me has found 32 errors after running for
-> an hour.
+The current design of btrfs quota doesn't support "quota limit after
+compression" after 
+commit e2d1f92399af ("btrfs: qgroup: do a reservation in a higher level.")
 
-https://www.gnu.org/software/ddrescue/
+So remove it to make things clear.
 
-At this stage I would use ddrescue or something similar to copy data from the 
-failing disk to a fresh disk, then do a BTRFS scrub to regenerate the missing 
-data.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ Documentation/btrfs-qgroup.asciidoc | 4 ----
+ cmds-qgroup.c                       | 9 ---------
+ 2 files changed, 13 deletions(-)
 
-I wouldn't remove the disk entirely because then you lose badly if you get 
-another failure.  I wouldn't use a BTRFS replace because you already have the 
-system apart and I expect ddrescue could copy the data faster.  Also as the 
-drive has been causing system failures (I'm guessing a problem with the power 
-connector) you REALLY don't want BTRFS to corrupt data on the other disks.  If 
-you have a system with the failing disk and a new disk attached then there's 
-no risk of further contamination.
-
-> Question 2 - Before having ran the scrub, booting off the raid with
-> bad sectors, would btrfs "on the fly" recognize it was getting bad
-> sector data with the checksum being off, and checking the other
-> drives?  Or, is it expected that I could get a bad sector read in a
-> critical piece of operating system and/or kernel, which could be
-> causing my lockup issues?
-
-Unless you have disabled CoW then BTRFS will not return bad data.
-
-> Question 3 - Probably doesn't matter, but how can I see which files
-> (or metadata to files) the 40 current bad sectors are in?  (On extX,
-> I'd use tune2fs and debugfs to be able to see this information.)
-
-Read all the files in the system and syslog will report it.  But really don't 
-do that until after you have copied the disk.
-
-> I do have hourly snapshots, from when it was properly running, so once
-> I'm that far in the process, I can also compare the most recent
-> snapshots, and see if there's any changes that happened to files that
-> shouldn't have.
-
-Snapshots refer to the same data blocks, so if a data block is corrupted in a 
-way that BTRFS doesn't notice (which should be almost impossible) then all 
-snapshots will have it.
-
+diff --git a/Documentation/btrfs-qgroup.asciidoc b/Documentation/btrfs-qgroup.asciidoc
+index 57cf012..454b074 100644
+--- a/Documentation/btrfs-qgroup.asciidoc
++++ b/Documentation/btrfs-qgroup.asciidoc
+@@ -73,10 +73,6 @@ is used if possible.
+ +
+ `Options`
+ +
+--c::::
+-limit amount of data after compression. This is the default, it is currently not
+-possible to turn off this option.
+-+
+ -e::::
+ limit space exclusively assigned to this qgroup.
+ 
+diff --git a/cmds-qgroup.c b/cmds-qgroup.c
+index 48c1733..9f76232 100644
+--- a/cmds-qgroup.c
++++ b/cmds-qgroup.c
+@@ -382,8 +382,6 @@ static const char * const cmd_qgroup_limit_usage[] = {
+ 	"btrfs qgroup limit [options] <size>|none [<qgroupid>] <path>",
+ 	"Set the limits a subvolume quota group.",
+ 	"",
+-	"-c   limit amount of data after compression. This is the default,",
+-	"     it is currently not possible to turn off this option.",
+ 	"-e   limit space exclusively assigned to this qgroup",
+ 	NULL
+ };
+@@ -396,7 +394,6 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 	char *path = NULL;
+ 	struct btrfs_ioctl_qgroup_limit_args args;
+ 	unsigned long long size;
+-	int compressed = 0;
+ 	int exclusive = 0;
+ 	DIR *dirstream = NULL;
+ 
+@@ -406,9 +403,6 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 		if (c < 0)
+ 			break;
+ 		switch (c) {
+-		case 'c':
+-			compressed = 1;
+-			break;
+ 		case 'e':
+ 			exclusive = 1;
+ 			break;
+@@ -426,9 +420,6 @@ static int cmd_qgroup_limit(int argc, char **argv)
+ 	}
+ 
+ 	memset(&args, 0, sizeof(args));
+-	if (compressed)
+-		args.lim.flags |= BTRFS_QGROUP_LIMIT_RFER_CMPR |
+-				  BTRFS_QGROUP_LIMIT_EXCL_CMPR;
+ 	if (exclusive) {
+ 		args.lim.flags |= BTRFS_QGROUP_LIMIT_MAX_EXCL;
+ 		args.lim.max_exclusive = size;
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+1.8.2.1
+

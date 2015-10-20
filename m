@@ -1,56 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:45806 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:34505 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753147AbbJOOmU (ORCPT
+	with ESMTP id S1751071AbbJTLeQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 15 Oct 2015 10:42:20 -0400
-Date: Thu, 15 Oct 2015 07:41:46 -0700
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: david@fromorbit.com, fstests@vger.kernel.org, linux-ext4@vger.kernel.org,
-        Anna.Schumaker@netapp.com, linux-btrfs@vger.kernel.org,
-        xfs@oss.sgi.com
-Subject: Re: [PATCH 03/12] generic/80[0-2]: support xfs in addition to btrfs
-Message-ID: <20151015144146.GL10391@birch.djwong.org>
-References: <20151007051257.3260.73072.stgit@birch.djwong.org>
- <20151007051323.3260.60421.stgit@birch.djwong.org>
- <20151015091944.GA13683@infradead.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151015091944.GA13683@infradead.org>
+	Tue, 20 Oct 2015 07:34:16 -0400
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fstests@vger.kernel.org
+Cc: linux-btrfs@vger.kernel.org
+Subject: [PATCH] xfstests: btrfs/012: add a regression test for deleting ext2_saved
+Date: Tue, 20 Oct 2015 19:34:06 +0800
+Message-Id: <1445340846-9774-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 15, 2015 at 02:19:44AM -0700, Christoph Hellwig wrote:
-> > +# this test requires the test fs support reflink...
-> > +#
-> > +_require_test_reflink()
-> > +{
-> > +    case $FSTYP in
-> > +    xfs)
-> > +	xfs_info "${TEST_DIR}" | grep reflink=1 -c -q || _notrun "Reflink not supported by this filesystem type: $FSTYP"
-> > +	;;
-> > +    btrfs)
-> > +        true
-> > +        ;;
-> > +    *)
-> > +        _notrun "Reflink not supported by this filesystem type: $FSTYP"
-> > +        ;;
-> > +    esac
-> 
-> I don't think that's a good test - we need to check if it's supported by
-> trying it.  That'll automatically get us coverage for other file systems
-> like xfs.
-> 
-> Note that dedup should get it's own feature check, as currently hacking
-> nfs into this check will also run dedup tests that can't really be
-> supported.
+Btrfs now has changed to delete subvolume/snapshot asynchronously,
+which means that after umount, if we've already deleted 'ext2_saved',
+rollback can still be completed, which should not.
 
-Good point.  I'll throw that in while I rework the tests.
+So this adds a regression test for this.
 
---D
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ tests/btrfs/012 | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/tests/btrfs/012 b/tests/btrfs/012
+index d513759..b39dec0 100755
+--- a/tests/btrfs/012
++++ b/tests/btrfs/012
+@@ -112,6 +112,18 @@ diff -r /lib/modules/`uname -r`/ $SCRATCH_MNT/`uname -r`/ 2>&1 | grep -vw "sourc
+ 
+ _scratch_unmount
+ 
++# Convert it to btrfs, mount it and delete "ext2_saved"
++$BTRFS_CONVERT_PROG $SCRATCH_DEV >> $seqres.full 2>&1 || \
++	_fail "btrfs-convert failed"
++_scratch_mount || _fail "Could not mount new btrfs fs"
++$BTRFS_UTIL_PROG subvolume delete $SCRATCH_MNT/ext2_saved >> $seqres.full 2>&1 ||
++	_fail "failed to delete ext2_saved subvolume"
++_scratch_unmount
++
++# Now restore the ext4 device, expecting a failure
++$BTRFS_CONVERT_PROG -r $SCRATCH_DEV >> $seqres.full 2>&1
++[ $? -eq 1 ] || _fail "Failure is expected, but btrfs-convert returns with rollback complete"
++
+ # success, all done
+ status=0
+ exit
+-- 
+1.8.2.1
+

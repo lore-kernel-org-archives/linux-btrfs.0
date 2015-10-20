@@ -1,129 +1,175 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46982 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46988 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752468AbbJTRPK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 13:15:10 -0400
+	id S1752485AbbJTRPN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Oct 2015 13:15:13 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id CE3A9AB1A
+	for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 17:15:10 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: =?UTF-8?q?Gabr=C3=ADel=20Arth=C3=BAr=20P=C3=A9tursson?=
-	<gabriel@system.is>,
-        David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/3] btrfs: add balance filter for stripes
-Date: Tue, 20 Oct 2015 19:13:49 +0200
-Message-Id: <aa6771ad37b6cd5370bccebfe525bd654f0d8a30.1445360598.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 3/3] btrfs: extend balance filter usage to take minimum and maximum
+Date: Tue, 20 Oct 2015 19:13:53 +0200
+Message-Id: <c0b33bea07c4e2ae6d4d9ed56b968e7c09b933c4.1445360598.git.dsterba@suse.com>
 In-Reply-To: <cover.1445360598.git.dsterba@suse.com>
 References: <cover.1445360598.git.dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Gabríel Arthúr Pétursson <gabriel@system.is>
+Similar to the 'limit' filter, we can enhance the 'usage' filter to
+accept a range. The change is backward compatible, the range is applied
+only in connection with the BTRFS_BALANCE_ARGS_USAGE_RANGE flag.
 
-Balance block groups which have the given number of stripes, defined by
-a range min..max. This is useful to selectively rebalance only chunks
-that do not span enough devices, applies to RAID0/10/5/6.
+We don't have a usecase yet, the current syntax has been sufficient. The
+enhancement should provide parity with other range-like filters.
 
-Signed-off-by: Gabríel Arthúr Pétursson <gabriel@system.is>
-[ renamed bargs members, added to the UAPI, wrote the changelog ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h           |  9 ++++++++-
- fs/btrfs/volumes.c         | 19 +++++++++++++++++++
+ fs/btrfs/ctree.h           | 14 ++++++++++++--
+ fs/btrfs/volumes.c         | 41 ++++++++++++++++++++++++++++++++++++++++-
  fs/btrfs/volumes.h         |  1 +
- include/uapi/linux/btrfs.h | 10 +++++++++-
- 4 files changed, 37 insertions(+), 2 deletions(-)
+ include/uapi/linux/btrfs.h |  8 +++++++-
+ 4 files changed, 60 insertions(+), 4 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 852c738d6954..76055a8317e9 100644
+index 76055a8317e9..31e5a3ed0a5c 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -859,7 +859,14 @@ struct btrfs_disk_balance_args {
- 		};
- 	};
+@@ -823,8 +823,18 @@ struct btrfs_disk_balance_args {
+ 	 */
+ 	__le64 profiles;
  
--	__le64 unused[7];
+-	/* usage filter */
+-	__le64 usage;
 +	/*
-+	 * Process chunks that cross stripes_min..stripes_max devices,
-+	 * BTRFS_BALANCE_ARGS_STRIPES_RANGE
++	 * usage filter
++	 * BTRFS_BALANCE_ARGS_USAGE with a single value means '0..N'
++	 * BTRFS_BALANCE_ARGS_USAGE_RANGE - range syntax, min..max
 +	 */
-+	__le32 stripes_min;
-+	__le32 stripes_max;
-+
-+	__le64 unused[6];
- } __attribute__ ((__packed__));
++	union {
++		__le64 usage;
++		struct {
++			__le32 usage_min;
++			__le32 usage_max;
++		};
++	};
  
- /*
+ 	/* devid filter */
+ 	__le64 devid;
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index b90a79c2bcf9..8d88a8737c79 100644
+index 8d88a8737c79..61e49e0fd934 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -3170,6 +3170,19 @@ static int chunk_vrange_filter(struct extent_buffer *leaf,
- 	return 1;
- }
- 
-+static int chunk_stripes_range_filter(struct extent_buffer *leaf,
-+			       struct btrfs_chunk *chunk,
-+			       struct btrfs_balance_args *bargs)
-+{
-+	int num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
+@@ -3009,16 +3009,19 @@ static void update_balance_args(struct btrfs_balance_control *bctl)
+ 	 * (albeit full) chunks.
+ 	 */
+ 	if (!(bctl->data.flags & BTRFS_BALANCE_ARGS_USAGE) &&
++	    !(bctl->data.flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
+ 	    !(bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT)) {
+ 		bctl->data.flags |= BTRFS_BALANCE_ARGS_USAGE;
+ 		bctl->data.usage = 90;
+ 	}
+ 	if (!(bctl->sys.flags & BTRFS_BALANCE_ARGS_USAGE) &&
++	    !(bctl->sys.flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
+ 	    !(bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT)) {
+ 		bctl->sys.flags |= BTRFS_BALANCE_ARGS_USAGE;
+ 		bctl->sys.usage = 90;
+ 	}
+ 	if (!(bctl->meta.flags & BTRFS_BALANCE_ARGS_USAGE) &&
++	    !(bctl->meta.flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
+ 	    !(bctl->meta.flags & BTRFS_BALANCE_ARGS_CONVERT)) {
+ 		bctl->meta.flags |= BTRFS_BALANCE_ARGS_USAGE;
+ 		bctl->meta.usage = 90;
+@@ -3074,13 +3077,46 @@ static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
+ 			      struct btrfs_balance_args *bargs)
+ {
+ 	struct btrfs_block_group_cache *cache;
++	u64 chunk_used;
++	u64 user_thresh_min;
++	u64 user_thresh_max;
++	int ret = 1;
 +
-+	if (bargs->stripes_min <= num_stripes
-+			&& num_stripes <= bargs->stripes_max)
-+		return 0;
++	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
++	chunk_used = btrfs_block_group_used(&cache->item);
 +
-+	return 1;
++	if (bargs->usage_min == 0)
++		user_thresh_min = 0;
++	else
++		user_thresh_min = div_factor_fine(cache->key.offset,
++					bargs->usage_min);
++
++	if (bargs->usage_max == 0)
++		user_thresh_max = 1;
++	else if (bargs->usage_max > 100)
++		user_thresh_max = cache->key.offset;
++	else
++		user_thresh_max = div_factor_fine(cache->key.offset,
++					bargs->usage_max);
++
++	if (user_thresh_min <= chunk_used && chunk_used < user_thresh_max)
++		ret = 0;
++
++	btrfs_put_block_group(cache);
++	return ret;
 +}
 +
- static int chunk_soft_convert_filter(u64 chunk_type,
- 				     struct btrfs_balance_args *bargs)
- {
-@@ -3236,6 +3249,12 @@ static int should_balance_chunk(struct btrfs_root *root,
++static int chunk_usage_range_filter(struct btrfs_fs_info *fs_info,
++		u64 chunk_offset, struct btrfs_balance_args *bargs)
++{
++	struct btrfs_block_group_cache *cache;
+ 	u64 chunk_used, user_thresh;
+ 	int ret = 1;
+ 
+ 	cache = btrfs_lookup_block_group(fs_info, chunk_offset);
+ 	chunk_used = btrfs_block_group_used(&cache->item);
+ 
+-	if (bargs->usage == 0)
++	if (bargs->usage_min == 0)
+ 		user_thresh = 1;
+ 	else if (bargs->usage > 100)
+ 		user_thresh = cache->key.offset;
+@@ -3229,6 +3265,9 @@ static int should_balance_chunk(struct btrfs_root *root,
+ 	if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE) &&
+ 	    chunk_usage_filter(bctl->fs_info, chunk_offset, bargs)) {
  		return 0;
++	} else if ((bargs->flags & BTRFS_BALANCE_ARGS_USAGE_RANGE) &&
++	    chunk_usage_range_filter(bctl->fs_info, chunk_offset, bargs)) {
++		return 0;
  	}
  
-+	/* stripes filter */
-+	if ((bargs->flags & BTRFS_BALANCE_ARGS_STRIPES_RANGE) &&
-+	    chunk_stripes_range_filter(leaf, chunk, bargs)) {
-+		return 0;
-+	}
-+
- 	/* soft profile changing mode */
- 	if ((bargs->flags & BTRFS_BALANCE_ARGS_SOFT) &&
- 	    chunk_soft_convert_filter(chunk_type, bargs)) {
+ 	/* devid filter */
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index c34578ee49f9..1d823ad3b914 100644
+index 1d823ad3b914..d2be0872ce2f 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -376,6 +376,7 @@ struct map_lookup {
- #define BTRFS_BALANCE_ARGS_VRANGE	(1ULL << 4)
+@@ -377,6 +377,7 @@ struct map_lookup {
  #define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
  #define BTRFS_BALANCE_ARGS_LIMIT_RANGE	(1ULL << 6)
-+#define BTRFS_BALANCE_ARGS_STRIPES_RANGE (1ULL << 7)
+ #define BTRFS_BALANCE_ARGS_STRIPES_RANGE (1ULL << 7)
++#define BTRFS_BALANCE_ARGS_USAGE_RANGE	(1ULL << 8)
  
  /*
   * Profile changing flags.  When SOFT is set we won't relocate chunk if
 diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index 11f13108b78b..17a94704b183 100644
+index 17a94704b183..dea893199257 100644
 --- a/include/uapi/linux/btrfs.h
 +++ b/include/uapi/linux/btrfs.h
-@@ -229,7 +229,15 @@ struct btrfs_balance_args {
- 			__u32 limit_max;
- 		};
- 	};
--	__u64 unused[7];
-+
-+	/*
-+	 * Process chunks that cross stripes_min..stripes_max devices,
-+	 * BTRFS_BALANCE_ARGS_STRIPES_RANGE
-+	 */
-+	__le32 stripes_min;
-+	__le32 stripes_max;
-+
-+	__u64 unused[6];
- } __attribute__ ((__packed__));
- 
- /* report balance progress to userspace */
+@@ -206,7 +206,13 @@ struct btrfs_ioctl_feature_flags {
+  */
+ struct btrfs_balance_args {
+ 	__u64 profiles;
+-	__u64 usage;
++	union {
++		__le64 usage;
++		struct {
++			__le32 usage_min;
++			__le32 usage_max;
++		};
++	};
+ 	__u64 devid;
+ 	__u64 pstart;
+ 	__u64 pend;
 -- 
 2.6.2
 

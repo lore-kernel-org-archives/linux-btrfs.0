@@ -1,192 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46972 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46982 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752485AbbJTRPG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 13:15:06 -0400
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 250F1AB1A
-	for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 17:15:04 +0000 (UTC)
+	id S1752468AbbJTRPK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Oct 2015 13:15:10 -0400
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 1/3] btrfs: extend balance filter limit to take minimum and maximum
-Date: Tue, 20 Oct 2015 19:13:46 +0200
-Message-Id: <c4e4a8c2750b57c9f750cd49eeb885a9695e858f.1445360598.git.dsterba@suse.com>
+Cc: =?UTF-8?q?Gabr=C3=ADel=20Arth=C3=BAr=20P=C3=A9tursson?=
+	<gabriel@system.is>,
+        David Sterba <dsterba@suse.com>
+Subject: [PATCH 2/3] btrfs: add balance filter for stripes
+Date: Tue, 20 Oct 2015 19:13:49 +0200
+Message-Id: <aa6771ad37b6cd5370bccebfe525bd654f0d8a30.1445360598.git.dsterba@suse.com>
 In-Reply-To: <cover.1445360598.git.dsterba@suse.com>
 References: <cover.1445360598.git.dsterba@suse.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The 'limit' filter is underdesigned, it should have been a range for
-[min,max], with some relaxed semantics when one of the bounds is
-missing. Besides that, using a full u64 for a single value is a waste of
-bytes.
+From: Gabríel Arthúr Pétursson <gabriel@system.is>
 
-Let's fix both by extending the use of the u64 bytes for the [min,max]
-range. This can be done in a backward compatible way, the range will be
-interpreted only if the appropriate flag is set
-(BTRFS_BALANCE_ARGS_LIMIT_RANGE).
+Balance block groups which have the given number of stripes, defined by
+a range min..max. This is useful to selectively rebalance only chunks
+that do not span enough devices, applies to RAID0/10/5/6.
 
+Signed-off-by: Gabríel Arthúr Pétursson <gabriel@system.is>
+[ renamed bargs members, added to the UAPI, wrote the changelog ]
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h           | 14 ++++++++++++--
- fs/btrfs/volumes.c         | 42 ++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/ctree.h           |  9 ++++++++-
+ fs/btrfs/volumes.c         | 19 +++++++++++++++++++
  fs/btrfs/volumes.h         |  1 +
- include/uapi/linux/btrfs.h | 13 ++++++++++++-
- 4 files changed, 67 insertions(+), 3 deletions(-)
+ include/uapi/linux/btrfs.h | 10 +++++++++-
+ 4 files changed, 37 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 938efe33be80..852c738d6954 100644
+index 852c738d6954..76055a8317e9 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -846,8 +846,18 @@ struct btrfs_disk_balance_args {
- 	/* BTRFS_BALANCE_ARGS_* */
- 	__le64 flags;
+@@ -859,7 +859,14 @@ struct btrfs_disk_balance_args {
+ 		};
+ 	};
  
--	/* BTRFS_BALANCE_ARGS_LIMIT value */
--	__le64 limit;
+-	__le64 unused[7];
 +	/*
-+	 * BTRFS_BALANCE_ARGS_LIMIT with value 'limit'
-+	 * BTRFS_BALANCE_ARGS_LIMIT_RANGE - the extend version can use minimum
-+	 * and maximum
++	 * Process chunks that cross stripes_min..stripes_max devices,
++	 * BTRFS_BALANCE_ARGS_STRIPES_RANGE
 +	 */
-+	union {
-+		__le64 limit;
-+		struct {
-+			__le32 limit_min;
-+			__le32 limit_max;
-+		};
-+	};
- 
- 	__le64 unused[7];
++	__le32 stripes_min;
++	__le32 stripes_max;
++
++	__le64 unused[6];
  } __attribute__ ((__packed__));
+ 
+ /*
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc735869c18..b90a79c2bcf9 100644
+index b90a79c2bcf9..8d88a8737c79 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -3250,6 +3250,16 @@ static int should_balance_chunk(struct btrfs_root *root,
- 			return 0;
- 		else
- 			bargs->limit--;
-+	} else if ((bargs->flags & BTRFS_BALANCE_ARGS_LIMIT_RANGE)) {
-+		/*
-+		 * Same logic as the 'limit' filter; the minimum cannot be
-+		 * determined here because we do not have the global informatoin
-+		 * about the count of all chunks that satisfy the filters.
-+		 */
-+		if (bargs->limit_max == 0)
-+			return 0;
-+		else
-+			bargs->limit_max--;
+@@ -3170,6 +3170,19 @@ static int chunk_vrange_filter(struct extent_buffer *leaf,
+ 	return 1;
+ }
+ 
++static int chunk_stripes_range_filter(struct extent_buffer *leaf,
++			       struct btrfs_chunk *chunk,
++			       struct btrfs_balance_args *bargs)
++{
++	int num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
++
++	if (bargs->stripes_min <= num_stripes
++			&& num_stripes <= bargs->stripes_max)
++		return 0;
++
++	return 1;
++}
++
+ static int chunk_soft_convert_filter(u64 chunk_type,
+ 				     struct btrfs_balance_args *bargs)
+ {
+@@ -3236,6 +3249,12 @@ static int should_balance_chunk(struct btrfs_root *root,
+ 		return 0;
  	}
  
- 	return 1;
-@@ -3264,6 +3274,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	struct btrfs_device *device;
- 	u64 old_size;
- 	u64 size_to_free;
-+	u64 chunk_type;
- 	struct btrfs_chunk *chunk;
- 	struct btrfs_path *path;
- 	struct btrfs_key key;
-@@ -3274,9 +3285,13 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	int ret;
- 	int enospc_errors = 0;
- 	bool counting = true;
-+	/* The single value limit and min/max limits use the same bytes in the */
- 	u64 limit_data = bctl->data.limit;
- 	u64 limit_meta = bctl->meta.limit;
- 	u64 limit_sys = bctl->sys.limit;
-+	u32 count_data = 0;
-+	u32 count_meta = 0;
-+	u32 count_sys = 0;
- 
- 	/* step one make some room on all the devices */
- 	devices = &fs_info->fs_devices->devices;
-@@ -3317,6 +3332,10 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 	spin_unlock(&fs_info->balance_lock);
- again:
- 	if (!counting) {
-+		/*
-+		 * The single value limit and min/max limits use the same bytes
-+		 * in the
-+		 */
- 		bctl->data.limit = limit_data;
- 		bctl->meta.limit = limit_meta;
- 		bctl->sys.limit = limit_sys;
-@@ -3364,6 +3383,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 		}
- 
- 		chunk = btrfs_item_ptr(leaf, slot, struct btrfs_chunk);
-+		chunk_type = btrfs_chunk_type(leaf, chunk);
- 
- 		if (!counting) {
- 			spin_lock(&fs_info->balance_lock);
-@@ -3384,6 +3404,28 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
- 			spin_lock(&fs_info->balance_lock);
- 			bctl->stat.expected++;
- 			spin_unlock(&fs_info->balance_lock);
++	/* stripes filter */
++	if ((bargs->flags & BTRFS_BALANCE_ARGS_STRIPES_RANGE) &&
++	    chunk_stripes_range_filter(leaf, chunk, bargs)) {
++		return 0;
++	}
 +
-+			if (chunk_type & BTRFS_BLOCK_GROUP_DATA)
-+				count_data++;
-+			else if (chunk_type & BTRFS_BLOCK_GROUP_SYSTEM)
-+				count_sys++;
-+			else if (chunk_type & BTRFS_BLOCK_GROUP_METADATA)
-+				count_meta++;
-+
-+			goto loop;
-+		}
-+
-+		/*
-+		 * Apply limit_min filter, no need to check if the LIMITS
-+		 * filter is used, limit_min is 0 by default
-+		 */
-+		if (((chunk_type & BTRFS_BLOCK_GROUP_DATA) &&
-+					count_data < bctl->data.limit_min)
-+				|| ((chunk_type & BTRFS_BLOCK_GROUP_METADATA) &&
-+					count_meta < bctl->meta.limit_min)
-+				|| ((chunk_type & BTRFS_BLOCK_GROUP_SYSTEM) &&
-+					count_sys < bctl->sys.limit_min)) {
-+			mutex_unlock(&fs_info->delete_unused_bgs_mutex);
- 			goto loop;
- 		}
- 
+ 	/* soft profile changing mode */
+ 	if ((bargs->flags & BTRFS_BALANCE_ARGS_SOFT) &&
+ 	    chunk_soft_convert_filter(chunk_type, bargs)) {
 diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 2ca784a14e84..c34578ee49f9 100644
+index c34578ee49f9..1d823ad3b914 100644
 --- a/fs/btrfs/volumes.h
 +++ b/fs/btrfs/volumes.h
-@@ -375,6 +375,7 @@ struct map_lookup {
- #define BTRFS_BALANCE_ARGS_DRANGE	(1ULL << 3)
+@@ -376,6 +376,7 @@ struct map_lookup {
  #define BTRFS_BALANCE_ARGS_VRANGE	(1ULL << 4)
  #define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
-+#define BTRFS_BALANCE_ARGS_LIMIT_RANGE	(1ULL << 6)
+ #define BTRFS_BALANCE_ARGS_LIMIT_RANGE	(1ULL << 6)
++#define BTRFS_BALANCE_ARGS_STRIPES_RANGE (1ULL << 7)
  
  /*
   * Profile changing flags.  When SOFT is set we won't relocate chunk if
 diff --git a/include/uapi/linux/btrfs.h b/include/uapi/linux/btrfs.h
-index b6dec05c7196..11f13108b78b 100644
+index 11f13108b78b..17a94704b183 100644
 --- a/include/uapi/linux/btrfs.h
 +++ b/include/uapi/linux/btrfs.h
-@@ -217,7 +217,18 @@ struct btrfs_balance_args {
- 
- 	__u64 flags;
- 
--	__u64 limit;		/* limit number of processed chunks */
+@@ -229,7 +229,15 @@ struct btrfs_balance_args {
+ 			__u32 limit_max;
+ 		};
+ 	};
+-	__u64 unused[7];
++
 +	/*
-+	 * BTRFS_BALANCE_ARGS_LIMIT with value 'limit'
-+	 * BTRFS_BALANCE_ARGS_LIMIT_RANGE - the extend version can use minimum
-+	 * and maximum
++	 * Process chunks that cross stripes_min..stripes_max devices,
++	 * BTRFS_BALANCE_ARGS_STRIPES_RANGE
 +	 */
-+	union {
-+		__u64 limit;		/* limit number of processed chunks */
-+		struct {
-+			__u32 limit_min;
-+			__u32 limit_max;
-+		};
-+	};
- 	__u64 unused[7];
++	__le32 stripes_min;
++	__le32 stripes_max;
++
++	__u64 unused[6];
  } __attribute__ ((__packed__));
  
+ /* report balance progress to userspace */
 -- 
 2.6.2
 

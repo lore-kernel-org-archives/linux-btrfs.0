@@ -1,85 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44211 "EHLO mx2.suse.de"
+Received: from swwu.com ([81.4.102.7]:43861 "EHLO swwu.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753319AbbJUQqI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 12:46:08 -0400
-From: David Sterba <dsterba@suse.com>
+	id S1750732AbbJUXgr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 Oct 2015 19:36:47 -0400
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8;
+ format=flowed
+Date: Thu, 22 Oct 2015 01:36:46 +0200
+From: Victor <services@swwu.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, clm@fb.com
-Subject: [PULL] Btrfs cleanups for 4.4 (collected)
-Date: Wed, 21 Oct 2015 18:44:46 +0200
-Message-Id: <cover.1445445632.git.dsterba@suse.com>
+Cc: spender@grsecurity.net, pageexec@freemail.hu, re.emese@gmail.com
+Subject: overflow in inode.c, file.c
+Message-ID: <fdb1fe411a9aa68d196737cbee851a1b@swwu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hello, while using linux-⁠4.2.3 (btrfs-⁠progs v4.2.2) with the latest
+grsec patch to date, a feature in the grsec patchset, an overflow
+checker (made by emese) seems to have found some bugs in the btrfs
+code itself (this is not caused by grsec).
 
-a bunch of cleanup patches from the mailinglist, no functional changes.
-Reviewed and compile-tested, merge with current integration is without
-conflits. Please pull, thanks.
+First bug: fs/⁠btrfs/⁠inode.c:5759
 
-----------------------------------------------------------------
-The following changes since commit 25cb62b76430a91cc6195f902e61c2cb84ade622:
+For example -⁠-⁠>
 
-  Linux 4.3-rc5 (2015-10-11 11:09:45 -0700)
+***********************************
+Oct 18 16:09:18 TestMachine kernel: [    8.449128] PAX: size overflow
+detected in function btrfs_real_readdir fs/⁠btrfs/⁠inode.c:5760
+cicus.935_282 max, count: 9, decl: pos; num: 0; context: dir_context;
+Oct 18 16:09:18 TestMachine kernel: [    8.449132] CPU: 0 PID: 2630
+Comm: polkitd Not tainted 4.2.3-⁠grsec #1
+Oct 18 16:09:18 TestMachine kernel: [    8.449134] Hardware name:
+Gigabyte Technology Co., Ltd. H81ND2H/⁠H81ND2H, BIOS F3 08/⁠11/⁠2015
+Oct 18 16:09:18 TestMachine kernel: [    8.449135]  ffffffff81901608
+0000000000000000 ffffffff819015e6 ffffc90004973d48
+Oct 18 16:09:18 TestMachine kernel: [    8.449139]  ffffffff81742f0f
+0000000000000007 ffffffff81901608 ffffc90004973d78
+Oct 18 16:09:18 TestMachine kernel: [    8.449141]  ffffffff811cb706
+0000000000000000 ffff8800d47359e0 ffffc90004973ed8
+Oct 18 16:09:18 TestMachine kernel: [    8.449144] Call Trace:
+Oct 18 16:09:18 TestMachine kernel: [    8.449151]
+[<ffffffff81742f0f>] dump_stack+0x4c/⁠0x7f
+Oct 18 16:09:18 TestMachine kernel: [    8.449154]
+[<ffffffff811cb706>] report_size_overflow+0x36/⁠0x40
+Oct 18 16:09:18 TestMachine kernel: [    8.449158]
+[<ffffffff812ef0bc>] btrfs_real_readdir+0x69c/⁠0x6d0
+Oct 18 16:09:18 TestMachine kernel: [    8.449160]
+[<ffffffff811dafc8>] iterate_dir+0xa8/⁠0x150
+Oct 18 16:09:18 TestMachine kernel: [    8.449164]
+[<ffffffff811e6d8d>] ? __fget_light+0x2d/⁠0x70
+Oct 18 16:09:18 TestMachine kernel: [    8.449166]
+[<ffffffff811dba3a>] SyS_getdents+0xba/⁠0x1c0
+Oct 18 16:09:18 TestMachine kernel: [    8.449169]
+[<ffffffff811db070>] ? iterate_dir+0x150/⁠0x150
+Oct 18 16:09:18 TestMachine kernel: [    8.449173]
+[<ffffffff81749b69>] entry_SYSCALL_64_fastpath+0x12/⁠0x83
+Oct 18 16:09:18 TestMachine kernel: [    8.449230] Overflow: 7fffffff
 
-are available in the git repository at:
+*************************************
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git cleanups/for-4.4
+Second bug: fs/⁠btrfs/⁠file.c:1871
 
-for you to fetch changes up to ddd664f4478a4aaf0ac67a4297e33f1992bc9be2:
+Example-⁠-⁠>
 
-  btrfs: reada: Fix returned errno code (2015-10-21 18:29:50 +0200)
+********************************
+Oct 18 16:09:20 TestMachine kernel: [   10.526375] PAX: size overflow
+detected in function btrfs_sync_file fs/⁠btrfs/⁠file.c:1871
+cicus.679_107 max, count: 289, decl: btrfs_wait_ordered_range; num: 3;
+context: fndecl;
+Oct 18 16:09:20 TestMachine kernel: [   10.526380] CPU: 1 PID: 3160
+Comm: mysqld Not tainted 4.2.3-⁠grsec #1
+Oct 18 16:09:20 TestMachine kernel: [   10.526382] Hardware name:
+Gigabyte Technology Co., Ltd. H81ND2H/⁠H81ND2H, BIOS F3 08/⁠11/⁠2015
+Oct 18 16:09:20 TestMachine kernel: [   10.526384]  ffffffff819019e5
+0000000000000000 ffffffff81901924 ffffc90004d8bd98
+Oct 18 16:09:20 TestMachine kernel: [   10.526387]  ffffffff81742f0f
+ffff88021f28ddc0 ffffffff819019e5 ffffc90004d8bdc8
+Oct 18 16:09:20 TestMachine kernel: [   10.526390]  ffffffff811cb706
+ffff880202e9e270 0000000000000000 8000000000000000
+Oct 18 16:09:20 TestMachine kernel: [   10.526392] Call Trace:
+Oct 18 16:09:20 TestMachine kernel: [   10.526399]
+[<ffffffff81742f0f>] dump_stack+0x4c/⁠0x7f
+Oct 18 16:09:20 TestMachine kernel: [   10.526402]
+[<ffffffff811cb706>] report_size_overflow+0x36/⁠0x40
+Oct 18 16:09:20 TestMachine kernel: [   10.526404]
+[<ffffffff81306a40>] btrfs_sync_file+0x90/⁠0x490
+Oct 18 16:09:20 TestMachine kernel: [   10.526407]
+[<ffffffff811fc199>] vfs_fsync_range+0x59/⁠0xc0
+Oct 18 16:09:20 TestMachine kernel: [   10.526410]
+[<ffffffff811e6d8d>] ? __fget_light+0x2d/⁠0x70
+Oct 18 16:09:20 TestMachine kernel: [   10.526411]
+[<ffffffff811fc26c>] do_fsync+0x3c/⁠0x70
+Oct 18 16:09:20 TestMachine kernel: [   10.526413]
+[<ffffffff811fc545>] SyS_fsync+0x15/⁠0x30
+Oct 18 16:09:20 TestMachine kernel: [   10.526415]
+[<ffffffff81749b69>] entry_SYSCALL_64_fastpath+0x12/⁠0x83
+*********************************
 
-----------------------------------------------------------------
-Alexandru Moise (8):
-      btrfs: Fixed dsize and last_off declarations
-      btrfs: Fixed declaration of old_len
-      btrfs: trimming some start_transaction() code away
-      btrfs: memset cur_trans->delayed_refs to zero
-      btrfs: use a single if() statement for one outcome in get_block_rsv()
-      btrfs: cleanup btrfs_balance profile validity checks
-      btrfs: change num_items type from u64 to unsigned int
-      btrfs: declare rsv_count as unsigned int instead of int
 
-Byongho Lee (4):
-      btrfs: replace unnecessary list_for_each_entry_safe to list_for_each_entry
-      btrfs: remove unnecessary list_del
-      btrfs: cleanup iterating over prop_handlers array
-      btrfs: compress: put variables defined per compress type in struct to make cache friendly
+len = end -⁠ start + 1
 
-Chandan Rajendra (1):
-      Btrfs: btrfs_submit_bio_hook: Use btrfs_wq_endio_type values instead of integer constants
+vfs_fsync calls vfs_fsync_range with 0 and LLONG_MAX for start and end.
+In btrfs_sync_file the above expression causes a signed overflow
+(undefined behaviour) with these values.
 
-Geliang Tang (1):
-      btrfs: fix a comment typo
 
-Luis de Bethencourt (2):
-      btrfs: check-integrity: Fix returned errno codes
-      btrfs: reada: Fix returned errno code
 
-Shan Hai (1):
-      btrfs/file.c: remove an unsed varialbe first_index
+This is the whole dmesg http://pastebin.com/S9gjYpYX , thanks
 
-Zhao Lei (3):
-      btrfs: Move btrfs_raid_array to public
-      btrfs: use btrfs_raid_array for btrfs_get_num_tolerated_disk_barrier_failures()
-      btrfs: use btrfs_raid_array in btrfs_reduce_alloc_profile
-
- fs/btrfs/check-integrity.c  |   4 +-
- fs/btrfs/compression.c      |  94 +++++++++++++-------------
- fs/btrfs/ctree.c            |   4 +-
- fs/btrfs/disk-io.c          |  35 ++++++----
- fs/btrfs/extent-tree.c      |  58 +++++++---------
- fs/btrfs/file.c             |   5 +-
- fs/btrfs/free-space-cache.c |   2 +-
- fs/btrfs/inode.c            |   5 +-
- fs/btrfs/ioctl.c            |   3 +-
- fs/btrfs/props.c            |  13 ++--
- fs/btrfs/reada.c            |   8 ++-
- fs/btrfs/root-tree.c        |   2 +-
- fs/btrfs/transaction.c      |  32 +++------
- fs/btrfs/transaction.h      |   5 +-
- fs/btrfs/volumes.c          | 156 +++++++++++++++++++++++++-------------------
- fs/btrfs/volumes.h          |   5 ++
- 16 files changed, 220 insertions(+), 211 deletions(-)

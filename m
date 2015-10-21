@@ -1,49 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f178.google.com ([209.85.212.178]:36928 "EHLO
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:35989 "EHLO
 	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751042AbbJUA7f (ORCPT
+	with ESMTP id S1751695AbbJUBLZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 20:59:35 -0400
-Received: by wicfv8 with SMTP id fv8so52715369wic.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 17:59:33 -0700 (PDT)
+	Tue, 20 Oct 2015 21:11:25 -0400
+Received: by wicfx6 with SMTP id fx6so69461064wic.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 18:11:24 -0700 (PDT)
 Received: from [192.168.1.30] (nat-minsk-pool-46-53-200-210.telecom.by. [46.53.200.210])
-        by smtp.gmail.com with ESMTPSA id q1sm6885522wje.39.2015.10.20.17.59.32
+        by smtp.gmail.com with ESMTPSA id bk4sm6974874wjc.1.2015.10.20.18.11.23
         for <linux-btrfs@vger.kernel.org>
         (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Tue, 20 Oct 2015 17:59:32 -0700 (PDT)
+        Tue, 20 Oct 2015 18:11:23 -0700 (PDT)
 To: linux-btrfs@vger.kernel.org
 From: Timofey Titovets <nefelim4ag@gmail.com>
 Subject: [RFC PATCH V2] btrfs/ioctl.c: extent_same - Use inode as src which,
  close to disk beginning
-Message-ID: <5626E373.8050906@gmail.com>
-Date: Wed, 21 Oct 2015 03:59:31 +0300
+Message-ID: <5626E63A.2090608@gmail.com>
+Date: Wed, 21 Oct 2015 04:11:22 +0300
 MIME-Version: 1.0
 Content-Type: multipart/mixed;
- boundary="------------030002080404090006030405"
+ boundary="------------060209080406080703090806"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a multi-part message in MIME format.
---------------030002080404090006030405
+--------------060209080406080703090806
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: 7bit
 
-It's just a proof of concept, and i hope to see feedback, ideas about it.
+It's just a proof of concept, and i hope to see feedback/ideas/review 
+about it.
 ---
 While deduplication,
 Btrfs produce extent and file fragmentation
 But it's can be optimized by compute - which inode data placed a closest 
 to beginning of hdd
-It's allow to reach:
-1. Permonace boost on hdd (beginning of disk faster then end)
-2. it's allow to make sparse only tail of fs, what can give boost later in
-balancing and resizing of fs
+It's allow to:
+1. Performance boost on hdd (beginning of disk faster then end)
+2. Make sparse only on tail of fs, what can give boost later for
+balancing and resizing operations
 
 New function:
 static u64 btrfs_avg_disko(struct inode *inode,
                          const u64 off, const u64 olen_aligned);
 
-It normalize offsets with data lenghts, by represent it like offsets of 
+It normalize offsets with data lengths, by represent it like offsets of 
 blocks
 It return average data offset of all "pagesized" blocks in given range 
 for inode
@@ -52,13 +53,14 @@ Function cloned from btrfs_clone()
 Changes from V1:
          Added new function which compute "normal" offset
 
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
   fs/btrfs/ioctl.c | 147 
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
   1 file changed, 145 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3e3e613..a14b4e7 100644
+index 3e3e613..17e5313 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
 @@ -86,6 +86,9 @@ struct btrfs_ioctl_received_subvol_args_32 {
@@ -66,7 +68,7 @@ index 3e3e613..a14b4e7 100644
 
 
 +static u64 btrfs_avg_disko(struct inode *inode,
-+                    const u64 off, const u64 olen_aligned);
++                        const u64 off, const u64 olen_aligned);
 +
   static int btrfs_clone(struct inode *src, struct inode *inode,
                  u64 off, u64 olen, u64 olen_aligned, u64 destoff,
@@ -238,7 +240,7 @@ btrfs_file_extent_item);
 
 
 
---------------030002080404090006030405
+--------------060209080406080703090806
 Content-Type: text/x-patch;
  name="0001-btrfs-ioctl.c-extent_same-Use-inode-as-src-which-clo.patch"
 Content-Transfer-Encoding: 7bit
@@ -246,19 +248,19 @@ Content-Disposition: attachment;
  filename*0="0001-btrfs-ioctl.c-extent_same-Use-inode-as-src-which-clo.pa";
  filename*1="tch"
 
->From 8719129c0fb4d5325f9f87ee34f591d301933f67 Mon Sep 17 00:00:00 2001
+>From 0fcd8c8f03064b9d7ed89606f3eff65ffc53cbf5 Mon Sep 17 00:00:00 2001
 From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Wed, 21 Oct 2015 03:31:57 +0300
+Date: Wed, 21 Oct 2015 04:10:13 +0300
 Subject: [RFC PATCH V2] btrfs/ioctl.c: extent_same - Use inode as src which
  close to disk beginning
 
 While deduplication,
 Btrfs produce extent and file fragmentation
 But it's can be optimized by compute - which inode data placed a closest to beginning of hdd
-It's allow to reach:
-1. Permonace boost on hdd (beginning of disk faster then end)
-2. it's allow to make sparse only tail of fs, what can give boost later in
-balancing and resizing of fs
+It's allow to:
+1. Performance boost on hdd (beginning of disk faster then end)
+2. Make sparse only on tail of fs, what can give boost later for
+balancing and resizing operations
 
 New function:
 static u64 btrfs_avg_disko(struct inode *inode,
@@ -266,12 +268,14 @@ static u64 btrfs_avg_disko(struct inode *inode,
 
 It normalize offsets with data lenghts, by represent it like offsets of blocks
 It return average data offset of all "pagesized" blocks in given range for inode
+
+Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
 ---
  fs/btrfs/ioctl.c | 147 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
  1 file changed, 145 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3e3e613..a14b4e7 100644
+index 3e3e613..cd0ecd3 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
 @@ -86,6 +86,9 @@ struct btrfs_ioctl_received_subvol_args_32 {
@@ -279,7 +283,7 @@ index 3e3e613..a14b4e7 100644
  
  
 +static u64 btrfs_avg_disko(struct inode *inode,
-+					const u64 off, const u64 olen_aligned);
++						const u64 off, const u64 olen_aligned);
 +
  static int btrfs_clone(struct inode *src, struct inode *inode,
  		       u64 off, u64 olen, u64 olen_aligned, u64 destoff,
@@ -317,8 +321,8 @@ index 3e3e613..a14b4e7 100644
 + * @off: Offset for computing
 + * @olen_aligned: Block-aligned len of data
 + *
-+ * Computing avg address place of data, allow to heuristically
-+ * determine where on the disk placed most fragment of data
++ * Computing average offset of data, allow to heuristically
++ * determine where on the disk placed most percent of data fragments
 + */
 +static u64 btrfs_avg_disko(struct inode *inode,
 +					const u64 off, const u64 olen_aligned)
@@ -446,4 +450,4 @@ index 3e3e613..a14b4e7 100644
 2.6.1
 
 
---------------030002080404090006030405--
+--------------060209080406080703090806--

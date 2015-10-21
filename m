@@ -1,134 +1,449 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from blu004-omc1s34.hotmail.com ([65.55.116.45]:54406 "EHLO
-	BLU004-OMC1S34.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753673AbbJTWqI convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 18:46:08 -0400
-Message-ID: <BLU437-SMTP66AE7103C3A5471C154844A9390@phx.gbl>
+Received: from mail-wi0-f178.google.com ([209.85.212.178]:36928 "EHLO
+	mail-wi0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751042AbbJUA7f (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 20 Oct 2015 20:59:35 -0400
+Received: by wicfv8 with SMTP id fv8so52715369wic.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 20 Oct 2015 17:59:33 -0700 (PDT)
+Received: from [192.168.1.30] (nat-minsk-pool-46-53-200-210.telecom.by. [46.53.200.210])
+        by smtp.gmail.com with ESMTPSA id q1sm6885522wje.39.2015.10.20.17.59.32
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 20 Oct 2015 17:59:32 -0700 (PDT)
+To: linux-btrfs@vger.kernel.org
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Subject: [RFC PATCH V2] btrfs/ioctl.c: extent_same - Use inode as src which,
+ close to disk beginning
+Message-ID: <5626E373.8050906@gmail.com>
+Date: Wed, 21 Oct 2015 03:59:31 +0300
 MIME-Version: 1.0
-In-Reply-To: <BLU436-SMTP11853633E0AF118E66934D6A9390@phx.gbl>
-References: <CAM9fjH6M2yqSiqXbT4DBvHbQGq9Cdw-wzMvsYkztPSsQG=PLqQ@mail.gmail.com>
-	<pan$55e2$eeada9c5$c7289131$4f093ca1@cox.net>
-	<CAM9fjH6pcwZKWryNrJay_N98wmXWVXXqo3HJuupbJRE3MC9YKQ@mail.gmail.com>
-	<BLU436-SMTP11853633E0AF118E66934D6A9390@phx.gbl>
-Date: Wed, 21 Oct 2015 00:46:02 +0200
-Subject: Re: How to remove missing device on RAID1?
-From: Henk Slager <hslager@hotmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: multipart/mixed;
+ boundary="------------030002080404090006030405"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-copy-paste error corrected
-On Wed, Oct 21, 2015 at 12:40 AM, Henk Slager <hslager@hotmail.com> wrote:
-> I had a similar issue some time ago, around the time kernel 4.1.6 was
-> just there.
-> In case you don't want to wait for new disk or decide to just run the
-> filesystem with 1 disk less or maybe later on replace 1 of the still
-> healthy disks with a double/bigger sized one and use current/older
-> kernel+tools, you could do this (assuming the filesystem is not too
-> full of course):
-> - mount degraded
-- btrfs balance start -f -v -sdevid=1 -mdevid=1 -mdevid=1 <mountpoint>
->   (where missing disk has devid 1)
-> After completion the (virtual/missing) device shall be fully unallocated
-> - create /dev/loopX with sparse file of same size as missing disk on
-> some other filesystem
-> - btrfs replace start 1 /dev/loopX <mountpoint>
-> - remove /dev/loopX from the filesystem
-> - remount filesystyem without degraded
-> And remove /dev/loopX
->
->
-> On Tue, Oct 20, 2015 at 11:48 PM, Kyle Manna <2bluesc@gmail.com> wrote:
->> Thanks for the follow-up Duncan, that makes sense.  I assumed I was
->> doing something wrong.
->>
->> I downloaded the devel branch of of btrfs-progs and got it running
->> before I saw the need for a kernel patch and decided to wait.
->>
->> For anyone following this later, I needed to use the following to get
->> the missing device ID:
->>
->> btrfs device usage <path>
->> ᐧ
->>
->> On Tue, Oct 20, 2015 at 1:58 PM, Duncan <1i5t5.duncan@cox.net> wrote:
->>> Kyle Manna posted on Tue, 20 Oct 2015 10:24:48 -0700 as excerpted:
->>>
->>>> Hi all,
->>>>
->>>> I have a collection of three (was 4) 1-2TB devices with data and
->>>> metadata in a RAID1 mirror.  Last night I was struck by the Click of
->>>> Death on an old Samsung drive.
->>>>
->>>> I removed the device from the system, rebooted and mounted the volume
->>>> with `-o degraded` and the file system seems fine and usable.  I'm
->>>> waiting on a replacement, drive but want to remove the old drive and
->>>> re-balance in the meantime.
->>>>
->>>> How do I remove the missing device?  I tried the `btrfs device delete
->>>> missing /mnt` but was greeted with "ERROR: missing is not a block
->>>> device".  A quick look at that btrfs-progs git repo shows that
->>>> `stat("missing")` is called, which of course fails since missing isn't a
->>>> block device.  Nothing other then `btrfs replace` seemed intuitive and
->>>> all the docs mention the older command.  What's the move?
->>>>
->>>> Thanks!
->>>> - Kyle
->>>>
->>>> Versions:
->>>> Kernel: 4.2.3-1-ARCH
->>>> btrfs-progs: 4.2.2-1 ᐧ
->>>
->>> I believe the current advice given here (that you were likely trying to
->>> follow, wrapped link)...
->>>
->>> https://btrfs.wiki.kernel.org/index.php/
->>> Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices
->>>
->>> ... is dated and no longer works due to code change some time in the past.
->>>
->>> There's a set of (very) recent patches, to the kernel and userspace both
->>> (I just updated userspace and it's in the git devel-branch v4.2.3-49-
->>> g4db87a1 I just built, kernelspace, I don't see it in linus-mainline yet,
->>> so I'd guess it's in the btrfs-integration patches, to land in the v4.4
->>> commit window if not in 4.3 as it's getting late in the cycle for that.
->>>
->>> btrfs fi show <path>
->>>
->>> That will list the btrfs component devices together with their devids.
->>>
->>> Then use the appropriate devid like so:
->>>
->>> btrfs dev del <devid> <path>
->>>
->>> The -progs commit is d462081f, by Anand Jain, titled:
->>>
->>> btrfs-progs: Introduce device delete by devid
->>>
->>> According to it, the required kernel commit (title only listed) is
->>> similar:
->>>
->>> Btrfs: Introduce device delete by devid
->>>
->>> You can probably find them on-list if you wish to cherry-pick them into a
->>> current version.
->>>
->>> --
->>> Duncan - List replies preferred.   No HTML msgs.
->>> "Every nonfree program has a lord, a master --
->>> and if you use the program, he is your master."  Richard Stallman
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+This is a multi-part message in MIME format.
+--------------030002080404090006030405
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+
+It's just a proof of concept, and i hope to see feedback, ideas about it.
+---
+While deduplication,
+Btrfs produce extent and file fragmentation
+But it's can be optimized by compute - which inode data placed a closest 
+to beginning of hdd
+It's allow to reach:
+1. Permonace boost on hdd (beginning of disk faster then end)
+2. it's allow to make sparse only tail of fs, what can give boost later in
+balancing and resizing of fs
+
+New function:
+static u64 btrfs_avg_disko(struct inode *inode,
+                         const u64 off, const u64 olen_aligned);
+
+It normalize offsets with data lenghts, by represent it like offsets of 
+blocks
+It return average data offset of all "pagesized" blocks in given range 
+for inode
+Function cloned from btrfs_clone()
+
+Changes from V1:
+         Added new function which compute "normal" offset
+
+---
+  fs/btrfs/ioctl.c | 147 
+++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+  1 file changed, 145 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3e3e613..a14b4e7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -86,6 +86,9 @@ struct btrfs_ioctl_received_subvol_args_32 {
+  #endif
+
+
++static u64 btrfs_avg_disko(struct inode *inode,
++                    const u64 off, const u64 olen_aligned);
++
+  static int btrfs_clone(struct inode *src, struct inode *inode,
+                 u64 off, u64 olen, u64 olen_aligned, u64 destoff,
+                 int no_time_update);
+@@ -3074,8 +3077,20 @@ static int btrfs_extent_same(struct inode *src, 
+u64 loff, u64 olen,
+
+      /* pass original length for comparison so we stay within i_size */
+      ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
+-    if (ret == 0)
+-        ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
++    if (ret == 0) {
++        /* prefer inode with lowest offset as source for clone*/
++        u64 src_weight;
++        u64 dst_weight;
++        src_weight = btrfs_avg_disko(src, off, olen);
++        dst_weight = btrfs_avg_disko(dest, dst_loff, olen);
++        /* if one of weight == 0 -> fallback */
++        if (dest_weight == 0)
++            src_weight = 0;
++        if (src_weight > dest_weight)
++            ret = btrfs_clone(dst, src, dst_loff, olen, len, loff, 1);
++        else
++            ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
++    }
+
+      if (same_inode)
+          unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
+@@ -3329,6 +3344,134 @@ static void clone_update_extent_map(struct inode 
+*inode,
+  }
+
+  /**
++ * btrfs_avg_disko() - return avg data offset weight for inode
++ *
++ * @inode: Inode
++ * @off: Offset for computing
++ * @olen_aligned: Block-aligned len of data
++ *
++ * Computing avg address place of data, allow to heuristically
++ * determine where on the disk placed most fragment of data
++ */
++static u64 btrfs_avg_disko(struct inode *inode,
++                    const u64 off, const u64 olen_aligned)
++{
++    struct btrfs_root *root = BTRFS_I(inode)->root;
++    struct btrfs_path *path = NULL;
++    struct extent_buffer *leaf;
++    char *buf = NULL;
++    struct btrfs_key key;
++    u32 nritems;
++    int slot;
++    int no_quota;
++    double sum = 0;
++    u64 ret = 0;
++    u64 counter = 0;
++
++    buf = vmalloc(root->nodesize);
++    if (!buf)
++        return ret;
++
++    path = btrfs_alloc_path();
++    if (!path) {
++        vfree(buf);
++        return ret;
++    }
++
++    path->reada = 2;
++    /* clone data */
++    key.objectid = btrfs_ino(inode);
++    key.type = BTRFS_EXTENT_DATA_KEY;
++    key.offset = off;
++
++    while (1) {
++        u64 next_key_min_offset = key.offset + 1;
++
++        /*
++         * note the key will change type as we walk through the
++         * tree.
++         */
++        path->leave_spinning = 1;
++        ret = btrfs_search_slot(NULL, BTRFS_I(inode)->root, &key, 
+path,    0, 0);
++        if (ret < 0)
++            goto out;
++        /*
++         * First search, if no extent item that starts at offset off was
++         * found but the previous item is an extent item, it's possible
++         * it might overlap our target range, therefore process it.
++         */
++        if (key.offset == off && ret > 0 && path->slots[0] > 0) {
++            btrfs_item_key_to_cpu(path->nodes[0], &key,
++                          path->slots[0] - 1);
++            if (key.type == BTRFS_EXTENT_DATA_KEY)
++                path->slots[0]--;
++        }
++
++        nritems = btrfs_header_nritems(path->nodes[0]);
++process_slot:
++        no_quota = 1;
++        if (path->slots[0] >= nritems) {
++            ret = btrfs_next_leaf(BTRFS_I(inode)->root, path);
++            if (ret < 0)
++                goto out;
++            if (ret > 0)
++                break;
++            nritems = btrfs_header_nritems(path->nodes[0]);
++        }
++        leaf = path->nodes[0];
++        slot = path->slots[0];
++
++        btrfs_item_key_to_cpu(leaf, &key, slot);
++        if (key.type > BTRFS_EXTENT_DATA_KEY ||
++            key.objectid != btrfs_ino(inode))
++            break;
++
++        if (key.type == BTRFS_EXTENT_DATA_KEY) {
++            struct btrfs_file_extent_item *extent;
++            int type;
++            u64 disko = 0;
++            u64 diskl = 0;
++            u64 datal = 0;
++
++            extent = btrfs_item_ptr(leaf, slot,    struct 
+btrfs_file_extent_item);
++            type = btrfs_file_extent_type(leaf, extent);
++            if (type == BTRFS_FILE_EXTENT_REG ||
++                type == BTRFS_FILE_EXTENT_PREALLOC) {
++                disko = btrfs_file_extent_disk_bytenr(leaf, extent);
++                diskl = btrfs_file_extent_disk_num_bytes(leaf, extent);
++                datal = btrfs_file_extent_num_bytes(leaf, extent);
++            }
++
++            /*
++             * The first search might have left us at an extent
++             * item that ends before our target range's start, can
++             * happen if we have holes and NO_HOLES feature enabled.
++             */
++            if (key.offset + datal <= off) {
++                path->slots[0]++;
++                goto process_slot;
++            } else if (key.offset >= off + olen_aligned) {
++                break;
++            }
++            next_key_min_offset = key.offset + datal;
++
++            for (;diskl >= 0; diskl -= pagesize) {
++                sum += disko+diskl;
++                counter++;
++            }
++
++            btrfs_release_path(path);
++            path->leave_spinning = 0;
++    }
++
++out:
++    ret = sum/counter;
++    btrfs_free_path(path);
++    vfree(buf);
++    return ret;
++}
++
++/**
+   * btrfs_clone() - clone a range from inode file to another
+   *
+   * @src: Inode to clone from
+-- 
+2.6.1
+
+
+
+--------------030002080404090006030405
+Content-Type: text/x-patch;
+ name="0001-btrfs-ioctl.c-extent_same-Use-inode-as-src-which-clo.patch"
+Content-Transfer-Encoding: 7bit
+Content-Disposition: attachment;
+ filename*0="0001-btrfs-ioctl.c-extent_same-Use-inode-as-src-which-clo.pa";
+ filename*1="tch"
+
+>From 8719129c0fb4d5325f9f87ee34f591d301933f67 Mon Sep 17 00:00:00 2001
+From: Timofey Titovets <nefelim4ag@gmail.com>
+Date: Wed, 21 Oct 2015 03:31:57 +0300
+Subject: [RFC PATCH V2] btrfs/ioctl.c: extent_same - Use inode as src which
+ close to disk beginning
+
+While deduplication,
+Btrfs produce extent and file fragmentation
+But it's can be optimized by compute - which inode data placed a closest to beginning of hdd
+It's allow to reach:
+1. Permonace boost on hdd (beginning of disk faster then end)
+2. it's allow to make sparse only tail of fs, what can give boost later in
+balancing and resizing of fs
+
+New function:
+static u64 btrfs_avg_disko(struct inode *inode,
+                        const u64 off, const u64 olen_aligned);
+
+It normalize offsets with data lenghts, by represent it like offsets of blocks
+It return average data offset of all "pagesized" blocks in given range for inode
+---
+ fs/btrfs/ioctl.c | 147 ++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 145 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 3e3e613..a14b4e7 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -86,6 +86,9 @@ struct btrfs_ioctl_received_subvol_args_32 {
+ #endif
+ 
+ 
++static u64 btrfs_avg_disko(struct inode *inode,
++					const u64 off, const u64 olen_aligned);
++
+ static int btrfs_clone(struct inode *src, struct inode *inode,
+ 		       u64 off, u64 olen, u64 olen_aligned, u64 destoff,
+ 		       int no_time_update);
+@@ -3074,8 +3077,20 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
+ 
+ 	/* pass original length for comparison so we stay within i_size */
+ 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
+-	if (ret == 0)
+-		ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
++	if (ret == 0) {
++		/* prefer inode with lowest offset as source for clone*/
++		u64 src_weight;
++		u64 dst_weight;
++		src_weight = btrfs_avg_disko(src, off, olen);
++		dst_weight = btrfs_avg_disko(dest, dst_loff, olen);
++		/* if one of weight == 0 -> fallback */
++		if (dest_weight == 0)
++			src_weight = 0;
++		if (src_weight > dest_weight)
++			ret = btrfs_clone(dst, src, dst_loff, olen, len, loff, 1);
++		else
++			ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
++	}
+ 
+ 	if (same_inode)
+ 		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
+@@ -3329,6 +3344,134 @@ static void clone_update_extent_map(struct inode *inode,
+ }
+ 
+ /**
++ * btrfs_avg_disko() - return avg data offset weight for inode
++ *
++ * @inode: Inode
++ * @off: Offset for computing
++ * @olen_aligned: Block-aligned len of data
++ *
++ * Computing avg address place of data, allow to heuristically
++ * determine where on the disk placed most fragment of data
++ */
++static u64 btrfs_avg_disko(struct inode *inode,
++					const u64 off, const u64 olen_aligned)
++{
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_path *path = NULL;
++	struct extent_buffer *leaf;
++	char *buf = NULL;
++	struct btrfs_key key;
++	u32 nritems;
++	int slot;
++	int no_quota;
++	double sum = 0;
++	u64 ret = 0;
++	u64 counter = 0;
++
++	buf = vmalloc(root->nodesize);
++	if (!buf)
++		return ret;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		vfree(buf);
++		return ret;
++	}
++
++	path->reada = 2;
++	/* clone data */
++	key.objectid = btrfs_ino(inode);
++	key.type = BTRFS_EXTENT_DATA_KEY;
++	key.offset = off;
++
++	while (1) {
++		u64 next_key_min_offset = key.offset + 1;
++
++		/*
++		 * note the key will change type as we walk through the
++		 * tree.
++		 */
++		path->leave_spinning = 1;
++		ret = btrfs_search_slot(NULL, BTRFS_I(inode)->root, &key, path,	0, 0);
++		if (ret < 0)
++			goto out;
++		/*
++		 * First search, if no extent item that starts at offset off was
++		 * found but the previous item is an extent item, it's possible
++		 * it might overlap our target range, therefore process it.
++		 */
++		if (key.offset == off && ret > 0 && path->slots[0] > 0) {
++			btrfs_item_key_to_cpu(path->nodes[0], &key,
++					      path->slots[0] - 1);
++			if (key.type == BTRFS_EXTENT_DATA_KEY)
++				path->slots[0]--;
++		}
++
++		nritems = btrfs_header_nritems(path->nodes[0]);
++process_slot:
++		no_quota = 1;
++		if (path->slots[0] >= nritems) {
++			ret = btrfs_next_leaf(BTRFS_I(inode)->root, path);
++			if (ret < 0)
++				goto out;
++			if (ret > 0)
++				break;
++			nritems = btrfs_header_nritems(path->nodes[0]);
++		}
++		leaf = path->nodes[0];
++		slot = path->slots[0];
++
++		btrfs_item_key_to_cpu(leaf, &key, slot);
++		if (key.type > BTRFS_EXTENT_DATA_KEY ||
++		    key.objectid != btrfs_ino(inode))
++			break;
++
++		if (key.type == BTRFS_EXTENT_DATA_KEY) {
++			struct btrfs_file_extent_item *extent;
++			int type;
++			u64 disko = 0;
++			u64 diskl = 0;
++			u64 datal = 0;
++
++			extent = btrfs_item_ptr(leaf, slot,	struct btrfs_file_extent_item);
++			type = btrfs_file_extent_type(leaf, extent);
++			if (type == BTRFS_FILE_EXTENT_REG ||
++			    type == BTRFS_FILE_EXTENT_PREALLOC) {
++				disko = btrfs_file_extent_disk_bytenr(leaf, extent);
++				diskl = btrfs_file_extent_disk_num_bytes(leaf, extent);
++				datal = btrfs_file_extent_num_bytes(leaf, extent);
++			}
++
++			/*
++			 * The first search might have left us at an extent
++			 * item that ends before our target range's start, can
++			 * happen if we have holes and NO_HOLES feature enabled.
++			 */
++			if (key.offset + datal <= off) {
++				path->slots[0]++;
++				goto process_slot;
++			} else if (key.offset >= off + olen_aligned) {
++				break;
++			}
++			next_key_min_offset = key.offset + datal;
++
++			for (;diskl >= 0; diskl -= pagesize) {
++				sum += disko+diskl;
++				counter++;
++			}
++
++			btrfs_release_path(path);
++			path->leave_spinning = 0;
++	}
++
++out:
++	ret = sum/counter;
++	btrfs_free_path(path);
++	vfree(buf);
++	return ret;
++}
++
++/**
+  * btrfs_clone() - clone a range from inode file to another
+  *
+  * @src: Inode to clone from
+-- 
+2.6.1
+
+
+--------------030002080404090006030405--

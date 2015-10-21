@@ -1,112 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:37227 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932317AbbJULvq (ORCPT
+Received: from mail-io0-f172.google.com ([209.85.223.172]:34839 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753786AbbJUMHz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 07:51:46 -0400
-Received: by igbhv6 with SMTP id hv6so35714907igb.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 04:51:46 -0700 (PDT)
+	Wed, 21 Oct 2015 08:07:55 -0400
+Received: by iofz202 with SMTP id z202so54478753iof.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 05:07:54 -0700 (PDT)
 Subject: Re: Expected behavior of bad sectors on one drive in a RAID1
 To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 References: <CA+X5Wn6Wu3RfX6rM6fpp9b4ZQQNm5WCbSOzxyOnE=+jDb0xDoA@mail.gmail.com>
  <201510201545.50705.russell@coker.com.au> <56263B0B.4050502@gmail.com>
  <201510210015.54337.russell@coker.com.au> <562648B5.2020401@gmail.com>
  <pan$6a87$d56eafce$4f04d0c$30b17c06@cox.net> <56269D1C.5080006@gmail.com>
+ <56277C4A.70300@gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <56277C4A.70300@gmail.com>
-Date: Wed, 21 Oct 2015 07:51:38 -0400
+Message-ID: <56278012.2060206@gmail.com>
+Date: Wed, 21 Oct 2015 08:07:46 -0400
 MIME-Version: 1.0
-In-Reply-To: <56269D1C.5080006@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090003060204070102020907"
+In-Reply-To: <56277C4A.70300@gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060808080103060108060701"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms090003060204070102020907
+--------------ms060808080103060108060701
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-10-20 15:59, Austin S Hemmelgarn wrote:
-> On 2015-10-20 15:20, Duncan wrote:
->> Yes, there's some small but not infinitesimal chance the checksum may =
-be
->> wrong, but if there's two copies of the data and the checksum on one i=
-s
->> wrong while the checksum on the other verifies... yes, there's still t=
-hat
->> small chance that the one that verifies is wrong too, but that it's an=
-y
->> worse than the one that does not verify?  /That's/ getting close to
->> infinitesimal, or at least close enough for the purposes of a mailing-=
+On 2015-10-21 07:51, Austin S Hemmelgarn wrote:
+> On 2015-10-20 15:59, Austin S Hemmelgarn wrote:
+>> On 2015-10-20 15:20, Duncan wrote:
+>>> Yes, there's some small but not infinitesimal chance the checksum may=
+ be
+>>> wrong, but if there's two copies of the data and the checksum on one =
+is
+>>> wrong while the checksum on the other verifies... yes, there's still
+>>> that
+>>> small chance that the one that verifies is wrong too, but that it's a=
+ny
+>>> worse than the one that does not verify?  /That's/ getting close to
+>>> infinitesimal, or at least close enough for the purposes of a mailing=
+-
+>>> list claim without links to supporting evidence by someone who has
+>>> already characterized it as not mathematically rigorous... and for me=
+,
+>>> personally.  I'm not spending any serious time thinking about getting=
 
->> list claim without links to supporting evidence by someone who has
->> already characterized it as not mathematically rigorous... and for me,=
+>>> hit
+>>> by lightening, either, tho by the same token I don't go out flying ki=
+tes
+>>> or waving long metal rods around in lightning storms, either.
+>> With a 32-bit checksum and a 4k block (the math is easier with smaller=
 
->> personally.  I'm not spending any serious time thinking about getting =
-hit
->> by lightening, either, tho by the same token I don't go out flying kit=
-es
->> or waving long metal rods around in lightning storms, either.
-> With a 32-bit checksum and a 4k block (the math is easier with smaller
-> numbers), that's 4128 bits, which means that a random single bit error
-> will have a approximately 0.24% chance of occurring in a given bit,
-> which translates to an approximately 7.75% chance that it will occur in=
+>> numbers), that's 4128 bits, which means that a random single bit error=
 
-> one of the checksum bits.  For a 16k block it's smaller of course
-> (around 1.8% I think, but that's just a guess), but it's still
-> sufficiently statistically likely that it should be considered.
-As mentioned in my other reply to this, I did the math wrong (bit of a=20
-difference between kilobit and kilobyte), so here's a (hopefully)=20
-correct and more thorough analysis:
-
-For 4kb blocks (32768 bits):
-There are a total of 32800 bits when including a 32 bit checksum outside =
-
-the block, this makes the chance of a single bit error in either the=20
-block or the checksum ~0.30%.  This in turn means an approximately 9.7%=20
-chance of a single bit error in the checksum.
-
-For 16kb blocks (131072 bits):
-There are a total of 131104 bits when including a 32 bit checksum=20
-outside the block, this makes the chance of a single bit error in either =
-
-the block or the checksum ~0.07%.  This in turn means an approximately=20
-2.4% chance of a single bit error in the checksum.
-
-This all of course assumes a naive interpretation of how modern block=20
-storage devices work.  All modern hard drives and SSD's include at a=20
-minimum the ability to correct single bit errors per byte, and detect=20
-double bit errors per byte, which means that we need a triple bit error=20
-in the same byte to get bad data back, which in turn makes the numbers=20
-small enough that it's impractical to represent them without scientific=20
-notation (on the order of 10^-5).
-
-That in turn assumes zero correlation beyond what's required to get bad=20
-data back from the storage, however, if there is enough correlation for=20
-that to happen, it's statistically likely that there will be other=20
-errors very close by.  This in turn means that it's more likely that the =
-
-checksum is either correct or absolutely completely wrong, which=20
-increases the chances that the resultant metadata block containing the=20
-checksum will nnot appear to have an incorrect checksum itself (because=20
-checksums are good at detecting proportionately small errors, but only=20
-mediocre at detecting very big errors).
-
-The approximate proportionate chances of an error in the data versus the =
-
-checksum however are still roughly the same however, irrespective of how =
-
-small the chances of getting any error are.  Based on this, the ratio of =
-
-the size of the checksum to the size of the data is a tradeoff that=20
-needs to be considered, the closer the ratio is to 1, the higher the=20
-chance of having an error in the checksum, but the less data you need to =
-
-correct/verify when there is an error.
+>> will have a approximately 0.24% chance of occurring in a given bit,
+>> which translates to an approximately 7.75% chance that it will occur i=
+n
+>> one of the checksum bits.  For a 16k block it's smaller of course
+>> (around 1.8% I think, but that's just a guess), but it's still
+>> sufficiently statistically likely that it should be considered.
+> As mentioned in my other reply to this, I did the math wrong (bit of a
+> difference between kilobit and kilobyte)
+And I realize of course right after sending this that my other reply=20
+didn't get through because GMail refuses to send mail in plain text, no=20
+matter how hard I beat it over the head...
 
 
---------------ms090003060204070102020907
+
+--------------ms060808080103060108060701
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -148,9 +111,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDIxMTE1MTM4WjBPBgkq
-hkiG9w0BCQQxQgRASk2goSsRXbBTfkDppXFjGXZdQ2EDCMaaivszi8Vk6H3p5rL92Y13lZmk
-DxnEzkc45IH0ILFK0dXByiQTW+FYYDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDIxMTIwNzQ2WjBPBgkq
+hkiG9w0BCQQxQgRASiubXVpn/xBMB+daKDM4rG888wR+0KNQWgWFWI2/z25Dy/zPz8jM763h
+gnts8RMJLobHfAQ6PnDi6NOCEUX4ZTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -158,14 +121,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBObC+Isq7G9Ykzhg3ysRVKQCbRfz3wTThmWczg82zubsZouJua
-17ExPByLo2WEfmUroYq5NQBnTfXMBDOtfVW9gx52xNR2g6wrDTD04wsR9qjZq4Iuf37a9fUx
-r9Mi7ycejloo8riSwt8G6sEK8ixuTnmmehiB1MCr1YKt3k79ueT0MGBAXKrvTRx9JrOo4sgn
-ep6MHe9UbrM7f1CZpdJ54DYlH+e4w5bwWofyRtksWdB7YBmf8Nk9VniwuBL7ivGlE0gk//Fv
-ES589sBGZyv5VU4S9+xljbsJcjH4iCIo1RjpSiV/5lfWEb463K8gG7XBRZ293Y25hVzGdk5f
-bSixcWtm6gmJ4blBs9iima1v/uFWiT4PaxXfhJrXavx67vYl/7qjHcAQQCnIurhbWTD/Jd/L
-k/c+wVyqqJOaSgTpubIaVlET6hEz7F0xoz5Wh7p8BRncuJ7Egdp/kzgJov+DFtdD7Tk+URRw
-x08kD5pyt3RgTZqow5rJYhEe5Qhsae5Om9ekQ9ymq2p+HVkZPokP4rCygCte0MM99o7Jxq0Y
-elfwFTRilifrJWSaOMo4Uf4VcGSuFlKOmDJGeXZWyrObfIf7JAa1tQqLArL2ykOc/f8rpf4I
-MWwC/B6Bero+yYK+zVHNVy4UN5HQHkn0/PTPEJ/dVNqmupNM6b4ku4ux5QAAAAAAAA==
---------------ms090003060204070102020907--
+BgkqhkiG9w0BAQEFAASCAgAzAQ+yCcuZBvJyv+38+cbGOkeSRJrU4iEpU3Pby2nM77Sq7cyy
+Pq+C+BTPMbHExfwzlawqP4mfO+An0yoAJ8xOEiaiU1+erjLoc8+6k3HX+Dwq9HE6Obr8IoX1
+/rQWtzAjE8OI8Pjd6jXmUewrn7GjwfwYoTykU+pnKTleqTSr6wWKibxPgcUwKCV7ShpE7E8K
+k0xHacTjTOGnnaHDwAFHS86yyvhpO9xRQIA9ZzCO+/L5fden9gzr6qKm5YAd5SskWS69Lm4k
+2dPUGbxNrX9Xp+9AbvZHn29mD0WUbZHVk7+3hdab+RsnUt3dFRs7wjM46SqNXlSOvduDr5mr
+kfNJptrN8svKUuks2YdHsLJBUfBFh4HkuIvF3THaWVNhgC4Mk+/IPNNV3I9QwHi5s9XagnGq
+XVQA4RBJRauPhmr0vZGTQO6UpTjT0DB/osJSjZdgJNqgJJaJhL7UBGb2KpQURxJTGU80Fipd
+mEbVDMLyIAev3lofuLB5NvREJSqEgGr7RrQMEzcQNfDCXjAN4jYryNlB+LX6vFwyIJDoQWe2
+IaVNZdJUVM1NTHwcHwc3e0Rnv5XrXUNbUxXoNUCsUJhuTX3Xthj+D6RPQv7aT0TZ3me1hbib
+pHgllqunh+NuiXGemej2umfLgp6EgiPfoYVxBATisNtQAKaV6mFhkX0/yQAAAAAAAA==
+--------------ms060808080103060108060701--

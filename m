@@ -1,177 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24644 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:27562 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751701AbbJUJJk (ORCPT
+	with ESMTP id S1752733AbbJUJMT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 05:09:40 -0400
-Subject: Re: [RFC PATCH 1/3] btrfs-progs: introduce framework to check kernel
- supported features
+	Wed, 21 Oct 2015 05:12:19 -0400
+Subject: Re: [RFC PATCH 2/3] btrfs-progs: kernel based default features for
+ mkfs
 To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
 References: <1445417149-804-1-git-send-email-anand.jain@oracle.com>
+ <1445417149-804-2-git-send-email-anand.jain@oracle.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5627564E.2070106@cn.fujitsu.com>
-Date: Wed, 21 Oct 2015 17:09:34 +0800
+Message-ID: <562756ED.1090302@cn.fujitsu.com>
+Date: Wed, 21 Oct 2015 17:12:13 +0800
 MIME-Version: 1.0
-In-Reply-To: <1445417149-804-1-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1445417149-804-2-git-send-email-anand.jain@oracle.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anand,
 
-This feature seems quite good, comment inlined below.
 
 Anand Jain wrote on 2015/10/21 16:45 +0800:
-> In the newer kernel, supported kernel features can be known from
->    /sys/fs/btrfs/features
-> however this interface was introduced only after 3.14, and most the
-> incompatible FS features were introduce before 3.14.
+> mkfs from latest btrfs-progs will enable latest default features,
+> and if the kernel is down-rev and does not support a latest default
+> feature then mount fails, as expected.
 >
-> This patch proposes to maintain kernel version against the feature list,
-> and so that will be the minimum kernel version needed to use the feature.
->
-> Further, for features supported later than 3.14 this list can still be
-> updated, so it serves as a repository which can be displayed for easy
-> reference.
+> This patch disables default features based on the running kernel.
 >
 > Signed-off-by: Anand Jain <anand.jain@oracle.com>
 > ---
->   utils.c | 69 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
->   utils.h |  1 +
->   2 files changed, 65 insertions(+), 5 deletions(-)
+>   mkfs.c | 5 ++++-
+>   1 file changed, 4 insertions(+), 1 deletion(-)
 >
-> diff --git a/utils.c b/utils.c
-> index b754686..cd5a626 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -32,10 +32,12 @@
->   #include <linux/loop.h>
->   #include <linux/major.h>
->   #include <linux/kdev_t.h>
-> +#include <linux/version.h>
->   #include <limits.h>
->   #include <blkid/blkid.h>
->   #include <sys/vfs.h>
->   #include <sys/statfs.h>
-> +#include <sys/utsname.h>
->   #include <linux/magic.h>
+> diff --git a/mkfs.c b/mkfs.c
+> index a5802f7..2b9d734 100644
+> --- a/mkfs.c
+> +++ b/mkfs.c
+> @@ -1357,10 +1357,13 @@ int main(int ac, char **av)
+>   	int dev_cnt = 0;
+>   	int saved_optind;
+>   	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
+> -	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
+> +	u64 features;
+>   	struct mkfs_allocation allocation = { 0 };
+>   	struct btrfs_mkfs_config mkfs_cfg;
 >
->   #include "kerncompat.h"
-> @@ -567,21 +569,28 @@ out:
->   	return ret;
->   }
->
-> +/*
-> + * min_ker_ver: update with minimum kernel version at which the feature
-> + * was integrated into the mainline. For the transit period, that is
-> + * feature not yet in mainline but in mailing list and for testing,
-> + * please use "0.0" to indicate the same.
-> + */
->   static const struct btrfs_fs_feature {
->   	const char *name;
->   	u64 flag;
->   	const char *desc;
-> +	const char *min_ker_ver;
->   } mkfs_features[] = {
->   	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
-> -		"mixed data and metadata block groups" },
-> +		"mixed data and metadata block groups", "2.7.31"},
->   	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
-> -		"increased hardlink limit per file to 65536" },
-> +		"increased hardlink limit per file to 65536", "3.7"},
->   	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
-> -		"raid56 extended format" },
-> +		"raid56 extended format", "3.9"},
->   	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
-> -		"reduced-size metadata extent refs" },
-> +		"reduced-size metadata extent refs", "3.10"},
->   	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
-> -		"no explicit hole extents for files" },
-> +		"no explicit hole extents for files", "3.14"},
->   	/* Keep this one last */
->   	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
->   };
-> @@ -3077,3 +3086,53 @@ unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode)
->
->   	return unit_mode;
->   }
+> +	features = btrfs_features_allowed_by_kernel();
+> +	features &= BTRFS_MKFS_DEFAULT_FEATURES;
 > +
-> +static int version_to_code(char *v)
-> +{
-> +	int i = 0;
-> +	char *b[3] = {NULL};
-> +	char *save_b = NULL;
-> +
-> +	for (b[i] = strtok_r(v, ".", &save_b);
-> +		b[i] != NULL;
-> +		b[i] = strtok_r(NULL, ".", &save_b))
-> +		i++;
-> +
-> +	if (b[2] == NULL)
-> +		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), 0);
-> +	else
-> +		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), atoi(b[2]));
-> +
-> +}
-> +
-> +static int get_kernel_code()
-> +{
-> +	int ret;
-> +	struct utsname utsbuf;
-> +	char *version;
-> +
-> +	ret = uname(&utsbuf);
-> +	if (ret)
-> +		return -ret;
-> +
-> +	version = strtok(utsbuf.release, "-");
-> +
-> +	return version_to_code(version);
-> +}
 
-The only problem is, kernel version is never reliable.
-If someone wants, uname output may even contain no numeric value.
+Despite the problem of btrfs_features_allowed_by_kernel() I mentioned in 
+previous mail,
+the behavior is a little aggressive for me.
 
-IIRC, I suggest to maintain similar feature matrix in fstests, but Dave 
-pointed out the above problem.
+So a user with old kernel won't be able to create a filesystem with 
+newer feature forever.
+Maybe the user are just making btrfs for his or her newer kernel?
 
-So I'm not fan of reading kernel version and generate supported features 
-for that.
-
-IMHO, just use /sys/fs/btrfs/features is good enough.
-And if there is no such file, just ignore it, user is responsible for
-such case.
+IMHO, it's better to output a warning other than just change features 
+without any information.
 
 Thanks,
 Qu
 
-> +
-> +u64 btrfs_features_allowed_by_kernel(void)
-> +{
-> +	int i;
-> +	int local_kernel_code = get_kernel_code();
-> +	u64 features = 0;
-> +
-> +	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
-> +		char *ver = strdup(mkfs_features[i].min_ker_ver);
-> +
-> +		if (local_kernel_code >= version_to_code(ver))
-> +			features |= mkfs_features[i].flag;
-> +
-> +		free(ver);
-> +	}
-> +	return (features);
-> +}
-> diff --git a/utils.h b/utils.h
-> index 192f3d1..9044643 100644
-> --- a/utils.h
-> +++ b/utils.h
-> @@ -104,6 +104,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed);
->   char* btrfs_parse_fs_features(char *namelist, u64 *flags);
->   void btrfs_process_fs_features(u64 flags);
->   void btrfs_parse_features_to_string(char *buf, u64 flags);
-> +u64 btrfs_features_allowed_by_kernel(void);
->
->   struct btrfs_mkfs_config {
->   	char *label;
+>   	while(1) {
+>   		int c;
+>   		static const struct option long_options[] = {
 >

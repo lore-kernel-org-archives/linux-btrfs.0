@@ -1,63 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.21]:53394 "EHLO mout.gmx.net"
+Received: from mx2.suse.de ([195.135.220.15]:40319 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753210AbbJTWvH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 18:51:07 -0400
-From: Christian Engelmayer <cengelma@gmx.at>
-To: dsterba@suse.com
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
-        Christian Engelmayer <cengelma@gmx.at>
-Subject: [PATCH] btrfs: fix possible leak in btrfs_ioctl_balance()
-Date: Wed, 21 Oct 2015 00:50:06 +0200
-Message-Id: <1445381406-13475-1-git-send-email-cengelma@gmx.at>
+	id S1751603AbbJUJrq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 Oct 2015 05:47:46 -0400
+Date: Wed, 21 Oct 2015 11:46:25 +0200
+From: David Sterba <dsterba@suse.cz>
+To: Christian Engelmayer <cengelma@gmx.at>
+Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: fix possible leak in btrfs_ioctl_balance()
+Message-ID: <20151021094625.GB13624@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1445381406-13475-1-git-send-email-cengelma@gmx.at>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1445381406-13475-1-git-send-email-cengelma@gmx.at>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 8eb934591f8b ("btrfs: check unsupported filters in balance
-arguments") adds a jump to exit label out_bargs in case the argument
-check fails. At this point in addition to the bargs memory, the
-memory for struct btrfs_balance_control has already been allocated.
-Ownership of bctl is passed to btrfs_balance() in the good case,
-thus the memory is not freed due to the introduced jump. Make sure
-that the memory gets freed in any case as necessary. Detected by
-Coverity CID 1328378.
+On Wed, Oct 21, 2015 at 12:50:06AM +0200, Christian Engelmayer wrote:
+> Commit 8eb934591f8b ("btrfs: check unsupported filters in balance
+> arguments") adds a jump to exit label out_bargs in case the argument
+> check fails. At this point in addition to the bargs memory, the
+> memory for struct btrfs_balance_control has already been allocated.
+> Ownership of bctl is passed to btrfs_balance() in the good case,
+> thus the memory is not freed due to the introduced jump. Make sure
+> that the memory gets freed in any case as necessary. Detected by
+> Coverity CID 1328378.
+> 
+> Signed-off-by: Christian Engelmayer <cengelma@gmx.at>
+Reviewed-by: David Sterba <dsterba@suse.com>
 
-Signed-off-by: Christian Engelmayer <cengelma@gmx.at>
----
-The proposed patch is only test compiled.
----
- fs/btrfs/ioctl.c | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 3e3e6130637f..8d20f3b1cab0 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -4641,7 +4641,7 @@ locked:
- 
- 	if (bctl->flags & ~(BTRFS_BALANCE_ARGS_MASK | BTRFS_BALANCE_TYPE_MASK)) {
- 		ret = -EINVAL;
--		goto out_bargs;
-+		goto out_bctl;
- 	}
- 
- do_balance:
-@@ -4655,12 +4655,15 @@ do_balance:
- 	need_unlock = false;
- 
- 	ret = btrfs_balance(bctl, bargs);
-+	bctl = NULL;
- 
- 	if (arg) {
- 		if (copy_to_user(arg, bargs, sizeof(*bargs)))
- 			ret = -EFAULT;
- 	}
- 
-+out_bctl:
-+	kfree(bctl);
- out_bargs:
- 	kfree(bargs);
- out_unlock:
--- 
-1.9.1
-
+Thanks for fixig it.

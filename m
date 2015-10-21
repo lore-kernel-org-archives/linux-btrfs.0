@@ -1,49 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60279 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752752AbbJUTlJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 15:41:09 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZozFk-0001yk-LN
-	for linux-btrfs@vger.kernel.org; Wed, 21 Oct 2015 21:40:52 +0200
-Received: from chello213047196183.tirol.surfer.at ([213.47.196.183])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 21:40:52 +0200
-Received: from wertstoffe by chello213047196183.tirol.surfer.at with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 21:40:52 +0200
-To: linux-btrfs@vger.kernel.org
-From: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>
-Subject: btrfs-balance causes system-freeze on full disk
-Date: Wed, 21 Oct 2015 21:38:52 +0200
-Message-ID: <c76lfc-jfl.ln1@aldebaran.xundeenergie.at>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:32976 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755423AbbJUU0X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 Oct 2015 16:26:23 -0400
+Received: by igbkq10 with SMTP id kq10so947020igb.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 13:26:23 -0700 (PDT)
+MIME-Version: 1.0
+In-Reply-To: <CANznX5FS+sT3Pay+iLdA5TmP6NX-di3fm0K_yCHs4sac_OhndA@mail.gmail.com>
+References: <CANznX5GOKcDMFTV2E-yDdvHWWf7Sn4o0PeX3vk0CZd2xmZo9mg@mail.gmail.com>
+	<CANznX5FS+sT3Pay+iLdA5TmP6NX-di3fm0K_yCHs4sac_OhndA@mail.gmail.com>
+Date: Wed, 21 Oct 2015 22:26:22 +0200
+Message-ID: <CAJCQCtSoAyVodd6uOhChCN98=Q0pmKzwbTZJ4YTT8C0JCNygRg@mail.gmail.com>
+Subject: Re: Btrfs/RAID5 became unmountable after SATA cable fault
+From: Chris Murphy <lists@colorremedies.com>
+To: "Janos Toth F." <toth.f.janos@gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi there!
+https://btrfs.wiki.kernel.org/index.php/Restore
 
-Is it possible, what i've recognized now. My system (debian) runs on
-btrfs, and i have a lot of snapshots on my hard-disk.
-Since some days my system freezes totally. I recognized, it always
-happens during btrfs-balance.
+This should still be possible with even a degraded/unmounted raid5. It
+is a bit tedious to figure out how to use it but if you've got some
+things you want off the volume, it's not so difficult to prevent
+trying it.
 
-So i deleted some of the old snapshots and tried another balance-run.
-Nothing happened... No system-freeze.
 
-System-freeze means: No Keyboard-action. The Mouse is frozen, the screen
-is frozen, no magic-sysreq, no ssh-login.
-
-Can btrfs cause such a freeze??
-
-greez
-
-jakob
--- 
-http://xundeenergie.at
-http://verkehrsloesungen.wordpress.com/
-http://cogitationum.wordpress.com/
-
+Chris Murphy

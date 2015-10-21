@@ -1,37 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39212 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:46993 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753367AbbJUJ2E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 05:28:04 -0400
-Date: Wed, 21 Oct 2015 11:26:43 +0200
+	id S1751004AbbJUL3D (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 21 Oct 2015 07:29:03 -0400
+Date: Wed, 21 Oct 2015 13:27:42 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Eryu Guan <guaneryu@gmail.com>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 02/10] btrfs-progs: save error number correctly in
- check_chunks_and_extents
-Message-ID: <20151021092643.GA13624@suse.cz>
+Subject: Re: [PATCH] Btrfs: add a check of whether fs_info->fs_root is NULL
+ in btrfs_async_reclaim_metadata_space()
+Message-ID: <20151021112742.GD13624@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1445254680-11102-1-git-send-email-guaneryu@gmail.com>
- <1445254680-11102-3-git-send-email-guaneryu@gmail.com>
- <20151019134104.GW27761@twin.jikos.cz>
- <20151020082451.GA3606@dhcp-13-216.nay.redhat.com>
+References: <201510210720.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151020082451.GA3606@dhcp-13-216.nay.redhat.com>
+In-Reply-To: <201510210720.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 20, 2015 at 06:28:00PM +0800, Eryu Guan wrote:
-> On Mon, Oct 19, 2015 at 03:41:04PM +0200, David Sterba wrote:
-> > On Mon, Oct 19, 2015 at 07:37:52PM +0800, Eryu Guan wrote:
-> > > Coverity reports assigning value from "err" to "ret", but that stored
-> > > value is overwritten by check_extent_refs() before it can be used.
-> > 
-> > If you fix a coverity issue, please add a tag and the id, like
-> > 
-> > Resolves-coverity-id: 1234
-> 
-> I was looking hard for CID but without luck.. I will ask around and see
-> where I can find the CIDs.
+On Wed, Oct 21, 2015 at 04:20:00PM +0900, Tsutomu Itoh wrote:
+> Kernel panic occurred due to NULL pointer reference in can_overcommit().
+> Because btrfs_async_reclaim_metadata_space() passed NULL pointer to
+> btrfs_calc_reclaim_metadata_size().
 
-Ok never mind then, I'll pick the patch as-is.
+> fs_info->fs_root is referred in btrfs_async_reclaim_metadata_space()
+> when mount kicked kworker(btrfs_async_reclaim_metadata_space).
+> 
+> But at this time, fs_info->fs_root had not been initialized yet,
+> so NULL pointer passed to btrfs_calc_reclaim_metadata_size().
+
+I don't think it's the right fix, the initialization sequence should
+take care of such situations. The fs_tree must exist at the time we
+reach the point where it crashed, the code expects it.

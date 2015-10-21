@@ -1,72 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f174.google.com ([209.85.212.174]:36579 "EHLO
-	mail-wi0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753369AbbJUSkG (ORCPT
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:38710 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755268AbbJUTOL convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 14:40:06 -0400
-Received: by wicfx6 with SMTP id fx6so104290945wic.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 11:40:05 -0700 (PDT)
+	Wed, 21 Oct 2015 15:14:11 -0400
+Received: by igbdj2 with SMTP id dj2so44789395igb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 21 Oct 2015 12:14:11 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CAN05THRdYbJYZ87s+A=q4yjTULP6_jcFtS_ke7-ZHiS5P8_E+A@mail.gmail.com>
-References: <CANznX5GOKcDMFTV2E-yDdvHWWf7Sn4o0PeX3vk0CZd2xmZo9mg@mail.gmail.com>
-	<CANznX5FS+sT3Pay+iLdA5TmP6NX-di3fm0K_yCHs4sac_OhndA@mail.gmail.com>
-	<CAN05THRdYbJYZ87s+A=q4yjTULP6_jcFtS_ke7-ZHiS5P8_E+A@mail.gmail.com>
-Date: Wed, 21 Oct 2015 20:40:05 +0200
-Message-ID: <CANznX5Gf9j0-sZ_F_UzQOeoHPN4ePqcv8H_a0oWNy0Bou_Jciw@mail.gmail.com>
-Subject: Re: Btrfs/RAID5 became unmountable after SATA cable fault
-From: "Janos Toth F." <toth.f.janos@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <BLU437-SMTP66AE7103C3A5471C154844A9390@phx.gbl>
+References: <CAM9fjH6M2yqSiqXbT4DBvHbQGq9Cdw-wzMvsYkztPSsQG=PLqQ@mail.gmail.com>
+	<pan$55e2$eeada9c5$c7289131$4f093ca1@cox.net>
+	<CAM9fjH6pcwZKWryNrJay_N98wmXWVXXqo3HJuupbJRE3MC9YKQ@mail.gmail.com>
+	<BLU436-SMTP11853633E0AF118E66934D6A9390@phx.gbl>
+	<BLU437-SMTP66AE7103C3A5471C154844A9390@phx.gbl>
+Date: Wed, 21 Oct 2015 12:14:10 -0700
+Message-ID: <CAM9fjH7WYUZHd4cZYB+cyT-4QBpx8oikJ-N27ymWDrbQfgiW4w@mail.gmail.com>
+Subject: Re: How to remove missing device on RAID1?
+From: Kyle Manna <2bluesc@gmail.com>
+To: Henk Slager <hslager@hotmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
-To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I am afraid the filesystem right now is really damaged regardless of
-it's state upon the unexpected cable failure because I tried some
-dangerous options after read-only restore/recovery methods all failed
-(including zero-log, followed by init-csum-tree and even
-chunk-recovery -> all of them just spit out several kind of errors
-which suggested they probably didn't even write anything to the disks
-before they decided that they already failed but they only caused more
-harm than good if they did write something).
+Hi Henk,
 
-Actually, I almost got rid of this data myself intentionally when my
-new set of drives arrived. I was considering if I should simply start
-from scratch (may be reviewing and might be saving my "scratchpad"
-portion of the data but nothing really irreplaceable and/or valuable)
-but I thought it's a good idea to test the "device replace" function
-in real life.
+This trick/hack worked great for me.  After the rebalance was
+complete, a sparse file + loop device, `btrfs replace` and `btrfs
+delete` worked as expected.  Thanks.
 
-Even though the replace operation seemed to be successful I am
-beginning to wonder if it wasn't really.
+In other news, I did hit a btrfs bug 3 times while attempting to
+balance.  I've added my comments @
+https://bugzilla.kernel.org/show_bug.cgi?id=105681#c14
+ᐧ
 
-
-On Wed, Oct 21, 2015 at 7:42 PM, ronnie sahlberg
-<ronniesahlberg@gmail.com> wrote:
-> Maybe hold off erasing the drives a little in case someone wants to
-> collect some extra data for diagnosing how/why the filesystem got into
-> this unrecoverable state.
->
-> A single device having issues should not cause the whole filesystem to
-> become unrecoverable.
->
-> On Wed, Oct 21, 2015 at 9:09 AM, Janos Toth F. <toth.f.janos@gmail.com> wrote:
->> I went through all the recovery options I could find (starting from
->> read-only to "extraordinarily dangerous"). Nothing seemed to work.
+On Tue, Oct 20, 2015 at 3:46 PM, Henk Slager <hslager@hotmail.com> wrote:
+> copy-paste error corrected
+> On Wed, Oct 21, 2015 at 12:40 AM, Henk Slager <hslager@hotmail.com> wrote:
+>> I had a similar issue some time ago, around the time kernel 4.1.6 was
+>> just there.
+>> In case you don't want to wait for new disk or decide to just run the
+>> filesystem with 1 disk less or maybe later on replace 1 of the still
+>> healthy disks with a double/bigger sized one and use current/older
+>> kernel+tools, you could do this (assuming the filesystem is not too
+>> full of course):
+>> - mount degraded
+> - btrfs balance start -f -v -sdevid=1 -mdevid=1 -mdevid=1 <mountpoint>
+>>   (where missing disk has devid 1)
+>> After completion the (virtual/missing) device shall be fully unallocated
+>> - create /dev/loopX with sparse file of same size as missing disk on
+>> some other filesystem
+>> - btrfs replace start 1 /dev/loopX <mountpoint>
+>> - remove /dev/loopX from the filesystem
+>> - remount filesystyem without degraded
+>> And remove /dev/loopX
 >>
->> A Windows based proprietary recovery software (ReclaiMe) could scratch
->> the surface but only that (it showed me the whole original folder
->> structure after a few minutes of scanning and the "preview" of some
->> some plaintext files was promising but most of the bigger files seemed
->> to be broken).
 >>
->> I used this as a bulk storage for backups and all the things I didn't
->> care to keep in more than one copies but that includes my
->> "scratchpad", so I cared enough to use RAID5 mode and to try restoring
->> some things.
->>
->> Any last ideas before I "ata secure erase" and sell/repurpose the disks?
+>> On Tue, Oct 20, 2015 at 11:48 PM, Kyle Manna <2bluesc@gmail.com> wrote:
+>>> Thanks for the follow-up Duncan, that makes sense.  I assumed I was
+>>> doing something wrong.
+>>>
+>>> I downloaded the devel branch of of btrfs-progs and got it running
+>>> before I saw the need for a kernel patch and decided to wait.
+>>>
+>>> For anyone following this later, I needed to use the following to get
+>>> the missing device ID:
+>>>
+>>> btrfs device usage <path>
+>>> ᐧ
+>>>
+>>> On Tue, Oct 20, 2015 at 1:58 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+>>>> Kyle Manna posted on Tue, 20 Oct 2015 10:24:48 -0700 as excerpted:
+>>>>
+>>>>> Hi all,
+>>>>>
+>>>>> I have a collection of three (was 4) 1-2TB devices with data and
+>>>>> metadata in a RAID1 mirror.  Last night I was struck by the Click of
+>>>>> Death on an old Samsung drive.
+>>>>>
+>>>>> I removed the device from the system, rebooted and mounted the volume
+>>>>> with `-o degraded` and the file system seems fine and usable.  I'm
+>>>>> waiting on a replacement, drive but want to remove the old drive and
+>>>>> re-balance in the meantime.
+>>>>>
+>>>>> How do I remove the missing device?  I tried the `btrfs device delete
+>>>>> missing /mnt` but was greeted with "ERROR: missing is not a block
+>>>>> device".  A quick look at that btrfs-progs git repo shows that
+>>>>> `stat("missing")` is called, which of course fails since missing isn't a
+>>>>> block device.  Nothing other then `btrfs replace` seemed intuitive and
+>>>>> all the docs mention the older command.  What's the move?
+>>>>>
+>>>>> Thanks!
+>>>>> - Kyle
+>>>>>
+>>>>> Versions:
+>>>>> Kernel: 4.2.3-1-ARCH
+>>>>> btrfs-progs: 4.2.2-1 ᐧ
+>>>>
+>>>> I believe the current advice given here (that you were likely trying to
+>>>> follow, wrapped link)...
+>>>>
+>>>> https://btrfs.wiki.kernel.org/index.php/
+>>>> Using_Btrfs_with_Multiple_Devices#Replacing_failed_devices
+>>>>
+>>>> ... is dated and no longer works due to code change some time in the past.
+>>>>
+>>>> There's a set of (very) recent patches, to the kernel and userspace both
+>>>> (I just updated userspace and it's in the git devel-branch v4.2.3-49-
+>>>> g4db87a1 I just built, kernelspace, I don't see it in linus-mainline yet,
+>>>> so I'd guess it's in the btrfs-integration patches, to land in the v4.4
+>>>> commit window if not in 4.3 as it's getting late in the cycle for that.
+>>>>
+>>>> btrfs fi show <path>
+>>>>
+>>>> That will list the btrfs component devices together with their devids.
+>>>>
+>>>> Then use the appropriate devid like so:
+>>>>
+>>>> btrfs dev del <devid> <path>
+>>>>
+>>>> The -progs commit is d462081f, by Anand Jain, titled:
+>>>>
+>>>> btrfs-progs: Introduce device delete by devid
+>>>>
+>>>> According to it, the required kernel commit (title only listed) is
+>>>> similar:
+>>>>
+>>>> Btrfs: Introduce device delete by devid
+>>>>
+>>>> You can probably find them on-list if you wish to cherry-pick them into a
+>>>> current version.
+>>>>
+>>>> --
+>>>> Duncan - List replies preferred.   No HTML msgs.
+>>>> "Every nonfree program has a lord, a master --
+>>>> and if you use the program, he is your master."  Richard Stallman
+>>>>
+>>>> --
+>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>>> the body of a message to majordomo@vger.kernel.org
+>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 >> --
 >> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 >> the body of a message to majordomo@vger.kernel.org
 >> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

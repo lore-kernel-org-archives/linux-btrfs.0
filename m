@@ -1,164 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:37807 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756846AbbJVIQ2 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:14638 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751523AbbJVIpd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Oct 2015 04:16:28 -0400
-Received: by igbhv6 with SMTP id hv6so55007540igb.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2015 01:16:27 -0700 (PDT)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1445474548-9243-2-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1445474548-9243-1-git-send-email-quwenruo@cn.fujitsu.com>
-	<1445474548-9243-2-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Thu, 22 Oct 2015 09:16:27 +0100
-Message-ID: <CAL3q7H5DNTCBAjqhFhxMnRTnUmmU=skzWqLcm9GB49zvN68BMg@mail.gmail.com>
+	Thu, 22 Oct 2015 04:45:33 -0400
 Subject: Re: [PATCH v3 RESENT 2/2] btrfs: qgroup: Don't copy extent buffer to
  do qgroup rescan
-From: Filipe Manana <fdmanana@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: "dsterba@suse.cz" <dsterba@suse.cz>,
+To: <fdmanana@gmail.com>
+References: <1445474548-9243-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1445474548-9243-2-git-send-email-quwenruo@cn.fujitsu.com>
+ <CAL3q7H5DNTCBAjqhFhxMnRTnUmmU=skzWqLcm9GB49zvN68BMg@mail.gmail.com>
+CC: "dsterba@suse.cz" <dsterba@suse.cz>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5628A223.3030901@cn.fujitsu.com>
+Date: Thu, 22 Oct 2015 16:45:23 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAL3q7H5DNTCBAjqhFhxMnRTnUmmU=skzWqLcm9GB49zvN68BMg@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 22, 2015 at 1:42 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> Ancient qgroup code call memcpy() on a extent buffer and use it for leaf
-> iteration.
->
-> As extent buffer contains lock, pointers to pages, it's never sane to do
-> such copy.
->
-> The following bug may be caused by this insane operation:
-> [92098.841309] general protection fault: 0000 [#1] SMP
-> [92098.841338] Modules linked in: ...
-> [92098.841814] CPU: 1 PID: 24655 Comm: kworker/u4:12 Not tainted
-> 4.3.0-rc1 #1
-> [92098.841868] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper
-> [btrfs]
-> [92098.842261] Call Trace:
-> [92098.842277]  [<ffffffffc035a5d8>] ? read_extent_buffer+0xb8/0x110
-> [btrfs]
-> [92098.842304]  [<ffffffffc0396d00>] ? btrfs_find_all_roots+0x60/0x70
-> [btrfs]
-> [92098.842329]  [<ffffffffc039af3d>]
-> btrfs_qgroup_rescan_worker+0x28d/0x5a0 [btrfs]
->
-> Where btrfs_qgroup_rescan_worker+0x28d is btrfs_disk_key_to_cpu(),
-> called in reading key from the memcpied extent_buffer.
->
-> This patch will read the whole leaf into memory, and use newly
-> introduced stack function to do qgroup rescan.
-
-Hi Qu,
-
-Instead of introducing more new functions, why not clone the extent
-buffer (btrfs_clone_extent_buffer) and then use it the
-regular/existing functions? Iow, the same as we do in backref walking,
-should make the change much smaller than it is.
-
-thanks
-
->
-> Reported-by: Stephane Lesimple <stephane_btrfs@lesimple.fr>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
-> v2:
->   Follow the parameter change in previous patch.
-> v3:
->   None
-> ---
->  fs/btrfs/qgroup.c | 22 ++++++++++++----------
->  1 file changed, 12 insertions(+), 10 deletions(-)
->
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index e9ace09..6a83a40 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -2183,11 +2183,11 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
->   */
->  static int
->  qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
-> -                  struct btrfs_trans_handle *trans,
-> -                  struct extent_buffer *scratch_leaf)
-> +                  struct btrfs_trans_handle *trans, char *stack_leaf)
->  {
->         struct btrfs_key found;
->         struct ulist *roots = NULL;
-> +       struct btrfs_header *header;
->         struct seq_list tree_mod_seq_elem = SEQ_LIST_INIT(tree_mod_seq_elem);
->         u64 num_bytes;
->         int slot;
-> @@ -2224,13 +2224,15 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
->         fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
->
->         btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
-> -       memcpy(scratch_leaf, path->nodes[0], sizeof(*scratch_leaf));
-> +       read_extent_buffer(path->nodes[0], stack_leaf, 0,
-> +                          fs_info->extent_root->nodesize);
-> +       header = (struct btrfs_header *)stack_leaf;
->         slot = path->slots[0];
->         btrfs_release_path(path);
->         mutex_unlock(&fs_info->qgroup_rescan_lock);
->
-> -       for (; slot < btrfs_header_nritems(scratch_leaf); ++slot) {
-> -               btrfs_item_key_to_cpu(scratch_leaf, &found, slot);
-> +       for (; slot < btrfs_stack_header_nritems(header); ++slot) {
-> +               btrfs_stack_item_key_to_cpu(header, &found, slot);
->                 if (found.type != BTRFS_EXTENT_ITEM_KEY &&
->                     found.type != BTRFS_METADATA_ITEM_KEY)
->                         continue;
-> @@ -2261,15 +2263,15 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->                                                      qgroup_rescan_work);
->         struct btrfs_path *path;
->         struct btrfs_trans_handle *trans = NULL;
-> -       struct extent_buffer *scratch_leaf = NULL;
-> +       char *stack_leaf = NULL;
->         int err = -ENOMEM;
->         int ret = 0;
->
->         path = btrfs_alloc_path();
->         if (!path)
->                 goto out;
-> -       scratch_leaf = kmalloc(sizeof(*scratch_leaf), GFP_NOFS);
-> -       if (!scratch_leaf)
-> +       stack_leaf = kmalloc(fs_info->extent_root->nodesize, GFP_NOFS);
-> +       if (!stack_leaf)
->                 goto out;
->
->         err = 0;
-> @@ -2283,7 +2285,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->                         err = -EINTR;
->                 } else {
->                         err = qgroup_rescan_leaf(fs_info, path, trans,
-> -                                                scratch_leaf);
-> +                                                stack_leaf);
->                 }
->                 if (err > 0)
->                         btrfs_commit_transaction(trans, fs_info->fs_root);
-> @@ -2292,7 +2294,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->         }
->
->  out:
-> -       kfree(scratch_leaf);
-> +       kfree(stack_leaf);
->         btrfs_free_path(path);
->
->         mutex_lock(&fs_info->qgroup_rescan_lock);
-> --
-> 2.6.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
+Filipe Manana wrote on 2015/10/22 09:16 +0100:
+> On Thu, Oct 22, 2015 at 1:42 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>> Ancient qgroup code call memcpy() on a extent buffer and use it for leaf
+>> iteration.
+>>
+>> As extent buffer contains lock, pointers to pages, it's never sane to do
+>> such copy.
+>>
+>> The following bug may be caused by this insane operation:
+>> [92098.841309] general protection fault: 0000 [#1] SMP
+>> [92098.841338] Modules linked in: ...
+>> [92098.841814] CPU: 1 PID: 24655 Comm: kworker/u4:12 Not tainted
+>> 4.3.0-rc1 #1
+>> [92098.841868] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper
+>> [btrfs]
+>> [92098.842261] Call Trace:
+>> [92098.842277]  [<ffffffffc035a5d8>] ? read_extent_buffer+0xb8/0x110
+>> [btrfs]
+>> [92098.842304]  [<ffffffffc0396d00>] ? btrfs_find_all_roots+0x60/0x70
+>> [btrfs]
+>> [92098.842329]  [<ffffffffc039af3d>]
+>> btrfs_qgroup_rescan_worker+0x28d/0x5a0 [btrfs]
+>>
+>> Where btrfs_qgroup_rescan_worker+0x28d is btrfs_disk_key_to_cpu(),
+>> called in reading key from the memcpied extent_buffer.
+>>
+>> This patch will read the whole leaf into memory, and use newly
+>> introduced stack function to do qgroup rescan.
+>
+> Hi Qu,
+>
+> Instead of introducing more new functions, why not clone the extent
+> buffer (btrfs_clone_extent_buffer) and then use it the
+> regular/existing functions? Iow, the same as we do in backref walking,
+> should make the change much smaller than it is.
+>
+> thanks
+>
+Thanks Filipe,
 
--- 
-Filipe David Manana,
+I didn't know there is such a nice function.
+And it's setting EXTENT_BUFFER_DUMMY, so it should be quite safe for the 
+use case.
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."
+Thanks for your advice a lot!
+Qu
+
+>>
+>> Reported-by: Stephane Lesimple <stephane_btrfs@lesimple.fr>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> ---
+>> v2:
+>>    Follow the parameter change in previous patch.
+>> v3:
+>>    None
+>> ---
+>>   fs/btrfs/qgroup.c | 22 ++++++++++++----------
+>>   1 file changed, 12 insertions(+), 10 deletions(-)
+>>
+>> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+>> index e9ace09..6a83a40 100644
+>> --- a/fs/btrfs/qgroup.c
+>> +++ b/fs/btrfs/qgroup.c
+>> @@ -2183,11 +2183,11 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
+>>    */
+>>   static int
+>>   qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+>> -                  struct btrfs_trans_handle *trans,
+>> -                  struct extent_buffer *scratch_leaf)
+>> +                  struct btrfs_trans_handle *trans, char *stack_leaf)
+>>   {
+>>          struct btrfs_key found;
+>>          struct ulist *roots = NULL;
+>> +       struct btrfs_header *header;
+>>          struct seq_list tree_mod_seq_elem = SEQ_LIST_INIT(tree_mod_seq_elem);
+>>          u64 num_bytes;
+>>          int slot;
+>> @@ -2224,13 +2224,15 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+>>          fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
+>>
+>>          btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+>> -       memcpy(scratch_leaf, path->nodes[0], sizeof(*scratch_leaf));
+>> +       read_extent_buffer(path->nodes[0], stack_leaf, 0,
+>> +                          fs_info->extent_root->nodesize);
+>> +       header = (struct btrfs_header *)stack_leaf;
+>>          slot = path->slots[0];
+>>          btrfs_release_path(path);
+>>          mutex_unlock(&fs_info->qgroup_rescan_lock);
+>>
+>> -       for (; slot < btrfs_header_nritems(scratch_leaf); ++slot) {
+>> -               btrfs_item_key_to_cpu(scratch_leaf, &found, slot);
+>> +       for (; slot < btrfs_stack_header_nritems(header); ++slot) {
+>> +               btrfs_stack_item_key_to_cpu(header, &found, slot);
+>>                  if (found.type != BTRFS_EXTENT_ITEM_KEY &&
+>>                      found.type != BTRFS_METADATA_ITEM_KEY)
+>>                          continue;
+>> @@ -2261,15 +2263,15 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+>>                                                       qgroup_rescan_work);
+>>          struct btrfs_path *path;
+>>          struct btrfs_trans_handle *trans = NULL;
+>> -       struct extent_buffer *scratch_leaf = NULL;
+>> +       char *stack_leaf = NULL;
+>>          int err = -ENOMEM;
+>>          int ret = 0;
+>>
+>>          path = btrfs_alloc_path();
+>>          if (!path)
+>>                  goto out;
+>> -       scratch_leaf = kmalloc(sizeof(*scratch_leaf), GFP_NOFS);
+>> -       if (!scratch_leaf)
+>> +       stack_leaf = kmalloc(fs_info->extent_root->nodesize, GFP_NOFS);
+>> +       if (!stack_leaf)
+>>                  goto out;
+>>
+>>          err = 0;
+>> @@ -2283,7 +2285,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+>>                          err = -EINTR;
+>>                  } else {
+>>                          err = qgroup_rescan_leaf(fs_info, path, trans,
+>> -                                                scratch_leaf);
+>> +                                                stack_leaf);
+>>                  }
+>>                  if (err > 0)
+>>                          btrfs_commit_transaction(trans, fs_info->fs_root);
+>> @@ -2292,7 +2294,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+>>          }
+>>
+>>   out:
+>> -       kfree(scratch_leaf);
+>> +       kfree(stack_leaf);
+>>          btrfs_free_path(path);
+>>
+>>          mutex_lock(&fs_info->qgroup_rescan_lock);
+>> --
+>> 2.6.1
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+>

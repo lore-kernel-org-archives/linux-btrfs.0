@@ -1,33 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:40319 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56160 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751603AbbJUJrq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 05:47:46 -0400
-Date: Wed, 21 Oct 2015 11:46:25 +0200
-From: David Sterba <dsterba@suse.cz>
-To: Christian Engelmayer <cengelma@gmx.at>
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: fix possible leak in btrfs_ioctl_balance()
-Message-ID: <20151021094625.GB13624@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1445381406-13475-1-git-send-email-cengelma@gmx.at>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1445381406-13475-1-git-send-email-cengelma@gmx.at>
+	id S1751170AbbJVJIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 Oct 2015 05:08:40 -0400
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id D6D0BAAF4
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2015 09:08:37 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH v2] btrfs: add balance filters limits, stripes and usage to supported mask
+Date: Thu, 22 Oct 2015 11:07:18 +0200
+Message-Id: <1445504838-25196-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Oct 21, 2015 at 12:50:06AM +0200, Christian Engelmayer wrote:
-> Commit 8eb934591f8b ("btrfs: check unsupported filters in balance
-> arguments") adds a jump to exit label out_bargs in case the argument
-> check fails. At this point in addition to the bargs memory, the
-> memory for struct btrfs_balance_control has already been allocated.
-> Ownership of bctl is passed to btrfs_balance() in the good case,
-> thus the memory is not freed due to the introduced jump. Make sure
-> that the memory gets freed in any case as necessary. Detected by
-> Coverity CID 1328378.
-> 
-> Signed-off-by: Christian Engelmayer <cengelma@gmx.at>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Enable the extended 'limit' syntax (a range), the new 'stripes' and
+extended 'usage' syntax (a range) filters in the filters mask. The patch
+comes separate and not within the series that introduced the new filters
+because the patch adding the mask was merged in a late rc. The
+integration branch was based on an older rc and could not merge the
+patch due to the missing changes.
 
-Thanks for fixig it.
+Prerequisities:
+* btrfs: check unsupported filters in balance arguments
+* btrfs: extend balance filter limit to take minimum and maximum
+* btrfs: add balance filter for stripes
+* btrfs: extend balance filter usage to take minimum and maximum
+
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+
+ fs/btrfs/volumes.h | 5 ++++-
+ 1 file changed, 4 insertions(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 90ef3e722b72..6abd2dd346b3 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -385,7 +385,10 @@ struct map_lookup {
+ 	 BTRFS_BALANCE_ARGS_DEVID | 		\
+ 	 BTRFS_BALANCE_ARGS_DRANGE |		\
+ 	 BTRFS_BALANCE_ARGS_VRANGE |		\
+-	 BTRFS_BALANCE_ARGS_LIMIT)
++	 BTRFS_BALANCE_ARGS_LIMIT |		\
++	 BTRFS_BALANCE_ARGS_LIMIT_RANGE |	\
++	 BTRFS_BALANCE_ARGS_STRIPES_RANGE |	\
++	 BTRFS_BALANCE_ARGS_USAGE_RANGE)
+ 
+ /*
+  * Profile changing flags.  When SOFT is set we won't relocate chunk if
+-- 
+2.6.2
+

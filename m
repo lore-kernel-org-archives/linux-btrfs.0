@@ -1,107 +1,224 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57691 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755846AbbJVDfI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 21 Oct 2015 23:35:08 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zp6ef-0004ww-Dv
-	for linux-btrfs@vger.kernel.org; Thu, 22 Oct 2015 05:35:05 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2015 05:35:05 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2015 05:35:05 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs-balance causes system-freeze on full disk
-Date: Thu, 22 Oct 2015 03:34:57 +0000 (UTC)
-Message-ID: <pan$af772$909eacb5$9a019d0d$f4538f63@cox.net>
-References: <c76lfc-jfl.ln1@aldebaran.xundeenergie.at>
-	<CAM9fjH4vQki-0UjdMTGZgKEbDy1pRBZNRqro8TtqzLbDPwfsvw@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from cn.fujitsu.com ([59.151.112.132]:12515 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750767AbbJVEKw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 Oct 2015 00:10:52 -0400
+Subject: Re: [RFC PATCH 2/3] btrfs-progs: kernel based default features for
+ mkfs
+To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
+References: <1445417149-804-1-git-send-email-anand.jain@oracle.com>
+ <1445417149-804-2-git-send-email-anand.jain@oracle.com>
+ <562756ED.1090302@cn.fujitsu.com> <56285367.6010705@oracle.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <562861AF.7000306@cn.fujitsu.com>
+Date: Thu, 22 Oct 2015 12:10:23 +0800
+MIME-Version: 1.0
+In-Reply-To: <56285367.6010705@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kyle Manna posted on Wed, 21 Oct 2015 13:51:22 -0700 as excerpted:
-
-> The issue I encountered is described @
-> https://bugzilla.kernel.org/show_bug.cgi?id=105681
-
-FWIW...
-
-I won't try to deal with the issue reported there, but I can help clear 
-something up that's mentioned on the bug[1].
-
-The question (comment 5 and 6) refers to btrfs device usage output, for a 
-three-device btrfs raid1, both data/metadata.  The question was why only 
-two of the three devices listed a system chunk.
-
-Btrfs raid1, unlike say mdraid1, is strictly pair-mirror, exactly two 
-copies of the chunk, one each on two different devices.  More devices 
-adds to the space available, not to the number of redundant copies.
-
-As it happens, the two devices that got a copy of the system chunk were 
-sdb and sdd, sdc didn't get a copy, as there are only two copies to 
-distribute, no matter the number of devices in the raid1.
 
 
-And as it happens, I've been personally interested in and thus following 
-the roadmapped btrfs N-way-mirroring, the feature that would put a copy 
-on all three devices, this being my most hotly anticipated btrfs feature 
-since 3-way-mirroring is about the perfect balance between cost and 
-reliability due to device redundancy, for me.
+Anand Jain wrote on 2015/10/22 11:09 +0800:
+>
+> Hi,
+>
+>   more details about this RFC as below..
+>
+>
+>> So a user with old kernel won't be able to create a filesystem with
+>> newer feature forever.
+>
+>   Thats not true. Here below is an example of the problem and fix
+>   in action.
+>
+>> Maybe the user are just making btrfs for his or her newer kernel?
+>
+>   Yes. Thats still possible as below.
+>
+>
+>
+> [[current problem]]
+>
+> I am on 3.8 kernel which does not support the skinny-metadata feature.
+> ---------
+> # uname -r
+> 3.8.13-98.4.1.el6uek.x86_64
+> -------------
+>
+> Lets say customer upgraded the latest btrfs-progs as they wanted better
+> cli interface, reporting and document which is only available in the
+> latest btrfs-progs.
+>
+> As btrfs-progs is backward kernel compatible, they don't have to
+> upgrade the kernel.
+>
+> But as skinny-metadata is part of the "mkfs default feature", thats get
+> enabled by default during mkfs.
 
-For quite some time now, a new N-way-mirroring feature has been on the 
-roadmap, to be worked on after raid56 mode, as the planned implementation 
-was to use some of the same code.  Raid56 mode is complete now, tho it 
-took far longer than initially expected, so hopefully n-way-mirroring is 
-already in development.  However, given the time raid56 took, 2-3 years 
-of development, it's likely to be some time before n-way-mirroring 
-actually appears.  And again, if it follows the pattern of other btrfs 
-features, it'll take a couple kernel cycles after initial release to 
-stabilize to actual usability, and a full year (five cycles) to stabilize 
-to approximately the same maturity/stability as the rest of btrfs in 
-general.
+For real customer case, that's really a problem.
+Customer is god, right?
 
-For raid56, nominally code-complete in 3.19, the last critical bug was in 
-the early 4.1 code, fixed by 4.1 release.  But my recommendation has been 
-to wait another couple cycles just to be sure nothing else "interesting" 
-comes up, basically a full year, five kernel cycles, after nominal code-
-complete release.  That would be 4.4...
+But on the other hand, normally support team only provides support for 
+their own product.
+Here "product" may be their distribution or other software, but never 
+any software customer build from source by themselves.
 
-Back to N-way-mirroring, assuming the work doesn't get delayed by 
-something else, I'd EWAG (educated WAG) an 18 month to 2 year development 
-time to nominally complete.  That would put initial release around 
-4.7-4.9, actual usability at 4.9-4.11, and year-on stability at 4.12-4.14.
+If customer want to upgrade btrfs-progs, they should use the repo from 
+distribution, not compile by themselves.
 
-So altho we're nearing a year since raid56 nominal-completion, I don't 
-expect N-way-mirroring code release for another year or so yet, don't 
-expect it to be really usable for another five months (two kernel cycles) 
-after that, and even then, wouldn't expect it to be as stable as the rest 
-of btrfs for another further three kernels or so, thus putting actual 
-reasonable stability (compared to the already stable 2-way raid1 code) 
-two years out...
+And it will be the responsibility of backport team to backport needed 
+features for kernel/btrfs-progs or change default features.
 
-So it's coming, and at least now it's close enough there's /some/ 
-estimate of when it might be available, but it's going to be some time 
-yet before I'd expect even nominal code-completion release, and some time 
-after that before it reaches the stability benefit that I'm actually 
-hotly anticipating the feature for.  Very roughly two years from now, tho 
-I'd not be surprised at all to see that slide another six months to a 
-year, and that's assuming nothing else shoves it out of the way, priority-
-wise.
+But unfortunately(or fortunately?), we are not backport team.
 
----
-[1] I do have a kernel-bugs login but didn't want to bother logging in 
-just to add the comment there, when I had just clicked a link here to get 
-there, and could simply reply here instead.
+>
+> ----------
+> # mkfs.btrfs -f /dev/sdc
+> btrfs-progs v4.2.2-7-g03cf344
+> See http://btrfs.wiki.kernel.org for more information.
+>
+> Label:              (null)
+> UUID:               bb85b156-35eb-49a5-be5a-512fec1abab4
+> Node size:          16384
+> Sector size:        4096
+> Filesystem size:    3.00GiB
+> Block group profiles:
+>    Data:             single            8.00MiB
+>    Metadata:         DUP             161.56MiB
+>    System:           DUP              12.00MiB
+> SSD detected:       no
+> Incompat features:  extref, skinny-metadata         <-----
+> Number of devices:  1
+> Devices:
+>     ID        SIZE  PATH
+>      1     3.00GiB  /dev/sdc
+> -------------------
+>
+> mount on the running kernel 3.8 fails, as there is no kernel support
+> for skinny-metadata
+> -----------
+> # mount /dev/sdc /btrfs
+> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+>         missing codepage or helper program, or other error
+>         In some cases useful info is found in syslog - try
+>         dmesg | tail  or so
+>
+> BTRFS: couldn't mount because of unsupported optional features (100).
+> btrfs: open_ctree failed
+> ----------
+>
+> Customers need to upgrade the kernel also to mount this FS.
+>
+>
+> [[current solution]]
+>
+> User must know that their running kernel does not support
+> skinny metadata and disable features accordingly as below.
+>
+> ------------
+> # mkfs.btrfs -f -O ^skinny-metadata /dev/sdc > /dev/null && mount
+> /dev/sdc /btrfs
+> # echo $?
+> 0
+> ------------
+>
+>
+> [[problem with the current solution]]
+>
+> btrfs-progs is backward kernel compatible.
+>
+> But the default feature as set during mkfs is very btrfs-progs centric,
+> and is not in sync with the current running kernel.
+>
+>
+> [[new proposed, with the patch]]
+>
+> - the default-features that are not supported by the running kernel
+>   are masked.
+>
+>   So now the default mkfs.btrfs and mount works. As progs finds that
+>   kernel version is too old to support skinny-metadata and remotes is
+>   from the default feature list.
+>
+> -------------------
+> # uname -r
+> 3.8.13-98.4.1.el6uek.x86_64
+>
+>
+> # mkfs.btrfs -f /dev/sdc
+> btrfs-progs v4.2.2-7-g03cf344
+> See http://btrfs.wiki.kernel.org for more information.
+>
+> Label:              (null)
+> UUID:               f2513ff0-6d94-4b6a-8bbf-ff53d343fa62
+> Node size:          16384
+> Sector size:        4096
+> Filesystem size:    3.00GiB
+> Block group profiles:
+>    Data:             single            8.00MiB
+>    Metadata:         DUP             161.56MiB
+>    System:           DUP              12.00MiB
+> SSD detected:       no
+> Incompat features:  extref  <-----
+> Number of devices:  1
+> Devices:
+>     ID        SIZE  PATH
+>      1     3.00GiB  /dev/sdc
+>
+> # mount /dev/sdc /btrfs
+> -------------------
+>
+>
+> However as Qu pointed out if user wants to create FS with a feature that
+> is not supported by running kernel. They still have the choice to enable
+> it using -O option. as below. however they won't be able to mount it
+> unless kernel is upgraded as well.
+>
+> -------
+> # mkfs.btrfs -f -O skinny-metadata /dev/sdc
+> btrfs-progs v4.2.2-7-g03cf344
+> See http://btrfs.wiki.kernel.org for more information.
+>
+> Label:              (null)
+> UUID:               30c018ab-3d2a-4acc-8287-3f28c5324fca
+> Node size:          16384
+> Sector size:        4096
+> Filesystem size:    3.00GiB
+> Block group profiles:
+>    Data:             single            8.00MiB
+>    Metadata:         DUP             161.56MiB
+>    System:           DUP              12.00MiB
+> SSD detected:       no
+> Incompat features:  extref, skinny-metadata   <----
+> Number of devices:  1
+> Devices:
+>     ID        SIZE  PATH
+>      1     3.00GiB  /dev/sdc
+>
+> # mount /dev/sdc /btrfs
+> mount: wrong fs type, bad option, bad superblock on /dev/sdc,
+>         missing codepage or helper program, or other error
+>         In some cases useful info is found in syslog - try
+>         dmesg | tail  or so
+> #
+> ---------
+>
+> In nut shell this patch makes _mkfs and btrfs-convert default features_
+> dynamically aligned with the running kernel.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Maybe just personal choice, I still prefer not to change default 
+features, output warning should be good enough for such case,
+due to the unreliableness of version check.
 
+Thanks,
+Qu
+
+>
+> Thanks, Anand
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

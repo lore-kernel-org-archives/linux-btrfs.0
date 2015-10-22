@@ -1,70 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from lists.s-osg.org ([54.187.51.154]:38307 "EHLO lists.s-osg.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752961AbbJTN4j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 20 Oct 2015 09:56:39 -0400
-From: Luis de Bethencourt <luisbg@osg.samsung.com>
-To: linux-kernel@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com, jbacik@fb.com, clm@fb.com,
-        Luis de Bethencourt <luisbg@osg.samsung.com>
-Subject: [RESEND PATCH 2/2] btrfs: reada: Fix returned errno code
-Date: Tue, 20 Oct 2015 14:56:23 +0100
-Message-Id: <1445349383-21722-3-git-send-email-luisbg@osg.samsung.com>
-In-Reply-To: <1445349383-21722-1-git-send-email-luisbg@osg.samsung.com>
-References: <1445349383-21722-1-git-send-email-luisbg@osg.samsung.com>
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:42868 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754129AbbJVTFQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 Oct 2015 15:05:16 -0400
+Received: from pps.filterd (m0001255.ppops.net [127.0.0.1])
+	by mx0b-00082601.pphosted.com (8.15.0.59/8.15.0.59) with SMTP id t9MJ28x6020597
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2015 12:05:15 -0700
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by mx0b-00082601.pphosted.com with ESMTP id 1xkj521n7j-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2015 12:05:15 -0700
+From: Josef Bacik <jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+Subject: [PATCH] Btrfs: igrab inode in writepage
+Date: Thu, 22 Oct 2015 15:05:09 -0400
+Message-ID: <1445540709-26995-1-git-send-email-jbacik@fb.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-reada is using -1 instead of the -ENOMEM defined macro to specify that
-a buffer allocation failed. Since the error number is propagated, the
-caller will get a -EPERM which is the wrong error condition.
+We hit this panic on a few of our boxes this week where we have an
+ordered_extent with an NULL inode.  We do an igrab() of the inode in writepages,
+but weren't doing it in writepage which can be called directly from the VM on
+dirty pages.  If the inode has been unlinked then we could have I_FREEING set
+which means igrab() would return NULL and we get this panic.  Fix this by trying
+to igrab in btrfs_writepage, and if it returns NULL then just redirty the page
+and return AOP_WRITEPAGE_ACTIVATE; so the VM knows it wasn't successful.  Thanks,
 
-Also, updating the caller to return the exact value from
-reada_add_block.
-
-Smatch tool warning:
-reada_add_block() warn: returning -1 instead of -ENOMEM is sloppy
-
-Signed-off-by: Luis de Bethencourt <luisbg@osg.samsung.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/reada.c | 8 +++++---
- 1 file changed, 5 insertions(+), 3 deletions(-)
+ fs/btrfs/inode.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 4645cd1..619f929 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -569,7 +569,7 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
- 	rec = kzalloc(sizeof(*rec), GFP_NOFS);
- 	if (!rec) {
- 		reada_extent_put(root->fs_info, re);
--		return -1;
-+		return -ENOMEM;
- 	}
- 
- 	rec->rc = rc;
-@@ -918,6 +918,7 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
- 	u64 start;
- 	u64 generation;
- 	int level;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a0fa725..4d1fdc2 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8438,15 +8438,28 @@ int btrfs_readpage(struct file *file, struct page *page)
+ static int btrfs_writepage(struct page *page, struct writeback_control *wbc)
+ {
+ 	struct extent_io_tree *tree;
+-
++	struct inode *inode = page->mapping->host;
 +	int ret;
- 	struct extent_buffer *node;
- 	static struct btrfs_key max_key = {
- 		.objectid = (u64)-1,
-@@ -943,9 +944,10 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
- 	generation = btrfs_header_generation(node);
- 	free_extent_buffer(node);
  
--	if (reada_add_block(rc, start, &max_key, level, generation)) {
-+	ret = reada_add_block(rc, start, &max_key, level, generation);
-+	if (ret) {
- 		kfree(rc);
--		return ERR_PTR(-ENOMEM);
-+		return ERR_PTR(ret);
+ 	if (current->flags & PF_MEMALLOC) {
+ 		redirty_page_for_writepage(wbc, page);
+ 		unlock_page(page);
+ 		return 0;
  	}
++
++	/*
++	 * If we are under memory pressure we will call this directly from the
++	 * VM, we need to make sure we have the inode referenced for the ordered
++	 * extent.  If not just return like we didn't do anything.
++	 */
++	if (!igrab(inode)) {
++		redirty_page_for_writepage(wbc, page);
++		return AOP_WRITEPAGE_ACTIVATE;
++	}
+ 	tree = &BTRFS_I(page->mapping->host)->io_tree;
+-	return extent_write_full_page(tree, page, btrfs_get_extent, wbc);
++	ret = extent_write_full_page(tree, page, btrfs_get_extent, wbc);
++	btrfs_add_delayed_iput(inode);
++	return ret;
+ }
  
- 	reada_start_machine(root->fs_info);
+ static int btrfs_writepages(struct address_space *mapping,
 -- 
-2.5.3
+2.1.0
 

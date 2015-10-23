@@ -1,45 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38429 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:58365 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751234AbbJVRJh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Oct 2015 13:09:37 -0400
-Date: Thu, 22 Oct 2015 19:08:15 +0200
+	id S1750911AbbJWJtr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Oct 2015 05:49:47 -0400
+Date: Fri, 23 Oct 2015 11:48:26 +0200
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Cc: Liu Bo <bo.li.liu@oracle.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs-progs: fix btrfs-convert rollback to check
- ROOT_BACKREF
-Message-ID: <20151022170815.GK13624@twin.jikos.cz>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 1/1] btrfs-progs: fix uninitialized copy of
+ btrfs_fs_devices list
+Message-ID: <20151023094825.GL13624@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1445147081-13511-1-git-send-email-bo.li.liu@oracle.com>
- <56238567.7060201@gmx.com>
+References: <1445486019-1173-1-git-send-email-anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <56238567.7060201@gmx.com>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1445486019-1173-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 18, 2015 at 07:41:27PM +0800, Qu Wenruo wrote:
-> 在 2015年10月18日 13:44, Liu Bo 写道:
-> > Btrfs has changed to delete subvolume/snapshot asynchronously, which means that
-> > after umount itself, if we've already deleted 'ext2_saved', rollback can still
-> > be completed.
-> >
-> > So this adds a check for ROOT_BACKREF before checking ROOT_ITEM since
-> > ROOT_BACKREF is immediately not in the btree after ioctl(BTRFS_IOC_SNAP_DESTROY)
-> > returns.
-> >
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> Reviewed-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+On Thu, Oct 22, 2015 at 11:53:39AM +0800, Anand Jain wrote:
+> Noticed that at print_one_uuid() some of the members of btrfs_fs_devices
+> contained some junk values. It took a while to dig this further, and found
+> that we make a local copy of the btrfs_fs_devices list at
+> search_umounted_fs_uuids() and wasn't initialized properly.
 > 
-> Looks good to me.
+> Fixed using using zalloc instead of malloc.
 > 
-> Although the error message for ret > 0 case can be improved a little, like:
-> "unable to find convert image subvolume, maybe it's already deleted?\n".
+> Signed-off-by: Anand Jain <anand.jain@oracle.com>
+> ---
+>  cmds-filesystem.c | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
+> index 3663734..4d3a9a4 100644
+> --- a/cmds-filesystem.c
+> +++ b/cmds-filesystem.c
+> @@ -685,7 +685,7 @@ static int search_umounted_fs_uuids(struct list_head *all_uuids,
+>  		if (is_seen_fsid(cur_fs->fsid))
+>  			continue;
+>  
+> -		fs_copy = malloc(sizeof(*fs_copy));
+> +		fs_copy = kzalloc(sizeof(*fs_copy), GFP_NOFS);
 
-I've adjusted the error messages.
-
-> BTW, would you please submit a test case for fstests? It won't be a hard 
-> one though.
-
-Test added.
+This is in purely userspace code, we can use malloc/calloc/free, I'll
+update it and apply.

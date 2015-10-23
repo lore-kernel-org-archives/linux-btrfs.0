@@ -1,81 +1,192 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56137 "EHLO mx2.suse.de"
+Received: from vps89324.tnxip.de ([46.105.16.45]:46509 "EHLO vps89324.tnxip.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751206AbbJWPYw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Oct 2015 11:24:52 -0400
-Subject: Re: [RFC PATCH 2/3] btrfs-progs: kernel based default features for
- mkfs
-To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-References: <1445417149-804-1-git-send-email-anand.jain@oracle.com>
- <1445417149-804-2-git-send-email-anand.jain@oracle.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <562A5140.20306@suse.com>
-Date: Fri, 23 Oct 2015 11:24:48 -0400
-MIME-Version: 1.0
-In-Reply-To: <1445417149-804-2-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset=windows-1252
+	id S1752808AbbJWPtm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Oct 2015 11:49:42 -0400
+Received: from gw.tnxip.de (gateway.lan.tnxip.de [IPv6:fd06:b1f0:4941::1000])
+	by vps89324.tnxip.de (Postfix) with ESMTPS id AB4425C0207
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2015 17:42:06 +0200 (CEST)
+Received: from localhost (localhost [IPv6:::1])
+	by gw.tnxip.de (Postfix) with ESMTP id 1C3E2782E6E
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2015 17:42:06 +0200 (CEST)
+Received: from gw.tnxip.de ([IPv6:::1])
+	by localhost (gateway.lan.tnxip.de [IPv6:::1]) (amavisd-new, port 10024)
+	with LMTP id hOrwGupw1XSK for <linux-btrfs@vger.kernel.org>;
+	Fri, 23 Oct 2015 17:41:52 +0200 (CEST)
+Received: from some-ipv6-address.wtnet.de (unknown [IPv6:2a02:2028:527:8f01:f581:532c:26ff:fdbf])
+	by gw.tnxip.de (Postfix) with ESMTPSA id 571B4782E68
+	for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2015 17:41:52 +0200 (CEST)
+Message-ID: <1445614907.16522.6.camel@tnxip.de>
+Subject: Linux 4.2.4 kernel panic while balancing
+From: Malte =?ISO-8859-1?Q?Schr=F6der?= <malte@tnxip.de>
+Reply-To: maltesch@gmx.de
+To: linux-btrfs@vger.kernel.org
+Date: Fri, 23 Oct 2015 17:41:47 +0200
+Content-Type: multipart/signed; micalg="pgp-sha256";
+	protocol="application/pgp-signature"; boundary="=-+yHRaPl0CkAybIXhFiBk"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
 
-On 10/21/15 4:45 AM, Anand Jain wrote:
-> mkfs from latest btrfs-progs will enable latest default features, 
-> and if the kernel is down-rev and does not support a latest
-> default feature then mount fails, as expected.
-> 
-> This patch disables default features based on the running kernel.
-
-I like the idea generally based on comments further in the thread, but
-what I don't like is:
-
-1) It's silent.
-2) There's no way to override it.
-
-If we're going to change the defaults at runtime, we should tell the
-user what has changed and why.  Otherwise, an identical mkfs.btrfs
-binary will behave differently on different systems without feedback
-and that violates the principle of least surprise.  If they want to do
-what Qu suggests later in the thread, where the device is being
-prepared for use on a newer kernel, it should be possible to force it.
- The normal -f should be fine there.
-
-- -Jeff
-
-> Signed-off-by: Anand Jain <anand.jain@oracle.com> --- mkfs.c | 5
-> ++++- 1 file changed, 4 insertions(+), 1 deletion(-)
-> 
-> diff --git a/mkfs.c b/mkfs.c index a5802f7..2b9d734 100644 ---
-> a/mkfs.c +++ b/mkfs.c @@ -1357,10 +1357,13 @@ int main(int ac, char
-> **av) int dev_cnt = 0; int saved_optind; char
-> fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 }; -	u64 features =
-> BTRFS_MKFS_DEFAULT_FEATURES; +	u64 features; struct mkfs_allocation
-> allocation = { 0 }; struct btrfs_mkfs_config mkfs_cfg;
-> 
-> +	features = btrfs_features_allowed_by_kernel(); +	features &=
-> BTRFS_MKFS_DEFAULT_FEATURES; + while(1) { int c; static const
-> struct option long_options[] = {
-> 
+--=-+yHRaPl0CkAybIXhFiBk
+Content-Type: multipart/mixed; boundary="=-bF17vvOEIt/tkzwy9WMY"
 
 
-- -- 
-Jeff Mahoney
-SUSE Labs
+--=-bF17vvOEIt/tkzwy9WMY
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+Hi,
+kernel 4.2 crashes more or less reliably when running btrfs balance.
+The filesystem in question is running in RAID1 mode. This happens quite
+reliably.
+Btrfs filesystem check doesn't show any problems.
+
+Dmesg output is attached.
+
+I'll happily provide more information if needed.
+
+Regards
+Malte
+--=-bF17vvOEIt/tkzwy9WMY
+Content-Disposition: attachment; filename="gateway.dmesg"
+Content-Type: text/plain; name="gateway.dmesg"; charset="UTF-8"
+Content-Transfer-Encoding: base64
+
+WyAgMjIwLjU2NTc3NV0gbmV0cG9sbDogbmV0Y29uc29sZTogbG9jYWwgcG9ydCA2NjY2ClsgIDIy
+MC41NjU4MDNdIG5ldHBvbGw6IG5ldGNvbnNvbGU6IGxvY2FsIElQdjQgYWRkcmVzcyAxOTIuMTY4
+LjEuMQpbICAyMjAuNTY1ODI3XSBuZXRwb2xsOiBuZXRjb25zb2xlOiBpbnRlcmZhY2UgJ2V0aDAn
+ClsgIDIyMC41NjU4NDZdIG5ldHBvbGw6IG5ldGNvbnNvbGU6IHJlbW90ZSBwb3J0IDY2NjYKWyAg
+MjIwLjU2NTg2Nl0gbmV0cG9sbDogbmV0Y29uc29sZTogcmVtb3RlIElQdjQgYWRkcmVzcyAxOTIu
+MTY4LjEuMTE0ClsgIDIyMC41NjU4OTFdIG5ldHBvbGw6IG5ldGNvbnNvbGU6IHJlbW90ZSBldGhl
+cm5ldCBhZGRyZXNzIDYwOjU3OjE4OmE3OjY3OjFlClsgIDIyMC41NjU5NDhdIGNvbnNvbGUgW25l
+dGNvbjBdIGVuYWJsZWQKWyAgMjIwLjU2NTk2Ml0gbmV0Y29uc29sZTogbmV0d29yayBsb2dnaW5n
+IHN0YXJ0ZWQKWyAgMjUzLjc4NTE2NV0gQlRSRlMgaW5mbyAoZGV2aWNlIHNkYTIpOiByZWxvY2F0
+aW5nIGJsb2NrIGdyb3VwIDQyMDYzMTIyOTIzNTIgZmxhZ3MgMTcKWyAgMjYxLjM0MDA2MV0gQlRS
+RlMgaW5mbyAoZGV2aWNlIHNkYTIpOiBmb3VuZCAzMSBleHRlbnRzCiBhYmxrX2hlbHBlciBkcm1f
+a21zX2hlbHBlciBscGNfaWNoIG1laSBmaXJld2lyZV9jb3JlIDgyNTBfcGNpIHVzYl9jb21tb25b
+ICAyNjcuMjk1MzE5XSAtLS0tLS0tLS0tLS1bIGN1dCBoZXJlIF0tLS0tLS0tLS0tLS0KIGNyY19p
+dHVfdCBldmRldiBtZmRfY29yZSBpbnB1dF9sZWRzIHNuZF9oZGFfY29yZSBsZWRfY2xhc3Mgc25k
+X3Bjc3AgY3J5cHRkWyAgMjY3LjI5NTM0Ml0ga2VybmVsIEJVRyBhdCBmcy9idHJmcy9leHRlbnQt
+dHJlZS5jOjE4MzMhCiBzZyBkcm0gc25kX3BjbSA4MjUwIHZpZGVvWyAgMjY3LjI5NTM1OF0gaW52
+YWxpZCBvcGNvZGU6IDAwMDAgWyMxXSAgaW50ZWxfZ3R0IGkyY19pODAxIHNuZF90aW1lciBzZXJp
+YWxfY29yZSB0cG1fdGlzU01QICBiYWNrbGlnaHQgdHBtIGJ1dHRvbiBzbmQgYWdwZ2FydAogc291
+bmRjb3JlIHByb2Nlc3NvciB0Y3BfY2RnIGVmaXZhcmZzIG1pY3JvY29kZVsgIDI2Ny4yOTUzNzVd
+IE1vZHVsZXMgbGlua2VkIGluOiBmYW4gdGhlcm1hbAogbmV0Y29uc29sZSBjb25maWdmcyBzaXRb
+ICAyNjcuMjk2MDA1XSBDUFU6IDYgUElEOiA4MDUgQ29tbToga3dvcmtlci91MTY6OSBOb3QgdGFp
+bnRlZCA0LjIuNC1nYXRld2F5ICMxClsgIDI2Ny4yOTYwMjNdIEhhcmR3YXJlIG5hbWU6IFN1cGVy
+bWljcm8gWDEwU0FFL1gxMFNBRSwgQklPUyAyLjBhIDA1LzA5LzIwMTQKIHR1bm5lbDQgaXBfdHVu
+bmVsIG5sc19pc284ODU5XzFbICAyNjcuMjk2MDQ0XSBXb3JrcXVldWU6IGJ0cmZzLWV4dGVudC1y
+ZWZzIGJ0cmZzX2V4dGVudF9yZWZzX2hlbHBlcgogbmxzX2NwNDM3WyAgMjY3LjI5NjA2MV0gdGFz
+azogZmZmZjg4MDdmYjQ3YzY4MCB0aTogZmZmZjg4MDdmYjRiNDAwMCB0YXNrLnRpOiBmZmZmODgw
+N2ZiNGI0MDAwCiB2ZmF0WyAgMjY3LjI5NjA3OV0gUklQOiAwMDEwOls8ZmZmZmZmZmY5MjFlODBj
+ZT5dICBmYXQgWzxmZmZmZmZmZjkyMWU4MGNlPl0gaW5zZXJ0X2lubGluZV9leHRlbnRfYmFja3Jl
+ZisweGRlLzB4ZTAKIHJwY3NlY19nc3Nfa3JiNVsgIDI2Ny4yOTYxMDZdIFJTUDogMDAxODpmZmZm
+ODgwN2ZiNGI3YjQ4ICBFRkxBR1M6IDAwMDEwMjkzCiBuZnNkIGF1dGhfcnBjZ3NzWyAgMjY3LjI5
+NjEyMV0gUkFYOiAwMDAwMDAwMDAwMDAwMDAwIFJCWDogMDAwMDAwMDAwMDAwMDAwMCBSQ1g6IDAw
+MDAwMDAwMDAwMDAwMDEKWyAgMjY3LjI5NjEzOV0gUkRYOiBmZmZmODgwMDAwMDAwMDAwIFJTSTog
+MDAwMDAwMDAwMDAwMDAwMSBSREk6IDAwMDAwMDAwMDAwMDAwMDAKIG5mc19hY2wgbG9ja2QgZ3Jh
+Y2VbICAyNjcuMjk2MTU3XSBSQlA6IGZmZmY4ODA3ZmI2N2I4MDAgUjA4OiAwMDAwMDAwMDAwMDA0
+MDAwIFIwOTogZmZmZjg4MDdmYjRiN2E1OAogc3VucnBjWyAgMjY3LjI5NjE3NV0gUjEwOiAwMDAw
+MDAwMDAwMDAwMDAwIFIxMTogMDAwMDAwMDAwMDAwMDAwMyBSMTI6IGZmZmY4ODAwY2M0YTllMTAK
+IG5mX2xvZ19pcHY0WyAgMjY3LjI5NjE5Ml0gUjEzOiAwMDAwMDAwMDAwMDAwMTAyIFIxNDogMDAw
+MDAwMDAwMDAwMDAwMCBSMTU6IDAwMDAwMDAwMDAwMDAwMDAKIHh0X1JFRElSRUNUIG5mX25hdF9y
+ZWRpcmVjdFsgIDI2Ny4yOTYyMTBdIEZTOiAgMDAwMDAwMDAwMDAwMDAwMCgwMDAwKSBHUzpmZmZm
+ODgwODFmYjgwMDAwKDAwMDApIGtubEdTOjAwMDAwMDAwMDAwMDAwMDAKWyAgMjY3LjI5NjIyOV0g
+Q1M6ICAwMDEwIERTOiAwMDAwIEVTOiAwMDAwIENSMDogMDAwMDAwMDA4MDA1MDAzMwogaXB0X01B
+U1FVRVJBREUgbmZfbmF0X21hc3F1ZXJhZGVfaXB2NCBuZl9sb2dfaXB2NlsgIDI2Ny4yOTYyNDVd
+IENSMjogMDAwMDdmMmE4YmM3YjZlMCBDUjM6IDAwMDAwMDA3ZTViYWMwMDAgQ1I0OiAwMDAwMDAw
+MDAwMTQwNmUwClsgIDI2Ny4yOTYyNjJdIERSMDogMDAwMDAwMDAwMDAwMDAwMCBEUjE6IDAwMDAw
+MDAwMDAwMDAwMDAgRFIyOiAwMDAwMDAwMDAwMDAwMDAwCiBuZl9sb2dfY29tbW9uIGlwdGFibGVf
+bmF0WyAgMjY3LjI5NjI4MF0gRFIzOiAwMDAwMDAwMDAwMDAwMDAwIERSNjogMDAwMDAwMDBmZmZl
+MGZmMCBEUjc6IDAwMDAwMDAwMDAwMDA0MDAKIG5mX25hdF9pcHY0WyAgMjY3LjI5NjI5N10gU3Rh
+Y2s6ClsgIDI2Ny4yOTYzMDZdICAwMDAwMDAwMDAwMDAwMDAwIDAwMDAwMDAwMDAwMDAxMDIgMDAw
+MDAwMDAwMDAwMDAwMCBpcHRfUkVKRUNUIDAwMDAwMDAwMDAwMDAwMDAKWyAgMjY3LjI5NjMzMF0g
+IGZmZmY4ODA3MDAwMDAwMDEgZmZmZmZmZmY5MjFkYmQ2ZSBuZl9yZWplY3RfaXB2NCAwMDAwMDAw
+MDAwMDAwMDAwIGZmZmZmZmZmOTIxZTkwZWIKIHh0X3JlY2VudCBpcDZ0YWJsZV9uYXQgbmZfbmF0
+X2lwdjZbICAyNjcuMjk2MzU1XSAgZmZmZjg4MDdmYjRiN2MwNCAwMDAwMDAwMDAwMDAzZDkzIGZm
+ZmY4ODAwY2M0YTllMTggZmZmZjg4MDBkOTA5YzAwMAogeHRfY29tbWVudFsgIDI2Ny4yOTYzNzld
+IENhbGwgVHJhY2U6CiBpcDZ0X1JFSkVDVCBuZl9yZWplY3RfaXB2NlsgIDI2Ny4yOTYzOTBdICBb
+PGZmZmZmZmZmOTIxZGJkNmU+XSA/IGJ0cmZzX2ZyZWVfcGF0aCsweGUvMHgyMAogeHRfYWRkcnR5
+cGVbICAyNjcuMjk2NDA1XSAgWzxmZmZmZmZmZjkyMWU5MGViPl0gPyBfX2J0cmZzX2ZyZWVfZXh0
+ZW50LmlzcmEuNzcrMHgzMWIvMHhkNTAKIHh0X3BvbGljeSBpcDZ0YWJsZV9tYW5nbGVbICAyNjcu
+Mjk2NDIzXSAgWzxmZmZmZmZmZjkyMWU4MTcyPl0gPyBfX2J0cmZzX2luY19leHRlbnRfcmVmLmlz
+cmEuNjErMHhhMi8weDI4MApbICAyNjcuMjk2NDQyXSAgWzxmZmZmZmZmZjkyMWVjZjgzPl0gPyBf
+X2J0cmZzX3J1bl9kZWxheWVkX3JlZnMrMHhiNzMvMHhmODAKWyAgMjY3LjI5NjQ2MV0gIFs8ZmZm
+ZmZmZmY5MjExMWRlYj5dID8gX19zbGFiX2ZyZWUrMHgxMWIvMHgyNjAKWyAgMjY3LjI5NjQ3N10g
+IFs8ZmZmZmZmZmY5MjJiYWY1Nj5dID8gYmxrX3F1ZXVlX2JpbysweDJhNi8weDJiMApbICAyNjcu
+Mjk2NDk0XSAgWzxmZmZmZmZmZjkyMTIxNGFkPl0gPyBfX3NiX3N0YXJ0X3dyaXRlKzB4M2QvMHhk
+MApbICAyNjcuMjk2NTEwXSAgWzxmZmZmZmZmZjkyMWVmZGRjPl0gPyBidHJmc19ydW5fZGVsYXll
+ZF9yZWZzLnBhcnQuODIrMHg2Yy8weDI3MApbICAyNjcuMjk2NTI5XSAgWzxmZmZmZmZmZjkyMWYw
+MDYzPl0gPyBkZWxheWVkX3JlZl9hc3luY19zdGFydCsweDczLzB4OTAKWyAgMjY3LjI5NjU0N10g
+IFs8ZmZmZmZmZmY5MjA1YzdmNz5dID8gcHJvY2Vzc19vbmVfd29yaysweDEyNy8weDNmMAogeHRf
+bWFyayBpcHRhYmxlX21hbmdsZSB4dF90Y3B1ZHAgaXB0YWJsZV9yYXcgbmZfY29ubnRyYWNrX2lw
+djQgbmZfZGVmcmFnX2lwdjQgbmZfbmF0X3RmdHAgeHRfQ1QgbmZfbmF0X3NubXBfYmFzaWMgbmZf
+Y29ubnRyYWNrX3NubXAgbmZfbmF0X3NpcCBpcDZ0YWJsZV9yYXcgbmZfbmF0X3BwdHAgbmZfbmF0
+X3Byb3RvX2dyZSB4dF9tdWx0aXBvcnQgbmZfY29ubnRyYWNrX2lwdjYgbmZfZGVmcmFnX2lwdjYg
+eHRfY29ubnRyYWNrIG5mX25hdF9pcmMgbmZfbmF0X2gzMjMgbmZfbmF0X2Z0cCBuZl9uYXRfYW1h
+bmRhIG5mX25hdCB4dF9ORkxPRyB4dF9MT0cgbmZfY29ubnRyYWNrX3RmdHAgbmZfY29ubnRyYWNr
+X3NpcCBuZl9jb25udHJhY2tfc2FuZSBuZl9jb25udHJhY2tfcHJvdG9fdWRwbGl0ZSBuZl9jb25u
+dHJhY2tfcHJvdG9fc2N0cCBuZl9jb25udHJhY2tfcHB0cFsgIDI2Ny4yOTY1NjNdICBbPGZmZmZm
+ZmZmOTIwNWNiMDI+XSA/IHdvcmtlcl90aHJlYWQrMHg0Mi8weDQ4MAogbmZfY29ubnRyYWNrX3By
+b3RvX2dyZSBuZl9jb25udHJhY2tfbmV0bGluayBuZl9jb25udHJhY2tfbmV0Ymlvc19ucyBuZl9j
+b25udHJhY2tfYnJvYWRjYXN0IG5mX2Nvbm50cmFja19pcmMgbmZfY29ubnRyYWNrX2gzMjMgdHNf
+a21wIG5mX2Nvbm50cmFja19hbWFuZGEgbmZfY29ubnRyYWNrX2Z0cCBuZl9jb25udHJhY2sgY3B1
+ZnJlcV9zdGF0cyBuZm5ldGxpbmtfbG9nIG5mbmV0bGluayBpcDZ0YWJsZV9maWx0ZXIgaXA2X3Rh
+YmxlcyB0dW4gaXB0YWJsZV9maWx0ZXIgaXBfdGFibGVzIHhfdGFibGVzIGJpbmZtdF9taXNjIDgw
+MjFxIGdhcnAgbXJwIHN0cCBsbGMgcGwyMzAzIGhpZF9nZW5lcmljIHVzYmhpZCBoaWQgZnRkaV9z
+aW8gdXNic2VyaWFsWyAgMjY3LjI5NzQwMV0gIFs8ZmZmZmZmZmY5MjA1Y2FjMD5dID8gcHJvY2Vz
+c19vbmVfd29yaysweDNmMC8weDNmMAogeDg2X3BrZ190ZW1wX3RoZXJtYWwgY29yZXRlbXAga3Zt
+X2ludGVsIGt2bSBzbmRfaGRhX2NvZGVjX3JlYWx0ZWsgY3JjdDEwZGlmX3BjbG11bCBjcmMzMl9w
+Y2xtdWwgc25kX2hkYV9jb2RlY19nZW5lcmljIHNuZF9oZGFfY29kZWNfaGRtaSBpVENPX3dkdCBj
+cmMzMmNfaW50ZWwgZ2hhc2hfY2xtdWxuaV9pbnRlbCBzbmRfaGRhX2ludGVsIGFlc25pX2ludGVs
+IGlUQ09fdmVuZG9yX3N1cHBvcnQgZmlyZXdpcmVfb2hjaSBlaGNpX3BjaSB4aGNpX3BjaSBlaGNp
+X2hjZCBhZXNfeDg2XzY0IGxydyB4aGNpX2hjZCBzbmRfaGRhX2NvZGVjIGdsdWVfaGVscGVyIGk5
+MTUgdXNiY29yZSBzbmRfaHdkZXAgbWVpX21lWyAgMjY3LjI5ODIzOF0gIFs8ZmZmZmZmZmY5MjA2
+MTk2Yz5dID8ga3RocmVhZCsweGJjLzB4ZTAKWyAgMjY3LjI5OTEwOF0gIFs8ZmZmZmZmZmY5MjA2
+MThiMD5dID8ga3RocmVhZF93b3JrZXJfZm4rMHgxNDAvMHgxNDAKWyAgMjY3LjI5OTk5MV0gIFs8
+ZmZmZmZmZmY5MjU1YWM4Zj5dID8gcmV0X2Zyb21fZm9yaysweDNmLzB4NzAKWyAgMjY3LjMwMDg1
+OF0gIFs8ZmZmZmZmZmY5MjA2MThiMD5dID8ga3RocmVhZF93b3JrZXJfZm4rMHgxNDAvMHgxNDAK
+WyAgMjY3LjMwMTcxMl0gQ29kZTogZTggNDggOGIgODQgMjQgYjAgMDAgMDAgMDAgNGMgODkgZjkg
+NGMgODkgZTYgNDggODkgZWYgNDggODkgNDQgMjQgMTAgOGIgODQgMjQgYTggMDAgMDAgMDAgODkg
+NDQgMjQgMDggZTggYzYgZDcgZmYgZmYgMzEgYzAgZWIgYjMgPDBmPiAwYiA0MSA1NyA0MSA1NiA0
+ZCA4OSBjZSA0MSA1NSA0ZCA4OSBjNSA0MSA1NCA1NSA0OCA4OSBmZCA1MyAKWyAgMjY3LjMwMzYy
+MF0gUklQICBbPGZmZmZmZmZmOTIxZTgwY2U+XSBpbnNlcnRfaW5saW5lX2V4dGVudF9iYWNrcmVm
+KzB4ZGUvMHhlMApbICAyNjcuMzA0NTE1XSAgUlNQIDxmZmZmODgwN2ZiNGI3YjQ4PgpbICAyNjcu
+MzA1NDM3XSAtLS1bIGVuZCB0cmFjZSA1NjE5M2MyYWU4MzI3NjI4IF0tLS0KWyAgMjY3LjQzMTk1
+N10gS2VybmVsIHBhbmljIC0gbm90IHN5bmNpbmc6IEZhdGFsIGV4Y2VwdGlvbgpbICAyNjcuNDMz
+NjU5XSBLZXJuZWwgT2Zmc2V0OiAweDExMDAwMDAwIGZyb20gMHhmZmZmZmZmZjgxMDAwMDAwIChy
+ZWxvY2F0aW9uIHJhbmdlOiAweGZmZmZmZmZmODAwMDAwMDAtMHhmZmZmZmZmZmJmZmZmZmZmKQpb
+ICAyNjcuNDM1MTE2XSBkcm1fa21zX2hlbHBlcjogcGFuaWMgb2NjdXJyZWQsIHN3aXRjaGluZyBi
+YWNrIHRvIHRleHQgY29uc29sZQpbICAyNjcuNTI5MzE5XSBSZWJvb3RpbmcgaW4gNjAgc2Vjb25k
+cy4uClsgIDMyNy4wNTc2OTRdIEFDUEkgTUVNT1JZIG9yIEkvTyBSRVNFVF9SRUcuCg==
+
+
+--=-bF17vvOEIt/tkzwy9WMY--
+
+--=-+yHRaPl0CkAybIXhFiBk
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part
+Content-Transfer-Encoding: 7bit
+
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+Version: GnuPG v1
 
-iQIcBAEBAgAGBQJWKlE/AAoJEB57S2MheeWy2mAP/33RvA9174u0PRmh+RBorZDC
-p3nDFFxS7pI5u7rSkFqUvbsKy9AoblUvgMYS8pDNkFokDML2hbH3HaYWFEmqvMch
-mp9DQ+wKz5hI5fYt/wgDdtVO6X0E3TCm2Cj1Uw4fl7E0bMzgNgio8tnOoGTrHGa5
-YkZ96L9UWzEScv9EtesO3DLbUC+O3pokyHsHCdBRVgEwLcLB1AtmPrQmhc2a1+M4
-sfzElmbo9Rld/xmtI4ecHl1sWbpfrYcKimzV32Jdv/SNhEyPuFOcN6/GUDOrGE7o
-Vs87+HtuXUr+CbFUM9r9wB1Nqj4yYJ78LnBfepBMjY9vWyAgPR49WFPRA/uhkvu/
-uOd4DNgUbLktakztsMb1GRiS/6AEj6s8mHFzkOrS5b9E/RbwegWgcnpnWCveFcDO
-Nsfa6Mg99X7ojuXeMi8c00Jins70uSnh/dLOtP5JYkxTAf8v5znbouYYawBZLHAi
-P0KbIpQFmW+Qm9is1CDVZktnj79BFMcd+twMFQu/m9jhYdLUFqeEFCJ+sxCGcmoM
-n18ayAzbvCQCYz5dBOk2EQPgQoQKJGEOdc4IY0GdRcOwNcbw2hWbwbfGjLAKpLrA
-PVC8YmRsyT1CotXBXJEpn7jYFR2fnDOyO/5jq1JRDa6Mxeq3dECIRWof3pwQLnpI
-boQXIGHUlVWltF+hla3C
-=TG+F
+iQIcBAABCAAGBQJWKlU7AAoJEJhhoDgpnptoqN4P/25DlZ60dQSapeav9mLnAnOJ
+v4NO6dgKnTpjBixTHyRKaicgPmEVxFupGTAiNnSfYqnPE/0en0WIJUwfRgswNpUB
+ZAqwpSqUDM+bUTCf8K2gPXhTzdMM+hbW/M2rVA+rO2gEOu258GaTu+LyZ8Hxlo7P
+54v3kUsx/2fKJAGgeGEJ3+UZ5iIbyMgkEt+BzpD6paz1CUX6X2DHHbLHKclHTsh+
+eeUyNpcnB235acU6jry1kNDQgfQScnzDqEWo/vIFY6Ey9GqhLHbCjzCvRqcY1ZV8
+6Qc3WklOy4EI9J4F+6BFR8ghUxz8ZxagWNM4ZeiuqoxuXrdNo2FY95Q5lb84Y8xP
+KO3m8EgbigAIR7OnXtdGnLn8bynQSsS2A+VoZ7/G2wEc78Uo3JGVWoAvbqne28nA
+G6od7vIn2j0aaqn6zg/hVa0I81j3pQuj0JA5IGs0/MP9z5755OKKKXFgWpCYXeLY
+C5f3fDosezH4u3X/NrSrGfvJKUZQxY2bHKiVbKxvyJYX/4IUpxywpP7gai3HLpCe
+wE/7ti4rROXadtSJmhxizQUZ0IjEgwamFRnWqD4h9AuDqIMA0gGUwpvjyqFaFdcd
+tKZoUsjnfqImSeEh6puDyT18roUsuVSERpfnBYDNfcmJE8Ap6//8af30e0XFfMjX
+CNPQRYAwcW5VwslxxSK4
+=H9DD
 -----END PGP SIGNATURE-----
+
+--=-+yHRaPl0CkAybIXhFiBk--
+

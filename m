@@ -1,124 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f49.google.com ([209.85.215.49]:35013 "EHLO
-	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751559AbbJWLwh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Oct 2015 07:52:37 -0400
-Received: by lfbn126 with SMTP id n126so46115200lfb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 23 Oct 2015 04:52:36 -0700 (PDT)
+Received: from henninger.io ([144.76.155.217]:55560 "EHLO mail.henninger.io"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751631AbbJWPFr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Oct 2015 11:05:47 -0400
+Subject: Re: Exclusive quota of snapshot exceeded despite no space used
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <56294960.10406@henninger.io> <5629758D.203@gmx.com>
+From: Johannes Henninger <johannes+btrfs@henninger.io>
+Message-ID: <562A4CC7.1060802@henninger.io>
+Date: Fri, 23 Oct 2015 17:05:43 +0200
 MIME-Version: 1.0
-In-Reply-To: <20151023001459.GF4400@hungrycats.org>
-References: <CAGqmi76ZKv3ezguTyxGL_Jv_xtq5w_SGPvjwTy90Z=oNY73Vmw@mail.gmail.com>
- <20151023001459.GF4400@hungrycats.org>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Fri, 23 Oct 2015 14:51:56 +0300
-Message-ID: <CAGqmi77ugFRYrV774py_=_XpPOSwh4zY9MsnexVgxH8MfnhjTQ@mail.gmail.com>
-Subject: Re: [RFC PATCH] btrfs/ioctl.c: Prefer inode with lowest offset as
- source for clone
-To: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <5629758D.203@gmx.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Zygo, you are right
-Thread closed, thanks
-
-2015-10-23 3:14 GMT+03:00 Zygo Blaxell <ce3g8jdj@umail.furryterror.org>:
-> On Tue, Oct 20, 2015 at 04:29:46PM +0300, Timofey Titovets wrote:
->> For performance reason, leave data at the start of disk, is preferable
->> while deduping
->> It's might sense for the reasons:
->> 1. Spinning rust - start of the disk is much faster
->> 2. Btrfs can deallocate empty data chunk from the end of fs - ie it's compact fs
+On 23.10.2015 01:47, Qu Wenruo wrote:
+> 在 2015年10月23日 04:38, Johannes Henninger 写道:
+>> I'm having a weird problem with snapshots and exclusive quotas. After
+>> creating a snapshot of a subvolume and setting an exclusive quota of
+>> 50MB for the snapshot, everything seems to work fine. I can write
+>> approximately 50MB before the quota kicks in.
+>>
+>> However, if I create a snapshot, set an exclusive quota and just wait
+>> for some time, I suddenly cannot even create an empty file because I'm
+>> getting a "quota exceeded" error. The time until the bug appears seems
+>> to vary. During the waiting time, I'm changing neither the snapshot nor
+>> the original subvolume. "qgroup show -e" reports an exclusive use of
+>> only a few kilobytes for the snapshot, which is nowhere near the limit.
+>>
+>> Steps to reproduce (/media/extern is a fresh and empty btrfs partition):
+>>
+>> Enable quota and create an empty subvolume:
+>>      root@t420:/media/extern# btrfs quota enable .
+>>      root@t420:/media/extern# btrfs subvolume create sub
+>>      Create subvolume './sub'
+>>
+>> Snapshot the subvolume and set a limit:
+>>      root@t420:/media/extern# btrfs subvolume snapshot sub snap
+>>      Create a snapshot of 'sub' in './snap'
+>>      root@t420:/media/extern# cd snap/
+>>      root@t420:/media/extern/snap# btrfs qgroup limit -e 50M .
+>>
+>> Sometimes it takes "longer" for the quota to kick in, so I'm touching a
+>> file every 5 minutes here:
+>>
+>>      root@t420:/media/extern/snap# for file in {1..100}; do touch $file;
+>> sleep 5m; done
+>>      touch: cannot touch ‘7’: Disk quota exceeded
+>>      ^C
+>>      root@t420:/media/extern/snap# btrfs qgroup show -e .
+>>      qgroupid         rfer         excl     max_excl
+>>      --------         ----         ----     --------
+>>      0/5          16.00KiB     16.00KiB         none
+>>      0/257        16.00KiB     16.00KiB         none
+>>      0/258        16.00KiB     16.00KiB     50.00MiB
+>>
+>> Any idea why this happens?
+> BTW, to make btrfs qgroup show work, it's better to call sync before
+> qgroup show.
 >
-> "src" is the extent that is kept, and "dst" is the extent that is
-> discarded.  When both extents are shared, the dedup userspace has to
-> pass a common "src" with many different "dst" over several extent-same
-> calls in order to get rid of all of the references to the "dst" extent.
+> It's a known bug that even after qgroup accounting rework, qgroup
+> reserve still has bug and can cause reserved space to underflow,
+> making such problem happen.
 >
-> If "src" and "dst" are arbitrarily swapped over multiple extent-same calls
-> then it becomes impossible to dedup shared extents.  Heck, if there are
-> more than two extents even in one extent-same call then it stops working.
+> For such case, btrfs qgroup show won't help as reserved space is not
+> shown in the output.
 >
-> It would be possible to have dedup figure out which extent the kernel
-> picked after the fact, but that's totally unnecessary extra work in
-> cases where the userspace has a good reason to pick the extents it did
-> (e.g. administrator hints about future usage of the files where the
-> extents were found).
+> One workaround would be, umount the filesystem and mount again.
+> Which will reset the underflow reserved space and work for sometime.
 >
-> Dedup userspace can figure out the physical addresses of the extents
-> and rearrange the arguments itself if desired.
+> If it's OK for you to recompile the kernel, you can try the following
+> patchset:
+> [PATCH v3 00/21] Rework btrfs qgroup reserved space framework
 >
->> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
->> ---
->>  fs/btrfs/ioctl.c | 9 +++++++--
->>  1 file changed, 7 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 3e3e613..3eb77c0 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -3074,8 +3074,13 @@ static int btrfs_extent_same(struct inode *src,
->> u64 loff, u64 olen,
->>
->>   /* pass original length for comparison so we stay within i_size */
->>   ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
->> - if (ret == 0)
->> -     ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
->> + if (ret == 0) {
->> +     /* prefer inode with lowest offset as source for clone*/
->> +     if (loff > dest_loff)
->> +         ret = btrfs_clone(dst, src, dst_loff, olen, len, loff, 1);
->> +     else
->> +         ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
->> + }
->>
->>   if (same_inode)
->>   unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
->> --
->> 2.6.1
+> Which should solve the problem.
 >
->> From 5ed3822bc308c726d91a837fbd97ebacaa51e58d Mon Sep 17 00:00:00 2001
->> From: Timofey Titovets <nefelim4ag@gmail.com>
->> Date: Tue, 20 Oct 2015 15:53:20 +0300
->> Subject: [RFC PATCH] btrfs/ioctl.c: Prefer inode with lowest offset as source for
->>  clone
->>
->> For performance reason, leave data at the start of disk, is preferable
->>
->> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
->> ---
->>  fs/btrfs/ioctl.c | 9 +++++++--
->>  1 file changed, 7 insertions(+), 2 deletions(-)
->>
->> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
->> index 3e3e613..3eb77c0 100644
->> --- a/fs/btrfs/ioctl.c
->> +++ b/fs/btrfs/ioctl.c
->> @@ -3074,8 +3074,13 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
->>
->>       /* pass original length for comparison so we stay within i_size */
->>       ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
->> -     if (ret == 0)
->> -             ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
->> +     if (ret == 0) {
->> +             /* prefer inode with lowest offset as source for clone*/
->> +             if (loff > dest_loff)
->> +                     ret = btrfs_clone(dst, src, dst_loff, olen, len, loff, 1);
->> +             else
->> +                     ret = btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
->> +     }
->>
->>       if (same_inode)
->>               unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
->> --
->> 2.6.1
->>
+> Thanks,
+> Qu
 >
 
+Thanks a lot for your reply!
 
+While remounting the filesystem fixes the issue temporary, it doesn't
+take very long for the bug to happen again so it's not really a
+workaround I can work with.
 
--- 
-Have a nice day,
-Timofey.
+I did recompile the kernel using your patches, but unfortunately the
+problem still appears.
+
+Thanks,
+Johannes
+

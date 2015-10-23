@@ -1,94 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from henninger.io ([144.76.155.217]:55560 "EHLO mail.henninger.io"
+Received: from mx2.suse.de ([195.135.220.15]:56137 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751631AbbJWPFr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 23 Oct 2015 11:05:47 -0400
-Subject: Re: Exclusive quota of snapshot exceeded despite no space used
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
-References: <56294960.10406@henninger.io> <5629758D.203@gmx.com>
-From: Johannes Henninger <johannes+btrfs@henninger.io>
-Message-ID: <562A4CC7.1060802@henninger.io>
-Date: Fri, 23 Oct 2015 17:05:43 +0200
+	id S1751206AbbJWPYw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 23 Oct 2015 11:24:52 -0400
+Subject: Re: [RFC PATCH 2/3] btrfs-progs: kernel based default features for
+ mkfs
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+References: <1445417149-804-1-git-send-email-anand.jain@oracle.com>
+ <1445417149-804-2-git-send-email-anand.jain@oracle.com>
+From: Jeff Mahoney <jeffm@suse.com>
+Message-ID: <562A5140.20306@suse.com>
+Date: Fri, 23 Oct 2015 11:24:48 -0400
 MIME-Version: 1.0
-In-Reply-To: <5629758D.203@gmx.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <1445417149-804-2-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23.10.2015 01:47, Qu Wenruo wrote:
-> 在 2015年10月23日 04:38, Johannes Henninger 写道:
->> I'm having a weird problem with snapshots and exclusive quotas. After
->> creating a snapshot of a subvolume and setting an exclusive quota of
->> 50MB for the snapshot, everything seems to work fine. I can write
->> approximately 50MB before the quota kicks in.
->>
->> However, if I create a snapshot, set an exclusive quota and just wait
->> for some time, I suddenly cannot even create an empty file because I'm
->> getting a "quota exceeded" error. The time until the bug appears seems
->> to vary. During the waiting time, I'm changing neither the snapshot nor
->> the original subvolume. "qgroup show -e" reports an exclusive use of
->> only a few kilobytes for the snapshot, which is nowhere near the limit.
->>
->> Steps to reproduce (/media/extern is a fresh and empty btrfs partition):
->>
->> Enable quota and create an empty subvolume:
->>      root@t420:/media/extern# btrfs quota enable .
->>      root@t420:/media/extern# btrfs subvolume create sub
->>      Create subvolume './sub'
->>
->> Snapshot the subvolume and set a limit:
->>      root@t420:/media/extern# btrfs subvolume snapshot sub snap
->>      Create a snapshot of 'sub' in './snap'
->>      root@t420:/media/extern# cd snap/
->>      root@t420:/media/extern/snap# btrfs qgroup limit -e 50M .
->>
->> Sometimes it takes "longer" for the quota to kick in, so I'm touching a
->> file every 5 minutes here:
->>
->>      root@t420:/media/extern/snap# for file in {1..100}; do touch $file;
->> sleep 5m; done
->>      touch: cannot touch ‘7’: Disk quota exceeded
->>      ^C
->>      root@t420:/media/extern/snap# btrfs qgroup show -e .
->>      qgroupid         rfer         excl     max_excl
->>      --------         ----         ----     --------
->>      0/5          16.00KiB     16.00KiB         none
->>      0/257        16.00KiB     16.00KiB         none
->>      0/258        16.00KiB     16.00KiB     50.00MiB
->>
->> Any idea why this happens?
-> BTW, to make btrfs qgroup show work, it's better to call sync before
-> qgroup show.
->
-> It's a known bug that even after qgroup accounting rework, qgroup
-> reserve still has bug and can cause reserved space to underflow,
-> making such problem happen.
->
-> For such case, btrfs qgroup show won't help as reserved space is not
-> shown in the output.
->
-> One workaround would be, umount the filesystem and mount again.
-> Which will reset the underflow reserved space and work for sometime.
->
-> If it's OK for you to recompile the kernel, you can try the following
-> patchset:
-> [PATCH v3 00/21] Rework btrfs qgroup reserved space framework
->
-> Which should solve the problem.
->
-> Thanks,
-> Qu
->
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-Thanks a lot for your reply!
+On 10/21/15 4:45 AM, Anand Jain wrote:
+> mkfs from latest btrfs-progs will enable latest default features, 
+> and if the kernel is down-rev and does not support a latest
+> default feature then mount fails, as expected.
+> 
+> This patch disables default features based on the running kernel.
 
-While remounting the filesystem fixes the issue temporary, it doesn't
-take very long for the bug to happen again so it's not really a
-workaround I can work with.
+I like the idea generally based on comments further in the thread, but
+what I don't like is:
 
-I did recompile the kernel using your patches, but unfortunately the
-problem still appears.
+1) It's silent.
+2) There's no way to override it.
 
-Thanks,
-Johannes
+If we're going to change the defaults at runtime, we should tell the
+user what has changed and why.  Otherwise, an identical mkfs.btrfs
+binary will behave differently on different systems without feedback
+and that violates the principle of least surprise.  If they want to do
+what Qu suggests later in the thread, where the device is being
+prepared for use on a newer kernel, it should be possible to force it.
+ The normal -f should be fine there.
 
+- -Jeff
+
+> Signed-off-by: Anand Jain <anand.jain@oracle.com> --- mkfs.c | 5
+> ++++- 1 file changed, 4 insertions(+), 1 deletion(-)
+> 
+> diff --git a/mkfs.c b/mkfs.c index a5802f7..2b9d734 100644 ---
+> a/mkfs.c +++ b/mkfs.c @@ -1357,10 +1357,13 @@ int main(int ac, char
+> **av) int dev_cnt = 0; int saved_optind; char
+> fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 }; -	u64 features =
+> BTRFS_MKFS_DEFAULT_FEATURES; +	u64 features; struct mkfs_allocation
+> allocation = { 0 }; struct btrfs_mkfs_config mkfs_cfg;
+> 
+> +	features = btrfs_features_allowed_by_kernel(); +	features &=
+> BTRFS_MKFS_DEFAULT_FEATURES; + while(1) { int c; static const
+> struct option long_options[] = {
+> 
+
+
+- -- 
+Jeff Mahoney
+SUSE Labs
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+
+iQIcBAEBAgAGBQJWKlE/AAoJEB57S2MheeWy2mAP/33RvA9174u0PRmh+RBorZDC
+p3nDFFxS7pI5u7rSkFqUvbsKy9AoblUvgMYS8pDNkFokDML2hbH3HaYWFEmqvMch
+mp9DQ+wKz5hI5fYt/wgDdtVO6X0E3TCm2Cj1Uw4fl7E0bMzgNgio8tnOoGTrHGa5
+YkZ96L9UWzEScv9EtesO3DLbUC+O3pokyHsHCdBRVgEwLcLB1AtmPrQmhc2a1+M4
+sfzElmbo9Rld/xmtI4ecHl1sWbpfrYcKimzV32Jdv/SNhEyPuFOcN6/GUDOrGE7o
+Vs87+HtuXUr+CbFUM9r9wB1Nqj4yYJ78LnBfepBMjY9vWyAgPR49WFPRA/uhkvu/
+uOd4DNgUbLktakztsMb1GRiS/6AEj6s8mHFzkOrS5b9E/RbwegWgcnpnWCveFcDO
+Nsfa6Mg99X7ojuXeMi8c00Jins70uSnh/dLOtP5JYkxTAf8v5znbouYYawBZLHAi
+P0KbIpQFmW+Qm9is1CDVZktnj79BFMcd+twMFQu/m9jhYdLUFqeEFCJ+sxCGcmoM
+n18ayAzbvCQCYz5dBOk2EQPgQoQKJGEOdc4IY0GdRcOwNcbw2hWbwbfGjLAKpLrA
+PVC8YmRsyT1CotXBXJEpn7jYFR2fnDOyO/5jq1JRDa6Mxeq3dECIRWof3pwQLnpI
+boQXIGHUlVWltF+hla3C
+=TG+F
+-----END PGP SIGNATURE-----

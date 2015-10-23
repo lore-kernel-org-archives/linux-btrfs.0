@@ -1,55 +1,144 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:56160 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751170AbbJVJIk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Oct 2015 05:08:40 -0400
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id D6D0BAAF4
-	for <linux-btrfs@vger.kernel.org>; Thu, 22 Oct 2015 09:08:37 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH v2] btrfs: add balance filters limits, stripes and usage to supported mask
-Date: Thu, 22 Oct 2015 11:07:18 +0200
-Message-Id: <1445504838-25196-1-git-send-email-dsterba@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:38048 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751655AbbJWCG4 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 Oct 2015 22:06:56 -0400
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <fdmanana@suse.com>
+Subject: [PATCH v4] btrfs: qgroup: Don't copy extent buffer to do qgroup rescan
+Date: Fri, 23 Oct 2015 10:04:51 +0800
+Message-ID: <1445565891-28121-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Enable the extended 'limit' syntax (a range), the new 'stripes' and
-extended 'usage' syntax (a range) filters in the filters mask. The patch
-comes separate and not within the series that introduced the new filters
-because the patch adding the mask was merged in a late rc. The
-integration branch was based on an older rc and could not merge the
-patch due to the missing changes.
+Ancient qgroup code call memcpy() on a extent buffer and use it for leaf
+iteration.
 
-Prerequisities:
-* btrfs: check unsupported filters in balance arguments
-* btrfs: extend balance filter limit to take minimum and maximum
-* btrfs: add balance filter for stripes
-* btrfs: extend balance filter usage to take minimum and maximum
+As extent buffer contains lock, pointers to pages, it's never sane to do
+such copy.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
+The following bug may be caused by this insane operation:
+[92098.841309] general protection fault: 0000 [#1] SMP
+[92098.841338] Modules linked in: ...
+[92098.841814] CPU: 1 PID: 24655 Comm: kworker/u4:12 Not tainted
+4.3.0-rc1 #1
+[92098.841868] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper
+[btrfs]
+[92098.842261] Call Trace:
+[92098.842277]  [<ffffffffc035a5d8>] ? read_extent_buffer+0xb8/0x110
+[btrfs]
+[92098.842304]  [<ffffffffc0396d00>] ? btrfs_find_all_roots+0x60/0x70
+[btrfs]
+[92098.842329]  [<ffffffffc039af3d>]
+btrfs_qgroup_rescan_worker+0x28d/0x5a0 [btrfs]
+
+Where btrfs_qgroup_rescan_worker+0x28d is btrfs_disk_key_to_cpu(),
+called in reading key from the copied extent_buffer.
+
+This patch will use btrfs_clone_extent_buffer() to a better copy of
+extent buffer to deal such case.
+
+Reported-by: Stephane Lesimple <stephane_btrfs@lesimple.fr>
+Suggested-by: Filipe Manana <fdmanana@kernel.org>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
+v2:
+  Follow the parameter change in previous patch.
+v3:
+  None
+v4:
+  Use btrfs_clone_extent_buffer() other than introducing new facilities
+---
+ fs/btrfs/qgroup.c | 28 +++++++++++++++++-----------
+ 1 file changed, 17 insertions(+), 11 deletions(-)
 
- fs/btrfs/volumes.h | 5 ++++-
- 1 file changed, 4 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index 90ef3e722b72..6abd2dd346b3 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -385,7 +385,10 @@ struct map_lookup {
- 	 BTRFS_BALANCE_ARGS_DEVID | 		\
- 	 BTRFS_BALANCE_ARGS_DRANGE |		\
- 	 BTRFS_BALANCE_ARGS_VRANGE |		\
--	 BTRFS_BALANCE_ARGS_LIMIT)
-+	 BTRFS_BALANCE_ARGS_LIMIT |		\
-+	 BTRFS_BALANCE_ARGS_LIMIT_RANGE |	\
-+	 BTRFS_BALANCE_ARGS_STRIPES_RANGE |	\
-+	 BTRFS_BALANCE_ARGS_USAGE_RANGE)
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 158633c..5534629 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2192,10 +2192,10 @@ void assert_qgroups_uptodate(struct btrfs_trans_handle *trans)
+  */
+ static int
+ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+-		   struct btrfs_trans_handle *trans,
+-		   struct extent_buffer *scratch_leaf)
++		   struct btrfs_trans_handle *trans)
+ {
+ 	struct btrfs_key found;
++	struct extent_buffer *scratch_leaf = NULL;
+ 	struct ulist *roots = NULL;
+ 	struct seq_list tree_mod_seq_elem = SEQ_LIST_INIT(tree_mod_seq_elem);
+ 	u64 num_bytes;
+@@ -2233,9 +2233,17 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 	fs_info->qgroup_rescan_progress.objectid = found.objectid + 1;
  
- /*
-  * Profile changing flags.  When SOFT is set we won't relocate chunk if
+ 	btrfs_get_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+-	memcpy(scratch_leaf, path->nodes[0], sizeof(*scratch_leaf));
+-	slot = path->slots[0];
++	scratch_leaf = btrfs_clone_extent_buffer(path->nodes[0]);
++	if (!scratch_leaf) {
++		ret = -ENOMEM;
++		mutex_unlock(&fs_info->qgroup_rescan_lock);
++		goto out;
++	}
++	extent_buffer_get(scratch_leaf);
++	btrfs_tree_read_lock(scratch_leaf);
++	btrfs_set_lock_blocking_rw(scratch_leaf, BTRFS_READ_LOCK);
+ 	btrfs_release_path(path);
++	slot = path->slots[0];
+ 	mutex_unlock(&fs_info->qgroup_rescan_lock);
+ 
+ 	for (; slot < btrfs_header_nritems(scratch_leaf); ++slot) {
+@@ -2259,6 +2267,10 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 			goto out;
+ 	}
+ out:
++	if (scratch_leaf) {
++		btrfs_tree_read_unlock_blocking(scratch_leaf);
++		free_extent_buffer(scratch_leaf);
++	}
+ 	btrfs_put_tree_mod_seq(fs_info, &tree_mod_seq_elem);
+ 
+ 	return ret;
+@@ -2270,16 +2282,12 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 						     qgroup_rescan_work);
+ 	struct btrfs_path *path;
+ 	struct btrfs_trans_handle *trans = NULL;
+-	struct extent_buffer *scratch_leaf = NULL;
+ 	int err = -ENOMEM;
+ 	int ret = 0;
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+ 		goto out;
+-	scratch_leaf = kmalloc(sizeof(*scratch_leaf), GFP_NOFS);
+-	if (!scratch_leaf)
+-		goto out;
+ 
+ 	err = 0;
+ 	while (!err) {
+@@ -2291,8 +2299,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 		if (!fs_info->quota_enabled) {
+ 			err = -EINTR;
+ 		} else {
+-			err = qgroup_rescan_leaf(fs_info, path, trans,
+-						 scratch_leaf);
++			err = qgroup_rescan_leaf(fs_info, path, trans);
+ 		}
+ 		if (err > 0)
+ 			btrfs_commit_transaction(trans, fs_info->fs_root);
+@@ -2301,7 +2308,6 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 	}
+ 
+ out:
+-	kfree(scratch_leaf);
+ 	btrfs_free_path(path);
+ 
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
 -- 
 2.6.2
 

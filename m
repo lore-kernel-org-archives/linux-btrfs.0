@@ -1,125 +1,135 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:65141 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S966010AbbJVXrc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 22 Oct 2015 19:47:32 -0400
-Subject: Re: Exclusive quota of snapshot exceeded despite no space used
-To: Johannes Henninger <johannes+btrfs@henninger.io>,
-        linux-btrfs@vger.kernel.org
-References: <56294960.10406@henninger.io>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5629758D.203@gmx.com>
-Date: Fri, 23 Oct 2015 07:47:25 +0800
+Received: from james.kirk.hungrycats.org ([174.142.39.145]:48404 "EHLO
+	james.kirk.hungrycats.org" rhost-flags-OK-FAIL-OK-FAIL)
+	by vger.kernel.org with ESMTP id S965951AbbJWAPA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 22 Oct 2015 20:15:00 -0400
+Date: Thu, 22 Oct 2015 20:14:59 -0400
+From: Zygo Blaxell <ce3g8jdj@umail.furryterror.org>
+To: Timofey Titovets <nefelim4ag@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: [RFC PATCH] btrfs/ioctl.c: Prefer inode with lowest offset as
+ source for clone
+Message-ID: <20151023001459.GF4400@hungrycats.org>
+References: <CAGqmi76ZKv3ezguTyxGL_Jv_xtq5w_SGPvjwTy90Z=oNY73Vmw@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <56294960.10406@henninger.io>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="hK8Uo4Yp55NZU70L"
+In-Reply-To: <CAGqmi76ZKv3ezguTyxGL_Jv_xtq5w_SGPvjwTy90Z=oNY73Vmw@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--hK8Uo4Yp55NZU70L
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-在 2015年10月23日 04:38, Johannes Henninger 写道:
-> I'm having a weird problem with snapshots and exclusive quotas. After
-> creating a snapshot of a subvolume and setting an exclusive quota of
-> 50MB for the snapshot, everything seems to work fine. I can write
-> approximately 50MB before the quota kicks in.
->
-> However, if I create a snapshot, set an exclusive quota and just wait
-> for some time, I suddenly cannot even create an empty file because I'm
-> getting a "quota exceeded" error. The time until the bug appears seems
-> to vary. During the waiting time, I'm changing neither the snapshot nor
-> the original subvolume. "qgroup show -e" reports an exclusive use of
-> only a few kilobytes for the snapshot, which is nowhere near the limit.
->
-> Steps to reproduce (/media/extern is a fresh and empty btrfs partition):
->
-> Enable quota and create an empty subvolume:
->      root@t420:/media/extern# btrfs quota enable .
->      root@t420:/media/extern# btrfs subvolume create sub
->      Create subvolume './sub'
->
-> Snapshot the subvolume and set a limit:
->      root@t420:/media/extern# btrfs subvolume snapshot sub snap
->      Create a snapshot of 'sub' in './snap'
->      root@t420:/media/extern# cd snap/
->      root@t420:/media/extern/snap# btrfs qgroup limit -e 50M .
->
-> Sometimes it takes "longer" for the quota to kick in, so I'm touching a
-> file every 5 minutes here:
->
->      root@t420:/media/extern/snap# for file in {1..100}; do touch $file;
-> sleep 5m; done
->      touch: cannot touch ‘7’: Disk quota exceeded
->      ^C
->      root@t420:/media/extern/snap# btrfs qgroup show -e .
->      qgroupid         rfer         excl     max_excl
->      --------         ----         ----     --------
->      0/5          16.00KiB     16.00KiB         none
->      0/257        16.00KiB     16.00KiB         none
->      0/258        16.00KiB     16.00KiB     50.00MiB
->
-> Any idea why this happens?
-BTW, to make btrfs qgroup show work, it's better to call sync before 
-qgroup show.
+On Tue, Oct 20, 2015 at 04:29:46PM +0300, Timofey Titovets wrote:
+> For performance reason, leave data at the start of disk, is preferable
+> while deduping
+> It's might sense for the reasons:
+> 1. Spinning rust - start of the disk is much faster
+> 2. Btrfs can deallocate empty data chunk from the end of fs - ie it's com=
+pact fs
 
-It's a known bug that even after qgroup accounting rework, qgroup 
-reserve still has bug and can cause reserved space to underflow, making 
-such problem happen.
+"src" is the extent that is kept, and "dst" is the extent that is
+discarded.  When both extents are shared, the dedup userspace has to
+pass a common "src" with many different "dst" over several extent-same
+calls in order to get rid of all of the references to the "dst" extent.
 
-For such case, btrfs qgroup show won't help as reserved space is not 
-shown in the output.
+If "src" and "dst" are arbitrarily swapped over multiple extent-same calls
+then it becomes impossible to dedup shared extents.  Heck, if there are
+more than two extents even in one extent-same call then it stops working.
 
-One workaround would be, umount the filesystem and mount again.
-Which will reset the underflow reserved space and work for sometime.
+It would be possible to have dedup figure out which extent the kernel
+picked after the fact, but that's totally unnecessary extra work in
+cases where the userspace has a good reason to pick the extents it did
+(e.g. administrator hints about future usage of the files where the
+extents were found).
 
-If it's OK for you to recompile the kernel, you can try the following 
-patchset:
-[PATCH v3 00/21] Rework btrfs qgroup reserved space framework
+Dedup userspace can figure out the physical addresses of the extents
+and rearrange the arguments itself if desired.
 
-Which should solve the problem.
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/ioctl.c | 9 +++++++--
+>  1 file changed, 7 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 3e3e613..3eb77c0 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3074,8 +3074,13 @@ static int btrfs_extent_same(struct inode *src,
+> u64 loff, u64 olen,
+>=20
+>   /* pass original length for comparison so we stay within i_size */
+>   ret =3D btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
+> - if (ret =3D=3D 0)
+> -     ret =3D btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+> + if (ret =3D=3D 0) {
+> +     /* prefer inode with lowest offset as source for clone*/
+> +     if (loff > dest_loff)
+> +         ret =3D btrfs_clone(dst, src, dst_loff, olen, len, loff, 1);
+> +     else
+> +         ret =3D btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+> + }
+>=20
+>   if (same_inode)
+>   unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
+> --=20
+> 2.6.1
 
-Thanks,
-Qu
+> From 5ed3822bc308c726d91a837fbd97ebacaa51e58d Mon Sep 17 00:00:00 2001
+> From: Timofey Titovets <nefelim4ag@gmail.com>
+> Date: Tue, 20 Oct 2015 15:53:20 +0300
+> Subject: [RFC PATCH] btrfs/ioctl.c: Prefer inode with lowest offset as so=
+urce for
+>  clone
+>=20
+> For performance reason, leave data at the start of disk, is preferable
+>=20
+> Signed-off-by: Timofey Titovets <nefelim4ag@gmail.com>
+> ---
+>  fs/btrfs/ioctl.c | 9 +++++++--
+>  1 file changed, 7 insertions(+), 2 deletions(-)
+>=20
+> diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+> index 3e3e613..3eb77c0 100644
+> --- a/fs/btrfs/ioctl.c
+> +++ b/fs/btrfs/ioctl.c
+> @@ -3074,8 +3074,13 @@ static int btrfs_extent_same(struct inode *src, u6=
+4 loff, u64 olen,
+> =20
+>  	/* pass original length for comparison so we stay within i_size */
+>  	ret =3D btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
+> -	if (ret =3D=3D 0)
+> -		ret =3D btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+> +	if (ret =3D=3D 0) {
+> +		/* prefer inode with lowest offset as source for clone*/
+> +		if (loff > dest_loff)
+> +			ret =3D btrfs_clone(dst, src, dst_loff, olen, len, loff, 1);
+> +		else
+> +			ret =3D btrfs_clone(src, dst, loff, olen, len, dst_loff, 1);
+> +	}
+> =20
+>  	if (same_inode)
+>  		unlock_extent(&BTRFS_I(src)->io_tree, same_lock_start,
+> --=20
+> 2.6.1
+>=20
 
->
-> Thanks,
-> Johannes
->
-> System info:
->
->      Linux t420 4.3.0-rc5 #1 SMP Tue Oct 13 13:21:02 CEST 2015 x86_64
-> GNU/Linux
->
->      Label: none  uuid: 9551e3ca-1608-469c-9d8c-77b99ce0e8ec
->          Total devices 1 FS bytes used 816.00KiB
->          devid    1 size 931.51GiB used 2.04GiB path /dev/sdb1
->
->      btrfs-progs v4.1.2
->
->      Data, single: total=8.00MiB, used=256.00KiB
->      System, DUP: total=8.00MiB, used=16.00KiB
->      System, single: total=4.00MiB, used=0.00B
->      Metadata, DUP: total=1.00GiB, used=544.00KiB
->      Metadata, single: total=8.00MiB, used=0.00B
->      GlobalReserve, single: total=16.00MiB, used=0.00B
->
->      [249174.151820]  sdb: sdb1
->      [249184.387377]  sdb: sdb1
->      [249184.573096]  sdb: sdb1
->      [249184.656274] BTRFS: device fsid
-> 9551e3ca-1608-469c-9d8c-77b99ce0e8ec devid 1 transid 3 /dev/sdb1
->      [249186.323915]  sdb: sdb1
->      [249186.534505]  sdb: sdb1
->      [249186.538420]  sdb: sdb1
->      [249196.781978] BTRFS info (device sdb1): disk space caching is enabled
->      [249196.781986] BTRFS: has skinny extents
->      [249196.781990] BTRFS: flagging fs with big metadata feature
->      [249196.818164] BTRFS: creating UUID tree
->      [249202.311983] BTRFS info (device sdb1): qgroup scan completed
-> (inconsistency flag cleared)
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+
+--hK8Uo4Yp55NZU70L
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlYpfAMACgkQgfmLGlazG5wiiACgif8R4AZx61aVHUsahDqUyhVs
+lNgAoL8AF1d+CWPo9meWEUKc47FotsUr
+=8lhB
+-----END PGP SIGNATURE-----
+
+--hK8Uo4Yp55NZU70L--

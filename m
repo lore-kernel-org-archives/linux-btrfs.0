@@ -1,55 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail1.vodafone.ie ([213.233.128.43]:58563 "EHLO
-	mail1.vodafone.ie" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751844AbbJXMCZ (ORCPT
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:34693 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752140AbbJXP2q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Oct 2015 08:02:25 -0400
-Subject: Re: [PATCH v7 5/4] copy_file_range.2: New page documenting
- copy_file_range()
-To: Anna Schumaker <Anna.Schumaker@netapp.com>, linux-nfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, zab@zabbo.net, viro@zeniv.linux.org.uk,
-        clm@fb.com, darrick.wong@oracle.com, mtk.manpages@gmail.com,
-        andros@netapp.com, hch@infradead.org
-References: <1445628736-13058-1-git-send-email-Anna.Schumaker@Netapp.com>
- <1445628736-13058-6-git-send-email-Anna.Schumaker@Netapp.com>
-From: =?UTF-8?Q?P=c3=a1draig_Brady?= <P@draigBrady.com>
-Message-ID: <562B734D.50800@draigBrady.com>
-Date: Sat, 24 Oct 2015 13:02:21 +0100
-MIME-Version: 1.0
-In-Reply-To: <1445628736-13058-6-git-send-email-Anna.Schumaker@Netapp.com>
-Content-Type: text/plain; charset=windows-1252
+	Sat, 24 Oct 2015 11:28:46 -0400
+Received: by padhk11 with SMTP id hk11so144702922pad.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Oct 2015 08:28:45 -0700 (PDT)
+From: Peng Tao <tao.peng@primarydata.com>
+To: linux-fsdevel@vger.kernel.org
+Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
+        Anna Schumaker <anna.schumaker@netapp.com>,
+        Christoph Hellwig <hch@infradead.org>, Zach Brown <zab@zabbo.net>,
+        Darren Hart <dvhart@linux.intel.com>,
+        Jeff Layton <jeff.layton@primarydata.com>, bfields@fieldses.org,
+        "Darrick J. Wong" <darrick.wong@oracle.com>, viro@zeniv.linux.org.uk,
+        linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org,
+        Steve French <steve.french@primarydata.com>,
+        Peng Tao <tao.peng@primarydata.com>
+Subject: [PATCH 0/9] vfs: move btrfs clone ioctls to common code
+Date: Sun, 25 Oct 2015 07:17:07 +0800
+Message-Id: <1445728636-10109-1-git-send-email-tao.peng@primarydata.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23/10/15 20:32, Anna Schumaker wrote:
-> +    len = stat.st_size;
-> +
-> +    fd_out = open(argv[2], O_CREAT|O_WRONLY|O_TRUNC, 0644);
-> +    if (fd_out == \-1) {
-> +        perror("open (argv[2])");
-> +        exit(EXIT_FAILURE);
-> +    }
-> +
-> +    do {
-> +        ret = copy_file_range(fd_in, NULL, fd_out, NULL, len, 0);
-> +        if (ret == \-1) {
-> +            perror("copy_file_range");
-> +            exit(EXIT_FAILURE);
-> +        }
-> +
-> +        len \-= ret;
-> +    } while (len > 0);
+Hi all,
 
-Is this an infinite loop if len decreases before the copy completes?
-Perhaps this should be: while (len && ret);
+This patchset moves BTRFS_IOC_CLONE/BTRFS_IOC_CLONE_RANGE to common vfs
+layer and adds NFS42 CLONE support to knfsd.
 
-Otherwise this set looks good.
+It is based on top of Trond's linux-next branch (a85240d254) and Anna's latest
+sys_copy_file_range work (v7).
 
-I'm a bit worried about the sparse expansion and default reflinking
-which might preclude cp(1) from using this call in most cases, but I will
-test and try to use it. coreutils has heuristics for determining if files
-are remote, which we might use to restrict to that use case.
+With this, btrfs/cifs/nfs all handle CLONE/CLONE_RANGE ioctls through the
+.copy_file_range method instead of each implementing them in the private
+ioctl handlers.
 
-thanks,
-Pádraig.
+Cheers,
+Tao
+
+Anna Schumaker (2):
+  nfsd: Pass filehandle to nfs4_preprocess_stateid_op()
+  NFSD: Implement the CLONE call
+
+Peng Tao (7):
+  vfs: add COPY_FILE_CLONE_ONLY flag
+  cifs: add .copy_file_range file operation
+  nfs42: add .copy_file_range file operation
+  vfs: pull btrfs clone API to vfs layer
+  btrfs: remove btrfs_ioctl_clone(_range)
+  cifs: remove private handler of BTRFS_IOC_CLONE
+  nfs42: remove private clone ioctl handler
+
+ fs/btrfs/ioctl.c        |  49 ------------------
+ fs/cifs/cifsfs.c        |  22 ++++++++
+ fs/cifs/cifsfs.h        |   4 +-
+ fs/cifs/ioctl.c         | 103 ++++++++++++++++++++-----------------
+ fs/ioctl.c              |  40 +++++++++++++++
+ fs/nfs/nfs4file.c       | 133 +++++++++---------------------------------------
+ fs/nfsd/nfs4proc.c      |  96 +++++++++++++++++++++++++++++++---
+ fs/nfsd/nfs4state.c     |   6 +--
+ fs/nfsd/nfs4xdr.c       |  21 ++++++++
+ fs/nfsd/state.h         |   5 +-
+ fs/nfsd/vfs.c           |  12 +++++
+ fs/nfsd/vfs.h           |   1 +
+ fs/nfsd/xdr4.h          |  10 ++++
+ fs/read_write.c         |   9 ++--
+ include/linux/fs.h      |   3 ++
+ include/linux/nfs4.h    |   4 +-
+ include/uapi/linux/fs.h |   9 ++++
+ 17 files changed, 303 insertions(+), 224 deletions(-)
+
+-- 
+1.8.3.1
+

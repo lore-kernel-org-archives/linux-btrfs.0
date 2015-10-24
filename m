@@ -1,11 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f44.google.com ([209.85.220.44]:34693 "EHLO
-	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752140AbbJXP2q (ORCPT
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:33349 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752373AbbJXP2x (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Oct 2015 11:28:46 -0400
-Received: by padhk11 with SMTP id hk11so144702922pad.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 24 Oct 2015 08:28:45 -0700 (PDT)
+	Sat, 24 Oct 2015 11:28:53 -0400
+Received: by pabrc13 with SMTP id rc13so144292928pab.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Oct 2015 08:28:52 -0700 (PDT)
 From: Peng Tao <tao.peng@primarydata.com>
 To: linux-fsdevel@vger.kernel.org
 Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
@@ -18,59 +18,77 @@ Cc: Trond Myklebust <trond.myklebust@primarydata.com>,
         linux-cifs@vger.kernel.org,
         Steve French <steve.french@primarydata.com>,
         Peng Tao <tao.peng@primarydata.com>
-Subject: [PATCH 0/9] vfs: move btrfs clone ioctls to common code
-Date: Sun, 25 Oct 2015 07:17:07 +0800
-Message-Id: <1445728636-10109-1-git-send-email-tao.peng@primarydata.com>
+Subject: [PATCH 1/9] vfs: add COPY_FILE_CLONE_ONLY flag
+Date: Sun, 25 Oct 2015 07:17:08 +0800
+Message-Id: <1445728636-10109-2-git-send-email-tao.peng@primarydata.com>
+In-Reply-To: <1445728636-10109-1-git-send-email-tao.peng@primarydata.com>
+References: <1445728636-10109-1-git-send-email-tao.peng@primarydata.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi all,
+To tell file system not to return partial success in the
+.copy_file_range method. This is useful to implement the
+clone (or reflink) functionality.
 
-This patchset moves BTRFS_IOC_CLONE/BTRFS_IOC_CLONE_RANGE to common vfs
-layer and adds NFS42 CLONE support to knfsd.
+COPY_FILE_CLONE_ONLY is added only to include/linux/fs.h
+and thus is not exposed to users. We can replace it with
+something like Anna's COPY_FR_REFLINK in uapi/fs.h when
+implementing new user visiable APIs like sys_clone.
 
-It is based on top of Trond's linux-next branch (a85240d254) and Anna's latest
-sys_copy_file_range work (v7).
+Signed-off-by: Peng Tao <tao.peng@primarydata.com>
+---
+ fs/read_write.c    | 9 +++++----
+ include/linux/fs.h | 3 +++
+ 2 files changed, 8 insertions(+), 4 deletions(-)
 
-With this, btrfs/cifs/nfs all handle CLONE/CLONE_RANGE ioctls through the
-.copy_file_range method instead of each implementing them in the private
-ioctl handlers.
-
-Cheers,
-Tao
-
-Anna Schumaker (2):
-  nfsd: Pass filehandle to nfs4_preprocess_stateid_op()
-  NFSD: Implement the CLONE call
-
-Peng Tao (7):
-  vfs: add COPY_FILE_CLONE_ONLY flag
-  cifs: add .copy_file_range file operation
-  nfs42: add .copy_file_range file operation
-  vfs: pull btrfs clone API to vfs layer
-  btrfs: remove btrfs_ioctl_clone(_range)
-  cifs: remove private handler of BTRFS_IOC_CLONE
-  nfs42: remove private clone ioctl handler
-
- fs/btrfs/ioctl.c        |  49 ------------------
- fs/cifs/cifsfs.c        |  22 ++++++++
- fs/cifs/cifsfs.h        |   4 +-
- fs/cifs/ioctl.c         | 103 ++++++++++++++++++++-----------------
- fs/ioctl.c              |  40 +++++++++++++++
- fs/nfs/nfs4file.c       | 133 +++++++++---------------------------------------
- fs/nfsd/nfs4proc.c      |  96 +++++++++++++++++++++++++++++++---
- fs/nfsd/nfs4state.c     |   6 +--
- fs/nfsd/nfs4xdr.c       |  21 ++++++++
- fs/nfsd/state.h         |   5 +-
- fs/nfsd/vfs.c           |  12 +++++
- fs/nfsd/vfs.h           |   1 +
- fs/nfsd/xdr4.h          |  10 ++++
- fs/read_write.c         |   9 ++--
- include/linux/fs.h      |   3 ++
- include/linux/nfs4.h    |   4 +-
- include/uapi/linux/fs.h |   9 ++++
- 17 files changed, 303 insertions(+), 224 deletions(-)
-
+diff --git a/fs/read_write.c b/fs/read_write.c
+index d2da7e4..da11a7f 100644
+--- a/fs/read_write.c
++++ b/fs/read_write.c
+@@ -1349,8 +1349,9 @@ static ssize_t vfs_copy_fr_copy(struct file *file_in, loff_t pos_in,
+ 
+ /*
+  * copy_file_range() differs from regular file read and write in that it
+- * specifically allows return partial success.  When it does so is up to
+- * the copy_file_range method.
++ * specifically allows returning partial success when COPY_FILE_CLONE_ONLY
++ * is not set in the flags argument, in which case it is up to the file system
++ * to decide whether it wants to do so in the copy_file_range method.
+  */
+ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+ 			    struct file *file_out, loff_t pos_out,
+@@ -1360,7 +1361,7 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+ 	struct inode *inode_out = file_inode(file_out);
+ 	ssize_t ret;
+ 
+-	if (flags != 0)
++	if (flags && flags != COPY_FILE_CLONE_ONLY)
+ 		return -EINVAL;
+ 
+ 	if (!(file_in->f_mode & FMODE_READ) ||
+@@ -1385,7 +1386,7 @@ ssize_t vfs_copy_file_range(struct file *file_in, loff_t pos_in,
+ 	if (file_out->f_op->copy_file_range)
+ 		ret = file_out->f_op->copy_file_range(file_in, pos_in, file_out,
+ 						      pos_out, len, flags);
+-	if (ret == -EOPNOTSUPP)
++	if (ret == -EOPNOTSUPP && !(flags & COPY_FILE_CLONE_ONLY))
+ 		ret = vfs_copy_fr_copy(file_in, pos_in, file_out, pos_out, len);
+ 
+ 	if (ret > 0) {
+diff --git a/include/linux/fs.h b/include/linux/fs.h
+index 6220307..1c430fd 100644
+--- a/include/linux/fs.h
++++ b/include/linux/fs.h
+@@ -1610,6 +1610,9 @@ struct block_device_operations;
+ 
+ struct iov_iter;
+ 
++/* Tell file system not to return partial success in copy_file_range method */
++#define COPY_FILE_CLONE_ONLY		(1 << 0)
++
+ struct file_operations {
+ 	struct module *owner;
+ 	loff_t (*llseek) (struct file *, loff_t, int);
 -- 
 1.8.3.1
 

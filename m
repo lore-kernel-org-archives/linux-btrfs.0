@@ -1,51 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from kolouchovi.com.246.248.89.in-addr.arpa ([89.248.246.154]:40888
-	"EHLO mail.kolouch.org" rhost-flags-OK-FAIL-OK-OK) by vger.kernel.org
-	with ESMTP id S1751253AbbJXRl7 convert rfc822-to-8bit (ORCPT
+Received: from mail-io0-f175.google.com ([209.85.223.175]:33806 "EHLO
+	mail-io0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751786AbbJXRwV convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Oct 2015 13:41:59 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mail.kolouch.org (Postfix) with ESMTP id 1B31929D2E0E
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 Oct 2015 19:36:24 +0200 (CEST)
-Received: from mail.kolouch.org ([127.0.0.1])
-	by localhost (localhost [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id cI09qhokh48T for <linux-btrfs@vger.kernel.org>;
-	Sat, 24 Oct 2015 19:36:19 +0200 (CEST)
-Received: from nbnb1 (unknown [89.248.244.226])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (256/256 bits))
-	(No client certificate requested)
-	by mail.kolouch.org (Postfix) with ESMTPSA id E263729D2E09
-	for <linux-btrfs@vger.kernel.org>; Sat, 24 Oct 2015 19:36:18 +0200 (CEST)
-Date: Sat, 24 Oct 2015 19:36:17 +0200
-From: kolcon@kolcon.net
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs double send
-Message-ID: <20151024173617.GA26012@nbnb1>
+	Sat, 24 Oct 2015 13:52:21 -0400
+Received: by iow1 with SMTP id 1so151785262iow.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 24 Oct 2015 10:52:21 -0700 (PDT)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <20151024173617.GA26012@nbnb1>
+References: <20151024173617.GA26012@nbnb1>
+Date: Sat, 24 Oct 2015 18:52:21 +0100
+Message-ID: <CAL3q7H5H_Qdq0NAhiDOVw=JLYPJPuHhhSZPgUSQm=oYN+yXK=g@mail.gmail.com>
+Subject: Re: btrfs double send
+From: Filipe Manana <fdmanana@gmail.com>
+To: kolcon@kolcon.net
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+On Sat, Oct 24, 2015 at 6:36 PM,  <kolcon@kolcon.net> wrote:
+> Hello,
+>
+> I would like to do backups based on btrfs send/receive.
+>
+> So I though I would do a transfer over portable HDD and then incremental
+> sends (using -p) over network.
+>
+> Initial :
+>
+> btrfs send "all" (primary HDD) →  btrfs receive (portable HDD) →  btrfs
+> send/receive (final HDD)
+>
+> Later :
+>
+> btrfs send -p "all" new →  ssh newhost "btrfs receive … "
+>
+> But I found out that does not work. It complains parent not found.
+>
+> Am I doing something wrong, or is it intended behaviour?
 
-I would like to do backups based on btrfs send/receive.
+It's a bug, we got it recently reported and fixed.
+The fix is in Chris' integration branch for the upcoming 4.4 merge window:
 
-So I though I would do a transfer over portable HDD and then incremental
-sends (using -p) over network.
+http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/commit/?h=integration-4.4&id=b96b1db039ebc584d03a9933b279e0d3e704c528
 
-Initial :
+cheers
+>
+> Best regards,
+>
+> Lubos
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-btrfs send "all" (primary HDD) →  btrfs receive (portable HDD) →  btrfs 
-send/receive (final HDD)
 
-Later :
 
-btrfs send -p "all" new →  ssh newhost "btrfs receive … "
+-- 
+Filipe David Manana,
 
-But I found out that does not work. It complains parent not found.
-
-Am I doing something wrong, or is it intended behaviour?
-
-Best regards,
-
-Lubos
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

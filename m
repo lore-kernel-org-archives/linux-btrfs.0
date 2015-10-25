@@ -1,700 +1,214 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:36321 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751099AbbJYKEc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 25 Oct 2015 06:04:32 -0400
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: stephane_btrfs@lesimple.fr, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 2/2 v2] Btrfs: fix regression running delayed references when using qgroups
-Date: Sun, 25 Oct 2015 10:04:01 +0000
-Message-Id: <1445767453-16233-2-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1445767453-16233-1-git-send-email-fdmanana@kernel.org>
-References: <1445767453-16233-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:33187 "EHLO
+	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751248AbbJYOjl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 25 Oct 2015 10:39:41 -0400
+Received: by igbkq10 with SMTP id kq10so59119779igb.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2015 07:39:40 -0700 (PDT)
 MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1444702827-18169-7-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
+	<1444702827-18169-7-git-send-email-quwenruo@cn.fujitsu.com>
+Date: Sun, 25 Oct 2015 14:39:40 +0000
+Message-ID: <CAL3q7H7mvHDYESXYHVYxJC7Yr+yXbvmajaRkWO7nu6iZBOYmSQ@mail.gmail.com>
+Subject: Re: [PATCH v3 06/21] btrfs: delayed_ref: Add new function to record
+ reserved space into delayed ref
+From: Filipe Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Tue, Oct 13, 2015 at 3:20 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+> Add new function btrfs_add_delayed_qgroup_reserve() function to record
+> how much space is reserved for that extent.
+>
+> As btrfs only accounts qgroup at run_delayed_refs() time, so newly
+> allocated extent should keep the reserved space until then.
+>
+> So add needed function with related members to do it.
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> v2:
+>   None
+> v3:
+>   None
+> ---
+>  fs/btrfs/delayed-ref.c | 29 +++++++++++++++++++++++++++++
+>  fs/btrfs/delayed-ref.h | 14 ++++++++++++++
+>  2 files changed, 43 insertions(+)
+>
+> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+> index ac3e81d..bd9b63b 100644
+> --- a/fs/btrfs/delayed-ref.c
+> +++ b/fs/btrfs/delayed-ref.c
+> @@ -476,6 +476,8 @@ add_delayed_ref_head(struct btrfs_fs_info *fs_info,
+>         INIT_LIST_HEAD(&head_ref->ref_list);
+>         head_ref->processing = 0;
+>         head_ref->total_ref_mod = count_mod;
+> +       head_ref->qgroup_reserved = 0;
+> +       head_ref->qgroup_ref_root = 0;
+>
+>         /* Record qgroup extent info if provided */
+>         if (qrecord) {
+> @@ -746,6 +748,33 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+>         return 0;
+>  }
+>
+> +int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
+> +                                    struct btrfs_trans_handle *trans,
+> +                                    u64 ref_root, u64 bytenr, u64 num_bytes)
+> +{
+> +       struct btrfs_delayed_ref_root *delayed_refs;
+> +       struct btrfs_delayed_ref_head *ref_head;
+> +       int ret = 0;
+> +
+> +       if (!fs_info->quota_enabled || !is_fstree(ref_root))
+> +               return 0;
+> +
+> +       delayed_refs = &trans->transaction->delayed_refs;
+> +
+> +       spin_lock(&delayed_refs->lock);
+> +       ref_head = find_ref_head(&delayed_refs->href_root, bytenr, 0);
+> +       if (!ref_head) {
+> +               ret = -ENOENT;
+> +               goto out;
+> +       }
 
-In the kernel 4.2 merge window we had a big changes to the implementation
-of delayed references and qgroups which made the no_quota field of delayed
-references not used anymore. More specifically the no_quota field is not
-used anymore as of:
+Hi Qu,
 
-  commit 0ed4792af0e8 ("btrfs: qgroup: Switch to new extent-oriented qgroup mechanism.")
+So while running btrfs/063, with qgroups enabled (I modified the test
+to enable qgroups), ran into this 2 times:
 
-Leaving the no_quota field actually prevents delayed references from
-getting merged, which in turn cause the following BUG_ON(), at
-fs/btrfs/extent-tree.c, to be hit when qgroups are enabled:
+[169125.246506] BTRFS info (device sdc): disk space caching is enabled
+[169125.363164] ------------[ cut here ]------------
+[169125.365236] WARNING: CPU: 10 PID: 2827 at fs/btrfs/inode.c:2929
+btrfs_finish_ordered_io+0x347/0x4eb [btrfs]()
+[169125.367702] BTRFS: Transaction aborted (error -2)
+[169125.368830] Modules linked in: btrfs dm_flakey dm_mod
+crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs
+lockd grace fscache sunrpc loop fuse parport_pc parport i2c_piix4
+psmouse acpi_cpufreq microcode pcspkr processor evdev i2c_core
+serio_raw button ext4 crc16 jbd2 mbcache sd_mod sg sr_mod cdrom
+ata_generic virtio_scsi ata_piix libata floppy virtio_pci virtio_ring
+scsi_mod e1000 virtio [last unloaded: btrfs]
+[169125.376755] CPU: 10 PID: 2827 Comm: kworker/u32:14 Tainted: G
+  W       4.3.0-rc5-btrfs-next-17+ #1
+[169125.378522] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996),
+BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org
+04/01/2014
+[169125.380916] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+[169125.382167]  0000000000000000 ffff88007ef2bc28 ffffffff812566f4
+ffff88007ef2bc70
+[169125.383643]  ffff88007ef2bc60 ffffffff8104d0a6 ffffffffa03cac33
+ffff8801f5ca6db0
+[169125.385197]  ffff8802c6c7ee98 ffff880122bc1000 00000000fffffffe
+ffff88007ef2bcc8
+[169125.386691] Call Trace:
+[169125.387194]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
+[169125.388205]  [<ffffffff8104d0a6>] warn_slowpath_common+0x9f/0xb8
+[169125.389386]  [<ffffffffa03cac33>] ?
+btrfs_finish_ordered_io+0x347/0x4eb [btrfs]
+[169125.390837]  [<ffffffff8104d107>] warn_slowpath_fmt+0x48/0x50
+[169125.391839]  [<ffffffffa03d67bb>] ? unpin_extent_cache+0xbe/0xcc [btrfs]
+[169125.392973]  [<ffffffffa03cac33>]
+btrfs_finish_ordered_io+0x347/0x4eb [btrfs]
+[169125.395714]  [<ffffffff8147c612>] ? _raw_spin_unlock_irqrestore+0x38/0x60
+[169125.396888]  [<ffffffff81087d0b>] ? trace_hardirqs_off_caller+0x1f/0xb9
+[169125.397986]  [<ffffffffa03cadec>] finish_ordered_fn+0x15/0x17 [btrfs]
+[169125.399122]  [<ffffffffa03ec706>] normal_work_helper+0x14c/0x32a [btrfs]
+[169125.400300]  [<ffffffffa03ec9e6>] btrfs_endio_write_helper+0x12/0x14 [btrfs]
+[169125.401450]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
+[169125.402631]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
+[169125.403622]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
+[169125.404693]  [<ffffffff8106904d>] kthread+0xef/0xf7
+[169125.405727]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+[169125.406808]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
+[169125.407834]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+[169125.408840] ---[ end trace 6ee4342a5722b119 ]---
+[169125.409654] BTRFS: error (device sdc) in
+btrfs_finish_ordered_io:2929: errno=-2 No such entry
 
-  static int run_delayed_tree_ref(...)
-  {
-     (...)
-     BUG_ON(node->ref_mod != 1);
-     (...)
-  }
+So what you have here is racy:
 
-This happens on a scenario like the following:
+btrfs_finish_ordered_io()
+   joins existing transaction (or starts a new one)
+   insert_reserved_file_extent()
+      btrfs_alloc_reserved_file_extent() --> creates delayed ref
 
-  1) Ref1 bytenr X, action = BTRFS_ADD_DELAYED_REF, no_quota = 1, added.
+      ******* delayed refs are run, someone called
+btrfs_async_run_delayed_refs() from btrfs_end_transaction(), ref head
+is removed ******
 
-  2) Ref2 bytenr X, action = BTRFS_DROP_DELAYED_REF, no_quota = 0, added.
-     It's not merged with Ref1 because Ref1->no_quota != Ref2->no_quota.
+      btrfs_add_delayed_qgroup_reserve() --> does not find delayed ref
+head, returns -ENOENT and finish_ordered_io aborts current
+transaction...
 
-  3) Ref3 bytenr X, action = BTRFS_ADD_DELAYED_REF, no_quota = 1, added.
-     It's not merged with the reference at the tail of the list of refs
-     for bytenr X because the reference at the tail, Ref2 is incompatible
-     due to Ref2->no_quota != Ref3->no_quota.
+A very tiny race, but...
 
-  4) Ref4 bytenr X, action = BTRFS_DROP_DELAYED_REF, no_quota = 0, added.
-     It's not merged with the reference at the tail of the list of refs
-     for bytenr X because the reference at the tail, Ref3 is incompatible
-     due to Ref3->no_quota != Ref4->no_quota.
+thanks
 
-  5) We run delayed references, trigger merging of delayed references,
-     through __btrfs_run_delayed_refs() -> btrfs_merge_delayed_refs().
 
-  6) Ref1 and Ref3 are merged as Ref1->no_quota = Ref3->no_quota and
-     all other conditions are satisfied too. So Ref1 gets a ref_mod
-     value of 2.
+> +       WARN_ON(ref_head->qgroup_reserved || ref_head->qgroup_ref_root);
+> +       ref_head->qgroup_ref_root = ref_root;
+> +       ref_head->qgroup_reserved = num_bytes;
+> +out:
+> +       spin_unlock(&delayed_refs->lock);
+> +       return ret;
+> +}
+> +
+>  int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+>                                 struct btrfs_trans_handle *trans,
+>                                 u64 bytenr, u64 num_bytes,
+> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+> index 13fb5e6..d4c41e2 100644
+> --- a/fs/btrfs/delayed-ref.h
+> +++ b/fs/btrfs/delayed-ref.h
+> @@ -113,6 +113,17 @@ struct btrfs_delayed_ref_head {
+>         int total_ref_mod;
+>
+>         /*
+> +        * For qgroup reserved space freeing.
+> +        *
+> +        * ref_root and reserved will be recorded after
+> +        * BTRFS_ADD_DELAYED_EXTENT is called.
+> +        * And will be used to free reserved qgroup space at
+> +        * run_delayed_refs() time.
+> +        */
+> +       u64 qgroup_ref_root;
+> +       u64 qgroup_reserved;
+> +
+> +       /*
+>          * when a new extent is allocated, it is just reserved in memory
+>          * The actual extent isn't inserted into the extent allocation tree
+>          * until the delayed ref is processed.  must_insert_reserved is
+> @@ -242,6 +253,9 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+>                                u64 owner, u64 offset, int action,
+>                                struct btrfs_delayed_extent_op *extent_op,
+>                                int no_quota);
+> +int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
+> +                                    struct btrfs_trans_handle *trans,
+> +                                    u64 ref_root, u64 bytenr, u64 num_bytes);
+>  int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
+>                                 struct btrfs_trans_handle *trans,
+>                                 u64 bytenr, u64 num_bytes,
+> --
+> 2.6.1
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-  7) Ref2 and Ref4 are merged as Ref2->no_quota = Ref4->no_quota and
-     all other conditions are satisfied too. So Ref2 gets a ref_mod
-     value of 2.
 
-  8) Ref1 and Ref2 aren't merged, because they have different values
-     for their no_quota field.
 
-  9) Delayed reference Ref1 is picked for running (select_delayed_ref()
-     always prefers references with an action == BTRFS_ADD_DELAYED_REF).
-     So run_delayed_tree_ref() is called for Ref1 which triggers the
-     BUG_ON because Ref1->red_mod != 1 (equals 2).
-
-So fix this by removing the no_quota field, as it's not used anymore as
-of commit 0ed4792af0e8 ("btrfs: qgroup: Switch to new extent-oriented
-qgroup mechanism.").
-
-This fixes the remainder of problems several people have been having when
-running delayed references, mostly while a balance is running in parallel,
-on a 4.2+ kernel.
-
-Very special thanks to Stéphane Lesimple for helping debugging this issue
-and testing this fix on his multi terabyte filesystem (which took more
-than one day to balance alone, plus fsck, etc).
-
-Reported-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
-Tested-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
-Cc: stable@vger.kernel.org  # 4.2+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: There was no v1. But since the first patch in the series became
-    a v2, made this one a v2 from the start.
-
- fs/btrfs/ctree.h       |  4 ++--
- fs/btrfs/delayed-ref.c | 28 +++++++----------------
- fs/btrfs/delayed-ref.h |  7 ++----
- fs/btrfs/extent-tree.c | 45 +++++++++++++-----------------------
- fs/btrfs/file.c        | 10 ++++----
- fs/btrfs/inode.c       |  4 ++--
- fs/btrfs/ioctl.c       | 62 +-------------------------------------------------
- fs/btrfs/relocation.c  | 16 ++++++-------
- fs/btrfs/tree-log.c    |  2 +-
- 9 files changed, 44 insertions(+), 134 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 49bc792..43eb981 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3398,7 +3398,7 @@ int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
- int btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		      struct btrfs_root *root,
- 		      u64 bytenr, u64 num_bytes, u64 parent, u64 root_objectid,
--		      u64 owner, u64 offset, int no_quota);
-+		      u64 owner, u64 offset);
- 
- int btrfs_free_reserved_extent(struct btrfs_root *root, u64 start, u64 len,
- 			       int delalloc);
-@@ -3411,7 +3411,7 @@ int btrfs_finish_extent_commit(struct btrfs_trans_handle *trans,
- int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 			 struct btrfs_root *root,
- 			 u64 bytenr, u64 num_bytes, u64 parent,
--			 u64 root_objectid, u64 owner, u64 offset, int no_quota);
-+			 u64 root_objectid, u64 owner, u64 offset);
- 
- int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans,
- 				   struct btrfs_root *root);
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 4832943..7832031 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -220,7 +220,7 @@ static bool merge_ref(struct btrfs_trans_handle *trans,
- 		if (seq && next->seq >= seq)
- 			goto next;
- 
--		if (next->type != ref->type || next->no_quota != ref->no_quota)
-+		if (next->type != ref->type)
- 			goto next;
- 
- 		if ((ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
-@@ -405,8 +405,7 @@ add_delayed_ref_tail_merge(struct btrfs_trans_handle *trans,
- 	exist = list_entry(href->ref_list.prev, struct btrfs_delayed_ref_node,
- 			   list);
- 	/* No need to compare bytenr nor is_head */
--	if (exist->type != ref->type || exist->no_quota != ref->no_quota ||
--	    exist->seq != ref->seq)
-+	if (exist->type != ref->type || exist->seq != ref->seq)
- 		goto add_tail;
- 
- 	if ((exist->type == BTRFS_TREE_BLOCK_REF_KEY ||
-@@ -637,7 +636,7 @@ add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 		     struct btrfs_delayed_ref_head *head_ref,
- 		     struct btrfs_delayed_ref_node *ref, u64 bytenr,
- 		     u64 num_bytes, u64 parent, u64 ref_root, int level,
--		     int action, int no_quota)
-+		     int action)
- {
- 	struct btrfs_delayed_tree_ref *full_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
-@@ -659,7 +658,6 @@ add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 	ref->action = action;
- 	ref->is_head = 0;
- 	ref->in_tree = 1;
--	ref->no_quota = no_quota;
- 	ref->seq = seq;
- 
- 	full_ref = btrfs_delayed_node_to_tree_ref(ref);
-@@ -692,7 +690,7 @@ add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 		     struct btrfs_delayed_ref_head *head_ref,
- 		     struct btrfs_delayed_ref_node *ref, u64 bytenr,
- 		     u64 num_bytes, u64 parent, u64 ref_root, u64 owner,
--		     u64 offset, int action, int no_quota)
-+		     u64 offset, int action)
- {
- 	struct btrfs_delayed_data_ref *full_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
-@@ -715,7 +713,6 @@ add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 	ref->action = action;
- 	ref->is_head = 0;
- 	ref->in_tree = 1;
--	ref->no_quota = no_quota;
- 	ref->seq = seq;
- 
- 	full_ref = btrfs_delayed_node_to_data_ref(ref);
-@@ -746,17 +743,13 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root,  int level, int action,
--			       struct btrfs_delayed_extent_op *extent_op,
--			       int no_quota)
-+			       struct btrfs_delayed_extent_op *extent_op)
- {
- 	struct btrfs_delayed_tree_ref *ref;
- 	struct btrfs_delayed_ref_head *head_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_qgroup_extent_record *record = NULL;
- 
--	if (!is_fstree(ref_root) || !fs_info->quota_enabled)
--		no_quota = 0;
--
- 	BUG_ON(extent_op && extent_op->is_data);
- 	ref = kmem_cache_alloc(btrfs_delayed_tree_ref_cachep, GFP_NOFS);
- 	if (!ref)
-@@ -785,8 +778,7 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 					bytenr, num_bytes, action, 0);
- 
- 	add_delayed_tree_ref(fs_info, trans, head_ref, &ref->node, bytenr,
--				   num_bytes, parent, ref_root, level, action,
--				   no_quota);
-+			     num_bytes, parent, ref_root, level, action);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	return 0;
-@@ -807,17 +799,13 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 			       u64 bytenr, u64 num_bytes,
- 			       u64 parent, u64 ref_root,
- 			       u64 owner, u64 offset, int action,
--			       struct btrfs_delayed_extent_op *extent_op,
--			       int no_quota)
-+			       struct btrfs_delayed_extent_op *extent_op)
- {
- 	struct btrfs_delayed_data_ref *ref;
- 	struct btrfs_delayed_ref_head *head_ref;
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_qgroup_extent_record *record = NULL;
- 
--	if (!is_fstree(ref_root) || !fs_info->quota_enabled)
--		no_quota = 0;
--
- 	BUG_ON(extent_op && !extent_op->is_data);
- 	ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
- 	if (!ref)
-@@ -853,7 +841,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 
- 	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
- 				   num_bytes, parent, ref_root, owner, offset,
--				   action, no_quota);
-+				   action);
- 	spin_unlock(&delayed_refs->lock);
- 
- 	return 0;
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 13fb5e6..930887a 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -68,7 +68,6 @@ struct btrfs_delayed_ref_node {
- 
- 	unsigned int action:8;
- 	unsigned int type:8;
--	unsigned int no_quota:1;
- 	/* is this node still in the rbtree? */
- 	unsigned int is_head:1;
- 	unsigned int in_tree:1;
-@@ -233,15 +232,13 @@ int btrfs_add_delayed_tree_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes, u64 parent,
- 			       u64 ref_root, int level, int action,
--			       struct btrfs_delayed_extent_op *extent_op,
--			       int no_quota);
-+			       struct btrfs_delayed_extent_op *extent_op);
- int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
- 			       struct btrfs_trans_handle *trans,
- 			       u64 bytenr, u64 num_bytes,
- 			       u64 parent, u64 ref_root,
- 			       u64 owner, u64 offset, int action,
--			       struct btrfs_delayed_extent_op *extent_op,
--			       int no_quota);
-+			       struct btrfs_delayed_extent_op *extent_op);
- int btrfs_add_delayed_extent_op(struct btrfs_fs_info *fs_info,
- 				struct btrfs_trans_handle *trans,
- 				u64 bytenr, u64 num_bytes,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index dd5756c..fd8cd5a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -95,8 +95,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 				     struct btrfs_root *root,
- 				     u64 parent, u64 root_objectid,
- 				     u64 flags, struct btrfs_disk_key *key,
--				     int level, struct btrfs_key *ins,
--				     int no_quota);
-+				     int level, struct btrfs_key *ins);
- static int do_chunk_alloc(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *extent_root, u64 flags,
- 			  int force);
-@@ -2009,8 +2008,7 @@ int btrfs_discard_extent(struct btrfs_root *root, u64 bytenr,
- int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 			 struct btrfs_root *root,
- 			 u64 bytenr, u64 num_bytes, u64 parent,
--			 u64 root_objectid, u64 owner, u64 offset,
--			 int no_quota)
-+			 u64 root_objectid, u64 owner, u64 offset)
- {
- 	int ret;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -2022,12 +2020,12 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 		ret = btrfs_add_delayed_tree_ref(fs_info, trans, bytenr,
- 					num_bytes,
- 					parent, root_objectid, (int)owner,
--					BTRFS_ADD_DELAYED_REF, NULL, no_quota);
-+					BTRFS_ADD_DELAYED_REF, NULL);
- 	} else {
- 		ret = btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
- 					num_bytes,
- 					parent, root_objectid, owner, offset,
--					BTRFS_ADD_DELAYED_REF, NULL, no_quota);
-+					BTRFS_ADD_DELAYED_REF, NULL);
- 	}
- 	return ret;
- }
-@@ -2048,15 +2046,11 @@ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
- 	u64 num_bytes = node->num_bytes;
- 	u64 refs;
- 	int ret;
--	int no_quota = node->no_quota;
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
- 
--	if (!is_fstree(root_objectid) || !root->fs_info->quota_enabled)
--		no_quota = 1;
--
- 	path->reada = 1;
- 	path->leave_spinning = 1;
- 	/* this will setup the path even if it fails to insert the back ref */
-@@ -2291,8 +2285,7 @@ static int run_delayed_tree_ref(struct btrfs_trans_handle *trans,
- 						parent, ref_root,
- 						extent_op->flags_to_set,
- 						&extent_op->key,
--						ref->level, &ins,
--						node->no_quota);
-+						ref->level, &ins);
- 	} else if (node->action == BTRFS_ADD_DELAYED_REF) {
- 		ret = __btrfs_inc_extent_ref(trans, root, node,
- 					     parent, ref_root,
-@@ -3123,7 +3116,7 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 	int level;
- 	int ret = 0;
- 	int (*process_func)(struct btrfs_trans_handle *, struct btrfs_root *,
--			    u64, u64, u64, u64, u64, u64, int);
-+			    u64, u64, u64, u64, u64, u64);
- 
- 
- 	if (btrfs_test_is_dummy_root(root))
-@@ -3164,15 +3157,14 @@ static int __btrfs_mod_ref(struct btrfs_trans_handle *trans,
- 			key.offset -= btrfs_file_extent_offset(buf, fi);
- 			ret = process_func(trans, root, bytenr, num_bytes,
- 					   parent, ref_root, key.objectid,
--					   key.offset, 1);
-+					   key.offset);
- 			if (ret)
- 				goto fail;
- 		} else {
- 			bytenr = btrfs_node_blockptr(buf, i);
- 			num_bytes = root->nodesize;
- 			ret = process_func(trans, root, bytenr, num_bytes,
--					   parent, ref_root, level - 1, 0,
--					   1);
-+					   parent, ref_root, level - 1, 0);
- 			if (ret)
- 				goto fail;
- 		}
-@@ -6239,7 +6231,6 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
- 	int extent_slot = 0;
- 	int found_extent = 0;
- 	int num_to_del = 1;
--	int no_quota = node->no_quota;
- 	u32 item_size;
- 	u64 refs;
- 	u64 bytenr = node->bytenr;
-@@ -6248,9 +6239,6 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
- 	bool skinny_metadata = btrfs_fs_incompat(root->fs_info,
- 						 SKINNY_METADATA);
- 
--	if (!info->quota_enabled || !is_fstree(root_objectid))
--		no_quota = 1;
--
- 	path = btrfs_alloc_path();
- 	if (!path)
- 		return -ENOMEM;
-@@ -6576,7 +6564,7 @@ void btrfs_free_tree_block(struct btrfs_trans_handle *trans,
- 					buf->start, buf->len,
- 					parent, root->root_key.objectid,
- 					btrfs_header_level(buf),
--					BTRFS_DROP_DELAYED_REF, NULL, 0);
-+					BTRFS_DROP_DELAYED_REF, NULL);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 
-@@ -6624,7 +6612,7 @@ out:
- /* Can return -ENOMEM */
- int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		      u64 bytenr, u64 num_bytes, u64 parent, u64 root_objectid,
--		      u64 owner, u64 offset, int no_quota)
-+		      u64 owner, u64 offset)
- {
- 	int ret;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -6647,13 +6635,13 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		ret = btrfs_add_delayed_tree_ref(fs_info, trans, bytenr,
- 					num_bytes,
- 					parent, root_objectid, (int)owner,
--					BTRFS_DROP_DELAYED_REF, NULL, no_quota);
-+					BTRFS_DROP_DELAYED_REF, NULL);
- 	} else {
- 		ret = btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
- 						num_bytes,
- 						parent, root_objectid, owner,
- 						offset, BTRFS_DROP_DELAYED_REF,
--						NULL, no_quota);
-+						NULL);
- 	}
- 	return ret;
- }
-@@ -7435,8 +7423,7 @@ static int alloc_reserved_tree_block(struct btrfs_trans_handle *trans,
- 				     struct btrfs_root *root,
- 				     u64 parent, u64 root_objectid,
- 				     u64 flags, struct btrfs_disk_key *key,
--				     int level, struct btrfs_key *ins,
--				     int no_quota)
-+				     int level, struct btrfs_key *ins)
- {
- 	int ret;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
-@@ -7526,7 +7513,7 @@ int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	ret = btrfs_add_delayed_data_ref(root->fs_info, trans, ins->objectid,
- 					 ins->offset, 0,
- 					 root_objectid, owner, offset,
--					 BTRFS_ADD_DELAYED_EXTENT, NULL, 0);
-+					 BTRFS_ADD_DELAYED_EXTENT, NULL);
- 	return ret;
- }
- 
-@@ -7740,7 +7727,7 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
- 						 ins.objectid, ins.offset,
- 						 parent, root_objectid, level,
- 						 BTRFS_ADD_DELAYED_EXTENT,
--						 extent_op, 0);
-+						 extent_op);
- 		if (ret)
- 			goto out_free_delayed;
- 	}
-@@ -8289,7 +8276,7 @@ skip:
- 			}
- 		}
- 		ret = btrfs_free_extent(trans, root, bytenr, blocksize, parent,
--				root->root_key.objectid, level - 1, 0, 0);
-+				root->root_key.objectid, level - 1, 0);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 	btrfs_tree_unlock(next);
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 7031e96..243f4bc 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -847,7 +847,7 @@ next_slot:
- 						disk_bytenr, num_bytes, 0,
- 						root->root_key.objectid,
- 						new_key.objectid,
--						start - extent_offset, 1);
-+						start - extent_offset);
- 				BUG_ON(ret); /* -ENOMEM */
- 			}
- 			key.offset = start;
-@@ -925,7 +925,7 @@ delete_extent_item:
- 						disk_bytenr, num_bytes, 0,
- 						root->root_key.objectid,
- 						key.objectid, key.offset -
--						extent_offset, 0);
-+						extent_offset);
- 				BUG_ON(ret); /* -ENOMEM */
- 				inode_sub_bytes(inode,
- 						extent_end - key.offset);
-@@ -1204,7 +1204,7 @@ again:
- 
- 		ret = btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
- 					   root->root_key.objectid,
--					   ino, orig_offset, 1);
-+					   ino, orig_offset);
- 		BUG_ON(ret); /* -ENOMEM */
- 
- 		if (split == start) {
-@@ -1231,7 +1231,7 @@ again:
- 		del_nr++;
- 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
- 					0, root->root_key.objectid,
--					ino, orig_offset, 0);
-+					ino, orig_offset);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 	other_start = 0;
-@@ -1248,7 +1248,7 @@ again:
- 		del_nr++;
- 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
- 					0, root->root_key.objectid,
--					ino, orig_offset, 0);
-+					ino, orig_offset);
- 		BUG_ON(ret); /* -ENOMEM */
- 	}
- 	if (del_nr == 0) {
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5ce55f6..87a01ff 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -2576,7 +2576,7 @@ again:
- 	ret = btrfs_inc_extent_ref(trans, root, new->bytenr,
- 			new->disk_len, 0,
- 			backref->root_id, backref->inum,
--			new->file_pos, 0);	/* start - extent_offset */
-+			new->file_pos);	/* start - extent_offset */
- 	if (ret) {
- 		btrfs_abort_transaction(trans, root, ret);
- 		goto out_free_path;
-@@ -4514,7 +4514,7 @@ delete:
- 			ret = btrfs_free_extent(trans, root, extent_start,
- 						extent_num_bytes, 0,
- 						btrfs_header_owner(leaf),
--						ino, extent_offset, 0);
-+						ino, extent_offset);
- 			BUG_ON(ret);
- 			if (btrfs_should_throttle_delayed_refs(trans, root))
- 				btrfs_async_run_delayed_refs(root,
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 685df7e..9021f0c 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -3202,41 +3202,6 @@ out:
- 	return ret;
- }
- 
--/* Helper to check and see if this root currently has a ref on the given disk
-- * bytenr.  If it does then we need to update the quota for this root.  This
-- * doesn't do anything if quotas aren't enabled.
-- */
--static int check_ref(struct btrfs_trans_handle *trans, struct btrfs_root *root,
--		     u64 disko)
--{
--	struct seq_list tree_mod_seq_elem = SEQ_LIST_INIT(tree_mod_seq_elem);
--	struct ulist *roots;
--	struct ulist_iterator uiter;
--	struct ulist_node *root_node = NULL;
--	int ret;
--
--	if (!root->fs_info->quota_enabled)
--		return 1;
--
--	btrfs_get_tree_mod_seq(root->fs_info, &tree_mod_seq_elem);
--	ret = btrfs_find_all_roots(trans, root->fs_info, disko,
--				   tree_mod_seq_elem.seq, &roots);
--	if (ret < 0)
--		goto out;
--	ret = 0;
--	ULIST_ITER_INIT(&uiter);
--	while ((root_node = ulist_next(roots, &uiter))) {
--		if (root_node->val == root->objectid) {
--			ret = 1;
--			break;
--		}
--	}
--	ulist_free(roots);
--out:
--	btrfs_put_tree_mod_seq(root->fs_info, &tree_mod_seq_elem);
--	return ret;
--}
--
- static int clone_finish_inode_update(struct btrfs_trans_handle *trans,
- 				     struct inode *inode,
- 				     u64 endoff,
-@@ -3495,9 +3460,7 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 	u32 nritems;
- 	int slot;
- 	int ret;
--	int no_quota;
- 	const u64 len = olen_aligned;
--	u64 last_disko = 0;
- 	u64 last_dest_end = destoff;
- 
- 	ret = -ENOMEM;
-@@ -3543,7 +3506,6 @@ static int btrfs_clone(struct inode *src, struct inode *inode,
- 
- 		nritems = btrfs_header_nritems(path->nodes[0]);
- process_slot:
--		no_quota = 1;
- 		if (path->slots[0] >= nritems) {
- 			ret = btrfs_next_leaf(BTRFS_I(src)->root, path);
- 			if (ret < 0)
-@@ -3695,35 +3657,13 @@ process_slot:
- 				btrfs_set_file_extent_num_bytes(leaf, extent,
- 								datal);
- 
--				/*
--				 * We need to look up the roots that point at
--				 * this bytenr and see if the new root does.  If
--				 * it does not we need to make sure we update
--				 * quotas appropriately.
--				 */
--				if (disko && root != BTRFS_I(src)->root &&
--				    disko != last_disko) {
--					no_quota = check_ref(trans, root,
--							     disko);
--					if (no_quota < 0) {
--						btrfs_abort_transaction(trans,
--									root,
--									ret);
--						btrfs_end_transaction(trans,
--								      root);
--						ret = no_quota;
--						goto out;
--					}
--				}
--
- 				if (disko) {
- 					inode_add_bytes(inode, datal);
- 					ret = btrfs_inc_extent_ref(trans, root,
- 							disko, diskl, 0,
- 							root->root_key.objectid,
- 							btrfs_ino(inode),
--							new_key.offset - datao,
--							no_quota);
-+							new_key.offset - datao);
- 					if (ret) {
- 						btrfs_abort_transaction(trans,
- 									root,
-diff --git a/fs/btrfs/relocation.c b/fs/btrfs/relocation.c
-index 58ede0a..2b68441 100644
---- a/fs/btrfs/relocation.c
-+++ b/fs/btrfs/relocation.c
-@@ -1716,7 +1716,7 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
- 		ret = btrfs_inc_extent_ref(trans, root, new_bytenr,
- 					   num_bytes, parent,
- 					   btrfs_header_owner(leaf),
--					   key.objectid, key.offset, 1);
-+					   key.objectid, key.offset);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, root, ret);
- 			break;
-@@ -1724,7 +1724,7 @@ int replace_file_extents(struct btrfs_trans_handle *trans,
- 
- 		ret = btrfs_free_extent(trans, root, bytenr, num_bytes,
- 					parent, btrfs_header_owner(leaf),
--					key.objectid, key.offset, 1);
-+					key.objectid, key.offset);
- 		if (ret) {
- 			btrfs_abort_transaction(trans, root, ret);
- 			break;
-@@ -1900,23 +1900,21 @@ again:
- 
- 		ret = btrfs_inc_extent_ref(trans, src, old_bytenr, blocksize,
- 					path->nodes[level]->start,
--					src->root_key.objectid, level - 1, 0,
--					1);
-+					src->root_key.objectid, level - 1, 0);
- 		BUG_ON(ret);
- 		ret = btrfs_inc_extent_ref(trans, dest, new_bytenr, blocksize,
- 					0, dest->root_key.objectid, level - 1,
--					0, 1);
-+					0);
- 		BUG_ON(ret);
- 
- 		ret = btrfs_free_extent(trans, src, new_bytenr, blocksize,
- 					path->nodes[level]->start,
--					src->root_key.objectid, level - 1, 0,
--					1);
-+					src->root_key.objectid, level - 1, 0);
- 		BUG_ON(ret);
- 
- 		ret = btrfs_free_extent(trans, dest, old_bytenr, blocksize,
- 					0, dest->root_key.objectid, level - 1,
--					0, 1);
-+					0);
- 		BUG_ON(ret);
- 
- 		btrfs_unlock_up_safe(path, 0);
-@@ -2745,7 +2743,7 @@ static int do_relocation(struct btrfs_trans_handle *trans,
- 						node->eb->start, blocksize,
- 						upper->eb->start,
- 						btrfs_header_owner(upper->eb),
--						node->level, 0, 1);
-+						node->level, 0);
- 			BUG_ON(ret);
- 
- 			ret = btrfs_drop_subtree(trans, root, eb, upper->eb);
-diff --git a/fs/btrfs/tree-log.c b/fs/btrfs/tree-log.c
-index 1fffe88..323e12c 100644
---- a/fs/btrfs/tree-log.c
-+++ b/fs/btrfs/tree-log.c
-@@ -693,7 +693,7 @@ static noinline int replay_one_extent(struct btrfs_trans_handle *trans,
- 				ret = btrfs_inc_extent_ref(trans, root,
- 						ins.objectid, ins.offset,
- 						0, root->root_key.objectid,
--						key->objectid, offset, 0);
-+						key->objectid, offset);
- 				if (ret)
- 					goto out;
- 			} else {
 -- 
-2.1.3
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

@@ -1,85 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:54222 "EHLO plane.gmane.org"
+Received: from mout.gmx.net ([212.227.17.22]:54319 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752545AbbJXXwZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 24 Oct 2015 19:52:25 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zq8bh-0001W6-Fq
-	for linux-btrfs@vger.kernel.org; Sun, 25 Oct 2015 01:52:17 +0200
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2015 01:52:17 +0200
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 25 Oct 2015 01:52:17 +0200
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs double send
-Date: Sat, 24 Oct 2015 23:52:08 +0000 (UTC)
-Message-ID: <pan$9ab81$c8b92b5e$46b15e5$edd1116f@cox.net>
-References: <20151024173617.GA26012@nbnb1>
-	<CAL3q7H5H_Qdq0NAhiDOVw=JLYPJPuHhhSZPgUSQm=oYN+yXK=g@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1751253AbbJYAoY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 24 Oct 2015 20:44:24 -0400
+Subject: Re: Exclusive quota of snapshot exceeded despite no space used
+To: Johannes Henninger <johannes+btrfs@henninger.io>,
+        linux-btrfs@vger.kernel.org
+References: <56294960.10406@henninger.io> <5629758D.203@gmx.com>
+ <562A4CC7.1060802@henninger.io>
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <562C25DE.6050209@gmx.com>
+Date: Sun, 25 Oct 2015 08:44:14 +0800
+MIME-Version: 1.0
+In-Reply-To: <562A4CC7.1060802@henninger.io>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Filipe Manana posted on Sat, 24 Oct 2015 18:52:21 +0100 as excerpted:
 
-> On Sat, Oct 24, 2015 at 6:36 PM,  <kolcon@kolcon.net> wrote:
->> Hello,
->>
->> I would like to do backups based on btrfs send/receive.
->>
->> So I though I would do a transfer over portable HDD and then
->> incremental sends (using -p) over network.
->>
->> Initial :
->>
->> btrfs send "all" (primary HDD) →  btrfs receive (portable HDD) →  btrfs
->> send/receive (final HDD)
->>
->> Later :
->>
->> btrfs send -p "all" new →  ssh newhost "btrfs receive … "
->>
->> But I found out that does not work. It complains parent not found.
->>
->> Am I doing something wrong, or is it intended behaviour?
-> 
-> It's a bug, we got it recently reported and fixed.
-> The fix is in Chris' integration branch for the upcoming 4.4 merge
-> window:
-> 
-> http://git.kernel.org/cgit/linux/kernel/git/mason/linux-btrfs.git/
-commit/?h=integration-4.4&id=b96b1db039ebc584d03a9933b279e0d3e704c528
 
-As a current workaround...
+在 2015年10月23日 23:05, Johannes Henninger 写道:
+> On 23.10.2015 01:47, Qu Wenruo wrote:
+>> 在 2015年10月23日 04:38, Johannes Henninger 写道:
+>>> I'm having a weird problem with snapshots and exclusive quotas. After
+>>> creating a snapshot of a subvolume and setting an exclusive quota of
+>>> 50MB for the snapshot, everything seems to work fine. I can write
+>>> approximately 50MB before the quota kicks in.
+>>>
+>>> However, if I create a snapshot, set an exclusive quota and just wait
+>>> for some time, I suddenly cannot even create an empty file because I'm
+>>> getting a "quota exceeded" error. The time until the bug appears seems
+>>> to vary. During the waiting time, I'm changing neither the snapshot nor
+>>> the original subvolume. "qgroup show -e" reports an exclusive use of
+>>> only a few kilobytes for the snapshot, which is nowhere near the limit.
+>>>
+>>> Steps to reproduce (/media/extern is a fresh and empty btrfs partition):
+>>>
+>>> Enable quota and create an empty subvolume:
+>>>       root@t420:/media/extern# btrfs quota enable .
+>>>       root@t420:/media/extern# btrfs subvolume create sub
+>>>       Create subvolume './sub'
+>>>
+>>> Snapshot the subvolume and set a limit:
+>>>       root@t420:/media/extern# btrfs subvolume snapshot sub snap
+>>>       Create a snapshot of 'sub' in './snap'
+>>>       root@t420:/media/extern# cd snap/
+>>>       root@t420:/media/extern/snap# btrfs qgroup limit -e 50M .
+>>>
+>>> Sometimes it takes "longer" for the quota to kick in, so I'm touching a
+>>> file every 5 minutes here:
+>>>
+>>>       root@t420:/media/extern/snap# for file in {1..100}; do touch $file;
+>>> sleep 5m; done
+>>>       touch: cannot touch ‘7’: Disk quota exceeded
+>>>       ^C
+>>>       root@t420:/media/extern/snap# btrfs qgroup show -e .
+>>>       qgroupid         rfer         excl     max_excl
+>>>       --------         ----         ----     --------
+>>>       0/5          16.00KiB     16.00KiB         none
+>>>       0/257        16.00KiB     16.00KiB         none
+>>>       0/258        16.00KiB     16.00KiB     50.00MiB
+>>>
+>>> Any idea why this happens?
+>> BTW, to make btrfs qgroup show work, it's better to call sync before
+>> qgroup show.
+>>
+>> It's a known bug that even after qgroup accounting rework, qgroup
+>> reserve still has bug and can cause reserved space to underflow,
+>> making such problem happen.
+>>
+>> For such case, btrfs qgroup show won't help as reserved space is not
+>> shown in the output.
+>>
+>> One workaround would be, umount the filesystem and mount again.
+>> Which will reset the underflow reserved space and work for sometime.
+>>
+>> If it's OK for you to recompile the kernel, you can try the following
+>> patchset:
+>> [PATCH v3 00/21] Rework btrfs qgroup reserved space framework
+>>
+>> Which should solve the problem.
+>>
+>> Thanks,
+>> Qu
+>>
+>
+> Thanks a lot for your reply!
+>
+> While remounting the filesystem fixes the issue temporary, it doesn't
+> take very long for the bug to happen again so it's not really a
+> workaround I can work with.
+>
+> I did recompile the kernel using your patches, but unfortunately the
+> problem still appears.
+>
+> Thanks,
+> Johannes
+>
+Interesting, just touching file will cause EQUOTA is quite a big problem.
 
-It's worth noting that btrfs send outputs a stream, while btrfs receives 
-a stream, but they don't have to be hooked up directly in real-time.  
-Both send and receive have parameters that allow sending output to, and 
-receiving input from, a file, and of course since they work with STDOUT/
-STDIN, even if explicit file options weren't supplied, shell redirection 
-can be used to do it.
+I'll try to reproduce it with my patchset and see what really caused the 
+problem.
+The problem seems to do with snapshot qgroup hacking.
+But I'm not completely sure yet.
 
-So it's quite possible to send to a file on the the portable device 
-instead of to btrfs receive, then unplug the device and plug it in on the 
-target, receiving from the file there.  That avoids the intermediate 
-receive/send and thus the problem, since it's ultimately (a copy of) the 
-original send stream now being received by receive on the target machine.
+BTW, does "sync; btrfs qgroup show -prce" still show excl as 16K?
+16K is the correct number with only 6 empty files, just in case.
 
-That also allows additional flexibility, since the intermediate/portable 
-device now doesn't have to have btrfs on it; it can be ext* or whatever.  
-In fact, the portable device shouldn't even need a filesystem at all, as 
-sending directly to the device-file and receiving from it should work.  
-Send/receive works with a stream after all, and anything that can 
-accurately store and replay that stream should be sufficient. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks,
+Qu

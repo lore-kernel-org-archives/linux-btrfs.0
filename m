@@ -1,48 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48701 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752927AbbJZGGU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 02:06:20 -0400
-Date: Mon, 26 Oct 2015 15:06:19 +0900 (KST)
-From: Jiri Kosina <jikos@kernel.org>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: [PATCH] btrfs: clear PF_NOFREEZE in cleaner_kthread()
-Message-ID: <alpine.LNX.2.00.1510261458070.8998@pobox.suse.cz>
+Received: from cn.fujitsu.com ([59.151.112.132]:52847 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750955AbbJZGKu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Oct 2015 02:10:50 -0400
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9Q6A6rv018924
+	for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 14:10:06 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [4.4][PATCH 0/3] btrfs: Qgroup hotfix
+Date: Mon, 26 Oct 2015 14:08:32 +0800
+Message-ID: <1445839715-17495-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: TEXT/PLAIN; charset=US-ASCII
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Jiri Kosina <jkosina@suse.cz>
+This patchset fixes 2 bugs:
+1. Race condition leading to abort transaction
+Reported by Filipe, fixed by 2nd patch.
 
-cleaner_kthread() kthread calls try_to_freeze() at the beginning of every 
-cleanup attempt. This operation can't ever succeed though, as the kthread 
-hasn't marked itself as freezable.
+2. Qgroup low level double free leading to EDQUOT
+In fact, I hit such bug several times during internal rebase, but I'm so
+stupid to forgot to include it in v3 patchset.
+Fixed in 3rd patch.
 
-Before (hopefully eventually) kthread freezing gets converted to fileystem 
-freezing, we'd rather mark cleaner_kthread() freezable (as my 
-understanding is that it can generate filesystem I/O during suspend).
+Qu Wenruo (3):
+  btrfs: Cleanup no_quota parameter
+  btrfs: qgroup: Fix a race in delayed_ref which leads to abort trans
+  btrfs: qgroup: Fix a rebase bug which will cause qgroup double free
 
-Signed-off-by: Jiri Kosina <jkosina@suse.cz>
----
- fs/btrfs/disk-io.c | 1 +
- 1 file changed, 1 insertion(+)
+ fs/btrfs/ctree.h       |  7 +++---
+ fs/btrfs/delayed-ref.c | 48 ++++++++++++++++++++--------------------
+ fs/btrfs/delayed-ref.h |  9 +++-----
+ fs/btrfs/extent-tree.c | 55 ++++++++++++++++++---------------------------
+ fs/btrfs/file.c        | 10 ++++-----
+ fs/btrfs/inode.c       | 16 +++++---------
+ fs/btrfs/ioctl.c       | 60 +-------------------------------------------------
+ fs/btrfs/qgroup.c      |  4 ----
+ fs/btrfs/relocation.c  | 16 ++++++--------
+ fs/btrfs/tree-log.c    |  2 +-
+ 10 files changed, 73 insertions(+), 154 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 295795a..173970d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -1759,6 +1759,7 @@ static int cleaner_kthread(void *arg)
- 	int again;
- 	struct btrfs_trans_handle *trans;
- 
-+	set_freezable();
- 	do {
- 		again = 0;
- 
 -- 
-Jiri Kosina
-SUSE Labs
+2.6.2
 

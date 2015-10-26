@@ -1,517 +1,691 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13333 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60505 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750932AbbJZJGd convert rfc822-to-8bit (ORCPT
+	with ESMTP id S1753312AbbJZJpc convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 05:06:33 -0400
+	Mon, 26 Oct 2015 05:45:32 -0400
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: "'Jeff Mahoney'" <jeffm@suse.com>, <linux-btrfs@vger.kernel.org>
-References: <110ea4fe9c32048517e83616ba63dacefffef54d.1445587196.git.zhaolei@cn.fujitsu.com> <562A4E12.6080608@suse.com>
-In-Reply-To: <562A4E12.6080608@suse.com>
+To: <fdmanana@gmail.com>, "'Jeff Mahoney'" <jeffm@suse.com>
+CC: <linux-btrfs@vger.kernel.org>
+References: <110ea4fe9c32048517e83616ba63dacefffef54d.1445587196.git.zhaolei@cn.fujitsu.com>	<562A4E12.6080608@suse.com> <CAL3q7H4Vds6pnvzcU2tdzAW+E1_is+yh_T_veqQ+R_AkZ66Smw@mail.gmail.com>
+In-Reply-To: <CAL3q7H4Vds6pnvzcU2tdzAW+E1_is+yh_T_veqQ+R_AkZ66Smw@mail.gmail.com>
 Subject: RE: [PATCH] btrfs: Remove code for no-cow in scrub/replace
-Date: Mon, 26 Oct 2015 17:06:29 +0800
-Message-ID: <025201d10fcd$99cbd600$cd638200$@cn.fujitsu.com>
+Date: Mon, 26 Oct 2015 17:45:23 +0800
+Message-ID: <025901d10fd3$0987b5e0$1c9721a0$@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Jeff Mahoney
-
-Thanks for review!
+Hi, Filipe Manana
 
 > -----Original Message-----
-> From: Jeff Mahoney [mailto:jeffm@suse.com]
-> Sent: Friday, October 23, 2015 11:11 PM
-> To: Zhao Lei <zhaolei@cn.fujitsu.com>; linux-btrfs@vger.kernel.org
+> From: Filipe Manana [mailto:fdmanana@gmail.com]
+> Sent: Friday, October 23, 2015 11:17 PM
+> To: Jeff Mahoney <jeffm@suse.com>
+> Cc: Zhao Lei <zhaolei@cn.fujitsu.com>; linux-btrfs@vger.kernel.org
 > Subject: Re: [PATCH] btrfs: Remove code for no-cow in scrub/replace
 > 
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
+> On Fri, Oct 23, 2015 at 4:11 PM, Jeff Mahoney <jeffm@suse.com> wrote:
+> > -----BEGIN PGP SIGNED MESSAGE-----
+> > Hash: SHA1
+> >
+> > On 10/23/15 4:03 AM, Zhao Lei wrote:
+> >> Since we set source bg to readonly in scrub/replace, we don't need to
+> >> consider confliction of no-cow write in scrub/replace operaion.
+> >
+> > What happens if there's a read failure?  IIRC the initial purpose of
+> > this code was to correct read failures during scrub and device
+> > replacement by fetching the bad extent from another device if one is
+> > available.
 > 
-> On 10/23/15 4:03 AM, Zhao Lei wrote:
-> > Since we set source bg to readonly in scrub/replace, we don't need to
-> > consider confliction of no-cow write in scrub/replace operaion.
+> And we don't have xfstests, or any other automated test suite, to test those
+> code paths.
+> So completely useless to run xfstests in a loop for 5 days, especially the generic
+> tests which never trigger scrub runs...
 > 
-> What happens if there's a read failure?  IIRC the initial purpose of this code
-> was to correct read failures during scrub and device replacement by fetching
-> the bad extent from another device if one is available.
-> 
-> See commit 0ef8e45158f (btrfs scrub: add fixup code for errors on nodatasum
-> files)
-> 
-"nodatasum" is used to check "is the data in non-cow state", and the reason
-for using inode-writeback is to avoid same-time-writing in the block which is
-in scrubing. Comment in newest code scrub.c L1055 can give us the detail.
-(Introduced by comment: b5d67f64f)
+Completely agree you.
 
-Since the entire bg was set to readonly in scrub period, there are no same-time
-write operation for both cow and non-cow bg, and the bio-based fix
-operation can works for all above case.
+Something which was not writen in patch's comment, I also have a custom test,
+which include scrub on bad-block device:
+
+[root@ZLLINUX custom_tests]# ls -l
+total 36
+-rwxr-xr-x 1 root root 15931 Oct  9 21:08 btrfs_maintance.sh
+-rwxr-xr-x 1 root root  2000 Apr 30 18:23 btrfs_out_of_space.sh
+-rwxr-xr-x 1 root root  5588 May 26 09:47 btrfs_replace_sumerr.sh
+-rwxr-xr-x 1 root root  1042 Sep 18 17:05 __loop_custom.sh
+-rwxr-xr-x 1 root root   939 Jul 14 18:15 xfstests.sh
+[root@ZLLINUX custom_tests]#
+
+# grep '()' btrfs_maintance.sh
+...
+redundancy_func_test()
+scrub_func_test()
+replace_func_test()
+many_faildisk_test()
+[root@ZLLINUX custom_tests]#
+
+And this patch also tested in above script:
+
+# ./__loop_custom.sh ./btrfs_maintance.sh
+Loop 0
+replace_func_test: raidtype=raid1 mkfs_opt= mount_opt=-o nodatacow max_disk=
+mkfs and mount: raid=raid1 dev_cnt=2 mkfs_opt= mount_opt=-o nodatacow:
+Writting some data:
+  du: 17, writting 1M file
+  du: 18, writting 2M file
+  du: 20, writting 4M file
+  du: 24, writting 8M file
+  du: 32, writting 16M file
+  reach enough space: 48%
+Start replace /dev/vdc -> /dev/vde
+  OO:/dev/vdc OO:/dev/vdd #X:/dev/vde
+  #O:/dev/vdc OO:/dev/vdd OO:/dev/vde
+  Replace start in dmesg found
+  Replace finish in dmesg found
+  dmesg: OK
+  file contents before remount: same
+  dmesg: OK
+  file contents after remount: same
+Check prune /dev/vdc
+  #O:/dev/vdc OO:/dev/vdd OO:/dev/vde
+  prune dsk /dev/vdc
+  #X:/dev/vdc OO:/dev/vdd OO:/dev/vde
+  dmesg: OK
+  fs contents: same
+Check prune /dev/vdd
+  #X:/dev/vdc OO:/dev/vdd OO:/dev/vde
+  prune dsk /dev/vdd
+  #X:/dev/vdc OX:/dev/vdd OO:/dev/vde
+  dmesg: OK
+  fs contents: same
+Start replace /dev/vde -> /dev/vdc
+  #X:/dev/vdc OX:/dev/vdd OO:/dev/vde
+  OO:/dev/vdc OX:/dev/vdd #O:/dev/vde
+  Replace start in dmesg found
+  Replace finish in dmesg found
+  dmesg: OK
+  file contents before remount: same
+  ....
+
+I'll add above script into xfstests when it is complete
+and stable.
 
 Thanks
 Zhaolei
 
-> - -Jeff
 > 
-> > This patch removes special code for no-cow mode in scrub/replace,
-> > reduced 670 lines.
 > >
-> > Tested by continuous xfstests in 5 days, include generic and btrfs
-> > groups with 10 mount options include nodatacow.
+> > See commit 0ef8e45158f (btrfs scrub: add fixup code for errors on
+> > nodatasum files)
 > >
-> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com> ---
-> > fs/btrfs/ctree.h |   1 - fs/btrfs/scrub.c | 669
-> > ------------------------------------------------------- 2 files
-> > changed, 670 deletions(-)
+> > - -Jeff
 > >
-> > diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h index
-> > 938efe3..3387509 100644 --- a/fs/btrfs/ctree.h +++ b/fs/btrfs/ctree.h
-> > @@ -1688,7 +1688,6 @@ struct btrfs_fs_info { int scrub_workers_refcnt;
-> > struct btrfs_workqueue *scrub_workers; struct
-> > btrfs_workqueue *scrub_wr_completion_workers; -	struct
-> > btrfs_workqueue *scrub_nocow_workers; struct btrfs_workqueue
-> > *scrub_parity_workers;
-> >
-> > #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY diff --git a/fs/btrfs/scrub.c
-> > b/fs/btrfs/scrub.c index d64f557..6027679
-> > 100644 --- a/fs/btrfs/scrub.c +++ b/fs/btrfs/scrub.c @@ -205,32
-> > +205,6 @@ struct scrub_ctx { atomic_t                refs; };
-> >
-> > -struct scrub_fixup_nodatasum { -	struct scrub_ctx	*sctx; -	struct
-> > btrfs_device	*dev; -	u64			logical; -	struct btrfs_root	*root; -
-> > struct btrfs_work	work; -	int			mirror_num; -}; - -struct
-> > scrub_nocow_inode { -	u64			inum; -	u64			offset; -	u64
-> 		root; -
-> > struct list_head	list; -}; - -struct scrub_copy_nocow_ctx { -
-> > struct scrub_ctx	*sctx; -	u64			logical; -	u64			len; -
-> 	int
-> > mirror_num; -	u64			physical_for_dev_replace; -	struct
-> list_head
-> > inodes; -	struct btrfs_work	work; -}; - struct scrub_warning {
-> > struct btrfs_path	*path; u64			extent_item_size; @@ -242,8
-> +216,6
-> > @@ struct scrub_warning {
-> >
-> > static void scrub_pending_bio_inc(struct scrub_ctx *sctx); static void
-> > scrub_pending_bio_dec(struct scrub_ctx *sctx); -static void
-> > scrub_pending_trans_workers_inc(struct scrub_ctx *sctx); -static void
-> > scrub_pending_trans_workers_dec(struct scrub_ctx *sctx); static int
-> > scrub_handle_errored_block(struct scrub_block *sblock_to_check);
-> > static int scrub_setup_recheck_block(struct scrub_block
-> > *original_sblock, struct scrub_block *sblocks_for_recheck); @@ -298,13
-> > +270,6 @@ static int scrub_add_page_to_wr_bio(struct scrub_ctx *sctx,
-> > static void scrub_wr_submit(struct scrub_ctx *sctx); static void
-> > scrub_wr_bio_end_io(struct bio *bio, int err); static void
-> > scrub_wr_bio_end_io_worker(struct btrfs_work *work); -static int
-> > write_page_nocow(struct scrub_ctx *sctx, -			    u64
-> > physical_for_dev_replace, struct page *page); -static int
-> > copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, - struct
-> > scrub_copy_nocow_ctx *ctx); -static int copy_nocow_pages(struct
-> > scrub_ctx *sctx, u64 logical, u64 len, - int mirror_num, u64
-> > physical_for_dev_replace); -static void copy_nocow_pages_worker(struct
-> > btrfs_work *work); static void __scrub_blocked_if_needed(struct
-> > btrfs_fs_info *fs_info); static void scrub_blocked_if_needed(struct
-> > btrfs_fs_info *fs_info); static void scrub_put_ctx(struct scrub_ctx
-> > *sctx); @@ -355,60 +320,6 @@ static void
-> > scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
-> > scrub_pause_off(fs_info); }
-> >
-> > -/* - * used for workers that require transaction commits (i.e., for
-> > the - * NOCOW case) - */ -static void
-> > scrub_pending_trans_workers_inc(struct scrub_ctx *sctx) -{ -	struct
-> > btrfs_fs_info *fs_info = sctx->dev_root->fs_info; - -
-> > atomic_inc(&sctx->refs); -	/* -	 * increment scrubs_running to
-> > prevent cancel requests from -	 * completing as long as a worker is
-> > running. we must also -	 * increment scrubs_paused to prevent
-> > deadlocking on pause -	 * requests used for transactions commits
-> > (as the worker uses a -	 * transaction context). it is safe to
-> > regard the worker -	 * as paused for all matters practical.
-> > effectively, we only -	 * avoid cancellation requests from
-> > completing. -	 */ -	mutex_lock(&fs_info->scrub_lock); -
-> > atomic_inc(&fs_info->scrubs_running); -
-> > atomic_inc(&fs_info->scrubs_paused); -
-> > mutex_unlock(&fs_info->scrub_lock); - -	/* -	 * check if
-> > @scrubs_running=@scrubs_paused condition -	 * inside wait_event()
-> > is not an atomic operation. -	 * which means we may inc/dec
-> > @scrub_running/paused -	 * at any time. Let's wake up
-> > @scrub_pause_wait as -	 * much as we can to let commit transaction
-> > blocked less. -	 */ -	wake_up(&fs_info->scrub_pause_wait); - -
-> > atomic_inc(&sctx->workers_pending); -} - -/* used for workers that
-> > require transaction commits */ -static void
-> > scrub_pending_trans_workers_dec(struct scrub_ctx *sctx) -{ -	struct
-> > btrfs_fs_info *fs_info = sctx->dev_root->fs_info; - -	/* -	 * see
-> > scrub_pending_trans_workers_inc() why we're pretending -	 * to be
-> > paused in the scrub counters -	 */ -
-> > mutex_lock(&fs_info->scrub_lock); -
-> > atomic_dec(&fs_info->scrubs_running); -
-> > atomic_dec(&fs_info->scrubs_paused); -
-> > mutex_unlock(&fs_info->scrub_lock); -
-> > atomic_dec(&sctx->workers_pending); -
-> > wake_up(&fs_info->scrub_pause_wait); -	wake_up(&sctx->list_wait); -
-> > scrub_put_ctx(sctx); -} - static void scrub_free_csums(struct
-> > scrub_ctx *sctx) { while (!list_empty(&sctx->csum_list)) { @@
-> > -686,194 +597,6 @@ out: btrfs_free_path(path); }
-> >
-> > -static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root,
-> > void *fixup_ctx) -{ -	struct page *page = NULL; -	unsigned long
-> > index; -	struct scrub_fixup_nodatasum *fixup = fixup_ctx; -	int
-> > ret; -	int corrected = 0; -	struct btrfs_key key; -	struct inode
-> > *inode = NULL; -	struct btrfs_fs_info *fs_info; -	u64 end = offset
-> > + PAGE_SIZE - 1; -	struct btrfs_root *local_root; -	int
-> > srcu_index; - -	key.objectid = root; -	key.type =
-> > BTRFS_ROOT_ITEM_KEY; -	key.offset = (u64)-1; - -	fs_info =
-> > fixup->root->fs_info; -	srcu_index =
-> > srcu_read_lock(&fs_info->subvol_srcu); - -	local_root =
-> > btrfs_read_fs_root_no_name(fs_info, &key); -	if
-> > (IS_ERR(local_root)) { -		srcu_read_unlock(&fs_info->subvol_srcu,
-> > srcu_index); -		return PTR_ERR(local_root); -	} - -	key.type =
-> > BTRFS_INODE_ITEM_KEY; -	key.objectid = inum; -	key.offset = 0; -
-> > inode = btrfs_iget(fs_info->sb, &key, local_root, NULL); -
-> > srcu_read_unlock(&fs_info->subvol_srcu, srcu_index); -	if
-> > (IS_ERR(inode)) -		return PTR_ERR(inode); - -	index = offset >>
-> > PAGE_CACHE_SHIFT; - -	page = find_or_create_page(inode->i_mapping,
-> > index, GFP_NOFS); -	if (!page) { -		ret = -ENOMEM; -		goto out;
-> -
-> > } - -	if (PageUptodate(page)) { -		if (PageDirty(page)) { -
-> 	/* -
-> > * we need to write the data to the defect sector. the -			 * data
-> > that was in that sector is not in memory, -			 * because the page
-> > was modified. we must not write the -			 * modified page to that
-> > sector. -			 * -			 * TODO: what could be done here:
-> wait for the
-> > delalloc -			 *       runner to write out that page (might
-> involve
-> > -			 *       COW) and see whether the sector is still -
-> *
-> > referenced afterwards. -			 * -			 * For the meantime,
-> we'll treat
-> > this error -			 * incorrectable, although there is a chance that a
-> > -			 * later scrub will find the bad sector again and that -
-> *
-> > there's no dirty page in memory, then. -			 */ -			ret = -EIO;
-> -
-> > goto out; -		} -		ret = repair_io_failure(inode, offset,
-> > PAGE_SIZE, -					fixup->logical, page, -
-> 	offset -
-> > page_offset(page), -					fixup->mirror_num); -
-> 	unlock_page(page);
-> > -		corrected = !ret; -	} else { -		/* -		 * we need to get good
-> > data first. the general readpage path -		 * will call
-> > repair_io_failure for us, we just have to make -		 * sure we read
-> > the bad mirror. -		 */ -		ret =
-> > set_extent_bits(&BTRFS_I(inode)->io_tree, offset, end, -
-> > EXTENT_DAMAGED, GFP_NOFS); -		if (ret) { -			/*
-> set_extent_bits
-> > should give proper error */ -			WARN_ON(ret > 0); -
-> 	if (ret > 0)
-> > -				ret = -EFAULT; -			goto out; -		} - -
-> 	ret =
-> > extent_read_full_page(&BTRFS_I(inode)->io_tree, page, -
-> > btrfs_get_extent, -						fixup->mirror_num); -
-> > wait_on_page_locked(page); - -		corrected =
-> > !test_range_bit(&BTRFS_I(inode)->io_tree, offset, -
-> 	end,
-> > EXTENT_DAMAGED, 0, NULL); -		if (!corrected) -
-> > clear_extent_bits(&BTRFS_I(inode)->io_tree, offset, end, -
-> > EXTENT_DAMAGED, GFP_NOFS); -	} - -out: -	if (page) -
-> > put_page(page); - -	iput(inode); - -	if (ret < 0) -		return ret; -
-> > -	if (ret == 0 && corrected) { -		/* -		 * we only need to call
-> > readpage for one of the inodes belonging -		 * to this extent. so
-> > make iterate_extent_inodes stop -		 */ -		return 1; -	} - -
-> 	return
-> > -EIO; -} - -static void scrub_fixup_nodatasum(struct btrfs_work
-> > *work) -{ -	int ret; -	struct scrub_fixup_nodatasum *fixup; -
-> > struct scrub_ctx *sctx; -	struct btrfs_trans_handle *trans = NULL;
-> > -	struct btrfs_path *path; -	int uncorrectable = 0; - -	fixup =
-> > container_of(work, struct scrub_fixup_nodatasum, work); -	sctx =
-> > fixup->sctx; - -	path = btrfs_alloc_path(); -	if (!path) { -
-> > spin_lock(&sctx->stat_lock); -		++sctx->stat.malloc_errors; -
-> > spin_unlock(&sctx->stat_lock); -		uncorrectable = 1; -		goto out; -
-> > } - -	trans = btrfs_join_transaction(fixup->root); -	if
-> > (IS_ERR(trans)) { -		uncorrectable = 1; -		goto out; -	} - -	/* -
-> > * the idea is to trigger a regular read through the standard path.
-> > we -	 * read a page from the (failed) logical address by specifying
-> > the -	 * corresponding copynum of the failed sector. thus, that
-> > readpage is -	 * expected to fail. -	 * that is the point where
-> > on-the-fly error correction will kick in -	 * (once it's finished)
-> > and rewrite the failed sector if a good copy -	 * can be found. -
-> > */ -	ret = iterate_inodes_from_logical(fixup->logical,
-> > fixup->root->fs_info, -						path, scrub_fixup_readpage,
-> -
-> > fixup); -	if (ret < 0) { -		uncorrectable = 1; -		goto out; -	} -
-> > WARN_ON(ret != 1); - -	spin_lock(&sctx->stat_lock); -
-> > ++sctx->stat.corrected_errors; -	spin_unlock(&sctx->stat_lock); -
-> > -out: -	if (trans && !IS_ERR(trans)) -
-> > btrfs_end_transaction(trans, fixup->root); -	if (uncorrectable) { -
-> > spin_lock(&sctx->stat_lock); -		++sctx->stat.uncorrectable_errors;
-> > -		spin_unlock(&sctx->stat_lock); -
-> 	btrfs_dev_replace_stats_inc( -
-> > &sctx->dev_root->fs_info->dev_replace. -
-> > num_uncorrectable_read_errors); -
-> > printk_ratelimited_in_rcu(KERN_ERR "BTRFS: " -		    "unable to
-> > fixup (nodatasum) error at logical %llu on dev %s\n", -
-> > fixup->logical, rcu_str_deref(fixup->dev->name)); -	} - -
-> > btrfs_free_path(path); -	kfree(fixup); - -
-> > scrub_pending_trans_workers_dec(sctx); -} - static inline void
-> > scrub_get_recover(struct scrub_recover *recover) {
-> > atomic_inc(&recover->refs); @@ -940,11 +663,6 @@ static int
-> > scrub_handle_errored_block(struct scrub_block *sblock_to_check) csum =
-> > sblock_to_check->pagev[0]->csum; dev = sblock_to_check->pagev[0]->dev;
-> >
-> > -	if (sctx->is_dev_replace && !is_metadata && !have_csum) { -
-> > sblocks_for_recheck = NULL; -		goto nodatasum_case; -	} - /* * read
-> > all mirrors one after the other. This includes to * re-read the extent
-> > or metadata block that failed (that was @@ -1058,36 +776,6 @@ static
-> > int scrub_handle_errored_block(struct scrub_block
-> > *sblock_to_check) goto out; }
-> >
-> > -	if (!is_metadata && !have_csum) { -		struct
+> >> This patch removes special code for no-cow mode in scrub/replace,
+> >> reduced 670 lines.
+> >>
+> >> Tested by continuous xfstests in 5 days, include generic and btrfs
+> >> groups with 10 mount options include nodatacow.
+> >>
+> >> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com> ---
+> >> fs/btrfs/ctree.h |   1 - fs/btrfs/scrub.c | 669
+> >> ------------------------------------------------------- 2 files
+> >> changed, 670 deletions(-)
+> >>
+> >> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h index
+> >> 938efe3..3387509 100644 --- a/fs/btrfs/ctree.h +++ b/fs/btrfs/ctree.h
+> >> @@ -1688,7 +1688,6 @@ struct btrfs_fs_info { int
+> >> scrub_workers_refcnt; struct btrfs_workqueue *scrub_workers; struct
+> >> btrfs_workqueue *scrub_wr_completion_workers; -       struct
+> >> btrfs_workqueue *scrub_nocow_workers; struct btrfs_workqueue
+> >> *scrub_parity_workers;
+> >>
+> >> #ifdef CONFIG_BTRFS_FS_CHECK_INTEGRITY diff --git a/fs/btrfs/scrub.c
+> >> b/fs/btrfs/scrub.c index d64f557..6027679
+> >> 100644 --- a/fs/btrfs/scrub.c +++ b/fs/btrfs/scrub.c @@ -205,32
+> >> +205,6 @@ struct scrub_ctx { atomic_t                refs; };
+> >>
+> >> -struct scrub_fixup_nodatasum { -     struct scrub_ctx        *sctx; -
+> struct
+> >> btrfs_device  *dev; - u64                     logical; -      struct
+> btrfs_root       *root; -
+> >> struct btrfs_work     work; - int                     mirror_num; -}; -
+> -struct
+> >> scrub_nocow_inode { - u64                     inum; - u64
+> offset; -       u64                     root; -
+> >> struct list_head      list; -}; - -struct scrub_copy_nocow_ctx { -
+> >> struct scrub_ctx      *sctx; -        u64
+> logical; -      u64                     len; -  int
+> >> mirror_num; - u64                     physical_for_dev_replace; -
+> struct list_head
+> >> inodes; -     struct btrfs_work       work; -}; - struct scrub_warning {
+> >> struct btrfs_path     *path; u64
+> extent_item_size; @@ -242,8 +216,6
+> >> @@ struct scrub_warning {
+> >>
+> >> static void scrub_pending_bio_inc(struct scrub_ctx *sctx); static
+> >> void scrub_pending_bio_dec(struct scrub_ctx *sctx); -static void
+> >> scrub_pending_trans_workers_inc(struct scrub_ctx *sctx); -static void
+> >> scrub_pending_trans_workers_dec(struct scrub_ctx *sctx); static int
+> >> scrub_handle_errored_block(struct scrub_block *sblock_to_check);
+> >> static int scrub_setup_recheck_block(struct scrub_block
+> >> *original_sblock, struct scrub_block *sblocks_for_recheck); @@
+> >> -298,13 +270,6 @@ static int scrub_add_page_to_wr_bio(struct
+> >> scrub_ctx *sctx, static void scrub_wr_submit(struct scrub_ctx *sctx);
+> >> static void scrub_wr_bio_end_io(struct bio *bio, int err); static
+> >> void scrub_wr_bio_end_io_worker(struct btrfs_work *work); -static int
+> >> write_page_nocow(struct scrub_ctx *sctx, -
+> u64
+> >> physical_for_dev_replace, struct page *page); -static int
+> >> copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, - struct
+> >> scrub_copy_nocow_ctx *ctx); -static int copy_nocow_pages(struct
+> >> scrub_ctx *sctx, u64 logical, u64 len, - int mirror_num, u64
+> >> physical_for_dev_replace); -static void
+> >> copy_nocow_pages_worker(struct btrfs_work *work); static void
+> >> __scrub_blocked_if_needed(struct btrfs_fs_info *fs_info); static void
+> >> scrub_blocked_if_needed(struct btrfs_fs_info *fs_info); static void
+> >> scrub_put_ctx(struct scrub_ctx *sctx); @@ -355,60 +320,6 @@ static
+> >> void scrub_blocked_if_needed(struct btrfs_fs_info *fs_info)
+> >> scrub_pause_off(fs_info); }
+> >>
+> >> -/* - * used for workers that require transaction commits (i.e., for
+> >> the - * NOCOW case) - */ -static void
+> >> scrub_pending_trans_workers_inc(struct scrub_ctx *sctx) -{ -  struct
+> >> btrfs_fs_info *fs_info = sctx->dev_root->fs_info; - -
+> >> atomic_inc(&sctx->refs); -    /* -     * increment scrubs_running to
+> >> prevent cancel requests from -         * completing as long as a worker
+> is
+> >> running. we must also -        * increment scrubs_paused to prevent
+> >> deadlocking on pause -         * requests used for transactions commits
+> >> (as the worker uses a -        * transaction context). it is safe to
+> >> regard the worker -    * as paused for all matters practical.
+> >> effectively, we only -         * avoid cancellation requests from
+> >> completing. -  */ -   mutex_lock(&fs_info->scrub_lock); -
+> >> atomic_inc(&fs_info->scrubs_running); -
+> >> atomic_inc(&fs_info->scrubs_paused); -
+> >> mutex_unlock(&fs_info->scrub_lock); - -       /* -     * check if
+> >> @scrubs_running=@scrubs_paused condition -     * inside wait_event()
+> >> is not an atomic operation. -  * which means we may inc/dec
+> >> @scrub_running/paused -        * at any time. Let's wake up
+> >> @scrub_pause_wait as -         * much as we can to let commit
+> transaction
+> >> blocked less. -        */ -   wake_up(&fs_info->scrub_pause_wait); - -
+> >> atomic_inc(&sctx->workers_pending); -} - -/* used for workers that
+> >> require transaction commits */ -static void
+> >> scrub_pending_trans_workers_dec(struct scrub_ctx *sctx) -{ -  struct
+> >> btrfs_fs_info *fs_info = sctx->dev_root->fs_info; - - /* -     * see
+> >> scrub_pending_trans_workers_inc() why we're pretending -       * to be
+> >> paused in the scrub counters -         */ -
+> >> mutex_lock(&fs_info->scrub_lock); -
+> >> atomic_dec(&fs_info->scrubs_running); -
+> >> atomic_dec(&fs_info->scrubs_paused); -
+> >> mutex_unlock(&fs_info->scrub_lock); -
+> >> atomic_dec(&sctx->workers_pending); -
+> >> wake_up(&fs_info->scrub_pause_wait); -
+> wake_up(&sctx->list_wait); -
+> >> scrub_put_ctx(sctx); -} - static void scrub_free_csums(struct
+> >> scrub_ctx *sctx) { while (!list_empty(&sctx->csum_list)) { @@
+> >> -686,194 +597,6 @@ out: btrfs_free_path(path); }
+> >>
+> >> -static int scrub_fixup_readpage(u64 inum, u64 offset, u64 root,
+> >> void *fixup_ctx) -{ - struct page *page = NULL; -     unsigned long
+> >> index; -      struct scrub_fixup_nodatasum *fixup = fixup_ctx; -      int
+> >> ret; -        int corrected = 0; -    struct btrfs_key key; - struct inode
+> >> *inode = NULL; -      struct btrfs_fs_info *fs_info; -        u64 end =
+> offset
+> >> + PAGE_SIZE - 1; -    struct btrfs_root *local_root; -        int
+> >> srcu_index; - -       key.objectid = root; -  key.type =
+> >> BTRFS_ROOT_ITEM_KEY; -        key.offset = (u64)-1; - -       fs_info =
+> >> fixup->root->fs_info; -       srcu_index =
+> >> srcu_read_lock(&fs_info->subvol_srcu); - -    local_root =
+> >> btrfs_read_fs_root_no_name(fs_info, &key); -  if
+> >> (IS_ERR(local_root)) { -
+> srcu_read_unlock(&fs_info->subvol_srcu,
+> >> srcu_index); -                return PTR_ERR(local_root); -   } - -
+> key.type =
+> >> BTRFS_INODE_ITEM_KEY; -       key.objectid = inum; -  key.offset = 0; -
+> >> inode = btrfs_iget(fs_info->sb, &key, local_root, NULL); -
+> >> srcu_read_unlock(&fs_info->subvol_srcu, srcu_index); -        if
+> >> (IS_ERR(inode)) -             return PTR_ERR(inode); - -      index =
+> offset >>
+> >> PAGE_CACHE_SHIFT; - - page = find_or_create_page(inode->i_mapping,
+> >> index, GFP_NOFS); -   if (!page) { -          ret = -ENOMEM; -
+> goto out; -
+> >> } - - if (PageUptodate(page)) { -             if (PageDirty(page)) { -
+> /* -
+> >> * we need to write the data to the defect sector. the -
+> * data
+> >> that was in that sector is not in memory, -                    *
+> because the page
+> >> was modified. we must not write the -                  * modified page
+> to that
+> >> sector. -                      * -                     * TODO:
+> what could be done here: wait for the
+> >> delalloc -                     *       runner to write out that page
+> (might involve
+> >> -                      *       COW) and see whether the sector is
+> still -                      *
+> >> referenced afterwards. -                       * -
+> * For the meantime, we'll treat
+> >> this error -                   * incorrectable, although there is a
+> chance that a
+> >> -                      * later scrub will find the bad sector again and
+> that -                         *
+> >> there's no dirty page in memory, then. -                       */ -
+> ret = -EIO; -
+> >> goto out; -           } -             ret = repair_io_failure(inode,
+> offset,
+> >> PAGE_SIZE, -                                  fixup->logical, page, -
+> offset -
+> >> page_offset(page), -
+> fixup->mirror_num); -           unlock_page(page);
+> >> -             corrected = !ret; -     } else { -              /* -
+> * we need to get good
+> >> data first. the general readpage path -                * will call
+> >> repair_io_failure for us, we just have to make -               * sure we
+> read
+> >> the bad mirror. -              */ -           ret =
+> >> set_extent_bits(&BTRFS_I(inode)->io_tree, offset, end, -
+> >> EXTENT_DAMAGED, GFP_NOFS); -          if (ret) { -
+> /* set_extent_bits
+> >> should give proper error */ -                 WARN_ON(ret > 0); -
+> if (ret > 0)
+> >> -                             ret = -EFAULT; -
+> goto out; -             } - -           ret =
+> >> extent_read_full_page(&BTRFS_I(inode)->io_tree, page, -
+> >> btrfs_get_extent, -
+> fixup->mirror_num); -
+> >> wait_on_page_locked(page); - -                corrected =
+> >> !test_range_bit(&BTRFS_I(inode)->io_tree, offset, -
+> end,
+> >> EXTENT_DAMAGED, 0, NULL); -           if (!corrected) -
+> >> clear_extent_bits(&BTRFS_I(inode)->io_tree, offset, end, -
+> >> EXTENT_DAMAGED, GFP_NOFS); -  } - -out: -     if (page) -
+> >> put_page(page); - -   iput(inode); - -        if (ret < 0) -          return
+> ret; -
+> >> -     if (ret == 0 && corrected) { -          /* -             * we only
+> need to call
+> >> readpage for one of the inodes belonging -             * to this extent.
+> so
+> >> make iterate_extent_inodes stop -              */ -           return
+> 1; -     } - -   return
+> >> -EIO; -} - -static void scrub_fixup_nodatasum(struct btrfs_work
+> >> *work) -{ -   int ret; -      struct scrub_fixup_nodatasum *fixup; -
+> >> struct scrub_ctx *sctx; -     struct btrfs_trans_handle *trans = NULL;
+> >> -     struct btrfs_path *path; -      int uncorrectable = 0; - -      fixup
+> =
+> >> container_of(work, struct scrub_fixup_nodatasum, work); -     sctx =
+> >> fixup->sctx; - -      path = btrfs_alloc_path(); -    if (!path) { -
+> >> spin_lock(&sctx->stat_lock); -
+> ++sctx->stat.malloc_errors; -
+> >> spin_unlock(&sctx->stat_lock); -              uncorrectable = 1; -
+> goto out; -
+> >> } - - trans = btrfs_join_transaction(fixup->root); -  if
+> >> (IS_ERR(trans)) { -           uncorrectable = 1; -            goto out;
+> -     } - -   /* -
+> >> * the idea is to trigger a regular read through the standard path.
+> >> we -   * read a page from the (failed) logical address by specifying
+> >> the -  * corresponding copynum of the failed sector. thus, that
+> >> readpage is -  * expected to fail. -   * that is the point where
+> >> on-the-fly error correction will kick in -     * (once it's finished)
+> >> and rewrite the failed sector if a good copy -         * can be found. -
+> >> */ -  ret = iterate_inodes_from_logical(fixup->logical,
+> >> fixup->root->fs_info, -
+> path, scrub_fixup_readpage, -
+> >> fixup); -     if (ret < 0) { -                uncorrectable = 1; -
+> goto out; -     } -
+> >> WARN_ON(ret != 1); - -        spin_lock(&sctx->stat_lock); -
+> >> ++sctx->stat.corrected_errors; -      spin_unlock(&sctx->stat_lock); -
+> >> -out: -       if (trans && !IS_ERR(trans)) -
+> >> btrfs_end_transaction(trans, fixup->root); -  if (uncorrectable) { -
+> >> spin_lock(&sctx->stat_lock); -
+> ++sctx->stat.uncorrectable_errors;
+> >> -             spin_unlock(&sctx->stat_lock); -
+> btrfs_dev_replace_stats_inc( -
+> >> &sctx->dev_root->fs_info->dev_replace. -
+> >> num_uncorrectable_read_errors); -
+> >> printk_ratelimited_in_rcu(KERN_ERR "BTRFS: " -
+> "unable to
+> >> fixup (nodatasum) error at logical %llu on dev %s\n", -
+> >> fixup->logical, rcu_str_deref(fixup->dev->name)); -   } - -
+> >> btrfs_free_path(path); -      kfree(fixup); - -
+> >> scrub_pending_trans_workers_dec(sctx); -} - static inline void
+> >> scrub_get_recover(struct scrub_recover *recover) {
+> >> atomic_inc(&recover->refs); @@ -940,11 +663,6 @@ static int
+> >> scrub_handle_errored_block(struct scrub_block *sblock_to_check) csum
+> >> = sblock_to_check->pagev[0]->csum; dev =
+> >> sblock_to_check->pagev[0]->dev;
+> >>
+> >> -     if (sctx->is_dev_replace && !is_metadata && !have_csum) { -
+> >> sblocks_for_recheck = NULL; -         goto nodatasum_case; -  } - /* *
+> read
+> >> all mirrors one after the other. This includes to * re-read the
+> >> extent or metadata block that failed (that was @@ -1058,36 +776,6 @@
+> >> static int scrub_handle_errored_block(struct scrub_block
+> >> *sblock_to_check) goto out; }
+> >>
+> >> -     if (!is_metadata && !have_csum) { -             struct
 > scrub_fixup_nodatasum
-> > *fixup_nodatasum; - -		WARN_ON(sctx->is_dev_replace); -
-> > -nodatasum_case: - -		/* -		 * !is_metadata and !have_csum, this
-> > means that the data -		 * might not be COW'ed, that it might be
-> > modified -		 * concurrently. The general strategy to work on the -
-> > * commit root does not help in the case when COW is not -		 *
-> > used. -		 */ -		fixup_nodatasum = kzalloc(sizeof(*fixup_nodatasum),
-> > GFP_NOFS); -		if (!fixup_nodatasum) -			goto
-> > did_not_correct_error; -		fixup_nodatasum->sctx = sctx; -
-> > fixup_nodatasum->dev = dev; -		fixup_nodatasum->logical = logical;
-> > -		fixup_nodatasum->root = fs_info->extent_root; -
-> > fixup_nodatasum->mirror_num = failed_mirror_index + 1; -
-> > scrub_pending_trans_workers_inc(sctx); -
-> > btrfs_init_work(&fixup_nodatasum->work, btrfs_scrub_helper, -
-> > scrub_fixup_nodatasum, NULL, NULL); -
-> > btrfs_queue_work(fs_info->scrub_workers, -
-> > &fixup_nodatasum->work); -		goto out; -	} - /* * now build and
-> > submit the bios for the other mirrors, check * checksums. @@
-> > -2575,23 +2263,9 @@ static int scrub_extent(struct scrub_ctx *sctx,
-> > u64 logical, u64 len, while (len) { u64 l = min_t(u64, len,
-> > blocksize); int have_csum = 0; - -		if (flags &
-> > BTRFS_EXTENT_FLAG_DATA) { -			/* push csums to sbio */ -
-> > have_csum = scrub_find_csum(sctx, logical, l, csum); -			if
-> > (have_csum == 0) -				++sctx->stat.no_csum; -			if
-> > (sctx->is_dev_replace && !have_csum) { -				ret =
-> > copy_nocow_pages(sctx, logical, l, -
+> >> *fixup_nodatasum; - -         WARN_ON(sctx->is_dev_replace); -
+> >> -nodatasum_case: - -          /* -             * !is_metadata
+> and !have_csum, this
+> >> means that the data -          * might not be COW'ed, that it might be
+> >> modified -             * concurrently. The general strategy to work on
+> the -
+> >> * commit root does not help in the case when COW is not -
+> *
+> >> used. -                */ -           fixup_nodatasum =
+> kzalloc(sizeof(*fixup_nodatasum),
+> >> GFP_NOFS); -          if (!fixup_nodatasum) -                 goto
+> >> did_not_correct_error; -              fixup_nodatasum->sctx = sctx; -
+> >> fixup_nodatasum->dev = dev; -         fixup_nodatasum->logical =
+> logical;
+> >> -             fixup_nodatasum->root = fs_info->extent_root; -
+> >> fixup_nodatasum->mirror_num = failed_mirror_index + 1; -
+> >> scrub_pending_trans_workers_inc(sctx); -
+> >> btrfs_init_work(&fixup_nodatasum->work, btrfs_scrub_helper, -
+> >> scrub_fixup_nodatasum, NULL, NULL); -
+> >> btrfs_queue_work(fs_info->scrub_workers, -
+> >> &fixup_nodatasum->work); -            goto out; -     } - /* * now
+> build and
+> >> submit the bios for the other mirrors, check * checksums. @@
+> >> -2575,23 +2263,9 @@ static int scrub_extent(struct scrub_ctx *sctx,
+> >> u64 logical, u64 len, while (len) { u64 l = min_t(u64, len,
+> >> blocksize); int have_csum = 0; - -            if (flags &
+> >> BTRFS_EXTENT_FLAG_DATA) { -                   /* push csums to sbio
+> */ -
+> >> have_csum = scrub_find_csum(sctx, logical, l, csum); -
+> if
+> >> (have_csum == 0) -                            ++sctx->stat.no_csum;
+> -                 if
+> >> (sctx->is_dev_replace && !have_csum) { -
+> ret =
+> >> copy_nocow_pages(sctx, logical, l, -
 > mirror_num, -
-> > physical_for_dev_replace); -				goto behind_scrub_pages; -
-> 		} -
-> > } ret = scrub_pages(sctx, logical, l, physical, dev, flags, gen,
-> > mirror_num, have_csum ? csum : NULL, 0, physical_for_dev_replace);
-> > -behind_scrub_pages: if (ret) return ret; len -= l; @@ -3762,10
-> > +3436,6 @@ static noinline_for_stack int scrub_workers_get(struct
-> > btrfs_fs_info *fs_info, if (!fs_info->scrub_wr_completion_workers)
-> > goto fail_scrub_wr_completion_workers;
-> >
-> > -		fs_info->scrub_nocow_workers = -
-> > btrfs_alloc_workqueue("btrfs-scrubnc", flags, 1, 0); -		if
-> > (!fs_info->scrub_nocow_workers) -			goto
+> >> physical_for_dev_replace); -                          goto
+> behind_scrub_pages; -                      } -
+> >> } ret = scrub_pages(sctx, logical, l, physical, dev, flags, gen,
+> >> mirror_num, have_csum ? csum : NULL, 0, physical_for_dev_replace);
+> >> -behind_scrub_pages: if (ret) return ret; len -= l; @@ -3762,10
+> >> +3436,6 @@ static noinline_for_stack int scrub_workers_get(struct
+> >> btrfs_fs_info *fs_info, if (!fs_info->scrub_wr_completion_workers)
+> >> goto fail_scrub_wr_completion_workers;
+> >>
+> >> -             fs_info->scrub_nocow_workers = -
+> >> btrfs_alloc_workqueue("btrfs-scrubnc", flags, 1, 0); -                if
+> >> (!fs_info->scrub_nocow_workers) -                     goto
 > fail_scrub_nocow_workers;
-> > fs_info->scrub_parity_workers =
-> > btrfs_alloc_workqueue("btrfs-scrubparity", flags, max_active, 2); @@
-> > -3776,8 +3446,6 @@ static noinline_for_stack int
-> > scrub_workers_get(struct btrfs_fs_info *fs_info, return 0;
-> >
-> > fail_scrub_parity_workers: -
-> > btrfs_destroy_workqueue(fs_info->scrub_nocow_workers);
-> > -fail_scrub_nocow_workers:
-> > btrfs_destroy_workqueue(fs_info->scrub_wr_completion_workers);
-> > fail_scrub_wr_completion_workers:
-> > btrfs_destroy_workqueue(fs_info->scrub_workers); @@ -3790,7 +3458,6
+> >> fs_info->scrub_parity_workers =
+> >> btrfs_alloc_workqueue("btrfs-scrubparity", flags, max_active, 2); @@
+> >> -3776,8 +3446,6 @@ static noinline_for_stack int
+> >> scrub_workers_get(struct btrfs_fs_info *fs_info, return 0;
+> >>
+> >> fail_scrub_parity_workers: -
+> >> btrfs_destroy_workqueue(fs_info->scrub_nocow_workers);
+> >> -fail_scrub_nocow_workers:
+> >> btrfs_destroy_workqueue(fs_info->scrub_wr_completion_workers);
+> >> fail_scrub_wr_completion_workers:
+> >> btrfs_destroy_workqueue(fs_info->scrub_workers); @@ -3790,7 +3458,6
+> >> @@ static noinline_for_stack void scrub_workers_put(struct
+> >> btrfs_fs_info *fs_info) if (--fs_info->scrub_workers_refcnt == 0) {
+> >> btrfs_destroy_workqueue(fs_info->scrub_workers);
+> >> btrfs_destroy_workqueue(fs_info->scrub_wr_completion_workers); -
+> >> btrfs_destroy_workqueue(fs_info->scrub_nocow_workers);
+> >> btrfs_destroy_workqueue(fs_info->scrub_parity_workers); }
+> >> WARN_ON(fs_info->scrub_workers_refcnt < 0); @@ -4081,339 +3748,3
 > @@
-> > static noinline_for_stack void scrub_workers_put(struct btrfs_fs_info
-> > *fs_info) if (--fs_info->scrub_workers_refcnt == 0) {
-> > btrfs_destroy_workqueue(fs_info->scrub_workers);
-> > btrfs_destroy_workqueue(fs_info->scrub_wr_completion_workers); -
-> > btrfs_destroy_workqueue(fs_info->scrub_nocow_workers);
-> > btrfs_destroy_workqueue(fs_info->scrub_parity_workers); }
-> > WARN_ON(fs_info->scrub_workers_refcnt < 0); @@ -4081,339 +3748,3 @@
-> > static void scrub_free_wr_ctx(struct scrub_wr_ctx *wr_ctx)
-> > mutex_unlock(&wr_ctx->wr_lock); }
-> >
-> > -static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical,
-> > u64 len, -			    int mirror_num, u64 physical_for_dev_replace)
-> -{ -
-> > struct scrub_copy_nocow_ctx *nocow_ctx; -	struct btrfs_fs_info
-> > *fs_info = sctx->dev_root->fs_info; - -	nocow_ctx =
-> > kzalloc(sizeof(*nocow_ctx), GFP_NOFS); -	if (!nocow_ctx) { -
-> > spin_lock(&sctx->stat_lock); -		sctx->stat.malloc_errors++; -
-> > spin_unlock(&sctx->stat_lock); -		return -ENOMEM; -	} - -
-> > scrub_pending_trans_workers_inc(sctx); - -	nocow_ctx->sctx = sctx;
-> > -	nocow_ctx->logical = logical; -	nocow_ctx->len = len; -
-> > nocow_ctx->mirror_num = mirror_num; -
-> > nocow_ctx->physical_for_dev_replace = physical_for_dev_replace; -
-> > btrfs_init_work(&nocow_ctx->work, btrfs_scrubnc_helper, -
-> > copy_nocow_pages_worker, NULL, NULL); -
-> > INIT_LIST_HEAD(&nocow_ctx->inodes); -
-> > btrfs_queue_work(fs_info->scrub_nocow_workers, -
-> > &nocow_ctx->work); - -	return 0; -} - -static int
-> > record_inode_for_nocow(u64 inum, u64 offset, u64 root, void *ctx)
-> > -{ -	struct scrub_copy_nocow_ctx *nocow_ctx = ctx; -	struct
-> > scrub_nocow_inode *nocow_inode; - -	nocow_inode =
-> > kzalloc(sizeof(*nocow_inode), GFP_NOFS); -	if (!nocow_inode) -
-> > return -ENOMEM; -	nocow_inode->inum = inum; -	nocow_inode->offset =
-> > offset; -	nocow_inode->root = root; -
-> > list_add_tail(&nocow_inode->list, &nocow_ctx->inodes); -	return 0;
-> > -} - -#define COPY_COMPLETE 1 - -static void
-> > copy_nocow_pages_worker(struct btrfs_work *work) -{ -	struct
-> > scrub_copy_nocow_ctx *nocow_ctx = -		container_of(work, struct
-> > scrub_copy_nocow_ctx, work); -	struct scrub_ctx *sctx =
-> > nocow_ctx->sctx; -	u64 logical = nocow_ctx->logical; -	u64 len =
-> > nocow_ctx->len; -	int mirror_num = nocow_ctx->mirror_num; -	u64
-> > physical_for_dev_replace = nocow_ctx->physical_for_dev_replace; -
-> > int ret; -	struct btrfs_trans_handle *trans = NULL; -	struct
-> > btrfs_fs_info *fs_info; -	struct btrfs_path *path; -	struct
-> > btrfs_root *root; -	int not_written = 0; - -	fs_info =
-> > sctx->dev_root->fs_info; -	root = fs_info->extent_root; - -	path =
-> > btrfs_alloc_path(); -	if (!path) { -		spin_lock(&sctx->stat_lock);
-> > -		sctx->stat.malloc_errors++; -		spin_unlock(&sctx->stat_lock); -
-> > not_written = 1; -		goto out; -	} - -	trans =
-> > btrfs_join_transaction(root); -	if (IS_ERR(trans)) { -		not_written
-> > = 1; -		goto out; -	} - -	ret =
-> > iterate_inodes_from_logical(logical, fs_info, path, -
-> > record_inode_for_nocow, nocow_ctx); -	if (ret != 0 && ret !=
-> > -ENOENT) { -		btrfs_warn(fs_info, "iterate_inodes_from_logical()
-> > failed: log %llu, " -			"phys %llu, len %llu, mir %u, ret %d", -
-> > logical, physical_for_dev_replace, len, mirror_num, -			ret); -
-> > not_written = 1; -		goto out; -	} - -	btrfs_end_transaction(trans,
-> > root); -	trans = NULL; -	while (!list_empty(&nocow_ctx->inodes)) {
-> > -		struct scrub_nocow_inode *entry; -		entry =
-> > list_first_entry(&nocow_ctx->inodes, -					 struct
-> > scrub_nocow_inode, -					 list); -
-> 	list_del_init(&entry->list); -
-> > ret = copy_nocow_pages_for_inode(entry->inum, entry->offset, -
-> > entry->root, nocow_ctx); -		kfree(entry); -		if (ret ==
-> > COPY_COMPLETE) { -			ret = 0; -			break; -		} else if
-> (ret) { -
-> > break; -		} -	} -out: -	while (!list_empty(&nocow_ctx->inodes)) { -
-> > struct scrub_nocow_inode *entry; -		entry =
-> > list_first_entry(&nocow_ctx->inodes, -					 struct
-> > scrub_nocow_inode, -					 list); -
-> 	list_del_init(&entry->list); -
-> > kfree(entry); -	} -	if (trans && !IS_ERR(trans)) -
-> > btrfs_end_transaction(trans, root); -	if (not_written) -
-> > btrfs_dev_replace_stats_inc(&fs_info->dev_replace. -
-> > num_uncorrectable_read_errors); - -	btrfs_free_path(path); -
-> > kfree(nocow_ctx); - -	scrub_pending_trans_workers_dec(sctx); -} -
-> > -static int check_extent_to_block(struct inode *inode, u64 start,
-> > u64 len, -				 u64 logical) -{ -	struct extent_state
-> *cached_state
-> > = NULL; -	struct btrfs_ordered_extent *ordered; -	struct
-> > extent_io_tree *io_tree; -	struct extent_map *em; -	u64 lockstart =
-> > start, lockend = start + len - 1; -	int ret = 0; - -	io_tree =
-> > &BTRFS_I(inode)->io_tree; - -	lock_extent_bits(io_tree, lockstart,
-> > lockend, 0, &cached_state); -	ordered =
-> > btrfs_lookup_ordered_range(inode, lockstart, len); -	if (ordered)
-> > { -		btrfs_put_ordered_extent(ordered); -		ret = 1; -		goto
-> > out_unlock; -	} - -	em = btrfs_get_extent(inode, NULL, 0, start,
-> > len, 0); -	if (IS_ERR(em)) { -		ret = PTR_ERR(em); -		goto
-> > out_unlock; -	} - -	/* -	 * This extent does not actually cover the
-> > logical extent anymore, -	 * move on to the next inode. -	 */ -	if
-> > (em->block_start > logical || -	    em->block_start + em->block_len
-> > < logical + len) { -		free_extent_map(em); -		ret = 1; -		goto
-> > out_unlock; -	} -	free_extent_map(em); - -out_unlock: -
-> > unlock_extent_cached(io_tree, lockstart, lockend, &cached_state, -
-> > GFP_NOFS); -	return ret; -} - -static int
-> > copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, -
-> > struct scrub_copy_nocow_ctx *nocow_ctx) -{ -	struct btrfs_fs_info
-> > *fs_info = nocow_ctx->sctx->dev_root->fs_info; -	struct btrfs_key
-> > key; -	struct inode *inode; -	struct page *page; -	struct
-> > btrfs_root *local_root; -	struct extent_io_tree *io_tree; -	u64
-> > physical_for_dev_replace; -	u64 nocow_ctx_logical; -	u64 len =
-> > nocow_ctx->len; -	unsigned long index; -	int srcu_index; -	int ret
-> > = 0; -	int err = 0; - -	key.objectid = root; -	key.type =
-> > BTRFS_ROOT_ITEM_KEY; -	key.offset = (u64)-1; - -	srcu_index =
-> > srcu_read_lock(&fs_info->subvol_srcu); - -	local_root =
-> > btrfs_read_fs_root_no_name(fs_info, &key); -	if
-> > (IS_ERR(local_root)) { -		srcu_read_unlock(&fs_info->subvol_srcu,
-> > srcu_index); -		return PTR_ERR(local_root); -	} - -	key.type =
-> > BTRFS_INODE_ITEM_KEY; -	key.objectid = inum; -	key.offset = 0; -
-> > inode = btrfs_iget(fs_info->sb, &key, local_root, NULL); -
-> > srcu_read_unlock(&fs_info->subvol_srcu, srcu_index); -	if
-> > (IS_ERR(inode)) -		return PTR_ERR(inode); - -	/* Avoid
-> > truncate/dio/punch hole.. */ -	mutex_lock(&inode->i_mutex); -
-> > inode_dio_wait(inode); - -	physical_for_dev_replace =
-> > nocow_ctx->physical_for_dev_replace; -	io_tree =
-> > &BTRFS_I(inode)->io_tree; -	nocow_ctx_logical =
-> > nocow_ctx->logical; - -	ret = check_extent_to_block(inode, offset,
-> > len, nocow_ctx_logical); -	if (ret) { -		ret = ret > 0 ? 0 : ret; -
-> > goto out; -	} - -	while (len >= PAGE_CACHE_SIZE) { -		index =
-> > offset >> PAGE_CACHE_SHIFT; -again: -		page =
-> > find_or_create_page(inode->i_mapping, index, GFP_NOFS); -		if
-> > (!page) { -			btrfs_err(fs_info, "find_or_create_page() failed"); -
-> > ret = -ENOMEM; -			goto out; -		} - -		if
-> (PageUptodate(page)) { -
-> > if (PageDirty(page)) -				goto next_page; -		} else { -
-> > ClearPageError(page); -			err = extent_read_full_page(io_tree,
-> > page, -							   btrfs_get_extent, -
-> > nocow_ctx->mirror_num); -			if (err) { -				ret = err; -
-> 			goto
-> > next_page; -			} - -			lock_page(page); -			/* -
-> 	 * If the page
-> > has been remove from the page cache, -			 * the data on it is
-> > meaningless, because it may be -			 * old one, the new data may
-> be
-> > written into the new -			 * page in the page cache. -			 */ -
-> 		if
-> > (page->mapping != inode->i_mapping) { -				unlock_page(page);
+> >> static void scrub_free_wr_ctx(struct scrub_wr_ctx *wr_ctx)
+> >> mutex_unlock(&wr_ctx->wr_lock); }
+> >>
+> >> -static int copy_nocow_pages(struct scrub_ctx *sctx, u64 logical,
+> >> u64 len, -                        int mirror_num, u64
+> physical_for_dev_replace) -{ -
+> >> struct scrub_copy_nocow_ctx *nocow_ctx; -     struct btrfs_fs_info
+> >> *fs_info = sctx->dev_root->fs_info; - -       nocow_ctx =
+> >> kzalloc(sizeof(*nocow_ctx), GFP_NOFS); -      if (!nocow_ctx) { -
+> >> spin_lock(&sctx->stat_lock); -
+> sctx->stat.malloc_errors++; -
+> >> spin_unlock(&sctx->stat_lock); -              return -ENOMEM;
+> -       } - -
+> >> scrub_pending_trans_workers_inc(sctx); - -    nocow_ctx->sctx = sctx;
+> >> -     nocow_ctx->logical = logical; - nocow_ctx->len = len; -
+> >> nocow_ctx->mirror_num = mirror_num; -
+> >> nocow_ctx->physical_for_dev_replace = physical_for_dev_replace; -
+> >> btrfs_init_work(&nocow_ctx->work, btrfs_scrubnc_helper, -
+> >> copy_nocow_pages_worker, NULL, NULL); -
+> >> INIT_LIST_HEAD(&nocow_ctx->inodes); -
+> >> btrfs_queue_work(fs_info->scrub_nocow_workers, -
+> >> &nocow_ctx->work); - -        return 0; -} - -static int
+> >> record_inode_for_nocow(u64 inum, u64 offset, u64 root, void *ctx) -{
+> >> -  struct scrub_copy_nocow_ctx *nocow_ctx = ctx; - struct
+> >> scrub_nocow_inode *nocow_inode; - -   nocow_inode =
+> >> kzalloc(sizeof(*nocow_inode), GFP_NOFS); -    if (!nocow_inode) -
+> >> return -ENOMEM; -     nocow_inode->inum = inum; -
+> nocow_inode->offset =
+> >> offset; -     nocow_inode->root = root; -
+> >> list_add_tail(&nocow_inode->list, &nocow_ctx->inodes); -      return 0;
+> >> -} - -#define COPY_COMPLETE 1 - -static void
+> >> copy_nocow_pages_worker(struct btrfs_work *work) -{ - struct
+> >> scrub_copy_nocow_ctx *nocow_ctx = -           container_of(work,
+> struct
+> >> scrub_copy_nocow_ctx, work); -        struct scrub_ctx *sctx =
+> >> nocow_ctx->sctx; -    u64 logical = nocow_ctx->logical; -     u64 len =
+> >> nocow_ctx->len; -     int mirror_num = nocow_ctx->mirror_num; -
+> u64
+> >> physical_for_dev_replace = nocow_ctx->physical_for_dev_replace; -
+> >> int ret; -    struct btrfs_trans_handle *trans = NULL; -      struct
+> >> btrfs_fs_info *fs_info; -     struct btrfs_path *path; -      struct
+> >> btrfs_root *root; -   int not_written = 0; - -        fs_info =
+> >> sctx->dev_root->fs_info; -    root = fs_info->extent_root; - -        path
+> =
+> >> btrfs_alloc_path(); - if (!path) { -          spin_lock(&sctx->stat_lock);
+> >> -             sctx->stat.malloc_errors++; -
+> spin_unlock(&sctx->stat_lock); -
+> >> not_written = 1; -            goto out; -     } - -   trans =
+> >> btrfs_join_transaction(root); -       if (IS_ERR(trans)) { -
+> not_written
+> >> = 1; -                goto out; -     } - -   ret =
+> >> iterate_inodes_from_logical(logical, fs_info, path, -
+> >> record_inode_for_nocow, nocow_ctx); - if (ret != 0 && ret !=
+> >> -ENOENT) { -          btrfs_warn(fs_info, "iterate_inodes_from_logical()
+> >> failed: log %llu, " -                 "phys %llu, len %llu, mir %u, ret %d",
 > -
-> > page_cache_release(page); -				goto again; -			} -
-> 		if
-> > (!PageUptodate(page)) { -				ret = -EIO; -				goto
-> next_page; -
-> > } -		} - -		ret = check_extent_to_block(inode, offset, len, -
-> > nocow_ctx_logical); -		if (ret) { -			ret = ret > 0 ? 0 : ret; -
-> > goto next_page; -		} - -		err = write_page_nocow(nocow_ctx->sctx, -
-> > physical_for_dev_replace, page); -		if (err) -			ret = err;
-> > -next_page: -		unlock_page(page); -
-> 	page_cache_release(page); - -
-> > if (ret) -			break; - -		offset += PAGE_CACHE_SIZE; -
-> > physical_for_dev_replace += PAGE_CACHE_SIZE; -		nocow_ctx_logical
-> > += PAGE_CACHE_SIZE; -		len -= PAGE_CACHE_SIZE; -	} -	ret =
-> > COPY_COMPLETE; -out: -	mutex_unlock(&inode->i_mutex); -
-> > iput(inode); -	return ret; -} - -static int write_page_nocow(struct
-> > scrub_ctx *sctx, -			    u64 physical_for_dev_replace, struct page
-> > *page) -{ -	struct bio *bio; -	struct btrfs_device *dev; -	int
-> > ret; - -	dev = sctx->wr_ctx.tgtdev; -	if (!dev) -		return -EIO; -
-> > if (!dev->bdev) { -		printk_ratelimited(KERN_WARNING -
-> 	"BTRFS:
-> > scrub write_page_nocow(bdev == NULL) is unexpected!\n"); -		return
-> > -EIO; -	} -	bio = btrfs_io_bio_alloc(GFP_NOFS, 1); -	if (!bio) { -
-> > spin_lock(&sctx->stat_lock); -		sctx->stat.malloc_errors++; -
-> > spin_unlock(&sctx->stat_lock); -		return -ENOMEM; -	} -
-> > bio->bi_iter.bi_size = 0; -	bio->bi_iter.bi_sector =
-> > physical_for_dev_replace >> 9; -	bio->bi_bdev = dev->bdev; -	ret =
-> > bio_add_page(bio, page, PAGE_CACHE_SIZE, 0); -	if (ret !=
-> > PAGE_CACHE_SIZE) { -leave_with_eio: -		bio_put(bio); -
-> > btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_WRITE_ERRS); -
-> > return -EIO; -	} - -	if (btrfsic_submit_bio_wait(WRITE_SYNC, bio))
-> > -		goto leave_with_eio; - -	bio_put(bio); -	return 0; -}
+> >> logical, physical_for_dev_replace, len, mirror_num, -
+> ret); -
+> >> not_written = 1; -            goto out; -     } - -
+> btrfs_end_transaction(trans,
+> >> root); -      trans = NULL; - while (!list_empty(&nocow_ctx->inodes)) {
+> >> -             struct scrub_nocow_inode *entry; -              entry
+> =
+> >> list_first_entry(&nocow_ctx->inodes, -
+> struct
+> >> scrub_nocow_inode, -                                   list); -
+> list_del_init(&entry->list); -
+> >> ret = copy_nocow_pages_for_inode(entry->inum, entry->offset, -
+> >> entry->root, nocow_ctx); -            kfree(entry); -         if (ret ==
+> >> COPY_COMPLETE) { -                    ret = 0; -
+> break; -                } else if (ret) { -
+> >> break; -              } -     } -out: -       while
+> (!list_empty(&nocow_ctx->inodes)) { -
+> >> struct scrub_nocow_inode *entry; -            entry =
+> >> list_first_entry(&nocow_ctx->inodes, -
+> struct
+> >> scrub_nocow_inode, -                                   list); -
+> list_del_init(&entry->list); -
+> >> kfree(entry); -       } -     if (trans && !IS_ERR(trans)) -
+> >> btrfs_end_transaction(trans, root); - if (not_written) -
+> >> btrfs_dev_replace_stats_inc(&fs_info->dev_replace. -
+> >> num_uncorrectable_read_errors); - -   btrfs_free_path(path); -
+> >> kfree(nocow_ctx); - - scrub_pending_trans_workers_dec(sctx); -} -
+> >> -static int check_extent_to_block(struct inode *inode, u64 start,
+> >> u64 len, -                             u64 logical) -{ -      struct
+> extent_state *cached_state
+> >> = NULL; -     struct btrfs_ordered_extent *ordered; - struct
+> >> extent_io_tree *io_tree; -    struct extent_map *em; -        u64
+> lockstart =
+> >> start, lockend = start + len - 1; -   int ret = 0; - -        io_tree =
+> >> &BTRFS_I(inode)->io_tree; - - lock_extent_bits(io_tree, lockstart,
+> >> lockend, 0, &cached_state); - ordered =
+> >> btrfs_lookup_ordered_range(inode, lockstart, len); -  if (ordered)
+> >> { -           btrfs_put_ordered_extent(ordered); -            ret = 1;
+> -              goto
+> >> out_unlock; - } - -   em = btrfs_get_extent(inode, NULL, 0, start,
+> >> len, 0); -    if (IS_ERR(em)) { -             ret = PTR_ERR(em); -
+> goto
+> >> out_unlock; - } - -   /* -     * This extent does not actually cover the
+> >> logical extent anymore, -      * move on to the next inode. -  */ -   if
+> >> (em->block_start > logical || -           em->block_start +
+> em->block_len
+> >> < logical + len) { -          free_extent_map(em); -          ret = 1; -
+> goto
+> >> out_unlock; - } -     free_extent_map(em); - -out_unlock: -
+> >> unlock_extent_cached(io_tree, lockstart, lockend, &cached_state, -
+> >> GFP_NOFS); -  return ret; -} - -static int
+> >> copy_nocow_pages_for_inode(u64 inum, u64 offset, u64 root, - struct
+> >> scrub_copy_nocow_ctx *nocow_ctx) -{ -  struct btrfs_fs_info
+> >> *fs_info = nocow_ctx->sctx->dev_root->fs_info; -      struct btrfs_key
+> >> key; -        struct inode *inode; -  struct page *page; -    struct
+> >> btrfs_root *local_root; -     struct extent_io_tree *io_tree; -       u64
+> >> physical_for_dev_replace; -   u64 nocow_ctx_logical; -        u64 len =
+> >> nocow_ctx->len; -     unsigned long index; -  int srcu_index; -       int
+> ret
+> >> = 0; -        int err = 0; - -        key.objectid = root; -  key.type =
+> >> BTRFS_ROOT_ITEM_KEY; -        key.offset = (u64)-1; - -
+> srcu_index =
+> >> srcu_read_lock(&fs_info->subvol_srcu); - -    local_root =
+> >> btrfs_read_fs_root_no_name(fs_info, &key); -  if
+> >> (IS_ERR(local_root)) { -
+> srcu_read_unlock(&fs_info->subvol_srcu,
+> >> srcu_index); -                return PTR_ERR(local_root); -   } - -
+> key.type =
+> >> BTRFS_INODE_ITEM_KEY; -       key.objectid = inum; -  key.offset = 0; -
+> >> inode = btrfs_iget(fs_info->sb, &key, local_root, NULL); -
+> >> srcu_read_unlock(&fs_info->subvol_srcu, srcu_index); -        if
+> >> (IS_ERR(inode)) -             return PTR_ERR(inode); - -      /* Avoid
+> >> truncate/dio/punch hole.. */ -        mutex_lock(&inode->i_mutex); -
+> >> inode_dio_wait(inode); - -    physical_for_dev_replace =
+> >> nocow_ctx->physical_for_dev_replace; -        io_tree =
+> >> &BTRFS_I(inode)->io_tree; -   nocow_ctx_logical =
+> >> nocow_ctx->logical; - -       ret = check_extent_to_block(inode, offset,
+> >> len, nocow_ctx_logical); -    if (ret) { -            ret = ret > 0 ? 0 : ret; -
+> >> goto out; -   } - -   while (len >= PAGE_CACHE_SIZE) { -
+> index =
+> >> offset >> PAGE_CACHE_SHIFT; -again: -         page =
+> >> find_or_create_page(inode->i_mapping, index, GFP_NOFS); -
+> if
+> >> (!page) { -                   btrfs_err(fs_info, "find_or_create_page()
+> failed"); -
+> >> ret = -ENOMEM; -                      goto out; -             } - -
+> if (PageUptodate(page)) { -
+> >> if (PageDirty(page)) -                                goto next_page;
+> -               } else { -
+> >> ClearPageError(page); -                       err =
+> extent_read_full_page(io_tree,
+> >> page, -
+> btrfs_get_extent, -
+> >> nocow_ctx->mirror_num); -                     if (err) { -
+> ret = err; -                            goto
+> >> next_page; -                  } - -
+> lock_page(page); -                      /* -                     * If
+> the page
+> >> has been remove from the page cache, -                         * the
+> data on it is
+> >> meaningless, because it may be -                       * old one, the
+> new data may be
+> >> written into the new -                         * page in the page
+> cache. -                     */ -                   if
+> >> (page->mapping != inode->i_mapping) { -
+> unlock_page(page); -
+> >> page_cache_release(page); -                           goto again;
+> -                   } -                     if
+> >> (!PageUptodate(page)) { -                             ret = -EIO; -
+> goto next_page; -
+> >> } -           } - -           ret = check_extent_to_block(inode, offset,
+> len, -
+> >> nocow_ctx_logical); -         if (ret) { -                    ret = ret >
+> 0 ? 0 : ret; -
+> >> goto next_page; -             } - -           err =
+> write_page_nocow(nocow_ctx->sctx, -
+> >> physical_for_dev_replace, page); -            if (err) -
+> ret = err;
+> >> -next_page: -         unlock_page(page); -
+> page_cache_release(page); - -
+> >> if (ret) -                    break; - -              offset +=
+> PAGE_CACHE_SIZE; -
+> >> physical_for_dev_replace += PAGE_CACHE_SIZE; -
+> nocow_ctx_logical
+> >> += PAGE_CACHE_SIZE; -         len -= PAGE_CACHE_SIZE; -       } -
+> ret =
+> >> COPY_COMPLETE; -out: -        mutex_unlock(&inode->i_mutex); -
+> >> iput(inode); -        return ret; -} - -static int write_page_nocow(struct
+> >> scrub_ctx *sctx, -                        u64
+> physical_for_dev_replace, struct page
+> >> *page) -{ -   struct bio *bio; -      struct btrfs_device *dev; -     int
+> >> ret; - -      dev = sctx->wr_ctx.tgtdev; -    if (!dev) -
+> return -EIO; -
+> >> if (!dev->bdev) { -           printk_ratelimited(KERN_WARNING -
+> "BTRFS:
+> >> scrub write_page_nocow(bdev == NULL) is unexpected!\n"); -
+> return
+> >> -EIO; -       } -     bio = btrfs_io_bio_alloc(GFP_NOFS, 1); -        if
+> (!bio) { -
+> >> spin_lock(&sctx->stat_lock); -
+> sctx->stat.malloc_errors++; -
+> >> spin_unlock(&sctx->stat_lock); -              return -ENOMEM;
+> -       } -
+> >> bio->bi_iter.bi_size = 0; -   bio->bi_iter.bi_sector =
+> >> physical_for_dev_replace >> 9; -      bio->bi_bdev = dev->bdev; -     ret
+> =
+> >> bio_add_page(bio, page, PAGE_CACHE_SIZE, 0); -        if (ret !=
+> >> PAGE_CACHE_SIZE) { -leave_with_eio: -         bio_put(bio); -
+> >> btrfs_dev_stat_inc_and_print(dev, BTRFS_DEV_STAT_WRITE_ERRS); -
+> >> return -EIO; -        } - -   if (btrfsic_submit_bio_wait(WRITE_SYNC, bio))
+> >> -             goto leave_with_eio; - -        bio_put(bio); - return 0; -}
+> >>
 > >
-> 
-> 
-> - --
-> Jeff Mahoney
-> SUSE Labs
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-> 
+> >
+> > - --
+> > Jeff Mahoney
+> > SUSE Labs
+> > -----BEGIN PGP SIGNATURE-----
+> > Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+> >
+> >
 > iQIcBAEBAgAGBQJWKk4SAAoJEB57S2MheeWyVwkP/0jftdMvTiXNe+7pzcnyoim
 > A
+> >
 > lYDb0pXTE+/F7utsRMFN1z/NHMLJaTzfmeBVffG+FlEPKakzsXqfTKuQ1MO3F+NK
-> m8djSfGd88rQFfIU3kdhw3g+3LIp4JG10/IMKjESS7ra4zFymIOrHAuK9JxsqCO5
-> VQ4f6rgqpeXGfi3F3huS6JVhDJJrXQcNCgbwUbNajzM052AsOsxfxUj7cLERgJ9Q
+> > m8djSfGd88rQFfIU3kdhw3g+3LIp4JG10/IMKjESS7ra4zFymIOrHAuK9JxsqCO5
+> > VQ4f6rgqpeXGfi3F3huS6JVhDJJrXQcNCgbwUbNajzM052AsOsxfxUj7cLERgJ9Q
+> >
 > 72GyA+cNstMMoHb5XqR3P+LlYdBJmQTQBnYSMP55WY+jZy6Eyt969Tkwr+T+S7
 > j1
-> s6PePS7ak8sZNpXhLxMtipIPF7b764iMTZrauf4uqa7woO4cAq5b/El+CvYrJA4B
-> fgxHRyCAJVdJrmdJuFP/ddY4OzzWByXyoT2cvv8+eysAUlRxrYB4/lE5FfDxUhC0
+> > s6PePS7ak8sZNpXhLxMtipIPF7b764iMTZrauf4uqa7woO4cAq5b/El+CvYrJA4B
+> > fgxHRyCAJVdJrmdJuFP/ddY4OzzWByXyoT2cvv8+eysAUlRxrYB4/lE5FfDxUhC0
+> >
 > wwUDruFbk27pYdCZNxnLkJ8oMaJLaYjcNSu5jgD3omNmWOSa6ZN17Ha7VPtLL
 > A4W
-> jUZXy/k4J4wKTR+/BfpsE52wcSEgFT6C3n+2A+y+/tS10fTw2UgTW3SwiYZlmYHi
+> > jUZXy/k4J4wKTR+/BfpsE52wcSEgFT6C3n+2A+y+/tS10fTw2UgTW3SwiYZlmYHi
+> >
 > amDXa8NcbrMNaZql1ykzkIpKHfkkNNScZTI8u4GWyVCs30npf8YOOmBNVRshp5
 > WQ
+> >
 > BnBPqgHcJFw+5autuBrtw58Z1j8IVlGdASt1d/VcBmgMJPCvIm/U/YfBHXslcUHU
-> MNOl/0NrfnfAdRZbAFeL
-> =wNWX
-> -----END PGP SIGNATURE-----
+> > MNOl/0NrfnfAdRZbAFeL
+> > =wNWX
+> > -----END PGP SIGNATURE-----
+> > --
+> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+> > in the body of a message to majordomo@vger.kernel.org More majordomo
+> > info at  http://vger.kernel.org/majordomo-info.html
+> 
+> 
+> 
+> --
+> Filipe David Manana,
+> 
+> "Reasonable men adapt themselves to the world.
+>  Unreasonable men adapt the world to themselves.
+>  That's why all progress depends on unreasonable men."
 

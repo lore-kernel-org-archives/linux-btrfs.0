@@ -1,119 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.70.57.6] ([195.70.57.6]:45212 "EHLO icts.hu"
-	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1753936AbbJZLdR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 07:33:17 -0400
-Received: from [10.168.1.103] (91.82.3.223.pool.invitel.hu [91.82.3.223])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by icts.hu (Postfix) with ESMTPSA id 910F41D0A1F6
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 12:23:29 +0100 (CET)
-To: linux-btrfs@vger.kernel.org
-From: =?UTF-8?B?U3phbG1hIEzDoXN6bMOz?= <dblaci@dblaci.hu>
-Subject: random i/o error without error in dmesg
-Message-ID: <562E0D31.2080003@dblaci.hu>
-Date: Mon, 26 Oct 2015 12:23:29 +0100
+Received: from userp1040.oracle.com ([156.151.31.81]:34575 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753426AbbJZLoC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Oct 2015 07:44:02 -0400
+Message-ID: <562E11A0.9060103@oracle.com>
+Date: Mon, 26 Oct 2015 19:42:24 +0800
+From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+To: Jeff Mahoney <jeffm@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [RFC PATCH 2/3] btrfs-progs: kernel based default features for
+ mkfs
+References: <1445417149-804-1-git-send-email-anand.jain@oracle.com> <1445417149-804-2-git-send-email-anand.jain@oracle.com> <562A5140.20306@suse.com>
+In-Reply-To: <562A5140.20306@suse.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
 
-I have this error for a time, It's not easy to reproduce, i write 
-everything i know at the moment.
+Thanks Jeff for the comments.
 
-I maintain some servers running xen (4.5.1) and gentoo dom0 with recent 
-kernels (3.18.*, 4.1.6, 4.2.3, 4.2.4). I use gentoo-sources patchset.
-Running xen domu s, for www and mysql.
-I have mysql servers in domu with high load (lots of read write). These 
-systems are identical in term of configuration and kernel.
+On 10/23/2015 11:24 PM, Jeff Mahoney wrote:
+> -----BEGIN PGP SIGNED MESSAGE-----
+> Hash: SHA1
+>
+> On 10/21/15 4:45 AM, Anand Jain wrote:
+>> mkfs from latest btrfs-progs will enable latest default features,
+>> and if the kernel is down-rev and does not support a latest
+>> default feature then mount fails, as expected.
+>>
+>> This patch disables default features based on the running kernel.
+>
+> I like the idea generally based on comments further in the thread, but
+> what I don't like is:
+>
+> 1) It's silent.
 
-Sometimes I got mysql errors randomly (sometimes more than one at a day, 
-sometimes one at a week), but it is more frequent on high load.
+  Will add warning.
 
-The mysql errors are because the file cannot be read from the 
-filesystem. If i try to run md5sum on it it shows io error.
+> 2) There's no way to override it.
 
-At this point mysql stop && umount && mount && mysql start solves the 
-problem.
+> If we're going to change the defaults at runtime, we should tell the
+> user what has changed and why.  Otherwise, an identical mkfs.btrfs
+> binary will behave differently on different systems without feedback
+> and that violates the principle of least surprise.  If they want to do
+> what Qu suggests later in the thread, where the device is being
+> prepared for use on a newer kernel, it should be possible to force it.
+>   The normal -f should be fine there.
 
-calling
-echo 3 > /proc/sys/vm/drop_caches
-sometimes solves the io error, but not every time. The problem rarely 
-randomly fixed without remount.
+  Sill have no idea how to get this, trying.
 
-The problem seems to have no connection to the dom0 kernel and the xen 
-version. I have this problem for example on these dom0 -s:
+Thanks, Anand
 
-kernel: 3.19.3  xen 4.5.0
-kernel: 4.2.3 xen 4.5.1
 
-The problem seems to have started with the kernel 4.0 series, but I am 
-not sure. In the summer the load was low, and the problem occured very 
-rarely.
-
-In this case of io error:
-btrfs scrub finds no error.
-no memory or hdd/ssd hardware error (smart, memtest, etc) (not only one 
-physical server is affected) and no errors in dmesg at all.
-tried different kernel configs, but I don't think I have anything 
-extraordinary.
-I use deadline scheduler.
-I use these mount options:
-
-/dev/xvdb1 on /mnt/mysql_naplo_b2 type btrfs 
-(rw,noatime,compress=zlib,nossd,noacl,space_cache,subvolid=5,subvol=/)
-
-I tried to reformat the filesystem with recent btrfs-progs: (and olders 
-before)
-btrfs-progs v4.2.2
-I use default mkfs options (skinny extents)
-After format the problem was disappeared for some days. (it seems 
-correlation with the age of the filesystem?)
-I do manual defragment on the filesystem with a script simply 
-recursively check "filefrag" for count the fragmentation and defrag if 
-it is more than 50 and the file is larger than 64kbyte. (this sometimes 
-lowers the frequency of the problem)
-The files unreadable are usually small files, for example:
-
-filefrag:
-/mnt/mysql_naplo_b2/mozanaplo_boly_altisk_2015/n_helyettesites.MYD: 2 
-extents found
-ls -l:
--rw-rw---- 1 mysql mysql 8092 okt   22 08.24 
-/mnt/mysql_naplo_b2/mozanaplo_boly_altisk_2015/n_helyettesites.MYD
-
-There is no error in dmesg, no io errors, no kernel panic, etc at all.
-
-The (virtual) servers has 3-4GB of memory, and I use a 2GB tmpfs for the 
-temporary tables (this way the physical memory usage is somewhat hectic).
-
-The filesystem has no snapshots, but sometimes (for rebuilding 
-replication) I take on, and delete it. (but the problem happens on 
-filesystems with no snapshot created ever)
-
-I did not try downgrading the kernel (for 3.18), but I always try to 
-upgrade.
-
-I guess this problem has some connection to the memory usage (but there 
-is no out of memory).
-
-I am able to try any debug mode if you suggest one, but it's not 
-reproducable, it happens randomly. I think there should be some errors 
-in the dmesg if I encounter io errors, but I am not sure if this error 
-has direct connection for btrfs at all. I didn't try other filesystems. 
-The problem was occured with kernel versions: 4.0.1, 4.0.4, 4.1.6, 
-4.2.1, 4.2.3, 4.2.4.
-
-I checked the bugzilla, and google for similar problem, but I couldn't 
-find any similar.
-
-This problem sometimes (i think it is the same) happen on a www server 
-too, with apache log files (they are fragmented heavily), but very 
-rarely. I don't have any problem with this configuration on other 
-servers even mysql servers with lower load.
-
-I welcome any suggestion:
-
-László Szalma
+> - -Jeff
+>
+>> Signed-off-by: Anand Jain <anand.jain@oracle.com> --- mkfs.c | 5
+>> ++++- 1 file changed, 4 insertions(+), 1 deletion(-)
+>>
+>> diff --git a/mkfs.c b/mkfs.c index a5802f7..2b9d734 100644 ---
+>> a/mkfs.c +++ b/mkfs.c @@ -1357,10 +1357,13 @@ int main(int ac, char
+>> **av) int dev_cnt = 0; int saved_optind; char
+>> fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 }; -	u64 features =
+>> BTRFS_MKFS_DEFAULT_FEATURES; +	u64 features; struct mkfs_allocation
+>> allocation = { 0 }; struct btrfs_mkfs_config mkfs_cfg;
+>>
+>> +	features = btrfs_features_allowed_by_kernel(); +	features &=
+>> BTRFS_MKFS_DEFAULT_FEATURES; + while(1) { int c; static const
+>> struct option long_options[] = {
+>>
+>
+>
+> - --
+> Jeff Mahoney
+> SUSE Labs
+> -----BEGIN PGP SIGNATURE-----
+> Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
+>
+> iQIcBAEBAgAGBQJWKlE/AAoJEB57S2MheeWy2mAP/33RvA9174u0PRmh+RBorZDC
+> p3nDFFxS7pI5u7rSkFqUvbsKy9AoblUvgMYS8pDNkFokDML2hbH3HaYWFEmqvMch
+> mp9DQ+wKz5hI5fYt/wgDdtVO6X0E3TCm2Cj1Uw4fl7E0bMzgNgio8tnOoGTrHGa5
+> YkZ96L9UWzEScv9EtesO3DLbUC+O3pokyHsHCdBRVgEwLcLB1AtmPrQmhc2a1+M4
+> sfzElmbo9Rld/xmtI4ecHl1sWbpfrYcKimzV32Jdv/SNhEyPuFOcN6/GUDOrGE7o
+> Vs87+HtuXUr+CbFUM9r9wB1Nqj4yYJ78LnBfepBMjY9vWyAgPR49WFPRA/uhkvu/
+> uOd4DNgUbLktakztsMb1GRiS/6AEj6s8mHFzkOrS5b9E/RbwegWgcnpnWCveFcDO
+> Nsfa6Mg99X7ojuXeMi8c00Jins70uSnh/dLOtP5JYkxTAf8v5znbouYYawBZLHAi
+> P0KbIpQFmW+Qm9is1CDVZktnj79BFMcd+twMFQu/m9jhYdLUFqeEFCJ+sxCGcmoM
+> n18ayAzbvCQCYz5dBOk2EQPgQoQKJGEOdc4IY0GdRcOwNcbw2hWbwbfGjLAKpLrA
+> PVC8YmRsyT1CotXBXJEpn7jYFR2fnDOyO/5jq1JRDa6Mxeq3dECIRWof3pwQLnpI
+> boQXIGHUlVWltF+hla3C
+> =TG+F
+> -----END PGP SIGNATURE-----
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

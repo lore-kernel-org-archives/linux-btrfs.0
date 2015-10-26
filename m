@@ -1,108 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f54.google.com ([209.85.220.54]:35282 "EHLO
-	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752076AbbJZSbW (ORCPT
+Received: from mail-lb0-f172.google.com ([209.85.217.172]:33273 "EHLO
+	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751617AbbJZUU0 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 14:31:22 -0400
-Received: by pasz6 with SMTP id z6so195399150pas.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 11:31:22 -0700 (PDT)
+	Mon, 26 Oct 2015 16:20:26 -0400
+Received: by lbbec13 with SMTP id ec13so46932105lbb.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 13:20:24 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <CA+9GZUipGeuNuVP2=g2+gbWpJWxbeHVQEcQ5QYfOCWjkv5JDcQ@mail.gmail.com>
-References: <CA+9GZUiUNiRJOjwhxZaE06GdfcLQBpWfY5kpkpmLhD6eg_cg4g@mail.gmail.com>
- <562E37F4.9080602@oracle.com> <CA+9GZUjnrdA-O24bbY4KGAxcLOk26uohS8cF+Z=vLjOT88-rwQ@mail.gmail.com>
- <CA+9GZUi9jiJ9RBezrh7Xi4_1eBpyeNBdrs+hYxsECaa_a9_csA@mail.gmail.com> <CA+9GZUipGeuNuVP2=g2+gbWpJWxbeHVQEcQ5QYfOCWjkv5JDcQ@mail.gmail.com>
-From: "cheater00 ." <cheater00@gmail.com>
-Date: Mon, 26 Oct 2015 19:31:02 +0100
-Message-ID: <CA+9GZUhAZRYto0Rm3Edy0j3gFfGZbfWpqunA3vzraxwh-ANORg@mail.gmail.com>
-Subject: Re: Bad fs performance, IO freezes
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CAAvdE8RJc2eOR0ePdpWaqEeOzHx5xqr5gr0z7sE+cEcuHKhN3A@mail.gmail.com>
+References: <CAAvdE8RJc2eOR0ePdpWaqEeOzHx5xqr5gr0z7sE+cEcuHKhN3A@mail.gmail.com>
+Date: Mon, 26 Oct 2015 21:20:24 +0100
+Message-ID: <CAPmG0jYRvLnkZG9-+aJdBr+6GphCob5rEi9qibAYa3V=kSOFEw@mail.gmail.com>
+Subject: Re: BTRFS with 8TB SMR drives
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I do not experience btrfs-transacti going up to 100% for minutes at a
-time now (not reproduced yet) but I have it spiking up to say 30% for
-a short while and everything jags during that time. So, say, if I am
-watching youtube, the sound cuts out and the video drops out for a
-bit. And if I'm typing, then what I typed during that time gets lost,
-like if I never typed that.
+I decided to give this ST8000AS0002 a try for storing old snapshots,
+although standardization for more optimal/native contol of SMR drives
+is still ongoing.  I saw people got it working with 3.18 kernel, so
+that gave confidence.
 
-I have also connected the same HDD bay with a USB3 cable instead of
-USB2. It's on an USB3 port. So it's running via USB3 now.
+I wanted to see if i could get it running with 4.3.0-rc6 kernel (and
+4.2.3 tools) on an H87M-Pro eSata (non-Intel) port. Filesystem is
+btrfs all single profiles on top of dm-crypt and mounted with
+compress-force=zlib,nossd (I use the drive via bcache but currently
+with not attached to a cache device). The initial snapshot send |
+receive action crashed after 1.2TB transferred, with all the
+typical/known problems in dmesg
+
+Then same trial, newly created fs, on 1 of the Intel sata ports. Also
+the same timeouts seen in dmesg, but fs already corrupted after a few
+GB of datatransfer. It seemed  that the drive was not able to handle
+and store the filesystemdatastream that was being pushed onto it.
+
+So I did  some step back and just created an ext4 on it and did and
+rsync copy.Unfortunately, also the same timouts, port resets etc.
+
+As the drive made the main system unstable, I hooked it up to an AMD
+E-350 based board, also to try other kernels. Also on this board, no
+success with 4.x kernels and also not with 3.18.22 in the first place.
+But I figured out that a powercycle did the trick and not just a hard-
+or softreset. So again created fs from scratch and mounted as
+indicated.
 
 
-On Mon, Oct 26, 2015 at 6:43 PM, cheater00 . <cheater00@gmail.com> wrote:
-> So far I cannot reproduce. If I don't post again this means the issue
-> has been fixed by updating the kernel.
+Now it is 55% filled (3.9TiB) with 10 snapshots (done as increments
+from the source fs from late 2013, with uncompressed allocation of
+about 5.6 TiB). The whole datatransfer took about 4 days, which is
+roughly 10x slower than what would be achieved if the drive were
+non-SMR and in a fast (e.g. Core i7) system.
+
+Although the task below took more than 8 minutes:
+[322087.174089] Workqueue: events_unbound
+btrfs_async_reclaim_metadata_space [btrfs]
+... the fs and system runs OK.
+
+My take is that this relatively low average datatransfer (one reason I
+forced zlib compression) helped getting the task done successfully for
+this device-managed SMR drive, but it is unsatisfying that there are
+kernel version and computerystem dependencies. I had limited time for
+preparing and setting up the datatransfer, so other configurations
+with new kernels might also work, but I had most confidence upfront in
+the one that has turned out to work. Maybe now that all data is on the
+drive, I shrink the fs and create a test fs in a second partition.
+
+On Sat, Oct 24, 2015 at 5:27 AM, Ken Long <kelargo1000@gmail.com> wrote:
+> Hello,
 >
-> On Mon, Oct 26, 2015 at 4:40 PM, cheater00 . <cheater00@gmail.com> wrote:
->> I have located 4.3.0-rc7 binaries which I will now try.
->>
->> On Mon, Oct 26, 2015 at 3:38 PM, cheater00 . <cheater00@gmail.com> wrote:
->>> Thanks for the reply. What version did this go into? I'll try getting
->>> a prebuilt backport of the kernel, building source could slow things
->>> down considerably, but debs will not be available for the latest few
->>> minor versions I guess. So if you can tell me a min version, I'll try
->>> to find the latest deb newer than that, or I'll build if that's not
->>> available.
->>>
->>> On Mon, Oct 26, 2015 at 3:25 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
->>>> On 10/26/2015 08:16 PM, cheater00 . wrote:
->>>>>
->>>>> Hi guys,
->>>>> I am running into really bad performance. Here's my setup:
->>>>>
->>>>> WD Red 6 TB connected over USB2 to my core i7 laptop, running Ubuntu
->>>>> 32-bit with kernel 4.0.4-040004-generic #201505171336.
->>>>>
->>>>> Single btrfs partition covering whole disk.
->>>>>
->>>>> Autodefrag is on.
->>>>>
->>>>> fstab line:
->>>>> UUID=... /media/X btrfs rw,nosuid,nodev,autodefrag 0 0
->>>>>
->>>>> Sometimes when files are being modified or removed, I see
->>>>> btrfs-transacti eat 100% cpu; during this time no io operations
->>>>> succeed, that is, they're all stalled. You can't even ls on that fs.
->>>>> This happens for several minutes then normal operation resumes. There
->>>>> doesn't seem to be a rule to what will trigger this, other than
->>>>> opening a single file and reading usually works quite well. (say,
->>>>> watching a movie while all other programs are closed). But even moving
->>>>> files off the disks triggers some sort of bug. Just now I am moving a
->>>>> few files (just 30gb worth) onto another disk, and the bug triggers.
->>>>> So btrfs-transacti was eating my cpu for over 5 minutes and according
->>>>> to mv's output after this was done and cpu usage went back to normal
->>>>> what I was waiting for was for a tiny png file to be removed. This is
->>>>> pretty bad.
->>>>>
->>>>> I have tried defragmenting directories where files are being accessed
->>>>> and moved. This hasn't helped.
->>>>>
->>>>> This happens whether the FS is near full or not. It currently is near
->>>>> full but it wasn't before and it still did that. It still has about ~
->>>>> 100GB free space now.
->>>>>
->>>>> The more things are happening the more often this bug gets triggered.
->>>>> So if I have utorrent running and its temporary downloads directory is
->>>>> there, its download speed graph will be a few spikes of running at
->>>>> several MB/sec separated by durations of 0 download speed.
->>>>>
->>>>> Nothing seems to show up in dmesg or syslog.
->>>>>
->>>>> I have asked in #btrfs but the suggestions ended up not fixing the
->>>>> issue (autodefrag, defrag dirs).
->>>>>
->>>>> Please advise what I should do with this issue.
->>>>
->>>>
->>>> It might be related to delayed ref rework, the last time I saw this kind of
->>>> hanging problem about btrfs-transaction eating cpu is that because btrfs
->>>> doesn't merge delayed refs, it'd be best to try the lastest kernel and if
->>>> the issue is not resolved, then we can work out a reproducer and provide
->>>> debugging.
->>>>
->>>> Thanks,
->>>>
->>>> Liubo
+> I have a a single version of this drive formatted with btrfs. Its my
+> only btrfs drive on this machine.
+> I'm getting similar errors. Is there any info I can provide to help
+> troubleshoot this?
+>
+> Is a full dmesg still wanted?
+>
+> here's what I'm running-
+>
+> $ uname -a
+> Linux machine 4.2.0-16-lowlatency #19-Ubuntu SMP PREEMPT Thu Oct 8
+> 16:19:23 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

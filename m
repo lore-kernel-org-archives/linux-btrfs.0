@@ -1,112 +1,158 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f181.google.com ([209.85.214.181]:36247 "EHLO
-	mail-ob0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754163AbbJZOBS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 10:01:18 -0400
-Received: by obcqt19 with SMTP id qt19so142654731obc.3
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 07:01:17 -0700 (PDT)
+Received: from mout.gmx.net ([212.227.17.21]:50591 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754091AbbJZOXq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Oct 2015 10:23:46 -0400
+Received: from thetick.localnet ([93.181.44.4]) by mail.gmx.com (mrgmx102)
+ with ESMTPSA (Nemesis) id 0LlXnX-1aOfnL1AIB-00bGjQ for
+ <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 15:23:44 +0100
+From: Marc Joliet <marcec@gmx.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: random i/o error without error in dmesg
+Date: Mon, 26 Oct 2015 15:23:39 +0100
+Message-ID: <5339076.FcC2BAjqs5@thetick>
+In-Reply-To: <562E0D31.2080003@dblaci.hu>
+References: <562E0D31.2080003@dblaci.hu>
 MIME-Version: 1.0
-In-Reply-To: <CA+9GZUgN1Av6mDt3MXGJ8CD8uLayO=T6biTzUd0m9vm4VCVVMw@mail.gmail.com>
-References: <CA+9GZUiUNiRJOjwhxZaE06GdfcLQBpWfY5kpkpmLhD6eg_cg4g@mail.gmail.com>
- <CAC=t97AxEpbE0iWc4dq-8-5ZEe==bnwmufi8TfW7n6669YUkCw@mail.gmail.com>
- <CA+9GZUja+36PfVrS+DuzeJdrYfCMgQQoSzw0Dt3PPpGz2Qywgg@mail.gmail.com>
- <CAC=t97DNfiBqA+evAH+wPt21VOdfEn7SF71FCBVZfjpphtTvmg@mail.gmail.com>
- <CA+9GZUjgdpzNn1U6LGuNPcGefVnVt-FRbNMN3e-bCm_QNxvnFg@mail.gmail.com> <CA+9GZUgN1Av6mDt3MXGJ8CD8uLayO=T6biTzUd0m9vm4VCVVMw@mail.gmail.com>
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Mon, 26 Oct 2015 09:00:58 -0500
-Message-ID: <CAC=t97AHHpzVEbWNP5WOJFdhbds0n2Dxy0vFN3fm6EEX6xEA6g@mail.gmail.com>
-Subject: Re: Bad fs performance, IO freezes
-To: "cheater00 ." <cheater00@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; boundary="nextPart4411903.bkLBVbEfPj"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I get the same kind of muddy errors when I do a quota rescan on the
-filesystem or qgroup show on any subvolume on mine, and I know I don't
-have them enabled.
+--nextPart4411903.bkLBVbEfPj
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-On Mon, Oct 26, 2015 at 8:56 AM, cheater00 . <cheater00@gmail.com> wrote:
-> fwiw, I did this:
->
-> sudo btrfs qgroup show /media/X
-> ERROR: can't perform the search - No such file or directory
-> ERROR: can't list qgroups: No such file or directory
->
-> I assume this means no qgroups present, which means no quotas present.
-> Please correct me if I'm wrong.
-> So yes, the issue must lie elsewhere.
->
-> On Mon, Oct 26, 2015 at 2:46 PM, cheater00 . <cheater00@gmail.com> wrote:
->> I don't remember doing that, but just to exclude everything, how do I check?
->>
->> On Mon, Oct 26, 2015 at 2:45 PM, Donald Pearson
->> <donaldwhpearson@gmail.com> wrote:
->>> AFAIK quotas aren't a mount option, but if you never enabled them and
->>> created the qgroups by hand that's your answer and the issue must be
->>> something else.
->>>
->>> On Mon, Oct 26, 2015 at 8:36 AM, cheater00 . <cheater00@gmail.com> wrote:
->>>> There are no quotas. I haven't enabled them. I believe the fstab says
->>>> that - could they be enabled in another way? How do I check for sure?
->>>> The man page doesn't say how to check the status:
->>>> https://btrfs.wiki.kernel.org/index.php/Manpage/btrfs-quota
->>>>
->>>> On Mon, Oct 26, 2015 at 2:32 PM, Donald Pearson
->>>> <donaldwhpearson@gmail.com> wrote:
->>>>> Accidentally didn't reply to the list the 1st time.
->>>>>
->>>>> I see the same issue when I have quotas enabled.  If you have quotas
->>>>> on, see if turning them off helps.
->>>>>
->>>>> On Mon, Oct 26, 2015 at 7:16 AM, cheater00 . <cheater00@gmail.com> wrote:
->>>>>> Hi guys,
->>>>>> I am running into really bad performance. Here's my setup:
->>>>>>
->>>>>> WD Red 6 TB connected over USB2 to my core i7 laptop, running Ubuntu
->>>>>> 32-bit with kernel 4.0.4-040004-generic #201505171336.
->>>>>>
->>>>>> Single btrfs partition covering whole disk.
->>>>>>
->>>>>> Autodefrag is on.
->>>>>>
->>>>>> fstab line:
->>>>>> UUID=... /media/X btrfs rw,nosuid,nodev,autodefrag 0 0
->>>>>>
->>>>>> Sometimes when files are being modified or removed, I see
->>>>>> btrfs-transacti eat 100% cpu; during this time no io operations
->>>>>> succeed, that is, they're all stalled. You can't even ls on that fs.
->>>>>> This happens for several minutes then normal operation resumes. There
->>>>>> doesn't seem to be a rule to what will trigger this, other than
->>>>>> opening a single file and reading usually works quite well. (say,
->>>>>> watching a movie while all other programs are closed). But even moving
->>>>>> files off the disks triggers some sort of bug. Just now I am moving a
->>>>>> few files (just 30gb worth) onto another disk, and the bug triggers.
->>>>>> So btrfs-transacti was eating my cpu for over 5 minutes and according
->>>>>> to mv's output after this was done and cpu usage went back to normal
->>>>>> what I was waiting for was for a tiny png file to be removed. This is
->>>>>> pretty bad.
->>>>>>
->>>>>> I have tried defragmenting directories where files are being accessed
->>>>>> and moved. This hasn't helped.
->>>>>>
->>>>>> This happens whether the FS is near full or not. It currently is near
->>>>>> full but it wasn't before and it still did that. It still has about ~
->>>>>> 100GB free space now.
->>>>>>
->>>>>> The more things are happening the more often this bug gets triggered.
->>>>>> So if I have utorrent running and its temporary downloads directory is
->>>>>> there, its download speed graph will be a few spikes of running at
->>>>>> several MB/sec separated by durations of 0 download speed.
->>>>>>
->>>>>> Nothing seems to show up in dmesg or syslog.
->>>>>>
->>>>>> I have asked in #btrfs but the suggestions ended up not fixing the
->>>>>> issue (autodefrag, defrag dirs).
->>>>>>
->>>>>> Please advise what I should do with this issue.
->>>>>> --
->>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>>>> the body of a message to majordomo@vger.kernel.org
->>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Hi
+
+FWIW, this sounds like what I've been seeing with dovecot.  In case it'=
+s=20
+relevant, I'll try to explain.
+
+After some uptime, I'll see log messages like this:
+
+Okt 26 12:05:46 thetick dovecot[467]: imap(marcec): Error: pread() fail=
+ed with=20
+file /home/marcec/.mdbox/mailboxes/BTRFS/dbox-Mails/dovecot.index.log:=20=
+
+Input/output error
+
+Occasionally they go away by themselves, but usually I have to reboot t=
+o make=20
+them go away.  This happens when getmail attempts to fetch mail, which =
+fails=20
+due to the above error.  After the reboot getmail succeeds again.
+
+As in Szalma's case, btrfs-scrub never reports anything wrong.
+
+I use LZO compression on the relevant file system, so I wanted to wait =
+until=20
+kernel 4.1.11 before reporting this, but that hasn't hit Gentoo yet (an=
+d=20
+neither has 4.1.10, for some reason).  I don't use quotas.
+
+According to the what I see in the systemd journal, the errors started =
+on=20
+2015-06-01 with kernel 3.19.8.  Note that, strangely enough, I had been=
+ using=20
+that same version since 2015-05-23, so for more than a week before the =
+error=20
+cropped up.  I checked whether I made any changes to the configuration,=
+ and=20
+found this:
+
+diff --git a/kernels/kernel-config-3.19.8-gentoo b/kernels/kernel-
+config-3.19.8-gentoo
+index b061b31..8cf8eba 100644
+=2D-- a/kernels/kernel-config-3.19.8-gentoo
++++ b/kernels/kernel-config-3.19.8-gentoo
+@@ -64,7 +64,7 @@ CONFIG_INIT_ENV_ARG_LIMIT=3D32
+ CONFIG_CROSS_COMPILE=3D""
+ # CONFIG_COMPILE_TEST is not set
+ CONFIG_LOCALVERSION=3D""
+=2DCONFIG_LOCALVERSION_AUTO=3Dy
++# CONFIG_LOCALVERSION_AUTO is not set
+ CONFIG_HAVE_KERNEL_GZIP=3Dy
+ CONFIG_HAVE_KERNEL_BZIP2=3Dy
+ CONFIG_HAVE_KERNEL_LZMA=3Dy
+@@ -73,8 +73,8 @@ CONFIG_HAVE_KERNEL_LZO=3Dy
+ CONFIG_HAVE_KERNEL_LZ4=3Dy
+ # CONFIG_KERNEL_GZIP is not set
+ # CONFIG_KERNEL_BZIP2 is not set
+=2DCONFIG_KERNEL_LZMA=3Dy
+=2D# CONFIG_KERNEL_XZ is not set
++# CONFIG_KERNEL_LZMA is not set
++CONFIG_KERNEL_XZ=3Dy
+ # CONFIG_KERNEL_LZO is not set
+ # CONFIG_KERNEL_LZ4 is not set
+ CONFIG_DEFAULT_HOSTNAME=3D"(none)"
+@@ -132,7 +132,7 @@ CONFIG_TICK_CPU_ACCOUNTING=3Dy
+ # CONFIG_VIRT_CPU_ACCOUNTING_GEN is not set
+ # CONFIG_IRQ_TIME_ACCOUNTING is not set
+ CONFIG_BSD_PROCESS_ACCT=3Dy
+=2D# CONFIG_BSD_PROCESS_ACCT_V3 is not set
++CONFIG_BSD_PROCESS_ACCT_V3=3Dy
+ CONFIG_TASKSTATS=3Dy
+ CONFIG_TASK_DELAY_ACCT=3Dy
+ CONFIG_TASK_XACCT=3Dy
+
+The only change I can think of that might affect anything is=20
+CONFIG_BSD_PROCESS_ACCT_V3=3Dy (I don't remember why exactly I set it).=
+  I can=20
+try without it set, but maybe the kernel configuration is a red herring=
+?
+
+Anyway, the current state of the system is:
+
+# uname -r=20
+4.1.9-gentoo-r1
+# btrfs filesystem show /=20
+Label: 'MARCEC_ROOT'  uuid: 0267d8b3-a074-460a-832d-5d5fd36bae64
+        Total devices 1 FS bytes used 74.40GiB
+        devid    1 size 107.79GiB used 105.97GiB path /dev/sda1
+
+btrfs-progs v4.2.2
+# btrfs filesystem df /
+Data, single: total=3D98.94GiB, used=3D72.30GiB
+System, single: total=3D32.00MiB, used=3D20.00KiB
+Metadata, single: total=3D7.00GiB, used=3D2.10GiB
+GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+
+The filesystem is mounted as (leaving out subvolume mounts which use th=
+e same=20
+mount options):
+/dev/sda1 on / type btrfs (rw,noatime,compress=3Dlzo,ssd,discard,space_=
+cache)
+
+Greetings,
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
+
+--nextPart4411903.bkLBVbEfPj
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQIcBAABCAAGBQJWLjdvAAoJEL/Q5oYsiHj0gGoP/RNfTqvP8rJsCQPHn8FzCTaz
++Q/0rckeUOhOoAmzEY0nBXD5P5b+XZue4bSkue4hDfvoTyTE7sBsp614/LlFdqEV
+H5JLAvoYF+/J/BjXeqiMrLjFTp5Qr60Hzzka8+8mbbNftz4gjL6PXju68JBB2RvC
+5SuMtqHo7yMD/Swoq3z+sztP51tzHlCh/lMo6eEBI5/6Azj6KE/bKd6vLYkmKTA+
+4rfzb1lqcLxZYlNBmlkVCdCp/KymzZDYQUhnFC4rjax50kCWrLILZPsuaETDuzKm
+JZgyrWnxJ8NtY088PMmskLf601IbrvaKTd/JKIzbt4TrlDaWMb3VA4p/fJvAFb1u
++uNCLgqnOA8Onom6Y3dPYdKmncfX243u66sXTofEy+NBar3XGPqg/WexPzxZUiOM
+zRTRBQKj9NiyLw6C4UY6ASQ2U/pv2CQiUJ17DmJPCJa3ky7rkTcurPo5SPuxDeBT
+UxPTx/uJ3U7NY6wNJHAlIHOuGsZEgDXgD2pEq5GGu18uvjGTr4LhjQAtiQkYq6XT
+r0vdDH3POLVrbhm+zUs3P1dapNzJyGiesi4mTATkC8VT9ZjTadRkDcgJms3LJ7te
+f7h/ntyHXUmGu4j2txJ5q7TRrilB11LBm1y2dYc3NB/EbPPV2Smsl5RduAvi4XOB
+pEX26G8vmcSnj2vzBC+1
+=GJF9
+-----END PGP SIGNATURE-----
+
+--nextPart4411903.bkLBVbEfPj--
+

@@ -1,27 +1,25 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f172.google.com ([209.85.217.172]:33273 "EHLO
-	mail-lb0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751617AbbJZUU0 (ORCPT
+Received: from blu004-omc1s20.hotmail.com ([65.55.116.31]:49740 "EHLO
+	BLU004-OMC1S20.hotmail.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751993AbbJZXNh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 16:20:26 -0400
-Received: by lbbec13 with SMTP id ec13so46932105lbb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 13:20:24 -0700 (PDT)
+	Mon, 26 Oct 2015 19:13:37 -0400
+Message-ID: <BLU436-SMTP1878FB5D7ACAF41B0E9B56FA9230@phx.gbl>
 MIME-Version: 1.0
 In-Reply-To: <CAAvdE8RJc2eOR0ePdpWaqEeOzHx5xqr5gr0z7sE+cEcuHKhN3A@mail.gmail.com>
 References: <CAAvdE8RJc2eOR0ePdpWaqEeOzHx5xqr5gr0z7sE+cEcuHKhN3A@mail.gmail.com>
-Date: Mon, 26 Oct 2015 21:20:24 +0100
-Message-ID: <CAPmG0jYRvLnkZG9-+aJdBr+6GphCob5rEi9qibAYa3V=kSOFEw@mail.gmail.com>
+Date: Tue, 27 Oct 2015 00:13:32 +0100
 Subject: Re: BTRFS with 8TB SMR drives
-From: Henk Slager <eye1tm@gmail.com>
+From: Henk Slager <hslager@hotmail.com>
 To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I decided to give this ST8000AS0002 a try for storing old snapshots,
-although standardization for more optimal/native contol of SMR drives
-is still ongoing.  I saw people got it working with 3.18 kernel, so
-that gave confidence.
+I decided to give this ST8000AS0002 a try for backups / storing old
+snapshots, although standardization for more optimal/native contol of
+SMR drives is still ongoing.  I saw people got it working with 3.18
+kernel, so that gave confidence.
 
 I wanted to see if i could get it running with 4.3.0-rc6 kernel (and
 4.2.3 tools) on an H87M-Pro eSata (non-Intel) port. Filesystem is
@@ -29,7 +27,7 @@ btrfs all single profiles on top of dm-crypt and mounted with
 compress-force=zlib,nossd (I use the drive via bcache but currently
 with not attached to a cache device). The initial snapshot send |
 receive action crashed after 1.2TB transferred, with all the
-typical/known problems in dmesg
+typical/known problems in dmesg.
 
 Then same trial, newly created fs, on 1 of the Intel sata ports. Also
 the same timeouts seen in dmesg, but fs already corrupted after a few

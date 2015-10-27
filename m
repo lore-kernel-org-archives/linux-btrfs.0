@@ -1,64 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51007 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:51530 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752286AbbJ0GXO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 02:23:14 -0400
+	id S1752136AbbJ0Gje (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 27 Oct 2015 02:39:34 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zqxf6-0004fA-BL
-	for linux-btrfs@vger.kernel.org; Tue, 27 Oct 2015 07:23:12 +0100
+	id 1Zqxuu-0003zF-OL
+	for linux-btrfs@vger.kernel.org; Tue, 27 Oct 2015 07:39:32 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 07:23:12 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 07:39:32 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 07:23:12 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 07:39:32 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: random i/o error without error in dmesg
-Date: Tue, 27 Oct 2015 06:23:06 +0000 (UTC)
-Message-ID: <pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
-References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick>
+Subject: Re: Bad fs performance, IO freezes
+Date: Tue, 27 Oct 2015 06:39:25 +0000 (UTC)
+Message-ID: <pan$f1907$281e469a$9ad1b02d$53b95aea@cox.net>
+References: <CA+9GZUiUNiRJOjwhxZaE06GdfcLQBpWfY5kpkpmLhD6eg_cg4g@mail.gmail.com>
+	<562E37F4.9080602@oracle.com>
+	<CA+9GZUjnrdA-O24bbY4KGAxcLOk26uohS8cF+Z=vLjOT88-rwQ@mail.gmail.com>
+	<CA+9GZUi9jiJ9RBezrh7Xi4_1eBpyeNBdrs+hYxsECaa_a9_csA@mail.gmail.com>
+	<CA+9GZUipGeuNuVP2=g2+gbWpJWxbeHVQEcQ5QYfOCWjkv5JDcQ@mail.gmail.com>
+	<CA+9GZUhAZRYto0Rm3Edy0j3gFfGZbfWpqunA3vzraxwh-ANORg@mail.gmail.com>
+	<CA+9GZUjTt7C4rjSgui3M65S_WEQ3zsLEjw39x=_Ots=N8Jn3eg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc Joliet posted on Mon, 26 Oct 2015 15:23:39 +0100 as excerpted:
+cheater00 . posted on Tue, 27 Oct 2015 03:00:05 +0100 as excerpted:
 
-> Occasionally they go away by themselves, but usually I have to reboot to
-> make them go away.  This happens when getmail attempts to fetch mail,
-> which fails due to the above error.  After the reboot getmail succeeds
-> again.
+> currently my computer freezes every several seconds for half a second or
+> so. Using it feels like I'm playing musical chairs with the kernel.
+> I have just one download happening on utorrent right now - this is what
+> the graph looks like:
+> http://i.imgur.com/LqhMtrJ.png and every time a new spike happens, a
+> freeze happens just before that... that's the only time those freezes
+> happen, too.
 
-Just out of curiosity, does a remount,ro, followed by a remount,rw, solve 
-the problem?
+Is it perchance every 30 seconds?  (The graph seems to indicate more like 
+50 second cycles, but...)
 
-The ro/rw cycle should force anything in memory to device, so if that 
-eliminates the problem, it could well be some sort of sync issue.  If it 
-doesn't, then it's more likely an in-memory filesystem state issue, 
-that's cleared by the reboot.
-
-And if the ro/rw cycle doesn't clear the problem, what about a full 
-unmount/mount cycle, at least of that subvolume?
-
-If you're running multiple subvolumes with root being one of them, you 
-can't of course unmount the entire filesystem, but you could go down to 
-emergency mode (systemctl emergency), try unmounting everything but /, 
-mounting / ro, and then switching back to normal mode (from emergency 
-mode, simply exiting should return you to normal multi-user or gui 
-target, remounting filesystems as necessary, etc).
-
-IOW, does it take a full reboot to clear the problem, or is a simple ro/rw 
-mount cycle enough, or an unmount/remount?
-
-Finally, assuming root itself isn't btrfs, if you have btrfs configured 
-as a module, you could try unmounting all btrfs and then unloading the 
-module, then reloading and remounting.  That should entirely clear all in-
-memory btrfs state, so if that doesn't solve the problem, while rebooting 
-does, then the problem's very possibly outside of btrfs scope.  Of course 
-if root is btrfs, you can't really check that.
+Because that's btrfs' normal commit time.  If it is, there's a mount 
+option to change the commit time (the wiki says commit=N, N=30 by 
+default, since kernel 3.12).  You could try fiddling with that, say 
+setting it to 15 or 60, not necessarily to fix the problem (tho 60 
+seconds might increase the problem while making it less frequent, while 
+15 might make it more frequent but less of a problem), but to see if the 
+cycle changes with the commit time option, or stays @ 30 seconds.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

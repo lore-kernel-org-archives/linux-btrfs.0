@@ -1,68 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [195.70.57.6] ([195.70.57.6]:58132 "EHLO icts.hu"
-	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S932425AbbJ0O6F (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 10:58:05 -0400
-Received: from [10.168.1.103] (193.226.213.205.pool.invitel.hu [193.226.213.205])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by icts.hu (Postfix) with ESMTPSA id 072C91D0FA89
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 15:57:08 +0100 (CET)
-From: =?UTF-8?B?U3phbG1hIEzDoXN6bMOz?= <dblaci@dblaci.hu>
-Subject: Re: random i/o error without error in dmesg
-To: linux-btrfs@vger.kernel.org
-References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick>
- <pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
-Message-ID: <562F90C3.6000002@dblaci.hu>
-Date: Tue, 27 Oct 2015 15:57:07 +0100
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:54203
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932435AbbJ0PCC (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 27 Oct 2015 11:02:02 -0400
+Subject: Re: Bad fs performance, IO freezes
+To: "cheater00 ." <cheater00@gmail.com>
+References: <CA+9GZUiUNiRJOjwhxZaE06GdfcLQBpWfY5kpkpmLhD6eg_cg4g@mail.gmail.com>
+ <562E37F4.9080602@oracle.com>
+ <CA+9GZUjnrdA-O24bbY4KGAxcLOk26uohS8cF+Z=vLjOT88-rwQ@mail.gmail.com>
+ <CA+9GZUi9jiJ9RBezrh7Xi4_1eBpyeNBdrs+hYxsECaa_a9_csA@mail.gmail.com>
+ <CA+9GZUipGeuNuVP2=g2+gbWpJWxbeHVQEcQ5QYfOCWjkv5JDcQ@mail.gmail.com>
+ <CA+9GZUhAZRYto0Rm3Edy0j3gFfGZbfWpqunA3vzraxwh-ANORg@mail.gmail.com>
+ <CA+9GZUjTt7C4rjSgui3M65S_WEQ3zsLEjw39x=_Ots=N8Jn3eg@mail.gmail.com>
+ <562F638B.1040701@gmail.com> <BLU436-SMTP2188EE1DBF30D4E50D6F3DA9220@phx.gbl>
+ <562F7C7B.6060408@gmail.com>
+ <CA+9GZUg3LxLqdqUATHVyLMsDYkH1FfvawtGZgKAv46qNsuZ-xQ@mail.gmail.com>
+ <CA+9GZUioamT+urUtZRvyv-hkurDpqH8A_f-L9ge9nUsq_tL=8w@mail.gmail.com>
+ <CA+9GZUhXfVyJd9CKb2RSms4g6YQUue+z7N54+=SKUmzrwqg4xw@mail.gmail.com>
+ <CA+9GZUhtS9Y-711VSaS1-ie92x9FtZFHw5WZ5__+YgbGneU9kA@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <562F91E7.5030407@googlemail.com>
+Date: Tue, 27 Oct 2015 16:01:59 +0100
 MIME-Version: 1.0
-In-Reply-To: <pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CA+9GZUhtS9Y-711VSaS1-ie92x9FtZFHw5WZ5__+YgbGneU9kA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I wait for the problem to occur, i will try the remount,ro remount,rw. 
-But I know for sure, in my case umount / mount solved the problem every 
-time!
+On 10/27/15 15:43, cheater00 . wrote:
+> I have remounted without autodefrag and the issue keeps on happening.
 
-Reboot was not needed. (I think reboot is simpler because the fs is 
-used, and the service has to be stopped etc.)
+At the risk of stating the obvious, the simplest thing is to stop using
+COW with compression for torrents. It's fundamentally not useful to have
+many small in-place writes, irregular compression and not encounter insane
+levels of fragmentation, which - at least in the current state of btrfs -
+is known to cause long stalls. Some fixes for that will be in 4.4.
 
-László Szalma
+Until then just do yourself a favor, stop doing the wrong thing and put
+torrent downloads into a directory where they won't get COWed.
 
-2015-10-27 07:23 keltezéssel, Duncan írta:
-> Marc Joliet posted on Mon, 26 Oct 2015 15:23:39 +0100 as excerpted:
->
->> Occasionally they go away by themselves, but usually I have to reboot to
->> make them go away.  This happens when getmail attempts to fetch mail,
->> which fails due to the above error.  After the reboot getmail succeeds
->> again.
-> Just out of curiosity, does a remount,ro, followed by a remount,rw, solve
-> the problem?
->
-> The ro/rw cycle should force anything in memory to device, so if that
-> eliminates the problem, it could well be some sort of sync issue.  If it
-> doesn't, then it's more likely an in-memory filesystem state issue,
-> that's cleared by the reboot.
->
-> And if the ro/rw cycle doesn't clear the problem, what about a full
-> unmount/mount cycle, at least of that subvolume?
->
-> If you're running multiple subvolumes with root being one of them, you
-> can't of course unmount the entire filesystem, but you could go down to
-> emergency mode (systemctl emergency), try unmounting everything but /,
-> mounting / ro, and then switching back to normal mode (from emergency
-> mode, simply exiting should return you to normal multi-user or gui
-> target, remounting filesystems as necessary, etc).
->
-> IOW, does it take a full reboot to clear the problem, or is a simple ro/rw
-> mount cycle enough, or an unmount/remount?
->
-> Finally, assuming root itself isn't btrfs, if you have btrfs configured
-> as a module, you could try unmounting all btrfs and then unloading the
-> module, then reloading and remounting.  That should entirely clear all in-
-> memory btrfs state, so if that doesn't solve the problem, while rebooting
-> does, then the problem's very possibly outside of btrfs scope.  Of course
-> if root is btrfs, you can't really check that.
->
+See the wiki at:
+https://btrfs.wiki.kernel.org/index.php/FAQ#Can_copy-on-write_be_turned_off_for_data_blocks.3F
+for more.
+
+-h
 

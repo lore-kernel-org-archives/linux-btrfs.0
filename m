@@ -1,121 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f50.google.com ([209.85.220.50]:34350 "EHLO
-	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752229AbbJ0CAZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 22:00:25 -0400
-Received: by padhk11 with SMTP id hk11so205690571pad.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 19:00:25 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <CA+9GZUhAZRYto0Rm3Edy0j3gFfGZbfWpqunA3vzraxwh-ANORg@mail.gmail.com>
-References: <CA+9GZUiUNiRJOjwhxZaE06GdfcLQBpWfY5kpkpmLhD6eg_cg4g@mail.gmail.com>
- <562E37F4.9080602@oracle.com> <CA+9GZUjnrdA-O24bbY4KGAxcLOk26uohS8cF+Z=vLjOT88-rwQ@mail.gmail.com>
- <CA+9GZUi9jiJ9RBezrh7Xi4_1eBpyeNBdrs+hYxsECaa_a9_csA@mail.gmail.com>
- <CA+9GZUipGeuNuVP2=g2+gbWpJWxbeHVQEcQ5QYfOCWjkv5JDcQ@mail.gmail.com> <CA+9GZUhAZRYto0Rm3Edy0j3gFfGZbfWpqunA3vzraxwh-ANORg@mail.gmail.com>
-From: "cheater00 ." <cheater00@gmail.com>
-Date: Tue, 27 Oct 2015 03:00:05 +0100
-Message-ID: <CA+9GZUjTt7C4rjSgui3M65S_WEQ3zsLEjw39x=_Ots=N8Jn3eg@mail.gmail.com>
-Subject: Re: Bad fs performance, IO freezes
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from plane.gmane.org ([80.91.229.3]:49790 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753048AbbJ0F6a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 27 Oct 2015 01:58:30 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZqxHA-0005IO-3x
+	for linux-btrfs@vger.kernel.org; Tue, 27 Oct 2015 06:58:28 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 06:58:28 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 06:58:28 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Recover btrfs volume which can only be mounded in read-only
+ mode
+Date: Tue, 27 Oct 2015 05:58:22 +0000 (UTC)
+Message-ID: <pan$e5e2d$4d523be4$45db755c$a34029b2@cox.net>
+References: <CAOGcOQE3_ROtk=2kQkjTUkGE1tz=HEzbeZnrWUOPziW=kNNXBQ@mail.gmail.com>
+	<561E6969.40500@oracle.com> <561EBAB1.6030600@gmail.com>
+	<pan$21730$7c1e6fa7$932b1831$daf2c6bb@cox.net>
+	<CAOGcOQGnHaZeiyuqm+rSX=MBNSFnE-JwSmnhTWZVU42FnSgXmA@mail.gmail.com>
+	<pan$e78b7$efe06fb0$f477bf4e$85f224c0@cox.net> <562369E8.60709@gmail.com>
+	<pan$5181$c6023994$2cb7128f$59b43d97@cox.net>
+	<20151026092457.GA11331@carfax.org.uk>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
-currently my computer freezes every several seconds for half a second
-or so. Using it feels like I'm playing musical chairs with the kernel.
-I have just one download happening on utorrent right now - this is
-what the graph looks like:
-http://i.imgur.com/LqhMtrJ.png
-and every time a new spike happens, a freeze happens just before
-that... that's the only time those freezes happen, too.
+Hugo Mills posted on Mon, 26 Oct 2015 09:24:57 +0000 as excerpted:
 
-Please advise.
+> On Mon, Oct 26, 2015 at 09:14:00AM +0000, Duncan wrote:
+>> Dmitry Katsubo posted on Sun, 18 Oct 2015 11:44:08 +0200 as excerpted:
+>> 
+>>> I think PID-based solution is not the best one. Why not simply take a
+>>> random device? Then at least all drives in the volume are equally
+>>> loaded (in average).
+>> 
+>> Nobody argues that the even/odd-PID-based read-scheduling solution is
+>> /optimal/, in a production sense at least.  But [it's near ideal for
+>> testing, and "good enough" for the most general case].
+> 
+> For what it's worth, David tried implementing round-robin (IIRC)
+> some time ago, and found that it performed *worse* than the pid-based
+> system. (It may have been random, but memory says it was round-robin).
 
-On Mon, Oct 26, 2015 at 7:31 PM, cheater00 . <cheater00@gmail.com> wrote:
-> I do not experience btrfs-transacti going up to 100% for minutes at a
-> time now (not reproduced yet) but I have it spiking up to say 30% for
-> a short while and everything jags during that time. So, say, if I am
-> watching youtube, the sound cuts out and the video drops out for a
-> bit. And if I'm typing, then what I typed during that time gets lost,
-> like if I never typed that.
->
-> I have also connected the same HDD bay with a USB3 cable instead of
-> USB2. It's on an USB3 port. So it's running via USB3 now.
->
->
-> On Mon, Oct 26, 2015 at 6:43 PM, cheater00 . <cheater00@gmail.com> wrote:
->> So far I cannot reproduce. If I don't post again this means the issue
->> has been fixed by updating the kernel.
->>
->> On Mon, Oct 26, 2015 at 4:40 PM, cheater00 . <cheater00@gmail.com> wrote:
->>> I have located 4.3.0-rc7 binaries which I will now try.
->>>
->>> On Mon, Oct 26, 2015 at 3:38 PM, cheater00 . <cheater00@gmail.com> wrote:
->>>> Thanks for the reply. What version did this go into? I'll try getting
->>>> a prebuilt backport of the kernel, building source could slow things
->>>> down considerably, but debs will not be available for the latest few
->>>> minor versions I guess. So if you can tell me a min version, I'll try
->>>> to find the latest deb newer than that, or I'll build if that's not
->>>> available.
->>>>
->>>> On Mon, Oct 26, 2015 at 3:25 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
->>>>> On 10/26/2015 08:16 PM, cheater00 . wrote:
->>>>>>
->>>>>> Hi guys,
->>>>>> I am running into really bad performance. Here's my setup:
->>>>>>
->>>>>> WD Red 6 TB connected over USB2 to my core i7 laptop, running Ubuntu
->>>>>> 32-bit with kernel 4.0.4-040004-generic #201505171336.
->>>>>>
->>>>>> Single btrfs partition covering whole disk.
->>>>>>
->>>>>> Autodefrag is on.
->>>>>>
->>>>>> fstab line:
->>>>>> UUID=... /media/X btrfs rw,nosuid,nodev,autodefrag 0 0
->>>>>>
->>>>>> Sometimes when files are being modified or removed, I see
->>>>>> btrfs-transacti eat 100% cpu; during this time no io operations
->>>>>> succeed, that is, they're all stalled. You can't even ls on that fs.
->>>>>> This happens for several minutes then normal operation resumes. There
->>>>>> doesn't seem to be a rule to what will trigger this, other than
->>>>>> opening a single file and reading usually works quite well. (say,
->>>>>> watching a movie while all other programs are closed). But even moving
->>>>>> files off the disks triggers some sort of bug. Just now I am moving a
->>>>>> few files (just 30gb worth) onto another disk, and the bug triggers.
->>>>>> So btrfs-transacti was eating my cpu for over 5 minutes and according
->>>>>> to mv's output after this was done and cpu usage went back to normal
->>>>>> what I was waiting for was for a tiny png file to be removed. This is
->>>>>> pretty bad.
->>>>>>
->>>>>> I have tried defragmenting directories where files are being accessed
->>>>>> and moved. This hasn't helped.
->>>>>>
->>>>>> This happens whether the FS is near full or not. It currently is near
->>>>>> full but it wasn't before and it still did that. It still has about ~
->>>>>> 100GB free space now.
->>>>>>
->>>>>> The more things are happening the more often this bug gets triggered.
->>>>>> So if I have utorrent running and its temporary downloads directory is
->>>>>> there, its download speed graph will be a few spikes of running at
->>>>>> several MB/sec separated by durations of 0 download speed.
->>>>>>
->>>>>> Nothing seems to show up in dmesg or syslog.
->>>>>>
->>>>>> I have asked in #btrfs but the suggestions ended up not fixing the
->>>>>> issue (autodefrag, defrag dirs).
->>>>>>
->>>>>> Please advise what I should do with this issue.
->>>>>
->>>>>
->>>>> It might be related to delayed ref rework, the last time I saw this kind of
->>>>> hanging problem about btrfs-transaction eating cpu is that because btrfs
->>>>> doesn't merge delayed refs, it'd be best to try the lastest kernel and if
->>>>> the issue is not resolved, then we can work out a reproducer and provide
->>>>> debugging.
->>>>>
->>>>> Thanks,
->>>>>
->>>>> Liubo
+What I'd like to know is what mdraid1 uses, and if btrfs can get that.  
+Because some upgrades worth ago, after trying mdraid6 for the main system 
+and mdraid0 for some parts (with mdraid1 for boot since grub1 could deal 
+with it, but not the others), I eventually settled on 4-way mdraid1 for 
+everything, using the same disks I had used for the raid6 and raid0.
+
+And I was rather blown away by the mdraid1 speed, in comparison, 
+especially compared to raid0, which I thought would be better than 
+raid1.  I guess my use-case is multi-thread read-heavy enough that the 
+whatever mdraid1 uses, I was getting upto four separate reads (one per 
+spindle) going at once, while writes still happened at single-spindle 
+speed as with SATA (as opposed to the older IDE, this was when SATA was 
+still new), each spindle had its own channel and they could write in 
+parallel with bottleneck being the speed at which the slowest of the four 
+completed its write.  So writes were single-spindle-speed, still far 
+faster than the raid6 read-modify-write cycle, while reads... it really 
+did appear to multitask one per spindle.
+
+Also, the mdraid1 may have actually taken into account spindle head 
+location as well, and scheduled reads to the spindle with the head 
+already positioned closest to the target, tho I'm not sure on that.
+
+But whatever mdraid1 scheduling does, I was totally astonished at how 
+efficient it was, and it really did turn my thinking on most efficient 
+raid choices upside down.  So if btrfs could simply take that scheduler 
+and modify it as necessary for btrfs specifics, provided the 
+modifications weren't /too/ heavy (and the fact that btrfs does read-time 
+checksum verification could very well mean the algorithm as directly 
+adapted as possible may not reach anything like the same efficiency), I 
+really do think that'd be the ideal.  And of course it's freedomware code 
+in the same kernel, so reusing the mdraid read-scheduler shouldn't be the 
+problem it might be in other circumstances, tho the possible caveat of 
+btrfs specific implementation issues does remain.
+
+And of course someone would have to take the time to adapt it to work 
+with btrfs, which gets us back onto the practical side of things, the 
+"opportunity rich, developer-time poor" situation that is btrfs coding 
+reality, premature optimization, possibly doing it at the same time as N-
+way-mirroring, etc.
+
+But anyway, mdraid's raid1 read-scheduler really does seem to be 
+impressively efficient, the benchmark to try to match, if possible.  If 
+that can be done by reusing some of the same code, so much the better. 
+=:^)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

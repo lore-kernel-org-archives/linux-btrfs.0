@@ -1,83 +1,132 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.15]:61925 "EHLO mout.gmx.net"
+Received: from mout.web.de ([212.227.15.4]:51169 "EHLO mout.web.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S964838AbbJ0SYs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 14:24:48 -0400
-Subject: Re: btrfs-balance causes system-freeze on full disk
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-References: <c76lfc-jfl.ln1@aldebaran.xundeenergie.at>
- <CAM9fjH4vQki-0UjdMTGZgKEbDy1pRBZNRqro8TtqzLbDPwfsvw@mail.gmail.com>
- <40k4gc-scp.ln1@aldebaran.xundeenergie.at>
- <20151027170904.GK11331@carfax.org.uk>
-From: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>
-Message-ID: <562FC132.2080209@nurfuerspam.de>
-Date: Tue, 27 Oct 2015 19:23:46 +0100
+	id S965359AbbJ0Uyu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 27 Oct 2015 16:54:50 -0400
+Received: from thetick.localnet ([93.181.44.4]) by smtp.web.de (mrweb002) with
+ ESMTPSA (Nemesis) id 0M40na-1ahDt620SA-00rYIT for
+ <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 21:54:46 +0100
+From: Marc Joliet <marcec@web.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: random i/o error without error in dmesg
+Date: Tue, 27 Oct 2015 21:54:40 +0100
+Message-ID: <1844690.p2LsPbdn9l@thetick>
+In-Reply-To: <pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
+References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick> <pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
 MIME-Version: 1.0
-In-Reply-To: <20151027170904.GK11331@carfax.org.uk>
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="joprSXUeXxTXhOKrIliQc4RT41FgGmUgj"
+Content-Type: multipart/signed; boundary="nextPart1794850.lMSNZVG9dD"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---joprSXUeXxTXhOKrIliQc4RT41FgGmUgj
-Content-Type: text/plain; charset=utf-8
+--nextPart1794850.lMSNZVG9dD
 Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-Am 2015-10-27 um 18:09 schrieb Hugo Mills:
-> On Tue, Oct 27, 2015 at 05:05:55PM +0100, Jakob Sch=C3=BCrz wrote:
->> Found a new habit...
->>
->> I have a lot Snapshots on my drive. (Take every 10 Min a new one, ever=
-y
->> houry one, every day one, every system-update, every plugin after
->> external HD...)
->>
->> If there are to much snapshots (didn't find out the count how much
->> exactly) balancing fails with a system-freeze.
->> if i delete some of my snapshots, balancing is working...
->=20
->    The whole machine comes to a halt, or just the balancing?=20
+OK, upgrading to gentoo-sources 4.1.11 didn't help, so I tried these st=
+eps. =20
+More inline below.
 
-The whole machine. Even magic-sysreq-keys are not reacting... I have to
-reboot my machine using the power-button...
+On Tuesday 27 October 2015 06:23:06 Duncan wrote:
+>Marc Joliet posted on Mon, 26 Oct 2015 15:23:39 +0100 as excerpted:
+>> Occasionally they go away by themselves, but usually I have to reboo=
+t to
+>> make them go away.  This happens when getmail attempts to fetch mail=
+,
+>> which fails due to the above error.  After the reboot getmail succee=
+ds
+>> again.
+>
+>Just out of curiosity, does a remount,ro, followed by a remount,rw, so=
+lve
+>the problem?
+>
+>The ro/rw cycle should force anything in memory to device, so if that
+>eliminates the problem, it could well be some sort of sync issue.  If =
+it
+>doesn't, then it's more likely an in-memory filesystem state issue,
+>that's cleared by the reboot.
 
-> If you
-> have lots of snapshots, balance can take *insane* amounts of time --
-> my big storage array, for example, takes about 60 seconds to balance a
-> data block group, and something like 4+ hours to balance some of the
-> metadata block groups. While it's "stuck" like that, it is actually
-> making progress, but it doesn't look like it.
+Didn't try this directly, but...
 
-I know, balancint takes a huge amount of time. So my command is:
+>And if the ro/rw cycle doesn't clear the problem, what about a full
+>unmount/mount cycle, at least of that subvolume?
 
-/bin/btrfs balance start -dusage=3D55 -v <mountpoint>
+...this didn't work, after which...
 
-When balancing is running, the machine reactes a little slower than
-normal... but in my case, the machine is freezing. completly and
-totally... :(
+>If you're running multiple subvolumes with root being one of them, you=
 
-greez jakob
+>can't of course unmount the entire filesystem, but you could go down t=
+o
+>emergency mode (systemctl emergency), try unmounting everything but /,=
 
+>mounting / ro, and then switching back to normal mode (from emergency
+>mode, simply exiting should return you to normal multi-user or gui
+>target, remounting filesystems as necessary, etc).
 
+...I tried most of this.  I unmounted everything except for /var and /,=
+=20
+neither of which I could mount read-only.  It didn't help, either.
 
+>IOW, does it take a full reboot to clear the problem, or is a simple r=
+o/rw
+>mount cycle enough, or an unmount/remount?
 
---joprSXUeXxTXhOKrIliQc4RT41FgGmUgj
+Seems that a full reboot is needed, but I would expect that it would ha=
+ve the=20
+same effect if I were to pivot back into the initramfs, unmount / from =
+there,=20
+then boot back into the system.  Because quite frankly, I can't think o=
+f any=20
+reason why a power cycle to the SSD should make a difference here.  I v=
+aguely=20
+remember that systemd can do that, so I'll see if I can find out how.
+
+>Finally, assuming root itself isn't btrfs, if you have btrfs configure=
+d
+>as a module, you could try unmounting all btrfs and then unloading the=
+
+>module, then reloading and remounting.  That should entirely clear all=
+ in-
+>memory btrfs state, so if that doesn't solve the problem, while reboot=
+ing
+>does, then the problem's very possibly outside of btrfs scope.  Of cou=
+rse
+>if root is btrfs, you can't really check that.
+
+Nope, btrfs is built-in (though it doesn't have to be, what with me usi=
+ng an=20
+initramfs).
+
+Thanks
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
+
+--nextPart1794850.lMSNZVG9dD
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v2
 
-iQEcBAEBCAAGBQJWL8EyAAoJEF2YPOCqoD05q9UH/1el1RE9qBNLSw19nNzmE6VJ
-HNxStZIdNr8B+sbikrW/jcygW5jknOvXcX2OzAuYoGV07VI1Ta+ZJMXZxJwZlwKg
-gJ9X53FGWEArjvUrQkeXPxOxQcTRXggpD2ZedCJh4fz5hVbE4r0xnfg9nKQVZNA3
-0V9vTuEgD6qE0QWnrewNXpSuruqbKTJwE6zfdbORxLavapKWV1mM/Hc7uQCXspYs
-cTulUUuQLL9z/qQyyEEAkcdH10h3SwKbxiU0mobr2nvNB8jl+KsKZ2hIoE3n9CZU
-KBE/ZGk8dyKo8kRCz5djTmlSJvv+BcxnCSnhzIeH/+bCueRtpJ/EwEmmV8s9TU4=
-=uDds
+iQIcBAABCAAGBQJWL+SVAAoJEL/Q5oYsiHj0ASgP/1g6K/N67a1o+2mHoFjqL9h4
+EFN2ocQqHJEVpGxsUe1/IY1ALGxHUxEXctFnUxVKU4zmovV3xZgN7UN+fTq0sva+
+hS0d4Uhdc8Mw2iSgPDaUkVbYeNrCDZOF3B16QKU+rf2qOxDABUjUQyOPYwTzSJWH
+pw6E7Jr/yKaqZih+rvsyIYRU2oU8RxHo7vn3TPKJWm9f1UW0y3rANTx9H9upSOes
+yh1GJ/K6iDA741Zd2XJZy6DVBxfLE9qLSR5OnNdEBGr71p+E0LjMBnacjoUcE4Ko
+9RTrcuUeMVin1Ktk01K9mIPgU7+RIAnEyPm6NccHtl77x7BWKcr5QCl3Z1pHyts8
+O9e3TpujUo3+G3yAMY5D9oNgHgr2XBQE9y/Qr0q1xYGMraHcddvsBHMOeGJfaRLU
+UBdzYbsFx+BsaMu3CXHVFPy5qn1JwkoncfWNdGVZPLuwC7sREY9mzR+bc5nloSK7
+57ysTBLCsztVv2MjCupijgDVQZRzazdsLUnOues5s84KKC6BD7gJP5ObSkgtDhE9
+BFgMM9C6wB+PQKDJhD+B1V6wVx347LxRUpNTqSayccqHnf7ErIzrcayZq5XQY8jd
+ImBtAkydn2M0w4VlBF/snLKcERU4uKt+S8lvfTLJeSrtF7ZCO5pXI952KGp5Y1q5
+aNOxER6C6/F+vuRdDfQi
+=olgH
 -----END PGP SIGNATURE-----
 
---joprSXUeXxTXhOKrIliQc4RT41FgGmUgj--
+--nextPart1794850.lMSNZVG9dD--
+

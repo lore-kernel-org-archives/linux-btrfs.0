@@ -1,81 +1,88 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp03.au.ibm.com ([202.81.31.145]:38006 "EHLO
-	e23smtp03.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932093AbbJ0Jln (ORCPT
+Received: from e23smtp09.au.ibm.com ([202.81.31.142]:49046 "EHLO
+	e23smtp09.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932093AbbJ0Jlq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 05:41:43 -0400
-Received: from localhost
-	by e23smtp03.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	Tue, 27 Oct 2015 05:41:46 -0400
+Received: from /spool/local
+	by e23smtp09.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 27 Oct 2015 19:41:41 +1000
-Received: from d23relay07.au.ibm.com (d23relay07.au.ibm.com [9.190.26.37])
-	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 230522CE8052
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 20:41:39 +1100 (EST)
+	Tue, 27 Oct 2015 19:41:44 +1000
+Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
+	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 468F52CE8054
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 20:41:42 +1100 (EST)
 Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
-	by d23relay07.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t9R9fWl718350204
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 20:41:40 +1100
+	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id t9R9fSuJ25034754
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 20:41:36 +1100
 Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
-	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t9R9f63Z019378
-	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 20:41:06 +1100
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id t9R9f8pK019450
+	for <linux-btrfs@vger.kernel.org>; Tue, 27 Oct 2015 20:41:09 +1100
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, clm@fb.com, jbacik@fb.com,
         bo.li.liu@oracle.com, dsterba@suse.cz, quwenruo@cn.fujitsu.com,
         chandan@mykolab.com
-Subject: [PATCH V7 12/13] Btrfs: prepare_pages: Retry adding a page to the page cache
-Date: Tue, 27 Oct 2015 15:09:45 +0530
-Message-Id: <1445938786-12488-13-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V7 13/13] Btrfs: Return valid delalloc range when the page does not have PG_Dirty flag set or has been invalidated
+Date: Tue, 27 Oct 2015 15:09:46 +0530
+Message-Id: <1445938786-12488-14-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1445938786-12488-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1445938786-12488-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When reading the page from the disk, we can race with Direct I/O which can get
-the page lock (before prepare_uptodate_page() gets it) and can go ahead and
-invalidate the page. Hence if the page is not found in the inode's address
-space, retry the operation of getting a page.
+The following issue was observed when running generic/095 test on
+subpagesize-blocksize patchset.
 
-Reported-by: Jakub Palider <jpa@semihalf.com>
+Assume that we are trying to write a dirty page that is mapping file offset
+range [159744, 163839].
+
+writepage_delalloc()
+  find_lock_delalloc_range(*start = 159744, *end = 0)
+    find_delalloc_range()
+      Returns range [X, Y] where (X > 163839)
+    lock_delalloc_pages()
+      One of the pages in range [X, Y] has dirty flag cleared;
+      Loop once more restricting the delalloc range to span only
+      PAGE_CACHE_SIZE bytes;
+    find_delalloc_range()
+      Returns range [356352, 360447];
+    lock_delalloc_pages()
+      The page [356352, 360447] has dirty flag cleared;
+    Returns with *start = 159744 and *end = 0;
+  *start = *end + 1;
+  find_lock_delalloc_range(*start = 1, *end = 0)
+    Finds and returns delalloc range [1, 12288];
+  cow_file_range()
+    Clears delalloc range [1, 12288]
+    Create ordered extent for range [1, 12288]
+
+The ordered extent thus created above breaks the rule that extents have to be
+aligned to the filesystem's block size.
+
+In cases where lock_delalloc_pages() fails (either due to PG_dirty flag being
+cleared or the page no longer being a member of the inode's page cache), this
+patch sets and returns the delalloc range that was found by
+find_delalloc_range().
+
 Reviewed-by: Josef Bacik <jbacik@fb.com>
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/file.c | 16 ++++++++++++++++
- 1 file changed, 16 insertions(+)
+ fs/btrfs/extent_io.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 5a7551c..0e54a53 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1316,6 +1316,7 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
- 	int faili;
- 
- 	for (i = 0; i < num_pages; i++) {
-+again:
- 		pages[i] = find_or_create_page(inode->i_mapping, index + i,
- 					       mask | __GFP_WRITE);
- 		if (!pages[i]) {
-@@ -1330,6 +1331,21 @@ static noinline int prepare_pages(struct inode *inode, struct page **pages,
- 		if (i == num_pages - 1)
- 			err = prepare_uptodate_page(pages[i],
- 						    pos + write_bytes, false);
-+
-+		/*
-+		 * When reading the page from the disk, we can race
-+		 * with direct i/o which can get the page lock (before
-+		 * prepare_uptodate_page() gets it) and can go ahead
-+		 * and invalidate the page. Hence if the page is found
-+		 * to be not belonging to the inode's address space,
-+		 * retry the operation of getting a page.
-+		 */
-+		if (unlikely(pages[i]->mapping != inode->i_mapping)) {
-+			unlock_page(pages[i]);
-+			page_cache_release(pages[i]);
-+			goto again;
-+		}
-+
- 		if (err) {
- 			page_cache_release(pages[i]);
- 			faili = i - 1;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index d093643..9c5891a 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -1794,6 +1794,8 @@ again:
+ 			goto again;
+ 		} else {
+ 			found = 0;
++			*start = delalloc_start;
++			*end = delalloc_end;
+ 			goto out_failed;
+ 		}
+ 	}
 -- 
 2.1.0
 

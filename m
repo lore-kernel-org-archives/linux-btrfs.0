@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44724 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:34744 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752016AbbJ0H0J (ORCPT
+	with ESMTP id S932267AbbJ0JGB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 03:26:09 -0400
+	Tue, 27 Oct 2015 05:06:01 -0400
 Subject: Re: [PATCH v3 06/21] btrfs: delayed_ref: Add new function to record
  reserved space into delayed ref
 To: Chris Mason <clm@fb.com>, <fdmanana@gmail.com>,
@@ -15,8 +15,8 @@ References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
  <562F1032.7040103@cn.fujitsu.com>
  <20151027061203.GA25844@ret.thefacebook.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <562F270C.1030701@cn.fujitsu.com>
-Date: Tue, 27 Oct 2015 15:26:04 +0800
+Message-ID: <562F3E74.4040205@cn.fujitsu.com>
+Date: Tue, 27 Oct 2015 17:05:56 +0800
 MIME-Version: 1.0
 In-Reply-To: <20151027061203.GA25844@ret.thefacebook.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -52,13 +52,15 @@ Chris Mason wrote on 2015/10/27 02:12 -0400:
 >
 > -chris
 >
-Nice advice, compiling now.
+Integration-4.4 merged with Linus' master also fails. :(
 
-But even rebasing my local old branch(based on 7d35199e15b82a4d1a200, 
-with 21 patches) to 4.3-rc7, the result got screwed up...
+Current known working branches are all based on 4.3-integration(4.2-rc5):
+https://github.com/adam900710/linux/tree/qgroup_reserve_good
 
-If things get crazy, I'm afraid it would need to revert all my qgroup 
-patchset from integration-4.4. :(
+Tried 4.3-rc5 and 4.3-rc7, all fails with kernel warning in generic/137.
+
+And due to the huge difference, I'm afraid it won't take a short time to 
+find the root cause...
 
 Thanks,
 Qu

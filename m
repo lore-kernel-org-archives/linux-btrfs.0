@@ -1,125 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16512 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752485AbbJ0BGv convert rfc822-to-8bit (ORCPT
+Received: from mail-pa0-f50.google.com ([209.85.220.50]:34350 "EHLO
+	mail-pa0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752229AbbJ0CAZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 21:06:51 -0400
-Subject: Re: Exclusive quota of snapshot exceeded despite no space used
-To: Johannes Henninger <johannes+btrfs@henninger.io>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>, <linux-btrfs@vger.kernel.org>
-References: <56294960.10406@henninger.io> <5629758D.203@gmx.com>
- <562A4CC7.1060802@henninger.io> <562C25DE.6050209@gmx.com>
- <562CB891.40301@henninger.io> <562DD249.200@cn.fujitsu.com>
- <562EC20B.909@henninger.io>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <562ECE25.90204@cn.fujitsu.com>
-Date: Tue, 27 Oct 2015 09:06:45 +0800
+	Mon, 26 Oct 2015 22:00:25 -0400
+Received: by padhk11 with SMTP id hk11so205690571pad.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 19:00:25 -0700 (PDT)
 MIME-Version: 1.0
-In-Reply-To: <562EC20B.909@henninger.io>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <CA+9GZUhAZRYto0Rm3Edy0j3gFfGZbfWpqunA3vzraxwh-ANORg@mail.gmail.com>
+References: <CA+9GZUiUNiRJOjwhxZaE06GdfcLQBpWfY5kpkpmLhD6eg_cg4g@mail.gmail.com>
+ <562E37F4.9080602@oracle.com> <CA+9GZUjnrdA-O24bbY4KGAxcLOk26uohS8cF+Z=vLjOT88-rwQ@mail.gmail.com>
+ <CA+9GZUi9jiJ9RBezrh7Xi4_1eBpyeNBdrs+hYxsECaa_a9_csA@mail.gmail.com>
+ <CA+9GZUipGeuNuVP2=g2+gbWpJWxbeHVQEcQ5QYfOCWjkv5JDcQ@mail.gmail.com> <CA+9GZUhAZRYto0Rm3Edy0j3gFfGZbfWpqunA3vzraxwh-ANORg@mail.gmail.com>
+From: "cheater00 ." <cheater00@gmail.com>
+Date: Tue, 27 Oct 2015 03:00:05 +0100
+Message-ID: <CA+9GZUjTt7C4rjSgui3M65S_WEQ3zsLEjw39x=_Ots=N8Jn3eg@mail.gmail.com>
+Subject: Re: Bad fs performance, IO freezes
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
+currently my computer freezes every several seconds for half a second
+or so. Using it feels like I'm playing musical chairs with the kernel.
+I have just one download happening on utorrent right now - this is
+what the graph looks like:
+http://i.imgur.com/LqhMtrJ.png
+and every time a new spike happens, a freeze happens just before
+that... that's the only time those freezes happen, too.
 
+Please advise.
 
-Johannes Henninger wrote on 2015/10/27 01:15 +0100:
-> On 26.10.2015 08:12, Qu Wenruo wrote:
+On Mon, Oct 26, 2015 at 7:31 PM, cheater00 . <cheater00@gmail.com> wrote:
+> I do not experience btrfs-transacti going up to 100% for minutes at a
+> time now (not reproduced yet) but I have it spiking up to say 30% for
+> a short while and everything jags during that time. So, say, if I am
+> watching youtube, the sound cuts out and the video drops out for a
+> bit. And if I'm typing, then what I typed during that time gets lost,
+> like if I never typed that.
+>
+> I have also connected the same HDD bay with a USB3 cable instead of
+> USB2. It's on an USB3 port. So it's running via USB3 now.
+>
+>
+> On Mon, Oct 26, 2015 at 6:43 PM, cheater00 . <cheater00@gmail.com> wrote:
+>> So far I cannot reproduce. If I don't post again this means the issue
+>> has been fixed by updating the kernel.
 >>
->>>>> Thanks a lot for your reply!
+>> On Mon, Oct 26, 2015 at 4:40 PM, cheater00 . <cheater00@gmail.com> wrote:
+>>> I have located 4.3.0-rc7 binaries which I will now try.
+>>>
+>>> On Mon, Oct 26, 2015 at 3:38 PM, cheater00 . <cheater00@gmail.com> wrote:
+>>>> Thanks for the reply. What version did this go into? I'll try getting
+>>>> a prebuilt backport of the kernel, building source could slow things
+>>>> down considerably, but debs will not be available for the latest few
+>>>> minor versions I guess. So if you can tell me a min version, I'll try
+>>>> to find the latest deb newer than that, or I'll build if that's not
+>>>> available.
+>>>>
+>>>> On Mon, Oct 26, 2015 at 3:25 PM, Liu Bo <bo.li.liu@oracle.com> wrote:
+>>>>> On 10/26/2015 08:16 PM, cheater00 . wrote:
+>>>>>>
+>>>>>> Hi guys,
+>>>>>> I am running into really bad performance. Here's my setup:
+>>>>>>
+>>>>>> WD Red 6 TB connected over USB2 to my core i7 laptop, running Ubuntu
+>>>>>> 32-bit with kernel 4.0.4-040004-generic #201505171336.
+>>>>>>
+>>>>>> Single btrfs partition covering whole disk.
+>>>>>>
+>>>>>> Autodefrag is on.
+>>>>>>
+>>>>>> fstab line:
+>>>>>> UUID=... /media/X btrfs rw,nosuid,nodev,autodefrag 0 0
+>>>>>>
+>>>>>> Sometimes when files are being modified or removed, I see
+>>>>>> btrfs-transacti eat 100% cpu; during this time no io operations
+>>>>>> succeed, that is, they're all stalled. You can't even ls on that fs.
+>>>>>> This happens for several minutes then normal operation resumes. There
+>>>>>> doesn't seem to be a rule to what will trigger this, other than
+>>>>>> opening a single file and reading usually works quite well. (say,
+>>>>>> watching a movie while all other programs are closed). But even moving
+>>>>>> files off the disks triggers some sort of bug. Just now I am moving a
+>>>>>> few files (just 30gb worth) onto another disk, and the bug triggers.
+>>>>>> So btrfs-transacti was eating my cpu for over 5 minutes and according
+>>>>>> to mv's output after this was done and cpu usage went back to normal
+>>>>>> what I was waiting for was for a tiny png file to be removed. This is
+>>>>>> pretty bad.
+>>>>>>
+>>>>>> I have tried defragmenting directories where files are being accessed
+>>>>>> and moved. This hasn't helped.
+>>>>>>
+>>>>>> This happens whether the FS is near full or not. It currently is near
+>>>>>> full but it wasn't before and it still did that. It still has about ~
+>>>>>> 100GB free space now.
+>>>>>>
+>>>>>> The more things are happening the more often this bug gets triggered.
+>>>>>> So if I have utorrent running and its temporary downloads directory is
+>>>>>> there, its download speed graph will be a few spikes of running at
+>>>>>> several MB/sec separated by durations of 0 download speed.
+>>>>>>
+>>>>>> Nothing seems to show up in dmesg or syslog.
+>>>>>>
+>>>>>> I have asked in #btrfs but the suggestions ended up not fixing the
+>>>>>> issue (autodefrag, defrag dirs).
+>>>>>>
+>>>>>> Please advise what I should do with this issue.
 >>>>>
->>>>> While remounting the filesystem fixes the issue temporary, it doesn't
->>>>> take very long for the bug to happen again so it's not really a
->>>>> workaround I can work with.
 >>>>>
->>>>> I did recompile the kernel using your patches, but unfortunately the
->>>>> problem still appears.
+>>>>> It might be related to delayed ref rework, the last time I saw this kind of
+>>>>> hanging problem about btrfs-transaction eating cpu is that because btrfs
+>>>>> doesn't merge delayed refs, it'd be best to try the lastest kernel and if
+>>>>> the issue is not resolved, then we can work out a reproducer and provide
+>>>>> debugging.
 >>>>>
 >>>>> Thanks,
->>>>> Johannes
 >>>>>
->>>> Interesting, just touching file will cause EQUOTA is quite a big
->>>> problem.
->>>>
->>>> I'll try to reproduce it with my patchset and see what really caused
->>>> the problem.
->>>> The problem seems to do with snapshot qgroup hacking.
->>>> But I'm not completely sure yet.
->>>>
->>>> BTW, does "sync; btrfs qgroup show -prce" still show excl as 16K?
->>>> 16K is the correct number with only 6 empty files, just in case.
->>>>
->>>> Thanks,
->>>> Qu
->>>
->>> I ran my example from the first mail again and managed to write 7 files
->>> this time, "qgroup show" still shows 16kB after sync:
->>>
->>> root@t420:/media/extern/snap# btrfs qg limit -e 50M .
->>> root@t420:/media/extern/snap# for file in {1..100}; do touch $file;
->>> sleep 5m; done
->>> touch: cannot touch ‘8’: Disk quota exceeded
->>> ^C
->>> root@t420:/media/extern/snap# sync
->>> root@t420:/media/extern/snap# btrfs qgroup show -pcre .
->>> qgroupid         rfer         excl     max_rfer     max_excl parent
->>> child
->>> --------         ----         ----     --------     -------- ------
->>> -----
->>> 0/5          16.00KiB     16.00KiB         none         none ---     ---
->>> 0/257        16.00KiB     16.00KiB         none         none ---     ---
->>> 0/258        16.00KiB     16.00KiB         none     50.00MiB ---     ---
->>> root@t420:/media/extern/snap# btrfs fi sync .
->>> FSSync '.'
->>> root@t420:/media/extern/snap# btrfs qgroup show -pcre .
->>> qgroupid         rfer         excl     max_rfer     max_excl parent
->>> child
->>> --------         ----         ----     --------     -------- ------
->>> -----
->>> 0/5          16.00KiB     16.00KiB         none         none ---     ---
->>> 0/257        16.00KiB     16.00KiB         none         none ---     ---
->>> 0/258        16.00KiB     16.00KiB         none     50.00MiB ---     ---
->>>
->>> By the way, I don't if its relevant but the problem is not limited to
->>> exclusive quotas, but also happens when setting a "referenced" limit
->>> (qgroup limit without "-e").
->>>
->>> Thanks,
->>> Johannes
->>>
->>
->> The bug is located, and turns out to be quite a stupid problem caused
->> by myself.
->>
->> I just forgot to include a cleanup patch during rebase!!!! AGAIN!!!
->>
->> You can apply the following patch to resolve it:
->> [PATCH 3/3] btrfs: qgroup: Fix a rebase bug which will cause qgroup
->> double free
->>
->> Or just apply the whole patchset:
->> [4.4][PATCH 0/3] btrfs: Qgroup hotfix
->>
->> At least, with the patchset based on Chris' integration-4.4 branch, it
->> succeeded in touching all the 100 files in my test box.
->>
->> Thanks,
->> Qu
->>
->
-> It's working! Thank you so much for fixing this bug, you don't even know
-> how much this has helped me!
->
-> Thanks!
-> Johannes
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
-Glad to hear that.
-
-If it's working for you, it would be better to add a 'Tested-by' tag for 
-the 3rd patch.
-
-Thanks,
-Qu
+>>>>> Liubo

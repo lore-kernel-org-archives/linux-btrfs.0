@@ -1,86 +1,107 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from blu004-omc1s20.hotmail.com ([65.55.116.31]:49740 "EHLO
-	BLU004-OMC1S20.hotmail.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751993AbbJZXNh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 19:13:37 -0400
-Message-ID: <BLU436-SMTP1878FB5D7ACAF41B0E9B56FA9230@phx.gbl>
+Received: from henninger.io ([144.76.155.217]:34261 "EHLO mail.henninger.io"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750935AbbJ0APN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 26 Oct 2015 20:15:13 -0400
+From: Johannes Henninger <johannes+btrfs@henninger.io>
+Subject: Re: Exclusive quota of snapshot exceeded despite no space used
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, linux-btrfs@vger.kernel.org
+References: <56294960.10406@henninger.io> <5629758D.203@gmx.com>
+ <562A4CC7.1060802@henninger.io> <562C25DE.6050209@gmx.com>
+ <562CB891.40301@henninger.io> <562DD249.200@cn.fujitsu.com>
+Message-ID: <562EC20B.909@henninger.io>
+Date: Tue, 27 Oct 2015 01:15:07 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAAvdE8RJc2eOR0ePdpWaqEeOzHx5xqr5gr0z7sE+cEcuHKhN3A@mail.gmail.com>
-References: <CAAvdE8RJc2eOR0ePdpWaqEeOzHx5xqr5gr0z7sE+cEcuHKhN3A@mail.gmail.com>
-Date: Tue, 27 Oct 2015 00:13:32 +0100
-Subject: Re: BTRFS with 8TB SMR drives
-From: Henk Slager <hslager@hotmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset="UTF-8"
+In-Reply-To: <562DD249.200@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I decided to give this ST8000AS0002 a try for backups / storing old
-snapshots, although standardization for more optimal/native contol of
-SMR drives is still ongoing.  I saw people got it working with 3.18
-kernel, so that gave confidence.
-
-I wanted to see if i could get it running with 4.3.0-rc6 kernel (and
-4.2.3 tools) on an H87M-Pro eSata (non-Intel) port. Filesystem is
-btrfs all single profiles on top of dm-crypt and mounted with
-compress-force=zlib,nossd (I use the drive via bcache but currently
-with not attached to a cache device). The initial snapshot send |
-receive action crashed after 1.2TB transferred, with all the
-typical/known problems in dmesg.
-
-Then same trial, newly created fs, on 1 of the Intel sata ports. Also
-the same timeouts seen in dmesg, but fs already corrupted after a few
-GB of datatransfer. It seemed  that the drive was not able to handle
-and store the filesystemdatastream that was being pushed onto it.
-
-So I did  some step back and just created an ext4 on it and did and
-rsync copy.Unfortunately, also the same timouts, port resets etc.
-
-As the drive made the main system unstable, I hooked it up to an AMD
-E-350 based board, also to try other kernels. Also on this board, no
-success with 4.x kernels and also not with 3.18.22 in the first place.
-But I figured out that a powercycle did the trick and not just a hard-
-or softreset. So again created fs from scratch and mounted as
-indicated.
-
-
-Now it is 55% filled (3.9TiB) with 10 snapshots (done as increments
-from the source fs from late 2013, with uncompressed allocation of
-about 5.6 TiB). The whole datatransfer took about 4 days, which is
-roughly 10x slower than what would be achieved if the drive were
-non-SMR and in a fast (e.g. Core i7) system.
-
-Although the task below took more than 8 minutes:
-[322087.174089] Workqueue: events_unbound
-btrfs_async_reclaim_metadata_space [btrfs]
-... the fs and system runs OK.
-
-My take is that this relatively low average datatransfer (one reason I
-forced zlib compression) helped getting the task done successfully for
-this device-managed SMR drive, but it is unsatisfying that there are
-kernel version and computerystem dependencies. I had limited time for
-preparing and setting up the datatransfer, so other configurations
-with new kernels might also work, but I had most confidence upfront in
-the one that has turned out to work. Maybe now that all data is on the
-drive, I shrink the fs and create a test fs in a second partition.
-
-On Sat, Oct 24, 2015 at 5:27 AM, Ken Long <kelargo1000@gmail.com> wrote:
-> Hello,
+On 26.10.2015 08:12, Qu Wenruo wrote:
 >
-> I have a a single version of this drive formatted with btrfs. Its my
-> only btrfs drive on this machine.
-> I'm getting similar errors. Is there any info I can provide to help
-> troubleshoot this?
+>>>> Thanks a lot for your reply!
+>>>>
+>>>> While remounting the filesystem fixes the issue temporary, it doesn't
+>>>> take very long for the bug to happen again so it's not really a
+>>>> workaround I can work with.
+>>>>
+>>>> I did recompile the kernel using your patches, but unfortunately the
+>>>> problem still appears.
+>>>>
+>>>> Thanks,
+>>>> Johannes
+>>>>
+>>> Interesting, just touching file will cause EQUOTA is quite a big
+>>> problem.
+>>>
+>>> I'll try to reproduce it with my patchset and see what really caused
+>>> the problem.
+>>> The problem seems to do with snapshot qgroup hacking.
+>>> But I'm not completely sure yet.
+>>>
+>>> BTW, does "sync; btrfs qgroup show -prce" still show excl as 16K?
+>>> 16K is the correct number with only 6 empty files, just in case.
+>>>
+>>> Thanks,
+>>> Qu
+>>
+>> I ran my example from the first mail again and managed to write 7 files
+>> this time, "qgroup show" still shows 16kB after sync:
+>>
+>> root@t420:/media/extern/snap# btrfs qg limit -e 50M .
+>> root@t420:/media/extern/snap# for file in {1..100}; do touch $file;
+>> sleep 5m; done
+>> touch: cannot touch ‘8’: Disk quota exceeded
+>> ^C
+>> root@t420:/media/extern/snap# sync
+>> root@t420:/media/extern/snap# btrfs qgroup show -pcre .
+>> qgroupid         rfer         excl     max_rfer     max_excl parent 
+>> child
+>> --------         ----         ----     --------     -------- ------ 
+>> -----
+>> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+>> 0/257        16.00KiB     16.00KiB         none         none ---     ---
+>> 0/258        16.00KiB     16.00KiB         none     50.00MiB ---     ---
+>> root@t420:/media/extern/snap# btrfs fi sync .
+>> FSSync '.'
+>> root@t420:/media/extern/snap# btrfs qgroup show -pcre .
+>> qgroupid         rfer         excl     max_rfer     max_excl parent 
+>> child
+>> --------         ----         ----     --------     -------- ------ 
+>> -----
+>> 0/5          16.00KiB     16.00KiB         none         none ---     ---
+>> 0/257        16.00KiB     16.00KiB         none         none ---     ---
+>> 0/258        16.00KiB     16.00KiB         none     50.00MiB ---     ---
+>>
+>> By the way, I don't if its relevant but the problem is not limited to
+>> exclusive quotas, but also happens when setting a "referenced" limit
+>> (qgroup limit without "-e").
+>>
+>> Thanks,
+>> Johannes
+>>
 >
-> Is a full dmesg still wanted?
+> The bug is located, and turns out to be quite a stupid problem caused
+> by myself.
 >
-> here's what I'm running-
+> I just forgot to include a cleanup patch during rebase!!!! AGAIN!!!
 >
-> $ uname -a
-> Linux machine 4.2.0-16-lowlatency #19-Ubuntu SMP PREEMPT Thu Oct 8
-> 16:19:23 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> You can apply the following patch to resolve it:
+> [PATCH 3/3] btrfs: qgroup: Fix a rebase bug which will cause qgroup
+> double free
+>
+> Or just apply the whole patchset:
+> [4.4][PATCH 0/3] btrfs: Qgroup hotfix
+>
+> At least, with the patchset based on Chris' integration-4.4 branch, it
+> succeeded in touching all the 100 files in my test box.
+>
+> Thanks,
+> Qu
+>
+
+It's working! Thank you so much for fixing this bug, you don't even know
+how much this has helped me!
+
+Thanks!
+Johannes

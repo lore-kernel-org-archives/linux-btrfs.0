@@ -1,177 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:33555 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964799AbbJ0ROM (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:48549 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751116AbbJ1AZf (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 13:14:12 -0400
+	Tue, 27 Oct 2015 20:25:35 -0400
+Subject: Re: [PATCH v3 06/21] btrfs: delayed_ref: Add new function to record
+ reserved space into delayed ref
+To: Chris Mason <clm@fb.com>, <fdmanana@gmail.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+References: <1444702827-18169-1-git-send-email-quwenruo@cn.fujitsu.com>
+ <1444702827-18169-7-git-send-email-quwenruo@cn.fujitsu.com>
+ <CAL3q7H7mvHDYESXYHVYxJC7Yr+yXbvmajaRkWO7nu6iZBOYmSQ@mail.gmail.com>
+ <562EF9D7.50101@cn.fujitsu.com> <20151027051403.GA23134@ret.thefacebook.com>
+ <562F1032.7040103@cn.fujitsu.com>
+ <20151027061203.GA25844@ret.thefacebook.com>
+ <562F3E74.4040205@cn.fujitsu.com> <20151027113435.GA837@ret.edimax.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <563015F9.50606@cn.fujitsu.com>
+Date: Wed, 28 Oct 2015 08:25:29 +0800
 MIME-Version: 1.0
-In-Reply-To: <1445728636-10109-3-git-send-email-tao.peng@primarydata.com>
-References: <1445728636-10109-1-git-send-email-tao.peng@primarydata.com> <1445728636-10109-3-git-send-email-tao.peng@primarydata.com>
-From: Steve French <smfrench@gmail.com>
-Date: Tue, 27 Oct 2015 12:13:52 -0500
-Message-ID: <CAH2r5mt1e5LigOh4Xyj5NCFUrSjTOajKjeYZsR2mE1rHE93uKg@mail.gmail.com>
-Subject: Re: [PATCH 2/9] cifs: add .copy_file_range file operation
-To: Peng Tao <tao.peng@primarydata.com>
-Cc: linux-fsdevel <linux-fsdevel@vger.kernel.org>,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        Christoph Hellwig <hch@infradead.org>, Zach Brown <zab@zabbo.net>,
-        Darren Hart <dvhart@linux.intel.com>,
-        Jeff Layton <jeff.layton@primarydata.com>,
-        "J. Bruce Fields" <bfields@fieldses.org>,
-        "Darrick J. Wong" <darrick.wong@oracle.com>,
-        Al Viro <viro@zeniv.linux.org.uk>,
-        "linux-nfs@vger.kernel.org" <linux-nfs@vger.kernel.org>,
-        linux-btrfs@vger.kernel.org,
-        "linux-cifs@vger.kernel.org" <linux-cifs@vger.kernel.org>,
-        Steve French <steve.french@primarydata.com>,
-        samba-technical <samba-technical@lists.samba.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20151027113435.GA837@ret.edimax.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Patch looks fine, but it points out a Kconfig problem with cifs.ko.
-Need to remove the
 
-         #ifdef CONFIG_CIFS_POSIX
 
-around the statements like:
-
-         .unlocked_ioctl = cifs_ioctl,
-         .copy_file_range = cifs_file_copy_range,
-
-Copy offload does not require support for the old CIFS POSIX
-extensions (or even cifs at all) - it works fine over SMB3.
-Alternatively you can move the copy_file_range to the end of the
-struct file_operations in your patch, and I can remove the
-CONFIG_CIFS_POSIX around cifs_ioctl in a different patch that I put in
-my tree - whichever you prefer.
-
-Originally the first ioctl that cifs supported did require the CIFS
-POSIX extensions because it used an info level defined in the CIFS
-UNIX/POSIX extensions.  With later additions to cifs_ioctl that
-restriction is now obsolete.  Later ioctls have been added that work
-over SMB3, and do not require the CIFS POSIX extensions (such as copy
-offload).   The patch that originally introduced the CIFS_POSIX ifdef
-around this ioctl was
-
-commit c67593a03129967eae8939c4899767182eb6d6cd
-Author: Steve French <smfrench@austin.rr.com>
-Date:   Thu Apr 28 22:41:04 2005 -0700
-
-    [PATCH] cifs: Enable ioctl support in POSIX extensions to handle lsattr
-
-but obviously now we don't need the CONFIG_CIFS_POSIX ifdef around the
-ioctl functions.
-
-On Sat, Oct 24, 2015 at 6:17 PM, Peng Tao <tao.peng@primarydata.com> wrote:
-> Signed-off-by: Peng Tao <tao.peng@primarydata.com>
-> ---
->  fs/cifs/cifsfs.c |  22 ++++++++++++
->  fs/cifs/cifsfs.h |   4 ++-
->  fs/cifs/ioctl.c  | 100 +++++++++++++++++++++++++++++++------------------------
->  3 files changed, 82 insertions(+), 44 deletions(-)
+Chris Mason wrote on 2015/10/27 07:34 -0400:
+> On Tue, Oct 27, 2015 at 05:05:56PM +0800, Qu Wenruo wrote:
+>>
+>>
+>> Chris Mason wrote on 2015/10/27 02:12 -0400:
+>>> On Tue, Oct 27, 2015 at 01:48:34PM +0800, Qu Wenruo wrote:
+>>>>>> Are you testing integration-4.4 from Chris repo?
+>>>>>> Or 4.3-rc from mainline repo with my qgroup reserve patchset applied?
+>>>>>>
+>>>>>> Although integration-4.4 already merged qgroup reserve patchset, but it's
+>>>>>> causing some strange bug like over decrease data sinfo->bytes_may_use,
+>>>>>> mainly in generic/127 testcase.
+>>>>>>
+>>>>>> But if qgroup reserve patchset is rebased to integration-4.3 (I did all my
+>>>>>> old tests based on that), no generic/127 problem at all.
+>>>>>
+>>>>> Did I mismerge things?
+>>>>>
+>>>>> -chris
+>>>>>
+>>>> Not sure yet.
+>>>>
+>>>> But at least some patches in 4.3 is not in integration-4.4, like the
+>>>> following patch:
+>>>> btrfs: Avoid truncate tailing page if fallocate range doesn't exceed inode
+>>>> size
+>>>
+>>> Have you tried testing integration-4.4 merged with current Linus git?
+>>>
+>>> -chris
+>>>
+>> Integration-4.4 merged with Linus' master also fails. :(
+>>
+>> Current known working branches are all based on 4.3-integration(4.2-rc5):
+>> https://github.com/adam900710/linux/tree/qgroup_reserve_good
+>>
+>> Tried 4.3-rc5 and 4.3-rc7, all fails with kernel warning in generic/137.
+>>
+>> And due to the huge difference, I'm afraid it won't take a short time to
+>> find the root cause...
 >
-> diff --git a/fs/cifs/cifsfs.c b/fs/cifs/cifsfs.c
-> index e739950..6ef7c3c 100644
-> --- a/fs/cifs/cifsfs.c
-> +++ b/fs/cifs/cifsfs.c
-> @@ -910,6 +910,22 @@ const struct inode_operations cifs_symlink_inode_ops = {
->  #endif
->  };
+> Ok, this is the top merge commit in integration:
 >
-> +#ifdef CONFIG_CIFS_POSIX
-> +ssize_t cifs_file_copy_range(struct file *file_in, loff_t pos_in,
-> +                            struct file *file_out, loff_t pos_out,
-> +                            size_t len, unsigned int flags)
-> +{
-> +       unsigned int xid;
-> +       int rc;
-> +
-> +       xid = get_xid();
-> +       rc = cifs_file_clone_range(xid, file_in, file_out, pos_in,
-> +                                  len, pos_out, true);
-> +       free_xid(xid);
-> +       return rc < 0 ? rc : len;
-> +}
-> +#endif
-> +
->  const struct file_operations cifs_file_ops = {
->         .read_iter = cifs_loose_read_iter,
->         .write_iter = cifs_file_write_iter,
-> @@ -923,6 +939,7 @@ const struct file_operations cifs_file_ops = {
->         .llseek = cifs_llseek,
->  #ifdef CONFIG_CIFS_POSIX
->         .unlocked_ioctl = cifs_ioctl,
-> +       .copy_file_range = cifs_file_copy_range,
->  #endif /* CONFIG_CIFS_POSIX */
->         .setlease = cifs_setlease,
->         .fallocate = cifs_fallocate,
-> @@ -941,6 +958,7 @@ const struct file_operations cifs_file_strict_ops = {
->         .llseek = cifs_llseek,
->  #ifdef CONFIG_CIFS_POSIX
->         .unlocked_ioctl = cifs_ioctl,
-> +       .copy_file_range = cifs_file_copy_range,
->  #endif /* CONFIG_CIFS_POSIX */
->         .setlease = cifs_setlease,
->         .fallocate = cifs_fallocate,
-> @@ -959,6 +977,7 @@ const struct file_operations cifs_file_direct_ops = {
->         .splice_read = generic_file_splice_read,
->  #ifdef CONFIG_CIFS_POSIX
->         .unlocked_ioctl  = cifs_ioctl,
-> +       .copy_file_range = cifs_file_copy_range,
->  #endif /* CONFIG_CIFS_POSIX */
->         .llseek = cifs_llseek,
->         .setlease = cifs_setlease,
-> @@ -977,6 +996,7 @@ const struct file_operations cifs_file_nobrl_ops = {
->         .llseek = cifs_llseek,
->  #ifdef CONFIG_CIFS_POSIX
->         .unlocked_ioctl = cifs_ioctl,
-> +       .copy_file_range = cifs_file_copy_range,
->  #endif /* CONFIG_CIFS_POSIX */
->         .setlease = cifs_setlease,
->         .fallocate = cifs_fallocate,
-> @@ -994,6 +1014,7 @@ const struct file_operations cifs_file_strict_nobrl_ops = {
->         .llseek = cifs_llseek,
->  #ifdef CONFIG_CIFS_POSIX
->         .unlocked_ioctl = cifs_ioctl,
-> +       .copy_file_range = cifs_file_copy_range,
->  #endif /* CONFIG_CIFS_POSIX */
->         .setlease = cifs_setlease,
->         .fallocate = cifs_fallocate,
-> @@ -1011,6 +1032,7 @@ const struct file_operations cifs_file_direct_nobrl_ops = {
->         .splice_read = generic_file_splice_read,
->  #ifdef CONFIG_CIFS_POSIX
->         .unlocked_ioctl  = cifs_ioctl,
-> +       .copy_file_range = cifs_file_copy_range,
->  #endif /* CONFIG_CIFS_POSIX */
->         .llseek = cifs_llseek,
->         .setlease = cifs_setlease,
+> commit a9e6d153563d2ed69c6cd7fb4fa5ce4ca7c712eb
+> Merge: 56fa9d0 0584f71
+> Author: Chris Mason <clm@fb.com>
+> Date:   Wed Oct 21 19:00:38 2015 -0700
+>
+>      Merge branch 'allocator-fixes' into for-linus-4.4
+>
+> Please try commit 56fa9d0, which doesn't have Josef's allocator fixes.
+> It's possible there is a conflict with your changes in there.
+>
+> -chris
+>
+Tried, still warning.
 
+I'd better investigate it now, and forget why it's OK in 4.3-integration...
 
-Patch looks fine, but it points out a Kconfig problem with cifs.ko.
-Need to remove the
-
-#ifdef CONFIG_CIFS_POSIX
-
-around the
-
-         .unlocked_ioctl = cifs_ioctl,
-         .copy_file_range = cifs_file_copy_range,
-
-statements.  Alternatively you can move the copy_file_range to the end
-of the struct file_operations in your patch, and I can remove the
-CONFIG_CIFS_POSIX around cifs_ioctl in a different patch that I put in
-my tree - whichever you prefer.
-
-Originally the first ioctl that cifs supported did require the CIFS
-POSIX extensions because it used an info level defined in the CIFS
-UNIX/POSIX extensions.  With later additions to cifs_ioctl that
-restriction is now obsolete.  Later ioctls have been added that work
-over SMB3, and do not require the CIFS POSIX extensions (such as copy
-offload).  See patch
-
--- 
 Thanks,
-
-Steve
+Qu

@@ -1,198 +1,209 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45054 "EHLO mx2.suse.de"
+Received: from plane.gmane.org ([80.91.229.3]:47966 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751281AbbJ0WZT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 27 Oct 2015 18:25:19 -0400
-From: Neil Brown <neil@brown.name>
-To: Chris Mason <clm@fb.com>, Al Viro <viro@ZenIV.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>
-Date: Wed, 28 Oct 2015 07:25:10 +0900
-Cc: Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: [PATCH/RFC] make btrfs subvol mounts appear in /proc/mounts
-Message-ID: <87oafkc5kp.fsf@notabene.neil.brown.name>
-MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha1; protocol="application/pgp-signature"
+	id S1755207AbbJ1FVe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Oct 2015 01:21:34 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZrJAy-0002Ed-PM
+	for linux-btrfs@vger.kernel.org; Wed, 28 Oct 2015 06:21:32 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 06:21:32 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 06:21:32 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: random i/o error without error in dmesg
+Date: Wed, 28 Oct 2015 05:21:13 +0000 (UTC)
+Message-ID: <pan$31224$86839f8e$da37e2a5$124e475b@cox.net>
+References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick>
+	<pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
+	<1844690.p2LsPbdn9l@thetick>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+Marc Joliet posted on Tue, 27 Oct 2015 21:54:40 +0100 as excerpted:
+
+>>IOW, does it take a full reboot to clear the problem, or is a simple
+>>ro/rw mount cycle enough, or an unmount/remount?
+> 
+> Seems that a full reboot is needed, but I would expect that it would
+> have the same effect if I were to pivot back into the initramfs, unmount
+> / from there,
+> then boot back into the system.  Because quite frankly, I can't think of
+> any reason why a power cycle to the SSD should make a difference here. 
+> I vaguely remember that systemd can do that, so I'll see if I can find
+> out how.
+
+Agree with both the systemd returning to the initr* point (which I 
+actually had in mind while writing the above but don't remember the 
+details either, so chose to omit in the interest of limiting the size of 
+the reply and research necessary to generate it), and the ssd power-cycle 
+point.
+
+>>Finally, assuming root itself isn't btrfs, if you have btrfs configured
+>>as a module, you could try unmounting all btrfs and then unloading the
+>>module, then reloading and remounting.  That should entirely clear all
+>>in-memory btrfs state, so if that doesn't solve the problem, while
+>>rebooting does, then the problem's very possibly outside of btrfs scope.
+>> Of course if root is btrfs, you can't really check that.
+> 
+> Nope, btrfs is built-in (though it doesn't have to be, what with me
+> using an initramfs).
+
+Same here, also gentoo as I guess you know from previous exchanges.  But 
+unfortunately, if your initr* is anything like mine, and your kernel 
+monolithic as mine, making btrfs a module with a btrfs root isn't the 
+easy thing it might seem to those who run ordinary distro supplied binary 
+kernels with pretty much everything modularized, as doing so involves a 
+whole new set of research on how to get that module properly included in 
+the initr* and loaded there, as well as installing and building the whole 
+module-handling infrastructure (modprobe and friends) again, as it's not 
+actually installed on the system at all at this point, because with the 
+kernel entirely monolithic, module-handling tools are unnecessary and 
+thus just another unnecessary package to have to keep building updates 
+for, if they remain installed.
+
+So I definitely sympathize with the feeling that such a stone is better 
+left unturned, if overturning it is at all a possibility that can be 
+avoided, as it is here, this whole exercise being simply one of better 
+pinning the bug down, not yet actually trying to solve it.  And given 
+that unturned stone, there are certainly easier ways.
+
+And one of those easier ways is investigating that whole systemd return 
+to initr* idea, since we both remember reading something about it, but 
+aren't familiar with the details.  In addition to addressing the problem 
+headon if anyone offers a way to do so, that's the path I'd be looking at 
+right now.
 
 
-If you create a subvolume in btrfs and access it (by name) without
-mounting it, then the subvolume looks like a separate mount to some
-extent, returning a different st_dev to stat(), but it doesn't look like
-a separate mount in that it isn't listed in /proc/mounts. This
-inconsistency can confuse tools.
+Meanwhile, addressing something in the snipped content, if a mount 
+refuses to remount read-only, it's normally due to deleted but still open 
+files.  Often, in many cases the overwhelming majority of the time, 
+that's due to updates that have been done, removing for instance old 
+library files that are still loaded into running executables.  The 
+generalized solution is to quit or restart the affected executables, thus 
+releasing the last open references to the otherwise already deleted 
+library and other files, so the filesystem can finish deleting them.  
+Once this is done, the filesystem can normally be remounted ro (tho bugs 
+like the one of this thread may prevent that).
 
-This patch causes these subvolumes to become separate mounts by using
-the VFS' automount functionality, much like NFS uses automount when it
-discovered mountpoints on the server.
+The problem lies in actually figuring out what still running executables 
+are still holding open file references to otherwise deleted files.  /proc/ 
+actually makes this sort of data available in its collection of files for 
+a running process, as there's one (as the saying goes, finding which one 
+is an exercise left for the reader, as I could look it up or check, but 
+so can you if you're /that/ interested) that tells which files the 
+process has open, and deleted files are clearly marked.
 
-The VFS currently makes it impossible to auto-mount a directory on to itself
-(i.e. a bind mount).  For NFS this isn't a problem as a new superblock
-is created for the child filesystem so there are two separate dentries
-(and inodes) for the one directory: one in the parent filesystem, one in
-the child (note that the two superblocks share a common connection to
-the server so there is still a lot of commonality).
+But it's still a hassle to go thru the appropriate /proc/ files for each 
+process, at least if it's done manually, so various helper tools have 
+been developed to automate the process.  The one I use here is a python-
+based script, packaged on gentoo as...
 
-BTRFS has chosen instead to use a single superblock for all subvolumes.
-This results in a single dentry for the subvol-root.  A dentry which
-must be auto-mounted on itself.
+app-admin/lib_users
 
-This creates 2 problems.
-Firstly, we want to be selective about when the dentry triggers an
-automount.  When the dentry is not the root of a vfsmount, we do want to
-trigger an automount.  When it is the root, we don't.
-I have modified follow_managed() to understand that if ->d_manage()
-returns 1, then an automount should be suppressed when
-  path->mnt->mnt_root =3D=3D path->dentry.
+Run as root, it'll tell you which executables are running that still hold 
+references to deleted files, so you can restart them.  Of course when a 
+library was updated for security reasons doing this restart is a good 
+idea from that perspective as well.  Some tools actually have a table of 
+executables and the services they belong to, and will automate the 
+restart, but of course these sorts of tools tend to be somewhat complex 
+and distro specific, while lib_users simply tells you the executables and 
+lets you decide what to do with that information, that being both simpler 
+and without the distro-specifics of the lists that the fully automated 
+tools must use.
 
-Secondly, finish_automount() explicitly tests for the case of mounting a
-dentry on top of itself and fails with -ELOOP.  I've changed this to
-only fail if the mounted-on directory is the root in its own vfsmount.
-So now mounting a dentry on itself can be OK, but mounting the same
-dentry on top of that will cause -ELOOP.
+If you do your updates while an X-based session is running and run 
+lib_users before shutting it down, you'll often find a whole slew of x-
+based executables listed, so much so that I don't even bother until I've 
+shut down X, these days.  That leaves only services and longer running CLI 
+executables, perhaps including the shell itself, in the list.
 
-With those two VFS changes, it is straight forward to enable automounts for
-btrfs subvolumes and to use clone_private_mount to create the required
-vfsmount.
+If it's only a couple higher-level services listed, it's generally 
+simplest to just restart them.  If it's many services or lower level 
+services such that restarting them will disturb the services depending on 
+them[1], from my experience, it's often easier to simply do a systemctl 
+emergency, perhaps even hitting ctrl-D straight from the resulting root 
+password prompt, to go immediately back to multi-user mode, as even 
+without entering the password, the drop to emergency mode will have 
+restarted all normal services.
 
-I have not added infrastructure to time-out the submounts after a period
-of inactivity in the way that NFS does.  If that is desirable (I'm not
-sure of the benefits) it can easily be added as a subsequent patch.
+What's left in the lib_user list after a dip to emergency mode, whether 
+you've returned to multi-user mode or not, is often only systemd and 
+perhaps its journald service, itself.  Journald can be restarted manually 
+in the usual way (systemctl restart journald.service or whatever, I 
+usually use tab completion so don't pay all that much attention to the 
+specific name), if necessary, while systemd itself can be "reexecuted" 
+using the systemctl daemon-reexec (tab-completion again) command.
 
-If this approach is acceptable, I will resubmit addressing any issues
-raised and with proper updates for the automount documentation.
+With a drop out of X mode, a dip to emergency mode and reexecing systemd 
+itself, at least in my experience with what I'm running here, lib_users 
+normally reports nothing further, and a remount read-only succeeds.
 
-Thanks for any comments,
-NeilBrown
+Of course, if lib_users reports nothing further still holding references 
+to deleted files, and a remount read-only STILL fails, that's a major 
+note of trouble and an important finding in itself.
 
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 611b66d73e80..e96c53590f72 100644
-=2D-- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5621,6 +5621,23 @@ static void btrfs_dentry_release(struct dentry *dent=
-ry)
- 	kfree(dentry->d_fsdata);
- }
-=20
-+static int btrfs_dentry_manage(struct dentry *dentry, bool in_rcu)
-+{
-+	/* This is a 'rebind automount'.  So only trigger automount
-+	 * when the dentry isn't the root of a mountpoint.
-+	 */
-+	return 1;
-+}
-+
-+static struct vfsmount *btrfs_dentry_automount(struct path *path)
-+{
-+	struct vfsmount *mnt;
-+	mnt =3D clone_private_mount(path);
-+	if (!IS_ERR(mnt))
-+		mntget(mnt);
-+	return mnt;
-+}
-+
- static struct dentry *btrfs_lookup(struct inode *dir, struct dentry *dentr=
-y,
- 				   unsigned int flags)
- {
-@@ -5633,6 +5650,8 @@ static struct dentry *btrfs_lookup(struct inode *dir,=
- struct dentry *dentry,
- 		else
- 			return ERR_CAST(inode);
- 	}
-+	if (inode && inode->i_ino =3D=3D BTRFS_FIRST_FREE_OBJECTID)
-+		dentry->d_flags |=3D DCACHE_MANAGE_TRANSIT | DCACHE_NEED_AUTOMOUNT;
-=20
- 	return d_splice_alias(inode, dentry);
- }
-@@ -9990,4 +10009,6 @@ static const struct inode_operations btrfs_symlink_i=
-node_operations =3D {
- const struct dentry_operations btrfs_dentry_operations =3D {
- 	.d_delete	=3D btrfs_dentry_delete,
- 	.d_release	=3D btrfs_dentry_release,
-+	.d_manage	=3D btrfs_dentry_manage,
-+	.d_automount	=3D btrfs_dentry_automount,
- };
-diff --git a/fs/namei.c b/fs/namei.c
-index 33e9495a3129..07e4bbbadae1 100644
-=2D-- a/fs/namei.c
-+++ b/fs/namei.c
-@@ -1178,6 +1178,7 @@ static int follow_managed(struct path *path, struct n=
-ameidata *nd)
- 	       unlikely(managed !=3D 0)) {
- 		/* Allow the filesystem to manage the transit without i_mutex
- 		 * being held. */
-+		ret =3D 0;
- 		if (managed & DCACHE_MANAGE_TRANSIT) {
- 			BUG_ON(!path->dentry->d_op);
- 			BUG_ON(!path->dentry->d_op->d_manage);
-@@ -1207,7 +1208,12 @@ static int follow_managed(struct path *path, struct =
-nameidata *nd)
-=20
- 		/* Handle an automount point */
- 		if (managed & DCACHE_NEED_AUTOMOUNT) {
-=2D			ret =3D follow_automount(path, nd, &need_mntput);
-+			if (ret =3D=3D 1 && path->mnt->mnt_root =3D=3D path->dentry) {
-+				/* only automount when not the root */
-+				ret =3D 0;
-+				break;
-+			} else
-+				ret =3D follow_automount(path, nd, &need_mntput);
- 			if (ret < 0)
- 				break;
- 			continue;
-@@ -1219,7 +1225,7 @@ static int follow_managed(struct path *path, struct n=
-ameidata *nd)
-=20
- 	if (need_mntput && path->mnt =3D=3D mnt)
- 		mntput(path->mnt);
-=2D	if (ret =3D=3D -EISDIR)
-+	if (ret =3D=3D -EISDIR || ret > 0)
- 		ret =3D 0;
- 	if (need_mntput)
- 		nd->flags |=3D LOOKUP_JUMPED;
-diff --git a/fs/namespace.c b/fs/namespace.c
-index 0570729c87fd..adfcb125bef0 100644
-=2D-- a/fs/namespace.c
-+++ b/fs/namespace.c
-@@ -2431,7 +2431,8 @@ int finish_automount(struct vfsmount *m, struct path =
-*path)
- 	BUG_ON(mnt_get_count(mnt) < 2);
-=20
- 	if (m->mnt_sb =3D=3D path->mnt->mnt_sb &&
-=2D	    m->mnt_root =3D=3D path->dentry) {
-+	    m->mnt_root =3D=3D path->dentry &&
-+	    path->mnt->mnt_root =3D=3D path->dentry) {
- 		err =3D -ELOOP;
- 		goto fail;
- 	}
+Meanwhile, as explained in the systemd docs (specifically the systemd for 
+administrators series, IIRC), systemd dropping back to the initr* is 
+actually its way of automatically doing effectively the same thing we 
+were using lib_users and all those restarts to do, getting rid of all 
+possible still running on root executables, including systemd itself, by 
+reexecing systemd itself back in the initr*, as a way to help eliminate 
+*everything* running on root, so it can not only be remounted read-only, 
+but actually unmounted the same as any other filesystem, as userspace is 
+now actually running from the initr* once again.  That's a far *FAR* 
+safer reboot after upgrade than traditional sysvinit solutions were able 
+to do. =:^)
 
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
+So the whole systemd switchroot back to initr* thing happens to be 
+actually linked in here too.  Tho in this case we'd be using it for more, 
+and indeed, there are systemd docs on how to get the reboot process to 
+stop in in the initr*[1].  While I don't recall actually seeing anything 
+about short-circuiting the reboot and restarting from the initr*, it 
+should certainly be possible to configure systemd and the initr* to allow 
+it.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
+And I might have it configured that way here too, to short-circuit the 
+reboot, were it not for the two facts that I (1) often use a dip to 
+emergency mode (and reexec of systemd if necessary) for many of the 
+reasons one might otherwise dip to initr*, and (2) generally track pre-
+release kernels, so a lot of the time when I reboot, it's to start a 
+freshly built kernel, and the dip to initr* wouldn't help with that.
 
-iQIcBAEBAgAGBQJWL/nGAAoJEDnsnt1WYoG5qBkP/04gREHHA13My5Fpa9+HHwzO
-aHWY/rS9dayaTwglTKYaUwrY6trh5z3VdoOVVbTqldol2yP7kgRiWiHyWgyf3qVv
-5UHYc994nWVUxPBbMuXygF5eqaR/kxZtb80qhxKJn2LeVrx1SUDyCdMWsmnoBYgh
-WzKKlUKuvVf1fTrVq5VZ6ueipXWsteH1IeyyL7Mb4DmNZ0Ocksrv1UC9Wpvaq28P
-2EtzdFBRv3TVzxQRtjho3E5yQQPuwnkLzfM0aFLCXQtXUQ1MubrifyNx8w4RczSt
-/hiUoIyymqgIC8032eTkI9HWAHzJOLLA+iQMfW2AHH6k254UXk49aNrCxWbkKfiv
-rbjWnNAEqrZA7pINLXzfsPutvmOJcXOLGtWW6keqo4uUmb1mI5mmpug2Yj92xL+w
-U01ZEu5A1Gu4GZ++NB8hqAmi0+JX+Y+CiA+WXRwlERVu4K882Us6MPeoHzDjLXIh
-z078LGs0+3cWGC7z249B1bq99c3RmCquqiQCub6fuuf7Li8l9Fgw3tYIrE5cIhCL
-vXmN0uKeHu9pA2ywEF1RwGJueqc4UjVjWAdkB8ARhvM0Px7m2Ery1jabuAw/8aBC
-wUK2jvHniiR6YKmATiOMkIiFUEiJCRmgDwplWMN4ACGli9J8DwN6ZrCay+vzc6gj
-2KxcwrhzyQjQScIwnxyP
-=eBEi
------END PGP SIGNATURE-----
---=-=-=--
+---
+[1] Low-level services:  Low-level services aren't so much a problem with 
+systemd, since it generally keeps thinks like sockets available and hooks 
+them back up to the restarted service, without disturbing the higher 
+level services that would otherwise need a restart too, at all.  But the 
+shear number of otherwise manual restarts necessary can still make it 
+easier to simply dip to emergency mode temporarily, before going normal 
+multi-user again.
+
+[2] Stopping the reboot process back in the initr*, before final 
+restart:  I did actually try to get this working at one point, but due to 
+some particulars specific to my own rather strange layout, certain initr* 
+related systemd service file symlinks were orphaned at the time, and it 
+didn't work as it was designed and documented to work.  I've since fixed 
+those symlink issues, but I've not tried again to stop in the initr* on 
+the way down, so I've never actually seen it do that, tho if I'm fast 
+enough and the reboot slow enough, I can at least see the return to initr* 
+stuff scrolling by now before it blinks out, and it wasn't doing that 
+before, so I expect I could actually get it to stop in in the initr* on 
+the way down, now, if I tried, by following the documentation.  Anyway, 
+that's why I'm not offering specific help on that aspect, because it was 
+broken for me when I tried it, and while I believe it fixed now, I've not 
+tried it since the fix, so I don't have the actual benefit of experience 
+to offer.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

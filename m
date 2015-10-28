@@ -1,55 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41268 "EHLO plane.gmane.org"
+Received: from henninger.io ([144.76.155.217]:38264 "EHLO mail.henninger.io"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965455AbbJ1Mql (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Oct 2015 08:46:41 -0400
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZrQ7h-0003IQ-1Z
-	for linux-btrfs@vger.kernel.org; Wed, 28 Oct 2015 13:46:37 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 13:46:37 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 13:46:37 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: random i/o error without error in dmesg
-Date: Wed, 28 Oct 2015 12:46:22 +0000 (UTC)
-Message-ID: <pan$e5b89$1910fd58$67d33955$834f4f12@cox.net>
-References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick>
-	<pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
-	<56308ADC.5060207@dblaci.hu>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S965816AbbJ1OCs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Oct 2015 10:02:48 -0400
+Subject: Re: Exclusive quota of snapshot exceeded despite no space used
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        linux-btrfs@vger.kernel.org
+References: <56294960.10406@henninger.io> <5629758D.203@gmx.com>
+ <562A4CC7.1060802@henninger.io> <562C25DE.6050209@gmx.com>
+ <562CB891.40301@henninger.io> <562DD249.200@cn.fujitsu.com>
+ <562EC20B.909@henninger.io> <562ECE25.90204@cn.fujitsu.com>
+From: Johannes Henninger <johannes+btrfs@henninger.io>
+Message-ID: <5630D57F.5070803@henninger.io>
+Date: Wed, 28 Oct 2015 15:02:39 +0100
+MIME-Version: 1.0
+In-Reply-To: <562ECE25.90204@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Szalma László posted on Wed, 28 Oct 2015 09:44:12 +0100 as excerpted:
+On 27.10.2015 02:06, Qu Wenruo wrote:
+>
+>
+> Johannes Henninger wrote on 2015/10/27 01:15 +0100:
+>> On 26.10.2015 08:12, Qu Wenruo wrote:
+>>>
+>>>>>> Thanks a lot for your reply!
+>>>>>>
+>>>>>> While remounting the filesystem fixes the issue temporary, it
+>>>>>> doesn't
+>>>>>> take very long for the bug to happen again so it's not really a
+>>>>>> workaround I can work with.
+>>>>>>
+>>>>>> I did recompile the kernel using your patches, but unfortunately the
+>>>>>> problem still appears.
+>>>>>>
+>>>>>> Thanks,
+>>>>>> Johannes
+>>>>>>
+>>>>> Interesting, just touching file will cause EQUOTA is quite a big
+>>>>> problem.
+>>>>>
+>>>>> I'll try to reproduce it with my patchset and see what really caused
+>>>>> the problem.
+>>>>> The problem seems to do with snapshot qgroup hacking.
+>>>>> But I'm not completely sure yet.
+>>>>>
+>>>>> BTW, does "sync; btrfs qgroup show -prce" still show excl as 16K?
+>>>>> 16K is the correct number with only 6 empty files, just in case.
+>>>>>
+>>>>> Thanks,
+>>>>> Qu
+>>>>
+>>>> I ran my example from the first mail again and managed to write 7
+>>>> files
+>>>> this time, "qgroup show" still shows 16kB after sync:
+>>>>
+>>>> root@t420:/media/extern/snap# btrfs qg limit -e 50M .
+>>>> root@t420:/media/extern/snap# for file in {1..100}; do touch $file;
+>>>> sleep 5m; done
+>>>> touch: cannot touch ‘8’: Disk quota exceeded
+>>>> ^C
+>>>> root@t420:/media/extern/snap# sync
+>>>> root@t420:/media/extern/snap# btrfs qgroup show -pcre .
+>>>> qgroupid         rfer         excl     max_rfer     max_excl parent
+>>>> child
+>>>> --------         ----         ----     --------     -------- ------
+>>>> -----
+>>>> 0/5          16.00KiB     16.00KiB         none         none
+>>>> ---     ---
+>>>> 0/257        16.00KiB     16.00KiB         none         none
+>>>> ---     ---
+>>>> 0/258        16.00KiB     16.00KiB         none     50.00MiB
+>>>> ---     ---
+>>>> root@t420:/media/extern/snap# btrfs fi sync .
+>>>> FSSync '.'
+>>>> root@t420:/media/extern/snap# btrfs qgroup show -pcre .
+>>>> qgroupid         rfer         excl     max_rfer     max_excl parent
+>>>> child
+>>>> --------         ----         ----     --------     -------- ------
+>>>> -----
+>>>> 0/5          16.00KiB     16.00KiB         none         none
+>>>> ---     ---
+>>>> 0/257        16.00KiB     16.00KiB         none         none
+>>>> ---     ---
+>>>> 0/258        16.00KiB     16.00KiB         none     50.00MiB
+>>>> ---     ---
+>>>>
+>>>> By the way, I don't if its relevant but the problem is not limited to
+>>>> exclusive quotas, but also happens when setting a "referenced" limit
+>>>> (qgroup limit without "-e").
+>>>>
+>>>> Thanks,
+>>>> Johannes
+>>>>
+>>>
+>>> The bug is located, and turns out to be quite a stupid problem caused
+>>> by myself.
+>>>
+>>> I just forgot to include a cleanup patch during rebase!!!! AGAIN!!!
+>>>
+>>> You can apply the following patch to resolve it:
+>>> [PATCH 3/3] btrfs: qgroup: Fix a rebase bug which will cause qgroup
+>>> double free
+>>>
+>>> Or just apply the whole patchset:
+>>> [4.4][PATCH 0/3] btrfs: Qgroup hotfix
+>>>
+>>> At least, with the patchset based on Chris' integration-4.4 branch, it
+>>> succeeded in touching all the 100 files in my test box.
+>>>
+>>> Thanks,
+>>> Qu
+>>>
+>>
+>> It's working! Thank you so much for fixing this bug, you don't even know
+>> how much this has helped me!
+>>
+>> Thanks!
+>> Johannes
+>> -- 
+>> To unsubscribe from this list: send the line "unsubscribe
+>> linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+> Glad to hear that.
+>
+> If it's working for you, it would be better to add a 'Tested-by' tag
+> for the 3rd patch.
+>
+> Thanks,
+> Qu
 
-> The umount/mount ALWAYS solved the problem for me, mount -o remount,ro
-> was tried for the first time, but it was not enought. Reboot was not
-> needed.
-> (kernel 4.2.4)
+Sure! Is there anything I have to do? I'm a kernel and mailing list noob :)
 
-So that means it's filesystem state that's tracked thru a remount, not 
-something like deleted/orphan files that a remount should square away.  
-But a full unmount clears the state, without having to unload the btrfs 
-kernel module or reboot.
-
-Which at least limits the active zone of the problem.  Unfortunately, I'm 
-not a dev and don't have a clue where to go from there... unless it's 
-related to the recent delayed-refs bug, in which case I believe a late 
-4.3 rc, or 4.3.0 when released, should fix it.  That fix should be CCed 
-to stable and thus appear there eventually, but I normally track pre-
-releases, not stable, so don't know how long it might be...  And again, I 
-don't know it's even related, but it does appear to be the active bug of 
-the moment, so in the absence of knowing, one can hope.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Thanks,
+Johannes

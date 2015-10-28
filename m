@@ -1,188 +1,165 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:50265 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751078AbbJ3XzG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Oct 2015 19:55:06 -0400
-Subject: Re: [PATCH 4/5] btrfs: Allow barrier_all_devices to do per-chunk
- device check
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
-References: <1442801443-5132-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1442801443-5132-5-git-send-email-quwenruo@cn.fujitsu.com>
- <56332B3A.3080703@oracle.com> <56335761.4080104@gmx.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <563402BD.6000504@oracle.com>
-Date: Sat, 31 Oct 2015 07:52:29 +0800
-MIME-Version: 1.0
-In-Reply-To: <56335761.4080104@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:42713 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S965564AbbJ1NKH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Oct 2015 09:10:07 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZrQUM-0004TV-W0
+	for linux-btrfs@vger.kernel.org; Wed, 28 Oct 2015 14:10:03 +0100
+Received: from ip68-5-198-206.oc.oc.cox.net ([68.5.198.206])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 14:10:02 +0100
+Received: from Cheshireccat by ip68-5-198-206.oc.oc.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 14:10:02 +0100
+To: linux-btrfs@vger.kernel.org
+From: JDAIII <Cheshireccat@gmail.com>
+Subject: Re: btrfs-undelete shell-script
+Date: Wed, 28 Oct 2015 06:06:35 +0000 (UTC)
+Message-ID: <loom.20151028T070456-61@post.gmane.org>
+References: <1842933.L15n886rVc@queen>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
-On 10/30/2015 07:41 PM, Qu Wenruo wrote:
->
->
-> åœ¨ 2015å¹´10æœˆ30æ—¥ 16:32, Anand Jain å†™é“:
->>
->>
->> Qu,
->>
->>   We shouldn't mark FS readonly when chunks are degradable.
->>   As below.
->>
->> Thanks, Anand
->>
->>
->> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->> index 39a2d57..dbb2483 100644
->> --- a/fs/btrfs/disk-io.c
->> +++ b/fs/btrfs/disk-io.c
->> @@ -3530,7 +3530,7 @@ static int write_all_supers(struct btrfs_root
->> *root, int max_mirrors)
->>
->>          if (do_barriers) {
->>                  ret = barrier_all_devices(root->fs_info);
->> -               if (ret) {
->> +               if (ret < 0) {
->>                          mutex_unlock(
->>
->> &root->fs_info->fs_devices->device_list_mutex);
->>                          btrfs_std_error(root->fs_info, ret,
->>
->>
->
-> Sorry, I didn't got the point here.
->
-> There should be no difference between ret and ret < 0,
-> as barrier_all_devices() will only return -EIO or 0.
+JÃ¶rg Walter <info <at> syntax-k.de> 
+writes:
 
-  oh sorry. you are right. I missed that point.
+> 
+> Hi,
+> 
+> I tried to recover an accidentally 
+deleted text file from a btrfs volume 
+using 
+> the trusty old 'grep --text -C 500' 
+method and failed, since the filesystem 
+was 
+> compressed. So I wrote a shell script 
+that uses btrfs-progs for a proper 
+> undelete functionality.
+> 
+> Attached is the script that implements a 
+working btrfs-undelete using the find-
+> root and restore tools from btrfs-progs. 
+It is fairly complete and solid and 
+> it even has some command  line help. It 
+needs bash and common unix utilities 
+> (sed, grep, wc, dirname, sort). I have 
+successfully used it to recover a 
+> couple of files I deleted accidentally 
+and was able to recover 2/3 of them just 
+> fine. The rest was zero-sized, I assume 
+that's because the file blocks have 
+> already been reused.
+> 
+> If you like it, feel free to add it to 
+btrfs-progs. I've chosen GPLv2 or later 
+> as license, as that's what btrfs-progs 
+seems to use.
+> 
+> Please CC me on replies, I am not 
+subscribed (and don't intend to).
+> 
 
-Thanks, Anand
+Hi all, new to btrfs and have an issue. 
+Thought I'd hit you folks up for some 
+assistance.
 
+First things first. I have exhausted 
+Google and tried the btrfs-undelete 
+script. I've had no luck recovering my 
+directory. I need to recover it asap as 
+important files are on the drive also that 
+we need and I have it unmounted until we 
+figure this out.
 
-> Thanks,
-> Qu
->
->>
->>
->> On 09/21/2015 10:10 AM, Qu Wenruo wrote:
->>> The last user of num_tolerated_disk_barrier_failures is
->>> barrier_all_devices().
->>> But it's can be easily changed to new per-chunk degradable check
->>> framework.
->>>
->>> Now btrfs_device will have two extra members, representing send/wait
->>> error, set at write_dev_flush() time.
->>> And then check it in a similar but more accurate behavior than old code.
->>>
->>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>> ---
->>>   fs/btrfs/disk-io.c | 13 +++++--------
->>>   fs/btrfs/volumes.c |  6 +++++-
->>>   fs/btrfs/volumes.h |  4 ++++
->>>   3 files changed, 14 insertions(+), 9 deletions(-)
->>>
->>> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
->>> index d64299f..7cd94e7 100644
->>> --- a/fs/btrfs/disk-io.c
->>> +++ b/fs/btrfs/disk-io.c
->>> @@ -3400,8 +3400,6 @@ static int barrier_all_devices(struct
->>> btrfs_fs_info *info)
->>>   {
->>>       struct list_head *head;
->>>       struct btrfs_device *dev;
->>> -    int errors_send = 0;
->>> -    int errors_wait = 0;
->>>       int ret;
->>>
->>>       /* send down all the barriers */
->>> @@ -3410,7 +3408,7 @@ static int barrier_all_devices(struct
->>> btrfs_fs_info *info)
->>>           if (dev->missing)
->>>               continue;
->>>           if (!dev->bdev) {
->>> -            errors_send++;
->>> +            dev->err_send = 1;
->>>               continue;
->>>           }
->>>           if (!dev->in_fs_metadata || !dev->writeable)
->>> @@ -3418,7 +3416,7 @@ static int barrier_all_devices(struct
->>> btrfs_fs_info *info)
->>>
->>>           ret = write_dev_flush(dev, 0);
->>>           if (ret)
->>> -            errors_send++;
->>> +            dev->err_send = 1;
->>>       }
->>>
->>>       /* wait for all the barriers */
->>> @@ -3426,7 +3424,7 @@ static int barrier_all_devices(struct
->>> btrfs_fs_info *info)
->>>           if (dev->missing)
->>>               continue;
->>>           if (!dev->bdev) {
->>> -            errors_wait++;
->>> +            dev->err_wait = 1;
->>>               continue;
->>>           }
->>>           if (!dev->in_fs_metadata || !dev->writeable)
->>> @@ -3434,10 +3432,9 @@ static int barrier_all_devices(struct
->>> btrfs_fs_info *info)
->>>
->>>           ret = write_dev_flush(dev, 1);
->>>           if (ret)
->>> -            errors_wait++;
->>> +            dev->err_wait = 1;
->>>       }
->>> -    if (errors_send > info->num_tolerated_disk_barrier_failures ||
->>> -        errors_wait > info->num_tolerated_disk_barrier_failures)
->>> +    if (btrfs_check_degradable(info, info->sb->s_flags) < 0)
->>>           return -EIO;
->>>       return 0;
->>>   }
->>> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
->>> index f1ef215..88266fa 100644
->>> --- a/fs/btrfs/volumes.c
->>> +++ b/fs/btrfs/volumes.c
->>> @@ -6945,8 +6945,12 @@ int btrfs_check_degradable(struct btrfs_fs_info
->>> *fs_info, unsigned flags)
->>>               btrfs_get_num_tolerated_disk_barrier_failures(
->>>                       map->type);
->>>           for (i = 0; i < map->num_stripes; i++) {
->>> -            if (map->stripes[i].dev->missing)
->>> +            if (map->stripes[i].dev->missing ||
->>> +                map->stripes[i].dev->err_wait ||
->>> +                map->stripes[i].dev->err_send)
->>>                   missing++;
->>> +            map->stripes[i].dev->err_wait = 0;
->>> +            map->stripes[i].dev->err_send = 0;
->>>           }
->>>           if (missing > max_tolerated) {
->>>               ret = -EIO;
->>> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
->>> index fe758df..cd02556 100644
->>> --- a/fs/btrfs/volumes.h
->>> +++ b/fs/btrfs/volumes.h
->>> @@ -76,6 +76,10 @@ struct btrfs_device {
->>>       int can_discard;
->>>       int is_tgtdev_for_dev_replace;
->>>
->>> +    /* for barrier_all_devices() check */
->>> +    int err_send;
->>> +    int err_wait;
->>> +
->>>   #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
->>>       seqcount_t data_seqcount;
->>>   #endif
->>>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+I've tried a few blocks and I get the same 
+error here.
+
+I've tried btrfs restore as you see here.
+
+$ sudo btrfs restore /dev/sde /media -v -i 
+-t 1060780900352
+parent transid verify failed on 
+1060780900352 wanted 39805 found 39797
+parent transid verify failed on 
+1060780900352 wanted 39805 found 39797
+parent transid verify failed on 
+1060780900352 wanted 39805 found 39797
+parent transid verify failed on 
+1060780900352 wanted 39805 found 39797
+Ignoring transid failure
+Couldn't setup extent tree
+Couldn't read fs root: -2
+extent buffer leak: start 1060780900352 
+len 16384
+
+My setup: I have two 4tb drives in a 
+single btrfs cluster in raid 0. I know, no 
+need to mention how bad that idea was. So 
+my wife is learning Linux and well let's 
+say she's never allowed near the server 
+again. She ran the command sudo rm -rf 
+/media/Movies trying to delete a single 
+file and that is why we are here.
+
+Well, I had 1.5TB in that folder of 
+hundreds of files. I could either spend 
+another 2 months ripping all my DVDs again 
+or recover my directory. I'm really 
+surprised btrfs doesn't have better 
+documentation on file recovery. Or a tool 
+that can be used for this purpose. First 
+thing I did when she told me about it is 
+stop all processes writing to that mount,  
+remove the btrfs volume from fstab and 
+reboot. For some reason umount never works 
+for me on the btrfs mounts.
+
+So here is a partial lsblk. sde and sdb1 
+are both in the volume together. I'm still 
+not sure why sde  shows no partitions.
+
+NAME   MAJ:MIN RM   SIZE RO TYPE  
+MOUNTPOINT
+sdb      8:16   0   3.7T  0 disk
+â””â”€sdb1   8:17   0   3.7T  0 part
+sde      8:64   0   3.7T  0 disk
+sdf      8:80   0   1.8T  0 disk
+â””â”€sdf1   8:81   0   1.8T  0 part  /media
+
+Here is my entry in fstab:
+UUID=7ffdecf9-af9a-4299-b697-4fc375bac3b1 
+/media       btrfs   defaults  
+
+So when I ran a sudo btrfs restore -s 
+/dev/sde /tmp it restored some files. I 
+had to stop it because I can't store 4TB 
+on my root partition. I'd like to either 
+recover /media/Movies from sde and sdb1. 
+Or I would be willing to restore a 
+snapshot but only of that one subdirectory 
+as other data changes hourly.
+
+So where can I start? I have run btrfs-
+find-root /dev/sde and sdb1 and have the 
+output files but I don't want to run the 
+btrfs-undelete script since I get the 
+errors above. I also noticed a strange 
+line in the btrfs-undelete script I got 
+from here: 
+http://comments.gmane.org/gmane.comp.file-
+systems.btrfs/22560
+
+In the script, it references 
+/dev/mapper/queen-home Now I've only been 
+using Linux for a year now full time but 
+I've never heard of that file.
+
+Any ideas, questions, comments? I'm 
+desperate so any help I can find would be 
+greatly appreciated.ÿôèº{.nÇ+‰·Ÿ®‰­†+%ŠËÿ±éİ¶¥Šwÿº{.nÇ+‰·¥Š{±ı»k~ÏâØ^n‡r¡ö¦zËëh™¨è­Ú&£ûàz¿äz¹Ş—ú+€Ê+zf£¢·hšˆ§~†­†Ûiÿÿïêÿ‘êçz_è®æj:+v‰¨ş)ß£øm

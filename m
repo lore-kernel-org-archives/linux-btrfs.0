@@ -1,52 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40648 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:41268 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932185AbbJ1Mg2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Oct 2015 08:36:28 -0400
+	id S965455AbbJ1Mql (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 28 Oct 2015 08:46:41 -0400
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZrPxp-0003aA-N0
-	for linux-btrfs@vger.kernel.org; Wed, 28 Oct 2015 13:36:25 +0100
+	id 1ZrQ7h-0003IQ-1Z
+	for linux-btrfs@vger.kernel.org; Wed, 28 Oct 2015 13:46:37 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 13:36:25 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 13:46:37 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 13:36:25 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 13:46:37 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Questions about FIEMAP
-Date: Wed, 28 Oct 2015 12:36:11 +0000 (UTC)
-Message-ID: <pan$d8e7d$1b0b27e5$1154191$b17f2ea@cox.net>
-References: <CY1PR10MB04283CC6BA7D9AE8F3F0B984E4310@CY1PR10MB0428.namprd10.prod.outlook.com>
-	<561BB531.6070706@redhat.com>
-	<CY1PR10MB0428CCC32D899CB0405B29ACE4210@CY1PR10MB0428.namprd10.prod.outlook.com>
+Subject: Re: random i/o error without error in dmesg
+Date: Wed, 28 Oct 2015 12:46:22 +0000 (UTC)
+Message-ID: <pan$e5b89$1910fd58$67d33955$834f4f12@cox.net>
+References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick>
+	<pan$69543$b4766f34$8286648d$3871cb8f@cox.net>
+	<56308ADC.5060207@dblaci.hu>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Wang, Zhiye posted on Wed, 28 Oct 2015 09:57:29 +0000 as excerpted:
+Szalma László posted on Wed, 28 Oct 2015 09:44:12 +0100 as excerpted:
 
-> Thank you all for your comments.
-> 
-> A further question is: if I mount a btrfs file system in "readonly"
-> mode, will any operation cause the blocks of a file get changed?
+> The umount/mount ALWAYS solved the problem for me, mount -o remount,ro
+> was tried for the first time, but it was not enought. Reboot was not
+> needed.
+> (kernel 4.2.4)
 
-Note that both bind-mounts and btrfs subvolume mounts can be used to make 
-parts of a filesystem appear in multiple locations in the filesystem 
-tree.  Because these different mounts can be separately mounted read-only 
-or writable, there's no guarantee that just because a filesystem or part 
-of it is read-only mounted in one location, it's read-only mounted 
-everywhere it can be accessed, and thus no guarantee that files even on a 
-read-only mounted filesystem or subvolume won't actually change out from 
-under you.
+So that means it's filesystem state that's tracked thru a remount, not 
+something like deleted/orphan files that a remount should square away.  
+But a full unmount clears the state, without having to unload the btrfs 
+kernel module or reboot.
 
-However, bind-mounts in particular aren't btrfs specific, so just because 
-btrfs subvolumes add another case in which the above can be true, doesn't 
-mean bind-mounts can't be used on other filesystems to effect the same 
-sort of otherwise read-only file instabilities.
+Which at least limits the active zone of the problem.  Unfortunately, I'm 
+not a dev and don't have a clue where to go from there... unless it's 
+related to the recent delayed-refs bug, in which case I believe a late 
+4.3 rc, or 4.3.0 when released, should fix it.  That fix should be CCed 
+to stable and thus appear there eventually, but I normally track pre-
+releases, not stable, so don't know how long it might be...  And again, I 
+don't know it's even related, but it does appear to be the active bug of 
+the moment, so in the absence of knowing, one can hope.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

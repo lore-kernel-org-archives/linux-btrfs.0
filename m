@@ -1,118 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:35490 "EHLO
-	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755877AbbJ1LYs (ORCPT
+Received: from mail-io0-f173.google.com ([209.85.223.173]:33085 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755509AbbJ1MIY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 28 Oct 2015 07:24:48 -0400
-Received: by iofz202 with SMTP id z202so6550515iof.2
-        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 04:24:47 -0700 (PDT)
-Subject: Re: random i/o error without error in dmesg
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <562E0D31.2080003@dblaci.hu> <5339076.FcC2BAjqs5@thetick>
- <pan$69543$b4766f34$8286648d$3871cb8f@cox.net> <1844690.p2LsPbdn9l@thetick>
- <pan$31224$86839f8e$da37e2a5$124e475b@cox.net>
+	Wed, 28 Oct 2015 08:08:24 -0400
+Received: by iodd200 with SMTP id d200so7705363iod.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 28 Oct 2015 05:08:23 -0700 (PDT)
+Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.googlemail.com with ESMTPSA id ie20sm9849332igb.10.2015.10.28.05.08.21
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Wed, 28 Oct 2015 05:08:21 -0700 (PDT)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5630B040.8020203@gmail.com>
-Date: Wed, 28 Oct 2015 07:23:44 -0400
+Subject: How to replicate a Xen VM using BTRFS as the root filesystem.
+Message-ID: <5630BA78.1090804@gmail.com>
+Date: Wed, 28 Oct 2015 08:07:20 -0400
 MIME-Version: 1.0
-In-Reply-To: <pan$31224$86839f8e$da37e2a5$124e475b@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms040804000008040300040903"
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010507070902060004080406"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms040804000008040300040903
+--------------ms010507070902060004080406
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-10-28 01:21, Duncan wrote:
-> Marc Joliet posted on Tue, 27 Oct 2015 21:54:40 +0100 as excerpted:
->
->>> IOW, does it take a full reboot to clear the problem, or is a simple
->>> ro/rw mount cycle enough, or an unmount/remount?
->>
->> Seems that a full reboot is needed, but I would expect that it would
->> have the same effect if I were to pivot back into the initramfs, unmou=
-nt
->> / from there,
->> then boot back into the system.  Because quite frankly, I can't think =
-of
->> any reason why a power cycle to the SSD should make a difference here.=
+I would put this on the wiki in the stuff about use cases, but I don't=20
+have a wiki account and don't really have the time or interest right now =
 
->> I vaguely remember that systemd can do that, so I'll see if I can find=
+in getting one, so I'm posting it here instead.
 
->> out how.
->
-> Agree with both the systemd returning to the initr* point (which I
-> actually had in mind while writing the above but don't remember the
-> details either, so chose to omit in the interest of limiting the size o=
-f
-> the reply and research necessary to generate it), and the ssd power-cyc=
-le
-> point.
->
->>> Finally, assuming root itself isn't btrfs, if you have btrfs configur=
-ed
->>> as a module, you could try unmounting all btrfs and then unloading th=
-e
->>> module, then reloading and remounting.  That should entirely clear al=
-l
->>> in-memory btrfs state, so if that doesn't solve the problem, while
->>> rebooting does, then the problem's very possibly outside of btrfs sco=
-pe.
->>> Of course if root is btrfs, you can't really check that.
->>
->> Nope, btrfs is built-in (though it doesn't have to be, what with me
->> using an initramfs).
->
-> Same here, also gentoo as I guess you know from previous exchanges.  Bu=
-t
-> unfortunately, if your initr* is anything like mine, and your kernel
-> monolithic as mine, making btrfs a module with a btrfs root isn't the
-> easy thing it might seem to those who run ordinary distro supplied bina=
-ry
-> kernels with pretty much everything modularized, as doing so involves a=
+This is a rather interesting use case for send/receive that I've never=20
+seen discussed anywhere else.  In essence, it lets you take a working=20
+Xen user domain which uses BTRFS as the root filesystem, and use that as =
 
-> whole new set of research on how to get that module properly included i=
-n
-> the initr* and loaded there, as well as installing and building the who=
-le
-> module-handling infrastructure (modprobe and friends) again, as it's no=
-t
-> actually installed on the system at all at this point, because with the=
+a template for new VM's without having to deal with seed devices (which=20
+means you can do it with the source domain online with only minimal=20
+service degradation).
 
-> kernel entirely monolithic, module-handling tools are unnecessary and
-> thus just another unnecessary package to have to keep building updates
-> for, if they remain installed.
-FWIW, I'm pretty sure that genkernel-next (and possibly genkernel too at =
+These steps assume you have a minimal working knowledge of Xen and=20
+BTRFS, as well as access to both Domain-0 and the user domain you are=20
+copying (refereed to below as the 'source domain'.  I've only used this=20
+myself with Gentoo, but it should work for almost any Linux distro.=20
+I've also only done this with fully paravirtualized domains, it's a lot=20
+more involved to do it with hardware virtualized domains, although PVH=20
+domains should work with exactly the same steps as regular PV domains.=20
+Your source domain's root also needs to be in a subvolume on the root=20
+filesystem, this won't work if it isn't.
 
-this point, but that's never had working userland support for BTRFS=20
-AFAICT) includes btrfs.ko and it's dependencies in any initr* it=20
-generates when it sees those modules on the system, although I'm not=20
-100% certain because I always build the driver for my root filesystem=20
-into the kernel directly.
->
-[ snip ]
-> What's left in the lib_user list after a dip to emergency mode, whether=
+1. Create your backend storage devices for the new domain.
+2. Attach the storage device (or devices) that will hold the root=20
+filesystem for the new domain to the source domain.  Using xl, this=20
+translates to something similar to: 'xl block-attach source=20
+"/dev/vg/target-disk,raw,xvdz"'
+3. From the source domain, use mkfs.btrfs to create a BTRFS filesystem=20
+on the target disk (be careful, if you specify the wrong disk you may=20
+cause serious issues).
+4. On the source domain, mount both the root filesystem (don't bind=20
+mount it, and make sure that you are mounting the top-level, not a=20
+subvolume) and the target filesystem.
+5. Create a read-only snapshot of the root subvolume from the source=20
+filesystem.
+6. Use btrfs send piped to btrfs receive to copy the snapshot from the=20
+source filesystem to the target filesystem.  This will likely take quite =
 
-> you've returned to multi-user mode or not, is often only systemd and
-> perhaps its journald service, itself.  Journald can be restarted manual=
-ly
-> in the usual way (systemctl restart journald.service or whatever, I
-> usually use tab completion so don't pay all that much attention to the
-> specific name), if necessary, while systemd itself can be "reexecuted"
-> using the systemctl daemon-reexec (tab-completion again) command.
-Udev might also be listed (for some reason, a lot of distros don't stop=20
-it when going to emergency mode, I don't know about what Gentoo does in=20
-this case though because I don't use systemd), and at least the last=20
-time I checked, dropping to emergency mode on Debian and Fedora testing=20
-versions also keeps any dhcp clients or other stuff needed for=20
-maintaining the network connection running as well.
+some time (on the low-end server equivalent hardware I have, it takes=20
+about 2o-25 minutes for a somewhat minimalistic Gentoo installation).
+7. While btrfs send/receive is running, prepare the configuration file=20
+for the target domain (I usually just copy the config from the source=20
+domain, and then change only what I need to).
+8. Once the send/receive operation is complete, use btrfs property set=20
+to change the snapshot on the target to be writable, then rename it to=20
+whatever you want the root subvolume to be called on the target system.
+9. In the newly created root subvolume, change any system specific=20
+configuration to what is needed for the new system (at a bare minimum,=20
+you probably need to change the hostname and networking configuration,=20
+and should verify that /etc/fstab and /etc/localtime are correct for the =
+
+target system).
+10. Unmount the target filesystem in the source domain.
+11. Use 'xl block-detach' to detach the target device from the source=20
+domain.
+12. Use your regular tools to start your new domain, log in, and preform =
+
+any final configuration needed.
+
+Using this methodology, I can have a new Gentoo PV domain running in=20
+about half an hour, whereas it takes me at least two and a half hours=20
+(and often much longer than that) when using the regular install process =
+
+for Gentoo.
 
 
-
---------------ms040804000008040300040903
+--------------ms010507070902060004080406
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -154,9 +136,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDI4MTEyMzQ0WjBPBgkq
-hkiG9w0BCQQxQgRAz/JTBMXp/2QsIfWqtdJaiRzquR5k7pub7quxjmy7Fv+xB9H7hLBNDrbC
-ZbNgZgJg9Fltfh7SbHoTf+KBw2HEITBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDI4MTIwNzIwWjBPBgkq
+hkiG9w0BCQQxQgRAof12mSB3Z7D9F9YgRSb+RFNQzDZ2o1HzDPQKsqKQoPlzdtqJpvjTlNly
+PbH18QUR/ggH3h4M364sOjjcwdGinTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -164,14 +146,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgAQAs04ZrAINsag4Hs+ENZvu0RaE/t+JCR+G7zhLD3FF0yb5DpJ
-EUY1/bjxiFDO8MZKWgblVaCarahB16oAxnV68HHO8jEEr1Ug5tA8wLEE81G399OIlKrLE9wc
-KCzaAk22vX3pw9YpW1MAuBYOezXISiiWmLwxFS3oiSFllvAuZEoSegs9FLBT8cjJ+xUO8/zo
-R4Ke2CukcT8sLgBwtgs+Xa5YDLt4coS6zymylLwKKzfYCXpT7PD6v6Tr3EcRk+1aN9DrIgEM
-60gsjGbs/c4+Ss4OoQw4FV1Z0JeZGY/VGxVF8e9Kl3HIN5/EwFkxjxxq79m7aOLPn0ik6bmr
-L0OTkuJdqYISm6KaO7/e3siz3C7twX23Y+0/yWDOSQU3jHRcFZ1wkXd8/+CRvsf6dFv9GsTL
-fwwF2Fqcgn1IoKpVhe2/V7w9MfxkB/6mbFadks7MQMndPFY57ImQLJ7QlxScdDqBLTYZslGl
-RO9ShKZ0njUeGH62WH9nI0hVufF9rHao7N6Q26Lj+NMyn3k0KwVqxXxRpLenx3NRi/CXba1Y
-NKZI5jbmYdJCyKsHW2Xe3BWOuNdXDyVAHsqSZA0SEWv3MpA9Pa0/znoJiMEM2UmVI0dUhgr1
-f/sSvAdytEPQ2h7IeTwuFWs52rMSXIpjiIkuWpof4zceR1IMUNOntUsySQAAAAAAAA==
---------------ms040804000008040300040903--
+BgkqhkiG9w0BAQEFAASCAgBtmJ6YcTXAVJSot62J53Hj5qe8w0swRGSE0VKzNEOaaH27zyNx
+VCmxX1Sb9Y74hbMhUA7AXbFm2hXZNz+ZS/ZRs4o81jfG41gfu5yJcLfLt96yCju4khmuBKty
+qtZ1jerXXkEmHpcWYnF/q0LidtxK5gDnrT1vT8pOeCcTpUFOC9MTR/YgzAO/9DnAyxzM66Mv
+Obr7/n7ryMYsI9qVRTmNHM+RZ1E+smgDYH7XkQFNrKjOlgqPzBF+JpgVb2zS02B7gy+jMhP6
+vsrHQ6wBOFwd7wbcuvNaXt6PIWrZX04SNZe6n94cnemq0C2jWvLn5eu+TOhh6bccu+iaslR4
+SCuiamgX7QBwnq0W+aSChEGpgp1UMj3VNJ5Sk3QmDqddfc+2nDqMakB1w+CO5sIGir/QxERf
+XIBQYYluXI2A0i2zryLYQiPFkHzcP/N+QgiyytaWMuLGMobR7U1jlyWJGac0qPrt9PGIlMj7
+AjgL6Q+zCl+9D2RNj1cyRj4gkw1JsDkdyvbM3flEjRP5fgoeSFlc8VozS6Nlv31QCJWrG7uL
+f474MiwyZ4lai+LFDRjkGvhBB8Ru2jrsG1J85SsSae4sGYvrsaQbBQW1e95ZLFDQTUUmCl6B
+/r5qQUsg8v+ErkqSRjUCwqWAcHhehDlc/cXzRqQHg+ZvQ3WrEulyDxNJ2gAAAAAAAA==
+--------------ms010507070902060004080406--

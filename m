@@ -1,31 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41951 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752703AbbJ2Rdy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Oct 2015 13:33:54 -0400
-Subject: Re: [PATCHv2] btrfs: bugfix: handle
- FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
-To: Luke Dashjr <luke@dashjr.org>, Chris Mason <clm@fb.com>,
-        David Sterba <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        <linux-kernel@vger.kernel.org>, <trivial@kernel.org>
-References: <201510290822.26515.luke@dashjr.org>
-From: Josef Bacik <jbacik@fb.com>
-Message-ID: <56325870.20506@fb.com>
-Date: Thu, 29 Oct 2015 13:33:36 -0400
+Received: from zinan.dashjr.org ([192.3.11.21]:35102 "EHLO zinan.dashjr.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751985AbbJ2IcO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Oct 2015 04:32:14 -0400
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org, trivial@kernel.org
+Subject: [PATCHv2] btrfs: bugfix: handle FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
+From: Luke Dashjr <luke@dashjr.org>
+Date: Thu, 29 Oct 2015 08:22:21 +0000
 MIME-Version: 1.0
-In-Reply-To: <201510290822.26515.luke@dashjr.org>
-Content-Type: text/plain; charset="windows-1252"; format=flowed
+Content-Type: Text/Plain;
+  charset="iso-8859-1"
+Message-Id: <201510290822.26515.luke@dashjr.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/29/2015 04:22 AM, Luke Dashjr wrote:
-> 32-bit ioctl uses these rather than the regular FS_IOC_* versions. They can
-> be handled in btrfs using the same code. Without this, 32-bit {ch,ls}attr
-> fail.
->
+32-bit ioctl uses these rather than the regular FS_IOC_* versions. They can
+be handled in btrfs using the same code. Without this, 32-bit {ch,ls}attr
+fail.
 
-Looks good, thanks,
+Signed-off-by: Luke Dashjr <luke-jr+git@utopios.org>
+Cc: stable@vger.kernel.org
+---
+ fs/btrfs/ctree.h |  1 +
+ fs/btrfs/file.c  |  2 +-
+ fs/btrfs/inode.c |  2 +-
+ fs/btrfs/ioctl.c | 21 +++++++++++++++++++++
+ 4 files changed, 24 insertions(+), 2 deletions(-)
 
-Reviewed-by: Josef Bacik <jbacik@fb.com>
-
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 6f364e1..880604d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3956,6 +3956,7 @@ void btrfs_test_inode_set_ops(struct inode *inode);
+ 
+ /* ioctl.c */
+ long btrfs_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
++long btrfs_compat_ioctl(struct file *file, unsigned int cmd, unsigned long arg);
+ void btrfs_update_iflags(struct inode *inode);
+ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir);
+ int btrfs_is_empty_uuid(u8 *uuid);
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index b072e17..fa366f4 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2811,7 +2811,7 @@ const struct file_operations btrfs_file_operations = {
+ 	.fallocate	= btrfs_fallocate,
+ 	.unlocked_ioctl	= btrfs_ioctl,
+ #ifdef CONFIG_COMPAT
+-	.compat_ioctl	= btrfs_ioctl,
++	.compat_ioctl	= btrfs_compat_ioctl,
+ #endif
+ };
+ 
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 8bb0136..3cde738 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9812,7 +9812,7 @@ static const struct file_operations btrfs_dir_file_operations = {
+ 	.iterate	= btrfs_real_readdir,
+ 	.unlocked_ioctl	= btrfs_ioctl,
+ #ifdef CONFIG_COMPAT
+-	.compat_ioctl	= btrfs_ioctl,
++	.compat_ioctl	= btrfs_compat_ioctl,
+ #endif
+ 	.release        = btrfs_release_file,
+ 	.fsync		= btrfs_sync_file,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 1c22c65..55baee9 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -5357,3 +5357,24 @@ long btrfs_ioctl(struct file *file, unsigned int
+ 
+ 	return -ENOTTY;
+ }
++
++#ifdef CONFIG_COMPAT
++long btrfs_compat_ioctl(struct file *file, unsigned int
++		cmd, unsigned long arg)
++{
++	switch (cmd) {
++	case FS_IOC32_GETFLAGS:
++		cmd = FS_IOC_GETFLAGS;
++		break;
++	case FS_IOC32_SETFLAGS:
++		cmd = FS_IOC_SETFLAGS;
++		break;
++	case FS_IOC32_GETVERSION:
++		cmd = FS_IOC_GETVERSION;
++		break;
++	default:
++		return -ENOIOCTLCMD;
++	}
++	return btrfs_ioctl(file, cmd, (unsigned long) compat_ptr(arg));
++}
++#endif
+-- 
+2.4.10

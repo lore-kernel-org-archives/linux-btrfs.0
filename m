@@ -1,210 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.web.de ([212.227.15.4]:56552 "EHLO mout.web.de"
+Received: from vs2.lukas-pirl.de ([5.45.100.90]:58790 "EHLO pim.lukas-pirl.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751438AbbJ2VKd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Oct 2015 17:10:33 -0400
-Received: from thetick.localnet ([93.181.44.4]) by smtp.web.de (mrweb001) with
- ESMTPSA (Nemesis) id 0Mbhiv-1aAxHf3vAD-00J5nz for
- <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2015 22:10:31 +0100
-From: Marc Joliet <marcec@web.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: random i/o error without error in dmesg
-Date: Thu, 29 Oct 2015 22:10:24 +0100
-Message-ID: <2085133.yRiO7H1dHn@thetick>
-In-Reply-To: <pan$31224$86839f8e$da37e2a5$124e475b@cox.net>
-References: <562E0D31.2080003@dblaci.hu> <1844690.p2LsPbdn9l@thetick> <pan$31224$86839f8e$da37e2a5$124e475b@cox.net>
+	id S1751055AbbJ2Vns (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Oct 2015 17:43:48 -0400
+Subject: Re: corrupted RAID1: unsuccessful recovery / help needed
+References: <562DC606.3070602@lukas-pirl.de>
+ <pan$deb9e$70dd599$c247d7fb$410817e7@cox.net>
+From: Lukas Pirl <btrfs@lukas-pirl.de>
+Cc: linux-btrfs@vger.kernel.org
+To: 1i5t5.duncan@cox.net
+Message-ID: <5632930D.4040000@lukas-pirl.de>
+Date: Fri, 30 Oct 2015 10:43:41 +1300
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="nextPart37082186.X2DLyVG23U"; micalg="pgp-sha256"; protocol="application/pgp-signature"
+In-Reply-To: <pan$deb9e$70dd599$c247d7fb$410817e7@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---nextPart37082186.X2DLyVG23U
-Content-Transfer-Encoding: quoted-printable
-Content-Type: text/plain; charset="utf-8"
+TL;DR: thanks but recovery still preferred over recreation.
 
-On Wednesday 28 October 2015 05:21:13 Duncan wrote:
->Marc Joliet posted on Tue, 27 Oct 2015 21:54:40 +0100 as excerpted:
->>>IOW, does it take a full reboot to clear the problem, or is a simple=
+Hello Duncan and thanks for your reply!
 
->>>ro/rw mount cycle enough, or an unmount/remount?
->>>
->> Seems that a full reboot is needed, but I would expect that it would=
-
->> have the same effect if I were to pivot back into the initramfs, unm=
-ount
->> / from there,
->> then boot back into the system.  Because quite frankly, I can't thin=
-k of
->> any reason why a power cycle to the SSD should make a difference her=
-e.
->> I vaguely remember that systemd can do that, so I'll see if I can fi=
-nd
->> out how.
+On 10/26/2015 09:31 PM, Duncan wrote:
+> FWIW... Older btrfs userspace such as your v3.17 is "OK" for normal
+> runtime use, assuming you don't need any newer features, as in normal
+> runtime, it's the kernel code doing the real work and userspace for the
+> most part simply makes the appropriate kernel calls to do that work.
+ >
+> But, once you get into a recovery situation like the one you're in now,
+> current userspace becomes much more important, as the various things
+> you'll do to attempt recovery rely far more on userspace code directly
+> accessing the filesystem, and it's only the newest userspace code that
+> has the latest fixes.
 >
->Agree with both the systemd returning to the initr* point (which I
->actually had in mind while writing the above but don't remember the
->details either, so chose to omit in the interest of limiting the size =
-of
->the reply and research necessary to generate it), and the ssd power-cy=
-cle
->point.
+> So for a recovery situation, the newest userspace release (4.2.2 at
+> present) as well as a recent kernel is recommended, and depending on the
+> problem, you may at times need to run integration or apply patches on top
+> of that.
 
-I haven't found any single command that lets you do that, but I can try=
- one of=20
-the special targets as detailed in bootup(7) (e.g., initrd.target) when=
- I have=20
-a chance.
+I am willing to update before trying further repairs. Is e.g. "balance" 
+also influenced by the userspace tools or does the kernel the actual work?
 
->>>Finally, assuming root itself isn't btrfs, if you have btrfs configu=
-red
->>>as a module, you could try unmounting all btrfs and then unloading t=
-he
->>>module, then reloading and remounting.  That should entirely clear a=
-ll
->>>in-memory btrfs state, so if that doesn't solve the problem, while
->>>rebooting does, then the problem's very possibly outside of btrfs sc=
-ope.
->>>
->>> Of course if root is btrfs, you can't really check that.
->>=20
->> Nope, btrfs is built-in (though it doesn't have to be, what with me
->> using an initramfs).
+> General note about btrfs and btrfs raid.  Given that btrfs itself remains
+> a "stabilizing, but not yet fully mature and stable filesystem", while
+> btrfs raid will often let you recover from a bad device, sometimes that
+> recovery is in the form of letting you mount ro, so you can access the
+> data and copy it elsewhere, before blowing away the filesystem and
+> starting over.
+
+If there is one subvolume that contains all other (read only) snapshots 
+and there is insufficient storage to copy them all separately:
+Is there an elegant way to preserve those when moving the data across disks?
+
+> Back to the problem at hand.  Current btrfs has a known limitation when
+> operating in degraded mode.  That being, a btrfs raid may be write-
+> mountable only once, degraded, after which it can only be read-only
+> mounted.  This is because under certain circumstances in degraded mode,
+> btrfs will fall back from its normal raid mode to single mode chunk
+> allocation for new writes, and once there's single-mode chunks on the
+> filesystem, btrfs mount isn't currently smart enough to check that all
+> chunks are actually available on present devices, and simply jumps to the
+> conclusion that there's single mode chunks on the missing device(s) as
+> well, so refuses to mount writable after that in ordered to prevent
+> further damage to the filesystem and preserve the ability to mount at
+> least ro, to copy off what isn't damaged.
 >
->Same here, also gentoo as I guess you know from previous exchanges.  B=
-ut
->unfortunately, if your initr* is anything like mine, and your kernel
->monolithic as mine, making btrfs a module with a btrfs root isn't the
->easy thing it might seem to those who run ordinary distro supplied bin=
-ary
->kernels with pretty much everything modularized, as doing so involves =
-a
->whole new set of research on how to get that module properly included =
-in
->the initr* and loaded there, as well as installing and building the wh=
-ole
->module-handling infrastructure (modprobe and friends) again, as it's n=
-ot
->actually installed on the system at all at this point, because with th=
-e
->kernel entirely monolithic, module-handling tools are unnecessary and
->thus just another unnecessary package to have to keep building updates=
+> There's a patch in the pipeline for this problem, that checks individual
+> chunks instead of leaping to conclusions based on the presence of single-
+> mode chunks on a degraded filesystem with missing devices.  If that's
+> your only problem (which the backtraces might reveal but I as a non-dev
+> btrfs user can't tell), the patches should let you mount writable.
 
->for, if they remain installed.
+Interesting, thanks for the insights.
 
-My kernel is fairly modular, and I use dracut to make my initramfs, so =
-I=20
-wouldn't be surprised if it works.  For me, personally, I just don't se=
-e any=20
-point in making btrfs a module.
+> But that patch isn't in kernel 4.2.  You'll need at least kernel 4.3-rc,
+> and possibly btrfs integration, or to cherrypick the patches onto 4.2.
 
-(And yes, of course I know you run Gentoo ;-) .)
+Well, before digging into that, a hint that this is actually the case 
+would be appreciated. :)
 
->So I definitely sympathize with the feeling that such a stone is bette=
-r
->left unturned, if overturning it is at all a possibility that can be
->avoided, as it is here, this whole exercise being simply one of better=
-
->pinning the bug down, not yet actually trying to solve it.  And given
->that unturned stone, there are certainly easier ways.
+> Meanwhile, in keeping with the admin's rule on backups, by definition, if
+> you valued the data more than the time and resources necessary for a
+> backup, by definition, you have a backup available, otherwise, by
+> definition, you valued the data less than the time and resources
+> necessary to back it up.
 >
->And one of those easier ways is investigating that whole systemd retur=
-n
->to initr* idea, since we both remember reading something about it, but=
+> Therefore, no worries.  Regardless of the fate of the data, you saved
+> what your actions declared of most valuable to you, either the data, or
+> the hassle and resources cost of the backup you didn't do.  As such, if
+> you don't have a backup (or if you do but it's outdated), the data at
+> risk of loss is by definition of very limited value.
+>
+> That said, it appears you don't even have to worry about loss of that
+> very limited value data, since mounting degraded,recovery,ro gives you
+> stable access to it, and you can use the opportunity provided to copy it
+> elsewhere, at least to the extent that the data we already know is of
+> limited value is even worth the hassle of doing that.
+>
+> Which is exactly what I'd do.  Actually, I've had to resort to btrfs
+> restore[1] a couple times when the filesystem wouldn't mount at all, so
+> the fact that you can mount it degraded,recovery,ro, already puts you
+> ahead of the game. =:^)
+>
+> So yeah, first thing, since you have the opportunity, unless your backups
+> are sufficiently current that it's not worth the trouble, copy off the
+> data while you can.
+>
+> Then, unless you wish to keep the filesystem around in case the devs want
+> to use it to improve btrfs' recovery system, I'd just blow it away and
+> start over, restoring the data from backup once you have a fresh
+> filesystem to restore to.  That's the simplest and fastest way to a fully
+> working system once again, and what I did here after using btrfs restore
+> to recover the delta between current and my backups.
 
->aren't familiar with the details.  In addition to addressing the probl=
-em
->headon if anyone offers a way to do so, that's the path I'd be looking=
- at
->right now.
+Thanks for all the elaborations. I guess there are also other valid 
+definitions of making backups out there – some that determine the amount 
+and the types of redundancy by additionally taking factors like the 
+anticipated risk of a failure or the severity of a failure into 
+consideration.
 
-Like I said above, I'll try it out when I have a moment where I have a =
-more=20
-"steady hand" so-to-speak.
+However, you are perfectly correct with your advice to 
+create/update/verify all backups as it is (still) possible.
 
-[snip deleted files stuff]
->app-admin/lib_users
-[snip the rest of the deleted files stuff]
+Besides that, I'd still be willing to restore the file system and to 
+provide additional information to devs.
 
-I use that to find processes that need restarting after upgrades, thoug=
-h I'll=20
-sometimes check to see if it's really a library that's causing it to sh=
-ow up,=20
-since often a process is listed because of stuff like the font cache, o=
-r, in=20
-the case of the FISH shell, it's own history file.
+Cheers,
 
-But yeah, didn't think of running that, but in rescue mode there were a=
-t most=20
-a dozen processes running, so there's not much to choose from, anyway. =
- I did=20
-have to kill two remaining user processes first (pulseaudio and... I fo=
-rgot=20
-the other one).  I didn't try the same with / and /var because I was ea=
-ger to=20
-get back to a normally running system ;-) .
-
->Of course, if lib_users reports nothing further still holding referenc=
-es
->to deleted files, and a remount read-only STILL fails, that's a major
->note of trouble and an important finding in itself.
-
-I don't expect that, but I'll make note of it if I encounter it.
-
->Meanwhile, as explained in the systemd docs (specifically the systemd =
-for
->administrators series, IIRC), systemd dropping back to the initr* is
->actually its way of automatically doing effectively the same thing we
->were using lib_users and all those restarts to do, getting rid of all
->possible still running on root executables, including systemd itself, =
-by
->reexecing systemd itself back in the initr*, as a way to help eliminat=
-e
->*everything* running on root, so it can not only be remounted read-onl=
-y,
->but actually unmounted the same as any other filesystem, as userspace =
-is
->now actually running from the initr* once again.  That's a far *FAR*
->safer reboot after upgrade than traditional sysvinit solutions were ab=
-le
->to do. =3D:^)
-
-Yeah, the ability to do that is a nice plus of using an initramfs.  Alt=
-hough=20
-I've never been clear on why it's *safer*.  Is it because the remount m=
-ight=20
-fail?  Or are there other reasons, too?
-
-[...]
-
-=2D-=20
-Marc Joliet
-=2D-
-"People who think they know everything really annoy those of us who kno=
-w we
-don't" - Bjarne Stroustrup
-
---nextPart37082186.X2DLyVG23U
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: This is a digitally signed message part.
-Content-Transfer-Encoding: 7Bit
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAABCAAGBQJWMotFAAoJEL/Q5oYsiHj03NIP/j8+pLCFionHgloipRSndD+V
-zsmblvOcfGHRn3PFpLUzsQV6J/lCs/+3HUDrpIFEb0XFCZ8yCCYC5K5rOrKE6bpw
-oI0gZXRvFwjdAbOf5fLf4xBofFnlSeeACxb8iFA6OjvnRp02efYJfn3oBQpWR0Xe
-opweyoAGfUnyDibodCFnxVyI8gO/FxxmeUB2zlWLNXR8bGPHA+qNioOGUxPKH6Z/
-7gJB3hNPYzNrRhunEaVi+21ab2Dqz3+tSu2ERWUmddAmUZyXgQsvi8+t9lZuoX/N
-OUdd8ZTAtuWeaNkyOIYLlzH9yXv6hwBoFGCqTONAS6c5yisl1PCtzYH0QhOrPCP4
-L3QwFt/m05dfMeXaigG9kewWQxw0oGX7p6JnzMY87SVE79VY9CxDuXQ0gTBQ1p6x
-xCqQlbUVgOVxR2UKoWiFpTPb93z/KGrpFPbur4Fa3eWTxUGuGxrTSj1pBC3wYX/l
-EZQ7RufMFW2sQ5eYVriGZlpbv4L+GFYZGPwxDOmdKW4s70O9B0e3pkmK6XoQt/dt
-IEx0c//TKc7G6a5Klq5AZIO5oAHUYjEu72sJoBOfcvT3JhTn/ZNulRbj99UakyNs
-qNrduTUfpAXwIuqAeyYYtWWVC7438XTO8kHU2bS60Isgx/5t9dyaGnoeIBFzyqb5
-3SzX9Y7L30RsfGtv1ppT
-=2Hm1
------END PGP SIGNATURE-----
-
---nextPart37082186.X2DLyVG23U--
-
+Lukas

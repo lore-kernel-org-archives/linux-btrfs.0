@@ -1,57 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1221 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:5639 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753872AbbJZKaI (ORCPT
+	with ESMTP id S1751478AbbJ2Jdi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 26 Oct 2015 06:30:08 -0400
+	Thu, 29 Oct 2015 05:33:38 -0400
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9QATWje004088
-	for <linux-btrfs@vger.kernel.org>; Mon, 26 Oct 2015 18:29:33 +0800
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id t9T9X2n6015816
+	for <linux-btrfs@vger.kernel.org>; Thu, 29 Oct 2015 17:33:02 +0800
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2 5/5] btrfs-progs: use system's default path for math.h
-Date: Mon, 26 Oct 2015 18:28:22 +0800
-Message-ID: <ff78b29bdd126b809e444d5ae9f384968b2a4a32.1445855131.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1445855131.git.zhaolei@cn.fujitsu.com>
-References: <cover.1445855131.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/6] btrfs-progs: fix floating point exception for btrfs-calc-size
+Date: Thu, 29 Oct 2015 17:31:43 +0800
+Message-ID: <e9288021adac2924ce1fdb637f61b9b924eff954.1446111097.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Line of
- #include "math.h"
-in extent-tree.c using quotas is history reason,
-(we have cuseom math.h in source before)
+Current code exit with floating point exception on a blank fs:
+ # btrfs-calc-size -b /dev/sda6
+ Calculating size of root tree
+         Total size: 16384
+                 Inline data: 0
+         Total seeks: 0
+                 Forward seeks: 0
+                 Backward seeks: 0
+ Floating point exception
 
-Now it is better to use "<>" instead of quotas for this header file.
+This patch add a condition check for above case.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- extent-tree.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ btrfs-calc-size.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/extent-tree.c b/extent-tree.c
-index 0c8152a..0d605e1 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -19,6 +19,7 @@
- #include <stdio.h>
- #include <stdlib.h>
- #include <stdint.h>
-+#include <math.h>
- #include "kerncompat.h"
- #include "radix-tree.h"
- #include "ctree.h"
-@@ -28,7 +29,6 @@
- #include "crc32c.h"
- #include "volumes.h"
- #include "free-space-cache.h"
--#include "math.h"
- #include "utils.h"
- 
- #define PENDING_EXTENT_INSERT 0
+diff --git a/btrfs-calc-size.c b/btrfs-calc-size.c
+index b756693..17d44ae 100644
+--- a/btrfs-calc-size.c
++++ b/btrfs-calc-size.c
+@@ -372,8 +372,8 @@ out_print:
+ 		printf("\tTotal seeks: %Lu\n", stat.total_seeks);
+ 		printf("\t\tForward seeks: %Lu\n", stat.forward_seeks);
+ 		printf("\t\tBackward seeks: %Lu\n", stat.backward_seeks);
+-		printf("\t\tAvg seek len: %Lu\n", stat.total_seek_len /
+-		       stat.total_seeks);
++		printf("\t\tAvg seek len: %llu\n", stat.total_seeks ?
++			stat.total_seek_len / stat.total_seeks : 0);
+ 		print_seek_histogram(&stat);
+ 		printf("\tTotal clusters: %Lu\n", stat.total_clusters);
+ 		printf("\t\tAvg cluster size: %Lu\n", stat.total_cluster_size /
 -- 
 1.8.5.1
 

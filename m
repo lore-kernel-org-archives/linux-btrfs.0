@@ -1,87 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:55728 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:59011 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757356AbbJ2Ok7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Oct 2015 10:40:59 -0400
-Date: Thu, 29 Oct 2015 15:39:32 +0100
+	id S1752670AbbJ2P1E (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 29 Oct 2015 11:27:04 -0400
+Date: Thu, 29 Oct 2015 16:25:36 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Luke Dashjr <luke@dashjr.org>
-Cc: dsterba@suse.cz, Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Thomas Rohwer <tr@ohwer.de>
+Cc: Luke Dashjr <luke@dashjr.org>, dsterba@suse.cz, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
 Subject: Re: [PATCH] btrfs: bugfix: handle
  FS_IOC32_{GETFLAGS,SETFLAGS,GETVERSION} in btrfs_ioctl
-Message-ID: <20151029143932.GZ13624@twin.jikos.cz>
+Message-ID: <20151029152536.GA13624@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <201505131715.27483.luke@dashjr.org>
  <201505141627.56205.luke@dashjr.org>
  <20150515111922.GB23255@twin.jikos.cz>
  <201510290822.35540.luke@dashjr.org>
+ <56320B79.9090207@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <201510290822.35540.luke@dashjr.org>
+In-Reply-To: <56320B79.9090207@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Oct 29, 2015 at 08:22:34AM +0000, Luke Dashjr wrote:
-> > > I don't see what is different with that implementation. All
-> > > f2fs_compat_ioctl does is change cmd to the plain-IOC equivalent and
-> > > call f2fs_ioctl with the same arg (compat_ptr merely causes a cast to
-> > > void* and back, which AFAIK is a noop on 64-bit?). Am I missing
-> > > something?
-> > 
-> > No, that's the idea. Add new calback for compat_ioctl, put it under
-> > #ifdef CONFIG_COMPAT and do the same number switch.
+On Thu, Oct 29, 2015 at 01:05:13PM +0100, Thomas Rohwer wrote:
+> Investigating the source, I noticed that probably the problem is the member clone_sources in the structure
+
+That's, right. Yet another thing to keep in mind when designing ioctls.
+
+> struct btrfs_ioctl_send_args {
+>    __s64 send_fd;      /* in */
+>    __u64 clone_sources_count;  /* in */
+>    __u64 __user *clone_sources;  /* in */
+>    __u64 parent_root;    /* in */
+>    __u64 flags;      /* in */
+>    __u64 reserved[4];    /* in */
+> };
 > 
-> Ok, someone else explained this to me. Please let me know if PATCHv2 (sent 
-> separately) does not address the needed changes.
+> in include/uapi/linux/btrfs.h and the missing adaption code in
+> fs/btrfs/ioctl.c. The member clone_sources is only 32 bit wide in case
+> of 32 bit user space.  For the ioctl RECEIVED_SUBVOL somebody already
+> added code for the in this case also necessary translation. I took
+> this as a template and wrote a patch (see below). The patch compiles
+> and with the new kernel I seem to get valid data with send (I have to
+> read it back yet, but I get about the expected amount and structure).
 
-Patch is ok, thanks.
+I'm not yet sure if this is the right approach, but I'm still
+considering it. My suggestion is to add the union and force the width.
+In case of the receive subvol this was not possible because it was
+around an external structure.
 
-> > > I could try to just imitate it, but
-> > > I'd rather know what is significant/going on to ensure I don't waste your
-> > > time with code I don't even properly understand myself.
-> > > 
-> > > Perhaps by coincidence, the patch does at least in practice work
-> > > (although at least `btrfs send` appears to be broken still, and I'm at a
-> > > loss for how to approach fixing that).
-> > 
-> > The 'receive' 32bit/64bit was broken due to size difference in the ioctl
-> > structure that led to different ioctl. This is transparently fixed, see
-> > BTRFS_IOC_SET_RECEIVED_SUBVOL_32 at the top of ioctl.c.
-> > 
-> > In what way is SEND broken? There are only u64/s64 members in
-> > btrfs_ioctl_send_args, I don't see how this could break on 32/64
-> > userspace/kernel.
-> 
-> I've investigated this now, and it seems to be the pointer-type clone_sources 
-> member of struct btrfs_ioctl_send_args. I can't think of a perfect way to fix 
-> this, but it might not be *too* ugly to:
-> - replace the current clone_sources with a u64 that must always be (u64)-1;
->   this causes older kernels to error cleanly if called with a new ioctl data
-> - use the top 1 or 2 bits of flags to indicate sizeof(void*) as it appears to
->   userspace OR just use up reserved[0] for pointer size:
->       io_send.ptr_size = sizeof(void*);
-> - replace one of the reserved fields with the new clone_sources
+The basic difference if we use the same structure definition, let the
+compiler pick the pointer type width, and do the conversion in kernel
+transparently (ie. the RECEIVED_SUBVOL workaround), or if we patch the
+structure so the pointer magic happens in the userspace.
 
-All the change seem too intrusive or not so easy to use.
+> This is a proof of concept patch; for example the compiler currently warns for
+>   (args64->clone_sources = (__u64*)args32->clone_sources;
+> and I would have to investigate how to properly convert the pointer.
 
-I suggest to add an anonymous union and add a u64 member that would
-force the type width:
+args64->clone_sources = (__u64*)(long)args32->clone_sources;
 
-struct btrfs_ioctl_send_args {
-        __s64 send_fd;                  /* in */
-        __u64 clone_sources_count;      /* in */
-	union {
-		__u64 __user *clone_sources;    /* in */
-		u64 __pointer_alignment;
-	};
-        __u64 parent_root;              /* in */
-        __u64 flags;                    /* in */
-        __u64 reserved[4];              /* in */
-};
+should work.
 
-> The way it was done for receive seems like it might not work for non-x86 
-> compat interfaces (eg, MIPS n32) - but I could be wrong.
+> Further there are probably some issues with the formating of the source code.
 
-Possible, but I don't see right now how it would not work on eg. mips32.
-unless sizeof(long) is 8 bytes there and CONFIG_64BIT is not defined.
+Yeah there are some, but at this point we're not sure what's the right
+approach so don't worry.

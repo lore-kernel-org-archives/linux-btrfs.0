@@ -1,37 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f41.google.com ([209.85.213.41]:34455 "EHLO
-	mail-vk0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757275AbbJ3Bn3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 29 Oct 2015 21:43:29 -0400
-MIME-Version: 1.0
-Date: Fri, 30 Oct 2015 09:43:28 +0800
-Message-ID: <CAGnHSEm4UND4aUuFMDesXQYiTGWFzv+tk1OEvMOj+6KRHC-MPw@mail.gmail.com>
-Subject: bad handling of unpartitioned device in sysfs_devno_to_wholedisk()
- (which breaks mkfs.btrfs)
-From: Tom Yan <tom.ty89@gmail.com>
-To: util-linux@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, elliott@hpe.com, ahferroin7@gmail.com
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:52118 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1758776AbbJ3I5p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 30 Oct 2015 04:57:45 -0400
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Zs5VI-0000jd-69
+	for linux-btrfs@vger.kernel.org; Fri, 30 Oct 2015 09:57:44 +0100
+Received: from coffee.modeemi.fi ([130.230.72.140])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2015 09:57:44 +0100
+Received: from flux-btrfs by coffee.modeemi.fi with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2015 09:57:44 +0100
+To: linux-btrfs@vger.kernel.org
+From: Erkki Seppala <flux-btrfs@inside.org>
+Subject: Re: BTRFS BUG at insert_inline_extent_backref+0xe3/0xf0 while rebalancing
+Date: Fri, 30 Oct 2015 10:57:35 +0200
+Message-ID: <m49a8r0buo0.fsf@coffee.modeemi.fi>
+References: <m49lhavbh8n.fsf@coffee.modeemi.fi>
+	<CAL3q7H5+BnHoDw3heasPpRw_kXv=rZdOYYFgtj8N39rAjWiY1Q@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-So I noticed that SSD detection does work on unpartitioned devices in
-mkfs.btrfs somehow:
-https://bugzilla.kernel.org/show_bug.cgi?id=102921
+Filipe Manana <fdmanana@gmail.com> writes:
+> Try this (just sent a few minutes ago):
+> https://patchwork.kernel.org/patch/7463161/
 
-Later I found out that it breaks at blkid_devno_to_wholedisk() in is_ssd():
-http://git.kernel.org/cgit/linux/kernel/git/kdave/btrfs-progs.git/tree/mkfs.c?h=v4.2.3#n1103
+I've been using this patch for a week now, doing two rebalances a day
+(one per file system) - no problem so far. Thanks!
 
-which Elliot had shown an example with strace:
-https://lists.01.org/pipermail/linux-nvdimm/2015-September/002109.html
+Probably unrelated to this I did experience one reboot without any
+trace, possibly because I had enabled panic = 10 and panic_on_oops = 1,
+but that event did not happen anytime near a balance was happening. I
+wonder if the hang detector could trigger that configuration to reboot?
 
-And I think the problem occurs in the sysfs_get_devname() here:
-https://git.kernel.org/cgit/utils/util-linux/util-linux.git/tree/lib/sysfs.c?h=v2.27#n785
+Thanks again for the great work, your detective work is always
+impressive :).
 
-Since sysfs_get_devname() has to call sysfs_readlink() later, which
-output a long full device path in /sys, I don't think we should call
-it directly with the buffer "diskname", which people won't expect that
-it has to be large enough to carry the path in the middle of the
-process. For example in is_sdd(), a char array of size 32 is used
-("wholedisk").
+-- 
+  _____________________________________________________________________
+     / __// /__ ____  __               http://www.modeemi.fi/~flux/\   \
+    / /_ / // // /\ \/ /                                            \  /
+   /_/  /_/ \___/ /_/\_\@modeemi.fi                                  \/
+

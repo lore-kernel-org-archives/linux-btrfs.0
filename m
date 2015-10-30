@@ -1,127 +1,153 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f46.google.com ([209.85.220.46]:33544 "EHLO
-	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932266AbbJMQNf (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:47114 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758604AbbJ3IpD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 13 Oct 2015 12:13:35 -0400
-Received: by pabrc13 with SMTP id rc13so25568481pab.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 13 Oct 2015 09:13:34 -0700 (PDT)
-Received: from arch-nb.localdomain ([175.118.89.137])
-        by smtp.gmail.com with ESMTPSA id eg5sm4712242pac.30.2015.10.13.09.13.33
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Tue, 13 Oct 2015 09:13:34 -0700 (PDT)
-From: Byongho Lee <bhlee.kernel@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: compress: put variables defined per compress type in struct to make cache friendly
-Date: Wed, 14 Oct 2015 01:13:26 +0900
-Message-Id: <1444752806-3549-1-git-send-email-bhlee.kernel@gmail.com>
+	Fri, 30 Oct 2015 04:45:03 -0400
+Message-ID: <56332B3A.3080703@oracle.com>
+Date: Fri, 30 Oct 2015 16:32:58 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 4/5] btrfs: Allow barrier_all_devices to do per-chunk
+ device check
+References: <1442801443-5132-1-git-send-email-quwenruo@cn.fujitsu.com> <1442801443-5132-5-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1442801443-5132-5-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Below variables are defined per compress type.
- - struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES]
- - spinlock_t comp_workspace_lock[BTRFS_COMPRESS_TYPES]
- - int comp_num_workspace[BTRFS_COMPRESS_TYPES]
- - atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES]
- - wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES]
 
-BTW, while accessing one compress type of these variables, the next or
-before address is other compress types of it.
-So this patch puts these variables in a struct to make cache friendly.
 
-Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
----
- fs/btrfs/compression.c | 46 ++++++++++++++++++++++++----------------------
- 1 file changed, 24 insertions(+), 22 deletions(-)
+Qu,
 
-diff --git a/fs/btrfs/compression.c b/fs/btrfs/compression.c
-index ce62324c78e7..85a80931ae3f 100644
---- a/fs/btrfs/compression.c
-+++ b/fs/btrfs/compression.c
-@@ -744,11 +744,13 @@ out:
- 	return ret;
- }
- 
--static struct list_head comp_idle_workspace[BTRFS_COMPRESS_TYPES];
--static spinlock_t comp_workspace_lock[BTRFS_COMPRESS_TYPES];
--static int comp_num_workspace[BTRFS_COMPRESS_TYPES];
--static atomic_t comp_alloc_workspace[BTRFS_COMPRESS_TYPES];
--static wait_queue_head_t comp_workspace_wait[BTRFS_COMPRESS_TYPES];
-+static struct {
-+	struct list_head idle_workspace;
-+	spinlock_t workspace_lock;
-+	int num_workspace;
-+	atomic_t alloc_workspace;
-+	wait_queue_head_t workspace_wait;
-+} comp[BTRFS_COMPRESS_TYPES];
- 
- static const struct btrfs_compress_op * const btrfs_compress_op[] = {
- 	&btrfs_zlib_compress,
-@@ -760,10 +762,10 @@ void __init btrfs_init_compress(void)
- 	int i;
- 
- 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
--		INIT_LIST_HEAD(&comp_idle_workspace[i]);
--		spin_lock_init(&comp_workspace_lock[i]);
--		atomic_set(&comp_alloc_workspace[i], 0);
--		init_waitqueue_head(&comp_workspace_wait[i]);
-+		INIT_LIST_HEAD(&comp[i].idle_workspace);
-+		spin_lock_init(&comp[i].workspace_lock);
-+		atomic_set(&comp[i].alloc_workspace, 0);
-+		init_waitqueue_head(&comp[i].workspace_wait);
- 	}
- }
- 
-@@ -777,11 +779,11 @@ static struct list_head *find_workspace(int type)
- 	int cpus = num_online_cpus();
- 	int idx = type - 1;
- 
--	struct list_head *idle_workspace	= &comp_idle_workspace[idx];
--	spinlock_t *workspace_lock		= &comp_workspace_lock[idx];
--	atomic_t *alloc_workspace		= &comp_alloc_workspace[idx];
--	wait_queue_head_t *workspace_wait	= &comp_workspace_wait[idx];
--	int *num_workspace			= &comp_num_workspace[idx];
-+	struct list_head *idle_workspace	= &comp[idx].idle_workspace;
-+	spinlock_t *workspace_lock		= &comp[idx].workspace_lock;
-+	atomic_t *alloc_workspace		= &comp[idx].alloc_workspace;
-+	wait_queue_head_t *workspace_wait	= &comp[idx].workspace_wait;
-+	int *num_workspace			= &comp[idx].num_workspace;
- again:
- 	spin_lock(workspace_lock);
- 	if (!list_empty(idle_workspace)) {
-@@ -820,11 +822,11 @@ again:
- static void free_workspace(int type, struct list_head *workspace)
- {
- 	int idx = type - 1;
--	struct list_head *idle_workspace	= &comp_idle_workspace[idx];
--	spinlock_t *workspace_lock		= &comp_workspace_lock[idx];
--	atomic_t *alloc_workspace		= &comp_alloc_workspace[idx];
--	wait_queue_head_t *workspace_wait	= &comp_workspace_wait[idx];
--	int *num_workspace			= &comp_num_workspace[idx];
-+	struct list_head *idle_workspace	= &comp[idx].idle_workspace;
-+	spinlock_t *workspace_lock		= &comp[idx].workspace_lock;
-+	atomic_t *alloc_workspace		= &comp[idx].alloc_workspace;
-+	wait_queue_head_t *workspace_wait	= &comp[idx].workspace_wait;
-+	int *num_workspace			= &comp[idx].num_workspace;
- 
- 	spin_lock(workspace_lock);
- 	if (*num_workspace < num_online_cpus()) {
-@@ -852,11 +854,11 @@ static void free_workspaces(void)
- 	int i;
- 
- 	for (i = 0; i < BTRFS_COMPRESS_TYPES; i++) {
--		while (!list_empty(&comp_idle_workspace[i])) {
--			workspace = comp_idle_workspace[i].next;
-+		while (!list_empty(&comp[i].idle_workspace)) {
-+			workspace = comp[i].idle_workspace.next;
- 			list_del(workspace);
- 			btrfs_compress_op[i]->free_workspace(workspace);
--			atomic_dec(&comp_alloc_workspace[i]);
-+			atomic_dec(&comp[i].alloc_workspace);
- 		}
- 	}
- }
--- 
-2.6.1
+  We shouldn't mark FS readonly when chunks are degradable.
+  As below.
 
+Thanks, Anand
+
+
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 39a2d57..dbb2483 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3530,7 +3530,7 @@ static int write_all_supers(struct btrfs_root 
+*root, int max_mirrors)
+
+         if (do_barriers) {
+                 ret = barrier_all_devices(root->fs_info);
+-               if (ret) {
++               if (ret < 0) {
+                         mutex_unlock(
+ 
+&root->fs_info->fs_devices->device_list_mutex);
+                         btrfs_std_error(root->fs_info, ret,
+
+
+
+
+On 09/21/2015 10:10 AM, Qu Wenruo wrote:
+> The last user of num_tolerated_disk_barrier_failures is
+> barrier_all_devices().
+> But it's can be easily changed to new per-chunk degradable check
+> framework.
+>
+> Now btrfs_device will have two extra members, representing send/wait
+> error, set at write_dev_flush() time.
+> And then check it in a similar but more accurate behavior than old code.
+>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   fs/btrfs/disk-io.c | 13 +++++--------
+>   fs/btrfs/volumes.c |  6 +++++-
+>   fs/btrfs/volumes.h |  4 ++++
+>   3 files changed, 14 insertions(+), 9 deletions(-)
+>
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index d64299f..7cd94e7 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -3400,8 +3400,6 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+>   {
+>   	struct list_head *head;
+>   	struct btrfs_device *dev;
+> -	int errors_send = 0;
+> -	int errors_wait = 0;
+>   	int ret;
+>
+>   	/* send down all the barriers */
+> @@ -3410,7 +3408,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+>   		if (dev->missing)
+>   			continue;
+>   		if (!dev->bdev) {
+> -			errors_send++;
+> +			dev->err_send = 1;
+>   			continue;
+>   		}
+>   		if (!dev->in_fs_metadata || !dev->writeable)
+> @@ -3418,7 +3416,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+>
+>   		ret = write_dev_flush(dev, 0);
+>   		if (ret)
+> -			errors_send++;
+> +			dev->err_send = 1;
+>   	}
+>
+>   	/* wait for all the barriers */
+> @@ -3426,7 +3424,7 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+>   		if (dev->missing)
+>   			continue;
+>   		if (!dev->bdev) {
+> -			errors_wait++;
+> +			dev->err_wait = 1;
+>   			continue;
+>   		}
+>   		if (!dev->in_fs_metadata || !dev->writeable)
+> @@ -3434,10 +3432,9 @@ static int barrier_all_devices(struct btrfs_fs_info *info)
+>
+>   		ret = write_dev_flush(dev, 1);
+>   		if (ret)
+> -			errors_wait++;
+> +			dev->err_wait = 1;
+>   	}
+> -	if (errors_send > info->num_tolerated_disk_barrier_failures ||
+> -	    errors_wait > info->num_tolerated_disk_barrier_failures)
+> +	if (btrfs_check_degradable(info, info->sb->s_flags) < 0)
+>   		return -EIO;
+>   	return 0;
+>   }
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index f1ef215..88266fa 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -6945,8 +6945,12 @@ int btrfs_check_degradable(struct btrfs_fs_info *fs_info, unsigned flags)
+>   			btrfs_get_num_tolerated_disk_barrier_failures(
+>   					map->type);
+>   		for (i = 0; i < map->num_stripes; i++) {
+> -			if (map->stripes[i].dev->missing)
+> +			if (map->stripes[i].dev->missing ||
+> +			    map->stripes[i].dev->err_wait ||
+> +			    map->stripes[i].dev->err_send)
+>   				missing++;
+> +			map->stripes[i].dev->err_wait = 0;
+> +			map->stripes[i].dev->err_send = 0;
+>   		}
+>   		if (missing > max_tolerated) {
+>   			ret = -EIO;
+> diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+> index fe758df..cd02556 100644
+> --- a/fs/btrfs/volumes.h
+> +++ b/fs/btrfs/volumes.h
+> @@ -76,6 +76,10 @@ struct btrfs_device {
+>   	int can_discard;
+>   	int is_tgtdev_for_dev_replace;
+>
+> +	/* for barrier_all_devices() check */
+> +	int err_send;
+> +	int err_wait;
+> +
+>   #ifdef __BTRFS_NEED_DEVICE_DATA_ORDERED
+>   	seqcount_t data_seqcount;
+>   #endif
+>

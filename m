@@ -1,155 +1,174 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:58530 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1758942AbbJ3LZn (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:33510 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1758497AbbJ3PE3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Oct 2015 07:25:43 -0400
-Date: Fri, 30 Oct 2015 11:25:41 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
+	Fri, 30 Oct 2015 11:04:29 -0400
+Received: by iodd200 with SMTP id d200so82318213iod.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2015 08:04:28 -0700 (PDT)
 Subject: Re: corrupted RAID1: unsuccessful recovery / help needed
-Message-ID: <20151030112541.GA21103@carfax.org.uk>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 References: <562DC606.3070602@lukas-pirl.de>
  <pan$deb9e$70dd599$c247d7fb$410817e7@cox.net>
  <5632930D.4040000@lukas-pirl.de>
  <pan$2c57b$16ebecd2$7cec1c09$cc5ded39@cox.net>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <563386BD.8060707@gmail.com>
+Date: Fri, 30 Oct 2015 11:03:25 -0400
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="ReaqsoxgOBHFXBhH"
 In-Reply-To: <pan$2c57b$16ebecd2$7cec1c09$cc5ded39@cox.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000309040800060409090807"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
 
---ReaqsoxgOBHFXBhH
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+--------------ms000309040800060409090807
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-On Fri, Oct 30, 2015 at 10:58:47AM +0000, Duncan wrote:
+On 2015-10-30 06:58, Duncan wrote:
 > Lukas Pirl posted on Fri, 30 Oct 2015 10:43:41 +1300 as excerpted:
-> 
-> > If there is one subvolume that contains all other (read only) snapshots
-> > and there is insufficient storage to copy them all separately:
-> > Is there an elegant way to preserve those when moving the data across
-> > disks?
-
-   If they're read-only snapshots already, then yes:
-
-sent=
-for sub in *; do
-   btrfs send $sent $sub | btrfs receive /where/ever
-   sent="$sent -c$sub"
-done
-
-   That will preserve the shared extents between the subvols on the
-receiving FS.
-
-   If they're not read-only, then snapshotting each one again as RO
-before sending would be the approach, but if your FS is itself RO,
-that's not going to be possible, and you need to look at Duncan's
-email.
-
-   Hugo.
-
+>
+>> If there is one subvolume that contains all other (read only) snapshot=
+s
+>> and there is insufficient storage to copy them all separately:
+>> Is there an elegant way to preserve those when moving the data across
+>> disks?
+>
 > AFAIK, no elegant way without a writable mount.
-> 
-> Tho I'm not sure, btrfs send, to a btrfs elsewhere using receive, may 
-> work, since you did specify read-only snapshots, which is what send 
-> normally works with in ordered to avoid changes to the snapshot while 
-> it's sending it.  My own use-case doesn't involve either snapshots or 
-> send/receive, however, so I'm not sure if send can work with a read-only 
-> filesystem or not, but I think its normal method of operation is to 
-> create those read-only snapshots itself, which of course would require a 
-> writable filesystem, so I'm guessing it won't work unless you can 
+>
+> Tho I'm not sure, btrfs send, to a btrfs elsewhere using receive, may
+> work, since you did specify read-only snapshots, which is what send
+> normally works with in ordered to avoid changes to the snapshot while
+> it's sending it.  My own use-case doesn't involve either snapshots or
+> send/receive, however, so I'm not sure if send can work with a read-onl=
+y
+> filesystem or not, but I think its normal method of operation is to
+> create those read-only snapshots itself, which of course would require =
+a
+> writable filesystem, so I'm guessing it won't work unless you can
 > convince it to use the read-only mounts as-is.
-> 
-> The less elegant way would involve manual deduplication.  Copy one 
-> snapshot, then another, and dedup what hasn't changed between the two, 
-> then add a third and dedup again. ...  Depending on the level of dedup 
-> (file vs block level) and the level of change in your filesystem, this 
-> should ultimately take about the same level of space as a full backup 
+Unless something has significantly changed since I last looked, send=20
+only works on existing snapshots and doesn't create any directly itself, =
+
+and as such should work fine to send snapshots from a read-only=20
+filesystem.  In theory, you could use it to send all the snapshots at=20
+once, although that would probably take a long time, so you'll probably=20
+have to use a loop like the fragment of shell-script that Hugo suggested =
+
+in his response.  That should result in an (almost) identical level of=20
+sharing.
+>
+> The less elegant way would involve manual deduplication.  Copy one
+> snapshot, then another, and dedup what hasn't changed between the two,
+> then add a third and dedup again. ...  Depending on the level of dedup
+> (file vs block level) and the level of change in your filesystem, this
+> should ultimately take about the same level of space as a full backup
 > plus a series of incrementals.
-> 
-> 
-> Meanwhile, this does reinforce the point that snapshots don't replace 
-> full backups, that being the reason I don't use them here, since if the 
+If you're using duperemove (which is the only maintained dedupe tool I=20
+know of for BTRFS), then this will likely take a long time for any=20
+reasonable amount of data, and probably take up more space on the=20
+destination drive than it does on the source (while duperemove does=20
+block-based deduplication, it uses large chunks by default).
+>
+> Meanwhile, this does reinforce the point that snapshots don't replace
+> full backups, that being the reason I don't use them here, since if the=
+
 > filesystem goes bad, it'll very likely take all the snapshots with it.
-> 
-> Snapshots do tend to be pretty convenient, arguably /too/ convenient and 
-> near-zero-cost to make, as people then tend to just do scheduled 
-> snapshots, without thinking about their overhead and maintenance costs on 
-> the filesystem, until they already have problems.  I'm not sure if you 
-> are a regular list reader and have thus seen my normal spiel on btrfs 
-> snapshot scaling and recommended limits to avoid problems or not, so if 
-> not, here's a slightly condensed version...
-> 
-> Btrfs has scaling issues that appear when trying to manage too many 
-> snapshots.  These tend to appear first in tools like balance and check, 
-> where time to process a filesystem goes up dramatically as the number of 
-> snapshots increases, to the point where it can become entirely 
-> impractical to manage at all somewhere near the 100k snapshots range, and 
-> is already dramatically affecting runtime at 10k snapshots.
-> 
-> As a result, I recommend keeping per-subvol snapshots to 250-ish, which 
-> will allow snapshotting four subvolumes while still keeping total 
-> filesystem snapshots to 1000, or eight subvolumes at a filesystem total 
-> of 2000 snapshots, levels where the scaling issues should remain well 
-> within control.  And 250-ish snapshots per subvolume is actually very 
-> reasonable even with half-hour scheduled snapshotting, provided a 
-> reasonable scheduled snapshot thinning program is also implemented, 
-> cutting say to hourly after six hours, six-hourly after a day, 12 hourly 
-> after 2 days, daily after a week, and weekly after four weeks to a 
-> quarter (13 weeks).  Out beyond a quarter or two, certainly within a 
-> year, longer term backups to other media should be done, and snapshots 
-> beyond that can be removed entirely, freeing up the space the old 
-> snapshots kept locked down and helping to keep the btrfs healthy and 
-> functioning well within its practical scalability limits.
-> 
-> Because a balance that takes a month to complete because it's dealing 
-> with a few hundred k snapshots is in practice (for most people) not 
-> worthwhile to do at all, and also in practice, a year or even six months 
-> out, are you really going to care about the precise half-hour snapshot, 
-> or is the next daily or weekly snapshot going to be just as good, and a 
-> whole lot easier to find among a couple hundred snapshots than hundreds 
-> of thousands?
-> 
-> If you have far too many snapshots, perhaps this sort of thinning 
-> strategy will as well allow you to copy and dedup only key snapshots, say 
-> weekly plus daily for the last week, doing the backup thing manually, as 
-> well, modifying the thinning strategy accordingly if necessary to get it 
-> to fit.  Tho using the copy and dedup strategy above will still require 
-> at least double the full space of a single copy, plus the space necessary 
-> for each deduped snapshot copy you keep, since the dedup occurs after the 
-> copy.
-> 
+FWIW, while I don't use them directly myself as a backup, they are=20
+useful when doing a backup to get a guaranteed stable version of the=20
+filesystem being backed-up (this is also one of the traditional use=20
+cases for LVM snapshots, although those have a lot of different issues=20
+to deal with).  For local backups (I also do cloud-storage based remote=20
+backups, but local is what matters in this case because it's where I=20
+actually use send/receive and snapshots) I use two different methods=20
+depending on the amount of storage I have:
+1. If I'm relatively limited on local storage (like in my laptop where=20
+the secondary internal disk is only 64G), I use a temporary snapshot to=20
+generate a SquashFS image of the system, which I then store on the=20
+secondary drive.
+2. If I have a lot of spare space (like on my desktop where I have 4x=20
+1TB HDD's and 2x 128G SSD's), I make a snapshot of the filesystem, then=20
+use send/receive to transfer that to a backup filesystem on a separate=20
+disk.  I then keep the original snapshot around on the filesystem so I=20
+can do incremental send/receive to speed up future backups.
+In both cases, I can directly boot my most recent backups if need be,=20
+and in the second case, I can actually use it to trivially regenerate=20
+the backed-up filesystems (by simply doing a send/receive in the=20
+opposite direction).
 
--- 
-Hugo Mills             | Beware geeks bearing GIFs
-hugo@... carfax.org.uk |
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+Beyond providing a stable system-image for backups, the only valid use=20
+case for snapshots in my opinion is to provide the equivalent to MS=20
+Windows' 'Restore Point' feature (which I'm pretty sure is done=20
+currently by RHEL and SLES if they are installed on BTRFS) and possibly=20
+'File History' for people who for some reason can't use real VCS or just =
 
---ReaqsoxgOBHFXBhH
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+need to store the last few revision (which is itself done by stuff like=20
+'snapper').
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJWM1O1AAoJEFheFHXiqx3krtcQAKo8CeDcW57WeTeRiktPhTE8
-Dv7A7dS/3+Ha7ACT1DMOxJvlLWVSii0aYVNc1bf3ALwncH08X4IAUpxsuUfKTkpY
-THSd8lOK1xRY0oOWLNDDCyc+o/3bN2pVqmMg+5rlSjBs3i3rmHxGOQL6fGYH5uWa
-JJcXZ9LxUad1JQ4ExgjoH3LgH4mdpY85ZKLqvrhbTjSwqBIEQrGDoaXm34GHNrM+
-GqkMQDtCYNPb2/UUHPukK+vuFWr45M3Q60XnWZRMRRzMkPyp64W2pYrdvHHtGK3g
-3xxf223d6TlKzoDGWAT1hkevhGV/Jg7cP35RFOGTaJpsAg3Z/x73ElCCoNaRdxT+
-e1x5loSoLLfi5z1fePUtHfT8MabCCSr5F8TqWbRsGvPFSK5Xkl8kJ8QFr16SBkD6
-XYnbIdoRdbvksOJ+4/BXV4+y//eDXd3cOSdjedSZiDJ4HzRS/iRlCW/yh4IUvrs8
-osK59q2B4/gzBylJsqaxDQIVZWHN3+5Z80PsbCIDgrYGYqpxWFsAAVU0ZpgSZC8U
-6TFeBQyUXA2IPGsVjh9Jh4d+gZp5g8xRwCsRqjoAm6ud564IO4msQ6ekVVs+f4c5
-FYBLDDmtDXmcO4G3Ev6HriBJNylWpmXxmjil5q0GYgJEhJ453j6jv+vlXAEf4Pxi
-A4si3Aqxsaz32pyhHs77
-=90qq
------END PGP SIGNATURE-----
 
---ReaqsoxgOBHFXBhH--
+--------------ms000309040800060409090807
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMDMwMTUwMzI1WjBPBgkq
+hkiG9w0BCQQxQgRAzPXn4t9sf7kLugk1YUyWGhBb3rb7DUhEcWUv4Qa34h8M9c9+C189OM9S
+hvyY6wwBjOre4DK2CiP1CunYreFFGzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgCYH5xeiEBDgeNH+yMC8dITNtFgGqSSOavUOHAH0P4TrdZhNRnn
+ClH6MlEiOXFEPTwbo9ytIkjMQqKP7HudIorgzFGCDoQ8c+Idt8E9pCez+ln1C4jauB5XJLDm
+1dF9oaOsFFCrjA8a0eBvP93yRo+dT9YL1uCcEHKVMNw1y4/zzLttAS7LwKCUeHMwTjTj2F0v
+qNq2c8jC2zL3nz8ZMs7b2cttiSEbXIF+6Pr1iMZUFDgDrKWK6xGrldebuFbyyOEz9NIZreTG
+7RJSRQcuEGSvrh9yy3AzfFlDlEQbG4d+FL2w4R+ajf5HKnMPbLx/hOOm69ii92p1y5+gHoOj
+B6cEpCo9ghDABMxP7ZTU2Jbrogdkr1sb8UYcC1Bxx6Mkh7p9PLazuBbLy9yJjMwPAmjej++S
+MZTj/jjOBQFEoHQMMtEK2wWtnLAcgb4Djq03h/PgrhQmu/EO8z9cS6hqhsvlMiklb0YIJmkx
+bAziR8iXsyG3FqENczt8o8sKfI/ahDebcOH4p+dYYUfbSufZexubqhR3m7PPrvp3LgzvsmvF
+0wPJhOEozAvioLhlE6UptRES2DhfBGyR1cvzzWETdPNI6WldumrbGAupGhndUTX44b7tc/im
+oAXMpEE+UlSCdIwzRP4GWElr+MISQLYfYidu82KgyQmvNzhyyFtZlOM94wAAAAAAAA==
+--------------ms000309040800060409090807--

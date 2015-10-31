@@ -1,108 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:33020 "EHLO
-	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750941AbbJaTSm (ORCPT
+Received: from smtp-out.rrz.uni-koeln.de ([134.95.19.53]:58782 "EHLO
+	smtp-out.rrz.uni-koeln.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751682AbbJaU4Q (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Oct 2015 15:18:42 -0400
-Received: by wmeg8 with SMTP id g8so32589486wme.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2015 12:18:41 -0700 (PDT)
-From: Philip Seeger <p0h0i0l0i0p@gmail.com>
-Subject: Re: Crash during mount -o degraded, kernel BUG at
- fs/btrfs/extent_io.c:2044
-To: Erik Berg <btrfs@slipsprogrammoer.no>, linux-btrfs@vger.kernel.org
-References: <n0bqib$2om$1@ger.gmane.org>
-Message-ID: <5635140F.7040206@googlemail.com>
-Date: Sat, 31 Oct 2015 20:18:39 +0100
+	Sat, 31 Oct 2015 16:56:16 -0400
+Received: from smtp-auth.rrz.uni-koeln.de (smtp-auth.rrz.uni-koeln.de [134.95.19.93])
+	by smtp-out.rrz.uni-koeln.de (8.14.4/8.14.4) with ESMTP id t9VKuDfK029253
+	for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2015 21:56:14 +0100
+Received: from linux-va3e.site ([176.0.113.210])
+	(authenticated as user sking using CRAM-MD5 bits=0)
+	by smtp-auth.uni-koeln.de (8.13.8/8.13.8) with ESMTP id t9VKuBhw020971
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES128-SHA bits=128 verify=NO)
+	for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2015 21:56:13 +0100
+Subject: Re: How to delete this snapshot, and how to succeed with balancing?
+To: linux-btrfs@vger.kernel.org
+References: <5634DD93.9050605@uni-koeln.de>
+ <20151031164112.GF21103@carfax.org.uk> <5634FB01.9030602@uni-koeln.de>
+ <20151031183337.GG21103@carfax.org.uk>
+From: Simon King <simon.king@uni-koeln.de>
+Message-ID: <56352AEA.7040907@uni-koeln.de>
+Date: Sat, 31 Oct 2015 21:56:10 +0100
 MIME-Version: 1.0
-In-Reply-To: <n0bqib$2om$1@ger.gmane.org>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20151031183337.GG21103@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 10/23/2015 01:13 AM, Erik Berg wrote:
-> So I intentionally broke this small raid6 fs on a VM to learn recovery
-> strategies for another much bigger raid6 I have running (which also
-> suffered a drive failure).
->
-> Basically I zeroed out one of the drives (vdd) from under the running
-> vm. Then ran an md5sum on a file on the fs to trigger some detection of
-> data inconsistency. I ran a scrub, which completed "ok". Then rebooted.
->
-> Now trying to mount the filesystem in degraded mode leads to a kernel
-> crash.
+Hi!
 
-I've tried this on a system running kernel 4.2.5 and got slightly 
-different results.
+Am 31.10.2015 um 19:33 schrieb Hugo Mills:
+>> I combined the two, since -dlimit on its own won't work:
+>>
+>> linux-va3e:~ # btrfs balance start -dlimit=2 /
+>> ERROR: error during balancing '/' - No space left on device
+>> There may be more info in syslog - try dmesg | tail
+> 
+>    And this is with a filesystem that's not fully allocated?
+> (i.e. btrfs fi show indicates that used and total are different for
+> each device). If that's the case, then you may have hit a known but
+> unfixed bug to do with space allocation.
 
-Created a raid6 array with 4 drives and put some stuff on it. Zeroed out 
-the second drive (sdc) and checked the md5 sums of said stuff (all OK, 
-good) which caused errors to be logged (dmesg) complaining about 
-checksum errors on the 4th drive (sde):
-BTRFS warning (device sde): csum failed ino 259 off 1071054848 csum 
-2566472073 expected csum 3870060223
+linux-va3e:~ # btrfs fi show
+Label: none  uuid: 656dc65f-240b-4137-a490-0175717dd7fa
+        Total devices 1 FS bytes used 13.71GiB
+        devid    1 size 20.00GiB used 16.88GiB path /dev/sda2
 
-This is misleading, these error messages might make one think that the 
-4th drive is bad and has to be replaced, which would reduce the 
-redundancy to the minimum because it's the second drive that's actually bad.
+btrfs-progs v4.0+20150429
 
-I started a scrub and this time, the checksum errors mentioned the right 
-drive:
-BTRFS: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
-BTRFS: checksum error at logical 38469632 on dev /dev/sdc, sector 19072: 
-metadata leaf (level 0) in tree 7
-...
+Is there a manual work-around?
 
-This error mentions a file which is still correct:
-BTRFS: checksum error at logical 2396721152 on dev /dev/sdc, sector 
-2322056, root 5, inode 257, offset 142282752, length 4096, links 1 
-(path: test1)
+>> Can I do this in the running system? Or would that only be an option
+>> during upgrade of openSuse Harlequin to Tumbleweed/Leap? Or even worse:
+>> Only an option after nuking the old installation and installing a new
+>> one from scratch?
+> 
+>    You'd have to recreate the FS, so it's a matter of a reinstall, or
+> nuking it and restoring from your backups.
 
-However, the scrub found uncorrectable errors, which shouldn't happen in 
-a raid6 array with only 1 bad drive:
-         total bytes scrubbed: 3.00GiB with 199314 errors
-         error details: read=1 super=2 csum=199311
-         corrected errors: 199306, uncorrectable errors: 6, unverified 
-errors: 0
-ERROR: There are uncorrectable errors.
+OK. So, I'll try to find out whether it is better to move on to
+Tumbleweed or to Leap (btw, I found out that the latter is based on the
+4.1 kernel).
 
-So wiping one drive in a btrfs raid6 array turned it into a bad state 
-with uncorrectable errors, which should not happen. But at least it's 
-still mountable without using the degraded option.
+Best regards,
+Simon
 
-Removing all the files on this filesystem (which were not corrupted) 
-fixed the aforementioned uncorrectable errors, another scrub found no 
-more errors:
-         scrub started at Sat Oct 31 19:12:25 2015 and finished after 
-00:01:15
-         total bytes scrubbed: 1.60GiB with 0 errors
-
-But it looks like there are still some "invisible" errors on this (now 
-empty) filesystem; after rebooting and mounting it, this one error is 
-logged:
-BTRFS: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 199313, gen 0
-
-Not sure if this might be because I wiped that drive from the very 
-beginning, effectively overwriting everything including MBR and other 
-meta data. But whatever happened, a single bad drive (returning 
-corrupted data) should not lead to fatal errors in a raid6 array.
-
-Next, I recreated this raid6 array (same drives) and filled it with one 
-file (dd if=/dev/urandom of=test bs=4M). I wiped the 2nd *and* 3rd drive 
-(sdc and sdd) this time. I unmounted it and tried mounting it, which 
-failed (again, sde is fine):
-BTRFS (device sde): bad tree block start 0 63651840
-BTRFS (device sde): bad tree block start 65536 63651840
-BTRFS (device sde): bad tree block start 2360238080 63651840
-BTRFS: open_ctree failed
-
-After rebooting, these errors mentioned sdb instead of sde, which is the 
-other good drive.
-
-Is it possible to recover from this type of 2-drive failure?
-
-What is that "invisible error" in the first test (empty fs after reboot)?
-
-
-
-
-Philip

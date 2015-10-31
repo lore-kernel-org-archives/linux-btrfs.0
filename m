@@ -1,66 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.palepurple.co.uk ([89.16.183.188]:54739 "EHLO
-	mail.palepurple.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752740AbbJ3UNl (ORCPT
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:52557 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752784AbbJaLKk convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 30 Oct 2015 16:13:41 -0400
-Received: from localhost (localhost [127.0.0.1])
-	by mail.palepurple.co.uk (Postfix) with ESMTP id 9A1FE9091
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2015 20:06:16 +0000 (GMT)
-Received: from mail.palepurple.co.uk ([127.0.0.1])
-	by localhost (mail.palepurple.co.uk [127.0.0.50]) (amavisd-new, port 10024)
-	with ESMTP id my_uL8gSeNHB for <linux-btrfs@vger.kernel.org>;
-	Fri, 30 Oct 2015 20:06:05 +0000 (GMT)
-Received: from [192.168.0.5] (97e41767.skybroadband.com [151.228.23.103])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	(Authenticated sender: david@codepoets.co.uk)
-	by mail.palepurple.co.uk (Postfix) with ESMTPSA id 7707F9031
-	for <linux-btrfs@vger.kernel.org>; Fri, 30 Oct 2015 20:06:05 +0000 (GMT)
-Subject: Re: Periodic kernel freezes
-To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <63869607-1857-48D3-9D95-62BDBB308060@oseberg.io>
-From: David Goodwin <david@codepoets.co.uk>
-Message-ID: <5633CDB3.2060905@codepoets.co.uk>
-Date: Fri, 30 Oct 2015 20:06:11 +0000
+	Sat, 31 Oct 2015 07:10:40 -0400
+Received: from merkaba.localnet (ppp-62-216-209-156.dynamic.mnet-online.de [62.216.209.156])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 819DB202
+	for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2015 12:10:38 +0100 (CET)
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [4.3-rc4] scrubbing aborts before finishing
+Date: Sat, 31 Oct 2015 12:10:37 +0100
+Message-ID: <1475910.a5YfPuWqAN@merkaba>
+In-Reply-To: <16063727.bYixifcRQC@merkaba>
+References: <16063727.bYixifcRQC@merkaba>
 MIME-Version: 1.0
-In-Reply-To: <63869607-1857-48D3-9D95-62BDBB308060@oseberg.io>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Donnerstag, 22. Oktober 2015, 10:41:15 CET schrieb Martin Steigerwald:
+> I get this:
+> 
+> merkaba:~> btrfs scrub status -d /       
+> scrub status for […]
+> scrub device /dev/mapper/sata-debian (id 1) history
+>         scrub started at Thu Oct 22 10:05:49 2015 and was aborted after 00:00:00
+>         total bytes scrubbed: 0.00B with 0 errors
+> scrub device /dev/dm-2 (id 2) history
+>         scrub started at Thu Oct 22 10:05:49 2015 and was aborted after 00:01:30
+>         total bytes scrubbed: 23.81GiB with 0 errors
+> 
+> For / scrub aborts for sata SSD immediately.
+> 
+> For /home scrub aborts for both SSDs at some time.
+> 
+> merkaba:~> btrfs scrub status -d /home
+> scrub status for […]
+> scrub device /dev/mapper/msata-home (id 1) history
+>         scrub started at Thu Oct 22 10:09:37 2015 and was aborted after 00:01:31
+>         total bytes scrubbed: 22.03GiB with 0 errors
+> scrub device /dev/dm-3 (id 2) history
+>         scrub started at Thu Oct 22 10:09:37 2015 and was aborted after 00:03:34
+>         total bytes scrubbed: 53.30GiB with 0 errors
+> 
+> Also single volume BTRFS is affected:
+> 
+> merkaba:~> btrfs scrub status /daten
+> scrub status for […]
+>         scrub started at Thu Oct 22 10:36:38 2015 and was aborted after 00:00:00
+>         total bytes scrubbed: 0.00B with 0 errors
+> 
+> 
+> No errors in dmesg, btrfs device stat or smartctl -a.
+> 
+> Any known issue?
 
-On 30/10/2015 16:25, Alex Adriaanse wrote:
-> I have an EC2 instance on AWS that tends to freeze several times per
-> week. When it freezes it stops responding to network traffic, disk
-> I/O stops, and CPU goes to 100%. The system comes back fine after a
-> reboot. I was finally able to get a kernel backtrace from when this
-> happened today, which I have attached to this email.
->
-> The VM in question runs Debian Jessie, and has 3 BTRFS filesystems,
-> including the root filesystem. Details are included below.
->
-> Any ideas?
->
+I am still seeing this in 4.3-rc7. It happens so that on one SSD BTRFS
+doesn´t even start scrubbing. But in the end it aborts it scrubbing anyway.
 
-Hi Alex -
+I do not see any other issue so far. But I would really like to be able to
+scrub my BTRFS filesystems completely again. Any hints? Any further
+information needed? 
 
-I kept experiencing problems with the Jessie 3.16.x kernel on EC2 (and 
-elsewhere) with BTRFS.
+merkaba:~> btrfs scrub status -d /
+scrub status for […]
+scrub device /dev/dm-5 (id 1) history
+        scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
+        total bytes scrubbed: 0.00B with 0 errors
+scrub device /dev/mapper/msata-debian (id 2) status
+        scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:20
+        total bytes scrubbed: 5.27GiB with 0 errors
+merkaba:~> btrfs scrub status -d /
+scrub status for […]
+scrub device /dev/dm-5 (id 1) history
+        scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
+        total bytes scrubbed: 0.00B with 0 errors
+scrub device /dev/mapper/msata-debian (id 2) status
+        scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:25
+        total bytes scrubbed: 6.59GiB with 0 errors
+merkaba:~> btrfs scrub status -d /
+scrub status for […]
+scrub device /dev/dm-5 (id 1) history
+        scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
+        total bytes scrubbed: 0.00B with 0 errors
+scrub device /dev/mapper/msata-debian (id 2) status
+        scrub started at Sat Oct 31 11:58:45 2015, running for 00:01:25
+        total bytes scrubbed: 21.97GiB with 0 errors
+merkaba:~> btrfs scrub status -d /
+scrub status for […]
+scrub device /dev/dm-5 (id 1) history
+        scrub started at Sat Oct 31 11:58:45 2015 and was aborted after 00:00:00
+        total bytes scrubbed: 0.00B with 0 errors
+scrub device /dev/mapper/msata-debian (id 2) history
+        scrub started at Sat Oct 31 11:58:45 2015 and was aborted after 00:01:32
+        total bytes scrubbed: 23.63GiB with 0 errors
 
-Out of 8 nodes, one managed an uptime of 90 days, while the average was 
-about 21 days.
 
-Crashes were seemingly random, and it was difficult to get stack traces.
+For the sake of it I am going to btrfs check one of the filesystem where
+BTRFS aborts scrubbing (which is all of the laptop filesystems, not only
+the RAID 1 one).
 
-For the stack traces I did get, it wasn't always obvious that the 
-problem lay with BTRFS.
+I will use the /daten filesystem as I can unmount it during laptop runtime
+easily. There scrubbing aborts immediately:
 
-Reboots normally needed to be forceful.
+merkaba:~> btrfs scrub start /daten 
+scrub started on /daten, fsid […] (pid=13861)
+merkaba:~> btrfs scrub status /daten
+scrub status for […]
+        scrub started at Sat Oct 31 12:04:25 2015 and was aborted after 00:00:00
+        total bytes scrubbed: 0.00B with 0 errors
 
-I'd suggest upgrading to a backports kernel (I compiled various 4.1.x 
-kernels, but there's now 4.2.x in jessie-backports).
+It is single device:
 
-You might also want to turn off compression...
+merkaba:~> btrfs fi sh /daten
+Label: 'daten'  uuid: […]
+        Total devices 1 FS bytes used 227.23GiB
+        devid    1 size 230.00GiB used 230.00GiB path /dev/mapper/msata-daten
 
-David.
+btrfs-progs v4.2.2
+merkaba:~> btrfs fi df /daten
+Data, single: total=228.99GiB, used=226.79GiB
+System, single: total=4.00MiB, used=48.00KiB
+Metadata, single: total=1.01GiB, used=449.50MiB
+GlobalReserve, single: total=160.00MiB, used=0.00B
+
+
+I do not see any output in btrfs check that points to any issue:
+
+merkaba:~> btrfs check /dev/msata/daten
+Checking filesystem on /dev/msata/daten
+UUID: 7918274f-e2ec-4983-bbb0-aa93ef95fcf7
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 243936530607 bytes used err is 0
+total csum bytes: 237758932
+total tree bytes: 471384064
+total fs tree bytes: 116473856
+total extent tree bytes: 78544896
+btree space waste bytes: 57523323
+file data blocks allocated: 422700576768
+ referenced 243803443200
+btrfs-progs v4.2.2
+
+Thanks,
+-- 
+Martin

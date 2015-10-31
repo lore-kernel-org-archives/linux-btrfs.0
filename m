@@ -1,89 +1,104 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f180.google.com ([209.85.217.180]:33143 "EHLO
-	mail-lb0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751470AbbJaWpQ (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:39300 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751075AbbJaWvy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Oct 2015 18:45:16 -0400
-Received: by lbbec13 with SMTP id ec13so68694924lbb.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2015 15:45:15 -0700 (PDT)
-MIME-Version: 1.0
-In-Reply-To: <56352AEA.7040907@uni-koeln.de>
-References: <5634DD93.9050605@uni-koeln.de>
-	<20151031164112.GF21103@carfax.org.uk>
-	<5634FB01.9030602@uni-koeln.de>
-	<20151031183337.GG21103@carfax.org.uk>
-	<56352AEA.7040907@uni-koeln.de>
-Date: Sat, 31 Oct 2015 23:45:15 +0100
-Message-ID: <CAPmG0jYNmTvuKnbRfYcViCQFnghL5LYnj_KyCOCLqVynseY2BA@mail.gmail.com>
+	Sat, 31 Oct 2015 18:51:54 -0400
+Date: Sat, 31 Oct 2015 22:51:51 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Henk Slager <eye1tm@gmail.com>
+Cc: Simon King <simon.king@uni-koeln.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
 Subject: Re: How to delete this snapshot, and how to succeed with balancing?
-From: Henk Slager <eye1tm@gmail.com>
-To: Simon King <simon.king@uni-koeln.de>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20151031225151.GH21103@carfax.org.uk>
+References: <5634DD93.9050605@uni-koeln.de>
+ <20151031164112.GF21103@carfax.org.uk>
+ <5634FB01.9030602@uni-koeln.de>
+ <20151031183337.GG21103@carfax.org.uk>
+ <56352AEA.7040907@uni-koeln.de>
+ <CAPmG0jYNmTvuKnbRfYcViCQFnghL5LYnj_KyCOCLqVynseY2BA@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="dCSxeJc5W8HZXZrD"
+In-Reply-To: <CAPmG0jYNmTvuKnbRfYcViCQFnghL5LYnj_KyCOCLqVynseY2BA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Simon,
 
->>> linux-va3e:~ # btrfs balance start -dlimit=2 /
->>> ERROR: error during balancing '/' - No space left on device
->>> There may be more info in syslog - try dmesg | tail
->>
->>    And this is with a filesystem that's not fully allocated?
->> (i.e. btrfs fi show indicates that used and total are different for
->> each device). If that's the case, then you may have hit a known but
->> unfixed bug to do with space allocation.
->
-> linux-va3e:~ # btrfs fi show
-> Label: none  uuid: 656dc65f-240b-4137-a490-0175717dd7fa
->         Total devices 1 FS bytes used 13.71GiB
->         devid    1 size 20.00GiB used 16.88GiB path /dev/sda2
->
-> btrfs-progs v4.0+20150429
->
-> Is there a manual work-around?
-For 'No space left on device', a trick I once saw is to run:
+--dCSxeJc5W8HZXZrD
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-btrfs balance start -dusage=0 -musage=0 /
+On Sat, Oct 31, 2015 at 11:45:15PM +0100, Henk Slager wrote:
+> Hi Simon,
+> 
+> >>> linux-va3e:~ # btrfs balance start -dlimit=2 /
+> >>> ERROR: error during balancing '/' - No space left on device
+> >>> There may be more info in syslog - try dmesg | tail
+> >>
+> >>    And this is with a filesystem that's not fully allocated?
+> >> (i.e. btrfs fi show indicates that used and total are different for
+> >> each device). If that's the case, then you may have hit a known but
+> >> unfixed bug to do with space allocation.
+> >
+> > linux-va3e:~ # btrfs fi show
+> > Label: none  uuid: 656dc65f-240b-4137-a490-0175717dd7fa
+> >         Total devices 1 FS bytes used 13.71GiB
+> >         devid    1 size 20.00GiB used 16.88GiB path /dev/sda2
+> >
+> > btrfs-progs v4.0+20150429
+> >
+> > Is there a manual work-around?
 
-Under certain circumstances (i don't remember which kernel, tools
-versions etc), this enables you to create files again on the
-filesystem.
-Looking at the   btrfs fi df /  output, I don't see a real need for
-balancing, the numbers can be much different and then balance might be
-usefull.
+   Not that we've found in the last year or so of poking at it, I'm
+afraid.
 
-The 318 snaphot is more of a problem and you should get rid of
-(some/unneeded/all) snapshots first. Default openSuse snapshot ages is
-high (months and years) so maybe you want to edit configs
-/etc/snapper/configs/<>
-/etc/sysconfig/snapper
+> For 'No space left on device', a trick I once saw is to run:
+> 
+> btrfs balance start -dusage=0 -musage=0 /
+> 
+> Under certain circumstances (i don't remember which kernel, tools
+> versions etc), this enables you to create files again on the
+> filesystem.
 
-to keep snapshot age just 1 or 2 days or so, but it really depends on
-how you use the notebook and the subvolumes on the filesystem. Or
-maybe you just disable snapper snapshotting completely, as 20GB will
-quite easily get too full with default snapper config. A crontask will
-automatically delete too old snapshots based on the snapper config.
+   That's basically what Simon's been doing (although a little more
+aggressively). It's not going to help here.
 
-if command (318 or with higher snapshot number)
-snapper -c root delete 1-318
+> Looking at the   btrfs fi df /  output, I don't see a real need for
+> balancing, the numbers can be much different and then balance might be
+> usefull.
 
-does not work, or the crontask fails, try
-btrfs sub del /.snapshots/<number>/snapshot
+   If you're hitting ENOSPC with unallocated space, then that's a
+bug. In fact, it's a known bug that hasn't been fixed yet.
 
-The 318 related error might also be fixed/workedaround by newer tools/kernel.
-Maybe get newer (4.2.3) btrfstools from this repo
-ttp://download.opensuse.org/repositories/filesystems/openSUSE_13.2/
-and find some 4.1 kernel rpm for openSuse 13.2 (or compile your own
-from kernel.org)
+   Hugo.
 
-You could also start with a Leap/Tumbleweed liveDVD and mount your
-/dev/sda2  somewhere and run the commands suggested above.
+-- 
+Hugo Mills             | That's not rain, that's a lake with slots in it.
+hugo@... carfax.org.uk |
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
-You should probably install/enable btrfsmaintenance package (and tune
-its config) so that defrag and balancing runs as crontask.
+--dCSxeJc5W8HZXZrD
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
-And one important thing: A btrfs fi defragment with still many
-snapshots around and 20GB rootfs will make the situation worse...
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-/Henk
+iQIcBAEBAgAGBQJWNUYHAAoJEFheFHXiqx3k4fAP/jNXumPeBTGCQo7oZSrmL2ST
+v/wb4/dkez/TG/WfvbqL7S4gz3bnSOCBmBhwEWSZo5B2kH3qbbrXGQJXEUhhwwNJ
+6YDjO6ti8sK8lIAvbRgJgg+hnl4XCZXiY5RHQXD9b6ZcH3OTtDMmlTUi2VC+N/6s
+hO9dluI1n8GAUHzlHgH30AOdNKCEE86AF/sirIyqZeMlndmnBQE6rXQr4X8LrLat
+eMpTOjAA4a8RwNL+YV9GOwcRESqIJSNB46wW7pltU9CyHFfgiPq4uPd+tFKXEeee
+U5fp50Qp+CL5snRZuIsZcTQM4C6xJiS+6ghpBUsQEoAWmkRqN7fWYVkzH+2Bj7ue
+PAPHzxnSOReKmDnuAc4Ljj/BHVsxeaHWI5f/Rp1VRZP1C6WGpI6/nebv9F2oFt+1
+zZXhELRLB4v64harJ3jweAsaLId3HpqnzpTqqLIBVL0jSHksDAE3dP89l7KX8mZL
+597V2mC9HzCrDhqygQUXK7OHk2lmYYosV6I+jJvzlCUqOePKfzzcg3JGLVAuPRdI
+P0ZKk/5WCEyGF22AJguqiycJGrlZNGmEr+khXz1XbQUkMUu67Nl1LSKc3K58OVQz
+ewEKgS0aocSOqxdZFGRSqdi8RBzP2NYqWMgX1JqlGdONF88VFqTKKskoqNCB+gCj
+HU3F6hqRmp62mcuRCW+D
+=4C0m
+-----END PGP SIGNATURE-----
+
+--dCSxeJc5W8HZXZrD--

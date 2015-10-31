@@ -1,153 +1,108 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:38663 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751478AbbJaSdj (ORCPT
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:33020 "EHLO
+	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750941AbbJaTSm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 31 Oct 2015 14:33:39 -0400
-Date: Sat, 31 Oct 2015 18:33:37 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Simon King <simon.king@uni-koeln.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: How to delete this snapshot, and how to succeed with balancing?
-Message-ID: <20151031183337.GG21103@carfax.org.uk>
-References: <5634DD93.9050605@uni-koeln.de>
- <20151031164112.GF21103@carfax.org.uk>
- <5634FB01.9030602@uni-koeln.de>
+	Sat, 31 Oct 2015 15:18:42 -0400
+Received: by wmeg8 with SMTP id g8so32589486wme.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 31 Oct 2015 12:18:41 -0700 (PDT)
+From: Philip Seeger <p0h0i0l0i0p@gmail.com>
+Subject: Re: Crash during mount -o degraded, kernel BUG at
+ fs/btrfs/extent_io.c:2044
+To: Erik Berg <btrfs@slipsprogrammoer.no>, linux-btrfs@vger.kernel.org
+References: <n0bqib$2om$1@ger.gmane.org>
+Message-ID: <5635140F.7040206@googlemail.com>
+Date: Sat, 31 Oct 2015 20:18:39 +0100
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="TKYYegg/GYAC5JIZ"
-In-Reply-To: <5634FB01.9030602@uni-koeln.de>
+In-Reply-To: <n0bqib$2om$1@ger.gmane.org>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 10/23/2015 01:13 AM, Erik Berg wrote:
+> So I intentionally broke this small raid6 fs on a VM to learn recovery
+> strategies for another much bigger raid6 I have running (which also
+> suffered a drive failure).
+>
+> Basically I zeroed out one of the drives (vdd) from under the running
+> vm. Then ran an md5sum on a file on the fs to trigger some detection of
+> data inconsistency. I ran a scrub, which completed "ok". Then rebooted.
+>
+> Now trying to mount the filesystem in degraded mode leads to a kernel
+> crash.
 
---TKYYegg/GYAC5JIZ
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I've tried this on a system running kernel 4.2.5 and got slightly 
+different results.
 
-On Sat, Oct 31, 2015 at 06:31:45PM +0100, Simon King wrote:
-> Hi Hugo,
-> 
-> Am 31.10.2015 um 17:41 schrieb Hugo Mills:
-> >> linux-va3e:~ # uname -a
-> >> Linux linux-va3e.site 3.16.7-29-desktop #1 SMP PREEMPT Fri Oct 23
-> >> 00:46:04 UTC 2015 (6be6a97) x86_64 x86_64 x86_64 GNU/Linux
-> > 
-> >    OK, that's a bit old -- you would probably do well to upgrade this
-> > anyway, regardless of the issues you're having. (I'd recommend 4.1 at
-> > the moment; there's a bug in 4.2 at the moment that affects
-> > balancing).
-> 
-> The latest version of openSuse is Tumbleweed, in a few days there will
-> be openSuse Leap; I am not sure what kernel it would give me.
-> 
-> >    I thought snapper could automatically delete old snapshots. (I've
-> > never used it, though, so I'm not sure). Worth looking at the snapper
-> > config to see if you can tell it how many to keep.
-> 
-> Probably it can, right.
-> 
-> >    You're telling it to move the first two chunks with less than 10%
-> > usage. If all the other chunks are full, and there are two chunks (one
-> > data, one metadata) with less than 10% usage, then they'll be moved to
-> > two new chunks... with less than 10% usage. So it's perfectly possible
-> > that the same command will show the same output.
-> 
-> Do I understand correctly: In that situation, balancing would have no
-> benefit, as two old chunks are moved to two new chunks? Then why are
-> they moved at all?
+Created a raid6 array with 4 drives and put some stuff on it. Zeroed out 
+the second drive (sdc) and checked the md5 sums of said stuff (all OK, 
+good) which caused errors to be logged (dmesg) complaining about 
+checksum errors on the 4th drive (sde):
+BTRFS warning (device sde): csum failed ino 259 off 1071054848 csum 
+2566472073 expected csum 3870060223
 
-   Because that's what balance does -- it's a fairly blunt tool for
-one thing (evening out the usage across multiple devices) that happens
-to have some useful side-effects (compacting space usage into smaller
-numbers of block groups and freeing up the empty ones).
+This is misleading, these error messages might make one think that the 
+4th drive is bad and has to be replaced, which would reduce the 
+redundancy to the minimum because it's the second drive that's actually bad.
 
-> >    Incidentally, I would suggest using -dlimit=2 on its own, rather
-> > than both limit and usage.
-> 
-> I combined the two, since -dlimit on its own won't work:
-> 
-> linux-va3e:~ # btrfs balance start -dlimit=2 /
-> ERROR: error during balancing '/' - No space left on device
-> There may be more info in syslog - try dmesg | tail
+I started a scrub and this time, the checksum errors mentioned the right 
+drive:
+BTRFS: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 1, gen 0
+BTRFS: checksum error at logical 38469632 on dev /dev/sdc, sector 19072: 
+metadata leaf (level 0) in tree 7
+...
 
-   And this is with a filesystem that's not fully allocated?
-(i.e. btrfs fi show indicates that used and total are different for
-each device). If that's the case, then you may have hit a known but
-unfixed bug to do with space allocation.
+This error mentions a file which is still correct:
+BTRFS: checksum error at logical 2396721152 on dev /dev/sdc, sector 
+2322056, root 5, inode 257, offset 142282752, length 4096, links 1 
+(path: test1)
 
-> >    "btrfs balance start /" should rebalance the whole filesystem --
-> 
-> linux-va3e:~ # btrfs balance start /
-> ERROR: error during balancing '/' - No space left on device
-> There may be more info in syslog - try dmesg | tail
-> linux-va3e:~ # dmesg | tail
-> [ 9814.499013] BTRFS info (device sda2): found 8153 extents
-> [ 9815.254270] BTRFS info (device sda2): relocating block group
-> 820062978048 flags 36
-> [ 9826.335122] BTRFS info (device sda2): found 8182 extents
-> [ 9826.858482] BTRFS info (device sda2): relocating block group
-> 805064146944 flags 36
-> [ 9839.444820] BTRFS info (device sda2): found 8184 extents
-> [ 9839.822108] BTRFS info (device sda2): relocating block group
-> 794595164160 flags 36
-> [ 9850.456697] BTRFS info (device sda2): found 8143 extents
-> [ 9850.778264] BTRFS info (device sda2): relocating block group
-> 794460946432 flags 36
-> [ 9862.546336] BTRFS info (device sda2): found 8140 extents
-> [ 9862.890330] BTRFS info (device sda2): 12 enospc errors during balance
-> 
-> 
-> > not that you'd need to for purposes of dealing with space usage
-> > issues.
-> 
-> I know that "df" is different from "btrfs fi df". However, I see that df
-> shows significantly more free space after balancing. Also, when my
-> computer became unusable, the problem disappeared by balancing and
-> defragmentation (deleting the old snapshots was not enough).
-> 
-> Unfortunately, df also shows significantly less free space after
-> UNSUCCESSFUL balancing.
-> 
-> >    You may have more success using mkfs.btrfs --mixed when you create
-> > the FS, which puts data and metadata in the same chunks.
-> 
-> Can I do this in the running system? Or would that only be an option
-> during upgrade of openSuse Harlequin to Tumbleweed/Leap? Or even worse:
-> Only an option after nuking the old installation and installing a new
-> one from scratch?
+However, the scrub found uncorrectable errors, which shouldn't happen in 
+a raid6 array with only 1 bad drive:
+         total bytes scrubbed: 3.00GiB with 199314 errors
+         error details: read=1 super=2 csum=199311
+         corrected errors: 199306, uncorrectable errors: 6, unverified 
+errors: 0
+ERROR: There are uncorrectable errors.
 
-   You'd have to recreate the FS, so it's a matter of a reinstall, or
-nuking it and restoring from your backups.
+So wiping one drive in a btrfs raid6 array turned it into a bad state 
+with uncorrectable errors, which should not happen. But at least it's 
+still mountable without using the degraded option.
 
-   Hugo.
+Removing all the files on this filesystem (which were not corrupted) 
+fixed the aforementioned uncorrectable errors, another scrub found no 
+more errors:
+         scrub started at Sat Oct 31 19:12:25 2015 and finished after 
+00:01:15
+         total bytes scrubbed: 1.60GiB with 0 errors
 
--- 
-Hugo Mills             | Le Corbusier's plan for improving Paris involved the
-hugo@... carfax.org.uk | assassination of the city, and its rebirth as tower
-http://carfax.org.uk/  | blocks.
-PGP: E2AB1DE4          |                   Robert Hughes, The Shock of the New
+But it looks like there are still some "invisible" errors on this (now 
+empty) filesystem; after rebooting and mounting it, this one error is 
+logged:
+BTRFS: bdev /dev/sdc errs: wr 0, rd 0, flush 0, corrupt 199313, gen 0
 
---TKYYegg/GYAC5JIZ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Not sure if this might be because I wiped that drive from the very 
+beginning, effectively overwriting everything including MBR and other 
+meta data. But whatever happened, a single bad drive (returning 
+corrupted data) should not lead to fatal errors in a raid6 array.
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Next, I recreated this raid6 array (same drives) and filled it with one 
+file (dd if=/dev/urandom of=test bs=4M). I wiped the 2nd *and* 3rd drive 
+(sdc and sdd) this time. I unmounted it and tried mounting it, which 
+failed (again, sde is fine):
+BTRFS (device sde): bad tree block start 0 63651840
+BTRFS (device sde): bad tree block start 65536 63651840
+BTRFS (device sde): bad tree block start 2360238080 63651840
+BTRFS: open_ctree failed
 
-iQIcBAEBAgAGBQJWNQmBAAoJEFheFHXiqx3k6xkP/RibrQZAfKd5fcJtrTFFuWDE
-VZq+K3FRnsSGev36LFVvB4iLt+n08OT6Y5ownfKKOjSNOCyypg3OOfDlv/tBHGqT
-Wob4LFi9imRjU8TldHKmIthuoXojcUcoZAraze+tnXcCK/6AUEXf9B9whyJUjEwA
-72RJHQmTArSK4iZQ0mUeEZ5n+CarU6zC48h3BPI9260fg6G45DFyK9mwY2Scb2qe
-fFQESfHUk+kdTJxVxIaL/LLBq9l0R1E6A9qxaEdlNAs7HVOc+kB+hJS/74XsDxNx
-uckOmIlE0mygBPUAbSRZz1ikVtLug1ZYMhUOko84iplezzZo9ZlTJjwpUGVnTIqA
-cXo/eF/MwDPp3gL4FLX9wyj/kbKts/j6CnfiIDD7hSfjlXAGXkZTWbhjEdhM0KwA
-ZZ056w7QY6dh/74AASH70vyxZfVlf3k5kdkvgfwcVEh3bjLc6jEgD/MewXzwFecm
-m+Pmop8RufIcVAU45nh8ZFexLt7XdcAtOgi1GvVal8RpsKsrOqxcnJT1rlwpFh+A
-ThsENev8FbZTiZCmCJL3F37AoXJC6Tdbrqc9JpbHg4h8d0+//QZ+pVrt1v7JjwBH
-pa3GZVzGalmNPSAK8hR5TMh3YA768MISWrXJLSfMqli465XWNCUikv0DG0znJhwZ
-8l2P1Mug8b+VosIF5o0J
-=UClU
------END PGP SIGNATURE-----
+After rebooting, these errors mentioned sdb instead of sde, which is the 
+other good drive.
 
---TKYYegg/GYAC5JIZ--
+Is it possible to recover from this type of 2-drive failure?
+
+What is that "invisible error" in the first test (empty fs after reboot)?
+
+
+
+
+Philip

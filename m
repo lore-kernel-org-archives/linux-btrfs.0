@@ -1,112 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14298 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:6273 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751342AbbKQAmS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Nov 2015 19:42:18 -0500
-Subject: Re: Ideas for btrfs-convert fix(or rework)
-To: <dsterba@suse.cz>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
-References: <56418E5D.9020604@gmx.com> <20151116174636.GA31035@twin.jikos.cz>
+	with ESMTP id S1751156AbbKBB7G (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Nov 2015 20:59:06 -0500
+Subject: Re: [PATCH 4/4] btrfs: qgroup: account shared subtree during snapshot
+ delete
+To: Mark Fasheh <mfasheh@suse.de>, <linux-btrfs@vger.kernel.org>
+References: <1442952948-21389-1-git-send-email-mfasheh@suse.de>
+ <1442952948-21389-5-git-send-email-mfasheh@suse.de>
+CC: <jbacik@fb.com>, <clm@fb.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <564A77E5.1040300@cn.fujitsu.com>
-Date: Tue, 17 Nov 2015 08:42:13 +0800
+Message-ID: <5636C365.2080908@cn.fujitsu.com>
+Date: Mon, 2 Nov 2015 09:59:01 +0800
 MIME-Version: 1.0
-In-Reply-To: <20151116174636.GA31035@twin.jikos.cz>
+In-Reply-To: <1442952948-21389-5-git-send-email-mfasheh@suse.de>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-David Sterba wrote on 2015/11/16 18:46 +0100:
-> On Tue, Nov 10, 2015 at 02:27:41PM +0800, Qu Wenruo wrote:
->> [[FIX IDEA]]
->> 1. Too many patches
+Mark Fasheh wrote on 2015/09/22 13:15 -0700:
+> Commit 0ed4792 ('btrfs: qgroup: Switch to new extent-oriented qgroup
+> mechanism.') removed our qgroup accounting during
+> btrfs_drop_snapshot(). Predictably, this results in qgroup numbers
+> going bad shortly after a snapshot is removed.
 >
-> Not percieved as a problem as long as the patches are well separated and
-> reviewable. If you prefer reasonably many preparatory and trivial
-> patches, then be it.
+> Fix this by adding a dirty extent record when we encounter extents during
+> our shared subtree walk. This effectively restores the functionality we had
+> with the original shared subtree walking code in 1152651 (btrfs: qgroup:
+> account shared subtrees during snapshot delete).
 >
->> 2. superblock reserve is d*mning hard, not matter at what timing.
->>      Until I need to codes for superblock reserve, the codes are quite
->>      easy to write.
->>      But when it comes to sb reserve, I'm going to get crazy...
+> The idea with the original patch (and this one) is that shared subtrees can
+> get skipped during drop_snapshot. The shared subtree walk then allows us a
+> chance to visit those extents and add them to the qgroup work for later
+> processing. This ultimately makes the accounting for drop snapshot work.
 >
-> What do you mean by the 'sb reserve'?
-
-Superblock reserved space.
-And the first 1Mb reserved space.
-
-IIRC, normal btrfs and convert btrfs doesn't reserve super block space well.
-For normal btrfs, it's still possible for device extent covering 
-btrfs_sb_offset(), not to mention the converted one, which only uses one sb.
-
-But the good news is, although it needs extra codes(about 5 patches and 
-over 500 lines), it shouldn't be a big problem as I'll reserve these 
-space at early time.
-
+> The new qgroup code nicely handles all the other extents during the tree
+> walk via the ref dec/inc functions so we don't have to add actions beyond
+> what we had originally.
 >
->>      I'll either add tons of codes to the simple chunk allocation to
->>      avoid using SB space and keep all chunks are large enough.
->>      Or I need to implement user-space whole chunk relocation codes.
->>
->>      I miss the old days when sb_bytenr can be specified by user...
->>      Then my work should be quite close to end...
->>
->> 3. Too aggressive rework
->>      I suppose this will not be a fix, but a total rework of the whole
->>      btrfs-convert program.
->>      Maybe only less than 30% old codes will stay, most of them will be
->>      rewritten.
+> Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+
+Hi Mark,
+
+Despite the performance regression reported from Stefan Priebe,
+there is another problem, I'll comment inlined below.
+
+> ---
+>   fs/btrfs/extent-tree.c | 41 ++++++++++++++++++++++++++++++++++-------
+>   1 file changed, 34 insertions(+), 7 deletions(-)
 >
-> I suppose that the rewrite would also touch generic code, so as far as
-> it's cleanups and other refactoring I won't object investing the time to
-> that.
-
-Not that much, most of the codes are rework of make_btrfs() to allow it 
-to alloc metadata and system chunk at early time.
-It's almost 10 patches and over 1000 lines to rework the huge 
-make_btrfs() into structuralized make_btrfs_v2().
-
-And will remove some btrfs-convert only hooks like custom_alloc_extent().
-
-As now, btrfs-convert will has a meta and system chunk(not covering 
-existing ext* data) after make_btrfs_v2().
-And then data chunks will be inserted to cover all ext* data.
-So no extra extent allocate routine is needed.
-
+> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+> index 3a70e6c..89be620 100644
+> --- a/fs/btrfs/extent-tree.c
+> +++ b/fs/btrfs/extent-tree.c
+> @@ -7757,17 +7757,37 @@ reada:
+>   }
 >
->>      No matter how I think the new code will be superior than old one,
->>      I'm pretty sure there will be tons of regression or new bugs for
->>      such huge rework.
->>
->>      But without such work, btrfs-convert will always be a mess and no
->>      real support for balance.
->>
->> So any ideas or advice is welcomed for this rework.
->
-> In general, I welcome the efforts to make convert better. The in-place
-> conversion is a unique feature and a nice to have. Several people
-> mentioned that.  Next, we want to add support more filesystems, eg.
-> reiserfs code is ready and needs configure checks and minor updates to
-> convert.c.  Basically any filesystem that provides a library API similar
-> to what ext2 does can be added. Convert code in a good shape would save
-> us trouble.
->
-> Expecting the regressions, the test set for the convertors needs to be
-> enhanced, the current state is less then ideal. Possibly we can use the
-> images from e2fsprogs testsuite.
+>   /*
+> - * TODO: Modify related function to add related node/leaf to dirty_extent_root,
+> - * for later qgroup accounting.
+> - *
+> - * Current, this function does nothing.
+> + * These may not be seen by the usual inc/dec ref code so we have to
+> + * add them here.
+>    */
+> +static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
+> +				     struct btrfs_root *root, u64 bytenr,
+> +				     u64 num_bytes)
+> +{
+> +	struct btrfs_qgroup_extent_record *qrecord;
+> +	struct btrfs_delayed_ref_root *delayed_refs;
+> +
+> +	qrecord = kmalloc(sizeof(*qrecord), GFP_NOFS);
+> +	if (!qrecord)
+> +		return -ENOMEM;
+> +
+> +	qrecord->bytenr = bytenr;
+> +	qrecord->num_bytes = num_bytes;
+> +	qrecord->old_roots = NULL;
+> +
+> +	delayed_refs = &trans->transaction->delayed_refs;
+> +	if (btrfs_qgroup_insert_dirty_extent(delayed_refs, qrecord))
+> +		kfree(qrecord);
 
-Nice idea.
+1) Unprotected dirty_extent_root.
 
-I'll try to enhance self test after btrfs-convert rework.
+Unfortunately, btrfs_qgroup_insert_dirty_exntet() is not protected by 
+any lock/mutex.
+
+And I'm sorry not to add comment about that.
+
+In fact, btrfs_qgroup_insert_dirty_extent should always be used with
+delayed_refs->lock hold.
+Just like add_delayed_ref_head(), where every caller of 
+add_delayed_ref_head() holds delayed_refs->lock.
+
+So here you will nned to hold delayed_refs->lock.
+
+2) Performance regression.(Reported by Stefan Priebe)
+
+The performance regression is not caused by your codes, at least not 
+completely.
+
+It's my fault not adding enough comment for insert_dirty_extent() 
+function. (just like 1, I must say I'm a bad reviewer until there is bug 
+report)
+
+As I was only expecting it called inside add_delayed_ref_head(),
+and caller of add_delayed_ref_head() has judged whether qgroup is 
+enabled before calling add_delayed_ref_head().
+
+So for qgroup disabled case, insert_dirty_extent() won't ever be called.
+
+
+
+As a result, if you want to call btrfs_qgroup_insert_dirty_extent() out 
+of add_delayed_ref_head(), you will need to handle the 
+delayed_refs->lock and judge whether qgroup is enabled.
+
+BTW, if it's OK for you, you can also further improve the performance of 
+qgroup by using kmem_cache for struct btrfs_qgroup_extent_record.
+
+I assume the kmalloc() may be one performance hot spot considering the 
+amount it called in qgroup enabled case.
 
 Thanks,
 Qu
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> +
+> +	return 0;
+> +}
+> +
+>   static int account_leaf_items(struct btrfs_trans_handle *trans,
+>   			      struct btrfs_root *root,
+>   			      struct extent_buffer *eb)
+>   {
+>   	int nr = btrfs_header_nritems(eb);
+> -	int i, extent_type;
+> +	int i, extent_type, ret;
+>   	struct btrfs_key key;
+>   	struct btrfs_file_extent_item *fi;
+>   	u64 bytenr, num_bytes;
+> @@ -7790,6 +7810,10 @@ static int account_leaf_items(struct btrfs_trans_handle *trans,
+>   			continue;
+>
+>   		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
+> +
+> +		ret = record_one_subtree_extent(trans, root, bytenr, num_bytes);
+> +		if (ret)
+> +			return ret;
+>   	}
+>   	return 0;
+>   }
+> @@ -7858,8 +7882,6 @@ static int adjust_slots_upwards(struct btrfs_root *root,
+>
+>   /*
+>    * root_eb is the subtree root and is locked before this function is called.
+> - * TODO: Modify this function to mark all (including complete shared node)
+> - * to dirty_extent_root to allow it get accounted in qgroup.
+>    */
+>   static int account_shared_subtree(struct btrfs_trans_handle *trans,
+>   				  struct btrfs_root *root,
+> @@ -7937,6 +7959,11 @@ walk_down:
+>   			btrfs_tree_read_lock(eb);
+>   			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
+>   			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
+> +
+> +			ret = record_one_subtree_extent(trans, root, child_bytenr,
+> +							root->nodesize);
+> +			if (ret)
+> +				goto out;
+>   		}
+>
+>   		if (level == 0) {
 >

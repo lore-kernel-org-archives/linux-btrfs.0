@@ -1,74 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43683 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752838AbbKAW5j (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 1 Nov 2015 17:57:39 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zt1ZA-0002Ti-GG
-	for linux-btrfs@vger.kernel.org; Sun, 01 Nov 2015 23:57:36 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2015 23:57:36 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 01 Nov 2015 23:57:36 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Regression in: [PATCH 4/4] btrfs: qgroup: account shared
- subtree during snapshot delete
-Date: Sun, 1 Nov 2015 22:57:22 +0000 (UTC)
-Message-ID: <pan$5a6ef$2dd4598a$565dd5ea$17edba05@cox.net>
+Received: from cn.fujitsu.com ([59.151.112.132]:20458 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750788AbbKBBec (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Nov 2015 20:34:32 -0500
+Subject: Re: Regression in: [PATCH 4/4] btrfs: qgroup: account shared subtree
+ during snapshot delete
+To: Stefan Priebe <s.priebe@profihost.ag>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        <mfasheh@suse.de>
 References: <56367AE8.9030509@profihost.ag>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+CC: <jbacik@fb.com>, Chris Mason <clm@fb.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5636BDA0.4020200@cn.fujitsu.com>
+Date: Mon, 2 Nov 2015 09:34:24 +0800
+MIME-Version: 1.0
+In-Reply-To: <56367AE8.9030509@profihost.ag>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Stefan Priebe posted on Sun, 01 Nov 2015 21:49:44 +0100 as excerpted:
 
+
+Stefan Priebe wrote on 2015/11/01 21:49 +0100:
+> Hi,
+>
 > this one: http://www.spinics.net/lists/linux-btrfs/msg47377.html
-> 
-> adds a regression to my test systems with very large disks (30tb and
-> 50tb).
-> 
+>
+> adds a regression to my test systems with very large disks (30tb and 50tb).
+>
 > btrfs balance is super slow afterwards while heavily making use of cp
 > --reflink=always on big files (200gb - 500gb).
-> 
+>
 > Sorry didn't know how to correctly reply to that "old" message.
+>
+> Greets,
+> Stefan
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-Just on the message-reply bit...
+Thanks for the testing.
 
-Gmane.org carries this list (among many), archiving the posts with both 
-nntp/news and http/web interfaces.  Both the web and news interfaces 
-normally allow replies to both old and current messages via the gmane 
-gateway forwarding to the list, tho the first time you reply to a list 
-via gmane, it'll respond with a confirmation to the email address you 
-used, requiring you to reply to that before forwarding the mail on to the 
-list.  If you don't reply within a week, the message is dropped.  
-However, at least for the news interface (not sure about the web 
-interface), you only have to confirm for a particular list/newsgroup 
-once, after that, it forwards to the list without further confirmations.
+Are you using qgroup or just doing normal balance with qgroup disabled?
 
-That's how I follow all my lists, reading and replying to them as 
-newsgroups via the gmane list2news interface.
+For the latter case, that's should be optimized to skip the dirty extent 
+insert in qgroup disabled case.
 
-http://gmane.org for more info.
+For qgroup enabled case, I'm afraid that's the design.
+As relocation will drop a subtree to relocate, and to ensure qgroup 
+consistent, we must walk down all the tree blocks and mark them dirty 
+for later qgroup accounting.
 
-The one caveat is that while on a lot of lists replies to the list only 
-is the norm, on the Linux kernel and vger.kernel.org hosted lists 
-(including this one), replying to all, list and previous posters, is the 
-norm, and I'm not sure if the web interface allows that.  On the news 
-interface it of course depends on your news client -- mine is more 
-adapted to news than mail, and while it allows forwarding to your normal 
-mail client for the mail side, normal followups are to news only, and 
-it's not easy to reply to all, so I generally reply to list (as 
-newsgroup) only, unless a poster specifically requests to be CCed on 
-replies.
+But there should be some hope left for optimization.
+For example, if all subtree blocks are already relocated, we can skip 
+the tree down walk routine.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Anyway, for your case of huge files, as tree level grows rapidly, any 
+workload involving tree iteration will be very time consuming.
+Like snapshot deletion and relocation.
 
+BTW, thanks for you regression report, I also found another problem of 
+the patch.
+I'll reply to the author to improve the patchset.
+
+Thanks,
+Qu

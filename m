@@ -1,82 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp01.in.ibm.com ([122.248.162.1]:35939 "EHLO
-	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755632AbbKRNl7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Nov 2015 08:41:59 -0500
-Received: from /spool/local
-	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 18 Nov 2015 19:11:56 +0530
-Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
-	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 1AA293940049
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 19:11:55 +0530 (IST)
-Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
-	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tAIDfrw261931688
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 19:11:53 +0530
-Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
-	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tAIDfqhi027008
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 19:11:52 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, clm@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz,
-        chandan@mykolab.com
-Subject: Re: [RFC PATCH V12 00/14] Btrfs: Subpagesize-blocksize: Allow I/O on blocks whose size is less than page size.
-Date: Wed, 18 Nov 2015 19:11:49 +0530
-Message-ID: <1747594.t1uFRQtHSi@localhost.localdomain>
-In-Reply-To: <1447657721-10025-1-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1447657721-10025-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:18218 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750775AbbKBBRk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 1 Nov 2015 20:17:40 -0500
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <dsterba@suse.cz>
+CC: <linux-btrfs@vger.kernel.org>
+References: <e9288021adac2924ce1fdb637f61b9b924eff954.1446111097.git.zhaolei@cn.fujitsu.com> <2a8343f402a43c5332c7dcdbf8efa5aee9e49ae9.1446111097.git.zhaolei@cn.fujitsu.com> <20151030133554.GF13624@twin.jikos.cz>
+In-Reply-To: <20151030133554.GF13624@twin.jikos.cz>
+Subject: RE: [PATCH 5/6] btrfs-progs: free comparer_set in cmd_qgroup_show
+Date: Mon, 2 Nov 2015 09:16:18 +0800
+Message-ID: <028c01d1150c$1ab38ae0$501aa0a0$@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Monday 16 Nov 2015 12:38:27 Chandan Rajendra wrote:
-> Btrfs assumes block size to be the same as the machine's page
-> size. This would mean that a Btrfs instance created on a 4k page size
-> machine (e.g. x86) will not be mountable on machines with larger page
-> sizes (e.g. PPC64/AARCH64). This patchset aims to resolve this
-> incompatibility.
-> 
-> This patchset continues with the work posted previously at
-> https://lwn.net/Articles/646937/.
-> 
-> I have reverted the upstream commit "btrfs: fix lockups from
-> btrfs_clear_path_blocking" (f82c458a2c3ffb94b431fc6ad791a79df1b3713e)
-> since this led to soft-lockups when the patch "Btrfs:
-> subpagesize-blocksize: Prevent writes to an extent buffer when
-> PG_writeback flag is set" is applied.
-> 
-> The commits for the Btrfs kernel module can be found at
-> https://github.com/chandanr/linux/tree/btrfs/subpagesize-blocksize.
-> 
-> The commits for Btrfs-progs can be found at
-> https://github.com/chandanr/btrfs-progs/tree/btrfs/subpagesize-blocksize.
-> 
-> Changes from V11:
-> 1. Addressed the review comments provided by Liu Bo for version V11.
-> 2. Fixed file defragmentation code to work in subpagesize-blocksize
->    scenario.
-> 3. Many "hard to reproduce" bugs were fixed.
-> 
-> fstests run status:
-> 1. On x86_64, all the tests (i.e. both generic and btrfs specific
->    tests) pass
->    - With 2k and 4k data blocksize combinations.
->    - With and without nodatacow option.
-> 2. On ppc64, generic tests were run with 4k data block size and 16k
->    metadata block size. generic/300 fails because of an issue with the
->    fio tool. The failure is seen even when running the test for other
->    filesystems (i.e. ext4 and xfs).
+Hi, David Sterba
 
-One more mistake from my side. On x86_64, For 2k block size, only generic
-tests were run (since the goal was to get regular I/O upstreamed first and
-then get the features upstreamed in subsequent releases).
+> -----Original Message-----
+> From: David Sterba [mailto:dsterba@suse.cz]
+> Sent: Friday, October 30, 2015 9:36 PM
+> To: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Cc: linux-btrfs@vger.kernel.org
+> Subject: Re: [PATCH 5/6] btrfs-progs: free comparer_set in cmd_qgroup_show
+> 
+> On Thu, Oct 29, 2015 at 05:31:47PM +0800, Zhao Lei wrote:
+> > comparer_set, which was allocated by malloc(), should be free before
+> > function return.
+> >
+> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> > ---
+> >  cmds-qgroup.c | 4 +++-
+> >  1 file changed, 3 insertions(+), 1 deletion(-)
+> >
+> > diff --git a/cmds-qgroup.c b/cmds-qgroup.c index a64b716..f069d32
+> > 100644
+> > --- a/cmds-qgroup.c
+> > +++ b/cmds-qgroup.c
+> > @@ -290,7 +290,7 @@ static int cmd_qgroup_show(int argc, char **argv)
+> >  	int filter_flag = 0;
+> >  	unsigned unit_mode;
+> >
+> > -	struct btrfs_qgroup_comparer_set *comparer_set;
+> > +	struct btrfs_qgroup_comparer_set *comparer_set = NULL;
+> >  	struct btrfs_qgroup_filter_set *filter_set;
+> >  	filter_set = btrfs_qgroup_alloc_filter_set();
+> >  	comparer_set = btrfs_qgroup_alloc_comparer_set();
+> > @@ -372,6 +372,8 @@ static int cmd_qgroup_show(int argc, char **argv)
+> >  		fprintf(stderr, "ERROR: can't list qgroups: %s\n",
+> >  				strerror(e));
+> >
+> > +	free(comparer_set);
+> 
+> Doh, coverity correctly found that comparer_set is freed inside
+> btrfs_show_qgroups() a few lines above. Patch dropped.
+> 
+My bad.
 
-However, On x86_64, with 4k block size, all the tests (i.e. generic and btrfs
-specific) pass indicating that the changes do not cause any regression in
-other Btrfs features.
+This problem is find in my node by valgrind memckeck, maybe it
+is not freed in some case, or a valgrind misreport.
+I'll check it deeply.
 
--- 
-chandan
+Thanks
+Zhaolei
+
+> > +
 

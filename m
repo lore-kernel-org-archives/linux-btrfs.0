@@ -1,46 +1,167 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:36951 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1758691AbbKSPBd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 10:01:33 -0500
-Date: Thu, 19 Nov 2015 10:01:25 -0500
-From: Chris Mason <clm@fb.com>
-To: <dsterba@suse.cz>, Filipe Manana <fdmanana@gmail.com>,
-        Justin Maggard <jmaggard10@gmail.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Justin Maggard <jmaggard@netgear.com>
-Subject: Re: [PATCH] btrfs: qgroup: fix quota disable during rescan
-Message-ID: <20151119150125.GA9887@ret.masoncoding.com>
-References: <1446835002-11751-1-git-send-email-jmaggard@netgear.com>
- <20151119130827.GC31035@twin.jikos.cz>
- <CAL3q7H4vJKPKArZL1JWghHQU+JKqgXA8b0C5fr9+19TPHJKH1Q@mail.gmail.com>
- <20151119132047.GD31035@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <20151119132047.GD31035@twin.jikos.cz>
+Received: from mail.kernel.org ([198.145.29.136]:53405 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751394AbbKBMcz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 2 Nov 2015 07:32:55 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix hole punching when using the no-holes feature
+Date: Mon,  2 Nov 2015 12:32:44 +0000
+Message-Id: <1446467564-32173-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 19, 2015 at 02:20:47PM +0100, David Sterba wrote:
-> On Thu, Nov 19, 2015 at 01:16:42PM +0000, Filipe Manana wrote:
-> > On Thu, Nov 19, 2015 at 1:08 PM, David Sterba <dsterba@suse.cz> wrote:
-> > > Hi,
-> > >
-> > > On Fri, Nov 06, 2015 at 10:36:42AM -0800, Justin Maggard wrote:
-> > >> There's a race condition that leads to a NULL pointer dereference if you
-> > >> disable quotas while a quota rescan is running.  To fix this, we just need
-> > >> to wait for the quota rescan worker to actually exit before tearing down
-> > >> the quota structures.
-> > >
-> > > I see a reproducible crash in btrfs/115 (the fstest for this patch).
-> > > This is with 4.4-rc1, so the patch is included:
-> > 
-> > That's the expected crash, the patch isn't in 4.4-rc1.
-> 
-> Aha, thanks. I got confused with the other fix, "btrfs: qgroup: exit
-> the rescan worker during umount".
+From: Filipe Manana <fdmanana@suse.com>
 
-Me too, sorry Justin I'll get the other one too.
+When we are using the no-holes feature, if we punch a hole into a file
+range that already contains a hole which overlaps the range we are passing
+to fallocate(), we end up removing the extent map that represents the
+existing hole without adding a new one. This happens because with the
+no-holes feature we do not have explicit extent items to represent holes
+and therefore the call to __btrfs_drop_extents(), made from
+btrfs_punch_hole(), returns an end offset to the variable drop_end that
+is smaller than the end of the range passed to fallocate(), while it
+drops all existing extent maps in that range.
+Normally having a missing extent map is not a problem, for example for
+a readpages() operation we just end up building the extent map by
+looking at the fs/subvol tree for a matching extent item (or a lack of
+one for implicit holes). However for an fsync that uses the fast path,
+which needs to look at the list of modified extent maps, this means
+the fsync will not record information about the complete hole we had
+before the fallocate() call into the log tree, resulting in a file with
+content/layout that does not match what we had neither before nor after
+the hole punch operation.
 
--chris
+The following test case for fstests reproduces the issue. It fails without
+this change because we get a file with a different digest after the fsync
+log replay and also with a different extent/hole layout.
+
+  seq=`basename $0`
+  seqres=$RESULT_DIR/$seq
+  echo "QA output created by $seq"
+  tmp=/tmp/$$
+  status=1	# failure is the default!
+  trap "_cleanup; exit \$status" 0 1 2 3 15
+
+  _cleanup()
+  {
+     _cleanup_flakey
+     rm -f $tmp.*
+  }
+
+  # get standard environment, filters and checks
+  . ./common/rc
+  . ./common/filter
+  . ./common/punch
+  . ./common/dmflakey
+
+  # real QA test starts here
+  _need_to_be_root
+  _supported_fs generic
+  _supported_os Linux
+  _require_scratch
+  _require_xfs_io_command "fpunch"
+  _require_xfs_io_command "fiemap"
+  _require_dm_target flakey
+  _require_metadata_journaling $SCRATCH_DEV
+
+  # This test was motivated by an issue found in btrfs when the btrfs
+  # no-holes feature is enabled (introduced in kernel 3.14). So enable
+  # the feature if the fs being tested is btrfs.
+  if [ $FSTYP == "btrfs" ]; then
+      _require_btrfs_fs_feature "no_holes"
+      _require_btrfs_mkfs_feature "no-holes"
+      MKFS_OPTIONS="$MKFS_OPTIONS -O no-holes"
+  fi
+
+  rm -f $seqres.full
+
+  _scratch_mkfs >>$seqres.full 2>&1
+  _init_flakey
+  _mount_flakey
+
+  # Create out test file with some data and then fsync it.
+  # We do the fsync only to make sure the last fsync we do in this test
+  # triggers the fast code path of btrfs' fsync implementation, a
+  # condition necessary to trigger the bug btrfs had.
+  $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 128K" \
+                  -c "fsync"                  \
+                  $SCRATCH_MNT/foobar | _filter_xfs_io
+
+  # Now punch a hole against the range [96K, 128K[.
+  $XFS_IO_PROG -c "fpunch 96K 32K" $SCRATCH_MNT/foobar
+
+  # Punch another hole against a range that overlaps the previous range
+  # and ends beyond eof.
+  $XFS_IO_PROG -c "fpunch 64K 128K" $SCRATCH_MNT/foobar
+
+  # Punch another hole against a range that overlaps the first range
+  # ([96K, 128K[) and ends at eof.
+  $XFS_IO_PROG -c "fpunch 32K 96K" $SCRATCH_MNT/foobar
+
+  # Fsync our file. We want to verify that, after a power failure and
+  # mounting the filesystem again, the file content reflects all the hole
+  # punch operations.
+  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
+
+  echo "File digest before power failure:"
+  md5sum $SCRATCH_MNT/foobar | _filter_scratch
+
+  echo "Fiemap before power failure:"
+  $XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foobar | _filter_fiemap
+
+  # Silently drop all writes and umount to simulate a crash/power failure.
+  _load_flakey_table $FLAKEY_DROP_WRITES
+  _unmount_flakey
+
+  # Allow writes again, mount to trigger log replay and validate file
+  # contents.
+  _load_flakey_table $FLAKEY_ALLOW_WRITES
+  _mount_flakey
+
+  echo "File digest after log replay:"
+  # Must match the same digest we got before the power failure.
+  md5sum $SCRATCH_MNT/foobar | _filter_scratch
+
+  echo "Fiemap after log replay:"
+  # Must match the same extent listing we got before the power failure.
+  $XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foobar | _filter_fiemap
+
+  _unmount_flakey
+
+  status=0
+  exit
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/file.c | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 381be79..0c48d94 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -2489,6 +2489,19 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+ 
+ 	trans->block_rsv = &root->fs_info->trans_block_rsv;
+ 	/*
++	 * If we are using the NO_HOLES feature we might have had already an
++	 * hole that overlaps a part of the region [lockstart, lockend] and
++	 * ends at (or beyond) lockend. Since we have no file extent items to
++	 * represent holes, drop_end can be less than lockend and so we must
++	 * make sure we have an extent map representing the existing hole (the
++	 * call to __btrfs_drop_extents() might have dropped the existing extent
++	 * map representing the existing hole), otherwise the fast fsync path
++	 * will not record the existence of the hole region
++	 * [existing_hole_start, lockend].
++	 */
++	if (drop_end <= lockend)
++		drop_end = lockend + 1;
++	/*
+ 	 * Don't insert file hole extent item if it's for a range beyond eof
+ 	 * (because it's useless) or if it represents a 0 bytes range (when
+ 	 * cur_offset == drop_end).
+-- 
+2.1.3
+

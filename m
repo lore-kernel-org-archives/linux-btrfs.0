@@ -1,94 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47840 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752708AbbKCBiZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Nov 2015 20:38:25 -0500
-From: Neil Brown <neil@brown.name>
-To: Chris Mason <clm@fb.com>, "J. Bruce Fields" <bfields@fieldses.org>
-Date: Tue, 03 Nov 2015 12:38:15 +1100
-Cc: Al Viro <viro@ZenIV.linux.org.uk>, Christoph Hellwig <hch@infradead.org>,
-        Linux btrfs Developers List <linux-btrfs@vger.kernel.org>,
-        Linux FS-devel Mailing List <linux-fsdevel@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: Re: [PATCH/RFC] make btrfs subvol mounts appear in /proc/mounts
-In-Reply-To: <20151102210347.GA20170@ret.masoncoding.com>
-References: <87oafkc5kp.fsf@notabene.neil.brown.name> <20151102205012.GA26986@fieldses.org> <20151102210347.GA20170@ret.masoncoding.com>
-Message-ID: <87ziyvj20o.fsf@notabene.neil.brown.name>
+Received: from mail-qk0-f174.google.com ([209.85.220.174]:33348 "EHLO
+	mail-qk0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753983AbbKCCBi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Nov 2015 21:01:38 -0500
+Received: by qkdl128 with SMTP id l128so1135640qkd.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 02 Nov 2015 18:01:37 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; boundary="=-=-=";
-	micalg=pgp-sha256; protocol="application/pgp-signature"
+In-Reply-To: <5623A943.2030304@googlemail.com>
+References: <CAGwxe4j7J5ztPk-OyeOuX2YH6SO3G9_h6VU_1wWMdP4rHpqiew@mail.gmail.com>
+ <5623A943.2030304@googlemail.com>
+From: Tobias Holst <tobby@tobby.eu>
+Date: Tue, 3 Nov 2015 03:01:18 +0100
+Message-ID: <CAGwxe4gogBG8_F6W0iAA7H02jyQOnjm+dYSL74-rpWEgDTUZsg@mail.gmail.com>
+Subject: Re: "free_raid_bio" crash on RAID6
+To: Philip Seeger <p0h0i0l0i0p@gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
---=-=-=
-Content-Type: text/plain
-Content-Transfer-Encoding: quoted-printable
+Hi
 
-On Tue, Nov 03 2015, Chris Mason wrote:
+No, I never figured this out... After a while of waiting for answers I
+just started over and took the data from my backup.
 
-> On Mon, Nov 02, 2015 at 03:50:12PM -0500, J. Bruce Fields wrote:
->> On Wed, Oct 28, 2015 at 07:25:10AM +0900, Neil Brown wrote:
->> >=20
->> > If you create a subvolume in btrfs and access it (by name) without
->> > mounting it, then the subvolume looks like a separate mount to some
->> > extent, returning a different st_dev to stat(), but it doesn't look li=
-ke
->> > a separate mount in that it isn't listed in /proc/mounts. This
->> > inconsistency can confuse tools.
->> >=20
->> > This patch causes these subvolumes to become separate mounts by using
->> > the VFS' automount functionality, much like NFS uses automount when it
->> > discovered mountpoints on the server.
->> >=20
->> > The VFS currently makes it impossible to auto-mount a directory on to =
-itself
->> > (i.e. a bind mount).  For NFS this isn't a problem as a new superblock
->> > is created for the child filesystem so there are two separate dentries
->> > (and inodes) for the one directory: one in the parent filesystem, one =
-in
->> > the child (note that the two superblocks share a common connection to
->> > the server so there is still a lot of commonality).
->> >=20
->> > BTRFS has chosen instead to use a single superblock for all subvolumes.
->>=20
->> Naive question: was there a reason for that choice?
+> Did you try removing the bad drive and did the system keep crashing anyway?
+
+As you can see in my first mail the drive was already removed when
+this error started to happen ("some devices missing"). ;)
+
+Regards,
+Tobias
+
+
+2015-10-18 16:14 GMT+02:00 Philip Seeger <p0h0i0l0i0p@gmail.com>:
+> Hi Tobias
 >
-> They are really all part of the same FS, the single super better fits.
-> Or said another way, it felt like there would be dramatically more duct
-> tape around supers-per-subvolume than there was abusing st_dev.
+> On 07/20/2015 06:20 PM, Tobias Holst wrote:
+>>
+>> My btrfs-RAID6 seems to be broken again :(
+>>
+>> When reading from it I get several of these:
+>> [  176.349943] BTRFS info (device dm-4): csum failed ino 1287707
+>> extent 21274957705216 csum 2830458701 wanted 426660650 mirror 2
+>>
+>> then followed by a "free_raid_bio"-crash:
+>>
+>> [  176.349961] ------------[ cut here ]------------
+>> [  176.349981] WARNING: CPU: 6 PID: 110 at
+>> /home/kernel/COD/linux/fs/btrfs/raid56.c:831
+>> __free_raid_bio+0xfc/0x130 [btrfs]()
+>> ...
 >
-> Neil's patch came up after I told him a few of us had tried to do the
-> same thing and failed to find clean vfs changes to make it possible...he
-> took it as a challenge.  Now I have to remember what it was about our
-> past attempts that I didn't like.
 >
-> I'll test this and queue for 4.5 if it all works out, thanks Neil!
-
-I'd rather resend with proper documentation updates and s-o-b before it
-gets queued if that is OK.  So once you are happy, please let me know
-and I'll do it "properly".
-
-Thanks,
-NeilBrown
-
---=-=-=
-Content-Type: application/pgp-signature; name="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQIcBAEBCAAGBQJWOBAHAAoJEDnsnt1WYoG576QP/1NraHVqNCrj7ovzkcDUgyF1
-6rZMOEtMdmVdcoNeHk4bRnZnAZqluaZrsK2ni7MYi7RgTWFmT7UmiuRNDvM1hx9R
-NMWmUoso1wtL3uv8e0C5aRgwLNjrhd+LopLgBquv5OqKkIaQxPGoY8TNT+6zDTRg
-8q4dvJaYNMmb3MEQp771tc2XDHgdSBKOsXmVM0bEl+1j5UobctNwWWw64eNIq4vr
-T3kWFqnPrNsoLUkOnOmT47jVVBXG+phbnFtkR4UcXorCYg8hzO/k5j1CrZ+BCR3k
-yUxOCMNx14D98y1ybbJL7nFdmR+6e9jCcK1faRZBXH8KzLI+p4UGYCOEqO8IPIZQ
-HKXj+isVynImpSjSCb8lye4ThAj+huPJYRlLGMpZCqbHj3/ud/izGNpJIhk23ruP
-VcZKV81FbN1Qiks1wgdZCtN9SbUupBQxwDd86f5uyXEPicmYVsMvh50H6AmeWx1M
-++7ZFNcPP5RLOd5QD5llOZv0JtvhGHOhoRQzFKwe02Fp4/1PR5IqSDLjUrRMeH//
-mnYLwSjNRGlXD/wgHuNkVugV76qvfj/E3jva1kKeS0WeXcvAILLFrr1g1Bi14sm3
-h+ndbLxJ4Y+uM69EHMhkGwxB6azAepd0TzrulOUmbirgU/SxB/uP+T40s3vJsv0s
-DRH9r+82jMkohjmxN9Gd
-=+HAj
------END PGP SIGNATURE-----
---=-=-=--
+> It's been 3 months now, have you ever figured this out? Do you know if the
+> bug has been identified and fixed or have you filed a bugzilla report?
+>
+>> One drive is broken, so at the moment it is mounted with "-O
+>> defaults,ro,degraded,recovery,compress=lzo,space_cache,subvol=raid".
+>
+>
+> Did you try removing the bad drive and did the system keep crashing anyway?
+>
+>
+>
+> Philip
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,78 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:30113 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:56691 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751677AbbKBIec (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Nov 2015 03:34:32 -0500
-Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tA28XiQ7011896
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Nov 2015 16:33:44 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: show-super: Add option to print superblock at given bytenr
-Date: Mon,  2 Nov 2015 16:34:19 +0800
-Message-Id: <1446453259-31917-1-git-send-email-quwenruo@cn.fujitsu.com>
+	with ESMTP id S1752252AbbKCHBI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2015 02:01:08 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tA33Onkv022157
+	for <linux-btrfs@vger.kernel.org>; Tue, 3 Nov 2015 11:24:50 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs-progs: mkfs: Round device size down to sectorsize
+Date: Tue, 3 Nov 2015 11:23:36 +0800
+Message-ID: <4372105ede489b71eec1af7720117900ddb6e427.1446520971.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add '-s <sb_bytenr>' option to show superblock at given bytenr.
+When do following command in a vm, whose disks are created by
+qemu-img create -f raw 11 2.6G:
+ # mkfs.btrfs -f /dev/vdd /dev/vde /dev/vdf
+ # btrfs-show-super /dev/vdd /dev/vde /dev/vdf | grep dev_item.total_bytes
+ dev_item.total_bytes    2791727104
+ dev_item.total_bytes    2791729152
+ dev_item.total_bytes    2791729152
+We can see that the first device's size is little smaller.
 
-This is very useful to debug non-standard btrfs, like debuging the
-1st stage btrfs of btrfs-convert.
+And it fails xfstests btrfs/011.
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reason:
+ First device's size is rounded down to sectorsize in make_btrfs(),
+ but other devices are not.
+
+Fix:
+ Round down remain devices' size in btrfs_add_to_fsid().
+
+Reported-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- Documentation/btrfs-show-super.asciidoc | 5 +++++
- btrfs-show-super.c                      | 7 ++++++-
- 2 files changed, 11 insertions(+), 1 deletion(-)
+ utils.c | 2 ++
+ 1 file changed, 2 insertions(+)
 
-diff --git a/Documentation/btrfs-show-super.asciidoc b/Documentation/btrfs-show-super.asciidoc
-index 1646be3..3480a3d 100644
---- a/Documentation/btrfs-show-super.asciidoc
-+++ b/Documentation/btrfs-show-super.asciidoc
-@@ -40,6 +40,11 @@ If several '-i <super_mirror>' are given, only the last one is valid.
- Attempt to print the superblock even if no superblock magic is found.  May end
- badly.
+diff --git a/utils.c b/utils.c
+index d17291a..b7752df 100644
+--- a/utils.c
++++ b/utils.c
+@@ -736,6 +736,8 @@ int btrfs_add_to_fsid(struct btrfs_trans_handle *trans,
+ 	u64 num_devs;
+ 	int ret;
  
-+-s <super_bytenr>::
-+Specifiy the superblock bytenr.
-++
-+Used for debug purpose. Disable '-f' option.
++	device_total_bytes = (device_total_bytes / sectorsize) * sectorsize;
 +
- EXIT STATUS
- -----------
- *btrfs-show-super* will return 0 if no error happened.
-diff --git a/btrfs-show-super.c b/btrfs-show-super.c
-index 27414c8..7b499e4 100644
---- a/btrfs-show-super.c
-+++ b/btrfs-show-super.c
-@@ -48,6 +48,7 @@ static void print_usage(void)
- 	fprintf(stderr, "\t-a : print information of all superblocks\n");
- 	fprintf(stderr, "\t-i <super_mirror> : specify which mirror to print out\n");
- 	fprintf(stderr, "\t-F : attempt to dump superblocks with bad magic\n");
-+	fprintf(stderr, "\t-s <bytenr> : specify the superblock bytenr\n");
- 	fprintf(stderr, "%s\n", PACKAGE_STRING);
- }
- 
-@@ -63,7 +64,7 @@ int main(int argc, char **argv)
- 	u64 arg;
- 	u64 sb_bytenr = btrfs_sb_offset(0);
- 
--	while ((opt = getopt(argc, argv, "fFai:")) != -1) {
-+	while ((opt = getopt(argc, argv, "fFai:s:")) != -1) {
- 		switch (opt) {
- 		case 'i':
- 			arg = arg_strtou64(optarg);
-@@ -86,6 +87,10 @@ int main(int argc, char **argv)
- 		case 'F':
- 			force = 1;
- 			break;
-+		case 's':
-+			sb_bytenr = arg_strtou64(optarg);
-+			all = 0;
-+			break;
- 		default:
- 			print_usage();
- 			exit(1);
+ 	device = kzalloc(sizeof(*device), GFP_NOFS);
+ 	if (!device)
+ 		goto err_nomem;
 -- 
-2.6.2
+1.8.5.1
 

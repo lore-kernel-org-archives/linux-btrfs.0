@@ -1,49 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52523 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53415 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752578AbbKCMCU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Nov 2015 07:02:20 -0500
-Date: Tue, 3 Nov 2015 13:00:50 +0100
+	id S1751288AbbKCMNd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 3 Nov 2015 07:13:33 -0500
+Date: Tue, 3 Nov 2015 13:12:03 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 1/2] btrfs-progs: mkfs: output device list in sorted order
-Message-ID: <20151103120050.GJ13624@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: print-tree: Output stripe dev uuid
+Message-ID: <20151103121203.GK13624@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <0e4f0ae269fdaf041e1f53d2460e92ac3f926b88.1446548572.git.zhaolei@cn.fujitsu.com>
+References: <1446533289-30373-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <0e4f0ae269fdaf041e1f53d2460e92ac3f926b88.1446548572.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <1446533289-30373-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Nov 03, 2015 at 07:03:00PM +0800, Zhao Lei wrote:
-> list_for_each_entry_reverse() in current code can not output
-> devices in sorted order, because the sequence are broken in
-> btrfs_alloc_chunk().
+On Tue, Nov 03, 2015 at 02:48:09PM +0800, Qu Wenruo wrote:
+> Add output for dev uuid for print_chunk().
 > 
-> We can use list_sort() instead.
+> Quite useful to debug temporary btrfs in btrfs-convert.
 > 
-> Before patch:
->  # mkfs.btrfs -f /dev/vdd /dev/vde /dev/vdf
->  ...
->  Number of devices:  3
->  Devices:
->     ID        SIZE  PATH
->      3     2.60GiB  /dev/vdf
->      1     2.60GiB  /dev/vdd
->      2     2.60GiB  /dev/vde
-> 
-> After patch:
->  # mkfs.btrfs -f /dev/vdd /dev/vde /dev/vdf
->  ...
->  Number of devices:  3
->  Devices:
->     ID        SIZE  PATH
->      1     2.60GiB  /dev/vdd
->      2     2.60GiB  /dev/vde
->      3     2.60GiB  /dev/vdf
-> 
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 
-Nice, thanks.
+Applied, thanks.

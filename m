@@ -1,278 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:45456 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932554AbbKDKJc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Nov 2015 05:09:32 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix extent accounting for partial direct IO writes
-Date: Wed,  4 Nov 2015 10:09:23 +0000
-Message-Id: <1446631763-9076-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-qk0-f173.google.com ([209.85.220.173]:35901 "EHLO
+	mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755880AbbKCSN5 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2015 13:13:57 -0500
+Received: by qkcl124 with SMTP id l124so10008279qkc.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2015 10:13:56 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <560E6ED2.4050306@gmail.com>
+References: <cover.1443583874.git.osandov@osandov.com> <560E6ED2.4050306@gmail.com>
+From: Tobias Holst <tobby@tobby.eu>
+Date: Tue, 3 Nov 2015 19:13:37 +0100
+Message-ID: <CAGwxe4hxRZNObdkPKikNUux2w94_UfyAKXEaBNY5UyK6b+LKuw@mail.gmail.com>
+Subject: Re: [PATCH v4 0/9] Btrfs: free space B-tree
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Omar Sandoval <osandov@osandov.com>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Hi
 
-When doing a write using direct IO we can end up not doing the whole write
-operation using the direct IO path, in that case we fallback to a buffered
-write to do the remaining IO. This happens for example if the range we are
-writing to contains a compressed extent.
-When we do a partial write and fallback to buffered IO, due to the
-existence of a compressed extent for example, we end up not adjusting the
-outstanding extents counter of our inode which ends up getting decremented
-twice, once by the DIO ordered extent for the partial write and once again
-by btrfs_direct_IO(), resulting in an arithmetic underflow at
-extent-tree.c:drop_outstanding_extent(). For example if we have:
+Anything new on this topic?
 
-  extents        [ prealloc extent ] [ compressed extent ]
-  offsets        A        B          C       D           E
+I think it would be a great thing and should be merged as soon as it
+is stable. :)
 
-and at the moment our inode's outstanding extents counter is 0, if we do a
-direct IO write against the range [B, D[ (which has a length smaller than
-128Mb), we end up bumping our inode's outstanding extents counter to 1, we
-create a DIO ordered extent for the range [B, C[ and then fallback to a
-buffered write for the range [C, D[. The direct IO handler
-(inode.c:btrfs_direct_IO()) decrements the outstanding extents counter by
-1, leaving it with a value of 0, through a call to
-btrfs_delalloc_release_space() and then shortly after the DIO ordered
-extent finishes and calls btrfs_delalloc_release_metadata() which ends
-up to attempt to decrement the inode's outstanding extents counter by 1,
-resulting in an assertion failure at drop_outstanding_extent() because
-the operation would result in an arithmetic underflow (0 - 1). This
-produces the following trace:
+Regards,
+Tobias
 
-  [125471.336838] BTRFS: assertion failed: BTRFS_I(inode)->outstanding_extents >= num_extents, file: fs/btrfs/extent-tree.c, line: 5526
-  [125471.338844] ------------[ cut here ]------------
-  [125471.340745] kernel BUG at fs/btrfs/ctree.h:4173!
-  [125471.340745] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-  [125471.340745] Modules linked in: btrfs f2fs xfs libcrc32c dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc acpi_cpufreq psmouse i2c_piix4 parport pcspkr serio_raw microcode processor evdev i2c_core button ext4 crc16 jbd2 mbcache sd_mod sg sr_mod cdrom ata_generic virtio_scsi ata_piix virtio_pci virtio_ring floppy libata virtio e1000 scsi_mod [last unloaded: btrfs]
-  [125471.340745] CPU: 10 PID: 23649 Comm: kworker/u32:1 Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
-  [125471.340745] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
-  [125471.340745] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
-  [125471.340745] task: ffff8804244fcf80 ti: ffff88040a118000 task.ti: ffff88040a118000
-  [125471.340745] RIP: 0010:[<ffffffffa0550da1>]  [<ffffffffa0550da1>] assfail.constprop.46+0x1e/0x20 [btrfs]
-  [125471.340745] RSP: 0018:ffff88040a11bc78  EFLAGS: 00010296
-  [125471.340745] RAX: 0000000000000075 RBX: 0000000000005000 RCX: 0000000000000000
-  [125471.340745] RDX: ffffffff81098f93 RSI: ffffffff8147c619 RDI: 00000000ffffffff
-  [125471.340745] RBP: ffff88040a11bc78 R08: 0000000000000001 R09: 0000000000000000
-  [125471.340745] R10: ffff88040a11bc08 R11: ffffffff81651000 R12: ffff8803efb4a000
-  [125471.340745] R13: ffff8803efb4a000 R14: 0000000000000000 R15: ffff8802f8e33c88
-  [125471.340745] FS:  0000000000000000(0000) GS:ffff88043dd40000(0000) knlGS:0000000000000000
-  [125471.340745] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-  [125471.340745] CR2: 00007fae7ca86095 CR3: 0000000001a0b000 CR4: 00000000000006e0
-  [125471.340745] Stack:
-  [125471.340745]  ffff88040a11bc88 ffffffffa04ca0cd ffff88040a11bcc8 ffffffffa04ceeb1
-  [125471.340745]  ffff8802f8e33940 ffff8802c93eadb0 ffff8802f8e0bf50 ffff8803efb4a000
-  [125471.340745]  0000000000000000 ffff8802f8e33c88 ffff88040a11bd38 ffffffffa04eccfa
-  [125471.340745] Call Trace:
-  [125471.340745]  [<ffffffffa04ca0cd>] drop_outstanding_extent+0x3d/0x6d [btrfs]
-  [125471.340745]  [<ffffffffa04ceeb1>] btrfs_delalloc_release_metadata+0x51/0xdd [btrfs]
-  [125471.340745]  [<ffffffffa04eccfa>] btrfs_finish_ordered_io+0x420/0x4eb [btrfs]
-  [125471.340745]  [<ffffffffa04ecdda>] finish_ordered_fn+0x15/0x17 [btrfs]
-  [125471.340745]  [<ffffffffa050e6e8>] normal_work_helper+0x14c/0x32a [btrfs]
-  [125471.340745]  [<ffffffffa050e9c8>] btrfs_endio_write_helper+0x12/0x14 [btrfs]
-  [125471.340745]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
-  [125471.340745]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
-  [125471.340745]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
-  [125471.340745]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
-  [125471.340745]  [<ffffffff8106904d>] kthread+0xef/0xf7
-  [125471.340745]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
-  [125471.340745]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
-  [125471.340745]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
-  [125471.340745] Code: a5 55 a0 48 89 e5 e8 42 50 bc e0 0f 0b 55 89 f1 48 c7 c2 f0 a8 55 a0 48 89 fe 31 c0 48 c7 c7 14 aa 55 a0 48 89 e5 e8 22 50 bc e0 <0f> 0b 0f 1f 44 00 00 55 31 c9 ba 18 00 00 00 48 89 e5 41 56 41
-  [125471.340745] RIP  [<ffffffffa0550da1>] assfail.constprop.46+0x1e/0x20 [btrfs]
-  [125471.340745]  RSP <ffff88040a11bc78>
-  [125471.539620] ---[ end trace 144259f7838b4aa4 ]---
 
-So fix this by ensuring we adjust the outstanding extents counter when we
-do the fallback just like we do for the case where the whole write can be
-done through the direct IO path.
-
-We were also adjusting the outstanding extents counter by a constant value
-of 1, which is incorrect because we were ignorning that we account extents
-in BTRFS_MAX_EXTENT_SIZE units, o fix that as well.
-
-The following test case for fstests reproduces this issue:
-
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      rm -f $tmp.*
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-
-  # real QA test starts here
-  _need_to_be_root
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-  _require_xfs_io_command "falloc"
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >>$seqres.full 2>&1
-  _scratch_mount "-o compress"
-
-  # Create a compressed extent covering the range [700K, 800K[.
-  $XFS_IO_PROG -f -s -c "pwrite -S 0xaa -b 100K 700K 100K" \
-      $SCRATCH_MNT/foo | _filter_xfs_io
-
-  # Create prealloc extent covering the range [600K, 700K[.
-  $XFS_IO_PROG -c "falloc 600K 100K" $SCRATCH_MNT/foo
-
-  # Write 80K of data to the range [640K, 720K[ using direct IO. This
-  # range covers both the prealloc extent and the compressed extent.
-  # Because there's a compressed extent in the range we are writing to,
-  # the DIO write code path ends up only writing the first 60k of data,
-  # which goes to the prealloc extent, and then falls back to buffered IO
-  # for writing the remaining 20K of data - because that remaining data
-  # maps to a file range containing a compressed extent.
-  # When falling back to buffered IO, we used to trigger an assertion when
-  # releasing reserved space due to bad accounting of the inode's
-  # outstanding extents counter, which was set to 1 but we ended up
-  # decrementing it by 1 twice, once through the ordered extent for the
-  # 60K of data we wrote using direct IO, and once through the main direct
-  # IO handler (inode.cbtrfs_direct_IO()) because the direct IO write
-  # wrote less than 80K of data (60K).
-  $XFS_IO_PROG -d -c "pwrite -S 0xbb -b 80K 640K 80K" \
-      $SCRATCH_MNT/foo | _filter_xfs_io
-
-  # Now similar test as above but for very large write operations. This
-  # triggers special cases for an inode's outstanding extents accounting,
-  # as internally btrfs logically splits extents into 128Mb units.
-  $XFS_IO_PROG -f -s \
-      -c "pwrite -S 0xaa -b 128M 258M 128M" \
-      -c "falloc 0 258M" \
-      $SCRATCH_MNT/bar | _filter_xfs_io
-  $XFS_IO_PROG -d -c "pwrite -S 0xbb -b 256M 3M 256M" $SCRATCH_MNT/bar \
-      | _filter_xfs_io
-
-  # Now verify the file contents are correct and that they are the same
-  # even after unmounting and mounting the fs again (or evicting the page
-  # cache).
-  #
-  # For file foo, all bytes in the range [0, 640K[ must have a value of
-  # 0x00, all bytes in the range [640K, 720K[ must have a value of 0xbb
-  # and all bytes in the range [720K, 800K[ must have a value of 0xaa.
-  #
-  # For file bar, all bytes in the range [0, 3M[ must havea value of 0x00,
-  # all bytes in the range [3M, 259M[ must have a value of 0xbb and all
-  # bytes in the range [259M, 386M[ must have a value of 0xaa.
-  #
-  echo "File digests before remounting the file system:"
-  md5sum $SCRATCH_MNT/foo | _filter_scratch
-  md5sum $SCRATCH_MNT/bar | _filter_scratch
-  _scratch_remount
-  echo "File digests after remounting the file system:"
-  md5sum $SCRATCH_MNT/foo | _filter_scratch
-  md5sum $SCRATCH_MNT/bar | _filter_scratch
-
-  status=0
-  exit
-
-Fixes: e1cbbfa5f5aa ("Btrfs: fix outstanding_extents accounting in DIO")
-Fixes: 3e05bde8c3c2 ("Btrfs: only adjust outstanding_extents when we do a short write")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c | 52 +++++++++++++++++++++++++++++++++++++---------------
- 1 file changed, 37 insertions(+), 15 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 4439fbb..6138eea 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7506,6 +7506,28 @@ struct btrfs_dio_data {
- 	u64 reserve;
- };
- 
-+static void adjust_dio_outstanding_extents(struct inode *inode,
-+					   struct btrfs_dio_data *dio_data,
-+					   const u64 len)
-+{
-+	unsigned num_extents;
-+
-+	num_extents = (unsigned) div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
-+					   BTRFS_MAX_EXTENT_SIZE);
-+	/*
-+	 * If we have an outstanding_extents count still set then we're
-+	 * within our reservation, otherwise we need to adjust our inode
-+	 * counter appropriately.
-+	 */
-+	if (dio_data->outstanding_extents) {
-+		dio_data->outstanding_extents -= num_extents;
-+	} else {
-+		spin_lock(&BTRFS_I(inode)->lock);
-+		BTRFS_I(inode)->outstanding_extents += num_extents;
-+		spin_unlock(&BTRFS_I(inode)->lock);
-+	}
-+}
-+
- static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 				   struct buffer_head *bh_result, int create)
- {
-@@ -7541,8 +7563,11 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
- 	 * If this errors out it's because we couldn't invalidate pagecache for
- 	 * this range and we need to fallback to buffered.
- 	 */
--	if (lock_extent_direct(inode, lockstart, lockend, &cached_state, create))
--		return -ENOTBLK;
-+	if (lock_extent_direct(inode, lockstart, lockend, &cached_state,
-+			       create)) {
-+		ret = -ENOTBLK;
-+		goto err;
-+	}
- 
- 	em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
- 	if (IS_ERR(em)) {
-@@ -7660,19 +7685,7 @@ unlock:
- 		if (start + len > i_size_read(inode))
- 			i_size_write(inode, start + len);
- 
--		/*
--		 * If we have an outstanding_extents count still set then we're
--		 * within our reservation, otherwise we need to adjust our inode
--		 * counter appropriately.
--		 */
--		if (dio_data->outstanding_extents) {
--			(dio_data->outstanding_extents)--;
--		} else {
--			spin_lock(&BTRFS_I(inode)->lock);
--			BTRFS_I(inode)->outstanding_extents++;
--			spin_unlock(&BTRFS_I(inode)->lock);
--		}
--
-+		adjust_dio_outstanding_extents(inode, dio_data, len);
- 		btrfs_free_reserved_data_space(inode, start, len);
- 		WARN_ON(dio_data->reserve < len);
- 		dio_data->reserve -= len;
-@@ -7699,8 +7712,17 @@ unlock:
- unlock_err:
- 	clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
- 			 unlock_bits, 1, 0, &cached_state, GFP_NOFS);
-+err:
- 	if (dio_data)
- 		current->journal_info = dio_data;
-+	/*
-+	 * Compensate the delalloc release we do in btrfs_direct_IO() when we
-+	 * write less data then expected, so that we don't underflow our inode's
-+	 * outstanding extents counter.
-+	 */
-+	if (create && dio_data)
-+		adjust_dio_outstanding_extents(inode, dio_data, len);
-+
- 	return ret;
- }
- 
--- 
-2.1.3
-
+2015-10-02 13:47 GMT+02:00 Austin S Hemmelgarn <ahferroin7@gmail.com>:
+> On 2015-09-29 23:50, Omar Sandoval wrote:
+>>
+>> Hi,
+>>
+>> Here's one more reroll of the free space B-tree patches, a more scalable
+>> alternative to the free space cache. Minimal changes this time around, I
+>> mainly wanted to resend this after Holger and I cleared up his bug
+>> report here: http://www.spinics.net/lists/linux-btrfs/msg47165.html. It
+>> initially looked like it was a bug in a patch that Josef sent, then in
+>> this series, but finally Holger and I figured out that it was something
+>> else in the queue of patches he carries around, we just don't know what
+>> yet (I'm in the middle of looking into it). While trying to reproduce
+>> that bug, I ran xfstests about a trillion times and a bunch of stress
+>> tests, so this is fairly well tested now. Additionally, the last time
+>> around, Holger and Austin both bravely offered their Tested-bys on the
+>> series. I wasn't sure which patch(es) to tack them onto so here they
+>> are:
+>>
+>> Tested-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
+>> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
+>
+> I've re-run the same testing I did for the last iteration, and also tested
+> that the btrfs_end_transaction thing mentioned below works right now
+> (Ironically that's one of the few things I didn't think of testing last time
+> :)), so the Tested-by from me is current now.
+>
+>>
+>> Thanks, everyone!
+>>
+>> Omar
+>>
+>> Changes from v3->v4:
+>>
+>> - Added a missing btrfs_end_transaction() to
+>> btrfs_create_free_space_tree() and
+>>    btrfs_clear_free_space_tree() in the error cases after we abort the
+>>    transaction (see
+>> http://www.spinics.net/lists/linux-btrfs/msg47545.html)
+>> - Rebased the kernel patches on v4.3-rc3
+>> - Rebased the progs patches on v4.2.1
+>>
+>> v3: http://www.spinics.net/lists/linux-btrfs/msg47095.html
+>>
+>> Changes from v2->v3:
+>>
+>> - Fixed a warning in the free space tree sanity tests caught by Zhao Lei.
+>> - Moved the addition of a block group to the free space tree to occur
+>> either on
+>>    the first attempt to modify the free space for the block group or in
+>>    btrfs_create_pending_block_groups(), whichever happens first. This
+>> avoids a
+>>    deadlock (lock recursion) when modifying the free space tree requires
+>>    allocating a new block group. In order to do this, it was simpler to
+>> change
+>>    the on-disk semantics: the superblock stripes will now appear to be
+>> free space
+>>    according to the free space tree, but load_free_space_tree() will still
+>>    exclude them when building the in-memory free space cache.
+>> - Changed the free_space_tree option to space_cache=v2 and made
+>> clear_cache
+>>    clear the free space tree. If the free space tree has been created,
+>>    the mount will fail unless space_cache=v2 or nospace_cache,clear_cache
+>>    is given because we cannot allow the free space tree to get out of
+>>    date.
+>> - Did a once-over of the code and caught a couple of error handling typos.
+>>
+>> v2: http://www.spinics.net/lists/linux-btrfs/msg46796.html
+>>
+>> Changes from v1->v2:
+>>
+>> - Cleaned up a bunch of unnecessary instances of "if (ret) goto out; ret =
+>> 0"
+>> - Added aborts in the free space tree code closer to the site the error is
+>>    encountered: where we add or remove block groups, add or remove free
+>> space,
+>>    and also when we convert formats
+>> - Moved loading of the free space tree into caching_thread() and added a
+>> new
+>>    patch 3 in preparation for it
+>> - Commented a bunch of stuff in the extent buffer bitmap operations and
+>>    refactored some of the complicated logic
+>>
+>> v1: http://www.spinics.net/lists/linux-btrfs/msg46713.html
+>>
+>> Omar Sandoval (9):
+>>    Btrfs: add extent buffer bitmap operations
+>>    Btrfs: add extent buffer bitmap sanity tests
+>>    Btrfs: add helpers for read-only compat bits
+>>    Btrfs: refactor caching_thread()
+>>    Btrfs: introduce the free space B-tree on-disk format
+>>    Btrfs: implement the free space B-tree
+>>    Btrfs: add free space tree sanity tests
+>>    Btrfs: wire up the free space tree to the extent tree
+>>    Btrfs: add free space tree mount option
+>>
+>>   fs/btrfs/Makefile                      |    5 +-
+>>   fs/btrfs/ctree.h                       |  157 +++-
+>>   fs/btrfs/disk-io.c                     |   38 +
+>>   fs/btrfs/extent-tree.c                 |   98 +-
+>>   fs/btrfs/extent_io.c                   |  183 +++-
+>>   fs/btrfs/extent_io.h                   |   10 +-
+>>   fs/btrfs/free-space-tree.c             | 1584
+>> ++++++++++++++++++++++++++++++++
+>>   fs/btrfs/free-space-tree.h             |   72 ++
+>>   fs/btrfs/super.c                       |   56 +-
+>>   fs/btrfs/tests/btrfs-tests.c           |   52 ++
+>>   fs/btrfs/tests/btrfs-tests.h           |   10 +
+>>   fs/btrfs/tests/extent-io-tests.c       |  138 ++-
+>>   fs/btrfs/tests/free-space-tests.c      |   35 +-
+>>   fs/btrfs/tests/free-space-tree-tests.c |  571 ++++++++++++
+>>   fs/btrfs/tests/qgroup-tests.c          |   20 +-
+>>   include/trace/events/btrfs.h           |    3 +-
+>>   16 files changed, 2925 insertions(+), 107 deletions(-)
+>>   create mode 100644 fs/btrfs/free-space-tree.c
+>>   create mode 100644 fs/btrfs/free-space-tree.h
+>>   create mode 100644 fs/btrfs/tests/free-space-tree-tests.c
+>>
+>
+>

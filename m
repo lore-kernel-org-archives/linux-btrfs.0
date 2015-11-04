@@ -1,55 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54378 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751636AbbKPPxL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Nov 2015 10:53:11 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 79D87AABB
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 15:52:47 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+Received: from mail-pa0-f54.google.com ([209.85.220.54]:36818 "EHLO
+	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030573AbbKDX4X (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Nov 2015 18:56:23 -0500
+Received: by pacdm15 with SMTP id dm15so43022535pac.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2015 15:56:22 -0800 (PST)
+From: Justin Maggard <jmaggard10@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: fix clashing number of the enhanced balance usage filter
-Date: Mon, 16 Nov 2015 16:50:13 +0100
-Message-Id: <1447689013-26385-1-git-send-email-dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: fdmanana@gmail.com, Justin Maggard <jmaggard@netgear.com>
+Subject: [PATCH v3] btrfs: qgroup: exit the rescan worker during umount
+Date: Wed,  4 Nov 2015 15:56:16 -0800
+Message-Id: <1446681376-24583-1-git-send-email-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've accidentally picked an already used number for the enhanced usage
-filter represented by BTRFS_BALANCE_ARGS_USAGE_RANGE, clashing with
-BTRFS_BALANCE_ARGS_CONVERT. Introduced during the development phase,
-no backward compatibility issues.
+I was hitting a consistent NULL pointer dereference during shutdown that
+showed the trace running through end_workqueue_bio().  I traced it back to
+the endio_meta_workers workqueue being poked after it had already been
+destroyed.
 
-Reported-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
-Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
-Fixes: bc3094673f22 ("btrfs: extend balance filter usage to take minimum and maximum")
-Signed-off-by: David Sterba <dsterba@suse.com>
+Eventually I found that the root cause was a qgroup rescan that was still
+in progress while we were stopping all the btrfs workers.
+
+Currently we explicitly pause balance and scrub operations in
+close_ctree(), but we do nothing to stop the qgroup rescan.  We should
+probably be doing the same for qgroup rescan, but that's a much larger
+change.  This small change is good enough to allow me to unmount without
+crashing.
+
+v3: avoid more races by calling btrfs_qgroup_wait_for_completion()
+
+Signed-off-by: Justin Maggard <jmaggard@netgear.com>
 ---
+ fs/btrfs/disk-io.c | 3 +++
+ fs/btrfs/qgroup.c  | 9 ++++++---
+ 2 files changed, 9 insertions(+), 3 deletions(-)
 
-For 4.4-rc
-
- fs/btrfs/volumes.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index ec5712372732..d5c84f6b1353 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -382,7 +382,7 @@ struct map_lookup {
- #define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
- #define BTRFS_BALANCE_ARGS_LIMIT_RANGE	(1ULL << 6)
- #define BTRFS_BALANCE_ARGS_STRIPES_RANGE (1ULL << 7)
--#define BTRFS_BALANCE_ARGS_USAGE_RANGE	(1ULL << 8)
-+#define BTRFS_BALANCE_ARGS_USAGE_RANGE	(1ULL << 10)
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 2d46675..1eb0839 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3780,6 +3780,9 @@ void close_ctree(struct btrfs_root *root)
+ 	fs_info->closing = 1;
+ 	smp_mb();
  
- #define BTRFS_BALANCE_ARGS_MASK			\
- 	(BTRFS_BALANCE_ARGS_PROFILES |		\
++	/* wait for the qgroup rescan worker to stop */
++	btrfs_qgroup_wait_for_completion(fs_info);
++
+ 	/* wait for the uuid_scan task to finish */
+ 	down(&fs_info->uuid_tree_rescan_sem);
+ 	/* avoid complains from lockdep et al., set sem back to initial state */
+diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+index 46476c2..75c0249 100644
+--- a/fs/btrfs/qgroup.c
++++ b/fs/btrfs/qgroup.c
+@@ -2286,7 +2286,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
+ 		goto out;
+ 
+ 	err = 0;
+-	while (!err) {
++	while (!err && !btrfs_fs_closing(fs_info)) {
+ 		trans = btrfs_start_transaction(fs_info->fs_root, 0);
+ 		if (IS_ERR(trans)) {
+ 			err = PTR_ERR(trans);
+@@ -2307,7 +2307,8 @@ out:
+ 	btrfs_free_path(path);
+ 
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
+-	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
++	if (!btrfs_fs_closing(fs_info))
++		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+ 
+ 	if (err > 0 &&
+ 	    fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT) {
+@@ -2336,7 +2337,9 @@ out:
+ 	}
+ 	btrfs_end_transaction(trans, fs_info->quota_root);
+ 
+-	if (err >= 0) {
++	if (btrfs_fs_closing(fs_info)) {
++		btrfs_info(fs_info, "qgroup scan paused");
++	} else if (err >= 0) {
+ 		btrfs_info(fs_info, "qgroup scan completed%s",
+ 			err > 0 ? " (inconsistency flag cleared)" : "");
+ 	} else {
 -- 
 2.6.2
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,41 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:53405 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:45456 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751394AbbKBMcz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 2 Nov 2015 07:32:55 -0500
+	id S932554AbbKDKJc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Nov 2015 05:09:32 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix hole punching when using the no-holes feature
-Date: Mon,  2 Nov 2015 12:32:44 +0000
-Message-Id: <1446467564-32173-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix extent accounting for partial direct IO writes
+Date: Wed,  4 Nov 2015 10:09:23 +0000
+Message-Id: <1446631763-9076-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-When we are using the no-holes feature, if we punch a hole into a file
-range that already contains a hole which overlaps the range we are passing
-to fallocate(), we end up removing the extent map that represents the
-existing hole without adding a new one. This happens because with the
-no-holes feature we do not have explicit extent items to represent holes
-and therefore the call to __btrfs_drop_extents(), made from
-btrfs_punch_hole(), returns an end offset to the variable drop_end that
-is smaller than the end of the range passed to fallocate(), while it
-drops all existing extent maps in that range.
-Normally having a missing extent map is not a problem, for example for
-a readpages() operation we just end up building the extent map by
-looking at the fs/subvol tree for a matching extent item (or a lack of
-one for implicit holes). However for an fsync that uses the fast path,
-which needs to look at the list of modified extent maps, this means
-the fsync will not record information about the complete hole we had
-before the fallocate() call into the log tree, resulting in a file with
-content/layout that does not match what we had neither before nor after
-the hole punch operation.
+When doing a write using direct IO we can end up not doing the whole write
+operation using the direct IO path, in that case we fallback to a buffered
+write to do the remaining IO. This happens for example if the range we are
+writing to contains a compressed extent.
+When we do a partial write and fallback to buffered IO, due to the
+existence of a compressed extent for example, we end up not adjusting the
+outstanding extents counter of our inode which ends up getting decremented
+twice, once by the DIO ordered extent for the partial write and once again
+by btrfs_direct_IO(), resulting in an arithmetic underflow at
+extent-tree.c:drop_outstanding_extent(). For example if we have:
 
-The following test case for fstests reproduces the issue. It fails without
-this change because we get a file with a different digest after the fsync
-log replay and also with a different extent/hole layout.
+  extents        [ prealloc extent ] [ compressed extent ]
+  offsets        A        B          C       D           E
+
+and at the moment our inode's outstanding extents counter is 0, if we do a
+direct IO write against the range [B, D[ (which has a length smaller than
+128Mb), we end up bumping our inode's outstanding extents counter to 1, we
+create a DIO ordered extent for the range [B, C[ and then fallback to a
+buffered write for the range [C, D[. The direct IO handler
+(inode.c:btrfs_direct_IO()) decrements the outstanding extents counter by
+1, leaving it with a value of 0, through a call to
+btrfs_delalloc_release_space() and then shortly after the DIO ordered
+extent finishes and calls btrfs_delalloc_release_metadata() which ends
+up to attempt to decrement the inode's outstanding extents counter by 1,
+resulting in an assertion failure at drop_outstanding_extent() because
+the operation would result in an arithmetic underflow (0 - 1). This
+produces the following trace:
+
+  [125471.336838] BTRFS: assertion failed: BTRFS_I(inode)->outstanding_extents >= num_extents, file: fs/btrfs/extent-tree.c, line: 5526
+  [125471.338844] ------------[ cut here ]------------
+  [125471.340745] kernel BUG at fs/btrfs/ctree.h:4173!
+  [125471.340745] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+  [125471.340745] Modules linked in: btrfs f2fs xfs libcrc32c dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc acpi_cpufreq psmouse i2c_piix4 parport pcspkr serio_raw microcode processor evdev i2c_core button ext4 crc16 jbd2 mbcache sd_mod sg sr_mod cdrom ata_generic virtio_scsi ata_piix virtio_pci virtio_ring floppy libata virtio e1000 scsi_mod [last unloaded: btrfs]
+  [125471.340745] CPU: 10 PID: 23649 Comm: kworker/u32:1 Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
+  [125471.340745] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+  [125471.340745] Workqueue: btrfs-endio-write btrfs_endio_write_helper [btrfs]
+  [125471.340745] task: ffff8804244fcf80 ti: ffff88040a118000 task.ti: ffff88040a118000
+  [125471.340745] RIP: 0010:[<ffffffffa0550da1>]  [<ffffffffa0550da1>] assfail.constprop.46+0x1e/0x20 [btrfs]
+  [125471.340745] RSP: 0018:ffff88040a11bc78  EFLAGS: 00010296
+  [125471.340745] RAX: 0000000000000075 RBX: 0000000000005000 RCX: 0000000000000000
+  [125471.340745] RDX: ffffffff81098f93 RSI: ffffffff8147c619 RDI: 00000000ffffffff
+  [125471.340745] RBP: ffff88040a11bc78 R08: 0000000000000001 R09: 0000000000000000
+  [125471.340745] R10: ffff88040a11bc08 R11: ffffffff81651000 R12: ffff8803efb4a000
+  [125471.340745] R13: ffff8803efb4a000 R14: 0000000000000000 R15: ffff8802f8e33c88
+  [125471.340745] FS:  0000000000000000(0000) GS:ffff88043dd40000(0000) knlGS:0000000000000000
+  [125471.340745] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+  [125471.340745] CR2: 00007fae7ca86095 CR3: 0000000001a0b000 CR4: 00000000000006e0
+  [125471.340745] Stack:
+  [125471.340745]  ffff88040a11bc88 ffffffffa04ca0cd ffff88040a11bcc8 ffffffffa04ceeb1
+  [125471.340745]  ffff8802f8e33940 ffff8802c93eadb0 ffff8802f8e0bf50 ffff8803efb4a000
+  [125471.340745]  0000000000000000 ffff8802f8e33c88 ffff88040a11bd38 ffffffffa04eccfa
+  [125471.340745] Call Trace:
+  [125471.340745]  [<ffffffffa04ca0cd>] drop_outstanding_extent+0x3d/0x6d [btrfs]
+  [125471.340745]  [<ffffffffa04ceeb1>] btrfs_delalloc_release_metadata+0x51/0xdd [btrfs]
+  [125471.340745]  [<ffffffffa04eccfa>] btrfs_finish_ordered_io+0x420/0x4eb [btrfs]
+  [125471.340745]  [<ffffffffa04ecdda>] finish_ordered_fn+0x15/0x17 [btrfs]
+  [125471.340745]  [<ffffffffa050e6e8>] normal_work_helper+0x14c/0x32a [btrfs]
+  [125471.340745]  [<ffffffffa050e9c8>] btrfs_endio_write_helper+0x12/0x14 [btrfs]
+  [125471.340745]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
+  [125471.340745]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
+  [125471.340745]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
+  [125471.340745]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
+  [125471.340745]  [<ffffffff8106904d>] kthread+0xef/0xf7
+  [125471.340745]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+  [125471.340745]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
+  [125471.340745]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+  [125471.340745] Code: a5 55 a0 48 89 e5 e8 42 50 bc e0 0f 0b 55 89 f1 48 c7 c2 f0 a8 55 a0 48 89 fe 31 c0 48 c7 c7 14 aa 55 a0 48 89 e5 e8 22 50 bc e0 <0f> 0b 0f 1f 44 00 00 55 31 c9 ba 18 00 00 00 48 89 e5 41 56 41
+  [125471.340745] RIP  [<ffffffffa0550da1>] assfail.constprop.46+0x1e/0x20 [btrfs]
+  [125471.340745]  RSP <ffff88040a11bc78>
+  [125471.539620] ---[ end trace 144259f7838b4aa4 ]---
+
+So fix this by ensuring we adjust the outstanding extents counter when we
+do the fallback just like we do for the case where the whole write can be
+done through the direct IO path.
+
+We were also adjusting the outstanding extents counter by a constant value
+of 1, which is incorrect because we were ignorning that we account extents
+in BTRFS_MAX_EXTENT_SIZE units, o fix that as well.
+
+The following test case for fstests reproduces this issue:
 
   seq=`basename $0`
   seqres=$RESULT_DIR/$seq
@@ -46,122 +104,175 @@ log replay and also with a different extent/hole layout.
 
   _cleanup()
   {
-     _cleanup_flakey
-     rm -f $tmp.*
+      rm -f $tmp.*
   }
 
   # get standard environment, filters and checks
   . ./common/rc
   . ./common/filter
-  . ./common/punch
-  . ./common/dmflakey
 
   # real QA test starts here
   _need_to_be_root
-  _supported_fs generic
+  _supported_fs btrfs
   _supported_os Linux
   _require_scratch
-  _require_xfs_io_command "fpunch"
-  _require_xfs_io_command "fiemap"
-  _require_dm_target flakey
-  _require_metadata_journaling $SCRATCH_DEV
-
-  # This test was motivated by an issue found in btrfs when the btrfs
-  # no-holes feature is enabled (introduced in kernel 3.14). So enable
-  # the feature if the fs being tested is btrfs.
-  if [ $FSTYP == "btrfs" ]; then
-      _require_btrfs_fs_feature "no_holes"
-      _require_btrfs_mkfs_feature "no-holes"
-      MKFS_OPTIONS="$MKFS_OPTIONS -O no-holes"
-  fi
+  _require_xfs_io_command "falloc"
 
   rm -f $seqres.full
 
   _scratch_mkfs >>$seqres.full 2>&1
-  _init_flakey
-  _mount_flakey
+  _scratch_mount "-o compress"
 
-  # Create out test file with some data and then fsync it.
-  # We do the fsync only to make sure the last fsync we do in this test
-  # triggers the fast code path of btrfs' fsync implementation, a
-  # condition necessary to trigger the bug btrfs had.
-  $XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 128K" \
-                  -c "fsync"                  \
-                  $SCRATCH_MNT/foobar | _filter_xfs_io
+  # Create a compressed extent covering the range [700K, 800K[.
+  $XFS_IO_PROG -f -s -c "pwrite -S 0xaa -b 100K 700K 100K" \
+      $SCRATCH_MNT/foo | _filter_xfs_io
 
-  # Now punch a hole against the range [96K, 128K[.
-  $XFS_IO_PROG -c "fpunch 96K 32K" $SCRATCH_MNT/foobar
+  # Create prealloc extent covering the range [600K, 700K[.
+  $XFS_IO_PROG -c "falloc 600K 100K" $SCRATCH_MNT/foo
 
-  # Punch another hole against a range that overlaps the previous range
-  # and ends beyond eof.
-  $XFS_IO_PROG -c "fpunch 64K 128K" $SCRATCH_MNT/foobar
+  # Write 80K of data to the range [640K, 720K[ using direct IO. This
+  # range covers both the prealloc extent and the compressed extent.
+  # Because there's a compressed extent in the range we are writing to,
+  # the DIO write code path ends up only writing the first 60k of data,
+  # which goes to the prealloc extent, and then falls back to buffered IO
+  # for writing the remaining 20K of data - because that remaining data
+  # maps to a file range containing a compressed extent.
+  # When falling back to buffered IO, we used to trigger an assertion when
+  # releasing reserved space due to bad accounting of the inode's
+  # outstanding extents counter, which was set to 1 but we ended up
+  # decrementing it by 1 twice, once through the ordered extent for the
+  # 60K of data we wrote using direct IO, and once through the main direct
+  # IO handler (inode.cbtrfs_direct_IO()) because the direct IO write
+  # wrote less than 80K of data (60K).
+  $XFS_IO_PROG -d -c "pwrite -S 0xbb -b 80K 640K 80K" \
+      $SCRATCH_MNT/foo | _filter_xfs_io
 
-  # Punch another hole against a range that overlaps the first range
-  # ([96K, 128K[) and ends at eof.
-  $XFS_IO_PROG -c "fpunch 32K 96K" $SCRATCH_MNT/foobar
+  # Now similar test as above but for very large write operations. This
+  # triggers special cases for an inode's outstanding extents accounting,
+  # as internally btrfs logically splits extents into 128Mb units.
+  $XFS_IO_PROG -f -s \
+      -c "pwrite -S 0xaa -b 128M 258M 128M" \
+      -c "falloc 0 258M" \
+      $SCRATCH_MNT/bar | _filter_xfs_io
+  $XFS_IO_PROG -d -c "pwrite -S 0xbb -b 256M 3M 256M" $SCRATCH_MNT/bar \
+      | _filter_xfs_io
 
-  # Fsync our file. We want to verify that, after a power failure and
-  # mounting the filesystem again, the file content reflects all the hole
-  # punch operations.
-  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foobar
-
-  echo "File digest before power failure:"
-  md5sum $SCRATCH_MNT/foobar | _filter_scratch
-
-  echo "Fiemap before power failure:"
-  $XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foobar | _filter_fiemap
-
-  # Silently drop all writes and umount to simulate a crash/power failure.
-  _load_flakey_table $FLAKEY_DROP_WRITES
-  _unmount_flakey
-
-  # Allow writes again, mount to trigger log replay and validate file
-  # contents.
-  _load_flakey_table $FLAKEY_ALLOW_WRITES
-  _mount_flakey
-
-  echo "File digest after log replay:"
-  # Must match the same digest we got before the power failure.
-  md5sum $SCRATCH_MNT/foobar | _filter_scratch
-
-  echo "Fiemap after log replay:"
-  # Must match the same extent listing we got before the power failure.
-  $XFS_IO_PROG -c "fiemap -v" $SCRATCH_MNT/foobar | _filter_fiemap
-
-  _unmount_flakey
+  # Now verify the file contents are correct and that they are the same
+  # even after unmounting and mounting the fs again (or evicting the page
+  # cache).
+  #
+  # For file foo, all bytes in the range [0, 640K[ must have a value of
+  # 0x00, all bytes in the range [640K, 720K[ must have a value of 0xbb
+  # and all bytes in the range [720K, 800K[ must have a value of 0xaa.
+  #
+  # For file bar, all bytes in the range [0, 3M[ must havea value of 0x00,
+  # all bytes in the range [3M, 259M[ must have a value of 0xbb and all
+  # bytes in the range [259M, 386M[ must have a value of 0xaa.
+  #
+  echo "File digests before remounting the file system:"
+  md5sum $SCRATCH_MNT/foo | _filter_scratch
+  md5sum $SCRATCH_MNT/bar | _filter_scratch
+  _scratch_remount
+  echo "File digests after remounting the file system:"
+  md5sum $SCRATCH_MNT/foo | _filter_scratch
+  md5sum $SCRATCH_MNT/bar | _filter_scratch
 
   status=0
   exit
 
+Fixes: e1cbbfa5f5aa ("Btrfs: fix outstanding_extents accounting in DIO")
+Fixes: 3e05bde8c3c2 ("Btrfs: only adjust outstanding_extents when we do a short write")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c | 13 +++++++++++++
- 1 file changed, 13 insertions(+)
+ fs/btrfs/inode.c | 52 +++++++++++++++++++++++++++++++++++++---------------
+ 1 file changed, 37 insertions(+), 15 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 381be79..0c48d94 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2489,6 +2489,19 @@ static int btrfs_punch_hole(struct inode *inode, loff_t offset, loff_t len)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 4439fbb..6138eea 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7506,6 +7506,28 @@ struct btrfs_dio_data {
+ 	u64 reserve;
+ };
  
- 	trans->block_rsv = &root->fs_info->trans_block_rsv;
- 	/*
-+	 * If we are using the NO_HOLES feature we might have had already an
-+	 * hole that overlaps a part of the region [lockstart, lockend] and
-+	 * ends at (or beyond) lockend. Since we have no file extent items to
-+	 * represent holes, drop_end can be less than lockend and so we must
-+	 * make sure we have an extent map representing the existing hole (the
-+	 * call to __btrfs_drop_extents() might have dropped the existing extent
-+	 * map representing the existing hole), otherwise the fast fsync path
-+	 * will not record the existence of the hole region
-+	 * [existing_hole_start, lockend].
-+	 */
-+	if (drop_end <= lockend)
-+		drop_end = lockend + 1;
++static void adjust_dio_outstanding_extents(struct inode *inode,
++					   struct btrfs_dio_data *dio_data,
++					   const u64 len)
++{
++	unsigned num_extents;
++
++	num_extents = (unsigned) div64_u64(len + BTRFS_MAX_EXTENT_SIZE - 1,
++					   BTRFS_MAX_EXTENT_SIZE);
 +	/*
- 	 * Don't insert file hole extent item if it's for a range beyond eof
- 	 * (because it's useless) or if it represents a 0 bytes range (when
- 	 * cur_offset == drop_end).
++	 * If we have an outstanding_extents count still set then we're
++	 * within our reservation, otherwise we need to adjust our inode
++	 * counter appropriately.
++	 */
++	if (dio_data->outstanding_extents) {
++		dio_data->outstanding_extents -= num_extents;
++	} else {
++		spin_lock(&BTRFS_I(inode)->lock);
++		BTRFS_I(inode)->outstanding_extents += num_extents;
++		spin_unlock(&BTRFS_I(inode)->lock);
++	}
++}
++
+ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 				   struct buffer_head *bh_result, int create)
+ {
+@@ -7541,8 +7563,11 @@ static int btrfs_get_blocks_direct(struct inode *inode, sector_t iblock,
+ 	 * If this errors out it's because we couldn't invalidate pagecache for
+ 	 * this range and we need to fallback to buffered.
+ 	 */
+-	if (lock_extent_direct(inode, lockstart, lockend, &cached_state, create))
+-		return -ENOTBLK;
++	if (lock_extent_direct(inode, lockstart, lockend, &cached_state,
++			       create)) {
++		ret = -ENOTBLK;
++		goto err;
++	}
+ 
+ 	em = btrfs_get_extent(inode, NULL, 0, start, len, 0);
+ 	if (IS_ERR(em)) {
+@@ -7660,19 +7685,7 @@ unlock:
+ 		if (start + len > i_size_read(inode))
+ 			i_size_write(inode, start + len);
+ 
+-		/*
+-		 * If we have an outstanding_extents count still set then we're
+-		 * within our reservation, otherwise we need to adjust our inode
+-		 * counter appropriately.
+-		 */
+-		if (dio_data->outstanding_extents) {
+-			(dio_data->outstanding_extents)--;
+-		} else {
+-			spin_lock(&BTRFS_I(inode)->lock);
+-			BTRFS_I(inode)->outstanding_extents++;
+-			spin_unlock(&BTRFS_I(inode)->lock);
+-		}
+-
++		adjust_dio_outstanding_extents(inode, dio_data, len);
+ 		btrfs_free_reserved_data_space(inode, start, len);
+ 		WARN_ON(dio_data->reserve < len);
+ 		dio_data->reserve -= len;
+@@ -7699,8 +7712,17 @@ unlock:
+ unlock_err:
+ 	clear_extent_bit(&BTRFS_I(inode)->io_tree, lockstart, lockend,
+ 			 unlock_bits, 1, 0, &cached_state, GFP_NOFS);
++err:
+ 	if (dio_data)
+ 		current->journal_info = dio_data;
++	/*
++	 * Compensate the delalloc release we do in btrfs_direct_IO() when we
++	 * write less data then expected, so that we don't underflow our inode's
++	 * outstanding extents counter.
++	 */
++	if (create && dio_data)
++		adjust_dio_outstanding_extents(inode, dio_data, len);
++
+ 	return ret;
+ }
+ 
 -- 
 2.1.3
 

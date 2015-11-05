@@ -1,35 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57283 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031773AbbKEMrG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Nov 2015 07:47:06 -0500
-Date: Thu, 5 Nov 2015 13:45:35 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 2/2] btrfs-progs: debug-tree: Add option to show ondisk
- block without open_ctree
-Message-ID: <20151105124535.GP13624@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1446712380-7654-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1446712380-7654-2-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:35514
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1030996AbbKENIu (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2015 08:08:50 -0500
+Subject: Re: [PATCH] btrfs: clear bio reference after submit_one_bio()
+To: Alex Lyakas <alex.btrfs@zadarastorage.com>,
+        Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>
+References: <1420473663-9315-1-git-send-email-naota@elisp.net>
+ <54AC65C2.8000801@jp.fujitsu.com>
+ <CAOcd+r10Q08zhvjMawOrQ8jWBReD6dYxeEtiZSoqUEuHCeM27g@mail.gmail.com>
+Cc: Naohiro Aota <naota@elisp.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <563B54DF.7080202@googlemail.com>
+Date: Thu, 5 Nov 2015 14:08:47 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1446712380-7654-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <CAOcd+r10Q08zhvjMawOrQ8jWBReD6dYxeEtiZSoqUEuHCeM27g@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 05, 2015 at 04:33:00PM +0800, Qu Wenruo wrote:
-> Add new option '-B' to show tree block without calling open_ctree.
-> It's very useful to debug non-standard super or heavily damaged case.
+On 10/11/15 20:09, Alex Lyakas wrote:
+> Hi Naota,
 > 
-> As it needs nodesize, also adds a new option '-n' to specify nodesize.
+> What happens if btrfs_bio_alloc() in submit_extent_page fails? Then we
+> return -ENOMEM to the caller, but we do not set *bio_ret to NULL. And
+> if *bio_ret was non-NULL upon entry into submit_extent_page, then we
+> had submitted this bio before getting to btrfs_bio_alloc(). So should
+> btrfs_bio_alloc() failure be handled in the same way?
 > 
-> Normal user should avoid calling it on random bytes, as it won't check
-> the validation of the tree block.
+> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+> index 3915c94..cd443bc 100644
+> --- a/fs/btrfs/extent_io.c
+> +++ b/fs/btrfs/extent_io.c
+> @@ -2834,8 +2834,11 @@ static int submit_extent_page(int rw, struct
+> extent_io_tree *tree,
 > 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+>         bio = btrfs_bio_alloc(bdev, sector, BIO_MAX_PAGES,
+>                         GFP_NOFS | __GFP_HIGH);
+> -       if (!bio)
+> +       if (!bio) {
+> +               if (bio_ret)
+> +                       *bio_ret = NULL;
+>                 return -ENOMEM;
+> +       }
+> 
+>         bio_add_page(bio, page, page_size, offset);
+>         bio->bi_end_io = end_io_func;
+> 
 
-I'm going to postpone this patch for next development cycle. It's
-likely that we'll add more options so I'd like to not make it a mess
-(similar to what btrfs-corrupt-block options are).
+Did you get any feedback on this? It seems it could cause data loss or
+corruption on allocation failures, no?
+
+-h
+

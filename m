@@ -1,108 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:36042 "EHLO
-	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1162313AbbKEQ3s (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2015 11:29:48 -0500
-Received: by ioll68 with SMTP id l68so96422071iol.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2015 08:29:47 -0800 (PST)
-Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
-        by smtp.googlemail.com with ESMTPSA id j11sm3138199ioi.42.2015.11.05.08.29.46
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Thu, 05 Nov 2015 08:29:46 -0800 (PST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Subject: Possible project idea
-Message-ID: <563B83DE.7070002@gmail.com>
-Date: Thu, 5 Nov 2015 11:29:18 -0500
+Received: from mx2.suse.de ([195.135.220.15]:58964 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751610AbbKETXs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Nov 2015 14:23:48 -0500
+Date: Thu, 5 Nov 2015 11:23:46 -0800
+From: Mark Fasheh <mfasheh@suse.de>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Stefan Priebe <s.priebe@profihost.ag>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        jbacik@fb.com, Chris Mason <clm@fb.com>
+Subject: Re: Regression in: [PATCH 4/4] btrfs: qgroup: account shared subtree
+ during snapshot delete
+Message-ID: <20151105192346.GI15575@wotan.suse.de>
+Reply-To: Mark Fasheh <mfasheh@suse.de>
+References: <56367AE8.9030509@profihost.ag>
+ <5636BDA0.4020200@cn.fujitsu.com>
+ <20151103192625.GE15575@wotan.suse.de>
+ <563958F0.6030904@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030603000202020303050608"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <563958F0.6030904@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Wed, Nov 04, 2015 at 09:01:36AM +0800, Qu Wenruo wrote:
+> 
+> 
+> Mark Fasheh wrote on 2015/11/03 11:26 -0800:
+> >On Mon, Nov 02, 2015 at 09:34:24AM +0800, Qu Wenruo wrote:
+> >>
+> >>
+> >>Stefan Priebe wrote on 2015/11/01 21:49 +0100:
+> >>>Hi,
+> >>>
+> >>>this one: http://www.spinics.net/lists/linux-btrfs/msg47377.html
+> >>>
+> >>>adds a regression to my test systems with very large disks (30tb and 50tb).
+> >>>
+> >>>btrfs balance is super slow afterwards while heavily making use of cp
+> >>>--reflink=always on big files (200gb - 500gb).
+> >>>
+> >>>Sorry didn't know how to correctly reply to that "old" message.
+> >>>
+> >>>Greets,
+> >>>Stefan
+> >>>--
+> >>>To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> >>>the body of a message to majordomo@vger.kernel.org
+> >>>More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> >>
+> >>Thanks for the testing.
+> >>
+> >>Are you using qgroup or just doing normal balance with qgroup disabled?
+> >>
+> >>For the latter case, that's should be optimized to skip the dirty
+> >>extent insert in qgroup disabled case.
+> >>
+> >>For qgroup enabled case, I'm afraid that's the design.
+> >>As relocation will drop a subtree to relocate, and to ensure qgroup
+> >>consistent, we must walk down all the tree blocks and mark them
+> >>dirty for later qgroup accounting.
+> >
+> >Qu, we're always going to have to walk the tree when deleting it, this is
+> >part of removing a subvolume. We've walked shared subtrees in this code for
+> >numerous kernel releases without incident before it was removed in 4.2.
+> >
+> >Do you have any actual evidence that this is a major performance regression?
+> > From our previous conversations you seemed convinced of this, without even
+> >having a working subtree walk to test. I remember the hand wringing
+> >about an individual commit being too heavy with the qgroup code (even though
+> >I pointed out that tree walk is a restartable transaction).
+> >
+> >It seems that you are confused still about how we handle removing a volume
+> >wrt qgroups.
+> >
+> >If you have questions or concerns I would be happy to explain them but
+> >IMHO your statements there are opinion and not based in fact.
+> 
+> Yes, I don't deny it.
+> But it's quite hard to prove it, as we need such a huge storage like Stefan.
+> What I have is only several hundred GB test storage.
+> Even accounting all my home NAS, I only have 2T, far from the
+> storage Stefan has.
+> 
+> And what Stefan report should already give some hint about the
+> performance issue.
+> 
+> In your word "it won't be doing anything (ok some kmalloc/free of a
+> very tiny object)", it's already slowing down balance, since balance
+> also use btrfs_drop_subtree().
 
---------------ms030603000202020303050608
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+When I wrote that I was under the impression that the qgroup code was doing
+it's own sanity checking (it used to) and since Stephan had them disabled
+they couldn't be causing the problem. I read your e-mail explaining that the
+qgroup api was now intertwined with delayed ref locking after this one.
 
-I'd been looking at the wiki page with project ideas, and I realized=20
-that there were no listed ideas that suggested the adding support for=20
-arbitrary erasure coding methods.  Ceph for example has an option that=20
-allows you to set arbitrary erasure coding such that you use n devices=20
-to store the data, and can tolerate loss of any m devices out of it.
+The same exact code ran in either case before and after your patches, so my
+guess is that the issue is actually inside the qgroup code that shouldn't
+have been run. I wonder if we even just filled up his memory but never
+cleaned the objects. The only other thing I can think of is if
+account_leaf_items() got run in a really tight loop for some reason.
 
-Technically, this would be covered as a special case by the whole=20
-copies/stripes/parity thing that was discussed a while back before=20
-raid56 code made it into the kernel (I've tried to find the thread for=20
-reference, but haven't been unable to locate it), but I didn't see that=20
-'project' listed anywhere on the page either.
+Kmalloc in the way we are using it is not usually a performance issue,
+especially if we've been reading off disk in the same process. Ask yourself
+this - your own patch series does the same kmalloc for every qgroup
+operation. Did you notice a complete and massive performance slowdown like
+the one Stefan reported?
 
-IMHO, this would be an excellent feature to differentiate BTRFS from=20
-bcachefs and ZFS (although I would not be surprised if they both copied=20
-it themselves).
+I will say that we never had this problem reported before, and
+account_leaf_items() is always run in all kernels, even without qgroups
+enabled. That will change with my new patch though.
+
+What we can say for sure is that drop_snapshot in the qgroup case will read
+more disk and obviously that will have a negative impact depending on what
+the tree looks like. So IMHO we ought to be focusing on reducing the amount
+of I/O involved.
 
 
---------------ms030603000202020303050608
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+> But we can't just ignore such "possible" performance issue just
+> because old code did the same thing.(Although not the same now,
+> we're marking all subtree blocks dirty other than shared one).
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTA1MTYyOTE4WjBPBgkq
-hkiG9w0BCQQxQgRASL+RXXq7XL5UoHw/DE7Y9L/Bkr6LvZtIUh2w5aPuA/9bXGE0vNzY174K
-AU5QmMI78/hTtW5l00S+848n8nWCnDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgB0JMl1lV81nCk0XAMj+7HUmzD7+Dy2d1OtukHiw6+mqOr6nOC1
-1z9cy4N8f7/hK9woJIZE07sTbvcHP0nKDXat67NXNcOfLDQBlWFeQOI0bjuDriy9FVJyjAbQ
-dZTg5GMKc8OkEERZWiFW2Ff/N+k/Yzqg/vBp2Cm6/XS+BS6BtEH548++NSKYJwgyJajxXTGl
-9Uf6BLCmLrptr9hetPspzCNHfxcraS5HmnZ4/sAy+HTaqEFmlPK9jYmTNYiZ01hB8vuIfPXO
-6bmvPaggkgMZv8ivTh/AuPGiB9vbOCM211kwz0pVDjKTzTyXoh0dbGYuoG2YJZH+CEKPcVIs
-2kfRKTUy1FMT0QMteuJ4VXuODh67fo0upzPr8eKw5ApQCV8COpkmgV7xC4dhY/il91aqnV7T
-PxwUYlDsuKdVE6j2qSU9JnvVnxlcO8iCH9/iyMjvr1GTgXffg4Mtx5CfPlhNjQQhUZGB5QvO
-uLEKeVmFGVZY8yU4leIIQ+CZSJ1s6rCPlio0qgS7otQUjJFh1INqshOOczLGTP/7Fh/STlWk
-1mAKuEEpc94RqhzzDUzngstDlVaPPJLTzZ475xreZyPnAqVmUFjjbFsi+qTHMEv8deFoyv8B
-U9rasrCAvU97IgE21z+NJYpR1tWv/ySzNk1E6sijYGbnYLwZd7ng9MV+hAAAAAAAAA==
---------------ms030603000202020303050608--
+Well, I can't disagree with that - the only reason we are talking right now
+is because you intentionally ignored the qgroup code in drop_snapshot(). So
+let's start with this - no more 'fixing' code by tearing it out and replacing
+it with /* TODO: somebody else re-implement this */   ;)
+	--Mark
+
+--
+Mark Fasheh

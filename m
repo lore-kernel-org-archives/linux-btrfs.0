@@ -1,82 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:47077 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:48441 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031875AbbKEKih (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Nov 2015 05:38:37 -0500
+	id S1031209AbbKELEx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Nov 2015 06:04:53 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix race waiting for qgroup rescan worker
-Date: Thu,  5 Nov 2015 10:38:30 +0000
-Message-Id: <1446719910-7636-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix sleeping inside atomic context in qgroup rescan worker
+Date: Thu,  5 Nov 2015 11:04:42 +0000
+Message-Id: <1446721482-7393-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We were initializing the completion (fs_info->qgroup_rescan_completion)
-object after releasing the qgroup rescan lock, which gives a small time
-window for a rescan waiter to not actually wait for the rescan worker
-to finish. Example:
+We are holding a btree path with spinning locks and then we attempt to
+clone an extent buffer, which calls kmem_cache_alloc() and this function
+can sleep, causing the following trace to be reported on a debug kernel:
 
-         CPU 1                                                     CPU 2
+[107118.218536] BUG: sleeping function called from invalid context at mm/slab.c:2871
+[107118.224110] in_atomic(): 1, irqs_disabled(): 0, pid: 19148, name: kworker/u32:3
+[107118.226120] INFO: lockdep is turned off.
+[107118.226843] Preemption disabled at:[<ffffffffa05ffa22>] btrfs_clear_lock_blocking_rw+0x96/0xea [btrfs]
 
- fs_info->qgroup_rescan_completion->done is 0
+[107118.229175] CPU: 3 PID: 19148 Comm: kworker/u32:3 Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
+[107118.231326] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[107118.233687] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper [btrfs]
+[107118.236835]  0000000000000000 ffff880424bf3b78 ffffffff812566f4 0000000000000000
+[107118.238369]  ffff880424bf3ba0 ffffffff81070664 ffffffff817f1cd5 0000000000000b37
+[107118.239769]  0000000000000000 ffff880424bf3bc8 ffffffff8107070a 0000000000008850
+[107118.241244] Call Trace:
+[107118.241729]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
+[107118.242602]  [<ffffffff81070664>] ___might_sleep+0x23a/0x241
+[107118.243586]  [<ffffffff8107070a>] __might_sleep+0x9f/0xa6
+[107118.244532]  [<ffffffff8115af70>] cache_alloc_debugcheck_before+0x25/0x36
+[107118.245939]  [<ffffffff8115d52b>] kmem_cache_alloc+0x50/0x215
+[107118.246930]  [<ffffffffa05e627e>] __alloc_extent_buffer+0x2a/0x11f [btrfs]
+[107118.248121]  [<ffffffffa05ecb1a>] btrfs_clone_extent_buffer+0x3d/0xdd [btrfs]
+[107118.249451]  [<ffffffffa06239ea>] btrfs_qgroup_rescan_worker+0x16d/0x434 [btrfs]
+[107118.250755]  [<ffffffff81087481>] ? arch_local_irq_save+0x9/0xc
+[107118.251754]  [<ffffffffa05f7952>] normal_work_helper+0x14c/0x32a [btrfs]
+[107118.252899]  [<ffffffffa05f7952>] ? normal_work_helper+0x14c/0x32a [btrfs]
+[107118.254195]  [<ffffffffa05f7c82>] btrfs_qgroup_rescan_helper+0x12/0x14 [btrfs]
+[107118.255436]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
+[107118.263690]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
+[107118.264888]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
+[107118.267413]  [<ffffffff8106904d>] kthread+0xef/0xf7
+[107118.268417]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+[107118.269505]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
+[107118.270491]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
 
- btrfs_qgroup_rescan_worker()
-   complete_all(&fs_info->qgroup_rescan_completion)
-     sets fs_info->qgroup_rescan_completion->done
-     to UINT_MAX / 2
-
- ... do some other stuff ....
-
- qgroup_rescan_init()
-   mutex_lock(&fs_info->qgroup_rescan_lock)
-   set flag BTRFS_QGROUP_STATUS_FLAG_RESCAN
-     in fs_info->qgroup_flags
-   mutex_unlock(&fs_info->qgroup_rescan_lock)
-
-                                                       btrfs_qgroup_wait_for_completion()
-                                                         mutex_lock(&fs_info->qgroup_rescan_lock)
-                                                         sees flag BTRFS_QGROUP_STATUS_FLAG_RESCAN
-                                                           in fs_info->qgroup_flags
-                                                         mutex_unlock(&fs_info->qgroup_rescan_lock)
-
-                                                         wait_for_completion_interruptible(
-                                                           &fs_info->qgroup_rescan_completion)
-
-                                                           fs_info->qgroup_rescan_completion->done
-                                                           is > 0 so it returns immediately
-
-  init_completion(&fs_info->qgroup_rescan_completion)
-    sets fs_info->qgroup_rescan_completion->done to 0
-
-So fix this by initializing the completion object while holding the mutex
-fs_info->qgroup_rescan_lock.
+So just use blocking locks for our path to solve this.
+This fixes the patch titled:
+  "btrfs: qgroup: Don't copy extent buffer to do qgroup rescan"
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/qgroup.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ fs/btrfs/qgroup.c | 1 -
+ 1 file changed, 1 deletion(-)
 
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 75c0249..75bb4af9 100644
+index 75bb4af9..93e12c1 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -2387,12 +2387,11 @@ qgroup_rescan_init(struct btrfs_fs_info *fs_info, u64 progress_objectid,
- 	memset(&fs_info->qgroup_rescan_progress, 0,
- 		sizeof(fs_info->qgroup_rescan_progress));
- 	fs_info->qgroup_rescan_progress.objectid = progress_objectid;
-+	init_completion(&fs_info->qgroup_rescan_completion);
+@@ -2198,7 +2198,6 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+ 	int slot;
+ 	int ret;
  
- 	spin_unlock(&fs_info->qgroup_lock);
- 	mutex_unlock(&fs_info->qgroup_rescan_lock);
- 
--	init_completion(&fs_info->qgroup_rescan_completion);
--
- 	memset(&fs_info->qgroup_rescan_work, 0,
- 	       sizeof(fs_info->qgroup_rescan_work));
- 	btrfs_init_work(&fs_info->qgroup_rescan_work,
+-	path->leave_spinning = 1;
+ 	mutex_lock(&fs_info->qgroup_rescan_lock);
+ 	ret = btrfs_search_slot_for_read(fs_info->extent_root,
+ 					 &fs_info->qgroup_rescan_progress,
 -- 
 2.1.3
 

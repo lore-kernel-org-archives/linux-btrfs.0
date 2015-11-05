@@ -1,100 +1,186 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:36153 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1031009AbbKDWz6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Nov 2015 17:55:58 -0500
-Received: by igdg1 with SMTP id g1so117300419igd.1
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2015 14:55:57 -0800 (PST)
-MIME-Version: 1.0
-Date: Wed, 4 Nov 2015 17:55:57 -0500
-Message-ID: <CAPoQQ-0SCeXpzjWM5Y3BUD=kHxAdfTRB21vnRf9TQGrQm6CHkQ@mail.gmail.com>
-Subject: btrfs_sync_file alignment trap on arm (kernel 4.2.5)
-From: Cody P Schafer <dev@codyps.com>
+Received: from plane.gmane.org ([80.91.229.3]:38445 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751378AbbKEEHA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 4 Nov 2015 23:07:00 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZuBpB-000449-R4
+	for linux-btrfs@vger.kernel.org; Thu, 05 Nov 2015 05:06:57 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2015 05:06:57 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2015 05:06:57 +0100
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Btrfs/RAID5 became unmountable after SATA cable fault
+Date: Thu, 5 Nov 2015 04:06:52 +0000 (UTC)
+Message-ID: <pan$f33d7$d1be1dd2$81273c9e$505ff3bb@cox.net>
+References: <g7loe3red3ksp64hmb0vsbs2.1445476794489@email.android.com>
+	<CANznX5EFZA=HvLkViF_56Pt_VPFiQ6NufoJjx3s42FVTEeGyew@mail.gmail.com>
+	<563A5251.70300@gmail.com>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ideas as to what could cause this would be appreciated.
+Austin S Hemmelgarn posted on Wed, 04 Nov 2015 13:45:37 -0500 as
+excerpted:
 
-This consistently is triggered shortly after boot (I presume due to
-conmand calling fsync on a file).
+> On 2015-11-04 13:01, Janos Toth F. wrote:
+>> But the worst part is that there are some ISO files which were
+>> seemingly copied without errors but their external checksums (the one
+>> which I can calculate with md5sum and compare to the one supplied by
+>> the publisher of the ISO file) don't match!
+>> Well... this, I cannot understand.
+>> How could these files become corrupt from a single disk failure? And
+>> more importantly: how could these files be copied without errors? Why
+>> didn't Btrfs gave a read error when the checksums didn't add up?
+> If you can prove that there was a checksum mismatch and BTRFS returned
+> invalid data instead of a read error or going to the other disk, then
+> that is a very serious bug that needs to be fixed.  You need to keep in
+> mind also however that it's completely possible that the data was bad
+> before you wrote it to the filesystem, and if that's the case, there's
+> nothing any filesystem can do to fix it for you.
 
-Note that I'm not quite running 4.2.5, but none of the changes I have
-additionally applied are to btrfs or atomics.
+As Austin suggests, if btrfs is returning data, and you haven't turned 
+off checksumming with nodatasum or nocow, then it's almost certainly 
+returning the data it was given to write out in the first place.  Whether 
+that data it was given to write out was correct, however, is an 
+/entirely/ different matter.
 
-Let me know if there is a way for me to get you more info.
+If ISOs are failing their external checksums, then something is going 
+on.  Had you verified the external checksums when you first got the 
+files?  That is, are you sure the files were correct as downloaded and/or 
+ripped?
 
-It looks like the line is:
+Where were the ISOs stored between original procurement/validation and 
+writing to btrfs?  Is it possible you still have some/all of them on that 
+media?  Do they still external-checksum-verify there?
 
-    mutex_lock(&inode->i_mutex);
-    atomic_inc(&root->log_batch);  <<<<
-    full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
-        &BTRFS_I(inode)->runtime_flags);
+Basically, assuming btrfs checksums are validating, there's three other 
+likely possibilities for where the corruption could have come from before 
+writing to btrfs.  Either the files were bad as downloaded or otherwise 
+procured -- which is why I asked whether you verified them upon receipt 
+-- or you have memory that's going bad, or your temporary storage is 
+going bad, before the files ever got written to btrfs.
+
+The memory going bad is a particularly worrying possibility, 
+considering...
+
+>> Now I am really considering to move from Linux to Windows and from
+>> Btrfs RAID-5 to Storage Spaces RAID-1 + ReFS (the only limitation is
+>> that ReFS is only "self-healing" on RAID-1, not RAID-5, so I need a new
+>> motherboard with more native SATA connectors and an extra HDD). That
+>> one seemed to actually do what it promises (abort any read operations
+>> upon checksum errors [which always happens seamlessly on every read]
+>> but look at the redundant data first and seamlessly "self-heal" if
+>> possible). The only thing which made Btrfs to look as a better
+>> alternative was the RAID-5 support. But I recently experienced two
+>> cases of 1 drive failing of 3 and it always tuned out as a smaller or
+>> bigger disaster (completely lost data or inconsistent data).
+
+> Have you considered looking into ZFS?  I hate to suggest it as an
+> alternative to BTRFS, but it's a much more mature and well tested
+> technology than ReFS, and has many of the same features as BTRFS (and
+> even has the option for triple parity instead of the double you get with
+> RAID6).  If you do consider ZFS, make a point to look at FreeBSD in
+> addition to the Linux version, the BSD one was a much better written
+> port of the original Solaris drivers, and has better performance in many
+> cases (and as much as I hate to admit it, BSD is way more reliable than
+> Linux in most use cases).
+> 
+> You should also seriously consider whether the convenience of having a
+> filesystem that fixes internal errors itself with no user intervention
+> is worth the risk of it corrupting your data.  Returning correct data
+> whenever possible is one thing, being 'self-healing' is completely
+> different.  When you start talking about things that automatically fix
+> internal errors without user intervention is when most seasoned system
+> administrators start to get really nervous.  Self correcting systems
+> have just as much chance to make things worse as they do to make things
+> better, and most of them depend on the underlying hardware working
+> correctly to actually provide any guarantee of reliability.
+
+I too would point you at ZFS, but there's one VERY BIG caveat, and one 
+related smaller one!
+
+The people who have a lot of ZFS experience say it's generally quite 
+reliable, but gobs of **RELIABLE** memory are *absolutely* *critical*!  
+The self-healing works well, *PROVIDED* memory isn't producing errors.  
+Absolutely reliable memory is in fact *so* critical, that running ZFS on 
+non-ECC memory is severely discouraged as a very real risk to your data.
+
+Which is why the above hints that your memory may be bad are so 
+worrying.  Don't even *THINK* about ZFS, particularly its self-healing 
+features, if you're not absolutely sure your memory is 100% reliable, 
+because apparently, based on the comment's I've seen, if it's not, you 
+WILL have data loss, likely far worse than btrfs under similar 
+circumstances, because when btrfs detects a checksum error it tries 
+another copy if it has one (raid1/10 mode), and simply fails the read if 
+it doesn't, while apparently, zfs with self-healing activated will give 
+you what it thinks is the corrected data, writing it back to repair the 
+problem as well, but if memory is bad, it'll be self-damaging instead of 
+self-healing, and from what I've read, that's actually a reasonably 
+common experience with non-ecc RAM, the reason they so severely 
+discourage attempts to run zfs on non-ecc.  But people still keep doing 
+it, and still keep getting burned as a result.
+
+(The smaller, in context, caveat, is that zfs works best with /lots/ of 
+RAM, particularly when run on Linux, since it is designed to work with a 
+different cache system than Linux uses, and won't work without it, so in 
+effect with ZFS on Linux everything must be cached twice, upping the 
+memory requirements dramatically.) 
 
 
-addr2line of the trapping instruction:
-    addr2line -e
-./work/beaglebone-poky-linux-gnueabi/linux-yocto-ikabit/4.2.5+gitAUTOINC+c29ac18888-r1/linux-beaglebone-standard-build/arch/arm/boot/vmlinux
-c0217a34 -i
-    /home/cody/obj/y/tmp/work-shared/beaglebone/kernel-source/arch/arm/include/asm/atomic.h:194
-    /home/cody/obj/y/tmp/work-shared/beaglebone/kernel-source/fs/btrfs/file.c:1886
+(Tho I should mention, while not on zfs, I've actually had my own 
+problems with ECC RAM too.  In my case, the RAM was certified to run at 
+speeds faster than it was actually reliable at, such that actually stored 
+data, what the ECC protects, was fine, the data was actually getting 
+damaged in transit to/from the RAM.  On a lightly loaded system, such as 
+one running many memory tests or under normal desktop usage conditions, 
+the RAM was generally fine, no problems.  But on a heavily loaded system, 
+such as when doing parallel builds (I run gentoo, which builds from 
+sources in ordered to get the higher level of option flexibility that 
+comes only when you can toggle build-time options), I'd often have memory 
+faults and my builds would fail.
 
-fault log:
+The most common failure, BTW, was on tarball decompression, bunzip2 or 
+the like, since the tarballs contained checksums that were verified on 
+data decompression, and often they'd fail to verify.
 
-[   11.488382] Alignment trap: not handling instruction e1993f9f at [<c0217a34>]
-[   11.560558] Unhandled fault: alignment exception (0x001) at 0x0000026d
-[   11.607301] pgd = dc090000
-[   11.610166] [0000026d] *pgd=9c063831, *pte=00000000, *ppte=00000000
-[   11.665548] Internal error: : 1 [#1] PREEMPT ARM
-[   11.670388] Modules linked in: omaplfb(O) bufferclass_ti(O) pvrsrvkm(O)
-[   11.677341] CPU: 0 PID: 248 Comm: connmand Tainted: G           O
- 4.2.5-yocto-standard #1
-[   11.686172] Hardware name: Generic AM33XX (Flattened Device Tree)
-[   11.692551] task: dc00d100 ti: dc068000 task.ti: dc068000
-[   11.698219] PC is at btrfs_sync_file+0x104/0x3f4
-[   11.703051] LR is at btrfs_sync_file+0x100/0x3f4
-[   11.707883] pc : [<c0217a38>]    lr : [<c0217a34>]    psr: 60060013
-[   11.707883] sp : dc069e98  ip : dc069e98  fp : dc069f1c
-[   11.719897] r10: 00000000  r9 : 0000026d  r8 : dd746b40
-[   11.725363] r7 : dcef8dcc  r6 : 00000000  r5 : dcef8d68  r4 : 00000001
-[   11.732192] r3 : 7fffffff  r2 : 00000000  r1 : 00000000  r0 : dcef8dcc
-[   11.739024] Flags: nZCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment user
-[   11.746491] Control: 10c5387d  Table: 9c090019  DAC: 00000015
-[   11.752502] Process connmand (pid: 248, stack limit = 0xdc068210)
-[   11.758878] Stack: (0xdc069e98 to 0xdc06a000)
-[   11.763436] 9e80:
-    ffffffff 7fffffff
-[   11.771998] 9ea0: dc069f38 c014582c 0000b30b 00000000 00000000
-000037f6 000081a4 d5012f68
-[   11.780559] 9ec0: 00000000 80000000 00000000 00000000 00000000
-00000000 0000008d 00000000
-[   11.789121] 9ee0: 00000400 00000000 00000001 20b04e34 563924e6
-dd746b40 dce2beb8 00000000
-[   11.797683] 9f00: 00000000 00000000 dc068000 00000000 dc069f54
-dc069f20 c0171d00 c0217940
-[   11.806245] 9f20: ffffffff 7fffffff 00000000 dc069f38 c0145b6c
-dd746b40 00000000 dd746b40
-[   11.814807] 9f40: 00000076 c000f7a4 dc069f74 dc069f58 c0171d3c
-c0171c40 ffffffff 7fffffff
-[   11.823369] 9f60: 00000000 c015cc9c dc069f94 dc069f78 c0171d7c
-c0171d14 00000000 bebe2bf8
-[   11.831931] 9f80: 00e64c4d b6a104d0 dc069fa4 dc069f98 c017204c
-c0171d50 00000000 dc069fa8
-[   11.840492] 9fa0: c000f600 c017203c bebe2bf8 00e64c4d 00000009
-bebe2bf8 0000008d 00000000
-[   11.849054] 9fc0: bebe2bf8 00e64c4d b6a104d0 00000076 00e64810
-00e60cd0 00000009 00000000
-[   11.857616] 9fe0: 00000000 bebe2bd4 b6e63384 b6dcef00 60060010
-00000009 044a1103 099b0303
-[   11.866199] [<c0217a38>] (btrfs_sync_file) from [<c0171d00>]
-(vfs_fsync_range+0xcc/0xd4)
-[   11.874674] [<c0171d00>] (vfs_fsync_range) from [<c0171d3c>]
-(vfs_fsync+0x34/0x3c)
-[   11.882600] [<c0171d3c>] (vfs_fsync) from [<c0171d7c>] (do_fsync+0x38/0x54)
-[   11.889890] [<c0171d7c>] (do_fsync) from [<c017204c>] (SyS_fsync+0x1c/0x20)
-[   11.897188] [<c017204c>] (SyS_fsync) from [<c000f600>]
-(ret_fast_syscall+0x0/0x3c)
-[   11.905116] Code: e14b05fc e1a00007 eb1251f7 e1993f9f (e2833001)
-[   13.418969] ---[ end trace d7bcd93aea7d243c ]---
-[   13.442420] Kernel panic - not syncing: Fatal exception
+Once I updated the BIOS to one that would let me set the memory speed 
+instead of using the speed the modules themselves reported, and I 
+declocked the memory just one notch (this was DDR1, IIRC I declocked from 
+the PC3200 it was rated, to PC3000 speeds), not only was the memory then 
+100% reliable, but I could and did actually reduce the number of wait-
+states for various operations, and it was STILL 100% reliable.  It simply 
+couldn't handle the raw speeds it was certified to run, is all, tho it 
+did handle it well enough, enough of the time, to make the problem far 
+more difficult to diagnose and confirm than it would have been had the 
+problem appeared at low load as well.
+
+As it happens, I was running reiserfs at the time, and it handled both 
+that hardware issue, and a number of others I've had, far better than I'd 
+have expected of /any/ filesystem, when the memory feeding it is simply 
+not reliable.  Reiserfs metadata, in particular, seems incredibly 
+resilient in the face of hardware issues, and I lost far less data than I 
+might have expected, tho without checksums and with bad memory, I imagine 
+I had occasional undetected bitflip corruption in files here or there, 
+but generally nothing I detected.  I still use reiserfs on my spinning 
+rust today, but it's not well suited to SSD, which is where I run btrfs.
+
+But the point for this discussion is that just because it's ECC RAM 
+doesn't mean you can't have memory related errors, just that if you do, 
+they're likely to be different errors, "transit errors", that will tend 
+to be undetected by many memory checkers, at least the ones that don't 
+tend to run full out memory bandwidth if they're simply checking that 
+what was stored in a cell can be read back, unchanged.)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

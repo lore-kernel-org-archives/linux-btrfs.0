@@ -1,76 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:48441 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:49988 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031209AbbKELEx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Nov 2015 06:04:53 -0500
+	id S1031108AbbKELUp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 5 Nov 2015 06:20:45 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix sleeping inside atomic context in qgroup rescan worker
-Date: Thu,  5 Nov 2015 11:04:42 +0000
-Message-Id: <1446721482-7393-1-git-send-email-fdmanana@kernel.org>
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] Btrfs fixes
+Date: Thu,  5 Nov 2015 11:20:37 +0000
+Message-Id: <1446722437-21605-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-We are holding a btree path with spinning locks and then we attempt to
-clone an extent buffer, which calls kmem_cache_alloc() and this function
-can sleep, causing the following trace to be reported on a debug kernel:
+Hi Chris,
 
-[107118.218536] BUG: sleeping function called from invalid context at mm/slab.c:2871
-[107118.224110] in_atomic(): 1, irqs_disabled(): 0, pid: 19148, name: kworker/u32:3
-[107118.226120] INFO: lockdep is turned off.
-[107118.226843] Preemption disabled at:[<ffffffffa05ffa22>] btrfs_clear_lock_blocking_rw+0x96/0xea [btrfs]
+please consider the following fixes for the 4.4 merge window (they were
+all previously sent to the mailing list already).
 
-[107118.229175] CPU: 3 PID: 19148 Comm: kworker/u32:3 Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
-[107118.231326] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
-[107118.233687] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper [btrfs]
-[107118.236835]  0000000000000000 ffff880424bf3b78 ffffffff812566f4 0000000000000000
-[107118.238369]  ffff880424bf3ba0 ffffffff81070664 ffffffff817f1cd5 0000000000000b37
-[107118.239769]  0000000000000000 ffff880424bf3bc8 ffffffff8107070a 0000000000008850
-[107118.241244] Call Trace:
-[107118.241729]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
-[107118.242602]  [<ffffffff81070664>] ___might_sleep+0x23a/0x241
-[107118.243586]  [<ffffffff8107070a>] __might_sleep+0x9f/0xa6
-[107118.244532]  [<ffffffff8115af70>] cache_alloc_debugcheck_before+0x25/0x36
-[107118.245939]  [<ffffffff8115d52b>] kmem_cache_alloc+0x50/0x215
-[107118.246930]  [<ffffffffa05e627e>] __alloc_extent_buffer+0x2a/0x11f [btrfs]
-[107118.248121]  [<ffffffffa05ecb1a>] btrfs_clone_extent_buffer+0x3d/0xdd [btrfs]
-[107118.249451]  [<ffffffffa06239ea>] btrfs_qgroup_rescan_worker+0x16d/0x434 [btrfs]
-[107118.250755]  [<ffffffff81087481>] ? arch_local_irq_save+0x9/0xc
-[107118.251754]  [<ffffffffa05f7952>] normal_work_helper+0x14c/0x32a [btrfs]
-[107118.252899]  [<ffffffffa05f7952>] ? normal_work_helper+0x14c/0x32a [btrfs]
-[107118.254195]  [<ffffffffa05f7c82>] btrfs_qgroup_rescan_helper+0x12/0x14 [btrfs]
-[107118.255436]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
-[107118.263690]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
-[107118.264888]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
-[107118.267413]  [<ffffffff8106904d>] kthread+0xef/0xf7
-[107118.268417]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
-[107118.269505]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
-[107118.270491]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+One fixes a sleep inside atomic context issue, introduced by one patch
+in the integration-4.4 branch. Another two fix races regarding waiting
+for qgroup rescan worker to finish and a race between the qgroup rescan
+worker and unmounting the filesystem (leading to crashes). The remaining
+patch fixes an issue with partial direct IO writes, which has been
+introduced in the 4.0 kernel, and results either in an assertion failure
+(BUG_ON) when CONFIG_BTRFS_ASSERT=y or arithmetic underflow of an inode's
+outstanding extents counter (used for proper space reservation) when
+assertions are disabled.
 
-So just use blocking locks for our path to solve this.
-This fixes the patch titled:
-  "btrfs: qgroup: Don't copy extent buffer to do qgroup rescan"
+Two test cases for fstests were sent recently to cover the issues regarding
+the races and the direct IO partial write regression.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/qgroup.c | 1 -
- 1 file changed, 1 deletion(-)
+Thanks.
 
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 75bb4af9..93e12c1 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2198,7 +2198,6 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
- 	int slot;
- 	int ret;
- 
--	path->leave_spinning = 1;
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
- 	ret = btrfs_search_slot_for_read(fs_info->extent_root,
- 					 &fs_info->qgroup_rescan_progress,
+The following changes since commit 2959a32a858a2c44bbbce83d19c158d54cc5998a:
+
+  Btrfs: fix hole punching when using the no-holes feature (2015-11-03 07:44:20 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git integration-4.4
+
+for you to fetch changes up to 3b2ba7b31d56c3d8f57cd5d32b8fb5101ab446e4:
+
+  Btrfs: fix sleeping inside atomic context in qgroup rescan worker (2015-11-05 11:02:22 +0000)
+
+----------------------------------------------------------------
+Filipe Manana (3):
+      Btrfs: fix extent accounting for partial direct IO writes
+      Btrfs: fix race waiting for qgroup rescan worker
+      Btrfs: fix sleeping inside atomic context in qgroup rescan worker
+
+Justin Maggard (1):
+      btrfs: qgroup: exit the rescan worker during umount
+
+ fs/btrfs/disk-io.c |  3 +++
+ fs/btrfs/inode.c   | 52 +++++++++++++++++++++++++++++++++++++---------------
+ fs/btrfs/qgroup.c  | 13 +++++++------
+ 3 files changed, 47 insertions(+), 21 deletions(-)
+
 -- 
 2.1.3
 

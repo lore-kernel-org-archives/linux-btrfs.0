@@ -1,43 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f53.google.com ([209.85.220.53]:35819 "EHLO
-	mail-pa0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751046AbbKFSk2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Nov 2015 13:40:28 -0500
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:36332 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964795AbbKEAun (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Nov 2015 19:50:43 -0500
 From: Justin Maggard <jmaggard10@gmail.com>
 To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
 Cc: Justin Maggard <jmaggard@netgear.com>
-Subject: [PATCH] btrfs: test quota disable during quota rescan
-Date: Fri,  6 Nov 2015 10:40:21 -0800
-Message-Id: <1446835221-11905-1-git-send-email-jmaggard@netgear.com>
+Subject: [PATCH v2] btrfs: test unmount during quota rescan
+Date: Wed,  4 Nov 2015 16:50:36 -0800
+Message-Id: <1446684636-32730-1-git-send-email-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test case tests if we are able to disable quotas on a filesystem
-while a quota rescan is running.  Up to now (4.3) this would result
+This test case tests if we are able to unmount a filesystem while
+a quota rescan is running.  Up to now (4.3) this would result
 in a kernel NULL pointer dereference.
 
-Fixed by patch (btrfs: qgroup: fix quota disable during rescan).
+Fixed by patch (btrfs: qgroup: exit the rescan worker during umount).
 
 Signed-off-by: Justin Maggard <jmaggard@netgear.com>
 ---
- tests/btrfs/115     | 62 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/115.out |  2 ++
+ tests/btrfs/114     | 61 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/114.out |  2 ++
  tests/btrfs/group   |  1 +
- 3 files changed, 65 insertions(+)
- create mode 100755 tests/btrfs/115
- create mode 100644 tests/btrfs/115.out
+ 3 files changed, 64 insertions(+)
+ create mode 100644 tests/btrfs/114
+ create mode 100644 tests/btrfs/114.out
 
-diff --git a/tests/btrfs/115 b/tests/btrfs/115
-new file mode 100755
-index 0000000..0d1cb3a
+diff --git a/tests/btrfs/114 b/tests/btrfs/114
+new file mode 100644
+index 0000000..0a0e8ba
 --- /dev/null
-+++ b/tests/btrfs/115
-@@ -0,0 +1,62 @@
++++ b/tests/btrfs/114
+@@ -0,0 +1,61 @@
 +#! /bin/bash
-+# FS QA Test No. btrfs/115
++# FS QA Test No. btrfs/114
 +#
-+# btrfs quota scan/disable sanity test
-+# Make sure that disabling quotas during a quota rescan doesn't crash
++# btrfs quota scan/unmount sanity test
++# Make sure that unmounting during a quota rescan doesn't crash
 +#
 +#-----------------------------------------------------------------------
 +# Copyright (c) 2015 NETGEAR, Inc.  All Rights Reserved.
@@ -89,29 +89,28 @@ index 0000000..0d1cb3a
 +done
 +echo 3 > /proc/sys/vm/drop_caches
 +$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
-+$BTRFS_UTIL_PROG quota disable $SCRATCH_MNT
-+
++_scratch_unmount
 +
 +echo "Silence is golden"
 +status=0
 +exit
-diff --git a/tests/btrfs/115.out b/tests/btrfs/115.out
+diff --git a/tests/btrfs/114.out b/tests/btrfs/114.out
 new file mode 100644
-index 0000000..d9dd136
+index 0000000..a2aa4a2
 --- /dev/null
-+++ b/tests/btrfs/115.out
++++ b/tests/btrfs/114.out
 @@ -0,0 +1,2 @@
-+QA output created by 115
++QA output created by 114
 +Silence is golden
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 10ab26b..39b9aff 100644
+index 7cf7dd7..10ab26b 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -117,3 +117,4 @@
+@@ -116,3 +116,4 @@
+ 111 auto quick send
  112 auto quick clone
  113 auto quick compress clone
- 114 auto qgroup
-+115 auto qgroup
++114 auto qgroup
 -- 
-2.6.3
+2.6.2
 

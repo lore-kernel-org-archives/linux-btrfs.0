@@ -1,54 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:16995 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750750AbbKBVzW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Nov 2015 16:55:22 -0500
-Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id tA2LtLG9012108
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Nov 2015 21:55:22 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id tA2LtK8V020347
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Nov 2015 21:55:21 GMT
-Received: from abhmp0008.oracle.com (abhmp0008.oracle.com [141.146.116.14])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id tA2LtKo4008526
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Nov 2015 21:55:20 GMT
-From: Ashish Samant <ashish.samant@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: ashish.samant@oracle.com
-Subject: [PATCH V2] btrfs: Print Warning only if ENOSPC_DEBUG is enabled
-Date: Mon,  2 Nov 2015 13:55:10 -0800
-Message-Id: <1446501310-4408-1-git-send-email-ashish.samant@oracle.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:27741 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1030389AbbKEA53 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Nov 2015 19:57:29 -0500
+Subject: Re: [PATCH 0/5] Btrfs: Per-chunk degradable check
+To: <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
+References: <1442801443-5132-1-git-send-email-quwenruo@cn.fujitsu.com>
+CC: Anand Jain <anand.jain@oracle.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <563AA975.4020904@cn.fujitsu.com>
+Date: Thu, 5 Nov 2015 08:57:25 +0800
+MIME-Version: 1.0
+In-Reply-To: <1442801443-5132-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dont call WARN_ON for ENOSPC error unless ENOSPC_DEBUG is enabled.
+Any new comment?
 
-Signed-off-by : Ashish Samant <ashish.samant@oracle.com>
----
- fs/btrfs/delayed-inode.c | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+And to Chris, is it possible to pick these patchset for 4.4?
 
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index a2ae427..b86cfd9 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -652,9 +652,13 @@ static int btrfs_delayed_inode_reserve_metadata(
- 			goto out;
- 
- 		ret = btrfs_block_rsv_migrate(src_rsv, dst_rsv, num_bytes);
--		if (!WARN_ON(ret))
-+		if (!ret)
- 			goto out;
- 
-+		if (btrfs_test_opt(root, ENOSPC_DEBUG))
-+			WARN(1, KERN_DEBUG
-+			     "btrfs: block rsv migrate returned %d\n", ret);
-+
- 		/*
- 		 * Ok this is a problem, let's just steal from the global rsv
- 		 * since this really shouldn't happen that often.
--- 
-1.8.3.2
+IMHO it's small enough (less than 100 lines) and didn't change degraded 
+mount behavior much.
 
+Thanks,
+Qu
+
+Qu Wenruo wrote on 2015/09/21 10:10 +0800:
+> Btrfs currently uses num_tolerated_disk_barrier_failures to do global
+> check for tolerated missing device.
+>
+> Although the one-size-fit-all solution is quite safe, it's too strict if
+> data and metadata has different duplication level.
+>
+> For example, if one use Single data and RAID1 metadata for 2 disks, it
+> means any missing device will make the fs unable to be degraded mounted.
+>
+> But in fact, some times all single chunks may be in the existing device
+> and in that case, we should allow it to be rw degraded mounted.
+>
+> Such case can be easily reproduced using the following script:
+>   # mkfs.btrfs -f -m raid1 -d sing /dev/sdb /dev/sdc
+>   # wipefs -f /dev/sdc
+>   # mount /dev/sdb -o degraded,rw
+>
+> If using btrfs-debug-tree to check /dev/sdb, one should find that the
+> data chunk is only in sdb, so in fact it should allow degraded mount.
+>
+> This patchset will introduce a new per-chunk degradable check for btrfs,
+> allow above case to succeed, and it's quite small anyway.
+>
+> Also, it provides the possibility for later enhancement, like
+> automatically add 'degraded' mount option if possible.
+>
+> Cc: Anand Jain <anand.jain@oracle.com>
+>
+> Qu Wenruo (5):
+>    btrfs: Introduce a new function to check if all chunks a OK for
+>      degraded     mount
+>    btrfs: Do per-chunk check for mount time check
+>    btrfs: Do per-chunk degraded check for remount
+>    btrfs: Allow barrier_all_devices to do per-chunk device check
+>    btrfs: Cleanup num_tolerated_disk_barrier_failures
+>
+>   fs/btrfs/ctree.h   |  2 --
+>   fs/btrfs/disk-io.c | 87 ++++++++++--------------------------------------------
+>   fs/btrfs/disk-io.h |  2 --
+>   fs/btrfs/super.c   | 11 ++++---
+>   fs/btrfs/volumes.c | 84 +++++++++++++++++++++++++++++++++++++++++-----------
+>   fs/btrfs/volumes.h |  5 ++++
+>   6 files changed, 94 insertions(+), 97 deletions(-)
+>

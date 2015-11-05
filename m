@@ -1,103 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:56719 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751748AbbKISj4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Nov 2015 13:39:56 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] Btrfs: fix race when listing an inode's xattrs
-Date: Mon,  9 Nov 2015 18:39:48 +0000
-Message-Id: <1447094388-4270-1-git-send-email-fdmanana@kernel.org>
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:33632 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1031084AbbKEKhf (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2015 05:37:35 -0500
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1446684636-32730-1-git-send-email-jmaggard@netgear.com>
+References: <1446684636-32730-1-git-send-email-jmaggard@netgear.com>
+Date: Thu, 5 Nov 2015 10:37:34 +0000
+Message-ID: <CAL3q7H4tFT+2R3QXJe2gmYK+iKw0ANyfHcL2V2wqgEQwVVyQrw@mail.gmail.com>
+Subject: Re: [PATCH v2] btrfs: test unmount during quota rescan
+From: Filipe Manana <fdmanana@gmail.com>
+To: Justin Maggard <jmaggard10@gmail.com>
+Cc: fstests@vger.kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Justin Maggard <jmaggard@netgear.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Nov 5, 2015 at 12:50 AM, Justin Maggard <jmaggard10@gmail.com> wrote:
+> This test case tests if we are able to unmount a filesystem while
+> a quota rescan is running.  Up to now (4.3) this would result
+> in a kernel NULL pointer dereference.
+>
+> Fixed by patch (btrfs: qgroup: exit the rescan worker during umount).
+>
+> Signed-off-by: Justin Maggard <jmaggard@netgear.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
 
-When listing a inode's xattrs we have a time window where we race against
-a concurrent operation for adding a new hard link for our inode that makes
-us not return any xattr to user space. In order for this to happen, the
-first xattr of our inode needs to be at slot 0 of a leaf and the previous
-leaf must still have room for an inode ref (or extref) item, and this can
-happen because an inode's listxattrs callback does not lock the inode's
-i_mutex (nor does the VFS does it for us), but adding a hard link to an
-inode makes the VFS lock the inode's i_mutex before calling the inode's
-link callback.
+> ---
 
-If we have the following leafs:
+Btw, for future patches/versions, here after the --- you should
+mention what changed between versions of the patch.
 
-               Leaf X (has N items)                    Leaf Y
+thanks
 
- [ ... (257 INODE_ITEM 0) (257 INODE_REF 256) ]  [ (257 XATTR_ITEM 12345), ... ]
-           slot N - 2         slot N - 1              slot 0
+>  tests/btrfs/114     | 61 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+>  tests/btrfs/114.out |  2 ++
+>  tests/btrfs/group   |  1 +
+>  3 files changed, 64 insertions(+)
+>  create mode 100644 tests/btrfs/114
+>  create mode 100644 tests/btrfs/114.out
+>
+> diff --git a/tests/btrfs/114 b/tests/btrfs/114
+> new file mode 100644
+> index 0000000..0a0e8ba
+> --- /dev/null
+> +++ b/tests/btrfs/114
+> @@ -0,0 +1,61 @@
+> +#! /bin/bash
+> +# FS QA Test No. btrfs/114
+> +#
+> +# btrfs quota scan/unmount sanity test
+> +# Make sure that unmounting during a quota rescan doesn't crash
+> +#
+> +#-----------------------------------------------------------------------
+> +# Copyright (c) 2015 NETGEAR, Inc.  All Rights Reserved.
+> +#
+> +# This program is free software; you can redistribute it and/or
+> +# modify it under the terms of the GNU General Public License as
+> +# published by the Free Software Foundation.
+> +#
+> +# This program is distributed in the hope that it would be useful,
+> +# but WITHOUT ANY WARRANTY; without even the implied warranty of
+> +# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+> +# GNU General Public License for more details.
+> +#
+> +# You should have received a copy of the GNU General Public License
+> +# along with this program; if not, write the Free Software Foundation,
+> +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+> +#-----------------------------------------------------------------------
+> +#
+> +
+> +seq=`basename $0`
+> +seqres=$RESULT_DIR/$seq
+> +echo "QA output created by $seq"
+> +
+> +here=`pwd`
+> +tmp=/tmp/$$
+> +status=1       # failure is the default!
+> +trap "_cleanup; exit \$status" 0 1 2 3 15
+> +
+> +_cleanup()
+> +{
+> +       cd /
+> +       rm -f $tmp.*
+> +}
+> +
+> +# get standard environment, filters and checks
+> +. ./common/rc
+> +. ./common/filter
+> +
+> +# real QA test starts here
+> +_supported_fs btrfs
+> +_supported_os Linux
+> +_require_scratch
+> +
+> +_scratch_mkfs >>$seqres.full 2>&1
+> +_scratch_mount
+> +
+> +for i in `seq 0 1 450000`; do
+> +       echo -n > $SCRATCH_MNT/file.$i
+> +done
+> +echo 3 > /proc/sys/vm/drop_caches
+> +$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
+> +_scratch_unmount
+> +
+> +echo "Silence is golden"
+> +status=0
+> +exit
+> diff --git a/tests/btrfs/114.out b/tests/btrfs/114.out
+> new file mode 100644
+> index 0000000..a2aa4a2
+> --- /dev/null
+> +++ b/tests/btrfs/114.out
+> @@ -0,0 +1,2 @@
+> +QA output created by 114
+> +Silence is golden
+> diff --git a/tests/btrfs/group b/tests/btrfs/group
+> index 7cf7dd7..10ab26b 100644
+> --- a/tests/btrfs/group
+> +++ b/tests/btrfs/group
+> @@ -116,3 +116,4 @@
+>  111 auto quick send
+>  112 auto quick clone
+>  113 auto quick compress clone
+> +114 auto qgroup
+> --
+> 2.6.2
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe fstests" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-The race illustrated by the following sequence diagram is possible:
 
-       CPU 1                                               CPU 2
 
-  btrfs_listxattr()
-
-    searches for key (257 XATTR_ITEM 0)
-
-    gets path with path->nodes[0] == leaf X
-    and path->slots[0] == N
-
-    because path->slots[0] is >=
-    btrfs_header_nritems(leaf X), it calls
-    btrfs_next_leaf()
-
-    btrfs_next_leaf()
-      releases the path
-
-                                                   adds key (257 INODE_REF 666)
-                                                   to the end of leaf X (slot N),
-                                                   and leaf X now has N + 1 items
-
-      searches for the key (257 INODE_REF 256),
-      with path->keep_locks == 1, because that
-      is the last key it saw in leaf X before
-      releasing the path
-
-      ends up at leaf X again and it verifies
-      that the key (257 INODE_REF 256) is no
-      longer the last key in leaf X, so it
-      returns with path->nodes[0] == leaf X
-      and path->slots[0] == N, pointing to
-      the new item with key (257 INODE_REF 666)
-
-    btrfs_listxattr's loop iteration sees that
-    the type of the key pointed by the path is
-    different from the type BTRFS_XATTR_ITEM_KEY
-    and so it breaks the loop and stops looking
-    for more xattr items
-      --> the application doesn't get any xattr
-          listed for our inode
-
-So fix this by breaking the loop only if the key's type is greater than
-BTRFS_XATTR_ITEM_KEY and skip the current key if its type is smaller.
-
-Cc: stable@vger.kernel.org
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/xattr.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 6f518c9..1fcd7b6 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -313,8 +313,10 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
- 		/* check to make sure this item is what we want */
- 		if (found_key.objectid != key.objectid)
- 			break;
--		if (found_key.type != BTRFS_XATTR_ITEM_KEY)
-+		if (found_key.type > BTRFS_XATTR_ITEM_KEY)
- 			break;
-+		if (found_key.type < BTRFS_XATTR_ITEM_KEY)
-+			goto next;
- 
- 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
- 		if (verify_dir_item(root, leaf, di))
 -- 
-2.1.3
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

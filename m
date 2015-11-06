@@ -1,63 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:49186 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750825AbbKJGZF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Nov 2015 01:25:05 -0500
-Date: Mon, 9 Nov 2015 22:24:28 -0800
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Christoph Hellwig <hch@infradead.org>
-Cc: Anna Schumaker <Anna.Schumaker@netapp.com>, linux-nfs@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-fsdevel@vger.kernel.org,
-        linux-api@vger.kernel.org, zab@zabbo.net, viro@zeniv.linux.org.uk,
-        clm@fb.com, mtk.manpages@gmail.com, andros@netapp.com
-Subject: Re: [PATCH v5 8/9] vfs: Add vfs_copy_file_range() support for
- pagecache copies
-Message-ID: <20151110062428.GF3255@birch.djwong.org>
-References: <1443634014-3026-1-git-send-email-Anna.Schumaker@Netapp.com>
- <1443634014-3026-9-git-send-email-Anna.Schumaker@Netapp.com>
- <20151011142203.GA31867@infradead.org>
- <20151012231749.GC11398@birch.djwong.org>
- <20151013072737.GA10794@infradead.org>
+Received: from mx141.netapp.com ([216.240.21.12]:31688 "EHLO mx141.netapp.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S966019AbbKFVS2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 6 Nov 2015 16:18:28 -0500
+From: Anna Schumaker <Anna.Schumaker@netapp.com>
+To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
+        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
+        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
+        <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
+        <andros@netapp.com>, <hch@infradead.org>
+Subject: [PATCH v8 0/4] VFS: In-kernel copy system call
+Date: Fri, 6 Nov 2015 16:18:16 -0500
+Message-ID: <1446844701-848-1-git-send-email-Anna.Schumaker@Netapp.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151013072737.GA10794@infradead.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Oct 13, 2015 at 12:27:37AM -0700, Christoph Hellwig wrote:
-> On Mon, Oct 12, 2015 at 04:17:49PM -0700, Darrick J. Wong wrote:
-> > Hm.  Peng's patches only generalize the CLONE and CLONE_RANGE ioctls from
-> > btrfs, however they don't port over the (vastly different) EXTENT_SAME ioctl.
-> > 
-> > What does everyone think about generalizing EXTENT_SAME?  The interface enables
-> > one to ask the kernel to dedupe multiple file ranges in a single call.  That's
-> > more complex than what I was proposing with COPY_FR_DEDUP(E), but I'm assuming
-> > that the extra complexity buys us the ability to ... multi-dedupe at the same
-> > time, with locks held on the source file?
-> > 
-> > I'm happy to generalize the existing EXTENT_SAME, but please yell if you really
-> > hate the interface.
-> 
-> It's not pretty, but if the btrfs folks have a good reason for it I
-> don't see a reason to diverge.
+Copy system calls came up during Plumbers a while ago, mostly because several
+filesystems (including NFS and XFS) are currently working on copy acceleration
+implementations.  We haven't heard from Zach Brown in a while, so I volunteered
+to push his patches upstream so individual filesystems don't need to keep
+writing their own ioctls.
 
-I started hoisting EXTENT_SAME into the VFS but I don't like the name because
-this ioctl implies some sort of action, but "EXTENT SAME" lacks a verb.  Since
-we have to introduce a new symbol anyway, I'm going to use FS_DEDUPE_RANGE.
+This posting  fixes up a few minor issues that came up on the mailing list.  I
+looked into the O_APPEND question, and do_splice_direct() specificially
+disallows files that are open for appending.  I've decided to keep the
+no-O_APPEND requirement for now since I use this function for pagecache copies.
 
-struct file_dedupe_range {
-	...
-}
+Changes in v8:
+- Remove redundant checks.
+- Make the fdget() / fdput() calls more obvious.
+- Document disallowing files open with O_APPEND.
 
-#define FI_DEDUPE_RANGE         _IOWR(0x94, 54, struct file_dedupe_range)
+Thanks,
+Anna
 
-(Honestly, I'm not in love with FICLONERANGE either, but FIDEDUPRANGE was just
-unpronounceable mess.)
 
-Also, for the btrfs folks: Why does extent_same call mnt_want_write_file on the
-fd that we pass into the ioctl?  Shouldn't we be calling it on the fd that's in
-the btrfs_ioctl_extent_same_info structure because that'ss the file that gets
-its blocks remapped?
+Anna Schumaker (1):
+  vfs: Add vfs_copy_file_range() support for pagecache copies
 
---D
+Zach Brown (3):
+  vfs: add copy_file_range syscall and vfs helper
+  x86: add sys_copy_file_range to syscall tables
+  btrfs: add .copy_file_range file operation
+
+ arch/x86/entry/syscalls/syscall_32.tbl |   1 +
+ arch/x86/entry/syscalls/syscall_64.tbl |   1 +
+ fs/btrfs/ctree.h                       |   3 +
+ fs/btrfs/file.c                        |   1 +
+ fs/btrfs/ioctl.c                       |  91 ++++++++++++----------
+ fs/read_write.c                        | 135 +++++++++++++++++++++++++++++++++
+ include/linux/fs.h                     |   3 +
+ include/linux/syscalls.h               |   3 +
+ include/uapi/asm-generic/unistd.h      |   4 +-
+ kernel/sys_ni.c                        |   1 +
+ 10 files changed, 203 insertions(+), 40 deletions(-)
+
+-- 
+2.6.2
+

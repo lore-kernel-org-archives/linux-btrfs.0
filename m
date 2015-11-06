@@ -1,150 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:37431 "EHLO
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:33568 "EHLO
 	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1162906AbbKFUgz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Nov 2015 15:36:55 -0500
-Received: by igbhv6 with SMTP id hv6so43212140igb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2015 12:36:54 -0800 (PST)
-Subject: Re: Unable to allocate for space usage in particular btrfs volume
-To: Calvin Walton <calvin.walton@kepstin.ca>,
-        OmegaPhil <OmegaPhil@startmail.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org, Hugo Mills <hugo@carfax.org.uk>
-References: <563A7452.4050202@startmail.com>
- <20151104213039.GC27446@carfax.org.uk> <563A7E45.1050806@startmail.com>
- <pan$b856e$b1f161a7$4a31aba1$83a27ad@cox.net>
- <563B3323.8080609@startmail.com> <1446840956.3899.13.camel@kepstin.ca>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <563D0F2C.3080400@gmail.com>
-Date: Fri, 6 Nov 2015 15:35:56 -0500
+	with ESMTP id S1030347AbbKFWQn (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Nov 2015 17:16:43 -0500
+Received: by igvi2 with SMTP id i2so42804887igv.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2015 14:16:42 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1446840956.3899.13.camel@kepstin.ca>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020403090408080706030903"
+In-Reply-To: <CAPoQQ-0SCeXpzjWM5Y3BUD=kHxAdfTRB21vnRf9TQGrQm6CHkQ@mail.gmail.com>
+References: <CAPoQQ-0SCeXpzjWM5Y3BUD=kHxAdfTRB21vnRf9TQGrQm6CHkQ@mail.gmail.com>
+Date: Fri, 6 Nov 2015 17:16:42 -0500
+Message-ID: <CAPoQQ-07L3-43Y4JiuHW1MPBNVgm3qXAtC0PDxCi0Pe8CxqPSQ@mail.gmail.com>
+Subject: Re: btrfs_sync_file alignment trap on arm (kernel 4.2.5)
+From: Cody P Schafer <dev@codyps.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
-
---------------ms020403090408080706030903
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-On 2015-11-06 15:15, Calvin Walton wrote:
-> On Thu, 2015-11-05 at 10:44 +0000, OmegaPhil wrote:
->> On 05/11/15 04:18, Duncan wrote:
->>> OmegaPhil posted on Wed, 04 Nov 2015 21:53:09 +0000 as excerpted:
->>> VM image files (and large database files, for the same reason) are
->>> a bit
->>> of a problem on btrfs, and indeed, any COW-based filesystem, since
->>> the
->>> random rewrite pattern matching that use-case is pretty much the
->>> absolute
->>> worst-case match for a COW-based filesystem there is.
->>> Since you're not doing snapshotting (which conflicts with this
->>> option,
->>> with an imperfect workaround), setting nocow on those files may
->>> well
->>> eliminate the problem, but be aware if you aren't already that (1)
->>> nocow
->>> does turn off checksumming as well, in ordered to avoid a race that
->>> could
->>> easily lead to data corruption, and (2) you can't just activate
+On Wed, Nov 4, 2015 at 5:55 PM, Cody P Schafer <dev@codyps.com> wrote:
+> Ideas as to what could cause this would be appreciated.
 >
->> So a couple of gig still unaccountable but irrelevant. Thanks,
->> problem
->> solved! Although hopefully checksumming will be allowed on nocow
->> files
->> in the future as thats currently 17% of all data unprotected and will
->> get worse...
+> This consistently is triggered shortly after boot (I presume due to
+> conmand calling fsync on a file).
 >
-> There's actually an interesting workaround to this: Although the VM
-> disk images aren't checksummed on the host filesystem, you can use
-> btrfs *inside* the VMs and enable checksumming there. The downside is
-> that you can only verify the VM data by booting the VM and running a
-> scrub from inside.
-Actually, by using a combination of loop devices and kpartx, it's fully=20
-possible to mount the FS and verify it without booting the VM.  Of=20
-course, doing this usually requires root access on the host system, but=20
-for most people I know, that's usually not an issue.  I do this on=20
-occasion when I need to pull a file off of one of my VM disks on my=20
-laptop and don't have the time to spin up the VM itself.
+> Note that I'm not quite running 4.2.5, but none of the changes I have
+> additionally applied are to btrfs or atomics.
+>
+> Let me know if there is a way for me to get you more info.
+>
+> It looks like the line is:
+>
+>     mutex_lock(&inode->i_mutex);
+>     atomic_inc(&root->log_batch);  <<<<
+>     full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
+>         &BTRFS_I(inode)->runtime_flags);
+>
+>
+> addr2line of the trapping instruction:
+>     addr2line -e
+> ./work/beaglebone-poky-linux-gnueabi/linux-yocto-ikabit/4.2.5+gitAUTOINC+c29ac18888-r1/linux-beaglebone-standard-build/arch/arm/boot/vmlinux
+> c0217a34 -i
+>     /home/cody/obj/y/tmp/work-shared/beaglebone/kernel-source/arch/arm/include/asm/atomic.h:194
+>     /home/cody/obj/y/tmp/work-shared/beaglebone/kernel-source/fs/btrfs/file.c:1886
+>
+> fault log:
+>
+> [   11.488382] Alignment trap: not handling instruction e1993f9f at [<c0217a34>]
+> [   11.560558] Unhandled fault: alignment exception (0x001) at 0x0000026d
+> [   11.607301] pgd = dc090000
+> [   11.610166] [0000026d] *pgd=9c063831, *pte=00000000, *ppte=00000000
+> [   11.665548] Internal error: : 1 [#1] PREEMPT ARM
+> [   11.670388] Modules linked in: omaplfb(O) bufferclass_ti(O) pvrsrvkm(O)
+> [   11.677341] CPU: 0 PID: 248 Comm: connmand Tainted: G           O
+>  4.2.5-yocto-standard #1
+> [   11.686172] Hardware name: Generic AM33XX (Flattened Device Tree)
+> [   11.692551] task: dc00d100 ti: dc068000 task.ti: dc068000
+> [   11.698219] PC is at btrfs_sync_file+0x104/0x3f4
+> [   11.703051] LR is at btrfs_sync_file+0x100/0x3f4
+> [   11.707883] pc : [<c0217a38>]    lr : [<c0217a34>]    psr: 60060013
+> [   11.707883] sp : dc069e98  ip : dc069e98  fp : dc069f1c
+> [   11.719897] r10: 00000000  r9 : 0000026d  r8 : dd746b40
+> [   11.725363] r7 : dcef8dcc  r6 : 00000000  r5 : dcef8d68  r4 : 00000001
+> [   11.732192] r3 : 7fffffff  r2 : 00000000  r1 : 00000000  r0 : dcef8dcc
+> [   11.739024] Flags: nZCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment user
+> [   11.746491] Control: 10c5387d  Table: 9c090019  DAC: 00000015
+> [   11.752502] Process connmand (pid: 248, stack limit = 0xdc068210)
+> [   11.758878] Stack: (0xdc069e98 to 0xdc06a000)
+> [   11.763436] 9e80:
+>     ffffffff 7fffffff
+> [   11.771998] 9ea0: dc069f38 c014582c 0000b30b 00000000 00000000
+> 000037f6 000081a4 d5012f68
+> [   11.780559] 9ec0: 00000000 80000000 00000000 00000000 00000000
+> 00000000 0000008d 00000000
+> [   11.789121] 9ee0: 00000400 00000000 00000001 20b04e34 563924e6
+> dd746b40 dce2beb8 00000000
+> [   11.797683] 9f00: 00000000 00000000 dc068000 00000000 dc069f54
+> dc069f20 c0171d00 c0217940
+> [   11.806245] 9f20: ffffffff 7fffffff 00000000 dc069f38 c0145b6c
+> dd746b40 00000000 dd746b40
+> [   11.814807] 9f40: 00000076 c000f7a4 dc069f74 dc069f58 c0171d3c
+> c0171c40 ffffffff 7fffffff
+> [   11.823369] 9f60: 00000000 c015cc9c dc069f94 dc069f78 c0171d7c
+> c0171d14 00000000 bebe2bf8
+> [   11.831931] 9f80: 00e64c4d b6a104d0 dc069fa4 dc069f98 c017204c
+> c0171d50 00000000 dc069fa8
+> [   11.840492] 9fa0: c000f600 c017203c bebe2bf8 00e64c4d 00000009
+> bebe2bf8 0000008d 00000000
+> [   11.849054] 9fc0: bebe2bf8 00e64c4d b6a104d0 00000076 00e64810
+> 00e60cd0 00000009 00000000
+> [   11.857616] 9fe0: 00000000 bebe2bd4 b6e63384 b6dcef00 60060010
+> 00000009 044a1103 099b0303
+> [   11.866199] [<c0217a38>] (btrfs_sync_file) from [<c0171d00>]
+> (vfs_fsync_range+0xcc/0xd4)
+> [   11.874674] [<c0171d00>] (vfs_fsync_range) from [<c0171d3c>]
+> (vfs_fsync+0x34/0x3c)
+> [   11.882600] [<c0171d3c>] (vfs_fsync) from [<c0171d7c>] (do_fsync+0x38/0x54)
+> [   11.889890] [<c0171d7c>] (do_fsync) from [<c017204c>] (SyS_fsync+0x1c/0x20)
+> [   11.897188] [<c017204c>] (SyS_fsync) from [<c000f600>]
+> (ret_fast_syscall+0x0/0x3c)
+> [   11.905116] Code: e14b05fc e1a00007 eb1251f7 e1993f9f (e2833001)
+> [   13.418969] ---[ end trace d7bcd93aea7d243c ]---
+> [   13.442420] Kernel panic - not syncing: Fatal exception
 
-Another option if you're doing a direct boot of the kernel (for example, =
+I looked into this a bit further, and it looks like my issue is that
+the btrfs_root* from BTRFS_I(inode)->root is somehow `1` instead of an
+actual pointer value, so it appears this isn't quite an alignment
+issue.
 
-when using a fully paravirtualized domain on Xen, or using some of the=20
-QEMU ARM systems) is to just do the volume management (partitioning and=20
-such) on the host, and expose each filesystem to the guest as a separate =
+Kernel starts without issue if I just stop doing the overlay (and as a
+result stop using btrfs at all).
 
-disk.  I do this with most of my Linux VM's on my Xen system where I use =
+I've added some debugging, and the actual file it's trying to fsync
+appears to be: `/var/lib/connman/settings.4CAC7X`
 
-LVM as the back-end storage for the virtual disk images, as it allows me =
+That directory is a overlayfs dir with a btrfs upper and a squashfs lower.
 
-to easily directly mount the VM's filesystems on the host if need be=20
-(and let's you do all kinds of cool things like using a cluster-aware=20
-filesystem for the VM's root so that you can mount it from the host=20
-safely while the VM is still online).
-
-
-
---------------ms020403090408080706030903
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTA2MjAzNTU2WjBPBgkq
-hkiG9w0BCQQxQgRA920HYqqNqTzvD4Vsz0trtLwJX2+Y2aVvq6/QLYPd88+PbbZbWo0Ku4Pi
-xxIMujPCqeS27w/1qPCIq3aQYfVKoTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgCA3XFmUD0bKO+uOkioIyi/Nwv222t3Prchct0f8fStJhs8relN
-pLsCEGtXwmDKkk/au751At0H8gT5elnzL14jFbzvZy+Uz7+DB6tj6k1xx+1QYSedqVZBqyrA
-75gGDZy9lBR8bG+1Pl8o3DzhQKNIo8Ym+wGKPUEnmZzvenZPUbjpBFp6+/G/ZWZlc+n+lxbL
-fL/AN8KNGbEIMju0AzijVYU4TSSnSX3SF2cYnmj2BNCRrpAjUbGJxh1NsQNFs8v4OP7JcwpI
-87UFscyq7k3C9bm8o/YtDEW/xVEqU5H3t7bUUVohKJZOjmUwtWi8bDZJQPyoy5s3WO5gCFje
-JELjgCLJ1U7RgKmrD64D3aETilcJiUUWFMjncB3jffpuI2Y9Q2qgI4ImGoE2ryt/Su7WwxDK
-MP3Qu9Z7U3xsC9H+Kap9hkRNS8Z2+t72+cTfGqhMxfGA1xA2vmrI+1NC7E7eP4UzQS2IrRLS
-mnj6fKiZ3EzR2Bb6U9a18D7bmCfYLFmC9f/kGJkHW/mdUCg1TMxlF2YSxl07F4DE6O0sXpIl
-xPJisTMiyLIFRgmOx9o00U7MarojV+6LzGxS0U7zZlyz1yL4f6HNu3k60r3ts359orwLKy3K
-u/YyiZIZX7smK3mSClZDIh5Z/yPpD6M/JlluDQqf/jZPenbidR8U4ft+SgAAAAAAAA==
---------------ms020403090408080706030903--
+Ideas on why the btrfs_root pointer is 0x1?

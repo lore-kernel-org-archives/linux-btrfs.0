@@ -1,146 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52729 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755724AbbKEWiQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Nov 2015 17:38:16 -0500
-From: Mark Fasheh <mfasheh@suse.de>
+Received: from mail-pa0-f44.google.com ([209.85.220.44]:34022 "EHLO
+	mail-pa0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752679AbbKFSgw (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Nov 2015 13:36:52 -0500
+Received: by padhx2 with SMTP id hx2so122121909pad.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2015 10:36:51 -0800 (PST)
+From: Justin Maggard <jmaggard10@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: jbacik@fb.com, clm@fb.com, quwenruo@cn.fujitsu.com, mfasheh@suse.de
-Subject: [PATCH 3/3] btrfs: qgroup: account shared subtree during snapshot delete
-Date: Thu,  5 Nov 2015 14:38:00 -0800
-Message-Id: <1446763080-20235-4-git-send-email-mfasheh@suse.de>
-In-Reply-To: <1446763080-20235-1-git-send-email-mfasheh@suse.de>
-References: <1446763080-20235-1-git-send-email-mfasheh@suse.de>
+Cc: Justin Maggard <jmaggard@netgear.com>
+Subject: [PATCH] btrfs: qgroup: fix quota disable during rescan
+Date: Fri,  6 Nov 2015 10:36:42 -0800
+Message-Id: <1446835002-11751-1-git-send-email-jmaggard@netgear.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Commit 0ed4792 ('btrfs: qgroup: Switch to new extent-oriented qgroup
-mechanism.') removed our qgroup accounting during
-btrfs_drop_snapshot(). Predictably, this results in qgroup numbers
-going bad shortly after a snapshot is removed.
+There's a race condition that leads to a NULL pointer dereference if you
+disable quotas while a quota rescan is running.  To fix this, we just need
+to wait for the quota rescan worker to actually exit before tearing down
+the quota structures.
 
-Fix this by adding a dirty extent record when we encounter extents during
-our shared subtree walk. This effectively restores the functionality we had
-with the original shared subtree walking code in 1152651 (btrfs: qgroup:
-account shared subtrees during snapshot delete).
-
-The idea with the original patch (and this one) is that shared subtrees can
-get skipped during drop_snapshot. The shared subtree walk then allows us a
-chance to visit those extents and add them to the qgroup work for later
-processing. This ultimately makes the accounting for drop snapshot work.
-
-The new qgroup code nicely handles all the other extents during the tree
-walk via the ref dec/inc functions so we don't have to add actions beyond
-what we had originally.
-
-Signed-off-by: Mark Fasheh <mfasheh@suse.de>
+Signed-off-by: Justin Maggard <jmaggard@netgear.com>
 ---
- fs/btrfs/extent-tree.c | 47 ++++++++++++++++++++++++++++++++++++++++-------
- fs/btrfs/qgroup.c      |  2 ++
- 2 files changed, 42 insertions(+), 7 deletions(-)
+ fs/btrfs/qgroup.c | 3 ++-
+ 1 file changed, 2 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 601d7d4..410b46d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7850,21 +7850,47 @@ reada:
- }
- 
- /*
-- * TODO: Modify related function to add related node/leaf to dirty_extent_root,
-- * for later qgroup accounting.
-- *
-- * Current, this function does nothing.
-+ * These may not be seen by the usual inc/dec ref code so we have to
-+ * add them here.
-  */
-+static int record_one_subtree_extent(struct btrfs_trans_handle *trans,
-+				     struct btrfs_root *root, u64 bytenr,
-+				     u64 num_bytes)
-+{
-+	struct btrfs_qgroup_extent_record *qrecord;
-+	struct btrfs_delayed_ref_root *delayed_refs;
-+
-+	qrecord = kmalloc(sizeof(*qrecord), GFP_NOFS);
-+	if (!qrecord)
-+		return -ENOMEM;
-+
-+	qrecord->bytenr = bytenr;
-+	qrecord->num_bytes = num_bytes;
-+	qrecord->old_roots = NULL;
-+
-+	delayed_refs = &trans->transaction->delayed_refs;
-+	spin_lock(&delayed_refs->lock);
-+	if (btrfs_qgroup_insert_dirty_extent(delayed_refs, qrecord))
-+		kfree(qrecord);
-+	spin_unlock(&delayed_refs->lock);
-+
-+	return 0;
-+}
-+
- static int account_leaf_items(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root,
- 			      struct extent_buffer *eb)
- {
- 	int nr = btrfs_header_nritems(eb);
--	int i, extent_type;
-+	int i, extent_type, ret;
- 	struct btrfs_key key;
- 	struct btrfs_file_extent_item *fi;
- 	u64 bytenr, num_bytes;
- 
-+	/* We can be called directly from walk_up_proc() */
-+	if (!root->fs_info->quota_enabled)
-+		return 0;
-+
- 	for (i = 0; i < nr; i++) {
- 		btrfs_item_key_to_cpu(eb, &key, i);
- 
-@@ -7883,6 +7909,10 @@ static int account_leaf_items(struct btrfs_trans_handle *trans,
- 			continue;
- 
- 		num_bytes = btrfs_file_extent_disk_num_bytes(eb, fi);
-+
-+		ret = record_one_subtree_extent(trans, root, bytenr, num_bytes);
-+		if (ret)
-+			return ret;
- 	}
- 	return 0;
- }
-@@ -7951,8 +7981,6 @@ static int adjust_slots_upwards(struct btrfs_root *root,
- 
- /*
-  * root_eb is the subtree root and is locked before this function is called.
-- * TODO: Modify this function to mark all (including complete shared node)
-- * to dirty_extent_root to allow it get accounted in qgroup.
-  */
- static int account_shared_subtree(struct btrfs_trans_handle *trans,
- 				  struct btrfs_root *root,
-@@ -8030,6 +8058,11 @@ walk_down:
- 			btrfs_tree_read_lock(eb);
- 			btrfs_set_lock_blocking_rw(eb, BTRFS_READ_LOCK);
- 			path->locks[level] = BTRFS_READ_LOCK_BLOCKING;
-+
-+			ret = record_one_subtree_extent(trans, root, child_bytenr,
-+							root->nodesize);
-+			if (ret)
-+				goto out;
- 		}
- 
- 		if (level == 0) {
 diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index b068209..ce1cdcf 100644
+index 75c0249..a7cf504 100644
 --- a/fs/btrfs/qgroup.c
 +++ b/fs/btrfs/qgroup.c
-@@ -1461,6 +1461,8 @@ struct btrfs_qgroup_extent_record
- 	struct btrfs_qgroup_extent_record *entry;
- 	u64 bytenr = record->bytenr;
- 
-+	assert_spin_locked(&delayed_refs->lock);
-+
- 	trace_btrfs_qgroup_insert_dirty_extent(record);
- 
- 	while (*p) {
+@@ -993,9 +993,10 @@ int btrfs_quota_disable(struct btrfs_trans_handle *trans,
+ 	mutex_lock(&fs_info->qgroup_ioctl_lock);
+ 	if (!fs_info->quota_root)
+ 		goto out;
+-	spin_lock(&fs_info->qgroup_lock);
+ 	fs_info->quota_enabled = 0;
+ 	fs_info->pending_quota_state = 0;
++	btrfs_qgroup_wait_for_completion(fs_info);
++	spin_lock(&fs_info->qgroup_lock);
+ 	quota_root = fs_info->quota_root;
+ 	fs_info->quota_root = NULL;
+ 	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_ON;
 -- 
-2.1.2
+2.6.3
 

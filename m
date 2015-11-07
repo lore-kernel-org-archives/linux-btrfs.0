@@ -1,61 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39333 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751163AbbKGIeY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 7 Nov 2015 03:34:24 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zuyx3-0002pV-0m
-	for linux-btrfs@vger.kernel.org; Sat, 07 Nov 2015 09:34:21 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 09:34:21 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 09:34:21 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Btrfs progs pre-release 4.3-rc1
-Date: Sat, 7 Nov 2015 08:34:14 +0000 (UTC)
-Message-ID: <pan$3824b$cc94e858$deca2096$42ae1abf@cox.net>
+Received: from mail-lf0-f68.google.com ([209.85.215.68]:34631 "EHLO
+	mail-lf0-f68.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753424AbbKGN6D (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 08:58:03 -0500
+Received: by lffz63 with SMTP id z63so4361648lff.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 05:58:01 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20151102151453.GI13624@twin.jikos.cz>
 References: <20151102151453.GI13624@twin.jikos.cz>
-	<pan$92b40$752beab9$f06026e1$b913018c@cox.net>
-	<20151106105353.GR13624@twin.jikos.cz>
-Mime-Version: 1.0
+Date: Sat, 7 Nov 2015 14:58:01 +0100
+Message-ID: <CAJCQCtT1XxVqJ70j-NQ_-eLZTHvF66=8-0Xg=uo39=cg4=fwZg@mail.gmail.com>
+Subject: Re: Btrfs progs pre-release 4.3-rc1
+From: Chris Murphy <lists@colorremedies.com>
+To: dsterba@suse.cz, Btrfs BTRFS <linux-btrfs@vger.kernel.org>,
+        Chris Mason <clm@fb.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-David Sterba posted on Fri, 06 Nov 2015 11:53:53 +0100 as excerpted:
+On Mon, Nov 2, 2015 at 4:14 PM, David Sterba <dsterba@suse.cz> wrote:
+> Hi,
+>
+> the kernel 4.3 was released yesterday, the btrfs-progs will follow at the end
+> of this week. I've tagged an rc1 from current devel branch. There are a lots of
+> small invisible changes and one change in the defaults:
+>
+> * mkfs: mixed mode is not forced anymore for devices smaller than 1 GiB
 
-> On Tue, Nov 03, 2015 at 12:10:14AM +0000, Duncan wrote:
->> David Sterba posted on Mon, 02 Nov 2015 16:14:53 +0100 as excerpted:
->> 
->> > the kernel 4.3 was released yesterday, the btrfs-progs will follow at
->> > the end of this week. I've tagged an rc1 from current devel branch.
->> > There are a lots of small invisible changes and one change in the
->> > defaults:
->> > 
->> > * mkfs: mixed mode is not forced anymore for devices smaller than 1
->> > GiB
->> 
->> It says one change in the /defaults/, but then it says mixed mode isn't
->> /forced/ anymore under a GiB.
-> 
-> Well, it may be a loose definition of 'default'. I meant a change in the
-> current behaviour without further tuning.
-> 
->> If the /defaults/ changed, is mixed mode still /recommended/ for small
->> filesystems?
-> 
-> Yes it is, where small remains < 1 GiB.
+Why?
 
-Thanks.  Useful information, now more important to know than ever, since 
-it's no longer the under-a-gig no-additional-options default.
+If it's still recommended to use mixed for small device, why not keep
+it the default and just permit the user to manually specify something
+else?
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

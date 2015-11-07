@@ -1,288 +1,392 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:53111 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933124AbbKGXWq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 18:22:46 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-	by mailgw-02.dd24.net (Postfix) with ESMTP id F28435FB0E
-	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 23:22:44 +0000 (UTC)
-Received: from mailgw-02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id vvDl5HUBnKTZ for <linux-btrfs@vger.kernel.org>;
-	Sat,  7 Nov 2015 23:22:42 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-46-244-245-7.dynamic.mnet-online.de [46.244.245.7])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 23:22:42 +0000 (UTC)
-Message-ID: <1446938562.7297.7.camel@scientia.net>
-Subject: strange "No space left on device"
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Sun, 08 Nov 2015 00:22:42 +0100
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-ZwhBM4WTVf/WjQ65gK3s"
-Mime-Version: 1.0
+Received: from frost.carfax.org.uk ([85.119.82.111]:43437 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752731AbbKGXa7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 18:30:59 -0500
+Date: Sat, 7 Nov 2015 23:30:57 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: strange "No space left on device"
+Message-ID: <20151107233057.GG27446@carfax.org.uk>
+References: <1446938562.7297.7.camel@scientia.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="f5QefDQHtn8hx44O"
+In-Reply-To: <1446938562.7297.7.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-ZwhBM4WTVf/WjQ65gK3s
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: base64
+--f5QefDQHtn8hx44O
+Content-Type: text/plain; charset=utf-8
+Content-Disposition: inline
+Content-Transfer-Encoding: quoted-printable
 
-SGV5LgoKSSBqdXN0IHJlcGVhdGVkbHkgZGlkIHRoZSBmb2xsb3dpbmcgdHdpY2Ugb24gYSB+OEdC
-IFVTQiBzdGljaywgdW5kZXIKRGViaWFuIHNpZCAoZXJnbyBrZXJuZWzCoDQuMi4wLTEtYW1kNjQs
-IGJ0cmZzcHJvZ3PCoDQuMi4yLTEpLgoKRmlyc3QsIGNyZWF0ZWQgc29tZSBHUFQgb24gdGhlIHN0
-aWNrOgpOdW1iZXLCoMKgU3RhcnQgKHNlY3RvcinCoMKgwqDCoEVuZCAoc2VjdG9yKcKgwqBTaXpl
-wqDCoMKgwqDCoMKgwqBDb2RlwqDCoE5hbWUKwqDCoMKgMcKgwqDCoMKgwqDCoMKgwqDCoMKgwqDC
-oDIwNDjCoMKgwqDCoMKgwqDCoMKgwqAxMDQ4NTc1wqDCoMKgNTExLjAgTWlCwqDCoMKgRUYwMsKg
-wqBCSU9TIGJvb3QgcGFydGl0aW9uCsKgwqDCoDLCoMKgwqDCoMKgwqDCoMKgwqAxMDQ4NTc2wqDC
-oMKgwqDCoMKgwqDCoMKgMzE0NTcyN8KgwqDCoDEwMjQuMCBNaULCoMKgODMwMMKgwqBMaW51eCBm
-aWxlc3lzdGVtCsKgwqDCoDPCoMKgwqDCoMKgwqDCoMKgwqAzMTQ1NzI4wqDCoMKgwqDCoMKgwqDC
-oMKgNDE5NDMwM8KgwqDCoDUxMi4wIE1pQsKgwqDCoDgzMDDCoMKgTGludXggZmlsZXN5c3RlbQrC
-oMKgwqA0wqDCoMKgwqDCoMKgwqDCoMKgNDE5NDMwNMKgwqDCoMKgwqDCoMKgwqDCoDYyOTE0NTXC
-oMKgwqAxMDI0LjAgTWlCwqDCoDgzMDDCoMKgTGludXggZmlsZXN5c3RlbQrCoMKgwqA1wqDCoMKg
-wqDCoMKgwqDCoMKgNjI5MTQ1NsKgwqDCoMKgwqDCoMKgwqAxNTY4NzY0NMKgwqDCoDQuNSBHaULC
-oMKgwqDCoMKgODMwMMKgwqBMaW51eCBmaWxlc3lzdGVtCgoKVGhlbiBmaWxlc3lzdGVtczoKcm9v
-dEBoZWlzZW5iZXJnOn4jIG1rZnMuYnRyZnMgLS1ub2Rpc2NhcmQgLS1sYWJlbCBib290LW1haW4g
-L2Rldi9zZGIyIApidHJmcy1wcm9ncyB2NC4yLjIKU2VlIGh0dHA6Ly9idHJmcy53aWtpLmtlcm5l
-bC5vcmcgZm9yIG1vcmUgaW5mb3JtYXRpb24uCgpMYWJlbDrCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoMKgYm9vdC1tYWluClVVSUQ6wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgMTUwZWU5
-ZmItYzY1MC00YjViLThmNjQtNjA2ZTU4OWU0MjlhCk5vZGUgc2l6ZTrCoMKgwqDCoMKgwqDCoMKg
-wqDCoDE2Mzg0ClNlY3RvciBzaXplOsKgwqDCoMKgwqDCoMKgwqA0MDk2CkZpbGVzeXN0ZW0gc2l6
-ZTrCoMKgwqDCoDEuMDBHaUIKQmxvY2sgZ3JvdXAgcHJvZmlsZXM6CsKgIERhdGE6wqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqBzaW5nbGXCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqA4LjAwTWlCCsKg
-IE1ldGFkYXRhOsKgwqDCoMKgwqDCoMKgwqDCoERVUMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqA1OS4xOU1pQgrCoCBTeXN0ZW06wqDCoMKgwqDCoMKgwqDCoMKgwqDCoERVUMKgwqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoMKgwqAxMi4wME1pQgpTU0QgZGV0ZWN0ZWQ6wqDCoMKgwqDCoMKgwqBubwpJ
-bmNvbXBhdCBmZWF0dXJlczrCoMKgZXh0cmVmLCBza2lubnktbWV0YWRhdGEKTnVtYmVyIG9mIGRl
-dmljZXM6wqDCoDEKRGV2aWNlczoKwqDCoMKgSUTCoMKgwqDCoMKgwqDCoMKgU0laRcKgwqBQQVRI
-CsKgwqDCoMKgMcKgwqDCoMKgwqAxLjAwR2lCwqDCoC9kZXYvc2RiMgoKcm9vdEBoZWlzZW5iZXJn
-On4jIG1rZnMuYnRyZnMgLS1ub2Rpc2NhcmQgLS1sYWJlbCBib290LWRhdGEgL2Rldi9zZGIzCmJ0
-cmZzLXByb2dzIHY0LjIuMgpTZWUgaHR0cDovL2J0cmZzLndpa2kua2VybmVsLm9yZyBmb3IgbW9y
-ZSBpbmZvcm1hdGlvbi4KCkxhYmVsOsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqBib290LWRh
-dGEKVVVJRDrCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqBiMWMxZmM3Ny1jOTY1LTRmMGMt
-YTJiNS00NGEzMDFmZDg3NzIKTm9kZSBzaXplOsKgwqDCoMKgwqDCoMKgwqDCoMKgMTYzODQKU2Vj
-dG9yIHNpemU6wqDCoMKgwqDCoMKgwqDCoDQwOTYKRmlsZXN5c3RlbSBzaXplOsKgwqDCoMKgMS4w
-MEdpQgpCbG9jayBncm91cCBwcm9maWxlczoKwqAgRGF0YTrCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoHNpbmdsZcKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoDguMDBNaUIKwqAgTWV0YWRhdGE6wqDC
-oMKgwqDCoMKgwqDCoMKgRFVQwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoDU5LjE5TWlCCsKg
-IFN5c3RlbTrCoMKgwqDCoMKgwqDCoMKgwqDCoMKgRFVQwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKg
-wqDCoDEyLjAwTWlCClNTRCBkZXRlY3RlZDrCoMKgwqDCoMKgwqDCoG5vCkluY29tcGF0IGZlYXR1
-cmVzOsKgwqBleHRyZWYsIHNraW5ueS1tZXRhZGF0YQpOdW1iZXIgb2YgZGV2aWNlczrCoMKgMQpE
-ZXZpY2VzOgrCoMKgwqBJRMKgwqDCoMKgwqDCoMKgwqBTSVpFwqDCoFBBVEgKwqDCoMKgwqAxwqDC
-oMKgwqDCoDEuMDBHaULCoMKgL2Rldi9zZGIzCgpyb290QGhlaXNlbmJlcmc6fiMgbWtmcy5idHJm
-cyAtLW5vZGlzY2FyZCAtLWxhYmVsIGJvb3QtYXJjaGl2ZQovZGV2L3NkYjQKYnRyZnMtcHJvZ3Mg
-djQuMi4yClNlZSBodHRwOi8vYnRyZnMud2lraS5rZXJuZWwub3JnIGZvciBtb3JlIGluZm9ybWF0
-aW9uLgoKTGFiZWw6wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoGJvb3QtYXJjaGl2ZQpVVUlE
-OsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoGEwNjNjZjNiLTAzMjItNGVjNy1hOGMxLTJk
-YWJlY2FkOWY1NwpOb2RlIHNpemU6wqDCoMKgwqDCoMKgwqDCoMKgwqAxNjM4NApTZWN0b3Igc2l6
-ZTrCoMKgwqDCoMKgwqDCoMKgNDA5NgpGaWxlc3lzdGVtIHNpemU6wqDCoMKgwqAxLjAwR2lCCkJs
-b2NrIGdyb3VwIHByb2ZpbGVzOgrCoCBEYXRhOsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgc2lu
-Z2xlwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgOC4wME1pQgrCoCBNZXRhZGF0YTrCoMKgwqDCoMKg
-wqDCoMKgwqBEVVDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgNTkuMTlNaUIKwqAgU3lzdGVt
-OsKgwqDCoMKgwqDCoMKgwqDCoMKgwqBEVVDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgMTIu
-MDBNaUIKU1NEIGRldGVjdGVkOsKgwqDCoMKgwqDCoMKgbm8KSW5jb21wYXQgZmVhdHVyZXM6wqDC
-oGV4dHJlZiwgc2tpbm55LW1ldGFkYXRhCk51bWJlciBvZiBkZXZpY2VzOsKgwqAxCkRldmljZXM6
-CsKgwqDCoElEwqDCoMKgwqDCoMKgwqDCoFNJWkXCoMKgUEFUSArCoMKgwqDCoDHCoMKgwqDCoMKg
-MS4wMEdpQsKgwqAvZGV2L3NkYjQKCnJvb3RAaGVpc2VuYmVyZzp+IyBta2ZzLmJ0cmZzIC0tbm9k
-aXNjYXJkIC0tbGFiZWwgYm9vdC1yZXNjdWUgL2Rldi9zZGI1CmJ0cmZzLXByb2dzIHY0LjIuMgpT
-ZWUgaHR0cDovL2J0cmZzLndpa2kua2VybmVsLm9yZyBmb3IgbW9yZSBpbmZvcm1hdGlvbi4KCkxh
-YmVsOsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqBib290LXJlc2N1ZQpVVUlEOsKgwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgwqDCoDEwNGI3YmMzLTNiOGMtNGEwOC1iMGE2LTkxNzJlZDY2NGU2
-OApOb2RlIHNpemU6wqDCoMKgwqDCoMKgwqDCoMKgwqAxNjM4NApTZWN0b3Igc2l6ZTrCoMKgwqDC
-oMKgwqDCoMKgNDA5NgpGaWxlc3lzdGVtIHNpemU6wqDCoMKgwqAzLjk4R2lCCkJsb2NrIGdyb3Vw
-IHByb2ZpbGVzOgrCoCBEYXRhOsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgc2luZ2xlwqDCoMKg
-wqDCoMKgwqDCoMKgwqDCoMKgOC4wME1pQgrCoCBNZXRhZGF0YTrCoMKgwqDCoMKgwqDCoMKgwqBE
-VVDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoDIxMS43NU1pQgrCoCBTeXN0ZW06wqDCoMKgwqDC
-oMKgwqDCoMKgwqDCoERVUMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAxMi4wME1pQgpTU0Qg
-ZGV0ZWN0ZWQ6wqDCoMKgwqDCoMKgwqBubwpJbmNvbXBhdCBmZWF0dXJlczrCoMKgZXh0cmVmLCBz
-a2lubnktbWV0YWRhdGEKTnVtYmVyIG9mIGRldmljZXM6wqDCoDEKRGV2aWNlczoKwqDCoMKgSUTC
-oMKgwqDCoMKgwqDCoMKgU0laRcKgwqBQQVRICsKgwqDCoMKgMcKgwqDCoMKgwqAzLjk4R2lCwqDC
-oC9kZXYvc2RiNQoKCgpObyBlcnJvcnMgaW4gdGhlIGtlcm5lbCBsb2cuCgoKClRoZW4gSSBnb3Qg
-dXNhZ2UgaW5mbzoKcm9vdEBoZWlzZW5iZXJnOi9kYXRhL1NTUy9ib290IyBidHJmcyBmaWxlc3lz
-dGVtIHVzYWdlIGRhdGEvCk92ZXJhbGw6CsKgwqDCoMKgRGV2aWNlIHNpemU6CQnCoMKgwqAxLjAw
-R2lCCsKgwqDCoMKgRGV2aWNlIGFsbG9jYXRlZDoJCcKgMTI2LjM4TWlCCsKgwqDCoMKgRGV2aWNl
-IHVuYWxsb2NhdGVkOgkJwqA4OTcuNjJNaUIKwqDCoMKgwqBEZXZpY2UgbWlzc2luZzoJCcKgwqDC
-oMKgwqAwLjAwQgrCoMKgwqDCoFVzZWQ6CQkJwqAyNTYuMDBLaUIKwqDCoMKgwqBGcmVlIChlc3Rp
-bWF0ZWQpOgkJwqA5MDUuNjJNaUIJKG1pbjogNDU2LjgxTWlCKQrCoMKgwqDCoERhdGEgcmF0aW86
-CQkJwqDCoMKgwqDCoMKgMS4wMArCoMKgwqDCoE1ldGFkYXRhIHJhdGlvOgkJwqDCoMKgwqDCoMKg
-Mi4wMArCoMKgwqDCoEdsb2JhbCByZXNlcnZlOgkJwqDCoDE2LjAwTWlCCSh1c2VkOiAwLjAwQikK
-CkRhdGEsc2luZ2xlOiBTaXplOjguMDBNaUIsIFVzZWQ6MC4wMEIKwqDCoMKgL2Rldi9zZGIzCcKg
-wqDCoDguMDBNaUIKCk1ldGFkYXRhLERVUDogU2l6ZTo1MS4xOU1pQiwgVXNlZDoxMTIuMDBLaUIK
-wqDCoMKgL2Rldi9zZGIzCcKgMTAyLjM4TWlCCgpTeXN0ZW0sRFVQOiBTaXplOjguMDBNaUIsIFVz
-ZWQ6MTYuMDBLaUIKwqDCoMKgL2Rldi9zZGIzCcKgwqAxNi4wME1pQgoKVW5hbGxvY2F0ZWQ6CsKg
-wqDCoC9kZXYvc2RiMwnCoDg5Ny42Mk1pQgpyb290QGhlaXNlbmJlcmc6L2RhdGEvU1NTL2Jvb3Qj
-IGJ0cmZzIGZpbGVzeXN0ZW0gdXNhZ2UgbWFpbi8KT3ZlcmFsbDoKwqDCoMKgwqBEZXZpY2Ugc2l6
-ZToJCcKgwqDCoDEuMDBHaUIKwqDCoMKgwqBEZXZpY2UgYWxsb2NhdGVkOgkJwqAxMjYuMzhNaUIK
-wqDCoMKgwqBEZXZpY2UgdW5hbGxvY2F0ZWQ6CQnCoDg5Ny42Mk1pQgrCoMKgwqDCoERldmljZSBt
-aXNzaW5nOgkJwqDCoMKgwqDCoDAuMDBCCsKgwqDCoMKgVXNlZDoJCQnCoDI1Ni4wMEtpQgrCoMKg
-wqDCoEZyZWUgKGVzdGltYXRlZCk6CQnCoDkwNS42Mk1pQgkobWluOiA0NTYuODFNaUIpCsKgwqDC
-oMKgRGF0YSByYXRpbzoJCQnCoMKgwqDCoMKgwqAxLjAwCsKgwqDCoMKgTWV0YWRhdGEgcmF0aW86
-CQnCoMKgwqDCoMKgwqAyLjAwCsKgwqDCoMKgR2xvYmFsIHJlc2VydmU6CQnCoMKgMTYuMDBNaUIJ
-KHVzZWQ6IDAuMDBCKQoKRGF0YSxzaW5nbGU6IFNpemU6OC4wME1pQiwgVXNlZDowLjAwQgrCoMKg
-wqAvZGV2L3NkYjIJwqDCoMKgOC4wME1pQgoKTWV0YWRhdGEsRFVQOiBTaXplOjUxLjE5TWlCLCBV
-c2VkOjExMi4wMEtpQgrCoMKgwqAvZGV2L3NkYjIJwqAxMDIuMzhNaUIKClN5c3RlbSxEVVA6IFNp
-emU6OC4wME1pQiwgVXNlZDoxNi4wMEtpQgrCoMKgwqAvZGV2L3NkYjIJwqDCoDE2LjAwTWlCCgpV
-bmFsbG9jYXRlZDoKwqDCoMKgL2Rldi9zZGIyCcKgODk3LjYyTWlCCnJvb3RAaGVpc2VuYmVyZzov
-ZGF0YS9TU1MvYm9vdCMgYnRyZnMgZmlsZXN5c3RlbSB1c2FnZSByZXNjdWUvCk92ZXJhbGw6CsKg
-wqDCoMKgRGV2aWNlIHNpemU6CQnCoMKgwqAzLjk4R2lCCsKgwqDCoMKgRGV2aWNlIGFsbG9jYXRl
-ZDoJCcKgNDMxLjUwTWlCCsKgwqDCoMKgRGV2aWNlIHVuYWxsb2NhdGVkOgkJwqDCoMKgMy41Nkdp
-QgrCoMKgwqDCoERldmljZSBtaXNzaW5nOgkJwqDCoMKgwqDCoDAuMDBCCsKgwqDCoMKgVXNlZDoJ
-CQnCoDMyMC4wMEtpQgrCoMKgwqDCoEZyZWUgKGVzdGltYXRlZCk6CQnCoMKgwqAzLjU3R2lCCSht
-aW46IDEuNzlHaUIpCsKgwqDCoMKgRGF0YSByYXRpbzoJCQnCoMKgwqDCoMKgwqAxLjAwCsKgwqDC
-oMKgTWV0YWRhdGEgcmF0aW86CQnCoMKgwqDCoMKgwqAyLjAwCsKgwqDCoMKgR2xvYmFsIHJlc2Vy
-dmU6CQnCoMKgMTYuMDBNaUIJKHVzZWQ6IDAuMDBCKQoKRGF0YSxzaW5nbGU6IFNpemU6OC4wME1p
-QiwgVXNlZDo2NC4wMEtpQgrCoMKgwqAvZGV2L3NkYjUJwqDCoMKgOC4wME1pQgoKTWV0YWRhdGEs
-RFVQOiBTaXplOjIwMy43NU1pQiwgVXNlZDoxMTIuMDBLaUIKwqDCoMKgL2Rldi9zZGI1CcKgNDA3
-LjUwTWlCCgpTeXN0ZW0sRFVQOiBTaXplOjguMDBNaUIsIFVzZWQ6MTYuMDBLaUIKwqDCoMKgL2Rl
-di9zZGI1CcKgwqAxNi4wME1pQgoKVW5hbGxvY2F0ZWQ6CsKgwqDCoC9kZXYvc2RiNQnCoMKgwqAz
-LjU2R2lCCgoKClN0aWxsIGFsbCBmaW5lLgoKTm93IEkgd3JpdGUgdG8gb25lIG9mIHRoZSBmaWxl
-c3lzdGVtcyAobWFpbiBhdCBmaXJzdCwgdGhhdCBzdGlsbCB3b3JrcykKYnV0IHRoZW4gd2hlbiBJ
-IGNwIC1hIGZyb20gYW5vdGhlciBidHJmcyB0byBkYXRhOgpjcDogZXJyb3Igd3JpdGluZyDigJhk
-YXRhL1NIQTUxMi1zdW1zLk9MROKAmTogTm8gc3BhY2UgbGVmdCBvbiBkZXZpY2UKY3A6IGZhaWxl
-ZCB0byBleHRlbmQg4oCYZGF0YS9TSEE1MTItc3Vtcy5PTETigJk6IE5vIHNwYWNlIGxlZnQgb24g
-ZGV2aWNlCmNwOiBlcnJvciB3cml0aW5nIOKAmGRhdGEvU0hBNTEyLXN1bXPigJk6IE5vIHNwYWNl
-IGxlZnQgb24gZGV2aWNlCmNwOiBmYWlsZWQgdG8gZXh0ZW5kIOKAmGRhdGEvU0hBNTEyLXN1bXPi
-gJk6IE5vIHNwYWNlIGxlZnQgb24gZGV2aWNlCgoodGhlc2UgZmlsZXMgYXJlIGp1c3QgYSBmZXcg
-Ynl0ZXMgbGFyZ2UpCk9uIHRoZSB0YXJnZXQgZnMsIHRoZXkncmUgdGhlcmUgYnV0IGFsbCAwIGJ5
-dGVzIGxhcmdlLgoKKGJ0dzogSSd2ZSBhbGlhc2VkIGNwIHRvIGNwIC0tcmVmbGluaz1hdXRvCgoK
-V2hlbiBJIG5vdyByZXBlYXQgdGhlIHVzYWdlIGluZm86CnJvb3RAaGVpc2VuYmVyZzovZGF0YS9T
-U1MvYm9vdCMgYnRyZnMgZmlsZXN5c3RlbSB1c2FnZSBkYXRhCk92ZXJhbGw6CsKgwqDCoMKgRGV2
-aWNlIHNpemU6CQnCoMKgwqAxLjAwR2lCCsKgwqDCoMKgRGV2aWNlIGFsbG9jYXRlZDoJCcKgMTE4
-LjM4TWlCCsKgwqDCoMKgRGV2aWNlIHVuYWxsb2NhdGVkOgkJwqA5MDUuNjJNaUIKwqDCoMKgwqBE
-ZXZpY2UgbWlzc2luZzoJCcKgwqDCoMKgwqAwLjAwQgrCoMKgwqDCoFVzZWQ6CQkJwqAyNTYuMDBL
-aUIKwqDCoMKgwqBGcmVlIChlc3RpbWF0ZWQpOgkJwqDCoMKgOC4wMEVpQgkobWluOiA4LjAwRWlC
-KQrCoMKgwqDCoERhdGEgcmF0aW86CQkJwqDCoMKgwqDCoMKgLW5hbgrCoMKgwqDCoE1ldGFkYXRh
-IHJhdGlvOgkJwqDCoMKgwqDCoMKgMi4wMArCoMKgwqDCoEdsb2JhbCByZXNlcnZlOgkJwqDCoDE2
-LjAwTWlCCSh1c2VkOiAwLjAwQikKCk1ldGFkYXRhLERVUDogU2l6ZTo1MS4xOU1pQiwgVXNlZDox
-MTIuMDBLaUIKwqDCoMKgL2Rldi9zZGMzCcKgMTAyLjM4TWlCCgpTeXN0ZW0sRFVQOiBTaXplOjgu
-MDBNaUIsIFVzZWQ6MTYuMDBLaUIKwqDCoMKgL2Rldi9zZGMzCcKgwqAxNi4wME1pQgoKVW5hbGxv
-Y2F0ZWQ6CsKgwqDCoC9kZXYvc2RjMwnCoDkwNS42Mk1pQgoKSXQgZ2V0J3MgYm9ndXMuLi4gYXQg
-bGVhc3QgdGhlIEZyZWUgc3BhY2Ugc2hvd3MgOCBFaUIgKGlmIHdpc2hlcyB3ZXJlCmhvcnNlcyku
-Li4KClN0aWxsIG5vIGVycm9yIGluIGtlcm5lbCBsb2dzOgrCoDM0MDEuOTM0NTE0XSBCVFJGUzog
-ZGV2aWNlIGxhYmVsIGJvb3QtcmVzY3VlIGRldmlkIDEgdHJhbnNpZCA4Ci9kZXYvc2RjNQpbIDM0
-MDEuOTg1ODU4XSBCVFJGUzogZGV2aWNlIGxhYmVsIGJvb3QtbWFpbiBkZXZpZCAxIHRyYW5zaWQg
-OAovZGV2L3NkYzIKWyAzNDAxLjk4ODYwMV0gQlRSRlM6IGRldmljZSBsYWJlbCBib290LWRhdGEg
-ZGV2aWQgMSB0cmFuc2lkIDkKL2Rldi9zZGMzClsgMzQwMS45OTczNzBdIEJUUkZTOiBkZXZpY2Ug
-bGFiZWwgYm9vdC1hcmNoaXZlIGRldmlkIDEgdHJhbnNpZCA5Ci9kZXYvc2RjNApbIDM0MDMuNzIx
-MDkxXSBCVFJGUyBpbmZvIChkZXZpY2Ugc2RjMyk6IGRpc2sgc3BhY2UgY2FjaGluZyBpcyBlbmFi
-bGVkClsgMzQwMy43MjEwOThdIEJUUkZTOiBoYXMgc2tpbm55IGV4dGVudHMKWyAzNDEzLjk2NDAz
-M10gQlRSRlMgaW5mbyAoZGV2aWNlIHNkYjMpOiBkaXNrIHNwYWNlIGNhY2hpbmcgaXMgZW5hYmxl
-ZApbIDM0MTMuOTY0MDQyXSBCVFJGUzogaGFzIHNraW5ueSBleHRlbnRzClsgMzUyMi45MDIzMDld
-IEJUUkZTIGluZm8gKGRldmljZSBzZGIzKTogZGlzayBzcGFjZSBjYWNoaW5nIGlzIGVuYWJsZWQK
-WyAzNTIyLjkwMjMxNF0gQlRSRlM6IGhhcyBza2lubnkgZXh0ZW50cwpbIDM1MjUuMDU1NjUzXSBC
-VFJGUyBpbmZvIChkZXZpY2Ugc2RjMyk6IGRpc2sgc3BhY2UgY2FjaGluZyBpcyBlbmFibGVkClsg
-MzUyNS4wNTU2NTldIEJUUkZTOiBoYXMgc2tpbm55IGV4dGVudHMKCgpidHJmcyBjaGVjayBkb2Vz
-bid0IHNob3cgZXJyb3JzIGVpdGhlci4KCgpBZnRlciBhIGJhbGFuY2UsIGkgY2FuIGNvcHkgYWdh
-aW4sIGV2ZW4gdGhvdWdoIHRoZSB1c2FnZSBzdGlsbCBzaG93cyA4CkVpQiBmb3IgYSB3aGlsZS4u
-LgoKCkFueXdheSBob3cgY2FuIGl0IGhhcHBlbiwgdGhhdCBvbiBhIGZyZXNoIGJ0cmZzIHdpdGgg
-bm8gZmlsZXMgYXQgYWxsIGEKYmFsYW5jZSBpcyBuZWNlc3Nhcnk/Ck9yIGlzIHRoZXJlIHNvbWUg
-ZGVlcGVyIGNvcnJ1cHRpb24gZ29pbmcgb24gaGVyZT8KCgpUaGFua3MsCkNocmlzLgo=
+On Sun, Nov 08, 2015 at 12:22:42AM +0100, Christoph Anton Mitterer wrote:
+> Hey.
+>=20
+> I just repeatedly did the following twice on a ~8GB USB stick, under
+> Debian sid (ergo kernel=C2=A04.2.0-1-amd64, btrfsprogs=C2=A04.2.2-1).
+>=20
+> First, created some GPT on the stick:
+> Number=C2=A0=C2=A0Start (sector)=C2=A0=C2=A0=C2=A0=C2=A0End (sector)=C2=
+=A0=C2=A0Size=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0Code=C2=A0=C2=A0Name
+> =C2=A0=C2=A0=C2=A01=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A02048=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A01048575=C2=A0=C2=A0=C2=A0511.0 MiB=C2=A0=C2=A0=C2=A0EF02=C2=A0=C2=A0BIOS=
+ boot partition
+> =C2=A0=C2=A0=C2=A02=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+1048576=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A03145727=C2=A0=
+=C2=A0=C2=A01024.0 MiB=C2=A0=C2=A08300=C2=A0=C2=A0Linux filesystem
+> =C2=A0=C2=A0=C2=A03=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+3145728=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A04194303=C2=A0=
+=C2=A0=C2=A0512.0 MiB=C2=A0=C2=A0=C2=A08300=C2=A0=C2=A0Linux filesystem
+> =C2=A0=C2=A0=C2=A04=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+4194304=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A06291455=C2=A0=
+=C2=A0=C2=A01024.0 MiB=C2=A0=C2=A08300=C2=A0=C2=A0Linux filesystem
+> =C2=A0=C2=A0=C2=A05=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+6291456=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A015687644=C2=A0=C2=A0=
+=C2=A04.5 GiB=C2=A0=C2=A0=C2=A0=C2=A0=C2=A08300=C2=A0=C2=A0Linux filesystem
+
+   These are all really small.
+
+   I would suggest running mkfs with --mixed for all of these
+filesystems and trying again.
+
+   Hugo.
+
+> Then filesystems:
+> root@heisenberg:~# mkfs.btrfs --nodiscard --label boot-main /dev/sdb2=20
+> btrfs-progs v4.2.2
+> See http://btrfs.wiki.kernel.org for more information.
+>=20
+> Label:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0boot-main
+> UUID:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0150ee9fb-c650-4b5b-8f64-606e589e429a
+> Node size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0163=
+84
+> Sector size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A04096
+> Filesystem size:=C2=A0=C2=A0=C2=A0=C2=A01.00GiB
+> Block group profiles:
+> =C2=A0 Data:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0single=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A08.00MiB
+> =C2=A0 Metadata:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0DUP=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A059.19MiB
+> =C2=A0 System:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0DUP=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A012.00MiB
+> SSD detected:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0no
+> Incompat features:=C2=A0=C2=A0extref, skinny-metadata
+> Number of devices:=C2=A0=C2=A01
+> Devices:
+> =C2=A0=C2=A0=C2=A0ID=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0SIZE=
+=C2=A0=C2=A0PATH
+> =C2=A0=C2=A0=C2=A0=C2=A01=C2=A0=C2=A0=C2=A0=C2=A0=C2=A01.00GiB=C2=A0=C2=
+=A0/dev/sdb2
+>=20
+> root@heisenberg:~# mkfs.btrfs --nodiscard --label boot-data /dev/sdb3
+> btrfs-progs v4.2.2
+> See http://btrfs.wiki.kernel.org for more information.
+>=20
+> Label:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0boot-data
+> UUID:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0b1c1fc77-c965-4f0c-a2b5-44a301fd8772
+> Node size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0163=
+84
+> Sector size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A04096
+> Filesystem size:=C2=A0=C2=A0=C2=A0=C2=A01.00GiB
+> Block group profiles:
+> =C2=A0 Data:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0single=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A08.00MiB
+> =C2=A0 Metadata:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0DUP=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A059.19MiB
+> =C2=A0 System:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0DUP=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A012.00MiB
+> SSD detected:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0no
+> Incompat features:=C2=A0=C2=A0extref, skinny-metadata
+> Number of devices:=C2=A0=C2=A01
+> Devices:
+> =C2=A0=C2=A0=C2=A0ID=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0SIZE=
+=C2=A0=C2=A0PATH
+> =C2=A0=C2=A0=C2=A0=C2=A01=C2=A0=C2=A0=C2=A0=C2=A0=C2=A01.00GiB=C2=A0=C2=
+=A0/dev/sdb3
+>=20
+> root@heisenberg:~# mkfs.btrfs --nodiscard --label boot-archive
+> /dev/sdb4
+> btrfs-progs v4.2.2
+> See http://btrfs.wiki.kernel.org for more information.
+>=20
+> Label:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0boot-archive
+> UUID:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0a063cf3b-0322-4ec7-a8c1-2dabecad9f57
+> Node size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0163=
+84
+> Sector size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A04096
+> Filesystem size:=C2=A0=C2=A0=C2=A0=C2=A01.00GiB
+> Block group profiles:
+> =C2=A0 Data:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0single=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A08.00MiB
+> =C2=A0 Metadata:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0DUP=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A059.19MiB
+> =C2=A0 System:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0DUP=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A012.00MiB
+> SSD detected:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0no
+> Incompat features:=C2=A0=C2=A0extref, skinny-metadata
+> Number of devices:=C2=A0=C2=A01
+> Devices:
+> =C2=A0=C2=A0=C2=A0ID=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0SIZE=
+=C2=A0=C2=A0PATH
+> =C2=A0=C2=A0=C2=A0=C2=A01=C2=A0=C2=A0=C2=A0=C2=A0=C2=A01.00GiB=C2=A0=C2=
+=A0/dev/sdb4
+>=20
+> root@heisenberg:~# mkfs.btrfs --nodiscard --label boot-rescue /dev/sdb5
+> btrfs-progs v4.2.2
+> See http://btrfs.wiki.kernel.org for more information.
+>=20
+> Label:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0boot-rescue
+> UUID:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0=C2=A0104b7bc3-3b8c-4a08-b0a6-9172ed664e68
+> Node size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0163=
+84
+> Sector size:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A04096
+> Filesystem size:=C2=A0=C2=A0=C2=A0=C2=A03.98GiB
+> Block group profiles:
+> =C2=A0 Data:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0single=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A08.00MiB
+> =C2=A0 Metadata:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0DUP=
+=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0211.75MiB
+> =C2=A0 System:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0DUP=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A012.00MiB
+> SSD detected:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0no
+> Incompat features:=C2=A0=C2=A0extref, skinny-metadata
+> Number of devices:=C2=A0=C2=A01
+> Devices:
+> =C2=A0=C2=A0=C2=A0ID=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0SIZE=
+=C2=A0=C2=A0PATH
+> =C2=A0=C2=A0=C2=A0=C2=A01=C2=A0=C2=A0=C2=A0=C2=A0=C2=A03.98GiB=C2=A0=C2=
+=A0/dev/sdb5
+>=20
+>=20
+>=20
+> No errors in the kernel log.
+>=20
+>=20
+>=20
+> Then I got usage info:
+> root@heisenberg:/data/SSS/boot# btrfs filesystem usage data/
+> Overall:
+> =C2=A0=C2=A0=C2=A0=C2=A0Device size:		=C2=A0=C2=A0=C2=A01.00GiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device allocated:		=C2=A0126.38MiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device unallocated:		=C2=A0897.62MiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device missing:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A00.=
+00B
+> =C2=A0=C2=A0=C2=A0=C2=A0Used:			=C2=A0256.00KiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Free (estimated):		=C2=A0905.62MiB	(min: 456.81Mi=
+B)
+> =C2=A0=C2=A0=C2=A0=C2=A0Data ratio:			=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A01.00
+> =C2=A0=C2=A0=C2=A0=C2=A0Metadata ratio:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A02.00
+> =C2=A0=C2=A0=C2=A0=C2=A0Global reserve:		=C2=A0=C2=A016.00MiB	(used: 0.00=
+B)
+>=20
+> Data,single: Size:8.00MiB, Used:0.00B
+> =C2=A0=C2=A0=C2=A0/dev/sdb3	=C2=A0=C2=A0=C2=A08.00MiB
+>=20
+> Metadata,DUP: Size:51.19MiB, Used:112.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdb3	=C2=A0102.38MiB
+>=20
+> System,DUP: Size:8.00MiB, Used:16.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdb3	=C2=A0=C2=A016.00MiB
+>=20
+> Unallocated:
+> =C2=A0=C2=A0=C2=A0/dev/sdb3	=C2=A0897.62MiB
+> root@heisenberg:/data/SSS/boot# btrfs filesystem usage main/
+> Overall:
+> =C2=A0=C2=A0=C2=A0=C2=A0Device size:		=C2=A0=C2=A0=C2=A01.00GiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device allocated:		=C2=A0126.38MiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device unallocated:		=C2=A0897.62MiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device missing:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A00.=
+00B
+> =C2=A0=C2=A0=C2=A0=C2=A0Used:			=C2=A0256.00KiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Free (estimated):		=C2=A0905.62MiB	(min: 456.81Mi=
+B)
+> =C2=A0=C2=A0=C2=A0=C2=A0Data ratio:			=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A01.00
+> =C2=A0=C2=A0=C2=A0=C2=A0Metadata ratio:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A02.00
+> =C2=A0=C2=A0=C2=A0=C2=A0Global reserve:		=C2=A0=C2=A016.00MiB	(used: 0.00=
+B)
+>=20
+> Data,single: Size:8.00MiB, Used:0.00B
+> =C2=A0=C2=A0=C2=A0/dev/sdb2	=C2=A0=C2=A0=C2=A08.00MiB
+>=20
+> Metadata,DUP: Size:51.19MiB, Used:112.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdb2	=C2=A0102.38MiB
+>=20
+> System,DUP: Size:8.00MiB, Used:16.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdb2	=C2=A0=C2=A016.00MiB
+>=20
+> Unallocated:
+> =C2=A0=C2=A0=C2=A0/dev/sdb2	=C2=A0897.62MiB
+> root@heisenberg:/data/SSS/boot# btrfs filesystem usage rescue/
+> Overall:
+> =C2=A0=C2=A0=C2=A0=C2=A0Device size:		=C2=A0=C2=A0=C2=A03.98GiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device allocated:		=C2=A0431.50MiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device unallocated:		=C2=A0=C2=A0=C2=A03.56GiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device missing:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A00.=
+00B
+> =C2=A0=C2=A0=C2=A0=C2=A0Used:			=C2=A0320.00KiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Free (estimated):		=C2=A0=C2=A0=C2=A03.57GiB	(min=
+: 1.79GiB)
+> =C2=A0=C2=A0=C2=A0=C2=A0Data ratio:			=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A01.00
+> =C2=A0=C2=A0=C2=A0=C2=A0Metadata ratio:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A02.00
+> =C2=A0=C2=A0=C2=A0=C2=A0Global reserve:		=C2=A0=C2=A016.00MiB	(used: 0.00=
+B)
+>=20
+> Data,single: Size:8.00MiB, Used:64.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdb5	=C2=A0=C2=A0=C2=A08.00MiB
+>=20
+> Metadata,DUP: Size:203.75MiB, Used:112.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdb5	=C2=A0407.50MiB
+>=20
+> System,DUP: Size:8.00MiB, Used:16.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdb5	=C2=A0=C2=A016.00MiB
+>=20
+> Unallocated:
+> =C2=A0=C2=A0=C2=A0/dev/sdb5	=C2=A0=C2=A0=C2=A03.56GiB
+>=20
+>=20
+>=20
+> Still all fine.
+>=20
+> Now I write to one of the filesystems (main at first, that still works)
+> but then when I cp -a from another btrfs to data:
+> cp: error writing =E2=80=98data/SHA512-sums.OLD=E2=80=99: No space left o=
+n device
+> cp: failed to extend =E2=80=98data/SHA512-sums.OLD=E2=80=99: No space lef=
+t on device
+> cp: error writing =E2=80=98data/SHA512-sums=E2=80=99: No space left on de=
+vice
+> cp: failed to extend =E2=80=98data/SHA512-sums=E2=80=99: No space left on=
+ device
+>=20
+> (these files are just a few bytes large)
+> On the target fs, they're there but all 0 bytes large.
+>=20
+> (btw: I've aliased cp to cp --reflink=3Dauto
+>=20
+>=20
+> When I now repeat the usage info:
+> root@heisenberg:/data/SSS/boot# btrfs filesystem usage data
+> Overall:
+> =C2=A0=C2=A0=C2=A0=C2=A0Device size:		=C2=A0=C2=A0=C2=A01.00GiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device allocated:		=C2=A0118.38MiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device unallocated:		=C2=A0905.62MiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Device missing:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A00.=
+00B
+> =C2=A0=C2=A0=C2=A0=C2=A0Used:			=C2=A0256.00KiB
+> =C2=A0=C2=A0=C2=A0=C2=A0Free (estimated):		=C2=A0=C2=A0=C2=A08.00EiB	(min=
+: 8.00EiB)
+> =C2=A0=C2=A0=C2=A0=C2=A0Data ratio:			=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0-nan
+> =C2=A0=C2=A0=C2=A0=C2=A0Metadata ratio:		=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A02.00
+> =C2=A0=C2=A0=C2=A0=C2=A0Global reserve:		=C2=A0=C2=A016.00MiB	(used: 0.00=
+B)
+>=20
+> Metadata,DUP: Size:51.19MiB, Used:112.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdc3	=C2=A0102.38MiB
+>=20
+> System,DUP: Size:8.00MiB, Used:16.00KiB
+> =C2=A0=C2=A0=C2=A0/dev/sdc3	=C2=A0=C2=A016.00MiB
+>=20
+> Unallocated:
+> =C2=A0=C2=A0=C2=A0/dev/sdc3	=C2=A0905.62MiB
+>=20
+> It get's bogus... at least the Free space shows 8 EiB (if wishes were
+> horses)...
+>=20
+> Still no error in kernel logs:
+> =C2=A03401.934514] BTRFS: device label boot-rescue devid 1 transid 8
+> /dev/sdc5
+> [ 3401.985858] BTRFS: device label boot-main devid 1 transid 8
+> /dev/sdc2
+> [ 3401.988601] BTRFS: device label boot-data devid 1 transid 9
+> /dev/sdc3
+> [ 3401.997370] BTRFS: device label boot-archive devid 1 transid 9
+> /dev/sdc4
+> [ 3403.721091] BTRFS info (device sdc3): disk space caching is enabled
+> [ 3403.721098] BTRFS: has skinny extents
+> [ 3413.964033] BTRFS info (device sdb3): disk space caching is enabled
+> [ 3413.964042] BTRFS: has skinny extents
+> [ 3522.902309] BTRFS info (device sdb3): disk space caching is enabled
+> [ 3522.902314] BTRFS: has skinny extents
+> [ 3525.055653] BTRFS info (device sdc3): disk space caching is enabled
+> [ 3525.055659] BTRFS: has skinny extents
+>=20
+>=20
+> btrfs check doesn't show errors either.
+>=20
+>=20
+> After a balance, i can copy again, even though the usage still shows 8
+> EiB for a while...
+>=20
+>=20
+> Anyway how can it happen, that on a fresh btrfs with no files at all a
+> balance is necessary?
+> Or is there some deeper corruption going on here?
+>=20
+>=20
+> Thanks,
+> Chris.
 
 
---=-ZwhBM4WTVf/WjQ65gK3s
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEwNzIzMjI0
-MlowTwYJKoZIhvcNAQkEMUIEQMlH9akOYdpYkeR4RpTErBW2fXp7HpbgOe+QdXE8GvQdGpOic53C
-uhJiSlG48pWLHYHlkLY/JjoKcJuvCIgtnNgwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDGmUpSWTELh3mJJntkMS9jVUQ741n1
-eT1o+EiWVIC1UpkaIYI7NZjfGdS13qDzJKNk+iSNRkDZj2i7nQ28whjtjinXm8+HfUh5hvuj1EG9
-lwE87PtiZHQMLfmH1Y8WQEEMT9ei9uQekzneWQdNBGvUqBQDjko0kwz7QirfdNQLUmS9ppGe1hRi
-N2YA3qnu9ckKxRmliYMD/3l86DtVfM4Z3i9q7KrmJUcexzAvRHQ/7s6v5JjPW0Skne9jdNCLo42R
-lNrQImbcGRyZrXLtE+heCjD9Yi9ahdQXLsj8TMNhp3ZmOxgDKOeOsPd1lYIjVqVPRAgvFQCG8fPE
-LvSeq3bZAAAAAAAA
+--=20
+Hugo Mills             | Reintarnation: Coming back from the dead as a
+hugo@... carfax.org.uk | hillbilly
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
 
+--f5QefDQHtn8hx44O
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
 
---=-ZwhBM4WTVf/WjQ65gK3s--
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
+iQIcBAEBAgAGBQJWPomxAAoJEFheFHXiqx3k/jsQAIXsQ0f1OGIQOETWh/rNMmH4
+OMUnOHpOKZskoSVB3BUlgUayeSy5/GDBo93OA/pqZqnsH1QopOM1iyRoWoF3Ug1R
+dVc7wl4FsWKpluyoV+QcPzePN5WxpxkbZotOdRPraVtGnzG6C2i0o1dFGk3Ydidj
+Wka/bdVrxwER1Zo/slJ/RuHWpuIoz+rj2SpYaBl71E6+K6A1IC4w+qx1x7BATwCE
+jQ+oEFGa7DiWkNH286FsZ3LgZL+7qmlCUF9y1RTEW8busMtrdjRnxJ/udMLJmppl
+uVjGNV8BltoryKJbopM7mVzDZaxBSGmdvxlqPo3LisJs2oPTtT4ZmZU0zvlXOEUp
+GBngX/dW1ZoBAQ+3WQG+TINcD1AmifU12FlwfOW3juDw/CpgHAsAvE9jFIqOVypO
+jUPA9yccGWZWwAsOHUCsKX8vN/1XNUNiD1EyO5GdV3r0HHU1AQ3HgYZTYWP2OPI8
+U4Yv1sNn8Opj18PMMPbhBW9UU1C9Pq710bwVwOzCZoO9Znlb/nShql+ffbzmGDxd
+iRvEQKkdvzBx9ZqlbADkDjG1JySi+g4dgbEsSZbI4lv0lXzkxFor7ACxU+jeb7oA
+HZyY8aeluGywcvvZL57r1lvvye/gY4lu9a+fzRYcSbeTUaGibydf8VjwMtYzYXQv
+98vRU+RC3Wlp4JnVblvJ
+=hTrb
+-----END PGP SIGNATURE-----
+
+--f5QefDQHtn8hx44O--

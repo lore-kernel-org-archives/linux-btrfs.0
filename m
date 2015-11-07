@@ -1,72 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wi0-f179.google.com ([209.85.212.179]:33120 "EHLO
-	mail-wi0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753675AbbKGQYO convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 11:24:14 -0500
-Received: by wijp11 with SMTP id p11so46436436wij.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 08:24:12 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <563B54DF.7080202@googlemail.com>
-References: <1420473663-9315-1-git-send-email-naota@elisp.net>
-	<54AC65C2.8000801@jp.fujitsu.com>
-	<CAOcd+r10Q08zhvjMawOrQ8jWBReD6dYxeEtiZSoqUEuHCeM27g@mail.gmail.com>
-	<563B54DF.7080202@googlemail.com>
-Date: Sat, 7 Nov 2015 18:24:12 +0200
-Message-ID: <CAOcd+r1=D0MY=0bGBRwX_K5eEUxmzmxVKjNHpgd0520T3+avdw@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: clear bio reference after submit_one_bio()
-From: Alex Lyakas <alex.btrfs@zadarastorage.com>
-To: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: Satoru Takeuchi <takeuchi_satoru@jp.fujitsu.com>,
-        Naohiro Aota <naota@elisp.net>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from plane.gmane.org ([80.91.229.3]:59339 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753311AbbKGTIl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 7 Nov 2015 14:08:41 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Zv8qp-00039w-Rh
+	for linux-btrfs@vger.kernel.org; Sat, 07 Nov 2015 20:08:35 +0100
+Received: from chello213047196183.tirol.surfer.at ([213.47.196.183])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 20:08:35 +0100
+Received: from wertstoffe by chello213047196183.tirol.surfer.at with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 20:08:35 +0100
+To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>
+Subject: boot from snapshot and take snapshot from here.
+Date: Sat, 7 Nov 2015 20:04:01 +0100
+Message-ID: <4iu1hc-23v.ln1@aldebaran.xundeenergie.at>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="33QrAwNQrdr69cvHKJ1M9CbTn673k7od7"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Holger,
-I think it will cause an invalid paging request, just like in case
-that Naohiro has fixed.
-I am not running the "latest and greatest" btrfs in my system, and it
-is not easy to set it up, that's why I cannot submit patches based on
-the latest code, I can only review and comment on patches.
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--33QrAwNQrdr69cvHKJ1M9CbTn673k7od7
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-Alex.
+Hi there!
+
+I can't find any Information for my Problem. And I try to explain, what
+I want.
+
+There is a btrfs-partition on my laptop.
+I take snapshots every hour from the subvolume @debian.
+
+btrfs subvol snapshot @debian @debian-snap1
+
+Then I transfer this snapshot to my external HD
+
+btrfs send @debian-snap1 | btrfs receive /backupmountpoint
+
+The next snapshot
+
+btrfs subvol snapshot @debian @debian-snap2
+
+Transfer is
+
+btrfs send -p @debian-snap1 @debian-snap2|btrfs receive /backupmountpoint=
 
 
-On Thu, Nov 5, 2015 at 3:08 PM, Holger Hoffstätte
-<holger.hoffstaette@googlemail.com> wrote:
-> On 10/11/15 20:09, Alex Lyakas wrote:
->> Hi Naota,
->>
->> What happens if btrfs_bio_alloc() in submit_extent_page fails? Then we
->> return -ENOMEM to the caller, but we do not set *bio_ret to NULL. And
->> if *bio_ret was non-NULL upon entry into submit_extent_page, then we
->> had submitted this bio before getting to btrfs_bio_alloc(). So should
->> btrfs_bio_alloc() failure be handled in the same way?
->>
->> diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
->> index 3915c94..cd443bc 100644
->> --- a/fs/btrfs/extent_io.c
->> +++ b/fs/btrfs/extent_io.c
->> @@ -2834,8 +2834,11 @@ static int submit_extent_page(int rw, struct
->> extent_io_tree *tree,
->>
->>         bio = btrfs_bio_alloc(bdev, sector, BIO_MAX_PAGES,
->>                         GFP_NOFS | __GFP_HIGH);
->> -       if (!bio)
->> +       if (!bio) {
->> +               if (bio_ret)
->> +                       *bio_ret = NULL;
->>                 return -ENOMEM;
->> +       }
->>
->>         bio_add_page(bio, page, page_size, offset);
->>         bio->bi_end_io = end_io_func;
->>
->
-> Did you get any feedback on this? It seems it could cause data loss or
-> corruption on allocation failures, no?
->
-> -h
->
+No magic here, works fine.
+
+BUT
+
+When i boot from f.e. @debian-snap2, the mechanics doesn't work any longe=
+r.
+
+btrfs subvol snapshot @debian-snap2 @debian-snap3
+
+this works.
+
+btrfs send -p @debian-snap2 debian-snap3 | btrfs receive /backupmountpoin=
+t
+
+gives me an error, that btrfs can't find a subvol with a proper ID.
+
+Ho to do this, if i want to boot from a former snapshot (in case of a
+mistaken system-upgrade) and i want to transfer the later snapshots to
+the external HD - only the differences?
+
+There is nothing on the internet on this problem (I've found). But i
+think this is a usecase, which I'm not alone needing it...
+
+jakob
+
+--=20
+http://xundeenergie.at
+http://verkehrsloesungen.wordpress.com/
+http://cogitationum.wordpress.com/
+
+
+--33QrAwNQrdr69cvHKJ1M9CbTn673k7od7
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
+
+iQEcBAEBCAAGBQJWPkskAAoJEF2YPOCqoD05+8YH/jnBW0aLb52zL9i0Ceft6XxD
+IkEpAK9gw8N7IlH7LRK6hcXVUsnpDBJvxQFcaXkPe7V1HSe0i6DZCeiUe3uUeVee
+KtDIiaKb2Z0vTJ61rkUZ4kAoD1iM9BOQ4Jgvt1Ywj1uc5s15OxuQ/FN+lirPqN5C
+tnwpOuAEC0vO2dpCR42xTj40qWaZ9dNZ+xQjmqG9UpglHoJ6VaNyBwmS+0O8fB72
+Wq6yYQYNWDW//a1kSAlDftCdRw9nJHnXnvM738ycsr6aJjOtP3Z9iThYKHTPZ3kC
+HNOJ4bzxJOcn7Q2AmhUTiTabC3KyULoW+oPtc3znWNuEkaCCIr3TShkQT81SgjQ=
+=uqs5
+-----END PGP SIGNATURE-----
+
+--33QrAwNQrdr69cvHKJ1M9CbTn673k7od7--
+

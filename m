@@ -1,46 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55726 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751715AbbKCLE5 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2015 06:04:57 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tA3B4E1l019307
-	for <linux-btrfs@vger.kernel.org>; Tue, 3 Nov 2015 19:04:14 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs-progs: mkfs: remove unused code of format uuid string
-Date: Tue, 3 Nov 2015 19:03:01 +0800
-Message-ID: <94d473ab47ad4398547cce2cb70eddec8d9800fd.1446548572.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <0e4f0ae269fdaf041e1f53d2460e92ac3f926b88.1446548572.git.zhaolei@cn.fujitsu.com>
-References: <0e4f0ae269fdaf041e1f53d2460e92ac3f926b88.1446548572.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-lf0-f53.google.com ([209.85.215.53]:35478 "EHLO
+	mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753376AbbKGA06 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Nov 2015 19:26:58 -0500
+Received: by lfbn126 with SMTP id n126so79260499lfb.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2015 16:26:56 -0800 (PST)
+From: Alexander Fougner <fougner89@gmail.com>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org, Alexander Fougner <fougner89@gmail.com>
+Subject: [PATCH] btrfs-progs: allow device deletion using 'missing' keyword again
+Date: Sat,  7 Nov 2015 01:26:24 +0100
+Message-Id: <1446855984-5123-1-git-send-email-fougner89@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Variant named dev_uuid and uuid_unparse() for set its value are
-not used, remove it.
+Device deletion procedures ensures the device is a block device.
+This patch introduces 'missing' as keyword again, correctly
+passing it on to the kernel instead of complaining about
+'missing' not being a block device.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Alexander Fougner <fougner89@gmail.com>
 ---
- mkfs.c | 3 ---
- 1 file changed, 3 deletions(-)
+ cmds-device.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/mkfs.c b/mkfs.c
-index 75fc086..d5da1fb 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1176,9 +1176,6 @@ static void list_all_devices(struct btrfs_root *root)
- 	printf("Devices:\n");
- 	printf("   ID        SIZE  PATH\n");
- 	list_for_each_entry(device, &fs_devices->devices, dev_list) {
--		char dev_uuid[BTRFS_UUID_UNPARSED_SIZE];
--
--		uuid_unparse(device->uuid, dev_uuid);
- 		printf("  %3llu  %10s  %s\n",
- 			device->devid,
- 			pretty_size(device->total_bytes),
+diff --git a/cmds-device.c b/cmds-device.c
+index c2f3a40..dca30d7 100644
+--- a/cmds-device.c
++++ b/cmds-device.c
+@@ -161,7 +161,7 @@ static int _cmd_device_remove(int argc, char **argv,
+ 		struct	btrfs_ioctl_vol_args arg;
+ 		int	res;
+ 
+-		if (is_block_device(argv[i]) != 1) {
++		if (is_block_device(argv[i]) != 1 && strcmp(argv[i], "missing")) {
+ 			fprintf(stderr,
+ 				"ERROR: %s is not a block device\n", argv[i]);
+ 			ret++;
 -- 
-1.8.5.1
+2.6.2
 

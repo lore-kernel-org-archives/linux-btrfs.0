@@ -1,155 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fallback2.mail.ru ([94.100.179.22]:36377 "EHLO
-	fallback2.mail.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752616AbbKGM2I (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 07:28:08 -0500
-Received: from smtp38.i.mail.ru (smtp38.i.mail.ru [94.100.177.98])
-	by fallback2.mail.ru (mPOP.Fallback_MX) with ESMTP id 901A864CF58B
-	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 15:22:00 +0300 (MSK)
-Received: from 77-173-215-182.ip.telfort.nl ([77.173.215.182]:37912 helo=centurion)
-	by smtp38.i.mail.ru with esmtpa (envelope-from <dma_k@mail.ru>)
-	id 1Zv2VK-000293-KJ
-	for linux-btrfs@vger.kernel.org; Sat, 07 Nov 2015 15:21:59 +0300
-Received: from [127.0.0.1] (Tanja.home [192.168.1.32])
-	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+Received: from mailgw-02.dd24.net ([193.46.215.43]:56640 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753425AbbKGPKz (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 10:10:55 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id 182335FC1D
+	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 15:05:09 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id EiHQRPSbEDOJ for <linux-btrfs@vger.kernel.org>;
+	Sat,  7 Nov 2015 15:05:06 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-46-244-245-7.dynamic.mnet-online.de [46.244.245.7])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by centurion (Postfix) with ESMTPSA id 75C5F311CD1
-	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 13:21:57 +0100 (CET)
-Message-ID: <563DECF0.8080901@mail.ru>
-Date: Sat, 07 Nov 2015 13:22:08 +0100
-From: Dmitry Katsubo <dma_k@mail.ru>
-MIME-Version: 1.0
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Process is blocked for more than 120 seconds
-References: <56374C7D.5080609@mail.ru>
-In-Reply-To: <56374C7D.5080609@mail.ru>
-Content-Type: text/plain; charset=ISO-8859-1
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 15:05:06 +0000 (UTC)
+Message-ID: <1446908706.7774.3.camel@scientia.net>
+Subject: mkfs.btrfs doesn't detect SSD
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Sat, 07 Nov 2015 16:05:06 +0100
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-k+4aUvVACtay1+cWfVdG"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi everyone,
 
-I have noticed the following in the log. The system continues to run,
-but I am not sure for how long it will be stable. Should I start
-worrying? Thanks in advance for the opinion.
+--=-k+4aUvVACtay1+cWfVdG
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: base64
 
-# uname -a
-Linux Debian 4.2.3-2~bpo8+1 (2015-10-20) i686 GNU/Linux
+SGV5LgoKSSdtIGNyZWF0aW5nIGEgZmlsZXN5c3RlbSBvbiBTYW1zdW5nIEV2byA4NTAgUHJvIG9u
+IHRvcCBvZiBhIGRtLQpjcnlwdC9MVUtTIGNvbnRhaW5lciAod2l0aCBUUklNIG5vdCBiZWluZyBw
+YXNzZWQgb24sIGZvciB0aGUgdXN1YWwKc2VjdXJpdHkgcmVhc29ucyk6CiMgbWtmcy5idHJmcyAt
+LWxhYmVsIHN5c3RlbSAvZGV2L21hcHBlci9zeXN0ZW0gCmJ0cmZzLXByb2dzIHY0LjIuMgpTZWUg
+aHR0cDovL2J0cmZzLndpa2kua2VybmVsLm9yZyBmb3IgbW9yZSBpbmZvcm1hdGlvbi4KCkxhYmVs
+OsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqBzeXN0ZW0KVVVJRDrCoMKgwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgwqA2NTUzMTE5Ni0yZTQzLTRjNDktYjQ5NS1hYzlhYmM1N2Q3ZDgKTm9kZSBz
+aXplOsKgwqDCoMKgwqDCoMKgwqDCoMKgMTYzODQKU2VjdG9yIHNpemU6wqDCoMKgwqDCoMKgwqDC
+oDQwOTYKRmlsZXN5c3RlbSBzaXplOsKgwqDCoMKgOTM3LjAwR2lCCkJsb2NrIGdyb3VwIHByb2Zp
+bGVzOgrCoCBEYXRhOsKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgc2luZ2xlwqDCoMKgwqDCoMKg
+wqDCoMKgwqDCoMKgOC4wME1pQgrCoCBNZXRhZGF0YTrCoMKgwqDCoMKgwqDCoMKgwqBEVVDCoMKg
+wqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqAxLjAxR2lCCsKgIFN5c3RlbTrCoMKgwqDCoMKgwqDC
+oMKgwqDCoMKgRFVQwqDCoMKgwqDCoMKgwqDCoMKgwqDCoMKgwqDCoDEyLjAwTWlCClNTRCBkZXRl
+Y3RlZDrCoMKgwqDCoMKgwqDCoG5vCkluY29tcGF0IGZlYXR1cmVzOsKgwqBleHRyZWYsIHNraW5u
+eS1tZXRhZGF0YQpOdW1iZXIgb2YgZGV2aWNlczrCoMKgMQpEZXZpY2VzOgrCoMKgwqBJRMKgwqDC
+oMKgwqDCoMKgwqBTSVpFwqDCoFBBVEgKwqDCoMKgwqAxwqDCoMKgOTM3LjAwR2lCwqDCoC9kZXYv
+bWFwcGVyL3N5c3RlbQoKCkFzIHlvdSBjYW4gc2VlIGl0IGRvZXNuJ3QgZGV0ZWN0IHRoZSBTU0Qu
+Cklzbid0IHRoYXQga2luZGEgcHJvYmxlbWF0aWMgY2F1c2UgYnRyZnMgZG9lcyBtb3JlIHdoZW4g
+aXQgZGV0ZWN0cyBhbmQKU1NEIHRoYW4ganVzdCB1c2luZyBUUklNIChlLmcuIG5vdCBEVVBpbmcg
+bWV0YS1kYXRhKT8KCkNhbiBJIHNvbWVob3cgb3ZlcnJpZGUgdGhpcyB0byBnZXQgdGhlIFNTRCAi
+ZGV0ZWN0ZWQiPwpPciB3aGF0IGlzIHRoZSBnZW5lcmFsIHN1Z2dlc3Rpb24gaGVyZT8gSGF2aW5n
+IGl0IGhhbmRsZWQgYXMgU1NEIG9yIGFzCm5vbi1TU0QsIGFzIHNhaWQsIHdoZW4gZG0tY3J5cHQg
+aXMgdXNlZCBiZWxvdyBhbmQgVFJJTSBpcyBub3QgaW50ZW5kZWQKdG8gYmUgdXNlZC4KCgpDaGVl
+cnMsCkNocmlzLg==
 
-# mount | grep /var
-/dev/sdd2 on /var type btrfs
-(rw,noatime,compress=lzo,space_cache,subvolid=258,subvol=/var)
 
-> [Mon Nov  2 06:35:57 2015] INFO: task nscd:859 blocked for more than 120 seconds.
-> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
-> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> [Mon Nov  2 06:35:57 2015] nscd            D f1c7dd20     0   859      1 0x00000000
-> [Mon Nov  2 06:35:57 2015]  f1c7dd40 00200082 f79de900 f1c7dd20 c10bc119 ffffffe0 f3aec740 00200246
-> [Mon Nov  2 06:35:57 2015]  f74ea800 f79e3f40 f77fb800 f1c7e000 f6b381dc f6b38000 f1c7dd4c c14f1fdb
-> [Mon Nov  2 06:35:57 2015]  d5553960 f1c7dd70 f867672f 00000000 f77fb800 c1099250 d0a4be08 d9755e68
-> [Mon Nov  2 06:35:57 2015] Call Trace:
-> [Mon Nov  2 06:35:57 2015]  [<c10bc119>] ? del_timer_sync+0x49/0x50
-> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f867672f>] ? wait_current_trans.isra.21+0x8f/0xf0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f86782b0>] ? start_transaction+0x3d0/0x5d0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f866483d>] ? btrfs_delalloc_reserve_metadata+0x32d/0x580 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f8678533>] ? btrfs_join_transaction+0x23/0x30 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f867e409>] ? btrfs_dirty_inode+0x39/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c11aaa6e>] ? file_update_time+0x7e/0xc0
-> [Mon Nov  2 06:35:57 2015]  [<f8689aa0>] ? btrfs_page_mkwrite+0x80/0x3c0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c10bec89>] ? hrtimer_cancel+0x19/0x20
-> [Mon Nov  2 06:35:57 2015]  [<c10d0871>] ? futex_wait+0x1e1/0x270
-> [Mon Nov  2 06:35:57 2015]  [<c115d098>] ? do_page_mkwrite+0x38/0x90
-> [Mon Nov  2 06:35:57 2015]  [<c115ecd2>] ? do_wp_page+0x2e2/0x6d0
-> [Mon Nov  2 06:35:57 2015]  [<c10cf491>] ? futex_wake+0x71/0x140
-> [Mon Nov  2 06:35:57 2015]  [<c105c717>] ? kmap_atomic_prot+0xe7/0x110
-> [Mon Nov  2 06:35:57 2015]  [<c1160a89>] ? handle_mm_fault+0xd59/0x14d0
-> [Mon Nov  2 06:35:57 2015]  [<c1054bcc>] ? __do_page_fault+0x18c/0x480
-> [Mon Nov  2 06:35:57 2015]  [<c1054ec0>] ? __do_page_fault+0x480/0x480
-> [Mon Nov  2 06:35:57 2015]  [<c14f67cf>] ? error_code+0x67/0x6c
-> [Mon Nov  2 06:35:57 2015] INFO: task nscd:864 blocked for more than 120 seconds.
-> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
-> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> [Mon Nov  2 06:35:57 2015] nscd            D f1c87f5c     0   864      1 0x00000000
-> [Mon Nov  2 06:35:57 2015]  f1c87ef4 00200082 f1c87f80 f1c87f5c 000003e7 f1c87ee4 f3aec740 ac76c560
-> [Mon Nov  2 06:35:57 2015]  f74ea800 f79e3f40 f3c7b040 f1c88000 f3c7b040 ffff0001 f1c87f00 c14f1fdb
-> [Mon Nov  2 06:35:57 2015]  f3aec77c f1c87f38 c14f4265 f1c87f1c f3aec780 f3aec788 00000000 00000125
-> [Mon Nov  2 06:35:57 2015] Call Trace:
-> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
-> [Mon Nov  2 06:35:57 2015]  [<c14f4265>] ? rwsem_down_write_failed+0x185/0x280
-> [Mon Nov  2 06:35:57 2015]  [<c12964d2>] ? call_rwsem_down_write_failed+0x6/0x8
-> [Mon Nov  2 06:35:57 2015]  [<c14f3b85>] ? down_write+0x25/0x40
-> [Mon Nov  2 06:35:57 2015]  [<c11505ba>] ? vm_mmap_pgoff+0x4a/0xa0
-> [Mon Nov  2 06:35:57 2015]  [<c1196d08>] ? SyS_fstat64+0x28/0x30
-> [Mon Nov  2 06:35:57 2015]  [<c1164e50>] ? SyS_mmap_pgoff+0x110/0x210
-> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
-> [Mon Nov  2 06:35:57 2015] INFO: task nmbd:1330 blocked for more than 120 seconds.
-> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
-> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> [Mon Nov  2 06:35:57 2015] nmbd            D 00000000     0  1330      1 0x00000000
-> [Mon Nov  2 06:35:57 2015]  ef44bd74 00200086 00000000 00000000 00000000 00000000 f3984900 00000000
-> [Mon Nov  2 06:35:57 2015]  f69e1800 f79e3f40 f3a7a800 ef44c000 d17255a0 d17255a0 ef44bd80 c14f1fdb
-> [Mon Nov  2 06:35:57 2015]  d1725600 ef44bdc8 f86961b5 000d3fff 00000000 00001000 00000000 000d3000
-> [Mon Nov  2 06:35:57 2015] Call Trace:
-> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f86961b5>] ? btrfs_start_ordered_extent+0xd5/0x100 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f868b254>] ? lock_and_cleanup_extent_if_need+0x134/0x260 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f868bb46>] ? prepare_pages+0xc6/0x150 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f868c76a>] ? __btrfs_buffered_write+0x17a/0x5e0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c113e663>] ? __alloc_pages_nodemask+0x133/0x880
-> [Mon Nov  2 06:35:57 2015]  [<f8690f85>] ? btrfs_file_write_iter+0x1e5/0x550 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c116980c>] ? page_add_new_anon_rmap+0x6c/0x90
-> [Mon Nov  2 06:35:57 2015]  [<c1191e29>] ? new_sync_write+0x79/0xb0
-> [Mon Nov  2 06:35:57 2015]  [<c1192433>] ? vfs_write+0x93/0x1a0
-> [Mon Nov  2 06:35:57 2015]  [<c1054be8>] ? __do_page_fault+0x1a8/0x480
-> [Mon Nov  2 06:35:57 2015]  [<c14f3030>] ? mutex_lock+0x10/0x30
-> [Mon Nov  2 06:35:57 2015]  [<c1192d96>] ? SyS_write+0x46/0x90
-> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
-> [Mon Nov  2 06:35:57 2015] INFO: task master:2321 blocked for more than 120 seconds.
-> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
-> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> [Mon Nov  2 06:35:57 2015] master          D f79e3f40     0  2321      1 0x00000004
-> [Mon Nov  2 06:35:57 2015]  edcd9e18 00200082 cb7fd040 f79e3f40 cb7fd040 ffffffe0 f3903c80 00200246
-> [Mon Nov  2 06:35:57 2015]  c167cb00 f79d1f40 eef44800 edcda000 f6b381dc f6b38000 edcd9e24 c14f1fdb
-> [Mon Nov  2 06:35:57 2015]  d5553960 edcd9e48 f867672f 00000000 eef44800 c1099250 f3309e68 c7a17d64
-> [Mon Nov  2 06:35:57 2015] Call Trace:
-> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f867672f>] ? wait_current_trans.isra.21+0x8f/0xf0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f86782b0>] ? start_transaction+0x3d0/0x5d0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f8678533>] ? btrfs_join_transaction+0x23/0x30 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f867e409>] ? btrfs_dirty_inode+0x39/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c11aaa6e>] ? file_update_time+0x7e/0xc0
-> [Mon Nov  2 06:35:57 2015]  [<c11998ea>] ? pipe_write+0x32a/0x400
-> [Mon Nov  2 06:35:57 2015]  [<c1191e29>] ? new_sync_write+0x79/0xb0
-> [Mon Nov  2 06:35:57 2015]  [<c1192433>] ? vfs_write+0x93/0x1a0
-> [Mon Nov  2 06:35:57 2015]  [<c11a4d88>] ? poll_select_set_timeout+0x68/0x80
-> [Mon Nov  2 06:35:57 2015]  [<c1192d96>] ? SyS_write+0x46/0x90
-> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
-> [Mon Nov  2 06:35:57 2015] INFO: task xfce4-sensors-p:2611 blocked for more than 120 seconds.
-> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
-> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
-> [Mon Nov  2 06:35:57 2015] xfce4-sensors-p D 00000000     0  2611   2560 0x00000000
-> [Mon Nov  2 06:35:57 2015]  e71f9e50 00200086 00000000 00000000 5ca90000 ffffffe0 eeec4ac0 00200246
-> [Mon Nov  2 06:35:57 2015]  c167cb00 f79d1f40 e7ea3040 e71fa000 f6f345dc f6f34400 e71f9e5c c14f1fdb
-> [Mon Nov  2 06:35:57 2015]  d5553960 e71f9e80 f867672f 00000000 e7ea3040 c1099250 c7a17d64 ea299e84
-> [Mon Nov  2 06:35:57 2015] Call Trace:
-> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f867672f>] ? wait_current_trans.isra.21+0x8f/0xf0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
-> [Mon Nov  2 06:35:57 2015]  [<f8678331>] ? start_transaction+0x451/0x5d0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f86784d4>] ? btrfs_start_transaction+0x24/0x30 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<f86795a0>] ? __unlink_start_trans+0x20/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c11a6e02>] ? d_rehash+0x42/0x50
-> [Mon Nov  2 06:35:57 2015]  [<f86829c8>] ? btrfs_unlink+0x28/0xb0 [btrfs]
-> [Mon Nov  2 06:35:57 2015]  [<c119e222>] ? vfs_unlink+0xf2/0x190
-> [Mon Nov  2 06:35:57 2015]  [<c11a0afb>] ? do_unlinkat+0x21b/0x280
-> [Mon Nov  2 06:35:57 2015]  [<c11a1505>] ? SyS_unlink+0x15/0x20
-> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
+--=-k+4aUvVACtay1+cWfVdG
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEwNzE1MDUw
+NlowTwYJKoZIhvcNAQkEMUIEQLcAcIwBDjhzTCNyvd/vhq8o8NRthVzWq/uidhcqCUcvlJkmqayp
++dXY89navsfUWJgNvwWlTR4B2wvKB2+SJCYwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCyrb7mxXBnn9dhNxYHhz148/UZQ+Ir
+J7YHWmO4x/dFnc1wlX9BXaKgNG4scrT0TTcyaFiOgR4ZhjLBWqFLOt6qtkCyx4QUjEWRlE6osKu8
+YZzveVtWyGRJyn+3a+IZ4+bPFDZ9X3U0L/JSSsI9QB8U0LpIf+vh6x23dOTD8MmhkFIUsw26uVUZ
+8op3KZtBNCydyxmG8qlOTh5pB0Ywe9diucaw2NfBJ4tOJ4RDb/ydR8kc0qsK4Wmo+8IjVJ3RgOcp
+Qzn9I3eINIQrvnRynmFRhuaSY+i7Ipmk31d/bRRBDF6Gzpj8C9STChHhnkqRroCiqesdJxQi3mmL
+tMN6pIehAAAAAAAA
+
+
+--=-k+4aUvVACtay1+cWfVdG--
 

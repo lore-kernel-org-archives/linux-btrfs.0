@@ -1,141 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f174.google.com ([209.85.223.174]:33129 "EHLO
-	mail-io0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030298AbbKFWV3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Nov 2015 17:21:29 -0500
-Received: by iodd200 with SMTP id d200so136527284iod.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2015 14:21:29 -0800 (PST)
+Received: from fallback2.mail.ru ([94.100.179.22]:36377 "EHLO
+	fallback2.mail.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752616AbbKGM2I (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 07:28:08 -0500
+Received: from smtp38.i.mail.ru (smtp38.i.mail.ru [94.100.177.98])
+	by fallback2.mail.ru (mPOP.Fallback_MX) with ESMTP id 901A864CF58B
+	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 15:22:00 +0300 (MSK)
+Received: from 77-173-215-182.ip.telfort.nl ([77.173.215.182]:37912 helo=centurion)
+	by smtp38.i.mail.ru with esmtpa (envelope-from <dma_k@mail.ru>)
+	id 1Zv2VK-000293-KJ
+	for linux-btrfs@vger.kernel.org; Sat, 07 Nov 2015 15:21:59 +0300
+Received: from [127.0.0.1] (Tanja.home [192.168.1.32])
+	(using TLSv1 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
+	(No client certificate requested)
+	by centurion (Postfix) with ESMTPSA id 75C5F311CD1
+	for <linux-btrfs@vger.kernel.org>; Sat,  7 Nov 2015 13:21:57 +0100 (CET)
+Message-ID: <563DECF0.8080901@mail.ru>
+Date: Sat, 07 Nov 2015 13:22:08 +0100
+From: Dmitry Katsubo <dma_k@mail.ru>
 MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <CAPoQQ-07L3-43Y4JiuHW1MPBNVgm3qXAtC0PDxCi0Pe8CxqPSQ@mail.gmail.com>
-References: <CAPoQQ-0SCeXpzjWM5Y3BUD=kHxAdfTRB21vnRf9TQGrQm6CHkQ@mail.gmail.com>
-	<CAPoQQ-07L3-43Y4JiuHW1MPBNVgm3qXAtC0PDxCi0Pe8CxqPSQ@mail.gmail.com>
-Date: Fri, 6 Nov 2015 22:21:29 +0000
-Message-ID: <CAL3q7H6Ro3GreTTQcisgxppNMSt8UZaJDNpVV8Y5hzMzVnUYVw@mail.gmail.com>
-Subject: Re: btrfs_sync_file alignment trap on arm (kernel 4.2.5)
-From: Filipe Manana <fdmanana@gmail.com>
-To: Cody P Schafer <dev@codyps.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Jeff Mahoney <jeffm@suse.com>
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Process is blocked for more than 120 seconds
+References: <56374C7D.5080609@mail.ru>
+In-Reply-To: <56374C7D.5080609@mail.ru>
+Content-Type: text/plain; charset=ISO-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 6, 2015 at 10:16 PM, Cody P Schafer <dev@codyps.com> wrote:
-> On Wed, Nov 4, 2015 at 5:55 PM, Cody P Schafer <dev@codyps.com> wrote:
->> Ideas as to what could cause this would be appreciated.
->>
->> This consistently is triggered shortly after boot (I presume due to
->> conmand calling fsync on a file).
->>
->> Note that I'm not quite running 4.2.5, but none of the changes I have
->> additionally applied are to btrfs or atomics.
->>
->> Let me know if there is a way for me to get you more info.
->>
->> It looks like the line is:
->>
->>     mutex_lock(&inode->i_mutex);
->>     atomic_inc(&root->log_batch);  <<<<
->>     full_sync = test_bit(BTRFS_INODE_NEEDS_FULL_SYNC,
->>         &BTRFS_I(inode)->runtime_flags);
->>
->>
->> addr2line of the trapping instruction:
->>     addr2line -e
->> ./work/beaglebone-poky-linux-gnueabi/linux-yocto-ikabit/4.2.5+gitAUTOINC+c29ac18888-r1/linux-beaglebone-standard-build/arch/arm/boot/vmlinux
->> c0217a34 -i
->>     /home/cody/obj/y/tmp/work-shared/beaglebone/kernel-source/arch/arm/include/asm/atomic.h:194
->>     /home/cody/obj/y/tmp/work-shared/beaglebone/kernel-source/fs/btrfs/file.c:1886
->>
->> fault log:
->>
->> [   11.488382] Alignment trap: not handling instruction e1993f9f at [<c0217a34>]
->> [   11.560558] Unhandled fault: alignment exception (0x001) at 0x0000026d
->> [   11.607301] pgd = dc090000
->> [   11.610166] [0000026d] *pgd=9c063831, *pte=00000000, *ppte=00000000
->> [   11.665548] Internal error: : 1 [#1] PREEMPT ARM
->> [   11.670388] Modules linked in: omaplfb(O) bufferclass_ti(O) pvrsrvkm(O)
->> [   11.677341] CPU: 0 PID: 248 Comm: connmand Tainted: G           O
->>  4.2.5-yocto-standard #1
->> [   11.686172] Hardware name: Generic AM33XX (Flattened Device Tree)
->> [   11.692551] task: dc00d100 ti: dc068000 task.ti: dc068000
->> [   11.698219] PC is at btrfs_sync_file+0x104/0x3f4
->> [   11.703051] LR is at btrfs_sync_file+0x100/0x3f4
->> [   11.707883] pc : [<c0217a38>]    lr : [<c0217a34>]    psr: 60060013
->> [   11.707883] sp : dc069e98  ip : dc069e98  fp : dc069f1c
->> [   11.719897] r10: 00000000  r9 : 0000026d  r8 : dd746b40
->> [   11.725363] r7 : dcef8dcc  r6 : 00000000  r5 : dcef8d68  r4 : 00000001
->> [   11.732192] r3 : 7fffffff  r2 : 00000000  r1 : 00000000  r0 : dcef8dcc
->> [   11.739024] Flags: nZCv  IRQs on  FIQs on  Mode SVC_32  ISA ARM  Segment user
->> [   11.746491] Control: 10c5387d  Table: 9c090019  DAC: 00000015
->> [   11.752502] Process connmand (pid: 248, stack limit = 0xdc068210)
->> [   11.758878] Stack: (0xdc069e98 to 0xdc06a000)
->> [   11.763436] 9e80:
->>     ffffffff 7fffffff
->> [   11.771998] 9ea0: dc069f38 c014582c 0000b30b 00000000 00000000
->> 000037f6 000081a4 d5012f68
->> [   11.780559] 9ec0: 00000000 80000000 00000000 00000000 00000000
->> 00000000 0000008d 00000000
->> [   11.789121] 9ee0: 00000400 00000000 00000001 20b04e34 563924e6
->> dd746b40 dce2beb8 00000000
->> [   11.797683] 9f00: 00000000 00000000 dc068000 00000000 dc069f54
->> dc069f20 c0171d00 c0217940
->> [   11.806245] 9f20: ffffffff 7fffffff 00000000 dc069f38 c0145b6c
->> dd746b40 00000000 dd746b40
->> [   11.814807] 9f40: 00000076 c000f7a4 dc069f74 dc069f58 c0171d3c
->> c0171c40 ffffffff 7fffffff
->> [   11.823369] 9f60: 00000000 c015cc9c dc069f94 dc069f78 c0171d7c
->> c0171d14 00000000 bebe2bf8
->> [   11.831931] 9f80: 00e64c4d b6a104d0 dc069fa4 dc069f98 c017204c
->> c0171d50 00000000 dc069fa8
->> [   11.840492] 9fa0: c000f600 c017203c bebe2bf8 00e64c4d 00000009
->> bebe2bf8 0000008d 00000000
->> [   11.849054] 9fc0: bebe2bf8 00e64c4d b6a104d0 00000076 00e64810
->> 00e60cd0 00000009 00000000
->> [   11.857616] 9fe0: 00000000 bebe2bd4 b6e63384 b6dcef00 60060010
->> 00000009 044a1103 099b0303
->> [   11.866199] [<c0217a38>] (btrfs_sync_file) from [<c0171d00>]
->> (vfs_fsync_range+0xcc/0xd4)
->> [   11.874674] [<c0171d00>] (vfs_fsync_range) from [<c0171d3c>]
->> (vfs_fsync+0x34/0x3c)
->> [   11.882600] [<c0171d3c>] (vfs_fsync) from [<c0171d7c>] (do_fsync+0x38/0x54)
->> [   11.889890] [<c0171d7c>] (do_fsync) from [<c017204c>] (SyS_fsync+0x1c/0x20)
->> [   11.897188] [<c017204c>] (SyS_fsync) from [<c000f600>]
->> (ret_fast_syscall+0x0/0x3c)
->> [   11.905116] Code: e14b05fc e1a00007 eb1251f7 e1993f9f (e2833001)
->> [   13.418969] ---[ end trace d7bcd93aea7d243c ]---
->> [   13.442420] Kernel panic - not syncing: Fatal exception
->
-> I looked into this a bit further, and it looks like my issue is that
-> the btrfs_root* from BTRFS_I(inode)->root is somehow `1` instead of an
-> actual pointer value, so it appears this isn't quite an alignment
-> issue.
->
-> Kernel starts without issue if I just stop doing the overlay (and as a
-> result stop using btrfs at all).
->
-> I've added some debugging, and the actual file it's trying to fsync
-> appears to be: `/var/lib/connman/settings.4CAC7X`
->
-> That directory is a overlayfs dir with a btrfs upper and a squashfs lower.
->
-> Ideas on why the btrfs_root pointer is 0x1?
+Hi everyone,
 
-Just a bad interaction with overlayfs, this is being discussed at this
-thread:  http://www.spinics.net/lists/linux-btrfs/msg47744.html
+I have noticed the following in the log. The system continues to run,
+but I am not sure for how long it will be stable. Should I start
+worrying? Thanks in advance for the opinion.
 
+# uname -a
+Linux Debian 4.2.3-2~bpo8+1 (2015-10-20) i686 GNU/Linux
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+# mount | grep /var
+/dev/sdd2 on /var type btrfs
+(rw,noatime,compress=lzo,space_cache,subvolid=258,subvol=/var)
 
+> [Mon Nov  2 06:35:57 2015] INFO: task nscd:859 blocked for more than 120 seconds.
+> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
+> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [Mon Nov  2 06:35:57 2015] nscd            D f1c7dd20     0   859      1 0x00000000
+> [Mon Nov  2 06:35:57 2015]  f1c7dd40 00200082 f79de900 f1c7dd20 c10bc119 ffffffe0 f3aec740 00200246
+> [Mon Nov  2 06:35:57 2015]  f74ea800 f79e3f40 f77fb800 f1c7e000 f6b381dc f6b38000 f1c7dd4c c14f1fdb
+> [Mon Nov  2 06:35:57 2015]  d5553960 f1c7dd70 f867672f 00000000 f77fb800 c1099250 d0a4be08 d9755e68
+> [Mon Nov  2 06:35:57 2015] Call Trace:
+> [Mon Nov  2 06:35:57 2015]  [<c10bc119>] ? del_timer_sync+0x49/0x50
+> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f867672f>] ? wait_current_trans.isra.21+0x8f/0xf0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f86782b0>] ? start_transaction+0x3d0/0x5d0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f866483d>] ? btrfs_delalloc_reserve_metadata+0x32d/0x580 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f8678533>] ? btrfs_join_transaction+0x23/0x30 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f867e409>] ? btrfs_dirty_inode+0x39/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c11aaa6e>] ? file_update_time+0x7e/0xc0
+> [Mon Nov  2 06:35:57 2015]  [<f8689aa0>] ? btrfs_page_mkwrite+0x80/0x3c0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c10bec89>] ? hrtimer_cancel+0x19/0x20
+> [Mon Nov  2 06:35:57 2015]  [<c10d0871>] ? futex_wait+0x1e1/0x270
+> [Mon Nov  2 06:35:57 2015]  [<c115d098>] ? do_page_mkwrite+0x38/0x90
+> [Mon Nov  2 06:35:57 2015]  [<c115ecd2>] ? do_wp_page+0x2e2/0x6d0
+> [Mon Nov  2 06:35:57 2015]  [<c10cf491>] ? futex_wake+0x71/0x140
+> [Mon Nov  2 06:35:57 2015]  [<c105c717>] ? kmap_atomic_prot+0xe7/0x110
+> [Mon Nov  2 06:35:57 2015]  [<c1160a89>] ? handle_mm_fault+0xd59/0x14d0
+> [Mon Nov  2 06:35:57 2015]  [<c1054bcc>] ? __do_page_fault+0x18c/0x480
+> [Mon Nov  2 06:35:57 2015]  [<c1054ec0>] ? __do_page_fault+0x480/0x480
+> [Mon Nov  2 06:35:57 2015]  [<c14f67cf>] ? error_code+0x67/0x6c
+> [Mon Nov  2 06:35:57 2015] INFO: task nscd:864 blocked for more than 120 seconds.
+> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
+> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [Mon Nov  2 06:35:57 2015] nscd            D f1c87f5c     0   864      1 0x00000000
+> [Mon Nov  2 06:35:57 2015]  f1c87ef4 00200082 f1c87f80 f1c87f5c 000003e7 f1c87ee4 f3aec740 ac76c560
+> [Mon Nov  2 06:35:57 2015]  f74ea800 f79e3f40 f3c7b040 f1c88000 f3c7b040 ffff0001 f1c87f00 c14f1fdb
+> [Mon Nov  2 06:35:57 2015]  f3aec77c f1c87f38 c14f4265 f1c87f1c f3aec780 f3aec788 00000000 00000125
+> [Mon Nov  2 06:35:57 2015] Call Trace:
+> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
+> [Mon Nov  2 06:35:57 2015]  [<c14f4265>] ? rwsem_down_write_failed+0x185/0x280
+> [Mon Nov  2 06:35:57 2015]  [<c12964d2>] ? call_rwsem_down_write_failed+0x6/0x8
+> [Mon Nov  2 06:35:57 2015]  [<c14f3b85>] ? down_write+0x25/0x40
+> [Mon Nov  2 06:35:57 2015]  [<c11505ba>] ? vm_mmap_pgoff+0x4a/0xa0
+> [Mon Nov  2 06:35:57 2015]  [<c1196d08>] ? SyS_fstat64+0x28/0x30
+> [Mon Nov  2 06:35:57 2015]  [<c1164e50>] ? SyS_mmap_pgoff+0x110/0x210
+> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
+> [Mon Nov  2 06:35:57 2015] INFO: task nmbd:1330 blocked for more than 120 seconds.
+> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
+> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [Mon Nov  2 06:35:57 2015] nmbd            D 00000000     0  1330      1 0x00000000
+> [Mon Nov  2 06:35:57 2015]  ef44bd74 00200086 00000000 00000000 00000000 00000000 f3984900 00000000
+> [Mon Nov  2 06:35:57 2015]  f69e1800 f79e3f40 f3a7a800 ef44c000 d17255a0 d17255a0 ef44bd80 c14f1fdb
+> [Mon Nov  2 06:35:57 2015]  d1725600 ef44bdc8 f86961b5 000d3fff 00000000 00001000 00000000 000d3000
+> [Mon Nov  2 06:35:57 2015] Call Trace:
+> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f86961b5>] ? btrfs_start_ordered_extent+0xd5/0x100 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f868b254>] ? lock_and_cleanup_extent_if_need+0x134/0x260 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f868bb46>] ? prepare_pages+0xc6/0x150 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f868c76a>] ? __btrfs_buffered_write+0x17a/0x5e0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c113e663>] ? __alloc_pages_nodemask+0x133/0x880
+> [Mon Nov  2 06:35:57 2015]  [<f8690f85>] ? btrfs_file_write_iter+0x1e5/0x550 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c116980c>] ? page_add_new_anon_rmap+0x6c/0x90
+> [Mon Nov  2 06:35:57 2015]  [<c1191e29>] ? new_sync_write+0x79/0xb0
+> [Mon Nov  2 06:35:57 2015]  [<c1192433>] ? vfs_write+0x93/0x1a0
+> [Mon Nov  2 06:35:57 2015]  [<c1054be8>] ? __do_page_fault+0x1a8/0x480
+> [Mon Nov  2 06:35:57 2015]  [<c14f3030>] ? mutex_lock+0x10/0x30
+> [Mon Nov  2 06:35:57 2015]  [<c1192d96>] ? SyS_write+0x46/0x90
+> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
+> [Mon Nov  2 06:35:57 2015] INFO: task master:2321 blocked for more than 120 seconds.
+> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
+> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [Mon Nov  2 06:35:57 2015] master          D f79e3f40     0  2321      1 0x00000004
+> [Mon Nov  2 06:35:57 2015]  edcd9e18 00200082 cb7fd040 f79e3f40 cb7fd040 ffffffe0 f3903c80 00200246
+> [Mon Nov  2 06:35:57 2015]  c167cb00 f79d1f40 eef44800 edcda000 f6b381dc f6b38000 edcd9e24 c14f1fdb
+> [Mon Nov  2 06:35:57 2015]  d5553960 edcd9e48 f867672f 00000000 eef44800 c1099250 f3309e68 c7a17d64
+> [Mon Nov  2 06:35:57 2015] Call Trace:
+> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f867672f>] ? wait_current_trans.isra.21+0x8f/0xf0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f86782b0>] ? start_transaction+0x3d0/0x5d0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f8678533>] ? btrfs_join_transaction+0x23/0x30 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f867e409>] ? btrfs_dirty_inode+0x39/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f867e480>] ? btrfs_dirty_inode+0xb0/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c11aaa6e>] ? file_update_time+0x7e/0xc0
+> [Mon Nov  2 06:35:57 2015]  [<c11998ea>] ? pipe_write+0x32a/0x400
+> [Mon Nov  2 06:35:57 2015]  [<c1191e29>] ? new_sync_write+0x79/0xb0
+> [Mon Nov  2 06:35:57 2015]  [<c1192433>] ? vfs_write+0x93/0x1a0
+> [Mon Nov  2 06:35:57 2015]  [<c11a4d88>] ? poll_select_set_timeout+0x68/0x80
+> [Mon Nov  2 06:35:57 2015]  [<c1192d96>] ? SyS_write+0x46/0x90
+> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
+> [Mon Nov  2 06:35:57 2015] INFO: task xfce4-sensors-p:2611 blocked for more than 120 seconds.
+> [Mon Nov  2 06:35:57 2015]       Not tainted 4.2.0-0.bpo.1-686-pae #1
+> [Mon Nov  2 06:35:57 2015] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs" disables this message.
+> [Mon Nov  2 06:35:57 2015] xfce4-sensors-p D 00000000     0  2611   2560 0x00000000
+> [Mon Nov  2 06:35:57 2015]  e71f9e50 00200086 00000000 00000000 5ca90000 ffffffe0 eeec4ac0 00200246
+> [Mon Nov  2 06:35:57 2015]  c167cb00 f79d1f40 e7ea3040 e71fa000 f6f345dc f6f34400 e71f9e5c c14f1fdb
+> [Mon Nov  2 06:35:57 2015]  d5553960 e71f9e80 f867672f 00000000 e7ea3040 c1099250 c7a17d64 ea299e84
+> [Mon Nov  2 06:35:57 2015] Call Trace:
+> [Mon Nov  2 06:35:57 2015]  [<c14f1fdb>] ? schedule+0x2b/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f867672f>] ? wait_current_trans.isra.21+0x8f/0xf0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c1099250>] ? wait_woken+0x80/0x80
+> [Mon Nov  2 06:35:57 2015]  [<f8678331>] ? start_transaction+0x451/0x5d0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f86784d4>] ? btrfs_start_transaction+0x24/0x30 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<f86795a0>] ? __unlink_start_trans+0x20/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c11a6e02>] ? d_rehash+0x42/0x50
+> [Mon Nov  2 06:35:57 2015]  [<f86829c8>] ? btrfs_unlink+0x28/0xb0 [btrfs]
+> [Mon Nov  2 06:35:57 2015]  [<c119e222>] ? vfs_unlink+0xf2/0x190
+> [Mon Nov  2 06:35:57 2015]  [<c11a0afb>] ? do_unlinkat+0x21b/0x280
+> [Mon Nov  2 06:35:57 2015]  [<c11a1505>] ? SyS_unlink+0x15/0x20
+> [Mon Nov  2 06:35:57 2015]  [<c14f559b>] ? sysenter_do_call+0x12/0x12
 
-
--- 
-Filipe David Manana,
-
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

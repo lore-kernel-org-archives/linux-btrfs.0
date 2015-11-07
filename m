@@ -1,91 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:42711 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753938AbbKGTSS (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 7 Nov 2015 14:18:18 -0500
-Date: Sat, 7 Nov 2015 19:18:17 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Jakob =?iso-8859-1?Q?Sch=FCrz?= <wertstoffe@nurfuerspam.de>
-Cc: linux-btrfs@vger.kernel.org
+Received: from plane.gmane.org ([80.91.229.3]:59975 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754153AbbKGTcs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 7 Nov 2015 14:32:48 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Zv9EE-0002nd-B5
+	for linux-btrfs@vger.kernel.org; Sat, 07 Nov 2015 20:32:46 +0100
+Received: from chello213047196183.tirol.surfer.at ([213.47.196.183])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 20:32:46 +0100
+Received: from wertstoffe by chello213047196183.tirol.surfer.at with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 07 Nov 2015 20:32:46 +0100
+To: linux-btrfs@vger.kernel.org
+From: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>
 Subject: Re: boot from snapshot and take snapshot from here.
-Message-ID: <20151107191817.GF27446@carfax.org.uk>
+Date: Sat, 7 Nov 2015 20:30:15 +0100
+Message-ID: <8302hc-1m9.ln1@aldebaran.xundeenergie.at>
 References: <4iu1hc-23v.ln1@aldebaran.xundeenergie.at>
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="fwqqG+mf3f7vyBCB"
-In-Reply-To: <4iu1hc-23v.ln1@aldebaran.xundeenergie.at>
+ <20151107191817.GF27446@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="emC6WRrHtkH8KDvmORJ0Vd5WGmJmbGrJb"
+In-Reply-To: <20151107191817.GF27446@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---fwqqG+mf3f7vyBCB
-Content-Type: text/plain; charset=iso-8859-1
-Content-Disposition: inline
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--emC6WRrHtkH8KDvmORJ0Vd5WGmJmbGrJb
+Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
-On Sat, Nov 07, 2015 at 08:04:01PM +0100, Jakob Sch=FCrz wrote:
-> Hi there!
->=20
-> I can't find any Information for my Problem. And I try to explain, what
-> I want.
-[snip]
-> BUT
->=20
-> When i boot from f.e. @debian-snap2, the mechanics doesn't work any longe=
-r.
->=20
-> btrfs subvol snapshot @debian-snap2 @debian-snap3
->=20
-> this works.
->=20
-> btrfs send -p @debian-snap2 debian-snap3 | btrfs receive /backupmountpoint
->=20
-> gives me an error, that btrfs can't find a subvol with a proper ID.
->=20
-> Ho to do this, if i want to boot from a former snapshot (in case of a
-> mistaken system-upgrade) and i want to transfer the later snapshots to
-> the external HD - only the differences?
+Am 2015-11-07 um 20:18 schrieb Hugo Mills:
+> On Sat, Nov 07, 2015 at 08:04:01PM +0100, Jakob Sch=C3=BCrz wrote:
+>> Hi there!
+>>
+>> I can't find any Information for my Problem. And I try to explain, wha=
+t
+>> I want.
+> [snip]
+>> BUT
+>>
+>> When i boot from f.e. @debian-snap2, the mechanics doesn't work any lo=
+nger.
+>>
+>> btrfs subvol snapshot @debian-snap2 @debian-snap3
+>>
+>> this works.
+>>
+>> btrfs send -p @debian-snap2 debian-snap3 | btrfs receive /backupmountp=
+oint
+>>
+>> gives me an error, that btrfs can't find a subvol with a proper ID.
+>>
+>> Ho to do this, if i want to boot from a former snapshot (in case of a
+>> mistaken system-upgrade) and i want to transfer the later snapshots to=
 
-   Basically, you can't right now. It's a known limitation, and can, I
-think, be fixed, but it'll need a change to the send stream format,
-which is a tricky migration to do (because there's currently no format
-identifier in it, which makes it hard to handle both formats easily).
+>> the external HD - only the differences?
+>=20
+>    Basically, you can't right now. It's a known limitation, and can, I
+> think, be fixed, but it'll need a change to the send stream format,
+> which is a tricky migration to do (because there's currently no format
+> identifier in it, which makes it hard to handle both formats easily).
+>=20
+>> There is nothing on the internet on this problem (I've found). But i
+>> think this is a usecase, which I'm not alone needing it...
+>=20
+>    You're not alone. It will come eventually, but only when David's in
+> a position to deal with the issues of changing the send stream.
 
-> There is nothing on the internet on this problem (I've found). But i
-> think this is a usecase, which I'm not alone needing it...
+OK!
 
-   You're not alone. It will come eventually, but only when David's in
-a position to deal with the issues of changing the send stream.
+I'm always happy, when i realize, it's not my tired mind, when i can't
+find the solution :)
 
-   Hugo.
+Thanks for the  info. So we will wait.
+
+jakob
+
 
 --=20
-Hugo Mills             | "No! My collection of rare, incurable diseases!
-hugo@... carfax.org.uk | Violated!"
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |                Stimpson J. Cat, The Ren & Stimpy S=
-how
+http://xundeenergie.at
+http://verkehrsloesungen.wordpress.com/
+http://cogitationum.wordpress.com/
 
---fwqqG+mf3f7vyBCB
+
+--emC6WRrHtkH8KDvmORJ0Vd5WGmJmbGrJb
 Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
 -----BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+Version: GnuPG v2
 
-iQIcBAEBAgAGBQJWPk54AAoJEFheFHXiqx3ki8gP/0qo4YMef9Rt3vLIPNq0rcPt
-m5LYWXKSQU722/H0K8Qa6ghJEwCdKxTNer3xJ8Q720l5yfki6WS0ie4aLpbb27jN
-o10eFNN+hM+3jMiCaQDK4Up2wp37TbkI8D1gXg+WZv1KboHGyrcmJDgMGL+MjQjo
-WDPLbSJg3XVV2PNZzvYt2ZTQn0kSx5eXbG82X4jPeqJXqaPq5ieLZOxBdJCcBbLh
-tHv4V0olWk8TXMcQe0O3Ma1p5VcqaAKrHQrYolBcapak3QDw+Kf/qlCAKd2Tk3fN
-nndnAxIuXn+lKpHLc/r/eWyAg8670NeHb5pPKkUuuQQclQo6pg9x+bcBtag3LMO8
-41KL6MDvrg4Hyt4GCoUvRDbxu4UaqUxpTRkv+Z0wX+gYLZdWGmJo6gFnkuoo4o3j
-FTWD0h9QiLvgCr8lIk5rYJp5nXTGxwXCndtNq1P5WQ2FaPiNlpXc4GdU9izUSRmU
-qQv4JOrYEYeoWEijUDiw2SN9uSb2LtcWmLqc63wWSsWxl0Hm5QbQcmxL9rMd96h4
-Ht9Dp3ZtXis1E88ESSzXE/IOEEUEai4KBgjw9U7VfRLXEDxctjj9OnpVe+0TCAPB
-Yfg7wbijsY7KHMinyC5Flx+xI5nSyzW69mDPS186yha72CFbQnAN24vSjnnp7W9V
-3TsssqAWyztTut3WTL69
-=0VzB
+iQEcBAEBCAAGBQJWPlFIAAoJEF2YPOCqoD051YgH/01dEmHewmzKaRMmqPig5M+7
+cVhkkGtuBo4M1AGJSAODddrgLk/c0pJtXvTBIGP7K0RvQjFvOjBY4UwoEXGS22bh
+uSF/fq1LS2KUDKLJE8TXd+buNSM9xfUONHazas8U8OzsbKG85cTaCNOi48oEIVzd
+DCuO6gb63KHnnDm3ta8HLwr4AV/+ZsLvElL7/uv6i3x7P1Mp3KN9FBnMwkNynGVA
+LM1hjf2NwjMMn1CYZzOGzfs279SYG1Iwyit5+k8mBOM/zAwTDg26vgh1lnX83LWk
+/zLK7ozn3gJeSK/a7f/jSOfcgrdQ8vfGrVquWmyViD1lM8JtzjnB0QjT/I1tqFo=
+=3+YQ
 -----END PGP SIGNATURE-----
 
---fwqqG+mf3f7vyBCB--
+--emC6WRrHtkH8KDvmORJ0Vd5WGmJmbGrJb--
+

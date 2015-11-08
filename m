@@ -1,42 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f53.google.com ([209.85.215.53]:35478 "EHLO
-	mail-lf0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753376AbbKGA06 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 6 Nov 2015 19:26:58 -0500
-Received: by lfbn126 with SMTP id n126so79260499lfb.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 06 Nov 2015 16:26:56 -0800 (PST)
-From: Alexander Fougner <fougner89@gmail.com>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org, Alexander Fougner <fougner89@gmail.com>
-Subject: [PATCH] btrfs-progs: allow device deletion using 'missing' keyword again
-Date: Sat,  7 Nov 2015 01:26:24 +0100
-Message-Id: <1446855984-5123-1-git-send-email-fougner89@gmail.com>
+Received: from voltaic.bi-co.net ([134.119.3.22]:35746 "EHLO voltaic.bi-co.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751880AbbKHPm7 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 8 Nov 2015 10:42:59 -0500
+From: Michael Lass <bevan@bi-co.net>
+To: linux-btrfs@vger.kernel.org
+Cc: Michael Lass <bevan@bi-co.net>
+Subject: [PATCH] btrfs-progs: mkfs: increase buffer size in is_ssd
+Date: Sun,  8 Nov 2015 16:33:03 +0100
+Message-Id: <1446996783-25363-1-git-send-email-bevan@bi-co.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Device deletion procedures ensures the device is a block device.
-This patch introduces 'missing' as keyword again, correctly
-passing it on to the kernel instead of complaining about
-'missing' not being a block device.
+In current versions of util-linux the buffer passed to blkid_devno_to_wholedisk
+has to be sufficiently large to not only hold the device name but the complete
+target of the /sys/dev/block/<maj:min> symlink. This was changed only recently
+in 4419ffb9eff5801fdbd385a4a6199b3877f802ad.
 
-Signed-off-by: Alexander Fougner <fougner89@gmail.com>
+The small buffer size currently can lead to failure of is_ssd due to truncated
+device names:
+
+readlink("/sys/dev/block/254:7", "../../devices/virtual/block/dm-", 31) = 31
+open("/sys/block/dm-/queue/rotational", O_RDONLY) = -1 ENOENT (No such file or directory)
+
+Signed-off-by: Michael Lass <bevan@bi-co.net>
 ---
- cmds-device.c | 2 +-
+ mkfs.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index c2f3a40..dca30d7 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -161,7 +161,7 @@ static int _cmd_device_remove(int argc, char **argv,
- 		struct	btrfs_ioctl_vol_args arg;
- 		int	res;
- 
--		if (is_block_device(argv[i]) != 1) {
-+		if (is_block_device(argv[i]) != 1 && strcmp(argv[i], "missing")) {
- 			fprintf(stderr,
- 				"ERROR: %s is not a block device\n", argv[i]);
- 			ret++;
+diff --git a/mkfs.c b/mkfs.c
+index 0ea39f3..db69ab9 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1102,7 +1102,7 @@ static int zero_output_file(int out_fd, u64 size, u32 sectorsize)
+ static int is_ssd(const char *file)
+ {
+ 	blkid_probe probe;
+-	char wholedisk[32];
++	char wholedisk[PATH_MAX];
+ 	char sysfs_path[PATH_MAX];
+ 	dev_t devno;
+ 	int fd;
 -- 
 2.6.2
 

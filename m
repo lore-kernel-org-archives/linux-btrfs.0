@@ -1,41 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43748 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750981AbbKHUFy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 8 Nov 2015 15:05:54 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZvWDn-0006Gc-KQ
-	for linux-btrfs@vger.kernel.org; Sun, 08 Nov 2015 21:05:51 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Nov 2015 21:05:51 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Nov 2015 21:05:51 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-qg0-f43.google.com ([209.85.192.43]:35856 "EHLO
+	mail-qg0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751499AbbKHU0L (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Nov 2015 15:26:11 -0500
+Received: by qgad10 with SMTP id d10so129092625qga.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 Nov 2015 12:26:10 -0800 (PST)
 Subject: Re: soft lockup when using btrfs dev del
-Date: Sun, 8 Nov 2015 20:05:43 +0000 (UTC)
-Message-ID: <pan$b1811$27097d49$ff1a179a$5fbf014a@cox.net>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 References: <563F7F7D.4050608@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <pan$b1811$27097d49$ff1a179a$5fbf014a@cox.net>
+From: Charles Wright <wrighrc@gmail.com>
+Message-ID: <563FAFE0.3090407@gmail.com>
+Date: Sun, 8 Nov 2015 15:26:08 -0500
+MIME-Version: 1.0
+In-Reply-To: <pan$b1811$27097d49$ff1a179a$5fbf014a@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Charles Wright posted on Sun, 08 Nov 2015 11:59:41 -0500 as excerpted:
+Hi Duncan,
+     I give my written permission for people on this list to quote the 
+problem.
+That's my standard email signature that I should have probably removed 
+in this case and I wasn't intending it to prevent a reply.
 
-Since you claim full copyright and don't allow quotes without written 
-consent... the normal behavior of quoting and replying in context can't 
-be done, as the implied consent when posting to a list isn't enough to 
-meet the higher legal barrier you claim.
+Thanks.
 
-So, I can't quote the problem, and thus, can't reply in context...
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
 

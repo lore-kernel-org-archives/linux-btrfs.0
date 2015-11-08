@@ -1,59 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f179.google.com ([209.85.160.179]:32863 "EHLO
-	mail-yk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751732AbbKHV23 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Nov 2015 16:28:29 -0500
-Received: by ykdv3 with SMTP id v3so147362336ykd.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 08 Nov 2015 13:28:27 -0800 (PST)
-MIME-Version: 1.0
-From: Glen H <glen.hertz@gmail.com>
-Date: Sun, 8 Nov 2015 16:28:08 -0500
-Message-ID: <CABtZWNH4rzzTtBwvt6Xs+nf=8aiJrbsCAVZB3QzPEnEfi-Cs5A@mail.gmail.com>
-Subject: btrfs-progs send | receive error: no such file or directory
+Received: from plane.gmane.org ([80.91.229.3]:46768 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750770AbbKHVeN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 8 Nov 2015 16:34:13 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZvXbH-0005Sp-9O
+	for linux-btrfs@vger.kernel.org; Sun, 08 Nov 2015 22:34:11 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 Nov 2015 22:34:11 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 08 Nov 2015 22:34:11 +0100
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: cannot mount btrfs volume read/write (+task blocked backtrace)
+Date: Sun, 8 Nov 2015 21:34:06 +0000 (UTC)
+Message-ID: <pan$3ffdf$6a78c0ef$7e29cbf3$bd815572@cox.net>
+References: <1088210322.2591.1446934834083.JavaMail.zimbra@grelot.net>
+	<1330727605.2639.1446965139494.JavaMail.zimbra@grelot.net>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Frédéric Grelot posted on Sun, 08 Nov 2015 07:45:39 +0100 as excerpted:
 
-I really enjoy the features of btrfs but send|receive is failing me so
-my backups are not working.  I'm using "btrbk" to backup my drives
-(all local) and one of the three subvolumes errors out.  When I run
-this command from the terminal it errors out:
+> After 8 hours, "btrfs check --readonly" is still "checking quota
+> groups". It does not have any IO activity, but uses 100% CPU.
+> #top
+>  1143 root      20   0 2266596 2.148g   1124 R 100.0 56.0 183:37.14
+>  btrfs check --readonly /dev/sda1
+> 
+> I am not sure what to do : if you have no idea, since I have less than
+> 3Tb of data I will just manually degrade the volume by removing one of
+> the disk, build a new btrfs on it, copy the data since I can still open
+> the old one RO, then manually take devices from the old volume to new
+> new one (converting to raid1 first, then raid6).
 
-> btrfs send /mnt/ssd/_btrbk_snap/@.20151108 | btrfs receive /mnt/backup2tb/
-At subvol /mnt/ssd/_btrbk_snap/@.20151108
-At subvol @.20151108
-ERROR: send ioctl failed with -2: No such file or directory
-ERROR: unexpected EOF in stream.
+Ahh... quotas.  Devs are working very hard on them, but to this point 
+quotas have never really worked /correctly/, and the estimate as to when 
+they might... seems to always remain a couple kernel cycles out.
 
-The source is an SSD drive and the subvolume is a readonly snapshot of
-@.  I have two other source subvolumes on another rotational disk that
-send|receive fine to the same target drive (/mnt/backup2tb) .  There
-is plenty of space on the backup drive.
+So my recommendation continues to be, either you really need quotas and 
+thus should use a filesystem where they are known to be mature and 
+stable, or you don't, and btrfs is an option, but don't enable quotas and 
+avoid the problems they cause.  Unless of course you're specifically 
+working with the devs to debug and fix current functionality and don't 
+mind loosing a filesystem or two in the process as a result, in which 
+case, THANK YOU for helping to stabilize the feature for everyone, 
+however long it might take. 
 
-The error happens after 110 seconds and the @.20151108 is 25GB.  If
-the error happened at the end of the transfer it would be transferring
-at a rate of about 220MB/s.  Since the receiving side is a slower
-rotational drive with a benchmarked write speed of 170MB/s I think the
-error is happening 80% of the way through the transfer.
+As for when it might be safe to enable them, at this point, with the 
+quota history we have, I'd suggest waiting at least two kernel cycles 
+after all known quota issues have been fixed.  But whether that's 4.6 or 
+5.6 (with roughly 5 releases per year and a assuming another major 
+version bump at what would be .20, in keeping with the precedent set with 
+the 3.x series, it's roughly two years per major version kernel cycle, so 
+5.6 would be around 1Q2018) or 6.6... who can tell, until it happens?
 
-For versions, I'm using:
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-- kernel  3.19.0-31-generic #36~14.04.1-Ubuntu SMP Thu Oct 8 10:21:08
-UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-- Linux Mint 17.2 (based on Ubuntu 14.04) which has a stock kernel of
-3.17 (but I upgraded to 3.19).
-
-- btrfs-progs 3.19, 3.19.1 and 4.3 (all fail with the same error).
-
-I have high hopes for btrfs and want to help to make it better as an
-end user.  When you have time can you please investigate this about a
-possible resolution?  I can provide more details if needed.  I
-appreciate the help.
-
-Thanks,
-
-Glen

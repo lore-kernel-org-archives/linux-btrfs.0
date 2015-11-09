@@ -1,56 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f170.google.com ([209.85.213.170]:35354 "EHLO
-	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751623AbbKINkD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 08:40:03 -0500
-Received: by igl9 with SMTP id 9so30396678igl.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2015 05:40:02 -0800 (PST)
-Subject: Re: mkfs.btrfs doesn't detect SSD
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-References: <1446908706.7774.3.camel@scientia.net>
- <1446910202.7774.5.camel@scientia.net>
+Received: from mail-io0-f173.google.com ([209.85.223.173]:36649 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751660AbbKINu0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 08:50:26 -0500
+Received: by iofh3 with SMTP id h3so18486494iof.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2015 05:50:26 -0800 (PST)
+Subject: Re: btrfs-progs send | receive error: no such file or directory
+To: Glen H <glen.hertz@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CABtZWNH4rzzTtBwvt6Xs+nf=8aiJrbsCAVZB3QzPEnEfi-Cs5A@mail.gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5640A22C.2030604@gmail.com>
-Date: Mon, 9 Nov 2015 08:39:56 -0500
+Message-ID: <5640A497.2060701@gmail.com>
+Date: Mon, 9 Nov 2015 08:50:15 -0500
 MIME-Version: 1.0
-In-Reply-To: <1446910202.7774.5.camel@scientia.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms050709040007000809000701"
+In-Reply-To: <CABtZWNH4rzzTtBwvt6Xs+nf=8aiJrbsCAVZB3QzPEnEfi-Cs5A@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070305000901060708060401"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms050709040007000809000701
+--------------ms070305000901060708060401
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-11-07 10:30, Christoph Anton Mitterer wrote:
-> Hmm in fact it seems to be the kernel who wrongly, detects the type:
-> /sys/block/sdb/queue/rotational =3D 1
-> or more like the USB/SATA bridge simply reports it wrong.
+On 2015-11-08 16:28, Glen H wrote:
+> Hi,
 >
-> Anyway, is there a way to override? Or will setting
-> /sys/block/sdb/queue/rotational =3D 0 give the expected behaviour?
-This is a common issue with many USB/SATA bridges (and also=20
-device-mapper and MD devices), which don't properly query the attached=20
-device and modify the properties they report to the host system.  If you =
+> I really enjoy the features of btrfs but send|receive is failing me so
+> my backups are not working.  I'm using "btrbk" to backup my drives
+> (all local) and one of the three subvolumes errors out.  When I run
+> this command from the terminal it errors out:
+>
+>> btrfs send /mnt/ssd/_btrbk_snap/@.20151108 | btrfs receive /mnt/backup=
+2tb/
+> At subvol /mnt/ssd/_btrbk_snap/@.20151108
+> At subvol @.20151108
+> ERROR: send ioctl failed with -2: No such file or directory
+> ERROR: unexpected EOF in stream.
+Have you ever run any kind of data deduplication (bedup, duperemove, or=20
+something else) on the source filesystem?  I've seen errors like this in =
 
-have some way to reliably identify this particular device, you could add =
+the past when trying to send from a filesystem that I had run=20
+deduplication on (and I don't think that the patches to fix it made into =
 
-a udev rule to automatically set it as non-rotational.  You could also=20
-do like you suggested and set it to non-rotational manually, although=20
-for mkfs at least, it's quicker to just manually specify '-m single'  on =
+the version of Mint you're using).
 
-the command-line (that's the only difference in mkfs behavior for a=20
-SSD).  Like Chris said in his reply though, everything other than using=20
-single profile for metadata is done at mount time (if queue/rotational=20
-is 0, then -o ssd does get added to the mount options automatically, but =
+That aside, there are two things that I've found that can fix some (but=20
+not all) send/receive errors:
+1. Run a balance on the filesystem (either a full balance, or use=20
+filters to select just the block in question).
+2. Force the file that it's choking on to be re-written (you can use=20
+'btrfs receive -vv' to see what files it's processing, although be=20
+prepared for _a lot_ of output).
 
-it's a lot clearer to just specify the option yourself).
 
 
---------------ms050709040007000809000701
+--------------ms070305000901060708060401
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -92,9 +97,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTA5MTMzOTU2WjBPBgkq
-hkiG9w0BCQQxQgRAvxaS1MeUf3MbyfsThiefxRKVIeujdH6uAAGiKbQaeQVPgr2hAS8jRJ0x
-ph6awdx/wPEwQtgrgvM9WZhVNUKn6zBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTA5MTM1MDE1WjBPBgkq
+hkiG9w0BCQQxQgRAeVGMzpIit0oUJK4gPHe4R1sJgtRbl6zusmX/m1lK0Kv7SssBXvu9gyiO
+yS+oWxlg7iRAHKYuYaofLnTlg0DiwDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -102,14 +107,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBOzMwwd85WctdboBNIjmxCBUDHguNcvhvUpXyBBquHAqwfcPvY
-dd8586D9zKgLlwliRnLwy2Humgr0SEYbH+KZxyQbe6aDSUFgh7QtwYBtUwbby1Wqbrma+J4W
-Rsxo9y1ylG2nAgRKIcMnGQcCRPBtGrr30Ey+K6aP5570SgP/M1XgUSROJ4bbZUh8t70AfP7E
-25o1uqDh7+D6Iy+yFa5fpf/WY93dZ54TZewSjrB/6VV6hVbvNDMyDeY5k204/DvS1Xp5AupE
-D4cOVTC0im3Ua7KmGDljTFOZyBCAipmxsXfT0ZRgvYDfBzvIMrho698MwonqwQLrzbNO//E1
-M2TqthygcQyLpIeBqA67pjr+TjKMuno0zJHl42vvdlNgbn3EipUj/o5Lfsbte2epPx/IGQC8
-Oi5QCqyVFkqVgisNBnuR/ZCdV4au6GGcWeJCCXZsZdo1xsaYnCwQ7tQCCA7neRA2JaXSGTzx
-PmQQLW1WKJCDlSzC9nTSs0fhtccssXySyZqGYa2Zun3+PqhuZlCmqELteUjW0GTd2tNLSzPT
-SbHRHKF8fvbIj0lXMFZ//wM0oqNlipyRp4eyPSJ0SvZEe0+TbmNgGBXz5LpScTHfva2D/V23
-MKVfRVvYGeN41ps7IZ2tsCZGVVToKGjbrDjoiv6Yb5IYYXxo0+rA9CMVugAAAAAAAA==
---------------ms050709040007000809000701--
+BgkqhkiG9w0BAQEFAASCAgBBiQUaU850hq8rTz2dZyRXg2ZPtBOIG1B+suMeq95uFgxowYhh
+SJajEUu+smYQD/reyQ4rVa6iAkFdcAw4T8wIQslaT7xiu97q0lYmkGxi1436Ox5fYrBUzi/B
+HWo5V6jeb3lzl4mq9psxy9rzLu4pquWZFkuGoac1/qmbIU6IzywYKPOEeh8QFDnSgX1LmHZT
+uchUG3TQffVOAzWrSRnmk6QgEblW2eZtWwyUknDUB2el/moEmcJfOvTSc7DNfsXz/dTHExqV
+whSMk5fU0mETdG2rMrHuhlo/J4amarVj/fhRW055K0WxWfjsiRRbj1EzwxWxwIBfKQq4Q3Ok
+WUlh3pvGFVWr+X3rXawr43mhfLMkxas8uAJ/TNMpV/poVTPbYLAXo4e6gyD2lNoinRESsrKE
+JMbWFrlLowmz38DuUACO8VgKQfAwZipvodNy6O/NyiEJXv6VjGcX3KcCCVZ/VzyeoP3qa0r+
+l3yAAopPn0OnkcXSInNBNbhkxXcosLmycEGfHEzpLgpvzJk0oSCaEF7UUEM+Wc7TDyrUNI1e
+KsPwpReYQUJRMFuDA3N2V8XkJtHReJPB5Da1I57+t5BOJUwli7+huFpH+3QwckCWfmDTskov
+xrhJrOOjzQB73pS8e2FtLZD2Y9HTfbAzjWDdN4dHP74jg7r8RFneA9taswAAAAAAAA==
+--------------ms070305000901060708060401--

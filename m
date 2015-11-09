@@ -1,179 +1,187 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:39071 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750788AbbKHWLC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 8 Nov 2015 17:11:02 -0500
-Message-ID: <1447020657.1068.6.camel@scientia.net>
-Subject: Re: strange "No space left on device"
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Sun, 08 Nov 2015 23:10:57 +0100
-In-Reply-To: <pan$1751c$67da8858$62f444f5$4f9a54fc@cox.net>
-References: <1446938562.7297.7.camel@scientia.net>
-	 <CAPmG0jb_ynq6qnxf-bysNaLut+5SOGqHrizLMaMN-1o6r2SZwg@mail.gmail.com>
-	 <pan$1751c$67da8858$62f444f5$4f9a54fc@cox.net>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-u3HVjFaxix4O4TS1Asvp"
+Received: from plane.gmane.org ([80.91.229.3]:53651 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751901AbbKIBJp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 8 Nov 2015 20:09:45 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1Zvaxr-000334-VM
+	for linux-btrfs@vger.kernel.org; Mon, 09 Nov 2015 02:09:44 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2015 02:09:43 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2015 02:09:43 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs-progs send | receive error: no such file or directory
+Date: Mon, 9 Nov 2015 01:09:36 +0000 (UTC)
+Message-ID: <pan$54c7b$e9d09f14$3a0341ca$3b12a44@cox.net>
+References: <CABtZWNH4rzzTtBwvt6Xs+nf=8aiJrbsCAVZB3QzPEnEfi-Cs5A@mail.gmail.com>
 Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Glen H posted on Sun, 08 Nov 2015 16:28:08 -0500 as excerpted:
 
---=-u3HVjFaxix4O4TS1Asvp
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+> I really enjoy the features of btrfs but send|receive is failing me so
+> my backups are not working.  I'm using "btrbk" to backup my drives (all
+> local) and one of the three subvolumes errors out.
 
-On Sun, 2015-11-08 at 20:39 +0000, Duncan wrote:
-> Wow, yes!=C2=A0=C2=A0Good catch, Henk! =3D:^)=C2=A0=C2=A0Hugo obviously d=
-idn't catch it,
-> and I=20
-> wouldn't have either, as the bad size detection behavior is so=20
-> unexpected, it just wouldn't occur to me to look!
-Hmm... all that *may* be more likely an error of myself when copying
-and pasting the terminal output together:
+> I have two other source subvolumes on another rotational disk that
+> send|receive fine to the same target drive (/mnt/backup2tb) .  There is
+> plenty of space on the backup drive.
 
-I did actually change the 3rd partition to use 1GiB in later tries at
-the expense of the 5th one shrinking, so the part table would have
-looked like this in these later tries:
-512M
-1G
-1G
-1G
-4G
+As a list regular and btrfs user myself, not a dev, this is simply 
+general information that might be of use, not specific to this report.
 
-Which would again fit the output of the various mkfs.btrfs.
+Btrfs is in general "stabilizing and maturing, but not yet fully stable", 
+and while stability has improved over time, that status is likely to 
+remain for awhile.  Original estimates of the work necessary proved 
+wildly optimistic, and features often take far more time to be coded and 
+to stabilize to the general level of btrfs itself than was originally 
+predicted.  Witness what happened to btrfs raid56 mode, for instance, 
+originally predicted for 3.5 or 3.6, then introduced in 3.9 as runtime 
+working but tools not there yet (making it effectively a raid0 that would 
+"magically" upgrade to raid56 when support was complete), finally 
+nominally completed in 3.19 but with bugs thru 4.1 at least, it 
+effectively took three years longer than anticipated.  Or witness the 
+btrfs quota code, which despite some rather herculean efforts by the devs 
+(it's on at least the third rewrite), to this day has never really worked 
+correctly, such that the recommendation is to not enable quotas if you 
+don't need the feature, or switch to a fileysystem with more stable and 
+mature quota support that actually works reliably, if you do.
 
-Sorry if that was the case, apologies for any confusion.
+The specific send/receive feature that's in question here works 
+reasonably reliably in general -- if it completes successfully on both 
+ends it's pretty reliably guaranteed to be a faithful copy -- but there 
+have been various corner-cases that have needed fixed over time, and it 
+appears you're hitting one of them.  As a real simple example that was 
+one of the first corner-case fixes, consider the case where originally dir 
+A contained subdir B, but at some point after the reference "parent" 
+snapshot, that reversed and now subdir A is inside dir B. Send/receive 
+originally couldn't handle that and would error out, but now that 
+specific corner-case works.
 
+So current send/receive status is that it should generally work, and when 
+both ends complete without error the result is pretty reliable, but 
+sometimes it doesn't work, and people using it should be prepared to use 
+alternative syncing solutions (such as rsync) or to futz around with the 
+directory structure (or simply do another full send parent, hopefully 
+getting around the problem) until it can be made to work.
 
-The problem seemed to went away when explicitly using --mixed.
+Meanwhile...
 
+> For versions, I'm using:
+> 
+> - kernel  3.19.0-31-generic #36~14.04.1-Ubuntu SMP Thu Oct 8 10:21:08
+> UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+> 
+> - Linux Mint 17.2 (based on Ubuntu 14.04) which has a stock kernel of
+> 3.17 (but I upgraded to 3.19).
+> 
+> - btrfs-progs 3.19, 3.19.1 and 4.3 (all fail with the same error).
 
-> (Apparently, btrfs-progs-4.3 does away with the default to mixed-
-> mode at 1 GiB or under, tho it is still recommended.
-Well I still had 4.2 ...
+Again, as stated above, btrfs isn't yet fully stable and mature, tho it 
+has gotten markedly more so over time.  While the general recommendation 
+used to be to keep current with the kernel, and to a lessor extent the 
+userspace (btrfs-progs), that has relaxed to some extent, such that the 
+current general list recommendation is to choose one of either (a) 
+keeping current, as previous, or (b) staying with the the last couple 
+stable-kernel series.
 
-> I'm not exactly sure of
-> why, tho I think it had to do with being able to use sub-GiB btrfs
-> for=20
-> testing without having to worry about mixed mode.
-Kinda strange... shouldn't it work out of the box for users and not
-developers?
+That's currently 3.18 and 4.1, with 4.4 (which is in the initial two-week 
+commit window phase, pre-rc1, ATM) already announced to be another stable 
+series.  Running unsupported kernels doesn't mean we won't try to help, 
+it just makes doing so harder, and people without a lot of time to reply 
+might simply skip answering entirely.
 
-To be honest, no one should need to read through the wiki, just to be
-able to create a small sized fs.
+Note that despite this "stabilizing not stable" status, various distros 
+have chosen to ship btrfs and even use it by default, often with older 
+kernels outside the (upstream and list) supported range.  People running 
+them can expect to be asked to upgrade when posting to this list, and 
+have at least three choices.  They can either (a) stick with what their 
+distro provides and get their support from the distro which has chosen to 
+support it, not here, (b) upgrade to something current and supported by 
+the list, or (c) stick with what they have and muddle thru -- it's not 
+that we refuse to support old versions, it's that known bugs in them have 
+been fixed, and btrfs as a project has moved on, so we'll try to support 
+it, but don't expect the devs to take too much interest in a bug not 
+duplicated on current or current-stable, and in general, expect a lower 
+likelihood of the list to be able to provide a fix.
 
-And even if no mixed D/M block group allocation was used... it
-shouldn't just fail out-of-the-box with a few byte large files on a 1
-GB fs.
+So as I said, the latest 3.18 series kernel is generally supported (until 
+4.4 comes out, anyway), but the 3.17 and 3.19 you're running are neither 
+one long-term-stable releases and are out of upstream support, so can't 
+be expected to have the latest fixes backported, unless of course the 
+distro has done it, which puts it squarely back in distro support 
+territory.
 
+So I'd recommend upgrading to the 4.1 LTS kernel series, or failing that, 
+switching to the 3.18 LTS kernel series (which would be a nominal 
+downgrade from 3.19, but is an LTS kernel and thus actively getting 
+backported fixes, while 3.19 is not), with an expectation that you'll 
+need to upgrade to 4.1 or 4.4 in less than two months.
 
+Or simply switch to current, the recently released 4.3 if you prefer, or 
+the still in short-term-support 4.2.
 
+Regardless, if at all possible, please get a 4.3 kernel somewhere if only 
+for temporary testing, building it yourself if necessary, and check for 
+sure whether it can properly send/receive the failing snapshot.  If so, 
+and neither 3.18 nor 4.1 LTS can do it, there's a patch that didn't make 
+it to stable that arguably needs to do so, while if not, we know there's 
+either another corner-case lurking in the send/receive code to fix, or 
+the problem is elsewhere (see the btrfs check discussion below).
 
+As for btrfs-progs, things work this way.  With normal runtime (loosely 
+stated, mounting and mounted filesystem operations), userspace pretty 
+much just makes kernel calls, and the kernel code does all the real 
+work.  This would include send/receive.  So in the normal runtime case, 
+userspace version isn't nearly as critical as kernel version.  However, 
+userspace commands that work with an unmounted filesystem, btrfs check, 
+btrfs restore, etc, use their own code to work with the filesystem.  
+Since in most cases you don't need to run these unless the filesystem is 
+damaged and won't mount, it's at this point that having a current btrfs 
+userspace with all the latest fixes becomes critical, as it can make the 
+difference between fixing the problem or making it worse (the reason 
+running btrfs check --repair is discouraged, except on the advice of a 
+dev because they know it can fix the present problem, or if the 
+alternative would be giving up and blowing the filesystem away, 
+recreating a fresh one, because --repair can make problems it doesn't 
+know about worse, of course, older versions not knowing about more such 
+problems).
 
-Cheers,
-Chris.
---=-u3HVjFaxix4O4TS1Asvp
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+Since there's no problem mounting the filesystem, btrfs-progs version 
+shouldn't make too much difference, certainly for the range of versions 
+you posted.  But it might still be worthwhile to run a btrfs check 
+(without --repair or other such switch, so the default read-only check is 
+done, preferably with a new 4.3 btrfs-progs, but even your old ones may 
+yield some information.  If check reports a problem, then it may not be 
+yet another send/receive corner-case at all, but rather, a problem with 
+the filesystem that doesn't appear under normal usage, but that send/
+receive happens to error out on.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEwODIyMTA1
-N1owTwYJKoZIhvcNAQkEMUIEQMDoHL6SbtneHowsT7DdJ75jxGI/p7a/oHf3I5mtp8CuSecK2LqC
-FDBhH+nwGSy9KHRx813vwc1C+LWbV9eaGfswagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDEkHWmCjF5upVPCOdYglrpth8iN8wr
-XmdikRw7+sJ6NYsplOZZQeiJ8MPJ2me34JlyJ/BtnAILeIjbZFtxmQJGmqs6OLnWDamWVLAdJZHW
-E8aJoBiNYLvSV23aMIxAeClNkyX3Q8kDqA3H+q2Vsia9Cvx3bnkHo775VzOLgRQ4AYbSFXNJhMzU
-dB0AaF0hTd0qhoOjhUbmJCCj+L4wzqtwa2QFnidztLhizAiAh6+f4YBD/3iOxkx+/S/bHYOljopg
-/Wsha5Og4T3EBD07PSiK25YS8vyB0i0fwj+wOvGN0FSfwKWtKl6NCDW2jRM20TjTpoZPHZevuqbo
-RCTmvlyEAAAAAAAA
+Meanwhile, a reasonable rule of thumb for btrfs-progs versions is to keep 
+them at least as new as the kernel they're running with, since its 
+release was designed with that kernel version... and problems known at 
+that time, in mind.  Running newer isn't a problem at all, since newer 
+userspace is designed to work with older kernels, and /generally/ running 
+older shouldn't be a problem either, as long as it's not /too/ old and 
+you don't have problems that a newer version is known to fix or need 
+features only available in newer versions.  But running a 3.12 userspace, 
+for instance, would be too old as so much has changed since then, 
+including in the command organization and output, that it's simply harder 
+to "impedance-match" that far back.  And if you're following the current 
+or last-two-lts kernel series rule, it should be reasonably easy to run 
+at least that new a userspace as well, so you just don't have to worry 
+about it.
 
-
---=-u3HVjFaxix4O4TS1Asvp--
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

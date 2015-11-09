@@ -1,59 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:61667 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751815AbbKIK1c convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 05:27:32 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: "'Chris Mason'" <clm@fb.com>
-CC: "'btrfs'" <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Fujitsu for 4.4
-Date: Mon, 9 Nov 2015 18:27:26 +0800
-Message-ID: <03be01d11ad9$3b385cf0$b1a916d0$@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Received: from mx2.suse.de ([195.135.220.15]:57045 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753029AbbKIKqV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Nov 2015 05:46:21 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, David Sterba <dsterba@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] btrfs: fix signed overflows in btrfs_sync_file
+Date: Mon,  9 Nov 2015 11:44:45 +0100
+Message-Id: <1447065885-24451-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Chris,
+The calculation of range length in btrfs_sync_file leads to signed
+overflow. This was caught by PaX gcc SIZE_OVERFLOW plugin.
 
-This is collection of some bug fix and cleanup from fujitsu against btrfs in v4.3,
-the main patch is these 2:
- Fix lost-data-profile caused by auto removing bg
- Fix lost-data-profile caused by balance bg
-It can solve the problem of 'lost all data profile by balance and auto-remove-bg',
-discussed in btrfs maillist.
+https://forums.grsecurity.net/viewtopic.php?f=1&t=4284
 
-Plus some enhancement and cleanup in scrub.
+The fsync call passes 0 and LLONG_MAX, the range length does not fit to
+loff_t and overflows, but the value is converted to u64 so it silently
+works as expected.
 
-Would you please consider merging the following fixes to integration-4.4 branch?
+The minimal fix is a typecast to u64, switching functions to take
+(start, end) instead of (start, len) would be more intrusive.
 
-REPO is:
-https:// github.com/zhaoleidd/btrfs.git integration-4.4
+Coccinelle script found that there's one more opencoded calculation of
+the length.
 
-Custom tests are done for patch of "Fix lost-data-profile", and I have queued
-xfstests(btrfs/generic with all mountopt) for this branch,
-(need about 4~5 days), and no error found until now(1 days).
+<smpl>
+@@
+loff_t start, end;
+@@
+* end - start
+</smpl>
 
---
-Zhao Lei (9):
-  btrfs: scrub: set error stats when tree block spanning stripes
-  btrfs: scrub: setup all fields for sblock_to_check
-  btrfs: Reset sblock->xxx_error stats before calling
-    scrub_recheck_block_checksum
-  btrfs: Use scrub_checksum_data and scrub_checksum_tree_block for
-    scrub_recheck_block_checksum
-  btrfs: Reduce unnecessary arguments in scrub_recheck_block
-  btrfs: Remove len argument from scrub_find_csum
-  btrfs: Fix lost-data-profile caused by auto removing bg
-  btrfs: Fix lost-data-profile caused by balance bg
-  btrfs: Use fs_info directly in btrfs_delete_unused_bgs
+CC: stable@vger.kernel.org
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+ fs/btrfs/file.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
- fs/btrfs/extent-tree.c |  11 +--
- fs/btrfs/scrub.c       | 179 ++++++++++++++++++-------------------------------
- fs/btrfs/volumes.c     |  21 ++++++
- 3 files changed, 93 insertions(+), 118 deletions(-)
-
-Thanks
-Zhaolei
-
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 8c6f247ba81d..d70399dbb364 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -1868,8 +1868,13 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 	struct btrfs_log_ctx ctx;
+ 	int ret = 0;
+ 	bool full_sync = 0;
+-	const u64 len = end - start + 1;
++	u64 len;
+ 
++	/*
++	 * The range length can be represented by u64, we have to do the typecasts
++	 * to avoid signed overflow if it's [0, LLONG_MAX] eg. from fsync()
++	 */
++	len = (u64)end - (u64)start + 1;
+ 	trace_btrfs_sync_file(file, datasync);
+ 
+ 	/*
+@@ -2057,8 +2062,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
+ 			}
+ 		}
+ 		if (!full_sync) {
+-			ret = btrfs_wait_ordered_range(inode, start,
+-						       end - start + 1);
++			ret = btrfs_wait_ordered_range(inode, start, len);
+ 			if (ret) {
+ 				btrfs_end_transaction(trans, root);
+ 				goto out;
+-- 
+2.6.2
 

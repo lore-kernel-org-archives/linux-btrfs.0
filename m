@@ -1,75 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20722 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753568AbbKYMI6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 07:08:58 -0500
-From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, calestyo@scientia.net, ahferroin7@gmail.com,
-        1i5t5.duncan@cox.net
-Subject: [PATCH 7/7] btrfs-progs: add -O comp= option for btrfs-convert
-Date: Wed, 25 Nov 2015 20:08:20 +0800
-Message-Id: <1448453300-8449-8-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
-References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
+Received: from bombadil.infradead.org ([198.137.202.9]:38918 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751465AbbKIH7c (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 02:59:32 -0500
+Date: Sun, 8 Nov 2015 23:59:26 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: david@fromorbit.com, fstests@vger.kernel.org, linux-ext4@vger.kernel.org,
+        Anna.Schumaker@netapp.com, linux-btrfs@vger.kernel.org,
+        xfs@oss.sgi.com
+Subject: Re: [RFCv3 00/12] xfstests: test the btrfs/xfs reflink/dedupe ioctls
+Message-ID: <20151109075926.GB17974@infradead.org>
+References: <20151007051257.3260.73072.stgit@birch.djwong.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20151007051257.3260.73072.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-User may want to convert the FS to a minimum kernel version. As they may need
-to use btrfs on a set of known kernel versions. And have the disk layout compatible.
+On Tue, Oct 06, 2015 at 10:12:57PM -0700, Darrick J. Wong wrote:
+>  * I don't have any interesting NFS/CIFS setups for test. :(
 
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
- btrfs-convert.c | 21 +++++++++++++++++++++
- 1 file changed, 21 insertions(+)
+I have a banrch with client and server support for NFSv4.2 CLONE
+support:
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index b0a998b..01b8940 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2879,6 +2879,8 @@ static void print_usage(void)
- 	printf("\t-L|--copy-label        use label from converted filesystem\n");
- 	printf("\t-p|--progress          show converting progress (default)\n");
- 	printf("\t-O|--features LIST     comma separated list of filesystem features\n");
-+	printf("\t                         use '-O list-all' to list features\n");
-+	printf("\t                         use '-O comp=<x.y>|<x.y.z>' x.y.z is the minimum kernel version to be supported\n");
- 	printf("\t--no-progress          show only overview, not the detailed progress\n");
- }
- 
-@@ -2970,6 +2972,24 @@ int main(int argc, char *argv[])
- 			case 'O': {
- 				char *orig = strdup(optarg);
- 				char *tmp = orig;
-+				char *tok;
-+
-+				tok = strtok(tmp, "=");
-+				if (!strcmp(tok, "comp")) {
-+					tok = strtok(NULL, "=");
-+					if (!tok) {
-+						fprintf(stderr,
-+				"Provide a version for 'comp=' option, ref to 'mkfs.btrfs -O list-all'\n");
-+						exit(1);
-+					}
-+					if (btrfs_features_allowed_by_version(tok, &features) < 0) {
-+						fprintf(stderr, "Wrong version format: '%s'\n", tok);
-+						exit(1);
-+					}
-+					features &= BTRFS_MKFS_DEFAULT_FEATURES;
-+					goto cont;
-+				}
-+				tmp = orig;
- 
- 				tmp = btrfs_parse_fs_features(tmp, &features);
- 				if (tmp) {
-@@ -2979,6 +2999,7 @@ int main(int argc, char *argv[])
- 					free(orig);
- 					exit(1);
- 				}
-+cont:
- 				free(orig);
- 				if (features & BTRFS_FEATURE_LIST_ALL) {
- 					btrfs_list_all_fs_features(
--- 
-2.6.2
+http://git.infradead.org/users/hch/pnfs.git/shortlog/refs/heads/reflink+clone
 
+For now you want to use btrfs on the server, as using reflinks on XFS
+seems to be a little unstable over NFS.
+
+> If you're going to start using this mess, you probably ought to just
+> pull from my github trees for kernel[1], xfsprogs[2], and xfstests[3].
+> They should just work with the btrfs that's in 4.3.
+> 
+> Comments and questions are, as always, welcome.
+
+Any reason the groups are called clone?  I don't really have an opinion
+on clone vs reflink but given that the xfs_io command is reflink I'd
+rather be consistent.
+
+Otherwise I'd say get it merged ASAP, we can still fix up various
+details later.

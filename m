@@ -1,99 +1,209 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f42.google.com ([74.125.82.42]:34071 "EHLO
-	mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751096AbbKINGc (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 08:06:32 -0500
-Received: by wmnn186 with SMTP id n186so102393501wmn.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2015 05:06:31 -0800 (PST)
-Received: from [192.168.1.70] (238.32.12.93.rev.sfr.net. [93.12.32.238])
-        by smtp.gmail.com with ESMTPSA id d10sm15364219wje.14.2015.11.09.05.06.29
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 09 Nov 2015 05:06:30 -0800 (PST)
+Received: from mail.kernel.org ([198.145.29.136]:32946 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752401AbbKIN7f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Nov 2015 08:59:35 -0500
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-From: Florian Margaine <florian.margaine@commerceguys.com>
-Subject: [PATCH] btrfs-progs: Fix partitioned loop devices resolve.
-Message-ID: <56409A52.2000708@commerceguys.com>
-Date: Mon, 9 Nov 2015 14:06:26 +0100
-MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="HK5amsnKhKURU1S5LO0SWBRWnflKfldsl"
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] Btrfs: fix race leading to incorrect item deletion when dropping extents
+Date: Mon,  9 Nov 2015 13:59:17 +0000
+Message-Id: <1447077557-8846-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---HK5amsnKhKURU1S5LO0SWBRWnflKfldsl
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+From: Filipe Manana <fdmanana@suse.com>
 
-When using partitions on a loop device, the device's name can be
-e.g. /dev/loop0p1 or similar, and no relevant entry exists in the /sys
-filesystem, so the current resolve_loop_device function fails.
+While running a stress test I got the following warning triggered:
 
-Instead of using string functions to extract the device name and reading
-this file, this patch uses the loop device API through ioctl to get the
-correct backing file.
+  [191627.672810] ------------[ cut here ]------------
+  [191627.673949] WARNING: CPU: 8 PID: 8447 at fs/btrfs/file.c:779 __btrfs_drop_extents+0x391/0xa50 [btrfs]()
+  (...)
+  [191627.701485] Call Trace:
+  [191627.702037]  [<ffffffff8145f077>] dump_stack+0x4f/0x7b
+  [191627.702992]  [<ffffffff81095de5>] ? console_unlock+0x356/0x3a2
+  [191627.704091]  [<ffffffff8104b3b0>] warn_slowpath_common+0xa1/0xbb
+  [191627.705380]  [<ffffffffa0664499>] ? __btrfs_drop_extents+0x391/0xa50 [btrfs]
+  [191627.706637]  [<ffffffff8104b46d>] warn_slowpath_null+0x1a/0x1c
+  [191627.707789]  [<ffffffffa0664499>] __btrfs_drop_extents+0x391/0xa50 [btrfs]
+  [191627.709155]  [<ffffffff8115663c>] ? cache_alloc_debugcheck_after.isra.32+0x171/0x1d0
+  [191627.712444]  [<ffffffff81155007>] ? kmemleak_alloc_recursive.constprop.40+0x16/0x18
+  [191627.714162]  [<ffffffffa06570c9>] insert_reserved_file_extent.constprop.40+0x83/0x24e [btrfs]
+  [191627.715887]  [<ffffffffa065422b>] ? start_transaction+0x3bb/0x610 [btrfs]
+  [191627.717287]  [<ffffffffa065b604>] btrfs_finish_ordered_io+0x273/0x4e2 [btrfs]
+  [191627.728865]  [<ffffffffa065b888>] finish_ordered_fn+0x15/0x17 [btrfs]
+  [191627.730045]  [<ffffffffa067d688>] normal_work_helper+0x14c/0x32c [btrfs]
+  [191627.731256]  [<ffffffffa067d96a>] btrfs_endio_write_helper+0x12/0x14 [btrfs]
+  [191627.732661]  [<ffffffff81061119>] process_one_work+0x24c/0x4ae
+  [191627.733822]  [<ffffffff810615b0>] worker_thread+0x206/0x2c2
+  [191627.734857]  [<ffffffff810613aa>] ? process_scheduled_works+0x2f/0x2f
+  [191627.736052]  [<ffffffff810613aa>] ? process_scheduled_works+0x2f/0x2f
+  [191627.737349]  [<ffffffff810669a6>] kthread+0xef/0xf7
+  [191627.738267]  [<ffffffff810f3b3a>] ? time_hardirqs_on+0x15/0x28
+  [191627.739330]  [<ffffffff810668b7>] ? __kthread_parkme+0xad/0xad
+  [191627.741976]  [<ffffffff81465592>] ret_from_fork+0x42/0x70
+  [191627.743080]  [<ffffffff810668b7>] ? __kthread_parkme+0xad/0xad
+  [191627.744206] ---[ end trace bbfddacb7aaada8d ]---
 
-Signed-off-by: Florian Margaine <florian@platform.sh>
+  $ cat -n fs/btrfs/file.c
+  691  int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
+  (...)
+  758                  btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+  759                  if (key.objectid > ino ||
+  760                      key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
+  761                          break;
+  762
+  763                  fi = btrfs_item_ptr(leaf, path->slots[0],
+  764                                      struct btrfs_file_extent_item);
+  765                  extent_type = btrfs_file_extent_type(leaf, fi);
+  766
+  767                  if (extent_type == BTRFS_FILE_EXTENT_REG ||
+  768                      extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+  (...)
+  774                  } else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+  (...)
+  778                  } else {
+  779                          WARN_ON(1);
+  780                          extent_end = search_start;
+  781                  }
+  (...)
 
+This happened because the item we were processing did not match a file
+extent item (its key type != BTRFS_EXTENT_DATA_KEY), and even on this
+case we cast the item to a struct btrfs_file_extent_item pointer and
+then find a type field value that does not match any of the expected
+values (BTRFS_FILE_EXTENT_[REG|PREALLOC|INLINE]). This scenario happens
+due to a tiny time window where a race can happen as exemplified below.
+For example, consider the following scenario where we're using the
+NO_HOLES feature and we have the following two neighbour leafs:
+
+               Leaf X (has N items)                    Leaf Y
+
+[ ... (257 INODE_ITEM 0) (257 INODE_REF 256) ]  [ (257 EXTENT_DATA 8192), ... ]
+          slot N - 2         slot N - 1              slot 0
+
+Our inode 257 has an implicit hole in the range [0, 8K[ (implicit rather
+than explicit because NO_HOLES is enabled). Now if our inode has an
+ordered extent for the range [4K, 8K[ that is finishing, the following
+can happen:
+
+          CPU 1                                       CPU 2
+
+  btrfs_finish_ordered_io()
+    insert_reserved_file_extent()
+      __btrfs_drop_extents()
+         Searches for the key
+          (257 EXTENT_DATA 4096) through
+          btrfs_lookup_file_extent()
+
+         Key not found and we get a path where
+         path->nodes[0] == leaf X and
+         path->slots[0] == N
+
+         Because path->slots[0] is >=
+         btrfs_header_nritems(leaf X), we call
+         btrfs_next_leaf()
+
+         btrfs_next_leaf() releases the path
+
+                                                  inserts key
+                                                  (257 INODE_REF 4096)
+                                                  at the end of leaf X,
+                                                  leaf X now has N + 1 keys,
+                                                  and the new key is at
+                                                  slot N
+
+         btrfs_next_leaf() searches for
+         key (257 INODE_REF 256), with
+         path->keep_locks set to 1,
+         because it was the last key it
+         saw in leaf X
+
+           finds it in leaf X again and
+           notices it's no longer the last
+           key of the leaf, so it returns 0
+           with path->nodes[0] == leaf X and
+           path->slots[0] == N (which is now
+           < btrfs_header_nritems(leaf X)),
+           pointing to the new key
+           (257 INODE_REF 4096)
+
+         __btrfs_drop_extents() casts the
+         item at path->nodes[0], slot
+         path->slots[0], to a struct
+         btrfs_file_extent_item - it does
+         not skip keys for the target
+         inode with a type less than
+         BTRFS_EXTENT_DATA_KEY
+         (BTRFS_INODE_REF_KEY < BTRFS_EXTENT_DATA_KEY)
+
+         sees a bogus value for the type
+         field triggering the WARN_ON in
+         the trace shown above, and sets
+         extent_end = search_start (4096)
+
+         does the if-then-else logic to
+         fixup 0 length extent items created
+         by a past bug from hole punching:
+
+           if (extent_end == key.offset &&
+               extent_end >= search_start)
+               goto delete_extent_item;
+
+         that evaluates to true and it ends
+         up deleting the key pointed to by
+         path->slots[0], (257 INODE_REF 4096),
+         from leaf X
+
+The same could happen for example for a xattr that ends up having a key
+with an offset value that matches search_start (very unlikely but not
+impossible).
+
+So fix this by ensuring that keys smaller than BTRFS_EXTENT_DATA_KEY are
+skipped, never casted to struct btrfs_file_extent_item and never deleted
+by accident. Also protect against the unexpected case of getting a key
+for a lower inode number by skipping that key and issuing a warning.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- utils.c | 18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
+ fs/btrfs/file.c | 16 ++++++++++++----
+ 1 file changed, 12 insertions(+), 4 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index d546bea..73a05e1 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1176,22 +1176,16 @@ static int is_loop_device (const char* device) {
- static int resolve_loop_device(const char* loop_dev, char* loop_file,
- 		int max_len)
- {
--	int ret;
--	FILE *f;
--	char fmt[20];
--	char p[PATH_MAX];
--	char real_loop_dev[PATH_MAX];
-+	int fd;
-+	struct loop_info64 lo64;
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index cfa243c..3009d45 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -756,8 +756,16 @@ next_slot:
+ 		}
+ 
+ 		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
+-		if (key.objectid > ino ||
+-		    key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
++
++		if (key.objectid > ino)
++			break;
++		if (WARN_ON_ONCE(key.objectid < ino) ||
++		    key.type < BTRFS_EXTENT_DATA_KEY) {
++			ASSERT(del_nr == 0);
++			path->slots[0]++;
++			goto next_slot;
++		}
++		if (key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
+ 			break;
+ 
+ 		fi = btrfs_item_ptr(leaf, path->slots[0],
+@@ -776,8 +784,8 @@ next_slot:
+ 				btrfs_file_extent_inline_len(leaf,
+ 						     path->slots[0], fi);
+ 		} else {
+-			WARN_ON(1);
+-			extent_end = search_start;
++			/* can't happen */
++			BUG();
+ 		}
+ 
+ 		/*
+-- 
+2.1.3
 
--	if (!realpath(loop_dev, real_loop_dev))
-+	if (!(fd =3D open(loop_dev, O_RDONLY)))
- 		return -errno;
--	snprintf(p, PATH_MAX, "/sys/block/%s/loop/backing_file",
-strrchr(real_loop_dev, '/'));
--	if (!(f =3D fopen(p, "r")))
-+	if (ioctl(fd, LOOP_GET_STATUS64, &lo64) !=3D 0)
- 		return -errno;
-
--	snprintf(fmt, 20, "%%%i[^\n]", max_len-1);
--	ret =3D fscanf(f, fmt, loop_file);
--	fclose(f);
--	if (ret =3D=3D EOF)
-+	memcpy(loop_file, lo64.lo_file_name, strlen(lo64.lo_file_name) + 1);
-+	if (close(fd) !=3D 0)
- 		return -errno;
-
- 	return 0;
---=20
-2.6.1
-
-
---HK5amsnKhKURU1S5LO0SWBRWnflKfldsl
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJWQJpSAAoJEIQ/bXU9lJcqzn4H/3+yI1IITnGIx/K+joPX1dit
-O+b7fxGFPYutI/D5y7dfvrwgqgBv4NSEWA7cXwWtnMf/j9ANKPlCjUqnkR+cNQ46
-Pupw8TbOsdQJrfp/pqVjzv5VtRU2firYrCnBkHR4KMfvr/QOa7uIk8+CdcV00GoN
-Yqbjn1EA6fqp/Z0ZbVHVBI1Ooq+4BwFfPm/w6UpTDq62MCebalNU8b0PBwkC6FE2
-IAM9aumJujOr4BnMo6glXq4Tuie2oXmxpsktOIIUhRoaMb+aUTRR+4MVJfBDzfDj
-x08bPm8uJILjneaigf4hKvTC+YY4JCU0s49gnwqoHMLKiuvuI0ut6qecLfmSkgc=
-=Bmp7
------END PGP SIGNATURE-----
-
---HK5amsnKhKURU1S5LO0SWBRWnflKfldsl--

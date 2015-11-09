@@ -1,160 +1,43 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp06.in.ibm.com ([122.248.162.6]:44571 "EHLO
-	e28smtp06.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751024AbbKBIaN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 2 Nov 2015 03:30:13 -0500
-Received: from /spool/local
-	by e28smtp06.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 2 Nov 2015 14:00:11 +0530
-Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
-	by d28dlp01.in.ibm.com (Postfix) with ESMTP id 79D55E0065
-	for <linux-btrfs@vger.kernel.org>; Mon,  2 Nov 2015 14:00:22 +0530 (IST)
-Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
-	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tA28U0Zf48365722
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Nov 2015 14:00:01 +0530
-Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
-	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tA28TwRM032567
-	for <linux-btrfs@vger.kernel.org>; Mon, 2 Nov 2015 13:59:59 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, clm@fb.com, jbacik@fb.com,
-        chandan@mykolab.com
-Subject: [PATCH V2] Btrfs: find_free_extent: Do not erroneously skip LOOP_CACHING_WAIT state
-Date: Mon,  2 Nov 2015 13:59:46 +0530
-Message-Id: <1446452986-6581-1-git-send-email-chandan@linux.vnet.ibm.com>
-In-Reply-To: <1446318664-26750-1-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1446318664-26750-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from mx1.redhat.com ([209.132.183.28]:54670 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751222AbbKIOM6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Nov 2015 09:12:58 -0500
+Date: Mon, 9 Nov 2015 15:12:56 +0100
+From: Karel Zak <kzak@redhat.com>
+To: Florian Margaine <florian.margaine@commerceguys.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs-progs: Fix partitioned loop devices resolve.
+Message-ID: <20151109141256.GW19508@ws.net.home>
+References: <56409A52.2000708@commerceguys.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56409A52.2000708@commerceguys.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When executing generic/001 in a loop on a ppc64 machine (with both sectorsize
-and nodesize set to 64k), the following call trace is observed,
+On Mon, Nov 09, 2015 at 02:06:26PM +0100, Florian Margaine wrote:
+> Instead of using string functions to extract the device name and reading
+> this file, this patch uses the loop device API through ioctl to get the
+> correct backing file.
 
-WARNING: at /root/repos/linux/fs/btrfs/locking.c:253
-Modules linked in:
-CPU: 2 PID: 8353 Comm: umount Not tainted 4.3.0-rc5-13676-ga5e681d #54
-task: c0000000f2b1f560 ti: c0000000f6008000 task.ti: c0000000f6008000
-NIP: c000000000520c88 LR: c0000000004a3b34 CTR: 0000000000000000
-REGS: c0000000f600a820 TRAP: 0700   Not tainted  (4.3.0-rc5-13676-ga5e681d)
-MSR: 8000000102029032 <SF,VEC,EE,ME,IR,DR,RI>  CR: 24444884  XER: 00000000
-CFAR: c0000000004a3b30 SOFTE: 1
-GPR00: c0000000004a3b34 c0000000f600aaa0 c00000000108ac00 c0000000f5a808c0
-GPR04: 0000000000000000 c0000000f600ae60 0000000000000000 0000000000000005
-GPR08: 00000000000020a1 0000000000000001 c0000000f2b1f560 0000000000000030
-GPR12: 0000000084842882 c00000000fdc0900 c0000000f600ae60 c0000000f070b800
-GPR16: 0000000000000000 c0000000f3c8a000 0000000000000000 0000000000000049
-GPR20: 0000000000000001 0000000000000001 c0000000f5aa01f8 0000000000000000
-GPR24: 0f83e0f83e0f83e1 c0000000f5a808c0 c0000000f3c8d000 c000000000000000
-GPR28: c0000000f600ae74 0000000000000001 c0000000f3c8d000 c0000000f5a808c0
-NIP [c000000000520c88] .btrfs_tree_lock+0x48/0x2a0
-LR [c0000000004a3b34] .btrfs_lock_root_node+0x44/0x80
-Call Trace:
-[c0000000f600aaa0] [c0000000f600ab80] 0xc0000000f600ab80 (unreliable)
-[c0000000f600ab80] [c0000000004a3b34] .btrfs_lock_root_node+0x44/0x80
-[c0000000f600ac00] [c0000000004a99dc] .btrfs_search_slot+0xa8c/0xc00
-[c0000000f600ad40] [c0000000004ab878] .btrfs_insert_empty_items+0x98/0x120
-[c0000000f600adf0] [c00000000050da44] .btrfs_finish_chunk_alloc+0x1d4/0x620
-[c0000000f600af20] [c0000000004be854] .btrfs_create_pending_block_groups+0x1d4/0x2c0
-[c0000000f600b020] [c0000000004bf188] .do_chunk_alloc+0x3c8/0x420
-[c0000000f600b100] [c0000000004c27cc] .find_free_extent+0xbfc/0x1030
-[c0000000f600b260] [c0000000004c2ce8] .btrfs_reserve_extent+0xe8/0x250
-[c0000000f600b330] [c0000000004c2f90] .btrfs_alloc_tree_block+0x140/0x590
-[c0000000f600b440] [c0000000004a47b4] .__btrfs_cow_block+0x124/0x780
-[c0000000f600b530] [c0000000004a4fc0] .btrfs_cow_block+0xf0/0x250
-[c0000000f600b5e0] [c0000000004a917c] .btrfs_search_slot+0x22c/0xc00
-[c0000000f600b720] [c00000000050aa40] .btrfs_remove_chunk+0x1b0/0x9f0
-[c0000000f600b850] [c0000000004c4e04] .btrfs_delete_unused_bgs+0x434/0x570
-[c0000000f600b950] [c0000000004d3cb8] .close_ctree+0x2e8/0x3b0
-[c0000000f600ba20] [c00000000049d178] .btrfs_put_super+0x18/0x30
-[c0000000f600ba90] [c000000000243cd4] .generic_shutdown_super+0xa4/0x1a0
-[c0000000f600bb10] [c0000000002441d8] .kill_anon_super+0x18/0x30
-[c0000000f600bb90] [c00000000049c898] .btrfs_kill_super+0x18/0xc0
-[c0000000f600bc10] [c0000000002444f8] .deactivate_locked_super+0x98/0xe0
-[c0000000f600bc90] [c000000000269f94] .cleanup_mnt+0x54/0xa0
-[c0000000f600bd10] [c0000000000bd744] .task_work_run+0xc4/0x100
-[c0000000f600bdb0] [c000000000016334] .do_notify_resume+0x74/0x80
-[c0000000f600be30] [c0000000000098b8] .ret_from_except_lite+0x64/0x68
-Instruction dump:
-fba1ffe8 fbc1fff0 fbe1fff8 7c791b78 f8010010 f821ff21 e94d0290 81030040
-812a04e8 7d094a78 7d290034 5529d97e <0b090000> 3b400000 3be30050 3bc3004c
+    #define LO_NAME_SIZE    64
 
-The above call trace is seen even on x86_64; albeit very rarely and that too
-with nodesize set to 64k and with nospace_cache mount option being used.
+    struct loop_info64 {
+        ...
+        uint8_t         lo_file_name[LO_NAME_SIZE];
+    };
 
-The reason for the above call trace is,
-btrfs_remove_chunk
-  check_system_chunk
-    Allocate chunk if required
-  For each physical stripe on underlying device,
-    btrfs_free_dev_extent
-      ...
-      Take lock on Device tree's root node
-      btrfs_cow_block("dev tree's root node");
-        btrfs_reserve_extent
-          find_free_extent
-	    index = BTRFS_RAID_DUP;
-	    have_caching_bg = false;
 
-            When in LOOP_CACHING_NOWAIT state, Assume we find a block group
-	    which is being cached; Hence have_caching_bg is set to true
+The loopdev is based on file descriptor, the lo_file_name[] is hint
+only and it does not have to match with the real path and the most
+important problem is that it uses 64-bytes buffer.
 
-            When repeating the search for the next RAID index, we set
-	    have_caching_bg to false.
+For losetup we use LOOP_GET_STATUS64 ioctl as fallback solution only.
 
-Hence right after completing the LOOP_CACHING_NOWAIT state, we incorrectly
-skip LOOP_CACHING_WAIT state and move to LOOP_ALLOC_CHUNK state where we
-allocate a chunk and try to add entries corresponding to the chunk's physical
-stripe into the device tree. When doing so the task deadlocks itself waiting
-for the blocking lock on the root node of the device tree.
+    Karel
 
-This commit fixes the issue by introducing a new local variable to help
-indicate as to whether a block group of any RAID type is being cached.
 
-Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
----
-Changelog:
-v1->v2: Honor 80 column restriction.
-
- fs/btrfs/extent-tree.c | 7 ++++++-
- 1 file changed, 6 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index f50c7c2..99a8e57 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7029,6 +7029,7 @@ static noinline int find_free_extent(struct btrfs_root *orig_root,
- 	bool failed_alloc = false;
- 	bool use_cluster = true;
- 	bool have_caching_bg = false;
-+	bool orig_have_caching_bg = false;
- 	bool full_search = false;
- 
- 	WARN_ON(num_bytes < root->sectorsize);
-@@ -7378,6 +7379,10 @@ loop:
- 	}
- 	up_read(&space_info->groups_sem);
- 
-+	if ((loop == LOOP_CACHING_NOWAIT) && have_caching_bg
-+		&& !orig_have_caching_bg)
-+		orig_have_caching_bg = true;
-+
- 	if (!ins->objectid && loop >= LOOP_CACHING_WAIT && have_caching_bg)
- 		goto search;
- 
-@@ -7400,7 +7405,7 @@ loop:
- 			 * don't have any unached bgs and we've alrelady done a
- 			 * full search through.
- 			 */
--			if (have_caching_bg || !full_search)
-+			if (orig_have_caching_bg || !full_search)
- 				loop = LOOP_CACHING_WAIT;
- 			else
- 				loop = LOOP_ALLOC_CHUNK;
 -- 
-2.1.0
-
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+ Karel Zak  <kzak@redhat.com>
+ http://karelzak.blogspot.com

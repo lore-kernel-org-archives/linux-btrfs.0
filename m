@@ -1,57 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:51913 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751294AbbKIK7s (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 05:59:48 -0500
-Received: from userv0022.oracle.com (userv0022.oracle.com [156.151.31.74])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id tA9AxlQD016242
+Received: from aserp1040.oracle.com ([141.146.126.69]:32864 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751993AbbKIK7v (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 05:59:51 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id tA9Axmcu017233
 	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 9 Nov 2015 10:59:47 GMT
-Received: from aserv0121.oracle.com (aserv0121.oracle.com [141.146.126.235])
-	by userv0022.oracle.com (8.13.8/8.13.8) with ESMTP id tA9AxlCL013955
+	for <linux-btrfs@vger.kernel.org>; Mon, 9 Nov 2015 10:59:50 GMT
+Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
+	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id tA9AxmdS003334
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 9 Nov 2015 10:59:47 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 9 Nov 2015 10:59:48 GMT
 Received: from abhmp0010.oracle.com (abhmp0010.oracle.com [141.146.116.16])
-	by aserv0121.oracle.com (8.13.8/8.13.8) with ESMTP id tA9AxlE9004271
-	for <linux-btrfs@vger.kernel.org>; Mon, 9 Nov 2015 10:59:47 GMT
+	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id tA9AxmK9021203
+	for <linux-btrfs@vger.kernel.org>; Mon, 9 Nov 2015 10:59:48 GMT
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 3/4] btrfs-progs: add fi show for spare
-Date: Mon,  9 Nov 2015 18:58:38 +0800
-Message-Id: <1447066719-3880-4-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 4/4] btrfs-progs: add global spare device list to filesystem show
+Date: Mon,  9 Nov 2015 18:58:39 +0800
+Message-Id: <1447066719-3880-5-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1447066719-3880-1-git-send-email-anand.jain@oracle.com>
 References: <1447066589-3835-1-git-send-email-anand.jain@oracle.com>
  <1447066719-3880-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This patch will add list of spare devices to the filesystem show
+output, as show in the example below.
+
+btrfs fi show
+Label: none  uuid: 17f7d403-17d7-4f0a-b8ba-de673fdd3f56
+	Total devices 2 FS bytes used 15.88MiB
+	devid    1 size 2.00GiB used 417.50MiB path /dev/sdc
+	devid    2 size 2.00GiB used 417.50MiB path /dev/sdd
+
+Global spare
+	device size 3.00GiB path /dev/sde
+
+btrfs-progs v4.2.3-12-gb5f4b68
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-filesystem.c | 4 ++++
- 1 file changed, 4 insertions(+)
+ cmds-filesystem.c | 5 +++++
+ utils.h           | 1 +
+ 2 files changed, 6 insertions(+)
 
 diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-index 4d3a9a4..11d0406 100644
+index 11d0406..651ffe4 100644
 --- a/cmds-filesystem.c
 +++ b/cmds-filesystem.c
-@@ -353,6 +353,9 @@ static void print_one_uuid(struct btrfs_fs_devices *fs_devices,
- 	if (add_seen_fsid(fs_devices->fsid))
- 		return;
- 
-+	if (fs_devices->spare)
-+		return;
+@@ -920,6 +920,11 @@ devs_only:
+ 					struct btrfs_fs_devices, list);
+ 		free_fs_devices(fs_devices);
+ 	}
 +
- 	uuid_unparse(fs_devices->fsid, uuidbuf);
- 	device = list_entry(fs_devices->devices.next, struct btrfs_device,
- 			    dev_list);
-@@ -610,6 +613,7 @@ static int copy_fs_devices(struct btrfs_fs_devices *dst,
- 	memcpy(dst->fsid, src->fsid, BTRFS_FSID_SIZE);
- 	INIT_LIST_HEAD(&dst->devices);
- 	dst->seed = NULL;
-+	dst->spare = src->spare;
++	if (where == -1 && search == NULL) {
++		ret = print_spare_device(unit_mode);
++		printf("\n");
++	}
+ out:
+ 	printf("%s\n", PACKAGE_STRING);
+ 	free_seen_fsid();
+diff --git a/utils.h b/utils.h
+index a84cf2d..b833390 100644
+--- a/utils.h
++++ b/utils.h
+@@ -271,5 +271,6 @@ const char *get_argv0_buf(void);
  
- 	list_for_each_entry(cur_dev, &src->devices, dev_list) {
- 		dev_copy = malloc(sizeof(*dev_copy));
+ unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode);
+ int is_numerical(const char *str);
++int print_spare_device(unsigned unit_mode);
+ 
+ #endif
 -- 
 2.4.1
 

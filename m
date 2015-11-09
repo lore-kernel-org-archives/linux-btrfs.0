@@ -1,133 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:32971 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:36488 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751905AbbKIN7u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Nov 2015 08:59:50 -0500
-From: fdmanana@kernel.org
+	id S1751600AbbKIRQR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Nov 2015 12:16:17 -0500
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] Btrfs: fix race leading to BUG_ON when running delalloc for nodatacow
-Date: Mon,  9 Nov 2015 13:59:44 +0000
-Message-Id: <1447077584-8893-1-git-send-email-fdmanana@kernel.org>
+Cc: clm@fb.com, David Sterba <dsterba@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] btrfs: properly set the termination value of ctx->pos in readdir
+Date: Mon,  9 Nov 2015 18:14:33 +0100
+Message-Id: <1447089273-27157-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+The value of ctx->pos in the last readdir call is supposed to be set to
+INT_MAX due to 32bit compatibility, unless 'pos' is intentially set to a
+larger value, then it's LLONG_MAX.
 
-If we are using the NO_HOLES feature, we have a tiny time window when
-running delalloc for a nodatacow inode where we can race with a concurrent
-link or xattr add operation leading to a BUG_ON.
+There's a report from PaX SIZE_OVERFLOW plugin that "ctx->pos++"
+overflows (https://forums.grsecurity.net/viewtopic.php?f=1&t=4284), on a
+64bit arch, where the value is 0x7fffffffffffffff ie. LLONG_MAX before
+the increment.
 
-This happens because at run_delalloc_nocow() we end up casting a leaf item
-of type BTRFS_INODE_[REF|EXTREF]_KEY or of type BTRFS_XATTR_ITEM_KEY to a
-file extent item (struct btrfs_file_extent_item) and then analyse its
-extent type field, which won't match any of the expected extent types
-(values BTRFS_FILE_EXTENT_[REG|PREALLOC|INLINE]) and therefore trigger an
-explicit BUG_ON(1).
+We can get to that situation like that:
 
-The following sequence diagram shows how the race happens when running a
-no-cow dellaloc range [4K, 8K[ for inode 257 and we have the following
-neighbour leafs:
+* emit all regular readdir entries
+* still in the same call to readdir, bump the last pos to INT_MAX
+* next call to readdir will not emit any entries, but will reach the
+  bump code again, finds pos to be INT_MAX and sets it to LLONG_MAX
 
-             Leaf X (has N items)                    Leaf Y
+Normally this is not a problem, but if we call readdir again, we'll find
+'pos' set to LLONG_MAX and the unconditional increment will overflow.
 
- [ ... (257 INODE_ITEM 0) (257 INODE_REF 256) ]  [ (257 EXTENT_DATA 8192), ... ]
-              slot N - 2         slot N - 1              slot 0
+The report from Victor at
+(http://thread.gmane.org/gmane.comp.file-systems.btrfs/49500) with debugging
+print shows that pattern:
 
- (Note the implicit hole for inode 257 regarding the [0, 8K[ range)
+ Overflow: e
+ Overflow: 7fffffff
+ Overflow: 7fffffffffffffff
+ PAX: size overflow detected in function btrfs_real_readdir
+   fs/btrfs/inode.c:5760 cicus.935_282 max, count: 9, decl: pos; num: 0;
+   context: dir_context;
+ CPU: 0 PID: 2630 Comm: polkitd Not tainted 4.2.3-grsec #1
+ Hardware name: Gigabyte Technology Co., Ltd. H81ND2H/H81ND2H, BIOS F3 08/11/2015
+  ffffffff81901608 0000000000000000 ffffffff819015e6 ffffc90004973d48
+  ffffffff81742f0f 0000000000000007 ffffffff81901608 ffffc90004973d78
+  ffffffff811cb706 0000000000000000 ffff8800d47359e0 ffffc90004973ed8
+ Call Trace:
+  [<ffffffff81742f0f>] dump_stack+0x4c/0x7f
+  [<ffffffff811cb706>] report_size_overflow+0x36/0x40
+  [<ffffffff812ef0bc>] btrfs_real_readdir+0x69c/0x6d0
+  [<ffffffff811dafc8>] iterate_dir+0xa8/0x150
+  [<ffffffff811e6d8d>] ? __fget_light+0x2d/0x70
+  [<ffffffff811dba3a>] SyS_getdents+0xba/0x1c0
+ Overflow: 1a
+  [<ffffffff811db070>] ? iterate_dir+0x150/0x150
+  [<ffffffff81749b69>] entry_SYSCALL_64_fastpath+0x12/0x83
 
-       CPU 1                                         CPU 2
+I haven't reproduced that directly but it's obviously possible to hit.
+After seting the 'index_cnt = 1 << 32' in btrfs_set_inode_index_count, the
+overflow happens.
 
- run_dealloc_nocow()
-   btrfs_lookup_file_extent()
-     --> searches for a key with value
-         (257 EXTENT_DATA 4096) in the
-         fs/subvol tree
-     --> returns us a path with
-         path->nodes[0] == leaf X and
-         path->slots[0] == N
+The fix avoids entering the "bump" section again once we've finished
+emitting the entries.
 
-   because path->slots[0] is >=
-   btrfs_header_nritems(leaf X), it
-   calls btrfs_next_leaf()
-
-   btrfs_next_leaf()
-     --> releases the path
-
-                                              hard link added to our inode,
-                                              with key (257 INODE_REF 500)
-                                              added to the end of leaf X,
-                                              so leaf X now has N + 1 keys
-
-     --> searches for the key
-         (257 INODE_REF 256), because
-         it was the last key in leaf X
-         before it released the path,
-         with path->keep_locks set to 1
-
-     --> ends up at leaf X again and
-         it verifies that the key
-         (257 INODE_REF 256) is no longer
-         the last key in the leaf, so it
-         returns with path->nodes[0] ==
-         leaf X and path->slots[0] == N,
-         pointing to the new item with
-         key (257 INODE_REF 500)
-
-   the loop iteration of run_dealloc_nocow()
-   does not break out the loop and continues
-   because the key referenced in the path
-   at path->nodes[0] and path->slots[0] is
-   for inode 257, its type is < BTRFS_EXTENT_DATA_KEY
-   and its offset (500) is less then our delalloc
-   range's end (8192)
-
-   the item pointed by the path, an inode reference item,
-   is (incorrectly) interpreted as a file extent item and
-   we get an invalid extent type, leading to the BUG_ON(1):
-
-   if (extent_type == BTRFS_FILE_EXTENT_REG ||
-      extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-       (...)
-   } else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-       (...)
-   } else {
-       BUG_ON(1)
-   }
-
-The same can happen if a xattr is added concurrently and ends up having
-a key with an offset smaller then the delalloc's range end.
-
-So fix this by skipping keys with a type smaller than
-BTRFS_EXTENT_DATA_KEY.
-
-Cc: stable@vger.kernel.org
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+References: https://forums.grsecurity.net/viewtopic.php?f=1&t=4284
+Reported-by: Victor <services@swwu.com>
+CC: stable@vger.kernel.org
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/inode.c | 10 ++++++++--
- 1 file changed, 8 insertions(+), 2 deletions(-)
+ fs/btrfs/inode.c | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6138eea..6e93349 100644
+index 611b66d73e80..529bef2a9a01 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -1304,8 +1304,14 @@ next_slot:
- 		num_bytes = 0;
- 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
+@@ -5665,6 +5665,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	char *name_ptr;
+ 	int name_len;
+ 	int is_curr = 0;	/* ctx->pos points to the current index? */
++	bool emitted;
  
--		if (found_key.objectid > ino ||
--		    found_key.type > BTRFS_EXTENT_DATA_KEY ||
-+		if (found_key.objectid > ino)
-+			break;
-+		if (WARN_ON_ONCE(found_key.objectid < ino) ||
-+		    found_key.type < BTRFS_EXTENT_DATA_KEY) {
-+			path->slots[0]++;
-+			goto next_slot;
-+		}
-+		if (found_key.type > BTRFS_EXTENT_DATA_KEY ||
- 		    found_key.offset > end)
- 			break;
+ 	/* FIXME, use a real flag for deciding about the key type */
+ 	if (root->fs_info->tree_root == root)
+@@ -5693,6 +5694,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	if (ret < 0)
+ 		goto err;
+ 
++	emitted = false;
+ 	while (1) {
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
+@@ -5772,6 +5774,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 
+ 			if (over)
+ 				goto nopos;
++			emitted = true;
+ 			di_len = btrfs_dir_name_len(leaf, di) +
+ 				 btrfs_dir_data_len(leaf, di) + sizeof(*di);
+ 			di_cur += di_len;
+@@ -5789,6 +5792,15 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 			goto nopos;
+ 	}
+ 
++	/*
++	 * If we haven't emitted any dir entry, we must not touch ctx->pos as
++	 * it was was set to the termination value in previous call. We assume
++	 * that "." and ".." were emitted if we reach this point and set the
++	 * termination value as well for an empty directory.
++	 */
++	if (ctx->pos > 2 && !emitted)
++		goto nopos;
++
+ 	/* Reached end of directory/root. Bump pos past the last item. */
+ 	ctx->pos++;
  
 -- 
-2.1.3
+2.6.2
 

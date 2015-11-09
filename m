@@ -1,75 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40751 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1755258AbbK0VNI (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 16:13:08 -0500
-Date: Fri, 27 Nov 2015 16:13:02 -0500
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>,
-        LKML <linux-kernel@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20151127211302.GC2162@ret.masoncoding.com>
+Received: from mx2.suse.de ([195.135.220.15]:38930 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751691AbbKIRxp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Nov 2015 12:53:45 -0500
+Date: Mon, 9 Nov 2015 18:52:10 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Victor <services@swwu.com>
+Cc: linux-btrfs@vger.kernel.org, spender@grsecurity.net, pageexec@freemail.hu,
+        re.emese@gmail.com
+Subject: Re: overflow in inode.c, file.c
+Message-ID: <20151109175210.GA6445@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <fdb1fe411a9aa68d196737cbee851a1b@swwu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=utf-8
+In-Reply-To: <fdb1fe411a9aa68d196737cbee851a1b@swwu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+Hi,
 
-I have a few fixes ready in my for-linus-4.4 branch.
+thanks for the report (and the reports on the forums),
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.4
+On Thu, Oct 22, 2015 at 01:36:46AM +0200, Victor wrote:
+> Hello, while using linux-⁠4.2.3 (btrfs-⁠progs v4.2.2) with the latest
+> grsec patch to date, a feature in the grsec patchset, an overflow
+> checker (made by emese) seems to have found some bugs in the btrfs
+> code itself (this is not caused by grsec).
+> 
+> First bug: fs/⁠btrfs/⁠inode.c:5759
 
-This has Mark Fasheh's patches to fix quota accounting during subvol
-deletion, which we've been working on for a while now.  The patch is
-pretty small but it's a key fix.
+https://patchwork.kernel.org/patch/7582351/
 
-Otherwise it's a random assortment.
+> Second bug: fs/⁠btrfs/⁠file.c:1871
 
-Filipe Manana (5) commits (+146/-49):
-    Btrfs: fix the number of transaction units needed to remove a block group (+38/-5)
-    Btrfs: use global reserve when deleting unused block group after ENOSPC (+52/-26)
-    Btrfs: fix scrub preventing unused block groups from being deleted (+24/-1)
-    Btrfs: fix race between cleaner kthread and space cache writeout (+16/-13)
-    Btrfs: fix race between scrub and block group deletion (+16/-4)
+https://patchwork.kernel.org/patch/7585611/
 
-David Sterba (3) commits (+10/-8):
-    btrfs: fix clashing number of the enhanced balance usage filter (+1/-1)
-    btrfs: fix signed overflows in btrfs_sync_file (+7/-3)
-    btrfs: fix rcu warning during device replace (+2/-4)
+> This is the whole dmesg http://pastebin.com/S9gjYpYX , thanks
 
-Zhaolei (1) commits (+18/-2):
-    btrfs: Continue replace when set_block_ro failed
-
-Mark Fasheh (1) commits (+42/-7):
-    btrfs: qgroup: account shared subtree during snapshot delete
-
-Justin Maggard (1) commits (+2/-1):
-    btrfs: qgroup: fix quota disable during rescan
-
-Holger Hoffst�tte (1) commits (+2/-2):
-    btrfs: fix balance range usage filters in 4.4-rc
-
-Dan Carpenter (1) commits (+3/-1):
-    Btrfs: tests: checking for NULL instead of IS_ERR()
-
-Josef Bacik (1) commits (+1/-1):
-    Btrfs: use btrfs_get_fs_root in resolve_indirect_ref
-
-Total: (14) commits (+224/-71)
-
- fs/btrfs/backref.c                |   2 +-
- fs/btrfs/ctree.h                  |   4 ++
- fs/btrfs/extent-tree.c            | 123 +++++++++++++++++++++++++++++++-------
- fs/btrfs/file.c                   |  10 +++-
- fs/btrfs/inode.c                  |  24 +-------
- fs/btrfs/qgroup.c                 |   5 +-
- fs/btrfs/scrub.c                  |  62 +++++++++++++++++--
- fs/btrfs/tests/free-space-tests.c |   4 +-
- fs/btrfs/transaction.c            |  32 ++++++++++
- fs/btrfs/transaction.h            |   4 ++
- fs/btrfs/volumes.c                |  13 ++--
- fs/btrfs/volumes.h                |   2 +-
- 12 files changed, 219 insertions(+), 66 deletions(-)
+The logs helped, thanks.

@@ -1,121 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:36488 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:56719 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751600AbbKIRQR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Nov 2015 12:16:17 -0500
-From: David Sterba <dsterba@suse.com>
+	id S1751748AbbKISj4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Nov 2015 13:39:56 -0500
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] btrfs: properly set the termination value of ctx->pos in readdir
-Date: Mon,  9 Nov 2015 18:14:33 +0100
-Message-Id: <1447089273-27157-1-git-send-email-dsterba@suse.com>
+Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
+Subject: [PATCH] Btrfs: fix race when listing an inode's xattrs
+Date: Mon,  9 Nov 2015 18:39:48 +0000
+Message-Id: <1447094388-4270-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The value of ctx->pos in the last readdir call is supposed to be set to
-INT_MAX due to 32bit compatibility, unless 'pos' is intentially set to a
-larger value, then it's LLONG_MAX.
+From: Filipe Manana <fdmanana@suse.com>
 
-There's a report from PaX SIZE_OVERFLOW plugin that "ctx->pos++"
-overflows (https://forums.grsecurity.net/viewtopic.php?f=1&t=4284), on a
-64bit arch, where the value is 0x7fffffffffffffff ie. LLONG_MAX before
-the increment.
+When listing a inode's xattrs we have a time window where we race against
+a concurrent operation for adding a new hard link for our inode that makes
+us not return any xattr to user space. In order for this to happen, the
+first xattr of our inode needs to be at slot 0 of a leaf and the previous
+leaf must still have room for an inode ref (or extref) item, and this can
+happen because an inode's listxattrs callback does not lock the inode's
+i_mutex (nor does the VFS does it for us), but adding a hard link to an
+inode makes the VFS lock the inode's i_mutex before calling the inode's
+link callback.
 
-We can get to that situation like that:
+If we have the following leafs:
 
-* emit all regular readdir entries
-* still in the same call to readdir, bump the last pos to INT_MAX
-* next call to readdir will not emit any entries, but will reach the
-  bump code again, finds pos to be INT_MAX and sets it to LLONG_MAX
+               Leaf X (has N items)                    Leaf Y
 
-Normally this is not a problem, but if we call readdir again, we'll find
-'pos' set to LLONG_MAX and the unconditional increment will overflow.
+ [ ... (257 INODE_ITEM 0) (257 INODE_REF 256) ]  [ (257 XATTR_ITEM 12345), ... ]
+           slot N - 2         slot N - 1              slot 0
 
-The report from Victor at
-(http://thread.gmane.org/gmane.comp.file-systems.btrfs/49500) with debugging
-print shows that pattern:
+The race illustrated by the following sequence diagram is possible:
 
- Overflow: e
- Overflow: 7fffffff
- Overflow: 7fffffffffffffff
- PAX: size overflow detected in function btrfs_real_readdir
-   fs/btrfs/inode.c:5760 cicus.935_282 max, count: 9, decl: pos; num: 0;
-   context: dir_context;
- CPU: 0 PID: 2630 Comm: polkitd Not tainted 4.2.3-grsec #1
- Hardware name: Gigabyte Technology Co., Ltd. H81ND2H/H81ND2H, BIOS F3 08/11/2015
-  ffffffff81901608 0000000000000000 ffffffff819015e6 ffffc90004973d48
-  ffffffff81742f0f 0000000000000007 ffffffff81901608 ffffc90004973d78
-  ffffffff811cb706 0000000000000000 ffff8800d47359e0 ffffc90004973ed8
- Call Trace:
-  [<ffffffff81742f0f>] dump_stack+0x4c/0x7f
-  [<ffffffff811cb706>] report_size_overflow+0x36/0x40
-  [<ffffffff812ef0bc>] btrfs_real_readdir+0x69c/0x6d0
-  [<ffffffff811dafc8>] iterate_dir+0xa8/0x150
-  [<ffffffff811e6d8d>] ? __fget_light+0x2d/0x70
-  [<ffffffff811dba3a>] SyS_getdents+0xba/0x1c0
- Overflow: 1a
-  [<ffffffff811db070>] ? iterate_dir+0x150/0x150
-  [<ffffffff81749b69>] entry_SYSCALL_64_fastpath+0x12/0x83
+       CPU 1                                               CPU 2
 
-I haven't reproduced that directly but it's obviously possible to hit.
-After seting the 'index_cnt = 1 << 32' in btrfs_set_inode_index_count, the
-overflow happens.
+  btrfs_listxattr()
 
-The fix avoids entering the "bump" section again once we've finished
-emitting the entries.
+    searches for key (257 XATTR_ITEM 0)
 
-References: https://forums.grsecurity.net/viewtopic.php?f=1&t=4284
-Reported-by: Victor <services@swwu.com>
-CC: stable@vger.kernel.org
-Signed-off-by: David Sterba <dsterba@suse.com>
+    gets path with path->nodes[0] == leaf X
+    and path->slots[0] == N
+
+    because path->slots[0] is >=
+    btrfs_header_nritems(leaf X), it calls
+    btrfs_next_leaf()
+
+    btrfs_next_leaf()
+      releases the path
+
+                                                   adds key (257 INODE_REF 666)
+                                                   to the end of leaf X (slot N),
+                                                   and leaf X now has N + 1 items
+
+      searches for the key (257 INODE_REF 256),
+      with path->keep_locks == 1, because that
+      is the last key it saw in leaf X before
+      releasing the path
+
+      ends up at leaf X again and it verifies
+      that the key (257 INODE_REF 256) is no
+      longer the last key in leaf X, so it
+      returns with path->nodes[0] == leaf X
+      and path->slots[0] == N, pointing to
+      the new item with key (257 INODE_REF 666)
+
+    btrfs_listxattr's loop iteration sees that
+    the type of the key pointed by the path is
+    different from the type BTRFS_XATTR_ITEM_KEY
+    and so it breaks the loop and stops looking
+    for more xattr items
+      --> the application doesn't get any xattr
+          listed for our inode
+
+So fix this by breaking the loop only if the key's type is greater than
+BTRFS_XATTR_ITEM_KEY and skip the current key if its type is smaller.
+
+Cc: stable@vger.kernel.org
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/inode.c | 12 ++++++++++++
- 1 file changed, 12 insertions(+)
+ fs/btrfs/xattr.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 611b66d73e80..529bef2a9a01 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -5665,6 +5665,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	char *name_ptr;
- 	int name_len;
- 	int is_curr = 0;	/* ctx->pos points to the current index? */
-+	bool emitted;
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 6f518c9..1fcd7b6 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -313,8 +313,10 @@ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size)
+ 		/* check to make sure this item is what we want */
+ 		if (found_key.objectid != key.objectid)
+ 			break;
+-		if (found_key.type != BTRFS_XATTR_ITEM_KEY)
++		if (found_key.type > BTRFS_XATTR_ITEM_KEY)
+ 			break;
++		if (found_key.type < BTRFS_XATTR_ITEM_KEY)
++			goto next;
  
- 	/* FIXME, use a real flag for deciding about the key type */
- 	if (root->fs_info->tree_root == root)
-@@ -5693,6 +5694,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 	if (ret < 0)
- 		goto err;
- 
-+	emitted = false;
- 	while (1) {
- 		leaf = path->nodes[0];
- 		slot = path->slots[0];
-@@ -5772,6 +5774,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 
- 			if (over)
- 				goto nopos;
-+			emitted = true;
- 			di_len = btrfs_dir_name_len(leaf, di) +
- 				 btrfs_dir_data_len(leaf, di) + sizeof(*di);
- 			di_cur += di_len;
-@@ -5789,6 +5792,15 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
- 			goto nopos;
- 	}
- 
-+	/*
-+	 * If we haven't emitted any dir entry, we must not touch ctx->pos as
-+	 * it was was set to the termination value in previous call. We assume
-+	 * that "." and ".." were emitted if we reach this point and set the
-+	 * termination value as well for an empty directory.
-+	 */
-+	if (ctx->pos > 2 && !emitted)
-+		goto nopos;
-+
- 	/* Reached end of directory/root. Bump pos past the last item. */
- 	ctx->pos++;
- 
+ 		di = btrfs_item_ptr(leaf, slot, struct btrfs_dir_item);
+ 		if (verify_dir_item(root, leaf, di))
 -- 
-2.6.2
+2.1.3
 

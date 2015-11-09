@@ -1,45 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:53501 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1032931AbbKEO7e (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 5 Nov 2015 09:59:34 -0500
-Date: Thu, 5 Nov 2015 09:59:22 -0500
-From: Chris Mason <clm@fb.com>
-To: <fdmanana@kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [GIT PULL] Btrfs fixes
-Message-ID: <20151105145922.GK5458@ret.masoncoding.com>
-References: <1446722437-21605-1-git-send-email-fdmanana@kernel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:61667 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751815AbbKIK1c convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 05:27:32 -0500
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: "'Chris Mason'" <clm@fb.com>
+CC: "'btrfs'" <linux-btrfs@vger.kernel.org>
+Subject: [GIT PULL] Fujitsu for 4.4
+Date: Mon, 9 Nov 2015 18:27:26 +0800
+Message-ID: <03be01d11ad9$3b385cf0$b1a916d0$@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1446722437-21605-1-git-send-email-fdmanana@kernel.org>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 05, 2015 at 11:20:37AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Hi Chris,
-> 
-> please consider the following fixes for the 4.4 merge window (they were
-> all previously sent to the mailing list already).
-> 
-> One fixes a sleep inside atomic context issue, introduced by one patch
-> in the integration-4.4 branch. Another two fix races regarding waiting
-> for qgroup rescan worker to finish and a race between the qgroup rescan
-> worker and unmounting the filesystem (leading to crashes). The remaining
-> patch fixes an issue with partial direct IO writes, which has been
-> introduced in the 4.0 kernel, and results either in an assertion failure
-> (BUG_ON) when CONFIG_BTRFS_ASSERT=y or arithmetic underflow of an inode's
-> outstanding extents counter (used for proper space reservation) when
-> assertions are disabled.
-> 
-> Two test cases for fstests were sent recently to cover the issues regarding
-> the races and the direct IO partial write regression.
+Hi Chris,
 
-Great, thanks Filipe.
+This is collection of some bug fix and cleanup from fujitsu against btrfs in v4.3,
+the main patch is these 2:
+ Fix lost-data-profile caused by auto removing bg
+ Fix lost-data-profile caused by balance bg
+It can solve the problem of 'lost all data profile by balance and auto-remove-bg',
+discussed in btrfs maillist.
 
-I'll send these for my second pull (probably next Wed).
+Plus some enhancement and cleanup in scrub.
 
--chris
+Would you please consider merging the following fixes to integration-4.4 branch?
+
+REPO is:
+https:// github.com/zhaoleidd/btrfs.git integration-4.4
+
+Custom tests are done for patch of "Fix lost-data-profile", and I have queued
+xfstests(btrfs/generic with all mountopt) for this branch,
+(need about 4~5 days), and no error found until now(1 days).
+
+--
+Zhao Lei (9):
+  btrfs: scrub: set error stats when tree block spanning stripes
+  btrfs: scrub: setup all fields for sblock_to_check
+  btrfs: Reset sblock->xxx_error stats before calling
+    scrub_recheck_block_checksum
+  btrfs: Use scrub_checksum_data and scrub_checksum_tree_block for
+    scrub_recheck_block_checksum
+  btrfs: Reduce unnecessary arguments in scrub_recheck_block
+  btrfs: Remove len argument from scrub_find_csum
+  btrfs: Fix lost-data-profile caused by auto removing bg
+  btrfs: Fix lost-data-profile caused by balance bg
+  btrfs: Use fs_info directly in btrfs_delete_unused_bgs
+
+ fs/btrfs/extent-tree.c |  11 +--
+ fs/btrfs/scrub.c       | 179 ++++++++++++++++++-------------------------------
+ fs/btrfs/volumes.c     |  21 ++++++
+ 3 files changed, 93 insertions(+), 118 deletions(-)
+
+Thanks
+Zhaolei
+
+

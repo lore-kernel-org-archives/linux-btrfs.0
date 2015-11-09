@@ -1,209 +1,133 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:32946 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:32971 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752401AbbKIN7f (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Nov 2015 08:59:35 -0500
+	id S1751905AbbKIN7u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 9 Nov 2015 08:59:50 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: clm@fb.com, Filipe Manana <fdmanana@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] Btrfs: fix race leading to incorrect item deletion when dropping extents
-Date: Mon,  9 Nov 2015 13:59:17 +0000
-Message-Id: <1447077557-8846-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix race leading to BUG_ON when running delalloc for nodatacow
+Date: Mon,  9 Nov 2015 13:59:44 +0000
+Message-Id: <1447077584-8893-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-While running a stress test I got the following warning triggered:
+If we are using the NO_HOLES feature, we have a tiny time window when
+running delalloc for a nodatacow inode where we can race with a concurrent
+link or xattr add operation leading to a BUG_ON.
 
-  [191627.672810] ------------[ cut here ]------------
-  [191627.673949] WARNING: CPU: 8 PID: 8447 at fs/btrfs/file.c:779 __btrfs_drop_extents+0x391/0xa50 [btrfs]()
-  (...)
-  [191627.701485] Call Trace:
-  [191627.702037]  [<ffffffff8145f077>] dump_stack+0x4f/0x7b
-  [191627.702992]  [<ffffffff81095de5>] ? console_unlock+0x356/0x3a2
-  [191627.704091]  [<ffffffff8104b3b0>] warn_slowpath_common+0xa1/0xbb
-  [191627.705380]  [<ffffffffa0664499>] ? __btrfs_drop_extents+0x391/0xa50 [btrfs]
-  [191627.706637]  [<ffffffff8104b46d>] warn_slowpath_null+0x1a/0x1c
-  [191627.707789]  [<ffffffffa0664499>] __btrfs_drop_extents+0x391/0xa50 [btrfs]
-  [191627.709155]  [<ffffffff8115663c>] ? cache_alloc_debugcheck_after.isra.32+0x171/0x1d0
-  [191627.712444]  [<ffffffff81155007>] ? kmemleak_alloc_recursive.constprop.40+0x16/0x18
-  [191627.714162]  [<ffffffffa06570c9>] insert_reserved_file_extent.constprop.40+0x83/0x24e [btrfs]
-  [191627.715887]  [<ffffffffa065422b>] ? start_transaction+0x3bb/0x610 [btrfs]
-  [191627.717287]  [<ffffffffa065b604>] btrfs_finish_ordered_io+0x273/0x4e2 [btrfs]
-  [191627.728865]  [<ffffffffa065b888>] finish_ordered_fn+0x15/0x17 [btrfs]
-  [191627.730045]  [<ffffffffa067d688>] normal_work_helper+0x14c/0x32c [btrfs]
-  [191627.731256]  [<ffffffffa067d96a>] btrfs_endio_write_helper+0x12/0x14 [btrfs]
-  [191627.732661]  [<ffffffff81061119>] process_one_work+0x24c/0x4ae
-  [191627.733822]  [<ffffffff810615b0>] worker_thread+0x206/0x2c2
-  [191627.734857]  [<ffffffff810613aa>] ? process_scheduled_works+0x2f/0x2f
-  [191627.736052]  [<ffffffff810613aa>] ? process_scheduled_works+0x2f/0x2f
-  [191627.737349]  [<ffffffff810669a6>] kthread+0xef/0xf7
-  [191627.738267]  [<ffffffff810f3b3a>] ? time_hardirqs_on+0x15/0x28
-  [191627.739330]  [<ffffffff810668b7>] ? __kthread_parkme+0xad/0xad
-  [191627.741976]  [<ffffffff81465592>] ret_from_fork+0x42/0x70
-  [191627.743080]  [<ffffffff810668b7>] ? __kthread_parkme+0xad/0xad
-  [191627.744206] ---[ end trace bbfddacb7aaada8d ]---
+This happens because at run_delalloc_nocow() we end up casting a leaf item
+of type BTRFS_INODE_[REF|EXTREF]_KEY or of type BTRFS_XATTR_ITEM_KEY to a
+file extent item (struct btrfs_file_extent_item) and then analyse its
+extent type field, which won't match any of the expected extent types
+(values BTRFS_FILE_EXTENT_[REG|PREALLOC|INLINE]) and therefore trigger an
+explicit BUG_ON(1).
 
-  $ cat -n fs/btrfs/file.c
-  691  int __btrfs_drop_extents(struct btrfs_trans_handle *trans,
-  (...)
-  758                  btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
-  759                  if (key.objectid > ino ||
-  760                      key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
-  761                          break;
-  762
-  763                  fi = btrfs_item_ptr(leaf, path->slots[0],
-  764                                      struct btrfs_file_extent_item);
-  765                  extent_type = btrfs_file_extent_type(leaf, fi);
-  766
-  767                  if (extent_type == BTRFS_FILE_EXTENT_REG ||
-  768                      extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
-  (...)
-  774                  } else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
-  (...)
-  778                  } else {
-  779                          WARN_ON(1);
-  780                          extent_end = search_start;
-  781                  }
-  (...)
+The following sequence diagram shows how the race happens when running a
+no-cow dellaloc range [4K, 8K[ for inode 257 and we have the following
+neighbour leafs:
 
-This happened because the item we were processing did not match a file
-extent item (its key type != BTRFS_EXTENT_DATA_KEY), and even on this
-case we cast the item to a struct btrfs_file_extent_item pointer and
-then find a type field value that does not match any of the expected
-values (BTRFS_FILE_EXTENT_[REG|PREALLOC|INLINE]). This scenario happens
-due to a tiny time window where a race can happen as exemplified below.
-For example, consider the following scenario where we're using the
-NO_HOLES feature and we have the following two neighbour leafs:
+             Leaf X (has N items)                    Leaf Y
 
-               Leaf X (has N items)                    Leaf Y
+ [ ... (257 INODE_ITEM 0) (257 INODE_REF 256) ]  [ (257 EXTENT_DATA 8192), ... ]
+              slot N - 2         slot N - 1              slot 0
 
-[ ... (257 INODE_ITEM 0) (257 INODE_REF 256) ]  [ (257 EXTENT_DATA 8192), ... ]
-          slot N - 2         slot N - 1              slot 0
+ (Note the implicit hole for inode 257 regarding the [0, 8K[ range)
 
-Our inode 257 has an implicit hole in the range [0, 8K[ (implicit rather
-than explicit because NO_HOLES is enabled). Now if our inode has an
-ordered extent for the range [4K, 8K[ that is finishing, the following
-can happen:
+       CPU 1                                         CPU 2
 
-          CPU 1                                       CPU 2
-
-  btrfs_finish_ordered_io()
-    insert_reserved_file_extent()
-      __btrfs_drop_extents()
-         Searches for the key
-          (257 EXTENT_DATA 4096) through
-          btrfs_lookup_file_extent()
-
-         Key not found and we get a path where
+ run_dealloc_nocow()
+   btrfs_lookup_file_extent()
+     --> searches for a key with value
+         (257 EXTENT_DATA 4096) in the
+         fs/subvol tree
+     --> returns us a path with
          path->nodes[0] == leaf X and
          path->slots[0] == N
 
-         Because path->slots[0] is >=
-         btrfs_header_nritems(leaf X), we call
-         btrfs_next_leaf()
+   because path->slots[0] is >=
+   btrfs_header_nritems(leaf X), it
+   calls btrfs_next_leaf()
 
-         btrfs_next_leaf() releases the path
+   btrfs_next_leaf()
+     --> releases the path
 
-                                                  inserts key
-                                                  (257 INODE_REF 4096)
-                                                  at the end of leaf X,
-                                                  leaf X now has N + 1 keys,
-                                                  and the new key is at
-                                                  slot N
+                                              hard link added to our inode,
+                                              with key (257 INODE_REF 500)
+                                              added to the end of leaf X,
+                                              so leaf X now has N + 1 keys
 
-         btrfs_next_leaf() searches for
-         key (257 INODE_REF 256), with
-         path->keep_locks set to 1,
-         because it was the last key it
-         saw in leaf X
+     --> searches for the key
+         (257 INODE_REF 256), because
+         it was the last key in leaf X
+         before it released the path,
+         with path->keep_locks set to 1
 
-           finds it in leaf X again and
-           notices it's no longer the last
-           key of the leaf, so it returns 0
-           with path->nodes[0] == leaf X and
-           path->slots[0] == N (which is now
-           < btrfs_header_nritems(leaf X)),
-           pointing to the new key
-           (257 INODE_REF 4096)
+     --> ends up at leaf X again and
+         it verifies that the key
+         (257 INODE_REF 256) is no longer
+         the last key in the leaf, so it
+         returns with path->nodes[0] ==
+         leaf X and path->slots[0] == N,
+         pointing to the new item with
+         key (257 INODE_REF 500)
 
-         __btrfs_drop_extents() casts the
-         item at path->nodes[0], slot
-         path->slots[0], to a struct
-         btrfs_file_extent_item - it does
-         not skip keys for the target
-         inode with a type less than
-         BTRFS_EXTENT_DATA_KEY
-         (BTRFS_INODE_REF_KEY < BTRFS_EXTENT_DATA_KEY)
+   the loop iteration of run_dealloc_nocow()
+   does not break out the loop and continues
+   because the key referenced in the path
+   at path->nodes[0] and path->slots[0] is
+   for inode 257, its type is < BTRFS_EXTENT_DATA_KEY
+   and its offset (500) is less then our delalloc
+   range's end (8192)
 
-         sees a bogus value for the type
-         field triggering the WARN_ON in
-         the trace shown above, and sets
-         extent_end = search_start (4096)
+   the item pointed by the path, an inode reference item,
+   is (incorrectly) interpreted as a file extent item and
+   we get an invalid extent type, leading to the BUG_ON(1):
 
-         does the if-then-else logic to
-         fixup 0 length extent items created
-         by a past bug from hole punching:
+   if (extent_type == BTRFS_FILE_EXTENT_REG ||
+      extent_type == BTRFS_FILE_EXTENT_PREALLOC) {
+       (...)
+   } else if (extent_type == BTRFS_FILE_EXTENT_INLINE) {
+       (...)
+   } else {
+       BUG_ON(1)
+   }
 
-           if (extent_end == key.offset &&
-               extent_end >= search_start)
-               goto delete_extent_item;
+The same can happen if a xattr is added concurrently and ends up having
+a key with an offset smaller then the delalloc's range end.
 
-         that evaluates to true and it ends
-         up deleting the key pointed to by
-         path->slots[0], (257 INODE_REF 4096),
-         from leaf X
-
-The same could happen for example for a xattr that ends up having a key
-with an offset value that matches search_start (very unlikely but not
-impossible).
-
-So fix this by ensuring that keys smaller than BTRFS_EXTENT_DATA_KEY are
-skipped, never casted to struct btrfs_file_extent_item and never deleted
-by accident. Also protect against the unexpected case of getting a key
-for a lower inode number by skipping that key and issuing a warning.
+So fix this by skipping keys with a type smaller than
+BTRFS_EXTENT_DATA_KEY.
 
 Cc: stable@vger.kernel.org
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/file.c | 16 ++++++++++++----
- 1 file changed, 12 insertions(+), 4 deletions(-)
+ fs/btrfs/inode.c | 10 ++++++++--
+ 1 file changed, 8 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index cfa243c..3009d45 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -756,8 +756,16 @@ next_slot:
- 		}
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 6138eea..6e93349 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -1304,8 +1304,14 @@ next_slot:
+ 		num_bytes = 0;
+ 		btrfs_item_key_to_cpu(leaf, &found_key, path->slots[0]);
  
- 		btrfs_item_key_to_cpu(leaf, &key, path->slots[0]);
--		if (key.objectid > ino ||
--		    key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
-+
-+		if (key.objectid > ino)
+-		if (found_key.objectid > ino ||
+-		    found_key.type > BTRFS_EXTENT_DATA_KEY ||
++		if (found_key.objectid > ino)
 +			break;
-+		if (WARN_ON_ONCE(key.objectid < ino) ||
-+		    key.type < BTRFS_EXTENT_DATA_KEY) {
-+			ASSERT(del_nr == 0);
++		if (WARN_ON_ONCE(found_key.objectid < ino) ||
++		    found_key.type < BTRFS_EXTENT_DATA_KEY) {
 +			path->slots[0]++;
 +			goto next_slot;
 +		}
-+		if (key.type > BTRFS_EXTENT_DATA_KEY || key.offset >= end)
++		if (found_key.type > BTRFS_EXTENT_DATA_KEY ||
+ 		    found_key.offset > end)
  			break;
  
- 		fi = btrfs_item_ptr(leaf, path->slots[0],
-@@ -776,8 +784,8 @@ next_slot:
- 				btrfs_file_extent_inline_len(leaf,
- 						     path->slots[0], fi);
- 		} else {
--			WARN_ON(1);
--			extent_end = search_start;
-+			/* can't happen */
-+			BUG();
- 		}
- 
- 		/*
 -- 
 2.1.3
 

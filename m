@@ -1,89 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f54.google.com ([209.85.220.54]:36818 "EHLO
-	mail-pa0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1030573AbbKDX4X (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Nov 2015 18:56:23 -0500
-Received: by pacdm15 with SMTP id dm15so43022535pac.3
-        for <linux-btrfs@vger.kernel.org>; Wed, 04 Nov 2015 15:56:22 -0800 (PST)
-From: Justin Maggard <jmaggard10@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:43660 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752553AbbKJRzb (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Nov 2015 12:55:31 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id CA8ACACB5
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 17:55:09 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: fdmanana@gmail.com, Justin Maggard <jmaggard@netgear.com>
-Subject: [PATCH v3] btrfs: qgroup: exit the rescan worker during umount
-Date: Wed,  4 Nov 2015 15:56:16 -0800
-Message-Id: <1446681376-24583-1-git-send-email-jmaggard@netgear.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/3] btrfs: do an allocation earlier during snapshot creation
+Date: Tue, 10 Nov 2015 18:53:56 +0100
+Message-Id: <f5f6b6ba10a5b97fd6950e30f188cbfd9b7e3493.1447177256.git.dsterba@suse.com>
+In-Reply-To: <cover.1447177256.git.dsterba@suse.com>
+References: <cover.1447177256.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I was hitting a consistent NULL pointer dereference during shutdown that
-showed the trace running through end_workqueue_bio().  I traced it back to
-the endio_meta_workers workqueue being poked after it had already been
-destroyed.
+We can allocate pending_snapshot earlier and do not have to do cleanup
+in case of failure.
 
-Eventually I found that the root cause was a qgroup rescan that was still
-in progress while we were stopping all the btrfs workers.
-
-Currently we explicitly pause balance and scrub operations in
-close_ctree(), but we do nothing to stop the qgroup rescan.  We should
-probably be doing the same for qgroup rescan, but that's a much larger
-change.  This small change is good enough to allow me to unmount without
-crashing.
-
-v3: avoid more races by calling btrfs_qgroup_wait_for_completion()
-
-Signed-off-by: Justin Maggard <jmaggard@netgear.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c | 3 +++
- fs/btrfs/qgroup.c  | 9 ++++++---
- 2 files changed, 9 insertions(+), 3 deletions(-)
+ fs/btrfs/ioctl.c | 20 +++++++++-----------
+ 1 file changed, 9 insertions(+), 11 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 2d46675..1eb0839 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3780,6 +3780,9 @@ void close_ctree(struct btrfs_root *root)
- 	fs_info->closing = 1;
- 	smp_mb();
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index 8d20f3b1cab0..bf7d8ba7dd00 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -655,22 +655,20 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	if (!test_bit(BTRFS_ROOT_REF_COWS, &root->state))
+ 		return -EINVAL;
  
-+	/* wait for the qgroup rescan worker to stop */
-+	btrfs_qgroup_wait_for_completion(fs_info);
++	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_NOFS);
++	if (!pending_snapshot)
++		return -ENOMEM;
 +
- 	/* wait for the uuid_scan task to finish */
- 	down(&fs_info->uuid_tree_rescan_sem);
- 	/* avoid complains from lockdep et al., set sem back to initial state */
-diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-index 46476c2..75c0249 100644
---- a/fs/btrfs/qgroup.c
-+++ b/fs/btrfs/qgroup.c
-@@ -2286,7 +2286,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
- 		goto out;
+ 	atomic_inc(&root->will_be_snapshoted);
+ 	smp_mb__after_atomic();
+ 	btrfs_wait_for_no_snapshoting_writes(root);
  
- 	err = 0;
--	while (!err) {
-+	while (!err && !btrfs_fs_closing(fs_info)) {
- 		trans = btrfs_start_transaction(fs_info->fs_root, 0);
- 		if (IS_ERR(trans)) {
- 			err = PTR_ERR(trans);
-@@ -2307,7 +2307,8 @@ out:
- 	btrfs_free_path(path);
+ 	ret = btrfs_start_delalloc_inodes(root, 0);
+ 	if (ret)
+-		goto out;
++		goto dec_and_free;
  
- 	mutex_lock(&fs_info->qgroup_rescan_lock);
--	fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
-+	if (!btrfs_fs_closing(fs_info))
-+		fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
+ 	btrfs_wait_ordered_extents(root, -1);
  
- 	if (err > 0 &&
- 	    fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT) {
-@@ -2336,7 +2337,9 @@ out:
- 	}
- 	btrfs_end_transaction(trans, fs_info->quota_root);
+-	pending_snapshot = kzalloc(sizeof(*pending_snapshot), GFP_NOFS);
+-	if (!pending_snapshot) {
+-		ret = -ENOMEM;
+-		goto out;
+-	}
+-
+ 	btrfs_init_block_rsv(&pending_snapshot->block_rsv,
+ 			     BTRFS_BLOCK_RSV_TEMP);
+ 	/*
+@@ -686,7 +684,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 					&pending_snapshot->qgroup_reserved,
+ 					false);
+ 	if (ret)
+-		goto free;
++		goto dec_and_free;
  
--	if (err >= 0) {
-+	if (btrfs_fs_closing(fs_info)) {
-+		btrfs_info(fs_info, "qgroup scan paused");
-+	} else if (err >= 0) {
- 		btrfs_info(fs_info, "qgroup scan completed%s",
- 			err > 0 ? " (inconsistency flag cleared)" : "");
- 	} else {
+ 	pending_snapshot->dentry = dentry;
+ 	pending_snapshot->root = root;
+@@ -737,11 +735,11 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
+ 	btrfs_subvolume_release_metadata(BTRFS_I(dir)->root,
+ 					 &pending_snapshot->block_rsv,
+ 					 pending_snapshot->qgroup_reserved);
+-free:
+-	kfree(pending_snapshot);
+-out:
++dec_and_free:
+ 	if (atomic_dec_and_test(&root->will_be_snapshoted))
+ 		wake_up_atomic_t(&root->will_be_snapshoted);
++	kfree(pending_snapshot);
++
+ 	return ret;
+ }
+ 
 -- 
 2.6.2
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,101 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43669 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:43679 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752553AbbKJRzf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Nov 2015 12:55:35 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 3A5FCACB5
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 17:55:13 +0000 (UTC)
+	id S1752553AbbKJRzi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Nov 2015 12:55:38 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 70760AD06
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 17:55:16 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/3] btrfs: allocate root item at snapshot ioctl time
-Date: Tue, 10 Nov 2015 18:54:00 +0100
-Message-Id: <df7bb4de0c195b9314b9d0256038a955f791eb31.1447177256.git.dsterba@suse.com>
+Subject: [PATCH 3/3] btrfs: preallocate path for snapshot creation at ioctl time
+Date: Tue, 10 Nov 2015 18:54:03 +0100
+Message-Id: <9f263bcb56ab8edb01a1951ecdaa4d12d3b1eba0.1447177256.git.dsterba@suse.com>
 In-Reply-To: <cover.1447177256.git.dsterba@suse.com>
 References: <cover.1447177256.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The actual snapshot creation is delayed until transaction commit. If we
-cannot get enough memory for the root item there, we have to fail the
-whole transaction commit which is bad. So we'll allocate the memory at
-the ioctl call and pass it along with the pending_snapshot struct. The
-potential ENOMEM will be returned to the caller of snapshot ioctl.
+We can also preallocate btrfs_path that's used during pending snapshot
+creation and avoid another late ENOMEM failure.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ioctl.c       | 9 +++++++++
- fs/btrfs/transaction.c | 9 +++------
+ fs/btrfs/ioctl.c       | 4 +++-
+ fs/btrfs/transaction.c | 9 ++++-----
  fs/btrfs/transaction.h | 1 +
- 3 files changed, 13 insertions(+), 6 deletions(-)
+ 3 files changed, 8 insertions(+), 6 deletions(-)
 
 diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index bf7d8ba7dd00..040faa8eebc9 100644
+index 040faa8eebc9..d318971d3085 100644
 --- a/fs/btrfs/ioctl.c
 +++ b/fs/btrfs/ioctl.c
-@@ -659,6 +659,13 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 	if (!pending_snapshot)
- 		return -ENOMEM;
+@@ -661,7 +661,8 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
  
-+	pending_snapshot->root_item = kzalloc(sizeof(struct btrfs_root_item),
-+			GFP_NOFS);
-+	if (!pending_snapshot->root_item) {
-+		ret = -ENOMEM;
-+		goto free_pending;
-+	}
-+
- 	atomic_inc(&root->will_be_snapshoted);
- 	smp_mb__after_atomic();
- 	btrfs_wait_for_no_snapshoting_writes(root);
-@@ -738,6 +745,8 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- dec_and_free:
- 	if (atomic_dec_and_test(&root->will_be_snapshoted))
+ 	pending_snapshot->root_item = kzalloc(sizeof(struct btrfs_root_item),
+ 			GFP_NOFS);
+-	if (!pending_snapshot->root_item) {
++	pending_snapshot->path = btrfs_alloc_path();
++	if (!pending_snapshot->root_item || !pending_snapshot->path) {
+ 		ret = -ENOMEM;
+ 		goto free_pending;
+ 	}
+@@ -747,6 +748,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
  		wake_up_atomic_t(&root->will_be_snapshoted);
-+free_pending:
-+	kfree(pending_snapshot->root_item);
+ free_pending:
+ 	kfree(pending_snapshot->root_item);
++	btrfs_free_path(pending_snapshot->path);
  	kfree(pending_snapshot);
  
  	return ret;
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index a5b06442f0bf..09129b65dd4b 100644
+index 09129b65dd4b..732ad46bf015 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -1320,11 +1320,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 		return 0;
- 	}
+@@ -1314,11 +1314,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
+ 	u64 root_flags;
+ 	uuid_le new_uuid;
  
--	new_root_item = kmalloc(sizeof(*new_root_item), GFP_NOFS);
--	if (!new_root_item) {
+-	path = btrfs_alloc_path();
+-	if (!path) {
 -		pending->error = -ENOMEM;
--		goto root_item_alloc_fail;
+-		return 0;
 -	}
-+	ASSERT(pending->root_item);
-+	new_root_item = pending->root_item;
++	ASSERT(pending->path);
++	path = pending->path;
  
- 	pending->error = btrfs_find_free_objectid(tree_root, &objectid);
- 	if (pending->error)
-@@ -1557,7 +1554,7 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	btrfs_clear_skip_qgroup(trans);
- no_free_objectid:
+ 	ASSERT(pending->root_item);
+ 	new_root_item = pending->root_item;
+@@ -1556,6 +1553,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
  	kfree(new_root_item);
--root_item_alloc_fail:
-+	pending->root_item = NULL;
+ 	pending->root_item = NULL;
  	btrfs_free_path(path);
++	pending->path = NULL;
++
  	return ret;
  }
+ 
 diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index a994bb097ee5..a4e1c1a40880 100644
+index a4e1c1a40880..9c94344fe204 100644
 --- a/fs/btrfs/transaction.h
 +++ b/fs/btrfs/transaction.h
-@@ -138,6 +138,7 @@ struct btrfs_pending_snapshot {
- 	struct dentry *dentry;
- 	struct inode *dir;
- 	struct btrfs_root *root;
-+	struct btrfs_root_item *root_item;
+@@ -141,6 +141,7 @@ struct btrfs_pending_snapshot {
+ 	struct btrfs_root_item *root_item;
  	struct btrfs_root *snap;
  	struct btrfs_qgroup_inherit *inherit;
++	struct btrfs_path *path;
  	/* block reservation for the operation */
+ 	struct btrfs_block_rsv block_rsv;
+ 	u64 qgroup_reserved;
 -- 
 2.6.2
 

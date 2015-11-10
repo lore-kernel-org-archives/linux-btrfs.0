@@ -1,88 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f173.google.com ([209.85.160.173]:35765 "EHLO
-	mail-yk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750727AbbKJDMC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 22:12:02 -0500
-Received: by ykba77 with SMTP id a77so2780388ykb.2
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2015 19:12:01 -0800 (PST)
+Received: from static.198.36.40.188.clients.your-server.de ([188.40.36.198]:38477
+	"EHLO mail.render-wahnsinn.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751620AbbKJKa2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Nov 2015 05:30:28 -0500
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by mail.render-wahnsinn.de (Postfix) with ESMTP id 2EC6C2239B3
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 11:22:32 +0100 (CET)
+Received: from mail.render-wahnsinn.de ([127.0.0.1])
+	by localhost (render-wahnsinn.de [127.0.0.1]) (amavisd-new, port 10024)
+	with LMTP id E2-0RPPPp4p6 for <linux-btrfs@vger.kernel.org>;
+	Tue, 10 Nov 2015 11:22:31 +0100 (CET)
+Received: from [192.168.192.248] (ip-178-200-54-61.hsi07.unitymediagroup.de [178.200.54.61])
+	by mail.render-wahnsinn.de (Postfix) with ESMTPSA id 2DF282200D9
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 11:22:31 +0100 (CET)
+Message-ID: <5641C566.7030309@render-wahnsinn.de>
+Date: Tue, 10 Nov 2015 11:22:30 +0100
+From: Robert Krig <robert.krig@render-wahnsinn.de>
 MIME-Version: 1.0
-In-Reply-To: <5640A497.2060701@gmail.com>
-References: <CABtZWNH4rzzTtBwvt6Xs+nf=8aiJrbsCAVZB3QzPEnEfi-Cs5A@mail.gmail.com>
- <5640A497.2060701@gmail.com>
-From: Glen H <glen.hertz@gmail.com>
-Date: Mon, 9 Nov 2015 22:11:41 -0500
-Message-ID: <CABtZWNHRiUOA1tcj2NmqBJs8N6SzXFbs1iVhj73D45Xb7sNojw@mail.gmail.com>
-Subject: Re: btrfs-progs send | receive error: no such file or directory
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: btrfs-balance convert from raid1 to single on specific device?
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 9, 2015 at 8:50 AM, Austin S Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-> On 2015-11-08 16:28, Glen H wrote:
->>
->> Hi,
->>
->> I really enjoy the features of btrfs but send|receive is failing me so
->> my backups are not working.  I'm using "btrbk" to backup my drives
->> (all local) and one of the three subvolumes errors out.  When I run
->> this command from the terminal it errors out:
->>
->>> btrfs send /mnt/ssd/_btrbk_snap/@.20151108 | btrfs receive
->>> /mnt/backup2tb/
->>
->> At subvol /mnt/ssd/_btrbk_snap/@.20151108
->> At subvol @.20151108
->> ERROR: send ioctl failed with -2: No such file or directory
->> ERROR: unexpected EOF in stream.
->
-> Have you ever run any kind of data deduplication (bedup, duperemove, or
-> something else) on the source filesystem?  I've seen errors like this in the
-> past when trying to send from a filesystem that I had run deduplication on
-> (and I don't think that the patches to fix it made into the version of Mint
-> you're using).
->
-> That aside, there are two things that I've found that can fix some (but not
-> all) send/receive errors:
-> 1. Run a balance on the filesystem (either a full balance, or use filters to
-> select just the block in question).
-> 2. Force the file that it's choking on to be re-written (you can use 'btrfs
-> receive -vv' to see what files it's processing, although be prepared for _a
-> lot_ of output).
+Hi,
 
-Thanks Austin for the suggestions.  I haven't done any deduping, it is
-a pretty fresh install too (two weeks old).  I tried a full balance a
-few times:
+I'm running Kernel 4.3 and Btrfs-tools 4.3 on Debian Jessie. I compiled
+the tools and kernel myself.
 
-# btrfs balan /
-Done, had to relocate 28 out of 28 chunks
-# btrfs balan /
-Done, had to relocate 28 out of 28 chunks
+Recently I added a new disk to my btrfs volume and wanted to proceed to
+convert from single to raid1.
+Unfortunately the new disk seems to be faulty and started throwing a lot
+of errors.
 
-After balancing the first time should there be less to rebalance the
-second time?
+The balance convert operation didn't manage to finish, and now I'm
+trying to get my btrfs volume back to single mode so that I can mount it
+read/write.
 
-I tried receive -vv and then deleted the file that was causing the
-issue but running again the issue happens on a different file:
+If I try to mount it degraded, then it complains that there are too few
+devices to mount writeable. So it will only allow me to mount read-only.
 
-...
-utimes var/lib/sudo/hertz
-truncate var/lib/sudo/hertz/2 size=40
-chown var/lib/sudo/hertz/2 - uid=0, gid=1000
-chmod var/lib/sudo/hertz/2 - mode=0600
-utimes var/lib/sudo/hertz/2
-mkfile o189735-35-0
-truncate o189735-35-0 size=0
-chown o189735-35-0 - uid=1000, gid=1000
-chmod o189735-35-0 - mode=0600
-ERROR: unexpected EOF in stream.
+So far, so bad.
 
-I'm not using any kind of raid.  Do you think reformatting the
-partition or something else might help?  Should I try to upgrade the
-kernel?
+I have managed to boot and mount the volume once, with the faulty disk
+and cancel the balance operation.
+Now I would like to convert it all to single again, so that I can
+finally remove that faulty drive.
 
-Thanks for the support.
+However, if I simply say
+btrfs fi balance start -dconvert=single -mconvert=single /btrfs-volume
 
-Glen
+Wouldn't that theoretically move some blocks to the faulty drive? Can I
+somehow specify to rebalance only the working drive?
+
+I was thinking by specifying the device id, which seems possible
+according to the manpage.
+I just wanted to check with you guys first, if that should work as
+expected, or will I run into further trouble?
+
+Also, I understand -dconvert is for data, and -mconvert is for metadata,
+but is -sconvert? Is that data and metadata combined, or are system
+chunks something else entirely?
+
+Thanks for your help.

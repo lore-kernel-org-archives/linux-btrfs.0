@@ -1,122 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f171.google.com ([209.85.223.171]:33402 "EHLO
-	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1031337AbbKEKmZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 5 Nov 2015 05:42:25 -0500
-Received: by iodd200 with SMTP id d200so85044985iod.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 05 Nov 2015 02:42:25 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <1446681376-24583-1-git-send-email-jmaggard@netgear.com>
-References: <1446681376-24583-1-git-send-email-jmaggard@netgear.com>
-Date: Thu, 5 Nov 2015 10:42:25 +0000
-Message-ID: <CAL3q7H6-gNGh1JGxhqLYCNXYjrHVO2i9UH_Bd5GUy7GiWapJBw@mail.gmail.com>
-Subject: Re: [PATCH v3] btrfs: qgroup: exit the rescan worker during umount
-From: Filipe Manana <fdmanana@gmail.com>
-To: Justin Maggard <jmaggard10@gmail.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Justin Maggard <jmaggard@netgear.com>
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:43656 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752553AbbKJRz2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Nov 2015 12:55:28 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 9CC37ACB5
+	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 17:55:06 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 0/3] Reduced impact of allocation failures during snapshot creation
+Date: Tue, 10 Nov 2015 18:53:53 +0100
+Message-Id: <cover.1447177256.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 4, 2015 at 11:56 PM, Justin Maggard <jmaggard10@gmail.com> wrote:
-> I was hitting a consistent NULL pointer dereference during shutdown that
-> showed the trace running through end_workqueue_bio().  I traced it back to
-> the endio_meta_workers workqueue being poked after it had already been
-> destroyed.
->
-> Eventually I found that the root cause was a qgroup rescan that was still
-> in progress while we were stopping all the btrfs workers.
->
-> Currently we explicitly pause balance and scrub operations in
-> close_ctree(), but we do nothing to stop the qgroup rescan.  We should
-> probably be doing the same for qgroup rescan, but that's a much larger
-> change.  This small change is good enough to allow me to unmount without
-> crashing.
->
-> v3: avoid more races by calling btrfs_qgroup_wait_for_completion()
+Here's an improvement in allocation of temporary structures during snaphost
+creation, namely the root_item. The allocation is moved to the ioctl call, so
+it will fail early and not during the transaction commit. I've once hit it in
+practice.
 
-Btw, information about what changes between versions should go after
-the "---" (triple dash) below. You should also have mentioned what
-changed between v2 and v1 as well (see
-https://btrfs.wiki.kernel.org/index.php/Developer%27s_FAQ#Repeated_submissions).
+It's aimed for 4.5 dev cycle and can be pulled from
 
->
-> Signed-off-by: Justin Maggard <jmaggard@netgear.com>
-Reviewed-by: Filipe Manana <fdmanana@suse.com>
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/prealloc-subvol
 
-I've added this to my integration branch for 4.4 [1] and will prepare
-later a pull request for Chris. I've removed there the v3 line from
-the change log, as that's not  intended to be there, serves only for
-patch reviewing in the list.
+David Sterba (3):
+  btrfs: do an allocation earlier during snapshot creation
+  btrfs: allocate root item at snapshot ioctl time
+  btrfs: preallocate path for snapshot creation at ioctl time
 
-Thanks for doing this and the test case for fstests.
-
-[1] http://git.kernel.org/cgit/linux/kernel/git/fdmanana/linux.git/log/?h=integration-4.4
-
-> ---
->  fs/btrfs/disk-io.c | 3 +++
->  fs/btrfs/qgroup.c  | 9 ++++++---
->  2 files changed, 9 insertions(+), 3 deletions(-)
->
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 2d46675..1eb0839 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -3780,6 +3780,9 @@ void close_ctree(struct btrfs_root *root)
->         fs_info->closing = 1;
->         smp_mb();
->
-> +       /* wait for the qgroup rescan worker to stop */
-> +       btrfs_qgroup_wait_for_completion(fs_info);
-> +
->         /* wait for the uuid_scan task to finish */
->         down(&fs_info->uuid_tree_rescan_sem);
->         /* avoid complains from lockdep et al., set sem back to initial state */
-> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
-> index 46476c2..75c0249 100644
-> --- a/fs/btrfs/qgroup.c
-> +++ b/fs/btrfs/qgroup.c
-> @@ -2286,7 +2286,7 @@ static void btrfs_qgroup_rescan_worker(struct btrfs_work *work)
->                 goto out;
->
->         err = 0;
-> -       while (!err) {
-> +       while (!err && !btrfs_fs_closing(fs_info)) {
->                 trans = btrfs_start_transaction(fs_info->fs_root, 0);
->                 if (IS_ERR(trans)) {
->                         err = PTR_ERR(trans);
-> @@ -2307,7 +2307,8 @@ out:
->         btrfs_free_path(path);
->
->         mutex_lock(&fs_info->qgroup_rescan_lock);
-> -       fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
-> +       if (!btrfs_fs_closing(fs_info))
-> +               fs_info->qgroup_flags &= ~BTRFS_QGROUP_STATUS_FLAG_RESCAN;
->
->         if (err > 0 &&
->             fs_info->qgroup_flags & BTRFS_QGROUP_STATUS_FLAG_INCONSISTENT) {
-> @@ -2336,7 +2337,9 @@ out:
->         }
->         btrfs_end_transaction(trans, fs_info->quota_root);
->
-> -       if (err >= 0) {
-> +       if (btrfs_fs_closing(fs_info)) {
-> +               btrfs_info(fs_info, "qgroup scan paused");
-> +       } else if (err >= 0) {
->                 btrfs_info(fs_info, "qgroup scan completed%s",
->                         err > 0 ? " (inconsistency flag cleared)" : "");
->         } else {
-> --
-> 2.6.2
->
-
-
+ fs/btrfs/ioctl.c       | 31 ++++++++++++++++++++-----------
+ fs/btrfs/transaction.c | 18 +++++++-----------
+ fs/btrfs/transaction.h |  2 ++
+ 3 files changed, 29 insertions(+), 22 deletions(-)
 
 -- 
-Filipe David Manana,
+2.6.2
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

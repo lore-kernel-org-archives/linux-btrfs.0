@@ -1,62 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:57387 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751115AbbKKN4p (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:22328 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752679AbbKKT06 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Nov 2015 08:56:45 -0500
-Date: Wed, 11 Nov 2015 05:56:39 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: Christoph Hellwig <hch@infradead.org>, david@fromorbit.com,
-        fstests@vger.kernel.org, linux-ext4@vger.kernel.org,
-        Anna.Schumaker@netapp.com, linux-btrfs@vger.kernel.org,
-        xfs@oss.sgi.com
-Subject: Re: [RFCv3 00/12] xfstests: test the btrfs/xfs reflink/dedupe ioctls
-Message-ID: <20151111135639.GA4760@infradead.org>
-References: <20151007051257.3260.73072.stgit@birch.djwong.org>
- <20151109075926.GB17974@infradead.org>
- <20151109184913.GB3255@birch.djwong.org>
+	Wed, 11 Nov 2015 14:26:58 -0500
+Subject: [RFCv3.1 00/11] xfstests: test the nfs/cifs/btrfs/xfs
+ reflink/dedupe ioctls
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: hch@infradead.org, david@fromorbit.com, darrick.wong@oracle.com
+Cc: fstests@vger.kernel.org, xfs@oss.sgi.com, tao.peng@primarydata.com,
+        linux-ext4@vger.kernel.org, Anna.Schumaker@netapp.com,
+        linux-btrfs@vger.kernel.org
+Date: Wed, 11 Nov 2015 11:26:28 -0800
+Message-ID: <20151111192628.15056.6451.stgit@birch.djwong.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151109184913.GB3255@birch.djwong.org>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 09, 2015 at 10:49:13AM -0800, Darrick J. Wong wrote:
-> I found a few more bugs in the kernel-side implementation, which might explain
-> that.  I'm about to start working on making CoW less crappy, but I'll push all
-> the patches out to github.  (I wasn't planning on patchbombing again until
-> December.)
+Hi all,
 
-Yes, please push your WIP code out as often as possible!
+This is part of the third revision of an RFC for adding to XFS support
+for tracking reverse-mappings of physical blocks to file and metadata;
+and support for mapping multiple file logical blocks to the same
+physical block, more commonly known as reflinking.
 
-Btw, here is another additional fixup, as two tests were wrongly
-tagged as needing reflink instead of dedupe:
+This patchset aims to make xfstests perform more rigorous testing of
+the NFS/CIFS/ocfs2/btrfs/XFS file clone, reflink, and dedupe ioctls.
+There are now tests of the basic functionality of the three ioctls;
+tests to ensure that the filesystem exhibits the expected copy on
+write semantics; tests to try to suss out race conditions in the new
+write paths; tests to ensure that the ioctls peform basic disk
+accounting correctly; tests of the interaction between reflink and the
+various fallocate verbs (allocate, punch, collapse, insert zeroes);
+and some attempts to test the upper limits of reflinking and ENOSPC
+behavior.
 
+Since the last posting, each test tries to reflink (or dedupe) on the
+test or scratch FS to decide if they're going to run, instead of
+guessing based on FS type.  Per Dave's suggestion, I also converted
+the basic functionality tests to use fixed sizes so that I can use
+md5sum in the golden output to check that the file contents match
+exactly.
 
-diff --git a/tests/generic/827 b/tests/generic/827
-index cc1bc52..c8ce7cf 100755
---- a/tests/generic/827
-+++ b/tests/generic/827
-@@ -47,7 +47,7 @@ _supported_fs generic
- _supported_os Linux
- 
- _require_scratch
--_require_xfs_io_command "reflink"
-+_require_xfs_io_command "dedupe"
- 
- echo "Format and mount"
- _scratch_mkfs > $seqres.full 2>&1
-diff --git a/tests/generic/828 b/tests/generic/828
-index 1757985..f5b7298 100755
---- a/tests/generic/828
-+++ b/tests/generic/828
-@@ -47,7 +47,7 @@ _supported_fs generic
- _supported_os Linux
- 
- _require_scratch
--_require_xfs_io_command "reflink"
-+_require_xfs_io_command "dedupe"
- 
- echo "Format and mount"
- _scratch_mkfs > $seqres.full 2>&1
+Issues: 
+
+ * I think the race checks for dedupe could be a little sharper at
+   finding mistakes.
+
+ * The realtime reflink test (xfs/804) crashes XFS before we even get
+   to the reflink attempt.
+
+ * I started the numbering really high to prevent the tests from
+   colliding with whatever new tests might arrive; this will require
+   some intervention to fix.
+
+If you're going to start using this mess, you probably ought to just
+pull from my github trees for kernel[1], xfsprogs[2], xfstests[3], and
+xfs-docs[4].  They should just work with the btrfs that's in 4.3...
+and somewhat buggily with the 4.3 XFS patched with [1].
+
+Comments and questions are, as always, welcome.
+
+--D
+
+[1] https://github.com/djwong/linux/tree/for-dave
+[2] https://github.com/djwong/xfsprogs/tree/for-dave
+[3] https://github.com/djwong/xfstests/tree/for-dave
+[4] https://github.com/djwong/xfs-documentation/tree/for-dave

@@ -1,84 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fallback2.mail.ru ([94.100.179.22]:43563 "EHLO
-	fallback2.mail.ru" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751859AbbKKM2G (ORCPT
+Received: from cc-smtpout2.netcologne.de ([89.1.8.212]:40585 "EHLO
+	cc-smtpout2.netcologne.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750818AbbKKO06 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Nov 2015 07:28:06 -0500
-Received: from smtp48.i.mail.ru (smtp48.i.mail.ru [94.100.177.108])
-	by fallback2.mail.ru (mPOP.Fallback_MX) with ESMTP id 66DC964BD7C8
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2015 14:37:39 +0300 (MSK)
-Received: from 77-173-215-182.ip.telfort.nl ([77.173.215.182]:46924 helo=centurion)
-	by smtp48.i.mail.ru with esmtpa (envelope-from <dma_k@mail.ru>)
-	id 1ZwTib-0008U0-3D
-	for linux-btrfs@vger.kernel.org; Wed, 11 Nov 2015 14:37:37 +0300
-Received: from [127.0.0.1] (localhost [IPv6:::1])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	Wed, 11 Nov 2015 09:26:58 -0500
+Received: from cc-smtpin3.netcologne.de (cc-smtpin3.netcologne.de [89.1.8.203])
+	by cc-smtpout2.netcologne.de (Postfix) with ESMTP id 8FFE211FF9
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2015 15:17:19 +0100 (CET)
+Received: from localhost (localhost [127.0.0.1])
+	by cc-smtpin3.netcologne.de (Postfix) with ESMTP id 89EAF11D91
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2015 15:17:19 +0100 (CET)
+Received: from [194.8.193.239] (helo=cc-smtpin3.netcologne.de)
+	by localhost with ESMTP (eXpurgate 4.0.9)
+	(envelope-from <crohmann@netcologne.de>)
+	id 56434def-0ac8-7f0000012729-7f000001d2b8-1
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2015 15:17:19 +0100
+Received: from [194.8.193.239] (sys-239.netcologne.de [194.8.193.239])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-SHA (256/256 bits))
 	(No client certificate requested)
-	by centurion (Postfix) with ESMTPSA id 96D033833EB
-	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2015 12:37:35 +0100 (CET)
-Subject: Re: Process is blocked for more than 120 seconds
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-References: <56374C7D.5080609@mail.ru> <563DECF0.8080901@mail.ru>
- <56409EE4.6070605@gmail.com>
-From: Dmitry Katsubo <dma_k@mail.ru>
-Message-ID: <564328B8.2020509@mail.ru>
-Date: Wed, 11 Nov 2015 12:38:32 +0100
+	by cc-smtpin3.netcologne.de (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Wed, 11 Nov 2015 15:17:19 +0100 (CET)
+Subject: Re: How to properly and efficiently balance RAID6 after more drives
+ are added?
+To: linux-btrfs@vger.kernel.org
+References: <55E6CF72.5070005@netcologne.de>
+ <20150902113021.GD11358@carfax.org.uk> <55E6F51B.3000007@netcologne.de>
+ <pan$45a25$fd021e31$91d1cbe2$220454a1@cox.net>
+ <55E95625.2030406@netcologne.de>
+ <pan$11297$845af192$4bee50bd$587fb5f7@cox.net>
+From: Christian Rohmann <crohmann@netcologne.de>
+Message-ID: <56434DEF.9070807@netcologne.de>
+Date: Wed, 11 Nov 2015 15:17:19 +0100
 MIME-Version: 1.0
-In-Reply-To: <56409EE4.6070605@gmail.com>
-Content-Type: text/plain; charset=windows-1252
+In-Reply-To: <pan$11297$845af192$4bee50bd$587fb5f7@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-11-09 14:25, Austin S Hemmelgarn wrote:
-> On 2015-11-07 07:22, Dmitry Katsubo wrote:
->> Hi everyone,
->>
->> I have noticed the following in the log. The system continues to run,
->> but I am not sure for how long it will be stable. Should I start
->> worrying? Thanks in advance for the opinion.
->>
-> This just means that a process was stuck in the D state (uninterruptible
-> I/O sleep) for more than 120 seconds.  Depending on a number of factors,
-> this happening could mean:
-> 1. Absolutely nothing (if you have low-powered or older hardware, for
-> example, I get these regularly on a first generation Raspberry Pi if I
-> don't increase the timeout significantly)
-> 2. The program is doing a very large chunk of I/O (usually with the
-> O_DIRECT flag, although this probably isn't the case here)
-> 3. There's a bug in the blocked program (this is rarely the case when
-> this type of thing happens)
-> 4. There's a bug in the kernel (which is why this dumps a stack trace)
-> 5. The filesystem itself is messed up somehow, and the kernel isn't
-> handling it properly (technically a bug, but a more specific case of it).
-> 6. You're hardware is misbehaving, failing, or experienced a transient
-> error.
-> 
-> Assuming you can rule out possibilities 1 and 6, I think that 4 is the
-> most likely cause, as all of the listed programs (I'm assuming that
-> 'master' is from postfix) are relatively well audited, and all of them
-> hit this at the same time.
-> 
-> For what it's worth, if you want you can do:
-> echo 0 > /proc/sys/kernel/hung_task_timeout_secs
-> like the message says to stop these from appearing in the future, or use
-> some arbitrary number to change the timeout before these messages appear
-> (I usually use at least 150 on production systems, and more often 300,
-> although on something like a Raspberry Pi I often use timeouts as high
-> as 1800 seconds).
+Sorry for the late reply to this list regarding this topic
+...
 
-Thanks for comments, Austin.
+On 09/04/2015 01:04 PM, Duncan wrote:
+> And of course, only with 4.1 (nominally 3.19 but there were initial 
+> problems) was raid6 mode fully code-complete and functional -- before 
+> that, runtime worked, it calculated and wrote the parity stripes as it 
+> should, but the code to recover from problems wasn't complete, so you 
+> were effectively running a slow raid0 in terms of recovery ability, but 
+> one that got "magically" updated to raid6 once the recovery code was 
+> actually there and working.
 
-The system is "normal" PC, running Intel Core 2 Duo Mobile @1.66GHz.
-"master" is indeed a postfix process.
+As other who write to this ML, I run into crashes when trying to do a
+balance of my filesystem.
+I moved through the different kernel versions and btrfs-tools and am
+currently running Kernel 4.3 + 4.3rc1 of the tools but still after like
+an hour of balancing (and actually moving chunks) the machine crashes
+horribly without giving any good stack trace or anything in the kernel
+log which I could report here :(
 
-I haven't seen anything like that when I was on 3.16 kernel, but after I
-have upgraded to 4.2.3, I caught that message. I/O and CPU load are
-usually low, but it could be (6) from your list, as the system is
-generally very old (5+ years).
+Any ideas on how I could proceed to get some usable debug info for the
+devs to look at?
 
-As the problem appeared only once for passed 15 days, I think it is just
-a transient error. Thanks for clarifying the possible reasons.
 
--- 
-With best regards,
-Dmitry
+> So I'm guessing you have some 8-strip-stripe chunks at say 20% full or 
+> some such.  There's 19.19 data TiB used of 22.85 TiB allocated, a spread 
+> of over 3 TiB.  A full nominal-size data stripe allocation, given 12 
+> devices in raid6, will be 10x1GiB data plus 2x1GiB parity, so there's 
+> about 3.5 TiB / 10 GiB extra stripes worth of chunks, 350 stripes or so, 
+> that should be freeable, roughly (the fact that you probably have 8-
+> strip, 12-strip, and 4-strip stripes, on the same filesystem, will of 
+> course change that a bit, as will the fact that four devices are much 
+> smaller than the other eight).
+
+The new devices have been in place for while (> 2 months) now, and are
+barely used. Why is there not more data being put onto the new disks?
+Even without a balance new data should spread evenly across all devices
+right? From the IOPs I can see that only the 8 disks which always have
+been in the box are doing any heavy lifting and the new disks are mostly
+idle.
+
+Anything I could do to narrow down where a certain file is stored across
+the devices?
+
+
+
+
+
+
+Regards
+
+Christian

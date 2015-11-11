@@ -1,58 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx141.netapp.com ([216.240.21.12]:16276 "EHLO mx141.netapp.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751059AbbKJVxm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Nov 2015 16:53:42 -0500
-From: Anna Schumaker <Anna.Schumaker@netapp.com>
-To: <linux-nfs@vger.kernel.org>, <linux-btrfs@vger.kernel.org>,
-        <linux-fsdevel@vger.kernel.org>, <linux-api@vger.kernel.org>,
-        <zab@zabbo.net>, <viro@zeniv.linux.org.uk>, <clm@fb.com>,
-        <darrick.wong@oracle.com>, <mtk.manpages@gmail.com>,
-        <andros@netapp.com>, <hch@infradead.org>
-Subject: [PATCH v9 2/4] x86: add sys_copy_file_range to syscall tables
-Date: Tue, 10 Nov 2015 16:53:31 -0500
-Message-ID: <1447192413-15376-3-git-send-email-Anna.Schumaker@Netapp.com>
-In-Reply-To: <1447192413-15376-1-git-send-email-Anna.Schumaker@Netapp.com>
+Received: from zeniv.linux.org.uk ([195.92.253.2]:46118 "EHLO
+	ZenIV.linux.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751612AbbKKDid (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 10 Nov 2015 22:38:33 -0500
+Date: Wed, 11 Nov 2015 03:38:27 +0000
+From: Al Viro <viro@ZenIV.linux.org.uk>
+To: Anna Schumaker <Anna.Schumaker@netapp.com>
+Cc: linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, linux-api@vger.kernel.org,
+        zab@zabbo.net, clm@fb.com, darrick.wong@oracle.com,
+        mtk.manpages@gmail.com, andros@netapp.com, hch@infradead.org
+Subject: Re: [PATCH v9 0/4] VFS: In-kernel copy system call
+Message-ID: <20151111033827.GJ22011@ZenIV.linux.org.uk>
 References: <1447192413-15376-1-git-send-email-Anna.Schumaker@Netapp.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1447192413-15376-1-git-send-email-Anna.Schumaker@Netapp.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zach Brown <zab@redhat.com>
+On Tue, Nov 10, 2015 at 04:53:29PM -0500, Anna Schumaker wrote:
+> Copy system calls came up during Plumbers a while ago, mostly because several
+> filesystems (including NFS and XFS) are currently working on copy acceleration
+> implementations.  We haven't heard from Zach Brown in a while, so I volunteered
+> to push his patches upstream so individual filesystems don't need to keep
+> writing their own ioctls.
 
-Add sys_copy_file_range to the x86 syscall tables.
-
-Signed-off-by: Zach Brown <zab@redhat.com>
-[Anna Schumaker: Update syscall number in syscall_32.tbl]
-Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
-Reviewed-by: Christoph Hellwig <hch@lst.de>
----
- arch/x86/entry/syscalls/syscall_32.tbl | 1 +
- arch/x86/entry/syscalls/syscall_64.tbl | 1 +
- 2 files changed, 2 insertions(+)
-
-diff --git a/arch/x86/entry/syscalls/syscall_32.tbl b/arch/x86/entry/syscalls/syscall_32.tbl
-index f17705e..cb713df 100644
---- a/arch/x86/entry/syscalls/syscall_32.tbl
-+++ b/arch/x86/entry/syscalls/syscall_32.tbl
-@@ -383,3 +383,4 @@
- 374	i386	userfaultfd		sys_userfaultfd
- 375	i386	membarrier		sys_membarrier
- 376	i386	mlock2			sys_mlock2
-+377	i386	copy_file_range		sys_copy_file_range
-diff --git a/arch/x86/entry/syscalls/syscall_64.tbl b/arch/x86/entry/syscalls/syscall_64.tbl
-index 314a90b..dc1040a 100644
---- a/arch/x86/entry/syscalls/syscall_64.tbl
-+++ b/arch/x86/entry/syscalls/syscall_64.tbl
-@@ -332,6 +332,7 @@
- 323	common	userfaultfd		sys_userfaultfd
- 324	common	membarrier		sys_membarrier
- 325	common	mlock2			sys_mlock2
-+326	common	copy_file_range		sys_copy_file_range
- 
- #
- # x32-specific system call numbers start at 512 to avoid cache impact
--- 
-2.6.2
-
+OK, taken for the next cycle.  FWIW, I'm going to toss COMPAT_SYSCALL_DEFINE
+counterpart in as well - right now it's doing only native, AFAICS.

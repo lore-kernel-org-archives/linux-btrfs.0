@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:35002 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751048AbbKKT2O (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:22451 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752679AbbKKT1F (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Nov 2015 14:28:14 -0500
-Subject: [PATCH 11/11] reflink: test that CoW writes fail when we're out of
- space
+	Wed, 11 Nov 2015 14:27:05 -0500
+Subject: [PATCH 01/11] btrfs: move btrfs reflink tests to generic
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: hch@infradead.org, david@fromorbit.com, darrick.wong@oracle.com
 Cc: fstests@vger.kernel.org, xfs@oss.sgi.com, tao.peng@primarydata.com,
         linux-ext4@vger.kernel.org, Anna.Schumaker@netapp.com,
         linux-btrfs@vger.kernel.org
-Date: Wed, 11 Nov 2015 11:27:44 -0800
-Message-ID: <20151111192744.15056.4781.stgit@birch.djwong.org>
+Date: Wed, 11 Nov 2015 11:26:35 -0800
+Message-ID: <20151111192635.15056.96745.stgit@birch.djwong.org>
 In-Reply-To: <20151111192628.15056.6451.stgit@birch.djwong.org>
 References: <20151111192628.15056.6451.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -20,60 +19,439 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ensure that copy-on-writing a reflinked file when there's no free disk
-space reflects the desired ENOSPC back to userspace during the write
-call.  Tests the buffered IO, direct IO, and mmap write paths.
+Move the cp --reflink tests from btrfs/ to generic/ since xfs now
+supports that ioctl.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- common/rc             |    2 -
- tests/generic/842     |  107 ++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/842.out |   10 ++++
- tests/generic/843     |  107 ++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/843.out |   10 ++++
- tests/generic/844     |  109 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/844.out |    8 ++++
- tests/generic/845     |  107 ++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/845.out |   10 ++++
- tests/generic/group   |    4 ++
- 10 files changed, 473 insertions(+), 1 deletion(-)
- create mode 100755 tests/generic/842
- create mode 100644 tests/generic/842.out
- create mode 100755 tests/generic/843
- create mode 100644 tests/generic/843.out
- create mode 100755 tests/generic/844
- create mode 100644 tests/generic/844.out
- create mode 100755 tests/generic/845
- create mode 100644 tests/generic/845.out
+ tests/btrfs/026       |   92 -----------------------------------------
+ tests/btrfs/026.out   |   16 -------
+ tests/btrfs/027       |  109 -------------------------------------------------
+ tests/btrfs/027.out   |   25 -----------
+ tests/btrfs/028       |   83 -------------------------------------
+ tests/btrfs/028.out   |    7 ---
+ tests/btrfs/group     |    3 -
+ tests/generic/800     |   92 +++++++++++++++++++++++++++++++++++++++++
+ tests/generic/800.out |   16 +++++++
+ tests/generic/801     |  109 +++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/generic/801.out |   25 +++++++++++
+ tests/generic/802     |   83 +++++++++++++++++++++++++++++++++++++
+ tests/generic/802.out |    7 +++
+ tests/generic/group   |    3 +
+ 14 files changed, 335 insertions(+), 335 deletions(-)
+ delete mode 100755 tests/btrfs/026
+ delete mode 100644 tests/btrfs/026.out
+ delete mode 100755 tests/btrfs/027
+ delete mode 100644 tests/btrfs/027.out
+ delete mode 100755 tests/btrfs/028
+ delete mode 100644 tests/btrfs/028.out
+ create mode 100755 tests/generic/800
+ create mode 100644 tests/generic/800.out
+ create mode 100755 tests/generic/801
+ create mode 100644 tests/generic/801.out
+ create mode 100755 tests/generic/802
+ create mode 100644 tests/generic/802.out
 
 
-diff --git a/common/rc b/common/rc
-index c016673..474fa84 100644
---- a/common/rc
-+++ b/common/rc
-@@ -101,7 +101,7 @@ _mwrite_byte() {
- 	mmap_len="$4"
- 	file="$5"
- 
--	"$XFS_IO_PROG" -f -c "mmap -rw 0 $mmap_len" -c "pwrite -S $pattern $offset $len" "$file"
-+	"$XFS_IO_PROG" -f -c "mmap -rw 0 $mmap_len" -c "mwrite -S $pattern $offset $len" "$file"
- }
- 
- # ls -l w/ selinux sometimes puts a dot at the end:
-diff --git a/tests/generic/842 b/tests/generic/842
+diff --git a/tests/btrfs/026 b/tests/btrfs/026
+deleted file mode 100755
+index 7559ca2..0000000
+--- a/tests/btrfs/026
++++ /dev/null
+@@ -1,92 +0,0 @@
+-#! /bin/bash
+-# FS QA Test No. 026
+-#
+-# Tests file clone functionality of btrfs ("reflinks"):
+-#   - Reflink a file
+-#   - Reflink the reflinked file
+-#   - Modify the original file
+-#   - Modify the reflinked file
+-#
+-#-----------------------------------------------------------------------
+-# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
+-#
+-# This program is free software; you can redistribute it and/or
+-# modify it under the terms of the GNU General Public License as
+-# published by the Free Software Foundation.
+-#
+-# This program is distributed in the hope that it would be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write the Free Software Foundation,
+-# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#-----------------------------------------------------------------------
+-#
+-
+-seq=`basename $0`
+-seqres=$RESULT_DIR/$seq
+-echo "QA output created by $seq"
+-
+-here=`pwd`
+-tmp=/tmp/$$
+-status=1    # failure is the default!
+-trap "_cleanup; exit \$status" 0 1 2 3 15
+-
+-_cleanup()
+-{
+-    cd /
+-    rm -f $tmp.*
+-}
+-
+-# get standard environment, filters and checks
+-. common/rc
+-. common/filter
+-
+-# real QA test starts here
+-_supported_fs btrfs
+-_supported_os Linux
+-
+-_require_xfs_io_command "fiemap"
+-_require_cp_reflink
+-_require_test
+-
+-TESTDIR1=$TEST_DIR/test-$seq
+-rm -rf $TESTDIR1
+-mkdir $TESTDIR1
+-
+-_checksum_files() {
+-    for F in original copy1 copy2
+-    do
+-        md5sum $TESTDIR1/$F | _filter_test_dir
+-    done
+-}
+-
+-rm -f $seqres.full
+-
+-echo "Create the original file and reflink to copy1, copy2"
+-$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original \
+-    >> $seqres.full 2>&1
+-cp --reflink $TESTDIR1/original $TESTDIR1/copy1
+-cp --reflink $TESTDIR1/copy1 $TESTDIR1/copy2
+-_verify_reflink $TESTDIR1/original $TESTDIR1/copy1
+-_verify_reflink $TESTDIR1/original $TESTDIR1/copy2
+-echo "Original md5sums:"
+-_checksum_files
+-
+-echo "Overwrite original file with new data"
+-$XFS_IO_PROG -c 'pwrite -S 0x62 0 9000' $TESTDIR1/original \
+-    >> $seqres.full 2>&1
+-echo "md5sums after overwriting original:"
+-_checksum_files
+-
+-echo "Overwrite copy1 with different new data"
+-$XFS_IO_PROG -c 'pwrite -S 0x63 0 9000' $TESTDIR1/copy1 \
+-    >> $seqres.full 2>&1
+-echo "md5sums after overwriting copy1:"
+-_checksum_files
+-
+-# success, all done
+-status=0
+-exit
+diff --git a/tests/btrfs/026.out b/tests/btrfs/026.out
+deleted file mode 100644
+index 3b90ff0..0000000
+--- a/tests/btrfs/026.out
++++ /dev/null
+@@ -1,16 +0,0 @@
+-QA output created by 026
+-Create the original file and reflink to copy1, copy2
+-Original md5sums:
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-026/original
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-026/copy1
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-026/copy2
+-Overwrite original file with new data
+-md5sums after overwriting original:
+-4a847a25439532bf48b68c9e9536ed5b  TEST_DIR/test-026/original
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-026/copy1
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-026/copy2
+-Overwrite copy1 with different new data
+-md5sums after overwriting copy1:
+-4a847a25439532bf48b68c9e9536ed5b  TEST_DIR/test-026/original
+-e271cd47d9f62ebc96cb4e67ae4d16db  TEST_DIR/test-026/copy1
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-026/copy2
+diff --git a/tests/btrfs/027 b/tests/btrfs/027
+deleted file mode 100755
+index d2b812b..0000000
+--- a/tests/btrfs/027
++++ /dev/null
+@@ -1,109 +0,0 @@
+-#! /bin/bash
+-# FS QA Test No. 027
+-#
+-# Tests file clone functionality of btrfs ("reflinks") on directory
+-# trees.
+-#   - Create directory and subdirectory, each having one file
+-#   - Create 2 recursive reflinked copies of the tree
+-#   - Modify the original files
+-#   - Modify one of the copies
+-#
+-#-----------------------------------------------------------------------
+-# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
+-#
+-# This program is free software; you can redistribute it and/or
+-# modify it under the terms of the GNU General Public License as
+-# published by the Free Software Foundation.
+-#
+-# This program is distributed in the hope that it would be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write the Free Software Foundation,
+-# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#-----------------------------------------------------------------------
+-
+-seq=`basename $0`
+-seqres=$RESULT_DIR/$seq
+-echo "QA output created by $seq"
+-
+-here=`pwd`
+-tmp=/tmp/$$
+-status=1    # failure is the default!
+-trap "_cleanup; exit \$status" 0 1 2 3 15
+-
+-_cleanup()
+-{
+-    cd /
+-    rm -f $tmp.*
+-}
+-
+-# get standard environment, filters and checks
+-. common/rc
+-. common/filter
+-
+-# real QA test starts here
+-_supported_fs btrfs
+-_supported_os Linux
+-
+-_require_xfs_io_command "fiemap"
+-_require_cp_reflink
+-_require_test
+-
+-TESTDIR1=$TEST_DIR/test-$seq
+-rm -rf $TESTDIR1
+-mkdir $TESTDIR1
+-
+-_checksum_files() {
+-    for F in original/file1 original/subdir/file2 \
+-                 copy1/file1 copy1/subdir/file2 \
+-                 copy2/file1 copy2/subdir/file2
+-        do
+-            md5sum $TESTDIR1/$F | _filter_test_dir
+-        done
+-}
+-
+-rm -f $seqres.full
+-
+-mkdir $TESTDIR1/original
+-mkdir $TESTDIR1/original/subdir
+-
+-echo "Create the original files and reflink dirs"
+-$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original/file1 \
+-    >> $seqres.full 2>&1
+-$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 11000' \
+-    $TESTDIR1/original/subdir/file2 >> $seqres.full 2>&1
+-cp --recursive --reflink $TESTDIR1/original $TESTDIR1/copy1
+-cp --recursive --reflink $TESTDIR1/copy1 $TESTDIR1/copy2
+-
+-_verify_reflink $TESTDIR1/original/file1 $TESTDIR1/copy1/file1
+-_verify_reflink $TESTDIR1/original/subdir/file2 \
+-    $TESTDIR1/copy1/subdir/file2
+-_verify_reflink $TESTDIR1/original/file1 $TESTDIR1/copy2/file1
+-_verify_reflink $TESTDIR1/original/subdir/file2 \
+-    $TESTDIR1/copy2/subdir/file2
+-
+-echo "Original md5sums:"
+-_checksum_files
+-
+-echo "Overwrite original/file1 and original/subdir/file2 with new data"
+-$XFS_IO_PROG -c 'pwrite -S 0x63 0 13000' $TESTDIR1/original/file1 \
+-    >> $seqres.full 2>&1
+-$XFS_IO_PROG -c 'pwrite -S 0x64 5000 1000' \
+-    $TESTDIR1/original/subdir/file2 >> $seqres.full 2>&1
+-echo "md5sums now:"
+-_checksum_files
+-
+-echo "Overwrite copy1/file1 and copy1/subdir/file2 with new data"
+-$XFS_IO_PROG -c 'pwrite -S 0x65 0 9000' $TESTDIR1/copy1/file1 \
+-    >> $seqres.full 2>&1
+-$XFS_IO_PROG -c 'pwrite -S 0x66 5000 25000' \
+-    $TESTDIR1/copy1/subdir/file2 >> $seqres.full 2>&1
+-echo "md5sums now:"
+-_checksum_files
+-
+-# success, all done
+-status=0
+-exit
+diff --git a/tests/btrfs/027.out b/tests/btrfs/027.out
+deleted file mode 100644
+index 7b7e3bb..0000000
+--- a/tests/btrfs/027.out
++++ /dev/null
+@@ -1,25 +0,0 @@
+-QA output created by 027
+-Create the original files and reflink dirs
+-Original md5sums:
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-027/original/file1
+-ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-027/original/subdir/file2
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-027/copy1/file1
+-ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-027/copy1/subdir/file2
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-027/copy2/file1
+-ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-027/copy2/subdir/file2
+-Overwrite original/file1 and original/subdir/file2 with new data
+-md5sums now:
+-260f6785c0537fd12582dcae28a3c1a9  TEST_DIR/test-027/original/file1
+-b8d91fb600f6f2191f2ba66665374860  TEST_DIR/test-027/original/subdir/file2
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-027/copy1/file1
+-ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-027/copy1/subdir/file2
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-027/copy2/file1
+-ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-027/copy2/subdir/file2
+-Overwrite copy1/file1 and copy1/subdir/file2 with new data
+-md5sums now:
+-260f6785c0537fd12582dcae28a3c1a9  TEST_DIR/test-027/original/file1
+-b8d91fb600f6f2191f2ba66665374860  TEST_DIR/test-027/original/subdir/file2
+-b20229a003e3985c4b0e6806abcd6642  TEST_DIR/test-027/copy1/file1
+-b815b24069db14e0a3a07169fd563e93  TEST_DIR/test-027/copy1/subdir/file2
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-027/copy2/file1
+-ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-027/copy2/subdir/file2
+diff --git a/tests/btrfs/028 b/tests/btrfs/028
+deleted file mode 100755
+index 7193337..0000000
+--- a/tests/btrfs/028
++++ /dev/null
+@@ -1,83 +0,0 @@
+-#! /bin/bash
+-# FS QA Test No. 028
+-#
+-# Moving and deleting cloned ("reflinked") files on btrfs:
+-#   - Create a file and a reflink
+-#   - Move both to a directory
+-#   - Delete the original (moved) file, check that the copy still exists.
+-#
+-#-----------------------------------------------------------------------
+-# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
+-#
+-# This program is free software; you can redistribute it and/or
+-# modify it under the terms of the GNU General Public License as
+-# published by the Free Software Foundation.
+-#
+-# This program is distributed in the hope that it would be useful,
+-# but WITHOUT ANY WARRANTY; without even the implied warranty of
+-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+-# GNU General Public License for more details.
+-#
+-# You should have received a copy of the GNU General Public License
+-# along with this program; if not, write the Free Software Foundation,
+-# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
+-#-----------------------------------------------------------------------
+-
+-seq=`basename $0`
+-seqres=$RESULT_DIR/$seq
+-echo "QA output created by $seq"
+-
+-here=`pwd`
+-tmp=/tmp/$$
+-status=1    # failure is the default!
+-trap "_cleanup; exit \$status" 0 1 2 3 15
+-
+-_cleanup()
+-{
+-    cd /
+-    rm -f $tmp.*
+-}
+-
+-# get standard environment, filters and checks
+-. ./common/rc
+-. ./common/filter
+-
+-# real QA test starts here
+-_supported_fs btrfs
+-_supported_os Linux
+-
+-_require_xfs_io_command "fiemap"
+-_require_cp_reflink
+-_require_test
+-
+-rm -f $seqres.full
+-
+-TESTDIR1=$TEST_DIR/test-$seq
+-rm -rf $TESTDIR1
+-mkdir $TESTDIR1
+-
+-echo "Create the original files and reflink dirs"
+-$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original \
+-    >> $seqres.full
+-cp --reflink $TESTDIR1/original $TESTDIR1/copy
+-
+-_verify_reflink $TESTDIR1/original $TESTDIR1/copy
+-
+-echo "Move orig & reflink copy to subdir and md5sum:"
+-mkdir $TESTDIR1/subdir
+-mv $TESTDIR1/original $TESTDIR1/subdir/original_moved
+-mv $TESTDIR1/copy $TESTDIR1/subdir/copy_moved
+-_verify_reflink $TESTDIR1/subdir/original_moved \
+-    $TESTDIR1/subdir/copy_moved
+-
+-md5sum $TESTDIR1/subdir/original_moved | _filter_test_dir
+-md5sum $TESTDIR1/subdir/copy_moved | _filter_test_dir
+-
+-echo "remove orig from subdir and md5sum reflink copy:"
+-rm $TESTDIR1/subdir/original_moved
+-md5sum $TESTDIR1/subdir/copy_moved | _filter_test_dir
+-rm -rf $TESTDIR1/subdir
+-
+-# success, all done
+-status=0
+-exit
+diff --git a/tests/btrfs/028.out b/tests/btrfs/028.out
+deleted file mode 100644
+index f683fce..0000000
+--- a/tests/btrfs/028.out
++++ /dev/null
+@@ -1,7 +0,0 @@
+-QA output created by 028
+-Create the original files and reflink dirs
+-Move orig & reflink copy to subdir and md5sum:
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-028/subdir/original_moved
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-028/subdir/copy_moved
+-remove orig from subdir and md5sum reflink copy:
+-42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-028/subdir/copy_moved
+diff --git a/tests/btrfs/group b/tests/btrfs/group
+index 7cf7dd7..c5d529f 100644
+--- a/tests/btrfs/group
++++ b/tests/btrfs/group
+@@ -28,9 +28,6 @@
+ 023 auto
+ 024 auto quick compress
+ 025 auto quick send clone
+-026 auto quick clone
+-027 auto quick clone
+-028 auto quick clone
+ 029 auto quick clone
+ 030 auto quick send
+ 031 auto quick subvol clone
+diff --git a/tests/generic/800 b/tests/generic/800
 new file mode 100755
-index 0000000..5eda56b
+index 0000000..a71f11a
 --- /dev/null
-+++ b/tests/generic/842
-@@ -0,0 +1,107 @@
++++ b/tests/generic/800
+@@ -0,0 +1,92 @@
 +#! /bin/bash
-+# FS QA Test No. 842
++# FS QA Test No. 800
 +#
-+# Reflink a file, use up the rest of the space, then try to observe ENOSPC
-+# while copy-on-writing the file via the page cache.
++# Tests file clone functionality of btrfs ("reflinks"):
++#   - Reflink a file
++#   - Reflink the reflinked file
++#   - Modify the original file
++#   - Modify the reflinked file
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
++# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -88,9 +466,10 @@ index 0000000..5eda56b
 +# along with this program; if not, write the Free Software Foundation,
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
++#
 +
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
 +here=`pwd`
@@ -101,237 +480,99 @@ index 0000000..5eda56b
 +_cleanup()
 +{
 +    cd /
-+    rm -rf "$tmp".* "$TESTDIR1"
++    rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/attr
-+. ./common/reflink
++. common/rc
++. common/filter
 +
 +# real QA test starts here
++_supported_fs btrfs
 +_supported_os Linux
-+_require_scratch_reflink
++
++_require_xfs_io_command "fiemap"
 +_require_cp_reflink
++_require_test
 +
-+rm -f "$seqres.full"
++TESTDIR1=$TEST_DIR/test-$seq
++rm -rf $TESTDIR1
++mkdir $TESTDIR1
 +
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
++_checksum_files() {
++    for F in original copy1 copy2
++    do
++        md5sum $TESTDIR1/$F | _filter_test_dir
++    done
++}
 +
-+TESTDIR="$SCRATCH_MNT/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
++rm -f $seqres.full
 +
-+echo "Reformat with appropriate size"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+NR_BLKS=10240
-+umount "$SCRATCH_MNT"
-+SZ_BYTES=$((NR_BLKS * 8 * BLKSZ))
-+if [ $SZ_BYTES -lt $((32 * 1048576)) ]; then
-+	SZ_BYTES=$((32 * 1048576))
-+fi
-+_scratch_mkfs_sized $SZ_BYTES >> "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
++echo "Create the original file and reflink to copy1, copy2"
++$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original \
++    >> $seqres.full 2>&1
++cp --reflink $TESTDIR1/original $TESTDIR1/copy1
++cp --reflink $TESTDIR1/copy1 $TESTDIR1/copy2
++_verify_reflink $TESTDIR1/original $TESTDIR1/copy1
++_verify_reflink $TESTDIR1/original $TESTDIR1/copy2
++echo "Original md5sums:"
++_checksum_files
 +
-+echo "Create a big file and reflink it"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" >> "$seqres.full" 2>&1
-+_cp_reflink "$TESTDIR/bigfile" "$TESTDIR/clonefile"
-+sync
++echo "Overwrite original file with new data"
++$XFS_IO_PROG -c 'pwrite -S 0x62 0 9000' $TESTDIR1/original \
++    >> $seqres.full 2>&1
++echo "md5sums after overwriting original:"
++_checksum_files
 +
-+echo "Allocate the rest of the space"
-+NR_FREE="$(stat -f -c '%f' "$TESTDIR")"
-+touch "$TESTDIR/file0" "$TESTDIR/file1"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_FREE)) "$TESTDIR/eat_my_space" >> "$seqres.full" 2>&1
-+sync
-+
-+echo "CoW the big file"
-+out="$(_pwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" 2>&1)"
-+echo "${out}" | grep -q "No space left on device" || echo "CoW should have failed with ENOSPC"
-+echo "${out}" >> "$seqres.full" 2>&1
-+echo "${out}"
-+
-+echo "Remount and try CoW again"
-+_scratch_remount
-+
-+out="$(_pwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" 2>&1)"
-+echo "${out}" | grep -q "No space left on device" || echo "CoW should have failed with ENOSPC"
-+echo "${out}" >> "$seqres.full" 2>&1
-+echo "${out}"
-+
-+#filefrag -v $TESTDIR/bigfile
-+#filefrag -v $TESTDIR/clonefile
-+
-+echo "Check scratch fs"
-+umount "$SCRATCH_MNT"
-+_check_scratch_fs
++echo "Overwrite copy1 with different new data"
++$XFS_IO_PROG -c 'pwrite -S 0x63 0 9000' $TESTDIR1/copy1 \
++    >> $seqres.full 2>&1
++echo "md5sums after overwriting copy1:"
++_checksum_files
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/842.out b/tests/generic/842.out
+diff --git a/tests/generic/800.out b/tests/generic/800.out
 new file mode 100644
-index 0000000..df58025
+index 0000000..6978d71
 --- /dev/null
-+++ b/tests/generic/842.out
-@@ -0,0 +1,10 @@
-+QA output created by 842
-+Format and mount
-+Reformat with appropriate size
-+Create a big file and reflink it
-+Allocate the rest of the space
-+CoW the big file
-+pwrite64: No space left on device
-+Remount and try CoW again
-+pwrite64: No space left on device
-+Check scratch fs
-diff --git a/tests/generic/843 b/tests/generic/843
++++ b/tests/generic/800.out
+@@ -0,0 +1,16 @@
++QA output created by 800
++Create the original file and reflink to copy1, copy2
++Original md5sums:
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-800/original
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-800/copy1
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-800/copy2
++Overwrite original file with new data
++md5sums after overwriting original:
++4a847a25439532bf48b68c9e9536ed5b  TEST_DIR/test-800/original
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-800/copy1
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-800/copy2
++Overwrite copy1 with different new data
++md5sums after overwriting copy1:
++4a847a25439532bf48b68c9e9536ed5b  TEST_DIR/test-800/original
++e271cd47d9f62ebc96cb4e67ae4d16db  TEST_DIR/test-800/copy1
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-800/copy2
+diff --git a/tests/generic/801 b/tests/generic/801
 new file mode 100755
-index 0000000..03dc570
+index 0000000..b21c44b
 --- /dev/null
-+++ b/tests/generic/843
-@@ -0,0 +1,107 @@
-+#! /bin/bash
-+# FS QA Test No. 843
-+#
-+# Reflink a file that uses more than half of the space, then try to observe
-+# ENOSPC while copy-on-writing the file via the page cache.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR1"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/attr
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+
-+rm -f "$seqres.full"
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+TESTDIR="$SCRATCH_MNT/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Reformat with appropriate size"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+NR_BLKS=10240
-+umount "$SCRATCH_MNT"
-+SZ_BYTES=$((NR_BLKS * 3 / 2 * BLKSZ))
-+if [ $SZ_BYTES -lt $((32 * 1048576)) ]; then
-+	SZ_BYTES=$((32 * 1048576))
-+fi
-+_scratch_mkfs_sized $SZ_BYTES >> "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Create a big file and reflink it"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" >> "$seqres.full" 2>&1
-+_cp_reflink "$TESTDIR/bigfile" "$TESTDIR/clonefile"
-+sync
-+
-+echo "Allocate the rest of the space"
-+NR_FREE="$(stat -f -c '%f' "$TESTDIR")"
-+touch "$TESTDIR/file0" "$TESTDIR/file1"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_FREE)) "$TESTDIR/eat_my_space" >> "$seqres.full" 2>&1
-+sync
-+
-+echo "CoW the big file"
-+out="$(_pwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" 2>&1)"
-+echo "${out}" | grep -q "No space left on device" || echo "CoW should have failed with ENOSPC"
-+echo "${out}" >> "$seqres.full" 2>&1
-+echo "${out}"
-+
-+echo "Remount and try CoW again"
-+_scratch_remount
-+
-+out="$(_pwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" 2>&1)"
-+echo "${out}" | grep -q "No space left on device" || echo "CoW should have failed with ENOSPC"
-+echo "${out}" >> "$seqres.full" 2>&1
-+echo "${out}"
-+
-+#filefrag -v $TESTDIR/bigfile
-+#filefrag -v $TESTDIR/clonefile
-+
-+echo "Check scratch fs"
-+umount "$SCRATCH_MNT"
-+_check_scratch_fs
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/843.out b/tests/generic/843.out
-new file mode 100644
-index 0000000..43c1cf6
---- /dev/null
-+++ b/tests/generic/843.out
-@@ -0,0 +1,10 @@
-+QA output created by 843
-+Format and mount
-+Reformat with appropriate size
-+Create a big file and reflink it
-+Allocate the rest of the space
-+CoW the big file
-+pwrite64: No space left on device
-+Remount and try CoW again
-+pwrite64: No space left on device
-+Check scratch fs
-diff --git a/tests/generic/844 b/tests/generic/844
-new file mode 100755
-index 0000000..70bc235
---- /dev/null
-+++ b/tests/generic/844
++++ b/tests/generic/801
 @@ -0,0 +1,109 @@
 +#! /bin/bash
-+# FS QA Test No. 844
++# FS QA Test No. 801
 +#
-+# Reflink a file, use up the rest of the space, then try to observe ENOSPC
-+# while copy-on-writing the file via mmap.
++# Tests file clone functionality of btrfs ("reflinks") on directory
++# trees.
++#   - Create directory and subdirectory, each having one file
++#   - Create 2 recursive reflinked copies of the tree
++#   - Modify the original files
++#   - Modify one of the copies
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
++# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -347,8 +588,8 @@ index 0000000..70bc235
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
 +
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
 +here=`pwd`
@@ -359,108 +600,123 @@ index 0000000..70bc235
 +_cleanup()
 +{
 +    cd /
-+    rm -rf "$tmp".* "$TESTDIR1"
++    rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/attr
-+. ./common/reflink
++. common/rc
++. common/filter
 +
 +# real QA test starts here
++_supported_fs btrfs
 +_supported_os Linux
-+_require_scratch_reflink
++
++_require_xfs_io_command "fiemap"
 +_require_cp_reflink
++_require_test
 +
-+rm -f "$seqres.full"
++TESTDIR1=$TEST_DIR/test-$seq
++rm -rf $TESTDIR1
++mkdir $TESTDIR1
 +
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
++_checksum_files() {
++    for F in original/file1 original/subdir/file2 \
++                 copy1/file1 copy1/subdir/file2 \
++                 copy2/file1 copy2/subdir/file2
++        do
++            md5sum $TESTDIR1/$F | _filter_test_dir
++        done
++}
 +
-+TESTDIR="$SCRATCH_MNT/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
++rm -f $seqres.full
 +
-+echo "Reformat with appropriate size"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+NR_BLKS=10240
-+umount "$SCRATCH_MNT"
-+SZ_BYTES=$((NR_BLKS * 8 * BLKSZ))
-+if [ $SZ_BYTES -lt $((32 * 1048576)) ]; then
-+	SZ_BYTES=$((32 * 1048576))
-+fi
-+_scratch_mkfs_sized $SZ_BYTES >> "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
++mkdir $TESTDIR1/original
++mkdir $TESTDIR1/original/subdir
 +
-+echo "Create a big file and reflink it"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" >> "$seqres.full" 2>&1
-+_cp_reflink "$TESTDIR/bigfile" "$TESTDIR/clonefile"
-+sync
++echo "Create the original files and reflink dirs"
++$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original/file1 \
++    >> $seqres.full 2>&1
++$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 11000' \
++    $TESTDIR1/original/subdir/file2 >> $seqres.full 2>&1
++cp --recursive --reflink $TESTDIR1/original $TESTDIR1/copy1
++cp --recursive --reflink $TESTDIR1/copy1 $TESTDIR1/copy2
 +
-+echo "Allocate the rest of the space"
-+NR_FREE="$(stat -f -c '%f' "$TESTDIR")"
-+touch "$TESTDIR/file0" "$TESTDIR/file1"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_FREE)) "$TESTDIR/eat_my_space" >> "$seqres.full" 2>&1
-+sync
++_verify_reflink $TESTDIR1/original/file1 $TESTDIR1/copy1/file1
++_verify_reflink $TESTDIR1/original/subdir/file2 \
++    $TESTDIR1/copy1/subdir/file2
++_verify_reflink $TESTDIR1/original/file1 $TESTDIR1/copy2/file1
++_verify_reflink $TESTDIR1/original/subdir/file2 \
++    $TESTDIR1/copy2/subdir/file2
 +
-+echo "mmap CoW the big file"
-+out="$(_mwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" 2>&1)"
-+err="$?"
-+if [ "$err" -lt 128 ]; then
-+	echo "mmap CoW should have failed with SIGBUS, got SIG$(kill -l $err)"
-+fi
++echo "Original md5sums:"
++_checksum_files
 +
-+echo "Remount and try CoW again"
-+_scratch_remount
++echo "Overwrite original/file1 and original/subdir/file2 with new data"
++$XFS_IO_PROG -c 'pwrite -S 0x63 0 13000' $TESTDIR1/original/file1 \
++    >> $seqres.full 2>&1
++$XFS_IO_PROG -c 'pwrite -S 0x64 5000 1000' \
++    $TESTDIR1/original/subdir/file2 >> $seqres.full 2>&1
++echo "md5sums now:"
++_checksum_files
 +
-+out="$(_mwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" 2>&1)"
-+err="$?"
-+if [ "$err" -lt 128 ]; then
-+	echo "mmap CoW should have failed with SIGBUS, got SIG$(kill -l $err)"
-+fi
-+
-+#filefrag -v $TESTDIR/bigfile
-+#filefrag -v $TESTDIR/clonefile
-+
-+echo "Check scratch fs"
-+umount "$SCRATCH_MNT"
-+_check_scratch_fs
++echo "Overwrite copy1/file1 and copy1/subdir/file2 with new data"
++$XFS_IO_PROG -c 'pwrite -S 0x65 0 9000' $TESTDIR1/copy1/file1 \
++    >> $seqres.full 2>&1
++$XFS_IO_PROG -c 'pwrite -S 0x66 5000 25000' \
++    $TESTDIR1/copy1/subdir/file2 >> $seqres.full 2>&1
++echo "md5sums now:"
++_checksum_files
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/844.out b/tests/generic/844.out
+diff --git a/tests/generic/801.out b/tests/generic/801.out
 new file mode 100644
-index 0000000..130afc1
+index 0000000..b8225cc
 --- /dev/null
-+++ b/tests/generic/844.out
-@@ -0,0 +1,8 @@
-+QA output created by 844
-+Format and mount
-+Reformat with appropriate size
-+Create a big file and reflink it
-+Allocate the rest of the space
-+mmap CoW the big file
-+Remount and try CoW again
-+Check scratch fs
-diff --git a/tests/generic/845 b/tests/generic/845
++++ b/tests/generic/801.out
+@@ -0,0 +1,25 @@
++QA output created by 801
++Create the original files and reflink dirs
++Original md5sums:
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-801/original/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-801/original/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-801/copy1/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-801/copy1/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-801/copy2/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-801/copy2/subdir/file2
++Overwrite original/file1 and original/subdir/file2 with new data
++md5sums now:
++260f6785c0537fd12582dcae28a3c1a9  TEST_DIR/test-801/original/file1
++b8d91fb600f6f2191f2ba66665374860  TEST_DIR/test-801/original/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-801/copy1/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-801/copy1/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-801/copy2/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-801/copy2/subdir/file2
++Overwrite copy1/file1 and copy1/subdir/file2 with new data
++md5sums now:
++260f6785c0537fd12582dcae28a3c1a9  TEST_DIR/test-801/original/file1
++b8d91fb600f6f2191f2ba66665374860  TEST_DIR/test-801/original/subdir/file2
++b20229a003e3985c4b0e6806abcd6642  TEST_DIR/test-801/copy1/file1
++b815b24069db14e0a3a07169fd563e93  TEST_DIR/test-801/copy1/subdir/file2
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-801/copy2/file1
++ca390545f0aedb54b808d6128c56a7dd  TEST_DIR/test-801/copy2/subdir/file2
+diff --git a/tests/generic/802 b/tests/generic/802
 new file mode 100755
-index 0000000..5efaf38
+index 0000000..afd8513
 --- /dev/null
-+++ b/tests/generic/845
-@@ -0,0 +1,107 @@
++++ b/tests/generic/802
+@@ -0,0 +1,83 @@
 +#! /bin/bash
-+# FS QA Test No. 845
++# FS QA Test No. 802
 +#
-+# Reflink a file, use up the rest of the space, then try to observe ENOSPC
-+# while copy-on-writing the file via direct-io.
++# Moving and deleting cloned ("reflinked") files on btrfs:
++#   - Create a file and a reflink
++#   - Move both to a directory
++#   - Delete the original (moved) file, check that the copy still exists.
 +#
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
++# Copyright (c) 2014, Oracle and/or its affiliates.  All Rights Reserved.
 +#
 +# This program is free software; you can redistribute it and/or
 +# modify it under the terms of the GNU General Public License as
@@ -476,8 +732,8 @@ index 0000000..5efaf38
 +# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 +#-----------------------------------------------------------------------
 +
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
++seq=`basename $0`
++seqres=$RESULT_DIR/$seq
 +echo "QA output created by $seq"
 +
 +here=`pwd`
@@ -488,105 +744,74 @@ index 0000000..5efaf38
 +_cleanup()
 +{
 +    cd /
-+    rm -rf "$tmp".* "$TESTDIR1"
++    rm -f $tmp.*
 +}
 +
 +# get standard environment, filters and checks
 +. ./common/rc
 +. ./common/filter
-+. ./common/attr
-+. ./common/reflink
 +
 +# real QA test starts here
++_supported_fs btrfs
 +_supported_os Linux
-+_require_scratch_reflink
++
++_require_xfs_io_command "fiemap"
 +_require_cp_reflink
++_require_test
 +
-+rm -f "$seqres.full"
++rm -f $seqres.full
 +
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
++TESTDIR1=$TEST_DIR/test-$seq
++rm -rf $TESTDIR1
++mkdir $TESTDIR1
 +
-+TESTDIR="$SCRATCH_MNT/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
++echo "Create the original files and reflink dirs"
++$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 9000' $TESTDIR1/original \
++    >> $seqres.full
++cp --reflink $TESTDIR1/original $TESTDIR1/copy
 +
-+echo "Reformat with appropriate size"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+NR_BLKS=10240
-+umount "$SCRATCH_MNT"
-+SZ_BYTES=$((NR_BLKS * 8 * BLKSZ))
-+if [ $SZ_BYTES -lt $((32 * 1048576)) ]; then
-+	SZ_BYTES=$((32 * 1048576))
-+fi
-+_scratch_mkfs_sized $SZ_BYTES >> "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
++_verify_reflink $TESTDIR1/original $TESTDIR1/copy
 +
-+echo "Create a big file and reflink it"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" >> "$seqres.full" 2>&1
-+_cp_reflink "$TESTDIR/bigfile" "$TESTDIR/clonefile"
-+sync
++echo "Move orig & reflink copy to subdir and md5sum:"
++mkdir $TESTDIR1/subdir
++mv $TESTDIR1/original $TESTDIR1/subdir/original_moved
++mv $TESTDIR1/copy $TESTDIR1/subdir/copy_moved
++_verify_reflink $TESTDIR1/subdir/original_moved \
++    $TESTDIR1/subdir/copy_moved
 +
-+echo "Allocate the rest of the space"
-+NR_FREE="$(stat -f -c '%f' "$TESTDIR")"
-+touch "$TESTDIR/file0" "$TESTDIR/file1"
-+_pwrite_byte 0x61 0 $((BLKSZ * NR_FREE)) "$TESTDIR/eat_my_space" >> "$seqres.full" 2>&1
-+sync
++md5sum $TESTDIR1/subdir/original_moved | _filter_test_dir
++md5sum $TESTDIR1/subdir/copy_moved | _filter_test_dir
 +
-+echo "CoW the big file"
-+out="$(_pwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" -d 2>&1)"
-+echo "${out}" | grep -q "No space left on device" || echo "CoW should have failed with ENOSPC"
-+echo "${out}" >> "$seqres.full" 2>&1
-+echo "${out}"
-+
-+echo "Remount and try CoW again"
-+_scratch_remount
-+
-+out="$(_pwrite_byte 0x62 0 $((BLKSZ * NR_BLKS)) "$TESTDIR/bigfile" -d 2>&1)"
-+echo "${out}" | grep -q "No space left on device" || echo "CoW should have failed with ENOSPC"
-+echo "${out}" >> "$seqres.full" 2>&1
-+echo "${out}"
-+
-+#filefrag -v $TESTDIR/bigfile
-+#filefrag -v $TESTDIR/clonefile
-+
-+echo "Check scratch fs"
-+umount "$SCRATCH_MNT"
-+_check_scratch_fs
++echo "remove orig from subdir and md5sum reflink copy:"
++rm $TESTDIR1/subdir/original_moved
++md5sum $TESTDIR1/subdir/copy_moved | _filter_test_dir
++rm -rf $TESTDIR1/subdir
 +
 +# success, all done
 +status=0
 +exit
-diff --git a/tests/generic/845.out b/tests/generic/845.out
+diff --git a/tests/generic/802.out b/tests/generic/802.out
 new file mode 100644
-index 0000000..d367a73
+index 0000000..c20e16e
 --- /dev/null
-+++ b/tests/generic/845.out
-@@ -0,0 +1,10 @@
-+QA output created by 845
-+Format and mount
-+Reformat with appropriate size
-+Create a big file and reflink it
-+Allocate the rest of the space
-+CoW the big file
-+pwrite64: No space left on device
-+Remount and try CoW again
-+pwrite64: No space left on device
-+Check scratch fs
++++ b/tests/generic/802.out
+@@ -0,0 +1,7 @@
++QA output created by 802
++Create the original files and reflink dirs
++Move orig & reflink copy to subdir and md5sum:
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-802/subdir/original_moved
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-802/subdir/copy_moved
++remove orig from subdir and md5sum reflink copy:
++42d69d1a6d333a7ebdf64792a555e392  TEST_DIR/test-802/subdir/copy_moved
 diff --git a/tests/generic/group b/tests/generic/group
-index eef608f..e184473 100644
+index 1dd4269..d9421c5 100644
 --- a/tests/generic/group
 +++ b/tests/generic/group
-@@ -249,4 +249,8 @@
- 839 auto quick clone
- 840 clone_stress
- 841 clone_stress
-+842 auto quick clone
-+843 auto quick clone
-+844 auto quick clone
-+845 auto quick clone
- 846 auto quick clone
+@@ -208,3 +208,6 @@
+ 323 auto aio stress
+ 324 auto fsr quick
+ 325 auto quick data log
++800 auto quick clone
++801 auto quick clone
++802 auto quick clone
 

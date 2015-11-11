@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34777 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752517AbbKKT1q (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:22478 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752697AbbKKT1I (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Nov 2015 14:27:46 -0500
-Subject: [PATCH 07/11] reflink: test accuracy of free block counts
+	Wed, 11 Nov 2015 14:27:08 -0500
+Subject: [PATCH 02/11] generic/80[0-2]: support xfs in addition to btrfs
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: hch@infradead.org, david@fromorbit.com, darrick.wong@oracle.com
 Cc: fstests@vger.kernel.org, xfs@oss.sgi.com, tao.peng@primarydata.com,
         linux-ext4@vger.kernel.org, Anna.Schumaker@netapp.com,
         linux-btrfs@vger.kernel.org
-Date: Wed, 11 Nov 2015 11:27:17 -0800
-Message-ID: <20151111192717.15056.86798.stgit@birch.djwong.org>
+Date: Wed, 11 Nov 2015 11:26:42 -0800
+Message-ID: <20151111192642.15056.75362.stgit@birch.djwong.org>
 In-Reply-To: <20151111192628.15056.6451.stgit@birch.djwong.org>
 References: <20151111192628.15056.6451.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -19,959 +19,369 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Check that the free block counts seem to be handled correctly in
-the reflink operation and subsequent attempts to rewrite reflinked
-copies.
+Modify the reflink tests to support xfs.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/generic/830     |   78 ++++++++++++++++++++++++++++++
- tests/generic/830.out |    4 ++
- tests/generic/831     |   98 +++++++++++++++++++++++++++++++++++++
- tests/generic/831.out |    8 +++
- tests/generic/832     |  103 +++++++++++++++++++++++++++++++++++++++
- tests/generic/832.out |    8 +++
- tests/generic/833     |  102 +++++++++++++++++++++++++++++++++++++++
- tests/generic/833.out |    8 +++
- tests/generic/834     |  110 ++++++++++++++++++++++++++++++++++++++++++
- tests/generic/834.out |   11 ++++
- tests/generic/835     |  114 +++++++++++++++++++++++++++++++++++++++++++
- tests/generic/835.out |   11 ++++
- tests/generic/836     |  129 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/836.out |   32 ++++++++++++
- tests/generic/group   |    7 +++
- 15 files changed, 823 insertions(+)
- create mode 100755 tests/generic/830
- create mode 100644 tests/generic/830.out
- create mode 100755 tests/generic/831
- create mode 100644 tests/generic/831.out
- create mode 100755 tests/generic/832
- create mode 100644 tests/generic/832.out
- create mode 100755 tests/generic/833
- create mode 100644 tests/generic/833.out
- create mode 100755 tests/generic/834
- create mode 100644 tests/generic/834.out
- create mode 100755 tests/generic/835
- create mode 100644 tests/generic/835.out
- create mode 100755 tests/generic/836
- create mode 100644 tests/generic/836.out
+ common/rc         |   42 ++++++------
+ common/reflink    |  179 +++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/029   |    1 
+ tests/btrfs/031   |    1 
+ tests/btrfs/108   |    1 
+ tests/btrfs/109   |    1 
+ tests/generic/800 |    3 +
+ tests/generic/801 |    3 +
+ tests/generic/802 |    3 +
+ 9 files changed, 210 insertions(+), 24 deletions(-)
+ create mode 100644 common/reflink
 
 
-diff --git a/tests/generic/830 b/tests/generic/830
-new file mode 100755
-index 0000000..d85bacf
---- /dev/null
-+++ b/tests/generic/830
-@@ -0,0 +1,78 @@
-+#! /bin/bash
-+# FS QA Test No. 830
-+#
-+# Ensure that reflinking a file N times doesn't eat a lot of blocks
-+#   - Create a file and record fs block usage
-+#   - Create some reflink copies
-+#   - Compare fs block usage to before
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
+diff --git a/common/rc b/common/rc
+index adf1edf..c016673 100644
+--- a/common/rc
++++ b/common/rc
+@@ -82,6 +82,27 @@ _md5_checksum()
+ 	md5sum $1 | cut -d ' ' -f1
+ }
+ 
++# Write a byte into a range of a file
++_pwrite_byte() {
++	pattern="$1"
++	offset="$2"
++	len="$3"
++	file="$4"
++	xfs_io_args="$5"
 +
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
++	"$XFS_IO_PROG" $xfs_io_args -f -c "pwrite -S $pattern $offset $len" "$file"
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
++# mmap-write a byte into a range of a file
++_mwrite_byte() {
++	pattern="$1"
++	offset="$2"
++	len="$3"
++	mmap_len="$4"
++	file="$5"
 +
-+# real QA test starts here
-+_supported_os Linux
-+_require_test_reflink
-+_require_cp_reflink
-+
-+rm -f "$seqres.full"
-+
-+TESTDIR="$TEST_DIR/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Create the original file blocks"
-+BLKSZ="$(stat -f $TESTDIR -c '%S')"
-+BLKS=2000
-+MARGIN=100
-+SZ=$((BLKSZ * BLKS))
-+NR=7
-+_pwrite_byte 0x61 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+sync
-+FREE_BLOCKS0=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Create the reflink copies"
-+for i in `seq 2 $NR`; do
-+	_cp_reflink "$TESTDIR/file1" "$TESTDIR/file.$i"
-+done
-+_test_remount
-+FREE_BLOCKS1=$(stat -f "$TESTDIR" -c '%f')
-+
-+_within_tolerance "free blocks after reflink" $FREE_BLOCKS1 $FREE_BLOCKS0 $MARGIN -v
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/830.out b/tests/generic/830.out
++	"$XFS_IO_PROG" -f -c "mmap -rw 0 $mmap_len" -c "pwrite -S $pattern $offset $len" "$file"
++}
+ 
+ # ls -l w/ selinux sometimes puts a dot at the end:
+ # -rwxrw-r--. id1 id2 file1
+@@ -2569,12 +2590,6 @@ _require_ugid_map()
+ 	fi
+ }
+ 
+-_require_cp_reflink()
+-{
+-       cp --help | grep -q reflink || \
+-               _notrun "This test requires a cp with --reflink support."
+-}
+-
+ _require_fssum()
+ {
+ 	FSSUM_PROG=$here/src/fssum
+@@ -2588,21 +2603,6 @@ _require_cloner()
+ 		_notrun "cloner binary not present at $CLONER_PROG"
+ }
+ 
+-# Given 2 files, verify that they have the same mapping but different
+-# inodes - i.e. an undisturbed reflink
+-# Silent if so, make noise if not
+-_verify_reflink()
+-{
+-       # not a hard link or symlink?
+-       cmp -s  <(stat -c '%i' $1) <(stat -c '%i' $2) \
+-               && echo "$1 and $2 are not reflinks: same inode number"
+-
+-       # same mapping?
+-       diff -u <($XFS_IO_PROG -c "fiemap" $1 | grep -v $1) \
+-               <($XFS_IO_PROG -c "fiemap" $2 | grep -v $2) \
+-               || echo "$1 and $2 are not reflinks: different extents"
+-}
+-
+ _require_atime()
+ {
+ 	if [ "$FSTYP" == "nfs" ]; then
+diff --git a/common/reflink b/common/reflink
 new file mode 100644
-index 0000000..76e2f1d
+index 0000000..d65816b
 --- /dev/null
-+++ b/tests/generic/830.out
-@@ -0,0 +1,4 @@
-+QA output created by 830
-+Create the original file blocks
-+Create the reflink copies
-+free blocks after reflink is in range
-diff --git a/tests/generic/831 b/tests/generic/831
-new file mode 100755
-index 0000000..d729769
---- /dev/null
-+++ b/tests/generic/831
-@@ -0,0 +1,98 @@
-+#! /bin/bash
-+# FS QA Test No. 831
-+#
-+# Ensure that deleting all copies of a file reflinked N times releases the blocks
-+#   - Record fs block usage (0)
-+#   - Create a file and some reflink copies
-+#   - Record fs block usage (1)
-+#   - Delete some copies of the file
-+#   - Record fs block usage (2)
-+#   - Delete all copies of the file
-+#   - Compare fs block usage to (2), (1), and (0)
-+#
++++ b/common/reflink
+@@ -0,0 +1,179 @@
++##/bin/bash
++# Routines for reflinking, deduping, and comparing parts of files.
 +#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
++#  Copyright (c) 2015 Oracle.  All Rights Reserved.
++#  This program is free software; you can redistribute it and/or modify
++#  it under the terms of the GNU General Public License as published by
++#  the Free Software Foundation; either version 2 of the License, or
++#  (at your option) any later version.
 +#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
++#  This program is distributed in the hope that it will be useful,
++#  but WITHOUT ANY WARRANTY; without even the implied warranty of
++#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
++#  GNU General Public License for more details.
 +#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
++#  You should have received a copy of the GNU General Public License
++#  along with this program; if not, write to the Free Software
++#  Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307
++#  USA
 +#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
++#  Contact information: Oracle Corporation, 500 Oracle Parkway,
++#  Redwood Shores, CA 94065, USA, or: http://www.oracle.com/
 +#-----------------------------------------------------------------------
 +
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++# Check that cp has a reflink argument
++_require_cp_reflink()
 +{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
++       cp --help | grep -q reflink || \
++               _notrun "This test requires a cp with --reflink support."
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_test_reflink
-+_require_cp_reflink
-+
-+rm -f "$seqres.full"
-+
-+TESTDIR="$TEST_DIR/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Create the original file blocks"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+BLKS=2000
-+MARGIN=100
-+SZ=$((BLKSZ * BLKS))
-+FREE_BLOCKS0=$(stat -f "$TESTDIR" -c '%f')
-+NR=7
-+_pwrite_byte 0x61 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+sync
-+
-+echo "Create the reflink copies"
-+for i in `seq 2 $NR`; do
-+	_cp_reflink "$TESTDIR/file1" "$TESTDIR/file.$i"
-+done
-+_cp_reflink "$TESTDIR/file1" "$TESTDIR/survivor"
-+_test_remount
-+FREE_BLOCKS1=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Delete most of the files"
-+rm -rf "$TESTDIR"/file*
-+_test_remount
-+FREE_BLOCKS2=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Delete all the files"
-+rm -rf "$TESTDIR"/*
-+_test_remount
-+FREE_BLOCKS3=$(stat -f "$TESTDIR" -c '%f')
-+#echo $FREE_BLOCKS0 $FREE_BLOCKS1 $FREE_BLOCKS2 $FREE_BLOCKS3
-+
-+_within_tolerance "free blocks after reflink" $FREE_BLOCKS1 $((FREE_BLOCKS0 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after deleting some reflink copies" $FREE_BLOCKS2 $FREE_BLOCKS1 $MARGIN -v
-+
-+_within_tolerance "free blocks after deleting all copies" $FREE_BLOCKS3 $FREE_BLOCKS0 $MARGIN -v
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/831.out b/tests/generic/831.out
-new file mode 100644
-index 0000000..88e0a23
---- /dev/null
-+++ b/tests/generic/831.out
-@@ -0,0 +1,8 @@
-+QA output created by 831
-+Create the original file blocks
-+Create the reflink copies
-+Delete most of the files
-+Delete all the files
-+free blocks after reflink is in range
-+free blocks after deleting some reflink copies is in range
-+free blocks after deleting all copies is in range
-diff --git a/tests/generic/832 b/tests/generic/832
-new file mode 100755
-index 0000000..4f12b77
---- /dev/null
-+++ b/tests/generic/832
-@@ -0,0 +1,103 @@
-+#! /bin/bash
-+# FS QA Test No. 832
-+#
-+# Ensure that punching all copies of a file reflinked N times releases the blocks
-+#   - Record fs block usage (0)
-+#   - Create a file and some reflink copies
-+#   - Record fs block usage (1)
-+#   - Punch some blocks of the copies
-+#   - Record fs block usage (2)
-+#   - Punch all blocks of the copies
-+#   - Compare fs block usage to (2), (1), and (0)
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++# Given 2 files, verify that they have the same mapping but different
++# inodes - i.e. an undisturbed reflink
++# Silent if so, make noise if not
++_verify_reflink()
 +{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
++       # not a hard link or symlink?
++       cmp -s  <(stat -c '%i' $1) <(stat -c '%i' $2) \
++               && echo "$1 and $2 are not reflinks: same inode number"
++
++       # same mapping?
++       diff -u <($XFS_IO_PROG -c "fiemap" $1 | grep -v $1) \
++               <($XFS_IO_PROG -c "fiemap" $2 | grep -v $2) \
++               || echo "$1 and $2 are not reflinks: different extents"
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
++# New reflink/dedupe helpers
 +
-+# real QA test starts here
-+_supported_os Linux
-+_require_test_reflink
-+_require_cp_reflink
-+_require_xfs_io_command "fpunch"
-+
-+rm -f "$seqres.full"
-+
-+TESTDIR="$TEST_DIR/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Create the original file blocks"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+BLKS=2000
-+MARGIN=100
-+SZ=$((BLKSZ * BLKS))
-+FREE_BLOCKS0=$(stat -f "$TESTDIR" -c '%f')
-+NR=4
-+_pwrite_byte 0x61 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+sync
-+
-+echo "Create the reflink copies"
-+for i in `seq 2 $NR`; do
-+	_cp_reflink "$TESTDIR/file1" "$TESTDIR/file$i"
-+done
-+_test_remount
-+FREE_BLOCKS1=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Punch most of the blocks"
-+"$XFS_IO_PROG" -f -c "fpunch 0 $SZ" "$TESTDIR/file2"
-+"$XFS_IO_PROG" -f -c "fpunch 0 $((SZ / 2))" "$TESTDIR/file3"
-+"$XFS_IO_PROG" -f -c "fpunch $((SZ / 2)) $((SZ / 2))" "$TESTDIR/file4"
-+_test_remount
-+FREE_BLOCKS2=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Punch all the files"
-+for i in `seq 2 $NR`; do
-+	"$XFS_IO_PROG" -f -c "fpunch 0 $SZ" "$TESTDIR/file$i"
-+done
-+"$XFS_IO_PROG" -f -c "fpunch 0 $SZ" "$TESTDIR/file1"
-+_test_remount
-+FREE_BLOCKS3=$(stat -f "$TESTDIR" -c '%f')
-+#echo $FREE_BLOCKS0 $FREE_BLOCKS1 $FREE_BLOCKS2 $FREE_BLOCKS3
-+
-+_within_tolerance "free blocks after reflink" $FREE_BLOCKS1 $((FREE_BLOCKS0 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after punching some reflink copies" $FREE_BLOCKS2 $FREE_BLOCKS1 $MARGIN -v
-+
-+_within_tolerance "free blocks after punching all copies" $FREE_BLOCKS3 $FREE_BLOCKS0 $MARGIN -v
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/832.out b/tests/generic/832.out
-new file mode 100644
-index 0000000..bb95578
---- /dev/null
-+++ b/tests/generic/832.out
-@@ -0,0 +1,8 @@
-+QA output created by 832
-+Create the original file blocks
-+Create the reflink copies
-+Punch most of the blocks
-+Punch all the files
-+free blocks after reflink is in range
-+free blocks after punching some reflink copies is in range
-+free blocks after punching all copies is in range
-diff --git a/tests/generic/833 b/tests/generic/833
-new file mode 100755
-index 0000000..07dfabf
---- /dev/null
-+++ b/tests/generic/833
-@@ -0,0 +1,102 @@
-+#! /bin/bash
-+# FS QA Test No. 833
-+#
-+# Ensure that collapse-range on all copies of a file reflinked N times releases the blocks
-+#   - Record fs block usage (0)
-+#   - Create a file and some reflink copies
-+#   - Record fs block usage (1)
-+#   - Collapse-range some blocks of the copies
-+#   - Record fs block usage (2)
-+#   - Truncate all blocks of the copies
-+#   - Compare fs block usage to (2), (1), and (0)
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++# this test requires the test fs support reflink...
++_require_test_reflink()
 +{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
++	_require_test
++	_require_xfs_io_command "reflink"
++
++	rm -rf "$TEST_DIR/file1" "$TEST_DIR/file2"
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$TEST_DIR/file1" > /dev/null
++	"$XFS_IO_PROG" -f -c "reflink $TEST_DIR/file1 0 0 65536" "$TEST_DIR/file2" > /dev/null
++	if [ ! -s "$TEST_DIR/file2" ]; then
++		rm -rf "$TEST_DIR/file1" "$TEST_DIR/file2"
++		_notrun "Reflink not supported by test filesystem type: $FSTYP"
++	fi
++	rm -rf "$TEST_DIR/file1" "$TEST_DIR/file2"
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_test_reflink
-+_require_cp_reflink
-+_require_xfs_io_command "fcollapse"
-+
-+rm -f "$seqres.full"
-+
-+TESTDIR="$TEST_DIR/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Create the original file blocks"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+BLKS=2000
-+MARGIN=100
-+SZ=$((BLKSZ * BLKS))
-+FREE_BLOCKS0=$(stat -f "$TESTDIR" -c '%f')
-+NR=4
-+_pwrite_byte 0x61 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+_test_remount
-+
-+echo "Create the reflink copies"
-+for i in `seq 2 $NR`; do
-+	_cp_reflink "$TESTDIR/file1" "$TESTDIR/file$i"
-+done
-+_test_remount
-+FREE_BLOCKS1=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Collapse most of the blocks"
-+"$XFS_IO_PROG" -f -c "fcollapse 0 $(((BLKS - 1) * BLKSZ))" $TESTDIR/file2
-+"$XFS_IO_PROG" -f -c "fcollapse 0 $((SZ / 2))" $TESTDIR/file3
-+"$XFS_IO_PROG" -f -c "fcollapse $((SZ / 2)) $(( ((BLKS / 2) - 1) * BLKSZ))" $TESTDIR/file4
-+_test_remount
-+FREE_BLOCKS2=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Collpase nearly all the files"
-+"$XFS_IO_PROG" -f -c "fcollapse 0 $(( ((BLKS / 2) - 1) * BLKSZ))" $TESTDIR/file3
-+"$XFS_IO_PROG" -f -c "fcollapse 0 $((SZ / 2))" $TESTDIR/file4
-+"$XFS_IO_PROG" -f -c "fcollapse 0 $(( (BLKS - 1) * BLKSZ))" $TESTDIR/file1
-+_test_remount
-+FREE_BLOCKS3=$(stat -f "$TESTDIR" -c '%f')
-+#echo $FREE_BLOCKS0 $FREE_BLOCKS1 $FREE_BLOCKS2 $FREE_BLOCKS3
-+
-+_within_tolerance "free blocks after reflink" $FREE_BLOCKS1 $((FREE_BLOCKS0 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after fcollapsing some reflink copies" $FREE_BLOCKS2 $FREE_BLOCKS1 $MARGIN -v
-+
-+_within_tolerance "free blocks after fcollapsing all copies" $FREE_BLOCKS3 $FREE_BLOCKS0 $MARGIN -v
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/833.out b/tests/generic/833.out
-new file mode 100644
-index 0000000..a9a2941
---- /dev/null
-+++ b/tests/generic/833.out
-@@ -0,0 +1,8 @@
-+QA output created by 833
-+Create the original file blocks
-+Create the reflink copies
-+Collapse most of the blocks
-+Collpase nearly all the files
-+free blocks after reflink is in range
-+free blocks after fcollapsing some reflink copies is in range
-+free blocks after fcollapsing all copies is in range
-diff --git a/tests/generic/834 b/tests/generic/834
-new file mode 100755
-index 0000000..d24dfa5
---- /dev/null
-+++ b/tests/generic/834
-@@ -0,0 +1,110 @@
-+#! /bin/bash
-+# FS QA Test No. 834
-+#
-+# Ensure that CoW on all copies of a file reflinked N times increases block count
-+#   - Record fs block usage (0)
-+#   - Create a file and some reflink copies
-+#   - Record fs block usage (1)
-+#   - CoW some blocks of the copies
-+#   - Record fs block usage (2)
-+#   - CoW all the rest of the blocks of the copies
-+#   - Compare fs block usage to (2), (1), and (0)
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename $0`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++# this test requires the scratch fs support reflink...
++_require_scratch_reflink()
 +{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
++	_require_scratch
++	_require_xfs_io_command "reflink"
++
++	_scratch_mkfs > /dev/null
++	_scratch_mount
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$SCRATCH_MNT/file1" > /dev/null
++	"$XFS_IO_PROG" -f -c "reflink $SCRATCH_MNT/file1 0 0 65536" "$SCRATCH_MNT/file2" > /dev/null
++	if [ ! -s "$SCRATCH_MNT/file2" ]; then
++		_scratch_unmount
++		_notrun "Reflink not supported by scratch filesystem type: $FSTYP"
++	fi
++	_scratch_unmount
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_test_reflink
-+_require_cp_reflink
-+
-+rm -f "$seqres.full"
-+
-+TESTDIR="$TEST_DIR/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Create the original file blocks"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+BLKS=2000
-+MARGIN=100
-+FREE_BLOCKS0=$(stat -f "$TESTDIR" -c '%f')
-+NR=4
-+SZ=$((BLKS * BLKSZ))
-+_pwrite_byte 0x61 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+_test_remount
-+
-+echo "Create the reflink copies"
-+for i in `seq 2 $NR`; do
-+	_cp_reflink "$TESTDIR/file1" "$TESTDIR/file$i"
-+done
-+_test_remount
-+FREE_BLOCKS1=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Rewrite some of the blocks"
-+_pwrite_byte 0x62 0 $SZ "$TESTDIR/file2" >> "$seqres.full"
-+_pwrite_byte 0x63 0 $((SZ / 2)) "$TESTDIR/file3" >> "$seqres.full"
-+_pwrite_byte 0x64 $((SZ / 2)) $((SZ / 2)) "$TESTDIR/file4" >> "$seqres.full"
-+_test_remount
-+FREE_BLOCKS2=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Rewrite all the files"
-+_pwrite_byte 0x62 0 $SZ "$TESTDIR/file2" >> "$seqres.full"
-+_pwrite_byte 0x63 0 $SZ "$TESTDIR/file3" >> "$seqres.full"
-+_pwrite_byte 0x64 0 $SZ "$TESTDIR/file4" >> "$seqres.full"
-+_test_remount
-+FREE_BLOCKS3=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Rewrite the original file"
-+_pwrite_byte 0x65 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+_test_remount
-+FREE_BLOCKS4=$(stat -f "$TESTDIR" -c '%f')
-+#echo $FREE_BLOCKS0 $FREE_BLOCKS1 $FREE_BLOCKS2 $FREE_BLOCKS3 $FREE_BLOCKS4
-+
-+_within_tolerance "free blocks after reflinking" $FREE_BLOCKS1 $((FREE_BLOCKS0 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after partially CoWing some copies" $FREE_BLOCKS2 $((FREE_BLOCKS1 - (2 * BLKS))) $MARGIN -v
-+
-+_within_tolerance "free blocks after CoWing all copies" $FREE_BLOCKS3 $((FREE_BLOCKS2 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after overwriting original" $FREE_BLOCKS4 $FREE_BLOCKS3 $MARGIN -v
-+
-+_within_tolerance "free blocks after all tests" $FREE_BLOCKS4 $((FREE_BLOCKS0 - (4 * BLKS))) $MARGIN -v
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/834.out b/tests/generic/834.out
-new file mode 100644
-index 0000000..e67e803
---- /dev/null
-+++ b/tests/generic/834.out
-@@ -0,0 +1,11 @@
-+QA output created by 834
-+Create the original file blocks
-+Create the reflink copies
-+Rewrite some of the blocks
-+Rewrite all the files
-+Rewrite the original file
-+free blocks after reflinking is in range
-+free blocks after partially CoWing some copies is in range
-+free blocks after CoWing all copies is in range
-+free blocks after overwriting original is in range
-+free blocks after all tests is in range
-diff --git a/tests/generic/835 b/tests/generic/835
-new file mode 100755
-index 0000000..881063b
---- /dev/null
-+++ b/tests/generic/835
-@@ -0,0 +1,114 @@
-+#! /bin/bash
-+# FS QA Test No. 835
-+#
-+# Ensure that CoW on all copies of a file reflinked N times increases block count
-+#   - Record fs block usage (0)
-+#   - Create a file and some reflink copies
-+#   - Record fs block usage (1)
-+#   - CoW some blocks of the copies
-+#   - Record fs block usage (2)
-+#   - CoW all the rest of the blocks of the copies
-+#   - Compare fs block usage to (2), (1), and (0)
-+#
-+# The main difference from 834 is that we use zero range, directio, and
-+# mmap to mix things up a bit.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++# this test requires the test fs support dedupe...
++_require_test_dedupe()
 +{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
++	_require_test
++	_require_xfs_io_command "dedupe"
++
++	rm -rf "$TEST_DIR/file1" "$TEST_DIR/file2"
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$TEST_DIR/file1" > /dev/null
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$TEST_DIR/file2" > /dev/null
++	testio="$("$XFS_IO_PROG" -f -c "dedupe $TEST_DIR/file1 0 0 65536" "$TEST_DIR/file2" 2>&1)"
++	echo $testio | grep -q "Operation not supported" && \
++		_notrun "Dedupe not supported by test filesystem type: $FSTYP"
++	rm -rf "$TEST_DIR/file1" "$TEST_DIR/file2"
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_test_reflink
-+_require_cp_reflink
-+_require_xfs_io_command "fzero"
-+
-+rm -f "$seqres.full"
-+
-+TESTDIR=$TEST_DIR/test-$seq
-+rm -rf $TESTDIR
-+mkdir $TESTDIR
-+
-+echo "Create the original file blocks"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+BLKS=2000
-+MARGIN=100
-+SZ=$((BLKSZ * BLKS))
-+FREE_BLOCKS0=$(stat -f "$TESTDIR" -c '%f')
-+NR=4
-+_pwrite_byte 0x61 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+_test_remount
-+
-+echo "Create the reflink copies"
-+for i in `seq 2 $NR`; do
-+	_cp_reflink "$TESTDIR/file1" "$TESTDIR/file$i"
-+done
-+_test_remount
-+FREE_BLOCKS1=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Rewrite some of the blocks"
-+"$XFS_IO_PROG" -f -c "fzero 0 $SZ" "$TESTDIR/file2" >> "$seqres.full"
-+_pwrite_byte 0x63 0 $((SZ / 2)) "$TESTDIR/file3" -d >> "$seqres.full"
-+_mwrite_byte 0x64 $((SZ / 2)) $((SZ / 2)) $SZ "$TESTDIR/file4" >> "$seqres.full"
-+_test_remount
-+FREE_BLOCKS2=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Rewrite all the files"
-+_pwrite_byte 0x62 0 $SZ "$TESTDIR/file2" -d >> "$seqres.full"
-+_mwrite_byte 0x63 0 $SZ $SZ "$TESTDIR/file3" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "fzero 0 $SZ" $TESTDIR/file4 >> "$seqres.full"
-+_test_remount
-+FREE_BLOCKS3=$(stat -f "$TESTDIR" -c '%f')
-+
-+echo "Rewrite the original file"
-+_pwrite_byte 0x65 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+_test_remount
-+FREE_BLOCKS4=$(stat -f "$TESTDIR" -c '%f')
-+#echo $FREE_BLOCKS0 $FREE_BLOCKS1 $FREE_BLOCKS2 $FREE_BLOCKS3 $FREE_BLOCKS4
-+
-+_within_tolerance "free blocks after reflinking" $FREE_BLOCKS1 $((FREE_BLOCKS0 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after partially CoWing some copies" $FREE_BLOCKS2 $((FREE_BLOCKS1 - (2 * BLKS))) $MARGIN -v
-+
-+_within_tolerance "free blocks after CoWing all copies" $FREE_BLOCKS3 $((FREE_BLOCKS2 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after overwriting original" $FREE_BLOCKS4 $FREE_BLOCKS3 $MARGIN -v
-+
-+_within_tolerance "free blocks after all tests" $FREE_BLOCKS4 $((FREE_BLOCKS0 - (4 * BLKS))) $MARGIN -v
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/835.out b/tests/generic/835.out
-new file mode 100644
-index 0000000..c1103be
---- /dev/null
-+++ b/tests/generic/835.out
-@@ -0,0 +1,11 @@
-+QA output created by 835
-+Create the original file blocks
-+Create the reflink copies
-+Rewrite some of the blocks
-+Rewrite all the files
-+Rewrite the original file
-+free blocks after reflinking is in range
-+free blocks after partially CoWing some copies is in range
-+free blocks after CoWing all copies is in range
-+free blocks after overwriting original is in range
-+free blocks after all tests is in range
-diff --git a/tests/generic/836 b/tests/generic/836
-new file mode 100755
-index 0000000..2e0639f
---- /dev/null
-+++ b/tests/generic/836
-@@ -0,0 +1,129 @@
-+#! /bin/bash
-+# FS QA Test No. 836
-+#
-+# Ensure that fallocate on reflinked files actually CoWs the shared blocks.
-+#   - Record fs block usage (0)
-+#   - Create a file and some reflink copies
-+#   - Record fs block usage (1)
-+#   - funshare half of one of the copies
-+#   - Record fs block usage (2)
-+#   - funshare all of the copies
-+#   - Record fs block usage (3)
-+#   - rewrite the original file
-+#   - Record fs block usage (4)
-+#   - Compare fs block usage of 0-4 to ensure that block usage behaves as
-+#     we expect.
-+#
-+# "funshare" refers to fallocate copy-on-writing the shared blocks
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
++# this test requires the scratch fs support dedupe...
++_require_scratch_dedupe()
 +{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
++	_require_scratch
++	_require_xfs_io_command "dedupe"
++
++	_scratch_mkfs > /dev/null
++	_scratch_mount
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$SCRATCH_MNT/file1" > /dev/null
++	"$XFS_IO_PROG" -f -c "pwrite -S 0x61 0 65536" "$SCRATCH_MNT/file2" > /dev/null
++	testio="$("$XFS_IO_PROG" -f -c "dedupe $TEST_DIR/file1 0 0 65536" "$TEST_DIR/file2" 2>&1)"
++	echo $testio | grep -q "Operation not supported" && \
++		_notrun "Dedupe not supported by test filesystem type: $FSTYP"
++	_scratch_unmount
 +}
 +
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/attr
++# Prints a range of a file as a hex dump
++_read_range() {
++	file="$1"
++	offset="$2"
++	len="$3"
++	xfs_io_args="$4"
++
++	$XFS_IO_PROG $xfs_io_args -f -c "pread -q -v $offset $len" "$file" | cut -d ' ' -f '3-18'
++}
++
++# Compare ranges of two files
++_compare_range() {
++	file1="$1"
++	offset1="$2"
++	file2="$3"
++	offset2="$4"
++	len="$5"
++
++	cmp -s <(_read_range "$file1" "$offset1" "$len") \
++	       <(_read_range "$file2" "$offset2" "$len")
++}
++
++# Prints the md5 checksum of a hexdump of a part of a given file
++_md5_range_checksum() {
++	file="$1"
++	offset="$2"
++	len="$3"
++
++	md5sum <(_read_range "$file" "$offset" "$len") | cut -d ' ' -f 1
++}
++
++# Reflink some file1 into file2 via cp
++_cp_reflink() {
++	file1="$1"
++	file2="$2"
++
++	cp --reflink=always "$file1" "$file2"
++}
++
++# Reflink some file1 into file2
++_reflink() {
++	file1="$1"
++	file2="$2"
++
++	"$XFS_IO_PROG" -f -c "reflink $file1" "$file2"
++}
++
++# Reflink some part of file1 into another part of file2
++_reflink_range() {
++	file1="$1"
++	offset1="$2"
++	file2="$3"
++	offset2="$4"
++	len="$5"
++
++	"$XFS_IO_PROG" -f -c "reflink $file1 $offset1 $offset2 $len" "$file2"
++}
++
++# Dedupe some part of file1 into another part of file2
++_dedupe_range() {
++	file1="$1"
++	offset1="$2"
++	file2="$3"
++	offset2="$4"
++	len="$5"
++
++	"$XFS_IO_PROG" -f -c "dedupe $file1 $offset1 $offset2 $len" "$file2"
++}
+diff --git a/tests/btrfs/029 b/tests/btrfs/029
+index 0b77b33..175317a 100755
+--- a/tests/btrfs/029
++++ b/tests/btrfs/029
+@@ -47,6 +47,7 @@ _cleanup()
+ # get standard environment, filters and checks
+ . ./common/rc
+ . ./common/filter
 +. ./common/reflink
-+
-+if [ $FSTYP = "btrfs" ]; then
-+	_notrun "btrfs doesn't handle unshare on fallocate"
-+fi
-+
-+# real QA test starts here
-+_supported_os Linux
+ 
+ # real QA test starts here
+ _supported_fs btrfs
+diff --git a/tests/btrfs/031 b/tests/btrfs/031
+index bcd332c..c5763da 100755
+--- a/tests/btrfs/031
++++ b/tests/btrfs/031
+@@ -48,6 +48,7 @@ _cleanup()
+ # get standard environment, filters and checks
+ . ./common/rc
+ . ./common/filter
++. ./common/reflink
+ 
+ # real QA test starts here
+ _supported_fs btrfs
+diff --git a/tests/btrfs/108 b/tests/btrfs/108
+index 5e3a403..18e5b99 100755
+--- a/tests/btrfs/108
++++ b/tests/btrfs/108
+@@ -41,6 +41,7 @@ _cleanup()
+ # get standard environment, filters and checks
+ . ./common/rc
+ . ./common/filter
++. ./common/reflink
+ 
+ # real QA test starts here
+ _supported_fs btrfs
+diff --git a/tests/btrfs/109 b/tests/btrfs/109
+index e2aeb73..b86336c 100755
+--- a/tests/btrfs/109
++++ b/tests/btrfs/109
+@@ -41,6 +41,7 @@ _cleanup()
+ # get standard environment, filters and checks
+ . ./common/rc
+ . ./common/filter
++. ./common/reflink
+ 
+ # real QA test starts here
+ _supported_fs btrfs
+diff --git a/tests/generic/800 b/tests/generic/800
+index a71f11a..1e73c33 100755
+--- a/tests/generic/800
++++ b/tests/generic/800
+@@ -43,9 +43,10 @@ _cleanup()
+ # get standard environment, filters and checks
+ . common/rc
+ . common/filter
++. common/reflink
+ 
+ # real QA test starts here
+-_supported_fs btrfs
 +_require_test_reflink
-+_require_cp_reflink
-+_require_xfs_io_command "falloc"
-+
-+rm -f "$seqres.full"
-+
-+TESTDIR="$TEST_DIR/test-$seq"
-+rm -rf "$TESTDIR"
-+mkdir "$TESTDIR"
-+
-+echo "Create the original file blocks"
-+BLKSZ="$(stat -f "$TESTDIR" -c '%S')"
-+BLKS=2000
-+MARGIN=100
-+SZ=$((BLKSZ * BLKS))
-+FREE_BLOCKS0=$(stat -f "$TESTDIR" -c '%f')
-+NR=4
-+_pwrite_byte 0x61 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+_test_remount
-+
-+echo "Create the reflink copies"
-+for i in `seq 2 $NR`; do
-+	_cp_reflink "$TESTDIR/file1" "$TESTDIR/file$i"
-+done
-+_test_remount
-+FREE_BLOCKS1=$(stat -f "$TESTDIR" -c '%f')
-+lsattr -l $TESTDIR/ | _filter_test_dir
-+
-+echo "funshare part of a file"
-+"$XFS_IO_PROG" -f -c "falloc 0 $((SZ / 2))" "$TESTDIR/file2"
-+_test_remount
-+lsattr -l $TESTDIR/ | _filter_test_dir
-+
-+echo "funshare some of the copies"
-+"$XFS_IO_PROG" -f -c "falloc 0 $SZ" "$TESTDIR/file2"
-+"$XFS_IO_PROG" -f -c "falloc 0 $SZ" "$TESTDIR/file3"
-+_test_remount
-+FREE_BLOCKS2=$(stat -f "$TESTDIR" -c '%f')
-+lsattr -l $TESTDIR/ | _filter_test_dir
-+
-+echo "funshare the rest of the files"
-+"$XFS_IO_PROG" -f -c "falloc 0 $SZ" "$TESTDIR/file4"
-+"$XFS_IO_PROG" -f -c "falloc 0 $SZ" "$TESTDIR/file1"
-+_test_remount
-+FREE_BLOCKS3=$(stat -f "$TESTDIR" -c '%f')
-+lsattr -l $TESTDIR/ | _filter_test_dir
-+
-+echo "Rewrite the original file"
-+_pwrite_byte 0x65 0 $SZ "$TESTDIR/file1" >> "$seqres.full"
-+_test_remount
-+FREE_BLOCKS4=$(stat -f "$TESTDIR" -c '%f')
-+lsattr -l $TESTDIR/ | _filter_test_dir
-+#echo $FREE_BLOCKS0 $FREE_BLOCKS1 $FREE_BLOCKS2 $FREE_BLOCKS3 $FREE_BLOCKS4
-+
-+_within_tolerance "free blocks after reflinking" $FREE_BLOCKS1 $((FREE_BLOCKS0 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after nocow'ing some copies" $FREE_BLOCKS2 $((FREE_BLOCKS1 - (2 * BLKS))) $MARGIN -v
-+
-+_within_tolerance "free blocks after nocow'ing all copies" $FREE_BLOCKS3 $((FREE_BLOCKS2 - BLKS)) $MARGIN -v
-+
-+_within_tolerance "free blocks after overwriting original" $FREE_BLOCKS4 $FREE_BLOCKS3 $MARGIN -v
-+
-+_within_tolerance "free blocks after all tests" $FREE_BLOCKS4 $((FREE_BLOCKS0 - (4 * BLKS))) $MARGIN -v
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/836.out b/tests/generic/836.out
-new file mode 100644
-index 0000000..45f7750
---- /dev/null
-+++ b/tests/generic/836.out
-@@ -0,0 +1,32 @@
-+QA output created by 836
-+Create the original file blocks
-+Create the reflink copies
-+TEST_DIR/test-836/file1          ---
-+TEST_DIR/test-836/file2          ---
-+TEST_DIR/test-836/file3          ---
-+TEST_DIR/test-836/file4          ---
-+funshare part of a file
-+TEST_DIR/test-836/file1          ---
-+TEST_DIR/test-836/file2          ---
-+TEST_DIR/test-836/file3          ---
-+TEST_DIR/test-836/file4          ---
-+funshare some of the copies
-+TEST_DIR/test-836/file1          ---
-+TEST_DIR/test-836/file2          No_COW
-+TEST_DIR/test-836/file3          No_COW
-+TEST_DIR/test-836/file4          ---
-+funshare the rest of the files
-+TEST_DIR/test-836/file1          No_COW
-+TEST_DIR/test-836/file2          No_COW
-+TEST_DIR/test-836/file3          No_COW
-+TEST_DIR/test-836/file4          No_COW
-+Rewrite the original file
-+TEST_DIR/test-836/file1          No_COW
-+TEST_DIR/test-836/file2          No_COW
-+TEST_DIR/test-836/file3          No_COW
-+TEST_DIR/test-836/file4          No_COW
-+free blocks after reflinking is in range
-+free blocks after nocow'ing some copies is in range
-+free blocks after nocow'ing all copies is in range
-+free blocks after overwriting original is in range
-+free blocks after all tests is in range
-diff --git a/tests/generic/group b/tests/generic/group
-index 0c137ea..9b57872 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -237,5 +237,12 @@
- 827 auto quick clone
- 828 auto quick clone
- 829 auto quick clone
-+830 auto quick clone
-+831 auto quick clone
-+832 auto quick clone
-+833 auto quick clone
-+834 auto quick clone
-+835 auto quick clone
-+836 auto quick clone
- 837 auto quick clone
- 838 auto quick clone
+ _supported_os Linux
+ 
+ _require_xfs_io_command "fiemap"
+diff --git a/tests/generic/801 b/tests/generic/801
+index b21c44b..2facea9 100755
+--- a/tests/generic/801
++++ b/tests/generic/801
+@@ -43,9 +43,10 @@ _cleanup()
+ # get standard environment, filters and checks
+ . common/rc
+ . common/filter
++. common/reflink
+ 
+ # real QA test starts here
+-_supported_fs btrfs
++_require_test_reflink
+ _supported_os Linux
+ 
+ _require_xfs_io_command "fiemap"
+diff --git a/tests/generic/802 b/tests/generic/802
+index afd8513..aaca2b4 100755
+--- a/tests/generic/802
++++ b/tests/generic/802
+@@ -41,9 +41,10 @@ _cleanup()
+ # get standard environment, filters and checks
+ . ./common/rc
+ . ./common/filter
++. ./common/reflink
+ 
+ # real QA test starts here
+-_supported_fs btrfs
++_require_test_reflink
+ _supported_os Linux
+ 
+ _require_xfs_io_command "fiemap"
 

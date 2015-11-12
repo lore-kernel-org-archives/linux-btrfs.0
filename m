@@ -1,111 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:38122 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751035AbbKLMdL (ORCPT
+Received: from mail-io0-f180.google.com ([209.85.223.180]:35431 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751680AbbKLMrY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 07:33:11 -0500
-Received: by igbxm8 with SMTP id xm8so39930350igb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 04:33:10 -0800 (PST)
+	Thu, 12 Nov 2015 07:47:24 -0500
+Received: by ioc74 with SMTP id 74so63390423ioc.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 04:47:24 -0800 (PST)
+Subject: Re: Potential to loose data in case of disk failure
+To: Sean Greenslade <sean@seangreenslade.com>,
+        Jim Murphy <srlinuxadmin@gmail.com>
+References: <CAKJi5fik1RsPQ7SA1P6=VmTwr06jrGFAA1cSWrVm0xoCrnhujA@mail.gmail.com>
+ <20151111202403.GA19245@wheatley.student.rit.edu>
+Cc: linux-btrfs@vger.kernel.org
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Subject: Re: illegal snapshot, cannot be deleted
-To: Vedran Vucic <vedran.vucic@gmail.com>, linux-btrfs@vger.kernel.org
-References: <CAHTEL3=r8kUJOU=xUAg2iG52HuWmqQ16QxUjY6d+zqbziW5+gw@mail.gmail.com>
-Message-ID: <564486F3.5020804@gmail.com>
-Date: Thu, 12 Nov 2015 07:32:51 -0500
+Message-ID: <56448A54.9020404@gmail.com>
+Date: Thu, 12 Nov 2015 07:47:16 -0500
 MIME-Version: 1.0
-In-Reply-To: <CAHTEL3=r8kUJOU=xUAg2iG52HuWmqQ16QxUjY6d+zqbziW5+gw@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060805080803050505030401"
+In-Reply-To: <20151111202403.GA19245@wheatley.student.rit.edu>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030205020904040303050903"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms060805080803050505030401
+--------------ms030205020904040303050903
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-11-11 17:11, Vedran Vucic wrote:
-> Hello,
+On 2015-11-11 15:24, Sean Greenslade wrote:
+> On Wed, Nov 11, 2015 at 11:30:57AM -0600, Jim Murphy wrote:
+>> Hi all,
+>>
+>> What am I missing or misunderstanding?  I have a newly
+>> purchased laptop I want/need to multi boot different OSs
+>> on.  As a result after partitioning I have ended up with two
+>> partitions on each of the two internal drives(sda3, sda8,
+>> sdb3 and sdb8).  FWIW, sda3 and sdb3 are the same size
+>> and sda8 and sdb8 are the same size.  As an end result
+>> I want one btrfs raid1 filesystem.  For lack of better terms,
+>> sda3 and sda8 "concatenated" together, sdb3 and sdb8
+>> "concatenated" together and then mirroring "sda" to "sdb"
+>> using only btrfs.  So far have found no use-case to cover
+>> this.
+>>
+>> If I create a raid1 btrfs volume using all 4 "devices" as I
+>> understand it I would loose data if I were to loose a drive
+>> because two mirror possibilities would be:
+>>
+>> sda3 mirrored to sda8
+>> sdb3 mirrored to sdb8
+>>
+>> Is what I want to do possible without using MD-RAID and/or
+>> LVM?  If so would someone point me to the documentation
+>> I missed.  For whatever reason, I don't want to believe that
+>> this can't be done.  I want to believe that the code in btrfs
+>> is smart enough to know that sda3 and sda8 are on the same
+>> drive and would not try to mirror data between them except in
+>> a test setup.  I hope  I just missed some documentation,
+>> somewhere.
+>>
+>> Thanks in advance for your help.  And last but not least,
+>> thanks to all for your work on btrfs.
+>>
+>> Jim
 >
-> I use OpenSuse 13.2 on my Toshiba Satellite laptop. I noticed that I ru=
-n
-> out of disk space, checked documentation and I realized that there were=
-
-> many snapshots.  I used Yast Snapper to delete snapshots.
-> I noticed that one snapshot  with number 748 could not be deleted.
-> I entered terminal and after the command:
-> snapper -c root delete 748
-> I got message Illegal snapshot.
-This sounds like some sort of issue with snapper, not BTRFS itself, but=20
-see below for some suggestions.
-> I woudl like to delete it since it is old one.
-> Please find details about my system as requested on your wiki page.
-> uname -a
-> Linux linux-jjcc.site 3.16.7-29-desktop #1 SMP PREEMPT Fri Oct 23 00:46=
-:04
-> UTC 2015 (6be6a97) i686 i686 i386 GNU/Linux
+> That's a pretty unusual setup, so I'm not surprised there's no quick an=
+d
+> easy answer. The best solution in my opinion would be to shuffle your
+> partitions around and combine sda3 and sda8 into a single partition.
+> There's generally no reason to present btrfs with two different
+> partitions on the same disk.
 >
-> btrfs --version
-> btrfs-progs v4.0+20150429
->
-> btrfs fi show
-> Label: none  uuid: d6934db3-3ac9-49d0-83db-287be7b995a5
->          Total devices 1 FS bytes used 10.98GiB
->          devid    1 size 18.71GiB used 18.71GiB path /dev/sda6
->
-> btrfs fi df /
-> Data, single: total=3D15.19GiB, used=3D10.37GiB
-> System, DUP: total=3D8.00MiB, used=3D16.00KiB
-> System, single: total=3D4.00MiB, used=3D0.00B
-> Metadata, DUP: total=3D1.75GiB, used=3D622.53MiB
-> Metadata, single: total=3D8.00MiB, used=3D0.00B
-> GlobalReserve, single: total=3D208.00MiB, used=3D0.00B
-> Please find attached dmesg.log as requested.
->
-> Please advise what have to do in order to delete snapshot that is repor=
-ted
-> to be illegal.
-Have you tried running 'btrfs subvolume delete' on the snapshot?  You'll =
+> If there's something that prevents you from doing that, you may be able=
 
-have to find the full path to it first of course, but that shouldn't be=20
-too hard.  Based on the lack of BTRFS error messages in the kernel log=20
-you posted, I'm pretty certain that this isn't an issue with the=20
-filesystem itself (although the filesystem doesn't look particularly=20
-healthy, see further below), so manually deleting the snapshot using the =
+> to use RAID10 or RAID6 somehow. I'm not really sure, though, so I'll
+> defer to others on the list for implementation details.
+RAID10 has the same issue.  Assume you have 1 block.  This gets stored=20
+as 2 copies, each with 2 stripes, with the stripes split symmetrically.=20
+  For this, call the first half of the first copy 1a, the second half=20
+1b, and likewise for 2a and 2b with the second copy.  1a and 2a have=20
+identical contents, and 1b and 2b have identical contents.  It is fully=20
+possible that you will end up with this block striped such that 1a and=20
+2a are on one disk, and 1b and 2b on the other.  Based on this, losing=20
+one disk would mean losing half the block, which would mean based on how =
 
-regular BTRFS commands should work just fine.  That said, you may also=20
-want to look into changing the config for snapper, as it has a=20
-ridiculously aggressive retention policy for snapshots by default, which =
-
-tends to lead to excessive space usage on filesystems smaller than about =
-
-250GB.
-
-You may also want to look at running a balance on the filesystem, the=20
-numbers from btrfs fi show and btrfs fi df look somewhat worrying,=20
-you've got all the space on the disk allocated as chunks by BTRFS, but=20
-have a significant amount of empty space in those chunks.  Given that=20
-fact, ENOSPC issues are a very real possibility, and you'll probably=20
-have to run a series of partial balances to fix this (and it's important =
-
-to do it before it becomes a visible issue also, because once you start=20
-getting ENOSPC errors, it is a lot harder to fix).  Try running a=20
-balance with '-dusage=3D0 -musage=3D0', then re-run repeatedly increasing=
-=20
-the number for both arguments by 5 each time until you get to 50.  If a=20
-run complains about 'ENOSPC errors during balance', re-run it with the=20
-same number for -dusage and -musage.  If you end up re-running with the=20
-same value 3 times and keep getting the errors, then you're probably=20
-beyond the point of this being fixable, and should just recreate the=20
-filesystem (you do have backups, right?).  Otherwise, after finishing=20
-the run with '-dusage=3D50 -musage=3D50' successfully, run a full balance=
-=20
-without the dusage and musage options.
+BTRFS works that you would lose the whole block (because neither copy=20
+would be complete).
 
 
 
-
---------------ms060805080803050505030401
+--------------ms030205020904040303050903
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -147,9 +131,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTEyMTIzMjUxWjBPBgkq
-hkiG9w0BCQQxQgRAkQEcPuUnLv/g1j2wdAh/CJKqRM+nxhlzW/tpR4OoMVKGRxuv4e/gl7y4
-UGJMnFgYt5+deonr4K1LirfyPbQslTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTEyMTI0NzE2WjBPBgkq
+hkiG9w0BCQQxQgRA5ARR18uM8S6NFqC6JL53Gv/1zEH1VVkyyIAcNvquqgykmh0gMm3hUAc2
+42KnRF08UBhOTaHLjk8nZ9pSPCkvGDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -157,14 +141,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBlbfuYILcoDnFiaWctD8gxjzzIqmA4hmWc/oCjjYFVu+4fI7nV
-DXT0RdBsZdv+YCJML36MSv+tWGmerqPFvU63pEPIrIyIDdD+L0jBcVK/VnEGlWQRJIDN3/3o
-5WIwN2jJ/wnPH469CMrUTpFstsB2k7dVRdZ7HcBy7si9i9Ra4BwvYxv/XebkWtnnLxoQXhkc
-qpMSpTL40bNqcDTvbD4vdJ6yR50EfGlRkuVgjd6km+VQlaeoFCw1M5bQJcqSJK7Q4guscK9v
-g0PAJNXVfYvE2lF6pFgpqimbLO4hjabrJCIfrOmtMnkAG7Wo97RFJmMDSU3rcRzvEuoi0pZj
-3xkpx027rie/kjKoMWMIt19Bbe5mBA0BOMSfN0ebxZgOSX2kRbtccaYyosL5Iy+oXSJfCDIh
-llxpYR9LfS2zHrBaBuMBhei565w4Yroqov89+dP5sTiMk9IDrOQ+vn8MaKsPBluybUm0IqHR
-T4VORYkbIrymzHxb21bg1kFMJ6/O56xkZXeTPM4vw3oZ+NH/abFUZ4UV5BMag4pareIO7Gk9
-En5EYL+b+lWvgHkHkd5fXqNFWzIaFqv7PaPxL8XpvzfBJoRd3a6wfMDUmFXBwyPlKEOyu4EI
-WSPT841WuuJ/6KwyT941/0h6g2Rf/08Ly5ycp7l0JEclZB6BnY4Kc3c6/QAAAAAAAA==
---------------ms060805080803050505030401--
+BgkqhkiG9w0BAQEFAASCAgBdh07ACQHlaIY6eSGmEn41EO/0hc+CEeXRdif5LXaJr6uOQa/F
+UsR/K/nqhRlu/+2sfqHVuycUoJaB3E7WLtzfxcOK8rnc3g3Wkym0quH/5aL1oCX1nhgCR2x/
+pfnN6bXuxC+ZY5uL2CEMR75g5NpA3P4UaGuxuDgZSl7MoMPievQNPeiE6+kKmduFmk8Z3AJH
+zZgxrptl6bnFvTalR5hNGDu05Mlodthh5RqNpu+sbsQzGOv3EukKHieO1xn5bEA3WeN2KsS7
+aVR7zzqQ/vvM3WFrRlXiT5JLVl+1WERVlp2c2StwhCqcvgphaOdNRT0B3CjwzrVXh3AQT/v/
+KJfJjv53fZdClzNDFMLRuqPb1CyVsZT73K2aqeFHjytbGNo4BOK0m+t6c8ZBUm7a+NjODumb
+eVdyi3k8zCQ5GsHccXdyft1BrerrJbys7WMQPong9t2Mz+hM7XFre9TspFMbE/mz9jQ3pQAu
+VTsV69foqWCFa7NQl6QkWZot5YBvWE5SKwjn9oHXjVAKuvKp52x1YTxGqNMza0lGX0V3hJyU
+FoGuTIMo65cVRA1XW0wri3jHm3sv8GP7nv4Qb4jcnmidwsZi9hzcwjGea17np859mC8PAUn4
+5dv1kP8Q2+lwTXEn7SSs1RsNfKWAt0e5K/QMdK2GbdrsmU0t/BmED98YCQAAAAAAAA==
+--------------ms030205020904040303050903--

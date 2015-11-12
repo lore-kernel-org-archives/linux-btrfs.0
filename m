@@ -1,65 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:41564 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750944AbbKLVvJ (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:41563 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753877AbbKLWXY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 16:51:09 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-	by mailgw-02.dd24.net (Postfix) with ESMTP id A35835FBCD
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 21:51:06 +0000 (UTC)
-Received: from mailgw-02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id 3FH4Tg8B-cKU for <linux-btrfs@vger.kernel.org>;
-	Thu, 12 Nov 2015 21:51:04 +0000 (UTC)
+	Thu, 12 Nov 2015 17:23:24 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id 15AC65FC57
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 22:23:23 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+	with ESMTP id 6ZZXzLr4peTf for <linux-btrfs@vger.kernel.org>;
+	Thu, 12 Nov 2015 22:23:21 +0000 (UTC)
 Received: from heisenberg.fritz.box (ppp-46-244-245-7.dynamic.mnet-online.de [46.244.245.7])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
-	by mailgw-02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 21:51:04 +0000 (UTC)
-Message-ID: <1447365063.7045.7.camel@scientia.net>
-Subject: bad extent [5993525264384, 5993525280768), type mismatch with chunk
+	by mailgw-01.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 22:23:21 +0000 (UTC)
+Message-ID: <1447367000.7045.10.camel@scientia.net>
+Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
+ chunk
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Thu, 12 Nov 2015 22:51:03 +0100
+Date: Thu, 12 Nov 2015 23:23:20 +0100
+In-Reply-To: <1447365063.7045.7.camel@scientia.net>
+References: <1447365063.7045.7.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-uLDKiqwaBSTk6Xc4fo1h"
+	boundary="=-+EOYJaPsocXkD1lWYoxK"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-uLDKiqwaBSTk6Xc4fo1h
+--=-+EOYJaPsocXkD1lWYoxK
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hey.
+I've uploaded the full output of btrfs check on that device to:
+http://christoph.anton.mitterer.name/tmp/public/cbec6446-898b-11e5-90a4-502=
+690aa641f.xz
 
-I get these errors on fsck'ing a btrfs:
-bad extent [5993525264384, 5993525280768), type mismatch with chunk
-bad extent [5993525280768, 5993525297152), type mismatch with chunk
-bad extent [5993525297152, 5993525313536), type mismatch with chunk
-bad extent [5993529442304, 5993529458688), type mismatch with chunk
-bad extent [5993529458688, 5993529475072), type mismatch with chunk
-bad extent [5993530015744, 5993530032128), type mismatch with chunk
-bad extent [5993530359808, 5993530376192), type mismatch with chunk
-bad extent [5993530376192, 5993530392576), type mismatch with chunk
-bad extent [5993530392576, 5993530408960), type mismatch with chunk
-bad extent [5993530408960, 5993530425344), type mismatch with chunk
-bad extent [5993531260928, 5993531277312), type mismatch with chunk
-bad extent [5993531310080, 5993531326464), type mismatch with chunk
+there are nearly 600k of these error lines... WTF?!
 
-What do they mean? And how to correct it without data loss (cause this
-would be critical/precious data)?
-
-Oddly, I've fsck'ed the very same fs last time I've unmounted it (with
-no errors)... and now this.
-The only difference would be newer kernel and btrfsprogs.
+Also, the filesystem still mounts (without any errors to dmesg)
 
 
-Thanks,
+Any help would be appreciated,
+thx,
 Chris.
---=-uLDKiqwaBSTk6Xc4fo1h
+--=-+EOYJaPsocXkD1lWYoxK
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -146,19 +135,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTExMjIxNTEw
-M1owTwYJKoZIhvcNAQkEMUIEQCflC6cSLVq/2pdOrUZINtlXS3ebvdB13XOAPgwjDNg5vUJD9cAZ
-LTrPmvol5KSi6xwWJ+Wv1GHs/bREiW5Z8UUwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTExMjIyMjMy
+MFowTwYJKoZIhvcNAQkEMUIEQJLSDXWqLlRUYZcxtKql1k6STbcAKMiDC5lQKs+tKX2GPgy2i8Fm
+FWSLbpoCYF5gmBCoL+YIr2ANMaZxF/XZidMwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQABHENE+KDiC04Dhl+YAfsmzd76ygya
-d/gcZoKfvD2XWSDVUWGFrYUBnd3uv8OlAAOTtd4c4a/x9/D4EWaPWDNbx6TjhgXWQCNYymZYwq86
-mr1tAdbNMr+HUA4fOBU3ZMf8r0ysVLkdSvXfgfaloYOOAwCkvCSozEGW8/wtCsLU1FEASXz1Kr0S
-FMzSkq5QE4lEzW/kdO+OERKclbmx9R59enqi3fuCgiDOIdvkt6/dL+Rfcetq+yP+2IlHUaek3e4g
-xv2RMjpNkPpp8vu4pneoj0xmPRD3UOyMVOqCWF/rMagpfp9u3KcQuuPELsVCu3hJh7hfa5hSyfiN
-xPjHh5uNAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDUFIQbxHDSlHOKaGZicypRqKhIxaiX
+HwWLqIyOyBySF7kiqMd89JE8mbDwjT7yWtaUxrfo4evQhJQLs8lR9LRAPDMD2S42/R7bGYLSN8tY
+KT8b8DyaBJhBuQU5JreckLQsgt594sRedXnCgTB9lal5+1fxvT7AkMtnknazesCdV5lcTROlXGea
+c6LHvtG72HBn9ZrR5FU9OI0Ymbmmz05ZWLtsacniRNiTHoKpaNUaDz2p5rYnpIha/GRUaMELpeDv
+bM5TVx1HcZZrFYTOjwgpukPvJDLSbjChCSnF6Pqt8B80WgvE3JDvlvxATjeMbzinzDJplNaRixBF
+J3Y+irtyAAAAAAAA
 
 
---=-uLDKiqwaBSTk6Xc4fo1h--
+--=-+EOYJaPsocXkD1lWYoxK--
 

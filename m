@@ -1,142 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51044 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752668AbbKLGqg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 01:46:36 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZwleN-0007fe-QT
-	for linux-btrfs@vger.kernel.org; Thu, 12 Nov 2015 07:46:28 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 07:46:27 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 07:46:27 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:35157 "EHLO
+	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751043AbbKLNEd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Nov 2015 08:04:33 -0500
+Received: by igl9 with SMTP id 9so96558592igl.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 05:04:32 -0800 (PST)
 Subject: Re: [PATCH 00/15] btrfs: Hot spare and Auto replace
-Date: Thu, 12 Nov 2015 06:46:19 +0000 (UTC)
-Message-ID: <pan$1d74$e90b44a9$d090dc10$a5a0a518@cox.net>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
 References: <1447066589-3835-1-git-send-email-anand.jain@oracle.com>
-	<5643F62D.6050703@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+ <5643F62D.6050703@cn.fujitsu.com>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <56448E58.3070000@gmail.com>
+Date: Thu, 12 Nov 2015 08:04:24 -0500
+MIME-Version: 1.0
+In-Reply-To: <5643F62D.6050703@cn.fujitsu.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060708050607040301000207"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Thu, 12 Nov 2015 10:15:09 +0800 as excerpted:
+This is a cryptographically signed message in MIME format.
 
+--------------ms060708050607040301000207
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
+
+On 2015-11-11 21:15, Qu Wenruo wrote:
+> Hi Anand,
+>
+> Nice work.
+> But I have some small questions about it.
+>
 > Anand Jain wrote on 2015/11/09 18:56 +0800:
->> These set of patches provides btrfs hot spare and auto replace support
+>> These set of patches provides btrfs hot spare and auto replace support=
+
 >> for you review and comments.
 >>
 >> First, here below are the simple example steps to configure the same:
 >>
 >> Add a spare device:
 >>      btrfs spare add /dev/sde -f
-> 
+>
 > I'm sorry but I didn't quite see the benefit of a spare device.
+Aside from what Duncan said (and I happen to agree with him), there is=20
+also the fact that hot-spares are (at least traditionally in most RAID=20
+systems) usually used with RAID5 or RAID6 (or some other parity scheme).
 
-You could ask the mdraid folks much the same question about spares there, 
-and the answer would I think be very much the same...  I'll just present 
-a couple points of the several that can be made.
+So, to summarize:
+1. Hot spares are more useful for most users in global context, and in=20
+that case only if they have more than one filesystem.
+2. A pool of hot spares is even more useful.
+3. Assuming whole disk usage (as opposed to partitioning), the hot spare =
 
-Perhaps the biggest point for this particular case...
+will have no load on it until it gets used, at which point it will=20
+almost always be in better physical condition than the device it=20
+replaced (which is important for HA systems, in such cases you replace=20
+the disk that failed, and make the new disk a hot spare)
+4. Hot spares are more often used (at least from what I've seen) on=20
+parity based raid systems than raid1.
 
-What you're forgetting is that the work here introduces the _global_ 
-spare -- one spare device (or pool of devices) for the whole set of 
-btrfs, no matter how many independent btrfs there happen to be on a 
-machine.
+In the rather limited case you outlined, I would probably just use raid1 =
 
-Your example used just one filesystem, in which case this point is null 
-and void, but what of the case where there's two?  You can't have the 
-same device be part of *both* filesystems.  What if the device is part of 
-btrfs A, but btrfs b is the one that loses a device?  In your example, 
-you're out of luck.  But as a global spare, the "extra" device doesn't 
-become attached to a specific btrfs until one of the existing devices 
-goes bad.  With working global spares, the first btrfs to have a bad 
-device will see the spare and be able to grab it, no matter which of the 
-two (or 10 or 100) separate btrfs it happens to be, as it's a _global_ 
-spare, not actually attached to a specific btrfs until it is needed as a 
-replacement.
+across all three devices myself (unless they were whole disks and not=20
+individual partitions, in which case I'd use a hot spare), but looking=20
+beyond that at my actual usage of BTRFS (multiple filesystems with=20
+multiple different raid profiles, spread across various disks), hot=20
+spares are definitely useful (although they would be more useful if I=20
+could specify that a given hot spare be used only for a given set of=20
+filesystems).
 
-By extension, there's the spare _pool_.  Suppose you have three separate 
-btrfs and three separate "extra" devices.  You can attach one to each 
-btrfs and be fine... if the existing devices all play nice and a second 
-one doesn't go out on any of them until all three have had one device go 
-out.  But what happens if one btrfs gets some real heavy unexpected use 
-and loses three devices before the other two btrfs lose any?  With global 
-spares, the unlucky btrfs can call for one at a time, and assuming 
-there's time for it to fully integrate before the next one dies, it can 
-call for the next and the next, and get all three, one at a time, without 
-the admin having to worry about manually device deleting the second and 
-third devices from their other btrfs, to attach to the unlucky/greedy one.
 
-And that three btrfs, three-device global-spare-pool scenario, with an 
-unlucky/greedy btrfs ending up getting all three spares, brings up a 
-second point...
 
-In that scenario without global hot-spares, say you've added one more 
-device to what ends up the unlucky btrfs than it'd need, so with auto-
-repair it can detect a failing device and automatically device-delete it 
-down to its device-minimum (either due to raid level or due to 
-capacity).  Now another device fails.  Oops!  Can't auto-repair now!
+--------------ms060708050607040301000207
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-But in the global hot-spare-pool scenario, with one repair done, there's 
-still two spares in the pool, so at the second device failure, it can 
-automatically pull a second from the pool (where given the pool it can be 
-instead of already attached to one of the other btrfs') and complete the 
-second repair, still without admin intervention.  Same again for the 
-third.
-
-So an admin who doesn't want to have to intervene when he's supposedly on 
-vacation can setup a queue of spares, and sure, if he's a good admin, 
-when a device goes bad and a spare is automatically pulled in to replace 
-it, he'll be notified, and he'll probably login to check logs and see 
-what happened, but no problem, there's still others in the queue.
-
-In fact, since the common folk wisdom says this sort of bad event 
-(someone you know getting a disease like cancer or dying, devices in your 
-machines going bad, friends having their significant others leave them... 
-at least here in the US, folk wisdom says it always happens in threes, so 
-particularly once two happen, people start wondering who/where the third 
-one is going to occur) happens in threes, a somewhat superstitious admin 
-could ensure he had four, well, he's cautious too, so make it five, 
-global spares setup, just in case.  Then it wouldn't matter if the three 
-devices going bad were all on the same btrfs, or one each on the three, 
-or two on one and a third elsewhere, he'd still have two additional 
-devices in the pool, just to cover his a** if the three /did/ go out.
-
-Now about time he loses a fourth, he better be on the phone confirming a 
-ticket home, but even then, he still has the one still in the pool, as he 
-was cautious, too, hopefully giving him time to actually /make/ it home 
-before two more go out leaving the pool empty and a btrfs a device down.  
-And if he's /that/ unlucky, well, maybe he better make a call to his 
-lawyer confirming his last will and testament before he steps on that 
-plane, too. =:^(
-
-Just a short mention of a third point, too.
-
-Devices in the pool presumably will be idle and thus spun down, thus not 
-already wearing out like they would be if they were already in use all 
-that time they're in the spare pool.
-
-Those are the biggest and most obvious ones I know of.  Talk to any good 
-admin who has handled lots of raid and I'm sure they'll provide a few 
-more.
-
-FWIW, there's also a case to be made for spare pools that may not be 
-global, but that can still be attached to more than one btrfs/raid, if 
-desired.  Consider the case for two pools, one with fast but small ssds 
-while the other has slow but large spinning rust, with the ability to map 
-individual btrfs to one or the other pool, or to neither, for instance.  
-But this patch series simply introduces the global pool and 
-functionality, leaving such fancy additional functionality for later.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTEyMTMwNDI0WjBPBgkq
+hkiG9w0BCQQxQgRASxc/S0jTsICUpV9QrMTnr7xCGK9AyrCMiDeWfqciQOxPVnHyF+fXbx78
+M6IuibTG9W+1/+yf/KaNVYLEGBFTeTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgAbRB5az0yIRGMgJPEoLHSNOdN5uT3npP2fqzhXJ1hRHFk2hV+N
+a/T4Qqj9lXg2lMnI67ygv/u0hg0n4dxWIl2Sy+r/r5D4i0mAw8CrCLBD/nm1hhQPPN9jg5Ld
+ucZ3TIlb2rFaVdbhN0h2uOOMjZfhdB0t+CdnsRKem6AgNhwIoFiXmSnQWYQuCL/gFcODXIK0
+mb2j8YemUHW2N51nqty9RFB9jRT28x7BSBW5r4/SzpGpC4TWJN+w0BMndCql5IH6NUu8kIx0
+YHFjJdL+EFaCYIpbYWA/SyJkXb8rmqJ8igjkJv8X9XChss/QVX5fpseufzbZRCcxOUaOJC3B
+/lPrBRiT4rNZcs8L7EkZCVe6CXG1Q5EREqJ04bsWug9Kkef0ihDEbDzq4K7zKTcnEC4q2LvC
+2h1AlN09/JC33W2cqGUx3fwDdjqV03BSkFVyHYghxXPzWqemjJUQkw6y0lCX1oX6qtyg0kjp
+fQwMptEGqCA/wGhhY1Eb1BWofOlJgeHK6AK/N+4CEyICLjjg/t83CdDEu2O28ZsHMpkZqneK
+Q8DY8q3yVoTzAkieNTfilqDbC7agfwq23jWpffzHNkAJc3XGFks5KhS+MTZsrotgG/QIPaiB
+r4c4AgXrORDP1yVCT5XgsHwcLooTSRBfQlqv71EAErW2qIrNX6HFJeQBIgAAAAAAAA==
+--------------ms060708050607040301000207--

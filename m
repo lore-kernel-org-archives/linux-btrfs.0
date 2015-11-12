@@ -1,243 +1,142 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16377 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752528AbbKLCPR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 11 Nov 2015 21:15:17 -0500
+Received: from plane.gmane.org ([80.91.229.3]:51044 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752668AbbKLGqg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Nov 2015 01:46:36 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZwleN-0007fe-QT
+	for linux-btrfs@vger.kernel.org; Thu, 12 Nov 2015 07:46:28 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 07:46:27 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 07:46:27 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [PATCH 00/15] btrfs: Hot spare and Auto replace
-To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
+Date: Thu, 12 Nov 2015 06:46:19 +0000 (UTC)
+Message-ID: <pan$1d74$e90b44a9$d090dc10$a5a0a518@cox.net>
 References: <1447066589-3835-1-git-send-email-anand.jain@oracle.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5643F62D.6050703@cn.fujitsu.com>
-Date: Thu, 12 Nov 2015 10:15:09 +0800
-MIME-Version: 1.0
-In-Reply-To: <1447066589-3835-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	<5643F62D.6050703@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Anand,
+Qu Wenruo posted on Thu, 12 Nov 2015 10:15:09 +0800 as excerpted:
 
-Nice work.
-But I have some small questions about it.
+> Anand Jain wrote on 2015/11/09 18:56 +0800:
+>> These set of patches provides btrfs hot spare and auto replace support
+>> for you review and comments.
+>>
+>> First, here below are the simple example steps to configure the same:
+>>
+>> Add a spare device:
+>>      btrfs spare add /dev/sde -f
+> 
+> I'm sorry but I didn't quite see the benefit of a spare device.
 
-Anand Jain wrote on 2015/11/09 18:56 +0800:
-> These set of patches provides btrfs hot spare and auto replace support
-> for you review and comments.
->
-> First, here below are the simple example steps to configure the same:
->
-> Add a spare device:
->      btrfs spare add /dev/sde -f
+You could ask the mdraid folks much the same question about spares there, 
+and the answer would I think be very much the same...  I'll just present 
+a couple points of the several that can be made.
 
-I'm sorry but I didn't quite see the benefit of a spare device.
+Perhaps the biggest point for this particular case...
 
-Let's take the following example:
+What you're forgetting is that the work here introduces the _global_ 
+spare -- one spare device (or pool of devices) for the whole set of 
+btrfs, no matter how many independent btrfs there happen to be on a 
+machine.
 
-1) 2 RAID1 + 1 spare
-    (A + B) + C
+Your example used just one filesystem, in which case this point is null 
+and void, but what of the case where there's two?  You can't have the 
+same device be part of *both* filesystems.  What if the device is part of 
+btrfs A, but btrfs b is the one that loses a device?  In your example, 
+you're out of luck.  But as a global spare, the "extra" device doesn't 
+become attached to a specific btrfs until one of the existing devices 
+goes bad.  With working global spares, the first btrfs to have a bad 
+device will see the spare and be able to grab it, no matter which of the 
+two (or 10 or 100) separate btrfs it happens to be, as it's a _global_ 
+spare, not actually attached to a specific btrfs until it is needed as a 
+replacement.
 
-2) 3 RAID1
-    (A + B + C)
-Let's assume they are all 12G size, and there are 3 raid1 chunks.
-Each one is 3G size.
+By extension, there's the spare _pool_.  Suppose you have three separate 
+btrfs and three separate "extra" devices.  You can attach one to each 
+btrfs and be fine... if the existing devices all play nice and a second 
+one doesn't go out on any of them until all three have had one device go 
+out.  But what happens if one btrfs gets some real heavy unexpected use 
+and loses three devices before the other two btrfs lose any?  With global 
+spares, the unlucky btrfs can call for one at a time, and assuming 
+there's time for it to fully integrate before the next one dies, it can 
+call for the next and the next, and get all three, one at a time, without 
+the admin having to worry about manually device deleting the second and 
+third devices from their other btrfs, to attach to the unlucky/greedy one.
 
-In my understanding, in normal operation case:
+And that three btrfs, three-device global-spare-pool scenario, with an 
+unlucky/greedy btrfs ending up getting all three spares, brings up a 
+second point...
 
-For case 1), all raid chunks should only be allocated into 2 RAID disks,
-and spare one should contains no raid1 chunks.
+In that scenario without global hot-spares, say you've added one more 
+device to what ends up the unlucky btrfs than it'd need, so with auto-
+repair it can detect a failing device and automatically device-delete it 
+down to its device-minimum (either due to raid level or due to 
+capacity).  Now another device fails.  Oops!  Can't auto-repair now!
 
-   A       B       C
-------  ------  ------
-|free|  |free|  |free|
-------  ------  |    |
-|3Ga1|  |3Ga2|  |    |
-------  ------  |    |
-|3Gb1|  |3Gb2|  |    |
-------  ------  |    |
-|3Gc1|  |3Gc2|  |    |
-------  ------  ------
+But in the global hot-spare-pool scenario, with one repair done, there's 
+still two spares in the pool, so at the second device failure, it can 
+automatically pull a second from the pool (where given the pool it can be 
+instead of already attached to one of the other btrfs') and complete the 
+second repair, still without admin intervention.  Same again for the 
+third.
 
+So an admin who doesn't want to have to intervene when he's supposedly on 
+vacation can setup a queue of spares, and sure, if he's a good admin, 
+when a device goes bad and a spare is automatically pulled in to replace 
+it, he'll be notified, and he'll probably login to check logs and see 
+what happened, but no problem, there's still others in the queue.
 
-For case 2), all raid1 chunks will be allocated into all 3 disks, making 
-the allocation more fair.
-   A       B       C
-------  ------  ------
-|free|  |free|  |free|
-------  ------  ------
-|free|  |free|  |free|
-------  ------  ------
-|3Gb2|  |3Ga1|  |3Ga2|
-------  ------  ------
-|3Gc1|  |3Gc2|  |3Gb1|
-------  ------  ------
+In fact, since the common folk wisdom says this sort of bad event 
+(someone you know getting a disease like cancer or dying, devices in your 
+machines going bad, friends having their significant others leave them... 
+at least here in the US, folk wisdom says it always happens in threes, so 
+particularly once two happen, people start wondering who/where the third 
+one is going to occur) happens in threes, a somewhat superstitious admin 
+could ensure he had four, well, he's cautious too, so make it five, 
+global spares setup, just in case.  Then it wouldn't matter if the three 
+devices going bad were all on the same btrfs, or one each on the three, 
+or two on one and a third elsewhere, he'd still have two additional 
+devices in the pool, just to cover his a** if the three /did/ go out.
 
+Now about time he loses a fourth, he better be on the phone confirming a 
+ticket home, but even then, he still has the one still in the pool, as he 
+was cautious, too, hopefully giving him time to actually /make/ it home 
+before two more go out leaving the pool empty and a btrfs a device down.  
+And if he's /that/ unlucky, well, maybe he better make a call to his 
+lawyer confirming his last will and testament before he steps on that 
+plane, too. =:^(
 
-At least in normal operation case, case 1) makes device C useless, and 
-reduce the total usable space.
+Just a short mention of a third point, too.
 
-In disk B failure case:
+Devices in the pool presumably will be idle and thus spun down, thus not 
+already wearing out like they would be if they were already in use all 
+that time they're in the spare pool.
 
-For case 1), we can auto replace B with C.
-And it will copy all data chunks from A to C.
-Need to copy 9G data.
+Those are the biggest and most obvious ones I know of.  Talk to any good 
+admin who has handled lots of raid and I'm sure they'll provide a few 
+more.
 
-And after replace:
-   A       B       C
-------  ------  ------
-|free|  | X  |  |free|
-------  ------  ------
-|3Ga1|  | X  |->|3Ga2|
-------  ------  ------
-|3Gb1|  | X  |->|3Gb2|
-------  ------  ------
-|3Gc1|  | X  |->|3Gc2|
-------  ------  ------
+FWIW, there's also a case to be made for spare pools that may not be 
+global, but that can still be attached to more than one btrfs/raid, if 
+desired.  Consider the case for two pools, one with fast but small ssds 
+while the other has slow but large spinning rust, with the ability to map 
+individual btrfs to one or the other pool, or to neither, for instance.  
+But this patch series simply introduces the global pool and 
+functionality, leaving such fancy additional functionality for later.
 
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-
-For case 2), we can just relocate and recover the bad chunks in B.
-It it should only need to copy 6G data.
-
-And after the "recovery", it should be much the same as case 1):
-   A       B       C
-------  ------  ------
-|free|  | X  |  |free|
-------  ------  ------
-|3Ga1|<\| X  |/>|3Gc1|
-------  ------  ------
-|3Gb2| || X  |/ |3Ga2|
-------  ------  ------
-|3Gc1| \| X  |  |3Gb1|
-------  ------  ------
-
-
-IIRC, the only benefit of a spare device is, we can ensure there is 
-enough space for a device place.(If the failing one is no larger than 
-spare).
-
-But the cost is, increase in replace data copy and unfair chunk allocation.
-
-So I am not sure if the cost is good enough for the case.
-At least, enhancing the chunk relocation to fulfill the case 2) will 
-bring a much smaller code base.
-
-Thanks,
-Qu
->
-> OR if there is a spare device which is already added before the, just
-> run
->
->      btrfs dev scan [/dev/sde]
->
-> this will register the spare device to the kernel.
->
->      btrfs fi show
->      Label: none  uuid: 52f170c1-725c-457d-8cfd-d57090460091
-> 	Total devices 2 FS bytes used 112.00KiB
-> 	devid    1 size 2.00GiB used 417.50MiB path /dev/sdc
-> 	devid    2 size 2.00GiB used 417.50MiB path /dev/sdd
->
->      Global spare
-> 	device size 3.00GiB path /dev/sde
->
-> Thats it.
->
-> Auto replace:
->   Replace happens automatically, that is when there is any write
->   failed or flush failed, the device will be marked as failed, which
->   will stop any further IO attempt to that device. And in the next commit
->   thread cycle the auto replace will pick the spare device (/dev/sde is
->   above example) to replace the failed device. And so the btrfs volume is
->   back to a healthy state.
->
->
-> Its btrfs Global spare:
->   as of now only global hot spare is supported, that is hot spare(s)
->   are for all the btrfs FS in the system.
->
-> No spare when device failed:
->   It would scan for spare device at the rate of transaction commit
->   and will trigger the auto replace when ever spare device is added.
->
-> Priority:
->   In some future work there can be some chronological order to pick
->   a spare and the failed device.
->
->
-> Patches:
->
-> Kernel:
-> First, it needs, Qu's per chunk missing device patchset,
-> which is part of the set here and also there is a light optimization
-> (patch 5/15) which was required as part of this enhancement.
->
-> Next patches 7,8/15 brings in support, to manage the transition of
-> devices from online (no state) to offline OR failed state dynamically.
-> On top of static device state like the current "missing" state.
->
-> Patch 9/15 fixes a bug where in we should have blocked the incompatible
-> feature at the device scan/add level instead/also at in the mount level.
-> This is because we don't have to bring a device into the device list,
-> if it is incompatible.
->
-> Next patches 10,11,12,13/15 adds support for Spare device. For the
-> details on how to add a spare device kindly see further below.
-> For kernel with out spare feature supported the spare device
-> is kept away. And when the kernel supports the spare device, it will
-> inhibit from mounting it. Further these patch set provides helper
-> function to pick a spare device and release a spare device back to
-> the spare device pool.
->
-> Patch 14/15 provides function for auto replace, this is mainly
-> from the existing replace code, and in the long run I see opportunity
-> to merge these code with the replace code that is triggered from
-> the user spare.
->
-> Last 15/15, uses all these facilities, picks a failed device and
-> triggers a auto replace in a kthread (casualty_kthread())
->
->
-> Progs:
-> Would need 4 patches as listed below.
->
->
-> Known Bug:
->
-> As now I see below stale kmem cache during module unload. Which
-> I am digging.
-> ------
-> BUG btrfs_path (Not tainted): Objects remaining in btrfs_path on kmem_cache_close()
-> ------
->
-> Anand Jain (10):
->    btrfs: optimize btrfs_check_degradable() for calls outside of barrier
->    btrfs: introduce device dynamic state transition to offline or failed
->    btrfs: check device for critical errors and mark failed
->    btrfs: block incompatible optional features at scan
->    btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
->    btrfs: add check not to mount a spare device
->    btrfs: support btrfs dev scan for spare device
->    btrfs: provide framework to get and put a spare device
->    btrfs: introduce helper functions to perform hot replace
->    btrfs: check for failed device and hot replace
->
-> Qu Wenruo (5):
->    btrfs: Introduce a new function to check if all chunks a OK for
->      degraded mount
->    btrfs: Do per-chunk check for mount time check
->    btrfs: Do per-chunk degraded check for remount
->    btrfs: Allow barrier_all_devices to do per-chunk device check
->    btrfs: Cleanup num_tolerated_disk_barrier_failures
->
->   fs/btrfs/ctree.h       |   7 +-
->   fs/btrfs/dev-replace.c | 116 ++++++++++++++++++++
->   fs/btrfs/dev-replace.h |   1 +
->   fs/btrfs/disk-io.c     | 211 +++++++++++++++++++++++-------------
->   fs/btrfs/disk-io.h     |   2 -
->   fs/btrfs/super.c       |  20 +++-
->   fs/btrfs/transaction.c |   3 +-
->   fs/btrfs/volumes.c     | 283 ++++++++++++++++++++++++++++++++++++++++++++++---
->   fs/btrfs/volumes.h     |  27 +++++
->   9 files changed, 571 insertions(+), 99 deletions(-)
->

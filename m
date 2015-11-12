@@ -1,171 +1,243 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:37395 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751279AbbKJMOd (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:16377 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752528AbbKLCPR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Nov 2015 07:14:33 -0500
-Received: by igbhv6 with SMTP id hv6so95112335igb.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 04:14:32 -0800 (PST)
+	Wed, 11 Nov 2015 21:15:17 -0500
 Subject: Re: [PATCH 00/15] btrfs: Hot spare and Auto replace
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
 References: <1447066589-3835-1-git-send-email-anand.jain@oracle.com>
- <5640A903.9030209@gmail.com> <pan$24d10$91cf318$b08c3c88$ac288e4@cox.net>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5641DF73.7030309@gmail.com>
-Date: Tue, 10 Nov 2015 07:13:39 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5643F62D.6050703@cn.fujitsu.com>
+Date: Thu, 12 Nov 2015 10:15:09 +0800
 MIME-Version: 1.0
-In-Reply-To: <pan$24d10$91cf318$b08c3c88$ac288e4@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms050804060409010001060108"
+In-Reply-To: <1447066589-3835-1-git-send-email-anand.jain@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Hi Anand,
 
---------------ms050804060409010001060108
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+Nice work.
+But I have some small questions about it.
 
-On 2015-11-09 16:29, Duncan wrote:
-> Austin S Hemmelgarn posted on Mon, 09 Nov 2015 09:09:07 -0500 as
-> excerpted:
+Anand Jain wrote on 2015/11/09 18:56 +0800:
+> These set of patches provides btrfs hot spare and auto replace support
+> for you review and comments.
 >
->>>    btrfs fi show
->>>    Label: none  uuid: 52f170c1-725c-457d-8cfd-d57090460091
->>>     Total devices 2 FS bytes used 112.00KiB
->>>     devid    1 size 2.00GiB used 417.50MiB path /dev/sdc
->>>     devid    2 size 2.00GiB used 417.50MiB path /dev/sdd
->>>
->>>    Global spare
->>>     device size 3.00GiB path /dev/sde
+> First, here below are the simple example steps to configure the same:
 >
-> First of all, thanks from me too, AJ, for this very nice new feature. =3D=
-:^)
->
->> Would I be correct in assuming that we can have more than one hot-spar=
-e
->> device at a time?  If so, what method is used to select which one to u=
-se
->> when one is needed?
->
-> In the later patches overview section, patches 10,11,12,13/15 paragraph=
-,
-> AJ mentions a helper function to pick/release a spare device from/to th=
-e
-> spare devices pool.  That would appear to be patch 13, provide framewor=
-k
-> to get and put a spare device.
->
-> Which means yes, multiple hot-spares are (at least planned to be)
-> allowed. =3D:^)
-Ah, you're right, somehow I missed that bit.
->
-> While I'm not a coder and could very well be misinterpreting this,
-> however, reading the btrfs_get_spare_device function in patch 13, there=
-'s
-> a comment that goes like this:
->
->>> /* as of now there is only one device in the spare fs_devices */
->
-> I don't read C well enough to know whether that's a comment on the
-> internal progress in the function (tho I don't see any obvious hints to=
+> Add a spare device:
+>      btrfs spare add /dev/sde -f
 
-> indicate that), or whether it can be taken at face value, that right no=
-w
-> there's only provision for one in the "pool" (seems the more obvious
-> interpretation).
->
-> So unless my lack of C skills is deceiving me, while a pool is intended=
-,
-> current patch implementation status simply assumes a spare pool of one,=
+I'm sorry but I didn't quite see the benefit of a spare device.
 
-> and the first spare found is picked. The put function in the same patch=
+Let's take the following example:
 
-> doesn't appear to have a limit on the number of spares that can be adde=
-d,
-> so assuming the current pool implementation allows it, more than one
-> spare can be added to the pool, but as I said, the get function appears=
+1) 2 RAID1 + 1 spare
+    (A + B) + C
 
-> to assume just one in the pool, so picks the first spare it finds.
-AFAICT, you are correct.  I hadn't yet gotten a chance to look at the=20
-actual code, so I hadn't seen this yet.
->
-> At least at the non-enterprise level, size-similar picking logic would
-> seem to be pretty useful if not feature critical, then, and given that
-> it /should/ be reasonably simple to implement, I'd hope that doing so
-> becomes a priority, tho certainly an initial first-pick base
-> implementation to which size-similar logic can be added later, is fine =
-as
-> well.  I'd just hope that "later" is within a couple kernel cycles, not=
- a
-> couple kernel major version cycles (~4 years each with bumps at .20).
->
-Hopefully, per-filesystem hot-spares will be a high priority too, as=20
-that type of usage is pretty much required for many enterprise type=20
-uses, although that doesn't need to be the same code doing it (in fact,=20
-I could see having per-fs spares and global spares both available=20
-potentially being very useful).
+2) 3 RAID1
+    (A + B + C)
+Let's assume they are all 12G size, and there are 3 raid1 chunks.
+Each one is 3G size.
+
+In my understanding, in normal operation case:
+
+For case 1), all raid chunks should only be allocated into 2 RAID disks,
+and spare one should contains no raid1 chunks.
+
+   A       B       C
+------  ------  ------
+|free|  |free|  |free|
+------  ------  |    |
+|3Ga1|  |3Ga2|  |    |
+------  ------  |    |
+|3Gb1|  |3Gb2|  |    |
+------  ------  |    |
+|3Gc1|  |3Gc2|  |    |
+------  ------  ------
 
 
---------------ms050804060409010001060108
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+For case 2), all raid1 chunks will be allocated into all 3 disks, making 
+the allocation more fair.
+   A       B       C
+------  ------  ------
+|free|  |free|  |free|
+------  ------  ------
+|free|  |free|  |free|
+------  ------  ------
+|3Gb2|  |3Ga1|  |3Ga2|
+------  ------  ------
+|3Gc1|  |3Gc2|  |3Gb1|
+------  ------  ------
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTEwMTIxMzM5WjBPBgkq
-hkiG9w0BCQQxQgRAIm8yQKvynFBdOyF4VW603LgJjuclEmP5GFYL4kXuw464BB4zYE1NlRn5
-mKpehE7BP83+F18/xvxwnApm1Z7TmTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBAPPFjlpcGgncvX20aDdE9dTEk2Ey1ugBpzypsAA71NvHRQXte
-9gr+ir5Q1HdKHF5iE2wiNs8v9RpNGGcduVks0WdABSGZCIrh524pSvdv6BSWfd0XzUoWwH0C
-bUlQdyJp30MYM1MNM9TQnI397TFWJsZsoDo+NFN5wPVnXwTKMj4q21DK9LB89R8/wf+kNM73
-hGPIIuJ6iL9h1oeyExPpjOXcWr2nXH+hLWHmVKZs8eSonGy9h7TAlOtDqouAKcUBbp4pzDgG
-8Wsfz6ZZLrxFvbFJ7eoFzh947dBnVTpxdXBLTm98DyeFrlv1NGrE7NEkOCe7Cxrw/l5wXLvO
-KsWV3+CNfcBL2mDbBvcwKcumzkh8EpgloO2u8hRhCbUNHoxdAQi9gjwwaXjoefaaVmE2E8+k
-DXbzi+47VpNDRKxrs6XIJN0zQ5i7Brg/+lj6aDaHTJQHOA0G7s6YDSVPCGhfxIhkqjcnKd4g
-ebgTgcHNZwBOglvoW54vgI5GuMrPiVUhktW+HwwDX1fdQ9VpfMvjct8lAWVOtEynrCPr3eEY
-H9cL1IiyKqEpQvfFRAzb4yssHu+tjBgKlr4pG/l2iaic1NpukYIXy+xB1sz2O3Y2wOLcLuz/
-kcDKMzu72QMfaf3zmQH7qyzDOFC2AfduZ6I1LjXgydoX8/9rtnWDjUb6pgAAAAAAAA==
---------------ms050804060409010001060108--
+
+At least in normal operation case, case 1) makes device C useless, and 
+reduce the total usable space.
+
+In disk B failure case:
+
+For case 1), we can auto replace B with C.
+And it will copy all data chunks from A to C.
+Need to copy 9G data.
+
+And after replace:
+   A       B       C
+------  ------  ------
+|free|  | X  |  |free|
+------  ------  ------
+|3Ga1|  | X  |->|3Ga2|
+------  ------  ------
+|3Gb1|  | X  |->|3Gb2|
+------  ------  ------
+|3Gc1|  | X  |->|3Gc2|
+------  ------  ------
+
+
+
+For case 2), we can just relocate and recover the bad chunks in B.
+It it should only need to copy 6G data.
+
+And after the "recovery", it should be much the same as case 1):
+   A       B       C
+------  ------  ------
+|free|  | X  |  |free|
+------  ------  ------
+|3Ga1|<\| X  |/>|3Gc1|
+------  ------  ------
+|3Gb2| || X  |/ |3Ga2|
+------  ------  ------
+|3Gc1| \| X  |  |3Gb1|
+------  ------  ------
+
+
+IIRC, the only benefit of a spare device is, we can ensure there is 
+enough space for a device place.(If the failing one is no larger than 
+spare).
+
+But the cost is, increase in replace data copy and unfair chunk allocation.
+
+So I am not sure if the cost is good enough for the case.
+At least, enhancing the chunk relocation to fulfill the case 2) will 
+bring a much smaller code base.
+
+Thanks,
+Qu
+>
+> OR if there is a spare device which is already added before the, just
+> run
+>
+>      btrfs dev scan [/dev/sde]
+>
+> this will register the spare device to the kernel.
+>
+>      btrfs fi show
+>      Label: none  uuid: 52f170c1-725c-457d-8cfd-d57090460091
+> 	Total devices 2 FS bytes used 112.00KiB
+> 	devid    1 size 2.00GiB used 417.50MiB path /dev/sdc
+> 	devid    2 size 2.00GiB used 417.50MiB path /dev/sdd
+>
+>      Global spare
+> 	device size 3.00GiB path /dev/sde
+>
+> Thats it.
+>
+> Auto replace:
+>   Replace happens automatically, that is when there is any write
+>   failed or flush failed, the device will be marked as failed, which
+>   will stop any further IO attempt to that device. And in the next commit
+>   thread cycle the auto replace will pick the spare device (/dev/sde is
+>   above example) to replace the failed device. And so the btrfs volume is
+>   back to a healthy state.
+>
+>
+> Its btrfs Global spare:
+>   as of now only global hot spare is supported, that is hot spare(s)
+>   are for all the btrfs FS in the system.
+>
+> No spare when device failed:
+>   It would scan for spare device at the rate of transaction commit
+>   and will trigger the auto replace when ever spare device is added.
+>
+> Priority:
+>   In some future work there can be some chronological order to pick
+>   a spare and the failed device.
+>
+>
+> Patches:
+>
+> Kernel:
+> First, it needs, Qu's per chunk missing device patchset,
+> which is part of the set here and also there is a light optimization
+> (patch 5/15) which was required as part of this enhancement.
+>
+> Next patches 7,8/15 brings in support, to manage the transition of
+> devices from online (no state) to offline OR failed state dynamically.
+> On top of static device state like the current "missing" state.
+>
+> Patch 9/15 fixes a bug where in we should have blocked the incompatible
+> feature at the device scan/add level instead/also at in the mount level.
+> This is because we don't have to bring a device into the device list,
+> if it is incompatible.
+>
+> Next patches 10,11,12,13/15 adds support for Spare device. For the
+> details on how to add a spare device kindly see further below.
+> For kernel with out spare feature supported the spare device
+> is kept away. And when the kernel supports the spare device, it will
+> inhibit from mounting it. Further these patch set provides helper
+> function to pick a spare device and release a spare device back to
+> the spare device pool.
+>
+> Patch 14/15 provides function for auto replace, this is mainly
+> from the existing replace code, and in the long run I see opportunity
+> to merge these code with the replace code that is triggered from
+> the user spare.
+>
+> Last 15/15, uses all these facilities, picks a failed device and
+> triggers a auto replace in a kthread (casualty_kthread())
+>
+>
+> Progs:
+> Would need 4 patches as listed below.
+>
+>
+> Known Bug:
+>
+> As now I see below stale kmem cache during module unload. Which
+> I am digging.
+> ------
+> BUG btrfs_path (Not tainted): Objects remaining in btrfs_path on kmem_cache_close()
+> ------
+>
+> Anand Jain (10):
+>    btrfs: optimize btrfs_check_degradable() for calls outside of barrier
+>    btrfs: introduce device dynamic state transition to offline or failed
+>    btrfs: check device for critical errors and mark failed
+>    btrfs: block incompatible optional features at scan
+>    btrfs: introduce BTRFS_FEATURE_INCOMPAT_SPARE_DEV
+>    btrfs: add check not to mount a spare device
+>    btrfs: support btrfs dev scan for spare device
+>    btrfs: provide framework to get and put a spare device
+>    btrfs: introduce helper functions to perform hot replace
+>    btrfs: check for failed device and hot replace
+>
+> Qu Wenruo (5):
+>    btrfs: Introduce a new function to check if all chunks a OK for
+>      degraded mount
+>    btrfs: Do per-chunk check for mount time check
+>    btrfs: Do per-chunk degraded check for remount
+>    btrfs: Allow barrier_all_devices to do per-chunk device check
+>    btrfs: Cleanup num_tolerated_disk_barrier_failures
+>
+>   fs/btrfs/ctree.h       |   7 +-
+>   fs/btrfs/dev-replace.c | 116 ++++++++++++++++++++
+>   fs/btrfs/dev-replace.h |   1 +
+>   fs/btrfs/disk-io.c     | 211 +++++++++++++++++++++++-------------
+>   fs/btrfs/disk-io.h     |   2 -
+>   fs/btrfs/super.c       |  20 +++-
+>   fs/btrfs/transaction.c |   3 +-
+>   fs/btrfs/volumes.c     | 283 ++++++++++++++++++++++++++++++++++++++++++++++---
+>   fs/btrfs/volumes.h     |  27 +++++
+>   9 files changed, 571 insertions(+), 99 deletions(-)
+>

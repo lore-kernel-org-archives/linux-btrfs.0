@@ -1,120 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:45183 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751241AbbKLFHs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 00:07:48 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zwk6s-0003fx-G0
-	for linux-btrfs@vger.kernel.org; Thu, 12 Nov 2015 06:07:46 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 06:07:46 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 06:07:46 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Potential to loose data in case of disk failure
-Date: Thu, 12 Nov 2015 05:07:41 +0000 (UTC)
-Message-ID: <pan$7387e$355c1b46$cb8e309e$12e649f4@cox.net>
-References: <CAKJi5fik1RsPQ7SA1P6=VmTwr06jrGFAA1cSWrVm0xoCrnhujA@mail.gmail.com>
-	<CAJCQCtTCzCOfdrvjNF2rs_VuHqVA4nU3jsgxKpkADd-+v7GtMA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:38122 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751035AbbKLMdL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Nov 2015 07:33:11 -0500
+Received: by igbxm8 with SMTP id xm8so39930350igb.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 12 Nov 2015 04:33:10 -0800 (PST)
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Subject: Re: illegal snapshot, cannot be deleted
+To: Vedran Vucic <vedran.vucic@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAHTEL3=r8kUJOU=xUAg2iG52HuWmqQ16QxUjY6d+zqbziW5+gw@mail.gmail.com>
+Message-ID: <564486F3.5020804@gmail.com>
+Date: Thu, 12 Nov 2015 07:32:51 -0500
+MIME-Version: 1.0
+In-Reply-To: <CAHTEL3=r8kUJOU=xUAg2iG52HuWmqQ16QxUjY6d+zqbziW5+gw@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060805080803050505030401"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Wed, 11 Nov 2015 18:13:22 -0500 as excerpted:
+This is a cryptographically signed message in MIME format.
 
-> On Wed, Nov 11, 2015 at 12:30 PM, Jim Murphy <srlinuxadmin@gmail.com>
-> wrote:
->> Hi all,
->>
->> What am I missing or misunderstanding?  I have a newly purchased laptop
->> I want/need to multi boot different OSs on.  As a result after
->> partitioning I have ended up with two partitions on each of the two
->> internal drives(sda3, sda8, sdb3 and sdb8).  FWIW, sda3 and sdb3 are
->> the same size and sda8 and sdb8 are the same size.  As an end result I
->> want one btrfs raid1 filesystem.  For lack of better terms,
->> sda3 and sda8 "concatenated" together, sdb3 and sdb8 "concatenated"
->> together and then mirroring "sda" to "sdb" using only btrfs.  So far
->> have found no use-case to cover this.
+--------------ms060805080803050505030401
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-There isn't any... using ONLY btrfs (as the OP specified).  You need 
-either mdraid or lvm to concatenate the two logical devices (partitions) 
-on a single physical device into one, so then btrfs will see only two 
-devices and put a raid1 copy on each.
+On 2015-11-11 17:11, Vedran Vucic wrote:
+> Hello,
+>
+> I use OpenSuse 13.2 on my Toshiba Satellite laptop. I noticed that I ru=
+n
+> out of disk space, checked documentation and I realized that there were=
 
-This is because (reordering a bit of your quote from further below)...
+> many snapshots.  I used Yast Snapper to delete snapshots.
+> I noticed that one snapshot  with number 748 could not be deleted.
+> I entered terminal and after the command:
+> snapper -c root delete 748
+> I got message Illegal snapshot.
+This sounds like some sort of issue with snapper, not BTRFS itself, but=20
+see below for some suggestions.
+> I woudl like to delete it since it is old one.
+> Please find details about my system as requested on your wiki page.
+> uname -a
+> Linux linux-jjcc.site 3.16.7-29-desktop #1 SMP PREEMPT Fri Oct 23 00:46=
+:04
+> UTC 2015 (6be6a97) i686 i686 i386 GNU/Linux
+>
+> btrfs --version
+> btrfs-progs v4.0+20150429
+>
+> btrfs fi show
+> Label: none  uuid: d6934db3-3ac9-49d0-83db-287be7b995a5
+>          Total devices 1 FS bytes used 10.98GiB
+>          devid    1 size 18.71GiB used 18.71GiB path /dev/sda6
+>
+> btrfs fi df /
+> Data, single: total=3D15.19GiB, used=3D10.37GiB
+> System, DUP: total=3D8.00MiB, used=3D16.00KiB
+> System, single: total=3D4.00MiB, used=3D0.00B
+> Metadata, DUP: total=3D1.75GiB, used=3D622.53MiB
+> Metadata, single: total=3D8.00MiB, used=3D0.00B
+> GlobalReserve, single: total=3D208.00MiB, used=3D0.00B
+> Please find attached dmesg.log as requested.
+>
+> Please advise what have to do in order to delete snapshot that is repor=
+ted
+> to be illegal.
+Have you tried running 'btrfs subvolume delete' on the snapshot?  You'll =
 
-> btrfs works strictly at the block device level, and considers different
-> partitions different block devices, it doesn't grok the underlying
-> physical device relationship.
+have to find the full path to it first of course, but that shouldn't be=20
+too hard.  Based on the lack of BTRFS error messages in the kernel log=20
+you posted, I'm pretty certain that this isn't an issue with the=20
+filesystem itself (although the filesystem doesn't look particularly=20
+healthy, see further below), so manually deleting the snapshot using the =
 
-[end of reordered bit]
+regular BTRFS commands should work just fine.  That said, you may also=20
+want to look into changing the config for snapper, as it has a=20
+ridiculously aggressive retention policy for snapshots by default, which =
 
-> I'm going to assume that mkfs.btrfs -mraid1 -draid1 command is pointed
-> at the two resulting /dev/mapper/X devices resulting from the linear
-> concat.
+tends to lead to excessive space usage on filesystems smaller than about =
 
-Except, under the conditions he specified, there will be no such linear 
-concat mapper device available.
+250GB.
 
->> If I create a raid1 btrfs volume using all 4 "devices" as I understand
->> it I would loose data if I were to loose a drive because two mirror
->> possibilities would be:
->>
->> sda3 mirrored to sda8 sdb3 mirrored to sdb8
-> 
-> Well you don't actually know how the mirroring will allocate is the
-> problem with the arrangement. But yes, it's possible some chunks on sda3
-> will be mirrored to sda8, which is not what you'd want so the linear
-> concat idea is fine using either the md driver or lvm.
-> 
->> Is what I want to do possible without using MD-RAID and/or LVM?
-> 
-> Yes, either are suitable for this purpose. The decision comes down to
-> the user space tools, use the tool that you're most comfortable with.
+You may also want to look at running a balance on the filesystem, the=20
+numbers from btrfs fi show and btrfs fi df look somewhat worrying,=20
+you've got all the space on the disk allocated as chunks by BTRFS, but=20
+have a significant amount of empty space in those chunks.  Given that=20
+fact, ENOSPC issues are a very real possibility, and you'll probably=20
+have to run a series of partial balances to fix this (and it's important =
 
-It's not possible /without/ using them, no.  Using them, yes, but that's 
-not the question that was asked.
-
-
-As for the explanation, that's the part that I reordered above, btrfs 
-only sees block devices.  It doesn't know nor care what they're from.
+to do it before it becomes a visible issue also, because once you start=20
+getting ENOSPC errors, it is a lot harder to fix).  Try running a=20
+balance with '-dusage=3D0 -musage=3D0', then re-run repeatedly increasing=
+=20
+the number for both arguments by 5 each time until you get to 50.  If a=20
+run complains about 'ENOSPC errors during balance', re-run it with the=20
+same number for -dusage and -musage.  If you end up re-running with the=20
+same value 3 times and keep getting the errors, then you're probably=20
+beyond the point of this being fixable, and should just recreate the=20
+filesystem (you do have backups, right?).  Otherwise, after finishing=20
+the run with '-dusage=3D50 -musage=3D50' successfully, run a full balance=
+=20
+without the dusage and musage options.
 
 
-One workaround would be as Sean Greenslade's, using either a partitioning 
-tool that can safely move partitions around without destroying the data 
-in them, or simply copying off to backup, deleting the partitions and 
-recreating them in a more workable layout, then restoring from backup to 
-the new partitions, combining the two partitions on each physical device 
-into one.
 
-Another workaround would be putting btrfs on top of an mdraid or lvm 
-setup as above, thereby using software to overcome the hardware layout 
-limitations.
 
-Yet another, the one I'd almost certainly use here unless the use-case 
-made it too inconvenient or not even possible (one big file too big for 
-either one alone), would be to simply create two entirely separate btrfs 
-raid1 filesystems, each one composed of the two partitions of similar 
-size.  I'm already a strong booster of using partitioning to avoid 
-putting all my data eggs in one basket, and already use multiple separate 
-btrfs raid1s on partitions of the same two physical devices, here, so 
-this wouldn't even be beyond what I'm already doing, here.  And if the 
-OP's already dealing with that many partitions, it sounds like he'd be 
-able to handle it fairly well too.  After all there's always symlinks and 
-bind-mounts available to make parts of one filesystem available in 
-arbitrary locations on another, if the location of the directories 
-themselves is hard-coded to such an extent that you can't simply move 
-them and point everything that was pointed at the old location to the new 
-one, instead.
+--------------ms060805080803050505030401
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTEyMTIzMjUxWjBPBgkq
+hkiG9w0BCQQxQgRAkQEcPuUnLv/g1j2wdAh/CJKqRM+nxhlzW/tpR4OoMVKGRxuv4e/gl7y4
+UGJMnFgYt5+deonr4K1LirfyPbQslTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgBlbfuYILcoDnFiaWctD8gxjzzIqmA4hmWc/oCjjYFVu+4fI7nV
+DXT0RdBsZdv+YCJML36MSv+tWGmerqPFvU63pEPIrIyIDdD+L0jBcVK/VnEGlWQRJIDN3/3o
+5WIwN2jJ/wnPH469CMrUTpFstsB2k7dVRdZ7HcBy7si9i9Ra4BwvYxv/XebkWtnnLxoQXhkc
+qpMSpTL40bNqcDTvbD4vdJ6yR50EfGlRkuVgjd6km+VQlaeoFCw1M5bQJcqSJK7Q4guscK9v
+g0PAJNXVfYvE2lF6pFgpqimbLO4hjabrJCIfrOmtMnkAG7Wo97RFJmMDSU3rcRzvEuoi0pZj
+3xkpx027rie/kjKoMWMIt19Bbe5mBA0BOMSfN0ebxZgOSX2kRbtccaYyosL5Iy+oXSJfCDIh
+llxpYR9LfS2zHrBaBuMBhei565w4Yroqov89+dP5sTiMk9IDrOQ+vn8MaKsPBluybUm0IqHR
+T4VORYkbIrymzHxb21bg1kFMJ6/O56xkZXeTPM4vw3oZ+NH/abFUZ4UV5BMag4pareIO7Gk9
+En5EYL+b+lWvgHkHkd5fXqNFWzIaFqv7PaPxL8XpvzfBJoRd3a6wfMDUmFXBwyPlKEOyu4EI
+WSPT841WuuJ/6KwyT941/0h6g2Rf/08Ly5ycp7l0JEclZB6BnY4Kc3c6/QAAAAAAAA==
+--------------ms060805080803050505030401--

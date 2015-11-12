@@ -1,74 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57045 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753029AbbKIKqV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 9 Nov 2015 05:46:21 -0500
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com, David Sterba <dsterba@suse.com>, stable@vger.kernel.org
-Subject: [PATCH] btrfs: fix signed overflows in btrfs_sync_file
-Date: Mon,  9 Nov 2015 11:44:45 +0100
-Message-Id: <1447065885-24451-1-git-send-email-dsterba@suse.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:25119 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752216AbbKLBVr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 11 Nov 2015 20:21:47 -0500
+Date: Wed, 11 Nov 2015 20:21:33 -0500
+From: Chris Mason <clm@fb.com>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
+CC: "'btrfs'" <linux-btrfs@vger.kernel.org>
+Subject: Re: [GIT PULL] Fujitsu for 4.4
+Message-ID: <20151112012133.GF26661@ret.masoncoding.com>
+References: <03be01d11ad9$3b385cf0$b1a916d0$@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <03be01d11ad9$3b385cf0$b1a916d0$@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The calculation of range length in btrfs_sync_file leads to signed
-overflow. This was caught by PaX gcc SIZE_OVERFLOW plugin.
+On Mon, Nov 09, 2015 at 06:27:26PM +0800, Zhao Lei wrote:
+> Hi Chris,
+> 
+> This is collection of some bug fix and cleanup from fujitsu against btrfs in v4.3,
+> the main patch is these 2:
+>  Fix lost-data-profile caused by auto removing bg
+>  Fix lost-data-profile caused by balance bg
+> It can solve the problem of 'lost all data profile by balance and auto-remove-bg',
+> discussed in btrfs maillist.
+> 
+> Plus some enhancement and cleanup in scrub.
+> 
+> Would you please consider merging the following fixes to integration-4.4 branch?
 
-https://forums.grsecurity.net/viewtopic.php?f=1&t=4284
+Thanks, I have these all queued up.  I verified the patches and
+cherry-picked them, since Linus doesn't like to see github pulls, but I
+do appreciate having them all in one place.
 
-The fsync call passes 0 and LLONG_MAX, the range length does not fit to
-loff_t and overflows, but the value is converted to u64 so it silently
-works as expected.
-
-The minimal fix is a typecast to u64, switching functions to take
-(start, end) instead of (start, len) would be more intrusive.
-
-Coccinelle script found that there's one more opencoded calculation of
-the length.
-
-<smpl>
-@@
-loff_t start, end;
-@@
-* end - start
-</smpl>
-
-CC: stable@vger.kernel.org
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/file.c | 10 +++++++---
- 1 file changed, 7 insertions(+), 3 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 8c6f247ba81d..d70399dbb364 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1868,8 +1868,13 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 	struct btrfs_log_ctx ctx;
- 	int ret = 0;
- 	bool full_sync = 0;
--	const u64 len = end - start + 1;
-+	u64 len;
- 
-+	/*
-+	 * The range length can be represented by u64, we have to do the typecasts
-+	 * to avoid signed overflow if it's [0, LLONG_MAX] eg. from fsync()
-+	 */
-+	len = (u64)end - (u64)start + 1;
- 	trace_btrfs_sync_file(file, datasync);
- 
- 	/*
-@@ -2057,8 +2062,7 @@ int btrfs_sync_file(struct file *file, loff_t start, loff_t end, int datasync)
- 			}
- 		}
- 		if (!full_sync) {
--			ret = btrfs_wait_ordered_range(inode, start,
--						       end - start + 1);
-+			ret = btrfs_wait_ordered_range(inode, start, len);
- 			if (ret) {
- 				btrfs_end_transaction(trans, root);
- 				goto out;
--- 
-2.6.2
-
+-chris

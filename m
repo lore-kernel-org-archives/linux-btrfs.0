@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:59817 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:60471 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932625AbbKMDbb (ORCPT
+	with ESMTP id S1754220AbbKMDoe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 22:31:31 -0500
-Message-ID: <1447385488.7045.32.camel@scientia.net>
+	Thu, 12 Nov 2015 22:44:34 -0500
+Message-ID: <1447386270.7045.35.camel@scientia.net>
 Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
  chunk
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Fri, 13 Nov 2015 04:31:28 +0100
+Date: Fri, 13 Nov 2015 04:44:30 +0100
 In-Reply-To: <564557A7.4030505@cn.fujitsu.com>
 References: <1447365063.7045.7.camel@scientia.net>
 	 <5645474D.8000804@cn.fujitsu.com> <1447381613.7045.21.camel@scientia.net>
@@ -18,13 +18,13 @@ References: <1447365063.7045.7.camel@scientia.net>
 	 <564557A7.4030505@cn.fujitsu.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-ybgR1JB8b9+rTNg9UezP"
+	boundary="=-PgSOmwp7ujTnI4bOWMgO"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-ybgR1JB8b9+rTNg9UezP
+--=-PgSOmwp7ujTnI4bOWMgO
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
@@ -32,32 +32,21 @@ On Fri, 2015-11-13 at 11:23 +0800, Qu Wenruo wrote:
 > No, "-t 2" means only dump extent tree, no privacy issues at all.
 > Since only numeric inode/snapshot number and offset inside file.
 > Or I'll give you a warning on privacy.
->=20
-> No file name at all, just try it yourself.
-I'm preparing it...
+
+Done...
+http://christoph.anton.mitterer.name/tmp/public/856fc21a-89b8-11e5-abaf-502=
+690aa641f.xz
 
 
-> It may happened in older kernels, just recent btrfsck can detect the
-> problem.
-Okay, and how do "we" find the cause?
+I tried to figure out which kernel I've started with when I created the
+fs,... that was around the 1th of March 2015... but I've only had the
+Debian unstable kernel form that time (not the current vanilla)... and
+I guess that was 3.16.
 
 
-> > kernel 4.2.6
-> > btrfsprogs 4.3
-> >=20
-> New enough, that's the only good news yet...
-Well but I did use the same fs with older kernels... so it may have
-happened much earlier... :-(
-
-I do have a SHA512 checksum on every file... stored in the XATTRS...
-
-So as long as the file hierarchy would still be complete I could at
-least check whether all files are still really valid.
-
-
-Cheers,
+Thanks,
 Chris.
---=-ybgR1JB8b9+rTNg9UezP
+--=-PgSOmwp7ujTnI4bOWMgO
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -144,19 +133,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTExMzAzMzEy
-OFowTwYJKoZIhvcNAQkEMUIEQOevOeWNKihWVSGYeeTU9K2w1nHLd6Z+NocLnlF7ZoH08xGig0Aj
-lfO6vSC5VlHhO6ARVIKu6cqsVM+M7R/jKtIwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTExMzAzNDQz
+MFowTwYJKoZIhvcNAQkEMUIEQIoCGcQUuKKw6eIhc3ZQw14vIvWG9T8KFtdIQDyWgRtGl7cODmKE
+swZa95trgGWy5HEkTLTa+SoJmrFrdVJzWi0wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBZ23KpKFjBANS4JBVMntpdUMHd6YMB
-jFFEO23hCdAdMbvcjl+ntpM1CE1CawTXD4qmMeunjo1uubD/U/hDRJrHQ69UdBRdIZiEJIayEMSb
-aho+uEoP+c3+gAeotxiHBhPPtlCcFnGQ/XYTmNX+sgQ0fChGWKfCo6hgXcL7p27xV6kcFE338t52
-J7B7xWE87Np1NjOobl7DqN2ozTZwnLhBVvclRdFYfHgUFNeEMo6LFSLnQ5aj6gcszmFLDRIVNdRB
-EJNO7oH0sSXTkqiSzJ8vrvnmYyxt7E+ZJ2Nunf77WwmTy5TkfSo4aGJXRta7srqyrsjbzjSBUmSP
-QAvEXKEkAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBXb02ETNQKsEgNxk6s0UAieUZ/Eswh
+rlMuhKPMYKynv9T/QA3uof2HYZh9HYarnICBzFpfoVhoJbj2wCVk17UpxT1BqNLiqpPSRWFK95by
+lClJHpIKosnsyPkn8L8MQZOj4vQvurzEv2uzL2OQXTriZJBxW50+whhPADbgGPa2Ni85X39rwQpD
+ZEoKrLCzMSRuOh9ty7p6G1AlENjZDo1ynoR11PbnMBYnPm2YlAI187edjnSOiAQKPnv0KGpI5V9I
+zwtx1dy2K/Usnxs8xSKZA6PpE9/xdgGAEHMi49m4O7lIsUwfRB/daZVs4YVr1kXJerKBOaeu/pZT
+/8YuiTosAAAAAAAA
 
 
---=-ybgR1JB8b9+rTNg9UezP--
+--=-PgSOmwp7ujTnI4bOWMgO--
 

@@ -1,12 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10115 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754394AbbKMCVf (ORCPT
+Received: from mail-bl2on0121.outbound.protection.outlook.com ([65.55.169.121]:32576
+	"EHLO na01-bl2-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S932453AbbKMCXa convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 21:21:35 -0500
-Subject: Re: BTRFS Error - Rockstor
-To: Scotty Edmonds <scotty@scottyedmonds.com>, Hugo Mills <hugo@carfax.org.uk>,
+	Thu, 12 Nov 2015 21:23:30 -0500
+From: Scotty Edmonds <scotty@scottyedmonds.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Hugo Mills <hugo@carfax.org.uk>,
         Donald Pearson <donaldwhpearson@gmail.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS Error - Rockstor
+Date: Fri, 13 Nov 2015 02:23:26 +0000
+Message-ID: <SN2PR07MB013024CC746A3302C8FB614CF110@SN2PR07MB013.namprd07.prod.outlook.com>
 References: <SN2PR07MB013A0D1DE3EC69CFAD9885ACF120@SN2PR07MB013.namprd07.prod.outlook.com>
  <CAC=t97BwoMcqE978Fcdu3keN4UNtxqoBDPdbYb_T0C-wR-CBsg@mail.gmail.com>
  <SN2PR07MB013F045DB3B42E4AD8AA3D6CF120@SN2PR07MB013.namprd07.prod.outlook.com>
@@ -14,28 +19,38 @@ References: <SN2PR07MB013A0D1DE3EC69CFAD9885ACF120@SN2PR07MB013.namprd07.prod.ou
  <SN2PR07MB01362A586F4293204E66FCFCF120@SN2PR07MB013.namprd07.prod.outlook.com>
  <CAC=t97AUVQ_Jk1aSmhHodF-Db7NjaUvD1pfbFokx+q_bg3QtxA@mail.gmail.com>
  <20151112225701.GD24333@carfax.org.uk>
- <SN2PR07MB01305858FEC051F986D3546CF110@SN2PR07MB013.namprd07.prod.outlook.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5645492B.9080808@cn.fujitsu.com>
-Date: Fri, 13 Nov 2015 10:21:31 +0800
+ <SN2PR07MB01305858FEC051F986D3546CF110@SN2PR07MB013.namprd07.prod.outlook.com>,<5645492B.9080808@cn.fujitsu.com>
+In-Reply-To: <5645492B.9080808@cn.fujitsu.com>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-In-Reply-To: <SN2PR07MB01305858FEC051F986D3546CF110@SN2PR07MB013.namprd07.prod.outlook.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+yes, no problem.  I had it powered off as I'm moving the system to a proper chassis and won't have it for another two weeks.
+
+Thanks,
+
+Scotty Edmonds
+Scotty@ScottyEdmonds.com
+
+________________________________________
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Sent: November-12-15 10:21 PM
+To: Scotty Edmonds; Hugo Mills; Donald Pearson
+Cc: Btrfs BTRFS
+Subject: Re: BTRFS Error - Rockstor
+
 Chunk root seems corrupted.
-But that's not a really huge problem, tree root corruption happens, and 
-thanks to the full CoW of btrfs metadata, we will always be able to find 
+But that's not a really huge problem, tree root corruption happens, and
+thanks to the full CoW of btrfs metadata, we will always be able to find
 a old version one.
 
-I'd like to do a full disk scan for any earlier version chunk root, but 
+I'd like to do a full disk scan for any earlier version chunk root, but
 I found that btrfs-find-root doesn't support search for chunk root.
-(Hey, who is the bad ass wrote btrfs-find-root and made chunk root 
+(Hey, who is the bad ass wrote btrfs-find-root and made chunk root
 search unsupported?! Oh, that's myself)
 
-If you can wait, I'll add chunk root search support for you in recent 
+If you can wait, I'll add chunk root search support for you in recent
 days, and then hopes we can find something helpful.
 
 Thanks,

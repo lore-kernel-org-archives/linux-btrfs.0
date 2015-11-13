@@ -1,53 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:37225 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754581AbbKMKTi (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:37416 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932879AbbKMKU4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 05:19:38 -0500
-Message-ID: <5645B906.8030402@oracle.com>
-Date: Fri, 13 Nov 2015 18:18:46 +0800
+	Fri, 13 Nov 2015 05:20:56 -0500
+Message-ID: <5645B953.7080202@oracle.com>
+Date: Fri, 13 Nov 2015 18:20:03 +0800
 From: Anand Jain <anand.jain@oracle.com>
 MIME-Version: 1.0
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-CC: linux-btrfs@vger.kernel.org
+To: kreijack@inwind.it, linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 00/15] btrfs: Hot spare and Auto replace
-References: <1447066589-3835-1-git-send-email-anand.jain@oracle.com> <5643F62D.6050703@cn.fujitsu.com>
-In-Reply-To: <5643F62D.6050703@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+References: <1447066589-3835-1-git-send-email-anand.jain@oracle.com> <5644E6B5.9070405@inwind.it>
+In-Reply-To: <5644E6B5.9070405@inwind.it>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+Thanks for comments.
 
-Thanks for the comments.
-
-> Let's take the following example:
+On 11/13/2015 03:21 AM, Goffredo Baroncelli wrote:
+> On 2015-11-09 11:56, Anand Jain wrote:
+>> These set of patches provides btrfs hot spare and auto replace support
+>> for you review and comments.
 >
-> 1) 2 RAID1 + 1 spare
->     (A + B) + C
+> Hi Anand,
 >
-> 2) 3 RAID1
->     (A + B + C)
+> is there any reason to put this kind of logic in the kernel space ?
+> I think that it could be more simply to create a daemon which checks
+ > the disks and when needed it starts a replace...
 
-> At least in normal operation case, case 1) makes device C useless, and
+> The pool policy could be more sophisticated: some filesystem could
+ > require a "dedicated" pool (for example because the disks are in the
+ > same enclosure); in other case a global pool may be more useful.
 
-  Yes.
+  Thats true. It can be added as an enhancement on top of current
+  implementation, I will, if time permits. Current priority is
+  to have stability on what could possibly go wrong (in configuring)
+  and how stable code towards it.
 
-> For case 2), we can just relocate and recover the bad chunks in B.
-> It it should only need to copy 6G data.
+> Another feature of this daemon could be to add a disk when the disk
+ > space is too low,
 
-  Case 2 is Wrong in the context of spare.
+  That will be at the cost of a spare device which user should review
+  the trade-offs and do it manually ? I am not sure.
 
-  Unless space usage is limited to 1/3 of total space.
-  But when you do that, case 1 drawback will equally apply
-  to case 2 as well.
+> or to start a balance when there is no space to
+ > allocate further chunk.....
 
+  Yep. As you notice, the thread created here is casualty_kthread()
+  (instead of replace_kthread()) over the long run I wish to provide
+  that feature in this thread, as it is a mutually exclusive operations
+  with replace.
 
- > It it should only need to copy 6G data.
+> Of course all these logic could be implemented in kernel space,
+ > but I think that we should avoid that when possible.
 
-   Its true as long as you don't replace the failed B
-   and bring the configuration to its original. However
-   when you do that,  Data  moved will be more than case 1.
-   So this is not fully correct.
+  Easy to handle the mutually_exclusive parts with in the kernel
+  and Its better to have the important logic at one place. Two heads
+  operating on an org looking and feeling different things will lead
+  to wrong decisions.
+
+> Moreover in  user space the logging is more easy....
 
 Thanks, Anand

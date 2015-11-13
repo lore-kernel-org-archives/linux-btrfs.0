@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:50670 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:50678 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932478AbbKMPVj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 10:21:39 -0500
+	id S932478AbbKMPVp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 10:21:45 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>, Jeff Mahoney <jeffm@suse.com>
-Subject: [PATCH 1/2] Btrfs: use global reserve when deleting unused block group after ENOSPC
-Date: Fri, 13 Nov 2015 15:20:31 +0000
-Message-Id: <1447428032-1872-2-git-send-email-fdmanana@kernel.org>
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH 2/2] Btrfs: fix the number of transaction units needed to remove a block group
+Date: Fri, 13 Nov 2015 15:20:32 +0000
+Message-Id: <1447428032-1872-3-git-send-email-fdmanana@kernel.org>
 In-Reply-To: <1447428032-1872-1-git-send-email-fdmanana@kernel.org>
 References: <1447428032-1872-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -16,191 +16,80 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-It's possible to reach a state where the cleaner kthread isn't able to
-start a transaction to delete an unused block group due to lack of enough
-free metadata space and due to lack of unallocated device space to allocate
-a new metadata block group as well. If this happens try to use space from
-the global block group reserve just like we do for unlink operations, so
-that we don't reach a permanent state where starting a transaction for
-filesystem operations (file creation, renames, etc) keeps failing with
--ENOSPC. Such an unfortunate state was observed on a machine where over
-a dozen unused data block groups existed and the cleaner kthread was
-failing to delete them due to ENOSPC error when attempting to start a
-transaction, and even running balance with a -dusage=0 filter failed with
-ENOSPC as well. Also unmounting and mounting again the filesystem didn't
-help. Allowing the cleaner kthread to use the global block reserve to
-delete the unused data block groups fixed the problem.
+We were using only 1 transaction unit when attempting to delete an unused
+block group but in reality we need 3 units. We were accounting only for
+the addition of the orphan item (for the block group's free space cache
+inode) but we were not accounting that we need to delete one block group
+item from the extent tree and one free space item from the tree of tree
+roots.
 
+While one unit is not enough, it worked most of the time because for each
+single unit we are too pessimistic and assume an entire tree path, with
+the highest possible height (8), needs to be COWed with eventual node
+splits at every possible level in the tree, so there was usually enough
+reserved space for removing the block group and free space items after
+adding the orphan.
+
+However after adding the orphan item, writepages() can by called by the VM
+subsystem against the btree inode when we are under memory pressure, which
+causes writeback to start for the nodes we COWed before, this forces the
+operation to remove the free space item to COW again some (or all of) the
+same nodes (in the tree of tree roots). Even without writepages() being
+called, we could fail with ENOSPC because the block group item is located
+in a different tree (the extent tree) and it can have a big enough heigth
+and require enough node/leaf splits to blow up the reserved space that did
+not ended up getting used for adding the orphan and removing the free
+space cache item.
+
+In the kernel 4.0 release, commit 3d84be799194 ("Btrfs: fix BUG_ON in
+btrfs_orphan_add() when delete unused block group"), we attempted to fix
+a BUG_ON due to ENOSPC when trying to add the orphan item by making the
+cleaner kthread reserve one transaction unit before attempting to remove
+the block group, but this was not enough. We had a couple user reports
+still hitting the same BUG_ON after 4.0, like Stefan Priebe's report on
+a 4.2-rc6 kernel for example:
+
+    http://www.spinics.net/lists/linux-btrfs/msg46070.html
+
+So fix this by reserving the neceasary 3 units of metadata.
+
+Reported-by: Stefan Priebe <s.priebe@profihost.ag>
+Fixes: 3d84be799194 ("Btrfs: fix BUG_ON in btrfs_orphan_add() when delete unused block group")
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
-Signed-off-by: Jeff Mahoney <jeffm@suse.com>
 ---
- fs/btrfs/ctree.h       |  2 ++
- fs/btrfs/extent-tree.c | 14 ++++++++++++--
- fs/btrfs/inode.c       | 24 +-----------------------
- fs/btrfs/transaction.c | 32 ++++++++++++++++++++++++++++++++
- fs/btrfs/transaction.h |  4 ++++
- fs/btrfs/volumes.c     |  2 +-
- 6 files changed, 52 insertions(+), 26 deletions(-)
+ fs/btrfs/extent-tree.c | 15 ++++++++++++++-
+ 1 file changed, 14 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a2e73f6..1573be6 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3479,6 +3479,8 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 			   struct btrfs_root *root, u64 bytes_used,
- 			   u64 type, u64 chunk_objectid, u64 chunk_offset,
- 			   u64 size);
-+struct btrfs_trans_handle *btrfs_start_trans_remove_block_group(
-+				struct btrfs_fs_info *fs_info);
- int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 group_start,
- 			     struct extent_map *em);
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index acf3ed1..7820093 100644
+index 7820093..cc54c3f 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -10256,6 +10256,17 @@ out:
- 	return ret;
- }
- 
-+struct btrfs_trans_handle *
-+btrfs_start_trans_remove_block_group(struct btrfs_fs_info *fs_info)
-+{
-+	/*
-+	 * 1 unit for adding the free space inode's orphan (located in the tree
-+	 * of tree roots).
-+	 */
-+	return btrfs_start_transaction_fallback_global_rsv(fs_info->extent_root,
-+							   1, 1);
-+}
-+
- /*
-  * Process the unused_bgs list and remove any that don't have any allocated
-  * space inside of them.
-@@ -10322,8 +10333,7 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		 * Want to do this before we do anything else so we can recover
- 		 * properly if we fail to join the transaction.
- 		 */
--		/* 1 for btrfs_orphan_reserve_metadata() */
--		trans = btrfs_start_transaction(root, 1);
-+		trans = btrfs_start_trans_remove_block_group(fs_info);
- 		if (IS_ERR(trans)) {
- 			btrfs_dec_block_group_ro(root, block_group);
- 			ret = PTR_ERR(trans);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 6e93349..f82d1f4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -4046,9 +4046,7 @@ int btrfs_unlink_inode(struct btrfs_trans_handle *trans,
-  */
- static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir)
+@@ -10260,11 +10260,24 @@ struct btrfs_trans_handle *
+ btrfs_start_trans_remove_block_group(struct btrfs_fs_info *fs_info)
  {
--	struct btrfs_trans_handle *trans;
- 	struct btrfs_root *root = BTRFS_I(dir)->root;
--	int ret;
- 
  	/*
- 	 * 1 for the possible orphan item
-@@ -4057,27 +4055,7 @@ static struct btrfs_trans_handle *__unlink_start_trans(struct inode *dir)
- 	 * 1 for the inode ref
- 	 * 1 for the inode
++	 * We need to reserve 3 units from the metadata space info in order
++	 * to remove a block group (done at btrfs_remove_block_group()), which
++	 * are used for:
++	 *
+ 	 * 1 unit for adding the free space inode's orphan (located in the tree
+ 	 * of tree roots).
++	 * 1 unit for deleting the block group item (located in the extent
++	 * tree).
++	 * 1 unit for deleting the free space item (located in tree of tree
++	 * roots).
++	 *
++	 * In order to remove a block group we also need to reserve units in the
++	 * system space info in order to update the chunk tree (update one or
++	 * more device items and remove one chunk item), but this is done at
++	 * btrfs_remove_chunk() through a call to check_system_chunk().
  	 */
--	trans = btrfs_start_transaction(root, 5);
--	if (!IS_ERR(trans) || PTR_ERR(trans) != -ENOSPC)
--		return trans;
--
--	if (PTR_ERR(trans) == -ENOSPC) {
--		u64 num_bytes = btrfs_calc_trans_metadata_size(root, 5);
--
--		trans = btrfs_start_transaction(root, 0);
--		if (IS_ERR(trans))
--			return trans;
--		ret = btrfs_cond_migrate_bytes(root->fs_info,
--					       &root->fs_info->trans_block_rsv,
--					       num_bytes, 5);
--		if (ret) {
--			btrfs_end_transaction(trans, root);
--			return ERR_PTR(ret);
--		}
--		trans->block_rsv = &root->fs_info->trans_block_rsv;
--		trans->bytes_reserved = num_bytes;
--	}
--	return trans;
-+	return btrfs_start_transaction_fallback_global_rsv(root, 5, 5);
+ 	return btrfs_start_transaction_fallback_global_rsv(fs_info->extent_root,
+-							   1, 1);
++							   3, 1);
  }
  
- static int btrfs_unlink(struct inode *dir, struct dentry *dentry)
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 418c6a2..3367a3c 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -592,6 +592,38 @@ struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 	return start_transaction(root, num_items, TRANS_START,
- 				 BTRFS_RESERVE_FLUSH_ALL);
- }
-+struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
-+					struct btrfs_root *root,
-+					unsigned int num_items,
-+					int min_factor)
-+{
-+	struct btrfs_trans_handle *trans;
-+	u64 num_bytes;
-+	int ret;
-+
-+	trans = btrfs_start_transaction(root, num_items);
-+	if (!IS_ERR(trans) || PTR_ERR(trans) != -ENOSPC)
-+		return trans;
-+
-+	trans = btrfs_start_transaction(root, 0);
-+	if (IS_ERR(trans))
-+		return trans;
-+
-+	num_bytes = btrfs_calc_trans_metadata_size(root, num_items);
-+	ret = btrfs_cond_migrate_bytes(root->fs_info,
-+				       &root->fs_info->trans_block_rsv,
-+				       num_bytes,
-+				       min_factor);
-+	if (ret) {
-+		btrfs_end_transaction(trans, root);
-+		return ERR_PTR(ret);
-+	}
-+
-+	trans->block_rsv = &root->fs_info->trans_block_rsv;
-+	trans->bytes_reserved = num_bytes;
-+
-+	return trans;
-+}
- 
- struct btrfs_trans_handle *btrfs_start_transaction_lflush(
- 					struct btrfs_root *root,
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index b05b2f6..0da21ca 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -185,6 +185,10 @@ int btrfs_end_transaction(struct btrfs_trans_handle *trans,
- 			  struct btrfs_root *root);
- struct btrfs_trans_handle *btrfs_start_transaction(struct btrfs_root *root,
- 						   unsigned int num_items);
-+struct btrfs_trans_handle *btrfs_start_transaction_fallback_global_rsv(
-+					struct btrfs_root *root,
-+					unsigned int num_items,
-+					int min_factor);
- struct btrfs_trans_handle *btrfs_start_transaction_lflush(
- 					struct btrfs_root *root,
- 					unsigned int num_items);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index d198dd3..e0bd364 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2853,7 +2853,7 @@ static int btrfs_relocate_chunk(struct btrfs_root *root, u64 chunk_offset)
- 	if (ret)
- 		return ret;
- 
--	trans = btrfs_start_transaction(root, 0);
-+	trans = btrfs_start_trans_remove_block_group(root->fs_info);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		btrfs_std_error(root->fs_info, ret, NULL);
+ /*
 -- 
 2.1.3
 

@@ -1,68 +1,114 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:52797 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754225AbbKMUCY (ORCPT
+Received: from mail-lf0-f42.google.com ([209.85.215.42]:36144 "EHLO
+	mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754225AbbKMUPy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 15:02:24 -0500
-Date: Fri, 13 Nov 2015 12:01:58 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <20151113200158.GA18943@merlins.org>
-References: <20151113174101.GC19249@merlins.org>
- <pan$d16ba$8434e942$7cc09c55$439d7a74@cox.net>
+	Fri, 13 Nov 2015 15:15:54 -0500
+Received: by lfs39 with SMTP id 39so58892160lfs.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 12:15:53 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$d16ba$8434e942$7cc09c55$439d7a74@cox.net>
-Subject: Re: Where is the disk space?
+In-Reply-To: <20151113184227.GF24333@carfax.org.uk>
+References: <CAHTEL3=r8kUJOU=xUAg2iG52HuWmqQ16QxUjY6d+zqbziW5+gw@mail.gmail.com>
+	<564486F3.5020804@gmail.com>
+	<CAHTEL3mEGmc5BhbGMEAbyPNU90nFQGZprLkWrh1WaEh5sSiH8w@mail.gmail.com>
+	<56461034.3070209@gmail.com>
+	<CAHTEL3m0uGWZGWUH_SLmg8TqMe4DcXU77p+S=4Aebukr1BZ-Bg@mail.gmail.com>
+	<56462784.2060601@gmail.com>
+	<20151113184227.GF24333@carfax.org.uk>
+Date: Fri, 13 Nov 2015 21:15:53 +0100
+Message-ID: <CAHTEL3n3G-fz6wFZhODhSiCznokhJCTD3PU9fmeumb19kyos_Q@mail.gmail.com>
+Subject: Re: illegal snapshot, cannot be deleted
+From: Vedran Vucic <vedran.vucic@gmail.com>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        Vedran Vucic <vedran.vucic@gmail.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 13, 2015 at 07:45:21PM +0000, Duncan wrote:
-> Marc MERLIN posted on Fri, 13 Nov 2015 09:41:01 -0800 as excerpted:
-> 
-> > Any ideas?
-> 
-> Without addressing the main question, a couple targets of opportunity:
-> 
-> 1) A quick balance with -mprofiles=single should kill those unused single 
-> metadata and system mkfs.btrfs legacies so you don't have to see them in 
-> fi df.
-> 
-> 2) While fi df reports the data total vs. used spread being close enough 
-> that it's unsurprising a balance -dusage=80 didn't give you anything 
-> back, the spread on metadata is rather higher, dup, 6.0 gig total, less 
-> than 1 gig used, so a balance -musage=50 or 80 should return a few gigs, 
-> 4-5 I'd guess, leaving you 1-2 gig metadata total.
+Hello,
 
-Well, -musage helped, I didn't know about that one, thanks:
-root@polgara:/mnt/btrfs_root# btrfs fi show .
-Label: 'btrfs_root'  uuid: a2a1ed7b-6bfe-4e83-bc10-727126ed17bf
-        Total devices 1 FS bytes used 39.09GiB
-        devid    1 size 55.88GiB used 51.88GiB path /dev/sdb5
+I guess that it might be bug in kernel.
+I was successful this:
+btrfs balance start / -dusage=50 -musage=35
 
-btrfs-progs v4.0-dirty
-root@polgara:/mnt/btrfs_root# btrfs balance start -musage=80 -v /mnt/btrfs_root
-Dumping filters: flags 0x6, state 0x0, force is off
-  METADATA (flags 0x2): balancing, usage=80
-  SYSTEM (flags 0x2): balancing, usage=80
-Done, had to relocate 14 out of 55 chunks
-root@polgara:/mnt/btrfs_root# btrfs fi show .
-Label: 'btrfs_root'  uuid: a2a1ed7b-6bfe-4e83-bc10-727126ed17bf
-        Total devices 1 FS bytes used 39.75GiB
-        devid    1 size 55.88GiB used 41.91GiB path /dev/sdb5
+musage above 35 caused ENOSPC message. Otherwise it was good.
+Thanks on support,
 
-btrfs-progs v4.0-dirty
-root@polgara:/mnt/btrfs_root# df -h .
-Filesystem      Size  Used Avail Use% Mounted on
-/dev/sdb5        56G   41G   15G  74% /mnt/btrfs_root
+vedran
 
-I'm still seeing 39GB used for 28GB of actual data, but I definitely
-fixed one bit already thanks to you.
-
-Marc
--- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/                         | PGP 1024R/763BE901
+On Fri, Nov 13, 2015 at 7:42 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> On Fri, Nov 13, 2015 at 01:10:12PM -0500, Austin S Hemmelgarn wrote:
+>> On 2015-11-13 12:30, Vedran Vucic wrote:
+>> >Hello,
+>> >
+>> >Here are outputs of commands as you requested:
+>> >  btrfs fi df /
+>> >Data, single: total=8.00GiB, used=7.71GiB
+>> >System, DUP: total=32.00MiB, used=16.00KiB
+>> >Metadata, DUP: total=1.12GiB, used=377.25MiB
+>> >GlobalReserve, single: total=128.00MiB, used=0.00B
+>> >
+>> >btrfs fi show
+>> >Label: none  uuid: d6934db3-3ac9-49d0-83db-287be7b995a5
+>> >         Total devices 1 FS bytes used 8.08GiB
+>> >         devid    1 size 18.71GiB used 10.31GiB path /dev/sda6
+>> >
+>> >btrfs-progs v4.0+20150429
+>> >
+>> Hmm, that's odd, based on these numbers, you should be having no
+>> issue at all trying to run a balance. You might be hitting some
+>> other bug in the kernel, however, but I don't remember if there were
+>> any known bugs related to ENOSPC or balance in the version you're
+>> running.
+>
+>    There's one specific bug that shows up with ENOSPC exactly like
+> this. It's in all versions of the kernel, there's no known solution,
+> and no guaranteed mitigation strategy, I'm afraid. Various things like
+> balancing, or adding, balancing, and removing a device again have been
+> tried. Sometimes they seem to help; sometimes they just make the
+> problem worse.
+>
+>    We average maybe one report a week or so(*) with this particular
+> set of symptoms.
+>
+>    Hugo.
+>
+> (*) <waves hands vaguely>
+>
+>>  You might see if trying to re-run the balance with
+>> '-dusage=40 -musage=40' works correctly (I've seen cases where the
+>> first run fails, but subsequent ones work because the first one made
+>> some progress despite failing).
+>> >On Fri, Nov 13, 2015 at 5:30 PM, Austin S Hemmelgarn
+>> ><ahferroin7@gmail.com> wrote:
+>> >>On 2015-11-13 11:12, Vedran Vucic wrote:
+>> >>>
+>> >>>Hello,
+>> >>>
+>> >>>I succeeded to delete illegal snapshot with command:
+>> >>>btrfs subvolume delete /.snapshots/741/snapshot
+>> >>>When I have done
+>> >>>btrfs balance / -dusage=0 -musage=0
+>> >>>increasing value up to 4o I did not have issues.
+>> >>>But on value 4- for-dusage= and -musage=
+>> >>>I got message that there is no space left on disk.
+>> >>>Do you have any advice how to manage that?
+>> >>
+>> >>
+>> >>Can you post the output of 'btrfs fi df' and 'btrfs fi show' again? Both
+>> >>should have changed after the balance, and I'd need to see what it looks
+>> >>like now to be able to give any reasonable advice.
+>> >>
+>> >>
+>>
+>>
+>
+>
+>
+> --
+> Hugo Mills             | You can play with your friends' privates, but you
+> hugo@... carfax.org.uk | can't play with your friends' childrens' privates.
+> http://carfax.org.uk/  |
+> PGP: E2AB1DE4          |                                       C++ coding rule

@@ -1,72 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:12000 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:14568 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752029AbbKIKBW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 05:01:22 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tA9A0enX031122
-	for <linux-btrfs@vger.kernel.org>; Mon, 9 Nov 2015 18:00:40 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+	with ESMTP id S932345AbbKMCxr (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 12 Nov 2015 21:53:47 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAD2r2XX031969
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 10:53:02 +0800
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/3] btrfs-progs: cleanup cmd_device_usage
-Date: Mon, 9 Nov 2015 17:59:38 +0800
-Message-ID: <0000e758dcc9eee7e01c6e19e417f2b393d9e42c.1447063147.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <068f125cbb9037fbd06cf5db81db8ae4a22ae712.1447063147.git.zhaolei@cn.fujitsu.com>
-References: <068f125cbb9037fbd06cf5db81db8ae4a22ae712.1447063147.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs-progs: find-root: Add support to search chunk root
+Date: Fri, 13 Nov 2015 10:53:41 +0800
+Message-ID: <1447383221-20729-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-1: Remove more_than_one variant, use iterator's value instead
-2: Remove "out" mark, use break instead.
+Add support to search chunk root, as we only need to search tree roots
+in system chunk, which should be very easy to add, just iterate in
+system chunks.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- cmds-device.c | 10 ++++------
- 1 file changed, 4 insertions(+), 6 deletions(-)
+ find-root.c | 18 ++++++++++++------
+ volumes.c   |  6 +++---
+ volumes.h   | 16 ++++++++++++++--
+ 3 files changed, 29 insertions(+), 11 deletions(-)
 
-diff --git a/cmds-device.c b/cmds-device.c
-index e23ea61..739405b 100644
---- a/cmds-device.c
-+++ b/cmds-device.c
-@@ -487,7 +487,6 @@ static int cmd_device_usage(int argc, char **argv)
+diff --git a/find-root.c b/find-root.c
+index 55e7942..5e97c80 100644
+--- a/find-root.c
++++ b/find-root.c
+@@ -108,8 +108,8 @@ int btrfs_find_root_search(struct btrfs_root *chunk_root,
  {
- 	unsigned unit_mode;
- 	int ret = 0;
--	int more_than_one = 0;
- 	int i;
- 
- 	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
-@@ -499,23 +498,22 @@ static int cmd_device_usage(int argc, char **argv)
- 		int fd;
- 		DIR *dirstream = NULL;
- 
--		if (more_than_one)
-+		if (i > 1)
- 			printf("\n");
- 
- 		fd = btrfs_open_dir(argv[i], &dirstream, 1);
- 		if (fd < 0) {
- 			ret = 1;
--			goto out;
-+			break;
+ 	struct btrfs_fs_info *fs_info = chunk_root->fs_info;
+ 	struct extent_buffer *eb;
+-	u64 metadata_offset = 0;
+-	u64 metadata_size = 0;
++	u64 chunk_offset = 0;
++	u64 chunk_size = 0;
+ 	u64 offset = 0;
+ 	u32 leafsize = chunk_root->leafsize;
+ 	int suppress_errors = 0;
+@@ -118,15 +118,21 @@ int btrfs_find_root_search(struct btrfs_root *chunk_root,
+ 	suppress_errors = fs_info->suppress_check_block_errors;
+ 	fs_info->suppress_check_block_errors = 1;
+ 	while (1) {
+-		ret = btrfs_next_metadata(&fs_info->mapping_tree,
+-					  &metadata_offset, &metadata_size);
++		if (filter->objectid != BTRFS_CHUNK_TREE_OBJECTID)
++			ret = btrfs_next_metadata(&fs_info->mapping_tree,
++						  &chunk_offset,
++						  &chunk_size);
++		else
++			ret = btrfs_next_system(&fs_info->mapping_tree,
++						&chunk_offset,
++						&chunk_size);
+ 		if (ret) {
+ 			if (ret == -ENOENT)
+ 				ret = 0;
+ 			break;
  		}
- 
- 		ret = _cmd_device_usage(fd, argv[i], unit_mode);
- 		close_file_or_dir(fd, dirstream);
- 
- 		if (ret)
--			goto out;
--		more_than_one = 1;
-+			break;
- 	}
--out:
-+
- 	return !!ret;
+-		for (offset = metadata_offset;
+-		     offset < metadata_offset + metadata_size;
++		for (offset = chunk_offset;
++		     offset < chunk_offset + chunk_size;
+ 		     offset += chunk_root->leafsize) {
+ 			eb = read_tree_block(chunk_root, offset, leafsize, 0);
+ 			if (!eb || IS_ERR(eb))
+diff --git a/volumes.c b/volumes.c
+index 83ddd16..3dc9099 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -1175,8 +1175,8 @@ int btrfs_num_copies(struct btrfs_mapping_tree *map_tree, u64 logical, u64 len)
+ 	return ret;
  }
  
+-int btrfs_next_metadata(struct btrfs_mapping_tree *map_tree, u64 *logical,
+-			u64 *size)
++int btrfs_next_chunk(struct btrfs_mapping_tree *map_tree, u64 *logical,
++		     u64 *size, u64 type)
+ {
+ 	struct cache_extent *ce;
+ 	struct map_lookup *map;
+@@ -1189,7 +1189,7 @@ int btrfs_next_metadata(struct btrfs_mapping_tree *map_tree, u64 *logical,
+ 			return -ENOENT;
+ 
+ 		map = container_of(ce, struct map_lookup, ce);
+-		if (map->type & BTRFS_BLOCK_GROUP_METADATA) {
++		if (map->type & type) {
+ 			*logical = ce->start;
+ 			*size = ce->size;
+ 			return 0;
+diff --git a/volumes.h b/volumes.h
+index 4ecb993..68f5144 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -167,8 +167,20 @@ int btrfs_map_block(struct btrfs_mapping_tree *map_tree, int rw,
+ 		    u64 logical, u64 *length,
+ 		    struct btrfs_multi_bio **multi_ret, int mirror_num,
+ 		    u64 **raid_map_ret);
+-int btrfs_next_metadata(struct btrfs_mapping_tree *map_tree, u64 *logical,
+-			u64 *size);
++int btrfs_next_chunk(struct btrfs_mapping_tree *map_tree, u64 *logical,
++		     u64 *size, u64 type);
++static inline int btrfs_next_metadata(struct btrfs_mapping_tree *map_tree,
++				      u64 *logical, u64 *size)
++{
++	return btrfs_next_chunk(map_tree, logical, size,
++				BTRFS_BLOCK_GROUP_METADATA);
++}
++static inline int btrfs_next_system(struct btrfs_mapping_tree *map_tree,
++				    u64 *logical, u64 *size)
++{
++	return btrfs_next_chunk(map_tree, logical, size,
++				BTRFS_BLOCK_GROUP_SYSTEM);
++}
+ int btrfs_rmap_block(struct btrfs_mapping_tree *map_tree,
+ 		     u64 chunk_start, u64 physical, u64 devid,
+ 		     u64 **logical, int *naddrs, int *stripe_len);
 -- 
-1.8.5.1
+2.6.2
 

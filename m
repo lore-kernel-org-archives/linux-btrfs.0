@@ -1,143 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:59877 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:50662 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752329AbbKYSJZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 13:09:25 -0500
+	id S932478AbbKMPVh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 10:21:37 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix error path when failing to submit bio for direct IO write
-Date: Tue, 24 Nov 2015 23:35:25 +0000
-Message-Id: <1448408125-10305-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
-References: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH 0/2] Btrfs: fixes for an ENOSPC issue that left a fs unusable
+Date: Fri, 13 Nov 2015 15:20:30 +0000
+Message-Id: <1447428032-1872-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Commit 61de718fceb6 ("Btrfs: fix memory corruption on failure to submit
-bio for direct IO") fixed problems with the error handling code after we
-fail to submit a bio for direct IO. However there were 2 problems that it
-did not address when the failure is due to memory allocation failures for
-direct IO writes:
+The following pair of changes fix an issue observed in a production
+environment where any file operations done by a package manager failed
+with ENOSPC. Forcing a commit of the current transaction (through "sync")
+didn't help, a balance operation with the filters -dusage=0 didn't help
+either and the issue persisted even after rebooting the machine. There
+were many data blocks groups that were unused, but they weren't getting
+deleted by the cleaner kthread because whenever it tried to start a
+transaction to delete a block group it got -ENOSPC error, which it silently
+ignores (as it does for any other error).
 
-1) We considered that there could be only one ordered extent for the whole
-   IO range, which is not always true, as we can have multiple;
+So these just make sure we fallback to use the global reserve, if -ENOSPC
+is encountered through the standard allocation path, to delete block groups
+as we do already for inode unlink operations. Another issue fixed is hitting
+a BUG_ON() when removing a block group due to -ENSPC failure when creating
+the orphan item for its free space cache inode. This second issue has
+been reported by a few users in the mailing list and bugzilla (for example
+at http://www.spinics.net/lists/linux-btrfs/msg46070.html).
 
-2) It did not set the bit BTRFS_ORDERED_IO_DONE in the ordered extent,
-   which can make other tasks running btrfs_wait_logged_extents() hang
-   forever, since they wait for that bit to be set. The general assumption
-   is that regardless of an error, the BTRFS_ORDERED_IO_DONE is always set
-   and it precedes setting the bit BTRFS_ORDERED_COMPLETE.
+These changes are also available at:
+http://git.kernel.org/cgit/linux/kernel/git/fdmanana/linux.git/log/?h=integration-4.4
 
-Fix these issues by moving part of the btrfs_endio_direct_write() handler
-into a new helper function and having that new helper function called when
-we fail to allocate memory to submit the bio (and its private object) for
-a direct IO write.
+Thanks.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+Filipe Manana (2):
+  Btrfs: use global reserve when deleting unused block group after
+    ENOSPC
+  Btrfs: fix the number of transaction units needed to remove a block
+    group
 
-V2: Fixed wrong uptodate value passed to helper
-    btrfs_endio_direct_write_update_ordered() (1 vs 0).
+ fs/btrfs/ctree.h       |  2 ++
+ fs/btrfs/extent-tree.c | 27 +++++++++++++++++++++++++--
+ fs/btrfs/inode.c       | 24 +-----------------------
+ fs/btrfs/transaction.c | 32 ++++++++++++++++++++++++++++++++
+ fs/btrfs/transaction.h |  4 ++++
+ fs/btrfs/volumes.c     |  2 +-
+ 6 files changed, 65 insertions(+), 26 deletions(-)
 
- fs/btrfs/inode.c | 54 +++++++++++++++++++++++++++---------------------------
- 1 file changed, 27 insertions(+), 27 deletions(-)
-
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f82d1f4..66106b4 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -7995,22 +7995,22 @@ static void btrfs_endio_direct_read(struct bio *bio)
- 	bio_put(bio);
- }
- 
--static void btrfs_endio_direct_write(struct bio *bio)
-+static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
-+						    const u64 offset,
-+						    const u64 bytes,
-+						    const int uptodate)
- {
--	struct btrfs_dio_private *dip = bio->bi_private;
--	struct inode *inode = dip->inode;
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_ordered_extent *ordered = NULL;
--	u64 ordered_offset = dip->logical_offset;
--	u64 ordered_bytes = dip->bytes;
--	struct bio *dio_bio;
-+	u64 ordered_offset = offset;
-+	u64 ordered_bytes = bytes;
- 	int ret;
- 
- again:
- 	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
- 						   &ordered_offset,
- 						   ordered_bytes,
--						   !bio->bi_error);
-+						   uptodate);
- 	if (!ret)
- 		goto out_test;
- 
-@@ -8023,13 +8023,22 @@ out_test:
- 	 * our bio might span multiple ordered extents.  If we haven't
- 	 * completed the accounting for the whole dio, go back and try again
- 	 */
--	if (ordered_offset < dip->logical_offset + dip->bytes) {
--		ordered_bytes = dip->logical_offset + dip->bytes -
--			ordered_offset;
-+	if (ordered_offset < offset + bytes) {
-+		ordered_bytes = offset + bytes - ordered_offset;
- 		ordered = NULL;
- 		goto again;
- 	}
--	dio_bio = dip->dio_bio;
-+}
-+
-+static void btrfs_endio_direct_write(struct bio *bio)
-+{
-+	struct btrfs_dio_private *dip = bio->bi_private;
-+	struct bio *dio_bio = dip->dio_bio;
-+
-+	btrfs_endio_direct_write_update_ordered(dip->inode,
-+						dip->logical_offset,
-+						dip->bytes,
-+						!bio->bi_error);
- 
- 	kfree(dip);
- 
-@@ -8365,24 +8374,15 @@ free_ordered:
- 		dip = NULL;
- 		io_bio = NULL;
- 	} else {
--		if (write) {
--			struct btrfs_ordered_extent *ordered;
--
--			ordered = btrfs_lookup_ordered_extent(inode,
--							      file_offset);
--			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
--			/*
--			 * Decrements our ref on the ordered extent and removes
--			 * the ordered extent from the inode's ordered tree,
--			 * doing all the proper resource cleanup such as for the
--			 * reserved space and waking up any waiters for this
--			 * ordered extent (through btrfs_remove_ordered_extent).
--			 */
--			btrfs_finish_ordered_io(ordered);
--		} else {
-+		if (write)
-+			btrfs_endio_direct_write_update_ordered(inode,
-+						file_offset,
-+						dio_bio->bi_iter.bi_size,
-+						0);
-+		else
- 			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
- 			      file_offset + dio_bio->bi_iter.bi_size - 1);
--		}
-+
- 		dio_bio->bi_error = -EIO;
- 		/*
- 		 * Releases and cleans up our dio_bio, no need to bio_put()
 -- 
 2.1.3
 

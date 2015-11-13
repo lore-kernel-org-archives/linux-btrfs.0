@@ -1,154 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:37097 "EHLO
-	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753042AbbKML6R (ORCPT
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:38595 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932232AbbKMOvH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 06:58:17 -0500
-Received: by wmww144 with SMTP id w144so27405793wmw.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 03:58:16 -0800 (PST)
-Received: from [192.168.254.20] ([37.120.121.173])
-        by smtp.googlemail.com with ESMTPSA id z13sm13906793wjr.47.2015.11.13.03.58.15
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Fri, 13 Nov 2015 03:58:15 -0800 (PST)
-To: linux-btrfs@vger.kernel.org
-From: Tobias Reinhard <trtracer@gmail.com>
-Subject: Check tree block failed
-Message-ID: <5645D059.5090702@gmail.com>
-Date: Fri, 13 Nov 2015 12:58:17 +0100
+	Fri, 13 Nov 2015 09:51:07 -0500
+Received: by igbxm8 with SMTP id xm8so15689803igb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 06:51:06 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <5644CB2F.8010302@mail.ru>
+References: <CAKJi5fik1RsPQ7SA1P6=VmTwr06jrGFAA1cSWrVm0xoCrnhujA@mail.gmail.com>
+	<20151111202403.GA19245@wheatley.student.rit.edu>
+	<56448A54.9020404@gmail.com>
+	<5644CB2F.8010302@mail.ru>
+Date: Fri, 13 Nov 2015 09:51:06 -0500
+Message-ID: <CAJCQCtTFj2dPUw-sxda3B+_G_-9777S1UdNrGkEQMQsPqLxGBQ@mail.gmail.com>
+Subject: Re: Potential to loose data in case of disk failure
+From: Chris Murphy <lists@colorremedies.com>
+To: Dmitry Katsubo <dma_k@mail.ru>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On Thu, Nov 12, 2015 at 12:23 PM, Dmitry Katsubo <dma_k@mail.ru> wrote:
+> On 2015-11-12 13:47, Austin S Hemmelgarn wrote:
+>>> That's a pretty unusual setup, so I'm not surprised there's no quick and
+>>> easy answer. The best solution in my opinion would be to shuffle your
+>>> partitions around and combine sda3 and sda8 into a single partition.
+>>> There's generally no reason to present btrfs with two different
+>>> partitions on the same disk.
+>>>
+>>> If there's something that prevents you from doing that, you may be able
+>>> to use RAID10 or RAID6 somehow. I'm not really sure, though, so I'll
+>>> defer to others on the list for implementation details.
+>> RAID10 has the same issue.  Assume you have 1 block.  This gets stored
+>> as 2 copies, each with 2 stripes, with the stripes split symmetrically.
+>>  For this, call the first half of the first copy 1a, the second half 1b,
+>> and likewise for 2a and 2b with the second copy.  1a and 2a have
+>> identical contents, and 1b and 2b have identical contents.  It is fully
+>> possible that you will end up with this block striped such that 1a and
+>> 2a are on one disk, and 1b and 2b on the other.  Based on this, losing
+>> one disk would mean losing half the block, which would mean based on how
+>> BTRFS works that you would lose the whole block (because neither copy
+>> would be complete).
+>
+> Does it equally apply to RAID1? Namely, if I create
+>
+> mkfs.btrfs -mraid1 -draid1 /dev/sda3 /dev/sda8
+>
+> then btrfs will "believe" that these are different drives and mistakenly
+> think that RAID pre-condition is satisfied. Am I right?
 
-I attached an 3TB drive to my ODroid, created a BTRFS FS on it an copied 
-some data on it. (with RSYNC)
-uname -a:
-Linux odroid 3.10.92-63 #1 SMP PREEMPT Wed Nov 11 16:48:34 BRST 2015 
-armv7l armv7l armv7l GNU/Linux
+Yes.
 
-btrfs fi show /dev/sdc1:
-Label: none  uuid: b56f091d-a65e-4c3b-8bb5-62fe64abbf49
-         Total devices 1 FS bytes used 531.56GiB
-         devid    1 size 2.73TiB used 535.04GiB path /dev/sdc1
 
-While that I caused several hangs and hard resets. So the copy process 
-got interrupted and I restarted it quite often.
+>If so then I
+> think this is a trap, and mkfs.btrfs should at least warn (or require
+> --force) if two partitions are on the same drive for raid1/raid5/raid10.
 
-Now I noticed that RSYNC had problems copying and these errors were in 
-the syslog:
-Nov 13 10:07:47 odroid kernel: [36992.586642] [c2] 
-btree_readpage_end_io_hook: 80 callbacks suppressed
-Nov 13 10:07:47 odroid kernel: [36992.586665] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.595929] [c2] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.596636] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.597214] [c2] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.598078] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.600270] [c1] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.601185] [c1] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.601912] [c1] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.602541] [c1] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:07:47 odroid kernel: [36992.603035] [c1] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.873444] [c2] 
-btree_readpage_end_io_hook: 1287 callbacks suppressed
-Nov 13 10:14:58 odroid kernel: [37423.873464] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.882742] [c2] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.883415] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.883931] [c2] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.884807] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.885289] [c2] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.887607] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.888131] [c2] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.888767] [c2] btrfs bad tree block 
-start 12374580131803448295 349183197184
-Nov 13 10:14:58 odroid kernel: [37423.889255] [c2] btrfs bad tree block 
-start 17126698417783671595 349183197184
-Nov 13 10:15:08 odroid kernel: [37433.380973] [c1] 
-btree_readpage_end_io_hook: 152 callbacks suppressed
-Nov 13 10:15:08 odroid kernel: [37433.380993] [c1] btrfs bad tree block 
-start 18333166547621876310 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.391719] [c1] btrfs bad tree block 
-start 12350952233302023580 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.394788] [c1] btrfs bad tree block 
-start 18333166547621876310 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.395243] [c1] btrfs bad tree block 
-start 12350952233302023580 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.396542] [c1] btrfs bad tree block 
-start 18333166547621876310 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.396984] [c1] btrfs bad tree block 
-start 12350952233302023580 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.397494] [c1] btrfs bad tree block 
-start 18333166547621876310 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.397919] [c1] btrfs bad tree block 
-start 12350952233302023580 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.401755] [c1] btrfs bad tree block 
-start 18333166547621876310 349182935040
-Nov 13 10:15:08 odroid kernel: [37433.402153] [c1] btrfs bad tree block 
-start 12350952233302023580 349182935040
-...
+Does mdadm warn in the same situation? LVM?
 
-I unmounted and ran:
-btrfs check --repair /dev/sdc1
-enabling repair mode
-Check tree block failed, want=349182689280, have=13636680588330724269
-Check tree block failed, want=349182689280, have=13636680588330724269
-Check tree block failed, want=349182689280, have=9483066940738130800
-Check tree block failed, want=349182689280, have=9483066940738130800
-Check tree block failed, want=349182689280, have=9483066940738130800
-read block failed check_tree_block
+There are some assumptions being made about the end user's
+understanding of the system they're working on, and those assumptions
+aren't unreasonable. But I'm not opposed to an informational message.
 
-But the error stays.
 
-btrfs rescue chunk-recover -v /dev/sdc1 gives a long list and ends with:
-Total Chunks:   538
-   Heathy:       282
-   Bad:  256
 
-Orphan Block Groups:
-
-Orphan Device Extents:
-The chunks in memory can not match the metadata of the fs. Repair failed.
-Fail to recover the chunk tree.
-
-The installed btrfs-progs version is
-btrfs version
-Btrfs v3.17
-
-So I check out btrfs-progs (I tried master and 4.3 branch - same result) 
-and tried with that. Again, a long list and ends with:
-Total Chunks:           538
-   Recoverable:          431
-   Unrecoverable:        107
-
-Orphan Block Groups:
-
-Orphan Device Extents:
-
-volumes.c:1216: btrfs_rmap_block: Assertion `!ce` failed.
-
-What can I do next?
-
-Any help would be appreciated.
-
-Tobias
-
+-- 
+Chris Murphy

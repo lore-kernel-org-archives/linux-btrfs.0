@@ -1,122 +1,117 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:45229 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757222AbbKSLp4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 06:45:56 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix scrub preventing unused block groups from being deleted
-Date: Thu, 19 Nov 2015 11:45:48 +0000
-Message-Id: <1447933548-14025-1-git-send-email-fdmanana@kernel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:13224 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S932481AbbKMLkX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 06:40:23 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tADBdbYl026356
+	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 19:39:37 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Continue replace when set_block_ro failed
+Date: Fri, 13 Nov 2015 19:38:27 +0800
+Message-ID: <786c7fb7179fe73f419c5ab9bea9f86d49510962.1447411735.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+xfstests/011 failed in node with small_size filesystem.
+Can be reproduced by following script:
+  DEV_LIST="/dev/vdd /dev/vde"
+  DEV_REPLACE="/dev/vdf"
 
-Currently scrub can race with the cleaner kthread when the later attempts
-to delete an unused block group, and the result is preventing the cleaner
-kthread from ever deleting later the block group - unless the block group
-becomes used and unused again. The following diagram illustrates that
-race:
+  do_test()
+  {
+      local mkfs_opt="$1"
+      local size="$2"
 
-              CPU 1                                 CPU 2
+      dmesg -c >/dev/null
+      umount $SCRATCH_MNT &>/dev/null
 
- cleaner kthread
-   btrfs_delete_unused_bgs()
+      echo  mkfs.btrfs -f $mkfs_opt "${DEV_LIST[*]}"
+      mkfs.btrfs -f $mkfs_opt "${DEV_LIST[@]}" || return 1
+      mount "${DEV_LIST[0]}" $SCRATCH_MNT
 
-     gets block group X from
-     fs_info->unused_bgs and
-     removes it from that list
+      echo -n "Writing big files"
+      dd if=/dev/urandom of=$SCRATCH_MNT/t0 bs=1M count=1 >/dev/null 2>&1
+      for ((i = 1; i <= size; i++)); do
+          echo -n .
+          /bin/cp $SCRATCH_MNT/t0 $SCRATCH_MNT/t$i || return 1
+      done
+      echo
 
-                                             scrub_enumerate_chunks()
+      echo Start replace
+      btrfs replace start -Bf "${DEV_LIST[0]}" "$DEV_REPLACE" $SCRATCH_MNT || {
+          dmesg
+          return 1
+      }
+      return 0
+  }
 
-                                               searches device tree using
-                                               its commit root
+  # Set size to value near fs size
+  # for example, 1897 can trigger this bug in 2.6G device.
+  #
+  ./do_test "-d raid1 -m raid1" 1897
 
-                                               finds device extent for
-                                               block group X
+System will report replace fail with following warning in dmesg:
 
-                                               gets block group X from the tree
-                                               fs_info->block_group_cache_tree
-                                               (via btrfs_lookup_block_group())
+Reason:
+ When big data writen to fs, the whole free space will be allocated
+ for data chunk.
+ And operation as scrub need to set_block_ro(), and when there is
+ only one metadata chunk in system(or other metadata chunks
+ are all full), the function will try to allocate a new chunk,
+ and failed because no space in device.
 
-                                               sets bg X to RO
+Fix:
+ When set_block_ro failed for metadata chunk, it is not a problem
+ because scrub_lock forbids commit_trancaction.
+ Let replace continue in this case is no problem.
 
-     sees the block group is
-     already RO and therefore
-     doesn't delete it nor adds
-     it back to unused list
+Tested by above script, and xfstests/011, plus 100 times xfstests/070.
 
-So fix this by making scrub add the block group again to the list of
-unused block groups if the block group is still unused when it finished
-scrubbing it and it hasn't been removed already.
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h       |  1 +
- fs/btrfs/extent-tree.c |  2 +-
- fs/btrfs/scrub.c       | 22 ++++++++++++++++++++++
- 3 files changed, 24 insertions(+), 1 deletion(-)
+ fs/btrfs/scrub.c | 9 ++++-----
+ 1 file changed, 4 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index d88994f..a0165c6 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3416,6 +3416,7 @@ int btrfs_cross_ref_exist(struct btrfs_trans_handle *trans,
- struct btrfs_block_group_cache *btrfs_lookup_block_group(
- 						 struct btrfs_fs_info *info,
- 						 u64 bytenr);
-+void btrfs_get_block_group(struct btrfs_block_group_cache *cache);
- void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
- int get_block_group_index(struct btrfs_block_group_cache *cache);
- struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e97d6d6..8fd14b6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -124,7 +124,7 @@ static int block_group_bits(struct btrfs_block_group_cache *cache, u64 bits)
- 	return (cache->flags & bits) == bits;
- }
- 
--static void btrfs_get_block_group(struct btrfs_block_group_cache *cache)
-+void btrfs_get_block_group(struct btrfs_block_group_cache *cache)
- {
- 	atomic_inc(&cache->count);
- }
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 28fbd83..cbf73bc 100644
+index a39f5d1..5a30753 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -3625,6 +3625,28 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+@@ -3532,6 +3532,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 	u64 length;
+ 	u64 chunk_offset;
+ 	int ret = 0;
++	int ro_set = 0;
+ 	int slot;
+ 	struct extent_buffer *l;
+ 	struct btrfs_key key;
+@@ -3617,10 +3618,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 		scrub_pause_on(fs_info);
+ 		ret = btrfs_inc_block_group_ro(root, cache);
+ 		scrub_pause_off(fs_info);
+-		if (ret) {
+-			btrfs_put_block_group(cache);
+-			break;
+-		}
++		ro_set = !ret;
  
- 		btrfs_dec_block_group_ro(root, cache);
+ 		dev_replace->cursor_right = found_key.offset + length;
+ 		dev_replace->cursor_left = found_key.offset;
+@@ -3660,7 +3658,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
  
-+		/*
-+		 * We might have prevented the cleaner kthread from deleting
-+		 * this block group if it was already unused because we raced
-+		 * and set it to RO mode first. So add it back to the unused
-+		 * list, otherwise it might not ever be deleted unless a manual
-+		 * balance is triggered or it becomes used and unused again.
-+		 */
-+		spin_lock(&cache->lock);
-+		if (!cache->removed && !cache->ro && cache->reserved == 0 &&
-+		    btrfs_block_group_used(&cache->item) == 0) {
-+			spin_unlock(&cache->lock);
-+			spin_lock(&fs_info->unused_bgs_lock);
-+			if (list_empty(&cache->bg_list)) {
-+				btrfs_get_block_group(cache);
-+				list_add_tail(&cache->bg_list,
-+					      &fs_info->unused_bgs);
-+			}
-+			spin_unlock(&fs_info->unused_bgs_lock);
-+		} else {
-+			spin_unlock(&cache->lock);
-+		}
-+
+ 		scrub_pause_off(fs_info);
+ 
+-		btrfs_dec_block_group_ro(root, cache);
++		if (ro_set)
++			btrfs_dec_block_group_ro(root, cache);
+ 
  		btrfs_put_block_group(cache);
  		if (ret)
- 			break;
 -- 
-2.1.3
+1.8.5.1
 

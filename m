@@ -1,78 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:38422 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750735AbbKMVNn (ORCPT
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:36708 "EHLO
+	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750872AbbKMWdY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 16:13:43 -0500
-Date: Fri, 13 Nov 2015 21:13:41 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: illegal snapshot, cannot be deleted
-Message-ID: <20151113211341.GH24333@carfax.org.uk>
-References: <CAHTEL3=r8kUJOU=xUAg2iG52HuWmqQ16QxUjY6d+zqbziW5+gw@mail.gmail.com>
- <564486F3.5020804@gmail.com>
- <CAHTEL3mEGmc5BhbGMEAbyPNU90nFQGZprLkWrh1WaEh5sSiH8w@mail.gmail.com>
- <56461034.3070209@gmail.com>
- <CAHTEL3m0uGWZGWUH_SLmg8TqMe4DcXU77p+S=4Aebukr1BZ-Bg@mail.gmail.com>
- <56462784.2060601@gmail.com>
- <20151113184227.GF24333@carfax.org.uk>
- <56463CBC.70808@gmail.com>
- <20151113195520.GG24333@carfax.org.uk>
- <pan$38813$161f71be$a3fa4155$7377d9e9@cox.net>
+	Fri, 13 Nov 2015 17:33:24 -0500
+Received: by wmww144 with SMTP id w144so46567593wmw.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 14:33:23 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="N8ia4yKhAKKETby7"
-In-Reply-To: <pan$38813$161f71be$a3fa4155$7377d9e9@cox.net>
+Date: Fri, 13 Nov 2015 16:33:23 -0600
+Message-ID: <CALuXmTBWN3_PLnm4uh7u1SmGA2+5_VvNou-BLtv4=+Jvjjdz1Q@mail.gmail.com>
+Subject: free space is missing after dist upgrade on lzo compressed vol
+From: Brenton Chapin <bzipitidoo@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+I was running Lubuntu 14.04 on btrfs with lzo compresssion on, with
+the following partition scheme:
 
---N8ia4yKhAKKETby7
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+sda5   232M  /boot
+sda6   16G   /
+sda7   104G /home
 
-On Fri, Nov 13, 2015 at 09:11:46PM +0000, Duncan wrote:
-> Hugo Mills posted on Fri, 13 Nov 2015 19:55:20 +0000 as excerpted:
-> 
-> > receive is implemented almost exclusively in userspace, with only a
-> > couple of ioctls for mucking around with the UUIDs at the end.
-> 
-> I wasn't aware of that and had assumed kernel space.  Apart from the 
-> topic of discussion here, that has implications for the old "how old is 
-> too old" versioning question regarding userspace, so thanks, Hugo. =:^)
+(sda5 is ext4)
 
-   Note that send is still heavily kernel-side. It's only receive
-that's all in userspace.
+I did 2 distribution upgrades, one after the other, to 15.04, then
+15.10, since the upgrade utility would not go directly to the latest
+version.  This process did a whole lot of reading and writing to the
+root volume of course.  Everything seems to be working, except most of
+the free space I had on sda6 is gone.  Was using about 4G, now df
+reports that the usage is 12G.  At first, I thought Lubuntu had not
+removed old files, but I can't find anything old left behind.  I began
+to suspect btrfs, and checking, find that du shows only 4G used on
+sda6.  Where'd the other 8G go?
 
-   Hugo.
+"btrfs fi df /" reports the following:
 
+Data, single: total=11.01GiB, used=10.58GiB
+System, DUP: total=8.00MiB, used=16.00KiB
+System, single: total=4.00MiB, used=0.00B
+Metadata, DUP: total=1.00GiB, used=397.80MiB
+Metadata, single: total=8.00MiB, used=0.00B
+GlobalReserve, single: total=144.00MiB, used=0.00B
+
+"btrfs filesystem show /" gives:
+
+Label: none  uuid: 4ea4ac08-ff37-4b51-b1a3-d8b21fd43ddd
+    Total devices 1 FS bytes used 10.97GiB
+    devid    1 size 15.02GiB used 13.04GiB path /dev/sda6
+
+btrfs-progs v4.0
+
+"du --max-depth=1 -h -x" on / shows:
+
+29M    ./etc
+0    ./media
+16M    ./bin
+354M    ./lib
+4.0K    ./lib64
+0    ./mnt
+160K    ./root
+12M    ./sbin
+0    ./srv
+4.0K    ./tmp
+3.1G    ./usr
+442M    ./var
+0    ./cdrom
+3.8M    ./lib32
+3.9G    .
+
+And of course df:
+
+/dev/sda6        16G   12G  2.5G  83% /
+/dev/sda5       232M   53M  163M  25% /boot
+/dev/sda7       104G   46G   57G  45% /home
+
+And mount:
+
+mount |grep sda
+/dev/sda6 on / type btrfs
+(rw,relatime,compress=lzo,space_cache,subvolid=257,subvol=/@)
+/dev/sda5 on /boot type ext4 (rw,relatime,data=ordered)
+/dev/sda7 on /home type btrfs
+(rw,relatime,compress=lzo,space_cache,subvolid=257,subvol=/@home)
+
+uname -a
+Linux ichor 4.2.0-18-generic #22-Ubuntu SMP Fri Nov 6 18:25:50 UTC
+2015 x86_64 x86_64 x86_64 GNU/Linux
+
+I can live with the situation, but recovering that space would be nice.
 -- 
-Hugo Mills             |
-hugo@... carfax.org.uk | __(_'>
-http://carfax.org.uk/  | Squeak!
-PGP: E2AB1DE4          |
-
---N8ia4yKhAKKETby7
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWRlKFAAoJEFheFHXiqx3k8RQQALx1DzoCZ+gX4pTe8D+ogW01
-K3QKvmYyvpuhNp7VN3wY6oNYw3zvJNWNVthXLDnNPaho63k4HbFb7sORiZALtS91
-QWs+lej60DVJ5UT9Oqm69dloUX1fwZgExnjIktf2ys1aZqbJ8budxLEqNlT6m637
-Qr2+vzGJQaHtw68J81VD2876+eFuwsQX+ufwHueZ4j3pFYdByk9Jnn613rXNSCIw
-Hqi6S6qlT67uMDf85PLBAJcTQNp5E+aaqgr6k6W9SOJdNLLJFUGU2ZMjGNoWQ9lh
-hhxZrhlTS8vY3z0wlQHSqPSFQ4J1y8RbaObDqJL+GmlmXA/QIu6iasmmY2fIeX01
-h2M7octvWrwumrVdeTpXr6mIDBB1zHVDJecJ/yOGQT3oHZzyw8U+JxNp1wwHRmd2
-nQmvYsPvXQiVAUxY3PaclGO4Zs+Hh8HTVeBFJf6n2HJtV2YRYcAjRrlirSSaEwzz
-kd0Uf3vpeqk//KZhu5wWw7/kYZjaYdFzTQclXPwIgl3lpdixs0SVNPiPCYir9Abs
-itjlGz4BixxeEtNtGhE2rTlXMMEfqfQijg8PhmTEKp7U51gh8AZq2NienvevWLZj
-fbLZbxQuSCbJTRpeJe6g4oekujXd81GEgmFdbObhTNqTsQOF0Ks5fSdtqRTzorOd
-sr+gGb1s+Dl0Ay8wgKZB
-=DJkb
------END PGP SIGNATURE-----
-
---N8ia4yKhAKKETby7--
+http://brentonchapin.no-ip.biz

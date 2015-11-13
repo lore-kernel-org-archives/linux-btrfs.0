@@ -1,34 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41964 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48102 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932293AbbKMP6Q (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 10:58:16 -0500
-Date: Fri, 13 Nov 2015 16:56:39 +0100
+	id S932858AbbKMQmW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 11:42:22 -0500
+Date: Fri, 13 Nov 2015 17:40:45 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Michael Lass <bevan@bi-co.net>
+To: Zhao Lei <zhaolei@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: mkfs: increase buffer size in is_ssd
-Message-ID: <20151113155639.GM6445@twin.jikos.cz>
+Subject: Re: [PATCH] btrfs-progs: Check periodic.timer_fd's value before use
+Message-ID: <20151113164045.GN6445@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1446996783-25363-1-git-send-email-bevan@bi-co.net>
+References: <bbf60367447e680378412a801a881496aa25fe60.1447060006.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1446996783-25363-1-git-send-email-bevan@bi-co.net>
+In-Reply-To: <bbf60367447e680378412a801a881496aa25fe60.1447060006.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 08, 2015 at 04:33:03PM +0100, Michael Lass wrote:
-> In current versions of util-linux the buffer passed to blkid_devno_to_wholedisk
-> has to be sufficiently large to not only hold the device name but the complete
-> target of the /sys/dev/block/<maj:min> symlink. This was changed only recently
-> in 4419ffb9eff5801fdbd385a4a6199b3877f802ad.
+On Mon, Nov 09, 2015 at 05:06:53PM +0800, Zhao Lei wrote:
+> periodic.timer_fd's value is 0 on inititlize-failed case,
+> if no value-checking before read(), the code will run as
+> read(STDIN).
 > 
-> The small buffer size currently can lead to failure of is_ssd due to truncated
-> device names:
+> This patch fixed above case.
 > 
-> readlink("/sys/dev/block/254:7", "../../devices/virtual/block/dm-", 31) = 31
-> open("/sys/block/dm-/queue/rotational", O_RDONLY) = -1 ENOENT (No such file or directory)
-> 
-> Signed-off-by: Michael Lass <bevan@bi-co.net>
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 
 Applied, thanks.

@@ -1,70 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:38595 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932232AbbKMOvH (ORCPT
+Received: from mail-io0-f171.google.com ([209.85.223.171]:35190 "EHLO
+	mail-io0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932307AbbKMPdr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 09:51:07 -0500
-Received: by igbxm8 with SMTP id xm8so15689803igb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 06:51:06 -0800 (PST)
+	Fri, 13 Nov 2015 10:33:47 -0500
+Received: by ioc74 with SMTP id 74so100618798ioc.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 07:33:46 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <5644CB2F.8010302@mail.ru>
-References: <CAKJi5fik1RsPQ7SA1P6=VmTwr06jrGFAA1cSWrVm0xoCrnhujA@mail.gmail.com>
-	<20151111202403.GA19245@wheatley.student.rit.edu>
-	<56448A54.9020404@gmail.com>
-	<5644CB2F.8010302@mail.ru>
-Date: Fri, 13 Nov 2015 09:51:06 -0500
-Message-ID: <CAJCQCtTFj2dPUw-sxda3B+_G_-9777S1UdNrGkEQMQsPqLxGBQ@mail.gmail.com>
-Subject: Re: Potential to loose data in case of disk failure
-From: Chris Murphy <lists@colorremedies.com>
-To: Dmitry Katsubo <dma_k@mail.ru>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <55CC5799.3040504@profihost.ag>
+References: <55CC5799.3040504@profihost.ag>
+Date: Fri, 13 Nov 2015 15:33:46 +0000
+Message-ID: <CAL3q7H5YxJ+PNO0BJZDGoNKqUnQ7=sx8ivydVxG9hpoPT8qGiw@mail.gmail.com>
+Subject: Re: 4.2-rc6: kernel BUG at fs/btrfs/inode.c:3230
+From: Filipe Manana <fdmanana@gmail.com>
+To: Stefan Priebe - Profihost AG <s.priebe@profihost.ag>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 12, 2015 at 12:23 PM, Dmitry Katsubo <dma_k@mail.ru> wrote:
-> On 2015-11-12 13:47, Austin S Hemmelgarn wrote:
->>> That's a pretty unusual setup, so I'm not surprised there's no quick and
->>> easy answer. The best solution in my opinion would be to shuffle your
->>> partitions around and combine sda3 and sda8 into a single partition.
->>> There's generally no reason to present btrfs with two different
->>> partitions on the same disk.
->>>
->>> If there's something that prevents you from doing that, you may be able
->>> to use RAID10 or RAID6 somehow. I'm not really sure, though, so I'll
->>> defer to others on the list for implementation details.
->> RAID10 has the same issue.  Assume you have 1 block.  This gets stored
->> as 2 copies, each with 2 stripes, with the stripes split symmetrically.
->>  For this, call the first half of the first copy 1a, the second half 1b,
->> and likewise for 2a and 2b with the second copy.  1a and 2a have
->> identical contents, and 1b and 2b have identical contents.  It is fully
->> possible that you will end up with this block striped such that 1a and
->> 2a are on one disk, and 1b and 2b on the other.  Based on this, losing
->> one disk would mean losing half the block, which would mean based on how
->> BTRFS works that you would lose the whole block (because neither copy
->> would be complete).
+On Thu, Aug 13, 2015 at 9:38 AM, Stefan Priebe - Profihost AG
+<s.priebe@profihost.ag> wrote:
 >
-> Does it equally apply to RAID1? Namely, if I create
+> Seen today:
 >
-> mkfs.btrfs -mraid1 -draid1 /dev/sda3 /dev/sda8
->
-> then btrfs will "believe" that these are different drives and mistakenly
-> think that RAID pre-condition is satisfied. Am I right?
+> [150110.712196] ------------[ cut here ]------------
+> [150110.776995] kernel BUG at fs/btrfs/inode.c:3230!
+> [150110.841067] invalid opcode: 0000 [#1] SMP
+> [150110.904472] Modules linked in: dm_mod netconsole ipt_REJECT
+> nf_reject_ipv4 xt_multiport iptable_filter ip_tables x_tables
+> cpufreq_userspace cpufreq_stats cpufreq_powersave cpufreq_conservative
+> bonding usbhid ext2 coretemp loop ehci_pci ehci_hcd sb_edac i2c_i801
+> usbcore edac_core i2c_core usb_common ipmi_si shpchp ipmi_msghandler
+> button btrfs lzo_compress raid0 raid456 async_raid6_recov async_memcpy
+> async_pq async_xor async_tx xor raid6_pq raid1 md_mod sg sd_mod ixgbe(O)
+> i40e(O) vxlan ip6_udp_tunnel udp_tunnel ahci ptp aacraid libahci pps_core
+> [150111.236617] CPU: 27 PID: 5015 Comm: btrfs-cleaner Tainted: G
+>    O   4.2-rc6 #1
+> [150111.305690] Hardware name: Supermicro X10DRH/X10DRH-IT, BIOS 1.0c
+> 02/18/2015
+> [150111.376185] task: ffff88104ec19d50 ti: ffff8810328bc000 task.ti:
+> ffff8810328bc000
+> [150111.446596] RIP: 0010:[<ffffffffa01caaa3>]  [<ffffffffa01caaa3>]
+> btrfs_orphan_add+0x153/0x230 [btrfs]
+> [150111.518909] RSP: 0018:ffff8810328bfbf8  EFLAGS: 00010286
+> [150111.591117] RAX: 00000000ffffffe4 RBX: ffff88104bc0d000 RCX:
+> ffff881052942000
+> [150111.664479] RDX: 000000000000dc9e RSI: 0000000000040000 RDI:
+> ffff881052942138
+> [150111.737600] RBP: ffff8810328bfc38 R08: 000060ef80001fd0 R09:
+> ffff880ec4c0f3f0
+> [150111.810923] R10: ffffffffa01e1527 R11: ffffea0030914100 R12:
+> ffff880a127477d0
+> [150111.884381] R13: 0000000000000001 R14: ffff880d4c35fcc0 R15:
+> 0000000000000001
+> [150111.957062] FS:  0000000000000000(0000) GS:ffff88107fd60000(0000)
+> knlGS:0000000000000000
+> [150112.031233] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+> [150112.104347] CR2: 0000000001262000 CR3: 0000000001c14000 CR4:
+> 00000000001407e0
+> [150112.178463] Stack:
+> [150112.251776]  ffff8810328bfc38 ffffffffa020ce17 ffff8810538aa000
+> ffff880d4c35fcc0
+> [150112.327874]  ffff8810538aa000 ffff880ec4c0f3f0 ffff880a127477d0
+> ffff881037d26600
+> [150112.404005]  ffff8810328bfcd8 ffffffffa01b3e06 ffff88104cf54c00
+> ffff880d4c35fcc0
+> [150112.480156] Call Trace:
+> [150112.555499]  [<ffffffffa020ce17>] ?
+> lookup_free_space_inode+0x47/0xf0 [btrfs]
+> [150112.632958]  [<ffffffffa01b3e06>]
+> btrfs_remove_block_group+0x246/0x930 [btrfs]
+> [150112.709655]  [<ffffffffa01ed447>] btrfs_remove_chunk+0x6a7/0x950 [btrfs]
+> [150112.785134]  [<ffffffffa01b4819>]
+> btrfs_delete_unused_bgs+0x329/0x350 [btrfs]
+> [150112.860907]  [<ffffffffa01bc396>] cleaner_kthread+0x196/0x200 [btrfs]
+> [150112.936807]  [<ffffffffa01bc200>] ?
+> btree_read_extent_buffer_pages.constprop.128+0x110/0x110 [btrfs]
+> [150113.014224]  [<ffffffff81090d59>] kthread+0xc9/0xe0
+> [150113.090363]  [<ffffffff81090c90>] ? kthread_worker_fn+0x150/0x150
+> [150113.165866]  [<ffffffff815fb708>] ret_from_fork+0x58/0x90
+> [150113.241276]  [<ffffffff81090c90>] ? kthread_worker_fn+0x150/0x150
+> [150113.316909] Code: 0f 1f 84 00 00 00 00 00 49 8b 54 24 38 eb 8d 66 0f
+> 1f 84 00 00 00 00 00 4c 89 e6 4c 89 f7 e8 c5 05 fe ff 85 c0 0f 84 53 ff
+> ff ff <0f> 0b 0f 1f 00 be 07 00 00 00 48 89 df e8 fb 02 fe ff 48 85 c0
+> [150113.476216] RIP  [<ffffffffa01caaa3>] btrfs_orphan_add+0x153/0x230
+> [btrfs]
+> [150113.553676]  RSP <ffff8810328bfbf8>
+> [150113.630868] ---[ end trace d01d42d1600e0787 ]---
 
-Yes.
+
+Thanks for reporting.
+Not a new issue, it's been around for many kernel releases before 4.2
+and got less likely to hit from 4.0 onwards.
+
+This is now fixed by the second patch in the following patchset:
+
+http://thread.gmane.org/gmane.comp.file-systems.btrfs/50150
 
 
->If so then I
-> think this is a trap, and mkfs.btrfs should at least warn (or require
-> --force) if two partitions are on the same drive for raid1/raid5/raid10.
 
-Does mdadm warn in the same situation? LVM?
-
-There are some assumptions being made about the end user's
-understanding of the system they're working on, and those assumptions
-aren't unreasonable. But I'm not opposed to an informational message.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 
 -- 
-Chris Murphy
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

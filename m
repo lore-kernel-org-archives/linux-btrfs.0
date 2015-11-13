@@ -1,116 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f43.google.com ([209.85.220.43]:36332 "EHLO
-	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964795AbbKEAun (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 4 Nov 2015 19:50:43 -0500
-From: Justin Maggard <jmaggard10@gmail.com>
-To: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
-Cc: Justin Maggard <jmaggard@netgear.com>
-Subject: [PATCH v2] btrfs: test unmount during quota rescan
-Date: Wed,  4 Nov 2015 16:50:36 -0800
-Message-Id: <1446684636-32730-1-git-send-email-jmaggard@netgear.com>
+Received: from bombadil.infradead.org ([198.137.202.9]:59924 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751969AbbKMI62 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 03:58:28 -0500
+Date: Fri, 13 Nov 2015 00:58:22 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: Peng Tao <tao.peng@primarydata.com>
+Cc: linux-fsdevel@vger.kernel.org,
+        Trond Myklebust <trond.myklebust@primarydata.com>,
+        Anna Schumaker <anna.schumaker@netapp.com>,
+        Christoph Hellwig <hch@infradead.org>, Zach Brown <zab@zabbo.net>,
+        Darren Hart <dvhart@linux.intel.com>,
+        Jeff Layton <jeff.layton@primarydata.com>, bfields@fieldses.org,
+        "Darrick J. Wong" <darrick.wong@oracle.com>, viro@zeniv.linux.org.uk,
+        linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-cifs@vger.kernel.org,
+        Steve French <steve.french@primarydata.com>
+Subject: Re: [PATCH 1/9] vfs: add COPY_FILE_CLONE_ONLY flag
+Message-ID: <20151113085822.GA2272@infradead.org>
+References: <1445728636-10109-1-git-send-email-tao.peng@primarydata.com>
+ <1445728636-10109-2-git-send-email-tao.peng@primarydata.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1445728636-10109-2-git-send-email-tao.peng@primarydata.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This test case tests if we are able to unmount a filesystem while
-a quota rescan is running.  Up to now (4.3) this would result
-in a kernel NULL pointer dereference.
+On Sun, Oct 25, 2015 at 07:17:08AM +0800, Peng Tao wrote:
+> To tell file system not to return partial success in the
+> .copy_file_range method. This is useful to implement the
+> clone (or reflink) functionality.
 
-Fixed by patch (btrfs: qgroup: exit the rescan worker during umount).
-
-Signed-off-by: Justin Maggard <jmaggard@netgear.com>
----
- tests/btrfs/114     | 61 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/114.out |  2 ++
- tests/btrfs/group   |  1 +
- 3 files changed, 64 insertions(+)
- create mode 100644 tests/btrfs/114
- create mode 100644 tests/btrfs/114.out
-
-diff --git a/tests/btrfs/114 b/tests/btrfs/114
-new file mode 100644
-index 0000000..0a0e8ba
---- /dev/null
-+++ b/tests/btrfs/114
-@@ -0,0 +1,61 @@
-+#! /bin/bash
-+# FS QA Test No. btrfs/114
-+#
-+# btrfs quota scan/unmount sanity test
-+# Make sure that unmounting during a quota rescan doesn't crash
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015 NETGEAR, Inc.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+_scratch_mount
-+
-+for i in `seq 0 1 450000`; do
-+	echo -n > $SCRATCH_MNT/file.$i
-+done
-+echo 3 > /proc/sys/vm/drop_caches
-+$BTRFS_UTIL_PROG quota enable $SCRATCH_MNT
-+_scratch_unmount
-+
-+echo "Silence is golden"
-+status=0
-+exit
-diff --git a/tests/btrfs/114.out b/tests/btrfs/114.out
-new file mode 100644
-index 0000000..a2aa4a2
---- /dev/null
-+++ b/tests/btrfs/114.out
-@@ -0,0 +1,2 @@
-+QA output created by 114
-+Silence is golden
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 7cf7dd7..10ab26b 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -116,3 +116,4 @@
- 111 auto quick send
- 112 auto quick clone
- 113 auto quick compress clone
-+114 auto qgroup
--- 
-2.6.2
-
+The return value is only part of it, the other part is to
+make it atomic.  Thus I don't think overloading copy_file_range
+is a good idea - we should have a seaprate .clone_file_range that
+is called by the btrfs ioctls moved to the core, and have
+vfs_copy_file_range use .clone_file_range if that exists, and
+if none of the potentially conflicting future flags like
+COPY_FALLOC are present.

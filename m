@@ -1,90 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:54135 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753743AbbKMJzG (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:35011 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932363AbbKMLh6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 04:55:06 -0500
-Message-ID: <1447408501.7045.52.camel@scientia.net>
+	Fri, 13 Nov 2015 06:37:58 -0500
+Message-ID: <1447414674.7045.56.camel@scientia.net>
 Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
  chunk
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Date: Fri, 13 Nov 2015 10:55:01 +0100
-In-Reply-To: <pan$40936$8da53a7a$3a479f22$1086065d@cox.net>
+Date: Fri, 13 Nov 2015 12:37:54 +0100
+In-Reply-To: <1447408501.7045.52.camel@scientia.net>
 References: <1447365063.7045.7.camel@scientia.net>
 	 <5645474D.8000804@cn.fujitsu.com> <1447381613.7045.21.camel@scientia.net>
 	 <56455073.1060406@cn.fujitsu.com> <1447387049.7045.39.camel@scientia.net>
 	 <pan$40936$8da53a7a$3a479f22$1086065d@cox.net>
+	 <1447408501.7045.52.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-X1ob8EXZQGIBd+LLtdDx"
+	boundary="=-Nn15j/IF2O0XwQSFjv9a"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-X1ob8EXZQGIBd+LLtdDx
+--=-Nn15j/IF2O0XwQSFjv9a
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 2015-11-13 at 07:05 +0000, Duncan wrote:
-> 8 TiB disks -- are those the disk-managed SMR "archive" disks I've
-> read=20
-> about on a number of threads?
-Yes... but...
+I just got the backup disk back, also btrfs, which was made via
+send/receive...
+It has the same errors during fsck.
 
-> If so, that hardware is almost certainly the cause, as they're known
-> to=20
-> be problematic on current kernels.=C2=A0=C2=A0While most filesystems (all=
-?)
-> will=20
-> apparently go corrupt on them, it can remain invisible corruption for
-> quite some time on many of them, but btrfs with its checksums and etc
-> will tend to show up the problems far sooner, and there have been at=20
-> least 2-3 threads on the problem already, on this list.
-I think it's pretty unlikely that this is the reason.
-
-- I never saw any errors popping up from the lower driver levels (i.e.
-the ATA errors all those people saw), and I've regularly checked
-- I always did the checksum verification based on my own hashes stored
-in each file's XATTRS, without any error so far.
-- I wrote far more data (the device is nearly fully) without any error
-(XATTRs/hashes) than the time when most of these people noticed sever
-corruptions, which seemed to happen already after some GB.
-- I think it's pretty unlikely that all data (in terms of hashsums)
-would be okay, and that these corruptions would have just appeared in
-some of btrfs meta-data.
-
-I'm not sure why I don't suffer from these issues, probably because I
-run them only via USB/SATA bridges, which, while they're USB3.0, are
-probably too slow for these errors to pop up.
-
-See my comment:
-https://bugzilla.kernel.org/show_bug.cgi?id=3D93581#c70
+The main disk still hasn't found any file (apart from a few, others for
+which none of my hash sums were stored at all) that doesn't verify.
 
 
-Further, a small status update:
-As mentioned this night, I've kicked of a full run of verifying all of
-my XATTRs-set hashsums... (and these hashsums are basically all
-computed when the data is known to be valid, e.g. for DSLR pictures
-straight off the SD, etc.).
-In terms of numbers of files, that run is half through,... so far with
-only a handful of errors related to files where I've apparently forgot
-to set the sums. No errors (so far).
+So I guess there's definitely some bug in btrfs, that even propagated
+via send/receive or was so common that it happens on another fs as
+well; even though it's unclear whether this was just in older versions.
+Perhaps Qu can shed some light on this, when he had a look at my extent
+tree dump.
 
-So unless btrfs completely lost file entries (and I guess that wouldn't
-just affect the extent tree?), and I thus wouldn't verify these files
-at all or notice them missing,... everything seems fine, as far as I
-can tell, (so far).
-
-I'll basically just about to head of to get my backup disk, which I
-haven't at home... to see whether it also shows these fsck errors. So
-stay tuned.
 
 Cheers,
 Chris.
---=-X1ob8EXZQGIBd+LLtdDx
+--=-Nn15j/IF2O0XwQSFjv9a
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -171,19 +133,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTExMzA5NTUw
-MVowTwYJKoZIhvcNAQkEMUIEQP+6WGJtI1ypzbHiyOkJ8ZaMsRzmUQo3F6wFoXw1lRI5vaanBmWF
-QCj2WsSOEAy5D7ksXBzCIMmpHrGymPBOmd4wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTExMzExMzc1
+NFowTwYJKoZIhvcNAQkEMUIEQAvea1YAxf1w2hYlKAznA370CNHWOEX7PKNE0OtC2RQsGVU9qg76
+GaFMS/gCR+Oye0CwK332S2sMx5yhkqf/4RkwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDbbYX8iUS2MYYt0pFjgJfUxtv0LOdV
-fSDW4OvJMzV7qvhP21T/hsQm9KcONdqCriLboDLinMNzH7hh3WxXQdnziR/iUlegqvgNkEvPGmty
-YtQAyFtZJo1QUisXgwbzAxj047jvPOlNtrooBZSmavZJkViXofQJVL2VZ4PSGVJm8YClGHypxexZ
-lCk2cNstS4+HVUAVSpay/WmemyYojU4Waky7ETNnxQ+iyIz/ltHILXLTRthSWee3FVNMSEIYL8WS
-Q26NtEPmVIvytEyGMKiChoQFEhC/9nXsn5jGF8TohdKOw3GwWDYuxxv/zijkCGsxlIWaNSyDWnuj
-PQ8gH4c6AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC1In6cvD/XDOvqKZQiev+8Z9eyiIxD
+Urh+BZQxkcbrKp1ZoB7WZB20qIqGDb92ej7Sd+QqY3V8yy4pknhIZ2iRzMcE4LVhv8ddvoplXhr8
+8RIjrf9b1HdpNUt4BD9vcI4omhQ9sdzE7CYPF/VDu4Nm2TLWMKXNcnTU0EJ2dB+Ei9B0RS0/+drc
+nubu8DQfep5ERNsoUE/VLpozrxJNpN02HlVPL6l8u/76mgNYCCCOgTCUsDefzdXIlf9oayljAcC4
+HYA/Z/7gNzNQt5YS1PEBoCzHamN4IWSUleqwsz5FXuUtsDJhFNgNrb8jofrDfYWmeb5yELB08utG
+kXGUR66hAAAAAAAA
 
 
---=-X1ob8EXZQGIBd+LLtdDx--
+--=-Nn15j/IF2O0XwQSFjv9a--
 

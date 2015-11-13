@@ -1,143 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:34995 "EHLO
-	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754712AbbKMMBr (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 07:01:47 -0500
-Received: by ioc74 with SMTP id 74so95019091ioc.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 04:01:46 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <786c7fb7179fe73f419c5ab9bea9f86d49510962.1447411735.git.zhaolei@cn.fujitsu.com>
-References: <786c7fb7179fe73f419c5ab9bea9f86d49510962.1447411735.git.zhaolei@cn.fujitsu.com>
-Date: Fri, 13 Nov 2015 12:01:46 +0000
-Message-ID: <CAL3q7H405kjq=aQ8WpAFZO0TLOVBoa6kTt29shnKHcFBrn9f3A@mail.gmail.com>
-Subject: Re: [PATCH] btrfs: Continue replace when set_block_ro failed
-From: Filipe Manana <fdmanana@gmail.com>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mx2.suse.de ([195.135.220.15]:44041 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753827AbbKMMqG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 07:46:06 -0500
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com, David Sterba <dsterba@suse.com>, stable@vger.kernel.org
+Subject: [PATCH v2] btrfs: properly set the termination value of ctx->pos in readdir
+Date: Fri, 13 Nov 2015 13:44:28 +0100
+Message-Id: <1447418668-24817-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 13, 2015 at 11:38 AM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
-> xfstests/011 failed in node with small_size filesystem.
-> Can be reproduced by following script:
->   DEV_LIST="/dev/vdd /dev/vde"
->   DEV_REPLACE="/dev/vdf"
->
->   do_test()
->   {
->       local mkfs_opt="$1"
->       local size="$2"
->
->       dmesg -c >/dev/null
->       umount $SCRATCH_MNT &>/dev/null
->
->       echo  mkfs.btrfs -f $mkfs_opt "${DEV_LIST[*]}"
->       mkfs.btrfs -f $mkfs_opt "${DEV_LIST[@]}" || return 1
->       mount "${DEV_LIST[0]}" $SCRATCH_MNT
->
->       echo -n "Writing big files"
->       dd if=/dev/urandom of=$SCRATCH_MNT/t0 bs=1M count=1 >/dev/null 2>&1
->       for ((i = 1; i <= size; i++)); do
->           echo -n .
->           /bin/cp $SCRATCH_MNT/t0 $SCRATCH_MNT/t$i || return 1
->       done
->       echo
->
->       echo Start replace
->       btrfs replace start -Bf "${DEV_LIST[0]}" "$DEV_REPLACE" $SCRATCH_MNT || {
->           dmesg
->           return 1
->       }
->       return 0
->   }
->
->   # Set size to value near fs size
->   # for example, 1897 can trigger this bug in 2.6G device.
->   #
->   ./do_test "-d raid1 -m raid1" 1897
->
-> System will report replace fail with following warning in dmesg:
->
-> Reason:
->  When big data writen to fs, the whole free space will be allocated
->  for data chunk.
->  And operation as scrub need to set_block_ro(), and when there is
->  only one metadata chunk in system(or other metadata chunks
->  are all full), the function will try to allocate a new chunk,
->  and failed because no space in device.
->
-> Fix:
->  When set_block_ro failed for metadata chunk, it is not a problem
->  because scrub_lock forbids commit_trancaction.
+The value of ctx->pos in the last readdir call is supposed to be set to
+INT_MAX due to 32bit compatibility, unless 'pos' is intentially set to a
+larger value, then it's LLONG_MAX.
 
-Hi Zhao, I'm confused reading this explanation.
+There's a report from PaX SIZE_OVERFLOW plugin that "ctx->pos++"
+overflows (https://forums.grsecurity.net/viewtopic.php?f=1&t=4284), on a
+64bit arch, where the value is 0x7fffffffffffffff ie. LLONG_MAX before
+the increment.
 
-Why isn't it a problem if the block group gets modified while the
-transaction is ongoing? Through writepages() for example.
-Committing a transaction isn't the only way to write data or metadata
-to a block group.
+We can get to that situation like that:
 
-thanks
+* emit all regular readdir entries
+* still in the same call to readdir, bump the last pos to INT_MAX
+* next call to readdir will not emit any entries, but will reach the
+  bump code again, finds pos to be INT_MAX and sets it to LLONG_MAX
 
->  Let replace continue in this case is no problem.
->
-> Tested by above script, and xfstests/011, plus 100 times xfstests/070.
->
-> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> ---
->  fs/btrfs/scrub.c | 9 ++++-----
->  1 file changed, 4 insertions(+), 5 deletions(-)
->
-> diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-> index a39f5d1..5a30753 100644
-> --- a/fs/btrfs/scrub.c
-> +++ b/fs/btrfs/scrub.c
-> @@ -3532,6 +3532,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
->         u64 length;
->         u64 chunk_offset;
->         int ret = 0;
-> +       int ro_set = 0;
->         int slot;
->         struct extent_buffer *l;
->         struct btrfs_key key;
-> @@ -3617,10 +3618,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
->                 scrub_pause_on(fs_info);
->                 ret = btrfs_inc_block_group_ro(root, cache);
->                 scrub_pause_off(fs_info);
-> -               if (ret) {
-> -                       btrfs_put_block_group(cache);
-> -                       break;
-> -               }
-> +               ro_set = !ret;
->
->                 dev_replace->cursor_right = found_key.offset + length;
->                 dev_replace->cursor_left = found_key.offset;
-> @@ -3660,7 +3658,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
->
->                 scrub_pause_off(fs_info);
->
-> -               btrfs_dec_block_group_ro(root, cache);
-> +               if (ro_set)
-> +                       btrfs_dec_block_group_ro(root, cache);
->
->                 btrfs_put_block_group(cache);
->                 if (ret)
-> --
-> 1.8.5.1
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Normally this is not a problem, but if we call readdir again, we'll find
+'pos' set to LLONG_MAX and the unconditional increment will overflow.
 
+The report from Victor at
+(http://thread.gmane.org/gmane.comp.file-systems.btrfs/49500) with debugging
+print shows that pattern:
 
+ Overflow: e
+ Overflow: 7fffffff
+ Overflow: 7fffffffffffffff
+ PAX: size overflow detected in function btrfs_real_readdir
+   fs/btrfs/inode.c:5760 cicus.935_282 max, count: 9, decl: pos; num: 0;
+   context: dir_context;
+ CPU: 0 PID: 2630 Comm: polkitd Not tainted 4.2.3-grsec #1
+ Hardware name: Gigabyte Technology Co., Ltd. H81ND2H/H81ND2H, BIOS F3 08/11/2015
+  ffffffff81901608 0000000000000000 ffffffff819015e6 ffffc90004973d48
+  ffffffff81742f0f 0000000000000007 ffffffff81901608 ffffc90004973d78
+  ffffffff811cb706 0000000000000000 ffff8800d47359e0 ffffc90004973ed8
+ Call Trace:
+  [<ffffffff81742f0f>] dump_stack+0x4c/0x7f
+  [<ffffffff811cb706>] report_size_overflow+0x36/0x40
+  [<ffffffff812ef0bc>] btrfs_real_readdir+0x69c/0x6d0
+  [<ffffffff811dafc8>] iterate_dir+0xa8/0x150
+  [<ffffffff811e6d8d>] ? __fget_light+0x2d/0x70
+  [<ffffffff811dba3a>] SyS_getdents+0xba/0x1c0
+ Overflow: 1a
+  [<ffffffff811db070>] ? iterate_dir+0x150/0x150
+  [<ffffffff81749b69>] entry_SYSCALL_64_fastpath+0x12/0x83
 
+The jump from 7fffffff to 7fffffffffffffff happens when new dir entries
+are not yet synced and are processed from the delayed list. Then the code
+could go to the bump section again even though it might not emit any new
+dir entries from the delayed list.
+
+The fix avoids entering the "bump" section again once we've finished
+emitting the entries, both for synced and delayed entries.
+
+References: https://forums.grsecurity.net/viewtopic.php?f=1&t=4284
+Reported-by: Victor <services@swwu.com>
+CC: stable@vger.kernel.org
+Signed-off-by: David Sterba <dsterba@suse.com>
+---
+
+v2:
+- the delayed inodes emit dir entries as well, pass the status back to
+  readdir
+
+ fs/btrfs/delayed-inode.c |  3 ++-
+ fs/btrfs/delayed-inode.h |  2 +-
+ fs/btrfs/inode.c         | 14 +++++++++++++-
+ 3 files changed, 16 insertions(+), 3 deletions(-)
+
+diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
+index a2ae42720a6a..bc2d048a9eb9 100644
+--- a/fs/btrfs/delayed-inode.c
++++ b/fs/btrfs/delayed-inode.c
+@@ -1690,7 +1690,7 @@ int btrfs_should_delete_dir_index(struct list_head *del_list,
+  *
+  */
+ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+-				    struct list_head *ins_list)
++				    struct list_head *ins_list, bool *emitted)
+ {
+ 	struct btrfs_dir_item *di;
+ 	struct btrfs_delayed_item *curr, *next;
+@@ -1734,6 +1734,7 @@ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+ 
+ 		if (over)
+ 			return 1;
++		*emitted = true;
+ 	}
+ 	return 0;
+ }
+diff --git a/fs/btrfs/delayed-inode.h b/fs/btrfs/delayed-inode.h
+index f70119f25421..0167853c84ae 100644
+--- a/fs/btrfs/delayed-inode.h
++++ b/fs/btrfs/delayed-inode.h
+@@ -144,7 +144,7 @@ void btrfs_put_delayed_items(struct list_head *ins_list,
+ int btrfs_should_delete_dir_index(struct list_head *del_list,
+ 				  u64 index);
+ int btrfs_readdir_delayed_dir_index(struct dir_context *ctx,
+-				    struct list_head *ins_list);
++				    struct list_head *ins_list, bool *emitted);
+ 
+ /* for init */
+ int __init btrfs_delayed_inode_init(void);
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 611b66d73e80..e044713608f5 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5665,6 +5665,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	char *name_ptr;
+ 	int name_len;
+ 	int is_curr = 0;	/* ctx->pos points to the current index? */
++	bool emitted;
+ 
+ 	/* FIXME, use a real flag for deciding about the key type */
+ 	if (root->fs_info->tree_root == root)
+@@ -5693,6 +5694,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	if (ret < 0)
+ 		goto err;
+ 
++	emitted = false;
+ 	while (1) {
+ 		leaf = path->nodes[0];
+ 		slot = path->slots[0];
+@@ -5772,6 +5774,7 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 
+ 			if (over)
+ 				goto nopos;
++			emitted = true;
+ 			di_len = btrfs_dir_name_len(leaf, di) +
+ 				 btrfs_dir_data_len(leaf, di) + sizeof(*di);
+ 			di_cur += di_len;
+@@ -5784,11 +5787,20 @@ static int btrfs_real_readdir(struct file *file, struct dir_context *ctx)
+ 	if (key_type == BTRFS_DIR_INDEX_KEY) {
+ 		if (is_curr)
+ 			ctx->pos++;
+-		ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list);
++		ret = btrfs_readdir_delayed_dir_index(ctx, &ins_list, &emitted);
+ 		if (ret)
+ 			goto nopos;
+ 	}
+ 
++	/*
++	 * If we haven't emitted any dir entry, we must not touch ctx->pos as
++	 * it was was set to the termination value in previous call. We assume
++	 * that "." and ".." were emitted if we reach this point and set the
++	 * termination value as well for an empty directory.
++	 */
++	if (ctx->pos > 2 && !emitted)
++		goto nopos;
++
+ 	/* Reached end of directory/root. Bump pos past the last item. */
+ 	ctx->pos++;
+ 
 -- 
-Filipe David Manana,
+2.6.2
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

@@ -1,186 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bender.boerde.de ([83.223.75.23]:39878 "EHLO bender.boerde.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932281AbbKMQWV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 11:22:21 -0500
-Received: from hunapu.boerde.de (darkwing.home.local [IPv6:2a01:30:2802:1:2ad2:44ff:feb0:8e38])
-	by bender.boerde.de (Postfix) with ESMTPSA id 5D8D21454101
-	for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 17:15:03 +0100 (CET)
-Date: Fri, 13 Nov 2015 17:15:01 +0100
-From: Georg Lukas <georg@op-co.de>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs-replace OOM on 2GB machine
-Message-ID: <20151113161501.GA29604@ovgu.de>
+Received: from mail-io0-f172.google.com ([209.85.223.172]:35995 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933006AbbKMQay (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 11:30:54 -0500
+Received: by iofh3 with SMTP id h3so102613449iof.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 08:30:53 -0800 (PST)
+Subject: Re: illegal snapshot, cannot be deleted
+To: Vedran Vucic <vedran.vucic@gmail.com>
+References: <CAHTEL3=r8kUJOU=xUAg2iG52HuWmqQ16QxUjY6d+zqbziW5+gw@mail.gmail.com>
+ <564486F3.5020804@gmail.com>
+ <CAHTEL3mEGmc5BhbGMEAbyPNU90nFQGZprLkWrh1WaEh5sSiH8w@mail.gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <56461034.3070209@gmail.com>
+Date: Fri, 13 Nov 2015 11:30:44 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="EeQfGwPcQSOJBaQU"
+In-Reply-To: <CAHTEL3mEGmc5BhbGMEAbyPNU90nFQGZprLkWrh1WaEh5sSiH8w@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030401070002070101050203"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a cryptographically signed message in MIME format.
 
---EeQfGwPcQSOJBaQU
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
+--------------ms030401070002070101050203
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-Hi,
+On 2015-11-13 11:12, Vedran Vucic wrote:
+> Hello,
+>
+> I succeeded to delete illegal snapshot with command:
+> btrfs subvolume delete /.snapshots/741/snapshot
+> When I have done
+> btrfs balance / -dusage=3D0 -musage=3D0
+> increasing value up to 4o I did not have issues.
+> But on value 4- for-dusage=3D and -musage=3D
+> I got message that there is no space left on disk.
+> Do you have any advice how to manage that?
 
-while evaluating btrfs for production use I ended up with a degraded
-two-disk RAID1 with one disk missing, and wanted to perform a "btrfs
-replace" to rebuild the RAID1. However, the replace operation causes
-most of my userland to be OOM-killed and aborts eventually, at about
-30% progress, on a box with 2GB of physical RAM.
-
-My setup is:
-
-Linux-4.3 with the following patches applied:
- - http://www.spinics.net/lists/linux-btrfs/msg46123.html
-   (needed for degraded mount of RAID1)
- - http://git.kernel.org/cgit/linux/kernel/git/mkp/linux.git/patch/?id=3D7c=
-4fbd50bfece00abf529bc96ac989dd2bb83ca4
-   (needed for the Seagate SMRs)
-
-btrfs-progs v4.2.3
-
-A btrfs RAID1 initially built on two dm-crypt containers on top of two
-Seagate 8TB SMR disks. For testing purposes, I unmounted the fs,
-reformatted one of the two crypto containers, mounted the fs in degraded
-mode (which required Anand's patch), and tried different approaches to
-get it back to full operation (rebalance to m=3Dd=3Dsingle, remove the
-missing drive, finally a replace), all without success.
-
-The current status is as follows:
-
-# btrfs dev usage /media/archive/
-/dev/mapper/archive1, ID: 1
-   Device size:             7.28TiB
-   Data,single:           837.00GiB
-   Data,RAID0:              1.17TiB
-   Data,RAID1:            959.00GiB
-   Data,DUP:                2.17TiB
-   Metadata,single:         2.00GiB
-   Metadata,RAID1:          4.00GiB
-   Metadata,DUP:            5.00GiB
-   System,RAID1:           32.00MiB
-   System,DUP:            192.00MiB
-   Unallocated:             2.17TiB
-
-missing, ID: 2
-   Device size:               0.00B
-   Data,RAID0:              1.17TiB
-   Data,RAID1:            959.00GiB
-   Metadata,RAID1:          4.00GiB
-   System,RAID1:           32.00MiB
-   Unallocated:             5.17TiB
-
-I then start the replace:
-
-# btrfs replace start 2 /dev/mapper/archive2 /media/archive/
-
-That takes a while, OOM-kills half of my userspace in the process (it
-seems like the kernel is allocating and freeing large chunks of memory
-during the replace:
-
-             total       used       free     shared    buffers     cached
-Mem:          1.9G       1.6G       342M       784K       1.8M        14M
--/+ buffers/cache:       1.6G       358M
-Swap:         4.0G        48M       4.0G
-
-(5 second pause)
-             total       used       free     shared    buffers     cached
-Mem:          1.9G       157M       1.8G       808K       6.6M        32M
--/+ buffers/cache:       118M       1.8G
-Swap:         4.0G        46M       4.0G
-
-(another 5 seconds)
-             total       used       free     shared    buffers     cached
-Mem:          1.9G       1.1G       835M       808K       6.7M        37M
--/+ buffers/cache:       1.1G       879M
-Swap:         4.0G        46M       4.0G
-
-That seems to be kernel memory, as the swap is hardly used, despite
-default swappiness settings. Furthermore, /proc/meminfo and slabtop have
-no indication of how the memory is used; it just vanishes from the
-"available" pool.
-
-Eventually, the replace aborts:
-
-[64326.700731] BTRFS: btrfs_scrub_dev(<missing disk>, 2, /dev/mapper/archiv=
-e2) failed -12
-[64326.700986] ------------[ cut here ]------------
-[64326.701024] WARNING: CPU: 1 PID: 36251 at fs/btrfs/dev-replace.c:428 btr=
-fs_dev_replace_start+0x36b/0x390 [btrfs]()
-[64326.701062] Modules linked in: btrfs dm_crypt loop sha256_ssse3 sha256_g=
-eneric hmac drbg ansi_cprng xts gf128mul algif_skcipher af_alg cpuid nfsd a=
-uth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc xor raid6_pq=
- intel_rapl iosf_mbi x86_pkg_temp_thermal iTCO_wdt intel_powerclamp iTCO_ve=
-ndor_support kvm_intel kvm evdev crct10dif_pclmul crc32_pclmul cryptd snd_p=
-cm snd_timer snd soundcore pcspkr psmouse serio_raw hpwdt hpilo lpc_ich mfd=
-_core 8250_fintek shpchp acpi_power_meter button pcc_cpufreq acpi_cpufreq p=
-rocessor coretemp ipmi_watchdog dm_mod ipmi_si ipmi_poweroff ipmi_devintf i=
-pmi_msghandler fuse autofs4 ext4 crc16 mbcache jbd2 sg sd_mod usb_storage h=
-id_generic usbhid hid crc32c_intel uhci_hcd thermal ahci libahci libata scs=
-i_mod tg3 ptp pps_core libphy ehci_pci ehci_hcd xhci_pci xhci_hcd
-[64326.701579]  usbcore usb_common [last unloaded: btrfs]
-[64326.701611] CPU: 1 PID: 36251 Comm: btrfs Tainted: G        W       4.3.=
-0-gl+ #42
-[64326.701647] Hardware name: HP ProLiant MicroServer Gen8, BIOS J06 06/06/=
-2014
-[64326.701671]  ffffffffa06e8b71 ffffffff8129eac3 0000000000000000 ffffffff=
-8106891c
-[64326.701720]  00000000fffffff4 ffff880079079800 ffff880006f1a000 ffff8800=
-74e2e000
-[64326.701769]  ffff880006f1aec8 ffffffffa06da7db 00007ffc00000001 ffff8800=
-71c42400
-[64326.701818] Call Trace:
-[64326.701840]  [<ffffffff8129eac3>] ? dump_stack+0x40/0x5d
-[64326.701864]  [<ffffffff8106891c>] ? warn_slowpath_common+0x7c/0xb0
-[64326.701896]  [<ffffffffa06da7db>] ? btrfs_dev_replace_start+0x36b/0x390 =
-[btrfs]
-[64326.701939]  [<ffffffffa06a6bbe>] ? btrfs_ioctl+0x1b6e/0x27b0 [btrfs]
-[64326.701964]  [<ffffffff8116b83a>] ? page_add_file_rmap+0x2a/0x50
-[64326.706074]  [<ffffffff81160379>] ? do_set_pte+0x99/0xc0
-[64326.706100]  [<ffffffff81135f49>] ? filemap_map_pages+0x219/0x220
-[64326.706123]  [<ffffffff81162127>] ? handle_mm_fault+0xdd7/0x16c0
-[64326.706149]  [<ffffffff811b0b0e>] ? do_vfs_ioctl+0x2be/0x490
-[64326.706174]  [<ffffffff811b0d51>] ? SyS_ioctl+0x71/0x80
-[64326.706198]  [<ffffffff815000ee>] ? entry_SYSCALL_64_fastpath+0x12/0x71
-[64326.706222] ---[ end trace 37fc29aa3c600bcf ]---
-
-I'm not sure how to proceed from here, or how to debug this issue. While
-the disks are not holding critical data, I'm sure it would benefit the
-community (and btrfs' reputation) if this issue could be sorted out.
+Can you post the output of 'btrfs fi df' and 'btrfs fi show' again?=20
+Both should have changed after the balance, and I'd need to see what it=20
+looks like now to be able to give any reasonable advice.
 
 
-Kind regards,
 
-Georg
---=20
-|| http://op-co.de ++  GCS d--(++) s: a C+++ UL+++ !P L+++ !E W+++ N  ++
-|| gpg: 0x962FD2DE ||  o? K- w---() O M V? PS+ PE-- Y++ PGP+ t+ 5 R+  ||
-|| Ge0rG: euIRCnet ||  X(+++) tv+ b+(++) DI+++ D- G e++++ h- r++ y?   ||
-++ IRCnet OFTC OPN ||_________________________________________________||
+--------------ms030401070002070101050203
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
---EeQfGwPcQSOJBaQU
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBVkYMhWBRyWxizTQeAQKTWQ/6AnYBrd4yoGEWpAXjK6k/3tCsjqiViaxx
-lkq767WvF3UH27K/tVaVYDOA6tuViW8uEw8ZgGOG0QkxZFzj52rCrs3gchkWCbLr
-cJgm7oOkiPKzj4KyWHYiTz7HEG48ECdgDmfM0sl6juS+wIPPpaP9fIAAXp/NDDau
-ESRz5ZUG+EmEbHor6/PkEcrpb8y0Nd8Tz3toIpNigInnvMxxaTbML5ru3RPVMESz
-BthcQa422evY4Ej/p2E7Ir5VEyda9gXu/28QHwGKo89J4SFdAVqSkOLysv7T2iep
-7iDQGIdiZ45pqOXRdzqXN5cOkIeIlVmMBwNeZsnod/ypFoSaPRJy3mi96HDvuaOt
-iORj+nei+uTRYppT9EgU/lwx3yHSJXUzjcy7933s/crx1UUBWR7VNmNsAuyFzbx4
-Sh6B+7xBdmOTAmRfUNWmJFpzRRDAIZ/FfGFTgyuo+MAAh6ZEEkWxbPyeed3vSG4A
-QnzNnlMQwqTeD7i570SssfDWqnqPykYH6FNC72zeEwSI5hYk4T/NKna4aqwTsOxL
-Z7Oq8gSRzqCeNT2iPkc/cyd+vt0tK1wSM93gkP3pqAs8LPMymRgiAfVDP5mvPEWz
-MTm8bJ1Cipf47alb/pn70CNqJgM+C9LrSTBjqQYzGFPse4L1cwi+IP6DVOXR/tK4
-TRS6LmZ9xS8=
-=OE+M
------END PGP SIGNATURE-----
-
---EeQfGwPcQSOJBaQU--
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCC
+Brgwgga0MIIEnKADAgECAgMRLfgwDQYJKoZIhvcNAQENBQAweTEQMA4GA1UEChMHUm9vdCBD
+QTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNp
+Z25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcwHhcN
+MTUwOTIxMTEzNTEzWhcNMTYwMzE5MTEzNTEzWjBjMRgwFgYDVQQDEw9DQWNlcnQgV29UIFVz
+ZXIxIzAhBgkqhkiG9w0BCQEWFGFoZmVycm9pbjdAZ21haWwuY29tMSIwIAYJKoZIhvcNAQkB
+FhNhaGVtbWVsZ0BvaGlvZ3QuY29tMIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEA
+nQ/81tq0QBQi5w316VsVNfjg6kVVIMx760TuwA1MUaNQgQ3NyUl+UyFtjhpkNwwChjgAqfGd
+LIMTHAdObcwGfzO5uI2o1a8MHVQna8FRsU3QGouysIOGQlX8jFYXMKPEdnlt0GoQcd+BtESr
+pivbGWUEkPs1CwM6WOrs+09bAJP3qzKIr0VxervFrzrC5Dg9Rf18r9WXHElBuWHg4GYHNJ2V
+Ab8iKc10h44FnqxZK8RDN8ts/xX93i9bIBmHnFfyNRfiOUtNVeynJbf6kVtdHP+CRBkXCNRZ
+qyQT7gbTGD24P92PS2UTmDfplSBcWcTn65o3xWfesbf02jF6PL3BCrVnDRI4RgYxG3zFBJuG
+qvMoEODLhHKSXPAyQhwZINigZNdw5G1NqjXqUw+lIqdQvoPijK9J3eijiakh9u2bjWOMaleI
+SMRR6XsdM2O5qun1dqOrCgRkM0XSNtBQ2JjY7CycIx+qifJWsRaYWZz0aQU4ZrtAI7gVhO9h
+pyNaAGjvm7PdjEBiXq57e4QcgpwzvNlv8pG1c/hnt0msfDWNJtl3b6elhQ2Pz4w/QnWifZ8E
+BrFEmjeeJa2dqjE3giPVWrsH+lOvQQONsYJOuVb8b0zao4vrWeGmW2q2e3pdv0Axzm/60cJQ
+haZUv8+JdX9ZzqxOm5w5eUQSclt84u+D+hsCAwEAAaOCAVkwggFVMAwGA1UdEwEB/wQCMAAw
+VgYJYIZIAYb4QgENBEkWR1RvIGdldCB5b3VyIG93biBjZXJ0aWZpY2F0ZSBmb3IgRlJFRSBo
+ZWFkIG92ZXIgdG8gaHR0cDovL3d3dy5DQWNlcnQub3JnMA4GA1UdDwEB/wQEAwIDqDBABgNV
+HSUEOTA3BggrBgEFBQcDBAYIKwYBBQUHAwIGCisGAQQBgjcKAwQGCisGAQQBgjcKAwMGCWCG
+SAGG+EIEATAyBggrBgEFBQcBAQQmMCQwIgYIKwYBBQUHMAGGFmh0dHA6Ly9vY3NwLmNhY2Vy
+dC5vcmcwMQYDVR0fBCowKDAmoCSgIoYgaHR0cDovL2NybC5jYWNlcnQub3JnL3Jldm9rZS5j
+cmwwNAYDVR0RBC0wK4EUYWhmZXJyb2luN0BnbWFpbC5jb22BE2FoZW1tZWxnQG9oaW9ndC5j
+b20wDQYJKoZIhvcNAQENBQADggIBADMnxtSLiIunh/TQcjnRdf63yf2D8jMtYUm4yDoCF++J
+jCXbPQBGrpCEHztlNSGIkF3PH7ohKZvlqF4XePWxpY9dkr/pNyCF1PRkwxUURqvuHXbu8Lwn
+8D3U2HeOEU3KmrfEo65DcbanJCMTTW7+mU9lZICPP7ZA9/zB+L0Gm1UNFZ6AU50N/86vjQfY
+WgkCd6dZD4rQ5y8L+d/lRbJW7ZGEQw1bSFVTRpkxxDTOwXH4/GpQfnfqTAtQuJ1CsKT12e+H
+NSD/RUWGTr289dA3P4nunBlz7qfvKamxPymHeBEUcuICKkL9/OZrnuYnGROFwcdvfjGE5iLB
+kjp/ttrY4aaVW5EsLASNgiRmA6mbgEAMlw3RwVx0sVelbiIAJg9Twzk4Ct6U9uBKiJ8S0sS2
+8RCSyTmCRhJs0vvva5W9QUFGmp5kyFQEoSfBRJlbZfGX2ehI2Hi3U2/PMUm2ONuQG1E+a0AP
+u7I0NJc/Xil7rqR0gdbfkbWp0a+8dAvaM6J00aIcNo+HkcQkUgtfrw+C2Oyl3q8IjivGXZqT
+5UdGUb2KujLjqjG91Dun3/RJ/qgQlotH7WkVBs7YJVTCxfkdN36rToPcnMYOI30FWa0Q06gn
+F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
+BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTEzMTYzMDQ0WjBPBgkq
+hkiG9w0BCQQxQgRAOP5S44z4BWSc6OeRlmHduD8kc866iWJ491DbcIB+AmENs0bFJIeMfuyY
+OjuWNl7F7fMzclNb7qup8GTxt3Y4vTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgBp968uEXZHvvQZ5bm71VGB/caeOKNG9qXfVSOOkfFHdiu45pXI
+J9/lKSEL4Gedn8D+yp+vpIKKmum/axNQlEwwWtFaLyoALgfU8WLfARfg8fLpCo3DI6tLxm67
+GGZu6x7Z672dKm0qkRKJeInuAn1PPkjY53Cp6eBqtDX7xazg1L+WjD/QxrXEbeylxBJJA53m
+KuwIF4cAPehOrbZ3Kg+9W8x88EdlTUkxqD60fSrYEKrm5tSk6b4N7ZHzGXqjcFnuuZHRBxxw
+xg5cAjGEL51vi22lC2cetm2aD3RHl/YV+Xl0SIvB8j7V2hSIuFnGJlU7p1lyzyK7Q/AYdVmw
+AZShsTdk5t4pxBZWxA+Mjr7gIQz/QADXeP12iGH/PYa6gpNvARbLtKlsdGKHsYjqUsfLp/yp
+mzAlo5WR6uZn8sPHcUi08D1Osr2eHbk0uqomYU/667AFwtIUOCA15w1zbQDJoZAjq+AdnB5R
+KI4xIFax7QkaK1+j/M6LUPnOuzWcBIeHgkp9Td8/LchkXgRnm9sZQL3RkpawSUfc5275Leam
+Ekt5hzzxJFg0R+epTW1tXy2cu/Un3ydPJavudnTbrMHGmVHl21DvL+w2aC+7u2TNDechRICo
+C7it/q4XiBXnlTRLh22upcwqBjO7W+Pz+RId+HPUXy+birZL+Oy5lts1xwAAAAAAAA==
+--------------ms030401070002070101050203--

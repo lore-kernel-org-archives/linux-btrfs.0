@@ -1,33 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:34196 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932199AbbKLW5E (ORCPT
+Received: from mail-bn1bon0133.outbound.protection.outlook.com ([157.56.111.133]:4333
+	"EHLO na01-bn1-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1754270AbbKMBqy convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 17:57:04 -0500
-Date: Thu, 12 Nov 2015 22:57:01 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Donald Pearson <donaldwhpearson@gmail.com>
-Cc: Scotty Edmonds <scotty@scottyedmonds.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Thu, 12 Nov 2015 20:46:54 -0500
+From: Scotty Edmonds <scotty@scottyedmonds.com>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        Donald Pearson <donaldwhpearson@gmail.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: BTRFS Error - Rockstor
-Message-ID: <20151112225701.GD24333@carfax.org.uk>
+Date: Fri, 13 Nov 2015 01:46:48 +0000
+Message-ID: <SN2PR07MB01305858FEC051F986D3546CF110@SN2PR07MB013.namprd07.prod.outlook.com>
 References: <SN2PR07MB013A0D1DE3EC69CFAD9885ACF120@SN2PR07MB013.namprd07.prod.outlook.com>
  <CAC=t97BwoMcqE978Fcdu3keN4UNtxqoBDPdbYb_T0C-wR-CBsg@mail.gmail.com>
  <SN2PR07MB013F045DB3B42E4AD8AA3D6CF120@SN2PR07MB013.namprd07.prod.outlook.com>
  <CAC=t97Cv01-8z-oA_pGea9RHQ6d53w=FLbuvpadB=m_LtTPiXw@mail.gmail.com>
  <SN2PR07MB01362A586F4293204E66FCFCF120@SN2PR07MB013.namprd07.prod.outlook.com>
- <CAC=t97AUVQ_Jk1aSmhHodF-Db7NjaUvD1pfbFokx+q_bg3QtxA@mail.gmail.com>
+ <CAC=t97AUVQ_Jk1aSmhHodF-Db7NjaUvD1pfbFokx+q_bg3QtxA@mail.gmail.com>,<20151112225701.GD24333@carfax.org.uk>
+In-Reply-To: <20151112225701.GD24333@carfax.org.uk>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="YToU2i3Vx8H2dn7O"
-In-Reply-To: <CAC=t97AUVQ_Jk1aSmhHodF-Db7NjaUvD1pfbFokx+q_bg3QtxA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Thanks for the help,  I got the same error on all variants.
 
---YToU2i3Vx8H2dn7O
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+[root@rockstor ~]# btrfs check --readonly -s 0 /dev/sdh
+using SB copy 0, bytenr 65536
+checksum verify failed on 12060305965056 found 779CCA23 wanted A746C37A
+checksum verify failed on 12060305965056 found 779CCA23 wanted A746C37A
+checksum verify failed on 12060305965056 found 1727A198 wanted 231E1577
+checksum verify failed on 12060305965056 found 1727A198 wanted 231E1577
+bytenr mismatch, want=12060305965056, have=13820656527619066643
+Couldn't read chunk tree
+Couldn't open file system
+[root@rockstor ~]#
+
+
+Thanks,
+
+Scotty Edmonds
+Scotty@ScottyEdmonds.com
+
+________________________________________
+From: Hugo Mills <hugo@carfax.org.uk>
+Sent: November-12-15 6:57 PM
+To: Donald Pearson
+Cc: Scotty Edmonds; Btrfs BTRFS
+Subject: Re: BTRFS Error - Rockstor
 
    On IRC earlier, I asked for the btrfs-debug-tree output of the
 broken tree block (1205030...etc). Since it's also failing, that would
@@ -53,10 +74,10 @@ On Thu, Nov 12, 2015 at 04:41:58PM -0600, Donald Pearson wrote:
 > <scotty@scottyedmonds.com> wrote:
 > > Not exactly sure what to look for in dmesg..   If it is a disk fail shouldn't I just be able to remove the disk as it's RAID5?
 > >
-> 
+>
 > Yes theoretically.
-> 
-> 
+>
+>
 > > [   20.323997] BTRFS: device label seagate3x2tb devid 2 transid 2315 /dev/sdc
 > > [   20.324387] BTRFS: device label seagate3x2tb devid 1 transid 2315 /dev/sda
 > > [   20.324601] BTRFS: device label seagate3x2tb devid 3 transid 2315 /dev/sdd
@@ -117,14 +138,14 @@ On Thu, Nov 12, 2015 at 04:41:58PM -0600, Donald Pearson wrote:
 > >
 > > Scotty Edmonds
 > > Scotty@ScottyEdmonds.com
-> 
+>
 > I think we need to see what some of the more experienced users think
 > on this one.  But you can try removing sdh and seeing if you can mount
 > it *read only* and degraded.  Just make sure whatever you do and play
 > with is done read only.  Don't try any fixes or repairs with the tools
 > unless told to do so by someone who really knows what they're talking
 > about.
-> 
+>
 > >
 > > ________________________________________
 > > From: Donald Pearson <donaldwhpearson@gmail.com>
@@ -237,32 +258,8 @@ On Thu, Nov 12, 2015 at 04:41:58PM -0600, Donald Pearson wrote:
 > >>>  Scotty Edmonds
 > >>>  Scotty@ScottyEdmonds.com
 
--- 
+--
 Hugo Mills             | "How deep will this sub go?"
 hugo@... carfax.org.uk | "Oh, she'll go all the way to the bottom if we don't
 http://carfax.org.uk/  | stop her."
 PGP: E2AB1DE4          |                                                  U571
-
---YToU2i3Vx8H2dn7O
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWRRk9AAoJEFheFHXiqx3k1twQAJTjv4NkRZdwNvQDWeF1IpsH
-TQKBvcfPZcSFmQ7pYNh91uVg6lxC/tResyNYIUS1RE1j64g2ESdAh2E71XtpWS3w
-j/XGBIsgqftzv6fDRVvz+uyXyfPha0XUkp73/ebolJ0aup1hJtKWC86pCinTynEj
-o+W6Un5M1PaNYfOdEKIp11J/qdYXvpkC9512YD9AoQL5iR/DPqUbdlPJukdaurE8
-unTTmB/kAnNWpONhgiIK12hLw9r7Yyl6XKG60zDHV3dIborzQZLPppsC4fvCg7q/
-McaAs97/p5D03BJ6nWsRheHVar8eWAJm5/eNTW72MnitqxA1NpSs6jGV31yvDifi
-IsVnYW1jdThNyrrQjbR5WamZ4isk+Q2W3rDVHTSzmm3VyrPAxC74LjDWfh9ArfnC
-wRrC8RWyZ50RsWksdHtZbtz0Pk5FISN8XQcPNpW5jeTxtWeQG6kY1591+udZymSp
-5SNWt86U8/malkjdgWkyZY16keSxWReTBwOPaU8+LG/qsfZljdgJv8YGvk1P0hSc
-dyRhqRtpUWlT8gtAH+U7dwsgAoZDZ6SNne1DdceStFjjNa6RCcDhV81urzZDhyd0
-jzddFf310pPbLIj7F5rlF/170K8b+wKop3ASv5yhZMBXH9Z8FuGYTkZepKLy6t7h
-96L2qOodyWrcG0BShdIc
-=GSTk
------END PGP SIGNATURE-----
-
---YToU2i3Vx8H2dn7O--

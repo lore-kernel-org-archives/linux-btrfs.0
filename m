@@ -1,12 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:49529 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754032AbbKMDAp (ORCPT
+Received: from mail-by2on0136.outbound.protection.outlook.com ([207.46.100.136]:2240
+	"EHLO na01-by2-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1754443AbbKMDF0 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 12 Nov 2015 22:00:45 -0500
-Subject: Re: BTRFS Error - Rockstor
-To: Scotty Edmonds <scotty@scottyedmonds.com>, Hugo Mills <hugo@carfax.org.uk>,
+	Thu, 12 Nov 2015 22:05:26 -0500
+From: Scotty Edmonds <scotty@scottyedmonds.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, Hugo Mills <hugo@carfax.org.uk>,
         Donald Pearson <donaldwhpearson@gmail.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS Error - Rockstor
+Date: Fri, 13 Nov 2015 03:05:21 +0000
+Message-ID: <SN2PR07MB013089A105ADDD50B22EB66CF110@SN2PR07MB013.namprd07.prod.outlook.com>
 References: <SN2PR07MB013A0D1DE3EC69CFAD9885ACF120@SN2PR07MB013.namprd07.prod.outlook.com>
  <CAC=t97BwoMcqE978Fcdu3keN4UNtxqoBDPdbYb_T0C-wR-CBsg@mail.gmail.com>
  <SN2PR07MB013F045DB3B42E4AD8AA3D6CF120@SN2PR07MB013.namprd07.prod.outlook.com>
@@ -16,21 +21,142 @@ References: <SN2PR07MB013A0D1DE3EC69CFAD9885ACF120@SN2PR07MB013.namprd07.prod.ou
  <20151112225701.GD24333@carfax.org.uk>
  <SN2PR07MB01305858FEC051F986D3546CF110@SN2PR07MB013.namprd07.prod.outlook.com>
  <5645492B.9080808@cn.fujitsu.com>
- <SN2PR07MB013024CC746A3302C8FB614CF110@SN2PR07MB013.namprd07.prod.outlook.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56455257.8010602@cn.fujitsu.com>
-Date: Fri, 13 Nov 2015 11:00:39 +0800
+ <SN2PR07MB013024CC746A3302C8FB614CF110@SN2PR07MB013.namprd07.prod.outlook.com>,<56455257.8010602@cn.fujitsu.com>
+In-Reply-To: <56455257.8010602@cn.fujitsu.com>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-In-Reply-To: <SN2PR07MB013024CC746A3302C8FB614CF110@SN2PR07MB013.namprd07.prod.outlook.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Got this:
+
+[root@rockstor ~]# btrfs-show-super -f /dev/sdg
+superblock: bytenr=65536, device=/dev/sdg
+---------------------------------------------------------
+csum                    0x793978ef [match]
+bytenr                  65536
+flags                   0x1
+                        ( WRITTEN )
+magic                   _BHRfS_M [match]
+fsid                    e8c92d93-fac3-4f83-b3aa-31cb92caafd9
+label                   mainNAS
+generation              25209
+root                    8640557629440
+sys_array_size          225
+chunk_root_generation   25196
+root_level              1
+chunk_root              12060305932288
+chunk_root_level        1
+log_root                0
+log_root_transid        0
+log_root_level          0
+total_bytes             15002964910080
+bytes_used              5973553180672
+sectorsize              4096
+nodesize                16384
+leafsize                16384
+stripesize              4096
+root_dir                6
+num_devices             5
+compat_flags            0x0
+compat_ro_flags         0x0
+incompat_flags          0x1e1
+                        ( MIXED_BACKREF |
+                          BIG_METADATA |
+                          EXTENDED_IREF |
+                          RAID56 |
+                          SKINNY_METADATA )
+csum_type               0
+csum_size               4
+cache_generation        25209
+uuid_tree_generation    25209
+dev_item.uuid           286474b1-210d-4db1-b97f-ff07116bf2f9
+dev_item.fsid           e8c92d93-fac3-4f83-b3aa-31cb92caafd9 [match]
+dev_item.type           0
+dev_item.total_bytes    3000592982016
+dev_item.bytes_used     1497618186240
+dev_item.io_align       4096
+dev_item.io_width       4096
+dev_item.sector_size    4096
+dev_item.devid          1
+dev_item.dev_group      0
+dev_item.seek_speed     0
+dev_item.bandwidth      0
+dev_item.generation     0
+sys_chunk_array[2048]:
+        item 0 key (FIRST_CHUNK_TREE CHUNK_ITEM 12060305915904)
+                chunk length 67108864 owner 2 stripe_len 65536
+                type SYSTEM|RAID5 num_stripes 5
+                        stripe 0 devid 4 offset 1074790400
+                        stripe 1 devid 5 offset 1074790400
+                        stripe 2 devid 1 offset 1371537408
+                        stripe 3 devid 3 offset 1351614464
+                        stripe 4 devid 2 offset 1351614464
+backup_roots[4]:
+        backup 0:
+                backup_tree_root:       8640557629440   gen: 25209      level: 1
+                backup_chunk_root:      12060305932288  gen: 25196      level: 1
+                backup_extent_root:     8640865320960   gen: 25209      level: 2
+                backup_fs_root:         6680017420288   gen: 25128      level: 0
+                backup_dev_root:        7742127030272   gen: 25196      level: 1
+                backup_csum_root:       8640864288768   gen: 25209      level: 3
+                backup_total_bytes:     15002964910080
+                backup_bytes_used:      5973553180672
+                backup_num_devices:     5
+
+        backup 1:
+                backup_tree_root:       7742772379648   gen: 25206      level: 1
+                backup_chunk_root:      12060305932288  gen: 25196      level: 1
+                backup_extent_root:     7742740856832   gen: 25206      level: 2
+                backup_fs_root:         6680017420288   gen: 25128      level: 0
+                backup_dev_root:        7742127030272   gen: 25196      level: 1
+                backup_csum_root:       7742662393856   gen: 25206      level: 3
+                backup_total_bytes:     15002964910080
+                backup_bytes_used:      5972952920064
+                backup_num_devices:     5
+
+        backup 2:
+                backup_tree_root:       7742732894208   gen: 25207      level: 1
+                backup_chunk_root:      12060305932288  gen: 25196      level: 1
+                backup_extent_root:     7742674255872   gen: 25207      level: 2
+                backup_fs_root:         6680017420288   gen: 25128      level: 0
+                backup_dev_root:        7742127030272   gen: 25196      level: 1
+                backup_csum_root:       7742665457664   gen: 25207      level: 3
+                backup_total_bytes:     15002964910080
+                backup_bytes_used:      5973141712896
+                backup_num_devices:     5
+
+        backup 3:
+                backup_tree_root:       8640836403200   gen: 25208      level: 1
+                backup_chunk_root:      12060305932288  gen: 25196      level: 1
+                backup_extent_root:     8640865320960   gen: 25209      level: 2
+                backup_fs_root:         6680017420288   gen: 25128      level: 0
+                backup_dev_root:        7742127030272   gen: 25196      level: 1
+                backup_csum_root:       8640864288768   gen: 25209      level: 3
+                backup_total_bytes:     15002964910080
+                backup_bytes_used:      5973372186624
+                backup_num_devices:     5
+
+
+[root@rockstor ~]#
+
+
+Thanks,
+
+Scotty Edmonds
+Scotty@ScottyEdmonds.com
+
+________________________________________
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Sent: November-12-15 11:00 PM
+To: Scotty Edmonds; Hugo Mills; Donald Pearson
+Cc: Btrfs BTRFS
+Subject: Re: BTRFS Error - Rockstor
+
 Although I submitted a patch, that won't work for you.
 
-As I found that your whole chunk tree is corrupted, so I'll need to add 
-a new mode for you to handle such case, which will be much time 
+As I found that your whole chunk tree is corrupted, so I'll need to add
+a new mode for you to handle such case, which will be much time
 consuming than the patch I submitted...
 
 But your superblock should has some glue if we are in good luck.
@@ -39,31 +165,31 @@ Would you please paste the output of 'btrfs-show-super -f <device>'?
 
 If we are in good luck, it has something like:
 ------
-	backup 0:
-		backup_tree_root:	30932992	gen: 10	level: 0
-		backup_chunk_root:	20971520	gen: 9	level: 0
-		backup_extent_root:	30916608	gen: 10	level: 0
-		backup_fs_root:		30982144	gen: 10	level: 0
-		backup_dev_root:	29458432	gen: 8	level: 0
-		backup_csum_root:	30949376	gen: 10	level: 1
-		backup_total_bytes:	1073741824
-		backup_bytes_used:	949682176
-		backup_num_devices:	1
+        backup 0:
+                backup_tree_root:       30932992        gen: 10 level: 0
+                backup_chunk_root:      20971520        gen: 9  level: 0
+                backup_extent_root:     30916608        gen: 10 level: 0
+                backup_fs_root:         30982144        gen: 10 level: 0
+                backup_dev_root:        29458432        gen: 8  level: 0
+                backup_csum_root:       30949376        gen: 10 level: 1
+                backup_total_bytes:     1073741824
+                backup_bytes_used:      949682176
+                backup_num_devices:     1
 
-	backup 1:
-		backup_tree_root:	30998528	gen: 11	level: 0
-		backup_chunk_root:	20971520	gen: 8	level: 0
-		backup_extent_root:	31014912	gen: 11	level: 0
-		backup_fs_root:		30982144	gen: 10	level: 0
-		backup_dev_root:	29458432	gen: 8	level: 0
-		backup_csum_root:	30949376	gen: 10	level: 1
-		backup_total_bytes:	1073741824
-		backup_bytes_used:	949682176
-		backup_num_devices:	1
+        backup 1:
+                backup_tree_root:       30998528        gen: 11 level: 0
+                backup_chunk_root:      20971520        gen: 8  level: 0
+                backup_extent_root:     31014912        gen: 11 level: 0
+                backup_fs_root:         30982144        gen: 10 level: 0
+                backup_dev_root:        29458432        gen: 8  level: 0
+                backup_csum_root:       30949376        gen: 10 level: 1
+                backup_total_bytes:     1073741824
+                backup_bytes_used:      949682176
+                backup_num_devices:     1
 ------
 
-And if the back_chunk_root's gen is smaller than 
-'chunk_root_generation', you're in good luck and can use that chunk root 
+And if the back_chunk_root's gen is smaller than
+'chunk_root_generation', you're in good luck and can use that chunk root
 to give it a try.
 
 Thanks,

@@ -1,101 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f52.google.com ([74.125.82.52]:33951 "EHLO
-	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751484AbbKIJLl (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 9 Nov 2015 04:11:41 -0500
-Received: by wmnn186 with SMTP id n186so93740694wmn.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 09 Nov 2015 01:11:39 -0800 (PST)
-Received: from [192.168.1.70] (238.32.12.93.rev.sfr.net. [93.12.32.238])
-        by smtp.gmail.com with ESMTPSA id 20sm13151852wmh.8.2015.11.09.01.11.38
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1.2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Mon, 09 Nov 2015 01:11:39 -0800 (PST)
-To: linux-btrfs@vger.kernel.org
-From: Florian Margaine <florian.margaine@commerceguys.com>
-Subject: [PATCH] Fix partitioned loop devices resolve.
-Message-ID: <56406349.5020608@commerceguys.com>
-Date: Mon, 9 Nov 2015 10:11:37 +0100
+Received: from userp1040.oracle.com ([156.151.31.81]:29747 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751348AbbKNCD5 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 13 Nov 2015 21:03:57 -0500
+Date: Fri, 13 Nov 2015 18:03:50 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] Btrfs: fix sleeping inside atomic context in qgroup
+ rescan worker
+Message-ID: <20151114020350.GE7166@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1446721482-7393-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="uMEqGjts54uV8E8niDvrV898JL0dKqKue"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1446721482-7393-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---uMEqGjts54uV8E8niDvrV898JL0dKqKue
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+On Thu, Nov 05, 2015 at 11:04:42AM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> We are holding a btree path with spinning locks and then we attempt to
+> clone an extent buffer, which calls kmem_cache_alloc() and this function
+> can sleep, causing the following trace to be reported on a debug kernel:
+> 
+> [107118.218536] BUG: sleeping function called from invalid context at mm/slab.c:2871
+> [107118.224110] in_atomic(): 1, irqs_disabled(): 0, pid: 19148, name: kworker/u32:3
+> [107118.226120] INFO: lockdep is turned off.
+> [107118.226843] Preemption disabled at:[<ffffffffa05ffa22>] btrfs_clear_lock_blocking_rw+0x96/0xea [btrfs]
+> 
+> [107118.229175] CPU: 3 PID: 19148 Comm: kworker/u32:3 Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
+> [107118.231326] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+> [107118.233687] Workqueue: btrfs-qgroup-rescan btrfs_qgroup_rescan_helper [btrfs]
+> [107118.236835]  0000000000000000 ffff880424bf3b78 ffffffff812566f4 0000000000000000
+> [107118.238369]  ffff880424bf3ba0 ffffffff81070664 ffffffff817f1cd5 0000000000000b37
+> [107118.239769]  0000000000000000 ffff880424bf3bc8 ffffffff8107070a 0000000000008850
+> [107118.241244] Call Trace:
+> [107118.241729]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
+> [107118.242602]  [<ffffffff81070664>] ___might_sleep+0x23a/0x241
+> [107118.243586]  [<ffffffff8107070a>] __might_sleep+0x9f/0xa6
+> [107118.244532]  [<ffffffff8115af70>] cache_alloc_debugcheck_before+0x25/0x36
+> [107118.245939]  [<ffffffff8115d52b>] kmem_cache_alloc+0x50/0x215
+> [107118.246930]  [<ffffffffa05e627e>] __alloc_extent_buffer+0x2a/0x11f [btrfs]
+> [107118.248121]  [<ffffffffa05ecb1a>] btrfs_clone_extent_buffer+0x3d/0xdd [btrfs]
+> [107118.249451]  [<ffffffffa06239ea>] btrfs_qgroup_rescan_worker+0x16d/0x434 [btrfs]
+> [107118.250755]  [<ffffffff81087481>] ? arch_local_irq_save+0x9/0xc
+> [107118.251754]  [<ffffffffa05f7952>] normal_work_helper+0x14c/0x32a [btrfs]
+> [107118.252899]  [<ffffffffa05f7952>] ? normal_work_helper+0x14c/0x32a [btrfs]
+> [107118.254195]  [<ffffffffa05f7c82>] btrfs_qgroup_rescan_helper+0x12/0x14 [btrfs]
+> [107118.255436]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
+> [107118.263690]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
+> [107118.264888]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
+> [107118.267413]  [<ffffffff8106904d>] kthread+0xef/0xf7
+> [107118.268417]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+> [107118.269505]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
+> [107118.270491]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+> 
+> So just use blocking locks for our path to solve this.
+> This fixes the patch titled:
+>   "btrfs: qgroup: Don't copy extent buffer to do qgroup rescan"
 
-When using partitions on a loop device, the device's name can be
-e.g. /dev/loop0p1 or similar, and no relevant entry exists in the /sys
-filesystem, so the current resolve_loop_device function fails.
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-Instead of using string functions to extract the device name and reading
-this file, this patch uses the loop device API through ioctl to get the
-correct backing file.
+Thanks,
 
-Signed-off-by: Florian Margaine <florian@platform.sh>
-
----
- utils.c | 18 ++++++------------
- 1 file changed, 6 insertions(+), 12 deletions(-)
-
-diff --git a/utils.c b/utils.c
-index d546bea..73a05e1 100644
---- a/utils.c
-+++ b/utils.c
-@@ -1176,22 +1176,16 @@ static int is_loop_device (const char* device) {
- static int resolve_loop_device(const char* loop_dev, char* loop_file,
- 		int max_len)
- {
--	int ret;
--	FILE *f;
--	char fmt[20];
--	char p[PATH_MAX];
--	char real_loop_dev[PATH_MAX];
-+	int fd;
-+	struct loop_info64 lo64;
-
--	if (!realpath(loop_dev, real_loop_dev))
-+	if (!(fd =3D open(loop_dev, O_RDONLY)))
- 		return -errno;
--	snprintf(p, PATH_MAX, "/sys/block/%s/loop/backing_file",
-strrchr(real_loop_dev, '/'));
--	if (!(f =3D fopen(p, "r")))
-+	if (ioctl(fd, LOOP_GET_STATUS64, &lo64) !=3D 0)
- 		return -errno;
-
--	snprintf(fmt, 20, "%%%i[^\n]", max_len-1);
--	ret =3D fscanf(f, fmt, loop_file);
--	fclose(f);
--	if (ret =3D=3D EOF)
-+	memcpy(loop_file, lo64.lo_file_name, strlen(lo64.lo_file_name) + 1);
-+	if (close(fd) !=3D 0)
- 		return -errno;
-
- 	return 0;
---=20
-2.6.1
-
-
-
-
---uMEqGjts54uV8E8niDvrV898JL0dKqKue
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJWQGNJAAoJEIQ/bXU9lJcqpJoIAKSZQlBkRYjNyFiDF+k8WPpC
-MApEcwriU/g4KUX5IGnVfh0NsgCyzjqLSvsHiwdL4kBTtghnmgb7MSMGNefOIWX+
-jcAP4MwDymlfiE+3Ek5CRozrluTbjLOJrIjWs7KXTmzf/MZWkkY6zseO4vph71Mj
-3Wo3Mz44GMk3u4eCRNXrlZVdxp9Z3Uw0tqjq6+ZMKbdyZG2wp1oEFVzZqdLCND+j
-w8CJVhPKp+f5uJKDVzo9JA+ek7f3qNezSnXL+iUKMgzQwyfMxiik9ktNDHrAOINy
-T603GJFsGGuZdJSXQwL6bJvST1BGuKLZfHAVTNf+cGgUuwbWfrSCh1dq+4Tp55Q=
-=zMDU
------END PGP SIGNATURE-----
-
---uMEqGjts54uV8E8niDvrV898JL0dKqKue--
+-liubo
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/qgroup.c | 1 -
+>  1 file changed, 1 deletion(-)
+> 
+> diff --git a/fs/btrfs/qgroup.c b/fs/btrfs/qgroup.c
+> index 75bb4af9..93e12c1 100644
+> --- a/fs/btrfs/qgroup.c
+> +++ b/fs/btrfs/qgroup.c
+> @@ -2198,7 +2198,6 @@ qgroup_rescan_leaf(struct btrfs_fs_info *fs_info, struct btrfs_path *path,
+>  	int slot;
+>  	int ret;
+>  
+> -	path->leave_spinning = 1;
+>  	mutex_lock(&fs_info->qgroup_rescan_lock);
+>  	ret = btrfs_search_slot_for_read(fs_info->extent_root,
+>  					 &fs_info->qgroup_rescan_progress,
+> -- 
+> 2.1.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

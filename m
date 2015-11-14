@@ -1,32 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-17.italiaonline.it ([212.48.25.145]:55915 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1750809AbbKNLRi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Nov 2015 06:17:38 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: Using Btrfs on single drives
-References: <CA+LE0jwrdpjmJhwmG9Yv5HjqZh28-yp3Man8NSmXqCoB=JJ=Ew@mail.gmail.com>
-To: audio muze <audiomuze@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@libero.it>
-Message-ID: <56471661.6020101@libero.it>
-Date: Sat, 14 Nov 2015 12:09:21 +0100
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:36978 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750994AbbKNOML (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Nov 2015 09:12:11 -0500
+Received: by igcto18 with SMTP id to18so6261977igc.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2015 06:12:10 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CA+LE0jwrdpjmJhwmG9Yv5HjqZh28-yp3Man8NSmXqCoB=JJ=Ew@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+From: "CHENG Yuk-Pong, Daniel " <j16sdiz@gmail.com>
+Date: Sat, 14 Nov 2015 22:11:31 +0800
+Message-ID: <CAOcLnUfVNvRLYdeQG_kTZyXaceaLCez=XsQ8PXwEyaXPeYiMwg@mail.gmail.com>
+Subject: More memory more jitters?
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-11-14 11:43, audio muze wrote:
-> I can turn checksumming
-> off given it's of no utility where a Btrfs volume is comprised of a
-> single device only?
+Hi List,
 
-The checksums are used to detect a data corruption; in case of a btrfs-raid, the checksums are used *also* to pick the good copy.
 
-BR
-G.Baroncelli
+I have read the Gotcha[1] page:
 
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+   Files with a lot of random writes can become heavily fragmented
+(10000+ extents) causing trashing on HDDs and excessive multi-second
+spikes of CPU load on systems with an SSD or **large amount a RAM**.
+
+Why could large amount of memory worsen the problem?
+
+If **too much** memory is a problem, is it possible to limit the
+memory btrfs use?
+
+Background info:
+
+I am running a heavy-write database server with 96GB ram. In the worse
+case it cause multi minutes of high cpu loads. Systemd keeping kill
+and restarting services, and old job don't die because they stuck in
+uninterruptable wait... etc.
+
+Tried with nodatacow, but it seems only affect new file. It is not an
+subvolume option either...
+
+
+Regards,
+Daniel
+
+
+[1] https://btrfs.wiki.kernel.org/index.php/Gotchas#Fragmentation

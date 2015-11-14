@@ -1,70 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:63979 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751658AbbKNAzC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 19:55:02 -0500
+Received: from smtp-17.italiaonline.it ([212.48.25.145]:58786 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1750773AbbKNLFa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Nov 2015 06:05:30 -0500
+Reply-To: kreijack@inwind.it
 Subject: Re: [PATCH 00/15] btrfs: Hot spare and Auto replace
-To: Anand Jain <anand.jain@oracle.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        linux-btrfs@vger.kernel.org
 References: <1447066589-3835-1-git-send-email-anand.jain@oracle.com>
- <5643F62D.6050703@cn.fujitsu.com> <56448E58.3070000@gmail.com>
- <564537D8.5020407@cn.fujitsu.com> <5645B986.9090903@oracle.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <56468653.9050005@gmx.com>
-Date: Sat, 14 Nov 2015 08:54:43 +0800
+ <5644E6B5.9070405@inwind.it> <5645B953.7080202@oracle.com>
+To: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <56471576.4080803@inwind.it>
+Date: Sat, 14 Nov 2015 12:05:26 +0100
 MIME-Version: 1.0
-In-Reply-To: <5645B986.9090903@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <5645B953.7080202@oracle.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-在 2015年11月13日 18:20, Anand Jain 写道:
->
->
-> Thanks for commenting.
->
->>>> I'm sorry but I didn't quite see the benefit of a spare device.
->>> Aside from what Duncan said (and I happen to agree with him), there is
->>> also the fact that hot-spares are (at least traditionally in most RAID
->>> systems) usually used with RAID5 or RAID6 (or some other parity scheme).
->>>
->>> So, to summarize:
->>> 1. Hot spares are more useful for most users in global context, and in
->>> that case only if they have more than one filesystem.
->>> 2. A pool of hot spares is even more useful.
+On 2015-11-13 11:20, Anand Jain wrote:
+> 
+> Thanks for comments.
+> 
+> On 11/13/2015 03:21 AM, Goffredo Baroncelli wrote:
+>> On 2015-11-09 11:56, Anand Jain wrote:
+>>> These set of patches provides btrfs hot spare and auto replace support
+>>> for you review and comments.
 >>
->> Agreed, just as Ducan said.
->> Although only one spare device is supported yet.
->
->   You can add more than one spare device currently.
->
->>> 3. Assuming whole disk usage (as opposed to partitioning), the hot spare
->>> will have no load on it until it gets used, at which point it will
->>> almost always be in better physical condition than the device it
->>> replaced (which is important for HA systems, in such cases you replace
->>> the disk that failed, and make the new disk a hot spare)
+>> Hi Anand,
 >>
->> OK, that's also right, if no one is calling btrfs dev scan with a
->> interval.
->
->    Not too sure what you mean about the scan part.
+>> is there any reason to put this kind of logic in the kernel space ?
+[...]
+> 
+>> Another feature of this daemon could be to add a disk when the disk
+>> space is too low,
+> 
+>  That will be at the cost of a spare device which user should review
+>  the trade-offs and do it manually ? I am not sure.
 
-Btrfs device scan will need to read the sb of the device.
-So the hot spare device won't really sleep for a long time as each time 
-btrfs scan devices, it will wakeup the device.
+If you have more than one spare, you can do automatically both: a new disk is added when the space is low, and a disk is replaced in case of failure. If you have only one spare: you may decide to reserve it only for replacing a failed disk. But this should be a configurable option: a low space leads to a not available filesystem, a failed disk means a higher likelihood to loosing all the filesystem. I am not sure which should be the more critical.
 
-Not sure about soft raid hot spare. Maybe they won't cause any IO on the 
-device? Or just the same with btrfs hot spare.
+>> or to start a balance when there is no space to
+>> allocate further chunk.....
+> 
+>  Yep. As you notice, the thread created here is casualty_kthread()
+>  (instead of replace_kthread()) over the long run I wish to provide
+>  that feature in this thread, as it is a mutually exclusive operations
+>  with replace.
 
-Thanks,
-Qu
+A disk replacing should be an higher priority operation. In case of disk failure during a balance/defrag, these operation should be stopped to allow a replace.
+If you want to start a replace, you should stop others (long time) operations like balance and defrag.
 
->
+> 
+>> Of course all these logic could be implemented in kernel space,
+>> but I think that we should avoid that when possible.
+> 
+>  Easy to handle the mutually_exclusive parts with in the kernel
+>  and Its better to have the important logic at one place. Two heads
+>  operating on an org looking and feeling different things will lead
+>  to wrong decisions.
+
+Which is the other logic which you are referring ?
+
+> 
+>> Moreover in  user space the logging is more easy....
+> 
 > Thanks, Anand
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+
+
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

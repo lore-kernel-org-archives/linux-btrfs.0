@@ -1,60 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35093 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751037AbbKNQkH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Nov 2015 11:40:07 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zxdrw-0001jY-CG
-	for linux-btrfs@vger.kernel.org; Sat, 14 Nov 2015 17:40:04 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2015 17:40:04 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2015 17:40:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: More memory more jitters?
-Date: Sat, 14 Nov 2015 16:37:14 +0000 (UTC)
-Message-ID: <pan$ce09f$d4f4e93$fd67914e$33e263e1@cox.net>
-References: <CAOcLnUfVNvRLYdeQG_kTZyXaceaLCez=XsQ8PXwEyaXPeYiMwg@mail.gmail.com>
-	<20151114143112.GK24333@carfax.org.uk>
-Mime-Version: 1.0
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:35252 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752023AbbKOD1B (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 14 Nov 2015 22:27:01 -0500
+Received: by wmdw130 with SMTP id w130so72290310wmd.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 14 Nov 2015 19:27:00 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <CA+LE0jwrdpjmJhwmG9Yv5HjqZh28-yp3Man8NSmXqCoB=JJ=Ew@mail.gmail.com>
+References: <CA+LE0jwrdpjmJhwmG9Yv5HjqZh28-yp3Man8NSmXqCoB=JJ=Ew@mail.gmail.com>
+Date: Sun, 15 Nov 2015 05:27:00 +0200
+Message-ID: <CA+LE0jyvd8f=z8GR7V2=cLzV3Khfn1YpEHka5-6k0JiSPa5-+Q@mail.gmail.com>
+Subject: Re: Using Btrfs on single drives
+From: audio muze <audiomuze@gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Cc: audio muze <audiomuze@gmail.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Sat, 14 Nov 2015 14:31:12 +0000 as excerpted:
+I've gone ahead and created a single drive Btrfs filesystem on a 3TB
+drive and started copying content from a raid5 array to the Btrfs
+volume.  Initially copy speeds were very good sustained at ~145MB/s
+and I left it to run overnight.  This morning I ran btrfs fi usage
+/mnt/btrfs and it reported around 700GB free.  I selected another
+folder containing 204GB and started a copy operation, again from the
+raid5 array to the Btrfs volume.  Copying is now materially slower and
+slowing further...it started at ~105MB/s and after 141GB has slowed to
+around 97MB/s.  Is this to be expected with Btrfs of have I come
+across a bug of some sort?
 
->> I have read the Gotcha[1] page:
->> 
->>    Files with a lot of random writes can become heavily fragmented
->> (10000+ extents) causing trashing on HDDs and excessive multi-second
->> spikes of CPU load on systems with an SSD or **large amount a RAM**.
->> 
->> Why could large amount of memory worsen the problem?
-> 
->    Because the kernel will hang on to lots of changes in RAM for
-> longer. With less memory, there's more pressure to write out dirty pages
-> to disk, so the changes get written out in smaller pieces more often.
-> With more memory, the changes being written out get "lumpier".
-> 
->> If **too much** memory is a problem, is it possible to limit the memory
->> btrfs use?
-> 
->    There's some VM knobs you can twiddle, I believe, but I haven't
-> really played with them myself -- I'm sure there's more knowledgable
-> people around here who can suggest suitable things to play with.
-
-Yes.  Don't have time to explain now, but I will later, if nobody beats 
-me to it.
-
-
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On Sat, Nov 14, 2015 at 12:43 PM, audio muze <audiomuze@gmail.com> wrote:
+> I'm looking to make a "production copy" of my music and video library
+> for use in our media server.  It is not my intent to create any form
+> of RAID array, but rather to treat each drive independently where
+> filesystem is concerned and then to create a single view of the drives
+> using mhddfs.  As the data will remain relatively static I may also
+> deploy Snapraid in conjunction with mhddfs.
+>
+> I'm considering using Btrfs as the underlying filesystem on each of
+> the individual drives, principally to take advantage of metadata
+> redundancy.  Am I corect in surmising that ?I can turn checksumming
+> off given it's of no utility where a Btrfs volume is comprised of a
+> single device only?

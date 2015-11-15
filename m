@@ -1,199 +1,196 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44388 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1031997AbbKFLLy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 6 Nov 2015 06:11:54 -0500
-Date: Fri, 6 Nov 2015 12:10:21 +0100
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.3
-Message-ID: <20151106111021.GS13624@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from userp1040.oracle.com ([156.151.31.81]:47413 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751502AbbKOSV2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 15 Nov 2015 13:21:28 -0500
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Vegard Nossum <vegard.nossum@oracle.com>
+Subject: BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
+Message-ID: <5648CD1D.9070804@oracle.com>
+Date: Sun, 15 Nov 2015 19:21:17 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Content-Type: multipart/mixed;
+ boundary="------------040709000508080806060603"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+This is a multi-part message in MIME format.
+--------------040709000508080806060603
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
+
 Hi,
 
-the btrfs-progs 4.3 have been released.
+With the attached btrfs image, I get the following splat when mounting:
 
-There's a notable change in the behaviour of mkfs on devices smaller than 1
-GiB. The forced --mixed mode is no more. The resulting filesytem will have a
-split data and metadata groups. This may lead to earlier 'no-space' because the
-space is reserved for metadata use.
+"""
+# mount -o loop -t btrfs ./btrfs.0 /mnt/0/
+BTRFS: device fsid 9006933e-2a9a-44f0-917f-514252aeec2c devid 1 transid 
+7 /dev/loop0
+BTRFS info (device loop0): disk space caching is enabled
+BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
+Kernel panic - not syncing: BUG!
+CPU: 0 PID: 313 Comm: mount Not tainted 4.2.5-00657-ge047887-dirty #25
+Stack:
+  637af890 60062489 602aeb2e 604192ba
+  60387961 00000011 637af8a0 6038a835
+  637af9c0 6038776b 634ef32b 00000000
+Call Trace:
+  [<6001c86d>] show_stack+0xfe/0x15b
+  [<6038a835>] dump_stack+0x2a/0x2c
+  [<6038776b>] panic+0x13e/0x2b3
+  [<6020f099>] btrfs_read_sys_array+0x25d/0x2ff
+  [<601cfbbe>] open_ctree+0x192d/0x27af
+  [<6019c2c1>] btrfs_mount+0x8f5/0xb9a
+  [<600bc9a7>] mount_fs+0x11/0xf3
+  [<600d5167>] vfs_kern_mount+0x75/0x11a
+  [<6019bcb0>] btrfs_mount+0x2e4/0xb9a
+  [<600bc9a7>] mount_fs+0x11/0xf3
+  [<600d5167>] vfs_kern_mount+0x75/0x11a
+  [<600d710b>] do_mount+0xa35/0xbc9
+  [<600d7557>] SyS_mount+0x95/0xc8
+  [<6001e884>] handle_syscall+0x6b/0x8e
 
-* mkfs
-  * mixed mode is not forced for filesystems smaller than 1GiB
-  * mixed mode broken with mismatching sectorsize and nodesize, fixed
-  * print version info earlier
-  * print devices sorted by id
-  * do not truncate target image with --rootsize
+Aborted
+"""
 
-* fi usage:
-  * don't print global block reserve
-  * print device id
-  * minor output tuning
-  * other cleanups
-
-* calc-size:
-  * div-by-zero fix on an empty filesystem
-  * fix crash
-
-* bugfixes:
-  * more superblock sanity checks
-  * consistently round size of all devices down to sectorsize
-  * misc leak fixes
-  * convert: don't try to rollback with a half-deleted ext2_saved subvolume
-
-* other:
-  * check: add progress indicator
-  * scrub: enahced error message
-  * show-super: read superblock from a given offset
-  * add README
-  * docs: update manual page for mkfs.btrfs, btrfstune, balance, convert and
-    inspect-internal
-  * build: optional build with more warnings (W=...)
-  * build: better support for static checkers
-  * build: html output of documentation
-  * pretty-print: last_snapshot for root_item
-  * pretty-print: stripe dev uuid
-  * error reporting wrappers, introduced and example use
-  * refactor open_file_or_dir
-  * other docs and help updates
-
-* testing:
-  * test for nodes crossing stripes
-  * test for broken 'subvolume sync'
-  * basic tests for mkfs, raid option combinations
-  * basic tests for fuzzed images (check)
-  * command intrumentation (eg valgrind)
-  * print commands if requested
-  * add README for tests
+I can test patches. Thanks,
 
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+Vegard
 
+--------------040709000508080806060603
+Content-Type: application/x-bzip;
+ name="btrfs.0.bz2"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="btrfs.0.bz2"
 
-Shortlog:
-
-Anand Jain (4):
-      btrfs-progs: move is_numerical() helper to utils and rename
-      btrfs-progs: device add: cleanup argument handling
-      btrfs-progs: fix uninitialized copy of btrfs_fs_devices list
-      btrfs-progs: fix missing initialization of list head for dev_list
-
-Chandan Rajendra (2):
-      Btrfs-progs: Do not force mixed block group creation unless '-M' option is specified
-      Btrfs-progs: Prevent creation of filesystem with 'mixed bgs' and having differing sectorsize and nodesize.
-
-David Sterba (46):
-      btrfs-progs: misc tests: add 009-subvolume-sync-must-wait
-      btrfs-progs: tests: print commands on terminal if requested
-      btrfs-progs: build: allow to build with various compiler warnings
-      btrfs-progs: a bit of makefile documentation
-      btrfs-progs: check: update help text
-      btrfs-progs: build: make support for static checkers more generic
-      btrfs-progs: docs: add html build target
-      btrfs-progs: cleanup and comment parse_range
-      btrfs-progs: do not modify the string in parse_range
-      btrfs-progs: extend parse_range API to accept a relaxed range
-      btrfs-progs: add helpers for parsing 32bit ranges
-      btrfs-progs: add helpers to print ranges
-      btrfs-progs: tests: add mkfs tests
-      btrfs-progs: tests: add 001-basic-profiles mkfs tests
-      btrfs-progs: tests: add 002-no-force-mixed-on-small-volume
-      btrfs-progs: tests: add 010-convert-delete-ext2-subvol
-      btrfs-progs: tests: set default test image size to 2G
-      btrfs-progs: tests: do not run sudo helper tests if not necessary
-      btrfs-progs: tests: add test driver for fuzzed images
-      btrfs-progs: tests: 001-simple-unmounted: iterate over fuzzed images and run check
-      btrfs-progs: tests: add support for command instrumentation
-      btrfs-progs: tests: do not log output of run_mayfail to terminal
-      btrfs-progs: tests: add 003-mixed-with-wrong-nodesize
-      btrfs-progs: mkfs: remove stray message about forced mixed-bg
-      btrfs-progs: add an initial README
-      btrfs-progs: add initial tests/README
-      btrfs-progs: image: fix bogus check after cpu on-line detection
-      btrfs-progs: mkfs: print version info first
-      btrfs-progs: docs: enhance manual page for mkfs
-      btrfs-progs: docs: enhance manual page for btrfstune
-      btrfs-progs: docs: enhance manual page for balance
-      btrfs-progs: docs: enhance the manual page for convert
-      btrfs-progs: docs: enhance manual page for inspect-internal
-      Btrfs progs v4.3-rc1
-      btrfs-progs: fi usage: do not print global block reserve
-      btrfs-progs: fi usage: cleanup, print header in one go
-      btrfs-progs: fi usage: print path header in the tabular mode
-      btrfs-progs: fi usage: properly count real space infos
-      btrfs-progs: fi usage: cleanup, replace header constant
-      btrfs-progs: fi usage: cleanup, replace space info starting column constant
-      btrfs-progs: fi usage: print device id column in the tabular output<F2>
-      btrfs-progs: string table: fix whitespace damage
-      btrfs-progs: string table: cleanup, rename single letter variables
-      btrfs-progs: string table: add specifier for fillup char
-      btrfs-progs: fi usage: print header and footer separation line
-      btrfs-progs: mkfs: do not truncate the image when --rootdir is set
-
-Eryu Guan (7):
-      btrfs-progs: fix leak of "path" in btrfs_find_item() error paths
-      btrfs-progs: save and return error number correctly in check_chunks_and_extents
-      btrfs-progs: fix memory leak on error path
-      btrfs-progs: remove identical branch in record_extent()
-      btrfs-progs: fix memory leak in cmd_qgroup_show()
-      btrfs-progs: return -ENOMEM properly in btrfs_read_block_groups()
-      btrfs-progs: mute coverity warnings about deadcode
-
-Lakshmipathi.G (1):
-      btrfs-progs: print root item's last_snapshot value
-
-Liu Bo (1):
-      Btrfs-progs: fix btrfs-convert rollback to check ROOT_BACKREF
-
-Qu Wenruo (6):
-      btrfs-progs: fsck: Add check for extent and parent chunk type
-      btrfs-progs: Read the whole superblock instead of struct btrfs_super_block
-      btrfs-progs: add more superblock validation checks
-      btrfs-progs: show-super: Add option to print superblock at given bytenr
-      btrfs-progs: print-tree: Output stripe dev uuid
-      btrfs-progs: Allow btrfs_leaf_free_space to accept NULL root
-
-Silvio Fricke (2):
-      btrfs-progs: check: add progress indicator
-      btrfs-progs: use calloc instead of malloc+memset
-
-Zhao Lei (32):
-      btrfs-progs: tests: Move extract_image out of check_all_images for common use
-      btrfs-progs: tests: Introduce fsck-tests/018-leaf-crossing-stripes
-      btrfs-progs: tests: Introduce misc-tests/008-leaf-crossing-stripes
-      btrfs-progs: tests: Avoid printing useless warning in fsck tests
-      btrfs-progs: use switch instead of a series of ifs for output error message
-      btrfs-progs: enhance error message with status from kernel and errno
-      btrfs-progs: Introduce warning and error for common use
-      btrfs-progs: use common warning/error for cmds-scrub.c
-      btrfs-progs: subvolume: use btrfs_open_dir for btrfs subvolume command
-      btrfs-progs: filesystem: use btrfs_open_dir for btrfs filesystem command
-      btrfs-progs: balance: use btrfs_open_dir for btrfs balance command
-      btrfs-progs: inspect: Bypass unnecessary clean function in open_error
-      btrfs-progs: inspect: set return value of error case
-      btrfs-progs: inspect: use btrfs_open_dir for btrfs inspect command
-      btrfs-progs: qgroup: use btrfs_open_dir for btrfs qgroup command
-      btrfs-progs: quota: use btrfs_open_dir for btrfs quota command
-      btrfs-progs: use btrfs_open_dir in open_path_or_dev_mnt
-      btrfs-progs: replace: use btrfs_open_dir for btrfs replace command
-      btrfs-progs: fragments: use btrfs_open_dir for btrfs-fragments command
-      btrfs-progs: btrfs: Add missing btrfs_close_all_devices for btrfs command
-      btrfs-progs: Remove all btrfs_close_all_devices in sub-command
-      btrfs-progs: Add all missing btrfs_close_all_devices to standalone tools
-      btrfs-progs: Add missing close_ctree to btrfs-select-super.c
-      btrfs-progs: use system's default path for math.h
-      btrfs-progs: fix floating point exception for btrfs-calc-size
-      btrfs-progs: Fix negative eb's ref_cnt in btrfs-calc-size
-      btrfs-progs: Fix uninitialized key.type for btrfs_find_free_objectid
-      btrfs-progs: Avoid use pointer in handle_options
-      btrfs-progs: mkfs: output device list in sorted order
-      btrfs-progs: mkfs: remove unused code of format uuid string
-      btrfs-progs: Rename variables in btrfs_add_to_fsid
-      btrfs-progs: mkfs: Round device size down to sectorsize
+QlpoOTFBWSZTWZpRqv0Agj9/////////////////////////////////////////////4BOf
+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
+--------------040709000508080806060603--

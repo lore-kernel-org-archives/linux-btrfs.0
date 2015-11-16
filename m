@@ -1,166 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:46799 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750913AbbKQKsK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Nov 2015 05:48:10 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAHAlOtp019092
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2015 18:47:24 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH v2] btrfs: Continue replace when set_block_ro failed
-Date: Tue, 17 Nov 2015 18:46:17 +0800
-Message-ID: <d23f307d82d1911a8536d6db1f5c4f806b866d16.1447757151.git.zhaolei@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:54378 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751636AbbKPPxL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Nov 2015 10:53:11 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 79D87AABB
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 15:52:47 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: fix clashing number of the enhanced balance usage filter
+Date: Mon, 16 Nov 2015 16:50:13 +0100
+Message-Id: <1447689013-26385-1-git-send-email-dsterba@suse.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-xfstests/011 failed in node with small_size filesystem.
-Can be reproduced by following script:
-  DEV_LIST="/dev/vdd /dev/vde"
-  DEV_REPLACE="/dev/vdf"
+I've accidentally picked an already used number for the enhanced usage
+filter represented by BTRFS_BALANCE_ARGS_USAGE_RANGE, clashing with
+BTRFS_BALANCE_ARGS_CONVERT. Introduced during the development phase,
+no backward compatibility issues.
 
-  do_test()
-  {
-      local mkfs_opt="$1"
-      local size="$2"
-
-      dmesg -c >/dev/null
-      umount $SCRATCH_MNT &>/dev/null
-
-      echo  mkfs.btrfs -f $mkfs_opt "${DEV_LIST[*]}"
-      mkfs.btrfs -f $mkfs_opt "${DEV_LIST[@]}" || return 1
-      mount "${DEV_LIST[0]}" $SCRATCH_MNT
-
-      echo -n "Writing big files"
-      dd if=/dev/urandom of=$SCRATCH_MNT/t0 bs=1M count=1 >/dev/null 2>&1
-      for ((i = 1; i <= size; i++)); do
-          echo -n .
-          /bin/cp $SCRATCH_MNT/t0 $SCRATCH_MNT/t$i || return 1
-      done
-      echo
-
-      echo Start replace
-      btrfs replace start -Bf "${DEV_LIST[0]}" "$DEV_REPLACE" $SCRATCH_MNT || {
-          dmesg
-          return 1
-      }
-      return 0
-  }
-
-  # Set size to value near fs size
-  # for example, 1897 can trigger this bug in 2.6G device.
-  #
-  ./do_test "-d raid1 -m raid1" 1897
-
-System will report replace fail with following warning in dmesg:
- [  134.710853] BTRFS: dev_replace from /dev/vdd (devid 1) to /dev/vdf started
- [  135.542390] BTRFS: btrfs_scrub_dev(/dev/vdd, 1, /dev/vdf) failed -28
- [  135.543505] ------------[ cut here ]------------
- [  135.544127] WARNING: CPU: 0 PID: 4080 at fs/btrfs/dev-replace.c:428 btrfs_dev_replace_start+0x398/0x440()
- [  135.545276] Modules linked in:
- [  135.545681] CPU: 0 PID: 4080 Comm: btrfs Not tainted 4.3.0 #256
- [  135.546439] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.2-0-g33fbe13 by qemu-project.org 04/01/2014
- [  135.547798]  ffffffff81c5bfcf ffff88003cbb3d28 ffffffff817fe7b5 0000000000000000
- [  135.548774]  ffff88003cbb3d60 ffffffff810a88f1 ffff88002b030000 00000000ffffffe4
- [  135.549774]  ffff88003c080000 ffff88003c082588 ffff88003c28ab60 ffff88003cbb3d70
- [  135.550758] Call Trace:
- [  135.551086]  [<ffffffff817fe7b5>] dump_stack+0x44/0x55
- [  135.551737]  [<ffffffff810a88f1>] warn_slowpath_common+0x81/0xc0
- [  135.552487]  [<ffffffff810a89e5>] warn_slowpath_null+0x15/0x20
- [  135.553211]  [<ffffffff81448c88>] btrfs_dev_replace_start+0x398/0x440
- [  135.554051]  [<ffffffff81412c3e>] btrfs_ioctl+0x1d2e/0x25c0
- [  135.554722]  [<ffffffff8114c7ba>] ? __audit_syscall_entry+0xaa/0xf0
- [  135.555506]  [<ffffffff8111ab36>] ? current_kernel_time64+0x56/0xa0
- [  135.556304]  [<ffffffff81201e3d>] do_vfs_ioctl+0x30d/0x580
- [  135.557009]  [<ffffffff8114c7ba>] ? __audit_syscall_entry+0xaa/0xf0
- [  135.557855]  [<ffffffff810011d1>] ? do_audit_syscall_entry+0x61/0x70
- [  135.558669]  [<ffffffff8120d1c1>] ? __fget_light+0x61/0x90
- [  135.559374]  [<ffffffff81202124>] SyS_ioctl+0x74/0x80
- [  135.559987]  [<ffffffff81809857>] entry_SYSCALL_64_fastpath+0x12/0x6f
- [  135.560842] ---[ end trace 2a5c1fc3205abbdd ]---
-
-Reason:
- When big data writen to fs, the whole free space will be allocated
- for data chunk.
- And operation as scrub need to set_block_ro(), and when there is
- only one metadata chunk in system(or other metadata chunks
- are all full), the function will try to allocate a new chunk,
- and failed because no space in device.
-
-Fix:
- When set_block_ro failed for metadata chunk, it is not a problem
- because scrub_lock paused commit_trancaction in same time, and
- metadata are always cowed, so the on-the-fly writepages will not
- write data into same place with scrub/replace.
- Let replace continue in this case is no problem.
-
-Tested by above script, and xfstests/011, plus 100 times xfstests/070.
-
-Changelog v1->v2:
-1: Add detail comments in source and commit-message.
-2: Add dmesg detail into commit-message.
-3: Limit return value of -ENOSPC to be passed.
-All suggested by: Filipe Manana <fdmanana@gmail.com>
-
-Suggested-by: Filipe Manana <fdmanana@gmail.com>
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Reported-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
+Reported-by: Dan Carpenter <dan.carpenter@oracle.com>
+Fixes: bc3094673f22 ("btrfs: extend balance filter usage to take minimum and maximum")
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/scrub.c | 20 ++++++++++++++++++--
- 1 file changed, 18 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index a39f5d1..fc0bb91 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3532,6 +3532,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 	u64 length;
- 	u64 chunk_offset;
- 	int ret = 0;
-+	int ro_set;
- 	int slot;
- 	struct extent_buffer *l;
- 	struct btrfs_key key;
-@@ -3617,7 +3618,21 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		scrub_pause_on(fs_info);
- 		ret = btrfs_inc_block_group_ro(root, cache);
- 		scrub_pause_off(fs_info);
--		if (ret) {
-+
-+		if (ret == 0) {
-+			ro_set = 1;
-+		} else if (ret == -ENOSPC) {
-+			/*
-+			 * btrfs_inc_block_group_ro return -ENOSPC when it
-+			 * failed in creating new chunk for metadata.
-+			 * It is not a problem for scrub/replace, because
-+			 * metadata are always cowed, and our scrub paused
-+			 * commit_transactions.
-+			 */
-+			ro_set = 0;
-+		} else {
-+			btrfs_warn(fs_info, "failed setting block group ro, ret=%d\n",
-+				   ret);
- 			btrfs_put_block_group(cache);
- 			break;
- 		}
-@@ -3660,7 +3675,8 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+For 4.4-rc
+
+ fs/btrfs/volumes.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index ec5712372732..d5c84f6b1353 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -382,7 +382,7 @@ struct map_lookup {
+ #define BTRFS_BALANCE_ARGS_LIMIT	(1ULL << 5)
+ #define BTRFS_BALANCE_ARGS_LIMIT_RANGE	(1ULL << 6)
+ #define BTRFS_BALANCE_ARGS_STRIPES_RANGE (1ULL << 7)
+-#define BTRFS_BALANCE_ARGS_USAGE_RANGE	(1ULL << 8)
++#define BTRFS_BALANCE_ARGS_USAGE_RANGE	(1ULL << 10)
  
- 		scrub_pause_off(fs_info);
- 
--		btrfs_dec_block_group_ro(root, cache);
-+		if (ro_set)
-+			btrfs_dec_block_group_ro(root, cache);
- 
- 		btrfs_put_block_group(cache);
- 		if (ret)
+ #define BTRFS_BALANCE_ARGS_MASK			\
+ 	(BTRFS_BALANCE_ARGS_PROFILES |		\
 -- 
-1.8.5.1
+2.6.2
 
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+More majordomo info at  http://vger.kernel.org/majordomo-

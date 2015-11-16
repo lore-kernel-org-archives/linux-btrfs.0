@@ -1,71 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35991 "EHLO plane.gmane.org"
+Received: from mx2.suse.de ([195.135.220.15]:40652 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750841AbbKMGlv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 01:41:51 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1Zx83Q-0005v4-Og
-	for linux-btrfs@vger.kernel.org; Fri, 13 Nov 2015 07:41:48 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 07:41:48 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 13 Nov 2015 07:41:48 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+	id S1752271AbbKPRsP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Nov 2015 12:48:15 -0500
+Date: Mon, 16 Nov 2015 18:46:36 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
 Subject: Re: Ideas for btrfs-convert fix(or rework)
-Date: Fri, 13 Nov 2015 06:41:40 +0000 (UTC)
-Message-ID: <pan$ec21f$788a0920$bfddacc$a403adaf@cox.net>
-References: <56418E5D.9020604@gmx.com> <20151110125501.1aa6f155@natsu>
-	<5641A7DA.6010102@gmx.com> <20151110140855.3ae7297c@natsu>
-	<5641B64A.9020606@gmx.com> <pan$edd20$481e3529$4248bf13$5caaf119@cox.net>
-	<CAO5K3OfBy72Yn1s4Ow2h_2KkE7U4wQA66oxjQLva82-D2LqScA@mail.gmail.com>
-	<564493D5.2070609@gmail.com> <20151112190918.3820dd2a@natsu>
-	<5644A44B.6050804@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Message-ID: <20151116174636.GA31035@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <56418E5D.9020604@gmx.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56418E5D.9020604@gmx.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S Hemmelgarn posted on Thu, 12 Nov 2015 09:38:03 -0500 as
-excerpted:
+On Tue, Nov 10, 2015 at 02:27:41PM +0800, Qu Wenruo wrote:
+> [[FIX IDEA]]
+> 1. Too many patches
 
-> I'm not arguing that [btrfs-convert] should just go away, I'm trying to
-> argue that it shouldn't be a development priority if it works correctly.
+Not percieved as a problem as long as the patches are well separated and
+reviewable. If you prefer reasonably many preparatory and trivial
+patches, then be it.
 
-Agreed.
+> 2. superblock reserve is d*mning hard, not matter at what timing.
+>     Until I need to codes for superblock reserve, the codes are quite
+>     easy to write.
+>     But when it comes to sb reserve, I'm going to get crazy...
 
-If you go back to my reply that started this subthread, the statement I 
-took issue with was that btrfs couldn't be accepted as stable unless 
-btrfs-convert was stable.
+What do you mean by the 'sb reserve'?
 
-I simply argued that wasn't the case, since a convert tool is entirely 
-optional, and many fully stable filesystems do entirely without one.  
-Btrfs as a filesystem doesn't /have/ to have this tool, it's optional, so 
-btrfs as a filesystem should be able to stabilize just fine, just as have 
-all the filesystems without a convert tool, no matter the condition of 
-this tool.
+>     I'll either add tons of codes to the simple chunk allocation to
+>     avoid using SB space and keep all chunks are large enough.
+>     Or I need to implement user-space whole chunk relocation codes.
+> 
+>     I miss the old days when sb_bytenr can be specified by user...
+>     Then my work should be quite close to end...
+> 
+> 3. Too aggressive rework
+>     I suppose this will not be a fix, but a total rework of the whole
+>     btrfs-convert program.
+>     Maybe only less than 30% old codes will stay, most of them will be
+>     rewritten.
 
-Of course having a convert tool and having it working is indeed nice to 
-have, and I said that, but the condition of a convert tool, or even 
-having one at all, really shouldn't hold up stabilization of the 
-filesystem as a whole, just as it hasn't held up stabilization of all the 
-other filesystems that don't have such a tool.
+I suppose that the rewrite would also touch generic code, so as far as
+it's cleanups and other refactoring I won't object investing the time to
+that.
 
-/Because/ btrfs-convert is a very nice to have tool, yes, time spent 
-working on it is worthwhile time.  But nobody, least of all me, was 
-arguing otherwise.  I was just saying that the overall stability of btrfs 
-as a filesystem shouldn't be affected by the stability of this tool, as 
-it's optional, and many other accepted as stable filesystems don't have 
-such tools, so just because btrfs does, if the tool doesn't happen to be 
-stable, should have nothing to do with whether the filesystem itself is 
-stable or not.
+>     No matter how I think the new code will be superior than old one,
+>     I'm pretty sure there will be tons of regression or new bugs for
+>     such huge rework.
+> 
+>     But without such work, btrfs-convert will always be a mess and no
+>     real support for balance.
+> 
+> So any ideas or advice is welcomed for this rework.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+In general, I welcome the efforts to make convert better. The in-place
+conversion is a unique feature and a nice to have. Several people
+mentioned that.  Next, we want to add support more filesystems, eg.
+reiserfs code is ready and needs configure checks and minor updates to
+convert.c.  Basically any filesystem that provides a library API similar
+to what ext2 does can be added. Convert code in a good shape would save
+us trouble.
 
+Expecting the regressions, the test set for the convertors needs to be
+enhanced, the current state is less then ideal. Possibly we can use the
+images from e2fsprogs testsuite.

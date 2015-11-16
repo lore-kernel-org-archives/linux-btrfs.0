@@ -1,332 +1,468 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp01.in.ibm.com ([122.248.162.1]:52301 "EHLO
-	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751266AbbKPHJG (ORCPT
+Received: from e28smtp04.in.ibm.com ([122.248.162.4]:58654 "EHLO
+	e28smtp04.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751917AbbKPHJL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Nov 2015 02:09:06 -0500
+	Mon, 16 Nov 2015 02:09:11 -0500
 Received: from /spool/local
-	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp04.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 16 Nov 2015 12:39:03 +0530
+	Mon, 16 Nov 2015 12:39:08 +0530
 Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
-	by d28dlp03.in.ibm.com (Postfix) with ESMTP id 3F7E51258098
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 12:39:09 +0530 (IST)
+	by d28dlp03.in.ibm.com (Postfix) with ESMTP id E290D1258088
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 12:39:12 +0530 (IST)
 Received: from d28av03.in.ibm.com (d28av03.in.ibm.com [9.184.220.65])
-	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tAG7908c45154388
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 12:39:00 +0530
+	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tAG7924m52953186
+	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 12:39:02 +0530
 Received: from d28av03.in.ibm.com (localhost [127.0.0.1])
-	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tAG78v4g027424
+	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tAG78uwU027350
 	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 12:38:58 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, jbacik@fb.com, clm@fb.com,
         bo.li.liu@oracle.com, dsterba@suse.cz, chandan@mykolab.com
-Subject: [RFC PATCH V12 14/14] Btrfs: subpagesize-blocksize: extent_clear_unlock_delalloc: Prevent page from being unlocked more than once
-Date: Mon, 16 Nov 2015 12:38:41 +0530
-Message-Id: <1447657721-10025-15-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [RFC PATCH V12 11/14] Btrfs: subpagesize-blocksize: Prevent writes to an extent buffer when PG_writeback flag is set.
+Date: Mon, 16 Nov 2015 12:38:38 +0530
+Message-Id: <1447657721-10025-12-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1447657721-10025-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1447657721-10025-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-extent_clear_unlock_delalloc() can unlock a page more than once as shown
-below (assume 4k as the block size and 64k as the page size).
+In non-subpagesize-blocksize scenario, BTRFS_HEADER_FLAG_WRITTEN flag prevents
+Btrfs code from writing into an extent buffer whose pages are under
+writeback. This facility isn't sufficient for achieving the same in
+subpagesize-blocksize scenario, since we have more than one extent buffer
+mapped to a page.
 
-cow_file_range
-  create 4k ordered extent corresponding to page offsets 0 - 4095
-  extent_clear_unlock_delalloc corresponding to page offsets 0 - 4095
-    unlock page
-  create 4k ordered extent corresponding to page offsets 4096 - 8191
-  extent_clear_unlock_delalloc corresponding to page offsets 4096 - 8191
-    unlock page
-
-To prevent such a scenario this commit passes "delalloc end" to
-extent_clear_unlock_delalloc() to help decide whether the page can be unlocked
-or not.
-
-NOTE: Since extent_clear_unlock_delalloc() is used by compression code as
-well, the commit passes ordered extent "end" as the value for the argument
-corresponding to "delalloc end" for invocations made from compression code
-path. This will be fixed by a future commit that gets compression to work in
-subpagesize-blocksize scenario.
+Hence this patch adds a new flag (i.e. EXTENT_BUFFER_HEAD_WRITEBACK) and
+corresponding code to track the writeback status of the page and to prevent
+writes to any of the extent buffers mapped to the page while writeback is
+going on.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- fs/btrfs/extent_io.c | 15 ++++++----
- fs/btrfs/extent_io.h |  5 ++--
- fs/btrfs/inode.c     | 84 ++++++++++++++++++++++++++++++----------------------
- 3 files changed, 60 insertions(+), 44 deletions(-)
+ fs/btrfs/ctree.c       |  21 ++++++-
+ fs/btrfs/extent-tree.c |  11 ++++
+ fs/btrfs/extent_io.c   | 150 ++++++++++++++++++++++++++++++++++++++++---------
+ fs/btrfs/extent_io.h   |   1 +
+ 4 files changed, 155 insertions(+), 28 deletions(-)
 
+diff --git a/fs/btrfs/ctree.c b/fs/btrfs/ctree.c
+index c3907b3..6afb6b8 100644
+--- a/fs/btrfs/ctree.c
++++ b/fs/btrfs/ctree.c
+@@ -1538,6 +1538,7 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		    struct extent_buffer *parent, int parent_slot,
+ 		    struct extent_buffer **cow_ret)
+ {
++	struct extent_buffer_head *ebh = eb_head(buf);
+ 	u64 search_start;
+ 	int ret;
+ 
+@@ -1551,6 +1552,14 @@ noinline int btrfs_cow_block(struct btrfs_trans_handle *trans,
+ 		       trans->transid, root->fs_info->generation);
+ 
+ 	if (!should_cow_block(trans, root, buf)) {
++		if (test_bit(EXTENT_BUFFER_HEAD_WRITEBACK, &ebh->bflags)) {
++			if (parent)
++				btrfs_set_lock_blocking(parent);
++			btrfs_set_lock_blocking(buf);
++			wait_on_bit_io(&ebh->bflags,
++				EXTENT_BUFFER_HEAD_WRITEBACK,
++				TASK_UNINTERRUPTIBLE);
++		}
+ 		*cow_ret = buf;
+ 		return 0;
+ 	}
+@@ -2671,6 +2680,7 @@ int btrfs_search_slot(struct btrfs_trans_handle *trans, struct btrfs_root
+ 		      *root, struct btrfs_key *key, struct btrfs_path *p, int
+ 		      ins_len, int cow)
+ {
++	struct extent_buffer_head *ebh;
+ 	struct extent_buffer *b;
+ 	int slot;
+ 	int ret;
+@@ -2773,8 +2783,17 @@ again:
+ 			 * then we don't want to set the path blocking,
+ 			 * so we test it here
+ 			 */
+-			if (!should_cow_block(trans, root, b))
++			if (!should_cow_block(trans, root, b)) {
++				ebh = eb_head(b);
++				if (test_bit(EXTENT_BUFFER_HEAD_WRITEBACK,
++						&ebh->bflags)) {
++					btrfs_set_path_blocking(p);
++					wait_on_bit_io(&ebh->bflags,
++						EXTENT_BUFFER_HEAD_WRITEBACK,
++						TASK_UNINTERRUPTIBLE);
++				}
+ 				goto cow_done;
++			}
+ 
+ 			/*
+ 			 * must have write locks on this node and the
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 3effd755..363d24b 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7819,14 +7819,25 @@ static struct extent_buffer *
+ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		      u64 bytenr, int level)
+ {
++	struct extent_buffer_head *ebh;
+ 	struct extent_buffer *buf;
+ 
+ 	buf = btrfs_find_create_tree_block(root, bytenr);
+ 	if (!buf)
+ 		return ERR_PTR(-ENOMEM);
++
++	ebh = eb_head(buf);
+ 	btrfs_set_header_generation(buf, trans->transid);
+ 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, buf, level);
+ 	btrfs_tree_lock(buf);
++
++	if (test_bit(EXTENT_BUFFER_HEAD_WRITEBACK,
++			&ebh->bflags)) {
++		btrfs_set_lock_blocking(buf);
++		wait_on_bit_io(&ebh->bflags, EXTENT_BUFFER_HEAD_WRITEBACK,
++			TASK_UNINTERRUPTIBLE);
++	}
++
+ 	clean_tree_block(trans, root->fs_info, buf);
+ 	clear_bit(EXTENT_BUFFER_STALE, &buf->ebflags);
+ 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 052c5c0..a6ab44c 100644
+index 34cb573..052c5c0 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1914,9 +1914,8 @@ out_failed:
+@@ -3796,6 +3796,52 @@ void wait_on_extent_buffer_writeback(struct extent_buffer *eb)
+ 		    TASK_UNINTERRUPTIBLE);
  }
  
- int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
--				 struct page *locked_page,
--				 unsigned clear_bits,
--				 unsigned long page_ops)
-+				u64 delalloc_end, struct page *locked_page,
-+				unsigned clear_bits, unsigned long page_ops)
++static void lock_extent_buffers(struct extent_buffer_head *ebh,
++				struct extent_page_data *epd)
++{
++	struct extent_buffer *locked_eb = NULL;
++	struct extent_buffer *eb;
++again:
++	eb = &ebh->eb;
++	do {
++		if (eb == locked_eb)
++			continue;
++
++		if (!btrfs_try_tree_write_lock(eb))
++			goto backoff;
++
++	} while ((eb = eb->eb_next) != NULL);
++
++	return;
++
++backoff:
++	if (locked_eb && (locked_eb->start > eb->start))
++		btrfs_tree_unlock(locked_eb);
++
++	locked_eb = eb;
++
++	eb = &ebh->eb;
++	while (eb != locked_eb) {
++		btrfs_tree_unlock(eb);
++		eb = eb->eb_next;
++	}
++
++	flush_write_bio(epd);
++
++	btrfs_tree_lock(locked_eb);
++
++	goto again;
++}
++
++static void unlock_extent_buffers(struct extent_buffer_head *ebh)
++{
++	struct extent_buffer *eb = &ebh->eb;
++
++	do {
++		btrfs_tree_unlock(eb);
++	} while ((eb = eb->eb_next) != NULL);
++}
++
+ static void lock_extent_buffer_pages(struct extent_buffer_head *ebh,
+ 				struct extent_page_data *epd)
  {
- 	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
- 	int ret;
-@@ -1924,6 +1923,7 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 	unsigned long index = start >> PAGE_CACHE_SHIFT;
- 	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
- 	unsigned long nr_pages = end_index - index + 1;
-+	u64 page_end;
- 	int i;
+@@ -3815,21 +3861,17 @@ static void lock_extent_buffer_pages(struct extent_buffer_head *ebh,
+ }
  
- 	clear_extent_bit(tree, start, end, clear_bits, 1, 0, NULL, GFP_NOFS);
-@@ -1960,8 +1960,13 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 			if ((page_ops & PAGE_END_WRITEBACK)
- 				&& !PagePrivate2(pages[i]))
- 				end_page_writeback(pages[i]);
--			if (page_ops & PAGE_UNLOCK)
--				unlock_page(pages[i]);
-+			if (page_ops & PAGE_UNLOCK) {
-+				page_end = page_offset(pages[i]) +
-+					PAGE_CACHE_SIZE - 1;
-+				if ((page_end <= end)
-+					|| (end == delalloc_end))
-+					unlock_page(pages[i]);
-+			}
- 			page_cache_release(pages[i]);
+ static int noinline_for_stack
+-lock_extent_buffer_for_io(struct extent_buffer *eb,
++mark_extent_buffer_writeback(struct extent_buffer *eb,
+ 			struct btrfs_fs_info *fs_info,
+ 			struct extent_page_data *epd)
+ {
++	struct extent_buffer_head *ebh = eb_head(eb);
++	struct extent_buffer *cur;
+ 	int dirty;
+ 	int ret = 0;
+ 
+-	if (!btrfs_try_tree_write_lock(eb)) {
+-		flush_write_bio(epd);
+-		btrfs_tree_lock(eb);
+-	}
+-
+ 	if (test_bit(EXTENT_BUFFER_WRITEBACK, &eb->ebflags)) {
+ 		dirty = test_bit(EXTENT_BUFFER_DIRTY, &eb->ebflags);
+-		btrfs_tree_unlock(eb);
+ 		if (!epd->sync_io) {
+ 			if (!dirty)
+ 				return 1;
+@@ -3837,15 +3879,23 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 				return 2;
  		}
- 		nr_pages -= ret;
+ 
++		cur = &ebh->eb;
++		do {
++			btrfs_set_lock_blocking(cur);
++		} while ((cur = cur->eb_next) != NULL);
++
+ 		flush_write_bio(epd);
+ 
+ 		while (1) {
+ 			wait_on_extent_buffer_writeback(eb);
+-			btrfs_tree_lock(eb);
+ 			if (!test_bit(EXTENT_BUFFER_WRITEBACK, &eb->ebflags))
+ 				break;
+-			btrfs_tree_unlock(eb);
+ 		}
++
++		cur = &ebh->eb;
++		do {
++			btrfs_clear_lock_blocking(cur);
++		} while ((cur = cur->eb_next) != NULL);
+ 	}
+ 
+ 	/*
+@@ -3853,22 +3903,20 @@ lock_extent_buffer_for_io(struct extent_buffer *eb,
+ 	 * under IO since we can end up having no IO bits set for a short period
+ 	 * of time.
+ 	 */
+-	spin_lock(&eb_head(eb)->refs_lock);
++	spin_lock(&ebh->refs_lock);
+ 	if (test_and_clear_bit(EXTENT_BUFFER_DIRTY, &eb->ebflags)) {
+ 		set_bit(EXTENT_BUFFER_WRITEBACK, &eb->ebflags);
+-		spin_unlock(&eb_head(eb)->refs_lock);
++		spin_unlock(&ebh->refs_lock);
+ 		btrfs_set_header_flag(eb, BTRFS_HEADER_FLAG_WRITTEN);
+ 		__percpu_counter_add(&fs_info->dirty_metadata_bytes,
+ 				     -eb->len,
+ 				     fs_info->dirty_metadata_batch);
+ 		ret = 0;
+ 	} else {
+-		spin_unlock(&eb_head(eb)->refs_lock);
++		spin_unlock(&ebh->refs_lock);
+ 		ret = 1;
+ 	}
+ 
+-	btrfs_tree_unlock(eb);
+-
+ 	return ret;
+ }
+ 
+@@ -4012,8 +4060,8 @@ static void set_btree_ioerr(struct extent_buffer *eb, struct page *page)
+ 
+ static void end_bio_subpagesize_blocksize_ebh_writepage(struct bio *bio)
+ {
+-	struct bio_vec *bvec;
+ 	struct extent_buffer *eb;
++	struct bio_vec *bvec;
+ 	int i, done;
+ 
+ 	bio_for_each_segment_all(bvec, bio, i) {
+@@ -4045,6 +4093,15 @@ static void end_bio_subpagesize_blocksize_ebh_writepage(struct bio *bio)
+ 
+ 			end_extent_buffer_writeback(eb);
+ 
++			if (done) {
++				struct extent_buffer_head *ebh = eb_head(eb);
++
++				clear_bit(EXTENT_BUFFER_HEAD_WRITEBACK,
++					&ebh->bflags);
++				smp_mb__after_atomic();
++				wake_up_bit(&ebh->bflags,
++					EXTENT_BUFFER_HEAD_WRITEBACK);
++			}
+ 		} while ((eb = eb->eb_next) != NULL);
+ 
+ 	}
+@@ -4054,6 +4111,7 @@ static void end_bio_subpagesize_blocksize_ebh_writepage(struct bio *bio)
+ 
+ static void end_bio_regular_ebh_writepage(struct bio *bio)
+ {
++	struct extent_buffer_head *ebh;
+ 	struct extent_buffer *eb;
+ 	struct bio_vec *bvec;
+ 	int i, done;
+@@ -4064,7 +4122,9 @@ static void end_bio_regular_ebh_writepage(struct bio *bio)
+ 		eb = (struct extent_buffer *)page->private;
+ 		BUG_ON(!eb);
+ 
+-		done = atomic_dec_and_test(&eb_head(eb)->io_bvecs);
++		ebh = eb_head(eb);
++
++		done = atomic_dec_and_test(&ebh->io_bvecs);
+ 
+ 		if (bio->bi_error ||
+ 		    test_bit(EXTENT_BUFFER_WRITE_ERR, &eb->ebflags)) {
+@@ -4078,6 +4138,10 @@ static void end_bio_regular_ebh_writepage(struct bio *bio)
+ 			continue;
+ 
+ 		end_extent_buffer_writeback(eb);
++
++		clear_bit(EXTENT_BUFFER_HEAD_WRITEBACK, &ebh->bflags);
++		smp_mb__after_atomic();
++		wake_up_bit(&ebh->bflags, EXTENT_BUFFER_HEAD_WRITEBACK);
+ 	}
+ 
+ 	bio_put(bio);
+@@ -4119,8 +4183,14 @@ write_regular_ebh(struct extent_buffer_head *ebh,
+ 			set_btree_ioerr(eb, p);
+ 			end_page_writeback(p);
+ 			if (atomic_sub_and_test(num_pages - i,
+-							&eb_head(eb)->io_bvecs))
++							&ebh->io_bvecs)) {
+ 				end_extent_buffer_writeback(eb);
++				clear_bit(EXTENT_BUFFER_HEAD_WRITEBACK,
++					&ebh->bflags);
++				smp_mb__after_atomic();
++				wake_up_bit(&ebh->bflags,
++					EXTENT_BUFFER_HEAD_WRITEBACK);
++			}
+ 			ret = -EIO;
+ 			break;
+ 		}
+@@ -4154,6 +4224,7 @@ static int write_subpagesize_blocksize_ebh(struct extent_buffer_head *ebh,
+ 	unsigned long i;
+ 	unsigned long bio_flags = 0;
+ 	int rw = (epd->sync_io ? WRITE_SYNC : WRITE) | REQ_META;
++	int nr_eb_submitted = 0;
+ 	int ret = 0, err = 0;
+ 
+ 	eb = &ebh->eb;
+@@ -4166,7 +4237,7 @@ static int write_subpagesize_blocksize_ebh(struct extent_buffer_head *ebh,
+ 			continue;
+ 
+ 		clear_bit(EXTENT_BUFFER_WRITE_ERR, &eb->ebflags);
+-		atomic_inc(&eb_head(eb)->io_bvecs);
++		atomic_inc(&ebh->io_bvecs);
+ 
+ 		if (btrfs_header_owner(eb) == BTRFS_TREE_LOG_OBJECTID)
+ 			bio_flags = EXTENT_BIO_TREE_LOG;
+@@ -4184,6 +4255,8 @@ static int write_subpagesize_blocksize_ebh(struct extent_buffer_head *ebh,
+ 			atomic_dec(&eb_head(eb)->io_bvecs);
+ 			end_extent_buffer_writeback(eb);
+ 			err = -EIO;
++		} else {
++			++nr_eb_submitted;
+ 		}
+ 	} while ((eb = eb->eb_next) != NULL);
+ 
+@@ -4191,6 +4264,12 @@ static int write_subpagesize_blocksize_ebh(struct extent_buffer_head *ebh,
+ 		update_nr_written(p, wbc, 1);
+ 	}
+ 
++	if (!nr_eb_submitted) {
++		clear_bit(EXTENT_BUFFER_HEAD_WRITEBACK, &ebh->bflags);
++		smp_mb__after_atomic();
++		wake_up_bit(&ebh->bflags, EXTENT_BUFFER_HEAD_WRITEBACK);
++	}
++
+ 	unlock_page(p);
+ 
+ 	return ret;
+@@ -4302,24 +4381,31 @@ retry:
+ 
+ 			j = 0;
+ 			ebs_to_write = dirty_ebs = 0;
++
++			lock_extent_buffers(ebh, &epd);
++
++			set_bit(EXTENT_BUFFER_HEAD_WRITEBACK, &ebh->bflags);
++
+ 			eb = &ebh->eb;
+ 			do {
+ 				BUG_ON(j >= BITS_PER_LONG);
+ 
+-				ret = lock_extent_buffer_for_io(eb, fs_info, &epd);
++				ret = mark_extent_buffer_writeback(eb, fs_info,
++								&epd);
+ 				switch (ret) {
+ 				case 0:
+ 					/*
+-					  EXTENT_BUFFER_DIRTY was set and we were able to
+-					  clear it.
++					  EXTENT_BUFFER_DIRTY was set and we were
++					  able to clear it.
+ 					*/
+ 					set_bit(j, &ebs_to_write);
+ 					break;
+ 				case 2:
+ 					/*
+-					  EXTENT_BUFFER_DIRTY was set, but we were unable
+-					  to clear EXTENT_BUFFER_WRITEBACK that was set
+-					  before we got the extent buffer locked.
++					  EXTENT_BUFFER_DIRTY was set, but we were
++					  unable to clear EXTENT_BUFFER_WRITEBACK
++					  that was set before we got the extent
++					  buffer locked.
+ 					 */
+ 					set_bit(j, &dirty_ebs);
+ 				default:
+@@ -4333,22 +4419,32 @@ retry:
+ 
+ 			ret = 0;
+ 
++			unlock_extent_buffers(ebh);
++
+ 			if (!ebs_to_write) {
++				clear_bit(EXTENT_BUFFER_HEAD_WRITEBACK,
++					&ebh->bflags);
++				smp_mb__after_atomic();
++				wake_up_bit(&ebh->bflags,
++					EXTENT_BUFFER_HEAD_WRITEBACK);
+ 				free_extent_buffer(&ebh->eb);
+ 				continue;
+ 			}
+ 
+ 			/*
+-			  Now that we know that atleast one of the extent buffer
++			  Now that we know that atleast one of the extent buffers
+ 			  belonging to the extent buffer head must be written to
+ 			  the disk, lock the extent_buffer_head's pages.
+ 			 */
+ 			lock_extent_buffer_pages(ebh, &epd);
+ 
+ 			if (ebh->eb.len < PAGE_CACHE_SIZE) {
+-				ret = write_subpagesize_blocksize_ebh(ebh, fs_info, wbc, &epd, ebs_to_write);
++				ret = write_subpagesize_blocksize_ebh(ebh, fs_info,
++								wbc, &epd,
++								ebs_to_write);
+ 				if (dirty_ebs) {
+-					redirty_extent_buffer_pages_for_writepage(&ebh->eb, wbc);
++					redirty_extent_buffer_pages_for_writepage(&ebh->eb,
++										wbc);
+ 				}
+ 			} else {
+ 				ret = write_regular_ebh(ebh, fs_info, wbc, &epd);
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index b9407b2..395b16f 100644
+index 93ec2d7..b9407b2 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -386,9 +386,8 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long offset,
- int extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
- int extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
- int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
--				 struct page *locked_page,
--				 unsigned bits_to_clear,
--				 unsigned long page_ops);
-+				u64 delalloc_end, struct page *locked_page,
-+				unsigned bits_to_clear, unsigned long page_ops);
- struct bio *
- btrfs_bio_alloc(struct block_device *bdev, u64 first_sector, int nr_vecs,
- 		gfp_t gfp_flags);
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bd96bac..7ea078f 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -98,9 +98,10 @@ static int btrfs_setsize(struct inode *inode, struct iattr *attr);
- static int btrfs_truncate(struct inode *inode);
- static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent);
- static noinline int cow_file_range(struct inode *inode,
--				   struct page *locked_page,
--				   u64 start, u64 end, int *page_started,
--				   unsigned long *nr_written, int unlock);
-+				struct page *locked_page,
-+				u64 start, u64 end, u64 delalloc_end,
-+				int *page_started, unsigned long *nr_written,
-+				int unlock);
- static struct extent_map *create_pinned_em(struct inode *inode, u64 start,
- 					   u64 len, u64 orig_start,
- 					   u64 block_start, u64 block_len,
-@@ -555,12 +556,13 @@ cont:
- 			 * we don't need to create any more async work items.
- 			 * Unlock and free up our temp pages.
- 			 */
--			extent_clear_unlock_delalloc(inode, start, end, NULL,
--						     clear_flags, PAGE_UNLOCK |
--						     PAGE_CLEAR_DIRTY |
--						     PAGE_SET_WRITEBACK |
--						     page_error_op |
--						     PAGE_END_WRITEBACK);
-+			extent_clear_unlock_delalloc(inode, start, end, end,
-+						NULL, clear_flags,
-+						PAGE_UNLOCK
-+						| PAGE_CLEAR_DIRTY
-+						| PAGE_SET_WRITEBACK
-+						| page_error_op
-+						| PAGE_END_WRITEBACK);
- 			goto free_pages_out;
- 		}
- 	}
-@@ -709,6 +711,8 @@ retry:
- 					     async_extent->start,
- 					     async_extent->start +
- 					     async_extent->ram_size - 1,
-+					     async_extent->start +
-+					     async_extent->ram_size - 1,
- 					     &page_started, &nr_written, 0);
+@@ -36,6 +36,7 @@
+ #define EXTENT_BUFFER_HEAD_TREE_REF 0
+ #define EXTENT_BUFFER_HEAD_DUMMY 1
+ #define EXTENT_BUFFER_HEAD_IN_TREE 2
++#define EXTENT_BUFFER_HEAD_WRITEBACK 3
  
- 			/* JDM XXX */
-@@ -828,6 +832,8 @@ retry:
- 		extent_clear_unlock_delalloc(inode, async_extent->start,
- 				async_extent->start +
- 				async_extent->ram_size - 1,
-+				async_extent->start +
-+				async_extent->ram_size - 1,
- 				NULL, EXTENT_LOCKED | EXTENT_DELALLOC,
- 				PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
- 				PAGE_SET_WRITEBACK);
-@@ -847,9 +853,10 @@ retry:
- 			tree->ops->writepage_end_io_hook(p, start, end,
- 							 NULL, 0);
- 			p->mapping = NULL;
--			extent_clear_unlock_delalloc(inode, start, end, NULL, 0,
--						     PAGE_END_WRITEBACK |
--						     PAGE_SET_ERROR);
-+			extent_clear_unlock_delalloc(inode, start, end, end,
-+						NULL, 0,
-+						PAGE_END_WRITEBACK |
-+						PAGE_SET_ERROR);
- 			free_async_extent_pages(async_extent);
- 		}
- 		alloc_hint = ins.objectid + ins.offset;
-@@ -863,6 +870,8 @@ out_free:
- 	extent_clear_unlock_delalloc(inode, async_extent->start,
- 				     async_extent->start +
- 				     async_extent->ram_size - 1,
-+				     async_extent->start +
-+				     async_extent->ram_size - 1,
- 				     NULL, EXTENT_LOCKED | EXTENT_DELALLOC |
- 				     EXTENT_DEFRAG | EXTENT_DO_ACCOUNTING,
- 				     PAGE_UNLOCK | PAGE_CLEAR_DIRTY |
-@@ -919,10 +928,10 @@ static u64 get_extent_allocation_hint(struct inode *inode, u64 start,
-  * IO when we return.
-  */
- static noinline int cow_file_range(struct inode *inode,
--				   struct page *locked_page,
--				   u64 start, u64 end, int *page_started,
--				   unsigned long *nr_written,
--				   int unlock)
-+				struct page *locked_page,
-+				u64 start, u64 end, u64 delalloc_end,
-+				int *page_started, unsigned long *nr_written,
-+				int unlock)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	u64 alloc_hint = 0;
-@@ -958,7 +967,8 @@ static noinline int cow_file_range(struct inode *inode,
- 		ret = cow_file_range_inline(root, inode, start, end, 0, 0,
- 					    NULL);
- 		if (ret == 0) {
--			extent_clear_unlock_delalloc(inode, start, end, NULL,
-+			extent_clear_unlock_delalloc(inode, start, end,
-+				     delalloc_end, NULL,
- 				     EXTENT_LOCKED | EXTENT_DELALLOC |
- 				     EXTENT_DEFRAG, PAGE_UNLOCK |
- 				     PAGE_CLEAR_DIRTY | PAGE_SET_WRITEBACK |
-@@ -1048,9 +1058,9 @@ static noinline int cow_file_range(struct inode *inode,
- 		page_ops = unlock ? PAGE_UNLOCK : 0;
- 		page_ops |= PAGE_SET_PRIVATE2;
- 		extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC;
--		extent_clear_unlock_delalloc(inode, start,
--					start + ram_size - 1, locked_page,
--					extent_ops, page_ops);
-+		extent_clear_unlock_delalloc(inode, start, start + ram_size - 1,
-+					delalloc_end, locked_page, extent_ops,
-+					page_ops);
- 		disk_num_bytes -= cur_alloc_size;
- 		num_bytes -= cur_alloc_size;
- 		alloc_hint = ins.objectid + ins.offset;
-@@ -1081,8 +1091,8 @@ out_unlock:
- 	extent_ops = EXTENT_LOCKED | EXTENT_DELALLOC | EXTENT_DO_ACCOUNTING
- 		| EXTENT_DEFRAG;
- 
--	extent_clear_unlock_delalloc(inode, start, end, locked_page,
--				extent_ops, page_ops);
-+	extent_clear_unlock_delalloc(inode, start, end, delalloc_end,
-+				locked_page, extent_ops, page_ops);
- 	goto out;
- }
- 
-@@ -1229,9 +1239,9 @@ static noinline int csum_exist_in_range(struct btrfs_root *root,
-  * blocks on disk
-  */
- static noinline int run_delalloc_nocow(struct inode *inode,
--				       struct page *locked_page,
--			      u64 start, u64 end, int *page_started, int force,
--			      unsigned long *nr_written)
-+				struct page *locked_page,
-+				u64 start, u64 end, int *page_started,
-+				int force, unsigned long *nr_written)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_trans_handle *trans;
-@@ -1257,7 +1267,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 
- 	path = btrfs_alloc_path();
- 	if (!path) {
--		extent_clear_unlock_delalloc(inode, start, end, locked_page,
-+		extent_clear_unlock_delalloc(inode, start, end, end,
-+					     locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
- 					     EXTENT_DO_ACCOUNTING |
- 					     EXTENT_DEFRAG, PAGE_UNLOCK |
-@@ -1275,7 +1286,8 @@ static noinline int run_delalloc_nocow(struct inode *inode,
- 		trans = btrfs_join_transaction(root);
- 
- 	if (IS_ERR(trans)) {
--		extent_clear_unlock_delalloc(inode, start, end, locked_page,
-+		extent_clear_unlock_delalloc(inode, start, end, end,
-+					     locked_page,
- 					     EXTENT_LOCKED | EXTENT_DELALLOC |
- 					     EXTENT_DO_ACCOUNTING |
- 					     EXTENT_DEFRAG, PAGE_UNLOCK |
-@@ -1410,8 +1422,8 @@ out_check:
- 		btrfs_release_path(path);
- 		if (cow_start != (u64)-1) {
- 			ret = cow_file_range(inode, locked_page,
--					     cow_start, found_key.offset - 1,
--					     page_started, nr_written, 1);
-+					cow_start, found_key.offset - 1, end,
-+					page_started, nr_written, 1);
- 			if (ret) {
- 				if (!nolock && nocow)
- 					btrfs_end_write_no_snapshoting(root);
-@@ -1471,10 +1483,10 @@ out_check:
- 		}
- 
- 		extent_clear_unlock_delalloc(inode, cur_offset,
--					     cur_offset + num_bytes - 1,
--					     locked_page, EXTENT_LOCKED |
--					     EXTENT_DELALLOC, PAGE_UNLOCK |
--					     PAGE_SET_PRIVATE2);
-+					cur_offset + num_bytes - 1, end,
-+					locked_page, EXTENT_LOCKED |
-+					EXTENT_DELALLOC, PAGE_UNLOCK |
-+					PAGE_SET_PRIVATE2);
- 		if (!nolock && nocow)
- 			btrfs_end_write_no_snapshoting(root);
- 		cur_offset = extent_end;
-@@ -1489,7 +1501,7 @@ out_check:
- 	}
- 
- 	if (cow_start != (u64)-1) {
--		ret = cow_file_range(inode, locked_page, cow_start, end,
-+		ret = cow_file_range(inode, locked_page, cow_start, end, end,
- 				     page_started, nr_written, 1);
- 		if (ret)
- 			goto error;
-@@ -1501,7 +1513,7 @@ error:
- 		ret = err;
- 
- 	if (ret && cur_offset < end)
--		extent_clear_unlock_delalloc(inode, cur_offset, end,
-+		extent_clear_unlock_delalloc(inode, cur_offset, end, end,
- 					     locked_page, EXTENT_LOCKED |
- 					     EXTENT_DELALLOC | EXTENT_DEFRAG |
- 					     EXTENT_DO_ACCOUNTING, PAGE_UNLOCK |
-@@ -1549,7 +1561,7 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
- 	} else if (!inode_need_compress(inode)) {
--		ret = cow_file_range(inode, locked_page, start, end,
-+		ret = cow_file_range(inode, locked_page, start, end, end,
- 				      page_started, nr_written, 1);
- 	} else {
- 		set_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
+ /* these are bit numbers for test/set bit on extent buffer */
+ #define EXTENT_BUFFER_UPTODATE 0
 -- 
 2.1.0
 

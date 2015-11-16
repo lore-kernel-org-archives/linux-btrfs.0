@@ -1,196 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47413 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751502AbbKOSV2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 15 Nov 2015 13:21:28 -0500
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org
-From: Vegard Nossum <vegard.nossum@oracle.com>
-Subject: BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
-Message-ID: <5648CD1D.9070804@oracle.com>
-Date: Sun, 15 Nov 2015 19:21:17 +0100
+Received: from mx2.suse.de ([195.135.220.15]:38765 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752098AbbKPNmJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 16 Nov 2015 08:42:09 -0500
+Date: Mon, 16 Nov 2015 14:40:30 +0100
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.3.1
+Message-ID: <20151116134029.GV6445@suse.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: multipart/mixed;
- boundary="------------040709000508080806060603"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a multi-part message in MIME format.
---------------040709000508080806060603
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: 7bit
-
 Hi,
 
-With the attached btrfs image, I get the following splat when mounting:
+the btrfs-progs 4.3.1 have been released.
 
-"""
-# mount -o loop -t btrfs ./btrfs.0 /mnt/0/
-BTRFS: device fsid 9006933e-2a9a-44f0-917f-514252aeec2c devid 1 transid 
-7 /dev/loop0
-BTRFS info (device loop0): disk space caching is enabled
-BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
-Kernel panic - not syncing: BUG!
-CPU: 0 PID: 313 Comm: mount Not tainted 4.2.5-00657-ge047887-dirty #25
-Stack:
-  637af890 60062489 602aeb2e 604192ba
-  60387961 00000011 637af8a0 6038a835
-  637af9c0 6038776b 634ef32b 00000000
-Call Trace:
-  [<6001c86d>] show_stack+0xfe/0x15b
-  [<6038a835>] dump_stack+0x2a/0x2c
-  [<6038776b>] panic+0x13e/0x2b3
-  [<6020f099>] btrfs_read_sys_array+0x25d/0x2ff
-  [<601cfbbe>] open_ctree+0x192d/0x27af
-  [<6019c2c1>] btrfs_mount+0x8f5/0xb9a
-  [<600bc9a7>] mount_fs+0x11/0xf3
-  [<600d5167>] vfs_kern_mount+0x75/0x11a
-  [<6019bcb0>] btrfs_mount+0x2e4/0xb9a
-  [<600bc9a7>] mount_fs+0x11/0xf3
-  [<600d5167>] vfs_kern_mount+0x75/0x11a
-  [<600d710b>] do_mount+0xa35/0xbc9
-  [<600d7557>] SyS_mount+0x95/0xc8
-  [<6001e884>] handle_syscall+0x6b/0x8e
+* fixes
+  * device delete: recognize 'missing' again
+  * mkfs: long names are not trimmed when doing ssd check
+  * support partitioned loop devices
 
-Aborted
-"""
+* other
+  * replace several mallocs with on-stack variables
+  * more memory allocation failure handling
+  * add tests for bugs fixed
+  * cmd-device: switch to new message printing helpers
+  * minor code cleanups
 
-I can test patches. Thanks,
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
 
 
-Vegard
+Shortlog:
 
---------------040709000508080806060603
-Content-Type: application/x-bzip;
- name="btrfs.0.bz2"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment;
- filename="btrfs.0.bz2"
+Alexander Fougner (1):
+      btrfs-progs: allow device deletion using 'missing' keyword again
 
-QlpoOTFBWSZTWZpRqv0Agj9/////////////////////////////////////////////4BOf
-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
---------------040709000508080806060603--
+David Sterba (25):
+      btrfs-progs: utils: rename helpinfo unit vairables
+      btrfs-progs: simplify empty stirngs check
+      btrfs-progs: don't print version info from embedded subcommands
+      btrfs-progs: remove unused parameter from print_one_fs
+      btrfs-progs: use on-stack buffer for dev_to_fsid
+      btrfs-progs: use on-stack buffer for btrfs_scan_one_device
+      btrfs-progs: use on-stack variable in __rebuild_device_items
+      btrfs-progs: use on-stack buffer in recover_prepare
+      btrfs-progs: use on-stack buffer in __ino_to_path_fd
+      btrfs-progs: use on-stack buffer in __csum_tree_block_size
+      btrfs-progs: handle memory allocation failure in add_file_items
+      btrfs-progs: handle memory allocation failures in traverse_directory
+      btrfs-progs: use fixed size buffer in zero_output_file
+      btrfs-progs: drop unused argument from zero_output_file
+      btrfs-progs: calc-size: use on-stack buffer for a helper structure
+      btrfs-progs: calc-size: kill fs_roots structure and its user
+      btrfs-progs: corrupt-block: use on-stack path buffer in corrupt_dir_item
+      btrfs-progs: image: reorder initialization in metadump_init
+      btrfs-progs: mkfs: handler memory allocation error in make_btrfs
+      btrfs-progs: tests: add 011-delete-missing-device
+      btrfs-progs: tests: add 005-long-device-name-for-ssd
+      btrfs-progs: utils: do not expect lo_file_name to be null terminated
+      btrfs-progs: tests: add 006-partitioned-loopdev
+      btrfs-progs: fix fd leak in resolve_loop_device_with_loopdev
+      Btrfs progs v4.3.1
+
+Florian Margaine (1):
+      btrfs-progs: Fix partitioned loop devices resolving
+
+Michael Lass (1):
+      btrfs-progs: mkfs: increase buffer size in is_ssd
+
+Qu Wenruo (1):
+      btrfs-progs: find-root: Add support to search chunk root
+
+Zhao Lei (3):
+      btrfs-progs: Check periodic.timer_fd's value before use
+      btrfs-progs: device: use warning/error for error message
+      btrfs-progs: cleanup cmd_device_usage, simplify loop checks
+

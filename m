@@ -1,74 +1,188 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f176.google.com ([209.85.213.176]:37154 "EHLO
-	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751702AbbKQMjf (ORCPT
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:32802 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753193AbbKQM4o (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Nov 2015 07:39:35 -0500
-Received: by igcto18 with SMTP id to18so12157913igc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2015 04:39:34 -0800 (PST)
-Subject: Re: BTRFS Error - Rockstor
-To: Scotty Edmonds <scotty@scottyedmonds.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>, Hugo Mills <hugo@carfax.org.uk>,
-        Donald Pearson <donaldwhpearson@gmail.com>
-References: <SN2PR07MB013A0D1DE3EC69CFAD9885ACF120@SN2PR07MB013.namprd07.prod.outlook.com>
- <CAC=t97BwoMcqE978Fcdu3keN4UNtxqoBDPdbYb_T0C-wR-CBsg@mail.gmail.com>
- <SN2PR07MB013F045DB3B42E4AD8AA3D6CF120@SN2PR07MB013.namprd07.prod.outlook.com>
- <CAC=t97Cv01-8z-oA_pGea9RHQ6d53w=FLbuvpadB=m_LtTPiXw@mail.gmail.com>
- <SN2PR07MB01362A586F4293204E66FCFCF120@SN2PR07MB013.namprd07.prod.outlook.com>
- <CAC=t97AUVQ_Jk1aSmhHodF-Db7NjaUvD1pfbFokx+q_bg3QtxA@mail.gmail.com>
- <20151112225701.GD24333@carfax.org.uk>
- <SN2PR07MB01305858FEC051F986D3546CF110@SN2PR07MB013.namprd07.prod.outlook.com>
- <5645492B.9080808@cn.fujitsu.com>
- <SN2PR07MB013024CC746A3302C8FB614CF110@SN2PR07MB013.namprd07.prod.outlook.com>
- <56492C32.5000107@cn.fujitsu.com>
- <SN2PR07MB0138346652867F9CF76D90BCF1D0@SN2PR07MB013.namprd07.prod.outlook.com>
- <564AD8C5.2040609@cn.fujitsu.com>
- <SN2PR07MB0138CA2787C4F7D11B7CECDCF1D0@SN2PR07MB013.namprd07.prod.outlook.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Tue, 17 Nov 2015 07:56:44 -0500
+Received: by igvi2 with SMTP id i2so96038841igv.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2015 04:56:43 -0800 (PST)
+Subject: Re: btrfs-replace OOM on 2GB machine
+To: Georg Lukas <georg@op-co.de>, linux-btrfs@vger.kernel.org
+References: <20151113161501.GA29604@ovgu.de>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <564B1FD5.4060101@gmail.com>
-Date: Tue, 17 Nov 2015 07:38:45 -0500
+Message-ID: <564B23D8.2000202@gmail.com>
+Date: Tue, 17 Nov 2015 07:55:52 -0500
 MIME-Version: 1.0
-In-Reply-To: <SN2PR07MB0138CA2787C4F7D11B7CECDCF1D0@SN2PR07MB013.namprd07.prod.outlook.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090408040208000609090605"
+In-Reply-To: <20151113161501.GA29604@ovgu.de>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms010602070803050005070007"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms090408040208000609090605
-Content-Type: text/plain; charset=windows-1252; format=flowed
+--------------ms010602070803050005070007
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-11-17 03:08, Scotty Edmonds wrote:
-> Sorry, I'm not at all familiar with backtrace.
+On 2015-11-13 11:15, Georg Lukas wrote:
+> Hi,
 >
-General procedure to get a backtrace on a system without core files:
-1. Make sure you have debugging symbols installed for the program you=20
-want the backtrace for, and ideally any libraries it uses.  (These=20
-usually are in packages with names ending in -dbg or -debug.  In the=20
-case of btrfs, you'll probably need symbols for glibc, lzo, and zlib).
-2. Start the program under gdb ('gdb /sbin/btrfs')
-3. When gdb is done loading, type in 'start' followed by the arguments=20
-for the program (in this case, 'rescue chunk-recover -y /dev/sdg')
-4. If gdb then says something about stopping at a breakpoint, enter the=20
-command 'continue'.
-5. When the program being debugged crashes, you should get a backtrace=20
-from gdb, if not, you can enter the command 'bt' to tell it to dump a=20
-backtrace.
-6. After copying the backtrace somewhere you can put it in an e-mail,=20
-you can exit gdb with the 'exit' command, it may complain about=20
-something still running, it's safe to tell it to kill this process.
+> while evaluating btrfs for production use I ended up with a degraded
+> two-disk RAID1 with one disk missing, and wanted to perform a "btrfs
+> replace" to rebuild the RAID1. However, the replace operation causes
+> most of my userland to be OOM-killed and aborts eventually, at about
+> 30% progress, on a box with 2GB of physical RAM.
+>
+> My setup is:
+>
+> Linux-4.3 with the following patches applied:
+>   - http://www.spinics.net/lists/linux-btrfs/msg46123.html
+>     (needed for degraded mount of RAID1)
+>   - http://git.kernel.org/cgit/linux/kernel/git/mkp/linux.git/patch/?id=
+=3D7c4fbd50bfece00abf529bc96ac989dd2bb83ca4
+>     (needed for the Seagate SMRs)
+>
+> btrfs-progs v4.2.3
+>
+> A btrfs RAID1 initially built on two dm-crypt containers on top of two
+> Seagate 8TB SMR disks. For testing purposes, I unmounted the fs,
+> reformatted one of the two crypto containers, mounted the fs in degrade=
+d
+> mode (which required Anand's patch), and tried different approaches to
+> get it back to full operation (rebalance to m=3Dd=3Dsingle, remove the
+> missing drive, finally a replace), all without success.
+While it probably isn't related to the OOM issue, I would be=20
+particularly wary of using BTRFS on SMR disks, we've had multiple=20
+reports of serious issues with them (and IIRC, they were all the same=20
+model of 8TB Seagate SMR disks).
+>
+> The current status is as follows:
+>
+> # btrfs dev usage /media/archive/
+> /dev/mapper/archive1, ID: 1
+>     Device size:             7.28TiB
+>     Data,single:           837.00GiB
+>     Data,RAID0:              1.17TiB
+>     Data,RAID1:            959.00GiB
+>     Data,DUP:                2.17TiB
+>     Metadata,single:         2.00GiB
+>     Metadata,RAID1:          4.00GiB
+>     Metadata,DUP:            5.00GiB
+>     System,RAID1:           32.00MiB
+>     System,DUP:            192.00MiB
+>     Unallocated:             2.17TiB
+>
+> missing, ID: 2
+>     Device size:               0.00B
+>     Data,RAID0:              1.17TiB
+>     Data,RAID1:            959.00GiB
+>     Metadata,RAID1:          4.00GiB
+>     System,RAID1:           32.00MiB
+>     Unallocated:             5.17TiB
+Hmm, it looks like things weren't all RAID1, you've got a little over=20
+1TiB of data that was RAID0, and that may be why you can't rebuild the=20
+FS.  This shouldn't be causing an OOM condition, but it definitely means =
 
-If instead you have your system configured for core dumps:
-1. Make sure you have debugging symbols installed for the program you=20
-want the backtrace for, and ideally any libraries it uses.
-2. Run gdb with the program and core file ('gdb /sbin/btrfs=20
-/path/to/core/file').
-3. Enter the command 'bt to get a backtrace.
+things are not fully recoverable.
+>
+> I then start the replace:
+>
+> # btrfs replace start 2 /dev/mapper/archive2 /media/archive/
+>
+> That takes a while, OOM-kills half of my userspace in the process (it
+> seems like the kernel is allocating and freeing large chunks of memory
+> during the replace:
+>
+>               total       used       free     shared    buffers     cac=
+hed
+> Mem:          1.9G       1.6G       342M       784K       1.8M        1=
+4M
+> -/+ buffers/cache:       1.6G       358M
+> Swap:         4.0G        48M       4.0G
+>
+> (5 second pause)
+>               total       used       free     shared    buffers     cac=
+hed
+> Mem:          1.9G       157M       1.8G       808K       6.6M        3=
+2M
+> -/+ buffers/cache:       118M       1.8G
+> Swap:         4.0G        46M       4.0G
+>
+> (another 5 seconds)
+>               total       used       free     shared    buffers     cac=
+hed
+> Mem:          1.9G       1.1G       835M       808K       6.7M        3=
+7M
+> -/+ buffers/cache:       1.1G       879M
+> Swap:         4.0G        46M       4.0G
+>
+> That seems to be kernel memory, as the swap is hardly used, despite
+> default swappiness settings. Furthermore, /proc/meminfo and slabtop hav=
+e
+> no indication of how the memory is used; it just vanishes from the
+> "available" pool.
+This sounds to me like a memory leak in the kernel, but I'm not certain. =
+
+  I'm going to try and reproduce this without the SMR patch (and=20
+obviously without the SMR drives themselves) in a VM.
+>
+> Eventually, the replace aborts:
+>
+> [64326.700731] BTRFS: btrfs_scrub_dev(<missing disk>, 2, /dev/mapper/ar=
+chive2) failed -12
+> [64326.700986] ------------[ cut here ]------------
+> [64326.701024] WARNING: CPU: 1 PID: 36251 at fs/btrfs/dev-replace.c:428=
+ btrfs_dev_replace_start+0x36b/0x390 [btrfs]()
+> [64326.701062] Modules linked in: btrfs dm_crypt loop sha256_ssse3 sha2=
+56_generic hmac drbg ansi_cprng xts gf128mul algif_skcipher af_alg cpuid =
+nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc xor =
+raid6_pq intel_rapl iosf_mbi x86_pkg_temp_thermal iTCO_wdt intel_powercla=
+mp iTCO_vendor_support kvm_intel kvm evdev crct10dif_pclmul crc32_pclmul =
+cryptd snd_pcm snd_timer snd soundcore pcspkr psmouse serio_raw hpwdt hpi=
+lo lpc_ich mfd_core 8250_fintek shpchp acpi_power_meter button pcc_cpufre=
+q acpi_cpufreq processor coretemp ipmi_watchdog dm_mod ipmi_si ipmi_power=
+off ipmi_devintf ipmi_msghandler fuse autofs4 ext4 crc16 mbcache jbd2 sg =
+sd_mod usb_storage hid_generic usbhid hid crc32c_intel uhci_hcd thermal a=
+hci libahci libata scsi_mod tg3 ptp pps_core libphy ehci_pci ehci_hcd xhc=
+i_pci xhci_hcd
+> [64326.701579]  usbcore usb_common [last unloaded: btrfs]
+> [64326.701611] CPU: 1 PID: 36251 Comm: btrfs Tainted: G        W       =
+4.3.0-gl+ #42
+> [64326.701647] Hardware name: HP ProLiant MicroServer Gen8, BIOS J06 06=
+/06/2014
+> [64326.701671]  ffffffffa06e8b71 ffffffff8129eac3 0000000000000000 ffff=
+ffff8106891c
+> [64326.701720]  00000000fffffff4 ffff880079079800 ffff880006f1a000 ffff=
+880074e2e000
+> [64326.701769]  ffff880006f1aec8 ffffffffa06da7db 00007ffc00000001 ffff=
+880071c42400
+> [64326.701818] Call Trace:
+> [64326.701840]  [<ffffffff8129eac3>] ? dump_stack+0x40/0x5d
+> [64326.701864]  [<ffffffff8106891c>] ? warn_slowpath_common+0x7c/0xb0
+> [64326.701896]  [<ffffffffa06da7db>] ? btrfs_dev_replace_start+0x36b/0x=
+390 [btrfs]
+> [64326.701939]  [<ffffffffa06a6bbe>] ? btrfs_ioctl+0x1b6e/0x27b0 [btrfs=
+]
+> [64326.701964]  [<ffffffff8116b83a>] ? page_add_file_rmap+0x2a/0x50
+> [64326.706074]  [<ffffffff81160379>] ? do_set_pte+0x99/0xc0
+> [64326.706100]  [<ffffffff81135f49>] ? filemap_map_pages+0x219/0x220
+> [64326.706123]  [<ffffffff81162127>] ? handle_mm_fault+0xdd7/0x16c0
+> [64326.706149]  [<ffffffff811b0b0e>] ? do_vfs_ioctl+0x2be/0x490
+> [64326.706174]  [<ffffffff811b0d51>] ? SyS_ioctl+0x71/0x80
+> [64326.706198]  [<ffffffff815000ee>] ? entry_SYSCALL_64_fastpath+0x12/0=
+x71
+> [64326.706222] ---[ end trace 37fc29aa3c600bcf ]---
+This actually looks like it's a different issue potentially, for some=20
+reason BTRFS is trying to scrub the missing disk (which won't work of=20
+course).
+>
+> I'm not sure how to proceed from here, or how to debug this issue. Whil=
+e
+> the disks are not holding critical data, I'm sure it would benefit the
+> community (and btrfs' reputation) if this issue could be sorted out.
 
 
---------------ms090408040208000609090605
+--------------ms010602070803050005070007
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -110,9 +224,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTE3MTIzODQ1WjBPBgkq
-hkiG9w0BCQQxQgRAA8RxeX7hKcSJH4IyaFDKkmhERXu1y0/+HWzQ0na9zLOLEZT+lurzGaYc
-FDYsq42ijb241ktLc+wwVCSCJmVOsDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTE3MTI1NTUyWjBPBgkq
+hkiG9w0BCQQxQgRAcKqOFch3yg7HfUdEgB/z72ZtYrBpaX10u6tpPibB0jv14Gaxli2vCjI5
+iNZ+0+6JdOE9P5hI5CKlcrHmCdzlyDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -120,14 +234,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgAm2nKu7yO7OH74YuDPTFfNp5Nj9iJ2zBK0umlAuzIxoKp5vYBX
-we0MsYoRl2EQtWzZUVR72+Gz2/fgvILcQG8TsE7ChKQUR8DQONPkdrXAhhR+qA+78rQ+UDBS
-gwZWHZDhfvuPlnT70rN1SHD4HfDiD86E7jJouQO33qut3GdE7uHfES2YyNVDE4bsdakTwqgv
-Q6rcHKL8/bvJ0vn+niLVqIhmoFmT8qmZkhzQXHjsRixlZDE8I34rswQDvrkV/h0/eTGncsDT
-gEVDK3E7IhDkeIrzpLFu31E4jDJig/7UKkiR+KzMhnXdj2T7wIUllA11oT78S70OoXNVpy1g
-/TOIBcEGesPXOpiiByIPqhg3IUEA9xOeAtnch5mPDG80fStG+cQE9Qt5t8lRRvTlrPR6gYQ9
-++m2lGqxAlDiJ9ziqY0FiHMZbMkV0LriDLbP7Ya+l7/l9Go0wSZzGNXMX+lI8Ey6TUgT9ka+
-Yy5EJLZy4MnEpfp7A+IkZMlk9PggRVmZ5DqX63ANLfH2OrsNgTzwniP8xGuzU6CbMOOkY4+Q
-gHOSVswxWevSkXFHkZjkM3VouQnSlazd0eSilh0sLY8Lk2ajzMu9dMJlfvUcZNrNm1yDanAO
-MvLcv0crRLkH9hHE0/3bp5Bp5HHEpsxopbSdAakB53a7jqgcGrHfJLZJGwAAAAAAAA==
---------------ms090408040208000609090605--
+BgkqhkiG9w0BAQEFAASCAgCN6eklANF9U31q/oRXl/SVGgrqngSY0FkweysangLmdBkI6LUu
+e3nghTrYYP9DXqeXUr3nJw7CC7ipTyBaVX3+vZIGviqCrVAJWF46ltPyqeMewj+FJKhNr7BD
+YcRlDD5v2Y/21H8/OQbId99Y7ScuGF563u0YT0jbshawdc0g6bU93X9OuuxICZIdj7eEVh95
+t9m9FsYrWRuuMDFAa8ktgPyw22FoS8OjEZlNl3XLfHg3TQpKVzKgnuOslSgO13f4akbateZI
+SWTULDPTpweEojqYmtpHG0+xuJXGRaFWLWPCK5/98OqqbV712oDo3MhAan2PZlx8LDZgBaic
+h8TUXKD411LoUUwDchf7+0m1vV+Qs2lA0MGHDCNtPJ9gNto21ydF2HYoySN0DxnkuGSLsz+f
+02NpDAS3VB3a39jr1iD0tCYUpev/XpQqgGkeuiWFoezpolP1c8dlpsf521fkRBbkTyCKrx1x
+UVt/l+mw8t/lHyNQQ/YAKaJhv4xULIB32hPjhh/fY9dqcJk7s/ul1wiMkVXFmZR56v0IF0Sm
+tn1X5Cdk1h0EI2jb2ubarzTv1V7e90zMU0dYMnmELZCNN3aQbigp07LeGQGIntrZghvl4m/U
++DvqdZdzF8iygIGKXV87ivhbmvVXCdpkL+rVOJw4xREQzBzlbuHum+wLswAAAAAAAA==
+--------------ms010602070803050005070007--

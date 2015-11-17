@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:45518 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:44197 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932554AbbKDKJn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 4 Nov 2015 05:09:43 -0500
+	id S1751787AbbKQR7s (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Nov 2015 12:59:48 -0500
 From: fdmanana@kernel.org
 To: fstests@vger.kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: test for btrfs direct IO write against compressed extent
-Date: Wed,  4 Nov 2015 10:09:36 +0000
-Message-Id: <1446631776-9120-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH RESEND] fstests: test for btrfs direct IO write against compressed extent
+Date: Tue, 17 Nov 2015 17:59:34 +0000
+Message-Id: <1447783174-26877-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -28,21 +28,26 @@ That issue is fixed by the following linux kernel patch:
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- tests/btrfs/114     | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/114.out |  15 ++++++++
+
+Resending since it was not merged in the last branch update.
+Renumbered the test to reflect the latest branch update, otherwise it's
+unchanged.
+
+ tests/btrfs/026     | 108 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ tests/btrfs/026.out |  15 ++++++++
  tests/btrfs/group   |   1 +
  3 files changed, 124 insertions(+)
- create mode 100755 tests/btrfs/114
- create mode 100644 tests/btrfs/114.out
+ create mode 100644 tests/btrfs/026
+ create mode 100644 tests/btrfs/026.out
 
-diff --git a/tests/btrfs/114 b/tests/btrfs/114
-new file mode 100755
-index 0000000..915d1e8
+diff --git a/tests/btrfs/026 b/tests/btrfs/026
+new file mode 100644
+index 0000000..0477ed4
 --- /dev/null
-+++ b/tests/btrfs/114
++++ b/tests/btrfs/026
 @@ -0,0 +1,108 @@
 +#! /bin/bash
-+# FSQA Test No. 114
++# FSQA Test No. 026
 +#
 +# Test that doing a direct IO write against a file range that contains one
 +# prealloc extent and one compressed extent works correctly.
@@ -149,13 +154,13 @@ index 0000000..915d1e8
 +
 +status=0
 +exit
-diff --git a/tests/btrfs/114.out b/tests/btrfs/114.out
+diff --git a/tests/btrfs/026.out b/tests/btrfs/026.out
 new file mode 100644
-index 0000000..a2d7e89
+index 0000000..4183275
 --- /dev/null
-+++ b/tests/btrfs/114.out
++++ b/tests/btrfs/026.out
 @@ -0,0 +1,15 @@
-+QA output created by 114
++QA output created by 026
 +wrote 102400/102400 bytes at offset 716800
 +XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
 +wrote 81920/81920 bytes at offset 655360
@@ -171,14 +176,17 @@ index 0000000..a2d7e89
 +647d815906324ccdf288c7681f900ec0  SCRATCH_MNT/foo
 +5876dba1217b4c2915cda86f4c67640e  SCRATCH_MNT/bar
 diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 7cf7dd7..04bc884 100644
+index 9f99ddc..3a99289 100644
 --- a/tests/btrfs/group
 +++ b/tests/btrfs/group
-@@ -116,3 +116,4 @@
- 111 auto quick send
- 112 auto quick clone
- 113 auto quick compress clone
-+114 auto quick compress prealloc
+@@ -28,6 +28,7 @@
+ 023 auto
+ 024 auto quick compress
+ 025 auto quick send clone
++026 auto quick compress prealloc
+ 029 auto quick clone
+ 030 auto quick send
+ 031 auto quick subvol clone
 -- 
 2.1.3
 

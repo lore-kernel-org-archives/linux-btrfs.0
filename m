@@ -1,91 +1,100 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bender.boerde.de ([83.223.75.23]:57564 "EHLO bender.boerde.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751734AbbKQNSR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Nov 2015 08:18:17 -0500
-Received: from hunapu.boerde.de (darkwing.home.local [IPv6:2a01:30:2802:1:2ad2:44ff:feb0:8e38])
-	by bender.boerde.de (Postfix) with ESMTPSA id 7211914540FD
-	for <linux-btrfs@vger.kernel.org>; Tue, 17 Nov 2015 14:18:14 +0100 (CET)
-Date: Tue, 17 Nov 2015 14:18:13 +0100
-From: Georg Lukas <georg@op-co.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs-replace OOM on 2GB machine
-Message-ID: <20151117131657.GA3424@ovgu.de>
+Received: from mail-bn1on0116.outbound.protection.outlook.com ([157.56.110.116]:48678
+	"EHLO na01-bn1-obe.outbound.protection.outlook.com"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1751206AbbKRNWm convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Nov 2015 08:22:42 -0500
+From: Scotty Edmonds <scotty@scottyedmonds.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Donald Pearson <donaldwhpearson@gmail.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS Error - Rockstor
+Date: Wed, 18 Nov 2015 12:50:52 +0000
+Message-ID: <SN2PR07MB013DC7E3D1F0FB1D5ED906ECF1C0@SN2PR07MB013.namprd07.prod.outlook.com>
+References: <SN2PR07MB013A0D1DE3EC69CFAD9885ACF120@SN2PR07MB013.namprd07.prod.outlook.com>
+ <CAC=t97BwoMcqE978Fcdu3keN4UNtxqoBDPdbYb_T0C-wR-CBsg@mail.gmail.com>
+ <SN2PR07MB013F045DB3B42E4AD8AA3D6CF120@SN2PR07MB013.namprd07.prod.outlook.com>
+ <CAC=t97Cv01-8z-oA_pGea9RHQ6d53w=FLbuvpadB=m_LtTPiXw@mail.gmail.com>
+ <SN2PR07MB01362A586F4293204E66FCFCF120@SN2PR07MB013.namprd07.prod.outlook.com>
+ <CAC=t97AUVQ_Jk1aSmhHodF-Db7NjaUvD1pfbFokx+q_bg3QtxA@mail.gmail.com>
+ <20151112225701.GD24333@carfax.org.uk>
+ <SN2PR07MB01305858FEC051F986D3546CF110@SN2PR07MB013.namprd07.prod.outlook.com>
+ <5645492B.9080808@cn.fujitsu.com>
+ <SN2PR07MB013024CC746A3302C8FB614CF110@SN2PR07MB013.namprd07.prod.outlook.com>
+ <56492C32.5000107@cn.fujitsu.com>
+ <SN2PR07MB0138346652867F9CF76D90BCF1D0@SN2PR07MB013.namprd07.prod.outlook.com>
+ <564AD8C5.2040609@cn.fujitsu.com>
+ <SN2PR07MB0138CA2787C4F7D11B7CECDCF1D0@SN2PR07MB013.namprd07.prod.outlook.com>,<564B1FD5.4060101@gmail.com>
+In-Reply-To: <564B1FD5.4060101@gmail.com>
+Content-Type: text/plain; charset=US-ASCII
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="NDin8bjvE/0mNLFQ"
-In-Reply-To: <564B23D8.2000202@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+(gdb) run rescue chunk-recover -y /dev/sdg
+Starting program: /usr/sbin/btrfs rescue chunk-recover -y /dev/sdg
+[Thread debugging using libthread_db enabled]
+Using host libthread_db library "/lib64/libthread_db.so.1".
+[New Thread 0x7ffff6f85700 (LWP 4140)]
+[New Thread 0x7ffff6784700 (LWP 4141)]
+[New Thread 0x7ffff5f83700 (LWP 4142)]
+[New Thread 0x7ffff5782700 (LWP 4143)]
+[New Thread 0x7ffff4f81700 (LWP 4144)]
+Scanning: 2441862246400 in dev0, 2068329484288 in dev1, 3000574365696 in dev2, 2233151475712 in dev3, 2449691725824 in dev4[Thread 0x7ffff5f83700 (LWP 4142) exited]
+Scanning: 2999962390528 in dev0, 2566459445248 in dev1, DONE in dev2, 2748207828992 in dev3, 3000592969728 in dev4[Thread 0x7ffff4f81700 (LWP 4144) exited]
+Scanning: 3000580788224 in dev0, 2567040225280 in dev1, DONE in dev2, 2748795932672 in dev3, DONE in dev4[Thread 0x7ffff6f85700 (LWP 4140) exited]
+Scanning: DONE in dev0, 2806774272000 in dev1, DONE in dev2, 3000592969728 in dev3, DONE in dev4[Thread 0x7ffff5782700 (LWP 4143) exited]
+Scanning: DONE in dev0, 3000592969728 in dev1, DONE in dev2, DONE in dev3, DONE in dev4[Thread 0x7ffff6784700 (LWP 4141) exited]
+Scanning: DONE in dev0, DONE in dev1, DONE in dev2, DONE in dev3, DONE in dev4
 
---NDin8bjvE/0mNLFQ
-Content-Type: text/plain; charset=utf-8
-Content-Disposition: inline
-Content-Transfer-Encoding: quoted-printable
+Program received signal SIGFPE, Arithmetic exception.
+0x00000000004273d8 in calc_stripe_length ()
+(gdb)
 
-* Austin S Hemmelgarn <ahferroin7@gmail.com> [2015-11-17 13:56]:
-> While it probably isn't related to the OOM issue, I would be particularly
-> wary of using BTRFS on SMR disks, we've had multiple reports of serious
-> issues with them (and IIRC, they were all the same model of 8TB Seagate S=
-MR
-> disks).
+(gdb) bt
+#0  0x00000000004273d8 in calc_stripe_length ()
+#1  0x000000000043191e in btrfs_recover_chunk_tree ()
+#2  0x000000000042f473 in cmd_rescue_chunk_recover ()
+#3  0x000000000040ea72 in main ()
+(gdb)
 
-Yes, that's exactly the model I have here, but the problems are related
-to the SMR support in the kernel, and hopefully not at all to btrfs.
-With the latest patch by Martin K. Petersen [*], the disks seem to be
-stable and reliable, finally.
+Thanks,
 
-[*] https://bugzilla.kernel.org/show_bug.cgi?id=3D93581
+Scotty Edmonds
+Scotty@ScottyEdmonds.com
 
-> Hmm, it looks like things weren't all RAID1, you've got a little over 1TiB
-> of data that was RAID0, and that may be why you can't rebuild the FS.  Th=
-is
-> shouldn't be causing an OOM condition, but it definitely means things are
-> not fully recoverable.
+________________________________________
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Sent: November-17-15 8:38 AM
+To: Scotty Edmonds; Qu Wenruo; Hugo Mills; Donald Pearson
+Cc: Btrfs BTRFS
+Subject: Re: BTRFS Error - Rockstor
 
-I think this was caused by my attempt to rebalance the degraded RAID1
-into RAID0, and there are indeed some files on the fs that I can't read
-any more. As this is not a production system, I'm not very bothered - I
-just wanted to find out if I can get it back to live, which currently
-fails on the replace.
+On 2015-11-17 03:08, Scotty Edmonds wrote:
+> Sorry, I'm not at all familiar with backtrace.
+>
+General procedure to get a backtrace on a system without core files:
+1. Make sure you have debugging symbols installed for the program you
+want the backtrace for, and ideally any libraries it uses.  (These
+usually are in packages with names ending in -dbg or -debug.  In the
+case of btrfs, you'll probably need symbols for glibc, lzo, and zlib).
+2. Start the program under gdb ('gdb /sbin/btrfs')
+3. When gdb is done loading, type in 'start' followed by the arguments
+for the program (in this case, 'rescue chunk-recover -y /dev/sdg')
+4. If gdb then says something about stopping at a breakpoint, enter the
+command 'continue'.
+5. When the program being debugged crashes, you should get a backtrace
+from gdb, if not, you can enter the command 'bt' to tell it to dump a
+backtrace.
+6. After copying the backtrace somewhere you can put it in an e-mail,
+you can exit gdb with the 'exit' command, it may complain about
+something still running, it's safe to tell it to kill this process.
 
-> This actually looks like it's a different issue potentially, for some rea=
-son
-> BTRFS is trying to scrub the missing disk (which won't work of course).
-
-Indeed, scrubbing the degraded disk set did not succeed either.
-
-If you need me to perform any other actions on that disk set, let me
-know on- or off-list.
-
-Georg
---=20
-|| http://op-co.de ++  GCS d--(++) s: a C+++ UL+++ !P L+++ !E W+++ N  ++
-|| gpg: 0x962FD2DE ||  o? K- w---() O M V? PS+ PE-- Y++ PGP+ t+ 5 R+  ||
-|| Ge0rG: euIRCnet ||  X(+++) tv+ b+(++) DI+++ D- G e++++ h- r++ y?   ||
-++ IRCnet OFTC OPN ||_________________________________________________||
-
---NDin8bjvE/0mNLFQ
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1
-
-iQIVAwUBVkspFGBRyWxizTQeAQKtPA/+NDld5RtzUZgX2ycbNXDLy8PvA/z0G4L4
-L1srKmR94CZn82EaGohykLG97ZOAa/lFROS6WIjTBpr10kvOsUcI/YPKOx4GICAY
-IRANe3HfB0BhaEpb2nO1zy/1gjyAHFq2tylrI2TFqwa9bNWkWi63XuNdZ0tMVZGe
-vypiTkHE4QS+hMJheiVz+r5pedegRFk1iVE/hkiI0EpcyvyE356za6gbrA8VS/aB
-4gjMrOJ2Oi4lUZOm+yw1LNMkWPJK9/WaY0JLuVp6wKxujcGWkbTXhThpcIxExbu2
-wXysbCnfs1fpg6apwqOJouBJDdx31/NwCABcYFQBBzZPYeKxs0+7dA4MiM9v6jn2
-Q5ComhKwo/6gfPthXHnRlZINYdzLRWLonM/ruB24lOimTo6puqmY73ZtBp+AdGuL
-bsHEBB1//nH+BpCPMIbF/sF9GIRlD1NyFiVdM0yLrVzqw4RD2Lz9aLAflv3xOiLY
-DLhq5vz+eF0ZGWiZRtQKRDjGpNP2k2txRT10Li4NQf+NYIyHMmK2Jrkzbmvm0vBF
-VRLbABFEh2vvAbeCkC9OFLOWfuarTfMegk32Evf++1rA+ZVqleQ2PovooLkiocCJ
-/oEf2GH9D0yi4kSoQmpwTeewr2knLBsTXD+V7T1jGygCbp94paJa1mwGyKPKcaXN
-t1JGLvJcY90=
-=3qpz
------END PGP SIGNATURE-----
-
---NDin8bjvE/0mNLFQ--
+If instead you have your system configured for core dumps:
+1. Make sure you have debugging symbols installed for the program you
+want the backtrace for, and ideally any libraries it uses.
+2. Run gdb with the program and core file ('gdb /sbin/btrfs
+/path/to/core/file').
+3. Enter the command 'bt to get a backtrace.

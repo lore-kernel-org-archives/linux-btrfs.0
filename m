@@ -1,54 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:50468
-	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751103AbbKQL3e (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Nov 2015 06:29:34 -0500
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Cc: David Sterba <dsterba@suse.cz>, Chris Mason <clm@fb.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>
-Subject: [PATCH] Fix balance regression in 4.4-rc
-Message-ID: <564B0F9C.6060707@googlemail.com>
-Date: Tue, 17 Nov 2015 12:29:32 +0100
-MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from plane.gmane.org ([80.91.229.3]:43209 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932070AbbKRACc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 17 Nov 2015 19:02:32 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZyqCk-00079k-DE
+	for linux-btrfs@vger.kernel.org; Wed, 18 Nov 2015 01:02:30 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 01:02:30 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 01:02:30 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH] Fix balance regression in 4.4-rc
+Date: Wed, 18 Nov 2015 00:02:25 +0000 (UTC)
+Message-ID: <pan$29163$566bcbd$785370e7$a2d14489@cox.net>
+References: <564B0F9C.6060707@googlemail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There's a regression in 4.4-rc since commit bc3094673f22
-(btrfs: extend balance filter usage to take minimum and maximum) in that
-existing (non-ranged) balance with -dusage=x no longer works; all chunks
-are skipped.
+Holger Hoffstätte posted on Tue, 17 Nov 2015 12:29:32 +0100 as excerpted:
 
-After staring at the code for a while and wondering why a non-ranged
-balance would even need min and max thresholds (..which then were not
-set correctly, leading to the bug) I realized that the only problem
-was the fact that the filter functions were named wrong, thanks to
-patching copypasta. Simply renaming both functions lets the existing
-btrfs-progs call balance with -dusage=x and now the non-ranged filter
-function is invoked, properly using only a single chunk limit.
+> There's a regression in 4.4-rc since commit bc3094673f22 (btrfs: extend
+> balance filter usage to take minimum and maximum) in that existing
+> (non-ranged) balance with -dusage=x no longer works; all chunks are
+> skipped.
 
-Signed-off-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
-Fixes: bc3094673f22 ("btrfs: extend balance filter usage to take minimum and maximum")
----
---- linux-4.1.13/fs/btrfs/volumes.c	2015-11-16 22:34:27.475045363 +0100
-+++ linux-4.1.13-filters/fs/btrfs/volumes.c	2015-11-17 12:08:41.308898665 +0100
-@@ -3189,7 +3189,7 @@
- 	return 1;
- }
- 
--static int chunk_usage_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
-+static int chunk_usage_range_filter(struct btrfs_fs_info *fs_info, u64 chunk_offset,
- 			      struct btrfs_balance_args *bargs)
- {
- 	struct btrfs_block_group_cache *cache;
-@@ -3222,7 +3222,7 @@
- 	return ret;
- }
- 
--static int chunk_usage_range_filter(struct btrfs_fs_info *fs_info,
-+static int chunk_usage_filter(struct btrfs_fs_info *fs_info,
- 		u64 chunk_offset, struct btrfs_balance_args *bargs)
- {
- 	struct btrfs_block_group_cache *cache;
+Not being a dev I won't attempt to comment on the patch itself, but the 
+title, please prefix the patch title with either btrfs: if it's for the 
+kernel (as here), or btrfs-progs: if for userspace.
+
+I was a bit confused here, thinking userspace, when it's apparently a 
+kernel patch.  (The significance here being that I've not upgraded to 4.4-
+rc kernel yet, and now probably won't until this gets in, since I tend to 
+use -dusage=x balance filters reasonably frequently.  If I had already 
+upgraded, I'd have probably dropped the patch into my autoapply dir until 
+it was applied upstream.)
+
+So...
+
+[PATCH] Fix balance regression in 4.4-rc
+
+... would become...
+
+[PATCH] btrfs: fix balance regression in 4.4-rc
+
+(Initial capitalization, fix/Fix, seems to be poster's choice.)
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

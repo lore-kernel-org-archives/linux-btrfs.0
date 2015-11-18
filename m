@@ -1,107 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39957 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750810AbbKRFbJ convert rfc822-to-8bit (ORCPT
+Received: from mail-lf0-f44.google.com ([209.85.215.44]:36725 "EHLO
+	mail-lf0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751579AbbKRMCM convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Nov 2015 00:31:09 -0500
-Subject: Re: Transaction aborted (error -17) after crash
-To: Mordechay Kaganer <mkaganer@gmail.com>, Qu Wenruo <quwenruo.btrfs@gmx.com>
-References: <CA+xOVSMpsSNfBxOghUe8H2QhzLDTC8EAABwkvrE12hUOFmfDig@mail.gmail.com>
- <564BEA55.4040209@gmx.com>
- <CA+xOVSMN+_H546rx3UCQht1yYd6F9KLr1vzAfK+JVHJXUF0rOw@mail.gmail.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <564C0D18.6040802@cn.fujitsu.com>
-Date: Wed, 18 Nov 2015 13:31:04 +0800
+	Wed, 18 Nov 2015 07:02:12 -0500
+Received: by lfs39 with SMTP id 39so24772869lfs.3
+        for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 04:02:10 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CA+xOVSMN+_H546rx3UCQht1yYd6F9KLr1vzAfK+JVHJXUF0rOw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <564C0D18.6040802@cn.fujitsu.com>
+References: <CA+xOVSMpsSNfBxOghUe8H2QhzLDTC8EAABwkvrE12hUOFmfDig@mail.gmail.com>
+	<564BEA55.4040209@gmx.com>
+	<CA+xOVSMN+_H546rx3UCQht1yYd6F9KLr1vzAfK+JVHJXUF0rOw@mail.gmail.com>
+	<564C0D18.6040802@cn.fujitsu.com>
+Date: Wed, 18 Nov 2015 14:02:10 +0200
+Message-ID: <CA+xOVSM6AGLM7B5UGD6EisAGsS8e61dt=FNCV6f7BE8FB9JBsg@mail.gmail.com>
+Subject: Re: Transaction aborted (error -17) after crash
+From: Mordechay Kaganer <mkaganer@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+B.H.
 
-
-Mordechay Kaganer wrote on 2015/11/18 07:18 +0200:
-> B.H.
+On Wed, Nov 18, 2015 at 7:31 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
-> On Wed, Nov 18, 2015 at 5:02 AM, Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
->>
->>
->> 在 2015年11月17日 13:12, Mordechay Kaganer 写道:
->>>
->>> B.H.
->>>
->>>
->>> [  836.026606] BTRFS warning (device md1): block group 12969790406656
->>> has wrong amount of free space
->>> [  836.026610] BTRFS warning (device md1): failed to load free space
->>> cache for block group 12969790406656, rebuild it now
->>> [ 1033.619798] BTRFS warning (device md1): block group 15322358743040
->>> has wrong amount of free space
->>> [ 1033.619801] BTRFS warning (device md1): failed to load free space
->>> cache for block group 15322358743040, rebuild it now
->>
->>
->> Block group seems to be corrupted, maybe some other place in extent tree is
->> also corrupted.
->>
->> Personally speaking, this would not be a huge problem and can be fix by
->> btrfsck --init-extent-tree --repair to fix it.
+> Hard to say yet.
 >
-> Thanks. That's what i get so far (it takes several hours to complete
-> because the partition is huge):
+> Is that the only error?
 >
-> # btrfsck --init-extent-tree --repair /dev/md1
-> enabling repair mode
-> Checking filesystem on /dev/md1
-> UUID: e16cc571-d897-473a-91d3-7673ea91d4cc
-> Creating a new extent tree
-> Failed to find [12968716681216, 168, 16384]
-> btrfs unable to find ref byte nr 12968927035392 parent 0 root 1  owner
-> 1 offset 0
-> Failed to find [12968716730368, 168, 16384]
-> btrfs unable to find ref byte nr 12969060089856 parent 0 root 1  owner
-> 0 offset 1
-> parent transid verify failed on 1103806464 wanted 19 found 13821
-> Ignoring transid failure
-> Failed to find [12968716779520, 168, 16384]
-> btrfs unable to find ref byte nr 12968933851136 parent 0 root 1  owner
-> 0 offset 1
->
-> Does it mean something screwed up and unrecoverable?
+> And did you tried btrfsck --init-extent-tree alone?
+> Although IIRC --init-extent-tree implies --repair, but it seems that extent
+> tree is not correctly rebuilt at least.
 
-Hard to say yet.
+btrfs check --init-extent-tree --repair gives tons of messages like this:
 
-Is that the only error?
+ref mismatch on [1628438528 16384] extent item 0, found 1
+adding new tree backref on start 1628438528 len 16384 parent 0 root 258
+Backref 1628438528 parent 258 root 258 not found in extent tree
+backpointer mismatch on [1628438528 16384]
+ref mismatch on [1628454912 16384] extent item 0, found 1
+adding new tree backref on start 1628454912 len 16384 parent 0 root 7
+Backref 1628454912 parent 7 root 7 not found in extent tree
+backpointer mismatch on [1628454912 16384]
+ref mismatch on [1628471296 16384] extent item 0, found 1
+adding new tree backref on start 1628471296 len 16384 parent 0 root 7
+Backref 1628471296 parent 7 root 7 not found in extent tree
+backpointer mismatch on [1628471296 16384]
+ref mismatch on [1628487680 16384] extent item 0, found 1
+adding new tree backref on start 1628487680 len 16384 parent 0 root 7
+Backref 1628487680 parent 7 root 7 not found in extent tree
+backpointer mismatch on [1628487680 16384]
 
-And did you tried btrfsck --init-extent-tree alone?
-Although IIRC --init-extent-tree implies --repair, but it seems that 
-extent tree is not correctly rebuilt at least.
+Anyway, that's only a backup so i think it's better to rebuild it from
+scratch, right?
 
->
->>
->> But you must ensure other tree is not corrupted, by using btrfsck without
->> any option to check the filesystem.
->
-> I did run btrfs check --repair without other options.
-
-Oh, I was meant to execute "btrfs check" without any other options, 
-especially exclude "--repair"...
-
-
-> Finished without
-> problems as far as i understand the output.
-
-That's a good news, at least it doesn't make the problem worse.
-
-And, it would be quite helpful if you can post all the output(for both 
-btrfsck --init-extent-tree, and btrfsck), to give us a better view of 
-what's going wrong.
-
-Thanks,
-Qu
-
-> Also tried mount with -o
-> clear_cache. All this doesn't seem to help - tried rsync after that
-> and the FS went read only with the same error message.
->
+-- 
+"ויעקב הלך לדרכו..."
+משיח NOW!
+Moshiach is coming very soon, prepare yourself!
+יחי אדוננו מורינו ורבינו מלך המשיח לעולם ועד!

@@ -1,246 +1,223 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23505 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21484 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754874AbbKRHYx (ORCPT
+	with ESMTP id S1754992AbbKRHYv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Nov 2015 02:24:53 -0500
+	Wed, 18 Nov 2015 02:24:51 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAI7NoS9007932
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 15:24:00 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAI7NoSA007932
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 15:24:01 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH 14/22] btrfs-progs: Introduce function to setup temporary extent tree
-Date: Wed, 18 Nov 2015 15:22:14 +0800
-Message-Id: <1447831342-15056-15-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 15/22] btrfs-progs: Introduce function to create convert data chunks
+Date: Wed, 18 Nov 2015 15:22:15 +0800
+Message-Id: <1447831342-15056-16-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447831342-15056-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447831342-15056-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce new function, setup_temporary_extent_tree() to build a
-temporary extent tree for make_btrfs_v2().
+Introduce new function, make_convert_data_chunks(), to build up data
+chunks for convert.
+
+It will call a modified verion of btrfs_alloc_data_chunk() to force
+data chunks to cover all known ext* data.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- utils.c | 198 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 197 insertions(+), 1 deletion(-)
+ btrfs-convert.c | 49 +++++++++++++++++++++++++++++++++++++++++++++++++
+ mkfs.c          |  2 +-
+ volumes.c       | 46 ++++++++++++++++++++++++++++++++++------------
+ volumes.h       |  2 +-
+ 4 files changed, 85 insertions(+), 14 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index ee2a538..f5fadb1 100644
---- a/utils.c
-+++ b/utils.c
-@@ -885,6 +885,194 @@ out:
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 3bee049..4626bbd 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -1688,6 +1688,55 @@ static int create_subvol(struct btrfs_trans_handle *trans,
+ 	return 0;
  }
  
- /*
-+ * Insert one temporary extent item.
-+ *
-+ * NOTE: if skinny_metadata is not enabled, this function must be called
-+ * after all other trees are initialized.
-+ * Or fs without skinny-metadata will be screwed up.
-+ */
-+static int insert_temp_extent_item(int fd, struct extent_buffer *buf,
-+				   struct btrfs_mkfs_config *cfg,
-+				   int *slot, u32 *itemoff, u64 bytenr,
-+				   u64 ref_root)
-+{
-+	struct extent_buffer *tmp;
-+	struct btrfs_extent_item *ei;
-+	struct btrfs_extent_inline_ref *iref;
-+	struct btrfs_disk_key disk_key;
-+	struct btrfs_disk_key tree_info_key;
-+	struct btrfs_tree_block_info *info;
-+	int itemsize;
-+	int skinny_metadata = cfg->features &
-+			      BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA;
-+	int ret;
-+
-+	if (skinny_metadata)
-+		itemsize = sizeof(*ei) + sizeof(*iref);
-+	else
-+		itemsize = sizeof(*ei) + sizeof(*iref) +
-+			   sizeof(struct btrfs_tree_block_info);
-+ 
-+	btrfs_set_header_nritems(buf, *slot + 1);
-+	*(itemoff) -= itemsize;
-+
-+	if (skinny_metadata) {
-+		btrfs_set_disk_key_type(&disk_key, BTRFS_METADATA_ITEM_KEY);
-+		btrfs_set_disk_key_offset(&disk_key, 0);
-+	} else {
-+		btrfs_set_disk_key_type(&disk_key, BTRFS_EXTENT_ITEM_KEY);
-+		btrfs_set_disk_key_offset(&disk_key, cfg->nodesize);
-+	}
-+	btrfs_set_disk_key_objectid(&disk_key, bytenr);
-+
-+	btrfs_set_item_key(buf, &disk_key, *slot);
-+	btrfs_set_item_offset(buf, btrfs_item_nr(*slot), *itemoff);
-+	btrfs_set_item_size(buf, btrfs_item_nr(*slot), itemsize);
-+
-+	ei = btrfs_item_ptr(buf, *slot, struct btrfs_extent_item);
-+	btrfs_set_extent_refs(buf, ei, 1);
-+	btrfs_set_extent_generation(buf, ei, 1);
-+	btrfs_set_extent_flags(buf, ei, BTRFS_EXTENT_FLAG_TREE_BLOCK);
-+
-+	if (skinny_metadata) {
-+		iref = (struct btrfs_extent_inline_ref *)(ei + 1);
-+	} else {
-+		info = (struct btrfs_tree_block_info *)(ei + 1);
-+		iref = (struct btrfs_extent_inline_ref *)(info + 1);
-+	}
-+	btrfs_set_extent_inline_ref_type(buf, iref,
-+					 BTRFS_TREE_BLOCK_REF_KEY);
-+	btrfs_set_extent_inline_ref_offset(buf, iref, ref_root);
-+
-+	(*slot)++;
-+	if (skinny_metadata)
-+		return 0;
-+
-+	/*
-+	 * Lastly, check the tree block key by read the tree block
-+	 * Since we do 1:1 mapping for convert case, we can directly
-+	 * read the bytenr from disk
-+	 */
-+	tmp = malloc(sizeof(*tmp) + cfg->nodesize);
-+	if (!tmp)
-+		return -ENOMEM;
-+	ret = setup_temp_extent_buffer(tmp, cfg, bytenr, ref_root);
-+	if (ret < 0)
-+		goto out;
-+	ret = pread(fd, tmp->data, cfg->nodesize, bytenr);
-+	if (ret < cfg->nodesize) {
-+		ret = (ret < 0 ? -errno : -EIO);
-+		goto out;
-+	}
-+	if (btrfs_header_nritems(tmp) == 0) {
-+		btrfs_set_disk_key_type(&tree_info_key, 0);
-+		btrfs_set_disk_key_objectid(&tree_info_key, 0);
-+		btrfs_set_disk_key_offset(&tree_info_key, 0);
-+	} else {
-+		btrfs_item_key(tmp, &tree_info_key, 0);
-+	}
-+	btrfs_set_tree_block_key(buf, info, &tree_info_key);
-+
-+out:
-+	free(tmp);
-+	return ret;
-+}
-+
-+static void insert_temp_block_group(struct extent_buffer *buf,
-+				   struct btrfs_mkfs_config *cfg,
-+				   int *slot, u32 *itemoff,
-+				   u64 bytenr, u64 len, u64 used, u64 flag)
-+{
-+	struct btrfs_block_group_item bgi;
-+	struct btrfs_disk_key disk_key;
-+
-+	btrfs_set_header_nritems(buf, *slot + 1);
-+	(*itemoff) -= sizeof(bgi);
-+	btrfs_set_disk_key_type(&disk_key, BTRFS_BLOCK_GROUP_ITEM_KEY);
-+	btrfs_set_disk_key_objectid(&disk_key, bytenr);
-+	btrfs_set_disk_key_offset(&disk_key, len);
-+	btrfs_set_item_key(buf, &disk_key, *slot);
-+	btrfs_set_item_offset(buf, btrfs_item_nr(*slot), *itemoff);
-+	btrfs_set_item_size(buf, btrfs_item_nr(*slot), sizeof(bgi));
-+
-+	btrfs_set_block_group_flags(&bgi, flag);
-+	btrfs_set_block_group_used(&bgi, used);
-+	btrfs_set_block_group_chunk_objectid(&bgi,
-+			BTRFS_FIRST_CHUNK_TREE_OBJECTID);
-+	write_extent_buffer(buf, &bgi, btrfs_item_ptr_offset(buf, *slot),
-+			    sizeof(bgi));
-+	(*slot)++;
-+}
-+
-+static int setup_temp_extent_tree(int fd, struct btrfs_mkfs_config *cfg,
-+				  u64 chunk_bytenr, u64 root_bytenr,
-+				  u64 extent_bytenr, u64 dev_bytenr,
-+				  u64 fs_bytenr, u64 csum_bytenr)
-+{
-+	struct extent_buffer *buf = NULL;
-+	u32 itemoff = __BTRFS_LEAF_DATA_SIZE(cfg->nodesize);
-+	int slot = 0;
-+	int ret;
-+
-+	/*
-+	 * We must ensure provided bytenr are in ascending order,
-+	 * or extent tree key order will be broken.
-+	 */
-+	BUG_ON(!(chunk_bytenr < root_bytenr && root_bytenr < extent_bytenr &&
-+		 extent_bytenr < dev_bytenr && dev_bytenr < fs_bytenr &&
-+		 fs_bytenr < csum_bytenr));
-+	buf = malloc(sizeof(*buf) + cfg->nodesize);
-+	if (!buf)
-+		return -ENOMEM;
-+
-+	ret = setup_temp_extent_buffer(buf, cfg, extent_bytenr,
-+				       BTRFS_EXTENT_TREE_OBJECTID);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = insert_temp_extent_item(fd, buf, cfg, &slot, &itemoff,
-+			chunk_bytenr, BTRFS_CHUNK_TREE_OBJECTID);
-+	if (ret < 0)
-+		goto out;
-+
-+	insert_temp_block_group(buf, cfg, &slot, &itemoff, chunk_bytenr,
-+			BTRFS_MKFS_SYSTEM_GROUP_SIZE, cfg->nodesize,
-+			BTRFS_BLOCK_GROUP_SYSTEM);
-+
-+	ret = insert_temp_extent_item(fd, buf, cfg, &slot, &itemoff,
-+			root_bytenr, BTRFS_ROOT_TREE_OBJECTID);
-+	if (ret < 0)
-+		goto out;
-+
-+	/* 5 tree block used, root, extent, dev, fs and csum*/
-+	insert_temp_block_group(buf, cfg, &slot, &itemoff, root_bytenr,
-+			BTRFS_CONVERT_META_GROUP_SIZE, cfg->nodesize * 5,
-+			BTRFS_BLOCK_GROUP_METADATA);
-+
-+	ret = insert_temp_extent_item(fd, buf, cfg, &slot, &itemoff,
-+			extent_bytenr, BTRFS_EXTENT_TREE_OBJECTID);
-+	if (ret < 0)
-+		goto out;
-+	ret = insert_temp_extent_item(fd, buf, cfg, &slot, &itemoff,
-+			dev_bytenr, BTRFS_DEV_TREE_OBJECTID);
-+	if (ret < 0)
-+		goto out;
-+	ret = insert_temp_extent_item(fd, buf, cfg, &slot, &itemoff,
-+			fs_bytenr, BTRFS_FS_TREE_OBJECTID);
-+	if (ret < 0)
-+		goto out;
-+	ret = insert_temp_extent_item(fd, buf, cfg, &slot, &itemoff,
-+			csum_bytenr, BTRFS_CSUM_TREE_OBJECTID);
-+	if (ret < 0)
-+		goto out;
-+
-+	ret = write_temp_extent_buffer(fd, buf, extent_bytenr);
-+out:
-+	free(buf);
-+	return ret;
-+}
-+
 +/*
-  * Improved version of make_btrfs().
-  *
-  * This one will not use bad behaved cfg->blocks[] array to arrange tree
-@@ -984,7 +1172,15 @@ static int make_btrfs_v2(int fd, struct btrfs_mkfs_config *cfg)
- 	if (ret < 0)
- 		goto out;
- 	ret = setup_temp_csum_tree(fd, cfg, csum_bytenr);
--
-+	if (ret < 0)
-+		goto out;
++ * New make_btrfs_v2() has handle system and meta chunks quite well.
++ * So only need to add remaining data chunks.
++ */
++static int make_convert_data_block_groups(struct btrfs_trans_handle *trans,
++					  struct btrfs_fs_info *fs_info,
++					  struct btrfs_mkfs_config *cfg)
++{
++	struct btrfs_root *extent_root = fs_info->extent_root;
++	struct cache_tree *data_chunks = &cfg->convert_data_chunks;
++	struct cache_extent *cache;
++	u64 max_chunk_size;
++	int ret = 0;
++
 +	/*
-+	 * Setup extent tree lastly, since it may need to read tree block key
-+	 * for non-skinny metadata case.
++	 * Don't create data chunk over 10% of the convert device
++	 * And for single chunk, don't create chunk larger than 1G.
 +	 */
-+	ret = setup_temp_extent_tree(fd, cfg, chunk_bytenr, root_bytenr,
-+				     extent_bytenr, dev_bytenr, fs_bytenr,
-+				     csum_bytenr);
- out:
- 	free(free_tree);
++	max_chunk_size = cfg->num_bytes / 10;
++	max_chunk_size = min((u64)(1024 * 1024 * 1024), max_chunk_size);
++	max_chunk_size = round_down(max_chunk_size, extent_root->sectorsize);
++
++	for (cache = first_cache_extent(data_chunks); cache;
++	     cache = next_cache_extent(cache)) {
++		u64 cur = cache->start;
++
++		while (cur < cache->start + cache->size) {
++			u64 len;
++			u64 cur_backup = cur;
++
++			len = min(max_chunk_size,
++				  cache->start + cache->size - cur);
++			ret = btrfs_alloc_data_chunk(trans, extent_root,
++					&cur_backup, len,
++					BTRFS_BLOCK_GROUP_DATA, 1);
++			if (ret < 0)
++				break;
++			ret = btrfs_make_block_group(trans, extent_root, 0,
++					BTRFS_BLOCK_GROUP_DATA,
++					BTRFS_FIRST_CHUNK_TREE_OBJECTID,
++					cur, len);
++			if (ret < 0)
++				break;
++			cur += len;
++		}
++	}
++	return ret;
++}
++
+ static int init_btrfs(struct btrfs_root *root)
+ {
+ 	int ret;
+diff --git a/mkfs.c b/mkfs.c
+index 306be51..3d62732 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -974,7 +974,7 @@ static int create_chunks(struct btrfs_trans_handle *trans,
+ 		size_of_data = minimum_data_chunk_size;
+ 
+ 	ret = btrfs_alloc_data_chunk(trans, root->fs_info->extent_root,
+-				     &chunk_start, size_of_data, data_type);
++				     &chunk_start, size_of_data, data_type, 0);
+ 	BUG_ON(ret);
+ 	ret = btrfs_make_block_group(trans, root->fs_info->extent_root, 0,
+ 				     data_type, BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+diff --git a/volumes.c b/volumes.c
+index 4e683bb..edc381e 100644
+--- a/volumes.c
++++ b/volumes.c
+@@ -399,7 +399,7 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_device *device,
+ 				  u64 chunk_tree, u64 chunk_objectid,
+ 				  u64 chunk_offset,
+-				  u64 num_bytes, u64 *start)
++				  u64 num_bytes, u64 *start, int convert)
+ {
+ 	int ret;
+ 	struct btrfs_path *path;
+@@ -412,9 +412,15 @@ static int btrfs_alloc_dev_extent(struct btrfs_trans_handle *trans,
+ 	if (!path)
+ 		return -ENOMEM;
+ 
+-	ret = find_free_dev_extent(trans, device, path, num_bytes, start);
+-	if (ret) {
+-		goto err;
++	/*
++	 * For convert case, just skip search free dev_extent, as caller
++	 * is responsible to ensure it's free.
++	 */
++	if (!convert) {
++		ret = find_free_dev_extent(trans, device, path, num_bytes,
++					   start);
++		if (ret)
++			goto err;
+ 	}
+ 
+ 	key.objectid = device->devid;
+@@ -973,7 +979,7 @@ again:
+ 		ret = btrfs_alloc_dev_extent(trans, device,
+ 			     info->chunk_root->root_key.objectid,
+ 			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
+-			     calc_size, &dev_offset);
++			     calc_size, &dev_offset, 0);
+ 		BUG_ON(ret);
+ 
+ 		device->bytes_used += calc_size;
+@@ -1029,9 +1035,17 @@ again:
  	return ret;
+ }
+ 
++/*
++ * Alloc a DATA chunk with SINGLE profile.
++ *
++ * If 'convert' is set, it will alloc a chunk with 1:1 mapping
++ * (btrfs logical bytenr == on-disk bytenr)
++ * For that case, caller must ensure the chunk and dev_extent is not
++ * occupied.
++ */
+ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *extent_root, u64 *start,
+-			   u64 num_bytes, u64 type)
++			   u64 num_bytes, u64 type, int convert)
+ {
+ 	u64 dev_offset;
+ 	struct btrfs_fs_info *info = extent_root->fs_info;
+@@ -1052,10 +1066,17 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 
+ 	key.objectid = BTRFS_FIRST_CHUNK_TREE_OBJECTID;
+ 	key.type = BTRFS_CHUNK_ITEM_KEY;
+-	ret = find_next_chunk(chunk_root, BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+-			      &key.offset);
+-	if (ret)
+-		return ret;
++	if (convert) {
++		BUG_ON(*start != round_down(*start, extent_root->sectorsize));
++		key.offset = *start;
++		dev_offset = *start;
++	} else {
++		ret = find_next_chunk(chunk_root,
++				      BTRFS_FIRST_CHUNK_TREE_OBJECTID,
++				      &key.offset);
++		if (ret)
++			return ret;
++	}
+ 
+ 	chunk = kmalloc(btrfs_chunk_item_size(num_stripes), GFP_NOFS);
+ 	if (!chunk)
+@@ -1080,7 +1101,7 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_alloc_dev_extent(trans, device,
+ 			     info->chunk_root->root_key.objectid,
+ 			     BTRFS_FIRST_CHUNK_TREE_OBJECTID, key.offset,
+-			     calc_size, &dev_offset);
++			     calc_size, &dev_offset, convert);
+ 		BUG_ON(ret);
+ 
+ 		device->bytes_used += calc_size;
+@@ -1117,7 +1138,8 @@ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 	ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
+ 				btrfs_chunk_item_size(num_stripes));
+ 	BUG_ON(ret);
+-	*start = key.offset;
++	if (!convert)
++		*start = key.offset;
+ 
+ 	map->ce.start = key.offset;
+ 	map->ce.size = num_bytes;
+diff --git a/volumes.h b/volumes.h
+index eb434f1..fccd964 100644
+--- a/volumes.h
++++ b/volumes.h
+@@ -191,7 +191,7 @@ int btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		      u64 *num_bytes, u64 type);
+ int btrfs_alloc_data_chunk(struct btrfs_trans_handle *trans,
+ 			   struct btrfs_root *extent_root, u64 *start,
+-			   u64 num_bytes, u64 type);
++			   u64 num_bytes, u64 type, int convert);
+ int btrfs_read_super_device(struct btrfs_root *root, struct extent_buffer *buf);
+ int btrfs_add_device(struct btrfs_trans_handle *trans,
+ 		     struct btrfs_root *root,
 -- 
 2.6.2
 

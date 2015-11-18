@@ -1,267 +1,216 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62127 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21484 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755141AbbKRHY4 (ORCPT
+	with ESMTP id S1755183AbbKRHY4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Wed, 18 Nov 2015 02:24:56 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAI7NoSC007932
-	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 15:24:02 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAI7NoSD007932
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 15:24:03 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH 17/22] btrfs-progs: extent-tree: Enhance btrfs_record_file_extent
-Date: Wed, 18 Nov 2015 15:22:17 +0800
-Message-Id: <1447831342-15056-18-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 18/22] btrfs-progs: convert: Introduce new function to create ext2 image
+Date: Wed, 18 Nov 2015 15:22:18 +0800
+Message-Id: <1447831342-15056-19-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447831342-15056-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447831342-15056-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Btrfs_record_file_extent() has some small problems like:
-1) Can't handle overlap extent
-2) May create extent larger than BTRFS_MAX_EXTENT_SIZE
+Use new function, create_ext2_image_v2() to create ext2 image.
 
-So enhance it using previous added facilites.
+Unlike old function which is called after copying all inodes, this
+function need to be called before copying inodes.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- extent-tree.c | 160 ++++++++++++++++++++++++++++++++++++++++------------------
- utils.h       |   2 +
- 2 files changed, 114 insertions(+), 48 deletions(-)
+ btrfs-convert.c | 153 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ ctree.h         |   1 +
+ 2 files changed, 154 insertions(+)
 
-diff --git a/extent-tree.c b/extent-tree.c
-index 9fa9377..a2f8fee 100644
---- a/extent-tree.c
-+++ b/extent-tree.c
-@@ -3917,7 +3917,7 @@ static void __get_extent_size(struct btrfs_root *root, struct btrfs_path *path,
- 	BUG_ON(!(key.type == BTRFS_EXTENT_ITEM_KEY ||
- 		 key.type == BTRFS_METADATA_ITEM_KEY));
- 	*start = key.objectid;
--	if (key.type == BTRFS_EXTENT_DATA_KEY)
-+	if (key.type == BTRFS_EXTENT_ITEM_KEY)
- 		*len = key.offset;
- 	else
- 		*len = root->nodesize;
-@@ -3971,16 +3971,11 @@ next:
- 	return 0;
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 4626bbd..18701b1 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -1237,6 +1237,7 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
+ fail:
+ 	return ret;
+ }
++
+ /*
+  * Create the ext2fs image file.
+  */
+@@ -1430,6 +1431,158 @@ fail:
+ 	return ret;
  }
  
--/*
-- * Record a file extent. Do all the required works, such as inserting
-- * file extent item, inserting extent item and backref item into extent
-- * tree and updating block accounting.
-- */
--int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
-+static int __btrfs_record_file_extent(struct btrfs_trans_handle *trans,
- 			      struct btrfs_root *root, u64 objectid,
- 			      struct btrfs_inode_item *inode,
- 			      u64 file_pos, u64 disk_bytenr,
--			      u64 num_bytes)
-+			      u64 *ret_num_bytes)
- {
- 	int ret;
- 	struct btrfs_fs_info *info = root->fs_info;
-@@ -3988,36 +3983,100 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
- 	struct extent_buffer *leaf;
- 	struct btrfs_file_extent_item *fi;
- 	struct btrfs_key ins_key;
--	struct btrfs_path path;
-+	struct btrfs_path *path;
- 	struct btrfs_extent_item *ei;
- 	u64 nbytes;
-+	u64 extent_num_bytes;
-+	u64 extent_bytenr;
-+	u64 extent_offset;
-+	u64 num_bytes = *ret_num_bytes;
- 
-+	num_bytes = min_t(u64, num_bytes, BTRFS_MAX_EXTENT_SIZE);
- 	if (disk_bytenr == 0) {
- 		ret = btrfs_insert_file_extent(trans, root, objectid,
- 						file_pos, disk_bytenr,
- 						num_bytes, num_bytes);
-+		*ret_num_bytes = num_bytes;
- 		return ret;
- 	}
- 
--	btrfs_init_path(&path);
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
++static int create_image_file_range_v2(struct btrfs_trans_handle *trans,
++				      struct btrfs_root *root,
++				      struct cache_tree *used,
++				      struct btrfs_inode_item *inode,
++				      u64 ino, u64 bytenr, u64 *ret_len,
++				      int datacsum)
++{
++	struct cache_extent *cache;
++	struct btrfs_block_group_cache *bg_cache;
++	u64 len = *ret_len;
++	u64 disk_bytenr;
++	int ret;
 +
-+	/* First to check extent overlap */
-+	ret = btrfs_search_overlap_extent(extent_root, path, disk_bytenr,
-+					  num_bytes);
-+	if (ret < 0)
-+		goto fail;
-+	if (ret > 0) {
-+		/* Found overlap */
-+		u64 cur_start;
-+		u64 cur_len;
++	BUG_ON(bytenr != round_down(bytenr, root->sectorsize));
++	BUG_ON(len != round_down(len, root->sectorsize));
++	len = min_t(u64, len, BTRFS_MAX_EXTENT_SIZE);
 +
-+		__get_extent_size(extent_root, path, &cur_start, &cur_len);
-+		/*
-+		 * Now we only support subset of exist extent
-+		 * No complicated split, as in btrfs-convert caller, it
-+		 * won't happen
-+		 */
-+		BUG_ON(disk_bytenr < cur_start);
-+
-+		extent_bytenr = cur_start;
-+		extent_num_bytes = cur_len;
-+		extent_offset = disk_bytenr - extent_bytenr;
-+	} else {
-+		/* No overlap at all, create new extent */
-+		btrfs_release_path(path);
-+		ins_key.objectid = disk_bytenr;
-+		ins_key.offset = num_bytes;
-+		ins_key.type = BTRFS_EXTENT_ITEM_KEY;
-+
-+		ret = btrfs_insert_empty_item(trans, extent_root, path,
-+					      &ins_key, sizeof(*ei));
-+		if (ret == 0) {
-+			leaf = path->nodes[0];
-+			ei = btrfs_item_ptr(leaf, path->slots[0],
-+					    struct btrfs_extent_item);
-+
-+			btrfs_set_extent_refs(leaf, ei, 0);
-+			btrfs_set_extent_generation(leaf, ei, 0);
-+			btrfs_set_extent_flags(leaf, ei,
-+					       BTRFS_EXTENT_FLAG_DATA);
-+
-+			btrfs_mark_buffer_dirty(leaf);
-+
-+			ret = btrfs_update_block_group(trans, root, disk_bytenr,
-+						       num_bytes, 1, 0);
-+			if (ret)
-+				goto fail;
-+		} else if (ret != -EEXIST) {
-+			goto fail;
++	cache = search_cache_extent(used, bytenr);
++	if (cache) {
++		if (cache->start <= bytenr) {
++			/*
++			 * |///////Used///////|
++			 *	|<--insert--->|
++			 *	bytenr
++			 */
++			len = min_t(u64, len, cache->start + cache->size -
++				    bytenr);
++			disk_bytenr = bytenr;
++		} else {
++			/*
++			 *		|//Used//|
++			 *  |<-insert-->|
++			 *  bytenr
++			 */
++			len = min(len, cache->start - bytenr);
++			disk_bytenr = 0;
++			datacsum = 0;
 +		}
-+		btrfs_extent_post_op(trans, extent_root);
-+		extent_bytenr = disk_bytenr;
-+		extent_num_bytes = num_bytes;
-+		extent_offset = 0;
++	} else {
++		/*
++		 * |//Used//|		|EOF
++		 * 	    |<-insert-->|
++		 * 	    bytenr
++		 */
++		disk_bytenr = 0;
++		datacsum = 0;
 +	}
- 
-+	btrfs_release_path(path);
- 	ins_key.objectid = objectid;
- 	ins_key.offset = file_pos;
- 	btrfs_set_key_type(&ins_key, BTRFS_EXTENT_DATA_KEY);
--	ret = btrfs_insert_empty_item(trans, root, &path, &ins_key,
-+	ret = btrfs_insert_empty_item(trans, root, path, &ins_key,
- 				      sizeof(*fi));
- 	if (ret)
- 		goto fail;
--	leaf = path.nodes[0];
--	fi = btrfs_item_ptr(leaf, path.slots[0],
-+	leaf = path->nodes[0];
-+	fi = btrfs_item_ptr(leaf, path->slots[0],
- 			    struct btrfs_file_extent_item);
- 	btrfs_set_file_extent_generation(leaf, fi, trans->transid);
- 	btrfs_set_file_extent_type(leaf, fi, BTRFS_FILE_EXTENT_REG);
--	btrfs_set_file_extent_disk_bytenr(leaf, fi, disk_bytenr);
--	btrfs_set_file_extent_disk_num_bytes(leaf, fi, num_bytes);
--	btrfs_set_file_extent_offset(leaf, fi, 0);
-+	btrfs_set_file_extent_disk_bytenr(leaf, fi, extent_bytenr);
-+	btrfs_set_file_extent_disk_num_bytes(leaf, fi, extent_num_bytes);
-+	btrfs_set_file_extent_offset(leaf, fi, extent_offset);
- 	btrfs_set_file_extent_num_bytes(leaf, fi, num_bytes);
--	btrfs_set_file_extent_ram_bytes(leaf, fi, num_bytes);
-+	btrfs_set_file_extent_ram_bytes(leaf, fi, extent_num_bytes);
- 	btrfs_set_file_extent_compression(leaf, fi, 0);
- 	btrfs_set_file_extent_encryption(leaf, fi, 0);
- 	btrfs_set_file_extent_other_encoding(leaf, fi, 0);
-@@ -4026,41 +4085,46 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
- 	nbytes = btrfs_stack_inode_nbytes(inode) + num_bytes;
- 	btrfs_set_stack_inode_nbytes(inode, nbytes);
- 
--	btrfs_release_path(&path);
--
--	ins_key.objectid = disk_bytenr;
--	ins_key.offset = num_bytes;
--	ins_key.type = BTRFS_EXTENT_ITEM_KEY;
--
--	ret = btrfs_insert_empty_item(trans, extent_root, &path,
--				      &ins_key, sizeof(*ei));
--	if (ret == 0) {
--		leaf = path.nodes[0];
--		ei = btrfs_item_ptr(leaf, path.slots[0],
--				    struct btrfs_extent_item);
--
--		btrfs_set_extent_refs(leaf, ei, 0);
--		btrfs_set_extent_generation(leaf, ei, 0);
--		btrfs_set_extent_flags(leaf, ei, BTRFS_EXTENT_FLAG_DATA);
--
--		btrfs_mark_buffer_dirty(leaf);
--
--		ret = btrfs_update_block_group(trans, root, disk_bytenr,
--					       num_bytes, 1, 0);
--		if (ret)
--			goto fail;
--	} else if (ret != -EEXIST) {
--		goto fail;
--	}
--	btrfs_extent_post_op(trans, extent_root);
-+	btrfs_release_path(path);
- 
--	ret = btrfs_inc_extent_ref(trans, root, disk_bytenr, num_bytes, 0,
--				   root->root_key.objectid,
--				   objectid, file_pos);
-+	ret = btrfs_inc_extent_ref(trans, root, extent_bytenr, extent_num_bytes,
-+				   0, root->root_key.objectid, objectid,
-+				   file_pos - extent_offset);
- 	if (ret)
- 		goto fail;
- 	ret = 0;
-+	*ret_num_bytes = min(extent_num_bytes, num_bytes);
- fail:
--	btrfs_release_path(&path);
-+	btrfs_free_path(path);
++
++	if (disk_bytenr) {
++		/* Check if the range is in a data block group */
++		bg_cache = btrfs_lookup_block_group(root->fs_info, bytenr);
++		if (!bg_cache)
++			return -ENOENT;
++		if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_DATA))
++			return -EINVAL;
++	
++		/* The extent should never cross block group boundary */
++		len = min_t(u64, len, bg_cache->key.objectid +
++			    bg_cache->key.offset - bytenr);
++	}
++
++	BUG_ON(len != round_down(len, root->sectorsize));
++	ret = btrfs_record_file_extent(trans, root, ino, inode, bytenr,
++				       disk_bytenr, len);
++	if (ret < 0)
++		return ret;
++
++	if (datacsum)
++		ret = csum_disk_extent(trans, root, bytenr, len);
++	*ret_len = len;
 +	return ret;
 +}
 +
-+/*
-+ * Record a file extent. Do all the required works, such as inserting
-+ * file extent item, inserting extent item and backref item into extent
-+ * tree and updating block accounting.
-+ */
-+int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
-+			     struct btrfs_root *root, u64 objectid,
-+			     struct btrfs_inode_item *inode,
-+			     u64 file_pos, u64 disk_bytenr,
-+			     u64 num_bytes)
++static int create_ext2_image_v2(struct btrfs_root *root,
++				struct btrfs_mkfs_config *cfg, u64 size,
++				char *name, int datacsum)
 +{
-+	u64 cur_disk_bytenr = disk_bytenr;
-+	u64 cur_file_pos = file_pos;
-+	u64 cur_num_bytes = num_bytes;
-+	int ret = 0;
++	struct btrfs_inode_item buf;
++	struct btrfs_trans_handle *trans;
++	struct btrfs_path *path = NULL;
++	struct btrfs_key key;
++	u64 cur;
++	u64 ino;
++	int ret;
 +
-+	while (num_bytes > 0) {
-+		ret = __btrfs_record_file_extent(trans, root, objectid,
-+						 inode, cur_file_pos,
-+						 cur_disk_bytenr,
-+						 &cur_num_bytes);
-+		if (ret < 0)
-+			break;
-+		cur_disk_bytenr += cur_num_bytes;
-+		cur_file_pos += cur_num_bytes;
-+		num_bytes -= cur_num_bytes;
++	trans = btrfs_start_transaction(root, 1);
++	if (!trans)
++		return -ENOMEM;
++	ret = btrfs_find_free_objectid(trans, root, BTRFS_FIRST_FREE_OBJECTID,
++				       &ino);
++	if (ret < 0)
++		goto out;
++	ret = btrfs_new_inode(trans, root, ino, 0600 | S_IFREG);
++	if (ret < 0)
++		goto out;
++	ret = btrfs_add_link(trans, root, ino, BTRFS_FIRST_FREE_OBJECTID, name,
++			     strlen(name), BTRFS_FT_REG_FILE, NULL, 1);
++	if (ret < 0)
++		goto out;
++
++	path = btrfs_alloc_path();
++	if (!path) {
++		ret = -ENOMEM;
++		goto out;
 +	}
- 	return ret;
- }
-diff --git a/utils.h b/utils.h
-index cec30dc..1fcc72e 100644
---- a/utils.h
-+++ b/utils.h
-@@ -31,6 +31,8 @@
- 		(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF		\
- 		| BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
- 
-+#define BTRFS_MAX_EXTENT_SIZE	(128 * 1024 * 1024)
++	key.objectid = ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
 +
- #define BTRFS_CONVERT_META_GROUP_SIZE (32 * 1024 * 1024)
++	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
++	if (ret) {
++		ret = (ret > 0 ? -ENOENT : ret);
++		goto out;
++	}
++	read_extent_buffer(path->nodes[0], &buf,
++			btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
++			sizeof(buf));
++	btrfs_release_path(path);
++
++	/*
++	 * Skip the first 1M, it should be reserved and will be handled later
++	 */
++	cur = 1024 * 1024;
++	while (cur < size) {
++		u64 len = size - cur;
++
++		ret = create_image_file_range_v2(trans, root,
++				&cfg->convert_used, &buf, ino, cur, &len,
++				datacsum);
++		if (ret < 0)
++			goto out;
++		cur += len;
++	}
++
++	key.objectid = ino;
++	key.type = BTRFS_INODE_ITEM_KEY;
++	key.offset = 0;
++	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
++	if (ret) {
++		ret = (ret > 0 ? -ENOENT : ret);
++		goto out;
++	}
++	btrfs_set_stack_inode_size(&buf, cfg->num_bytes);
++	write_extent_buffer(path->nodes[0], &buf,
++			btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
++			sizeof(buf));
++out:
++	btrfs_free_path(path);
++	btrfs_commit_transaction(trans, root);
++	return ret;
++}
++
+ static struct btrfs_root * link_subvol(struct btrfs_root *root,
+ 		const char *base, u64 root_objectid)
+ {
+diff --git a/ctree.h b/ctree.h
+index f97af7e..6e3e919 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -570,6 +570,7 @@ struct btrfs_extent_item_v0 {
  
- /*
+ #define BTRFS_MAX_EXTENT_ITEM_SIZE(r) ((BTRFS_LEAF_DATA_SIZE(r) >> 4) - \
+ 					sizeof(struct btrfs_item))
++#define BTRFS_MAX_EXTENT_SIZE		(128 * 1024 * 1024)
+ 
+ #define BTRFS_EXTENT_FLAG_DATA		(1ULL << 0)
+ #define BTRFS_EXTENT_FLAG_TREE_BLOCK	(1ULL << 1)
 -- 
 2.6.2
 

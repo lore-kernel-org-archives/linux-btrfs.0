@@ -1,29 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp08.in.ibm.com ([122.248.162.8]:58227 "EHLO
-	e28smtp08.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751171AbbKPIBi (ORCPT
+Received: from e28smtp01.in.ibm.com ([122.248.162.1]:35939 "EHLO
+	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755632AbbKRNl7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Nov 2015 03:01:38 -0500
+	Wed, 18 Nov 2015 08:41:59 -0500
 Received: from /spool/local
-	by e28smtp08.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 16 Nov 2015 13:31:36 +0530
-Received: from d28relay05.in.ibm.com (d28relay05.in.ibm.com [9.184.220.62])
-	by d28dlp02.in.ibm.com (Postfix) with ESMTP id E9AD43940049
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 13:31:33 +0530 (IST)
-Received: from d28av03.in.ibm.com (d28av03.in.ibm.com [9.184.220.65])
-	by d28relay05.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tAG81LIs64356520
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 13:31:23 +0530
-Received: from d28av03.in.ibm.com (localhost [127.0.0.1])
-	by d28av03.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tAG81KLh019148
-	for <linux-btrfs@vger.kernel.org>; Mon, 16 Nov 2015 13:31:21 +0530
+	Wed, 18 Nov 2015 19:11:56 +0530
+Received: from d28relay03.in.ibm.com (d28relay03.in.ibm.com [9.184.220.60])
+	by d28dlp02.in.ibm.com (Postfix) with ESMTP id 1AA293940049
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 19:11:55 +0530 (IST)
+Received: from d28av05.in.ibm.com (d28av05.in.ibm.com [9.184.220.67])
+	by d28relay03.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tAIDfrw261931688
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 19:11:53 +0530
+Received: from d28av05.in.ibm.com (localhost [127.0.0.1])
+	by d28av05.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tAIDfqhi027008
+	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 19:11:52 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: linux-btrfs@vger.kernel.org
 Cc: jbacik@fb.com, clm@fb.com, bo.li.liu@oracle.com, dsterba@suse.cz,
         chandan@mykolab.com
 Subject: Re: [RFC PATCH V12 00/14] Btrfs: Subpagesize-blocksize: Allow I/O on blocks whose size is less than page size.
-Date: Mon, 16 Nov 2015 13:31:17 +0530
-Message-ID: <38099530.P1k8LIApjl@localhost.localdomain>
+Date: Wed, 18 Nov 2015 19:11:49 +0530
+Message-ID: <1747594.t1uFRQtHSi@localhost.localdomain>
 In-Reply-To: <1447657721-10025-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1447657721-10025-1-git-send-email-chandan@linux.vnet.ibm.com>
 MIME-Version: 1.0
@@ -69,9 +69,13 @@ On Monday 16 Nov 2015 12:38:27 Chandan Rajendra wrote:
 >    fio tool. The failure is seen even when running the test for other
 >    filesystems (i.e. ext4 and xfs).
 
-Sorry, I forgot to mention that the fact that nospace_cache mount option was
-used when running tests on ppc64. The space cache code still needs to be fixed
-to work in subpagesize-blocksize scenario.
+One more mistake from my side. On x86_64, For 2k block size, only generic
+tests were run (since the goal was to get regular I/O upstreamed first and
+then get the features upstreamed in subsequent releases).
+
+However, On x86_64, with 4k block size, all the tests (i.e. generic and btrfs
+specific) pass indicating that the changes do not cause any regression in
+other Btrfs features.
 
 -- 
 chandan

@@ -1,131 +1,161 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23505 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:21484 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753789AbbKRHYj (ORCPT
+	with ESMTP id S1754620AbbKRHYm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Nov 2015 02:24:39 -0500
+	Wed, 18 Nov 2015 02:24:42 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAI7NoRx007932
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAI7NoS0007932
 	for <linux-btrfs@vger.kernel.org>; Wed, 18 Nov 2015 15:23:53 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [RFC PATCH 04/22] btrfs-progs: convert: Read and build up used space tree
-Date: Wed, 18 Nov 2015 15:22:04 +0800
-Message-Id: <1447831342-15056-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [RFC PATCH 05/22] btrfs-progs: utils: Introduce new function to remove reserved ranges
+Date: Wed, 18 Nov 2015 15:22:05 +0800
+Message-Id: <1447831342-15056-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447831342-15056-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447831342-15056-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Before we do real convert, we'd better read and build up used space
-cache tree for later data/meta chunk layout calculation.
+Introduce functions to remove reserved ranges for later btrfs-convert
+rework.
 
-This patch will iterate all used blocks in ext2 filesystem and record it
-into mkfs_cfg.used cache tree for later used.
-
-This provides the basis for later btrfs-convert rework.
+The reserved ranges includes:
+1. [0,1M)
+2. [btrfs_sb_offset(1), +BTRFS_STRIP_LEN)
+3. [btrfs_sb_offset(2), +BTRFS_STRIP_LEN)
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-convert.c | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
+ utils.c | 115 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 115 insertions(+)
 
-diff --git a/btrfs-convert.c b/btrfs-convert.c
-index f66affd..3bee049 100644
---- a/btrfs-convert.c
-+++ b/btrfs-convert.c
-@@ -2286,6 +2286,77 @@ err:
- 	return ret;
+diff --git a/utils.c b/utils.c
+index 60235d8..5ab5ede 100644
+--- a/utils.c
++++ b/utils.c
+@@ -177,6 +177,121 @@ int test_uuid_unique(char *fs_uuid)
  }
  
-+static int add_one_used_block(ext2_filsys fs, char *bitmap,
-+			      unsigned long group_nr, struct cache_tree *used)
+ /*
++ * Remove one reserve range from given cache tree
++ * if min_stripe_size is non-zero, it will ensure for split case,
++ * all its split cache extent is no smaller than @min_strip_size / 2.
++ *
++ */
++static int wipe_one_reserved_range(struct cache_tree *tree,
++				   u64 start, u64 len, u64 min_stripe_size,
++				   int ensure_size)
 +{
-+	unsigned long offset;
-+	unsigned i;
-+	int ret = 0;
++	struct cache_extent *cache;
++	int ret;
 +
-+	offset = fs->super->s_first_data_block;
-+	offset /= EXT2FS_CLUSTER_RATIO(fs);
-+	offset += group_nr * fs->super->s_clusters_per_group;
-+	for (i = 0; i < fs->super->s_clusters_per_group; i++) {
-+		if (ext2fs_test_bit(i, bitmap)) {
-+			u64 start;
++	/* The logical here is simplified to handle special cases only */
++	BUG_ON(min_stripe_size < len * 2 ||
++	       min_stripe_size / 2 < BTRFS_STRIPE_LEN);
 +
-+			start = (i + offset) * EXT2FS_CLUSTER_RATIO(fs);
-+			start *= fs->blocksize;
-+			ret = add_merge_cache_extent(used, start,
-+						     fs->blocksize);
-+			if (ret < 0)
-+				break;
++	/* Also, wipe range should already be aligned */
++	BUG_ON(start != round_down(start, BTRFS_STRIPE_LEN) ||
++	       start + len != round_up(start + len, BTRFS_STRIPE_LEN));
++
++	min_stripe_size /= 2;
++
++	cache = lookup_cache_extent(tree, start, len);
++	if (!cache)
++		return 0;
++
++	if (start <= cache->start) {
++		/*
++		 *	|--------cache---------|
++		 * |-wipe-|
++		 */
++		BUG_ON(start + len <= cache->start);
++
++		/*
++		 * The wipe size is smaller than min_stripe_size / 2,
++		 * so the result length should still meet min_stripe_size
++		 * And no need to do alignment
++		 */
++		cache->size -= (start + len - cache->start);
++		if (cache->size == 0) {
++			remove_cache_extent(tree, cache);
++			free(cache);
++			return 0;
 +		}
++
++		BUG_ON(ensure_size && cache->size < min_stripe_size);
++
++		cache->start = start + len;
++		return 0;
++	} else if (start > cache->start && start + len < cache->start +
++		   cache->size) {
++		/*
++		 * |-------cache-----|
++		 * 	|-wipe-|
++		 */
++		u64 old_len = cache->size;
++		u64 insert_start = start + len;
++		u64 insert_len;
++
++		cache->size = start - cache->start;
++		if (ensure_size)
++			cache->size = max(cache->size, min_stripe_size);
++		cache->start = start - cache->size;
++
++		/* And insert the new one */
++		insert_len = old_len - start - len;
++		if (ensure_size)
++			insert_len = max(insert_len, min_stripe_size);
++
++		ret = add_merge_cache_extent(tree, insert_start, insert_len);
++		return ret;
++	} else {
++		/*
++		 * |----cache-----|
++		 * 		|--wipe-|
++		 * Wipe len should be small enough and no need to expand the
++		 * remaining extent
++		 */
++		cache->size = start - cache->start;
++		BUG_ON(ensure_size && cache->size < min_stripe_size);
++		return 0;
 +	}
++}
++
++/*
++ * Remove reserved ranges from given cache_tree
++ *
++ * It will remove the following ranges
++ * 1) 0~1M
++ * 2) 2nd superblock, +64K(make sure chunks are 64K aligned)
++ * 3) 3rd superblock, +64K
++ *
++ * @min_stripe must be given for safety check
++ * and if @ensure_size is given, it will ensure affected cache_extent will be
++ * larger than min_stripe_size
++ */
++static int wipe_reserved_ranges(struct cache_tree *tree, u64 min_stripe_size,
++				int ensure_size)
++{
++	int ret;
++
++	ret = wipe_one_reserved_range(tree, 0, 1024 * 1024, min_stripe_size, 
++				      ensure_size);
++	if (ret < 0)
++		return ret;
++	ret = wipe_one_reserved_range(tree, btrfs_sb_offset(1), BTRFS_STRIPE_LEN,
++				      min_stripe_size, ensure_size);
++	if (ret < 0)
++		return ret;
++	ret = wipe_one_reserved_range(tree, btrfs_sb_offset(2), BTRFS_STRIPE_LEN,
++				      min_stripe_size, ensure_size);
 +	return ret;
 +}
 +
 +/*
-+ * This function will iterate through all the ext2 block groups to fill used
-+ * space tree.
-+ * Which will later be used to build data chunk layout to ensure all ext2 used
-+ * data will be covered by data chunk.
-+ */
-+static int read_ext2_used_space(ext2_filsys fs, struct cache_tree *used_tree)
-+{
-+	blk64_t blk_itr = EXT2FS_B2C(fs, fs->super->s_first_data_block);
-+	char *block_bitmap = NULL;
-+	unsigned long i;
-+	int block_nbytes;
-+	int ret = 0;
-+
-+	block_nbytes = EXT2_CLUSTERS_PER_GROUP(fs->super) / 8;
-+	ret = ext2fs_read_bitmaps(fs);
-+	if (ret < 0)
-+		return ret;
-+	/* Shouldn't happen */
-+	BUG_ON(!fs->block_map);
-+
-+	block_bitmap = malloc(block_nbytes);
-+	if (!block_bitmap)
-+		return -ENOMEM;
-+
-+	for (i = 0; i < fs->group_desc_count; i++) {
-+		ret = ext2fs_get_block_bitmap_range2(fs->block_map, blk_itr,
-+						block_nbytes * 8, block_bitmap);
-+		if (ret) {
-+			error("fail to get bitmap from ext2, %s",
-+			      strerror(-ret));
-+			break;
-+		}
-+		ret = add_one_used_block(fs, block_bitmap, i, used_tree);
-+		if (ret < 0) {
-+			error("fail to build used space tree, %s",
-+			      strerror(-ret));
-+			break;
-+		}
-+		blk_itr += fs->super->s_clusters_per_group;
-+	}
-+
-+	free(block_bitmap);
-+	return ret;
-+}
-+
- static int do_convert(const char *devname, int datacsum, int packing, int noxattr,
- 		u32 nodesize, int copylabel, const char *fslabel, int progress,
- 		u64 features)
-@@ -2323,7 +2394,13 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- 	if (btrfs_check_nodesize(nodesize, blocksize, features))
- 		goto fail;
- 
-+	/* Build the used space tree first */
- 	init_mkfs_config(&mkfs_cfg);
-+	ret = read_ext2_used_space(ext2_fs, &mkfs_cfg.convert_used);
-+	if (ret < 0) {
-+		error("fail to read ext2 block bitmap\n");
-+		goto fail;
-+	}
- 
- 	blocks_per_node = nodesize / blocksize;
- 	ret = -blocks_per_node;
+  * @fs_uuid - if NULL, generates a UUID, returns back the new filesystem UUID
+  */
+ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
 -- 
 2.6.2
 

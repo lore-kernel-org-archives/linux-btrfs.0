@@ -1,80 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from gourmet.spamgourmet.com ([216.75.62.102]:52382 "EHLO
-	gourmet8.spamgourmet.com" rhost-flags-OK-OK-OK-FAIL)
-	by vger.kernel.org with ESMTP id S1751611AbbKSRf2 (ORCPT
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:35817 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753193AbbKSRv6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 12:35:28 -0500
-Received: from spamgourmet by gourmet7.spamgourmet.com with local (Exim 4.80)
-	(envelope-from <linux-btrfs.tebulin@xoxy.net>)
-	id 1ZzT7I-0003Sh-1j
-	for linux-btrfs@vger.kernel.org; Thu, 19 Nov 2015 17:35:28 +0000
-From: linux-btrfs.tebulin@xoxy.net
-Subject: Re: Kernel 3.19 and still "disk full" even though 'btrfs fi df"
- reports enough room left?
-To: linux-btrfs@vger.kernel.org
-References: <564CC90F.3060703@gmail.com>
- <20151118190857.GY24333@carfax.org.uk>
-Message-ID: <564E085C.3060208@gmail.com>
-Date: Thu, 19 Nov 2015 18:35:24 +0100
+	Thu, 19 Nov 2015 12:51:58 -0500
+Received: by igl9 with SMTP id 9so130102844igl.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 09:51:57 -0800 (PST)
+Received: from [127.0.0.1] (rrcs-70-62-41-24.central.biz.rr.com. [70.62.41.24])
+        by smtp.googlemail.com with ESMTPSA id l5sm3761354ioa.17.2015.11.19.09.51.56
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Thu, 19 Nov 2015 09:51:56 -0800 (PST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Subject: Possibility of a BTRFS module for Ansible.
+Message-ID: <564E0BF5.1030302@gmail.com>
+Date: Thu, 19 Nov 2015 12:50:45 -0500
 MIME-Version: 1.0
-In-Reply-To: <20151118190857.GY24333@carfax.org.uk>
-Content-Type: text/plain; charset=utf-8
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090202030208020804000505"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Many thanks to everybody on the list for the awful a lot help I received. 
-I'm impressed by the amount, quality and speed of the responses I received!
-> See the FAQ[1] for how to interpret the output. ...
-Very helpful, thanks. 
- 
-> The solution is to free up some of the data allocation, using a filtered balance.
-As noted in my original post, this is already part of my "voodoo" I'm doing in these situations. 
-Will newer kernel relieve me from this burden?
+This is a cryptographically signed message in MIME format.
 
-FYI: On executing "btrfs fi show" the first time after I deleted many snapshots and did a filtered (-dusage) balance, it reported sth. like 
-	devid    1 size 119.21GiB used 117.03GiB
-now (after a unfiltered balance?) it reports 
-	devid    1 size 119.21GiB used 66.06GiB
+--------------ms090202030208020804000505
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: quoted-printable
 
-I'm really confuzzled.
+I recently started using Ansible for orchestrating updates, backups, and =
 
-> [..] Ubuntu repeatedly chooses to stabilize on exactly the wrong kernel versions.
-> ..
-> Give http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.1.13-wily/ a try.
-Could not agree more. Will give wily kernel a try.
+other similar stuff.  Working with BTRFS with it has gotten annoying=20
+really fast due to some of the hoops I have to jump through to get the=20
+btrfs command to work in a way that the shell and command modules in=20
+Ansible expect (it would be really nice to have an option for subv=20
+delete that would work like rm -f).  Because of this, I'm looking at=20
+writing a module for BTRFS management (ZFS has one, why shouldn't we?),=20
+but I wanted to check here first to see if:
 
-> The output is really a little confusing. [..] should make the output more understandable. 
-+1 
-Considering that the status of a file systems should be understandable by regular users, it would be great if the btrfs tools could provide additional user hints like _"I seems your metadata space is running out of space. Please run `foo bar` to resolve this situation or consult FAQ[4] for more details"_. 
+1. Anybody may have already started working on this (in which case, I'd=20
+love to help).
 
-Austin Hemmelgarn commented on my ZFS comparison. His argument sound very vigilant taking into account the benefit of a  GPL-compliant FOSS FS like btrfs vs. a stabilized ZFS.
+2. Anybody here actually uses Ansible and could help with testing=20
+(module inclusion requires testing by a third party).
 
-The thing I appreciate in ZFS as user most, is the very user friendly interface of it's tools. Just have a look at the following output:
-
-	# zpool status
-	Permission denied the ZFS utilities must be run as root.
-	# sudo zpool status
-	  pool: zfstank
-	 state: ONLINE
-	status: Some supported features are not enabled on the pool. The pool can
-		still be used, but some features are unavailable.
-	action: Enable all features using 'zpool upgrade'. Once this is done,
-		the pool may no longer be accessible by software that does not support
-		the features. See zpool-features(5) for details.
-	  scan: scrub repaired 0 in 23h56m with 0 errors on Mon Aug 31 01:21:26 2015
-	config: ...
-	errors: No known data errors
-
-This output is totally self explaining. In case of errors, ZFS will simply lists the broken files and tell you about your options to resolve the issue (restore backup, overwrite, delete). It uses easy terms & guides me in many places.
-
-In contrast the terminology in btrfs (DUP, Metadata, Global Reserve) is rather intimidating, and as already stated, the output to a simple command like "disk free" rather difficult to understand. But btrfs seems to make progress here.
-
-Again thanks for all the helpful feedback here on the list! 
-
-I'm still a bit puzzled how to avoid my situation in the first place. 
-Should I pick "btrfs show" in favor to "btrfs fi df" to learn about an impending "disk full" situation?  
-Will newer kernels do the balance on their own? 
-
--Ben
+3. Anyone had any suggestion as to what might be worthwhile to include.=20
+  At a minimum, I'm looking at supporting scrub, balance, defrag,=20
+subvolume creation/removal/snapshotting, and probably send/receive.
 
 
+--------------ms090202030208020804000505
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTE5MTc1MDQ1WjBPBgkq
+hkiG9w0BCQQxQgRAcdEHheLcPyRJeUG/AXcEstIdUjaNtsJAuHyi/ioyx+WQk8Btk1SOmPn2
+iQiOonHewaMIz8e2bO5WR+pTv9EEfjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgA8MsAgLKp3SQzgVYWBRFv7eeCNZFjy3b9HERYqQHMfxrxTyuj7
+gHDjZh9diJoaQhzdAO+hrH6YEnw8o1VJSUdYvhTm7xqvOrfdCT1qwAJ/HYktbvGgpRY9NhmX
+/4VctRLjIhOSeDEMsnmjDc6bnPto23ukzET3fQw7Vhbqlerfr+CjTCL2bfuAFYCphlY8IXot
+U2+xws73hNkSgzcUG3OGjnGQDafljPp3hIBOP6Qwb+WivtaR5TEUZ/O6+euhX4hFTcP0otUB
+q8bjw7/YMybyII6wVHWSNOdu9hLOwka36NlsnejWYABDOppVAIp56SpUwuk4v+lIpDbiJEJI
+ziG4g7qoxeVbGD2CKW4MrUb1rHlcOhK4WVZENpx7PVYr1Cx9plulPdk3AGaANN0EzlSO3N93
+SOCIAHsAO3Wj2Txz1AJymyQpLK15cVGCjQaIVhFI6oFeqPLXWrIw8vZStnCRH1YiHspAFWPc
+MXkD0vkTfLAlrWbb/afphhWpYsZzXuPVv3Mw+y56hV9kgo9i/KiTlOcaDA3fBYSLQztJAy7G
+WPNMkFFgVmjXxkFY0w+KXJsnKTV78PQ2IWPG1y8j6cYuORDki8AIdlqK4WXcC6/twwbeI/iI
+lqrGJ1ZGrk5DRQF0ITByVn3P8XFj6NKF5MJPaXlN4RUdm9uZJwM/hiPjFwAAAAAAAA==
+--------------ms090202030208020804000505--

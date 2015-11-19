@@ -1,91 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41934 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52514 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932541AbbKSKoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 05:44:12 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 03CA9ACBD
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 10:43:48 +0000 (UTC)
+	id S932882AbbKSNRd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 08:17:33 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 48355ACD7
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 13:17:08 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/3] btrfs: constify static arrays
-Date: Thu, 19 Nov 2015 11:42:31 +0100
-Message-Id: <de37f1d3a183e134a1a392309d79f2b3091204d7.1447929577.git.dsterba@suse.com>
-In-Reply-To: <cover.1447929577.git.dsterba@suse.com>
-References: <cover.1447929577.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: put delayed item hook into inode
+Date: Thu, 19 Nov 2015 14:15:51 +0100
+Message-Id: <1447938951-14182-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-There are a few statically initialized arrays that can be made const.
-The remaining (like file_system_type, sysfs attributes or prop handlers)
-do not allow that due to type mismatch when passed to the APIs or
-because the structures are modified through other members.
+From: David Sterba <dsterba@suse.cz>
 
-Signed-off-by: David Sterba <dsterba@suse.com>
+Inodes for delayed iput allocate a trivial helper structure, let's place
+the list hook directly into the inode and save a kmalloc (killing a
+__GFP_NOFAIL as a bonus) at the cost of increasing size of btrfs_inode.
+
+The inode can be put into the delayed_iputs list more than once and we
+have to keep the count. This means we can't use the list_splice to
+process a bunch of inodes because we'd lost track of the count if the
+inode is put into the delayed iputs again while it's processed.
+
+Signed-off-by: David Sterba <dsterba@suse.cz>
 ---
- fs/btrfs/ctree.h | 2 +-
- fs/btrfs/inode.c | 2 +-
- fs/btrfs/ioctl.c | 2 +-
- fs/btrfs/super.c | 2 +-
- 4 files changed, 4 insertions(+), 4 deletions(-)
+ fs/btrfs/btrfs_inode.h |  4 ++++
+ fs/btrfs/inode.c       | 56 ++++++++++++++++++++++----------------------------
+ 2 files changed, 29 insertions(+), 31 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 8c58191249cc..63ec26c716fa 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -174,7 +174,7 @@ struct btrfs_ordered_sum;
- /* csum types */
- #define BTRFS_CSUM_TYPE_CRC32	0
+diff --git a/fs/btrfs/btrfs_inode.h b/fs/btrfs/btrfs_inode.h
+index 0ef5cc13fae2..61205e3bbefa 100644
+--- a/fs/btrfs/btrfs_inode.h
++++ b/fs/btrfs/btrfs_inode.h
+@@ -192,6 +192,10 @@ struct btrfs_inode {
+ 	/* File creation time. */
+ 	struct timespec i_otime;
  
--static int btrfs_csum_sizes[] = { 4 };
-+static const int btrfs_csum_sizes[] = { 4 };
- 
- /* four bytes for CRC32 */
- #define BTRFS_EMPTY_DIR_SIZE 0
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index bf93a6bf7ca1..1f1ee8e2d3c7 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -84,7 +84,7 @@ struct kmem_cache *btrfs_path_cachep;
- struct kmem_cache *btrfs_free_space_cachep;
- 
- #define S_SHIFT 12
--static unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
-+static const unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
- 	[S_IFREG >> S_SHIFT]	= BTRFS_FT_REG_FILE,
- 	[S_IFDIR >> S_SHIFT]	= BTRFS_FT_DIR,
- 	[S_IFCHR >> S_SHIFT]	= BTRFS_FT_CHRDEV,
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index da94138eb85e..fd429d7f40ab 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -5286,7 +5286,7 @@ static int btrfs_ioctl_set_fslabel(struct file *file, void __user *arg)
- static int btrfs_ioctl_get_supported_features(struct file *file,
- 					      void __user *arg)
- {
--	static struct btrfs_ioctl_feature_flags features[3] = {
-+	static const struct btrfs_ioctl_feature_flags features[3] = {
- 		INIT_FEATURE_FLAGS(SUPP),
- 		INIT_FEATURE_FLAGS(SAFE_SET),
- 		INIT_FEATURE_FLAGS(SAFE_CLEAR)
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 24154e422945..b813fd76f03f 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -309,7 +309,7 @@ enum {
- 	Opt_err,
++	/* Hook into fs_info->delayed_iputs */
++	struct list_head delayed_iput;
++	long delayed_iput_count;
++
+ 	struct inode vfs_inode;
  };
  
--static match_table_t tokens = {
-+static const match_table_t tokens = {
- 	{Opt_degraded, "degraded"},
- 	{Opt_subvol, "subvol=%s"},
- 	{Opt_subvolid, "subvolid=%s"},
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 994490d5fa64..769d9cff6adc 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -3106,55 +3106,47 @@ static int btrfs_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
+ 				      start, (size_t)(end - start + 1));
+ }
+ 
+-struct delayed_iput {
+-	struct list_head list;
+-	struct inode *inode;
+-};
+-
+-/* JDM: If this is fs-wide, why can't we add a pointer to
+- * btrfs_inode instead and avoid the allocation? */
+ void btrfs_add_delayed_iput(struct inode *inode)
+ {
+ 	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
+-	struct delayed_iput *delayed;
++	struct btrfs_inode *binode = BTRFS_I(inode);
+ 
+ 	if (atomic_add_unless(&inode->i_count, -1, 1))
+ 		return;
+ 
+-	delayed = kmalloc(sizeof(*delayed), GFP_NOFS | __GFP_NOFAIL);
+-	delayed->inode = inode;
+-
+ 	spin_lock(&fs_info->delayed_iput_lock);
+-	list_add_tail(&delayed->list, &fs_info->delayed_iputs);
++	if (binode->delayed_iput_count == 0) {
++		ASSERT(list_empty(&binode->delayed_iput));
++		list_add_tail(&binode->delayed_iput, &fs_info->delayed_iputs);
++	} else {
++		binode->delayed_iput_count++;
++	}
+ 	spin_unlock(&fs_info->delayed_iput_lock);
+ }
+ 
+ void btrfs_run_delayed_iputs(struct btrfs_root *root)
+ {
+-	LIST_HEAD(list);
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+-	struct delayed_iput *delayed;
+-	int empty;
+-
+-	spin_lock(&fs_info->delayed_iput_lock);
+-	empty = list_empty(&fs_info->delayed_iputs);
+-	spin_unlock(&fs_info->delayed_iput_lock);
+-	if (empty)
+-		return;
+ 
+ 	down_read(&fs_info->delayed_iput_sem);
+-
+ 	spin_lock(&fs_info->delayed_iput_lock);
+-	list_splice_init(&fs_info->delayed_iputs, &list);
+-	spin_unlock(&fs_info->delayed_iput_lock);
+-
+-	while (!list_empty(&list)) {
+-		delayed = list_entry(list.next, struct delayed_iput, list);
+-		list_del(&delayed->list);
+-		iput(delayed->inode);
+-		kfree(delayed);
++	while (!list_empty(&fs_info->delayed_iputs)) {
++		struct btrfs_inode *inode;
++
++		inode = list_first_entry(&fs_info->delayed_iputs,
++				struct btrfs_inode, delayed_iput);
++		if (inode->delayed_iput_count) {
++			inode->delayed_iput_count--;
++			list_move_tail(&inode->delayed_iput,
++					&fs_info->delayed_iputs);
++		} else {
++			list_del_init(&inode->delayed_iput);
++		}
++		spin_unlock(&fs_info->delayed_iput_lock);
++		iput(&inode->vfs_inode);
++		spin_lock(&fs_info->delayed_iput_lock);
+ 	}
+-
++	spin_unlock(&fs_info->delayed_iput_lock);
+ 	up_read(&root->fs_info->delayed_iput_sem);
+ }
+ 
+@@ -9046,6 +9038,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	ei->dir_index = 0;
+ 	ei->last_unlink_trans = 0;
+ 	ei->last_log_commit = 0;
++	ei->delayed_iput_count = 0;
+ 
+ 	spin_lock_init(&ei->lock);
+ 	ei->outstanding_extents = 0;
+@@ -9070,6 +9063,7 @@ struct inode *btrfs_alloc_inode(struct super_block *sb)
+ 	mutex_init(&ei->delalloc_mutex);
+ 	btrfs_ordered_inode_tree_init(&ei->ordered_tree);
+ 	INIT_LIST_HEAD(&ei->delalloc_inodes);
++	INIT_LIST_HEAD(&ei->delayed_iput);
+ 	RB_CLEAR_NODE(&ei->rb_node);
+ 
+ 	return inode;
 -- 
 2.6.2
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

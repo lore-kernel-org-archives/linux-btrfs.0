@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:42424 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:45229 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1757228AbbKSK5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 05:57:31 -0500
+	id S1757222AbbKSLp4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 06:45:56 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix race between scrub and block group deletion
-Date: Thu, 19 Nov 2015 10:57:20 +0000
-Message-Id: <1447930640-13192-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix scrub preventing unused block groups from being deleted
+Date: Thu, 19 Nov 2015 11:45:48 +0000
+Message-Id: <1447933548-14025-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-Scrub can race with the cleaner kthread deleting block groups that are
-unused (and with relocation too) leading to a failure with error -EINVAL
-that gets returned to user space.
-
-The following diagram illustrates how it happens:
+Currently scrub can race with the cleaner kthread when the later attempts
+to delete an unused block group, and the result is preventing the cleaner
+kthread from ever deleting later the block group - unless the block group
+becomes used and unused again. The following diagram illustrates that
+race:
 
               CPU 1                                 CPU 2
 
@@ -26,102 +26,97 @@ The following diagram illustrates how it happens:
    btrfs_delete_unused_bgs()
 
      gets block group X from
-     fs_info->unused_bgs
+     fs_info->unused_bgs and
+     removes it from that list
 
-     sets block group to RO
+                                             scrub_enumerate_chunks()
 
-       btrfs_remove_chunk(bg X)
+                                               searches device tree using
+                                               its commit root
 
-         deletes device extents
+                                               finds device extent for
+                                               block group X
 
-                                         scrub_enumerate_chunks()
+                                               gets block group X from the tree
+                                               fs_info->block_group_cache_tree
+                                               (via btrfs_lookup_block_group())
 
-                                           searches device tree using
-                                           its commit root
+                                               sets bg X to RO
 
-                                           finds device extent for
-                                           block group X
+     sees the block group is
+     already RO and therefore
+     doesn't delete it nor adds
+     it back to unused list
 
-                                           gets block group X from the tree
-                                           fs_info->block_group_cache_tree
-                                           (via btrfs_lookup_block_group())
-
-                                           sets bg X to RO (again)
-
-          btrfs_remove_block_group(bg X)
-
-            deletes block group from
-            fs_info->block_group_cache_tree
-
-            removes extent map from
-            fs_info->mapping_tree
-
-                                               scrub_chunk(offset X)
-
-                                                 searches fs_info->mapping_tree
-                                                 for extent map starting at
-                                                 offset X
-
-                                                    --> doesn't find any such
-                                                        extent map
-                                                    --> returns -EINVAL and scrub
-                                                        errors out to userspace
-                                                        with -EINVAL
-
-Fix this by dealing with an extent map lookup failure as an indicator of
-block group deletion.
-Issue reproduced with fstest btrfs/071.
+So fix this by making scrub add the block group again to the list of
+unused block groups if the block group is still unused when it finished
+scrubbing it and it hasn't been removed already.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/scrub.c | 20 ++++++++++++++++----
- 1 file changed, 16 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.h       |  1 +
+ fs/btrfs/extent-tree.c |  2 +-
+ fs/btrfs/scrub.c       | 22 ++++++++++++++++++++++
+ 3 files changed, 24 insertions(+), 1 deletion(-)
 
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index d88994f..a0165c6 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3416,6 +3416,7 @@ int btrfs_cross_ref_exist(struct btrfs_trans_handle *trans,
+ struct btrfs_block_group_cache *btrfs_lookup_block_group(
+ 						 struct btrfs_fs_info *info,
+ 						 u64 bytenr);
++void btrfs_get_block_group(struct btrfs_block_group_cache *cache);
+ void btrfs_put_block_group(struct btrfs_block_group_cache *cache);
+ int get_block_group_index(struct btrfs_block_group_cache *cache);
+ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e97d6d6..8fd14b6 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -124,7 +124,7 @@ static int block_group_bits(struct btrfs_block_group_cache *cache, u64 bits)
+ 	return (cache->flags & bits) == bits;
+ }
+ 
+-static void btrfs_get_block_group(struct btrfs_block_group_cache *cache)
++void btrfs_get_block_group(struct btrfs_block_group_cache *cache)
+ {
+ 	atomic_inc(&cache->count);
+ }
 diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 2907a77..28fbd83 100644
+index 28fbd83..cbf73bc 100644
 --- a/fs/btrfs/scrub.c
 +++ b/fs/btrfs/scrub.c
-@@ -3432,7 +3432,9 @@ out:
- static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
- 					  struct btrfs_device *scrub_dev,
- 					  u64 chunk_offset, u64 length,
--					  u64 dev_offset, int is_dev_replace)
-+					  u64 dev_offset,
-+					  struct btrfs_block_group_cache *cache,
-+					  int is_dev_replace)
- {
- 	struct btrfs_mapping_tree *map_tree =
- 		&sctx->dev_root->fs_info->mapping_tree;
-@@ -3445,8 +3447,18 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
- 	em = lookup_extent_mapping(&map_tree->map_tree, chunk_offset, 1);
- 	read_unlock(&map_tree->map_tree.lock);
+@@ -3625,6 +3625,28 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
  
--	if (!em)
--		return -EINVAL;
-+	if (!em) {
+ 		btrfs_dec_block_group_ro(root, cache);
+ 
 +		/*
-+		 * Might have been an unused block group deleted by the cleaner
-+		 * kthread or relocation.
++		 * We might have prevented the cleaner kthread from deleting
++		 * this block group if it was already unused because we raced
++		 * and set it to RO mode first. So add it back to the unused
++		 * list, otherwise it might not ever be deleted unless a manual
++		 * balance is triggered or it becomes used and unused again.
 +		 */
 +		spin_lock(&cache->lock);
-+		if (!cache->removed)
-+			ret = -EINVAL;
-+		spin_unlock(&cache->lock);
++		if (!cache->removed && !cache->ro && cache->reserved == 0 &&
++		    btrfs_block_group_used(&cache->item) == 0) {
++			spin_unlock(&cache->lock);
++			spin_lock(&fs_info->unused_bgs_lock);
++			if (list_empty(&cache->bg_list)) {
++				btrfs_get_block_group(cache);
++				list_add_tail(&cache->bg_list,
++					      &fs_info->unused_bgs);
++			}
++			spin_unlock(&fs_info->unused_bgs_lock);
++		} else {
++			spin_unlock(&cache->lock);
++		}
 +
-+		return ret;
-+	}
- 
- 	map = (struct map_lookup *)em->bdev;
- 	if (em->start != chunk_offset)
-@@ -3577,7 +3589,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
- 		dev_replace->cursor_left = found_key.offset;
- 		dev_replace->item_needs_writeback = 1;
- 		ret = scrub_chunk(sctx, scrub_dev, chunk_offset, length,
--				  found_key.offset, is_dev_replace);
-+				  found_key.offset, cache, is_dev_replace);
- 
- 		/*
- 		 * flush, submit all pending read and write bios, afterwards
+ 		btrfs_put_block_group(cache);
+ 		if (ret)
+ 			break;
 -- 
 2.1.3
 

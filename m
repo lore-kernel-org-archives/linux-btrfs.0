@@ -1,86 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55432 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752191AbbKSCQl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Nov 2015 21:16:41 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZzEm6-0001Ts-OI
-	for linux-btrfs@vger.kernel.org; Thu, 19 Nov 2015 03:16:39 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 03:16:38 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 03:16:38 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
+Received: from meiko.romanrm.net ([195.154.92.155]:42982 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750908AbbKSF6e (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 00:58:34 -0500
+Date: Thu, 19 Nov 2015 10:58:30 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: linux-btrfs.tebulin@xoxy.net
+Cc: linux-btrfs@vger.kernel.org
 Subject: Re: Kernel 3.19 and still "disk full" even though 'btrfs fi df"
  reports enough room left?
-Date: Thu, 19 Nov 2015 02:16:20 +0000 (UTC)
-Message-ID: <pan$61583$65d817c9$bfda2de6$465dca20@cox.net>
+Message-ID: <20151119105830.48b57273@natsu>
+In-Reply-To: <564CC90F.3060703@gmail.com>
 References: <564CC90F.3060703@gmail.com>
-	<20151118190857.GY24333@carfax.org.uk> <564D1AE5.3000700@cn.fujitsu.com>
 Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/pfpES.sIAO6VwFzu=h_r5+z"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Thu, 19 Nov 2015 08:42:13 +0800 as excerpted:
+--Sig_/pfpES.sIAO6VwFzu=h_r5+z
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-> Although the metadata output is showing that you still have about 512M
-> available, but the 512M is Global Reserved space, or the unknown one.
+On Wed, 18 Nov 2015 19:53:03 +0100
+linux-btrfs.tebulin@xoxy.net wrote:
 
-Unknown here, as the userspace (btrfs-progs) is evidently too old to show 
-it as global reserve, as it does in newer versions...
+>   $ uname -a
+>   Linux neptun 3.19.0-31-generic #36~14.04.1-Ubuntu SMP Thu Oct 8
+> 10:21:08 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
 
-> The output is really a little confusing. I'd like the change the output
-> by adding global reserved into metadata used space and make it a sub
-> item for metadata.
+For whatever unknown reason, Ubuntu repeatedly chooses to stabilize on exac=
+tly
+the wrong kernel versions. Their recent releases were based on kernels 3.11,
+3.13 and 3.19. None of these were chosen by the upstream as the "longterm"
+branches, and as you can see none are listed anymore on https://www.kernel.=
+org/
 
-Thanks for the clarification.  It's most helpful, here. =:^)
+To emphasize -- the mainline Linux kernel developers (and Btrfs developers)
+basically do not care anymore about 3.19 at all. What you currently use, is=
+ a
+piecemeal of unknown quality, cobbled together by Ubuntu developers from
+patches lifted either from 3.18 or 4.1 series -- by taking fixes they deem
+important and frankensteining them together until they somehow seem to appl=
+y.
 
-I've at times wondered if global reserve folded into one of the other 
-settings.  Apparently it comes from the metadata allocation, but while 
-metadata is normally dup (single-device btrfs) or raid1 (multi-device), 
-global reserve is single.
+And do they back/forward-port Btrfs-related bugfixes?... all of them?... are
+they doing that well enough? Just nobody knows.
 
-It would have been nice if that sort of substructure was described a bit 
-better when global reserve first made its appearance, at least in the 
-patch descriptions and release announcement, if not then yet in btrfs fi 
-df output, first implementations being what they are.  But regardless, 
-now at least it should be clear for list regulars who read this thread 
-anyway, since the above reasonably clarifies things.
+So my suggestion would be to try a newer kernel from www.kernel.org: if the
+problem disappears at 4.1 then just keep on using that, or 4.3 if you have =
+to,
+but otherwise that one might be a bit too new to start using right away.
 
-As for btrfs fi df, making global reserve a metadata subentry there would 
-be one way to deal with it, preserving the exposure of the additional 
-data provided by that line (here, the fact that global reserve is 
-actually being used, underlining the fact that the filesystem is severely 
-short on space).
+--=20
+With respect,
+Roman
 
-Another way of handling it would be to simply add the global reserve into 
-the metadata used figure before printing it, eliminating the separate 
-global reserve line, and changing the upthread posted metadata line from 
-8.48 GiB of 9 GiB used, to 8.98 of 9 GiB used, which is effectively the 
-case if the 512 MiB of global reserve indeed comes from the metadata 
-allocation.  This would more clearly show how full metadata actually is 
-without the added complexity of an additional global reserve line, but 
-would lose the fact that global reserve is actually in use, that the 
-broken out global reserve line exposes.
+--Sig_/pfpES.sIAO6VwFzu=h_r5+z
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
 
-I'd actually argue in favor of the latter, directly folding global 
-reserve allocation into metadata used, since it'd both be simpler, and 
-more consistent if for instance btrfs fi usage didn't report separate 
-global reserve in the overall stats, but fail to report it in the per-
-device stats and in btrfs dev usage.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
 
-Either way would make much clearer that metadata is actually running out 
-than the current report layout does, since "metadata used" would then 
-either explicitly or implicitly include the global reserve.
+iEYEARECAAYFAlZNZQYACgkQTLKSvz+PZwh30QCgj4Cx+AKTsoKqRReRlc0Y7JQ+
+idAAmwarcoG9J+BKBmJKxEejkQ4ffoyt
+=6WJq
+-----END PGP SIGNATURE-----
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--Sig_/pfpES.sIAO6VwFzu=h_r5+z--

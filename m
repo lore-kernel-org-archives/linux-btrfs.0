@@ -1,126 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41931 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:41934 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932541AbbKSKoJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 05:44:09 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B7404ACBD
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 10:43:44 +0000 (UTC)
+	id S932541AbbKSKoM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 05:44:12 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 03CA9ACBD
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 10:43:48 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 2/3] btrfs: constify remaining structs with function pointers
-Date: Thu, 19 Nov 2015 11:42:28 +0100
-Message-Id: <e253ac860a8f9d3fcdfe09743611b9a39c9968c7.1447929577.git.dsterba@suse.com>
+Subject: [PATCH 3/3] btrfs: constify static arrays
+Date: Thu, 19 Nov 2015 11:42:31 +0100
+Message-Id: <de37f1d3a183e134a1a392309d79f2b3091204d7.1447929577.git.dsterba@suse.com>
 In-Reply-To: <cover.1447929577.git.dsterba@suse.com>
 References: <cover.1447929577.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-* struct extent_io_ops
-* struct btrfs_free_space_op
+There are a few statically initialized arrays that can be made const.
+The remaining (like file_system_type, sysfs attributes or prop handlers)
+do not allow that due to type mismatch when passed to the APIs or
+because the structures are modified through other members.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/free-space-cache.c       | 2 +-
- fs/btrfs/free-space-cache.h       | 2 +-
- fs/btrfs/inode-map.c              | 4 ++--
- fs/btrfs/inode.c                  | 4 ++--
- fs/btrfs/tests/free-space-tests.c | 4 ++--
- 5 files changed, 8 insertions(+), 8 deletions(-)
+ fs/btrfs/ctree.h | 2 +-
+ fs/btrfs/inode.c | 2 +-
+ fs/btrfs/ioctl.c | 2 +-
+ fs/btrfs/super.c | 2 +-
+ 4 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
-index 85a1f8621b51..3e9706af990d 100644
---- a/fs/btrfs/free-space-cache.c
-+++ b/fs/btrfs/free-space-cache.c
-@@ -2016,7 +2016,7 @@ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
- 	return true;
- }
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 8c58191249cc..63ec26c716fa 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -174,7 +174,7 @@ struct btrfs_ordered_sum;
+ /* csum types */
+ #define BTRFS_CSUM_TYPE_CRC32	0
  
--static struct btrfs_free_space_op free_space_op = {
-+static const struct btrfs_free_space_op free_space_op = {
- 	.recalc_thresholds	= recalculate_thresholds,
- 	.use_bitmap		= use_bitmap,
- };
-diff --git a/fs/btrfs/free-space-cache.h b/fs/btrfs/free-space-cache.h
-index f251865eb6f3..33178c490ace 100644
---- a/fs/btrfs/free-space-cache.h
-+++ b/fs/btrfs/free-space-cache.h
-@@ -37,7 +37,7 @@ struct btrfs_free_space_ctl {
- 	int total_bitmaps;
- 	int unit;
- 	u64 start;
--	struct btrfs_free_space_op *op;
-+	const struct btrfs_free_space_op *op;
- 	void *private;
- 	struct mutex cache_writeout_mutex;
- 	struct list_head trimming_ranges;
-diff --git a/fs/btrfs/inode-map.c b/fs/btrfs/inode-map.c
-index 767a6056ac45..53014e963617 100644
---- a/fs/btrfs/inode-map.c
-+++ b/fs/btrfs/inode-map.c
-@@ -334,7 +334,7 @@ static bool use_bitmap(struct btrfs_free_space_ctl *ctl,
- 	return true;
- }
+-static int btrfs_csum_sizes[] = { 4 };
++static const int btrfs_csum_sizes[] = { 4 };
  
--static struct btrfs_free_space_op free_ino_op = {
-+static const struct btrfs_free_space_op free_ino_op = {
- 	.recalc_thresholds	= recalculate_thresholds,
- 	.use_bitmap		= use_bitmap,
- };
-@@ -356,7 +356,7 @@ static bool pinned_use_bitmap(struct btrfs_free_space_ctl *ctl,
- 	return false;
- }
- 
--static struct btrfs_free_space_op pinned_free_ino_op = {
-+static const struct btrfs_free_space_op pinned_free_ino_op = {
- 	.recalc_thresholds	= pinned_recalc_thresholds,
- 	.use_bitmap		= pinned_use_bitmap,
- };
+ /* four bytes for CRC32 */
+ #define BTRFS_EMPTY_DIR_SIZE 0
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 994490d5fa64..bf93a6bf7ca1 100644
+index bf93a6bf7ca1..1f1ee8e2d3c7 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
-@@ -74,7 +74,7 @@ static const struct inode_operations btrfs_file_inode_operations;
- static const struct address_space_operations btrfs_aops;
- static const struct address_space_operations btrfs_symlink_aops;
- static const struct file_operations btrfs_dir_file_operations;
--static struct extent_io_ops btrfs_extent_io_ops;
-+static const struct extent_io_ops btrfs_extent_io_ops;
+@@ -84,7 +84,7 @@ struct kmem_cache *btrfs_path_cachep;
+ struct kmem_cache *btrfs_free_space_cachep;
  
- static struct kmem_cache *btrfs_inode_cachep;
- static struct kmem_cache *btrfs_delalloc_work_cachep;
-@@ -10045,7 +10045,7 @@ static const struct file_operations btrfs_dir_file_operations = {
- 	.fsync		= btrfs_sync_file,
+ #define S_SHIFT 12
+-static unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
++static const unsigned char btrfs_type_by_mode[S_IFMT >> S_SHIFT] = {
+ 	[S_IFREG >> S_SHIFT]	= BTRFS_FT_REG_FILE,
+ 	[S_IFDIR >> S_SHIFT]	= BTRFS_FT_DIR,
+ 	[S_IFCHR >> S_SHIFT]	= BTRFS_FT_CHRDEV,
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index da94138eb85e..fd429d7f40ab 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -5286,7 +5286,7 @@ static int btrfs_ioctl_set_fslabel(struct file *file, void __user *arg)
+ static int btrfs_ioctl_get_supported_features(struct file *file,
+ 					      void __user *arg)
+ {
+-	static struct btrfs_ioctl_feature_flags features[3] = {
++	static const struct btrfs_ioctl_feature_flags features[3] = {
+ 		INIT_FEATURE_FLAGS(SUPP),
+ 		INIT_FEATURE_FLAGS(SAFE_SET),
+ 		INIT_FEATURE_FLAGS(SAFE_CLEAR)
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 24154e422945..b813fd76f03f 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -309,7 +309,7 @@ enum {
+ 	Opt_err,
  };
  
--static struct extent_io_ops btrfs_extent_io_ops = {
-+static const struct extent_io_ops btrfs_extent_io_ops = {
- 	.fill_delalloc = run_delalloc_range,
- 	.submit_bio_hook = btrfs_submit_bio_hook,
- 	.merge_bio_hook = btrfs_merge_bio_hook,
-diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
-index 915e290896ca..a53a73e398ad 100644
---- a/fs/btrfs/tests/free-space-tests.c
-+++ b/fs/btrfs/tests/free-space-tests.c
-@@ -445,11 +445,11 @@ test_steal_space_from_bitmap_to_extent(struct btrfs_block_group_cache *cache)
- 	int ret;
- 	u64 offset;
- 	u64 max_extent_size;
--	struct btrfs_free_space_op test_free_space_ops = {
-+	const struct btrfs_free_space_op test_free_space_ops = {
- 		.recalc_thresholds = cache->free_space_ctl->op->recalc_thresholds,
- 		.use_bitmap = test_use_bitmap,
- 	};
--	struct btrfs_free_space_op *orig_free_space_ops;
-+	const struct btrfs_free_space_op *orig_free_space_ops;
- 
- 	test_msg("Running space stealing from bitmap to extent\n");
- 
+-static match_table_t tokens = {
++static const match_table_t tokens = {
+ 	{Opt_degraded, "degraded"},
+ 	{Opt_subvol, "subvol=%s"},
+ 	{Opt_subvolid, "subvolid=%s"},
 -- 
 2.6.2
 
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,106 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20914 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756091AbbKSAmR convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 18 Nov 2015 19:42:17 -0500
+Received: from plane.gmane.org ([80.91.229.3]:55432 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752191AbbKSCQl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 18 Nov 2015 21:16:41 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZzEm6-0001Ts-OI
+	for linux-btrfs@vger.kernel.org; Thu, 19 Nov 2015 03:16:39 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 03:16:38 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 03:16:38 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: Kernel 3.19 and still "disk full" even though 'btrfs fi df"
  reports enough room left?
-To: Hugo Mills <hugo@carfax.org.uk>, <linux-btrfs.tebulin@xoxy.net>,
-        <linux-btrfs@vger.kernel.org>
+Date: Thu, 19 Nov 2015 02:16:20 +0000 (UTC)
+Message-ID: <pan$61583$65d817c9$bfda2de6$465dca20@cox.net>
 References: <564CC90F.3060703@gmail.com>
- <20151118190857.GY24333@carfax.org.uk>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <564D1AE5.3000700@cn.fujitsu.com>
-Date: Thu, 19 Nov 2015 08:42:13 +0800
-MIME-Version: 1.0
-In-Reply-To: <20151118190857.GY24333@carfax.org.uk>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	<20151118190857.GY24333@carfax.org.uk> <564D1AE5.3000700@cn.fujitsu.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Qu Wenruo posted on Thu, 19 Nov 2015 08:42:13 +0800 as excerpted:
 
+> Although the metadata output is showing that you still have about 512M
+> available, but the 512M is Global Reserved space, or the unknown one.
 
-Hugo Mills wrote on 2015/11/18 19:08 +0000:
-> On Wed, Nov 18, 2015 at 07:53:03PM +0100, linux-btrfs.tebulin@xoxy.net wrote:
->> Hello there!
->>
->> I'm stumbling over this regularly. I explicitly upgraded the kernel to
->> avoid this, but it still occurs me every few months:
->>
->>    $ touch foo
->>    touch: »foo“ kann nicht berührt werden: Auf dem Gerät ist kein
->> Speicherplatz mehr verfügbar
->>    $ sudo btrfs fi df /
->>    Data, single: total=101.14GiB, used=78.99GiB
->>    System, DUP: total=32.00MiB, used=16.00KiB
->>    Metadata, DUP: total=9.00GiB, used=8.48GiB
->>    unknown, single: total=512.00MiB, used=832.00KiB
->>
->> Whut? Why? WTF?
->
->     Running out of metadata space, probably, although it's impossible
-> to tell from only this information -- see below.
+Unknown here, as the userspace (btrfs-progs) is evidently too old to show 
+it as global reserve, as it does in newer versions...
 
-It's almost 100% sure that you already run out of metadata space.
+> The output is really a little confusing. I'd like the change the output
+> by adding global reserved into metadata used space and make it a sub
+> item for metadata.
 
-Although the metadata output is showing that you still have about 512M 
-available, but the 512M is Global Reserved space, or the unknown one.
+Thanks for the clarification.  It's most helpful, here. =:^)
 
-Global reserved space should not be used, until metadata is really 
-running out.
-And in your case, you are already using global reserved space, see the 
-832KB?
+I've at times wondered if global reserve folded into one of the other 
+settings.  Apparently it comes from the metadata allocation, but while 
+metadata is normally dup (single-device btrfs) or raid1 (multi-device), 
+global reserve is single.
 
-You may question that why not continue using global reserved space, but 
-that's the last method, so Btrfs will just give you ENOSPC error.
+It would have been nice if that sort of substructure was described a bit 
+better when global reserve first made its appearance, at least in the 
+patch descriptions and release announcement, if not then yet in btrfs fi 
+df output, first implementations being what they are.  But regardless, 
+now at least it should be clear for list regulars who read this thread 
+anyway, since the above reasonably clarifies things.
 
+As for btrfs fi df, making global reserve a metadata subentry there would 
+be one way to deal with it, preserving the exposure of the additional 
+data provided by that line (here, the fact that global reserve is 
+actually being used, underlining the fact that the filesystem is severely 
+short on space).
 
-The output is really a little confusing. I'd like the change the output 
-by adding global reserved into metadata used space and make it a sub 
-item for metadata.
-This should make the output more understandable.
+Another way of handling it would be to simply add the global reserve into 
+the metadata used figure before printing it, eliminating the separate 
+global reserve line, and changing the upthread posted metadata line from 
+8.48 GiB of 9 GiB used, to 8.98 of 9 GiB used, which is effectively the 
+case if the 512 MiB of global reserve indeed comes from the metadata 
+allocation.  This would more clearly show how full metadata actually is 
+without the added complexity of an additional global reserve line, but 
+would lose the fact that global reserve is actually in use, that the 
+broken out global reserve line exposes.
 
-Thanks,
-Qu
+I'd actually argue in favor of the latter, directly folding global 
+reserve allocation into metadata used, since it'd both be simpler, and 
+more consistent if for instance btrfs fi usage didn't report separate 
+global reserve in the overall stats, but fail to report it in the per-
+device stats and in btrfs dev usage.
 
->
->>    $ uname -a
->>    Linux neptun 3.19.0-31-generic #36~14.04.1-Ubuntu SMP Thu Oct 8
->> 10:21:08 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
->>
->> dmesg is empty. Resolution is to delete a whole bunch of btrfs
->> subvolumes which are produced by apt-btrfs-snapshot. I run a
->>     sudo btrfs balance start -dusage=5 /
->> afterwards as part of my regular "i have no clue what the heck is wrong
->> with this; maybe it will help & mend my problem" process.
->>
->> This is annoying. Why is even btrfs own "disk free" utility lying to me?
->
->     I't snot lying to you -- you're just not seeing the whole
-> story. You can't tell everything about disk usage from btrfs fi df.
-> You need to use btrfs fi show as well to get the full information (or
-> btrfs fi usage, which combines the output of both). See the FAQ[1] for
-> how to interpret the output.
->
->> How to fix this? How to avoid this? How to get notified about this?
->
->     Without seeing your btrfs fi show output, I can't say for sure, but
-> the usual problem in this instance is that you've got all your
-> available space allocated to either data or metadata, and the FS needs
-> more metadata space and can't allocate it. The solution is to free up
-> some of the data allocation, using a filtered balance. See the FAQ[2]
-> for how to spot the problem, and what to do about it.
->
-> [1] https://btrfs.wiki.kernel.org/index.php/FAQ#Understanding_free_space.2C_using_the_original_tools
-> [2] https://btrfs.wiki.kernel.org/index.php/FAQ#if_your_device_is_large_.28.3E16GiB.29
->
->     Hugo.
->
->> - Ben
->>
->> P.S.: Just as user feedback: For /srv I'm using on the very same system
->> ZFS since the very first day. With snapshots & all the fancy stuff like
->> ZRAID-1, lz4, ... My number of Issues there: 0
->>
->
+Either way would make much clearer that metadata is actually running out 
+than the current report layout does, since "metadata used" would then 
+either explicitly or implicitly include the global reserve.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

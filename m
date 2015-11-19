@@ -1,112 +1,127 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:41477 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:42424 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932906AbbKSKhB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 05:37:01 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 7ED01ACBD
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 10:36:36 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
+	id S1757228AbbKSK5b (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 05:57:31 -0500
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH for 4.4] btrfs: fix rcu warning during device replace
-Date: Thu, 19 Nov 2015 11:35:17 +0100
-Message-Id: <1447929317-2522-1-git-send-email-dsterba@suse.com>
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix race between scrub and block group deletion
+Date: Thu, 19 Nov 2015 10:57:20 +0000
+Message-Id: <1447930640-13192-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The test btrfs/011 triggers a rcu warning
+From: Filipe Manana <fdmanana@suse.com>
 
-===============================
-[ INFO: suspicious RCU usage. ]
-4.4.0-rc1-default+ #286 Tainted: G        W
--------------------------------
-fs/btrfs/volumes.c:1977 suspicious rcu_dereference_check() usage!
+Scrub can race with the cleaner kthread deleting block groups that are
+unused (and with relocation too) leading to a failure with error -EINVAL
+that gets returned to user space.
 
-other info that might help us debug this:
+The following diagram illustrates how it happens:
 
-rcu_scheduler_active = 1, debug_locks = 0
-4 locks held by btrfs/28786:
+              CPU 1                                 CPU 2
 
-0:  (&fs_info->dev_replace.lock_finishing_cancel_unmount){+.+...}, at: [<ffffffffa00bc785>] btrfs_dev_replace_finishing+0x45/0xa00 [btrfs]
-1:  (uuid_mutex){+.+.+.}, at: [<ffffffffa00bc84f>] btrfs_dev_replace_finishing+0x10f/0xa00 [btrfs]
-2:  (&fs_devs->device_list_mutex){+.+.+.}, at: [<ffffffffa00bc868>] btrfs_dev_replace_finishing+0x128/0xa00 [btrfs]
-3:  (&fs_info->chunk_mutex){+.+...}, at: [<ffffffffa00bc87d>] btrfs_dev_replace_finishing+0x13d/0xa00 [btrfs]
+ cleaner kthread
+   btrfs_delete_unused_bgs()
 
-stack backtrace:
-CPU: 0 PID: 28786 Comm: btrfs Tainted: G        W       4.4.0-rc1-default+ #286
-Hardware name: Intel Corporation SandyBridge Platform/To be filled by O.E.M., BIOS ASNBCPT1.86C.0031.B00.1006301607 06/30/2010
-0000000000000001 ffff8800a07dfb48 ffffffff8141d47b 0000000000000001
-0000000000000001 0000000000000000 ffff8801464a4f00 ffff8800a07dfb78
-ffffffff810cd883 ffff880146eb9400 ffff8800a3698600 ffff8800a33fe220
-Call Trace:
-[<ffffffff8141d47b>] dump_stack+0x4f/0x74
-[<ffffffff810cd883>] lockdep_rcu_suspicious+0x103/0x140
-[<ffffffffa0071261>] btrfs_rm_dev_replace_remove_srcdev+0x111/0x130 [btrfs]
-[<ffffffff810d354d>] ? trace_hardirqs_on+0xd/0x10
-[<ffffffff81449536>] ? __percpu_counter_sum+0x66/0x80
-[<ffffffffa00bcc15>] btrfs_dev_replace_finishing+0x4d5/0xa00 [btrfs]
-[<ffffffffa00bc96e>] ? btrfs_dev_replace_finishing+0x22e/0xa00 [btrfs]
-[<ffffffffa00a8795>] ? btrfs_scrub_dev+0x415/0x6d0 [btrfs]
-[<ffffffffa003ea69>] ? btrfs_start_transaction+0x9/0x20 [btrfs]
-[<ffffffffa00bda79>] btrfs_dev_replace_start+0x339/0x590 [btrfs]
-[<ffffffff81196aa5>] ? __might_fault+0x95/0xa0
-[<ffffffffa0078638>] btrfs_ioctl_dev_replace+0x118/0x160 [btrfs]
-[<ffffffff811409c6>] ? stack_trace_call+0x46/0x70
-[<ffffffffa007c914>] ? btrfs_ioctl+0x24/0x1770 [btrfs]
-[<ffffffffa007ce43>] btrfs_ioctl+0x553/0x1770 [btrfs]
-[<ffffffff811409c6>] ? stack_trace_call+0x46/0x70
-[<ffffffff811d6eb1>] ? do_vfs_ioctl+0x21/0x5a0
-[<ffffffff811d6f1c>] do_vfs_ioctl+0x8c/0x5a0
-[<ffffffff811e3336>] ? __fget_light+0x86/0xb0
-[<ffffffff811e3369>] ? __fdget+0x9/0x20
-[<ffffffff811d7451>] ? SyS_ioctl+0x21/0x80
-[<ffffffff811d7483>] SyS_ioctl+0x53/0x80
-[<ffffffff81b1efd7>] entry_SYSCALL_64_fastpath+0x12/0x6f
+     gets block group X from
+     fs_info->unused_bgs
 
-This is because of unprotected use of rcu_dereference in
-btrfs_scratch_superblocks. We can't add rcu locks around the whole
-function because we read the superblock.
+     sets block group to RO
 
-The fix will use the rcu string buffer directly without the rcu locking.
-Thi is safe as the device will not go away in the meantime. We're
-holding the device list mutexes.
+       btrfs_remove_chunk(bg X)
 
-Restructuring the code to narrow down the rcu section turned out to be
-impossible, we need to call filp_open (through update_dev_time) on the
-buffer and this could call kmalloc/__might_sleep. We could call kstrdup
-with GFP_ATOMIC but it's not absolutely necessary.
+         deletes device extents
 
-Fixes: 12b1c2637b6e (Btrfs: enhance btrfs_scratch_superblock to scratch all superblocks)
-Signed-off-by: David Sterba <dsterba@suse.com>
+                                         scrub_enumerate_chunks()
+
+                                           searches device tree using
+                                           its commit root
+
+                                           finds device extent for
+                                           block group X
+
+                                           gets block group X from the tree
+                                           fs_info->block_group_cache_tree
+                                           (via btrfs_lookup_block_group())
+
+                                           sets bg X to RO (again)
+
+          btrfs_remove_block_group(bg X)
+
+            deletes block group from
+            fs_info->block_group_cache_tree
+
+            removes extent map from
+            fs_info->mapping_tree
+
+                                               scrub_chunk(offset X)
+
+                                                 searches fs_info->mapping_tree
+                                                 for extent map starting at
+                                                 offset X
+
+                                                    --> doesn't find any such
+                                                        extent map
+                                                    --> returns -EINVAL and scrub
+                                                        errors out to userspace
+                                                        with -EINVAL
+
+Fix this by dealing with an extent map lookup failure as an indicator of
+block group deletion.
+Issue reproduced with fstest btrfs/071.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/volumes.c | 6 ++----
- 1 file changed, 2 insertions(+), 4 deletions(-)
+ fs/btrfs/scrub.c | 20 ++++++++++++++++----
+ 1 file changed, 16 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a6df8fdc1312..cd425dfe059e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1973,8 +1973,7 @@ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
- 	if (srcdev->writeable) {
- 		fs_devices->rw_devices--;
- 		/* zero out the old super if it is writable */
--		btrfs_scratch_superblocks(srcdev->bdev,
--					rcu_str_deref(srcdev->name));
-+		btrfs_scratch_superblocks(srcdev->bdev, srcdev->name->str);
- 	}
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 2907a77..28fbd83 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3432,7 +3432,9 @@ out:
+ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
+ 					  struct btrfs_device *scrub_dev,
+ 					  u64 chunk_offset, u64 length,
+-					  u64 dev_offset, int is_dev_replace)
++					  u64 dev_offset,
++					  struct btrfs_block_group_cache *cache,
++					  int is_dev_replace)
+ {
+ 	struct btrfs_mapping_tree *map_tree =
+ 		&sctx->dev_root->fs_info->mapping_tree;
+@@ -3445,8 +3447,18 @@ static noinline_for_stack int scrub_chunk(struct scrub_ctx *sctx,
+ 	em = lookup_extent_mapping(&map_tree->map_tree, chunk_offset, 1);
+ 	read_unlock(&map_tree->map_tree.lock);
  
- 	if (srcdev->bdev)
-@@ -2024,8 +2023,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
- 	btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev);
+-	if (!em)
+-		return -EINVAL;
++	if (!em) {
++		/*
++		 * Might have been an unused block group deleted by the cleaner
++		 * kthread or relocation.
++		 */
++		spin_lock(&cache->lock);
++		if (!cache->removed)
++			ret = -EINVAL;
++		spin_unlock(&cache->lock);
++
++		return ret;
++	}
  
- 	if (tgtdev->bdev) {
--		btrfs_scratch_superblocks(tgtdev->bdev,
--					rcu_str_deref(tgtdev->name));
-+		btrfs_scratch_superblocks(tgtdev->bdev, tgtdev->name->str);
- 		fs_info->fs_devices->open_devices--;
- 	}
- 	fs_info->fs_devices->num_devices--;
+ 	map = (struct map_lookup *)em->bdev;
+ 	if (em->start != chunk_offset)
+@@ -3577,7 +3589,7 @@ int scrub_enumerate_chunks(struct scrub_ctx *sctx,
+ 		dev_replace->cursor_left = found_key.offset;
+ 		dev_replace->item_needs_writeback = 1;
+ 		ret = scrub_chunk(sctx, scrub_dev, chunk_offset, length,
+-				  found_key.offset, is_dev_replace);
++				  found_key.offset, cache, is_dev_replace);
+ 
+ 		/*
+ 		 * flush, submit all pending read and write bios, afterwards
 -- 
-1.8.4.5
+2.1.3
 

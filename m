@@ -1,97 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43679 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752553AbbKJRzi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 10 Nov 2015 12:55:38 -0500
-Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 70760AD06
-	for <linux-btrfs@vger.kernel.org>; Tue, 10 Nov 2015 17:55:16 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/3] btrfs: preallocate path for snapshot creation at ioctl time
-Date: Tue, 10 Nov 2015 18:54:03 +0100
-Message-Id: <9f263bcb56ab8edb01a1951ecdaa4d12d3b1eba0.1447177256.git.dsterba@suse.com>
-In-Reply-To: <cover.1447177256.git.dsterba@suse.com>
-References: <cover.1447177256.git.dsterba@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:44583 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1757419AbbKSJ2N (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 04:28:13 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
+	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAJ9RRJe016697
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 17:27:27 +0800
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Support convert to -d dup for btrfs-convert
+Date: Thu, 19 Nov 2015 17:26:22 +0800
+Message-ID: <a00388267bcd7b1f90f45259338901ba1cfffb0b.1447925171.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can also preallocate btrfs_path that's used during pending snapshot
-creation and avoid another late ENOMEM failure.
+Since we will add support for -d dup for non-mixed filesystem,
+kernel need to support converting to this raid-type.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
+This patch remove limitation of above case.
+
+Tested by following script:
+(combination of dup conversion with fsck):
+
+export TEST_DEV='/dev/vdc'
+export TEST_DIR='/var/ltf/tester/mnt'
+
+do_dup_test()
+{
+    local m_from="$1"
+    local d_from="$2"
+    local m_to="$3"
+    local d_to="$4"
+
+    echo "Convert from -m $m_from -d $d_from to -m $m_to -d $d_to"
+
+    umount "$TEST_DIR" &>/dev/null
+    ./mkfs.btrfs -f -m "$m_from" -d "$d_from" "$TEST_DEV" >/dev/null || return 1
+    mount "$TEST_DEV" "$TEST_DIR" || return 1
+
+    cp -a /sbin/* "$TEST_DIR"
+
+    [[ "$m_from" != "$m_to" ]] && {
+        ./btrfs balance start -f -mconvert="$m_to" "$TEST_DIR" || return 1
+    }
+
+    [[ "$d_from" != "$d_to" ]] && {
+	local opt=()
+	[[ "$d_to" == single ]] && opt+=("-f")
+        ./btrfs balance start "${opt[@]}" -dconvert="$d_to" "$TEST_DIR" || return 1
+    }
+
+    umount "$TEST_DIR" || return 1
+    ./btrfsck "$TEST_DEV" || return 1
+    echo
+
+    return 0
+}
+
+test_all()
+{
+    for m_from in single dup; do
+    for d_from in single dup; do
+    for m_to in single dup; do
+    for d_to in single dup; do
+    do_dup_test "$m_from" "$d_from" "$m_to" "$d_to" || return 1
+    done
+    done
+    done
+    done
+}
+
+test_all
+
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/ioctl.c       | 4 +++-
- fs/btrfs/transaction.c | 9 ++++-----
- fs/btrfs/transaction.h | 1 +
- 3 files changed, 8 insertions(+), 6 deletions(-)
+ fs/btrfs/volumes.c | 8 --------
+ 1 file changed, 8 deletions(-)
 
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 040faa8eebc9..d318971d3085 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -661,7 +661,8 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 
- 	pending_snapshot->root_item = kzalloc(sizeof(struct btrfs_root_item),
- 			GFP_NOFS);
--	if (!pending_snapshot->root_item) {
-+	pending_snapshot->path = btrfs_alloc_path();
-+	if (!pending_snapshot->root_item || !pending_snapshot->path) {
- 		ret = -ENOMEM;
- 		goto free_pending;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 6fc73586..9f3f4a0 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3551,14 +3551,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 		goto out;
  	}
-@@ -747,6 +748,7 @@ static int create_snapshot(struct btrfs_root *root, struct inode *dir,
- 		wake_up_atomic_t(&root->will_be_snapshoted);
- free_pending:
- 	kfree(pending_snapshot->root_item);
-+	btrfs_free_path(pending_snapshot->path);
- 	kfree(pending_snapshot);
  
- 	return ret;
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 09129b65dd4b..732ad46bf015 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -1314,11 +1314,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	u64 root_flags;
- 	uuid_le new_uuid;
- 
--	path = btrfs_alloc_path();
--	if (!path) {
--		pending->error = -ENOMEM;
--		return 0;
+-	/* allow dup'ed data chunks only in mixed mode */
+-	if (!mixed && (bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
+-	    (bctl->data.target & BTRFS_BLOCK_GROUP_DUP)) {
+-		btrfs_err(fs_info, "dup for data is not allowed");
+-		ret = -EINVAL;
+-		goto out;
 -	}
-+	ASSERT(pending->path);
-+	path = pending->path;
- 
- 	ASSERT(pending->root_item);
- 	new_root_item = pending->root_item;
-@@ -1556,6 +1553,8 @@ static noinline int create_pending_snapshot(struct btrfs_trans_handle *trans,
- 	kfree(new_root_item);
- 	pending->root_item = NULL;
- 	btrfs_free_path(path);
-+	pending->path = NULL;
-+
- 	return ret;
- }
- 
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index a4e1c1a40880..9c94344fe204 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -141,6 +141,7 @@ struct btrfs_pending_snapshot {
- 	struct btrfs_root_item *root_item;
- 	struct btrfs_root *snap;
- 	struct btrfs_qgroup_inherit *inherit;
-+	struct btrfs_path *path;
- 	/* block reservation for the operation */
- 	struct btrfs_block_rsv block_rsv;
- 	u64 qgroup_reserved;
+-
+ 	/* allow to reduce meta or sys integrity only if force set */
+ 	allowed = BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1 |
+ 			BTRFS_BLOCK_GROUP_RAID10 |
 -- 
-2.6.2
+1.8.5.1
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,118 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:35398 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750874AbbKSM3Y (ORCPT
+Received: from gourmet.spamgourmet.com ([216.75.62.102]:52382 "EHLO
+	gourmet8.spamgourmet.com" rhost-flags-OK-OK-OK-FAIL)
+	by vger.kernel.org with ESMTP id S1751611AbbKSRf2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 07:29:24 -0500
-Received: by ioc74 with SMTP id 74so86743593ioc.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 04:29:23 -0800 (PST)
+	Thu, 19 Nov 2015 12:35:28 -0500
+Received: from spamgourmet by gourmet7.spamgourmet.com with local (Exim 4.80)
+	(envelope-from <linux-btrfs.tebulin@xoxy.net>)
+	id 1ZzT7I-0003Sh-1j
+	for linux-btrfs@vger.kernel.org; Thu, 19 Nov 2015 17:35:28 +0000
+From: linux-btrfs.tebulin@xoxy.net
 Subject: Re: Kernel 3.19 and still "disk full" even though 'btrfs fi df"
  reports enough room left?
-To: linux-btrfs.tebulin@xoxy.net, linux-btrfs@vger.kernel.org
+To: linux-btrfs@vger.kernel.org
 References: <564CC90F.3060703@gmail.com>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <564DC072.4060508@gmail.com>
-Date: Thu, 19 Nov 2015 07:28:34 -0500
+ <20151118190857.GY24333@carfax.org.uk>
+Message-ID: <564E085C.3060208@gmail.com>
+Date: Thu, 19 Nov 2015 18:35:24 +0100
 MIME-Version: 1.0
-In-Reply-To: <564CC90F.3060703@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms090906050601040603080606"
+In-Reply-To: <20151118190857.GY24333@carfax.org.uk>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+Many thanks to everybody on the list for the awful a lot help I received. 
+I'm impressed by the amount, quality and speed of the responses I received!
+> See the FAQ[1] for how to interpret the output. ...
+Very helpful, thanks. 
+ 
+> The solution is to free up some of the data allocation, using a filtered balance.
+As noted in my original post, this is already part of my "voodoo" I'm doing in these situations. 
+Will newer kernel relieve me from this burden?
 
---------------ms090906050601040603080606
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+FYI: On executing "btrfs fi show" the first time after I deleted many snapshots and did a filtered (-dusage) balance, it reported sth. like 
+	devid    1 size 119.21GiB used 117.03GiB
+now (after a unfiltered balance?) it reports 
+	devid    1 size 119.21GiB used 66.06GiB
 
-On 2015-11-18 13:53, linux-btrfs.tebulin@xoxy.net wrote:
->
-> P.S.: Just as user feedback: For /srv I'm using on the very same system=
+I'm really confuzzled.
 
-> ZFS since the very first day. With snapshots & all the fancy stuff like=
+> [..] Ubuntu repeatedly chooses to stabilize on exactly the wrong kernel versions.
+> ..
+> Give http://kernel.ubuntu.com/~kernel-ppa/mainline/v4.1.13-wily/ a try.
+Could not agree more. Will give wily kernel a try.
 
-> ZRAID-1, lz4, ... My number of Issues there: 0
-Since other people have adequately answered the main questions, I'll=20
-just comment on this.
+> The output is really a little confusing. [..] should make the output more understandable. 
++1 
+Considering that the status of a file systems should be understandable by regular users, it would be great if the btrfs tools could provide additional user hints like _"I seems your metadata space is running out of space. Please run `foo bar` to resolve this situation or consult FAQ[4] for more details"_. 
 
-In general, ZFS is not a good comparison to BTRFS for anything but=20
-features.  Just the open source version of ZFS has been around for more=20
-than a decade, and it existed as proprietary code for quite a while=20
-before that.  As such, it's had a lot longer to stabilize, has had=20
-exponentially more testing, and in general is a lot more reliable.  As=20
-such, aside from feature comparisons, ZFS is going to win in almost all=20
-tests of performance, reliability, and usability for the foreseeable=20
-future.  This doesn't mean you shouldn't use BTRFS (ZFS got to where it=20
-is now exactly because _a lot_ of people use it), it just means you need =
+Austin Hemmelgarn commented on my ZFS comparison. His argument sound very vigilant taking into account the benefit of a  GPL-compliant FOSS FS like btrfs vs. a stabilized ZFS.
 
-to do a lot of homework, and ideally keep you system actually up to date =
+The thing I appreciate in ZFS as user most, is the very user friendly interface of it's tools. Just have a look at the following output:
 
-(having all updates installed on Ubuntu doesn't really count in this=20
-case, they're pretty bad sometimes about not properly tracking upstream=20
-development (although they are significantly better than regular Debian))=
-=2E
+	# zpool status
+	Permission denied the ZFS utilities must be run as root.
+	# sudo zpool status
+	  pool: zfstank
+	 state: ONLINE
+	status: Some supported features are not enabled on the pool. The pool can
+		still be used, but some features are unavailable.
+	action: Enable all features using 'zpool upgrade'. Once this is done,
+		the pool may no longer be accessible by software that does not support
+		the features. See zpool-features(5) for details.
+	  scan: scrub repaired 0 in 23h56m with 0 errors on Mon Aug 31 01:21:26 2015
+	config: ...
+	errors: No known data errors
+
+This output is totally self explaining. In case of errors, ZFS will simply lists the broken files and tell you about your options to resolve the issue (restore backup, overwrite, delete). It uses easy terms & guides me in many places.
+
+In contrast the terminology in btrfs (DUP, Metadata, Global Reserve) is rather intimidating, and as already stated, the output to a simple command like "disk free" rather difficult to understand. But btrfs seems to make progress here.
+
+Again thanks for all the helpful feedback here on the list! 
+
+I'm still a bit puzzled how to avoid my situation in the first place. 
+Should I pick "btrfs show" in favor to "btrfs fi df" to learn about an impending "disk full" situation?  
+Will newer kernels do the balance on their own? 
+
+-Ben
 
 
---------------ms090906050601040603080606
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTE5MTIyODM0WjBPBgkq
-hkiG9w0BCQQxQgRAJcW1oUGXP+SGSi9ucGFzB+amK7ky7qeGIGPYEyyKL65puY57jIq2DG97
-Evch5To9RpPTf+aCznZE6f+xLTgsvTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBD93u/fLm41ZeiyKMiEIkN9ee8DFwd/rf855C0xrPUelyt0UO0
-957/3bsgLCl3qdMtcrIbLYRyPDbRlih2FtYiqo60h4odHQ7GF24f6R0ScqMth3uudDOH5lla
-Ibg/ZtvddUEC2kUlRRA5IjVPZrSV6UGkNlpzkXSTK5LT9AiSKD7Jt2S/7rNefRn0RBd0Q8zY
-EIPTiEmdRDse/VeVZtLToza4SK5afvobeT7//3oygfxCa3a8EqvZexObDSgkuwV27e8S2j+m
-2yzvI71rqgFnCpExs1li0WTlo6RDti0RAMuGC0KV+4yEqgjIL4znvTs54GknkhAEzKKT9a5y
-EWsXseFLXmuWh3nfNuOL6u2Zs9KOsXOJa3bPtSAVJ16dV3cGYCy/Un/rLmckpVRYYzCNMufr
-ycAKPyr2CWYPoxW3zVGT3i+2sIaoBd1zKiZ4l4mj7O0EX8n2oYAiQO/KqBmSafbpdAu3KYTp
-KFebpoTBXJUa0hsubZ03Rz1GSqN4Lp78s4TzoAZDlTuP+5vViaqiU09GqqRq2cFQCA06OKDd
-tIhnU49CJAyQAMPFqzBkk8m7OC9TFd7faETGsO859Lr7Az3Vy7865grUKwDhyGkhwuGJXGbp
-Q1W7YGVFhygxMldXxvdSbckEqdKHhogUB1rHCJV61u2fPbnL487xuDDnCgAAAAAAAA==
---------------ms090906050601040603080606--

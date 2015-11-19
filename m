@@ -1,105 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44583 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757419AbbKSJ2N (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 04:28:13 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (localhost.localdomain [127.0.0.1])
-	by edo.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAJ9RRJe016697
-	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 17:27:27 +0800
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Support convert to -d dup for btrfs-convert
-Date: Thu, 19 Nov 2015 17:26:22 +0800
-Message-ID: <a00388267bcd7b1f90f45259338901ba1cfffb0b.1447925171.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:41928 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932541AbbKSKoF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 05:44:05 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 73BEBAD07
+	for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 10:43:41 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 1/3] btrfs tests: replace whole ops structure for free space tests
+Date: Thu, 19 Nov 2015 11:42:24 +0100
+Message-Id: <4f200592ebbc69605bcc13c0f92b24f78b450acb.1447929577.git.dsterba@suse.com>
+In-Reply-To: <cover.1447929577.git.dsterba@suse.com>
+References: <cover.1447929577.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Since we will add support for -d dup for non-mixed filesystem,
-kernel need to support converting to this raid-type.
+Preparatory work for making btrfs_free_space_op constant. In
+test_steal_space_from_bitmap_to_extent, we substitute use_bitmap with
+own version thus preventing constification. We can rework it so we
+replace the whole structure with the correct function pointers.
 
-This patch remove limitation of above case.
-
-Tested by following script:
-(combination of dup conversion with fsck):
-
-export TEST_DEV='/dev/vdc'
-export TEST_DIR='/var/ltf/tester/mnt'
-
-do_dup_test()
-{
-    local m_from="$1"
-    local d_from="$2"
-    local m_to="$3"
-    local d_to="$4"
-
-    echo "Convert from -m $m_from -d $d_from to -m $m_to -d $d_to"
-
-    umount "$TEST_DIR" &>/dev/null
-    ./mkfs.btrfs -f -m "$m_from" -d "$d_from" "$TEST_DEV" >/dev/null || return 1
-    mount "$TEST_DEV" "$TEST_DIR" || return 1
-
-    cp -a /sbin/* "$TEST_DIR"
-
-    [[ "$m_from" != "$m_to" ]] && {
-        ./btrfs balance start -f -mconvert="$m_to" "$TEST_DIR" || return 1
-    }
-
-    [[ "$d_from" != "$d_to" ]] && {
-	local opt=()
-	[[ "$d_to" == single ]] && opt+=("-f")
-        ./btrfs balance start "${opt[@]}" -dconvert="$d_to" "$TEST_DIR" || return 1
-    }
-
-    umount "$TEST_DIR" || return 1
-    ./btrfsck "$TEST_DEV" || return 1
-    echo
-
-    return 0
-}
-
-test_all()
-{
-    for m_from in single dup; do
-    for d_from in single dup; do
-    for m_to in single dup; do
-    for d_to in single dup; do
-    do_dup_test "$m_from" "$d_from" "$m_to" "$d_to" || return 1
-    done
-    done
-    done
-    done
-}
-
-test_all
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 8 --------
- 1 file changed, 8 deletions(-)
+ fs/btrfs/tests/free-space-tests.c | 14 ++++++++------
+ 1 file changed, 8 insertions(+), 6 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc73586..9f3f4a0 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3551,14 +3551,6 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		goto out;
- 	}
- 
--	/* allow dup'ed data chunks only in mixed mode */
--	if (!mixed && (bctl->data.flags & BTRFS_BALANCE_ARGS_CONVERT) &&
--	    (bctl->data.target & BTRFS_BLOCK_GROUP_DUP)) {
--		btrfs_err(fs_info, "dup for data is not allowed");
--		ret = -EINVAL;
--		goto out;
--	}
+diff --git a/fs/btrfs/tests/free-space-tests.c b/fs/btrfs/tests/free-space-tests.c
+index c8c3d70c31ff..915e290896ca 100644
+--- a/fs/btrfs/tests/free-space-tests.c
++++ b/fs/btrfs/tests/free-space-tests.c
+@@ -445,9 +445,11 @@ test_steal_space_from_bitmap_to_extent(struct btrfs_block_group_cache *cache)
+ 	int ret;
+ 	u64 offset;
+ 	u64 max_extent_size;
 -
- 	/* allow to reduce meta or sys integrity only if force set */
- 	allowed = BTRFS_BLOCK_GROUP_DUP | BTRFS_BLOCK_GROUP_RAID1 |
- 			BTRFS_BLOCK_GROUP_RAID10 |
+-	bool (*use_bitmap_op)(struct btrfs_free_space_ctl *,
+-			      struct btrfs_free_space *);
++	struct btrfs_free_space_op test_free_space_ops = {
++		.recalc_thresholds = cache->free_space_ctl->op->recalc_thresholds,
++		.use_bitmap = test_use_bitmap,
++	};
++	struct btrfs_free_space_op *orig_free_space_ops;
+ 
+ 	test_msg("Running space stealing from bitmap to extent\n");
+ 
+@@ -469,8 +471,8 @@ test_steal_space_from_bitmap_to_extent(struct btrfs_block_group_cache *cache)
+ 	 * that forces use of bitmaps as soon as we have at least 1
+ 	 * extent entry.
+ 	 */
+-	use_bitmap_op = cache->free_space_ctl->op->use_bitmap;
+-	cache->free_space_ctl->op->use_bitmap = test_use_bitmap;
++	orig_free_space_ops = cache->free_space_ctl->op;
++	cache->free_space_ctl->op = &test_free_space_ops;
+ 
+ 	/*
+ 	 * Extent entry covering free space range [128Mb - 256Kb, 128Mb - 128Kb[
+@@ -877,7 +879,7 @@ test_steal_space_from_bitmap_to_extent(struct btrfs_block_group_cache *cache)
+ 	if (ret)
+ 		return ret;
+ 
+-	cache->free_space_ctl->op->use_bitmap = use_bitmap_op;
++	cache->free_space_ctl->op = orig_free_space_ops;
+ 	__btrfs_remove_free_space_cache(cache->free_space_ctl);
+ 
+ 	return 0;
 -- 
-1.8.5.1
+2.6.2
 
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

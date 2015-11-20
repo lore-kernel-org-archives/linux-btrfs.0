@@ -1,137 +1,131 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:38125 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S934935AbbKTD0l (ORCPT
+	with ESMTP id S934929AbbKTD0n (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 22:26:41 -0500
+	Thu, 19 Nov 2015 22:26:43 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdC022290
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:25:56 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdD022290
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:25:57 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 03/25] btrfs-progs: Add new init/free function and member for mkfs_config
-Date: Fri, 20 Nov 2015 11:24:07 +0800
-Message-Id: <1447989869-24739-4-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 04/25] btrfs-progs: convert: Read and build up used space tree
+Date: Fri, 20 Nov 2015 11:24:08 +0800
+Message-Id: <1447989869-24739-5-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add new members for mkfs_config:
-1. super_bytenr
-   For convert case to restore where super block is allocated.
-   Has no use for normal mkfs case.
+Before we do real convert, we'd better read and build up used space
+cache tree for later data/meta chunk layout calculation.
 
-2. convert_used
-   A cache tree to record which ranges are used in original filesystem.
-   This will gives the guide for later convert implement to provide better
-   system/meta chunk allocation, other than just allocating them into
-   range covered by DATA chunk.
+This patch will iterate all used blocks in ext2 filesystem and record it
+into mkfs_cfg.used cache tree for later used.
 
-3. chunk_uuid
-   Chunk tree uuid, used for later per tree root initialization.
-
-Since convert_used is a cache_tree, it needs to be initialized and freed
-properly, add new init/free function for it too.
+This provides the basis for later btrfs-convert rework.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-convert.c |  5 +++++
- mkfs.c          |  2 ++
- utils.h         | 29 +++++++++++++++++++++++++++++
- 3 files changed, 36 insertions(+)
+ btrfs-convert.c | 77 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 77 insertions(+)
 
 diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 02e5cdb..f66affd 100644
+index f66affd..3bee049 100644
 --- a/btrfs-convert.c
 +++ b/btrfs-convert.c
-@@ -2322,6 +2322,9 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- 	}
+@@ -2286,6 +2286,77 @@ err:
+ 	return ret;
+ }
+ 
++static int add_one_used_block(ext2_filsys fs, char *bitmap,
++			      unsigned long group_nr, struct cache_tree *used)
++{
++	unsigned long offset;
++	unsigned i;
++	int ret = 0;
++
++	offset = fs->super->s_first_data_block;
++	offset /= EXT2FS_CLUSTER_RATIO(fs);
++	offset += group_nr * fs->super->s_clusters_per_group;
++	for (i = 0; i < fs->super->s_clusters_per_group; i++) {
++		if (ext2fs_test_bit(i, bitmap)) {
++			u64 start;
++
++			start = (i + offset) * EXT2FS_CLUSTER_RATIO(fs);
++			start *= fs->blocksize;
++			ret = add_merge_cache_extent(used, start,
++						     fs->blocksize);
++			if (ret < 0)
++				break;
++		}
++	}
++	return ret;
++}
++
++/*
++ * This function will iterate through all the ext2 block groups to fill used
++ * space tree.
++ * Which will later be used to build data chunk layout to ensure all ext2 used
++ * data will be covered by data chunk.
++ */
++static int read_ext2_used_space(ext2_filsys fs, struct cache_tree *used_tree)
++{
++	blk64_t blk_itr = EXT2FS_B2C(fs, fs->super->s_first_data_block);
++	char *block_bitmap = NULL;
++	unsigned long i;
++	int block_nbytes;
++	int ret = 0;
++
++	block_nbytes = EXT2_CLUSTERS_PER_GROUP(fs->super) / 8;
++	ret = ext2fs_read_bitmaps(fs);
++	if (ret < 0)
++		return ret;
++	/* Shouldn't happen */
++	BUG_ON(!fs->block_map);
++
++	block_bitmap = malloc(block_nbytes);
++	if (!block_bitmap)
++		return -ENOMEM;
++
++	for (i = 0; i < fs->group_desc_count; i++) {
++		ret = ext2fs_get_block_bitmap_range2(fs->block_map, blk_itr,
++						block_nbytes * 8, block_bitmap);
++		if (ret) {
++			error("fail to get bitmap from ext2, %s",
++			      strerror(-ret));
++			break;
++		}
++		ret = add_one_used_block(fs, block_bitmap, i, used_tree);
++		if (ret < 0) {
++			error("fail to build used space tree, %s",
++			      strerror(-ret));
++			break;
++		}
++		blk_itr += fs->super->s_clusters_per_group;
++	}
++
++	free(block_bitmap);
++	return ret;
++}
++
+ static int do_convert(const char *devname, int datacsum, int packing, int noxattr,
+ 		u32 nodesize, int copylabel, const char *fslabel, int progress,
+ 		u64 features)
+@@ -2323,7 +2394,13 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
  	if (btrfs_check_nodesize(nodesize, blocksize, features))
  		goto fail;
-+
-+	init_mkfs_config(&mkfs_cfg);
-+
+ 
++	/* Build the used space tree first */
+ 	init_mkfs_config(&mkfs_cfg);
++	ret = read_ext2_used_space(ext2_fs, &mkfs_cfg.convert_used);
++	if (ret < 0) {
++		error("fail to read ext2 block bitmap\n");
++		goto fail;
++	}
+ 
  	blocks_per_node = nodesize / blocksize;
  	ret = -blocks_per_node;
- 	for (i = 0; i < 7; i++) {
-@@ -2479,6 +2482,8 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
- 	printf("conversion complete.\n");
- 	return 0;
- fail:
-+	free_mkfs_config(&mkfs_cfg);
-+
- 	if (fd != -1)
- 		close(fd);
- 	if (is_btrfs)
-diff --git a/mkfs.c b/mkfs.c
-index 5f1411f..306be51 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -1669,6 +1669,7 @@ int main(int ac, char **av)
- 			"WARNING: metatdata has lower redundancy than data!\n\n");
- 	}
- 
-+	init_mkfs_config(&mkfs_cfg);
- 	mkfs_cfg.label = label;
- 	mkfs_cfg.fs_uuid = fs_uuid;
- 	memcpy(mkfs_cfg.blocks, blocks, sizeof(blocks));
-@@ -1839,6 +1840,7 @@ raid_groups:
- 	}
- 
- out:
-+	free_mkfs_config(&mkfs_cfg);
- 	ret = close_ctree(root);
- 	BUG_ON(ret);
- 	btrfs_close_all_devices();
-diff --git a/utils.h b/utils.h
-index b625330..dff2633 100644
---- a/utils.h
-+++ b/utils.h
-@@ -109,14 +109,43 @@ void btrfs_parse_features_to_string(char *buf, u64 flags);
- struct btrfs_mkfs_config {
- 	char *label;
- 	char *fs_uuid;
-+	char *chunk_uuid;
-+
- 	u64 blocks[8];
- 	u64 num_bytes;
- 	u32 nodesize;
- 	u32 sectorsize;
- 	u32 stripesize;
- 	u64 features;
-+
-+	/*
-+	 * Already used space in original filesystem before convert.
-+	 * For normal mkfs case, it should be empty.
-+	 */
-+	struct cache_tree convert_used;
-+
-+	/*
-+	 * Super block bytenr.
-+	 * For normal mkfs case, it shouldn't be used as mkfs doesn't support
-+	 * change super block bytenr anymore.
-+	 *
-+	 * For convert use, it restore the superblock bytenr from the temporary
-+	 * btrfs fs.
-+	 */
-+	u64 super_bytenr;
- };
- 
-+static inline void init_mkfs_config(struct btrfs_mkfs_config *cfg)
-+{
-+	memset(cfg, 0, sizeof(*cfg));
-+	cache_tree_init(&cfg->convert_used);
-+}
-+
-+static inline void free_mkfs_config(struct btrfs_mkfs_config *cfg)
-+{
-+	free_extent_cache_tree(&cfg->convert_used);
-+}
-+
- int make_btrfs(int fd, struct btrfs_mkfs_config *cfg);
- int btrfs_make_root_dir(struct btrfs_trans_handle *trans,
- 			struct btrfs_root *root, u64 objectid);
 -- 
 2.6.2
 

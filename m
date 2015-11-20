@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37319 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:41560 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1759534AbbKTLBK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 06:01:10 -0500
+	id S1751295AbbKTMQa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Nov 2015 07:16:30 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix race when finishing dev replace leading to transaction abort
-Date: Fri, 20 Nov 2015 11:01:01 +0000
-Message-Id: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix race when finishing dev replace leading to transaction abort
+Date: Fri, 20 Nov 2015 12:16:22 +0000
+Message-Id: <1448021782-722-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
+References: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -118,17 +120,23 @@ the following diagram illustrates:
    of srcdev->devid, which is X (and X > 0)
 
 So fix this by replacing the device object in the extent maps only after
-finishing the setup for the target device (setting its new ID, etc).
+finishing the setup for the target device (setting its new ID, etc) and
+before setting the old device's ID to BTRFS_DEV_REPLACE_DEVID.
 
 This happened while running fstest btrfs/071.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/dev-replace.c | 15 +++++++++------
- 1 file changed, 9 insertions(+), 6 deletions(-)
+
+V2: Made the attribution of a new id from the old device to happen
+    after replacing the device for the extent maps with the new device,
+    as obviously it was missing before.
+
+ fs/btrfs/dev-replace.c | 20 +++++++++++++-------
+ 1 file changed, 13 insertions(+), 7 deletions(-)
 
 diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 1e668fb..a81268c 100644
+index 1e668fb..923b375 100644
 --- a/fs/btrfs/dev-replace.c
 +++ b/fs/btrfs/dev-replace.c
 @@ -516,12 +516,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
@@ -145,17 +153,29 @@ index 1e668fb..a81268c 100644
  		btrfs_err_in_rcu(root->fs_info,
  			      "btrfs_scrub_dev(%s, %llu, %s) failed %d",
  			      src_device->missing ? "<missing disk>" :
-@@ -565,6 +560,14 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+@@ -547,7 +542,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
+ 		      rcu_str_deref(tgt_device->name));
+ 	tgt_device->is_tgtdev_for_dev_replace = 0;
+ 	tgt_device->devid = src_device->devid;
+-	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
+ 	memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
+ 	memcpy(tgt_device->uuid, src_device->uuid, sizeof(tgt_device->uuid));
+ 	memcpy(src_device->uuid, uuid_tmp, sizeof(src_device->uuid));
+@@ -565,6 +559,18 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
  	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
  	fs_info->fs_devices->rw_devices++;
  
 +	/*
 +	 * Now that our new device replaced the old device and it's completely
 +	 * setup, replace the old device with the new one in the mapping tree.
++	 * But do it before setting the old device's id to
++	 * BTRFS_DEV_REPLACE_DEVID, to avoid racing with tasks finishing chunk
++	 * allocation.
 +	 */
 +	btrfs_dev_replace_update_device_in_mapping_tree(fs_info,
 +							src_device,
 +							tgt_device);
++	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
 +
  	btrfs_dev_replace_unlock(dev_replace);
  

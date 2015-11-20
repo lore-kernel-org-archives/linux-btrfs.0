@@ -1,161 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:14410 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S934932AbbKTD0x (ORCPT
+	with ESMTP id S1161342AbbKTD0y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 22:26:53 -0500
+	Thu, 19 Nov 2015 22:26:54 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdE022290
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:04 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdF022290
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:08 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 05/25] btrfs-progs: utils: Introduce new function to remove reserved ranges
-Date: Fri, 20 Nov 2015 11:24:09 +0800
-Message-Id: <1447989869-24739-6-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 06/25] btrfs-progs: utils: Introduce function to calculate the available space
+Date: Fri, 20 Nov 2015 11:24:10 +0800
+Message-Id: <1447989869-24739-7-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce functions to remove reserved ranges for later btrfs-convert
-rework.
+Introduce a new function, calculate_available_space() to get available
+space for convert.
 
-The reserved ranges includes:
-1. [0,1M)
-2. [btrfs_sb_offset(1), +BTRFS_STRIP_LEN)
-3. [btrfs_sb_offset(2), +BTRFS_STRIP_LEN)
+Unlike old implement, this function will do the new work:
+1) batch used ext* data space.
+   To ensure data chunks will recovery them all.
+   And restore the result into mkfs_cfg->convert_data_chunks for later
+   user.
+
+2) avoid SB and reserved space
+   Both batched data space or free space will not cover reserved space,
+   like sb or the first 1M.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- utils.c | 115 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 115 insertions(+)
+ utils.c | 75 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ utils.h | 12 +++++++++++
+ 2 files changed, 87 insertions(+)
 
 diff --git a/utils.c b/utils.c
-index 60235d8..5ab5ede 100644
+index 5ab5ede..42e333b 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -177,6 +177,121 @@ int test_uuid_unique(char *fs_uuid)
+@@ -291,6 +291,81 @@ static int wipe_reserved_ranges(struct cache_tree *tree, u64 min_stripe_size,
+ 	return ret;
  }
  
- /*
-+ * Remove one reserve range from given cache tree
-+ * if min_stripe_size is non-zero, it will ensure for split case,
-+ * all its split cache extent is no smaller than @min_strip_size / 2.
-+ *
-+ */
-+static int wipe_one_reserved_range(struct cache_tree *tree,
-+				   u64 start, u64 len, u64 min_stripe_size,
-+				   int ensure_size)
++static int calculate_available_space(struct cache_tree *used,
++				     struct cache_tree *free,
++				     struct btrfs_mkfs_config *cfg)
 +{
 +	struct cache_extent *cache;
++	u64 cur_off = 0;
++	/* Twice minimal chunk size */
++	u64 min_stripe_size = 2 * 16 * 1024 * 1024;
 +	int ret;
 +
-+	/* The logical here is simplified to handle special cases only */
-+	BUG_ON(min_stripe_size < len * 2 ||
-+	       min_stripe_size / 2 < BTRFS_STRIPE_LEN);
++	for (cache = first_cache_extent(used); cache;
++	     cache = next_cache_extent(cache)) {
++		u64 cur_len;
 +
-+	/* Also, wipe range should already be aligned */
-+	BUG_ON(start != round_down(start, BTRFS_STRIPE_LEN) ||
-+	       start + len != round_up(start + len, BTRFS_STRIPE_LEN));
-+
-+	min_stripe_size /= 2;
-+
-+	cache = lookup_cache_extent(tree, start, len);
-+	if (!cache)
-+		return 0;
-+
-+	if (start <= cache->start) {
-+		/*
-+		 *	|--------cache---------|
-+		 * |-wipe-|
-+		 */
-+		BUG_ON(start + len <= cache->start);
-+
-+		/*
-+		 * The wipe size is smaller than min_stripe_size / 2,
-+		 * so the result length should still meet min_stripe_size
-+		 * And no need to do alignment
-+		 */
-+		cache->size -= (start + len - cache->start);
-+		if (cache->size == 0) {
-+			remove_cache_extent(tree, cache);
-+			free(cache);
-+			return 0;
-+		}
-+
-+		BUG_ON(ensure_size && cache->size < min_stripe_size);
-+
-+		cache->start = start + len;
-+		return 0;
-+	} else if (start > cache->start && start + len < cache->start +
-+		   cache->size) {
-+		/*
-+		 * |-------cache-----|
-+		 * 	|-wipe-|
-+		 */
-+		u64 old_len = cache->size;
-+		u64 insert_start = start + len;
-+		u64 insert_len;
-+
-+		cache->size = start - cache->start;
-+		if (ensure_size)
-+			cache->size = max(cache->size, min_stripe_size);
-+		cache->start = start - cache->size;
-+
-+		/* And insert the new one */
-+		insert_len = old_len - start - len;
-+		if (ensure_size)
-+			insert_len = max(insert_len, min_stripe_size);
-+
-+		ret = add_merge_cache_extent(tree, insert_start, insert_len);
-+		return ret;
-+	} else {
-+		/*
-+		 * |----cache-----|
-+		 * 		|--wipe-|
-+		 * Wipe len should be small enough and no need to expand the
-+		 * remaining extent
-+		 */
-+		cache->size = start - cache->start;
-+		BUG_ON(ensure_size && cache->size < min_stripe_size);
-+		return 0;
++		if (cache->start + cache->size < cur_off)
++			continue;
++		if (cache->start > cur_off + min_stripe_size)
++			cur_off = cache->start;
++		cur_len = max(cache->start + cache->size - cur_off,
++			      min_stripe_size);
++		ret = add_merge_cache_extent(&cfg->convert_data_chunks,
++					     cur_off, cur_len);
++		if (ret < 0)
++			goto out;
++		cur_off += cur_len;
 +	}
-+}
 +
-+/*
-+ * Remove reserved ranges from given cache_tree
-+ *
-+ * It will remove the following ranges
-+ * 1) 0~1M
-+ * 2) 2nd superblock, +64K(make sure chunks are 64K aligned)
-+ * 3) 3rd superblock, +64K
-+ *
-+ * @min_stripe must be given for safety check
-+ * and if @ensure_size is given, it will ensure affected cache_extent will be
-+ * larger than min_stripe_size
-+ */
-+static int wipe_reserved_ranges(struct cache_tree *tree, u64 min_stripe_size,
-+				int ensure_size)
-+{
-+	int ret;
++	/* remove reserved ranges and keep the size of chunks */
++	ret = wipe_reserved_ranges(&cfg->convert_data_chunks, min_stripe_size,
++				   1);
++	if (ret < 0)
++		goto out;
 +
-+	ret = wipe_one_reserved_range(tree, 0, 1024 * 1024, min_stripe_size, 
-+				      ensure_size);
-+	if (ret < 0)
-+		return ret;
-+	ret = wipe_one_reserved_range(tree, btrfs_sb_offset(1), BTRFS_STRIPE_LEN,
-+				      min_stripe_size, ensure_size);
-+	if (ret < 0)
-+		return ret;
-+	ret = wipe_one_reserved_range(tree, btrfs_sb_offset(2), BTRFS_STRIPE_LEN,
-+				      min_stripe_size, ensure_size);
++	/*
++	 * Now calculate the free space cache tree
++	 * Always round up the start for insert, to avoid metadta extent cross
++	 * stripe boundary
++	 */
++	cur_off = 0;
++	for (cache = first_cache_extent(&cfg->convert_data_chunks); cache;
++	     cache = next_cache_extent(cache)) {
++		if (cache->start < cur_off)
++			continue;
++		if (cache->start > cur_off) {
++			u64 insert_start;
++			u64 len;
++
++			len = cache->start - round_up(cur_off,
++						      BTRFS_STRIPE_LEN);
++			insert_start = round_up(cur_off, BTRFS_STRIPE_LEN);
++
++			ret = add_merge_cache_extent(free, insert_start, len);
++			if (ret < 0)
++				goto out;
++		}
++		cur_off = cache->start + cache->size;
++	}
++	/* Don't forget the last range */
++	if (cfg->num_bytes > cur_off) {
++		u64 len = cfg->num_bytes - cur_off;
++		u64 insert_start;
++
++		insert_start = round_up(cur_off, BTRFS_STRIPE_LEN);
++
++		ret = add_merge_cache_extent(free, insert_start, len);
++		if (ret < 0)
++			goto out;
++	}
++
++	/* Remove reserved bytes */
++	ret = wipe_reserved_ranges(free, min_stripe_size, 0);
++out:
 +	return ret;
 +}
 +
-+/*
+ /*
   * @fs_uuid - if NULL, generates a UUID, returns back the new filesystem UUID
   */
- int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+diff --git a/utils.h b/utils.h
+index dff2633..6ac1ba8 100644
+--- a/utils.h
++++ b/utils.h
+@@ -31,6 +31,8 @@
+ 		(BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF		\
+ 		| BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA)
+ 
++#define BTRFS_CONVERT_META_GROUP_SIZE (32 * 1024 * 1024)
++
+ /*
+  * Avoid multi-device features (RAID56) and mixed block groups
+  */
+@@ -125,6 +127,14 @@ struct btrfs_mkfs_config {
+ 	struct cache_tree convert_used;
+ 
+ 	/*
++	 * Ranges that should be covered by data chunk
++	 * For convert use only.
++	 *
++	 * Optimized version of convert_used, without tiny chunks.
++	 */
++	struct cache_tree convert_data_chunks;
++
++	/*
+ 	 * Super block bytenr.
+ 	 * For normal mkfs case, it shouldn't be used as mkfs doesn't support
+ 	 * change super block bytenr anymore.
+@@ -139,11 +149,13 @@ static inline void init_mkfs_config(struct btrfs_mkfs_config *cfg)
+ {
+ 	memset(cfg, 0, sizeof(*cfg));
+ 	cache_tree_init(&cfg->convert_used);
++	cache_tree_init(&cfg->convert_data_chunks);
+ }
+ 
+ static inline void free_mkfs_config(struct btrfs_mkfs_config *cfg)
+ {
+ 	free_extent_cache_tree(&cfg->convert_used);
++	free_extent_cache_tree(&cfg->convert_data_chunks);
+ }
+ 
+ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg);
 -- 
 2.6.2
 

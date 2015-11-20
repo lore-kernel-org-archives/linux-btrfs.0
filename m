@@ -1,38 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f172.google.com ([209.85.220.172]:35416 "EHLO
-	mail-qk0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754502AbbKCTAE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 3 Nov 2015 14:00:04 -0500
-Received: by qkct129 with SMTP id t129so10744240qkc.2
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2015 11:00:03 -0800 (PST)
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:50960 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1759795AbbKTNOH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Nov 2015 08:14:07 -0500
+Date: Fri, 20 Nov 2015 08:13:58 -0500
+From: Chris Mason <clm@fb.com>
+To: Liu Bo <bo.li.liu@oracle.com>, <axboe@fb.com>
+CC: <linux-btrfs@vger.kernel.org>
+Subject: Re: [PATCH] Btrfs: fix a bug of sleeping in atomic context
+Message-ID: <20151120131358.GC9887@ret.masoncoding.com>
+References: <1447984177-26795-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
-In-Reply-To: <20151103183450.GD20170@ret.masoncoding.com>
-References: <cover.1443583874.git.osandov@osandov.com> <560E6ED2.4050306@gmail.com>
- <CAGwxe4hxRZNObdkPKikNUux2w94_UfyAKXEaBNY5UyK6b+LKuw@mail.gmail.com> <20151103183450.GD20170@ret.masoncoding.com>
-From: Tobias Holst <tobby@tobby.eu>
-Date: Tue, 3 Nov 2015 19:59:44 +0100
-Message-ID: <CAGwxe4hjgz1G34iYAm5MhE=kxHBBahHsv2vhL_2Ge1Fc8VP1Yg@mail.gmail.com>
-Subject: Re: [PATCH v4 0/9] Btrfs: free space B-tree
-To: Chris Mason <clm@fb.com>, Tobias Holst <tobby@tobby.eu>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Omar Sandoval <osandov@osandov.com>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1447984177-26795-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Ah, thanks for the information!
-Happy testing :)
+On Thu, Nov 19, 2015 at 05:49:37PM -0800, Liu Bo wrote:
+> while xfstesting, this bug[1] is spotted by both btrfs/061 and btrfs/063,
+> so those sub-stripe writes are gatherred into plug callback list and
+> hopefully we can have a full stripe writes.
+> 
+> However, while processing these plugged callbacks, it's within an atomic
+> context which is provided by blk_sq_make_request() because of a get_cpu()
+> in blk_mq_get_ctx().
+> 
+> This changes to always use btrfs_rmw_helper to complete the pending writes.
+> 
 
-2015-11-03 19:34 GMT+01:00 Chris Mason <clm@fb.com>:
-> On Tue, Nov 03, 2015 at 07:13:37PM +0100, Tobias Holst wrote:
->> Hi
->>
->> Anything new on this topic?
->>
->> I think it would be a great thing and should be merged as soon as it
->> is stable. :)
->
-> I've been testing it, but my plan is 4.5.
->
-> -chris
+Thanks Liu, but MD raid has the same troubles, we're not atomic in our unplugs.
+
+Jens?
+
+> [1]:
+> 
+> BUG: sleeping function called from invalid context at mm/page_alloc.c:3190
+> in_atomic(): 1, irqs_disabled(): 0, pid: 6, name: kworker/u16:0
+> 3 locks held by kworker/u16:0/6:
+>  #0:  ("writeback"){++++.+}, at: [<ffffffff8107f083>] process_one_work+0x173/0x730
+>  #1:  ((&(&wb->dwork)->work)){+.+.+.}, at: [<ffffffff8107f083>] process_one_work+0x173/0x730
+>  #2:  (&type->s_umount_key#44){+++++.}, at: [<ffffffff811e6805>] trylock_super+0x25/0x60
+> CPU: 5 PID: 6 Comm: kworker/u16:0 Tainted: G           OE   4.3.0+ #3
+> Hardware name: Red Hat KVM, BIOS Bochs 01/01/2011
+> Workqueue: writeback wb_workfn (flush-btrfs-108)
+>  ffffffff81a3abab ffff88042e282ba8 ffffffff8130191b ffffffff81a3abab
+>  0000000000000c76 ffff88042e282ba8 ffff88042e27c180 ffff88042e282bd8
+>  ffffffff8108ed95 ffff880400000004 0000000000000000 0000000000000c76
+> Call Trace:
+>  [<ffffffff8130191b>] dump_stack+0x4f/0x74
+>  [<ffffffff8108ed95>] ___might_sleep+0x185/0x240
+>  [<ffffffff8108eea2>] __might_sleep+0x52/0x90
+>  [<ffffffff811817e8>] __alloc_pages_nodemask+0x268/0x410
+>  [<ffffffff8109a43c>] ? sched_clock_local+0x1c/0x90
+>  [<ffffffff8109a6d1>] ? local_clock+0x21/0x40
+>  [<ffffffff810b9eb0>] ? __lock_release+0x420/0x510
+>  [<ffffffff810b534c>] ? __lock_acquired+0x16c/0x3c0
+>  [<ffffffff811ca265>] alloc_pages_current+0xc5/0x210
+>  [<ffffffffa0577105>] ? rbio_is_full+0x55/0x70 [btrfs]
+>  [<ffffffff810b7ed8>] ? mark_held_locks+0x78/0xa0
+>  [<ffffffff81666d50>] ? _raw_spin_unlock_irqrestore+0x40/0x60
+>  [<ffffffffa0578c0a>] full_stripe_write+0x5a/0xc0 [btrfs]
+>  [<ffffffffa0578ca9>] __raid56_parity_write+0x39/0x60 [btrfs]
+>  [<ffffffffa0578deb>] run_plug+0x11b/0x140 [btrfs]
+>  [<ffffffffa0578e33>] btrfs_raid_unplug+0x23/0x70 [btrfs]
+>  [<ffffffff812d36c2>] blk_flush_plug_list+0x82/0x1f0
+>  [<ffffffff812e0349>] blk_sq_make_request+0x1f9/0x740
+>  [<ffffffff812ceba2>] ? generic_make_request_checks+0x222/0x7c0
+>  [<ffffffff812cf264>] ? blk_queue_enter+0x124/0x310
+>  [<ffffffff812cf1d2>] ? blk_queue_enter+0x92/0x310
+>  [<ffffffff812d0ae2>] generic_make_request+0x172/0x2c0
+>  [<ffffffff812d0ad4>] ? generic_make_request+0x164/0x2c0
+>  [<ffffffff812d0ca0>] submit_bio+0x70/0x140
+>  [<ffffffffa0577b29>] ? rbio_add_io_page+0x99/0x150 [btrfs]
+>  [<ffffffffa0578a89>] finish_rmw+0x4d9/0x600 [btrfs]
+>  [<ffffffffa0578c4c>] full_stripe_write+0x9c/0xc0 [btrfs]
+>  [<ffffffffa057ab7f>] raid56_parity_write+0xef/0x160 [btrfs]
+>  [<ffffffffa052bd83>] btrfs_map_bio+0xe3/0x2d0 [btrfs]
+>  [<ffffffffa04fbd6d>] btrfs_submit_bio_hook+0x8d/0x1d0 [btrfs]
+>  [<ffffffffa05173c4>] submit_one_bio+0x74/0xb0 [btrfs]
+>  [<ffffffffa0517f55>] submit_extent_page+0xe5/0x1c0 [btrfs]
+>  [<ffffffffa0519b18>] __extent_writepage_io+0x408/0x4c0 [btrfs]
+>  [<ffffffffa05179c0>] ? alloc_dummy_extent_buffer+0x140/0x140 [btrfs]
+>  [<ffffffffa051dc88>] __extent_writepage+0x218/0x3a0 [btrfs]
+>  [<ffffffff810b7ed8>] ? mark_held_locks+0x78/0xa0
+>  [<ffffffffa051e2c9>] extent_write_cache_pages.clone.0+0x2f9/0x400 [btrfs]
+>  [<ffffffffa051e422>] extent_writepages+0x52/0x70 [btrfs]
+>  [<ffffffffa05001f0>] ? btrfs_set_inode_index+0x70/0x70 [btrfs]
+>  [<ffffffffa04fcc17>] btrfs_writepages+0x27/0x30 [btrfs]
+>  [<ffffffff81184df3>] do_writepages+0x23/0x40
+>  [<ffffffff81212229>] __writeback_single_inode+0x89/0x4d0
+>  [<ffffffff81212a60>] ? writeback_sb_inodes+0x260/0x480
+>  [<ffffffff81212a60>] ? writeback_sb_inodes+0x260/0x480
+>  [<ffffffff8121295f>] ? writeback_sb_inodes+0x15f/0x480
+>  [<ffffffff81212ad2>] writeback_sb_inodes+0x2d2/0x480
+>  [<ffffffff810b1397>] ? down_read_trylock+0x57/0x60
+>  [<ffffffff811e6805>] ? trylock_super+0x25/0x60
+>  [<ffffffff810d629f>] ? rcu_read_lock_sched_held+0x4f/0x90
+>  [<ffffffff81212d0c>] __writeback_inodes_wb+0x8c/0xc0
+>  [<ffffffff812130b5>] wb_writeback+0x2b5/0x500
+>  [<ffffffff810b7ed8>] ? mark_held_locks+0x78/0xa0
+>  [<ffffffff810660a8>] ? __local_bh_enable_ip+0x68/0xc0
+>  [<ffffffff81213362>] ? wb_do_writeback+0x62/0x310
+>  [<ffffffff812133c1>] wb_do_writeback+0xc1/0x310
+>  [<ffffffff8107c3d9>] ? set_worker_desc+0x79/0x90
+>  [<ffffffff81213842>] wb_workfn+0x92/0x330
+>  [<ffffffff8107f133>] process_one_work+0x223/0x730
+>  [<ffffffff8107f083>] ? process_one_work+0x173/0x730
+>  [<ffffffff8108035f>] ? worker_thread+0x18f/0x430
+>  [<ffffffff810802ed>] worker_thread+0x11d/0x430
+>  [<ffffffff810801d0>] ? maybe_create_worker+0xf0/0xf0
+>  [<ffffffff810801d0>] ? maybe_create_worker+0xf0/0xf0
+>  [<ffffffff810858df>] kthread+0xef/0x110
+>  [<ffffffff8108f74e>] ? schedule_tail+0x1e/0xd0
+>  [<ffffffff810857f0>] ? __init_kthread_worker+0x70/0x70
+>  [<ffffffff816673bf>] ret_from_fork+0x3f/0x70
+>  [<ffffffff810857f0>] ? __init_kthread_worker+0x70/0x70
+

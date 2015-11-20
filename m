@@ -1,212 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:47371 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752023AbbKODYG (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:34698 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751190AbbKTTYn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Nov 2015 22:24:06 -0500
-Message-ID: <1447557840.20381.29.camel@scientia.net>
+	Fri, 20 Nov 2015 14:24:43 -0500
+Message-ID: <1448047478.6878.4.camel@scientia.net>
 Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
  chunk
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+To: Laurent Bonnaud <L.Bonnaud@laposte.net>, quwenruo@cn.fujitsu.com,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Date: Sun, 15 Nov 2015 04:24:00 +0100
-In-Reply-To: <5647DFED.5020507@gmx.com>
-References: <1447365063.7045.7.camel@scientia.net>
-	 <56468CE4.2010605@gmx.com> <1447468167.27386.3.camel@scientia.net>
-	 <5647DFED.5020507@gmx.com>
+Date: Fri, 20 Nov 2015 20:24:38 +0100
+In-Reply-To: <564F48FE.4000400@laposte.net>
+References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-3oWxRWbqkQAssNr6oWxl"
+	boundary="=-Q/xslJwxrsxecbkAAlRm"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-3oWxRWbqkQAssNr6oWxl
+--=-Q/xslJwxrsxecbkAAlRm
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, 2015-11-15 at 09:29 +0800, Qu Wenruo wrote:
-> > > If type is wrong, all the extents inside the chunk should be
-> > > reported
-> > > as
-> > > mismatch type with chunk.
-> > Isn't that the case? At least there are so many reported extents...
->=20
-> If you posted all the output
-Sure, I posted everything that the dump gave :)
+On Fri, 2015-11-20 at 17:23 +0100, Laurent Bonnaud wrote:
+> So here is the output of "btrfs-debug-tree -t 2 <dev>" in case it may
+Gosh... 15M via mail?! o.O
 
-> , that's just a little more than nothing.
-> Just tens of error reported, compared to millions of extents.
-> And in your case, if a chunk is really bad, it will report about 65K
-> errors.
-I see..
+Anyway an update from my side...
+I've copied all data from the fs in question to a new btrfs,... done
+under Linux=C2=A04.2.6 and=C2=A0btrfs-progs v4.3.
+No data was lost or anyhow corrupted (also shown by extensive tests
+using my XATTR hashsums and other backups I've had).
 
-
-> I think it's a btrfsck issue, at least from the dump info, your
-> extent=20
-> tree is OK.
-> And if there is no other error reported from btrfsck, your filesystem
-> should be OK.
-Nope.. there were no further errors.
+On the new fs, btrfs doesn't report that error anymore.
+No snapshots/etc made so far on the new fs.
 
 
 
-> > In any case, I'll keep the fs in question for a while, so that I
-> > can do
-> > verifications in case you have patches.
->=20
-> Nice.
-Just tell me if you have something.
+Qu, have you had a look at btrfs check already?
 
-
-
-btw: I saw these:
-Nov 15 02:01:42 heisenberg kernel: INFO: task btrfs-transacti:28379 blocked=
- for more than 120 seconds.
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0Not tainted 4.2.0-1-amd64 #1
-Nov 15 02:01:42 heisenberg kernel: "echo 0 > /proc/sys/kernel/hung_task_tim=
-eout_secs" disables this message.
-Nov 15 02:01:42 heisenberg kernel: btrfs-transacti D ffffffff8109a1b0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A00 28379=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A02 0x0000=
-0000
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0ffff88016e3e6500 000000000000=
-0046 000000000000007a ffff88040be88f00
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A00000000000002659 ffff88013807=
-0000 ffff88041e355840 7fffffffffffffff
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0ffffffff815508e0 ffff88013806=
-fbb8 0007ffffffffffff ffffffff815500ff
-Nov 15 02:01:42 heisenberg kernel: Call Trace:
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815508e0>] ? bit_wa=
-it_timeout+0x70/0x70
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815500ff>] ? schedu=
-le+0x2f/0x70
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81552bc7>] ? schedu=
-le_timeout+0x1f7/0x290
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa02be6f2>] ? extent=
-_write_cache_pages.isra.28.constprop.43+0x222/0x330 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8101c325>] ? read_t=
-sc+0x5/0x10
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815508e0>] ? bit_wa=
-it_timeout+0x70/0x70
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8154f7ad>] ? io_sch=
-edule_timeout+0x9d/0x110
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81550915>] ? bit_wa=
-it_io+0x35/0x60
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815504ca>] ? __wait=
-_on_bit+0x5a/0x90
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81152496>] ? find_g=
-et_pages_tag+0x116/0x150
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff811513a6>] ? wait_o=
-n_page_bit+0xb6/0xc0
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff810a9b20>] ? autore=
-move_wake_function+0x40/0x40
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81151477>] ? filema=
-p_fdatawait_range+0xc7/0x140
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa02b9a43>] ? btrfs_=
-wait_ordered_range+0x73/0x110 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa02e3c1d>] ? btrfs_=
-wait_cache_io+0x5d/0x1e0 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa028e7bc>] ? btrfs_=
-start_dirty_block_groups+0x17c/0x3f0 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029ee84>] ? btrfs_=
-commit_transaction+0x1b4/0xa90 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029f7f0>] ? start_=
-transaction+0x90/0x580 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029a654>] ? transa=
-ction_kthread+0x224/0x240 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029a430>] ? btrfs_=
-cleanup_transaction+0x510/0x510 [btrfs]
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8108aa41>] ? kthrea=
-d+0xc1/0xe0
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8108a980>] ? kthrea=
-d_create_on_node+0x170/0x170
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81553e5f>] ? ret_fr=
-om_fork+0x3f/0x70
-Nov 15 02:01:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8108a980>] ? kthrea=
-d_create_on_node+0x170/0x170
-Nov 15 02:03:42 heisenberg kernel: INFO: task btrfs-transacti:28379 blocked=
- for more than 120 seconds.
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0Not tainted 4.2.0-1-amd64 #1
-Nov 15 02:03:42 heisenberg kernel: "echo 0 > /proc/sys/kernel/hung_task_tim=
-eout_secs" disables this message.
-Nov 15 02:03:42 heisenberg kernel: btrfs-transacti D ffffffff8109a1b0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A00 28379=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A02 0x0000=
-0000
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0ffff88016e3e6500 000000000000=
-0046 000000000000007a ffff88040be88f00
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A00000000000002659 ffff88013807=
-0000 ffff88041e355840 7fffffffffffffff
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0ffffffff815508e0 ffff88013806=
-fbb8 0007ffffffffffff ffffffff815500ff
-Nov 15 02:03:42 heisenberg kernel: Call Trace:
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815508e0>] ? bit_wa=
-it_timeout+0x70/0x70
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815500ff>] ? schedu=
-le+0x2f/0x70
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81552bc7>] ? schedu=
-le_timeout+0x1f7/0x290
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa02be6f2>] ? extent=
-_write_cache_pages.isra.28.constprop.43+0x222/0x330 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8101c325>] ? read_t=
-sc+0x5/0x10
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815508e0>] ? bit_wa=
-it_timeout+0x70/0x70
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8154f7ad>] ? io_sch=
-edule_timeout+0x9d/0x110
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81550915>] ? bit_wa=
-it_io+0x35/0x60
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff815504ca>] ? __wait=
-_on_bit+0x5a/0x90
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81152496>] ? find_g=
-et_pages_tag+0x116/0x150
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff811513a6>] ? wait_o=
-n_page_bit+0xb6/0xc0
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff810a9b20>] ? autore=
-move_wake_function+0x40/0x40
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81151477>] ? filema=
-p_fdatawait_range+0xc7/0x140
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa02b9a43>] ? btrfs_=
-wait_ordered_range+0x73/0x110 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa02e3c1d>] ? btrfs_=
-wait_cache_io+0x5d/0x1e0 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa028e7bc>] ? btrfs_=
-start_dirty_block_groups+0x17c/0x3f0 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029ee84>] ? btrfs_=
-commit_transaction+0x1b4/0xa90 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029f7f0>] ? start_=
-transaction+0x90/0x580 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029a654>] ? transa=
-ction_kthread+0x224/0x240 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029a430>] ? btrfs_=
-cleanup_transaction+0x510/0x510 [btrfs]
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8108aa41>] ? kthrea=
-d+0xc1/0xe0
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8108a980>] ? kthrea=
-d_create_on_node+0x170/0x170
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81553e5f>] ? ret_fr=
-om_fork+0x3f/0x70
-Nov 15 02:03:42 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8108a980>] ? kthrea=
-d_create_on_node+0x170/0x170
-Nov 15 04:18:37 heisenberg kernel: virbr1: port 2(vnet0) entered disabled s=
-tate
-Nov 15 04:18:37 heisenberg kernel: device vnet0 left promiscuous mode
-Nov 15 04:18:37 heisenberg kernel: virbr1: port 2(vnet0) entered disabled s=
-tate
-
-Is that anything to worry about? And any way to find out to which
-filesystem that process corresponds?
-At least I've never seen =C2=A0btrfs-transacti to hang... and since nothing
-than the cp -a from on to the other disk is doing anything on the two
-HDDs, I was a bit surprised to see that happen
+And you've explained that the fs was okay and only the check was
+wrong... but since the false positive errors don't appear on my copied
+fs, does that really mean that the skinny metadata changed so much, or
+was anything changed in the kernel that the same didn't appear on the
+new fs anymore (or was it perhaps because I was using snapshots?)
 
 
 Cheers,
 Chris.
---=-3oWxRWbqkQAssNr6oWxl
+--=-Q/xslJwxrsxecbkAAlRm
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -293,19 +138,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTExNTAzMjQw
-MFowTwYJKoZIhvcNAQkEMUIEQLUtJ6gnRc28gzqBXcTEviyplgZJKxUAsK909fx+7V3kCU6dMIvv
-klIVzCB+J5LCOqHVLJtCIpX+/SjmQY4VFKIwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyMDE5MjQz
+OFowTwYJKoZIhvcNAQkEMUIEQN9Dl828pboZjMFeSNCwrQwG2Dc7QPYzFkqDg9UM6g2MR+Jrk1Tu
+u9WM6ECNvGAXUAOhUZE/u0t5vpEvQX2Gj8AwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCuGQPyWWcjNDVj3blUD1gfYBjCJOXh
-klrZhm/fEF7+IyFPf9M0I6Jc/uyYZmfFstVPfRqeJVKdaYxGEJrna1gQQKx9s7hZEd1Zl6YAoLII
-Ty+j0/aJEZEkPItgugmohJ34cKhkd+y2XVniFsWJFunMXwQLnuaX/MuR7HojdSgagLpjkuIYKwZk
-w8T0KVPKsAJ7avskBPsppIot+/jRPMoP0unE1a8djmvhQGhhNXtPKFGDpZ/d4rwp7ZdieKa9vTMj
-HcK8PoV/LWMxjJY/qyPOL9vWSWaYB8htAEDPl8ybZIOk121AQwUOluiQBeKrllnGOA0GjfQxAHZC
-FzJbHJRkAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCvsE7XekHeAebBEAWsvr/kxmSTsic0
+IVK5pRRA9vBAaf7Y/YtGLdjaEwokzZN8A5I6lOeOVbwc1k/Ht7oOD1fX+bntNRYsABDTozZjMFRZ
+XFL+IBFRmYWiIu/ZGsy8AufUjmPNMcxduiF8a3MwHvDgvjPcJQBtEV26R29kxKZW1mWwjFUQNyj/
+HSsfpR57slkzusQk9oFsjOvMFapU4ZGtBxY/wAjKo65cSq+LMe9B1zWgP/xR6QbI6zhGK6HFgavg
+ZgnDP2Q9kWt0d8/JbqLIktbEztX5UHET/uM8ZRPysaOHwl+OIrlLg/k2EfCgAQ1xm1qDMUOlEOZu
+73Cavy0yAAAAAAAA
 
 
---=-3oWxRWbqkQAssNr6oWxl--
+--=-Q/xslJwxrsxecbkAAlRm--
 

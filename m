@@ -1,84 +1,139 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:35109 "EHLO
-	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759810AbbKTNOM (ORCPT
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:38163 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751542AbbKTNVq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 08:14:12 -0500
-Received: by ioc74 with SMTP id 74so122544262ioc.2
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 05:14:12 -0800 (PST)
+	Fri, 20 Nov 2015 08:21:46 -0500
+Received: by igbxm8 with SMTP id xm8so11577381igb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 05:21:45 -0800 (PST)
 Subject: Re: Kernel 3.19 and still "disk full" even though 'btrfs fi df"
  reports enough room left?
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <564CC90F.3060703@gmail.com> <564DC072.4060508@gmail.com>
- <pan$7d183$c0b735b0$44af3f79$b541cb8b@cox.net>
+To: Dmitry Katsubo <dma_k@mail.ru>, linux-btrfs@vger.kernel.org
+References: <564CC90F.3060703@gmail.com>
+ <20151118190857.GY24333@carfax.org.uk> <564D1AE5.3000700@cn.fujitsu.com>
+ <pan$61583$65d817c9$bfda2de6$465dca20@cox.net> <564F0671.8060402@mail.ru>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <564F1C96.6050406@gmail.com>
-Date: Fri, 20 Nov 2015 08:13:58 -0500
+Message-ID: <564F1E5B.6040004@gmail.com>
+Date: Fri, 20 Nov 2015 08:21:31 -0500
 MIME-Version: 1.0
-In-Reply-To: <pan$7d183$c0b735b0$44af3f79$b541cb8b@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000605030000020706080700"
+In-Reply-To: <564F0671.8060402@mail.ru>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms040307000807030709060904"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms000605030000020706080700
+--------------ms040307000807030709060904
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-11-19 21:11, Duncan wrote:
-> Austin S Hemmelgarn posted on Thu, 19 Nov 2015 07:28:34 -0500 as
-> excerpted:
+On 2015-11-20 06:39, Dmitry Katsubo wrote:
+> If I may add:
 >
->> (having all updates installed on Ubuntu doesn't really count in this
->> case, they're pretty bad sometimes about not properly tracking upstrea=
-m
->> development[)]
+> Information for "System"
 >
-> No kidding.  I'm involved with an upstream that had a security patch an=
-d
-> version-bump a number of years ago.  An Ubuntu bug was filed... and it
-> sat in the bug queue IIRC untouched until it was obsoleted by newer
-> releases, where the new version /was/ included.  At least Fedora (which=
- I
-> remember a poster confirming the update on) and Gentoo (which I run,
-> personally filed a bug with, and saw the security bump) made the versio=
-n
-> bump available as an update.
+>    System, DUP: total=3D32.00MiB, used=3D16.00KiB
 >
-> Apparently, as it wasn't a headline component (one would /hope/ they at=
-
-> least get security updates out for /them/, and they evidently do for at=
-
-> least some as they do publish security updates, but at this point I'd
-> wonder how consistently they do for others), Ubuntu simply didn't care.=
-
-> Made /me/ glad I wasn't on Ubuntu, that's for sure!
+> is also quite technical, as for end user system =3D metadata (one can c=
+all
+> it "filesystem metadata" perhaps). For simplicity the numbers can be
+> added to "Metadata" thus eliminating that line as well.
 >
-Yeah, that's one of the reasons that I switched to Gentoo.  For those=20
-who may be interested, the full list is:
-1. Way easier to stay up to date (from an administrative perspective,=20
-not necessarily a computational time perspective (although emerge does=20
-compute dependencies noticeably faster than dnf, yum, and zypper most of =
+> For those power users who really want to see the tiny details like
+> "System" and "GlobalReserve" I suggest to implement "-v" flag:
+>
+> # btrfs fi usage -v
+Actually, I really like this idea, one of the questions I get asked when =
 
-the time)).
-2. Exponentially more configurable than almost any other full distro=20
-(this is the big one that really made me choose Gentoo initially).
-3. I build my own kernels, and Gentoo has direct integration for this=20
-(in fact, they only distribute the sources for the kernel, you build it=20
-locally regardless (which is really not hard even if you don't use=20
-genkernel to automate it)).
-4. Better response to bug reports (as compared to Ubuntu, although this=20
-is on average, and not always consistent).
-5. Proper support for a wide variety of desktop environments in the main =
+I show people BTRFS is the difference between System and Metadata, and=20
+it's not always easy to explain to somebody who doesn't have a=20
+background in filesystem development.  For some reason, people seem to=20
+have trouble with the concept that the system tree is an index of the=20
+other trees.  In general, it doesn't make sense for most non-debugging=20
+cases to have it listed separate from the Metadata (they always have the =
 
-project (In almost every other distro, any desktop other than the=20
-default is usually an after thought, or maintained through a separate=20
-project; and, Xfce (which is what I use) is not very popular as a=20
-default environment for some reason).
+same profile unless you're part way through a conversion, and it really=20
+is metadata, just slightly higher level than the usual metadata chunks).
+>
+> On 2015-11-19 03:16, Duncan wrote:
+>> Qu Wenruo posted on Thu, 19 Nov 2015 08:42:13 +0800 as excerpted:
+>>
+>>> Although the metadata output is showing that you still have about 512=
+M
+>>> available, but the 512M is Global Reserved space, or the unknown one.=
+
+>>
+>> Unknown here, as the userspace (btrfs-progs) is evidently too old to s=
+how
+>> it as global reserve, as it does in newer versions...
+>>
+>>> The output is really a little confusing. I'd like the change the outp=
+ut
+>>> by adding global reserved into metadata used space and make it a sub
+>>> item for metadata.
+>>
+>> Thanks for the clarification.  It's most helpful, here. =3D:^)
+>>
+>> I've at times wondered if global reserve folded into one of the other
+>> settings.  Apparently it comes from the metadata allocation, but while=
+
+>> metadata is normally dup (single-device btrfs) or raid1 (multi-device)=
+,
+>> global reserve is single.
+>>
+>> It would have been nice if that sort of substructure was described a b=
+it
+>> better when global reserve first made its appearance, at least in the
+>> patch descriptions and release announcement, if not then yet in btrfs =
+fi
+>> df output, first implementations being what they are.  But regardless,=
+
+>> now at least it should be clear for list regulars who read this thread=
+
+>> anyway, since the above reasonably clarifies things.
+>>
+>> As for btrfs fi df, making global reserve a metadata subentry there wo=
+uld
+>> be one way to deal with it, preserving the exposure of the additional
+>> data provided by that line (here, the fact that global reserve is
+>> actually being used, underlining the fact that the filesystem is sever=
+ely
+>> short on space).
+>>
+>> Another way of handling it would be to simply add the global reserve i=
+nto
+>> the metadata used figure before printing it, eliminating the separate
+>> global reserve line, and changing the upthread posted metadata line fr=
+om
+>> 8.48 GiB of 9 GiB used, to 8.98 of 9 GiB used, which is effectively th=
+e
+>> case if the 512 MiB of global reserve indeed comes from the metadata
+>> allocation.  This would more clearly show how full metadata actually i=
+s
+>> without the added complexity of an additional global reserve line, but=
+
+>> would lose the fact that global reserve is actually in use, that the
+>> broken out global reserve line exposes.
+>>
+>> I'd actually argue in favor of the latter, directly folding global
+>> reserve allocation into metadata used, since it'd both be simpler, and=
+
+>> more consistent if for instance btrfs fi usage didn't report separate
+>> global reserve in the overall stats, but fail to report it in the per-=
+
+>> device stats and in btrfs dev usage.
+>>
+>> Either way would make much clearer that metadata is actually running o=
+ut
+>> than the current report layout does, since "metadata used" would then
+>> either explicitly or implicitly include the global reserve.
+>>
+>
+>
 
 
---------------ms000605030000020706080700
+
+--------------ms040307000807030709060904
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -120,9 +175,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTIwMTMxMzU4WjBPBgkq
-hkiG9w0BCQQxQgRAlKRpOCO9J6DJEoAfcP0FXjEVuMbCgEJxzdVcWJdP23vuNMnmZK842f5T
-iWLxbyzoIjtIs+1kOjmmfz2icX84FTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTIwMTMyMTMxWjBPBgkq
+hkiG9w0BCQQxQgRAgLa6aoWSMB9JV5T9LaDmIZO5inkOcSUWmHJzHH989eqElQsoS1rX4uhS
+kujFURfmCLD8D57zSGH4jPPYoawk+TBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -130,14 +185,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgA6J58QXt3vDIgHv2WN2I4GaZYfdRt9E/YptRH7y/4+SzmNqhgu
-QEe85so7j9a83/aI96cZezv2dbs0Dh7ewYs5dK40MRUL7Tb0lowxlW9z9evMVioDSkZYGFFQ
-zvvSxuJx8gvgBrw/uXcWvovfokLDHx1KFzVfhVdnjVSOrGyJ2+7w79ckob27sPq4wbO02ajH
-kjono9jf6h0HNhgbQNMJck90HS9j6cf4FNo0q5/ACrh+hhSHZuOBPrUFs8Ky7F04TmJTkMVG
-jWFLvnVro5doNUEfCGTR2B6l26UZU5tGycxKycjNAXPLpT/hi6cXElFOhzjeQUk2q4gr21m7
-ZtavfFRkhfFCu+i61/rFIPvcssrjvlj9FFB/SfjMJUeDywDJW/HovA0cL/jZvCka+ZHuttLU
-JDjXmszzPKI9041r9/NmZZJdLsicL6EXOvdlfUT8oNQkkO0VK53Zbq8z/LFIAetujjW+rWN9
-ZKOesyRbiwLFV/TZzKLLZmK41cu4c9JdGxIZK/DaTfhxaCpp8+DuGlp5azhrR+4AwhRyRmJn
-plujnn5c1adhGcWSjivJUWzyZaQajynrb3GmVko0lTnDiLMeY7DZKnKgOXwrrGO2t7NWX9m6
-xUzUK5X6wnnEFii+NCwAg/Zb5cvEAEXEiC7cFw2BR3MwDPgo3IunwcJe0wAAAAAAAA==
---------------ms000605030000020706080700--
+BgkqhkiG9w0BAQEFAASCAgAVDdjpCaDW+I1jLLf8i8NlQXAxP5F1Bc72uUMPXNThGvPalO2q
+8qyyNvJ+taVD5qmYfr+u216HRm0w7PcGwmK8IdJ1WaqGek0G8tPKihOmCyo/xtfrcjTHONFH
+0ll+hdZD5XrYkSxgwcjCKw4hltJoFTWIWZoJsCQL7aJ+HQOqDH+19mbNGMkEjwIW2Pq6Oka5
+6VCSm2fFXDXMMu8xu5qA7QhsVr5BjOW8K9emKeEOLHt3Yr+0fMeHumYHGY05heDmjSPIQdJ3
+XQeo2nNd0LviDwIHzZjawrVItPyFKOBO3b3pRJ9p7Zwt1EedTYp1imEXHqG968eQjKsQV00q
+rC3SD/VIWlzZPvgvKMZApdV+MHHlQCGi2TPG0SpmNUHF/K3E0H2OIYoKJoVzvA0FisZ7JqWu
+jcGNfWXCxSXH8iH+ZfC5HRwKdS9Q+7yl9+KfIZlL0+eAOdiz1I2Cp0oxqFwVG/vGD3BSvZ4z
+kfpgFHoCs80qTCNWFuAEO5r5FIX7IKQKINKrNV4Jc5mNcy5CQq7zMutxlsMLOPEoexIqwiZb
++k07ebAZToVIhpYemfaLAfkDeZm2dZ9qHa506QfE0XxbLKGoZVNgIQwr3ugo8NN/2R8Sinxz
+J/CpMnTy+YcuiRoASYqQT3/IPbpjuhjvLsXrlnNu+lR+5MeyYk9++7oNkAAAAAAAAA==
+--------------ms040307000807030709060904--

@@ -1,172 +1,216 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48404 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:36161 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1758984AbbKTD06 (ORCPT
+	with ESMTP id S934951AbbKTD06 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
 	Thu, 19 Nov 2015 22:26:58 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdH022290
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:11 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdI022290
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:12 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 08/25] btrfs-progs: Introduce function to setup temporary superblock
-Date: Fri, 20 Nov 2015 11:24:12 +0800
-Message-Id: <1447989869-24739-9-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 09/25] btrfs-progs: Introduce function to setup temporary tree root
+Date: Fri, 20 Nov 2015 11:24:13 +0800
+Message-Id: <1447989869-24739-10-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new function, setup_temp_super(), to setup temporary super
-for make_btrfs_v2().
+Introduce new function, setup_temp_tree_root(), to initialize temporary
+tree root for make_btrfs_v2().
 
-Unlike the old codes in make_btrfs(), it will also initialize
-system_chunk_array before chunk tree allocation.
+The new function will setup tree root at metadata chunk and ensure data
+won't be written into metadata chunk.
+
+Also, new make_btrfs_v2() will have a much better code structure than
+old make_btrfs().
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- utils.c | 117 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 117 insertions(+)
+ utils.c | 148 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 148 insertions(+)
 
 diff --git a/utils.c b/utils.c
-index 5619b85..6c4da04 100644
+index 6c4da04..ce4d93c 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -400,6 +400,98 @@ static int reserve_free_space(struct cache_tree *free_tree, u64 len,
- 	return 0;
+@@ -493,6 +493,136 @@ out:
  }
  
-+static inline int write_temp_super(int fd, struct btrfs_super_block *sb,
-+				   u64 sb_bytenr)
+ /*
++ * Setup an extent buffer for tree block.
++ */
++static int setup_temp_extent_buffer(struct extent_buffer *buf,
++				    struct btrfs_mkfs_config *cfg,
++				    u64 bytenr, u64 owner)
 +{
-+	u32 crc = ~(u32)0;
++	unsigned char fsid[BTRFS_FSID_SIZE];
++	unsigned char chunk_uuid[BTRFS_UUID_SIZE];
 +	int ret;
 +
-+	crc = btrfs_csum_data(NULL, (char *)sb + BTRFS_CSUM_SIZE, crc,
-+			      BTRFS_SUPER_INFO_SIZE - BTRFS_CSUM_SIZE);
-+	btrfs_csum_final(crc, (char *)&sb->csum[0]);
-+	ret = pwrite(fd, sb, BTRFS_SUPER_INFO_SIZE, sb_bytenr);
-+	if (ret < BTRFS_SUPER_INFO_SIZE)
-+		ret = (ret < 0 ? -errno : - EIO);
++	/* We rely on cfg->fs_uuid and chunk_uuid to fsid and chunk uuid */
++	BUG_ON(!cfg->fs_uuid || !cfg->chunk_uuid);
++	ret = uuid_parse(cfg->fs_uuid, fsid);
++	if (ret)
++		return -EINVAL;
++	ret = uuid_parse(cfg->chunk_uuid, chunk_uuid);
++	if (ret)
++		return -EINVAL;
++
++	memset(buf->data, 0, cfg->nodesize);
++	buf->len = cfg->nodesize;
++	btrfs_set_header_bytenr(buf, bytenr);
++	btrfs_set_header_generation(buf, 1);
++	btrfs_set_header_backref_rev(buf, BTRFS_MIXED_BACKREF_REV);
++	btrfs_set_header_owner(buf, owner);
++	btrfs_set_header_flags(buf, BTRFS_HEADER_FLAG_WRITTEN);
++	write_extent_buffer(buf, chunk_uuid, btrfs_header_chunk_tree_uuid(buf),
++			    BTRFS_UUID_SIZE);
++	write_extent_buffer(buf, fsid, btrfs_header_fsid(), BTRFS_FSID_SIZE);
++	return 0;
++}
++
++static inline int write_temp_extent_buffer(int fd, struct extent_buffer *buf,
++					   u64 bytenr)
++{
++	int ret;
++
++	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
++
++	/* Temporary extent buffer is always mapped 1:1 on disk */
++	ret = pwrite(fd, buf->data, buf->len, bytenr);
++	if (ret < buf->len)
++		ret = (ret < 0 ? ret : -EIO);
 +	else
 +		ret = 0;
 +	return ret;
 +}
 +
 +/*
-+ * Setup temporary superblock at cfg->super_bynter
-+ * Needed info are extracted from cfg, and root_bytenr, chunk_bytenr
++ * Insert a root item for temporary tree root
 + *
-+ * For now sys chunk array will be empty and dev_item is empty
-+ * too.
-+ * They will be re-initialized at temp chunk tree setup.
++ * Only used in make_btrfs_v2().
 + */
-+static int setup_temp_super(int fd, struct btrfs_mkfs_config *cfg,
-+			    u64 root_bytenr, u64 chunk_bytenr)
++static void insert_temp_root_item(struct extent_buffer *buf,
++				  struct btrfs_mkfs_config *cfg,
++				  int *slot, u32 *itemoff, u64 objectid,
++				  u64 bytenr)
 +{
-+	unsigned char chunk_uuid[BTRFS_UUID_SIZE];
-+	char super_buf[BTRFS_SUPER_INFO_SIZE];
-+	struct btrfs_super_block *super = (struct btrfs_super_block*)super_buf;
++	struct btrfs_root_item root_item;
++	struct btrfs_inode_item *inode_item;
++	struct btrfs_disk_key disk_key;
++
++	btrfs_set_header_nritems(buf, *slot + 1);
++	(*itemoff) -= sizeof(root_item);
++	memset(&root_item, 0, sizeof(root_item));
++	inode_item = &root_item.inode;
++	btrfs_set_stack_inode_generation(inode_item, 1);
++	btrfs_set_stack_inode_size(inode_item, 3);
++	btrfs_set_stack_inode_nlink(inode_item, 1);
++	btrfs_set_stack_inode_nbytes(inode_item, cfg->nodesize);
++	btrfs_set_stack_inode_mode(inode_item, S_IFDIR | 0755);
++	btrfs_set_root_refs(&root_item, 1);
++	btrfs_set_root_used(&root_item, cfg->nodesize);
++	btrfs_set_root_generation(&root_item, 1);
++	btrfs_set_root_bytenr(&root_item, bytenr);
++
++	memset(&disk_key, 0, sizeof(disk_key));
++	btrfs_set_disk_key_type(&disk_key, BTRFS_ROOT_ITEM_KEY);
++	btrfs_set_disk_key_objectid(&disk_key, objectid);
++	btrfs_set_disk_key_offset(&disk_key, 0);
++
++	btrfs_set_item_key(buf, &disk_key, *slot);
++	btrfs_set_item_offset(buf, btrfs_item_nr(*slot), *itemoff);
++	btrfs_set_item_size(buf, btrfs_item_nr(*slot), sizeof(root_item));
++	write_extent_buffer(buf, &root_item,
++			    btrfs_item_ptr_offset(buf, *slot),
++			    sizeof(root_item));
++	(*slot)++;
++}
++
++static int setup_temp_root_tree(int fd, struct btrfs_mkfs_config *cfg,
++				u64 root_bytenr, u64 extent_bytenr,
++				u64 dev_bytenr, u64 fs_bytenr, u64 csum_bytenr)
++{
++	struct extent_buffer *buf = NULL;
++	u32 itemoff = __BTRFS_LEAF_DATA_SIZE(cfg->nodesize);
++	int slot = 0;
 +	int ret;
 +
 +	/*
-+	 * We rely on cfg->chunk_uuid and cfg->fs_uuid to pass uuid
-+	 * for other functions.
-+	 * Caller must allocation space for them
++	 * Provided bytenr must in ascending order, or tree root will have a
++	 * bad key order.
 +	 */
-+	BUG_ON(!cfg->chunk_uuid || !cfg->fs_uuid);
-+	memset(super_buf, 0, BTRFS_SUPER_INFO_SIZE);
-+	cfg->num_bytes = round_down(cfg->num_bytes, cfg->sectorsize);
++	BUG_ON(!(root_bytenr < extent_bytenr && extent_bytenr < dev_bytenr &&
++		 dev_bytenr < fs_bytenr && fs_bytenr < csum_bytenr));
++	buf = malloc(sizeof(*buf) + cfg->nodesize);
++	if (!buf)
++		return -ENOMEM;
 +
-+	if (cfg->fs_uuid && *cfg->fs_uuid) {
-+		if (uuid_parse(cfg->fs_uuid, super->fsid) != 0) {
-+			error("cound not parse UUID: %s", cfg->fs_uuid);
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+		if (!test_uuid_unique(cfg->fs_uuid)) {
-+			error("non-unique UUID: %s", cfg->fs_uuid);
-+			ret = -EINVAL;
-+			goto out;
-+		}
-+	} else {
-+		uuid_generate(super->fsid);
-+		uuid_unparse(super->fsid, cfg->fs_uuid);
-+	}
-+	uuid_generate(chunk_uuid);
-+	uuid_unparse(chunk_uuid, cfg->chunk_uuid);
++	ret = setup_temp_extent_buffer(buf, cfg, root_bytenr,
++				       BTRFS_ROOT_TREE_OBJECTID);
++	if (ret < 0)
++		goto out;
 +
-+	btrfs_set_super_bytenr(super, cfg->super_bytenr);
-+	btrfs_set_super_num_devices(super, 1);
-+	btrfs_set_super_magic(super, BTRFS_MAGIC);
-+	btrfs_set_super_generation(super, 1);
-+	btrfs_set_super_root(super, root_bytenr);
-+	btrfs_set_super_chunk_root(super, chunk_bytenr);
-+	btrfs_set_super_total_bytes(super, cfg->num_bytes);
-+	/*
-+	 * Temporary btrfs will only has 6 tree roots:
-+	 * chunk tree, root tree, extent_tree, device tree, fs tree
-+	 * and csum tree.
-+	 */
-+	btrfs_set_super_bytes_used(super, 6 * cfg->nodesize);
-+	btrfs_set_super_sectorsize(super, cfg->sectorsize);
-+	btrfs_set_super_leafsize(super, cfg->nodesize);
-+	btrfs_set_super_nodesize(super, cfg->nodesize);
-+	btrfs_set_super_stripesize(super, cfg->stripesize);
-+	btrfs_set_super_csum_type(super, BTRFS_CSUM_TYPE_CRC32);
-+	btrfs_set_super_chunk_root(super, chunk_bytenr);
-+	btrfs_set_super_cache_generation(super, -1);
-+	btrfs_set_super_incompat_flags(super, cfg->features);
-+	if (cfg->label)
-+		strncpy(super->label, cfg->label, BTRFS_LABEL_SIZE - 1);
++	insert_temp_root_item(buf, cfg, &slot, &itemoff,
++			      BTRFS_EXTENT_TREE_OBJECTID, extent_bytenr);
++	insert_temp_root_item(buf, cfg, &slot, &itemoff,
++			      BTRFS_DEV_TREE_OBJECTID, dev_bytenr);
++	insert_temp_root_item(buf, cfg, &slot, &itemoff,
++			      BTRFS_FS_TREE_OBJECTID, fs_bytenr);
++	insert_temp_root_item(buf, cfg, &slot, &itemoff,
++			      BTRFS_CSUM_TREE_OBJECTID, csum_bytenr);
 +
-+	/* Sys chunk array will be re-initialized at chunk tree init time */
-+	super->sys_chunk_array_size = 0;
-+
-+	ret = write_temp_super(fd, super, cfg->super_bytenr);
++	ret = write_temp_extent_buffer(fd, buf, root_bytenr);
 +out:
++	free(buf);
 +	return ret;
 +}
 +
- /*
++/*
   * Improved version of make_btrfs().
   *
-@@ -415,6 +507,10 @@ static int make_btrfs_v2(int fd, struct btrfs_mkfs_config *cfg)
- 	struct cache_tree *used_tree = &cfg->convert_used;
- 	u64 sys_chunk_start;
- 	u64 meta_chunk_start;
-+	/* chunk tree bytenr, in system chunk */
-+	u64 chunk_bytenr;
-+	/* metadata trees bytenr, in metadata chunk */
-+	u64 root_bytenr;
+  * This one will not use bad behaved cfg->blocks[] array to arrange tree
+@@ -511,6 +641,11 @@ static int make_btrfs_v2(int fd, struct btrfs_mkfs_config *cfg)
+ 	u64 chunk_bytenr;
+ 	/* metadata trees bytenr, in metadata chunk */
+ 	u64 root_bytenr;
++	u64 extent_bytenr;
++	u64 dev_bytenr;
++	u64 fs_bytenr;
++	u64 csum_bytenr;
++	/* Above bytenrs are just for better readablity */
  	int ret;
  
  	/* Shouldn't happen */
-@@ -446,6 +542,27 @@ static int make_btrfs_v2(int fd, struct btrfs_mkfs_config *cfg)
- 	if (ret < 0)
+@@ -543,6 +678,8 @@ static int make_btrfs_v2(int fd, struct btrfs_mkfs_config *cfg)
  		goto out;
  
-+	/*
-+	 * Inside the allocate metadata chunk, its layout will be:
-+	 *  | offset		| contents	|
-+	 *  -------------------------------------
-+	 *  | +0		| tree root	|
-+	 *  | +nodesize		| extent root	|
-+	 *  | +nodesize * 2	| device root	|
-+	 *  | +nodesize * 3	| fs tree	|
-+	 *  | +nodesize * 4	| csum tree	|
-+	 *  -------------------------------------
-+	 * Inside the allocated system chunk, its layout will be:
-+	 *  | offset		| contents	|
-+	 *  -------------------------------------
-+	 *  | +0		| chunk root	|
-+	 *  -------------------------------------
-+	 */
-+	chunk_bytenr = sys_chunk_start;
-+	root_bytenr = meta_chunk_start;
-+	ret = setup_temp_super(fd, cfg, root_bytenr, chunk_bytenr);
+ 	/*
++	 * Allocated meta/sys chunks will be mapped 1:1 with device offset.
++	 *
+ 	 * Inside the allocate metadata chunk, its layout will be:
+ 	 *  | offset		| contents	|
+ 	 *  -------------------------------------
+@@ -560,9 +697,20 @@ static int make_btrfs_v2(int fd, struct btrfs_mkfs_config *cfg)
+ 	 */
+ 	chunk_bytenr = sys_chunk_start;
+ 	root_bytenr = meta_chunk_start;
++	extent_bytenr = meta_chunk_start + cfg->nodesize;
++	dev_bytenr = meta_chunk_start + cfg->nodesize * 2;
++	fs_bytenr = meta_chunk_start + cfg->nodesize * 3;
++	csum_bytenr = meta_chunk_start + cfg->nodesize * 4;
++
+ 	ret = setup_temp_super(fd, cfg, root_bytenr, chunk_bytenr);
+ 	if (ret < 0)
+ 		goto out;
++
++	ret = setup_temp_root_tree(fd, cfg, root_bytenr, extent_bytenr,
++				   dev_bytenr, fs_bytenr, csum_bytenr);
 +	if (ret < 0)
 +		goto out;
++
  out:
  	free(free_tree);
  	return ret;

@@ -1,80 +1,280 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60379 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934674AbbKTDl3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 22:41:29 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZzcZg-0007Mm-Gb
-	for linux-btrfs@vger.kernel.org; Fri, 20 Nov 2015 04:41:24 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 04:41:24 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 04:41:24 +0100
+Received: from mail-pa0-f46.google.com ([209.85.220.46]:36244 "EHLO
+	mail-pa0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756449AbbKTELH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 23:11:07 -0500
+Received: by pacdm15 with SMTP id dm15so103052703pac.3
+        for <linux-btrfs@vger.kernel.org>; Thu, 19 Nov 2015 20:11:07 -0800 (PST)
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: anything wrong with `balance -dusage -musage` together?
-Date: Fri, 20 Nov 2015 03:41:17 +0000 (UTC)
-Message-ID: <pan$34689$f9a98441$5a26e794$85a7efc3@cox.net>
-References: <564E60FD.1010801@lukas-pirl.de>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+From: Paul Loewenstein <paul.loewenstein@gmail.com>
+Subject: Self-destruct of btrfs RAID6 array
+Message-ID: <564E9D62.4050306@gmail.com>
+Date: Thu, 19 Nov 2015 20:11:14 -0800
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Lukas Pirl posted on Fri, 20 Nov 2015 12:53:33 +1300 as excerpted:
+I have just had an apparently catastrophic collapse of a large RAID6 
+array.  I was hoping that the dual-redundancy of a RAID6 array would 
+compensate for having no backup media large enough to back it up!
 
-> I rarely see balance used with -dusage -musage together, esp. with
-> values other than zero.
-> 
-> The question is, is there anything wrong with running (say) `balance
-> -dusage=50 -musage=30` regularly?
+Any suggestions for repairing this array, at least to the point of 
+mounting it read-only?  I am thinking of trying to mount it degraded 
+with different devices missing, but I don't know if that will be an 
+exercise in futility.
 
-I see the question in general has already been answered, nothing at all 
-wrong with invoking balance with both an -musage and a -dusage filter, 
-it's only rare to see in examples because the examples are generally 
-dealing with specific cases where one or the other, generally metadata, 
-has run out, due to the other one, generally data, taking all the 
-otherwise unallocated space with mostly empty allocations.  So a quick
--dusage filter to clear out the mostly empty data allocations is the most 
-common example seen.
+btrfs fi show still works!
 
-But I'd like to point out, not only is combining -dusage and -musage OK, 
-but in some cases, specifically btrfs' mixed-bg mode where data and 
-metadata are combined into the same blocks, it's actually _mandatory_.
+Label: 'btrfsdata'  uuid: ccde0a00-e50b-4154-977f-ac591ab580a5
+         Total devices 6 FS bytes used 9.62TiB
+         devid   10 size 3.64TiB used 2.41TiB path /dev/sdg
+         devid   11 size 3.64TiB used 2.41TiB path /dev/sda
+         devid   12 size 3.64TiB used 2.41TiB path /dev/sdb
+         devid   13 size 3.64TiB used 2.41TiB path /dev/sdc
+         devid   14 size 3.64TiB used 2.41TiB path /dev/sdd
+         devid   15 size 3.64TiB used 2.41TiB path /dev/sde
 
-Note that mkfs.btrfs defaulted to --mixed mode for small filesystems, 
-under a GiB, for some time, and that while btrfs-progs 4.3 
-controversially does away with that default, it's still very strongly 
-recommended for filesystems under a GiB, and recommended in general by 
-many list regulars to between 8 and 32 GiB (I've even seen an argument 
-for making it 64 GiB), as while slightly less efficient (and doubling 
-data usage in dup mode), it does eliminate the data vs metadata hassles, 
-which can be far worse at smaller filesystem sizes.
+It spontaneously (I believe it was after it successfully mounted rw on 
+boot, but I can't check for sure without looking at the last file 
+creation time).  After another reboot it won't mount at all.
 
-And some people use --mixed at even larger sizes, hundreds of gigs to TiB 
-scale, often to enable them to do single-device dup mode data for better 
-reliability and to better take advantage of btrfs' data integrity 
-features, since until now dup mode has been allowed for metadata only, 
-and thus has been disallowed for data except with mixed-mode.  (Tho 
-that's set to change as recently patches have been posted that would 
-allow dup mode data as well, which when integrated, would do away with 
-the biggest reason to use mixed mode at 100 gig and larger sizes.)
+btrfs check /dev/sda gives:
 
-Anyway, with mixed mode, data and metadata are mixed in the same chunks, 
-and balance will refuse to run with balance filters unless the -d and -m 
-filters exactly duplicate each other.  So on such a btrfs, to do a -dusage 
-balance of any percentage, -musage must be added as well, with the exact 
-same percentage.
+parent transid verify failed on 73440384909312 wanted 491976 found 485531
+parent transid verify failed on 73440384909312 wanted 491976 found 485531
+checksum verify failed on 73440384909312 found 26943E11 wanted 0FCB3E97
+checksum verify failed on 73440384909312 found AAD98681 wanted EA004FE8
+checksum verify failed on 73440384909312 found AAD98681 wanted EA004FE8
+bytenr mismatch, want=73440384909312, have=274180945215488
+Couldn't read chunk root
+Couldn't open file system
 
-So as I said, not only is there nothing wrong with combining -dusage and -
-musage, in some cases it's actually mandatory.
+Looking back in the journal (I shall now be setting up journal 
+monitoring), I found lots of errors, starting last September, only a few 
+weeks after converting from RAID1 to RAID6.
+Blank lines precede reboots and for the first log indicate the omission 
+of over 30K entries!  The first log must represent some software bug, 
+because /dev/sdh is NOT a btrfs device!
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+LOG EXTRACTS, while the filesystem was still mounted.  Journal grepped 
+for btrfs, boot line added after.  Note different kernel version on 
+reboot after upgrade.
+
+Aug 26 20:12:24 cambridge kernel: Linux version 4.1.5-100.fc21.x86_64 
+(mockbuild@bkernel02.phx2.fedoraproject.org) (gcc version 4.9.2 20150212 
+(Red Hat 4.9.2-6) (GCC) ) #1 SMP Tue Aug 11 00:24:23 UTC 2015
+Aug 26 20:12:52 cambridge kernel: Btrfs loaded
+Aug 26 20:12:52 cambridge kernel: BTRFS: device label btrfsdata devid 11 
+transid 484422 /dev/sda
+Aug 26 20:12:52 cambridge kernel: BTRFS: device label btrfsdata devid 15 
+transid 484422 /dev/sde
+Aug 26 20:12:52 cambridge kernel: BTRFS: device label btrfsdata devid 13 
+transid 484422 /dev/sdc
+Aug 26 20:12:52 cambridge kernel: BTRFS: device label btrfsdata devid 14 
+transid 484422 /dev/sdd
+Aug 26 20:12:52 cambridge kernel: BTRFS: device label btrfsdata devid 12 
+transid 484422 /dev/sdb
+Aug 26 20:12:52 cambridge kernel: BTRFS: device label btrfsdata devid 10 
+transid 484422 /dev/sdg
+Sep 13 16:11:34 cambridge kernel: BTRFS: bdev /dev/sdh errs: wr 0, rd 0, 
+flush 1, corrupt 0, gen 0
+Sep 13 16:11:34 cambridge kernel: BTRFS: lost page write due to I/O 
+error on /dev/sdh
+Sep 13 16:11:34 cambridge kernel: BTRFS: bdev /dev/sdh errs: wr 1, rd 0, 
+flush 1, corrupt 0, gen 0
+Sep 13 16:11:34 cambridge kernel: BTRFS: lost page write due to I/O 
+error on /dev/sdh
+Sep 13 16:11:34 cambridge kernel: BTRFS: bdev /dev/sdh errs: wr 2, rd 0, 
+flush 1, corrupt 0, gen 0
+Sep 13 16:11:34 cambridge kernel: BTRFS: lost page write due to I/O 
+error on /dev/sdh
+
+Nov 15 15:21:51 cambridge kernel: BTRFS: lost page write due to I/O 
+error on /dev/sdh
+Nov 15 15:21:51 cambridge kernel: BTRFS: bdev /dev/sdh errs: wr 18713, 
+rd 0, flush 6238, corrupt 0, gen 0
+Nov 15 15:21:51 cambridge kernel: BTRFS: lost page write due to I/O 
+error on /dev/sdh
+Nov 15 15:21:51 cambridge kernel: BTRFS: bdev /dev/sdh errs: wr 18714, 
+rd 0, flush 6238, corrupt 0, gen 0
+
+Nov 15 15:23:00 cambridge kernel: Linux version 4.1.12-101.fc21.x86_64 
+(mockbuild@bkernel01.phx2.fedoraproject.org) (gcc version 4.9.2 20150212 
+(Red Hat 4.9.2-6) (GCC) ) #1 SMP Wed Oct 28 15:18:44 UTC 2015
+Nov 15 15:23:33 cambridge kernel: Btrfs loaded
+Nov 15 15:23:33 cambridge kernel: BTRFS: device label btrfsdata devid 14 
+transid 492036 /dev/sdd
+Nov 15 15:23:33 cambridge kernel: BTRFS: device label btrfsdata devid 15 
+transid 485798 /dev/sde
+Nov 15 15:23:33 cambridge kernel: BTRFS: device label btrfsdata devid 11 
+transid 492036 /dev/sda
+Nov 15 15:23:33 cambridge kernel: BTRFS: device label btrfsdata devid 13 
+transid 492036 /dev/sdc
+Nov 15 15:23:33 cambridge kernel: BTRFS: device label btrfsdata devid 10 
+transid 492036 /dev/sdg
+Nov 15 15:23:33 cambridge kernel: BTRFS: device label btrfsdata devid 12 
+transid 492036 /dev/sdb
+Nov 15 15:23:33 cambridge kernel: BTRFS (device sdb): parent transid 
+verify failed on 73440384909312 wanted 491976 found 485531
+Nov 15 15:23:33 cambridge kernel: BTRFS (device sdb): parent transid 
+verify failed on 73440384913408 wanted 491976 found 485531
+Nov 15 15:23:33 cambridge kernel: BTRFS (device sdb): parent transid 
+verify failed on 73440384917504 wanted 491976 found 485696
+Nov 15 15:23:33 cambridge kernel: BTRFS (device sdb): parent transid 
+verify failed on 73440384921600 wanted 491976 found 485696
+Nov 15 15:23:33 cambridge kernel: BTRFS: bdev /dev/sde errs: wr 18711, 
+rd 0, flush 6237, corrupt 0, gen 0
+Nov 15 15:23:33 cambridge kernel: BTRFS (device sdb): bad tree block 
+start 1121375725894905312 74200909787136
+Nov 15 15:23:33 cambridge kernel: BTRFS (device sdb): bad tree block 
+start 7250342666203184288 74200909791232
+Nov 15 15:23:33 cambridge kernel: BTRFS (device sdb): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+
+Nov 15 20:37:14 cambridge kernel: BTRFS (device sdb): parent transid 
+verify failed on 73440384917504 wanted 491976 found 485696
+Nov 15 20:37:14 cambridge kernel: BTRFS (device sdb): parent transid 
+verify failed on 73440384921600 wanted 491976 found 485696
+Nov 15 20:39:01 cambridge kernel: BTRFS (device sdb): bad tree block 
+start 8747312261073978676 74201584123904
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733865472 csum 3128256294 expected csum 3176585556
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733869568 csum 3953187115 expected csum 2827150008
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733873664 csum 2011708136 expected csum 1514290758
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733877760 csum 4227108651 expected csum 3929632885
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733881856 csum 667263525 expected csum 2167952522
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733885952 csum 1421670165 expected csum 2602382287
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733890048 csum 2320260888 expected csum 606775819
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733865472 csum 3128256294 expected csum 3176585556
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733894144 csum 2140326945 expected csum 2209619790
+Nov 15 20:39:02 cambridge kernel: BTRFS warning (device sdb): csum 
+failed ino 1455165 off 1733898240 csum 372680472 expected csum 3888049973
+
+Nov 15 20:42:45 cambridge kernel: Linux version 4.1.12-101.fc21.x86_64 
+(mockbuild@bkernel01.phx2.fedoraproject.org) (gcc version 4.9.2 20150212 
+(Red Hat 4.9.2-6) (GCC) ) #1 SMP Wed Oct 28 15:18:44 UTC 2015
+Nov 15 20:43:16 cambridge kernel: Btrfs loaded
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 15 
+transid 492120 /dev/sde
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 14 
+transid 492120 /dev/sdd
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 13 
+transid 492120 /dev/sdc
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 12 
+transid 492120 /dev/sdb
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 11 
+transid 492120 /dev/sda
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 10 
+transid 492120 /dev/sdg
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384909312 wanted 491976 found 485531
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384913408 wanted 491976 found 485531
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384917504 wanted 491976 found 485696
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384921600 wanted 491976 found 485696
+Nov 15 20:43:16 cambridge kernel: BTRFS: bdev /dev/sde errs: wr 18711, 
+rd 0, flush 6237, corrupt 0, gen 0
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 1121375725894905312 74200909787136
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 7250342666203184288 74200909791232
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:43:16 cambridge kernel: BTRFS: Failed to read block groups: -5
+Nov 15 20:43:16 cambridge kernel: BTRFS: open_ctree failed
+Nov 15 20:49:14 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384909312 wanted 491976 found 485531
+Nov 15 20:49:15 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384913408 wanted 491976 found 485531
+Nov 15 20:49:15 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384917504 wanted 491976 found 485696
+Nov 15 20:49:15 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384921600 wanted 491976 found 485696
+Nov 15 20:49:15 cambridge kernel: BTRFS: bdev /dev/sde errs: wr 18711, 
+rd 0, flush 6237, corrupt 0, gen 0
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 1121375725894905312 74200909787136
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 7250342666203184288 74200909791232
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:49:16 cambridge kernel: BTRFS: Failed to read block groups: -5
+Nov 15 20:49:16 cambridge kernel: BTRFS: open_ctree failed
+Nov 15 20:43:16 cambridge kernel: Btrfs loaded
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 15 
+transid 492120 /dev/sde
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 14 
+transid 492120 /dev/sdd
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 13 
+transid 492120 /dev/sdc
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 12 
+transid 492120 /dev/sdb
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 11 
+transid 492120 /dev/sda
+Nov 15 20:43:16 cambridge kernel: BTRFS: device label btrfsdata devid 10 
+transid 492120 /dev/sdg
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384909312 wanted 491976 found 485531
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384913408 wanted 491976 found 485531
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384917504 wanted 491976 found 485696
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384921600 wanted 491976 found 485696
+Nov 15 20:43:16 cambridge kernel: BTRFS: bdev /dev/sde errs: wr 18711, 
+rd 0, flush 6237, corrupt 0, gen 0
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 1121375725894905312 74200909787136
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 7250342666203184288 74200909791232
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:43:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:43:16 cambridge kernel: BTRFS: Failed to read block groups: -5
+Nov 15 20:43:16 cambridge kernel: BTRFS: open_ctree failed
+Nov 15 20:49:14 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384909312 wanted 491976 found 485531
+Nov 15 20:49:15 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384913408 wanted 491976 found 485531
+Nov 15 20:49:15 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384917504 wanted 491976 found 485696
+Nov 15 20:49:15 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73440384921600 wanted 491976 found 485696
+Nov 15 20:49:15 cambridge kernel: BTRFS: bdev /dev/sde errs: wr 18711, 
+rd 0, flush 6237, corrupt 0, gen 0
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 1121375725894905312 74200909787136
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): bad tree block 
+start 7250342666203184288 74200909791232
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:49:16 cambridge kernel: BTRFS (device sdg): parent transid 
+verify failed on 73417618042880 wanted 488487 found 485439
+Nov 15 20:49:16 cambridge kernel: BTRFS: Failed to read block groups: -5
+Nov 15 20:49:16 cambridge kernel: BTRFS: open_ctree failed
 

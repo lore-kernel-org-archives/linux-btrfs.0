@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:46373 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:48878 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1161335AbbKTNny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 08:43:54 -0500
+	id S1756164AbbKTOMk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Nov 2015 09:12:40 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: fix race when finishing dev replace leading to transaction abort
-Date: Fri, 20 Nov 2015 13:42:35 +0000
-Message-Id: <1448026955-10835-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v4] Btrfs: fix race when finishing dev replace leading to transaction abort
+Date: Fri, 20 Nov 2015 14:12:26 +0000
+Message-Id: <1448028746-24504-1-git-send-email-fdmanana@kernel.org>
 In-Reply-To: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
 References: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -136,14 +136,17 @@ V3: Make it really race free. The previous approach was still racy, but in a
     replace that sets up the new device with the final phase of chunk allocation
     that processes the stripes and updates the device items.
 
- fs/btrfs/volumes.c | 15 +++++++++++++--
- 1 file changed, 13 insertions(+), 2 deletions(-)
+V4: Moved critical section a bit further, as there's further usage of a
+    stripe's device.
+
+ fs/btrfs/volumes.c | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 45f2025..ab55faf 100644
+index 45f2025..2290469 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -4827,21 +4827,32 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+@@ -4827,20 +4827,32 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
  		goto out;
  	}
  
@@ -171,13 +174,21 @@ index 45f2025..ab55faf 100644
  		if (ret)
 -			goto out;
 +			break;
- 	}
-+	mutex_unlock(&chunk_root->fs_info->fs_devices->device_list_mutex);
-+	if (ret)
++	}
++	if (ret) {
++		mutex_unlock(&chunk_root->fs_info->fs_devices->device_list_mutex);
 +		goto out;
+ 	}
  
  	stripe = &chunk->stripe;
- 	for (i = 0; i < map->num_stripes; i++) {
+@@ -4853,6 +4865,7 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 		memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
+ 		stripe++;
+ 	}
++	mutex_unlock(&chunk_root->fs_info->fs_devices->device_list_mutex);
+ 
+ 	btrfs_set_stack_chunk_length(chunk, chunk_size);
+ 	btrfs_set_stack_chunk_owner(chunk, extent_root->root_key.objectid);
 -- 
 2.1.3
 

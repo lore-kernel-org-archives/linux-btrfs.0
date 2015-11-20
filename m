@@ -1,160 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:35816 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751178AbbKNJ5g (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 14 Nov 2015 04:57:36 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: jeffm@suse.com, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2 2/2] Btrfs: fix the number of transaction units needed to remove a block group
-Date: Fri, 13 Nov 2015 23:57:17 +0000
-Message-Id: <1447459037-11422-3-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1447459037-11422-1-git-send-email-fdmanana@kernel.org>
-References: <1447428032-1872-1-git-send-email-fdmanana@kernel.org>
- <1447459037-11422-1-git-send-email-fdmanana@kernel.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:34337 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1162031AbbKTItM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Nov 2015 03:49:12 -0500
+Message-ID: <564EDE62.9070107@oracle.com>
+Date: Fri, 20 Nov 2015 16:48:34 +0800
+From: Anand Jain <anand.jain@oracle.com>
+MIME-Version: 1.0
+To: David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH for 4.4] btrfs: fix rcu warning during device replace
+References: <1447929317-2522-1-git-send-email-dsterba@suse.com>
+In-Reply-To: <1447929317-2522-1-git-send-email-dsterba@suse.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
 
-We were using only 1 transaction unit when attempting to delete an unused
-block group but in reality we need 3 + N units, where N corresponds to the
-number of stripes. We were accounting only for the addition of the orphan
-item (for the block group's free space cache inode) but we were not
-accounting that we need to delete one block group item from the extent
-tree, one free space item from the tree of tree roots and N device extent
-items from the device tree.
+Thanks David.
 
-While one unit is not enough, it worked most of the time because for each
-single unit we are too pessimistic and assume an entire tree path, with
-the highest possible heigth (8), needs to be COWed with eventual node
-splits at every possible level in the tree, so there was usually enough
-reserved space for removing all the items and adding the orphan item.
+  Checked other places it seems to be fine.
+  My oversight on the rcu usage part. Thanks.
 
-However after adding the orphan item, writepages() can by called by the VM
-subsystem against the btree inode when we are under memory pressure, which
-causes writeback to start for the nodes we COWed before, this forces the
-operation to remove the free space item to COW again some (or all of) the
-same nodes (in the tree of tree roots). Even without writepages() being
-called, we could fail with ENOSPC because these items are located in
-multiple trees and one of them might have a higher heigth and require
-node/leaf splits at many levels, exhausting all the reserved space before
-removing all the items and adding the orphan.
+Reviewed-by: Anand Jain <anand.jain@oracle.com>
 
-In the kernel 4.0 release, commit 3d84be799194 ("Btrfs: fix BUG_ON in
-btrfs_orphan_add() when delete unused block group"), we attempted to fix
-a BUG_ON due to ENOSPC when trying to add the orphan item by making the
-cleaner kthread reserve one transaction unit before attempting to remove
-the block group, but this was not enough. We had a couple user reports
-still hitting the same BUG_ON after 4.0, like Stefan Priebe's report on
-a 4.2-rc6 kernel for example:
-
-    http://www.spinics.net/lists/linux-btrfs/msg46070.html
-
-So fix this by reserving all the necessary units of metadata.
-
-Reported-by: Stefan Priebe <s.priebe@profihost.ag>
-Fixes: 3d84be799194 ("Btrfs: fix BUG_ON in btrfs_orphan_add() when delete unused block group")
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Added missing units to account for removing the device extent items from
-    the device tree (done at btrfs_remove_chunk through btrfs_free_dev_extent).
-
- fs/btrfs/ctree.h       |  3 ++-
- fs/btrfs/extent-tree.c | 37 ++++++++++++++++++++++++++++++++++---
- fs/btrfs/volumes.c     |  3 ++-
- 3 files changed, 38 insertions(+), 5 deletions(-)
-
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 1573be6..d88994f 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3480,7 +3480,8 @@ int btrfs_make_block_group(struct btrfs_trans_handle *trans,
- 			   u64 type, u64 chunk_objectid, u64 chunk_offset,
- 			   u64 size);
- struct btrfs_trans_handle *btrfs_start_trans_remove_block_group(
--				struct btrfs_fs_info *fs_info);
-+				struct btrfs_fs_info *fs_info,
-+				const u64 chunk_offset);
- int btrfs_remove_block_group(struct btrfs_trans_handle *trans,
- 			     struct btrfs_root *root, u64 group_start,
- 			     struct extent_map *em);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 7820093..e97d6d6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10257,14 +10257,44 @@ out:
- }
- 
- struct btrfs_trans_handle *
--btrfs_start_trans_remove_block_group(struct btrfs_fs_info *fs_info)
-+btrfs_start_trans_remove_block_group(struct btrfs_fs_info *fs_info,
-+				     const u64 chunk_offset)
- {
-+	struct extent_map_tree *em_tree = &fs_info->mapping_tree.map_tree;
-+	struct extent_map *em;
-+	struct map_lookup *map;
-+	unsigned int num_items;
-+
-+	read_lock(&em_tree->lock);
-+	em = lookup_extent_mapping(em_tree, chunk_offset, 1);
-+	read_unlock(&em_tree->lock);
-+	ASSERT(em && em->start == chunk_offset);
-+
- 	/*
-+	 * We need to reserve 3 + N units from the metadata space info in order
-+	 * to remove a block group (done at btrfs_remove_chunk() and at
-+	 * btrfs_remove_block_group()), which are used for:
-+	 *
- 	 * 1 unit for adding the free space inode's orphan (located in the tree
- 	 * of tree roots).
-+	 * 1 unit for deleting the block group item (located in the extent
-+	 * tree).
-+	 * 1 unit for deleting the free space item (located in tree of tree
-+	 * roots).
-+	 * N units for deleting N device extent items corresponding to each
-+	 * stripe (located in the device tree).
-+	 *
-+	 * In order to remove a block group we also need to reserve units in the
-+	 * system space info in order to update the chunk tree (update one or
-+	 * more device items and remove one chunk item), but this is done at
-+	 * btrfs_remove_chunk() through a call to check_system_chunk().
- 	 */
-+	map = (struct map_lookup *)em->bdev;
-+	num_items = 3 + map->num_stripes;
-+	free_extent_map(em);
-+
- 	return btrfs_start_transaction_fallback_global_rsv(fs_info->extent_root,
--							   1, 1);
-+							   num_items, 1);
- }
- 
- /*
-@@ -10333,7 +10363,8 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		 * Want to do this before we do anything else so we can recover
- 		 * properly if we fail to join the transaction.
- 		 */
--		trans = btrfs_start_trans_remove_block_group(fs_info);
-+		trans = btrfs_start_trans_remove_block_group(fs_info,
-+						     block_group->key.objectid);
- 		if (IS_ERR(trans)) {
- 			btrfs_dec_block_group_ro(root, block_group);
- 			ret = PTR_ERR(trans);
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e0bd364..45f2025 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -2853,7 +2853,8 @@ static int btrfs_relocate_chunk(struct btrfs_root *root, u64 chunk_offset)
- 	if (ret)
- 		return ret;
- 
--	trans = btrfs_start_trans_remove_block_group(root->fs_info);
-+	trans = btrfs_start_trans_remove_block_group(root->fs_info,
-+						     chunk_offset);
- 	if (IS_ERR(trans)) {
- 		ret = PTR_ERR(trans);
- 		btrfs_std_error(root->fs_info, ret, NULL);
--- 
-2.1.3
-
+On 11/19/2015 06:35 PM, David Sterba wrote:
+> The test btrfs/011 triggers a rcu warning
+>
+> ===============================
+> [ INFO: suspicious RCU usage. ]
+> 4.4.0-rc1-default+ #286 Tainted: G        W
+> -------------------------------
+> fs/btrfs/volumes.c:1977 suspicious rcu_dereference_check() usage!
+>
+> other info that might help us debug this:
+>
+> rcu_scheduler_active = 1, debug_locks = 0
+> 4 locks held by btrfs/28786:
+>
+> 0:  (&fs_info->dev_replace.lock_finishing_cancel_unmount){+.+...}, at: [<ffffffffa00bc785>] btrfs_dev_replace_finishing+0x45/0xa00 [btrfs]
+> 1:  (uuid_mutex){+.+.+.}, at: [<ffffffffa00bc84f>] btrfs_dev_replace_finishing+0x10f/0xa00 [btrfs]
+> 2:  (&fs_devs->device_list_mutex){+.+.+.}, at: [<ffffffffa00bc868>] btrfs_dev_replace_finishing+0x128/0xa00 [btrfs]
+> 3:  (&fs_info->chunk_mutex){+.+...}, at: [<ffffffffa00bc87d>] btrfs_dev_replace_finishing+0x13d/0xa00 [btrfs]
+>
+> stack backtrace:
+> CPU: 0 PID: 28786 Comm: btrfs Tainted: G        W       4.4.0-rc1-default+ #286
+> Hardware name: Intel Corporation SandyBridge Platform/To be filled by O.E.M., BIOS ASNBCPT1.86C.0031.B00.1006301607 06/30/2010
+> 0000000000000001 ffff8800a07dfb48 ffffffff8141d47b 0000000000000001
+> 0000000000000001 0000000000000000 ffff8801464a4f00 ffff8800a07dfb78
+> ffffffff810cd883 ffff880146eb9400 ffff8800a3698600 ffff8800a33fe220
+> Call Trace:
+> [<ffffffff8141d47b>] dump_stack+0x4f/0x74
+> [<ffffffff810cd883>] lockdep_rcu_suspicious+0x103/0x140
+> [<ffffffffa0071261>] btrfs_rm_dev_replace_remove_srcdev+0x111/0x130 [btrfs]
+> [<ffffffff810d354d>] ? trace_hardirqs_on+0xd/0x10
+> [<ffffffff81449536>] ? __percpu_counter_sum+0x66/0x80
+> [<ffffffffa00bcc15>] btrfs_dev_replace_finishing+0x4d5/0xa00 [btrfs]
+> [<ffffffffa00bc96e>] ? btrfs_dev_replace_finishing+0x22e/0xa00 [btrfs]
+> [<ffffffffa00a8795>] ? btrfs_scrub_dev+0x415/0x6d0 [btrfs]
+> [<ffffffffa003ea69>] ? btrfs_start_transaction+0x9/0x20 [btrfs]
+> [<ffffffffa00bda79>] btrfs_dev_replace_start+0x339/0x590 [btrfs]
+> [<ffffffff81196aa5>] ? __might_fault+0x95/0xa0
+> [<ffffffffa0078638>] btrfs_ioctl_dev_replace+0x118/0x160 [btrfs]
+> [<ffffffff811409c6>] ? stack_trace_call+0x46/0x70
+> [<ffffffffa007c914>] ? btrfs_ioctl+0x24/0x1770 [btrfs]
+> [<ffffffffa007ce43>] btrfs_ioctl+0x553/0x1770 [btrfs]
+> [<ffffffff811409c6>] ? stack_trace_call+0x46/0x70
+> [<ffffffff811d6eb1>] ? do_vfs_ioctl+0x21/0x5a0
+> [<ffffffff811d6f1c>] do_vfs_ioctl+0x8c/0x5a0
+> [<ffffffff811e3336>] ? __fget_light+0x86/0xb0
+> [<ffffffff811e3369>] ? __fdget+0x9/0x20
+> [<ffffffff811d7451>] ? SyS_ioctl+0x21/0x80
+> [<ffffffff811d7483>] SyS_ioctl+0x53/0x80
+> [<ffffffff81b1efd7>] entry_SYSCALL_64_fastpath+0x12/0x6f
+>
+> This is because of unprotected use of rcu_dereference in
+> btrfs_scratch_superblocks. We can't add rcu locks around the whole
+> function because we read the superblock.
+>
+> The fix will use the rcu string buffer directly without the rcu locking.
+> Thi is safe as the device will not go away in the meantime. We're
+> holding the device list mutexes.
+>
+> Restructuring the code to narrow down the rcu section turned out to be
+> impossible, we need to call filp_open (through update_dev_time) on the
+> buffer and this could call kmalloc/__might_sleep. We could call kstrdup
+> with GFP_ATOMIC but it's not absolutely necessary.
+>
+> Fixes: 12b1c2637b6e (Btrfs: enhance btrfs_scratch_superblock to scratch all superblocks)
+> Signed-off-by: David Sterba <dsterba@suse.com>
+> ---
+>   fs/btrfs/volumes.c | 6 ++----
+>   1 file changed, 2 insertions(+), 4 deletions(-)
+>
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a6df8fdc1312..cd425dfe059e 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -1973,8 +1973,7 @@ void btrfs_rm_dev_replace_remove_srcdev(struct btrfs_fs_info *fs_info,
+>   	if (srcdev->writeable) {
+>   		fs_devices->rw_devices--;
+>   		/* zero out the old super if it is writable */
+> -		btrfs_scratch_superblocks(srcdev->bdev,
+> -					rcu_str_deref(srcdev->name));
+> +		btrfs_scratch_superblocks(srcdev->bdev, srcdev->name->str);
+>   	}
+>
+>   	if (srcdev->bdev)
+> @@ -2024,8 +2023,7 @@ void btrfs_destroy_dev_replace_tgtdev(struct btrfs_fs_info *fs_info,
+>   	btrfs_sysfs_rm_device_link(fs_info->fs_devices, tgtdev);
+>
+>   	if (tgtdev->bdev) {
+> -		btrfs_scratch_superblocks(tgtdev->bdev,
+> -					rcu_str_deref(tgtdev->name));
+> +		btrfs_scratch_superblocks(tgtdev->bdev, tgtdev->name->str);
+>   		fs_info->fs_devices->open_devices--;
+>   	}
+>   	fs_info->fs_devices->num_devices--;
+>

@@ -1,55 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:33572 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161865AbbKTN35 (ORCPT
+Received: from mail-io0-f180.google.com ([209.85.223.180]:32916 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1161341AbbKTNwj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 08:29:57 -0500
-Received: by igvi2 with SMTP id i2so32777496igv.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 05:29:57 -0800 (PST)
-Subject: Re: Self-destruct of btrfs RAID6 array
-To: Paul Loewenstein <paul.loewenstein@gmail.com>, linux-btrfs@vger.kernel.org
-References: <564E9D62.4050306@gmail.com>
+	Fri, 20 Nov 2015 08:52:39 -0500
+Received: by iouu10 with SMTP id u10so125758370iou.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 05:52:39 -0800 (PST)
+Subject: Re: Kernel 3.19 and still "disk full" even though 'btrfs fi df"
+ reports enough room left?
+To: Hugo Mills <hugo@carfax.org.uk>, Dmitry Katsubo <dma_k@mail.ru>,
+        linux-btrfs@vger.kernel.org
+References: <564CC90F.3060703@gmail.com>
+ <20151118190857.GY24333@carfax.org.uk> <564D1AE5.3000700@cn.fujitsu.com>
+ <pan$61583$65d817c9$bfda2de6$465dca20@cox.net> <564F0671.8060402@mail.ru>
+ <564F1E5B.6040004@gmail.com> <20151120132714.GK24333@carfax.org.uk>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <564F2047.5010508@gmail.com>
-Date: Fri, 20 Nov 2015 08:29:43 -0500
+Message-ID: <564F2599.6050802@gmail.com>
+Date: Fri, 20 Nov 2015 08:52:25 -0500
 MIME-Version: 1.0
-In-Reply-To: <564E9D62.4050306@gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms050606090103050303060807"
+In-Reply-To: <20151120132714.GK24333@carfax.org.uk>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms060607080005090402010904"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms050606090103050303060807
-Content-Type: text/plain; charset=utf-8; format=flowed
+--------------ms060607080005090402010904
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-11-19 23:11, Paul Loewenstein wrote:
-> I have just had an apparently catastrophic collapse of a large RAID6
-> array.  I was hoping that the dual-redundancy of a RAID6 array would
-> compensate for having no backup media large enough to back it up!
-Duncan already did a really good job of explaining this (and from what I =
+On 2015-11-20 08:27, Hugo Mills wrote:
+> On Fri, Nov 20, 2015 at 08:21:31AM -0500, Austin S Hemmelgarn wrote:
+>> On 2015-11-20 06:39, Dmitry Katsubo wrote:
+>>> If I may add:
+>>>
+>>> Information for "System"
+>>>
+>>>    System, DUP: total=3D32.00MiB, used=3D16.00KiB
+>>>
+>>> is also quite technical, as for end user system =3D metadata (one can=
+ call
+>>> it "filesystem metadata" perhaps). For simplicity the numbers can be
+>>> added to "Metadata" thus eliminating that line as well.
+>>>
+>>> For those power users who really want to see the tiny details like
+>>> "System" and "GlobalReserve" I suggest to implement "-v" flag:
+>>>
+>>> # btrfs fi usage -v
+>> Actually, I really like this idea, one of the questions I get asked
+>> when I show people BTRFS is the difference between System and
+>> Metadata, and it's not always easy to explain to somebody who
+>> doesn't have a background in filesystem development.  For some
+>> reason, people seem to have trouble with the concept that the system
+>> tree is an index of the other trees.
+>
+>     Actually, it's not that in the system chunks. :)
+>
+>     System chunks contain the chunk tree, not the tree of tree roots.
+> They're special (and small) because they're listed explicitly by devid
+> and physical offset at the end of the superblock, and allow the FS to
+> read them first so that it can bootstrap the logical:physical mapping
+> table before it starts reading all the other metadata like the tree of
+> tree roots (which is "normal" metadata).
+I guess my understanding was wrong then.  Thanks for the explanation.
 
-can tell, I'm pretty sure his analysis of what's going on is correct),=20
-but I would like to add a couple of things.
 
-First, RAID is not a backup, it's a way to minimize the need to restore=20
-from backups in the event of hardware failure (or, in the case of BTRFS, =
-
-also a way to minimize the effects of data corruption).
-
-Second, have you considered doing encrypted backups to a cloud storage=20
-service?  This is what I personally do, and it works really well for me. =
-
-  Amazon S3 has pretty reasonable pricing, and there are multiple=20
-options on Linux to allow accessing it like a filesystem.  There are=20
-many other options as well (in my case, I backup to both S3 and Dropbox, =
-
-but I also have small enough backups that I don't need to worry about=20
-the 1T limit on Dropbox for non-business accounts).
-
-
---------------ms050606090103050303060807
+--------------ms060607080005090402010904
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -91,9 +107,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTIwMTMyOTQzWjBPBgkq
-hkiG9w0BCQQxQgRAh5QSO/4HkndU3VtFuW1LtC5CGbd/v+xCVeThm08Fs8FxfmbeCD77z0z0
-lLN4bKP89eQDZvUP1GnH+9F5ULSsZjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTIwMTM1MjI1WjBPBgkq
+hkiG9w0BCQQxQgRAv2xyzUI1UqpYIkeqg6VJut+tX1ypsujcrtR5KcNFgfQWamf929jDRIQC
+orFiCjjZLvxdHditV5pekVxq9M7xYjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -101,14 +117,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgCUneAyLrwtQzIm6R/wuM6D+MM/CZiadNHwWpnOSWLWq/O+hT3T
-/I7j9tD2VloUyOEVNRUaAGLKbDYw50feF5Xbs2E7wE7QItGd7PGIeFJGjv+ucBzhQl0KQ/QW
-45pph6AClZuDFEU+PFka0r6XFT2DE17kz19B7Ze2S1gkmLclDW1yEQHYDXCVKPbfcqsPgY/2
-sTBgae6QzyKp3X56eFTxclhzlAe3aNVcuBQ5B+9n/8j5BQGXJN1+LY0XABm3igLGn1hIlkL7
-HvthBVH5K/B+01hu4OCBKi9w4RuJ2tWwrB8xF0jlDKAePB1BufNfvnPWV7GPpTihsBTI5YWL
-CgjkEKj/69IY4+4aOS98uamXYEv1b7KkXqec6J600SNKiZ+tkDSOyI0JYD4NRC4OgglTRRLK
-ndoG3Nh7HdAIT/N3xJbuOAQ75JzHMv3+PDAQ2QQk1vfw6YUarn0IeQX80BNqkEEMthniXz6t
-IdpbUlmC3QlmbTQr+rtfMlGTpyswmehVNRUuHC/DDzRcy+a7DLQXslKIuDggK3XqqQEY67ql
-TdEKH7i9MfS1GDDpxAb8w4ePNSWCGV2NU5do7mYrQf2jFX4uwotV/QByJA0j5lrQFasgErQN
-SaC1oJnPe9sxoPBjun9EUqFR+3Rde0+j0gYUsGNmEfY80zyJFGO8TPa8SgAAAAAAAA==
---------------ms050606090103050303060807--
+BgkqhkiG9w0BAQEFAASCAgA0gtBbBhOngCGEaYaWQLex5HGo7kDLDQca+U92ZWU/5lQ8XyjC
+EnSNQiNcYubS5rbDl54ElXMvVLdmtbUr2lVkkbyoQXhh5HbuKg1+xlWtvdtzK4yelcxKz3My
+7AXyr3laBlfM4Hhjtv46KAb3TEgQ3gYEzknYSEChJC6C9KTBlMGIf8ie03ighausDobJKvuC
+sS3w/K3gzfF6q1jpzToK4Z3tRFxGwH4URQHHbBnlh8W0QjjeojBUSN5l/gtorgEq9ySOD6xy
+zB/QZn9yGXI+XTVZs7c8vfl6Cu3yAvyz4yND8lJAcLJDjS1FOz8Siao9J00050+r1uYniB9A
+o+7zZgKnPr2nAUGDEqQAhXnzNDCESusaACXMsr1PY0T9Hd/BcFHz2r7RGWc5HOg6U8BuQX4D
+kZAh4FHNk7ntdPuvjOIcXYNZKyrogC6ZEgGAxzOHmH+Scid5LiP7+32pDLQMLYhcWxxhrDY6
+jRyREjeu2uHN7sERSzkEdRZHsYGliWKPRqEtOfGytxNfNgQq8HnyzT6j1rDl2VTHxzXVwFdf
+KL5J7qgzcDpROpBZuxJBHEHCnYatG26VQp0hVCYq1axN6l+WL4DHi4As4QpTu4+wU2QIEH50
+Ilp7ASV1+dorkeg5771uS0mvhEJPOq05pcQVr0NxrieYdXYYpE7lJOTuMAAAAAAAAA==
+--------------ms060607080005090402010904--

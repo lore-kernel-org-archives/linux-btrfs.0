@@ -1,41 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from vs2.lukas-pirl.de ([5.45.100.90]:52644 "EHLO pim.lukas-pirl.de"
+Received: from plane.gmane.org ([80.91.229.3]:55401 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934126AbbKTAGe (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 19:06:34 -0500
-Subject: Re: anything wrong with `balance -dusage -musage` together?
-To: Hugo Mills <hugo@carfax.org.uk>
-References: <564E60FD.1010801@lukas-pirl.de>
- <20151119235931.GH24333@carfax.org.uk>
-Cc: linux-btrfs@vger.kernel.org
-From: Lukas Pirl <btrfs@lukas-pirl.de>
-Message-ID: <564E6404.7050100@lukas-pirl.de>
-Date: Fri, 20 Nov 2015 13:06:28 +1300
-MIME-Version: 1.0
-In-Reply-To: <20151119235931.GH24333@carfax.org.uk>
-Content-Type: text/plain; charset=utf-8
+	id S1752611AbbKTCLv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 19 Nov 2015 21:11:51 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1ZzbAy-0000zW-Qn
+	for linux-btrfs@vger.kernel.org; Fri, 20 Nov 2015 03:11:48 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 03:11:48 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 03:11:48 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Kernel 3.19 and still "disk full" even though 'btrfs fi df"
+ reports enough room left?
+Date: Fri, 20 Nov 2015 02:11:42 +0000 (UTC)
+Message-ID: <pan$7d183$c0b735b0$44af3f79$b541cb8b@cox.net>
+References: <564CC90F.3060703@gmail.com> <564DC072.4060508@gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/20/2015 12:59 PM, Hugo Mills wrote as excerpted:
->    Nothing actively wrong with that, no. It certainly won't break
-> anything. It's just rarely actually useful. The usual situation is
-> that you run out of one kind of storage before the other (data vs
-> metadata, that is), and you need to free up some allocation of one of
-> them so it can go to the other. This is typically too much data
-> allocation, and metadata has run out (so -d is more often used than
-> -m).
->
->    For the "usual" case of running out of metadata allocation, you
-> don't actually need much space to reclaim, so -dlimit=X for small X is
-> an easier approach to use.
+Austin S Hemmelgarn posted on Thu, 19 Nov 2015 07:28:34 -0500 as
+excerpted:
 
-Thanks Hugo for your quick reply.
+> (having all updates installed on Ubuntu doesn't really count in this
+> case, they're pretty bad sometimes about not properly tracking upstream
+> development[)]
 
-Alright, the look at https://github.com/kdave/btrfsmaintenance
-just made me think over regular balances using -*usage before one or the
-other space runs out (as suggested there).
+No kidding.  I'm involved with an upstream that had a security patch and 
+version-bump a number of years ago.  An Ubuntu bug was filed... and it 
+sat in the bug queue IIRC untouched until it was obsoleted by newer 
+releases, where the new version /was/ included.  At least Fedora (which I 
+remember a poster confirming the update on) and Gentoo (which I run, 
+personally filed a bug with, and saw the security bump) made the version 
+bump available as an update.
 
-Best,
+Apparently, as it wasn't a headline component (one would /hope/ they at 
+least get security updates out for /them/, and they evidently do for at 
+least some as they do publish security updates, but at this point I'd 
+wonder how consistently they do for others), Ubuntu simply didn't care.  
+Made /me/ glad I wasn't on Ubuntu, that's for sure!
 
-Lukas
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

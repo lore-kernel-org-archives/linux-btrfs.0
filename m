@@ -1,77 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:8878 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1161927AbbKTD1V (ORCPT
+	with ESMTP id S1161932AbbKTD1W (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 22:27:21 -0500
+	Thu, 19 Nov 2015 22:27:22 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdW022290
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:35 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdX022290
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:36 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 23/25] btrfs-progs: Convert: Add support for rollback new convert behavior
-Date: Fri, 20 Nov 2015 11:24:27 +0800
-Message-Id: <1447989869-24739-24-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 24/25] btrfs-progs: convert: Strictly avoid meta or system chunk allocation
+Date: Fri, 20 Nov 2015 11:24:28 +0800
+Message-Id: <1447989869-24739-25-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add support to rollback new btrfs-convert.
+Before this patch, btrfs-convert only rely on large enough initial
+system/metadata chunk size to ensure no newer system/meta chunk will be
+created.
 
-The support is quite easy unlike the new convert behavior, which only
-needs to check if there is block group covering the reserved ranges.
+But that's not safe enough. So add two new members in fs_info,
+avoid_sys/meta_chunk_alloc flags to prevent any newer system or meta
+chunks to be created before init_btrfs_v2().
 
-Old convert behavior ensure there is always a system chunk covering
-reserved ranges.
-The new one ensure there is no chunk covering them.
+BTW, old fs_info->system_allocs is not the same, as if set it to -1, it
+will only force chunk tree blocks to be allocated from metadata.
+Such wired design will be handled in later cleanup patchset, but not
+now.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-convert.c | 23 ++++++++++++++++++-----
- 1 file changed, 18 insertions(+), 5 deletions(-)
+ btrfs-convert.c | 9 +++++++++
+ ctree.h         | 2 ++
+ extent-tree.c   | 9 +++++++++
+ 3 files changed, 20 insertions(+)
 
 diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 8079aea..1d09141 100644
+index 1d09141..a81345d 100644
 --- a/btrfs-convert.c
 +++ b/btrfs-convert.c
-@@ -3451,11 +3451,23 @@ static int do_rollback(const char *devname)
- 		num_bytes = btrfs_file_extent_num_bytes(leaf, fi);
+@@ -2114,6 +2114,13 @@ static int init_btrfs_v2(struct btrfs_mkfs_config *cfg, ext2_filsys ext2_fs,
+ 	int found_root = 0;
+ 	int ret;
  
- 		cache1 = btrfs_lookup_block_group(root->fs_info, offset);
--		cache2 =  btrfs_lookup_block_group(root->fs_info,
--						   offset + num_bytes - 1);
--		if (!cache1 || cache1 != cache2 ||
--		    (!(cache1->flags & BTRFS_BLOCK_GROUP_SYSTEM) &&
--		     !intersect_with_sb(offset, num_bytes)))
-+		cache2 = btrfs_lookup_block_group(root->fs_info,
-+						  offset + num_bytes - 1);
-+		/*
-+		 * Here we must take consideration of old and new convert
-+		 * behavior.
-+		 * For old convert case, there should be a SYSTEM chunk
-+		 * covering the relocated extents
-+		 * For new convert case, all reserved range or sb block
-+		 * is not and should not be covered by any chunk.
-+		 * Or we are unable to rebuild the extent map
-+		 * Anyway, they should be covered by the same chunk
-+		 */
-+		if (cache1 != cache2)
-+			break;
-+		/* Old convert behavior, should be covered by SYS chunk*/
-+		if (cache1 && !(cache1->flags & BTRFS_BLOCK_GROUP_SYSTEM) &&
-+		    !intersect_with_sb(offset, num_bytes))
- 			break;
++	/*
++	 * Don't alloc any metadata chunk, as we don't want any
++	 * chunk allocated before all data chunks are inserted.
++	 * Or we can screw up the chunk type.
++	 */
++	fs_info->avoid_meta_chunk_alloc = 1;
++	fs_info->avoid_sys_chunk_alloc = 1;
+ 	trans = btrfs_start_transaction(root, 1);
+ 	BUG_ON(!trans);
+ 	ret = btrfs_fix_block_accounting(trans, root);
+@@ -2185,6 +2192,8 @@ static int init_btrfs_v2(struct btrfs_mkfs_config *cfg, ext2_filsys ext2_fs,
  
- 		set_extent_bits(&io_tree, offset, offset + num_bytes - 1,
-@@ -3469,6 +3481,7 @@ next_extent:
+ 	ret = btrfs_commit_transaction(trans, root);
+ 	BUG_ON(ret);
++	fs_info->avoid_meta_chunk_alloc = 0;
++	fs_info->avoid_sys_chunk_alloc = 0;
+ err:
+ 	return ret;
+ }
+diff --git a/ctree.h b/ctree.h
+index 6e3e919..41b5e8f 100644
+--- a/ctree.h
++++ b/ctree.h
+@@ -1015,6 +1015,8 @@ struct btrfs_fs_info {
+ 	unsigned int quota_enabled:1;
+ 	unsigned int suppress_check_block_errors:1;
+ 	unsigned int ignore_fsid_mismatch:1;
++	unsigned int avoid_meta_chunk_alloc:1;
++	unsigned int avoid_sys_chunk_alloc:1;
  
- 	if (offset < total_bytes) {
- 		fprintf(stderr, "unable to build extent mapping\n");
-+		fprintf(stderr, "converted filesystem after balance is unable to rollback\n");
- 		goto fail;
- 	}
+ 	int (*free_extent_hook)(struct btrfs_trans_handle *trans,
+ 				struct btrfs_root *root,
+diff --git a/extent-tree.c b/extent-tree.c
+index a2f8fee..c0b4442 100644
+--- a/extent-tree.c
++++ b/extent-tree.c
+@@ -1904,6 +1904,15 @@ static int do_chunk_alloc(struct btrfs_trans_handle *trans,
+ 	    thresh)
+ 		return 0;
  
++	/*
++	 * Avoid allocate any chunk forbit by fs_info
++	 */
++	if (extent_root->fs_info->avoid_meta_chunk_alloc &&
++	    (flags & BTRFS_BLOCK_GROUP_METADATA))
++		return 0;
++	if (extent_root->fs_info->avoid_sys_chunk_alloc &&
++	    (flags & BTRFS_BLOCK_GROUP_SYSTEM))
++		return 0;
+ 	ret = btrfs_alloc_chunk(trans, extent_root, &start, &num_bytes,
+ 	                        space_info->flags);
+ 	if (ret == -ENOSPC) {
 -- 
 2.6.2
 

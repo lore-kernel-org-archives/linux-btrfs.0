@@ -1,133 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23806 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751011AbbKUGFY (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:23929 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S934401AbbKTBuV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 21 Nov 2015 01:05:24 -0500
-Date: Fri, 20 Nov 2015 22:05:15 -0800
+	Thu, 19 Nov 2015 20:50:21 -0500
+Received: from userv0021.oracle.com (userv0021.oracle.com [156.151.31.71])
+	by aserp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id tAK1oKxg006572
+	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 01:50:21 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+	by userv0021.oracle.com (8.13.8/8.13.8) with ESMTP id tAK1oKp0003539
+	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 01:50:20 GMT
+Received: from abhmp0003.oracle.com (abhmp0003.oracle.com [141.146.116.9])
+	by userv0122.oracle.com (8.13.8/8.13.8) with ESMTP id tAK1oK1v003048
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 01:50:20 GMT
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Jens Axboe <axboe@fb.com>
-Cc: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: fix a bug of sleeping in atomic context
-Message-ID: <20151121060515.GA14457@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1447984177-26795-1-git-send-email-bo.li.liu@oracle.com>
- <20151120131358.GC9887@ret.masoncoding.com>
- <564F9103.7060301@fb.com>
- <20151120230829.GB8096@localhost.localdomain>
- <564FD665.90603@fb.com>
- <20151121031421.GC8096@localhost.localdomain>
- <564FE502.2050808@fb.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <564FE502.2050808@fb.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] Btrfs: fix a bug of sleeping in atomic context
+Date: Thu, 19 Nov 2015 17:49:37 -0800
+Message-Id: <1447984177-26795-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 20, 2015 at 08:29:06PM -0700, Jens Axboe wrote:
-> On 11/20/2015 08:14 PM, Liu Bo wrote:
-> >On Fri, Nov 20, 2015 at 07:26:45PM -0700, Jens Axboe wrote:
-> >>On 11/20/2015 04:08 PM, Liu Bo wrote:
-> >>>On Fri, Nov 20, 2015 at 02:30:43PM -0700, Jens Axboe wrote:
-> >>>>On 11/20/2015 06:13 AM, Chris Mason wrote:
-> >>>>>On Thu, Nov 19, 2015 at 05:49:37PM -0800, Liu Bo wrote:
-> >>>>>>while xfstesting, this bug[1] is spotted by both btrfs/061 and btrfs/063,
-> >>>>>>so those sub-stripe writes are gatherred into plug callback list and
-> >>>>>>hopefully we can have a full stripe writes.
-> >>>>>>
-> >>>>>>However, while processing these plugged callbacks, it's within an atomic
-> >>>>>>context which is provided by blk_sq_make_request() because of a get_cpu()
-> >>>>>>in blk_mq_get_ctx().
-> >>>>>>
-> >>>>>>This changes to always use btrfs_rmw_helper to complete the pending writes.
-> >>>>>>
-> >>>>>
-> >>>>>Thanks Liu, but MD raid has the same troubles, we're not atomic in our unplugs.
-> >>>>>
-> >>>>>Jens?
-> >>>>
-> >>>>Yeah, blk-mq does have preemption disabled when it flushes, for the single
-> >>>>queue setup. That's a bug. Attached is an untested patch that should fix it,
-> >>>>can you try it?
-> >>>>
-> >>>
-> >>>Although it runs into a warning one time of 50 tries, that was not atomic warning but another racy issue.
-> >>>
-> >>>WARNING: CPU: 2 PID: 8531 at fs/btrfs/ctree.c:1162 __btrfs_cow_block+0x431/0x610 [btrfs]()
-> >>>
-> >>>So overall the patch is good.
-> >>>
-> >>>>I'll rework this to be a proper patch, not convinced we want to add the new
-> >>>>request before flush, that might destroy merging opportunities. I'll unify
-> >>>>the mq/sq parts.
-> >>>
-> >>>That's true, xfstests didn't notice any performance difference but that cannot prove anything.
-> >>>
-> >>>I'll test the new patch when you send it out.
-> >>
-> >>Try this one, that should retain the plug issue characteristics we care
-> >>about as well.
-> >
-> >The test does not complain any more, thank for the quick patch.
-> >
-> >Tested-by: Liu Bo <bo.li.liu@oracle.com>
-> 
-> Can I talk you into trying this one? It's simpler, does the same thing. We
-> don't need to overcomplicate it, it's fine not having preempt disabled for
-> adding to the list.
+while xfstesting, this bug[1] is spotted by both btrfs/061 and btrfs/063,
+so those sub-stripe writes are gatherred into plug callback list and
+hopefully we can have a full stripe writes.
 
-Of course, I've run the case with the patch for 20 times, no more
-warnings, thanks for the fix.
+However, while processing these plugged callbacks, it's within an atomic
+context which is provided by blk_sq_make_request() because of a get_cpu()
+in blk_mq_get_ctx().
 
-Thanks,
+This changes to always use btrfs_rmw_helper to complete the pending writes.
 
--liubo
+[1]:
 
-> 
-> -- 
-> Jens Axboe
-> 
+BUG: sleeping function called from invalid context at mm/page_alloc.c:3190
+in_atomic(): 1, irqs_disabled(): 0, pid: 6, name: kworker/u16:0
+3 locks held by kworker/u16:0/6:
+ #0:  ("writeback"){++++.+}, at: [<ffffffff8107f083>] process_one_work+0x173/0x730
+ #1:  ((&(&wb->dwork)->work)){+.+.+.}, at: [<ffffffff8107f083>] process_one_work+0x173/0x730
+ #2:  (&type->s_umount_key#44){+++++.}, at: [<ffffffff811e6805>] trylock_super+0x25/0x60
+CPU: 5 PID: 6 Comm: kworker/u16:0 Tainted: G           OE   4.3.0+ #3
+Hardware name: Red Hat KVM, BIOS Bochs 01/01/2011
+Workqueue: writeback wb_workfn (flush-btrfs-108)
+ ffffffff81a3abab ffff88042e282ba8 ffffffff8130191b ffffffff81a3abab
+ 0000000000000c76 ffff88042e282ba8 ffff88042e27c180 ffff88042e282bd8
+ ffffffff8108ed95 ffff880400000004 0000000000000000 0000000000000c76
+Call Trace:
+ [<ffffffff8130191b>] dump_stack+0x4f/0x74
+ [<ffffffff8108ed95>] ___might_sleep+0x185/0x240
+ [<ffffffff8108eea2>] __might_sleep+0x52/0x90
+ [<ffffffff811817e8>] __alloc_pages_nodemask+0x268/0x410
+ [<ffffffff8109a43c>] ? sched_clock_local+0x1c/0x90
+ [<ffffffff8109a6d1>] ? local_clock+0x21/0x40
+ [<ffffffff810b9eb0>] ? __lock_release+0x420/0x510
+ [<ffffffff810b534c>] ? __lock_acquired+0x16c/0x3c0
+ [<ffffffff811ca265>] alloc_pages_current+0xc5/0x210
+ [<ffffffffa0577105>] ? rbio_is_full+0x55/0x70 [btrfs]
+ [<ffffffff810b7ed8>] ? mark_held_locks+0x78/0xa0
+ [<ffffffff81666d50>] ? _raw_spin_unlock_irqrestore+0x40/0x60
+ [<ffffffffa0578c0a>] full_stripe_write+0x5a/0xc0 [btrfs]
+ [<ffffffffa0578ca9>] __raid56_parity_write+0x39/0x60 [btrfs]
+ [<ffffffffa0578deb>] run_plug+0x11b/0x140 [btrfs]
+ [<ffffffffa0578e33>] btrfs_raid_unplug+0x23/0x70 [btrfs]
+ [<ffffffff812d36c2>] blk_flush_plug_list+0x82/0x1f0
+ [<ffffffff812e0349>] blk_sq_make_request+0x1f9/0x740
+ [<ffffffff812ceba2>] ? generic_make_request_checks+0x222/0x7c0
+ [<ffffffff812cf264>] ? blk_queue_enter+0x124/0x310
+ [<ffffffff812cf1d2>] ? blk_queue_enter+0x92/0x310
+ [<ffffffff812d0ae2>] generic_make_request+0x172/0x2c0
+ [<ffffffff812d0ad4>] ? generic_make_request+0x164/0x2c0
+ [<ffffffff812d0ca0>] submit_bio+0x70/0x140
+ [<ffffffffa0577b29>] ? rbio_add_io_page+0x99/0x150 [btrfs]
+ [<ffffffffa0578a89>] finish_rmw+0x4d9/0x600 [btrfs]
+ [<ffffffffa0578c4c>] full_stripe_write+0x9c/0xc0 [btrfs]
+ [<ffffffffa057ab7f>] raid56_parity_write+0xef/0x160 [btrfs]
+ [<ffffffffa052bd83>] btrfs_map_bio+0xe3/0x2d0 [btrfs]
+ [<ffffffffa04fbd6d>] btrfs_submit_bio_hook+0x8d/0x1d0 [btrfs]
+ [<ffffffffa05173c4>] submit_one_bio+0x74/0xb0 [btrfs]
+ [<ffffffffa0517f55>] submit_extent_page+0xe5/0x1c0 [btrfs]
+ [<ffffffffa0519b18>] __extent_writepage_io+0x408/0x4c0 [btrfs]
+ [<ffffffffa05179c0>] ? alloc_dummy_extent_buffer+0x140/0x140 [btrfs]
+ [<ffffffffa051dc88>] __extent_writepage+0x218/0x3a0 [btrfs]
+ [<ffffffff810b7ed8>] ? mark_held_locks+0x78/0xa0
+ [<ffffffffa051e2c9>] extent_write_cache_pages.clone.0+0x2f9/0x400 [btrfs]
+ [<ffffffffa051e422>] extent_writepages+0x52/0x70 [btrfs]
+ [<ffffffffa05001f0>] ? btrfs_set_inode_index+0x70/0x70 [btrfs]
+ [<ffffffffa04fcc17>] btrfs_writepages+0x27/0x30 [btrfs]
+ [<ffffffff81184df3>] do_writepages+0x23/0x40
+ [<ffffffff81212229>] __writeback_single_inode+0x89/0x4d0
+ [<ffffffff81212a60>] ? writeback_sb_inodes+0x260/0x480
+ [<ffffffff81212a60>] ? writeback_sb_inodes+0x260/0x480
+ [<ffffffff8121295f>] ? writeback_sb_inodes+0x15f/0x480
+ [<ffffffff81212ad2>] writeback_sb_inodes+0x2d2/0x480
+ [<ffffffff810b1397>] ? down_read_trylock+0x57/0x60
+ [<ffffffff811e6805>] ? trylock_super+0x25/0x60
+ [<ffffffff810d629f>] ? rcu_read_lock_sched_held+0x4f/0x90
+ [<ffffffff81212d0c>] __writeback_inodes_wb+0x8c/0xc0
+ [<ffffffff812130b5>] wb_writeback+0x2b5/0x500
+ [<ffffffff810b7ed8>] ? mark_held_locks+0x78/0xa0
+ [<ffffffff810660a8>] ? __local_bh_enable_ip+0x68/0xc0
+ [<ffffffff81213362>] ? wb_do_writeback+0x62/0x310
+ [<ffffffff812133c1>] wb_do_writeback+0xc1/0x310
+ [<ffffffff8107c3d9>] ? set_worker_desc+0x79/0x90
+ [<ffffffff81213842>] wb_workfn+0x92/0x330
+ [<ffffffff8107f133>] process_one_work+0x223/0x730
+ [<ffffffff8107f083>] ? process_one_work+0x173/0x730
+ [<ffffffff8108035f>] ? worker_thread+0x18f/0x430
+ [<ffffffff810802ed>] worker_thread+0x11d/0x430
+ [<ffffffff810801d0>] ? maybe_create_worker+0xf0/0xf0
+ [<ffffffff810801d0>] ? maybe_create_worker+0xf0/0xf0
+ [<ffffffff810858df>] kthread+0xef/0x110
+ [<ffffffff8108f74e>] ? schedule_tail+0x1e/0xd0
+ [<ffffffff810857f0>] ? __init_kthread_worker+0x70/0x70
+ [<ffffffff816673bf>] ret_from_fork+0x3f/0x70
+ [<ffffffff810857f0>] ? __init_kthread_worker+0x70/0x70
 
-> diff --git a/block/blk-mq.c b/block/blk-mq.c
-> index 3ae09de62f19..6d6f8feb48c0 100644
-> --- a/block/blk-mq.c
-> +++ b/block/blk-mq.c
-> @@ -1291,15 +1291,16 @@ static blk_qc_t blk_mq_make_request(struct request_queue *q, struct bio *bio)
->  		blk_mq_bio_to_request(rq, bio);
->  
->  		/*
-> -		 * we do limited pluging. If bio can be merged, do merge.
-> +		 * We do limited pluging. If the bio can be merged, do that.
->  		 * Otherwise the existing request in the plug list will be
->  		 * issued. So the plug list will have one request at most
->  		 */
->  		if (plug) {
->  			/*
->  			 * The plug list might get flushed before this. If that
-> -			 * happens, same_queue_rq is invalid and plug list is empty
-> -			 **/
-> +			 * happens, same_queue_rq is invalid and plug list is
-> +			 * empty
-> +			 */
->  			if (same_queue_rq && !list_empty(&plug->mq_list)) {
->  				old_rq = same_queue_rq;
->  				list_del_init(&old_rq->queuelist);
-> @@ -1380,12 +1381,15 @@ static blk_qc_t blk_sq_make_request(struct request_queue *q, struct bio *bio)
->  		blk_mq_bio_to_request(rq, bio);
->  		if (!request_count)
->  			trace_block_plug(q);
-> -		else if (request_count >= BLK_MAX_REQUEST_COUNT) {
-> +
-> +		blk_mq_put_ctx(data.ctx);
-> +
-> +		if (request_count >= BLK_MAX_REQUEST_COUNT) {
->  			blk_flush_plug_list(plug, false);
->  			trace_block_plug(q);
->  		}
-> +
->  		list_add_tail(&rq->queuelist, &plug->mq_list);
-> -		blk_mq_put_ctx(data.ctx);
->  		return cookie;
->  	}
->  
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/raid56.c | 13 +++++--------
+ 1 file changed, 5 insertions(+), 8 deletions(-)
+
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 1a33d3e..03fcf32 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -1731,14 +1731,11 @@ static void btrfs_raid_unplug(struct blk_plug_cb *cb, bool from_schedule)
+ 	struct btrfs_plug_cb *plug;
+ 	plug = container_of(cb, struct btrfs_plug_cb, cb);
+ 
+-	if (from_schedule) {
+-		btrfs_init_work(&plug->work, btrfs_rmw_helper,
+-				unplug_work, NULL, NULL);
+-		btrfs_queue_work(plug->info->rmw_workers,
+-				 &plug->work);
+-		return;
+-	}
+-	run_plug(plug);
++	btrfs_init_work(&plug->work, btrfs_rmw_helper,
++			unplug_work, NULL, NULL);
++	btrfs_queue_work(plug->info->rmw_workers,
++			 &plug->work);
++	return;
+ }
+ 
+ /*
+-- 
+2.5.0
 

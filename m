@@ -1,14 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:41560 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:46373 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751295AbbKTMQa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 07:16:30 -0500
+	id S1161335AbbKTNny (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Nov 2015 08:43:54 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v2] Btrfs: fix race when finishing dev replace leading to transaction abort
-Date: Fri, 20 Nov 2015 12:16:22 +0000
-Message-Id: <1448021782-722-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v3] Btrfs: fix race when finishing dev replace leading to transaction abort
+Date: Fri, 20 Nov 2015 13:42:35 +0000
+Message-Id: <1448026955-10835-1-git-send-email-fdmanana@kernel.org>
 In-Reply-To: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
 References: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -119,9 +119,8 @@ the following diagram illustrates:
    namely it sets tgtdev->devid to the value
    of srcdev->devid, which is X (and X > 0)
 
-So fix this by replacing the device object in the extent maps only after
-finishing the setup for the target device (setting its new ID, etc) and
-before setting the old device's ID to BTRFS_DEV_REPLACE_DEVID.
+So fix this by taking the device list mutex when processing the chunk's
+extent map stripes to update the device items.
 
 This happened while running fstest btrfs/071.
 
@@ -132,54 +131,53 @@ V2: Made the attribution of a new id from the old device to happen
     after replacing the device for the extent maps with the new device,
     as obviously it was missing before.
 
- fs/btrfs/dev-replace.c | 20 +++++++++++++-------
- 1 file changed, 13 insertions(+), 7 deletions(-)
+V3: Make it really race free. The previous approach was still racy, but in a
+    different way. Need to really synchronize the finishing phase of device
+    replace that sets up the new device with the final phase of chunk allocation
+    that processes the stripes and updates the device items.
 
-diff --git a/fs/btrfs/dev-replace.c b/fs/btrfs/dev-replace.c
-index 1e668fb..923b375 100644
---- a/fs/btrfs/dev-replace.c
-+++ b/fs/btrfs/dev-replace.c
-@@ -516,12 +516,7 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	dev_replace->time_stopped = get_seconds();
- 	dev_replace->item_needs_writeback = 1;
- 
--	/* replace old device with new one in mapping tree */
--	if (!scrub_ret) {
--		btrfs_dev_replace_update_device_in_mapping_tree(fs_info,
--								src_device,
--								tgt_device);
--	} else {
-+	if (scrub_ret) {
- 		btrfs_err_in_rcu(root->fs_info,
- 			      "btrfs_scrub_dev(%s, %llu, %s) failed %d",
- 			      src_device->missing ? "<missing disk>" :
-@@ -547,7 +542,6 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 		      rcu_str_deref(tgt_device->name));
- 	tgt_device->is_tgtdev_for_dev_replace = 0;
- 	tgt_device->devid = src_device->devid;
--	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
- 	memcpy(uuid_tmp, tgt_device->uuid, sizeof(uuid_tmp));
- 	memcpy(tgt_device->uuid, src_device->uuid, sizeof(tgt_device->uuid));
- 	memcpy(src_device->uuid, uuid_tmp, sizeof(src_device->uuid));
-@@ -565,6 +559,18 @@ static int btrfs_dev_replace_finishing(struct btrfs_fs_info *fs_info,
- 	list_add(&tgt_device->dev_alloc_list, &fs_info->fs_devices->alloc_list);
- 	fs_info->fs_devices->rw_devices++;
+ fs/btrfs/volumes.c | 15 +++++++++++++--
+ 1 file changed, 13 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 45f2025..ab55faf 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -4827,21 +4827,32 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
  
 +	/*
-+	 * Now that our new device replaced the old device and it's completely
-+	 * setup, replace the old device with the new one in the mapping tree.
-+	 * But do it before setting the old device's id to
-+	 * BTRFS_DEV_REPLACE_DEVID, to avoid racing with tasks finishing chunk
-+	 * allocation.
++	 * Take the device list mutex to prevent races with the final phase of
++	 * a device replace operation that replaces the device object associated
++	 * with the map's stripes, because the device object's id can change
++	 * at any time during that final phase of the device replace operation
++	 * (dev-replace.c:btrfs_dev_replace_finishing()).
 +	 */
-+	btrfs_dev_replace_update_device_in_mapping_tree(fs_info,
-+							src_device,
-+							tgt_device);
-+	src_device->devid = BTRFS_DEV_REPLACE_DEVID;
-+
- 	btrfs_dev_replace_unlock(dev_replace);
++	mutex_lock(&chunk_root->fs_info->fs_devices->device_list_mutex);
+ 	for (i = 0; i < map->num_stripes; i++) {
+ 		device = map->stripes[i].dev;
+ 		dev_offset = map->stripes[i].physical;
  
- 	btrfs_rm_dev_replace_blocked(fs_info);
+ 		ret = btrfs_update_device(trans, device);
+ 		if (ret)
+-			goto out;
++			break;
+ 		ret = btrfs_alloc_dev_extent(trans, device,
+ 					     chunk_root->root_key.objectid,
+ 					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
+ 					     chunk_offset, dev_offset,
+ 					     stripe_size);
+ 		if (ret)
+-			goto out;
++			break;
+ 	}
++	mutex_unlock(&chunk_root->fs_info->fs_devices->device_list_mutex);
++	if (ret)
++		goto out;
+ 
+ 	stripe = &chunk->stripe;
+ 	for (i = 0; i < map->num_stripes; i++) {
 -- 
 2.1.3
 

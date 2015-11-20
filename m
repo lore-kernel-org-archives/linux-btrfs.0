@@ -1,216 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:23741 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:33229 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1161908AbbKTD1O (ORCPT
+	with ESMTP id S1161815AbbKTD1P (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 22:27:14 -0500
+	Thu, 19 Nov 2015 22:27:15 -0500
 Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdR022290
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:28 +0800
+	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3PqdS022290
+	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:26:29 +0800
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 18/25] btrfs-progs: convert: Introduce new function to create ext2 image
-Date: Fri, 20 Nov 2015 11:24:22 +0800
-Message-Id: <1447989869-24739-19-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 19/25] btrfs-progs: convert: Introduce function to migrate reserved ranges
+Date: Fri, 20 Nov 2015 11:24:23 +0800
+Message-Id: <1447989869-24739-20-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use new function, create_ext2_image_v2() to create ext2 image.
+Introduce new function, migrate_reserved_ranges() to migrate used ext2
+data in btrfs reserved space.
 
-Unlike old function which is called after copying all inodes, this
-function need to be called before copying inodes.
+Unlike old implement, which will need to relocate all the complicated
+csum and reference relocation, above patches already ensure such
+reserved ranges won't be allocated.
+So here we only need copy these data out and create new
+extent/csum/reference.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- btrfs-convert.c | 153 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- ctree.h         |   1 +
- 2 files changed, 154 insertions(+)
+ btrfs-convert.c | 123 +++++++++++++++++++++++++++++++++++++++++++++++++++++++-
+ 1 file changed, 122 insertions(+), 1 deletion(-)
 
 diff --git a/btrfs-convert.c b/btrfs-convert.c
-index 4626bbd..18701b1 100644
+index 18701b1..657fc1d 100644
 --- a/btrfs-convert.c
 +++ b/btrfs-convert.c
-@@ -1237,6 +1237,7 @@ static int create_image_file_range(struct btrfs_trans_handle *trans,
- fail:
- 	return ret;
- }
-+
- /*
-  * Create the ext2fs image file.
-  */
-@@ -1430,6 +1431,158 @@ fail:
+@@ -1504,8 +1504,123 @@ static int create_image_file_range_v2(struct btrfs_trans_handle *trans,
  	return ret;
  }
  
-+static int create_image_file_range_v2(struct btrfs_trans_handle *trans,
++/*
++ * Relocate used ext2 data in one reserved ranges
++ *
++ * Since all ext2 data in reserved range is not covered by any chunk nor
++ * data extent, we don't need to handle any reference but add new
++ * extent/reference
++ */
++static int migrate_one_reserved_range(struct btrfs_trans_handle *trans,
 +				      struct btrfs_root *root,
 +				      struct cache_tree *used,
-+				      struct btrfs_inode_item *inode,
-+				      u64 ino, u64 bytenr, u64 *ret_len,
-+				      int datacsum)
++				      struct btrfs_inode_item *inode, int fd,
++				      u64 ino, u64 start, u64 len, int datacsum)
 +{
++	u64 cur_off = start;
++	u64 cur_len = len;
 +	struct cache_extent *cache;
-+	struct btrfs_block_group_cache *bg_cache;
-+	u64 len = *ret_len;
-+	u64 disk_bytenr;
-+	int ret;
++	struct btrfs_key key;
++	struct extent_buffer *eb;
++	int ret = 0;
 +
-+	BUG_ON(bytenr != round_down(bytenr, root->sectorsize));
-+	BUG_ON(len != round_down(len, root->sectorsize));
-+	len = min_t(u64, len, BTRFS_MAX_EXTENT_SIZE);
++	while (cur_off < start + len) {
++		cache = lookup_cache_extent(used, cur_off, cur_len);
++		if (!cache)
++			break;
++		cur_off = max(cache->start, cur_off);
++		cur_len = min(cache->start + cache->size, start + len) -
++			  cur_off;
++		BUG_ON(cur_len < root->sectorsize);
 +
-+	cache = search_cache_extent(used, bytenr);
-+	if (cache) {
-+		if (cache->start <= bytenr) {
-+			/*
-+			 * |///////Used///////|
-+			 *	|<--insert--->|
-+			 *	bytenr
-+			 */
-+			len = min_t(u64, len, cache->start + cache->size -
-+				    bytenr);
-+			disk_bytenr = bytenr;
-+		} else {
-+			/*
-+			 *		|//Used//|
-+			 *  |<-insert-->|
-+			 *  bytenr
-+			 */
-+			len = min(len, cache->start - bytenr);
-+			disk_bytenr = 0;
-+			datacsum = 0;
++		/* reserve extent for the data */
++		ret = btrfs_reserve_extent(trans, root, cur_len, 0, 0, (u64)-1, &key, 1);
++		if (ret < 0)
++			break;
++
++		eb = malloc(sizeof(*eb) + cur_len);
++		if (!eb) {
++			ret = -ENOMEM;
++			break;
 +		}
-+	} else {
-+		/*
-+		 * |//Used//|		|EOF
-+		 * 	    |<-insert-->|
-+		 * 	    bytenr
-+		 */
-+		disk_bytenr = 0;
-+		datacsum = 0;
-+	}
 +
-+	if (disk_bytenr) {
-+		/* Check if the range is in a data block group */
-+		bg_cache = btrfs_lookup_block_group(root->fs_info, bytenr);
-+		if (!bg_cache)
-+			return -ENOENT;
-+		if (!(bg_cache->flags & BTRFS_BLOCK_GROUP_DATA))
-+			return -EINVAL;
-+	
-+		/* The extent should never cross block group boundary */
-+		len = min_t(u64, len, bg_cache->key.objectid +
-+			    bg_cache->key.offset - bytenr);
-+	}
++		ret = pread(fd, eb->data, cur_len, cur_off);
++		if (ret < cur_len) {
++			ret = (ret < 0 ? ret : -EIO);
++			free(eb);
++			break;
++		}
++		eb->start = key.objectid;
++		eb->len = key.offset;
 +
-+	BUG_ON(len != round_down(len, root->sectorsize));
-+	ret = btrfs_record_file_extent(trans, root, ino, inode, bytenr,
-+				       disk_bytenr, len);
++		/* Write the data */
++		ret = write_and_map_eb(trans, root, eb);
++		free(eb);
++		if (ret < 0)
++			break;
++
++		/* Now handle extent item and file extent things */
++		ret = btrfs_record_file_extent(trans, root, ino, inode, cur_off,
++					       key.objectid, key.offset);
++		if (ret < 0)
++			break;
++		/* Finally, insert csum items */
++		if (datacsum)
++			ret = csum_disk_extent(trans, root, key.objectid,
++					       key.offset);
++
++		cur_off += key.offset;
++		cur_len = start + len - cur_off;
++	}
++	return ret;
++}
++
++/*
++ * Relocate the used ext2 data in reserved ranges
++ * [0,1M)
++ * [btrfs_sb_offset(1), +BTRFS_STRIPE_LEN)
++ * [btrfs_sb_offset(2), +BTRFS_STRIPE_LEN)
++ */
++static int migrate_reserved_ranges(struct btrfs_trans_handle *trans,
++				   struct btrfs_root *root,
++				   struct cache_tree *used,
++				   struct btrfs_inode_item *inode, int fd,
++				   u64 ino, u64 total_bytes, int datacsum)
++{
++	u64 cur_off;
++	u64 cur_len;
++	int ret = 0;
++
++	/* 0 ~ 1M */
++	cur_off = 0;
++	cur_len = 1024 * 1024;
++	ret = migrate_one_reserved_range(trans, root, used, inode, fd, ino,
++					 cur_off, cur_len, datacsum);
 +	if (ret < 0)
 +		return ret;
 +
-+	if (datacsum)
-+		ret = csum_disk_extent(trans, root, bytenr, len);
-+	*ret_len = len;
++	/* second sb(fisrt sb is included in 0~1M) */
++	cur_off = btrfs_sb_offset(1);
++	cur_len = min(total_bytes, cur_off + BTRFS_STRIPE_LEN) - cur_off;
++	if (cur_off < total_bytes)
++		return ret;
++	ret = migrate_one_reserved_range(trans, root, used, inode, fd, ino,
++					 cur_off, cur_len, datacsum);
++	if (ret < 0)
++		return ret;
++
++	/* Last sb */
++	cur_off = btrfs_sb_offset(2);
++	cur_len = min(total_bytes, cur_off + BTRFS_STRIPE_LEN) - cur_off;
++	if (cur_off < total_bytes)
++		return ret;
++	ret = migrate_one_reserved_range(trans, root, used, inode, fd, ino,
++					 cur_off, cur_len, datacsum);
 +	return ret;
 +}
 +
-+static int create_ext2_image_v2(struct btrfs_root *root,
-+				struct btrfs_mkfs_config *cfg, u64 size,
-+				char *name, int datacsum)
-+{
-+	struct btrfs_inode_item buf;
-+	struct btrfs_trans_handle *trans;
-+	struct btrfs_path *path = NULL;
-+	struct btrfs_key key;
-+	u64 cur;
-+	u64 ino;
-+	int ret;
-+
-+	trans = btrfs_start_transaction(root, 1);
-+	if (!trans)
-+		return -ENOMEM;
-+	ret = btrfs_find_free_objectid(trans, root, BTRFS_FIRST_FREE_OBJECTID,
-+				       &ino);
-+	if (ret < 0)
-+		goto out;
-+	ret = btrfs_new_inode(trans, root, ino, 0600 | S_IFREG);
-+	if (ret < 0)
-+		goto out;
-+	ret = btrfs_add_link(trans, root, ino, BTRFS_FIRST_FREE_OBJECTID, name,
-+			     strlen(name), BTRFS_FT_REG_FILE, NULL, 1);
-+	if (ret < 0)
-+		goto out;
-+
-+	path = btrfs_alloc_path();
-+	if (!path) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+	key.objectid = ino;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	if (ret) {
-+		ret = (ret > 0 ? -ENOENT : ret);
-+		goto out;
-+	}
-+	read_extent_buffer(path->nodes[0], &buf,
-+			btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
-+			sizeof(buf));
-+	btrfs_release_path(path);
-+
-+	/*
-+	 * Skip the first 1M, it should be reserved and will be handled later
-+	 */
-+	cur = 1024 * 1024;
-+	while (cur < size) {
-+		u64 len = size - cur;
-+
-+		ret = create_image_file_range_v2(trans, root,
-+				&cfg->convert_used, &buf, ino, cur, &len,
-+				datacsum);
-+		if (ret < 0)
-+			goto out;
-+		cur += len;
-+	}
-+
-+	key.objectid = ino;
-+	key.type = BTRFS_INODE_ITEM_KEY;
-+	key.offset = 0;
-+	ret = btrfs_search_slot(trans, root, &key, path, 0, 1);
-+	if (ret) {
-+		ret = (ret > 0 ? -ENOENT : ret);
-+		goto out;
-+	}
-+	btrfs_set_stack_inode_size(&buf, cfg->num_bytes);
-+	write_extent_buffer(path->nodes[0], &buf,
-+			btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
-+			sizeof(buf));
-+out:
-+	btrfs_free_path(path);
-+	btrfs_commit_transaction(trans, root);
-+	return ret;
-+}
-+
- static struct btrfs_root * link_subvol(struct btrfs_root *root,
- 		const char *base, u64 root_objectid)
+ static int create_ext2_image_v2(struct btrfs_root *root,
+-				struct btrfs_mkfs_config *cfg, u64 size,
++				struct btrfs_mkfs_config *cfg, int fd, u64 size,
+ 				char *name, int datacsum)
  {
-diff --git a/ctree.h b/ctree.h
-index f97af7e..6e3e919 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -570,6 +570,7 @@ struct btrfs_extent_item_v0 {
+ 	struct btrfs_inode_item buf;
+@@ -1565,6 +1680,12 @@ static int create_ext2_image_v2(struct btrfs_root *root,
+ 		cur += len;
+ 	}
  
- #define BTRFS_MAX_EXTENT_ITEM_SIZE(r) ((BTRFS_LEAF_DATA_SIZE(r) >> 4) - \
- 					sizeof(struct btrfs_item))
-+#define BTRFS_MAX_EXTENT_SIZE		(128 * 1024 * 1024)
- 
- #define BTRFS_EXTENT_FLAG_DATA		(1ULL << 0)
- #define BTRFS_EXTENT_FLAG_TREE_BLOCK	(1ULL << 1)
++	/* handle the reserved ranges */
++	ret = migrate_reserved_ranges(trans, root, &cfg->convert_used, &buf, fd,
++				      ino, cfg->num_bytes, datacsum);
++	if (ret < 0)
++		goto out;
++
+ 	key.objectid = ino;
+ 	key.type = BTRFS_INODE_ITEM_KEY;
+ 	key.offset = 0;
 -- 
 2.6.2
 

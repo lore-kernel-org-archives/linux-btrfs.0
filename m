@@ -1,193 +1,227 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:20331 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932349AbbKQVRw (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:48863 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1163147AbbKUAum (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 17 Nov 2015 16:17:52 -0500
-Date: Tue, 17 Nov 2015 13:16:43 -0800
+	Fri, 20 Nov 2015 19:50:42 -0500
+Subject: [PATCH 1/2] test-scripts: test migration scripts
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: Dave Chinner <david@fromorbit.com>
+To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: fstests@vger.kernel.org, xfs@oss.sgi.com, hch@infradead.org,
         tao.peng@primarydata.com, linux-ext4@vger.kernel.org,
         Anna.Schumaker@netapp.com, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 01/12] test-scripts: test migration scripts
-Message-ID: <20151117211643.GF2217@birch.djwong.org>
-References: <20151113213643.31124.80975.stgit@birch.djwong.org>
- <20151113213650.31124.16817.stgit@birch.djwong.org>
- <20151116205845.GK14311@dastard>
- <20151116235111.GE2224@birch.djwong.org>
+Date: Fri, 20 Nov 2015 16:50:08 -0800
+Message-ID: <20151121005008.20398.37255.stgit@birch.djwong.org>
+In-Reply-To: <20151121005001.20398.92856.stgit@birch.djwong.org>
+References: <20151121005001.20398.92856.stgit@birch.djwong.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151116235111.GE2224@birch.djwong.org>
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 16, 2015 at 03:51:11PM -0800, Darrick J. Wong wrote:
-> On Tue, Nov 17, 2015 at 07:58:45AM +1100, Dave Chinner wrote:
-> > On Fri, Nov 13, 2015 at 01:36:50PM -0800, Darrick J. Wong wrote:
-> > > Add two scripts: "nextid" finds the next available test ID number in a
-> > > group, and "mvtest" relocates a test, fixes the golden output, and
-> > > moves the group entry for that test.
-> > > 
-> > > Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-> > > ---
-> > >  mvtest |   58 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-> > >  nextid |   35 +++++++++++++++++++++++++++++++++++
-> > 
-> > These should be placed in the "tools" directory.
-> 
-> <nod>
-> 
-> > 
-> > >  create mode 100755 mvtest
-> > >  create mode 100755 nextid
-> > > 
-> > > 
-> > > diff --git a/mvtest b/mvtest
-> > > new file mode 100755
-> > > index 0000000..b5406d1
-> > > --- /dev/null
-> > > +++ b/mvtest
-> > > @@ -0,0 +1,58 @@
-> > > +#!/bin/sh
-> > > +
-> > > +# Renumber a test
-> > > +
-> > > +if [ -z "$1" ] || [ "$1" = "--help" ]; then
-> > > +	echo "Usage: $0 path_to_test new_path_to_test"
-> > > +	exit 1
-> > > +fi
-> > > +
-> > > +src="$1"
-> > > +dest="$2"
-> > > +
-> > > +die() {
-> > > +	echo "$@"
-> > > +	exit 1
-> > > +}
-> > > +
-> > > +nsort() {
-> > > +	sort -g < "$1" > "$2"
-> > > +}
-> > > +
-> > > +append() {
-> > > +	out="$1"
-> > > +	shift
-> > > +	echo "$@" >> "${out}"
-> > > +}
-> > > +
-> > > +test "${src}" != "${dest}" || die "Test \"${src}\" is the same as dest."
-> > > +test -e "tests/${src}" || die "Test \"${src}\" does not exist."
-> > > +test ! -e "tests/${dest}" || die "Test \"${src}\" already exists."
-> > > +
-> > > +sid="$(basename "${src}")"
-> > > +did="$(basename "${dest}")"
-> > > +
-> > > +sgroup="$(basename "$(dirname "tests/${src}")")"
-> > > +dgroup="$(basename "$(dirname "tests/${dest}")")"
-> > > +
-> > > +sgroupfile="tests/${sgroup}/group"
-> > > +dgroupfile="tests/${sgroup}/group"
-> > > +
-> > > +$DBG git mv "tests/${src}" "tests/${dest}"
-> > 
-> > $DBG?
-> 
-> "DBG=echo ./mvtest foo bar" to see what it would have run, more or less.
-> 
-> (I suppose I could getopt a --dry-run, but I could also just get rid of them.)
-> 
-> > 
-> > ....
-> > > +$DBG sed -e "/^${sid}.*$/d" -i "${sgroupfile}"
-> > > +$DBG cp "${dgroupfile}" "${dgroupfile}.new"
-> > > +$DBG append "${dgroupfile}.new" "${newgrpline}"
-> > > +$DBG nsort "${dgroupfile}.new" "${dgroupfile}"
-> > 
-> > What does this do to comments in the group file?
-> 
-> Eats them.  I don't know of a good way to sort just the uncommented lines
-> in the file, short of writing a python script to do that.
-> 
-> I guess it's not that hard; I've sort of needed one here and there over
-> the years, but never wrote one, and $google doesn't immediately provide
-> any such thing.
-> 
-> > 
-> > ...
-> > 
-> > > diff --git a/nextid b/nextid
-> > > new file mode 100755
-> > > index 0000000..285b549
-> > > --- /dev/null
-> > > +++ b/nextid
-> > > @@ -0,0 +1,35 @@
-> > > +#!/bin/sh
-> > > +
-> > > +# Given a group name, find the next available test number.
-> > > +
-> > > +if [ -z "$1" ] || [ "$1" = "--help" ]; then
-> > > +	echo "Usage: $0 groupname[/start_looking_at_this_number]"
-> > > +	exit 1
-> > > +fi
-> > > +
-> > > +die() {
-> > > +	echo "$@"
-> > > +	exit 1
-> > > +}
-> > > +
-> > > +if [ "$(basename "$1")" != "$1" ]; then
-> > > +	group="$(dirname "$1")"
-> > > +	id="$(basename "$1")"
-> > > +else
-> > > +	group="$1"
-> > > +	id=1
-> > > +fi
-> > > +test -e "tests/${group}/group" || die "Unknown group \"${group}\"."
-> > > +
-> > > +while test "${id}" -lt 1000; do
-> > > +	name="$(printf "%.03d" "${id}")"
-> > > +	if [ ! -e "tests/${group}/${name}" ]; then
-> > > +		echo "${group}/${name}"
-> > > +		exit 0
-> > > +	fi
-> > > +	id=$((id + 1))
-> > > +done
-> > > +
-> > > +echo "No free IDs less than ${id} in group \"${group}\"."
-> > 
-> > So the "new" script does this differently, by reading the group
-> > file and looking for the first non-contiguous ID in the file. It
-> > doesn't need scan ID limits because EOF triggers that. Wouldn't it
-> > be better to to factor the code out of the "new" script to find the
-> > next id, and then have the new script call that?
-> 
-> Sure!
+Add two scripts: "nextid" finds the next available test ID number in a
+group, and "mvtest" relocates a test, fixes the golden output, and
+moves the group entry for that test.
 
-In the end I wrote a short Python program to sort group files and it wasn't
-much harder to reuse the code to implement nextid, so I did that instead.
+v2: sorting group files should preserve group order; nextid should use
+the same algorithm as new; move both tools to tools/.
 
-I'll probably post this and a patch to fix the error codes in generic/157
-later this week.
+Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
+---
+ tools/mvtest     |   55 +++++++++++++++++++++++++++
+ tools/nextid     |    1 
+ tools/sort-group |  112 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 3 files changed, 168 insertions(+)
+ create mode 100755 tools/mvtest
+ create mode 120000 tools/nextid
+ create mode 100755 tools/sort-group
 
---D
 
-> 
-> --D
-> 
-> > 
-> > Cheers,
-> > 
-> > Dave.
-> > -- 
-> > Dave Chinner
-> > david@fromorbit.com
-> > 
-> > _______________________________________________
-> > xfs mailing list
-> > xfs@oss.sgi.com
-> > http://oss.sgi.com/mailman/listinfo/xfs
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/tools/mvtest b/tools/mvtest
+new file mode 100755
+index 0000000..af601d6
+--- /dev/null
++++ b/tools/mvtest
+@@ -0,0 +1,55 @@
++#!/bin/sh
++
++# Renumber a test
++dir="$(dirname "$0")"
++
++if [ -z "$1" ] || [ "$1" = "--help" ]; then
++	echo "Usage: $0 path_to_test new_path_to_test"
++	exit 1
++fi
++
++src="$1"
++dest="$2"
++
++die() {
++	echo "$@"
++	exit 1
++}
++
++append() {
++	out="$1"
++	shift
++	echo "$@" >> "${out}"
++}
++
++test "${src}" != "${dest}" || die "Test \"${src}\" is the same as dest."
++test -e "tests/${src}" || die "Test \"${src}\" does not exist."
++test ! -e "tests/${dest}" || die "Test \"${src}\" already exists."
++
++sid="$(basename "${src}")"
++did="$(basename "${dest}")"
++
++sgroup="$(basename "$(dirname "tests/${src}")")"
++dgroup="$(basename "$(dirname "tests/${dest}")")"
++
++sgroupfile="tests/${sgroup}/group"
++dgroupfile="tests/${sgroup}/group"
++
++git mv "tests/${src}" "tests/${dest}"
++git mv "tests/${src}.out" "tests/${dest}.out"
++sed -e "s/^# FS QA Test No. ${sid}$/# FS QA Test No. ${did}/g" -i "tests/${dest}"
++sed -e "s/^QA output created by ${sid}$/QA output created by ${did}/g" -i "tests/${dest}.out"
++sed -e "s/test-${sid}/test-${did}/g" -i "tests/${dest}.out"
++
++grpline="$(grep "^${sid} " "${sgroupfile}")"
++newgrpline="$(echo "${grpline}" | sed -e "s/^${sid} /${did} /g")"
++
++sed -e "/^${sid}.*$/d" -i "${sgroupfile}"
++cp "${dgroupfile}" "${dgroupfile}.new"
++append "${dgroupfile}.new" "${newgrpline}"
++"${dir}/sort-group.py" "${dgroupfile}.new"
++mv "${dgroupfile}.new" "${dgroupfile}"
++
++echo "Moved \"${src}\" to \"${dest}\"."
++
++exit 0
+diff --git a/tools/nextid b/tools/nextid
+new file mode 120000
+index 0000000..5c31d60
+--- /dev/null
++++ b/tools/nextid
+@@ -0,0 +1 @@
++sort-group
+\ No newline at end of file
+diff --git a/tools/sort-group b/tools/sort-group
+new file mode 100755
+index 0000000..84944ed
+--- /dev/null
++++ b/tools/sort-group
+@@ -0,0 +1,112 @@
++#!/usr/bin/env python
++import sys
++
++# Sort a group list, carefully preserving comments.
++
++def xfstest_key(key):
++	'''Extract the numeric part of a test name if possible.'''
++	k = 0
++
++	assert type(key) == str
++
++	# No test number at all...
++	if not key[0].isdigit():
++		return key
++
++	# ...otherwise extract as much number as we can.
++	for digit in key:
++		if digit.isdigit():
++			k = k * 10 + int(digit)
++		else:
++			return k
++	return k
++
++def read_group(fd):
++	'''Read the group list, carefully attaching comments to the next test.'''
++	tests = {}
++	comments = None
++
++	for line in fd:
++		sline = line.strip()
++		tokens = sline.split()
++		if len(tokens) == 0 or tokens[0] == '#':
++			if comments == None:
++				comments = []
++			comments.append(sline)
++		else:
++			tests[tokens[0]] = (comments, tokens[1:])
++			comments = None
++	return tests
++
++def sort_keys(keys):
++	'''Separate keys into integer and non-integer tests.'''
++	int_keys = []
++	int_xkeys = []
++	str_keys = []
++
++	# Sort keys into integer(ish) tests and other
++	for key in keys:
++		xkey = xfstest_key(key)
++		if type(xkey) == int:
++			int_keys.append(key)
++			int_xkeys.append(xkey)
++		else:
++			str_keys.append(key)
++	return (int_keys, int_xkeys, str_keys)
++
++def write_sorted(tests, fd):
++	def dump_xkey(xkey):
++		(comments, tokens) = tests[key]
++		if comments:
++			for c in comments:
++				fd.write('%s\n' % c)
++		fd.write('%s %s\n' % (key, ' '.join(tokens)))
++	'''Print tests (and comments) in number order.'''
++
++	(int_keys, ignored, str_keys) = sort_keys(tests.keys())
++	for key in sorted(int_keys, key = xfstest_key):
++		dump_xkey(key)
++	for key in sorted(str_keys):
++		dump_xkey(key)
++
++def sort_main():
++	if '--help' in sys.argv[1:]:
++		print('Usage: %s groupfiles' % sys.argv[0])
++		sys.exit(0)
++
++	for arg in sys.argv[1:]:
++		with open(arg, 'r+') as fd:
++			x = read_group(fd)
++			fd.seek(0, 0)
++			write_sorted(x, fd)
++
++def nextid_main():
++	if '--help' in sys.argv[1:]:
++		print('Usage: %s group[/startid] ' % sys.argv[0])
++		sys.exit(0)
++
++	if len(sys.argv) != 2:
++		print('Specify exactly one group name.')
++		sys.exit(1)
++
++	c = sys.argv[1].split('/')
++	if len(c) > 1:
++		startid = int(c[1])
++	else:
++		startid = 1
++	group = c[0]
++
++	with open('tests/%s/group' % group, 'r') as fd:
++		x = read_group(fd)
++		xkeys = {int(x) for x in sort_keys(x.keys())[1]}
++
++		xid = startid
++		while xid in xkeys:
++			xid += 1
++		print('%s/%d' % (group, xid))
++
++if __name__ == '__main__':
++	if 'nextid' in sys.argv[0]:
++		nextid_main()
++	else:
++		sort_main()
+

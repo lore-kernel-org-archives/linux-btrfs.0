@@ -1,160 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:34902 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1760881AbbKTT3i (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 14:29:38 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-01.dd24.net (Postfix) with ESMTP id 006075FD35
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 19:29:37 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id dbL5t0T94Csk for <linux-btrfs@vger.kernel.org>;
-	Fri, 20 Nov 2015 19:29:34 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-46-244-245-7.dynamic.mnet-online.de [46.244.245.7])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 19:29:34 +0000 (UTC)
-Message-ID: <1448047774.6878.9.camel@scientia.net>
-Subject: Re: [Enhancement] ... and please rename "raid1" to something better
-From: Christoph Anton Mitterer <calestyo@scientia.net>
+Received: from vs2.lukas-pirl.de ([5.45.100.90]:46918 "EHLO pim.lukas-pirl.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1761215AbbKUAhp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 20 Nov 2015 19:37:45 -0500
+Received: from [192.168.1.5] (unknown [119.224.19.150])
+	by pim.lukas-pirl.de (Postfix) with ESMTPSA id C0EFD1FD931E
+	for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2015 00:37:41 +0000 (UTC)
+Subject: Re: 4.2.6: livelock in recovery (free_reloc_roots)?
 To: linux-btrfs@vger.kernel.org
-Date: Fri, 20 Nov 2015 20:29:34 +0100
-In-Reply-To: <pan$130bd$2fb4e52a$aef597d4$e021ef73@cox.net>
-References: <pan$130bd$2fb4e52a$aef597d4$e021ef73@cox.net>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-0EmytZYyR9PGVNUAN90V"
-Mime-Version: 1.0
+References: <564EE213.3060007@lukas-pirl.de>
+From: Lukas Pirl <btrfs@lukas-pirl.de>
+Message-ID: <564FBCD1.1020009@lukas-pirl.de>
+Date: Sat, 21 Nov 2015 13:37:37 +1300
+MIME-Version: 1.0
+In-Reply-To: <564EE213.3060007@lukas-pirl.de>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+A follow-up question:
 
---=-0EmytZYyR9PGVNUAN90V
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+Can "btrfs_recover_relocation" prevented from being run? I would not
+mind losing a few recent writes (what was a balance) but instead going
+rw again, so I can restart a balance.
 
-On Fri, 2015-11-20 at 11:05 +0000, Duncan wrote:
-> It's missing raid1. =3D:^(
-speaking of which...
+>From what I have read, btrfs-zero-log would not help in this case (?) so
+I did not run it so far.
 
-Wouldn't the developers consider to rename raid1 to something more
-correct? E.g. replicas2 or dup or whatever.
+By the way, I can confirm the defect of 'btrfs device remove missing …"
+mentioned here: http://www.spinics.net/lists/linux-btrfs/msg48383.html :
 
-RAID1 has ever had the meaning of mirrored devices and the closest to
-this in btrfs would be N replicas with N devices, and not two as it is
-now.
-Also I wouldn't know of any other system that doesn't use "RAID1" in
-the traditional meaning (MD, basically every HW RAID I came across).
+$ btrfs device delete missing /mnt/data
+ERROR: missing is not a block device
+$ btrfs device delete 5 /mnt/data
+ERROR: 5 is not a block device
 
-And I'm not against the mode of having 2 duplicates itself... just
-against the naming, which I think easily confuses users and they may
-awake with a bad surprise.
+Thanks and best regards,
 
-
-Cheers,
-Chris.
---=-0EmytZYyR9PGVNUAN90V
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyMDE5Mjkz
-NFowTwYJKoZIhvcNAQkEMUIEQFLsEKvwGd+1zU1DkR3T4cE9qqJsHrtZq4ci9uzuUxAO4biIEufH
-oxIZehXIpnyevOjQjoRTXnoKat/NWKpifiEwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBhZ/9ITFmDR21h0jO+EANj1qvbr9RJ
-ePDGLN0ga5qpqUBVWwFog1ygo71AJV3J82XlidFcmj0ANb9hN3qBi4o4NMELLp66wlCMsSFYt5gf
-A7N1wgPoPJWBGXXdrGduFg2Mt3fQufDqKOZpNoIKCOsM8tjlFbichh3OSU/gVqn/NCZPyn0Nz3Gm
-AsuR5u4XYuyVuzBCdkOWVc+Fv8tPBp6QIKlFCaIBdrpgeYbuuL/VrU9NY5CJplt77O+AvgxcyJxV
-wDlavWAUmLSBy5GN95A2oq00g3EvJbT67L33UoL4htXQ93VFg100HqheOKlJ/rd2SOv7PTx0HlgZ
-e9+Cwz/uAAAAAAAA
-
-
---=-0EmytZYyR9PGVNUAN90V--
-
+Lukas
+On 11/20/2015 10:04 PM, Lukas Pirl wrote as excerpted:
+> Dear list,
+> 
+> I am (still) trying to recover a RAID1 that can only be mounted
+> recovery,degraded,ro.
+> 
+> I experienced an issue that might be interesting for you: I tried to
+> mount the file system rw,recovery and the kernel ended up burning one
+> core (and only one specific core, never scheduled to another one).
+> 
+> The watchdog printed a stack trace roughly every 20 seconds. There were
+> only a few stack traces that were printed alternating (see below).
+> After a few hours with the mount command still being blocked and without
+> visible IO activity, the system was power-cycled.
+> 
+> Summary:
+> 
+> Call Trace:
+>  [<ffffffffa0309641>] ? free_reloc_roots+0x11/0x30 [btrfs]
+>  [<ffffffffa030964d>] ? free_reloc_roots+0x1d/0x30 [btrfs]
+>  [<ffffffffa030f6e5>] ? merge_reloc_roots+0x165/0x220 [btrfs]
+>  [<ffffffffa0310343>] ? btrfs_recover_relocation+0x293/0x380 [btrfs]
+>  [<ffffffffa02bcaa2>] ? open_ctree+0x20d2/0x23b0 [btrfs]
+>  [<ffffffffa02933fb>] ? btrfs_mount+0x87b/0x990 [btrfs]
+>  [<ffffffff8117417f>] ? pcpu_next_unpop+0x3f/0x50
+>  [<ffffffff811c3646>] ? mount_fs+0x36/0x170
+>  [<ffffffff811ddf08>] ? vfs_kern_mount+0x68/0x110
+>  [<ffffffffa0292d3b>] ? btrfs_mount+0x1bb/0x990 [btrfs]
+>  …
+> 
+> Call Trace:
+>  <IRQ>  [<ffffffff810c8240>] ? rcu_dump_cpu_stacks+0x80/0xb0
+>  [<ffffffff810cb381>] ? rcu_check_callbacks+0x421/0x6e0
+>  [<ffffffff8101cb95>] ? sched_clock+0x5/0x10
+>  [<ffffffff8108d2c5>] ? notifier_call_chain+0x45/0x70
+>  [<ffffffff810d5fc1>] ? timekeeping_update+0xf1/0x150
+>  [<ffffffff810df2c0>] ? tick_sched_do_timer+0x40/0x40
+>  [<ffffffff810d0bb6>] ? update_process_times+0x36/0x60
+>  [<ffffffff810df2c0>] ? tick_sched_do_timer+0x40/0x40
+>  [<ffffffff810decf4>] ? tick_sched_handle.isra.15+0x24/0x60
+>  [<ffffffff810df2c0>] ? tick_sched_do_timer+0x40/0x40
+>  [<ffffffff810df2fb>] ? tick_sched_timer+0x3b/0x70
+>  [<ffffffff810d16dc>] ? __hrtimer_run_queues+0xdc/0x210
+>  [<ffffffff8101c645>] ? read_tsc+0x5/0x10
+>  [<ffffffff8101c645>] ? read_tsc+0x5/0x10
+>  [<ffffffff810d1afa>] ? hrtimer_interrupt+0x9a/0x190
+>  [<ffffffff8155b4f9>] ? smp_apic_timer_interrupt+0x39/0x50
+>  [<ffffffff815596db>] ? apic_timer_interrupt+0x6b/0x70
+>  <EOI>  [<ffffffff815584a0>] ? _raw_spin_lock+0x10/0x20
+>  [<ffffffffa030955f>] ? __del_reloc_root+0x2f/0x100 [btrfs]
+>  [<ffffffffa0309530>] ? __add_reloc_root+0xe0/0xe0 [btrfs]
+>  [<ffffffffa030964d>] ? free_reloc_roots+0x1d/0x30 [btrfs]
+>  [<ffffffffa030f6e5>] ? merge_reloc_roots+0x165/0x220 [btrfs]
+>  [<ffffffffa0310343>] ? btrfs_recover_relocation+0x293/0x380 [btrfs]
+>  [<ffffffffa02bcaa2>] ? open_ctree+0x20d2/0x23b0 [btrfs]
+>  [<ffffffffa02933fb>] ? btrfs_mount+0x87b/0x990 [btrfs]
+>  [<ffffffff8117417f>] ? pcpu_next_unpop+0x3f/0x50
+>  [<ffffffff811c3646>] ? mount_fs+0x36/0x170
+>  [<ffffffff811ddf08>] ? vfs_kern_mount+0x68/0x110
+>  [<ffffffffa0292d3b>] ? btrfs_mount+0x1bb/0x990 [btrfs]
+>  …
+> 
+> Call Trace:
+>  [<ffffffffa030955f>] ? __del_reloc_root+0x2f/0x100 [btrfs]
+>  [<ffffffffa030964d>] ? free_reloc_roots+0x1d/0x30 [btrfs]
+>  [<ffffffffa030f6e5>] ? merge_reloc_roots+0x165/0x220 [btrfs]
+>  [<ffffffffa0310343>] ? btrfs_recover_relocation+0x293/0x380 [btrfs]
+>  [<ffffffffa02bcaa2>] ? open_ctree+0x20d2/0x23b0 [btrfs]
+>  [<ffffffffa02933fb>] ? btrfs_mount+0x87b/0x990 [btrfs]
+>  [<ffffffff8117417f>] ? pcpu_next_unpop+0x3f/0x50
+>  [<ffffffff811c3646>] ? mount_fs+0x36/0x170
+>  [<ffffffff811ddf08>] ? vfs_kern_mount+0x68/0x110
+>  [<ffffffffa0292d3b>] ? btrfs_mount+0x1bb/0x990 [btrfs]
+>  …
+> 
+> A longer excerpt can be found here: http://pastebin.com/NPM0Ckfy
+> 
+> I am using kernel 4.2.6 (Debian backports) and btrfs-tools 4.3.
+> 
+> btrfs check --readonly gave no errors.
+> (except the probably false positives mentioned here
+> http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg48325.html)
+> 
+> Reading the whole file system worked also.
+> 
+> If you need more information to trace this back, let me know and I'll
+> try to get it.
+> If you have suggestions regarding the recovery, please let me know as well.
+> 
+> Best regards,
+> 
+> Lukas
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 

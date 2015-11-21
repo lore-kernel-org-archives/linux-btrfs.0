@@ -1,92 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44351 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751585AbbKZCCt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 21:02:49 -0500
-Subject: Re: [PATCH 0/7] Let user specify the kernel version for features
-To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
-References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
-CC: <dsterba@suse.cz>, <calestyo@scientia.net>, <ahferroin7@gmail.com>,
-        <1i5t5.duncan@cox.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5656683C.6060001@cn.fujitsu.com>
-Date: Thu, 26 Nov 2015 10:02:36 +0800
+Received: from vs2.lukas-pirl.de ([5.45.100.90]:40462 "EHLO pim.lukas-pirl.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750734AbbKZCMc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Nov 2015 21:12:32 -0500
+Subject: Re: 4.2.6: livelock in recovery (free_reloc_roots)?
+To: Alexander Fougner <fougner89@gmail.com>
+References: <564EE213.3060007@lukas-pirl.de> <564FBCD1.1020009@lukas-pirl.de>
+ <pan$3f62e$32bded6f$af93867e$b809a854@cox.net> <565032DA.5010602@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+From: Lukas Pirl <btrfs@lukas-pirl.de>
+Message-ID: <56503BB0.3070702@lukas-pirl.de>
+Date: Sat, 21 Nov 2015 22:38:56 +1300
 MIME-Version: 1.0
-In-Reply-To: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <565032DA.5010602@gmail.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 11/21/2015 10:01 PM, Alexander Fougner wrote as excerpted:
+> This is fixed in btrfs-progs 4.3.1, that allows you to delete a
+> device again by the 'missing' keyword.
 
+Thanks Alexander! I just found the thread reporting the bug but not the
+patch with the corresponding btrfs-tools version it was merged in.
 
-Anand Jain wrote on 2015/11/25 20:08 +0800:
-> Sometimes users may want to have a btrfs to be supported on multiple
-> kernel version. A simple example, USB drive can be used with multiple
-> system running different kernel versions. Or in a data center a SAN
-> LUN could be mounted on any system with different kernel version.
->
-> Thanks for providing comments and feedback.
-> Further to it, here below is a set of patch which will introduce, to
-> specify a kernel version so that default features can be set based on
-> what features were supported at that kernel version.
-
-With the new -O comp= option, the concern on user who want to make a 
-btrfs for newer kernel is hugely reduced.
-
-But I still prefer such feature align to be done only when specified by 
-user, instead of automatically. (yeah, already told for several times 
-though)
-Warning should be enough for user, sometimes too automatic is not  good, 
-especially for tests.
-
-A lot of btrfs-progs change, like recent disabling mixed-bg for small 
-volume has already cause regression in generic/077 testcase.
-And Dave is already fed up with such problem from btrfs...
-
-Especially such auto-detection will make default behavior more unstable, 
-at least not a good idea for me.
-
-
-
-Beside this, I'm curious how other filesystm user tools handle such 
-kernel mismatch, or do they?
-
-Thanks,
-Qu
-
-
->
-> First of all to let user know what features was supported at what kernel
-> version. Patch 1/7 updates -O list-all which will list the feature with
-> version.
->
-> As we didn't maintain the sysfs and progs feature names consistent, so
-> to avoid confusion Patch 2/7 displays sysfs feature name as well again
-> in the list-all output.
->
-> Next, Patch 3,4,5/7 are helper functions.
->
-> Patch 6,7/7 provides the -O comp=<version> for mkfs.btrfs and
-> btrfs-convert respectively
->
-> Thanks, Anand
->
-> Anand Jain (7):
->    btrfs-progs: show the version for -O list-all
->    btrfs-progs: add kernel alias for each of the features in the list
->    btrfs-progs: make is_numerical non static
->    btrfs-progs: check for numerical in version_to_code()
->    btrfs-progs: introduce framework version to features
->    btrfs-progs: add -O comp= option for mkfs.btrfs
->    btrfs-progs: add -O comp= option for btrfs-convert
->
->   btrfs-convert.c | 21 +++++++++++++++++++++
->   cmds-replace.c  | 11 -----------
->   mkfs.c          | 24 ++++++++++++++++++++++--
->   utils.c         | 58 ++++++++++++++++++++++++++++++++++++++++++++++++++++-----
->   utils.h         |  2 ++
->   5 files changed, 98 insertions(+), 18 deletions(-)
->
-
-
+Lukas

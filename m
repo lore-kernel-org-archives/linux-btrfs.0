@@ -1,137 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from vs2.lukas-pirl.de ([5.45.100.90]:46918 "EHLO pim.lukas-pirl.de"
+Received: from plane.gmane.org ([80.91.229.3]:59986 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1761215AbbKUAhp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 19:37:45 -0500
-Received: from [192.168.1.5] (unknown [119.224.19.150])
-	by pim.lukas-pirl.de (Postfix) with ESMTPSA id C0EFD1FD931E
-	for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2015 00:37:41 +0000 (UTC)
-Subject: Re: 4.2.6: livelock in recovery (free_reloc_roots)?
+	id S1750828AbbKUHQt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 21 Nov 2015 02:16:49 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1a02Pg-0005sv-7t
+	for linux-btrfs@vger.kernel.org; Sat, 21 Nov 2015 08:16:48 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2015 08:16:48 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 21 Nov 2015 08:16:48 +0100
 To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: 4.2.6: livelock in recovery (free_reloc_roots)?
+Date: Sat, 21 Nov 2015 07:16:40 +0000 (UTC)
+Message-ID: <pan$3f62e$32bded6f$af93867e$b809a854@cox.net>
 References: <564EE213.3060007@lukas-pirl.de>
-From: Lukas Pirl <btrfs@lukas-pirl.de>
-Message-ID: <564FBCD1.1020009@lukas-pirl.de>
-Date: Sat, 21 Nov 2015 13:37:37 +1300
-MIME-Version: 1.0
-In-Reply-To: <564EE213.3060007@lukas-pirl.de>
-Content-Type: text/plain; charset=utf-8
+	<564FBCD1.1020009@lukas-pirl.de>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-A follow-up question:
+Lukas Pirl posted on Sat, 21 Nov 2015 13:37:37 +1300 as excerpted:
 
-Can "btrfs_recover_relocation" prevented from being run? I would not
-mind losing a few recent writes (what was a balance) but instead going
-rw again, so I can restart a balance.
+> Can "btrfs_recover_relocation" prevented from being run? I would not
+> mind losing a few recent writes (what was a balance) but instead going
+> rw again, so I can restart a balance.
 
->From what I have read, btrfs-zero-log would not help in this case (?) so
-I did not run it so far.
+I'm not familiar with that thread name (I run multiple small btrfs on 
+ssds, so scrub, balance, etc, take only a few minutes at most), but if 
+it's the balance thread, then yes, there's a mount option that cancels a 
+running balance.  See the wiki page covering mount options.
 
-By the way, I can confirm the defect of 'btrfs device remove missing …"
-mentioned here: http://www.spinics.net/lists/linux-btrfs/msg48383.html :
+> From what I have read, btrfs-zero-log would not help in this case (?) so
+> I did not run it so far.
 
-$ btrfs device delete missing /mnt/data
-ERROR: missing is not a block device
-$ btrfs device delete 5 /mnt/data
-ERROR: 5 is not a block device
+Correct.  Btrfs is atomic at commit time, so doesn't need a journal in 
+the sense of older filesystems like reiserfs, jfs and ext3/4.
 
-Thanks and best regards,
+What's this log, then?  While btrfs won't fully write normal file writes 
+until a commit (every 30 seconds by default, there's a mount option...), 
+which is atomic (with copy-on-write helping here) so in the event of a 
+crash either the before or after state is returned, not something half 
+written, fsync is different.  That says don't return until the file is 
+written to storage.  But if a commit is done to ensure that, there may be 
+far more data to commit that otherwise doesn't need to be committed yet, 
+seriously slowing things down.  So that's where this log comes in.  It's 
+purely a log of fsynced data (and perhaps a few other similar things, I'm 
+not a dev and am not sure) between atomic commits, so the fsync can 
+return quickly while still having actually written the data to store, 
+without having to wait upto 30 seconds (by default) for the normal commit 
+to complete, or forcing a commit, along with everything else half 
+written, early.
 
-Lukas
-On 11/20/2015 10:04 PM, Lukas Pirl wrote as excerpted:
-> Dear list,
+There was a bug at one point where this log could be corrupted and thus 
+couldn't be written properly at mount, but the primary trigger bug for 
+that problem is long since fixed, so while there's various hardware bugs 
+and etc that could still by remote chance cause problems, thus the option 
+to zero the log, it's a very rare occurrence, and the trace when it fails 
+is telltale enough that if it's posted the devs can tell you to run the 
+zero-log command then.  Otherwise, it generally does no good, and while 
+it generally does no serious harm beyond the loss of a few seconds worth 
+of fsyncs, etc, either, because the commits /are/ atomic and zeroing the 
+log simply returns the system to the state of such a commit, it's not 
+recommended as it /does/ needlessly kill the log of those last few 
+seconds of fsyncs.
+
+> By the way, I can confirm the defect of 'btrfs device remove missing …"
+> mentioned here: http://www.spinics.net/lists/linux-btrfs/msg48383.html :
 > 
-> I am (still) trying to recover a RAID1 that can only be mounted
-> recovery,degraded,ro.
-> 
-> I experienced an issue that might be interesting for you: I tried to
-> mount the file system rw,recovery and the kernel ended up burning one
-> core (and only one specific core, never scheduled to another one).
-> 
-> The watchdog printed a stack trace roughly every 20 seconds. There were
-> only a few stack traces that were printed alternating (see below).
-> After a few hours with the mount command still being blocked and without
-> visible IO activity, the system was power-cycled.
-> 
-> Summary:
-> 
-> Call Trace:
->  [<ffffffffa0309641>] ? free_reloc_roots+0x11/0x30 [btrfs]
->  [<ffffffffa030964d>] ? free_reloc_roots+0x1d/0x30 [btrfs]
->  [<ffffffffa030f6e5>] ? merge_reloc_roots+0x165/0x220 [btrfs]
->  [<ffffffffa0310343>] ? btrfs_recover_relocation+0x293/0x380 [btrfs]
->  [<ffffffffa02bcaa2>] ? open_ctree+0x20d2/0x23b0 [btrfs]
->  [<ffffffffa02933fb>] ? btrfs_mount+0x87b/0x990 [btrfs]
->  [<ffffffff8117417f>] ? pcpu_next_unpop+0x3f/0x50
->  [<ffffffff811c3646>] ? mount_fs+0x36/0x170
->  [<ffffffff811ddf08>] ? vfs_kern_mount+0x68/0x110
->  [<ffffffffa0292d3b>] ? btrfs_mount+0x1bb/0x990 [btrfs]
->  …
-> 
-> Call Trace:
->  <IRQ>  [<ffffffff810c8240>] ? rcu_dump_cpu_stacks+0x80/0xb0
->  [<ffffffff810cb381>] ? rcu_check_callbacks+0x421/0x6e0
->  [<ffffffff8101cb95>] ? sched_clock+0x5/0x10
->  [<ffffffff8108d2c5>] ? notifier_call_chain+0x45/0x70
->  [<ffffffff810d5fc1>] ? timekeeping_update+0xf1/0x150
->  [<ffffffff810df2c0>] ? tick_sched_do_timer+0x40/0x40
->  [<ffffffff810d0bb6>] ? update_process_times+0x36/0x60
->  [<ffffffff810df2c0>] ? tick_sched_do_timer+0x40/0x40
->  [<ffffffff810decf4>] ? tick_sched_handle.isra.15+0x24/0x60
->  [<ffffffff810df2c0>] ? tick_sched_do_timer+0x40/0x40
->  [<ffffffff810df2fb>] ? tick_sched_timer+0x3b/0x70
->  [<ffffffff810d16dc>] ? __hrtimer_run_queues+0xdc/0x210
->  [<ffffffff8101c645>] ? read_tsc+0x5/0x10
->  [<ffffffff8101c645>] ? read_tsc+0x5/0x10
->  [<ffffffff810d1afa>] ? hrtimer_interrupt+0x9a/0x190
->  [<ffffffff8155b4f9>] ? smp_apic_timer_interrupt+0x39/0x50
->  [<ffffffff815596db>] ? apic_timer_interrupt+0x6b/0x70
->  <EOI>  [<ffffffff815584a0>] ? _raw_spin_lock+0x10/0x20
->  [<ffffffffa030955f>] ? __del_reloc_root+0x2f/0x100 [btrfs]
->  [<ffffffffa0309530>] ? __add_reloc_root+0xe0/0xe0 [btrfs]
->  [<ffffffffa030964d>] ? free_reloc_roots+0x1d/0x30 [btrfs]
->  [<ffffffffa030f6e5>] ? merge_reloc_roots+0x165/0x220 [btrfs]
->  [<ffffffffa0310343>] ? btrfs_recover_relocation+0x293/0x380 [btrfs]
->  [<ffffffffa02bcaa2>] ? open_ctree+0x20d2/0x23b0 [btrfs]
->  [<ffffffffa02933fb>] ? btrfs_mount+0x87b/0x990 [btrfs]
->  [<ffffffff8117417f>] ? pcpu_next_unpop+0x3f/0x50
->  [<ffffffff811c3646>] ? mount_fs+0x36/0x170
->  [<ffffffff811ddf08>] ? vfs_kern_mount+0x68/0x110
->  [<ffffffffa0292d3b>] ? btrfs_mount+0x1bb/0x990 [btrfs]
->  …
-> 
-> Call Trace:
->  [<ffffffffa030955f>] ? __del_reloc_root+0x2f/0x100 [btrfs]
->  [<ffffffffa030964d>] ? free_reloc_roots+0x1d/0x30 [btrfs]
->  [<ffffffffa030f6e5>] ? merge_reloc_roots+0x165/0x220 [btrfs]
->  [<ffffffffa0310343>] ? btrfs_recover_relocation+0x293/0x380 [btrfs]
->  [<ffffffffa02bcaa2>] ? open_ctree+0x20d2/0x23b0 [btrfs]
->  [<ffffffffa02933fb>] ? btrfs_mount+0x87b/0x990 [btrfs]
->  [<ffffffff8117417f>] ? pcpu_next_unpop+0x3f/0x50
->  [<ffffffff811c3646>] ? mount_fs+0x36/0x170
->  [<ffffffff811ddf08>] ? vfs_kern_mount+0x68/0x110
->  [<ffffffffa0292d3b>] ? btrfs_mount+0x1bb/0x990 [btrfs]
->  …
-> 
-> A longer excerpt can be found here: http://pastebin.com/NPM0Ckfy
-> 
-> I am using kernel 4.2.6 (Debian backports) and btrfs-tools 4.3.
-> 
-> btrfs check --readonly gave no errors.
-> (except the probably false positives mentioned here
-> http://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg48325.html)
-> 
-> Reading the whole file system worked also.
-> 
-> If you need more information to trace this back, let me know and I'll
-> try to get it.
-> If you have suggestions regarding the recovery, please let me know as well.
-> 
-> Best regards,
-> 
-> Lukas
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> $ btrfs device delete missing
+> /mnt/data ERROR: missing is not a block device
+> $ btrfs device delete 5
+> /mnt/data ERROR: 5 is not a block device
+
+That's a known bug, with patches working their way thru the system both 
+to provide a different alternative and to let btrfs device delete missing 
+work again, but IDR the specific status of those patches.  Presumably 
+they'll be in 4.4, but I don't know if they made it into 4.3 or not and 
+don't feel like looking it up ATM when you could do so just as easily.
+
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

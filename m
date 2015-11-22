@@ -1,220 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40957 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750724AbbKVGNX (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Nov 2015 01:13:23 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a0Nth-0001hQ-Qt
-	for linux-btrfs@vger.kernel.org; Sun, 22 Nov 2015 07:13:14 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2015 07:13:13 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2015 07:13:13 +0100
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:37841 "EHLO
+	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752335AbbKVVkA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 22 Nov 2015 16:40:00 -0500
+Received: by wmww144 with SMTP id w144so82497507wmw.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2015 13:39:59 -0800 (PST)
+MIME-Version: 1.0
+From: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>
+Date: Mon, 23 Nov 2015 02:39:44 +0500
+Message-ID: <CABXGCsM2=xypLXTj9QrotwH-RiZm+WdHuyGLUtCeA3t5KAmRHA@mail.gmail.com>
+Subject: INFO: task tracker-store:2686 blocked for more than 120 seconds.
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: free space is missing after dist upgrade on lzo compressed vol
-Date: Sun, 22 Nov 2015 06:12:58 +0000 (UTC)
-Message-ID: <pan$4311b$f83b5a0f$e7ee4a74$4127ffa2@cox.net>
-References: <CALuXmTBWN3_PLnm4uh7u1SmGA2+5_VvNou-BLtv4=+Jvjjdz1Q@mail.gmail.com>
-	<20151113223816.GI24333@carfax.org.uk>
-	<CALuXmTDsK6PbNNRV=tTcp+O0Fx-xAceAN3O1BqdjFSpno7KBow@mail.gmail.com>
-	<CAGqmi779f9cEQJN4GtJ02pCW03DCB4SCX50arHY3kqK2bUNB1g@mail.gmail.com>
-	<CALuXmTDKiQwBnGuGF5MsoD9d_wfv+LVyVxWbmnyEz_nCB-5qkg@mail.gmail.com>
-Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Brenton Chapin posted on Sat, 21 Nov 2015 12:32:12 -0600 as excerpted:
-
-> Thanks, snapshots, or subvolumes, was it.  (I'm not clear on the
-> distinction between a snapshot and a subvolume.)
-
-As Hugo says much more briefly, snapshots are a special kind of 
-subvolume.  These are normally (copy-on-write, aka cow, based) 
-"snapshots" of another subvolume at a the point they were taken, 
-containing the same data, etc.  Snapshots can be read-only, in which case 
-they lock in what the snapshotted subvolume looked like at that time, or 
-writable, just like normal subvolumes, in which case they start out 
-looking like the subvolume they snapshotted at that point in time, but 
-both the original subvolume and its writable snapshot can be written to, 
-so one or both can diverge from the "picture" that was taken by the 
-snapshot.
-
-Subvolumes (and thus snapshots, since snapshots are a special case of 
-subvolume), meanwhile, look and work almost like directories, except they 
-have a few extra features that normal directories don't have, the biggest 
-of which is that subvolumes can be mounted separately, as if they were 
-their own filesystems.  This is actually what's happening below, as it's 
-not the "root" subvolume that's actually mounted at /, but rather, a 
-subvolume below the root subvolume.  Knowing that should help make sense 
-of the subvolume list output, below, and explains why you don't see the 
-subvolumes in the filesystem, as what's mounted at / isn't actually the 
-root subvolume, but a subvolume nested within the root subvolume.
-
-More on that below, but while we're talking about subvolume features, let 
-me repeat something I said above, now that you have a bit more context to 
-put it in.  Snapshots are taken of specific subvolumes (again, if it 
-helps, think subdirs), NOT of the whole filesystem including all 
-subvolumes.  As such, snapshots stop at subvolume boundaries.  If for 
-instance you take a snapshot of the root subvolume (ID 5 in the listing 
-below, *NOT* the nested subvolume below it that happens to be mounted
-at /), you get a picture/snapshot of only what's directly in it, not 
-what's in subvolumes nested beneath it.  Nested subvolumes are 
-snapshotted separately.
-
-> btrfs subvolume list -p /
-> ID 257 gen 16615 parent 5 top level 5 path @
-> ID 262 gen 15857 parent 5 top level 5 path
-> @apt-snapshot-release-upgrade-vivid-2015-11-12_15:49:30
-> ID 266 gen 16544 parent 257 top level 257 path
-> var/lib/machines
-> ID 268 gen 16203 parent 5 top level 5 path
-> @apt-snapshot-release-upgrade-wily-2015-11-13_04:10:00
-> 
-> Seems these subvolumes (snapshots?) are nowhere visible in the file
-> system.  Now I'm trying to figure out the correct commands to delete
-> them.  "btrfs subvolume delete @apt-snapshot..." gave "ERROR: error
-> accessing '@apt-snapshot...", while "btrfs sbuvolume show " on
-> variations of the name keep giving me "ERROR: finding real path for
-> '...', No such file or directory."  No luck so far.  What am I missing?
-
-As I said above, you won't see these subvolumes (including snapshots) 
-visible in the filesystem, because what you have mounted at / is not the 
-root level (ID 5) subvolume, but rather, a subvolume nested within it.
-
-Visualizing the above listing as a tree, you have...
-
-+-+--       ID 5  root subvolume, always ID 5 (not listed)
-  |
-  +-+--   ID 257  @ (this is what is mounted at /)
-  | |
-  | +--   ID 266	(@/)var/lib/machines (systemd generated)
-  |
-  +--     ID 262 @apt-snapshot-release-upgrade-vivid...
-  |
-  +--     ID 268 @apt-snapshot-release-upgrade-wily...
-
-As mentioned, it's ID 257, @, that's mounted at /.  Your 4.2 kernel is 
-actually new enough to print this information in the mount output, and 
-indeed, from the mount output you posted upthread:
-
->>>>> /dev/sda6 on / type btrfs
->>>>> (rw,relatime,compress=lzo,space_cache,subvolid=257,subvol=/@)
-
-See that subvolid=257,subvol=/@ ?  That's the same ID 257 @ as shown in 
-your subvolume list, and as I diagrammed in the tree layout.
-
-IDs 262 and 268 are snapshots of the state of ID 257 @, at the time you 
-did the upgrades.  ID 5 is of course the root subvolume, in which the 
-others are nested, and ID 257 @, has ID 266 nested within it.  Of course 
-this information can be easily seen from the tree layout I did, but it's 
-there in the listing as well, with the parent/top-level ID in the listing 
-being the direct parent subvolume.
-
-OK, so how do you delete those snapshots and recover the space they claim?
-
-As with normal directories in filesystems, to work with subvolumes/
-snapshots in btrfs, you need a subvolume from which they're descended 
-mounted.
-
-Since ID 257 (@) is mounted, ID 266, var/lib/machines, nested within it, 
-is visible in its tree, and for most purposes will look and behave like 
-an ordinary directory, except that you won't be able to rmdir it, because 
-it's actually a subvolume.  As long as it's not actually mounted as its 
-own subvolume, however, you could btrfs subvolume delete it, if you 
-wanted to.
-
-But the two snapshots, ID 262 and 268, are not within the mounted tree 
-and you can't directly work with them as a result, tho you _can_ btrfs 
-subvolume list them, as you did.  To work with them, in this case, to 
-btrfs subvolume delete them, you'll need to mount their parent subvolume 
-somewhere.
-
-Tho here's where I start going out beyond my own personal working 
-knowledge, as I neither run Ubuntu (I'm a Gentooer), so don't know what 
-specific mount points it might provide for that, nor do I actually use 
-the btrfs subvolumes/snapshots features here, tho I did play with them 
-just a bit when I was first setting things up here, before deciding they 
-didn't actually fit my use-case very well, and my life was simpler 
-without trying to use them.  So while I can read the btrfs-subvolume 
-manpage and the subvolume documentation on the btrfs wiki, so can you, 
-and with limited personal experience, I don't have the benefit of that 
-experience to pass on many hints or warnings based on it.  So the actual 
-command details are going to be a bit vague/theoretical/handwavy.
-
-But here what I'd do would be:
-
-1) Create a mountpoint for the purpose, say /mnt/rootfsrootsubvol/
-
-(That lets you create other mountpoints, say /mnt/homefsrootsubvol/, if 
-you want to do the same thing for your home filesystem, since I noticed 
-in your mount output that it's a separate btrfs, also using subvolumes.)
-
-2) (Optional)  Create an fstab entry with my desired device, mount point 
-and mount options, specifically including subvolid=5, and probably noauto, 
-unless you want it mounted all the time, something like this:
-
-/dev/sda6 /mnt/rootfsrootsubvol btrfs subvolid=5,noauto
-
-3) Mount the root subvolume, either using the options from the fstab 
-entry you created in step 2, or manually adding the -o subvolid=5 option.
-
-4) /Now/ do your deletion using the path, much as you'd delete a 
-directory, except of course using btrfs subvolume delete instead of rmdir 
-or rm -r.
-
-(Obviously untested because as I said I don't use the subvolume 
-functionality here, but /something/ like this...)
-
-btrfs subvolume delete [-c|-C] /mnt/rootfsrootsubvol/@apt-snapshot...
-
-Hint: Use tab-completion to avoid having to type in the whole path. =:^)
-
-The -c/-C options are described in the manpage, but...  without them, the 
-command will return, but btrfs will still be working on doing the actual 
-delete in the background.  So you get a prompt back pretty fast, but 
-because the delete will be ongoing, you won't see the full result in your 
-btrfs fi df/show/usage or in normal df, for awhile.  If you prefer that 
-the delete command not return until the delete is actually done, use the
--c option.  If you're deleting several snapshots/subvolumes at once, -c 
-will delete them all and then do a commit before returning, while -C will 
-do a commit after each one, of course returning only after the last one.  
-Thus, with these options the command will continue running for longer, 
-but when it /does/ return, you should be able to see the properly final 
-subvolume deletion results in your btrfs filesystem show/df/usage 
-commands and in regular df.
-
-5) Don't forget to umount the root subvolume, again. =:^)
+[  239.881241] INFO: task tracker-store:2686 blocked for more than 120 seconds.
+[  239.881245]       Not tainted 4.2.6-300.fc23.x86_64+debug #1
+[  239.881246] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
+disables this message.
+[  239.881247] tracker-store   D ffff8807fe1d76d8 11528  2686      1 0x00000000
+[  239.881254]  ffff8807a7aef1e8 0000000000000096 ffff8807f997b800
+0000000000000000
+[  239.881256]  ffff8807f61faa40 ffff8807a79c5480 ffff8807a7aef1e8
+ffff8807a7af0000
+[  239.881258]  ffff8807fe1d76c0 7fffffffffffffff ffffffff8186d450
+ffff8807a7aef3b0
+[  239.881260] Call Trace:
+[  239.881267]  [<ffffffff8186d450>] ? bit_wait+0x50/0x50
+[  239.881268]  [<ffffffff8186cade>] schedule+0x3e/0x90
+[  239.881270]  [<ffffffff81871705>] schedule_timeout+0x255/0x410
+[  239.881274]  [<ffffffff81107f5d>] ? mark_held_locks+0x7d/0xb0
+[  239.881279]  [<ffffffff8113e00d>] ? ktime_get+0x7d/0x140
+[  239.881281]  [<ffffffff8186d450>] ? bit_wait+0x50/0x50
+[  239.881283]  [<ffffffff811080b9>] ? trace_hardirqs_on_caller+0x129/0x1b0
+[  239.881287]  [<ffffffff810267d9>] ? read_tsc+0x9/0x10
+[  239.881289]  [<ffffffff8113e03c>] ? ktime_get+0xac/0x140
+[  239.881292]  [<ffffffff811902d3>] ? __delayacct_blkio_start+0x23/0x30
+[  239.881294]  [<ffffffff8186d450>] ? bit_wait+0x50/0x50
+[  239.881296]  [<ffffffff8186c024>] io_schedule_timeout+0xa4/0x110
+[  239.881297]  [<ffffffff8186d485>] bit_wait_io+0x35/0x50
+[  239.881299]  [<ffffffff8186d01d>] __wait_on_bit+0x5d/0x90
+[  239.881303]  [<ffffffff811e12cf>] wait_on_page_bit+0xcf/0xf0
+[  239.881305]  [<ffffffff810fbfc0>] ? autoremove_wake_function+0x40/0x40
+[  239.881329]  [<ffffffffa06f1319>]
+read_extent_buffer_pages+0x2c9/0x300 [btrfs]
+[  239.881340]  [<ffffffffa06c0ec0>] ? free_root_pointers+0x60/0x60 [btrfs]
+[  239.881347]  [<ffffffffa06c1e8c>]
+btree_read_extent_buffer_pages.constprop.54+0xac/0x110 [btrfs]
+[  239.881354]  [<ffffffffa06c3171>] read_tree_block+0x41/0x70 [btrfs]
+[  239.881360]  [<ffffffffa06a048e>]
+read_block_for_search.isra.34+0x13e/0x380 [btrfs]
+[  239.881366]  [<ffffffffa06a27f4>] btrfs_search_slot+0x384/0xa10 [btrfs]
+[  239.881369]  [<ffffffff811080b9>] ? trace_hardirqs_on_caller+0x129/0x1b0
+[  239.881375]  [<ffffffffa06bd08e>] btrfs_lookup_csum+0x4e/0x150 [btrfs]
+[  239.881382]  [<ffffffffa06bd345>]
+__btrfs_lookup_bio_sums.isra.6+0x1b5/0x510 [btrfs]
+[  239.881389]  [<ffffffffa06c2c5c>] ? btrfs_bio_wq_end_io+0x2c/0x80 [btrfs]
+[  239.881395]  [<ffffffffa06bd926>] btrfs_lookup_bio_sums+0x36/0x40 [btrfs]
+[  239.881402]  [<ffffffffa06cd661>] btrfs_submit_bio_hook+0x131/0x1b0 [btrfs]
+[  239.881410]  [<ffffffffa06e8bde>] submit_one_bio+0x6e/0xa0 [btrfs]
+[  239.881417]  [<ffffffffa06edac5>] submit_extent_page+0xe5/0x1e0 [btrfs]
+[  239.881423]  [<ffffffffa06eee8e>] __do_readpage+0x39e/0x940 [btrfs]
+[  239.881429]  [<ffffffffa06ed200>] ?
+btrfs_create_repair_bio+0x100/0x100 [btrfs]
+[  239.881436]  [<ffffffffa06d0140>] ?
+btrfs_writepage_end_io_hook+0x300/0x300 [btrfs]
+[  239.881443]  [<ffffffffa06ef7f4>]
+__extent_readpages.constprop.40+0x2c4/0x2e0 [btrfs]
+[  239.881445]  [<ffffffff811e3168>] ? __add_to_page_cache_locked+0x408/0x470
+[  239.881451]  [<ffffffffa06d0140>] ?
+btrfs_writepage_end_io_hook+0x300/0x300 [btrfs]
+[  239.881458]  [<ffffffffa06efe77>] extent_readpages+0x197/0x1f0 [btrfs]
+[  239.881464]  [<ffffffffa06d0140>] ?
+btrfs_writepage_end_io_hook+0x300/0x300 [btrfs]
+[  239.881469]  [<ffffffffa06cda6f>] btrfs_readpages+0x1f/0x30 [btrfs]
+[  239.881472]  [<ffffffff811f42cf>] __do_page_cache_readahead+0x2af/0x330
+[  239.881473]  [<ffffffff811f419d>] ? __do_page_cache_readahead+0x17d/0x330
+[  239.881475]  [<ffffffff810e7e3c>] ? local_clock+0x1c/0x20
+[  239.881477]  [<ffffffff811f4433>] ondemand_readahead+0xe3/0x460
+[  239.881480]  [<ffffffff812a2132>] ? inode_congested+0x122/0x210
+[  239.881482]  [<ffffffff811f4823>] page_cache_async_readahead+0x73/0x80
+[  239.881483]  [<ffffffff811e44b2>] generic_file_read_iter+0x452/0x610
+[  239.881485]  [<ffffffff81107f5d>] ? mark_held_locks+0x7d/0xb0
+[  239.881487]  [<ffffffff8126fe1c>] __vfs_read+0xcc/0x100
+[  239.881488]  [<ffffffff8127073a>] vfs_read+0x8a/0x140
+[  239.881490]  [<ffffffff812714e8>] SyS_read+0x58/0xd0
+[  239.881493]  [<ffffffff818735ee>] entry_SYSCALL_64_fastpath+0x12/0x76
+[  239.881495] 1 lock held by tracker-store/2686:
+[  239.881495]  #0:  (&f->f_pos_lock){+.+.+.}, at:
+[<ffffffff81293149>] __fdget_pos+0x49/0x50
 
 
-Tip/Recommendation:  Don't keep the root subvolume mounted all the time.  
-Mount it to work with subvolumes.  Unmount it when you're done working 
-with them.  Besides being generally good practice, there's a security 
-dimension to consider.  Snapshots in particular will have old copies of 
-various executables and libraries around, some of which will be still 
-vulnerable versions of executables and libraries that have had security 
-updates since then.  Should someone with ill intent get access to your 
-system and these security-vulnerable executables and libraries are 
-accessible via mounted snapshot or root subvolume, these old binaries 
-with known security issues could well make it far easier for them to get 
-root access than it would be were these old snapshots not accessible 
-because neither they nor the root subvolume are mounted.
 
-Of course keeping the root subvolume unmounted keeps you or others from 
-accidentally (or deliberately, as an attack) deleting subvolumes and 
-snapshots not immediately nested in your working system, as well.
 
-So just keep the root subvolume unmounted unless you're actually working 
-with it, for much the same reasons you don't run as root unless you're 
-actually doing something that needs it. =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--
+Best Regards,
+Mike Gavrilov.

@@ -1,167 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:47240 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:47270 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753173AbbKWM4X (ORCPT
+	with ESMTP id S1753173AbbKWM4Z (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 07:56:23 -0500
+	Mon, 23 Nov 2015 07:56:25 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz
-Subject: [PATCH v2 1/5] btrfs-progs: introduce framework to check kernel supported features
-Date: Mon, 23 Nov 2015 20:56:14 +0800
-Message-Id: <1448283378-10579-2-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH v2 2/5] btrfs-progs: add framework to check features supported by sysfs
+Date: Mon, 23 Nov 2015 20:56:15 +0800
+Message-Id: <1448283378-10579-3-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
 References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In the newer kernel, supported kernel features can be known from
-  /sys/fs/btrfs/features
-however this interface was introduced only after 3.14, and most the
-incompatible FS features were introduce before 3.14.
+This adds a framework to check the /sys/fs/btrfs/features for the list
+of supported features by the btrfs kernel. Which I hope by using it the
+mkfs and btrfs-convert could tune to set features as supported by the
+running kernel.
 
-This patch proposes to maintain kernel version against the feature list,
-and so that will be the minimum kernel version needed to use the feature.
-
-Further, for features supported later than 3.14 this list can still be
-updated, so it serves as a repository which can be displayed for easy
-reference.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
-v2: Check for condition that what happens when we fail to read kernel
-    version. Now the code will fail back to use the default as set by
-    the progs.
-
- utils.c | 80 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ utils.c | 66 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++--------
  utils.h |  1 +
- 2 files changed, 76 insertions(+), 5 deletions(-)
+ 2 files changed, 59 insertions(+), 8 deletions(-)
 
 diff --git a/utils.c b/utils.c
-index b754686..24042e5 100644
+index 24042e5..48a1989 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -32,10 +32,12 @@
- #include <linux/loop.h>
- #include <linux/major.h>
- #include <linux/kdev_t.h>
-+#include <linux/version.h>
- #include <limits.h>
- #include <blkid/blkid.h>
- #include <sys/vfs.h>
- #include <sys/statfs.h>
-+#include <sys/utsname.h>
- #include <linux/magic.h>
- 
- #include "kerncompat.h"
-@@ -567,21 +569,28 @@ out:
- 	return ret;
- }
- 
-+/*
-+ * min_ker_ver: update with minimum kernel version at which the feature
-+ * was integrated into the mainline. For the transit period, that is
-+ * feature not yet in mainline but in mailing list and for testing,
-+ * please use "0.0" to indicate the same.
-+ */
+@@ -577,22 +577,23 @@ out:
+  */
  static const struct btrfs_fs_feature {
  	const char *name;
++	const char *name_ker;
  	u64 flag;
  	const char *desc;
-+	const char *min_ker_ver;
+ 	const char *min_ker_ver;
  } mkfs_features[] = {
- 	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
--		"mixed data and metadata block groups" },
-+		"mixed data and metadata block groups", "2.7.31"},
- 	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
--		"increased hardlink limit per file to 65536" },
-+		"increased hardlink limit per file to 65536", "3.7"},
- 	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
--		"raid56 extended format" },
-+		"raid56 extended format", "3.9"},
- 	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
--		"reduced-size metadata extent refs" },
-+		"reduced-size metadata extent refs", "3.10"},
- 	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
--		"no explicit hole extents for files" },
-+		"no explicit hole extents for files", "3.14"},
+-	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
++	{ "mixed-bg", "mixed_groups", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
+ 		"mixed data and metadata block groups", "2.7.31"},
+-	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
++	{ "extref", "extended_iref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
+ 		"increased hardlink limit per file to 65536", "3.7"},
+-	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
++	{ "raid56", "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
+ 		"raid56 extended format", "3.9"},
+-	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
++	{ "skinny-metadata", "skinny_metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
+ 		"reduced-size metadata extent refs", "3.10"},
+-	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
++	{ "no-holes", "no_holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
+ 		"no explicit hole extents for files", "3.14"},
  	/* Keep this one last */
- 	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+-	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
++	{ "list-all", "", BTRFS_FEATURE_LIST_ALL, NULL }
  };
-@@ -3077,3 +3086,64 @@ unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode)
  
- 	return unit_mode;
+ static int parse_one_fs_feature(const char *name, u64 *flags)
+@@ -602,10 +603,12 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
+ 
+ 	for (i = 0; i < ARRAY_SIZE(mkfs_features); i++) {
+ 		if (name[0] == '^' &&
+-			!strcmp(mkfs_features[i].name, name + 1)) {
++			(!strcmp(mkfs_features[i].name, name + 1) ||
++			!strcmp(mkfs_features[i].name_ker, name + 1))) {
+ 			*flags &= ~ mkfs_features[i].flag;
+ 			found = 1;
+-		} else if (!strcmp(mkfs_features[i].name, name)) {
++		} else if (!strcmp(mkfs_features[i].name, name) ||
++			!strcmp(mkfs_features[i].name_ker, name)) {
+ 			*flags |= mkfs_features[i].flag;
+ 			found = 1;
+ 		}
+@@ -3147,3 +3150,50 @@ u64 btrfs_features_allowed_by_kernel(void)
+ 	}
+ 	return (features);
  }
 +
-+static int version_to_code(char *v)
++int check_or_load_btrfs_ko()
 +{
-+	int i = 0;
-+	char *b[3] = {NULL};
-+	char *save_b = NULL;
-+
-+	for (b[i] = strtok_r(v, ".", &save_b);
-+		b[i] != NULL;
-+		b[i] = strtok_r(NULL, ".", &save_b))
-+		i++;
-+
-+	if (b[2] == NULL)
-+		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), 0);
-+	else
-+		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), atoi(b[2]));
-+
-+}
-+
-+static int get_kernel_code()
-+{
-+	int ret;
-+	struct utsname utsbuf;
-+	char *version;
-+
-+	ret = uname(&utsbuf);
-+	if (ret)
-+		return -ret;
-+
-+	if (!strlen(utsbuf.release))
-+		return -EINVAL;
-+
-+	version = strtok(utsbuf.release, "-");
-+
-+	return version_to_code(version);
-+}
-+
-+u64 btrfs_features_allowed_by_kernel(void)
-+{
-+	int i;
-+	int local_kernel_code = get_kernel_code();
-+	u64 features = 0;
++	int fd;
 +
 +	/*
-+	 * When system did not provide the kernel version then just
-+	 * return 0, the caller has to depend on the intelligence as
-+	 * per btrfs-progs version
++	 * open will load btrfs kernel module if its not loaded,
++	 * and if the kernel has CONFIG auto load set?
 +	 */
-+	if (local_kernel_code <= 0)
-+		return 0;
++	fd = open("/dev/btrfs-control", O_RDONLY);
++	if (fd < 0)
++		return -errno;
 +
-+	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
-+		char *ver = strdup(mkfs_features[i].min_ker_ver);
++	close(fd);
++	return 0;
++}
 +
-+		if (local_kernel_code >= version_to_code(ver))
-+			features |= mkfs_features[i].flag;
++int btrfs_features_allowed_by_sysfs(u64 *features)
++{
++	int ret;
++	DIR *dir;
++	struct dirent *ent;
 +
-+		free(ver);
++	ret = check_or_load_btrfs_ko();
++	if (ret) {
++		/* returns, -errno */
++		return ret;
 +	}
-+	return (features);
++
++	dir = opendir("/sys/fs/btrfs/features");
++	if (!dir) {
++		/*
++		 * An old kernel which does not support sysfs/features
++		 */
++		return -errno;
++	}
++
++	*features = 0;
++	while((ent = readdir(dir)) != NULL) {
++		if (!strcmp(".", ent->d_name) ||
++				!strcmp("..", ent->d_name))
++			continue;
++		parse_one_fs_feature(ent->d_name, features);
++	}
++	closedir(dir);
++	return 0;
 +}
 diff --git a/utils.h b/utils.h
-index 192f3d1..9044643 100644
+index 9044643..af0aa31 100644
 --- a/utils.h
 +++ b/utils.h
-@@ -104,6 +104,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed);
- char* btrfs_parse_fs_features(char *namelist, u64 *flags);
+@@ -105,6 +105,7 @@ char* btrfs_parse_fs_features(char *namelist, u64 *flags);
  void btrfs_process_fs_features(u64 flags);
  void btrfs_parse_features_to_string(char *buf, u64 flags);
-+u64 btrfs_features_allowed_by_kernel(void);
+ u64 btrfs_features_allowed_by_kernel(void);
++int btrfs_features_allowed_by_sysfs(u64 *features);
  
  struct btrfs_mkfs_config {
  	char *label;

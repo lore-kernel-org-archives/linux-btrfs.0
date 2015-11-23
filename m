@@ -1,150 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:6409 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S934930AbbKTD0k (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 19 Nov 2015 22:26:40 -0500
-Received: from localhost.localdomain (tang.cn.fujitsu.com [127.0.0.1])
-	by tang.cn.fujitsu.com (8.14.3/8.13.1) with ESMTP id tAK3Pqd9022290
-	for <linux-btrfs@vger.kernel.org>; Fri, 20 Nov 2015 11:25:52 +0800
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH 00/25] Btrfs-convert rework to support native separate
-Date: Fri, 20 Nov 2015 11:24:04 +0800
-Message-Id: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:52509 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751262AbbKWRfP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Nov 2015 12:35:15 -0500
+Date: Mon, 23 Nov 2015 18:33:30 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 00/25] Btrfs-convert rework to support native separate
+Message-ID: <20151123173330.GH31035@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here comes the 1st version of btrfs-convert rework.
-Any test is welcomed, and it can already pass the convert test from
-btrfs-progs. (Since the test doesn't test rollback function)
+On Fri, Nov 20, 2015 at 11:24:04AM +0800, Qu Wenruo wrote:
+> Here comes the 1st version of btrfs-convert rework.
+> Any test is welcomed, and it can already pass the convert test from
+> btrfs-progs. (Since the test doesn't test rollback function)
 
-I also did some tests like create ext4 and fill it with fsstress to test
-convert, at least no bug spotted yet.
-
-The new btrfs-convert has the following bugfix/feature:
-1. True separate meta/data chunk
-   The converted filesystem will has correct chunk layout, and all ext*
-   data will be covered by data chunk and metadata will be covered by
-   metadata chunk.
-   Allowing converted filesystem to pass latest btrfs check.
-
-2. Structurized make_btrfs_v2()
-   Unlike old make_btrfs() which is a mess of hand written codes, new
-   make_btrfs_v2() is all structurized and should be easy for later
-   expansion.
-
-But it still has something to do:
-1) Ability to handle 10+ TB level filesystem.
-   Current implement rely on the initial system chunk to contain all
-   chunks until we inserted all data chunks.
-   However the initial system chunk are only 32M, in simple calculation,
-   it can only hold at most 400K chunks.
-   If every chunk is in the smallest size (16M), it can only handle
-   less than 6T size in its worst case.
-   Better calculate the initial system chunk size according to the
-   filesystem size
-
-2) Ability to create DUP metadata chunk without using balance
-   Now the data and metadata chunk are all in SINGLE profile.
-   User needs to convert metadata to DUP if they want DUP metadata
-   profile.
-
-   This is a little hard, as we must do it at make_btrfs() time, where
-   we don't have full btrfs facilities to modify the metadata tree.
-
-   This may need another rework on functions like btrfs_search_slot() to
-   support temporary btrfs image without btrfs_root structure.
-
-The new btrfs-convert will work like the following:
-
-1) Scan ext2 for all used space
-
-2) Calculate the following tree maps:
-   convert_data_chunks:
-     Ranges must be covered by data chunks
-     Maps are batched to avoid small chunk and avoid reserved ranges
-     like the first 1MB of the device and superblock space.
-   free_space:
-     Ranges that later allocation can allocate from
-     With reserved ranges wiped.
-
-3) Reserved space for superblock and system/metadata chunks
-   Use free_space above to reserve space
-
-4) Make a temporary btrfs, using above super/system/metadata position
-   This is done by the new make_btrfs_v2() function.
-
-5) Open temporary btrfs
-
-6) Insert all data chunks to cover all ext* data
-
-7) Create ext2_save subvolume and image
-   Unlike old implement, which did this later, we do this first, as this
-   method can reduce the extent fragments, reducing extent tree size.
-
-   And this also calculate all the csum if needed, making later inode
-   copy free from calculating csum.
-
-8) Handle reserved ranges
-   Copy ext* data in reserved ranges into other places.
-   Now the hole ext2_save subvolume and image is created.
-
-9) Copy inodes
-   Inode copy will use the ext2_save image as new logical <-> disk
-   mapping, to handle reserved ranges.
-
-For rollback function, since the only difference part lies in how we
-handle reserved ranges, the modification is quite small, and it will
-continue supporting old behavior btrfs-convert for compatibility.
-
-Changelog:
-v2:
-  Add rollback support
-  Make btrfs-convert more safe on chunk type
-
-Qu Wenruo (25):
-  btrfs-progs: extent-cache: Add comments for search/lookup functions
-  btrfs-progs: extent-tree: Add add_merge_cache_extent function
-  btrfs-progs: Add new init/free function and member for mkfs_config
-  btrfs-progs: convert: Read and build up used space tree
-  btrfs-progs: utils: Introduce new function to remove reserved ranges
-  btrfs-progs: utils: Introduce function to calculate the available
-    space
-  btrfs-progs: Reserve space for system/meta chunks and superblock
-  btrfs-progs: Introduce function to setup temporary superblock
-  btrfs-progs: Introduce function to setup temporary tree root
-  btrfs-progs: Introduce function to setup temporary chunk root
-  btrfs-progs: Introduce function to initialize device tree
-  btrfs-progs: Introduce function to initialize fs tree
-  btrfs-progs: Introduce function to initialize csum tree
-  btrfs-progs: Introduce function to setup temporary extent tree
-  btrfs-progs: Introduce function to create convert data chunks
-  btrfs-progs: extent-tree: Introduce function to find the first overlap
-    extent.
-  btrfs-progs: extent-tree: Enhance btrfs_record_file_extent
-  btrfs-progs: convert: Introduce new function to create ext2 image
-  btrfs-progs: convert: Introduce function to migrate reserved ranges
-  btrfs-progs: Enhance record_file_blocks to handle reserved ranges
-  btrfs-progs: convert: Introduce init_btrfs_v2 function.
-  btrfs-progs: Introduce do_convert_v2 function
-  btrfs-progs: Convert: Add support for rollback new convert behavior
-  btrfs-progs: convert: Strictly avoid meta or system chunk allocation
-  btrfs-progs: Cleanup old btrfs-convert
-
- btrfs-convert.c | 1617 +++++++++++++++++++------------------------------------
- ctree.c         |   24 +
- ctree.h         |   13 +-
- extent-cache.c  |   57 ++
- extent-cache.h  |   39 ++
- extent-tree.c   |  243 ++++++---
- mkfs.c          |    4 +-
- utils.c         | 1013 ++++++++++++++++++++++++++++++++++
- utils.h         |   45 ++
- volumes.c       |   46 +-
- volumes.h       |    2 +-
- 11 files changed, 1970 insertions(+), 1133 deletions(-)
-
--- 
-2.6.2
-
+I went through the patches, looks mostly ok akin to the proposed
+changes. I'll take the independent patches rightaway. Unfortunatelly
+there are code changes that clash significantly with the pending
+reiserfs addition to convert, I'm afraid you'll have to rework your
+patchset on top of that.  The code is now pushed to branch
+'dev/convert-reiser'.

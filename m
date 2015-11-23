@@ -1,168 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:40011 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:41536 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752139AbbKWFtQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 00:49:16 -0500
+	id S1752822AbbKWGaI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Nov 2015 01:30:08 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a0k01-0006Em-Ac
-	for linux-btrfs@vger.kernel.org; Mon, 23 Nov 2015 06:49:13 +0100
+	id 1a0kdW-00028p-PW
+	for linux-btrfs@vger.kernel.org; Mon, 23 Nov 2015 07:30:02 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2015 06:49:13 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2015 07:30:02 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2015 06:49:13 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2015 07:30:02 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs send reproducibly fails for a specific subvolume after
- sending 15 GiB, scrub reports no errors
-Date: Mon, 23 Nov 2015 05:49:05 +0000 (UTC)
-Message-ID: <pan$564a3$4b5e10ad$ddc42749$7ee47482@cox.net>
-References: <56523AC8.7050205@voidptr.de>
+Subject: Re: btrfs: poor performance on deleting many large files
+Date: Mon, 23 Nov 2015 06:29:57 +0000 (UTC)
+Message-ID: <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Nils Steinger posted on Sun, 22 Nov 2015 22:59:36 +0100 as excerpted:
+Mitch Fossen posted on Sun, 22 Nov 2015 19:43:28 -0600 as excerpted:
 
-> I recently ran into a problem while trying to back up some of my btrfs
-> subvolumes over the network:
-> `btrfs send` works flawlessly on snapshots of most subvolumes, but keeps
-> failing on snapshots of a certain subvolume — always after sending 15
-> GiB:
+> Hi all,
 > 
-> btrfs send /btrfs/snapshots/home/2015-11-17_03:28:14_BOOT-AUTOSNAPSHOT |
-> pv | ssh kappa "btrfs receive /mnt/300gb/backups/snapshots/zeta/home/"
-> At subvol /btrfs/snapshots/home/2015-11-17_03:28:14_BOOT-AUTOSNAPSHOT At
-> subvol 2015-11-17_03:28:14_BOOT-AUTOSNAPSHOT ERROR: send ioctl failed
-> with -2: No such file or directory
->   15GB 0:34:34 [7,41MB/s]
+> I have a btrfs setup of 4x2TB HDDs for /home in btrfs RAID0 on Ubuntu
+> 15.10 (kernel 4.2) and btrfs-progs 4.3.1. Root is on a separate SSD also
+> running btrfs.
 > 
-> I've tried piping the output to /dev/null instead of ssh and got the
-> same error (again after sending 15 GiB), so this seems to be on the
-> sending side.
+> About 6 people use it via ssh and run simulations. One of these
+> simulations generates a lot of intermediate data that can be discarded
+> after it is run, it usually ends up being around 100GB to 300GB spread
+> across dozens of files 500M to 5GB apiece.
 > 
-> However, btrfs scrub reports no errors and I don't get any messages in
-> dmesg when the btrfs send fails.
+> The problem is that, when it comes time to do a "rm -rf
+> ~/working_directory" the entire machine locks up and sporadically allows
+> other IO requests to go through, with a 5 to 10 minute delay before
+> other requests seem to be served. It can end up taking half an hour or
+> more to fully remove the offending directory, with the hangs happening
+> frequently enough to be frustrating. This didn't seem to happen when the
+> system was using ext4 on LVM.
 > 
-> What could cause this kind of error?
-> And is there a way to fix it, preferably without recreating the FS?
+> Is there a way to fix this performance issue or at least mitigate it?
+> Would using ionice and the CFQ scheduler help? As far as I know Ubuntu
+> uses deadline by default which ignores ionice values.
+> 
+> Alternatively, would balancing and defragging data more often help? The
+> current mount options are compress=lzo and space_cache, and I will try
+> it with autodefrag enabled as well to see if that helps.
+> 
+> For now I think I'll recommend that everyone use subvolumes for these
+> runs and then enable user_subvol_rm_allowed.
 
-Btrfs scrub?  Why do you believe it will detect/fix the problem?  Do you 
-have reason to believe the hardware is not reliable and is returning data 
-that's different than what was saved in the first place, or that your RAM 
-is bad and thus that the checksums recorded for the data and metadata as 
-it was saved were unreliable as saved?
+Using subvolumes was the first recommendation I was going to make, too, 
+so you're on the right track. =:^)
 
-Because what btrfs scrub does is very simple.  It checks that the data 
-and metadata on the filesystem still produce checksums that match the 
-checksums recorded when that data/metadata and the checksums covering it 
-were originally saved.  If the checksums match, scrub reports no problems.
-
-But what scrub does NOT detect are problems in the data and metadata that 
-occurred before it was saved.  If you downloaded a jpeg image, for 
-instance, and it was corrupted in the download, but the data you got was 
-saved to btrfs just the way you got it, it won't report as invalid, 
-because the checksum was taken on data that was already invalid.  But if 
-it was correct as downloaded and saved, but the physical device hosting 
-the btrfs is going bad, so it returns different data for that file than 
-what was originally saved, then the checksum taken on the data before it 
-was saved isn't going to match what you're getting back, and /that/ error 
-would be detected.
-
-So btrfs scrub detects (and under all but single and raid0 modes, 
-potentially corrects using either the redundant copy of dup or raid1/10 
-modes or the parity cross-checks of raid5/6 modes) is a very limited 
-subset of potential errors, generally only that the data that was written 
-still matches the checksum written for it, when it is read back.  But it 
-won't detect others, if there's a bug in btrfs itself such that it 
-checksums and writes the wrong data, or if the data was otherwise invalid 
-before it was checksummed and written in the first place (as with the jpeg 
-corrupted during download, example).
-
-What you're almost certainly wanting to run instead, is btrfs check (the 
-recommendation is not to run it with the --repair option, until you know 
-what errors it returns in default check-but-don't-fix mode, and know that 
-repair will actually fix the problem, generally after posting the results 
-of the check-only here and getting confirmation that --repair will 
-actually fix the problems properly), since btrfs check actually checks 
-for various other filesystem related bugs.
+Also, in case you are using it (you didn't say, but this has been 
+demonstrated to solve similar issues for others so it's worth 
+mentioning), try turning btrfs quota functionality off.  While the devs 
+are working very hard on that feature for btrfs, the fact is that it's 
+simply still buggy and doesn't work reliably anyway, in addition to 
+triggering scaling issues before they'd otherwise occur.  So my 
+recommendation has been, and remains, unless you're working directly with 
+the devs to fix quota issues (in which case, thanks!), if you actually 
+NEED quota functionality, use a filesystem where it works reliably, while 
+if you don't, just turn it off and avoid the scaling and other issues 
+that currently still come with it.
 
 
-However, note that just because send is failing, doesn't mean check will 
-actually find something wrong.  It might, but it might not, too.  The 
-general send/receive situation is as follows:
+As for defrag, that's quite a topic of its own, with complications 
+related to snapshots and the nocow file attribute.  Very briefly, if you 
+haven't been running it regularly or using the autodefrag mount option by 
+default, chances are your available free space is rather fragmented as 
+well, and while defrag may help, it may not reduce fragmentation to the 
+degree you'd like.  (I'd suggest using filefrag to check fragmentation, 
+but it doesn't know how to deal with btrfs compression, and will report 
+heavy fragmentation for compressed files even if they're fine.  Since you 
+use compression, that kind of eliminates using filefrag to actually see 
+what your fragmentation is.)
 
-If both send and receive complete successfully, you can be quite 
-confident that you have a faithfully reproduced copy.  However, there are 
-various corner-cases that send/receive may still have problems with, altho 
-over time the ones found have been fixed to work correctly.
+Additionally, defrag isn't snapshot aware (they tried it for a few 
+kernels a couple years ago but it simply didn't scale), so if you're 
+using snapshots (as I believe Ubuntu does by default on btrfs, at least 
+taking snapshots for upgrade-in-place), so using defrag on files that 
+exist in the snapshots as well can dramatically increase space usage, 
+since defrag will break the reflinks to the snapshotted extents and 
+create new extents for defragged files.
 
-Here's a very simple example that was one of the first such corner-cases 
-fixed.  Suppose you have a subvolume that originally has two directories, 
-A and B, with B nested inside A such that B is a subdir of A.  That's 
-what you do your original send/receive based on.  Then, sometime later, 
-you decide B should be the outer directory, with A nested inside it.  
-Then, you do another send/receive, this one incremental, using the first 
-one as the parent. That reversed nesting order corner-case used to trip 
-up send/receive, which didn't originally know how to deal with that 
-case.  But as I said, that was one of the first corner-case breakages 
-found, and a patch soon taught send/receive how to deal with it properly.
+Meanwhile, the absolute worst-case fragmentation on btrfs occurs with  
+random-internal-rewrite-pattern files (as opposed to never changed, or 
+append-only).  Common examples are database files and VM images.  For 
+/relatively/ small files, to say 256 MiB, the autodefrag mount option is 
+a reasonably effective solution, but it tends to have scaling issues with 
+files over half a GiB so you can call this a negative recommendation for 
+trying that option with half-gig-plus internal-random-rewrite-pattern 
+files.  There are other mitigation strategies that can be used, but here 
+the subject gets complex so I'll not detail them.  Suffice it to say that 
+if the filesystem in question is used with large VM images or database 
+files and you haven't taken specific fragmentation avoidance measures, 
+that's very likely a good part of your problem right there, and you can 
+call this a hint that further research is called for.
 
-But there have been a number of other similar corner-case failures, 
-generally more complex than that one.  As they've been found they've been 
-fixed.
-
-The problem, however, is that as a dev you never really know that you've 
-found and fixed *ALL* of them, because as you find and fix the most 
-common, the remaining corner-case failures become less and less common, 
-and you never really know if there's yet more of them that are simply too 
-rare for people to have found and reported yet, or if you've really 
-gotten them all, now.
-
-
-But, again, it's worth noting that the failure mode is "fail dirty".  
-That is, if both ends report success, you can be quite confident it is 
-indeed a reliable copy.  The chance of silent failure is extremely small, 
-and if there is a failure, you know about it as one end or the other 
-fails with an error you can see, even if you don't know exactly what's 
-causing it.
-
-
-So definitely, do that check and see if it reports problems.  But don't 
-be too surprised if it doesn't, because it very well could be another 
-corner-case that is entirely valid at the filesystem level (just like 
-that nesting reversal above, that's entirely legit), and send/receive 
-simply doesn't know how to deal with it yet.
-
-If the check does come up clean, then the next thing, since you didn't 
-mention your kernel or btrfs-progs versions, is to upgrade to current 
-versions if necessary, since send/receive (and check) will have been 
-taught about more problems and how to deal with them, in newer versions.  
-Try again (both the send/receive and the check) with those current 
-versions.
-
-If with current you're still getting failure, but check coming up clean, 
-then you've very possibly hit another corner-case, and the devs are 
-likely to be interested in trying to debug and trace it down, to 
-eliminate it as they've done the others.
-
-
-Meanwhile, if you don't have time to debug with them, you can of course 
-try resolving the situation yourself.  Since it's reproducibly happening 
-at 15 GiB, it's always happening at the same place.  You can try deleting 
-stuff or moving it temporarily to a different filesystem or subvolume, 
-and see if you can avoid the problem or move it elsewhere.  By bisecting 
-the problem (repeatedly cutting in half the problem space each time, 
-testing half of what was the bad half in the last step), you have a very 
-good chance of figuring out what subdir, and possibly eventually what 
-file, is causing the problem.  Once you know that, you can delete just 
-that subdir or file and restore from backup, hopefully deleting the 
-problem along with the file, and not bringing it back with the restore 
-from backup.
+If your half-gig-plus files are mostly write-once, for example most media 
+files unless you're doing heavy media editing, however, then autodefrag 
+could be a good option in general, as it deals well with such files and 
+with random-internal-rewrite-pattern files under a quarter gig or so.  Be 
+aware, however, that if it's enabled on an already heavily fragmented 
+filesystem (as yours likely is), it's likely to actually make performance 
+worse until it gets things under control.  Your best bet in that case, if 
+you have spare devices available to do so, is probably to create a fresh 
+btrfs and consistently use autodefrag as you populate it from the 
+existing heavily fragmented btrfs.  That way, it'll never have a chance 
+for the fragmentation to build up in the first place, and autodefrag used 
+as a routine mount option should keep it from getting bad in normal use.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

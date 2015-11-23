@@ -1,74 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31495 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:17063 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752895AbbKWBA7 (ORCPT
+	with ESMTP id S1752991AbbKWBKv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 22 Nov 2015 20:00:59 -0500
+	Sun, 22 Nov 2015 20:10:51 -0500
 Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
  chunk
-To: Laurent Bonnaud <L.Bonnaud@laposte.net>,
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
         Qu Wenruo <quwenruo.btrfs@gmx.com>
 References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
  <1448047478.6878.4.camel@scientia.net> <564FBF0F.4050705@gmx.com>
  <564FC3FE.9020905@lukas-pirl.de> <565122AA.90904@gmx.com>
- <56519644.8060105@laposte.net>
-CC: Lukas Pirl <btrfs@lukas-pirl.de>, <linux-btrfs@vger.kernel.org>,
-        <calestyo@scientia.net>
+ <1448175373.7143.24.camel@scientia.net>
+CC: <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56526543.4090301@cn.fujitsu.com>
-Date: Mon, 23 Nov 2015 09:00:51 +0800
+Message-ID: <56526790.6020907@cn.fujitsu.com>
+Date: Mon, 23 Nov 2015 09:10:40 +0800
 MIME-Version: 1.0
-In-Reply-To: <56519644.8060105@laposte.net>
+In-Reply-To: <1448175373.7143.24.camel@scientia.net>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Laurent Bonnaud wrote on 2015/11/22 11:17 +0100:
-> On 22/11/2015 03:04, Qu Wenruo wrote:
+Christoph Anton Mitterer wrote on 2015/11/22 07:56 +0100:
+> Hey Qu.
 >
+>
+> On Sun, 2015-11-22 at 10:04 +0800, Qu Wenruo wrote:
 >> If any of you can recompile btrfs-progs and use gdb to debug it,
->> would anyone please to investigate where did the wrong_chunk_type is
->> set?
+>> would
+>> anyone please to investigate where did the wrong_chunk_type is set?
+>> It is in the function check_extent_type():
 >
-> In the mean time my btrfs filesystem degraded
+> Not 100% what you want... AFAIU, you just want to see whether that line
+> is reached?
 >
-> Nov 20 18:10:53 irancy kernel: BTRFS: device label sauvegarde-IUT2 devid 1 transid 9056 /dev/sdb1
-> Nov 20 18:10:53 irancy kernel: BTRFS info (device sdb1): disk space caching is enabled
-> Nov 20 18:10:56 irancy kernel: BTRFS: checking UUID tree
-> Nov 20 18:12:06 irancy kernel: BTRFS info (device sdb1): disk space caching is enabled
-> Nov 20 18:12:49 irancy kernel: BTRFS warning (device sdb1): block group 314635714560 has wrong amount of free space
-> Nov 20 18:12:49 irancy kernel: BTRFS warning (device sdb1): failed to load free space cache for block group 314635714560, rebuild it now
-> Nov 20 18:12:51 irancy kernel: BTRFS: Transaction aborted (error -17)
-> Nov 20 18:12:51 irancy kernel: BTRFS: error (device sdb1) in btrfs_run_delayed_refs:2781: errno=-17 Object already exists
+> If didn't re-compile but used the btrfs-tools-dbg package, but I guess
+> that should do.
+>
+> In the debian version that line seems to be at:
+> 4374
+> 4375 /* Check if the type of extent matches with its chunk */
+> 4376 static void check_extent_type(struct extent_record *rec)
+> 4377 {
+> ...
+> 4419                         bg_type = BTRFS_BLOCK_GROUP_METADATA;
+> 4420                 if (!(bg_cache->flags & bg_type))
+> 4421                         rec->wrong_chunk_type = 1;
+> 4422         }
+> 4423 }
+>
+> Running:
+> # gdb btrfs
+> (gdb) dir /root/btrfs-tools-4.3
+> Source directories searched: /root/btrfs-tools-4.3:$cdir:$cwd
+> (gdb) break cmds-check.c:4421
+> Breakpoint 1 at 0x41d859: file cmds-check.c, line 4421.
+> (gdb) run check /dev/mapper/data-b
+> Starting program: /bin/btrfs check /dev/mapper/data-b
+> [Thread debugging using libthread_db enabled]
+> Using host libthread_db library "/lib/x86_64-linux-gnu/libthread_db.so.1".
+>
+> ... in fact reaches that breakpoint:
+> Breakpoint 1, check_extent_type (rec=rec@entry=0x884290) at cmds-check.c:4423
+> 4423	}
 
-Not pretty sure about the free space error for blockgroup,
-but the btrfs_run_delayed_refs problem seems to be a regression from 
-4.2-rc1.
-And should be fixed in 4.3-rc1, or just revert to 4.1, where my qgroup 
-rework(with a delayed_ref regression) is not introduced.
+Normally you can use -dbg package, but as you experienced, a lot of 
+reasons like optimization from compiler can cause such situation.
 
-> Nov 20 18:12:51 irancy kernel: BTRFS info (device sdb1): forced readonly
-> Nov 20 18:12:51 irancy kernel: BTRFS warning (device sdb1): Skipping commit of aborted transaction.
-> Nov 20 18:12:51 irancy kernel: BTRFS: error (device sdb1) in cleanup_transaction:1710: errno=-17 Object already exists
-> Nov 20 19:25:37 irancy kernel: BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
-> Nov 20 19:25:37 irancy kernel: BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
-> Nov 20 19:25:37 irancy kernel: BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
-> Nov 20 19:25:37 irancy kernel: BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
-> [...]
->
-> Are you interested in the output of btrfs-image ?  No idea of the size (I am running it currently) but here some info about its size:
->
-> # btrfs fi df /mnt/sauvegarde/
-> Data, single: total=1.81TiB, used=1.79TiB
-> System, DUP: total=32.00MiB, used=240.00KiB
-> Metadata, DUP: total=7.00GiB, used=5.38GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
-Considering the size, I'd like not to touch the dump, metadata is over 
-5G, and I think it's not related to on-disk data, but runtime problem 
-like I mentioned above.
+That's why I recommended to compile the package from scratch.
+
+And if you want to compile, it's also recommended to disable unrelated 
+component by disabling document(needs xmlto and ascii) and convert(needs 
+a lot of ext2 related headers).
+"./configure --disable-convert --disable-documentation" should do the trick.
+
+Also, you won't want compiler to do extra optimization, so after 
+configuration, you'd better edit Makefile and change optimization level 
+to 0, by changing the "-O1" (o and one) to "-O0" (o and zero) of CFLAGS.
+
+Then make, compiler will complain about the optimization level as some 
+headers need it, but that's OK and won't cause anything wrong.
+
+After make, you won't need to install the btrfs-progs, you can just use 
+gdb to debug local ./btrfsck and add new breakpoints to do the trick.
 
 Thanks,
 Qu
+
+>
+> ... but the error message ("bad extent [5993525264384, 5993525280768),
+> type mismatch with chunk") doesn't seem to be printed at that stage...
+>
+>
+> If I continue, it goes for a while:
+>
+> Breakpoint 1, check_extent_type (rec=rec@entry=0x884290) at cmds-check.c:4423
+> 4423	}
+> (gdb) cont 100000
+> Will ignore next 99999 crossings of breakpoint 1.  Continuing.
+>
+> and so on for at least several million crossings... I then removed the
+> breakpoint and after a longer while the usual error messages came up.
+>
+>
+> Does that help?
+>
+> Chris.
+>

@@ -1,103 +1,147 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f49.google.com ([209.85.220.49]:34984 "EHLO
-	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753155AbbKWHGm (ORCPT
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:33325 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751485AbbKWM0v (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 02:06:42 -0500
-Received: by pacej9 with SMTP id ej9so182258781pac.2
-        for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2015 23:06:41 -0800 (PST)
-Received: from [192.168.146.53] (fenrir.ics.es.osaka-u.ac.jp. [133.1.236.59])
-        by smtp.googlemail.com with ESMTPSA id ir5sm8975050pbc.13.2015.11.22.23.06.39
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Sun, 22 Nov 2015 23:06:41 -0800 (PST)
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Jiachen Yang <farseerfc@gmail.com>
-Subject: Error while deleting device from a raid1 array
-Message-ID: <5652BAF9.7030307@gmail.com>
-Date: Mon, 23 Nov 2015 16:06:33 +0900
+	Mon, 23 Nov 2015 07:26:51 -0500
+Received: by igcmv3 with SMTP id mv3so27342205igc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2015 04:26:50 -0800 (PST)
+Subject: Re: btrfs send reproducibly fails for a specific subvolume after
+ sending 15 GiB, scrub reports no errors
+To: Nils Steinger <nst@voidptr.de>, linux-btrfs@vger.kernel.org
+References: <56523AC8.7050205@voidptr.de>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <56530608.50906@gmail.com>
+Date: Mon, 23 Nov 2015 07:26:48 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha256;
- protocol="application/pgp-signature";
- boundary="vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP"
+In-Reply-To: <56523AC8.7050205@voidptr.de>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms050902040502080407030805"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
---vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP
-Content-Type: text/plain; charset=utf-8
+This is a cryptographically signed message in MIME format.
+
+--------------ms050902040502080407030805
+Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-Hi,
+On 2015-11-22 16:59, Nils Steinger wrote:
+> Hi,
+>
+> I recently ran into a problem while trying to back up some of my btrfs
+> subvolumes over the network:
+> `btrfs send` works flawlessly on snapshots of most subvolumes, but keep=
+s
+> failing on snapshots of a certain subvolume =E2=80=94 always after send=
+ing 15 GiB:
+>
+> btrfs send /btrfs/snapshots/home/2015-11-17_03:28:14_BOOT-AUTOSNAPSHOT =
+|
+> pv | ssh kappa "btrfs receive /mnt/300gb/backups/snapshots/zeta/home/"
+> At subvol /btrfs/snapshots/home/2015-11-17_03:28:14_BOOT-AUTOSNAPSHOT
+> At subvol 2015-11-17_03:28:14_BOOT-AUTOSNAPSHOT
+> ERROR: send ioctl failed with -2: No such file or directory
+>    15GB 0:34:34 [7,41MB/s]
+>
+> I've tried piping the output to /dev/null instead of ssh and got the
+> same error (again after sending 15 GiB), so this seems to be on the
+> sending side.
+This is an issue that comes up sometimes with send, it's not well=20
+understood or documented, but sometimes something in source FS can get=20
+into a state that send chokes on, and then crashes.  I've actually been=20
+trying to reproduce this myself on a small filesystem so that it's=20
+easier to debug, but so far been unsuccessful.  I have yet to find any=20
+reliable way to reproduce this, and thus have no reliable way to prevent =
 
-I'm sorry if this email is sent twice. Gmail says it failed to deliver
-because it contains HTML, so I will try with plain text:
+it from happening either.
+>
+> However, btrfs scrub reports no errors and I don't get any messages in
+> dmesg when the btrfs send fails.
+Scrub is intended to fix corruption due to hardware failures.  In almost =
 
-I have a raid1 array that contains 3 devices like this:
+all cases that I've seen of what you are getting, it wasn't a provable=20
+hardware issue, and scrub returned no errors.
+>
+> What could cause this kind of error?
+> And is there a way to fix it, preferably without recreating the FS?
+In general (assuming you are seeing the same issue I run into from time=20
+to time), there are two options other than recreating the filesystem:
+1. Recreate the file that scrub is choking on.  You can see what file by =
 
-Label: 'pool' uuid: 7e66ba23-14c7-47b5-90fc-481ecc769138
+adding -vv to the receive command-li9ne, although be ready for lots of=20
+output.  It's important to note that mv won't work for this unless=20
+you're moving the data to a different filesystem (if it's a directory,=20
+copy everything out and then recreate the directory, then copy=20
+everything back in).  The downside to this option is that you will=20
+usually run into multiple files that send chokes on, and the only way to =
 
-Total devices 3 FS bytes used 888.04GiB
-devid    1 size 931.51GiB used 738.03GiB path /dev/sdb
-devid    2 size 465.76GiB used 228.00GiB path /dev/sdc
-devid    5 size 1.82TiB used 966.03GiB path /dev/sdd
-
-btrfs-progs v4.3
-Data, RAID1: total=3D939.00GiB, used=3D871.94GiB
-System, RAID1: total=3D32.00MiB, used=3D192.00KiB
-Metadata, RAID1: total=3D27.00GiB, used=3D16.10GiB
-GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
-
-I was planning to replace devid 2 with another larger HDD so that I can
-have more space.
-Because I have no spare slots for a new device, I have to firstly delete
-the devid 2 and then add the new device to it. A simple calculation
-suggested that after deleting devid 2, I should still have enough space
-to hold a raid1 on the remaining 2 devices.
-
-So I issued `btrfs device delete /dev/sdc /pool`, and after a while, my
-FS turned write-only with this error in dmesg:
-https://cfp.vim-cn.com/ccm2
-
-I have reboot and tried for several times, and it will always stopped
-with this kind of situation.
-The last time I tried, the system refused to mount the btrfs array with
-an error says something like:
-`BTRFS: open_ctree failed`. I reboot forcefully and it mounted again.
-
-Now I am afraid to try again, so I bring it here. I have 2 questions:
-1. Do I have enough space to hold raid1 even if I deleted devid 2?
-2. How to delete devid 2 safely?
-
-About my system version:
-Linux yang-z800 4.2.5-1-ARCH #1 SMP PREEMPT Tue Oct 27 08:13:28 CET 2015
-x86_64 GNU/Linux
-btrfs-progs v4.3.1
-
-Thank you
-
---=20
-Jiachen Yang =E6=A5=8A=E5=98=89=E6=99=A8
-Graduate School of Information Science and Technology, Osaka University
-Blog: https://farseerfc.me/
-Gmail: farseerfc@gmail.com
+find them all is to keep repeating the process until send completes=20
+successfully.
+2. Run a full balance on the FS (this doesn't work anywhere near as=20
+reliably as the first option, but is the only way to fix some issues=20
+caused by doing batch deduplication on some older kernels).
 
 
---vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: OpenPGP digital signature
-Content-Disposition: attachment; filename="signature.asc"
+--------------ms050902040502080407030805
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v2
-
-iQEcBAEBCAAGBQJWUrr9AAoJEJDLPWLBPUeW17oIAKz/j5CYxyGmojpovkbjohuZ
-YRI3Yvd0rw8i2JEYEL9uONNLI6lg6dMJyfwwi2exiKNhrFivGHck6qWXbd1jniWy
-CRIoqOVqoBssf/0F27lmtjR475VyfRfe1O12m012JwuOx9t3loI3K+QApseyFJqu
-G3+/c03/BpIT0CJ26Gg7b+6t5UkKt/zuTJDKdGzYlzPI1D8eeXA6TS/D1ohij4I3
-czXqtMsdVjRq0GfbTCFChiZx/nB+746e7i0KMKu4drkr9dC52cYnHYw1qFgcWrfr
-mnRt81QOo7mi0t+1PrGTT9cFK/6dx4K0hGhp/q6+NnHqV+SZAYzgQsjkvn/FgZM=
-=94++
------END PGP SIGNATURE-----
-
---vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP--
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTIzMTIyNjQ4WjBPBgkq
+hkiG9w0BCQQxQgRAv9ytFjZ82+LRYgpb6Q2vTH95h11KNW1JNzr3Gerj1Vc2cbxIIJVJ72Zn
++YsxSs+DQHGhIH2n+AMo/RiXajLMqTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgBl3bSgjAvOpAy6wjcrQ3xOFq9sBt+pJ/7oQB1Y6FgupS30T29d
+G1e+bIc278WYqhcxGZsQ2uSwbRZLQYo5KjJI4hg3Rr3YoLbfa0hw80/qC5V8vRbQn7ozWgrZ
+aB/u5j709a5X9T878QsPnKfF3lo+Qis4uc48hIS5yCyhi9wotRSACbhtXQFNdQ6I6V/6sQrV
+GmJ/j+kQwSITXnRftwBrw5NcPOtsDWOhg6n3wIBf2IedoVhQ2j+s+xpVeKxDsDmN85i0BZ5A
+4i1yZHGfiehEYb9LqpJIl7C++3Z06YaLL57h22uYcnr2yjws3DhYBThtXRxJPUjfjWCIECeo
+eVNu6HqZBls1mwaViis4YRfYhUhIMSNfbes+ePUhTdbYBE7AEr778Dzb1oRg7OafM42g3RTI
+W6DCphGNVMVcz+zfWHCuSLpelPMryANErAznEns8vQZKWOs0k1gFGXALpcJMmcuWWFjr67oC
+ccAtrgrX/P3mou2TWNm0N/uXWfTEVqfV6jE150jZ1ODffirg8/P8xkdn9G/fN5NRwIwMZsqw
+wzMBe/zmjIPOBEwLPGJLU2O+3ffRYG2+9e6BDf6AuCZvkjjiyZmQwhy7mNiL9xX20aeJIFBv
+MebL9+dqBogqiGmQYV+v633eZL/ycxGRBck4h4OSeJVHNaEF7bSKFgB3mwAAAAAAAA==
+--------------ms050902040502080407030805--

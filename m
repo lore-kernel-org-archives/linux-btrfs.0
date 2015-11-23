@@ -1,126 +1,103 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41536 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752822AbbKWGaI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 01:30:08 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a0kdW-00028p-PW
-	for linux-btrfs@vger.kernel.org; Mon, 23 Nov 2015 07:30:02 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2015 07:30:02 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 23 Nov 2015 07:30:02 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs: poor performance on deleting many large files
-Date: Mon, 23 Nov 2015 06:29:57 +0000 (UTC)
-Message-ID: <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-pa0-f49.google.com ([209.85.220.49]:34984 "EHLO
+	mail-pa0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753155AbbKWHGm (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Nov 2015 02:06:42 -0500
+Received: by pacej9 with SMTP id ej9so182258781pac.2
+        for <linux-btrfs@vger.kernel.org>; Sun, 22 Nov 2015 23:06:41 -0800 (PST)
+Received: from [192.168.146.53] (fenrir.ics.es.osaka-u.ac.jp. [133.1.236.59])
+        by smtp.googlemail.com with ESMTPSA id ir5sm8975050pbc.13.2015.11.22.23.06.39
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLSv1/SSLv3 cipher=OTHER);
+        Sun, 22 Nov 2015 23:06:41 -0800 (PST)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: Jiachen Yang <farseerfc@gmail.com>
+Subject: Error while deleting device from a raid1 array
+Message-ID: <5652BAF9.7030307@gmail.com>
+Date: Mon, 23 Nov 2015 16:06:33 +0900
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha256;
+ protocol="application/pgp-signature";
+ boundary="vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mitch Fossen posted on Sun, 22 Nov 2015 19:43:28 -0600 as excerpted:
+This is an OpenPGP/MIME signed message (RFC 4880 and 3156)
+--vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
 
-> Hi all,
-> 
-> I have a btrfs setup of 4x2TB HDDs for /home in btrfs RAID0 on Ubuntu
-> 15.10 (kernel 4.2) and btrfs-progs 4.3.1. Root is on a separate SSD also
-> running btrfs.
-> 
-> About 6 people use it via ssh and run simulations. One of these
-> simulations generates a lot of intermediate data that can be discarded
-> after it is run, it usually ends up being around 100GB to 300GB spread
-> across dozens of files 500M to 5GB apiece.
-> 
-> The problem is that, when it comes time to do a "rm -rf
-> ~/working_directory" the entire machine locks up and sporadically allows
-> other IO requests to go through, with a 5 to 10 minute delay before
-> other requests seem to be served. It can end up taking half an hour or
-> more to fully remove the offending directory, with the hangs happening
-> frequently enough to be frustrating. This didn't seem to happen when the
-> system was using ext4 on LVM.
-> 
-> Is there a way to fix this performance issue or at least mitigate it?
-> Would using ionice and the CFQ scheduler help? As far as I know Ubuntu
-> uses deadline by default which ignores ionice values.
-> 
-> Alternatively, would balancing and defragging data more often help? The
-> current mount options are compress=lzo and space_cache, and I will try
-> it with autodefrag enabled as well to see if that helps.
-> 
-> For now I think I'll recommend that everyone use subvolumes for these
-> runs and then enable user_subvol_rm_allowed.
+Hi,
 
-Using subvolumes was the first recommendation I was going to make, too, 
-so you're on the right track. =:^)
+I'm sorry if this email is sent twice. Gmail says it failed to deliver
+because it contains HTML, so I will try with plain text:
 
-Also, in case you are using it (you didn't say, but this has been 
-demonstrated to solve similar issues for others so it's worth 
-mentioning), try turning btrfs quota functionality off.  While the devs 
-are working very hard on that feature for btrfs, the fact is that it's 
-simply still buggy and doesn't work reliably anyway, in addition to 
-triggering scaling issues before they'd otherwise occur.  So my 
-recommendation has been, and remains, unless you're working directly with 
-the devs to fix quota issues (in which case, thanks!), if you actually 
-NEED quota functionality, use a filesystem where it works reliably, while 
-if you don't, just turn it off and avoid the scaling and other issues 
-that currently still come with it.
+I have a raid1 array that contains 3 devices like this:
+
+Label: 'pool' uuid: 7e66ba23-14c7-47b5-90fc-481ecc769138
+
+Total devices 3 FS bytes used 888.04GiB
+devid    1 size 931.51GiB used 738.03GiB path /dev/sdb
+devid    2 size 465.76GiB used 228.00GiB path /dev/sdc
+devid    5 size 1.82TiB used 966.03GiB path /dev/sdd
+
+btrfs-progs v4.3
+Data, RAID1: total=3D939.00GiB, used=3D871.94GiB
+System, RAID1: total=3D32.00MiB, used=3D192.00KiB
+Metadata, RAID1: total=3D27.00GiB, used=3D16.10GiB
+GlobalReserve, single: total=3D512.00MiB, used=3D0.00B
+
+I was planning to replace devid 2 with another larger HDD so that I can
+have more space.
+Because I have no spare slots for a new device, I have to firstly delete
+the devid 2 and then add the new device to it. A simple calculation
+suggested that after deleting devid 2, I should still have enough space
+to hold a raid1 on the remaining 2 devices.
+
+So I issued `btrfs device delete /dev/sdc /pool`, and after a while, my
+FS turned write-only with this error in dmesg:
+https://cfp.vim-cn.com/ccm2
+
+I have reboot and tried for several times, and it will always stopped
+with this kind of situation.
+The last time I tried, the system refused to mount the btrfs array with
+an error says something like:
+`BTRFS: open_ctree failed`. I reboot forcefully and it mounted again.
+
+Now I am afraid to try again, so I bring it here. I have 2 questions:
+1. Do I have enough space to hold raid1 even if I deleted devid 2?
+2. How to delete devid 2 safely?
+
+About my system version:
+Linux yang-z800 4.2.5-1-ARCH #1 SMP PREEMPT Tue Oct 27 08:13:28 CET 2015
+x86_64 GNU/Linux
+btrfs-progs v4.3.1
+
+Thank you
+
+--=20
+Jiachen Yang =E6=A5=8A=E5=98=89=E6=99=A8
+Graduate School of Information Science and Technology, Osaka University
+Blog: https://farseerfc.me/
+Gmail: farseerfc@gmail.com
 
 
-As for defrag, that's quite a topic of its own, with complications 
-related to snapshots and the nocow file attribute.  Very briefly, if you 
-haven't been running it regularly or using the autodefrag mount option by 
-default, chances are your available free space is rather fragmented as 
-well, and while defrag may help, it may not reduce fragmentation to the 
-degree you'd like.  (I'd suggest using filefrag to check fragmentation, 
-but it doesn't know how to deal with btrfs compression, and will report 
-heavy fragmentation for compressed files even if they're fine.  Since you 
-use compression, that kind of eliminates using filefrag to actually see 
-what your fragmentation is.)
+--vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: OpenPGP digital signature
+Content-Disposition: attachment; filename="signature.asc"
 
-Additionally, defrag isn't snapshot aware (they tried it for a few 
-kernels a couple years ago but it simply didn't scale), so if you're 
-using snapshots (as I believe Ubuntu does by default on btrfs, at least 
-taking snapshots for upgrade-in-place), so using defrag on files that 
-exist in the snapshots as well can dramatically increase space usage, 
-since defrag will break the reflinks to the snapshotted extents and 
-create new extents for defragged files.
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-Meanwhile, the absolute worst-case fragmentation on btrfs occurs with  
-random-internal-rewrite-pattern files (as opposed to never changed, or 
-append-only).  Common examples are database files and VM images.  For 
-/relatively/ small files, to say 256 MiB, the autodefrag mount option is 
-a reasonably effective solution, but it tends to have scaling issues with 
-files over half a GiB so you can call this a negative recommendation for 
-trying that option with half-gig-plus internal-random-rewrite-pattern 
-files.  There are other mitigation strategies that can be used, but here 
-the subject gets complex so I'll not detail them.  Suffice it to say that 
-if the filesystem in question is used with large VM images or database 
-files and you haven't taken specific fragmentation avoidance measures, 
-that's very likely a good part of your problem right there, and you can 
-call this a hint that further research is called for.
+iQEcBAEBCAAGBQJWUrr9AAoJEJDLPWLBPUeW17oIAKz/j5CYxyGmojpovkbjohuZ
+YRI3Yvd0rw8i2JEYEL9uONNLI6lg6dMJyfwwi2exiKNhrFivGHck6qWXbd1jniWy
+CRIoqOVqoBssf/0F27lmtjR475VyfRfe1O12m012JwuOx9t3loI3K+QApseyFJqu
+G3+/c03/BpIT0CJ26Gg7b+6t5UkKt/zuTJDKdGzYlzPI1D8eeXA6TS/D1ohij4I3
+czXqtMsdVjRq0GfbTCFChiZx/nB+746e7i0KMKu4drkr9dC52cYnHYw1qFgcWrfr
+mnRt81QOo7mi0t+1PrGTT9cFK/6dx4K0hGhp/q6+NnHqV+SZAYzgQsjkvn/FgZM=
+=94++
+-----END PGP SIGNATURE-----
 
-If your half-gig-plus files are mostly write-once, for example most media 
-files unless you're doing heavy media editing, however, then autodefrag 
-could be a good option in general, as it deals well with such files and 
-with random-internal-rewrite-pattern files under a quarter gig or so.  Be 
-aware, however, that if it's enabled on an already heavily fragmented 
-filesystem (as yours likely is), it's likely to actually make performance 
-worse until it gets things under control.  Your best bet in that case, if 
-you have spare devices available to do so, is probably to create a fresh 
-btrfs and consistently use autodefrag as you populate it from the 
-existing heavily fragmented btrfs.  That way, it'll never have a chance 
-for the fragmentation to build up in the first place, and autodefrag used 
-as a routine mount option should keep it from getting bad in normal use.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+--vgN6dT9xX9TwLe0b57bpdct1uaiK0n9lP--

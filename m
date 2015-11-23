@@ -1,168 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:49833 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752903AbbKWQOL (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:47240 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753173AbbKWM4X (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 11:14:11 -0500
-Message-ID: <1448295247.2100.7.camel@scientia.net>
-Subject: Re: [PATCH v2 3/5] btrfs-progs: kernel based default features for
- mkfs
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>,
-        Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
-Date: Mon, 23 Nov 2015 17:14:07 +0100
-In-Reply-To: <56533951.7090208@gmail.com>
+	Mon, 23 Nov 2015 07:56:23 -0500
+From: Anand Jain <anand.jain@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz
+Subject: [PATCH v2 1/5] btrfs-progs: introduce framework to check kernel supported features
+Date: Mon, 23 Nov 2015 20:56:14 +0800
+Message-Id: <1448283378-10579-2-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
 References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
-	 <1448283378-10579-4-git-send-email-anand.jain@oracle.com>
-	 <1448294271.2100.3.camel@scientia.net> <56533951.7090208@gmail.com>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-0+E6jYAXrGvjAyGJDcCZ"
-Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+In the newer kernel, supported kernel features can be known from
+  /sys/fs/btrfs/features
+however this interface was introduced only after 3.14, and most the
+incompatible FS features were introduce before 3.14.
 
---=-0+E6jYAXrGvjAyGJDcCZ
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+This patch proposes to maintain kernel version against the feature list,
+and so that will be the minimum kernel version needed to use the feature.
 
-On Mon, 2015-11-23 at 11:05 -0500, Austin S Hemmelgarn wrote:
-> I would find it useful if btrfs gives a warning if it creates a
-> > filesystem which (because unsupported in the current kernel) lacks
-> > features which are considered default by then.
-> It should give a warning if the user requests a feature that is=20
-> unsupported by the kernel it's being run on, but it should not by=20
-> default try to enable something that isn't supported by the kernel
-> it's=20
-> running on.
-Well that as well, and of course it shouldn't try to enable a feature
-that wouldn't work, but what I meant was, e.g. if I create a fs with
-btrfs-progs 4.3 (where skinny-extents are default) but on such an old
-kernel where this isn't supported yet,... it should tell me "Normally
-I'd create the fs with skinny-extents, but I don't as your kernel is
-too old".
+Further, for features supported later than 3.14 this list can still be
+updated, so it serves as a repository which can be displayed for easy
+reference.
 
+Signed-off-by: Anand Jain <anand.jain@oracle.com>
+---
+v2: Check for condition that what happens when we fail to read kernel
+    version. Now the code will fail back to use the default as set by
+    the progs.
 
-> It is actually possible to clone a btrfs filesystem, just not in a
-> way=20
-> that people used to stuff like ext4 would recognize.=C2=A0=C2=A0In essenc=
-e, you
-> need to take the FS mostly off-line, force all subvolumes to read-
-> only,=20
-> then use send-receive to transfer things, and finally make the=20
-> subvolumes writable again.=C2=A0=C2=A0I've been considering doing a scrip=
-t to
-> do=20
-> this automatically, but have never gotten around to it as it's not=20
-> something that is quick to code, and it's not something I do very
-> often.
-And that would also keep all ref-links, etc.? I.e. the copied fs
-wouldn't eat up much more space than the original?
-Well than such script should be part of btrfs-progs :-)
+ utils.c | 80 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
+ utils.h |  1 +
+ 2 files changed, 76 insertions(+), 5 deletions(-)
 
-Cheers,
-Chris.
---=-0+E6jYAXrGvjAyGJDcCZ
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyMzE2MTQw
-N1owTwYJKoZIhvcNAQkEMUIEQBWssaLYWCi40ixnH66enGVWHCjpPh56aUc0wdtVX68cdFSgOu0C
-r+zy4h9oTKTS2/r7AslAq7UDZE42IsknkM0wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBDmezpCfPouGL7343jwWWtJc815SZS
-jjzrjs3dV1a9mrwqsevN6JulxVlOE+YsuyJqeR66LCqbHU2g8ci3JpTWFAB85TgH7OZUDDZhgiKZ
-KjDqpugJU0tgNoNAwFtGDoIy7mEfNYCoHEbo2XcdMk3i5pBiLb5Xm2AChr3/c1jyoP8cBS5InUzj
-j2GyeVSoMXbicmSavrjW2v5nMers8ChQ+b0Me/hd6rgsRFsEAsiCHMDnGpOTjmOt2mPsv8VRBoUx
-Wpe34Q8pXrMUK9sBDpvB2WUpYqFhoXGdKnjEuvQQ9PxH6iNlQdiWyvyLyEQQBnrRNWRjBCEsPCKr
-S3yHAzaxAAAAAAAA
-
-
---=-0+E6jYAXrGvjAyGJDcCZ--
+diff --git a/utils.c b/utils.c
+index b754686..24042e5 100644
+--- a/utils.c
++++ b/utils.c
+@@ -32,10 +32,12 @@
+ #include <linux/loop.h>
+ #include <linux/major.h>
+ #include <linux/kdev_t.h>
++#include <linux/version.h>
+ #include <limits.h>
+ #include <blkid/blkid.h>
+ #include <sys/vfs.h>
+ #include <sys/statfs.h>
++#include <sys/utsname.h>
+ #include <linux/magic.h>
+ 
+ #include "kerncompat.h"
+@@ -567,21 +569,28 @@ out:
+ 	return ret;
+ }
+ 
++/*
++ * min_ker_ver: update with minimum kernel version at which the feature
++ * was integrated into the mainline. For the transit period, that is
++ * feature not yet in mainline but in mailing list and for testing,
++ * please use "0.0" to indicate the same.
++ */
+ static const struct btrfs_fs_feature {
+ 	const char *name;
+ 	u64 flag;
+ 	const char *desc;
++	const char *min_ker_ver;
+ } mkfs_features[] = {
+ 	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
+-		"mixed data and metadata block groups" },
++		"mixed data and metadata block groups", "2.7.31"},
+ 	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
+-		"increased hardlink limit per file to 65536" },
++		"increased hardlink limit per file to 65536", "3.7"},
+ 	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
+-		"raid56 extended format" },
++		"raid56 extended format", "3.9"},
+ 	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
+-		"reduced-size metadata extent refs" },
++		"reduced-size metadata extent refs", "3.10"},
+ 	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
+-		"no explicit hole extents for files" },
++		"no explicit hole extents for files", "3.14"},
+ 	/* Keep this one last */
+ 	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
+ };
+@@ -3077,3 +3086,64 @@ unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode)
+ 
+ 	return unit_mode;
+ }
++
++static int version_to_code(char *v)
++{
++	int i = 0;
++	char *b[3] = {NULL};
++	char *save_b = NULL;
++
++	for (b[i] = strtok_r(v, ".", &save_b);
++		b[i] != NULL;
++		b[i] = strtok_r(NULL, ".", &save_b))
++		i++;
++
++	if (b[2] == NULL)
++		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), 0);
++	else
++		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), atoi(b[2]));
++
++}
++
++static int get_kernel_code()
++{
++	int ret;
++	struct utsname utsbuf;
++	char *version;
++
++	ret = uname(&utsbuf);
++	if (ret)
++		return -ret;
++
++	if (!strlen(utsbuf.release))
++		return -EINVAL;
++
++	version = strtok(utsbuf.release, "-");
++
++	return version_to_code(version);
++}
++
++u64 btrfs_features_allowed_by_kernel(void)
++{
++	int i;
++	int local_kernel_code = get_kernel_code();
++	u64 features = 0;
++
++	/*
++	 * When system did not provide the kernel version then just
++	 * return 0, the caller has to depend on the intelligence as
++	 * per btrfs-progs version
++	 */
++	if (local_kernel_code <= 0)
++		return 0;
++
++	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
++		char *ver = strdup(mkfs_features[i].min_ker_ver);
++
++		if (local_kernel_code >= version_to_code(ver))
++			features |= mkfs_features[i].flag;
++
++		free(ver);
++	}
++	return (features);
++}
+diff --git a/utils.h b/utils.h
+index 192f3d1..9044643 100644
+--- a/utils.h
++++ b/utils.h
+@@ -104,6 +104,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed);
+ char* btrfs_parse_fs_features(char *namelist, u64 *flags);
+ void btrfs_process_fs_features(u64 flags);
+ void btrfs_parse_features_to_string(char *buf, u64 flags);
++u64 btrfs_features_allowed_by_kernel(void);
+ 
+ struct btrfs_mkfs_config {
+ 	char *label;
+-- 
+2.6.2
 

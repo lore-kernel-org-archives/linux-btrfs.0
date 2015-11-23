@@ -1,83 +1,168 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38765 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:34472 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752098AbbKPNmJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 16 Nov 2015 08:42:09 -0500
-Date: Mon, 16 Nov 2015 14:40:30 +0100
-From: David Sterba <dsterba@suse.cz>
+	id S1751255AbbKWPcA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 23 Nov 2015 10:32:00 -0500
+From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs release 4.3.1
-Message-ID: <20151116134029.GV6445@suse.cz>
-Reply-To: dsterba@suse.cz
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix race between cleaner kthread and space cache writeout
+Date: Mon, 23 Nov 2015 15:25:16 +0000
+Message-Id: <1448292316-4451-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Filipe Manana <fdmanana@suse.com>
 
-the btrfs-progs 4.3.1 have been released.
+When a block group becomes unused and the cleaner kthread is currently
+running, we can end up getting the current transaction aborted with error
+-ENOENT when we try to commit the transaction, leading to the following
+trace:
 
-* fixes
-  * device delete: recognize 'missing' again
-  * mkfs: long names are not trimmed when doing ssd check
-  * support partitioned loop devices
+  [59779.258768] WARNING: CPU: 3 PID: 5990 at fs/btrfs/extent-tree.c:3740 btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]()
+  [59779.272594] BTRFS: Transaction aborted (error -2)
+  (...)
+  [59779.291137] Call Trace:
+  [59779.291621]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
+  [59779.292543]  [<ffffffff8104d0a6>] warn_slowpath_common+0x9f/0xb8
+  [59779.293435]  [<ffffffffa04cb81f>] ? btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]
+  [59779.295000]  [<ffffffff8104d107>] warn_slowpath_fmt+0x48/0x50
+  [59779.296138]  [<ffffffffa04c2721>] ? write_one_cache_group.isra.32+0x77/0x82 [btrfs]
+  [59779.297663]  [<ffffffffa04cb81f>] btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]
+  [59779.299141]  [<ffffffffa0549b0d>] commit_cowonly_roots+0x1de/0x261 [btrfs]
+  [59779.300359]  [<ffffffffa04dd5b6>] btrfs_commit_transaction+0x4c4/0x99c [btrfs]
+  [59779.301805]  [<ffffffffa04b5df4>] btrfs_sync_fs+0x145/0x1ad [btrfs]
+  [59779.302893]  [<ffffffff81196634>] sync_filesystem+0x7f/0x93
+  (...)
+  [59779.318186] ---[ end trace 577e2daff90da33a ]---
 
-* other
-  * replace several mallocs with on-stack variables
-  * more memory allocation failure handling
-  * add tests for bugs fixed
-  * cmd-device: switch to new message printing helpers
-  * minor code cleanups
+The following diagram illustrates a sequence of steps leading to this
+problem:
 
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+       CPU 1                                             CPU 2
 
+                           <at transaction N>
 
-Shortlog:
+                                                        adds bg A to list
+                                                        fs_info->unused_bgs
 
-Alexander Fougner (1):
-      btrfs-progs: allow device deletion using 'missing' keyword again
+                                                        adds bg B to list
+                                                        fs_info->unused_bgs
 
-David Sterba (25):
-      btrfs-progs: utils: rename helpinfo unit vairables
-      btrfs-progs: simplify empty stirngs check
-      btrfs-progs: don't print version info from embedded subcommands
-      btrfs-progs: remove unused parameter from print_one_fs
-      btrfs-progs: use on-stack buffer for dev_to_fsid
-      btrfs-progs: use on-stack buffer for btrfs_scan_one_device
-      btrfs-progs: use on-stack variable in __rebuild_device_items
-      btrfs-progs: use on-stack buffer in recover_prepare
-      btrfs-progs: use on-stack buffer in __ino_to_path_fd
-      btrfs-progs: use on-stack buffer in __csum_tree_block_size
-      btrfs-progs: handle memory allocation failure in add_file_items
-      btrfs-progs: handle memory allocation failures in traverse_directory
-      btrfs-progs: use fixed size buffer in zero_output_file
-      btrfs-progs: drop unused argument from zero_output_file
-      btrfs-progs: calc-size: use on-stack buffer for a helper structure
-      btrfs-progs: calc-size: kill fs_roots structure and its user
-      btrfs-progs: corrupt-block: use on-stack path buffer in corrupt_dir_item
-      btrfs-progs: image: reorder initialization in metadump_init
-      btrfs-progs: mkfs: handler memory allocation error in make_btrfs
-      btrfs-progs: tests: add 011-delete-missing-device
-      btrfs-progs: tests: add 005-long-device-name-for-ssd
-      btrfs-progs: utils: do not expect lo_file_name to be null terminated
-      btrfs-progs: tests: add 006-partitioned-loopdev
-      btrfs-progs: fix fd leak in resolve_loop_device_with_loopdev
-      Btrfs progs v4.3.1
+                           <transaction kthread
+                            commits transaction N
+                            and wakes up the
+                            cleaner kthread>
 
-Florian Margaine (1):
-      btrfs-progs: Fix partitioned loop devices resolving
+  cleaner kthread
+    delete_unused_bgs()
 
-Michael Lass (1):
-      btrfs-progs: mkfs: increase buffer size in is_ssd
+      sees bg A in list
+      fs_info->unused_bgs
 
-Qu Wenruo (1):
-      btrfs-progs: find-root: Add support to search chunk root
+      btrfs_start_transaction()
 
-Zhao Lei (3):
-      btrfs-progs: Check periodic.timer_fd's value before use
-      btrfs-progs: device: use warning/error for error message
-      btrfs-progs: cleanup cmd_device_usage, simplify loop checks
+                           <transaction N + 1 starts>
+
+      deletes bg A
+
+                                                        update_block_group(bg C)
+
+                                                          --> adds bg C to list
+                                                              fs_info->unused_bgs
+
+      deletes bg B
+
+      sees bg C in the list
+      fs_info->unused_bgs
+
+      btrfs_remove_chunk(bg C)
+        btrfs_remove_block_group(bg C)
+
+          --> checks if the block group
+              is in a dirty list, and
+              because it isn't now, it
+              does nothing
+
+          --> the block group item
+              is deleted from the
+              extent tree
+
+                                                          --> adds bg C to list
+                                                              transaction->dirty_bgs
+
+                                                         some task calls
+                                                         btrfs_commit_transaction(t N + 1)
+                                                           commit_cowonly_roots()
+                                                             btrfs_write_dirty_block_groups()
+                                                               --> sees bg C in cur_trans->dirty_bgs
+                                                               --> calls write_one_cache_group()
+                                                                   which returns -ENOENT because
+                                                                   it did not find the block group
+                                                                   item in the extent tree
+                                                               --> transaction aborte with -ENOENT
+                                                                   because write_one_cache_group()
+                                                                   returned that error
+
+So fix this by adding a block group to the list of dirty block groups
+before adding it to the list of unused block groups.
+
+This happened on a stress test using fsstress plus concurrent calls to
+fallocate 20G and truncate (releasing part of the space allocated with
+fallocate).
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/extent-tree.c | 29 ++++++++++++++++-------------
+ 1 file changed, 16 insertions(+), 13 deletions(-)
+
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 8fd14b6..e563e5a 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5915,19 +5915,6 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+ 			set_extent_dirty(info->pinned_extents,
+ 					 bytenr, bytenr + num_bytes - 1,
+ 					 GFP_NOFS | __GFP_NOFAIL);
+-			/*
+-			 * No longer have used bytes in this block group, queue
+-			 * it for deletion.
+-			 */
+-			if (old_val == 0) {
+-				spin_lock(&info->unused_bgs_lock);
+-				if (list_empty(&cache->bg_list)) {
+-					btrfs_get_block_group(cache);
+-					list_add_tail(&cache->bg_list,
+-						      &info->unused_bgs);
+-				}
+-				spin_unlock(&info->unused_bgs_lock);
+-			}
+ 		}
+ 
+ 		spin_lock(&trans->transaction->dirty_bgs_lock);
+@@ -5939,6 +5926,22 @@ static int update_block_group(struct btrfs_trans_handle *trans,
+ 		}
+ 		spin_unlock(&trans->transaction->dirty_bgs_lock);
+ 
++		/*
++		 * No longer have used bytes in this block group, queue it for
++		 * deletion. We do this after adding the block group to the
++		 * dirty list to avoid races between cleaner kthread and space
++		 * cache writeout.
++		 */
++		if (!alloc && old_val == 0) {
++			spin_lock(&info->unused_bgs_lock);
++			if (list_empty(&cache->bg_list)) {
++				btrfs_get_block_group(cache);
++				list_add_tail(&cache->bg_list,
++					      &info->unused_bgs);
++			}
++			spin_unlock(&info->unused_bgs_lock);
++		}
++
+ 		btrfs_put_block_group(cache);
+ 		total -= num_bytes;
+ 		bytenr += num_bytes;
+-- 
+2.1.3
 

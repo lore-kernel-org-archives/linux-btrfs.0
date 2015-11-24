@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.20]:65183 "EHLO mout.gmx.net"
+Received: from mout.gmx.net ([212.227.15.18]:63852 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753653AbbKXXqU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Nov 2015 18:46:20 -0500
+	id S1753510AbbKXXxj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Nov 2015 18:53:39 -0500
 Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
  chunk
 To: Laurent Bonnaud <L.Bonnaud@laposte.net>,
@@ -15,8 +15,8 @@ References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
 Cc: Lukas Pirl <btrfs@lukas-pirl.de>, linux-btrfs@vger.kernel.org,
         calestyo@scientia.net
 From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5654F6BC.8020900@gmx.com>
-Date: Wed, 25 Nov 2015 07:46:04 +0800
+Message-ID: <5654F877.2050202@gmx.com>
+Date: Wed, 25 Nov 2015 07:53:27 +0800
 MIME-Version: 1.0
 In-Reply-To: <565462F7.8040601@laposte.net>
 Content-Type: text/plain; charset=utf-8; format=flowed
@@ -31,10 +31,6 @@ On 11/24/2015 09:15 PM, Laurent Bonnaud wrote:
 >> Considering the size, I'd like not to touch the dump, metadata is over 5G,
 >
 > It is only 2GB once compressed :>.
-
-The size seems small enough, I'll try to download it as it's super 
-useful to debug it.
-
 >
 >> and I think it's not related to on-disk data, but runtime problem like I mentioned above.
 >
@@ -42,13 +38,6 @@ useful to debug it.
 >
 >   - reboot the machine with a 4.3.0 kernel from Debian experimental
 >   - run "du" on the btrfs FS as a quick sanity check
-
-Nice reproducer.
-Is it 100% reproducible or has a chance to reproduce?
-
-Thanks,
-Qu
-
 >
 > The kernel went read-only again with the following kernel errors:
 >
@@ -92,3 +81,10 @@ Qu
 >
 > Are you interested in the btrfs-image output now ?
 >
+BTW, did you encountered the same btrfsck error "chunk type dismatch" 
+from Christoph?
+
+If so that will provide great help for the btrfsck false alert debugging.
+
+Thanks,
+Qu

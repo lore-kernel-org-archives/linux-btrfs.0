@@ -1,204 +1,150 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:40033 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754208AbbKXXUP (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:56429 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932357AbbKXXaD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Nov 2015 18:20:15 -0500
-Message-ID: <1448407209.21291.112.camel@scientia.net>
-Subject: Re: subvols and parents - how?
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Hugo Mills <hugo@carfax.org.uk>
+	Tue, 24 Nov 2015 18:30:03 -0500
+Date: Tue, 24 Nov 2015 23:30:00 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
 Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Wed, 25 Nov 2015 00:20:09 +0100
-In-Reply-To: <20151124215542.GT24333@carfax.org.uk>
+Subject: Re: subvols and parents - how?
+Message-ID: <20151124233000.GX24333@carfax.org.uk>
 References: <1448340960.14125.51.camel@scientia.net>
-	 <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
-	 <1448400350.21291.88.camel@scientia.net>
-	 <20151124215542.GT24333@carfax.org.uk>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-rYBrz2LIqfXd6OBrANDl"
-Mime-Version: 1.0
+ <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
+ <1448400350.21291.88.camel@scientia.net>
+ <20151124215542.GT24333@carfax.org.uk>
+ <1448407209.21291.112.camel@scientia.net>
+MIME-Version: 1.0
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="tkgHWL40pCDFFyey"
+In-Reply-To: <1448407209.21291.112.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-rYBrz2LIqfXd6OBrANDl
-Content-Type: text/plain; charset="UTF-8"
+--tkgHWL40pCDFFyey
+Content-Type: text/plain; charset=iso-8859-1
+Content-Disposition: inline
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-11-24 at 21:55 +0000, Hugo Mills wrote:
-> =C2=A0 =C2=A0In practice, new content is checked by a number of people wh=
-en
-> it's
-> put in, so the case of someone putting random poorly-thought-out crap
-> in the wiki isn't particularly likely to happen.
-Well... it may work in 99% cases... but there could something slip
-through, which isn't as easy the case in manpages, which also tend to
-be less messy than the huge pile of wiki pages where similar/related
-things are described on different pages.
+On Wed, Nov 25, 2015 at 12:20:09AM +0100, Christoph Anton Mitterer wrote:
+> On Tue, 2015-11-24 at 21:55 +0000, Hugo Mills wrote:
+> > =A0 =A0In practice, new content is checked by a number of people when
+> > it's
+> > put in, so the case of someone putting random poorly-thought-out crap
+> > in the wiki isn't particularly likely to happen.
+> Well... it may work in 99% cases... but there could something slip
+> through, which isn't as easy the case in manpages, which also tend to
+> be less messy than the huge pile of wiki pages where similar/related
+> things are described on different pages.
+>=20
+> Imagine a case, a non-experienced user update the wiki saying that --
+> repair should be used, he may not even doing it in bad faith, perhaps
+> he had success with it and now writes a recipe.
+> It may take a while until someone of the more experienced guys notices
+> that and corrects it.
 
-Imagine a case, a non-experienced user update the wiki saying that --
-repair should be used, he may not even doing it in bad faith, perhaps
-he had success with it and now writes a recipe.
-It may take a while until someone of the more experienced guys notices
-that and corrects it.
-But if ", in the meantime had some fs corruptions,... I may experience
-already severe problems by following that suggestion... (and while I do
-have many backups of all my data, others may not, and if their life's
-data is concerned, they'd be screwed).
+   You can get update notifications, with the diffs for each page, via
+RSS. (At least, I do, and I think David and a few others monitor it in
+the same way). The window of failure is fairly small, particularly in
+view of the number of such "dangerous" changes made. The total
+vulnerability is measured in hours per year...
 
-So even if it takes you just a few hours to correct such rubbish, you
-know that Murphy's law may still hit n people during that time ;-)
+> But if ", in the meantime had some fs corruptions,... I may experience
+> already severe problems by following that suggestion... (and while I do
+> have many backups of all my data, others may not, and if their life's
+> data is concerned, they'd be screwed).
+>=20
+> So even if it takes you just a few hours to correct such rubbish, you
+> know that Murphy's law may still hit n people during that time ;-)
+>=20
+>=20
+> > Please feel free to add the things you'd like to see. As I said
+> > above, we do check the docs on the wiki as they're changed, so if
+> > you're wrong on some details, it won't be a major issue for very
+> > long. If you want to discuss details before you write something,
+> > start
+> > a conversation -- either on here, or on IRC (or even on the Talk
+> > pages
+> > of the wiki).
+> Well I can write a list together of things which I think should be part
+> of some more general documentation (i.e. less documentation about
+> options of the tools)... questions a complete newcomer to btrfs may
+> have who needs however more than "just a filesystem".
+>=20
+>=20
+> > =A0=A0=A0Note that the "parent" of send -p and of snapshots is not the =
+same
+> > relationship as the "parent" (containing subvol) of the tree
+> > structure. This is an awkward nomenclature problem, and I'm not sure
+> > how to fix it.
+> Yeah, that was clear... :-)
+> Maybe call the "parent" from send -p "base" or something like that...
+> IMHO that would fit more as the parent there is more like a
+> "fundament".
 
+   Yes, that makes sense.
 
-> Please feel free to add the things you'd like to see. As I said
-> above, we do check the docs on the wiki as they're changed, so if
-> you're wrong on some details, it won't be a major issue for very
-> long. If you want to discuss details before you write something,
-> start
-> a conversation -- either on here, or on IRC (or even on the Talk
-> pages
-> of the wiki).
-Well I can write a list together of things which I think should be part
-of some more general documentation (i.e. less documentation about
-options of the tools)... questions a complete newcomer to btrfs may
-have who needs however more than "just a filesystem".
+> Anyway, it's still not as bad as the usage of "RAID1" ;-)
+>=20
+>=20
+> > because
+> > you can't rename a subvol across another subvol boundary.
+> That's not quite clear to me... I had subvols like that:
+> /top/root/below-root
+> /top/below-top
+> and was able to move that to:
+> /top/root/below-top
+> /top/below-root
+>=20
+> i.e. not just changing names but swapping as in:
+> mv /top/root/below-top /top/tmp
+> mv /top/below-root /top/root/below-root
+> mv /top/tmp /top/below-top
+>=20
+> with top, root, below-top and below-root all being the same subvols
 
+   With a recent mv, it'll be doing doing reflink copies followed by
+delete for all of the contents, which makes it pretty efficient, but I
+think you'll find that the UUID of the subvols changes. (At least, I
+hope it does. If it doesn't, then my mental model of what the FS is
+doing is *really* screwed up).
 
-> =C2=A0=C2=A0=C2=A0Note that the "parent" of send -p and of snapshots is n=
-ot the same
-> relationship as the "parent" (containing subvol) of the tree
-> structure. This is an awkward nomenclature problem, and I'm not sure
-> how to fix it.
-Yeah, that was clear... :-)
-Maybe call the "parent" from send -p "base" or something like that...
-IMHO that would fit more as the parent there is more like a
-"fundament".
+   Hugo.
 
-Anyway, it's still not as bad as the usage of "RAID1" ;-)
-
-
-> because
-> you can't rename a subvol across another subvol boundary.
-That's not quite clear to me... I had subvols like that:
-/top/root/below-root
-/top/below-top
-and was able to move that to:
-/top/root/below-top
-/top/below-root
-
-i.e. not just changing names but swapping as in:
-mv /top/root/below-top /top/tmp
-mv /top/below-root /top/root/below-root
-mv /top/tmp /top/below-top
-
-with top, root, below-top and below-root all being the same subvols
-
-
-Thanks a lot for your explanations :)
-
-Chris.
---=-rYBrz2LIqfXd6OBrANDl
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNDIzMjAw
-OVowTwYJKoZIhvcNAQkEMUIEQL67I1u/ycKff2pynFy0SQP+1svFBzjzjuxXoUomqkWCP6WMcevW
-3DR9j0HltVw1lUZywA4qFJZuoLmVtguKqJ4wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBsQ5uZp328TKTB1RqPeeLDC6LBOwDx
-R6qHKUe2UIZtB4mA/1uviEDKtULgX2QkxVnaLNl5O9MmmS29UW8/7A3in6gqZbIksolqa1wEuBzY
-8ebfqHW2Gm9gIp/eiK7SSQCRS0FoSdapav0bTh0hgIZ/d05yaqugbkHIJ29OwONVEgVRKUDVWhxP
-WfvklV0EH1UScYeC0GD4pEo//XAW8y146ThRNkyFlOLkiqUX0d9molPgp9YrMuekBU2aDoOiEvDw
-ATDkemb920XBx5ilslGCxj54cSQn9MPx9iFo9v911Eq3PThf5bYhUQpW683hlpIGPQnpyP9IqG9a
-l1iG4B9gAAAAAAAA
+> Thanks a lot for your explanations :)
+>=20
+> Chris.
 
 
---=-rYBrz2LIqfXd6OBrANDl--
 
+--=20
+Hugo Mills             | Never underestimate the bandwidth of a Volvo filled
+hugo@... carfax.org.uk | with backup tapes.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--tkgHWL40pCDFFyey
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJWVPL4AAoJEFheFHXiqx3kdVkP/RgHpKeKliQpXu4gBBkych0k
+X/32XdWnICNXLoOW2a0NhBcL9rArii9YGaSdZC63g1pCcH4UjSriE+M22Vj0cO2i
+EGtffzwX4T0tnnxyVAKtWe34URuNs5w/pb0R1+mP6+QqvBM2g05sJE52r62NBacy
+ONG3FOHenuxriugj7GAqIfKLExF2E647fR3rkwAPu0tAORSumBEhn1JvDkne3fuZ
+nDZsQnKC2U41uGXgFxq0GiCHKW7ep6/BUs7PIoj6aGRv2r8Y1jzrnnuG4KjUTBQA
+wLeB2odmPdDWXVDE7Bkzi1LaqzKzVQLjmq+7psrG/an2qEkRsLskutTaYeCK7nWv
+7VKiuRRG5Z55HpGTk4bBWJoJAJ4Hidm+knIIklfcTrL9bJNsk8uO1Bl8uBqvErDC
+Q0JE4fJz8W4zmaXQeRejdByhoMnCJj3E65Cud4/vud5CcWkRnbkGWkwJHruAXwFg
+8jS0XjVYfpTdEgL9eY7aLTQtPSc0HpYDuzXfDbj58eVTDD3tSJNvlcBuOOY3LenQ
+RDKfU3HK7Z1Dieby2EXoEY8eypnn6MOMdFenKotmmNzCJDh7I9OktP9sISP2WhrW
+qbwVOb/jqh89hpz6PNPVIaQR0C2sMAxh51R8HS8oRtfIn6cnxxja6kIIPplWDhNx
+lzUin8C/CmJmlt/bALNs
+=pK+Z
+-----END PGP SIGNATURE-----
+
+--tkgHWL40pCDFFyey--

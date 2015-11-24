@@ -1,14 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:58148 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:59877 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751320AbbKYL7L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 06:59:11 -0500
+	id S1752329AbbKYSJZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Nov 2015 13:09:25 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix error path when failing to submit bio for direct IO write
-Date: Tue, 24 Nov 2015 17:25:18 +0000
-Message-Id: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH v2] Btrfs: fix error path when failing to submit bio for direct IO write
+Date: Tue, 24 Nov 2015 23:35:25 +0000
+Message-Id: <1448408125-10305-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
+References: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
@@ -36,11 +38,15 @@ a direct IO write.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+
+V2: Fixed wrong uptodate value passed to helper
+    btrfs_endio_direct_write_update_ordered() (1 vs 0).
+
  fs/btrfs/inode.c | 54 +++++++++++++++++++++++++++---------------------------
  1 file changed, 27 insertions(+), 27 deletions(-)
 
 diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f82d1f4..4f8560c 100644
+index f82d1f4..66106b4 100644
 --- a/fs/btrfs/inode.c
 +++ b/fs/btrfs/inode.c
 @@ -7995,22 +7995,22 @@ static void btrfs_endio_direct_read(struct bio *bio)
@@ -123,7 +129,7 @@ index f82d1f4..4f8560c 100644
 +			btrfs_endio_direct_write_update_ordered(inode,
 +						file_offset,
 +						dio_bio->bi_iter.bi_size,
-+						1);
++						0);
 +		else
  			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
  			      file_offset + dio_bio->bi_iter.bi_size - 1);

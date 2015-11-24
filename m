@@ -1,105 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f172.google.com ([209.85.223.172]:33111 "EHLO
-	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753520AbbKXUjr (ORCPT
+Received: from mail-io0-f173.google.com ([209.85.223.173]:34196 "EHLO
+	mail-io0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754054AbbKXUpD (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Nov 2015 15:39:47 -0500
-Received: by iouu10 with SMTP id u10so33521152iou.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 12:39:46 -0800 (PST)
-Subject: Re: shall distros run btrfsck on boot?
+	Tue, 24 Nov 2015 15:45:03 -0500
+Received: by ioir85 with SMTP id r85so33251601ioi.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 12:45:02 -0800 (PST)
+Subject: Re: btrfs send reproducibly fails for a specific subvolume after
+ sending 15 GiB, scrub reports no errors
 To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        Eric Sandeen <sandeen@redhat.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-References: <1448337754.14125.33.camel@scientia.net>
- <pan$32768$921cbe34$6a22269c$2c7db710@cox.net>
- <1448340211.14125.44.camel@scientia.net>
- <pan$c9010$71046470$f37154a0$cd8b55eb@cox.net>
- <pan$d4967$d0c5632e$fa0a61b0$e3c076ef@cox.net> <56549AFB.3040904@redhat.com>
- <1448385809.21291.22.camel@scientia.net>
+        Duncan <1i5t5.duncan@cox.net>, Nils Steinger <nst@voidptr.de>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <56530608.50906@gmail.com> <20151123211012.GA12286@ny.voidptr.de>
+ <pan$7e9cd$79273243$6e85efe7$7ee378ef@cox.net> <56545C1B.1080507@gmail.com>
+ <1448390914.21291.42.camel@scientia.net>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5654CAE0.5040907@gmail.com>
-Date: Tue, 24 Nov 2015 15:38:56 -0500
+Message-ID: <5654CC1B.4030209@gmail.com>
+Date: Tue, 24 Nov 2015 15:44:11 -0500
 MIME-Version: 1.0
-In-Reply-To: <1448385809.21291.22.camel@scientia.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms040305090607040008030605"
+In-Reply-To: <1448390914.21291.42.camel@scientia.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070509090405050405090705"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms040305090607040008030605
+--------------ms070509090405050405090705
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-11-24 12:23, Christoph Anton Mitterer wrote:
-> On Tue, 2015-11-24 at 11:14 -0600, Eric Sandeen wrote:
->> In a nutshell, though, I think a filesystem repair should be an
->> admin-initiated
->> action, not something that surprises you on a boot, at least for a
->> journaling
->> filesystem which is designed to maintain its integrity even in the
->> face of
->> a power loss or crash.
+On 2015-11-24 13:48, Christoph Anton Mitterer wrote:
+> Hey.
 >
-> Well I wouldn't agree here... I maintain some >2PiB of storage for a
-> LHC Tier-2,... right now everything with ext4.
-> During normal operation we can of course not have any fsck, but every
-> now and then, when we reboot, it happens automatically,... and
-> regularly shows at least some (apparently non-serious) glitches.
-Yeah, that's pretty normal for any large storage array with a high=20
-uptime.  ext4 also doesn't correct anything on the fly, so it's more=20
-important that you always run a check on boot when you don't reboot=20
-often (which brings up why i personally suggest stuff like GlusterFS or=20
-Ceph for large scale data storage, you can reboot individual nodes one=20
-at a time, have zero down time, and maintain a high degree of=20
-performance and data safety).
+> All that sounds pretty serious, doesn't it? So in other words, AFAIU,
+> send/receive cannot really be reliably used.
 >
-> IMHO, either the kernel driver itself already checks "everything", then=
-
-> we wouldn't need a dedicated check tool.
-> Or it does not, but in that case, there will be people who want to have=
-
-> that in-depth checks run regularly (and even if it's just every half a
-> year).
-> I better wait half an hour at boot, and find such errors, rather than
-> that they silently pile up until I really run into troubles.
-Well, that depends on the type of errors.  XFS doesn't need a fsck on=20
-mount usually, but there is still a xfs_repair tool for fixing badly=20
-damaged filesystems that the kernel can't mount.  btrfs check falls into =
-
-the same general usage as XFS repair, IOW, if the system was shut down=20
-cleanly, you're fine barring software bugs, but if it crashed, you=20
-should be running a check on the FS.  Like I mentioned above, ext4=20
-doesn't correct errors while online, it either (depending on how the fs=20
-is configured) ignores them, goes read-only, or panics the system.=20
-BTRFS on the other hand, can correct many types of errors while online=20
-(that's part of what scrub is for), and is usually pretty resilient when =
-
-it comes to disk errors (I have a few TB worth of data on assorted BTRFS =
-
-filesystems, I run scrubs on them weekly (which usually turns up about a =
-
-single block error across the whole data set per month), and run a check =
-
-on them monthly, which has never turned up anything unless the system=20
-had crashed).
+> I did so far for making incremental backups, but I've also experienced
+> some problems (though not what this is about here).
 >
-> That being said, of course it should be configurable for the admin...
-> and it is, via fstab.
-> So apart from that, given the expectation that btrfsck should be rock-
-> solid as e.g. e2fsck in some future, I wouldn't see why people
-> shouldn't have the necessary facilities to have it auto-run.
-btrfsck has to parse all the data in the FS, and unlike ext4, BTRFS has=20
-multiple copies of each metadata block (and often on large filesystems,=20
-is configured for multiple copies of each data block), and has checksums =
+I would say it's currently usable for one-shot stuff, but probably not=20
+reliably useable for automated things without some kind of=20
+administrative oversight.  In theory, it wouldn't be hard to write a=20
+script to automate fixing this particular issue when send encounters it, =
 
-on _everything_, which need to be validated.  There is no way that this=20
-can be made all that much faster short of getting faster hardware to run =
-
-it on.
+but that has it's own issues (you have to either toggle the snapshot=20
+writable temporarily, or modify the source and re-snapshot).
 
 
---------------ms040305090607040008030605
+
+--------------ms070509090405050405090705
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -141,9 +90,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTI0MjAzODU2WjBPBgkq
-hkiG9w0BCQQxQgRA1WZd98JJr0qV/K3iqLK2Qn2LYhCyeaUVcc7YlTEh+PPwByK80pGS+tRT
-VI5YNKQxJMgrtBjFojJDtqVeOCOZfTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTI0MjA0NDExWjBPBgkq
+hkiG9w0BCQQxQgRA4m/b/8cq5CXTw7W1/mO8Hh8r89AOZcaNUZKsCf29lbZLRosXvjyBU3md
+NlWwDFxgYwk2VWUL2ilOgL5Lea+efTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -151,14 +100,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgB16hdV4CBOIX+Ke5Sj/40pXXvKdzAMbv0IMtzkSgfXFzr+MCdH
-IJsBmIXVfh+MGVe2QkmeVubhpmJtCdKclGpSTY5SmPRVTmoNo8twz1Zx7l4WnrL4ZxdwTzOl
-7Q0iav+qjYiTNJm23Az+pbmYlH5cmIu0IE2jVTWKGf3RxXSP7uqg0pMvQfpAVXDMSHLLPXwg
-nX6yG5U89NIlGwLSmgCwcZXNq4kK5/UN5GxHNFCFxhgVpHRu49//aCmQoT8lCgg2pRJr9Knm
-ICTo0KUFXVUmFbUTu+sddysCi7E8jt2r2XWj+GVANGVibvB90Om0/9q3WPoZ5RBkLWVZ4WZS
-/X+C3QJonf5VNBE9OzwPaOYhnf/eTJ97BjkzWz4vy72l/BAxNnbGFWpzGV3L7a8EQIOBbIRa
-xtH1c3h+LlPP8na6yXv/ZljCSR7r6BdCWH7QI0cZLiU7cq55MuH1BDVdJbK2Y6UWAaYux4AN
-Rrzmb3fRiRalpvie4LlDCXaZJtZ1QxNzmX4cwfW2JYgplUy6gMRDn6B8hFLixOrO2rZPtnH+
-8q7Fra7ENpEwbrQuUoi876aJOCfvFbpvw4gmsrWNadS97HC0u5wnVg0exOkghS4Zd+zK243F
-lpYYrLizYTE1x83UqnAdFYOATF4LqCK7JF/dUphcI3FV21eV2jKXqFAYGwAAAAAAAA==
---------------ms040305090607040008030605--
+BgkqhkiG9w0BAQEFAASCAgAYVmDmcGvNARlvl+nxyFtzho639ZTgg90OlOvNWanfCUQQHYP/
+A5loJTykcLuswEGG2L7itZ05g3JvvbkilLeHR/YF151diV8YOJK1BZntfg9puroCkKKQN0wG
+gsSfm+CEVVIe/PICRt3iEmOhfcROvRdufELJdg6m/ezYGSlFa/ywtpOoznVbVyg7yCNVh6zY
+Kf/tPyig7nOZTG1Dg0BY5+GIErA1TYWNZnBgdWB6GSVGyvV717D5f6oxjjxQHlVaksNjUnbK
+dlSBK0EcKa1WC+xVdKgcy4pFJGielh0SSq9w2vg/LeXQM/JK2VTLXQwANz/xo/Bo8aaJMmvM
+yj/Hr03LGzxymeQBQLeqzILZCG3Zf31M9UcAOpPjCKnIBSjM8PE86ZmjvpaCeWc47UQlthl5
+COTJV2ASN6zNi6uqPuzPstIf86mUKPK0UypKFftr+lK2bZDPhnvhwX+kzDPS3z4FTNDlaeXi
+wPJxHVpLgxkMk4FIyuvzWNY0gxqbrYoqD+NilxHphdWiessbuoTdvmH703pG0rZUhvUKgQI6
+NoGJNO56q9kmUcgKPXKsbxx9XUFvEHd/4Uvu8FpdCw8RzZWr7r+ArfC4/X0C4feF9gKyaLCe
+T7+x6MUFma2GSwMgkk4nIjxlGOWH73DlmitEwCayovcWT40Noox5xlpkBwAAAAAAAA==
+--------------ms070509090405050405090705--

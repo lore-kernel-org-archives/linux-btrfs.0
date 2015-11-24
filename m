@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21377 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:36098 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752498AbbKXAxi (ORCPT
+	with ESMTP id S1751730AbbKXIuj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 19:53:38 -0500
+	Tue, 24 Nov 2015 03:50:39 -0500
 Subject: Re: [PATCH 00/25] Btrfs-convert rework to support native separate
 To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
 References: <1447989869-24739-1-git-send-email-quwenruo@cn.fujitsu.com>
  <20151123173330.GH31035@twin.jikos.cz>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5653B503.5040500@cn.fujitsu.com>
-Date: Tue, 24 Nov 2015 08:53:23 +0800
+Message-ID: <565424B8.3020502@cn.fujitsu.com>
+Date: Tue, 24 Nov 2015 16:50:00 +0800
 MIME-Version: 1.0
 In-Reply-To: <20151123173330.GH31035@twin.jikos.cz>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -32,15 +32,27 @@ David Sterba wrote on 2015/11/23 18:33 +0100:
 > patchset on top of that.  The code is now pushed to branch
 > 'dev/convert-reiser'.
 >
-Thanks for the check, David.
 
-I'll rebase it soon.
+Hi David,
+
+It seems the conflict is quite huge, your reiserfs support is based on 
+the old behavior, just like what old ext2 one do: custom extent allocation.
+
+I'm afraid the rebase will take a lot of time since I'm completely a 
+newbie about reiserfs... :(
+
+I may need to change a lot of ext2 direct call to generic one, and may 
+even change the generic function calls.(no alloc/free, only free space 
+lookup)
+
+And some (maybe a lot) of reiserfs codes may be removed during the rework.
+
+Will it be OK for you?
 
 Thanks,
 Qu
 
 -- 
 This message has been scanned for viruses and
-dangerous content by FCNIC, and is
-believed to be clean.
+dangerous content by Fujitsu, and is believed to be clean.
 

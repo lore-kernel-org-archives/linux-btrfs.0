@@ -1,108 +1,170 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:51736 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753052AbbKXVRS (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:34416 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753961AbbKXVZy (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Nov 2015 16:17:18 -0500
-Message-ID: <1448399833.21291.84.camel@scientia.net>
-Subject: Re: btrfs send reproducibly fails for a specific subvolume after
- sending 15 GiB, scrub reports no errors
+	Tue, 24 Nov 2015 16:25:54 -0500
+Message-ID: <1448400350.21291.88.camel@scientia.net>
+Subject: Re: subvols and parents - how?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>, Duncan <1i5t5.duncan@cox.net>,
-        Nils Steinger <nst@voidptr.de>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Tue, 24 Nov 2015 22:17:13 +0100
-In-Reply-To: <5654CF58.8080207@gmail.com>
-References: <56530608.50906@gmail.com>
-	 <20151123211012.GA12286@ny.voidptr.de>
-	 <pan$7e9cd$79273243$6e85efe7$7ee378ef@cox.net> <56545C1B.1080507@gmail.com>
-	 <1448390914.21291.42.camel@scientia.net> <5654CC1B.4030209@gmail.com>
-	 <1448398257.21291.63.camel@scientia.net> <5654CF58.8080207@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Tue, 24 Nov 2015 22:25:50 +0100
+In-Reply-To: <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
+References: <1448340960.14125.51.camel@scientia.net>
+	 <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-/qO19zqXx39ssGgerBSv"
+	boundary="=-HSQPfcfqeMnQp2LxY16o"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-/qO19zqXx39ssGgerBSv
+--=-HSQPfcfqeMnQp2LxY16o
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-11-24 at 15:58 -0500, Austin S Hemmelgarn wrote:
-> I had tried using send/receive once with -p, but had numerous issues.
-=C2=A0
-> The incrementals I've been doing have used -c instead, and I hadn't had=
-=C2=A0
-> any issues with data loss with that.=C2=A0=C2=A0The issue outlined here w=
-as only a=C2=A0
-> small part of why I stopped using it for backups.=C2=A0=C2=A0The main rea=
-son was=C2=A0
-> to provide better consistency between my local copies and what I upload=
-=C2=A0
-> to S3/Dropbox, meaning I only have to test one back up image per=C2=A0
-> filesystem backed-up, instead of two.
+On Tue, 2015-11-24 at 08:29 +0000, Duncan wrote:
+> OK, found it on the wiki.=C2=A0=C2=A0It wasn't under use-cases, where I
+> initially=20
+> thought to look, but under sysadmin guide.=C2=A0=C2=A0Specifically, see s=
+ection
+> 4.2, managing snapshots, but I'd suggest reading the entire
+> subvolumes=20
+> discussion, section 4, or even most/all of the page.
+>=20
+> https://btrfs.wiki.kernel.org/index.php/SysadminGuide
+Well I've had read that, but it's pretty vague and especially doesn't
+mentioned any of the filesystem internal implications (if there are
+any)... like I wondered before, whether this has effects on ref-links
+not being used when e.g. sending/recieving ... or on future planned
+extensions like recursive snapshots.
 
-Okay maybe I just don't understand how to use send/receive correctly...
+
+>=C2=A0
+> Suppose you only want to rollback /, because some update screwed you
+> up,=20
+> but not /home, which is fine.=C2=A0=C2=A0If /home is a nested subvolume, =
+then=20
+> you're now mounting the nested home subvolume from some other nesting
+> tree entirely,
+That's a bit unclear to me,... I thought when I make a snapshot, any
+nested subvols wouldn't be snapshotted and thus be empty dirs.
+So I'd have rather that if I would simply have no /home (if I didn't
+move it to the rolled-back subvol manually)
 
 
-What I have is about the following (simplified):
-
-master-fs:
+> 5
+> >=20
+> +-roots (dir not subvol, note the s, rootS, plural)
+> > +-root (subvol, mountpoint /)
+> > > +-boot/ (dir)
+> > > +-root/ (dir)
+> > > +-lib/=C2=A0=C2=A0(dir)
+> > > +-home/ (empty dir as mountpoint)
+> > +-root-snapshot-2015.0301 (dated snapshot of root)
+> > +-root-snapshot-2015.0601 (dated snapshot of root)
+> > +-root-snapshot-2015.0901 (dated snapshot of root)
+> +-homes (dir not subvol)
+> > +-home (subvol, mountpoint /home)
+> > +-home-snapshot-2015.0301 (dated snapshot of home)
+> ...
+That's more what I've had in mind...
+Actually something like this:
 5
 |
-+--data (subvol, my precious data)
-|
-+--snapshots
-=C2=A0 =C2=A0|
-=C2=A0 =C2=A0+--2015-11-01 (suvol, ro-snapshot of /data)
-
-So 2015-11-01 is basically the first snapshot ever made.
-
-Now I want to have it on:
-backup-fs
-+--2015-11-01 (suvol, ro-snapshot of /data)
-
-
-So far I did
-btrfs send /master-fs/snapshots/2015-11-01 | btrfs receive /backup-fs/2015-=
-11-01
++-root =C2=A0 =C2=A0 =C2=A0 (=3Dsubvol)
+| +-boot
+| +-home =C2=A0 =C2=A0 (subvo=3D/home being mounted heron)
+| +-lib
++-home =C2=A0 =C2=A0 =C2=A0 (subvol, the current version)
++-snapshots =C2=A0(=3Ddir)
+=C2=A0 +-root
+=C2=A0 | +-2015-01-14 (subvol, snapshot)
+=C2=A0 | +-2015-09-30 (subvol, snapshot)
+=C2=A0 +-home
+=C2=A0 =C2=A0 +-2015-06-04 (subvol, snapshot)
+=C2=A0 =C2=A0 +-2015-09-01 (subvol, snapshot)
 
 
+And it once more points to the problem of the wiki... anyone can write
+(I think even I) and it's totally unclear at the first glance how
+"[non-]official" and outdated something may be.
+Apart from the problem that many important questions (from the PoV of
+an more advanced admin that doesn't just do mkfs.btrfs and then never
+again thinks about it) :-(
 
 
-Then time goes by and=C2=A0I get new content in the data subvol, so what
-I'd like to have then is a new snapshot on the master-fs:
-5
-|
-+--data (subvol, more of my precious data)
-|
-+--snapshots
-=C2=A0 =C2=A0|
-=C2=A0 =C2=A0+--2015-11-01 (suvol, ro-snapshot of /data)
-=C2=A0 =C2=A0+--2015-11-20 (suvol, ro-snapshot of /data)
-
-And this should go incrementally on backup-fs:
-backup-fs
-+--2015-11-01 (suvol, ro-snapshot of /data)
-+--2015-11-20
-(suvol, ro-snapshot of /data)
-
-So far I used something like:
-btrfs send -p=C2=A02015-11-01 /master-fs/snapshots/2015-11-20 | btrfs recei=
-ve /backup-fs/2015-11-20
-
-And obviously I want it to share all the ref-links and stuf...
+> Meanwhile, if the intention for a subvolume is simply to exclude that
+> subtree from snapshotting of the parent, as might be the case for
+> example=20
+that is in fact also use case.. so in practise I'll probably have a mix
+of (a) and (b).
 
 
-So in other words, what's the difference between -p and -c? :D
+> if you have a VMs subvol, with the VM image files set NOCOW to avoid=20
+> fragmentation, since snapshotting nocow files forces cow1 (a cow at
+> the=20
+> first write of that block, before returning to nocow, because a
+> snapshot=20
+> locks the existing extents in place for the snapshot, so initial
+> writes=20
+> to a block after a snapshot /can't be nocow or it'd change the
+> snapshot=20
+> too...)
+Ah that's good to know how that works (or better said, that it works at
+all)... I've already wondered myself several times what happens when I
+snapshot NOCOW files, ... something that's I guess also missing from
+the (missing ;-) ) btrfs-end-user overview and details documentation.
 
 
-Thx,
+> OTOH, if there's a chance you might want to mount that subvolume in a
+> roll-back scenario, under the snapshot you're rolling back to, then
+> it=20
+> makes sense to put it directly under ID 5 again, and mount it in any
+> case.
+Yes.
+
+
+> Then there's the security angle to consider.=C2=A0=C2=A0With the (basical=
+ly,=20
+> possibly modified as I suggested) flat layout, mounting something
+> doesn't=20
+> automatically give people in-tree access to nested subvolumes
+> (subject to=20
+> normal file permissions, of course), like nested layout does.=C2=A0=C2=A0=
+And
+> with=20
+> (possibly modified) flat layout, the whole subvolume tree doesn't
+> need to=20
+> be mounted all the time either, only when you're actually working
+> with=20
+> subvolumes.
+Uhm, I don't get the big security advantage here... whether nested or
+manually mounted to a subdir,... if the permissions are insecure I'll
+have a problem... if they're secure, than not.
+
+Of course I use insecure permissions and don't mount the subvols then
+I'd be safe in flat setup, but not in a nested setup...(where they
+subvol is "auto-mounted")...
+
+But that seems pretty awkward.
+
+
+
+Mhh I think my main question turns out to be whether the different
+layouts would have any technical (i.e. not administrative) effects...
+like the aforementioned stuff of recursive snapshots (should such thing
+ever come to life).
+But at least from the userspace tools it seems that I can move subvols
+arbitrarily and they adapt their parent IDs accordingly...
+
+So I guess whatever setup one uses nested/flat/mixed... doesn't rule
+out any functionalities for the future?!
+
+thx,
 Chris.
-
---=-/qO19zqXx39ssGgerBSv
+--=-HSQPfcfqeMnQp2LxY16o
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -189,19 +251,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNDIxMTcx
-M1owTwYJKoZIhvcNAQkEMUIEQN+UuLh1RpKv0eELc5Ow+OurzA3HV1je+q4e8ZEhpusc2ry0fgk3
-SfXzmKH6IzS3/68An1MM8mlzrXVPARqyFRIwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNDIxMjU1
+MFowTwYJKoZIhvcNAQkEMUIEQLVXgtvgCgVMHnlgbi0OidWGudiohogdiRNKYtrbeGxFS6Yddm4B
+0RiUJW3BCKCoGVvdKhnqz6dhZTtwVGfayz8wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC+vxTwMqzMueB+8XQbWr8K0e1vZamu
-sh608Xy0lB9s5ZrV/A0W4dPaZ1eUd99hG0QtLWYsRr/MGy/z3q5f1uZZG6FRHHM/krDx0SRxduzO
-WqYq8Vj/2eTJxvQuYmOB3Ym4JgpE1sZeFzB8916iCWSifbEAArtPtjl/CzpBtmun79+HOlEAmp22
-ehpHykRkOTX9LDc+VwXVTLpg5cnrBL3wB7CoMcTTwM8AT4rKeUhHJHJLuFG9SxbE0J/kSJ1AL48x
-cy4xE9tglonIWondnk5MEruzhI6hJKj1ls4XciaDPnEvyjUaIYeE9gNW1GAgyoVIeRcQ0IBVg1gN
-Fy9icQ9HAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQArAU1oq/8ev01xA5vPinBKRoYX59B1
+pFJjnPddXPzvnIYK1stnECnGj+yxSlQc0dVqpWUzWgo2qrY9FHM/tzVQ2jI66qsGGOf8mjeXfu4k
+gzVIaP3KMF+7LEECOPXQIg8oCXRPwJp9CIu5Rm7EroWABv7NkA9G1Hjhf7C9Yo31/gfcTSDy9PTH
+ty8sVbV2NNCpcGbjJMvh792i7FUH2uv2it+3sI/SK0xQdLo/BNp3rdlYqsD5CooSP6X1MTzte6YJ
+H11GZd70ZGN6sGB5gA8cmEF++9sjhibtHVhb15K3whIlwzaQM3TpCgjJGV4qeQiQEooMGym2ZaCU
+pAzvzKMcAAAAAAAA
 
 
---=-/qO19zqXx39ssGgerBSv--
+--=-HSQPfcfqeMnQp2LxY16o--
 

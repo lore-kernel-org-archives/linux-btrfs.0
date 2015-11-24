@@ -1,49 +1,137 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:43924 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:58148 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752179AbbKZNxn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Nov 2015 08:53:43 -0500
-Date: Thu, 26 Nov 2015 14:51:57 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs-progs: mkfs: Fix a wrong extent buffer size
- causing wrong superblock csum
-Message-ID: <20151126135157.GQ31035@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1448525755-1192-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1448525755-1192-1-git-send-email-quwenruo@cn.fujitsu.com>
+	id S1751320AbbKYL7L (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Nov 2015 06:59:11 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix error path when failing to submit bio for direct IO write
+Date: Tue, 24 Nov 2015 17:25:18 +0000
+Message-Id: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 26, 2015 at 04:15:55PM +0800, Qu Wenruo wrote:
-> For make_btrfs(), it's setting wrong buf size for last super block write
-> out.
-> The superblock size is always BTRFS_SUPER_INFO_SIZE, not
-> cfg->sectorsize.
-> 
-> And this makes mkfs.btrfs -f -s 8K fails.
-> 
-> Fix it to BTRFS_SUPER_INFO_SIZE.
-> 
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Already fixed in current devel (bf1ac8305ab3f191d9).
+Commit 61de718fceb6 ("Btrfs: fix memory corruption on failure to submit
+bio for direct IO") fixed problems with the error handling code after we
+fail to submit a bio for direct IO. However there were 2 problems that it
+did not address when the failure is due to memory allocation failures for
+direct IO writes:
 
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -554,7 +554,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
->  	BUG_ON(sizeof(super) > cfg->sectorsize);
->  	memset(buf->data, 0, cfg->sectorsize);
->  	memcpy(buf->data, &super, sizeof(super));
-> -	buf->len = cfg->sectorsize;
-> +	buf->len = BTRFS_SUPER_INFO_SIZE;
->  	csum_tree_block_size(buf, BTRFS_CRC32_SIZE, 0);
->  	ret = pwrite(fd, buf->data, cfg->sectorsize, cfg->blocks[0]);
+1) We considered that there could be only one ordered extent for the whole
+   IO range, which is not always true, as we can have multiple;
 
-Also, this overwrites more bytes than necessary so my fix uses
-BTRFS_SUPER_INFO_SIZE everywhere.
+2) It did not set the bit BTRFS_ORDERED_IO_DONE in the ordered extent,
+   which can make other tasks running btrfs_wait_logged_extents() hang
+   forever, since they wait for that bit to be set. The general assumption
+   is that regardless of an error, the BTRFS_ORDERED_IO_DONE is always set
+   and it precedes setting the bit BTRFS_ORDERED_COMPLETE.
 
->  	if (ret != cfg->sectorsize) {
+Fix these issues by moving part of the btrfs_endio_direct_write() handler
+into a new helper function and having that new helper function called when
+we fail to allocate memory to submit the bio (and its private object) for
+a direct IO write.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 54 +++++++++++++++++++++++++++---------------------------
+ 1 file changed, 27 insertions(+), 27 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index f82d1f4..4f8560c 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -7995,22 +7995,22 @@ static void btrfs_endio_direct_read(struct bio *bio)
+ 	bio_put(bio);
+ }
+ 
+-static void btrfs_endio_direct_write(struct bio *bio)
++static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
++						    const u64 offset,
++						    const u64 bytes,
++						    const int uptodate)
+ {
+-	struct btrfs_dio_private *dip = bio->bi_private;
+-	struct inode *inode = dip->inode;
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_ordered_extent *ordered = NULL;
+-	u64 ordered_offset = dip->logical_offset;
+-	u64 ordered_bytes = dip->bytes;
+-	struct bio *dio_bio;
++	u64 ordered_offset = offset;
++	u64 ordered_bytes = bytes;
+ 	int ret;
+ 
+ again:
+ 	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+ 						   &ordered_offset,
+ 						   ordered_bytes,
+-						   !bio->bi_error);
++						   uptodate);
+ 	if (!ret)
+ 		goto out_test;
+ 
+@@ -8023,13 +8023,22 @@ out_test:
+ 	 * our bio might span multiple ordered extents.  If we haven't
+ 	 * completed the accounting for the whole dio, go back and try again
+ 	 */
+-	if (ordered_offset < dip->logical_offset + dip->bytes) {
+-		ordered_bytes = dip->logical_offset + dip->bytes -
+-			ordered_offset;
++	if (ordered_offset < offset + bytes) {
++		ordered_bytes = offset + bytes - ordered_offset;
+ 		ordered = NULL;
+ 		goto again;
+ 	}
+-	dio_bio = dip->dio_bio;
++}
++
++static void btrfs_endio_direct_write(struct bio *bio)
++{
++	struct btrfs_dio_private *dip = bio->bi_private;
++	struct bio *dio_bio = dip->dio_bio;
++
++	btrfs_endio_direct_write_update_ordered(dip->inode,
++						dip->logical_offset,
++						dip->bytes,
++						!bio->bi_error);
+ 
+ 	kfree(dip);
+ 
+@@ -8365,24 +8374,15 @@ free_ordered:
+ 		dip = NULL;
+ 		io_bio = NULL;
+ 	} else {
+-		if (write) {
+-			struct btrfs_ordered_extent *ordered;
+-
+-			ordered = btrfs_lookup_ordered_extent(inode,
+-							      file_offset);
+-			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
+-			/*
+-			 * Decrements our ref on the ordered extent and removes
+-			 * the ordered extent from the inode's ordered tree,
+-			 * doing all the proper resource cleanup such as for the
+-			 * reserved space and waking up any waiters for this
+-			 * ordered extent (through btrfs_remove_ordered_extent).
+-			 */
+-			btrfs_finish_ordered_io(ordered);
+-		} else {
++		if (write)
++			btrfs_endio_direct_write_update_ordered(inode,
++						file_offset,
++						dio_bio->bi_iter.bi_size,
++						1);
++		else
+ 			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
+ 			      file_offset + dio_bio->bi_iter.bi_size - 1);
+-		}
++
+ 		dio_bio->bi_error = -EIO;
+ 		/*
+ 		 * Releases and cleans up our dio_bio, no need to bio_put()
+-- 
+2.1.3
+

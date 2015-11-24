@@ -1,182 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f181.google.com ([209.85.160.181]:33348 "EHLO
-	mail-yk0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753246AbbKXOja (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Nov 2015 09:39:30 -0500
-Received: by ykdv3 with SMTP id v3so20428965ykd.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 06:39:29 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <1448283378-10579-2-git-send-email-anand.jain@oracle.com>
-References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
-	<1448283378-10579-2-git-send-email-anand.jain@oracle.com>
-Date: Tue, 24 Nov 2015 14:39:29 +0000
-Message-ID: <CAMU1PDita6iet1xg97RfCDPWuVUaq=dYBO_eM3ZDQtvLRPcHCw@mail.gmail.com>
-Subject: Re: [PATCH v2 1/5] btrfs-progs: introduce framework to check kernel
- supported features
-From: Mike Fleetwood <mike.fleetwood@googlemail.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.cz>
-Content-Type: text/plain; charset=UTF-8
+Received: from smtp113.iad3a.emailsrvr.com ([173.203.187.113]:40710 "EHLO
+	smtp113.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752225AbbKXRLj convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Nov 2015 12:11:39 -0500
+Received: from smtp15.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp15.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id DC765380CD5
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 12:06:09 -0500 (EST)
+Received: from smtp15.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp15.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id D825538017D
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 12:06:09 -0500 (EST)
+Received: by smtp15.relay.iad3a.emailsrvr.com (Authenticated sender: vincent-AT-up4.tv) with ESMTPSA id B75D7380CD5
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 12:06:09 -0500 (EST)
+From: Vincent Olivier <vincent@up4.com>
+Content-Type: text/plain; charset=us-ascii
+Subject: btrfs check help
+Message-Id: <AF79907D-A36B-4806-B31A-3E327F2E5642@up4.com>
+Date: Tue, 24 Nov 2015 12:06:08 -0500
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0 (Mac OS X Mail 9.1 \(3096.5\))
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 23 November 2015 at 12:56, Anand Jain <anand.jain@oracle.com> wrote:
-> In the newer kernel, supported kernel features can be known from
->   /sys/fs/btrfs/features
-> however this interface was introduced only after 3.14, and most the
-> incompatible FS features were introduce before 3.14.
->
-> This patch proposes to maintain kernel version against the feature list,
-> and so that will be the minimum kernel version needed to use the feature.
->
-> Further, for features supported later than 3.14 this list can still be
-> updated, so it serves as a repository which can be displayed for easy
-> reference.
->
-> Signed-off-by: Anand Jain <anand.jain@oracle.com>
-> ---
-> v2: Check for condition that what happens when we fail to read kernel
->     version. Now the code will fail back to use the default as set by
->     the progs.
->
->  utils.c | 80 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-----
->  utils.h |  1 +
->  2 files changed, 76 insertions(+), 5 deletions(-)
->
-> diff --git a/utils.c b/utils.c
-> index b754686..24042e5 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -32,10 +32,12 @@
->  #include <linux/loop.h>
->  #include <linux/major.h>
->  #include <linux/kdev_t.h>
-> +#include <linux/version.h>
->  #include <limits.h>
->  #include <blkid/blkid.h>
->  #include <sys/vfs.h>
->  #include <sys/statfs.h>
-> +#include <sys/utsname.h>
->  #include <linux/magic.h>
->
->  #include "kerncompat.h"
-> @@ -567,21 +569,28 @@ out:
->         return ret;
->  }
->
-> +/*
-> + * min_ker_ver: update with minimum kernel version at which the feature
-> + * was integrated into the mainline. For the transit period, that is
-> + * feature not yet in mainline but in mailing list and for testing,
-> + * please use "0.0" to indicate the same.
-> + */
->  static const struct btrfs_fs_feature {
->         const char *name;
->         u64 flag;
->         const char *desc;
-> +       const char *min_ker_ver;
->  } mkfs_features[] = {
->         { "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
-> -               "mixed data and metadata block groups" },
-> +               "mixed data and metadata block groups", "2.7.31"},
-I think you mean 2.6.37 here.
-67377734fd24c3 "Btrfs: add support for mixed data+metadata block groups"
+Hi,
 
-Thanks,
-Mike
+Woke up this morning with a kernel panic (for which I do not have details). Please find below the output for btrfs check. Is this normal ? What should I do ? Arch Linux 4.2.5. Btrfs-utils 4.3.1. 17x4TB RAID10.
 
->         { "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
-> -               "increased hardlink limit per file to 65536" },
-> +               "increased hardlink limit per file to 65536", "3.7"},
->         { "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
-> -               "raid56 extended format" },
-> +               "raid56 extended format", "3.9"},
->         { "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
-> -               "reduced-size metadata extent refs" },
-> +               "reduced-size metadata extent refs", "3.10"},
->         { "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
-> -               "no explicit hole extents for files" },
-> +               "no explicit hole extents for files", "3.14"},
->         /* Keep this one last */
->         { "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
->  };
-> @@ -3077,3 +3086,64 @@ unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode)
->
->         return unit_mode;
->  }
-> +
-> +static int version_to_code(char *v)
-> +{
-> +       int i = 0;
-> +       char *b[3] = {NULL};
-> +       char *save_b = NULL;
-> +
-> +       for (b[i] = strtok_r(v, ".", &save_b);
-> +               b[i] != NULL;
-> +               b[i] = strtok_r(NULL, ".", &save_b))
-> +               i++;
-> +
-> +       if (b[2] == NULL)
-> +               return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), 0);
-> +       else
-> +               return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), atoi(b[2]));
-> +
-> +}
-> +
-> +static int get_kernel_code()
-> +{
-> +       int ret;
-> +       struct utsname utsbuf;
-> +       char *version;
-> +
-> +       ret = uname(&utsbuf);
-> +       if (ret)
-> +               return -ret;
-> +
-> +       if (!strlen(utsbuf.release))
-> +               return -EINVAL;
-> +
-> +       version = strtok(utsbuf.release, "-");
-> +
-> +       return version_to_code(version);
-> +}
-> +
-> +u64 btrfs_features_allowed_by_kernel(void)
-> +{
-> +       int i;
-> +       int local_kernel_code = get_kernel_code();
-> +       u64 features = 0;
-> +
-> +       /*
-> +        * When system did not provide the kernel version then just
-> +        * return 0, the caller has to depend on the intelligence as
-> +        * per btrfs-progs version
-> +        */
-> +       if (local_kernel_code <= 0)
-> +               return 0;
-> +
-> +       for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
-> +               char *ver = strdup(mkfs_features[i].min_ker_ver);
-> +
-> +               if (local_kernel_code >= version_to_code(ver))
-> +                       features |= mkfs_features[i].flag;
-> +
-> +               free(ver);
-> +       }
-> +       return (features);
-> +}
-> diff --git a/utils.h b/utils.h
-> index 192f3d1..9044643 100644
-> --- a/utils.h
-> +++ b/utils.h
-> @@ -104,6 +104,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed);
->  char* btrfs_parse_fs_features(char *namelist, u64 *flags);
->  void btrfs_process_fs_features(u64 flags);
->  void btrfs_parse_features_to_string(char *buf, u64 flags);
-> +u64 btrfs_features_allowed_by_kernel(void);
->
->  struct btrfs_mkfs_config {
->         char *label;
-> --
-> 2.6.2
+Regards,
+
+Vincent
+
+[root@3dcpc5 ~]# btrfs check /dev/sdk
+Checking filesystem on /dev/sdk
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents
+checking free space cache
+checking fs roots
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+found 19328809638262 bytes used err is 1
+total csum bytes: 18849042724
+total tree bytes: 27389886464
+total fs tree bytes: 4449746944
+total extent tree bytes: 3075457024
+btree space waste bytes: 2880474254
+file data blocks allocated: 19430708535296
+referenced 20123773407232

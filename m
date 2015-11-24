@@ -1,151 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:54606 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754253AbbKXSZR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Nov 2015 13:25:17 -0500
-Message-ID: <1448389513.21291.38.camel@scientia.net>
+Received: from mout.gmx.net ([212.227.17.20]:65183 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753653AbbKXXqU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 24 Nov 2015 18:46:20 -0500
 Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
  chunk
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Date: Tue, 24 Nov 2015 19:25:13 +0100
-In-Reply-To: <5653F725.5030700@cn.fujitsu.com>
+To: Laurent Bonnaud <L.Bonnaud@laposte.net>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
 References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
-	 <1448047478.6878.4.camel@scientia.net> <564FBF0F.4050705@gmx.com>
-	 <564FC3FE.9020905@lukas-pirl.de> <565122AA.90904@gmx.com>
-	 <1448175373.7143.24.camel@scientia.net> <56526790.6020907@cn.fujitsu.com>
-	 <1448302368.2100.28.camel@scientia.net> <5653B34B.9000103@cn.fujitsu.com>
-	 <1448330029.14125.13.camel@scientia.net> <5653C6D5.1010908@cn.fujitsu.com>
-	 <1448333334.14125.14.camel@scientia.net> <5653D157.5060209@cn.fujitsu.com>
-	 <1448334124.14125.17.camel@scientia.net> <5653F725.5030700@cn.fujitsu.com>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-eU6Cdgpzo65EsVliPPzf"
-Mime-Version: 1.0
+ <1448047478.6878.4.camel@scientia.net> <564FBF0F.4050705@gmx.com>
+ <564FC3FE.9020905@lukas-pirl.de> <565122AA.90904@gmx.com>
+ <56519644.8060105@laposte.net> <56526543.4090301@cn.fujitsu.com>
+ <565462F7.8040601@laposte.net>
+Cc: Lukas Pirl <btrfs@lukas-pirl.de>, linux-btrfs@vger.kernel.org,
+        calestyo@scientia.net
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <5654F6BC.8020900@gmx.com>
+Date: Wed, 25 Nov 2015 07:46:04 +0800
+MIME-Version: 1.0
+In-Reply-To: <565462F7.8040601@laposte.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-eU6Cdgpzo65EsVliPPzf
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-11-24 at 13:35 +0800, Qu Wenruo wrote:
-> Hopes you didn't wait too long.
-No worries, didn't hold my breath ;)
+On 11/24/2015 09:15 PM, Laurent Bonnaud wrote:
+> On 23/11/2015 02:00, Qu Wenruo wrote:
+>
+>> Considering the size, I'd like not to touch the dump, metadata is over 5G,
+>
+> It is only 2GB once compressed :>.
 
+The size seems small enough, I'll try to download it as it's super 
+useful to debug it.
 
-> The fixing patch is CCed to you, or you can get it from patchwork:
-> https://patchwork.kernel.org/patch/7687611/
-Unfortunately that doesn't make the error messages go away.
-:(
+>
+>> and I think it's not related to on-disk data, but runtime problem like I mentioned above.
+>
+> To test this hypothesis I did the following:
+>
+>   - reboot the machine with a 4.3.0 kernel from Debian experimental
+>   - run "du" on the btrfs FS as a quick sanity check
 
-Shall I start debugging again?
+Nice reproducer.
+Is it 100% reproducible or has a chance to reproduce?
 
-Cheers,
-Chris.
---=-eU6Cdgpzo65EsVliPPzf
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+Thanks,
+Qu
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNDE4MjUx
-M1owTwYJKoZIhvcNAQkEMUIEQKN/WQr4hJ3/Fjj3OcHL1GYam1mHbSyc+eEsXDgGq/lIPiwsHgxU
-kR4xB2dHocpoTLf5+b6/KGeajJ9D77XB7W8wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBvZabdakVQ1z8s0PcSDPvP8WsAAdMX
-yalaEA5/TXkwDk0K5JTGe2+8yTljSij8lYiHjoyacJzLAeM9UDgp6hX2sWFS007fVnJl1U9XfkWe
-TlYqeY97oLebTREwH+jdt8y12vyAFhl5YqsjI9ImBXeE1Wf5z+32XdUe/rQwsGBI3jmTxQc4Wdes
-xwOl/07+jF3L+QE+oefrjOEZR2HIn4H8ZUoDmmBAJnrLT8zIfjYC7olUwzwnbwdNw8DqXpenEypH
-mK6VKkWdPEcjCDjkSe/ixZl1n9avNrgDMJGZxOQJwj3lR0S4PPrKryQJBYBeactfgxmwVnSMHLff
-wBtMeJlAAAAAAAAA
-
-
---=-eU6Cdgpzo65EsVliPPzf--
-
+>
+> The kernel went read-only again with the following kernel errors:
+>
+> [ 5759.890934] BTRFS info (device sdb1): disk space caching is enabled
+> [ 5773.278244] BTRFS warning (device sdb1): block group 314635714560 has wrong amount of free space
+> [ 5773.278247] BTRFS warning (device sdb1): failed to load free space cache for block group 314635714560, rebuild it now
+> [ 5773.947885] ------------[ cut here ]------------
+> [ 5773.947908] WARNING: CPU: 0 PID: 2546 at /build/linux-7sjCdl/linux-4.3/fs/btrfs/extent-tree.c:2851 btrfs_run_delayed_refs+0x26b/0x2a0 [btrfs]()
+> [ 5773.947909] BTRFS: Transaction aborted (error -17)
+> [ 5773.947910] Modules linked in: xt_multiport cpufreq_conservative cpufreq_powersave cpufreq_userspace cpufreq_stats ip6table_filter ip6_tables iptable_filter ip_tables x_tables binfmt_misc snd_hda_codec_analog snd_hda_codec_generic dell_wmi iTCO_wdt iTCO_vendor_support sparse_keymap evdev coretemp kvm_intel dcdbas snd_hda_intel snd_hda_codec snd_hda_core kvm snd_hwdep i915 snd_pcm_oss snd_mixer_oss pcspkr sg snd_pcm psmouse lpc_ich mfd_core serio_raw i2c_i801 snd_timer snd shpchp tpm_tis video drm_kms_helper drm soundcore mei_me mei i2c_algo_bit wmi tpm 8250_fintek button acpi_cpufreq processor ib_iser rdma_cm iw_cm ib_cm ib_sa ib_mad ib_core ib_addr iscsi_tcp libiscsi_tcp libiscsi scsi_transport_iscsi drbd lru_cache libcrc32c parport_pc ppdev lp parport loop dm_crypt dm_mod autofs4 ext4 crc16 mbcache
+> [ 5773.947951]  jbd2 crc32c_generic btrfs xor raid6_pq md_mod ses enclosure hid_generic usbhid hid sd_mod uas usb_storage ahci libahci ata_generic libata scsi_mod e1000e ptp pps_core ehci_pci uhci_hcd ehci_hcd usbcore usb_common
+> [ 5773.947967] CPU: 0 PID: 2546 Comm: kworker/u16:2 Not tainted 4.3.0-trunk-amd64 #1 Debian 4.3-1~exp1
+> [ 5773.947968] Hardware name: Dell Inc. OptiPlex 780                 /0C27VV, BIOS A08 01/21/2011
+> [ 5773.947981] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+> [ 5773.947983]  ffffffffa02a8250 ffffffff812c53a9 ffff8800af283d30 ffffffff8106ebad
+> [ 5773.947985]  ffff8800ace5eae0 ffff8800af283d80 ffff8800ac6ade70 ffff8800ac6add10
+> [ 5773.947987]  0000000000000020 ffffffff8106ec2c ffffffffa02a8420 0000000000000020
+> [ 5773.947989] Call Trace:
+> [ 5773.947994]  [<ffffffff812c53a9>] ? dump_stack+0x40/0x57
+> [ 5773.947997]  [<ffffffff8106ebad>] ? warn_slowpath_common+0x7d/0xb0
+> [ 5773.947999]  [<ffffffff8106ec2c>] ? warn_slowpath_fmt+0x4c/0x50
+> [ 5773.948019]  [<ffffffffa021908b>] ? btrfs_run_delayed_refs+0x26b/0x2a0 [btrfs]
+> [ 5773.948027]  [<ffffffffa02190f2>] ? delayed_ref_async_start+0x32/0x80 [btrfs]
+> [ 5773.948039]  [<ffffffffa025bd98>] ? btrfs_scrubparity_helper+0xc8/0x260 [btrfs]
+> [ 5773.948041]  [<ffffffff810851df>] ? process_one_work+0x19f/0x3d0
+> [ 5773.948043]  [<ffffffff8108545d>] ? worker_thread+0x4d/0x450
+> [ 5773.948044]  [<ffffffff81085410>] ? process_one_work+0x3d0/0x3d0
+> [ 5773.948046]  [<ffffffff8108af5d>] ? kthread+0xbd/0xe0
+> [ 5773.948048]  [<ffffffff8108aea0>] ? kthread_create_on_node+0x170/0x170
+> [ 5773.948051]  [<ffffffff81553c5f>] ? ret_from_fork+0x3f/0x70
+> [ 5773.948053]  [<ffffffff8108aea0>] ? kthread_create_on_node+0x170/0x170
+> [ 5773.948054] ---[ end trace 654b175f2543b4e4 ]---
+> [ 5773.948057] BTRFS: error (device sdb1) in btrfs_run_delayed_refs:2851: errno=-17 Object already exists
+> [ 5773.948092] BTRFS info (device sdb1): forced readonly
+> [ 5936.235238] perf interrupt took too long (2502 > 2500), lowering kernel.perf_event_max_sample_rate to 50000
+> [ 6427.280125] BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
+> [ 6427.288873] BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
+> [ 6427.381126] BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
+> [ 6427.381747] BTRFS (device sdb1): parent transid verify failed on 353291255808 wanted 9058 found 9056
+> [...]
+>
+> Are you interested in the btrfs-image output now ?
+>

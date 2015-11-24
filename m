@@ -1,63 +1,111 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:59414 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:60048 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751836AbbKXEnf (ORCPT
+	with ESMTP id S1750830AbbKXE4F (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 23:43:35 -0500
-Message-ID: <1448340211.14125.44.camel@scientia.net>
-Subject: Re: shall distros run btrfsck on boot?
+	Mon, 23 Nov 2015 23:56:05 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id 2D8D25FB94
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 04:56:03 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id IDRtuvUoCIwj for <linux-btrfs@vger.kernel.org>;
+	Tue, 24 Nov 2015 04:56:01 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Tue, 24 Nov 2015 04:56:01 +0000 (UTC)
+Message-ID: <1448340960.14125.51.camel@scientia.net>
+Subject: subvols and parents - how?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Tue, 24 Nov 2015 05:43:31 +0100
-In-Reply-To: <pan$32768$921cbe34$6a22269c$2c7db710@cox.net>
-References: <1448337754.14125.33.camel@scientia.net>
-	 <pan$32768$921cbe34$6a22269c$2c7db710@cox.net>
+To: linux-btrfs@vger.kernel.org
+Date: Tue, 24 Nov 2015 05:56:00 +0100
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-3UyRPLdYnUGaOU7h6O7k"
+	boundary="=-rZgUxkBendl5IsVKmXMu"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-3UyRPLdYnUGaOU7h6O7k
+--=-rZgUxkBendl5IsVKmXMu
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-11-24 at 04:35 +0000, Duncan wrote:
-> I'm a list regular and btrfs user, not a dev, but all the indications
-=20
-> continue to point to _not_ running it automatically at boot, nobody
-> even=20
-> _suggesting_ otherwise.
-Sure, I just asked because maybe that would have just been an
-anachronism from the days btrfsck was much more alpha.
+Hey.
+
+I'd have a, mainly administrative, question.
+
+When I use subvolumes than these have always a parent subvolume (except
+ID5), so I can basically decide between two ways:
+
+a) make child subvolumes, e.g.
+5
+|
++-root =C2=A0 (=3Dsubvol, mountpoint /)
+=C2=A0 +-boot/
+=C2=A0 +-root/
+=C2=A0 +-lib/
+=C2=A0 +-home/ (=3Dsubvolume)
+and soon on... perhaps the whole thing without the dedicated root-
+subovlume (although that's probably not so smart, I guess).
+
+b) place at least some of the subvolumes directly below the top-level
+and mount them e.g. via /etc/fstab, e.g.
+5
+|
++-root =C2=A0 (=3Dsubvol, mountpoint /)
+| +-boot/
+| +-root/
+| +-lib/
++-home/ (=3Dsubvolume, mountpoint /home)
 
 
-> =C2=A0=C2=A0The btrfs kernel code itself detects and often=20
-> corrects many problems, and btrfs check is simply not recommended for
-> automatic at-boot scheduling -- if the kernel code can't fix it
-> without=20
-> intervention, then the problem is too serious to be fixed without=20
-> intervention by some scheduled btrfs check run, as well.
-I once had an issue with a btrfs, where the kernel didn't show anything
-but btrfsck did...(not the one Qu's currently looking into).
-And I though the same is basically the case for other filesystems like
-ext.
+Now I wondered whether this has any technical implications, but neither
+the wiki, nor the manpages seem to explain a lot here.
 
 
-> In fact, take a look at the shipped fsck.btrfs shell-script, based
-> upon=20
-> the xfs one.=C2=A0=C2=A0As both the code and the comments suggest, it's=
-=20
-> specifically designed to simply return success
-Sure, but that could have simply been forgotten to update...
+The "differences", AFAIU, are the follows:
+- When I mount a given subvolume,.. it's childs are automatically=C2=A0
+=C2=A0 "there".
+=C2=A0 Whereas when I don't have them as childs (as in (b)) I must of
+=C2=A0 course mount them somehow manually.
+- Analogously for umounting.
+- I can move existing subvols to higher/lower levels, and the parent
+=C2=A0 IDs will change accordingly.
+
+So basically it makes no difference, right? Or is there anything more
+technical going on? E.g. with the ref-links or so?
+Right now, there are, AFAIK, neither recursive snapshots (and
+especially not atomic ones) nor recursive send/receive, right?
+If that should ever be implemented, would I perhaps have problems with=C2=
+=A0
+(a) or (b)?
 
 
-Thanks for the update on the status in that matter :)
-Cheers,
+Thanks,
 Chris.
---=-3UyRPLdYnUGaOU7h6O7k
+
+btw, for a developer:
+$ btrfs subvolume list /mnt/ -pacguqt
+ID=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0gen=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0cgen=
+=C2=A0=C2=A0=C2=A0=C2=A0parent=C2=A0=C2=A0top level=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0parent_uuid=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0uuid=C2=A0=C2=A0=
+=C2=A0=C2=A0path=C2=A0=C2=A0=C2=A0=C2=A0
+--=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0---=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0----=
+=C2=A0=C2=A0=C2=A0=C2=A0------=C2=A0=C2=A0---------=C2=A0=C2=A0=C2=A0=C2=A0=
+=C2=A0=C2=A0=C2=A0-----------=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0----=C2=A0=C2=A0=
+=C2=A0=C2=A0----=C2=A0=C2=A0=C2=A0=C2=A0
+257=C2=A0=C2=A0=C2=A0=C2=A0=C2=A016=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A08=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A05=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A05=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
+=A0=C2=A0=C2=A0=C2=A0=C2=A0-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A064f8a=
+75b-5cb5-6e4d-9f30-d45fe3d9e060=C2=A0=C2=A0=C2=A0=C2=A0<FS_TREE>/root
+
+There seem to be some colum mis-aglinment issues in the output =3D)
+btrfsprogs 4.3
+--=-rZgUxkBendl5IsVKmXMu
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -144,19 +192,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNDA0NDMz
-MVowTwYJKoZIhvcNAQkEMUIEQI+ST6uq4oukAyMvUit/eYVY9M23hqeFePiXjZvKPU3NvXnqcBFi
-LNMw/JV4PPwMml2hrGMc4vBHN12roJGWcn8wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNDA0NTYw
+MFowTwYJKoZIhvcNAQkEMUIEQITPLVDEmW7e0+ZmXskeZ8eTjKSRvqK+tpNAPIECLljHXxN7fGCj
+KkljSS3drND9/kWvq31TwDbG+K3FyGgNQ40wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCP6yqbm9M339o6TYj2XY9/QcquXIPZ
-RTod0GCGAE0iXP2O/2Ul1DOH5faDHcMigKZoPJGPHR9iz9Wo/grEbK4KY6eBpnxiKSf/ntDC+NT7
-kva98a+VsasUvp5FTxBXbp45cY1U+b3X/N0fmixbbg9Rvs+B7w1GQBfjMAjLsBTt88aOop6vQKcN
-FjIwe0UrR7My7WShW8IR2S2qtNP8bYjr+Fp8Lgrp1PMb9OPPUUXvlip7Dl/EjsJfd5OcOP+KhCzf
-OHXeRzvA5qiurLtDQLZ0g01XMeHL4kL29I4y+1y7d8dVb0A/0vEvoX5K/WYV/3aYttS410MrXvBA
-rHgIBKPjAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBIds+YLEnFTmIMiDlc13wjuIhplBdC
+BlmdOWSUm52Ow4KpHePjQURFBfE0IkrSBzJmwUwNN52rBxqavxBMEfASj3YKHG0I/zCzorTNzQ1n
+NRLiws0h6/YHldhsfXcg+kh9Q4jSSFiCrxSXON/afbHEv0sR2pSMXUYIgPuLylUDyoUq6xS88dEP
+wg3KnBxT2D5Q1xFz23LECVWnjIQfMAFOj/nyt5FgfGZyNyZBqqr3wjB3VSPoZNayHS5jas233KD6
+U7j2oV4DeEmQ7B7p3VxChjmJMLuBCIb/YsJ0fT51K8w8PcmkZj6u//OFv6Pnq3tQgkFo04PWkdOs
+h7TdXxArAAAAAAAA
 
 
---=-3UyRPLdYnUGaOU7h6O7k--
+--=-rZgUxkBendl5IsVKmXMu--
 

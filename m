@@ -1,351 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp113.iad3a.emailsrvr.com ([173.203.187.113]:42029 "EHLO
-	smtp113.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751800AbbKYQvJ convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 11:51:09 -0500
-Received: from smtp23.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
-	by smtp23.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id E86CC280859
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 11:51:08 -0500 (EST)
-Received: from smtp23.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
-	by smtp23.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id E1DB4280858
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 11:51:08 -0500 (EST)
-Received: by smtp23.relay.iad3a.emailsrvr.com (Authenticated sender: vincent-AT-up4.tv) with ESMTPSA id 97D98280859
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 11:51:08 -0500 (EST)
-Content-Type: text/plain; charset=utf-8
-Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2104\))
-Subject: Re: btrfs check help
-From: Vincent Olivier <vincent@up4.com>
-In-Reply-To: <20151124203210.GR24333@carfax.org.uk>
-Date: Wed, 25 Nov 2015 11:51:08 -0500
-Message-Id: <B369C8E5-3E5E-4008-BD99-C174D7ABFB36@up4.com>
-References: <AF79907D-A36B-4806-B31A-3E327F2E5642@up4.com> <5654C86C.9080800@gmail.com> <20151124203210.GR24333@carfax.org.uk>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Received: from aserp1040.oracle.com ([141.146.126.69]:44946 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751295AbbKYSM1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Nov 2015 13:12:27 -0500
+Date: Wed, 25 Nov 2015 10:11:36 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Anand Jain <anand.jain@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, calestyo@scientia.net,
+        ahferroin7@gmail.com, 1i5t5.duncan@cox.net
+Subject: Re: [PATCH 2/7] btrfs-progs: add kernel alias for each of the
+ features in the list
+Message-ID: <20151125181136.GC21642@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
+ <1448453300-8449-3-git-send-email-anand.jain@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1448453300-8449-3-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I should probably point out that there is 64GB of RAM on this machine and it’s a dual Xeon processor (LGA2011-3) system. Also, there is only Btrfs served via Samba and the kernel panic was caused Btrfs (as per what I remember from the log on the screen just before I rebooted) and happened in the middle of the night when zero (0) client was connected.
-
-You will find below the full “btrfs check” log for each device in the order it is listed by “btrfs fi show”.
-
-Ca I get a strong confirmation that I should run with the “—repair” option on each device? Thanks.
-
-Vincent
-
-
-Checking filesystem on /dev/sdk
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdp
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [O]
-checking free space cache [o]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdi
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [.]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdq
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [o]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdh
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdm
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [O]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdj
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [.]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdo
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [O]
-checking free space cache [.]
-checking fs roots [o]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdg
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [o]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdn
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [O]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdl
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [o]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdc
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [O]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdr
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [O]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdf
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [o]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sde
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [.]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdd
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-Checking filesystem on /dev/sdb
-UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-checking extents [o]
-checking free space cache [.]
-root 5 inode 1341670 errors 400, nbytes wrong
-root 11406 inode 1341670 errors 400, nbytes wrong
-
-found 19328980191604 bytes used err is 1
-total csum bytes: 18849205856
-total tree bytes: 27393392640
-total fs tree bytes: 4452958208
-total extent tree bytes: 3075571712
-btree space waste bytes: 2881050910
-file data blocks allocated: 19445786390528
-referenced 20138885959680
-
-
-
-> On Nov 24, 2015, at 3:32 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+On Wed, Nov 25, 2015 at 08:08:15PM +0800, Anand Jain wrote:
+> We should have maintained feature's name same across progs UI and sysfs UI.
+> For example, progs mixed-bg is /sys/fs/btrfs/features/mixed_groups
+> in sysfs. As these are already released and is UIs, there is nothing much
+> can be done about it, except for creating the alias and making it aware.
 > 
-> On Tue, Nov 24, 2015 at 03:28:28PM -0500, Austin S Hemmelgarn wrote:
->> On 2015-11-24 12:06, Vincent Olivier wrote:
->>> Hi,
->>> 
->>> Woke up this morning with a kernel panic (for which I do not have details). Please find below the output for btrfs check. Is this normal ? What should I do ? Arch Linux 4.2.5. Btrfs-utils 4.3.1. 17x4TB RAID10.
->> You get bonus points for being on a reasonably up-to-date kernel and
->> userspace :)
->> 
->> This is actually a pretty tame check result for a filesystem that's
->> been through kernel panic. I think everything listed here is safe
->> for check to fix, but I would suggest waiting until the devs provide
->> opinions before actually running with --repair.  I would also
->> suggest comparing results between the different devices in the FS,
->> if things are drastically different, you may have issues that check
->> can't fix on it's own.
->>> [root@3dcpc5 ~]# btrfs check /dev/sdk
->>> Checking filesystem on /dev/sdk
->>> UUID: 6a742786-070d-4557-9e67-c73b84967bf5
->>> checking extents
->>> checking free space cache
->>> checking fs roots
->> These next two lines are errors, but I'm not 100% certain if it's
->> safe to have check fix them:
->>> root 5 inode 1341670 errors 400, nbytes wrong
->>> root 11406 inode 1341670 errors 400, nbytes wrong
+> Add kernel alias for each of the features in the list.
 > 
->   I think so yes.
+> eg: The string with in () is the sysfs name for the same feaure
 > 
->> This next one is also an error, and I am fairly certain that it's
->> safe to have check fix as long as the number at the end is not too
->> big.
->>> found 19328809638262 bytes used err is 1
+> mkfs.btrfs -O list-all
+> Filesystem features available:
+> mixed-bg (mixed_groups)           - mixed data and metadata block groups (0x4, 2.7.37)
+> extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
+> raid56 (raid56)                   - raid56 extended format (0x80, 3.9)
+> skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
+> no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
 > 
->   Agreed.
+> btrfs-convert -O list-all
+> Filesystem features available:
+> extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
+> skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
+> no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
+
+You miss a signed-off-by here.
+
+Thanks,
+
+-liubo
+> ---
+>  utils.c | 13 +++++++++++--
+>  1 file changed, 11 insertions(+), 2 deletions(-)
 > 
->   Hugo.
-> 
->> The rest is just reference info
->>> total csum bytes: 18849042724
->>> total tree bytes: 27389886464
->>> total fs tree bytes: 4449746944
->>> total extent tree bytes: 3075457024
->>> btree space waste bytes: 2880474254
->> The only other thing I know that's worth mentioning is that if the
->> numbers on these next two lines don't match, you may be missing some
->> writes from right before the crash.
->>> file data blocks allocated: 19430708535296
->>> referenced 20123773407232
-> 
+> diff --git a/utils.c b/utils.c
+> index 0163915..6d2675d 100644
+> --- a/utils.c
+> +++ b/utils.c
+> @@ -648,17 +648,26 @@ void btrfs_process_fs_features(u64 flags)
+>  void btrfs_list_all_fs_features(u64 mask_disallowed)
+>  {
+>  	int i;
+> +	u64 feature_per_sysfs;
+> +
+> +	btrfs_features_allowed_by_sysfs(&feature_per_sysfs);
+>  
+>  	fprintf(stderr, "Filesystem features available:\n");
+>  	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
+>  		char *is_default = "";
+> +		char name[256];
+>  
+>  		if (mkfs_features[i].flag & mask_disallowed)
+>  			continue;
+>  		if (mkfs_features[i].flag & BTRFS_MKFS_DEFAULT_FEATURES)
+>  			is_default = ", default";
+> -		fprintf(stderr, "%-20s- %s (0x%llx, %s%s)\n",
+> -				mkfs_features[i].name,
+> +		if (mkfs_features[i].flag & feature_per_sysfs)
+> +			sprintf(name, "%s (%s)",
+> +				mkfs_features[i].name, mkfs_features[i].name_ker);
+> +		else
+> +			sprintf(name, "%s", mkfs_features[i].name);
+> +		fprintf(stderr, "%-34s- %s (0x%llx, %s%s)\n",
+> +				name,
+>  				mkfs_features[i].desc,
+>  				mkfs_features[i].flag,
+>  				mkfs_features[i].min_ker_ver,
 > -- 
-> Hugo Mills             | Great films about cricket: Umpire of the Rising Sun
-> hugo@... carfax.org.uk |
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
-
+> 2.6.2
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

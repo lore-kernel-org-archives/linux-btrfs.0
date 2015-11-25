@@ -1,203 +1,351 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:44189 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751320AbbKYPfk convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 10:35:40 -0500
-Received: from merkaba.localnet (unknown [91.221.105.244])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id 9F7AE194
-	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 16:35:39 +0100 (CET)
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: [4.3-rc4] scrubbing aborts before finishing
-Date: Wed, 25 Nov 2015 16:35:39 +0100
-Message-ID: <4738187.k1WenrURk2@merkaba>
-In-Reply-To: <1475910.a5YfPuWqAN@merkaba>
-References: <16063727.bYixifcRQC@merkaba> <1475910.a5YfPuWqAN@merkaba>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Received: from smtp113.iad3a.emailsrvr.com ([173.203.187.113]:42029 "EHLO
+	smtp113.iad3a.emailsrvr.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751800AbbKYQvJ convert rfc822-to-8bit
+	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 25 Nov 2015 11:51:09 -0500
+Received: from smtp23.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp23.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id E86CC280859
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 11:51:08 -0500 (EST)
+Received: from smtp23.relay.iad3a.emailsrvr.com (localhost.localdomain [127.0.0.1])
+	by smtp23.relay.iad3a.emailsrvr.com (SMTP Server) with ESMTP id E1DB4280858
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 11:51:08 -0500 (EST)
+Received: by smtp23.relay.iad3a.emailsrvr.com (Authenticated sender: vincent-AT-up4.tv) with ESMTPSA id 97D98280859
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 11:51:08 -0500 (EST)
+Content-Type: text/plain; charset=utf-8
+Mime-Version: 1.0 (Mac OS X Mail 8.2 \(2104\))
+Subject: Re: btrfs check help
+From: Vincent Olivier <vincent@up4.com>
+In-Reply-To: <20151124203210.GR24333@carfax.org.uk>
+Date: Wed, 25 Nov 2015 11:51:08 -0500
+Message-Id: <B369C8E5-3E5E-4008-BD99-C174D7ABFB36@up4.com>
+References: <AF79907D-A36B-4806-B31A-3E327F2E5642@up4.com> <5654C86C.9080800@gmail.com> <20151124203210.GR24333@carfax.org.uk>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Samstag, 31. Oktober 2015, 12:10:37 CET schrieb Martin Steigerwald:
-> Am Donnerstag, 22. Oktober 2015, 10:41:15 CET schrieb Martin Steigerwald:
-> > I get this:
-> > 
-> > merkaba:~> btrfs scrub status -d /
-> > scrub status for […]
-> > scrub device /dev/mapper/sata-debian (id 1) history
-> > 
-> >         scrub started at Thu Oct 22 10:05:49 2015 and was aborted after
-> >         00:00:00
-> >         total bytes scrubbed: 0.00B with 0 errors
-> > 
-> > scrub device /dev/dm-2 (id 2) history
-> > 
-> >         scrub started at Thu Oct 22 10:05:49 2015 and was aborted after
-> >         00:01:30
-> >         total bytes scrubbed: 23.81GiB with 0 errors
-> > 
-> > For / scrub aborts for sata SSD immediately.
-> > 
-> > For /home scrub aborts for both SSDs at some time.
-> > 
-> > merkaba:~> btrfs scrub status -d /home
-> > scrub status for […]
-> > scrub device /dev/mapper/msata-home (id 1) history
-> > 
-> >         scrub started at Thu Oct 22 10:09:37 2015 and was aborted after
-> >         00:01:31
-> >         total bytes scrubbed: 22.03GiB with 0 errors
-> > 
-> > scrub device /dev/dm-3 (id 2) history
-> > 
-> >         scrub started at Thu Oct 22 10:09:37 2015 and was aborted after
-> >         00:03:34
-> >         total bytes scrubbed: 53.30GiB with 0 errors
-> > 
-> > Also single volume BTRFS is affected:
-> > 
-> > merkaba:~> btrfs scrub status /daten
-> > scrub status for […]
-> > 
-> >         scrub started at Thu Oct 22 10:36:38 2015 and was aborted after
-> >         00:00:00
-> >         total bytes scrubbed: 0.00B with 0 errors
-> > 
-> > No errors in dmesg, btrfs device stat or smartctl -a.
-> > 
-> > Any known issue?
-> 
-> I am still seeing this in 4.3-rc7. It happens so that on one SSD BTRFS
-> doesn´t even start scrubbing. But in the end it aborts it scrubbing anyway.
-> 
-> I do not see any other issue so far. But I would really like to be able to
-> scrub my BTRFS filesystems completely again. Any hints? Any further
-> information needed?
-> 
-> merkaba:~> btrfs scrub status -d /
-> scrub status for […]
-> scrub device /dev/dm-5 (id 1) history
->         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
->         total bytes scrubbed: 0.00B with 0 errors
-> scrub device /dev/mapper/msata-debian (id 2) status
->         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:20
->         total bytes scrubbed: 5.27GiB with 0 errors
-> merkaba:~> btrfs scrub status -d /
-> scrub status for […]
-> scrub device /dev/dm-5 (id 1) history
->         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
->         total bytes scrubbed: 0.00B with 0 errors
-> scrub device /dev/mapper/msata-debian (id 2) status
->         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:25
->         total bytes scrubbed: 6.59GiB with 0 errors
-> merkaba:~> btrfs scrub status -d /
-> scrub status for […]
-> scrub device /dev/dm-5 (id 1) history
->         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
->         total bytes scrubbed: 0.00B with 0 errors
-> scrub device /dev/mapper/msata-debian (id 2) status
->         scrub started at Sat Oct 31 11:58:45 2015, running for 00:01:25
->         total bytes scrubbed: 21.97GiB with 0 errors
-> merkaba:~> btrfs scrub status -d /
-> scrub status for […]
-> scrub device /dev/dm-5 (id 1) history
->         scrub started at Sat Oct 31 11:58:45 2015 and was aborted after
-> 00:00:00 total bytes scrubbed: 0.00B with 0 errors
-> scrub device /dev/mapper/msata-debian (id 2) history
->         scrub started at Sat Oct 31 11:58:45 2015 and was aborted after
-> 00:01:32 total bytes scrubbed: 23.63GiB with 0 errors
-> 
-> 
-> For the sake of it I am going to btrfs check one of the filesystem where
-> BTRFS aborts scrubbing (which is all of the laptop filesystems, not only
-> the RAID 1 one).
-> 
-> I will use the /daten filesystem as I can unmount it during laptop runtime
-> easily. There scrubbing aborts immediately:
-> 
-> merkaba:~> btrfs scrub start /daten
-> scrub started on /daten, fsid […] (pid=13861)
-> merkaba:~> btrfs scrub status /daten
-> scrub status for […]
->         scrub started at Sat Oct 31 12:04:25 2015 and was aborted after
-> 00:00:00 total bytes scrubbed: 0.00B with 0 errors
-> 
-> It is single device:
-> 
-> merkaba:~> btrfs fi sh /daten
-> Label: 'daten'  uuid: […]
->         Total devices 1 FS bytes used 227.23GiB
->         devid    1 size 230.00GiB used 230.00GiB path
-> /dev/mapper/msata-daten
-> 
-> btrfs-progs v4.2.2
-> merkaba:~> btrfs fi df /daten
-> Data, single: total=228.99GiB, used=226.79GiB
-> System, single: total=4.00MiB, used=48.00KiB
-> Metadata, single: total=1.01GiB, used=449.50MiB
-> GlobalReserve, single: total=160.00MiB, used=0.00B
-> 
-> 
-> I do not see any output in btrfs check that points to any issue:
-> 
-> merkaba:~> btrfs check /dev/msata/daten
-> Checking filesystem on /dev/msata/daten
-> UUID: 7918274f-e2ec-4983-bbb0-aa93ef95fcf7
-> checking extents
-> checking free space cache
-> checking fs roots
-> checking csums
-> checking root refs
-> found 243936530607 bytes used err is 0
-> total csum bytes: 237758932
-> total tree bytes: 471384064
-> total fs tree bytes: 116473856
-> total extent tree bytes: 78544896
-> btree space waste bytes: 57523323
-> file data blocks allocated: 422700576768
->  referenced 243803443200
-> btrfs-progs v4.2.2
+I should probably point out that there is 64GB of RAM on this machine and it’s a dual Xeon processor (LGA2011-3) system. Also, there is only Btrfs served via Samba and the kernel panic was caused Btrfs (as per what I remember from the log on the screen just before I rebooted) and happened in the middle of the night when zero (0) client was connected.
 
-Even with 4.4-rc2 this issue still happens:
+You will find below the full “btrfs check” log for each device in the order it is listed by “btrfs fi show”.
 
-merkaba:~> btrfs scrub status -d /
-scrub status for […]
-scrub device /dev/mapper/sata-debian (id 1) history
-        scrub started at Wed Nov 25 16:28:33 2015, running for 00:00:00
-        total bytes scrubbed: 0.00B with 0 errors
-scrub device /dev/dm-2 (id 2) status
-        scrub started at Wed Nov 25 16:28:33 2015, running for 00:00:55
-        total bytes scrubbed: 14.24GiB with 0 errors
+Ca I get a strong confirmation that I should run with the “—repair” option on each device? Thanks.
 
-merkaba:~> btrfs scrub status -d /
-scrub status for […]
-scrub device /dev/mapper/sata-debian (id 1) history
-        scrub started at Wed Nov 25 16:28:33 2015 and was aborted after 
-00:00:00
-        total bytes scrubbed: 0.00B with 0 errors
-scrub device /dev/dm-2 (id 2) history
-        scrub started at Wed Nov 25 16:28:33 2015 and was aborted after 
-00:01:33
-        total bytes scrubbed: 23.71GiB with 0 errors
-
-merkaba:~> cat /proc/version
-Linux version 4.4.0-rc2-tp520+ (martin@merkaba) (gcc version 5.2.1 20151121 
-(Debian 5.2.1-24) ) #45 SMP PREEMPT Mon Nov 23 17:10:16 CET 2015
-
-This time I also removed all files in /var/lib/btrfs to avoid any possible 
-issues with saved BTRFS status reports. (Yeah, I think it would have been 
-enough to just delete the one for the filesystem with that UUID.)
-
-As written this bug also happens with a single device BTRFS.
+Vincent
 
 
-I´d report a bug report, in case anyone would be interested. But if the 
-interest it like in this mailinglist post I can spare myself the time for 
-reporting via bugzilla.
+Checking filesystem on /dev/sdk
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
 
-So does anyone at all care about this issue?
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdp
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [O]
+checking free space cache [o]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
 
-Thanks,
--- 
-Martin
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdi
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [.]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdq
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [o]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdh
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdm
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [O]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdj
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [.]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdo
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [O]
+checking free space cache [.]
+checking fs roots [o]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdg
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [o]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdn
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [O]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdl
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [o]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdc
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [O]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdr
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [O]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdf
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [o]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sde
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [.]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdd
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+Checking filesystem on /dev/sdb
+UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+checking extents [o]
+checking free space cache [.]
+root 5 inode 1341670 errors 400, nbytes wrong
+root 11406 inode 1341670 errors 400, nbytes wrong
+
+found 19328980191604 bytes used err is 1
+total csum bytes: 18849205856
+total tree bytes: 27393392640
+total fs tree bytes: 4452958208
+total extent tree bytes: 3075571712
+btree space waste bytes: 2881050910
+file data blocks allocated: 19445786390528
+referenced 20138885959680
+
+
+
+> On Nov 24, 2015, at 3:32 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
+> 
+> On Tue, Nov 24, 2015 at 03:28:28PM -0500, Austin S Hemmelgarn wrote:
+>> On 2015-11-24 12:06, Vincent Olivier wrote:
+>>> Hi,
+>>> 
+>>> Woke up this morning with a kernel panic (for which I do not have details). Please find below the output for btrfs check. Is this normal ? What should I do ? Arch Linux 4.2.5. Btrfs-utils 4.3.1. 17x4TB RAID10.
+>> You get bonus points for being on a reasonably up-to-date kernel and
+>> userspace :)
+>> 
+>> This is actually a pretty tame check result for a filesystem that's
+>> been through kernel panic. I think everything listed here is safe
+>> for check to fix, but I would suggest waiting until the devs provide
+>> opinions before actually running with --repair.  I would also
+>> suggest comparing results between the different devices in the FS,
+>> if things are drastically different, you may have issues that check
+>> can't fix on it's own.
+>>> [root@3dcpc5 ~]# btrfs check /dev/sdk
+>>> Checking filesystem on /dev/sdk
+>>> UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+>>> checking extents
+>>> checking free space cache
+>>> checking fs roots
+>> These next two lines are errors, but I'm not 100% certain if it's
+>> safe to have check fix them:
+>>> root 5 inode 1341670 errors 400, nbytes wrong
+>>> root 11406 inode 1341670 errors 400, nbytes wrong
+> 
+>   I think so yes.
+> 
+>> This next one is also an error, and I am fairly certain that it's
+>> safe to have check fix as long as the number at the end is not too
+>> big.
+>>> found 19328809638262 bytes used err is 1
+> 
+>   Agreed.
+> 
+>   Hugo.
+> 
+>> The rest is just reference info
+>>> total csum bytes: 18849042724
+>>> total tree bytes: 27389886464
+>>> total fs tree bytes: 4449746944
+>>> total extent tree bytes: 3075457024
+>>> btree space waste bytes: 2880474254
+>> The only other thing I know that's worth mentioning is that if the
+>> numbers on these next two lines don't match, you may be missing some
+>> writes from right before the crash.
+>>> file data blocks allocated: 19430708535296
+>>> referenced 20123773407232
+> 
+> -- 
+> Hugo Mills             | Great films about cricket: Umpire of the Rising Sun
+> hugo@... carfax.org.uk |
+> http://carfax.org.uk/  |
+> PGP: E2AB1DE4          |
+

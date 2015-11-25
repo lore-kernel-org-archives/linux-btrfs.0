@@ -1,96 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:44946 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751295AbbKYSM1 (ORCPT
+Received: from mail-lf0-f52.google.com ([209.85.215.52]:35522 "EHLO
+	mail-lf0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751127AbbKYSwq convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 13:12:27 -0500
-Date: Wed, 25 Nov 2015 10:11:36 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Anand Jain <anand.jain@oracle.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, calestyo@scientia.net,
-        ahferroin7@gmail.com, 1i5t5.duncan@cox.net
-Subject: Re: [PATCH 2/7] btrfs-progs: add kernel alias for each of the
- features in the list
-Message-ID: <20151125181136.GC21642@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
- <1448453300-8449-3-git-send-email-anand.jain@oracle.com>
+	Wed, 25 Nov 2015 13:52:46 -0500
+Received: by lfdl133 with SMTP id l133so71382170lfd.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 10:52:45 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1448453300-8449-3-git-send-email-anand.jain@oracle.com>
+In-Reply-To: <B369C8E5-3E5E-4008-BD99-C174D7ABFB36@up4.com>
+References: <AF79907D-A36B-4806-B31A-3E327F2E5642@up4.com>
+	<5654C86C.9080800@gmail.com>
+	<20151124203210.GR24333@carfax.org.uk>
+	<B369C8E5-3E5E-4008-BD99-C174D7ABFB36@up4.com>
+Date: Wed, 25 Nov 2015 19:52:45 +0100
+Message-ID: <CAPmG0jYtBFDKtQmjo=PMbrfmUb7213bu+mcWyYrxtkjwPj70+g@mail.gmail.com>
+Subject: Re: btrfs check help
+From: Henk Slager <eye1tm@gmail.com>
+To: Vincent Olivier <vincent@up4.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 25, 2015 at 08:08:15PM +0800, Anand Jain wrote:
-> We should have maintained feature's name same across progs UI and sysfs UI.
-> For example, progs mixed-bg is /sys/fs/btrfs/features/mixed_groups
-> in sysfs. As these are already released and is UIs, there is nothing much
-> can be done about it, except for creating the alias and making it aware.
-> 
-> Add kernel alias for each of the features in the list.
-> 
-> eg: The string with in () is the sysfs name for the same feaure
-> 
-> mkfs.btrfs -O list-all
-> Filesystem features available:
-> mixed-bg (mixed_groups)           - mixed data and metadata block groups (0x4, 2.7.37)
-> extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
-> raid56 (raid56)                   - raid56 extended format (0x80, 3.9)
-> skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
-> no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
-> 
-> btrfs-convert -O list-all
-> Filesystem features available:
-> extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
-> skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
-> no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
+[...]
+> Ca I get a strong confirmation that I should run with the “—repair” option on each device? Thanks.
+>
+> Vincent
+>
+>
+> Checking filesystem on /dev/sdk
+> UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+> checking extents [o]
+> checking free space cache [.]
+> root 5 inode 1341670 errors 400, nbytes wrong
+> root 11406 inode 1341670 errors 400, nbytes wrong
+[...]
 
-You miss a signed-off-by here.
+I just remember that I have seen this kind of error before; luckily, I
+found the btrfs check output (august 2015) on some backup of an old
+snapshot; In my case it was on a raid5 fs from november 2013, 7 small
+txt files (all several 100 bytes) and the 7 errors are repeated for
+about 10 snapshots. I did   # find . -inum <inode number>    to find
+the files. 2 of the 7 were still in the latest/actual subvol and I
+just recreated them.
 
-Thanks,
+The errors from the older snapshots are still there as far as I
+remember from the last btrfs check I did (with kernel 4.3.0 tools
+4.3.x). The fs is converted to raid10 since 3 months. As I also got
+other fake errors (as in this
+https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg48325.html
+), I won't run a repair until I see proof that this 'errors 400,
+nbytes wrong' is a risk for file-server stability.
+I just see that on an archive clone fs with this 10 old snapshots
+(created via send|receive), there is no error.
 
--liubo
-> ---
->  utils.c | 13 +++++++++++--
->  1 file changed, 11 insertions(+), 2 deletions(-)
-> 
-> diff --git a/utils.c b/utils.c
-> index 0163915..6d2675d 100644
-> --- a/utils.c
-> +++ b/utils.c
-> @@ -648,17 +648,26 @@ void btrfs_process_fs_features(u64 flags)
->  void btrfs_list_all_fs_features(u64 mask_disallowed)
->  {
->  	int i;
-> +	u64 feature_per_sysfs;
-> +
-> +	btrfs_features_allowed_by_sysfs(&feature_per_sysfs);
->  
->  	fprintf(stderr, "Filesystem features available:\n");
->  	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
->  		char *is_default = "";
-> +		char name[256];
->  
->  		if (mkfs_features[i].flag & mask_disallowed)
->  			continue;
->  		if (mkfs_features[i].flag & BTRFS_MKFS_DEFAULT_FEATURES)
->  			is_default = ", default";
-> -		fprintf(stderr, "%-20s- %s (0x%llx, %s%s)\n",
-> -				mkfs_features[i].name,
-> +		if (mkfs_features[i].flag & feature_per_sysfs)
-> +			sprintf(name, "%s (%s)",
-> +				mkfs_features[i].name, mkfs_features[i].name_ker);
-> +		else
-> +			sprintf(name, "%s", mkfs_features[i].name);
-> +		fprintf(stderr, "%-34s- %s (0x%llx, %s%s)\n",
-> +				name,
->  				mkfs_features[i].desc,
->  				mkfs_features[i].flag,
->  				mkfs_features[i].min_ker_ver,
-> -- 
-> 2.6.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+In your case, it is likely just 1 small file in rootvol (5) and the
+same allocation in other subvol (11406), so maybe you can fix this
+like I did and don't run a '--repair'

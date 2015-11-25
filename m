@@ -1,209 +1,151 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:38584 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752057AbbKTW4W (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:22451 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752300AbbKYR7I (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 20 Nov 2015 17:56:22 -0500
-Date: Fri, 20 Nov 2015 14:55:36 -0800
+	Wed, 25 Nov 2015 12:59:08 -0500
+Date: Wed, 25 Nov 2015 09:58:31 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
 To: fdmanana@kernel.org
 Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH v4] Btrfs: fix race when finishing dev replace leading to
- transaction abort
-Message-ID: <20151120225536.GA8096@localhost.localdomain>
+Subject: Re: [PATCH] Btrfs: fix error path when failing to submit bio for
+ direct IO write
+Message-ID: <20151125175831.GB21642@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
-References: <1448017261-15543-1-git-send-email-fdmanana@kernel.org>
- <1448028746-24504-1-git-send-email-fdmanana@kernel.org>
+References: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1448028746-24504-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <1448385918-5536-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 20, 2015 at 02:12:26PM +0000, fdmanana@kernel.org wrote:
+On Tue, Nov 24, 2015 at 05:25:18PM +0000, fdmanana@kernel.org wrote:
 > From: Filipe Manana <fdmanana@suse.com>
 > 
-> During the final phase of a device replace operation, I ran into a
-> transaction abort that resulted in the following trace:
+> Commit 61de718fceb6 ("Btrfs: fix memory corruption on failure to submit
+> bio for direct IO") fixed problems with the error handling code after we
+> fail to submit a bio for direct IO. However there were 2 problems that it
+> did not address when the failure is due to memory allocation failures for
+> direct IO writes:
 > 
-> [23919.655368] WARNING: CPU: 10 PID: 30175 at fs/btrfs/extent-tree.c:9843 btrfs_create_pending_block_groups+0x15e/0x1ab [btrfs]()
-> [23919.664742] BTRFS: Transaction aborted (error -2)
-> [23919.665749] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc i2c_piix4 parport psmouse acpi_cpufreq processor i2c_core evdev microcode pcspkr button serio_raw ext4 crc16 jbd2 mbcache sd_mod sg sr_mod cdrom virtio_scsi ata_generic ata_piix virtio_pci floppy virtio_ring libata e1000 virtio scsi_mod [last unloaded: btrfs]
-> [23919.679442] CPU: 10 PID: 30175 Comm: fsstress Not tainted 4.3.0-rc5-btrfs-next-17+ #1
-> [23919.682392] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
-> [23919.689151]  0000000000000000 ffff8804020cbb50 ffffffff812566f4 ffff8804020cbb98
-> [23919.692604]  ffff8804020cbb88 ffffffff8104d0a6 ffffffffa03eea69 ffff88041b678a48
-> [23919.694230]  ffff88042ac38000 ffff88041b678930 00000000fffffffe ffff8804020cbbf0
-> [23919.696716] Call Trace:
-> [23919.698669]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
-> [23919.700597]  [<ffffffff8104d0a6>] warn_slowpath_common+0x9f/0xb8
-> [23919.701958]  [<ffffffffa03eea69>] ? btrfs_create_pending_block_groups+0x15e/0x1ab [btrfs]
-> [23919.703612]  [<ffffffff8104d107>] warn_slowpath_fmt+0x48/0x50
-> [23919.705047]  [<ffffffffa03eea69>] btrfs_create_pending_block_groups+0x15e/0x1ab [btrfs]
-> [23919.706967]  [<ffffffffa0402097>] __btrfs_end_transaction+0x84/0x2dd [btrfs]
-> [23919.708611]  [<ffffffffa0402300>] btrfs_end_transaction+0x10/0x12 [btrfs]
-> [23919.710099]  [<ffffffffa03ef0b8>] btrfs_alloc_data_chunk_ondemand+0x121/0x28b [btrfs]
-> [23919.711970]  [<ffffffffa0413025>] btrfs_fallocate+0x7d3/0xc6d [btrfs]
-> [23919.713602]  [<ffffffff8108b78f>] ? lock_acquire+0x10d/0x194
-> [23919.714756]  [<ffffffff81086dbc>] ? percpu_down_read+0x51/0x78
-> [23919.716155]  [<ffffffff8116ef1d>] ? __sb_start_write+0x5f/0xb0
-> [23919.718918]  [<ffffffff8116ef1d>] ? __sb_start_write+0x5f/0xb0
-> [23919.724170]  [<ffffffff8116b579>] vfs_fallocate+0x170/0x1ff
-> [23919.725482]  [<ffffffff8117c1d7>] ioctl_preallocate+0x89/0x9b
-> [23919.726790]  [<ffffffff8117c5ef>] do_vfs_ioctl+0x406/0x4e6
-> [23919.728428]  [<ffffffff81171175>] ? SYSC_newfstat+0x25/0x2e
-> [23919.729642]  [<ffffffff8118574d>] ? __fget_light+0x4d/0x71
-> [23919.730782]  [<ffffffff8117c726>] SyS_ioctl+0x57/0x79
-> [23919.731847]  [<ffffffff8147cd97>] entry_SYSCALL_64_fastpath+0x12/0x6f
-> [23919.733330] ---[ end trace 166ef301a335832a ]---
+> 1) We considered that there could be only one ordered extent for the whole
+>    IO range, which is not always true, as we can have multiple;
 > 
-> This is due to a race between device replace and chunk allocation, which
-> the following diagram illustrates:
+> 2) It did not set the bit BTRFS_ORDERED_IO_DONE in the ordered extent,
+>    which can make other tasks running btrfs_wait_logged_extents() hang
+>    forever, since they wait for that bit to be set. The general assumption
+>    is that regardless of an error, the BTRFS_ORDERED_IO_DONE is always set
+>    and it precedes setting the bit BTRFS_ORDERED_COMPLETE.
 > 
->          CPU 1                                    CPU 2
+> Fix these issues by moving part of the btrfs_endio_direct_write() handler
+> into a new helper function and having that new helper function called when
+> we fail to allocate memory to submit the bio (and its private object) for
+> a direct IO write.
 > 
->  btrfs_dev_replace_finishing()
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/inode.c | 54 +++++++++++++++++++++++++++---------------------------
+>  1 file changed, 27 insertions(+), 27 deletions(-)
 > 
->    at this point
->     dev_replace->tgtdev->devid ==
->     BTRFS_DEV_REPLACE_DEVID (0ULL)
-> 
->    ...
-> 
->    btrfs_start_transaction()
->    btrfs_commit_transaction()
-> 
->                                                btrfs_fallocate()
->                                                  btrfs_alloc_data_chunk_ondemand()
->                                                    btrfs_join_transaction()
->                                                      --> starts a new transaction
->                                                    do_chunk_alloc()
->                                                      lock fs_info->chunk_mutex
->                                                        btrfs_alloc_chunk()
->                                                          --> creates extent map for
->                                                              the new chunk with
->                                                              em->bdev->map->stripes[i]->dev->devid
->                                                              == X (X > 0)
->                                                          --> extent map is added to
->                                                              fs_info->mapping_tree
->                                                          --> initial phase of bg A
->                                                              allocation completes
->                                                      unlock fs_info->chunk_mutex
-> 
->    lock fs_info->chunk_mutex
-> 
->    btrfs_dev_replace_update_device_in_mapping_tree()
->      --> iterates fs_info->mapping_tree and
->          replaces the device in every extent
->          map's map->stripes[] with
->          dev_replace->tgtdev, which still has
->          an id of 0ULL (BTRFS_DEV_REPLACE_DEVID)
-> 
->                                                    btrfs_end_transaction()
->                                                      btrfs_create_pending_block_groups()
->                                                        --> starts final phase of
->                                                            bg A creation (update device,
->                                                            extent, and chunk trees, etc)
->                                                        btrfs_finish_chunk_alloc()
-> 
->                                                          btrfs_update_device()
->                                                            --> attempts to update a device
->                                                                item with ID == 0ULL
->                                                                (BTRFS_DEV_REPLACE_DEVID)
->                                                                which is the current ID of
->                                                                bg A's
->                                                                em->bdev->map->stripes[i]->dev->devid
->                                                            --> doesn't find such item
->                                                                returns -ENOENT
->                                                            --> the device id should have been X
->                                                                and not 0ULL
-> 
->                                                        got -ENOENT from
->                                                        btrfs_finish_chunk_alloc()
->                                                        and aborts current transaction
-> 
->    finishes setting up the target device,
->    namely it sets tgtdev->devid to the value
->    of srcdev->devid, which is X (and X > 0)
-> 
-> So fix this by taking the device list mutex when processing the chunk's
-> extent map stripes to update the device items.
-> 
-> This happened while running fstest btrfs/071.
+> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> index f82d1f4..4f8560c 100644
+> --- a/fs/btrfs/inode.c
+> +++ b/fs/btrfs/inode.c
+> @@ -7995,22 +7995,22 @@ static void btrfs_endio_direct_read(struct bio *bio)
+>  	bio_put(bio);
+>  }
+>  
+> -static void btrfs_endio_direct_write(struct bio *bio)
+> +static void btrfs_endio_direct_write_update_ordered(struct inode *inode,
+> +						    const u64 offset,
+> +						    const u64 bytes,
+> +						    const int uptodate)
+>  {
+> -	struct btrfs_dio_private *dip = bio->bi_private;
+> -	struct inode *inode = dip->inode;
+>  	struct btrfs_root *root = BTRFS_I(inode)->root;
+>  	struct btrfs_ordered_extent *ordered = NULL;
+> -	u64 ordered_offset = dip->logical_offset;
+> -	u64 ordered_bytes = dip->bytes;
+> -	struct bio *dio_bio;
+> +	u64 ordered_offset = offset;
+> +	u64 ordered_bytes = bytes;
+>  	int ret;
+>  
+>  again:
+>  	ret = btrfs_dec_test_first_ordered_pending(inode, &ordered,
+>  						   &ordered_offset,
+>  						   ordered_bytes,
+> -						   !bio->bi_error);
+> +						   uptodate);
+>  	if (!ret)
+>  		goto out_test;
+>  
+> @@ -8023,13 +8023,22 @@ out_test:
+>  	 * our bio might span multiple ordered extents.  If we haven't
+>  	 * completed the accounting for the whole dio, go back and try again
+>  	 */
+> -	if (ordered_offset < dip->logical_offset + dip->bytes) {
+> -		ordered_bytes = dip->logical_offset + dip->bytes -
+> -			ordered_offset;
+> +	if (ordered_offset < offset + bytes) {
+> +		ordered_bytes = offset + bytes - ordered_offset;
+>  		ordered = NULL;
+>  		goto again;
+>  	}
+> -	dio_bio = dip->dio_bio;
+> +}
+> +
+> +static void btrfs_endio_direct_write(struct bio *bio)
+> +{
+> +	struct btrfs_dio_private *dip = bio->bi_private;
+> +	struct bio *dio_bio = dip->dio_bio;
+> +
+> +	btrfs_endio_direct_write_update_ordered(dip->inode,
+> +						dip->logical_offset,
+> +						dip->bytes,
+> +						!bio->bi_error);
+>  
+>  	kfree(dip);
+>  
+> @@ -8365,24 +8374,15 @@ free_ordered:
+>  		dip = NULL;
+>  		io_bio = NULL;
+>  	} else {
+> -		if (write) {
+> -			struct btrfs_ordered_extent *ordered;
+> -
+> -			ordered = btrfs_lookup_ordered_extent(inode,
+> -							      file_offset);
+> -			set_bit(BTRFS_ORDERED_IOERR, &ordered->flags);
+> -			/*
+> -			 * Decrements our ref on the ordered extent and removes
+> -			 * the ordered extent from the inode's ordered tree,
+> -			 * doing all the proper resource cleanup such as for the
+> -			 * reserved space and waking up any waiters for this
+> -			 * ordered extent (through btrfs_remove_ordered_extent).
+> -			 */
+> -			btrfs_finish_ordered_io(ordered);
+> -		} else {
+> +		if (write)
+> +			btrfs_endio_direct_write_update_ordered(inode,
+> +						file_offset,
+> +						dio_bio->bi_iter.bi_size,
+> +						1);
 
-The code looks good to me.
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
+uptodate=1 won't set IOERR for ordered extent, is that expected?
 
 Thanks,
 
 -liubo
-> 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
-> 
-> V2: Made the attribution of a new id from the old device to happen
->     after replacing the device for the extent maps with the new device,
->     as obviously it was missing before.
-> 
-> V3: Make it really race free. The previous approach was still racy, but in a
->     different way. Need to really synchronize the finishing phase of device
->     replace that sets up the new device with the final phase of chunk allocation
->     that processes the stripes and updates the device items.
-> 
-> V4: Moved critical section a bit further, as there's further usage of a
->     stripe's device.
-> 
->  fs/btrfs/volumes.c | 17 +++++++++++++++--
->  1 file changed, 15 insertions(+), 2 deletions(-)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 45f2025..2290469 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -4827,20 +4827,32 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
->  		goto out;
->  	}
->  
-> +	/*
-> +	 * Take the device list mutex to prevent races with the final phase of
-> +	 * a device replace operation that replaces the device object associated
-> +	 * with the map's stripes, because the device object's id can change
-> +	 * at any time during that final phase of the device replace operation
-> +	 * (dev-replace.c:btrfs_dev_replace_finishing()).
-> +	 */
-> +	mutex_lock(&chunk_root->fs_info->fs_devices->device_list_mutex);
->  	for (i = 0; i < map->num_stripes; i++) {
->  		device = map->stripes[i].dev;
->  		dev_offset = map->stripes[i].physical;
->  
->  		ret = btrfs_update_device(trans, device);
->  		if (ret)
-> -			goto out;
-> +			break;
->  		ret = btrfs_alloc_dev_extent(trans, device,
->  					     chunk_root->root_key.objectid,
->  					     BTRFS_FIRST_CHUNK_TREE_OBJECTID,
->  					     chunk_offset, dev_offset,
->  					     stripe_size);
->  		if (ret)
-> -			goto out;
-> +			break;
-> +	}
-> +	if (ret) {
-> +		mutex_unlock(&chunk_root->fs_info->fs_devices->device_list_mutex);
-> +		goto out;
->  	}
->  
->  	stripe = &chunk->stripe;
-> @@ -4853,6 +4865,7 @@ int btrfs_finish_chunk_alloc(struct btrfs_trans_handle *trans,
->  		memcpy(stripe->dev_uuid, device->uuid, BTRFS_UUID_SIZE);
->  		stripe++;
->  	}
-> +	mutex_unlock(&chunk_root->fs_info->fs_devices->device_list_mutex);
->  
->  	btrfs_set_stack_chunk_length(chunk, chunk_size);
->  	btrfs_set_stack_chunk_owner(chunk, extent_root->root_key.objectid);
+> +		else
+>  			unlock_extent(&BTRFS_I(inode)->io_tree, file_offset,
+>  			      file_offset + dio_bio->bi_iter.bi_size - 1);
+> -		}
+> +
+>  		dio_bio->bi_error = -EIO;
+>  		/*
+>  		 * Releases and cleans up our dio_bio, no need to bio_put()
 > -- 
 > 2.1.3
 > 

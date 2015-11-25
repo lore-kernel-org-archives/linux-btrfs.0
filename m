@@ -1,50 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20729 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:20722 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753601AbbKYMI7 (ORCPT
+	with ESMTP id S1753568AbbKYMI6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 07:08:59 -0500
+	Wed, 25 Nov 2015 07:08:58 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, calestyo@scientia.net, ahferroin7@gmail.com,
         1i5t5.duncan@cox.net
-Subject: [PATCH 6/7] btrfs-progs: add -O comp= option for mkfs.btrfs
-Date: Wed, 25 Nov 2015 20:08:19 +0800
-Message-Id: <1448453300-8449-7-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 7/7] btrfs-progs: add -O comp= option for btrfs-convert
+Date: Wed, 25 Nov 2015 20:08:20 +0800
+Message-Id: <1448453300-8449-8-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
 References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This provides default feature set by version, for mkfs.btrfs
-through the new option '-O comp=<x.y>|<x.y.z>', where x.y.z is the
-minimum kernel version that should be supported.
+User may want to convert the FS to a minimum kernel version. As they may need
+to use btrfs on a set of known kernel versions. And have the disk layout compatible.
 
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- mkfs.c | 24 ++++++++++++++++++++++--
- 1 file changed, 22 insertions(+), 2 deletions(-)
+ btrfs-convert.c | 21 +++++++++++++++++++++
+ 1 file changed, 21 insertions(+)
 
-diff --git a/mkfs.c b/mkfs.c
-index 6cb998b..34ba77d 100644
---- a/mkfs.c
-+++ b/mkfs.c
-@@ -324,7 +324,9 @@ static void print_usage(int ret)
- 	fprintf(stderr, "\t-s|--sectorsize SIZE    min block allocation (may not mountable by current kernel)\n");
- 	fprintf(stderr, "\t-r|--rootdir DIR        the source directory\n");
- 	fprintf(stderr, "\t-K|--nodiscard          do not perform whole device TRIM\n");
--	fprintf(stderr, "\t-O|--features LIST      comma separated list of filesystem features, use '-O list-all' to list features\n");
-+	fprintf(stderr, "\t-O|--features LIST      comma separated list of filesystem features\n");
-+	fprintf(stderr, "\t                          use '-O list-all' to list features\n");
-+	fprintf(stderr, "\t                          use '-O comp=<x.y>|<x.y.z>' x.y.z is the minimum kernel version to be supported\n");
- 	fprintf(stderr, "\t-U|--uuid UUID          specify the filesystem UUID\n");
- 	fprintf(stderr, "\t-q|--quiet              no messages except errors\n");
- 	fprintf(stderr, "\t-V|--version            print the mkfs.btrfs version and exit\n");
-@@ -1439,7 +1441,24 @@ int main(int ac, char **av)
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index b0a998b..01b8940 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -2879,6 +2879,8 @@ static void print_usage(void)
+ 	printf("\t-L|--copy-label        use label from converted filesystem\n");
+ 	printf("\t-p|--progress          show converting progress (default)\n");
+ 	printf("\t-O|--features LIST     comma separated list of filesystem features\n");
++	printf("\t                         use '-O list-all' to list features\n");
++	printf("\t                         use '-O comp=<x.y>|<x.y.z>' x.y.z is the minimum kernel version to be supported\n");
+ 	printf("\t--no-progress          show only overview, not the detailed progress\n");
+ }
+ 
+@@ -2970,6 +2972,24 @@ int main(int argc, char *argv[])
  			case 'O': {
  				char *orig = strdup(optarg);
  				char *tmp = orig;
--
 +				char *tok;
 +
 +				tok = strtok(tmp, "=");
@@ -63,17 +59,17 @@ index 6cb998b..34ba77d 100644
 +					goto cont;
 +				}
 +				tmp = orig;
+ 
  				tmp = btrfs_parse_fs_features(tmp, &features);
  				if (tmp) {
- 					fprintf(stderr,
-@@ -1448,6 +1467,7 @@ int main(int ac, char **av)
+@@ -2979,6 +2999,7 @@ int main(int argc, char *argv[])
  					free(orig);
  					exit(1);
  				}
 +cont:
  				free(orig);
  				if (features & BTRFS_FEATURE_LIST_ALL) {
- 					btrfs_list_all_fs_features(0);
+ 					btrfs_list_all_fs_features(
 -- 
 2.6.2
 

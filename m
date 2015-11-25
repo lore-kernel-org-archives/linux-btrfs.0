@@ -1,84 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:45762 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750967AbbKYWuO (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:24570 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752478AbbKYWxF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 17:50:14 -0500
+	Wed, 25 Nov 2015 17:53:05 -0500
+Subject: Re: [PATCH 2/7] btrfs-progs: add kernel alias for each of the
+ features in the list
+To: bo.li.liu@oracle.com
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, calestyo@scientia.net,
+        ahferroin7@gmail.com, 1i5t5.duncan@cox.net
+References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
+ <1448453300-8449-3-git-send-email-anand.jain@oracle.com>
+ <20151125181136.GC21642@localhost.localdomain>
 From: Anand Jain <anand.jain@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.cz, calestyo@scientia.net, ahferroin7@gmail.com,
-        1i5t5.duncan@cox.net, bo.li.liu@oracle.com
-Subject: [PATCH V1.1 2/7] btrfs-progs: add kernel alias for each of the features in the list
-Date: Wed, 25 Nov 2015 21:36:04 +0800
-Message-Id: <1448458564-1037-1-git-send-email-anand.jain@oracle.com>
-In-Reply-To: <1448453300-8449-3-git-send-email-anand.jain@oracle.com>
-References: <1448453300-8449-3-git-send-email-anand.jain@oracle.com>
+Message-ID: <56563BC0.1070508@oracle.com>
+Date: Thu, 26 Nov 2015 06:52:48 +0800
+MIME-Version: 1.0
+In-Reply-To: <20151125181136.GC21642@localhost.localdomain>
+Content-Type: text/plain; charset=ISO-8859-1; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We should have maintained feature's name same across progs UI and sysfs UI.
-For example, progs mixed-bg is /sys/fs/btrfs/features/mixed_groups
-in sysfs. As these are already released and is UIs, there is nothing much
-can be done about it, except for creating the alias and making it aware.
 
-Add kernel alias for each of the features in the list.
 
-eg: The string with in () is the sysfs name for the same feaure
+Liu Bo wrote:
+> On Wed, Nov 25, 2015 at 08:08:15PM +0800, Anand Jain wrote:
+>> We should have maintained feature's name same across progs UI and sysfs UI.
+>> For example, progs mixed-bg is /sys/fs/btrfs/features/mixed_groups
+>> in sysfs. As these are already released and is UIs, there is nothing much
+>> can be done about it, except for creating the alias and making it aware.
+>>
+>> Add kernel alias for each of the features in the list.
+>>
+>> eg: The string with in () is the sysfs name for the same feaure
+>>
+>> mkfs.btrfs -O list-all
+>> Filesystem features available:
+>> mixed-bg (mixed_groups)           - mixed data and metadata block groups (0x4, 2.7.37)
+>> extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
+>> raid56 (raid56)                   - raid56 extended format (0x80, 3.9)
+>> skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
+>> no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
+>>
+>> btrfs-convert -O list-all
+>> Filesystem features available:
+>> extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
+>> skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
+>> no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
+>
+> You miss a signed-off-by here.
 
-mkfs.btrfs -O list-all
-Filesystem features available:
-mixed-bg (mixed_groups)           - mixed data and metadata block groups (0x4, 2.7.37)
-extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
-raid56 (raid56)                   - raid56 extended format (0x80, 3.9)
-skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
-no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
+  oh no. thanks for the catch.
 
-btrfs-convert -O list-all
-Filesystem features available:
-extref (extended_iref)            - increased hardlink limit per file to 65536 (0x40, 3.7, default)
-skinny-metadata (skinny_metadata) - reduced-size metadata extent refs (0x100, 3.10, default)
-no-holes (no_holes)               - no explicit hole extents for files (0x200, 3.14)
-
-Signed-off-by: Anand Jain <anand.jain@oracle.com>
----
-V1.1 add signed-off-by
-
- utils.c | 13 +++++++++++--
- 1 file changed, 11 insertions(+), 2 deletions(-)
-
-diff --git a/utils.c b/utils.c
-index 0163915..6d2675d 100644
---- a/utils.c
-+++ b/utils.c
-@@ -648,17 +648,26 @@ void btrfs_process_fs_features(u64 flags)
- void btrfs_list_all_fs_features(u64 mask_disallowed)
- {
- 	int i;
-+	u64 feature_per_sysfs;
-+
-+	btrfs_features_allowed_by_sysfs(&feature_per_sysfs);
- 
- 	fprintf(stderr, "Filesystem features available:\n");
- 	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
- 		char *is_default = "";
-+		char name[256];
- 
- 		if (mkfs_features[i].flag & mask_disallowed)
- 			continue;
- 		if (mkfs_features[i].flag & BTRFS_MKFS_DEFAULT_FEATURES)
- 			is_default = ", default";
--		fprintf(stderr, "%-20s- %s (0x%llx, %s%s)\n",
--				mkfs_features[i].name,
-+		if (mkfs_features[i].flag & feature_per_sysfs)
-+			sprintf(name, "%s (%s)",
-+				mkfs_features[i].name, mkfs_features[i].name_ker);
-+		else
-+			sprintf(name, "%s", mkfs_features[i].name);
-+		fprintf(stderr, "%-34s- %s (0x%llx, %s%s)\n",
-+				name,
- 				mkfs_features[i].desc,
- 				mkfs_features[i].flag,
- 				mkfs_features[i].min_ker_ver,
--- 
-2.6.2
-
+> Thanks,
+>
+> -liubo
+>> ---
+>>   utils.c | 13 +++++++++++--
+>>   1 file changed, 11 insertions(+), 2 deletions(-)
+>>
+>> diff --git a/utils.c b/utils.c
+>> index 0163915..6d2675d 100644
+>> --- a/utils.c
+>> +++ b/utils.c
+>> @@ -648,17 +648,26 @@ void btrfs_process_fs_features(u64 flags)
+>>   void btrfs_list_all_fs_features(u64 mask_disallowed)
+>>   {
+>>   	int i;
+>> +	u64 feature_per_sysfs;
+>> +
+>> +	btrfs_features_allowed_by_sysfs(&feature_per_sysfs);
+>>
+>>   	fprintf(stderr, "Filesystem features available:\n");
+>>   	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
+>>   		char *is_default = "";
+>> +		char name[256];
+>>
+>>   		if (mkfs_features[i].flag & mask_disallowed)
+>>   			continue;
+>>   		if (mkfs_features[i].flag & BTRFS_MKFS_DEFAULT_FEATURES)
+>>   			is_default = ", default";
+>> -		fprintf(stderr, "%-20s- %s (0x%llx, %s%s)\n",
+>> -				mkfs_features[i].name,
+>> +		if (mkfs_features[i].flag & feature_per_sysfs)
+>> +			sprintf(name, "%s (%s)",
+>> +				mkfs_features[i].name, mkfs_features[i].name_ker);
+>> +		else
+>> +			sprintf(name, "%s", mkfs_features[i].name);
+>> +		fprintf(stderr, "%-34s- %s (0x%llx, %s%s)\n",
+>> +				name,
+>>   				mkfs_features[i].desc,
+>>   				mkfs_features[i].flag,
+>>   				mkfs_features[i].min_ker_ver,
+>> --
+>> 2.6.2
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>

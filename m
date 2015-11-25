@@ -1,119 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp01.au.ibm.com ([202.81.31.143]:49763 "EHLO
+Received: from e23smtp01.au.ibm.com ([202.81.31.143]:49792 "EHLO
 	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752121AbbKYLEj (ORCPT
+	with ESMTP id S1751622AbbKYLEn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 06:04:39 -0500
+	Wed, 25 Nov 2015 06:04:43 -0500
 Received: from localhost
 	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 25 Nov 2015 21:04:37 +1000
+	Wed, 25 Nov 2015 21:04:41 +1000
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: fstests@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
         fdmanana@gmail.com, chandan@mykolab.com
-Subject: [PATCH 01/12] Filter xfs_io and od's output in units of FS block size and the CPU's page size
-Date: Wed, 25 Nov 2015 16:32:55 +0530
-Message-Id: <1448449386-4186-2-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH 02/12] Fix btrfs/017 to work on non-4k block sized filesystems
+Date: Wed, 25 Nov 2015 16:32:56 +0530
+Message-Id: <1448449386-4186-3-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1448449386-4186-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1448449386-4186-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The helpers will be used to make btrfs tests that assume 4k as the block size
-to work on non-4k blocksized filesystem instances as well.
+This commit makes use of the new _filter_xfs_io_blocks_modified filtering
+function to print information in terms of file blocks rather than file
+offset.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- common/filter | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- common/rc     |  5 +++++
- 2 files changed, 57 insertions(+)
+ tests/btrfs/017     | 16 ++++++++++++----
+ tests/btrfs/017.out |  3 +--
+ 2 files changed, 13 insertions(+), 6 deletions(-)
 
-diff --git a/common/filter b/common/filter
-index af456c9..faa6f82 100644
---- a/common/filter
-+++ b/common/filter
-@@ -229,6 +229,45 @@ _filter_xfs_io_unique()
-     common_line_filter | _filter_xfs_io
- }
+diff --git a/tests/btrfs/017 b/tests/btrfs/017
+index f8855e3..34c5f0a 100755
+--- a/tests/btrfs/017
++++ b/tests/btrfs/017
+@@ -63,13 +63,21 @@ rm -f $seqres.full
+ _scratch_mkfs "--nodesize 65536" >>$seqres.full 2>&1
+ _scratch_mount
  
-+_filter_xfs_io_units_modified()
-+{
-+	UNIT=$1
-+	UNIT_SIZE=$2
+-$XFS_IO_PROG -f -d -c "pwrite 0 8K" $SCRATCH_MNT/foo | _filter_xfs_io
++BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
++EXTENT_SIZE=$((2 * $BLOCK_SIZE))
 +
-+	$AWK_PROG -v unit="$UNIT" -v unit_size=$UNIT_SIZE '
-+		/wrote/ {
-+			split($2, bytes, "/")
-+
-+			bytes_written = strtonum(bytes[1])
-+
-+			offset = strtonum($NF)
-+
-+			unit_start = offset / unit_size
-+			unit_start = int(unit_start)
-+			unit_end = (offset + bytes_written - 1) / unit_size
-+			unit_end = int(unit_end)
-+
-+			printf("%ss modified: [%d - %d]\n", unit, unit_start, unit_end)
-+
-+			next
-+		}
-+	'
-+}
-+
-+_filter_xfs_io_blocks_modified()
-+{
-+	BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
-+
-+	_filter_xfs_io_units_modified "Block" $BLOCK_SIZE
-+}
-+
-+_filter_xfs_io_pages_modified()
-+{
-+	PAGE_SIZE=$(get_page_size)
-+
-+	_filter_xfs_io_units_modified "Page" $PAGE_SIZE
-+}
-+
- _filter_test_dir()
- {
- 	sed -e "s,$TEST_DEV,TEST_DEV,g" -e "s,$TEST_DIR,TEST_DIR,g"
-@@ -323,5 +362,18 @@ _filter_ro_mount() {
- 	    -e "s/mount: cannot mount block device/mount: cannot mount/g"
- }
++$XFS_IO_PROG -f -d -c "pwrite 0 $EXTENT_SIZE" $SCRATCH_MNT/foo \
++	| _filter_xfs_io_blocks_modified
  
-+_filter_od()
-+{
-+	BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
-+	$AWK_PROG -v block_size=$BLOCK_SIZE '
-+		/^[0-9]+/ {
-+			offset = strtonum("0"$1);
-+			$1 = sprintf("%o", offset / block_size);
-+			print $0;
-+		}
-+		/\*/
-+	'
-+}
-+
- # make sure this script returns success
- /bin/true
-diff --git a/common/rc b/common/rc
-index 4c2f42c..acda6cb 100644
---- a/common/rc
-+++ b/common/rc
-@@ -3151,6 +3151,11 @@ get_block_size()
- 	echo `stat -f -c %S $1`
- }
+ _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
  
-+get_page_size()
-+{
-+	echo $(getconf PAGE_SIZE)
-+}
+-$CLONER_PROG -s 0 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo-reflink
+-$CLONER_PROG -s 0 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/snap/foo-reflink
+-$CLONER_PROG -s 0 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/snap/foo-reflink2
++$CLONER_PROG -s 0 -d 0 -l $EXTENT_SIZE $SCRATCH_MNT/foo $SCRATCH_MNT/foo-reflink
 +
- init_rc
++$CLONER_PROG -s 0 -d 0 -l $EXTENT_SIZE $SCRATCH_MNT/foo \
++	     $SCRATCH_MNT/snap/foo-reflink
++
++$CLONER_PROG -s 0 -d 0 -l $EXTENT_SIZE $SCRATCH_MNT/foo \
++	     $SCRATCH_MNT/snap/foo-reflink2
  
- ################################################################################
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+ _run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
+diff --git a/tests/btrfs/017.out b/tests/btrfs/017.out
+index f940f3a..503eb88 100644
+--- a/tests/btrfs/017.out
++++ b/tests/btrfs/017.out
+@@ -1,5 +1,4 @@
+ QA output created by 017
+-wrote 8192/8192 bytes at offset 0
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Blocks modified: [0 - 1]
+ 65536 65536
+ 65536 65536
 -- 
 2.1.0
 

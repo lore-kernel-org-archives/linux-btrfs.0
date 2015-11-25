@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:43537 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754189AbbKYDfa (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:55909 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752893AbbKYERA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 24 Nov 2015 22:35:30 -0500
-Message-ID: <1448422525.21291.131.camel@scientia.net>
+	Tue, 24 Nov 2015 23:17:00 -0500
+Message-ID: <1448425015.21291.142.camel@scientia.net>
 Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
  chunk
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Cc: linux-btrfs@vger.kernel.org
-Date: Wed, 25 Nov 2015 04:35:25 +0100
-In-Reply-To: <565507EF.5030205@cn.fujitsu.com>
+Date: Wed, 25 Nov 2015 05:16:55 +0100
+In-Reply-To: <1448422525.21291.131.camel@scientia.net>
 References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
 	 <1448047478.6878.4.camel@scientia.net> <564FBF0F.4050705@gmx.com>
 	 <564FC3FE.9020905@lukas-pirl.de> <565122AA.90904@gmx.com>
@@ -21,60 +21,182 @@ References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
 	 <1448333334.14125.14.camel@scientia.net> <5653D157.5060209@cn.fujitsu.com>
 	 <1448334124.14125.17.camel@scientia.net> <5653F725.5030700@cn.fujitsu.com>
 	 <1448389513.21291.38.camel@scientia.net> <565507EF.5030205@cn.fujitsu.com>
+	 <1448422525.21291.131.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-5kG0fLg20UPkkbR3nAMw"
+	boundary="=-FRi7PlLSgneZ8z91UbAM"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-5kG0fLg20UPkkbR3nAMw
+--=-FRi7PlLSgneZ8z91UbAM
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, 2015-11-25 at 08:59 +0800, Qu Wenruo wrote:
-> Did you use the complied btrfsck? Or use the system btrfsck by
-> mistake?
-I'm pretty sure cause I already did the whole procedure twice, but let
-me repeat and record it here just to be 100% sure:
+Hey again.
 
-$ make clean
-Cleaning
-$ md5sum cmds-check.c=20
-a7e7d871c3b666df6b56c724dbfd1d86=C2=A0=C2=A0cmds-check.c
-$ export CFLAGS=3D"-g -O0 -Wall -D_FORTIFY_SOURCE=3D2"
-$ ./configure --disable-convert --disable-documentation
-[snip]
-$ make
-# ./btrfs check /dev/mapper/data-b
-Checking filesystem on /dev/mapper/data-b
-UUID: 250ddae1-7b37-4b22-89e9-4dc5886c810f
-checking extents
-[getting a cup of tea]
-.. and voila it works...
+So it seems that data-b is always fine (well at least three times in a
+row) and data-old-a always gives errors.
 
-which is kinda weird... I still have the previous run in the bash
-history... and I *did* invoke ./btrfs and not btrfs.
-Also I just haven't done any further patching... so it cannot be that
-the patch wasn't applied before.
+including e.g:
+bad extent [3067663679488, 3067663695872), type mismatch with chunk
+bad extent [3067663876096, 3067663892480), type mismatch with chunk
+bad extent [3067663892480, 3067663908864), type mismatch with chunk
+bad extent [3067663908864, 3067663925248), type mismatch with chunk
+bad extent [3067669348352, 3067669364736), type mismatch with chunk
+bad extent [3067669430272, 3067669446656), type mismatch with chunk
+bad extent [3067669659648, 3067669676032), type mismatch with chunk
+bad extent [3067669790720, 3067669807104), type mismatch with chunk
+bad extent [3067669807104, 3067669823488), type mismatch with chunk
+bad extent [3067669823488, 3067669839872), type mismatch with chunk
+bad extent [3067669872640, 3067669889024), type mismatch with chunk
+bad extent [3067669921792, 3067669938176), type mismatch with chunk
+bad extent [3067671805952, 3067671822336), type mismatch with chunk
 
-WTF?! Apparently I suffer from Gremlins :-/
+I've started debugging (everything as before) with:
+(gdb) break cmds-check.c:4387
+Breakpoint 1 at 0x42cf2b: file cmds-check.c, line 4387.
+(gdb) break cmds-check.c:4394
+Breakpoint 2 at 0x42cf57: file cmds-check.c, line 4394.
+(gdb) break cmds-check.c:4411
+Breakpoint 3 at 0x42cfa6: file cmds-check.c, line 4411.
+(gdb) break cmds-check.c:4421
+Breakpoint 4 at 0x42d000: file cmds-check.c, line 4421.
 
-*a little while later*
+Hit a:
+Breakpoint 1, check_extent_type (rec=3D0x1a44130) at cmds-check.c:4387
+4387				rec->wrong_chunk_type =3D 1;
+(gdb) bt
+#0=C2=A0=C2=A0check_extent_type (rec=3D0x1a44130) at cmds-check.c:4387
+#1=C2=A0=C2=A00x000000000042d6a5 in add_extent_rec (extent_cache=3D0x7fffff=
+ffdf30, parent_key=3D0x0, parent_gen=3D0, start=3D1097665216512, nr=3D16384=
+, extent_item_refs=3D1, is_root=3D0, inc_ref=3D0, set_checked=3D0,=C2=A0
+=C2=A0=C2=A0=C2=A0=C2=A0metadata=3D0, extent_rec=3D1, max_size=3D16384) at =
+cmds-check.c:4576
+#2=C2=A0=C2=A00x000000000042ecc9 in process_extent_item (root=3D0x919d20, e=
+xtent_cache=3D0x7fffffffdf30, eb=3D0x1a0edb0, slot=3D95) at cmds-check.c:51=
+42
+#3=C2=A0=C2=A00x0000000000430aea in run_next_block (root=3D0x919d20, bits=
+=3D0x91e220, bits_nr=3D1024, last=3D0x7fffffffdb78, pending=3D0x7fffffffdf1=
+0, seen=3D0x7fffffffdf20, reada=3D0x7fffffffdf00,=C2=A0
+=C2=A0=C2=A0=C2=A0=C2=A0nodes=3D0x7fffffffdef0, extent_cache=3D0x7fffffffdf=
+30, chunk_cache=3D0x7fffffffdf90, dev_cache=3D0x7fffffffdfa0, block_group_c=
+ache=3D0x7fffffffdf70, dev_extent_cache=3D0x7fffffffdf40, ri=3D0x6cef30)
+=C2=A0=C2=A0=C2=A0=C2=A0at cmds-check.c:5960
+#4=C2=A0=C2=A00x00000000004356c4 in deal_root_from_list (list=3D0x7fffffffd=
+c00, root=3D0x919d20, bits=3D0x91e220, bits_nr=3D1024, pending=3D0x7fffffff=
+df10, seen=3D0x7fffffffdf20, reada=3D0x7fffffffdf00,=C2=A0
+=C2=A0=C2=A0=C2=A0=C2=A0nodes=3D0x7fffffffdef0, extent_cache=3D0x7fffffffdf=
+30, chunk_cache=3D0x7fffffffdf90, dev_cache=3D0x7fffffffdfa0, block_group_c=
+ache=3D0x7fffffffdf70, dev_extent_cache=3D0x7fffffffdf40)
+=C2=A0=C2=A0=C2=A0=C2=A0at cmds-check.c:8014
+#5=C2=A0=C2=A00x0000000000435d91 in check_chunks_and_extents (root=3D0x919d=
+20) at cmds-check.c:8181
+#6=C2=A0=C2=A00x0000000000438e2b in cmd_check (argc=3D1, argv=3D0x7fffffffe=
+220) at cmds-check.c:9627
+#7=C2=A0=C2=A00x0000000000409d49 in main (argc=3D2, argv=3D0x7fffffffe220) =
+at btrfs.c:252
+(gdb) continue
+Continuing.
 
-And back they are...(the errors)... o.O
-This time I checked both of my devices that shown the symptoms
-concurrently... data-b as above showed no errors.
-data-old-a, came with the same errors as before.
+Breakpoint 1, check_extent_type (rec=3D0x1a44130) at cmds-check.c:4387
+4387				rec->wrong_chunk_type =3D 1;
+(gdb) bt
+#0=C2=A0=C2=A0check_extent_type (rec=3D0x1a44130) at cmds-check.c:4387
+#1=C2=A0=C2=A00x000000000042d856 in add_tree_backref (extent_cache=3D0x7fff=
+ffffdf30, bytenr=3D1097665216512, parent=3D1314162819072, root=3D0, found_r=
+ef=3D0) at cmds-check.c:4624
+#2=C2=A0=C2=A00x000000000042ede2 in process_extent_item (root=3D0x919d20, e=
+xtent_cache=3D0x7fffffffdf30, eb=3D0x1a0edb0, slot=3D95) at cmds-check.c:51=
+61
+#3=C2=A0=C2=A00x0000000000430aea in run_next_block (root=3D0x919d20, bits=
+=3D0x91e220, bits_nr=3D1024, last=3D0x7fffffffdb78, pending=3D0x7fffffffdf1=
+0, seen=3D0x7fffffffdf20, reada=3D0x7fffffffdf00,=20
+=C2=A0=C2=A0=C2=A0=C2=A0nodes=3D0x7fffffffdef0, extent_cache=3D0x7fffffffdf=
+30, chunk_cache=3D0x7fffffffdf90, dev_cache=3D0x7fffffffdfa0, block_group_c=
+ache=3D0x7fffffffdf70, dev_extent_cache=3D0x7fffffffdf40, ri=3D0x6cef30)
+=C2=A0=C2=A0=C2=A0=C2=A0at cmds-check.c:5960
+#4=C2=A0=C2=A00x00000000004356c4 in deal_root_from_list (list=3D0x7fffffffd=
+c00, root=3D0x919d20, bits=3D0x91e220, bits_nr=3D1024, pending=3D0x7fffffff=
+df10, seen=3D0x7fffffffdf20, reada=3D0x7fffffffdf00,=20
+=C2=A0=C2=A0=C2=A0=C2=A0nodes=3D0x7fffffffdef0, extent_cache=3D0x7fffffffdf=
+30, chunk_cache=3D0x7fffffffdf90, dev_cache=3D0x7fffffffdfa0, block_group_c=
+ache=3D0x7fffffffdf70, dev_extent_cache=3D0x7fffffffdf40)
+=C2=A0=C2=A0=C2=A0=C2=A0at cmds-check.c:8014
+#5=C2=A0=C2=A00x0000000000435d91 in check_chunks_and_extents (root=3D0x919d=
+20) at cmds-check.c:8181
+#6=C2=A0=C2=A00x0000000000438e2b in cmd_check (argc=3D1, argv=3D0x7fffffffe=
+220) at cmds-check.c:9627
+#7=C2=A0=C2=A00x0000000000409d49 in main (argc=3D2, argv=3D0x7fffffffe220) =
+at btrfs.c:252
 
-Is there anything non-deterministic involved?
+You've mentioned=C2=A0add_extent_rec() before, but that doesn't seem to
+contain bytenr so I cannot break on it.
 
+I tried it with add_tree_backref instead, maybe that's already helpful
+for you until you give me further instructions on what to debug:
+Breakpoint 5 at 0x42d84a: file cmds-check.c, line 4624.
+(gdb) continue=20
+Continuing.
+
+Breakpoint 5, add_tree_backref (extent_cache=3D0x7fffffffdf30, bytenr=3D306=
+7669348352, parent=3D0, root=3D2, found_ref=3D0) at cmds-check.c:4624
+4624		check_extent_type(rec);
+(gdb) bt
+#0=C2=A0=C2=A0add_tree_backref (extent_cache=3D0x7fffffffdf30, bytenr=3D306=
+7669348352, parent=3D0, root=3D2, found_ref=3D0) at cmds-check.c:4624
+#1=C2=A0=C2=A00x000000000042edb8 in process_extent_item (root=3D0x919d20, e=
+xtent_cache=3D0x7fffffffdf30, eb=3D0x1a0edb0, slot=3D96) at cmds-check.c:51=
+57
+#2=C2=A0=C2=A00x0000000000430aea in run_next_block (root=3D0x919d20, bits=
+=3D0x91e220, bits_nr=3D1024, last=3D0x7fffffffdb78, pending=3D0x7fffffffdf1=
+0, seen=3D0x7fffffffdf20, reada=3D0x7fffffffdf00,=C2=A0
+=C2=A0=C2=A0=C2=A0=C2=A0nodes=3D0x7fffffffdef0, extent_cache=3D0x7fffffffdf=
+30, chunk_cache=3D0x7fffffffdf90, dev_cache=3D0x7fffffffdfa0, block_group_c=
+ache=3D0x7fffffffdf70, dev_extent_cache=3D0x7fffffffdf40, ri=3D0x6cef30)
+=C2=A0=C2=A0=C2=A0=C2=A0at cmds-check.c:5960
+#3=C2=A0=C2=A00x00000000004356c4 in deal_root_from_list (list=3D0x7fffffffd=
+c00, root=3D0x919d20, bits=3D0x91e220, bits_nr=3D1024, pending=3D0x7fffffff=
+df10, seen=3D0x7fffffffdf20, reada=3D0x7fffffffdf00,=C2=A0
+=C2=A0=C2=A0=C2=A0=C2=A0nodes=3D0x7fffffffdef0, extent_cache=3D0x7fffffffdf=
+30, chunk_cache=3D0x7fffffffdf90, dev_cache=3D0x7fffffffdfa0, block_group_c=
+ache=3D0x7fffffffdf70, dev_extent_cache=3D0x7fffffffdf40)
+=C2=A0=C2=A0=C2=A0=C2=A0at cmds-check.c:8014
+#4=C2=A0=C2=A00x0000000000435d91 in check_chunks_and_extents (root=3D0x919d=
+20) at cmds-check.c:8181
+#5=C2=A0=C2=A00x0000000000438e2b in cmd_check (argc=3D1, argv=3D0x7fffffffe=
+220) at cmds-check.c:9627
+#6=C2=A0=C2=A00x0000000000409d49 in main (argc=3D2, argv=3D0x7fffffffe220) =
+at btrfs.c:252
+
+(btw: all lines are 4.3 including your patch)
+
+
+breakpoint 5 would be reached many times:
+
+Breakpoint 5, add_tree_backref (extent_cache=3D0x7fffffffdf30, bytenr=3D306=
+7669348352, parent=3D0, root=3D2, found_ref=3D0) at cmds-check.c:4624
+4624		check_extent_type(rec);
+(gdb) continue=20
+Continuing.
+
+Breakpoint 5, add_tree_backref (extent_cache=3D0x7fffffffdf30, bytenr=3D306=
+7669348352, parent=3D0, root=3D7, found_ref=3D0) at cmds-check.c:4624
+4624		check_extent_type(rec);
+(gdb) continue=20
+Continuing.
+
+Breakpoint 5, add_tree_backref (extent_cache=3D0x7fffffffdf30, bytenr=3D306=
+7669348352, parent=3D0, root=3D7, found_ref=3D0) at cmds-check.c:4624
+4624		check_extent_type(rec);
+(gdb) continue=20
+Continuing.
 
 Cheers,
 Chris.
 
---=-5kG0fLg20UPkkbR3nAMw
+--=-FRi7PlLSgneZ8z91UbAM
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -161,19 +283,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNTAzMzUy
-NVowTwYJKoZIhvcNAQkEMUIEQA8VzoOWp4xO19JUikcmaXZ0N4f6f/ttHpnZYGeMe0iqoZ7EdJXg
-7QXJLHF5tdohitMe6pbh88x+RxBRjG6BpoIwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNTA0MTY1
+NVowTwYJKoZIhvcNAQkEMUIEQPSBQhsKt2e1Oo22rnQbBaVdPU7PyJUyyOukfknYOWmzxsEFgUL4
+8emosds9GPpuXVA4YW0ozFhE96nO2nNJx3IwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCuoEQFy5rrz4dvAD+GH9j7odn5K06b
-fz94QY7PMAmWZPiC8F596tZplB1TLajZtK0qyY0MHHwbUch2D44nswLarCUHOOVjtUwC+/6cLFBz
-rQBmRZXTzRPgyYOvhNPifN6WdAShMNkze/H99c1hIPUHCvHo6UlIlfQE4YdzN5eIyktN05r1K329
-yHoLQbpObgx1zyiOKYVjNdEG+sDFNyGihNoStGsGqDnJ7rMafBbV2hxq8V1jqTvM3QxdDPhHyq79
-IbMtLoSStQkZ35Bb53R7gmmppzcrEH7ij4lmOnwbwEH/yyv+XSO6oFHVB9qrwjbHdCK4qFyJEv/1
-FEonMf1LAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCvyzvt9OjnnsP56q4AQGnCdK38eKaT
+ku5lPZmSlcLXwQCKMNCp4Ec88nIRx6HhiiLck2QE7+PCyrhy2AjqEpO4IrSkVv+ylVu5BdrVRMLF
+4CY9zaErutQAZcrwSzgRW2Z2YCVm9mqFDYOCwSp+VSzXh/aN1ooDfkpPJvXOSILU3Pi6fSjsniZx
++v5P4ddfBDN1w3A/sByqMp5FLPpe9lm4s2CCNyuZeQpBQKMIGxNvW3gywCvPrwq25tTN5VTlyzKe
+9F6VOhXVg4XoDYTV21GqovFxT+kXusWy6pmNPV3GjWOmZeFJWDI73icFFSCw4X5WrkT5P+W+NEwU
+vbQM2cCLAAAAAAAA
 
 
---=-5kG0fLg20UPkkbR3nAMw--
+--=-FRi7PlLSgneZ8z91UbAM--
 

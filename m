@@ -1,83 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20664 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:20697 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753567AbbKYMIy (ORCPT
+	with ESMTP id S1751637AbbKYMI4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 07:08:54 -0500
+	Wed, 25 Nov 2015 07:08:56 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, calestyo@scientia.net, ahferroin7@gmail.com,
         1i5t5.duncan@cox.net
-Subject: [PATCH 3/7] btrfs-progs: make is_numerical non static
-Date: Wed, 25 Nov 2015 20:08:16 +0800
-Message-Id: <1448453300-8449-4-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 4/7] btrfs-progs: check for numerical in version_to_code()
+Date: Wed, 25 Nov 2015 20:08:17 +0800
+Message-Id: <1448453300-8449-5-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
 References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+As the version is now being passed by user it should be checked
+if its numerical. We didn't need this before as version wasn't
+passed by used. So this is not a bug fix.
+
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- cmds-replace.c | 11 -----------
- utils.c        | 11 +++++++++++
- utils.h        |  1 +
- 3 files changed, 12 insertions(+), 11 deletions(-)
+ utils.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
 
-diff --git a/cmds-replace.c b/cmds-replace.c
-index 9ab8438..86162b6 100644
---- a/cmds-replace.c
-+++ b/cmds-replace.c
-@@ -65,17 +65,6 @@ static const char * const replace_cmd_group_usage[] = {
- 	NULL
- };
- 
--static int is_numerical(const char *str)
--{
--	if (!(*str >= '0' && *str <= '9'))
--		return 0;
--	while (*str >= '0' && *str <= '9')
--		str++;
--	if (*str != '\0')
--		return 0;
--	return 1;
--}
--
- static int dev_replace_cancel_fd = -1;
- static void dev_replace_sigint_handler(int signal)
- {
 diff --git a/utils.c b/utils.c
-index 6d2675d..0e66e2b 100644
+index 0e66e2b..216efa6 100644
 --- a/utils.c
 +++ b/utils.c
-@@ -178,6 +178,17 @@ int test_uuid_unique(char *fs_uuid)
- 	return unique;
+@@ -3119,14 +3119,18 @@ static int version_to_code(char *v)
+ 
+ 	for (b[i] = strtok_r(v, ".", &save_b);
+ 		b[i] != NULL;
+-		b[i] = strtok_r(NULL, ".", &save_b))
++		b[i] = strtok_r(NULL, ".", &save_b)) {
++		if (!is_numerical(b[i]))
++			return -EINVAL;
+ 		i++;
++	}
+ 
++	if (b[1] == NULL)
++		return KERNEL_VERSION(atoi(b[0]), 0, 0);
+ 	if (b[2] == NULL)
+ 		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), 0);
+-	else
+-		return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), atoi(b[2]));
+ 
++	return KERNEL_VERSION(atoi(b[0]), atoi(b[1]), atoi(b[2]));
  }
  
-+int is_numerical(const char *str)
-+{
-+	if (!(*str >= '0' && *str <= '9'))
-+		return 0;
-+	while (*str >= '0' && *str <= '9')
-+		str++;
-+	if (*str != '\0')
-+		return 0;
-+	return 1;
-+}
-+
- /*
-  * @fs_uuid - if NULL, generates a UUID, returns back the new filesystem UUID
-  */
-diff --git a/utils.h b/utils.h
-index af0aa31..cb20d73 100644
---- a/utils.h
-+++ b/utils.h
-@@ -271,5 +271,6 @@ const char *get_argv0_buf(void);
- 	"-t|--tbytes        show sizes in TiB, or TB with --si"
- 
- unsigned int get_unit_mode_from_arg(int *argc, char *argv[], int df_mode);
-+int is_numerical(const char *str);
- 
- #endif
+ static int get_kernel_code()
 -- 
 2.6.2
 

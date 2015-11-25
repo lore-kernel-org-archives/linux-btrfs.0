@@ -1,75 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20725 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:20729 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753571AbbKYMI6 (ORCPT
+	with ESMTP id S1753601AbbKYMI7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 07:08:58 -0500
+	Wed, 25 Nov 2015 07:08:59 -0500
 From: Anand Jain <anand.jain@oracle.com>
 To: linux-btrfs@vger.kernel.org
 Cc: dsterba@suse.cz, calestyo@scientia.net, ahferroin7@gmail.com,
         1i5t5.duncan@cox.net
-Subject: [PATCH 5/7] btrfs-progs: introduce framework version to features
-Date: Wed, 25 Nov 2015 20:08:18 +0800
-Message-Id: <1448453300-8449-6-git-send-email-anand.jain@oracle.com>
+Subject: [PATCH 6/7] btrfs-progs: add -O comp= option for mkfs.btrfs
+Date: Wed, 25 Nov 2015 20:08:19 +0800
+Message-Id: <1448453300-8449-7-git-send-email-anand.jain@oracle.com>
 In-Reply-To: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
 References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-As discussed in the mailing list this provides a framework to introduce
-the feature where mkfs and btrfs-convert can set the default features
-as per the given mainline kernel version.
+This provides default feature set by version, for mkfs.btrfs
+through the new option '-O comp=<x.y>|<x.y.z>', where x.y.z is the
+minimum kernel version that should be supported.
 
-Suggested-by: David Sterba <dsterba@suse.cz>
 Signed-off-by: Anand Jain <anand.jain@oracle.com>
 ---
- utils.c | 23 +++++++++++++++++++++++
- utils.h |  1 +
- 2 files changed, 24 insertions(+)
+ mkfs.c | 24 ++++++++++++++++++++++--
+ 1 file changed, 22 insertions(+), 2 deletions(-)
 
-diff --git a/utils.c b/utils.c
-index 216efa6..a9b46b8 100644
---- a/utils.c
-+++ b/utils.c
-@@ -3222,3 +3222,26 @@ int btrfs_features_allowed_by_sysfs(u64 *features)
- 	closedir(dir);
- 	return 0;
- }
+diff --git a/mkfs.c b/mkfs.c
+index 6cb998b..34ba77d 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -324,7 +324,9 @@ static void print_usage(int ret)
+ 	fprintf(stderr, "\t-s|--sectorsize SIZE    min block allocation (may not mountable by current kernel)\n");
+ 	fprintf(stderr, "\t-r|--rootdir DIR        the source directory\n");
+ 	fprintf(stderr, "\t-K|--nodiscard          do not perform whole device TRIM\n");
+-	fprintf(stderr, "\t-O|--features LIST      comma separated list of filesystem features, use '-O list-all' to list features\n");
++	fprintf(stderr, "\t-O|--features LIST      comma separated list of filesystem features\n");
++	fprintf(stderr, "\t                          use '-O list-all' to list features\n");
++	fprintf(stderr, "\t                          use '-O comp=<x.y>|<x.y.z>' x.y.z is the minimum kernel version to be supported\n");
+ 	fprintf(stderr, "\t-U|--uuid UUID          specify the filesystem UUID\n");
+ 	fprintf(stderr, "\t-q|--quiet              no messages except errors\n");
+ 	fprintf(stderr, "\t-V|--version            print the mkfs.btrfs version and exit\n");
+@@ -1439,7 +1441,24 @@ int main(int ac, char **av)
+ 			case 'O': {
+ 				char *orig = strdup(optarg);
+ 				char *tmp = orig;
+-
++				char *tok;
 +
-+int btrfs_features_allowed_by_version(char *version, u64 *features)
-+{
-+	int i;
-+	int code;
-+	char *ver = strdup(version);
-+
-+	*features = 0;
-+	code = version_to_code(ver);
-+	free(ver);
-+	if (code < 0)
-+		return code;
-+
-+	for (i = 0; i < ARRAY_SIZE(mkfs_features) - 1; i++) {
-+		ver = strdup(mkfs_features[i].min_ker_ver);
-+
-+		if (code >= version_to_code(ver))
-+			*features |= mkfs_features[i].flag;
-+
-+		free(ver);
-+	}
-+	return 0;
-+}
-diff --git a/utils.h b/utils.h
-index cb20d73..1418e84 100644
---- a/utils.h
-+++ b/utils.h
-@@ -106,6 +106,7 @@ void btrfs_process_fs_features(u64 flags);
- void btrfs_parse_features_to_string(char *buf, u64 flags);
- u64 btrfs_features_allowed_by_kernel(void);
- int btrfs_features_allowed_by_sysfs(u64 *features);
-+int btrfs_features_allowed_by_version(char *version, u64 *features);
- 
- struct btrfs_mkfs_config {
- 	char *label;
++				tok = strtok(tmp, "=");
++				if (!strcmp(tok, "comp")) {
++					tok = strtok(NULL, "=");
++					if (!tok) {
++						fprintf(stderr,
++				"Provide a version for 'comp=' option, ref to 'mkfs.btrfs -O list-all'\n");
++						exit(1);
++					}
++					if (btrfs_features_allowed_by_version(tok, &features) < 0) {
++						fprintf(stderr, "Wrong version format: '%s'\n", tok);
++						exit(1);
++					}
++					features &= BTRFS_MKFS_DEFAULT_FEATURES;
++					goto cont;
++				}
++				tmp = orig;
+ 				tmp = btrfs_parse_fs_features(tmp, &features);
+ 				if (tmp) {
+ 					fprintf(stderr,
+@@ -1448,6 +1467,7 @@ int main(int ac, char **av)
+ 					free(orig);
+ 					exit(1);
+ 				}
++cont:
+ 				free(orig);
+ 				if (features & BTRFS_FEATURE_LIST_ALL) {
+ 					btrfs_list_all_fs_features(0);
 -- 
 2.6.2
 

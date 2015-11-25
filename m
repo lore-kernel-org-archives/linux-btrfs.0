@@ -1,41 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:59924 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751969AbbKMI62 (ORCPT
+Received: from e23smtp01.au.ibm.com ([202.81.31.143]:49763 "EHLO
+	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752121AbbKYLEj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 03:58:28 -0500
-Date: Fri, 13 Nov 2015 00:58:22 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: Peng Tao <tao.peng@primarydata.com>
-Cc: linux-fsdevel@vger.kernel.org,
-        Trond Myklebust <trond.myklebust@primarydata.com>,
-        Anna Schumaker <anna.schumaker@netapp.com>,
-        Christoph Hellwig <hch@infradead.org>, Zach Brown <zab@zabbo.net>,
-        Darren Hart <dvhart@linux.intel.com>,
-        Jeff Layton <jeff.layton@primarydata.com>, bfields@fieldses.org,
-        "Darrick J. Wong" <darrick.wong@oracle.com>, viro@zeniv.linux.org.uk,
-        linux-nfs@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org,
-        Steve French <steve.french@primarydata.com>
-Subject: Re: [PATCH 1/9] vfs: add COPY_FILE_CLONE_ONLY flag
-Message-ID: <20151113085822.GA2272@infradead.org>
-References: <1445728636-10109-1-git-send-email-tao.peng@primarydata.com>
- <1445728636-10109-2-git-send-email-tao.peng@primarydata.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1445728636-10109-2-git-send-email-tao.peng@primarydata.com>
+	Wed, 25 Nov 2015 06:04:39 -0500
+Received: from localhost
+	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Wed, 25 Nov 2015 21:04:37 +1000
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: fstests@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
+        fdmanana@gmail.com, chandan@mykolab.com
+Subject: [PATCH 01/12] Filter xfs_io and od's output in units of FS block size and the CPU's page size
+Date: Wed, 25 Nov 2015 16:32:55 +0530
+Message-Id: <1448449386-4186-2-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1448449386-4186-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1448449386-4186-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Oct 25, 2015 at 07:17:08AM +0800, Peng Tao wrote:
-> To tell file system not to return partial success in the
-> .copy_file_range method. This is useful to implement the
-> clone (or reflink) functionality.
+The helpers will be used to make btrfs tests that assume 4k as the block size
+to work on non-4k blocksized filesystem instances as well.
 
-The return value is only part of it, the other part is to
-make it atomic.  Thus I don't think overloading copy_file_range
-is a good idea - we should have a seaprate .clone_file_range that
-is called by the btrfs ioctls moved to the core, and have
-vfs_copy_file_range use .clone_file_range if that exists, and
-if none of the potentially conflicting future flags like
-COPY_FALLOC are present.
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ common/filter | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
+ common/rc     |  5 +++++
+ 2 files changed, 57 insertions(+)
+
+diff --git a/common/filter b/common/filter
+index af456c9..faa6f82 100644
+--- a/common/filter
++++ b/common/filter
+@@ -229,6 +229,45 @@ _filter_xfs_io_unique()
+     common_line_filter | _filter_xfs_io
+ }
+ 
++_filter_xfs_io_units_modified()
++{
++	UNIT=$1
++	UNIT_SIZE=$2
++
++	$AWK_PROG -v unit="$UNIT" -v unit_size=$UNIT_SIZE '
++		/wrote/ {
++			split($2, bytes, "/")
++
++			bytes_written = strtonum(bytes[1])
++
++			offset = strtonum($NF)
++
++			unit_start = offset / unit_size
++			unit_start = int(unit_start)
++			unit_end = (offset + bytes_written - 1) / unit_size
++			unit_end = int(unit_end)
++
++			printf("%ss modified: [%d - %d]\n", unit, unit_start, unit_end)
++
++			next
++		}
++	'
++}
++
++_filter_xfs_io_blocks_modified()
++{
++	BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
++
++	_filter_xfs_io_units_modified "Block" $BLOCK_SIZE
++}
++
++_filter_xfs_io_pages_modified()
++{
++	PAGE_SIZE=$(get_page_size)
++
++	_filter_xfs_io_units_modified "Page" $PAGE_SIZE
++}
++
+ _filter_test_dir()
+ {
+ 	sed -e "s,$TEST_DEV,TEST_DEV,g" -e "s,$TEST_DIR,TEST_DIR,g"
+@@ -323,5 +362,18 @@ _filter_ro_mount() {
+ 	    -e "s/mount: cannot mount block device/mount: cannot mount/g"
+ }
+ 
++_filter_od()
++{
++	BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
++	$AWK_PROG -v block_size=$BLOCK_SIZE '
++		/^[0-9]+/ {
++			offset = strtonum("0"$1);
++			$1 = sprintf("%o", offset / block_size);
++			print $0;
++		}
++		/\*/
++	'
++}
++
+ # make sure this script returns success
+ /bin/true
+diff --git a/common/rc b/common/rc
+index 4c2f42c..acda6cb 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3151,6 +3151,11 @@ get_block_size()
+ 	echo `stat -f -c %S $1`
+ }
+ 
++get_page_size()
++{
++	echo $(getconf PAGE_SIZE)
++}
++
+ init_rc
+ 
+ ################################################################################
+-- 
+2.1.0
+

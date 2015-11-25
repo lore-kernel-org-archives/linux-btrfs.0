@@ -1,65 +1,203 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:54900 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:44189 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751674AbbKYP0f (ORCPT
+	with ESMTP id S1751320AbbKYPfk convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 10:26:35 -0500
+	Wed, 25 Nov 2015 10:35:40 -0500
+Received: from merkaba.localnet (unknown [91.221.105.244])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 9F7AE194
+	for <linux-btrfs@vger.kernel.org>; Wed, 25 Nov 2015 16:35:39 +0100 (CET)
 From: Martin Steigerwald <martin@lichtvoll.de>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: Eric Sandeen <sandeen@redhat.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Subject: Re: shall distros run btrfsck on boot?
-Date: Wed, 25 Nov 2015 16:26:33 +0100
-Message-ID: <1946208.UO3P0Uc3S9@merkaba>
-In-Reply-To: <5655AA62.2070901@gmail.com>
-References: <1448337754.14125.33.camel@scientia.net> <5654E427.6060708@redhat.com> <5655AA62.2070901@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: [4.3-rc4] scrubbing aborts before finishing
+Date: Wed, 25 Nov 2015 16:35:39 +0100
+Message-ID: <4738187.k1WenrURk2@merkaba>
+In-Reply-To: <1475910.a5YfPuWqAN@merkaba>
+References: <16063727.bYixifcRQC@merkaba> <1475910.a5YfPuWqAN@merkaba>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Mittwoch, 25. November 2015, 07:32:34 CET schrieb Austin S Hemmelgarn:
-> On 2015-11-24 17:26, Eric Sandeen wrote:
-> > On 11/24/15 2:38 PM, Austin S Hemmelgarn wrote:
-> >> if the system was
-> >> shut down cleanly, you're fine barring software bugs, but if it
-> >> crashed, you should be running a check on the FS.
+Am Samstag, 31. Oktober 2015, 12:10:37 CET schrieb Martin Steigerwald:
+> Am Donnerstag, 22. Oktober 2015, 10:41:15 CET schrieb Martin Steigerwald:
+> > I get this:
 > > 
-> > Um, no...
+> > merkaba:~> btrfs scrub status -d /
+> > scrub status for […]
+> > scrub device /dev/mapper/sata-debian (id 1) history
 > > 
-> > The *entire point* of having a journaling filesystem is that after a
-> > crash or power loss, a journal replay on next mount will bring the
-> > metadata into a consistent state.
+> >         scrub started at Thu Oct 22 10:05:49 2015 and was aborted after
+> >         00:00:00
+> >         total bytes scrubbed: 0.00B with 0 errors
+> > 
+> > scrub device /dev/dm-2 (id 2) history
+> > 
+> >         scrub started at Thu Oct 22 10:05:49 2015 and was aborted after
+> >         00:01:30
+> >         total bytes scrubbed: 23.81GiB with 0 errors
+> > 
+> > For / scrub aborts for sata SSD immediately.
+> > 
+> > For /home scrub aborts for both SSDs at some time.
+> > 
+> > merkaba:~> btrfs scrub status -d /home
+> > scrub status for […]
+> > scrub device /dev/mapper/msata-home (id 1) history
+> > 
+> >         scrub started at Thu Oct 22 10:09:37 2015 and was aborted after
+> >         00:01:31
+> >         total bytes scrubbed: 22.03GiB with 0 errors
+> > 
+> > scrub device /dev/dm-3 (id 2) history
+> > 
+> >         scrub started at Thu Oct 22 10:09:37 2015 and was aborted after
+> >         00:03:34
+> >         total bytes scrubbed: 53.30GiB with 0 errors
+> > 
+> > Also single volume BTRFS is affected:
+> > 
+> > merkaba:~> btrfs scrub status /daten
+> > scrub status for […]
+> > 
+> >         scrub started at Thu Oct 22 10:36:38 2015 and was aborted after
+> >         00:00:00
+> >         total bytes scrubbed: 0.00B with 0 errors
+> > 
+> > No errors in dmesg, btrfs device stat or smartctl -a.
+> > 
+> > Any known issue?
 > 
-> OK, first, that was in reference to BTRFS, not ext4, and BTRFS is a COW
-> filesystem, not a journaling one, which is an important distinction as
-> mentioned by Hugo in his reply.  Second, there are two reasons that you
-> should be running a check even of a journaled filesystem when the system
-> crashes (this also applies to COW filesystems, and anything else that
-> relies on atomicity of write operations for consistency):
+> I am still seeing this in 4.3-rc7. It happens so that on one SSD BTRFS
+> doesn´t even start scrubbing. But in the end it aborts it scrubbing anyway.
 > 
-> 1. Disks don't atomically write anything bigger than a sector, and may
-> not even atomically write the sector itself.  This means that it's
-> possible to get a partial write to the journal, which in turn has
-> significant potential to put the metadata in an inconsistent state when
-> the journal gets replayed (IIRC, ext4 has a journal_checksum mount
-> option that is supposed to mitigate this possibility).  This sounds like
-> something that shouldn't happen all that often, but on a busy
-> filesystem, the probability is exactly proportionate to the size of the
-> journal relative to the size of the FS.
+> I do not see any other issue so far. But I would really like to be able to
+> scrub my BTRFS filesystems completely again. Any hints? Any further
+> information needed?
 > 
-> 2. If the system crashed, all code running on it immediately before the
-> crash is instantly suspect, and you have no way to know for certain that
-> something didn't cause random garbage to be written to the disk.  On top
-> of this, hardware is potentially suspect, and when your hardware is
-> misbehaving, then all bets as to consistency are immediately off.
+> merkaba:~> btrfs scrub status -d /
+> scrub status for […]
+> scrub device /dev/dm-5 (id 1) history
+>         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
+>         total bytes scrubbed: 0.00B with 0 errors
+> scrub device /dev/mapper/msata-debian (id 2) status
+>         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:20
+>         total bytes scrubbed: 5.27GiB with 0 errors
+> merkaba:~> btrfs scrub status -d /
+> scrub status for […]
+> scrub device /dev/dm-5 (id 1) history
+>         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
+>         total bytes scrubbed: 0.00B with 0 errors
+> scrub device /dev/mapper/msata-debian (id 2) status
+>         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:25
+>         total bytes scrubbed: 6.59GiB with 0 errors
+> merkaba:~> btrfs scrub status -d /
+> scrub status for […]
+> scrub device /dev/dm-5 (id 1) history
+>         scrub started at Sat Oct 31 11:58:45 2015, running for 00:00:00
+>         total bytes scrubbed: 0.00B with 0 errors
+> scrub device /dev/mapper/msata-debian (id 2) status
+>         scrub started at Sat Oct 31 11:58:45 2015, running for 00:01:25
+>         total bytes scrubbed: 21.97GiB with 0 errors
+> merkaba:~> btrfs scrub status -d /
+> scrub status for […]
+> scrub device /dev/dm-5 (id 1) history
+>         scrub started at Sat Oct 31 11:58:45 2015 and was aborted after
+> 00:00:00 total bytes scrubbed: 0.00B with 0 errors
+> scrub device /dev/mapper/msata-debian (id 2) history
+>         scrub started at Sat Oct 31 11:58:45 2015 and was aborted after
+> 00:01:32 total bytes scrubbed: 23.63GiB with 0 errors
+> 
+> 
+> For the sake of it I am going to btrfs check one of the filesystem where
+> BTRFS aborts scrubbing (which is all of the laptop filesystems, not only
+> the RAID 1 one).
+> 
+> I will use the /daten filesystem as I can unmount it during laptop runtime
+> easily. There scrubbing aborts immediately:
+> 
+> merkaba:~> btrfs scrub start /daten
+> scrub started on /daten, fsid […] (pid=13861)
+> merkaba:~> btrfs scrub status /daten
+> scrub status for […]
+>         scrub started at Sat Oct 31 12:04:25 2015 and was aborted after
+> 00:00:00 total bytes scrubbed: 0.00B with 0 errors
+> 
+> It is single device:
+> 
+> merkaba:~> btrfs fi sh /daten
+> Label: 'daten'  uuid: […]
+>         Total devices 1 FS bytes used 227.23GiB
+>         devid    1 size 230.00GiB used 230.00GiB path
+> /dev/mapper/msata-daten
+> 
+> btrfs-progs v4.2.2
+> merkaba:~> btrfs fi df /daten
+> Data, single: total=228.99GiB, used=226.79GiB
+> System, single: total=4.00MiB, used=48.00KiB
+> Metadata, single: total=1.01GiB, used=449.50MiB
+> GlobalReserve, single: total=160.00MiB, used=0.00B
+> 
+> 
+> I do not see any output in btrfs check that points to any issue:
+> 
+> merkaba:~> btrfs check /dev/msata/daten
+> Checking filesystem on /dev/msata/daten
+> UUID: 7918274f-e2ec-4983-bbb0-aa93ef95fcf7
+> checking extents
+> checking free space cache
+> checking fs roots
+> checking csums
+> checking root refs
+> found 243936530607 bytes used err is 0
+> total csum bytes: 237758932
+> total tree bytes: 471384064
+> total fs tree bytes: 116473856
+> total extent tree bytes: 78544896
+> btree space waste bytes: 57523323
+> file data blocks allocated: 422700576768
+>  referenced 243803443200
+> btrfs-progs v4.2.2
 
-In the case of shaky hardware a fsck run can report bogus data, i.e. problems 
-where they are none or vice versa. If I suspect defect memory or controller I 
-would check the device on different hardware only. Especially on attempts to 
-repair any possible issues.
+Even with 4.4-rc2 this issue still happens:
+
+merkaba:~> btrfs scrub status -d /
+scrub status for […]
+scrub device /dev/mapper/sata-debian (id 1) history
+        scrub started at Wed Nov 25 16:28:33 2015, running for 00:00:00
+        total bytes scrubbed: 0.00B with 0 errors
+scrub device /dev/dm-2 (id 2) status
+        scrub started at Wed Nov 25 16:28:33 2015, running for 00:00:55
+        total bytes scrubbed: 14.24GiB with 0 errors
+
+merkaba:~> btrfs scrub status -d /
+scrub status for […]
+scrub device /dev/mapper/sata-debian (id 1) history
+        scrub started at Wed Nov 25 16:28:33 2015 and was aborted after 
+00:00:00
+        total bytes scrubbed: 0.00B with 0 errors
+scrub device /dev/dm-2 (id 2) history
+        scrub started at Wed Nov 25 16:28:33 2015 and was aborted after 
+00:01:33
+        total bytes scrubbed: 23.71GiB with 0 errors
+
+merkaba:~> cat /proc/version
+Linux version 4.4.0-rc2-tp520+ (martin@merkaba) (gcc version 5.2.1 20151121 
+(Debian 5.2.1-24) ) #45 SMP PREEMPT Mon Nov 23 17:10:16 CET 2015
+
+This time I also removed all files in /var/lib/btrfs to avoid any possible 
+issues with saved BTRFS status reports. (Yeah, I think it would have been 
+enough to just delete the one for the filesystem with that UUID.)
+
+As written this bug also happens with a single device BTRFS.
 
 
+I´d report a bug report, in case anyone would be interested. But if the 
+interest it like in this mailinglist post I can spare myself the time for 
+reporting via bugzilla.
+
+So does anyone at all care about this issue?
+
+Thanks,
 -- 
 Martin

@@ -1,232 +1,287 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:40811 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:40743 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753408AbbKZSzw (ORCPT
+	with ESMTP id S1751481AbbKZSzi (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Nov 2015 13:55:52 -0500
+	Thu, 26 Nov 2015 13:55:38 -0500
 From: Christoph Hellwig <hch@lst.de>
 To: viro@zeniv.linux.org.uk
 Cc: tao.peng@primarydata.com, jeff.layton@primarydata.com,
         linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         linux-nfs@vger.kernel.org, linux-cifs@vger.kernel.org
-Subject: [PATCH 5/5] nfsd: implement the NFSv4.2 CLONE operation
-Date: Thu, 26 Nov 2015 19:50:59 +0100
-Message-Id: <1448563859-21922-6-git-send-email-hch@lst.de>
+Subject: [PATCH 1/5] cifs: implement clone_file_range operation
+Date: Thu, 26 Nov 2015 19:50:55 +0100
+Message-Id: <1448563859-21922-2-git-send-email-hch@lst.de>
 In-Reply-To: <1448563859-21922-1-git-send-email-hch@lst.de>
 References: <1448563859-21922-1-git-send-email-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is basically a remote version of the btrfs CLONE operation,
-so the implementation is fairly trivial.  Made even more trivial
-by stealing the XDR code and general framework Anna Schumaker's
-COPY prototype.
+And drop the fake support for the btrfs CLONE ioctl - SMB2 copies are
+chunked and do not actually implement clone semantics!
+
+Heavily based on a previous patch from Peng Tao.
 
 Signed-off-by: Christoph Hellwig <hch@lst.de>
 ---
- fs/nfsd/nfs4proc.c   | 47 +++++++++++++++++++++++++++++++++++++++++++++++
- fs/nfsd/nfs4xdr.c    | 21 +++++++++++++++++++++
- fs/nfsd/vfs.c        |  8 ++++++++
- fs/nfsd/vfs.h        |  2 ++
- fs/nfsd/xdr4.h       | 10 ++++++++++
- include/linux/nfs4.h |  4 ++--
- 6 files changed, 90 insertions(+), 2 deletions(-)
+ fs/cifs/cifsfs.c |  25 ++++++++++++++
+ fs/cifs/cifsfs.h |   4 ++-
+ fs/cifs/ioctl.c  | 103 +++++++++++++++++++++++++++++++------------------------
+ 3 files changed, 86 insertions(+), 46 deletions(-)
 
-diff --git a/fs/nfsd/nfs4proc.c b/fs/nfsd/nfs4proc.c
-index 3ba10a3..819ad81 100644
---- a/fs/nfsd/nfs4proc.c
-+++ b/fs/nfsd/nfs4proc.c
-@@ -1012,6 +1012,47 @@ nfsd4_write(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
- }
- 
- static __be32
-+nfsd4_clone(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
-+		struct nfsd4_clone *clone)
-+{
-+	struct file *src, *dst;
-+	__be32 status;
-+
-+	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->save_fh,
-+					    &clone->cl_src_stateid, RD_STATE,
-+					    &src, NULL);
-+	if (status) {
-+		dprintk("NFSD: %s: couldn't process src stateid!\n", __func__);
-+		goto out;
-+	}
-+
-+	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
-+					    &clone->cl_dst_stateid, WR_STATE,
-+					    &dst, NULL);
-+	if (status) {
-+		dprintk("NFSD: %s: couldn't process dst stateid!\n", __func__);
-+		goto out_put_src;
-+	}
-+
-+	/* fix up for NFS-specific error code */
-+	if (!S_ISREG(file_inode(src)->i_mode) ||
-+	    !S_ISREG(file_inode(dst)->i_mode)) {
-+		status = nfserr_wrong_type;
-+		goto out_put_dst;
-+	}
-+
-+	status = nfsd4_clone_file_range(src, clone->cl_src_pos,
-+			dst, clone->cl_dst_pos, clone->cl_count);
-+
-+out_put_dst:
-+	fput(dst);
-+out_put_src:
-+	fput(src);
-+out:
-+	return status;
-+}
-+
-+static __be32
- nfsd4_fallocate(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
- 		struct nfsd4_fallocate *fallocate, int flags)
- {
-@@ -2281,6 +2322,12 @@ static struct nfsd4_operation nfsd4_ops[] = {
- 		.op_name = "OP_DEALLOCATE",
- 		.op_rsize_bop = (nfsd4op_rsize)nfsd4_only_status_rsize,
- 	},
-+	[OP_CLONE] = {
-+		.op_func = (nfsd4op_func)nfsd4_clone,
-+		.op_flags = OP_MODIFIES_SOMETHING | OP_CACHEME,
-+		.op_name = "OP_CLONE",
-+		.op_rsize_bop = (nfsd4op_rsize)nfsd4_only_status_rsize,
-+	},
- 	[OP_SEEK] = {
- 		.op_func = (nfsd4op_func)nfsd4_seek,
- 		.op_name = "OP_SEEK",
-diff --git a/fs/nfsd/nfs4xdr.c b/fs/nfsd/nfs4xdr.c
-index 51c9e9c..924416f 100644
---- a/fs/nfsd/nfs4xdr.c
-+++ b/fs/nfsd/nfs4xdr.c
-@@ -1675,6 +1675,25 @@ nfsd4_decode_fallocate(struct nfsd4_compoundargs *argp,
- }
- 
- static __be32
-+nfsd4_decode_clone(struct nfsd4_compoundargs *argp, struct nfsd4_clone *clone)
-+{
-+	DECODE_HEAD;
-+
-+	status = nfsd4_decode_stateid(argp, &clone->cl_src_stateid);
-+	if (status)
-+		return status;
-+	status = nfsd4_decode_stateid(argp, &clone->cl_dst_stateid);
-+	if (status)
-+		return status;
-+
-+	READ_BUF(8 + 8 + 8);
-+	p = xdr_decode_hyper(p, &clone->cl_src_pos);
-+	p = xdr_decode_hyper(p, &clone->cl_dst_pos);
-+	p = xdr_decode_hyper(p, &clone->cl_count);
-+	DECODE_TAIL;
-+}
-+
-+static __be32
- nfsd4_decode_seek(struct nfsd4_compoundargs *argp, struct nfsd4_seek *seek)
- {
- 	DECODE_HEAD;
-@@ -1785,6 +1804,7 @@ static nfsd4_dec nfsd4_dec_ops[] = {
- 	[OP_READ_PLUS]		= (nfsd4_dec)nfsd4_decode_notsupp,
- 	[OP_SEEK]		= (nfsd4_dec)nfsd4_decode_seek,
- 	[OP_WRITE_SAME]		= (nfsd4_dec)nfsd4_decode_notsupp,
-+	[OP_CLONE]		= (nfsd4_dec)nfsd4_decode_clone,
- };
- 
- static inline bool
-@@ -4292,6 +4312,7 @@ static nfsd4_enc nfsd4_enc_ops[] = {
- 	[OP_READ_PLUS]		= (nfsd4_enc)nfsd4_encode_noop,
- 	[OP_SEEK]		= (nfsd4_enc)nfsd4_encode_seek,
- 	[OP_WRITE_SAME]		= (nfsd4_enc)nfsd4_encode_noop,
-+	[OP_CLONE]		= (nfsd4_enc)nfsd4_encode_noop,
- };
- 
- /*
-diff --git a/fs/nfsd/vfs.c b/fs/nfsd/vfs.c
-index 994d66f..5411bf0 100644
---- a/fs/nfsd/vfs.c
-+++ b/fs/nfsd/vfs.c
-@@ -36,6 +36,7 @@
- #endif /* CONFIG_NFSD_V3 */
- 
- #ifdef CONFIG_NFSD_V4
-+#include "../internal.h"
- #include "acl.h"
- #include "idmap.h"
- #endif /* CONFIG_NFSD_V4 */
-@@ -498,6 +499,13 @@ __be32 nfsd4_set_nfs4_label(struct svc_rqst *rqstp, struct svc_fh *fhp,
- }
+diff --git a/fs/cifs/cifsfs.c b/fs/cifs/cifsfs.c
+index cbc0f4b..ad7117a 100644
+--- a/fs/cifs/cifsfs.c
++++ b/fs/cifs/cifsfs.c
+@@ -914,6 +914,23 @@ const struct inode_operations cifs_symlink_inode_ops = {
  #endif
- 
-+__be32 nfsd4_clone_file_range(struct file *src, u64 src_pos, struct file *dst,
-+		u64 dst_pos, u64 count)
-+{
-+	return nfserrno(vfs_clone_file_range(src, src_pos, dst, dst_pos,
-+			count));
-+}
-+
- __be32 nfsd4_vfs_fallocate(struct svc_rqst *rqstp, struct svc_fh *fhp,
- 			   struct file *file, loff_t offset, loff_t len,
- 			   int flags)
-diff --git a/fs/nfsd/vfs.h b/fs/nfsd/vfs.h
-index fcfc48c..c11ba31 100644
---- a/fs/nfsd/vfs.h
-+++ b/fs/nfsd/vfs.h
-@@ -56,6 +56,8 @@ __be32          nfsd4_set_nfs4_label(struct svc_rqst *, struct svc_fh *,
- 		    struct xdr_netobj *);
- __be32		nfsd4_vfs_fallocate(struct svc_rqst *, struct svc_fh *,
- 				    struct file *, loff_t, loff_t, int);
-+__be32		nfsd4_clone_file_range(struct file *, u64, struct file *,
-+			u64, u64);
- #endif /* CONFIG_NFSD_V4 */
- __be32		nfsd_create(struct svc_rqst *, struct svc_fh *,
- 				char *name, int len, struct iattr *attrs,
-diff --git a/fs/nfsd/xdr4.h b/fs/nfsd/xdr4.h
-index ce7362c..d955481 100644
---- a/fs/nfsd/xdr4.h
-+++ b/fs/nfsd/xdr4.h
-@@ -491,6 +491,15 @@ struct nfsd4_fallocate {
- 	u64		falloc_length;
  };
  
-+struct nfsd4_clone {
-+	/* request */
-+	stateid_t	cl_src_stateid;
-+	stateid_t	cl_dst_stateid;
-+	u64		cl_src_pos;
-+	u64		cl_dst_pos;
-+	u64		cl_count;
-+};
++ssize_t cifs_file_copy_range(struct file *file_in, loff_t pos_in,
++			     struct file *file_out, loff_t pos_out,
++			     size_t len, unsigned int flags)
++{
++	unsigned int xid;
++	int rc;
 +
- struct nfsd4_seek {
- 	/* request */
- 	stateid_t	seek_stateid;
-@@ -555,6 +564,7 @@ struct nfsd4_op {
- 		/* NFSv4.2 */
- 		struct nfsd4_fallocate		allocate;
- 		struct nfsd4_fallocate		deallocate;
-+		struct nfsd4_clone		clone;
- 		struct nfsd4_seek		seek;
- 	} u;
- 	struct nfs4_replay *			replay;
-diff --git a/include/linux/nfs4.h b/include/linux/nfs4.h
-index e7e7853..43aeabd 100644
---- a/include/linux/nfs4.h
-+++ b/include/linux/nfs4.h
-@@ -139,10 +139,10 @@ enum nfs_opnum4 {
- Needs to be updated if more operations are defined in future.*/
++	if (flags)
++		return -EOPNOTSUPP;
++
++	xid = get_xid();
++	rc = cifs_file_clone_range(xid, file_in, file_out, pos_in,
++				   len, pos_out, true);
++	free_xid(xid);
++	return rc < 0 ? rc : len;
++}
++
+ const struct file_operations cifs_file_ops = {
+ 	.read_iter = cifs_loose_read_iter,
+ 	.write_iter = cifs_file_write_iter,
+@@ -926,6 +943,7 @@ const struct file_operations cifs_file_ops = {
+ 	.splice_read = generic_file_splice_read,
+ 	.llseek = cifs_llseek,
+ 	.unlocked_ioctl	= cifs_ioctl,
++	.copy_file_range = cifs_file_copy_range,
+ 	.setlease = cifs_setlease,
+ 	.fallocate = cifs_fallocate,
+ };
+@@ -942,6 +960,8 @@ const struct file_operations cifs_file_strict_ops = {
+ 	.splice_read = generic_file_splice_read,
+ 	.llseek = cifs_llseek,
+ 	.unlocked_ioctl	= cifs_ioctl,
++	.copy_file_range = cifs_file_copy_range,
++	.copy_file_range = cifs_file_copy_range,
+ 	.setlease = cifs_setlease,
+ 	.fallocate = cifs_fallocate,
+ };
+@@ -958,6 +978,7 @@ const struct file_operations cifs_file_direct_ops = {
+ 	.mmap = cifs_file_mmap,
+ 	.splice_read = generic_file_splice_read,
+ 	.unlocked_ioctl  = cifs_ioctl,
++	.copy_file_range = cifs_file_copy_range,
+ 	.llseek = cifs_llseek,
+ 	.setlease = cifs_setlease,
+ 	.fallocate = cifs_fallocate,
+@@ -974,6 +995,7 @@ const struct file_operations cifs_file_nobrl_ops = {
+ 	.splice_read = generic_file_splice_read,
+ 	.llseek = cifs_llseek,
+ 	.unlocked_ioctl	= cifs_ioctl,
++	.copy_file_range = cifs_file_copy_range,
+ 	.setlease = cifs_setlease,
+ 	.fallocate = cifs_fallocate,
+ };
+@@ -989,6 +1011,7 @@ const struct file_operations cifs_file_strict_nobrl_ops = {
+ 	.splice_read = generic_file_splice_read,
+ 	.llseek = cifs_llseek,
+ 	.unlocked_ioctl	= cifs_ioctl,
++	.copy_file_range = cifs_file_copy_range,
+ 	.setlease = cifs_setlease,
+ 	.fallocate = cifs_fallocate,
+ };
+@@ -1004,6 +1027,7 @@ const struct file_operations cifs_file_direct_nobrl_ops = {
+ 	.mmap = cifs_file_mmap,
+ 	.splice_read = generic_file_splice_read,
+ 	.unlocked_ioctl  = cifs_ioctl,
++	.copy_file_range = cifs_file_copy_range,
+ 	.llseek = cifs_llseek,
+ 	.setlease = cifs_setlease,
+ 	.fallocate = cifs_fallocate,
+@@ -1014,6 +1038,7 @@ const struct file_operations cifs_dir_ops = {
+ 	.release = cifs_closedir,
+ 	.read    = generic_read_dir,
+ 	.unlocked_ioctl  = cifs_ioctl,
++	.copy_file_range = cifs_file_copy_range,
+ 	.llseek = generic_file_llseek,
+ };
  
- #define FIRST_NFS4_OP	OP_ACCESS
--#define LAST_NFS4_OP 	OP_WRITE_SAME
- #define LAST_NFS40_OP	OP_RELEASE_LOCKOWNER
- #define LAST_NFS41_OP	OP_RECLAIM_COMPLETE
--#define LAST_NFS42_OP	OP_WRITE_SAME
-+#define LAST_NFS42_OP	OP_CLONE
-+#define LAST_NFS4_OP	LAST_NFS42_OP
+diff --git a/fs/cifs/cifsfs.h b/fs/cifs/cifsfs.h
+index c3cc160..797439b 100644
+--- a/fs/cifs/cifsfs.h
++++ b/fs/cifs/cifsfs.h
+@@ -131,7 +131,9 @@ extern int	cifs_setxattr(struct dentry *, const char *, const void *,
+ extern ssize_t	cifs_getxattr(struct dentry *, const char *, void *, size_t);
+ extern ssize_t	cifs_listxattr(struct dentry *, char *, size_t);
+ extern long cifs_ioctl(struct file *filep, unsigned int cmd, unsigned long arg);
+-
++extern int cifs_file_clone_range(unsigned int xid, struct file *src_file,
++				 struct file *dst_file, u64 off, u64 len,
++				 u64 destoff, bool dup_extents);
+ #ifdef CONFIG_CIFS_NFSD_EXPORT
+ extern const struct export_operations cifs_export_ops;
+ #endif /* CONFIG_CIFS_NFSD_EXPORT */
+diff --git a/fs/cifs/ioctl.c b/fs/cifs/ioctl.c
+index 35cf990..4f92f5c 100644
+--- a/fs/cifs/ioctl.c
++++ b/fs/cifs/ioctl.c
+@@ -34,73 +34,43 @@
+ #include "cifs_ioctl.h"
+ #include <linux/btrfs.h>
  
- enum nfsstat4 {
- 	NFS4_OK = 0,
+-static long cifs_ioctl_clone(unsigned int xid, struct file *dst_file,
+-			unsigned long srcfd, u64 off, u64 len, u64 destoff,
+-			bool dup_extents)
++int cifs_file_clone_range(unsigned int xid, struct file *src_file,
++			  struct file *dst_file, u64 off, u64 len,
++			  u64 destoff, bool dup_extents)
+ {
+-	int rc;
+-	struct cifsFileInfo *smb_file_target = dst_file->private_data;
++	struct inode *src_inode = file_inode(src_file);
+ 	struct inode *target_inode = file_inode(dst_file);
+-	struct cifs_tcon *target_tcon;
+-	struct fd src_file;
+ 	struct cifsFileInfo *smb_file_src;
+-	struct inode *src_inode;
++	struct cifsFileInfo *smb_file_target;
+ 	struct cifs_tcon *src_tcon;
++	struct cifs_tcon *target_tcon;
++	int rc;
+ 
+ 	cifs_dbg(FYI, "ioctl clone range\n");
+-	/* the destination must be opened for writing */
+-	if (!(dst_file->f_mode & FMODE_WRITE)) {
+-		cifs_dbg(FYI, "file target not open for write\n");
+-		return -EINVAL;
+-	}
+ 
+-	/* check if target volume is readonly and take reference */
+-	rc = mnt_want_write_file(dst_file);
+-	if (rc) {
+-		cifs_dbg(FYI, "mnt_want_write failed with rc %d\n", rc);
+-		return rc;
+-	}
+-
+-	src_file = fdget(srcfd);
+-	if (!src_file.file) {
+-		rc = -EBADF;
+-		goto out_drop_write;
+-	}
+-
+-	if (src_file.file->f_op->unlocked_ioctl != cifs_ioctl) {
+-		rc = -EBADF;
+-		cifs_dbg(VFS, "src file seems to be from a different filesystem type\n");
+-		goto out_fput;
+-	}
+-
+-	if ((!src_file.file->private_data) || (!dst_file->private_data)) {
++	if (!src_file->private_data || !dst_file->private_data) {
+ 		rc = -EBADF;
+ 		cifs_dbg(VFS, "missing cifsFileInfo on copy range src file\n");
+-		goto out_fput;
++		goto out;
+ 	}
+ 
+ 	rc = -EXDEV;
+ 	smb_file_target = dst_file->private_data;
+-	smb_file_src = src_file.file->private_data;
++	smb_file_src = src_file->private_data;
+ 	src_tcon = tlink_tcon(smb_file_src->tlink);
+ 	target_tcon = tlink_tcon(smb_file_target->tlink);
+ 
+ 	/* check source and target on same server (or volume if dup_extents) */
+ 	if (dup_extents && (src_tcon != target_tcon)) {
+ 		cifs_dbg(VFS, "source and target of copy not on same share\n");
+-		goto out_fput;
++		goto out;
+ 	}
+ 
+ 	if (!dup_extents && (src_tcon->ses != target_tcon->ses)) {
+ 		cifs_dbg(VFS, "source and target of copy not on same server\n");
+-		goto out_fput;
++		goto out;
+ 	}
+ 
+-	src_inode = file_inode(src_file.file);
+-	rc = -EINVAL;
+-	if (S_ISDIR(src_inode->i_mode))
+-		goto out_fput;
+-
+ 	/*
+ 	 * Note: cifs case is easier than btrfs since server responsible for
+ 	 * checks for proper open modes and file type and if it wants
+@@ -136,6 +106,52 @@ out_unlock:
+ 	/* although unlocking in the reverse order from locking is not
+ 	   strictly necessary here it is a little cleaner to be consistent */
+ 	unlock_two_nondirectories(src_inode, target_inode);
++out:
++	return rc;
++}
++
++static long cifs_ioctl_clone(unsigned int xid, struct file *dst_file,
++			unsigned long srcfd, u64 off, u64 len, u64 destoff,
++			bool dup_extents)
++{
++	int rc;
++	struct fd src_file;
++	struct inode *src_inode;
++
++	cifs_dbg(FYI, "ioctl clone range\n");
++	/* the destination must be opened for writing */
++	if (!(dst_file->f_mode & FMODE_WRITE)) {
++		cifs_dbg(FYI, "file target not open for write\n");
++		return -EINVAL;
++	}
++
++	/* check if target volume is readonly and take reference */
++	rc = mnt_want_write_file(dst_file);
++	if (rc) {
++		cifs_dbg(FYI, "mnt_want_write failed with rc %d\n", rc);
++		return rc;
++	}
++
++	src_file = fdget(srcfd);
++	if (!src_file.file) {
++		rc = -EBADF;
++		goto out_drop_write;
++	}
++
++	if (src_file.file->f_op->unlocked_ioctl != cifs_ioctl) {
++		rc = -EBADF;
++		cifs_dbg(VFS, "src file seems to be from a different filesystem type\n");
++		goto out_fput;
++	}
++
++	src_inode = file_inode(src_file.file);
++	rc = -EINVAL;
++	if (S_ISDIR(src_inode->i_mode))
++		goto out_fput;
++
++	rc = cifs_file_clone_range(xid, src_file.file, dst_file, off, len,
++				   destoff, dup_extents);
++
+ out_fput:
+ 	fdput(src_file);
+ out_drop_write:
+@@ -258,9 +274,6 @@ long cifs_ioctl(struct file *filep, unsigned int command, unsigned long arg)
+ 		case CIFS_IOC_COPYCHUNK_FILE:
+ 			rc = cifs_ioctl_clone(xid, filep, arg, 0, 0, 0, false);
+ 			break;
+-		case BTRFS_IOC_CLONE:
+-			rc = cifs_ioctl_clone(xid, filep, arg, 0, 0, 0, true);
+-			break;
+ 		case CIFS_IOC_SET_INTEGRITY:
+ 			if (pSMBFile == NULL)
+ 				break;
 -- 
 1.9.1
 

@@ -1,86 +1,30 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55700 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751123AbbKCJ24 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 3 Nov 2015 04:28:56 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1ZtXtd-0007Ol-Th
-	for linux-btrfs@vger.kernel.org; Tue, 03 Nov 2015 10:28:53 +0100
-Received: from host-78-149-214-107.as13285.net ([78.149.214.107])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2015 10:28:53 +0100
-Received: from samtygier by host-78-149-214-107.as13285.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 03 Nov 2015 10:28:53 +0100
-To: linux-btrfs@vger.kernel.org
-From: sam tygier <samtygier@yahoo.co.uk>
-Subject: [PATCH v2] Btrfs: Check metadata redundancy on balance
-Date: Tue, 03 Nov 2015 09:28:39 +0000
-Message-ID: <n19uo7$gji$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from bombadil.infradead.org ([198.137.202.9]:40733 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751481AbbKZSzg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Nov 2015 13:55:36 -0500
+From: Christoph Hellwig <hch@lst.de>
+To: viro@zeniv.linux.org.uk
+Cc: tao.peng@primarydata.com, jeff.layton@primarydata.com,
+        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        linux-nfs@vger.kernel.org, linux-cifs@vger.kernel.org
+Subject: vfs: move btrfs clone ioctls to common code
+Date: Thu, 26 Nov 2015 19:50:54 +0100
+Message-Id: <1448563859-21922-1-git-send-email-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Resending as previous comments did not need any changes.
+This patch set moves the existing btrfs clone ioctls that other file
+system have started to implement to common code, and allows the NFS
+server to export this functionality to remote systems.
 
-Currently BTRFS allows you to make bad choices of data and 
-metadata levels. For example -d raid1 -m raid0 means you can
-only use half your total disk space, but will loose everything
-if 1 disk fails. It should give a warning in these cases.
+This work is based originally on my NFS CLONE prototype, which reused
+code from Anna Schumaker's NFS COPY prototype, as well as various
+updates from Peng Tao to this code.
 
-This patch is a follow up to
-[PATCH v2] btrfs-progs: check metadata redundancy
-in order to cover the case of using balance to convert to such
-a set of raid levels.
+The patches are also available as a git branch and on gitweb:
 
-A simple example to hit this is to create a single device fs, 
-which will default to single:dup, then to add a second device and
-attempt to convert to raid1 with the command
-btrfs balance start -dconvert=raid1  /mnt
-this will result in a filesystem with raid1:dup, which will not
-survive the loss of one drive. I personally don't see why the tools
-should allow this, but in the previous thread a warning was
-considered sufficient.
-
-Changes in v2
-Use btrfs_get_num_tolerated_disk_barrier_failures()
-
-Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
-
-From: Sam Tygier <samtygier@yahoo.co.uk>
-Date: Sat, 3 Oct 2015 16:43:48 +0100
-Subject: [PATCH] Btrfs: Check metadata redundancy on balance
-
-When converting a filesystem via balance check that metadata mode
-is at least as redundant as the data mode. For example give warning
-when:
--dconvert=raid1 -mconvert=single
----
- fs/btrfs/volumes.c | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc73586..40247e9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3584,6 +3584,12 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		}
- 	} while (read_seqretry(&fs_info->profiles_lock, seq));
- 
-+	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
-+		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
-+		btrfs_info(fs_info,
-+			"Warning: metatdata has lower redundancy than data\n");
-+	}
-+
- 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
- 		fs_info->num_tolerated_disk_barrier_failures = min(
- 			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
--- 
-2.4.3
-
-
+	git://git.infradead.org/users/hch/pnfs.git clone-for-viro
+	http://git.infradead.org/users/hch/pnfs.git/shortlog/refs/heads/clone-for-viro
 

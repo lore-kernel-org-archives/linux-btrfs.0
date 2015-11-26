@@ -1,51 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:35538 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:36443 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751474AbbKZQkN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Nov 2015 11:40:13 -0500
+	id S1752056AbbKZQww (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Nov 2015 11:52:52 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a1zaT-0006gR-JF
-	for linux-btrfs@vger.kernel.org; Thu, 26 Nov 2015 17:40:01 +0100
+	id 1a1zmp-0005kq-Os
+	for linux-btrfs@vger.kernel.org; Thu, 26 Nov 2015 17:52:47 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2015 17:40:01 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2015 17:52:47 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2015 17:40:01 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2015 17:52:47 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [4.3-rc4] scrubbing aborts before finishing
-Date: Thu, 26 Nov 2015 16:39:56 +0000 (UTC)
-Message-ID: <pan$ecfab$57cc777c$ca4a8e04$f7991114@cox.net>
-References: <16063727.bYixifcRQC@merkaba> <1475910.a5YfPuWqAN@merkaba>
-	<4738187.k1WenrURk2@merkaba>
+Subject: Re: btrfs: poor performance on deleting many large files
+Date: Thu, 26 Nov 2015 16:52:41 +0000 (UTC)
+Message-ID: <pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	<pan$eea04$e9596e27$78b44461$c5754723@cox.net>
+	<1448488198.4717.4.camel@gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Martin Steigerwald posted on Wed, 25 Nov 2015 16:35:39 +0100 as excerpted:
+Mitchell Fossen posted on Wed, 25 Nov 2015 15:49:58 -0600 as excerpted:
 
-> I´d report a bug report, in case anyone would be interested. But if the
-> interest it like in this mailinglist post I can spare myself the time
-> for reporting via bugzilla.
-> 
-> So does anyone at all care about this issue?
+> Also, is there a recommendation for relatime vs noatime mount options? I
+> don't believe anything that runs on the server needs to use file access
+> times, so if it can help with performance/disk usage I'm fine with
+> setting it to noatime.
 
-FWIW I'm interested, but haven't as a user seen the same thing here... 
-scrubs have worked fine here unless I forget to sudo, in which case they 
-don't work at all as they can't get necessary privs.
+FWIW I finally got tired enough of always setting noatime (for over a 
+decade, since kernel 2.4 and my standardizing to then reiserfs) that I 
+finally found the spot in the kernel where the relatime default is set, 
+and patched it to be noatime by default.  My kernel scripts apply that on 
+top of my git kernel pulls, now.
 
-And I'm stumped as to what else it might be.  I don't even have an idea 
-where to start looking for clues.
+For people doing snapshotting in particular, atime updates can be a big 
+part of the differences between snapshots, so it's particularly important 
+to set noatime if you're snapshotting.
 
-But not being a dev and having not the foggiest what the problem may be, 
-it's not like my interest is going to help much, which is why I didn't 
-reply earlier.  Just posting now to say you're not alone in your 
-interest.  Things like this that don't seem to have any logic bother me, 
-tho, so I really would like to at least learn why it's happening.
+If you're not doing snapshots, it's somewhat less important, but IIRC it 
+was still someone more of a performance issue than with ext*, tho I don't 
+remember the details but I'd guess it's to do with COWing the metadata 
+triggering metadata fragmentation.
+
+Bottom line, use noatime unless you have something that needs atime.  
+It's not going to hurt for sure, and should improve performance at least 
+somewhat even on ext*.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

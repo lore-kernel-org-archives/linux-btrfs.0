@@ -1,33 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46903 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48749 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750786AbbKZO3U (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Nov 2015 09:29:20 -0500
-Date: Thu, 26 Nov 2015 15:27:33 +0100
+	id S1751198AbbKZPCa (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Nov 2015 10:02:30 -0500
+Date: Thu, 26 Nov 2015 16:00:44 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org, calestyo@scientia.net
-Subject: Re: [PATCH v2] btrfs-progs: fsck: Fix a false alert where extent
- record has wrong metadata flag
-Message-ID: <20151126142733.GR31035@twin.jikos.cz>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Zhao Lei <zhaolei@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] btrfs-progs: mkfs: Enable -d dup for single device
+Message-ID: <20151126150044.GU31035@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1448432346-2842-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <71e6ba091cdb43b7d0d5f73fb3dd2daa2929ec41.1447925407.git.zhaolei@cn.fujitsu.com>
+ <564E3BA8.9020909@gmail.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1448432346-2842-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <564E3BA8.9020909@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Nov 25, 2015 at 02:19:06PM +0800, Qu Wenruo wrote:
-> In process_extent_item(), it gives 'metadata' initial value 0, but for
-> non-skinny-metadata case, metadata extent can't be judged just from key
-> type and it forgot that case.
+On Thu, Nov 19, 2015 at 04:14:16PM -0500, Austin S Hemmelgarn wrote:
+> On 2015-11-19 04:36, Zhao Lei wrote:
+> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> Seeing as I forgot to reply to the previous version after testing it, 
+> I'll just reply here now that I've run this version through the same 
+> tests I did on the last one.
 > 
-> This causes a lot of false alert in non-skinny-metadata filesystem.
-> 
-> Fix it by set correct metadata value before calling add_extent_rec().
-> 
-> Reported-by: Christoph Anton Mitterer <calestyo@scientia.net>
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> I threw everything I could think of at it, and nothing broke, so you can 
+> add:
+> Tested-by: Austin S. Hemmelgarn
 
-Patch replaced, thanks. The test image is pushed as well.
+Thanks.
+
+Patch added to devel as it's not code-intrusive, will be probably
+released within 4.4.

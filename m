@@ -1,60 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36443 "EHLO plane.gmane.org"
+Received: from mx2.suse.de ([195.135.220.15]:33233 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752056AbbKZQww (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Nov 2015 11:52:52 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a1zmp-0005kq-Os
-	for linux-btrfs@vger.kernel.org; Thu, 26 Nov 2015 17:52:47 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2015 17:52:47 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 26 Nov 2015 17:52:47 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs: poor performance on deleting many large files
-Date: Thu, 26 Nov 2015 16:52:41 +0000 (UTC)
-Message-ID: <pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-	<pan$eea04$e9596e27$78b44461$c5754723@cox.net>
-	<1448488198.4717.4.camel@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1752568AbbKZRkg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 26 Nov 2015 12:40:36 -0500
+Date: Thu, 26 Nov 2015 18:38:50 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Mike Fleetwood <mike.fleetwood@googlemail.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>,
+        David Sterba <dsterba@suse.cz>
+Subject: Re: [PATCH v2 1/5] btrfs-progs: introduce framework to check kernel
+ supported features
+Message-ID: <20151126173850.GV31035@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
+ <1448283378-10579-2-git-send-email-anand.jain@oracle.com>
+ <CAMU1PDita6iet1xg97RfCDPWuVUaq=dYBO_eM3ZDQtvLRPcHCw@mail.gmail.com>
+ <5654C6BF.8010502@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5654C6BF.8010502@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Mitchell Fossen posted on Wed, 25 Nov 2015 15:49:58 -0600 as excerpted:
+On Tue, Nov 24, 2015 at 03:21:19PM -0500, Austin S Hemmelgarn wrote:
+> > I think you mean 2.6.37 here.
+> > 67377734fd24c3 "Btrfs: add support for mixed data+metadata block groups"
+> This brings up a rather important question:
+> Should compat-X.Y mean features that were considered usable in that 
+> version, or everything that version offered?  I understand wanting 
+> consistency with the kernel versions, but we shouldn't be creating 
+> filesystems that we know will break on the specified kernel even if it 
+> is mountable on it.
 
-> Also, is there a recommendation for relatime vs noatime mount options? I
-> don't believe anything that runs on the server needs to use file access
-> times, so if it can help with performance/disk usage I'm fine with
-> setting it to noatime.
+IMO compat refers to the compatibility feature bits so it's whether the
+filesystem is mountable on a given version. Usability can be subjective.
+I assume the kernel versions in wide use match some of the long term
+branches. If it's k.org, we can submit the fixes and distros update
+their long term branches.
 
-FWIW I finally got tired enough of always setting noatime (for over a 
-decade, since kernel 2.4 and my standardizing to then reiserfs) that I 
-finally found the spot in the kernel where the relatime default is set, 
-and patched it to be noatime by default.  My kernel scripts apply that on 
-top of my git kernel pulls, now.
-
-For people doing snapshotting in particular, atime updates can be a big 
-part of the differences between snapshots, so it's particularly important 
-to set noatime if you're snapshotting.
-
-If you're not doing snapshots, it's somewhat less important, but IIRC it 
-was still someone more of a performance issue than with ext*, tho I don't 
-remember the details but I'd guess it's to do with COWing the metadata 
-triggering metadata fragmentation.
-
-Bottom line, use noatime unless you have something that needs atime.  
-It's not going to hurt for sure, and should improve performance at least 
-somewhat even on ext*.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+A table of "is the feature usable" would be interesting but I think it's
+for wiki.

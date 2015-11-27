@@ -1,61 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:45370 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:40751 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932787AbbKMUhR (ORCPT
+	by vger.kernel.org with ESMTP id S1755258AbbK0VNI (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 13 Nov 2015 15:37:17 -0500
-Date: Fri, 13 Nov 2015 15:37:00 -0500
+	Fri, 27 Nov 2015 16:13:08 -0500
+Date: Fri, 27 Nov 2015 16:13:02 -0500
 From: Chris Mason <clm@fb.com>
 To: Linus Torvalds <torvalds@linux-foundation.org>,
         linux-btrfs <linux-btrfs@vger.kernel.org>,
         LKML <linux-kernel@vger.kernel.org>
 Subject: [GIT PULL] Btrfs
-Message-ID: <20151113203700.GC17545@ret.masoncoding.com>
+Message-ID: <20151127211302.GC2162@ret.masoncoding.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi Linus,
 
-My for-linus-4.4 branch is ready for pulling:
+I have a few fixes ready in my for-linus-4.4 branch.
 
 git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.4
 
-Some of this got cherry-picked from a github repo this week, but I
-verified the patches.  We have three small scrub cleanups and a
-collection of fixes.
+This has Mark Fasheh's patches to fix quota accounting during subvol
+deletion, which we've been working on for a while now.  The patch is
+pretty small but it's a key fix.
 
-Zhao Lei (9) commits (+97/-122):
-    btrfs: Use scrub_checksum_data and scrub_checksum_tree_block for scrub_recheck_block_checksum (+36/-94)
-    btrfs: Reset sblock->xxx_error stats before calling scrub_recheck_block_checksum (+4/-0)
-    btrfs: scrub: set error stats when tree block spanning stripes (+6/-0)
-    btrfs: Reduce unnecessary arguments in scrub_recheck_block (+8/-20)
-    btrfs: Fix lost-data-profile caused by auto removing bg (+5/-2)
-    btrfs: Use fs_info directly in btrfs_delete_unused_bgs (+2/-2)
-    btrfs: scrub: setup all fields for sblock_to_check (+12/-0)
-    btrfs: Fix lost-data-profile caused by balance bg (+21/-0)
-    btrfs: Remove len argument from scrub_find_csum (+3/-4)
+Otherwise it's a random assortment.
 
-Filipe Manana (6) commits (+61/-25):
-    Btrfs: fix race leading to incorrect item deletion when dropping extents (+12/-4)
-    Btrfs: fix race leading to BUG_ON when running delalloc for nodatacow (+8/-2)
-    Btrfs: fix sleeping inside atomic context in qgroup rescan worker (+0/-1)
-    Btrfs: fix extent accounting for partial direct IO writes (+37/-15)
-    Btrfs: fix race waiting for qgroup rescan worker (+1/-2)
-    Btrfs: fix race when listing an inode's xattrs (+3/-1)
+Filipe Manana (5) commits (+146/-49):
+    Btrfs: fix the number of transaction units needed to remove a block group (+38/-5)
+    Btrfs: use global reserve when deleting unused block group after ENOSPC (+52/-26)
+    Btrfs: fix scrub preventing unused block groups from being deleted (+24/-1)
+    Btrfs: fix race between cleaner kthread and space cache writeout (+16/-13)
+    Btrfs: fix race between scrub and block group deletion (+16/-4)
 
-Justin Maggard (1) commits (+9/-3):
-    btrfs: qgroup: exit the rescan worker during umount
+David Sterba (3) commits (+10/-8):
+    btrfs: fix clashing number of the enhanced balance usage filter (+1/-1)
+    btrfs: fix signed overflows in btrfs_sync_file (+7/-3)
+    btrfs: fix rcu warning during device replace (+2/-4)
 
-Total: (16) commits (+167/-150)
+Zhaolei (1) commits (+18/-2):
+    btrfs: Continue replace when set_block_ro failed
 
- fs/btrfs/disk-io.c     |   3 +
- fs/btrfs/extent-tree.c |  11 +--
- fs/btrfs/file.c        |  16 +++--
- fs/btrfs/inode.c       |  62 ++++++++++++-----
- fs/btrfs/qgroup.c      |  13 ++--
- fs/btrfs/scrub.c       | 179 ++++++++++++++++++-------------------------------
- fs/btrfs/volumes.c     |  21 ++++++
- fs/btrfs/xattr.c       |   4 +-
- 8 files changed, 163 insertions(+), 146 deletions(-)
+Mark Fasheh (1) commits (+42/-7):
+    btrfs: qgroup: account shared subtree during snapshot delete
+
+Justin Maggard (1) commits (+2/-1):
+    btrfs: qgroup: fix quota disable during rescan
+
+Holger Hoffstätte (1) commits (+2/-2):
+    btrfs: fix balance range usage filters in 4.4-rc
+
+Dan Carpenter (1) commits (+3/-1):
+    Btrfs: tests: checking for NULL instead of IS_ERR()
+
+Josef Bacik (1) commits (+1/-1):
+    Btrfs: use btrfs_get_fs_root in resolve_indirect_ref
+
+Total: (14) commits (+224/-71)
+
+ fs/btrfs/backref.c                |   2 +-
+ fs/btrfs/ctree.h                  |   4 ++
+ fs/btrfs/extent-tree.c            | 123 +++++++++++++++++++++++++++++++-------
+ fs/btrfs/file.c                   |  10 +++-
+ fs/btrfs/inode.c                  |  24 +-------
+ fs/btrfs/qgroup.c                 |   5 +-
+ fs/btrfs/scrub.c                  |  62 +++++++++++++++++--
+ fs/btrfs/tests/free-space-tests.c |   4 +-
+ fs/btrfs/transaction.c            |  32 ++++++++++
+ fs/btrfs/transaction.h            |   4 ++
+ fs/btrfs/volumes.c                |  13 ++--
+ fs/btrfs/volumes.h                |   2 +-
+ 12 files changed, 219 insertions(+), 66 deletions(-)

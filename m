@@ -1,123 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:40815 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753446AbbKZSzx (ORCPT
+Received: from mail-lf0-f42.google.com ([209.85.215.42]:33795 "EHLO
+	mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751302AbbK0ILt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 26 Nov 2015 13:55:53 -0500
-From: Christoph Hellwig <hch@lst.de>
-To: viro@zeniv.linux.org.uk
-Cc: tao.peng@primarydata.com, jeff.layton@primarydata.com,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-cifs@vger.kernel.org,
-        Anna Schumaker <Anna.Schumaker@netapp.com>,
-        Anna Schumaker <Anna.Schumaker@netapp.com>
-Subject: [PATCH 4/5] nfsd: Pass filehandle to nfs4_preprocess_stateid_op()
-Date: Thu, 26 Nov 2015 19:50:58 +0100
-Message-Id: <1448563859-21922-5-git-send-email-hch@lst.de>
-In-Reply-To: <1448563859-21922-1-git-send-email-hch@lst.de>
-References: <1448563859-21922-1-git-send-email-hch@lst.de>
+	Fri, 27 Nov 2015 03:11:49 -0500
+Received: by lffu14 with SMTP id u14so120843541lff.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 00:11:48 -0800 (PST)
+From: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: Rasmus Villemoes <linux@rasmusvillemoes.dk>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH] btrfs: use kbasename in btrfsic_mount
+Date: Fri, 27 Nov 2015 09:11:31 +0100
+Message-Id: <1448611892-26144-1-git-send-email-linux@rasmusvillemoes.dk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Anna Schumaker <Anna.Schumaker@netapp.com>
+This is more readable.
 
-This will be needed so COPY can look up the saved_fh in addition to the
-current_fh.
-
-Signed-off-by: Anna Schumaker <Anna.Schumaker@Netapp.com>
+Signed-off-by: Rasmus Villemoes <linux@rasmusvillemoes.dk>
 ---
- fs/nfsd/nfs4proc.c  | 16 +++++++++-------
- fs/nfsd/nfs4state.c |  5 ++---
- fs/nfsd/state.h     |  4 ++--
- 3 files changed, 13 insertions(+), 12 deletions(-)
 
-diff --git a/fs/nfsd/nfs4proc.c b/fs/nfsd/nfs4proc.c
-index a9f096c..3ba10a3 100644
---- a/fs/nfsd/nfs4proc.c
-+++ b/fs/nfsd/nfs4proc.c
-@@ -774,8 +774,9 @@ nfsd4_read(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
- 		clear_bit(RQ_SPLICE_OK, &rqstp->rq_flags);
- 
- 	/* check stateid */
--	status = nfs4_preprocess_stateid_op(rqstp, cstate, &read->rd_stateid,
--			RD_STATE, &read->rd_filp, &read->rd_tmp_file);
-+	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
-+					&read->rd_stateid, RD_STATE,
-+					&read->rd_filp, &read->rd_tmp_file);
- 	if (status) {
- 		dprintk("NFSD: nfsd4_read: couldn't process stateid!\n");
- 		goto out;
-@@ -921,7 +922,8 @@ nfsd4_setattr(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
- 
- 	if (setattr->sa_iattr.ia_valid & ATTR_SIZE) {
- 		status = nfs4_preprocess_stateid_op(rqstp, cstate,
--			&setattr->sa_stateid, WR_STATE, NULL, NULL);
-+				&cstate->current_fh, &setattr->sa_stateid,
-+				WR_STATE, NULL, NULL);
- 		if (status) {
- 			dprintk("NFSD: nfsd4_setattr: couldn't process stateid!\n");
- 			return status;
-@@ -985,8 +987,8 @@ nfsd4_write(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
- 	if (write->wr_offset >= OFFSET_MAX)
- 		return nfserr_inval;
- 
--	status = nfs4_preprocess_stateid_op(rqstp, cstate, stateid, WR_STATE,
--			&filp, NULL);
-+	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
-+						stateid, WR_STATE, &filp, NULL);
- 	if (status) {
- 		dprintk("NFSD: nfsd4_write: couldn't process stateid!\n");
- 		return status;
-@@ -1016,7 +1018,7 @@ nfsd4_fallocate(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
- 	__be32 status = nfserr_notsupp;
- 	struct file *file;
- 
--	status = nfs4_preprocess_stateid_op(rqstp, cstate,
-+	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
- 					    &fallocate->falloc_stateid,
- 					    WR_STATE, &file, NULL);
- 	if (status != nfs_ok) {
-@@ -1055,7 +1057,7 @@ nfsd4_seek(struct svc_rqst *rqstp, struct nfsd4_compound_state *cstate,
- 	__be32 status;
- 	struct file *file;
- 
--	status = nfs4_preprocess_stateid_op(rqstp, cstate,
-+	status = nfs4_preprocess_stateid_op(rqstp, cstate, &cstate->current_fh,
- 					    &seek->seek_stateid,
- 					    RD_STATE, &file, NULL);
- 	if (status) {
-diff --git a/fs/nfsd/nfs4state.c b/fs/nfsd/nfs4state.c
-index 6b800b5..df5dba6 100644
---- a/fs/nfsd/nfs4state.c
-+++ b/fs/nfsd/nfs4state.c
-@@ -4797,10 +4797,9 @@ nfs4_check_file(struct svc_rqst *rqstp, struct svc_fh *fhp, struct nfs4_stid *s,
-  */
- __be32
- nfs4_preprocess_stateid_op(struct svc_rqst *rqstp,
--		struct nfsd4_compound_state *cstate, stateid_t *stateid,
--		int flags, struct file **filpp, bool *tmp_file)
-+		struct nfsd4_compound_state *cstate, struct svc_fh *fhp,
-+		stateid_t *stateid, int flags, struct file **filpp, bool *tmp_file)
- {
--	struct svc_fh *fhp = &cstate->current_fh;
- 	struct inode *ino = d_inode(fhp->fh_dentry);
- 	struct net *net = SVC_NET(rqstp);
- 	struct nfsd_net *nn = net_generic(net, nfsd_net_id);
-diff --git a/fs/nfsd/state.h b/fs/nfsd/state.h
-index 77fdf4d..99432b7 100644
---- a/fs/nfsd/state.h
-+++ b/fs/nfsd/state.h
-@@ -578,8 +578,8 @@ struct nfsd4_compound_state;
- struct nfsd_net;
- 
- extern __be32 nfs4_preprocess_stateid_op(struct svc_rqst *rqstp,
--		struct nfsd4_compound_state *cstate, stateid_t *stateid,
--		int flags, struct file **filp, bool *tmp_file);
-+		struct nfsd4_compound_state *cstate, struct svc_fh *fhp,
-+		stateid_t *stateid, int flags, struct file **filp, bool *tmp_file);
- __be32 nfsd4_lookup_stateid(struct nfsd4_compound_state *cstate,
- 		     stateid_t *stateid, unsigned char typemask,
- 		     struct nfs4_stid **s, struct nfsd_net *nn);
+I think the following strlcpy may be somewhat fragile since obviously
+ds->name and p overlap. It certainly relies on strlcpy doing a forward
+copy, and since different architectures can have their own strlcpy,
+that's hard to verify (and also won't necessarily continue to hold).
+
+Maybe
+
+  if (p != ds->name)
+    memmove(ds->name, p, strlen(p)+1);
+
+instead.
+
+
+ fs/btrfs/check-integrity.c | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index 0340c57bf377..55a5cff390b9 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -95,6 +95,7 @@
+ #include <linux/genhd.h>
+ #include <linux/blkdev.h>
+ #include <linux/vmalloc.h>
++#include <linux/string.h>
+ #include "ctree.h"
+ #include "disk-io.h"
+ #include "hash.h"
+@@ -3136,11 +3137,7 @@ int btrfsic_mount(struct btrfs_root *root,
+ 		ds->state = state;
+ 		bdevname(ds->bdev, ds->name);
+ 		ds->name[BDEVNAME_SIZE - 1] = '\0';
+-		for (p = ds->name; *p != '\0'; p++);
+-		while (p > ds->name && *p != '/')
+-			p--;
+-		if (*p == '/')
+-			p++;
++		p = kbasename(ds->name);
+ 		strlcpy(ds->name, p, sizeof(ds->name));
+ 		btrfsic_dev_state_hashtable_add(ds,
+ 						&btrfsic_dev_state_hashtable);
 -- 
-1.9.1
+2.6.1
 

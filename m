@@ -1,48 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f42.google.com ([209.85.215.42]:33849 "EHLO
-	mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752393AbbK0IiK (ORCPT
+Received: from mail-yk0-f180.google.com ([209.85.160.180]:36752 "EHLO
+	mail-yk0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754046AbbK0JhP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 03:38:10 -0500
-Received: by lffu14 with SMTP id u14so121559323lff.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 00:38:08 -0800 (PST)
-From: Rasmus Villemoes <linux@rasmusvillemoes.dk>
-To: kbuild test robot <lkp@intel.com>
-Cc: kbuild-all@01.org, Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: Re: [PATCH] btrfs: use kbasename in btrfsic_mount
-References: <201511271640.QHZdu1xB%fengguang.wu@intel.com>
-Date: Fri, 27 Nov 2015 09:38:07 +0100
-In-Reply-To: <201511271640.QHZdu1xB%fengguang.wu@intel.com> (kbuild test
-	robot's message of "Fri, 27 Nov 2015 16:32:49 +0800")
-Message-ID: <87zixzbzww.fsf@rasmusvillemoes.dk>
+	Fri, 27 Nov 2015 04:37:15 -0500
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <1448611892-26144-1-git-send-email-linux@rasmusvillemoes.dk>
+References: <1448611892-26144-1-git-send-email-linux@rasmusvillemoes.dk>
+Date: Fri, 27 Nov 2015 11:37:14 +0200
+Message-ID: <CAHp75VcV_BTb45xRiZKEtNeNaP93zzNr=Zr+Q-PgkGM6pF1=og@mail.gmail.com>
+Subject: Re: [PATCH] btrfs: use kbasename in btrfsic_mount
+From: Andy Shevchenko <andy.shevchenko@gmail.com>
+To: Rasmus Villemoes <linux@rasmusvillemoes.dk>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        "linux-kernel@vger.kernel.org" <linux-kernel@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Nov 27 2015, kbuild test robot <lkp@intel.com> wrote:
+On Fri, Nov 27, 2015 at 10:11 AM, Rasmus Villemoes
+<linux@rasmusvillemoes.dk> wrote:
+> This is more readable.
 
-> Hi Rasmus,
->
-> [auto build test WARNING on: v4.4-rc2]
-> [also build test WARNING on: next-20151127]
->
-> url:    https://github.com/0day-ci/linux/commits/Rasmus-Villemoes/btrfs-use-kbasename-in-btrfsic_mount/20151127-161249
-> config: i386-randconfig-s1-201547 (attached as .config)
-> reproduce:
->         # save the attached .config to linux build tree
->         make ARCH=i386 
->
-> All warnings (new ones prefixed by >>):
->
->    fs/btrfs/check-integrity.c: In function 'btrfsic_mount':
->>> fs/btrfs/check-integrity.c:3140:5: warning: assignment discards 'const' qualifier from pointer target type [-Wdiscarded-qualifiers]
->       p = kbasename(ds->name);
->         ^
->
+Actually, Rasmus, a bit of offtopic here, but I would like to have
+your opinion for that clean up:
+http://www.spinics.net/lists/kernel/msg1411600.html
 
-Baah. Ok, that's easy to fix. Sorry for not compile-testing this myself.
 
-Rasmus
+
+-- 
+With Best Regards,
+Andy Shevchenko

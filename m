@@ -1,87 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:45163 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:45963 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753894AbbK0RDO (ORCPT
+	with ESMTP id S1754306AbbK0RTL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 12:03:14 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-	by mailgw-01.dd24.net (Postfix) with ESMTP id 12DF05FD60
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 17:03:13 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id Z4Tx1kVk82wJ for <linux-btrfs@vger.kernel.org>;
-	Fri, 27 Nov 2015 17:03:11 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 17:03:11 +0000 (UTC)
-Message-ID: <1448643790.11377.39.camel@scientia.net>
-Subject: slowness when cp respectively send/receiving on top of dm-crypt
+	Fri, 27 Nov 2015 12:19:11 -0500
+Message-ID: <1448644747.11377.45.camel@scientia.net>
+Subject: Re: How to detect / notify when a raid drive fails?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Fri, 27 Nov 2015 18:03:10 +0100
+To: linux-btrfs@vger.kernel.org, Anand Jain <anand.jain@oracle.com>
+Date: Fri, 27 Nov 2015 18:19:07 +0100
+In-Reply-To: <56581F87.9080409@oracle.com>
+References: <1448601297.4093478.451242913.1CEE0D6D@webmail.messagingengine.com>
+	 <pan$2baa9$6d4c6e73$140f6177$488caa5a@cox.net>
+	 <56581F87.9080409@oracle.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-PlyFfuCIi4Plm6Un/x6E"
+	boundary="=-a1/xfOJZWs2aO9N3T4RG"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-PlyFfuCIi4Plm6Un/x6E
+--=-a1/xfOJZWs2aO9N3T4RG
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hey.
+On Fri, 2015-11-27 at 17:16 +0800, Anand Jain wrote:
+> =C2=A0 I understand as a user, a full md/lvm set of features are importan=
+t
+> =C2=A0 to begin operations using btrfs and we don't have it yet. I have t=
+o
+> =C2=A0 blame it on the priority list.
+What's would be especially nice from the admin side, would be something
+like /proc/mdstat, which centrally gives information about the health
+of your RAID.
 
-Not sure if that's valuable input for the devs, but here's some vague
-real-world report about performance:
+It can/should of course be more than just "OK" / "not OK"...
+information about which devices are in which state, whether a
+rebuild/reconstruction/scrub is going on, etc. pp.
+Maybe even details of properties like chunk sizes (as far as these
+apply to btrfs).
 
-I'm just copying (via send/receive) a large filesystem (~7TB) from on
-HDD over to another.
-The devices are both connected via USB3, and each of the btrfs is on
-top of dm-crypt.
-
-It's already obvious that things are slowed down, compared to "normal"
-circumstances, but from looking at iotop for a while (and the best disk
-IO measuring tool ever: the LEDs on the USB/SATA bridge) it seems that
-there are always times when basically no IO happens to disk.
-
-There seems to be a repeating schema like this:
-- First, there is some heavy disk IO (200-250 M/s), mostly on btrfs
-send and receive processes
-- Then there are times when send/receive seem to not do anything, but
-either btrfs-transaction (this I see far less however, and the IO% is
-far lower, while that of dmcrypt_write is usually to 99%) or
-dmcrypt_write eat up all IO (I mean the percent value shown in iotop)
-with now total/actual disk write and read being basically zero during
-that.
-
-Kinda feels as if there would be some large buffer written first, then
-when that gets full, dm-crypt starts encrypting it during which there
-is no disk-IO (since it waits for the encryption).
-
-Not sure if this is something that could be optimised or maybe it's
-even a non issue that happens for example while many small files are
-read/written (the data consists of both, many small files as well as
-many big files), which may explain why sometimes the actual IO goes up
-to large >200M/s or at least > 150M/s and sometimes it caps at around
-40-80M/s
+Having a dedicated monitoring process... well nice to have, but
+something like mdstat is, always there, doesn't need special userland
+tools and can easily used by 3rd party stuff like Icinga/Nagios
+check_raid.
+I think the keywords here are human readable + parseable... so maybe
+even two files.
 
 
-Obviously, since I use dm-crypt and compression on both devices, it may
-be a CPU issue, but it's a 8 core machine with i7-3612QM CPU @
-2.10GHz... not the fastest, but not the slowest either... and looking
-at top/htop is happens quite often that there is only very little CPU
-utilisation, so it doesn't seem as if CPU would be the killing factor
-here.
-
-
-
-HTH,
+Cheers,
 Chris.
---=-PlyFfuCIi4Plm6Un/x6E
+--=-a1/xfOJZWs2aO9N3T4RG
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -168,19 +138,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNzE3MDMx
-MFowTwYJKoZIhvcNAQkEMUIEQAeW1MblGI2Zb+58upgkvvsr55pKkIOAZuPUMxSEa9H8kNezeyIc
-k5NR6fBkDSHsF5jCz3ldO3wzkBRYJaDkQxcwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNzE3MTkw
+N1owTwYJKoZIhvcNAQkEMUIEQAq8AQPwTcipbUttv5xA6CEpOQQCzyo/A6GU73qJhc91IoK3t415
+DdtIeYBMeVLxyQH25QJ120f8ygxgzBK9dmMwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAtk4uVcOarjF+iIv1m13IU7n0c3nH0
-eUFF+p0kpcT5LSPbMHSzTzjAzBZZXM6Hriekjle5XuiZZk7ktwsDLH+71A6hlwj1C9X0gB5RSHAK
-RbYSVfyU1Ey8sTXHUEAy80N2RavjQOPWwn9IT77oA89IK4CHJO1ipLCxoihty0FQpaHgwb2gOkXO
-g5rJVeKf18U6XDiYu5pgK5WqtvQP0c0HltFylDmmAdVVWpK9/b59TaMj69g52xgaHjFcybFIFhRV
-4mn18//MemASytzFFWh88zYYEa5SsiHn6RnBdnnaskDUVTMZOqO6fJFPA/XSlhc/Z/JzgyOmiVnh
-w3sfdrbFAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAHs0iavPvbc2rOMRwVamEcX098wK2k
+vQTA6cpYSJoqqjHBoYKh9ihZF5my+XEFsnhqXPmSlnwUfSfxh8542pgPlg0Npe1NBHM7oTvjYji8
+/anR/2hGsxSQRodxNJayFCEbTBXqqJKxWFqonjaKI+mPtpfpWbsHkqobKMYMs38W5xfobSYCLsGt
+RDV/UQr/jLH4iU1E+Q94PgZ4L8Si1+qRdQllmuzDlhzIzqBPgYjxEQF1wZFPxBCf6DimMVgHS00i
+od0Zt19J6r84sJTZWkt//7NLViX1wY9H6Te5BEwrkzPcZ7QDwCXnHUzch9357hztlwpnbudMpqkc
+x4TVVJHbAAAAAAAA
 
 
---=-PlyFfuCIi4Plm6Un/x6E--
+--=-a1/xfOJZWs2aO9N3T4RG--
 

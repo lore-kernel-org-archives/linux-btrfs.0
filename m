@@ -1,146 +1,186 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f50.google.com ([209.85.215.50]:35888 "EHLO
-	mail-lf0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754944AbbK0QcI (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:45163 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753894AbbK0RDO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 11:32:08 -0500
-Received: by lfs39 with SMTP id 39so132010326lfs.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 08:32:06 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <3E0A8132-7121-482F-BAAC-BAC6D18661AC@up4.com>
-References: <AF79907D-A36B-4806-B31A-3E327F2E5642@up4.com>
-	<5654C86C.9080800@gmail.com>
-	<20151124203210.GR24333@carfax.org.uk>
-	<B369C8E5-3E5E-4008-BD99-C174D7ABFB36@up4.com>
-	<56566416.5000405@cn.fujitsu.com>
-	<4EF3E931-9089-40FB-8E8E-1928539D39D4@up4.com>
-	<3E0A8132-7121-482F-BAAC-BAC6D18661AC@up4.com>
-Date: Fri, 27 Nov 2015 17:32:06 +0100
-Message-ID: <CAPmG0jbkRVHx=Z4RjQDaGJ72XmEUJY=n1BZuaE4k1wFBE8V_5g@mail.gmail.com>
-Subject: Re: btrfs check help
-From: Henk Slager <eye1tm@gmail.com>
-To: Vincent Olivier <vincent@up4.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Fri, 27 Nov 2015 12:03:14 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id 12DF05FD60
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 17:03:13 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+	with ESMTP id Z4Tx1kVk82wJ for <linux-btrfs@vger.kernel.org>;
+	Fri, 27 Nov 2015 17:03:11 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-01.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 17:03:11 +0000 (UTC)
+Message-ID: <1448643790.11377.39.camel@scientia.net>
+Subject: slowness when cp respectively send/receiving on top of dm-crypt
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Fri, 27 Nov 2015 18:03:10 +0100
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-PlyFfuCIi4Plm6Un/x6E"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-My experience/interpretation of the 2 checks is that it is OK, see
-some more comments inserted below. Hopefully a developer of
-btrfs-progs can comment in more detail.
 
-> [root@3dcpc5 ~]# btrfs check --repair /dev/sdk
-> enabling repair mode
-> Checking filesystem on /dev/sdk
-> UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-> checking extents
-> Fixed 0 roots.
-> checking free space cache
-> cache and super generation don't match, space cache will be invalidated
-This might be there because of the crash earlier, but a cache
-invalidation should not be a problem.
-> checking fs roots
-> reset nbytes for ino 1341670 root 5
-> reset nbytes for ino 1341670 root 11406
-At least the nbytes error seems to be fixed.
-> warning line 3653
-> checking csums
-> checking root refs
-> found 19343374874998 bytes used err is 0
-> total csum bytes: 18863243900
-> total tree bytes: 27413118976
-> total fs tree bytes: 4455694336
-> total extent tree bytes: 3077373952
-> btree space waste bytes: 2882193883
-> file data blocks allocated: 19461564538880
->  referenced 20155355832320
+--=-PlyFfuCIi4Plm6Un/x6E
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-The second readonly check partly can't deal with the just invalidated
-space cache I think (I assume you haven't mounted and/or/ used
-read-write the filesystem in between), but even if the space cache
-wouldn't be touched in the --repair check, my experience is that those
-errors, like in dmesg on my system:
-[38018.645187] BTRFS info (device sdi): The free space cache file
-(6258971115520) is invalid. skip it
-   will disappear over time when the filesystem is filled/used.
-This particular error is from a backup fs where one disk had gone bad.
-A btrfs replace still worked and just after that, I saw many of those
-errors, but now after a few weeks they are mostly gone. I did not
-explicitly unmount or check--repair the fs, I just had to reboot the
-system for another reason.
-Your kernel+tools is new enough, you probably want to have a look at
-the 'Space cache control' options on the wiki:
-https://btrfs.wiki.kernel.org/index.php/Mount_options
-  before you decide what to do.
+Hey.
 
-> root@3dcpc5 ~]# btrfs check /dev/sdk
-> Checking filesystem on /dev/sdk
-> UUID: 6a742786-070d-4557-9e67-c73b84967bf5
-> checking extents
-> checking free space cache
-> block group 53328591454208 has wrong amount of free space
-> failed to load free space cache for block group 53328591454208
-> block group 53329665196032 has wrong amount of free space
-> failed to load free space cache for block group 53329665196032
-> Wanted offset 58836887044096, found 58836887011328
-> Wanted offset 58836887044096, found 58836887011328
-> cache appears valid but isnt 58836887011328
-> Wanted offset 60505481887744, found 60505481805824
-> Wanted offset 60505481887744, found 60505481805824
-> cache appears valid but isnt 60505481805824
-> Wanted bytes 16384, found 81920 for off 60979001966592
-> Wanted bytes 1073725440, found 81920 for off 60979001966592
-> cache appears valid but isnt 60979001950208
-> Wanted offset 61297908056064, found 61297908006912
-> Wanted offset 61297908056064, found 61297908006912
-> cache appears valid but isnt 61297903271936
-> Wanted bytes 32768, found 16384 for off 61711301296128
-> Wanted bytes 1066319872, found 16384 for off 61711301296128
-> cache appears valid but isnt 61711293874176
-> There is no free space entry for 62691824041984-62691824058368
-> There is no free space entry for 62691824041984-62692693901312
-> cache appears valid but isnt 62691620159488
-> There is no free space entry for 63723505205248-63723505221632
-> There is no free space entry for 63723505205248-63724559794176
-> cache appears valid but isnt 63723486052352
-> Wanted bytes 32768, found 16384 for off 64746920902656
-> Wanted bytes 914849792, found 16384 for off 64746920902656
-> cache appears valid but isnt 64746762010624
-> There is no free space entry for 65770368401408-65770368434176
-> There is no free space entry for 65770368401408-65771111710720
-> cache appears valid but isnt 65770037968896
-> Wanted offset 66758954270720, found 66758954221568
-> Wanted offset 66758954270720, found 66758954221568
-> cache appears valid but isnt 66758954188800
-> block group 70204591702016 has wrong amount of free space
-> failed to load free space cache for block group 70204591702016
-> block group 70205665443840 has wrong amount of free space
-> failed to load free space cache for block group 70205665443840
-> block group 70206739185664 has wrong amount of free space
-> failed to load free space cache for block group 70206739185664
-> Wanted offset 70216543715328, found 70216543698944
-> Wanted offset 70216543715328, found 70216543698944
-> cache appears valid but isnt 70216537079808
-> Wanted offset 71025067474944, found 71025067409408
-> Wanted offset 71025067474944, found 71025067409408
-> cache appears valid but isnt 71025064673280
-> Wanted offset 71455641354240, found 71455641337856
-> Wanted offset 71455641354240, found 71455641337856
-> cache appears valid but isnt 71455635144704
-> block group 71662867316736 has wrong amount of free space
-> failed to load free space cache for block group 71662867316736
-> block group 71663941058560 has wrong amount of free space
-> failed to load free space cache for block group 71663941058560
-> There is no free space entry for 72725872967680-72725872984064
-> There is no free space entry for 72725872967680-72726945464320
-> cache appears valid but isnt 72725871722496
-> block group 73207981801472 has wrong amount of free space
-> failed to load free space cache for block group 73207981801472
-> found 19343374940534 bytes used err is -22
-> total csum bytes: 18863243900
-> total tree bytes: 27413184512
-> total fs tree bytes: 4455727104
-> total extent tree bytes: 3077406720
-> btree space waste bytes: 2882234096
-> file data blocks allocated: 19461573357568
->  referenced 20155367563264
+Not sure if that's valuable input for the devs, but here's some vague
+real-world report about performance:
+
+I'm just copying (via send/receive) a large filesystem (~7TB) from on
+HDD over to another.
+The devices are both connected via USB3, and each of the btrfs is on
+top of dm-crypt.
+
+It's already obvious that things are slowed down, compared to "normal"
+circumstances, but from looking at iotop for a while (and the best disk
+IO measuring tool ever: the LEDs on the USB/SATA bridge) it seems that
+there are always times when basically no IO happens to disk.
+
+There seems to be a repeating schema like this:
+- First, there is some heavy disk IO (200-250 M/s), mostly on btrfs
+send and receive processes
+- Then there are times when send/receive seem to not do anything, but
+either btrfs-transaction (this I see far less however, and the IO% is
+far lower, while that of dmcrypt_write is usually to 99%) or
+dmcrypt_write eat up all IO (I mean the percent value shown in iotop)
+with now total/actual disk write and read being basically zero during
+that.
+
+Kinda feels as if there would be some large buffer written first, then
+when that gets full, dm-crypt starts encrypting it during which there
+is no disk-IO (since it waits for the encryption).
+
+Not sure if this is something that could be optimised or maybe it's
+even a non issue that happens for example while many small files are
+read/written (the data consists of both, many small files as well as
+many big files), which may explain why sometimes the actual IO goes up
+to large >200M/s or at least > 150M/s and sometimes it caps at around
+40-80M/s
+
+
+Obviously, since I use dm-crypt and compression on both devices, it may
+be a CPU issue, but it's a 8 core machine with i7-3612QM CPU @
+2.10GHz... not the fastest, but not the slowest either... and looking
+at top/htop is happens quite often that there is only very little CPU
+utilisation, so it doesn't seem as if CPU would be the killing factor
+here.
+
+
+
+HTH,
+Chris.
+--=-PlyFfuCIi4Plm6Un/x6E
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyNzE3MDMx
+MFowTwYJKoZIhvcNAQkEMUIEQAeW1MblGI2Zb+58upgkvvsr55pKkIOAZuPUMxSEa9H8kNezeyIc
+k5NR6fBkDSHsF5jCz3ldO3wzkBRYJaDkQxcwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAtk4uVcOarjF+iIv1m13IU7n0c3nH0
+eUFF+p0kpcT5LSPbMHSzTzjAzBZZXM6Hriekjle5XuiZZk7ktwsDLH+71A6hlwj1C9X0gB5RSHAK
+RbYSVfyU1Ey8sTXHUEAy80N2RavjQOPWwn9IT77oA89IK4CHJO1ipLCxoihty0FQpaHgwb2gOkXO
+g5rJVeKf18U6XDiYu5pgK5WqtvQP0c0HltFylDmmAdVVWpK9/b59TaMj69g52xgaHjFcybFIFhRV
+4mn18//MemASytzFFWh88zYYEa5SsiHn6RnBdnnaskDUVTMZOqO6fJFPA/XSlhc/Z/JzgyOmiVnh
+w3sfdrbFAAAAAAAA
+
+
+--=-PlyFfuCIi4Plm6Un/x6E--
+

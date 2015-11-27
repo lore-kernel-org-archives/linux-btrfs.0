@@ -1,93 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from vs2.lukas-pirl.de ([5.45.100.90]:47254 "EHLO pim.lukas-pirl.de"
+Received: from mout.gmx.net ([212.227.15.18]:51261 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751101AbbK0KaN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 05:30:13 -0500
-Subject: Re: implications of mixed mode
-To: Duncan <1i5t5.duncan@cox.net>
-References: <56579BD1.4030401@lukas-pirl.de>
- <pan$d7271$6dfb6246$70339bd2$f62a4d8@cox.net>
-From: Lukas Pirl <btrfs@lukas-pirl.de>
-Cc: linux-btrfs@vger.kernel.org
-Message-ID: <565830AD.3000805@lukas-pirl.de>
-Date: Fri, 27 Nov 2015 23:30:05 +1300
+	id S1751538AbbK0KrT (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Nov 2015 05:47:19 -0500
+To: linux-btrfs@vger.kernel.org
+Cc: Linux Kernel <linux-kernel@vger.kernel.org>
+From: =?UTF-8?Q?Toralf_F=c3=b6rster?= <toralf.foerster@gmx.de>
+Subject: PAX: size overflow detected in function try_merge_map
+ fs/btrfs/extent_map.c:238
+Message-ID: <565834B3.4020602@gmx.de>
+Date: Fri, 27 Nov 2015 11:47:15 +0100
 MIME-Version: 1.0
-In-Reply-To: <pan$d7271$6dfb6246$70339bd2$f62a4d8@cox.net>
 Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/27/2015 04:11 PM, Duncan wrote as excerpted:
-> My big hesitancy would be over that fact that very few will run or test 
-> mixed-mode at TB scale filesystem level, and where they do, it's likely 
-> to be in ordered to work around the current (but set to soon be 
-> eliminated) metadata-only (no data) dup mode limit on single-device, 
-> since in that regard mixed-mode is treated as metadata and dup mode is 
-> allowed.
-> 
-> So you're relatively more likely to run into rarely seen scaling issues 
-> and perhaps bugs that nobody else has ever run into as (relatively) 
-> nobody else runs mixed-mode on multi-terabyte-scale btrfs.  If you want 
-> to be the guinea pig and make it easier for others to try later on, after 
-> you've flushed out the worst bugs, that's definitely one way to do it.
-> =:^]
+Happened today few times in a row at a stable 64 bit Gentoo hardened system:
 
-I see. This somehow aligns with Qu's answer.
 
-> It's worth noting that rsync... seems to stress btrfs more than pretty 
-> much any other common single application.  It's extremely heavy access 
-> pattern just seems to trigger bugs that nothing else does, and while they 
-> do tend to get fixed, it really does seem to push btrfs to the limits, 
-> and there have been a /lot/ of rsync triggered btrfs bugs reported over 
-> the years.
 
-Well, IMHO btrfs /has/ to deal with rsync workloads if it wants to be
-an alternative for larger storages but that is another story.
-I do run btrfs (non-mixed) with rsync workloads for quite a while now
-and it is doing well (except for the deadlock that has been around a
-while ago). Maybe my network is just slow enough to not trigger any
-unfixed weird issues with the intense access patterns of rsync.
-Anyways, thanks for the hint!
+Nov 27 10:23:09 t44 kernel: [41619.519921] PAX: size overflow detected in function try_merge_map fs/btrfs/extent_map.c:238 cicus.107_102 max, count: 13, decl: block_len; num: 0; context: extent_map;
+Nov 27 10:23:09 t44 kernel: [41619.519929] CPU: 2 PID: 3361 Comm: host_jskwgen Tainted: G        W       4.2.6-hardened-r6 #3
+Nov 27 10:23:09 t44 kernel: [41619.519932] Hardware name: LENOVO 20AQCTO1WW/20AQCTO1WW, BIOS GJET83WW (2.33 ) 03/09/2015
+Nov 27 10:23:09 t44 kernel: [41619.519934]  ffffffff81831343 0000000000000000 ffffffff8183132d ffffc9000298b6e8
+Nov 27 10:23:09 t44 kernel: [41619.519939]  ffffffff815ee0ea ffff88033e30eec8 ffffffff81831343 ffffc9000298b718
+Nov 27 10:23:09 t44 kernel: [41619.519943]  ffffffff811ade1b ffff8802fb611480 ffff88032b717510 ffff88032b74fae0
+Nov 27 10:23:09 t44 kernel: [41619.519946] Call Trace:
+Nov 27 10:23:09 t44 kernel: [41619.519955]  [<ffffffff815ee0ea>] dump_stack+0x45/0x5d
+Nov 27 10:23:09 t44 kernel: [41619.519959]  [<ffffffff811ade1b>] report_size_overflow+0x3b/0x50
+Nov 27 10:23:09 t44 kernel: [41619.519963]  [<ffffffff8128c701>] try_merge_map+0x1f1/0x310
+Nov 27 10:23:09 t44 kernel: [41619.519966]  [<ffffffff8128ca82>] add_extent_mapping+0x132/0x1c0
+Nov 27 10:23:09 t44 kernel: [41619.519968]  [<ffffffff81273ea9>] btrfs_get_extent+0x659/0xdd0
+Nov 27 10:23:09 t44 kernel: [41619.519972]  [<ffffffff81197b72>] ? kmem_cache_alloc+0x32/0x140
+Nov 27 10:23:09 t44 kernel: [41619.519975]  [<ffffffff81297292>] __do_readpage+0x6f2/0xc30
+Nov 27 10:23:09 t44 kernel: [41619.519977]  [<ffffffff8129353e>] ? __set_extent_bit+0x14e/0x580
+Nov 27 10:23:09 t44 kernel: [41619.519979]  [<ffffffff81273850>] ? btrfs_real_readdir+0x6f0/0x6f0
+Nov 27 10:23:09 t44 kernel: [41619.519983]  [<ffffffff815f4869>] ? _raw_spin_unlock_irq+0x19/0x30
+Nov 27 10:23:09 t44 kernel: [41619.519985]  [<ffffffff81290e92>] ? btrfs_lookup_ordered_extent+0xa2/0xe0
+Nov 27 10:23:09 t44 kernel: [41619.519987]  [<ffffffff812979a6>] __extent_read_full_page+0x1d6/0x210
+Nov 27 10:23:09 t44 kernel: [41619.519989]  [<ffffffff81273850>] ? btrfs_real_readdir+0x6f0/0x6f0
+Nov 27 10:23:09 t44 kernel: [41619.519991]  [<ffffffff81273850>] ? btrfs_real_readdir+0x6f0/0x6f0
+Nov 27 10:23:09 t44 kernel: [41619.519993]  [<ffffffff812990bf>] extent_read_full_page+0x4f/0x80
+Nov 27 10:23:09 t44 kernel: [41619.519997]  [<ffffffff81155cf9>] ? lru_cache_add+0x19/0x30
+Nov 27 10:23:09 t44 kernel: [41619.519999]  [<ffffffff81270ac0>] ? inode_tree_add+0x150/0x150
+Nov 27 10:23:09 t44 kernel: [41619.520000]  [<ffffffff81270af4>] btrfs_readpage+0x34/0x50
+Nov 27 10:23:09 t44 kernel: [41619.520002]  [<ffffffff81270ac0>] ? inode_tree_add+0x150/0x150
+Nov 27 10:23:09 t44 kernel: [41619.520004]  [<ffffffff81147919>] do_read_cache_page+0x99/0x1b0
+Nov 27 10:23:09 t44 kernel: [41619.520006]  [<ffffffff81270ac0>] ? inode_tree_add+0x150/0x150
+Nov 27 10:23:09 t44 kernel: [41619.520008]  [<ffffffff81270ac0>] ? inode_tree_add+0x150/0x150
+Nov 27 10:23:09 t44 kernel: [41619.520009]  [<ffffffff81147a68>] read_cache_page+0x38/0x50
+Nov 27 10:23:09 t44 kernel: [41619.520012]  [<ffffffff811b4d4a>] page_getlink.isra.48.constprop.51+0x3a/0xa0
+Nov 27 10:23:09 t44 kernel: [41619.520014]  [<ffffffff811b4ddb>] page_follow_link_light+0x2b/0x50
+Nov 27 10:23:09 t44 kernel: [41619.520016]  [<ffffffff811b557f>] trailing_symlink+0x27f/0x2b0
+Nov 27 10:23:09 t44 kernel: [41619.520019]  [<ffffffff811b85db>] path_openat+0x16b/0x1700
+Nov 27 10:23:09 t44 kernel: [41619.520021]  [<ffffffff811bae21>] do_filp_open+0x81/0xf0
+Nov 27 10:23:09 t44 kernel: [41619.520024]  [<ffffffff811a4cc3>] do_sys_open+0x133/0x280
+Nov 27 10:23:09 t44 kernel: [41619.520026]  [<ffffffff811a4e41>] SyS_open+0x31/0x50
+Nov 27 10:23:09 t44 kernel: [41619.520028]  [<ffffffff815f5119>] entry_SYSCALL_64_fastpath+0x12/0x83
 
-> Between the stresses of rsyncing half a TiB daily and the relatively 
-> untested quantity that is mixed-mode btrfs at multi-terabyte scales on 
-> multi-devices, there's a reasonably high chance that you /will/ be 
-> working with the devs on various bugs for awhile.  If you're willing to 
-> do it, great, somebody putting the filesystem thru those kinds of mixed-
-> mode paces at that scale is just the sort of thing we need to get 
-> coverage on that particular not yet well tested corner case, but don't 
-> expect it to be particularly stable for a couple kernel cycles anyway, 
-> and after that, you'll still be running a particularly rare corner-case 
-> that's likely to put new code thru its paces as well, so just be aware of 
-> the relatively stony path you're signing up to navigate, should you 
-> choose to go that route.
 
-Makes perfect sense. I think I sadly do not have the resources to be
-that guinea pig…
+Furthermore  neither login into the KDE screen saver nor login at the console could be made, sys-rq keys didn't worked  - power off was my friend.
 
-> Meanwhile, assuming you're /not/ deliberately setting out to test a 
-> rarely tested corner-case with stress tests known to rather too 
-> frequently get the best of btrfs...
-> 
-> Why are you considering mixed-mode here?  At that size the ENOSPC hassles 
-> of unmixed-mode btrfs on say single-digit GiB and below really should be 
-> dwarfed into insignificance, particularly since btrfs since 3.17 or so 
-> deletes empty chunks instead of letting them build up to the point where 
-> they're a problem, so what possible reason, other than simply to test it 
-> and cover that corner-case, could justify mixed-mode at that sort of 
-> scale?
-> 
-> Unless of course, given that you didn't mention number of devices or 
-> individual device size, only the 8 TB total, you have in mind a raid of 
-> something like 1000 8-GB USB sticks, or the like, in which case mixed-
-> mode on the individual sticks might make some sense (well, to the extent 
-> that a 1000-device raid of /anything/ makes sense! =:^), given their 8-GB 
-> each size.
 
-That is not the case. I just came to the consideration because I
-wondered why mixed-mode is not generally preferred when data and
-metadata have the same replication level.
 
-Thanks Duncan!
-
-Lukas
+-- 
+Toralf, pgp: C4EACDDE 0076E94E

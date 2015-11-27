@@ -1,158 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:44570 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:44651 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754597AbbK0Qik (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 11:38:40 -0500
+	id S1755116AbbK0Qje (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Nov 2015 11:39:34 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
 Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix unprotected list move from unused_bgs to deleted_bgs list
-Date: Fri, 27 Nov 2015 16:38:25 +0000
-Message-Id: <1448642305-26199-1-git-send-email-fdmanana@kernel.org>
+Subject: [PATCH] Btrfs: fix memory leaks after transaction is aborted
+Date: Fri, 27 Nov 2015 16:39:29 +0000
+Message-Id: <1448642369-28264-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-As of my previous change titled "Btrfs: fix scrub preventing unused block
-groups from being deleted", the following warning at
-extent-tree.c:btrfs_delete_unused_bgs() can be hit when we mount the a
-filesysten with "-o discard":
-
- 10263  void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 10264  {
- (...)
- 10405                  if (trimming) {
- 10406                          WARN_ON(!list_empty(&block_group->bg_list));
- 10407                          spin_lock(&trans->transaction->deleted_bgs_lock);
- 10408                          list_move(&block_group->bg_list,
- 10409                                    &trans->transaction->deleted_bgs);
- 10410                          spin_unlock(&trans->transaction->deleted_bgs_lock);
- 10411                          btrfs_get_block_group(block_group);
- 10412                  }
- (...)
-
-This happens because scrub can now add back the block group to the list of
-unused block groups (fs_info->unused_bgs). This is dangerous because we
-are moving the block group from the unused block groups list to the list
-of deleted block groups without holding the lock that protects the source
-list (fs_info->unused_bgs_lock).
-
-The following diagram illustrates how this happens:
-
-            CPU 1                                     CPU 2
-
- cleaner_kthread()
-   btrfs_delete_unused_bgs()
-
-     sees bg X in list
-      fs_info->unused_bgs
-
-     deletes bg X from list
-      fs_info->unused_bgs
-
-                                            scrub_enumerate_chunks()
-
-                                              searches device tree using
-                                              its commit root
-
-                                              finds device extent for
-                                              block group X
-
-                                              gets block group X from the tree
-                                              fs_info->block_group_cache_tree
-                                              (via btrfs_lookup_block_group())
-
-                                              sets bg X to RO (again)
-
-                                              scrub_chunk(bg X)
-
-                                              sets bg X back to RW mode
-
-                                              adds bg X to the list
-                                              fs_info->unused_bgs again,
-                                              since it's still unused and
-                                              currently not in that list
-
-     sets bg X to RO mode
-
-     btrfs_remove_chunk(bg X)
-
-     --> discard is enabled and bg X
-         is in the fs_info->unused_bgs
-         list again so the warning is
-         triggered
-     --> we move it from that list into
-         the transaction's delete_bgs
-         list, but we can have another
-         task currently manipulating
-         the first list (fs_info->unused_bgs)
-
-Fix this by using the same lock (fs_info->unused_bgs_lock) to protect both
-the list of unused block groups and the list of deleted block groups. This
-makes it safe and there's not much worry for more lock contention, as this
-lock is seldom used and only the cleaner kthread adds elements to the list
-of deleted block groups. The warning goes away too, as this was previously
-an impossible case (and would have been better a BUG_ON/ASSERT) but it's
-not impossible anymore.
-Reproduced with fstest btrfs/073 (using MOUNT_OPTIONS="-o discard").
+When a transaction is aborted, or its commit fails before writing the new
+superblock and calling btrfs_finish_extent_commit(), we leak reference
+counts on the block groups attached to the transaction's delete_bgs list,
+because btrfs_finish_extent_commit() is never called for those two cases.
+Fix this by dropping their references at btrfs_put_transaction(), which
+is called when transactions are aborted (by making the transaction kthread
+commit the transaction) or if their commits fail.
 
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c | 10 +++++++---
- fs/btrfs/transaction.c |  1 -
- fs/btrfs/transaction.h |  2 +-
- 3 files changed, 8 insertions(+), 5 deletions(-)
+ fs/btrfs/transaction.c | 17 +++++++++++++++++
+ 1 file changed, 17 insertions(+)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4b89680..c4661db 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10480,11 +10480,15 @@ void btrfs_delete_unused_bgs(struct btrfs_fs_info *fs_info)
- 		 * until transaction commit to do the actual discard.
- 		 */
- 		if (trimming) {
--			WARN_ON(!list_empty(&block_group->bg_list));
--			spin_lock(&trans->transaction->deleted_bgs_lock);
-+			spin_lock(&fs_info->unused_bgs_lock);
-+			/*
-+			 * A concurrent scrub might have added us to the list
-+			 * fs_info->unused_bgs, so use a list_move operation
-+			 * to add the block group to the deleted_bgs list.
-+			 */
- 			list_move(&block_group->bg_list,
- 				  &trans->transaction->deleted_bgs);
--			spin_unlock(&trans->transaction->deleted_bgs_lock);
-+			spin_unlock(&fs_info->unused_bgs_lock);
- 			btrfs_get_block_group(block_group);
- 		}
- end_trans:
 diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index 3367a3c..be8eae8 100644
+index be8eae8..f85ccf6 100644
 --- a/fs/btrfs/transaction.c
 +++ b/fs/btrfs/transaction.c
-@@ -274,7 +274,6 @@ loop:
- 	cur_trans->num_dirty_bgs = 0;
- 	spin_lock_init(&cur_trans->dirty_bgs_lock);
- 	INIT_LIST_HEAD(&cur_trans->deleted_bgs);
--	spin_lock_init(&cur_trans->deleted_bgs_lock);
- 	spin_lock_init(&cur_trans->dropped_roots_lock);
- 	list_add_tail(&cur_trans->list, &fs_info->trans_list);
- 	extent_io_tree_init(&cur_trans->dirty_pages,
-diff --git a/fs/btrfs/transaction.h b/fs/btrfs/transaction.h
-index 0da21ca..64c8221 100644
---- a/fs/btrfs/transaction.h
-+++ b/fs/btrfs/transaction.h
-@@ -77,8 +77,8 @@ struct btrfs_transaction {
- 	 */
- 	struct mutex cache_write_mutex;
- 	spinlock_t dirty_bgs_lock;
-+	/* Protected by spin lock fs_info->unused_bgs_lock. */
- 	struct list_head deleted_bgs;
--	spinlock_t deleted_bgs_lock;
- 	spinlock_t dropped_roots_lock;
- 	struct btrfs_delayed_ref_root delayed_refs;
- 	int aborted;
+@@ -75,6 +75,23 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
+ 			list_del_init(&em->list);
+ 			free_extent_map(em);
+ 		}
++		/*
++		 * If any block groups are found in ->deleted_bgs then it's
++		 * because the transaction was aborted and a commit did not
++		 * happen (things failed before writing the new superblock
++		 * and calling btrfs_finish_extent_commit()), so we can not
++		 * discard the physical locations of the block groups.
++		 */
++		while (!list_empty(&transaction->deleted_bgs)) {
++			struct btrfs_block_group_cache *cache;
++
++			cache = list_first_entry(&transaction->deleted_bgs,
++						 struct btrfs_block_group_cache,
++						 bg_list);
++			list_del_init(&cache->bg_list);
++			btrfs_put_block_group_trimming(cache);
++			btrfs_put_block_group(cache);
++		}
+ 		kmem_cache_free(btrfs_transaction_cachep, transaction);
+ 	}
+ }
 -- 
 2.1.3
 

@@ -1,45 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from fieldses.org ([173.255.197.46]:46890 "EHLO fieldses.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755241AbbK3W4a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 17:56:30 -0500
-Date: Mon, 30 Nov 2015 17:56:29 -0500
-To: Christoph Hellwig <hch@lst.de>
-Cc: viro@zeniv.linux.org.uk, tao.peng@primarydata.com,
-        jeff.layton@primarydata.com, linux-fsdevel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org, linux-nfs@vger.kernel.org,
-        linux-cifs@vger.kernel.org
-Subject: Re: vfs: move btrfs clone ioctls to common code
-Message-ID: <20151130225629.GC31564@fieldses.org>
-References: <1448563859-21922-1-git-send-email-hch@lst.de>
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:33643
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754834AbbK0QcG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 27 Nov 2015 11:32:06 -0500
+Received: from tux.wizards.de (p4FF582A1.dip0.t-ipconnect.de [79.245.130.161])
+	by mail02.iobjects.de (Postfix) with ESMTPSA id 1696A4160151
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 17:32:05 +0100 (CET)
+Received: from [192.168.100.223] (ragnarok [192.168.100.223])
+	by tux.wizards.de (Postfix) with ESMTP id A78A411C01DE
+	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 17:32:04 +0100 (CET)
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Subject: [PATCH] btrfs: fix misleading warning when space cache failed to load
+Message-ID: <56588584.3030705@googlemail.com>
+Date: Fri, 27 Nov 2015 17:32:04 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1448563859-21922-1-git-send-email-hch@lst.de>
-From: bfields@fieldses.org (J. Bruce Fields)
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Nov 26, 2015 at 07:50:54PM +0100, Christoph Hellwig wrote:
-> This patch set moves the existing btrfs clone ioctls that other file
-> system have started to implement to common code, and allows the NFS
-> server to export this functionality to remote systems.
-> 
-> This work is based originally on my NFS CLONE prototype, which reused
-> code from Anna Schumaker's NFS COPY prototype, as well as various
-> updates from Peng Tao to this code.
+When an inconsistent space cache is detected during loading we log a
+warning that users frequently mistake as instruction to invalidate the
+cache manually, even though this is not required. Fix the message to
+indicate that the cache will be rebuilt automatically.
 
-Looks good to me.  (In particular: ACK to the locks.c and nfsd patches.
-But, disclaimer, I haven't tried to test clone.)
+Signed-off-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
+---
+ fs/btrfs/free-space-cache.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
---b.
-
-> 
-> The patches are also available as a git branch and on gitweb:
-> 
-> 	git://git.infradead.org/users/hch/pnfs.git clone-for-viro
-> 	http://git.infradead.org/users/hch/pnfs.git/shortlog/refs/heads/clone-for-viro
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-nfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 0948d34..7a91770 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -891,7 +891,7 @@ out:
+ 		spin_unlock(&block_group->lock);
+ 		ret = 0;
+ 
+-		btrfs_warn(fs_info, "failed to load free space cache for block group %llu, rebuild it now",
++		btrfs_warn(fs_info, "failed to load free space cache for block group %llu, rebuilding it now",
+ 			block_group->key.objectid);
+ 	}
+ 
+-- 
+2.6.3
+--
+To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+the body of a message to majordomo@vger.kernel.org
+More majordomo info at  http://vger.kernel.org/majordomo-

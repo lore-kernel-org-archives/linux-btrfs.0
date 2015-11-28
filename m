@@ -1,30 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f49.google.com ([209.85.215.49]:34068 "EHLO
-	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751031AbbK1Jkk (ORCPT
+Received: from mail-oi0-f41.google.com ([209.85.218.41]:35435 "EHLO
+	mail-oi0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751168AbbK1MtA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Nov 2015 04:40:40 -0500
-Received: by lffu14 with SMTP id u14so150200723lff.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 01:40:39 -0800 (PST)
+	Sat, 28 Nov 2015 07:49:00 -0500
+Received: by oige206 with SMTP id e206so73199198oig.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 04:48:59 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQgjbR77eei2-srOofBLpWp-avj_2OMCRa_4Ffby8eL5g@mail.gmail.com>
-References: <CAK5rZE7_f6cypBPTR8UX-7t=OnRE595XBw__kN6Gy2cNowGFgA@mail.gmail.com>
-	<20151127204305.GE24333@carfax.org.uk>
-	<CAJCQCtQgjbR77eei2-srOofBLpWp-avj_2OMCRa_4Ffby8eL5g@mail.gmail.com>
-Date: Sat, 28 Nov 2015 11:40:38 +0200
-Message-ID: <CAK5rZE7j-4QMFjvn-FzWXDdqegvkQ9=HGoLUey6Kw4OMsQ0uZQ@mail.gmail.com>
-Subject: Re: BTRFS: could not find root 8
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
-To: linux-btrfs@vger.kernel.org
+In-Reply-To: <1448679820.11377.52.camel@scientia.net>
+References: <1448679820.11377.52.camel@scientia.net>
+From: Noah Massey <noah.massey@gmail.com>
+Date: Sat, 28 Nov 2015 07:48:20 -0500
+Message-ID: <CADfjVrh-k0r3u=TC2vpWh2rm2QNPt1e8cyJOq5EYbKc_Jx57yg@mail.gmail.com>
+Subject: Re: cannot move ro-snapshot directly but indirectly works
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>> After upgrading from systemd227 to 228
->>> these messages began to show up during boot:
->>> [   24.652118] BTRFS: could not find root 8
->>> [   24.664742] BTRFS: could not find root 8
+On Fri, Nov 27, 2015 at 22:06 Christoph Anton Mitterer
+<calestyo@scientia.net> wrote:
+>
+> Hey.
+>
+> Not sure whether this is intended or not, but it feels at least
+> somewhat strange:
+>
+> Consider I have a readonly snapshot (the only subvol here):
+> /btrfs/snapshots/ro-snapshot
+> now I want to move it to the dir:
+> /btrfs/snapshots/foo/
+> i.e.
+> mv /btrfs/snapshots/ro-snapshot
+> /btrfs/snapshots/foo/
+> but the mv complains about read-only filesystem.
+>
 
-> b. For the OP, is it possible quotas was ever enabled on this file system?
+Not a developer, but I believe this is intended behavior.
+Changing the direct parent directory of a subvolume is not a read only
+operation: it involves modifying the '..' directory entry.
+Renaming the subvolume, or moving the parent directory, modify the
+overall fs-hierachy, but do not modify the subvol.
 
-Quotas have never been enabled since creation of this fs.
+The same is true for normal directories:
+mkdir /tmp/dir1
+chmod -w /tmp/dir1
+mv /tmp/dir1 /tmp/dir2 ## allowed
+mkdir /tmp/dir3
+mv /tmp/dir2 /tmp/dir3/dir2 ## Permission denied
+
+~ Noah

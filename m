@@ -1,60 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:44651 "EHLO mail.kernel.org"
+Received: from plane.gmane.org ([80.91.229.3]:43027 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755116AbbK0Qje (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 11:39:34 -0500
-From: fdmanana@kernel.org
+	id S1750821AbbK1GPK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Nov 2015 01:15:10 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1a2Ymm-00020I-20
+	for linux-btrfs@vger.kernel.org; Sat, 28 Nov 2015 07:15:04 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 07:15:04 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 07:15:04 +0100
 To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix memory leaks after transaction is aborted
-Date: Fri, 27 Nov 2015 16:39:29 +0000
-Message-Id: <1448642369-28264-1-git-send-email-fdmanana@kernel.org>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [PATCH] btrfs: fix misleading warning when space cache failed
+ to load
+Date: Sat, 28 Nov 2015 06:11:11 +0000 (UTC)
+Message-ID: <pan$e5666$605427a0$1d2f736b$c2fb9624@cox.net>
+References: <56588584.3030705@googlemail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Holger Hoffstätte posted on Fri, 27 Nov 2015 17:32:04 +0100 as excerpted:
 
-When a transaction is aborted, or its commit fails before writing the new
-superblock and calling btrfs_finish_extent_commit(), we leak reference
-counts on the block groups attached to the transaction's delete_bgs list,
-because btrfs_finish_extent_commit() is never called for those two cases.
-Fix this by dropping their references at btrfs_put_transaction(), which
-is called when transactions are aborted (by making the transaction kthread
-commit the transaction) or if their commits fail.
+> When an inconsistent space cache is detected during loading we log a
+> warning that users frequently mistake as instruction to invalidate the
+> cache manually, even though this is not required. Fix the message to
+> indicate that the cache will be rebuilt automatically.
+> 
+> Signed-off-by: Holger Hoffstätte <holger.hoffstaette@googlemail.com>
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/transaction.c | 17 +++++++++++++++++
- 1 file changed, 17 insertions(+)
++1.  The message as-is, /is/ confusing, and this fixes it. =:^)
 
-diff --git a/fs/btrfs/transaction.c b/fs/btrfs/transaction.c
-index be8eae8..f85ccf6 100644
---- a/fs/btrfs/transaction.c
-+++ b/fs/btrfs/transaction.c
-@@ -75,6 +75,23 @@ void btrfs_put_transaction(struct btrfs_transaction *transaction)
- 			list_del_init(&em->list);
- 			free_extent_map(em);
- 		}
-+		/*
-+		 * If any block groups are found in ->deleted_bgs then it's
-+		 * because the transaction was aborted and a commit did not
-+		 * happen (things failed before writing the new superblock
-+		 * and calling btrfs_finish_extent_commit()), so we can not
-+		 * discard the physical locations of the block groups.
-+		 */
-+		while (!list_empty(&transaction->deleted_bgs)) {
-+			struct btrfs_block_group_cache *cache;
-+
-+			cache = list_first_entry(&transaction->deleted_bgs,
-+						 struct btrfs_block_group_cache,
-+						 bg_list);
-+			list_del_init(&cache->bg_list);
-+			btrfs_put_block_group_trimming(cache);
-+			btrfs_put_block_group(cache);
-+		}
- 		kmem_cache_free(btrfs_transaction_cachep, transaction);
- 	}
- }
 -- 
-2.1.3
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

@@ -1,106 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:48747 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751738AbbK1EOF (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:47647 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751866AbbK1Ezj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 23:14:05 -0500
-Message-ID: <1448684040.6837.18.camel@scientia.net>
+	Fri, 27 Nov 2015 23:55:39 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id 2F3D15FD30
+	for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 04:55:38 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id CIUU72v2h_9a for <linux-btrfs@vger.kernel.org>;
+	Sat, 28 Nov 2015 04:55:36 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 04:55:36 +0000 (UTC)
+Message-ID: <1448686535.6837.30.camel@scientia.net>
 Subject: Re: slowness when cp respectively send/receiving on top of dm-crypt
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Henk Slager <eye1tm@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Date: Sat, 28 Nov 2015 05:14:00 +0100
-In-Reply-To: <CAPmG0jZDHkvFq8_f__2p2net3Qu_rfvxBeyRHNZPZ3tekbhMMQ@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Sat, 28 Nov 2015 05:55:35 +0100
+In-Reply-To: <1448643790.11377.39.camel@scientia.net>
 References: <1448643790.11377.39.camel@scientia.net>
-	 <CAPmG0jZDHkvFq8_f__2p2net3Qu_rfvxBeyRHNZPZ3tekbhMMQ@mail.gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-YNM6Dr1uw+YBTnB+gF4b"
+	boundary="=-yXoa3vXMDe61QFy7CL4p"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-YNM6Dr1uw+YBTnB+gF4b
+--=-yXoa3vXMDe61QFy7CL4p
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 2015-11-27 at 20:00 +0100, Henk Slager wrote:
-> As far as I can guess this is transfers between Seagate Archive 8TB
-> SMR drives.
-Yes it is,... and I though about SMR being the reason at first, too,
-but:
-- As far as I understood SMR, it shouldn't kick in when I do what is
-mostly streaming data. Okay I don't know exactly how btrfs writes it's
-data, but when I send/receive 7GB I'd have expected that a great deal
-of it is just sequential writing.
+Hey.
 
-- When these disks move data from their non shingled areas to the
-shingled ones, that - or at least that's my impression - produces some
-typical sounds from the mechanical movements, which I didn't hear
+Send/receiving the master to the backup has finished just before... and
+now - not that I wouldn't trust btrfs, the hardware, etc. - I ran a
+complete diff --recursive --no-dereference over the snapshots on the
+two disks.
 
-- Bust most importantly,... if the reason was SMR, why should always
-when no IO happens dmcrypt_write be at basically full CPU.
+The two btrfs are mounted ro (thus no write IO), there is not really
+any other IO going on in the system.
 
 
-> I think you know this:
-> https://www.mail-archive.com/linux-btrfs%40vger.kernel.org/msg47341.h
-> tml
-> and certainly this:
-> https://bugzilla.kernel.org/show_bug.cgi?id=3D93581
-I knew the later, but as you've mentioned, the USB/SATA bridge probably
-save me from it. Interesting that USB3 is still slow enough not to get
-caught ;)
+I basically see a similar up and down as before during writing:
+This time, only the diff process show up in iotop.
+Sometimes, I get rates of 280-300 MB/s... for several seconds,
+sometimes 3-4s... sometimes longer 10-20s,... then it falls down to 30-
+40MB/s
 
-But thanks for the hint nevertheless :)
+At the same time I look at which files diff is currently comparing,...
+and these are all large analog image scans[0] and these are > 800MB
+(per file).
+Also the slow downs or speed ups don't happen when diff moves on to a
+new file... can also be when it still compares the same file for a
+while.
+
+I wouldn't assume that these are highly fragmented, since both
+filesystems were freshly filled a recently ago, with no much further
+writes since.
+And AFAIU, SMR shouldn't kick in here either.
 
 
+I tried to have a short look at how the logical CPUs are utilised at
+the slow and at the fast phases.
+There is no exact schema, sometimes (but not always) it looks as if 1-2=20
+cores have some 100% utilisation when it's fast... while when it's slow
+all cores are at 30-50%
+But that may also be just coincidence, as I observed the opposite
+behaviour few times...
+So don't give too much on this.
 
-> > There seems to be a repeating schema like this:
-> > - First, there is some heavy disk IO (200-250 M/s), mostly on btrfs
-> I think it is MByte/s (and not Mbit/s) right?
-Oh yes.. it's whatever iotop shows (not sure whether the use MB or MiB)
 
-
-> I must say that adding compression (compress-force=3Dzlib mount option)
-> makes the whole transferchain tend to not pipeline.
-Ah? Well if I'd have known that in advance ^^ (although I just use
-compress)...
-Didn't marketing tell people that compression may even speed up IO
-because the CPUs are so much faster than the disks?
-
->  Just dm-crypt I
-> have not seen it on Core-i7 systems. A test between 2 modern SSDs
-> (SATA3 connected ) is likely needed to see if there really is
-> tendency
-> for hiccups in processing/pipelining. On kernels 3.11 to 4.0 I have
-> seen and experienced far from optimal behavior, but with 4.3 it is
-> quite OK, although I use large bcache which can mitigate HDD seeks
-> quite well.
-I remember that in much earlier times, there was something about dm-
-crypt that is used just a single thread or so for IO...forgot the
-details though.
-
-> >Not sure if this is something that could be optimised or maybe it's
-> > even a non issue that happens for example while many small files
-> > are
-> > read/written (the data consists of both, many small files as well
-> > as
-> > many big files), which may explain why sometimes the actual IO goes
-> > up
-> > to large >200M/s or at least > 150M/s and sometimes it caps at
-> > around
-> > 40-80M/s
-> Indeed typical behavior of SMR drive
-Well it's not that I wanted to complain... I can live with that
-speeds... I just thought that there may be some bad playing between dm-
-crypt and btrfs, which could have been shown by these periods in which
-nothing seems to happen except dmcrypt_write doing stuff.
-
+Why can it sometimes be super fast and the falls back to low speed?
 
 Cheers,
-Chris
---=-YNM6Dr1uw+YBTnB+gF4b
+Chris.
+
+
+[0] yay.. the good old childhood images where they had no digikams...
+;)
+--=-yXoa3vXMDe61QFy7CL4p
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -187,19 +170,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyODA0MTQw
-MFowTwYJKoZIhvcNAQkEMUIEQOd2gEbUXS2bEVeyOFGL/LBtgRUtC6pbxjXUFlwEWiMWMk1uuCvj
-r2PYz5O7BvfQ70ddwXA2XcQ2yzyRS3vGb2owagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyODA0NTUz
+NVowTwYJKoZIhvcNAQkEMUIEQIO8r4BUmu15nJK0WMKCiB4/znJ8hGQK67VX0jGrRnGpxjvsIaSq
+A0UrF/rB7jPrq/m4iQs88Y/N6DlQYN6QTUgwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBx/6hlyT8GGpD88Enn5iCvzkpeIPoF
-bCCWC0PEcOCldKaBfwtjTneRXYhooN5Zr98vyeAgYrb4PcbZzZZzEDKFUfG73roOeFygK7+NA5lN
-41iw4kGyE1Egf8n4CRPc3fTz5bZzeGRv9diQaXQ/r+zOKv8OxFUXMcjPFZ5zAQgjeEu7VEZv/liv
-wVASI7FGl3JK0e3hBNsGz8ZCinS5NWLhGqBOhtMoWwLj2mUwBzOAKx19hlHjX0G2Eb5ZrQZXRp/G
-y8+fmDcnKXQtHChxj7TgbLPns3lnV9xRSiQOK+06Rr9FgAPw8rGsghNF9kQwMjAgTeTF1zOaxkZs
-fTq4A31/AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAty716Azfbu4KbKC26Qx5KTlHNTwcq
+r/DFhKGAJ8QWAcK9H8eDYQq9plDZf3cYrlh4c8fnxrHvwDe+dmOOAh17AG/A7aP0ugtMVuY1nGD+
+jUjozCI8vC48J3KNkhRDrKRvTHkAqeUFT2sYHL+Oexfa2/tWO7MScL1qfs5kWJYOU/GeSQiI5a9f
+3JkdX3Ih42tTt6KPsomlL/FScITfu9ofQteyivj1ikxxgz9QGafBq7L/Gp45umpxNCW3453Opxcu
+cI0Anre1wogLgxk00HjlgYEYw2rZq+IUnNMuG22Ksa83+8c2YSIsWybT1r4h/PRnafwCVNH9aadu
+bbLMfrMMAAAAAAAA
 
 
---=-YNM6Dr1uw+YBTnB+gF4b--
+--=-yXoa3vXMDe61QFy7CL4p--
 

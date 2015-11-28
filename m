@@ -1,188 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:47647 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751866AbbK1Ezj (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 23:55:39 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-02.dd24.net (Postfix) with ESMTP id 2F3D15FD30
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 04:55:38 +0000 (UTC)
-Received: from mailgw-02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id CIUU72v2h_9a for <linux-btrfs@vger.kernel.org>;
-	Sat, 28 Nov 2015 04:55:36 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 04:55:36 +0000 (UTC)
-Message-ID: <1448686535.6837.30.camel@scientia.net>
-Subject: Re: slowness when cp respectively send/receiving on top of dm-crypt
-From: Christoph Anton Mitterer <calestyo@scientia.net>
+Received: from plane.gmane.org ([80.91.229.3]:42952 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750893AbbK1GJF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 28 Nov 2015 01:09:05 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1a2Ygt-00058E-Gu
+	for linux-btrfs@vger.kernel.org; Sat, 28 Nov 2015 07:08:59 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 07:08:59 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 07:08:59 +0100
 To: linux-btrfs@vger.kernel.org
-Date: Sat, 28 Nov 2015 05:55:35 +0100
-In-Reply-To: <1448643790.11377.39.camel@scientia.net>
-References: <1448643790.11377.39.camel@scientia.net>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-yXoa3vXMDe61QFy7CL4p"
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: implications of mixed mode
+Date: Sat, 28 Nov 2015 06:08:54 +0000 (UTC)
+Message-ID: <pan$c4f12$68229b85$998fe036$ec46a899@cox.net>
+References: <56579BD1.4030401@lukas-pirl.de>
+	<pan$d7271$6dfb6246$70339bd2$f62a4d8@cox.net>
+	<565830AD.3000805@lukas-pirl.de>
 Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Lukas Pirl posted on Fri, 27 Nov 2015 23:30:05 +1300 as excerpted:
 
---=-yXoa3vXMDe61QFy7CL4p
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+> On 11/27/2015 04:11 PM, Duncan wrote as excerpted:
+>> My big hesitancy would be over that fact that very few will run or test
+>> mixed-mode at TB scale filesystem level [s]o you're relatively more
+>> likely to run into rarely seen scaling issues and perhaps bugs
 
-Hey.
+>> It's worth noting that rsync... seems to stress btrfs more than pretty
+>> much any other common single application.  It's extremely heavy access
+>> pattern just seems to trigger bugs that nothing else does, and while
+>> they do tend to get fixed, it really does seem to push btrfs to the
+>> limits, and there have been a /lot/ of rsync triggered btrfs bugs
+>> reported over the years.
+> 
+> Well, IMHO btrfs /has/ to deal with rsync workloads if it wants to be an
+> alternative for larger storages but that is another story.
 
-Send/receiving the master to the backup has finished just before... and
-now - not that I wouldn't trust btrfs, the hardware, etc. - I ran a
-complete diff --recursive --no-dereference over the snapshots on the
-two disks.
+Yes; that's why they get fixed. =:^)  I'm simply saying it's a strong 
+stressor, and on top of running the less tested setup that TB-scale mixed-
+mode is, you're looking at an ideal test case for generating bugs.  If 
+that's your intent...
 
-The two btrfs are mounted ro (thus no write IO), there is not really
-any other IO going on in the system.
+But it seems not...
 
+> I do run btrfs (non-mixed) with rsync workloads for quite a while now
+> and it is doing well (except for the deadlock that has been around a
+> while ago). Maybe my network is just slow enough to not trigger any
+> unfixed weird issues with the intense access patterns of rsync. Anyways,
+> thanks for the hint!
 
-I basically see a similar up and down as before during writing:
-This time, only the diff process show up in iotop.
-Sometimes, I get rates of 280-300 MB/s... for several seconds,
-sometimes 3-4s... sometimes longer 10-20s,... then it falls down to 30-
-40MB/s
+That's good to read.  Actually, given the number of rsync-triggered bugs 
+fixed over the years, rsync should be reasonably solid now in the default 
+case, so it's not entirely surprising that it's working well for you.  
+But it's _still_ good to read, as rsync really has triggered quite a 
+number of bugs over the years, so if it's now working well, that really 
+does indicate btrfs is maturing and getting more solidly stable, now. =:^)
 
-At the same time I look at which files diff is currently comparing,...
-and these are all large analog image scans[0] and these are > 800MB
-(per file).
-Also the slow downs or speed ups don't happen when diff moves on to a
-new file... can also be when it still compares the same file for a
-while.
+But of course if you do a less tested setup, rsyncing half a TB a day to 
+it, you're putting yourself in line to find a whole /new/ set of bugs.  
+That's primarily what I was saying.
 
-I wouldn't assume that these are highly fragmented, since both
-filesystems were freshly filled a recently ago, with no much further
-writes since.
-And AFAIU, SMR shouldn't kick in here either.
+> I think I sadly do not have the resources to be that guinea pig…
 
+Makes sense.
 
-I tried to have a short look at how the logical CPUs are utilised at
-the slow and at the fast phases.
-There is no exact schema, sometimes (but not always) it looks as if 1-2=20
-cores have some 100% utilisation when it's fast... while when it's slow
-all cores are at 30-50%
-But that may also be just coincidence, as I observed the opposite
-behaviour few times...
-So don't give too much on this.
+It'd be nice to have that corner-case well tested, but because it /is/ a 
+reasonably rare corner-case, it's not like millions of users are going to 
+be stumbling over bugs if testing waits awhile or even never really 
+happens at all.
 
+>> Meanwhile, assuming you're /not/ deliberately setting out to test,
+>> [w]hy are you considering mixed-mode here?  At that size the ENOSPC
+>> hassles of unmixed-mode btrfs on single-digit GiB [small btrfs] really
+>> should be dwarfed into insignificance, particularly since btrfs since
+>> [autoo-empty-chunk-deletion] so what possible reason [...] could
+>> justify mixed-mode at that sort of scale?
 
-Why can it sometimes be super fast and the falls back to low speed?
+> I just came to the consideration because I wondered why mixed-mode
+> is not generally preferred when data and metadata have the
+> same replication level.
 
-Cheers,
-Chris.
+The most direct answer is that mixed-mode is less efficient, and that it 
+really was designed for severely size constrained (under double-digit 
+GiB) btrfs, where the hassles of data vs. metadata chunks really are an 
+administration headache.  It was never designed for even 100 GiB btrfs, 
+where the data vs. metadata hassles tend to be much less of a headache, 
+such that the inefficiency of mixed-mode tends to matter more than the 
+much more minor data vs. metadata hassles.
 
+Compounding that are two additional factors, the first being that unlike 
+when mixed-mode was introduced, btrfs now deletes empty chunks, as well 
+as being a bit better at allocating smaller chunks as size gets tight, so 
+data vs. metadata hassles are at least an order of magnitude lower than 
+they were (many will never see ENOSPC due to poor data/metadata balance 
+at all now, while previously, it was generally only a matter of time if 
+people weren't routinely rebalancing to prevent it).
 
-[0] yay.. the good old childhood images where they had no digikams...
-;)
---=-yXoa3vXMDe61QFy7CL4p
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+The second additional factor is that mixed-mode gets /much/ less testing 
+at 100 GiB and above, because it simply wasn't designed for that and the 
+devs just don't test it, which means you're probably at least doubling 
+your chance of bugs.  For that factor alone, many would actively negative-
+recommend it, except for people who are really prepared to be guinea 
+pigs, and indeed, that's exactly what you've seen here.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyODA0NTUz
-NVowTwYJKoZIhvcNAQkEMUIEQIO8r4BUmu15nJK0WMKCiB4/znJ8hGQK67VX0jGrRnGpxjvsIaSq
-A0UrF/rB7jPrq/m4iQs88Y/N6DlQYN6QTUgwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAty716Azfbu4KbKC26Qx5KTlHNTwcq
-r/DFhKGAJ8QWAcK9H8eDYQq9plDZf3cYrlh4c8fnxrHvwDe+dmOOAh17AG/A7aP0ugtMVuY1nGD+
-jUjozCI8vC48J3KNkhRDrKRvTHkAqeUFT2sYHL+Oexfa2/tWO7MScL1qfs5kWJYOU/GeSQiI5a9f
-3JkdX3Ih42tTt6KPsomlL/FScITfu9ofQteyivj1ikxxgz9QGafBq7L/Gp45umpxNCW3453Opxcu
-cI0Anre1wogLgxk00HjlgYEYw2rZq+IUnNMuG22Ksa83+8c2YSIsWybT1r4h/PRnafwCVNH9aadu
-bbLMfrMMAAAAAAAA
+But it's a reasonable question, and now you have reasonable answers. =:^)
 
-
---=-yXoa3vXMDe61QFy7CL4p--
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

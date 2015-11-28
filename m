@@ -1,67 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:41111 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751091AbbK1DDq (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:47820 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751659AbbK1D5J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 22:03:46 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-02.dd24.net (Postfix) with ESMTP id F24A95FE1D
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 03:03:43 +0000 (UTC)
-Received: from mailgw-02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id fZ50i-gmvLKg for <linux-btrfs@vger.kernel.org>;
-	Sat, 28 Nov 2015 03:03:42 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 03:03:41 +0000 (UTC)
-Message-ID: <1448679820.11377.52.camel@scientia.net>
-Subject: cannot move ro-snapshot directly but indirectly works
+	Fri, 27 Nov 2015 22:57:09 -0500
+Message-ID: <1448683025.6837.4.camel@scientia.net>
+Subject: Re: btrfs: poor performance on deleting many large files
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Sat, 28 Nov 2015 04:03:40 +0100
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Sat, 28 Nov 2015 04:57:05 +0100
+In-Reply-To: <pan$34543$2ed1f043$2f803125$884b36c0@cox.net>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	 <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
+	 <1448488198.4717.4.camel@gmail.com>
+	 <pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
+	 <1448562347.8809.16.camel@scientia.net>
+	 <pan$54542$5eb77bd3$8682bff8$82310de1@cox.net>
+	 <1448582805.11377.9.camel@scientia.net>
+	 <pan$34543$2ed1f043$2f803125$884b36c0@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-w/sgQEwehBfbMAtE0Ezn"
+	boundary="=-KWbCosInuiDn3PjZyj50"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-w/sgQEwehBfbMAtE0Ezn
+--=-KWbCosInuiDn3PjZyj50
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Hey.
+On Fri, 2015-11-27 at 03:38 +0000, Duncan wrote:
+> AFAIK, per-subvolume *atime mounts should already be working.
+Ah I see. :)
 
-Not sure whether this is intended or not, but it feels at least
-somewhat strange:
-
-Consider I have a readonly snapshot (the only subvol here):
-/btrfs/snapshots/ro-snapshot
-now I want to move it to the dir:
-/btrfs/snapshots/foo/
-i.e.=C2=A0
-mv /btrfs/snapshots/ro-snapshot
-/btrfs/snapshots/foo/
-but the mv complains about read-only filesystem.
-
-However I can do something like:
-mkdir /btrfs/tmp
-mv =C2=A0/btrfs/snapshots /btrfs/tmp/
-mv /btrfs/tmp /btrfs/snapshots
-mv /btrfs/snapshots/snapshots /btrfs/snapshots/foo
-which would give me just the dir structure I tried to get before.
-
-
-Long story short... I don't get why one cannot move a ro-snapshot directly,=
- when one can move it indirectly in the fs-hierarchy.
+Still, specifically for snapshots that's a bit unhandy, as one
+typically doesn't mount each of them... one rather mount e.g. the top
+level subvol and has a subdir snapshots there...
+So perhaps the idea of having snapshots that are per se noatime is
+still not too bad.
 
 
 Cheers,
-Chris.
---=-w/sgQEwehBfbMAtE0Ezn
+Chris
+--=-KWbCosInuiDn3PjZyj50
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -148,19 +130,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyODAzMDM0
-MFowTwYJKoZIhvcNAQkEMUIEQHRVIBMakqZqEEVVYbiB2A3Yfq6ob97JZU2mdW3vUMvfRrF9LjLA
-a17YwWRAIDShkdMj2PdYvvvPH9ewt5jYBZQwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTEyODAzNTcw
+NVowTwYJKoZIhvcNAQkEMUIEQMOeyYhlBsMw5rFLgleGXtCyeB5Eo9Zg0BihjIMuBd9P7H055Dsh
+u2+sbasoTAtJMwqessSnh0umdU1l2k93FuAwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCqv+KtgVLXQIz3vl+Jo5K4ooVTAFph
-7xrtljEwLnLSIhLsMYvvblb0wO98Obs2K+TgNeo3Nc1KRyoWA8CG5jTz5f+RRr+ZmpeSIp1GYu0A
-dc5UsjHkflcZSA9zPrV/ArVCaIpOUARpWs1mSsBrqmDrolzVA1qYyIxvBoLatdVVYfgcsSH71JhX
-xeBgftpNE0JhsNHRthjnLzJ0qfC0uPaG0vprWB1/VeFLHsl05LyW1sm9jG+B21SN+SoZ3qu1A9Ro
-wTo4NNEz9cqz05Kqpxy4lWRzrYKHdRcmq22V46At5KOio54dmr6Qysun+TWtv1FR9qmTQL4SUjCF
-W29dAA7cAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCpAWMr74gEPANxWz3O8bz/0T7ug9MD
+tsD74I4kjEjKQWuAyPvy3OtJj0k9s6SNQFMQKR3MQB+tiRslhuq/xkcx8jzV/ce8UeDn8muT8A85
+/kq5V68AOWYhbQX2x6sOvBELGCu/jT5QCu+JnV3NCKW4fA/fuV1jxF6j16gk9H9NCQ+qPwbpKB5i
+XH+VToah+7vXZzFCjyFFHqZKUVfS22cnK341na6YGbGTpINc8XyFiqUPyx1QtI8KgahQtKiQ+jLq
+F3WGkWoZj2Vt6xc6rYOQQ+FnwrSSEg6g17Mw/lc8/2yW1z8b/E30mhZ9ra/lUHfJTsP/JYcwR7kI
+xSHe+vtUAAAAAAAA
 
 
---=-w/sgQEwehBfbMAtE0Ezn--
+--=-KWbCosInuiDn3PjZyj50--
 

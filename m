@@ -1,78 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from torres.zugschlus.de ([85.214.131.164]:60868 "EHLO
-	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752126AbbK2SGc (ORCPT
+Received: from mail-lf0-f47.google.com ([209.85.215.47]:34634 "EHLO
+	mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753057AbbK2T3u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Nov 2015 13:06:32 -0500
-Received: from mh by torres.zugschlus.de with local (Exim 4.80)
-	(envelope-from <mh+linux-btrfs@zugschlus.de>)
-	id 1a36Mn-00042S-K6
-	for linux-btrfs@vger.kernel.org; Sun, 29 Nov 2015 19:06:29 +0100
-Date: Sun, 29 Nov 2015 19:06:29 +0100
-From: Marc Haber <mh+linux-btrfs@zugschlus.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: "disk full" on a 5 GB btrfs filesystem, FAQ outdated?
-Message-ID: <20151129180629.GJ31524@torres.zugschlus.de>
-References: <20151129130754.GI31524@torres.zugschlus.de>
- <20151129141806.GG24333@carfax.org.uk>
+	Sun, 29 Nov 2015 14:29:50 -0500
+Received: by lffu14 with SMTP id u14so174101336lff.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Nov 2015 11:29:49 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-In-Reply-To: <20151129141806.GG24333@carfax.org.uk>
+In-Reply-To: <pan$8c5a3$43576c38$c4ab8cd7$5fc9a224@cox.net>
+References: <1448643790.11377.39.camel@scientia.net>
+	<CAPmG0jZDHkvFq8_f__2p2net3Qu_rfvxBeyRHNZPZ3tekbhMMQ@mail.gmail.com>
+	<1448684040.6837.18.camel@scientia.net>
+	<CAPmG0jbso5RM4UW_urBKa02LOKreCTx2PjX7YyUp6nuqOONo=Q@mail.gmail.com>
+	<pan$8c5a3$43576c38$c4ab8cd7$5fc9a224@cox.net>
+Date: Sun, 29 Nov 2015 20:29:49 +0100
+Message-ID: <CAPmG0jZkK-2iJ0vd3L08Fkap-XdrSx_jSn5ZgZzOk1wvbAzEqA@mail.gmail.com>
+Subject: Re: slowness when cp respectively send/receiving on top of dm-crypt
+From: Henk Slager <eye1tm@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Hugo,
+On Sun, Nov 29, 2015 at 6:31 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-On Sun, Nov 29, 2015 at 02:18:06PM +0000, Hugo Mills wrote:
-> On Sun, Nov 29, 2015 at 02:07:54PM +0100, Marc Haber wrote:
-> > However, the FAQ
-> > https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_Btrfs_claims_I.27m_out_of_space.2C_but_it_looks_like_I_should_have_lots_left.21
-> > suggests that for small filesystems (<16 GB), the best solution would
-> > be to upgrade to at least 2.6.37 and recreate the filesystem. 2.6.37
-> > is ancient, from 2011, so I am pretty sure that the filesystem _was_
-> > created at least with a kernel more recent than that.
-> 
->    You missed the most important thing from that paragraph: Use mixed
-> block groups. That's "mkfs.btrfs --mixed ..." (which I realise is
-> missing from the text, and I'll be adding it after I send this email).
+> What are you using to tell you it has 1018391 extents?  If you're using
+> filefrag, it's known not to understand btrfs compression, which uses 128
+> KiB (pre-compression size, I believe, tho I'm not absolutely positive)
+> blocks, and as a result, to report each of those blocks as a separate
+> extent.
+Indeed filefrag, and filefrag -k -v results in a 72M txt file, almost
+all 'extents' show length:128, but also several a bit bigger or much
+bigger.
+>From just quickly browsing and random checks, it seems mostly
+contiguous (on linux block layer level or from what filefrag sees), it
+looks like it is not so difficult to change filefrag so that it also
+reports the amount of discontinuities. But maybe there is other
+'misunderstanding' between filefrag and btrfs, so then we would need
+something dedicated. filefrag execution takes long time mostly
+(minutes), even just for 1 though big file.
 
-Yes, that was the important bit of missing information. My filesystem
-now reads:
+> Because if you're using compress-force, filefrag will see each 128 KiB
+> compression block as an extent, and 1018391 reported "extents" (actually
+> compression blocks) should be ~ 125 GiB.
+See also above;
+file is 176521162380 bytes ~= 164.4 GiB and ls -lh reports 165G
 
-[26/512]mh@fan:/mnt/tempdisk$ df -h .
-Filesystem               Size  Used Avail Use% Mounted on
-/dev/mapper/banana-root  6,0G  836M  5,2G  14% /mnt/tempdisk
-[27/513]mh@fan:/mnt/tempdisk$ sudo btrfs fi show .
-Label: none  uuid: b2906231-70a9-46d9-9830-38a13cb73171
-        Total devices 1 FS bytes used 861.29MiB
-        devid    1 size 6.00GiB used 6.00GiB path /dev/mapper/banana-root
+> AFAIK there's no easy "admin-level" way to check extent usage when btrfs
+> compression is used on a file.  There's developer-level btrfs-debug
+> output, but nothing admin-level or user-level at all.
+I would be interested in tooling that gives more visibility on what
+happens on btrfs disk-block level, primarily just for non-compression
+use-cases. If you know some, please let us know.
 
-btrfs-progs v4.3
-[28/514]mh@fan:/mnt/tempdisk$ sudo btrfs fi df .
-System, single: total=4.00MiB, used=4.00KiB
-Data+Metadata, single: total=6.00GiB, used=861.29MiB
-GlobalReserve, single: total=20.00MiB, used=0.00B
-[29/515]mh@fan:/mnt/tempdisk$
+> And while compress-force won't change the reported "extents" that are
+> actually compression-blocks if the file is actually compressed, just
+> compress by itself may or may not actually compress the file (there's an
+> algorithm used, from what the devs have said, basically it checks whether
+> the first block or two compress well, and assumes the rest of the file
+> will be similar, compressing or not based on the result of that attempt),
+This method is probably a good method for live data being written, but
+for static content (my data files), it turned out to be not good
+enough, i.e. total space gained in TeraByte range was not what I
+expected/wanted.
 
-Can I somehow get duplicate metadata back? Or is that unnecessary?
-
-> > My normal way to recover from this situation is to btrfs add a new
-> > device, btrfs balance, btrfs --convert=single --force balance, btfs
-> > device remove, btr balance start -mconvert=dup --force and finally
-> > balance start again.
-> > 
-> > Is there any solution to solve this more elegantly?
-> 
->    Recreate the FS with --mixed, and that should deal with it.
-
-Done. Thanks!
-
-Greetings
-Marc
-
-
--- 
------------------------------------------------------------------------------
-Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
-Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
-Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421
+> so it's quite possible you'll get better "extent" numbers if the file
+> isn't actually compressed, in which case filefrag actually gets things
+> right and reports real extent numbers, vs the number of compression
+> blocks if the file is compressed.
+I think you mean that when the destination block of the file are not
+re-compressed (and stored on disk) but left and stored as the
+unprocessed source datablock. Indeed, when I first e.g gzip the file,
+it's then 75G and filefrag reports 8613 extents, most of them 512KiB

@@ -1,135 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.19]:52609 "EHLO mout.gmx.net"
+Received: from plane.gmane.org ([80.91.229.3]:51971 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752713AbbK2BVt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Nov 2015 20:21:49 -0500
-Subject: Re: [PATCH 0/7] Let user specify the kernel version for features
-To: Anand Jain <anand.jain@oracle.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
- <5656683C.6060001@cn.fujitsu.com> <5656A18E.9050607@oracle.com>
- <5656AC64.3030304@cn.fujitsu.com> <5656EA7F.1070500@oracle.com>
- <5656FBB7.5020802@gmx.com> <565784DE.5080401@oracle.com>
- <5657A757.90909@cn.fujitsu.com> <56581742.9030308@oracle.com>
-Cc: dsterba@suse.cz, calestyo@scientia.net, ahferroin7@gmail.com,
-        1i5t5.duncan@cox.net
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <565A5317.8040506@gmx.com>
-Date: Sun, 29 Nov 2015 09:21:27 +0800
-MIME-Version: 1.0
-In-Reply-To: <56581742.9030308@oracle.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+	id S1750725AbbK2Fbx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Nov 2015 00:31:53 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1a2uaR-0002Hd-Jc
+	for linux-btrfs@vger.kernel.org; Sun, 29 Nov 2015 06:31:47 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Nov 2015 06:31:47 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Nov 2015 06:31:47 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: slowness when cp respectively send/receiving on top of dm-crypt
+Date: Sun, 29 Nov 2015 05:31:45 +0000 (UTC)
+Message-ID: <pan$8c5a3$43576c38$c4ab8cd7$5fc9a224@cox.net>
+References: <1448643790.11377.39.camel@scientia.net>
+	<CAPmG0jZDHkvFq8_f__2p2net3Qu_rfvxBeyRHNZPZ3tekbhMMQ@mail.gmail.com>
+	<1448684040.6837.18.camel@scientia.net>
+	<CAPmG0jbso5RM4UW_urBKa02LOKreCTx2PjX7YyUp6nuqOONo=Q@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Henk Slager posted on Sat, 28 Nov 2015 19:37:31 +0100 as excerpted:
 
+> I did cp a 165G file to the SMR drive. The source had 130 extents and
+> just uncompressed btrfs raid10 fs, steadily 150+MB/s throughput. The fs
+> on the SMR disk is mounted like this:
+> /dev/mapper/dmcrypt_smr on /mnt/smr type btrfs
+> (rw,noatime,compress-force=zlib,nossd,space_cache,subvolid=5,subvol=/)
 
-On 11/27/2015 04:41 PM, Anand Jain wrote:
->
->
->
->
->> I meant, it can be done in packaging level and it's much easier to do.
->
->   Its all about trade off, and there is no right or wrong, so is tough
->   to arrive at a conclusion even before this was implemented. Below are
->   the choices considered, now putting in the order of least suitable
->   to most suitable after reviewing their advantages and disadvantages.
->
->   . Update default features at the compile time, so to have a define
->     set for the default choices per release/distro. (not sure how to
->     do that), But with this, you can not solve the problem for which
->     current "-O comp=" is provided (i.e to provide features which are
->     compatible across a set of known kernels). And mainly, you are
->     letting the control of such a discussion out of btrfs/mainline.
->     Then distros will have own set of default features instead of having
->     such an effort discussed and converged at the mainline.
+Note that compress-force=zlib.  It's important below.
 
-No need to set default feature per distro, we have make it clear, our 
-btrfs-progs defaults feature are these, if the distro doesn't like it, 
-do the backport yourself.
+> The result of the cp action is that the destination is 1018391 extents
 
->
->   . /etc/btrfs.conf file to hold the default features (same as ext4)
->     I have to drop this idea since from the user point of view you are
->     creating another source of config/input that user/distro has to
->     care about.
->
+> The fs on the SMR drive is almost exclusively adding files, so assume
+> enough un-fragmented free space available still.
 
-No need as described above.
+What are you using to tell you it has 1018391 extents?  If you're using 
+filefrag, it's known not to understand btrfs compression, which uses 128 
+KiB (pre-compression size, I believe, tho I'm not absolutely positive) 
+blocks, and as a result, to report each of those blocks as a separate 
+extent.
 
->   . Do it at run time for the running kernel. Current. In the order of
->     priority .. check sysfs, if not check kernel-version, if not use
->     progs-version-based-defaults (original).
->
+1018391 * 1/8 MiB (aka 128 KiB) * 1/1024 GiB/MiB ~= 124.3 GiB.
 
-As stated several times, kernel version based probe is inaccurate, as 
-long as your goal is to ensure the fs can be mounted, you are wasting 
-time as such probe won't meet your goal.
+Are you sure that was a 165 GiB file, or was it (~) 125 GiB?  And GiB 
+(2^30, 1024^3) or GB (10^9, 1000^3), or some horrible mixture of 1024s 
+and 1000s?
 
-Even as a fallback method, it's not reliable and super easy to avoid.
-Just remove the btrfs module.
-Then all the features are just based on vanilla kernel version, which is 
-far from the real kernel.
+Because if you're using compress-force, filefrag will see each 128 KiB 
+compression block as an extent, and 1018391 reported "extents" (actually 
+compression blocks) should be ~ 125 GiB.
 
+> If you would do the same without compress-force-zlib, (also no other
+> compression), you will see that btrfs can really do well (like 1 extent
+> per GB or so) even with dm-crypt
 
-As long as your goal is to ensure a fs after mkfs can be used without 
-error, you're already in a nightmare.
-What if the kernel doesn't has btrfs compiled?
-What if the fs is not only for kernel to mount, but also a boot 
-partition for grub?
-Do you need to check the grub2 version? Check if this is a /boot partition?
+AFAIK there's no easy "admin-level" way to check extent usage when btrfs 
+compression is used on a file.  There's developer-level btrfs-debug 
+output, but nothing admin-level or user-level at all.
 
-You want to handle them all? This is not the right place, you're in the 
-field of distro, not btrfs-progs.
+>> Didn't marketing tell people that compression may even speed up IO
+>> because the CPUs are so much faster than the disks?
 
+> They did not tell that it can cause this million extent creation. And
+> LZO might be different and force or not also has impact.
 
-Recently I just encountered such problem. Latest xfs-progs makes xfs 
-version 5 by default, but grub2 can't handle version 5 yet in latest 
-stable version.
-Then system can't even boot into grub2.
+Except it's not (that we know of, and most likely not) million plus 
+extents.  It's a million plus 128-KiB-each compression blocks.  Big 
+difference!
 
-Did you see Dave trying to add such grub2 version based probe to change 
-mkfs.xfs features?
-No, just because that's not the way things should be done.
+LZO should report an identical number of compression blocks, because 
+btrfs uses the same 128 KiB compression block size for both.
 
->
->> And it's much predictable than version based detection.
->
->   I think you mean to say its not predictable because it follows
->   a priority list, and we won't know which system used sysfs/version/
->   progs-version. Concern is valid. But I feel its trivial, unless
->   you have some strong reason. Further still its only a trade off that
->   could achieve.
->
->   Other concern that others commented..
->
->   if sysfs is not there and feature is backported, for this we should
->   ensure sysfs feature is also backported along with the feature it
->   self, without that feature back port is incomplete.
+And while compress-force won't change the reported "extents" that are 
+actually compression-blocks if the file is actually compressed, just 
+compress by itself may or may not actually compress the file (there's an 
+algorithm used, from what the devs have said, basically it checks whether 
+the first block or two compress well, and assumes the rest of the file 
+will be similar, compressing or not based on the result of that attempt), 
+so it's quite possible you'll get better "extent" numbers if the file 
+isn't actually compressed, in which case filefrag actually gets things 
+right and reports real extent numbers, vs the number of compression 
+blocks if the file is compressed.
 
-Just remove the btrfs module, then sysfs probe just become meaningless.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-If something wrong may happen, then it will happen.
-And the wrong thing is vanilla version based probe.
-
-You are already messing up what btrfs-progs should do and what a distro 
-should do.
-
-Thanks,
-Qu
-
-> If distro does not
->   want to backport sysfs, the other choice that disto has is to update
->   the feature-to-version table in the progs.
->
->   For the system which does not provide version at all, it will fail
->   back to the original progs-version-based-defaults.
->
->
->   Hope I have captured all the concerns and addressed them.
->
->
-> Thanks, Anand
->
->

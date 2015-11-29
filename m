@@ -1,98 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51971 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750725AbbK2Fbx (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Nov 2015 00:31:53 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a2uaR-0002Hd-Jc
-	for linux-btrfs@vger.kernel.org; Sun, 29 Nov 2015 06:31:47 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Nov 2015 06:31:47 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Nov 2015 06:31:47 +0100
+Received: from torres.zugschlus.de ([85.214.131.164]:60344 "EHLO
+	torres.zugschlus.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750893AbbK2NpI (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 29 Nov 2015 08:45:08 -0500
+Received: from mh by torres.zugschlus.de with local (Exim 4.80)
+	(envelope-from <mh+linux-btrfs@zugschlus.de>)
+	id 1a31hq-0002ti-Pr
+	for linux-btrfs@vger.kernel.org; Sun, 29 Nov 2015 14:07:54 +0100
+Date: Sun, 29 Nov 2015 14:07:54 +0100
+From: Marc Haber <mh+linux-btrfs@zugschlus.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: slowness when cp respectively send/receiving on top of dm-crypt
-Date: Sun, 29 Nov 2015 05:31:45 +0000 (UTC)
-Message-ID: <pan$8c5a3$43576c38$c4ab8cd7$5fc9a224@cox.net>
-References: <1448643790.11377.39.camel@scientia.net>
-	<CAPmG0jZDHkvFq8_f__2p2net3Qu_rfvxBeyRHNZPZ3tekbhMMQ@mail.gmail.com>
-	<1448684040.6837.18.camel@scientia.net>
-	<CAPmG0jbso5RM4UW_urBKa02LOKreCTx2PjX7YyUp6nuqOONo=Q@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: "disk full" on a 5 GB btrfs filesystem, FAQ outdated?
+Message-ID: <20151129130754.GI31524@torres.zugschlus.de>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Henk Slager posted on Sat, 28 Nov 2015 19:37:31 +0100 as excerpted:
+Hi,
 
-> I did cp a 165G file to the SMR drive. The source had 130 extents and
-> just uncompressed btrfs raid10 fs, steadily 150+MB/s throughput. The fs
-> on the SMR disk is mounted like this:
-> /dev/mapper/dmcrypt_smr on /mnt/smr type btrfs
-> (rw,noatime,compress-force=zlib,nossd,space_cache,subvolid=5,subvol=/)
+I have a banana pi with a btrfs filesystem of 5 GB in size, which
+frequently runs out of space (lots of snapshots). This is currently
+again the case:
 
-Note that compress-force=zlib.  It's important below.
+[27/524]mh@banana:~$ sudo btrfs balance start /
+ERROR: error during balancing '/' - No space left on device
+There may be more info in syslog - try dmesg | tail
+[28/525]mh@banana:~$ sudo btrfs balance start / -dlimit=3
+[sudo] password for mh on banana:
+ERROR: error during balancing '/' - No space left on device
+There may be more info in syslog - try dmesg | tail
+[29/526]mh@banana:~$ sudo btrfs balance start / -dlimit=3
+ERROR: error during balancing '/' - No space left on device
+There may be more info in syslog - try dmesg | tail
+[30/526]mh@banana:~$ sudo btrfs balance start / -dusage=0
+Done, had to relocate 0 out of 8 chunks
+[31/527]mh@banana:~$ sudo btrfs balance start / -dlimit=3
+ERROR: error during balancing '/' - No space left on device
+There may be more info in syslog - try dmesg | tail
+[32/528]mh@banana:~$ sudo btrfs fi show /
+Label: none  uuid: ada6b7f5-98d6-4fee-a3a3-b73bd152ff6c
+        Total devices 1 FS bytes used 3.37GiB
+        devid    1 size 6.89GiB used 4.22GiB path /dev/mapper/banana-root
 
-> The result of the cp action is that the destination is 1018391 extents
+btrfs-progs v4.3
+[33/529]mh@banana:~$ sudo btrfs fi df /
+Data, single: total=3.41GiB, used=3.25GiB
+System, DUP: total=32.00MiB, used=16.00KiB
+Metadata, DUP: total=384.00MiB, used=121.75MiB
+GlobalReserve, single: total=48.00MiB, used=0.00B
+[34/530]mh@banana:~$ uname -a
+Linux banana 4.3.0-zgbpi-armmp-lpae+ #2 SMP Sat Nov 7 13:07:34 UTC 2015 armv7l GNU/Linux
+[36/532]mh@banana:~$ df -h /
+Filesystem               Size  Used Avail Use% Mounted on
+/dev/mapper/banana-root  6.9G  3.6G  2.9G  56% /
+[37/533]mh@banana:~$
 
-> The fs on the SMR drive is almost exclusively adding files, so assume
-> enough un-fragmented free space available still.
+The first kernel that was ever booted on the device was 4.1, I am
+therefore reasonably sure that the filesystem was also created with a
+recent kernel. Is there any possibility to find out about the kernel
+version that a filesystem was created with?
 
-What are you using to tell you it has 1018391 extents?  If you're using 
-filefrag, it's known not to understand btrfs compression, which uses 128 
-KiB (pre-compression size, I believe, tho I'm not absolutely positive) 
-blocks, and as a result, to report each of those blocks as a separate 
-extent.
+However, the FAQ
+https://btrfs.wiki.kernel.org/index.php/FAQ#Help.21_Btrfs_claims_I.27m_out_of_space.2C_but_it_looks_like_I_should_have_lots_left.21
+suggests that for small filesystems (<16 GB), the best solution would
+be to upgrade to at least 2.6.37 and recreate the filesystem. 2.6.37
+is ancient, from 2011, so I am pretty sure that the filesystem _was_
+created at least with a kernel more recent than that.
 
-1018391 * 1/8 MiB (aka 128 KiB) * 1/1024 GiB/MiB ~= 124.3 GiB.
+My normal way to recover from this situation is to btrfs add a new
+device, btrfs balance, btrfs --convert=single --force balance, btfs
+device remove, btr balance start -mconvert=dup --force and finally
+balance start again.
 
-Are you sure that was a 165 GiB file, or was it (~) 125 GiB?  And GiB 
-(2^30, 1024^3) or GB (10^9, 1000^3), or some horrible mixture of 1024s 
-and 1000s?
+Is there any solution to solve this more elegantly?
 
-Because if you're using compress-force, filefrag will see each 128 KiB 
-compression block as an extent, and 1018391 reported "extents" (actually 
-compression blocks) should be ~ 125 GiB.
-
-> If you would do the same without compress-force-zlib, (also no other
-> compression), you will see that btrfs can really do well (like 1 extent
-> per GB or so) even with dm-crypt
-
-AFAIK there's no easy "admin-level" way to check extent usage when btrfs 
-compression is used on a file.  There's developer-level btrfs-debug 
-output, but nothing admin-level or user-level at all.
-
->> Didn't marketing tell people that compression may even speed up IO
->> because the CPUs are so much faster than the disks?
-
-> They did not tell that it can cause this million extent creation. And
-> LZO might be different and force or not also has impact.
-
-Except it's not (that we know of, and most likely not) million plus 
-extents.  It's a million plus 128-KiB-each compression blocks.  Big 
-difference!
-
-LZO should report an identical number of compression blocks, because 
-btrfs uses the same 128 KiB compression block size for both.
-
-And while compress-force won't change the reported "extents" that are 
-actually compression-blocks if the file is actually compressed, just 
-compress by itself may or may not actually compress the file (there's an 
-algorithm used, from what the devs have said, basically it checks whether 
-the first block or two compress well, and assumes the rest of the file 
-will be similar, compressing or not based on the result of that attempt), 
-so it's quite possible you'll get better "extent" numbers if the file 
-isn't actually compressed, in which case filefrag actually gets things 
-right and reports real extent numbers, vs the number of compression 
-blocks if the file is compressed.
+Greetings
+Marc
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+-----------------------------------------------------------------------------
+Marc Haber         | "I don't trust Computers. They | Mailadresse im Header
+Leimen, Germany    |  lose things."    Winona Ryder | Fon: *49 6224 1600402
+Nordisch by Nature |  How to make an American Quilt | Fax: *49 6224 1600421

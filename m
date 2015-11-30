@@ -1,70 +1,250 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp07.in.ibm.com ([122.248.162.7]:43527 "EHLO
-	e28smtp07.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752862AbbK3KRs (ORCPT
+Received: from e28smtp01.in.ibm.com ([122.248.162.1]:48609 "EHLO
+	e28smtp01.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752630AbbK3KRq (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 05:17:48 -0500
+	Mon, 30 Nov 2015 05:17:46 -0500
 Received: from localhost
-	by e28smtp07.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp01.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 30 Nov 2015 15:47:47 +0530
+	Mon, 30 Nov 2015 15:47:44 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: fstests@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
         fdmanana@gmail.com, chandan@mykolab.com
-Subject: [PATCH 1/8] Filter xfs_io's output in units of page size
-Date: Mon, 30 Nov 2015 15:47:17 +0530
-Message-Id: <1448878644-16503-2-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH 7/8] Fix btrfs/103 to work on non-4k block sized filesystems
+Date: Mon, 30 Nov 2015 15:47:23 +0530
+Message-Id: <1448878644-16503-8-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The helpers introduced in this commit will be used to make btrfs tests that
-assume 4k as the page size to work on non-4k page-sized systems as well.
+This commit makes use of the new _filter_xfs_io_blocks_modified filtering
+function to print information in terms of file blocks rather than file
+offset.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- common/filter | 8 ++++++++
- common/rc     | 6 ++++++
- 2 files changed, 14 insertions(+)
+ tests/btrfs/103     |  44 +++++++++++-------
+ tests/btrfs/103.out | 132 ++++++++++++++++++++++++++++++++++++++--------------
+ 2 files changed, 122 insertions(+), 54 deletions(-)
 
-diff --git a/common/filter b/common/filter
-index 05f2fab..1be377c 100644
---- a/common/filter
-+++ b/common/filter
-@@ -261,6 +261,14 @@ _filter_xfs_io_blocks_modified()
- 	_filter_xfs_io_units_modified "Block" $BLOCK_SIZE
+diff --git a/tests/btrfs/103 b/tests/btrfs/103
+index 3020c86..9d11d0f 100755
+--- a/tests/btrfs/103
++++ b/tests/btrfs/103
+@@ -56,31 +56,37 @@ test_clone_and_read_compressed_extent()
+ 	_scratch_mkfs >>$seqres.full 2>&1
+ 	_scratch_mount $mount_opts
+ 
++	BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
++
+ 	# Create a test file with a single extent that is compressed (the
+ 	# data we write into it is highly compressible no matter which
+ 	# compression algorithm is used, zlib or lzo).
+-	$XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 4K"        \
+-			-c "pwrite -S 0xbb 4K 8K"        \
+-			-c "pwrite -S 0xcc 12K 4K"       \
+-			$SCRATCH_MNT/foo | _filter_xfs_io
++	$XFS_IO_PROG -f -c "pwrite -S 0xaa 0K $((1 * $BLOCK_SIZE))" \
++		-c "pwrite -S 0xbb $((1 * $BLOCK_SIZE)) $((2 * $BLOCK_SIZE))" \
++		-c "pwrite -S 0xcc $((3 * $BLOCK_SIZE)) $((1 * $BLOCK_SIZE))" \
++		$SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
++
+ 
+ 	# Now clone our extent into an adjacent offset.
+-	$CLONER_PROG -s $((4 * 1024)) -d $((16 * 1024)) -l $((8 * 1024)) \
+-		$SCRATCH_MNT/foo $SCRATCH_MNT/foo
++	$CLONER_PROG -s $((1 * $BLOCK_SIZE)) -d $((4 * $BLOCK_SIZE)) \
++		     -l $((2 * $BLOCK_SIZE)) $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+ 
+ 	# Same as before but for this file we clone the extent into a lower
+ 	# file offset.
+-	$XFS_IO_PROG -f -c "pwrite -S 0xaa 8K 4K"         \
+-			-c "pwrite -S 0xbb 12K 8K"        \
+-			-c "pwrite -S 0xcc 20K 4K"        \
+-			$SCRATCH_MNT/bar | _filter_xfs_io
++	$XFS_IO_PROG -f \
++		-c "pwrite -S 0xaa $((2 * $BLOCK_SIZE)) $((1 * $BLOCK_SIZE))" \
++		-c "pwrite -S 0xbb $((3 * $BLOCK_SIZE)) $((2 * $BLOCK_SIZE))" \
++		-c "pwrite -S 0xcc $((5 * $BLOCK_SIZE)) $((1 * $BLOCK_SIZE))" \
++		$SCRATCH_MNT/bar | _filter_xfs_io_blocks_modified
+ 
+-	$CLONER_PROG -s $((12 * 1024)) -d 0 -l $((8 * 1024)) \
++	$CLONER_PROG -s $((3 * $BLOCK_SIZE)) -d 0 -l $((2 * $BLOCK_SIZE)) \
+ 		$SCRATCH_MNT/bar $SCRATCH_MNT/bar
+ 
+-	echo "File digests before unmounting filesystem:"
+-	md5sum $SCRATCH_MNT/foo | _filter_scratch
+-	md5sum $SCRATCH_MNT/bar | _filter_scratch
++	echo "File contents before unmounting filesystem:"
++	echo "foo:"
++	od -t x1 $SCRATCH_MNT/foo | _filter_od
++	echo "bar:"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
+ 
+ 	# Evicting the inode or clearing the page cache before reading again
+ 	# the file would also trigger the bug - reads were returning all bytes
+@@ -91,10 +97,12 @@ test_clone_and_read_compressed_extent()
+ 	# ranges that point to the same compressed extent.
+ 	_scratch_remount
+ 
+-	echo "File digests after mounting filesystem again:"
+-	# Must match the same digests we got before.
+-	md5sum $SCRATCH_MNT/foo | _filter_scratch
+-	md5sum $SCRATCH_MNT/bar | _filter_scratch
++	echo "File contents after mounting filesystem again:"
++	# Must match the same contents we got before.
++	echo "foo:"
++	od -t x1 $SCRATCH_MNT/foo | _filter_od
++	echo "bar:"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
  }
  
-+_filter_xfs_io_pages_modified()
-+{
-+	PAGE_SIZE=$(get_page_size)
-+
-+	_filter_xfs_io_units_modified "Page" $PAGE_SIZE
-+}
-+
-+
- _filter_test_dir()
- {
- 	sed -e "s,$TEST_DEV,TEST_DEV,g" -e "s,$TEST_DIR,TEST_DIR,g"
-diff --git a/common/rc b/common/rc
-index 4c2f42c..82c1bbb 100644
---- a/common/rc
-+++ b/common/rc
-@@ -3151,6 +3151,12 @@ get_block_size()
- 	echo `stat -f -c %S $1`
- }
+ echo -e "\nTesting with zlib compression..."
+diff --git a/tests/btrfs/103.out b/tests/btrfs/103.out
+index f62de2f..8e31b5f 100644
+--- a/tests/btrfs/103.out
++++ b/tests/btrfs/103.out
+@@ -1,41 +1,101 @@
+ QA output created by 103
  
-+get_page_size()
-+{
-+	echo $(getconf PAGE_SIZE)
-+}
-+
-+
- init_rc
+ Testing with zlib compression...
+-wrote 4096/4096 bytes at offset 0
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 4096
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 4096/4096 bytes at offset 12288
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 4096/4096 bytes at offset 8192
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 12288
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 4096/4096 bytes at offset 20480
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-File digests before unmounting filesystem:
+-4b985a45790261a706c3ddbf22c5f765  SCRATCH_MNT/foo
+-fd331e6b7a9ab105f48f71b53162d5b5  SCRATCH_MNT/bar
+-File digests after mounting filesystem again:
+-4b985a45790261a706c3ddbf22c5f765  SCRATCH_MNT/foo
+-fd331e6b7a9ab105f48f71b53162d5b5  SCRATCH_MNT/bar
++Blocks modified: [0 - 0]
++Blocks modified: [1 - 2]
++Blocks modified: [3 - 3]
++Blocks modified: [2 - 2]
++Blocks modified: [3 - 4]
++Blocks modified: [5 - 5]
++File contents before unmounting filesystem:
++foo:
++0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++1 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++3 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++4 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++6
++bar:
++0 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++2 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++3 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++5 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++6
++File contents after mounting filesystem again:
++foo:
++0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++1 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++3 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++4 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++6
++bar:
++0 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++2 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++3 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++5 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++6
  
- ################################################################################
+ Testing with lzo compression...
+-wrote 4096/4096 bytes at offset 0
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 4096
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 4096/4096 bytes at offset 12288
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 4096/4096 bytes at offset 8192
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 12288
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 4096/4096 bytes at offset 20480
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-File digests before unmounting filesystem:
+-4b985a45790261a706c3ddbf22c5f765  SCRATCH_MNT/foo
+-fd331e6b7a9ab105f48f71b53162d5b5  SCRATCH_MNT/bar
+-File digests after mounting filesystem again:
+-4b985a45790261a706c3ddbf22c5f765  SCRATCH_MNT/foo
+-fd331e6b7a9ab105f48f71b53162d5b5  SCRATCH_MNT/bar
++Blocks modified: [0 - 0]
++Blocks modified: [1 - 2]
++Blocks modified: [3 - 3]
++Blocks modified: [2 - 2]
++Blocks modified: [3 - 4]
++Blocks modified: [5 - 5]
++File contents before unmounting filesystem:
++foo:
++0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++1 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++3 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++4 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++6
++bar:
++0 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++2 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++3 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++5 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++6
++File contents after mounting filesystem again:
++foo:
++0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++1 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++3 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++4 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++6
++bar:
++0 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++2 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
++*
++3 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
++*
++5 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
++*
++6
 -- 
 2.1.0
 

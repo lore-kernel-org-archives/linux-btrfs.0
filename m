@@ -1,83 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:57801 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754662AbbK3T14 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 14:27:56 -0500
-Subject: Re: shall distros run btrfsck on boot?
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-References: <1448337754.14125.33.camel@scientia.net>
- <5659DBD9.1070802@suse.com> <565BAD9C.4040002@cn.fujitsu.com>
-From: Jeff Mahoney <jeffm@suse.com>
-Message-ID: <565CA337.3080609@suse.com>
-Date: Mon, 30 Nov 2015 14:27:51 -0500
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:36826 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753719AbbK3URl (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 15:17:41 -0500
+Received: by igcph11 with SMTP id ph11so72586184igc.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 12:17:41 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <565BAD9C.4040002@cn.fujitsu.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <565C625C.7060503@gmail.com>
+References: <565C01F1.5030108@oracle.com>
+	<565C625C.7060503@gmail.com>
+Date: Mon, 30 Nov 2015 13:17:41 -0700
+Message-ID: <CAJCQCtQPdzQG0She3yjxAmDmXSAphdMriW11Pe=BMrBRXYTh6Q@mail.gmail.com>
+Subject: Re: [RFC] Btrfs device and pool management (wip)
+From: Chris Murphy <lists@colorremedies.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Anand Jain <anand.jain@oracle.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
------BEGIN PGP SIGNED MESSAGE-----
-Hash: SHA1
+On Mon, Nov 30, 2015 at 7:51 AM, Austin S Hemmelgarn
+<ahferroin7@gmail.com> wrote:
 
-On 11/29/15 8:59 PM, Qu Wenruo wrote:
-> 
-> 
-> Jeff Mahoney wrote on 2015/11/28 11:52 -0500: On 11/23/15 11:02
-> PM, Christoph Anton Mitterer wrote:
->>>> Hey.
->>>> 
->>>> Short question since that came up on debian-devel.
->>>> 
->>>> Now that btrfs check get's more and more useful, are the 
->>>> developers going to recommend running it periodically on
->>>> boot (of course that wouldn't work right now, as it would
->>>> *always* check)?
-> 
-> Running fsck on boot is a holdover from an era where non-journaling
-> file systems were the norm.  It persists in the ext* world mostly
-> due to inertia, but it shouldn't be run on boot with ext3 or ext4
-> either. As Eric noted, fsck.xfs is a no-op.  We have something
-> similar for btrfs and have no intention of ever running fsck on
-> boot with btrfs except in the case of a mount failure of the root
-> file system.
-> 
->>>> Plus... is btrfs check (without any arguments) 
->>>> non-desctructive, or are there corner-cases where it may
->>>> lead to any changes on the devices?
-> 
-> I haven't reviewed it in detail, but a quick glance makes it look 
-> like it will, minimally, create transactions even in check-only 
-> mode.
-> 
->> This seems interesting.
-> 
->> Any clue to enhance?
+> General thoughts on this:
+> 1. If there's a write error, we fail unconditionally right now.  It would be
+> nice to have a configurable number of retries before failing.
 
-My glance wasn't close enough.  We only start a transaction after we
-check and repair is enabled.
+I'm unconvinced. I pretty much immediately do not trust a block device
+that fails even a single write, and I'd expect the file system to
+quickly get confused if it can't rely on flushing pending writes to
+that device. Unless Btrfs gets into the business of tracking bad
+sectors (failed writes), the block device is a gonor upon a single
+write failure, although it could still be reliable for reads.
 
-- -Jeff
+Possibly reasonable, is the user indicting a preference for what
+happens after the max number of write failures is exceeded:
 
-- -- 
-Jeff Mahoney
-SUSE Labs
------BEGIN PGP SIGNATURE-----
-Version: GnuPG/MacGPG2 v2.0.19 (Darwin)
-Comment: GPGTools - http://gpgtools.org
+- Volume goes degraded: Faulty block device is ignored entirely,
+degraded writes permitted.
+- Volumes goes ro: Faulty block device is still used for reads,
+degraded writes not permitted.
 
-iQIcBAEBAgAGBQJWXKM2AAoJEB57S2MheeWynW4QAJBHbn8Wk+z4hRVfdtg2J6Ot
-v3HMaI3kto0Pg1fi87pQKJd3ET/p1ovdTQr2awCBr9hS3Pe5cPGF8Giv+LstWW5G
-LWWDaZDYqIJOGx69cwgiYIHxzMf/xn3xoovkrc63b8XjiZa3kUgMbb0cxtnNpXGE
-2pa0das4ePZQ54OEfJvOdtdAhwMot1CV9UQaPm1DVJ8eQLAIvQKo4TFtv2y7FlNk
-eVfqcK2rM0SHmrx1IcHtd6EBG7yK0zCqPiFLBEU8Zkx3dFDTqsrsa1F2Vgnu7Pm8
-LUZekSIUarqQcmM6xZpuZdA+7aOJ2pcCx2aoaYe34QK6U1YHD/Tb+tJNusMMUUdp
-z/0NjKmj4ONasbZ9ttZWg4FdDi2eVIRSZ7mYxSv6Gblo7iU/k8WSCzr/VZrnMzXG
-idEc9hUUykWdDLYJ7q6EP3/2rApjw/lxLD7peX/+ew9v9ddISbCI+qWO/+ocnPkH
-0+v/FkWMFEoaZL5yRkJLfAPNnT4cGEu5n3hjy5Pgxc+1D+eZU+0EtR+0kd8iO/LH
-+qrz9RcVLKnPk3dMP6bAznqWz/pmry213AFRl4kTJsv5XDt9oSz4BmhKGU+zG+v6
-JPXme3Fl/8GSaRVzTbQ+ALC5vxBL8oFQaV9jY8GA8d24dSXWqDYFLvIjtUNek/r2
-gT7Z2612ZTceYX4oFOuk
-=32+d
------END PGP SIGNATURE-----
+As far as I know, md and lvm only do the former. And md/mdadm did
+recently get the ability to support bad block maps so it can continue
+using drives lacking reserve sectors (typically that's the reason for
+write failures on conventional rotational drives).
+
+
+
+> 2. Similar for read errors, possibly with the ability to ignore them below
+> some threshold.
+
+Agreed. Maybe it would be an error rate (set by ratio)?
+
+
+
+
+-- 
+Chris Murphy

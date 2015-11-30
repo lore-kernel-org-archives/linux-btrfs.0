@@ -1,216 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:19075 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752468AbbK3H7t (ORCPT
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:34553 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753517AbbK3MaQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 02:59:49 -0500
-Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id tAU7xmtF023825
-	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:59:49 GMT
-Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
-	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id tAU7xmq7020486
-	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:59:48 GMT
-Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
-	by userv0122.oracle.com (8.13.8/8.13.8) with ESMTP id tAU7xlm4003200
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:59:47 GMT
-To: linux-btrfs@vger.kernel.org
-From: Anand Jain <anand.jain@oracle.com>
-Subject: [RFC] Btrfs device and pool management (wip)
-Message-ID: <565C01F1.5030108@oracle.com>
-Date: Mon, 30 Nov 2015 15:59:45 +0800
+	Mon, 30 Nov 2015 07:30:16 -0500
+Received: by igvg19 with SMTP id g19so68846405igv.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 04:30:15 -0800 (PST)
+Subject: Re: [PATCH v2 1/5] btrfs-progs: introduce framework to check kernel
+ supported features
+To: dsterba@suse.cz, Mike Fleetwood <mike.fleetwood@googlemail.com>,
+        Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
+ <1448283378-10579-2-git-send-email-anand.jain@oracle.com>
+ <CAMU1PDita6iet1xg97RfCDPWuVUaq=dYBO_eM3ZDQtvLRPcHCw@mail.gmail.com>
+ <5654C6BF.8010502@gmail.com> <20151126173850.GV31035@twin.jikos.cz>
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <565C4152.8040103@gmail.com>
+Date: Mon, 30 Nov 2015 07:30:10 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20151126173850.GV31035@twin.jikos.cz>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms000002030008010409070108"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-(fixed alignment)
+This is a cryptographically signed message in MIME format.
+
+--------------ms000002030008010409070108
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: quoted-printable
+
+On 2015-11-26 12:38, David Sterba wrote:
+> On Tue, Nov 24, 2015 at 03:21:19PM -0500, Austin S Hemmelgarn wrote:
+>>> I think you mean 2.6.37 here.
+>>> 67377734fd24c3 "Btrfs: add support for mixed data+metadata block grou=
+ps"
+>> This brings up a rather important question:
+>> Should compat-X.Y mean features that were considered usable in that
+>> version, or everything that version offered?  I understand wanting
+>> consistency with the kernel versions, but we shouldn't be creating
+>> filesystems that we know will break on the specified kernel even if it=
+
+>> is mountable on it.
+>
+> IMO compat refers to the compatibility feature bits so it's whether the=
+
+> filesystem is mountable on a given version. Usability can be subjective=
+=2E
+> I assume the kernel versions in wide use match some of the long term
+> branches. If it's k.org, we can submit the fixes and distros update
+> their long term branches.
+My point was that if we know that there's a significant chance of either =
+
+data corruption or a kernel crash when using a given feature with a=20
+given kernel, we should not turn on that feature for that kernel.  For=20
+every other project I've ever seen, compatible means that you can be=20
+fairly certain that it won't crash, and won't destroy data.  There is no =
+
+excuse for knowingly making filesystems that will break the system.
+
+Also, expecting the distros to keep up with development given the pace=20
+at which BTRFS is moving is not all that realistic.  Secondarily, at=20
+least Ubuntu has a habit of picking kernel versions that aren't marked=20
+LTS by kernel.org.
+>
+> A table of "is the feature usable" would be interesting but I think it'=
+s
+> for wiki.
+I'd say it would be a lot more helpful in the manpage than in the wiki=20
+(if you're reprovisioning a system, you don't necessarily have access to =
+
+the wiki).
 
 
-------------
-  Data center systems are generally aligned with the RAS (Reliability,
-Availability and Serviceability) attributes. When it comes to Storage,
-RAS applies even more because its matter of trust. In this context, one
-of the primary area that a typical volume manager should be well tested
-is, how well RAS attributes are maintained in the context of device
-failure, and its further reporting.
+--------------ms000002030008010409070108
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
 
-  But, identifying a failed device is not a straight forward code. If
-you look at some statistics performed on failed and returned disks,
-most of the disks ends up being classified as NTF (No Trouble Found).
-That is, host failed-and-replaced a disk even before it has actually
-failed. This is not good for a cost effective setup who would want to
-stretch the life of an intermittently failing device to its maximum
-tenure and would want to replace only when it has confirmed dead.
-
-  Also on the other hand, some of the data center admins would like to
-mitigate the risk (of low performance at peak of their business
-productions) of a potential failure, and prefer to pro-actively replace
-the disk at their low business/workload hours, or they may choose to
-replace a device even for read errors (mainly due to performance
-reasons).
-
-  In short a large variant of real MTF (Mean Time to Failure) for the
-devices across the industries/users.
-
-
-Consideration:
-
-  - Have user-tunable to support different context of usages, which
-should be applied on top of a set of disk IO errors, and its out come
-will be to know if the disk can be failed.
-
-  - Distinguish real disk failure (failed state) VS IO errors due to
-intermittent transport errors (offline state). (I am not sure how to do
-that yet, basically in some means, block layer could help?, RFC ?).
-
-  - A sysfs offline interface, so as to udev update the kernel, when
-disk is pulled out.
-
-  - Because even to fail a device it depends on the user requirements,
-btrfs IO completion threads instead of directly reacting on an IO
-error, it will continue to just report the IO error into device error
-statistics, and a spooler up on errors will apply user/system
-criticalness as provided by the user on the top, which will decide if
-the device has to be marked as failed OR if it can continue to be in
-online.
-
-  - A FS load pattern (mostly outside of btrfs-kernel or with in btrfs-
-kernel) may pick the right time to replace the failed device, or to run
-other FS maintenance activities (balance, scrub) automatically.
-
-  - Sysfs will help user land scripts which may want to bring device to
-offline or failed.
-
-
-
-Device State flow:
-
-   A device in the btrfs kernel can be in any one of following state:
-
-   Online
-      A normal healthy device
-
-   Missing
-      Device wasn't found that the time of mount OR device scan.
-
-   Offline (disappeared)
-      Device was present at some point in time after the FS was mounted,
-      however offlined by user or block layer or hot unplug or device
-      experienced transport error. Basically due to any error other than
-      media error.
-      The device in offline state are not candidate for the replace.
-      Since still there is a hope that device may be restored to online
-      at some point in time, by user or transport-layer error recovery.
-      For device pulled out, there will be udev script which will call
-      offline through sysfs. In the long run, we would also need to know
-      the block layer to distinguish from the transient write errors
-      like writes failing  due to transport error, vs write errors which
-      are confirmed as target-device/device-media failure.
-
-   Failed
-      Device has confirmed a write/flush failure for at least a block.
-      (In general the disk/storage FW will try to relocate the bad block
-      on write, it happens automatically and transparent even to the
-      block layer. Further there might have been few retry from the block
-      layer. And here btrfs assumes that such an attempt has also
-      failed). Or it might set device as failed for extensive read
-      errors if the user tuned profile demands it.
-
-
-A btrfs pool can be in one of the state:
-
-Online:
-   All the chunks are as configured.
-
-Degraded:
-   One or more logical-chunks does not meet the redundancy level that
-   user requested / configured.
-
-Failed:
-   One or more logical-chunk is incomplete. FS will be in a RO mode Or
-   panic -dump as configured.
-
-
-Flow diagram (also include pool states BTRFS_POOL_STATE_xx along with
-device state BTRFS_DEVICE_STATE_xx):
-
-
-                     [1]
-                     BTRFS_DEVICE_STATE_ONLINE,
-                      BTRFS_POOL_STATE_ONLINE
-                                 |
-                                 |
-                                 V
-                           new IO error
-                                 |
-                                 |
-                                 V
-                    check with block layer to know
-                   if confirmed media/target:- failed
-                 or fix-able transport issue:- offline.
-                       and apply user config.
-             can be ignored ?  --------------yes->[1]
-                                 |
-                                 |no
-         _______offline__________/\______failed________
-         |                                             |
-         |                                             |
-         V                                             V
-(eg: transport issue [*], disk is good)     (eg: write media error)
-         |                                             |
-         |                                             |
-         V                                             V
-BTRFS_DEVICE_STATE_OFFLINE                BTRFS_DEVICE_STATE_FAILED
-         |                                             |
-         |                                             |
-         |______________________  _____________________|
-                                \/
-                                 |
-                         Missing chunk ? --NO--> goto [1]
-                                 |
-                                 |
-                          Tolerable? -NO-> FS ERROR. RO.
-                                      BTRFS_POOL_STATE_FAILED->remount?
-                                 |
-                                 |yes
-                                 V
-                       BTRFS_POOL_STATE_DEGRADED --> rebalance -> [1]
-                                 |
-         ______offline___________|____failed_________
-         |                                           |
-         |                                      check priority
-         |                                           |
-         |                                           |
-         |                                      hot spare ?
-         |                                    replace --> goto [1]
-         |                                           |
-         |                                           | no
-         |                                           |
-         |                                       spare-add
-(user/sys notify issue is fixed,         (manual-replace/dev-delete)
-   trigger scrub/balance)                            |
-         |______________________  ___________________|
-                                \/
-                                 |
-                                 V
-                                [1]
-
-
-Code status:
-  Part-1: Provided device transitions from online to failed/offline,
-          hot spare and auto replace.
-          [PATCH 00/15] btrfs: Hot spare and Auto replace
-
-  Next,
-   . Add sysfs part on top of
-     [PATCH] btrfs: Introduce device pool sysfs attributes
-   . POOL_STATE flow and reporting
-   . Device transactions from Offline to Online
-   . Btrfs-progs mainly to show device and pool states
-   . Apply user tolerance level to the IO errors
-----------
-
-
-Thanks, Anand
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMTMwMTIzMDEwWjBPBgkq
+hkiG9w0BCQQxQgRArdfLQ8U5gC/kFMUZ6k74bQbv9Kj4qyo4di6TbzIYeznXg97T15HlPPlf
+1JLd57Tgdghr84u+QNyaWszwrWh/FjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgCMmvyPGW0nqQcE/O66sbuUVC1lzQlNJ7ouXa68l0ZcpB5tMtEp
+Jv50Li/24yOP6Gz4AlobflSHQEvo7qNUBy1MCBjFPZz9HSG6GjtTTh3fkCipmVM6OYRPOH+D
+7fZ91/cHeYLDQocUCjYrWQWa1UUqKpgsdqwiZa8nvaAP/H4GIOBUFYevV1WoUFQzMXw8/1ve
+V3pPA1L6c8n477qchqPidCqrXDHbDI4xa9HYZwgGn9eSW6sTtLKrQVJYSYkte+hMG8w5haLZ
+5iYDbbK3lsLAxorPCjsTk5YRxKJZbFKgc5EiZYUz9vapQXdDn1j9H+CnHImAgpou+NCcKA/T
+Ko9ctzcyb8aYnsfoqur2ojzuRYepaWX8o9XlZNv8uGzjgtmujyZ80mPELrmHvG9ItjmxcE/r
+qFFcifXRf5KxQL/vK+JrRj5PkGjFahxwV6Dj0loBgLe6vdrT5oj9LRcdlt2d57A2fTnMgL37
+n+fcH2zGe0llbFFurnGTxJHfkLYxEsK6OcXwirCpzuzghPrq3EXClS0EEoMpsqfeK7fctegI
+ZlPy6X+JHtRkUFOnJZdQsJnj7+/atiwAYEpXHsx1qn25NgNrYOTxtYdLX/QOpEXJMKXzalqr
+8wFZ4v1NidCMXJz5wagwg7DRVp08wWXqfqDtPE+2pvY/aps90J42q+tuywAAAAAAAA==
+--------------ms000002030008010409070108--

@@ -1,136 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45631 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48134 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752297AbbK3Pxu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 10:53:50 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 2545DAAB6
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 15:53:49 +0000 (UTC)
+	id S1755065AbbK3Q2z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 11:28:55 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: better packing of btrfs_delayed_extent_op
-Date: Mon, 30 Nov 2015 16:51:29 +0100
-Message-Id: <1448898689-29992-1-git-send-email-dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>, stable@vger.kernel.org, #@suse.cz,
+        3.19+@suse.cz
+Subject: [PATCH 1/2] btrfs: handle invalid num_stripes in sys_array
+Date: Mon, 30 Nov 2015 17:27:06 +0100
+Message-Id: <075db4cd6a697e299f7d3ef9ee095f775ec9866c.1448900173.git.dsterba@suse.com>
+In-Reply-To: <cover.1448900173.git.dsterba@suse.com>
+References: <cover.1448900173.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs_delayed_extent_op can be packed in a better way, it's 40 bytes now
-and has 8 unused bytes. Reducing the level type to u8 makes it possible
-to squeeze it to the padding byte after key. The bitfields were switched
-to bool as there's space to store the full byte without increasing the
-whole structure, besides that the generated assembly is smaller.
+We can handle the special case of num_stripes == 0 directly inside
+btrfs_read_sys_array. The BUG_ON in btrfs_chunk_item_size is there to
+catch other unhandled cases where we fail to validate external data.
 
-struct btrfs_delayed_extent_op {
-	struct btrfs_disk_key      key;                  /*     0    17 */
-	u8                         level;                /*    17     1 */
-	bool                       update_key;           /*    18     1 */
-	bool                       update_flags;         /*    19     1 */
-	bool                       is_data;              /*    20     1 */
+A crafted or corrupted image crashes at mount time:
 
-	/* XXX 3 bytes hole, try to pack */
+BTRFS: device fsid 9006933e-2a9a-44f0-917f-514252aeec2c devid 1 transid 7 /dev/loop0
+BTRFS info (device loop0): disk space caching is enabled
+BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
+Kernel panic - not syncing: BUG!
+CPU: 0 PID: 313 Comm: mount Not tainted 4.2.5-00657-ge047887-dirty #25
+Stack:
+ 637af890 60062489 602aeb2e 604192ba
+ 60387961 00000011 637af8a0 6038a835
+ 637af9c0 6038776b 634ef32b 00000000
+Call Trace:
+ [<6001c86d>] show_stack+0xfe/0x15b
+ [<6038a835>] dump_stack+0x2a/0x2c
+ [<6038776b>] panic+0x13e/0x2b3
+ [<6020f099>] btrfs_read_sys_array+0x25d/0x2ff
+ [<601cfbbe>] open_ctree+0x192d/0x27af
+ [<6019c2c1>] btrfs_mount+0x8f5/0xb9a
+ [<600bc9a7>] mount_fs+0x11/0xf3
+ [<600d5167>] vfs_kern_mount+0x75/0x11a
+ [<6019bcb0>] btrfs_mount+0x2e4/0xb9a
+ [<600bc9a7>] mount_fs+0x11/0xf3
+ [<600d5167>] vfs_kern_mount+0x75/0x11a
+ [<600d710b>] do_mount+0xa35/0xbc9
+ [<600d7557>] SyS_mount+0x95/0xc8
+ [<6001e884>] handle_syscall+0x6b/0x8e
 
-	u64                        flags_to_set;         /*    24     8 */
-
-	/* size: 32, cachelines: 1, members: 6 */
-	/* sum members: 29, holes: 1, sum holes: 3 */
-	/* last cacheline: 32 bytes */
-};
-
-The final size is 32 bytes which gives +26 object per slab page.
-
-   text	   data	    bss	    dec	    hex	filename
- 938811	  43670	  23144	1005625	  f5839	fs/btrfs/btrfs.ko.before
- 938747	  43670	  23144	1005561	  f57f9	fs/btrfs/btrfs.ko.after
-
+Reported-by: Jiri Slaby <jslaby@suse.com>
+Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
+CC: stable@vger.kernel.org	# 3.19+
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/delayed-ref.c |  4 ++--
- fs/btrfs/delayed-ref.h |  8 ++++----
- fs/btrfs/extent-tree.c | 15 ++++++---------
- fs/btrfs/extent-tree.h |  0
- 4 files changed, 12 insertions(+), 15 deletions(-)
- delete mode 100644 fs/btrfs/extent-tree.h
+ fs/btrfs/volumes.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index e06dd75ad13f..914ac13bd92f 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -493,12 +493,12 @@ update_existing_head_ref(struct btrfs_delayed_ref_root *delayed_refs,
- 				memcpy(&existing_ref->extent_op->key,
- 				       &ref->extent_op->key,
- 				       sizeof(ref->extent_op->key));
--				existing_ref->extent_op->update_key = 1;
-+				existing_ref->extent_op->update_key = true;
- 			}
- 			if (ref->extent_op->update_flags) {
- 				existing_ref->extent_op->flags_to_set |=
- 					ref->extent_op->flags_to_set;
--				existing_ref->extent_op->update_flags = 1;
-+				existing_ref->extent_op->update_flags = true;
- 			}
- 			btrfs_free_delayed_extent_op(ref->extent_op);
- 		}
-diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
-index 00ed02cbf3e9..c24b653c7343 100644
---- a/fs/btrfs/delayed-ref.h
-+++ b/fs/btrfs/delayed-ref.h
-@@ -75,11 +75,11 @@ struct btrfs_delayed_ref_node {
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a6df8fdc1312..b5d6c53d2441 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6514,6 +6514,14 @@ int btrfs_read_sys_array(struct btrfs_root *root)
+ 				goto out_short_read;
  
- struct btrfs_delayed_extent_op {
- 	struct btrfs_disk_key key;
-+	u8 level;
-+	bool update_key;
-+	bool update_flags;
-+	bool is_data;
- 	u64 flags_to_set;
--	int level;
--	unsigned int update_key:1;
--	unsigned int update_flags:1;
--	unsigned int is_data:1;
- };
- 
- /*
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index acf3ed11cfb6..5c542f10c9b6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -2988,9 +2988,9 @@ int btrfs_set_disk_extent_flags(struct btrfs_trans_handle *trans,
- 		return -ENOMEM;
- 
- 	extent_op->flags_to_set = flags;
--	extent_op->update_flags = 1;
--	extent_op->update_key = 0;
--	extent_op->is_data = is_data ? 1 : 0;
-+	extent_op->update_flags = true;
-+	extent_op->update_key = false;
-+	extent_op->is_data = is_data ? true : false;
- 	extent_op->level = level;
- 
- 	ret = btrfs_add_delayed_extent_op(root->fs_info, trans, bytenr,
-@@ -7977,12 +7977,9 @@ struct extent_buffer *btrfs_alloc_tree_block(struct btrfs_trans_handle *trans,
- 		else
- 			memset(&extent_op->key, 0, sizeof(extent_op->key));
- 		extent_op->flags_to_set = flags;
--		if (skinny_metadata)
--			extent_op->update_key = 0;
--		else
--			extent_op->update_key = 1;
--		extent_op->update_flags = 1;
--		extent_op->is_data = 0;
-+		extent_op->update_key = skinny_metadata ? false : true;
-+		extent_op->update_flags = true;
-+		extent_op->is_data = false;
- 		extent_op->level = level;
- 
- 		ret = btrfs_add_delayed_tree_ref(root->fs_info, trans,
-diff --git a/fs/btrfs/extent-tree.h b/fs/btrfs/extent-tree.h
-deleted file mode 100644
-index e69de29bb2d1..000000000000
+ 			num_stripes = btrfs_chunk_num_stripes(sb, chunk);
++			if (!num_stripes) {
++				printk(KERN_ERR
++	    "BTRFS: invalid number of stripes %u in sys_array at offset %u\n",
++					num_stripes, cur_offset);
++				ret = -EIO;
++				break;
++			}
++
+ 			len = btrfs_chunk_item_size(num_stripes);
+ 			if (cur_offset + len > array_size)
+ 				goto out_short_read;
 -- 
-1.8.4.5
+2.6.2
 
 --
 To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo
+More majordomo info at  http://vger.kernel.org/majordomo-

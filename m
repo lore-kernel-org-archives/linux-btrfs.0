@@ -1,131 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp02.in.ibm.com ([122.248.162.2]:38315 "EHLO
-	e28smtp02.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751948AbbK3KRi (ORCPT
+Received: from e28smtp07.in.ibm.com ([122.248.162.7]:43527 "EHLO
+	e28smtp07.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752862AbbK3KRs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 05:17:38 -0500
+	Mon, 30 Nov 2015 05:17:48 -0500
 Received: from localhost
-	by e28smtp02.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp07.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 30 Nov 2015 15:47:36 +0530
+	Mon, 30 Nov 2015 15:47:47 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: fstests@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
         fdmanana@gmail.com, chandan@mykolab.com
-Subject: [PATCH 8/8] Fix btrfs/106 to work on non-4k page sized machines
-Date: Mon, 30 Nov 2015 15:47:24 +0530
-Message-Id: <1448878644-16503-9-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH 1/8] Filter xfs_io's output in units of page size
+Date: Mon, 30 Nov 2015 15:47:17 +0530
+Message-Id: <1448878644-16503-2-git-send-email-chandan@linux.vnet.ibm.com>
 In-Reply-To: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This commit makes use of the new _filter_xfs_io_pages_modified filtering
-function to print information in terms of page size units rather than file
-offset.
+The helpers introduced in this commit will be used to make btrfs tests that
+assume 4k as the page size to work on non-4k page-sized systems as well.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- tests/btrfs/106     | 36 ++++++++++++++++++++----------------
- tests/btrfs/106.out | 30 ++++++++++++++++++------------
- 2 files changed, 38 insertions(+), 28 deletions(-)
+ common/filter | 8 ++++++++
+ common/rc     | 6 ++++++
+ 2 files changed, 14 insertions(+)
 
-diff --git a/tests/btrfs/106 b/tests/btrfs/106
-index 1670453..30c43fa 100755
---- a/tests/btrfs/106
-+++ b/tests/btrfs/106
-@@ -58,31 +58,35 @@ test_clone_and_read_compressed_extent()
- 	_scratch_mkfs >>$seqres.full 2>&1
- 	_scratch_mount $mount_opts
- 
--	# Create our test file with a single extent of 64Kb that is going to be
--	# compressed no matter which compression algorithm is used (zlib/lzo).
--	$XFS_IO_PROG -f -c "pwrite -S 0xaa 0K 64K" \
--		$SCRATCH_MNT/foo | _filter_xfs_io
-+	PAGE_SIZE=$(get_page_size)
-+
-+	# Create our test file with 16 pages worth of data in a single extent
-+	# that is going to be compressed no matter which compression algorithm
-+	# is used (zlib/lzo).
-+	$XFS_IO_PROG -f -c "pwrite -S 0xaa 0K $((16 * $PAGE_SIZE))" \
-+		     $SCRATCH_MNT/foo | _filter_xfs_io_pages_modified
- 
- 	# Now clone the compressed extent into an adjacent file offset.
--	$CLONER_PROG -s 0 -d $((64 * 1024)) -l $((64 * 1024)) \
-+	$CLONER_PROG -s 0 -d $((16 * $PAGE_SIZE)) -l $((16 * $PAGE_SIZE)) \
- 		$SCRATCH_MNT/foo $SCRATCH_MNT/foo
- 
--	echo "File digest before unmount:"
--	md5sum $SCRATCH_MNT/foo | _filter_scratch
-+	echo "File contents before unmount:"
-+	od -t x1 $SCRATCH_MNT/foo | _filter_od
- 
- 	# Remount the fs or clear the page cache to trigger the bug in btrfs.
--	# Because the extent has an uncompressed length that is a multiple of
--	# 16 pages, all the pages belonging to the second range of the file
--	# (64K to 128K), which points to the same extent as the first range
--	# (0K to 64K), had their contents full of zeroes instead of the byte
--	# 0xaa. This was a bug exclusively in the read path of compressed
--	# extents, the correct data was stored on disk, btrfs just failed to
--	# fill in the pages correctly.
-+	# Because the extent has an uncompressed length that is a multiple of 16
-+	# pages, all the pages belonging to the second range of the file that is
-+	# mapped by the page index range [16, 31], which points to the same
-+	# extent as the first file range mapped by the page index range [0, 15],
-+	# had their contents full of zeroes instead of the byte 0xaa. This was a
-+	# bug exclusively in the read path of compressed extents, the correct
-+	# data was stored on disk, btrfs just failed to fill in the pages
-+	# correctly.
- 	_scratch_remount
- 
--	echo "File digest after remount:"
-+	echo "File contents after remount:"
- 	# Must match the digest we got before.
--	md5sum $SCRATCH_MNT/foo | _filter_scratch
-+	od -t x1 $SCRATCH_MNT/foo | _filter_od
+diff --git a/common/filter b/common/filter
+index 05f2fab..1be377c 100644
+--- a/common/filter
++++ b/common/filter
+@@ -261,6 +261,14 @@ _filter_xfs_io_blocks_modified()
+ 	_filter_xfs_io_units_modified "Block" $BLOCK_SIZE
  }
  
- echo -e "\nTesting with zlib compression..."
-diff --git a/tests/btrfs/106.out b/tests/btrfs/106.out
-index 692108d..1144a82 100644
---- a/tests/btrfs/106.out
-+++ b/tests/btrfs/106.out
-@@ -1,17 +1,23 @@
- QA output created by 106
++_filter_xfs_io_pages_modified()
++{
++	PAGE_SIZE=$(get_page_size)
++
++	_filter_xfs_io_units_modified "Page" $PAGE_SIZE
++}
++
++
+ _filter_test_dir()
+ {
+ 	sed -e "s,$TEST_DEV,TEST_DEV,g" -e "s,$TEST_DIR,TEST_DIR,g"
+diff --git a/common/rc b/common/rc
+index 4c2f42c..82c1bbb 100644
+--- a/common/rc
++++ b/common/rc
+@@ -3151,6 +3151,12 @@ get_block_size()
+ 	echo `stat -f -c %S $1`
+ }
  
- Testing with zlib compression...
--wrote 65536/65536 bytes at offset 0
--XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--File digest before unmount:
--be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
--File digest after remount:
--be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
-+Pages modified: [0 - 15]
-+File contents before unmount:
-+0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+40
-+File contents after remount:
-+0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+40
++get_page_size()
++{
++	echo $(getconf PAGE_SIZE)
++}
++
++
+ init_rc
  
- Testing with lzo compression...
--wrote 65536/65536 bytes at offset 0
--XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--File digest before unmount:
--be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
--File digest after remount:
--be68df46e3cf60b559376a35f9fbb05d  SCRATCH_MNT/foo
-+Pages modified: [0 - 15]
-+File contents before unmount:
-+0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+40
-+File contents after remount:
-+0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+40
+ ################################################################################
 -- 
 2.1.0
 

@@ -1,78 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:48134 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:48141 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755065AbbK3Q2z (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 11:28:55 -0500
+	id S1755087AbbK3Q26 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 11:28:58 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 69C4CAAC7
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 16:28:57 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>, stable@vger.kernel.org, #@suse.cz,
-        3.19+@suse.cz
-Subject: [PATCH 1/2] btrfs: handle invalid num_stripes in sys_array
-Date: Mon, 30 Nov 2015 17:27:06 +0100
-Message-Id: <075db4cd6a697e299f7d3ef9ee095f775ec9866c.1448900173.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH 2/2] btrfs: verbose error when we find an unexpected item in sys_array
+Date: Mon, 30 Nov 2015 17:27:09 +0100
+Message-Id: <d53b1469fa8dab55414b0b39e338070f49d4c9f0.1448900173.git.dsterba@suse.com>
 In-Reply-To: <cover.1448900173.git.dsterba@suse.com>
 References: <cover.1448900173.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We can handle the special case of num_stripes == 0 directly inside
-btrfs_read_sys_array. The BUG_ON in btrfs_chunk_item_size is there to
-catch other unhandled cases where we fail to validate external data.
-
-A crafted or corrupted image crashes at mount time:
-
-BTRFS: device fsid 9006933e-2a9a-44f0-917f-514252aeec2c devid 1 transid 7 /dev/loop0
-BTRFS info (device loop0): disk space caching is enabled
-BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
-Kernel panic - not syncing: BUG!
-CPU: 0 PID: 313 Comm: mount Not tainted 4.2.5-00657-ge047887-dirty #25
-Stack:
- 637af890 60062489 602aeb2e 604192ba
- 60387961 00000011 637af8a0 6038a835
- 637af9c0 6038776b 634ef32b 00000000
-Call Trace:
- [<6001c86d>] show_stack+0xfe/0x15b
- [<6038a835>] dump_stack+0x2a/0x2c
- [<6038776b>] panic+0x13e/0x2b3
- [<6020f099>] btrfs_read_sys_array+0x25d/0x2ff
- [<601cfbbe>] open_ctree+0x192d/0x27af
- [<6019c2c1>] btrfs_mount+0x8f5/0xb9a
- [<600bc9a7>] mount_fs+0x11/0xf3
- [<600d5167>] vfs_kern_mount+0x75/0x11a
- [<6019bcb0>] btrfs_mount+0x2e4/0xb9a
- [<600bc9a7>] mount_fs+0x11/0xf3
- [<600d5167>] vfs_kern_mount+0x75/0x11a
- [<600d710b>] do_mount+0xa35/0xbc9
- [<600d7557>] SyS_mount+0x95/0xc8
- [<6001e884>] handle_syscall+0x6b/0x8e
-
-Reported-by: Jiri Slaby <jslaby@suse.com>
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-CC: stable@vger.kernel.org	# 3.19+
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/volumes.c | 3 +++
+ 1 file changed, 3 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a6df8fdc1312..b5d6c53d2441 100644
+index b5d6c53d2441..e73e4a1aef91 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6514,6 +6514,14 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 				goto out_short_read;
- 
- 			num_stripes = btrfs_chunk_num_stripes(sb, chunk);
-+			if (!num_stripes) {
-+				printk(KERN_ERR
-+	    "BTRFS: invalid number of stripes %u in sys_array at offset %u\n",
-+					num_stripes, cur_offset);
-+				ret = -EIO;
-+				break;
-+			}
-+
- 			len = btrfs_chunk_item_size(num_stripes);
- 			if (cur_offset + len > array_size)
- 				goto out_short_read;
+@@ -6530,6 +6530,9 @@ int btrfs_read_sys_array(struct btrfs_root *root)
+ 			if (ret)
+ 				break;
+ 		} else {
++			printk(KERN_ERR
++		"BTRFS: unexpected item type %u in sys_array at offset %u\n",
++				(u32)key.type, cur_offset);
+ 			ret = -EIO;
+ 			break;
+ 		}
 -- 
 2.6.2
 

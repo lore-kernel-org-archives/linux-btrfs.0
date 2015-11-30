@@ -1,89 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:39908 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751555AbbK3Blt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Nov 2015 20:41:49 -0500
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 3A5B44043CFB
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 09:41:34 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:39063 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751434AbbK3JsI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 04:48:08 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 86819ACA5
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 09:46:27 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: mkfs-tests: Check sectorsize and nodesize combination
-Date: Mon, 30 Nov 2015 09:39:30 +0800
-Message-Id: <1448847570-9549-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs-progs: install to /usr/local by default again
+Date: Mon, 30 Nov 2015 10:46:15 +0100
+Message-Id: <1448876775-4979-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add mkfs selftest for invalid and valid sectorsize/nodesize
-combination.
+The conversion to autotools changed the default prefix to /usr. There's
+no reason to diverge. Distributions builds set prefix the /usr path and
+local builds are supposed to go to /usr/local .
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Reference: https://bugzilla.kernel.org/show_bug.cgi?id=108571
+Reported-by: Karl Richter <krichter722@aol.de>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- .../008-secorsize-nodesize-combination/test.sh     | 51 ++++++++++++++++++++++
- 1 file changed, 51 insertions(+)
- create mode 100755 tests/mkfs-tests/008-secorsize-nodesize-combination/test.sh
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/tests/mkfs-tests/008-secorsize-nodesize-combination/test.sh b/tests/mkfs-tests/008-secorsize-nodesize-combination/test.sh
-new file mode 100755
-index 0000000..5bc3a48
---- /dev/null
-+++ b/tests/mkfs-tests/008-secorsize-nodesize-combination/test.sh
-@@ -0,0 +1,51 @@
-+#!/bin/bash
-+# test variant sectorsize and node size combination
-+# including valid ones and invalid ones
-+# only do mkfs and fsck check, no mounting check as
-+# sub/multi-pagesize is not supported yet.
-+
-+source $TOP/tests/common
-+
-+check_prereq mkfs.btrfs
-+check_prereq btrfs
-+
-+# disable mixed bg to avoid sectorsize == nodesize check
-+features="^mixed-bg"
-+image_size=1g
-+image=image
-+
-+# caller need to judge whether the combination is valid
-+do_test()
-+{
-+	sectorsize=$1
-+	nodesize=$2
-+	truncate -s $image_size $image
-+	run_mayfail $TOP/mkfs.btrfs -O $features -n $nodesize -s $sectorsize \
-+		$image
-+	ret=$?
-+	if [ $ret == 0 ]; then
-+		run_check $TOP/btrfs check $image
-+	fi
-+	return $ret
-+}
-+
-+# Invalid: Unaligned sectorsize and nodesize
-+do_test 8191 8191 && _fail
-+
-+# Invalid: Aligned sectorsize with unaligned nodesize
-+do_test 4k 16385 && _fail
-+
-+# Invalid: Ungliend sectorsize with aligned nodesize
-+do_test 8191 16k && _fail
-+
-+# Valid: Aligned sectorsize and nodesize
-+do_test 4k 16k || _fail
-+
-+# Invalid: Sectorsize larger than nodesize
-+do_test 8k 4k && _fail
-+
-+# Invalid: too large nodesize
-+do_test 16k 128k && _fail
-+
-+# Valid: large sectorsize
-+do_test 64k 64k || _fail
+diff --git a/configure.ac b/configure.ac
+index c3a22d1315c7..c1140973d0d7 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -23,7 +23,7 @@ dnl the compiler (like AC_PROG_LIBTOOL) to avoid autoconf errors.
+ AC_USE_SYSTEM_EXTENSIONS
+ 
+ AC_CONFIG_SRCDIR([btrfs.c])
+-AC_PREFIX_DEFAULT([/usr])
++AC_PREFIX_DEFAULT([/usr/local])
+ 
+ AC_PROG_CC
+ AC_CANONICAL_HOST
 -- 
 2.6.2
-
-
 

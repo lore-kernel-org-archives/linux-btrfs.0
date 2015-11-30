@@ -1,75 +1,193 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f47.google.com ([209.85.215.47]:34634 "EHLO
-	mail-lf0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753057AbbK2T3u (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:5969 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752055AbbK3Byr (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Nov 2015 14:29:50 -0500
-Received: by lffu14 with SMTP id u14so174101336lff.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 29 Nov 2015 11:29:49 -0800 (PST)
+	Sun, 29 Nov 2015 20:54:47 -0500
+Subject: Re: btrfs check help
+To: Vincent Olivier <vincent@up4.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <AF79907D-A36B-4806-B31A-3E327F2E5642@up4.com>
+ <5654C86C.9080800@gmail.com> <20151124203210.GR24333@carfax.org.uk>
+ <B369C8E5-3E5E-4008-BD99-C174D7ABFB36@up4.com>
+ <56566416.5000405@cn.fujitsu.com>
+ <4EF3E931-9089-40FB-8E8E-1928539D39D4@up4.com>
+ <3E0A8132-7121-482F-BAAC-BAC6D18661AC@up4.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <565BAC49.3090404@cn.fujitsu.com>
+Date: Mon, 30 Nov 2015 09:54:17 +0800
 MIME-Version: 1.0
-In-Reply-To: <pan$8c5a3$43576c38$c4ab8cd7$5fc9a224@cox.net>
-References: <1448643790.11377.39.camel@scientia.net>
-	<CAPmG0jZDHkvFq8_f__2p2net3Qu_rfvxBeyRHNZPZ3tekbhMMQ@mail.gmail.com>
-	<1448684040.6837.18.camel@scientia.net>
-	<CAPmG0jbso5RM4UW_urBKa02LOKreCTx2PjX7YyUp6nuqOONo=Q@mail.gmail.com>
-	<pan$8c5a3$43576c38$c4ab8cd7$5fc9a224@cox.net>
-Date: Sun, 29 Nov 2015 20:29:49 +0100
-Message-ID: <CAPmG0jZkK-2iJ0vd3L08Fkap-XdrSx_jSn5ZgZzOk1wvbAzEqA@mail.gmail.com>
-Subject: Re: slowness when cp respectively send/receiving on top of dm-crypt
-From: Henk Slager <eye1tm@gmail.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <3E0A8132-7121-482F-BAAC-BAC6D18661AC@up4.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Nov 29, 2015 at 6:31 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-> What are you using to tell you it has 1018391 extents?  If you're using
-> filefrag, it's known not to understand btrfs compression, which uses 128
-> KiB (pre-compression size, I believe, tho I'm not absolutely positive)
-> blocks, and as a result, to report each of those blocks as a separate
-> extent.
-Indeed filefrag, and filefrag -k -v results in a 72M txt file, almost
-all 'extents' show length:128, but also several a bit bigger or much
-bigger.
->From just quickly browsing and random checks, it seems mostly
-contiguous (on linux block layer level or from what filefrag sees), it
-looks like it is not so difficult to change filefrag so that it also
-reports the amount of discontinuities. But maybe there is other
-'misunderstanding' between filefrag and btrfs, so then we would need
-something dedicated. filefrag execution takes long time mostly
-(minutes), even just for 1 though big file.
 
-> Because if you're using compress-force, filefrag will see each 128 KiB
-> compression block as an extent, and 1018391 reported "extents" (actually
-> compression blocks) should be ~ 125 GiB.
-See also above;
-file is 176521162380 bytes ~= 164.4 GiB and ls -lh reports 165G
+Vincent Olivier wrote on 2015/11/27 06:25 -0500:
+>
+>> On Nov 26, 2015, at 10:03 PM, Vincent Olivier <vincent@up4.com> wrote:
+>>
+>>>
+>>> On Nov 25, 2015, at 8:44 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>>>
+>>>
+>>>
+>>> Vincent Olivier wrote on 2015/11/25 11:51 -0500:
+>>>> I should probably point out that there is 64GB of RAM on this machine and it’s a dual Xeon processor (LGA2011-3) system. Also, there is only Btrfs served via Samba and the kernel panic was caused Btrfs (as per what I remember from the log on the screen just before I rebooted) and happened in the middle of the night when zero (0) client was connected.
+>>>>
+>>>> You will find below the full “btrfs check” log for each device in the order it is listed by “btrfs fi show”.
+>>>
+>>> There is really no need to do such thing, as btrfs is able to manage multiple device, calling btrfsck on any of them is enough as long as it's not hugely damaged.
+>>>
+>>>>
+>>>> Ca I get a strong confirmation that I should run with the “—repair” option on each device? Thanks.
+>>>
+>>> YES.
+>>>
+>>> Inode nbytes fix is *VERY* safe as long as it's the only error.
+>>>
+>>> Although it's not that convincing since the inode nbytes fix code is written by myself and authors always tend to believe their codes are good....
+>>> But at least, some other users with more complicated problem(with inode nbytes error) fixed it.
+>>>
+>>> The last decision is still on you anyway.
+>>
+>> I will do it on the first device from the “fi show” output and report.
+>
+>
+> ok this doesn’t look good. i ran —repair and check again and it looks even worse. please help.
+>
+>
+> [root@3dcpc5 ~]# btrfs check --repair /dev/sdk
+> enabling repair mode
+> Checking filesystem on /dev/sdk
+> UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+> checking extents
+> Fixed 0 roots.
+> checking free space cache
+> cache and super generation don't match, space cache will be invalidated
+> checking fs roots
+> reset nbytes for ino 1341670 root 5
+> reset nbytes for ino 1341670 root 11406
 
-> AFAIK there's no easy "admin-level" way to check extent usage when btrfs
-> compression is used on a file.  There's developer-level btrfs-debug
-> output, but nothing admin-level or user-level at all.
-I would be interested in tooling that gives more visibility on what
-happens on btrfs disk-block level, primarily just for non-compression
-use-cases. If you know some, please let us know.
+As mentioned by other guys, inode nbytes seems to be fixed.
 
-> And while compress-force won't change the reported "extents" that are
-> actually compression-blocks if the file is actually compressed, just
-> compress by itself may or may not actually compress the file (there's an
-> algorithm used, from what the devs have said, basically it checks whether
-> the first block or two compress well, and assumes the rest of the file
-> will be similar, compressing or not based on the result of that attempt),
-This method is probably a good method for live data being written, but
-for static content (my data files), it turned out to be not good
-enough, i.e. total space gained in TeraByte range was not what I
-expected/wanted.
+But to make it sure, if the inode is a directory or a normal file?
 
-> so it's quite possible you'll get better "extent" numbers if the file
-> isn't actually compressed, in which case filefrag actually gets things
-> right and reports real extent numbers, vs the number of compression
-> blocks if the file is compressed.
-I think you mean that when the destination block of the file are not
-re-compressed (and stored on disk) but left and stored as the
-unprocessed source datablock. Indeed, when I first e.g gzip the file,
-it's then 75G and filefrag reports 8613 extents, most of them 512KiB
+> warning line 3653
+
+Seems to be a unexpected warning.
+The subvolume root seems to be shared by other subvolume.
+
+It may be one corner case for inode nbytes repair code.
+But it seems no harm yet.
+
+> checking csums
+> checking root refs
+> found 19343374874998 bytes used err is 0
+> total csum bytes: 18863243900
+> total tree bytes: 27413118976
+> total fs tree bytes: 4455694336
+> total extent tree bytes: 3077373952
+> btree space waste bytes: 2882193883
+> file data blocks allocated: 19461564538880
+>   referenced 20155355832320
+>
+>
+>
+>
+>
+> root@3dcpc5 ~]# btrfs check /dev/sdk
+> Checking filesystem on /dev/sdk
+> UUID: 6a742786-070d-4557-9e67-c73b84967bf5
+> checking extents
+> checking free space cache
+> block group 53328591454208 has wrong amount of free space
+> failed to load free space cache for block group 53328591454208
+> block group 53329665196032 has wrong amount of free space
+> failed to load free space cache for block group 53329665196032
+> Wanted offset 58836887044096, found 58836887011328
+> Wanted offset 58836887044096, found 58836887011328
+> cache appears valid but isnt 58836887011328
+> Wanted offset 60505481887744, found 60505481805824
+> Wanted offset 60505481887744, found 60505481805824
+> cache appears valid but isnt 60505481805824
+> Wanted bytes 16384, found 81920 for off 60979001966592
+> Wanted bytes 1073725440, found 81920 for off 60979001966592
+> cache appears valid but isnt 60979001950208
+> Wanted offset 61297908056064, found 61297908006912
+> Wanted offset 61297908056064, found 61297908006912
+> cache appears valid but isnt 61297903271936
+> Wanted bytes 32768, found 16384 for off 61711301296128
+> Wanted bytes 1066319872, found 16384 for off 61711301296128
+> cache appears valid but isnt 61711293874176
+> There is no free space entry for 62691824041984-62691824058368
+> There is no free space entry for 62691824041984-62692693901312
+> cache appears valid but isnt 62691620159488
+> There is no free space entry for 63723505205248-63723505221632
+> There is no free space entry for 63723505205248-63724559794176
+> cache appears valid but isnt 63723486052352
+> Wanted bytes 32768, found 16384 for off 64746920902656
+> Wanted bytes 914849792, found 16384 for off 64746920902656
+> cache appears valid but isnt 64746762010624
+> There is no free space entry for 65770368401408-65770368434176
+> There is no free space entry for 65770368401408-65771111710720
+> cache appears valid but isnt 65770037968896
+> Wanted offset 66758954270720, found 66758954221568
+> Wanted offset 66758954270720, found 66758954221568
+> cache appears valid but isnt 66758954188800
+> block group 70204591702016 has wrong amount of free space
+> failed to load free space cache for block group 70204591702016
+> block group 70205665443840 has wrong amount of free space
+> failed to load free space cache for block group 70205665443840
+> block group 70206739185664 has wrong amount of free space
+> failed to load free space cache for block group 70206739185664
+> Wanted offset 70216543715328, found 70216543698944
+> Wanted offset 70216543715328, found 70216543698944
+> cache appears valid but isnt 70216537079808
+> Wanted offset 71025067474944, found 71025067409408
+> Wanted offset 71025067474944, found 71025067409408
+> cache appears valid but isnt 71025064673280
+> Wanted offset 71455641354240, found 71455641337856
+> Wanted offset 71455641354240, found 71455641337856
+> cache appears valid but isnt 71455635144704
+> block group 71662867316736 has wrong amount of free space
+> failed to load free space cache for block group 71662867316736
+> block group 71663941058560 has wrong amount of free space
+> failed to load free space cache for block group 71663941058560
+> There is no free space entry for 72725872967680-72725872984064
+> There is no free space entry for 72725872967680-72726945464320
+> cache appears valid but isnt 72725871722496
+> block group 73207981801472 has wrong amount of free space
+> failed to load free space cache for block group 73207981801472
+> found 19343374940534 bytes used err is -22
+
+Just free space cache mismatch.
+Quite common for btrfsck, as it doesn't modify free space cache and 
+alloced/freed some space.
+
+It seems quite scary but in fact won't be a big problem.
+The behavior can be improved for btrfsck, if it found old free space 
+cache, just clean it to ensure good output.
+
+To fix the problem, mount the filesystem with "-o clear_cache" to 
+cleanup the wrong space cache.
+
+Thanks,
+Qu
+
+> total csum bytes: 18863243900
+> total tree bytes: 27413184512
+> total fs tree bytes: 4455727104
+> total extent tree bytes: 3077406720
+> btree space waste bytes: 2882234096
+> file data blocks allocated: 19461573357568
+>   referenced 20155367563264
+> [root@3dcpc5 ~]# --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
+

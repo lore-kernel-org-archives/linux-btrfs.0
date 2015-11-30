@@ -1,75 +1,83 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:24417 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751788AbbK3Eyp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Nov 2015 23:54:45 -0500
-Subject: Re: [PATCH 0/7] Let user specify the kernel version for features
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
- <5656683C.6060001@cn.fujitsu.com> <5656A18E.9050607@oracle.com>
- <5656AC64.3030304@cn.fujitsu.com> <5656EA7F.1070500@oracle.com>
- <5656FBB7.5020802@gmx.com> <565784DE.5080401@oracle.com>
- <5657A757.90909@cn.fujitsu.com> <56581742.9030308@oracle.com>
- <565A5317.8040506@gmx.com>
-Cc: dsterba@suse.cz, calestyo@scientia.net, ahferroin7@gmail.com,
-        1i5t5.duncan@cox.net
-From: Anand Jain <anand.jain@oracle.com>
-Message-ID: <565BD67B.9090007@oracle.com>
-Date: Mon, 30 Nov 2015 12:54:19 +0800
-MIME-Version: 1.0
-In-Reply-To: <565A5317.8040506@gmx.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:37836 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751861AbbK3FCy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 00:02:54 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1a3Gbv-0006WI-6R
+	for linux-btrfs@vger.kernel.org; Mon, 30 Nov 2015 06:02:47 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 06:02:47 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 06:02:47 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: slowness when cp respectively send/receiving on top of dm-crypt
+Date: Mon, 30 Nov 2015 05:02:43 +0000 (UTC)
+Message-ID: <pan$dfd56$d94661c9$2e95ffe8$7f001483@cox.net>
+References: <1448643790.11377.39.camel@scientia.net>
+	<CAPmG0jZDHkvFq8_f__2p2net3Qu_rfvxBeyRHNZPZ3tekbhMMQ@mail.gmail.com>
+	<1448684040.6837.18.camel@scientia.net>
+	<CAPmG0jbso5RM4UW_urBKa02LOKreCTx2PjX7YyUp6nuqOONo=Q@mail.gmail.com>
+	<pan$8c5a3$43576c38$c4ab8cd7$5fc9a224@cox.net>
+	<CAPmG0jZkK-2iJ0vd3L08Fkap-XdrSx_jSn5ZgZzOk1wvbAzEqA@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Henk Slager posted on Sun, 29 Nov 2015 20:29:49 +0100 as excerpted:
 
+> On Sun, Nov 29, 2015 at 6:31 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> 
+>> What are you using to tell you it has 1018391 extents?  If you're using
+>> filefrag, it's known not to understand btrfs compression, which uses
+>> 128 KiB (pre-compression size, I believe, tho I'm not absolutely
+>> positive) blocks, and as a result, to report each of those blocks as a
+>> separate extent.
 
-  (Most of the technical reasoning were already discussed so I won't
-  repeat them here).
+> Indeed filefrag, and filefrag -k -v results in a 72M txt file, almost
+> all 'extents' show length:128, but also several a bit bigger or much
+> bigger.
 
-  And jolting for new technical reasons finds only these..
+Hmm... I wonder... Were they multiples of 128?  I'm not a coder but with 
+your results it occurs to me that for sections that compress 
+"negatively", that is, that end up larger when "compressed" than when 
+not, perhaps even compress-force doesn't compress in that case, which, 
+presuming there's several in a row, would then appear as a single extent 
+to filefrag (assuming it actually is and the only reason filefrag would 
+split it up in reports would be due to the compression), as it would then 
+know how to map them properly.
 
-> What if the fs is not only for kernel to mount, but also a boot
-> partition for grub?
-> Do you need to check the grub2 version? Check if this is a /boot partition?
+Regardless, that's entirely new information to me, as I figured with 
+compressed files it saw each 128 KiB as a separate extent, regardless.
 
+Meanwhile, I didn't know about the -v actually showing the addresses so 
+real extents could be manually calculated, either.  The manpage simply 
+says "be verbose", which isn't particularly helpful, and I'd obviously 
+never tried it.
 
-  In the above context, which is better..
-  this :
+> From just quickly browsing and random checks, it seems mostly contiguous
+> (on linux block layer level or from what filefrag sees), it looks like
+> it is not so difficult to change filefrag so that it also reports the
+> amount of discontinuities. But maybe there is other 'misunderstanding'
+> between filefrag and btrfs, so then we would need something dedicated.
+> filefrag execution takes long time mostly (minutes), even just for 1
+> though big file.
 
-    mkfs.btrfs -O ^skinny-metadata,^mixed-bg,^extref,^raid56,^no-holes
-    btrfs-convert -O ^skinny-metadata,^extref,^no-holes
+So filefrag -v's practical verbosity is new and quite useful information 
+as well. =:^)  In fact, given that new info and enough motivation, I 
+could almost certainly hack up a script to do the address comparisons and 
+report actual extents here, tho obviously it'd be far less efficient than 
+actually writing the same in native code, the result if filefrag itself 
+were to "learn" about btrfs compression.
 
-  or this:
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-    mkfs.btrfs -O comp=<X>
-    btrfs-convert -O comp=<X>
-
-    X = some number below 2.7.37 OR grub2 (planned) (thanks to you,
-    to bring this up).
-
-  ?
-
-> Recently I just encountered such problem. Latest xfs-progs makes xfs
-> version 5 by default, but grub2 can't handle version 5 yet in latest
-> stable version.
-> Then system can't even boot into grub2.
-
-   Good example. Appears that user didn't know what latest features
-   to disable? so to be compatible with grub2 ? OR they have to read
-   couple of grub documents to fix.
-
-   Imagine the pain while using btrfs-convert. That means you need to
-   restore Hope you have not deleted the ext_saved subvol. And then
-   again run btrfs-convert.
-
-
-> Did you see Dave trying to add such grub2 version based probe to change
-> mkfs.xfs features?
-> No, just because that's not the way things should be done.
-
-   So what was fix in this case ? Or is there any fix-patch rejected ?
-
-Cheers, Anand

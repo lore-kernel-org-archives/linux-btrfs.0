@@ -1,30 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17090 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:19075 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752992AbbK3Hyw (ORCPT
+	with ESMTP id S1752468AbbK3H7t (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 02:54:52 -0500
+	Mon, 30 Nov 2015 02:59:49 -0500
 Received: from aserv0021.oracle.com (aserv0021.oracle.com [141.146.126.233])
-	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id tAU7sphB018609
+	by userp1040.oracle.com (Sentrion-MTA-4.3.2/Sentrion-MTA-4.3.2) with ESMTP id tAU7xmtF023825
 	(version=TLSv1 cipher=DHE-RSA-AES256-SHA bits=256 verify=OK)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:54:51 GMT
-Received: from aserv0122.oracle.com (aserv0122.oracle.com [141.146.126.236])
-	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id tAU7spQd008672
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:59:49 GMT
+Received: from userv0122.oracle.com (userv0122.oracle.com [156.151.31.75])
+	by aserv0021.oracle.com (8.13.8/8.13.8) with ESMTP id tAU7xmq7020486
 	(version=TLSv1/SSLv3 cipher=DHE-RSA-AES256-SHA bits=256 verify=FAIL)
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:54:51 GMT
-Received: from abhmp0002.oracle.com (abhmp0002.oracle.com [141.146.116.8])
-	by aserv0122.oracle.com (8.13.8/8.13.8) with ESMTP id tAU7soGo015246
-	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:54:51 GMT
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:59:48 GMT
+Received: from abhmp0014.oracle.com (abhmp0014.oracle.com [141.146.116.20])
+	by userv0122.oracle.com (8.13.8/8.13.8) with ESMTP id tAU7xlm4003200
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 07:59:47 GMT
+To: linux-btrfs@vger.kernel.org
 From: Anand Jain <anand.jain@oracle.com>
 Subject: [RFC] Btrfs device and pool management (wip)
-To: linux-btrfs@vger.kernel.org
-Message-ID: <565C00C9.30402@oracle.com>
-Date: Mon, 30 Nov 2015 15:54:49 +0800
+Message-ID: <565C01F1.5030108@oracle.com>
+Date: Mon, 30 Nov 2015 15:59:45 +0800
 MIME-Version: 1.0
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+(fixed alignment)
 
 
 ------------
@@ -56,29 +57,30 @@ devices across the industries/users.
 
 Consideration:
 
-  - Have user-tunable to support different context of usages, which 
-should be applied on top of a set of disk IO errors, and its out come 
+  - Have user-tunable to support different context of usages, which
+should be applied on top of a set of disk IO errors, and its out come
 will be to know if the disk can be failed.
 
-  - Distinguish real disk failure (failed state) VS IO errors due to 
-intermittent transport errors (offline state). (I am not sure how to do 
+  - Distinguish real disk failure (failed state) VS IO errors due to
+intermittent transport errors (offline state). (I am not sure how to do
 that yet, basically in some means, block layer could help?, RFC ?).
 
-  - A sysfs offline interface, so as to udev update the kernel, when 
+  - A sysfs offline interface, so as to udev update the kernel, when
 disk is pulled out.
 
-  - Because even to fail a device it depends on the user requirements, 
-btrfs IO completion threads instead of directly reacting on an IO error, 
-it will continue to just report the IO error into device error 
-statistics, and a spooler up on errors will apply user/system 
-criticalness as provided by the user on the top, which will decide if 
-the device has to be marked as failed OR if it can continue to be in online.
+  - Because even to fail a device it depends on the user requirements,
+btrfs IO completion threads instead of directly reacting on an IO
+error, it will continue to just report the IO error into device error
+statistics, and a spooler up on errors will apply user/system
+criticalness as provided by the user on the top, which will decide if
+the device has to be marked as failed OR if it can continue to be in
+online.
 
-  - A FS load pattern (mostly outside of btrfs-kernel or with in 
-btrfs-kernel) may pick the right time to replace the failed device, or 
-to run other FS maintenance activities (balance, scrub) automatically.
+  - A FS load pattern (mostly outside of btrfs-kernel or with in btrfs-
+kernel) may pick the right time to replace the failed device, or to run
+other FS maintenance activities (balance, scrub) automatically.
 
-  - Sysfs will help user land scripts which may want to bring device to 
+  - Sysfs will help user land scripts which may want to bring device to
 offline or failed.
 
 
@@ -131,7 +133,7 @@ Failed:
    panic -dump as configured.
 
 
-Flow diagram (also include pool states BTRFS_POOL_STATE_xx along with 
+Flow diagram (also include pool states BTRFS_POOL_STATE_xx along with
 device state BTRFS_DEVICE_STATE_xx):
 
 
@@ -149,7 +151,7 @@ device state BTRFS_DEVICE_STATE_xx):
                    if confirmed media/target:- failed
                  or fix-able transport issue:- offline.
                        and apply user config.
-			can be ignored ?  --------------yes->[1]
+             can be ignored ?  --------------yes->[1]
                                  |
                                  |no
          _______offline__________/\______failed________
@@ -212,4 +214,3 @@ Code status:
 
 
 Thanks, Anand
-

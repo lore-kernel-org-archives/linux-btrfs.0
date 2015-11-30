@@ -1,234 +1,739 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp03.in.ibm.com ([122.248.162.3]:42588 "EHLO
-	e28smtp03.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752683AbbK3KRr (ORCPT
+Received: from e28smtp07.in.ibm.com ([122.248.162.7]:43533 "EHLO
+	e28smtp07.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752912AbbK3KRt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 05:17:47 -0500
+	Mon, 30 Nov 2015 05:17:49 -0500
 Received: from localhost
-	by e28smtp03.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp07.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Mon, 30 Nov 2015 15:47:44 +0530
+	Mon, 30 Nov 2015 15:47:47 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 To: fstests@vger.kernel.org
 Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
         fdmanana@gmail.com, chandan@mykolab.com
-Subject: [PATCH 4/8] Fix btrfs/095 to work on non-4k block sized filesystems
-Date: Mon, 30 Nov 2015 15:47:20 +0530
-Message-Id: <1448878644-16503-5-git-send-email-chandan@linux.vnet.ibm.com>
-In-Reply-To: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
+Subject: [PATCH V2 3/5] Fix btrfs/055 to work on non-4k block sized filesystems
+Date: Mon, 30 Nov 2015 15:46:58 +0530
+Message-Id: <1448878620-16382-4-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1448878620-16382-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1448878620-16382-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This commit makes use of the new _filter_xfs_io_blocks_modified filtering
-function to print information in terms of file blocks rather than file
-offset.
+This commit makes use of the new _filter_xfs_io_blocks_modified and _filter_od
+filtering functions to print information in terms of file blocks rather than
+file offset.
 
 Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 ---
- tests/btrfs/095     | 110 +++++++++++++++++++++++++++++-----------------------
- tests/btrfs/095.out |  42 ++++++++++++++++----
- 2 files changed, 96 insertions(+), 56 deletions(-)
+ tests/btrfs/055     | 128 ++++++++++--------
+ tests/btrfs/055.out | 378 +++++++++++++++++++++++++---------------------------
+ 2 files changed, 259 insertions(+), 247 deletions(-)
 
-diff --git a/tests/btrfs/095 b/tests/btrfs/095
-index 1b4ba90..dec530c 100755
---- a/tests/btrfs/095
-+++ b/tests/btrfs/095
-@@ -63,84 +63,98 @@ _scratch_mkfs >>$seqres.full 2>&1
- _init_flakey
- _mount_flakey
+diff --git a/tests/btrfs/055 b/tests/btrfs/055
+index c0dd9ed..1f50850 100755
+--- a/tests/btrfs/055
++++ b/tests/btrfs/055
+@@ -60,88 +60,110 @@ test_btrfs_clone_with_holes()
+ 	_scratch_mkfs "$1" >/dev/null 2>&1
+ 	_scratch_mount
  
--# Create prealloc extent covering range [160K, 620K[
--$XFS_IO_PROG -f -c "falloc 160K 460K" $SCRATCH_MNT/foo
-+BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
+-	# Create a file with 4 extents and 1 hole, all with a size of 8Kb each.
+-	# The hole is in the range [16384, 24576[.
+-	$XFS_IO_PROG -s -f -c "pwrite -S 0x01 -b 8192 0 8192" \
+-			-c "pwrite -S 0x02 -b 8192 8192 8192" \
+-			-c "pwrite -S 0x04 -b 8192 24576 8192" \
+-			-c "pwrite -S 0x05 -b 8192 32768 8192" \
+-		$SCRATCH_MNT/foo | _filter_xfs_io
++	BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
  
--# Now write to the last 80K of the prealloc extent plus 40K to the unallocated
--# space that immediately follows it. This creates a new extent of 40K that spans
--# the range [620K, 660K[.
--$XFS_IO_PROG -c "pwrite -S 0xaa 540K 120K" $SCRATCH_MNT/foo | _filter_xfs_io
-+# Create prealloc extent covering file block range [40, 155[
-+$XFS_IO_PROG -f -c "falloc $((40 * $BLOCK_SIZE)) $((115 * $BLOCK_SIZE))" \
-+	     $SCRATCH_MNT/foo
+-	# Clone destination file, 1 extent of 96kb.
+-	$XFS_IO_PROG -s -f -c "pwrite -S 0xff -b 98304 0 98304" \
+-		$SCRATCH_MNT/bar | _filter_xfs_io
++	EXTENT_SIZE=$((2 * $BLOCK_SIZE))
+ 
+-	# Clone 2nd extent, 8Kb hole and 3rd extent of foo into bar.
+-	$CLONER_PROG -s 8192 -d 0 -l 24576 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++	OFFSET=0
 +
-+# Now write to the last 20 blocks of the prealloc extent plus 10 blocks to the
-+# unallocated space that immediately follows it. This creates a new extent of 10
-+# blocks that spans the block range [155, 165[.
-+$XFS_IO_PROG -c "pwrite -S 0xaa $((135 * $BLOCK_SIZE)) $((30 * $BLOCK_SIZE))" \
-+	     $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
- 
- # At this point, there are now 2 back references to the prealloc extent in our
--# extent tree. Both are for our file offset 160K and one relates to a file
--# extent item with a data offset of 0 and a length of 380K, while the other
--# relates to a file extent item with a data offset of 380K and a length of 80K.
-+# extent tree. Both are for our file offset mapped by the 40th block of the file
-+# and one relates to a file extent item with a data offset of 0 and a length of
-+# 95 blocks, while the other relates to a file extent item with a data offset of
-+# 95 blocks and a length of 20 blocks.
- 
- # Make sure everything done so far is durably persisted (all back references are
- # in the extent tree, etc).
- sync
- 
--# Now clone all extents of our file that cover the offset 160K up to its eof
--# (660K at this point) into itself at offset 2M. This leaves a hole in the file
--# covering the range [660K, 2M[. The prealloc extent will now be referenced by
--# the file twice, once for offset 160K and once for offset 2M. The 40K extent
--# that follows the prealloc extent will also be referenced twice by our file,
--# once for offset 620K and once for offset 2M + 460K.
--$CLONER_PROG -s $((160 * 1024)) -d $((2 * 1024 * 1024)) -l 0 $SCRATCH_MNT/foo \
--	$SCRATCH_MNT/foo
--
--# Now create one new extent in our file with a size of 100Kb. It will span the
--# range [3M, 3M + 100K[. It also will cause creation of a hole spanning the
--# range [2M + 460K, 3M[. Our new file size is 3M + 100K.
--$XFS_IO_PROG -c "pwrite -S 0xbb 3M 100K" $SCRATCH_MNT/foo | _filter_xfs_io
-+# Now clone all extents of our file that cover the file range spanned by 40th
-+# block up to its eof (165th block at this point) into itself at 512th
-+# block. This leaves a hole in the file covering the block range [165, 512[. The
-+# prealloc extent will now be referenced by the file twice, once for offset
-+# mapped by the 40th block and once for offset mapped by 512th block. The 10
-+# blocks extent that follows the prealloc extent will also be referenced twice
-+# by our file, once for offset mapped by the 155th block and once for offset
-+# (512 block + 115 blocks)
-+$CLONER_PROG -s $((40 * $BLOCK_SIZE)) -d $((512 * $BLOCK_SIZE)) -l 0 \
-+	     $SCRATCH_MNT/foo $SCRATCH_MNT/foo
++	# Create a file with 4 extents and 1 hole, all with 2 blocks each.
++	# The hole is in the block range [4, 5[.
++	$XFS_IO_PROG -s -f -c "pwrite -S 0x01 -b $EXTENT_SIZE $OFFSET $EXTENT_SIZE" \
++		     $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
 +
-+# Now create one new extent in our file with a size of 25 blocks. It will span
-+# the block range [768, 768 + 25[. It also will cause creation of a hole
-+# spanning the block range [512 + 115, 768[. Our new file size is the file
-+# offset mapped by (768 + 25)th block.
-+$XFS_IO_PROG -c "pwrite -S 0xbb $((768 * $BLOCK_SIZE)) $((25 * $BLOCK_SIZE))" \
-+	     $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
- 
- # At this point, there are now (in memory) 4 back references to the prealloc
- # extent.
- #
--# Two of them are for file offset 160K, related to file extent items
--# matching the file offsets 160K and 540K respectively, with data offsets of
--# 0 and 380K respectively, and with lengths of 380K and 80K respectively.
-+# Two of them are for file offset mapped by the 40th block, related to file
-+# extent items matching the file offsets mapped by 40th and 135th block
-+# respectively, with data offsets of 0 and 95 blocks respectively, and with
-+# lengths of 95 and 20 blocks respectively.
- #
--# The other two references are for file offset 2M, related to file extent items
--# matching the file offsets 2M and 2M + 380K respectively, with data offsets of
--# 0 and 380K respectively, and with lengths of 380K and 80K respectively.
-+# The other two references are for file offset mapped by 512th block, related to
-+# file extent items matching the file offsets mapped by 512th and (512 + 95)th
-+# block respectively, with data offsets mapped by 0th and 95th block
-+# respectively, and with lengths of 95 and 20 blocks respectively.
- #
--# The 40K extent has 2 back references, one for file offset 620K and the other
--# for file offset 2M + 460K.
-+# The 10 block extent has 2 back references, one for file offset mapped by 155th
-+# block and the other for file offset mapped by (512 + 115)th block.
- #
--# The 100K extent has a single back reference and it relates to file offset 3M.
-+# The 25 blocks extent has a single back reference and it relates to file offset
-+# mapped by 768th block.
++	OFFSET=$(($OFFSET + $EXTENT_SIZE))
++	$XFS_IO_PROG -s -f -c "pwrite -S 0x02 -b $EXTENT_SIZE $OFFSET $EXTENT_SIZE" \
++		     $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
 +
++	OFFSET=$(($OFFSET + 2 * $EXTENT_SIZE))
++	$XFS_IO_PROG -s -f -c "pwrite -S 0x04 -b $EXTENT_SIZE $OFFSET $EXTENT_SIZE" \
++		     $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
++
++	OFFSET=$(($OFFSET + $EXTENT_SIZE))
++	$XFS_IO_PROG -s -f -c "pwrite -S 0x05 -b $EXTENT_SIZE $OFFSET $EXTENT_SIZE" \
++		     $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
++
++	# Clone destination file, 1 extent of 24 blocks.
++	EXTENT_SIZE=$((24 * $BLOCK_SIZE))
++	$XFS_IO_PROG -s -f -c "pwrite -S 0xff -b $EXTENT_SIZE 0 $EXTENT_SIZE" \
++		$SCRATCH_MNT/bar | _filter_xfs_io_blocks_modified
++
++	# Clone 2nd extent, 2-blocks sized hole and 3rd extent of foo into bar.
++	$CLONER_PROG -s $((2 * $BLOCK_SIZE)) -d 0 -l $((6 * $BLOCK_SIZE)) \
++		     $SCRATCH_MNT/foo $SCRATCH_MNT/bar
  
--# Now clone our 100K extent into offset 600K. That offset covers the last 20K
--# of the prealloc extent, the whole 40K extent and 40K of the hole starting at
--# offset 660K.
--$CLONER_PROG -s $((3 * 1024 * 1024)) -d $((600 * 1024)) -l $((100 * 1024)) \
-+# Now clone our 25 block extent into offset mapped by 150th block. That offset
-+# covers the last 5 blocks of the prealloc extent, the whole 10 block extent and
-+# 10 blocks of the hole starting at offset mapped by 165th block.
-+$CLONER_PROG -s $((768 * $BLOCK_SIZE)) -d $((150 * $BLOCK_SIZE)) -l $((25 * $BLOCK_SIZE)) \
- 	$SCRATCH_MNT/foo $SCRATCH_MNT/foo
+ 	# Verify both extents and the hole were cloned.
+ 	echo "1) Check both extents and the hole were cloned"
+-	od -t x1 $SCRATCH_MNT/bar
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
  
--# At this point there's only one reference to the 40K extent, at file offset
--# 2M + 460K, we have 4 references for the prealloc extent (2 for file offset
--# 160K and 2 for file offset 2M) and 2 references for the 100K extent (1 for
--# file offset 3M and a new one for file offset 600K).
-+# At this point there's only one reference to the 10 block extent, at file
-+# offset mapped by (512 + 115) block, we have 4 references for the prealloc
-+# extent (2 for file offset mapped by 40th block and 2 for file offset mapped by
-+# 512th block) and 2 references for the 25 block extent (1 for file offset
-+# mapped by 768th block and a new one for file offset mapped by 150th block).
+-	# Cloning range starts at the middle of an hole.
+-	$CLONER_PROG -s 20480 -d 32768 -l 12288 $SCRATCH_MNT/foo \
+-		$SCRATCH_MNT/bar
++	# Cloning range starts at the middle of a hole.
++	$CLONER_PROG -s $((5 * $BLOCK_SIZE)) -d $((8 * $BLOCK_SIZE)) \
++		     -l $((3 * $BLOCK_SIZE)) $SCRATCH_MNT/foo $SCRATCH_MNT/bar
  
- # Now fsync our file to make all its new data and metadata updates are durably
- # persisted and present if a power failure/crash happens after a successful
- # fsync and before the next transaction commit.
- $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
+-	# Verify that half of the hole and the following 8Kb extent were cloned.
+-	echo "2) Check half hole and one 8Kb extent were cloned"
+-	od -t x1 $SCRATCH_MNT/bar
++	# Verify that half of the hole and the following 2 block extent were cloned.
++	echo "2) Check half hole and the following 2 block extent were cloned"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
  
--echo "File digest before power failure:"
--md5sum $SCRATCH_MNT/foo | _filter_scratch
-+echo "File contents before power failure:"
-+od -t x1 $SCRATCH_MNT/foo | _filter_od
+-	# Cloning range ends at the middle of an hole.
+-	$CLONER_PROG -s 0 -d 65536 -l 20480 $SCRATCH_MNT/foo $SCRATCH_MNT/bar
++	# Cloning range ends at the middle of a hole.
++	$CLONER_PROG -s 0 -d $((16 * $BLOCK_SIZE)) -l $((5 * $BLOCK_SIZE)) \
++		     $SCRATCH_MNT/foo $SCRATCH_MNT/bar
  
- # During log replay, the btrfs delayed references implementation used to run the
- # deletion of back references before the addition of new back references, which
- # made the addition fail as it didn't find the key in the extent tree that it
--# was looking for. The failure triggered by this test was related to the 40K
--# extent, which got 1 reference dropped and 1 reference added during the fsync
--# log replay - when running the delayed references at transaction commit time,
--# btrfs was applying the deletion before the insertion, resulting in a failure
--# of the insertion that ended up turning the fs into read-only mode.
-+# was looking for. The failure triggered by this test was related to the 10
-+# block extent, which got 1 reference dropped and 1 reference added during the
-+# fsync log replay - when running the delayed references at transaction commit
-+# time, btrfs was applying the deletion before the insertion, resulting in a
-+# failure of the insertion that ended up turning the fs into read-only mode.
- _flakey_drop_and_remount
+-	# Verify that 2 extents of 8kb and a 4kb hole were cloned.
+-	echo "3) Check that 2 extents of 8kb eacg and a 4kb hole were cloned"
+-	od -t x1 $SCRATCH_MNT/bar
++	# Verify that 2 extents of 2 blocks size and a 1-block hole were cloned.
++	echo "3) Check that 2 extents of 2 blocks each and a hole of 1 block were cloned"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
  
--echo "File digest after log replay:"
--md5sum $SCRATCH_MNT/foo | _filter_scratch
-+echo "File contents after log replay:"
-+od -t x1 $SCRATCH_MNT/foo | _filter_od
+-	# Create a 24Kb hole at the end of the source file (foo).
+-	$XFS_IO_PROG -c "truncate 65536" $SCRATCH_MNT/foo
++	# Create a 6-block hole at the end of the source file (foo).
++	$XFS_IO_PROG -c "truncate $((16 * $BLOCK_SIZE))" $SCRATCH_MNT/foo \
++		| _filter_xfs_io_blocks_modified
+ 	sync
  
- _unmount_flakey
+ 	# Now clone a range that overlaps that hole at the end of the foo file.
+-	# It should clone the last 4Kb of the extent at offset 32768 and the
+-	# first 8kb of the 24kb hole at the end of foo.
+-	$CLONER_PROG -s 36864 -d 86016 -l 12288 $SCRATCH_MNT/foo \
+-		$SCRATCH_MNT/bar
++	# It should clone the 10th block and the first two blocks of the hole
++	# at the end of foo.
++	$CLONER_PROG -s $((9 * $BLOCK_SIZE)) -d $((21 * $BLOCK_SIZE)) \
++		     -l $((3 * $BLOCK_SIZE)) $SCRATCH_MNT/foo $SCRATCH_MNT/bar
  
-diff --git a/tests/btrfs/095.out b/tests/btrfs/095.out
-index e93435c..e73b24d 100644
---- a/tests/btrfs/095.out
-+++ b/tests/btrfs/095.out
-@@ -1,9 +1,35 @@
- QA output created by 095
--wrote 122880/122880 bytes at offset 552960
+-	# Verify that the second half of the 8Kb extent at offset 32768 of foo
+-	# and the first 8Kb of the 24kb hole of foo were cloned into bar.
+-	echo "4) Check that 4kb of 1 extent and 8Kb of an hole were cloned"
+-	od -t x1 $SCRATCH_MNT/bar
++	# Verify that the 9th block of foo and the first 2 blocks of the
++	# 6-block hole of foo were cloned into bar.
++	echo "4) Check that a block of 1 extent and 2 blocks of a hole were cloned"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
+ 
+ 	# Clone the same range as before, but clone it into a different offset
+ 	# of the target (bar) such that it increases the size of the target
+-	# by 8Kb.
+-	$CLONER_PROG -s 36864 -d 94208 -l 12288 $SCRATCH_MNT/foo \
+-		$SCRATCH_MNT/bar
++	# by 2 blocks.
++	$CLONER_PROG -s $((9 * $BLOCK_SIZE)) -d $((23 * $BLOCK_SIZE)) \
++		     -l $((3 * $BLOCK_SIZE)) $SCRATCH_MNT/foo $SCRATCH_MNT/bar
+ 
+-	# Verify that the second half of the 8Kb extent at offset 32768 of foo
+-	# and the first 8Kb of the 24kb hole of foo were cloned into bar at
+-	# bar's offset 94208 and that bar's size increased by 8Kb.
+-	echo "5) Check that 4kb of 1 extent and 8Kb of an hole were cloned and file size increased"
+-	od -t x1 $SCRATCH_MNT/bar
++	# Verify that the 9th block of foo and the first 2 blocks of the 6-block
++	# hole of foo were cloned into bar at bar's 23rd block and that bar's
++	# size increased by 2 blocks.
++	echo "5) Check that a block of 1 extent and 2 blocks of a hole were" \
++	     "cloned and file size increased"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
+ 
+ 	# Create a new completely sparse file (no extents, it's a big hole).
+-	$XFS_IO_PROG -f -c "truncate 100000" $SCRATCH_MNT/qwerty
++	$XFS_IO_PROG -f -c "truncate $((25 * $BLOCK_SIZE))" $SCRATCH_MNT/qwerty \
++		| _filter_xfs_io_blocks_modified
+ 	sync
+ 
+ 	# Test cloning a range from the sparse file to the bar file without
+ 	# increasing bar's size.
+-	$CLONER_PROG -s 4096 -d 0 -l 8192 $SCRATCH_MNT/qwerty $SCRATCH_MNT/bar
++	$CLONER_PROG -s $((1 * $BLOCK_SIZE)) -d 0 -l $((2 * $BLOCK_SIZE)) \
++		     $SCRATCH_MNT/qwerty $SCRATCH_MNT/bar
+ 
+-	# First 8Kb of bar should now be zeroes.
+-	echo "6) Check that 8kb of the hole were cloned"
+-	od -t x1 $SCRATCH_MNT/bar
++	# First 2 blocks of bar should now be zeroes.
++	echo "6) Check that 2 blocks of the hole were cloned"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
+ 
+ 	# Test cloning a range from the sparse file to the end of the bar file.
+-	# The bar file currently has a size of 106496 bytes.
+-	$CLONER_PROG -s 0 -d 106496 -l 32768 $SCRATCH_MNT/qwerty \
++	# The bar file currently has 26 blocks.
++	$CLONER_PROG -s 0 -d $((26 * $BLOCK_SIZE)) -l $((8 * $BLOCK_SIZE)) $SCRATCH_MNT/qwerty \
+ 		$SCRATCH_MNT/bar
+ 
+-	# Verify bar's size increased to 106496 + 32768 bytes (136Kb), and its
+-	# last 32768 bytes are all zeroes.
+-	echo "7) Check that 32kb of the hole were cloned and the file size increased"
+-	od -t x1 $SCRATCH_MNT/bar
++	# Verify bar's size increased to 26 + 8 blocks, and its
++	# last 8 blocks are all zeroes.
++	echo "7) Check that 8 blocks of the hole were cloned and the file size increased"
++	od -t x1 $SCRATCH_MNT/bar | _filter_od
+ 
+ 	# Verify that there are no consistency errors.
+ 	_check_scratch_fs
+diff --git a/tests/btrfs/055.out b/tests/btrfs/055.out
+index d8d4893..2d29d6f 100644
+--- a/tests/btrfs/055.out
++++ b/tests/btrfs/055.out
+@@ -1,347 +1,337 @@
+ QA output created by 055
+ Testing without the NO_HOLES feature
+-wrote 8192/8192 bytes at offset 0
 -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--wrote 102400/102400 bytes at offset 3145728
+-wrote 8192/8192 bytes at offset 8192
 -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
--File digest before power failure:
--beaf47c36659ac29bb9363fb8ffa10a1  SCRATCH_MNT/foo
--File digest after log replay:
--beaf47c36659ac29bb9363fb8ffa10a1  SCRATCH_MNT/foo
-+Blocks modified: [135 - 164]
-+Blocks modified: [768 - 792]
-+File contents before power failure:
+-wrote 8192/8192 bytes at offset 24576
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 32768
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 98304/98304 bytes at offset 0
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Blocks modified: [0 - 1]
++Blocks modified: [2 - 3]
++Blocks modified: [6 - 7]
++Blocks modified: [8 - 9]
++Blocks modified: [0 - 23]
+ 1) Check both extents and the hole were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0300000
+-2) Check half hole and one 8Kb extent were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++2) Check half hole and the following 2 block extent were cloned
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0300000
+-3) Check that 2 extents of 8kb eacg and a 4kb hole were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++3) Check that 2 extents of 2 blocks each and a hole of 1 block were cloned
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++25 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0300000
+-4) Check that 4kb of 1 extent and 8Kb of an hole were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++4) Check that a block of 1 extent and 2 blocks of a hole were cloned
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0300000
+-5) Check that 4kb of 1 extent and 8Kb of an hole were cloned and file size increased
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++5) Check that a block of 1 extent and 2 blocks of a hole were cloned and file size increased
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++27 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0320000
+-6) Check that 8kb of the hole were cloned
+-0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++32
++6) Check that 2 blocks of the hole were cloned
 +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+207 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+226 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+257 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+1137 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+1175 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+1400 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+1431
-+File contents after log replay:
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++27 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0320000
+-7) Check that 32kb of the hole were cloned and the file size increased
+-0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++32
++7) Check that 8 blocks of the hole were cloned and the file size increased
 +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+207 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+226 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+257 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+1137 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-+*
-+1175 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-+*
-+1400 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
-+*
-+1431
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++27 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0420000
++42
+ Testing with the NO_HOLES feature enabled
+-wrote 8192/8192 bytes at offset 0
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 8192
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 24576
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 8192/8192 bytes at offset 32768
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
+-wrote 98304/98304 bytes at offset 0
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Blocks modified: [0 - 1]
++Blocks modified: [2 - 3]
++Blocks modified: [6 - 7]
++Blocks modified: [8 - 9]
++Blocks modified: [0 - 23]
+ 1) Check both extents and the hole were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0300000
+-2) Check half hole and one 8Kb extent were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++2) Check half hole and the following 2 block extent were cloned
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0300000
+-3) Check that 2 extents of 8kb eacg and a 4kb hole were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++3) Check that 2 extents of 2 blocks each and a hole of 1 block were cloned
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++25 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0300000
+-4) Check that 4kb of 1 extent and 8Kb of an hole were cloned
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++4) Check that a block of 1 extent and 2 blocks of a hole were cloned
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0300000
+-5) Check that 4kb of 1 extent and 8Kb of an hole were cloned and file size increased
+-0000000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++30
++5) Check that a block of 1 extent and 2 blocks of a hole were cloned and file size increased
++0 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0020000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++2 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++27 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0320000
+-6) Check that 8kb of the hole were cloned
+-0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++32
++6) Check that 2 blocks of the hole were cloned
++0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++27 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0320000
+-7) Check that 32kb of the hole were cloned and the file size increased
+-0000000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++32
++7) Check that 8 blocks of the hole were cloned and the file size increased
++0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0040000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++4 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0060000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++6 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0100000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0110000 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
++11 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04 04
+ *
+-0130000 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
++13 ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff ff
+ *
+-0200000 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
++20 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01 01
+ *
+-0220000 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
++22 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02 02
+ *
+-0240000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++24 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0250000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++25 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0260000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++26 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0270000 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
++27 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05 05
+ *
+-0300000 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
++30 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+ *
+-0420000
++42
 -- 
 2.1.0
 

@@ -1,86 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:5514 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:8767 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752111AbbK3CAP (ORCPT
+	with ESMTP id S1753070AbbK3CQs (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 29 Nov 2015 21:00:15 -0500
-Subject: Re: shall distros run btrfsck on boot?
-To: Jeff Mahoney <jeffm@suse.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        <linux-btrfs@vger.kernel.org>
-References: <1448337754.14125.33.camel@scientia.net>
- <5659DBD9.1070802@suse.com>
+	Sun, 29 Nov 2015 21:16:48 -0500
+Subject: Re: BTRFS: could not find root 8
+To: <kreijack@inwind.it>, Chris Murphy <lists@colorremedies.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Imran Geriskovan <imran.geriskovan@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <CAK5rZE7_f6cypBPTR8UX-7t=OnRE595XBw__kN6Gy2cNowGFgA@mail.gmail.com>
+ <20151127204305.GE24333@carfax.org.uk>
+ <CAJCQCtQgjbR77eei2-srOofBLpWp-avj_2OMCRa_4Ffby8eL5g@mail.gmail.com>
+ <565B06AF.9020806@inwind.it>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <565BAD9C.4040002@cn.fujitsu.com>
-Date: Mon, 30 Nov 2015 09:59:56 +0800
+Message-ID: <565BB17E.7010708@cn.fujitsu.com>
+Date: Mon, 30 Nov 2015 10:16:30 +0800
 MIME-Version: 1.0
-In-Reply-To: <5659DBD9.1070802@suse.com>
+In-Reply-To: <565B06AF.9020806@inwind.it>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Jeff Mahoney wrote on 2015/11/28 11:52 -0500:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA256
+Goffredo Baroncelli wrote on 2015/11/29 15:07 +0100:
+> On 2015-11-27 23:51, Chris Murphy wrote:
+>> But from github I'm not finding any indication that systemd enables
+>> quota. This issue suggests that quota disabled is tolerated.
+>> https://github.com/systemd/systemd/issues/1809
 >
-> On 11/23/15 11:02 PM, Christoph Anton Mitterer wrote:
->> Hey.
->>
->> Short question since that came up on debian-devel.
->>
->> Now that btrfs check get's more and more useful, are the
->> developers going to recommend running it periodically on boot (of
->> course that wouldn't work right now, as it would *always* check)?
+> Looking at the systemd source, it seems that it could enable quota when playing with the "machine":
 >
-> Running fsck on boot is a holdover from an era where non-journaling
-> file systems were the norm.  It persists in the ext* world mostly due
-> to inertia, but it shouldn't be run on boot with ext3 or ext4 either.
->   As Eric noted, fsck.xfs is a no-op.  We have something similar for
-> btrfs and have no intention of ever running fsck on boot with btrfs
-> except in the case of a mount failure of the root file system.
 >
->> Plus... is btrfs check (without any arguments) non-desctructive, or
->> are there corner-cases where it may lead to any changes on the
->> devices?
+> See src/shared/machine-pool.c:
 >
-> I haven't reviewed it in detail, but a quick glance makes it look like
-> it will, minimally, create transactions even in check-only mode.
+> int setup_machine_directory(uint64_t size, sd_bus_error *error) {
+>          _cleanup_release_lock_file_ LockFile lock_file = LOCK_FILE_INIT;
+>          struct loop_info64 info = {
+>                  .lo_flags = LO_FLAGS_AUTOCLEAR,
+> [...]
+>          r = check_btrfs();
+>          if (r < 0)
+>                  return sd_bus_error_set_errnof(error, r, "Failed to determine whether /var/lib/machines is located on btrfs: %m");
+>          if (r > 0) {
+>                  (void) btrfs_subvol_make_label("/var/lib/machines");
+>
+>                  r = btrfs_quota_enable("/var/lib/machines", true);
+> [...]
+>
+> But I was unable to understand if:
+> - enabling quota is a "per filesystem" attribute or per "subvolume attribute"
 
-This seems interesting.
+Not a systemd dev, so I can only answer this one.
 
-Any clue to enhance?
+Btrfs quota is a "per filesystem" attribute.
+Yeah, it's filesystem level.
+
+
+
+And the root reason for the "could not find root" error message is,
+btrfs doesn't have a good enough ioctl API for btrfs qgroup.
+
+Currently, btrfs already has several IOCTLs, but only covers the 
+following operations:
+1) Enable/disable quota -> IOC_QUOTA_CTL
+2) Rescan and rescan status -> IOC_QUOTA_RESCAN* (3 ioctls)
+3) Qgroup create/remove/assign -> IOC_QGROUP_* (3 ioctls)
+
+It does *NOT* include the most used operation, show qgroup accounting.
+
+And "btrfs qgroup show" commands uses the generic tree search facility 
+to manually get needed qgroup info.
+
+Unfortunately, generic tree search will output such error if one is 
+searching for a non-exist tree.
+
+
+So the result is, either we find a good idea to create a dedicated 
+qgroup ioctl(either new ioctl number or integrate it into existing one), 
+or just ignore the error message.
 
 Thanks,
 Qu
+
+
+> - when systemd invokes setup_machine_directory()
 >
-> - -Jeff
+> Does someone have more information ?
 >
-> - --
-> Jeff Mahoney
-> SUSE Labs
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG/MacGPG2 v2
->
-> iQIcBAEBCAAGBQJWWdvZAAoJEB57S2MheeWyH9IP/3fYiURQ//xy4QHxUqztiR2h
-> NrX+I2n7cnaK3jxhgSQ4snFMzQqxpyjDdV3bTy6kqfBIhvrXKGVQdyFG0SV1MNuJ
-> WJuJYCzQa81mDP3G2T3I3sN7oFndIctKaDNBJ5VVCes/W7sFm3JTTfRRmPm7rhNw
-> GeFTnKFaZ39Lc53VOR7nX3vDKeGWzyyl2WGYYQ2uq7CKIn3jW1Pi5PKEysq21d8W
-> zsDjMh3PfI/TkI4BvNZkyoQaQPaMPZrK0rvY0ke3ScKh5W9MO9zZwcheT79gBRS/
-> MPtyOdWVtslDwdurgPyi9fX4bFlPQ6vqBy3evFeYBhuujypX49T8xZGUSIWUvXli
-> ElGm80S/+UWGWMl968BcoAp/rrQTfnZcYPHV4YZaeRRwdli5z82gRQsB5OYsQd1w
-> AlKJ3uq5mFu/qbWYgM3d51tr+OwZOSCDp9Ofj41Da7P1YmGDC10BP8hlm/YiDP91
-> sRCPF8Y9vy9F6wkCH0xX416CoR/jmB1xKgNiVs64laMfznLBprgGxpTh0/Eh6jjS
-> aXvtPyJjsidjIXBygzXVDHcSkZT6B881wWhKmDhLiSd5iQqfEnelbOB4gP7ew92X
-> QbATRfjIPqCPfLS3S2mOlewq+IbFBvX6TkDzqyGjyST66h3MgayD1nADNGMOauV7
-> aFaeWgGFGM1gcqDS/7vY
-> =eiA7
-> -----END PGP SIGNATURE-----
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> BR
 >
 >
 

@@ -1,70 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e23smtp01.au.ibm.com ([202.81.31.143]:40029 "EHLO
-	e23smtp01.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751392AbbKYMEt (ORCPT
+Received: from e28smtp03.in.ibm.com ([122.248.162.3]:42234 "EHLO
+	e28smtp03.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750850AbbK3KRV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 25 Nov 2015 07:04:49 -0500
+	Mon, 30 Nov 2015 05:17:21 -0500
 Received: from localhost
-	by e23smtp01.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	by e28smtp03.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
 	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Wed, 25 Nov 2015 22:04:46 +1000
+	Mon, 30 Nov 2015 15:47:19 +0530
 From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: fdmanana@gmail.com
-Cc: fstests@vger.kernel.org,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        chandan@mykolab.com
-Subject: Re: [PATCH 06/12] Fix btrfs/094 to work on non-4k block sized filesystems
-Date: Wed, 25 Nov 2015 17:33:50 +0530
-Message-ID: <1773494.Ogl3FMxuuo@localhost.localdomain>
-In-Reply-To: <CAL3q7H4U_b_OkpA4_5MU3DMdP1LPjxNYmFXCVU0j9Zi86c2szg@mail.gmail.com>
-References: <1448449386-4186-1-git-send-email-chandan@linux.vnet.ibm.com> <1984236.SDzE0v2Uyc@localhost.localdomain> <CAL3q7H4U_b_OkpA4_5MU3DMdP1LPjxNYmFXCVU0j9Zi86c2szg@mail.gmail.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+To: fstests@vger.kernel.org
+Cc: Chandan Rajendra <chandan@linux.vnet.ibm.com>, linux-btrfs@vger.kernel.org,
+        fdmanana@gmail.com, chandan@mykolab.com
+Subject: [PATCH V2 2/5] Fix btrfs/017 to work on non-4k block sized filesystems
+Date: Mon, 30 Nov 2015 15:46:57 +0530
+Message-Id: <1448878620-16382-3-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1448878620-16382-1-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1448878620-16382-1-git-send-email-chandan@linux.vnet.ibm.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wednesday 25 Nov 2015 11:51:52 Filipe Manana wrote:
-> On Wed, Nov 25, 2015 at 11:47 AM, Chandan Rajendra
-> 
-> <chandan@linux.vnet.ibm.com> wrote:
-> > On Wednesday 25 Nov 2015 11:11:27 Filipe Manana wrote:
-> >> Hi Chandan,
-> >> 
-> >> I can't agree with this change. We're no longer checking that file
-> >> data is correct after the cloning operations. The md5sum checks were
-> >> exactly for that. So essentially the test is only verifying the clone
-> >> operations don't fail with errors, it no longer checks for data
-> >> corruption...
-> >> 
-> >> Same comment applies to at least a few other patches in the series.
-> > 
-> > Hello Filipe,
-> > 
-> > All the tests where we had md5sum being echoed into output have been
-> > replaced with code to verify the md5sum values as shown below,
-> > 
-> >         if [ $foo_orig_hash != $foo_hash ]; then
-> >         
-> >                 echo "Read operation failed on $SCRATCH_MNT/foo: "\
-> >                 
-> >                      "Mimatching hash values detected."
-> >         
-> >         fi
-> > 
-> > This will cause a diff between the test's ideal output versus the output
-> > obtained during the test run.
-> 
-> Right, it compares the digests before and after some operation (which
-> should always match). However we no longer validate that the file
-> content is correct before the operation. For some of the tests that is
-> more important, like the ones that test read corruption after cloning
-> compressed extents.
+This commit makes use of the new _filter_xfs_io_blocks_modified filtering
+function to print information in terms of file blocks rather than file
+offset.
 
-Filipe, you are right. I will drop the fautly patches and send V2 containing
-fixes for only btrfs/017, btrfs/055 and btrfs/056.
+Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+---
+ tests/btrfs/017     | 16 ++++++++++++----
+ tests/btrfs/017.out |  3 +--
+ 2 files changed, 13 insertions(+), 6 deletions(-)
 
-Thanks for providing the review comments.
-
+diff --git a/tests/btrfs/017 b/tests/btrfs/017
+index f8855e3..34c5f0a 100755
+--- a/tests/btrfs/017
++++ b/tests/btrfs/017
+@@ -63,13 +63,21 @@ rm -f $seqres.full
+ _scratch_mkfs "--nodesize 65536" >>$seqres.full 2>&1
+ _scratch_mount
+ 
+-$XFS_IO_PROG -f -d -c "pwrite 0 8K" $SCRATCH_MNT/foo | _filter_xfs_io
++BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
++EXTENT_SIZE=$((2 * $BLOCK_SIZE))
++
++$XFS_IO_PROG -f -d -c "pwrite 0 $EXTENT_SIZE" $SCRATCH_MNT/foo \
++	| _filter_xfs_io_blocks_modified
+ 
+ _run_btrfs_util_prog subvolume snapshot $SCRATCH_MNT $SCRATCH_MNT/snap
+ 
+-$CLONER_PROG -s 0 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/foo-reflink
+-$CLONER_PROG -s 0 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/snap/foo-reflink
+-$CLONER_PROG -s 0 -d 0 -l 8192 $SCRATCH_MNT/foo $SCRATCH_MNT/snap/foo-reflink2
++$CLONER_PROG -s 0 -d 0 -l $EXTENT_SIZE $SCRATCH_MNT/foo $SCRATCH_MNT/foo-reflink
++
++$CLONER_PROG -s 0 -d 0 -l $EXTENT_SIZE $SCRATCH_MNT/foo \
++	     $SCRATCH_MNT/snap/foo-reflink
++
++$CLONER_PROG -s 0 -d 0 -l $EXTENT_SIZE $SCRATCH_MNT/foo \
++	     $SCRATCH_MNT/snap/foo-reflink2
+ 
+ _run_btrfs_util_prog quota enable $SCRATCH_MNT
+ _run_btrfs_util_prog quota rescan -w $SCRATCH_MNT
+diff --git a/tests/btrfs/017.out b/tests/btrfs/017.out
+index f940f3a..503eb88 100644
+--- a/tests/btrfs/017.out
++++ b/tests/btrfs/017.out
+@@ -1,5 +1,4 @@
+ QA output created by 017
+-wrote 8192/8192 bytes at offset 0
+-XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
++Blocks modified: [0 - 1]
+ 65536 65536
+ 65536 65536
 -- 
-chandan
+2.1.0
 

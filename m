@@ -1,67 +1,119 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:39444 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40459 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754911AbbK0Pdc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 27 Nov 2015 10:33:32 -0500
+	id S1752481AbbK3KEV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 05:04:21 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 90C25AC05
-	for <linux-btrfs@vger.kernel.org>; Fri, 27 Nov 2015 15:31:51 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 7F9A0AB13
+	for <linux-btrfs@vger.kernel.org>; Mon, 30 Nov 2015 10:02:40 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/4] btrfs: use smaller type for btrfs_path locks
-Date: Fri, 27 Nov 2015 16:31:45 +0100
-Message-Id: <cbd8e97ad970ced49419a344366aae7773e3f57b.1448637387.git.dsterba@suse.com>
-In-Reply-To: <cover.1448637387.git.dsterba@suse.com>
-References: <cover.1448637387.git.dsterba@suse.com>
+Subject: [PATCH] btrfs: cleanup, remove stray return statements
+Date: Mon, 30 Nov 2015 11:02:31 +0100
+Message-Id: <1448877751-17067-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The values of btrfs_path::locks are 0 to 4, fit into a u8. Let's see:
-
-* overall size of btrfs_path drops down from 136 to 112 (-24 bytes),
-* better packing in a slab page +6 objects
-* the whole structure now fits to 2 cachelines
-* slight decrease in code size:
-
-   text    data     bss     dec     hex filename
- 938731   43670   23144 1005545   f57e9 fs/btrfs/btrfs.ko.before
- 938203   43670   23144 1005017   f55d9 fs/btrfs/btrfs.ko.after
-
-(and the generated assembly does not change much)
-
-The main purpose is to decrease the size of the structure without
-affecting performance. The byte access is usually well behaving accross
-arches, the locks are not accessed frequently and sometimes just
-compared to zero.
-
-Note for further size reduction attempts: the slots could be made u16
-but this might generate worse code on some arches (non-byte and non-int
-access). Also the range of operations on slots is wider compared to
-locks and the potential performance drop should be evaluated first.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+ fs/btrfs/disk-io.c | 1 -
+ fs/btrfs/inode.c   | 1 -
+ fs/btrfs/locking.c | 2 --
+ fs/btrfs/raid56.c  | 2 --
+ fs/btrfs/scrub.c   | 2 --
+ fs/btrfs/volumes.c | 1 -
+ 6 files changed, 9 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 4e00412dc5ff..caa8d53912a7 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -595,7 +595,7 @@ struct btrfs_path {
- 	struct extent_buffer *nodes[BTRFS_MAX_LEVEL];
- 	int slots[BTRFS_MAX_LEVEL];
- 	/* if there is real range locking, this locks field will change */
--	int locks[BTRFS_MAX_LEVEL];
-+	u8 locks[BTRFS_MAX_LEVEL];
- 	u8 reada;
- 	/* keep some upper locks as we walk down */
- 	u8 lowest_level;
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 974be09e7556..c76f6ea3edd6 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3962,7 +3962,6 @@ static void __btrfs_btree_balance_dirty(struct btrfs_root *root,
+ 		balance_dirty_pages_ratelimited(
+ 				   root->fs_info->btree_inode->i_mapping);
+ 	}
+-	return;
+ }
+ 
+ void btrfs_btree_balance_dirty(struct btrfs_root *root)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 994490d5fa64..771a1a851bf3 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -5326,7 +5326,6 @@ void btrfs_evict_inode(struct inode *inode)
+ no_delete:
+ 	btrfs_remove_delayed_node(inode);
+ 	clear_inode(inode);
+-	return;
+ }
+ 
+ /*
+diff --git a/fs/btrfs/locking.c b/fs/btrfs/locking.c
+index 8077461fc56a..d13128c70ddd 100644
+--- a/fs/btrfs/locking.c
++++ b/fs/btrfs/locking.c
+@@ -56,7 +56,6 @@ void btrfs_set_lock_blocking_rw(struct extent_buffer *eb, int rw)
+ 		atomic_dec(&eb->spinning_readers);
+ 		read_unlock(&eb->lock);
+ 	}
+-	return;
+ }
+ 
+ /*
+@@ -96,7 +95,6 @@ void btrfs_clear_lock_blocking_rw(struct extent_buffer *eb, int rw)
+ 		    waitqueue_active(&eb->read_lock_wq))
+ 			wake_up(&eb->read_lock_wq);
+ 	}
+-	return;
+ }
+ 
+ /*
+diff --git a/fs/btrfs/raid56.c b/fs/btrfs/raid56.c
+index 1a33d3eb36de..6d707545f775 100644
+--- a/fs/btrfs/raid56.c
++++ b/fs/btrfs/raid56.c
+@@ -503,7 +503,6 @@ static void cache_rbio(struct btrfs_raid_bio *rbio)
+ 	}
+ 
+ 	spin_unlock_irqrestore(&table->cache_lock, flags);
+-	return;
+ }
+ 
+ /*
+@@ -906,7 +905,6 @@ static void raid_write_end_io(struct bio *bio)
+ 		err = -EIO;
+ 
+ 	rbio_orig_end_io(rbio, err);
+-	return;
+ }
+ 
+ /*
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 2907a77fb1f6..83eceae1c2bb 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -1514,8 +1514,6 @@ static void scrub_recheck_block(struct btrfs_fs_info *fs_info,
+ 
+ 	if (sblock->no_io_error_seen)
+ 		scrub_recheck_block_checksum(sblock);
+-
+-	return;
+ }
+ 
+ static inline int scrub_check_fsid(u8 fsid[],
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a6df8fdc1312..d9b557b0ba98 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1642,7 +1642,6 @@ static void update_dev_time(char *path_name)
+ 		return;
+ 	file_update_time(filp);
+ 	filp_close(filp, NULL);
+-	return;
+ }
+ 
+ static int btrfs_rm_dev_item(struct btrfs_root *root,
 -- 
-2.6.2
+1.8.4.5
 
---
-To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-the body of a message to majordomo@vger.kernel.org
-More majordomo info at  http://vger.kernel.org/majordomo-

@@ -1,67 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21233 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751660AbbK3GM7 (ORCPT
+Received: from mail-lf0-f44.google.com ([209.85.215.44]:36671 "EHLO
+	mail-lf0-f44.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752176AbbK3Hs7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 30 Nov 2015 01:12:59 -0500
-Subject: Re: potential btrfs-progs clean up
-To: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
-References: <1448453300-8449-1-git-send-email-anand.jain@oracle.com>
- <5656683C.6060001@cn.fujitsu.com> <5656A18E.9050607@oracle.com>
- <5656AC64.3030304@cn.fujitsu.com> <565BE23C.3010400@oracle.com>
-CC: <dsterba@suse.cz>, <calestyo@scientia.net>, <ahferroin7@gmail.com>,
-        <1i5t5.duncan@cox.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <565BE8D9.3000708@cn.fujitsu.com>
-Date: Mon, 30 Nov 2015 14:12:41 +0800
+	Mon, 30 Nov 2015 02:48:59 -0500
+Received: by lfs39 with SMTP id 39so183195584lfs.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 29 Nov 2015 23:48:58 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <565BE23C.3010400@oracle.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <pan$98cfe$190ff92c$916c4a80$8c9e9ee4@cox.net>
+References: <20151129130754.GI31524@torres.zugschlus.de>
+	<20151129141806.GG24333@carfax.org.uk>
+	<20151129180629.GJ31524@torres.zugschlus.de>
+	<pan$98cfe$190ff92c$916c4a80$8c9e9ee4@cox.net>
+Date: Mon, 30 Nov 2015 09:48:57 +0200
+Message-ID: <CAK5rZE5ug5MVntFBa31Kr_7YKSMV+bVA4kxaBsDKb0Eo1_JpzQ@mail.gmail.com>
+Subject: Re: "disk full" on a 5 GB btrfs filesystem, FAQ outdated?
+From: Imran Geriskovan <imran.geriskovan@gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 11/30/15, Duncan <1i5t5.duncan@cox.net> wrote:
+> Of course you can also try compress-force(=lzo the default
+> compression so the =spec isn't required), which should give
+> you slightly better performance than zlib, but also a bit
+> less efficient compression in terms of size saved.
 
+lzo perf relative to zlib (A very very rough comparison)
 
-Anand Jain wrote on 2015/11/30 13:44 +0800:
->
->
-> (this is a different topic, updated the subject)
->
->> Totally agree with this point. Too many non-sense in btrfs-progs codes
->> copied from kernel, and due to lack of update, it's very buggy now.
->> Just check volume.c for allocating data chunk.
->
->    Which functions in volume.c in particular ?
-
-btrfs_alloc_chunk().
-
-1) Fixed SINGLE DATA chunk size
-The point is very easy, for SINGLE and DATA chunk, its size is always 
-fixed to 8M. (below minimal data chunk size already)
-Normally it's OK, but not the normal 10% of filesystem.
-
-The bug is hidden by the complicated PROFILE if sentences.
-
-2) Not that clear chunk size limitation.
-And the logical of btrfs_alloc_chunk() is not that clear to for the 
-minimal *stripe* size(which is physical) and minimal *chunk* size(which 
-is logical).
-
-Not a real problem yet.
-
-3) Duplicated chunk allocation functions
-Btrfs_alloc_chunk(), btrfs_alloc_data_chunk().
-
-But don't cleanup the latter one yet, as btrfs-convert rework still 
-needs it to avoid some chunk allocation check.
-
-Thanks,
-Qu
-
-
->
-> Thanks, Anand
->
->
-
-
+Compress/Decompress times: 1/3 - 1/2 (which is significant)
+Output Size: %10-20 larger

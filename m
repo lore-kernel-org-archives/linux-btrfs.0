@@ -1,168 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:34472 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:32893 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751255AbbKWPcA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 23 Nov 2015 10:32:00 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix race between cleaner kthread and space cache writeout
-Date: Mon, 23 Nov 2015 15:25:16 +0000
-Message-Id: <1448292316-4451-1-git-send-email-fdmanana@kernel.org>
+	id S1753907AbbK3Nuk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 08:50:40 -0500
+Date: Mon, 30 Nov 2015 14:48:51 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Vegard Nossum <vegard.nossum@oracle.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org
+Subject: Re: BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
+Message-ID: <20151130134851.GZ31035@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <5648CD1D.9070804@oracle.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5648CD1D.9070804@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Sun, Nov 15, 2015 at 07:21:17PM +0100, Vegard Nossum wrote:
+> With the attached btrfs image, I get the following splat when mounting:
+> 
+> """
+> # mount -o loop -t btrfs ./btrfs.0 /mnt/0/
+> BTRFS: device fsid 9006933e-2a9a-44f0-917f-514252aeec2c devid 1 transid 
+> 7 /dev/loop0
+> BTRFS info (device loop0): disk space caching is enabled
+> BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
 
-When a block group becomes unused and the cleaner kthread is currently
-running, we can end up getting the current transaction aborted with error
--ENOENT when we try to commit the transaction, leading to the following
-trace:
+Looks like a fuzzed image, it blows when num_stripes is 0
 
-  [59779.258768] WARNING: CPU: 3 PID: 5990 at fs/btrfs/extent-tree.c:3740 btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]()
-  [59779.272594] BTRFS: Transaction aborted (error -2)
-  (...)
-  [59779.291137] Call Trace:
-  [59779.291621]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
-  [59779.292543]  [<ffffffff8104d0a6>] warn_slowpath_common+0x9f/0xb8
-  [59779.293435]  [<ffffffffa04cb81f>] ? btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]
-  [59779.295000]  [<ffffffff8104d107>] warn_slowpath_fmt+0x48/0x50
-  [59779.296138]  [<ffffffffa04c2721>] ? write_one_cache_group.isra.32+0x77/0x82 [btrfs]
-  [59779.297663]  [<ffffffffa04cb81f>] btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]
-  [59779.299141]  [<ffffffffa0549b0d>] commit_cowonly_roots+0x1de/0x261 [btrfs]
-  [59779.300359]  [<ffffffffa04dd5b6>] btrfs_commit_transaction+0x4c4/0x99c [btrfs]
-  [59779.301805]  [<ffffffffa04b5df4>] btrfs_sync_fs+0x145/0x1ad [btrfs]
-  [59779.302893]  [<ffffffff81196634>] sync_filesystem+0x7f/0x93
-  (...)
-  [59779.318186] ---[ end trace 577e2daff90da33a ]---
+ 335 static inline unsigned long btrfs_chunk_item_size(int num_stripes)
+ 336 {
+ 337         BUG_ON(num_stripes == 0);
+ 338         return sizeof(struct btrfs_chunk) +
+ 339                 sizeof(struct btrfs_stripe) * (num_stripes - 1);
+ 340 }
 
-The following diagram illustrates a sequence of steps leading to this
-problem:
+called from btrfs_read_sys_array. The check for num_stripes == 0 seems to be
+missing from kernel code, 'btrfs check' detects that and does not crash.
 
-       CPU 1                                             CPU 2
-
-                           <at transaction N>
-
-                                                        adds bg A to list
-                                                        fs_info->unused_bgs
-
-                                                        adds bg B to list
-                                                        fs_info->unused_bgs
-
-                           <transaction kthread
-                            commits transaction N
-                            and wakes up the
-                            cleaner kthread>
-
-  cleaner kthread
-    delete_unused_bgs()
-
-      sees bg A in list
-      fs_info->unused_bgs
-
-      btrfs_start_transaction()
-
-                           <transaction N + 1 starts>
-
-      deletes bg A
-
-                                                        update_block_group(bg C)
-
-                                                          --> adds bg C to list
-                                                              fs_info->unused_bgs
-
-      deletes bg B
-
-      sees bg C in the list
-      fs_info->unused_bgs
-
-      btrfs_remove_chunk(bg C)
-        btrfs_remove_block_group(bg C)
-
-          --> checks if the block group
-              is in a dirty list, and
-              because it isn't now, it
-              does nothing
-
-          --> the block group item
-              is deleted from the
-              extent tree
-
-                                                          --> adds bg C to list
-                                                              transaction->dirty_bgs
-
-                                                         some task calls
-                                                         btrfs_commit_transaction(t N + 1)
-                                                           commit_cowonly_roots()
-                                                             btrfs_write_dirty_block_groups()
-                                                               --> sees bg C in cur_trans->dirty_bgs
-                                                               --> calls write_one_cache_group()
-                                                                   which returns -ENOENT because
-                                                                   it did not find the block group
-                                                                   item in the extent tree
-                                                               --> transaction aborte with -ENOENT
-                                                                   because write_one_cache_group()
-                                                                   returned that error
-
-So fix this by adding a block group to the list of dirty block groups
-before adding it to the list of unused block groups.
-
-This happened on a stress test using fsstress plus concurrent calls to
-fallocate 20G and truncate (releasing part of the space allocated with
-fallocate).
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/extent-tree.c | 29 ++++++++++++++++-------------
- 1 file changed, 16 insertions(+), 13 deletions(-)
-
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8fd14b6..e563e5a 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5915,19 +5915,6 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 			set_extent_dirty(info->pinned_extents,
- 					 bytenr, bytenr + num_bytes - 1,
- 					 GFP_NOFS | __GFP_NOFAIL);
--			/*
--			 * No longer have used bytes in this block group, queue
--			 * it for deletion.
--			 */
--			if (old_val == 0) {
--				spin_lock(&info->unused_bgs_lock);
--				if (list_empty(&cache->bg_list)) {
--					btrfs_get_block_group(cache);
--					list_add_tail(&cache->bg_list,
--						      &info->unused_bgs);
--				}
--				spin_unlock(&info->unused_bgs_lock);
--			}
- 		}
- 
- 		spin_lock(&trans->transaction->dirty_bgs_lock);
-@@ -5939,6 +5926,22 @@ static int update_block_group(struct btrfs_trans_handle *trans,
- 		}
- 		spin_unlock(&trans->transaction->dirty_bgs_lock);
- 
-+		/*
-+		 * No longer have used bytes in this block group, queue it for
-+		 * deletion. We do this after adding the block group to the
-+		 * dirty list to avoid races between cleaner kthread and space
-+		 * cache writeout.
-+		 */
-+		if (!alloc && old_val == 0) {
-+			spin_lock(&info->unused_bgs_lock);
-+			if (list_empty(&cache->bg_list)) {
-+				btrfs_get_block_group(cache);
-+				list_add_tail(&cache->bg_list,
-+					      &info->unused_bgs);
-+			}
-+			spin_unlock(&info->unused_bgs_lock);
-+		}
-+
- 		btrfs_put_block_group(cache);
- 		total -= num_bytes;
- 		bytenr += num_bytes;
--- 
-2.1.3
-
+The userspace code has some more validations so I'll port them to kernel
+and this should fix the mount crash.

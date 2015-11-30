@@ -1,134 +1,291 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f169.google.com ([209.85.213.169]:37385 "EHLO
-	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751279AbbK1KfG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 28 Nov 2015 05:35:06 -0500
-Received: by igcto18 with SMTP id to18so42846639igc.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 28 Nov 2015 02:35:05 -0800 (PST)
-MIME-Version: 1.0
-Reply-To: fdmanana@gmail.com
-In-Reply-To: <pan$74d49$6dea473f$1e446cbc$abd9cb3c@cox.net>
-References: <1448642305-26199-1-git-send-email-fdmanana@kernel.org>
-	<pan$74d49$6dea473f$1e446cbc$abd9cb3c@cox.net>
-Date: Sat, 28 Nov 2015 10:35:05 +0000
-Message-ID: <CAL3q7H6xvPfCk2bYRJqJr94_GGUwRkJoEB=A2hb85DKNErqd4A@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix unprotected list move from unused_bgs to
- deleted_bgs list
-From: Filipe Manana <fdmanana@gmail.com>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mx1.redhat.com ([209.132.183.28]:38776 "EHLO mx1.redhat.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755053AbbK3VoI (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 30 Nov 2015 16:44:08 -0500
+From: Andreas Gruenbacher <agruenba@redhat.com>
+To: Alexander Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org
+Cc: Andreas Gruenbacher <agruenba@redhat.com>, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: [PATCH 05/10] btrfs: Use xattr handler infrastructure
+Date: Mon, 30 Nov 2015 22:43:38 +0100
+Message-Id: <1448919823-27103-6-git-send-email-agruenba@redhat.com>
+In-Reply-To: <1448919823-27103-1-git-send-email-agruenba@redhat.com>
+References: <1448919823-27103-1-git-send-email-agruenba@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Nov 28, 2015 at 7:34 AM, Duncan <1i5t5.duncan@cox.net> wrote:
-> fdmanana posted on Fri, 27 Nov 2015 16:38:25 +0000 as excerpted:
->
->> As of my previous change titled "Btrfs: fix scrub preventing unused
->> block groups from being deleted", the following warning at
->> extent-tree.c:btrfs_delete_unused_bgs() can be hit when we mount the a
->> filesysten with "-o discard":
+Use the VFS xattr handler infrastructure and get rid of similar code in
+the filesystem.
 
-Hi Duncan,
+Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+Cc: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>
+Cc: David Sterba <dsterba@suse.com>
+Cc: linux-btrfs@vger.kernel.org
+---
+ fs/btrfs/inode.c |   8 +--
+ fs/btrfs/xattr.c | 166 ++++++++++++++++++++-----------------------------------
+ fs/btrfs/xattr.h |   2 -
+ 3 files changed, 63 insertions(+), 113 deletions(-)
 
->
-> This set of questions doesn't have anything directly to do with your
-> patch, but it does have to do with unused blockgroup deletion, which of
-> course your patch does too.
-
-If it's unrelated to the patch please keep this in a separate thread
-(which ironically I'm not doing it now as this client doesn't seem to
-allow me to).
-
->
-> When does unused blockgroup deletion occur?  Is there a waiting period
-> after a new block group is created before it's deleted?  (I'd suppose so,
-> so there's no race between creation in ordered to actually use it, and
-> immediate deletion before it can be used.)  How long?
-
-There's no guarantee about when. It can be as soon as the block group
-becomes empty/unused or it might happen some time after the current
-transaction is committed. The cleaner kthread is awaken at transaction
-commit time, then does several stuff like deleting snapshots and
-unused block groups and then it sleeps if it has nothing more to do. A
-block group might become empty/unused while the cleaner kthread is
-active or when its inactive (in the former case the deletion can
-happen immediately while in the later case the block group deletion
-happens sometime after the current transaction is committed).
-
->
-> I suppose you've seen the discussion on defrag apparently not having as
-
-Nop, I haven't. I don't always have the time to read through long
-threads with a lot of theories and speculation.
-
-> many uncongested data chunks to work with now, as they're all deleted,
-> making it less effective since the available blocks of free space are
-> likely to be much smaller now, whereas previously it could very
-> frequently find whole gigs free to use at a time.
-
-I don't get that. Defrag is basically marking as dirty a range of
-consecutive pages that have physical (on disk) extents that aren't
-contiguous - you can think of it as almost like rewriting the same
-data in a file region from userspace (try that, create a fragmented
-file, then read its content and write that same content again to the
-file and call 'sync', the file will now have less extents unless you
-were low on free space).
-
-When writeback happens (in a response to fsync, sync or periodically
-triggered by the kernel for several reasons) the allocator is called
-to find space to write the data to - it tries its best to find
-contiguous space (preferably a single extent, otherwise multiple) -
-this is the same mechanism regardless of the pages becoming dirty due
-to regular writes from user space or pages becoming dirty from a
-defrag operation. If the allocator can't find space, it tries to
-allocate new block groups/chunks - having a block group deletion
-forcing later the allocator to allocate a new block group is no
-different from forcing it to allocate a new one because all current
-ones are full.
-
-> First of all, I've not
-> seen a direct confirmation from a dev on that theory yet, tho IIRC Hugo
-> said it made sense, so that'd be useful.  Second, how trivial/major is
-> patching defrag to be rather greeder with chunk allocation, when it can't
-> find existing free space blocks of sufficient size?  Is that going to
-> have to wait for the eventual defrag rewrite to enable reflink/snapshot
-> awareness again?
-
-Snapshot aware defrag has some extra stuff I didn't mention above, but
-I'm not describing it here (I would have to go and read its
-implementation before that) as it's been disabled for almost 2 years
-now (with the disable patch backported to stable).
-
->
-> And while waiting for that, is my suggested but as yet untested
-> workaround of doing a bunch of 1 GiB file truncates to force data chunk
-> allocation, syncing, then either deleting them (if the wait before empty-
-> chunk deletion will allow time for the defrag to claim them), or
-> truncating them to say 3.9 KiB (just under a single 4 KiB block) to keep
-> the chunks claimed while freeing most of them (if the wait before empty-
-> chunk deletion is too short to allow defrag to claim entirely empty
-> chunks), followed by another sync, before the defrag, likely to work?  If
-> not, is there some other way to force data chunk allocation and/or
-> temporarily suspend empty-data-chunk deletion to give defrag some
-> uncongested free space to work with?
->
-> --
-> Duncan - List replies preferred.   No HTML msgs.
-> "Every nonfree program has a lord, a master --
-> and if you use the program, he is your master."  Richard Stallman
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
-
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index d540fd7..4fb8d6e 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9994,7 +9994,7 @@ static const struct inode_operations btrfs_dir_inode_operations = {
+ 	.setattr	= btrfs_setattr,
+ 	.mknod		= btrfs_mknod,
+ 	.setxattr	= btrfs_setxattr,
+-	.getxattr	= btrfs_getxattr,
++	.getxattr	= generic_getxattr,
+ 	.listxattr	= btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+ 	.permission	= btrfs_permission,
+@@ -10071,7 +10071,7 @@ static const struct inode_operations btrfs_file_inode_operations = {
+ 	.getattr	= btrfs_getattr,
+ 	.setattr	= btrfs_setattr,
+ 	.setxattr	= btrfs_setxattr,
+-	.getxattr	= btrfs_getxattr,
++	.getxattr	= generic_getxattr,
+ 	.listxattr      = btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+ 	.permission	= btrfs_permission,
+@@ -10085,7 +10085,7 @@ static const struct inode_operations btrfs_special_inode_operations = {
+ 	.setattr	= btrfs_setattr,
+ 	.permission	= btrfs_permission,
+ 	.setxattr	= btrfs_setxattr,
+-	.getxattr	= btrfs_getxattr,
++	.getxattr	= generic_getxattr,
+ 	.listxattr	= btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+ 	.get_acl	= btrfs_get_acl,
+@@ -10100,7 +10100,7 @@ static const struct inode_operations btrfs_symlink_inode_operations = {
+ 	.setattr	= btrfs_setattr,
+ 	.permission	= btrfs_permission,
+ 	.setxattr	= btrfs_setxattr,
+-	.getxattr	= btrfs_getxattr,
++	.getxattr	= generic_getxattr,
+ 	.listxattr	= btrfs_listxattr,
+ 	.removexattr	= btrfs_removexattr,
+ 	.update_time	= btrfs_update_time,
+diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
+index 1fcd7b6..7cbef1a 100644
+--- a/fs/btrfs/xattr.c
++++ b/fs/btrfs/xattr.c
+@@ -351,137 +351,89 @@ err:
+ 	return ret;
+ }
+ 
+-/*
+- * List of handlers for synthetic system.* attributes.  All real ondisk
+- * attributes are handled directly.
+- */
+-const struct xattr_handler *btrfs_xattr_handlers[] = {
+-#ifdef CONFIG_BTRFS_FS_POSIX_ACL
+-	&posix_acl_access_xattr_handler,
+-	&posix_acl_default_xattr_handler,
+-#endif
+-	NULL,
+-};
+-
+-/*
+- * Check if the attribute is in a supported namespace.
+- *
+- * This is applied after the check for the synthetic attributes in the system
+- * namespace.
+- */
+-static int btrfs_is_valid_xattr(const char *name)
++static int btrfs_xattr_handler_get(const struct xattr_handler *handler,
++				   struct dentry *dentry, const char *name,
++				   void *buffer, size_t size)
+ {
+-	int len = strlen(name);
+-	int prefixlen = 0;
+-
+-	if (!strncmp(name, XATTR_SECURITY_PREFIX,
+-			XATTR_SECURITY_PREFIX_LEN))
+-		prefixlen = XATTR_SECURITY_PREFIX_LEN;
+-	else if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
+-		prefixlen = XATTR_SYSTEM_PREFIX_LEN;
+-	else if (!strncmp(name, XATTR_TRUSTED_PREFIX, XATTR_TRUSTED_PREFIX_LEN))
+-		prefixlen = XATTR_TRUSTED_PREFIX_LEN;
+-	else if (!strncmp(name, XATTR_USER_PREFIX, XATTR_USER_PREFIX_LEN))
+-		prefixlen = XATTR_USER_PREFIX_LEN;
+-	else if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
+-		prefixlen = XATTR_BTRFS_PREFIX_LEN;
+-	else
+-		return -EOPNOTSUPP;
+-
+-	/*
+-	 * The name cannot consist of just prefix
+-	 */
+-	if (len <= prefixlen)
+-		return -EINVAL;
++	struct inode *inode = d_inode(dentry);
+ 
+-	return 0;
++	name = xattr_full_name(handler, name);
++	return __btrfs_getxattr(inode, name, buffer, size);
+ }
+ 
+-ssize_t btrfs_getxattr(struct dentry *dentry, const char *name,
+-		       void *buffer, size_t size)
++static int btrfs_xattr_handler_set(const struct xattr_handler *handler,
++				   struct dentry *dentry, const char *name,
++				   const void *buffer, size_t size,
++				   int flags)
+ {
+-	int ret;
++	struct inode *inode = d_inode(dentry);
+ 
+-	/*
+-	 * If this is a request for a synthetic attribute in the system.*
+-	 * namespace use the generic infrastructure to resolve a handler
+-	 * for it via sb->s_xattr.
+-	 */
+-	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
+-		return generic_getxattr(dentry, name, buffer, size);
++	name = xattr_full_name(handler, name);
++	return __btrfs_setxattr(NULL, inode, name, buffer, size, flags);
++}
+ 
+-	ret = btrfs_is_valid_xattr(name);
+-	if (ret)
+-		return ret;
+-	return __btrfs_getxattr(d_inode(dentry), name, buffer, size);
++static int btrfs_xattr_handler_set_prop(const struct xattr_handler *handler,
++					struct dentry *dentry,
++					const char *name, const void *value,
++					size_t size, int flags)
++{
++	name = xattr_full_name(handler, name);
++	return btrfs_set_prop(d_inode(dentry), name, value, size, flags);
+ }
+ 
++static const struct xattr_handler btrfs_security_xattr_handler = {
++	.prefix = XATTR_SECURITY_PREFIX,
++	.get = btrfs_xattr_handler_get,
++	.set = btrfs_xattr_handler_set,
++};
++
++static const struct xattr_handler btrfs_trusted_xattr_handler = {
++	.prefix = XATTR_TRUSTED_PREFIX,
++	.get = btrfs_xattr_handler_get,
++	.set = btrfs_xattr_handler_set,
++};
++
++static const struct xattr_handler btrfs_user_xattr_handler = {
++	.prefix = XATTR_USER_PREFIX,
++	.get = btrfs_xattr_handler_get,
++	.set = btrfs_xattr_handler_set,
++};
++
++static const struct xattr_handler btrfs_btrfs_xattr_handler = {
++	.prefix = XATTR_BTRFS_PREFIX,
++	.get = btrfs_xattr_handler_get,
++	.set = btrfs_xattr_handler_set_prop,
++};
++
++const struct xattr_handler *btrfs_xattr_handlers[] = {
++	&btrfs_security_xattr_handler,
++#ifdef CONFIG_BTRFS_FS_POSIX_ACL
++	&posix_acl_access_xattr_handler,
++	&posix_acl_default_xattr_handler,
++#endif
++	&btrfs_trusted_xattr_handler,
++	&btrfs_user_xattr_handler,
++	&btrfs_btrfs_xattr_handler,
++	NULL,
++};
++
+ int btrfs_setxattr(struct dentry *dentry, const char *name, const void *value,
+ 		   size_t size, int flags)
+ {
+ 	struct btrfs_root *root = BTRFS_I(d_inode(dentry))->root;
+-	int ret;
+ 
+-	/*
+-	 * The permission on security.* and system.* is not checked
+-	 * in permission().
+-	 */
+ 	if (btrfs_root_readonly(root))
+ 		return -EROFS;
+-
+-	/*
+-	 * If this is a request for a synthetic attribute in the system.*
+-	 * namespace use the generic infrastructure to resolve a handler
+-	 * for it via sb->s_xattr.
+-	 */
+-	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
+-		return generic_setxattr(dentry, name, value, size, flags);
+-
+-	ret = btrfs_is_valid_xattr(name);
+-	if (ret)
+-		return ret;
+-
+-	if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
+-		return btrfs_set_prop(d_inode(dentry), name,
+-				      value, size, flags);
+-
+-	if (size == 0)
+-		value = "";  /* empty EA, do not remove */
+-
+-	return __btrfs_setxattr(NULL, d_inode(dentry), name, value, size,
+-				flags);
++	return generic_setxattr(dentry, name, value, size, flags);
+ }
+ 
+ int btrfs_removexattr(struct dentry *dentry, const char *name)
+ {
+ 	struct btrfs_root *root = BTRFS_I(d_inode(dentry))->root;
+-	int ret;
+ 
+-	/*
+-	 * The permission on security.* and system.* is not checked
+-	 * in permission().
+-	 */
+ 	if (btrfs_root_readonly(root))
+ 		return -EROFS;
+-
+-	/*
+-	 * If this is a request for a synthetic attribute in the system.*
+-	 * namespace use the generic infrastructure to resolve a handler
+-	 * for it via sb->s_xattr.
+-	 */
+-	if (!strncmp(name, XATTR_SYSTEM_PREFIX, XATTR_SYSTEM_PREFIX_LEN))
+-		return generic_removexattr(dentry, name);
+-
+-	ret = btrfs_is_valid_xattr(name);
+-	if (ret)
+-		return ret;
+-
+-	if (!strncmp(name, XATTR_BTRFS_PREFIX, XATTR_BTRFS_PREFIX_LEN))
+-		return btrfs_set_prop(d_inode(dentry), name,
+-				      NULL, 0, XATTR_REPLACE);
+-
+-	return __btrfs_setxattr(NULL, d_inode(dentry), name, NULL, 0,
+-				XATTR_REPLACE);
++	return generic_removexattr(dentry, name);
+ }
+ 
+ static int btrfs_initxattrs(struct inode *inode,
+diff --git a/fs/btrfs/xattr.h b/fs/btrfs/xattr.h
+index 5049608..96807b3 100644
+--- a/fs/btrfs/xattr.h
++++ b/fs/btrfs/xattr.h
+@@ -28,8 +28,6 @@ extern ssize_t __btrfs_getxattr(struct inode *inode, const char *name,
+ extern int __btrfs_setxattr(struct btrfs_trans_handle *trans,
+ 			    struct inode *inode, const char *name,
+ 			    const void *value, size_t size, int flags);
+-extern ssize_t btrfs_getxattr(struct dentry *dentry, const char *name,
+-		void *buffer, size_t size);
+ extern int btrfs_setxattr(struct dentry *dentry, const char *name,
+ 		const void *value, size_t size, int flags);
+ extern int btrfs_removexattr(struct dentry *dentry, const char *name);
 -- 
-Filipe David Manana,
+2.5.0
 
-"Reasonable men adapt themselves to the world.
- Unreasonable men adapt the world to themselves.
- That's why all progress depends on unreasonable men."

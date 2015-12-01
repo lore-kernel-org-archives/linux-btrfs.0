@@ -1,61 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:53935 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1754451AbbLAKxv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Dec 2015 05:53:51 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 1936B40427C6
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Dec 2015 18:53:43 +0800 (CST)
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: Fix no_space in write and rm loop
-Date: Tue, 1 Dec 2015 18:51:53 +0800
-Message-ID: <8fc5de8c2a2a3bea83818f970f649a9024725cfa.1448967099.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mx2.suse.de ([195.135.220.15]:54481 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755471AbbLARLL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Dec 2015 12:11:11 -0500
+Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 1919EACA7
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Dec 2015 17:11:10 +0000 (UTC)
+From: David Sterba <dsterba@suse.com>
+To: linux-btrfs@vger.kernel.org
+Cc: David Sterba <dsterba@suse.com>
+Subject: [PATCH] btrfs: drop duplicate prefix from scrub workqueues
+Date: Tue,  1 Dec 2015 18:09:12 +0100
+Message-Id: <1448989752-13459-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I see no_space in v4.4-rc1 again in xfstests generic/102.
-It happened randomly in some node only.
-(one of 4 phy-node, and a kvm with non-virtio block driver)
+The helper btrfs_alloc_workqueue will add the "btrfs-" prefix.
 
-By bisect, we can found the first-bad is:
- commit bdced438acd8 ("block: setup bi_phys_segments after splitting")'
-But above patch only triggered the bug by making bio operation
-faster(or slower).
-
-Main reason is in our space_allocating code, we need to commit
-page writeback before wait it complish, this patch fixed above
-bug.
-
-BTW, there is another reason for generic/102 fail, caused by
-disable default mixed-blockgroup, I'll fix it in xfstests.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent-tree.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+ fs/btrfs/scrub.c | 10 +++++-----
+ 1 file changed, 5 insertions(+), 5 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index acf3ed1..ab85393 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4086,8 +4086,10 @@ commit_trans:
- 		    !atomic_read(&root->fs_info->open_ioctl_trans)) {
- 			need_commit--;
+diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
+index 2907a77fb1f6..f8f52a61e329 100644
+--- a/fs/btrfs/scrub.c
++++ b/fs/btrfs/scrub.c
+@@ -3685,27 +3685,27 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
+ 	if (fs_info->scrub_workers_refcnt == 0) {
+ 		if (is_dev_replace)
+ 			fs_info->scrub_workers =
+-				btrfs_alloc_workqueue("btrfs-scrub", flags,
++				btrfs_alloc_workqueue("scrub", flags,
+ 						      1, 4);
+ 		else
+ 			fs_info->scrub_workers =
+-				btrfs_alloc_workqueue("btrfs-scrub", flags,
++				btrfs_alloc_workqueue("scrub", flags,
+ 						      max_active, 4);
+ 		if (!fs_info->scrub_workers)
+ 			goto fail_scrub_workers;
  
--			if (need_commit > 0)
-+			if (need_commit > 0) {
-+				btrfs_start_delalloc_roots(fs_info, 0, -1);
- 				btrfs_wait_ordered_roots(fs_info, -1);
-+			}
+ 		fs_info->scrub_wr_completion_workers =
+-			btrfs_alloc_workqueue("btrfs-scrubwrc", flags,
++			btrfs_alloc_workqueue("scrubwrc", flags,
+ 					      max_active, 2);
+ 		if (!fs_info->scrub_wr_completion_workers)
+ 			goto fail_scrub_wr_completion_workers;
  
- 			trans = btrfs_join_transaction(root);
- 			if (IS_ERR(trans))
+ 		fs_info->scrub_nocow_workers =
+-			btrfs_alloc_workqueue("btrfs-scrubnc", flags, 1, 0);
++			btrfs_alloc_workqueue("scrubnc", flags, 1, 0);
+ 		if (!fs_info->scrub_nocow_workers)
+ 			goto fail_scrub_nocow_workers;
+ 		fs_info->scrub_parity_workers =
+-			btrfs_alloc_workqueue("btrfs-scrubparity", flags,
++			btrfs_alloc_workqueue("scrubparity", flags,
+ 					      max_active, 2);
+ 		if (!fs_info->scrub_parity_workers)
+ 			goto fail_scrub_parity_workers;
 -- 
-1.8.5.1
-
-
+1.8.4.5
 

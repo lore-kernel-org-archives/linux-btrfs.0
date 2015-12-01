@@ -1,67 +1,228 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ftx-008-i770.relay.mailchannels.net ([50.61.143.70]:32389 "EHLO
-	ftx-008-i770.relay.mailchannels.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1753018AbbLAKWw (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Dec 2015 05:22:52 -0500
-Subject: Re: [RFC] Btrfs device and pool management (wip)
-To: Chris Murphy <lists@colorremedies.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-References: <565C01F1.5030108@oracle.com> <565C625C.7060503@gmail.com>
- <CAJCQCtQPdzQG0She3yjxAmDmXSAphdMriW11Pe=BMrBRXYTh6Q@mail.gmail.com>
- <565CB3A2.30705@gmail.com>
- <CAJCQCtS1VTsTEzgf6Qx6zvdv3AR8UnUWZc-esn3skpYS2=VVDg@mail.gmail.com>
-Cc: Anand Jain <anand.jain@oracle.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Brendan Hide <brendan@swiftspirit.co.za>
-Message-ID: <565D7106.9050302@swiftspirit.co.za>
-Date: Tue, 1 Dec 2015 12:05:58 +0200
+Received: from aserp1040.oracle.com ([141.146.126.69]:45313 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756183AbbLALMj (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Dec 2015 06:12:39 -0500
+To: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.cz, quwenruo@cn.fujitsu.com
+From: Vegard Nossum <vegard.nossum@oracle.com>
+Subject: divide error in __btrfs_map_block (div64_u64(stripe_nr, stripe_len))
+Message-ID: <565D8098.5080200@oracle.com>
+Date: Tue, 1 Dec 2015 12:12:24 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtS1VTsTEzgf6Qx6zvdv3AR8UnUWZc-esn3skpYS2=VVDg@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: multipart/mixed;
+ boundary="------------020401020202040003050008"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 11/30/2015 11:09 PM, Chris Murphy wrote:
-> On Mon, Nov 30, 2015 at 1:37 PM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->
->> I've had multiple cases of disks that got one write error then were fine for
->> more than a year before any further issues.  My thought is add an option to
->> retry that single write after some short delay (1-2s maybe), and if it still
->> fails, then mark the disk as failed.
-> Seems reasonable.
-I think I added this to the Project Ideas page on the wiki a *very* long 
-time ago
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#False_alarm_on_bad_disk_-_rebuild_mitigation
+This is a multi-part message in MIME format.
+--------------020401020202040003050008
+Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Transfer-Encoding: 7bit
 
-"After a device is marked as unreliable, maintain the device within the 
-FS in order to confirm the issue persists. The device will still 
-contribute toward fs performance but will not be treated as if 
-contributing towards replication/reliability. If the device shows that 
-the given errors were a once-off issue then the device can be marked as 
-reliable once again. This will mitigate further unnecessary rebalance. 
-See http://storagemojo.com/2007/02/26/netapp-weighs-in-on-disks/ - 
-"[Drive Resurrection]" as an example of where this is a significant 
-feature for storage vendors."
->
->>> Agreed. Maybe it would be an error rate (set by ratio)?
->>>
->> I was thinking of either:
->> a. A running count, using the current error counting mechanisms, with some
->> max number allowed before the device gets kicked.
->> b. A count that decays over time, this would need two tunables (how long an
->> error is considered, and how many are allowed).
->
-> OK.
->
->
->
+Hi,
+
+With the attached (fuzzed) disk image I get this crash on latest 
+linus/master when mounting:
+
+BTRFS: device fsid de80ced1-18ac-490c-9afb-cf0a7d66cc7e devid 1 transid 
+7 /dev/loop0
+BTRFS info (device loop0): disk space caching is enabled
+divide error: 0000 [#1] SMP KASAN
+CPU: 0 PID: 955 Comm: mount Not tainted 4.4.0-rc3+ #244
+task: ffff880015231c00 ti: ffff8800156f0000 task.ti: ffff8800156f0000
+RIP: 0010:[<ffffffff814cabf5>]  [<ffffffff814cabf5>] 
+__btrfs_map_block+0x175/0x1b30
+RSP: 0018:ffff8800156f6f18  EFLAGS: 00010246
+RAX: 0000000000021000 RBX: 0000000000021000 RCX: ffff880015fce000
+RDX: 0000000000000000 RSI: 0000000000021000 RDI: ffff8800152cb9f0
+RBP: ffff8800156f70c8 R08: 0000000000400000 R09: 0000000000000000
+R10: ffff880015fde1c0 R11: 0000000000000001 R12: 0000000000400000
+R13: 0000000000021000 R14: 0000000000000000 R15: ffff8800156f7170
+FS:  00007f387f51c880(0000) GS:ffff880016e00000(0000) knlGS:0000000000000000
+CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
+CR2: 00007f387eca3540 CR3: 000000000005d000 CR4: 00000000001406b0
+Stack:
+  ffffffff81224300 ffff8800156f6f48 ffffffff8101af95 ffff8800156f6f48
+  ffffffff810ad7fe 0000000000000000 ffff8800156f6fa8 ffffffff8100b5cb
+  ffff8800156f7ff8 ffff8800156f0000 00000000c0ed0001 ffff8800156f71b0
+Call Trace:
+  [<ffffffff814ccdd8>] btrfs_map_bio+0x128/0x600
+  [<ffffffff8147b369>] btree_submit_bio_hook+0x179/0x190
+  [<ffffffff814b388e>] submit_one_bio+0xee/0x120
+  [<ffffffff814beecf>] read_extent_buffer_pages+0x2cf/0x4a0
+  [<ffffffff81479bfe>] 
+btree_read_extent_buffer_pages.constprop.51+0x12e/0x190
+  [<ffffffff8147b63b>] read_tree_block+0x4b/0x80
+  [<ffffffff81482b19>] open_ctree+0x2489/0x3770
+  [<ffffffff81440883>] btrfs_mount+0xf43/0x10c0
+  [<ffffffff812328e6>] mount_fs+0x56/0x1b0
+  [<ffffffff8125e116>] vfs_kern_mount+0x66/0x190
+  [<ffffffff8143fbbe>] btrfs_mount+0x27e/0x10c0
+  [<ffffffff812328e6>] mount_fs+0x56/0x1b0
+  [<ffffffff8125e116>] vfs_kern_mount+0x66/0x190
+  [<ffffffff8125fc32>] do_mount+0x362/0x16b0
+  [<ffffffff812614b6>] SyS_mount+0xf6/0x160
+  [<ffffffff81f7d82e>] entry_SYSCALL_64_fastpath+0x12/0x71
+Code: 29 da 48 89 d3 49 89 c6 48 89 85 e8 fe ff ff 48 83 c0 10 48 89 c7 
+48 89 85 30 ff ff ff e8 54 95 d5 ff 4d 63 76 10 31 d2 48 89 d8 <49> f7 
+f6 44 89 b5 20 ff ff ff 48 89 85 10 ff ff ff 49 0f af c6
+RIP  [<ffffffff814cabf5>] __btrfs_map_block+0x175/0x1b30
+  RSP <ffff8800156f6f18>
+---[ end trace c42185c4a2495b9c ]---
+mount (955) used greatest stack depth: 25200 bytes left
+Segmentation fault
+
+It seems to be this line:
+
+/*
+  * stripe_nr counts the total number of stripes we have to stride
+  * to get to this block
+  */
+stripe_nr = div64_u64(stripe_nr, stripe_len);
+
+I can test patches. Thanks,
 
 
--- 
-__________
-Brendan Hide
-http://swiftspirit.co.za/
-http://www.webafrica.co.za/?AFF1E97
+Vegard
 
+--------------020401020202040003050008
+Content-Type: application/x-bzip;
+ name="btrfs.2.bz2"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment;
+ filename="btrfs.2.bz2"
+
+QlpoOTFBWSZTWUJ5F5YAgk7/////////////////////////////////////////////4BT/
+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
+--------------020401020202040003050008--

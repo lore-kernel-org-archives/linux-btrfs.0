@@ -1,61 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41802 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:62711 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932185AbbLHBvP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 20:51:15 -0500
-Subject: Re: [PATCH v2 00/25] Btrfs-convert rework to support separate chunk
- type
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <1448953905-28673-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20151207152011.GE4227@twin.jikos.cz>
+	with ESMTP id S1755006AbbLAHOO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Dec 2015 02:14:14 -0500
+Received: from localhost.localdomain (unknown [10.167.226.34])
+	by cn.fujitsu.com (Postfix) with ESMTP id 9863940444C2
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Dec 2015 15:13:59 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56663775.9080504@cn.fujitsu.com>
-Date: Tue, 8 Dec 2015 09:50:45 +0800
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH v2 01/25] btrfs-progs: extent-cache: Add comments for search/lookup functions
+Date: Tue,  1 Dec 2015 15:11:21 +0800
+Message-Id: <1448953905-28673-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1448953905-28673-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1448953905-28673-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20151207152011.GE4227@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There are quite a lot search/lookup functions with different behavior,
+add comments for them, as it will take extra time to view source to
+understand the behavior difference.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ extent-cache.h | 31 +++++++++++++++++++++++++++++++
+ 1 file changed, 31 insertions(+)
 
-David Sterba wrote on 2015/12/07 16:20 +0100:
-> On Tue, Dec 01, 2015 at 03:11:20PM +0800, Qu Wenruo wrote:
->> Here comes the 2st version of btrfs-convert rework.
->> This time, it is rebased to co-operate with David new abstraction work
->> for incoming reiserfs support.
->> (Sorry David, your reiserfs support will need more modification as the
->> abstraction facility is also modified in this patchset)
->
-> Yeah seems like the removed functions are not needed, the reiser code
-> should be portable on top of the v2 code.
->
->> Any test is welcomed, and it can already pass the convert test from
->> btrfs-progs. (Since the test doesn't test rollback function)
->
-> I'll start merging the patches to devel when I'm sure I understand the
-> change so more reviewers can help and are welcome too. The unmerged
-> patches would be put into an integration branch, hopefully this would
-> work.
+diff --git a/extent-cache.h b/extent-cache.h
+index cb1f77c..1ce68ef 100644
+--- a/extent-cache.h
++++ b/extent-cache.h
+@@ -45,11 +45,31 @@ struct cache_extent *last_cache_extent(struct cache_tree *tree);
+ struct cache_extent *prev_cache_extent(struct cache_extent *pe);
+ struct cache_extent *next_cache_extent(struct cache_extent *pe);
+ 
++/*
++ * Find a cache_extent which covers start.
++ *
++ * If not found, return next cache_extent if possible.
++ */
+ struct cache_extent *search_cache_extent(struct cache_tree *tree, u64 start);
++
++/*
++ * Find a cahce_extent which restrictly covers start.
++ *
++ * If not found, return NULL.
++ */
+ struct cache_extent *lookup_cache_extent(struct cache_tree *tree,
+ 					 u64 start, u64 size);
+ 
++/*
++ * Add an non-overlap extent into cache tree
++ *
++ * If [start, start+size) overlap with existing one, it will return -EEXIST.
++ */
+ int add_cache_extent(struct cache_tree *tree, u64 start, u64 size);
++
++/*
++ * Same with add_cache_extent, but with cache_extent strcut.
++ */
+ int insert_cache_extent(struct cache_tree *tree, struct cache_extent *pe);
+ void remove_cache_extent(struct cache_tree *tree, struct cache_extent *pe);
+ 
+@@ -71,8 +91,19 @@ static void free_##name##_tree(struct cache_tree *tree)		\
+ 
+ void free_extent_cache_tree(struct cache_tree *tree);
+ 
++/*
++ * Search a cache_extent with same objectid, and covers start.
++ *
++ * If not found, return next if possible.
++ */
+ struct cache_extent *search_cache_extent2(struct cache_tree *tree,
+ 					  u64 objectid, u64 start);
++/*
++ * Search a cache_extent with same objectid, and covers the range
++ * [start, start + size)
++ *
++ * If not found, return next cache_extent if possible.
++ */
+ struct cache_extent *lookup_cache_extent2(struct cache_tree *tree,
+ 					  u64 objectid, u64 start, u64 size);
+ int add_cache_extent2(struct cache_tree *tree,
+-- 
+2.6.2
 
-Feel free if you have any question on the patches or the design behind it.
-
->
->> 2. Structurized make_btrfs_v2()
->>     Unlike old make_btrfs() which is a mess of hand written codes
->
-> I though 99% of our code is hand written :)
-
-I hope I can write code by mind. :)
-
-Thanks,
-Qu
-
->
->>     new
->>     make_btrfs_v2() is all structurized and should be easy for later
->>     expansion.
->
->
 
 

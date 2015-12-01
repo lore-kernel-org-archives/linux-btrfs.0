@@ -1,46 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48500 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:31807 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S933012AbbLOBQy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 20:16:54 -0500
-Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
- chunk
-To: Laurent Bonnaud <L.Bonnaud@laposte.net>,
-        Qu Wenruo <quwenruo.btrfs@gmx.com>
-References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
- <1448047478.6878.4.camel@scientia.net> <564FBF0F.4050705@gmx.com>
- <564FC3FE.9020905@lukas-pirl.de> <565122AA.90904@gmx.com>
- <56519644.8060105@laposte.net> <56526543.4090301@cn.fujitsu.com>
- <565462F7.8040601@laposte.net> <5654F6BC.8020900@gmx.com>
- <565579DB.2040105@laposte.net> <56607848.5040705@laposte.net>
- <5660E2BD.3050000@cn.fujitsu.com> <566ADBF6.9090507@laposte.net>
- <566EBA5D.5030200@laposte.net>
-CC: Lukas Pirl <btrfs@lukas-pirl.de>, <linux-btrfs@vger.kernel.org>,
-        <calestyo@scientia.net>
+	with ESMTP id S1751359AbbLAGq7 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Dec 2015 01:46:59 -0500
+Subject: Re: Bug/regression: Read-only mount not read-only
+To: Chris Mason <clm@fb.com>, Hugo Mills <hugo@carfax.org.uk>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>
+References: <20151128134634.GF24333@carfax.org.uk>
+ <20151130164801.GD2162@ret.masoncoding.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <566F69FB.4060105@cn.fujitsu.com>
-Date: Tue, 15 Dec 2015 09:16:43 +0800
+Message-ID: <565D4248.8060502@cn.fujitsu.com>
+Date: Tue, 1 Dec 2015 14:46:32 +0800
 MIME-Version: 1.0
-In-Reply-To: <566EBA5D.5030200@laposte.net>
+In-Reply-To: <20151130164801.GD2162@ret.masoncoding.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Laurent Bonnaud wrote on 2015/12/14 13:47 +0100:
-> On 11/12/2015 15:21, Laurent Bonnaud wrote:
+Chris Mason wrote on 2015/11/30 11:48 -0500:
+> On Sat, Nov 28, 2015 at 01:46:34PM +0000, Hugo Mills wrote:
+>>     We've just had someone on IRC with a problem mounting their FS. The
+>> main problem is that they've got a corrupt log tree. That isn't the
+>> subject of this email, though.
+>>
+>>     The issue I'd like to raise is that even with -oro as a point
+>> option, the FS is trying to replay the log tree. The dmesg output from
+>> mount -oro is at the end of the email.
+>>
+>>     Now, my memory, experience and understanding is that the FS
+>> doesn't, and shouldn't replay the log tree on a RO mount, because the
+>> FS should still be consistent even without the reply, and
+>> RO-means-actually-RO is possible and desirable. (Compared to a
+>> journalling FS, where journal replay is required for a consistent,
+>> usable FS).
+>>
+>>     So, this looks to me like a regression that's come in somewhere.
+>>
+>>     (Just for completeness, the system in question usually runs 4.2.5,
+>> but the live CD the OP is using is 4.2.3).
 >
->> The next step will we to run a "btrfs scrub" to check if data loss did happen...
+> We do need to replay the log tree, even on readonly mounts.  Otherwise
+> files created and fsunk before crashing may not even exist.
 >
-> Scrubbing is now finished and it detected no errors.
+> We'll bail out of the log replay on readonly media, but otherwise the
+> replay always happens.
 >
-Glad to hear that.
+> -chris
 
-Your fs should be OK now.
+Or disable log_tree (making fsync as slow as sync).
+And there will be no log replay, making RO mount real RO.
+I think we can add it to kernel btrfs documentation.
+
+
+Or, in my wildest dream, introduce a per-inode tree to record file 
+extents/dir items.
+
+Then fsync will only need to sync the inode file extent/dir item 
+tree.(and its direct parent maybe)
+And better random read/write performance.
+
+Although that's just my dream....
+
+But I'm a little curious about why btrfs choose to pack dir items and 
+file extents into the same subvolume tree at design time.
+Unlike most of other file systems(ext4 for example).
+
+Is it just designed for simplicity?
 
 Thanks,
 Qu
+
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 
 

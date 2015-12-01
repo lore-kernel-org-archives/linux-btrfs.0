@@ -1,34 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:45988 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750795AbbLAPOz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Dec 2015 10:14:55 -0500
-Date: Tue, 1 Dec 2015 16:13:05 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Andreas Gruenbacher <agruenba@redhat.com>
-Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
-        Christoph Hellwig <hch@infradead.org>, linux-kernel@vger.kernel.org,
-        linux-fsdevel@vger.kernel.org, Chris Mason <clm@fb.com>,
-        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH 05/10] btrfs: Use xattr handler infrastructure
-Message-ID: <20151201151305.GB31035@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1448919823-27103-1-git-send-email-agruenba@redhat.com>
- <1448919823-27103-6-git-send-email-agruenba@redhat.com>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:56623 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1754713AbbLARJ2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Dec 2015 12:09:28 -0500
+Date: Tue, 1 Dec 2015 12:09:20 -0500
+From: Chris Mason <clm@fb.com>
+To: Christoph Hellwig <hch@lst.de>
+CC: <viro@zeniv.linux.org.uk>, <tao.peng@primarydata.com>,
+        <jeff.layton@primarydata.com>, <linux-fsdevel@vger.kernel.org>,
+        <linux-btrfs@vger.kernel.org>, <linux-nfs@vger.kernel.org>,
+        <linux-cifs@vger.kernel.org>
+Subject: Re: vfs: move btrfs clone ioctls to common code
+Message-ID: <20151201170920.GB8918@ret.masoncoding.com>
+References: <1448563859-21922-1-git-send-email-hch@lst.de>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1448919823-27103-6-git-send-email-agruenba@redhat.com>
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1448563859-21922-1-git-send-email-hch@lst.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 30, 2015 at 10:43:38PM +0100, Andreas Gruenbacher wrote:
-> Use the VFS xattr handler infrastructure and get rid of similar code in
-> the filesystem.
+On Thu, Nov 26, 2015 at 07:50:54PM +0100, Christoph Hellwig wrote:
+> This patch set moves the existing btrfs clone ioctls that other file
+> system have started to implement to common code, and allows the NFS
+> server to export this functionality to remote systems.
 > 
-> Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
-> Cc: Chris Mason <clm@fb.com>
-> Cc: Josef Bacik <jbacik@fb.com>
-> Cc: David Sterba <dsterba@suse.com>
+> This work is based originally on my NFS CLONE prototype, which reused
+> code from Anna Schumaker's NFS COPY prototype, as well as various
+> updates from Peng Tao to this code.
+> 
+> The patches are also available as a git branch and on gitweb:
+> 
+> 	git://git.infradead.org/users/hch/pnfs.git clone-for-viro
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Thanks Christoph, this looks fine to me.
+
+-chris
+

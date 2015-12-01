@@ -1,87 +1,82 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:38066 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:58139 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752575AbbLASz0 (ORCPT
+	by vger.kernel.org with ESMTP id S932098AbbLATA2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Dec 2015 13:55:26 -0500
-Date: Tue, 1 Dec 2015 13:54:20 -0500
+	Tue, 1 Dec 2015 14:00:28 -0500
+Date: Tue, 1 Dec 2015 14:00:18 -0500
 From: Chris Mason <clm@fb.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-CC: Hugo Mills <hugo@carfax.org.uk>,
+To: Hugo Mills <hugo@carfax.org.uk>,
         Btrfs mailing list <linux-btrfs@vger.kernel.org>
 Subject: Re: Bug/regression: Read-only mount not read-only
-Message-ID: <20151201185420.GC8918@ret.masoncoding.com>
+Message-ID: <20151201190018.GD8918@ret.masoncoding.com>
 References: <20151128134634.GF24333@carfax.org.uk>
  <20151130164801.GD2162@ret.masoncoding.com>
- <565D4248.8060502@cn.fujitsu.com>
+ <20151130170600.GC8775@carfax.org.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <565D4248.8060502@cn.fujitsu.com>
+In-Reply-To: <20151130170600.GC8775@carfax.org.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 01, 2015 at 02:46:32PM +0800, Qu Wenruo wrote:
+On Mon, Nov 30, 2015 at 05:06:00PM +0000, Hugo Mills wrote:
+> On Mon, Nov 30, 2015 at 11:48:01AM -0500, Chris Mason wrote:
+> > On Sat, Nov 28, 2015 at 01:46:34PM +0000, Hugo Mills wrote:
+> > >    We've just had someone on IRC with a problem mounting their FS. The
+> > > main problem is that they've got a corrupt log tree. That isn't the
+> > > subject of this email, though.
+> > > 
+> > >    The issue I'd like to raise is that even with -oro as a point
+> > > option, the FS is trying to replay the log tree. The dmesg output from
+> > > mount -oro is at the end of the email.
+> > > 
+> > >    Now, my memory, experience and understanding is that the FS
+> > > doesn't, and shouldn't replay the log tree on a RO mount, because the
+> > > FS should still be consistent even without the reply, and
+> > > RO-means-actually-RO is possible and desirable. (Compared to a
+> > > journalling FS, where journal replay is required for a consistent,
+> > > usable FS).
+> > > 
+> > >    So, this looks to me like a regression that's come in somewhere.
+> > > 
+> > >    (Just for completeness, the system in question usually runs 4.2.5,
+> > > but the live CD the OP is using is 4.2.3).
+> > 
+> > We do need to replay the log tree, even on readonly mounts.  Otherwise
+> > files created and fsunk before crashing may not even exist.
 > 
-> 
-> Chris Mason wrote on 2015/11/30 11:48 -0500:
-> >On Sat, Nov 28, 2015 at 01:46:34PM +0000, Hugo Mills wrote:
-> >>    We've just had someone on IRC with a problem mounting their FS. The
-> >>main problem is that they've got a corrupt log tree. That isn't the
-> >>subject of this email, though.
-> >>
-> >>    The issue I'd like to raise is that even with -oro as a point
-> >>option, the FS is trying to replay the log tree. The dmesg output from
-> >>mount -oro is at the end of the email.
-> >>
-> >>    Now, my memory, experience and understanding is that the FS
-> >>doesn't, and shouldn't replay the log tree on a RO mount, because the
-> >>FS should still be consistent even without the reply, and
-> >>RO-means-actually-RO is possible and desirable. (Compared to a
-> >>journalling FS, where journal replay is required for a consistent,
-> >>usable FS).
-> >>
-> >>    So, this looks to me like a regression that's come in somewhere.
-> >>
-> >>    (Just for completeness, the system in question usually runs 4.2.5,
-> >>but the live CD the OP is using is 4.2.3).
-> >
-> >We do need to replay the log tree, even on readonly mounts.  Otherwise
-> >files created and fsunk before crashing may not even exist.
-> >
-> >We'll bail out of the log replay on readonly media, but otherwise the
-> >replay always happens.
-> >
-> >-chris
-> 
-> Or disable log_tree (making fsync as slow as sync).
-> And there will be no log replay, making RO mount real RO.
-> I think we can add it to kernel btrfs documentation.
+>    I'm actually happy with that, as long as the log tree is retained
+> until it _can_ be played back. I think it's much more important that
+> read-only actually means read-only *as much as is possible* (if for no
+> other reason than being able to test the status of the log tree).
+> Obviously, for journalling FSes, a journal reply is required by the
+> design of the FS, but with a CoW FS, the FS should be consistent if
+> possibly outdated with a RO mount.
 
-True, without the log tree there's nothing to replay.
+Normally I'd agree, but we have a long tradition of mounting root
+readonly at first for no good reason at all.  This is why reiserfs/ext
+(and I think xfs) all replay logs on readonly mounts.  It's not an
+admin initiated action but an early stage of boot.
 
 > 
+>    Maybe there should be a "replay-log" mount option to modify the
+> "ro" option to allow the log to be replayed but no further
+> modifications? (i.e. keep the plain "ro" case to be the safest option
+> that makes the fewest changes to the FS structure -- none).
 > 
-> Or, in my wildest dream, introduce a per-inode tree to record file
-> extents/dir items.
-> 
-> Then fsync will only need to sync the inode file extent/dir item tree.(and
-> its direct parent maybe)
-> And better random read/write performance.
-> 
-> Although that's just my dream....
-> 
-> But I'm a little curious about why btrfs choose to pack dir items and file
-> extents into the same subvolume tree at design time.
-> Unlike most of other file systems(ext4 for example).
-> 
-> Is it just designed for simplicity?
 
-It's partially simplicity, but it also helps with locality.  When you're
-working with lots of files in a single directory, we're able to do many operations
-faster because we're not jumping around to other indexes for individual
-file extents.
+I'd do it the other way around, have a mount option that is emergency
+readonly.
 
-The cost is contention at the top of the btree, which I'm still hoping
-to fix without having to go all the way down to per-file trees.
+> > We'll bail out of the log replay on readonly media, but otherwise the
+> > replay always happens.
+> 
+>    OK, so what was happening in the cases where a filesystem was
+> mountable RO, but not RW, and then btrfs-zero-log allowed the FS to be
+> mounted? I've handled any number of people with exactly those
+> symptoms, and it's been like that for a while. What I saw on IRC a
+> couple of days ago seems to be new behaviour.
+
+Something else was being skipped, probably btrfs_cleanup_fs_roots()
 
 -chris

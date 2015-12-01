@@ -1,134 +1,154 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:62711 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:64522 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755105AbbLAHOS (ORCPT
+	with ESMTP id S1755117AbbLAHOS (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 1 Dec 2015 02:14:18 -0500
 Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id EBD6A40444C1
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Dec 2015 15:13:58 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 0237340444C8
+	for <linux-btrfs@vger.kernel.org>; Tue,  1 Dec 2015 15:14:00 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 00/25] Btrfs-convert rework to support separate chunk type
-Date: Tue,  1 Dec 2015 15:11:20 +0800
-Message-Id: <1448953905-28673-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v2 04/25] btrfs-progs: convert: Introduce functions to read used space
+Date: Tue,  1 Dec 2015 15:11:24 +0800
+Message-Id: <1448953905-28673-5-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1448953905-28673-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1448953905-28673-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Here comes the 2st version of btrfs-convert rework.
-This time, it is rebased to co-operate with David new abstraction work
-for incoming reiserfs support.
-(Sorry David, your reiserfs support will need more modification as the
-abstraction facility is also modified in this patchset)
+Before we do real convert, we need to read and build up used space cache
+tree for later data/meta separate chunk layout.
 
-Any test is welcomed, and it can already pass the convert test from
-btrfs-progs. (Since the test doesn't test rollback function)
+This patch will iterate all used blocks in ext2 filesystem and record it
+into cctx->used cache tree, for later use.
 
-I also did some tests like create ext4 and fill it with fsstress to test
-convert, at least no bug spotted yet.
+This provides the very basic of later btrfs-convert rework.
 
-The new btrfs-convert has the following bugfix/feature:
-1. True separate meta/data chunk
-   The converted filesystem will has correct chunk layout, and all ext*
-   data will be covered by data chunk and metadata will be covered by
-   metadata chunk.
-   Allowing converted filesystem to pass latest btrfs check.
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+ btrfs-convert.c | 80 +++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 80 insertions(+)
 
-2. Structurized make_btrfs_v2()
-   Unlike old make_btrfs() which is a mess of hand written codes, new
-   make_btrfs_v2() is all structurized and should be easy for later
-   expansion.
-
-But it still has something to do:
-1) Ability to handle 10+ TB level filesystem.
-   Current implement rely on the initial system chunk to contain all
-   chunks until we inserted all data chunks.
-   However the initial system chunk are only 32M, in simple calculation,
-   it can only hold at most 400K chunks.
-   If every chunk is in the smallest size (16M), it can only handle
-   less than 6T size in its worst case.
-   Better calculate the initial system chunk size according to the
-   filesystem size
-
-   But now, I'll focus on current implement to ensure it's safe and
-   stable.
-
-2) Ability to create DUP metadata chunk without using balance
-   Now the data and metadata chunk are all in SINGLE profile.
-   User needs to convert metadata to DUP if they want DUP metadata
-   profile.
-
-   This is a little hard, as we must do it at make_btrfs() time, where
-   we don't have full btrfs facilities to modify the metadata tree.
-
-   But should be easy to add DUP support since the make_btrfs() is much
-   clearer than ever.
-
-The core idea of new btrfs-convert is quite simple:
-Do reserve at *CHUNK* level.
-
-Instead of old extent level reserve, we just insert a big enough SYS/META
-chunks at make_btrfs() time, then insert all data chunks to cover old fs
-data.
-Then things will get very clear. No custom extent allocation function,
-all chunk/extent allocation facility can be used without modification
-and won't screw up chunk layout.
-
-For rollback function, as old and new convert has completely different
-chunk type (ANY vs DATA), so make rollback a little less restricted to
-handle both old and new behavior.
-
-Changelog:
-v1:
-  Add rollback support
-  Make btrfs-convert more safe on chunk type
-
-v2:
-  Rebased to latest devel branch.
-
-Qu Wenruo (25):
-  btrfs-progs: extent-cache: Add comments for search/lookup functions
-  btrfs-progs: extent-tree: Add add_merge_cache_extent function
-  btrfs-progs: Introduce new members for btrfs_convert_context
-  btrfs-progs: convert: Introduce functions to read used space
-  btrfs-progs: convert: Introduce new function to remove reserved ranges
-  btrfs-progs: convert: Introduce function to calculate the available   
-     space
-  btrfs-progs: utils: Introduce new function for convert
-  btrfs-progs: Introduce function to setup temporary superblock
-  btrfs-progs: Introduce function to setup temporary tree root
-  btrfs-progs: Introduce function to setup temporary chunk root
-  btrfs-progs: Introduce function to initialize device tree
-  btrfs-progs: Introduce function to initialize fs tree
-  btrfs-progs: Introduce function to initialize csum tree
-  btrfs-progs: Introduce function to setup temporary extent tree
-  btrfs-progs: Introduce function to create convert data chunks
-  btrfs-progs: extent-tree: Introduce function to find the first overlap
-    extent.
-  btrfs-progs: extent-tree: Enhance btrfs_record_file_extent
-  btrfs-progs: convert: Introduce new function to create converted image
-  btrfs-progs: convert: Introduce function to migrate reserved ranges
-  btrfs-progs: convert: Enhance record_file_blocks to handle reserved
-    ranges
-  btrfs-progs: convert: Introduce init_btrfs_v2 function.
-  btrfs-progs: Introduce do_convert_v2 function
-  btrfs-progs: Convert: Add support for rollback new convert behavior
-  btrfs-progs: convert: Strictly avoid meta or system chunk allocation
-  btrfs-progs: Cleanup old btrfs-convert
-
- btrfs-convert.c | 1866 +++++++++++++++++++++++--------------------------------
- ctree.c         |   24 +
- ctree.h         |   14 +-
- extent-cache.c  |   57 ++
- extent-cache.h  |   39 ++
- extent-tree.c   |  251 ++++++--
- mkfs.c          |    4 +-
- utils.c         |  828 +++++++++++++++++++++++-
- utils.h         |   30 +-
- volumes.c       |   46 +-
- volumes.h       |    2 +-
- 11 files changed, 1969 insertions(+), 1192 deletions(-)
-
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 4baa68e..65841bd 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -81,6 +81,7 @@ struct btrfs_convert_context;
+ struct btrfs_convert_operations {
+ 	const char *name;
+ 	int (*open_fs)(struct btrfs_convert_context *cctx, const char *devname);
++	int (*read_used_space)(struct btrfs_convert_context *cctx);
+ 	int (*alloc_block)(struct btrfs_convert_context *cctx, u64 goal,
+ 			   u64 *block_ret);
+ 	int (*alloc_block_range)(struct btrfs_convert_context *cctx, u64 goal,
+@@ -230,6 +231,73 @@ fail:
+ 	return -1;
+ }
+ 
++static int __ext2_add_one_block(ext2_filsys fs, char *bitmap,
++				unsigned long group_nr, struct cache_tree *used)
++{
++	unsigned long offset;
++	unsigned i;
++	int ret = 0;
++
++	offset = fs->super->s_first_data_block;
++	offset /= EXT2FS_CLUSTER_RATIO(fs);
++	offset += group_nr * fs->super->s_clusters_per_group;
++	for (i = 0; i < fs->super->s_clusters_per_group; i++) {
++		if (ext2fs_test_bit(i, bitmap)) {
++			u64 start;
++
++			start = (i + offset) * EXT2FS_CLUSTER_RATIO(fs);
++			start *= fs->blocksize;
++			ret = add_merge_cache_extent(used, start,
++						     fs->blocksize);
++			if (ret < 0)
++				break;
++		}
++	}
++	return ret;
++}
++
++/*
++ * Read all used ext2 space into cctx->used cache tree
++ */
++static int ext2_read_used_space(struct btrfs_convert_context *cctx)
++{
++	ext2_filsys fs = (ext2_filsys)cctx->fs_data;
++	blk64_t blk_itr = EXT2FS_B2C(fs, fs->super->s_first_data_block);
++	struct cache_tree *used_tree = &cctx->used;
++	char *block_bitmap = NULL;
++	unsigned long i;
++	int block_nbytes;
++	int ret = 0;
++
++	block_nbytes = EXT2_CLUSTERS_PER_GROUP(fs->super) / 8;
++	/* Shouldn't happen */
++	BUG_ON(!fs->block_map);
++
++	block_bitmap = malloc(block_nbytes);
++	if (!block_bitmap)
++		return -ENOMEM;
++
++	for (i = 0; i < fs->group_desc_count; i++) {
++		ret = ext2fs_get_block_bitmap_range2(fs->block_map, blk_itr,
++						block_nbytes * 8, block_bitmap);
++		if (ret) {
++			error("fail to get bitmap from ext2, %s",
++			      strerror(-ret));
++			break;
++		}
++		ret = __ext2_add_one_block(fs, block_bitmap, i, used_tree);
++		if (ret < 0) {
++			error("fail to build used space tree, %s",
++			      strerror(-ret));
++			break;
++		}
++		blk_itr += fs->super->s_clusters_per_group;
++	}
++
++	free(block_bitmap);
++	return ret;
++}
++
+ static void ext2_close_fs(struct btrfs_convert_context *cctx)
+ {
+ 	if (cctx->volume_name) {
+@@ -2418,6 +2486,7 @@ err:
+ static const struct btrfs_convert_operations ext2_convert_ops = {
+ 	.name			= "ext2",
+ 	.open_fs		= ext2_open_fs,
++	.read_used_space	= ext2_read_used_space,
+ 	.alloc_block		= ext2_alloc_block,
+ 	.alloc_block_range	= ext2_alloc_block_range,
+ 	.copy_inodes		= ext2_copy_inodes,
+@@ -2451,6 +2520,14 @@ static int convert_open_fs(const char *devname,
+ 	return -1;
+ }
+ 
++/*
++ * Read used space
++ */
++static int convert_read_used_space(struct btrfs_convert_context *cctx)
++{
++	return cctx->convert_ops->read_used_space(cctx);
++}
++
+ static int do_convert(const char *devname, int datacsum, int packing, int noxattr,
+ 		u32 nodesize, int copylabel, const char *fslabel, int progress,
+ 		u64 features)
+@@ -2474,6 +2551,9 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
+ 	ret = convert_open_fs(devname, &cctx);
+ 	if (ret)
+ 		goto fail;
++	ret = convert_read_used_space(&cctx);
++	if (ret)
++		goto fail;
+ 
+ 	blocksize = cctx.blocksize;
+ 	total_bytes = (u64)blocksize * (u64)cctx.block_count;
 -- 
 2.6.2
 

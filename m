@@ -1,34 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from verein.lst.de ([213.95.11.211]:52432 "EHLO newverein.lst.de"
+Received: from mx2.suse.de ([195.135.220.15]:45988 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751989AbbLAHhV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Dec 2015 02:37:21 -0500
-Date: Tue, 1 Dec 2015 08:37:18 +0100
-From: Christoph Hellwig <hch@lst.de>
-To: "J. Bruce Fields" <bfields@fieldses.org>
-Cc: Christoph Hellwig <hch@lst.de>, viro@zeniv.linux.org.uk,
-        tao.peng@primarydata.com, jeff.layton@primarydata.com,
-        linux-fsdevel@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        linux-nfs@vger.kernel.org, linux-cifs@vger.kernel.org
-Subject: Re: [PATCH 2/5] locks: new locks_mandatory_area calling convention
-Message-ID: <20151201073718.GA29495@lst.de>
-References: <1448563859-21922-1-git-send-email-hch@lst.de> <1448563859-21922-3-git-send-email-hch@lst.de> <20151130223830.GB31564@fieldses.org>
+	id S1750795AbbLAPOz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 1 Dec 2015 10:14:55 -0500
+Date: Tue, 1 Dec 2015 16:13:05 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Andreas Gruenbacher <agruenba@redhat.com>
+Cc: Alexander Viro <viro@zeniv.linux.org.uk>,
+        Christoph Hellwig <hch@infradead.org>, linux-kernel@vger.kernel.org,
+        linux-fsdevel@vger.kernel.org, Chris Mason <clm@fb.com>,
+        Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 05/10] btrfs: Use xattr handler infrastructure
+Message-ID: <20151201151305.GB31035@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1448919823-27103-1-git-send-email-agruenba@redhat.com>
+ <1448919823-27103-6-git-send-email-agruenba@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151130223830.GB31564@fieldses.org>
+In-Reply-To: <1448919823-27103-6-git-send-email-agruenba@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Nov 30, 2015 at 05:38:30PM -0500, J. Bruce Fields wrote:
-> > +	if (size < inode->i_size) {
-> > +		return locks_mandatory_area(filp, size, inode->i_size - 1,
-> > +				true);
-> > +	} else {
-> > +		return locks_mandatory_area(filp, inode->i_size, size - 1,
-> > +				true);
+On Mon, Nov 30, 2015 at 10:43:38PM +0100, Andreas Gruenbacher wrote:
+> Use the VFS xattr handler infrastructure and get rid of similar code in
+> the filesystem.
 > 
-> I feel like these callers would be just slightly more self-documenting
-> if that last parameter was F_WRLCK instead of true.
+> Signed-off-by: Andreas Gruenbacher <agruenba@redhat.com>
+> Cc: Chris Mason <clm@fb.com>
+> Cc: Josef Bacik <jbacik@fb.com>
+> Cc: David Sterba <dsterba@suse.com>
 
-Sure, I can change that forthe next version.
-
+Reviewed-by: David Sterba <dsterba@suse.com>

@@ -1,148 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm02.jp.fujitsu.com ([202.219.69.169]:57146 "EHLO
-	mgwkm02.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932572AbbLPDI2 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:58123 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753998AbbLAAvJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Dec 2015 22:08:28 -0500
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by kw-mxq.gw.nic.fujitsu.com (Postfix) with ESMTP id 18BD6AC00C6
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 11:58:00 +0900 (JST)
-Received: from WIN-5MHF4RKU941.jp.fujitsu.com (unknown [10.124.102.163])
-	by m3051.s.css.fujitsu.com (Postfix) with SMTP id EC21ADD
-	for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 11:57:59 +0900 (JST)
-Message-Id: <201512160257.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 16 Dec 2015 11:57:38 +0900
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] Btrfs: fix output of compression message in btrfs_parse_options()
+	Mon, 30 Nov 2015 19:51:09 -0500
+Subject: Re: BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
+To: Vegard Nossum <vegard.nossum@oracle.com>, <dsterba@suse.cz>,
+        Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, <linux-btrfs@vger.kernel.org>
+References: <5648CD1D.9070804@oracle.com>
+ <20151130134851.GZ31035@twin.jikos.cz> <20151130163407.GA31035@twin.jikos.cz>
+ <565CC820.9020706@oracle.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <565CEEF1.80006@cn.fujitsu.com>
+Date: Tue, 1 Dec 2015 08:50:57 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <565CC820.9020706@oracle.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The compression message might not be correctly output.
-Fix it.
 
-[[before fix]]
 
-# mount -o compress /dev/sdb3 /test3
-[  996.874264] BTRFS info (device sdb3): disk space caching is enabled
-[  996.874268] BTRFS: has skinny extents
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
+Vegard Nossum wrote on 2015/11/30 23:05 +0100:
+> On 11/30/2015 05:34 PM, David Sterba wrote:
+>> On Mon, Nov 30, 2015 at 02:48:51PM +0100, David Sterba wrote:
+>>> On Sun, Nov 15, 2015 at 07:21:17PM +0100, Vegard Nossum wrote:
+>>>> With the attached btrfs image, I get the following splat when mounting:
+>>>>
+>>>> """
+>>>> # mount -o loop -t btrfs ./btrfs.0 /mnt/0/
+>>>> BTRFS: device fsid 9006933e-2a9a-44f0-917f-514252aeec2c devid 1 transid
+>>>> 7 /dev/loop0
+>>>> BTRFS info (device loop0): disk space caching is enabled
+>>>> BUG: failure at fs/btrfs/ctree.h:337/btrfs_chunk_item_size()!
+>>
+>> The fix, worked for me on the provided image:
+>> https://patchwork.kernel.org/patch/7728051/
+>>
+>> I'll add the attached image to btrfs-progs testsuite as it triggers
+>> crashes in other tools.
+>>
+>
+> Thanks, that seems to fix the problem.
+>
+> With your patch and a new image, I run into a second issue (which is
+> probably unrelated):
+>
+> BTRFS critical (device loop0): unable to find logical 4294963200 len
+> 40966cc7e != de8
+> BUG: failure at fs/btrfs/inode.c:1805/btrfs_merge_bio_hook()!
+> Kernel panic - not syncing: BUG! errors
+> CPU: 0 PID: 913 Comm: mount Not tainted 4.2.5 #1cc7e devid 1 transid 7
+> /dev/loop0
+> Stack: dev_item UUID does not match fsid:
+> de80ced1-18ac-490c-9afb-cf0a7d66cc7e != de8
+>    e0147430 60075412 600bd457 603f5080
+>    606dfc7a 605e2b14 e0147440 605e595fors
+>    e0147560 605e291e e00cb2e8 00001000
+>   Call Trace:
+>    [<60029f3b>] show_stack+0xdb/0x1a0
+>    [<605e595f>] dump_stack+0x2a/0x2c
+>    [<605e291e>] panic+0x137/0x2ac
+>    [<602b8d0c>] btrfs_merge_bio_hook+0xfc/0x100
+>    [<602e3923>] submit_extent_page+0x223/0x330
+>    [<602e51a6>] __do_readpage+0x476/0xb60
+>    [<602e59bf>] __extent_read_full_page+0x12f/0x140
+>    [<602e8264>] read_extent_buffer_pages+0x1e4/0x410
+>    [<602a9d46>] btree_read_extent_buffer_pages.constprop.24+0x106/0x1a0
+>    [<602aa67e>] read_tree_block+0x5e/0xa0
+>    [<602b0064>] open_ctree+0x1814/0x2db0
+>    [<60273a3b>] btrfs_mount+0xf3b/0x1010
+>    [<601054d3>] mount_fs+0x33/0x210
+>    [<60124b94>] vfs_kern_mount+0x74/0x170
+>    [<60272df3>] btrfs_mount+0x2f3/0x1010
+>    [<601054d3>] mount_fs+0x33/0x210
+>    [<60124b94>] vfs_kern_mount+0x74/0x170
+>    [<601264dc>] do_mount+0x26c/0xf30
+>    [<6012768b>] SyS_mount+0xab/0x120
+>
+> Should I start a new thread? I've attached the new image. Thanks,
+>
+>
+> Vegard
+>
+>
+Glad to see btrfsck is much robust than kernel now. :)
 
-# mount -o remount,compress-force /dev/sdb3 /test3
-[ 1035.075017] BTRFS info (device sdb3): force zlib compression
-[ 1035.075021] BTRFS info (device sdb3): disk space caching is enabled
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress-force=zlib,space_cache,subvolid=5,subvol=/)
+Btrfsck already gives quite good clue on the problem:
 
-# mount -o remount,compress /dev/sdb3 /test3
-[ 1053.679092] BTRFS info (device sdb3): disk space caching is enabled
-[root@luna compress-info]# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
+ERROR: chunk_root block unaligned: 4294967168
+ERROR: chunk_root block unaligned: 4294967168
 
-[[after fix]]
+Chunk root in superblock is not aligned, and the superblock is not valid.
 
-# mount -o compress /dev/sdb3 /test3
-[  401.021753] BTRFS info (device sdb3): use zlib compression
-[  401.021758] BTRFS info (device sdb3): disk space caching is enabled
-[  401.021760] BTRFS: has skinny extents
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
+It would be better to copy all these btrfs-progs enhancement to kernel.
 
-# mount -o remount,compress-force /dev/sdb3 /test3
-[  439.824624] BTRFS info (device sdb3): force zlib compression
-[  439.824629] BTRFS info (device sdb3): disk space caching is enabled
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress-force=zlib,space_cache,subvolid=5,subvol=/)
+Thanks,
+Qu
 
-# mount -o remount,compress /dev/sdb3 /test3
-[  459.918430] BTRFS info (device sdb3): use zlib compression
-[  459.918434] BTRFS info (device sdb3): disk space caching is enabled
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
----
- fs/btrfs/disk-io.c |  2 +-
- fs/btrfs/super.c   | 21 ++++++++++++++-------
- 2 files changed, 15 insertions(+), 8 deletions(-)
-
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 974be09..dcc1f15 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -2709,7 +2709,7 @@ int open_ctree(struct super_block *sb,
- 	 * In the long term, we'll store the compression type in the super
- 	 * block, and it'll be used for per file compression control.
- 	 */
--	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
-+	fs_info->compress_type = BTRFS_COMPRESS_NONE;
- 
- 	ret = btrfs_parse_options(tree_root, options);
- 	if (ret) {
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 24154e4..e2e8a54 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -381,6 +381,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	int ret = 0;
- 	char *compress_type;
- 	bool compress_force = false;
-+	enum btrfs_compression_type saved_compress_type;
-+	bool saved_compress_force;
- 
- 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
- 	if (cache_gen)
-@@ -458,6 +460,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			/* Fallthrough */
- 		case Opt_compress:
- 		case Opt_compress_type:
-+			saved_compress_type = info->compress_type;
-+			saved_compress_force =
-+				btrfs_test_opt(root, FORCE_COMPRESS);
- 			if (token == Opt_compress ||
- 			    token == Opt_compress_force ||
- 			    strcmp(args[0].from, "zlib") == 0) {
-@@ -475,6 +480,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				btrfs_set_fs_incompat(info, COMPRESS_LZO);
- 			} else if (strncmp(args[0].from, "no", 2) == 0) {
- 				compress_type = "no";
-+				info->compress_type = BTRFS_COMPRESS_NONE;
- 				btrfs_clear_opt(info->mount_opt, COMPRESS);
- 				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
- 				compress_force = false;
-@@ -484,14 +490,8 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			}
- 
- 			if (compress_force) {
--				btrfs_set_and_info(root, FORCE_COMPRESS,
--						   "force %s compression",
--						   compress_type);
-+				btrfs_set_opt(info->mount_opt, FORCE_COMPRESS);
- 			} else {
--				if (!btrfs_test_opt(root, COMPRESS))
--					btrfs_info(root->fs_info,
--						   "btrfs: use %s compression",
--						   compress_type);
- 				/*
- 				 * If we remount from compress-force=xxx to
- 				 * compress=xxx, we need clear FORCE_COMPRESS
-@@ -500,6 +500,13 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				 */
- 				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
- 			}
-+			if (info->compress_type != saved_compress_type ||
-+			    compress_force != saved_compress_force)
-+				btrfs_info(root->fs_info,
-+					   "%s %s compression",
-+					   (compress_force) ? "force" : "use",
-+					   compress_type);
-+			compress_force = false;
- 			break;
- 		case Opt_ssd:
- 			btrfs_set_and_info(root, SSD,
--- 
-2.4.5
 

@@ -1,80 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:47679 "EHLO plane.gmane.org"
+Received: from mail.virtall.com ([178.63.195.102]:59335 "EHLO mail.virtall.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1758466AbbLBNqd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 2 Dec 2015 08:46:33 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a47jS-0006HO-OJ
-	for linux-btrfs@vger.kernel.org; Wed, 02 Dec 2015 14:46:06 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2015 14:46:06 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2015 14:46:06 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: utils version and convert crash
-Date: Wed, 2 Dec 2015 13:45:17 +0000 (UTC)
-Message-ID: <pan$85c2b$46f55be$d534ced$bd1aab07@cox.net>
-References: <CA+WRLO_k=jn1=dNPY8Cv-dFkM=Q2ge0tfX3HXVW9v9eGPhnS=Q@mail.gmail.com>
-	<pan$29351$45c9e04c$34064b25$8daa651c@cox.net>
-	<CA+WRLO_hx3u0wPy_GfguKmmXY4crxrRFx9TvuoLYh-Su0ju8ww@mail.gmail.com>
-	<565E0356.9030006@gmail.com>
-	<CA+WRLO-VSOH1QUHTXFGzCSUKW=mRoufmUpYG8xRB4N80+rHmjg@mail.gmail.com>
-	<CA+WRLO_1bLpve50YkuGD4wDxyO_e=4u9xev8y4XxZT9L01KxDQ@mail.gmail.com>
-	<pan$c5c73$162474d7$f06e12fa$496fb5f@cox.net> <565EE329.3050902@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+	id S1757252AbbLBNxs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 2 Dec 2015 08:53:48 -0500
+MIME-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII;
+ format=flowed
+Date: Wed, 02 Dec 2015 22:53:45 +0900
+From: Tomasz Chmielewski <tch@virtall.com>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: compression disk space saving - what are your results?
+In-Reply-To: <565EEC1F.7070600@gmail.com>
+References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
+ <565EEC1F.7070600@gmail.com>
+Message-ID: <18fb40ae4411f31353e06bf99ee12c8a@admin.virtall.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S Hemmelgarn posted on Wed, 02 Dec 2015 07:25:13 -0500 as
-excerpted:
+On 2015-12-02 22:03, Austin S Hemmelgarn wrote:
 
-> On 2015-12-02 05:01, Duncan wrote:
+>>  From these numbers (124 GB used where data size is 153 GB), it 
+>> appears
+>> that we save around 20% with zlib compression enabled.
+>> Is 20% reasonable saving for zlib? Typically text compresses much 
+>> better
+>> with that algorithm, although I understand that we have several
+>> limitations when applying that on a filesystem level.
+> 
+> This is actually an excellent question.  A couple of things to note
+> before I share what I've seen:
+> 1. Text compresses better with any compression algorithm.  It is by
+> nature highly patterned and moderately redundant data, which is what
+> benefits the most from compression.
 
-[on unverified errors returned by scrub]
->>
->> Unverified errors are, I believe[1], errors where a metadata block
->> holding checksums itself has an error, so the blocks its checksums in
->> turn covered are not checksum-verified.
->>
->> What that means in practice is that once the first metadata block error
->> has been corrected in a first scrub run, a second scrub run can now
->> check the blocks that were recorded as unverified errors in the first
->> run, potentially finding and hopefully fixing additional errors[.]
+It looks that compress=zlib does not compress very well. Following 
+Duncan's suggestion, I've changed it to compress-force=zlib, and 
+re-copied the data to make sure the file are compressed.
 
->> ---
->> [1] I'm not a dev and am not absolutely sure of the technical accuracy
->> of this description, but from an admin's viewpoint it seems to be
->> correct at least in practice, based on the fact that further scrubs as
->> long as there were unverified errors often did find additional errors,
->> while once the unverified count dropped to zero and the last read
->> errors were corrected, further scrubs turned up no further errors.
->>
-> AFAICT from reading the code, that is a correct assessment.  It would be
-> kind of nice though if there was some way to tell scrub to recheck up to
-> X many times if there are unverified errors...
+Compression ratio is much much better now (on a slightly changed data 
+set):
 
-Yes.  For me as explained it wasn't that big a deal as another scrub was 
-another minute or less, but definitely on terabyte-scale filesystems on 
-spinning rust, where scrubs take hours, having scrub be able to 
-automatically track just the corrected errors along with their 
-unverifieds, and rescan just those, should only take a matter of a few 
-minutes more, while a full rescan of /everything/ would take the same 
-number of hours yet again... and again if there's a third scan required, 
-etc.
+# df -h
+/dev/xvdb       200G   24G  176G  12% /var/log/remote
 
-I'd say just make it automatic on corrected metadata errors as I can't 
-think of a reason people wouldn't want it, given the time it would save 
-over rerunning a full scrub over and over again, but making it an option 
-would be fine with me too.
 
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+# du -sh /var/log/remote/
+138G    /var/log/remote/
+
+
+So, 138 GB files use just 24 GB on disk - nice!
+
+However, I would still expect that compress=zlib has almost the same 
+effect as compress-force=zlib, for 100% text files/logs.
+
+
+Tomasz Chmielewski
+http://wpkg.org
 

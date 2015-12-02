@@ -1,151 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:33411 "EHLO
-	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1757046AbbLBMZW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2015 07:25:22 -0500
-Received: by iouu10 with SMTP id u10so44413829iou.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2015 04:25:21 -0800 (PST)
-Subject: Re: utils version and convert crash
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <CA+WRLO_k=jn1=dNPY8Cv-dFkM=Q2ge0tfX3HXVW9v9eGPhnS=Q@mail.gmail.com>
- <pan$29351$45c9e04c$34064b25$8daa651c@cox.net>
- <CA+WRLO_hx3u0wPy_GfguKmmXY4crxrRFx9TvuoLYh-Su0ju8ww@mail.gmail.com>
- <565E0356.9030006@gmail.com>
- <CA+WRLO-VSOH1QUHTXFGzCSUKW=mRoufmUpYG8xRB4N80+rHmjg@mail.gmail.com>
- <CA+WRLO_1bLpve50YkuGD4wDxyO_e=4u9xev8y4XxZT9L01KxDQ@mail.gmail.com>
- <pan$c5c73$162474d7$f06e12fa$496fb5f@cox.net>
+Received: from mail-io0-f177.google.com ([209.85.223.177]:33779 "EHLO
+	mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932180AbbLBNDg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2015 08:03:36 -0500
+Received: by iouu10 with SMTP id u10so45397102iou.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2015 05:03:35 -0800 (PST)
+Subject: Re: compression disk space saving - what are your results?
+To: Tomasz Chmielewski <tch@virtall.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>
+References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <565EE329.3050902@gmail.com>
-Date: Wed, 2 Dec 2015 07:25:13 -0500
+Message-ID: <565EEC1F.7070600@gmail.com>
+Date: Wed, 2 Dec 2015 08:03:27 -0500
 MIME-Version: 1.0
-In-Reply-To: <pan$c5c73$162474d7$f06e12fa$496fb5f@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020905030901050008050306"
+In-Reply-To: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080908090704060903090802"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms020905030901050008050306
+--------------ms080908090704060903090802
 Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-12-02 05:01, Duncan wrote:
-> Gareth Pye posted on Wed, 02 Dec 2015 18:07:48 +1100 as excerpted:
+On 2015-12-02 04:46, Tomasz Chmielewski wrote:
+> What are your disk space savings when using btrfs with compression?
 >
->> Output from scrub:
->> sudo btrfs scrub start -Bd /data
+> I have a 200 GB btrfs filesystem which uses compress=3Dzlib, only store=
+s
+> text files (logs), mostly multi-gigabyte files.
 >
-> [Omitted no-error device reports.]
 >
->> scrub device /dev/sdh (id 6) done
->>     scrub started at Wed Dec  2 07:04:08 2015 and finished after 06:47=
-:22
->>     total bytes scrubbed: 1.09TiB with 2 errors
->>     error details: read=3D2
->>     corrected errors: 2, uncorrectable errors: 0, unverified errors: 3=
-0
+> It's a "single" filesystem, so "df" output matches "btrfs fi df":
 >
-> Also note those unverified errors...
+> # df -h
+> Filesystem      Size  Used Avail Use% Mounted on
+> (...)
+> /dev/xvdb       200G  124G   76G  62% /var/log/remote
 >
-> I have quite a bit of experience with btrfs scrub as I ran with a faili=
-ng
-> ssd for awhile, using btrfs scrub on the multiple btrfs raid1 filesyste=
-ms
-> on parallel partitions on the failing ssd and another good one to corre=
-ct
-> the errors and continue operations.
 >
-> Unverified errors are, I believe[1], errors where a metadata block
-> holding checksums itself has an error, so the blocks its checksums in
-> turn covered are not checksum-verified.
+> # du -sh /var/log/remote/
+> 153G    /var/log/remote/
 >
-> What that means in practice is that once the first metadata block error=
+>
+>  From these numbers (124 GB used where data size is 153 GB), it appears=
 
-> has been corrected in a first scrub run, a second scrub run can now che=
-ck
-> the blocks that were recorded as unverified errors in the first run,
-> potentially finding and hopefully fixing additional errors, tho unless
-> the problem's extreme, most of the unverifieds should end up being
-> correct once they can be verified, with only a few possible further
-> errors found.
->
-> Of course if some of these previously unverified blocks are themselves
-> metadata blocks with further checksums, yet another run may be required=
-=2E
->
-> Fortunately, these trees are quite wide (121 items according to an old
-> post from Hugo I found myself rereading a few hours ago) and thus don't=
+> that we save around 20% with zlib compression enabled.
+> Is 20% reasonable saving for zlib? Typically text compresses much bette=
+r
+> with that algorithm, although I understand that we have several
+> limitations when applying that on a filesystem level.
 
-> tend to be very deep -- I think I ended up rerunning scrub four times a=
-t
-> one point, before both read and unverified errors went to zero, tho
-> that's on relatively small partitioned-up ssd filesystems of under 50 g=
-ig
-> usable capacity (pair-raid1, 50 gig per device), so I could see terabyt=
-e-
-> scale filesystems going to 6-7 levels.
->
-> And, again on a btrfs raid1 with a known failing device -- several
-> thousand redirected sectors by the time I gave up and btrfs replaced --=
+This is actually an excellent question.  A couple of things to note=20
+before I share what I've seen:
+1. Text compresses better with any compression algorithm.  It is by=20
+nature highly patterned and moderately redundant data, which is what=20
+benefits the most from compression.
+2. When BTRFS does in-line compression, it uses 128k blocks.  Because of =
 
-> generally each successive scrub run would return an order of magnitude =
-or
-> so fewer errors (corrected and unverified both) than the previous run,
-> tho occasionally I'd hit a bad spot and the number would go up a bit in=
+this, there are diminishing returns for smaller files when using=20
+compression.
+3. The best compression ratio I've ever seen from zlib on real data is=20
+about 65-70%, and that was using SquashFS, which is designed to take up=20
+as little room as possible.
+4. LZO gets a worse compression ratio than zlib (around 40-50% if you're =
 
-> one run, before dropping an order of magnitude or so again on the next
-> run.
->
-> So with only two corrected read-errors and 30 unverified, I'd expect
-> maybe another one or two corrected read-errors on a second run, and
-> probably no unverifieds, in which case a third run shouldn't be necessa=
-ry
-> unless you just want the peace of mind of seeing that no errors found
-> message.  Tho of course if you're unlucky, one of those 30 will turn ou=
-t
-> to be a a read error on a full 121-item metadata block, so your
-> unverifieds will go up for that run, before going down again in
-> subsequent runs.
->
-> Of course with filesystems of under 50 gig capacity on fast ssds, a
-> typical scrub ran in under a minute, so repeated scrubs to find and
-> correct all errors wasn't a big deal, generally under 10 minutes
-> including human response time.  On terabyte-scale spinning rust with
-> scrubs taking hours, multiple scrubs could easily take a full 24-hour d=
-ay
-> or more! =3D:^(
->
-> So now that you did one scrub and did find errors, you do probably want=
+lucky), but is a _lot_ faster.
+5. By playing around with the -c option for defrag, you can compress or=20
+uncompress different parts of the filesystem, and get a rough idea of=20
+what compresses best.
 
-> to trace them down and correct the problem if possible, before running
-> further scrubs to find and exterminate any errors still hiding behind
-> unverified in the first run.  But once you're reasonably confident you'=
-re
-> running a reliable system again, you probably do want to run further
-> scrubs until that unverified count goes to zero (assuming no
-> uncorrectable errors in the mean time).
->
-> ---
-> [1] I'm not a dev and am not absolutely sure of the technical accuracy =
-of
-> this description, but from an admin's viewpoint it seems to be correct =
-at
-> least in practice, based on the fact that further scrubs as long as the=
-re
-> were unverified errors often did find additional errors, while once the=
+Now, to my results.  These are all from my desktop system, with no=20
+deduplication, and the data for zlib is somewhat outdated (I've not used =
 
-> unverified count dropped to zero and the last read errors were correcte=
-d,
-> further scrubs turned up no further errors.
->
-AFAICT from reading the code, that is a correct assessment.  It would be =
+it since LZO support stabilized).
 
-kind of nice though if there was some way to tell scrub to recheck up to =
+For the filesystems I have on traditional hard disks:
+1. For /home (mostly text files, some SQLite databases, and a couple of=20
+git repositories), I get about 15-20% space savings with zlib, and about =
 
-X many times if there are unverified errors...
+a 2-4$ performance hit.  I get about 5-10% space savings with lzo, but=20
+performance is about 5-8% better than uncompressed.
+2. For /usr/src (50/50 mix of text and executable code), I get about 25% =
+
+space savings with zlib with a 5-7% hit to performance, and about 10%=20
+with lzo with a 7% boost in performance relative to uncompressed.
+3. For /usr/portage and /var/lib/layman (lots of small text files, a=20
+number of VCS repos, and about 2000 compressed source archives), I get=20
+about 25% space savings with zlib, with a 15% performance hit (yes,=20
+seriously 15%), and with lzo I get about 25% space savings with no=20
+measurable performance difference relative to uncompressed.
+
+For the filesystems I have on SSD's:
+1. For /var/tmp (huge assortment of different things, but usually=20
+similar to /usr/src because this is where packages get built), I get=20
+almost no space savings with either type of compression, and see a=20
+performance reduction of about 5% for both.
+2. For /var/log (Lots of text files (notably, I don't compress rotated=20
+logs, and I don't have systemd's insane binary log files), I get about=20
+30% space savings with zlib, but it makes the _whole_ system run about=20
+5% slower, and I get about 20% space savings with lzo, with no=20
+measurable performance difference relative to uncompressed.
+3. For /var/spool (Lots of really short text files, mostly stuff from=20
+postfix and CUPS), I actually see higher disk usage with both types of=20
+compression, but almost zero performance impact from either of them.
+4. For /boot (a couple of big binary files that already have built-in=20
+compression), I see no net space savings, and don't have any numbers=20
+regarding performance impact.
+5. For / (everything that isn't on one of the other filesystems I listed =
+
+above), I see about 10-20% space savings from zlib, with a roughly 5%=20
+performance hit, and about 5-15% space savings with lzo, with no=20
+measurable performance difference.
 
 
---------------ms020905030901050008050306
+--------------ms080908090704060903090802
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -187,9 +157,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjAyMTIyNTEzWjBPBgkq
-hkiG9w0BCQQxQgRAVauwPG6TmranSAHmat+5Yyl5z/fsg02q4Tx8UQgMq6ROns+TIjQDPhfq
-Gk4xVXo98vXj2RwEy9hDCjRNfIiptjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjAyMTMwMzI3WjBPBgkq
+hkiG9w0BCQQxQgRAzOiZ3wBrUtGvDR7wRivTeV2AO6zmIlkCXyPY30Gdycww50dvGNLbQFdJ
+Itz8wX0DFNWsC8TUbGW+cKibKLIbbTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -197,14 +167,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBXwbvuoCXZHjfgZ+h/gOMCovsBiJRiUzaWSmtFkiowCqg7gtWp
-c4fuVp9zqOMLAxnsbn0GcY1mHqJ4vWH3kLO1RBEG3BpmWFunHdQoF7lO+wMystMhpMemBUHu
-WIrVv1Kx1QHWYOP//kQcSPWgnZvtqlG//eS5++CEy+T0kj5ywOp+gWc2smVrYBDM0c6twsMG
-fE4l85sM1TQbjRyc60kjL6P3dWTSiOJGAnAkhOSXbWkXHyAlYU0TamEgEQrFmz7zjQBZHo3W
-p+dPfI2sZ/48IAxm3RKbQ07S860TCo1i1bBAaTAmf9rHy1/5N3b3EGEuzbnp3tIhv3icSvEh
-ItdU0fl1sNw3j7GxdgXj0DAL5yuAM43oH9g5rLfQJl6BPjCVm6GNqHUDQqUHR5QkJdKVWXye
-0qQ5Nu0gUx9qLFMoPcLd7g2gkYtI0SZXH+n4cw/5rzHjobrIqI0MDIZy2L9dOEkQxNHiNF3T
-gyOgdZoudxg8RDjwxN1m7yl7dEz9ip1Yf6F+BzbMnKouUbnTnl2exuQ2ukUth10vbnPaMJuT
-LtW5RAu12PKy7kzbviSR2wlXE44IK6aC/7C1v4KKwiiZ2U/r9t86vArm6XoF1raau03HttFt
-iGu9vmy1+HiVSW2fwOg9RpOE9BgiJWROPDYpkaqBdL/FDOQHnzNB4b+lZgAAAAAAAA==
---------------ms020905030901050008050306--
+BgkqhkiG9w0BAQEFAASCAgBd48tTupnTnR3cVWlsSJ8KtZ1ZVevHv9HYaJm3258gNaLoLFVN
+juCBCZ6lTb1/xxbb+uO+LNh+PqZ/lNJNWjhpVE4mA3Ctg0tiO+Zz+7FsUx7uhH9nRTlDhVo+
+ipEMJS/+iftxxbN902fYwqcd40tENQDJ4ZCc7rQAirlYmAiPTYAXUMQ/erwdE7qP3GqE4ojE
+oOMVLATM6P8QKb1NXug/L4OUeOwloqkOT0f7AUxCCPOnHUNMzMJ+drG3DJdSXdd8r5VCWN8p
+7/dLs9dmLQArYRkdtlxPP/fzRx7AsUPjfRrLJqStKqQ0hZzNnYPCiicD+CRwO1d6NvKM+CcX
+CvCQgnOP1SchBOn6HUG9WC8QHEB6Lcn260l4hzE+SJj4oKgz5pIdV1n4LHvpnw7qiw4BbDzA
+MqP2XHjZroHI7PRLVB1brRRZyDKQOnEQWIr/8fUcZqTylaliVJRvLW1cJcbDuQi6mcQ4ihIU
+SoTY7M6G6MmYb/nt9c7bwCnQch/e4uAJ70P0AunDE3m6mnLOkaRQYqZS2vOi3baaSwc5te3Y
+vAMSJtwLoJ7LvKYERYK6G3O7zQ5ZP65130KFmZKVvdgOsY7kuIPwmmEqDvfoVMAiN/Nrro2Y
+eaO6nByuqk7Z+dFrOkiym7qV8ADkgcYsJOQzsdgYprynOjHNqARe29eHNgAAAAAAAA==
+--------------ms080908090704060903090802--

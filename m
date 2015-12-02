@@ -1,69 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:35268 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754495AbbLBOjR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2015 09:39:17 -0500
-Received: by igl9 with SMTP id 9so111710448igl.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2015 06:39:16 -0800 (PST)
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:37187 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1757368AbbLBOtQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 2 Dec 2015 09:49:16 -0500
+Received: by igcto18 with SMTP id to18so32898449igc.0
+        for <linux-btrfs@vger.kernel.org>; Wed, 02 Dec 2015 06:49:15 -0800 (PST)
 Subject: Re: compression disk space saving - what are your results?
-To: Imran Geriskovan <imran.geriskovan@gmail.com>, linux-btrfs@vger.kernel.org
+To: Tomasz Chmielewski <tch@virtall.com>
 References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
- <pan$101f2$e235cddd$fea951cb$dcf70182@cox.net>
- <CAK5rZE6-SMfseAfEu1GxLrgYNOBMhNbiQ8tqWVWUr6dFDL8OKw@mail.gmail.com>
+ <565EEC1F.7070600@gmail.com>
+ <18fb40ae4411f31353e06bf99ee12c8a@admin.virtall.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <565F028C.6000707@gmail.com>
-Date: Wed, 2 Dec 2015 09:39:08 -0500
+Message-ID: <565F04E1.6000003@gmail.com>
+Date: Wed, 2 Dec 2015 09:49:05 -0500
 MIME-Version: 1.0
-In-Reply-To: <CAK5rZE6-SMfseAfEu1GxLrgYNOBMhNbiQ8tqWVWUr6dFDL8OKw@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms050101020009020604000701"
+In-Reply-To: <18fb40ae4411f31353e06bf99ee12c8a@admin.virtall.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070601040303060304090801"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms050101020009020604000701
-Content-Type: text/plain; charset=utf-8; format=flowed
+--------------ms070601040303060304090801
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-12-02 09:03, Imran Geriskovan wrote:
->>> What are your disk space savings when using btrfs with compression?
+On 2015-12-02 08:53, Tomasz Chmielewski wrote:
+> On 2015-12-02 22:03, Austin S Hemmelgarn wrote:
 >
->> * There's the compress vs. compress-force option and discussion.  A
->> number of posters have reported that for mostly text, compress didn't
->> give them expected compression results and they needed to use compress=
--
->> force.
+>>>  From these numbers (124 GB used where data size is 153 GB), it appea=
+rs
+>>> that we save around 20% with zlib compression enabled.
+>>> Is 20% reasonable saving for zlib? Typically text compresses much bet=
+ter
+>>> with that algorithm, although I understand that we have several
+>>> limitations when applying that on a filesystem level.
+>>
+>> This is actually an excellent question.  A couple of things to note
+>> before I share what I've seen:
+>> 1. Text compresses better with any compression algorithm.  It is by
+>> nature highly patterned and moderately redundant data, which is what
+>> benefits the most from compression.
 >
-> "compress-force" option compresses regardless of the "compressibility"
-> of the file.
+> It looks that compress=3Dzlib does not compress very well. Following
+> Duncan's suggestion, I've changed it to compress-force=3Dzlib, and
+> re-copied the data to make sure the file are compressed.
+For future reference, if you run 'btrfs filesystem defrag -r -czlib' on=20
+the top level directory, you can achieve the same effect without having=20
+to deal with the copy overhead.  This has a side effect of breaking=20
+reflinks, but copying the files off and back onto the filesystem does so =
+
+also, and even then, I doubt that you're using reflinks.  There probably =
+
+wouldn't be much difference in the time it takes, but at least you=20
+wouldn't be hitting another disk in the process.
 >
-> "compress" option makes some inference about the "compressibility"
-> and decides to compress or not.
+> Compression ratio is much much better now (on a slightly changed data s=
+et):
 >
-> I wonder how that inference is done?
-> Can anyone provide some pseudo code for it?
-I'm not certain how BTRFS does it, but my guess would be trying to=20
-compress the block, then storing the uncompressed version if the=20
-compressed one is bigger.
+> # df -h
+> /dev/xvdb       200G   24G  176G  12% /var/log/remote
+>
+>
+> # du -sh /var/log/remote/
+> 138G    /var/log/remote/
+>
+>
+> So, 138 GB files use just 24 GB on disk - nice!
+>
+> However, I would still expect that compress=3Dzlib has almost the same
+> effect as compress-force=3Dzlib, for 100% text files/logs.
+>
+That's better than 80% space savings (it works out to about 83.6%), so I =
 
-The program lrzip has an option to do per-block compression checks kind=20
-of like this, but it's method is to try LZO compression on the block=20
-(which is fast), and only use the selected compression method (bzip2 by=20
-default I think, but it can also do zlib and xz) if the LZO compression=20
-ratio is is good enough.  If we went with a similar method, I'd say we=20
-should integrate LZ4 support first, and use that for the test.  I think=20
-NTFS compression on Windows might do something similar, but they use an=20
-old LZ77 derivative for their compression (I think it's referred to as=20
-LZNT1, and it's designed for speed, and usually doesn't get much better=20
-than a 30% compression ratio).
-
-On a side note, I really wish BTRFS would just add LZ4 support.  It's a=20
-lot more deterministic WRT decompression time than LZO, gets a similar=20
-compression ratio, and runs faster on most processors for both=20
-compression and decompression.
+doubt that you'd manage to get anything better than that even with only=20
+plain text files.  It's interesting that there's such a big discrepancy=20
+though, that indicates that BTRFS really needs some work WRT deciding=20
+what to compress.
 
 
---------------ms050101020009020604000701
+
+--------------ms070601040303060304090801
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -105,9 +123,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjAyMTQzOTA4WjBPBgkq
-hkiG9w0BCQQxQgRA1gTXQSwqE3fFElaGgDu5Hu4Le/5goeTPXk2nu6PCIdztyvoXn0h+JM42
-OX6F/omUoMfqLbgqLoojy16ZPTqq5DBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjAyMTQ0OTA1WjBPBgkq
+hkiG9w0BCQQxQgRAthJWzvIG6MFQBsrC5SGZlgM5ptjWVwaxVuSp4xzsaUMZOaIb/qboN+7A
+QM70CReFE3WzNpmuvgFQOG/mfEHiHTBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -115,14 +133,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBxAU1jLAXE3NBlRsbs5kKk99oFFlBZ5R/VzSP/qX90YWsWp5Ln
-5L+VYwV6/jn84JOFxzbkOwcIRxb08MmIFFivhIR2OrLrN48itDxByEnnqMPYHDMRxZvTIkB6
-DQyCFycbxOtUaHHWA7xwZ4/1pjaH6AOo31AomtUtEKAVEU79RbkWN6sEYhKqpO81DBBMS1ss
-Wba2/HhJuFtxoi7NY1rI38B6tq+U1GJM89n55SzbeIsJUEkWSyeLQNP6QXt+hEPQYTE2qPNe
-oB92ehXbv69hC7uefp63+22hYHboOZvNWwef10DeaoD20ACZbXuQK2EkV+t+7tTLqbXOTlcC
-Veory5P8F0o4bHfNroIdiT1Eg2q3I8U6LAvr0/T8mZibBnTKmZI/UwPxIdMb2aOyWBtxTWYl
-YLp8qKzfJv6K1y0YvVo3cfyDM62j/wRZI1v1w/HvNRBaHQcfbqZcyVxA+q5nqybsS+OjQAIJ
-WL5qeWtGnKo0yrX1hxVs0m9yzDixuDKOU4zVJwZ+uwSF18X4IpVOeua2tGWYTed2fMm0MKwT
-0xKDD3NX4sIRWberlU/uaPVjJufXZUjY3DJgiQ1QEOc+QKCS4nHnXr7QvLkMAESZVQLfA9Hv
-UBe5ZYgva4ZeZTxgzOn3eHg04Zc2ZOZBuseJ8GeGbVIbF4DTwRbCz6jJxQAAAAAAAA==
---------------ms050101020009020604000701--
+BgkqhkiG9w0BAQEFAASCAgCZIo8XY4cutNrPvh9pxVioNgJ3VSv8kElO4JcHMt13Q/MAbgRW
+aHPW2QdF/JMNgCzYzbXYBiToFWI2v57FWrNnidVp2rPDUGyUUNI4YH3Lh7Z6aWON/1URiGO9
+RsQJyBwBZAxWILmyAoEO29I2FYkvjtfVszKqKj4spBCVbSr8TG1r0Sk1dsKtZFiZap3/hM22
+jzuTKSZDgAJiwMq8nHydm6NAO9iyK016fMR1IYmDmktxQBcXB2hPU0uULFLyAfjZ76MGCppb
+jk3dkhaaWLR9vOgWqMQzN+EBSJtC/1w7X60uMJv+pNUxAQBr4L75eSHoK8JGXsy7o0pHNk89
+pfmCTl6VHVvhqtxpHkiTnO034YT4bGIOZx3Bsc/Dr+vWt8LezquSWa0eg8m7hEAu6yfPWcW0
+GBv185Kc9Yxz6pQSa/fb1RzTbA0oQc6uJdQpo+jOZe4vPTsDxx/rNX6eNkNgXUFGMHGvsccf
+liilKCcx0vF8V0vDgNRA0krxWuR6tktWZExlF4oZuBhHSaCtv6EQjOZbDg9BilK4v2hgve6V
+f7ROBpeZzZsXH+qEZj5ZrEuz4cLg93j7o6c46UpCgkeoKw/Cl/ec12RC5gcRJz2Cwsb4Ctp3
+x8FMvRFbDKWupMYQ8JKKT0S8rBcEI+idHUNZ7fmsqnbUWtKs0zSNHw5I9QAAAAAAAA==
+--------------ms070601040303060304090801--

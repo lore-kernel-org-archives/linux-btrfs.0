@@ -1,89 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44520 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44536 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752692AbbLCQ61 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:58:27 -0500
+	id S1752880AbbLCQ6d (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:58:33 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 18835ADD8
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:26 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id AE496ADD8
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:32 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 05/12] btrfs: remove a trivial helper btrfs_set_buffer_uptodate
-Date: Thu,  3 Dec 2015 17:56:35 +0100
-Message-Id: <23a5c840493bede65c760e75384dfcd06286a100.1449161602.git.dsterba@suse.com>
+Subject: [PATCH 07/12] btrfs: make clear_extent_buffer_uptodate return void
+Date: Thu,  3 Dec 2015 17:56:42 +0100
+Message-Id: <e2c9f804b9ea12263553373a2ce711ae986f1890.1449161602.git.dsterba@suse.com>
 In-Reply-To: <cover.1449161602.git.dsterba@suse.com>
 References: <cover.1449161602.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Does not return any errors, nor anything from the callgraph.
+
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/disk-io.c     | 5 -----
- fs/btrfs/disk-io.h     | 1 -
- fs/btrfs/extent-tree.c | 2 +-
- fs/btrfs/volumes.c     | 4 ++--
- 4 files changed, 3 insertions(+), 9 deletions(-)
+ fs/btrfs/extent_io.c | 3 +--
+ fs/btrfs/extent_io.h | 2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 974be09e7556..166ad0821ec2 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -3902,11 +3902,6 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
- 	return !ret;
+diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
+index 47db9069bf05..d5778e821d60 100644
+--- a/fs/btrfs/extent_io.c
++++ b/fs/btrfs/extent_io.c
+@@ -5227,7 +5227,7 @@ int set_extent_buffer_dirty(struct extent_buffer *eb)
+ 	return was_dirty;
  }
  
--int btrfs_set_buffer_uptodate(struct extent_buffer *buf)
--{
--	return set_extent_buffer_uptodate(buf);
--}
--
- void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
+-int clear_extent_buffer_uptodate(struct extent_buffer *eb)
++void clear_extent_buffer_uptodate(struct extent_buffer *eb)
  {
- 	struct btrfs_root *root;
-diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
-index adeb31830b9c..7c52e29fdb0d 100644
---- a/fs/btrfs/disk-io.h
-+++ b/fs/btrfs/disk-io.h
-@@ -116,7 +116,6 @@ static inline void btrfs_put_fs_root(struct btrfs_root *root)
- void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
- int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
- 			  int atomic);
--int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
- int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid);
- u32 btrfs_csum_data(char *data, u32 seed, size_t len);
- void btrfs_csum_final(u32 crc, char *result);
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index acf3ed11cfb6..9dfd60aad1b5 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -7831,7 +7831,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 	clear_bit(EXTENT_BUFFER_STALE, &buf->bflags);
+ 	unsigned long i;
+ 	struct page *page;
+@@ -5240,7 +5240,6 @@ int clear_extent_buffer_uptodate(struct extent_buffer *eb)
+ 		if (page)
+ 			ClearPageUptodate(page);
+ 	}
+-	return 0;
+ }
  
- 	btrfs_set_lock_blocking(buf);
--	btrfs_set_buffer_uptodate(buf);
-+	set_extent_buffer_uptodate(buf);
- 
- 	if (root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID) {
- 		buf->log_index = root->log_transid % 2;
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index e335938825e1..83bbca7a3924 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6468,11 +6468,11 @@ int btrfs_read_sys_array(struct btrfs_root *root)
- 	sb = btrfs_find_create_tree_block(root, BTRFS_SUPER_INFO_OFFSET);
- 	if (!sb)
- 		return -ENOMEM;
--	btrfs_set_buffer_uptodate(sb);
-+	set_extent_buffer_uptodate(sb);
- 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, sb, 0);
- 	/*
- 	 * The sb extent buffer is artifical and just used to read the system array.
--	 * btrfs_set_buffer_uptodate() call does not properly mark all it's
-+	 * set_extent_buffer_uptodate() call does not properly mark all it's
- 	 * pages up-to-date when the page is larger: extent does not cover the
- 	 * whole page and consequently check_page_uptodate does not find all
- 	 * the page's extents up-to-date (the hole beyond sb),
+ void set_extent_buffer_uptodate(struct extent_buffer *eb)
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 013af0512f1a..ad1d28c1cfd4 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -331,7 +331,7 @@ void memset_extent_buffer(struct extent_buffer *eb, char c,
+ void clear_extent_buffer_dirty(struct extent_buffer *eb);
+ int set_extent_buffer_dirty(struct extent_buffer *eb);
+ void set_extent_buffer_uptodate(struct extent_buffer *eb);
+-int clear_extent_buffer_uptodate(struct extent_buffer *eb);
++void clear_extent_buffer_uptodate(struct extent_buffer *eb);
+ int extent_buffer_uptodate(struct extent_buffer *eb);
+ int extent_buffer_under_io(struct extent_buffer *eb);
+ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long offset,
 -- 
 2.6.2
 

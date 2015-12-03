@@ -1,67 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44220 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44478 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752679AbbLCQxt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:53:49 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 1CD76ADD6
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:53:48 +0000 (UTC)
+	id S1752071AbbLCQ6K (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:58:10 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/3] btrfs: use GFP_KERNEL for xattr and acl allocations
-Date: Thu,  3 Dec 2015 17:51:58 +0100
-Message-Id: <39a27ec1004e886f1d949bdb8f2616896d02c5c2.1449160585.git.dsterba@suse.com>
-In-Reply-To: <cover.1449160585.git.dsterba@suse.com>
-References: <cover.1449160585.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com
+Subject: [PULL][PATCH 00/12] Minor cleanups and code simplifications
+Date: Thu,  3 Dec 2015 17:56:19 +0100
+Message-Id: <cover.1449161602.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-We don't have to use GFP_NOFS in context of ACL or XATTR actions, not
-possible to loop through the allocator and it's safe to fail with
-ENOMEM.
+A random set of changes that popped up during code reading. Separated for
+easier review. For 4.5, please pull.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/acl.c   | 4 ++--
- fs/btrfs/xattr.c | 2 +-
- 2 files changed, 3 insertions(+), 3 deletions(-)
+----------------------------------------------------------------
+The following changes since commit 1ec218373b8ebda821aec00bb156a9c94fad9cd4:
 
-diff --git a/fs/btrfs/acl.c b/fs/btrfs/acl.c
-index 9a0124a95851..dbbb8ed53a51 100644
---- a/fs/btrfs/acl.c
-+++ b/fs/btrfs/acl.c
-@@ -48,7 +48,7 @@ struct posix_acl *btrfs_get_acl(struct inode *inode, int type)
- 
- 	size = __btrfs_getxattr(inode, name, "", 0);
- 	if (size > 0) {
--		value = kzalloc(size, GFP_NOFS);
-+		value = kzalloc(size, GFP_KERNEL);
- 		if (!value)
- 			return ERR_PTR(-ENOMEM);
- 		size = __btrfs_getxattr(inode, name, value, size);
-@@ -102,7 +102,7 @@ static int __btrfs_set_acl(struct btrfs_trans_handle *trans,
- 
- 	if (acl) {
- 		size = posix_acl_xattr_size(acl->a_count);
--		value = kmalloc(size, GFP_NOFS);
-+		value = kmalloc(size, GFP_KERNEL);
- 		if (!value) {
- 			ret = -ENOMEM;
- 			goto out;
-diff --git a/fs/btrfs/xattr.c b/fs/btrfs/xattr.c
-index 1fcd7b6e7564..24e8ff722730 100644
---- a/fs/btrfs/xattr.c
-+++ b/fs/btrfs/xattr.c
-@@ -494,7 +494,7 @@ static int btrfs_initxattrs(struct inode *inode,
- 
- 	for (xattr = xattr_array; xattr->name != NULL; xattr++) {
- 		name = kmalloc(XATTR_SECURITY_PREFIX_LEN +
--			       strlen(xattr->name) + 1, GFP_NOFS);
-+			       strlen(xattr->name) + 1, GFP_KERNEL);
- 		if (!name) {
- 			err = -ENOMEM;
- 			break;
--- 
-2.6.2
+  Linux 4.4-rc2 (2015-11-22 16:45:59 -0800)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git cleanup/misc-simplify
+
+for you to fetch changes up to bb45445ab63fcd83950180c8d17833ca0216da64:
+
+  btrfs: make set_range_writeback return void (2015-12-03 15:02:24 +0100)
+
+----------------------------------------------------------------
+David Sterba (12):
+      btrfs: make btrfs_close_one_device static
+      btrfs: sink parameter wait to btrfs_alloc_delalloc_work
+      btrfs: remove wait from struct btrfs_delalloc_work
+      btrfs: change how delay_iput is tracked in btrfs_delalloc_work
+      btrfs: remove a trivial helper btrfs_set_buffer_uptodate
+      btrfs: make set_extent_buffer_uptodate return void
+      btrfs: make clear_extent_buffer_uptodate return void
+      btrfs: make extent_clear_unlock_delalloc return void
+      btrfs: make end_extent_writepage return void
+      btrfs: make extent_range_clear_dirty_for_io return void
+      btrfs: make extent_range_redirty_for_io return void
+      btrfs: make set_range_writeback return void
+
+ fs/btrfs/ctree.h       |  8 +++++---
+ fs/btrfs/disk-io.c     |  5 -----
+ fs/btrfs/disk-io.h     |  1 -
+ fs/btrfs/extent-tree.c |  2 +-
+ fs/btrfs/extent_io.c   | 27 +++++++++------------------
+ fs/btrfs/extent_io.h   | 12 ++++++------
+ fs/btrfs/inode.c       | 26 ++++++++++++++------------
+ fs/btrfs/volumes.c     |  7 ++++---
+ fs/btrfs/volumes.h     |  1 -
+ 9 files changed, 39 insertions(+), 50 deletions(-)

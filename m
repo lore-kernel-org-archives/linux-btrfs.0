@@ -1,55 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f173.google.com ([209.85.217.173]:34145 "EHLO
-	mail-lb0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751854AbbLCMJ3 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 07:09:29 -0500
-Received: by lbbcs9 with SMTP id cs9so298490lbb.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2015 04:09:27 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <pan$6405b$7a197e29$8d0a71a9$2a5649b6@cox.net>
-References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
-	<pan$101f2$e235cddd$fea951cb$dcf70182@cox.net>
-	<CAK5rZE6-SMfseAfEu1GxLrgYNOBMhNbiQ8tqWVWUr6dFDL8OKw@mail.gmail.com>
-	<565F028C.6000707@gmail.com>
-	<pan$6405b$7a197e29$8d0a71a9$2a5649b6@cox.net>
-Date: Thu, 3 Dec 2015 14:09:27 +0200
-Message-ID: <CAK5rZE6Y8Pa68yMDr-a-zNqFdb8VM+t9jv+HwxGck8SJ_vCR+A@mail.gmail.com>
-Subject: Re: compression disk space saving - what are your results?
-From: Imran Geriskovan <imran.geriskovan@gmail.com>
+Received: from know-smtprelay-omc-10.server.virginmedia.net ([80.0.253.74]:41318
+	"EHLO know-smtprelay-omc-10.server.virginmedia.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752133AbbLCSQW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 13:16:22 -0500
 To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+From: Codebird <codebird@birds-are-nice.me>
+Subject: btrfs crashing the kernel with Seagate 8TB SMR drives.
+Message-ID: <566084F8.5050705@birds-are-nice.me>
+Date: Thu, 3 Dec 2015 18:07:52 +0000
+MIME-Version: 1.0
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->> On a side note, I really wish BTRFS would just add LZ4 support.  It's a
->> lot more deterministic WRT decompression time than LZO, gets a similar
->> compression ratio, and runs faster on most processors for both
->> compression and decompression.
+I've got a nice bug for you - because I can offer you what everyone 
+likes to see, a precise error message.
 
-Relative ratios according to
-http://catchchallenger.first-world.info//wiki/Quick_Benchmark:_Gzip_vs_Bzip2_vs_LZMA_vs_XZ_vs_LZ4_vs_LZO
+I've got a btrfs filesystem spread over six devices, RAID1 mode. Four of 
+these are Seagate 8TB archive drives - those SMR ones that a few others 
+have reported failing when used with btrfs. I've had that issue too, and 
+I just can't explain why, other than to say that it only occurs when 
+using them on my mainboard SATA ports, not via USB dock. But that's not 
+what I'm reporting - that's just the source of the problem that causes 
+the crash I am reporting.
 
-Compressed size
-gzip (1) - lzo (1.4) - lz4 (1.4)
+The crash occurs when scrubbing, after some time and some terabytes - or 
+possibly just when reading a certain place, I'm not sure - and it gives 
+this helpful error left on the screen along with a system so 
+unresponsive numlock won't flash:
 
-Compression Time
-gzip (5) - lzo (1) - lz4 (0.8)
+BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO failure
+BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO failure
+BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5 IO 
+failure
+BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5 IO 
+failure
+BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5 IO 
+failure
+<long indent, as if a CR was lost> BTRFS: assertion failed: 
+f(fs_info->sb->s_flags & MS  <Cut by edge of screen>
+-----------[ cut here ]------------
+kernel BUG at ../fs/btrfs/ctree.h:4057!
 
-Decompression Time
-gzip (9) - lzo (4) - lz4 (1)
-
-Compression Memory
-gzip (1) - lzo (2) - lz4 (20)
-
-Decompression Memory
-gzip (1) - lzo (2) - lz4 (130). Yes 130! not a typo.
-
-But there is a note:
-Note: lz4 it's the program using this size, the
-code for internal lz4 use very less memory.
-
-However, I could not find any better apples to apples
-comparison.
-
-If lz4's real memory consumption is in orders of lzo,
-than it looks good.
+Not sure if some of those 5 might be 6, as I was in a hurry to get it 
+back up both times and just got a blurry photo. But it looks to me like 
+there might be a chunk of code that doesn't handle a hardware fault - 
+rather than cleanly return an error it's causing the kernel to hang 
+entirely. I've managed to get this to happen twice now, so it's 
+certainly something worth looking into. This is on SUSE tumbleweed, with 
+kernel 4.3.0-2-default.

@@ -1,66 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:42784 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44186 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752482AbbLCQgs (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:36:48 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id B7B4AAD53
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:36:47 +0000 (UTC)
+	id S1752009AbbLCQxj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:53:39 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 4/4] btrfs: make lock_extent static inline
-Date: Thu,  3 Dec 2015 17:34:57 +0100
-Message-Id: <cd716d8fea125e5531003e66aaf7ca7323277f83.1449159704.git.dsterba@suse.com>
-In-Reply-To: <cover.1449159704.git.dsterba@suse.com>
-References: <cover.1449159704.git.dsterba@suse.com>
+Cc: David Sterba <dsterba@suse.com>, clm@fb.com
+Subject: [PULL][PATCH 0/3] GFP flags adjustments
+Date: Thu,  3 Dec 2015 17:51:48 +0100
+Message-Id: <cover.1449160585.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One call less reduces stack usage, code slightly reduced as well.
+Part of the planned memory allocation / error handling updates, a lightweight
+start.  We don't need to use GFP_NOFS everywhere, this flag should protect
+against looping back to the filesystem in certain allocation contexts. GFP_KERNEL
+is safe in functions started eg. from userspace (like the ioctls) or for
+mount-time allocations. For 4.5, please pull.
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- fs/btrfs/extent_io.c | 5 -----
- fs/btrfs/extent_io.h | 7 ++++++-
- 2 files changed, 6 insertions(+), 6 deletions(-)
+----------------------------------------------------------------
+The following changes since commit 1ec218373b8ebda821aec00bb156a9c94fad9cd4:
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index bf9849909d46..044ffa3a520a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -1347,11 +1347,6 @@ int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
- 	return err;
- }
- 
--int lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
--{
--	return lock_extent_bits(tree, start, end, NULL);
--}
--
- int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
- {
- 	int err;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index e5726a3f9ce5..7cb9fa5845dc 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -199,9 +199,14 @@ int try_release_extent_mapping(struct extent_map_tree *map,
- 			       struct extent_io_tree *tree, struct page *page,
- 			       gfp_t mask);
- int try_release_extent_buffer(struct page *page);
--int lock_extent(struct extent_io_tree *tree, u64 start, u64 end);
- int lock_extent_bits(struct extent_io_tree *tree, u64 start, u64 end,
- 		     struct extent_state **cached);
-+
-+static inline int lock_extent(struct extent_io_tree *tree, u64 start, u64 end)
-+{
-+	return lock_extent_bits(tree, start, end, NULL);
-+}
-+
- int try_lock_extent(struct extent_io_tree *tree, u64 start, u64 end);
- int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
- 			  get_extent_t *get_extent, int mirror_num);
--- 
-2.6.2
+  Linux 4.4-rc2 (2015-11-22 16:45:59 -0800)
 
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git dev/gfp-flags
+
+for you to fetch changes up to 39a27ec1004e886f1d949bdb8f2616896d02c5c2:
+
+  btrfs: use GFP_KERNEL for xattr and acl allocations (2015-12-03 15:03:44 +0100)
+
+----------------------------------------------------------------
+David Sterba (3):
+      btrfs: use GFP_KERNEL for allocations in ioctl handlers
+      btrfs: use GFP_KERNEL for allocations of workqueues
+      btrfs: use GFP_KERNEL for xattr and acl allocations
+
+ fs/btrfs/acl.c          |  4 ++--
+ fs/btrfs/async-thread.c |  4 ++--
+ fs/btrfs/ioctl.c        | 10 +++++-----
+ fs/btrfs/xattr.c        |  2 +-
+ 4 files changed, 10 insertions(+), 10 deletions(-)

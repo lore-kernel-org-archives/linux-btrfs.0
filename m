@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44566 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44551 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752922AbbLCQ6u (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:58:50 -0500
+	id S1752922AbbLCQ6n (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:58:43 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 3509FADDA
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:49 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id A4DBBADD8
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:42 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 12/12] btrfs: make set_range_writeback return void
-Date: Thu,  3 Dec 2015 17:56:59 +0100
-Message-Id: <bb45445ab63fcd83950180c8d17833ca0216da64.1449161602.git.dsterba@suse.com>
+Subject: [PATCH 10/12] btrfs: make extent_range_clear_dirty_for_io return void
+Date: Thu,  3 Dec 2015 17:56:52 +0100
+Message-Id: <f7026335e8bc7ccb4a3a403e62c7b03b3a43098e.1449161602.git.dsterba@suse.com>
 In-Reply-To: <cover.1449161602.git.dsterba@suse.com>
 References: <cover.1449161602.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,29 +24,43 @@ recover from.
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
  fs/btrfs/extent_io.c | 3 +--
- 1 file changed, 1 insertion(+), 2 deletions(-)
+ fs/btrfs/extent_io.h | 2 +-
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index f06800e48f97..efe6ac627be9 100644
+index 0ea3e99501e4..e55a728408bb 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1485,7 +1485,7 @@ void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
- /*
-  * helper function to set both pages and extents in the tree writeback
-  */
--static int set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
-+static void set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+@@ -1451,7 +1451,7 @@ int unlock_extent(struct extent_io_tree *tree, u64 start, u64 end)
+ 				GFP_NOFS);
+ }
+ 
+-int extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
++void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
  {
  	unsigned long index = start >> PAGE_CACHE_SHIFT;
  	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
-@@ -1498,7 +1498,6 @@ static int set_range_writeback(struct extent_io_tree *tree, u64 start, u64 end)
+@@ -1464,7 +1464,6 @@ int extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
  		page_cache_release(page);
  		index++;
  	}
 -	return 0;
  }
  
- /* find the first state struct with 'bits' set after 'start', and
+ int extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
+diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
+index 81f84f1f488b..b0b2d20ffd3c 100644
+--- a/fs/btrfs/extent_io.h
++++ b/fs/btrfs/extent_io.h
+@@ -338,7 +338,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long offset,
+ 		      unsigned long min_len, char **map,
+ 		      unsigned long *map_start,
+ 		      unsigned long *map_len);
+-int extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
++void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
+ int extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+ 				 struct page *locked_page,
 -- 
 2.6.2
 

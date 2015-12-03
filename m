@@ -1,133 +1,239 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:34929 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752273AbbLCSTo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 13:19:44 -0500
-Message-ID: <1449166780.6894.2.camel@scientia.net>
-Subject: Re: btrfs crashing the kernel with Seagate 8TB SMR drives.
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Codebird <codebird@birds-are-nice.me>, linux-btrfs@vger.kernel.org
-Date: Thu, 03 Dec 2015 19:19:40 +0100
-In-Reply-To: <566084F8.5050705@birds-are-nice.me>
-References: <566084F8.5050705@birds-are-nice.me>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-qoJaj82OhRbYp9K/Y8JX"
-Mime-Version: 1.0
+Received: from mail-wm0-f47.google.com ([74.125.82.47]:34082 "EHLO
+	mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753148AbbLCThA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 14:37:00 -0500
+Received: by wmvv187 with SMTP id v187so43453729wmv.1
+        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2015 11:36:59 -0800 (PST)
+MIME-Version: 1.0
+From: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>
+Date: Fri, 4 Dec 2015 00:36:43 +0500
+Message-ID: <CABXGCsMYdfSpZeUbWut1p542XA-L99iXM0Ero8tAFVhU9xhzkw@mail.gmail.com>
+Subject: Very various speed of grep operation on btrfs partition
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Today on work I needed searching some strings in repository. Only
+machine with windows was available. I am was using grep from Cygwin
+for this task and I am was surprised about speed of NTFS partition.I
+decided to repeat this task on my home Linux workstation.
 
---=-qoJaj82OhRbYp9K/Y8JX
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
 
-Any chances that this is:
-https://bugzilla.kernel.org/show_bug.cgi?id=3D93581
+real 3m21.262s
+user 0m0.914s
+sys 0m2.288s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m49.921s
+user 0m0.736s
+sys 0m0.957s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m1.077s
+user 0m0.667s
+sys 0m0.409s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m1.062s
+user 0m0.657s
+sys 0m0.386s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m1.020s
+user 0m0.641s
+sys 0m0.373s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m0.941s
+user 0m0.593s
+sys 0m0.335s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m0.918s
+user 0m0.594s
+sys 0m0.322s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m1.053s
+user 0m0.620s
+sys 0m0.401s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 0m1.049s
+user 0m0.625s
+sys 0m0.411s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 2m51.858s
+user 0m0.885s
+sys 0m1.863s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 3m22.615s
+user 0m0.876s
+sys 0m2.160s
+[mikhail@localhost ~]$ time grep -rn 'float:left;display:
+block;height: 24px;line-height: 1.2em;position: relative;text-align:
+center;white-space: nowrap;width: 80px;'
+"/home/mikhail/sources/inside/Модули интерфейса/"
+/home/mikhail/sources/inside/Модули интерфейса/Активные
+продажи/Темы/Разводящая группы
+тем/CRMGroupTheme/CRMGroupTheme.xhtml:38:      <component
+data-component="SBIS3.CORE.Button" name="addTheme" data-access="Работа
+с темами CRM" class="ws-CRMGroupTheme__addTheme"
+style="float:left;display: block;height: 24px;line-height:
+1.2em;position: relative;text-align: center;white-space: nowrap;width:
+80px;">
+
+real 1m16.100s
+user 0m0.773s
+sys 0m1.173s
+[mikhail@localhost ~]$
 
 
-Cheers,
-Chris.
---=-qoJaj82OhRbYp9K/Y8JX
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
+>From results we see that search goes sometimes instantly less than a
+second, and sometimes lasts 4 minutes. /home partition formatted in
+BTRFS filesystem. I would be interested investigate what is related to
+search speed. And make that search was always goes less than a second.
 
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwMzE4MTk0
-MFowTwYJKoZIhvcNAQkEMUIEQNprkfvvzftvnyW9YFaakODkYd1yapNgtwhPoONTGaRIjftFU2e3
-2r3PJDPmLZaDzVDFh28OIJBBBCkx308IDtkwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQB7e2qjTu7e3YctxR2CDccmBxMOKeHo
-GWMmwvWh6J6S/ZKr7pwd8pJbCPvgrw3J4ksQcvWMaheAdrptWX1fac2FKGfcIVGq7QAVimc6uf4k
-ivwpkpByUKei1pkm0XaVdBSJ70LDKI/Mua3YMCE5xKHvXMaxAnJ+g6c/ve9NSWhP0THpUALnUF1S
-tSfaFU8UbSiBTVFz+8ZyYnIcK4vUbqE9WGnh8Az9pT/SG+/vlHTlFOheCKgu7TJ+8ySdCPX4mhut
-ngwhFhyPlPSSZ1+ATRkwAXoAqWtb26pp9dbzWsjv4vAX998S0Prsm4jF0a1W2t3wHzkQ8RdpU7i4
-01EWU6e/AAAAAAAA
+Here is my mount options:
+UUID=82df2d84-bf54-46cb-84ba-c88e93677948 /home btrfs
+subvolid=5,autodefrag,noatime,space_cache,inode_cache,nodatacow 0 0
+
+# uname -a
+Linux localhost.localdomain 4.2.6-301.fc23.x86_64+debug #1 SMP Fri Nov
+20 22:07:57 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+
+How to start investigation?
 
 
---=-qoJaj82OhRbYp9K/Y8JX--
 
+--
+Best Regards,
+Mike Gavrilov.
+���{.n�+�������+%�����ݶ��w��{.n�+����{���k~���^n�r���z���h����&���z��z�ޗ�+��+zf���h���~����i��������z_��j:+v���)ߣ�m

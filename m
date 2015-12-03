@@ -1,28 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:46070 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932091AbbLRSDN (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Dec 2015 13:03:13 -0500
-Date: Fri, 18 Dec 2015 19:01:06 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-Cc: linux-btrfs@vger.kernel.org, dsterba@suse.cz, chandan@mykolab.com
-Subject: Re: [PATCH] Btrfs-progs: ftw_add_entry_size: Round up file size to
- sectorsize
-Message-ID: <20151218180106.GZ4227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <1450173720-25543-1-git-send-email-chandan@linux.vnet.ibm.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1450173720-25543-1-git-send-email-chandan@linux.vnet.ibm.com>
+Received: from charlotte.tuxdriver.com ([70.61.120.58]:43635 "EHLO
+	smtp.tuxdriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752046AbbLCSqF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 13:46:05 -0500
+From: Neil Horman <nhorman@tuxdriver.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Neil Horman <nhorman@tuxdriver.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.cz>
+Subject: [PATCH] btrfs: only free root_path if it was allocated from the heap
+Date: Thu,  3 Dec 2015 13:45:44 -0500
+Message-Id: <1449168344-5803-1-git-send-email-nhorman@tuxdriver.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 15, 2015 at 03:32:00PM +0530, Chandan Rajendra wrote:
-> ftw_add_entry_size() assumes 4k as the block size of the underlying filesystem
-> and hence the file sizes computed is incorrect for non-4k sectorsized
-> filesystems. Fix this by rounding up file sizes to sectorsize.
-> 
-> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Noticed this while doing some snapshots in a chroot environment
 
-Applied, thanks.
+btrfs receive can set root_path to either realmnt, which is passed in from the
+command line, or to a heap allocated via find_mount_root  in do_receive.  We
+should only free the later, not the former, as the former results in an invalid
+pointer warning from glibc during free.
+
+Signed-off-by: Neil Horman <nhorman@tuxdriver.com>
+CC: Josef Bacik <jbacik@fb.com>
+CC: David Sterba <dsterba@suse.cz>
+---
+ cmds-receive.c | 4 +++-
+ 1 file changed, 3 insertions(+), 1 deletion(-)
+
+diff --git a/cmds-receive.c b/cmds-receive.c
+index 3a84a3b..c25dc59 100644
+--- a/cmds-receive.c
++++ b/cmds-receive.c
+@@ -1201,7 +1201,9 @@ out:
+ 		close(r->write_fd);
+ 		r->write_fd = -1;
+ 	}
+-	free(r->root_path);
++
++	if (r->root_path != realmnt)
++		free(r->root_path);
+ 	r->root_path = NULL;
+ 	r->dest_dir_path = NULL;
+ 	free(dest_dir_full_path);
+-- 
+2.5.0
+

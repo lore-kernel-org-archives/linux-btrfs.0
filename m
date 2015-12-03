@@ -1,60 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44485 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44493 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752308AbbLCQ6O (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:58:14 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id D389CAAC3
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:12 +0000 (UTC)
+	id S1752496AbbLCQ6R (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:58:17 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 22C82ADD7
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:16 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 01/12] btrfs: make btrfs_close_one_device static
-Date: Thu,  3 Dec 2015 17:56:22 +0100
-Message-Id: <87ad58c5f07444ab2fa083c62b154f38ef0a3035.1449161602.git.dsterba@suse.com>
+Subject: [PATCH 02/12] btrfs: sink parameter wait to btrfs_alloc_delalloc_work
+Date: Thu,  3 Dec 2015 17:56:26 +0100
+Message-Id: <651d494a678e48712f784e8f26450c34b5c61015.1449161602.git.dsterba@suse.com>
 In-Reply-To: <cover.1449161602.git.dsterba@suse.com>
 References: <cover.1449161602.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+There's only one caller and single value, we can propagate it down to
+the callee and remove the unused parameter.
+
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/volumes.c | 3 ++-
- fs/btrfs/volumes.h | 1 -
- 2 files changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h | 2 +-
+ fs/btrfs/inode.c | 6 +++---
+ 2 files changed, 4 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a6df8fdc1312..e335938825e1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -125,6 +125,7 @@ static int btrfs_relocate_sys_chunks(struct btrfs_root *root);
- static void __btrfs_reset_dev_stats(struct btrfs_device *dev);
- static void btrfs_dev_stat_print_on_error(struct btrfs_device *dev);
- static void btrfs_dev_stat_print_on_load(struct btrfs_device *device);
-+static void btrfs_close_one_device(struct btrfs_device *device);
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 8c58191249cc..cb540251f666 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3910,7 +3910,7 @@ struct btrfs_delalloc_work {
+ };
  
- DEFINE_MUTEX(uuid_mutex);
- static LIST_HEAD(fs_uuids);
-@@ -6951,7 +6952,7 @@ void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info)
- 	}
+ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+-						    int wait, int delay_iput);
++						    int delay_iput);
+ void btrfs_wait_and_free_delalloc_work(struct btrfs_delalloc_work *work);
+ 
+ struct extent_map *btrfs_get_extent_fiemap(struct inode *inode, struct page *page,
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 994490d5fa64..9898b0d79c5a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -9457,7 +9457,7 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
  }
  
--void btrfs_close_one_device(struct btrfs_device *device)
-+static void btrfs_close_one_device(struct btrfs_device *device)
+ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+-						    int wait, int delay_iput)
++						    int delay_iput)
  {
- 	struct btrfs_fs_devices *fs_devices = device->fs_devices;
- 	struct btrfs_device *new_device;
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index ec5712372732..2dc59eba188d 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -566,6 +566,5 @@ static inline void unlock_chunks(struct btrfs_root *root)
- struct list_head *btrfs_get_fs_uuids(void);
- void btrfs_set_fs_info_ptr(struct btrfs_fs_info *fs_info);
- void btrfs_reset_fs_info_ptr(struct btrfs_fs_info *fs_info);
--void btrfs_close_one_device(struct btrfs_device *device);
+ 	struct btrfs_delalloc_work *work;
  
- #endif
+@@ -9468,7 +9468,7 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+ 	init_completion(&work->completion);
+ 	INIT_LIST_HEAD(&work->list);
+ 	work->inode = inode;
+-	work->wait = wait;
++	work->wait = 0;
+ 	work->delay_iput = delay_iput;
+ 	WARN_ON_ONCE(!inode);
+ 	btrfs_init_work(&work->work, btrfs_flush_delalloc_helper,
+@@ -9516,7 +9516,7 @@ static int __start_delalloc_inodes(struct btrfs_root *root, int delay_iput,
+ 		}
+ 		spin_unlock(&root->delalloc_lock);
+ 
+-		work = btrfs_alloc_delalloc_work(inode, 0, delay_iput);
++		work = btrfs_alloc_delalloc_work(inode, delay_iput);
+ 		if (!work) {
+ 			if (delay_iput)
+ 				btrfs_add_delayed_iput(inode);
 -- 
 2.6.2
 

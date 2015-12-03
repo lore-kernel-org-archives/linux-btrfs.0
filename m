@@ -1,89 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44512 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44520 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752692AbbLCQ6X (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:58:23 -0500
+	id S1752692AbbLCQ61 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:58:27 -0500
 Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id BE25CADD8
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:22 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 18835ADD8
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:26 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 04/12] btrfs: change how delay_iput is tracked in btrfs_delalloc_work
-Date: Thu,  3 Dec 2015 17:56:32 +0100
-Message-Id: <a4469a31e3b0cc55ebba9c3aee26cd5632743056.1449161602.git.dsterba@suse.com>
+Subject: [PATCH 05/12] btrfs: remove a trivial helper btrfs_set_buffer_uptodate
+Date: Thu,  3 Dec 2015 17:56:35 +0100
+Message-Id: <23a5c840493bede65c760e75384dfcd06286a100.1449161602.git.dsterba@suse.com>
 In-Reply-To: <cover.1449161602.git.dsterba@suse.com>
 References: <cover.1449161602.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The dellaloc work is not frequently used, the delayed status is once set
-and read so it looks quite safe to drop the member and store the status
-in the lowest bit of the inode pointer.
-
-Combined with the removal of 'wait' we got +2 objects per 4k slab.
-
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/ctree.h |  5 ++++-
- fs/btrfs/inode.c | 11 +++++++++--
- 2 files changed, 13 insertions(+), 3 deletions(-)
+ fs/btrfs/disk-io.c     | 5 -----
+ fs/btrfs/disk-io.h     | 1 -
+ fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/volumes.c     | 4 ++--
+ 4 files changed, 3 insertions(+), 9 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index a61c53bce162..d5e250a65725 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -3901,8 +3901,11 @@ void btrfs_extent_item_to_extent_map(struct inode *inode,
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 974be09e7556..166ad0821ec2 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -3902,11 +3902,6 @@ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+ 	return !ret;
+ }
  
- /* inode.c */
- struct btrfs_delalloc_work {
-+	/*
-+	 * Note: lowest bit of inode tracks if the iput is delayed,
-+	 * do not access the pointer directly.
-+	 */
- 	struct inode *inode;
--	int delay_iput;
- 	struct completion completion;
- 	struct list_head list;
- 	struct btrfs_work work;
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 15b29e879ffc..529a53b80ca0 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9436,16 +9436,21 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
+-int btrfs_set_buffer_uptodate(struct extent_buffer *buf)
+-{
+-	return set_extent_buffer_uptodate(buf);
+-}
+-
+ void btrfs_mark_buffer_dirty(struct extent_buffer *buf)
  {
- 	struct btrfs_delalloc_work *delalloc_work;
- 	struct inode *inode;
-+	int delay_iput;
+ 	struct btrfs_root *root;
+diff --git a/fs/btrfs/disk-io.h b/fs/btrfs/disk-io.h
+index adeb31830b9c..7c52e29fdb0d 100644
+--- a/fs/btrfs/disk-io.h
++++ b/fs/btrfs/disk-io.h
+@@ -116,7 +116,6 @@ static inline void btrfs_put_fs_root(struct btrfs_root *root)
+ void btrfs_mark_buffer_dirty(struct extent_buffer *buf);
+ int btrfs_buffer_uptodate(struct extent_buffer *buf, u64 parent_transid,
+ 			  int atomic);
+-int btrfs_set_buffer_uptodate(struct extent_buffer *buf);
+ int btrfs_read_buffer(struct extent_buffer *buf, u64 parent_transid);
+ u32 btrfs_csum_data(char *data, u32 seed, size_t len);
+ void btrfs_csum_final(u32 crc, char *result);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index acf3ed11cfb6..9dfd60aad1b5 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -7831,7 +7831,7 @@ btrfs_init_new_buffer(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 	clear_bit(EXTENT_BUFFER_STALE, &buf->bflags);
  
- 	delalloc_work = container_of(work, struct btrfs_delalloc_work,
- 				     work);
- 	inode = delalloc_work->inode;
-+	/* Lowest bit of inode pointer tracks the delayed status */
-+	delay_iput = ((unsigned long)inode & 1UL);
-+	inode = (struct inode *)((unsigned long)inode & ~1UL);
-+
- 	filemap_flush(inode->i_mapping);
- 	if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
- 				&BTRFS_I(inode)->runtime_flags))
- 		filemap_flush(inode->i_mapping);
+ 	btrfs_set_lock_blocking(buf);
+-	btrfs_set_buffer_uptodate(buf);
++	set_extent_buffer_uptodate(buf);
  
--	if (delalloc_work->delay_iput)
-+	if (delay_iput)
- 		btrfs_add_delayed_iput(inode);
- 	else
- 		iput(inode);
-@@ -9464,7 +9469,9 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
- 	init_completion(&work->completion);
- 	INIT_LIST_HEAD(&work->list);
- 	work->inode = inode;
--	work->delay_iput = delay_iput;
-+	/* Lowest bit of inode pointer tracks the delayed status */
-+	if (delay_iput)
-+		*((unsigned long *)work->inode) |= 1UL;
- 	WARN_ON_ONCE(!inode);
- 	btrfs_init_work(&work->work, btrfs_flush_delalloc_helper,
- 			btrfs_run_delalloc_work, NULL, NULL);
+ 	if (root->root_key.objectid == BTRFS_TREE_LOG_OBJECTID) {
+ 		buf->log_index = root->log_transid % 2;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index e335938825e1..83bbca7a3924 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6468,11 +6468,11 @@ int btrfs_read_sys_array(struct btrfs_root *root)
+ 	sb = btrfs_find_create_tree_block(root, BTRFS_SUPER_INFO_OFFSET);
+ 	if (!sb)
+ 		return -ENOMEM;
+-	btrfs_set_buffer_uptodate(sb);
++	set_extent_buffer_uptodate(sb);
+ 	btrfs_set_buffer_lockdep_class(root->root_key.objectid, sb, 0);
+ 	/*
+ 	 * The sb extent buffer is artifical and just used to read the system array.
+-	 * btrfs_set_buffer_uptodate() call does not properly mark all it's
++	 * set_extent_buffer_uptodate() call does not properly mark all it's
+ 	 * pages up-to-date when the page is larger: extent does not cover the
+ 	 * whole page and consequently check_page_uptodate does not find all
+ 	 * the page's extents up-to-date (the hole beyond sb),
 -- 
 2.6.2
 

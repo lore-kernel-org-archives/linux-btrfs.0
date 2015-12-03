@@ -1,49 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-yk0-f182.google.com ([209.85.160.182]:33009 "EHLO
-	mail-yk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751329AbbLCQvE (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 11:51:04 -0500
-Received: by ykdv3 with SMTP id v3so92615332ykd.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 03 Dec 2015 08:51:03 -0800 (PST)
+Received: from smtpoutz28.laposte.net ([194.117.213.103]:47607 "EHLO
+	smtp.laposte.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752418AbbLCRNt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 12:13:49 -0500
+Received: from smtp.laposte.net (localhost [127.0.0.1])
+	by lpn-prd-vrout016 (Postfix) with ESMTP id 9CFEE1116F0
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 18:13:46 +0100 (CET)
+Received: from lpn-prd-vrin004 (lpn-prd-vrin004.laposte [10.128.63.5])
+	by lpn-prd-vrout016 (Postfix) with ESMTP id 704A111162D
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 18:13:46 +0100 (CET)
+Received: from lpn-prd-vrin004 (localhost [127.0.0.1])
+	by lpn-prd-vrin004 (Postfix) with ESMTP id 4B07D70E269
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 18:13:46 +0100 (CET)
+Subject: Re: bad extent [5993525264384, 5993525280768), type mismatch with
+ chunk
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Qu Wenruo <quwenruo@cn.fujitsu.com>
+References: <56455073.1060406@cn.fujitsu.com> <564F48FE.4000400@laposte.net>
+ <1448047478.6878.4.camel@scientia.net> <564FBF0F.4050705@gmx.com>
+ <564FC3FE.9020905@lukas-pirl.de> <565122AA.90904@gmx.com>
+ <56519644.8060105@laposte.net> <56526543.4090301@cn.fujitsu.com>
+ <565462F7.8040601@laposte.net> <5654F6BC.8020900@gmx.com>
+ <565579DB.2040105@laposte.net>
+Cc: Lukas Pirl <btrfs@lukas-pirl.de>, linux-btrfs@vger.kernel.org,
+        calestyo@scientia.net
+From: Laurent Bonnaud <L.Bonnaud@laposte.net>
+Message-ID: <56607848.5040705@laposte.net>
+Date: Thu, 3 Dec 2015 18:13:44 +0100
 MIME-Version: 1.0
-Date: Thu, 3 Dec 2015 18:51:03 +0200
-Message-ID: <CAOcd+r3DHGSu5017ha+m1E9bv2YD4v-LCMBxYywNA9BaLK-DQg@mail.gmail.com>
-Subject: [RFC PATCH] btrfs: flush_space: treat return value of do_chunk_alloc properly
-From: Alex Lyakas <alex@zadarastorage.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <565579DB.2040105@laposte.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-do_chunk_alloc returns 1 when it succeeds to allocate a new chunk.
-But flush_space will not convert this to 0, and will also return 1.
-As a result, reserve_metadata_bytes will think that flush_space failed,
-and may potentially return this value "1" to the caller (depends how
-reserve_metadata_bytes was called). The caller will also treat this as an error.
-For example, btrfs_block_rsv_refill does:
+On 25/11/2015 10:05, Laurent Bonnaud wrote:
 
-int ret = -ENOSPC;
-...
-ret = reserve_metadata_bytes(root, block_rsv, num_bytes, flush);
-if (!ret) {
-        block_rsv_add_bytes(block_rsv, num_bytes, 0);
-        return 0;
-}
+>> > Nice reproducer.
+>> > Is it 100% reproducible or has a chance to reproduce?
+> I tried a second time and got a similar kernel backtrace.
 
-return ret;
+Hi,
 
-So it will return -ENOSPC.
+any news since you downloaded my FS image ?
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 4b89680..1ba3f0d 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -4727,7 +4727,7 @@ static int flush_space(struct btrfs_root *root,
-                                     btrfs_get_alloc_profile(root, 0),
-                                     CHUNK_ALLOC_NO_FORCE);
-                btrfs_end_transaction(trans, root);
--               if (ret == -ENOSPC)
-+               if (ret > 0 || ret == -ENOSPC)
-                        ret = 0;
-                break;
-        case COMMIT_TRANS:
+I kept my corrupted FS in case you wanted more info, but since I use this disk as a backup, it deprives me from one backup.  So would you mind if I replace my corrupted FS with a new one ?
+
+Thanks for investigating this bug,
+
+-- 
+Laurent.

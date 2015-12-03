@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44542 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44531 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752880AbbLCQ6h (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:58:37 -0500
+	id S1752441AbbLCQ6a (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:58:30 -0500
 Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 0FC3DADD8
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:36 +0000 (UTC)
+	by mx2.suse.de (Postfix) with ESMTP id 68308ADD8
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:29 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 08/12] btrfs: make extent_clear_unlock_delalloc return void
-Date: Thu,  3 Dec 2015 17:56:45 +0100
-Message-Id: <2d2099af7656dd745bd2b85f8a20028bee444fc9.1449161602.git.dsterba@suse.com>
+Subject: [PATCH 06/12] btrfs: make set_extent_buffer_uptodate return void
+Date: Thu,  3 Dec 2015 17:56:39 +0100
+Message-Id: <1d8b7f37e62fb493cfd03a5596a6502e44666f65.1449161602.git.dsterba@suse.com>
 In-Reply-To: <cover.1449161602.git.dsterba@suse.com>
 References: <cover.1449161602.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -21,53 +21,44 @@ Does not return any errors, nor anything from the callgraph.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c | 5 ++---
+ fs/btrfs/extent_io.c | 3 +--
  fs/btrfs/extent_io.h | 2 +-
- 2 files changed, 3 insertions(+), 4 deletions(-)
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index d5778e821d60..b7261ea08a87 100644
+index 9abe18763a7f..47db9069bf05 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -1820,7 +1820,7 @@ STATIC u64 find_lock_delalloc_range(struct inode *inode,
- 	return found;
+@@ -5243,7 +5243,7 @@ int clear_extent_buffer_uptodate(struct extent_buffer *eb)
+ 	return 0;
  }
  
--int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
-+void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 				 struct page *locked_page,
- 				 unsigned clear_bits,
- 				 unsigned long page_ops)
-@@ -1835,7 +1835,7 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 
- 	clear_extent_bit(tree, start, end, clear_bits, 1, 0, NULL, GFP_NOFS);
- 	if (page_ops == 0)
--		return 0;
-+		return;
- 
- 	if ((page_ops & PAGE_SET_ERROR) && nr_pages > 0)
- 		mapping_set_error(inode->i_mapping, -EIO);
-@@ -1869,7 +1869,6 @@ int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 		index += ret;
- 		cond_resched();
+-int set_extent_buffer_uptodate(struct extent_buffer *eb)
++void set_extent_buffer_uptodate(struct extent_buffer *eb)
+ {
+ 	unsigned long i;
+ 	struct page *page;
+@@ -5255,7 +5255,6 @@ int set_extent_buffer_uptodate(struct extent_buffer *eb)
+ 		page = eb->pages[i];
+ 		SetPageUptodate(page);
  	}
 -	return 0;
  }
  
- /*
+ int extent_buffer_uptodate(struct extent_buffer *eb)
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index ad1d28c1cfd4..2d57166e20d0 100644
+index f4c1ae11855f..013af0512f1a 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -340,7 +340,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long offset,
- 		      unsigned long *map_len);
- int extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
- int extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
--int extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
-+void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
- 				 struct page *locked_page,
- 				 unsigned bits_to_clear,
- 				 unsigned long page_ops);
+@@ -330,7 +330,7 @@ void memset_extent_buffer(struct extent_buffer *eb, char c,
+ 			  unsigned long start, unsigned long len);
+ void clear_extent_buffer_dirty(struct extent_buffer *eb);
+ int set_extent_buffer_dirty(struct extent_buffer *eb);
+-int set_extent_buffer_uptodate(struct extent_buffer *eb);
++void set_extent_buffer_uptodate(struct extent_buffer *eb);
+ int clear_extent_buffer_uptodate(struct extent_buffer *eb);
+ int extent_buffer_uptodate(struct extent_buffer *eb);
+ int extent_buffer_under_io(struct extent_buffer *eb);
 -- 
 2.6.2
 

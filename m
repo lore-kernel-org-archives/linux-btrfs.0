@@ -1,77 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44547 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44559 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752922AbbLCQ6k (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 3 Dec 2015 11:58:40 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 5531AADD8
-	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:39 +0000 (UTC)
+	id S1752922AbbLCQ6r (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 3 Dec 2015 11:58:47 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id E7C63ADD8
+	for <linux-btrfs@vger.kernel.org>; Thu,  3 Dec 2015 16:58:45 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH 09/12] btrfs: make end_extent_writepage return void
-Date: Thu,  3 Dec 2015 17:56:49 +0100
-Message-Id: <016fbd25e29306fa5fb23561c82539a7ae835ed8.1449161602.git.dsterba@suse.com>
+Subject: [PATCH 11/12] btrfs: make extent_range_redirty_for_io return void
+Date: Thu,  3 Dec 2015 17:56:55 +0100
+Message-Id: <a9a852192fa3d43a0f17fe8d5e69ec2fd8537c01.1449161602.git.dsterba@suse.com>
 In-Reply-To: <cover.1449161602.git.dsterba@suse.com>
 References: <cover.1449161602.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Does not return any errors, nor anything from the callgraph.  The branch
-in end_bio_extent_writepage has been skipped since
-5fd02043553b ("Btrfs: finish ordered extents in their own thread").
+Does not return any errors, nor anything from the callgraph. There's a
+BUG_ON but it's a sanity check and not an error condition we could
+recover from.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent_io.c | 7 ++-----
+ fs/btrfs/extent_io.c | 3 +--
  fs/btrfs/extent_io.h | 2 +-
- 2 files changed, 3 insertions(+), 6 deletions(-)
+ 2 files changed, 2 insertions(+), 3 deletions(-)
 
 diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index b7261ea08a87..0ea3e99501e4 100644
+index e55a728408bb..f06800e48f97 100644
 --- a/fs/btrfs/extent_io.c
 +++ b/fs/btrfs/extent_io.c
-@@ -2515,7 +2515,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
+@@ -1466,7 +1466,7 @@ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end)
+ 	}
+ }
  
- /* lots and lots of room for performance fixes in the end_bio funcs */
- 
--int end_extent_writepage(struct page *page, int err, u64 start, u64 end)
-+void end_extent_writepage(struct page *page, int err, u64 start, u64 end)
+-int extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
++void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
  {
- 	int uptodate = (err == 0);
- 	struct extent_io_tree *tree;
-@@ -2536,7 +2536,6 @@ int end_extent_writepage(struct page *page, int err, u64 start, u64 end)
- 		ret = ret < 0 ? ret : -EIO;
- 		mapping_set_error(page->mapping, ret);
+ 	unsigned long index = start >> PAGE_CACHE_SHIFT;
+ 	unsigned long end_index = end >> PAGE_CACHE_SHIFT;
+@@ -1480,7 +1480,6 @@ int extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end)
+ 		page_cache_release(page);
+ 		index++;
  	}
 -	return 0;
  }
  
  /*
-@@ -2578,9 +2577,7 @@ static void end_bio_extent_writepage(struct bio *bio)
- 		start = page_offset(page);
- 		end = start + bvec->bv_offset + bvec->bv_len - 1;
- 
--		if (end_extent_writepage(page, bio->bi_error, start, end))
--			continue;
--
-+		end_extent_writepage(page, bio->bi_error, start, end);
- 		end_page_writeback(page);
- 	}
- 
 diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index 2d57166e20d0..81f84f1f488b 100644
+index b0b2d20ffd3c..fbc6448e70e4 100644
 --- a/fs/btrfs/extent_io.h
 +++ b/fs/btrfs/extent_io.h
-@@ -357,7 +357,7 @@ int repair_io_failure(struct inode *inode, u64 start, u64 length, u64 logical,
- 		      int mirror_num);
- int clean_io_failure(struct inode *inode, u64 start, struct page *page,
- 		     unsigned int pg_offset);
--int end_extent_writepage(struct page *page, int err, u64 start, u64 end);
-+void end_extent_writepage(struct page *page, int err, u64 start, u64 end);
- int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
- 			 int mirror_num);
- 
+@@ -339,7 +339,7 @@ int map_private_extent_buffer(struct extent_buffer *eb, unsigned long offset,
+ 		      unsigned long *map_start,
+ 		      unsigned long *map_len);
+ void extent_range_clear_dirty_for_io(struct inode *inode, u64 start, u64 end);
+-int extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
++void extent_range_redirty_for_io(struct inode *inode, u64 start, u64 end);
+ void extent_clear_unlock_delalloc(struct inode *inode, u64 start, u64 end,
+ 				 struct page *locked_page,
+ 				 unsigned bits_to_clear,
 -- 
 2.6.2
 

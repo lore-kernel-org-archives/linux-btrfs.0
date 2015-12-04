@@ -1,147 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:33866 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751560AbbLDNxp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 08:53:45 -0500
-Received: by igvg19 with SMTP id g19so36120020igv.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 05:53:44 -0800 (PST)
-Subject: Re: 3.16.0 Debian kernel hang
-To: Russell Coker <russell@coker.com.au>
-References: <201512042100.58127.russell@coker.com.au>
- <5661906A.50309@gmail.com> <201512050042.32497.russell@coker.com.au>
-Cc: linux-btrfs@vger.kernel.org
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <56619AC3.5000309@gmail.com>
-Date: Fri, 4 Dec 2015 08:53:07 -0500
+Received: from mx2.suse.de ([195.135.220.15]:47306 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751172AbbLDOV2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Dec 2015 09:21:28 -0500
+Date: Fri, 4 Dec 2015 15:19:36 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: bo.li.liu@oracle.com, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/5] Make btrfs-progs really compatible with any
+ kernel version
+Message-ID: <20151204141936.GH31035@suse.cz>
+Reply-To: dsterba@suse.cz
+References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
+ <20151123175608.GI31035@twin.jikos.cz>
+ <20151204014402.GF19589@localhost.localdomain>
+ <5660F5A3.3080409@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <201512050042.32497.russell@coker.com.au>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms050709090804010800010307"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <5660F5A3.3080409@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Fri, Dec 04, 2015 at 10:08:35AM +0800, Qu Wenruo wrote:
+> Liu Bo wrote on 2015/12/03 17:44 -0800:
+> > On Mon, Nov 23, 2015 at 06:56:09PM +0100, David Sterba wrote:
+> >> On Mon, Nov 23, 2015 at 08:56:13PM +0800, Anand Jain wrote:
+> >>> Btrfs-progs is a tool for the btrfs kernel and we hope latest btrfs-progs
+> >>> be compatible w any set of older/newer kernels.
+> >>>
+> >>> So far mkfs.btrfs and btrfs-convert sets the default features, for eg,
+> >>> skinny-metadata even if the running kernel does not supports it, and
+> >>> so the mount fails on the running.
+> >>
+> >> So the default behaviour of mkfs will try to best guess the feature set
+> >> of currently running kernel. I think this is is the most common scenario
+> >> and justifies the change in default behaviours.
+> >>
+> >> For the other cases I'd like to introduce some human-readable shortcuts
+> >> to the --features option. Eg. 'mkfs.btrfs -O compat-3.2' will pick all
+> >> options supported by the unpatched mainline kernel of version 3.2. This
+> >> would be present for all version, regardless if there was a change in the
+> >> options or not.
+> >>
+> >> Similarly for convenience, add 'running' that would pick the options
+> >> from running kernel but will be explicit.
+> >>
+> >> A remaining option should override the 'running' behaviour and pick the
+> >> latest mkfs options. Naming it 'defaults' sounds a bit ambiguous so the
+> >> name is yet to be determined.
+> >>
+> >>> Here in this set of patches will make sure the progs understands the
+> >>> kernel supported features.
+> >>>
+> >>> So in this patch, checks if sysfs tells whether the feature is
+> >>> supported if not, then it will relay on static kernel version which
+> >>> provided that feature (skinny-metadata here in this example), next
+> >>> if for some reason the running kernel does not provide the kernel
+> >>> version, then it will fall back to the original method to enable
+> >>> the feature with a hope that kernel will support it.
+> >>>
+> >>> Also the last patch adds a warning when we fail to read either
+> >>> sysfs features or the running kernel version.
+> >>
+> >> Your patchset is a good start, the additional options I've described can
+> >> be added on top of that. We might need to switch the version
+> >> representation from string to KERNEL_VERSION but that's an
+> >> implementation detail.
+> >
+> > Depending on sysfs is stable but depending on kernel version may be not,
+> > we may have a distro kernel which backports some incompat features from
+> > upstream, then we have to decide based on sysfs interface.
+> 
+> +1.
+> 
+> Although sysfs does not always show up even for supported kernel, e.g 
+> btrfs modules is not loaded after boot.
+> So we need to consider twice before choosing a fallback method.
 
---------------ms050709090804010800010307
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
-
-On 2015-12-04 08:42, Russell Coker wrote:
-> On Sat, 5 Dec 2015 12:08:58 AM Austin S Hemmelgarn wrote:
->>> I know that there are no plans to backport things to 3.16 and I don't=
-
->>> think the Debian people are going to be very interested in this.  So
->>> this message is a FYI for users, maybe consider not using the
->>> Debian/Jessie kernel for BTRFS systems.
->>
->> I'd suggest extending that suggestion to:
->> If you're not using an Enterprise distro (RHEL, SLES, CentOS, OEL), th=
-en
->> you should probably be building your own kernel, ideally using upstrea=
-m
->> sources.
->
-> There are lots of ways of dealing with this.
->
-> Debian development doesn't stop.  Anyone who is running a Jessie system=
- can
-> easily run a kernel from Testing or Unstable (which really isn't partic=
-ularly
-> unstable).  It's generally expected that Debian user-space will work wi=
-th a
-> kernel from +- one release of Debian.  Also every time I've tried it De=
-bian
-> has worked well with a CentOS kernel of a similar version.
-Well yes, that does usually work, but that doesn't mean that it keeps up =
-
-with mainline very well.  Back when I used Debian on a regular basis, I=20
-ran the 'unstable' kernels, and they still lagged behind mainline by at=20
-least a minor version, and often more than that.  And there have been=20
-cases where things got horribly broken in mainline due to lack of proper =
-
-vetting of code (Most recent example being the insanity with the=20
-clustered MD code, which broke non-clustered soft raid for at least two=20
-major releases), which prevents them from safely keeping up-to-date with =
-
-mainline.
->
-> The only reason I'm not running Unstable kernels on my Debian systems i=
-s
-> because I run some Xen servers and upgrading Xen is problemmatic.  Lino=
-de is
-> moving from Xen to KVM so I guess I should consider doing the same.  If=
- I
-> migrate my Xen servers to KVM I can use newer kernels with less risk.
-That's interesting, that must be something with how they do kernel=20
-development in Debian, because I've never had any issues upgrading=20
-either Xen or Linux on any of the systems I've run Xen on, and I=20
-directly track mainline (with a small number of patches) for Linux, and=20
-stay relatively close to mainline with Xen (Gentoo doesn't have all that =
-
-many patches on top of the regular release for Xen, aside from XSA patche=
-s).
-
-
-
---------------ms050709090804010800010307
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA0MTM1MzA3WjBPBgkq
-hkiG9w0BCQQxQgRAIs0ULz9fc9Ia3VvUIDv4e69kcOQLtqAwmZCO2KIZSUjScEdIuVph+LXN
-cO9K1ge4UmxzOhJ0xq7Lr9rqemIjszBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgAhZNH/56YjX+yQEYOYe/vw7aIWEJGedXrrV5Pm199ZGKIWtFlp
-+GYlOS7sNx6i8dtrBwzVR8bVFidawxVwIJIJJ7rttiy5hAlr2kZJnYUXV3ZgGShd6yAaGpAU
-HzZWcasmqdq7ygtzh3abHDJp6ybYunX/V4fv9gKGygZYfeAAp1FtksykaogAEfy6+9yUZ5eV
-zEDoy2eEcBmAmKGjPhjxbXoe5d46oEU/XqChvsJXH3oxcAXEQQkohazG7ltAGBaLuito1ntp
-bf6lyexYxN+vsk7RX2XRrUdX33uOqYHN/SeykQel+oh0yBIruMD+u96qRkjxougz79rewF3A
-DtwAFR7/aRHorBMMx8WnYCNqHxMBS7jYYlEZ/V+257I545TRkN3LA1cNkCSkhmeN87x0Qyto
-AOVmnzZOMeaqS4u6zF92/WO5UQAUX53t8EpYvVLyMwa3ecOsX8XTdKsKS0VaSkWUufh7oueK
-D8wteBsqLvvznCWy6l1GEwcB6VEqRPSvExJRaEvKY4qemU7bVwpsSGiLJagQOm+Trn4aFjcp
-0R+CuMHPZhCo/cpf265JVUjp46O/VO7KHBDAQSeVnl/+8fh7YtHZ67kap6ZVP4ke8jrc/QoO
-j0rJCNVANRArnd4qZDQGm3X7nZPkHfxGX9jjzHtsxBzdridWnidugCg2EwAAAAAAAA==
---------------ms050709090804010800010307--
+There are several factors that we have to take into account for the
+default behaviour and fallback. I'm close to a final proposal yet missed
+the possibility of unloaded module that would remove the access to
+sysfs, as you point out.

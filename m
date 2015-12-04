@@ -1,39 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:33939 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755543AbbLGPjR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Dec 2015 10:39:17 -0500
-Date: Mon, 7 Dec 2015 16:37:17 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Naohiro Aota <naota@elisp.net>
-Cc: linux-btrfs@vger.kernel.org, quwenruo@cn.fujitsu.com
-Subject: Re: [PATCH 2/3] btrfs-progs: properly reset nlink of multi-linked
- file
-Message-ID: <20151207153717.GH4227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail-pf0-f175.google.com ([209.85.192.175]:34779 "EHLO
+	mail-pf0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752542AbbLDIRK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 03:17:10 -0500
+Received: by pfbg73 with SMTP id g73so23333627pfb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 00:17:09 -0800 (PST)
+From: Naohiro Aota <naota@elisp.net>
+To: linux-btrfs@vger.kernel.org
+Cc: quwenruo@cn.fujitsu.com, Naohiro Aota <naota@elisp.net>
+Subject: [PATCH 1/3] btrfs-progs: test: umount if confirmation failed
+Date: Fri,  4 Dec 2015 14:37:25 +0900
+Message-Id: <1449207447-1203-2-git-send-email-naota@elisp.net>
+In-Reply-To: <1449207447-1203-1-git-send-email-naota@elisp.net>
 References: <1449207447-1203-1-git-send-email-naota@elisp.net>
- <1449207447-1203-3-git-send-email-naota@elisp.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1449207447-1203-3-git-send-email-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 04, 2015 at 02:37:26PM +0900, Naohiro Aota wrote:
-> If a file is linked from more than one directory and only one
-> of the links is corrupted, btrfs check dose not reset the nlink
-> properly. Actually it can go into infinite loop to link the broken file
-> into lost+found.
-> 
-> This patch fix two part of the code. The first one delay the freeing
-> valid (no error, found inode ref, directory index, and directory
-> item) backrefs. Freeing valid backrefs earier prevent reset_nlink() to
-> add back all valid links.
-> 
-> The second fix is obvious: passing `ref_type' to btrfs_add_link() is just
-> wrong. It should be `filetype' instead. The current code can break all valid
-> file links.
-> 
-> Signed-off-by: Naohiro Aota <naota@elisp.net>
+When a check in check_inode() failed, the test should umount test target
+file system. This commit add clean up umount line in failure path.
 
-Applied, thanks.
+Signed-off-by: Naohiro Aota <naota@elisp.net>
+---
+ tests/fsck-tests/012-leaf-corruption/test.sh | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
+index 6e23145..bfdd0ea 100755
+--- a/tests/fsck-tests/012-leaf-corruption/test.sh
++++ b/tests/fsck-tests/012-leaf-corruption/test.sh
+@@ -57,6 +57,7 @@ check_inode()
+ 	# Check whether the inode exists
+ 	exists=$($SUDO_HELPER find $path -inum $ino)
+ 	if [ -z "$exists" ]; then
++		$SUDO_HELPER umount $TEST_MNT
+ 		_fail "inode $ino not recovered correctly"
+ 	fi
+ 
+@@ -64,17 +65,20 @@ check_inode()
+ 	found_mode=$(printf "%o" 0x$($SUDO_HELPER stat $exists -c %f))
+ 	if [ $found_mode -ne $mode ]; then
+ 		echo "$found_mode"
++		$SUDO_HELPER umount $TEST_MNT
+ 		_fail "inode $ino modes not recovered"
+ 	fi
+ 
+ 	# Check inode size
+ 	found_size=$($SUDO_HELPER stat $exists -c %s)
+ 	if [ $mode -ne 41700 -a $found_size -ne $size ]; then
++		$SUDO_HELPER umount $TEST_MNT
+ 		_fail "inode $ino size not recovered correctly"
+ 	fi
+ 
+ 	# Check inode name
+ 	if [ "$(basename $exists)" != "$name" ]; then
++		$SUDO_HELPER umount $TEST_MNT
+ 		_fail "inode $ino name not recovered correctly"
+ 	else
+ 		return 0
+-- 
+2.6.3
+

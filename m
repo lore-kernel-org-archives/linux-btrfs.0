@@ -1,39 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:50562 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755935AbbLDKBF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 05:01:05 -0500
-Received: from wheezy.localnet (ns-local [10.10.10.1])
-	by smtp.sws.net.au (Postfix) with ESMTP id 337BDEB72
-	for <linux-btrfs@vger.kernel.org>; Fri,  4 Dec 2015 21:01:01 +1100 (AEDT)
-From: Russell Coker <russell@coker.com.au>
+Received: from emkei.cz ([46.167.245.116]:44590 "EHLO emkei.cz"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751551AbbLDMOH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Dec 2015 07:14:07 -0500
 To: linux-btrfs@vger.kernel.org
-Subject: 3.16.0 Debian kernel hang
-Date: Fri, 4 Dec 2015 21:00:58 +1100
-MIME-Version: 1.0
-Content-Type: text/plain;
-  charset="us-ascii"
-Message-Id: <201512042100.58127.russell@coker.com.au>
+Subject: Subvolume UUID, data =?UTF-8?B?Y29ycnVwdGlvbj8=?=
+From: "S.J" <sorry@anonym.com>
+Reply-To: sorry@anonym.com
+Content-Type: text/plain; charset=utf-8
+Message-Id: <20151204120529.37E47D5A28@emkei.cz>
+Date: Fri,  4 Dec 2015 13:05:28 +0100 (CET)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-One of my test laptops started hanging on mounting the root filesystem.  I 
-think that it had experience an unexpected power outage prior to that which 
-may have caused corruption.
+Hello
 
-When I tried to mount the root filesystem the mount process would stick in D 
-state, there would be no disk IO, and the computer would get hot - presumably 
-due to kernel CPU use even though "top" didn't seem to indicate that.
+As we know, two file systems with the same UUID (like reported by eg. "blkid") are problematic, especially if both are mounted at the same time it leads to data corruption. So, copying a BTRFS partition with eg. dd to another and use it immediately is bad. To prevent this, "btrfstune -u /dev/sdaX" changes the UUID of the given partition.
 
-When I mounted the filesystem with a 4.2.0 kernel it said "The free space cache 
-file (1103101952) is invalid, skip it" and then things worked.  Now that the 
-machine is running 4.2.0 everything is fine.
+However, BTRFS subvolumes have their own UUID, which can be viewed eg. with "btrfs sub list -u /mountpoint". This UUIDs are not changed by the command above, and apparently there is no other way to do this.
 
-I know that there are no plans to backport things to 3.16 and I don't think 
-the Debian people are going to be very interested in this.  So this message is 
-a FYI for users, maybe consider not using the Debian/Jessie kernel for BTRFS 
-systems.
+My question is: Is this a problem similar to the main UUID? Can mounting two BTRFS partitions with equal subvolume UUIDs (but different main UUID) can cause data corruption?
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+(...well, and maybe someone could explain me what these subvol UUIDs are for in the first place. Subvolumes already have an unique number, and from user p.o.v, there isn't anything where the subvol UUIDs can be used at all (?))
+
+Thank you
+
+PS: Apologies for sending a second mail, somehow my first try didn't contain any text

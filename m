@@ -1,80 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f170.google.com ([209.85.213.170]:37075 "EHLO
+Received: from mail-ig0-f170.google.com ([209.85.213.170]:36622 "EHLO
 	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754849AbbLDMdm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 07:33:42 -0500
-Received: by igcto18 with SMTP id to18so34739901igc.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 04:33:42 -0800 (PST)
+	with ESMTP id S1750925AbbLDMi1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 07:38:27 -0500
+Received: by igcph11 with SMTP id ph11so31862439igc.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 04:38:26 -0800 (PST)
 Subject: Re: compression disk space saving - what are your results?
-To: Imran Geriskovan <imran.geriskovan@gmail.com>, linux-btrfs@vger.kernel.org
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
  <pan$101f2$e235cddd$fea951cb$dcf70182@cox.net>
  <CAK5rZE6-SMfseAfEu1GxLrgYNOBMhNbiQ8tqWVWUr6dFDL8OKw@mail.gmail.com>
  <565F028C.6000707@gmail.com> <pan$6405b$7a197e29$8d0a71a9$2a5649b6@cox.net>
- <CAK5rZE6Y8Pa68yMDr-a-zNqFdb8VM+t9jv+HwxGck8SJ_vCR+A@mail.gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <56618801.9060802@gmail.com>
-Date: Fri, 4 Dec 2015 07:33:05 -0500
+Message-ID: <5661891E.40600@gmail.com>
+Date: Fri, 4 Dec 2015 07:37:50 -0500
 MIME-Version: 1.0
-In-Reply-To: <CAK5rZE6Y8Pa68yMDr-a-zNqFdb8VM+t9jv+HwxGck8SJ_vCR+A@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080007000901030109040608"
+In-Reply-To: <pan$6405b$7a197e29$8d0a71a9$2a5649b6@cox.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080608000407070609080105"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080007000901030109040608
+--------------ms080608000407070609080105
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-12-03 07:09, Imran Geriskovan wrote:
->>> On a side note, I really wish BTRFS would just add LZ4 support.  It's=
+On 2015-12-03 01:29, Duncan wrote:
+> Austin S Hemmelgarn posted on Wed, 02 Dec 2015 09:39:08 -0500 as
+> excerpted:
+>
+>> On 2015-12-02 09:03, Imran Geriskovan wrote:
+>>>>> What are your disk space savings when using btrfs with compression?=
+
+>>>
+>>>> [Some] posters have reported that for mostly text, compress didn't
+>>>> give them expected compression results and they needed to use
+>>>> compress-force.
+>>>
+>>> "compress-force" option compresses regardless of the "compressibility=
+"
+>>> of the file.
+>>>
+>>> "compress" option makes some inference about the "compressibility" an=
+d
+>>> decides to compress or not.
+>>>
+>>> I wonder how that inference is done?
+>>> Can anyone provide some pseudo code for it?
+>
+>> I'm not certain how BTRFS does it, but my guess would be trying to
+>> compress the block, then storing the uncompressed version if the
+>> compressed one is bigger.
+>
+> No pseudocode as I'm not a dev and wouldn't want to give the wrong
+> impression, but as I believe I replied recently in another thread, base=
+d
+> on comments the devs have made...
+>
+> With compress, btrfs does a(n intended to be fast) trial compression of=
+
+> the first 128 KiB block or two and uses the result of that to decide
+> whether to compress the entire file.
+>
+> Compress-force simply bypasses that first decision point, processing th=
+e
+> file as if the test always succeeded and compression was chosen.
+>
+> If the decision to compress is made, the file is (evidently, again, not=
  a
->>> lot more deterministic WRT decompression time than LZO, gets a simila=
+> dev, but filefrag results support) compressed a 128 KiB block at a time=
+
+> with the resulting size compared against the uncompressed version, with=
+
+> the smaller version stored.
+>
+> (Filefrag doesn't understand btrfs compression and reports individual
+> extents for each 128 KiB compression block, if compressed.  However, fo=
 r
->>> compression ratio, and runs faster on most processors for both
->>> compression and decompression.
->
-> Relative ratios according to
-> http://catchchallenger.first-world.info//wiki/Quick_Benchmark:_Gzip_vs_=
-Bzip2_vs_LZMA_vs_XZ_vs_LZ4_vs_LZO
->
-> Compressed size
-> gzip (1) - lzo (1.4) - lz4 (1.4)
->
-> Compression Time
-> gzip (5) - lzo (1) - lz4 (0.8)
->
-> Decompression Time
-> gzip (9) - lzo (4) - lz4 (1)
->
-> Compression Memory
-> gzip (1) - lzo (2) - lz4 (20)
->
-> Decompression Memory
-> gzip (1) - lzo (2) - lz4 (130). Yes 130! not a typo.
->
-> But there is a note:
-> Note: lz4 it's the program using this size, the
-> code for internal lz4 use very less memory.
->
-> However, I could not find any better apples to apples
-> comparison.
->
-> If lz4's real memory consumption is in orders of lzo,
-> than it looks good.
-AFAICT, it's similar memory consumption.  I did some tests a while back=20
-comparing the options for kernel image compression using a VM, and one=20
-of the things I tested (although I can't for the life of me remember how =
+> many files processed with compress-force, filefrag doesn't report the
+> expected size/128-KiB extents, but rather something lower.  If
+> filefrag -v is used, details of each "extent" are listed, and some show=
 
-exactly except that it involved using QEMU hooked up to GDB) was=20
-run-time decompressor footprint.  LZO really should have a smaller=20
-memory footprint too, it's just that lzop needs to handle almost a dozen =
+> up as multiples of 128 KiB, indicating runs of uncompressable blocks th=
+at
+> unlike actually compressed blocks, filefrag can and does report correct=
+ly
+> as single extents.  The conclusion is thus as above, that btrfs is
+> testing the compression result of each block, and not compressing if th=
+e
+> "compression" ends up being negative, that is, if the "compressed" size=
 
-different LZO compression formats.
+> is larger than the uncompressed size.)
+>
+>> On a side note, I really wish BTRFS would just add LZ4 support.  It's =
+a
+>> lot more deterministic WRT decompression time than LZO, gets a similar=
+
+>> compression ratio, and runs faster on most processors for both
+>> compression and decompression.
+>
+> There were patches (at least RFC level, IIRC) floating around years ago=
+
+> to add lz4... I wonder what happened to them?  My impression was that a=
+
+> large deployment somewhere may actually be running them as well, making=
+
+> them well tested (and obviously well beyond preliminary RFC level) by
+> now, altho that impression could well be wrong.
+>
+Hmm, I'll have to see if I can find those and rebase them.  IIRC, the=20
+argument against adding it was 'but we already have a fast compression=20
+algorithm!', which in turn says to me they didn't try to sell it on the=20
+most significant parts, namely that it's faster at decompression than=20
+LZO (even when you use the lz4hc variant, which takes longer to compress =
+
+to give a (usually) better compression ratio, but decompresses just as=20
+fast as regular lz4), and the timings are a lot more deterministic=20
+(which is really important if you're doing real-time stuff).
 
 
---------------ms080007000901030109040608
+--------------ms080608000407070609080105
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -116,9 +162,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA0MTIzMzA1WjBPBgkq
-hkiG9w0BCQQxQgRADs6bU59K/Sqdau+ZLURC1y6TRqZ/ImV1JrjhJCU+3nIy35aiRM3sztwV
-wvIadAxTnsZbvHHujE3iIWNeefWbQDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA0MTIzNzUwWjBPBgkq
+hkiG9w0BCQQxQgRAxdz+M77vbR9pWNcJaMXmTlilzAsTJHdpkrDbgDFweno87zQBQAigfg2w
+q08Dp0iz8cx0g/s7uVwBrw6IAuq2MzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -126,14 +172,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgA5Z2UmXl9FfeuwEYeaWi7BCoSnBg1FZLHlwK/kBc0CW5KulQ4W
-2zn0YuRqvrxPkcPlQGHjP9+NFQqmudvaybhK6Glv/ooxCt565OWA5WsBV7UXK69T0u6VW4bB
-malPpqmfj6PXeyZ2YEySp88EgDPIxrrpEeCCgnYFmhRgxl1Oro0x6tZbUCBrMNceFtODkjJB
-3ROlLLReFkP8V57O4PWuEwjog30sZ6f8CfhtQryU2ztyEkNSj1cu1pABVEZNSWvUuUlAMb8k
-njhv3TXFZ9hgscEEYwMkEsGgPgWoZowf3wEH/A/aZcHXx1XLToup6VXHPxWyozLaD0ur3rf3
-+Ew4+cxVfYmMf11ww8KtAii1dc7aohd3vosJmlL75g4SKxaZR2LtT8uH5UiWIEVlTgQE9+jo
-k94UaQM8KAXKXyoGEikLVhiOVEZmU64AhOut7f6vTccIhzpmTkPRPv86Hjb33irdumhcaq9C
-68HFzaFqnhWzo0g70NpUQgoDqsfJfXZSy4ldFyb2kUuXTj0jjuHM3CBUtk2pHPM0YLAdYTza
-7S/CTCmDo9XMraNTbJM+R5uyN+DSXS643Noe8jhVy4dKbi5QBHyrkgfTMoZO47u3RrLxfH7J
-VcvJgELswYcGFYjW/WB+C5GE1ly0jg0xnJObJL96XMCPnL60WeTfsERl8gAAAAAAAA==
---------------ms080007000901030109040608--
+BgkqhkiG9w0BAQEFAASCAgBO9MR8xHy+T0g6BD3C2hv/dUIegSsvKWVN5GcnoWR23YVEO3a8
+jvCJAWBcIyZUV+TH5Htrhi1RvAIQsAUWNyfwZPMq6nzAkNjgR0IZHM6BuQOh2vlCRacQb7bo
+iTSbeXy9rUM0qZkpdmO4ZtoTzQhjyjpvvTMzo8TmjXPjzUOWTRPGVrGCvP/wWtbWsyPL+uOP
+hx8zR+FtcdN5GbgPGpNC0CH09GVjLfQ0jY+uWW1mrrwNGrsUbnG8snhe4cu+CoPbeYwcEQH0
+T1KGHSOWMfWMH35Run5wOh+TNfQbamcq992aCxNCuBYQoku0o/1oc7bJJB10Nyd/IMH761RC
+Xi/2s9A0kTOvXYH7PVZTroVgyzrMxUZ3Tj/Y48QTw2u9F4HZqugNIWkz079Rw7XRr6lBNLHa
+Qlnr57C2qyiOeAb3x7wMuoLYZhGE9rX0KYNgttzGoSCCcEwg5wrigigixkmH+eVzPBH8nych
+wptwWFplAUcp7AUStpw1nnG6qNhFF/PGjJ8HBeElpM0/wV1gcAl6E0B4w3rVFleRF22Rpil0
+2jnj8dzg1dD2lZ4g4uKgWN2rW+jGMUep/3YMIqahi46/3aVDR6c7q5zF7a0/i8MFtJQFhb/V
+pwVdAtez1QHdf3EOof4NLIiJDXIP9RiHqka/yr62u6VjQvuvA8XrIplwdgAAAAAAAA==
+--------------ms080608000407070609080105--

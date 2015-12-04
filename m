@@ -1,79 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m50-134.163.com ([123.125.50.134]:43778 "EHLO m50-134.163.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751049AbbLUPut (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Dec 2015 10:50:49 -0500
-From: Geliang Tang <geliangtang@163.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-Cc: Geliang Tang <geliangtang@163.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH 3/3 v2] btrfs: use list_for_each_entry* in backref.c
-Date: Mon, 21 Dec 2015 23:50:23 +0800
-Message-Id: <d65aa20f49405e738c90aaf703ccec31f311de22.1450712597.git.geliangtang@163.com>
-In-Reply-To: <617786fdb0eb4f593bdc6efffe040ce6ebcb1cc5.1450447999.git.geliangtang@163.com>
+Received: from mail-pf0-f179.google.com ([209.85.192.179]:36701 "EHLO
+	mail-pf0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755213AbbLDISL (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 03:18:11 -0500
+Received: by pfdd184 with SMTP id d184so22814273pfd.3
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 00:18:10 -0800 (PST)
+From: Naohiro Aota <naota@elisp.net>
+To: linux-btrfs@vger.kernel.org
+Cc: quwenruo@cn.fujitsu.com
+Subject: [PATCH 0/3] btrfs-progs: fix file restore to lost+found bug
+Date: Fri,  4 Dec 2015 14:37:24 +0900
+Message-Id: <1449207447-1203-1-git-send-email-naota@elisp.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use list_for_each_entry*() to simplify the code.
+This series address an issue of btrfsck to restore infinite number of
+same file into `lost+found' directory. The issue occur on a file which
+is linked from two different directory A and B. If links from dir A is
+corrupted and links from dir B is kept valid, btrfsck won't stop
+creating a file in lost+found like this:
 
-Signed-off-by: Geliang Tang <geliangtang@163.com>
----
-Changes in v2:
- - Use list_for_each_entry_safe_continue() in __merge_refs().
----
- fs/btrfs/backref.c | 23 ++++++-----------------
- 1 file changed, 6 insertions(+), 17 deletions(-)
+-----
+Moving file 'file.del.51' to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 1876
+Trying to rebuild inode:1877
+Moving file 'del' to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 1877
+Can't get file name for inode 1876, using '1876' as fallback
+Moving file '1876' to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 1876
+Can't get file name for inode 1876, using '1876' as fallback
+Moving file '1876.1876' to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 1876
+(snip)
+Moving file '1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876.1876' to 'lost+found' dir since it has no valid backref
+Fixed the nlink of inode 1876
+Can't get file name for inode 1876, using '1876' as fallback
+Can't get file name for inode 1876, using '1876' as fallback
+Can't get file name for inode 1876, using '1876' as fallback
+-----
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index d453d62..08405a3 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -520,13 +520,10 @@ static inline int ref_for_same_block(struct __prelim_ref *ref1,
- static int __add_missing_keys(struct btrfs_fs_info *fs_info,
- 			      struct list_head *head)
- {
--	struct list_head *pos;
-+	struct __prelim_ref *ref;
- 	struct extent_buffer *eb;
- 
--	list_for_each(pos, head) {
--		struct __prelim_ref *ref;
--		ref = list_entry(pos, struct __prelim_ref, list);
--
-+	list_for_each_entry(ref, head, list) {
- 		if (ref->parent)
- 			continue;
- 		if (ref->key_for_search.type)
-@@ -563,23 +560,15 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
-  */
- static void __merge_refs(struct list_head *head, int mode)
- {
--	struct list_head *pos1;
-+	struct __prelim_ref *ref1;
- 
--	list_for_each(pos1, head) {
--		struct list_head *n2;
--		struct list_head *pos2;
--		struct __prelim_ref *ref1;
-+	list_for_each_entry(ref1, head, list) {
-+		struct __prelim_ref *ref2 = ref1, *tmp;
- 
--		ref1 = list_entry(pos1, struct __prelim_ref, list);
--
--		for (pos2 = pos1->next, n2 = pos2->next; pos2 != head;
--		     pos2 = n2, n2 = pos2->next) {
--			struct __prelim_ref *ref2;
-+		list_for_each_entry_safe_continue(ref2, tmp, head, list) {
- 			struct __prelim_ref *xchg;
- 			struct extent_inode_elem *eie;
- 
--			ref2 = list_entry(pos2, struct __prelim_ref, list);
--
- 			if (!ref_for_same_block(ref1, ref2))
- 				continue;
- 			if (mode == 1) {
--- 
-2.5.0
+The problem is early release of inode backrefs. The release prevents
+`reset_nlink()' to add back valid backrefs to an inode. In the result,
+the following results occur:
 
+0. btrfsck scan a FS tree
+1. It finds valid links and invalid links (some links are lost)
+2. All valid links are released
+3. btrfsck detects found_links != nlink
+4. reset_nlink() reset nlink to 0
+5. No valid links are restored (thus still nlink = 0)
+6. The file is restored to lost+found since nlink == 0 (now, nlink = 1)
+7. btrfsck rescan the FS tree
+8. It finds `found_links' = #valid_links+1 (in lost+found) and nlink = 1
+9. again all valid links are lost, and restore to lost+found
+
+The first patch add clean up code to the test. It umount test
+directory on failure path. The second patch fix the above problem. And
+the last patch extend the test to check a case of multiple-linked file
+corruption.
 

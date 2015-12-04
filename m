@@ -1,64 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:16549 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750849AbbLDAwy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 19:52:54 -0500
-Date: Thu, 3 Dec 2015 16:52:37 -0800
+Received: from userp1040.oracle.com ([156.151.31.81]:25533 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754639AbbLDBoW (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 20:44:22 -0500
+Date: Thu, 3 Dec 2015 17:44:03 -0800
 From: Liu Bo <bo.li.liu@oracle.com>
-To: Codebird <codebird@birds-are-nice.me>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs crashing the kernel with Seagate 8TB SMR drives.
-Message-ID: <20151204005237.GE19589@localhost.localdomain>
+To: dsterba@suse.cz
+Cc: Anand Jain <anand.jain@oracle.com>, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/5] Make btrfs-progs really compatible with any
+ kernel version
+Message-ID: <20151204014402.GF19589@localhost.localdomain>
 Reply-To: bo.li.liu@oracle.com
-References: <566084F8.5050705@birds-are-nice.me>
+References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
+ <20151123175608.GI31035@twin.jikos.cz>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <566084F8.5050705@birds-are-nice.me>
+In-Reply-To: <20151123175608.GI31035@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 03, 2015 at 06:07:52PM +0000, Codebird wrote:
-> I've got a nice bug for you - because I can offer you what everyone likes to
-> see, a precise error message.
+On Mon, Nov 23, 2015 at 06:56:09PM +0100, David Sterba wrote:
+> On Mon, Nov 23, 2015 at 08:56:13PM +0800, Anand Jain wrote:
+> > Btrfs-progs is a tool for the btrfs kernel and we hope latest btrfs-progs
+> > be compatible w any set of older/newer kernels.
+> > 
+> > So far mkfs.btrfs and btrfs-convert sets the default features, for eg,
+> > skinny-metadata even if the running kernel does not supports it, and
+> > so the mount fails on the running.
 > 
-> I've got a btrfs filesystem spread over six devices, RAID1 mode. Four of
-> these are Seagate 8TB archive drives - those SMR ones that a few others have
-> reported failing when used with btrfs. I've had that issue too, and I just
-> can't explain why, other than to say that it only occurs when using them on
-> my mainboard SATA ports, not via USB dock. But that's not what I'm reporting
-> - that's just the source of the problem that causes the crash I am
-> reporting.
+> So the default behaviour of mkfs will try to best guess the feature set
+> of currently running kernel. I think this is is the most common scenario
+> and justifies the change in default behaviours.
 > 
-> The crash occurs when scrubbing, after some time and some terabytes - or
-> possibly just when reading a certain place, I'm not sure - and it gives this
-> helpful error left on the screen along with a system so unresponsive numlock
-> won't flash:
+> For the other cases I'd like to introduce some human-readable shortcuts
+> to the --features option. Eg. 'mkfs.btrfs -O compat-3.2' will pick all
+> options supported by the unpatched mainline kernel of version 3.2. This
+> would be present for all version, regardless if there was a change in the
+> options or not.
 > 
-> BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO failure
-> BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO failure
-> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5 IO
-> failure
-> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5 IO
-> failure
-> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5 IO
-> failure
-> <long indent, as if a CR was lost> BTRFS: assertion failed:
-> f(fs_info->sb->s_flags & MS  <Cut by edge of screen>
-> -----------[ cut here ]------------
-> kernel BUG at ../fs/btrfs/ctree.h:4057!
+> Similarly for convenience, add 'running' that would pick the options
+> from running kernel but will be explicit.
 > 
-> Not sure if some of those 5 might be 6, as I was in a hurry to get it back
-> up both times and just got a blurry photo. But it looks to me like there
-> might be a chunk of code that doesn't handle a hardware fault - rather than
-> cleanly return an error it's causing the kernel to hang entirely. I've
-> managed to get this to happen twice now, so it's certainly something worth
-> looking into. This is on SUSE tumbleweed, with kernel 4.3.0-2-default.
+> A remaining option should override the 'running' behaviour and pick the
+> latest mkfs options. Naming it 'defaults' sounds a bit ambiguous so the
+> name is yet to be determined.
+> 
+> > Here in this set of patches will make sure the progs understands the
+> > kernel supported features.
+> > 
+> > So in this patch, checks if sysfs tells whether the feature is
+> > supported if not, then it will relay on static kernel version which
+> > provided that feature (skinny-metadata here in this example), next
+> > if for some reason the running kernel does not provide the kernel
+> > version, then it will fall back to the original method to enable
+> > the feature with a hope that kernel will support it.
+> > 
+> > Also the last patch adds a warning when we fail to read either
+> > sysfs features or the running kernel version.
+> 
+> Your patchset is a good start, the additional options I've described can
+> be added on top of that. We might need to switch the version
+> representation from string to KERNEL_VERSION but that's an
+> implementation detail.
 
-We do set btrfs to readonly state when handing this EIO error, but
-what's happening here is that btrfs failed to stop scrub workers
-calling repair_io_failure() and hit that ASSERT.
+Depending on sysfs is stable but depending on kernel version may be not,
+we may have a distro kernel which backports some incompat features from
+upstream, then we have to decide based on sysfs interface.
 
-Will send a patch to you.
+However, this brings another problems, for very old kernels, they don't
+have sysfs, do you have any suggestions for that?
 
 Thanks,
 

@@ -1,45 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:51636 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750907AbbLDO0M (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 09:26:12 -0500
-From: Russell Coker <russell@coker.com.au>
-To: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Subject: Re: 3.16.0 Debian kernel hang
-Date: Sat, 5 Dec 2015 01:26:09 +1100
-Cc: linux-btrfs@vger.kernel.org
-References: <201512042100.58127.russell@coker.com.au> <201512050042.32497.russell@coker.com.au> <56619AC3.5000309@gmail.com>
-In-Reply-To: <56619AC3.5000309@gmail.com>
+Received: from static.198.36.40.188.clients.your-server.de ([188.40.36.198]:45896
+	"EHLO mail.render-wahnsinn.de" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751765AbbLDPVi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Dec 2015 10:21:38 -0500
+Subject: Re: btrfs crashing the kernel with Seagate 8TB SMR drives.
+To: Codebird <codebird@birds-are-nice.me>, linux-btrfs@vger.kernel.org
+References: <566084F8.5050705@birds-are-nice.me>
+From: Robert Krig <robert.krig@render-wahnsinn.de>
+Message-ID: <5661AF77.6000009@render-wahnsinn.de>
+Date: Fri, 4 Dec 2015 16:21:27 +0100
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201512050126.09510.russell@coker.com.au>
+In-Reply-To: <566084F8.5050705@birds-are-nice.me>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, 5 Dec 2015 12:53:07 AM Austin S Hemmelgarn wrote:
-> > The only reason I'm not running Unstable kernels on my Debian systems is
-> > because I run some Xen servers and upgrading Xen is problemmatic.  Linode
-> > is moving from Xen to KVM so I guess I should consider doing the
-> > same.  If I migrate my Xen servers to KVM I can use newer kernels with
-> > less risk.
-> 
-> That's interesting, that must be something with how they do kernel 
-> development in Debian, because I've never had any issues upgrading 
-> either Xen or Linux on any of the systems I've run Xen on, and I 
-> directly track mainline (with a small number of patches) for Linux, and 
-> stay relatively close to mainline with Xen (Gentoo doesn't have all that 
-> many patches on top of the regular release for Xen, aside from XSA
-> patches).
+As Chris mentioned, check out the Bug report here:
+https://bugzilla.kernel.org/show_bug.cgi?id=93581
 
-I don't think that Debian does anything wrong in this regard.  It's just that 
-my experience of Xen is that it is fragile at the best of times.  The fact 
-that Red Hat packaged the Xen kernel in the Linux kernel package is a major 
-indication of Xen problems IMHO, the concept of Xen is that it shouldn't be 
-tied to a Linux kernel.
 
-If you haven't had Xen issues then I think you have been lucky.
+I have a 8TB SMR Drive and the kernel was reporting drive errors.
+Switching to Kernel 3.16 (Standard Debian Jessie kernel) fixed it for me
+( for the moment).
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+>From what I read in that kernel bug report. The patch has been submitted
+for kernel 4.4.
+
+On 03.12.2015 19:07, Codebird wrote:
+> I've got a nice bug for you - because I can offer you what everyone
+> likes to see, a precise error message.
+>
+> I've got a btrfs filesystem spread over six devices, RAID1 mode. Four
+> of these are Seagate 8TB archive drives - those SMR ones that a few
+> others have reported failing when used with btrfs. I've had that issue
+> too, and I just can't explain why, other than to say that it only
+> occurs when using them on my mainboard SATA ports, not via USB dock.
+> But that's not what I'm reporting - that's just the source of the
+> problem that causes the crash I am reporting.
+>
+> The crash occurs when scrubbing, after some time and some terabytes -
+> or possibly just when reading a certain place, I'm not sure - and it
+> gives this helpful error left on the screen along with a system so
+> unresponsive numlock won't flash:
+>
+> BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO
+> failure
+> BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO
+> failure
+> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5
+> IO failure
+> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5
+> IO failure
+> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5
+> IO failure
+> <long indent, as if a CR was lost> BTRFS: assertion failed:
+> f(fs_info->sb->s_flags & MS  <Cut by edge of screen>
+> -----------[ cut here ]------------
+> kernel BUG at ../fs/btrfs/ctree.h:4057!
+>
+> Not sure if some of those 5 might be 6, as I was in a hurry to get it
+> back up both times and just got a blurry photo. But it looks to me
+> like there might be a chunk of code that doesn't handle a hardware
+> fault - rather than cleanly return an error it's causing the kernel to
+> hang entirely. I've managed to get this to happen twice now, so it's
+> certainly something worth looking into. This is on SUSE tumbleweed,
+> with kernel 4.3.0-2-default.
+> -- 
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

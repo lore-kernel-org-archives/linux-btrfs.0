@@ -1,103 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:36680 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754740AbbLDCZy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 21:25:54 -0500
-Date: Thu, 3 Dec 2015 18:25:37 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: David Sterba <dsterba@suse.com>
+Received: from mx2.suse.de ([195.135.220.15]:35951 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750723AbbLDMiR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 4 Dec 2015 07:38:17 -0500
+Date: Fri, 4 Dec 2015 13:36:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
 Cc: linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH 04/12] btrfs: change how delay_iput is tracked in
  btrfs_delalloc_work
-Message-ID: <20151204022537.GH19589@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
+Message-ID: <20151204123625.GF31035@suse.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1449161602.git.dsterba@suse.com>
  <a4469a31e3b0cc55ebba9c3aee26cd5632743056.1449161602.git.dsterba@suse.com>
+ <20151204022537.GH19589@localhost.localdomain>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <a4469a31e3b0cc55ebba9c3aee26cd5632743056.1449161602.git.dsterba@suse.com>
+In-Reply-To: <20151204022537.GH19589@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 03, 2015 at 05:56:32PM +0100, David Sterba wrote:
-> The dellaloc work is not frequently used, the delayed status is once set
-> and read so it looks quite safe to drop the member and store the status
-> in the lowest bit of the inode pointer.
+On Thu, Dec 03, 2015 at 06:25:37PM -0800, Liu Bo wrote:
+> >  	struct inode *inode;
+> > -	int delay_iput;
+> >  	struct completion completion;
+> >  	struct list_head list;
+> >  	struct btrfs_work work;
+> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+> > index 15b29e879ffc..529a53b80ca0 100644
+> > --- a/fs/btrfs/inode.c
+> > +++ b/fs/btrfs/inode.c
+> > @@ -9436,16 +9436,21 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
+> >  {
+> >  	struct btrfs_delalloc_work *delalloc_work;
+> >  	struct inode *inode;
+> > +	int delay_iput;
+> >  
+> >  	delalloc_work = container_of(work, struct btrfs_delalloc_work,
+> >  				     work);
+> >  	inode = delalloc_work->inode;
+> > +	/* Lowest bit of inode pointer tracks the delayed status */
+> > +	delay_iput = ((unsigned long)inode & 1UL);
+> > +	inode = (struct inode *)((unsigned long)inode & ~1UL);
+> > +
 > 
-> Combined with the removal of 'wait' we got +2 objects per 4k slab.
-> 
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/ctree.h |  5 ++++-
->  fs/btrfs/inode.c | 11 +++++++++--
->  2 files changed, 13 insertions(+), 3 deletions(-)
-> 
-> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-> index a61c53bce162..d5e250a65725 100644
-> --- a/fs/btrfs/ctree.h
-> +++ b/fs/btrfs/ctree.h
-> @@ -3901,8 +3901,11 @@ void btrfs_extent_item_to_extent_map(struct inode *inode,
->  
->  /* inode.c */
->  struct btrfs_delalloc_work {
-> +	/*
-> +	 * Note: lowest bit of inode tracks if the iput is delayed,
-> +	 * do not access the pointer directly.
-> +	 */
->  	struct inode *inode;
-> -	int delay_iput;
->  	struct completion completion;
->  	struct list_head list;
->  	struct btrfs_work work;
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 15b29e879ffc..529a53b80ca0 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -9436,16 +9436,21 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
->  {
->  	struct btrfs_delalloc_work *delalloc_work;
->  	struct inode *inode;
-> +	int delay_iput;
->  
->  	delalloc_work = container_of(work, struct btrfs_delalloc_work,
->  				     work);
->  	inode = delalloc_work->inode;
-> +	/* Lowest bit of inode pointer tracks the delayed status */
-> +	delay_iput = ((unsigned long)inode & 1UL);
-> +	inode = (struct inode *)((unsigned long)inode & ~1UL);
-> +
+> To be quite frankly, I don't like this, it's a pointer anyway,
+> error-prone in a debugging view, instead would 'u8 delayed_iput' help?
 
-To be quite frankly, I don't like this, it's a pointer anyway, error-prone in a debugging view, instead would 'u8 delayed_iput' help?
+The point was to shrink the structure. Adding the u8 will grow it by
+another 8 bytes, besides the slab objects are aligned to 8 bytes by
+default so the overall cost of storing the delayed information is 8
+bytes:
 
-Thanks,
+struct btrfs_delalloc_work {
+        struct inode *             inode;                /*     0     8 */
+        struct completion          completion;           /*     8    32 */
+        struct list_head           list;                 /*    40    16 */
+        struct btrfs_work          work;                 /*    56    88 */
+        /* --- cacheline 2 boundary (128 bytes) was 16 bytes ago --- */
+        u8                         delay;                /*   144     1 */
 
--liubo
+        /* size: 152, cachelines: 3, members: 5 */
+        /* padding: 7 */
+        /* last cacheline: 24 bytes */
+};
 
->  	filemap_flush(inode->i_mapping);
->  	if (test_bit(BTRFS_INODE_HAS_ASYNC_EXTENT,
->  				&BTRFS_I(inode)->runtime_flags))
->  		filemap_flush(inode->i_mapping);
->  
-> -	if (delalloc_work->delay_iput)
-> +	if (delay_iput)
->  		btrfs_add_delayed_iput(inode);
->  	else
->  		iput(inode);
-> @@ -9464,7 +9469,9 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
->  	init_completion(&work->completion);
->  	INIT_LIST_HEAD(&work->list);
->  	work->inode = inode;
-> -	work->delay_iput = delay_iput;
-> +	/* Lowest bit of inode pointer tracks the delayed status */
-> +	if (delay_iput)
-> +		*((unsigned long *)work->inode) |= 1UL;
->  	WARN_ON_ONCE(!inode);
->  	btrfs_init_work(&work->work, btrfs_flush_delalloc_helper,
->  			btrfs_run_delalloc_work, NULL, NULL);
-> -- 
-> 2.6.2
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+As the use of the inode pointer is limited, I don't think this would
+cause surprises. And it's commented where used which should help during
+debugging.
+
+Abusing the low bits of pointers is nothing new, the page cache tags are
+implemented that way. This kind of low-level optimizations is IMO acceptable.

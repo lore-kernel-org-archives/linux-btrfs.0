@@ -1,126 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:33249 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753167AbbLDBxf (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 20:53:35 -0500
-Date: Thu, 3 Dec 2015 17:53:16 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Martin Tippmann <martin.tippmann@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Bug Report: btrfs hangs / freezes on 4.3
-Message-ID: <20151204015316.GG19589@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CABL_Pd_bOgBASMmaz8S+UO7RZ-xLp79NA42O2EiiEgaxe2Pxjw@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:52412 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1754633AbbLDCIx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 21:08:53 -0500
+Subject: Re: [PATCH v2 0/5] Make btrfs-progs really compatible with any kernel
+ version
+To: <bo.li.liu@oracle.com>, <dsterba@suse.cz>
+References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
+ <20151123175608.GI31035@twin.jikos.cz>
+ <20151204014402.GF19589@localhost.localdomain>
+CC: Anand Jain <anand.jain@oracle.com>, <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5660F5A3.3080409@cn.fujitsu.com>
+Date: Fri, 4 Dec 2015 10:08:35 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CABL_Pd_bOgBASMmaz8S+UO7RZ-xLp79NA42O2EiiEgaxe2Pxjw@mail.gmail.com>
+In-Reply-To: <20151204014402.GF19589@localhost.localdomain>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 02, 2015 at 10:00:41PM +0100, Martin Tippmann wrote:
-> Hi,
-> 
-> just saw this in the logs on a few machines, Kernel 4.3.0, Mount options:
 
-Could you please try this patch?
-https://patchwork.kernel.org/patch/7735381/
+
+Liu Bo wrote on 2015/12/03 17:44 -0800:
+> On Mon, Nov 23, 2015 at 06:56:09PM +0100, David Sterba wrote:
+>> On Mon, Nov 23, 2015 at 08:56:13PM +0800, Anand Jain wrote:
+>>> Btrfs-progs is a tool for the btrfs kernel and we hope latest btrfs-progs
+>>> be compatible w any set of older/newer kernels.
+>>>
+>>> So far mkfs.btrfs and btrfs-convert sets the default features, for eg,
+>>> skinny-metadata even if the running kernel does not supports it, and
+>>> so the mount fails on the running.
+>>
+>> So the default behaviour of mkfs will try to best guess the feature set
+>> of currently running kernel. I think this is is the most common scenario
+>> and justifies the change in default behaviours.
+>>
+>> For the other cases I'd like to introduce some human-readable shortcuts
+>> to the --features option. Eg. 'mkfs.btrfs -O compat-3.2' will pick all
+>> options supported by the unpatched mainline kernel of version 3.2. This
+>> would be present for all version, regardless if there was a change in the
+>> options or not.
+>>
+>> Similarly for convenience, add 'running' that would pick the options
+>> from running kernel but will be explicit.
+>>
+>> A remaining option should override the 'running' behaviour and pick the
+>> latest mkfs options. Naming it 'defaults' sounds a bit ambiguous so the
+>> name is yet to be determined.
+>>
+>>> Here in this set of patches will make sure the progs understands the
+>>> kernel supported features.
+>>>
+>>> So in this patch, checks if sysfs tells whether the feature is
+>>> supported if not, then it will relay on static kernel version which
+>>> provided that feature (skinny-metadata here in this example), next
+>>> if for some reason the running kernel does not provide the kernel
+>>> version, then it will fall back to the original method to enable
+>>> the feature with a hope that kernel will support it.
+>>>
+>>> Also the last patch adds a warning when we fail to read either
+>>> sysfs features or the running kernel version.
+>>
+>> Your patchset is a good start, the additional options I've described can
+>> be added on top of that. We might need to switch the version
+>> representation from string to KERNEL_VERSION but that's an
+>> implementation detail.
+>
+> Depending on sysfs is stable but depending on kernel version may be not,
+> we may have a distro kernel which backports some incompat features from
+> upstream, then we have to decide based on sysfs interface.
+
++1.
+
+Although sysfs does not always show up even for supported kernel, e.g 
+btrfs modules is not loaded after boot.
+So we need to consider twice before choosing a fallback method.
+
+>
+> However, this brings another problems, for very old kernels, they don't
+> have sysfs, do you have any suggestions for that?
+
+Other fs, like xfs/ext* doesn't even have sysfs feature interface, only 
+release announcement mentioning default behavior change.
+And I don't see many users complaining about it.
+
+Here is the example of xfsprogs changed its default feature recently:
+In 10th, June, 2015, xfsprogs v3.2.3 is released, with new default 
+feature of enabling CRC for fs.
+The first supported kernel is 3.15, which is release in 8th Jun, 2014.
+Almost one year ago.
+
+On the other hand, the sysfs feature is introduced at the end of year 2013.
+It's already over 2 years.
+
+So just forgot the extra minor case of super old kernel would be good 
+enough.
 
 Thanks,
+Qu
 
--liubo
-> 
-> /dev/sda /media/storage1 btrfs
-> rw,noatime,compress=lzo,space_cache,subvolid=5,subvol=/ 0 0
-> 
-> [414675.258270] INFO: task java:19267 blocked for more than 120 seconds.
-> [414675.258312]       Not tainted 4.3.0-040300-generic #201511020846
-> [414675.258353] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
-> disables this message.
-> [414675.258429] java            D ffff88081f996980     0 19267  18965 0x00000000
-> [414675.258436]  ffff880337d67bb8 0000000000000082 ffff88081c2f3800
-> ffff880019be9c00
-> [414675.258438]  ffff880337d68000 ffff88101b7627bc ffff880019be9c00
-> 00000000ffffffff
-> [414675.258440]  ffff88101b7627c0 ffff880337d67bd0 ffffffff817af3f3
-> ffff88101b7627b8
-> [414675.258442] Call Trace:
-> [414675.258445]  [<ffffffff817af3f3>] schedule+0x33/0x80
-> [414675.258450]  [<ffffffff817af6ae>] schedule_preempt_disabled+0xe/0x10
-> [414675.258454]  [<ffffffff817b0fb5>] __mutex_lock_slowpath+0x95/0x110
-> [414675.258458]  [<ffffffff817b104f>] mutex_lock+0x1f/0x30
-> [414675.258470]  [<ffffffffc02c3352>]
-> btrfs_wait_ordered_roots+0x42/0x1d0 [btrfs]
-> [414675.258480]  [<ffffffffc0294c8f>]
-> btrfs_check_data_free_space+0x1ff/0x2f0 [btrfs]
-> [414675.258491]  [<ffffffffc02bb30f>] __btrfs_buffered_write+0x13f/0x5a0 [btrfs]
-> [414675.258495]  [<ffffffff816fb001>] ? tcp_recvmsg+0x3d1/0xb70
-> [414675.258505]  [<ffffffffc02be971>] btrfs_file_write_iter+0x171/0x560 [btrfs]
-> [414675.258510]  [<ffffffff810aeacc>] ? set_next_entity+0x9c/0xb0
-> [414675.258515]  [<ffffffff811f13c7>] __vfs_write+0xa7/0xf0
-> [414675.258520]  [<ffffffff811f1a16>] vfs_write+0xa6/0x1a0
-> [414675.258524]  [<ffffffff811f2616>] SyS_write+0x46/0xa0
-> [414675.258528]  [<ffffffff817b3036>] entry_SYSCALL_64_fastpath+0x16/0x75
-> [414675.258533] INFO: task java:19268 blocked for more than 120 seconds.
-> [414675.258576]       Not tainted 4.3.0-040300-generic #201511020846
-> [414675.258616] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
-> disables this message.
-> [414675.258684] java            D ffff88081f996980     0 19268  18965 0x00000000
-> [414675.258692]  ffff880634f23bb8 0000000000000082 ffff88081c2f3800
-> ffff880019beaa00
-> [414675.258704]  ffff880634f24000 ffff88101b7627bc ffff880019beaa00
-> 00000000ffffffff
-> [414675.258715]  ffff88101b7627c0 ffff880634f23bd0 ffffffff817af3f3
-> ffff88101b7627b8
-> [414675.258727] Call Trace:
-> [414675.258732]  [<ffffffff817af3f3>] schedule+0x33/0x80
-> [414675.258736]  [<ffffffff817af6ae>] schedule_preempt_disabled+0xe/0x10
-> [414675.258741]  [<ffffffff817b0fb5>] __mutex_lock_slowpath+0x95/0x110
-> [414675.258745]  [<ffffffff817b104f>] mutex_lock+0x1f/0x30
-> [414675.258756]  [<ffffffffc02c3352>]
-> btrfs_wait_ordered_roots+0x42/0x1d0 [btrfs]
-> [414675.258764]  [<ffffffffc0294c8f>]
-> btrfs_check_data_free_space+0x1ff/0x2f0 [btrfs]
-> [414675.258772]  [<ffffffffc02bb30f>] __btrfs_buffered_write+0x13f/0x5a0 [btrfs]
-> [414675.258774]  [<ffffffff816fb001>] ? tcp_recvmsg+0x3d1/0xb70
-> [414675.258783]  [<ffffffffc02be971>] btrfs_file_write_iter+0x171/0x560 [btrfs]
-> [414675.258785]  [<ffffffff8169561b>] ? sock_recvmsg+0x3b/0x50
-> [414675.258787]  [<ffffffff811f13c7>] __vfs_write+0xa7/0xf0
-> [414675.258790]  [<ffffffff811f1a16>] vfs_write+0xa6/0x1a0
-> [414675.258791]  [<ffffffff810e65c5>] ? ktime_get_ts64+0x45/0xf0
-> [414675.258793]  [<ffffffff811f2616>] SyS_write+0x46/0xa0
-> [414675.258795]  [<ffffffff817b3036>] entry_SYSCALL_64_fastpath+0x16/0x75
-> [414675.258812] INFO: task java:19067 blocked for more than 120 seconds.
-> [414675.258856]       Not tainted 4.3.0-040300-generic #201511020846
-> [414675.258898] "echo 0 > /proc/sys/kernel/hung_task_timeout_secs"
-> disables this message.
-> [414675.258964] java            D ffff88081f8d6980     0 19067   2602 0x00000000
-> [414675.258967]  ffff880056957bb8 0000000000000082 ffff88081c2c6200
-> ffff8810188e0000
-> [414675.258968]  ffff880056958000 ffff88101b7627bc ffff8810188e0000
-> 00000000ffffffff
-> [414675.258970]  ffff88101b7627c0 ffff880056957bd0 ffffffff817af3f3
-> ffff88101b7627b8
-> [414675.258972] Call Trace:
-> [414675.258975]  [<ffffffff817af3f3>] schedule+0x33/0x80
-> [414675.258977]  [<ffffffff817af6ae>] schedule_preempt_disabled+0xe/0x10
-> [414675.258979]  [<ffffffff817b0fb5>] __mutex_lock_slowpath+0x95/0x110
-> [414675.258981]  [<ffffffff817b104f>] mutex_lock+0x1f/0x30
-> [414675.258992]  [<ffffffffc02c3352>]
-> btrfs_wait_ordered_roots+0x42/0x1d0 [btrfs]
-> [414675.259003]  [<ffffffffc0294c8f>]
-> btrfs_check_data_free_space+0x1ff/0x2f0 [btrfs]
-> [414675.259013]  [<ffffffffc02bb30f>] __btrfs_buffered_write+0x13f/0x5a0 [btrfs]
-> [414675.259019]  [<ffffffff81314dc3>] ? security_inode_need_killpriv+0x33/0x50
-> [414675.259029]  [<ffffffffc02be971>] btrfs_file_write_iter+0x171/0x560 [btrfs]
-> [414675.259035]  [<ffffffff811f13c7>] __vfs_write+0xa7/0xf0
-> [414675.259040]  [<ffffffff811f1a16>] vfs_write+0xa6/0x1a0
-> [414675.259046]  [<ffffffff81063d24>] ? __do_page_fault+0x1b4/0x400
-> [414675.259051]  [<ffffffff811f2616>] SyS_write+0x46/0xa0
-> [414675.259055]  [<ffffffff817b3036>] entry_SYSCALL_64_fastpath+0x16/0x75
-> 
-> regards
-> Martin
+>
+> Thanks,
+>
+> -liubo
+>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
+

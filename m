@@ -1,73 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35951 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750723AbbLDMiR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Dec 2015 07:38:17 -0500
-Date: Fri, 4 Dec 2015 13:36:25 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Liu Bo <bo.li.liu@oracle.com>
-Cc: linux-btrfs@vger.kernel.org
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:42354
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753130AbbLDMul (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 07:50:41 -0500
+Received: from tux.wizards.de (p4FF582A1.dip0.t-ipconnect.de [79.245.130.161])
+	by mail02.iobjects.de (Postfix) with ESMTPSA id BF32C416046B
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Dec 2015 13:50:39 +0100 (CET)
+Received: from [192.168.100.223] (ragnarok [192.168.100.223])
+	by tux.wizards.de (Postfix) with ESMTP id 5CD9811C01CE
+	for <linux-btrfs@vger.kernel.org>; Fri,  4 Dec 2015 13:50:39 +0100 (CET)
 Subject: Re: [PATCH 04/12] btrfs: change how delay_iput is tracked in
  btrfs_delalloc_work
-Message-ID: <20151204123625.GF31035@suse.cz>
-Reply-To: dsterba@suse.cz
+To: linux-btrfs@vger.kernel.org
 References: <cover.1449161602.git.dsterba@suse.com>
  <a4469a31e3b0cc55ebba9c3aee26cd5632743056.1449161602.git.dsterba@suse.com>
  <20151204022537.GH19589@localhost.localdomain>
+ <20151204123625.GF31035@suse.cz>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <56618C1F.70805@googlemail.com>
+Date: Fri, 4 Dec 2015 13:50:39 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151204022537.GH19589@localhost.localdomain>
+In-Reply-To: <20151204123625.GF31035@suse.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 03, 2015 at 06:25:37PM -0800, Liu Bo wrote:
-> >  	struct inode *inode;
-> > -	int delay_iput;
-> >  	struct completion completion;
-> >  	struct list_head list;
-> >  	struct btrfs_work work;
-> > diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> > index 15b29e879ffc..529a53b80ca0 100644
-> > --- a/fs/btrfs/inode.c
-> > +++ b/fs/btrfs/inode.c
-> > @@ -9436,16 +9436,21 @@ static void btrfs_run_delalloc_work(struct btrfs_work *work)
-> >  {
-> >  	struct btrfs_delalloc_work *delalloc_work;
-> >  	struct inode *inode;
-> > +	int delay_iput;
-> >  
-> >  	delalloc_work = container_of(work, struct btrfs_delalloc_work,
-> >  				     work);
-> >  	inode = delalloc_work->inode;
-> > +	/* Lowest bit of inode pointer tracks the delayed status */
-> > +	delay_iput = ((unsigned long)inode & 1UL);
-> > +	inode = (struct inode *)((unsigned long)inode & ~1UL);
-> > +
-> 
-> To be quite frankly, I don't like this, it's a pointer anyway,
-> error-prone in a debugging view, instead would 'u8 delayed_iput' help?
+On 12/04/15 13:36, David Sterba wrote:
+[snip]
+> As the use of the inode pointer is limited, I don't think this would
+> cause surprises. And it's commented where used which should help during
+> debugging.
 
-The point was to shrink the structure. Adding the u8 will grow it by
-another 8 bytes, besides the slab objects are aligned to 8 bytes by
-default so the overall cost of storing the delayed information is 8
-bytes:
+When I read through those bits (mostly pondering portability) I was wondering
+whether it might make sense to provide thin wrap/unwrap functions for the tag
+bit instead of relying on open code and comments only. Just an idea, not sure
+if it's worth the trouble. The code itself is functional and works fine as it
+is, I'm running it right now.
 
-struct btrfs_delalloc_work {
-        struct inode *             inode;                /*     0     8 */
-        struct completion          completion;           /*     8    32 */
-        struct list_head           list;                 /*    40    16 */
-        struct btrfs_work          work;                 /*    56    88 */
-        /* --- cacheline 2 boundary (128 bytes) was 16 bytes ago --- */
-        u8                         delay;                /*   144     1 */
+-h
 
-        /* size: 152, cachelines: 3, members: 5 */
-        /* padding: 7 */
-        /* last cacheline: 24 bytes */
-};
-
-As the use of the inode pointer is limited, I don't think this would
-cause surprises. And it's commented where used which should help during
-debugging.
-
-Abusing the low bits of pointers is nothing new, the page cache tags are
-implemented that way. This kind of low-level optimizations is IMO acceptable.

@@ -1,99 +1,171 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from know-smtprelay-omc-11.server.virginmedia.net ([80.0.253.75]:53037
-	"EHLO know-smtprelay-omc-11.server.virginmedia.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1756261AbbLDRIA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 4 Dec 2015 12:08:00 -0500
-Subject: Re: btrfs crashing the kernel with Seagate 8TB SMR drives.
-References: <566084F8.5050705@birds-are-nice.me>
- <5661AF77.6000009@render-wahnsinn.de>
-To: linux-btrfs@vger.kernel.org
-From: Birdsarenice <Quail@birds-are-nice.me>
-Message-ID: <5661C672.50203@birds-are-nice.me>
-Date: Fri, 4 Dec 2015 16:59:30 +0000
+Received: from userp1040.oracle.com ([156.151.31.81]:24819 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752294AbbLDSX1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 13:23:27 -0500
+Date: Fri, 4 Dec 2015 10:23:04 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: dsterba@suse.cz, Anand Jain <anand.jain@oracle.com>,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/5] Make btrfs-progs really compatible with any
+ kernel version
+Message-ID: <20151204182304.GB8792@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1448283378-10579-1-git-send-email-anand.jain@oracle.com>
+ <20151123175608.GI31035@twin.jikos.cz>
+ <20151204014402.GF19589@localhost.localdomain>
+ <5660F5A3.3080409@cn.fujitsu.com>
+ <20151204025309.GI19589@localhost.localdomain>
+ <56610F43.4060306@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <5661AF77.6000009@render-wahnsinn.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56610F43.4060306@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I did suspect that NCQ may be involved, but I had no clear evidence - 
-until I noticed that my drives had also incremented the 'end to end 
-error' count in SMART, which does match accounts of the NCQ issue. That 
-suggests there are two interlinked issues: The issue with those Seagate 
-drives and NCQ, combined with btrfs causing a kernel lock under certain 
-error circumstances when it would be more appropriate to remount ro. 
-Looks like the NCQ issue is already being addressed, but I did uncover a 
-new and unusual error condition that btrfs needs to handle - and looking 
-at the patch, it's a trivial thing to fix, so bothering the mailing list 
-with it has made btrfs better in a tiny way. I don't usually report 
-errors, assuming that people far more capable than I are already on top 
-of them, but when I saw one that gave a description right down to the 
-line number I thought it might be something that could be looked into 
-very easily.
+On Fri, Dec 04, 2015 at 11:57:55AM +0800, Qu Wenruo wrote:
+> 
+> 
+> Liu Bo wrote on 2015/12/03 18:53 -0800:
+> >On Fri, Dec 04, 2015 at 10:08:35AM +0800, Qu Wenruo wrote:
+> >>
+> >>
+> >>Liu Bo wrote on 2015/12/03 17:44 -0800:
+> >>>On Mon, Nov 23, 2015 at 06:56:09PM +0100, David Sterba wrote:
+> >>>>On Mon, Nov 23, 2015 at 08:56:13PM +0800, Anand Jain wrote:
+> >>>>>Btrfs-progs is a tool for the btrfs kernel and we hope latest btrfs-progs
+> >>>>>be compatible w any set of older/newer kernels.
+> >>>>>
+> >>>>>So far mkfs.btrfs and btrfs-convert sets the default features, for eg,
+> >>>>>skinny-metadata even if the running kernel does not supports it, and
+> >>>>>so the mount fails on the running.
+> >>>>
+> >>>>So the default behaviour of mkfs will try to best guess the feature set
+> >>>>of currently running kernel. I think this is is the most common scenario
+> >>>>and justifies the change in default behaviours.
+> >>>>
+> >>>>For the other cases I'd like to introduce some human-readable shortcuts
+> >>>>to the --features option. Eg. 'mkfs.btrfs -O compat-3.2' will pick all
+> >>>>options supported by the unpatched mainline kernel of version 3.2. This
+> >>>>would be present for all version, regardless if there was a change in the
+> >>>>options or not.
+> >>>>
+> >>>>Similarly for convenience, add 'running' that would pick the options
+> >>>>from running kernel but will be explicit.
+> >>>>
+> >>>>A remaining option should override the 'running' behaviour and pick the
+> >>>>latest mkfs options. Naming it 'defaults' sounds a bit ambiguous so the
+> >>>>name is yet to be determined.
+> >>>>
+> >>>>>Here in this set of patches will make sure the progs understands the
+> >>>>>kernel supported features.
+> >>>>>
+> >>>>>So in this patch, checks if sysfs tells whether the feature is
+> >>>>>supported if not, then it will relay on static kernel version which
+> >>>>>provided that feature (skinny-metadata here in this example), next
+> >>>>>if for some reason the running kernel does not provide the kernel
+> >>>>>version, then it will fall back to the original method to enable
+> >>>>>the feature with a hope that kernel will support it.
+> >>>>>
+> >>>>>Also the last patch adds a warning when we fail to read either
+> >>>>>sysfs features or the running kernel version.
+> >>>>
+> >>>>Your patchset is a good start, the additional options I've described can
+> >>>>be added on top of that. We might need to switch the version
+> >>>>representation from string to KERNEL_VERSION but that's an
+> >>>>implementation detail.
+> >>>
+> >>>Depending on sysfs is stable but depending on kernel version may be not,
+> >>>we may have a distro kernel which backports some incompat features from
+> >>>upstream, then we have to decide based on sysfs interface.
+> >>
+> >>+1.
+> >>
+> >>Although sysfs does not always show up even for supported kernel, e.g btrfs
+> >>modules is not loaded after boot.
+> >>So we need to consider twice before choosing a fallback method.
+> >>
+> >>>
+> >>>However, this brings another problems, for very old kernels, they don't
+> >>>have sysfs, do you have any suggestions for that?
+> >>
+> >>Other fs, like xfs/ext* doesn't even have sysfs feature interface, only
+> >>release announcement mentioning default behavior change.
+> >>And I don't see many users complaining about it.
+> >>
+> >>Here is the example of xfsprogs changed its default feature recently:
+> >>In 10th, June, 2015, xfsprogs v3.2.3 is released, with new default feature
+> >>of enabling CRC for fs.
+> >>The first supported kernel is 3.15, which is release in 8th Jun, 2014.
+> >>Almost one year ago.
+> >
+> >It's the same thing, if you use a earlier version(before v5) xfs and a
+> >v5 xfsprogs, you are not going to mount it.
+> >
+> >>
+> >>On the other hand, the sysfs feature is introduced at the end of year 2013.
+> >>It's already over 2 years.
+> >>
+> >>So just forgot the extra minor case of super old kernel would be good
+> >>enough.
+> >
+> >Sorry we're not able to do that since most users won't keep up upgrading their
+> >kernels to the latest one, instead they use the stable one they think.
+> >
+> >The fact is that btrfs has way more incompatible features than either ext4 or xfs,
+> >and no complain on ext4/xfs from them won't solve our btrfs issue anyway.
+> >
+> >The problem is much more serious for enterprise users which are sort of
+> >conservative, they would backport what they need, if they use
+> >btrfs they will experience the painful things.
+> 
+> Only if enterprise really think btrfs is stable enough.
+> For this point, xfs is considered more stable than btrfs, but v5 xfs recent
+> change doesn't introduce such facility to do that compatibility check in
+> xfsprogs.
 
-I'm still impressed with the resilience of btrfs though - after all this 
-abuse of crashing during rebalancing, corrupted filesystem structures 
-and out-of-order commands, all my data is still undamaged. No 
-conventional RAID could have endured that.
+Xfs on kernel side obviously refuses to mount if you create an incompatible
+feature with a recent xfsprogs but try to mount it with older kernel.
 
-Thanks for the patch, but I'd rather not fiddle with he kernel and have 
-to repeat every time a new version comes out. I'll just disable NCQ 
-until the fix is mainlined and SUSE incorporates it.
+STATIC int
+xfs_mount_validate_sb()
+{
+	...
+	if (xfs_sb_has_incompat_feature(sbp, XFS_SB_FEAT_INCOMPAT_UNKNOWN)) {         
+		xfs_warn(mp,                                             
+		"Superblock has unknown incompatible features (0x%x) enabled.",                  
+                                 (sbp->sb_features_incompat & XFS_SB_FEAT_INCOMPAT_UNKNOWN));  
+		xfs_warn(mp,
+		"Filesystem can not be safely mounted by this kernel.");                         
+		return -EINVAL;                                          
+	}                                                                
+	...
+}
 
-uOn 04/12/15 15:21, Robert Krig wrote:
-> As Chris mentioned, check out the Bug report here:
-> https://bugzilla.kernel.org/show_bug.cgi?id=93581
->
->
-> I have a 8TB SMR Drive and the kernel was reporting drive errors.
-> Switching to Kernel 3.16 (Standard Debian Jessie kernel) fixed it for me
-> ( for the moment).
->
-> >From what I read in that kernel bug report. The patch has been submitted
-> for kernel 4.4.
->
-> On 03.12.2015 19:07, Codebird wrote:
->> I've got a nice bug for you - because I can offer you what everyone
->> likes to see, a precise error message.
->>
->> I've got a btrfs filesystem spread over six devices, RAID1 mode. Four
->> of these are Seagate 8TB archive drives - those SMR ones that a few
->> others have reported failing when used with btrfs. I've had that issue
->> too, and I just can't explain why, other than to say that it only
->> occurs when using them on my mainboard SATA ports, not via USB dock.
->> But that's not what I'm reporting - that's just the source of the
->> problem that causes the crash I am reporting.
->>
->> The crash occurs when scrubbing, after some time and some terabytes -
->> or possibly just when reading a certain place, I'm not sure - and it
->> gives this helpful error left on the screen along with a system so
->> unresponsive numlock won't flash:
->>
->> BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO
->> failure
->> BTRFS: Error (device sdg1) in  __btrfs_free_extent:6360: errno=-5 IO
->> failure
->> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5
->> IO failure
->> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5
->> IO failure
->> BTRFS: Error (device sdg1) in  btrfs_run_delayed_refs:2851: errno=-5
->> IO failure
->> <long indent, as if a CR was lost> BTRFS: assertion failed:
->> f(fs_info->sb->s_flags & MS  <Cut by edge of screen>
->> -----------[ cut here ]------------
->> kernel BUG at ../fs/btrfs/ctree.h:4057!
->>
->> Not sure if some of those 5 might be 6, as I was in a hurry to get it
->> back up both times and just got a blurry photo. But it looks to me
->> like there might be a chunk of code that doesn't handle a hardware
->> fault - rather than cleanly return an error it's causing the kernel to
->> hang entirely. I've managed to get this to happen twice now, so it's
->> certainly something worth looking into. This is on SUSE tumbleweed,
->> with kernel 4.3.0-2-default.
->> -- 
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
+And this did happen:
+http://comments.gmane.org/gmane.comp.file-systems.xfs.general/69514
+
+> 
+> >
+> >There're plenty of fixes for progs code, people needs stabler recovery
+> >tools rather than new features they may not use.
+> >
+> >So we'd like to have a univeral progs code for old kernels.
+> 
+> Overall, btrfs is considered as a fast-moving and not that stable fs (at
+> least not as stable as ext4/xfs).
+> And users are always encourages to use latest kernel for these reason.
+> 
+> Shouldn't we do such thing when btrfs is stable enough?
+
+That's not true, we use a stable kernel instead, which has a stable btrfs,
+it's not latest kernel but stable kernel that is more suitable for production use.
+
+We offer btrfs support as the customers requested, I asked for this
+because our customer needs btrfs-progs to be wiser on this feature selecting stuff.
+
+Thanks,
+
+-liubo

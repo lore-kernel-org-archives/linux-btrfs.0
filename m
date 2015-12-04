@@ -1,126 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f170.google.com ([209.85.213.170]:36622 "EHLO
-	mail-ig0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750925AbbLDMi1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 07:38:27 -0500
-Received: by igcph11 with SMTP id ph11so31862439igc.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 04:38:26 -0800 (PST)
-Subject: Re: compression disk space saving - what are your results?
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
- <pan$101f2$e235cddd$fea951cb$dcf70182@cox.net>
- <CAK5rZE6-SMfseAfEu1GxLrgYNOBMhNbiQ8tqWVWUr6dFDL8OKw@mail.gmail.com>
- <565F028C.6000707@gmail.com> <pan$6405b$7a197e29$8d0a71a9$2a5649b6@cox.net>
+Received: from mail-io0-f177.google.com ([209.85.223.177]:35351 "EHLO
+	mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752107AbbLDNAb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 08:00:31 -0500
+Received: by ioc74 with SMTP id 74so114527530ioc.2
+        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 05:00:31 -0800 (PST)
+Subject: Re: Very various speed of grep operation on btrfs partition
+To: =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>,
+        linux-btrfs@vger.kernel.org
+References: <CABXGCsMYdfSpZeUbWut1p542XA-L99iXM0Ero8tAFVhU9xhzkw@mail.gmail.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5661891E.40600@gmail.com>
-Date: Fri, 4 Dec 2015 07:37:50 -0500
+Message-ID: <56618E4A.2000905@gmail.com>
+Date: Fri, 4 Dec 2015 07:59:54 -0500
 MIME-Version: 1.0
-In-Reply-To: <pan$6405b$7a197e29$8d0a71a9$2a5649b6@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080608000407070609080105"
+In-Reply-To: <CABXGCsMYdfSpZeUbWut1p542XA-L99iXM0Ero8tAFVhU9xhzkw@mail.gmail.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms040804050300050708080203"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080608000407070609080105
+--------------ms040804050300050708080203
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-12-03 01:29, Duncan wrote:
-> Austin S Hemmelgarn posted on Wed, 02 Dec 2015 09:39:08 -0500 as
-> excerpted:
+On 2015-12-03 14:36, =D0=9C=D0=B8=D1=85=D0=B0=D0=B8=D0=BB =D0=93=D0=B0=D0=
+=B2=D1=80=D0=B8=D0=BB=D0=BE=D0=B2 wrote:
+> Today on work I needed searching some strings in repository. Only
+> machine with windows was available. I am was using grep from Cygwin
+> for this task and I am was surprised about speed of NTFS partition.I
+> decided to repeat this task on my home Linux workstation.
 >
->> On 2015-12-02 09:03, Imran Geriskovan wrote:
->>>>> What are your disk space savings when using btrfs with compression?=
-
->>>
->>>> [Some] posters have reported that for mostly text, compress didn't
->>>> give them expected compression results and they needed to use
->>>> compress-force.
->>>
->>> "compress-force" option compresses regardless of the "compressibility=
-"
->>> of the file.
->>>
->>> "compress" option makes some inference about the "compressibility" an=
-d
->>> decides to compress or not.
->>>
->>> I wonder how that inference is done?
->>> Can anyone provide some pseudo code for it?
+[...snip...]
+>  From results we see that search goes sometimes instantly less than a
+> second, and sometimes lasts 4 minutes. /home partition formatted in
+> BTRFS filesystem. I would be interested investigate what is related to
+> search speed. And make that search was always goes less than a second.
 >
->> I'm not certain how BTRFS does it, but my guess would be trying to
->> compress the block, then storing the uncompressed version if the
->> compressed one is bigger.
+> Here is my mount options:
+> UUID=3D82df2d84-bf54-46cb-84ba-c88e93677948 /home btrfs
+> subvolid=3D5,autodefrag,noatime,space_cache,inode_cache,nodatacow 0 0
 >
-> No pseudocode as I'm not a dev and wouldn't want to give the wrong
-> impression, but as I believe I replied recently in another thread, base=
-d
-> on comments the devs have made...
+> # uname -a
+> Linux localhost.localdomain 4.2.6-301.fc23.x86_64+debug #1 SMP Fri Nov
+> 20 22:07:57 UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
 >
-> With compress, btrfs does a(n intended to be fast) trial compression of=
-
-> the first 128 KiB block or two and uses the result of that to decide
-> whether to compress the entire file.
+> How to start investigation?
 >
-> Compress-force simply bypasses that first decision point, processing th=
-e
-> file as if the test always succeeded and compression was chosen.
->
-> If the decision to compress is made, the file is (evidently, again, not=
- a
-> dev, but filefrag results support) compressed a 128 KiB block at a time=
+Well, what other things are accessing the filesystem at the same time?=20
+If you've got something like KDE running with the 'semantic desktop'=20
+stuff turned on, than that will seriously impact the performance of=20
+other things using that filesystem.
 
-> with the resulting size compared against the uncompressed version, with=
+The other thing to keep in mind, is that caching may be impacting things =
 
-> the smaller version stored.
->
-> (Filefrag doesn't understand btrfs compression and reports individual
-> extents for each 128 KiB compression block, if compressed.  However, fo=
-r
-> many files processed with compress-force, filefrag doesn't report the
-> expected size/128-KiB extents, but rather something lower.  If
-> filefrag -v is used, details of each "extent" are listed, and some show=
+somewhat.  To really get a good idea of performance for something like=20
+this, you should run 'sync' followed by 'echo 3 >=20
+/proc/sys/vm/drop_caches' (you'll need to be root for the second one)=20
+prior to each run, and ideally have nothing else running on that filesyst=
+em.
 
-> up as multiples of 128 KiB, indicating runs of uncompressable blocks th=
-at
-> unlike actually compressed blocks, filefrag can and does report correct=
-ly
-> as single extents.  The conclusion is thus as above, that btrfs is
-> testing the compression result of each block, and not compressing if th=
-e
-> "compression" ends up being negative, that is, if the "compressed" size=
+On a separate note, if you're either running on a 64-bit system, or have =
 
-> is larger than the uncompressed size.)
->
->> On a side note, I really wish BTRFS would just add LZ4 support.  It's =
-a
->> lot more deterministic WRT decompression time than LZO, gets a similar=
+less than about 2^31 files on the FS, inode_cache will slow things down. =
 
->> compression ratio, and runs faster on most processors for both
->> compression and decompression.
->
-> There were patches (at least RFC level, IIRC) floating around years ago=
+  It's intended for stuff like mail spools where you have billions of=20
+files being created and deleted over a few weeks, and quickly use up the =
 
-> to add lz4... I wonder what happened to them?  My impression was that a=
+inode numbers.  On almost all systems, it will make things run slower,=20
+and possibly result in non-=3Ddeterministic filesystem performance like=20
+what you are seeing here.
 
-> large deployment somewhere may actually be running them as well, making=
+Additionally, do you have some particular reason that you absolutely=20
+_need_ nodatacow to be enabled for the FS?  It usually has no impact on=20
+performance, but it removes any kind of error correction for file data=20
+(checksums can't be used safely without COW semantics).  It probably has =
 
-> them well tested (and obviously well beyond preliminary RFC level) by
-> now, altho that impression could well be wrong.
->
-Hmm, I'll have to see if I can find those and rebase them.  IIRC, the=20
-argument against adding it was 'but we already have a fast compression=20
-algorithm!', which in turn says to me they didn't try to sell it on the=20
-most significant parts, namely that it's faster at decompression than=20
-LZO (even when you use the lz4hc variant, which takes longer to compress =
-
-to give a (usually) better compression ratio, but decompresses just as=20
-fast as regular lz4), and the timings are a lot more deterministic=20
-(which is really important if you're doing real-time stuff).
+no direct impact on what you're seeing here, but it is something that=20
+really shouldn't be used in most cases at the filesystem level (it can=20
+be done on given subvolumes or directories, and that's the recommended=20
+way to do it if you don't want to go down to the per-file level).
 
 
---------------ms080608000407070609080105
+--------------ms040804050300050708080203
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -162,9 +125,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA0MTIzNzUwWjBPBgkq
-hkiG9w0BCQQxQgRAxdz+M77vbR9pWNcJaMXmTlilzAsTJHdpkrDbgDFweno87zQBQAigfg2w
-q08Dp0iz8cx0g/s7uVwBrw6IAuq2MzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA0MTI1OTU0WjBPBgkq
+hkiG9w0BCQQxQgRAKpzISKwq76Qf3b2/8wuHikwB+jLzaUJztXSp7J1vY+ZLrkrxa7iE85xN
+a1jsT4ZWIPyRafDwzahr2Kn+JY0aUzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -172,14 +135,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBO9MR8xHy+T0g6BD3C2hv/dUIegSsvKWVN5GcnoWR23YVEO3a8
-jvCJAWBcIyZUV+TH5Htrhi1RvAIQsAUWNyfwZPMq6nzAkNjgR0IZHM6BuQOh2vlCRacQb7bo
-iTSbeXy9rUM0qZkpdmO4ZtoTzQhjyjpvvTMzo8TmjXPjzUOWTRPGVrGCvP/wWtbWsyPL+uOP
-hx8zR+FtcdN5GbgPGpNC0CH09GVjLfQ0jY+uWW1mrrwNGrsUbnG8snhe4cu+CoPbeYwcEQH0
-T1KGHSOWMfWMH35Run5wOh+TNfQbamcq992aCxNCuBYQoku0o/1oc7bJJB10Nyd/IMH761RC
-Xi/2s9A0kTOvXYH7PVZTroVgyzrMxUZ3Tj/Y48QTw2u9F4HZqugNIWkz079Rw7XRr6lBNLHa
-Qlnr57C2qyiOeAb3x7wMuoLYZhGE9rX0KYNgttzGoSCCcEwg5wrigigixkmH+eVzPBH8nych
-wptwWFplAUcp7AUStpw1nnG6qNhFF/PGjJ8HBeElpM0/wV1gcAl6E0B4w3rVFleRF22Rpil0
-2jnj8dzg1dD2lZ4g4uKgWN2rW+jGMUep/3YMIqahi46/3aVDR6c7q5zF7a0/i8MFtJQFhb/V
-pwVdAtez1QHdf3EOof4NLIiJDXIP9RiHqka/yr62u6VjQvuvA8XrIplwdgAAAAAAAA==
---------------ms080608000407070609080105--
+BgkqhkiG9w0BAQEFAASCAgCItost5qb3WcFuMlbs7uYxmX7ISw8pg/RD7MhVi6p9txGP2YHy
+hdlVkudgJYQw/IUCp6tv8fVTyo06qw6YJcc082ywOpE96bRedDnLjaI6U48arePxewU8c8FR
+5Okeh8trbOTDLxt547ti6uubS1pauqGY3lFxoD+ECIgMGWtVrvaUAuIFK5qsY1Qjw+LG0osw
+JnJ6+A+iDqR320mBa89rT5g8zIYfZJiGJnNPorOWmeaBKGFa+gpG1rsV5mgsF93bFMQjxPh8
+LI/Tp87NjvaYvRFOGGeF4xhtjf5mp/mlumSrO2jas8HopwiFtrK6MYH1po8I6Cds1vPQHrpZ
+JA5lCwMmD21y+r+yiZlOTm1FXh5rGBEMTXIBW0d3mRs1fh8bcKmgOMHo0tjLJbNvz65SMTWG
+lW4mIwGbS5M+MU8AL6XOWjGVfOhuvPr+A5SFVVGZeobDtAXBen64z29Y3S30xmTzPL5Xamtm
+Eiq5Hd3+nOx23mIF5zeYfCqWph4TPUbB4VY0FKKYhl6UoQ8MOKjjiym4pYMjSZqHMu2T3b3w
+sAMzdHJLfl8jJ8/6OB3V/OR6wd9ryXf6mkWLh1zjFcDswawbXtKW9veNpPsWvV+sipB4RtV4
+vgoRfkV+fx3kvOzedczWcuLsZMj1z8K/CUmZLHSu7vfNJvW7VQzq7bBbbQAAAAAAAA==
+--------------ms040804050300050708080203--

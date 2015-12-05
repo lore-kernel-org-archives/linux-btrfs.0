@@ -1,100 +1,125 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:57882 "EHLO plane.gmane.org"
+Received: from mout.gmx.net ([212.227.15.15]:52107 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754453AbbLENTY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 5 Dec 2015 08:19:24 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a5CkE-0003Na-If
-	for linux-btrfs@vger.kernel.org; Sat, 05 Dec 2015 14:19:22 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 05 Dec 2015 14:19:22 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 05 Dec 2015 14:19:22 +0100
+	id S1751633AbbLENhP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 5 Dec 2015 08:37:15 -0500
+Received: from thetick.localnet ([93.181.44.4]) by mail.gmx.com (mrgmx003)
+ with ESMTPSA (Nemesis) id 0MHnzh-1a8mSS0oY9-003aPS for
+ <linux-btrfs@vger.kernel.org>; Sat, 05 Dec 2015 14:37:13 +0100
+From: Marc Joliet <marcec@gmx.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Subvolume UUID, data corruption?
-Date: Sat, 5 Dec 2015 13:19:16 +0000 (UTC)
-Message-ID: <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
-References: <20151204120529.37E47D5A28@emkei.cz>
-	<20151204130758.GR8775@carfax.org.uk>
-	<1449286104.18841.14.camel@scientia.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: compression disk space saving - what are your results?
+Date: Sat, 05 Dec 2015 14:37:05 +0100
+Message-ID: <6329794.eixGOkx0p3@thetick>
+In-Reply-To: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
+References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
+MIME-Version: 1.0
+Content-Type: multipart/signed; boundary="nextPart2160819.7KbyQApKBx"; micalg="pgp-sha256"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer posted on Sat, 05 Dec 2015 04:28:24 +0100 as
-excerpted:
+--nextPart2160819.7KbyQApKBx
+Content-Transfer-Encoding: quoted-printable
+Content-Type: text/plain; charset="utf-8"
 
-> On Fri, 2015-12-04 at 13:07 +0000, Hugo Mills wrote:
->> I don't think it'll cause problems.
-> Is there any guaranteed behaviour when btrfs encounters two filesystems
-> (i.e. not talking about the subvols now) with the same UUID?
-> 
-> Given that it's long standing behaviour that people could clone
-> filesystems (dd, etc.) and this just worked™, btrfs should at least
-> handle such case gracefully.
-> For example, when already more than one block device with a btrfs of the
-> same UUID are known, then it should refuse to mount any of them.
-> 
-> And if one is already known and another device pops up it should refuse
-> to mount that and continue to normally use the already mounted one.
+On Wednesday 02 December 2015 18:46:30 Tomasz Chmielewski wrote:
+>What are your disk space savings when using btrfs with compression?
+>
+>I have a 200 GB btrfs filesystem which uses compress=3Dzlib, only stor=
+es
+>text files (logs), mostly multi-gigabyte files.
+>
+>
+>It's a "single" filesystem, so "df" output matches "btrfs fi df":
+>
+># df -h
+>Filesystem      Size  Used Avail Use% Mounted on
+>(...)
+>/dev/xvdb       200G  124G   76G  62% /var/log/remote
+>
+>
+># du -sh /var/log/remote/
+>153G    /var/log/remote/
+>
+>
+> From these numbers (124 GB used where data size is 153 GB), it appear=
+s
+>that we save around 20% with zlib compression enabled.
+>Is 20% reasonable saving for zlib? Typically text compresses much bett=
+er
+>with that algorithm, although I understand that we have several
+>limitations when applying that on a filesystem level.
+>
+>
+>Tomasz Chmielewski
+>http://wpkg.org
 
-The problem with btrfs is that because (unlike traditional filesystems) 
-it's multi-device, it needs some way to identify what devices belong to a 
-particular filesystem.
+I have a total of three file systems that use compression, on a desktop=
+ and a=20
+laptop.  / on both uses compress=3Dlzo, and my backup drive uses compre=
+ss=3Dzlib=20
+(my RAID1 FS does not use compression).  My desktop looks like this:
 
-And UUID is, by definition and expansion, Universally Unique ID.  Btrfs 
-simply depends on it being what it says on the the tin, universally 
-unique, to ID the components of the filesystem and assemble them 
-correctly.
+% df -h
+Dateisystem    Gr=C3=B6=C3=9Fe Benutzt Verf. Verw% Eingeh=C3=A4ngt auf
+/dev/sda1       108G     79G   26G   76% /
+[...]
 
-Besides dd, etc, LVM snapshots are another case where this goes screwy.  
-If the UUID isn't UUID, do a btrfs device scan (which udev normally does 
-by default these days) so the duplicate UUID is detected, and btrfs 
-*WILL* eventually start trying to write to all the "newly added" devices 
-that scan found, identified by their Universally Unique IDs, aka UUIDs.  
-It's not a matter of if, but when.
+For / I get a total of about 8G or at least 9% space saving:
 
+# du -hsc /mnt/rootfs/*
+71G     /mnt/rootfs/home
+14G     /mnt/rootfs/rootfs
+2,3G    /mnt/rootfs/var
+87G     insgesamt
 
-And the UUID is embedded so deeply within the filesystem and its 
-operations, as an inextricable part of the metadata (thus avoiding the 
-problem reiserfs had where a reiserfs stored in a loopback file on a 
-reiserfs, would screw up reiserfsck, on btrfs, the loopback file would 
-have a different UUID and thus couldn't be mixed up), that changing the 
-UUID is not the simple operation of changing a few bytes in the superblock 
-that it is on other filesystems, which is why there's now a tool to go 
-thru all those metadata entries and change it.
+I write "at least" because this does not include snapshots.  On my lapt=
+op the=20
+difference is merely 1 GB (83 vs. 84 GB), but it was using the autodefr=
+ag=20
+mount option until yesterday (when I migrated it to an SSD using dd), w=
+hich=20
+probably accounts for a significant amount of wasted space.  I'll see h=
+ow it=20
+develops over the next two weeks, but I expect the ratio to become simi=
+lar to=20
+my desktop (probably less, since there is also a lot of music on there)=
+.
 
+I would love to answer the question for my backup drive, but du took to=
+o long=20
+(> 1 h) so I stopped it :-( .  I might try it again later, but no promi=
+ses!
 
-So an aware btrfs admin simply takes pains to avoid triggering a btrfs 
-device scan at the wrong time, and to immediately hide their LVM 
-snapshots, immediately unplug their directly dd-ed devices, etc, and thus 
-doesn't have to deal with the filesystem corruption that'd be a when not 
-if, if they didn't take such precautions with their dupped UUIDs that 
-actually aren't as UUID as the name suggests...
+Greetings
+=2D-=20
+Marc Joliet
+=2D-
+"People who think they know everything really annoy those of us who kno=
+w we
+don't" - Bjarne Stroustrup
+--nextPart2160819.7KbyQApKBx
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: This is a digitally signed message part.
+Content-Transfer-Encoding: 7Bit
 
-And as your followup suggests in a security context, they consider 
-masking out their UUIDs before posting them, as well, tho most kernel 
-hackers generally consider unsupervised physical access to be game-over, 
-security-wise.  (After all, in that case there's often little or nothing 
-preventing a reboot to that USB stick, if desired, or simply yanking the 
-devices and duping them or plugging them in elsewhere, if the BIOS is 
-password protected, with the only thing standing in the way at that point 
-being possible device encryption.)
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
+iQIcBAABCAAGBQJWYuiGAAoJEL/Q5oYsiHj0kroQAM1aQ7lSox4PRUJ4T66Z8Mm9
+26WkYQHWC7LpFBSdKZ2l87alseYmD6k2MUsKr73Pr5FWL3wp6ARTvnoJsSvIg2p3
+zuJxgdhkm8Tre8u5uw9N4+KhKjREIzgsHwFwlIMJTWQM0d6yfzr1LXpPyJhsisJ4
+1J6aJTW6/xRnZ7Kh8Z7fxn3huZbT87rnPODP5O8HxmLD1ZrOU4it6hGBk3jX1epU
+V/2H1rKg+rhnawQmQ14MwrPsINQNdrShSup3n0gZfSCH3JfU2WAEOg/ap7nzqM9A
+Fr/2mBX2QyoKZ9zc2+ab71XfaHGA74qNvVrhdVKnrCReaDTxh5NIOnPMMsRBxaBW
+D1Hmy47XRf8KxL9DVqI6n0/jiR12EH1JdVxKICwg6hN+06mlQYu8d1kAESAhkjI1
+1poyoahP8QgQTSs9UeOAKLuj78tJ6cyE6Aldw+ir0oKjflkIQs9Ha8EeGAE8SbP1
+lyF8Ec2Pne8B2m/rCz2K2GKnICUAkCFGidvkDLeKNM5WLvjOc+Fo7Exn5OXUvDRl
+6gU5fo4FrK41YUxCCeAMFbW4RHQ9pvvDMs7CFbYAf0HLpw5lhfYb7uhmWdeCU1do
+KtWXZRDc6qLjEI82blpC7wZi/94OmRrcXJKhWnBRQ++myDFzzJMJ4zcajG0XBKvV
+RMxEIwCm8BOvq90XediR
+=TbnU
+-----END PGP SIGNATURE-----
 
-The UUID *as* a UUID, _unique_ at least on that system (if not actually 
-universally) as it says on the tin, is so deeply embedded in btrfs that 
-at this point it's not going to be removed.  The only real alternative if 
-you don't like it is using a different filesystem.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+--nextPart2160819.7KbyQApKBx--
 

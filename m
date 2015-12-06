@@ -1,108 +1,178 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:60173 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751540AbbLFBvZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Dec 2015 20:51:25 -0500
-Message-ID: <1449366679.3183.36.camel@scientia.net>
+Received: from mailgw-01.dd24.net ([193.46.215.41]:42055 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751540AbbLFBv0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 5 Dec 2015 20:51:26 -0500
+Message-ID: <1449366680.3183.37.camel@scientia.net>
 Subject: Re: attacking btrfs filesystems via UUID collisions? (was:
  Subvolume UUID, data corruption?)
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Hugo Mills <hugo@carfax.org.uk>
-Cc: linux-btrfs@vger.kernel.org
-Date: Sun, 06 Dec 2015 02:51:19 +0100
-In-Reply-To: <20151205120103.GA2376@carfax.org.uk>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Sun, 06 Dec 2015 02:51:20 +0100
+In-Reply-To: <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
 References: <20151204120529.37E47D5A28@emkei.cz>
 	 <20151204130758.GR8775@carfax.org.uk>
 	 <1449286104.18841.14.camel@scientia.net>
-	 <20151205120103.GA2376@carfax.org.uk>
+	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-WKE76UTrCECy4EXyrBuX"
+	boundary="=-49nH5mjJLMyEIN7mrcFS"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-WKE76UTrCECy4EXyrBuX
+--=-49nH5mjJLMyEIN7mrcFS
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sat, 2015-12-05 at 12:01 +0000, Hugo Mills wrote:
-> On Sat, Dec 05, 2015 at 04:28:24AM +0100, Christoph Anton Mitterer
-> wrote:
-> > On Fri, 2015-12-04 at 13:07 +0000, Hugo Mills wrote:
-> > > I don't think it'll cause problems.
-> > Is there any guaranteed behaviour when btrfs encounters two
-> > filesystems
-> > (i.e. not talking about the subvols now) with the same UUID?
->=20
-> =C2=A0=C2=A0=C2=A0Nothing guaranteed, but the likelihood is that things w=
-ill go
-> badly
-> wrong, in the sense of corrupt filesystems.
-Phew... well sorry, but I think that's really something that makes
-btrfs not productively usable until fixed.
+On Sat, 2015-12-05 at 13:19 +0000, Duncan wrote:
+> The problem with btrfs is that because (unlike traditional
+> filesystems)=20
+> it's multi-device, it needs some way to identify what devices belong
+> to a=20
+> particular filesystem.
+Sure, but that applies to lvm, or MD as well... and I wouldn't know of
+any random corruption issues there.
+
+
+> And UUID is, by definition and expansion, Universally Unique ID.
+Nitpicking doesn't help here,... reality is they're not,.. either by
+people doing stuff like dd, other forms of clones, LVM, etc. ... or as
+I've described maliciously.
+
+
+> Btrfs=20
+> simply depends on it being what it says on the the tin, universally=20
+> unique, to ID the components of the filesystem and assemble them=20
+> correctly.
+Admittedly, I'm not an expert to the internals of btrfs, but it seems
+other multi-device containers can handle UUID duplicates fine, or at
+least so that you don't get any data corruption (or leaks).
+
+This is a showstopper - maybe not under lab conditions but surely under
+real world scenarios.
+I'm actually quite surprised that no-one else didn't complain about
+that before, given how long btrfs exists.
+
+
+> Besides dd, etc, LVM snapshots are another case where this goes
+> screwy.=C2=A0=C2=A0
+> If the UUID isn't UUID, do a btrfs device scan (which udev normally
+> does=20
+> by default these days) so the duplicate UUID is detected, and btrfs=20
+> *WILL* eventually start trying to write to all the "newly added"
+> devices=20
+> that scan found, identified by their Universally Unique IDs, aka
+> UUIDs.=C2=A0=C2=A0
+> It's not a matter of if, but when.
+Well.. as I said... quite scary, with respect to both, accidental and
+malicious cases of duplicate UUIDs.
+
+
+> And the UUID is embedded so deeply within the filesystem and its=20
+> operations, as an inextricable part of the metadata (thus avoiding
+> the=20
+> problem reiserfs had where a reiserfs stored in a loopback file on a=20
+> reiserfs, would screw up reiserfsck, on btrfs, the loopback file
+> would=20
+> have a different UUID and thus couldn't be mixed up), that changing
+> the=20
+> UUID is not the simple operation of changing a few bytes in the
+> superblock=20
+> that it is on other filesystems, which is why there's now a tool to
+> go=20
+> thru all those metadata entries and change it.
+I don't think that this design is per se bad and prevents the kernel to
+handle such situations gracefully.
+
+I would expect that in addition to the fs UUID, it needs a form of
+device ID... so why not simply ignoring any new device for which there
+already is a matching fs UUID and device ID, unless the respective tool
+(mount, btrfs, etc.) is explicitly told so via some
+device=3D/dev/sda,/dev/sdb option.
+
+If that means that less things work out of the box (in the sense of
+"auto-assembly") well than this is simply necessary.
+data security and consistency is definitely much more important than
+any fancy auto-magic.
 
 
 
-> =C2=A0=C2=A0=C2=A0Except that that's exactly the mechanism that btrfs use=
-s to handle
-> multi-device filesystems, so you've just broken anything with more
-> than one device in the FS.
-Don't other containers (e.g. LVM) do something similar, and yet they
-don't fail badly in case e.g. multipl PVs with the same UUID appear,
-AFAIC.
+> So an aware btrfs admin simply takes pains to avoid triggering a
+> btrfs=20
+> device scan at the wrong time, and to immediately hide their LVM=20
+> snapshots, immediately unplug their directly dd-ed devices, etc, and
+> thus=20
+> doesn't have to deal with the filesystem corruption that'd be a when
+> not=20
+> if, if they didn't take such precautions with their dupped UUIDs that
+> actually aren't as UUID as the name suggests...
+a) People shouldn't need to do days of study to be able to use btrfs
+securely. Of course it's more advanced and not everything can be
+simplified in a way so that users don't need to know anything (e.g. all
+the well-known effects of CoW)... but when the point is reached where
+security and data integrity is threatened, there's definitely a hard
+border that mustn't be crossed.
 
-And shouldn't there be some kind of device UUID, which differs
-different parts of the same btrfs (with the same fs UUID) but on
-different devices?!
-
-
-> =C2=A0=C2=A0=C2=A0If you inspect the devid on each device as well, and re=
-fuse
-> duplicates of those, you've just broken any multipathing
-> configurations.
-Well, how many people are actually doing this? A minority. So then it
-would be simply necessary that multipathing doesn't work out of the box
-and one need to specifically tell the kernel to consider a device with
-the same btrfs UUID as not a clone but another path to the same device.
-
-In any cases, rare feature like multipathing cannot justify the
-possibility of data corruption.
-That situtation as it is now is IMHO completely unacceptable.
+b) Given how complex software is, I doubt that it's easily possible,
+even for the aware admin, to really prevent all situations that can
+lead to such situations.
+Not to talk about about any attack-scenarios.
 
 
 
-> =C2=A0=C2=A0=C2=A0Even if you can handle that, if you have two copies of =
-dev1, and
-> two copies of dev2, how do you guarantee that the "right" pair of
-> dev1
-> and dev2 is selected? (e.g. if you have them as network devices, and
-> the device enumeration order is unstable on each boot).
-Not sure what you mean now:
-The multipathing case?
-Then, as I've said, such situations would simply require to manually
-set things up and explicitly tell the kernel that the devices foo and
-bar are to be used (despite their dup UUID).
+> And as your followup suggests in a security context, they consider=20
+> masking out their UUIDs before posting them, as well, tho most kernel
+> hackers generally consider unsupervised physical access to be game-
+> over,=20
+> security-wise.
+Do they? I rather thought many of them had a rather practical and real-
+world-situations-based POV.
 
-If you mean what happens when I have e.g. two clones of a 2-device
-btrfs, as in
-fsdev1
-fsdev2
-fsdev1_clone
-fsdev2_clone
-Then as I've said before... if one pair of them
-is already mounted (i.e. when the *_clone appear), than it's likely
-that these belong actually together and the kernel should continue to
-use them and ignore any other.
-If all appear before any is mounted, then
-either is should refuse to mount/use any of them, or it should require
-to manually specify which devices to be used (i.e. via /dev/sda or so).
+> (After all, in that case there's often little or nothing=20
+> preventing a reboot to that USB stick, if desired, or simply yanking
+> the=20
+> devices and duping them or plugging them in elsewhere, if the BIOS is
+> password protected, with the only thing standing in the way at that
+> point=20
+> being possible device encryption.)
+There's hardware which would, when it detects physicals intrusion (like
+yanking) lock up itself (securely clearing the memory, disconnecting
+itself from other nodes, which may be compromised as well, when the
+filesystem on the attacked node would go crazy.
+
+You have things like ATMs, which are physically usually quite well
+secured, but which do have rather easily accessible maintenance ports.
+All of us have seen such embedded devices rebooting themselves, where
+you see kernel messages.
+That's the point where an attacker could easily get the btrfs UUID:
+[=C2=A0=C2=A0=C2=A0=C2=A00.000000] Command line: BOOT_IMAGE=3D/vmlinuz-4.2.=
+0-1-amd64
+root=3DUUID=3Dbd1ea5a0-9bba-11e5-82fa-502690aa641f
+
+If you can attack such devices already by just having access to a USB
+port... then holly sh**...
+
+
+> The only real
+> alternative if=20
+> you don't like it is using a different filesystem.
+As I've said, I don't have a problem with UUIDs... I just can't quite
+believe that btrfs and the userland cannot be modified so that it
+handles such cases gracefully.
+
+If not, than, to be quite honest, that would be really a major
+showstopper for many usage areas.
+And I'm not talking about ATMs (or any other embedded devices where
+people may have non-supervides access - e.g. TVs in a mall,
+entertainment systems in planes) but also the normal desktops/laptops
+where colleagues, fellow students, etc. may want to play some "prank".
 
 
 Cheers,
 Chris.
---=-WKE76UTrCECy4EXyrBuX
+--=-49nH5mjJLMyEIN7mrcFS
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -189,19 +259,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwNjAxNTEx
-OVowTwYJKoZIhvcNAQkEMUIEQLS5VOZBFXML08XwRSSaqQ3Ohk+6LmlMLWCUEMnB1wqT02nmjhGe
-32CXPvDlRFU6pFMephS10l8OV7jr3hPQSWowagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwNjAxNTEy
+MFowTwYJKoZIhvcNAQkEMUIEQOetJTiEMoNd1MogNsvGpxO9VKENz0pRyxYC6Y0bu8IEd/2JP3KR
+7/ihhBMXDhHD8oY762HVWUTXM6/bdUWT0eUwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCXaET3dDqbwD+IRpWh2v2zYWE5RInW
-i/O3bDGQTLbnuE5H2+QtqRpmBG2baTp9CQ7qsz5k/3oFanBavJ4rzWtDmvYcTApDt9wtMEIetqOr
-E+BzBGeCXIz+R4MVAyyzNQArNwMsePt52wj2Qm0lPiINN4soRkmI5p0SMy8xPEPJnh80t988rLjQ
-WAsm3M548q5/aApJ7ekJz/t8eQjeT6+gLUfUC2+b6eV1W7otuWKPpwF0LjCFWywPE+0RxEw1tAtd
-DfB4QWrUUM6+szFzEDkCARyo4F7AjO8rt7pCNqA6rugsRXcAsPM7BkvPPE7xRQLzFwQjBa1p0Jl5
-IQt40Jk3AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDPA9cf5bQjTLkVq0JFWkGU3VhP/f8p
+HBCYO0Yg9ux8GwxFLoDF4laWWukmAtS8HzJ/n+a8dXJvSliySES0WRHCvGOf4/367KTgu9AKYkoL
+fmCbz9DOsZ5u+xVMuT8fc39Z0Wk4m1jp+rgmyyrJ5y444NTsjNEQztnH6lJgiTQscBrTwnkPcukT
+x+Rd24cIRy3XEWJnJt+x2lypJJh+xUw6WHJ9qn7EIvfwCaYLyCa9eD4LErc+5SMzSa1bo1FaQtDE
+25JF1jXs2A/km6EBhZM7uSY6NkMre3uLAYjFBbHvMe/xG1dTTM8rxtOF0y3CPfU9kcfMwDxB6lHe
+rpx6DPd1AAAAAAAA
 
 
---=-WKE76UTrCECy4EXyrBuX--
+--=-49nH5mjJLMyEIN7mrcFS--
 

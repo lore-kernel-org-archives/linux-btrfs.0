@@ -1,24 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f170.google.com ([209.85.223.170]:36735 "EHLO
-	mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753014AbbLFTPz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Dec 2015 14:15:55 -0500
-Received: by iofh3 with SMTP id h3so162407906iof.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 06 Dec 2015 11:15:54 -0800 (PST)
+Received: from mail-io0-f180.google.com ([209.85.223.180]:34805 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754323AbbLFUm6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 6 Dec 2015 15:42:58 -0500
+Received: by ioir85 with SMTP id r85so163131457ioi.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 06 Dec 2015 12:42:58 -0800 (PST)
 MIME-Version: 1.0
-Date: Sun, 6 Dec 2015 13:15:54 -0600
-Message-ID: <CA+pSGYcxAHUppSgODwk16i+5rLdojzjYxp8=SWWkLXmXOAo9kg@mail.gmail.com>
-Subject: Scrub on btrfs single device only to detect errors, not correct them?
-From: Jon Panozzo <jonp@lime-technology.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <CA+pSGYcxAHUppSgODwk16i+5rLdojzjYxp8=SWWkLXmXOAo9kg@mail.gmail.com>
+References: <CA+pSGYcxAHUppSgODwk16i+5rLdojzjYxp8=SWWkLXmXOAo9kg@mail.gmail.com>
+Date: Sun, 6 Dec 2015 13:42:57 -0700
+Message-ID: <CAJCQCtQX5Ov6YKZ=SdxaGSPaGa0sEFF6gz89WsDm9qegmykGkA@mail.gmail.com>
+Subject: Re: Scrub on btrfs single device only to detect errors, not correct them?
+From: Chris Murphy <lists@colorremedies.com>
+To: Jon Panozzo <jonp@lime-technology.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Just to confirm, is the sole purpose of supporting scrub on single btrfs
-devices to detect errors, but not to correct them?
+On Sun, Dec 6, 2015 at 12:15 PM, Jon Panozzo <jonp@lime-technology.com> wrote:
+> Just to confirm, is the sole purpose of supporting scrub on single btrfs
+> devices to detect errors, but not to correct them?
 
-Best Regards,
+If that single device metadata profile is DUP, then it will correct
+those. If there is only one copy of anything, then it just reports.
+Scrub works on all data, but a passive scrub happens anytime something
+is read.
 
-Jonathan Panozzo
-Lime Technology, Inc.
+
+-- 
+Chris Murphy

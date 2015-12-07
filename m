@@ -1,31 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:53682 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:53932 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754775AbbLGOSu (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Dec 2015 09:18:50 -0500
-Date: Mon, 7 Dec 2015 15:16:51 +0100
+	id S1754735AbbLGOZF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Dec 2015 09:25:05 -0500
+Date: Mon, 7 Dec 2015 15:23:06 +0100
 From: David Sterba <dsterba@suse.cz>
-To: David Sterba <dsterba@suse.com>
-Cc: linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: [PULL][PATCH 00/12] Minor cleanups and code simplifications
-Message-ID: <20151207141651.GB4227@twin.jikos.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 04/12] btrfs: change how delay_iput is tracked in
+ btrfs_delalloc_work
+Message-ID: <20151207142306.GC4227@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <cover.1449161602.git.dsterba@suse.com>
+ <a4469a31e3b0cc55ebba9c3aee26cd5632743056.1449161602.git.dsterba@suse.com>
+ <20151204022537.GH19589@localhost.localdomain>
+ <20151204123625.GF31035@suse.cz>
+ <56618C1F.70805@googlemail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <cover.1449161602.git.dsterba@suse.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <56618C1F.70805@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 03, 2015 at 05:56:19PM +0100, David Sterba wrote:
-> ----------------------------------------------------------------
-> The following changes since commit 1ec218373b8ebda821aec00bb156a9c94fad9cd4:
+On Fri, Dec 04, 2015 at 01:50:39PM +0100, Holger Hoffstätte wrote:
+> On 12/04/15 13:36, David Sterba wrote:
+> [snip]
+> > As the use of the inode pointer is limited, I don't think this would
+> > cause surprises. And it's commented where used which should help during
+> > debugging.
 > 
-> David Sterba (12):
->       btrfs: make btrfs_close_one_device static
->       btrfs: sink parameter wait to btrfs_alloc_delalloc_work
->       btrfs: remove wait from struct btrfs_delalloc_work
->       btrfs: change how delay_iput is tracked in btrfs_delalloc_work
+> When I read through those bits (mostly pondering portability) I was wondering
+> whether it might make sense to provide thin wrap/unwrap functions for the tag
+> bit instead of relying on open code and comments only.
 
-FYI, this patch was dropped, branch force-pushed and the top commit is
-35de6db28f260e88e9acc47305f7b3f272d76cbf
+I'm not sure if a helper makes sense for a single occurence of each
+operation, a comment seems enough to me. Anyway, the patch will be
+dropped.

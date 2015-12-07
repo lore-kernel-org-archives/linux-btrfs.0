@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f173.google.com ([209.85.213.173]:37771 "EHLO
-	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933026AbbLGOnP (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 09:43:15 -0500
-Received: by igcto18 with SMTP id to18so82042632igc.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 06:43:14 -0800 (PST)
+Received: from mail-io0-f169.google.com ([209.85.223.169]:35976 "EHLO
+	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964783AbbLGOro (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 09:47:44 -0500
+Received: by iofh3 with SMTP id h3so183343244iof.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 06:47:44 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <pan$519f9$af10e2cb$f1ea2d14$435d0b5a@cox.net>
 References: <CA+pSGYcxAHUppSgODwk16i+5rLdojzjYxp8=SWWkLXmXOAo9kg@mail.gmail.com>
 	<CAJCQCtQX5Ov6YKZ=SdxaGSPaGa0sEFF6gz89WsDm9qegmykGkA@mail.gmail.com>
 	<pan$519f9$af10e2cb$f1ea2d14$435d0b5a@cox.net>
-Date: Mon, 7 Dec 2015 08:43:14 -0600
-Message-ID: <CA+pSGYcFAxsk=8EWPz4wM0Gjk4Nyra0HEcTjbJtRQU8-zfSVjA@mail.gmail.com>
+Date: Mon, 7 Dec 2015 08:47:43 -0600
+Message-ID: <CA+pSGYeYwC=eWmSuC4MXsSz1qVvWqzxxv7KzxkhQ84BKUDO-MA@mail.gmail.com>
 Subject: Re: Scrub on btrfs single device only to detect errors, not correct them?
 From: Jon Panozzo <jonp@lime-technology.com>
 To: Duncan <1i5t5.duncan@cox.net>
@@ -20,25 +20,18 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Duncan,
+And I'll throw this question out to everyone:
 
-Thanks for the additional feedback.  Two follow-up questions to this is:
-
-Can the --mixed option only be applied when first creating the fs, or
-can you simply add this to the balance command to take an existing
-filesystem and add this to it?
-
-So it sounds like there are really three ways to enable scrub to
-repair errors on a btrfs single device (please confirm):
-
-1) mkfs.btrfs with the --mixed option
-2) create two partitions on a single phys device, then present them as
-logical devices (maybe a loopback or something) and create a btrfs
-raid1 for both data/metadata
-3) wait for the patch in process to allow for btrfs single devices to
-support dup mode for data
-
-Is that about right?
+Let's say I have a means of providing parity for a btrfs device, but
+in a way that's external to btrfs (imagine a btrfs single device as
+part of a hardware or software RAID).  If BTRFS detected an error
+during a scrub, and parity wasn't updated as a result (say the result
+of bitrot on the btrfs device), couldn't parity be used to repair the
+broken bit(s)?  If so, the big question is how to use scrub to
+determine the sector/bit (forgive me if I'm using wrong terminology)
+at the block level that needs to be fixed.  I think my theory is sound
+in principle, but not sure if it's possible to correlate a scrub-found
+uncorrectable error to a physical location on the block device.
 
 - Jon
 

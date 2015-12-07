@@ -1,47 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34756 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1759489AbbLCKKp (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 3 Dec 2015 05:10:45 -0500
-From: Zhaolei <zhaolei@cn.fujitsu.com>
-To: <fstests@vger.kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] fstests: Fix generic/102 fail for btrfs
-Date: Thu, 3 Dec 2015 18:08:36 +0800
-Message-ID: <56d7fca5e2f5dadceb4a3ec3d4589fec54da8d3b.1449137276.git.zhaolei@cn.fujitsu.com>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:1037 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1755840AbbLGWMK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Dec 2015 17:12:10 -0500
+Date: Tue, 8 Dec 2015 09:12:07 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: Zhaolei <zhaolei@cn.fujitsu.com>
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] fstests: Fix generic/102 fail for btrfs
+Message-ID: <20151207221207.GF26718@dastard>
+References: <56d7fca5e2f5dadceb4a3ec3d4589fec54da8d3b.1449137276.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <56d7fca5e2f5dadceb4a3ec3d4589fec54da8d3b.1449137276.git.zhaolei@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+On Thu, Dec 03, 2015 at 06:08:36PM +0800, Zhaolei wrote:
+> From: Zhao Lei <zhaolei@cn.fujitsu.com>
+> 
+> generic/102 sometimes fails in newest btrfs toolchain,
+> because it use non-mixed mode in default, which request more space
+> for metadata, and no space for data writing.
+> 
+> This patch force mixed mode for btrfs in generic/102.
+> 
+> Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+> ---
+>  tests/generic/102 | 2 ++
+>  1 file changed, 2 insertions(+)
+> 
+> diff --git a/tests/generic/102 b/tests/generic/102
+> index abc3994..8c01fb5 100755
+> --- a/tests/generic/102
+> +++ b/tests/generic/102
+> @@ -48,6 +48,8 @@ _require_scratch
+>  
+>  rm -f $seqres.full
+>  
+> +[[ "$FSTYP" = "btrfs" ]] && MKFS_OPTIONS+=" --mixed"
+> +
+>  dev_size=$((512 * 1024 * 1024))     # 512MB filesystem
+>  _scratch_mkfs_sized $dev_size >>$seqres.full 2>&1
 
-generic/102 sometimes fails in newest btrfs toolchain,
-because it use non-mixed mode in default, which request more space
-for metadata, and no space for data writing.
+This sort of filesystem size specific mkfs requirement belongs in
+the filesystem specific section of _scratch_mkfs_sized().
 
-This patch force mixed mode for btrfs in generic/102.
+Cheers,
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- tests/generic/102 | 2 ++
- 1 file changed, 2 insertions(+)
-
-diff --git a/tests/generic/102 b/tests/generic/102
-index abc3994..8c01fb5 100755
---- a/tests/generic/102
-+++ b/tests/generic/102
-@@ -48,6 +48,8 @@ _require_scratch
- 
- rm -f $seqres.full
- 
-+[[ "$FSTYP" = "btrfs" ]] && MKFS_OPTIONS+=" --mixed"
-+
- dev_size=$((512 * 1024 * 1024))     # 512MB filesystem
- _scratch_mkfs_sized $dev_size >>$seqres.full 2>&1
- _scratch_mount
+Dave.
 -- 
-1.8.5.1
-
-
-
+Dave Chinner
+david@fromorbit.com

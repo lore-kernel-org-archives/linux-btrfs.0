@@ -1,144 +1,163 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:32261 "EHLO heian.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751219AbbLHJFf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Dec 2015 04:05:35 -0500
+Received: from cn.fujitsu.com ([59.151.112.132]:24651 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753450AbbLGGHG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 01:07:06 -0500
 Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 100AF4043CE7
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2015 17:05:23 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id D2B864043CE3
+	for <linux-btrfs@vger.kernel.org>; Mon,  7 Dec 2015 14:06:42 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs-progs: Enhance chunk validation check
-Date: Tue,  8 Dec 2015 17:05:22 +0800
-Message-Id: <1449565522-7736-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH] btrfs: Introduce new mount option to disable tree log replay
+Date: Mon,  7 Dec 2015 14:06:42 +0800
+Message-Id: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Enhance chunk validation:
-1) Num_stripes
-   We already have such check but it's only in super block sys chunk
-   array.
-   Now check all on-disk chunks.
+Introduce a new mount option "nologreplay" to co-operate with "ro" mount
+option to get real readonly mount, like "norecovery" in ext* and xfs.
 
-2) Chunk logical
-   It should be aligned to sector size.
-   This behavior should be *DOUBLE CHECKED* for 64K sector size like
-   PPC64 or AArch64.
-   Maybe we can found some hidden bugs.
+Since the new parse_options() need to check new flags at remount time,
+so add a new parameter for parse_options().
 
-3) Chunk length
-   Same as chunk logical, should be aligned to sector size.
-
-4) Stripe length
-   It should be power of 2.
-
-5) Chunk type
-   Any bit out of TYPE_MAS | PROFILE_MASK is invalid.
-
-With all these much restrict rules, several fuzzed image reported in
-mail list should no longer cause btrfsck error.
-
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- disk-io.c |  2 --
- utils.h   |  7 +++++++
- volumes.c | 29 ++++++++++++++++++++++++++++-
- 3 files changed, 35 insertions(+), 3 deletions(-)
+ Documentation/filesystems/btrfs.txt |  5 +++++
+ fs/btrfs/ctree.h                    |  4 +++-
+ fs/btrfs/disk-io.c                  |  7 ++++---
+ fs/btrfs/super.c                    | 20 +++++++++++++++++---
+ 4 files changed, 29 insertions(+), 7 deletions(-)
 
-diff --git a/disk-io.c b/disk-io.c
-index 7a63b91..83bdb27 100644
---- a/disk-io.c
-+++ b/disk-io.c
-@@ -40,8 +40,6 @@
- #define BTRFS_BAD_LEVEL			(-3)
- #define BTRFS_BAD_NRITEMS		(-4)
+diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+index c772b47..ac4ed68 100644
+--- a/Documentation/filesystems/btrfs.txt
++++ b/Documentation/filesystems/btrfs.txt
+@@ -168,6 +168,11 @@ Options with (*) are default options and will not show in the mount options.
+   notreelog
+ 	Enable/disable the tree logging used for fsync and O_SYNC writes.
  
--#define IS_ALIGNED(x, a)                (((x) & ((typeof(x))(a) - 1)) == 0)
--
- /* Calculate max possible nritems for a leaf/node */
- static u32 max_nritems(u8 level, u32 nodesize)
++  nologreplay
++	Disable the log tree replay at mount time for real read-only mount.
++	Must be use with "ro" mount option and can't be disabled by mount
++	option.
++
+   recovery
+ 	Enable autorecovery attempts if a bad tree root is found at mount time.
+ 	Currently this scans a list of several previous tree roots and tries to
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index a0165c6..c54ff25 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -2184,6 +2184,7 @@ struct btrfs_ioctl_defrag_range_args {
+ #define BTRFS_MOUNT_RESCAN_UUID_TREE	(1 << 23)
+ #define BTRFS_MOUNT_FRAGMENT_DATA	(1 << 24)
+ #define BTRFS_MOUNT_FRAGMENT_METADATA	(1 << 25)
++#define BTRFS_MOUNT_NOLOGREPLAY		(1 << 26)
+ 
+ #define BTRFS_DEFAULT_COMMIT_INTERVAL	(30)
+ #define BTRFS_DEFAULT_MAX_INLINE	(8192)
+@@ -4070,7 +4071,8 @@ void btrfs_sysfs_remove_mounted(struct btrfs_fs_info *fs_info);
+ ssize_t btrfs_listxattr(struct dentry *dentry, char *buffer, size_t size);
+ 
+ /* super.c */
+-int btrfs_parse_options(struct btrfs_root *root, char *options);
++int btrfs_parse_options(struct btrfs_root *root, char *options,
++			unsigned long new_flags);
+ int btrfs_sync_fs(struct super_block *sb, int wait);
+ 
+ #ifdef CONFIG_PRINTK
+diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+index 1eb0839..617bf4f 100644
+--- a/fs/btrfs/disk-io.c
++++ b/fs/btrfs/disk-io.c
+@@ -2711,7 +2711,7 @@ int open_ctree(struct super_block *sb,
+ 	 */
+ 	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
+ 
+-	ret = btrfs_parse_options(tree_root, options);
++	ret = btrfs_parse_options(tree_root, options, sb->s_flags);
+ 	if (ret) {
+ 		err = ret;
+ 		goto fail_alloc;
+@@ -3009,8 +3009,9 @@ retry_root_backup:
+ 	if (ret)
+ 		goto fail_trans_kthread;
+ 
+-	/* do not make disk changes in broken FS */
+-	if (btrfs_super_log_root(disk_super) != 0) {
++	/* do not make disk changes in broken FS or nologreplay is given */
++	if (btrfs_super_log_root(disk_super) != 0 &&
++	    !btrfs_test_opt(tree_root, NOLOGREPLAY)) {
+ 		ret = btrfs_replay_log(fs_info, fs_devices);
+ 		if (ret) {
+ 			err = ret;
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 24154e4..3b1dcc1 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -302,7 +302,7 @@ enum {
+ 	Opt_check_integrity_print_mask, Opt_fatal_errors, Opt_rescan_uuid_tree,
+ 	Opt_commit_interval, Opt_barrier, Opt_nodefrag, Opt_nodiscard,
+ 	Opt_noenospc_debug, Opt_noflushoncommit, Opt_acl, Opt_datacow,
+-	Opt_datasum, Opt_treelog, Opt_noinode_cache,
++	Opt_datasum, Opt_treelog, Opt_noinode_cache, Opt_nologreplay,
+ #ifdef CONFIG_BTRFS_DEBUG
+ 	Opt_fragment_data, Opt_fragment_metadata, Opt_fragment_all,
+ #endif
+@@ -334,6 +334,7 @@ static match_table_t tokens = {
+ 	{Opt_noacl, "noacl"},
+ 	{Opt_notreelog, "notreelog"},
+ 	{Opt_treelog, "treelog"},
++	{Opt_nologreplay, "nologreplay"},
+ 	{Opt_flushoncommit, "flushoncommit"},
+ 	{Opt_noflushoncommit, "noflushoncommit"},
+ 	{Opt_ratio, "metadata_ratio=%d"},
+@@ -371,7 +372,8 @@ static match_table_t tokens = {
+  * reading in a new superblock is parsed here.
+  * XXX JDM: This needs to be cleaned up for remount.
+  */
+-int btrfs_parse_options(struct btrfs_root *root, char *options)
++int btrfs_parse_options(struct btrfs_root *root, char *options,
++			unsigned long new_flags)
  {
-diff --git a/utils.h b/utils.h
-index 493c2e4..7740fc2 100644
---- a/utils.h
-+++ b/utils.h
-@@ -24,6 +24,8 @@
- #include <dirent.h>
- #include <stdarg.h>
- 
-+#define IS_ALIGNED(x, a)                (((x) & ((typeof(x))(a) - 1)) == 0)
-+
- #define BTRFS_MKFS_SYSTEM_GROUP_SIZE (4 * 1024 * 1024)
- #define BTRFS_MKFS_SMALL_VOLUME_SIZE (1024 * 1024 * 1024)
- #define BTRFS_MKFS_DEFAULT_NODE_SIZE 16384
-@@ -246,6 +248,11 @@ static inline u64 div_factor(u64 num, int factor)
- 	return num;
- }
- 
-+static inline int is_power_of_2(unsigned long n)
-+{
-+	return (n != 0 && ((n & (n - 1)) == 0));
-+}
-+
- int btrfs_tree_search2_ioctl_supported(int fd);
- int btrfs_check_nodesize(u32 nodesize, u32 sectorsize, u64 features);
- 
-diff --git a/volumes.c b/volumes.c
-index 492dcd2..a94be0e 100644
---- a/volumes.c
-+++ b/volumes.c
-@@ -1591,6 +1591,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	struct cache_extent *ce;
- 	u64 logical;
- 	u64 length;
-+	u64 stripe_len;
- 	u64 devid;
- 	u8 uuid[BTRFS_UUID_SIZE];
- 	int num_stripes;
-@@ -1599,6 +1600,33 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 
- 	logical = key->offset;
- 	length = btrfs_chunk_length(leaf, chunk);
-+	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
-+	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
-+	/* Validation check */
-+	if (!num_stripes) {
-+		error("invalid chunk num_stripes: %u", num_stripes);
-+		return -EIO;
+ 	struct btrfs_fs_info *info = root->fs_info;
+ 	substring_t args[MAX_OPT_ARGS];
+@@ -587,6 +589,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			btrfs_clear_and_info(root, NOTREELOG,
+ 					     "enabling tree log");
+ 			break;
++		case Opt_nologreplay:
++			btrfs_set_and_info(root, NOLOGREPLAY,
++					   "disabling log replay at mount time");
++			break;
+ 		case Opt_flushoncommit:
+ 			btrfs_set_and_info(root, FLUSHONCOMMIT,
+ 					   "turning on flush-on-commit");
+@@ -753,6 +759,14 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			break;
+ 		}
+ 	}
++	/*
++	 * Extra check for current option against current flag
++	 */
++	if (btrfs_test_opt(root, NOLOGREPLAY) && !(new_flags & MS_RDONLY)) {
++		btrfs_err(root->fs_info,
++			  "nologreplay must be used with ro mount option");
++		ret = -EINVAL;
 +	}
-+	if (!IS_ALIGNED(logical, root->sectorsize)) {
-+		error("invalid chunk logical %llu", logical);
-+		return -EIO;
-+	}
-+	if (!length || !IS_ALIGNED(length, root->sectorsize)) {
-+		error("invalid chunk length %llu", length);
-+		return -EIO;
-+	}
-+	if (!is_power_of_2(stripe_len)) {
-+		error("invalid chunk stripe length: %llu", stripe_len);
-+		return -EIO;
-+	}
-+	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-+	    btrfs_chunk_type(leaf, chunk)) {
-+		error("unrecognized chunk type: %llu",
-+		      ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
-+			BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-+		      btrfs_chunk_type(leaf, chunk));
-+		return -EIO;
-+	}
- 
- 	ce = search_cache_extent(&map_tree->cache_tree, logical);
- 
-@@ -1607,7 +1635,6 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 		return 0;
+ out:
+ 	if (!ret && btrfs_test_opt(root, SPACE_CACHE))
+ 		btrfs_info(root->fs_info, "disk space caching is enabled");
+@@ -1637,7 +1651,7 @@ static int btrfs_remount(struct super_block *sb, int *flags, char *data)
+ 		}
  	}
  
--	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
- 	map = kmalloc(btrfs_map_lookup_size(num_stripes), GFP_NOFS);
- 	if (!map)
- 		return -ENOMEM;
+-	ret = btrfs_parse_options(root, data);
++	ret = btrfs_parse_options(root, data, *flags);
+ 	if (ret) {
+ 		ret = -EINVAL;
+ 		goto restore;
 -- 
 2.6.3
 

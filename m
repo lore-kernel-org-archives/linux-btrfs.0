@@ -1,71 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.15.18]:55094 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932091AbbLGOME (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Dec 2015 09:12:04 -0500
-Subject: Re: [PATCH] btrfs: Enhance super validation check
-To: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>,
-        Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
-References: <1449477555-10333-1-git-send-email-quwenruo@cn.fujitsu.com>
- <566571F0.2010002@googlemail.com>
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5665938F.7040508@gmx.com>
-Date: Mon, 7 Dec 2015 22:11:27 +0800
+Received: from e23smtp05.au.ibm.com ([202.81.31.147]:39618 "EHLO
+	e23smtp05.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964859AbbLGPjB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 10:39:01 -0500
+Received: from localhost
+	by e23smtp05.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Tue, 8 Dec 2015 01:38:58 +1000
+Received: from d23relay06.au.ibm.com (d23relay06.au.ibm.com [9.185.63.219])
+	by d23dlp01.au.ibm.com (Postfix) with ESMTP id 056032CE8052
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2015 02:38:56 +1100 (EST)
+Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
+	by d23relay06.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tB7Fcd9g29229074
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Dec 2015 02:38:48 +1100
+Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tB7FcN4S020976
+	for <linux-btrfs@vger.kernel.org>; Tue, 8 Dec 2015 02:38:23 +1100
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] btrfs: Introduce new mount option to disable tree log replay
+Date: Mon, 07 Dec 2015 21:08:04 +0530
+Message-ID: <8056366.2GdjmACnsD@localhost.localdomain>
+In-Reply-To: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <566571F0.2010002@googlemail.com>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-On 12/07/2015 07:48 PM, Holger Hoffstätte wrote:
-> -----BEGIN PGP SIGNED MESSAGE-----
-> Hash: SHA1
+On Monday 07 Dec 2015 14:06:42 Qu Wenruo wrote:
+> Introduce a new mount option "nologreplay" to co-operate with "ro" mount
+> option to get real readonly mount, like "norecovery" in ext* and xfs.
+> 
+> Since the new parse_options() need to check new flags at remount time,
+> so add a new parameter for parse_options().
 >
-> On 12/07/15 09:39, Qu Wenruo wrote:
-> (..)
->> +#define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
->
-> It looks like you diffed from a tree that has Josef's patch
-> called "Btrfs: add metadump_v2 support to the kernel" [1] applied,
-> which never made it upstream (probably got lost in the 4.0 mess).
-> This patch is not yet in 4.4rc, so merging your patch will introduce
-> half of Josef's patch but with the bits in inode.c missing.
 
-It's based from integration-4.4.
+Hello Qu,
+The patch should add an entry into btrfs_show_options() for 'mount' command to
+be able to display an entry corresponding to 'nologreplay' mount option.
 
-This bit is copied from btrfs-progs.
-And I added this is to make kernel accept such dump image as it used to.
-(Along with fsid chaning image)
+Even after adding such an entry to btrfs_show_options(),
+the following occurs,
+# mount -o nologreplay,ro /dev/loop6 /mnt/
+# mount | grep loop6
+/dev/loop6 on /mnt type btrfs (ro,relatime,seclabel,nologreplay,space_cache,subvolid=5,subvol=/)
+# mount -o remount,rw /dev/loop6 /mnt/
+# mount | grep loop6
+/dev/loop6 on /mnt type btrfs (rw,relatime,seclabel,nologreplay,space_cache,subvolid=5,subvol=/)
 
-Not sure about the inode part.
-But I added this just to keep the same behavior for such images.
->
-> cc:'ing Chris to make sure he applies that missing patch as well.
+As can be seen from the last line, both 'rw' and 'nologreplay' options are set.
 
-And if Josef's patch can be merged into kernel, that would be best.
+-- 
+chandan
 
-Thanks,
-Qu
-
->
-> cheers,
-> Holger
->
-> [1] http://www.spinics.net/lists/linux-btrfs/msg41973.html
->
-> -----BEGIN PGP SIGNATURE-----
-> Version: GnuPG v2
->
-> iEYEARECAAYFAlZlcewACgkQD4E0Cdjc7s2AjACeJKjfyJDRQBVM9y2j90MaZhjX
-> ynwAn0oKMM9MTZ4I8cmuxnHGgj3ZeSv4
-> =Jb6u
-> -----END PGP SIGNATURE-----
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->

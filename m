@@ -1,139 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56426 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754601AbbLGNsz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Dec 2015 08:48:55 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a5w9t-0008Ni-2y
-	for linux-btrfs@vger.kernel.org; Mon, 07 Dec 2015 14:48:53 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 14:48:53 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 14:48:53 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Fixing recursive fault and parent transid verify failed
-Date: Mon, 7 Dec 2015 13:48:47 +0000 (UTC)
-Message-ID: <pan$cb93a$b4f560b9$2dfdbdbc$17d7a835@cox.net>
-References: <20151207015715.GA13954@alistair-xps13>
-	<pan$42653$68e1a3aa$3a4c1c2c$b0e89f8@cox.net>
-	<20151207100256.GA6836@alistair-xps13>
-Mime-Version: 1.0
+Received: from mail-ig0-f173.google.com ([209.85.213.173]:37771 "EHLO
+	mail-ig0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933026AbbLGOnP (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 09:43:15 -0500
+Received: by igcto18 with SMTP id to18so82042632igc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 06:43:14 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <pan$519f9$af10e2cb$f1ea2d14$435d0b5a@cox.net>
+References: <CA+pSGYcxAHUppSgODwk16i+5rLdojzjYxp8=SWWkLXmXOAo9kg@mail.gmail.com>
+	<CAJCQCtQX5Ov6YKZ=SdxaGSPaGa0sEFF6gz89WsDm9qegmykGkA@mail.gmail.com>
+	<pan$519f9$af10e2cb$f1ea2d14$435d0b5a@cox.net>
+Date: Mon, 7 Dec 2015 08:43:14 -0600
+Message-ID: <CA+pSGYcFAxsk=8EWPz4wM0Gjk4Nyra0HEcTjbJtRQU8-zfSVjA@mail.gmail.com>
+Subject: Re: Scrub on btrfs single device only to detect errors, not correct them?
+From: Jon Panozzo <jonp@lime-technology.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Alistair Grant posted on Mon, 07 Dec 2015 21:02:56 +1100 as excerpted:
+Duncan,
 
-> I think I'll try the btrfs restore as a learning exercise, and to check
-> the contents of my backup (I don't trust my memory, so something could
-> have changed since the last backup).
+Thanks for the additional feedback.  Two follow-up questions to this is:
 
-Trying btrfs restore is an excellent idea.  It'll make things far easier 
-if you have to use it for real some day.
+Can the --mixed option only be applied when first creating the fs, or
+can you simply add this to the balance command to take an existing
+filesystem and add this to it?
 
-Note that while I see your kernel is reasonably current (4.2 series), I 
-don't know what btrfs-progs ubuntu ships.  There have been some marked 
-improvements to restore somewhat recently, checking the wiki btrfs-progs 
-release-changelog list says 4.0 brought optional metadata restore, 4.0.1 
-added --symlinks, and 4.2.3 fixed a symlink path check off-by-one error.  
-(And don't use 4.1.1 as its mkfs.btrfs is broken and produces invalid 
-filesystems.)  So you'll want at least progs 4.0 to get the optional 
-metadata restoration, and 4.2.3 to get full symlinks restoration support.
+So it sounds like there are really three ways to enable scrub to
+repair errors on a btrfs single device (please confirm):
 
-> Does btrfs restore require the path to be on a btrfs filesystem?  I've
-> got an existing ext4 drive with enough free space to do the restore, so
-> would prefer to use it than have to buy another drive.
+1) mkfs.btrfs with the --mixed option
+2) create two partitions on a single phys device, then present them as
+logical devices (maybe a loopback or something) and create a btrfs
+raid1 for both data/metadata
+3) wait for the patch in process to allow for btrfs single devices to
+support dup mode for data
 
-Restoring to ext4 should be fine.
+Is that about right?
 
-Btrfs restore writes files as would an ordinary application, the reason 
-metadata restoration is optional (otherwise it uses normal file change 
-and mod times, with files written as the running user, root, using umask-
-based file perms, all exactly the same as if it were a normal file 
-writing application), so it will restore to any normal filesystem.  The 
-filesystem it's restoring /from/ of course must be btrfs... unmounted 
-since it's designed to be used when mounting is broken, but it writes 
-files normally, so can write them to any filesystem.
+- Jon
 
-FWIW, I restored to my reiserfs based media partition (still on spinning 
-rust, my btrfs are all on ssd) here, since that's where I had the room to 
-work with.
-
-> My plan is:
-> 
-> * btrfs restore /dev/sdX /path/to/ext4/restorepoint
-> ** Where /dev/sdX is one of the two drives that were part of the raid1
->    fileystem
-> * hashdeep audit the restored drive and backup
-> * delete the existing corrupted btrfs filesystem and recreate
-> * rsync the merge filesystem (from backup and restore)
->   on to the new filesystem
-> 
-> Any comments or suggestions are welcome.
-
-
-Looks very reasonable, here.  There's a restore page on the wiki with 
-more information than the btrfs-restore manpage, describing how to use it 
-with btrfs-find-root if necessary, etc.
-
-https://btrfs.wiki.kernel.org/index.php/Restore
-
-Some details on the page are a bit dated; it doesn't cover the dryrun, 
-list-roots, metadata and symlink options, for instance, and these can be 
-very helpful, but the general idea remains the same.
-
-The general idea is to use btrfs-find-root to get a listing of available 
-root generations (if restore can't find a working root from the 
-superblocks or you want to try restoring an earlier root), then feed the 
-corresponding bytenr to restore's -t option.
-
-Note that generation and transid refer to the same thing, a normally 
-increasing number, so higher generations are newer.  The wiki page makes 
-this much clearer than it used to, but the old wording anyway was 
-confusing to me until I figured that out.
-
-Where the wiki page talks about root object-ids, those are the various 
-subtrees, low numbers are the base trees, 256+ are subvolumes/snapshots.  
-Note that restore's list-roots option lists these for the given bytenr as 
-well.
-
-So you try restore with list-roots (-l) to see what it gives you, try 
-btrfs-find-root if not satisfied, to find older generations and get their 
-bytenrs to plug into restore with -t, and then confirm specific 
-generation bytenrs with list-roots again.
-
-Once you have a good generation/bytenr candidate, try a dry-run (-D) to 
-see if you get a list of files it's trying to restore that looks 
-reasonable.
-
-If the dry-run goes well, you can try the full restore, not forgetting 
-the metadata and symlinks options (-m, -S, respectively), if desired.
-
->From there you can continue with your plan as above.
-
-One more bonus hint.  Since you'll be doing a new mkfs.btrfs, it's a good 
-time to review active features and decide which ones you might wish to 
-activate (or not, if you're concerned about old-kernel compatibility).  
-Additionally, before repopulating your new filesystem, you may want to 
-review mount options, particularly autodefrag if appropriate, and 
-compression if desired, so they take effect from the very first file 
-created on the new filesystem. =:^)
-
-FWIW in the past I usually did an immediate post-mkfs.btrfs mount and 
-balance with -dusage=0 -musage=0 to get rid of the single-mode chunk 
-artifacts from the mkfs.btrfs as well, but with a new enough mkfs.btrfs 
-you may be able to avoid that now, as -progs 4.2 was supposed to 
-eliminate those single-mode mkfs.btrfs artifacts on multi-device 
-filesystems.  I've just not done any fresh mkfs.btrfs since then so 
-haven't had a chance to play with it and see it personally, just yet.
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+On Sun, Dec 6, 2015 at 9:48 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Chris Murphy posted on Sun, 06 Dec 2015 13:42:57 -0700 as excerpted:
+>
+>> On Sun, Dec 6, 2015 at 12:15 PM, Jon Panozzo <jonp@lime-technology.com>
+>> wrote:
+>>> Just to confirm, is the sole purpose of supporting scrub on single
+>>> btrfs devices to detect errors, but not to correct them?
+>>
+>> If that single device metadata profile is DUP, then it will correct
+>> those. If there is only one copy of anything, then it just reports.
+>> Scrub works on all data, but a passive scrub happens anytime something
+>> is read.
+>
+> ... And more to the point, expanding on that, on a single device btrfs,
+> data is single mode by default, so scrub for it (as opposed to metadata)
+> is error-detect-only as mentioned.
+>
+> However, while the default mode separates data and metadata, and in that
+> mode, historically (there's a patch to change this, adding the missing
+> option) data was single-only, mixed-bg mode (the mkfs.btrfs --mixed
+> option) puts data and metadata both in the same shared block-group type,
+> which can then be either dup or single mode.
+>
+> Obviously duplicating data as well as metadata means you can only store
+> half as much data, since it's all stored twice, but that will let scrub
+> correct errors in cases where only one of the two copies doesn't verify
+> checksum, but the other one does.
+>
+> And as mentioned above, there's a patch in process now, that will remove
+> the single-device restriction of data (as opposed to metadata) to single
+> mode, allowing the choice of dup mode for data as well as metadata.
+>
+>
+> Also, in addition to the mixed-mode workaround to get dup data, it's
+> possible, altho rather inefficient in performance terms, to partition a
+> physical device such that two equal sized partitions are made available
+> as logical devices, and then mkfs.btrf -d raid1 -m raid1 the two logical
+> devices into a single btrfs, raid1 for both data and metadata, so btrfs
+> creates two copies that way, again letting scrub correct errors when only
+> one of the two fails to verify against checksum.
+>
+> --
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

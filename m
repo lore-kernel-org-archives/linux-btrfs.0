@@ -1,208 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:34589 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752736AbbLGIjh (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 03:39:37 -0500
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id 5FAFD4091CE4
-	for <linux-btrfs@vger.kernel.org>; Mon,  7 Dec 2015 16:39:16 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH] btrfs: Enhance super validation check
-Date: Mon,  7 Dec 2015 16:39:15 +0800
-Message-Id: <1449477555-10333-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:46746
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756024AbbLGLsE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 06:48:04 -0500
+Subject: Re: [PATCH] btrfs: Enhance super validation check
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>,
+        linux-btrfs <linux-btrfs@vger.kernel.org>, Chris Mason <clm@fb.com>
+References: <1449477555-10333-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <566571F0.2010002@googlemail.com>
+Date: Mon, 7 Dec 2015 12:48:00 +0100
 MIME-Version: 1.0
+In-Reply-To: <1449477555-10333-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Enhance btrfs_check_super_valid() function by the following points:
-1) Restrict sector/node size check
-   Not the old max/min valid check, but also check if it's a power of 2.
-   So some bogus number like 12K nodesize won't pass now.
+-----BEGIN PGP SIGNED MESSAGE-----
+Hash: SHA1
 
-2) Super flag check
-   Except some common one like WRITTEN and RELOC, and other one used in
-   btrfs-progs, unrecognized flag will cause btrfs refuse to mount.
+On 12/07/15 09:39, Qu Wenruo wrote:
+(..)
+> +#define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
 
-3) Better root alignment check
-   Now root bytenr is checked against sectorsize.
+It looks like you diffed from a tree that has Josef's patch
+called "Btrfs: add metadump_v2 support to the kernel" [1] applied,
+which never made it upstream (probably got lost in the 4.0 mess).
+This patch is not yet in 4.4rc, so merging your patch will introduce
+half of Josef's patch but with the bits in inode.c missing.
 
-4) Move some check into btrfs_check_super_valid().
-   Like nodesize vs leafsize check, and PAGESIZE vs sectorsize check.
-   And MAGIC check.
+cc:'ing Chris to make sure he applies that missing patch as well.
 
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- fs/btrfs/ctree.h   |   2 ++
- fs/btrfs/disk-io.c | 102 ++++++++++++++++++++++++++++-------------------------
- 2 files changed, 55 insertions(+), 49 deletions(-)
+cheers,
+Holger
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index c54ff25..18a2875 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -356,6 +356,8 @@ static inline unsigned long btrfs_chunk_item_size(int num_stripes)
- 
- #define BTRFS_SUPER_FLAG_SEEDING	(1ULL << 32)
- #define BTRFS_SUPER_FLAG_METADUMP	(1ULL << 33)
-+#define BTRFS_SUPER_FLAG_METADUMP_V2	(1ULL << 34)
-+#define BTRFS_SUPER_FLAG_CHANGING_FSID	(1ULL << 35)
- 
- #define BTRFS_BACKREF_REV_MAX		256
- #define BTRFS_BACKREF_REV_SHIFT		56
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 617bf4f..78ce192 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -54,6 +54,14 @@
- #include <asm/cpufeature.h>
- #endif
- 
-+#define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN |\
-+				 BTRFS_HEADER_FLAG_RELOC |\
-+				 BTRFS_SUPER_FLAG_ERROR |\
-+				 BTRFS_SUPER_FLAG_CHANGING_FSID |\
-+				 BTRFS_SUPER_FLAG_SEEDING |\
-+				 BTRFS_SUPER_FLAG_METADUMP |\
-+				 BTRFS_SUPER_FLAG_METADUMP_V2)
-+
- static const struct extent_io_ops btree_extent_io_ops;
- static void end_workqueue_fn(struct btrfs_work *work);
- static void free_fs_root(struct btrfs_root *root);
-@@ -2727,26 +2735,6 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
- 	}
- 
--	/*
--	 * Leafsize and nodesize were always equal, this is only a sanity check.
--	 */
--	if (le32_to_cpu(disk_super->__unused_leafsize) !=
--	    btrfs_super_nodesize(disk_super)) {
--		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
--		       "blocksizes don't match.  node %d leaf %d\n",
--		       btrfs_super_nodesize(disk_super),
--		       le32_to_cpu(disk_super->__unused_leafsize));
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--	if (btrfs_super_nodesize(disk_super) > BTRFS_MAX_METADATA_BLOCKSIZE) {
--		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
--		       "blocksize (%d) was too large\n",
--		       btrfs_super_nodesize(disk_super));
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--
- 	features = btrfs_super_incompat_flags(disk_super);
- 	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
- 	if (tree_root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
-@@ -2818,17 +2806,6 @@ int open_ctree(struct super_block *sb,
- 	sb->s_blocksize = sectorsize;
- 	sb->s_blocksize_bits = blksize_bits(sectorsize);
- 
--	if (btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
--		printk(KERN_ERR "BTRFS: valid FS not found on %s\n", sb->s_id);
--		goto fail_sb_buffer;
--	}
--
--	if (sectorsize != PAGE_SIZE) {
--		printk(KERN_ERR "BTRFS: incompatible sector size (%lu) "
--		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
--		goto fail_sb_buffer;
--	}
--
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(tree_root);
- 	mutex_unlock(&fs_info->chunk_mutex);
-@@ -3986,8 +3963,19 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 			      int read_only)
- {
- 	struct btrfs_super_block *sb = fs_info->super_copy;
-+	u64 nodesize = btrfs_super_nodesize(sb);
-+	u64 sectorsize = btrfs_super_sectorsize(sb);
- 	int ret = 0;
- 
-+	if (btrfs_super_magic(sb) != BTRFS_MAGIC) {
-+		printk(KERN_ERR "BTRFS: no valid FS found\n");
-+		ret = -EINVAL;
-+	}
-+	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP) {
-+		printk(KERN_ERR "BTRFS: unrecognized super flag: %llu\n",
-+				btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP);
-+		ret = -EINVAL;
-+	}
- 	if (btrfs_super_root_level(sb) >= BTRFS_MAX_LEVEL) {
- 		printk(KERN_ERR "BTRFS: tree_root level too big: %d >= %d\n",
- 				btrfs_super_root_level(sb), BTRFS_MAX_LEVEL);
-@@ -4005,31 +3993,47 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	/*
--	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
--	 * items yet, they'll be verified later. Issue just a warning.
-+	 * Check sectorsize and nodesize first, some other check will need it.
-+	 * XXX: Just do a favor for later subpage size check. Check all
-+	 * possible sectorsize(4K, 8K, 16K, 32K, 64K) here.
- 	 */
--	if (!IS_ALIGNED(btrfs_super_root(sb), 4096))
-+	if (!is_power_of_2(sectorsize) || sectorsize < 4096 ||
-+	    sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		printk(KERN_ERR "BTRFS: invalid sectorsize %llu\n", sectorsize);
-+		ret = -EINVAL;
-+	}
-+	/* Only PAGE SIZE is supported yet */
-+	if (sectorsize != PAGE_CACHE_SIZE) {
-+		printk(KERN_ERR "BTRFS: sectorsize %llu not supported yet, only support %lu\n",
-+				sectorsize, PAGE_CACHE_SIZE);
-+		ret = -EINVAL;
-+	}
-+	if (!is_power_of_2(nodesize) || nodesize < sectorsize ||
-+	    nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		printk(KERN_ERR "BTRFS: invalid nodesize %llu\n", nodesize);
-+		ret = -EINVAL;
-+	}
-+	if (nodesize != le32_to_cpu(sb->__unused_leafsize)) {
-+		printk(KERN_ERR "BTRFS: invalid leafsize %u, should be %llu\n",
-+				le32_to_cpu(sb->__unused_leafsize),
-+				nodesize);
-+		ret = -EINVAL;
-+	}
-+
-+	/* Root alignment check */
-+	if (!IS_ALIGNED(btrfs_super_root(sb), sectorsize)) {
- 		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
- 				btrfs_super_root(sb));
--	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), 4096))
-+		ret = -EINVAL;
-+	}
-+	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), sectorsize)) {
- 		printk(KERN_WARNING "BTRFS: chunk_root block unaligned: %llu\n",
- 				btrfs_super_chunk_root(sb));
--	if (!IS_ALIGNED(btrfs_super_log_root(sb), 4096))
--		printk(KERN_WARNING "BTRFS: log_root block unaligned: %llu\n",
--				btrfs_super_log_root(sb));
--
--	/*
--	 * Check the lower bound, the alignment and other constraints are
--	 * checked later.
--	 */
--	if (btrfs_super_nodesize(sb) < 4096) {
--		printk(KERN_ERR "BTRFS: nodesize too small: %u < 4096\n",
--				btrfs_super_nodesize(sb));
- 		ret = -EINVAL;
- 	}
--	if (btrfs_super_sectorsize(sb) < 4096) {
--		printk(KERN_ERR "BTRFS: sectorsize too small: %u < 4096\n",
--				btrfs_super_sectorsize(sb));
-+	if (!IS_ALIGNED(btrfs_super_log_root(sb), sectorsize)) {
-+		printk(KERN_WARNING "BTRFS: log_root block unaligned: %llu\n",
-+				btrfs_super_log_root(sb));
- 		ret = -EINVAL;
- 	}
- 
--- 
-2.6.3
+[1] http://www.spinics.net/lists/linux-btrfs/msg41973.html
 
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v2
 
-
+iEYEARECAAYFAlZlcewACgkQD4E0Cdjc7s2AjACeJKjfyJDRQBVM9y2j90MaZhjX
+ynwAn0oKMM9MTZ4I8cmuxnHGgj3ZeSv4
+=Jb6u
+-----END PGP SIGNATURE-----

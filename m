@@ -1,122 +1,160 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:35548 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S964863AbbLGPj0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 10:39:26 -0500
-Received: by igl9 with SMTP id 9so76385231igl.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 07:39:25 -0800 (PST)
-Subject: Re: Scrub on btrfs single device only to detect errors, not correct
- them?
-To: Jon Panozzo <jonp@lime-technology.com>
-References: <CA+pSGYcxAHUppSgODwk16i+5rLdojzjYxp8=SWWkLXmXOAo9kg@mail.gmail.com>
- <CAJCQCtQX5Ov6YKZ=SdxaGSPaGa0sEFF6gz89WsDm9qegmykGkA@mail.gmail.com>
- <pan$519f9$af10e2cb$f1ea2d14$435d0b5a@cox.net>
- <CA+pSGYeYwC=eWmSuC4MXsSz1qVvWqzxxv7KzxkhQ84BKUDO-MA@mail.gmail.com>
- <56659F48.6000800@gmail.com>
- <CA+pSGYdE8FxCGjR_=gU58jej6AuMMZ-wn6EzyE_g0n7Trqb_Hw@mail.gmail.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5665A819.9030804@gmail.com>
-Date: Mon, 7 Dec 2015 10:39:05 -0500
+Received: from mail-pf0-f175.google.com ([209.85.192.175]:36411 "EHLO
+	mail-pf0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932359AbbLGTzJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 14:55:09 -0500
+Received: by pfdd184 with SMTP id d184so69837100pfd.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 11:55:09 -0800 (PST)
+Received: from localhost (114-198-89-204.dyn.iinet.net.au. [114.198.89.204])
+        by smtp.gmail.com with ESMTPSA id 81sm36344676pfk.56.2015.12.07.11.55.07
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Mon, 07 Dec 2015 11:55:08 -0800 (PST)
+Date: Tue, 8 Dec 2015 06:55:04 +1100
+From: Alistair Grant <akgrant0710@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Fixing recursive fault and parent transid verify failed
+Message-ID: <20151207195504.GA9262@alistair-xps13>
+References: <20151207015715.GA13954@alistair-xps13>
+ <pan$42653$68e1a3aa$3a4c1c2c$b0e89f8@cox.net>
+ <20151207100256.GA6836@alistair-xps13>
+ <pan$cb93a$b4f560b9$2dfdbdbc$17d7a835@cox.net>
 MIME-Version: 1.0
-In-Reply-To: <CA+pSGYdE8FxCGjR_=gU58jej6AuMMZ-wn6EzyE_g0n7Trqb_Hw@mail.gmail.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030507010400050102010807"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$cb93a$b4f560b9$2dfdbdbc$17d7a835@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On Mon, Dec 07, 2015 at 01:48:47PM +0000, Duncan wrote:
+> Alistair Grant posted on Mon, 07 Dec 2015 21:02:56 +1100 as excerpted:
+> 
+> > I think I'll try the btrfs restore as a learning exercise, and to check
+> > the contents of my backup (I don't trust my memory, so something could
+> > have changed since the last backup).
+> 
+> Trying btrfs restore is an excellent idea.  It'll make things far easier 
+> if you have to use it for real some day.
+> 
+> Note that while I see your kernel is reasonably current (4.2 series), I 
+> don't know what btrfs-progs ubuntu ships.  There have been some marked 
+> improvements to restore somewhat recently, checking the wiki btrfs-progs 
+> release-changelog list says 4.0 brought optional metadata restore, 4.0.1 
+> added --symlinks, and 4.2.3 fixed a symlink path check off-by-one error.  
+> (And don't use 4.1.1 as its mkfs.btrfs is broken and produces invalid 
+> filesystems.)  So you'll want at least progs 4.0 to get the optional 
+> metadata restoration, and 4.2.3 to get full symlinks restoration support.
+> 
 
---------------ms030507010400050102010807
-Content-Type: text/plain; charset=utf-8; format=flowed
-Content-Transfer-Encoding: quoted-printable
+Ubuntu 15.10 comes with btrfs-progs v4.0.  It looks like it is easy
+enough to compile and install the latest version from
+git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git so
+I'll do that.
 
-On 2015-12-07 10:12, Jon Panozzo wrote:
-> This is what I was thinking as well.  In my particular use-case,
-> parity is only really used today to reconstruct an entire device due
-> to a device failure.  I think if btrfs scrub detected errors on a
-> single device, I could do a "reverse reconstruct" where instead of
-> syncing TO the parity disk, I sync FROM the parity disk TO the btrfs
-> single device with the error, replacing physical blocks that are out
-> of sync with parity (thus repairing the scrub-found errrors).  The
-> downside to this approach is I would have to perform the reverse-sync
-> against the entire btrfs block device, which could be much more
-> time-consuming than if I could single out the specific block addresses
-> and just sync those.  That said, I guess option A is better than no
-> option at all.
+Should I stick to 4.2.3 or use the latest 4.3.1?
+
+
+> > Does btrfs restore require the path to be on a btrfs filesystem?  I've
+> > got an existing ext4 drive with enough free space to do the restore, so
+> > would prefer to use it than have to buy another drive.
+> 
+> Restoring to ext4 should be fine.
+> 
+> Btrfs restore writes files as would an ordinary application, the reason 
+> metadata restoration is optional (otherwise it uses normal file change 
+> and mod times, with files written as the running user, root, using umask-
+> based file perms, all exactly the same as if it were a normal file 
+> writing application), so it will restore to any normal filesystem.  The 
+> filesystem it's restoring /from/ of course must be btrfs... unmounted 
+> since it's designed to be used when mounting is broken, but it writes 
+> files normally, so can write them to any filesystem.
+> 
+> FWIW, I restored to my reiserfs based media partition (still on spinning 
+> rust, my btrfs are all on ssd) here, since that's where I had the room to 
+> work with.
 >
-> I would be curious if any of the devs or other members of this mailing
-> list have tried to correlate btrfs internal block addresses to a true
-> block-address on the device being used.  Any interesting articles /
-> links that show how to do this?  Not expecting much, but if someone
-> does know, I'd be very grateful.
-I think there is a tool in btrfs-progs to do it, but I've never used it, =
 
-and you would still need to get scrub to spit out actual error addresses =
+Thanks for the confirmation.
 
-for you.
+ 
+> > My plan is:
+> > 
+> > * btrfs restore /dev/sdX /path/to/ext4/restorepoint
+> > ** Where /dev/sdX is one of the two drives that were part of the raid1
+> >    fileystem
+> > * hashdeep audit the restored drive and backup
+> > * delete the existing corrupted btrfs filesystem and recreate
+> > * rsync the merge filesystem (from backup and restore)
+> >   on to the new filesystem
+> > 
+> > Any comments or suggestions are welcome.
+> 
+> 
+> Looks very reasonable, here.  There's a restore page on the wiki with 
+> more information than the btrfs-restore manpage, describing how to use it 
+> with btrfs-find-root if necessary, etc.
+> 
+> https://btrfs.wiki.kernel.org/index.php/Restore
+> 
+
+I'd seen this, but it isn't explicit about the target filesystem
+support.  I should try and update the page a bit.
 
 
+> Some details on the page are a bit dated; it doesn't cover the dryrun, 
+> list-roots, metadata and symlink options, for instance, and these can be 
+> very helpful, but the general idea remains the same.
+> 
+> The general idea is to use btrfs-find-root to get a listing of available 
+> root generations (if restore can't find a working root from the 
+> superblocks or you want to try restoring an earlier root), then feed the 
+> corresponding bytenr to restore's -t option.
+> 
+> Note that generation and transid refer to the same thing, a normally 
+> increasing number, so higher generations are newer.  The wiki page makes 
+> this much clearer than it used to, but the old wording anyway was 
+> confusing to me until I figured that out.
+> 
+> Where the wiki page talks about root object-ids, those are the various 
+> subtrees, low numbers are the base trees, 256+ are subvolumes/snapshots.  
+> Note that restore's list-roots option lists these for the given bytenr as 
+> well.
+> 
+> So you try restore with list-roots (-l) to see what it gives you, try 
+> btrfs-find-root if not satisfied, to find older generations and get their 
+> bytenrs to plug into restore with -t, and then confirm specific 
+> generation bytenrs with list-roots again.
+> 
+> Once you have a good generation/bytenr candidate, try a dry-run (-D) to 
+> see if you get a list of files it's trying to restore that looks 
+> reasonable.
+> 
+> If the dry-run goes well, you can try the full restore, not forgetting 
+> the metadata and symlinks options (-m, -S, respectively), if desired.
+> 
+> From there you can continue with your plan as above.
+> 
+> One more bonus hint.  Since you'll be doing a new mkfs.btrfs, it's a good 
+> time to review active features and decide which ones you might wish to 
+> activate (or not, if you're concerned about old-kernel compatibility).  
+> Additionally, before repopulating your new filesystem, you may want to 
+> review mount options, particularly autodefrag if appropriate, and 
+> compression if desired, so they take effect from the very first file 
+> created on the new filesystem. =:^)
+> 
+> FWIW in the past I usually did an immediate post-mkfs.btrfs mount and 
+> balance with -dusage=0 -musage=0 to get rid of the single-mode chunk 
+> artifacts from the mkfs.btrfs as well, but with a new enough mkfs.btrfs 
+> you may be able to avoid that now, as -progs 4.2 was supposed to 
+> eliminate those single-mode mkfs.btrfs artifacts on multi-device 
+> filesystems.  I've just not done any fresh mkfs.btrfs since then so 
+> haven't had a chance to play with it and see it personally, just yet.
+> 
+> -- 
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
 
---------------ms030507010400050102010807
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA3MTUzOTA1WjBPBgkq
-hkiG9w0BCQQxQgRA4h33FI2WhwPasKHK0P54N5QYGiiy2psNRXpnv69sBZg2bCSBdsGzyv10
-RSMDDSL4ND0gQS4f/nxkaaVk/DOktDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgCOcF0RJRhyt3ecifl95ms9JtlLgA9spUqRzH7EKrBBT9UG+Djp
-JIkNYvf7fNhGZVY2TB5AtOVeHupAqNKIHOGJDHnZyOTryz8us2goLr/hXN+vdj/lYT12bdnU
-aN2zhg3gYVdz8lblXzVy5sjrWjsFmGiykFsJsBs0nk2/rCLpm3B1sgEeBhTGG+t6uxHaIZo0
-TJO45XS9rLm0qyE/u2+FjcbwdX0lBkby5Ej+rv/WSwV3aViSvLrlI6Az8oGIT/in37PJfbJh
-T3OADP08uTPIMKd6mzYUcaJpZZDtDZbKR76L5CLIHZU+EPUGLsE1Z8of5gp2+oTVmCDQ2VSr
-bUM6/UWPHehC4pVE0iq7Vrc2AMoi+mg1u9XE0uOQg7GBnscEPlq6vsby6GFZqcuDEtMCWw1g
-FZGSHzKMV64oxBHAzV81+24aypv457TwRpni64PXUXYqf4fayh6Lx2ZVObgAIW+Vi9ju8V5H
-he/FFbbQDLE5IeK69W8wkGqYFXW/KcjjhCcBuamOmReUu/ATLl3Lcd3PSD4T6PdOSnSsxOhS
-Wg5YkOtup8+Xo9iZqylbg4ZL+jSQNc4RaO/DutXekxkbtfry+3lU5b1jVSidY1b3BwqBQjKu
-1VjCpnIJUZ24J4dUgP1I7IGBlJJ3Ulon03UE12bzIch2DQcnk5gn+FlfYAAAAAAAAA==
---------------ms030507010400050102010807--
+Thanks!
+Alistair
+

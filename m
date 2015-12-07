@@ -1,55 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34385 "EHLO mx1.redhat.com"
+Received: from mout.gmx.net ([212.227.15.18]:59355 "EHLO mout.gmx.net"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755831AbbLGXGg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Dec 2015 18:06:36 -0500
+	id S1755643AbbLGXwP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Dec 2015 18:52:15 -0500
 Subject: Re: [PATCH] btrfs: Introduce new mount option to disable tree log
  replay
-To: Christoph Anton Mitterer <calestyo@scientia.net>,
-        Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>
 References: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
- <5665B359.2050906@redhat.com> <2856934.1tulUexfpA@localhost.localdomain>
- <5665C1F2.8020407@redhat.com> <1449521684.6881.13.camel@scientia.net>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-From: Eric Sandeen <sandeen@redhat.com>
-Message-ID: <566610FA.1080408@redhat.com>
-Date: Mon, 7 Dec 2015 17:06:34 -0600
+ <8056366.2GdjmACnsD@localhost.localdomain>
+Cc: linux-btrfs@vger.kernel.org
+From: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Message-ID: <56661B9B.9090607@gmx.com>
+Date: Tue, 8 Dec 2015 07:51:55 +0800
 MIME-Version: 1.0
-In-Reply-To: <1449521684.6881.13.camel@scientia.net>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <8056366.2GdjmACnsD@localhost.localdomain>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/7/15 2:54 PM, Christoph Anton Mitterer wrote:
-
-...
- 
-> 2) a section that describes "ro" in btrfs-mount(5) which describes that
-> normal "ro" alone may cause changes on the device and which then refers
-> to hard-ro and/or the list of options (currently nologreplay) which are
-> required right now to make it truly ro.
-> 
-> 
-> I think this is important as an end-user probably expects "ro" to be
-> truly ro,
-
-Yeah, I don't know that this is true.  It hasn't been true for over a
-decade (2?), with the most widely-used filesystem in linux history, i.e.
-ext3.  So if btrfs wants to go on this re-education crusade, more power
-to you, but I don't know that it's really a fight worth fighting.  ;)
-
-> so if he looks it up in the documentation (2) he should find
-> enough information that this isn't the case and what to do instead.
-> Further, as one might expect that in the future, other places (than
-> just the log) may cause changes to a device, even though mounted ro...
-> I think it's better for the end user to also have a real "hard-ro" like
-> option, than a possibly growing list of "noXYZ" where the end-user may
-> have no clue that something else is now also required to get the truly
-> read-only behaviour.
-
-# blockdev --setro ...
-
--Eric
 
 
+On 12/07/2015 11:38 PM, Chandan Rajendra wrote:
+> On Monday 07 Dec 2015 14:06:42 Qu Wenruo wrote:
+>> Introduce a new mount option "nologreplay" to co-operate with "ro" mount
+>> option to get real readonly mount, like "norecovery" in ext* and xfs.
+>>
+>> Since the new parse_options() need to check new flags at remount time,
+>> so add a new parameter for parse_options().
+>>
+>
+> Hello Qu,
+> The patch should add an entry into btrfs_show_options() for 'mount' command to
+> be able to display an entry corresponding to 'nologreplay' mount option.
 
+Thanks for the advice.
+I just forgot show_mount_options().
+
+And for option to disable "nologreplay", I follow the behavior of xfs 
+and ext4 "norecovery" behavior.
+Which means no option to disable "norecovery", as it is only used for 
+debugging case.
+So the only method is to umount it and mount it again.
+
+>
+> Even after adding such an entry to btrfs_show_options(),
+> the following occurs,
+> # mount -o nologreplay,ro /dev/loop6 /mnt/
+> # mount | grep loop6
+> /dev/loop6 on /mnt type btrfs (ro,relatime,seclabel,nologreplay,space_cache,subvolid=5,subvol=/)
+> # mount -o remount,rw /dev/loop6 /mnt/
+> # mount | grep loop6
+> /dev/loop6 on /mnt type btrfs (rw,relatime,seclabel,nologreplay,space_cache,subvolid=5,subvol=/)
+>
+> As can be seen from the last line, both 'rw' and 'nologreplay' options are set.
+>
+
+I'll double check it, maybe it bypassed btrfs_parse_options(), and 
+bypassed the check in it.
+
+Thanks,
+Qu

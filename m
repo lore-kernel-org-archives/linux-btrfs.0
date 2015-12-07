@@ -1,59 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:34823 "EHLO twin.jikos.cz"
+Received: from mx1.redhat.com ([209.132.183.28]:55838 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932955AbbLGQDQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 7 Dec 2015 11:03:16 -0500
-Date: Mon, 7 Dec 2015 16:02:49 +0100
-From: David Sterba <dave@jikos.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] btrfs: Enhance super validation check
-Message-ID: <20151207150249.GQ26112@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <1449477555-10333-1-git-send-email-quwenruo@cn.fujitsu.com>
+	id S932174AbbLGQ1H (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 7 Dec 2015 11:27:07 -0500
+Subject: Re: [PATCH] btrfs: Introduce new mount option to disable tree log
+ replay
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: Eric Sandeen <sandeen@redhat.com>
+Message-ID: <5665B359.2050906@redhat.com>
+Date: Mon, 7 Dec 2015 10:27:05 -0600
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1449477555-10333-1-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 07, 2015 at 04:39:15PM +0800, Qu Wenruo wrote:
-> Enhance btrfs_check_super_valid() function by the following points:
-> 1) Restrict sector/node size check
->    Not the old max/min valid check, but also check if it's a power of 2.
->    So some bogus number like 12K nodesize won't pass now.
+On 12/7/15 12:06 AM, Qu Wenruo wrote:
+> Introduce a new mount option "nologreplay" to co-operate with "ro" mount
+> option to get real readonly mount, like "norecovery" in ext* and xfs.
 > 
-> 2) Super flag check
->    Except some common one like WRITTEN and RELOC, and other one used in
->    btrfs-progs, unrecognized flag will cause btrfs refuse to mount.
+> Since the new parse_options() need to check new flags at remount time,
+> so add a new parameter for parse_options().
 > 
-> 3) Better root alignment check
->    Now root bytenr is checked against sectorsize.
-> 
-> 4) Move some check into btrfs_check_super_valid().
->    Like nodesize vs leafsize check, and PAGESIZE vs sectorsize check.
->    And MAGIC check.
-> 
-> Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
 > Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
-Good, the code is better structured now, eg. the sb magic check came too
-late before.
-
-> @@ -4005,31 +3993,47 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
->  	}
+> ---
+>  Documentation/filesystems/btrfs.txt |  5 +++++
+>  fs/btrfs/ctree.h                    |  4 +++-
+>  fs/btrfs/disk-io.c                  |  7 ++++---
+>  fs/btrfs/super.c                    | 20 +++++++++++++++++---
+>  4 files changed, 29 insertions(+), 7 deletions(-)
+> 
+> diff --git a/Documentation/filesystems/btrfs.txt b/Documentation/filesystems/btrfs.txt
+> index c772b47..ac4ed68 100644
+> --- a/Documentation/filesystems/btrfs.txt
+> +++ b/Documentation/filesystems/btrfs.txt
+> @@ -168,6 +168,11 @@ Options with (*) are default options and will not show in the mount options.
+>    notreelog
+>  	Enable/disable the tree logging used for fsync and O_SYNC writes.
 >  
->  	/*
-> -	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
-> -	 * items yet, they'll be verified later. Issue just a warning.
-> +	 * Check sectorsize and nodesize first, some other check will need it.
-> +	 * XXX: Just do a favor for later subpage size check. Check all
+> +  nologreplay
+> +	Disable the log tree replay at mount time for real read-only mount.
+> +	Must be use with "ro" mount option and can't be disabled by mount
+> +	option.
 
-Please do not add new XXX or TODO markers to the sources. The comment
-would be fine with just:
+This documentation is not clear to me - "can't be disabled by mount option?"
 
-	 "Check all possible sectorsizes (4K, 8K, 16K, 32K, 64K) here."
+I think you mean to talk about remount here?  Perhaps something like:
 
-With that fixed,
+"... Must be used with 'ro' mount option.  A filesystem mounted with the
+'nologreplay' option cannot transition to a read-write mount via 
+remount,rw - the filesystem must be unmounted and remounted if read-write
+access is desired."
 
-Reviewed-by: David Sterba <dsterba@suse.com>
+Thanks,
+-Eric

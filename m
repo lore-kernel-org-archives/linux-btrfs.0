@@ -1,64 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:54481 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:56943 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755471AbbLARLL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 1 Dec 2015 12:11:11 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id 1919EACA7
-	for <linux-btrfs@vger.kernel.org>; Tue,  1 Dec 2015 17:11:10 +0000 (UTC)
+	id S1756289AbbLHNld (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Dec 2015 08:41:33 -0500
+Received: from relay2.suse.de (charybdis-ext.suse.de [195.135.220.254])
+	by mx2.suse.de (Postfix) with ESMTP id 0EB2FABE5
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2015 13:41:32 +0000 (UTC)
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
 Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs: drop duplicate prefix from scrub workqueues
-Date: Tue,  1 Dec 2015 18:09:12 +0100
-Message-Id: <1448989752-13459-1-git-send-email-dsterba@suse.com>
+Subject: [PATCH] btrfs: don't use slab cache for struct btrfs_delalloc_work
+Date: Tue,  8 Dec 2015 14:39:32 +0100
+Message-Id: <1449581972-22423-1-git-send-email-dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The helper btrfs_alloc_workqueue will add the "btrfs-" prefix.
+Although we prefer to use separate caches for various structs, it seems
+better not to do that for struct btrfs_delalloc_work. Objects of this
+type are allocated rarely, when transaction commit calls
+btrfs_start_delalloc_roots, requesting delayed iputs.
+
+The objects are temporary (with some IO involved) but still allocated
+and freed within __start_delalloc_inodes. Memory allocation failure is
+handled.
+
+The slab cache is empty most of the time (observed on several systems),
+so if we need to allocate a new slab object, the first one has to
+allocate a full page. In a potential case of low memory conditions this
+might fail with higher probability compared to using the generic slab
+caches.
 
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/scrub.c | 10 +++++-----
- 1 file changed, 5 insertions(+), 5 deletions(-)
+ fs/btrfs/inode.c | 14 ++------------
+ 1 file changed, 2 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index 2907a77fb1f6..f8f52a61e329 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -3685,27 +3685,27 @@ static noinline_for_stack int scrub_workers_get(struct btrfs_fs_info *fs_info,
- 	if (fs_info->scrub_workers_refcnt == 0) {
- 		if (is_dev_replace)
- 			fs_info->scrub_workers =
--				btrfs_alloc_workqueue("btrfs-scrub", flags,
-+				btrfs_alloc_workqueue("scrub", flags,
- 						      1, 4);
- 		else
- 			fs_info->scrub_workers =
--				btrfs_alloc_workqueue("btrfs-scrub", flags,
-+				btrfs_alloc_workqueue("scrub", flags,
- 						      max_active, 4);
- 		if (!fs_info->scrub_workers)
- 			goto fail_scrub_workers;
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 994490d5fa64..eeae851427fe 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -77,7 +77,6 @@ static const struct file_operations btrfs_dir_file_operations;
+ static struct extent_io_ops btrfs_extent_io_ops;
  
- 		fs_info->scrub_wr_completion_workers =
--			btrfs_alloc_workqueue("btrfs-scrubwrc", flags,
-+			btrfs_alloc_workqueue("scrubwrc", flags,
- 					      max_active, 2);
- 		if (!fs_info->scrub_wr_completion_workers)
- 			goto fail_scrub_wr_completion_workers;
+ static struct kmem_cache *btrfs_inode_cachep;
+-static struct kmem_cache *btrfs_delalloc_work_cachep;
+ struct kmem_cache *btrfs_trans_handle_cachep;
+ struct kmem_cache *btrfs_transaction_cachep;
+ struct kmem_cache *btrfs_path_cachep;
+@@ -9174,8 +9173,6 @@ void btrfs_destroy_cachep(void)
+ 		kmem_cache_destroy(btrfs_path_cachep);
+ 	if (btrfs_free_space_cachep)
+ 		kmem_cache_destroy(btrfs_free_space_cachep);
+-	if (btrfs_delalloc_work_cachep)
+-		kmem_cache_destroy(btrfs_delalloc_work_cachep);
+ }
  
- 		fs_info->scrub_nocow_workers =
--			btrfs_alloc_workqueue("btrfs-scrubnc", flags, 1, 0);
-+			btrfs_alloc_workqueue("scrubnc", flags, 1, 0);
- 		if (!fs_info->scrub_nocow_workers)
- 			goto fail_scrub_nocow_workers;
- 		fs_info->scrub_parity_workers =
--			btrfs_alloc_workqueue("btrfs-scrubparity", flags,
-+			btrfs_alloc_workqueue("scrubparity", flags,
- 					      max_active, 2);
- 		if (!fs_info->scrub_parity_workers)
- 			goto fail_scrub_parity_workers;
+ int btrfs_init_cachep(void)
+@@ -9210,13 +9207,6 @@ int btrfs_init_cachep(void)
+ 	if (!btrfs_free_space_cachep)
+ 		goto fail;
+ 
+-	btrfs_delalloc_work_cachep = kmem_cache_create("btrfs_delalloc_work",
+-			sizeof(struct btrfs_delalloc_work), 0,
+-			SLAB_RECLAIM_ACCOUNT | SLAB_MEM_SPREAD,
+-			NULL);
+-	if (!btrfs_delalloc_work_cachep)
+-		goto fail;
+-
+ 	return 0;
+ fail:
+ 	btrfs_destroy_cachep();
+@@ -9461,7 +9451,7 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+ {
+ 	struct btrfs_delalloc_work *work;
+ 
+-	work = kmem_cache_zalloc(btrfs_delalloc_work_cachep, GFP_NOFS);
++	work = kmalloc(sizeof(*work), GFP_NOFS);
+ 	if (!work)
+ 		return NULL;
+ 
+@@ -9480,7 +9470,7 @@ struct btrfs_delalloc_work *btrfs_alloc_delalloc_work(struct inode *inode,
+ void btrfs_wait_and_free_delalloc_work(struct btrfs_delalloc_work *work)
+ {
+ 	wait_for_completion(&work->completion);
+-	kmem_cache_free(btrfs_delalloc_work_cachep, work);
++	kfree(work);
+ }
+ 
+ /*
 -- 
 1.8.4.5
 

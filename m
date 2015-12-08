@@ -1,62 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f175.google.com ([209.85.192.175]:34779 "EHLO
-	mail-pf0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752542AbbLDIRK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 4 Dec 2015 03:17:10 -0500
-Received: by pfbg73 with SMTP id g73so23333627pfb.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 04 Dec 2015 00:17:09 -0800 (PST)
-From: Naohiro Aota <naota@elisp.net>
-To: linux-btrfs@vger.kernel.org
-Cc: quwenruo@cn.fujitsu.com, Naohiro Aota <naota@elisp.net>
-Subject: [PATCH 1/3] btrfs-progs: test: umount if confirmation failed
-Date: Fri,  4 Dec 2015 14:37:25 +0900
-Message-Id: <1449207447-1203-2-git-send-email-naota@elisp.net>
-In-Reply-To: <1449207447-1203-1-git-send-email-naota@elisp.net>
+Received: from mail-qk0-f173.google.com ([209.85.220.173]:33436 "EHLO
+	mail-qk0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932577AbbLHCGs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 7 Dec 2015 21:06:48 -0500
+Received: by qkdb5 with SMTP id b5so9532885qkd.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 07 Dec 2015 18:06:48 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <20151207153538.GG4227@twin.jikos.cz>
 References: <1449207447-1203-1-git-send-email-naota@elisp.net>
+ <56623F4B.80502@gmx.com> <CAEe67=-3o9Roe7ewHRQqWnSe+HjVc22-_6FObHy2PeTwZXAcSQ@mail.gmail.com>
+ <20151207153538.GG4227@twin.jikos.cz>
+From: Naohiro Aota <naota@elisp.net>
+Date: Tue, 8 Dec 2015 11:06:28 +0900
+Message-ID: <CAEe67=8JC38S_eNenwg2QmcMLKetR3zbzj0aMTXGcV4U1gCBzQ@mail.gmail.com>
+Subject: Re: [PATCH 0/3] btrfs-progs: fix file restore to lost+found bug
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Cc: Naohiro Aota <naota@elisp.net>, David Sterba <dsterba@suse.cz>,
+        Qu Wenruo <quwenruo.btrfs@gmx.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When a check in check_inode() failed, the test should umount test target
-file system. This commit add clean up umount line in failure path.
+On Tue, Dec 8, 2015 at 12:35 AM, David Sterba <dsterba@suse.cz> wrote:
+> On Mon, Dec 07, 2015 at 11:59:19AM +0900, Naohiro Aota wrote:
+>> > But I only see the first 2 patches in maillist...
+>> > The last test case seems missing?
+>>
+>> Maybe, the last patch is too large to post to the list? Even it get
+>> smaller, 130260 bytes seems to be a bit large.
+>>
+>> How should I handle this? Put my repo somewhere and wait a maintainer
+>> to pull it?
+>
+> Please send it to me directly. The image will be available in
+> btrfs-progs git and we don't necessarily need the copy in the
+> mailinglist.
 
-Signed-off-by: Naohiro Aota <naota@elisp.net>
----
- tests/fsck-tests/012-leaf-corruption/test.sh | 4 ++++
- 1 file changed, 4 insertions(+)
-
-diff --git a/tests/fsck-tests/012-leaf-corruption/test.sh b/tests/fsck-tests/012-leaf-corruption/test.sh
-index 6e23145..bfdd0ea 100755
---- a/tests/fsck-tests/012-leaf-corruption/test.sh
-+++ b/tests/fsck-tests/012-leaf-corruption/test.sh
-@@ -57,6 +57,7 @@ check_inode()
- 	# Check whether the inode exists
- 	exists=$($SUDO_HELPER find $path -inum $ino)
- 	if [ -z "$exists" ]; then
-+		$SUDO_HELPER umount $TEST_MNT
- 		_fail "inode $ino not recovered correctly"
- 	fi
- 
-@@ -64,17 +65,20 @@ check_inode()
- 	found_mode=$(printf "%o" 0x$($SUDO_HELPER stat $exists -c %f))
- 	if [ $found_mode -ne $mode ]; then
- 		echo "$found_mode"
-+		$SUDO_HELPER umount $TEST_MNT
- 		_fail "inode $ino modes not recovered"
- 	fi
- 
- 	# Check inode size
- 	found_size=$($SUDO_HELPER stat $exists -c %s)
- 	if [ $mode -ne 41700 -a $found_size -ne $size ]; then
-+		$SUDO_HELPER umount $TEST_MNT
- 		_fail "inode $ino size not recovered correctly"
- 	fi
- 
- 	# Check inode name
- 	if [ "$(basename $exists)" != "$name" ]; then
-+		$SUDO_HELPER umount $TEST_MNT
- 		_fail "inode $ino name not recovered correctly"
- 	else
- 		return 0
--- 
-2.6.3
-
+Sure. I'll send it to you.

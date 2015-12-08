@@ -1,60 +1,52 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f178.google.com ([209.85.213.178]:37029 "EHLO
-	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932607AbbLHMRN (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 07:17:13 -0500
-Received: by igcto18 with SMTP id to18so15280789igc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 04:17:12 -0800 (PST)
-Subject: Re: [PATCH] btrfs: Introduce new mount option to disable tree log
+Received: from mail-io0-f182.google.com ([209.85.223.182]:32949 "EHLO
+	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933097AbbLHQZV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 11:25:21 -0500
+Received: by iouu10 with SMTP id u10so30129121iou.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 08:25:20 -0800 (PST)
+Subject: Re: [PATCH v2] btrfs: Introduce new mount option to disable tree log
  replay
 To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
-References: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
- <5665B596.3060309@gmail.com> <566673CD.6070406@cn.fujitsu.com>
+References: <1449555033-25075-1-git-send-email-quwenruo@cn.fujitsu.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5666CA2F.4080600@gmail.com>
-Date: Tue, 8 Dec 2015 07:16:47 -0500
+Message-ID: <56670445.7070800@gmail.com>
+Date: Tue, 8 Dec 2015 11:24:37 -0500
 MIME-Version: 1.0
-In-Reply-To: <566673CD.6070406@cn.fujitsu.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080706050206000707010200"
+In-Reply-To: <1449555033-25075-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020104050204090300010202"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080706050206000707010200
-Content-Type: text/plain; charset=utf-8; format=flowed
+--------------ms020104050204090300010202
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-12-08 01:08, Qu Wenruo wrote:
->
->
-> Austin S Hemmelgarn wrote on 2015/12/07 11:36 -0500:
->> On 2015-12-07 01:06, Qu Wenruo wrote:
->>> Introduce a new mount option "nologreplay" to co-operate with "ro" mo=
-unt
->>> option to get real readonly mount, like "norecovery" in ext* and xfs.=
-
->>>
->>> Since the new parse_options() need to check new flags at remount time=
-,
->>> so add a new parameter for parse_options().
->>>
->>
->> Passes xfstests and a handful of other things that I really should jus=
+On 2015-12-08 01:10, Qu Wenruo wrote:
+> Introduce a new mount option "nologreplay" to co-operate with "ro" moun=
 t
->> take the time to integrate into xfstests, so:
->> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
->>
-> Thanks for the test.
+> option to get real readonly mount, like "norecovery" in ext* and xfs.
 >
-> But I'm afraid you may need to test v2 patch again, as the v2 changed
-> some behavior.
+> Since the new parse_options() need to check new flags at remount time,
+> so add a new parameter for parse_options().
 >
-That's OK, I should have results for you some time later today.
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> v2:
+>    Make RO check mandatory for btrfs_parse_options().
+>    Add btrfs_show_options() support for nologreplay.
+>
+>    Document for btrfs-mount(5) will follow after the patch being merged=
+=2E
+
+Same set of tests I ran against the last version, still no issues, so:
+Tested-by: Austin S. Hemmelgarn
 
 
 
---------------ms080706050206000707010200
+--------------ms020104050204090300010202
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -96,9 +88,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA4MTIxNjQ3WjBPBgkq
-hkiG9w0BCQQxQgRAw0dd5H91aFj6iD70BaxmsvE/DwtEOO/yzSbdVncpjvjqfBTq09I4/6Lq
-OUaD4bj/PY3Roe6P448HievPebxBiDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA4MTYyNDM3WjBPBgkq
+hkiG9w0BCQQxQgRAP4zIFpE/Fp9oDl19aL6EPoAMSTG6P69m/okRumf+sI/FwtaOcASPd9q+
+vM13LTfrrra3MUR7367J+TWP9mq56TBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -106,14 +98,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgA9agqA9u5DSKasg5QAoZvEi50gy3V59nfx1Fnj29V3NcD3DoVO
-M8BnSeY8fpngOaMt7Wdgj0ia515IPv0KH+ntvVU/e33PC8O2UJFkCjGlxaSQg/8QCVX/VQy0
-QurgMJklzCwJ9Z44zAH5ehJtTcXrONrOZkSOZ+y7TKiBRS+W+wErE+2ImvoWcotvFuwESdwc
-lGHEyZ2XGMly1xNuztTGDyMowowmcuBCmW63rDDOyRAFfgQoDPPJW76hKSx62RBbNYIo93Ev
-QUHBAtascc/p4QNZQoIEudevvAMlqAAwvwzCtCJF2xMMG0ZsdGdJ5qxwk/sAySI5MvDoIutV
-EXXzNQ7a4a0Q2rI8cVn+Bi/XSMeXoI4+b2Bmi7dzxfi9+Wb6uQETDAFGNU8bvmu+kl83jidq
-MJ5I7Xq4rBjDjkrWa/1+ecI/RRg6pGxRMTWyGhaV9o2H/MFnI5N+x1SkKj4C2yjCoNzXiWN9
-+W7eDyFdVs0EdBddRQ3/kA6GHSwWJ73iy8tL5tZsIFujPAn93ePSgCArJy203mAbraeko1wF
-9Pb6y3PTtpibjUklyi835XpClAlLaNRk0AwQDdvR5GebMx9m+VuOx6g+0N8BBz9PCjXUWiBQ
-vX99jNAKqn1UbbpP3EjjX+9MOG2QHtKHmHcjPo51N0rFk7YicdloZnsiRwAAAAAAAA==
---------------ms080706050206000707010200--
+BgkqhkiG9w0BAQEFAASCAgAgSFRQ9bFyNZmZrnu+SKXIQ7dRLC4Ny+UjrIvjTWMXNQzrZw6G
+dbS0Mh158nqp7iFIABCwDfTW+32CK3Z5l4G7ISYWBgDXKBcvKOOI2fVRnj9qT2mTfMTrkaqV
+ELQ9C9zpKVEO6d+klxeQG7iUZN5ycpu17dvCuQ8CZHvsImwoSmLyxDYcYoyQTK6NPB/LAB1q
+VSTqH6rvYd3f9jwbdZtyPG6FL+OjtC71MHpXjrP8W2IqzV1DBe15c2sMnk14WSHU6sStrvkp
+kBSfodbVHnajD1h3Dc4aHZCSX7zLy4aU68KdZJT8lldeYsJbD5SjwZn/03rU5SPu9fw6Ybxv
+jv/jY/OIAApsdZdEG7OgdXEUDXK6pDVQHvQFoHczZrP7KGOmX9LWCvIHVwxcsleVMXulQxjf
+rqaQt0x6B0qOq3CNNa4y3ThL8f3wi0/527ir9KTyN6ElpwtovEofhr/sgC9xUKXz+NGX3lA3
+//+7DjypU1fBuzktILlM4WN06iYWusAFDl6ANugX/gordouzTJGzuXl4q5Ev8V3PoUqtsuPa
+bT7nFJBENzy3rIktqrTpAdl5h0Ib0UMsWsjhOeNDwRei9VP2Xyyo0H23YbkjuB5ZRsHjdmbQ
+5ixv0AEXWe+xyqEI9f/esLGcI9rlzl2AOxLfTkzJMxzIgRVpEIefwQkDqAAAAAAAAA==
+--------------ms020104050204090300010202--

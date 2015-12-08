@@ -1,78 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:33088 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932607AbbLHMQR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 07:16:17 -0500
-Received: by iouu10 with SMTP id u10so22741246iou.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 04:16:16 -0800 (PST)
+Received: from mail-ig0-f178.google.com ([209.85.213.178]:37029 "EHLO
+	mail-ig0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932607AbbLHMRN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 07:17:13 -0500
+Received: by igcto18 with SMTP id to18so15280789igc.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 04:17:12 -0800 (PST)
 Subject: Re: [PATCH] btrfs: Introduce new mount option to disable tree log
  replay
-To: Eric Sandeen <sandeen@redhat.com>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
 References: <1449468402-27914-1-git-send-email-quwenruo@cn.fujitsu.com>
- <5665B359.2050906@redhat.com> <2856934.1tulUexfpA@localhost.localdomain>
- <5665C1F2.8020407@redhat.com> <1449521684.6881.13.camel@scientia.net>
- <566610FA.1080408@redhat.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+ <5665B596.3060309@gmail.com> <566673CD.6070406@cn.fujitsu.com>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5666C9F7.2030509@gmail.com>
-Date: Tue, 8 Dec 2015 07:15:51 -0500
+Message-ID: <5666CA2F.4080600@gmail.com>
+Date: Tue, 8 Dec 2015 07:16:47 -0500
 MIME-Version: 1.0
-In-Reply-To: <566610FA.1080408@redhat.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms030607070505000104080209"
+In-Reply-To: <566673CD.6070406@cn.fujitsu.com>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080706050206000707010200"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms030607070505000104080209
+--------------ms080706050206000707010200
 Content-Type: text/plain; charset=utf-8; format=flowed
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-12-07 18:06, Eric Sandeen wrote:
-> On 12/7/15 2:54 PM, Christoph Anton Mitterer wrote:
+On 2015-12-08 01:08, Qu Wenruo wrote:
 >
-> ...
 >
->> 2) a section that describes "ro" in btrfs-mount(5) which describes tha=
+> Austin S Hemmelgarn wrote on 2015/12/07 11:36 -0500:
+>> On 2015-12-07 01:06, Qu Wenruo wrote:
+>>> Introduce a new mount option "nologreplay" to co-operate with "ro" mo=
+unt
+>>> option to get real readonly mount, like "norecovery" in ext* and xfs.=
+
+>>>
+>>> Since the new parse_options() need to check new flags at remount time=
+,
+>>> so add a new parameter for parse_options().
+>>>
+>>
+>> Passes xfstests and a handful of other things that I really should jus=
 t
->> normal "ro" alone may cause changes on the device and which then refer=
-s
->> to hard-ro and/or the list of options (currently nologreplay) which ar=
-e
->> required right now to make it truly ro.
+>> take the time to integrate into xfstests, so:
+>> Tested-by: Austin S. Hemmelgarn <ahferroin7@gmail.com>
 >>
->>
->> I think this is important as an end-user probably expects "ro" to be
->> truly ro,
+> Thanks for the test.
 >
-> Yeah, I don't know that this is true.  It hasn't been true for over a
-> decade (2?), with the most widely-used filesystem in linux history, i.e=
-=2E
-> ext3.  So if btrfs wants to go on this re-education crusade, more power=
-
-> to you, but I don't know that it's really a fight worth fighting.  ;)
+> But I'm afraid you may need to test v2 patch again, as the v2 changed
+> some behavior.
 >
-Actually, AFAICT, it's been at least 4.5 decades.  Last I checked, this=20
-dates back to the original UNIX filesystems, which still updated atimes=20
-even when mounted RO.
-
-Despite this, it really isn't a widely known or well documented behavior =
-
-outside of developers, forensic specialists, and people who have had to=20
-deal with the implications it has on data recovery.  There really isn't=20
-any way that the user would know about it without being explicitly told, =
-
-and it's something that can have a serious impact on being able to=20
-recover a broken filesystem.  TBH, I really feel that _every_=20
-filesystem's documentation should have something about how to make it=20
-mount truly read-only, even if it's just a reference to how to mark the=20
-block device read-only.
+That's OK, I should have results for you some time later today.
 
 
 
---------------ms030607070505000104080209
+--------------ms080706050206000707010200
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -114,9 +96,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA4MTIxNTUxWjBPBgkq
-hkiG9w0BCQQxQgRAwWE/BxgNP/+2FHAfM+O48jDT9TrBsWbcyKXYW+M3Vlk1sbtvJ8HTeUOX
-zknL3R57E+Vm62aomSjM2xwbejrDOjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA4MTIxNjQ3WjBPBgkq
+hkiG9w0BCQQxQgRAw0dd5H91aFj6iD70BaxmsvE/DwtEOO/yzSbdVncpjvjqfBTq09I4/6Lq
+OUaD4bj/PY3Roe6P448HievPebxBiDBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -124,14 +106,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgAXh5HQczsk6BoKjnV+wmj9h/G5EcQ8MEWc7xj61E+cEc1mFFwu
-RLjVuwGW5O4NkF3w+xQjhfM1N8a5hvTqCNa/2B7XrycaCvSn4KNQ7o1u/re6WdaHPcKZxvo5
-bIxuec5Y1l1+CxdKjDcFRntRnwKF1DTMb6Ag6xvyD0eCKfGIn4sguKOFu4Pv2EwcZVAvVBnQ
-XvzONBzjxjXW2Y3JVRK08MMj9Z0fXhFKzsftKkaU8ZEpNAY92ApTFuv6f2kvuzEyUdRjUq50
-Bt48sa2tZG7vC+zRKCpUjSYD3fXFMjWCERsFjPFW2BV0vc8ETVGped0GRLHpwkLDiOG2pf7A
-DPSxhBGJgcOQfx3FNb45es/F0xbOOB+HyBJVESgQ9CBBCrb0ndVWio/3d0UgD7n1w7+b44lF
-oO8UeDVRlaQfVk9QMU1NPHQYUFgek5kvnWLVMFQ/xBjKXqzOEg/qx73kpjOILcgfFJB2xNMO
-kihsLuQ8Bjf/Iha6tF1ttcjazkwqpumBWoLnOzkwRDmbXsqlOSTbAjZlQYsyioW1KZVzSH/2
-E4VkhukUyd6vkxXQ7fxl6GUvnRqnY84r+BUxPZ31cHT32VJvzCyV9DBhZHSnKWavAsMdxf89
-XNtGk0aRP5XiD2Oxn/iC8RzFyYQYj2COv23Ak/lVJswzYF+pbStLyse/fwAAAAAAAA==
---------------ms030607070505000104080209--
+BgkqhkiG9w0BAQEFAASCAgA9agqA9u5DSKasg5QAoZvEi50gy3V59nfx1Fnj29V3NcD3DoVO
+M8BnSeY8fpngOaMt7Wdgj0ia515IPv0KH+ntvVU/e33PC8O2UJFkCjGlxaSQg/8QCVX/VQy0
+QurgMJklzCwJ9Z44zAH5ehJtTcXrONrOZkSOZ+y7TKiBRS+W+wErE+2ImvoWcotvFuwESdwc
+lGHEyZ2XGMly1xNuztTGDyMowowmcuBCmW63rDDOyRAFfgQoDPPJW76hKSx62RBbNYIo93Ev
+QUHBAtascc/p4QNZQoIEudevvAMlqAAwvwzCtCJF2xMMG0ZsdGdJ5qxwk/sAySI5MvDoIutV
+EXXzNQ7a4a0Q2rI8cVn+Bi/XSMeXoI4+b2Bmi7dzxfi9+Wb6uQETDAFGNU8bvmu+kl83jidq
+MJ5I7Xq4rBjDjkrWa/1+ecI/RRg6pGxRMTWyGhaV9o2H/MFnI5N+x1SkKj4C2yjCoNzXiWN9
++W7eDyFdVs0EdBddRQ3/kA6GHSwWJ73iy8tL5tZsIFujPAn93ePSgCArJy203mAbraeko1wF
+9Pb6y3PTtpibjUklyi835XpClAlLaNRk0AwQDdvR5GebMx9m+VuOx6g+0N8BBz9PCjXUWiBQ
+vX99jNAKqn1UbbpP3EjjX+9MOG2QHtKHmHcjPo51N0rFk7YicdloZnsiRwAAAAAAAA==
+--------------ms080706050206000707010200--

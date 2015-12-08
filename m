@@ -1,118 +1,86 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:36927 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753681AbbLOBPC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 20:15:02 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id C009B4092567
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 09:14:40 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 2/2] btrfs: Enhance chunk validation check
-Date: Tue, 15 Dec 2015 09:14:37 +0800
-Message-ID: <1450142077-6983-2-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1450142077-6983-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1450142077-6983-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from plane.gmane.org ([80.91.229.3]:53887 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932355AbbLHJZi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 8 Dec 2015 04:25:38 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1a6EWS-00006V-5z
+	for linux-btrfs@vger.kernel.org; Tue, 08 Dec 2015 10:25:24 +0100
+Received: from host-78-149-214-107.as13285.net ([78.149.214.107])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 10:25:24 +0100
+Received: from samtygier by host-78-149-214-107.as13285.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 10:25:24 +0100
+To: linux-btrfs@vger.kernel.org
+From: sam tygier <samtygier@yahoo.co.uk>
+Subject: [PATCH v2] Btrfs: Check metadata redundancy on balance
+Date: Tue, 8 Dec 2015 09:25:03 +0000
+Message-ID: <n467lf$t3g$1@ger.gmane.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Enhance chunk validation:
-1) Num_stripes
-   We already have such check but it's only in super block sys chunk
-   array.
-   Now check all on-disk chunks.
+Resending as previous comments did not need any changes.
 
-2) Chunk logical
-   It should be aligned to sector size.
-   This behavior should be *DOUBLE CHECKED* for 64K sector size like
-   PPC64 or AArch64.
-   Maybe we can found some hidden bugs.
+Currently BTRFS allows you to make bad choices of data and 
+metadata levels. For example -d raid1 -m raid0 means you can
+only use half your total disk space, but will loose everything
+if 1 disk fails. It should give a warning in these cases.
 
-3) Chunk length
-   Same as chunk logical, should be aligned to sector size.
+This patch is a follow up to
+[PATCH v2] btrfs-progs: check metadata redundancy
+in order to cover the case of using balance to convert to such
+a set of raid levels.
 
-4) Stripe length
-   It should be power of 2.
+A simple example to hit this is to create a single device fs, 
+which will default to single:dup, then to add a second device and
+attempt to convert to raid1 with the command
+btrfs balance start -dconvert=raid1  /mnt
+this will result in a filesystem with raid1:dup, which will not
+survive the loss of one drive. I personally don't see why the tools
+should allow this, but in the previous thread a warning was
+considered sufficient.
 
-5) Chunk type
-   Any bit out of TYPE_MAS | PROFILE_MASK is invalid.
+Changes in v2
+Use btrfs_get_num_tolerated_disk_barrier_failures()
 
-With all these much restrict rules, several fuzzed image reported in
-mail list should no longer cause kernel panic.
+Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
 
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+From: Sam Tygier <samtygier@yahoo.co.uk>
+Date: Sat, 3 Oct 2015 16:43:48 +0100
+Subject: [PATCH] Btrfs: Check metadata redundancy on balance
 
+When converting a filesystem via balance check that metadata mode
+is at least as redundant as the data mode. For example give warning
+when:
+-dconvert=raid1 -mconvert=single
 ---
-v2:
-  Fix a typo which forgot to return -EIO after num_stripes check.
----
- fs/btrfs/volumes.c | 33 ++++++++++++++++++++++++++++++++-
- 1 file changed, 32 insertions(+), 1 deletion(-)
+ fs/btrfs/volumes.c | 6 ++++++
+ 1 file changed, 6 insertions(+)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9ea345f..bda84be 100644
+index 6fc73586..40247e9 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -6199,6 +6199,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	struct extent_map *em;
- 	u64 logical;
- 	u64 length;
-+	u64 stripe_len;
- 	u64 devid;
- 	u8 uuid[BTRFS_UUID_SIZE];
- 	int num_stripes;
-@@ -6207,6 +6208,37 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+@@ -3584,6 +3584,12 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 		}
+ 	} while (read_seqretry(&fs_info->profiles_lock, seq));
  
- 	logical = key->offset;
- 	length = btrfs_chunk_length(leaf, chunk);
-+	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
-+	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
-+	/* Validation check */
-+	if (!num_stripes) {
-+		btrfs_err(root->fs_info, "invalid chunk num_stripes: %u",
-+			  num_stripes);
-+		return -EIO;
++	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
++		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
++		btrfs_info(fs_info,
++			"Warning: metatdata has lower redundancy than data\n");
 +	}
-+	if (!IS_ALIGNED(logical, root->sectorsize)) {
-+		btrfs_err(root->fs_info,
-+			  "invalid chunk logical %llu", logical);
-+		return -EIO;
-+	}
-+	if (!length || !IS_ALIGNED(length, root->sectorsize)) {
-+		btrfs_err(root->fs_info,
-+			"invalid chunk length %llu", length);
-+		return -EIO;
-+	}
-+	if (!is_power_of_2(stripe_len)) {
-+		btrfs_err(root->fs_info, "invalid chunk stripe length: %llu",
-+			  stripe_len);
-+		return -EIO;
-+	}
-+	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-+	    btrfs_chunk_type(leaf, chunk)) {
-+		btrfs_err(root->fs_info, "unrecognized chunk type: %llu",
-+			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
-+			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-+			  btrfs_chunk_type(leaf, chunk));
-+		return -EIO;
-+	}
- 
- 	read_lock(&map_tree->map_tree.lock);
- 	em = lookup_extent_mapping(&map_tree->map_tree, logical, 1);
-@@ -6223,7 +6255,6 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	em = alloc_extent_map();
- 	if (!em)
- 		return -ENOMEM;
--	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
- 	map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
- 	if (!map) {
- 		free_extent_map(em);
++
+ 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+ 		fs_info->num_tolerated_disk_barrier_failures = min(
+ 			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
 -- 
-2.6.3
+2.4.3
 
 
 

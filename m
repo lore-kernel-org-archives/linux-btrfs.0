@@ -1,102 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f179.google.com ([209.85.223.179]:34654 "EHLO
-	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756931AbbLHQBd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 11:01:33 -0500
-Received: by ioir85 with SMTP id r85so28679740ioi.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 08:01:33 -0800 (PST)
+Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:48681
+	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756905AbbLHQCR (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 11:02:17 -0500
 Subject: Re: Scrub: no spae left on device
-To: Marc MERLIN <marc@merlins.org>,
+To: Lionel Bouton <lionel-subscription@bouton.name>,
+        Marc MERLIN <marc@merlins.org>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <20151208150638.GL27889@merlins.org>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <5666FEB2.9060905@gmail.com>
-Date: Tue, 8 Dec 2015 11:00:50 -0500
+ <5666F947.5010902@googlemail.com> <5666FB58.2040900@bouton.name>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <5666FF07.5060902@googlemail.com>
+Date: Tue, 8 Dec 2015 17:02:15 +0100
 MIME-Version: 1.0
-In-Reply-To: <20151208150638.GL27889@merlins.org>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070708080608030008000704"
+In-Reply-To: <5666FB58.2040900@bouton.name>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
+On 12/08/15 16:46, Lionel Bouton wrote:
+> Le 08/12/2015 16:37, Holger Hoffstätte a écrit :
+>> On 12/08/15 16:06, Marc MERLIN wrote:
+>>> Howdy,
+>>>
+>>> Why would scrub need space and why would it cancel if there isn't enough of
+>>> it?
+>>> (kernel 4.3)
+>>>
+>>> /etc/cron.daily/btrfs-scrub:
+>>> btrfs scrub start -Bd /dev/mapper/cryptroot
+>>> scrub device /dev/mapper/cryptroot (id 1) done
+>>> 	scrub started at Mon Dec  7 01:35:08 2015 and finished after 258 seconds
+>>> 	total bytes scrubbed: 130.84GiB with 0 errors
+>>> btrfs scrub start -Bd /dev/mapper/pool1
+>>> ERROR: scrubbing /dev/mapper/pool1 failed for device id 1 (No space left on device)
+>>> scrub device /dev/mapper/pool1 (id 1) canceled
+>> Scrub rewrites metadata (apparently even in -r aka readonly mode), and that
+>> can lead to temporary metadata expansion (stuff gets COWed around); it's
+>> a bit surprising but makes sense if you think about it.
+> 
+> How long must I think about it until it makes sense? :-)
+> 
+> Sorry I'm not sure why metadata is rewritten if no error is detected.
+> I've several theories but lack information: is the fact that no error
+> has been detected stored somewhere? is scrub using some kind of internal
+> temporary snapshot(s) to avoid interfering with other operations? other
+> reason I didn't think about?
 
---------------ms070708080608030008000704
-Content-Type: text/plain; charset=windows-1252; format=flowed
-Content-Transfer-Encoding: quoted-printable
+Well..I have no idea what the historical motivation for this behaviour was,
+even though I can make up at least two: rewriting known-good checksums
+generally (since you know they are good this very moment), and in case of
+error avoiding the area where the block error occurred (read errors on rust
+are often clustered and affect entire tracks).
 
-On 2015-12-08 10:06, Marc MERLIN wrote:
-> Howdy,
->
-> Why would scrub need space and why would it cancel if there isn't enoug=
-h of
-> it?
-> (kernel 4.3)
->
-Wild guess here, but maybe scrub unconditionally updates the error=20
-counters, regardless of whether any errors were found or not?
+That's really all I know. I agree it's surprising, especially since it
+happens by default and also in -r mode, which might be considered a bug.
 
+-h
 
-
---------------ms070708080608030008000704
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
-
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA4MTYwMDUwWjBPBgkq
-hkiG9w0BCQQxQgRAkDCvN4Nm2ZIDsK4QyAFwgOEP02lKTnr8Qu8zSvZ0g3mAwJlYzBJZgvJ0
-S7wHDTaTSB+xnt04wfpwKfsKVoLBDzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBZKcZiAO5wSX7iuEhl7FW7Y/5EqogHcU3jjKlgGbxnivxp2kXZ
-L8A2lL5NMDZEZ39E6yV81uV4a2v/RKKRm6J1UYNfDzRPBq2/QkWpOGvt5NsIg3MPWYNnE9xW
-T/rQGX6b0+3p7PIpSEEKOnTkm1XSVqxJ5SZSS6nAQk//R4dfK+L32XIK+W2auHxMFQRAKy91
-YYSLwyCkU03VEMRdaen6PvPl/swMQfVi1nnwS4XrcVuhgxkg4UsXQcSHMvTjNyqED/wBA2/J
-MmcSGqFWDIMqTHI/hsOFlqe4ZkqN5Lt4mzicUvic4tD0Lbj7nVwQrw5n8zb9uS/KTCZ/Re5H
-lqLWFNgjtdhGjhh4OaVfxwPTpsflx0Kcqm0/7lRDpgDH7ErogGiLT6rWT/mr8B/NgPJNJvaN
-vT2YgUiZ3cT946+RWPniKnL2mxHdBoGr4MvRsiJhV8JiWGaDoHHuarO4Q15T/Y8Ak67+II9P
-mWBasIIj9KkHux12S8kZxlbM3sg9ddbBKQRjNwVdYn0wyB7RhHXrVm+lWJH8oXHBYz2Yzquq
-OT4Q0cYJe7zBbDA+dym2NXBixkdiabrOyxwne299QuE/h/nGPrEG3OkKRUjPREIB/8VZlBCf
-bjagFCrk2ULsADtfsCssOnS6t4+3BNqxSNjTrxRpTbVR/J2Ob6txdeM4swAAAAAAAA==
---------------ms070708080608030008000704--

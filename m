@@ -1,53 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:24407 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S965024AbbLOLMa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Dec 2015 06:12:30 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id E94534092563
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 19:11:44 +0800 (CST)
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 4/4] btrfs: Use direct way to determine raid56 write/recover mode
-Date: Tue, 15 Dec 2015 19:09:52 +0800
-Message-ID: <28d51b8df8225be1798b3ffe2e9315c93ad03d92.1450177455.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <cover.1450177455.git.zhaolei@cn.fujitsu.com>
-References: <cover.1450177455.git.zhaolei@cn.fujitsu.com>
+Received: from aserp1040.oracle.com ([141.146.126.69]:34882 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932460AbbLHG3J (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 01:29:09 -0500
+Subject: [PATCH v3.4 0/3] xfstests: test the nfs/cifs/btrfs/xfs
+ reflink/dedupe ioctls
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: david@fromorbit.com, darrick.wong@oracle.com
+Cc: fstests@vger.kernel.org, xfs@oss.sgi.com, hch@infradead.org,
+        tao.peng@primarydata.com, linux-ext4@vger.kernel.org,
+        Anna.Schumaker@netapp.com, linux-btrfs@vger.kernel.org
+Date: Mon, 07 Dec 2015 22:28:44 -0800
+Message-ID: <20151208062844.21871.23644.stgit@birch.djwong.org>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Old code use bbio->raid_map to determine whether in raid56
-write/recover operation, because we don't have bbio->map_type
-that time, and have to use above workaround.
+Hi all,
 
-Now we have direct way for this condition, to get gid of using
-the function-relative data, and make code readable.
+This is a small patch set against the reflink/dedupe test cases in
+xfstests.  The first patch is a rewrite of the tools to find the
+lowest vacant ID number and to move a test case.  These two programs
+are useful for staging a lot of new tests at a high number and moving
+them to lower numbers when the maintainer wants to accept the new
+tests.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/volumes.c | 3 ++-
- 1 file changed, 2 insertions(+), 1 deletion(-)
+The second patch updates the golden output for the test that examines
+the results of feeding bad inputs to the two ioctls.  The new error
+values are based on a discussion of how to react to bad file types on
+the mailing lists and the ongoing work to hoist the ioctls to the VFS
+level.
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 367e8ec..d411444 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6056,7 +6056,8 @@ int btrfs_map_bio(struct btrfs_root *root, int rw, struct bio *bio,
- 	bbio->fs_info = root->fs_info;
- 	atomic_set(&bbio->stripes_pending, bbio->num_stripes);
- 
--	if (bbio->raid_map) {
-+	if ((bbio->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK) &&
-+	    ((rw & WRITE) || (mirror_num > 1))) {
- 		/* In this case, map_length has been set to the length of
- 		   a single stripe; not the whole write */
- 		if (rw & WRITE) {
--- 
-1.8.5.1
+The third patch has a few more tests for things that I found while
+rewriting XFS copy-on-write, and for explicitly testing the ability to
+reflink/dedupe "to the end of the file" by setting len == 0.  These
+tests are new and need more careful review than the first two patches.
 
+If you're going to start using this mess, you probably ought to just
+pull from my github trees for kernel[1], xfsprogs[2], xfstests[3], and
+xfs-docs[4].  They should just work with the btrfs that's in 4.4...
+and somewhat buggily with the 4.4 XFS patched with [1].  The relevant
+xfs_io support will be in xfsprogs 4.3 though it still needs a patch
+to fix len == 0 support.  Probably easier just to grab [2] and build
+that.
 
+Comments and questions are, as always, welcome.
 
+--D
+
+[1] https://github.com/djwong/linux/tree/for-dave
+[2] https://github.com/djwong/xfsprogs/tree/for-dave
+[3] https://github.com/djwong/xfstests/tree/for-dave
+[4] https://github.com/djwong/xfs-documentation/tree/for-dave

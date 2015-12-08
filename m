@@ -1,52 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from magic.merlins.org ([209.81.13.136]:53464 "EHLO
-	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S965362AbbLHQjR (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 11:39:17 -0500
-Date: Tue, 8 Dec 2015 08:39:16 -0800
-From: Marc MERLIN <marc@merlins.org>
-To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
-	<holger.hoffstaette@googlemail.com>
-Cc: Lionel Bouton <lionel-subscription@bouton.name>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: Scrub: no spae left on device
-Message-ID: <20151208163916.GP27889@merlins.org>
-References: <20151208150638.GL27889@merlins.org> <5666F947.5010902@googlemail.com> <5666FB58.2040900@bouton.name> <20151208160615.GO27889@merlins.org> <56670430.4070907@googlemail.com>
+Received: from mo4-p00-ob.smtp.rzone.de ([81.169.146.161]:10986 "EHLO
+	mo4-p00-ob.smtp.rzone.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752626AbbLHUqv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 15:46:51 -0500
+Received: from i5.rohdewald.de (p5B3E226D.dip0.t-ipconnect.de [91.62.34.109])
+	by smtp.strato.de (RZmta 37.14 DYNA|AUTH)
+	with ESMTPSA id L054c7rB8KknnOE
+	(using TLSv1.2 with cipher ECDHE-RSA-AES256-GCM-SHA384 (curve secp521r1 with 521 ECDH bits, eq. 15360 bits RSA))
+	(Client did not present a certificate)
+	for <linux-btrfs@vger.kernel.org>;
+	Tue, 8 Dec 2015 21:46:49 +0100 (CET)
+Received: from i5.localnet (localhost.localdomain [127.0.0.1])
+	by i5.rohdewald.de (Postfix) with ESMTP id 0D4125E08E0
+	for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2015 21:46:49 +0100 (CET)
+From: Wolfgang Rohdewald <wolfgang.kde@rohdewald.de>
+To: linux-btrfs@vger.kernel.org
+Subject: btrfs scrub can neither start nor cancel
+Date: Tue, 08 Dec 2015 21:46:48 +0100
+Message-ID: <31519331.YQjdnfjTR6@i5>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <56670430.4070907@googlemail.com>
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 08, 2015 at 05:24:16PM +0100, Holger Hoffstätte wrote:
-> On 12/08/15 17:06, Marc MERLIN wrote:
-> > Label: 'btrfs_pool1'  uuid: 5ee24229-2431-448a-868e-2c325d10bfa7
-> > 	Total devices 1 FS bytes used 524.26GiB
-> > 	devid    1 size 615.01GiB used 614.94GiB path /dev/mapper/pool1
->                         ^^^^^^^^^^^^^^^^^^^^^^^^
-> This is what I was alluding to. You could have started a -dusage balance
-> *before* the scrub so that one or several data chunks get freed.
-> Balancing metadata when you're out of space accomplishes nothing and only
-> will very likely fail, just as you saw. You have ~90GB usable space, but
-> that space is spread over chunks with low utilisation.
-
-Yes, my partition got a bit full, I freed up space, and unfortunately we
-still don't have a background rebalance to fix this, so I did run a manual
-one.
-But my filesystem was usable, I was writing to it just fine. I was just very
-surprised that scrub needed to rewrite blocks on a single disk device.
-
-You could make the case that scrub and balance=0 should be run together.
-In the meantime, I upgraded my script:
+I just tried this script:
 http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair
-http://marc.merlins.org/linux/scripts/btrfs-scrub
 
-I figured there is no good reason not to run a balance 20 on metadata and
-data every night.
+but I did not pass the directory where the filesystem is mounted.
 
-Marc
+Next I called it correctly: btrfs-scrub /t4
+I also tried btrfs scrub start / cancel directly, but 
+I am not really sure what I did in which order.
+
+Anyway now I can neither cancel nor start btrfs scrub. Rebooting did not help.
+Running unmodified Linux 4.3
+
+It seems like scrub stopped and did not clean up. Maybe because:
+Dec  8 21:07:41 s5 kernel: [17833.840868] btrfs[23746]: segfault at ffffffffffffff98 ip 00000000004079e1 sp 00007fffafa27510 error 5 in btrfs[400000+53000]
+
+How can I now clean this up?
+
+root@s5:~# btrfs --version
+Btrfs v3.12
+
+root@s5:~# btrfs scrub status /t4
+scrub status for 700900de-e35f-4264-8f5d-1b2b249a5c3a
+        scrub started at Tue Dec  8 21:05:31 2015, running for 20 seconds
+        total bytes scrubbed: 3.09GiB with 0 errors
+
+root@s5:~# btrfs scrub cancel /t4
+ERROR: scrub cancel failed on /t4: not running
+
+root@s5:~# btrfs scrub start /t4
+ERROR: scrub is already running.
+To cancel use 'btrfs scrub cancel /t4'.
+To see the status use 'btrfs scrub status [-d] /t4'.
+
+
 -- 
-"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
-Microsoft is to operating systems ....
-                                      .... what McDonalds is to gourmet cooking
-Home page: http://marc.merlins.org/  
+Wolfgang

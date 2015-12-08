@@ -1,44 +1,102 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:41338 "EHLO mail.bouton.name"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1755075AbbLHPtc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Dec 2015 10:49:32 -0500
+Received: from mail-io0-f179.google.com ([209.85.223.179]:34654 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756931AbbLHQBd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 11:01:33 -0500
+Received: by ioir85 with SMTP id r85so28679740ioi.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 08:01:33 -0800 (PST)
 Subject: Re: Scrub: no spae left on device
 To: Marc MERLIN <marc@merlins.org>,
         "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 References: <20151208150638.GL27889@merlins.org>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <5666F9CF.6050300@bouton.name>
-Date: Tue, 8 Dec 2015 16:39:59 +0100
+From: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Message-ID: <5666FEB2.9060905@gmail.com>
+Date: Tue, 8 Dec 2015 11:00:50 -0500
 MIME-Version: 1.0
 In-Reply-To: <20151208150638.GL27889@merlins.org>
-Content-Type: text/plain; charset=windows-1252
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms070708080608030008000704"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 08/12/2015 16:06, Marc MERLIN a écrit :
+This is a cryptographically signed message in MIME format.
+
+--------------ms070708080608030008000704
+Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Transfer-Encoding: quoted-printable
+
+On 2015-12-08 10:06, Marc MERLIN wrote:
 > Howdy,
 >
-> Why would scrub need space and why would it cancel if there isn't enough of
+> Why would scrub need space and why would it cancel if there isn't enoug=
+h of
 > it?
 > (kernel 4.3)
 >
-> /etc/cron.daily/btrfs-scrub:
-> btrfs scrub start -Bd /dev/mapper/cryptroot
-> scrub device /dev/mapper/cryptroot (id 1) done
-> 	scrub started at Mon Dec  7 01:35:08 2015 and finished after 258 seconds
-> 	total bytes scrubbed: 130.84GiB with 0 errors
-> btrfs scrub start -Bd /dev/mapper/pool1
-> ERROR: scrubbing /dev/mapper/pool1 failed for device id 1 (No space left on device)
-> scrub device /dev/mapper/pool1 (id 1) canceled
+Wild guess here, but maybe scrub unconditionally updates the error=20
+counters, regardless of whether any errors were found or not?
 
-I can't be sure (not-a-dev), but one possibility that comes to mind is
-that if an error is detected writes must be done on the device. The
-repair might not be done in-place but with CoW and even if the error is
-not repaired by lack of redundancy IIRC each device tracks the number of
-errors detected so I assume this is written somewhere (system or
-metadata chunks most probably).
 
-Best regards,
 
-Lionel
+--------------ms070708080608030008000704
+Content-Type: application/pkcs7-signature; name="smime.p7s"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Description: S/MIME Cryptographic Signature
+
+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
+cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
+AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjA4MTYwMDUwWjBPBgkq
+hkiG9w0BCQQxQgRAkDCvN4Nm2ZIDsK4QyAFwgOEP02lKTnr8Qu8zSvZ0g3mAwJlYzBJZgvJ0
+S7wHDTaTSB+xnt04wfpwKfsKVoLBDzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
+MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
+ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
+QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
+dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
+MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
+bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
+BgkqhkiG9w0BAQEFAASCAgBZKcZiAO5wSX7iuEhl7FW7Y/5EqogHcU3jjKlgGbxnivxp2kXZ
+L8A2lL5NMDZEZ39E6yV81uV4a2v/RKKRm6J1UYNfDzRPBq2/QkWpOGvt5NsIg3MPWYNnE9xW
+T/rQGX6b0+3p7PIpSEEKOnTkm1XSVqxJ5SZSS6nAQk//R4dfK+L32XIK+W2auHxMFQRAKy91
+YYSLwyCkU03VEMRdaen6PvPl/swMQfVi1nnwS4XrcVuhgxkg4UsXQcSHMvTjNyqED/wBA2/J
+MmcSGqFWDIMqTHI/hsOFlqe4ZkqN5Lt4mzicUvic4tD0Lbj7nVwQrw5n8zb9uS/KTCZ/Re5H
+lqLWFNgjtdhGjhh4OaVfxwPTpsflx0Kcqm0/7lRDpgDH7ErogGiLT6rWT/mr8B/NgPJNJvaN
+vT2YgUiZ3cT946+RWPniKnL2mxHdBoGr4MvRsiJhV8JiWGaDoHHuarO4Q15T/Y8Ak67+II9P
+mWBasIIj9KkHux12S8kZxlbM3sg9ddbBKQRjNwVdYn0wyB7RhHXrVm+lWJH8oXHBYz2Yzquq
+OT4Q0cYJe7zBbDA+dym2NXBixkdiabrOyxwne299QuE/h/nGPrEG3OkKRUjPREIB/8VZlBCf
+bjagFCrk2ULsADtfsCssOnS6t4+3BNqxSNjTrxRpTbVR/J2Ob6txdeM4swAAAAAAAA==
+--------------ms070708080608030008000704--

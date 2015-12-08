@@ -1,98 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:43559 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752594AbbLHUvK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 15:51:10 -0500
-Date: Tue, 8 Dec 2015 20:51:08 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Wolfgang Rohdewald <wolfgang.kde@rohdewald.de>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs scrub can neither start nor cancel
-Message-ID: <20151208205108.GD2376@carfax.org.uk>
-References: <31519331.YQjdnfjTR6@i5>
+Received: from mail-pf0-f174.google.com ([209.85.192.174]:32986 "EHLO
+	mail-pf0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750752AbbLHWiv (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 17:38:51 -0500
+Received: by pfnn128 with SMTP id n128so18909558pfn.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 14:38:51 -0800 (PST)
+Received: from localhost (203-166-229-17.dyn.iinet.net.au. [203.166.229.17])
+        by smtp.gmail.com with ESMTPSA id f67sm6890559pfd.9.2015.12.08.14.38.49
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Tue, 08 Dec 2015 14:38:50 -0800 (PST)
+Date: Wed, 9 Dec 2015 09:38:47 +1100
+From: Alistair Grant <akgrant0710@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Fixing recursive fault and parent transid verify failed
+Message-ID: <20151208223847.GA4419@alistair-xps13>
+References: <20151207015715.GA13954@alistair-xps13>
+ <pan$42653$68e1a3aa$3a4c1c2c$b0e89f8@cox.net>
+ <20151207100256.GA6836@alistair-xps13>
+ <pan$cb93a$b4f560b9$2dfdbdbc$17d7a835@cox.net>
+ <20151207195504.GA9262@alistair-xps13>
+ <pan$73edd$edd83c4d$2a373055$4b6032dd@cox.net>
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="VV4b6MQE+OnNyhkM"
-In-Reply-To: <31519331.YQjdnfjTR6@i5>
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <pan$73edd$edd83c4d$2a373055$4b6032dd@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---VV4b6MQE+OnNyhkM
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
-
-On Tue, Dec 08, 2015 at 09:46:48PM +0100, Wolfgang Rohdewald wrote:
-> I just tried this script:
-> http://marc.merlins.org/perso/btrfs/2014-03.html#Btrfs-Tips_-Btrfs-Scrub-and-Btrfs-Filesystem-Repair
+On Tue, Dec 08, 2015 at 03:25:14PM +0000, Duncan wrote:
+> Alistair Grant posted on Tue, 08 Dec 2015 06:55:04 +1100 as excerpted:
 > 
-> but I did not pass the directory where the filesystem is mounted.
-> 
-> Next I called it correctly: btrfs-scrub /t4
-> I also tried btrfs scrub start / cancel directly, but 
-> I am not really sure what I did in which order.
-> 
-> Anyway now I can neither cancel nor start btrfs scrub. Rebooting did not help.
+> > On Mon, Dec 07, 2015 at 01:48:47PM +0000, Duncan wrote:
+> >> Alistair Grant posted on Mon, 07 Dec 2015 21:02:56 +1100 as excerpted:
+> >> 
+> >> > I think I'll try the btrfs restore as a learning exercise, and to
+> >> > check the contents of my backup (I don't trust my memory, so
+> >> > something could have changed since the last backup).
+> >> 
+> >> Trying btrfs restore is an excellent idea.  It'll make things far
+> >> easier if you have to use it for real some day.
+> >> 
+> >> Note that while I see your kernel is reasonably current (4.2 series), I
+> >> don't know what btrfs-progs ubuntu ships.  There have been some marked
+> >> improvements to restore somewhat recently, checking the wiki
+> >> btrfs-progs release-changelog list says 4.0 brought optional metadata
+> >> restore, 4.0.1 added --symlinks, and 4.2.3 fixed a symlink path check
+> >> off-by-one error. (And don't use 4.1.1 as its mkfs.btrfs is broken and
+> >> produces invalid filesystems.)  So you'll want at least progs 4.0 to
+> >> get the optional metadata restoration, and 4.2.3 to get full symlinks
+> >> restoration support.
+> >> 
+> >> ...
 
-   It might be that the userspace tools has got confused and left
-behind a lock/pid/progress file in /var/lib/btrfs/
 
-   Take a look in there and see if there's anything that you can
-delete to good effect?
+Thanks again Duncan for your assistance.
 
-   Hugo.
+I plugged the ext4 drive I planned to use for the recovery in to the
+machine and immediately got a couple of errors, which makes me wonder
+whether there isn't a hardware problem with the machine somewhere.  So
+decided to move to another machine to do the recovery.
 
-> Running unmodified Linux 4.3
-> 
-> It seems like scrub stopped and did not clean up. Maybe because:
-> Dec  8 21:07:41 s5 kernel: [17833.840868] btrfs[23746]: segfault at ffffffffffffff98 ip 00000000004079e1 sp 00007fffafa27510 error 5 in btrfs[400000+53000]
-> 
-> How can I now clean this up?
-> 
-> root@s5:~# btrfs --version
-> Btrfs v3.12
-> 
-> root@s5:~# btrfs scrub status /t4
-> scrub status for 700900de-e35f-4264-8f5d-1b2b249a5c3a
->         scrub started at Tue Dec  8 21:05:31 2015, running for 20 seconds
->         total bytes scrubbed: 3.09GiB with 0 errors
-> 
-> root@s5:~# btrfs scrub cancel /t4
-> ERROR: scrub cancel failed on /t4: not running
-> 
-> root@s5:~# btrfs scrub start /t4
-> ERROR: scrub is already running.
-> To cancel use 'btrfs scrub cancel /t4'.
-> To see the status use 'btrfs scrub status [-d] /t4'.
-> 
-> 
+So I'm now recovering on Arch Linux 4.1.13-1 with btrfs-progs v4.3.1
+(the latest version from archlinuxarm.org).
 
--- 
-Hugo Mills             | Go not to the elves for counsel, for they will say
-hugo@... carfax.org.uk | both no and yes.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
+Attempting:
 
---VV4b6MQE+OnNyhkM
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
+sudo btrfs restore -S -m -v /dev/sdb /mnt/btrfs-recover/ ^&1 | tee btrfs-recover.log
 
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
+only recovered 53 of the more than 106,000 files that should be available.
 
-iQIcBAEBAgAGBQJWZ0K8AAoJEFheFHXiqx3kNDEP/0Yl07kQ9nlb5jTyfCsWk+4y
-zt4E0LIgC9kyLsLKG92hsmMUCQh687EOiWTzuik73ubuwwTsTht7idSUlg4j13pf
-aXIyF3k9BE9+yTrVW/jB6O6bL+RNBZmhaZI6MP5eosBOHs/K3N0Ep/S9J4fU0s2o
-Vh04iKjFJEjfuJAaNvMtxpOc/r4SzV1nG6YEsW/Uam4fUkOWHD3x87f3zr8q8dvk
-SGz1lHIUPYvupiA5aCQrOQp6sFILTlFZhmcWkx1354bhU1Xi+bAkaAF32dipp6wM
-ndhRAh1pkbrIEL6C3o+KzJYDhB+o7/ZTgbIFFaHRDevPfLWLDD89KOltFWkCdPGB
-0BqLeDzNdgP8MgGJ3sIkkYu6qokdPgn/cpCkRWcIxj5KZmOIEekBz5fkVjzP/0t+
-eSjFkmZ9chHj20/Qyy8yZ8sxDn/3oSJ3gLf7qVDVxeO4dtLlKKeFrtyShHXcI2pR
-yPp+UpUFXCNMwwg1ALOuq1mDpZcHIFwxGwHc1VLZCAmyRWQoQf2dGLNYf2o3c5tX
-7QtxJh7sWK31vW3JJbTmD0lysBRQjl9+1vaahKK+lmIv+RQydayoasH7Y+yK4GSY
-ry6bkbPXsoOf3+qc0obz8ENYJh6wyxotp16A9mMRVESLZr20SkO7lOllTFDj1iHP
-NdoguKknXkunCkNjZpg7
-=yMTa
------END PGP SIGNATURE-----
+The log is available at: 
 
---VV4b6MQE+OnNyhkM--
+https://www.dropbox.com/s/p8bi6b8b27s9mhv/btrfs-recover.log?dl=0
+
+I did attempt btrfs-find-root, but couldn't make sense of the output:
+
+https://www.dropbox.com/s/qm3h2f7c6puvd4j/btrfs-find-root.log?dl=0
+
+Simply mounting the drive, then re-mounting it read only, and rsync'ing
+the files to the backup drive recovered 97,974 files before crashing.
+If anyone is interested, I've uploaded a photo of the console to:
+
+https://www.dropbox.com/s/xbrp6hiah9y6i7s/rsync%20crash.jpg?dl=0
+
+I'm currently running a hashdeep audit between the recovered files and
+the backup to see how the recovery went.
+
+If you'd like me to try any other tests, I'll keep the damaged file
+system for at least the next day or so.
+
+Thanks again for all your assistance,
+Alistair
+

@@ -1,107 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:50348 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:50364 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751444AbbLIEgm (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 23:36:42 -0500
-Message-ID: <1449635797.20578.0.camel@scientia.net>
+	with ESMTP id S1751845AbbLIEiG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 23:38:06 -0500
+Message-ID: <1449635882.20578.2.camel@scientia.net>
 Subject: Re: subvols and parents - how?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Wed, 09 Dec 2015 05:36:37 +0100
-In-Reply-To: <pan$22dc8$4457dc54$1cd0d037$c9fb9e32@cox.net>
+Date: Wed, 09 Dec 2015 05:38:02 +0100
+In-Reply-To: <pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
 References: <1448340960.14125.51.camel@scientia.net>
 	 <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
 	 <1448400350.21291.88.camel@scientia.net>
-	 <pan$22dc8$4457dc54$1cd0d037$c9fb9e32@cox.net>
+	 <pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-878GXYsMU839CRJLEMRp"
+	boundary="=-rBtdQa61FiJdGhKOvXsx"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-878GXYsMU839CRJLEMRp
+--=-rBtdQa61FiJdGhKOvXsx
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 2015-11-27 at 01:02 +0000, Duncan wrote:
-[snip snap]
-> #1 could be a pain to setup if you weren't actually mounting it
-> previously, just relying on the nested tree, AND...
->=20
-> #2 The point I was trying to make, now, to mount it you'll mount not
-> a=20
-> native nested subvol, and not a directly available sibling
-> 5/subvols/home, but you'll actually be reaching into an entirely=20
-> different nesting structure to grab something down inside, mounting
-> 5/subvols/root/home subvolume nesting down inside the direct
-> 5/subvols/root sibling subvol.
+On Fri, 2015-11-27 at 02:02 +0000, Duncan wrote:
+> Uhm, I don't get the big security advantage here... whether nested
+> > or
+> > manually mounted to a subdir,... if the permissions are insecure
+> > I'll
+> > have a problem... if they're secure, than not.
+> Consider a setuid-root binary with a recently publicized but patched
+> on=20
+> your system vuln.=C2=A0=C2=A0But if you have root snapshots from before t=
+he
+> patch=20
+> and those snapshots are nested below root, then they're always=20
+> accessible.=C2=A0=C2=A0If the path to the vulnerable setuid is as user
+> accessible=20
+> as it likely was in its original location, then anyone with login
+> access=20
+> to the system is likely to be able to run it from the snapshot... and
+> will be able to get root due to the vuln.
 
-Okay so your main point was basically "keeping things administrable"...
+Hmm good point... I think it would be great if you could add that
+scenario somewhere to the documentation. :-)
+Based on that one can easily think about more/similar examples...
+device file that had too permissive modes set, and where snapshotted
+like that... and so on.
 
+I think that's another example why it would be nice if btrfs had
+something (per subvolume) like ext4's default mount options (I mean the
+ones stored in the superblock).
 
-> one of which was that everything=20
-> that the package manager installs should be on the same partition
-> with=20
-> the installed-package database, so if it has to be restored from
-> backup,=20
-> at least if it's all old, at least it's all equally old, and the
-> package=20
-> database actually matches what's on the system because it's in the
-> same=20
-> backup!
-I basically agree, though I'd allow few exceptions, like database-like
-data that is stored in /var/ sometimes and that doesn't need to be
-consistent with anything but iself... e.g. static web pages
-(/var/www)... postgresl DB, or sks keyserver DB... and so on.
-
-btw: What's the proper way for merging / splitting into subvols.
-E.g. consider I have:
-5
-|
-+--root (subvol)
-=C2=A0 =C2=A0|
-=C2=A0 =C2=A0+-- var (no subvol)
-
-And say I would want to split of var/www into a subvol.
-Well one obvious way would be with mv (and AFAIU that would keep my
-ref-links with clones, if any) but that also means that anything that
-accesses /var/www probably needs a downtime.
-Is it planned to have a special function that basically says:
-"make dir foo and anything below (except nested subvols) a subvol named
-foo, immediately and atomically"?
-
-And similar vice-versa... a special function that says:
-"make subvol foo and anything below (except nested subvols) a dir of
-the parent subvol named foo, immediately and atomically"?
-
-Could be handy for real world administration, especially when one
-want's
-to avoid downtimes.
-
-btw: Few days ago, either Hugo or your thought that mv'ing a subvol
-would change it's UUID, but my try (which was with coreutils 8.3 -> no
-reflinked mv) seemed to show it wouldn't but there was no further reply
-then... so am I right that the UUID wouldn't change?
+Not only would it allow the userland tools to do things like "adding
+notatime" per default on snapshots (at least ro snapshot), so that one
+can have them nested and still doesn't suffer from the previously
+discussed writes-on-read-amplifications... it would also allow to set
+things like nodev, noexec, nosuid and that like on subvols... and again
+it would make the whole thing practically usable with nested subvols.
 
 
-> The same idea applies here.=C2=A0=C2=A0Once you start reaching into neste=
-d
-> subvols=20
-> to get the deeper nested subvols you're trying to mount, it's too
-> much=20
-> and you're just begging to get it wrong under the extreme pressures
-> of a=20
-> disaster recovery.
-Well apparently you oversaw the extremely simple and reliable solution:
-leaving a tiny little note on your desk saying something like: "dear
-boss, things are screwed up, I'm on vacation now..." ;-)
+Where would be the appropriate place to record that as a feature
+request?
+Simply here on the list?
 
 
-Thanks,
+Cheers,
 Chris.
---=-878GXYsMU839CRJLEMRp
+--=-rBtdQa61FiJdGhKOvXsx
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -188,19 +156,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA0MzYz
-N1owTwYJKoZIhvcNAQkEMUIEQJ5UQsp0xjKEzf3Gz/6lvC3D0VHXGry2S2H43sNKFZBBsuMmZ2kJ
-8KvsdUUaW6Zs0Sq52AsCaXkIw2NqfqhLD4AwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA0Mzgw
+MlowTwYJKoZIhvcNAQkEMUIEQDy2WFwSU4jbLrf0j/xLV3Bk8/ZJVqPEZ7SsWTpSs2h9kavSNvzN
+7NUTZsCXdQ1BZCeAtAdYW5Atdo2gNod4DHUwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBgG950PF2DYDypldRzLtEOUhDa8RJL
-Q5CkIKj55txrG5vLGNTieqOsZO9qGwWjv8hQ3JlOyHzmRUSVOqiUo5Mi2ziocABqojto2fj9yqT/
-Qm9qEhNsP6yR+G/fdqmxpisLOIyVOh8RSK8TSTMQfPYCBFOSmdpmu0sjmsIEWi2t8XWDzdOFwWJv
-f9NbS3fZnkIT3zetQcIBmLijRAPsce6g0SiGNL1UZhpxpAGtE0ZU3Gz5DdZG8OBUAdLJtXduWXge
-IhHWUDctVjAgsX4T6+s1y86Ln9VSgibYDlYhRBXaIXgAz9sZpvcHh2Au4f2lYwbD6Ykwkyfh9WMu
-Lz21+AKwAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCyp9Tsc/V/uWMs7NdIil3YhiXHgUWS
+pQngs1puztsBVKwSw+oepV/DUwletin4N4pf0fkEpZQ92JK23GJqaGLBXXTVxXgNXQCwRtytoISM
+U6ZtQIAnlNW+R4gaCilU+c/5G2A2ja5mPjmoHEfRk1wmBHzbxlT4fbgaJ3+gQVwdNDehNHAhTqH8
+jLmHMkZov2MeGuH7a10fegNPWuk6EDBg5wdyBG/sWKEAmyZQAFhdTAxd+ztFD64qtdHgftA7eFVo
+J6u1dQ1VLgnEt1b3MOZqI5htL5qmgtcWYsKdn4da11mtt33sVKoCbR2tfPphSN6fIsDyGLIYTSlq
+zNKvPlhoAAAAAAAA
 
 
---=-878GXYsMU839CRJLEMRp--
+--=-rBtdQa61FiJdGhKOvXsx--
 

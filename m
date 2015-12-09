@@ -1,250 +1,172 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:45227 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:45320 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751395AbbLIFjy (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Dec 2015 00:39:54 -0500
-Message-ID: <1449639588.7835.2.camel@scientia.net>
-Subject: Re: attacking btrfs filesystems via UUID collisions?
+	with ESMTP id S1750920AbbLIFnF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Dec 2015 00:43:05 -0500
+Message-ID: <1449639781.7835.3.camel@scientia.net>
+Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
+ poor performance on deleting many large files?)
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>, Duncan <1i5t5.duncan@cox.net>,
-        linux-btrfs@vger.kernel.org
-Date: Wed, 09 Dec 2015 06:39:48 +0100
-In-Reply-To: <56644785.4090702@gmx.com>
-References: <20151204120529.37E47D5A28@emkei.cz>
-	 <20151204130758.GR8775@carfax.org.uk>
-	 <1449286104.18841.14.camel@scientia.net>
-	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
-	 <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: Austin S Hemmelgarn <ahferroin7@gmail.com>, linux-btrfs@vger.kernel.org,
+        Duncan <1i5t5.duncan@cox.net>
+Date: Wed, 09 Dec 2015 06:43:01 +0100
+In-Reply-To: <20151126003342.GA24333@carfax.org.uk>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	 <56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
+	 <20151126003342.GA24333@carfax.org.uk>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-aXy9UE9f0Lco//WfFt2q"
+	boundary="=-2rGOBY9GIH1rMOAHOyMh"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-aXy9UE9f0Lco//WfFt2q
+--=-2rGOBY9GIH1rMOAHOyMh
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, 2015-12-06 at 22:34 +0800, Qu Wenruo wrote:
-> Not sure about LVM/MD, but they should suffer the same UUID conflict
-> problem.
-Well I had that actually quite often in LVM (i.e. same UUIDs visible on
-the same system), basically because we made clones from one template VM
-image and when that is normally booted, LVM doesn't allow to change the
-UUIDs of already active PV/VG/LVs (or maybe just some of these three,
-forgot the details)
-
-But there was never any issue, LVM on the host system, when one set was
-already used, continues to use that just fine and the toolset reports
-which it would use (more below).
+Hey Hugo,
 
 
-> The only idea I have can only enhance the behavior, but never fix it.
-> For example, if found multiple btrfs devices with same devid, just=20
-> refuse to mount.
-> And for already mounted btrfs, ignore any duplicated fsid/devid.
-Well I think that's already a perfectly valid solution... basically the
-idea that I had before.
-I'd call that a 100% fix, not just a workaround.
-
-If then the tools (i.e. btrfstune) allows to change the UUID of the duplica=
-te set of devices (perhaps again with the necessity to specify each of them=
- via device=3D/dev/sda,etc.) I'd be completely happy again,... and the show=
- could get on ;)
-
-> The problem can get even tricky for case like device missing for a
-> while=20
-> and appear again case.
-I had thought about that too:
-a) In the non-malicious case, this could e.g. mean that a device from a
-btrfs RAID was missing and a clone with the same UUID / dev ID get's
-added to the system
-Possible consequences, AFAICS:
-- The data is simply auto-rebuilt on the clone.
-- Some corruptions occur when the clone is older, and data that was
-only on the newer device is now missing (not sure if this can happen at
-all or whether generation IDs prevent it).
-
-b) In the malicious/attack case, one possible scenario could be:
-A device is missing from a btrfs RAID... the machine is left
-unattended. An attacker comes plugs in the USB stick with the missing
-UUID. Is the rebuild (and thus data leakage) now happening
-automatically?
-
-In any case though, a simply solution could be, that not automatic
-assemblies happen per default, and the people who still want to do
-that, are properly warned about the possible implications in the docs.
+On Thu, 2015-11-26 at 00:33 +0000, Hugo Mills wrote:
+> =C2=A0 =C2=A0Answering the second part first, no, it can't.
+Thanks so far :)
 
 
-> But just as you mentioned, it *IS* a real problem, and we should need
-> to=20
-> enhance it.
-Should one (or I) add this as a ticket to the kernel bugzilla, or as an
-entry to the btrfs wiki?
+> =C2=A0=C2=A0=C2=A0The issue is that nodatacow bypasses the transactional =
+nature of
+> the FS, making changes to live data immediately. This then means that
+> if you modify a modatacow file, the csum for that modified section is
+> out of date, and won't be back in sync again until the latest
+> transaction is committed. So you can end up with an inconsistent
+> filesystem if there's a crash between the two events.
+Sure,... (and btw: is there some kind of journal planned for
+nodatacow'ed files?),... but why not simply trying to write an updated
+checksum after the modified section has been flushed to disk... of
+course there's no guarantee that both are consistent in case of crash (
+but that's also the case without any checksum)... but at least one
+would have the csum protection against everything else (blockerrors and
+that like) in case no crash occurs?
 
 
-> I'd like to see how LVM/DM behaves first, at least as a reference if=20
-> they are really so safe.
-Well that's very simple to check, I did it here for the LV case only:
-root@lcg-lrz-admin:~# truncate -s 1G image1
-root@lcg-lrz-admin:~# losetup -f image1=C2=A0
-root@lcg-lrz-admin:~# pvcreate /dev/loop0
-=C2=A0 Physical volume "/dev/loop0" successfully created
-root@lcg-lrz-admin:~# losetup -d /dev/loop0=C2=A0
-root@lcg-lrz-admin:~# cp image1 image2
-root@lcg-lrz-admin:~# losetup -f image1=C2=A0
-root@lcg-lrz-admin:~# pvscan=C2=A0
-=C2=A0 PV /dev/sdb=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0VG vg_data=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0lvm2 [50,00 GiB / 0=C2=A0=C2=A0=C2=A0=C2=A0free]
-=C2=A0 PV /dev/sda1=C2=A0=C2=A0=C2=A0=C2=A0VG vg_system=C2=A0=C2=A0=C2=A0lv=
-m2 [9,99 GiB / 0=C2=A0=C2=A0=C2=A0=C2=A0free]
-=C2=A0 PV /dev/loop0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0lvm2 [1,00 GiB]
-=C2=A0 Total: 3 [60,99 GiB] / in use: 2 [59,99 GiB] / in no VG: 1 [1,00 GiB=
-]
-root@lcg-lrz-admin:~# losetup -f image2=C2=A0
-root@lcg-lrz-admin:~# pvscan=C2=A0
-=C2=A0 Found duplicate PV tSK9Cdpw6bcmocZnxFPD6ThNz1opRXsB: using /dev/loop=
-1 not /dev/loop0
-=C2=A0 PV /dev/sdb=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0VG vg_data=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0lvm2 [50,00 GiB / 0=C2=A0=C2=A0=C2=A0=C2=A0free]
-=C2=A0 PV /dev/sda1=C2=A0=C2=A0=C2=A0=C2=A0VG vg_system=C2=A0=C2=A0=C2=A0lv=
-m2 [9,99 GiB / 0=C2=A0=C2=A0=C2=A0=C2=A0free]
-=C2=A0 PV /dev/loop1=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0lvm2 [1,00 GiB]
-=C2=A0 Total: 3 [60,99 GiB] / in use: 2 [59,99 GiB] / in no VG: 1 [1,00 GiB=
-]
 
-Obviously, with PVs alone, there is no "x is already used" case. As one
-can see it just says it would ignore one of them, which I think is
-rather stupid in that particular case (i.e. non of the devices already
-used somehow), because it probably just "randomly" decides which is to
-be used, which is ambiguous.
+> > For me the checksumming is actually the most important part of
+> > btrfs
+> > (not that I wouldn't like its other features as well)... so turning
+> > it
+> > off is something I really would want to avoid.
+> >=20
+> > Plus it opens questions like: When there are no checksums, how can
+> > it
+> > (in the RAID cases) decide which block is the good one in case of
+> > corruptions?
+> =C2=A0=C2=A0=C2=A0It doesn't decide -- both copies look equally good, bec=
+ause
+> there's
+> no checksum, so if you read the data, the FS will return whatever
+> data
+> was on the copy it happened to pick.
+Hmm I see... so one gets basically the behaviour of RAID.
+Isn't that kind of a big loss? I always considered the guarantee
+against block errors and that like one of the big and basic features of
+btrfs.
+It seems that for certain (not too unimportant cases: DBs, VMs) one has
+to decide between either evil, loosing the guaranteed consistency via
+checksums... or basically running into severe troubles (like Mitch's
+reported fragmentation issues).
 
 
-> And what will rescan show if they are not active?
-My experience was always (it's just quite late and I don't want to
-simulate everything right now, which is trivial anyway):
-- It shows warnings about the duplicates in the tools
-- It continues to use the already active devices (if any)
-- Unfortunately, while the kernel continues to use the already used
-devices, the toolset may use other device (kinda stupid, but at least
-it warns and the already used devices seem to be still properly used):
-
-continuation from the setup above:
-root@lcg-lrz-admin:~# losetup -d /dev/loop1=C2=A0
-(now only image1 is seen as loop0)
-root@lcg-lrz-admin:~# vgcreate vg_test /dev/loop0
-=C2=A0 Volume group "vg_test" successfully created
-root@lcg-lrz-admin:~# lvcreate -n test vg_test -l 100
-=C2=A0 Logical volume "test" created
-root@lcg-lrz-admin:~# mkfs.ext4 /dev/vg_test/test=C2=A0
-mke2fs 1.42.12 (29-Aug-2014)
-...
-root@lcg-lrz-admin:~# mount /dev/vg_test/test /mnt/
-root@lcg-lrz-admin:~# losetup -a
-/dev/loop0: [64768]:518297 (/root/image1)
-root@lcg-lrz-admin:~# losetup -f image2=C2=A0
-root@lcg-lrz-admin:~# vgs
-=C2=A0 Found duplicate PV tSK9Cdpw6bcmocZnxFPD6ThNz1opRXsB: using /dev/loop=
-1 not /dev/loop0
-=C2=A0 VG=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0#PV #LV #SN Attr=
-=C2=A0=C2=A0=C2=A0VSize=C2=A0=C2=A0VFree
-=C2=A0 vg_data=C2=A0=C2=A0=C2=A0=C2=A0=C2=A01=C2=A0=C2=A0=C2=A01=C2=A0=C2=
-=A0=C2=A00 wz--n- 50,00g=C2=A0=C2=A0=C2=A0=C2=A00=C2=A0
-=C2=A0 vg_system=C2=A0=C2=A0=C2=A01=C2=A0=C2=A0=C2=A02=C2=A0=C2=A0=C2=A00 w=
-z--n-=C2=A0=C2=A09,99g=C2=A0=C2=A0=C2=A0=C2=A00=C2=A0
-root@lcg-lrz-admin:~# lvs
-=C2=A0 Found duplicate PV tSK9Cdpw6bcmocZnxFPD6ThNz1opRXsB: using /dev/loop=
-1 not /dev/loop0
-=C2=A0 LV=C2=A0=C2=A0=C2=A0VG=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0Attr=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0LSize=C2=A0=C2=A0=C2=A0=C2=
-=A0Pool Origin Data%=C2=A0=C2=A0Meta%=C2=A0=C2=A0Move Log Cpy%Sync Convert
-=C2=A0 data vg_data=C2=A0=C2=A0=C2=A0-wi-ao----=C2=A0=C2=A0=C2=A050,00g=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0
-=C2=A0 root vg_system -wi-ao----=C2=A0=C2=A0=C2=A0=C2=A09,02g=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=
-=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=
-=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0
-=C2=A0 swap vg_system -wi-ao---- 1000,00m =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =
-=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=
-=A0
-
-As you can see, even though loop0 is used (by the kernel) the toolset
-would use loop1... o.O
-Yeah, don't ask me why... I once had a discussion with Alastair from
-the LVM people about that, forgot the exact reasons (if there were any)
-and I was simply happy that it continued to use the already open
-devices properly.
-
-
->  Or after a reboot?
-Haven't checked this right now but I guess it again just decides on one
-of them (which is pretty bad).
-
-
-> > I would expect that in addition to the fs UUID, it needs a form of
-> > device ID... so why not simply ignoring any new device for which
-> > there
-> > already is a matching fs UUID and device ID, unless the respective
-> > tool
-> > (mount, btrfs, etc.) is explicitly told so via some
-> > device=3D/dev/sda,/dev/sdb option.
+> > 3) When I would actually disable datacow for e.g. a subvolume that
+> > holds VMs or DBs... what are all the implications?
+> > Obviously no checksumming, but what happens if I snapshot such a
+> > subvolume or if I send/receive it?
 >=20
-> IIRC, there were some btrfs-progs patches for such behavior, not sure
-> about kernel part though.
-> But at least an interesting method to solve the problem.
-> (Better than just rejecting mounting any)
-Of course if the user wouldn't specify those, it would still need to
-reject mounting/using/activating/fsck'ing/etc. ...
+> =C2=A0=C2=A0=C2=A0After snapshotting, modifications are CoWed precisely o=
+nce, and
+> then it reverts to nodatacow again. This means that making a snapshot
+> of a nodatacow object will cause it to fragment as writes are made to
+> it.
+I see... something that should possibly go to some advanced admin
+documentation (if not already in).
+It means basically, that one must assure that any such files (VM
+images, DB data dirs) are already created with nodatacow (perhaps on a
+subvolume which is mounted as such.
 
 
-> > If that means that less things work out of the box (in the sense of
-> > "auto-assembly") well than this is simply necessary.
-> > data security and consistency is definitely much more important
-> > than
-> > any fancy auto-magic.
->=20
-> Can't agree any more.
-> Especially when auto leads to wrong behavior (Like kernel version
-> based=20
-> probing).
-Good to hear... well... you're the developer... spread the word :D
+> > 4) Duncan mentioned that defrag (and I guess that's also for auto-
+> > defrag) isn't ref-link aware...
+> > Isn't that somehow a complete showstopper?
+> =C2=A0=C2=A0=C2=A0It is, but the one attempt at dealing with it caused ma=
+ssive data
+> corruption, and it was turned off again.
+So... does this mean that it's still planned to be implemented some day
+or has it been given up forever?
+And is it (hopefully) also planned to be implemented for reflinks when
+compression is added/changed/removed?
 
 
-> And after all, this topic makes me remember the bugreport of fuzzed
-> (but=20
-> csum recalculated) images.
-> I used to ignore them and I think that wouldn't happen.
->=20
-> But the reporter is right, it's a btrfs security problem, and now I'm
-> super happy to see such report.
-As I've said, I've been quite surprised that no one seems to have
-thought about that before (especially the security aspect of that
-issue).
+Given that you (or Duncan?,... sorry I sometimes mix up which of said
+exactly what, since both of you are notoriously helpful :-) ) mentioned
+that autodefrag basically fails with larger files,... and given that it
+seems to be quite important for btrfs to not be fragmented too heavily,
+it sounds a bit as if anything that uses (multiple) reflinks (e.g.
+snapshots) cannot be really used very well.
 
 
-> As it's easy to fix, I can always submit some patches if there is no=20
-> other guy faster than me. :)
-Awesome... showstopper number #1 just seems to be about to walk away :D
+>  autodefrag, however, has
+> always been snapshot aware and snapshot safe, and would be the
+> recommended approach here.
+Ahhh... so autodefag *is* snapshot aware, and that's basically why the
+suggestion is (AFAIU) that it's turned on, right?
+So, I'm afraid O:-), that triggers a follow-up question:
+Why isn't it the default? Or in other words what are its drawbacks
+(e.g. other cases where ref-links would be broken up,... or issues with
+compression)?
+
+And also, when I now activate it on an already populated fs, will it
+defrag also any old files (even if they're not rewritten or so)?
+I tried to have a look for some general (rather "for dummies" than for
+core developers) description of how defrag and autodefrag work... but
+couldn't find anything in the usual places... :-(
+
+btw: The wiki (https://btrfs.wiki.kernel.org/index.php/UseCases#How_do_
+I_defragment_many_files.3F) doesn't mention that auto-defrag doesn't
+suffer from that problem.
 
 
-> So for this one, as long as we find a good behavior to solve it, it=20
-> won't be a big thing.
-Great... keep me/us updated :)
+>  (Actually, it was broken in the same
+> incident I just described -- but fixed again when the broken patches
+> were reverted).
+So it just couldn't be fixed (hopfully: yet) for the (manual) online
+defragmentation?!
 
 
-Cheers,
+> > 5) Especially keeping (4) in mind but also the other comments in
+> > from
+> > Duncan and Austin...
+> > Is auto-defrag now recommended to be generally used?
+>
+> =C2=A0=C2=A0=C2=A0Absolutely, yes.
+I see... well, I'll probably wait for some answers about its drawbacks
+and then give it a try.
+
+
+> =C2=A0=C2=A0=C2=A0It's late for me, and this email was longer than I susp=
+ected, so
+> I'm going to stop here, but I'll try to pick it up again and answer
+> your other questions tomorrow.
+Thanks so far :)
+
+I know I haven't replied to that thread for some days, but if you have
+anything to add to the remaining questions, I'd be still happy to read
+it :)
+
+
+Thanks and best wishes,
 Chris.
---=-aXy9UE9f0Lco//WfFt2q
+--=-2rGOBY9GIH1rMOAHOyMh
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -331,19 +253,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA1Mzk0
-OFowTwYJKoZIhvcNAQkEMUIEQIkU+gUdUSytGkpLzX916Jd4CgzORVtVqxtVbUcYvwEwky0Gxq8C
-gKRfEDtFkJNIr1d4AYFPgO4OeoaJ9Ll/3mYwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA1NDMw
+MVowTwYJKoZIhvcNAQkEMUIEQFHMbVccof38Xue8xuupcen5zdntmZrzP3d84t47Zj+muRUonWdL
+IYBAAoXnNXQnzdQ7xkxe+yXNh6OXvKMqKXMwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQB8/jMuR64RLTef28Y2FuHC3zgU2D7q
-IN/eukTHD9uFVYtVU3uaH2gxfTlTxO6Y0xIFrAdj4VMuSrE9OzE+T34VxLWC8j7TX0GpOxt+2s7T
-y3c1LkkNuR3myLjtmW3veHg9c7zPUiwl4H9Vvytu6q/iUkJRmu9Sxoq7OWnwD995x6qPOF1/0VSq
-zH1aj6SOleHxTeLu32SielUHeycDxkni6/Jx6WSSCXTy0vsBqNOQP+LnjhtfJnkesSxeKsIyqN4m
-oddE9CoBIjwmqmOSaN3u+0Ubcxj0DFb62AwGqRou7kSetx+dwm7Pe69xmQJttupJ2cfJJNU/fDen
-FR0kKsLsAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCoY4a4P1pQ7jXTJndZgEpGxP4wacsc
+NVoPhMWifznC/r6asg0InswEM2ThHLmzMpmiDqI4w64itIm0fveEyCb+O2AxEKcBb2guomz/aEXl
+0/Jyp1oOzlyN1DLAvs9AYm3KY6rtzYQSUIr0LpPKONg2X99JaeX9b3C/6OQq3h+9hqUCdSjg5unF
+65TsSbBnC6scTwGZaFeAWCoo+dar0aY6JZKkCPrT5VOpV7MKGA3HQJU829CfsGha2Uf83yqY5BOT
+crHSfr/VvbBa+wK0JlKLPB/l01KX8Gfx7uYTdBLqdhcm0hlyFOf0kTgzYoYr4Sb69Pfnd4lfvPtH
+5rm9Lz95AAAAAAAA
 
 
---=-aXy9UE9f0Lco//WfFt2q--
+--=-2rGOBY9GIH1rMOAHOyMh--
 

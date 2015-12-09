@@ -1,75 +1,129 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:50364 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:50395 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751845AbbLIEiG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 23:38:06 -0500
-Message-ID: <1449635882.20578.2.camel@scientia.net>
-Subject: Re: subvols and parents - how?
+	with ESMTP id S1751919AbbLIEjH (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 23:39:07 -0500
+Message-ID: <1449635942.20578.3.camel@scientia.net>
+Subject: Re: [RFC] Btrfs device and pool management (wip)
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Wed, 09 Dec 2015 05:38:02 +0100
-In-Reply-To: <pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
-References: <1448340960.14125.51.camel@scientia.net>
-	 <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
-	 <1448400350.21291.88.camel@scientia.net>
-	 <pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
+To: Chris Murphy <lists@colorremedies.com>,
+        Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: Anand Jain <anand.jain@oracle.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Wed, 09 Dec 2015 05:39:02 +0100
+In-Reply-To: <CAJCQCtQPdzQG0She3yjxAmDmXSAphdMriW11Pe=BMrBRXYTh6Q@mail.gmail.com>
+References: <565C01F1.5030108@oracle.com> <565C625C.7060503@gmail.com>
+	 <CAJCQCtQPdzQG0She3yjxAmDmXSAphdMriW11Pe=BMrBRXYTh6Q@mail.gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-rBtdQa61FiJdGhKOvXsx"
+	boundary="=-/iGNJ1VnRwMqHb72tXJc"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-rBtdQa61FiJdGhKOvXsx
+--=-/iGNJ1VnRwMqHb72tXJc
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 2015-11-27 at 02:02 +0000, Duncan wrote:
-> Uhm, I don't get the big security advantage here... whether nested
-> > or
-> > manually mounted to a subdir,... if the permissions are insecure
-> > I'll
-> > have a problem... if they're secure, than not.
-> Consider a setuid-root binary with a recently publicized but patched
-> on=20
-> your system vuln.=C2=A0=C2=A0But if you have root snapshots from before t=
+On Mon, 2015-11-30 at 13:17 -0700, Chris Murphy wrote:
+> On Mon, Nov 30, 2015 at 7:51 AM, Austin S Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>=20
+> > General thoughts on this:
+> > 1. If there's a write error, we fail unconditionally right now.=C2=A0=
+=C2=A0It
+> > would be
+> > nice to have a configurable number of retries before failing.
+>=20
+> I'm unconvinced. I pretty much immediately do not trust a block
+> device
+> that fails even a single write, and I'd expect the file system to
+> quickly get confused if it can't rely on flushing pending writes to
+> that device.
+=46rom my large-amounts-of-storage-admin PoV,... I'd say it would be nice
+to have more knobs to control when exactly a device is considered no
+longer perfectly fine, which can include several different stages like:
+- perhaps unreliable
+=C2=A0 e.g. maybe the device shows SMART problems or there were correctable=
+=C2=A0
+=C2=A0 read and/or write errors under a certain threshold (either in total,
+=C2=A0 or per time period)
+=C2=A0 Then I could imagine that one can control whether the device is put=
+=C2=A0
+=C2=A0 - continued to be normally used until certain error thresholds are
+=C2=A0=C2=A0 =C2=A0exceeded.
+=C2=A0 - placed in a mode where data is still written to, but only when
+=C2=A0 =C2=A0 there's a duplicate on at least on other good device,... so t=
 he
-> patch=20
-> and those snapshots are nested below root, then they're always=20
-> accessible.=C2=A0=C2=A0If the path to the vulnerable setuid is as user
-> accessible=20
-> as it likely was in its original location, then anyone with login
-> access=20
-> to the system is likely to be able to run it from the snapshot... and
-> will be able to get root due to the vuln.
+=C2=A0 =C2=A0 device would be used as read pool
+=C2=A0 =C2=A0 maybe optionally, data already on the device is auto-replicat=
+ed to
+=C2=A0 =C2=A0 good devices
+=C2=A0 - offline (perhaps only to be automatically reused in case of
+=C2=A0 =C2=A0 emergency (as a hot spare) when the fs knows that otherwise i=
+t's
+=C2=A0 =C2=A0
+even more likely that data would be lost soon
+- failed
+=C2=A0 the threshold
+from above has been reached, the fs suspects the
+=C2=A0 device to completely
+fail soon
+=C2=A0 Possible knobs would include how aggressively data is tried
+to move
+=C2=A0 of the device.
+=C2=A0 How often should retries be made? In case the
+other devices are
+=C2=A0 under high IO load how much percentage should be
+used to get the
+=C2=A0 still working data of the bad device (i.e. up to 100%,
+meaning=C2=A0
+=C2=A0 "rather stop any other IO, just to move the data to good
+devices=C2=A0
+=C2=A0 ASAP)?=C2=A0
+- dead
+=C2=A0 accesses don't work anymore at all an the fs shouldn't even waste=C2=
+=A0
+=C2=A0 time trying to read/recover data from it.
 
-Hmm good point... I think it would be great if you could add that
-scenario somewhere to the documentation. :-)
-Based on that one can easily think about more/similar examples...
-device file that had too permissive modes set, and where snapshotted
-like that... and so on.
-
-I think that's another example why it would be nice if btrfs had
-something (per subvolume) like ext4's default mount options (I mean the
-ones stored in the superblock).
-
-Not only would it allow the userland tools to do things like "adding
-notatime" per default on snapshots (at least ro snapshot), so that one
-can have them nested and still doesn't suffer from the previously
-discussed writes-on-read-amplifications... it would also allow to set
-things like nodev, noexec, nosuid and that like on subvols... and again
-it would make the whole thing practically usable with nested subvols.
+It would also make sense to allow tuning what conditions need be met to
+e.g. consider a drive unreliable (e.g. which SMART errors?) and to
+allow an admin to manually place a drive in a certain state (e.g. SMART
+would be still good, no IO errors so far, but the drive is 5 year old
+and I better want to consider it unreliable).
 
 
-Where would be the appropriate place to record that as a feature
-request?
-Simply here on the list?
+That's - to some extent - what we at our LHC Tier-2 do at higher levels
+(partly simply by human management, partly via the storage management
+system we use (dCache), partly by RAID and other tools and scripting).
+
+
+
+In any case, though,... any of these knobs should IMHO default to the
+most conservative settings.
+In other words: If a device shows the slightest hint of being
+unstable/unreliable/failed... it should be considered bad, no new data
+should go on it (if necessary, because not enough other devices are
+left, the fs should get ro).
+The only thing I wouldn't have a opinion is: should the fs go ro and do
+nothing, waiting for a human to decide what's next, or should it go ro
+and (if possible) try to move data off the bad device (per default).
+
+Generally, a filesystem should be safe per default (which is why I see
+the issue in the other thread with the corruption/security leaks in
+case of UUID collisions quite a showstopper).
+=46rom the admin side, I don't want to be required to make it safe,.. my
+interaction should rather only be needed to tune things.
+
+Of course I'm aware that btrfs brings several techniques which make it
+unavoidable that more maintenance is put into the filesystem, but, per
+default, this should be minimised as far as possible.
 
 
 Cheers,
 Chris.
---=-rBtdQa61FiJdGhKOvXsx
+--=-/iGNJ1VnRwMqHb72tXJc
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -156,19 +210,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA0Mzgw
-MlowTwYJKoZIhvcNAQkEMUIEQDy2WFwSU4jbLrf0j/xLV3Bk8/ZJVqPEZ7SsWTpSs2h9kavSNvzN
-7NUTZsCXdQ1BZCeAtAdYW5Atdo2gNod4DHUwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA0Mzkw
+MlowTwYJKoZIhvcNAQkEMUIEQKU6c64YXUQukzYybFAPXgyZ5rnKwmwWjq7BSGk3RAmagG90c4Yj
+70nZv9C/cDuR5d55bLURkXJNXye7ynytfsAwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCyp9Tsc/V/uWMs7NdIil3YhiXHgUWS
-pQngs1puztsBVKwSw+oepV/DUwletin4N4pf0fkEpZQ92JK23GJqaGLBXXTVxXgNXQCwRtytoISM
-U6ZtQIAnlNW+R4gaCilU+c/5G2A2ja5mPjmoHEfRk1wmBHzbxlT4fbgaJ3+gQVwdNDehNHAhTqH8
-jLmHMkZov2MeGuH7a10fegNPWuk6EDBg5wdyBG/sWKEAmyZQAFhdTAxd+ztFD64qtdHgftA7eFVo
-J6u1dQ1VLgnEt1b3MOZqI5htL5qmgtcWYsKdn4da11mtt33sVKoCbR2tfPphSN6fIsDyGLIYTSlq
-zNKvPlhoAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCcjQEKZcKyP6cAEOtyz36kQAI02XPm
+47BlLsTjJyDAYF0TL+Y3jhD2Xd8hENhuTM8bHCXSphln8Oc2q0ZifvuDxbKxP8TbFaLhIKoJ9DG9
+vb+akuYE4XXiUgyNQ7NNihO2uLN4oELrZ6ZDWMtXBfeBX61jFe0LioaLqkIpOYC8i7IARbddHVZI
+Q7kb6bfLT/+F/nL882CE7+ipNSP4uR/Fh/zntix/t552Q6WhuHrO6M5PYK9Axd3b6FoGpXG60TEX
+d4I0tbnqASLCzrknRddm71dakVrvOjo4Jt5GmXJOsNUnyJwcYF7TFbsSRD2oQeaRgiPmr5JLriIX
+henWazCHAAAAAAAA
 
 
---=-rBtdQa61FiJdGhKOvXsx--
+--=-/iGNJ1VnRwMqHb72tXJc--
 

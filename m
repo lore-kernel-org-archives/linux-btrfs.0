@@ -1,213 +1,250 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48934 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:36947 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751111AbbLIGqo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Dec 2015 01:46:44 -0500
+	id S1754457AbbLIKTy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Dec 2015 05:19:54 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a6YWP-0008VC-W7
-	for linux-btrfs@vger.kernel.org; Wed, 09 Dec 2015 07:46:42 +0100
+	id 1a6bqi-0001jk-GE
+	for linux-btrfs@vger.kernel.org; Wed, 09 Dec 2015 11:19:52 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 07:46:41 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 11:19:52 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 07:46:41 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 11:19:52 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Scrub: no spae left on device
-Date: Wed, 9 Dec 2015 06:46:32 +0000 (UTC)
-Message-ID: <pan$e6131$4ac4af65$a9a25416$d5a8b7e8@cox.net>
-References: <20151208150638.GL27889@merlins.org>
-	<5666F947.5010902@googlemail.com> <5666FB58.2040900@bouton.name>
-	<20151208160615.GO27889@merlins.org>
+Subject: Re: Fixing recursive fault and parent transid verify failed
+Date: Wed, 9 Dec 2015 10:19:41 +0000 (UTC)
+Message-ID: <pan$39f4c$4a92c925$153447bf$d623c310@cox.net>
+References: <20151207015715.GA13954@alistair-xps13>
+	<pan$42653$68e1a3aa$3a4c1c2c$b0e89f8@cox.net>
+	<20151207100256.GA6836@alistair-xps13>
+	<pan$cb93a$b4f560b9$2dfdbdbc$17d7a835@cox.net>
+	<20151207195504.GA9262@alistair-xps13>
+	<pan$73edd$edd83c4d$2a373055$4b6032dd@cox.net>
+	<20151208223847.GA4419@alistair-xps13>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Marc MERLIN posted on Tue, 08 Dec 2015 08:06:15 -0800 as excerpted:
+Alistair Grant posted on Wed, 09 Dec 2015 09:38:47 +1100 as excerpted:
 
-> On Tue, Dec 08, 2015 at 04:46:32PM +0100, Lionel Bouton wrote:
->> Le 08/12/2015 16:37, Holger Hoffstätte a écrit :
->> > On 12/08/15 16:06, Marc MERLIN wrote:
->> >>
->> >> Why would scrub need space and why would it cancel if there isn't
->> >> enough of it? (kernel 4.3)
->> >>
->> >> btrfs scrub start -Bd /dev/mapper/pool1
->> >> ERROR: scrubbing /dev/mapper/pool1 failed for device id 1
->> >> (No space left on device)
->> >> scrub device /dev/mapper/pool1 (id 1) canceled
->> > Scrub rewrites metadata (apparently even in -r aka readonly mode),
->> > and that can lead to temporary metadata expansion (stuff gets COWed
->> > around); it's a bit surprising but makes sense if you think about it.
-
-Are you sure about that?
-
-My / is mounted ro by default, and if I try to scrub it in normal mode, 
-it'll error out due to read-only.  But I can run a read-only scrub just 
-fine, and if I find errors, I simply mount it writable and redo the scrub 
-without the -r.  (My / is only 8 GiB, under half used including metadata 
-on a fast SSD, so scrubs complete in under 30 seconds, and doing a read-
-only scrub followed by a mount-writable and a second fixing scrub if 
-necessary, is trivial.)
-
->> Sorry I'm not sure why metadata is rewritten if no error is detected.
-
-But scrub will of course do copy-on-write if there's an error, and it's 
-possible that on initialization it checks for space to do a few cows if 
-necessary, before it actually checks for the -r read-only flag.  I try to 
-leave at least enough unallocated space to do a balance, which of course 
-except for -dusage=0 (or -musage=0) writes a new chunk to rewrite 
-existing chunks into, so I'd be unlikely to ever get that close to out of 
-space to trigger the possible initialization-time space-warning, and thus 
-wouldn't know whether it has one or whether it comes before the -r check, 
-or not.
-
-> And this is what I got:
-> legolas:~# btrfs balance start -musage=10 -v /mnt/btrfs_pool1/
-> Dumping filters: flags 0x6, state 0x0, force is off
->   METADATA (flags 0x2): balancing, usage=10
->   SYSTEM (flags 0x2): balancing, usage=10
-> ERROR: error during balancing '/mnt/btrfs_pool1/' - No space left on
-> device There may be more info in syslog - try dmesg | tail
+> On Tue, Dec 08, 2015 at 03:25:14PM +0000, Duncan wrote:
+>> Alistair Grant posted on Tue, 08 Dec 2015 06:55:04 +1100 as excerpted:
+>> 
+>> > On Mon, Dec 07, 2015 at 01:48:47PM +0000, Duncan wrote:
+>> >> Alistair Grant posted on Mon, 07 Dec 2015 21:02:56 +1100 as
+>> >> excerpted:
+>> >> 
+>> >> > I think I'll try the btrfs restore as a learning exercise
+>> >> 
+>> >> Trying btrfs restore is an excellent idea.  It'll make things far
+>> >> easier if you have to use it for real some day.
 > 
-> Ok, that sucks.
+> Thanks again Duncan for your assistance.
 > 
-> legolas:~# btrfs balance start -musage=0 -v /mnt/btrfs_pool1/
-> Dumping filters: flags 0x6, state 0x0, force is off
->   METADATA (flags 0x2): balancing, usage=0
->   SYSTEM (flags 0x2): balancing, usage=0
-> Done, had to relocate 0 out of 618 chunks
+> I plugged the ext4 drive I planned to use for the recovery in to the
+> machine and immediately got a couple of errors, which makes me wonder
+> whether there isn't a hardware problem with the machine somewhere.
 > 
-> This worked. Mmmh, I thought this wouldn't be necessary anymore in 4.3
-> kernels?
+> So decided to move to another machine to do the recovery.
 
-Well, it said it had to relocate zero blocks, so it _appears_ that it 
-didn't do anything, which would be expected on reasonably current kernels 
-as they already clean up zero-usage chunks, automatically.  *BUT*...
+Ouch!  That can happen, and if you moved the ext4 drive to a different 
+machine and it was fine there, then it's not the drive.
 
-> legolas:~# btrfs balance start -musage=10 -v /mnt/btrfs_pool1
-> Dumping filters: flags 0x6, state 0x0, force is off
->   METADATA (flags 0x2): balancing, usage=10
->   SYSTEM (flags 0x2):  balancing, usage=10
-> Done, had to relocate 1 out of 618 chunks
+But you didn't say what kind of errors or if you checked SMART, or even 
+how it was plugged in (USB or SATA-direct or...).  So I guess you have 
+that side of things under control.  (If not, there's some here who know 
+quite a bit about that sort of thing...)
 
-... if it did nothing in the -musage=0 case above, why did the -musage=10 
-case fail before, but succeed after?
-
-That's a very good question I don't have an answer to.  Good question for 
-the devs and others that actually read code.
-
-Meanwhile, note that if it relocates only a single chunk (of non-zero 
-usage), under normal circumstances, it'll take exactly the same amount of 
-space as before, because it'd allocate a new chunk of exactly the same 
-size as the one it was rewriting.
-
-However, once remaining unallocated space gets tight enough, it starts 
-allocating smaller than normal chunks, which may be what happened this 
-time.  Presumably that chunk was originally allocated when the filesystem 
-still has much more unallocated free space, so it was a standard size 
-chunk.  When it was rewritten, unallocated space was much tighter, so a 
-smaller chunk would likely be written, which would then be rather fuller 
-than it was previously, as it would have the same amount of metadata in 
-it, but be a smaller chunk.
-
-And, perhaps partially answering my own question above, the balance with 
--musage=0 somehow triggered a space reevaluation, thus allowing the 
--musage=10 balance to run afterward when it wouldn't before, even tho the 
--musage=0 didn't actually relocate (to /dev/null as they'd be empty, IOW, 
-delete) any empty chunks.
-
-But... it still shouldn't happen, as if -musage=0 didn't relocate 
-anything, it shouldn't trigger a space reevaluage that -musage=10 
-wouldn't trigger on its own, so while this might partially answer what 
-happened, it does nothing to explain /why/ it happened.  I'd call it a 
-bug in the balance code, as the result of the -musage=10 should be 
-exactly the same before and after, because the -musage=0 didn't actually 
-relocate/delete anything.
-
-> And now I'm back in business...
+> So I'm now recovering on Arch Linux 4.1.13-1 with btrfs-progs v4.3.1
+> (the latest version from archlinuxarm.org).
 > 
-> Still, this is a bit disappointing and at the very least very unexpected
-> in 4.3.
+> Attempting:
 > 
-> legolas:~# btrfs fi df /mnt/btrfs_pool1
-> Data, single: total=604.88GiB, used=520.09GiB
-> System, DUP: total=32.00MiB, used=96.00KiB
-> Metadata, DUP: total=5.00GiB, used=4.17GiB
-> GlobalReserve, single: total=512.00MiB, used=0.00B
+> sudo btrfs restore -S -m -v /dev/sdb /mnt/btrfs-recover/ ^&1 | tee
+> btrfs-recover.log
+> 
+> only recovered 53 of the more than 106,000 files that should be
+> available.
+> 
+> The log is available at:
+> 
+> https://www.dropbox.com/s/p8bi6b8b27s9mhv/btrfs-recover.log?dl=0
+> 
+> I did attempt btrfs-find-root, but couldn't make sense of the output:
+> 
+> https://www.dropbox.com/s/qm3h2f7c6puvd4j/btrfs-find-root.log?dl=0
 
-> legolas:~# btrfs fi show /mnt/btrfs_pool1
-> Label: 'btrfs_pool1'  uuid: [...]
-> 	Total devices 1 FS bytes used 524.26GiB
->       devid    1 size 615.01GiB used 614.94GiB path /dev/mapper/pool1
+Yeah, btrfs-find-root's output deciphering takes a bit of knowledge.  
+Between what I had said and the wiki, I was hoping you could make sense 
+of things without further help, but...
+
+Well, at least this gets you some practice before you are desperate. =:^)
+
+FWIW, I was really hoping that it would find generation/transid 2308, 
+since that's what it was finding on those errors, but that seems to be 
+too far back.
+
+OK, here's the thing about transaction IDs aka transids aka generations.  
+Normally, it's a monotonically increasing number, representing the 
+transaction/commit count at that point.
+
+Taking a step back, btrfs organizes things as a tree of trees, with each 
+change cascading up (down?) the tree to its root, and then to the master 
+tree's root.  Between this and btrfs' copy-on-write nature, this means 
+the filesystem is atomic.  If the system crashes at any point, either the 
+latest changes are committed and the master root reflects them, or the 
+master root points to the previous consistent state of all the subtrees, 
+which is still in place due to copy-on-write and the fact that the 
+changes hadn't cascaded all the way up the trees to the master root, yet.
+
+And each time the master root is updated, the generation aka transid is 
+incremented by one.  So 3503 is the current generation (see the superblock 
+thinks... bit), 3502 the one before that, 3501 the one before that...
+
+The superblocks record the current transid and point (by address, aka 
+bytenr) to that master root.
+
+But, because btrfs is copy-on-write, older copies of the master root (and 
+the other roots it points to) tend to hang around for awhile.  Which is 
+where btrfs-find-root comes along, as it's designed to find all those old 
+roots, listing them by bytenr and generation/transid.
+
+In your case, while generation 3361 is current, there's a list going back 
+to generation 2497 with only a few (just eyeballing it) missing, then 
+2326, and pretty much nothing before that but the REALLY early generation 
+2 and 3, which are likely a nearly empty filesystem.
+
+OK, that explains the generations/transids.  There's also levels, which I 
+don't clearly understand myself; definitely not well enough to try to 
+explain, tho I could make some WAGs but that'd just confuse things if 
+they're equally wildly wrong.  But it turns out that levels aren't in 
+practice something you normally need to worry much about anyway, so 
+ignoring them seems to work fine.
+
+Then, there's bytenrs, the block addresses.  These are more or less 
+randomly large numbers, from an admin perspective, but they're very 
+important numbers, because this is the number you feed to restore's -t 
+option, that tells it which tree root to use.
+
+Put a different way, humans read the generation aka transid numbers; 
+btrfs reads the block numbers.  So what we do is find a generation number 
+that looks reasonable, and get its corresponding block number, to feed to 
+restore -t.
 
 
-As Holger points out, you really are out of unallocated space.
+OK, knowing that, you can perhaps make a bit more sense of what those 
+transid verify failed messages are all about.  As I said, the current 
+generation is 3503.  Apparently, there's a problem in a subtree, however, 
+where the last update was gen 3361, but some intervening updates got lost 
+and it can only find 2308 (with a couple updated to 2309).
 
-And metadata is 5.00 GiB allocated, 4.17 directly used, plus the global 
-reserve (which was recently confirmed on-list to come out of metadata) of 
-half a GiB, so 4.17 + 0.50 = 4.67 GiB out of 5.00 used, so while not 
-entirely full, you're close enough (under half a GiB free, and it's dup 
-so you're under a pair of quarter-GiB metadata chunks free) that large 
-operations may fail.
+Which is why I had hoped btrfs-find-root would find history going back to 
+2308, since while it'll be old, that would bring that subtree back 
+online.  But it wasn't to be.  However, it's still possible that 
+something a bit newer references that old 2308, and if we're lucky, one 
+of those newer generations will indeed give us access to that subtree 
+once again, even if it doesn't have the latest changes to it.
 
-But as Holger also alluded to, you have all sorts of data space available 
-(see below for why), with metadata space almost entirely used.
 
-So why were you running -m balances, when -m was basically full but -d 
-had some spare room and you actually needed to clear it?  Why weren't you 
-doing -dusage=, to clear out those (partially, again, see below) empty 
-data chunks, instead of the -musage=, which couldn't do much as metadata 
-was pretty much fully used already?
+OK, so normally, you'd try with the newest generation you can find that 
+works, but here, we know we may have to use an older one to get access to 
+that out of sync subtree.
 
-And your command-prompts don't include timestamps so I can't say for 
-sure, but presumably those results were AFTER the balance -musage=10 
-succeeded and we don't have any pre-balance reports.  It's possible you 
-were actually in worse shape before.
+So here's what you do.  Pick a generation from the list.  We'll start 
+fairly new (high generation number), but go back a few commits, since 
+it's obvious the current generation is screwed up.  Somewhat at random, 
+I'll say 3480, 20-some generations back.
 
-Meanwhile, it's worth noting that while current kernel btrfs /does/ 
-automatically delete entirely empty chunks now, so -[dm]usage=0 can be 
-expected to do nothing as the kernel already does that on its own now, 
-thereby fixing the previously most extreme out-of-balance scenarios where 
-there's loads of entirely empty chunks lying around, the kernel does 
-*not* automatically do balances of _mostly-but-not-entirely_ empty chunks.
+For generation 3480, find-root says the bytenr aka block is 564199424.
 
-Which means that over time, normal usage is still likely to accumulate a 
-bunch of say 1-60% full chunks, most likely data, that can still add up 
-to tens or even hundreds of gigs of wasted chunk allocations that are 
-*not* automatically cleared, because there's still at least *some* usage 
-in those chunks.
+So now feed that into btrfs restore using -t.  We'll also want to use -l, 
+to list the subtrees.
 
-Of course people leaving old snapshots lying around will exacerbate the 
-problem, but even without snapshots, it'll likely still develop, given 
-enough time, tho with usage=0 chunks automatically deleted now, it should 
-take far longer than it did before.
+btrfs restore -l -t 564199424
 
-That explains that data line above, nearly 605 GiB data chunk allocation, 
-with only just over 520 GiB actually used, a difference of ~85 GiB.
+What you're looking for there is a complete list of trees.  You want 
+(based on the listing I have for a btrfs here) the extent, dev, fs, csum, 
+uuid, and data-reloc trees.  If you have subvolumes I think they should 
+be listed as well.  (I don't use subvolumes or snapshots here, so I can't 
+say for sure.)
 
-While space is pretty tight and you might have to start pretty small (or 
-delete a bunch of snapshots or temporarily delete or move off-filesystem 
-a bunch of unsnapshotted files, hopefully clearing at least some data 
-chunks to usage=0 so they can be cleaned up by the kernel or manually), 
-say at -dusage=1, you should be able to get a good portion of that 85 GiB 
-back with balance -dusage=, going up to say 70% if necessary, as you may 
-have several 70% full chunks that can combine to one or two less chunks 
-if they're rebalanced.
+If you have a complete list of at least the base trees (forgetting about 
+snapshots/subvols for the moment), it's a reasonable candidate to try 
+restoring.  If not, try picking a different generation from find-root and 
+feeding its block number to restore.
 
-After that, please try to keep at least 5 or even 10 GiB unallocated, 
-doing -dusage= balances while you still have enough room for balance to 
-write new chunks, not letting it get so tight.  That's even more critical 
-now than it was before, because there's unlikely to be zero-usage chunks 
-lying around to balance away getting you out of the tight spot, because 
-the kernel now balances those away on its own.
+Once you have a good generation candidate based on restore -l, you can 
+use restore -S -m -D -t <block> to do a dry run, and see if it seems to 
+give you a reasonable number of files or not (tho note that the last time 
+I actually used it for real, the actual number of files restored in a 
+real run was somewhat more than in the dry run, I think there's some 
+stuff the dry run doesn't or possibly can't try that a run for real does, 
+but clearly, only a hundred files or so when you're expecting tens of 
+thousands isn't a reasonable candidate).  Again, if not, start over with 
+another generation pick from find-root, while if the number of files in 
+the dry-run seems reasonable, try the real restore without the -D.
 
-And of course if you do that, you shouldn't run into the scrub ENOSPC 
-errors, either. =:^)
+
+Meanwhile, in terms of picking candidate generations, the example one I 
+used was reasonably current, but hopefully before whatever was lost in 
+the crash.  If that didn't turn out to be the case, I'd try going back 
+further, say to generation 3400, then to 3361 and something shortly 
+before that, say 3360 and 3350, since 3361 was one of the wanted 
+generations in the errors, then 3300, 3000, 2497, and try both of the 
+2326s, one of which I'm guessing is an error and thus very bad.  (I 
+didn't actually check that your find-root listing listed all of those in 
+the middle, I'm simply using them as examples.)
+
+Of course the further back you go (beyond whatever immediate damage), the 
+more likely some of the subtree roots have been overwritten, so the more 
+likely you'll fail at the restore -l step.
+
+If you go back quite a way and hit a good one, then try coming forward 
+again, using the standard bisect method.  If the first set of picks don't 
+yield anything reasonable, try some others.
+
+If you try quite a few and nothing seems to be coming up good, then it 
+might be time to try using the check and rescue tools to start restoring 
+bad trees as necessary.  But I've never gotten to this point and would be 
+feeling my own way along as well, so I'm not going to try being the blind 
+leading the blind into that.
+
+But given a reasonable backup in any case, by this point you will have at 
+least covered the find-root and restore basics, so even if you weren't 
+particularly successful with it this time, you do have the backup and 
+don't need to be, and you already accomplished your goal of getting some 
+practice in case you do end up needing it at some point, and hopefully 
+when you actually do need it, the problem will be different and restore 
+will work better for you.
+
+But of course, with good backups, you _should_ never find yourself 
+actually needing to use this knowledge.  But it's still nice to have 
+actually gotten a bit of experience with it, just in case. =:^)
+
+> Simply mounting the drive, then re-mounting it read only, and rsync'ing
+> the files to the backup drive recovered 97,974 files before crashing.
+> If anyone is interested, I've uploaded a photo of the console to:
+> 
+> https://www.dropbox.com/s/xbrp6hiah9y6i7s/rsync%20crash.jpg?dl=0
+> 
+> I'm currently running a hashdeep audit between the recovered files and
+> the backup to see how the recovery went.
+> 
+> If you'd like me to try any other tests, I'll keep the damaged file
+> system for at least the next day or so.
+> 
+> Thanks again for all your assistance,
+> Alistair
+
+
+
+
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

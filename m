@@ -1,129 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:50395 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:50426 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751919AbbLIEjH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 23:39:07 -0500
-Message-ID: <1449635942.20578.3.camel@scientia.net>
-Subject: Re: [RFC] Btrfs device and pool management (wip)
+	with ESMTP id S1753122AbbLIElQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 23:41:16 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id C2DAC5FB74
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Dec 2015 04:41:14 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id kefJsjgqCqZA for <linux-btrfs@vger.kernel.org>;
+	Wed,  9 Dec 2015 04:41:12 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Wed,  9 Dec 2015 04:41:12 +0000 (UTC)
+Message-ID: <1449636072.20578.4.camel@scientia.net>
+Subject: Re: kernel call trace during send/receive
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Chris Murphy <lists@colorremedies.com>,
-        Austin S Hemmelgarn <ahferroin7@gmail.com>
-Cc: Anand Jain <anand.jain@oracle.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Wed, 09 Dec 2015 05:39:02 +0100
-In-Reply-To: <CAJCQCtQPdzQG0She3yjxAmDmXSAphdMriW11Pe=BMrBRXYTh6Q@mail.gmail.com>
-References: <565C01F1.5030108@oracle.com> <565C625C.7060503@gmail.com>
-	 <CAJCQCtQPdzQG0She3yjxAmDmXSAphdMriW11Pe=BMrBRXYTh6Q@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Date: Wed, 09 Dec 2015 05:41:12 +0100
+In-Reply-To: <1448588940.11377.12.camel@scientia.net>
+References: <1448588940.11377.12.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-/iGNJ1VnRwMqHb72tXJc"
+	boundary="=-WyZKnLHMVJhJairuAY9z"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-/iGNJ1VnRwMqHb72tXJc
+--=-WyZKnLHMVJhJairuAY9z
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-11-30 at 13:17 -0700, Chris Murphy wrote:
-> On Mon, Nov 30, 2015 at 7:51 AM, Austin S Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->=20
-> > General thoughts on this:
-> > 1. If there's a write error, we fail unconditionally right now.=C2=A0=
-=C2=A0It
-> > would be
-> > nice to have a configurable number of retries before failing.
->=20
-> I'm unconvinced. I pretty much immediately do not trust a block
-> device
-> that fails even a single write, and I'd expect the file system to
-> quickly get confused if it can't rely on flushing pending writes to
-> that device.
-=46rom my large-amounts-of-storage-admin PoV,... I'd say it would be nice
-to have more knobs to control when exactly a device is considered no
-longer perfectly fine, which can include several different stages like:
-- perhaps unreliable
-=C2=A0 e.g. maybe the device shows SMART problems or there were correctable=
-=C2=A0
-=C2=A0 read and/or write errors under a certain threshold (either in total,
-=C2=A0 or per time period)
-=C2=A0 Then I could imagine that one can control whether the device is put=
-=C2=A0
-=C2=A0 - continued to be normally used until certain error thresholds are
-=C2=A0=C2=A0 =C2=A0exceeded.
-=C2=A0 - placed in a mode where data is still written to, but only when
-=C2=A0 =C2=A0 there's a duplicate on at least on other good device,... so t=
-he
-=C2=A0 =C2=A0 device would be used as read pool
-=C2=A0 =C2=A0 maybe optionally, data already on the device is auto-replicat=
-ed to
-=C2=A0 =C2=A0 good devices
-=C2=A0 - offline (perhaps only to be automatically reused in case of
-=C2=A0 =C2=A0 emergency (as a hot spare) when the fs knows that otherwise i=
-t's
-=C2=A0 =C2=A0
-even more likely that data would be lost soon
-- failed
-=C2=A0 the threshold
-from above has been reached, the fs suspects the
-=C2=A0 device to completely
-fail soon
-=C2=A0 Possible knobs would include how aggressively data is tried
-to move
-=C2=A0 of the device.
-=C2=A0 How often should retries be made? In case the
-other devices are
-=C2=A0 under high IO load how much percentage should be
-used to get the
-=C2=A0 still working data of the bad device (i.e. up to 100%,
-meaning=C2=A0
-=C2=A0 "rather stop any other IO, just to move the data to good
-devices=C2=A0
-=C2=A0 ASAP)?=C2=A0
-- dead
-=C2=A0 accesses don't work anymore at all an the fs shouldn't even waste=C2=
-=A0
-=C2=A0 time trying to read/recover data from it.
+Hey.
 
-It would also make sense to allow tuning what conditions need be met to
-e.g. consider a drive unreliable (e.g. which SMART errors?) and to
-allow an admin to manually place a drive in a certain state (e.g. SMART
-would be still good, no IO errors so far, but the drive is 5 year old
-and I better want to consider it unreliable).
+Hmm I guess no one has any clue about that error?
 
-
-That's - to some extent - what we at our LHC Tier-2 do at higher levels
-(partly simply by human management, partly via the storage management
-system we use (dCache), partly by RAID and other tools and scripting).
-
-
-
-In any case, though,... any of these knobs should IMHO default to the
-most conservative settings.
-In other words: If a device shows the slightest hint of being
-unstable/unreliable/failed... it should be considered bad, no new data
-should go on it (if necessary, because not enough other devices are
-left, the fs should get ro).
-The only thing I wouldn't have a opinion is: should the fs go ro and do
-nothing, waiting for a human to decide what's next, or should it go ro
-and (if possible) try to move data off the bad device (per default).
-
-Generally, a filesystem should be safe per default (which is why I see
-the issue in the other thread with the corruption/security leaks in
-case of UUID collisions quite a showstopper).
-=46rom the admin side, I don't want to be required to make it safe,.. my
-interaction should rather only be needed to tune things.
-
-Of course I'm aware that btrfs brings several techniques which make it
-unavoidable that more maintenance is put into the filesystem, but, per
-default, this should be minimised as far as possible.
-
+Well it seems at least that an fsck over the receiving fs passes
+through without any error.
 
 Cheers,
 Chris.
---=-/iGNJ1VnRwMqHb72tXJc
+
+On Fri, 2015-11-27 at 02:49 +0100, Christoph Anton Mitterer wrote:
+> Hey.
+>=20
+> Just got the following during send/receiving a big snapshot from one
+> btrfs to another fresh one.
+>=20
+> Both under kernel=C2=A04.2.6, tools 4.3
+>=20
+> The send/receive seems to continue however...
+>=20
+> Any ideas what that means?
+>=20
+> Cheers,
+> Chris.
+>=20
+> Nov 27 01:52:36 heisenberg kernel: ------------[ cut here ]--------
+> ----
+> Nov 27 01:52:36 heisenberg kernel: WARNING: CPU: 7 PID: 18086 at
+> /build/linux-CrHvZ_/linux-4.2.6/fs/btrfs/send.c:5794
+> btrfs_ioctl_send+0x661/0x1120 [btrfs]()
+> Nov 27 01:52:36 heisenberg kernel: Modules linked in: ext4 mbcache
+> jbd2 nls_utf8 nls_cp437 vfat fat uas vhost_net vhost macvtap macvlan
+> xt_CHECKSUM iptable_mangle ipt_MASQUERADE nf_nat_masquerade_ipv4
+> iptable_nat nf_nat_ipv4 nf_nat xt_tcpudp tun bridge stp llc fuse ccm
+> ebtable_filter ebtables seqiv ecb drbg ansi_cprng algif_skcipher md4
+> algif_hash af_alg binfmt_misc xfrm_user xfrm4_tunnel tunnel4 ipcomp
+> xfrm_ipcomp esp4 ah4 cpufreq_userspace cpufreq_powersave
+> cpufreq_stats cpufreq_conservative ip6t_REJECT nf_reject_ipv6
+> nf_conntrack_ipv6 nf_defrag_ipv6 ip6table_filter ip6_tables xt_policy
+> ipt_REJECT nf_reject_ipv4 xt_comment nf_conntrack_ipv4 nf_defrag_ipv4
+> xt_multiport xt_conntrack nf_conntrack iptable_filter ip_tables
+> x_tables joydev rtsx_pci_ms rtsx_pci_sdmmc mmc_core memstick iTCO_wdt
+> iTCO_vendor_support x86_pkg_temp_thermal
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0intel_powerclamp intel_rapl
+> iosf_mbi coretemp kvm_intel kvm crct10dif_pclmul crc32_pclmul evdev
+> deflate ctr psmouse serio_raw twofish_generic pcspkr btusb btrtl
+> btbcm btintel bluetooth crc16 uvcvideo videobuf2_vmalloc
+> videobuf2_memops videobuf2_core v4l2_common videodev media
+> twofish_avx_x86_64 twofish_x86_64_3way twofish_x86_64 twofish_common
+> sg arc4 camellia_generic iwldvm mac80211 iwlwifi cfg80211 rtsx_pci
+> rfkill camellia_aesni_avx_x86_64 snd_hda_codec_hdmi tpm_tis tpm
+> 8250_fintek camellia_x86_64 snd_hda_codec_realtek
+> snd_hda_codec_generic processor battery fujitsu_laptop i2c_i801 ac
+> lpc_ich serpent_avx_x86_64 mfd_core snd_hda_intel snd_hda_codec
+> snd_hda_core snd_hwdep snd_pcm shpchp snd_timer e1000e snd soundcore
+> i915 ptp pps_core video button drm_kms_helper drm thermal_sys mei_me
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0i2c_algo_bit mei
+> serpent_sse2_x86_64 xts serpent_generic blowfish_generic
+> blowfish_x86_64 blowfish_common cast5_avx_x86_64 cast5_generic
+> cast_common des_generic cbc cmac xcbc rmd160 sha512_ssse3
+> sha512_generic sha256_ssse3 sha256_generic hmac crypto_null af_key
+> xfrm_algo loop parport_pc ppdev lp parport autofs4 dm_crypt dm_mod
+> md_mod btrfs xor raid6_pq uhci_hcd usb_storage sd_mod crc32c_intel
+> aesni_intel aes_x86_64 glue_helper ahci lrw gf128mul ablk_helper
+> libahci cryptd libata ehci_pci xhci_pci ehci_hcd scsi_mod xhci_hcd
+> usbcore usb_common
+> Nov 27 01:52:36 heisenberg kernel: CPU: 7 PID: 18086 Comm: btrfs Not
+> tainted 4.2.0-1-amd64 #1 Debian 4.2.6-1
+> Nov 27 01:52:36 heisenberg kernel: Hardware name: FUJITSU LIFEBOOK
+> E782/FJNB23E, BIOS Version 1.11 05/24/2012
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A00000000000000000 ffffffffa0=
+2e6260
+> ffffffff8154e2f6 0000000000000000
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0ffffffff8106e5b1 ffff880235=
+a3c42c
+> 00007ffd3d3796c0 ffff8802f0e5c000
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A00000000000000004 ffff880105=
+43c500
+> ffffffffa02d2d81 ffff88041e5ebb00
+> Nov 27 01:52:36 heisenberg kernel: Call Trace:
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8154e2f6>] ?
+> dump_stack+0x40/0x50
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8106e5b1>] ?
+> warn_slowpath_common+0x81/0xb0
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa02d2d81>] ?
+> btrfs_ioctl_send+0x661/0x1120 [btrfs]
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8115a8c4>] ?
+> __alloc_pages_nodemask+0x194/0x9e0
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffffa029bfac>] ?
+> btrfs_ioctl+0x26c/0x2a10 [btrfs]
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81098e5a>] ?
+> sched_move_task+0xca/0x1d0
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff812c50ee>] ?
+> cpumask_next_and+0x2e/0x50
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8109b7cf>] ?
+> select_task_rq_fair+0x23f/0x5c0
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8109ef87>] ?
+> enqueue_task_fair+0x387/0x1120
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8101c814>] ?
+> native_sched_clock+0x24/0x80
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8101c875>] ?
+> sched_clock+0x5/0x10
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff811cf2c3>] ?
+> do_vfs_ioctl+0x2c3/0x4a0
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff8106d9f6>] ?
+> _do_fork+0x146/0x3a0
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff811cf516>] ?
+> SyS_ioctl+0x76/0x90
+> Nov 27 01:52:36 heisenberg kernel:=C2=A0=C2=A0[<ffffffff81553a32>] ?
+> system_call_fast_compare_end+0xc/0x6b
+> Nov 27 01:52:36 heisenberg kernel: ---[ end trace f5fa91e2672eead0 ]-
+> --
+--=-WyZKnLHMVJhJairuAY9z
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -210,19 +233,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA0Mzkw
-MlowTwYJKoZIhvcNAQkEMUIEQKU6c64YXUQukzYybFAPXgyZ5rnKwmwWjq7BSGk3RAmagG90c4Yj
-70nZv9C/cDuR5d55bLURkXJNXye7ynytfsAwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIwOTA0NDEx
+MlowTwYJKoZIhvcNAQkEMUIEQEOtuHbBW5C7babNnEMtelxqsGU+S8yd6oUfJFW2AcwBDARA83s3
+93j5IGhe2HJHT3NfbA9D3da8Rv1vMlh4HPkwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCcjQEKZcKyP6cAEOtyz36kQAI02XPm
-47BlLsTjJyDAYF0TL+Y3jhD2Xd8hENhuTM8bHCXSphln8Oc2q0ZifvuDxbKxP8TbFaLhIKoJ9DG9
-vb+akuYE4XXiUgyNQ7NNihO2uLN4oELrZ6ZDWMtXBfeBX61jFe0LioaLqkIpOYC8i7IARbddHVZI
-Q7kb6bfLT/+F/nL882CE7+ipNSP4uR/Fh/zntix/t552Q6WhuHrO6M5PYK9Axd3b6FoGpXG60TEX
-d4I0tbnqASLCzrknRddm71dakVrvOjo4Jt5GmXJOsNUnyJwcYF7TFbsSRD2oQeaRgiPmr5JLriIX
-henWazCHAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBlHIxvf680kfexlIkubAmXftnerMA4
+xyqhlbJ6xjZnd0Zyc6HuPe374mUIXDg7ECN4/yVZFMKmVtw+9ftmKKTe2qYH8O20fD2wAdxBAh8Q
+uDyMt5RF5Ij5LOkw8PbKZYDxOwtkleaDQND5jmKQ4/kAgc1gQ8hgsmLpH46zy82faK3FBQp3WzG/
+RcI+KGgkiiV6x+0fi9GJdGhYwrCieU5yNEnXQ1Xqgiq5yvSq+a+aToQgpZPUNcQqvlvWmaICXjh8
+xjWpCv6tpA8t8nYsi/GXLeP8L+xCD1tM5T4VBqMB1A3cB2uIEEl/jpJG6Eoo4t3lcphJ29Va2aOE
+ZWBKjnQZAAAAAAAA
 
 
---=-/iGNJ1VnRwMqHb72tXJc--
+--=-WyZKnLHMVJhJairuAY9z--
 

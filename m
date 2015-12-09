@@ -1,48 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from vwp7940.webpack.hosteurope.de ([178.77.87.119]:43669 "EHLO
-	vwp7940.webpack.hosteurope.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751261AbbLIWFG (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Dec 2015 17:05:06 -0500
-Message-ID: <5668A1CB.1020007@anonym.com>
-Date: Wed, 09 Dec 2015 22:48:59 +0100
-From: "S.J." <sorry@anonym.com>
+Received: from m.nv-systems.net ([176.9.99.115]:49091 "EHLO m.nv-systems.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1754612AbbLIXO4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Dec 2015 18:14:56 -0500
+Subject: Re: kernel BUG at fs/btrfs/extent-tree.c:1833! [btrfs]
+To: fdmanana@gmail.com,
+        =?UTF-8?B?0JzQuNGF0LDQuNC7INCT0LDQstGA0LjQu9C+0LI=?=
+	<mikhail.v.gavrilov@gmail.com>
+References: <CABXGCsMgw7NH5VzPvOVKrkd03CH7Dmjhg1xizwhknLDg9Vk2AA@mail.gmail.com>
+ <CAL3q7H5kiPdR0N2k=q92MFS-gcCE4A==yB2TLBgze43haARvaQ@mail.gmail.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: Gerald Hopf <gerald.hopf@nv-systems.net>
+Message-ID: <5668B3BE.60500@nv-systems.net>
+Date: Thu, 10 Dec 2015 00:05:34 +0100
 MIME-Version: 1.0
-To: linux-btrfs@vger.kernel.org
-Subject: Re: attacking btrfs filesystems via UUID collisions?
-References: <20151204120529.37E47D5A28@emkei.cz>	 <20151204130758.GR8775@carfax.org.uk>	 <1449286104.18841.14.camel@scientia.net>	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>	 <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com> <1449639588.7835.2.camel@scientia.net>
-In-Reply-To: <1449639588.7835.2.camel@scientia.net>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+In-Reply-To: <CAL3q7H5kiPdR0N2k=q92MFS-gcCE4A==yB2TLBgze43haARvaQ@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> 1. better practices, we really need to tell users, and documentation
-> writers, that using dd (or variant) to copy Btrfs volumes has a
-> consequence and should not be used to make copies.
 
-> 2. Btrfs needs a better way to make a copy of a volume when there are
-> snapshots (including even rw snapshots); e.g. permit send/receive to
-> work on rw snapshots if the fs is ro mounted; e.g. a way to do
-> "recursive" send/receive.
+>> kernel BUG at fs/btrfs/extent-tree.c:1833!
+> We got this fixed in 4.4-rc1:
+>
+> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=2c3cf7d5f6105bb957df125dfce61d4483b8742d
+> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=b06c4bf5c874a57254b197f53ddf588e7a24a2bf
+>
+> Patches were tagged for stable releases but weren't yet backported to
+> 4.2 and 4.3 (the issue affects all 4.2 and 4.3 releases at the
+> moment).
+>
+> cheers
+Could someone please backport this important fix and merge it into the 
+stable kernels?
+Today Kernel 4.2.7 and 4.3.1 were finally released and as far as I can 
+see in the changelog no btrfs fixes were included in these updates.
+=> still can't do balance without crashing the system
 
-> 3. Some way to fail gracefully, when there's ambiguity that cannot be
-> resolved. Once there are duplicate devs (dd or lvm snapshots, etc)
-> then there's simply no way to resolve the ambiguity automatically, and
-> the volume should just refuse to rw mount until the user resolves the
-> ambiguity. I think it's OK to fallback to ro mount (maybe) by default
-> in such a case rather than totally fail to mount.
-
-About 3:
-RO fallback for the second device/partitions is not good.
-It won't stop confusing the two partitions, and even if both are RO,
-thinking it's ok to read and then reading the wrong data is bad.
-
-About 1 and 2 ... if 3 gets fulfilled, why?
-DD itself is not a problem "if" the UUID is changed after it
-(which is a command as simple as dd), and if someone doesn't
-know that, he/she will notice when mount refuses to work
-because UUID duplicate.
-
-
-PS: Kudos to C.A. Mitterer for discovering that problem
+Gerald
 

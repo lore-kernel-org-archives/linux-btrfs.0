@@ -1,539 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:45365 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751377AbbLIFpv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Dec 2015 00:45:51 -0500
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs: poor
- performance on deleting many large files?)
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
- <56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
- <pan$3c463$5dc6ffa1$704b2ca2$141e65cc@cox.net>
-Message-ID: <5667C00B.4010100@scientia.net>
-Date: Wed, 9 Dec 2015 06:45:47 +0100
-MIME-Version: 1.0
-In-Reply-To: <pan$3c463$5dc6ffa1$704b2ca2$141e65cc@cox.net>
-Content-Type: text/plain; charset=utf-8
+Received: from mailout91.mail01.mtsvc.net ([216.70.64.178]:36762 "EHLO
+	n56.mail01.mtsvc.net" rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1750814AbbLIGaK (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 9 Dec 2015 01:30:10 -0500
+Message-ID: <1449642609.20669.7.camel@love2code.net>
+Subject: Re: Missing half of available space (resend)
+From: David Hampton <mailinglists@love2code.net>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Wed, 09 Dec 2015 01:30:09 -0500
+In-Reply-To: <CAJCQCtQrfRxrvmGT2ZA4WM6YLN5oy-+_k+NmDpv475SAtCoVNw@mail.gmail.com>
+References: <1449637341.20669.0.camel@love2code.net>
+	 <CAJCQCtQrfRxrvmGT2ZA4WM6YLN5oy-+_k+NmDpv475SAtCoVNw@mail.gmail.com>
+Content-Type: text/plain; charset="UTF-8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-11-27 00:08, Duncan wrote:
-> Christoph Anton Mitterer posted on Thu, 26 Nov 2015 01:23:59 +0100 as
-> excerpted:
->> 1) AFAIU, the fragmentation problem exists especially for those files
->> that see many random writes, especially, but not limited to, big files.
->> Now that databases and VMs are affected by this, is probably broadly
->> known in the meantime (well at least by people on that list).
->> But I'd guess there are n other cases where such IO patterns can happen
->> which one simply never notices, while the btrfs continues to degrade.
+On Tue, 2015-12-08 at 22:27 -0700, Chris Murphy wrote:
+> On Tue, Dec 8, 2015 at 10:02 PM, David Hampton
+> <mailinglists@love2code.net> wrote:
+> > The
+> > 'btrfs fi df' command consistently shows a total size of around
+> > 3TB, and says that space is almost completely full.
 > 
-> The two other known cases are:
+> and
 > 
-> 1) Bittorrent download files, where the full file size is preallocated 
-> (and I think fsynced), then the torrent client downloads into it a chunk 
-> at a time.
-Okay, sounds obvious.
-
-
-> The more general case would be any time a file of some size is 
-> preallocated and then written into more or less randomly, the problem 
-> being the preallocation, which on traditional rewrite-in-place 
-> filesystems helps avoid fragmentation (as well as ensuring space to save 
-> the full file), but on COW-based filesystems like btrfs, triggers exactly 
-> the fragmentation it was trying to avoid.
-Is it really just the case when the file storage *is* actually fully
-pre-allocated?
-Cause that wouldn't (necessarily) be the case for e.g. VM images (e.g.
-qcow2, or raw images when these are sparse files).
-Or is it rather any case where, in larger file, many random (file
-internal) writes occur?
-
-
-> arranging to 
-> have the client write into a dir with the nocow attribute set, so newly 
-> created torrent files inherit it and do rewrite-in-place, is highly 
-> recommended.
-At the IMHO pretty high expense of loosing the checksumming :-(
-Basically loosing half of the main functionalities that make btrfs
-interesting for me.
-
-
-> It's also worth noting that once the download is complete, the files 
-> aren't going to be rewritten any further, and thus can be moved out of 
-> the nocow-set download dir and treated normally.
-Sure... but this requires manual intervention.
-
-For databases, will e.g. the vacuuming maintenance tasks solve the
-fragmentation issues (cause I guess at least when doing full vacuuming,
-it will rewrite the files).
-
-
-> The problem is much reduced in newer systemd, which is btrfs aware and in 
-> fact uses btrfs-specific features such as subvolumes in a number of cases 
-> (creating subvolumes rather than directories where it makes sense in some 
-> shipped tmpfiles.d config files, for instance), if it's running on 
-> btrfs.
-Hmm doesn't seem really good to me if systemd would do that, cause it
-then excludes any such files from being snapshot.
-
-
-> For the journal, I /think/ (see the next paragraph) that it now 
-> sets the journal files nocow, and puts them in a dedicated subvolume so 
-> snapshots of the parent won't snapshot the journals, thereby helping to 
-> avoid the snapshot-triggered cow1 issue.
-The same here, kinda disturbing if systemd would decide that on it's
-own, i.e. excluding files from being checksum protected...
-
-
->> So is there any general approach towards this?
-> The general case is that for normal desktop users, it doesn't tend to be 
-> a problem, as they don't do either large VMs or large databases,
-Well depends a bit on how one defines the "normal desktop user",... for
-e.g. developers or more "power users" it's probably not so unlikely that
-they do run local VMs for testing or whatever.
-
-> and 
-> small ones such as the sqlite files generated by firefox and various 
-> email clients are handled quite well by autodefrag, with that general 
-> desktop usage being its primary target.
-Which is however not yet the default...
-
-
-> For server usage and the more technically inclined workstation users who 
-> are running VMs and larger databases, the general feeling seems to be 
-> that those adminning such systems are, or should be, technically inclined 
-> enough to do their research and know when measures such as nocow and 
-> limited snapshotting along with manual defrags where necessary, are 
-> called for.
-mhh... well it's perhaps simple to expect that knowledge for few things
-like VMs, DBs and that like... but there are countless of software
-systems, many of them being more or less like a black box, at least with
-respect to their internals.
-
-It feels a bit, if there should be some tools provided by btrfs, which
-tell the users which files are likely problematic and should be nodatacow'ed
-
-
-> And if they don't originally, they find out when they start 
-> researching why performance isn't what they expected and what to do about 
-> it. =:^)
-Which can take quite a while to be found out...
-
-
->> And what are the actual possible consequences? Is it just that fs gets
->> slower (due to the fragmentation) or may I even run into other issues to
->> the point the space is eaten up or the fs becomes basically unusable?
-> It's primarily a performance issue, tho in severe cases it can also be a 
-> scaling issue, to the point that maintenance tasks such as balance take 
-> much longer than they should and can become impractical to run
-hmm so it could in principle also affect other files and not just the
-fragmented ones, right?!
-
-Are there any problems caused by all this with respect to free space
-fragmentation? And what exactly are the consequences of free space
-fragmentation? ;)
-
-
-> (where the 
-> alternative starting over with a new filesystem and restoring from 
-> backups is faster)
-Which is not always feasible :-/ .. and shouldn't be necessary for a fs.
-
-
-Well I probably miss some real world experience here, i.e. whether these
-issues are really problematic in practice or rather not, but that sounds
-all quite worrisome..
-
-
->> This is especially important for me, because for some VMs and even DBs I
->> wouldn't want to use nodatacow, because I want to have the checksumming.
->> (i.e. those cases where data integrity is much more important than
->> security)
-> In general, nocow and the resulting loss of checksumming on these files 
-> isn't nearly the problem that it might seem at first glance.  Why?  
-> Because think about it, the applications using these files have had to be 
-> usable on more traditional filesystems without filesystem-level 
-> checksumming for decades, so the ones where data integrity is absolutely 
-> vital have tended to develop their own data integrity assurance 
-> mechanisms.  They really had no choice, as if they hadn't, they'd have 
-> been too unstable for the tasks at hand, and something else would have 
-> come along that was more stable and thus more suited to the task at hand.
-Hmm I don't share that view... take DBs, these are typically not
-checksummed simply for performance reasons... so if you had block
-corruptions it would have been easy the case that simply a value was
-changed, which would go through unnoticed.
-
-IIRC, Ted Tso once mentioned that some proposals for checksumming on
-ext4 had been made (or that even some work was done on that)... so I
-guess it must be doable even without CoW.
-As said previously,... not having checksumming, even when "just" in
-cases like VMs, DBs, etc. seems like a very big loss to me. :(
-
-
-> In fact, while I've seen no reports of this recently, a few years ago 
-> there were a number of reported cases where the best explanation was that 
-> after a crash, the btrfs level file integrity and the application level 
-> file integrity apparently clashed, with the btrfs commit points and the 
-> application's own commit points out of sync, so that while btrfs said the 
-> file was fine, apparently parts of it were from before an application 
-> level checkpoint while other parts of it were after, so the application 
-> itself rejected the file, even tho the btrfs checksums matched.
-mhh I remember some cases, where these programs didn't properly sync
-their data while already writing their own journals or similar
-statuses... but that's simply bugs in these applications.
-
-What fs level checksumming should mainly protect, AFAIU, is any
-corruptions on the media or bus.
-
-
-> As I said, that was a few years ago, and I think btrfs' barrier handling 
-> and fsync log rewriting are better now, such that I've not seen such 
-> reports in quite awhile.  But something was definitely happening at the 
-> time, and I think in at least some cases the application alone would have 
-> handled things better, as then it could have detected the damage and 
-> potentially replayed its own log or restored to a previous checkpoint, 
-> the exact same thing it did on filesystems without the integrity 
-> protections btrfs has.
-Hmm I think dpkg was one case, IIRC,... but again... this is nothing
-that would apply to big VM images, where there is no protection from the
-application... and nothing that protects against single byte errors,
-which merely change a value and which even DBs with their journal
-wouldn't notice.
-
-
-> In 
-> many cases they'd simply process the corrupt data and keep on going,
-Which may be much worse than if they'd crash at least...
-
-> while in others they'd crash, but it wouldn't be a big deal, because it'd 
-> be one corrupt jpeg or a few seconds of garbage in an mp3 or mpeg, and if 
-> the one app couldn't handle it without crashing, another would.
-That may apply for desktop applications, where wrong data is usually not
-that critical,... but if you do scientific computation than these kinds
-of unnoticed errors may easily be the worst.
-
-
-> Plus, the admins running the big, important apps, are much more likely to 
-> appreciate the value of the admin's rule of backups
-Backups don't help in the case of silent and single block corruptions...
-your data gets just wrong and you continue to use it, which is why
-overall checksumming (including on every read) would be so important.
-
-
-> Because checksumming doesn't help you if the filesystem as a whole goes 
-> bad, or if the physical devices hosting it do so, while backups do!  (And 
-> the same of course applies to snapshotting, tho they can help with the 
-> generally worst risk, as any admin worth their salt knows, the admin's 
-> own fat-fingering!)
-Sure, but these kinds of incidents are rather harmless (given one has
-done proper backuping) as they're more or less immediately noticed.
-
-
->> 2) Why does notdatacow imply nodatasum and can that ever be decoupled?
 > 
-> Hugo covered that.  It's a race issue.  With data rewritten in-place, 
-> it's no longer possible to atomically update both the data and its 
-> checksum at the same time, and if there's a crash between updates of the 
-> two or while one is actually being written...
+> > root@selene:~# btrfs fi df /video
+> > Data, RAID6: total=3.15TiB, used=3.11TiB
 > 
-> Which is precisely why checksummed data integrity isn't more commonly 
-> implemented; on overwrite-in-place, it's simply not race free, so copy-on-
-> write is what actually makes it possible.  Therefore, disable copy-on-
-> write and by definition you must disable checksumming as well.
-I've answered already at Hugo's reply,... so see there.
-
-Plus, as said above, I think to remember that something was in the works
-for ext4... so it must be somehow possible, even if at the cost that
-it's ambiguous in cash of crashes.
-
-
-> Snapshots too are cow-based, as they lock in the existing version where 
-> it's at.  By virtue of necessity, then, first-writes to a block after a 
-> snapshot cow it, that being a necessary exception to nocow.  However, the 
-> file retains its nocow attribute, and further writes to the new block are 
-> now done in-place... until it to is locked in place by another snapshot.
-Maybe that (and further exceptions, if any) should go to the description
-of nodatacow, also explaining the possible implications (like the
-fragmentation that will likely then occur to the not snapshotted file),
-
-
->> 4) Duncan mentioned that defrag (and I guess that's also for auto-
->> defrag) isn't ref-link aware...
->> Isn't that somehow a complete showstopper?
->>
->> As soon as one uses snapshot, and would defrag or auto defrag any of
->> them, space usage would just explode, perhaps to the extent of ENOSPC,
->> and rendering the fs effectively useless.
->>
->> That sounds to me like, either I can't use ref-links, which are crucial
->> not only to snapshots but every file I copy with cp --reflink auto ...
->> or I can't defrag... which however will sooner or later cause quite some
->> fragmentation issues on btrfs?
+> The "total=3.15TiB" means "there's a total of 3.15TiB allocated for
+> data chunks using raid6 profile" and of that 3.11TiB is used.
 > 
-> Hugo answered this one too, tho I wasn't aware that autodefrag was 
-> snapshot-aware.
-Is there some "definite" resource on that? Just in case Hugo may have
-recalled this incorrectly?
+> btrfs fi df doesn't ever show how much is free or available.
 
+I think I get it.  The numbers in the 'df' command don't show the total
+number of chunks that exist, only the subset of those chunks that have
+been allocated to something.
 
-> But even without snapshot awareness, with an appropriate program of 
-> snapshot thinning (ideally no more than 250-ish snapshots per subvolume, 
-> which easily covers a year's worth of snapshots even starting at 
-> something like half-hourly, if they're thinned properly as well; 250 per 
-> subvolume lets you cover 8 subvolumes with a 2000 snapshot total, a 
-> reasonable cap that doesn't trigger severe scaling issues) defrag 
-> shouldn't be /too/ bad.
->
-> Most files aren't actually modified that much, so the number of
-> defrag-triggered copies wouldn't be that high.
-Hmm I thought that would only depend on how badly the files are
-fragmented when being snapshot.
-If I make a snapshot, while there are many fragments, and then defrag
-one of them, everything that gets defragmented would be rewritten,
-loosing any ref-links, while files that aren't defragmented would retain
-them.
+> You can get an estimate of that by using 'btrfs fi usage' instead.
 
-So I'd have thought that whether running into scaling issues, depends
-fully on the respective fs.
+Seems I need to upgrade my tools.  That command was added in 3.18 and I
+only have the 3.12 tools.
 
+> > root@selene:~# df -h /video
+> > Filesystem      Size  Used Avail Use% Mounted on
+> > /dev/vda         15T  3.2T  8.3T  28% /video
+> 
+> That's about right although it seems it's slightly overestimating the
+> available free space.
 
-So concluding:
-- auto-defrag is ref-link aware, any generally suggested to be enabled
-  it should also have no issues with compression
-- non-auto-defrag may become reflink aware again in the future(?)
-  solving the problems that arise right now from reflink
-  copies/snapshots and the need to defragment for preformance reasons
-  (in those cases where autodefrag doesn't work well)
-- at least in my opinion, not having checksumming is a very big loss,
-  by far not circumvented in most cases at the application level
+Thanks.  Make me feel a lot better.
+
+David
 
 
 
-> Autodefrag is recommended for, and indeed targeted at, general desktop 
-> use, where internal-rewrite-pattern database, etc, files tend to be 
-> relatively small, quarter to half gig at the largest.
-Hmm and what about mixed-use systems,... which have both, desktop and
-server like IO patterns?
-
-
-> btrfs defrag works fine with compression and in fact it even has an 
-> option to compress as it goes, thus allowing one to use it to compress 
-> files later, if you for instance weren't running the compress mount 
-> option (or perhaps toggled between zlib and lzo based compression) at the 
-> time the file was originally written.
-btw: I think documentation (at least the manpage) doesn't tell whether
-btrfs defragment -c XX will work on files which aren't fragmented.
-
-
-> FWIW, I believe the intent remains to reenable snapshot-aware-defrag 
-> sometime in the future, after the various scaling issues including 
-> quotas, have been dealt with.  When the choice is between a defrag taking 
-> a half hour but not being snapshot aware, and taking perhaps literally 
-> /weeks/, because the scaling issues really were that bad... an actually 
-> practical defrag, even if it broke snapshot reflinks, was *clearly* 
-> preferred to one that was for all practical purposes too badly broken to 
-> actually use, because it scaled so badly it took weeks to do what should 
-> have been a half-hour job.
-Phew... "clearly" may be rather something that differs from person to
-person.
-- A defrag that doesn't work due to scaling issues - well one can
-hopefully abort it and it's as if there simply was no defragmentation.
-- A defrag which breaks up the ref-links, may eat up vast amounts of
-storage that should not need to be "wasted" like this, and you'll never
-get the ref-links back (unless perhaps with dedup).
-
-Especially since the reflink stuff is one of the core parts of btrfs, I
-wouldn't be so sure that it's better to silently break up the reflinks
-(end users likely have no idea on what we discuss here, and it doesn't
-seem to be mentioned in the manpages), instead of simply have a not
-working defragmentation.
-
-
-> The only exception to that 
-> would be if people simply give up on quotas entirely, and there's enough 
-> demand for that feature that giving up on them would be a *BIG* hit to 
-> btrfs as the assumed ext* successor, so unless they come up against a 
-> wall and find quotas simply can't be done in a reliable and scalable way 
-> on btrfs, the feature /will/ be there eventually, and then I think 
-> snapshot-aware-defrag work can resume.
-Well, sounds like a good plan, dropping quotas would surely be bad for
-many people... as are however several other things (as the
-aforementioned loss of checksumming).
-
-
-> I actually don't know what the effect of defrag, with or without 
-> recompression, is on same-subvolume reflinks.  If I were to guess I'd say 
-> it breaks them too, but I don't know.  If I needed to know I'd probably 
-> test it to see... or ask.
-How would you find out? Somehow via space usage?
-
-
-> It _is_ worth noting, however, lest there be any misconceptions, that 
-> regardless of the number of reflinks sharing an extent between them, a 
-> single defrag on a single file will only make, maximum, a single 
-> additional copy.  It's not like it makes another copy for each of the 
-> reflinks to it, unless you defrag each of those reflinks individually.
-Yes. that's what I'd have expected.
-However when one runs e.g. btrfs fi defrag /snapshots/ one would get n
-additional copies (one per snapshot), in the worst case.
-
-
->> 7) How das free-space defragmentation happen (or is there even such a
->> thing)?
->> For example, when I have my big qemu images, *not* using nodatacow, and
->> I copy the image e.g. with qemu-img old.img new.img ... and delete the
->> old then.
->> Then I'd expect that the new.img is more or less not fragmented,... but
->> will my free space (from the removed old.img) still be completely messed
->> up sooner or later driving me into problems?
-
-> and having to manually run a balance
-> -dusage=0
-btw: shouldn't it do that particular one automatically from time to
-time? Or is that actually the case now, by what you mentioned further
-below around 3.17?
-
-
-> So at some point, defrag will need at least partially rewritten to be at 
-> least somewhat more greedy in its new data chunk allocation.
-Just wanted to ask why defrag doesn't simply allocate some bigger chunks
-of data in advance... ;)
-
->  I'm not a 
-> coder so I can't evaluate how big a rewrite that'll be, but with a bit of 
-> luck, it's more like a few line patch than a rewrite.  Because if it's a 
-> rewrite, then it's likely to wait until they can try to address the 
-> snapshot-aware-defrag issue again at the same time, and it's anyone's 
-> guess when that'll be, but probably more like years than months.
-Years? Ok... what a pity...
-
-
-> Meanwhile, I don't know that anybody has tried this yet, and with both 
-> compression and autodefrag on here it's not easy for me to try it, but in 
-> theory anyway, if defrag isn't working particularly well, it should be 
-> possible to truncate-create a number of GiB-sized files, sync (or fsync 
-> each one individually) so they're written out to storage, then truncate 
-> each file down to a few bytes, something 0 < size < 4096 bytes (or page 
-> size on archs where it's not 4096 by default), so they take only a single 
-> block of that original 1 GiB allocation, and sync again.
-a) wouldn't truncate create a sparse file? And would btrfs then really
-allocate chunks for that (would sound quite strange to me), which I
-guess is your goal here?
-
-b) How can one find out wheter defragmentation worked well? I guess with
-filefrag in the compress=no case an not at all in any other?
-
-
->> Are there for example any general recommendations what to regularly to
->> do keep the fs in a clean and proper shape (and I don't count "start
->> with a fresh one and copy the data over" as a valid way).
-
-> So "start with a fresh btrfs and copy the data over", is indeed part of 
-> my regular backups routine here
-[The following being more general thoughts/comments, not specifically a
-reply to you ;-)]:
-Well apart from several other more severe things I've mentioned before
-(plus the IMHO quite severe issues with UUID collisions and possible
-security leaks) I can only emphasize this once more:
-It's IMHO not acceptable for a fs when it would more or less require
-starting with a fresh fs every now and then - at least not when one
-wants to use it in production mode.
-
-Obviously, I don't demand that one can do in-place conversion when new
-features get in (like skinny metadata)... I'm rather talking about that
-copying data off, starting with a fresh fs and copying data back cannot
-be considered (more or less) normal maintenance, e.g. to fight severe
-forms of fragmentation or so
-
-While this is wouldn't be a problem for single desktop machines or
-smaller servers it would IMHO be a showstopper for big storage Tiers
-(and I'm running one).
-Take the LHC Computing Grid for example,...we manage some 100 PiB,
-probably more in the meantime, in many research centres worldwide, much
-of that being on disk and at least some parts of it with no real backups
-anywhere. This may sound stupid, but in reality, one has funding
-constraints and many other reasons that may keep one from having
-everything twice.
-This should especially demonstrate that not everyone has e.g. twice his
-actually used storage just to move the data away, recreate the
-filesystems and move it back (not to talk about any larger downtimes
-that would result from that).
-
-For quite a while I was thinking about productively using btrfs at our
-local Tier-2 in Munich, but then decided against:
-- the regular kernels from our current distro would have been rather too
-old (and btrfs in them probably not yet stable enough)
-- and even with more current kernels (I decided that around 4.0), btrfs
-RAID6 (as well as MD RAID, with either btrfs or ext4) was slower than
-ext4 on hardware RAID.
-Not in all IO cases, but in the majority of those IO patterns that we
-have (which is typically write once+read many, never append, sequential
-read, random read and vector read).
-
-On HW RAID, btrfs and ext4 were rather close... yet I decided against
-btrfs for now, as it feels like it needs much more maintenance (in the
-form of human interaction, digging out what actually causes the problems
-and so on)... and as one of the core guys in storage support here (at
-least in Germany), I'd probably recommend other sites the same.
-
-So apart from these bigger issues, some of which are possibly rather a
-matter of time to be solved during development (like snapshot aware
-defrag), there are IMHO also some other areas which make it difficult to
-use btrfs at large.
-The fact alone that you guys need to explain here over many pages shows
-that. And not every group/organisation/company is big enough to simply
-hire their own btrfs developers to get first grade support ;)
-
-Part of that is of course my own inexperience with btrfs (at least to
-the extent that I'd entrust it with our ~2PiB data),... but even during
-the short time that I've been more "regularly" on the list here, I read
-about many people having issues (with fragmentation mostly ^^) and
-stumbled over many places where I think documentation for
-admins/end-users would be missing... or over effects which are easily
-not clear at all for the non-power-btrfs-user but which may have
-tremendous effects (e.g. CoW+DBs/VMs/etc, atime+snapshots,
-defrag+snapshots, etc.). And while those are rather clear if one thinks
-thoroughly through the likely effects of CoW, others like what Marc
-Merlin recently reported (ENOSPC on scrub) aren't that easily clear at all.
-
-Long story short... this is all fine, when I just play around with my
-notebooks, or my few own servers,... at the worst case I start from
-scratch taking a backup... but when dealing with more systems or those
-where downtime/failure is a much bigger problem, then I think
-self-maintenance and documentation need to get better (especially for
-normal admins, and believe me, not every admin is willing to dig into
-the details of btrfs and understand "all" the curicumstances of
-fragmentation or issues with datacow/nodatacow.
-
-
-> But in terms of your question, the only things I do somewhat regularly 
-> are an occasional scrub (with btrfs raid1 precisely so I /do/ have a 
-> second copy available if one or the other fails checksum), and mostly 
-> because it's habit from before the automatic empty chunk delete code and 
-> my btrfs are all relatively small so the room for error is accordingly 
-> smaller, keeping an eye on the combination of btrfs fi sh and btrfs fi df, 
-> to see if I need to run a filtered balance.
-Speaking of which:
-Is there somewhere a good documentation of what exactly all this numbers
-of show, df, usage and so on tell?
-
-
-> Other than that, it's the usual simply keeping up with the backups
-Well but AFAIU it's much more, which I'd count towards maintenance:
-- enabling autodefrag
-- fighting fragmentation (by manually using svols with nodatacow in
-  those cases where necessary, which first need to be determined)
-- enabling notatime, especially when doing snapshots
-- sometimes (still?) the necessity to run balance to reorder block
-  groups,.. okay you said that empty ones are now automatically
-  reclaimed.
-
-
-
-Thank for all your detailed explanations, that helped a lot[0] :)
-Cheers,
-Chris.
-
-
-[0] The same goes obviously for Hugo :)

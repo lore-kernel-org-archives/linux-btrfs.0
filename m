@@ -1,111 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:41334 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:45391 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750933AbbLIL12 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 9 Dec 2015 06:27:28 -0500
+	id S1750933AbbLILym (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 9 Dec 2015 06:54:42 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a6cto-0008TF-In
-	for linux-btrfs@vger.kernel.org; Wed, 09 Dec 2015 12:27:13 +0100
+	id 1a6dKR-0005bN-5N
+	for linux-btrfs@vger.kernel.org; Wed, 09 Dec 2015 12:54:39 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 12:27:03 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 12:54:39 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 12:27:03 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 09 Dec 2015 12:54:39 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: subvols and parents - how?
-Date: Wed, 9 Dec 2015 11:26:52 +0000 (UTC)
-Message-ID: <pan$eafa8$b5da4379$31bc32b1$5bc4c9a0@cox.net>
-References: <1448340960.14125.51.camel@scientia.net>
-	<pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
-	<1448400350.21291.88.camel@scientia.net>
-	<pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
-	<1449635882.20578.2.camel@scientia.net>
+Subject: Re: attacking btrfs filesystems via UUID collisions? (was:
+ Subvolume UUID, data corruption?)
+Date: Wed, 9 Dec 2015 11:54:30 +0000 (UTC)
+Message-ID: <pan$44094$74e68a55$b1d01980$9156743e@cox.net>
+References: <20151204120529.37E47D5A28@emkei.cz>
+	<20151204130758.GR8775@carfax.org.uk>
+	<1449286104.18841.14.camel@scientia.net>
+	<pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
+	<1449366680.3183.37.camel@scientia.net>
+	<pan$ddc43$45608356$bf638c60$d3fc60dc@cox.net>
+	<1449637658.20578.23.camel@scientia.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer posted on Wed, 09 Dec 2015 05:38:02 +0100 as
+Christoph Anton Mitterer posted on Wed, 09 Dec 2015 06:07:38 +0100 as
 excerpted:
 
-> On Fri, 2015-11-27 at 02:02 +0000, Duncan wrote:
+> Well as I've said, getting that in via USB may be only one way.
+> We're already so far that GNOME&Co. automount devices when plugged...
 
->> Consider a setuid-root binary with a recently publicized but patched on
->> your system vuln.  But if you have root snapshots from before the patch
->> and those snapshots are nested below root, then they're always
->> accessible.  If the path to the vulnerable setuid is as user accessible
->> as it likely was in its original location, then anyone with login
->> access to the system is likely to be able to run it from the
->> snapshot... and will be able to get root due to the vuln.
-> 
-> Hmm good point... I think it would be great if you could add that
-> scenario somewhere to the documentation. :-)
+Ugh.  ... And many know that's the sort of thing that made MS so much of 
+a security headache, and want no part of it!
 
-FWIW, I (personally, not sure if that "you" was singular or plural) am 
-much more comfortable on the lists than on wikis, which I tend to treat 
-much as I did printed encyclopedias back in the day -- as great 
-references, but read-only from my perspective.  So while I know they can 
-be edited in theory, I just don't tend to get around to it, and don't 
-believe I've ever even gotten a wiki login, on /any/ wiki, let alone the 
-btrfs wiki.  But as you've likely noticed, I do find them great 
-references to read and to post links to. =:^)
+FWIW, of course gentoo allows far more configurability in this regard 
+than many distros, but no automount here, and while I don't do gnome 
+because I like my system configurable and they'd just as soon it be their 
+way or the highway (echoes of proprietaryware attitude there if you ask 
+me, but I'm very glad gnome's available for them to work on as otherwise 
+they'd be troubling kde and etc to go the same way), I do have a much 
+more limited than usual kde installed, without stuff like the device 
+notifier plasmoid or underlying infrastructure like udisks, as the only 
+things I want mounted are the things I've either configured to be mounted 
+via fstab, or the thing's I've manually mounted.  (FWIW, the semantic-
+desktop crap is opted out at build-time too, so it's not even there to 
+turn off at runtime, the best most distros allow for those not interested 
+in that stuff.  It meant dumping a few apps and some missing features in 
+others, but I don't have indexing taking gigs of space and major IO 
+bandwidth at the most inconvenient times (any time!) for nothing I'm 
+going to make use of, either!)
 
-So while I'm not opposed in principle to editing the wiki, in practice 
-I'm never going to do it.  I'll reply here with the info, and if it gets 
-to the wiki, it's almost certainly because someone else posted it there, 
-based on my post here, or not.
+> You said it's basically not fixable in btrfs:
+> It's absolutely clear that I'm no btrfs expert (or even developer), but
+> my poor man approach which I think I've written before doesn't seem so
+> impossible, does it?
+> 1) Don't simply "activate" btrfs devices that are found but rather:
+> 2) Check if there are other devices of the same fs UUID + device ID,
+> or more generally said: check if there are any collisions
+> 3) If there are, and some of them are already active,
+> continue to use them, don't activate the newly appeared ones
+> 4) If there are, and none of them are already active, refuse to
+> activate *any* of them unless the user manually instructs to do so
+> via device= like options.
 
-> Based on that one can easily think about more/similar examples... device
-> file that had too permissive modes set, and where snapshotted like
-> that... and so on.
+The underlying issue pretty much isn't fixable, but as Qu has suggested 
+on that subthread, there's ameliorations that can be done, basically in 
+line with your suggestions above, and you've indicated that you'd 
+consider that fixed, tho neither he nor I consider it "fixed", only 
+hidden to some extent.
 
-Exactly...
-
-> I think that's another example why it would be nice if btrfs had
-> something (per subvolume) like ext4's default mount options (I mean the
-> ones stored in the superblock).
-> 
-> Not only would it allow the userland tools to do things like "adding
-> notatime" [...] it would also allow to set things like nodev, noexec,
-> nosuid and that like on subvols... and again it would make the whole
-> thing practically usable with nested subvols.
-> 
-> Where would be the appropriate place to record that as a feature
-> request?
-> Simply here on the list?
-
-While the appropriate place would be on the wiki, where there's a page 
-for that (here, the request is likely to be lost to history, while on the 
-wiki it's in a nice list that both devs and other requesters can look at, 
-a year, five years, a decade... into the future), in this case...
-
-There's already a framework for it and a limited implementation, tho only 
-a small subset of possible options are yet available.  The UI exposure is 
-as btrfs property (see the btrfs-property manpage), with the properties, 
-in general, implemented as extented attributes.
-
-You can browse what's currently available, but as I said, it's pretty 
-limited ATM, pretty much just enough to prove the concept and serve as a 
-placeholder for more to be added, later.
-
-Of course other informational and sometimes configurable bits are exposed 
-in the developing btrfs sysfs tree, which is where most of the work of 
-that sort has been focused recently.  But it too is somewhat immature and 
-developing, tho at this point it seems to be further along than 
-properties, partly because btrfs' own tools are using it at times.
-
-Basically, both properties and the sysfs interface demonstrate btrfs' 
-status as stabilizING and maturING, as that sort of thing really can't be 
-implemented until the basics have settled down far enough to form a 
-stable reference point, but not yet fully stable or mature, as both 
-interfaces are as yet not fully developed, with more to be added.
-
-But in both cases there's enough there to browse and get a reasonable 
-idea how things are being exposed and how they'll work once they are. =:^)
+Anyway, he's a dev and actively involved now, while I'm not a dev,
+so he can take it from there. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

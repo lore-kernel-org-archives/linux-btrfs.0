@@ -1,108 +1,225 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f176.google.com ([209.85.213.176]:34269 "EHLO
-	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751467AbbLJTmu (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:41217 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751658AbbLJVN3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Dec 2015 14:42:50 -0500
-Received: by mail-ig0-f176.google.com with SMTP id g19so25185847igv.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2015 11:42:49 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <5668A1CB.1020007@anonym.com>
-References: <20151204120529.37E47D5A28@emkei.cz>
-	<20151204130758.GR8775@carfax.org.uk>
-	<1449286104.18841.14.camel@scientia.net>
-	<pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
-	<1449366680.3183.37.camel@scientia.net>
-	<56644785.4090702@gmx.com>
-	<1449639588.7835.2.camel@scientia.net>
-	<5668A1CB.1020007@anonym.com>
-Date: Thu, 10 Dec 2015 12:42:49 -0700
-Message-ID: <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
-Subject: Re: attacking btrfs filesystems via UUID collisions?
-From: Chris Murphy <lists@colorremedies.com>
-To: "S.J." <sorry@anonym.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Thu, 10 Dec 2015 16:13:29 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id 083E45FBEB
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2015 21:13:27 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id w7fLj2mb1Rn8 for <linux-btrfs@vger.kernel.org>;
+	Thu, 10 Dec 2015 21:13:24 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2015 21:13:24 +0000 (UTC)
+Message-ID: <1449782004.7032.19.camel@scientia.net>
+Subject: Re: subvols, ro- and bind mounts - how?
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Thu, 10 Dec 2015 22:13:24 +0100
+In-Reply-To: <pan$eafa8$b5da4379$31bc32b1$5bc4c9a0@cox.net>
+References: <1448340960.14125.51.camel@scientia.net>
+	 <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
+	 <1448400350.21291.88.camel@scientia.net>
+	 <pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
+	 <1449635882.20578.2.camel@scientia.net>
+	 <pan$eafa8$b5da4379$31bc32b1$5bc4c9a0@cox.net>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-7ltuvltyo4YKojjU6KvJ"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 9, 2015 at 2:48 PM, S.J. <sorry@anonym.com> wrote:
->> 1. better practices, we really need to tell users, and documentation
->> writers, that using dd (or variant) to copy Btrfs volumes has a
->> consequence and should not be used to make copies.
->
->
->> 2. Btrfs needs a better way to make a copy of a volume when there are
->> snapshots (including even rw snapshots); e.g. permit send/receive to
->> work on rw snapshots if the fs is ro mounted; e.g. a way to do
->> "recursive" send/receive.
->
->
->> 3. Some way to fail gracefully, when there's ambiguity that cannot be
->> resolved. Once there are duplicate devs (dd or lvm snapshots, etc)
->> then there's simply no way to resolve the ambiguity automatically, and
->> the volume should just refuse to rw mount until the user resolves the
->> ambiguity. I think it's OK to fallback to ro mount (maybe) by default
->> in such a case rather than totally fail to mount.
->
->
-> About 3:
-> RO fallback for the second device/partitions is not good.
-> It won't stop confusing the two partitions, and even if both are RO,
-> thinking it's ok to read and then reading the wrong data is bad.
 
-That isn't what I'm suggesting. In the multiple device volume case
-where there are two exact (same UUID, same devid, same generation)
-instances of one of the block devices, Btrfs could randomly choose
-either one if it's an RO mount.
+--=-7ltuvltyo4YKojjU6KvJ
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-It may very well be safer to just refuse to mount it with an error
-indicating the ambiguity, and suggesting the user explicitly specify
-the devices to use to assemble the volume, and if the generations
-differ on those chosen devices, at least warn about that also.
+Hey.
 
+I'd have an additional question about subvols O:-)
 
->
-> About 1 and 2 ... if 3 gets fulfilled, why?
-> DD itself is not a problem "if" the UUID is changed after it
-> (which is a command as simple as dd), and if someone doesn't
-> know that, he/she will notice when mount refuses to work
-> because UUID duplicate.
+Given the following setup:
+5
+|
++--root (subvol, /)
+=C2=A0 =C2=A0+-- mnt (dir)
 
-dd is not a copy operation. It's creating a 2nd original. You don't
-end up with an original and a copy (or clone). A copy or clone has
-some distinguishing difference. Volume UUID is used throughout Btrfs
-metadata, it's not just in the superblocks. Changing volume UUID
-requires a rewrite of all metadata. This is inefficient for two
-reasons: one dd copies unused sectors; two it copies metadata that
-will have to be completely rewritten by btrfstune to change volume
-UUID; and also the subvolume UUIDs aren't changed, so it's an
-incomplete solution that has problems (see other threads).
+with the following done:
+- init 1
+- remount,ro / (i.e. the subvol root)
+- mount /dev/btrfs-device /mnt (i.e. mount the top subvol at /mnt)
 
-If your workflow requires making an exact copy (for the shelf or for
-an emergency) then dd might be OK. But most often it's used because
-it's been easy, not because it's a good practice. Note that Btrfs is
-not unique, XFS v5 does a very similar thing with volume UUID as well,
-and resulted in this change:
-http://oss.sgi.com/pipermail/xfs/2015-April/041267.html
+The following happened:
+- / was ro-mounted (obviously, at least one thing that I had expected
+=C2=A0 correctly)
+- /mnt was ro-mounted either (and the /mnt/root/ nested subvol then as
+=C2=A0 well).
+=C2=A0 =3D> why is /mnt (i.e. the top level subvol) mounted ro??
+=C2=A0 =3D> I would have expected that, since / (i.e. the subvol "root" is =
+ro
+=C2=A0 =C2=A0 =C2=A0mounted), it's also ro mounted as the nested subvol bel=
+ow 5, i.e.
+=C2=A0 =C2=A0 =C2=A0my naive thinking was in terms of logic:
+=C2=A0 =C2=A0 =C2=A0"/ mounted ro" =3D> "subvol root is mounted ro (everywh=
+ere)"
+=C2=A0 =C2=A0 =C2=A0 =C2=A0=3D> "thus /mnt/root/ is mounted ro as well"
 
-Using dd also means the volume is offline. For even medium sized
-multiple device volumes, it's a huge penalty. dd does not scale. Using
-dd means source and destination physical configurations are identical
-(at least the number of devices and the data and metadata profiles)
-which I may not want or need for a clone. Maybe I want a 1x6TB clone
-for the 5x1TB raid5 volume.
-
-Even for an online full volume copy/clone of a 5x1TB raid5, moving all
-subvolume+snapshots to a new 3x4TB raid5 (or whatever), that could be
-hundreds of subvolumes to btrfs send/receive. OK yeah script it. But
-that's tedious even assuming I have a script friendly subvolume naming
-convention to get the send/receive order correct, which I don't.
-
-Anyway, I think it's a nice to have now, that'll eventually be a need.
-And dd is just totally disqualified outside of very specific edge case
-need.
+However, the later doesn't seem to be true, cause then I did:
+- remount,rw /mnt
+=3D> now /mnt/*, including /mnt/root/* was rw moutned
 
 
--- 
-Chris Murphy
+
+So I guess my assumption of subvols behaving more or less as if they'd
+be a fs (and thus mounted at one place ro =3D> everywhere ro) is not
+true, is it?
+
+Do, ro,rw (and possibly others) instead only affect the respective
+mountpoint?
+And automatically any nested subvols of that mountpoint?
+
+So I could have basically:
+/mount-point1/subvol-a	; ro, noexec
+/mount-point2/subvol-a	; rw, compress=3Dyes
+/root			; rw, compress=3Dno
+/root/here/it/is/nested/subvol-a ; (no mountpoint)
+
+(with subvol-a being the same subvol)
+
+And when I write via mount-point1 I'd get an error, but via mount-
+point2 it works and in addition I get compression, while when writing
+via the /root mountpoint, where it is nested, I'd get the rw and
+compress=3Dno from the "parent" mountpoint /root
+
+
+Does that sounds correct?
+It seems to make sense actually, though it's a bit unfamiliar... if I'm
+not correctly wrong, than e.g. in terms of ext* I cannot have the same
+fs mounted with different settings,... of course I cannot have it
+mounted twice at all, but speaking of bind mounts.
+
+So I guess, that when I'd do --bind mounts instead, I actually do get
+the "old" behaviour, i.e. when the source is ro, then the --bind
+mount's target is also forcibly ro.
+
+
+Still, one unclear thing, why got /mnt mounted ro very above?
+
+
+
+Thanks,
+Chris.
+
+btw: Not sure if I just missed it, but I guess the above should be more
+or less documented, showing people that mounting subvols (especially
+when mounting the same several times, either directly or as nested
+subvol) has these implications.
+--=-7ltuvltyo4YKojjU6KvJ
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxMDIxMTMy
+NFowTwYJKoZIhvcNAQkEMUIEQO03Iev5beHvh9iOL0zI043rshUevXHQ6JvTAJT2a9ep7jASmh0v
+f8SdU1ZyoXB/NOvia6Mb5uQtxsTzh50bqbgwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAuVg+1TXskuXsjF8NcFXjXhndOhW+Z
+zqzUqMoAGc7tU5r0MCi5/EuFY3oRqrlqdUlK0KTg9DeXpaXSYKeZDEZxFkMHpWYE2OVjqBg2ZRT+
+yvknw/P2SVzws8S/ECFI/ocsN/VRHz9V1h4E62xPC0pChAodcyHAL3mpxQL5YlWMxcYZ0JYTFPp7
+04F1qfbb1xBk2f5KHXCK6iWJGiHomPaHtZ32ws9Q/mZ1Rv7qNOIxLi+GTdeaXSGu+XCuF8pYUbJd
+1IXVsh6tbExmCZYLXud8NVJLqOfrwaFZfeLDJ48V7oTyiAYmtCpI/CLddA0HXKmo8igSYBk1P39G
+a8KteXz5AAAAAAAA
+
+
+--=-7ltuvltyo4YKojjU6KvJ--
+

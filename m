@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:34704 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752116AbbLJRZt (ORCPT
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:33875 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752571AbbLJR0J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Dec 2015 12:25:49 -0500
+	Thu, 10 Dec 2015 12:26:09 -0500
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1448878620-16382-6-git-send-email-chandan@linux.vnet.ibm.com>
-References: <1448878620-16382-1-git-send-email-chandan@linux.vnet.ibm.com>
-	<1448878620-16382-6-git-send-email-chandan@linux.vnet.ibm.com>
-Date: Thu, 10 Dec 2015 17:25:48 +0000
-Message-ID: <CAL3q7H6b0wn-ZVgd5asJBD60OORgpijs0h-vkCr+cUKnTQ+DRw@mail.gmail.com>
-Subject: Re: [PATCH V2 5/5] Fix btrfs/096 to work on non-4k block sized filesystems
+In-Reply-To: <1448878644-16503-4-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
+	<1448878644-16503-4-git-send-email-chandan@linux.vnet.ibm.com>
+Date: Thu, 10 Dec 2015 17:26:09 +0000
+Message-ID: <CAL3q7H7f5xhfGvAF5DNxe5hfpaBg4mFLTfE+2xTOXACrVmJo0A@mail.gmail.com>
+Subject: Re: [PATCH 3/8] Fix btrfs/094 to work on non-4k block sized filesystems
 From: Filipe Manana <fdmanana@gmail.com>
 To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 Cc: fstests@vger.kernel.org,
@@ -33,99 +33,196 @@ Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Thanks!
 
 > ---
->  tests/btrfs/096     | 45 +++++++++++++++++++++++++--------------------
->  tests/btrfs/096.out | 15 +++++----------
->  2 files changed, 30 insertions(+), 30 deletions(-)
+>  tests/btrfs/094     | 75 ++++++++++++++++++++++++++++++-----------------------
+>  tests/btrfs/094.out | 71 ++++++++++++++++++++++++++++++++++++++++----------
+>  2 files changed, 100 insertions(+), 46 deletions(-)
 >
-> diff --git a/tests/btrfs/096 b/tests/btrfs/096
-> index f5b3a7f..896a209 100755
-> --- a/tests/btrfs/096
-> +++ b/tests/btrfs/096
-> @@ -51,30 +51,35 @@ rm -f $seqres.full
+> diff --git a/tests/btrfs/094 b/tests/btrfs/094
+> index 6f6cdeb..45f108d 100755
+> --- a/tests/btrfs/094
+> +++ b/tests/btrfs/094
+> @@ -67,36 +67,41 @@ mkdir $send_files_dir
 >  _scratch_mkfs >>$seqres.full 2>&1
->  _scratch_mount
+>  _scratch_mount "-o compress"
 >
-> -# Create our test files. File foo has the same 2K of data at offset 4K as file
-> -# bar has at its offset 0.
-> -$XFS_IO_PROG -f -s -c "pwrite -S 0xaa 0 4K" \
-> -               -c "pwrite -S 0xbb 4k 2K" \
-> -               -c "pwrite -S 0xcc 8K 4K" \
-> -               $SCRATCH_MNT/foo | _filter_xfs_io
+> -# Create the file with a single extent of 128K. This creates a metadata file
+> -# extent item with a data start offset of 0 and a logical length of 128K.
+> -$XFS_IO_PROG -f -c "pwrite -S 0xaa 64K 128K" -c "fsync" \
+> -       $SCRATCH_MNT/foo | _filter_xfs_io
+> -
+> -# Now rewrite the range 64K to 112K of our file. This will make the inode's
+> -# metadata continue to point to the 128K extent we created before, but now
+> -# with an extent item that points to the extent with a data start offset of
+> -# 112K and a logical length of 16K.
+> -# That metadata file extent item is associated with the logical file offset
+> -# at 176K and covers the logical file range 176K to 192K.
+> -$XFS_IO_PROG -c "pwrite -S 0xbb 64K 112K" -c "fsync" \
+> -       $SCRATCH_MNT/foo | _filter_xfs_io
+> -
+> -# Now rewrite the range 180K to 12K. This will make the inode's metadata
+> -# continue to point the the 128K extent we created earlier, with a single
+> -# extent item that points to it with a start offset of 112K and a logical
+> -# length of 4K.
+> -# That metadata file extent item is associated with the logical file offset
+> -# at 176K and covers the logical file range 176K to 180K.
+> -$XFS_IO_PROG -c "pwrite -S 0xcc 180K 12K" -c "fsync" \
+> -       $SCRATCH_MNT/foo | _filter_xfs_io
 > +BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
->
-> -# File bar consists of a single inline extent (2K size).
-> -$XFS_IO_PROG -f -s -c "pwrite -S 0xbb 0 2K" \
-> -               $SCRATCH_MNT/bar | _filter_xfs_io
-> +# Create our test files. File foo has the same 2k of data at offset $BLOCK_SIZE
-> +# as file bar has at its offset 0.
-> +$XFS_IO_PROG -f -s -c "pwrite -S 0xaa 0 $BLOCK_SIZE" \
-> +               -c "pwrite -S 0xbb $BLOCK_SIZE 2k" \
-> +               -c "pwrite -S 0xcc $(($BLOCK_SIZE * 2)) $BLOCK_SIZE" \
-> +               $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
->
-> -# Now call the clone ioctl to clone the extent of file bar into file foo at its
-> -# offset 4K. This made file foo have an inline extent at offset 4K, something
-> -# which the btrfs code can not deal with in future IO operations because all
-> -# inline extents are supposed to start at an offset of 0, resulting in all sorts
-> -# of chaos.
-> -# So here we validate that the clone ioctl returns an EOPNOTSUPP, which is what
-> -# it returns for other cases dealing with inlined extents.
-> -$CLONER_PROG -s 0 -d $((4 * 1024)) -l $((2 * 1024)) \
-> +# File bar consists of a single inline extent (2k in size).
-> +$XFS_IO_PROG -f -s -c "pwrite -S 0xbb 0 2k" \
-> +               $SCRATCH_MNT/bar | _filter_xfs_io_blocks_modified
 > +
-> +# Now call the clone ioctl to clone the extent of file bar into file
-> +# foo at its $BLOCK_SIZE offset. This made file foo have an inline
-> +# extent at offset $BLOCK_SIZE, something which the btrfs code can not
-> +# deal with in future IO operations because all inline extents are
-> +# supposed to start at an offset of 0, resulting in all sorts of
-> +# chaos.
-> +# So here we validate that the clone ioctl returns an EOPNOTSUPP,
-> +# which is what it returns for other cases dealing with inlined
-> +# extents.
-> +$CLONER_PROG -s 0 -d $BLOCK_SIZE -l 2048 \
->         $SCRATCH_MNT/bar $SCRATCH_MNT/foo
+> +# Create the file with a single extent of 32 blocks. This creates a metadata
+> +# file extent item with a data start offset of 0 and a logical length of
+> +# 32 blocks.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xaa $((16 * $BLOCK_SIZE)) $((32 * $BLOCK_SIZE))" \
+> +            -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
+> +
+> +# Now rewrite the block range [16, 28[ of our file. This will make
+> +# the inode's metadata continue to point to the single 32 block extent
+> +# we created before, but now with an extent item that points to the
+> +# extent with a data start offset referring to the 28th block and a
+> +# logical length of 4 blocks.
+> +# That metadata file extent item is associated with the block range
+> +# [44, 48[.
+> +$XFS_IO_PROG -c "pwrite -S 0xbb $((16 * $BLOCK_SIZE)) $((28 * $BLOCK_SIZE))" \
+> +            -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
+> +
+> +
+> +# Now rewrite the block range [45, 48[. This will make the inode's
+> +# metadata continue to point the 32 block extent we created earlier,
+> +# with a single extent item that points to it with a start offset
+> +# referring to the 28th block and a logical length of 1 block.
+> +# That metadata file extent item is associated with the block range
+> +# [44, 45[.
+> +$XFS_IO_PROG -c "pwrite -S 0xcc $((45 * $BLOCK_SIZE)) $((3 * $BLOCK_SIZE))" \
+> +            -c "fsync" $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
 >
-> -# Because of the inline extent at offset 4K, the following write made the kernel
-> -# crash with a BUG_ON().
-> -$XFS_IO_PROG -c "pwrite -S 0xdd 6K 2K" $SCRATCH_MNT/foo | _filter_xfs_io
-> +# Because of the inline extent at offset $BLOCK_SIZE, the following
-> +# write made the kernel crash with a BUG_ON().
-> +$XFS_IO_PROG -c "pwrite -S 0xdd $(($BLOCK_SIZE + 2048)) 2k" \
-> +            $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
+>  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
+>
+> -# Now clone that same region of the 128K extent into a new file, so that it
+> +# Now clone that same region of the 32 block extent into a new file, so that it
+>  # gets referenced twice and the incremental send operation below decides to
+>  # issue a clone operation instead of copying the data.
+>  touch $SCRATCH_MNT/bar
+> -$CLONER_PROG -s $((176 * 1024)) -d $((176 * 1024)) -l $((4 * 1024)) \
+> +$CLONER_PROG -s $((44 * $BLOCK_SIZE)) -d $((44 * $BLOCK_SIZE)) -l $BLOCK_SIZE \
+>         $SCRATCH_MNT/foo $SCRATCH_MNT/bar
+>
+>  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
+> @@ -105,10 +110,13 @@ _run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
+>  _run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
+>         -f $send_files_dir/2.snap
+>
+> -echo "File digests in the original filesystem:"
+> -md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
+> -md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
+> -md5sum $SCRATCH_MNT/mysnap2/bar | _filter_scratch
+> +echo "File contents in the original filesystem:"
+> +echo "mysnap1/foo"
+> +od -t x1 $SCRATCH_MNT/mysnap1/foo | _filter_od
+> +echo "mysnap2/foo"
+> +od -t x1 $SCRATCH_MNT/mysnap2/foo | _filter_od
+> +echo "mysnap2/bar"
+> +od -t x1 $SCRATCH_MNT/mysnap2/bar | _filter_od
+>
+>  # Now recreate the filesystem by receiving both send streams and verify we get
+>  # the same file contents that the original filesystem had.
+> @@ -119,10 +127,13 @@ _scratch_mount
+>  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
+>  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
+>
+> -echo "File digests in the new filesystem:"
+> -md5sum $SCRATCH_MNT/mysnap1/foo | _filter_scratch
+> -md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
+> -md5sum $SCRATCH_MNT/mysnap2/bar | _filter_scratch
+> +echo "File contents in the new filesystem:"
+> +echo "mysnap1/foo"
+> +od -t x1 $SCRATCH_MNT/mysnap1/foo | _filter_od
+> +echo "mysnap2/foo"
+> +od -t x1 $SCRATCH_MNT/mysnap2/foo | _filter_od
+> +echo "mysnap2/bar"
+> +od -t x1 $SCRATCH_MNT/mysnap2/bar | _filter_od
 >
 >  status=0
 >  exit
-> diff --git a/tests/btrfs/096.out b/tests/btrfs/096.out
-> index 235198d..2a4251e 100644
-> --- a/tests/btrfs/096.out
-> +++ b/tests/btrfs/096.out
-> @@ -1,12 +1,7 @@
->  QA output created by 096
-> -wrote 4096/4096 bytes at offset 0
+> diff --git a/tests/btrfs/094.out b/tests/btrfs/094.out
+> index c3ac1bf..1c00cc5 100644
+> --- a/tests/btrfs/094.out
+> +++ b/tests/btrfs/094.out
+> @@ -1,15 +1,58 @@
+>  QA output created by 094
+> -wrote 131072/131072 bytes at offset 65536
 > -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 2048/2048 bytes at offset 4096
+> -wrote 114688/114688 bytes at offset 65536
 > -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 4096/4096 bytes at offset 8192
+> -wrote 12288/12288 bytes at offset 184320
 > -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -wrote 2048/2048 bytes at offset 0
-> -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> +Blocks modified: [0 - 0]
-> +Blocks modified: [1 - 1]
-> +Blocks modified: [2 - 2]
-> +Blocks modified: [0 - 0]
->  clone failed: Operation not supported
-> -wrote 2048/2048 bytes at offset 6144
-> -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> +Blocks modified: [1 - 1]
+> -File digests in the original filesystem:
+> -f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap1/foo
+> -f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap2/foo
+> -7fccf6175f5c68504b408719a21db99f  SCRATCH_MNT/mysnap2/bar
+> -File digests in the new filesystem:
+> -f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap1/foo
+> -f98243c603750f7daf225b1745b31516  SCRATCH_MNT/mysnap2/foo
+> -7fccf6175f5c68504b408719a21db99f  SCRATCH_MNT/mysnap2/bar
+> +Blocks modified: [16 - 47]
+> +Blocks modified: [16 - 43]
+> +Blocks modified: [45 - 47]
+> +File contents in the original filesystem:
+> +mysnap1/foo
+> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +*
+> +20 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+> +*
+> +54 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +*
+> +55 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
+> +*
+> +60
+> +mysnap2/foo
+> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +*
+> +20 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+> +*
+> +54 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +*
+> +55 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
+> +*
+> +60
+> +mysnap2/bar
+> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +*
+> +54 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +*
+> +55
+> +File contents in the new filesystem:
+> +mysnap1/foo
+> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +*
+> +20 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+> +*
+> +54 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +*
+> +55 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
+> +*
+> +60
+> +mysnap2/foo
+> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +*
+> +20 bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb bb
+> +*
+> +54 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +*
+> +55 cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc cc
+> +*
+> +60
+> +mysnap2/bar
+> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +*
+> +54 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +*
+> +55
 > --
 > 2.1.0
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe fstests" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
 
 

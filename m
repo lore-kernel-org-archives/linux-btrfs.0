@@ -1,185 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f179.google.com ([209.85.220.179]:34628 "EHLO
-	mail-qk0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751905AbbLMQPx (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Dec 2015 11:15:53 -0500
-Received: by qkdp187 with SMTP id p187so104817973qkd.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 08:15:52 -0800 (PST)
+Received: from mail.kernel.org ([198.145.29.136]:41565 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751157AbbLJLpG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Dec 2015 06:45:06 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org, clm@fb.com
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] Btrfs fixes for 4.4
+Date: Thu, 10 Dec 2015 11:44:50 +0000
+Message-Id: <1449747890-26516-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H5W4gwiJzujaZdsAAexfQoi_AvLcY581Zs+toUprR0Uxw@mail.gmail.com>
-References: <1437400580-30525-1-git-send-email-fdmanana@kernel.org>
-	<20150721235334.GA8113@huxley.DHCP.TheFacebook.com>
-	<CAOcd+r3vHCntp5k5KAP6pKQ4X6zot_7whLd0mS9oOvroAgATgQ@mail.gmail.com>
-	<CAL3q7H5W4gwiJzujaZdsAAexfQoi_AvLcY581Zs+toUprR0Uxw@mail.gmail.com>
-Date: Sun, 13 Dec 2015 18:15:52 +0200
-Message-ID: <CAOcd+r25YGV6=CxW+c8nh345u4S9FT+1HmcpmaOqwAuKzJSR-w@mail.gmail.com>
-Subject: Re: [PATCH] Btrfs: fix quick exhaustion of the system array in the superblock
-From: Alex Lyakas <alex@zadarastorage.com>
-To: Filipe Manana <fdmanana@kernel.org>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
-        Filipe Manana <fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thank you, Filipe. Now it is more clear.
-Fortunately, in my kernel 3.18 I do not have do_chunk_alloc() calling
-btrfs_create_pending_block_groups(), so I cannot hit this deadlock.
-But can hit the issue that this call is meant to fix.
+From: Filipe Manana <fdmanana@suse.com>
 
-Thanks,
-Alex.
+Hi Chris,
 
+Please consider the following fixes for kernel 4.4. Two of them are fixes
+to new issues introduced in the 4.4 merge window and 4.4 release candidates.
+The other one just fixes a warning message that is confusing and has made
+several users wonder if they are supposed to do anything or not when we
+fail to read a space cache.
+All these fixes have been previously sent to the mailing list.
 
-On Sun, Dec 13, 2015 at 5:45 PM, Filipe Manana <fdmanana@kernel.org> wrote:
-> On Sun, Dec 13, 2015 at 10:29 AM, Alex Lyakas <alex@zadarastorage.com> wrote:
->> Hi Filipe Manana,
->>
->> Can't the call to btrfs_create_pending_block_groups() cause a
->> deadlock, like in
->> http://www.spinics.net/lists/linux-btrfs/msg48744.html? Because this
->> call updates the device tree, and we may be calling do_chunk_alloc()
->> from find_free_extent() when holding a lock on the device tree root
->> (because we want to COW a block of the device tree).
->>
->> My understanding from Josef's chunk allocator rework
->> (http://www.spinics.net/lists/linux-btrfs/msg25722.html) was that now
->> when allocating a new chunk we do not immediately update the
->> device/chunk tree. We keep the new chunk in "pending_chunks" and in
->> "new_bgs" on a transaction handle, and we actually update the
->> chunk/device tree only when we are done with a particular transaction
->> handle. This way we avoid that sort of deadlocks.
->>
->> But this patch breaks this rule, as it may make us update the
->> device/chunk tree in the context of chunk allocation, which is the
->> scenario that the rework was meant to avoid.
->>
->> Can you please point me at what I am missing?
->
-> https://git.kernel.org/cgit/linux/kernel/git/torvalds/linux.git/commit/?id=d9a0540a79f87456907f2ce031f058cf745c5bff
->
->>
->> Thanks,
->> Alex.
->>
->>
->> On Wed, Jul 22, 2015 at 1:53 AM, Omar Sandoval <osandov@fb.com> wrote:
->>> On Mon, Jul 20, 2015 at 02:56:20PM +0100, fdmanana@kernel.org wrote:
->>>> From: Filipe Manana <fdmanana@suse.com>
->>>>
->>>> Omar reported that after commit 4fbcdf669454 ("Btrfs: fix -ENOSPC when
->>>> finishing block group creation"), introduced in 4.2-rc1, the following
->>>> test was failing due to exhaustion of the system array in the superblock:
->>>>
->>>>   #!/bin/bash
->>>>
->>>>   truncate -s 100T big.img
->>>>   mkfs.btrfs big.img
->>>>   mount -o loop big.img /mnt/loop
->>>>
->>>>   num=5
->>>>   sz=10T
->>>>   for ((i = 0; i < $num; i++)); do
->>>>       echo fallocate $i $sz
->>>>       fallocate -l $sz /mnt/loop/testfile$i
->>>>   done
->>>>   btrfs filesystem sync /mnt/loop
->>>>
->>>>   for ((i = 0; i < $num; i++)); do
->>>>         echo rm $i
->>>>         rm /mnt/loop/testfile$i
->>>>         btrfs filesystem sync /mnt/loop
->>>>   done
->>>>   umount /mnt/loop
->>>>
->>>> This made btrfs_add_system_chunk() fail with -EFBIG due to excessive
->>>> allocation of system block groups. This happened because the test creates
->>>> a large number of data block groups per transaction and when committing
->>>> the transaction we start the writeout of the block group caches for all
->>>> the new new (dirty) block groups, which results in pre-allocating space
->>>> for each block group's free space cache using the same transaction handle.
->>>> That in turn often leads to creation of more block groups, and all get
->>>> attached to the new_bgs list of the same transaction handle to the point
->>>> of getting a list with over 1500 elements, and creation of new block groups
->>>> leads to the need of reserving space in the chunk block reserve and often
->>>> creating a new system block group too.
->>>>
->>>> So that made us quickly exhaust the chunk block reserve/system space info,
->>>> because as of the commit mentioned before, we do reserve space for each
->>>> new block group in the chunk block reserve, unlike before where we would
->>>> not and would at most allocate one new system block group and therefore
->>>> would only ensure that there was enough space in the system space info to
->>>> allocate 1 new block group even if we ended up allocating thousands of
->>>> new block groups using the same transaction handle. That worked most of
->>>> the time because the computed required space at check_system_chunk() is
->>>> very pessimistic (assumes a chunk tree height of BTRFS_MAX_LEVEL/8 and
->>>> that all nodes/leafs in a path will be COWed and split) and since the
->>>> updates to the chunk tree all happen at btrfs_create_pending_block_groups
->>>> it is unlikely that a path needs to be COWed more than once (unless
->>>> writepages() for the btree inode is called by mm in between) and that
->>>> compensated for the need of creating any new nodes/leads in the chunk
->>>> tree.
->>>>
->>>> So fix this by ensuring we don't accumulate a too large list of new block
->>>> groups in a transaction's handles new_bgs list, inserting/updating the
->>>> chunk tree for all accumulated new block groups and releasing the unused
->>>> space from the chunk block reserve whenever the list becomes sufficiently
->>>> large. This is a generic solution even though the problem currently can
->>>> only happen when starting the writeout of the free space caches for all
->>>> dirty block groups (btrfs_start_dirty_block_groups()).
->>>>
->>>> Reported-by: Omar Sandoval <osandov@fb.com>
->>>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
->>>
->>> Thanks a lot for taking a look.
->>>
->>> Tested-by: Omar Sandoval <osandov@fb.com>
->>>
->>>> ---
->>>>  fs/btrfs/extent-tree.c | 18 ++++++++++++++++++
->>>>  1 file changed, 18 insertions(+)
->>>>
->>>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>>> index 171312d..07204bf 100644
->>>> --- a/fs/btrfs/extent-tree.c
->>>> +++ b/fs/btrfs/extent-tree.c
->>>> @@ -4227,6 +4227,24 @@ out:
->>>>       space_info->chunk_alloc = 0;
->>>>       spin_unlock(&space_info->lock);
->>>>       mutex_unlock(&fs_info->chunk_mutex);
->>>> +     /*
->>>> +      * When we allocate a new chunk we reserve space in the chunk block
->>>> +      * reserve to make sure we can COW nodes/leafs in the chunk tree or
->>>> +      * add new nodes/leafs to it if we end up needing to do it when
->>>> +      * inserting the chunk item and updating device items as part of the
->>>> +      * second phase of chunk allocation, performed by
->>>> +      * btrfs_finish_chunk_alloc(). So make sure we don't accumulate a
->>>> +      * large number of new block groups to create in our transaction
->>>> +      * handle's new_bgs list to avoid exhausting the chunk block reserve
->>>> +      * in extreme cases - like having a single transaction create many new
->>>> +      * block groups when starting to write out the free space caches of all
->>>> +      * the block groups that were made dirty during the lifetime of the
->>>> +      * transaction.
->>>> +      */
->>>> +     if (trans->chunk_bytes_reserved >= (2 * 1024 * 1024ull)) {
->>>> +             btrfs_create_pending_block_groups(trans, trans->root);
->>>> +             btrfs_trans_release_chunk_metadata(trans);
->>>> +     }
->>>>       return ret;
->>>>  }
->>>>
->>>> --
->>>> 2.1.3
->>>>
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>> --
->>> Omar
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+Thanks.
+
+The following changes since commit dba72cb30b6a4811038128c8a98b268d18ca60fe:
+
+  btrfs: fix balance range usage filters in 4.4-rc (2015-11-25 05:27:33 -0800)
+
+are available in the git repository at:
+
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.4
+
+for you to fetch changes up to 94356889c404faf050895099fd0d23f8bef118c4:
+
+  btrfs: fix misleading warning when space cache failed to load (2015-12-10 11:38:08 +0000)
+
+----------------------------------------------------------------
+Filipe Manana (2):
+      Btrfs: fix unprotected list move from unused_bgs to deleted_bgs list
+      Btrfs: fix transaction handle leak in balance
+
+Holger Hoffstätte (1):
+      btrfs: fix misleading warning when space cache failed to load
+
+ fs/btrfs/extent-tree.c      | 10 +++++++---
+ fs/btrfs/free-space-cache.c |  2 +-
+ fs/btrfs/transaction.c      |  1 -
+ fs/btrfs/transaction.h      |  2 +-
+ fs/btrfs/volumes.c          |  3 +--
+ 5 files changed, 10 insertions(+), 8 deletions(-)
+
+-- 
+2.1.3
+

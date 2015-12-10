@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f175.google.com ([209.85.213.175]:32835 "EHLO
-	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752410AbbLJR1f (ORCPT
+Received: from mail-io0-f177.google.com ([209.85.223.177]:34959 "EHLO
+	mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752410AbbLJR1u (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Dec 2015 12:27:35 -0500
+	Thu, 10 Dec 2015 12:27:50 -0500
 MIME-Version: 1.0
 Reply-To: fdmanana@gmail.com
-In-Reply-To: <1448878644-16503-7-git-send-email-chandan@linux.vnet.ibm.com>
+In-Reply-To: <1448878644-16503-6-git-send-email-chandan@linux.vnet.ibm.com>
 References: <1448878644-16503-1-git-send-email-chandan@linux.vnet.ibm.com>
-	<1448878644-16503-7-git-send-email-chandan@linux.vnet.ibm.com>
-Date: Thu, 10 Dec 2015 17:27:35 +0000
-Message-ID: <CAL3q7H5XUadSd1_KPbVZ8f02kTKaZcFZFkLEiFC=xuBrBDQr8A@mail.gmail.com>
-Subject: Re: [PATCH 6/8] Fix btrfs/098 to work on non-4k block sized filesystems
+	<1448878644-16503-6-git-send-email-chandan@linux.vnet.ibm.com>
+Date: Thu, 10 Dec 2015 17:27:49 +0000
+Message-ID: <CAL3q7H637w0jHVCnfhmQuojtAdc_pP4+X7WMZPH=hrSMQteiJg@mail.gmail.com>
+Subject: Re: [PATCH 5/8] Fix btrfs/097 to work on non-4k block sized filesystems
 From: Filipe Manana <fdmanana@gmail.com>
 To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 Cc: fstests@vger.kernel.org,
@@ -33,139 +33,119 @@ Reviewed-by: Filipe Manana <fdmanana@suse.com>
 Thanks!
 
 > ---
->  tests/btrfs/098     | 67 +++++++++++++++++++++++++++++------------------------
->  tests/btrfs/098.out | 27 ++++++++++++++++-----
->  2 files changed, 58 insertions(+), 36 deletions(-)
+>  tests/btrfs/097     | 41 ++++++++++++++++++++++++-----------------
+>  tests/btrfs/097.out | 23 +++++++++++++++++------
+>  2 files changed, 41 insertions(+), 23 deletions(-)
 >
-> diff --git a/tests/btrfs/098 b/tests/btrfs/098
-> index 8aef119..49f6d16 100755
-> --- a/tests/btrfs/098
-> +++ b/tests/btrfs/098
-> @@ -58,43 +58,50 @@ _scratch_mkfs >>$seqres.full 2>&1
->  _init_flakey
->  _mount_flakey
+> diff --git a/tests/btrfs/097 b/tests/btrfs/097
+> index d9138ea..d1cfff1 100755
+> --- a/tests/btrfs/097
+> +++ b/tests/btrfs/097
+> @@ -57,22 +57,29 @@ mkdir $send_files_dir
+>  _scratch_mkfs >>$seqres.full 2>&1
+>  _scratch_mount
 >
-> -# Create our test file with a single 100K extent starting at file offset 800K.
-> -# We fsync the file here to make the fsync log tree gets a single csum item that
-> -# covers the whole 100K extent, which causes the second fsync, done after the
-> -# cloning operation below, to not leave in the log tree two csum items covering
-> -# two sub-ranges ([0, 20K[ and [20K, 100K[)) of our extent.
-> -$XFS_IO_PROG -f -c "pwrite -S 0xaa 800K 100K"  \
+> -# Create our test file with a single extent of 64K starting at file offset 128K.
+> -$XFS_IO_PROG -f -c "pwrite -S 0xaa 128K 64K" $SCRATCH_MNT/foo | _filter_xfs_io
 > +BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
 > +
-> +# Create our test file with a single 25 block extent starting at file offset
-> +# mapped by 200th block We fsync the file here to make the fsync log tree get a
-> +# single csum item that covers the whole 25 block extent, which causes the
-> +# second fsync, done after the cloning operation below, to not leave in the log
-> +# tree two csum items covering two block sub-ranges ([0, 5[ and [5, 25[)) of our
-> +# extent.
-> +$XFS_IO_PROG -f -c "pwrite -S 0xaa $((200 * $BLOCK_SIZE)) $((25 * $BLOCK_SIZE))" \
->                 -c "fsync"                     \
-> -               $SCRATCH_MNT/foo | _filter_xfs_io
-> +               $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
-> +
+> +# Create our test file with a single extent of 16 blocks starting at a file
+> +# offset mapped by 32nd block.
+> +$XFS_IO_PROG -f -c "pwrite -S 0xaa $((32 * $BLOCK_SIZE)) $((16 * $BLOCK_SIZE))" \
+> +            $SCRATCH_MNT/foo | _filter_xfs_io_blocks_modified
 >
-> -# Now clone part of our extent into file offset 400K. This adds a file extent
-> -# item to our inode's metadata that points to the 100K extent we created before,
-> -# using a data offset of 20K and a data length of 20K, so that it refers to
-> -# the sub-range [20K, 40K[ of our original extent.
-> -$CLONER_PROG -s $((800 * 1024 + 20 * 1024)) -d $((400 * 1024)) \
-> -       -l $((20 * 1024)) $SCRATCH_MNT/foo $SCRATCH_MNT/foo
-> +# Now clone part of our extent into file offset mapped by 100th block. This adds
-> +# a file extent item to our inode's metadata that points to the 25 block extent
-> +# we created before, using a data offset of 5 blocks and a data length of 5
-> +# blocks, so that it refers to the block sub-range [5, 10[ of our original
-> +# extent.
-> +$CLONER_PROG -s $(((200 * $BLOCK_SIZE) + (5 * $BLOCK_SIZE))) \
-> +            -d $((100 * $BLOCK_SIZE)) -l $((5 * $BLOCK_SIZE)) \
-> +            $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+>  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
 >
->  # Now fsync our file to make sure the extent cloning is durably persisted. This
->  # fsync will not add a second csum item to the log tree containing the checksums
-> -# for the blocks in the sub-range [20K, 40K[ of our extent, because there was
-> +# for the blocks in the block sub-range [5, 10[ of our extent, because there was
->  # already a csum item in the log tree covering the whole extent, added by the
->  # first fsync we did before.
->  $XFS_IO_PROG -c "fsync" $SCRATCH_MNT/foo
->
-> -echo "File digest before power failure:"
-> -md5sum $SCRATCH_MNT/foo | _filter_scratch
-> +echo "File contents before power failure:"
-> +od -t x1 $SCRATCH_MNT/foo | _filter_od
->
->  # The fsync log replay first processes the file extent item corresponding to the
-> -# file offset 400K (the one which refers to the [20K, 40K[ sub-range of our 100K
-> -# extent) and then processes the file extent item for file offset 800K. It used
-> -# to happen that when processing the later, it erroneously left in the csum tree
-> -# 2 csum items that overlapped each other, 1 for the sub-range [20K, 40K[ and 1
-> -# for the whole range of our extent. This introduced a problem where subsequent
-> -# lookups for the checksums of blocks within the range [40K, 100K[ of our extent
-> -# would not find anything because lookups in the csum tree ended up looking only
-> -# at the smaller csum item, the one covering the subrange [20K, 40K[. This made
-> -# read requests assume an expected checksum with a value of 0 for those blocks,
-> -# which caused checksum verification failure when the read operations finished.
-> +# file offset mapped by 100th block (the one which refers to the [5, 10[ block
-> +# sub-range of our 25 block extent) and then processes the file extent item for
-> +# file offset mapped by 200th block. It used to happen that when processing the
-> +# later, it erroneously left in the csum tree 2 csum items that overlapped each
-> +# other, 1 for the block sub-range [5, 10[ and 1 for the whole range of our
-> +# extent. This introduced a problem where subsequent lookups for the checksums
-> +# of blocks within the block range [10, 25[ of our extent would not find
-> +# anything because lookups in the csum tree ended up looking only at the smaller
-> +# csum item, the one covering the block subrange [5, 10[. This made read
-> +# requests assume an expected checksum with a value of 0 for those blocks, which
-> +# caused checksum verification failure when the read operations finished.
->  # However those checksum failure did not result in read requests returning an
->  # error to user space (like -EIO for e.g.) because the expected checksum value
->  # had the special value 0, and in that case btrfs set all bytes of the
-> @@ -106,10 +113,10 @@ md5sum $SCRATCH_MNT/foo | _filter_scratch
+>  # Now clone parts of the original extent into lower offsets of the file.
 >  #
->  _flakey_drop_and_remount
+>  # The first clone operation adds a file extent item to file offset 0 that points
+> -# to our initial extent with a data offset of 16K. The corresponding data back
+> -# reference in the extent tree has an offset of 18446744073709535232, which is
+> -# the result of file_offset - data_offset = 0 - 16K.
+> -#
+> -# The second clone operation adds a file extent item to file offset 16K that
+> -# points to our initial extent with a data offset of 48K. The corresponding data
+> -# back reference in the extent tree has an offset of 18446744073709518848, which
+> -# is the result of file_offset - data_offset = 16K - 48K.
+> +# to our initial extent with a data offset of 4 blocks. The corresponding data back
+> +# reference in the extent tree has a large value for the 'offset' field, which is
+> +# the result of file_offset - data_offset = 0 - (file offset of 4th block).  For
+> +# example in case of 4k block size, it will be 0 - 16k = 18446744073709535232.
+> +
+> +# The second clone operation adds a file extent item to file offset mapped by
+> +# 4th block that points to our initial extent with a data offset of 12
+> +# blocks. The corresponding data back reference in the extent tree has a large
+> +# value for the 'offset' field, which is the result of file_offset - data_offset
+> +# = (file offset of 4th block) - (file offset of 12th block). For example in
+> +# case of 4k block size, it will be 16K - 48K = 18446744073709518848.
+>  #
+>  # Those large back reference offsets (result of unsigned arithmetic underflow)
+>  # confused the back reference walking code (used by an incremental send and
+> @@ -83,10 +90,10 @@ _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap1
+>  # "BTRFS error (device sdc): did not find backref in send_root. inode=257, \
+>  #  offset=0, disk_byte=12845056 found extent=12845056"
+>  #
+> -$CLONER_PROG -s $(((128 + 16) * 1024)) -d 0 -l $((16 * 1024)) \
+> -       $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+> -$CLONER_PROG -s $(((128 + 48) * 1024)) -d $((16 * 1024)) -l $((16 * 1024)) \
+> +$CLONER_PROG -s $(((32 + 4) * $BLOCK_SIZE)) -d 0 -l $((4 * $BLOCK_SIZE)) \
+>         $SCRATCH_MNT/foo $SCRATCH_MNT/foo
+> +$CLONER_PROG -s $(((32 + 12) * $BLOCK_SIZE)) -d $((4 * $BLOCK_SIZE)) \
+> +            -l $((4 * $BLOCK_SIZE)) $SCRATCH_MNT/foo $SCRATCH_MNT/foo
 >
-> -echo "File digest after log replay:"
-> -# Must match the same digest he had after cloning the extent and before the
-> -# power failure happened.
-> -md5sum $SCRATCH_MNT/foo | _filter_scratch
-> +echo "File contents after log replay:"
-> +# Must match the file contents we had after cloning the extent and before
-> +# the power failure happened.
-> +od -t x1 $SCRATCH_MNT/foo | _filter_od
+>  _run_btrfs_util_prog subvolume snapshot -r $SCRATCH_MNT $SCRATCH_MNT/mysnap2
 >
->  _unmount_flakey
+> @@ -94,8 +101,8 @@ _run_btrfs_util_prog send $SCRATCH_MNT/mysnap1 -f $send_files_dir/1.snap
+>  _run_btrfs_util_prog send -p $SCRATCH_MNT/mysnap1 $SCRATCH_MNT/mysnap2 \
+>         -f $send_files_dir/2.snap
 >
-> diff --git a/tests/btrfs/098.out b/tests/btrfs/098.out
-> index 3aa0772..98a96de 100644
-> --- a/tests/btrfs/098.out
-> +++ b/tests/btrfs/098.out
-> @@ -1,7 +1,22 @@
->  QA output created by 098
-> -wrote 102400/102400 bytes at offset 819200
+> -echo "File digest in the original filesystem:"
+> -md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
+> +echo "File contents in the original filesystem:"
+> +od -t x1 $SCRATCH_MNT/mysnap2/foo | _filter_od
+>
+>  # Now recreate the filesystem by receiving both send streams and verify we get
+>  # the same file contents that the original filesystem had.
+> @@ -106,8 +113,8 @@ _scratch_mount
+>  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/1.snap
+>  _run_btrfs_util_prog receive $SCRATCH_MNT -f $send_files_dir/2.snap
+>
+> -echo "File digest in the new filesystem:"
+> -md5sum $SCRATCH_MNT/mysnap2/foo | _filter_scratch
+> +echo "File contents in the new filesystem:"
+> +od -t x1 $SCRATCH_MNT/mysnap2/foo | _filter_od
+>
+>  status=0
+>  exit
+> diff --git a/tests/btrfs/097.out b/tests/btrfs/097.out
+> index 5e87eb2..aa9e549 100644
+> --- a/tests/btrfs/097.out
+> +++ b/tests/btrfs/097.out
+> @@ -1,7 +1,18 @@
+>  QA output created by 097
+> -wrote 65536/65536 bytes at offset 131072
 > -XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-> -File digest before power failure:
-> -39b386375971248740ed8651d5a2ed9f  SCRATCH_MNT/foo
-> -File digest after log replay:
-> -39b386375971248740ed8651d5a2ed9f  SCRATCH_MNT/foo
-> +Blocks modified: [200 - 224]
-> +File contents before power failure:
-> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> -File digest in the original filesystem:
+> -6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
+> -File digest in the new filesystem:
+> -6c6079335cff141b8a31233ead04cbff  SCRATCH_MNT/mysnap2/foo
+> +Blocks modified: [32 - 47]
+> +File contents in the original filesystem:
+> +0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 > +*
-> +144 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 > +*
-> +151 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +40 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 > +*
-> +310 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +60
+> +File contents in the new filesystem:
+> +0 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 > +*
-> +341
-> +File contents after log replay:
-> +0 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
+> +10 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
 > +*
-> +144 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
+> +40 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
 > +*
-> +151 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00 00
-> +*
-> +310 aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa aa
-> +*
-> +341
+> +60
 > --
 > 2.1.0
 >

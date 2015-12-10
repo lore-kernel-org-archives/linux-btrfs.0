@@ -1,165 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:34946 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933015AbbLHG3Y (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 8 Dec 2015 01:29:24 -0500
-Subject: [PATCH 2/3] generic/15[78]: fix error messages in the golden output
-From: "Darrick J. Wong" <darrick.wong@oracle.com>
-To: david@fromorbit.com, darrick.wong@oracle.com
-Cc: fstests@vger.kernel.org, xfs@oss.sgi.com, hch@infradead.org,
-        tao.peng@primarydata.com, linux-ext4@vger.kernel.org,
-        Anna.Schumaker@netapp.com, linux-btrfs@vger.kernel.org
-Date: Mon, 07 Dec 2015 22:28:58 -0800
-Message-ID: <20151208062858.21871.84165.stgit@birch.djwong.org>
-In-Reply-To: <20151208062844.21871.23644.stgit@birch.djwong.org>
+Received: from bombadil.infradead.org ([198.137.202.9]:53136 "EHLO
+	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752300AbbLJQev (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Dec 2015 11:34:51 -0500
+Date: Thu, 10 Dec 2015 08:34:49 -0800
+From: Christoph Hellwig <hch@infradead.org>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: david@fromorbit.com, fstests@vger.kernel.org, xfs@oss.sgi.com,
+        hch@infradead.org, tao.peng@primarydata.com,
+        linux-ext4@vger.kernel.org, Anna.Schumaker@netapp.com,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH 3/3] reflink: more tests
+Message-ID: <20151210163449.GA15774@infradead.org>
 References: <20151208062844.21871.23644.stgit@birch.djwong.org>
+ <20151208062904.21871.30589.stgit@birch.djwong.org>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20151208062904.21871.30589.stgit@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Fix the error messages in the golden output for generic/15[78], which
-examine the responses to invalid inputs as returned by the
-clone/clone_range/extent_same ioctls.  Also fix a filtering omission.
-
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- tests/generic/157     |   18 +++++++++++++-----
- tests/generic/157.out |    6 +++---
- tests/generic/158     |   18 +++++++++++++-----
- tests/generic/158.out |    8 ++++----
- 4 files changed, 33 insertions(+), 17 deletions(-)
-
-
-diff --git a/tests/generic/157 b/tests/generic/157
-index a43fb0d..f68ff52 100755
---- a/tests/generic/157
-+++ b/tests/generic/157
-@@ -75,10 +75,18 @@ mkdir "$TESTDIR1/dir1"
- seq 1 $((2 * BLKSZ / 250)) | while read f; do
- 	touch "$TESTDIR1/dir1/$f"
- done
--mknod "$TESTDIR1/dev1" b 8 0
-+mknod "$TESTDIR1/dev1" c 1 3
- mkfifo "$TESTDIR1/fifo1"
- sync
- 
-+_filter_enotty() {
-+	sed -e 's/Inappropriate ioctl for device/Invalid argument/g'
-+}
-+
-+_filter_einval() {
-+	sed -e 's/Invalid argument/Bad file descriptor/g'
-+}
-+
- echo "Try cross-device reflink"
- _reflink_range "$TESTDIR1/file1" 0 "$TESTDIR2/file1" 0 $BLKSZ
- 
-@@ -98,16 +106,16 @@ echo "Try to reflink a device"
- _reflink_range "$TESTDIR1/dev1" 0 "$TESTDIR1/file2" 0 $BLKSZ
- 
- echo "Try to reflink to a dir"
--_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ
-+_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ 2>&1 | _filter_test_dir
- 
- echo "Try to reflink to a device"
--_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ
-+_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ 2>&1 | _filter_enotty
- 
- echo "Try to reflink to a fifo"
--_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n
-+_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n 2>&1 | _filter_enotty
- 
- echo "Try to reflink an append-only file"
--_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/file3" 0 $BLKSZ -a
-+_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/file3" 0 $BLKSZ -a 2>&1 | _filter_einval
- 
- echo "Reflink two files"
- _reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/file2" 0 $BLKSZ >> "$seqres.full"
-diff --git a/tests/generic/157.out b/tests/generic/157.out
-index 177e7f8..ac3c440 100644
---- a/tests/generic/157.out
-+++ b/tests/generic/157.out
-@@ -14,11 +14,11 @@ XFS_IOC_CLONE_RANGE: Is a directory
- Try to reflink a device
- XFS_IOC_CLONE_RANGE: Invalid argument
- Try to reflink to a dir
--/mnt/test-157/dir1: Is a directory
-+TEST_DIR/test-157/dir1: Is a directory
- Try to reflink to a device
--XFS_IOC_CLONE_RANGE: Operation not supported
-+XFS_IOC_CLONE_RANGE: Invalid argument
- Try to reflink to a fifo
--XFS_IOC_CLONE_RANGE: Operation not supported
-+XFS_IOC_CLONE_RANGE: Invalid argument
- Try to reflink an append-only file
- XFS_IOC_CLONE_RANGE: Bad file descriptor
- Reflink two files
-diff --git a/tests/generic/158 b/tests/generic/158
-index a499b21..749b186 100755
---- a/tests/generic/158
-+++ b/tests/generic/158
-@@ -76,10 +76,18 @@ mkdir "$TESTDIR1/dir1"
- seq 1 $((2 * BLKSZ / 250)) | while read f; do
- 	touch "$TESTDIR1/dir1/$f"
- done
--mknod "$TESTDIR1/dev1" b 8 0
-+mknod "$TESTDIR1/dev1" c 1 3
- mkfifo "$TESTDIR1/fifo1"
- sync
- 
-+_filter_enotty() {
-+	sed -e 's/Inappropriate ioctl for device/Invalid argument/g'
-+}
-+
-+_filter_eperm() {
-+	sed -e 's/Permission denied/Invalid argument/g'
-+}
-+
- echo "Try cross-device dedupe"
- _dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR2/file1" 0 $BLKSZ
- 
-@@ -96,16 +104,16 @@ echo "Try to dedupe a dir"
- _dedupe_range "$TESTDIR1/dir1" 0 "$TESTDIR1/file2" 0 $BLKSZ
- 
- echo "Try to dedupe a device"
--_dedupe_range "$TESTDIR1/dev1" 0 "$TESTDIR1/file2" 0 $BLKSZ
-+_dedupe_range "$TESTDIR1/dev1" 0 "$TESTDIR1/file2" 0 $BLKSZ 2>&1 | _filter_enotty
- 
- echo "Try to dedupe to a dir"
--_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ
-+_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ 2>&1 | _filter_test_dir
- 
- echo "Try to dedupe to a device"
--_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ
-+_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ 2>&1 | _filter_eperm
- 
- echo "Try to dedupe to a fifo"
--_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n
-+_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n 2>&1 | _filter_eperm
- 
- echo "Try to dedupe an append-only file"
- _dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/file3" 0 $BLKSZ -a >> "$seqres.full"
-diff --git a/tests/generic/158.out b/tests/generic/158.out
-index 36a3f1f..dff3692 100644
---- a/tests/generic/158.out
-+++ b/tests/generic/158.out
-@@ -12,13 +12,13 @@ dedupe: Invalid argument
- Try to dedupe a dir
- XFS_IOC_FILE_EXTENT_SAME: Is a directory
- Try to dedupe a device
--XFS_IOC_FILE_EXTENT_SAME: Permission denied
-+XFS_IOC_FILE_EXTENT_SAME: Invalid argument
- Try to dedupe to a dir
--/mnt/test-158/dir1: Is a directory
-+TEST_DIR/test-158/dir1: Is a directory
- Try to dedupe to a device
--dedupe: Permission denied
-+dedupe: Invalid argument
- Try to dedupe to a fifo
--dedupe: Permission denied
-+dedupe: Invalid argument
- Try to dedupe an append-only file
- Dedupe two files
- Check scratch fs
-
+The new 849 fails reliably on btrfs, which makes me wonder if either
+the test is doing something wrong, or the btrfs whole file clone
+behavior is broken, which wouldn't be very reasuring.  I didn't have
+time to look into why it's failing yet.

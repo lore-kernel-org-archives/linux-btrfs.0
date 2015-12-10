@@ -1,70 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f169.google.com ([209.85.223.169]:33218 "EHLO
-	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752646AbbLJMIz (ORCPT
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:33790 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752683AbbLJMb4 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Dec 2015 07:08:55 -0500
-Received: by iouu10 with SMTP id u10so91496594iou.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2015 04:08:54 -0800 (PST)
-Subject: Re: attacking btrfs filesystems via UUID collisions?
-To: "S.J." <sorry@anonym.com>, linux-btrfs@vger.kernel.org
-References: <20151204120529.37E47D5A28@emkei.cz>
- <20151204130758.GR8775@carfax.org.uk>
- <1449286104.18841.14.camel@scientia.net>
- <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
- <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
- <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
+	Thu, 10 Dec 2015 07:31:56 -0500
+Received: by mail-ig0-f172.google.com with SMTP id mv3so16507796igc.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2015 04:31:55 -0800 (PST)
+Subject: Re: subvols and parents - how?
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <1448340960.14125.51.camel@scientia.net>
+ <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
+ <1448400350.21291.88.camel@scientia.net>
+ <pan$22dc8$4457dc54$1cd0d037$c9fb9e32@cox.net>
+ <1449635797.20578.0.camel@scientia.net>
+ <pan$a4433$5d5ccde9$c53fc1f2$f519d361@cox.net> <56687B26.7070300@gmail.com>
+ <pan$f0e4$be60fa55$99baefcb$2044c99d@cox.net>
 From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <56696B53.7070905@gmail.com>
-Date: Thu, 10 Dec 2015 07:08:51 -0500
+Message-ID: <566970B8.7030700@gmail.com>
+Date: Thu, 10 Dec 2015 07:31:52 -0500
 MIME-Version: 1.0
-In-Reply-To: <5668A1CB.1020007@anonym.com>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms080702080007010206070807"
+In-Reply-To: <pan$f0e4$be60fa55$99baefcb$2044c99d@cox.net>
+Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020005070303060102080102"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 This is a cryptographically signed message in MIME format.
 
---------------ms080702080007010206070807
+--------------ms020005070303060102080102
 Content-Type: text/plain; charset=utf-8
 Content-Transfer-Encoding: quoted-printable
 
-On 2015-12-09 16:48, S.J. wrote:
->> 1. better practices, we really need to tell users, and documentation
->> writers, that using dd (or variant) to copy Btrfs volumes has a
->> consequence and should not be used to make copies.
+On 2015-12-09 22:56, Duncan wrote:
+> Austin S Hemmelgarn posted on Wed, 09 Dec 2015 14:04:06 -0500 as
+> excerpted:
 >=20
->> 2. Btrfs needs a better way to make a copy of a volume when there are
->> snapshots (including even rw snapshots); e.g. permit send/receive to
->> work on rw snapshots if the fs is ro mounted; e.g. a way to do
->> "recursive" send/receive.
+>> Agreed.  It's not too bad fixing a Gentoo system (as long as
+>> /var/lib/portage/world is still correct, you can just nuke the install=
+ed
+>> package database and emerge world, it'll take time, but it will get yo=
+ur
+>> system in a guaranteed consistent state).
 >=20
->> 3. Some way to fail gracefully, when there's ambiguity that cannot be
->> resolved. Once there are duplicate devs (dd or lvm snapshots, etc)
->> then there's simply no way to resolve the ambiguity automatically, and=
-
->> the volume should just refuse to rw mount until the user resolves the
->> ambiguity. I think it's OK to fallback to ro mount (maybe) by default
->> in such a case rather than totally fail to mount.
+> For sufficiently loose values of "consistent", yes, as I found out by=20
+> experience.  But it can be done, and I do have the experience to prove =
+it.
 >=20
-> About 3:
-> RO fallback for the second device/partitions is not good.
-> It won't stop confusing the two partitions, and even if both are RO,
-> thinking it's ok to read and then reading the wrong data is bad.
->=20
-> About 1 and 2 ... if 3 gets fulfilled, why?
-> DD itself is not a problem "if" the UUID is changed after it
-> (which is a command as simple as dd), and if someone doesn't
-> know that, he/she will notice when mount refuses to work
-> because UUID duplicate.
-Unless things have changed significantly, changing the UUID on a BTRFS
-image is not anywhere near as simple as copying it with dd.  The UUID
-gets used internally somehow, and changing it would require rewriting
-_all_ the metadata blocks.
+> What happens in practice is that while yes, as long as @world is correc=
+t=20
+> you can install to current and have all those files tracked again as=20
+> appropriate, if your package installation database is missing or out of=
+=20
+> sync with what's actually on your filesystem(s), where the new version =
+of=20
+> various packages will replace older files as they come across them duri=
+ng=20
+> the install process (subject to CONFIG_PROTECT of course, this part isn=
+'t=20
+> the problem), the problem is actually where the files of the actually=20
+> installed but untracked version differ from those of the version you're=
+=20
+> installing.
+Oh, definately, it's a useable system short term, but not something you
+should be depending on.  The other big difference though is that it's
+then trivial to bootstrap a clean install on the same system if you have
+the space for it (which is what I usually end up doing).
 
 
-
---------------ms080702080007010206070807
+--------------ms020005070303060102080102
 Content-Type: application/pkcs7-signature; name="smime.p7s"
 Content-Transfer-Encoding: base64
 Content-Disposition: attachment; filename="smime.p7s"
@@ -106,9 +108,9 @@ F6gUv9/mo6riv3A5bem/BdbgaJoPnWQD9D8wSyci9G4LKC+HQAMdLmGoeZfpJzKHMYIE0TCC
 BM0CAQEwgYAweTEQMA4GA1UEChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNl
 cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
 AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjEwMTIwODUxWjBPBgkq
-hkiG9w0BCQQxQgRASOpuOCADu3v5OKk09NFup+mAJvRKJB79YTLaA7JFMb4NoAgiwBzvSd1x
-PH2X/jgURx1IrNsjhOYBuAFDJxYzpjBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
+hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjEwMTIzMTUyWjBPBgkq
+hkiG9w0BCQQxQgRAg2qKUkSaVW2r/wtHS+JP2XPmjDhqj6ZVBZD/4KNApvVh8k3lGnFUfkji
+jOyJwp9oIaWWObwTgyMsspknv7nylzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
 BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
 MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
 ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
@@ -116,14 +118,14 @@ QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
 dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
 MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
 bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgB2gna9koeyw8p3vLo/kqtdYfSeEG7+AHD/eMOC8e8gbRN/qnvq
-Cg0hGasr46MMLXKuHmWD1WOuN9BlyMxWZ0vLV8Cbgur+8XURPtT/2Sr2zZnOTX83cPj3X4Kv
-jkAFf1BiRmEl7/hn318e11HybYq4L38GLgHhz15Ri8U6P1IEZ3PjmIgZFQ8mNNGcTY8nbs4x
-PuKeM4FJRv8+6TgKM9UkyBFltJoL1tNF1WEmErhSWlwO5DBhA6KOeOUpoHD1t4v9bML32fo/
-3637cihT7S73wLWCoPB6jvOxlahWLYq5e067l//2SMzfMWhmwKv9KpEHTg+cJ7YL/mXrz7Lj
-LmuYm2tjr/dh35/nOc0ifL87DuNfSl/MW+K5fRJXGQuJtPNxsLp2zKHdxTYlms0KQwPPebGU
-YV/J0TyA74y3GmWyM+KvTJsFoJ9f5CyIQpNCFeqQ+TTXqpXEd6dQAO9rvky6F049Z8V/TcMs
-JtmiToRcuUaPYxjlegytZyqK3CklxbgPx0g7ptEJk6HTfGVYIs+AF1dBYYvWhLPv5PK+ZxDX
-xznSrtNGq2xfWFjn3aRuyYOoWjGHRh084jP5zBhmO49mCcnAUPMb0Kw4ydNtBBRLNrzla7Qd
-J1e5KGN/dB3IYdWLqlUZjDz4Qcz2TfRQ3KlWfdzTdboVRTeRPEUp0zzrBwAAAAAAAA==
---------------ms080702080007010206070807--
+BgkqhkiG9w0BAQEFAASCAgBUrvBJTNlGIeOn8OR6iQBIQr+wDcIRoaBJzhuCHP6yBmAzinFC
+yqWpaqS4ytHG6OBPmIzlpSfHKE0AZzcTqssfvSB1LHxirah2+SKY6K58Mcl8m//Pm+7C0RNR
+P+GsczcLYfhjp9F3CiIbyAeDg09fkDAovgJNStuGmMgHp6FecuGg9uK6+Np09GxdDbeK97/e
+Q3cEihy5WTmIQ3DCQ0Svh9BnNAoGFLmpLheN5/9j8gQbnBw3N0R7xUsqfmb+6Wd90hEXSp37
+ljecpy+dmhAYIQTb15yYAiGPjriLEz0nFWkpD4UdWDSXEjYH+g+ixRf+jzkGthquKXWaOJbS
+hEZpp0fPX61U97V9iu4O08/zqkxw2+TMEHOnLS2uue9W9mKxZ3hy/UqfVBQzVQwSAg3kduTC
+lg47yPkNP36AdgPjGA3It34a1GL4Aygbft2eXg0dfCDNFin9+znY5fXNxh9gb6BCCst77Ot/
+nfzFjuZfautHXhnoZJ8MjQ0+AFp801MVeD1+twxPZEzQbb9EODcpsKf+4y94OF4tPzy8rox1
+jG/4srNLc2ocWHNiWTTxbQ7ngUush7bWNbYXyWVR9fWjrqyuUCFWR5DVSGKSAw67a2RpAE1O
+5PQEUbYUjFAjFEjjqVPy7SA+yVxgGSqHPf9Vku7ZpVH2jfFKBQTTnsuYNwAAAAAAAA==
+--------------ms020005070303060102080102--

@@ -1,58 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:60089 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750886AbbLUGbP (ORCPT
+Received: from mail-ig0-f172.google.com ([209.85.213.172]:37801 "EHLO
+	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752488AbbLJRYu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Dec 2015 01:31:15 -0500
-Date: Mon, 21 Dec 2015 17:31:11 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: "Darrick J. Wong" <darrick.wong@oracle.com>
-Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
-        fstests@vger.kernel.org, xfs@oss.sgi.com
-Subject: Re: [PATCH 06/11] reflink: more tests
-Message-ID: <20151221063111.GO19802@dastard>
-References: <20151219091052.15320.94973.stgit@birch.djwong.org>
- <20151219091131.15320.12391.stgit@birch.djwong.org>
+	Thu, 10 Dec 2015 12:24:50 -0500
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151219091131.15320.12391.stgit@birch.djwong.org>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <1448878620-16382-2-git-send-email-chandan@linux.vnet.ibm.com>
+References: <1448878620-16382-1-git-send-email-chandan@linux.vnet.ibm.com>
+	<1448878620-16382-2-git-send-email-chandan@linux.vnet.ibm.com>
+Date: Thu, 10 Dec 2015 17:24:49 +0000
+Message-ID: <CAL3q7H7MM-ce+KJ3=YNASQA4ZB5ifWw5jT4Eqg5UFtPDBfLJ8w@mail.gmail.com>
+Subject: Re: [PATCH V2 1/5] Filter xfs_io and od's output in units of FS block size
+From: Filipe Manana <fdmanana@gmail.com>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: fstests@vger.kernel.org,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        chandan@mykolab.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 19, 2015 at 01:11:31AM -0800, Darrick J. Wong wrote:
-> Add more tests for unaligned copy-on-write things, and explicitly
-> test the ability to pass "len == 0" to mean reflink/dedupe all
-> the way to the end of the file".
-> 
-> Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
-.....
-> +_cleanup()
+On Mon, Nov 30, 2015 at 10:16 AM, Chandan Rajendra
+<chandan@linux.vnet.ibm.com> wrote:
+> The helpers introduced in this commit will be used to make btrfs tests that
+> assume 4k as the block size to work on non-4k blocksized filesystem instances
+> as well.
+>
+> Signed-off-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Reviewed-by: Filipe Manana <fdmanana@suse.com>
+
+Thanks!
+
+> ---
+>  common/filter | 45 +++++++++++++++++++++++++++++++++++++++++++++
+>  1 file changed, 45 insertions(+)
+>
+> diff --git a/common/filter b/common/filter
+> index af456c9..05f2fab 100644
+> --- a/common/filter
+> +++ b/common/filter
+> @@ -229,6 +229,38 @@ _filter_xfs_io_unique()
+>      common_line_filter | _filter_xfs_io
+>  }
+>
+> +_filter_xfs_io_units_modified()
 > +{
-> +    cd /
-> +    rm -rf "$tmp".* "$TESTDIR"
-> +}
-.....
+> +       UNIT=$1
+> +       UNIT_SIZE=$2
 > +
-> +TESTDIR="$TEST_DIR/test-$seq"
-> +rm -rf "$TESTDIR"
-> +mkdir "$TESTDIR"
+> +       $AWK_PROG -v unit="$UNIT" -v unit_size=$UNIT_SIZE '
+> +               /wrote/ {
+> +                       split($2, bytes, "/")
+> +
+> +                       bytes_written = strtonum(bytes[1])
+> +
+> +                       offset = strtonum($NF)
+> +
+> +                       unit_start = offset / unit_size
+> +                       unit_start = int(unit_start)
+> +                       unit_end = (offset + bytes_written - 1) / unit_size
+> +                       unit_end = int(unit_end)
+> +
+> +                       printf("%ss modified: [%d - %d]\n", unit, unit_start, unit_end)
+> +
+> +                       next
+> +               }
+> +       '
+> +}
+> +
+> +_filter_xfs_io_blocks_modified()
+> +{
+> +       BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
+> +
+> +       _filter_xfs_io_units_modified "Block" $BLOCK_SIZE
+> +}
+> +
+>  _filter_test_dir()
+>  {
+>         sed -e "s,$TEST_DEV,TEST_DEV,g" -e "s,$TEST_DIR,TEST_DIR,g"
+> @@ -323,5 +355,18 @@ _filter_ro_mount() {
+>             -e "s/mount: cannot mount block device/mount: cannot mount/g"
+>  }
+>
+> +_filter_od()
+> +{
+> +       BLOCK_SIZE=$(get_block_size $SCRATCH_MNT)
+> +       $AWK_PROG -v block_size=$BLOCK_SIZE '
+> +               /^[0-9]+/ {
+> +                       offset = strtonum("0"$1);
+> +                       $1 = sprintf("%o", offset / block_size);
+> +                       print $0;
+> +               }
+> +               /\*/
+> +       '
+> +}
+> +
+>  # make sure this script returns success
+>  /bin/true
+> --
+> 2.1.0
+>
 
-This use of TESTDIR is highly confusing. When I see TESTDIR I think
-that it's the mount point of the test device, not potentially some
-directory on the scratch device.
 
-I see that this occurs through lots of tests, not just these new
-ones. Can you do a pass across the tests with, say, sed and rename
-all these to something less confusing? e.g. "testdir", in lower
-case, makes it clear that it's a local variable, not the global test
-device mount point.... (i.e. test local variables are lower case,
-exported test harnes variables are upper case ;)
 
-Separate patch/pull req is fine.
-
-Cheers,
-
-dave.
 -- 
-Dave Chinner
-david@fromorbit.com
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

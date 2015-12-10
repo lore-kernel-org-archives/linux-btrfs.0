@@ -1,131 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f172.google.com ([209.85.213.172]:33790 "EHLO
-	mail-ig0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752683AbbLJMb4 (ORCPT
+Received: from frost.carfax.org.uk ([85.119.82.111]:49239 "EHLO
+	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752701AbbLJMlb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 10 Dec 2015 07:31:56 -0500
-Received: by mail-ig0-f172.google.com with SMTP id mv3so16507796igc.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 10 Dec 2015 04:31:55 -0800 (PST)
-Subject: Re: subvols and parents - how?
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <1448340960.14125.51.camel@scientia.net>
- <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
- <1448400350.21291.88.camel@scientia.net>
- <pan$22dc8$4457dc54$1cd0d037$c9fb9e32@cox.net>
- <1449635797.20578.0.camel@scientia.net>
- <pan$a4433$5d5ccde9$c53fc1f2$f519d361@cox.net> <56687B26.7070300@gmail.com>
- <pan$f0e4$be60fa55$99baefcb$2044c99d@cox.net>
-From: Austin S Hemmelgarn <ahferroin7@gmail.com>
-Message-ID: <566970B8.7030700@gmail.com>
-Date: Thu, 10 Dec 2015 07:31:52 -0500
+	Thu, 10 Dec 2015 07:41:31 -0500
+Date: Thu, 10 Dec 2015 12:41:29 +0000
+From: Hugo Mills <hugo@carfax.org.uk>
+To: Austin S Hemmelgarn <ahferroin7@gmail.com>
+Cc: "S.J." <sorry@anonym.com>, linux-btrfs@vger.kernel.org
+Subject: Re: attacking btrfs filesystems via UUID collisions?
+Message-ID: <20151210124129.GI2376@carfax.org.uk>
+References: <20151204120529.37E47D5A28@emkei.cz>
+ <20151204130758.GR8775@carfax.org.uk>
+ <1449286104.18841.14.camel@scientia.net>
+ <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
+ <1449366680.3183.37.camel@scientia.net>
+ <56644785.4090702@gmx.com>
+ <1449639588.7835.2.camel@scientia.net>
+ <5668A1CB.1020007@anonym.com>
+ <56696B53.7070905@gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <pan$f0e4$be60fa55$99baefcb$2044c99d@cox.net>
-Content-Type: multipart/signed; protocol="application/pkcs7-signature"; micalg=sha-512; boundary="------------ms020005070303060102080102"
+Content-Type: multipart/signed; micalg=pgp-sha1;
+	protocol="application/pgp-signature"; boundary="+HmK7y6O+lKZIGkr"
+In-Reply-To: <56696B53.7070905@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a cryptographically signed message in MIME format.
 
---------------ms020005070303060102080102
-Content-Type: text/plain; charset=utf-8
-Content-Transfer-Encoding: quoted-printable
+--+HmK7y6O+lKZIGkr
+Content-Type: text/plain; charset=us-ascii
+Content-Disposition: inline
 
-On 2015-12-09 22:56, Duncan wrote:
-> Austin S Hemmelgarn posted on Wed, 09 Dec 2015 14:04:06 -0500 as
-> excerpted:
->=20
->> Agreed.  It's not too bad fixing a Gentoo system (as long as
->> /var/lib/portage/world is still correct, you can just nuke the install=
-ed
->> package database and emerge world, it'll take time, but it will get yo=
-ur
->> system in a guaranteed consistent state).
->=20
-> For sufficiently loose values of "consistent", yes, as I found out by=20
-> experience.  But it can be done, and I do have the experience to prove =
-it.
->=20
-> What happens in practice is that while yes, as long as @world is correc=
-t=20
-> you can install to current and have all those files tracked again as=20
-> appropriate, if your package installation database is missing or out of=
-=20
-> sync with what's actually on your filesystem(s), where the new version =
-of=20
-> various packages will replace older files as they come across them duri=
-ng=20
-> the install process (subject to CONFIG_PROTECT of course, this part isn=
-'t=20
-> the problem), the problem is actually where the files of the actually=20
-> installed but untracked version differ from those of the version you're=
-=20
-> installing.
-Oh, definately, it's a useable system short term, but not something you
-should be depending on.  The other big difference though is that it's
-then trivial to bootstrap a clean install on the same system if you have
-the space for it (which is what I usually end up doing).
+On Thu, Dec 10, 2015 at 07:08:51AM -0500, Austin S Hemmelgarn wrote:
+> On 2015-12-09 16:48, S.J. wrote:
+> >> 1. better practices, we really need to tell users, and documentation
+> >> writers, that using dd (or variant) to copy Btrfs volumes has a
+> >> consequence and should not be used to make copies.
+> > 
+> >> 2. Btrfs needs a better way to make a copy of a volume when there are
+> >> snapshots (including even rw snapshots); e.g. permit send/receive to
+> >> work on rw snapshots if the fs is ro mounted; e.g. a way to do
+> >> "recursive" send/receive.
+> > 
+> >> 3. Some way to fail gracefully, when there's ambiguity that cannot be
+> >> resolved. Once there are duplicate devs (dd or lvm snapshots, etc)
+> >> then there's simply no way to resolve the ambiguity automatically, and
+> >> the volume should just refuse to rw mount until the user resolves the
+> >> ambiguity. I think it's OK to fallback to ro mount (maybe) by default
+> >> in such a case rather than totally fail to mount.
+> > 
+> > About 3:
+> > RO fallback for the second device/partitions is not good.
+> > It won't stop confusing the two partitions, and even if both are RO,
+> > thinking it's ok to read and then reading the wrong data is bad.
+> > 
+> > About 1 and 2 ... if 3 gets fulfilled, why?
+> > DD itself is not a problem "if" the UUID is changed after it
+> > (which is a command as simple as dd), and if someone doesn't
+> > know that, he/she will notice when mount refuses to work
+> > because UUID duplicate.
+> Unless things have changed significantly, changing the UUID on a BTRFS
+> image is not anywhere near as simple as copying it with dd.  The UUID
+> gets used internally somehow, and changing it would require rewriting
+> _all_ the metadata blocks.
 
+   Indeed, but there is now a tool to do that. :) (btrfstune -u or -U)
 
---------------ms020005070303060102080102
-Content-Type: application/pkcs7-signature; name="smime.p7s"
-Content-Transfer-Encoding: base64
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Description: S/MIME Cryptographic Signature
+   Hugo.
 
-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
-cnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcN
-AQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DANBglghkgBZQMEAgMFAKCCAiEwGAYJKoZI
-hvcNAQkDMQsGCSqGSIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTUxMjEwMTIzMTUyWjBPBgkq
-hkiG9w0BCQQxQgRAg2qKUkSaVW2r/wtHS+JP2XPmjDhqj6ZVBZD/4KNApvVh8k3lGnFUfkji
-jOyJwp9oIaWWObwTgyMsspknv7nylzBsBgkqhkiG9w0BCQ8xXzBdMAsGCWCGSAFlAwQBKjAL
-BglghkgBZQMEAQIwCgYIKoZIhvcNAwcwDgYIKoZIhvcNAwICAgCAMA0GCCqGSIb3DQMCAgFA
-MAcGBSsOAwIHMA0GCCqGSIb3DQMCAgEoMIGRBgkrBgEEAYI3EAQxgYMwgYAweTEQMA4GA1UE
-ChMHUm9vdCBDQTEeMBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlD
-QSBDZXJ0IFNpZ25pbmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2Vy
-dC5vcmcCAxEt+DCBkwYLKoZIhvcNAQkQAgsxgYOggYAweTEQMA4GA1UEChMHUm9vdCBDQTEe
-MBwGA1UECxMVaHR0cDovL3d3dy5jYWNlcnQub3JnMSIwIAYDVQQDExlDQSBDZXJ0IFNpZ25p
-bmcgQXV0aG9yaXR5MSEwHwYJKoZIhvcNAQkBFhJzdXBwb3J0QGNhY2VydC5vcmcCAxEt+DAN
-BgkqhkiG9w0BAQEFAASCAgBUrvBJTNlGIeOn8OR6iQBIQr+wDcIRoaBJzhuCHP6yBmAzinFC
-yqWpaqS4ytHG6OBPmIzlpSfHKE0AZzcTqssfvSB1LHxirah2+SKY6K58Mcl8m//Pm+7C0RNR
-P+GsczcLYfhjp9F3CiIbyAeDg09fkDAovgJNStuGmMgHp6FecuGg9uK6+Np09GxdDbeK97/e
-Q3cEihy5WTmIQ3DCQ0Svh9BnNAoGFLmpLheN5/9j8gQbnBw3N0R7xUsqfmb+6Wd90hEXSp37
-ljecpy+dmhAYIQTb15yYAiGPjriLEz0nFWkpD4UdWDSXEjYH+g+ixRf+jzkGthquKXWaOJbS
-hEZpp0fPX61U97V9iu4O08/zqkxw2+TMEHOnLS2uue9W9mKxZ3hy/UqfVBQzVQwSAg3kduTC
-lg47yPkNP36AdgPjGA3It34a1GL4Aygbft2eXg0dfCDNFin9+znY5fXNxh9gb6BCCst77Ot/
-nfzFjuZfautHXhnoZJ8MjQ0+AFp801MVeD1+twxPZEzQbb9EODcpsKf+4y94OF4tPzy8rox1
-jG/4srNLc2ocWHNiWTTxbQ7ngUush7bWNbYXyWVR9fWjrqyuUCFWR5DVSGKSAw67a2RpAE1O
-5PQEUbYUjFAjFEjjqVPy7SA+yVxgGSqHPf9Vku7ZpVH2jfFKBQTTnsuYNwAAAAAAAA==
---------------ms020005070303060102080102--
+-- 
+Hugo Mills             | Go not to the elves for counsel, for they will say
+hugo@... carfax.org.uk | both no and yes.
+http://carfax.org.uk/  |
+PGP: E2AB1DE4          |
+
+--+HmK7y6O+lKZIGkr
+Content-Type: application/pgp-signature; name="signature.asc"
+Content-Description: Digital signature
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1.4.12 (GNU/Linux)
+
+iQIcBAEBAgAGBQJWaXL5AAoJEFheFHXiqx3kIzwP/j4lDcD2bVHMkc1A+AT8bPQm
+Njd2ybY1SCoJBi3qIYX6z0JBIt6BzeM41Ov6RbTffQ+s4ayIabdHEG43+6P/ShYd
+EunaY+3XQcZ3cr18U3Au8/FK4/CxBIaGIqhfxNJRf+lRd/yqsdf5jjLc0JAEVJeH
+pzWCX1LQhyce1TcpfWz+LG2OFcs3EZjqCvs7Y7qIk7sL1xZ6qK6Irwh8N/TjAQa2
+gQ2auhQ7nlCyWks8C83/Rcu/BoabajJw+AMrKJQ0UtaoF6kWR3oKL31px0oZO6t9
+0aj5ILbCpteFLvD2dv/VLZXuziNri9cgjD/soTVrM60zqizQN6DaXx+sN+aiwJRR
+YNiYZNryFJDD+FVdTe9V8q5ghcHY/Mm79hDheW8lQLyiUAWYSgRb8g++OWORTXAx
+GuXNq6KKGeLuE00v/R6fvqcw7CrWOeEMAsA+F5YlQp2WMhT5R9oF31tBbXIR098b
+pIYaKbIefjVMVS0gK/Frx6jKyYNQGSk8HI+hC/gkc/OkB5wrYMOZFeCnj7YTt8hv
+d75j3heAvPkieVypvu7Th8OSCfcvL8DEGb+5zlkLnSVZ3RbeBQ2EPWTIscJxJIjV
+VsxJhkVKXUgiBX0m2zJnJHZNqMqNi7DlNpGDFs3038az81WHFQNHBOpfycIjeuou
+5d4FnkUgAXViY/L4a7IC
+=4GiZ
+-----END PGP SIGNATURE-----
+
+--+HmK7y6O+lKZIGkr--

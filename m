@@ -1,35 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:52843 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932379AbbLPRdW (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 12:33:22 -0500
-Date: Wed, 16 Dec 2015 12:33:12 -0500
-From: Chris Mason <clm@fb.com>
-To: <fdmanana@kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [GIT PULL] Btrfs fixes for 4.4
-Message-ID: <20151216173312.GF6322@ret.masoncoding.com>
-References: <1449747890-26516-1-git-send-email-fdmanana@kernel.org>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1449747890-26516-1-git-send-email-fdmanana@kernel.org>
+Received: from mail.kernel.org ([198.145.29.136]:39937 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750834AbbLJLQr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 10 Dec 2015 06:16:47 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix transaction handle leak in balance
+Date: Thu, 10 Dec 2015 11:16:27 +0000
+Message-Id: <1449746187-11806-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 10, 2015 at 11:44:50AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Hi Chris,
-> 
-> Please consider the following fixes for kernel 4.4. Two of them are fixes
-> to new issues introduced in the 4.4 merge window and 4.4 release candidates.
-> The other one just fixes a warning message that is confusing and has made
-> several users wonder if they are supposed to do anything or not when we
-> fail to read a space cache.
-> All these fixes have been previously sent to the mailing list.
+From: Filipe Manana <fdmanana@suse.com>
 
-Thanks Filipe, I tested these and pushed out, along with my two from
-this week.
+If we fail to allocate a new data chunk, we were jumping to the error path
+without release the transaction handle we got before. Fix this by always
+releasing it before doing the jump.
 
--chris
+Fixes: 2c9fe8355258 ("btrfs: Fix lost-data-profile caused by balance bg")
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/volumes.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 3e55e07..f5e5e20 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3548,12 +3548,11 @@ again:
+ 
+ 			ret = btrfs_force_chunk_alloc(trans, chunk_root,
+ 						      BTRFS_BLOCK_GROUP_DATA);
++			btrfs_end_transaction(trans, chunk_root);
+ 			if (ret < 0) {
+ 				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+ 				goto error;
+ 			}
+-
+-			btrfs_end_transaction(trans, chunk_root);
+ 			chunk_reserved = 1;
+ 		}
+ 
+-- 
+2.1.3
+

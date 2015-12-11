@@ -1,51 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f45.google.com ([209.85.192.45]:36504 "EHLO
-	mail-qg0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750923AbbLKRyu (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:45071 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750862AbbLKSf1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Dec 2015 12:54:50 -0500
-Received: by qgcc31 with SMTP id c31so203268542qgc.3
-        for <linux-btrfs@vger.kernel.org>; Fri, 11 Dec 2015 09:54:49 -0800 (PST)
-Subject: Re: new oops in 4.4.0-rc4
-To: Chris Mason <clm@fb.com>, Andrew Morton <akpm@linux-foundation.org>,
-        Dave Jones <dsj@fb.com>, linux-kernel@vger.kernel.org,
-        Btrfs mailing list <linux-btrfs@vger.kernel.org>
-References: <5669AA01.2000300@jons.org>
- <20151211153559.GD11257@ret.masoncoding.com>
-From: Jon Christopherson <jon@jons.org>
-Message-ID: <566B0DE7.3030406@jons.org>
-Date: Fri, 11 Dec 2015 11:54:47 -0600
+	Fri, 11 Dec 2015 13:35:27 -0500
+Date: Fri, 11 Dec 2015 10:35:21 -0800
+From: Liu Bo <bo.li.liu@oracle.com>
+To: fdmanana@kernel.org
+Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH] Btrfs: fix transaction handle leak in balance
+Message-ID: <20151211183520.GA13961@localhost.localdomain>
+Reply-To: bo.li.liu@oracle.com
+References: <1449746187-11806-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
-In-Reply-To: <20151211153559.GD11257@ret.masoncoding.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1449746187-11806-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/11/2015 09:35 AM, Chris Mason wrote:
-> On Thu, Dec 10, 2015 at 10:36:17AM -0600, Jon Christopherson wrote:
+On Thu, Dec 10, 2015 at 11:16:27AM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> If we fail to allocate a new data chunk, we were jumping to the error path
+> without release the transaction handle we got before. Fix this by always
+> releasing it before doing the jump.
 
-<snip>
+Looks good.
 
->
-> Dave Jones sent in a report about this with trinity too, I'm digging in
-> today.  Since you can trigger this reliably, what was the last
-> known-good kernel for you?
->
-> -chris
->
+Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
 
-Hello,
+Thanks,
 
-My last known good kernel was from Dec 5 04:00 CST:
-
-Linux version 4.4.0-120-generic (root@enigma.jons.org) (gcc version 
-5.2.1 20151124 (Ubuntu 5.2.1-1ubuntu1~14.04) ) #201512050400 SMP Sat Dec 
-5 03:54:25 CST 2015
-
-I will check over the commits from then till now as well.
-
-
-Regards,
-
-Jon Christopherson
-
+-liubo
+> 
+> Fixes: 2c9fe8355258 ("btrfs: Fix lost-data-profile caused by balance bg")
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+>  fs/btrfs/volumes.c | 3 +--
+>  1 file changed, 1 insertion(+), 2 deletions(-)
+> 
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index 3e55e07..f5e5e20 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3548,12 +3548,11 @@ again:
+>  
+>  			ret = btrfs_force_chunk_alloc(trans, chunk_root,
+>  						      BTRFS_BLOCK_GROUP_DATA);
+> +			btrfs_end_transaction(trans, chunk_root);
+>  			if (ret < 0) {
+>  				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
+>  				goto error;
+>  			}
+> -
+> -			btrfs_end_transaction(trans, chunk_root);
+>  			chunk_reserved = 1;
+>  		}
+>  
+> -- 
+> 2.1.3
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

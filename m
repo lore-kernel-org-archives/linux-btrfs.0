@@ -1,105 +1,173 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f171.google.com ([209.85.192.171]:34895 "EHLO
-	mail-pf0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750798AbbLLWMe (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:55614 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750798AbbLLWPn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Dec 2015 17:12:34 -0500
-Received: by pfd5 with SMTP id 5so22819213pfd.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 12 Dec 2015 14:12:33 -0800 (PST)
-Received: from localhost (220-253-24-178.dyn.iinet.net.au. [220.253.24.178])
-        by smtp.gmail.com with ESMTPSA id x86sm18633214pfi.68.2015.12.12.14.12.31
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 12 Dec 2015 14:12:32 -0800 (PST)
-Date: Sun, 13 Dec 2015 09:12:29 +1100
-From: Alistair Grant <akgrant0710@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Fixing recursive fault and parent transid verify failed
-Message-ID: <20151212221229.GA3121@alistair-xps13>
-References: <20151207015715.GA13954@alistair-xps13>
- <pan$42653$68e1a3aa$3a4c1c2c$b0e89f8@cox.net>
- <20151207100256.GA6836@alistair-xps13>
- <pan$cb93a$b4f560b9$2dfdbdbc$17d7a835@cox.net>
- <20151207195504.GA9262@alistair-xps13>
- <pan$73edd$edd83c4d$2a373055$4b6032dd@cox.net>
- <20151208223847.GA4419@alistair-xps13>
- <pan$39f4c$4a92c925$153447bf$d623c310@cox.net>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$39f4c$4a92c925$153447bf$d623c310@cox.net>
+	Sat, 12 Dec 2015 17:15:43 -0500
+Message-ID: <1449958538.15961.3.camel@scientia.net>
+Subject: Re: btrfs: poor performance on deleting many large files
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Sat, 12 Dec 2015 23:15:38 +0100
+In-Reply-To: <pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	 <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
+	 <1448488198.4717.4.camel@gmail.com>
+	 <pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
+	 <1448562347.8809.16.camel@scientia.net>
+	 <pan$54542$5eb77bd3$8682bff8$82310de1@cox.net>
+	 <1448582805.11377.9.camel@scientia.net>
+	 <pan$34543$2ed1f043$2f803125$884b36c0@cox.net>
+	 <1448683025.6837.4.camel@scientia.net>
+	 <pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-vhErYdQMAdg/N3Kcj3VD"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 09, 2015 at 10:19:41AM +0000, Duncan wrote:
-> Alistair Grant posted on Wed, 09 Dec 2015 09:38:47 +1100 as excerpted:
-> 
-> > On Tue, Dec 08, 2015 at 03:25:14PM +0000, Duncan wrote:
-> > Thanks again Duncan for your assistance.
-> > 
-> > I plugged the ext4 drive I planned to use for the recovery in to the
-> > machine and immediately got a couple of errors, which makes me wonder
-> > whether there isn't a hardware problem with the machine somewhere.
-> > 
-> > So decided to move to another machine to do the recovery.
-> 
-> Ouch!  That can happen, and if you moved the ext4 drive to a different 
-> machine and it was fine there, then it's not the drive.
-> 
-> But you didn't say what kind of errors or if you checked SMART, or even 
-> how it was plugged in (USB or SATA-direct or...).  So I guess you have 
-> that side of things under control.  (If not, there's some here who know 
-> quite a bit about that sort of thing...)
 
-Yep, I'm familiar enough with smartmontools, etc. to (hopefully) figure
-this out on my own.
+--=-vhErYdQMAdg/N3Kcj3VD
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Sat, 2015-11-28 at 06:49 +0000, Duncan wrote:
+> Christoph Anton Mitterer posted on Sat, 28 Nov 2015 04:57:05 +0100 as
+> excerpted:
+> > Still, specifically for snapshots that's a bit unhandy, as one
+> > typically
+> > doesn't mount each of them... one rather mount e.g. the top level
+> > subvol
+> > and has a subdir snapshots there...
+> > So perhaps the idea of having snapshots that are per se noatime is
+> > still
+> > not too bad.
+> Read-only snapshots?
+So you basically mean that ro snapshots won't have their atime updated
+even without noatime?
+Well I guess that was anyway the recent behaviour of Linux filesystems,
+and only very old UNIX systems updated the atime even when the fs was
+set ro.
+
+> That'd do it, and of course you can toggle the read-
+> only property (see btrfs property and its btrfs-property manpage).
+Sure, but then it would still be nice for rw snapshots.
+
+I guess what I probably actually want is the ability to set noatime as
+a property.
+I'll add that in a "feature request" on the project ideas wiki.
+
+> Alternatively, mount the toplevel subvol read-only or noatime on one=20
+> mountpoint, and bind-mount it read-write or whatever other
+> appropriate=20
+Well it's of course somehow possible... but that seems a bit ugly to
+me... the best IMHO, would really be if one could set a property on
+snapshots that marks them noatime.
 
 
-> 
-> > So I'm now recovering on Arch Linux 4.1.13-1 with btrfs-progs v4.3.1
-> > (the latest version from archlinuxarm.org).
-> > 
-> > Attempting:
-> > 
-> > sudo btrfs restore -S -m -v /dev/sdb /mnt/btrfs-recover/ ^&1 | tee
-> > btrfs-recover.log
-> > 
-> > only recovered 53 of the more than 106,000 files that should be
-> > available.
-> > 
-> > The log is available at:
-> > 
-> > https://www.dropbox.com/s/p8bi6b8b27s9mhv/btrfs-recover.log?dl=0
-> > 
-> > I did attempt btrfs-find-root, but couldn't make sense of the output:
-> > 
-> > https://www.dropbox.com/s/qm3h2f7c6puvd4j/btrfs-find-root.log?dl=0
-> 
-> Yeah, btrfs-find-root's output deciphering takes a bit of knowledge.  
-> Between what I had said and the wiki, I was hoping you could make sense 
-> of things without further help, but...
->
-> ...
+Cheers,
+Chris.
+--=-vhErYdQMAdg/N3Kcj3VD
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
-It turns out that a drive from a separate filesystem was dying and
-causing all the weird behaviour on the original machine.
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxMjIyMTUz
+OFowTwYJKoZIhvcNAQkEMUIEQNdE9Pj+HWbxDYRPjZ2P8fWH/slIbBoCy8vU0IWExlECe8LoBo4h
+GcJQuy2pFJ+clUhd/9un9PeCaE4TNUnLzQMwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC5PlaNCdxwoJYL2MFVDqk65Yp4MZ1N
+MynOmJZKyeWw2vaCBEb6OeTLj/2Eu/kdR9nCpNQEIxE73qhFzKpKNOnJcc5IPQZk+zJ2jEgg3wMB
+7HwCr2y2iuShK3DiatepMGYiXR+gcv+PBZEo0+rGDokJoP1LF7rvateqXRFoU4CVpdZ2faSuDCG8
+Z7y9EDbLcsCl7zVR+Z9hn7Rb1YSPHVy1ueinblWXPYQn1GIdiF5vZxQdaXW964hr5WLRl6tCLS3M
+j8n4BKHe0ehIelMT6zr8VLsvobCeMcT9kmF3S5ehnESca7lfkQQEj9uJPM9V0wmHd2GZH5DTmNkj
+MY8lCwVkAAAAAAAA
 
-Having two failures at the same time (drive physical failure and btrfs
-filesystem corruption) was a bit too much for me, so I aborted the btrfs
-restore attempts, bought a replacement drive and just went back to the
-backups (for both failures).
 
-Unfortunately, I now won't be able to determine whether there was any
-connection between the failures or not.
-
-So while I didn't get to practice my restore skills, the good news is
-that it is all back up and running without any problems (yet :-)).
-
-Thank you very much for the description and detailed set of steps for
-using btrfs-find-root and restore.  While I didn't get to use them this
-time, I've added links to the mailing list archive in my btrfs wiki user
-page so I can find my way back (and if others search for restore and
-find root they may also benefit from your effort).
-
-Thanks again,
-Alistair
+--=-vhErYdQMAdg/N3Kcj3VD--
 

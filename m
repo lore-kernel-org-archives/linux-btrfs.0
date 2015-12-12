@@ -1,87 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:49447 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:49793 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752045AbbLLU2D (ORCPT
+	with ESMTP id S1752338AbbLLUdT (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 12 Dec 2015 15:28:03 -0500
-Message-ID: <1449952078.6742.10.camel@scientia.net>
-Subject: Re: subvols, ro- and bind mounts - how?
+	Sat, 12 Dec 2015 15:33:19 -0500
+Message-ID: <1449952395.6742.13.camel@scientia.net>
+Subject: Re: Will "btrfs check --repair" fix the mounting problem?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Chris Murphy <lists@colorremedies.com>, "S.J." <sorry@anonym.com>
+To: Chris Murphy <lists@colorremedies.com>, Ivan Sizov <sivan606@gmail.com>
 Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Sat, 12 Dec 2015 21:27:58 +0100
-In-Reply-To: <CAJCQCtR+8V5Kp6kYD3SsOpBQWi8_hc=m-FoumSkb5b4cQf0MBQ@mail.gmail.com>
-References: <1448340960.14125.51.camel@scientia.net>
-	 <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
-	 <1448400350.21291.88.camel@scientia.net>
-	 <pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
-	 <1449635882.20578.2.camel@scientia.net>
-	 <pan$eafa8$b5da4379$31bc32b1$5bc4c9a0@cox.net>
-	 <1449782004.7032.19.camel@scientia.net> <5669FE64.2090308@anonym.com>
-	 <CAJCQCtR+8V5Kp6kYD3SsOpBQWi8_hc=m-FoumSkb5b4cQf0MBQ@mail.gmail.com>
+Date: Sat, 12 Dec 2015 21:33:15 +0100
+In-Reply-To: <CAJCQCtTckg3dA-YiswCHGo0rH7UQtObLCHb=H=mERG256SdjyQ@mail.gmail.com>
+References: <566b0cff.pXiyzYE4dYIOt31+%sivan606@gmail.com>
+	 <CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
+	 <CAMG9ccx6ahFfnsq3DHUzemYjQwuTHD46nL1SqPsjeDNL4KTRWg@mail.gmail.com>
+	 <CAJCQCtTckg3dA-YiswCHGo0rH7UQtObLCHb=H=mERG256SdjyQ@mail.gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-g25rICPu3S5CI3rq43iT"
+	boundary="=-JwTXJcrA8auDuosLhkCw"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-g25rICPu3S5CI3rq43iT
+--=-JwTXJcrA8auDuosLhkCw
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Thu, 2015-12-10 at 19:32 -0700, Chris Murphy wrote:
-> That seems due for a revision because I do rw, ro, rw, rw, ro mounts
-> in sequence and they stick fine. In fact they stick with the same
-> subvolume.
+On Sat, 2015-12-12 at 13:16 -0700, Chris Murphy wrote:
+> > What is the better way to get data? send/receive works only with RO
+> > snapshots. Is there another way to preserve subvolumes and CoW
+> > structure (a lot of files was copied between subvols using "cp
+> > --reflink=3Dalways")? Or just rsync'ing files is all what I can do?
 >=20
-> [root@f23m ]# mount /dev/sda7 /mnt/1 -o subvol=3Dhome
-> [root@f23m ]# mount /dev/sda7 /mnt/2 -o subvol=3Dhome,ro
-> [root@f23m ]# mount /dev/sda7 /mnt/3 -o subvol=3Dhome
-> [root@f23m ]# mount
-> [...snip...]
-> /dev/sda7 on /mnt/1 type btrfs
-> (rw,relatime,seclabel,ssd,space_cache,subvolid=3D258,subvol=3D/home)
-> /dev/sda7 on /mnt/2 type btrfs
-> (ro,relatime,seclabel,ssd,space_cache,subvolid=3D258,subvol=3D/home)
-> /dev/sda7 on /mnt/3 type btrfs
-> (rw,relatime,seclabel,ssd,space_cache,subvolid=3D258,subvol=3D/home)
+> cp -a or rsync -a is all I can think of. To start to get it back to
+> normal, you can use duperemove. While that doesn't create subvolumes,
+> it'll at least find duplicate extents and use reflinks for those. So
+> it's in effect the same thing you have now, just lacking the
+> subvolume
+> structure.
 
+If he can still write to the fs, he could just create a ro-snapshot of
+the rw ones?
+Of course if the fs is already damaged, that may cause even more
+damage... so this should only be made on a clone of the fs.
 
-Not sure what you mean with "stick" here... I'd say the above has
-simply the following semantics:
-- the default for mounts is rw
-- thus /mnt/1 and /mnt/3 are rw, and 3 isn't rw, because 1 was
-
-In other words, if you change that to the following:
-# mount /dev/sda7 /mnt/1 -o subvol=3Dhome,ro
-# mount /dev/sda7 /mnt/2 -o subvol=3Dhome,ro
-# mount /dev/sda7 /mnt/3 -o subvol=3Dhome
-I'd expect that you get
-ro
-ro
-rw
-
-At least based on how I understood the whole system now.
-That was actually my question here:
-Q: In other words does mounting the same subvol *again* behave like --
-bind mounts, i.e. the further mounts would get the options from the
-first mount?
-
-And I guess the A:(nswer) is: no, mount options affect the respective
-mountpoint (including any nested subvols below that) only (except of
-course it's a --bind mount.
-
-
-If one of the devs could confirm that semantics, I may find some time
-to update the wiki accordingly.
-
-
-Cheers,
-Chris.
-
---=-g25rICPu3S5CI3rq43iT
+--=-JwTXJcrA8auDuosLhkCw
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -168,19 +132,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxMjIwMjc1
-OFowTwYJKoZIhvcNAQkEMUIEQPxmxy9xjwG9G6UDElmZclg1oHDiXzuMftmTOEfkLlvwDWPuB/nu
-F8gTgo+lNqBYc35lwrPuCNEDH5OfZtvV6K0wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxMjIwMzMx
+NVowTwYJKoZIhvcNAQkEMUIEQFjpVF5shk477s8BnCTiF7/p2fCDHqUzHj21JJP6F2D4jGwHvw68
+DKXc434zEcGM4lHRHe2cpOnQ4TyysEgYdkUwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBgWE8Kor5s1oBOiZShkVHPlSl3JLTs
-8CQHFVvF8kfziNFIqG/qrQeNQszL1KGBdYe2NjWZ+Zfa6rAlWWgYbvl71QC7pTHDBnmx5jciIrxi
-ry1m0yWoVWdVJ619a5IJ6N7/MGEkXYXd3ChrD3NgjOiuGy6Zz0KdM32pZIQvPmJ6jS+6iGE6O/ta
-1YkHL8NpMORYS9kUSH9NglP0KI3w9xcQ7r/LDNpf1dZpFV6XVp/JSJDLuPPeLa0vuq+VUD0BSnx9
-ySm1jB7vqef95aIODxlJaOkKOVMpHLOg4g3Ajiex5Dg91AYBZ3EOivI+SoyWnvVzuqAY3QPX9VqO
-R81IDTnlAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAPnAdZPq0n1KKlO5YY833t9PfQ5sFc
+hmvw6u3hSaogRFDtBQ424qcazyuMAZu746YeHasxY6nc0DisrbXe5dxJpo9jjzvDZnFlkbUs2qEg
+aXF2yhJN3bsjlXv6DUSBj0gZ+j5wxByQ1P4DYK+au3vgZ2d49U7slfx7Cm70zpnwXLNTiCVg4Mzd
+xxtH3ydGe14s8cM2PrNx7nrrGLRwZox042PpUk3Q2mwGUEIzrUKoUOWI1GmkdUm0+a+6CAZa2Om6
+n8HnCO0vWhjgWAzw88uFsRy1V4UfCOw2Cx20+afLzBmZ5IZPjxw/jX/PFxjOE1tp0dVhiFIWEU3X
+RI8suahDAAAAAAAA
 
 
---=-g25rICPu3S5CI3rq43iT--
+--=-JwTXJcrA8auDuosLhkCw--
 

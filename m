@@ -1,102 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:37231 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751982AbbLLCdD (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:37746 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754723AbbLLDID (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 11 Dec 2015 21:33:03 -0500
-Message-ID: <1449887577.31388.91.camel@scientia.net>
+	Fri, 11 Dec 2015 22:08:03 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id 1379E5FE7B
+	for <linux-btrfs@vger.kernel.org>; Sat, 12 Dec 2015 03:08:02 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+	with ESMTP id 1dMtg96wRAtD for <linux-btrfs@vger.kernel.org>;
+	Sat, 12 Dec 2015 03:08:00 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-01.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Sat, 12 Dec 2015 03:08:00 +0000 (UTC)
+Message-ID: <1449889679.31388.92.camel@scientia.net>
 Subject: Re: subvols and parents - how?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Sat, 12 Dec 2015 03:32:57 +0100
-In-Reply-To: <pan$eafa8$b5da4379$31bc32b1$5bc4c9a0@cox.net>
+To: linux-btrfs@vger.kernel.org
+Date: Sat, 12 Dec 2015 04:07:59 +0100
+In-Reply-To: <1449887577.31388.91.camel@scientia.net>
 References: <1448340960.14125.51.camel@scientia.net>
 	 <pan$72d2a$22c54e26$a0b05056$57585aef@cox.net>
 	 <1448400350.21291.88.camel@scientia.net>
 	 <pan$3a1c9$86b20059$6602684a$c91a5eb4@cox.net>
 	 <1449635882.20578.2.camel@scientia.net>
 	 <pan$eafa8$b5da4379$31bc32b1$5bc4c9a0@cox.net>
+	 <1449887577.31388.91.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-W4jBmCnCLHSIEdkKyNrc"
+	boundary="=-1lOh6dbdE4J8RU9KHLkR"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-W4jBmCnCLHSIEdkKyNrc
+--=-1lOh6dbdE4J8RU9KHLkR
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, 2015-12-09 at 11:26 +0000, Duncan wrote:
-> > Hmm good point... I think it would be great if you could add that
-> > scenario somewhere to the documentation. :-)
-> FWIW, I (personally, not sure if that "you" was singular or plural)
-> am=20
-> much more comfortable on the lists than on wikis, which I tend to
-> treat=20
-> much as I did printed encyclopedias back in the day -- as great=20
-> references, but read-only from my perspective.
-Well you (since it was your idea and I'd consider you "senior" enough
-to do it, at least more senior than myself ;) )... or any developer of
-course ;)
+On Sat, 2015-12-12 at 03:32 +0100, Christoph Anton Mitterer wrote:
+> What's still missing now, IMHO, is:
+> - a guide when one should make subvole (e.g. keeping things on the
+> root
+> fs together, unless it's separate like /var/www is usually, but
+> /var/lib typically "corresponds" to a state of /etc and /usr.
+I just added that:
+https://btrfs.wiki.kernel.org/index.php/SysadminGuide#When_To_Make_Subvolum=
+es
 
-I did that now, or better said I largely rewrote:
-https://btrfs.wiki.kernel.org/index.php/SysadminGuide#Subvolumes
-which I think should rather be its own wiki article.
-
-One of the devs/experts... please double check it and pick/drop what
-you like/dislike.
-Especially notice that I've changed what was in the wiki, namely
-subvolid=3D0 would mount the toplevel subovl,... I changed that to 5.
-Also I assumed the manpage would be correct and subvol=3D is always
-relative to the top level subvol, thus subvol=3D/ should mount that.
-
-What's still missing now, IMHO, is:
-- the snapshots subchapter itself is not complete (especially ro vs. rw
-snapshots)... and implications like not mounting snapshots noatime, and
-write amplification effects
-- a guide when one should make subvole (e.g. keeping things on the root
-fs together, unless it's separate like /var/www is usually, but
-/var/lib typically "corresponds" to a state of /etc and /usr.
-- what I've asked in another mail,.. about subvols and mountopts.
-
-That rework also contains your security idea... shamelessly not quoting
-you there O:-)
-
-
-Well, I hope me editing such central part of the wiki wasn't to
-bold,... but if it was, then I guess Chris Mason placing me on the
-pillory would be nearly as big of an honour as being insulted by Linus
-;-)
-
-
-
-> While the appropriate place would be on the wiki, where there's a
-> page=20
-> for that (here, the request is likely to be lost to history, while on
-> the=20
-> wiki it's in a nice list that both devs and other requesters can look
-> at,=20
-> a year, five years, a decade... into the future), in this case...
-I think I'm simply going to add it there, in another bold step... O:-)
-
-
-> There's already a framework for it and a limited implementation, tho
-> only=20
-> a small subset of possible options are yet available.=C2=A0=C2=A0The UI
-> exposure is=20
-> as btrfs property (see the btrfs-property manpage), with the
-> properties,=20
-> in general, implemented as extented attributes.
-Mhh,... I've only recently learned about that properties... well if
-that's technically possible to cleanly solve it with XATTRS... fine for
-me.
-
-
-Cheers,
 Chris.
---=-W4jBmCnCLHSIEdkKyNrc
+--=-1lOh6dbdE4J8RU9KHLkR
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -183,19 +139,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxMjAyMzI1
-N1owTwYJKoZIhvcNAQkEMUIEQPW7nj75DBaKF96KMaEUvpf49sbvb4W9B8+PPxRMv6c9YMPqFnIG
-Iu/JM09cpMW3FOU+vJVN596D7PjLGU2s5uswagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxMjAzMDc1
+OVowTwYJKoZIhvcNAQkEMUIEQGQ3fo0HO/oJTIhB+gR4xf266djs8DKpxL2Jlrz+XrCl3+mVd6ls
+l0/o3u0g64OC2wo7kJRhhsg45vHkmjpMvNcwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQB/3moDIdLRhejhjzN0SpBZ17jhrQXq
-YoZRsyVo/aSgH34bSfRQYmudEj/kycRgqx7mZQ6Al4C+9zIOLWHyaqdjr0p9SJlM/kK0wCjtBZzO
-u+jy4sIOPSaZ0J0/bzapnP+59xIhYF70UvCLUHFOe1MF7m5DiGijHKSiktaszzb9NCI6JHtyD/tU
-gF95aK5EVxMdH8FSVhdxGs/GUleKfFQCXUYLLyu9pi16PuwJ2kszGoE5XtiNzoWwxTMCs8L0u+Fm
-WNJY3VOxZlxLC2dgh6JV6ZPQ7hiRMKDNzQRUnkDJ0DkSUcbR3WcZVcCwQGOT3riaSIkN53NzUXCw
-nQGQK533AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDQ9PIbJcumsa9Z+DcUN1U2NHH4i9Z3
+Nj1xqA5wTyW6TUWoNgNLisXhMhWn3WkWPfBkr5xbpGJaXje0iIXGvz8TCue2B8sPnoXgeJGnhKHb
+QWYkbgTLoQm7b0L8zxfgyzzox9DaTLT5SA1qcmEDOyqKOgkmGUjekFPs4Bo1jVkwRyDI/X9HfJR1
+GfCInF5EtBiEny/QTfUu6rze5aurRS+NPXXQjaTIFRFsg7DVPHKmOjkwvcTQg1rnao/V/YvBTzqE
+vSak7W4MoTGezxoRFsSsqfRMQm6ukjQ2IBCYQb4Lid/W3tJyzm9+b15q7FAhwoA0i+pbbNdAkjBB
+1iADSbLtAAAAAAAA
 
 
---=-W4jBmCnCLHSIEdkKyNrc--
+--=-1lOh6dbdE4J8RU9KHLkR--
 

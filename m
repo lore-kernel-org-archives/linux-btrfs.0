@@ -1,378 +1,404 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f169.google.com ([209.85.220.169]:32901 "EHLO
-	mail-qk0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751600AbbLMKvi convert rfc822-to-8bit (ORCPT
+Received: from mail.kernel.org ([198.145.29.136]:35128 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752275AbbLMPnz convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Dec 2015 05:51:38 -0500
-Received: by qkck189 with SMTP id k189so63644314qkc.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 02:51:37 -0800 (PST)
+	Sun, 13 Dec 2015 10:43:55 -0500
+Received: from mail.kernel.org (localhost [127.0.0.1])
+	by mail.kernel.org (Postfix) with ESMTP id E48A52039D
+	for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 15:43:53 +0000 (UTC)
+Received: from mail-io0-f171.google.com (mail-io0-f171.google.com [209.85.223.171])
+	(using TLSv1.2 with cipher AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mail.kernel.org (Postfix) with ESMTPSA id 86776203B5
+	for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 15:43:51 +0000 (UTC)
+Received: by iow186 with SMTP id 186so3045956iow.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 07:43:50 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1445799092-13557-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <CAOcd+r3ANb6KiZUfRHqxjLPsG=49YvqtMyVO1W=bm2yp0UmB-A@mail.gmail.com>
 References: <1445767453-16233-1-git-send-email-fdmanana@kernel.org>
 	<1445799092-13557-1-git-send-email-fdmanana@kernel.org>
-Date: Sun, 13 Dec 2015 12:51:37 +0200
-Message-ID: <CAOcd+r3ANb6KiZUfRHqxjLPsG=49YvqtMyVO1W=bm2yp0UmB-A@mail.gmail.com>
+	<CAOcd+r3ANb6KiZUfRHqxjLPsG=49YvqtMyVO1W=bm2yp0UmB-A@mail.gmail.com>
+Date: Sun, 13 Dec 2015 15:43:50 +0000
+Message-ID: <CAL3q7H55-dyK_=JP0JrJkF-2wUFArvgTn_FcrMPdJrpLhkO6aA@mail.gmail.com>
 Subject: Re: [PATCH 1/2 v3] Btrfs: fix regression when running delayed references
-From: Alex Lyakas <alex@zadarastorage.com>
-To: fdmanana@kernel.org
+From: Filipe Manana <fdmanana@kernel.org>
+To: Alex Lyakas <alex@zadarastorage.com>
 Cc: linux-btrfs <linux-btrfs@vger.kernel.org>,
         Filipe Manana <fdmanana@suse.com>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Filipe Manana,
-
-My understanding of selecting delayed refs to run or merging them is
-far from complete. Can you please explain what will happen in the
-following scenario:
-
-1) Ref1 is created, as you explain
-2) Somebody calls __btrfs_run_delayed_refs() and runs Ref1, and we end
-up with an EXTENT_ITEM and an inline extent back ref
-3) Ref2 and Ref3 are added
-4) Somebody calls __btrfs_run_delayed_refs()
-
-At this point, we cannot merge Ref2 and Ref3, because they might be
-referencing tree blocks of completely different trees, thus
-comp_tree_refs() will return 1 or -1. But we will select Ref3 to be
-run, because we prefer BTRFS_ADD_DELAYED_REF over
-BTRFS_DROP_DELAYED_REF, as you explained. So we hit the same BUG_ON
-now, because we already have Ref1 in the extent tree.
-
-So something should prevent us from running Ref3 before running Ref2.
-We should run Ref2 first, which should get rid of the EXTENT_ITEM and
-the inline backref, and then run Ref3 to create a new backref with a
-proper owner. What is that something?
-
-Can you please point me at what am I missing?
-
-Also, can such scenario happen in 3.18 kernel, which still has an
-rbtree per ref-head? Looking at the code, I don't see anything
-preventing that from happening.
-
-Thanks,
-Alex.
-
-
-On Sun, Oct 25, 2015 at 8:51 PM,  <fdmanana@kernel.org> wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Sun, Dec 13, 2015 at 10:51 AM, Alex Lyakas <alex@zadarastorage.com> wrote:
+> Hi Filipe Manana,
 >
-> In the kernel 4.2 merge window we had a refactoring/rework of the delayed
-> references implementation in order to fix certain problems with qgroups.
-> However that rework introduced one more regression that leads to the
-> following trace when running delayed references for metadata:
+> My understanding of selecting delayed refs to run or merging them is
+> far from complete. Can you please explain what will happen in the
+> following scenario:
 >
-> [35908.064664] kernel BUG at fs/btrfs/extent-tree.c:1832!
-> [35908.065201] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-> [35908.065201] Modules linked in: dm_flakey dm_mod btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc psmouse i2
-> [35908.065201] CPU: 14 PID: 15014 Comm: kworker/u32:9 Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
-> [35908.065201] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
-> [35908.065201] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
-> [35908.065201] task: ffff880114b7d780 ti: ffff88010c4c8000 task.ti: ffff88010c4c8000
-> [35908.065201] RIP: 0010:[<ffffffffa04928b5>]  [<ffffffffa04928b5>] insert_inline_extent_backref+0x52/0xb1 [btrfs]
-> [35908.065201] RSP: 0018:ffff88010c4cbb08  EFLAGS: 00010293
-> [35908.065201] RAX: 0000000000000000 RBX: ffff88008a661000 RCX: 0000000000000000
-> [35908.065201] RDX: ffffffffa04dd58f RSI: 0000000000000001 RDI: 0000000000000000
-> [35908.065201] RBP: ffff88010c4cbb40 R08: 0000000000001000 R09: ffff88010c4cb9f8
-> [35908.065201] R10: 0000000000000000 R11: 000000000000002c R12: 0000000000000000
-> [35908.065201] R13: ffff88020a74c578 R14: 0000000000000000 R15: 0000000000000000
-> [35908.065201] FS:  0000000000000000(0000) GS:ffff88023edc0000(0000) knlGS:0000000000000000
-> [35908.065201] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
-> [35908.065201] CR2: 00000000015e8708 CR3: 0000000102185000 CR4: 00000000000006e0
-> [35908.065201] Stack:
-> [35908.065201]  ffff88010c4cbb18 0000000000000f37 ffff88020a74c578 ffff88015a408000
-> [35908.065201]  ffff880154a44000 0000000000000000 0000000000000005 ffff88010c4cbbd8
-> [35908.065201]  ffffffffa0492b9a 0000000000000005 0000000000000000 0000000000000000
-> [35908.065201] Call Trace:
-> [35908.065201]  [<ffffffffa0492b9a>] __btrfs_inc_extent_ref+0x8b/0x208 [btrfs]
-> [35908.065201]  [<ffffffffa0497117>] ? __btrfs_run_delayed_refs+0x4d4/0xd33 [btrfs]
-> [35908.065201]  [<ffffffffa049773d>] __btrfs_run_delayed_refs+0xafa/0xd33 [btrfs]
-> [35908.065201]  [<ffffffffa04a976a>] ? join_transaction.isra.10+0x25/0x41f [btrfs]
-> [35908.065201]  [<ffffffffa04a97ed>] ? join_transaction.isra.10+0xa8/0x41f [btrfs]
-> [35908.065201]  [<ffffffffa049914d>] btrfs_run_delayed_refs+0x75/0x1dd [btrfs]
-> [35908.065201]  [<ffffffffa04992f1>] delayed_ref_async_start+0x3c/0x7b [btrfs]
-> [35908.065201]  [<ffffffffa04d4b4f>] normal_work_helper+0x14c/0x32a [btrfs]
-> [35908.065201]  [<ffffffffa04d4e93>] btrfs_extent_refs_helper+0x12/0x14 [btrfs]
-> [35908.065201]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
-> [35908.065201]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
-> [35908.065201]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
-> [35908.065201]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
-> [35908.065201]  [<ffffffff8106904d>] kthread+0xef/0xf7
-> [35908.065201]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
-> [35908.065201]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
-> [35908.065201]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
-> [35908.065201] Code: 6a 01 41 56 41 54 ff 75 10 41 51 4d 89 c1 49 89 c8 48 8d 4d d0 e8 f6 f1 ff ff 48 83 c4 28 85 c0 75 2c 49 81 fc ff 00 00 00 77 02 <0f> 0b 4c 8b 45 30 8b 4d 28 45 31
-> [35908.065201] RIP  [<ffffffffa04928b5>] insert_inline_extent_backref+0x52/0xb1 [btrfs]
-> [35908.065201]  RSP <ffff88010c4cbb08>
-> [35908.310885] ---[ end trace fe4299baf0666457 ]---
+> 1) Ref1 is created, as you explain
+> 2) Somebody calls __btrfs_run_delayed_refs() and runs Ref1, and we end
+> up with an EXTENT_ITEM and an inline extent back ref
+> 3) Ref2 and Ref3 are added
+> 4) Somebody calls __btrfs_run_delayed_refs()
 >
-> This happens because the new delayed references code no longer merges
-> delayed references that have different sequence values. The following
-> steps are an example sequence leading to this issue:
->
-> 1) Transaction N starts, fs_info->tree_mod_seq has value 0;
->
-> 2) Extent buffer (btree node) A is allocated, delayed reference Ref1 for
->    bytenr A is created, with a value of 1 and a seq value of 0;
+> At this point, we cannot merge Ref2 and Ref3, because they might be
+> referencing tree blocks of completely different trees, thus
+> comp_tree_refs() will return 1 or -1. But we will select Ref3 to be
+> run, because we prefer BTRFS_ADD_DELAYED_REF over
+> BTRFS_DROP_DELAYED_REF, as you explained. So we hit the same BUG_ON
+> now, because we already have Ref1 in the extent tree.
 
-What happens if Ref1 is run at this point?
+No, that won't happen. If the ref (Ref3) is for a different tree, than
+it has a different inline extent from Ref1
+(lookup_inline_extent_backref returns -ENOENT and not 0).
+
+If they are all for the same tree it means Ref3 is not merged with
+Ref2 because they have different seq numbers and a seq value exist in
+fs_info->tree_mod_seq_list, and we skip Ref3 through
+btrfs_check_delayed_seq() until such seq number goes away from
+tree_mod_seq_list. If no seq number exists in tree_mod_seq_list then
+we merge it (Ref3) through btrfs_merge_delayed_refs(), called when
+running delayed refs, with Ref2 (which removes both refs since one is
+"-1" and the other "+1").
+
+Iow, after this regression fix, no behaviour changed from releases before 4.2.
 
 >
-> 3) fs_info->tree_mod_seq is incremented to 1;
+> So something should prevent us from running Ref3 before running Ref2.
+> We should run Ref2 first, which should get rid of the EXTENT_ITEM and
+> the inline backref, and then run Ref3 to create a new backref with a
+> proper owner. What is that something?
 >
-> 4) Extent buffer A is deleted through btrfs_del_items(), which calls
->    btrfs_del_leaf(), which in turn calls btrfs_free_tree_block(). The
->    later returns the metadata extent associated to extent buffer A to
->    the free space cache (the range is not pinned), because the extent
->    buffer was created in the current transaction (N) and writeback never
->    happened for the extent buffer (flag BTRFS_HEADER_FLAG_WRITTEN not set
->    in the extent buffer).
->    This creates the delayed reference Ref2 for bytenr A, with a value
->    of -1 and a seq value of 1;
+> Can you please point me at what am I missing?
 >
-> 5) Delayed reference Ref2 is not merged with Ref1 when we create it,
->    because they have different sequence numbers (decided at
->    add_delayed_ref_tail_merge());
+> Also, can such scenario happen in 3.18 kernel, which still has an
+> rbtree per ref-head? Looking at the code, I don't see anything
+> preventing that from happening.
 >
-> 6) fs_info->tree_mod_seq is incremented to 2;
+> Thanks,
+> Alex.
 >
-> 7) Some task attempts to allocate a new extent buffer (done at
->    extent-tree.c:find_free_extent()), but due to heavy fragmentation
->    and running low on metadata space the clustered allocation fails
->    and we fall back to unclustered allocation, which finds the
->    extent at offset A, so a new extent buffer at offset A is allocated.
->    This creates delayed reference Ref3 for bytenr A, with a value of -1
->    and a seq value of 2;
 >
-> 8) Ref3 is not merged neither with Ref2 nor Ref1, again because they
->    all have different seq values;
-Can Ref3 be merged with Ref1? They might be referencing blocks of
-completely different trees (although using the same bytenr). So they
-will have different root/parent and thus cannot be merged, I think.
-
+> On Sun, Oct 25, 2015 at 8:51 PM,  <fdmanana@kernel.org> wrote:
+>> From: Filipe Manana <fdmanana@suse.com>
+>>
+>> In the kernel 4.2 merge window we had a refactoring/rework of the delayed
+>> references implementation in order to fix certain problems with qgroups.
+>> However that rework introduced one more regression that leads to the
+>> following trace when running delayed references for metadata:
+>>
+>> [35908.064664] kernel BUG at fs/btrfs/extent-tree.c:1832!
+>> [35908.065201] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+>> [35908.065201] Modules linked in: dm_flakey dm_mod btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc psmouse i2
+>> [35908.065201] CPU: 14 PID: 15014 Comm: kworker/u32:9 Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
+>> [35908.065201] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+>> [35908.065201] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+>> [35908.065201] task: ffff880114b7d780 ti: ffff88010c4c8000 task.ti: ffff88010c4c8000
+>> [35908.065201] RIP: 0010:[<ffffffffa04928b5>]  [<ffffffffa04928b5>] insert_inline_extent_backref+0x52/0xb1 [btrfs]
+>> [35908.065201] RSP: 0018:ffff88010c4cbb08  EFLAGS: 00010293
+>> [35908.065201] RAX: 0000000000000000 RBX: ffff88008a661000 RCX: 0000000000000000
+>> [35908.065201] RDX: ffffffffa04dd58f RSI: 0000000000000001 RDI: 0000000000000000
+>> [35908.065201] RBP: ffff88010c4cbb40 R08: 0000000000001000 R09: ffff88010c4cb9f8
+>> [35908.065201] R10: 0000000000000000 R11: 000000000000002c R12: 0000000000000000
+>> [35908.065201] R13: ffff88020a74c578 R14: 0000000000000000 R15: 0000000000000000
+>> [35908.065201] FS:  0000000000000000(0000) GS:ffff88023edc0000(0000) knlGS:0000000000000000
+>> [35908.065201] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+>> [35908.065201] CR2: 00000000015e8708 CR3: 0000000102185000 CR4: 00000000000006e0
+>> [35908.065201] Stack:
+>> [35908.065201]  ffff88010c4cbb18 0000000000000f37 ffff88020a74c578 ffff88015a408000
+>> [35908.065201]  ffff880154a44000 0000000000000000 0000000000000005 ffff88010c4cbbd8
+>> [35908.065201]  ffffffffa0492b9a 0000000000000005 0000000000000000 0000000000000000
+>> [35908.065201] Call Trace:
+>> [35908.065201]  [<ffffffffa0492b9a>] __btrfs_inc_extent_ref+0x8b/0x208 [btrfs]
+>> [35908.065201]  [<ffffffffa0497117>] ? __btrfs_run_delayed_refs+0x4d4/0xd33 [btrfs]
+>> [35908.065201]  [<ffffffffa049773d>] __btrfs_run_delayed_refs+0xafa/0xd33 [btrfs]
+>> [35908.065201]  [<ffffffffa04a976a>] ? join_transaction.isra.10+0x25/0x41f [btrfs]
+>> [35908.065201]  [<ffffffffa04a97ed>] ? join_transaction.isra.10+0xa8/0x41f [btrfs]
+>> [35908.065201]  [<ffffffffa049914d>] btrfs_run_delayed_refs+0x75/0x1dd [btrfs]
+>> [35908.065201]  [<ffffffffa04992f1>] delayed_ref_async_start+0x3c/0x7b [btrfs]
+>> [35908.065201]  [<ffffffffa04d4b4f>] normal_work_helper+0x14c/0x32a [btrfs]
+>> [35908.065201]  [<ffffffffa04d4e93>] btrfs_extent_refs_helper+0x12/0x14 [btrfs]
+>> [35908.065201]  [<ffffffff81063b23>] process_one_work+0x24a/0x4ac
+>> [35908.065201]  [<ffffffff81064285>] worker_thread+0x206/0x2c2
+>> [35908.065201]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
+>> [35908.065201]  [<ffffffff8106407f>] ? rescuer_thread+0x2cb/0x2cb
+>> [35908.065201]  [<ffffffff8106904d>] kthread+0xef/0xf7
+>> [35908.065201]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+>> [35908.065201]  [<ffffffff8147d10f>] ret_from_fork+0x3f/0x70
+>> [35908.065201]  [<ffffffff81068f5e>] ? kthread_parkme+0x24/0x24
+>> [35908.065201] Code: 6a 01 41 56 41 54 ff 75 10 41 51 4d 89 c1 49 89 c8 48 8d 4d d0 e8 f6 f1 ff ff 48 83 c4 28 85 c0 75 2c 49 81 fc ff 00 00 00 77 02 <0f> 0b 4c 8b 45 30 8b 4d 28 45 31
+>> [35908.065201] RIP  [<ffffffffa04928b5>] insert_inline_extent_backref+0x52/0xb1 [btrfs]
+>> [35908.065201]  RSP <ffff88010c4cbb08>
+>> [35908.310885] ---[ end trace fe4299baf0666457 ]---
+>>
+>> This happens because the new delayed references code no longer merges
+>> delayed references that have different sequence values. The following
+>> steps are an example sequence leading to this issue:
+>>
+>> 1) Transaction N starts, fs_info->tree_mod_seq has value 0;
+>>
+>> 2) Extent buffer (btree node) A is allocated, delayed reference Ref1 for
+>>    bytenr A is created, with a value of 1 and a seq value of 0;
 >
-> 9) We start running the delayed references (__btrfs_run_delayed_refs());
+> What happens if Ref1 is run at this point?
 >
-> 10) The delayed Ref1 is the first one being applied, which ends up
->     creating an inline extent backref in the extent tree;
+>>
+>> 3) fs_info->tree_mod_seq is incremented to 1;
+>>
+>> 4) Extent buffer A is deleted through btrfs_del_items(), which calls
+>>    btrfs_del_leaf(), which in turn calls btrfs_free_tree_block(). The
+>>    later returns the metadata extent associated to extent buffer A to
+>>    the free space cache (the range is not pinned), because the extent
+>>    buffer was created in the current transaction (N) and writeback never
+>>    happened for the extent buffer (flag BTRFS_HEADER_FLAG_WRITTEN not set
+>>    in the extent buffer).
+>>    This creates the delayed reference Ref2 for bytenr A, with a value
+>>    of -1 and a seq value of 1;
+>>
+>> 5) Delayed reference Ref2 is not merged with Ref1 when we create it,
+>>    because they have different sequence numbers (decided at
+>>    add_delayed_ref_tail_merge());
+>>
+>> 6) fs_info->tree_mod_seq is incremented to 2;
+>>
+>> 7) Some task attempts to allocate a new extent buffer (done at
+>>    extent-tree.c:find_free_extent()), but due to heavy fragmentation
+>>    and running low on metadata space the clustered allocation fails
+>>    and we fall back to unclustered allocation, which finds the
+>>    extent at offset A, so a new extent buffer at offset A is allocated.
+>>    This creates delayed reference Ref3 for bytenr A, with a value of -1
+>>    and a seq value of 2;
+>>
+>> 8) Ref3 is not merged neither with Ref2 nor Ref1, again because they
+>>    all have different seq values;
+> Can Ref3 be merged with Ref1? They might be referencing blocks of
+> completely different trees (although using the same bytenr). So they
+> will have different root/parent and thus cannot be merged, I think.
 >
-> 10) Next the delayed reference Ref3 is selected for execution, and not
->     Ref2, because select_delayed_ref() always gives a preference for
->     positive references (that have an action of BTRFS_ADD_DELAYED_REF);
->
-> 11) When running Ref3 we encounter alreay the inline extent backref
->     in the extent tree at insert_inline_extent_backref(), which makes
->     us hit the following BUG_ON:
->
->         BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID);
->
->     This is always true because owner corresponds to the level of the
->     extent buffer/btree node in the btree.
->
-> For the scenario described above we hit the BUG_ON because we never merge
-> references that have different seq values.
->
-> We used to do the merging before the 4.2 kernel, more specifically, before
-> the commmits:
->
->   c6fc24549960 ("btrfs: delayed-ref: Use list to replace the ref_root in ref_head.")
->   c43d160fcd5e ("btrfs: delayed-ref: Cleanup the unneeded functions.")
->
-> This issue became more exposed after the following change that was added
-> to 4.2 as well:
->
->   cffc3374e567 ("Btrfs: fix order by which delayed references are run")
->
-> Which in turn fixed another regression by the two commits previously
-> mentioned.
->
-> So fix this by bringing back the delayed reference merge code, with the
-> proper adaptations so that it operates against the new data structure
-> (linked list vs old red black tree implementation).
->
-> This issue was hit running fstest btrfs/063 in a loop. Several people have
-> reported this issue in the mailing list when running on kernels 4.2+.
->
-> Very special thanks to Stéphane Lesimple for helping debugging this issue
-> and testing this fix on his multi terabyte filesystem (which took more
-> than one day to balance alone, plus fsck, etc).
->
-> Fixes: c6fc24549960 ("btrfs: delayed-ref: Use list to replace the ref_root in ref_head.")
-> Reported-by: Peter Becker <floyd.net@gmail.com>
-> Reported-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
-> Tested-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
-> Reported-by: Malte Schröder <malte@tnxip.de>
-> Reported-by: Derek Dongray <derek@valedon.co.uk>
-> Reported-by: Erkki Seppala <flux-btrfs@inside.org>
-> Cc: stable@vger.kernel.org  # 4.2+
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
-> ---
->
-> V2: No code changes. Added Stéphane's Tested-by tag and made patch
->     part of a 2 fixes series, to reflect the other remaining fix
->     depends on this one.
-> V3: No changes. Updated only the 2nd patch in the series to v3 (change log
->     updated).
->
->  fs/btrfs/delayed-ref.c | 113 +++++++++++++++++++++++++++++++++++++++++++++++++
->  fs/btrfs/extent-tree.c |  14 ++++++
->  2 files changed, 127 insertions(+)
->
-> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-> index bd9b63b..2f41580 100644
-> --- a/fs/btrfs/delayed-ref.c
-> +++ b/fs/btrfs/delayed-ref.c
-> @@ -197,6 +197,119 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
->                 trans->delayed_ref_updates--;
->  }
->
-> +static bool merge_ref(struct btrfs_trans_handle *trans,
-> +                     struct btrfs_delayed_ref_root *delayed_refs,
-> +                     struct btrfs_delayed_ref_head *head,
-> +                     struct btrfs_delayed_ref_node *ref,
-> +                     u64 seq)
-> +{
-> +       struct btrfs_delayed_ref_node *next;
-> +       bool done = false;
-> +
-> +       next = list_first_entry(&head->ref_list, struct btrfs_delayed_ref_node,
-> +                               list);
-> +       while (!done && &next->list != &head->ref_list) {
-> +               int mod;
-> +               struct btrfs_delayed_ref_node *next2;
-> +
-> +               next2 = list_next_entry(next, list);
-> +
-> +               if (next == ref)
-> +                       goto next;
-> +
-> +               if (seq && next->seq >= seq)
-> +                       goto next;
-> +
-> +               if (next->type != ref->type || next->no_quota != ref->no_quota)
-> +                       goto next;
-> +
-> +               if ((ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
-> +                    ref->type == BTRFS_SHARED_BLOCK_REF_KEY) &&
-> +                   comp_tree_refs(btrfs_delayed_node_to_tree_ref(ref),
-> +                                  btrfs_delayed_node_to_tree_ref(next),
-> +                                  ref->type))
-> +                       goto next;
-> +               if ((ref->type == BTRFS_EXTENT_DATA_REF_KEY ||
-> +                    ref->type == BTRFS_SHARED_DATA_REF_KEY) &&
-> +                   comp_data_refs(btrfs_delayed_node_to_data_ref(ref),
-> +                                  btrfs_delayed_node_to_data_ref(next)))
-> +                       goto next;
-> +
-> +               if (ref->action == next->action) {
-> +                       mod = next->ref_mod;
-> +               } else {
-> +                       if (ref->ref_mod < next->ref_mod) {
-> +                               swap(ref, next);
-> +                               done = true;
-> +                       }
-> +                       mod = -next->ref_mod;
-> +               }
-> +
-> +               drop_delayed_ref(trans, delayed_refs, head, next);
-> +               ref->ref_mod += mod;
-> +               if (ref->ref_mod == 0) {
-> +                       drop_delayed_ref(trans, delayed_refs, head, ref);
-> +                       done = true;
-> +               } else {
-> +                       /*
-> +                        * Can't have multiples of the same ref on a tree block.
-> +                        */
-> +                       WARN_ON(ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
-> +                               ref->type == BTRFS_SHARED_BLOCK_REF_KEY);
-> +               }
-> +next:
-> +               next = next2;
-> +       }
-> +
-> +       return done;
-> +}
-> +
-> +void btrfs_merge_delayed_refs(struct btrfs_trans_handle *trans,
-> +                             struct btrfs_fs_info *fs_info,
-> +                             struct btrfs_delayed_ref_root *delayed_refs,
-> +                             struct btrfs_delayed_ref_head *head)
-> +{
-> +       struct btrfs_delayed_ref_node *ref;
-> +       u64 seq = 0;
-> +
-> +       assert_spin_locked(&head->lock);
-> +
-> +       if (list_empty(&head->ref_list))
-> +               return;
-> +
-> +       /* We don't have too many refs to merge for data. */
-> +       if (head->is_data)
-> +               return;
-> +
-> +       spin_lock(&fs_info->tree_mod_seq_lock);
-> +       if (!list_empty(&fs_info->tree_mod_seq_list)) {
-> +               struct seq_list *elem;
-> +
-> +               elem = list_first_entry(&fs_info->tree_mod_seq_list,
-> +                                       struct seq_list, list);
-> +               seq = elem->seq;
-> +       }
-> +       spin_unlock(&fs_info->tree_mod_seq_lock);
-> +
-> +       ref = list_first_entry(&head->ref_list, struct btrfs_delayed_ref_node,
-> +                              list);
-> +       while (&ref->list != &head->ref_list) {
-> +               if (seq && ref->seq >= seq)
-> +                       goto next;
-> +
-> +               if (merge_ref(trans, delayed_refs, head, ref, seq)) {
-> +                       if (list_empty(&head->ref_list))
-> +                               break;
-> +                       ref = list_first_entry(&head->ref_list,
-> +                                              struct btrfs_delayed_ref_node,
-> +                                              list);
-> +                       continue;
-> +               }
-> +next:
-> +               ref = list_next_entry(ref, list);
-> +       }
-> +}
-> +
->  int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
->                             struct btrfs_delayed_ref_root *delayed_refs,
->                             u64 seq)
-> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-> index 92fdbc6..c0f30f5 100644
-> --- a/fs/btrfs/extent-tree.c
-> +++ b/fs/btrfs/extent-tree.c
-> @@ -2502,7 +2502,21 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
->                         }
->                 }
->
-> +               /*
-> +                * We need to try and merge add/drops of the same ref since we
-> +                * can run into issues with relocate dropping the implicit ref
-> +                * and then it being added back again before the drop can
-> +                * finish.  If we merged anything we need to re-loop so we can
-> +                * get a good ref.
-> +                * Or we can get node references of the same type that weren't
-> +                * merged when created due to bumps in the tree mod seq, and
-> +                * we need to merge them to prevent adding an inline extent
-> +                * backref before dropping it (triggering a BUG_ON at
-> +                * insert_inline_extent_backref()).
-> +                */
->                 spin_lock(&locked_ref->lock);
-> +               btrfs_merge_delayed_refs(trans, fs_info, delayed_refs,
-> +                                        locked_ref);
->
->                 /*
->                  * locked_ref is the head node, so we have to go one
-> --
-> 2.1.3
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>> 9) We start running the delayed references (__btrfs_run_delayed_refs());
+>>
+>> 10) The delayed Ref1 is the first one being applied, which ends up
+>>     creating an inline extent backref in the extent tree;
+>>
+>> 10) Next the delayed reference Ref3 is selected for execution, and not
+>>     Ref2, because select_delayed_ref() always gives a preference for
+>>     positive references (that have an action of BTRFS_ADD_DELAYED_REF);
+>>
+>> 11) When running Ref3 we encounter alreay the inline extent backref
+>>     in the extent tree at insert_inline_extent_backref(), which makes
+>>     us hit the following BUG_ON:
+>>
+>>         BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID);
+>>
+>>     This is always true because owner corresponds to the level of the
+>>     extent buffer/btree node in the btree.
+>>
+>> For the scenario described above we hit the BUG_ON because we never merge
+>> references that have different seq values.
+>>
+>> We used to do the merging before the 4.2 kernel, more specifically, before
+>> the commmits:
+>>
+>>   c6fc24549960 ("btrfs: delayed-ref: Use list to replace the ref_root in ref_head.")
+>>   c43d160fcd5e ("btrfs: delayed-ref: Cleanup the unneeded functions.")
+>>
+>> This issue became more exposed after the following change that was added
+>> to 4.2 as well:
+>>
+>>   cffc3374e567 ("Btrfs: fix order by which delayed references are run")
+>>
+>> Which in turn fixed another regression by the two commits previously
+>> mentioned.
+>>
+>> So fix this by bringing back the delayed reference merge code, with the
+>> proper adaptations so that it operates against the new data structure
+>> (linked list vs old red black tree implementation).
+>>
+>> This issue was hit running fstest btrfs/063 in a loop. Several people have
+>> reported this issue in the mailing list when running on kernels 4.2+.
+>>
+>> Very special thanks to Stéphane Lesimple for helping debugging this issue
+>> and testing this fix on his multi terabyte filesystem (which took more
+>> than one day to balance alone, plus fsck, etc).
+>>
+>> Fixes: c6fc24549960 ("btrfs: delayed-ref: Use list to replace the ref_root in ref_head.")
+>> Reported-by: Peter Becker <floyd.net@gmail.com>
+>> Reported-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
+>> Tested-by: Stéphane Lesimple <stephane_btrfs@lesimple.fr>
+>> Reported-by: Malte Schröder <malte@tnxip.de>
+>> Reported-by: Derek Dongray <derek@valedon.co.uk>
+>> Reported-by: Erkki Seppala <flux-btrfs@inside.org>
+>> Cc: stable@vger.kernel.org  # 4.2+
+>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>> ---
+>>
+>> V2: No code changes. Added Stéphane's Tested-by tag and made patch
+>>     part of a 2 fixes series, to reflect the other remaining fix
+>>     depends on this one.
+>> V3: No changes. Updated only the 2nd patch in the series to v3 (change log
+>>     updated).
+>>
+>>  fs/btrfs/delayed-ref.c | 113 +++++++++++++++++++++++++++++++++++++++++++++++++
+>>  fs/btrfs/extent-tree.c |  14 ++++++
+>>  2 files changed, 127 insertions(+)
+>>
+>> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+>> index bd9b63b..2f41580 100644
+>> --- a/fs/btrfs/delayed-ref.c
+>> +++ b/fs/btrfs/delayed-ref.c
+>> @@ -197,6 +197,119 @@ static inline void drop_delayed_ref(struct btrfs_trans_handle *trans,
+>>                 trans->delayed_ref_updates--;
+>>  }
+>>
+>> +static bool merge_ref(struct btrfs_trans_handle *trans,
+>> +                     struct btrfs_delayed_ref_root *delayed_refs,
+>> +                     struct btrfs_delayed_ref_head *head,
+>> +                     struct btrfs_delayed_ref_node *ref,
+>> +                     u64 seq)
+>> +{
+>> +       struct btrfs_delayed_ref_node *next;
+>> +       bool done = false;
+>> +
+>> +       next = list_first_entry(&head->ref_list, struct btrfs_delayed_ref_node,
+>> +                               list);
+>> +       while (!done && &next->list != &head->ref_list) {
+>> +               int mod;
+>> +               struct btrfs_delayed_ref_node *next2;
+>> +
+>> +               next2 = list_next_entry(next, list);
+>> +
+>> +               if (next == ref)
+>> +                       goto next;
+>> +
+>> +               if (seq && next->seq >= seq)
+>> +                       goto next;
+>> +
+>> +               if (next->type != ref->type || next->no_quota != ref->no_quota)
+>> +                       goto next;
+>> +
+>> +               if ((ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
+>> +                    ref->type == BTRFS_SHARED_BLOCK_REF_KEY) &&
+>> +                   comp_tree_refs(btrfs_delayed_node_to_tree_ref(ref),
+>> +                                  btrfs_delayed_node_to_tree_ref(next),
+>> +                                  ref->type))
+>> +                       goto next;
+>> +               if ((ref->type == BTRFS_EXTENT_DATA_REF_KEY ||
+>> +                    ref->type == BTRFS_SHARED_DATA_REF_KEY) &&
+>> +                   comp_data_refs(btrfs_delayed_node_to_data_ref(ref),
+>> +                                  btrfs_delayed_node_to_data_ref(next)))
+>> +                       goto next;
+>> +
+>> +               if (ref->action == next->action) {
+>> +                       mod = next->ref_mod;
+>> +               } else {
+>> +                       if (ref->ref_mod < next->ref_mod) {
+>> +                               swap(ref, next);
+>> +                               done = true;
+>> +                       }
+>> +                       mod = -next->ref_mod;
+>> +               }
+>> +
+>> +               drop_delayed_ref(trans, delayed_refs, head, next);
+>> +               ref->ref_mod += mod;
+>> +               if (ref->ref_mod == 0) {
+>> +                       drop_delayed_ref(trans, delayed_refs, head, ref);
+>> +                       done = true;
+>> +               } else {
+>> +                       /*
+>> +                        * Can't have multiples of the same ref on a tree block.
+>> +                        */
+>> +                       WARN_ON(ref->type == BTRFS_TREE_BLOCK_REF_KEY ||
+>> +                               ref->type == BTRFS_SHARED_BLOCK_REF_KEY);
+>> +               }
+>> +next:
+>> +               next = next2;
+>> +       }
+>> +
+>> +       return done;
+>> +}
+>> +
+>> +void btrfs_merge_delayed_refs(struct btrfs_trans_handle *trans,
+>> +                             struct btrfs_fs_info *fs_info,
+>> +                             struct btrfs_delayed_ref_root *delayed_refs,
+>> +                             struct btrfs_delayed_ref_head *head)
+>> +{
+>> +       struct btrfs_delayed_ref_node *ref;
+>> +       u64 seq = 0;
+>> +
+>> +       assert_spin_locked(&head->lock);
+>> +
+>> +       if (list_empty(&head->ref_list))
+>> +               return;
+>> +
+>> +       /* We don't have too many refs to merge for data. */
+>> +       if (head->is_data)
+>> +               return;
+>> +
+>> +       spin_lock(&fs_info->tree_mod_seq_lock);
+>> +       if (!list_empty(&fs_info->tree_mod_seq_list)) {
+>> +               struct seq_list *elem;
+>> +
+>> +               elem = list_first_entry(&fs_info->tree_mod_seq_list,
+>> +                                       struct seq_list, list);
+>> +               seq = elem->seq;
+>> +       }
+>> +       spin_unlock(&fs_info->tree_mod_seq_lock);
+>> +
+>> +       ref = list_first_entry(&head->ref_list, struct btrfs_delayed_ref_node,
+>> +                              list);
+>> +       while (&ref->list != &head->ref_list) {
+>> +               if (seq && ref->seq >= seq)
+>> +                       goto next;
+>> +
+>> +               if (merge_ref(trans, delayed_refs, head, ref, seq)) {
+>> +                       if (list_empty(&head->ref_list))
+>> +                               break;
+>> +                       ref = list_first_entry(&head->ref_list,
+>> +                                              struct btrfs_delayed_ref_node,
+>> +                                              list);
+>> +                       continue;
+>> +               }
+>> +next:
+>> +               ref = list_next_entry(ref, list);
+>> +       }
+>> +}
+>> +
+>>  int btrfs_check_delayed_seq(struct btrfs_fs_info *fs_info,
+>>                             struct btrfs_delayed_ref_root *delayed_refs,
+>>                             u64 seq)
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 92fdbc6..c0f30f5 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -2502,7 +2502,21 @@ static noinline int __btrfs_run_delayed_refs(struct btrfs_trans_handle *trans,
+>>                         }
+>>                 }
+>>
+>> +               /*
+>> +                * We need to try and merge add/drops of the same ref since we
+>> +                * can run into issues with relocate dropping the implicit ref
+>> +                * and then it being added back again before the drop can
+>> +                * finish.  If we merged anything we need to re-loop so we can
+>> +                * get a good ref.
+>> +                * Or we can get node references of the same type that weren't
+>> +                * merged when created due to bumps in the tree mod seq, and
+>> +                * we need to merge them to prevent adding an inline extent
+>> +                * backref before dropping it (triggering a BUG_ON at
+>> +                * insert_inline_extent_backref()).
+>> +                */
+>>                 spin_lock(&locked_ref->lock);
+>> +               btrfs_merge_delayed_refs(trans, fs_info, delayed_refs,
+>> +                                        locked_ref);
+>>
+>>                 /*
+>>                  * locked_ref is the head node, so we have to go one
+>> --
+>> 2.1.3
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html

@@ -1,166 +1,169 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1693 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753251AbbL2ICJ (ORCPT
+Received: from mail-qk0-f182.google.com ([209.85.220.182]:36415 "EHLO
+	mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751523AbbLMK3Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Dec 2015 03:02:09 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id 9EB6D41887E9
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:14 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 7/7] btrfs-progs: dedup-tree: Add dedup tree support
-Date: Tue, 29 Dec 2015 16:01:09 +0800
-Message-ID: <1451376069-30414-8-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1451376069-30414-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1451376069-30414-1-git-send-email-quwenruo@cn.fujitsu.com>
+	Sun, 13 Dec 2015 05:29:24 -0500
+Received: by qkht125 with SMTP id t125so98604902qkh.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 02:29:24 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
+In-Reply-To: <20150721235334.GA8113@huxley.DHCP.TheFacebook.com>
+References: <1437400580-30525-1-git-send-email-fdmanana@kernel.org>
+	<20150721235334.GA8113@huxley.DHCP.TheFacebook.com>
+Date: Sun, 13 Dec 2015 12:29:24 +0200
+Message-ID: <CAOcd+r3vHCntp5k5KAP6pKQ4X6zot_7whLd0mS9oOvroAgATgQ@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: fix quick exhaustion of the system array in the superblock
+From: Alex Lyakas <alex@zadarastorage.com>
+To: Omar Sandoval <osandov@fb.com>
+Cc: fdmanana@kernel.org, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        Filipe Manana <fdmanana@suse.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add dedup tree support for btrfs-debug-tree.
+Hi Filipe Manana,
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
----
- btrfs-debug-tree.c |  4 ++++
- ctree.h            |  7 +++++++
- print-tree.c       | 52 ++++++++++++++++++++++++++++++++++++++++++++++++++++
- 3 files changed, 63 insertions(+)
+Can't the call to btrfs_create_pending_block_groups() cause a
+deadlock, like in
+http://www.spinics.net/lists/linux-btrfs/msg48744.html? Because this
+call updates the device tree, and we may be calling do_chunk_alloc()
+from find_free_extent() when holding a lock on the device tree root
+(because we want to COW a block of the device tree).
 
-diff --git a/btrfs-debug-tree.c b/btrfs-debug-tree.c
-index 8adc39f..8b04df1 100644
---- a/btrfs-debug-tree.c
-+++ b/btrfs-debug-tree.c
-@@ -381,6 +381,10 @@ again:
- 					printf("multiple");
- 				}
- 				break;
-+			case BTRFS_DEDUP_TREE_OBJECTID:
-+				if (!skip)
-+					printf("dedup");
-+				break;
- 			default:
- 				if (!skip) {
- 					printf("file");
-diff --git a/ctree.h b/ctree.h
-index 20305de..eacad7d 100644
---- a/ctree.h
-+++ b/ctree.h
-@@ -76,6 +76,9 @@ struct btrfs_free_space_ctl;
- /* for storing items that use the BTRFS_UUID_KEY* */
- #define BTRFS_UUID_TREE_OBJECTID 9ULL
- 
-+/* on-disk dedup tree (EXPERIMENTAL) */
-+#define BTRFS_DEDUP_TREE_OBJECTID 10ULL
-+
- /* for storing balance parameters in the root tree */
- #define BTRFS_BALANCE_OBJECTID -4ULL
- 
-@@ -1180,6 +1183,10 @@ struct btrfs_root {
- #define BTRFS_DEV_ITEM_KEY	216
- #define BTRFS_CHUNK_ITEM_KEY	228
- 
-+#define BTRFS_DEDUP_STATUS_ITEM_KEY	230
-+#define BTRFS_DEDUP_HASH_ITEM_KEY	231
-+#define BTRFS_DEDUP_BYTENR_ITEM_KEY	232
-+
- #define BTRFS_BALANCE_ITEM_KEY	248
- 
- /*
-diff --git a/print-tree.c b/print-tree.c
-index 4d4c3a2..b88beef 100644
---- a/print-tree.c
-+++ b/print-tree.c
-@@ -25,6 +25,7 @@
- #include "disk-io.h"
- #include "print-tree.h"
- #include "utils.h"
-+#include "dedup.h"
- 
- 
- static void print_dir_item_type(struct extent_buffer *eb,
-@@ -658,6 +659,15 @@ static void print_key_type(u64 objectid, u8 type)
- 	case BTRFS_UUID_KEY_RECEIVED_SUBVOL:
- 		printf("UUID_KEY_RECEIVED_SUBVOL");
- 		break;
-+	case BTRFS_DEDUP_STATUS_ITEM_KEY:
-+		printf("DEDUP_STATUS_ITEM");
-+		break;
-+	case BTRFS_DEDUP_HASH_ITEM_KEY:
-+		printf("DEDUP_HASH_ITEM");
-+		break;
-+	case BTRFS_DEDUP_BYTENR_ITEM_KEY:
-+		printf("DEDUP_BYTENR_ITEM");
-+		break;
- 	default:
- 		printf("UNKNOWN.%d", type);
- 	};
-@@ -803,6 +813,37 @@ static void print_uuid_item(struct extent_buffer *l, unsigned long offset,
- 	}
- }
- 
-+static void print_dedup_status(struct extent_buffer *node, int slot)
-+{
-+	struct btrfs_dedup_status_item *status_item;
-+	u64 blocksize;
-+	u64 limit;
-+	u16 hash_type;
-+	u16 backend;
-+
-+	status_item = btrfs_item_ptr(node, slot,
-+			struct btrfs_dedup_status_item);
-+	blocksize = btrfs_dedup_status_blocksize(node, status_item);
-+	limit = btrfs_dedup_status_limit(node, status_item);
-+	hash_type = btrfs_dedup_status_hash_type(node, status_item);
-+	backend = btrfs_dedup_status_backend(node, status_item);
-+
-+	printf("\t\tdedup status item ");
-+	if (backend == BTRFS_DEDUP_BACKEND_INMEMORY)
-+		printf("backend: inmemory\n");
-+	else if (backend == BTRFS_DEDUP_BACKEND_ONDISK)
-+		printf("backend: ondisk\n");
-+	else
-+		printf("backend: Unrecognized(%u)\n", backend);
-+
-+	if (hash_type == BTRFS_DEDUP_HASH_SHA256)
-+		printf("\t\thash algorithm: SHA-256 ");
-+	else
-+		printf("\t\thash algorithm: Unrecognized(%u) ", hash_type);
-+
-+	printf("blocksize: %llu limit: %llu\n", blocksize, limit);
-+}
-+
- void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- {
- 	int i;
-@@ -823,6 +864,8 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 	struct btrfs_qgroup_info_item *qg_info;
- 	struct btrfs_qgroup_limit_item *qg_limit;
- 	struct btrfs_qgroup_status_item *qg_status;
-+	struct btrfs_dedup_hash_item *hash_item;
-+
- 	u32 nr = btrfs_header_nritems(l);
- 	u64 objectid;
- 	u32 type;
-@@ -1045,6 +1088,15 @@ void btrfs_print_leaf(struct btrfs_root *root, struct extent_buffer *l)
- 		case BTRFS_DEV_STATS_KEY:
- 			printf("\t\tdevice stats\n");
- 			break;
-+		case BTRFS_DEDUP_STATUS_ITEM_KEY:
-+			print_dedup_status(l, i);
-+			break;
-+		case BTRFS_DEDUP_HASH_ITEM_KEY:
-+			hash_item = btrfs_item_ptr(l, i,
-+					struct btrfs_dedup_hash_item);
-+
-+			printf("\t\tdedup hash item num_bytes: %llu\n",
-+				btrfs_dedup_hash_len(l, hash_item));
- 		};
- 		fflush(stdout);
- 	}
--- 
-2.6.4
+My understanding from Josef's chunk allocator rework
+(http://www.spinics.net/lists/linux-btrfs/msg25722.html) was that now
+when allocating a new chunk we do not immediately update the
+device/chunk tree. We keep the new chunk in "pending_chunks" and in
+"new_bgs" on a transaction handle, and we actually update the
+chunk/device tree only when we are done with a particular transaction
+handle. This way we avoid that sort of deadlocks.
+
+But this patch breaks this rule, as it may make us update the
+device/chunk tree in the context of chunk allocation, which is the
+scenario that the rework was meant to avoid.
+
+Can you please point me at what I am missing?
+
+Thanks,
+Alex.
 
 
-
+On Wed, Jul 22, 2015 at 1:53 AM, Omar Sandoval <osandov@fb.com> wrote:
+> On Mon, Jul 20, 2015 at 02:56:20PM +0100, fdmanana@kernel.org wrote:
+>> From: Filipe Manana <fdmanana@suse.com>
+>>
+>> Omar reported that after commit 4fbcdf669454 ("Btrfs: fix -ENOSPC when
+>> finishing block group creation"), introduced in 4.2-rc1, the following
+>> test was failing due to exhaustion of the system array in the superblock:
+>>
+>>   #!/bin/bash
+>>
+>>   truncate -s 100T big.img
+>>   mkfs.btrfs big.img
+>>   mount -o loop big.img /mnt/loop
+>>
+>>   num=5
+>>   sz=10T
+>>   for ((i = 0; i < $num; i++)); do
+>>       echo fallocate $i $sz
+>>       fallocate -l $sz /mnt/loop/testfile$i
+>>   done
+>>   btrfs filesystem sync /mnt/loop
+>>
+>>   for ((i = 0; i < $num; i++)); do
+>>         echo rm $i
+>>         rm /mnt/loop/testfile$i
+>>         btrfs filesystem sync /mnt/loop
+>>   done
+>>   umount /mnt/loop
+>>
+>> This made btrfs_add_system_chunk() fail with -EFBIG due to excessive
+>> allocation of system block groups. This happened because the test creates
+>> a large number of data block groups per transaction and when committing
+>> the transaction we start the writeout of the block group caches for all
+>> the new new (dirty) block groups, which results in pre-allocating space
+>> for each block group's free space cache using the same transaction handle.
+>> That in turn often leads to creation of more block groups, and all get
+>> attached to the new_bgs list of the same transaction handle to the point
+>> of getting a list with over 1500 elements, and creation of new block groups
+>> leads to the need of reserving space in the chunk block reserve and often
+>> creating a new system block group too.
+>>
+>> So that made us quickly exhaust the chunk block reserve/system space info,
+>> because as of the commit mentioned before, we do reserve space for each
+>> new block group in the chunk block reserve, unlike before where we would
+>> not and would at most allocate one new system block group and therefore
+>> would only ensure that there was enough space in the system space info to
+>> allocate 1 new block group even if we ended up allocating thousands of
+>> new block groups using the same transaction handle. That worked most of
+>> the time because the computed required space at check_system_chunk() is
+>> very pessimistic (assumes a chunk tree height of BTRFS_MAX_LEVEL/8 and
+>> that all nodes/leafs in a path will be COWed and split) and since the
+>> updates to the chunk tree all happen at btrfs_create_pending_block_groups
+>> it is unlikely that a path needs to be COWed more than once (unless
+>> writepages() for the btree inode is called by mm in between) and that
+>> compensated for the need of creating any new nodes/leads in the chunk
+>> tree.
+>>
+>> So fix this by ensuring we don't accumulate a too large list of new block
+>> groups in a transaction's handles new_bgs list, inserting/updating the
+>> chunk tree for all accumulated new block groups and releasing the unused
+>> space from the chunk block reserve whenever the list becomes sufficiently
+>> large. This is a generic solution even though the problem currently can
+>> only happen when starting the writeout of the free space caches for all
+>> dirty block groups (btrfs_start_dirty_block_groups()).
+>>
+>> Reported-by: Omar Sandoval <osandov@fb.com>
+>> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+>
+> Thanks a lot for taking a look.
+>
+> Tested-by: Omar Sandoval <osandov@fb.com>
+>
+>> ---
+>>  fs/btrfs/extent-tree.c | 18 ++++++++++++++++++
+>>  1 file changed, 18 insertions(+)
+>>
+>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+>> index 171312d..07204bf 100644
+>> --- a/fs/btrfs/extent-tree.c
+>> +++ b/fs/btrfs/extent-tree.c
+>> @@ -4227,6 +4227,24 @@ out:
+>>       space_info->chunk_alloc = 0;
+>>       spin_unlock(&space_info->lock);
+>>       mutex_unlock(&fs_info->chunk_mutex);
+>> +     /*
+>> +      * When we allocate a new chunk we reserve space in the chunk block
+>> +      * reserve to make sure we can COW nodes/leafs in the chunk tree or
+>> +      * add new nodes/leafs to it if we end up needing to do it when
+>> +      * inserting the chunk item and updating device items as part of the
+>> +      * second phase of chunk allocation, performed by
+>> +      * btrfs_finish_chunk_alloc(). So make sure we don't accumulate a
+>> +      * large number of new block groups to create in our transaction
+>> +      * handle's new_bgs list to avoid exhausting the chunk block reserve
+>> +      * in extreme cases - like having a single transaction create many new
+>> +      * block groups when starting to write out the free space caches of all
+>> +      * the block groups that were made dirty during the lifetime of the
+>> +      * transaction.
+>> +      */
+>> +     if (trans->chunk_bytes_reserved >= (2 * 1024 * 1024ull)) {
+>> +             btrfs_create_pending_block_groups(trans, trans->root);
+>> +             btrfs_trans_release_chunk_metadata(trans);
+>> +     }
+>>       return ret;
+>>  }
+>>
+>> --
+>> 2.1.3
+>>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+> --
+> Omar
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

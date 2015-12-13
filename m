@@ -1,95 +1,96 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49843 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:50244 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751053AbbLMGvO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Dec 2015 01:51:14 -0500
+	id S1751210AbbLMHKr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 13 Dec 2015 02:10:47 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a80Uy-0004aO-HY
-	for linux-btrfs@vger.kernel.org; Sun, 13 Dec 2015 07:51:12 +0100
+	id 1a80nr-0001Mu-Nl
+	for linux-btrfs@vger.kernel.org; Sun, 13 Dec 2015 08:10:43 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 07:51:12 +0100
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 08:10:43 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 07:51:12 +0100
+        for <linux-btrfs@vger.kernel.org>; Sun, 13 Dec 2015 08:10:43 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Will "btrfs check --repair" fix the mounting problem?
-Date: Sun, 13 Dec 2015 06:51:07 +0000 (UTC)
-Message-ID: <pan$b4f0c$bec57257$c0c1d11d$1f0adfb3@cox.net>
-References: <566b0cff.pXiyzYE4dYIOt31+%sivan606@gmail.com>
-	<CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
-	<CAMG9ccx6ahFfnsq3DHUzemYjQwuTHD46nL1SqPsjeDNL4KTRWg@mail.gmail.com>
-	<CAJCQCtTckg3dA-YiswCHGo0rH7UQtObLCHb=H=mERG256SdjyQ@mail.gmail.com>
+Subject: Re: btrfs: poor performance on deleting many large files
+Date: Sun, 13 Dec 2015 07:10:38 +0000 (UTC)
+Message-ID: <pan$2ad7b$daf1d36c$45046af8$71124522@cox.net>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	<pan$eea04$e9596e27$78b44461$c5754723@cox.net>
+	<1448488198.4717.4.camel@gmail.com>
+	<pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
+	<1448562347.8809.16.camel@scientia.net>
+	<pan$54542$5eb77bd3$8682bff8$82310de1@cox.net>
+	<1448582805.11377.9.camel@scientia.net>
+	<pan$34543$2ed1f043$2f803125$884b36c0@cox.net>
+	<1448683025.6837.4.camel@scientia.net>
+	<pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
+	<1449958538.15961.3.camel@scientia.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Sat, 12 Dec 2015 13:16:41 -0700 as excerpted:
+Christoph Anton Mitterer posted on Sat, 12 Dec 2015 23:15:38 +0100 as
+excerpted:
 
-> On Sat, Dec 12, 2015 at 3:34 AM, Ivan Sizov <sivan606@gmail.com> wrote:
->> 2015-12-11 21:24 GMT+03:00 Chris Murphy <lists@colorremedies.com>:
->>> I would not repair it if the risk of it getting worse is bad for your
->>> data.
->>>
->>> Note the wiki says this feature is not well tested and is reported to
->>> not work reliably.
->>> https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
->>>
->>> Qu is working on patches to fix some of these problems, I don't know
->>> the status of any of that. I just did a conversion myself the other
->>> day with kernel 4.4.0rc3 and btrfs-progs 4.3.1 and that worked without
->>> error. But there were also no big files at all (it was just a clean OS
->>> installation). I immediately took a snapshot of that, and btrfs
->>> send/receive it to a new Btrfs volume, and then discarded the
->>> converted one entirely.
->>>
->>> The trace looks like it's mounting read-only? If it can be mounted
->>> read only, get the important data off the volume if it's not already
->>> backed up, and then blow it away. I personally wouldn't bother with
->>> repairing it.
->>
->> What is the better way to get data? send/receive works only with RO
->> snapshots. Is there another way to preserve subvolumes and CoW
->> structure (a lot of files was copied between subvols using "cp
->> --reflink=always")? Or just rsync'ing files is all what I can do?
+> On Sat, 2015-11-28 at 06:49 +0000, Duncan wrote:
+>> Christoph Anton Mitterer posted on Sat, 28 Nov 2015 04:57:05 +0100 as
+>> excerpted:
+>> > Still, specifically for snapshots that's a bit unhandy, as one
+>> > typically doesn't mount each of them... one rather mount e.g. the top
+>> > level subvol and has a subdir snapshots there...
+>> > So perhaps the idea of having snapshots that are per se noatime is
+>> > still not too bad.
+>> Read-only snapshots?
+> So you basically mean that ro snapshots won't have their atime updated
+> even without noatime?
+> Well I guess that was anyway the recent behaviour of Linux filesystems,
+> and only very old UNIX systems updated the atime even when the fs was
+> set ro.
+
+I'd test it to be sure before relying on it (keeping in mind that my own 
+use-case doesn't include subvolumes/snapshots so it's quite possible I 
+could get fine details of this nature wrong), but that would be my very 
+(_very_! see next) strong assumption, yes.
+
+Because read-only snapshots are used for btrfs-send among other things, 
+with the idea being that the read-only will keep them from changing in 
+the middle of the send, and ro snapshot atime updates would seem to throw 
+that entirely out the window.  So I can't imagine ro snapshots doing atime 
+updates under any circumstance because I just can't see how send could 
+rely on them then, but I'd still test it before counting on it.
+
+>> That'd do it, and of course you can toggle the read-
+>> only property (see btrfs property and its btrfs-property manpage).
+> Sure, but then it would still be nice for rw snapshots.
 > 
-> cp -a or rsync -a is all I can think of. To start to get it back to
-> normal, you can use duperemove. While that doesn't create subvolumes,
-> it'll at least find duplicate extents and use reflinks for those. So
-> it's in effect the same thing you have now, just lacking the subvolume
-> structure.
+> I guess what I probably actually want is the ability to set noatime as a
+> property.
+> I'll add that in a "feature request" on the project ideas wiki.
 
-I can also suggest btrfs restore, on the /unmounted/ btrfs, to get data 
-off it to some other normally mounted filesystem (btrfs or other).
+AFAIK, the general idea was to eventually have all the (possible, some 
+are global-filesystem-scope) subvolume mount options exposed as 
+properties, it's just not implemented yet, but I'm not entirely sure if 
+that was all /btrfs-specific/ mount options, or included the generic ones 
+such as the *atime and no* (noexec/nodev/...) options as well.  In view 
+of that and the fact that noatime is generic, adding it as a specific 
+request still makes sense.  Someone with more specific knowledge on the 
+current plan can remove it if it's already covered.
 
-Note that it has options for subvolume restore or not, metadata restore 
-or not, restore by path regex... some reasonably advanced stuff.  It's 
-designed for use when the filesystem won't mount at all, but it can even 
-be used on a healthy btrfs, as long as it is unmounted.
+>> Alternatively, mount the toplevel subvol read-only or noatime on one
+>> mountpoint, and bind-mount it read-write or whatever other appropriate
+> Well it's of course somehow possible... but that seems a bit ugly to
+> me... the best IMHO, would really be if one could set a property on
+> snapshots that marks them noatime.
 
-I've not used the restore subvolume functionality at all as my use-case 
-doesn't involve subvolumes, but between that and the path-regex options, 
-it should be possible to restore from subvolumes separately, altho as 
-normal files in normal subdirs, since it's designed to restore to other 
-filesystems as well as to btrfs.
-
-And if the damage is mostly in subvolumes, it's very possible you can 
-restore the data from more of them than you could otherwise access 
-without crashing the filesystem and possibly the system, since restore 
-works from userspace on an unmounted filesystem and thus should at least 
-not have as high a risk of taking the entire system down when it hits 
-those errors, as operating on a mounted filesystem could do due to 
-triggering the error in kernelspace.
-
-No it won't get you the subvolume structure on the restore-to 
-destination, so it's not /too/ much better than cp -a or rsync -a, but if 
-those end up crashing without restoring what you want, restore just might 
-get you more of that otherwise inaccessible due to crashes, data, 
-including what's on the subvolumes if you want it.
+Yes.  Possible is good, but "just works", as one would hope the 
+properties solution to eventually be, is still better than "possible by 
+jumping thru mount-bind hoops", the current "possibility method". =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

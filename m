@@ -1,29 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:57365 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:57819 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753630AbbLNXQZ (ORCPT
+	with ESMTP id S1753607AbbLNXZJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 18:16:25 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-01.dd24.net (Postfix) with ESMTP id 8BB585FC16
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 23:16:24 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id k-bRs52Z64w6 for <linux-btrfs@vger.kernel.org>;
-	Mon, 14 Dec 2015 23:16:22 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 23:16:22 +0000 (UTC)
-Message-ID: <1450134982.6629.60.camel@scientia.net>
-Subject: project idea: per-object default mount-options / more
- btrfs-properties / chattr attributes (was: btrfs: poor performance on
- deleting many large files)
+	Mon, 14 Dec 2015 18:25:09 -0500
+Message-ID: <1450135505.6629.66.camel@scientia.net>
+Subject: Re: btrfs: poor performance on deleting many large files
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Tue, 15 Dec 2015 00:16:22 +0100
-In-Reply-To: <566F261F.4040705@gmail.com>
+To: Lionel Bouton <lionel-subscription@bouton.name>,
+        linux-btrfs@vger.kernel.org
+Date: Tue, 15 Dec 2015 00:25:05 +0100
+In-Reply-To: <566F34F0.8050407@bouton.name>
 References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
 	 <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
 	 <1448488198.4717.4.camel@gmail.com>
@@ -36,46 +23,76 @@ References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
 	 <pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
 	 <1449958538.15961.3.camel@scientia.net> <566ED124.30803@gmail.com>
 	 <1450121957.6629.41.camel@scientia.net> <566F261F.4040705@gmail.com>
+	 <566F34F0.8050407@bouton.name>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-6XOWnwfyg1djGcFJTdPq"
+	boundary="=-gFY4ZyFyHJ8urWfjPpFp"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-6XOWnwfyg1djGcFJTdPq
+--=-gFY4ZyFyHJ8urWfjPpFp
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-Just FYI:
+On Mon, 2015-12-14 at 22:30 +0100, Lionel Bouton wrote:
+> Mutt is often used as an example but tmpwatch uses atime by default
+> too
+> and it's quite useful.
+Hmm one could probably argue that these few cases justify the use of
+separate filesystems (or btrfs subvols ;) ), so that the majority could
+benefit of noatime.
 
-On Mon, 2015-12-14 at 15:27 -0500, Austin S. Hemmelgarn wrote:
-> > My idea would be basically, that having a noatime btrfs-property,
-> > which
-> > is perhaps even set automatically, would be an elegant way of doing
-> > that.
-> > I just haven't had time to properly write that up and add is as a
-> > "feature request" to the projects idea wiki page.
-> I like this idea.
+> If you have a local cache of remote files for which you want a good
+> hit
+> ratio and don't care too much about its exact size (you should have
+> Nagios/Zabbix/... alerting you when a filesystem reaches a %free
+> limit
+> if you value your system's availability anyway), using tmpwatch with
+> cron to maintain it is only one single line away and does the job.
+> For
+> an example of this particular case, on Gentoo the
+> /usr/portage/distfiles
+> directory is used in one of the tasks you can uncomment to activate
+> in
+> the cron.daily file provided when installing tmpwatch.
+> Using tmpwatch/cron is far more convenient than using a dedicated
+> cache
+> (which might get tricky if the remote isn't HTTP-based, like an
+> rsync/ftp/nfs/... server or doesn't support HTTP IMS requests for
+> example).
+> Some http frameworks put sessions in /tmp: in this case if you want
+> sessions to expire based on usage and not creation time, using
+> tmpwatch
+> or similar with atime is the only way to clean these files. This can
+> even become a performance requirement: I've seen some servers slowing
+> down with tens/hundreds of thousands of session files in /tmp because
+> it
+> was only cleaned at boot and the systems were almost never
+> rebooted...
+Okay there are probably some usecases, ... the session cleaning I'd
+however rather consider a bug in the respective software, especially if
+it really depends on it to expire the session (what if for some reason
+tmpwatch get's broken, uninstalled, etc.)
 
-I've just compiled some thoughts and ideas into:
-https://btrfs.wiki.kernel.org/index.php/Project_ideas#Per-object_default_mo=
-unt-options_.2F_btrfs-properties_.2F_chattr.281.29_attributes_and_reasonabl=
-e_userland_defaults
 
-As usual, this is mostly from my admin/end-user side, i.e. what I could
-imagine would ease in the maintenance of large/complex (in terms of
-subvols, nesting, snapshots) btrfs filesystems...
+> I use noatime and nodiratime
+FYI: noatime implies nodiratime :-)
 
-And of course, any developer or more expert user than me is happily
-invited to comment/remove any (possibly stupid) ideas of mine therein,
-or summon the inquisition for my heresy ;)
+
+> Finally Linus Torvalds has been quite vocal and consistent on the
+> general subject of the kernel not breaking user-space APIs no matter
+> what so I wouldn't have much hope for default kernel mount options
+> changes...
+He surely is right in general,... but when the point has been reached,
+where only a minority actually requires the feature... and the minority
+actually starts to suffer from that... it may change.
 
 
 Cheers,
 Chris.
---=-6XOWnwfyg1djGcFJTdPq
+--=-gFY4ZyFyHJ8urWfjPpFp
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -162,19 +179,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDIzMTYy
-MlowTwYJKoZIhvcNAQkEMUIEQGSgyBk6dONj/C1mT8a6x25BH4uN2MAUxx+vCmrP/D/V8XqP+jgo
-j8eRfbofWcBM0n8GaoYMqOcgMG0sN8z2wl0wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDIzMjUw
+NVowTwYJKoZIhvcNAQkEMUIEQJD0kk/4wD6daBNuNAcppdVeqTEkzcl6F+Ie+wJOFSxF1QaKl8ol
+OUl64E1ykYXmbuRoNxrwxmDkICEXR/X0CdIwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBOScahlTfsOsaOdPRTK4oseKQlSGhX
-iQGcTgkUZoI1aLXgKNU1rzgP/s0+5ldxAF9qvrUoOgAE8x84Wv68SRr0KkntDTFKsJ0XwsV4nLzb
-iRqOzT8E4dXfkb+fSo/Ab6mShDWqc5j62H2iDfjihUG8lsDEKlqx94dSB+fQyN+eywvZvq496N/y
-MrxCKKKNXZWiD//gKdHmH3yfAvmk/if5mXfDRrg8QEN9oUTzdm7icKM0H9kgGdtgcjyRIzJqicaJ
-F7j+K4EAw+XxU6CsxuqlsD9C9yCAPFMNeLY1YiY8izAE69SaGp73IHGpOj8/+SJ+X8xlS4/sCXGy
-gi2Op4PwAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAlNY2qwQRZekkLifxQPG2T4UjtahgV
+rN6XLAsI/fEHR3SqoVaDaQRxt21LaaTulFyivJ3wXp5Zrz/gpO2vNwyhocxomgbfwk2EIFj0KvfT
+ldegBxEsVy74Jo+QLi0LKuBo2hHkyE7Q3G3TVJq6nRyjy6nKZnZdWgIcEG3t9nhMkHyRlEWS8KFm
+2AJ6v2bZ1p2r6vwTZaDdSysJ4OlBfJblNcefmKiPu1ylqKGW0LAchh90DaZF5S0gKL+sG5R6m94F
+R9T+fK4mTKiuTWKDQKxebqXyFNqh1ZY8u2jG6SiCRPdgAWmDKIzZaTlk9QCnTAXgsbZBFKP7nsIJ
+uLjHoD1YAAAAAAAA
 
 
---=-6XOWnwfyg1djGcFJTdPq--
+--=-gFY4ZyFyHJ8urWfjPpFp--
 

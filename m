@@ -1,198 +1,363 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60723 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752095AbbLNC22 (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:38836 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751624AbbLNCqG (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Dec 2015 21:28:28 -0500
-Subject: Re: Will "btrfs check --repair" fix the mounting problem?
-To: Chris Murphy <lists@colorremedies.com>, Ivan Sizov <sivan606@gmail.com>
-References: <566b0cff.pXiyzYE4dYIOt31+%sivan606@gmail.com>
- <CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <566E2934.1090207@cn.fujitsu.com>
-Date: Mon, 14 Dec 2015 10:28:04 +0800
-MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+	Sun, 13 Dec 2015 21:46:06 -0500
+Message-ID: <1450061161.2388.66.camel@scientia.net>
+Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
+ poor performance on deleting many large files?)
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Mon, 14 Dec 2015 03:46:01 +0100
+In-Reply-To: <pan$ab79a$6d00d5c9$95504338$ca8d2761@cox.net>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	 <56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
+	 <20151126003342.GA24333@carfax.org.uk>
+	 <1449639781.7835.3.camel@scientia.net>
+	 <pan$ab79a$6d00d5c9$95504338$ca8d2761@cox.net>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-FH3EBVYyfavoJDv7oSFT"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--=-FH3EBVYyfavoJDv7oSFT
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Chris Murphy wrote on 2015/12/11 11:24 -0700:
-> On Fri, Dec 11, 2015 at 10:50 AM, Ivan Sizov <sivan606@gmail.com> wrote:
->> Btrfs crashes in few seconds after mounting RW.
->> If it's important: the volume was converted from ext4. "ext2_saved"
->> subvolume still presents.
->>
->> dmesg:
->> [  625.998387] BTRFS info (device sda1): disk space caching is enabled
->> [  625.998392] BTRFS: has skinny extents
->> [  627.727708] BTRFS: checking UUID tree
->> [  708.514128] ------------[ cut here ]------------
->> [  708.514161] WARNING: CPU: 1 PID: 2263 at fs/btrfs/extent-tree.c:6255 __btrfs_free_extent.isra.68+0x8c8/0xd70 [btrfs]()
->> [  708.514164] Modules linked in: bnep bluetooth rfkill ip6t_rpfilter ip6t_REJECT nf_reject_ipv6 xt_conntrack ebtable_broute bridge ebtable_filter ebtable_nat ebtables ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 ip6table_raw ip6table_security ip6table_mangle ip6table_filter ip6_tables iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack iptable_raw iptable_security iptable_mangle gpio_ich coretemp kvm_intel kvm iTCO_wdt iTCO_vendor_support snd_hda_codec_realtek snd_hda_codec_generic snd_hda_intel snd_hda_codec snd_hda_core snd_hwdep snd_seq snd_seq_device lpc_ich snd_pcm snd_timer ppdev snd i2c_i801 mei_me mei soundcore parport_pc parport shpchp tpm_infineon tpm_tis tpm acpi_cpufreq nfsd auth_rpcgss nfs_acl lockd grace isofs squashfs btrfs xor raid6_pq i915 hid_logitech_hidpp
->> [  708.514277]  8021q garp stp video llc mrp i2c_algo_bit drm_kms_helper r8169 uas crc32c_intel drm serio_raw mii hid_logitech_dj usb_storage scsi_dh_rdac scsi_dh_emc scsi_dh_alua sunrpc loop
->> [  708.514311] CPU: 1 PID: 2263 Comm: btrfs-transacti Not tainted 4.2.3-300.fc23.x86_64 #1
->> [  708.514315] Hardware name: MSI MS-7636/H55M-P31(MS-7636)   , BIOS V1.9 09/14/2010
->> [  708.514319]  0000000000000000 00000000f50458a6 ffff880066b03ad8 ffffffff81771fca
->> [  708.514326]  0000000000000000 0000000000000000 ffff880066b03b18 ffffffff8109e4a6
->> [  708.514332]  0000000000000002 000000252f595000 00000000fffffffe 0000000000000000
->> [  708.514338] Call Trace:
->> [  708.514349]  [<ffffffff81771fca>] dump_stack+0x45/0x57
->> [  708.514359]  [<ffffffff8109e4a6>] warn_slowpath_common+0x86/0xc0
->> [  708.514365]  [<ffffffff8109e5da>] warn_slowpath_null+0x1a/0x20
->> [  708.514391]  [<ffffffffa0305628>] __btrfs_free_extent.isra.68+0x8c8/0xd70 [btrfs]
->> [  708.514429]  [<ffffffffa036da5a>] ? find_ref_head+0x5a/0x80 [btrfs]
->> [  708.514456]  [<ffffffffa03093c8>] __btrfs_run_delayed_refs+0x998/0x1080 [btrfs]
+On Wed, 2015-12-09 at 13:36 +0000, Duncan wrote:
+> Answering the BTW first, not to my knowledge, and I'd be
+> skeptical.=C2=A0=C2=A0In=20
+> general, btrfs is cowed, and that's the focus.=C2=A0=C2=A0To the extent t=
+hat
+> nocow=20
+> is necessary for fragmentation/performance reasons, etc, the idea is
+> to=20
+> try to make cow work better in those cases, for example by working on
+> autodefrag to make it better at handling large files without the
+> scaling=20
+> issues it currently has above half a gig or so, and thus to confine
+> nocow=20
+> to a smaller and smaller niche use-case, rather than focusing on
+> making=20
+> nocow better.
+> Of course it remains to be seen how much better they can do with=20
+> autodefrag, etc, but at this point, there's way more project=20
+> possibilities than people to develop them, so even if they do find
+> they=20
+> can't make cow work much better for these cases, actually working on
+> nocow=20
+> would still be rather far down the list, because there's so many
+> other=20
+> improvement and feature opportunities that will get the focus
+> first.=C2=A0=C2=A0
+> Which in practice probably puts it in "it'd be nice, but it's low
+> enough=20
+> priority that we're talking five years out or more, unless of course=20
+> someone else qualified steps up and that's their personal itch they
+> want=20
+> to scratch", territory.
+I guess I'll split out my answer on that, in a fresh thread about
+checksums for nodatacow later, hoping to attract some more devs there
+:-)
 
-Not completely sure, but it may be related to a regression in 4.2.
-The regression it self is already fixed, but is not backported to 4.2 as 
-far as I know.
+I think however, again with my naive understanding on how CoW works and
+what it inherently implies, that there cannot be a real good solution
+to the fragmentation problem for DB/etc. files.
 
-So, I'd recommend to revert to 4.1 and see if things get better.
-Fortunately, btrfs already aborted the transaction before things get worse.
-
->> [  708.514477]  [<ffffffffa030c674>] btrfs_run_delayed_refs.part.73+0x74/0x270 [btrfs]
->> [  708.514496]  [<ffffffffa030c885>] btrfs_run_delayed_refs+0x15/0x20 [btrfs]
->> [  708.514518]  [<ffffffffa0320f26>] btrfs_commit_transaction+0x56/0xad0 [btrfs]
->> [  708.514541]  [<ffffffffa031c604>] transaction_kthread+0x214/0x230 [btrfs]
->> [  708.514564]  [<ffffffffa031c3f0>] ? btrfs_cleanup_transaction+0x500/0x500 [btrfs]
->> [  708.514569]  [<ffffffff810bc8a8>] kthread+0xd8/0xf0
->> [  708.514574]  [<ffffffff810bc7d0>] ? kthread_worker_fn+0x160/0x160
->> [  708.514581]  [<ffffffff81778d9f>] ret_from_fork+0x3f/0x70
->> [  708.514585]  [<ffffffff810bc7d0>] ? kthread_worker_fn+0x160/0x160
->> [  708.514588] ---[ end trace 6731111f3bf2295a ]---
->> [  708.514594] BTRFS info (device sda1): leaf 535035904 total ptrs 204 free space 4451
->> [  708.514598]  item 0 key (159696797696 169 0) itemoff 16250 itemsize 33
->> [  708.514601]          extent refs 1 gen 21134 flags 2
->> [  708.514604]          tree block backref root 2
->> [  708.514609]  item 1 key (159696830464 169 1) itemoff 16217 itemsize 33
->> [  708.514612]          extent refs 1 gen 21134 flags 2
->> [  708.514615]          tree block backref root 2
->> [  708.514619]  item 2 key (159696846848 169 0) itemoff 16184 itemsize 33
->>
->> *********** a lot of similar messages ***********
->>
->> [  708.516923]  item 203 key (159711268864 169 0) itemoff 9551 itemsize 33
->> [  708.516927]          extent refs 1 gen 21082 flags 2
->> [  708.516930]          tree block backref root 384
->> [  708.516937] BTRFS error (device sda1): unable to find ref byte nr 159708172288 parent 0 root 385  owner 2 offset 0
->> [  708.516944] ------------[ cut here ]------------
->> [  708.516975] WARNING: CPU: 1 PID: 2263 at fs/btrfs/extent-tree.c:6261 __btrfs_free_extent.isra.68+0x92f/0xd70 [btrfs]()
->> [  708.516979] BTRFS: Transaction aborted (error -2)
->> [  708.516982] Modules linked in: bnep bluetooth rfkill ip6t_rpfilter ip6t_REJECT nf_reject_ipv6 xt_conntrack ebtable_broute bridge ebtable_filter ebtable_nat ebtables ip6table_nat nf_conntrack_ipv6 nf_defrag_ipv6 nf_nat_ipv6 ip6table_raw ip6table_security ip6table_mangle ip6table_filter ip6_tables iptable_nat nf_conntrack_ipv4 nf_defrag_ipv4 nf_nat_ipv4 nf_nat nf_conntrack iptable_raw iptable_security iptable_mangle gpio_ich coretemp kvm_intel kvm iTCO_wdt iTCO_vendor_support snd_hda_codec_realtek snd_hda_codec_generic snd_hda_intel snd_hda_codec snd_hda_core snd_hwdep snd_seq snd_seq_device lpc_ich snd_pcm snd_timer ppdev snd i2c_i801 mei_me mei soundcore parport_pc parport shpchp tpm_infineon tpm_tis tpm acpi_cpufreq nfsd auth_rpcgss nfs_acl lockd grace isofs squashfs btrfs xor raid6_pq i915 hid_logitech_hidpp
->> [  708.517075]  8021q garp stp video llc mrp i2c_algo_bit drm_kms_helper r8169 uas crc32c_intel drm serio_raw mii hid_logitech_dj usb_storage scsi_dh_rdac scsi_dh_emc scsi_dh_alua sunrpc loop
->> [  708.517108] CPU: 1 PID: 2263 Comm: btrfs-transacti Tainted: G        W       4.2.3-300.fc23.x86_64 #1
->> [  708.517112] Hardware name: MSI MS-7636/H55M-P31(MS-7636)   , BIOS V1.9 09/14/2010
->> [  708.517115]  0000000000000000 00000000f50458a6 ffff880066b03a78 ffffffff81771fca
->> [  708.517123]  0000000000000000 ffff880066b03ad0 ffff880066b03ab8 ffffffff8109e4a6
->> [  708.517129]  ffffffffa03a0349 000000252f595000 00000000fffffffe 0000000000000000
->> [  708.517135] Call Trace:
->> [  708.517143]  [<ffffffff81771fca>] dump_stack+0x45/0x57
->> [  708.517150]  [<ffffffff8109e4a6>] warn_slowpath_common+0x86/0xc0
->> [  708.517157]  [<ffffffff8109e535>] warn_slowpath_fmt+0x55/0x70
->> [  708.517186]  [<ffffffffa030568f>] __btrfs_free_extent.isra.68+0x92f/0xd70 [btrfs]
->> [  708.517226]  [<ffffffffa036da5a>] ? find_ref_head+0x5a/0x80 [btrfs]
->> [  708.517262]  [<ffffffffa03093c8>] __btrfs_run_delayed_refs+0x998/0x1080 [btrfs]
->> [  708.517288]  [<ffffffffa030c674>] btrfs_run_delayed_refs.part.73+0x74/0x270 [btrfs]
->> [  708.517317]  [<ffffffffa030c885>] btrfs_run_delayed_refs+0x15/0x20 [btrfs]
->> [  708.517351]  [<ffffffffa0320f26>] btrfs_commit_transaction+0x56/0xad0 [btrfs]
->> [  708.517382]  [<ffffffffa031c604>] transaction_kthread+0x214/0x230 [btrfs]
->> [  708.517411]  [<ffffffffa031c3f0>] ? btrfs_cleanup_transaction+0x500/0x500 [btrfs]
->> [  708.517419]  [<ffffffff810bc8a8>] kthread+0xd8/0xf0
->> [  708.517425]  [<ffffffff810bc7d0>] ? kthread_worker_fn+0x160/0x160
->> [  708.517432]  [<ffffffff81778d9f>] ret_from_fork+0x3f/0x70
->> [  708.517439]  [<ffffffff810bc7d0>] ? kthread_worker_fn+0x160/0x160
->> [  708.517444] ---[ end trace 6731111f3bf2295b ]---
->> [  708.517450] BTRFS: error (device sda1) in __btrfs_free_extent:6261: errno=-2 No such entry
->> [  708.517455] BTRFS info (device sda1): forced readonly
->> [  708.517464] BTRFS: error (device sda1) in btrfs_run_delayed_refs:2781: errno=-2 No such entry
->> [  708.517580] pending csums is 139264
->> [  841.017119] BTRFS error (device sda1): cleaner transaction attach returned -30
->>
->>
->> I checked the filesystem extents:
->>
->> $ sudo btrfs check --subvol-extents 5 /dev/sda1
->> Print extent state for subvolume 5 on /dev/sda1
->> UUID: 6de5c663-bc65-4120-8cf6-5309fd25aa7e
->> checksum verify failed on 159708168192 found 3659C180 wanted 8EE67C14
->> checksum verify failed on 159708168192 found 3659C180 wanted 8EE67C14
->> bytenr mismatch, want=159708168192, have=16968404070778227820
->> ERROR: while mapping refs: -5
->> extent_io.c:582: free_extent_buffer: Assertion `eb->refs < 0` failed.
->> btrfs(+0x51e9e)[0x56283f4bde9e]
->> btrfs(free_extent_buffer+0xc0)[0x56283f4be9b0]
->> btrfs(btrfs_free_fs_root+0x11)[0x56283f4aef11]
->> btrfs(rb_free_nodes+0x21)[0x56283f4d7cc1]
->> btrfs(close_ctree+0x194)[0x56283f4b0214]
->> btrfs(cmd_check+0x486)[0x56283f49ace6]
->> btrfs(main+0x82)[0x56283f47fad2]
->> /lib64/libc.so.6(__libc_start_main+0xf0)[0x7f8cbea98580]
->> btrfs(_start+0x29)[0x56283f47fbd9]
->> $
-
-Did you tried it without the '--subvol-extents 5' options?
-And what's the output?
-
-And it may be a good idea to run btrfs-find-root -a, trying to find a 
-good copy of old btrfs root tree.
-It may cause miracle to make it RW again.
-
->>
->> Will "btrfs check --repair" fix my problem or make it worse?
->> Fedora 23. Installed (but now broken) system has 4.2.5 kernel. A live
->> CD has kernel 4.2.3 with btrfs-progs 4.2.2!
->
-> I would not repair it if the risk of it getting worse is bad for your data.
-
-Totally agreed here.
-It seems the problem is already tricky enough for --repair.
-
->
-> Note the wiki says this feature is not well tested and is reported to
-> not work reliably.
-> https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
->
-> Qu is working on patches to fix some of these problems, I don't know
-> the status of any of that.
-
-The patches are under review now, and David should be picking needed 
-patches now.
-
-> I just did a conversion myself the other
-> day with kernel 4.4.0rc3 and btrfs-progs 4.3.1 and that worked without
-> error. But there were also no big files at all (it was just a clean OS
-> installation). I immediately took a snapshot of that, and btrfs
-> send/receive it to a new Btrfs volume, and then discarded the
-> converted one entirely.
-
-It should has the problem of wrong chunk type even it's empty.
-Btrfsck should report things like :
-bad extent [33554432, 36335616), type mismatch with chunk
-bad extent [36352000, 36356096), type mismatch with chunk
-bad extent [36454400, 36458496), type mismatch with chunk
-bad extent [36458496, 36462592), type mismatch with chunk
-bad extent [36462592, 36466688), type mismatch with chunk
-bad extent [36499456, 36503552), type mismatch with chunk
+And as such, I'd think that having a checksumming feature for
+notdatacow as well, even if it's not perfect, is definitely worth it.
 
 
->
-> The trace looks like it's mounting read-only? If it can be mounted
-> read only, get the important data off the volume if it's not already
-> backed up, and then blow it away. I personally wouldn't bother with
-> repairing it.
+> As for the updated checksum after modification, the problem with that
+> is=20
+> that in the mean time, the checksum wouldn't verify,
+Well one could either implement some locking,.. but I don't see the
+general problem here... if the block is still being written (and I
+count updating the meta-data, including checksum, to that) it cannot be
+read anyway, can it? It may be only half written and the data returned
+would be garbage.
 
-+1 for the advice if you just want to use back up things and get back to 
-normal life.
 
-Thanks,
-Qu
+>  and while btrfs=20
+> could of course keep status in memory during normal operations,
+> that's=20
+> not the problem, the problem is what happens if there's a crash and
+> in-
+> memory state vaporizes.=C2=A0=C2=A0In that case, when btrfs remounted, it=
+'d
+> have no=20
+> way of knowing why the checksum didn't match, just that it didn't,
+> and=20
+> would then refuse access to that block in the file, because for all
+> it=20
+> knows, it /is/ a block error.
+And this would only happen in the rare cases that anything crashes,
+where it's anyway quite likely that this no-CoWed block will be
+garbage.
+I'll talk about that more in the separate thread... so let's move
+things there.
 
->
->
->
 
+> Same here.=C2=A0=C2=A0In fact, my most anticipated feature is N-way-mirro=
+ring,=20
+Hmm ... not totally sure about that...
+AFAIU, N-way-mirroring is what currently the currently wrongly called
+RAID1 is in btrfs, i.e. having N replicas of everything on M devices,
+right?
+In other words, not being a N-parity-RAID and not guaranteeing that
+*any* N disks could fail, right?
+
+Hmm I guess that would be definitely nice to have, especially since
+then we could have true RAID1, i.e. N=3DM.
+
+But it's probably rather important for those scenarios, where either
+resilience matters a lot... and/or =C2=A0 those where write speed doesn't
+but read speed does, right?
+
+Taking the example of our use case at the university, i.e. the LHC
+Tier-2 we run,... that would rather be uninteresting.
+We typically have storage nodes (and many of them) of say 16-24
+devices, and based on funding constraints, resilience concerns and IO
+performance, we place them in RAID6 (yeah i know, RAID5 is faster, but
+even with hotspares in place, practise lead too often to lost RAIDs).
+
+Especially for the bigger nodes, with more disks, we'd rather have a N-
+parity RAID, where any N disks can fail)... of course performance
+considerations may kill that desire again ;)
+
+
+> It is a big and basic feature, but turning it off isn't the end of
+> the=20
+> world, because then it's still the same level of reliability other=20
+> solutions such as raid generally provide.
+Sure... I never meant it as "loss to what we already have in other
+systems"... but as "loss compared to how awesome[0] btrfs could be ;-)"
+
+
+> But as it happens, both VM image management and databases tend to
+> come=20
+> with their own integrity management, in part precisely because the=20
+> filesystem could never provide that sort of service.
+Well that's only partially true, to my knowledge.
+a) I wouldn't know that hypervisors do that at all.
+b) DBs have of course their journal, but that protects only against
+crashes,... not against bad blocks nor does it help you to decide which
+block is good when you have multiple.
+
+
+> After all, you can always decide not to run it if you're worried
+> about the space effects it's going to have
+Hmm well,... and the manpage actually mentions that it blows up when
+snapshots are used... at least in some technical language...
+So,.. you're possibly right, here,... though I guess many may just do=C2=A0
+btrfs filesystem --help which looses no word about the possible grave
+effects of defrag.
+
+
+> But even at that point, while snapshot-aware-defrag is still on the
+> list, =C2=A0I'm not sure if it's ever going to be actually viable.=C2=A0=
+=C2=A0It may
+> be that the scaling issues are just too big, and it simply can't be
+> made to work =C2=A0both correctly and in anything approaching practical
+> time.
+Well, I shall hope not
+:)
+
+
+> Worst-case, you =C2=A0set nocow and turn off snapshotting, but that's=C2=
+=A0
+> exactly the situation
+> you're in anyway with other filesystems, so you're no worse off than
+> if you were using them.
+> Meanwhile, where those btrfs features *can* be used, which is on
+> /most/=20
+> files, with only limited exceptions, it's all upside! =3D:^)
+Sure :D ... but that doesn't mean we should try do minimise the upside
+cases if possible :-)
+
+
+> FWIW, I've seen it asserted that autodefrag is snapshot aware a few
+> times=20
+> now, but I'm not personally sure that is the case and I don't see any
+> immediately obvious reason it would be, when (manual) defrag isn't,
+> so=20
+> I've refrained from making that claim, myself.=C2=A0=C2=A0If I were to se=
+e
+> multiple=20
+> devs make that assertion, I'd be more confident, but I believe I've
+> only=20
+> seen it from Hugo, and while I trust him in general because in
+> general=20
+> what he says makes sense, here, as I said, it just doesn't make
+> immediate=20
+> sense to me that the two would be so different
+Yes, that was my concern as well...
+
+
+> The biggest downside of autodefrag is its performance on large
+> (generally=20
+> noticeable at between half a gig and a gig) random-rewrite-pattern
+> files=20
+> in actively-being-rewritten use.=C2=A0=C2=A0For all other cases it's gene=
+rally=20
+> recommended, but that's why it's not the default.
+Hmm that makes it a bit difficult to use when you have mixed use cases.
+Can't they just add a feature that allows one to select up to which
+file sizes autodefrag kicks in.
+
+Interestingly, I've enabled it now, and as I've mentioned before I run
+several VMs on that machine (which has a SSD), so far intentionally not
+set nodatacow... however, so far I don't see any aggressive rewriting,
+though admittedly, I wouldn't know how to properly tell whether auto-
+defrag was doing heavy IO or not, it doesn't show up as a kernel thread
+it seems.
+
+> AFAIK autodefrag only queues up the defrag when it detects
+> fragmentation=20
+> beyond some threshold, and it only checks and thus only detects at
+> file=20
+> (re)write.
+Sounds reasonable... especially I wouldn't want the situation in which
+it basically constantly rewrites files, just because of few fragments.
+
+Another case however, could be more tricky do detect: Files which
+continuously and quickly fragment at whole or at least in parts.
+AFAIU, it would basically not make any sense to try any defrag on such
+(because of the "it quickly fragments" again).
+
+Also it would be nice to have some knobs to control in more detail how
+much IO it spends on autodefrag, perhaps even on a per fs basis or even
+more detailed.
+
+
+> Further, when a filesystem is highly fragmented and autodefrag is
+> first=20
+> turned on, often it actually rather negatively affects performance
+> for a=20
+> few days, because so many files are so fragmented that it's queuing
+> up=20
+> defrags for nearly everything written.
+I've read that advice of your's before... so you basically think it
+would also queue up files that are fragmented, even when these are not
+written to since it was turned on.
+
+Interestingly, I did turn it on just a few days, and so far I haven't
+seem much disk activity that would point to autodefrag.
+
+
+
+Thanks again for your time and answers :)
+Chris.
+
+
+[0] In Germany there's the term "eierlegende Wollmilchsau", it
+basically describes a pig, which gives milk, eggs and wool... perhaps
+one can translate it with "jack of all trades device".
+(No I don't want btrfs, to include a webbrowser and PDF reader ;) )
+--=-FH3EBVYyfavoJDv7oSFT
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDAyNDYw
+MVowTwYJKoZIhvcNAQkEMUIEQL2pBKbld+oJchLTuwVTm15T3XZP16Tb534Q717mtgusxMDbFCkF
+nulu07WN6gArASOxYKac9fbPT33335gHfcQwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQA4SJOyrw0ZR8cTKKFHO9M3GPG480vg
+5Ot+q5rgdpGfjspbBMsJ71vHk/AaKOJLw7iYWsOx7V4smq1rOkRy70cYezWtvfyK7m0GFqPWSImq
+H1oIR+htpCr8JuarqEPhb7A1AQFQA3oYUNcihVIdufXTcCH8+k9u8cYAG7/eOaIs/lA9Wd9uICuo
+TisbFtxxGNYh0X8BAy6ci1LWgakKq9MfCJS2DrQ2VZWuyneW0FhQNSLAA2RroEUImNyLZ3Dj6BJc
+XQRqekyERGLPlmGpg5AablxdON4CAOnJ7CvMbuUlwIZbNnziljZYNwUHsVK55/6hn2VeZxU1c9Q/
+tnWTiqneAAAAAAAA
+
+
+--=-FH3EBVYyfavoJDv7oSFT--
 

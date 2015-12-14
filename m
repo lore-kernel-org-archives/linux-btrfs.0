@@ -1,142 +1,80 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:54330 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:54370 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752095AbbLNA1x (ORCPT
+	with ESMTP id S1752156AbbLNA25 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Dec 2015 19:27:53 -0500
-Message-ID: <1450052868.30943.27.camel@scientia.net>
+	Sun, 13 Dec 2015 19:28:57 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id 75C8A5FC1D
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 00:28:56 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+	with ESMTP id j0LNkxicrySS for <linux-btrfs@vger.kernel.org>;
+	Mon, 14 Dec 2015 00:28:54 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-01.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 00:28:54 +0000 (UTC)
+Message-ID: <1450052934.30943.28.camel@scientia.net>
 Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Mon, 14 Dec 2015 01:27:48 +0100
-In-Reply-To: <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 14 Dec 2015 01:28:54 +0100
+In-Reply-To: <566B79BC.30104@anonym.com>
 References: <20151204120529.37E47D5A28@emkei.cz>
 	 <20151204130758.GR8775@carfax.org.uk>
 	 <1449286104.18841.14.camel@scientia.net>
 	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
-	 <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
-	 <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
+	 <1449366680.3183.37.camel@scientia.net>	<56644785.4090702@gmx.com>
+	 <1449639588.7835.2.camel@scientia.net>	<5668A1CB.1020007@anonym.com>
 	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
 	 <1449872498.31388.74.camel@fo>
 	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
+	 <566B79BC.30104@anonym.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-YT3wrWQKYZ0AF5t4s8xR"
+	boundary="=-nbQ7dNZ61XAEH3GFZkAS"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-YT3wrWQKYZ0AF5t4s8xR
+--=-nbQ7dNZ61XAEH3GFZkAS
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Fri, 2015-12-11 at 16:06 -0700, Chris Murphy wrote:
-> For anything but a new and empty Btrfs volume
-What's the influence of the fs being new/empty?
-
-> this hypothetical
-> attack would be a ton easier to do on LVM and mdadm raid because they
-> have a tiny amount of metadata to spoof compared to a Btrfs volume
-> with even a little bit of data on it.
-Uhm I haven't said that other systems properly handle this kind of
-attack. ;-)
-Guess that would need to be evaluated...
-
-
->  I think this concern is overblown.
-I don't think so. Let me give you an example: There is an attack[0]
-against crypto, where the attacker listens via a smartphone's
-microphone, and based on the acoustics of a computer where gnupg runs.
-This is surely not an attack many people would have considered even
-remotely possible, but in fact it works, at least under lab conditions.
-
-I guess the same applies for possible attack vectors like this here.
-The stronger actual crypto and the strong software gets in terms of
-classical security holes (buffer overruns and so), the more attackers
-will try to go alternative ways.
-
-
-> I'm suggesting bitwise identical copies being created is not what is
-> wanted most of the time, except in edge cases.
-mhh,.. well there's the VM case, e.g. duplicating a template VM,
-booting it deploying software. Guess that's already common enough.
-There are people who want to use btrfs on top of LVM and using the
-snapshot functionality of that... another use case.
-Some people may want to use it on top of MD (for whatever reason)... at
-least in the mirroring RAID case, the kernel would see the same btrfs
-twice.
-
-Apart from that, btrfs should be a general purpose fs, and not just a
-desktop or server fs.
-So edge cases like forensics (where it's common that you create bitwise
-identical images) shouln't be forgotten either.
-
-
-> > >If your workflow requires making an exact copy (for the shelf or
-> > > for
-> > > an emergency) then dd might be OK. But most often it's used
-> > > because
-> > > it's been easy, not because it's a good practice.
-> > Ufff.. I wouldn't got that far to call something here bad or good
-> > practice.
+On Sat, 2015-12-12 at 02:34 +0100, S.J. wrote:
+> A bit more about the dd-is-bad-topic:
 >=20
-> It's not just bad practice, it's sufficiently sloppy that it's very
-> nearly user sabotage. That this is due to innocent ignorance, and a
-> long standing practice that's bad advice being handed down from
-> previous generations doesn't absolve the practice and mean we should
-> invent esoteric work arounds for what is not a good practice. We have
-> all sorts of exhibits why it's not a good idea.
-Well if you don't give any real arguments or technical reasons (apart
-from "working around software that doesn't handle this well") I
-consider this just repetition of the baseless claim that long standing
-practise would be bad.
+> IMHO it doesn't matter at all.
+Yes, fully agree.
 
 
-> I disagree. It was due to the rudimentary nature of earlier
-> filesystems' metadata paradigm that it worked. That's no longer the
-> case.
-Well in the end it's of course up to the developers to decide whether
-this is acceptable or not, but being on the admin/end-user side, I can
-at least say that not everyone on there would accept "this is no longer
-the case" as valid explanation when their fs was corrupted or attacked.
-
-
-> Sure, the kernel code should get smarter about refusing to mount in
-> ambiguous cases, so that a file system isn't nerfed. That shouldn't
-> happen. But we also need to get away from this idea that dd is
-> actually an appropriate tool for making a file system copy.
-Uhm... your view is a bit narrow-sighted... again take the forensics
-example.
-
-But apart from that,... I never said that dd should be the regular tool
-for people to copy a btrfs image. Typically it would be simply slower
-than other means.
-
-But for some solutions, it may still be the better choice, or at least
-the only choice implemented right now (e.g. I wouldn't now of a
-hypervisor system, that looks at an existing disk image, finds any
-btrfs in that (possibly "hidden" below further block layers), and
-cleanly copies the data into freshly created btrfs image, with the same
-structure.
-AFAIK, there's not even a solution right now, that copies a complete
-btrfs, with snapshots, etc. preserving all ref-links. At least nothing
-official that works in one command.
-
-Long story, short, I think we can agree, that - dd or not - corruptions
-or attack vectors shouldn't be possible.
-And be it just, to protect against the btrfs on hardware RAID1 case,
-which is accidentally switched to JBOD mode...
+> a) For this specific problem here, fixing a security problem
+> automatically
+> fixes the risk of data corruption because careless cloning+mounting
+> (without UUID adjustments) too.
+> So, if the user likes to use dd with its disadvantages, like waiting=20
+> hours to
+> copy lots of free space, and bad practice, etc.etc., why should it
+> concern
+> the Btrfs developers and/or us here?
+>=20
+> b) At wider scope; while Btrfs is more complex than Xfs etc.,
+> currently
+> there is no other reason why things could go bad when dd'ing
+> something.
+> As long as this holds, is there really a place in the official Btrfs=20
+> documentation
+> for telling the users "dd is bad [practice]"?
+> ...
+fully agree as well. :-)
 
 
 Cheers,
 Chris.
-
-
-[0]=C2=A0http://www.tau.ac.il/~tromer/papers/acoustic-20131218.pdf
-
---=-YT3wrWQKYZ0AF5t4s8xR
+--=-nbQ7dNZ61XAEH3GFZkAS
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -223,19 +161,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDAwMjc0
-OFowTwYJKoZIhvcNAQkEMUIEQNNj8waWBz0vbURYYma66RlBiUwynYWzA37Z0wngXcAHQElkrhHl
-wFSbCc3whp82l2NUqAoTPm9yJ5bOPaL44/UwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDAwMjg1
+NFowTwYJKoZIhvcNAQkEMUIEQAKwG4aziHXwIhTFGm3nIHnpkk8ZuQhl7ZJif0uY0X7D41mp7eX4
+pwzwgeBkz7qSn2aU4M2iz9hPM3nDQasBhtowagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCAWpb0/2yAWtVh/N08EIndRH2BXw54
-f46GI0cttTW0ZAmzDfV5t9l8NS/qy1IdOvMDZKvlO7PHTYkulLrMUQk6iJl4svq2a2GU12jixvr2
-YgDQKBw090sMz7QwsrjpdF+5CgeaZRICdYu0eALK7TdJrh6HvvEV8QcKx8pIiNytrY4JxicrJIip
-9wiYOpgrUQrf/AmhRraxf+BXohkrMR9h/oPVV0HLaMnGXI48wEXeBhGk1AYN1frW3uZsWzBDptaJ
-zndOY+HDv4kuGJ5/lpTpDDU/6ismRKJbXWoNgzMqjmbwkoMnA9+h08pjgzaW0ac/swpz/S+xnqNV
-RZwx8hVPAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCRwYMa195VIRObsAUrTFUORT/86Nye
+7Vp13Zjq4qA7kcrmbrJsjbHSu9OoRqlWh3dGIoW8MpUzDMayrEyOUYap28+cAR6yTdjzEd5py6tR
+AOaxpeTBB9BbR48xu6wBcjJ98LMyLxdSlyDeWGl7jcPyyP/sg8TXBP1W9a1fKvB3jL2zMl1qg+BG
+cxNP8Lt5WYCzWbrsIGjwS+XYwGrIhORq1/AlwAQP65SYbqvQFvcFWaVy6MZFHiPjIWx16Wr6iiiI
+bGpU3NZ4suLVaXVGk70notpc2Nq8BnO4pw0WFuTPsi7juJhMv1AvIjbpvRjYw2ImuxeNBIRcvXH7
+z0RCcqIkAAAAAAAA
 
 
---=-YT3wrWQKYZ0AF5t4s8xR--
+--=-nbQ7dNZ61XAEH3GFZkAS--
 

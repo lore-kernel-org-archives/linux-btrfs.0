@@ -1,57 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:35239 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752817AbbLNGnC (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 01:43:02 -0500
-From: Russell Coker <russell@coker.com.au>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Subject: Re: dear developers, can we have notdatacow + checksumming, plz?
-Date: Mon, 14 Dec 2015 17:42:56 +1100
-Cc: linux-btrfs@vger.kernel.org
-References: <1450069158.2388.72.camel@scientia.net>
-In-Reply-To: <1450069158.2388.72.camel@scientia.net>
-MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="iso-8859-1"
-Message-Id: <201512141742.56891.russell@coker.com.au>
+Received: from plane.gmane.org ([80.91.229.3]:44061 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752372AbbLNGvy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Dec 2015 01:51:54 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1a8Mz5-00007X-Cd
+	for linux-btrfs@vger.kernel.org; Mon, 14 Dec 2015 07:51:47 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 07:51:47 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 07:51:47 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Kernel lockup, might be helpful log.
+Date: Mon, 14 Dec 2015 06:51:41 +0000 (UTC)
+Message-ID: <pan$42e96$8159f644$233ed3aa$27e4f2e6@cox.net>
+References: <566DF757.8020807@birds-are-nice.me>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, 14 Dec 2015 03:59:18 PM Christoph Anton Mitterer wrote:
-> I've had some discussions on the list these days about not having
-> checksumming with nodatacow (mostly with Hugo and Duncan).
+Birdsarenice posted on Sun, 13 Dec 2015 22:55:19 +0000 as excerpted:
+
+> Meanwhile, I did get lucky: At one crash I happened to be logged in and
+> was able to hit dmesg seconds before it went completely. So what I have
+> here is information that looks like it'll help you track down a
+> rarely-encountered and hard-to-reproduce bug which can cause the system
+> to lock up completely in event of certain types of hard drive failure.
+> It might be nothing, but perhaps someone will find it of use - because
+> it'd be a tricky one to both reproduce and get a good error report if it
+> did occur.
 > 
-> They both basically told me it wouldn't be straight possible with CoW,
-> and Duncan thinks it may not be so much necessary, but none of them
-> could give me really hard arguments, why it cannot work (or perhaps I
-> was just too stupid to understand them ^^)... while at the same time I
-> think that it would be generally utmost important to have checksumming
-> (real world examples below).
+> I see an 'invalid opcode' error in here, that's pretty unusual
 
-My understanding of BTRFS is that the metadata referencing data blocks has the 
-checksums for those blocks, then the blocks which link to that metadata (EG 
-directory entries referencing file metadata) has checksums of those.  For each 
-metadata block there is a new version that is eventually linked from a new 
-version of the tree root.
+Disclaimer:  I'm a list regular and (small-scale) sysadmin, not a dev, 
+and most certainly not a btrfs dev.  Take what I saw with that in mind, 
+tho I've been active on-list for over a year and thus now have a 
+reasonable level of practical sysadmin configuration and crisis recovery 
+level btrfs experience.
 
-This means that the regular checksum mechanisms can't work with nocow data.  A 
-filesystem can have checksums just pointing to data blocks but you need to 
-cater for the case where a corrupt metadata block points to an old version of 
-a data block and matching checksum.  The way that BTRFS works with an entire 
-checksumed tree means that there's no possibility of pointing to an old 
-version of a data block.
+You could well be quite correct with the unusual crash log and its value, 
+I'll leave that up to the devs to decide, but that "invalid opcode: 0000" 
+bit is in fact not at all unusual on btrfs.  Tho I can say it fooled me 
+originally as well, because it certainly /looks/ both suspicious and in 
+general unusual.
 
-The NetApp published research into hard drive errors indicates that they are 
-usually in small numbers and located in small areas of the disk.  So if BTRFS 
-had a nocow file with any storage method other than dup you would have metadata 
-and file data far enough apart that they are not likely to be hit by the same 
-corruption (and the same thing would apply with most Ext4 Inode tables and 
-data blocks).  I think that a file mode where there were checksums on data 
-blocks with no checksums on the metadata tree would be useful.  But it would 
-require a moderate amount of coding and there's lots of other things that the 
-developers are working on.
+Based on how a dev explained it to me, I believe btrfs actually 
+deliberately uses opcode 0000 to trigger a semi-controlled crash in 
+instances where code that "should never happen" actually gets executed 
+for some reason, leaving the kernel is an unknown and thus not 
+trustworthy enough to reliably write to storage devices and do a 
+controlled shutdown.  That's of course why the tracebacks are there, to 
+help the devs figure out where it was and what triggered it, but the 0000 
+opcode itself is actually quite frequently found in these tracebacks, 
+because it's the method chosen to deliberately trigger them.
+
+I'd guess the same technique is actually used in various other (non-
+btrfs) kernel code as well, but in fully stable code it actually is very 
+rarely seen, precisely because it /does/ mean the kernel reached code 
+that it is never expected to reach, meaning something specific went wrong 
+to get to that point, and in fully stable code, it's rare that any code 
+paths actually leading to that sort of execution point remain, as they've 
+all been found over the years.
+
+But of course btrfs, while no longer experimental, remains "still 
+stabilizing and maturing, not yet fully stable or mature", so there's 
+still code paths left that do still occasionally reach these intended to 
+be unreachable code points, and when that happens, triggering a crash and 
+hopefully getting a traceback that helps the devs figure out which code 
+path has the bug and why, is a good thing to do, and this is apparently 
+the way it's done.
+
+(BTW, compliments on the nick and email address. =:^)
 
 -- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

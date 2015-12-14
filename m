@@ -1,65 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:43733 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932135AbbLNTMD (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:55056 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932122AbbLNTQ6 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 14:12:03 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-	by mailgw-01.dd24.net (Postfix) with ESMTP id B7EE85FCC6
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 19:12:00 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id rtHpL1Uw8PEV for <linux-btrfs@vger.kernel.org>;
-	Mon, 14 Dec 2015 19:11:58 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 19:11:58 +0000 (UTC)
-Message-ID: <1450120318.6629.28.camel@scientia.net>
+	Mon, 14 Dec 2015 14:16:58 -0500
+Message-ID: <1450120614.6629.34.camel@scientia.net>
 Subject: Re: [PATCH v3] btrfs: Introduce new mount option to disable tree
  log replay
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Mon, 14 Dec 2015 20:11:58 +0100
-In-Reply-To: <20151214173200.GO4227@twin.jikos.cz>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>, dsterba@suse.cz,
+        Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+Date: Mon, 14 Dec 2015 20:16:54 +0100
+In-Reply-To: <566F016D.8050403@gmail.com>
 References: <1449714846-18174-1-git-send-email-quwenruo@cn.fujitsu.com>
-	 <20151214173200.GO4227@twin.jikos.cz>
+	 <20151214173200.GO4227@twin.jikos.cz> <566F016D.8050403@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-K2kAm/pj78t53Rp/SBa1"
+	boundary="=-VuD6Hq+JIssKzLqPolN/"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-K2kAm/pj78t53Rp/SBa1
+--=-VuD6Hq+JIssKzLqPolN/
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-12-14 at 18:32 +0100, David Sterba wrote:
-> I've read the discussions around the change and from the user's POV
-> I'd
-> suggest to add another mount option that would be just an alias for
-> any
-> mount options that would implement the 'hard-ro' semantics.
-Nice to hear...=C2=A0
+On Mon, 2015-12-14 at 12:50 -0500, Austin S. Hemmelgarn wrote:
+> It should also imply noatime.=C2=A0=C2=A0I'm not sure how BTRFS handles a=
+time
+> when=20
+> mounted RO, but I know a lot of old UNIX systems updated atime even
+> on=20
+> filesystems mounted RO, and I know that at least at one point Linux
+> did too.
+I stumbled over that recently myself, and haven't bothered to try it
+out, yet.
+But Duncan's argument, why at least ro-snapshots (yes I know, this may
+not be exactly the same as RO mount option) would need to imply
+noatime, is pretty convincing. :)
+
+Anyway, if it "ro" wouldn't imply noatime, I would ask why, because the
+atime is definitely something the fs exports normally to userland,...
+and that's how I'd basically consider hard-ro vs. (soft-)ro:
+
+soft-ro: data as visible by the mounted fs must not change (unless
+=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0perhaps for necessary repair/replay opera=
+tions to get the=C2=A0
+=C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0filesystem back in a consistent state)
+hard-ro: soft-ro + nothing on the backing devices may change (bitwise)
 
 
-> Say it's called 'nowr'
-though I'm deeply saddened, that you don't like my proposed "hard-ro"
-which I though about for nearly 1s ;-)
-
-> =C2=A0mount -o ro,nowr /dev/sdx /mnt
-Sounds reasonable... especially I mean that, as long ro's documentation
-points to "nowr" and clearly states whether both (ro+nowr) are required
-to get the desired behaviour, I have no very strong opinion, whether
-both (ro+nowr) should be required, or whether nowr, should imply ro.
-Though I think, the later may be better.
-
-Thanks,
+Cheers,
 Chris.
---=-K2kAm/pj78t53Rp/SBa1
+--=-VuD6Hq+JIssKzLqPolN/
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -146,19 +140,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDE5MTE1
-OFowTwYJKoZIhvcNAQkEMUIEQE8gpzGI2m7Bz2hWAcfjBf2f1EmrA5VfeioJkjknDR+NOF9eIA8W
-5tzqKAcmuxtz2lsNE3x3DhUpFDo13vi6KL4wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDE5MTY1
+NFowTwYJKoZIhvcNAQkEMUIEQPTgNVnsbXMsyxIkfKmOxVwoEz0k/lX6cfMv83VMQHtU1MsvBu0B
+8L5Usvryq4w6uKPn0uWBjwdy1OKayYVfQXcwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQA2I/1e3ywSQybEd/TmNiTdOYz5oGR1
-6UxA29QClckV3KxIYDI12hfPJWkeS54ILet79ZPinK2OU+sx+M0jS+S46vAMhxm++Ribv/nHqcUm
-7xFbpqCK8mVwUEnAtO9AxVk+qZzgP65Vf5ONzPqDYPKdlsKiu7+eULifEmFvfA+qvjQSVsCJHMcN
-aSXRn7GXke7fFCsbdx0996qq4QuofI60g80C/DmZuSMr2q2TO+ZwYPMFqhp704zXahAWXN854EjA
-x5+Y2yjKvvTk8AHaT31UQvNk0FsXRTnuX6G2vw6m5g1WeoY9nms2QCbyJKGJ4FEbEqqiJ1L/pA4N
-WBrzmao0AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCIDMSavD8e+gNGFjrI+isG8f9Vx1L2
+9KsCYvamNmCSEd+W9gki7s7sj3JdD8XhGH1nsXMGNYvvCYMtzhfmaaJt1kBXKc1uogrBL6Gi0b9Z
+5TfexZ3tWzlgWegySxpn4+xhYe9nERLU8bxIOcfGhRWnWSuOj3bzZQVpOXnvra3vA/0r9l2hYXZP
+fk5WA3JmZDFxpoc22RaeLn/1/SNakLwH/sjvOXyXfqI3bABEoK65F2qehCIjJKGz/FYq2vHsGl0R
+t1nIn6IHxBsyI/pNO2D655FPHBDZh8JAWSuWTgj57LsXYhkndFmtE+x/Qm/V1mOk5T8i6yKJcyNb
+nNUWo21CAAAAAAAA
 
 
---=-K2kAm/pj78t53Rp/SBa1--
+--=-VuD6Hq+JIssKzLqPolN/--
 

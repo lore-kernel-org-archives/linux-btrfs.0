@@ -1,76 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59988 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932241AbbLNLwK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 06:52:10 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a8Rfg-0002vH-2w
-	for linux-btrfs@vger.kernel.org; Mon, 14 Dec 2015 12:52:04 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 12:52:04 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 12:52:04 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs check inconsistency with raid1, part 1
-Date: Mon, 14 Dec 2015 11:51:57 +0000 (UTC)
-Message-ID: <pan$c4332$ebbeb2d6$2298daa7$4db71b7a@cox.net>
-References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
-	<566E584B.5040104@cn.fujitsu.com>
-	<CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
-Mime-Version: 1.0
+Received: from mail-ig0-f176.google.com ([209.85.213.176]:35441 "EHLO
+	mail-ig0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932268AbbLNMGt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Dec 2015 07:06:49 -0500
+Received: by mail-ig0-f176.google.com with SMTP id to4so2912220igc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 04:06:48 -0800 (PST)
+MIME-Version: 1.0
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <566DF757.8020807@birds-are-nice.me>
+References: <566DF757.8020807@birds-are-nice.me>
+Date: Mon, 14 Dec 2015 12:06:48 +0000
+Message-ID: <CAL3q7H6Rd-Te2OCaLMswj3X3Zgy456jwMbgMeNy_+sP_=sAcpg@mail.gmail.com>
+Subject: Re: Kernel lockup, might be helpful log.
+From: Filipe Manana <fdmanana@gmail.com>
+To: Birdsarenice <Quail@birds-are-nice.me>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Mon, 14 Dec 2015 00:24:21 -0700 as excerpted:
+On Sun, Dec 13, 2015 at 10:55 PM, Birdsarenice <Quail@birds-are-nice.me> wrote:
+> I've finally finished deleting all those nasty unreliable Seagate drives
+> from my array. During the process I crashed my server - over, and over, and
+> over. Completely gone - screen blank, controls unresponsive, no network
+> activity (no, I don't have root on btrfs - data only). Most annoying, but I
+> think btrfs survived it all somehow - it's scrubbing now.
+>
+> Meanwhile, I did get lucky: At one crash I happened to be logged in and was
+> able to hit dmesg seconds before it went completely. So what I have here is
+> information that looks like it'll help you track down a rarely-encountered
+> and hard-to-reproduce bug which can cause the system to lock up completely
+> in event of certain types of hard drive failure. It might be nothing, but
+> perhaps someone will find it of use - because it'd be a tricky one to both
+> reproduce and get a good error report if it did occur.
+>
+> I see an 'invalid opcode' error in here, that's pretty unusual - and again
+> it even gives a file name and line number to look at. The root cause of all
+> my issues is the NCQ issue with Seagate 8TB archive drives, which is Someone
+> Else's Problem - but I think some good can come of this, as these exotic
+> forms of corruption and weird drive semi-failures have revealed ways in
+> which btrfs's error handling could be made more graceful.
+>
+> Meanwhile I remain impressed that btrfs appears to have kept all my data
+> intact even though all these issues.
 
->> Personally speaking, it may be a false alert from btrfsck.
->> So in this case, I can't provide much help.
->>
->> If you're brave enough, mount it rw to see what will happen(although it
->> may mount just OK).
-> 
-> I'm brave enough. I'll give it a try tomorrow unless there's another
-> request for more info before then.
+Regarding the trace you got, from a BUG_ON, it's due a regression
+present in 4.2 and 4.3 kernels that got fixed in 4.4-rc. The fixes are
+scheduled for the next stable releases of 4.2.x and 4.3.x. A ton of
+people have hit this (one example report
+http://www.spinics.net/lists/linux-btrfs/msg49766.html).
 
-Given the off-by-one generations and my own btrfs raid1 experience, I'm 
-guessing the likely result is a good mount and either no problems or a 
-good initial mount but lockup once you try actually doing too much (like 
-actually reading the affected blocks) with the filesystem.
 
-Looks like a normal generation-out-of-sync condition, common with forced 
-unsynced/not-remounted-ro shutdowns.  If so, btrfs should redirect reads 
-to the updated current generation device, but you'll need to do a scrub 
-to get everything 100% back in sync.
-
-The catch I found, at least when I still had the then-failing (but not 
-failed, it was just finding more and more sectors that needed redirected 
-to spares) ssd still in my raid1, also with an on-boot service that read 
-a rather large dir into cache, was that after so many errors from the 
-failing device, instead of continuing to redirect errors to the good 
-device, btrfs just gives up, which resulted in a system crash, here.
-
-But when there weren't that many errors on the failing device, or when I 
-intercepted the boot process and mounted everything but didn't run normal 
-post-mount services (systemd emergency target instead of my usual default 
-multi-user) so the service that cached that dir didn't have a chance to 
-run, so all those errors didn't trigger, I could still mount normally, 
-and from there, I could run scrub, which took care of the problem without 
-triggering the usual too many errors crash, and after scrub, I could 
-invoke normal multi-user mode and start all services including the 
-caching service, and go about my usual business.
-
-So if I'm correct, mount normally and scrub, and you should be fine, tho 
-you may have to abort a normal boot if it accesses too many bad files, in 
-ordered to be able to finish the scrub before a crash.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Filipe David Manana,
 
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

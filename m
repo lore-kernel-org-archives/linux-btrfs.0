@@ -1,80 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:54370 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752156AbbLNA25 (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:35869 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751624AbbLNBo7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 13 Dec 2015 19:28:57 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-01.dd24.net (Postfix) with ESMTP id 75C8A5FC1D
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 00:28:56 +0000 (UTC)
-Received: from mailgw-01.dd24.net ([192.168.1.35])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id j0LNkxicrySS for <linux-btrfs@vger.kernel.org>;
-	Mon, 14 Dec 2015 00:28:54 +0000 (UTC)
-Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 00:28:54 +0000 (UTC)
-Message-ID: <1450052934.30943.28.camel@scientia.net>
-Subject: Re: attacking btrfs filesystems via UUID collisions?
+	Sun, 13 Dec 2015 20:44:59 -0500
+Message-ID: <1450057495.2388.40.camel@scientia.net>
+Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
+ poor performance on deleting many large files?)
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Mon, 14 Dec 2015 01:28:54 +0100
-In-Reply-To: <566B79BC.30104@anonym.com>
-References: <20151204120529.37E47D5A28@emkei.cz>
-	 <20151204130758.GR8775@carfax.org.uk>
-	 <1449286104.18841.14.camel@scientia.net>
-	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
-	 <1449366680.3183.37.camel@scientia.net>	<56644785.4090702@gmx.com>
-	 <1449639588.7835.2.camel@scientia.net>	<5668A1CB.1020007@anonym.com>
-	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
-	 <1449872498.31388.74.camel@fo>
-	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
-	 <566B79BC.30104@anonym.com>
+To: linux-btrfs@vger.kernel.org
+Cc: Duncan <1i5t5.duncan@cox.net>, Hugo Mills <hugo@carfax.org.uk>
+Date: Mon, 14 Dec 2015 02:44:55 +0100
+In-Reply-To: <20151126003342.GA24333@carfax.org.uk>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	 <56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
+	 <20151126003342.GA24333@carfax.org.uk>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-nbQ7dNZ61XAEH3GFZkAS"
+	boundary="=-AMxbULnJvC830v/a2M3S"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-nbQ7dNZ61XAEH3GFZkAS
+--=-AMxbULnJvC830v/a2M3S
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sat, 2015-12-12 at 02:34 +0100, S.J. wrote:
-> A bit more about the dd-is-bad-topic:
->=20
-> IMHO it doesn't matter at all.
-Yes, fully agree.
+Two more on these:
+
+On Thu, 2015-11-26 at 00:33 +0000, Hugo Mills wrote:
+> 3) When I would actually disable datacow for e.g. a subvolume that
+> > holds VMs or DBs... what are all the implications?
+> > Obviously no checksumming, but what happens if I snapshot such a
+> > subvolume or if I send/receive it?
+> =C2=A0=C2=A0=C2=A0After snapshotting, modifications are CoWed precisely o=
+nce, and
+> then it reverts to nodatacow again. This means that making a snapshot
+> of a nodatacow object will cause it to fragment as writes are made to
+> it.
+AFAIU, the one the get's fragmented then is the snapshot, right, and
+the "original" will stay in place where it was? (Which is of course
+good, because one probably marked it nodatacow, to avoid that
+fragmentation problem on internal writes).
+
+I'd assume the same happens when I do a reflink cp.
+
+Can one make a copy, where one still has atomicity (which I guess
+implies CoW) but where the destination file isn't heavily fragmented
+afterwards,... i.e. there's some pre-allocation, and then cp really
+does copy each block (just everything's at the state of time where I
+stared cp, not including any other internal changes made on the source
+in between).
 
 
-> a) For this specific problem here, fixing a security problem
-> automatically
-> fixes the risk of data corruption because careless cloning+mounting
-> (without UUID adjustments) too.
-> So, if the user likes to use dd with its disadvantages, like waiting=20
-> hours to
-> copy lots of free space, and bad practice, etc.etc., why should it
-> concern
-> the Btrfs developers and/or us here?
->=20
-> b) At wider scope; while Btrfs is more complex than Xfs etc.,
-> currently
-> there is no other reason why things could go bad when dd'ing
-> something.
-> As long as this holds, is there really a place in the official Btrfs=20
-> documentation
-> for telling the users "dd is bad [practice]"?
-> ...
-fully agree as well. :-)
+And one more:
+You both said, auto-defrag is generally recommended.
+Does that also apply for SSDs (where we want to avoid unnecessary
+writes)?
+It does seem to get enabled, when SSD mode is detected.
+What would it actually do on an SSD?
 
 
 Cheers,
 Chris.
---=-nbQ7dNZ61XAEH3GFZkAS
+--=-AMxbULnJvC830v/a2M3S
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -161,19 +151,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDAwMjg1
-NFowTwYJKoZIhvcNAQkEMUIEQAKwG4aziHXwIhTFGm3nIHnpkk8ZuQhl7ZJif0uY0X7D41mp7eX4
-pwzwgeBkz7qSn2aU4M2iz9hPM3nDQasBhtowagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDAxNDQ1
+NVowTwYJKoZIhvcNAQkEMUIEQC08gHnil9Dk33ojJmUnOtW0Wav7CNyE7YTkUKVgGkCPgn85v740
+MlHF+OcjgWBmEA+ooqA20PAkC4Gtlqk8VncwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCRwYMa195VIRObsAUrTFUORT/86Nye
-7Vp13Zjq4qA7kcrmbrJsjbHSu9OoRqlWh3dGIoW8MpUzDMayrEyOUYap28+cAR6yTdjzEd5py6tR
-AOaxpeTBB9BbR48xu6wBcjJ98LMyLxdSlyDeWGl7jcPyyP/sg8TXBP1W9a1fKvB3jL2zMl1qg+BG
-cxNP8Lt5WYCzWbrsIGjwS+XYwGrIhORq1/AlwAQP65SYbqvQFvcFWaVy6MZFHiPjIWx16Wr6iiiI
-bGpU3NZ4suLVaXVGk70notpc2Nq8BnO4pw0WFuTPsi7juJhMv1AvIjbpvRjYw2ImuxeNBIRcvXH7
-z0RCcqIkAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBJ5j0do4r0EeLTYTg8aa4FuEg86+jJ
+J/60+X/Gz++uLdQlk216dqLjX2Ne6BZIblSWZNFjGPuiihMz6W/eQ/cEVRBoA0zHnCymaTS2Upx3
+2E7EECD1QhsWikIrPe4ScBzC57XRcVZpRqy1dkiMt/GK0dAOn6hcGd/3voYC0hTVL8Mr6JWNv4FM
+uPb4KFrBDnpxtjcRZ6z369XlcbBzh2cFnq55q+GtxNJAFk5HWiv3QdP76D0nUFGTpoEPWZzPntev
+h+eXCxzrJgwRWNXLTwibF6p3o6Xswi1JalANzspwtJjaUQrqQ0edFGs4hq1jSDiVE0p6dI6YItNd
+V/0vPDKzAAAAAAAA
 
 
---=-nbQ7dNZ61XAEH3GFZkAS--
+--=-AMxbULnJvC830v/a2M3S--
 

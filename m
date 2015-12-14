@@ -1,52 +1,50 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f46.google.com ([209.85.215.46]:34325 "EHLO
-	mail-lf0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753248AbbLNSLU convert rfc822-to-8bit (ORCPT
+Received: from mail-io0-f172.google.com ([209.85.223.172]:35862 "EHLO
+	mail-io0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932081AbbLNTI1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 13:11:20 -0500
-Received: by lfcy184 with SMTP id y184so53771063lfc.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 10:11:19 -0800 (PST)
+	Mon, 14 Dec 2015 14:08:27 -0500
+Received: by iofo67 with SMTP id o67so54374474iof.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 11:08:26 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jZ1jVer4SF1fG6bD2c-723VXb6GfG__01NUOqG5gVqdWQ@mail.gmail.com>
-References: <16063727.bYixifcRQC@merkaba>
-	<1475910.a5YfPuWqAN@merkaba>
-	<4738187.k1WenrURk2@merkaba>
-	<2196957.diBSeBoUhe@merkaba>
-	<CAPmG0jZ1jVer4SF1fG6bD2c-723VXb6GfG__01NUOqG5gVqdWQ@mail.gmail.com>
-Date: Mon, 14 Dec 2015 19:11:19 +0100
-Message-ID: <CAPmG0jYyPZRheVbTLTHdNhJfbRGTehPziCgeLeHayf__Opis1g@mail.gmail.com>
-Subject: Re: [4.3-rc4] scrubbing aborts before finishing
-From: Henk Slager <eye1tm@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
+In-Reply-To: <pan$5cd3e$edc0ac14$3ab81548$27ab4e4c@cox.net>
+References: <8336788.myI8ELqtIK@merkaba>
+	<566E2490.8080905@cn.fujitsu.com>
+	<pan$9174a$2018742f$398dd5e6$c274a59a@cox.net>
+	<566E7072.8020108@cn.fujitsu.com>
+	<pan$5cd3e$edc0ac14$3ab81548$27ab4e4c@cox.net>
+Date: Mon, 14 Dec 2015 12:08:26 -0700
+Message-ID: <CAJCQCtQ=dcHTETVTW-wvccfxjkXdRbKm+3vXKMGvN5Kbb7rDBw@mail.gmail.com>
+Subject: Re: Still not production ready
+From: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 14, 2015 at 6:31 PM, Henk Slager <eye1tm@gmail.com> wrote:
-> [...]
->>> > merkaba:~> btrfs fi sh /daten
->>> > Label: 'daten'  uuid: […]
->>> >
->>> >         Total devices 1 FS bytes used 227.23GiB
->>> >         devid    1 size 230.00GiB used 230.00GiB path
-> [...]
->>> > merkaba:~> btrfs fi df /daten
->>> > Data, single: total=228.99GiB, used=226.79GiB
->>> > System, single: total=4.00MiB, used=48.00KiB
->>> > Metadata, single: total=1.01GiB, used=449.50MiB
->>> > GlobalReserve, single: total=160.00MiB, used=0.00B
+On Mon, Dec 14, 2015 at 5:10 AM, Duncan <1i5t5.duncan@cox.net> wrote:
+> Qu Wenruo posted on Mon, 14 Dec 2015 15:32:02 +0800 as excerpted:
 >
-> If this is still the fill-level of the storage device, then also with
-> 4.4-rcX and new enough tools it will fail I think.
-> AFAIK, scrub does writes (in metadata?) so I think a non-read-only
-> scrub command can't allocate space. See all other comments/threads
-> w.r.t. allocated / free space.
-> Especially an fs of this size, I would keep ~10% free on
-> 'device-level' ( 227.23GiB would need to be 207.00GiB ) and also ~10%
-> on 'chunk-level' ( 226.79GiB would need to be 186.30GiB ).
+>> Oh, my poor English... :(
 >
-> Assuming you don't have snapshots, a   btrfs fi defrag -r /daten
-> might give some more room short-term, after you just (re)moved files
-> off the fs first.
-# btrfs fi defrag -r -clzo /daten
-I meant.
+> Well, as I said, native English speakers commonly enough mis-negate...
+>
+> The real issue seems to be that English simply lacks proper support for
+> the double-negatives feature that people keep wanting to use, despite the
+> fact that it yields an officially undefined result that compilers (people
+> reading/hearing) don't quite know what to do with, with actual results
+> often throwing warnings and generally changing from compiler to
+> compiler . =:^)
+
+It's a trap! Haha. Yeah like you say, it's not a matter of poor
+English. Qu writes very understandable English. Officially in English
+the negatives should cancel, which is different in many other
+languages where additional negatives amplify. But even native English
+speakers have dialects where it amplifies, rather than cancels. So I'd
+consider the double or multiple negative in English as a
+colloquialism. And a trap!
+
+
+-- 
+Chris Murphy

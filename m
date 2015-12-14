@@ -1,114 +1,37 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([222.73.24.84]:54900 "EHLO heian.cn.fujitsu.com"
-	rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1755075AbbLHInp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Dec 2015 03:43:45 -0500
-Received: from localhost.localdomain (unknown [10.167.226.34])
-	by cn.fujitsu.com (Postfix) with ESMTP id D4DF34043CE7
-	for <linux-btrfs@vger.kernel.org>; Tue,  8 Dec 2015 16:40:42 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v3 2/2] btrfs: Enhance chunk validation check
-Date: Tue,  8 Dec 2015 16:40:42 +0800
-Message-Id: <1449564042-5473-1-git-send-email-quwenruo@cn.fujitsu.com>
+Received: from mx2.suse.de ([195.135.220.15]:33812 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752414AbbLNQ0p (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Dec 2015 11:26:45 -0500
+Date: Mon, 14 Dec 2015 17:24:41 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 1/2] btrfs: Enhance super validation check
+Message-ID: <20151214162441.GL4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1449560158-32577-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1449560158-32577-1-git-send-email-quwenruo@cn.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Enhance chunk validation:
-1) Num_stripes
-   We already have such check but it's only in super block sys chunk
-   array.
-   Now check all on-disk chunks.
+On Tue, Dec 08, 2015 at 03:35:57PM +0800, Qu Wenruo wrote:
+> @@ -4005,31 +3989,47 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
+>  	}
+>  
+>  	/*
+> -	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
+> -	 * items yet, they'll be verified later. Issue just a warning.
+> +	 * Check sectorsize and nodesize first, some other check will need it.
+> +	 * XXX: Just do a favor for later subpage size check. Check all
 
-2) Chunk logical
-   It should be aligned to sector size.
-   This behavior should be *DOUBLE CHECKED* for 64K sector size like
-   PPC64 or AArch64.
-   Maybe we can found some hidden bugs.
+Same as in v1: Please do not add new XXX or TODO markers to the sources.
+The comment would be fine with just:
 
-3) Chunk length
-   Same as chunk logical, should be aligned to sector size.
+	 "Check all possible sectorsizes (4K, 8K, 16K, 32K, 64K) here."
 
-4) Stripe length
-   It should be power of 2.
+With that fixed,
 
-5) Chunk type
-   Any bit out of TYPE_MAS | PROFILE_MASK is invalid.
-
-With all these much restrict rules, several fuzzed image reported in
-mail list should no longer cause kernel panic.
-
-Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
----
-v3:
-  Fix a typo which forgot to return -EIO after num_stripes check.
----
- fs/btrfs/volumes.c | 33 ++++++++++++++++++++++++++++++++-
- 1 file changed, 32 insertions(+), 1 deletion(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 9ea345f..bda84be 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -6199,6 +6199,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	struct extent_map *em;
- 	u64 logical;
- 	u64 length;
-+	u64 stripe_len;
- 	u64 devid;
- 	u8 uuid[BTRFS_UUID_SIZE];
- 	int num_stripes;
-@@ -6207,6 +6208,37 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 
- 	logical = key->offset;
- 	length = btrfs_chunk_length(leaf, chunk);
-+	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
-+	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
-+	/* Validation check */
-+	if (!num_stripes) {
-+		btrfs_err(root->fs_info, "invalid chunk num_stripes: %u",
-+			  num_stripes);
-+		return -EIO;
-+	}
-+	if (!IS_ALIGNED(logical, root->sectorsize)) {
-+		btrfs_err(root->fs_info,
-+			  "invalid chunk logical %llu", logical);
-+		return -EIO;
-+	}
-+	if (!length || !IS_ALIGNED(length, root->sectorsize)) {
-+		btrfs_err(root->fs_info,
-+			"invalid chunk length %llu", length);
-+		return -EIO;
-+	}
-+	if (!is_power_of_2(stripe_len)) {
-+		btrfs_err(root->fs_info, "invalid chunk stripe length: %llu",
-+			  stripe_len);
-+		return -EIO;
-+	}
-+	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-+	    btrfs_chunk_type(leaf, chunk)) {
-+		btrfs_err(root->fs_info, "unrecognized chunk type: %llu",
-+			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
-+			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
-+			  btrfs_chunk_type(leaf, chunk));
-+		return -EIO;
-+	}
- 
- 	read_lock(&map_tree->map_tree.lock);
- 	em = lookup_extent_mapping(&map_tree->map_tree, logical, 1);
-@@ -6223,7 +6255,6 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
- 	em = alloc_extent_map();
- 	if (!em)
- 		return -ENOMEM;
--	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
- 	map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
- 	if (!map) {
- 		free_extent_map(em);
--- 
-2.6.3
-
-
-
+Reviewed-by: David Sterba <dsterba@suse.com>

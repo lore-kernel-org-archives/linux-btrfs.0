@@ -1,15 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:57031 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:57365 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753634AbbLNXK7 (ORCPT
+	with ESMTP id S1753630AbbLNXQZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 18:10:59 -0500
-Message-ID: <1450134655.6629.55.camel@scientia.net>
-Subject: Re: btrfs: poor performance on deleting many large files
+	Mon, 14 Dec 2015 18:16:25 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id 8BB585FC16
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 23:16:24 +0000 (UTC)
+Received: from mailgw-01.dd24.net ([192.168.1.35])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
+	with ESMTP id k-bRs52Z64w6 for <linux-btrfs@vger.kernel.org>;
+	Mon, 14 Dec 2015 23:16:22 +0000 (UTC)
+Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-01.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 23:16:22 +0000 (UTC)
+Message-ID: <1450134982.6629.60.camel@scientia.net>
+Subject: project idea: per-object default mount-options / more
+ btrfs-properties / chattr attributes (was: btrfs: poor performance on
+ deleting many large files)
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Tue, 15 Dec 2015 00:10:55 +0100
+To: linux-btrfs@vger.kernel.org
+Date: Tue, 15 Dec 2015 00:16:22 +0100
 In-Reply-To: <566F261F.4040705@gmail.com>
 References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
 	 <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
@@ -25,39 +38,44 @@ References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
 	 <1450121957.6629.41.camel@scientia.net> <566F261F.4040705@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-5CPQUFxm7bVzbKoeZUN6"
+	boundary="=-6XOWnwfyg1djGcFJTdPq"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-5CPQUFxm7bVzbKoeZUN6
+--=-6XOWnwfyg1djGcFJTdPq
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-12-14 at 15:27 -0500, Austin S. Hemmelgarn wrote:
-> On 2015-12-14 14:39, Christoph Anton Mitterer wrote:
-> > On Mon, 2015-12-14 at 09:24 -0500, Austin S. Hemmelgarn wrote:
-> > > Unless things have changed very recently, even many modern
-> > > systems
-> > > update atime on read-only filesystems, unless the media itself is
-> > > read-only.
-> > Seriously? Oh... *sigh*...
-> > You mean as in Linux, ext*, xfs?
-> Possibly, I know that Windows 7 does it, and I think OS X and OpenBSD
-> do=20
-> it, but I'm not sure about Linux.
-I've just checked it via loopback image and strictatime:
+Just FYI:
 
-- ro snapshot doesn't get atime updated
-- rw snapshot does atime get update
-- ro mounted fs (top level subvol) doesn't get atimes updated (neither
-=C2=A0 in subvols)
-- rw mounted fs (top level subvol) does get atimes updated
+On Mon, 2015-12-14 at 15:27 -0500, Austin S. Hemmelgarn wrote:
+> > My idea would be basically, that having a noatime btrfs-property,
+> > which
+> > is perhaps even set automatically, would be an elegant way of doing
+> > that.
+> > I just haven't had time to properly write that up and add is as a
+> > "feature request" to the projects idea wiki page.
+> I like this idea.
+
+I've just compiled some thoughts and ideas into:
+https://btrfs.wiki.kernel.org/index.php/Project_ideas#Per-object_default_mo=
+unt-options_.2F_btrfs-properties_.2F_chattr.281.29_attributes_and_reasonabl=
+e_userland_defaults
+
+As usual, this is mostly from my admin/end-user side, i.e. what I could
+imagine would ease in the maintenance of large/complex (in terms of
+subvols, nesting, snapshots) btrfs filesystems...
+
+And of course, any developer or more expert user than me is happily
+invited to comment/remove any (possibly stupid) ideas of mine therein,
+or summon the inquisition for my heresy ;)
+
 
 Cheers,
 Chris.
---=-5CPQUFxm7bVzbKoeZUN6
+--=-6XOWnwfyg1djGcFJTdPq
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -144,19 +162,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDIzMTA1
-NVowTwYJKoZIhvcNAQkEMUIEQHi02UJFaO+cGjg81dX7NW4P6C2NglhYQGGT7NhySdj3ua/MHW2T
-ok4IKG5ORINhwFGj4ngZTbDVnd8ZbLuqCYcwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDIzMTYy
+MlowTwYJKoZIhvcNAQkEMUIEQGSgyBk6dONj/C1mT8a6x25BH4uN2MAUxx+vCmrP/D/V8XqP+jgo
+j8eRfbofWcBM0n8GaoYMqOcgMG0sN8z2wl0wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBIfrKg6ae3tPyAE+hibpEl6IKReW5S
-aAdVMId3MjXDatp45ga/SzvK2lB+Ostz8z20L2SrPjkT+EinZl3nJgtf/nUQjheuwZjVjOD+H4kH
-abp1r8Tt0dJhufZzCYTWv6DurJ66zJxpZaoQL32hMl6QrenAEiugp5ol6moCE7ooWmeBoABCAUYC
-IF/oOuqZMNkOoPLI1XIKNL4DRrCQhFz5DwzUwO1VHHbrDFF44fVxYCh0yup1ZYm5mwQgWDblHbHq
-KR2NQmJO77gtDL+1uuFDwuq9BjKM9ghe0Zl/7Wt8YAFhJR0qoselATwEFjYM+tFszaFwRKpkfDNy
-oXdDyoTeAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBOScahlTfsOsaOdPRTK4oseKQlSGhX
+iQGcTgkUZoI1aLXgKNU1rzgP/s0+5ldxAF9qvrUoOgAE8x84Wv68SRr0KkntDTFKsJ0XwsV4nLzb
+iRqOzT8E4dXfkb+fSo/Ab6mShDWqc5j62H2iDfjihUG8lsDEKlqx94dSB+fQyN+eywvZvq496N/y
+MrxCKKKNXZWiD//gKdHmH3yfAvmk/if5mXfDRrg8QEN9oUTzdm7icKM0H9kgGdtgcjyRIzJqicaJ
+F7j+K4EAw+XxU6CsxuqlsD9C9yCAPFMNeLY1YiY8izAE69SaGp73IHGpOj8/+SJ+X8xlS4/sCXGy
+gi2Op4PwAAAAAAAA
 
 
---=-5CPQUFxm7bVzbKoeZUN6--
+--=-6XOWnwfyg1djGcFJTdPq--
 

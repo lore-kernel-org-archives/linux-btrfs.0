@@ -1,79 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58070 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:59988 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932121AbbLNLTd (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 06:19:33 -0500
+	id S932241AbbLNLwK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Dec 2015 06:52:10 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a8RA4-0007Iw-Il
-	for linux-btrfs@vger.kernel.org; Mon, 14 Dec 2015 12:19:29 +0100
+	id 1a8Rfg-0002vH-2w
+	for linux-btrfs@vger.kernel.org; Mon, 14 Dec 2015 12:52:04 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 12:19:19 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 12:52:04 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 12:19:19 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 12:52:04 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
- poor performance on deleting many large files?)
-Date: Mon, 14 Dec 2015 11:19:06 +0000 (UTC)
-Message-ID: <pan$844bc$626c7c35$7c4d2e49$5485aa77@cox.net>
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-	<56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
-	<20151126003342.GA24333@carfax.org.uk>
-	<1449639781.7835.3.camel@scientia.net>
-	<pan$ab79a$6d00d5c9$95504338$ca8d2761@cox.net>
-	<1450061161.2388.66.camel@scientia.net>
+Subject: Re: btrfs check inconsistency with raid1, part 1
+Date: Mon, 14 Dec 2015 11:51:57 +0000 (UTC)
+Message-ID: <pan$c4332$ebbeb2d6$2298daa7$4db71b7a@cox.net>
+References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
+	<566E584B.5040104@cn.fujitsu.com>
+	<CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer posted on Mon, 14 Dec 2015 03:46:01 +0100 as
-excerpted:
+Chris Murphy posted on Mon, 14 Dec 2015 00:24:21 -0700 as excerpted:
 
->> Same here.  In fact, my most anticipated feature is N-way-mirroring,
-> Hmm ... not totally sure about that...
-> AFAIU, N-way-mirroring is what currently the currently wrongly called
-> RAID1 is in btrfs, i.e. having N replicas of everything on M devices,
-> right?
-> In other words, not being a N-parity-RAID and not guaranteeing that
-> *any* N disks could fail, right?
+>> Personally speaking, it may be a false alert from btrfsck.
+>> So in this case, I can't provide much help.
+>>
+>> If you're brave enough, mount it rw to see what will happen(although it
+>> may mount just OK).
+> 
+> I'm brave enough. I'll give it a try tomorrow unless there's another
+> request for more info before then.
 
-No.  N-way-mirroring, at least in simplest form (as in md/raid1) is N 
-replicas on N devices, so loss of N-1 devices is permitted without loss 
-of data.
+Given the off-by-one generations and my own btrfs raid1 experience, I'm 
+guessing the likely result is a good mount and either no problems or a 
+good initial mount but lockup once you try actually doing too much (like 
+actually reading the affected blocks) with the filesystem.
 
-Normally the best thing about this is that unlike parity, once the 
-general support is in, you can increase redundancy at will, with 
-guaranteed device-loss protection of as many devices as you care to 
-insure against.
+Looks like a normal generation-out-of-sync condition, common with forced 
+unsynced/not-remounted-ro shutdowns.  If so, btrfs should redirect reads 
+to the updated current generation device, but you'll need to do a scrub 
+to get everything 100% back in sync.
 
-At one point with somewhat old devices that I didn't particularly trust 
-any more and because I had them from a previous raid6 setup, I was 
-running 4-way-md/raid1.
+The catch I found, at least when I still had the then-failing (but not 
+failed, it was just finding more and more sectors that needed redirected 
+to spares) ssd still in my raid1, also with an on-boot service that read 
+a rather large dir into cache, was that after so many errors from the 
+failing device, instead of continuing to redirect errors to the good 
+device, btrfs just gives up, which resulted in a system crash, here.
 
-Of course with md/raid1, the problem is lack of any sort of data 
-integrity assurance, even scrubbing just arbitrarily chooses one and in 
-the case of difference, simply copies that to the others, not even 
-plurality-vote most authoritative version.
+But when there weren't that many errors on the failing device, or when I 
+intercepted the boot process and mounted everything but didn't run normal 
+post-mount services (systemd emergency target instead of my usual default 
+multi-user) so the service that cached that dir didn't have a chance to 
+run, so all those errors didn't trigger, I could still mount normally, 
+and from there, I could run scrub, which took care of the problem without 
+triggering the usual too many errors crash, and after scrub, I could 
+invoke normal multi-user mode and start all services including the 
+caching service, and go about my usual business.
 
-With btrfs checksumming, the value of N-way-mirroring is increased 
-dramatically, since it allows individual block verification and fallback, 
-as opposed to whole-device-loss.
-
-While my own sweet-spot balance will tend to be three-way, avoiding the 
-"if one copy is bad (perhaps because of a device that's known failing/
-failed), you better /hope/ your only remaining copy is good" problem of 
-the present two-way-only solution, I could easily see people finding 
-value in 4/5/6-way mirroring as well.
-
-And of course if that is extended to raid10, three-way-mirroring, two-way-
-striping, on six total devices, would be my preferred, over the three-way-
-striped, two-way-mirrored, that's the only current choice for six-device 
-btrfs raid10.
+So if I'm correct, mount normally and scrub, and you should be fine, tho 
+you may have to abort a normal boot if it accesses too many bad files, in 
+ordered to be able to finish the scrub before a crash.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

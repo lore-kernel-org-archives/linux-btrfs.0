@@ -1,90 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:56954 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751273AbbL1EfM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 23:35:12 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aDPWX-0002c4-GX
-	for linux-btrfs@vger.kernel.org; Mon, 28 Dec 2015 05:35:09 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 05:35:09 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 05:35:09 +0100
+Received: from userp1040.oracle.com ([156.151.31.81]:45946 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753680AbbLOC3m (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Dec 2015 21:29:42 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: How to change BTRFS filesystem UUID
-Date: Mon, 28 Dec 2015 04:35:04 +0000 (UTC)
-Message-ID: <pan$8c9ca$1617b07e$b95cfe66$943328ef@cox.net>
-References: <567FF63E.3010106@ganomi.com>
-	<20151227144535.GJ1586@carfax.org.uk> <5680034D.7030509@ganomi.com>
-	<1451257299.6320.3.camel@scientia.net>
-	<20151227231303.GL1586@carfax.org.uk> <56809AC4.2080209@ganomi.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Cc: zhaolei@cn.fujitsu.com
+Subject: [PATCH] Btrfs: do not create empty block group if we have allocated data
+Date: Mon, 14 Dec 2015 18:29:32 -0800
+Message-Id: <1450146572-22383-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Jiri Kanicky posted on Mon, 28 Dec 2015 13:13:24 +1100 as excerpted:
+Now we force to create empty block group to keep data profile alive,
+however, in the below example, we eventually get an empty block group
+while we're trying to get more space for other types (metadata/system),
 
-> VM with BTRFS filesystem running on XenServer. The VM disk is a VHD
-> stored on NFS storage. NFS storage ran out of space, and I found the
-> BTRFS in RO mode. I could not remount it as RW after increasing the
-> storage space. I rebooted the VM and the VM was not able to boot
-> anymore. There were many lines during boot reporting "btrfs open_ctree
-> failed" and the boot ended up in dracut mode.
-> 
-> I booted from CD and find out that I can mount the BTRFS filesystem and
-> all data are there.
+- Before,
+block group "A": size=2G, used=1.2G
+block group "B": size=2G, used=512M
 
-You did well. =:^)
+- After "btrfs balance start -dusage=50 mount_point",
+block group "A": size=2G, used=(1.2+0.5)G
+block group "C": size=2G, used=0
 
-Just in case you ever get into a situation where the btrfs will /not/ 
-mount, however, there's an additional tool you can try to hopefully at 
-least recover the data off of it, copying it to a new (possibly non-
-btrfs) location from the unmounted filesystem.
+Since there is no data in block group C, it won't be deleted
+automatically and we have to get the unused 2G until the next mount.
 
-btrfs restore
+Balance itself just moves data and doesn't remove data, so it's safe
+to not create such a empty block group if we already have data
+ allocated in other block groups.
 
-In addition to the btrfs-restore manpage, there's even a wiki page on it 
-that has some "extraordinary measures" you can try if restore won't work 
-by itself, using btrfs-find-root to hopefully find a usable previous root 
-to feed to restore's -t option.  However, once you get to this level 
-you're basically trying to reconstruct at least enough of a filesystem 
-from historical bits and pieces as they may still be found on the device 
-to be able to restore from, and it does get quite technical, so many 
-people need help, and only some end up being able to restore most or all 
-of their data, as often it's simply too damaged.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ fs/btrfs/volumes.c |    9 ++++++++-
+ 1 files changed, 8 insertions(+), 1 deletions(-)
 
-So the ideal is obviously to have backups if the data is important enough 
-to you that you'd be jumping thru these hoops if you had to, and once you 
-have backups, then restore becomes a tool to be used to possibly get a 
-newer copy than your backup had, but no big deal if it fails as you /do/ 
-have backups.  And at that point, you don't need to worry too much about 
-the "extraordinary measures" stuff, because if it doesn't work with 
-normal measures, then you just use the backup.
-
-What's nice about btrfs-restore is that it works in read-only mode on the 
-unmounted filesystem in question and thus won't cause any more damage.  
-As a result, it's a good tool to use to try to get a current backup with 
-if you don't have one, before trying seriously invasive procedures that 
-if they don't fix the problem, could damage the filesystem further, 
-rendering it impossible to get anything useful out of it.
-
-Anyway, just pointing out the btrfs restore tool, as it's a very useful 
-tool to have in your toolbox if a btrfs won't mount.  You will want to 
-use a recent version of btrfs-progs, however, as btrfs restore has 
-notably improved over time, with the last fix to it in 4.2.3, an off-by-
-one fix to the symlink restoration code added in 4.0.1, and 4.0 added 
-metadata (time/mode/uid/gid) restoration, where before that files were 
-restored with the ownership (root) and umask of the btrfs restore process 
-and had to be manually corrected.
-
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 4564522..14139c9 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3400,6 +3400,7 @@ static int __btrfs_balance(struct btrfs_fs_info *fs_info)
+ 	u32 count_meta = 0;
+ 	u32 count_sys = 0;
+ 	int chunk_reserved = 0;
++	u64 bytes_used = 0;
+ 
+ 	/* step one make some room on all the devices */
+ 	devices = &fs_info->fs_devices->devices;
+@@ -3538,7 +3539,13 @@ again:
+ 			goto loop;
+ 		}
+ 
+-		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) && !chunk_reserved) {
++		ASSERT(fs_info->data_sinfo);
++		spin_lock(&fs_info->data_sinfo->lock);
++		bytes_used = fs_info->data_sinfo->bytes_used;
++		spin_unlock(&fs_info->data_sinfo->lock);
++
++		if ((chunk_type & BTRFS_BLOCK_GROUP_DATA) &&
++		    !chunk_reserved && !bytes_used) {
+ 			trans = btrfs_start_transaction(chunk_root, 0);
+ 			if (IS_ERR(trans)) {
+ 				mutex_unlock(&fs_info->delete_unused_bgs_mutex);
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+1.7.1
 

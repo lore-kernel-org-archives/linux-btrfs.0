@@ -1,17 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:60037 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:60688 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932540AbbLOAIa (ORCPT
+	with ESMTP id S932649AbbLOAW7 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 19:08:30 -0500
-Message-ID: <1450138105.701.24.camel@scientia.net>
+	Mon, 14 Dec 2015 19:22:59 -0500
+Message-ID: <1450138975.701.39.camel@scientia.net>
 Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Tue, 15 Dec 2015 01:08:25 +0100
-In-Reply-To: <566EC2D7.3000101@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Tue, 15 Dec 2015 01:22:55 +0100
+In-Reply-To: <CAJCQCtQG7tLnc8WmGRvnB6OjbdVxZC6Q9Hp8J8bZfkdGcayZ2g@mail.gmail.com>
 References: <20151204120529.37E47D5A28@emkei.cz>
 	 <20151204130758.GR8775@carfax.org.uk>
 	 <1449286104.18841.14.camel@scientia.net>
@@ -21,121 +20,102 @@ References: <20151204120529.37E47D5A28@emkei.cz>
 	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
 	 <1449872498.31388.74.camel@fo>
 	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
-	 <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
+	 <1450052868.30943.27.camel@scientia.net>
+	 <CAJCQCtQG7tLnc8WmGRvnB6OjbdVxZC6Q9Hp8J8bZfkdGcayZ2g@mail.gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-RUDbbweDLY/YxTLMDSB/"
+	boundary="=-EMZAUqLqSfhuBivg6yKW"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-RUDbbweDLY/YxTLMDSB/
+--=-EMZAUqLqSfhuBivg6yKW
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-12-14 at 08:23 -0500, Austin S. Hemmelgarn wrote:
-> The reason that this isn't quite as high of a concern is because
-> performing this attack requires either root access, or direct
-> physical=20
-> access to the hardware, and in either case, your system is already=20
-> compromised.
-No necessarily.
-Apart from the ATM image (where most people wouldn't call it
-compromised, just because it's openly accessible on the street)
-imageine you're running a VM hosting service, where you allow users to
-upload images and have them deployed.
-In the cheap" case these will end up as regular files, where they
-couldn't do any harm (even if colliding UUIDs)... but even there one
-would have to expect, that the hypervisor admin may losetup them for
-whichever reason.
-But if you offer more professional services, you may give your clients
-e.g. direct access to some storage backend, which are then probably
-also seen on the host by its kernel.
-And here we already have the case, that a client could remotely trigger
-such collision.
+On Mon, 2015-12-14 at 13:55 -0700, Chris Murphy wrote:
+> I'm aware of this proof of concept. I'd put it, and this one, in the
+> realm of a targeted attack, so it's not nearly as likely as other
+> problems needing fixing. That doesn't mean don't understand it better
+> so it can be fixed. It means understand before arriving at risk
+> assessment let alone conclusions.
+Assessing the actual risk of any such attack vector is IMHO quite
+difficult... but at least past experience has shown countless times
+over and over again, that any system, where people already saw it would
+have issues, were sooner or later actively attacked.
 
-And remember, things only sounds far-fetched until it actually happens
-the first time ;)
+Take all the things from online banking... TAN, iTAN... at some point
+the two-factor auth via mobileTAN were some people already warned, that
+this would be rather easy to attack... banks and proponents of the
+system said, that this is rather not realistic in practise.
+I think alone in Germany we had some 8 million Euros that were stolen
+by hacking mTANs last year.
 
 
-> I still think that that isn't a sufficient excuse for not fixing the=20
-> issue, as there are a number of non-security related issues that can=20
-> result from this (there are some things that are common practice with
-> LVM or mdraid that can't be done with BTRFS because of this).
-Sure, I guess we agree on that,...
+> I didn't. I did state there are edge cases, not normal use. My
+> criticism of dd for copying a volume is for general purpose copying,
+> not edge cases.
+Sure... but I guess we've never needed to argue about that.
+If a howto were to be written on "how to best copy a btrfs filesystem"
+and someone would say "me! take dd"... I'd be surely on your side,
+sayin "Naaahh... stupid... you copy empty blocks and that like".
 
-
-> > Apart from that, btrfs should be a general purpose fs, and not just
-> > a
-> > desktop or server fs.
-> > So edge cases like forensics (where it's common that you create
-> > bitwise
-> > identical images) shouln't be forgotten either.
-> While I would normally agree, there are ways to work around this in
-> the=20
-> forensics case that don't work for any other case (namely, if BTRFS
-> is=20
-> built as a module, you can unmount everything, unload the module,
-> reload=20
-> it, and only scan the devices you want).
-see below (*)
-
-
-> On that note, why exactly is it better to make the filesystem UUID
-> such=20
-> an integral part of the filesystem?
-Well I think it's a proper way to e.g. handle the multi-device case.
-You have n devices, you want to differ them,... using a pseudo-random
-UUID is surely better than giving them numbers.
-Same for the fs UUID, e.g. when used for mounting devices whose paths
-aren't stable.
-
-As said before, using the UUID isn't the problem - not protecting
-against collisions is.
-
-
-> The other thing I'm reading out of=20
-> this all, is that by writing a total of 64 bytes to a specific
-> location=20
-> in a single disk in a multi-device BTRFS filesystem, you can make the
-> whole filesystem fall apart, which is absolutely absurd.
-Well,... I don't think that writing *into* the filesystem is covered by
-common practise anymore.
-
-In UNIX, a device (which holds the filesystem) is a file. Therefore one
-can argue: if one copies/duplicates one file (i.e. the fs) neither of
-the two's contents should get corrupted.
-But if you actively write *into* the file by yourself,... then you're
-simply on your own, either you know what you do, or just may just
-corrupt *that* specific file. Of course it should again not lead to any
-of it's clones or become corrupted as well.
+But here we talk about something completely different... namely all
+those cases where UUID collisions could happen, including those where a
+bit-identical copy is, for whichever reason, the best solution.
 
 
 
-> And some recovery situations (think along the lines of no recovery
-> disk,=20
-> and you only have busybox or something similar to work with).
-(*) which is however also, why you may not be able to unmount the
-device anymore or unload btrfs.
-Maybe you have reasons you must/want to do any forensics in the running
-system.
+> I already have, as have others.
+So far you've only said it would be bad practise as it wouldn't work
+well with filesystems that do use UUIDs.
+I agree with what Austin gave you as an answer upon that.
 
 
-> > AFAIK, there's not even a solution right now, that copies a
-> > complete
-> > btrfs, with snapshots, etc. preserving all ref-links. At least
-> > nothing
-> > official that works in one command.
-> Send-receive kind of works for that
-I've added the "in one command" for that... O:-)
-In case the btrfs would have subvols/snapshots... the user would need
-to make the recursion himself...=C2=A0
+> Does the user want cake or pie? The computer doesn't have that level
+> of granular information when there are two apparently bitwise
+> identical devices.
+I'm quite sure the computer has some concept of device path, and UUID
+isn't the only way to identify a device. If that was so, than any
+cloned ext4 would suffer from corruptions as well, as the fs would
+chose the device based on UUID.
+
+brtfs does of course more, especially in the multi-device case,...
+where it needs to differ devices based on their content, no on their
+path (which may be unstable).
+But such case can surely be detected, and as you said yourself below:
+
+> So option a is to simply fail and let the user
+> resolve the ambiguity.
+... on could e.g. simply require the user to resolve the situation
+manually.
+And I guess that's exactly what I've wrote here several times in this
+thread, for mounting situations, for rebuild/fsck/repair/etc.
+sitations.
+
+
+>  Option b is maybe to leveral btrfs check code
+> and find out if there's more to the story, some indication that one
+> of
+> the apparently identical copies isn't really identical.
+Can't believe that this would be possible... if they're bitwise
+identical, they're bitwise identical, the only thing that differs them
+is how they're connected, e.g. USB port 1, sata port 2, etc..
+But as this is unstable (just swap two sata disks) it cannot be used.
+
+
+> That's not something btrfs can resolve alone.
+Sure, I've never demanded that.
+I always said "handle it gracefully" (i.e. no corruptions, no new
+mounts, fsck's, etc.), require the user to manually sort out things.
+Not automagically determine which of the devices are actually the right
+ones and use them.
 
 
 Cheers,
 Chris.
---=-RUDbbweDLY/YxTLMDSB/
+--=-EMZAUqLqSfhuBivg6yKW
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -222,19 +202,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNTAwMDgy
-NVowTwYJKoZIhvcNAQkEMUIEQEjGon0ON1K6yb9CXy9uTn3SmIfEaA2w6Asn3t3bzA0+DymdKmS6
-iCjFX024pA4l/sGiBNhcK5LEZsp04ohLGHAwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNTAwMjI1
+NVowTwYJKoZIhvcNAQkEMUIEQKJdc2qu4SV6POtyp2VANdlRL+GMTqq7IfOmSeSnd6mGD4VRMVyI
++9VkOxikKo0kj9B53fvWgkN3xblAKqt8IMgwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAN3H9rHzVYGTV9UDu4+iQacUuN5jd4
-iApl7osYNqgDfUDUiqE+92J9J+ukdHA44/eZ3yPYyW8PotJ8h96rn4ZJ64lbZ/TRR9ZnrGxxI9R0
-uwn1WpZo4Ntlv2TfMr303n1RXK4Te7m0VgH8vBaz4muy4TN55WbYNMp3huEhOugVdzSmX4aYx+RN
-lDEopcJUWSLSGTBFjx5sKZKMg8dv6JAZXPW/x+pg8TDs62FE/oAYUkPDyJoibfJk2rALRR7PJq1D
-DSYNtSJz/zILz0gwcMW/qP16Nk7CLueeNUl7omGVHSpv6vY7ja4NfzJfxwKj83DCkDdY64EHE+uK
-9GKmST6FAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAusXq5Nj1th7eLxuGOipuUgpvyvkMf
+kXsYfh2IhuKE6ic8DxXp7YFbqJWV0wMBAf7z1Nrhh0UxPJtickPrjTAFWEEu+5j5YxdTBrDOcgXU
+3Lp30RxkSfPBDikFL9nnFiqwWOkuwZtkxaSmRcS+EUsNqD3g9I57p+NHHE3CcZWXsOsLesX+HP97
+gxnbzavJlx8+ivG15IZ1ILxwYoPViAW2eOkLLvauZ1+aXXqYwTOsPDseY1qbeIwtVWJ3uLDnU7lL
+eDGRImJQMJ8fBADejGATx/+Czng28oR+1TvHi8HVkY4fObKRrWRYupp+kWW/s6aHojqG8rUdR0TO
++P38OpbkAAAAAAAA
 
 
---=-RUDbbweDLY/YxTLMDSB/--
+--=-EMZAUqLqSfhuBivg6yKW--
 

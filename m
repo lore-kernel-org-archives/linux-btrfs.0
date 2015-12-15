@@ -1,197 +1,116 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:36927 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753671AbbLOBPA (ORCPT
+	with ESMTP id S1753681AbbLOBPC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 20:15:00 -0500
+	Mon, 14 Dec 2015 20:15:02 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id 02123409255D
+	by cn.fujitsu.com (Postfix) with ESMTP id C009B4092567
 	for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 09:14:40 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH v3 1/2] btrfs: Enhance super validation check
-Date: Tue, 15 Dec 2015 09:14:36 +0800
-Message-ID: <1450142077-6983-1-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 2/2] btrfs: Enhance chunk validation check
+Date: Tue, 15 Dec 2015 09:14:37 +0800
+Message-ID: <1450142077-6983-2-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1450142077-6983-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1450142077-6983-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Enhance btrfs_check_super_valid() function by the following points:
-1) Restrict sector/node size check
-   Not the old max/min valid check, but also check if it's a power of 2.
-   So some bogus number like 12K node size won't pass now.
+Enhance chunk validation:
+1) Num_stripes
+   We already have such check but it's only in super block sys chunk
+   array.
+   Now check all on-disk chunks.
 
-2) Super flag check
-   For now, there is still some inconsistency between kernel and
-   btrfs-progs super flags.
-   And considering btrfs-progs may add new flags for super block, this
-   check will only output warning.
+2) Chunk logical
+   It should be aligned to sector size.
+   This behavior should be *DOUBLE CHECKED* for 64K sector size like
+   PPC64 or AArch64.
+   Maybe we can found some hidden bugs.
 
-3) Better root alignment check
-   Now root bytenr is checked against sector size.
+3) Chunk length
+   Same as chunk logical, should be aligned to sector size.
 
-4) Move some check into btrfs_check_super_valid().
-   Like node size vs leaf size check, and PAGESIZE vs sectorsize check.
-   And magic number check.
+4) Stripe length
+   It should be power of 2.
+
+5) Chunk type
+   Any bit out of TYPE_MAS | PROFILE_MASK is invalid.
+
+With all these much restrict rules, several fuzzed image reported in
+mail list should no longer cause kernel panic.
 
 Reported-by: Vegard Nossum <vegard.nossum@oracle.com>
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Reviewed-by: David Sterba <dsterba@suse.com>
+
 ---
 v2:
-  Make super flag check optional and won't cause mount failure.
-v3:
-  Remove an XXX in comment
+  Fix a typo which forgot to return -EIO after num_stripes check.
 ---
- fs/btrfs/disk-io.c | 97 +++++++++++++++++++++++++++---------------------------
- 1 file changed, 48 insertions(+), 49 deletions(-)
+ fs/btrfs/volumes.c | 33 ++++++++++++++++++++++++++++++++-
+ 1 file changed, 32 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 617bf4f..ffa3ac6 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -54,6 +54,12 @@
- #include <asm/cpufeature.h>
- #endif
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9ea345f..bda84be 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -6199,6 +6199,7 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 	struct extent_map *em;
+ 	u64 logical;
+ 	u64 length;
++	u64 stripe_len;
+ 	u64 devid;
+ 	u8 uuid[BTRFS_UUID_SIZE];
+ 	int num_stripes;
+@@ -6207,6 +6208,37 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
  
-+#define BTRFS_SUPER_FLAG_SUPP	(BTRFS_HEADER_FLAG_WRITTEN |\
-+				 BTRFS_HEADER_FLAG_RELOC |\
-+				 BTRFS_SUPER_FLAG_ERROR |\
-+				 BTRFS_SUPER_FLAG_SEEDING |\
-+				 BTRFS_SUPER_FLAG_METADUMP)
-+
- static const struct extent_io_ops btree_extent_io_ops;
- static void end_workqueue_fn(struct btrfs_work *work);
- static void free_fs_root(struct btrfs_root *root);
-@@ -2727,26 +2733,6 @@ int open_ctree(struct super_block *sb,
- 		goto fail_alloc;
- 	}
+ 	logical = key->offset;
+ 	length = btrfs_chunk_length(leaf, chunk);
++	stripe_len = btrfs_chunk_stripe_len(leaf, chunk);
++	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
++	/* Validation check */
++	if (!num_stripes) {
++		btrfs_err(root->fs_info, "invalid chunk num_stripes: %u",
++			  num_stripes);
++		return -EIO;
++	}
++	if (!IS_ALIGNED(logical, root->sectorsize)) {
++		btrfs_err(root->fs_info,
++			  "invalid chunk logical %llu", logical);
++		return -EIO;
++	}
++	if (!length || !IS_ALIGNED(length, root->sectorsize)) {
++		btrfs_err(root->fs_info,
++			"invalid chunk length %llu", length);
++		return -EIO;
++	}
++	if (!is_power_of_2(stripe_len)) {
++		btrfs_err(root->fs_info, "invalid chunk stripe length: %llu",
++			  stripe_len);
++		return -EIO;
++	}
++	if (~(BTRFS_BLOCK_GROUP_TYPE_MASK | BTRFS_BLOCK_GROUP_PROFILE_MASK) &
++	    btrfs_chunk_type(leaf, chunk)) {
++		btrfs_err(root->fs_info, "unrecognized chunk type: %llu",
++			  ~(BTRFS_BLOCK_GROUP_TYPE_MASK |
++			    BTRFS_BLOCK_GROUP_PROFILE_MASK) &
++			  btrfs_chunk_type(leaf, chunk));
++		return -EIO;
++	}
  
--	/*
--	 * Leafsize and nodesize were always equal, this is only a sanity check.
--	 */
--	if (le32_to_cpu(disk_super->__unused_leafsize) !=
--	    btrfs_super_nodesize(disk_super)) {
--		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
--		       "blocksizes don't match.  node %d leaf %d\n",
--		       btrfs_super_nodesize(disk_super),
--		       le32_to_cpu(disk_super->__unused_leafsize));
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--	if (btrfs_super_nodesize(disk_super) > BTRFS_MAX_METADATA_BLOCKSIZE) {
--		printk(KERN_ERR "BTRFS: couldn't mount because metadata "
--		       "blocksize (%d) was too large\n",
--		       btrfs_super_nodesize(disk_super));
--		err = -EINVAL;
--		goto fail_alloc;
--	}
--
- 	features = btrfs_super_incompat_flags(disk_super);
- 	features |= BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF;
- 	if (tree_root->fs_info->compress_type == BTRFS_COMPRESS_LZO)
-@@ -2818,17 +2804,6 @@ int open_ctree(struct super_block *sb,
- 	sb->s_blocksize = sectorsize;
- 	sb->s_blocksize_bits = blksize_bits(sectorsize);
- 
--	if (btrfs_super_magic(disk_super) != BTRFS_MAGIC) {
--		printk(KERN_ERR "BTRFS: valid FS not found on %s\n", sb->s_id);
--		goto fail_sb_buffer;
--	}
--
--	if (sectorsize != PAGE_SIZE) {
--		printk(KERN_ERR "BTRFS: incompatible sector size (%lu) "
--		       "found on %s\n", (unsigned long)sectorsize, sb->s_id);
--		goto fail_sb_buffer;
--	}
--
- 	mutex_lock(&fs_info->chunk_mutex);
- 	ret = btrfs_read_sys_array(tree_root);
- 	mutex_unlock(&fs_info->chunk_mutex);
-@@ -3986,8 +3961,17 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 			      int read_only)
- {
- 	struct btrfs_super_block *sb = fs_info->super_copy;
-+	u64 nodesize = btrfs_super_nodesize(sb);
-+	u64 sectorsize = btrfs_super_sectorsize(sb);
- 	int ret = 0;
- 
-+	if (btrfs_super_magic(sb) != BTRFS_MAGIC) {
-+		printk(KERN_ERR "BTRFS: no valid FS found\n");
-+		ret = -EINVAL;
-+	}
-+	if (btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP)
-+		printk(KERN_WARNING "BTRFS: unrecognized super flag: %llu\n",
-+				btrfs_super_flags(sb) & ~BTRFS_SUPER_FLAG_SUPP);
- 	if (btrfs_super_root_level(sb) >= BTRFS_MAX_LEVEL) {
- 		printk(KERN_ERR "BTRFS: tree_root level too big: %d >= %d\n",
- 				btrfs_super_root_level(sb), BTRFS_MAX_LEVEL);
-@@ -4005,31 +3989,46 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
- 	}
- 
- 	/*
--	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
--	 * items yet, they'll be verified later. Issue just a warning.
-+	 * Check sectorsize and nodesize first, other check will need it.
-+	 * Check all possible sectorsize(4K, 8K, 16K, 32K, 64K) here.
- 	 */
--	if (!IS_ALIGNED(btrfs_super_root(sb), 4096))
-+	if (!is_power_of_2(sectorsize) || sectorsize < 4096 ||
-+	    sectorsize > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		printk(KERN_ERR "BTRFS: invalid sectorsize %llu\n", sectorsize);
-+		ret = -EINVAL;
-+	}
-+	/* Only PAGE SIZE is supported yet */
-+	if (sectorsize != PAGE_CACHE_SIZE) {
-+		printk(KERN_ERR "BTRFS: sectorsize %llu not supported yet, only support %lu\n",
-+				sectorsize, PAGE_CACHE_SIZE);
-+		ret = -EINVAL;
-+	}
-+	if (!is_power_of_2(nodesize) || nodesize < sectorsize ||
-+	    nodesize > BTRFS_MAX_METADATA_BLOCKSIZE) {
-+		printk(KERN_ERR "BTRFS: invalid nodesize %llu\n", nodesize);
-+		ret = -EINVAL;
-+	}
-+	if (nodesize != le32_to_cpu(sb->__unused_leafsize)) {
-+		printk(KERN_ERR "BTRFS: invalid leafsize %u, should be %llu\n",
-+				le32_to_cpu(sb->__unused_leafsize),
-+				nodesize);
-+		ret = -EINVAL;
-+	}
-+
-+	/* Root alignment check */
-+	if (!IS_ALIGNED(btrfs_super_root(sb), sectorsize)) {
- 		printk(KERN_WARNING "BTRFS: tree_root block unaligned: %llu\n",
- 				btrfs_super_root(sb));
--	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), 4096))
-+		ret = -EINVAL;
-+	}
-+	if (!IS_ALIGNED(btrfs_super_chunk_root(sb), sectorsize)) {
- 		printk(KERN_WARNING "BTRFS: chunk_root block unaligned: %llu\n",
- 				btrfs_super_chunk_root(sb));
--	if (!IS_ALIGNED(btrfs_super_log_root(sb), 4096))
--		printk(KERN_WARNING "BTRFS: log_root block unaligned: %llu\n",
--				btrfs_super_log_root(sb));
--
--	/*
--	 * Check the lower bound, the alignment and other constraints are
--	 * checked later.
--	 */
--	if (btrfs_super_nodesize(sb) < 4096) {
--		printk(KERN_ERR "BTRFS: nodesize too small: %u < 4096\n",
--				btrfs_super_nodesize(sb));
- 		ret = -EINVAL;
- 	}
--	if (btrfs_super_sectorsize(sb) < 4096) {
--		printk(KERN_ERR "BTRFS: sectorsize too small: %u < 4096\n",
--				btrfs_super_sectorsize(sb));
-+	if (!IS_ALIGNED(btrfs_super_log_root(sb), sectorsize)) {
-+		printk(KERN_WARNING "BTRFS: log_root block unaligned: %llu\n",
-+				btrfs_super_log_root(sb));
- 		ret = -EINVAL;
- 	}
- 
+ 	read_lock(&map_tree->map_tree.lock);
+ 	em = lookup_extent_mapping(&map_tree->map_tree, logical, 1);
+@@ -6223,7 +6255,6 @@ static int read_one_chunk(struct btrfs_root *root, struct btrfs_key *key,
+ 	em = alloc_extent_map();
+ 	if (!em)
+ 		return -ENOMEM;
+-	num_stripes = btrfs_chunk_num_stripes(leaf, chunk);
+ 	map = kmalloc(map_lookup_size(num_stripes), GFP_NOFS);
+ 	if (!map) {
+ 		free_extent_map(em);
 -- 
 2.6.3
 

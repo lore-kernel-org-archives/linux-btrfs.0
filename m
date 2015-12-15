@@ -1,60 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f178.google.com ([209.85.223.178]:33133 "EHLO
-	mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932803AbbLOEFk (ORCPT
+Received: from mail-oi0-f52.google.com ([209.85.218.52]:36420 "EHLO
+	mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S933146AbbLOJfC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 23:05:40 -0500
-Received: by mail-io0-f178.google.com with SMTP id 186so6794599iow.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 14 Dec 2015 20:05:40 -0800 (PST)
+	Tue, 15 Dec 2015 04:35:02 -0500
+Received: by mail-oi0-f52.google.com with SMTP id n133so1576342oia.3
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 01:35:01 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <566ED124.30803@gmail.com>
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-	<pan$eea04$e9596e27$78b44461$c5754723@cox.net>
-	<1448488198.4717.4.camel@gmail.com>
-	<pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
-	<1448562347.8809.16.camel@scientia.net>
-	<pan$54542$5eb77bd3$8682bff8$82310de1@cox.net>
-	<1448582805.11377.9.camel@scientia.net>
-	<pan$34543$2ed1f043$2f803125$884b36c0@cox.net>
-	<1448683025.6837.4.camel@scientia.net>
-	<pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
-	<1449958538.15961.3.camel@scientia.net>
-	<566ED124.30803@gmail.com>
-Date: Mon, 14 Dec 2015 21:05:39 -0700
-Message-ID: <CAJCQCtQKvnkbe9KUSyA1dvRFomA1ZzgDC20s9UaN1LuQzM7pzA@mail.gmail.com>
-Subject: Re: btrfs: poor performance on deleting many large files
-From: Chris Murphy <lists@colorremedies.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <566F7007.4040503@cn.fujitsu.com>
+References: <566b0cff.pXiyzYE4dYIOt31+%sivan606@gmail.com> <CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
+ <566E2934.1090207@cn.fujitsu.com> <CAMG9ccy_Du3WOm_yAak_L8UnuiBCcf=1f4ybGzTUxC5iFJfaiQ@mail.gmail.com>
+ <566F7007.4040503@cn.fujitsu.com>
+From: Ivan Sizov <sivan606@gmail.com>
+Date: Tue, 15 Dec 2015 09:34:41 +0000
+Message-ID: <CAMG9ccy_LKZeGRtPqffpXM8YD4NmDwAxyfr5iPz37j0+OjL4wg@mail.gmail.com>
+Subject: Re: Will "btrfs check --repair" fix the mounting problem?
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 14, 2015 at 7:24 AM, Austin S. Hemmelgarn
-<ahferroin7@gmail.com> wrote:
-
+2015-12-15 1:42 GMT+00:00 Qu Wenruo <quwenruo@cn.fujitsu.com>:
+> You'll see output like the following:
+> Well block 29491200(gen: 5 level: 0) seems good, and it matches superblock
+> Well block 29376512(gen: 4 level: 0) seems good, but generation/level
+> doesn't match, want gen: 5 level: 0
 >
-> If you have software that actually depends on atimes, then that software is
-> broken (and yes, I even feel this way about Mutt).  The way atimes are
-> implemented on most systems breaks the semantics that almost everyone
-> expects from them, because they get updated for anything that even looks
-> sideways at the inode from across the room.  Most software that uses them
-> expects them to answer the question 'When were the contents of this file
-> last read?', but they can get updated even for stuff like calculating file
-> sizes, listing directory contents, or modifying the file's metadata.
+> The match one is not what you're looking for.
+> Try the one whose generation is a little smaller than match one.
+>
+> Then use btrfsck to test if it's OK:
+> $ btrfsck -r <BYTENR> /dev/sda1
+>
+> Try 2~5 times with bytenr whose generation is near the match one.
+> If you're in good luck, you will find one doesn't crash btrfsck.
+>
+> And if that doesn't produce much error, then you can try btrfsck --repair -r
+> <BYTENR> to fix it and try mount.
 
-This Jonathan Corbet article still applies:
-http://lwn.net/Articles/397442/
+I've found a root that doesn't produce backtrace. But extent/chunk
+allocation errors was found:
 
-What a mess!
+$ sudo btrfsck --tree-root 535461888 /dev/sda1
+parent transid verify failed on 535461888 wanted 21154 found 21150
+parent transid verify failed on 535461888 wanted 21154 found 21150
+Ignoring transid failure
+checking extents
+parent transid verify failed on 459292672 wanted 21148 found 21153
+parent transid verify failed on 459292672 wanted 21148 found 21153
+Ignoring transid failure
+bad block 459292672
+Errors found in extent allocation tree or chunk allocation
+parent transid verify failed on 459292672 wanted 21148 found 21153
 
-Hey. The 5 year anniversary was in July. Wanna bring it up again, Austin? Haha.
-http://thread.gmane.org/gmane.linux.kernel.cifs/294
-
-Users want file creation time. Specifically, an immutable time for
-that file that persists across file system copies. The time of its
-first occurrence on a particular volume is not useful information.
-Getting that requires what seems to be an unlikely consensus.
-
+Should I ignore those errors and run btrfsck --repair? Or
+--init-extent-tree is needed?
 
 -- 
-Chris Murphy
+Ivan Sizov

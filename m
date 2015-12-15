@@ -1,98 +1,141 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:57819 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:60037 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753607AbbLNXZJ (ORCPT
+	with ESMTP id S932540AbbLOAIa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 18:25:09 -0500
-Message-ID: <1450135505.6629.66.camel@scientia.net>
-Subject: Re: btrfs: poor performance on deleting many large files
+	Mon, 14 Dec 2015 19:08:30 -0500
+Message-ID: <1450138105.701.24.camel@scientia.net>
+Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Lionel Bouton <lionel-subscription@bouton.name>,
-        linux-btrfs@vger.kernel.org
-Date: Tue, 15 Dec 2015 00:25:05 +0100
-In-Reply-To: <566F34F0.8050407@bouton.name>
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-	 <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
-	 <1448488198.4717.4.camel@gmail.com>
-	 <pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
-	 <1448562347.8809.16.camel@scientia.net>
-	 <pan$54542$5eb77bd3$8682bff8$82310de1@cox.net>
-	 <1448582805.11377.9.camel@scientia.net>
-	 <pan$34543$2ed1f043$2f803125$884b36c0@cox.net>
-	 <1448683025.6837.4.camel@scientia.net>
-	 <pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
-	 <1449958538.15961.3.camel@scientia.net> <566ED124.30803@gmail.com>
-	 <1450121957.6629.41.camel@scientia.net> <566F261F.4040705@gmail.com>
-	 <566F34F0.8050407@bouton.name>
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Tue, 15 Dec 2015 01:08:25 +0100
+In-Reply-To: <566EC2D7.3000101@gmail.com>
+References: <20151204120529.37E47D5A28@emkei.cz>
+	 <20151204130758.GR8775@carfax.org.uk>
+	 <1449286104.18841.14.camel@scientia.net>
+	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
+	 <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
+	 <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
+	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
+	 <1449872498.31388.74.camel@fo>
+	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
+	 <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-gFY4ZyFyHJ8urWfjPpFp"
+	boundary="=-RUDbbweDLY/YxTLMDSB/"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-gFY4ZyFyHJ8urWfjPpFp
+--=-RUDbbweDLY/YxTLMDSB/
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-12-14 at 22:30 +0100, Lionel Bouton wrote:
-> Mutt is often used as an example but tmpwatch uses atime by default
-> too
-> and it's quite useful.
-Hmm one could probably argue that these few cases justify the use of
-separate filesystems (or btrfs subvols ;) ), so that the majority could
-benefit of noatime.
+On Mon, 2015-12-14 at 08:23 -0500, Austin S. Hemmelgarn wrote:
+> The reason that this isn't quite as high of a concern is because
+> performing this attack requires either root access, or direct
+> physical=20
+> access to the hardware, and in either case, your system is already=20
+> compromised.
+No necessarily.
+Apart from the ATM image (where most people wouldn't call it
+compromised, just because it's openly accessible on the street)
+imageine you're running a VM hosting service, where you allow users to
+upload images and have them deployed.
+In the cheap" case these will end up as regular files, where they
+couldn't do any harm (even if colliding UUIDs)... but even there one
+would have to expect, that the hypervisor admin may losetup them for
+whichever reason.
+But if you offer more professional services, you may give your clients
+e.g. direct access to some storage backend, which are then probably
+also seen on the host by its kernel.
+And here we already have the case, that a client could remotely trigger
+such collision.
 
-> If you have a local cache of remote files for which you want a good
-> hit
-> ratio and don't care too much about its exact size (you should have
-> Nagios/Zabbix/... alerting you when a filesystem reaches a %free
-> limit
-> if you value your system's availability anyway), using tmpwatch with
-> cron to maintain it is only one single line away and does the job.
-> For
-> an example of this particular case, on Gentoo the
-> /usr/portage/distfiles
-> directory is used in one of the tasks you can uncomment to activate
-> in
-> the cron.daily file provided when installing tmpwatch.
-> Using tmpwatch/cron is far more convenient than using a dedicated
-> cache
-> (which might get tricky if the remote isn't HTTP-based, like an
-> rsync/ftp/nfs/... server or doesn't support HTTP IMS requests for
-> example).
-> Some http frameworks put sessions in /tmp: in this case if you want
-> sessions to expire based on usage and not creation time, using
-> tmpwatch
-> or similar with atime is the only way to clean these files. This can
-> even become a performance requirement: I've seen some servers slowing
-> down with tens/hundreds of thousands of session files in /tmp because
-> it
-> was only cleaned at boot and the systems were almost never
-> rebooted...
-Okay there are probably some usecases, ... the session cleaning I'd
-however rather consider a bug in the respective software, especially if
-it really depends on it to expire the session (what if for some reason
-tmpwatch get's broken, uninstalled, etc.)
+And remember, things only sounds far-fetched until it actually happens
+the first time ;)
 
 
-> I use noatime and nodiratime
-FYI: noatime implies nodiratime :-)
+> I still think that that isn't a sufficient excuse for not fixing the=20
+> issue, as there are a number of non-security related issues that can=20
+> result from this (there are some things that are common practice with
+> LVM or mdraid that can't be done with BTRFS because of this).
+Sure, I guess we agree on that,...
 
 
-> Finally Linus Torvalds has been quite vocal and consistent on the
-> general subject of the kernel not breaking user-space APIs no matter
-> what so I wouldn't have much hope for default kernel mount options
-> changes...
-He surely is right in general,... but when the point has been reached,
-where only a minority actually requires the feature... and the minority
-actually starts to suffer from that... it may change.
+> > Apart from that, btrfs should be a general purpose fs, and not just
+> > a
+> > desktop or server fs.
+> > So edge cases like forensics (where it's common that you create
+> > bitwise
+> > identical images) shouln't be forgotten either.
+> While I would normally agree, there are ways to work around this in
+> the=20
+> forensics case that don't work for any other case (namely, if BTRFS
+> is=20
+> built as a module, you can unmount everything, unload the module,
+> reload=20
+> it, and only scan the devices you want).
+see below (*)
+
+
+> On that note, why exactly is it better to make the filesystem UUID
+> such=20
+> an integral part of the filesystem?
+Well I think it's a proper way to e.g. handle the multi-device case.
+You have n devices, you want to differ them,... using a pseudo-random
+UUID is surely better than giving them numbers.
+Same for the fs UUID, e.g. when used for mounting devices whose paths
+aren't stable.
+
+As said before, using the UUID isn't the problem - not protecting
+against collisions is.
+
+
+> The other thing I'm reading out of=20
+> this all, is that by writing a total of 64 bytes to a specific
+> location=20
+> in a single disk in a multi-device BTRFS filesystem, you can make the
+> whole filesystem fall apart, which is absolutely absurd.
+Well,... I don't think that writing *into* the filesystem is covered by
+common practise anymore.
+
+In UNIX, a device (which holds the filesystem) is a file. Therefore one
+can argue: if one copies/duplicates one file (i.e. the fs) neither of
+the two's contents should get corrupted.
+But if you actively write *into* the file by yourself,... then you're
+simply on your own, either you know what you do, or just may just
+corrupt *that* specific file. Of course it should again not lead to any
+of it's clones or become corrupted as well.
+
+
+
+> And some recovery situations (think along the lines of no recovery
+> disk,=20
+> and you only have busybox or something similar to work with).
+(*) which is however also, why you may not be able to unmount the
+device anymore or unload btrfs.
+Maybe you have reasons you must/want to do any forensics in the running
+system.
+
+
+> > AFAIK, there's not even a solution right now, that copies a
+> > complete
+> > btrfs, with snapshots, etc. preserving all ref-links. At least
+> > nothing
+> > official that works in one command.
+> Send-receive kind of works for that
+I've added the "in one command" for that... O:-)
+In case the btrfs would have subvols/snapshots... the user would need
+to make the recursion himself...=C2=A0
 
 
 Cheers,
 Chris.
---=-gFY4ZyFyHJ8urWfjPpFp
+--=-RUDbbweDLY/YxTLMDSB/
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -179,19 +222,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNDIzMjUw
-NVowTwYJKoZIhvcNAQkEMUIEQJD0kk/4wD6daBNuNAcppdVeqTEkzcl6F+Ie+wJOFSxF1QaKl8ol
-OUl64E1ykYXmbuRoNxrwxmDkICEXR/X0CdIwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNTAwMDgy
+NVowTwYJKoZIhvcNAQkEMUIEQEjGon0ON1K6yb9CXy9uTn3SmIfEaA2w6Asn3t3bzA0+DymdKmS6
+iCjFX024pA4l/sGiBNhcK5LEZsp04ohLGHAwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAlNY2qwQRZekkLifxQPG2T4UjtahgV
-rN6XLAsI/fEHR3SqoVaDaQRxt21LaaTulFyivJ3wXp5Zrz/gpO2vNwyhocxomgbfwk2EIFj0KvfT
-ldegBxEsVy74Jo+QLi0LKuBo2hHkyE7Q3G3TVJq6nRyjy6nKZnZdWgIcEG3t9nhMkHyRlEWS8KFm
-2AJ6v2bZ1p2r6vwTZaDdSysJ4OlBfJblNcefmKiPu1ylqKGW0LAchh90DaZF5S0gKL+sG5R6m94F
-R9T+fK4mTKiuTWKDQKxebqXyFNqh1ZY8u2jG6SiCRPdgAWmDKIzZaTlk9QCnTAXgsbZBFKP7nsIJ
-uLjHoD1YAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAN3H9rHzVYGTV9UDu4+iQacUuN5jd4
+iApl7osYNqgDfUDUiqE+92J9J+ukdHA44/eZ3yPYyW8PotJ8h96rn4ZJ64lbZ/TRR9ZnrGxxI9R0
+uwn1WpZo4Ntlv2TfMr303n1RXK4Te7m0VgH8vBaz4muy4TN55WbYNMp3huEhOugVdzSmX4aYx+RN
+lDEopcJUWSLSGTBFjx5sKZKMg8dv6JAZXPW/x+pg8TDs62FE/oAYUkPDyJoibfJk2rALRR7PJq1D
+DSYNtSJz/zILz0gwcMW/qP16Nk7CLueeNUl7omGVHSpv6vY7ja4NfzJfxwKj83DCkDdY64EHE+uK
+9GKmST6FAAAAAAAA
 
 
---=-gFY4ZyFyHJ8urWfjPpFp--
+--=-RUDbbweDLY/YxTLMDSB/--
 

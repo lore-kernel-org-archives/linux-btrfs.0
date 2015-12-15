@@ -1,91 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:45793 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:47148 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932984AbbLOAfG (ORCPT
+	with ESMTP id S932795AbbLOBC3 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 19:35:06 -0500
-Message-ID: <1450139700.701.50.camel@scientia.net>
-Subject: Re: attacking btrfs filesystems via UUID collisions?
+	Mon, 14 Dec 2015 20:02:29 -0500
+Message-ID: <1450141345.701.61.camel@scientia.net>
+Subject: Re: dear developers, can we have notdatacow + checksumming, plz?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Chris Murphy <lists@colorremedies.com>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Tue, 15 Dec 2015 01:35:00 +0100
-In-Reply-To: <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
-References: <20151204120529.37E47D5A28@emkei.cz>
-	 <20151204130758.GR8775@carfax.org.uk>
-	 <1449286104.18841.14.camel@scientia.net>
-	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
-	 <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
-	 <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
-	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
-	 <1449872498.31388.74.camel@fo>
-	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
-	 <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
-	 <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
+To: Russell Coker <russell@coker.com.au>
+Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 15 Dec 2015 02:02:25 +0100
+In-Reply-To: <201512141742.56891.russell@coker.com.au>
+References: <1450069158.2388.72.camel@scientia.net>
+	 <201512141742.56891.russell@coker.com.au>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-f7vOTlEV0OL2UJ7QleWf"
+	boundary="=-ga5BlSWvmxTxajQvT2lZ"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-f7vOTlEV0OL2UJ7QleWf
+--=-ga5BlSWvmxTxajQvT2lZ
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-12-14 at 14:26 -0700, Chris Murphy wrote:
-> The automobile is invented and due to the ensuing chaos, common
-> practice of doing whatever the F you wanted came to an end in favor
-> of
-> rules of the road and traffic lights. I'm sure some people went
-> ballistic, but for the most part things were much better without the
-> brokenness or prior common practice.
-Okay than take your road traffic example, apply it to filesystems.
+On Mon, 2015-12-14 at 17:42 +1100, Russell Coker wrote:
+> My understanding of BTRFS is that the metadata referencing data
+> blocks has the=20
+> checksums for those blocks, then the blocks which link to that
+> metadata (EG=20
+> directory entries referencing file metadata) has checksums of those.
+You mean basically, that all metadata is chained, right?
 
-In road traffic you have rules, e.g. pedestrians may cross the road
-when their light shows green and that of the cars red.
-That could be the rule, similar as to "don't have duplicate UUIDs with
-btrfs".
+> For each=20
+> metadata block there is a new version that is eventually linked from
+> a new=20
+> version of the tree root.
+>=20
+> This means that the regular checksum mechanisms can't work with nocow
+> data.=C2=A0 A=20
+> filesystem can have checksums just pointing to data blocks but you
+> need to=20
+> cater for the case where a corrupt metadata block points to an old
+> version of=20
+> a data block and matching checksum.=C2=A0 The way that BTRFS works with a=
+n
+> entire=20
+> checksumed tree means that there's no possibility of pointing to an
+> old=20
+> version of a data block.
+Hmm I'm not sure whether I understand that (or better said, I'm
+probably sure I don't :D).
 
-Despite we have the rule, cars stop at red, pedestrians walk at green,
-we still teach our kids: "look at both sides on the road, only cross if
-there's no car (or tank or whatever ;) ) crossing.
-Applying that to filesystems would be: "hope that everyone plays the
-rules, but don't kill yourself in one doesn't and there are duplicate
-IDs).
+AFAIU, the metadata is always CoWed, right? So when a nodatacow file is
+written, I'd assume it's mtime was update, which already leads to
+CoWing of metadata... just that now, the checksums should be written as
+well.
 
-=C2=A0
-> So the fact we're going to have this problem with all file systems
-> that incorporate the volume UUID into the metadata stream, tells me
-> that the very rudimentary common practice of using dd needs to go
-> away, in general practice.
-Sure, for those that use multiple devices (LVM, MD, etc.), or for those
-that actually just use the UUID to select the block device for each
-write/read (and not use these only "once") to get the right major/minor
-dev id (or whatever the kernel uses internally for path based
-addressing).
+If the metadata block is corrupt, then should that be noticed via the
+csums on that?
 
-
-> http://www.ietf.org/rfc/rfc4122.txt
-> "A UUID is 128 bits long, and can guarantee uniqueness across space
-> and time."
-But of course not in terms of the problems we're talking about here,
-where UUIDs may be accidentally or maliciously duplicated.
-
-> Also see security considerations in section 6.
-Doesn't section 6 basically imply that you can not 100% guarantee
-they're equal? E.g. bad random seed on multiple systems?
-
-Also, IIRC, one of the UUID algos just used some combination of MAC,
-time and PID... which especially in VMs may even lead to dupes.
+And you said "The way that BTRFS works with an entire checksumed tree
+means that there's no possibility of pointing to an old version of a
+data block."... how would that work for nodatacow'ed blocks? If there
+is a crash it cannot know whether it was still the old block or the new
+one or any garbage in between?!
 
 
+> The NetApp published research into hard drive errors indicates that
+> they are=20
+> usually in small numbers and located in small areas of the disk.=C2=A0 So
+> if BTRFS=20
+> had a nocow file with any storage method other than dup you would
+> have metadata=20
+> and file data far enough apart that they are not likely to be hit by
+> the same=20
+> corruption (and the same thing would apply with most Ext4 Inode
+> tables and=20
+> data blocks).
+Well put aside any such research (whose results aren't guaranteed to be
+always the case)... but that's just one reason from my motivation why
+I've said checksums for no-CoWed files would be great (I used the
+multi-device example though, not DUP).
 
-Cheers,
+
+> I think that a file mode where there were checksums on data=20
+> blocks with no checksums on the metadata tree would be useful.=C2=A0 But
+> it would=20
+> require a moderate amount of coding
+Do you mean in general, or having this as a mode for nodatacow'ed
+files?
+Loosing the meta data checksumming, doesn't seem really much more
+appealing than not having data checksumming :-(
+
+
+> and there's lots of other things that the=20
+> developers are working on.
+Sure, I just wanted to bring this to their attending... I already
+imagined that they wouldn't drop their current work to do that, just
+because me whining for it ;-)
+
+
+Thanks,
 Chris.
---=-f7vOTlEV0OL2UJ7QleWf
+--=-ga5BlSWvmxTxajQvT2lZ
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -172,19 +191,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNTAwMzUw
-MFowTwYJKoZIhvcNAQkEMUIEQLuObvyy9E5ViJJTe2IC968MEyBmjbKuL+6h0Jlv7FmoZs+XfBaF
-O5s6decSYaU2ysP6ctpBER0JWsXXl1YhDbQwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNTAxMDIy
+NVowTwYJKoZIhvcNAQkEMUIEQFw2i37qyvqYbymkSG+bfszG7c1fs9AZ0wERwD3TnJEDtWWLrkv2
+TZe/bH1AzsuexHrfUpIEKiYjTBqaW40PC3kwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC1FpAIq8LxdNObyRnjYU55FTuvMn/K
-oNT2a2uENcpCYh36rJmCgyCrsO2BhEkzBW3a7sgL8Oe2bd1lNIrKYpXLTv/l+fTe7cgBjjeX44hn
-MIuibeLtb4/BAwyaFGMId4GUlKHa/G4IsSfxA7yIY3jujWgwel/LLiZK0QJ10LPTntxg/O+OQakj
-dwk2T5tWT/lFiq/HXUnxiupwywrqSQyHF7o03qlfsFcxrSCs1kRPQ3HLhypAzwzfkc/D6uFXDMaI
-JQ/XEKZVc4+kppMeXZAIk6p8xPzvPRDBXTRJEPIV5NQUhXPhTOprIllzj8j4yyHukW7/eRn8ftvT
-UWJYNtoVAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCkaIP1nGIxrV0Z7RdNy7x4OJtyI7KO
+bEId+3gP/PSQbSbmARsn1mDTYsWFSFbenLY09LDKldUJV8WxtHMIKCSIY67knhotyqsb00xl1Ly2
+0Zo283cbhwnVW1W8aud5CGqpDLnV8kttQkX/Ht2knFC7hn8nE1T7ok4Vevh39w4qL/m59Va/Ugm3
+EIHpVApYFmjifTFUL+wUx4ds4gKD186lpCov4yhuIHIIyYIkBDuxCiJMKcVkRSYxKw36VVh10Lwt
+57pIvSZtZeMzQQdTqUHMJXhghUqzV32dI12wkxMUYw3tqIOEzQoyKBG3YbbSaHQp+VrIZyOoyYsL
+nhAi3b3sAAAAAAAA
 
 
---=-f7vOTlEV0OL2UJ7QleWf--
+--=-ga5BlSWvmxTxajQvT2lZ--
 

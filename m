@@ -1,209 +1,123 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:47148 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932795AbbLOBC3 (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:52064 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S932945AbbLOBmx (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 20:02:29 -0500
-Message-ID: <1450141345.701.61.camel@scientia.net>
-Subject: Re: dear developers, can we have notdatacow + checksumming, plz?
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Russell Coker <russell@coker.com.au>
-Cc: linux-btrfs@vger.kernel.org
-Date: Tue, 15 Dec 2015 02:02:25 +0100
-In-Reply-To: <201512141742.56891.russell@coker.com.au>
-References: <1450069158.2388.72.camel@scientia.net>
-	 <201512141742.56891.russell@coker.com.au>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-ga5BlSWvmxTxajQvT2lZ"
-Mime-Version: 1.0
+	Mon, 14 Dec 2015 20:42:53 -0500
+Subject: Re: Will "btrfs check --repair" fix the mounting problem?
+To: Ivan Sizov <sivan606@gmail.com>
+References: <566b0cff.pXiyzYE4dYIOt31+%sivan606@gmail.com>
+ <CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
+ <566E2934.1090207@cn.fujitsu.com>
+ <CAMG9ccy_Du3WOm_yAak_L8UnuiBCcf=1f4ybGzTUxC5iFJfaiQ@mail.gmail.com>
+CC: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <566F7007.4040503@cn.fujitsu.com>
+Date: Tue, 15 Dec 2015 09:42:31 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAMG9ccy_Du3WOm_yAak_L8UnuiBCcf=1f4ybGzTUxC5iFJfaiQ@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-ga5BlSWvmxTxajQvT2lZ
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-12-14 at 17:42 +1100, Russell Coker wrote:
-> My understanding of BTRFS is that the metadata referencing data
-> blocks has the=20
-> checksums for those blocks, then the blocks which link to that
-> metadata (EG=20
-> directory entries referencing file metadata) has checksums of those.
-You mean basically, that all metadata is chained, right?
+Ivan Sizov wrote on 2015/12/14 20:55 +0300:
+> 2015-12-14 5:28 GMT+03:00 Qu Wenruo <quwenruo@cn.fujitsu.com>:
+>> Not completely sure, but it may be related to a regression in 4.2.
+>> The regression it self is already fixed, but is not backported to 4.2 as far
+>> as I know.
+>>
+>> So, I'd recommend to revert to 4.1 and see if things get better.
+>> Fortunately, btrfs already aborted the transaction before things get worse.
+>
+> Nothing changed, mount also fails on 4.1.3.
+>
+>
+>>>> I checked the filesystem extents:
+>>>>
+>>>> $ sudo btrfs check --subvol-extents 5 /dev/sda1
+>>>> Print extent state for subvolume 5 on /dev/sda1
+>>>> UUID: 6de5c663-bc65-4120-8cf6-5309fd25aa7e
+>>>> checksum verify failed on 159708168192 found 3659C180 wanted 8EE67C14
+>>>> checksum verify failed on 159708168192 found 3659C180 wanted 8EE67C14
+>>>> bytenr mismatch, want=159708168192, have=16968404070778227820
+>>>> ERROR: while mapping refs: -5
+>>>> extent_io.c:582: free_extent_buffer: Assertion `eb->refs < 0` failed.
+>>>> btrfs(+0x51e9e)[0x56283f4bde9e]
+>>>> btrfs(free_extent_buffer+0xc0)[0x56283f4be9b0]
+>>>> btrfs(btrfs_free_fs_root+0x11)[0x56283f4aef11]
+>>>> btrfs(rb_free_nodes+0x21)[0x56283f4d7cc1]
+>>>> btrfs(close_ctree+0x194)[0x56283f4b0214]
+>>>> btrfs(cmd_check+0x486)[0x56283f49ace6]
+>>>> btrfs(main+0x82)[0x56283f47fad2]
+>>>> /lib64/libc.so.6(__libc_start_main+0xf0)[0x7f8cbea98580]
+>>>> btrfs(_start+0x29)[0x56283f47fbd9]
+>>>> $
+>>
+>>
+>> Did you tried it without the '--subvol-extents 5' options?
+>> And what's the output?
+>
+> Yes, I tried it. The output is normal, nothing problem found (shows
+> UUID, then "checking extents" and that's all)!
 
-> For each=20
-> metadata block there is a new version that is eventually linked from
-> a new=20
-> version of the tree root.
->=20
-> This means that the regular checksum mechanisms can't work with nocow
-> data.=C2=A0 A=20
-> filesystem can have checksums just pointing to data blocks but you
-> need to=20
-> cater for the case where a corrupt metadata block points to an old
-> version of=20
-> a data block and matching checksum.=C2=A0 The way that BTRFS works with a=
-n
-> entire=20
-> checksumed tree means that there's no possibility of pointing to an
-> old=20
-> version of a data block.
-Hmm I'm not sure whether I understand that (or better said, I'm
-probably sure I don't :D).
+Then, it means it hit an assertion and no backtrace support is compiled.
+So I consider that's the same with your backtrace.
 
-AFAIU, the metadata is always CoWed, right? So when a nodatacow file is
-written, I'd assume it's mtime was update, which already leads to
-CoWing of metadata... just that now, the checksums should be written as
-well.
+>
+>> And it may be a good idea to run btrfs-find-root -a, trying to find a good
+>> copy of old btrfs root tree.
+>> It may cause miracle to make it RW again.
+>
+> Thanks for advice. "btrfs-find-root -a" is running at the moment. What
+> should I do after its completion? Should I just try RW mounting of the
+> found root or it isn't safe?
 
-If the metadata block is corrupt, then should that be noticed via the
-csums on that?
+You'll see output like the following:
+Well block 29491200(gen: 5 level: 0) seems good, and it matches superblock
+Well block 29376512(gen: 4 level: 0) seems good, but generation/level 
+doesn't match, want gen: 5 level: 0
 
-And you said "The way that BTRFS works with an entire checksumed tree
-means that there's no possibility of pointing to an old version of a
-data block."... how would that work for nodatacow'ed blocks? If there
-is a crash it cannot know whether it was still the old block or the new
-one or any garbage in between?!
+The match one is not what you're looking for.
+Try the one whose generation is a little smaller than match one.
 
+Then use btrfsck to test if it's OK:
+$ btrfsck -r <BYTENR> /dev/sda1
 
-> The NetApp published research into hard drive errors indicates that
-> they are=20
-> usually in small numbers and located in small areas of the disk.=C2=A0 So
-> if BTRFS=20
-> had a nocow file with any storage method other than dup you would
-> have metadata=20
-> and file data far enough apart that they are not likely to be hit by
-> the same=20
-> corruption (and the same thing would apply with most Ext4 Inode
-> tables and=20
-> data blocks).
-Well put aside any such research (whose results aren't guaranteed to be
-always the case)... but that's just one reason from my motivation why
-I've said checksums for no-CoWed files would be great (I used the
-multi-device example though, not DUP).
+Try 2~5 times with bytenr whose generation is near the match one.
+If you're in good luck, you will find one doesn't crash btrfsck.
+
+And if that doesn't produce much error, then you can try btrfsck 
+--repair -r <BYTENR> to fix it and try mount.
+
+>
+>> +1 for the advice if you just want to use back up things and get back to
+>> normal life.
+>
+> I already backed up the most important data (the whole disk space is
+> 1,82 TB). But I want to solve this strange problem.
+
+At least the direct cause is quite straightforward:
+
+ >>>> checksum verify failed on 159708168192 found 3659C180 wanted 8EE67C14
+ >>>> checksum verify failed on 159708168192 found 3659C180 wanted 8EE67C14
+ >>>> bytenr mismatch, want=159708168192, have=16968404070778227820
+
+The tree block at bytenr 159708168192 is damaged.
+Its csum mismatched, and bytenr doesn't match either.
+Maybe the tree is damaged.
+(And apparently, btrfs abort transaction didn't do its job well)
+
+But hard to find out the root cause though.
 
 
-> I think that a file mode where there were checksums on data=20
-> blocks with no checksums on the metadata tree would be useful.=C2=A0 But
-> it would=20
-> require a moderate amount of coding
-Do you mean in general, or having this as a mode for nodatacow'ed
-files?
-Loosing the meta data checksumming, doesn't seem really much more
-appealing than not having data checksumming :-(
-
-
-> and there's lots of other things that the=20
-> developers are working on.
-Sure, I just wanted to bring this to their attending... I already
-imagined that they wouldn't drop their current work to do that, just
-because me whining for it ;-)
-
+If you still want to try btrfs converted from ext*, I'd recommend to use 
+next release of btrfs-progs, and kernel 4.4 or 4.1.
 
 Thanks,
-Chris.
---=-ga5BlSWvmxTxajQvT2lZ
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
-ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
-HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
-Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
-aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
-LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
-hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
-rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
-LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
-hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
-aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
-o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
-cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
-VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
-KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
-L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
-Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
-QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
-e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
-GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
-CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
-az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
-yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
-3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
-aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
-+P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
-yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
-oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
-CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
-DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
-IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
-9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
-AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
-eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
-YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
-fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
-3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
-bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
-dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
-BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
-CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
-YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
-cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
-b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
-IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
-ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
-uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
-HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
-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
-AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
-cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNTAxMDIy
-NVowTwYJKoZIhvcNAQkEMUIEQFw2i37qyvqYbymkSG+bfszG7c1fs9AZ0wERwD3TnJEDtWWLrkv2
-TZe/bH1AzsuexHrfUpIEKiYjTBqaW40PC3kwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
-QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
-cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
-dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCkaIP1nGIxrV0Z7RdNy7x4OJtyI7KO
-bEId+3gP/PSQbSbmARsn1mDTYsWFSFbenLY09LDKldUJV8WxtHMIKCSIY67knhotyqsb00xl1Ly2
-0Zo283cbhwnVW1W8aud5CGqpDLnV8kttQkX/Ht2knFC7hn8nE1T7ok4Vevh39w4qL/m59Va/Ugm3
-EIHpVApYFmjifTFUL+wUx4ds4gKD186lpCov4yhuIHIIyYIkBDuxCiJMKcVkRSYxKw36VVh10Lwt
-57pIvSZtZeMzQQdTqUHMJXhghUqzV32dI12wkxMUYw3tqIOEzQoyKBG3YbbSaHQp+VrIZyOoyYsL
-nhAi3b3sAAAAAAAA
+Qu
 
 
---=-ga5BlSWvmxTxajQvT2lZ--
 

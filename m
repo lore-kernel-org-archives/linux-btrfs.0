@@ -1,46 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:50490 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752156AbbLaSZP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 13:25:15 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix number of transaction units required to create symlink
-Date: Thu, 31 Dec 2015 18:25:08 +0000
-Message-Id: <1451586308-29558-1-git-send-email-fdmanana@kernel.org>
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:5778 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S933351AbbLORIb (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 15 Dec 2015 12:08:31 -0500
+Date: Tue, 15 Dec 2015 12:08:27 -0500
+From: Chris Mason <clm@fb.com>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+CC: Andrey Ryabinin <ryabinin.a.a@gmail.com>, Dave Jones <dsj@fb.com>
+Subject: Btrfs: check for empty bitmap list in setup_cluster_bitmaps
+Message-ID: <20151215170827.GA6322@ret.masoncoding.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Dave Jones found a warning from kasan in setup_cluster_bitmaps()
 
-We weren't accounting for the insertion of an inline extent item for the
-symlink inode nor that we need to update the parent inode item (through
-the call to btrfs_add_nondir()). So fix this by including two more
-transaction units.
+==================================================================
+BUG: KASAN: stack-out-of-bounds in setup_cluster_bitmap+0xc4/0x5a0 at
+addr ffff88039bef6828
+Read of size 8 by task nfsd/1009
+page:ffffea000e6fbd80 count:0 mapcount:0 mapping:          (null)
+index:0x0
+flags: 0x8000000000000000()
+page dumped because: kasan: bad access detected
+CPU: 1 PID: 1009 Comm: nfsd Tainted: G        W
+4.4.0-rc3-backup-debug+ #1
+ffff880065647b50 000000006bb712c2 ffff88039bef6640 ffffffffa680a43e
+0000004559c00000 ffff88039bef66c8 ffffffffa62638d1 ffffffffa61121c0
+ffff8803a5769de8 0000000000000296 ffff8803a5769df0 0000000000046280
+Call Trace:
+[<ffffffffa680a43e>] dump_stack+0x4b/0x6d
+[<ffffffffa62638d1>] kasan_report_error+0x501/0x520
+[<ffffffffa61121c0>] ? debug_show_all_locks+0x1e0/0x1e0
+[<ffffffffa6263948>] kasan_report+0x58/0x60
+[<ffffffffa6814b00>] ? rb_last+0x10/0x40
+[<ffffffffa66f8af4>] ? setup_cluster_bitmap+0xc4/0x5a0
+[<ffffffffa6262ead>] __asan_load8+0x5d/0x70
+[<ffffffffa66f8af4>] setup_cluster_bitmap+0xc4/0x5a0
+[<ffffffffa66f675a>] ? setup_cluster_no_bitmap+0x6a/0x400
+[<ffffffffa66fcd16>] btrfs_find_space_cluster+0x4b6/0x640
+[<ffffffffa66fc860>] ? btrfs_alloc_from_cluster+0x4e0/0x4e0
+[<ffffffffa66fc36e>] ? btrfs_return_cluster_to_free_space+0x9e/0xb0
+[<ffffffffa702dc37>] ? _raw_spin_unlock+0x27/0x40
+[<ffffffffa666a1a1>] find_free_extent+0xba1/0x1520
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- fs/btrfs/inode.c | 4 +++-
- 1 file changed, 3 insertions(+), 1 deletion(-)
+Andrey noticed this was because we were doing list_first_entry on a list
+that might be empty.  Rework the tests a bit so we don't do that.
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 2ea2e0e..5dbc07a 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9660,9 +9660,11 @@ static int btrfs_symlink(struct inode *dir, struct dentry *dentry,
- 	/*
- 	 * 2 items for inode item and ref
- 	 * 2 items for dir items
-+	 * 1 item for updating parent inode item
-+	 * 1 item for the inline extent item
- 	 * 1 item for xattr if selinux is on
- 	 */
--	trans = btrfs_start_transaction(root, 5);
-+	trans = btrfs_start_transaction(root, 7);
- 	if (IS_ERR(trans))
- 		return PTR_ERR(trans);
+Signed-off-by: Chris Mason <clm@fb.com>
+Reprorted-by: Andrey Ryabinin <ryabinin.a.a@gmail.com>
+Reported-by:  Dave Jones <dsj@fb.com>
+
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 0948d34..e6fc7d9 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -2972,7 +2972,7 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
+ 		     u64 cont1_bytes, u64 min_bytes)
+ {
+ 	struct btrfs_free_space_ctl *ctl = block_group->free_space_ctl;
+-	struct btrfs_free_space *entry;
++	struct btrfs_free_space *entry = NULL;
+ 	int ret = -ENOSPC;
+ 	u64 bitmap_offset = offset_to_bitmap(ctl, offset);
  
--- 
-2.1.3
-
+@@ -2983,8 +2983,10 @@ setup_cluster_bitmap(struct btrfs_block_group_cache *block_group,
+ 	 * The bitmap that covers offset won't be in the list unless offset
+ 	 * is just its start offset.
+ 	 */
+-	entry = list_first_entry(bitmaps, struct btrfs_free_space, list);
+-	if (entry->offset != bitmap_offset) {
++	if (!list_empty(bitmaps))
++		entry = list_first_entry(bitmaps, struct btrfs_free_space, list);
++
++	if (!entry || entry->offset != bitmap_offset) {
+ 		entry = tree_search_offset(ctl, bitmap_offset, 1, 0);
+ 		if (entry && list_empty(&entry->list))
+ 			list_add(&entry->list, bitmaps);

@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:34476 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:35268 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932400AbbLOBt6 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 20:49:58 -0500
+	id S1753602AbbLOCIo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 14 Dec 2015 21:08:44 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a8ekW-0003pd-9j
-	for linux-btrfs@vger.kernel.org; Tue, 15 Dec 2015 02:49:56 +0100
+	id 1a8f2e-0008Ku-Gq
+	for linux-btrfs@vger.kernel.org; Tue, 15 Dec 2015 03:08:40 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 02:49:56 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 03:08:40 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 02:49:56 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 03:08:40 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: btrfs: poor performance on deleting many large files
-Date: Tue, 15 Dec 2015 01:49:50 +0000 (UTC)
-Message-ID: <pan$c3e1a$7bad3839$12bcfe1f$4c2ff85e@cox.net>
+Date: Tue, 15 Dec 2015 02:08:34 +0000 (UTC)
+Message-ID: <pan$f0d9c$6c421fa5$20426420$296fb4ac@cox.net>
 References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
 	<pan$eea04$e9596e27$78b44461$c5754723@cox.net>
 	<1448488198.4717.4.camel@gmail.com>
@@ -31,76 +31,46 @@ References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
 	<pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
 	<1449958538.15961.3.camel@scientia.net> <566ED124.30803@gmail.com>
 	<1450121957.6629.41.camel@scientia.net> <566F261F.4040705@gmail.com>
-	<566F34F0.8050407@bouton.name> <1450135505.6629.66.camel@scientia.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer posted on Tue, 15 Dec 2015 00:25:05 +0100 as
+Austin S. Hemmelgarn posted on Mon, 14 Dec 2015 15:27:11 -0500 as
 excerpted:
 
-> On Mon, 2015-12-14 at 22:30 +0100, Lionel Bouton wrote:
-> 
->> I use noatime and nodiratime
+> FWIW, both Duncan and I have our own copy of the sources patched to
+> default to noatime, and I know a number of embedded Linux developers who
+> do likewise, and I've even heard talk in the past of some distributions
+> possibly using such patches themselves (although it always ends up not
+> happening, because of Mutt).
 
-> FYI: noatime implies nodiratime :-)
+And FWIW, while I was reasonably conservative with my original patch and 
+simply defaulted to noatime, turning it off if any of the atime-enabling 
+options were found, I'm beginning to think I might as well simply hard-
+code noatime, removing the conditions.  This is due to initr* behavior 
+that ends up not disabling atime for early, mostly virtual/memory-based 
+filesystems like procfs, sysfs, devfs, tmp-on-tmpfs, etc, but could 
+extend to initial initr* mount of the root filesystem as well, if I 
+decide to make it rw on the kernel commandline or some such.
 
-Was going to post that myself.  Is there some reason you:
+Of course atime on a memory-based-fs isn't normally a huge problem since 
+its all memory-based anyway, and it would enable stuff like atime based 
+tmpwatch since I do a tmpfs based tmp, so I've not worried about it 
+much.  But at the same time, I'm now assuming noatime on my systems, and 
+anything that breaks that assumption could trigger hard to trace down 
+bugs, and hardcoding the noatime assumption would bring a consistency 
+that I don't have ATM.
 
-a) use nodiratime when noatime is already enabled, despite the fact that 
-the latter already includes the former, or
-
-b) didn't sufficiently research the option (at least the current mount 
-manpage documents that noatime includes nodiratime under both the noatime 
-and nodiratime options, and at least some hint of that has been in the 
-manpage for years as I recall reading it when I first read of nodiratime 
-and checked whether my noatime options included it) before standardizing 
-on it, or
-
-c) might have actually been talking in general, and there's some mounts 
-you don't actually choose to make noatime, but still want nodiratime, or
-
-d) chose that isn't otherwise reflected in the above?  If so, please 
-describe, as it could be a learning experience for me, and possibly 
-others as well.
-
->> Finally Linus Torvalds has been quite vocal and consistent on the
->> general subject of the kernel not breaking user-space APIs no matter
->> what so I wouldn't have much hope for default kernel mount options
->> changes...
-
-> He surely is right in general,... but when the point has been reached,
-> where only a minority actually requires the feature... and the minority
-> actually starts to suffer from that... it may change.
-
-Generally speaking, the practical rule is that you don't break userspace, 
-but that a break that isn't noticed and reported by someone within a few 
-release cycles is considered OK, as obviously nobody who actually cares 
-enough about the possibility of old userspace breaking on new kernels 
-enough to test for it was (still) using that functionality anyway.  (This 
-is sometimes known as the "if a tree falls in the forest and there's 
-nobody around to hear it, did it actually fall", rule. =:^)
-
-But if it's noticed and reported before the new behavior itself is locked 
-into place by other userspace relying on it, the change in behavior must 
-be reverted.  (There have actually been a few cases over the years where 
-they went to rather exceptional lengths to make two otherwise 
-incompatible userspace-exposed behaviors both continue to work for the 
-userspace that expected that behavior, without actually coding in such 
-obvious hacks as executable name conditionals or the like, as others have 
-been known to do at times.  Sometimes these fixes do end up bending the 
-rules a bit, particularly the no-policy-in-the-kernel rule, but they do 
-reinforce the now userspace breakage rule.)
-
-The possible workarounds include the handful of kernel compatibility 
-options that when enabled continue otherwise userspace breaking behavior 
-such as removing old kernel API procfs files and the like.
-
-That practical rule does in effect make it possible to do userspace-
-breaking changes if you wait around long enough that there's nobody who 
-will complain still actually using the old behavior.
-
+If/when I change my patch in that regard, I may look into adding other 
+conditional options, perhaps defaulting to autodefrag if it's btrfs, for 
+instance, if my limited sysadmin-not-developer-level patching/coding 
+skills allow it.  I'd have to see...  But I'd certainly start with making 
+autodefrag a default, not hard-coded, if I did patch in autodefrag, 
+because while I don't have large VM images and the like, where autodefrag 
+can be a performance bottleneck, to worry about now, I'd like to keep 
+that option available for me in the future, and would thus make 
+autodefrag the default, not hard-coded.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

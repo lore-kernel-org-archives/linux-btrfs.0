@@ -1,62 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-oi0-f52.google.com ([209.85.218.52]:36420 "EHLO
-	mail-oi0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933146AbbLOJfC (ORCPT
+Received: from mail-ig0-f182.google.com ([209.85.213.182]:38462 "EHLO
+	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932770AbbLONy2 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Dec 2015 04:35:02 -0500
-Received: by mail-oi0-f52.google.com with SMTP id n133so1576342oia.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 01:35:01 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <566F7007.4040503@cn.fujitsu.com>
-References: <566b0cff.pXiyzYE4dYIOt31+%sivan606@gmail.com> <CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
- <566E2934.1090207@cn.fujitsu.com> <CAMG9ccy_Du3WOm_yAak_L8UnuiBCcf=1f4ybGzTUxC5iFJfaiQ@mail.gmail.com>
- <566F7007.4040503@cn.fujitsu.com>
-From: Ivan Sizov <sivan606@gmail.com>
-Date: Tue, 15 Dec 2015 09:34:41 +0000
-Message-ID: <CAMG9ccy_LKZeGRtPqffpXM8YD4NmDwAxyfr5iPz37j0+OjL4wg@mail.gmail.com>
-Subject: Re: Will "btrfs check --repair" fix the mounting problem?
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+	Tue, 15 Dec 2015 08:54:28 -0500
+Received: by mail-ig0-f182.google.com with SMTP id xm8so14081199igb.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 05:54:28 -0800 (PST)
+Subject: Re: attacking btrfs filesystems via UUID collisions?
+To: Chris Murphy <lists@colorremedies.com>
+References: <20151204120529.37E47D5A28@emkei.cz>
+ <20151204130758.GR8775@carfax.org.uk>
+ <1449286104.18841.14.camel@scientia.net>
+ <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
+ <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
+ <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
+ <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
+ <1449872498.31388.74.camel@fo>
+ <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
+ <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
+ <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
+Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <56701B79.8030105@gmail.com>
+Date: Tue, 15 Dec 2015 08:54:01 -0500
+MIME-Version: 1.0
+In-Reply-To: <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-2015-12-15 1:42 GMT+00:00 Qu Wenruo <quwenruo@cn.fujitsu.com>:
-> You'll see output like the following:
-> Well block 29491200(gen: 5 level: 0) seems good, and it matches superblock
-> Well block 29376512(gen: 4 level: 0) seems good, but generation/level
-> doesn't match, want gen: 5 level: 0
+On 2015-12-14 16:26, Chris Murphy wrote:
+> On Mon, Dec 14, 2015 at 6:23 AM, Austin S. Hemmelgarn
+> <ahferroin7@gmail.com> wrote:
+>>
+>> Agreed, if yo9u can't substantiate _why_ it's bad practice, then you aren't
+>> making a valid argument.  The fact that there is software that doesn't
+>> handle it well would say to me based on established practice that that
+>> software is what's broken, not common practice.
 >
-> The match one is not what you're looking for.
-> Try the one whose generation is a little smaller than match one.
+> The automobile is invented and due to the ensuing chaos, common
+> practice of doing whatever the F you wanted came to an end in favor of
+> rules of the road and traffic lights. I'm sure some people went
+> ballistic, but for the most part things were much better without the
+> brokenness or prior common practice.
+Except for one thing:  Automobiles actually provide a measurable 
+significant benefit to society.  What specific benefit does embedding 
+the filesystem UUID in the metadata actually provide?
 >
-> Then use btrfsck to test if it's OK:
-> $ btrfsck -r <BYTENR> /dev/sda1
+> So the fact we're going to have this problem with all file systems
+> that incorporate the volume UUID into the metadata stream, tells me
+> that the very rudimentary common practice of using dd needs to go
+> away, in general practice. I've already said data recovery (including
+> forensics) and sticking drives away on a shelf could be reasonable.
 >
-> Try 2~5 times with bytenr whose generation is near the match one.
-> If you're in good luck, you will find one doesn't crash btrfsck.
+>> The assumption that a UUID is actually unique is an inherently flawed one,
+>> because it depends both on the method of generation guaranteeing it's unique
+>> (and none of the defined methods guarantee that), and a distinct absence of
+>> malicious intent.
 >
-> And if that doesn't produce much error, then you can try btrfsck --repair -r
-> <BYTENR> to fix it and try mount.
+> http://www.ietf.org/rfc/rfc4122.txt
+> "A UUID is 128 bits long, and can guarantee uniqueness across space and time."
+>
+> Also see security considerations in section 6.
+Both aspects ignore the facts that:
+Version 1 is easy to cause a collision with (MAC addresses are by no 
+means unique, and are easy to spoof, and so are timestamps).
+Version 2 is relatively easy to cause a collision with, because UID and 
+GID numbers are a fixed size namespace.
+Version 3 is slightly better, but still not by any means unique because 
+you just have to guess the seed string (or a collision for it).
+Version 4 is probably the hardest to get a collision with, but only if 
+you are using a true RNG, and evne then, 122 bits of entropy is not much 
+protection.
+Version 5 has the same issues as Version 3, but is more secure against 
+hash collisions.
 
-I've found a root that doesn't produce backtrace. But extent/chunk
-allocation errors was found:
+In general, you should only use UUID's when either:
+a. You have absolutely 100% complete control of the storage of them, 
+such that you can guarantee they don't get reused.
+b. They can be guaranteed to be relatively unique for the system using them.
+>
+>
+>> On that note, why exactly is it better to make the filesystem UUID such an
+>> integral part of the filesystem?  The other thing I'm reading out of this
+>> all, is that by writing a total of 64 bytes to a specific location in a
+>> single disk in a multi-device BTRFS filesystem, you can make the whole
+>> filesystem fall apart, which is absolutely absurd.
+>
+>
+> OK maybe I'm  missing something.
+>
+> 1. UUID is 128 bits. So where are you getting the additional 48 bytes from?
+> 2. The volume UUID is in every superblock, which for all practical
+> purposes means at least two instances of that UUID per device.
+>
+> Are you saying the file system falls apart when changing just one of
+> those volume UUIDs in one superblock? And how does it fall apart? I'd
+> say all volume UUID instances (each superblock, on every device)
+> should be checked and if any of them mismatch then fail to mount.
+You're right, it would probably take writing all the SB's (although I'm 
+not 100% certain that we actually check that the SB UUID's match).
+The extra bytes, which I grossly miscalculated, are for the SB checksum, 
+which would have to be updated to match the new SB.
+>
+> There could be some leveraging of the device WWN, or absent that its
+> serial number, propogated into all of the volume's devices (cross
+> referencing each other's devid to WWN or serial). And then that way
+> there's a way to differentiate. In the dd case, there would be
+> mismatching real device WWN/serial number and the one written in
+> metadata on all drives, including the copy. This doesn't say what
+> policy should happen next, just that at least it's known there's a
+> mismatch.
+>
+That gets tricky too, because for example you have stuff like flat files 
+used as filesystem images.
 
-$ sudo btrfsck --tree-root 535461888 /dev/sda1
-parent transid verify failed on 535461888 wanted 21154 found 21150
-parent transid verify failed on 535461888 wanted 21154 found 21150
-Ignoring transid failure
-checking extents
-parent transid verify failed on 459292672 wanted 21148 found 21153
-parent transid verify failed on 459292672 wanted 21148 found 21153
-Ignoring transid failure
-bad block 459292672
-Errors found in extent allocation tree or chunk allocation
-parent transid verify failed on 459292672 wanted 21148 found 21153
+However, if we then use some separate UUID (possibly hashed off of the 
+file location) in place of the device serial/WWN, that could 
+theoretically provide some better protection.  The obvious solution in 
+the case of a mismatch would be to refuse the mount until either the 
+issue is fixed using the tools, or the user specifies some particular 
+mount option to either fix ti automatically, or ignore copies with a 
+mismatching serial.
 
-Should I ignore those errors and run btrfsck --repair? Or
---init-extent-tree is needed?
-
--- 
-Ivan Sizov

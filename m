@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:35966 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S964870AbbLOLM1 (ORCPT
+	with ESMTP id S965019AbbLOLMb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Dec 2015 06:12:27 -0500
+	Tue, 15 Dec 2015 06:12:31 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id C0DCA4092558
-	for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 19:11:43 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 5FB16409255D
+	for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 19:11:44 +0800 (CST)
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/4] btrfs: return all mirror whether need_raid_map set or not
-Date: Tue, 15 Dec 2015 19:09:50 +0800
-Message-ID: <77a0296e8261fa89dba93cc2d9bc39ebf3a19770.1450177455.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 3/4] btrfs: Small cleanup for get index_srcdev loop
+Date: Tue, 15 Dec 2015 19:09:51 +0800
+Message-ID: <b5e99a0e984d0107c79a080d85bce79d31555048.1450177455.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1450177455.git.zhaolei@cn.fujitsu.com>
 References: <cover.1450177455.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,37 +20,74 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-__btrfs_map_block() should return all mirror on WRITE,
-REQ_GET_READ_MIRRORS, and RECOVERY case, whether need_raid_map set
-or not.
-
-need_raid_map only used to control is to set bbio->raid_map.
-
-Current code works right because there is only one caller can
-trigger above bug, which is readahead, and this function happened
-to bypass on less mirror.
+1: Adjust condition in loop to make less TAB
+2: Move btrfs_put_bbio()'s line for combine, and makes logic clean.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/volumes.c | 5 ++---
- 1 file changed, 2 insertions(+), 3 deletions(-)
+ fs/btrfs/volumes.c | 42 ++++++++++++++++++++----------------------
+ 1 file changed, 20 insertions(+), 22 deletions(-)
 
 diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a6df8fd..4ee429b 100644
+index 4ee429b..367e8ec 100644
 --- a/fs/btrfs/volumes.c
 +++ b/fs/btrfs/volumes.c
-@@ -5464,9 +5464,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+@@ -5368,35 +5368,33 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		 * target drive.
+ 		 */
+ 		for (i = 0; i < tmp_num_stripes; i++) {
+-			if (tmp_bbio->stripes[i].dev->devid == srcdev_devid) {
+-				/*
+-				 * In case of DUP, in order to keep it
+-				 * simple, only add the mirror with the
+-				 * lowest physical address
+-				 */
+-				if (found &&
+-				    physical_of_found <=
+-				     tmp_bbio->stripes[i].physical)
+-					continue;
+-				index_srcdev = i;
+-				found = 1;
+-				physical_of_found =
+-					tmp_bbio->stripes[i].physical;
+-			}
++			if (tmp_bbio->stripes[i].dev->devid != srcdev_devid)
++				continue;
++
++			/*
++			 * In case of DUP, in order to keep it simple, only add
++			 * the mirror with the lowest physical address
++			 */
++			if (found &&
++			    physical_of_found <= tmp_bbio->stripes[i].physical)
++				continue;
++
++			index_srcdev = i;
++			found = 1;
++			physical_of_found = tmp_bbio->stripes[i].physical;
  		}
  
- 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
--		if (need_raid_map &&
--		    ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
--		     mirror_num > 1)) {
-+		if ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
-+		    mirror_num > 1) {
- 			/* push stripe_nr back to the start of the full stripe */
- 			stripe_nr = div_u64(raid56_full_stripe_start,
- 					stripe_len * nr_data_stripes(map));
+-		if (found) {
+-			mirror_num = index_srcdev + 1;
+-			patch_the_first_stripe_for_dev_replace = 1;
+-			physical_to_patch_in_first_stripe = physical_of_found;
+-		} else {
++		btrfs_put_bbio(tmp_bbio);
++
++		if (!found) {
+ 			WARN_ON(1);
+ 			ret = -EIO;
+-			btrfs_put_bbio(tmp_bbio);
+ 			goto out;
+ 		}
+ 
+-		btrfs_put_bbio(tmp_bbio);
++		mirror_num = index_srcdev + 1;
++		patch_the_first_stripe_for_dev_replace = 1;
++		physical_to_patch_in_first_stripe = physical_of_found;
+ 	} else if (mirror_num > map->num_stripes) {
+ 		mirror_num = 0;
+ 	}
 -- 
 1.8.5.1
 

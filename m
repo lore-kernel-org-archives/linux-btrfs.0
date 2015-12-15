@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:35966 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S964927AbbLOLM3 (ORCPT
+	with ESMTP id S964870AbbLOLM1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Dec 2015 06:12:29 -0500
+	Tue, 15 Dec 2015 06:12:27 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 341154092556
+	by cn.fujitsu.com (Postfix) with ESMTP id C0DCA4092558
 	for <linux-btrfs@vger.kernel.org>; Tue, 15 Dec 2015 19:11:43 +0800 (CST)
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/4] btrfs: Disable raid56 readahead
-Date: Tue, 15 Dec 2015 19:09:49 +0800
-Message-ID: <092e20dbfac092d4632f1fa04dbcd5f09f0066b7.1450177455.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/4] btrfs: return all mirror whether need_raid_map set or not
+Date: Tue, 15 Dec 2015 19:09:50 +0800
+Message-ID: <77a0296e8261fa89dba93cc2d9bc39ebf3a19770.1450177455.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1450177455.git.zhaolei@cn.fujitsu.com>
 References: <cover.1450177455.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,37 +20,37 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Raid56 readahead can not work in current code, reada_find_extent()
-will show warning of bbio->num_stripes > BTRFS_MAX_MIRRORS, because
-raid56 have parity strip, which makes more bbio->num_stripes.
+__btrfs_map_block() should return all mirror on WRITE,
+REQ_GET_READ_MIRRORS, and RECOVERY case, whether need_raid_map set
+or not.
 
-The reason why we haven't see above error is because another bug
-in __btrfs_map_block(), which make raid56 readahead do nothing.
+need_raid_map only used to control is to set bbio->raid_map.
 
-Before we will fix bug in __btrfs_map_block(), we need to disable
-raid56 temporary, to avoid above warning.
+Current code works right because there is only one caller can
+trigger above bug, which is readahead, and this function happened
+to bypass on less mirror.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/reada.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ fs/btrfs/volumes.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 619f929..7bbd656 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -363,6 +363,11 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 	if (ret || !bbio || length < blocksize)
- 		goto error;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a6df8fd..4ee429b 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -5464,9 +5464,8 @@ static int __btrfs_map_block(struct btrfs_fs_info *fs_info, int rw,
+ 		}
  
-+	if (bbio->map_type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
-+		/* Current code can not support RAID56 yet */
-+		goto error;
-+	}
-+
- 	if (bbio->num_stripes > BTRFS_MAX_MIRRORS) {
- 		btrfs_err(root->fs_info,
- 			   "readahead: more than %d copies not supported",
+ 	} else if (map->type & BTRFS_BLOCK_GROUP_RAID56_MASK) {
+-		if (need_raid_map &&
+-		    ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
+-		     mirror_num > 1)) {
++		if ((rw & (REQ_WRITE | REQ_GET_READ_MIRRORS)) ||
++		    mirror_num > 1) {
+ 			/* push stripe_nr back to the start of the full stripe */
+ 			stripe_nr = div_u64(raid56_full_stripe_start,
+ 					stripe_len * nr_data_stripes(map));
 -- 
 1.8.5.1
 

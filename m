@@ -1,83 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48297 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:48255 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751846AbbLPAkb (ORCPT
+	with ESMTP id S932784AbbLPBV1 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 15 Dec 2015 19:40:31 -0500
-Subject: Re: Will "btrfs check --repair" fix the mounting problem?
-To: Ivan Sizov <sivan606@gmail.com>
-References: <566b0cff.pXiyzYE4dYIOt31+%sivan606@gmail.com>
- <CAJCQCtTLrGin24rFGdvYV-JcegEgGEE7qK3gAYSd8K_SXFeu=g@mail.gmail.com>
- <566E2934.1090207@cn.fujitsu.com>
- <CAMG9ccy_Du3WOm_yAak_L8UnuiBCcf=1f4ybGzTUxC5iFJfaiQ@mail.gmail.com>
- <566F7007.4040503@cn.fujitsu.com>
- <CAMG9ccy_LKZeGRtPqffpXM8YD4NmDwAxyfr5iPz37j0+OjL4wg@mail.gmail.com>
-CC: Chris Murphy <lists@colorremedies.com>,
+	Tue, 15 Dec 2015 20:21:27 -0500
+Subject: Re: Still not production ready
+To: Chris Mason <clm@fb.com>, Martin Steigerwald <martin@lichtvoll.de>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+References: <8336788.myI8ELqtIK@merkaba> <566E2490.8080905@cn.fujitsu.com>
+ <20151215215958.GC6322@ret.masoncoding.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5670B2F5.2010201@cn.fujitsu.com>
-Date: Wed, 16 Dec 2015 08:40:21 +0800
+Message-ID: <5670BC6D.1010906@cn.fujitsu.com>
+Date: Wed, 16 Dec 2015 09:20:45 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAMG9ccy_LKZeGRtPqffpXM8YD4NmDwAxyfr5iPz37j0+OjL4wg@mail.gmail.com>
+In-Reply-To: <20151215215958.GC6322@ret.masoncoding.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Ivan Sizov wrote on 2015/12/15 09:34 +0000:
-> 2015-12-15 1:42 GMT+00:00 Qu Wenruo <quwenruo@cn.fujitsu.com>:
->> You'll see output like the following:
->> Well block 29491200(gen: 5 level: 0) seems good, and it matches superblock
->> Well block 29376512(gen: 4 level: 0) seems good, but generation/level
->> doesn't match, want gen: 5 level: 0
+Chris Mason wrote on 2015/12/15 16:59 -0500:
+> On Mon, Dec 14, 2015 at 10:08:16AM +0800, Qu Wenruo wrote:
 >>
->> The match one is not what you're looking for.
->> Try the one whose generation is a little smaller than match one.
 >>
->> Then use btrfsck to test if it's OK:
->> $ btrfsck -r <BYTENR> /dev/sda1
+>> Martin Steigerwald wrote on 2015/12/13 23:35 +0100:
+>>> Hi!
+>>>
+>>> For me it is still not production ready.
 >>
->> Try 2~5 times with bytenr whose generation is near the match one.
->> If you're in good luck, you will find one doesn't crash btrfsck.
+>> Yes, this is the *FACT* and not everyone has a good reason to deny it.
 >>
->> And if that doesn't produce much error, then you can try btrfsck --repair -r
->> <BYTENR> to fix it and try mount.
+>>> Again I ran into:
+>>>
+>>> btrfs kworker thread uses up 100% of a Sandybridge core for minutes on random
+>>> write into big file
+>>> https://bugzilla.kernel.org/show_bug.cgi?id=90401
+>>
+>> Not sure about guideline for other fs, but it will attract more dev's
+>> attention if it can be posted to maillist.
+>>
+>>>
+>>>
+>>> No matter whether SLES 12 uses it as default for root, no matter whether
+>>> Fujitsu and Facebook use it: I will not let this onto any customer machine
+>>> without lots and lots of underprovisioning and rigorous free space monitoring.
+>>> Actually I will renew my recommendations in my trainings to be careful with
+>>> BTRFS.
+>>>
+>>>  From my experience the monitoring would check for:
+>>>
+>>> merkaba:~> btrfs fi show /home
+>>> Label: 'home'  uuid: […]
+>>>          Total devices 2 FS bytes used 156.31GiB
+>>>          devid    1 size 170.00GiB used 164.13GiB path /dev/mapper/msata-home
+>>>          devid    2 size 170.00GiB used 164.13GiB path /dev/mapper/sata-home
+>>>
+>>> If "used" is same as "size" then make big fat alarm. It is not sufficient for
+>>> it to happen. It can run for quite some time just fine without any issues, but
+>>> I never have seen a kworker thread using 100% of one core for extended period
+>>> of time blocking everything else on the fs without this condition being met.
+>>>
+>>
+>> And specially advice on the device size from myself:
+>> Don't use devices over 100G but less than 500G.
+>> Over 100G will leads btrfs to use big chunks, where data chunks can be at
+>> most 10G and metadata to be 1G.
+>>
+>> I have seen a lot of users with about 100~200G device, and hit unbalanced
+>> chunk allocation (10G data chunk easily takes the last available space and
+>> makes later metadata no where to store)
 >
-> I've found a root that doesn't produce backtrace. But extent/chunk
-> allocation errors was found:
->
-> $ sudo btrfsck --tree-root 535461888 /dev/sda1
-> parent transid verify failed on 535461888 wanted 21154 found 21150
-> parent transid verify failed on 535461888 wanted 21154 found 21150
-> Ignoring transid failure
-> checking extents
-> parent transid verify failed on 459292672 wanted 21148 found 21153
-> parent transid verify failed on 459292672 wanted 21148 found 21153
+> Maybe we should tune things so the size of the chunk is based on the
+> space remaining instead of the total space?
 
-Transid failure is OK.
+Submitted such patch before.
+David pointed out that such behavior will cause a lot of small 
+fragmented chunks at last several GB.
+Which may make balance behavior not as predictable as before.
 
-> Ignoring transid failure
-> bad block 459292672
-> Errors found in extent allocation tree or chunk allocation
-> parent transid verify failed on 459292672 wanted 21148 found 21153
->
-> Should I ignore those errors and run btrfsck --repair? Or
-> --init-extent-tree is needed?
->
-Did it btrfsck has other complain?
-And how is the generation difference between the one you're using and 
-the one in superblock?
 
-If the generation difference is larger than 1, I'd recommend not to run 
-'--repair' nor '--init-extent-tree'
+At least, we can just change the current 10% chunk size limit to 5% to 
+make such problem less easier to trigger.
+It's a simple and easy solution.
 
-If the difference is only 1, and btrfsck doesn't report problems other 
-than transid error, I'd like to try --repair or --init-extent-tree.
+Another cause of the problem is, we understated the chunk size change 
+for fs at the borderline of big chunk.
 
-But there is *NO* guarantee and it may still make case worse.
+For 99G, its chunk size limit is 1G, and it needs 99 data chunks to 
+fully cover the fs.
+But for 100G, it only needs 10 chunks to covert the fs.
+And it need to be 990G to match the number again.
+
+The sudden drop of chunk number is the root cause.
+
+So we'd better reconsider both the big chunk size limit and chunk size 
+limit to find a balanaced solution for it.
 
 Thanks,
 Qu
+>
+>>
+>> And unfortunately, your fs is already in the dangerous zone.
+>> (And you are using RAID1, which means it's the same as one 170G btrfs with
+>> SINGLE data/meta)
+>>
+>>>
+>>> In addition to that last time I tried it aborts scrub any of my BTRFS
+>>> filesstems. Reported in another thread here that got completely ignored so
+>>> far. I think I could go back to 4.2 kernel to make this work.
+>
+> We'll pick this thread up again, the ones that get fixed the fastest are
+> the ones that we can easily reproduce.  The rest need a lot of think
+> time.
+>
+> -chris
+>
+>
 
 

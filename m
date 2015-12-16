@@ -1,414 +1,101 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:42835 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:43691 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751732AbbLPV7H (ORCPT
+	with ESMTP id S966591AbbLPWO5 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 16:59:07 -0500
-Message-ID: <1450303141.6242.50.camel@scientia.net>
-Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
- poor performance on deleting many large files?)
+	Wed, 16 Dec 2015 17:14:57 -0500
+Message-ID: <1450304093.6242.54.camel@scientia.net>
+Subject: Re: btrfs: poor performance on deleting many large files
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Wed, 16 Dec 2015 22:59:01 +0100
-In-Reply-To: <pan$7e682$345fe6d2$de13162d$f5ac4118@cox.net>
+Date: Wed, 16 Dec 2015 23:14:53 +0100
+In-Reply-To: <pan$2ad7b$daf1d36c$45046af8$71124522@cox.net>
 References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-	 <56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
-	 <pan$3c463$5dc6ffa1$704b2ca2$141e65cc@cox.net>
-	 <5667C00B.4010100@scientia.net>
-	 <pan$7e682$345fe6d2$de13162d$f5ac4118@cox.net>
+	 <pan$eea04$e9596e27$78b44461$c5754723@cox.net>
+	 <1448488198.4717.4.camel@gmail.com>
+	 <pan$8ce6a$31af576$4416e55e$7b867388@cox.net>
+	 <1448562347.8809.16.camel@scientia.net>
+	 <pan$54542$5eb77bd3$8682bff8$82310de1@cox.net>
+	 <1448582805.11377.9.camel@scientia.net>
+	 <pan$34543$2ed1f043$2f803125$884b36c0@cox.net>
+	 <1448683025.6837.4.camel@scientia.net>
+	 <pan$46a28$81694e9d$c6d5f048$1c8bcdd8@cox.net>
+	 <1449958538.15961.3.camel@scientia.net>
+	 <pan$2ad7b$daf1d36c$45046af8$71124522@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-xR/eyxGAxOpJfjCg6hed"
+	boundary="=-eigo91jOwmg3Ah1QV8lY"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-xR/eyxGAxOpJfjCg6hed
+--=-eigo91jOwmg3Ah1QV8lY
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, 2015-12-09 at 16:36 +0000, Duncan wrote:
-> But... as I've pointed out in other replies, in many cases including
-> this=20
-> specific one (bittorrent), applications have already had to develop
-> their=20
-> own integrity management features
-Well let's move discussion upon that into the "dear developers, can we
-have notdatacow + checksumming, plz?" where I showed in one of the more
-recent threads that bittorrent seems rather to be the only thing which
-does use that per default... while on the VM image front, nothing seems
-to support it, and on the DB front, some support it, but don't use it
-per default.
-
-
-> In the bittorrent case specifically, torrent chunks are already=20
-> checksummed, and if they don't verify upon download, the chunk is
-> thrown=20
-> away and redownloaded.
-I'm not a bittorrent expert, because I don't use it, but that sounds to
-be more like the edonkey model, where - while there are checksums -
-these are only used until the download completes. Then you have the
-complete file, any checksum info thrown away, and the file again being
-"at risk" (i.e. not checksum protected).
-
-
-> And after the download is complete and the file isn't being
-> constantly=20
-> rewritten, it's perfectly fine to copy it elsewhere, into a dir where
-> nocow doesn't apply.
-Sure, but again, nothing the user may automatically do, and there's
-still the gap between the final verification from the bt software, to
-the time it's copied over.
-Arguably, that may be very short, but I see no reasons to make any
-breaks in the everything-verified chain from the btrfs side.
-
-
-> =C2=A0=C2=A0With the copy, btrfs will create checksums, and if=20
-> you're paranoid you can hashcheck the original nocow copy against the
-> new=20
-> checksummed/cow copy, and after that, any on-media changes will be
-> caught=20
-> by the normal checksum verification mechanisms.
-As before... of course you're right that one can do this, but nothing
-that happens per default.
-And I think that's just one of the nice things btrfs would/should give
-us. That the filesystem assures that data is valid, at least in terms
-of storage device and bus errors (it cannot protect of course against
-memory errors or that like).
-
-
-> > Hmm doesn't seem really good to me if systemd would do that, cause
-> > it
-> > then excludes any such files from being snapshot.
+On Sun, 2015-12-13 at 07:10 +0000, Duncan wrote:
+> > So you basically mean that ro snapshots won't have their atime
+> > updated
+> > even without noatime?
+> > Well I guess that was anyway the recent behaviour of Linux
+> > filesystems,
+> > and only very old UNIX systems updated the atime even when the fs
+> > was
+> > set ro.
 >=20
-> Of course if the directories are already present due to systemd
-> upgrading=20
-> from non-btrfs-aware versions, they'll remain as normal dirs, not=20
-> subvolumes.=C2=A0=C2=A0This is the case here.
-Well, even if not, because one starts from a fresh system... people may
-not want that.
-
-
-> And of course you can switch them around to dirs if you like, and/or=20
-> override the shipped tmpfiles.d config with your own.
-... sure but, people may not even notice that.
-I don't think such a decision is up to systemd.
-Anyway, since we're btrfs here, not systemd, that shouldn't bother us
-;)
-
-
-> > > and small ones such as the sqlite files generated by firefox and
-> > > various email clients are handled quite well by autodefrag, with
-> > > that
-> > > general desktop usage being its primary target.
-> > Which is however not yet the default...
-> Distro integration bug! =3D:^)
-Nah,... really not...
-I'm quite sure that most distros will generally decide against
-diverting from upstream in such choices.
-
-
-
-> > It feels a bit, if there should be some tools provided by btrfs,
-> > which
-> > tell the users which files are likely problematic and should be
-> > nodatacow'ed
-> And there very well might be such a tool... five or ten years down
-> the=20
-> road when btrfs is much more mature and generally stabilized, well
-> beyond=20
-> the "still maturing and stabilizing" status of the moment.
-Hmm let's hope btrfs isn't finished only when the next-gen default fs
-arrives ;^)
-
-
-
-> But it can be the case that as filesystem fragmentation levels rise,
-> free-
-> space itself is fragmented, to the point where files that would
-> otherwise=20
-> not be fragmented as they're created once and never touched again,
-> end up=20
-> fragmented, because there's simply no free-space extents big enough
-> to=20
-> create them in unfragmented, so a bunch of smaller free-space extents
-> must be used where one larger one would have been used had it
-> existed.
-In kinda curios, what free space fragmentation actually means here.
-
-Ist simply like this:
-+----------+-----+---+--------+
-| =C2=A0 =C2=A0 F =C2=A0 =C2=A0| =C2=A0D =C2=A0| F | =C2=A0 =C2=A0D =C2=A0 =
-|
-+----------+-----+---+--------+
-Where D is data (i.e. files/metadata) and F is free space.
-In other words, (F)ree space itself is not further subdivided and only
-fragmented by the (D)ata extents in between.
-
-Or is it more complex like this:
-+-----+----+-----+---+--------+
-| =C2=A0F=C2=A0 | =C2=A0F=C2=A0| =C2=A0D =C2=A0| F | =C2=A0 =C2=A0D =C2=A0 =
-|
-+-----+
-----+-----+---+--------+
-Where the (F)ree space itself is subdivided
-into "extents" (not necessarily of the same size), and btrfs couldn't
-use e.g. the first two F's as one contiguous amount of free space for a
-larger (D)ata extent of that size:
-+----------+-----+---+--------+
-| =C2=A0 =C2=A0
-D =C2=A0 =C2=A0| =C2=A0D =C2=A0| F | =C2=A0 =C2=A0D =C2=A0 |
-+----------+-----+---+--------+
-but would split
-that up into two instead:
-+-----+----+-----+---+--------+
-| =C2=A0D=C2=A0 | =C2=A0D=C2=A0| =C2=A0D
-=C2=A0| F | =C2=A0 =C2=A0D =C2=A0 |
-+-----+----+-----+---+--------+
-
-?
-
-
-> In that regard, yes, it can affect other files, but it affects them
-> by=20
-> fragmentation, so no, it doesn't affect unfragmented files... to the=20
-> extent that there are any unfragmented files left.
-I see :)
-
-
-> > Are there any problems caused by all this with respect to free
-> > space
-> > fragmentation? And what exactly are the consequences of free space
-> > fragmentation? ;)
-> I must have intuited the question as I just answered it, above! =3D:^)
-O:-D
-
-
-> And of course that's assuming the worst case, that autodefrag is
-> /not/=20
-> snapshot-aware.=C2=A0=C2=A0If it is, then the problem effectively vaporiz=
-es=20
-> entirely.
-
-
-> > Hmm and what about mixed-use systems,... which have both, desktop
-> > and
-> > server like IO patterns?
+> I'd test it to be sure before relying on it (keeping in mind that my
+> own=20
+> use-case doesn't include subvolumes/snapshots so it's quite possible
+> I=20
+> could get fine details of this nature wrong), but that would be my
+> very=20
+> (_very_! see next) strong assumption, yes.
 >=20
-> Valid question.=C2=A0=C2=A0And autodefrag, like most btrfs-specific mount
-> options,=20
-> remains filesystem-global at this point, too, so it's not like you
-> can=20
-> mount different subvolumes, some with autodefrag, some without (tho=20
-> that's a planned future implementation detail).
->=20
-> But, at least personally, I tend to prefer separate filesystems, not=20
-> subvols, in any case, primarily because I don't like having my data
-> eggs=20
-> all in the same filesystem basket and then watching its bottom drop
-> out=20
-> when I find it unmountable!
->=20
-> But the filesystem-global nature of autodefrag and similar mount
-> options,=20
-> tends to encourage the separate filesystem layout as well, as in that
-> case you simply don't have to worry, because the server stuff is on
-> its=20
-> own separate btrfs where the autdefrag on the desktop btrfs can't=20
-> interfere with it, as each separate filesystem can have its own mount
-> options. =3D:^)
->=20
-> So that'd be /my/ preferred solution, but I can indeed see it being a
-=20
-> problem for those users (or distros) that prefer one big filesystem
-> with=20
-> subvolumes, which some do, because then it's all in a single storage
-> pool=20
-> and thus easier to manage.
-Well the problem I see here mainly is, with additional filesystems
-(while you're absolutely right with your eggs basket example ;) )...
-one has again the problem of partitioning or using e.g. LVM in order
-not to allocate a more or less fixed number of bytes for each of the
-different fs to be created for different purposes.
-Now placing LVM below btrfs is at least conceptually bad, because btrfs
-would already provide similar/same features by itself.
-
-So that would be the nice part of just using subvols, with different
-e.g. auto-defrag options though: it doesn't matter which of the subvols
-eats up more space eventually - they share it.
-
-
-
-> > btw: I think documentation (at least the manpage) doesn't tell
-> > whether
-> > btrfs defragment -c XX will work on files which aren't fragmented.
->=20
-> It implies it, but I don't believe it's explicit.
->=20
-> The implication is due to the implication that defrag with the
-> compress=20
-> option is effectively compress, in that it rewrites everything it's
-> told=20
-> to compress in that case, of course defragging in the process due to
-> the=20
-> rewrite, but with the primary purpose being the compress, when used
+> Because read-only snapshots are used for btrfs-send among other
+> things,=20
+> with the idea being that the read-only will keep them from changing
 > in=20
-> that manner.
-Hmm,... I guess it would be better if there was a separate option for
-that... or at least some more clear documentation.
+> the middle of the send, and ro snapshot atime updates would seem to
+> throw=20
+> that entirely out the window.=C2=A0=C2=A0So I can't imagine ro snapshots =
+doing
+> atime=20
+> updates under any circumstance because I just can't see how send
+> could=20
+> rely on them then, but I'd still test it before counting on it.
 
-> he obviously didn't
-> think thru the fact that compression MUST be a rewrite, thereby
-> breaking=20
-> snapshot reflinks, even were normal non-compression defrag to be
-> snapshot=20
-> aware, because compression substantially changes the way the file is=20
-> stored), that's _implied_, not explicit.
-So you mean, even if ref-link aware defrag would return, it would still
-break them again when compressing/uncompressing/recompressing?
-I'd have hoped that then, all snapshots respectively other reflinks
-would simply also change to being compressed, or at least that there
-would then be an option that allows to choose... break up the reflinks,
-or change them.
-
-> Yes.=C2=A0=C2=A0Try it on a file that's large enough (a gig or so should =
-do it
-> nicely) to make a difference in the btrfs fi df listing.=C2=A0=C2=A0Compa=
-re
-> before=20
-> and after listings.
-Okay... I'll need to think a bit more about how to actually trigger
-that.
-Cause a) one doesn't get notice, AFAICS, whether autodefrag ran, b) I
-need to actually manage creating a fragmented file first, and c)
-understand what each of the fi df's values actually mean ;)
+For those who haven't followed up the other threads:
+I've tried it out and yes, ro-snapshots (as well as ro mounted btrfs
+filesystem/subvolumes) don't have their atimes changed on e.g. read.
 
 
 
-> As I said to my knowledge it hasn't been tried, but AFAIK, truncate,
-> followed by sync (or fsync), doesn't do sparse.=C2=A0=C2=A0I've seen it u=
-sed
-> for (I=20
-> believe) similar purposes elsewhere, which is why I suggested its use
-> here.
-Hmm at least doing an
-trunacete --size 10G foo
-sync
-doesn't seem to cause any disk IO.
-
-
-> Of course if truncate doesn't work, catting from /dev/urandom should
-> do=20
-> the trick, as that should be neither sparse nor compressible.=C2=A0=C2=A0
-Or perhaps a bit faster, /dev/zero ;-P
-
-=C2=A0
-> > b) How can one find out wheter defragmentation worked well? I guess
-> > with
-> > filefrag in the compress=3Dno case an not at all in any other?
->=20
-> I recently found out that filefrag -v actually lists the extent byte=20
-> addresses, thus making it possible to manually (or potentially via=20
-> script) whether the 128-KiB compression blocks are contiguous or
-> not.=C2=A0=C2=A0
-> Contiguous would mean same extent, even if filefrag doesn't
-> understand=20
-> that yet.
->=20
-> But certainly, filefrag in the uncompressed case is exactly what I
-> had in=20
-> mind.
-I'm a bit unsure how to read filefrag's output... (even in the
-uncompressed case).
-What would it show me if there was fragmentation
-
-
-> Yeah, the LHC is rather a special case.
-Well many fields of science actually go into that ranges now,
-astronomers, microbiologists, genetic sciences, brain research, other
-fields of physics, we even have had contact with some guys from
-humanities that apparently think their "research" would need that large
-amounts of storage (don't ask me,... I didn't understand it ^^)
-
-
-> Tho to be fair, were I managing data for them or that sort of data
-> set=20
-> where shear size makes backups impractical, I'd probably be at least
-> as=20
-> conservative about btrfs usage as you're sounding, not necessarily in
+> AFAIK, the general idea was to eventually have all the (possible,
+> some=20
+> are global-filesystem-scope) subvolume mount options exposed as=20
+> properties, it's just not implemented yet, but I'm not entirely sure
+> if=20
+> that was all /btrfs-specific/ mount options, or included the generic
+> ones=20
+> such as the *atime and no* (noexec/nodev/...) options as well.=C2=A0=C2=
+=A0In
+> view=20
+> of that and the fact that noatime is generic, adding it as a specific
+> request still makes sense.=C2=A0=C2=A0Someone with more specific knowledg=
+e on
 > the=20
-> specifics, but simply because while btrfs is indeed stabilizing, I=20
-> haven't had any argument on this list against my oft stated opinion
-> that=20
-> it's not fully stable and mature yet, and won't be for some time.
-Sure,... I mean right now it's not a shame for btrfs, that one perhaps.
-wouldn't recommend it for that usage.
-But in the future the goal should be, that it can be used,... in our
-case that would be probably still simple, as the vast majority of data
-(i.e. PiBs that are archived) are typically write once read many.
-But the files that are processed in jobs, aren't necessarily. They may
-easily do all these things were right now btrfs may still start to
-choke sooner or later.
+> current plan can remove it if it's already covered.
+Not sure if I'd had already posted that here, but I did write some of
+these ideas up and added it to the wiki:
+https://btrfs.wiki.kernel.org/index.php?title=3DProject_ideas&action=3Dhist=
+orysubmit&diff=3D29757&oldid=3D29743
 
 
 
-> As such, to date I'd be unlikely to consider btrfs at all for data
-> where=20
-> backups aren't feasible, unless it really is simply throw-away data=20
-> (which from your description isn't the case there), and would be
-> leery as=20
-> well about btrfs usage where backups are available, but simply=20
-> impractical to deal with, due to shear size and data transfer time.
-Sure, talking about right now,... but at least in 5-10 years, btrfs has
-hopefully matured enough that people don't have to start making backups
-on the fresh fs ;)
-
-
-> > For quite a while I was thinking about productively using btrfs at
-> > our
-> > local Tier-2 in Munich, but then decided against:
->=20
-> As should be apparent from the above, I basically agree.
->=20
-> I did want to mention that I enjoyed seeing your large-scale
-> description,=20
-> however, as well as your own reasoning for the decisions you have
-> made.=C2=A0=C2=A0
-> (Of course it's confirming my own opinion so I'm likely to enjoy it,
-> but=20
-> still...)
-Well it was also meant as giving some insight to the devs on which
-problems real world scenarios might suffer.
-
-It would be interesting to hear from Chris (Mason), how things are
-going at facebook (IIRC, they were testing btrfs in production),
-especially with regards to maintainability and all these things we were
-talking about (fragmentation ant that like).
-
-But of course, even if it works out perfectly for them, one may not
-immediately generalise... perhaps they don't do snapshots ;-) ... or
-their nodes are more muliple-redundant and throw-away (i.e. if one VM's
-fs breaks or gets slower, it would be automatically re-deployed and
-populated with data).
-These, and of course having the maintainer of the fs hired, may not be
-things every site can afford (and it would also require cloning Chris,
-which he may not be particularly fond of ;) ).
-
-
-> > Speaking of which:
-> > Is there somewhere a good documentation of what exactly all this
-> > numbers
-> > of show, df, usage and so on tell?
->=20
-> It's certainly in quite a few on-list posts over the years
-okay,.. in other words: no ;-)
-scatter over the years list posts don't count as documentation :P
-
-
-Cheers,
+Best wishes,
 Chris.
---=-xR/eyxGAxOpJfjCg6hed
+--=-eigo91jOwmg3Ah1QV8lY
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -495,19 +182,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjIxNTkw
-MlowTwYJKoZIhvcNAQkEMUIEQCVxGooJa393ogieimHe8trLmIgIkqbZNo4u/dW4pY29gph1Xwmq
-vOtItpNQQ0mb6SLpL9z0kapnsBOJGFO2JRowagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjIyMTQ1
+M1owTwYJKoZIhvcNAQkEMUIEQLPpl3lrVGKC9yx+xRByb2GHLVf3Z+06TNias7YqcLRSlruG96kr
+yI4pP99jVFck+WgfNvLZKYoOzqOoTfCj+howagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAKQlaAu9x9I1J1sJS8OZVFO22XfUm9
-vSY/IUNMqDSMf9tYOACeJVf+7bhpl7KRr94i5LFZTdftNKRLWuodOl3juMau9y/zOoJ8FUQ8cZIo
-cEeteqcv3eV4YGF4MDw4q91aAOm10YUC8q7imUOfr3AXtjvVcGJnnYY2kZaUkEM6xeOPPgnA9jh5
-WVnzffGr19lcMinBiHVivLABCR445iW6ZLOcuHS5xijxpOSdmufZWi7FBozi/mdvZEmvEMVoE7y2
-XVJq/biPSnJLgSSOrtZ2ysGA4/0zKZI19f4/5dwRVyM32ZuNXMnLvgN7Kjwd+yE3o22zpFwU2kJ+
-TKSAkNg3AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAi71YsFeJ292B99maJwEjcgWukc9jk
+rRqPAnOud+C/F5yVRLkv9jzitcIS0ul/WUTkbFMbvJZkevvdC9d7T8BmigwkimANYjY1OXAlmsyh
+28bB1fIOCdVp/fqzdXR+Jikxb9RCciYlrxmUSET0uXIl5Tt6Mm1p60McFFUnNDcYXddyWri5KQ0s
+GUmksWYJHsGvbNUBgML40XL+ugddDdycXsrkGw9ZLbiCzSIqMUkUYPT4vvV/2XDfQw/e+Z48BWRm
+e/48sCBJ9oEL5VJN9sQmYUbktaegYbWLHHXNdIEzLW/YtugjAF+8mGk/9b9KzbydsZ8fstJ/6Tep
+9vJVU8XtAAAAAAAA
 
 
---=-xR/eyxGAxOpJfjCg6hed--
+--=-eigo91jOwmg3Ah1QV8lY--
 

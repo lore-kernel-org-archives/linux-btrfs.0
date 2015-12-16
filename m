@@ -1,75 +1,67 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:34769 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932369AbbLPMDn (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:32860 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752827AbbLPMKQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 07:03:43 -0500
-Message-ID: <1450267418.6259.11.camel@scientia.net>
+	Wed, 16 Dec 2015 07:10:16 -0500
+Message-ID: <1450267809.6259.16.camel@scientia.net>
 Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Hugo Mills <hugo@carfax.org.uk>,
         "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
 Cc: Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Wed, 16 Dec 2015 13:03:38 +0100
-In-Reply-To: <20151215141813.GG26782@carfax.org.uk>
-References: <56644785.4090702@gmx.com>
-	 <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
+Date: Wed, 16 Dec 2015 13:10:09 +0100
+In-Reply-To: <20151215144210.GH26782@carfax.org.uk>
+References: <5668A1CB.1020007@anonym.com>
 	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
 	 <1449872498.31388.74.camel@fo>
 	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
 	 <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
 	 <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
 	 <56701B79.8030105@gmail.com> <20151215141813.GG26782@carfax.org.uk>
+	 <56702340.2090908@gmail.com> <20151215144210.GH26782@carfax.org.uk>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-Wo4ozZmW5vvUHiYRFGw9"
+	boundary="=-9CXhyFfB0GIjwNaUsyP7"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-Wo4ozZmW5vvUHiYRFGw9
+--=-9CXhyFfB0GIjwNaUsyP7
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-12-15 at 14:18 +0000, Hugo Mills wrote:
-> =C2=A0 =C2=A0That one's easy to answer. It deals with a major issue that
-> reiserfs had: if you have a filesystem with another filesystem image
-> stored on it, reiserfsck could end up deciding that both the metadata
-> blocks of the main filesystem *and* the metadata blocks of the image
-> were part of the same FS (because they're on the same block device),
-> and so would splice both filesystems into one, generally complaining
-> loudly along the way that there was a lot of corruption present that
-> it was trying to fix.
-Hmm that's a bit strange though, and to me it rather sounds like other
-bugs...
-You can have a ext4 on a file in an ext4, with or without the same
-UUIDs, and it will just work.
-If the filesystem takes contents from a normal file as possible
-metadata, than something else is severely screwed up... or in case of
-the fsck: it probably means it's a bit too liberal in searching places.
+On Tue, 2015-12-15 at 14:42 +0000, Hugo Mills wrote:
+> =C2=A0 =C2=A0I would suggest trying to migrate to a state where detecting=
+ more
+> than one device with the same UUID and devid is cause to prevent the
+> FS from mounting, unless there's also a "mount_duplicates_yes_i_
+> know_this_is_dangerous_and_i_know_what_im_doing" mount flag present,
+> for the multipathing people. That will break existing userspace
+> behaviour for the multipathing case, but the migration can probably
+> be
+> managed. (e.g. NFS has successfully changed default behaviour for one
+> of its mount options in the last few(?) years).
 
-I'd be quite shocked if this is the case in btrfs, cause it would mean
-again, that we have a vulnerability against UUID collisions.
-Imagine some attacker finds out the UUID of a filesystem (which is
-probably rather easy)... next he uploads some file (e.g. it's a
-webserver with allows image uploads, a forum perhaps) that in reality
-contains what's looks like btrfs metadata and uses a matching UUID.
+I don't think that a single mountpoint a la "force-and-do-it" is a
+proper solution here. It would still open surface for attacks and also
+for accidents.
+In the case mutli-pathing is used, the only realistic way seems to be
+manually specifying the devices a la device=3D/dev/sda,/dev/sdb.
 
-It would run into the same issues as what you describe for reiser,..
-the UUID would be no real help to solve that problem.
+Of course btrfs would stil use the UUIDs/deviceIDs of these, but *only*
+of those devices that have been whitelisted with the device=3Doption.
 
-
-Does anyone know whether btrfsck (or other userland) tools do such
-things? I.e. search more or less arbitrary blocks, where it cannot be
-sure it's *not* data, for what it would interpret as meta-data
-subsequently?
+In the case of a general "mount_duplicates_yes_iknow_th..." option you
+could end up with having e.g. three duplicates, two being actually
+mutli-paths, and the third one being a losetup or USB clone of the
+image,... again allowing for the aforementioned attacks to happen, and
+again allowing for severe corruption to occur.
 
 
-CHeers,
-Chris.
---=-Wo4ozZmW5vvUHiYRFGw9
+--=-9CXhyFfB0GIjwNaUsyP7
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -156,19 +148,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyMDMz
-OFowTwYJKoZIhvcNAQkEMUIEQEWnh18owerZBC1VCiSYLRdyWL0nnBbczgfslfPLxwcn7qQ2WHT9
-ueLHOcNs97OQV6H6AMIPm7RZPCO1D85WT88wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyMTAw
+OVowTwYJKoZIhvcNAQkEMUIEQF/l3sGB2SS0+fsP62j1V/BzSA6oA5JnVzJ7wAM4vdqNKgM0WIDX
+rrxg88q8WQLuiEdrCbF0DubdK9ZuLCaZytowagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCM1S0OAS462Jf6jxrsuepD2cakI+1S
-1IL8kAE0AOa2RgGpeTzfNecVZAPu//3Wo5J7xTDbOfnlFT8A2sQA3CnWGVJa5Pnz7pk/6+cBR7du
-chXO9HIo3NeWdN14BF1O7HqpyqHWNiDAMAIUBUBW8gWOJPCy1zFRByHknR/kzZHIry48APX5w0jC
-2SVfCsWiydkzwI5L+TBzDwaVSkVHGRtXpzA7Fmldz7z5L3758CZM6NkXbRVgWyihUnTSO3KKozQU
-2aZnnFDisq6oxIOjg0ZpjMu01X9NHKnhnVRYq1O+Z+74pwgx2fxR3DlFyf+4ADT3gzDwLmMBtz7R
-udRraylyAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC8qYUx9uATu2gCql7zGuovQ5Fh8Dw7
+m2AxIHAziTXtmWBv5OGdu4o1Cfn+4fQ8ME64BPDlXbu6BpDNbnvdSEMTwc4D9jDofnANPVSSbmMf
+QrYqlnpBHCDNvie0DdmX+qc2gZbxzN3m7FTTftP2mKbsHpUmUun8kV2nwiAVG+v3qH8390Q+s5Y+
+K4uHfdSIGl5GOvxPVFbbjDIy7QOCdle7hhMtj4DgTlGBwsTiuqs0R5qFnw7YO0CiAYlj22s/6cRj
+HJI2m8yCCXI/prqYRVPxXPSJZtcHZw2C7BlLlmgQ/+2IN7e8kQ0XOumPIZc4gTMrEPyuofTBBVCB
+iSeEjv/UAAAAAAAA
 
 
---=-Wo4ozZmW5vvUHiYRFGw9--
+--=-9CXhyFfB0GIjwNaUsyP7--
 

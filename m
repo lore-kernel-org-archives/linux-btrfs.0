@@ -1,145 +1,513 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51016 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752794AbbLPTsm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 14:48:42 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a9I3z-0005k4-PL
-	for linux-btrfs@vger.kernel.org; Wed, 16 Dec 2015 20:48:39 +0100
-Received: from chello213047196183.tirol.surfer.at ([213.47.196.183])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 20:48:39 +0100
-Received: from wertstoffe by chello213047196183.tirol.surfer.at with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 20:48:39 +0100
-To: linux-btrfs@vger.kernel.org
-From: =?UTF-8?Q?Jakob_Sch=c3=bcrz?= <wertstoffe@nurfuerspam.de>
-Subject: Kernel-failure - Computer freezes
-Date: Wed, 16 Dec 2015 20:47:01 +0100
-Message-ID: <lmr8kc-v36.ln1@aldebaran.xundeenergie.at>
+Received: from mailgw-01.dd24.net ([193.46.215.41]:42835 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751732AbbLPV7H (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Dec 2015 16:59:07 -0500
+Message-ID: <1450303141.6242.50.camel@scientia.net>
+Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
+ poor performance on deleting many large files?)
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Wed, 16 Dec 2015 22:59:01 +0100
+In-Reply-To: <pan$7e682$345fe6d2$de13162d$f5ac4118@cox.net>
+References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
+	 <56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
+	 <pan$3c463$5dc6ffa1$704b2ca2$141e65cc@cox.net>
+	 <5667C00B.4010100@scientia.net>
+	 <pan$7e682$345fe6d2$de13162d$f5ac4118@cox.net>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-xR/eyxGAxOpJfjCg6hed"
 Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Got this Kernel-failure today while making a btrfs-snapshot.
 
-# uname -r
-4.2.0-1-amd64
+--=-xR/eyxGAxOpJfjCg6hed
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Wed, 2015-12-09 at 16:36 +0000, Duncan wrote:
+> But... as I've pointed out in other replies, in many cases including
+> this=20
+> specific one (bittorrent), applications have already had to develop
+> their=20
+> own integrity management features
+Well let's move discussion upon that into the "dear developers, can we
+have notdatacow + checksumming, plz?" where I showed in one of the more
+recent threads that bittorrent seems rather to be the only thing which
+does use that per default... while on the VM image front, nothing seems
+to support it, and on the DB front, some support it, but don't use it
+per default.
 
 
-Dez 16 20:33:14 aldebaran kernel: btrfs: page allocation failure:
-order:1, mode:0x204020
-Dez 16 20:33:14 aldebaran kernel: CPU: 1 PID: 8016 Comm: btrfs Tainted:
-G     U  W       4.2.0-1-amd64 #1 Debian 4.2.6-3
-Dez 16 20:33:14 aldebaran kernel: Hardware name: Hewlett-Packard HP
-ProBook 450 G2/2248, BIOS M74 Ver. 01.08 12/12/2014
-Dez 16 20:33:14 aldebaran kernel:  0000000000000000 0000000000000001
-ffffffff8154f6c3 0000000000204020
-Dez 16 20:33:14 aldebaran kernel:  ffffffff8115727f ffff88014f5fbb00
-0000000000000000 0000000000000001
-Dez 16 20:33:14 aldebaran kernel:  0000000100000000 0000000000000000
-ffff88014f5fdfa8 0000000000000046
-Dez 16 20:33:14 aldebaran kernel: Call Trace:
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff8154f6c3>] ?
-dump_stack+0x40/0x50
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff8115727f>] ?
-warn_alloc_failed+0xcf/0x130
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff8115a984>] ?
-__alloc_pages_nodemask+0x2b4/0x9e0
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811a21a1>] ?
-kmem_getpages+0x61/0x110
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811a3e53>] ?
-fallback_alloc+0x143/0x1f0
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811a599b>] ?
-kmem_cache_alloc+0x1eb/0x430
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff812c63bc>] ?
-ida_pre_get+0x5c/0xd0
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811be90d>] ?
-get_anon_bdev+0x6d/0xe0
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffffa046cfd1>] ?
-btrfs_init_free_ino_ctl+0x61/0xa0 [btrfs]
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffffa046fcf6>] ?
-btrfs_init_fs_root+0x106/0x180 [btrfs]
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffffa0471063>] ?
-btrfs_read_fs_root+0x33/0x40 [btrfs]
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffffa0471103>] ?
-btrfs_get_fs_root.part.49+0x93/0x180 [btrfs]
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffffa049a331>] ?
-memcmp_extent_buffer+0xc1/0x120 [btrfs]
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffffa04840e5>] ?
-btrfs_lookup_dentry+0x285/0x500 [btrfs]
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffffa048436e>] ?
-btrfs_lookup+0xe/0x30 [btrfs]
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811c5899>] ?
-lookup_real+0x19/0x60
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811ca6a8>] ?
-path_openat+0xa98/0x14c0
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff8117d50e>] ?
-do_set_pte+0x9e/0xd0
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff8115230e>] ?
-filemap_map_pages+0x21e/0x230
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811cc125>] ?
-do_filp_open+0x75/0xd0
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811d8c3f>] ?
-__alloc_fd+0x3f/0x110
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff811bbaca>] ?
-do_sys_open+0x12a/0x200
-Dez 16 20:33:14 aldebaran kernel:  [<ffffffff81554df2>] ?
-system_call_fast_compare_end+0xc/0x6b
-Dez 16 20:33:14 aldebaran kernel: Mem-Info:
-Dez 16 20:33:14 aldebaran kernel: active_anon:226184 inactive_anon:65166
-isolated_anon:0
-                                   active_file:245088
-inactive_file:246297 isolated_file:0
-                                   unevictable:192 dirty:1706
-writeback:50 unstable:0
-                                   slab_reclaimable:32362
-slab_unreclaimable:16012
-                                   mapped:96648 shmem:53953
-pagetables:9075 bounce:0
-                                   free:7046 free_pcp:1265 free_cma:0
-Dez 16 20:33:14 aldebaran kernel: Node 0 DMA free:13364kB min:32kB
-low:40kB high:48kB active_anon:252kB inactive_anon:284kB
-active_file:560kB inactive_file:660kB unevictable:0kB isolated(anon):0kB
-isolated(file)
-Dez 16 20:33:14 aldebaran kernel: lowmem_reserve[]: 0 2125 3337 3337
-Dez 16 20:33:14 aldebaran kernel: Node 0 DMA32 free:11232kB min:4624kB
-low:5780kB high:6936kB active_anon:612872kB inactive_anon:162128kB
-active_file:616016kB inactive_file:618100kB unevictable:516kB isolated(an
-Dez 16 20:33:14 aldebaran kernel: lowmem_reserve[]: 0 0 1212 1212
-Dez 16 20:33:14 aldebaran kernel: Node 0 Normal free:3464kB min:2636kB
-low:3292kB high:3952kB active_anon:291612kB inactive_anon:98252kB
-active_file:363776kB inactive_file:366212kB unevictable:252kB isolated(ano
-Dez 16 20:33:14 aldebaran kernel: lowmem_reserve[]: 0 0 0 0
-Dez 16 20:33:14 aldebaran kernel: Node 0 DMA: 31*4kB (UE) 17*8kB (UM)
-8*16kB (UE) 5*32kB (UEM) 2*64kB (E) 1*128kB (E) 1*256kB (M) 2*512kB (EM)
-1*1024kB (E) 1*2048kB (E) 2*4096kB (UM) = 13348kB
-Dez 16 20:33:14 aldebaran kernel: Node 0 DMA32: 2720*4kB (UEM) 30*8kB
-(UEM) 7*16kB (UM) 0*32kB 0*64kB 0*128kB 0*256kB 0*512kB 0*1024kB
-0*2048kB 0*4096kB = 11232kB
-Dez 16 20:33:14 aldebaran kernel: Node 0 Normal: 837*4kB (UEM) 22*8kB
-(UM) 0*16kB 2*32kB (M) 0*64kB 0*128kB 0*256kB 0*512kB 0*1024kB 0*2048kB
-0*4096kB = 3588kB
-Dez 16 20:33:14 aldebaran kernel: Node 0 hugepages_total=0
-hugepages_free=0 hugepages_surp=0 hugepages_size=2048kB
-Dez 16 20:33:14 aldebaran kernel: 545434 total pagecache pages
-Dez 16 20:33:14 aldebaran kernel: 4 pages in swap cache
-Dez 16 20:33:14 aldebaran kernel: Swap cache stats: add 10, delete 6,
-find 0/0
-Dez 16 20:33:14 aldebaran kernel: Free swap  = 7812052kB
-Dez 16 20:33:14 aldebaran kernel: Total swap = 7812092kB
-Dez 16 20:33:14 aldebaran kernel: 892955 pages RAM
-Dez 16 20:33:14 aldebaran kernel: 0 pages HighMem/MovableOnly
-Dez 16 20:33:14 aldebaran kernel: 33747 pages reserved
-Dez 16 20:33:14 aldebaran kernel: 0 pages hwpoisoned
-Dez 16 20:33:14 aldebaran kernel: BUG: unable to handle kernel NULL
-pointer dereference at 0000000000000022
+> In the bittorrent case specifically, torrent chunks are already=20
+> checksummed, and if they don't verify upon download, the chunk is
+> thrown=20
+> away and redownloaded.
+I'm not a bittorrent expert, because I don't use it, but that sounds to
+be more like the edonkey model, where - while there are checksums -
+these are only used until the download completes. Then you have the
+complete file, any checksum info thrown away, and the file again being
+"at risk" (i.e. not checksum protected).
 
--- 
-http://xundeenergie.at
-http://verkehrsloesungen.wordpress.com/
-http://cogitationum.wordpress.com/
+
+> And after the download is complete and the file isn't being
+> constantly=20
+> rewritten, it's perfectly fine to copy it elsewhere, into a dir where
+> nocow doesn't apply.
+Sure, but again, nothing the user may automatically do, and there's
+still the gap between the final verification from the bt software, to
+the time it's copied over.
+Arguably, that may be very short, but I see no reasons to make any
+breaks in the everything-verified chain from the btrfs side.
+
+
+> =C2=A0=C2=A0With the copy, btrfs will create checksums, and if=20
+> you're paranoid you can hashcheck the original nocow copy against the
+> new=20
+> checksummed/cow copy, and after that, any on-media changes will be
+> caught=20
+> by the normal checksum verification mechanisms.
+As before... of course you're right that one can do this, but nothing
+that happens per default.
+And I think that's just one of the nice things btrfs would/should give
+us. That the filesystem assures that data is valid, at least in terms
+of storage device and bus errors (it cannot protect of course against
+memory errors or that like).
+
+
+> > Hmm doesn't seem really good to me if systemd would do that, cause
+> > it
+> > then excludes any such files from being snapshot.
+>=20
+> Of course if the directories are already present due to systemd
+> upgrading=20
+> from non-btrfs-aware versions, they'll remain as normal dirs, not=20
+> subvolumes.=C2=A0=C2=A0This is the case here.
+Well, even if not, because one starts from a fresh system... people may
+not want that.
+
+
+> And of course you can switch them around to dirs if you like, and/or=20
+> override the shipped tmpfiles.d config with your own.
+... sure but, people may not even notice that.
+I don't think such a decision is up to systemd.
+Anyway, since we're btrfs here, not systemd, that shouldn't bother us
+;)
+
+
+> > > and small ones such as the sqlite files generated by firefox and
+> > > various email clients are handled quite well by autodefrag, with
+> > > that
+> > > general desktop usage being its primary target.
+> > Which is however not yet the default...
+> Distro integration bug! =3D:^)
+Nah,... really not...
+I'm quite sure that most distros will generally decide against
+diverting from upstream in such choices.
+
+
+
+> > It feels a bit, if there should be some tools provided by btrfs,
+> > which
+> > tell the users which files are likely problematic and should be
+> > nodatacow'ed
+> And there very well might be such a tool... five or ten years down
+> the=20
+> road when btrfs is much more mature and generally stabilized, well
+> beyond=20
+> the "still maturing and stabilizing" status of the moment.
+Hmm let's hope btrfs isn't finished only when the next-gen default fs
+arrives ;^)
+
+
+
+> But it can be the case that as filesystem fragmentation levels rise,
+> free-
+> space itself is fragmented, to the point where files that would
+> otherwise=20
+> not be fragmented as they're created once and never touched again,
+> end up=20
+> fragmented, because there's simply no free-space extents big enough
+> to=20
+> create them in unfragmented, so a bunch of smaller free-space extents
+> must be used where one larger one would have been used had it
+> existed.
+In kinda curios, what free space fragmentation actually means here.
+
+Ist simply like this:
++----------+-----+---+--------+
+| =C2=A0 =C2=A0 F =C2=A0 =C2=A0| =C2=A0D =C2=A0| F | =C2=A0 =C2=A0D =C2=A0 =
+|
++----------+-----+---+--------+
+Where D is data (i.e. files/metadata) and F is free space.
+In other words, (F)ree space itself is not further subdivided and only
+fragmented by the (D)ata extents in between.
+
+Or is it more complex like this:
++-----+----+-----+---+--------+
+| =C2=A0F=C2=A0 | =C2=A0F=C2=A0| =C2=A0D =C2=A0| F | =C2=A0 =C2=A0D =C2=A0 =
+|
++-----+
+----+-----+---+--------+
+Where the (F)ree space itself is subdivided
+into "extents" (not necessarily of the same size), and btrfs couldn't
+use e.g. the first two F's as one contiguous amount of free space for a
+larger (D)ata extent of that size:
++----------+-----+---+--------+
+| =C2=A0 =C2=A0
+D =C2=A0 =C2=A0| =C2=A0D =C2=A0| F | =C2=A0 =C2=A0D =C2=A0 |
++----------+-----+---+--------+
+but would split
+that up into two instead:
++-----+----+-----+---+--------+
+| =C2=A0D=C2=A0 | =C2=A0D=C2=A0| =C2=A0D
+=C2=A0| F | =C2=A0 =C2=A0D =C2=A0 |
++-----+----+-----+---+--------+
+
+?
+
+
+> In that regard, yes, it can affect other files, but it affects them
+> by=20
+> fragmentation, so no, it doesn't affect unfragmented files... to the=20
+> extent that there are any unfragmented files left.
+I see :)
+
+
+> > Are there any problems caused by all this with respect to free
+> > space
+> > fragmentation? And what exactly are the consequences of free space
+> > fragmentation? ;)
+> I must have intuited the question as I just answered it, above! =3D:^)
+O:-D
+
+
+> And of course that's assuming the worst case, that autodefrag is
+> /not/=20
+> snapshot-aware.=C2=A0=C2=A0If it is, then the problem effectively vaporiz=
+es=20
+> entirely.
+
+
+> > Hmm and what about mixed-use systems,... which have both, desktop
+> > and
+> > server like IO patterns?
+>=20
+> Valid question.=C2=A0=C2=A0And autodefrag, like most btrfs-specific mount
+> options,=20
+> remains filesystem-global at this point, too, so it's not like you
+> can=20
+> mount different subvolumes, some with autodefrag, some without (tho=20
+> that's a planned future implementation detail).
+>=20
+> But, at least personally, I tend to prefer separate filesystems, not=20
+> subvols, in any case, primarily because I don't like having my data
+> eggs=20
+> all in the same filesystem basket and then watching its bottom drop
+> out=20
+> when I find it unmountable!
+>=20
+> But the filesystem-global nature of autodefrag and similar mount
+> options,=20
+> tends to encourage the separate filesystem layout as well, as in that
+> case you simply don't have to worry, because the server stuff is on
+> its=20
+> own separate btrfs where the autdefrag on the desktop btrfs can't=20
+> interfere with it, as each separate filesystem can have its own mount
+> options. =3D:^)
+>=20
+> So that'd be /my/ preferred solution, but I can indeed see it being a
+=20
+> problem for those users (or distros) that prefer one big filesystem
+> with=20
+> subvolumes, which some do, because then it's all in a single storage
+> pool=20
+> and thus easier to manage.
+Well the problem I see here mainly is, with additional filesystems
+(while you're absolutely right with your eggs basket example ;) )...
+one has again the problem of partitioning or using e.g. LVM in order
+not to allocate a more or less fixed number of bytes for each of the
+different fs to be created for different purposes.
+Now placing LVM below btrfs is at least conceptually bad, because btrfs
+would already provide similar/same features by itself.
+
+So that would be the nice part of just using subvols, with different
+e.g. auto-defrag options though: it doesn't matter which of the subvols
+eats up more space eventually - they share it.
+
+
+
+> > btw: I think documentation (at least the manpage) doesn't tell
+> > whether
+> > btrfs defragment -c XX will work on files which aren't fragmented.
+>=20
+> It implies it, but I don't believe it's explicit.
+>=20
+> The implication is due to the implication that defrag with the
+> compress=20
+> option is effectively compress, in that it rewrites everything it's
+> told=20
+> to compress in that case, of course defragging in the process due to
+> the=20
+> rewrite, but with the primary purpose being the compress, when used
+> in=20
+> that manner.
+Hmm,... I guess it would be better if there was a separate option for
+that... or at least some more clear documentation.
+
+> he obviously didn't
+> think thru the fact that compression MUST be a rewrite, thereby
+> breaking=20
+> snapshot reflinks, even were normal non-compression defrag to be
+> snapshot=20
+> aware, because compression substantially changes the way the file is=20
+> stored), that's _implied_, not explicit.
+So you mean, even if ref-link aware defrag would return, it would still
+break them again when compressing/uncompressing/recompressing?
+I'd have hoped that then, all snapshots respectively other reflinks
+would simply also change to being compressed, or at least that there
+would then be an option that allows to choose... break up the reflinks,
+or change them.
+
+> Yes.=C2=A0=C2=A0Try it on a file that's large enough (a gig or so should =
+do it
+> nicely) to make a difference in the btrfs fi df listing.=C2=A0=C2=A0Compa=
+re
+> before=20
+> and after listings.
+Okay... I'll need to think a bit more about how to actually trigger
+that.
+Cause a) one doesn't get notice, AFAICS, whether autodefrag ran, b) I
+need to actually manage creating a fragmented file first, and c)
+understand what each of the fi df's values actually mean ;)
+
+
+
+> As I said to my knowledge it hasn't been tried, but AFAIK, truncate,
+> followed by sync (or fsync), doesn't do sparse.=C2=A0=C2=A0I've seen it u=
+sed
+> for (I=20
+> believe) similar purposes elsewhere, which is why I suggested its use
+> here.
+Hmm at least doing an
+trunacete --size 10G foo
+sync
+doesn't seem to cause any disk IO.
+
+
+> Of course if truncate doesn't work, catting from /dev/urandom should
+> do=20
+> the trick, as that should be neither sparse nor compressible.=C2=A0=C2=A0
+Or perhaps a bit faster, /dev/zero ;-P
+
+=C2=A0
+> > b) How can one find out wheter defragmentation worked well? I guess
+> > with
+> > filefrag in the compress=3Dno case an not at all in any other?
+>=20
+> I recently found out that filefrag -v actually lists the extent byte=20
+> addresses, thus making it possible to manually (or potentially via=20
+> script) whether the 128-KiB compression blocks are contiguous or
+> not.=C2=A0=C2=A0
+> Contiguous would mean same extent, even if filefrag doesn't
+> understand=20
+> that yet.
+>=20
+> But certainly, filefrag in the uncompressed case is exactly what I
+> had in=20
+> mind.
+I'm a bit unsure how to read filefrag's output... (even in the
+uncompressed case).
+What would it show me if there was fragmentation
+
+
+> Yeah, the LHC is rather a special case.
+Well many fields of science actually go into that ranges now,
+astronomers, microbiologists, genetic sciences, brain research, other
+fields of physics, we even have had contact with some guys from
+humanities that apparently think their "research" would need that large
+amounts of storage (don't ask me,... I didn't understand it ^^)
+
+
+> Tho to be fair, were I managing data for them or that sort of data
+> set=20
+> where shear size makes backups impractical, I'd probably be at least
+> as=20
+> conservative about btrfs usage as you're sounding, not necessarily in
+> the=20
+> specifics, but simply because while btrfs is indeed stabilizing, I=20
+> haven't had any argument on this list against my oft stated opinion
+> that=20
+> it's not fully stable and mature yet, and won't be for some time.
+Sure,... I mean right now it's not a shame for btrfs, that one perhaps.
+wouldn't recommend it for that usage.
+But in the future the goal should be, that it can be used,... in our
+case that would be probably still simple, as the vast majority of data
+(i.e. PiBs that are archived) are typically write once read many.
+But the files that are processed in jobs, aren't necessarily. They may
+easily do all these things were right now btrfs may still start to
+choke sooner or later.
+
+
+
+> As such, to date I'd be unlikely to consider btrfs at all for data
+> where=20
+> backups aren't feasible, unless it really is simply throw-away data=20
+> (which from your description isn't the case there), and would be
+> leery as=20
+> well about btrfs usage where backups are available, but simply=20
+> impractical to deal with, due to shear size and data transfer time.
+Sure, talking about right now,... but at least in 5-10 years, btrfs has
+hopefully matured enough that people don't have to start making backups
+on the fresh fs ;)
+
+
+> > For quite a while I was thinking about productively using btrfs at
+> > our
+> > local Tier-2 in Munich, but then decided against:
+>=20
+> As should be apparent from the above, I basically agree.
+>=20
+> I did want to mention that I enjoyed seeing your large-scale
+> description,=20
+> however, as well as your own reasoning for the decisions you have
+> made.=C2=A0=C2=A0
+> (Of course it's confirming my own opinion so I'm likely to enjoy it,
+> but=20
+> still...)
+Well it was also meant as giving some insight to the devs on which
+problems real world scenarios might suffer.
+
+It would be interesting to hear from Chris (Mason), how things are
+going at facebook (IIRC, they were testing btrfs in production),
+especially with regards to maintainability and all these things we were
+talking about (fragmentation ant that like).
+
+But of course, even if it works out perfectly for them, one may not
+immediately generalise... perhaps they don't do snapshots ;-) ... or
+their nodes are more muliple-redundant and throw-away (i.e. if one VM's
+fs breaks or gets slower, it would be automatically re-deployed and
+populated with data).
+These, and of course having the maintainer of the fs hired, may not be
+things every site can afford (and it would also require cloning Chris,
+which he may not be particularly fond of ;) ).
+
+
+> > Speaking of which:
+> > Is there somewhere a good documentation of what exactly all this
+> > numbers
+> > of show, df, usage and so on tell?
+>=20
+> It's certainly in quite a few on-list posts over the years
+okay,.. in other words: no ;-)
+scatter over the years list posts don't count as documentation :P
+
+
+Cheers,
+Chris.
+--=-xR/eyxGAxOpJfjCg6hed
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjIxNTkw
+MlowTwYJKoZIhvcNAQkEMUIEQCVxGooJa393ogieimHe8trLmIgIkqbZNo4u/dW4pY29gph1Xwmq
+vOtItpNQQ0mb6SLpL9z0kapnsBOJGFO2JRowagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAKQlaAu9x9I1J1sJS8OZVFO22XfUm9
+vSY/IUNMqDSMf9tYOACeJVf+7bhpl7KRr94i5LFZTdftNKRLWuodOl3juMau9y/zOoJ8FUQ8cZIo
+cEeteqcv3eV4YGF4MDw4q91aAOm10YUC8q7imUOfr3AXtjvVcGJnnYY2kZaUkEM6xeOPPgnA9jh5
+WVnzffGr19lcMinBiHVivLABCR445iW6ZLOcuHS5xijxpOSdmufZWi7FBozi/mdvZEmvEMVoE7y2
+XVJq/biPSnJLgSSOrtZ2ysGA4/0zKZI19f4/5dwRVyM32ZuNXMnLvgN7Kjwd+yE3o22zpFwU2kJ+
+TKSAkNg3AAAAAAAA
+
+
+--=-xR/eyxGAxOpJfjCg6hed--
 

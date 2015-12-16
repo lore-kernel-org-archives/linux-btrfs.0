@@ -1,97 +1,155 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:39445 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:43030 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S933879AbbLPJzR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 04:55:17 -0500
+	id S1754612AbbLPLCF (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Dec 2015 06:02:05 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a98nj-0007Io-DD
-	for linux-btrfs@vger.kernel.org; Wed, 16 Dec 2015 10:55:15 +0100
+	id 1a99qM-0007Da-8F
+	for linux-btrfs@vger.kernel.org; Wed, 16 Dec 2015 12:02:02 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 10:55:15 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 12:02:02 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 10:55:15 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 12:02:02 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: dear developers, can we have notdatacow + checksumming, plz?
-Date: Wed, 16 Dec 2015 09:55:08 +0000 (UTC)
-Message-ID: <pan$5e79$48bd5e4f$cab49683$cb54fe41@cox.net>
-References: <1450069158.2388.72.camel@scientia.net>
-	<566ECF41.10709@gmail.com> <1450149311.701.126.camel@scientia.net>
-	<56703928.7070003@gmail.com>
+Subject: Re: need to recover large file
+Date: Wed, 16 Dec 2015 11:01:56 +0000 (UTC)
+Message-ID: <pan$8fd1f$d0a2d4bd$a145e3d0$e1171740@cox.net>
+References: <E3AE2CD5-D3F1-48CF-9C5E-092DDF41AF3A@neb.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Austin S. Hemmelgarn posted on Tue, 15 Dec 2015 11:00:40 -0500 as
-excerpted:
+Langhorst, Brad posted on Wed, 16 Dec 2015 03:13:48 +0000 as excerpted:
 
-> AFAIUI, checksums are stored per-instance for every block.  This is
-> important in a multi-device filesystem in case you lose a device, so
-> that you still have a checksum for the block.  There should be no
-> difference between extent layout and compression between devices
-> however.
+> Hi:
+> 
+> I just screwed upâŠ spent the last 3 weeks generting a 400G file
+> (genome assembly) .
+> Went to back it up and swapped the arguments to tar (tar Jcf my_precious
+> my_precious.tar.xz)
+> what was once 400G is now 108 bytes of xz header - argh.
+> 
+> This is on a 6-volume btrfs filesystem.
+> 
+> I immediately unmounted the fs (had to cd /  first).
+> 
+> After a bit of searching I found Chris Masonâs post about using
+> btrfs-debug-tree -R
 
-I don't believe that's quite correct.
+[Snip most of the result as I'm not familiar with this utility.  But it 
+ends with...]
 
-What is correct, to the best of my knowledge, is that checksums are 
-metadata, and thus have whatever duplication/parity level metadata is 
-assigned.
+> Btrfs v3.12
 
-For single devices, that is of course by default dup, 2X the metadata and 
-thus 2X the checksums, both on the single data (as effectively the only 
-choice on a single device, at least thru 4.3, tho there's a patch adding 
-dup data as an option that I think should be in 4.4) when covering data, 
-dup metadata when covering it.
+[...]
+ 
+> I also read that one can use btrfs-find-root to get a list of files to
+> recover and just ran btrfs-find-root on one of the underlying disks but
+> I get an error "Super think's the tree root is at 25606900367360,
+> chunk root 25606758596608
+> Went past the fs size, exiting
 
-For multiple devices, it's default raid1 metadata, default single data, 
-so the picture doesn't differ much by default from the single-device 
-default picture.  It's also possible to do single metadata, raidN data, 
-which really doesn't make sense except for raid0 data, and thus I believe 
-there's a warning about that sort of layout in newer mkfs.btrfs, or when 
-lowering the metadata redundancy using balance filters.
+WTF?  I thought that bug was patched a long time ago.  How old a btrfs-
+progs are you using, anyway?
 
-But of course it's possible to do raid1 data and metadata, which would be 
-two copies of each, regardless of the number of devices (except that it's 
-2+, of course).  But the copies aren't 1:1 assigned.  That is, if they're 
-equal generation, btrfs can read either checksum and apply it to either 
-data/metadata block.  (Of course if they're not equal generation, btrfs 
-will choose the higher one, thus covering the case of writing at the time 
-of a crash, since either they will both be the same generation if the 
-root block wasn't updated to the new one on either one yet, or one will 
-be a higher/newer generation than the other, if it had already finished 
-writing one but not the other at the time of the crash.)
+*OH!* *3.12*
 
-This is why it's an extremely good idea if you have a pair of devices in 
-raid1, and you mount one of them degraded/writable with the other 
-unavailable for some reason, that you don't also mount the other one 
-writable and then try to recombined them.  Chances are the generations 
-wouldn't match and it'd pick the one with the higher generation, but if 
-they did for some reason match, and both checksums were valid on their 
-data, but the data differed... either one could be chosen, and a scrub 
-might choose either one to fix the other, as well, which could in theory 
-result in a file with intermixed blocks from the two different versions!
+Why are you still using 3.12?  That's nigh back in the dark ages as far 
+as btrfs is concerned.  AFAIK, btrfs was either still labeled 
+experimental back then, or 3.12 was the first version where experimental 
+was stripped, so it's a very long time ago indeed, particularly for a 
+filesystem that while no longer experimental, is still under heavy 
+development, with bugs being fixed in every release, with the patches not 
+always reaching old stable tho since 3.12 for the kernel anyway they do 
+try, so if you're running old releases, you're code that's known to be 
+buggy and known to have fixes for those bugs in newer releases.
 
-Just ensure that if one is mounted writable, it's the only one mounted 
-writable if there's a chance of recombining, and you'll be fine, as it'll 
-be the only one with advancing generations.  And if by some accident both 
-are mounted writable separately, the best bet is to be sure and wipe the 
-one, then add it as a new device, if you're going to reintroduce it to 
-the same filesystem.
+The general list recommendation for the kernel, unless you have a known 
+reason (like an already reported but still unfixed bug in newer), is run 
+the latest or next to latest release series of either current, which 
+would ATM be 4.3 or 4.2, as 4.4 isn't out yet, tho it's getting close, or 
+or LTS, which would be 4.1 or 3.18, tho 4.4 will be also and it's getting 
+close so you should be already preparing to upgrade to at least 4.1 if 
+you're on the LTS series.
 
-Of course this gets a bit more complicated with 3+ device raid1, since 
-currently, there's still only two copies of each block and two copies of 
-the checksum, meaning there's at least one device without a copy of each 
-block, and if the filesystem is mounted degraded writable repeatedly with 
-a random device missing...
+The coverage of the penultimate series gives you some time to upgrade to 
+the latest, since the penultimate series is covered too.
 
-Similarly, the permutations can be calculated for the other raid types, 
-and for mixed raid types like raid6 data (specified) and raid1 metadata 
-(unspecified so the default used), but I won't attempt that here.
+For runtime, the kernel code is generally used (userspace mostly just 
+makes calls to the kernel and lets it do the work), so kernel code is 
+most important.  However, once you're trying to recover things, 
+basically, when you're working with the unmounted filesystem, userspace 
+code is used, so having something reasonably current there becomes 
+important.
+
+As a rule of thumb, then, running a btrfs-progs userspace of at least the 
+same release series as the kernel you're running is recommended (tho 
+newer is fine), since the kernel and userspace were developed at about 
+the same time and with the same problems in mind, and if you're keeping 
+up with the kernel series recommendation, that means you're userspace 
+isn't getting /too/ old.  But even then, once you're trying to do a btrfs 
+recovery with those tools, a recommendation to try latest current can be 
+considered normal, since it'll be able to detect and usually fix the 
+latest problems.
+
+So a 3.18 series kernel and at least a 3.18 series userspace, would be 
+recommended, and indeed, for a filesystem like btrfs that is still 
+stabilizing and not yet fully stable and mature, is quite reasonable 
+indeed.  While some people have reason to use particularly old and 
+demonstrated stable versions, and enterprise distros generally cater to 
+this need with support for upto a decade, using a still new and maturing 
+btrfs is incompatible with a need for old and demonstrated stable, so in 
+that case, from the viewpoint of this list at least, if you're looking 
+for that old and stable, you really should be using a different 
+filesystem, as btrfs simply isn't that old and stable, yet.
+
+Meanwhile, while that's the view of upstream btrfs and thus this upstream 
+list, some distros never-the-less choose to support old btrfs, backporting 
+patches, etc, as they consider necessary.  However, that's their support 
+then, and their business.  If you're trusting them for that support, 
+really, you should be contacting them for it, as this list really isn't 
+in the best position to supply that sort of support.  Yes, they may be 
+using an old in number kernel and perhaps userspace, with newer patches 
+backported to it, but it's the distro that makes those choices and knows 
+what patches it's backporting, and thus is in the best position to 
+support it.  Not that we on the list won't try, but we're simply not in a 
+good position to provide that support that far back as we've long since 
+moved on, neither do we track what distros have backported and what they 
+haven't, etc.
+
+
+So, basically, you have four choices:
+
+1) Follow list recommendations and upgrade to something that isn't out of 
+the dark ages in terms of btrfs history.
+
+2) Follow the presumed recommendations of your distro, and get support 
+there, since they're best positioned to support you with those old 
+versions.
+
+3) Decide to take your chances at the best support we can offer given 
+your old versions, knowing it's not to the level we could offer if you 
+upgraded to something semi-current, and it might mean losing data to bugs 
+that are long since fixed in current versions.
+
+4) Decide that btrfs is too fast moving for your use-case as you need a 
+truly stable filesystem and tools, and switch to something more 
+appropriate to your use-case.
+
+
+Seriously.  I remember discussion of that bug and believe it's fixed in 
+anything even close to current userspace.  Meanwhile, the latest btrfs 
+restore works quite a bit better as well.  I know as I've used restore a 
+couple times myself, and the new version really does work a LOT better. 
+=:^)  So I really would suggest upgrading, as I think it very well might 
+eliminate the problems you're seeing and let you find and restore from a 
+good root, hopefully getting that file back.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

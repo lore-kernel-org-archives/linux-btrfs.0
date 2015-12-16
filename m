@@ -1,24 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:37189 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:39445 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932927AbbLPJQC (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 04:16:02 -0500
+	id S933879AbbLPJzR (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 16 Dec 2015 04:55:17 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a98Bk-00029T-7e
-	for linux-btrfs@vger.kernel.org; Wed, 16 Dec 2015 10:16:00 +0100
+	id 1a98nj-0007Io-DD
+	for linux-btrfs@vger.kernel.org; Wed, 16 Dec 2015 10:55:15 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 10:16:00 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 10:55:15 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 10:16:00 +0100
+        for <linux-btrfs@vger.kernel.org>; Wed, 16 Dec 2015 10:55:15 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: dear developers, can we have notdatacow + checksumming, plz?
-Date: Wed, 16 Dec 2015 09:15:53 +0000 (UTC)
-Message-ID: <pan$b3872$2bf834b4$c6dedc4e$e2073fbb@cox.net>
+Date: Wed, 16 Dec 2015 09:55:08 +0000 (UTC)
+Message-ID: <pan$5e79$48bd5e4f$cab49683$cb54fe41@cox.net>
 References: <1450069158.2388.72.camel@scientia.net>
 	<566ECF41.10709@gmail.com> <1450149311.701.126.camel@scientia.net>
 	<56703928.7070003@gmail.com>
@@ -30,51 +30,68 @@ List-ID: <linux-btrfs.vger.kernel.org>
 Austin S. Hemmelgarn posted on Tue, 15 Dec 2015 11:00:40 -0500 as
 excerpted:
 
-> And in particular, the only
-> journaling filesystem that I know of that even allows the option of
-> journaling the file contents instead of just metadata is ext4.
+> AFAIUI, checksums are stored per-instance for every block.  This is
+> important in a multi-device filesystem in case you lose a device, so
+> that you still have a checksum for the block.  There should be no
+> difference between extent layout and compression between devices
+> however.
 
-IIRC, ext3 was the first to have it in Linux mainline, with data=writeback 
-for the speed freaks that don't care about data loss, data=ordered as the 
-default normal option (except for that infamous period when Linus lost 
-his head and let people talk him into switching to data=writeback, 
-despite the risks... he later came back to his senses and reverted that), 
-and data=journal for the folks that were willing to pay trade a bit of 
-speed for better data protection (tho it was famous for surprising 
-everybody, in that in certain use-cases it was extremely fast, faster 
-than data=writeback, something I don't think was ever fully explained).
+I don't believe that's quite correct.
 
-To my knowledge ext3 still has that, tho I haven't used it probably a 
-decade.
+What is correct, to the best of my knowledge, is that checksums are 
+metadata, and thus have whatever duplication/parity level metadata is 
+assigned.
 
-Reiserfs has all three data= options as well, with data=ordered the 
-default, tho it only had data=writeback initially.  While I've used 
-reiserfs for years, it has always been with the default data=ordered 
-since that was introduced, and I'd be surprised if data=journal had the 
-same use-case speed advantage that it did on ext3, as it's too 
-different.  Meanwhile, that early data=writeback default is where 
-reiserfs got its ill repute for data loss, but it had long switched to 
-data=ordered by default by the time Linus lost his senses and tried 
-data=writeback by default on ext3.  Because I was on reiserfs from 
-data=writeback era, I was rather glad most kernel hackers didn't want to 
-touch it by the time Linus let them talk him into data=writeback on ext3, 
-and thus left reiserfs (which again had long been data=ordered by default 
-by then) well enough alone.
+For single devices, that is of course by default dup, 2X the metadata and 
+thus 2X the checksums, both on the single data (as effectively the only 
+choice on a single device, at least thru 4.3, tho there's a patch adding 
+dup data as an option that I think should be in 4.4) when covering data, 
+dup metadata when covering it.
 
-But I did help a few people running ext3 trace down their new ext3 
-stability issues to that bad data=writeback experiment, and persuaded 
-them to specify data=ordered, which solved their problems, so indeed 
-they /were/ data=writeback related.  And happily, Linus did eventually 
-regain his senses and return ext3 to data=ordered by default once again.
+For multiple devices, it's default raid1 metadata, default single data, 
+so the picture doesn't differ much by default from the single-device 
+default picture.  It's also possible to do single metadata, raidN data, 
+which really doesn't make sense except for raid0 data, and thus I believe 
+there's a warning about that sort of layout in newer mkfs.btrfs, or when 
+lowering the metadata redundancy using balance filters.
 
-And based on what you said, ext4 still has all three data= options, 
-including data=journal.  But I wasn't sure on that myself (tho I would 
-have assumed it inherited it from ext3) and thus am /definitely/ not sure 
-whether it inherits ext3's data=journal speed advantages in certain 
-corner-cases.
+But of course it's possible to do raid1 data and metadata, which would be 
+two copies of each, regardless of the number of devices (except that it's 
+2+, of course).  But the copies aren't 1:1 assigned.  That is, if they're 
+equal generation, btrfs can read either checksum and apply it to either 
+data/metadata block.  (Of course if they're not equal generation, btrfs 
+will choose the higher one, thus covering the case of writing at the time 
+of a crash, since either they will both be the same generation if the 
+root block wasn't updated to the new one on either one yet, or one will 
+be a higher/newer generation than the other, if it had already finished 
+writing one but not the other at the time of the crash.)
 
-I have no idea whether other journaled filesystems allow choosing the 
-journal level or not, tho.  I only know of those three.
+This is why it's an extremely good idea if you have a pair of devices in 
+raid1, and you mount one of them degraded/writable with the other 
+unavailable for some reason, that you don't also mount the other one 
+writable and then try to recombined them.  Chances are the generations 
+wouldn't match and it'd pick the one with the higher generation, but if 
+they did for some reason match, and both checksums were valid on their 
+data, but the data differed... either one could be chosen, and a scrub 
+might choose either one to fix the other, as well, which could in theory 
+result in a file with intermixed blocks from the two different versions!
+
+Just ensure that if one is mounted writable, it's the only one mounted 
+writable if there's a chance of recombining, and you'll be fine, as it'll 
+be the only one with advancing generations.  And if by some accident both 
+are mounted writable separately, the best bet is to be sure and wipe the 
+one, then add it as a new device, if you're going to reintroduce it to 
+the same filesystem.
+
+Of course this gets a bit more complicated with 3+ device raid1, since 
+currently, there's still only two copies of each block and two copies of 
+the checksum, meaning there's at least one device without a copy of each 
+block, and if the filesystem is mounted degraded writable repeatedly with 
+a random device missing...
+
+Similarly, the permutations can be calculated for the other raid types, 
+and for mixed raid types like raid6 data (specified) and raid1 metadata 
+(unspecified so the default used), but I won't attempt that here.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

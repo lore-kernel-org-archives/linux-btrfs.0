@@ -1,154 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:60422 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754692AbbLPMD2 (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:34769 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932369AbbLPMDn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 07:03:28 -0500
-Message-ID: <1450267404.6259.10.camel@scientia.net>
+	Wed, 16 Dec 2015 07:03:43 -0500
+Message-ID: <1450267418.6259.11.camel@scientia.net>
 Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Wed, 16 Dec 2015 13:03:24 +0100
-In-Reply-To: <56701B79.8030105@gmail.com>
-References: <20151204120529.37E47D5A28@emkei.cz>
-	 <20151204130758.GR8775@carfax.org.uk>
-	 <1449286104.18841.14.camel@scientia.net>
-	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
-	 <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
+To: Hugo Mills <hugo@carfax.org.uk>,
+        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Wed, 16 Dec 2015 13:03:38 +0100
+In-Reply-To: <20151215141813.GG26782@carfax.org.uk>
+References: <56644785.4090702@gmx.com>
 	 <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
 	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
 	 <1449872498.31388.74.camel@fo>
 	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
 	 <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
 	 <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
-	 <56701B79.8030105@gmail.com>
+	 <56701B79.8030105@gmail.com> <20151215141813.GG26782@carfax.org.uk>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-B3UNvD49ipILjsO8/Kqc"
+	boundary="=-Wo4ozZmW5vvUHiYRFGw9"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-B3UNvD49ipILjsO8/Kqc
+--=-Wo4ozZmW5vvUHiYRFGw9
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-12-15 at 08:54 -0500, Austin S. Hemmelgarn wrote:
-> Except for one thing:=C2=A0=C2=A0Automobiles actually provide a measurabl=
-e
-> significant benefit to society.=C2=A0=C2=A0What specific benefit does emb=
-edding
-> the filesystem UUID in the metadata actually provide?
-I guess that's quite obvious.
-You want something that can be used to address devices stable (i.e. not
-their "path" like sda,sdb). So either some ID or a label. Human
-readable lables are basically guaranteed to collide, so UUIDs are the
-clean solution.
-Since there is however no guarantee that they don't collide (either by
-accident or malicious intent), you need to protect against that.
+On Tue, 2015-12-15 at 14:18 +0000, Hugo Mills wrote:
+> =C2=A0 =C2=A0That one's easy to answer. It deals with a major issue that
+> reiserfs had: if you have a filesystem with another filesystem image
+> stored on it, reiserfsck could end up deciding that both the metadata
+> blocks of the main filesystem *and* the metadata blocks of the image
+> were part of the same FS (because they're on the same block device),
+> and so would splice both filesystems into one, generally complaining
+> loudly along the way that there was a lot of corruption present that
+> it was trying to fix.
+Hmm that's a bit strange though, and to me it rather sounds like other
+bugs...
+You can have a ext4 on a file in an ext4, with or without the same
+UUIDs, and it will just work.
+If the filesystem takes contents from a normal file as possible
+metadata, than something else is severely screwed up... or in case of
+the fsck: it probably means it's a bit too liberal in searching places.
 
-Analogous for the device IDs of multi-device fs or containers.
+I'd be quite shocked if this is the case in btrfs, cause it would mean
+again, that we have a vulnerability against UUID collisions.
+Imagine some attacker finds out the UUID of a filesystem (which is
+probably rather easy)... next he uploads some file (e.g. it's a
+webserver with allows image uploads, a forum perhaps) that in reality
+contains what's looks like btrfs metadata and uses a matching UUID.
 
-> > "A UUID is 128 bits long, and can guarantee uniqueness across space
-> > and time."
-> >=20
-> > Also see security considerations in section 6.
-> Both aspects ignore the facts that:
-> Version 1 is easy to cause a collision with (MAC addresses are by no=20
-> means unique, and are easy to spoof, and so are timestamps).
-> Version 2 is relatively easy to cause a collision with, because UID
-> and=20
-> GID numbers are a fixed size namespace.
-> Version 3 is slightly better, but still not by any means unique
-> because=20
-> you just have to guess the seed string (or a collision for it).
-> Version 4 is probably the hardest to get a collision with, but only
-> if=20
-> you are using a true RNG, and evne then, 122 bits of entropy is not
-> much=20
-> protection.
-> Version 5 has the same issues as Version 3, but is more secure
-> against=20
-> hash collisions.
-I guess we don't need to discuss how unique UUIDs are when they're
-*freshly created*, since this is the only thing what the RFC
-"guarantees"...
-That's mostly irrelevant for us here, as we have two far more stronger
-cases, accidental duplication and malicious collisions.
-The possible case, that by normal means (e.g. mkfs.btrfs) a UUID
-collision occurs, are small, but solving the actual two cases here,
-will solve that one as well.
-
-Apart from that, I've noticed in several of your mails that either
-something with the indention level goes wrong, or you mix contents from
-multiple mails from different people.
-E.g. that "Also see security considerations in section 6." wasn't from
-me, which was at quotation level 1 in your mail, but the example with
-the automobile, which was also on level 1, was from me.
-That's kinda confusing...
+It would run into the same issues as what you describe for reiser,..
+the UUID would be no real help to solve that problem.
 
 
-> In general, you should only use UUID's when either:
-> a. You have absolutely 100% complete control of the storage of them,=20
-> such that you can guarantee they don't get reused.
-> b. They can be guaranteed to be relatively unique for the system
-> using them.
-No, this aren't necessary constraints. And in fact would make multi-
-device practically impossible (you always need some ID, unless you want
-to open the door for countless of errors, where people wrongly assemble
-their devices... whether it's UUID or anything else, doesn't matter).
-The only thing that one needs to do, is handle collisions gracefully
-and don't do auto-assemblies,.. all as I've described in the mail from
-"Fri, 11 Dec 2015 23:06:03 +0100"
-(http://thread.gmane.org/gmane.comp.file-systems.btrfs/50909/focus=3D51147)
+Does anyone know whether btrfsck (or other userland) tools do such
+things? I.e. search more or less arbitrary blocks, where it cannot be
+sure it's *not* data, for what it would interpret as meta-data
+subsequently?
 
 
-
-> > There could be some leveraging of the device WWN, or absent that
-> > its
-> > serial number, propogated into all of the volume's devices (cross
-> > referencing each other's devid to WWN or serial). And then that way
-> > there's a way to differentiate. In the dd case, there would be
-> > mismatching real device WWN/serial number and the one written in
-> > metadata on all drives, including the copy. This doesn't say what
-> > policy should happen next, just that at least it's known there's a
-> > mismatch.
-> >=20
-> That gets tricky too, because for example you have stuff like flat
-> files=20
-> used as filesystem images.
-plus... one cannot be sure whether any hardware device IDs, like serial
-numbers, are unique... a powerful attacker could surely change these as
-well.
-Or imagine you have a failing harddisk, and dd it's content to
-another... the btrfs part would stay identical, while the hardware
-device IDs change and confuse everything.
-
-
-
-> However, if we then use some separate UUID (possibly hashed off of
-> the=20
-> file location) in place of the device serial/WWN, that could=20
-> theoretically provide some better protection.
-Not really... it just delegates the problem one level further.
-The only real protection is, that the kernel and userland tools deal
-correctly with the situation.
-
-
-> The obvious solution in=20
-> the case of a mismatch would be to refuse the mount until either the=20
-> issue is fixed using the tools, or the user specifies some particular
-> mount option to either fix ti automatically, or ignore copies with a=20
-> mismatching serial.
-Sure, as I've said before :-)
-
-
-Cheers,
-Chris
---=-B3UNvD49ipILjsO8/Kqc
+CHeers,
+Chris.
+--=-Wo4ozZmW5vvUHiYRFGw9
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -235,19 +156,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyMDMy
-NFowTwYJKoZIhvcNAQkEMUIEQLF97e1xOsybCX8jUuVpmBpB7FRPNvbkrWtK9F65fawAga1cd7Dd
-GeJunOVjoqON9vfpqZrp+wgHjuCuvi0kkwMwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyMDMz
+OFowTwYJKoZIhvcNAQkEMUIEQEWnh18owerZBC1VCiSYLRdyWL0nnBbczgfslfPLxwcn7qQ2WHT9
+ueLHOcNs97OQV6H6AMIPm7RZPCO1D85WT88wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQB51XliuHfeOBMXtFKT4Uw028K+WT14
-2YT+VYRft//Y5ZaI+iwc89FIlTUA5bwMzQUDWWWKio1SJzPptZe1+v4NZoe3077B37iPHP85a51T
-mbcPA+uPp7vg0pkNMk4ltn9uJEvO7XDO38SxbyN08I34F8MXf6cD3ycGu5A86FI1/TY6hlu2zXd4
-VqnYizS85h78J4Gd7m0WXrqrxXU3FslO+KzqBMEbCIrATQqYd2ptf5yoSWK2AGAWPCTEs6xpufHv
-OhQzIRkyeoPg+sJLwnhDpqK8U3JUSfaoTIhNPIBuyMWiUc2V5Tb4fIDJofJMVA1lATbquyt4e++J
-QjUH1rvJAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCM1S0OAS462Jf6jxrsuepD2cakI+1S
+1IL8kAE0AOa2RgGpeTzfNecVZAPu//3Wo5J7xTDbOfnlFT8A2sQA3CnWGVJa5Pnz7pk/6+cBR7du
+chXO9HIo3NeWdN14BF1O7HqpyqHWNiDAMAIUBUBW8gWOJPCy1zFRByHknR/kzZHIry48APX5w0jC
+2SVfCsWiydkzwI5L+TBzDwaVSkVHGRtXpzA7Fmldz7z5L3758CZM6NkXbRVgWyihUnTSO3KKozQU
+2aZnnFDisq6oxIOjg0ZpjMu01X9NHKnhnVRYq1O+Z+74pwgx2fxR3DlFyf+4ADT3gzDwLmMBtz7R
+udRraylyAAAAAAAA
 
 
---=-B3UNvD49ipILjsO8/Kqc--
+--=-Wo4ozZmW5vvUHiYRFGw9--
 

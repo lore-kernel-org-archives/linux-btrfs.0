@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:32860 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752827AbbLPMKQ (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:35367 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752952AbbLPMOe (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 07:10:16 -0500
-Message-ID: <1450267809.6259.16.camel@scientia.net>
+	Wed, 16 Dec 2015 07:14:34 -0500
+Message-ID: <1450268070.6259.20.camel@scientia.net>
 Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Hugo Mills <hugo@carfax.org.uk>,
-        "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Cc: Chris Murphy <lists@colorremedies.com>,
+To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
+        Hugo Mills <hugo@carfax.org.uk>,
+        Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Wed, 16 Dec 2015 13:10:09 +0100
-In-Reply-To: <20151215144210.GH26782@carfax.org.uk>
+Date: Wed, 16 Dec 2015 13:14:30 +0100
+In-Reply-To: <567039D4.70400@gmail.com>
 References: <5668A1CB.1020007@anonym.com>
 	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
 	 <1449872498.31388.74.camel@fo>
@@ -21,47 +21,41 @@ References: <5668A1CB.1020007@anonym.com>
 	 <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
 	 <56701B79.8030105@gmail.com> <20151215141813.GG26782@carfax.org.uk>
 	 <56702340.2090908@gmail.com> <20151215144210.GH26782@carfax.org.uk>
+	 <567039D4.70400@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-9CXhyFfB0GIjwNaUsyP7"
+	boundary="=-fMK4j5rvh6mrevTXYryN"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-9CXhyFfB0GIjwNaUsyP7
+--=-fMK4j5rvh6mrevTXYryN
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-12-15 at 14:42 +0000, Hugo Mills wrote:
-> =C2=A0 =C2=A0I would suggest trying to migrate to a state where detecting=
- more
-> than one device with the same UUID and devid is cause to prevent the
-> FS from mounting, unless there's also a "mount_duplicates_yes_i_
-> know_this_is_dangerous_and_i_know_what_im_doing" mount flag present,
-> for the multipathing people. That will break existing userspace
-> behaviour for the multipathing case, but the migration can probably
-> be
-> managed. (e.g. NFS has successfully changed default behaviour for one
-> of its mount options in the last few(?) years).
+On Tue, 2015-12-15 at 11:03 -0500, Austin S. Hemmelgarn wrote:
+> May I propose the alternative option of adding a flag to tell mount
+> to=20
+> _only_ use the devices specified in the options?
+That's one part of exactly what I propose since a few days :-P
+(no one seems to read my mails ;-) )
+Plus that this isn't the case only for mounts, but also fsck, repair,
+and all other userland tool operations.
 
-I don't think that a single mountpoint a la "force-and-do-it" is a
-proper solution here. It would still open surface for attacks and also
-for accidents.
-In the case mutli-pathing is used, the only realistic way seems to be
-manually specifying the devices a la device=3D/dev/sda,/dev/sdb.
+But it's only part of the solution to the whole problem, the other one
+is that automatic device activations/rebuilds/etc. of _already active_
+devices should generally not happen (manual of course may happen, again
+with device=3D options, specifying *which* devices are actually meant).
 
-Of course btrfs would stil use the UUIDs/deviceIDs of these, but *only*
-of those devices that have been whitelisted with the device=3Doption.
+See my mail from "Fri, 11 Dec 2015 23:06:03 +0100"
+(http://thread.gmane.org/gmane.comp.file-systems.btrfs/50909/focus=3D5114
+7)
+which I think covers pretty much all cases.
 
-In the case of a general "mount_duplicates_yes_iknow_th..." option you
-could end up with having e.g. three duplicates, two being actually
-mutli-paths, and the third one being a losetup or USB clone of the
-image,... again allowing for the aforementioned attacks to happen, and
-again allowing for severe corruption to occur.
-
-
---=-9CXhyFfB0GIjwNaUsyP7
+Cheers,
+Chris.
+--=-fMK4j5rvh6mrevTXYryN
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -148,19 +142,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyMTAw
-OVowTwYJKoZIhvcNAQkEMUIEQF/l3sGB2SS0+fsP62j1V/BzSA6oA5JnVzJ7wAM4vdqNKgM0WIDX
-rrxg88q8WQLuiEdrCbF0DubdK9ZuLCaZytowagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyMTQz
+MFowTwYJKoZIhvcNAQkEMUIEQFBhDvWyHr4ZMCAgkCQBPrwQs3okulArGTq9JgNtCv6Wl6RRSYC6
+AdavmAoMhQfgnRo/X5ZEE9HqibNYjf6vGlYwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC8qYUx9uATu2gCql7zGuovQ5Fh8Dw7
-m2AxIHAziTXtmWBv5OGdu4o1Cfn+4fQ8ME64BPDlXbu6BpDNbnvdSEMTwc4D9jDofnANPVSSbmMf
-QrYqlnpBHCDNvie0DdmX+qc2gZbxzN3m7FTTftP2mKbsHpUmUun8kV2nwiAVG+v3qH8390Q+s5Y+
-K4uHfdSIGl5GOvxPVFbbjDIy7QOCdle7hhMtj4DgTlGBwsTiuqs0R5qFnw7YO0CiAYlj22s/6cRj
-HJI2m8yCCXI/prqYRVPxXPSJZtcHZw2C7BlLlmgQ/+2IN7e8kQ0XOumPIZc4gTMrEPyuofTBBVCB
-iSeEjv/UAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDVmLDvozwl8FV9EZuNtgczjFFwt24Y
++i/IFIP+Meu8GGCgDun5Fm57KFk9q++GENxs1/z/6DgqcMyGpMT9mV7Y5tKv1k2fncd0SallRPZa
+Qk+Eab/bNUn/rh1YksoHHG7E5ar8M7H5Gp216JYvpLhzJScbYmxW8WihckXeoY/q5I19MQnVXHB4
+1gMc5N2PcEcvWsKaYqpXlCwjDjttBBiTtTphYnjhDk/dRzLQsAUvmHwUUPc3PYu1U3p2b+4/pyiV
+xwZQWbj9VRPNr0Mc8qMueCO3gXfNXJXbZJJ7DqvPVtnBm+vga3xa0f7EzYDJ12LSq/S/+sENbZsg
+RJvWmlpJAAAAAAAA
 
 
---=-9CXhyFfB0GIjwNaUsyP7--
+--=-fMK4j5rvh6mrevTXYryN--
 

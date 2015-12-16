@@ -1,61 +1,184 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:35367 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:38219 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752952AbbLPMOe (ORCPT
+	with ESMTP id S934103AbbLPM43 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 16 Dec 2015 07:14:34 -0500
-Message-ID: <1450268070.6259.20.camel@scientia.net>
+	Wed, 16 Dec 2015 07:56:29 -0500
+Message-ID: <1450270585.6259.49.camel@scientia.net>
 Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>,
-        Hugo Mills <hugo@carfax.org.uk>,
         Chris Murphy <lists@colorremedies.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Wed, 16 Dec 2015 13:14:30 +0100
-In-Reply-To: <567039D4.70400@gmail.com>
-References: <5668A1CB.1020007@anonym.com>
+Date: Wed, 16 Dec 2015 13:56:25 +0100
+In-Reply-To: <5670218C.2010104@gmail.com>
+References: <20151204120529.37E47D5A28@emkei.cz>
+	 <20151204130758.GR8775@carfax.org.uk>
+	 <1449286104.18841.14.camel@scientia.net>
+	 <pan$7e229$ce87d3b$b8d75c44$337e15c7@cox.net>
+	 <1449366680.3183.37.camel@scientia.net> <56644785.4090702@gmx.com>
+	 <1449639588.7835.2.camel@scientia.net> <5668A1CB.1020007@anonym.com>
 	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
 	 <1449872498.31388.74.camel@fo>
 	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
 	 <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
-	 <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
-	 <56701B79.8030105@gmail.com> <20151215141813.GG26782@carfax.org.uk>
-	 <56702340.2090908@gmail.com> <20151215144210.GH26782@carfax.org.uk>
-	 <567039D4.70400@gmail.com>
+	 <1450138105.701.24.camel@scientia.net> <5670218C.2010104@gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-fMK4j5rvh6mrevTXYryN"
+	boundary="=-lb0Gh9SEG9fvY0N7XXUx"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-fMK4j5rvh6mrevTXYryN
+--=-lb0Gh9SEG9fvY0N7XXUx
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2015-12-15 at 11:03 -0500, Austin S. Hemmelgarn wrote:
-> May I propose the alternative option of adding a flag to tell mount
+On Tue, 2015-12-15 at 09:19 -0500, Austin S. Hemmelgarn wrote:
+> Um, no you don't have direct physical access to the hardware with an
+> ATM, at least, not unless you are going to take apart the cover and=20
+> anything else in your way (and probably set off internal alarms).
+Well access to the services ports (which may be USB) is typically much
+easier, and doesn't require to completely dismantle the steel and so...
+Simply because service teams also need to access these "regularly".
+
+But even if we don't count ATMs here, use any other publicly accessible
+computer terminals.
+Library computer, the entertainment systems in airplanes, TVs in a
+shopping centre, etc. pp.
+
+
+> =C2=A0=C2=A0And=20
+> even without that, it's still possible to DoS an ATM without much=20
+> effort.=C2=A0=C2=A0Most of them have a 3.5mm headphone jack for TTS for p=
+eople=20
+> with poor vision, and that's more than enough to overload at least
+> part=20
+> of the system with a relatively simple to put together bit of=20
+> electronics that would cost you less than 10 USD.
+As I've said before,.. you always find another weak link, of course,...
+as it was pointed out before, USB itself is quite a security problem
+(firmware attacks and that like).
+
+But just because there are other issues, right now, there is no
+justification to make btrfs "weak" as well... because this just leads
+to the=C2=A0vicious circle, that everyone has security issues, not willing
+to solve them, pointing to others as an excuse.
+
+
+> > imageine you're running a VM hosting service, where you allow users
+> > to
+> > upload images and have them deployed.
+> > In the cheap" case these will end up as regular files, where they
+> > couldn't do any harm (even if colliding UUIDs)... but even there
+> > one
+> > would have to expect, that the hypervisor admin may losetup them
+> > for
+> > whichever reason.
+> > But if you offer more professional services, you may give your
+> > clients
+> > e.g. direct access to some storage backend, which are then probably
+> > also seen on the host by its kernel.
+> > And here we already have the case, that a client could remotely
+> > trigger
+> > such collision.
+> In that particular situation, it's not relevant unless the host admin
+> goes to mount them.=C2=A0=C2=A0UUID collisions are only an issue if the=
+=20
+> filesystems get mounted.
+Hmm from the impression I got so far, it was not only a problem when
+actually mounting... but even if... this doesn't change the situation.
+Same problem as before, the host system may have btrfs filesystems
+whose IDs have leaked, the attacker may upload them as VM images as
+described above, and even if the host's admin doesn't want to mount
+those, he may mount what he considers his filsystems, which however
+also collide.
+Boom. Same issues as before.
+
+Turn it as you want, resistance is futile ;-)
+
+
+> > Well I think it's a proper way to e.g. handle the multi-device
+> > case.
+> > You have n devices, you want to differ them,... using a pseudo-
+> > random
+> > UUID is surely better than giving them numbers.
+> That's debatable, the same issues are obviously present in both cases
+> (individual numbers can collide too).
+Sure, as I've said. You always must handle the case of accidentally or
+maliciously colliding IDs if you count on data integrity and security.
+But using UUIDs makes chances at least small that you run into
+collisions (that users must than manually resolve somehow) *even when*
+you just create fresh filesystem, have no attacker and no dd or that
+like goes in your way.
+
+
+> > Same for the fs UUID, e.g. when used for mounting devices whose
+> > paths
+> > aren't stable.
+> In the case of a sanely designed system using LVM for example, device
+> paths are stable.
+Well, but LVM itself works with UUIDs again, so you just delegate the
+problem.
+And apart from that, with btrfs, I thought, we rather want to avoid
+using LVM below.
+
+
+> > As said before, using the UUID isn't the problem - not protecting
+> > against collisions is.
+> No, the issues are:
+> 1. We assume that the UUID will be unique for the life of the=20
+> filesystem, which is not a safe assumption.
+> 2. We don't sanely handle things if it isn't unique.
+Well isn't that what I've said? At least it's what I've meant ;)
+
+
+> > Well,... I don't think that writing *into* the filesystem is
+> > covered by
+> > common practise anymore.
+> For end users, I agree.=C2=A0=C2=A0Part of the discussion involves attack=
+s on
+> the=20
+> system, and for a attacker it's not a far stretch to write directly
 > to=20
-> _only_ use the devices specified in the options?
-That's one part of exactly what I propose since a few days :-P
-(no one seems to read my mails ;-) )
-Plus that this isn't the case only for mounts, but also fsck, repair,
-and all other userland tool operations.
+> the block device if possible (and it's even common practice for=20
+> bypassing permission checks done in the VFS layer).
+Well but that's something else here what I don't think we can cover.
+What we must assume is, that devices show up with colliding IDs, either
+by "accident" or means like dd... or by an attacker somehow being able
+to make them show up (USB, the image upload scenarios I've described
+before, and so on).
 
-But it's only part of the solution to the whole problem, the other one
-is that automatic device activations/rebuilds/etc. of _already active_
-devices should generally not happen (manual of course may happen, again
-with device=3D options, specifying *which* devices are actually meant).
+If the attacker can however write to *arbitrary* (and not just "his")
+devices, bypassing checks in the VFS layer or anything else... well
+than game over.
+He wouldn't need bothering to do a probably compelx attack based on
+btrfs colliding UUIDs - he could simply overwrite the root filesystem
+and reboot with his own malicious kernel/etc.
 
-See my mail from "Fri, 11 Dec 2015 23:06:03 +0100"
-(http://thread.gmane.org/gmane.comp.file-systems.btrfs/50909/focus=3D5114
-7)
-which I think covers pretty much all cases.
+
+> My point is that by changing the UUID in a superblock (and properly=20
+> updating the checksum for the superblock), you can trivially break a=20
+> multi-device filesystem.=C2=A0=C2=A0And it's a whole lot easier to do tha=
+t than
+> it=20
+> is to do the equivalent for LVM.
+I'm a bit unsure what you try to show:
+- Arbitrarily writing into a device (e.g. in the superblock) is IMHO
+=C2=A0 not common practise, an not justified by common or historical use.
+- If one does however do it (and it doesn't matter if the admin does it
+=C2=A0 or an attacker), one would of course end up in the situation, where
+=C2=A0 btrfs should detect this, and refuse mounting, fsck'ing, and that
+=C2=A0 like.
+=C2=A0 Problem solved.
+
+
 
 Cheers,
 Chris.
---=-fMK4j5rvh6mrevTXYryN
+
+--=-lb0Gh9SEG9fvY0N7XXUx
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -142,19 +265,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyMTQz
-MFowTwYJKoZIhvcNAQkEMUIEQFBhDvWyHr4ZMCAgkCQBPrwQs3okulArGTq9JgNtCv6Wl6RRSYC6
-AdavmAoMhQfgnRo/X5ZEE9HqibNYjf6vGlYwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxNjEyNTYy
+NVowTwYJKoZIhvcNAQkEMUIEQMqYI+4Feqn2OU05aSczlB1C+R4gWQukR15E+E9tYm95RKnF1VGM
+9a1Ff50t5UVKhmqRx7t2rZB57+bV4Fdz56IwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDVmLDvozwl8FV9EZuNtgczjFFwt24Y
-+i/IFIP+Meu8GGCgDun5Fm57KFk9q++GENxs1/z/6DgqcMyGpMT9mV7Y5tKv1k2fncd0SallRPZa
-Qk+Eab/bNUn/rh1YksoHHG7E5ar8M7H5Gp216JYvpLhzJScbYmxW8WihckXeoY/q5I19MQnVXHB4
-1gMc5N2PcEcvWsKaYqpXlCwjDjttBBiTtTphYnjhDk/dRzLQsAUvmHwUUPc3PYu1U3p2b+4/pyiV
-xwZQWbj9VRPNr0Mc8qMueCO3gXfNXJXbZJJ7DqvPVtnBm+vga3xa0f7EzYDJ12LSq/S/+sENbZsg
-RJvWmlpJAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCAJgi5VShddClHnFwer+DDGYlJcUaq
+2T4RjSXZVBpo/k45o9MziWdyZU3xOuGXwrfMqV1yI9+dpLl7BYnyn9m3haohROr7bQlv9kGTEu7t
+etks95q7hoDYkfvwWYVa9MTWVC4aVE7RXkfZrPgsXSbULwZg7f7xn6q5yEDkJO8EMyq+qyibRwsv
+pcNQeRZXj37AdlKmSTLTUlE2S2C6H3VwH5nhz2Cj8npnAcnXzD0yoeubGwjgdqqAL2TgZFEZ8CYt
+ny/IWOKBXgB5/pjyQxTVEl2gFFHJPLewoetXgBS+P2uMY72W+oYAPgbKDRUmLIlVNIxSdRQOak9+
+CssoRed7AAAAAAAA
 
 
---=-fMK4j5rvh6mrevTXYryN--
+--=-lb0Gh9SEG9fvY0N7XXUx--
 

@@ -1,48 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:50563 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932239AbbLQGFG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Dec 2015 01:05:06 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a9RgX-0006qe-4Z
-	for linux-btrfs@vger.kernel.org; Thu, 17 Dec 2015 07:05:05 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Dec 2015 07:05:05 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 17 Dec 2015 07:05:05 +0100
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:54361 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756613AbbLQN31 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Dec 2015 08:29:27 -0500
+Received: from merkaba.localnet (host-188-174-216-157.customer.m-online.net [188.174.216.157])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 12118199
+	for <linux-btrfs@vger.kernel.org>; Thu, 17 Dec 2015 14:29:26 +0100 (CET)
+From: Martin Steigerwald <martin@lichtvoll.de>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
- poor performance on deleting many large files?)
-Date: Thu, 17 Dec 2015 06:01:57 +0000 (UTC)
-Message-ID: <pan$2b803$5c4c0aaf$d82c2845$1b642fc8@cox.net>
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-	<56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
-	<pan$3c463$5dc6ffa1$704b2ca2$141e65cc@cox.net>
-	<5667C00B.4010100@scientia.net>
-	<pan$7e682$345fe6d2$de13162d$f5ac4118@cox.net>
-	<1450303141.6242.50.camel@scientia.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: Re: [4.3-rc4] scrubbing aborts before finishing (SOLVED)
+Date: Thu, 17 Dec 2015 14:29:25 +0100
+Message-ID: <7163629.YhTYQ8DPxj@merkaba>
+In-Reply-To: <4230736.3pqTg9ZQT8@merkaba>
+References: <16063727.bYixifcRQC@merkaba> <2196957.diBSeBoUhe@merkaba> <4230736.3pqTg9ZQT8@merkaba>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer posted on Wed, 16 Dec 2015 22:59:01 +0100 as
-excerpted:
+Am Mittwoch, 16. Dezember 2015, 00:18:53 CET schrieb Martin Steigerwald:
+> Am Montag, 14. Dezember 2015, 08:59:59 CET schrieb Martin Steigerwald:
+> > Am Mittwoch, 25. November 2015, 16:35:39 CET schrieben Sie:
+> > > Am Samstag, 31. Oktober 2015, 12:10:37 CET schrieb Martin Steigerwald:
+> > > > Am Donnerstag, 22. Oktober 2015, 10:41:15 CET schrieb Martin
+> Steigerwald:
+> > > > > I get this:
+> > > > > 
+> > > > > merkaba:~> btrfs scrub status -d /
+> > > > > scrub status for […]
+> > > > > scrub device /dev/mapper/sata-debian (id 1) history
+> > > > > 
+> > > > >         scrub started at Thu Oct 22 10:05:49 2015 and was aborted
+> > > > >         after
+> > > > >         00:00:00
+> > > > >         total bytes scrubbed: 0.00B with 0 errors
+> > > > > 
+> > > > > scrub device /dev/dm-2 (id 2) history
+> > > > > 
+> > > > >         scrub started at Thu Oct 22 10:05:49 2015 and was aborted
+> > > > >         after
+> > > > >         00:01:30
+> > > > >         total bytes scrubbed: 23.81GiB with 0 errors
+> > > > > 
+> > > > > For / scrub aborts for sata SSD immediately.
+> > > > > 
+> > > > > For /home scrub aborts for both SSDs at some time.
+[…]
+> I now have 4.4-rc5 running, the boot crash I had appears to be fixed. Oh,
+> and I see that scrubbing / at leasted worked now:
+> 
+> merkaba:~> btrfs scrub status -d /
+> scrub status for […]
+> scrub device /dev/dm-5 (id 1) history
+>         scrub started at Wed Dec 16 00:13:20 2015 and finished after
+> 00:01:42 total bytes scrubbed: 23.94GiB with 0 errors
+> scrub device /dev/mapper/msata-debian (id 2) history
+>         scrub started at Wed Dec 16 00:13:20 2015 and finished after
+> 00:01:34 total bytes scrubbed: 23.94GiB with 0 errors
+> 
+> I will check with other BTRFS filesystems tomorrow and report back whether
+> scrubbing is stable for meagain.
 
->> It's certainly in quite a few on-list posts over the years
+This appears to be fixed with 4.4-rc5. Thank you!!!
 
-> okay,.. in other words: no ;-)
-> scatter over the years list posts don't count as documentation :P
-
-=:^)
-
+Thanks,
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Martin

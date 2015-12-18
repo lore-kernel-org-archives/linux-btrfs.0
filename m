@@ -1,107 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:37239 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751794AbbLRMJz (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Dec 2015 07:09:55 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups
-Date: Fri, 18 Dec 2015 12:09:49 +0000
-Message-Id: <1450440589-22071-1-git-send-email-fdmanana@kernel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:51945 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753663AbbLROMi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Dec 2015 09:12:38 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+	by cn.fujitsu.com (Postfix) with ESMTP id 252AF4092558
+	for <linux-btrfs@vger.kernel.org>; Fri, 18 Dec 2015 22:12:12 +0800 (CST)
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/3] btrfs: Fix in-segment calculation for reada
+Date: Fri, 18 Dec 2015 22:10:19 +0800
+Message-ID: <d91c92e58567119e5e94cac3c7c81d90881d3f1b.1450447809.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+reada_zone->end is end pos of segment:
+ end = start + cache->key.offset - 1;
 
-We call btrfs_write_dirty_block_groups() in the critical section of a
-transaction's commit, when no other tasks can joing the transaction and
-add more block groups to the transaction's list of dirty block groups,
-so we not taking the dirty block groups spinlock when checking for the
-list's emptyness, grabbing its first element or deleting elements from
-it.
+So we need to use "<=" in condition to judge is a pos in the
+segment.
 
-However there's a special and rare case where we can have a concurrent
-task adding elements to this list. We trigger writeback for space
-caches before at btrfs_start_dirty_block_groups() and in past iterations
-of the loop at btrfs_write_dirty_block_groups(), this means that when
-the writeback finishes (which happens asynchronously) it creates a
-task ran in endio free space worke queue that executes
-btrfs_finish_ordered_io() - this function is able to join the transaction,
-through btrfs_join_transaction_nolock(), and update the free space cache's
-inode item in the root tree, which can result in COWing nodes of this tree
-and therefore allocation of a new block group, which gets added to the
-transaction's list of dirty block groups.
+The problem happened rearly, because logical pos rarely pointed
+to last 4k of a blockgroup, but we need to fix it to make code
+right in logic.
 
-So fix this by taking the dirty block groups spinlock before doing
-operations on the dirty block groups list at
-btrfs_write_dirty_block_groups().
-
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/extent-tree.c | 19 +++++++++++++++++--
- 1 file changed, 17 insertions(+), 2 deletions(-)
+ fs/btrfs/reada.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c4661db..e6993f6 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -3684,11 +3684,21 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
- 		return -ENOMEM;
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index 7bbd656..6fb9c37 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -265,7 +265,7 @@ static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
+ 	spin_unlock(&fs_info->reada_lock);
  
- 	/*
--	 * We don't need the lock here since we are protected by the transaction
--	 * commit.  We want to do the cache_save_setup first and then run the
-+	 * Even though we are in the critical section of the transaction commit,
-+	 * we can still have concurrent tasks adding elements to this
-+	 * transaction's list of dirty block groups. These tasks correspond to
-+	 * endio free space workers started when writeback finishes for a
-+	 * space cache, which run inode.c:btrfs_finish_ordered_io(), and can
-+	 * allocate new block groups as a result of COWing nodes of the root
-+	 * tree when updating the free space inode. The writeback for the space
-+	 * caches is triggered by an earlier call to
-+	 * btrfs_start_dirty_block_groups() and iterations of the following
-+	 * loop.
-+	 * Also we want to do the cache_save_setup first and then run the
- 	 * delayed refs to make sure we have the best chance at doing this all
- 	 * in one shot.
+ 	if (ret == 1) {
+-		if (logical >= zone->start && logical < zone->end)
++		if (logical >= zone->start && logical <= zone->end)
+ 			return zone;
+ 		spin_lock(&fs_info->reada_lock);
+ 		kref_put(&zone->refcnt, reada_zone_release);
+@@ -684,7 +684,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
  	 */
-+	spin_lock(&cur_trans->dirty_bgs_lock);
- 	while (!list_empty(&cur_trans->dirty_bgs)) {
- 		cache = list_first_entry(&cur_trans->dirty_bgs,
- 					 struct btrfs_block_group_cache,
-@@ -3700,11 +3710,13 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
- 		 * finish and then do it all again
- 		 */
- 		if (!list_empty(&cache->io_list)) {
-+			spin_unlock(&cur_trans->dirty_bgs_lock);
- 			list_del_init(&cache->io_list);
- 			btrfs_wait_cache_io(root, trans, cache,
- 					    &cache->io_ctl, path,
- 					    cache->key.objectid);
- 			btrfs_put_block_group(cache);
-+			spin_lock(&cur_trans->dirty_bgs_lock);
- 		}
- 
- 		/*
-@@ -3712,6 +3724,7 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
- 		 * on any pending IO
- 		 */
- 		list_del_init(&cache->dirty_list);
-+		spin_unlock(&cur_trans->dirty_bgs_lock);
- 		should_put = 1;
- 
- 		cache_save_setup(cache, trans, path);
-@@ -3743,7 +3756,9 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
- 		/* if its not on the io list, we need to put the block group */
- 		if (should_put)
- 			btrfs_put_block_group(cache);
-+		spin_lock(&cur_trans->dirty_bgs_lock);
- 	}
-+	spin_unlock(&cur_trans->dirty_bgs_lock);
- 
- 	while (!list_empty(io)) {
- 		cache = list_first_entry(io, struct btrfs_block_group_cache,
+ 	ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
+ 				     dev->reada_next >> PAGE_CACHE_SHIFT, 1);
+-	if (ret == 0 || re->logical >= dev->reada_curr_zone->end) {
++	if (ret == 0 || re->logical > dev->reada_curr_zone->end) {
+ 		ret = reada_pick_zone(dev);
+ 		if (!ret) {
+ 			spin_unlock(&fs_info->reada_lock);
 -- 
-2.1.3
+1.8.5.1
+
+
 

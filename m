@@ -1,80 +1,189 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m50-132.163.com ([123.125.50.132]:48260 "EHLO m50-132.163.com"
+Received: from mail.kernel.org ([198.145.29.136]:37183 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751195AbbLRORg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Dec 2015 09:17:36 -0500
-From: Geliang Tang <geliangtang@163.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>
-Cc: Geliang Tang <geliangtang@163.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH 3/3] btrfs: use list_for_each_entry* in backref.c
-Date: Fri, 18 Dec 2015 22:17:01 +0800
-Message-Id: <617786fdb0eb4f593bdc6efffe040ce6ebcb1cc5.1450447999.git.geliangtang@163.com>
-In-Reply-To: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
-References: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
-In-Reply-To: <b87e3c3186f2f308924b2e09d112036912233c9d.1450447999.git.geliangtang@163.com>
-References: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com> <b87e3c3186f2f308924b2e09d112036912233c9d.1450447999.git.geliangtang@163.com>
+	id S1751939AbbLRMJ0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Dec 2015 07:09:26 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix locking bugs when defragging leaves
+Date: Fri, 18 Dec 2015 12:09:18 +0000
+Message-Id: <1450440558-14107-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use list_for_each_entry*() to simplify the code.
+From: Filipe Manana <fdmanana@suse.com>
 
-Signed-off-by: Geliang Tang <geliangtang@163.com>
+When running fstests btrfs/070, with a higher number of fsstress
+operations, I ran frequently into two different locking bugs when
+defragging directories.
+
+The first bug produced the following traces:
+
+[133860.229792] ------------[ cut here ]------------
+[133860.251062] WARNING: CPU: 2 PID: 26057 at fs/btrfs/locking.c:46 btrfs_set_lock_blocking_rw+0x57/0xbd [btrfs]()
+[133860.253576] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc i2c_piix4 psmouse parport
+[133860.282566] CPU: 2 PID: 26057 Comm: btrfs Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
+[133860.284393] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[133860.286827]  0000000000000000 ffff880207697b78 ffffffff812566f4 0000000000000000
+[133860.288341]  ffff880207697bb0 ffffffff8104d0a6 ffffffffa052d4c1 ffff880178f60e00
+[133860.294219]  ffff880178f60e00 0000000000000000 00000000000000f6 ffff880207697bc0
+[133860.295831] Call Trace:
+[133860.306518]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
+[133860.307473]  [<ffffffff8104d0a6>] warn_slowpath_common+0x9f/0xb8
+[133860.308619]  [<ffffffffa052d4c1>] ? btrfs_set_lock_blocking_rw+0x57/0xbd [btrfs]
+[133860.310068]  [<ffffffff8104d172>] warn_slowpath_null+0x1a/0x1c
+[133860.312552]  [<ffffffffa052d4c1>] btrfs_set_lock_blocking_rw+0x57/0xbd [btrfs]
+[133860.314630]  [<ffffffffa04d5787>] btrfs_set_lock_blocking+0xe/0x10 [btrfs]
+[133860.323596]  [<ffffffffa04d99cb>] btrfs_realloc_node+0xb3/0x341 [btrfs]
+[133860.325233]  [<ffffffffa050e396>] btrfs_defrag_leaves+0x239/0x2fa [btrfs]
+[133860.332427]  [<ffffffffa04fc2ce>] btrfs_defrag_root+0x63/0xca [btrfs]
+[133860.337259]  [<ffffffffa052a34e>] btrfs_ioctl_defrag+0x78/0x14e [btrfs]
+[133860.340147]  [<ffffffffa052b00b>] btrfs_ioctl+0x746/0x24c6 [btrfs]
+[133860.344833]  [<ffffffff81087481>] ? arch_local_irq_save+0x9/0xc
+[133860.346343]  [<ffffffff8113ad61>] ? __might_fault+0x4c/0xa7
+[133860.353248]  [<ffffffff8113ad61>] ? __might_fault+0x4c/0xa7
+[133860.354242]  [<ffffffff8113adba>] ? __might_fault+0xa5/0xa7
+[133860.355232]  [<ffffffff81171139>] ? cp_new_stat+0x15d/0x174
+[133860.356237]  [<ffffffff8117c610>] do_vfs_ioctl+0x427/0x4e6
+[133860.358587]  [<ffffffff81171175>] ? SYSC_newfstat+0x25/0x2e
+[133860.360195]  [<ffffffff8118574d>] ? __fget_light+0x4d/0x71
+[133860.361380]  [<ffffffff8117c726>] SyS_ioctl+0x57/0x79
+[133860.363578]  [<ffffffff8147cd97>] entry_SYSCALL_64_fastpath+0x12/0x6f
+[133860.366217] ---[ end trace 2cadb2f653437e49 ]---
+[133860.367399] ------------[ cut here ]------------
+[133860.368162] kernel BUG at fs/btrfs/locking.c:307!
+[133860.369430] invalid opcode: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
+[133860.370205] Modules linked in: btrfs crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc i2c_piix4 psmouse parport
+[133860.370205] CPU: 2 PID: 26057 Comm: btrfs Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
+[133860.370205] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[133860.370205] task: ffff8800aec6db40 ti: ffff880207694000 task.ti: ffff880207694000
+[133860.370205] RIP: 0010:[<ffffffffa052d466>]  [<ffffffffa052d466>] btrfs_assert_tree_locked+0x10/0x14 [btrfs]
+[133860.370205] RSP: 0018:ffff880207697bc0  EFLAGS: 00010246
+[133860.370205] RAX: 0000000000000000 RBX: ffff880178f60e00 RCX: 0000000000000000
+[133860.370205] RDX: ffff88023ec4fb50 RSI: 00000000ffffffff RDI: ffff880178f60e00
+[133860.370205] RBP: ffff880207697bc0 R08: 0000000000000001 R09: 0000000000000000
+[133860.370205] R10: 0000160000000000 R11: ffffffff81651000 R12: ffff880178f60e00
+[133860.370205] R13: 0000000000000000 R14: 00000000000000f6 R15: ffff8801ff409000
+[133860.370205] FS:  00007f763efd48c0(0000) GS:ffff88023ec40000(0000) knlGS:0000000000000000
+[133860.370205] CS:  0010 DS: 0000 ES: 0000 CR0: 000000008005003b
+[133860.370205] CR2: 0000000002158048 CR3: 000000003fd6c000 CR4: 00000000000006e0
+[133860.370205] Stack:
+[133860.370205]  ffff880207697bd8 ffffffffa052d4d0 0000000000000000 ffff880207697be8
+[133860.370205]  ffffffffa04d5787 ffff880207697c80 ffffffffa04d99cb ffff8801ff409590
+[133860.370205]  ffff880207697ca8 000000f507697c80 ffff880183c11bb8 0000000000000000
+[133860.370205] Call Trace:
+[133860.370205]  [<ffffffffa052d4d0>] btrfs_set_lock_blocking_rw+0x66/0xbd [btrfs]
+[133860.370205]  [<ffffffffa04d5787>] btrfs_set_lock_blocking+0xe/0x10 [btrfs]
+[133860.370205]  [<ffffffffa04d99cb>] btrfs_realloc_node+0xb3/0x341 [btrfs]
+[133860.370205]  [<ffffffffa050e396>] btrfs_defrag_leaves+0x239/0x2fa [btrfs]
+[133860.370205]  [<ffffffffa04fc2ce>] btrfs_defrag_root+0x63/0xca [btrfs]
+[133860.370205]  [<ffffffffa052a34e>] btrfs_ioctl_defrag+0x78/0x14e [btrfs]
+[133860.370205]  [<ffffffffa052b00b>] btrfs_ioctl+0x746/0x24c6 [btrfs]
+[133860.370205]  [<ffffffff81087481>] ? arch_local_irq_save+0x9/0xc
+[133860.370205]  [<ffffffff8113ad61>] ? __might_fault+0x4c/0xa7
+[133860.370205]  [<ffffffff8113ad61>] ? __might_fault+0x4c/0xa7
+[133860.370205]  [<ffffffff8113adba>] ? __might_fault+0xa5/0xa7
+[133860.370205]  [<ffffffff81171139>] ? cp_new_stat+0x15d/0x174
+[133860.370205]  [<ffffffff8117c610>] do_vfs_ioctl+0x427/0x4e6
+[133860.370205]  [<ffffffff81171175>] ? SYSC_newfstat+0x25/0x2e
+[133860.370205]  [<ffffffff8118574d>] ? __fget_light+0x4d/0x71
+[133860.370205]  [<ffffffff8117c726>] SyS_ioctl+0x57/0x79
+[133860.370205]  [<ffffffff8147cd97>] entry_SYSCALL_64_fastpath+0x12/0x6f
+
+This bug happened because we assumed that by setting keep_locks to 1 in
+our search path, our path after a call to btrfs_search_slot() would have
+all nodes locked, which is not always true because unlock_up() (called by
+btrfs_search_slot()) will unlock a node in a path if the slot of the node
+below it doesn't point to the last item or beyond the last item. For
+example, when the tree has a heigth of 2 and path->slots[0] has a value
+smaller than btrfs_header_nritems(path->nodes[0]) - 1, the node at level 2
+will be unlocked (also because lowest_unlock is set to 1 due to the fact
+that the value passed as ins_len to btrfs_search_slot is 0).
+This resulted in btrfs_find_next_key(), called before btrfs_realloc_node(),
+to release out path and call again btrfs_search_slot(), but this time with
+the cow parameter set to 0, meaning the resulting path got only read locks.
+Therefore when we called btrfs_realloc_node(), with path->nodes[1] having
+a read lock, it resulted in the warning and BUG_ON when calling
+btrfs_set_lock_blocking() against the node, as that function expects the
+node to have a write lock.
+
+The second bug happened often when the first bug didn't happen, and made
+us hang and hitting the following warning at fs/btrfs/locking.c:
+
+   251  void btrfs_tree_lock(struct extent_buffer *eb)
+   252  {
+   253          WARN_ON(eb->lock_owner == current->pid);
+
+This happened because the tree search we made at btrfs_defrag_leaves()
+before calling btrfs_find_next_key() locked a leaf and all the other
+nodes in the path, so btrfs_find_next_key() had no need to release the
+path and make a new search (with path->lowest_level set to 1). This
+made btrfs_realloc_node() attempt to write lock the same leaf again,
+resulting in a hang/deadlock.
+
+So fix these issues by calling btrfs_find_next_key() after calling
+btrfs_realloc_node() and setting the search path's lowest_level to 1
+to avoid the hang/deadlock when attempting to write lock the leaves
+at btrfs_realloc_node().
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/backref.c | 24 +++++++-----------------
- 1 file changed, 7 insertions(+), 17 deletions(-)
+ fs/btrfs/tree-defrag.c | 27 ++++++++++++++++++++++++---
+ 1 file changed, 24 insertions(+), 3 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index d453d62..fa6f346 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -520,13 +520,10 @@ static inline int ref_for_same_block(struct __prelim_ref *ref1,
- static int __add_missing_keys(struct btrfs_fs_info *fs_info,
- 			      struct list_head *head)
- {
--	struct list_head *pos;
-+	struct __prelim_ref *ref;
- 	struct extent_buffer *eb;
+diff --git a/fs/btrfs/tree-defrag.c b/fs/btrfs/tree-defrag.c
+index f31db43..cb65089 100644
+--- a/fs/btrfs/tree-defrag.c
++++ b/fs/btrfs/tree-defrag.c
+@@ -89,6 +89,12 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+ 		goto out;
+ 	}
+ 	btrfs_release_path(path);
++	/*
++	 * We don't need a lock on a leaf. btrfs_realloc_node() will lock all
++	 * leafs from path->nodes[1], so set lowest_level to 1 to avoid later
++	 * a deadlock (attempting to write lock an already write locked leaf).
++	 */
++	path->lowest_level = 1;
+ 	wret = btrfs_search_slot(trans, root, &key, path, 0, 1);
  
--	list_for_each(pos, head) {
--		struct __prelim_ref *ref;
--		ref = list_entry(pos, struct __prelim_ref, list);
--
-+	list_for_each_entry(ref, head, list) {
- 		if (ref->parent)
- 			continue;
- 		if (ref->key_for_search.type)
-@@ -563,23 +560,16 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
-  */
- static void __merge_refs(struct list_head *head, int mode)
- {
--	struct list_head *pos1;
-+	struct __prelim_ref *ref1;
- 
--	list_for_each(pos1, head) {
--		struct list_head *n2;
--		struct list_head *pos2;
--		struct __prelim_ref *ref1;
-+	list_for_each_entry(ref1, head, list) {
-+		struct __prelim_ref *ref2, *tmp;
- 
--		ref1 = list_entry(pos1, struct __prelim_ref, list);
--
--		for (pos2 = pos1->next, n2 = pos2->next; pos2 != head;
--		     pos2 = n2, n2 = pos2->next) {
--			struct __prelim_ref *ref2;
-+		ref2 = list_next_entry(ref1, list);
-+		list_for_each_entry_safe_from(ref2, tmp, head, list) {
- 			struct __prelim_ref *xchg;
- 			struct extent_inode_elem *eie;
- 
--			ref2 = list_entry(pos2, struct __prelim_ref, list);
--
- 			if (!ref_for_same_block(ref1, ref2))
- 				continue;
- 			if (mode == 1) {
+ 	if (wret < 0) {
+@@ -99,9 +105,12 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+ 		ret = 0;
+ 		goto out;
+ 	}
+-	path->slots[1] = btrfs_header_nritems(path->nodes[1]);
+-	next_key_ret = btrfs_find_next_key(root, path, &key, 1,
+-					   min_trans);
++	/*
++	 * The node at level 1 must always be locked when our path has
++	 * keep_locks set and lowest_level is 1, regardless of the value of
++	 * path->slots[1].
++	 */
++	BUG_ON(path->locks[1] == 0);
+ 	ret = btrfs_realloc_node(trans, root,
+ 				 path->nodes[1], 0,
+ 				 &last_ret,
+@@ -110,6 +119,18 @@ int btrfs_defrag_leaves(struct btrfs_trans_handle *trans,
+ 		WARN_ON(ret == -EAGAIN);
+ 		goto out;
+ 	}
++	/*
++	 * Now that we reallocated the node we can find the next key. Note that
++	 * btrfs_find_next_key() can release our path and do another search
++	 * without COWing, this is because even with path->keep_locks = 1,
++	 * btrfs_search_slot() / ctree.c:unlock_up() does not keeps a lock on a
++	 * node when path->slots[node_level - 1] does not point to the last
++	 * item or a slot beyond the last item (ctree.c:unlock_up()). Therefore
++	 * we search for the next key after reallocating our node.
++	 */
++	path->slots[1] = btrfs_header_nritems(path->nodes[1]);
++	next_key_ret = btrfs_find_next_key(root, path, &key, 1,
++					   min_trans);
+ 	if (next_key_ret == 0) {
+ 		memcpy(&root->defrag_progress, &key, sizeof(key));
+ 		ret = -EAGAIN;
 -- 
-2.5.0
-
+2.1.3
 

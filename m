@@ -1,247 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:57717 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:59837 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752424AbbLRAVl (ORCPT
+	with ESMTP id S1754114AbbLRA4Y (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Dec 2015 19:21:41 -0500
-Message-ID: <1450398096.6498.34.camel@scientia.net>
-Subject: Re: [auto-]defrag, nodatacow - general suggestions?(was: btrfs:
- poor performance on deleting many large files?)
+	Thu, 17 Dec 2015 19:56:24 -0500
+Message-ID: <1450400180.6498.38.camel@scientia.net>
+Subject: Re: attacking btrfs filesystems via UUID collisions?
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Fri, 18 Dec 2015 01:21:36 +0100
-In-Reply-To: <pan$7df3b$2174f8e9$efd1ab67$2dbe2f31@cox.net>
-References: <CA+ve2MYBAPbLPiX4i2oZeDeu+9=JurXHsx5fMef2iV3rRrCKxg@mail.gmail.com>
-	 <56530DAD.9080607@gmail.com> <1448497439.28195.33.camel@scientia.net>
-	 <pan$3c463$5dc6ffa1$704b2ca2$141e65cc@cox.net>
-	 <5667C00B.4010100@scientia.net>
-	 <pan$7e682$345fe6d2$de13162d$f5ac4118@cox.net>
-	 <1450303141.6242.50.camel@scientia.net>
-	 <pan$7df3b$2174f8e9$efd1ab67$2dbe2f31@cox.net>
+Date: Fri, 18 Dec 2015 01:56:20 +0100
+In-Reply-To: <pan$8abc4$5a93b86f$66b76637$230f3991@cox.net>
+References: <5668A1CB.1020007@anonym.com>
+	 <CAJCQCtQCoi52o2REWZGObq-19EpgCv+7QmKvP=Gvk1myVq-+_g@mail.gmail.com>
+	 <1449872498.31388.74.camel@fo>
+	 <CAJCQCtSXkXs0jQ=zaP6FJvRZS0yvz5CrjP8a06K0+htG5H8LTg@mail.gmail.com>
+	 <1450052868.30943.27.camel@scientia.net> <566EC2D7.3000101@gmail.com>
+	 <CAJCQCtTuETCh_n3dnhPbVBx6_0dcAmNgNWN_bpsTE8goH8byKg@mail.gmail.com>
+	 <56701B79.8030105@gmail.com> <20151215141813.GG26782@carfax.org.uk>
+	 <1450267418.6259.11.camel@scientia.net>
+	 <20151216144132.GE6322@ret.masoncoding.com>
+	 <1450278243.5570.10.camel@scientia.net>
+	 <pan$8abc4$5a93b86f$66b76637$230f3991@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-rweaMm/WA21KCyxfIPbK"
+	boundary="=-ED/dDHvwa+MumGlmHUiw"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-rweaMm/WA21KCyxfIPbK
+--=-ED/dDHvwa+MumGlmHUiw
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-[I'm combining the messages again, since I feel a bit bad, when I write
-so many mails to the list ;) ]
-But from my side, feel free to split up as much as you want (perhaps
-not single characters or so ;) )
-
-
-On Thu, 2015-12-17 at 04:06 +0000, Duncan wrote:
-> Just to mention here, that I said "integrity management features",
-> which=C2=A0
-> includes more than checksumming.=C2=A0=C2=A0As Austin Hemmelgarn has been
-> pointing=C2=A0
-> out, DBs and some VMs do COW, some DBs do checksumming or at least
-> have=C2=A0
-> that option, and both VMs and DBs generally do at least some level
-> of=C2=A0
-> consistency checking as they load.=C2=A0=C2=A0Those are all "integrity
-> management=C2=A0
-> features" at some level.
-Okay... well, but the point of that whole thread was obviously data
-integrity protection in the sense of what data checksumming does in
-btrfs for CoWed data and for meta-data.
-In other words: checksums at some blockleve, which are verified upon
-every read.
-
-
-
-> As for bittorrent, I /think/ the checksums are in the torrent files=C2=A0
-> themselves (and if I'm not mistaken, much as git, the chunks within
+On Thu, 2015-12-17 at 03:25 +0000, Duncan wrote:
+> So it's definitely _not_ something that reiserfsck would do in a
+> "normal"=C2=A0
+> fsck, only when doing "I'm desperate and don't have backups, go to
 > the=C2=A0
-> file are actually IDed by checksum, not specific position, so as long
-> as=C2=A0
-> the torrent is active, uploading or downloading, these will by
-> definition=C2=A0
-> be retained).=C2=A0=C2=A0As long as those are retained, the checksums sho=
-uld
-> be=C2=A0
-> retained.=C2=A0=C2=A0And ideally, people will continue to torrent the fil=
-es
-> long=C2=A0
-> after they've finished downloading them, in which case they'll still
-> need=C2=A0
-> the torrent files themselves, along with the checksums info.
-Well I guess we don't need to hook up ourselves so much on the p2p
-formats.
-They're just one examples, even if these would actually be integrity
-protected in the sense as described above, well, fine, but there are
-other major use cases left, for which this is not the case.
-
-Of course one can also always argue, that users can then manually move
-the files out of the no-CoWed area or manually create their own
-checksums as I do and store them in XATTRS.
-But all this is not real proper full checksum protection: there are
-gaps, where things are not protected and normal users may simply not
-do/know all this (and why shouldn't they still benefit from proper
-checksumming if we can make it for them).
-IMHO, even the argument that one could manually make checksums or move
-the file to CoWed area, while the e.g. downloaded files are still in
-cache doesn't count: that wouldn't work for VMs, DBs, and certainly not
-for torrent files larger than the memory.
-
-
-> Meanwhile, if they do it correctly there's no window without
-> protection,=C2=A0
-> as the torrent file can be used to double-verify the file once moved,
-> as=C2=A0
-> well, before deleting it.
-Again, would work only for torrent-like files, not for VM images, only
-partially for DBs... plus... why requiring users to make it manually,
-if the fs could take care of it.
-
-
-
-
-
-
-
-On Thu, 2015-12-17 at 05:07 +0000, Duncan wrote:
-> > In kinda curios, what free space fragmentation actually means here.
-> >=C2=A0
-> > Ist simply like this:
-> > +----------+-----+---+--------+
-> > >=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0F=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0D=
-=C2=A0=C2=A0| F |=C2=A0=C2=A0=C2=A0=C2=A0D=C2=A0=C2=A0=C2=A0|
-> > +----------+-----+---+--------+
-> > Where D is data (i.e. files/metadata) and F is free space.
-> > In other words, (F)ree space itself is not further subdivided and
-> > only
-> > fragmented by the (D)ata extents in between.
-> >=C2=A0
-> > Or is it more complex like this:
-> > +-----+----+-----+---+--------+
-> > >=C2=A0=C2=A0F=C2=A0=C2=A0|=C2=A0=C2=A0F |=C2=A0=C2=A0D=C2=A0=C2=A0| F =
-|=C2=A0=C2=A0=C2=A0=C2=A0D=C2=A0=C2=A0=C2=A0|
-> > +-----+----+-----+---+--------+
-> > Where the (F)ree space itself is subdivided into "extents" (not
-> > necessarily of the same size), and btrfs couldn't use e.g. the
-> > first two
-> > F's as one contiguous amount of free space for a larger (D)ata
-> > extent
-> At the one level, I had the simpler f/d/f/d scheme in mind, but that=C2=
-=A0
-> would be the case inside a single data chunk.=C2=A0=C2=A0At the higher fi=
-le
-> level,=C2=A0
-> with files significant fractions of the size of a single data chunk
-> to=C2=A0
-> much larger than a single data chunk, the more complex and second
-> f/f/d/f/d case would apply, with the chunk boundary as the
-> separation=C2=A0
-> between the f/f.
-Okay, but that's only when there are data chunks that neighbour each
-other... since the data chunks are rather big normally (1GB) that
-shouldn't be such a big issue,... so I guess the real world looks like
-this:
-=C2=A0DC#1 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0DC=
-#2
-...----+---------------------------------...
-...---+|+----------+-----+-
---+--------+
-... F ||| =C2=A0 =C2=A0 F=C2=A0=C2=A0=C2=A0=C2=A0|=C2=A0=C2=A0D=C2=A0=C2=A0=
-| F |=C2=A0=C2=A0=C2=A0=C2=A0D=C2=A0=C2=A0=C2=A0|
-...---+|+--------
---+-----+---+--------+
-...----++---------------------------------...
-(with DC =3D data chunk)
-
-but it could NOT look like this:
-=C2=A0DC#1 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0 =C2=A0DC=
-#2
-...----+---------------------------------...
-...---+|+-----+----+-----+---+--------+
-... F ||| =C2=A0F=C2=A0 | =C2=A0F |=C2=A0=C2=A0D=C2=A0=C2=A0| F
-|=C2=A0=C2=A0=C2=A0=C2=A0D=C2=A0=C2=A0=C2=A0|
-...---+|+-----+----+-----+---+--------+
-...----++-------------
---------------------...
-in other words, there could be =3D2 adjacent free
-space "extents", when these are actually parts of different
-neighbouring chunks, but there could NOT be >=3D2 adjacent free space
-"extents" as part of the same data chunk.
-Right?
-
-
-=C2=A0
-> IOW, files larger than data chunk size will always be fragmented
-> into=C2=A0
-> data chunk size fragments/extents, at the largest, because chunks
-> are=C2=A0
-> designed to be movable using balance, device remove, replace, etc.
-IOW, filefrag doesn't really show me directly, whether a file is
-fragged or not (at least not, when the file is > chunk size)...
-There should be a better tool for that from the btrfs :)
-
-And one more (think I found parts of the answer already below):
-Does defrag only try to defrag within chunks, or would it also try to
-align datachunks the "belong" together next to each other - or better
-said would it try to place extents beloning together in neighbouring
-extents?
-Or is it basically not really forseen in btrfs, that file sizes > chunk
-size are really fully consecutively on disk?
-Similar perhaps, whether freshly allocating a file larger than > chunk
-size, would try to choose the (already existing) and allocate new
-chunks so that its extents are contiguous even at chunk borders?
-
-I think if files > chunk size, would be always fragmented at the chunk
-level,.. this may show up a problematic edge case:
-If a file is heavily accessed at regions that are at the chunk borders,
-one would have always seeks (at HDDs) when the next chunk is actually
-needed... and one could never defrag it fully, or at least any balance
-could "destroy" it again.
-I guess nodatacow'ed areas also use the 1GB chunk size, right?
-
-
-> Using the 1 GiB nominal figure, files over 1 GiB would always be
-> broken=C2=A0
-> into 1 GiB maximum size extents, corresponding to 1 extent per chunk.
-I see...
-
-=C2=A0
-> But based on real reports posting before and after numbers from
-> filefrag=C2=A0
-> (on uncompressed btrfs), we do have cases where defrag can't find 256
-> KiB=C2=A0
-> free-space blocks and thus can actually fragment a file worse than it
-> was=C2=A0
-> before, so free-space fragmentation is indeed a very real problem.
-btw: That's IMHO quite strange... or rather said: I'd have thought that
-the check whether an extent get's even more fragmented than before,
-would have been rather trivial...
-
-
-
-
-
-
-
-On Thu, 2015-12-17 at 06:00 +0000, Duncan wrote:
-> but as has been discussed elsewhere, on btrfs
-> compressed=C2=A0
-> files it will interpret each 128 KiB btrfs compression block as its
-> own=C2=A0
-> extent, even if (as seen in verbose mode) the next one begins where
-> the=C2=A0
-> previous one ends so it's really just a single extent.
-Hmm I took the opportunity and reported that as a wishlist bug
-upstream:
-http://bugs.debian.org/cgi-bin/bugreport.cgi?bug=3D808265
-
+> ends of the earth if necessary to recover what you can of my data,
+> and=C2=A0
+> yes, I understand it could be a bit risky or end up rather
+> disordered,=C2=A0
+> but I'm willing to take that risk because I _am_ that desperate",
+> level=C2=A0
+> recovery.
+Well, as long as that was/is clearly documented (which in the btrfs
+would need to include any warnings about issues with multi-dev, if
+any), then it's IMHO completely okay.
+:)
 
 Cheers,
 Chris.
---=-rweaMm/WA21KCyxfIPbK
+--=-ED/dDHvwa+MumGlmHUiw
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -328,19 +139,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxODAwMjEz
-NlowTwYJKoZIhvcNAQkEMUIEQJJ42NqhVviipl0DoUUaYvHH1ZEKBbxpxzex+BCFHN9VoTocllVL
-LFITGAm0wiGUNGnnhYtb2T4e0yrQcwLqN8cwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIxODAwNTYy
+MFowTwYJKoZIhvcNAQkEMUIEQK5rkex9O/nYAhv+09HIi9eSeQjfq+e4cna7KFHIMBq0EGBOA+io
+8twuKIiyjm9nyHHIZtGja+9c4KD1RZb212EwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCrjaSqow1PiEVC8cwkxl1pvhEkjxQF
-G2g2ioK2UZJZUSH4c84YrVmCuho6QHtGfIQ9K8M7mbM4pom/jUZnPXELbbbZ3BkM7kVLBLHMqHWO
-D3rxYQXeAG3YLupleFKnoKzR98OAKLJb7E7nredzaf0iA12pMoywVB92tjP4k9DzxqsOQMb9WW1O
-1QXIQCJKCMWMpOJZ9daCwPrrWZ+NQ1n34UHTwEy+MKf31SV+ABb7r+KJDbSCAo7DgGhVwSzsDUg5
-eG/TggjMJMu5CZXph8QQ3liwhrYFdw+t6nkxXdpENOvzwsvsXiEPjGy+ozeBQCWrmA/DLkGbh5pp
-zVx7KPPsAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQDbdbC/tYkmSmYQpxQcEq9rUWKRQzfz
+soBHHFEp1/qSodTY0Eg3IiDKuW1MivGXZ3UbS8X3faIviujljpK22U39315P9vII4EREc+83CQlc
+DmxQpDJ5j6V99cZ1w8/cmouhuIZeLym0gAvn338QnNcZr7mW4I58o4xcYpxCoNOmWG6LOG8rovkl
+hs4NJ3xiAnZ086RINyBhBBMIW1QcuAzq8r4bKWbMVpD5kQHcdyObWoyDW5yPf54V32IENSWpOkYC
+1PL+49+PQO6yse5H8TSDvbPHwdtJL5Uy+J1O+QI4TKXS1KuLcDZIX8C55nxJA8WCAQiGH3iCM0Np
+L4WoS8CfAAAAAAAA
 
 
---=-rweaMm/WA21KCyxfIPbK--
+--=-ED/dDHvwa+MumGlmHUiw--
 

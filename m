@@ -1,62 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:51945 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753663AbbLROMi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Dec 2015 09:12:38 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 252AF4092558
-	for <linux-btrfs@vger.kernel.org>; Fri, 18 Dec 2015 22:12:12 +0800 (CST)
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/3] btrfs: Fix in-segment calculation for reada
-Date: Fri, 18 Dec 2015 22:10:19 +0800
-Message-ID: <d91c92e58567119e5e94cac3c7c81d90881d3f1b.1450447809.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from m50-138.163.com ([123.125.50.138]:50165 "EHLO m50-138.163.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751195AbbLRORw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 18 Dec 2015 09:17:52 -0500
+From: Geliang Tang <geliangtang@163.com>
+To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>
+Cc: Geliang Tang <geliangtang@163.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: [PATCH 2/3] btrfs: use list_for_each_entry_safe in free-space-cache.c
+Date: Fri, 18 Dec 2015 22:17:00 +0800
+Message-Id: <b87e3c3186f2f308924b2e09d112036912233c9d.1450447999.git.geliangtang@163.com>
+In-Reply-To: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
+References: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
+In-Reply-To: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
+References: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-reada_zone->end is end pos of segment:
- end = start + cache->key.offset - 1;
+Use list_for_each_entry_safe() instead of list_for_each_safe() to
+simplify the code.
 
-So we need to use "<=" in condition to judge is a pos in the
-segment.
-
-The problem happened rearly, because logical pos rarely pointed
-to last 4k of a blockgroup, but we need to fix it to make code
-right in logic.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+Signed-off-by: Geliang Tang <geliangtang@163.com>
 ---
- fs/btrfs/reada.c | 4 ++--
- 1 file changed, 2 insertions(+), 2 deletions(-)
+ fs/btrfs/free-space-cache.c | 14 ++++----------
+ 1 file changed, 4 insertions(+), 10 deletions(-)
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 7bbd656..6fb9c37 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -265,7 +265,7 @@ static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
- 	spin_unlock(&fs_info->reada_lock);
+diff --git a/fs/btrfs/free-space-cache.c b/fs/btrfs/free-space-cache.c
+index 85a1f86..a368bc8 100644
+--- a/fs/btrfs/free-space-cache.c
++++ b/fs/btrfs/free-space-cache.c
+@@ -1086,14 +1086,11 @@ write_pinned_extent_entries(struct btrfs_root *root,
+ static noinline_for_stack int
+ write_bitmap_entries(struct btrfs_io_ctl *io_ctl, struct list_head *bitmap_list)
+ {
+-	struct list_head *pos, *n;
++	struct btrfs_free_space *entry, *next;
+ 	int ret;
  
- 	if (ret == 1) {
--		if (logical >= zone->start && logical < zone->end)
-+		if (logical >= zone->start && logical <= zone->end)
- 			return zone;
- 		spin_lock(&fs_info->reada_lock);
- 		kref_put(&zone->refcnt, reada_zone_release);
-@@ -684,7 +684,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 	 */
- 	ret = radix_tree_gang_lookup(&dev->reada_extents, (void **)&re,
- 				     dev->reada_next >> PAGE_CACHE_SHIFT, 1);
--	if (ret == 0 || re->logical >= dev->reada_curr_zone->end) {
-+	if (ret == 0 || re->logical > dev->reada_curr_zone->end) {
- 		ret = reada_pick_zone(dev);
- 		if (!ret) {
- 			spin_unlock(&fs_info->reada_lock);
+ 	/* Write out the bitmaps */
+-	list_for_each_safe(pos, n, bitmap_list) {
+-		struct btrfs_free_space *entry =
+-			list_entry(pos, struct btrfs_free_space, list);
+-
++	list_for_each_entry_safe(entry, next, bitmap_list, list) {
+ 		ret = io_ctl_add_bitmap(io_ctl, entry->bitmap);
+ 		if (ret)
+ 			return -ENOSPC;
+@@ -1119,13 +1116,10 @@ static int flush_dirty_cache(struct inode *inode)
+ static void noinline_for_stack
+ cleanup_bitmap_list(struct list_head *bitmap_list)
+ {
+-	struct list_head *pos, *n;
++	struct btrfs_free_space *entry, *next;
+ 
+-	list_for_each_safe(pos, n, bitmap_list) {
+-		struct btrfs_free_space *entry =
+-			list_entry(pos, struct btrfs_free_space, list);
++	list_for_each_entry_safe(entry, next, bitmap_list, list)
+ 		list_del_init(&entry->list);
+-	}
+ }
+ 
+ static void noinline_for_stack
 -- 
-1.8.5.1
-
+2.5.0
 
 

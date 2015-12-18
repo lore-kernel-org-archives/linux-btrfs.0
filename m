@@ -1,92 +1,60 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f174.google.com ([209.85.217.174]:33570 "EHLO
-	mail-lb0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932238AbbLRN7i (ORCPT
+Received: from manchmal.in-ulm.de ([217.10.9.201]:57074 "EHLO
+	manchmal.in-ulm.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S964992AbbLRUiH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Dec 2015 08:59:38 -0500
-Received: by mail-lb0-f174.google.com with SMTP id kw15so64222598lbb.0
-        for <linux-btrfs@vger.kernel.org>; Fri, 18 Dec 2015 05:59:37 -0800 (PST)
+	Fri, 18 Dec 2015 15:38:07 -0500
+Date: Fri, 18 Dec 2015 21:38:04 +0100
+From: Christoph Biedl <linux-kernel.bfrz@manchmal.in-ulm.de>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: ERROR: scrubbing <dev> failed for device id 1: ret=-1, errno=28
+ (No space left on device)
+Message-ID: <1450469988@msgid.manchmal.in-ulm.de>
+References: <1450423394@msgid.manchmal.in-ulm.de>
+ <CAPmG0jZYidy-ra-R-C5GQNQhUZeVSB6anCg7N9sFSY5NrrO61w@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAPmG0jZ_k82PuxdMX0x5s80XUCps93JwWKtbgk+4DeEaSG7JkA@mail.gmail.com>
-References: <CAGqmi75csQRJifFt=66ooQ9SHqxfeAJoRe+u7v21gNqaFibpgA@mail.gmail.com>
- <CAPmG0jZ_k82PuxdMX0x5s80XUCps93JwWKtbgk+4DeEaSG7JkA@mail.gmail.com>
-From: Timofey Titovets <nefelim4ag@gmail.com>
-Date: Fri, 18 Dec 2015 16:58:57 +0300
-Message-ID: <CAGqmi74fy-st5fvQH4gTRdFUrcDBxBr9iBpn4Ex6UAaWcPsF=g@mail.gmail.com>
-Subject: Re: Space not return
-To: Henk Slager <eye1tm@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CAPmG0jZYidy-ra-R-C5GQNQhUZeVSB6anCg7N9sFSY5NrrO61w@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-thanks for the explanation
+Henk Slager wrote...
 
-2015-12-18 15:49 GMT+03:00 Henk Slager <eye1tm@gmail.com>:
-> On Fri, Dec 18, 2015 at 10:37 AM, Timofey Titovets <nefelim4ag@gmail.com> wrote:
->> Hi guys, i catch strange problem:
->> btrfs with mysql, mysql rewrite data, but space consumption only increasing
->> i.e:
->>
->> df -h
->> /dev/sdb1       112G   73G   39G  66% /var/lib/mysql
->>
->> du -hs
->> 43G /var/lib/mysql/
-> As the fs is new, the file(s) in this directory might initially have
-> large extents. Writing a lot to the file(s), with larger pieces at
-> file-offsets that belong to those large extents makes btrfs CoW
-> allocate new extents but does not free the original space in the large
-> extents (no extent splitting in btrfs).
->
-> You could run:
-> # filefrag -k -v /var/lib/mysql/*
-> to see what the situation is, but migh be too much data.
-> In theory, if you would read and writeback the full offset+size of the
-> larger extents, the original large extent space is freed. You get more
-> fragmentation then, but should not be big problem on SSD (if
-> /dev/sdb1  is that)
->
-> File(s) re-creating with nodatacow mount option on might also be your
-> choice. And make sure you have no hidden snapshots somewhere, but I
-> assume you have checked that.
-> Another brute-force work-around would be to run:
-> # btrfs fi defrag -r -v -clzo /var/lib/mysql/
-> so to force rewriting info smaller extents, but you probably don't
-> want compression on those file(s)
->
->> btrfs fi df /var/lib/mysql
->> Data, single: total=78.00GiB, used=72.39GiB
->> System, single: total=32.00MiB, used=16.00KiB
->> Metadata, single: total=1.00GiB, used=109.61MiB
->> GlobalReserve, single: total=48.00MiB, used=0.00B
->>
->> This is fresh fs (seven hours old)
->> Created by btrfs-progs 4.1.2
->> Linux 4.2.0-0.bpo.1-amd64 #1 SMP Debian 4.2.6-3~bpo8+2 (2015-12-14)
->> x86_64 GNU/Linux
->>
->> Btrfsck not found any errors on this device
->>
->> P.S. First i think what it because system have opened files
->> descriptors, but after reboot, space not return
->> If i write file by dd and after delete it, space will returned (with
->> direct io and without)
->>
->> --
->> Have a nice day,
->> Timofey.
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> you need to do some balancing, as I think that the free space is too
+> fragmented and the system fails to allocate extra metadata space
+> needed for scrub doing writes into metadata.
+> 
+> # btrfs balance start -dusage=<number>
+> with number somewhere between 5 and 50; first start with lower number
+> and repeat and increase until the 5.17GiB gets closer down to the
+> 3.75GiB
+
+Thanks, that one worked with number 100. Still some ENOSPC errors but
+appeareantly good enough to make scrubbing work.
+
+> The issue is that for for a filesystem of this size (6.5GiB), it would
+> have been better to have mixed data/metadata allocation. See help of
+> mkfs.btrfs. So maybe you want to recreate the fs like that, otherwise
+> you might easily hit this problem again if you don't monitor free
+> space / balance regularly.
+
+Will keep that in mind. Just out of curiousity: Initially, the file
+system size was just 4 Gibyte. Is it possible this made things worse?
 
 
+Oh, and by the way:
 
--- 
-Have a nice day,
-Timofey.
+--- a/Documentation/mkfs.btrfs.asciidoc
++++ b/Documentation/mkfs.btrfs.asciidoc
+@@ -77,7 +77,7 @@ where the space is reserved for the other block group type, is not available for
+ allocation and can lead to ENOSPC state.
+ +
+ The recommended size for the mixed mode is for filesystems less than 1GiB. The
+-soft recommendation is to use it for filesystems smaller than 5GiB. Thie mixed
++soft recommendation is to use it for filesystems smaller than 5GiB. The mixed
+ mode may lead to degraded performance on larger filesystems, but is otherwise
+ usable, even on multiple devices.
+ +
+
+
+    Christoph

@@ -1,71 +1,121 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:60213 "EHLO mx1.redhat.com"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934734AbbLQOJA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 17 Dec 2015 09:09:00 -0500
-Date: Thu, 17 Dec 2015 15:08:58 +0100
-From: Karel Zak <kzak@redhat.com>
-To: Eric Sandeen <sandeen@redhat.com>
-Cc: Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        fsdevel <linux-fsdevel@vger.kernel.org>,
-        btrfs <linux-btrfs@vger.kernel.org>, linux-ext4@vger.kernel.org,
-        xfs@oss.sgi.com
+Received: from cn.fujitsu.com ([59.151.112.132]:65064 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S964900AbbLRB3s (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 17 Dec 2015 20:29:48 -0500
 Subject: Re: Ideas on unified real-ro mount option across all filesystems
-Message-ID: <20151217140858.GD13224@ws.net.home>
-References: <567212DA.8050808@cn.fujitsu.com>
- <567228EF.80007@redhat.com>
+To: Eric Sandeen <sandeen@redhat.com>, fsdevel <linux-fsdevel@vger.kernel.org>,
+        btrfs <linux-btrfs@vger.kernel.org>, <kzak@redhat.com>
+References: <567212DA.8050808@cn.fujitsu.com> <567228EF.80007@redhat.com>
+CC: <linux-ext4@vger.kernel.org>, <xfs@oss.sgi.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5673616C.1040706@cn.fujitsu.com>
+Date: Fri, 18 Dec 2015 09:29:16 +0800
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
 In-Reply-To: <567228EF.80007@redhat.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 16, 2015 at 09:15:59PM -0600, Eric Sandeen wrote:
+
+
+Eric Sandeen wrote on 2015/12/16 21:15 -0600:
+> <xfs list address fixed>
+>
+> On 12/16/15 7:41 PM, Qu Wenruo wrote:
+>> Hi,
+>>
+>> In a recent btrfs patch, it is going to add a mount option to disable
+>> log replay for btrfs, just like "norecovery" for ext4/xfs.
+>>
+>> But in the discussion on the mount option name and use case, it seems
+>> better to have an unified and fs independent mount option alias for
+>> real RO mount
+>>
+>> Reasons:
+>> 1) Some file system may have already used [no]"recovery" mount option
+>>     In fact, btrfs has already used "recovery" mount option.
+>>     Using "norecovery" mount option will be quite confusing for btrfs.
+>
+> Too bad btrfs picked those semantics when "norecovery" has existed on
+> other filesystems for quite some time with a different meaning... :(
+>
+>> 2) More straight forward mount option
+>>     Currently, to get real RO mount, for ext4/xfs, user must use -o
+>>     ro,norecovery.
+>>     Just ro won't ensure real RO, and norecovery can't be used alone.
+>>     If we have a simple alias, it would be much better for user to use.
+>>     (it maybe done just in user space mount)
+>
+> mount(8) simply says:
+>
+>         ro     Mount the filesystem read-only.
+>
+> and mount(2) is no more illustrative:
+>
+>         MS_RDONLY
+>                Mount file system read-only.
+>
+> kernel code is no help, either:
+>
+> #define MS_RDONLY        1      /* Mount read-only */
+>
+> They say nothing about what, exactly, "read-only" means.  But since at least
+> the early ext3 days, it means that you cannot write through the filesystem, not
+> that the filesystem will leave the block device unmodified when it mounts.
+>
 > I have always interpreted it as simply "no user changes to the filesystem,"
 > and that is clearly what the vfs does with the flag...
+>
+>>     Not to mention some fs (yeah, btrfs again) doesn't have "norecovery"
+>>     but "nologreplay".
+>
+> well, again, btrfs picked unfortunate semantics, given the precedent set
+> by other filesystems.
+>
+> f2fs, ext4, gfs2, nilfs2, and xfs all support "norecovery" - xfs since
+> forever, ext4 & f2fs since 2009, etc.
 
-Yep,
+I understand it's btrfs' fault.
+Considering how many filesystems are already using "norecovery", it is 
+almost a standard.
 
+Not sure if it's possible to change the "recovery" mount option to other 
+name for btrfs, but it seems using "norecovery" would be the best solution.
+
+>
+>> 3) A lot of user even don't now mount ro can still modify device
+>>     Yes, I didn't know this point until I checked the log replay code of
+>>     btrfs.
+>>     Adding such mount option alias may raise some attention of users.
+>
 > Given that nothing in the documentation implies that the block device itself
 > must remain unchanged on a read-only mount, I don't see any problem which
 > needs fixing.  MS_RDONLY rejects user IO; that's all.
 
-I agree, it's FS specific business to interpret the 'ro'.
+And thanks for the info provided by Karel, it's clear that at least 
+mount(8) itself already has explain on what ro will do and what it won't do.
 
-And it's already enough complicated, we have three levels of "read-only":
-
- - read-only device (blockdev --setro ioctl)
- - read-only filesystem (mount -o ro)
- - read-only VFS node (mount -o remount,ro,bind /src /dst)
-
-and for example in /proc/self/mountinfo we distinguish between FS "ro"
-and VFS "ro" flag:
-
-# grep test /proc/self/mountinfo
-185 59 8:5 / /mnt/test ro,relatime shared:32 - ext4 /dev/sda5 rw,data=ordered
-                       ^^                                     ^^
-
-
-BTW, util-linux 2.27 mount(8) man page:
-
-   -r, --read-only
-       Mount the filesystem read-only.  A synonym is -o ro.
-
-       Note  that,  depending  on the filesystem type, state and
-       kernel behavior, the system may still write to the device.  For
-       example, ext3 and ext4 will replay the journal if the
-       filesystem is dirty.  To prevent this kind of write access, you
-       may want to mount an ext3 or ext4 filesystem with the ro,noload
-       mount options or set the  block  device itself to read-only
-       mode, see the blockdev(8) command.
+Thanks,
+Qu
+>
+> If you want to be sure your block device rejects all IO for forensics or
+> what have you, I'd suggest # blockdev --setro /dev/whatever prior to mount,
+> and take it out of the filesystem's control.  Or better yet, making an
+> image and not touching the original.
+>
+> -Eric
+>
+>> Any ideas about this?
+>
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-fsdevel" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
 
 
- (maybe we need to copy this note to "ro" description too and add hint
- about btrfs too :-)
-
-     Karel
-
-
--- 
- Karel Zak  <kzak@redhat.com>
- http://karelzak.blogspot.com

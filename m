@@ -1,295 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:39555 "EHLO
+Received: from userp1040.oracle.com ([156.151.31.81]:39352 "EHLO
 	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753927AbbLSJMJ (ORCPT
+	with ESMTP id S1753688AbbLSJLB (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Dec 2015 04:12:09 -0500
-Subject: [PATCH 10/11] reflink: test a big CoW operation
+	Sat, 19 Dec 2015 04:11:01 -0500
+Subject: [PATCH v4 00/11] xfstests: test the nfs/cifs/btrfs/xfs
+ reflink/dedupe ioctls
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Sat, 19 Dec 2015 01:12:00 -0800
-Message-ID: <20151219091200.15320.21534.stgit@birch.djwong.org>
-In-Reply-To: <20151219091052.15320.94973.stgit@birch.djwong.org>
-References: <20151219091052.15320.94973.stgit@birch.djwong.org>
+Date: Sat, 19 Dec 2015 01:10:52 -0800
+Message-ID: <20151219091052.15320.94973.stgit@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Test what happens when we send largeish buffers to CoW all at once.
+Hi all,
 
-Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
----
- tests/generic/878     |   99 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/878.out |   13 ++++++
- tests/generic/879     |   99 +++++++++++++++++++++++++++++++++++++++++++++++++
- tests/generic/879.out |   13 ++++++
- tests/generic/group   |    2 +
- 5 files changed, 226 insertions(+)
- create mode 100755 tests/generic/878
- create mode 100644 tests/generic/878.out
- create mode 100755 tests/generic/879
- create mode 100644 tests/generic/879.out
+This is a small patch set against the reflink/dedupe test cases in
+xfstests.  The first patch is a rewrite of the tools to find the
+lowest vacant ID number and to move a test case.  These two programs
+are useful for staging a lot of new tests at a high number and moving
+them to lower numbers when the maintainer wants to accept the new
+tests.
 
+The second patch fixes some reflink tests that didn't clean up after
+themselves.
 
-diff --git a/tests/generic/878 b/tests/generic/878
-new file mode 100755
-index 0000000..342a94e
---- /dev/null
-+++ b/tests/generic/878
-@@ -0,0 +1,99 @@
-+#! /bin/bash
-+# FS QA Test No. 878
-+#
-+# Reflink two large files and CoW them in big chunks.
-+#
-+# This test is dependent on the system page size, so we cannot use md5 in
-+# the golden output; we can only compare to a check file.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+TESTDIR="$SCRATCH_MNT/test-$seq"
-+rm -rf $TESTDIR
-+mkdir $TESTDIR
-+
-+BLKSZ=65536
-+NR=6400
-+BSZ=1280
-+
-+FREE_BLOCKS=$(stat -f -c '%a' "$TESTDIR")
-+REAL_BLKSZ=$(stat -f -c '%S' "$TESTDIR")
-+SPACE_NEEDED=$(((BLKSZ * NR * 3) * 5 / 4))
-+SPACE_AVAIL=$((FREE_BLOCKS * REAL_BLKSZ))
-+test $SPACE_NEEDED -gt $SPACE_AVAIL && _notrun "Not enough space. $SPACE_AVAIL < $SPACE_NEEDED"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file1" >> "$seqres.full"
-+_cp_reflink "$TESTDIR/file1" "$TESTDIR/file2" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file2.chk" >> "$seqres.full"
-+_scratch_remount
-+
-+echo "Compare files"
-+md5sum "$TESTDIR/file1" | _filter_scratch
-+md5sum "$TESTDIR/file2" | _filter_scratch
-+md5sum "$TESTDIR/file2.chk" | _filter_scratch
-+
-+echo "CoW and unmount"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file2" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file2.chk" >> "$seqres.full"
-+_scratch_remount
-+
-+echo "Compare files"
-+md5sum "$TESTDIR/file1" | _filter_scratch
-+md5sum "$TESTDIR/file2" | _filter_scratch
-+md5sum "$TESTDIR/file2.chk" | _filter_scratch
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+_check_scratch_fs
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/878.out b/tests/generic/878.out
-new file mode 100644
-index 0000000..0da5baa
---- /dev/null
-+++ b/tests/generic/878.out
-@@ -0,0 +1,13 @@
-+QA output created by 878
-+Format and mount
-+Create the original files
-+Compare files
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-878/file1
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-878/file2
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-878/file2.chk
-+CoW and unmount
-+Compare files
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-878/file1
-+c835fd53fa27b72511b250d51595c053  SCRATCH_MNT/test-878/file2
-+c835fd53fa27b72511b250d51595c053  SCRATCH_MNT/test-878/file2.chk
-+Check for damage
-diff --git a/tests/generic/879 b/tests/generic/879
-new file mode 100755
-index 0000000..83be543
---- /dev/null
-+++ b/tests/generic/879
-@@ -0,0 +1,99 @@
-+#! /bin/bash
-+# FS QA Test No. 879
-+#
-+# Reflink two large files and DIO CoW them in big chunks.
-+#
-+# This test is dependent on the system page size, so we cannot use md5 in
-+# the golden output; we can only compare to a check file.
-+#
-+#-----------------------------------------------------------------------
-+# Copyright (c) 2015, Oracle and/or its affiliates.  All Rights Reserved.
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+
-+seq=`basename "$0"`
-+seqres="$RESULT_DIR/$seq"
-+echo "QA output created by $seq"
-+
-+here=`pwd`
-+tmp=/tmp/$$
-+status=1    # failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+    cd /
-+    rm -rf "$tmp".* "$TESTDIR"
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+. ./common/reflink
-+
-+# real QA test starts here
-+_supported_os Linux
-+_require_scratch_reflink
-+_require_cp_reflink
-+
-+rm -f "$seqres.full"
-+
-+
-+echo "Format and mount"
-+_scratch_mkfs > "$seqres.full" 2>&1
-+_scratch_mount >> "$seqres.full" 2>&1
-+
-+TESTDIR="$SCRATCH_MNT/test-$seq"
-+rm -rf $TESTDIR
-+mkdir $TESTDIR
-+
-+BLKSZ=65536
-+NR=6400
-+BSZ=1280
-+
-+FREE_BLOCKS=$(stat -f -c '%a' "$TESTDIR")
-+REAL_BLKSZ=$(stat -f -c '%S' "$TESTDIR")
-+SPACE_NEEDED=$(((BLKSZ * NR * 3) * 5 / 4))
-+SPACE_AVAIL=$((FREE_BLOCKS * REAL_BLKSZ))
-+test $SPACE_NEEDED -gt $SPACE_AVAIL && _notrun "Not enough space. $SPACE_AVAIL < $SPACE_NEEDED"
-+
-+echo "Create the original files"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file1" >> "$seqres.full"
-+_cp_reflink "$TESTDIR/file1" "$TESTDIR/file2" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x61 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file2.chk" >> "$seqres.full"
-+_scratch_remount
-+
-+echo "Compare files"
-+md5sum "$TESTDIR/file1" | _filter_scratch
-+md5sum "$TESTDIR/file2" | _filter_scratch
-+md5sum "$TESTDIR/file2.chk" | _filter_scratch
-+
-+echo "CoW and unmount"
-+"$XFS_IO_PROG" -d -f -c "pwrite -S 0x63 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file2" >> "$seqres.full"
-+"$XFS_IO_PROG" -f -c "pwrite -S 0x63 -b $((BLKSZ * BSZ)) 0 $((BLKSZ * NR))" "$TESTDIR/file2.chk" >> "$seqres.full"
-+_scratch_remount
-+
-+echo "Compare files"
-+md5sum "$TESTDIR/file1" | _filter_scratch
-+md5sum "$TESTDIR/file2" | _filter_scratch
-+md5sum "$TESTDIR/file2.chk" | _filter_scratch
-+
-+echo "Check for damage"
-+umount "$SCRATCH_MNT"
-+_check_scratch_fs
-+
-+# success, all done
-+status=0
-+exit
-diff --git a/tests/generic/879.out b/tests/generic/879.out
-new file mode 100644
-index 0000000..fc1363a
---- /dev/null
-+++ b/tests/generic/879.out
-@@ -0,0 +1,13 @@
-+QA output created by 879
-+Format and mount
-+Create the original files
-+Compare files
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-879/file1
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-879/file2
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-879/file2.chk
-+CoW and unmount
-+Compare files
-+01768a16d33c9bd21dc67a7fac006ee1  SCRATCH_MNT/test-879/file1
-+c835fd53fa27b72511b250d51595c053  SCRATCH_MNT/test-879/file2
-+c835fd53fa27b72511b250d51595c053  SCRATCH_MNT/test-879/file2.chk
-+Check for damage
-diff --git a/tests/generic/group b/tests/generic/group
-index f3e3e2c..68853b4 100644
---- a/tests/generic/group
-+++ b/tests/generic/group
-@@ -289,3 +289,5 @@
- 875 auto quick clone
- 876 auto quick clone
- 877 auto quick clone
-+878 auto quick clone
-+879 auto quick clone
+Patch 3 updates the golden output for the test that examines the
+results of feeding bad inputs to the two ioctls.  The new error values
+are based on a discussion of how to react to bad file types on the
+mailing lists and the ongoing work to hoist the ioctls to the VFS
+level.
 
+Patches 4-5 fix some minor errors found while testing with different
+kernel config and block size options.
+
+Patch 6 introduces new tests to check the behavior of unaligned CoW,
+punch-while-CoWd, and ensures that passing len == 0 to reflink
+actually runs to EOF.
+
+Patch 7 introduces some XFS-specific ENOSPC testing, wherein we try to
+crash the filesystem by allocating all the blocks in an AG and then
+expanding the refcount and rmap btrees until the AG runs out of space.
+
+Patch 8 introduces checks that CoW works with a variety of different
+neighbor blocks -- delalloc, unwritten, hole, and regular.
+
+Patch 9 introduces checks for CoW when blocksize < pagesize.
+
+Patch 10 tries some large CoW operations to ensure that it works
+correctly.
+
+Patch 11 creates a 'dedupe' group for testing specifically dedupe
+functionality.
+
+If you're going to start using this mess, you probably ought to just
+pull from my github trees for kernel[1], xfsprogs[2], xfstests[3],
+xfs-docs[4], and man-pages[5].  They should just work with the btrfs
+that's in 4.4...  and somewhat buggily with the 4.4 XFS patched with
+[1].  The relevant xfs_io support will be in xfsprogs 4.3 though it
+still needs a patch to fix len == 0 support.  Probably easier just to
+grab [2] and build that.
+
+Comments and questions are, as always, welcome.
+
+--D
+
+[1] https://github.com/djwong/linux/tree/for-dave
+[2] https://github.com/djwong/xfsprogs/tree/for-dave
+[3] https://github.com/djwong/xfstests/tree/for-dave
+[4] https://github.com/djwong/xfs-documentation/tree/for-dave
+[5] https://github.com/djwong/man-pages/commits/for-mtk

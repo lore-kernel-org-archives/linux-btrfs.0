@@ -1,133 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail110.syd.optusnet.com.au ([211.29.132.97]:55009 "EHLO
-	mail110.syd.optusnet.com.au" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1752853AbbLSK7m (ORCPT
+Received: from mail-lf0-f54.google.com ([209.85.215.54]:34890 "EHLO
+	mail-lf0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752067AbbLSPbg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Dec 2015 05:59:42 -0500
-Received: from gw.lambert.rd.to (c110-22-133-81.mckinn4.vic.optusnet.com.au [110.22.133.81])
-	by mail110.syd.optusnet.com.au (Postfix) with ESMTPS id D50ED780690
-	for <linux-btrfs@vger.kernel.org>; Sat, 19 Dec 2015 21:38:56 +1100 (AEDT)
-Received: from [192.168.2.2] (matthew.lambert.rd.to [192.168.2.2])
-	by gw.lambert.rd.to (8.15.1/8.14.7) with ESMTP id tBJAcuIM019205
-	for <linux-btrfs@vger.kernel.org>; Sat, 19 Dec 2015 21:38:56 +1100
-From: Matthew Jurgens <default.mailbox@edcint.co.nz>
-Subject: Disk quota exceeded
-To: linux-btrfs@vger.kernel.org
-Message-ID: <567533BA.1010207@edcint.co.nz>
-Date: Sat, 19 Dec 2015 21:38:50 +1100
+	Sat, 19 Dec 2015 10:31:36 -0500
+Received: by mail-lf0-f54.google.com with SMTP id l133so88778978lfd.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 19 Dec 2015 07:31:35 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <1450469988@msgid.manchmal.in-ulm.de>
+References: <1450423394@msgid.manchmal.in-ulm.de>
+	<CAPmG0jZYidy-ra-R-C5GQNQhUZeVSB6anCg7N9sFSY5NrrO61w@mail.gmail.com>
+	<1450469988@msgid.manchmal.in-ulm.de>
+Date: Sat, 19 Dec 2015 16:31:34 +0100
+Message-ID: <CAPmG0jYet6-hGRZQyoh6TrvBPDOZhhPjPjZZiiCEkmtEtR4bLg@mail.gmail.com>
+Subject: Re: ERROR: scrubbing <dev> failed for device id 1: ret=-1, errno=28
+ (No space left on device)
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I've create a subvolume
-CMD: btrfs quota enable /export/shared
-CMD: btrfs subvol create /export/shared/TV/files
-Create subvolume '/export/shared/TV/files'
-CMD: btrfs quota rescan /export/shared/TV/files
+On Fri, Dec 18, 2015 at 9:38 PM, Christoph Biedl
+<linux-kernel.bfrz@manchmal.in-ulm.de> wrote:
+> Henk Slager wrote...
+>
+>> you need to do some balancing, as I think that the free space is too
+>> fragmented and the system fails to allocate extra metadata space
+>> needed for scrub doing writes into metadata.
+>>
+>> # btrfs balance start -dusage=<number>
+>> with number somewhere between 5 and 50; first start with lower number
+>> and repeat and increase until the 5.17GiB gets closer down to the
+>> 3.75GiB
+>
+> Thanks, that one worked with number 100. Still some ENOSPC errors but
+> appeareantly good enough to make scrubbing work.
+>
+>> The issue is that for for a filesystem of this size (6.5GiB), it would
+>> have been better to have mixed data/metadata allocation. See help of
+>> mkfs.btrfs. So maybe you want to recreate the fs like that, otherwise
+>> you might easily hit this problem again if you don't monitor free
+>> space / balance regularly.
+>
+> Will keep that in mind. Just out of curiousity: Initially, the file
+> system size was just 4 Gibyte. Is it possible this made things worse?
+That should not matter.
 
-I've assigned a small quota to it:
-CMD: btrfs qgroup limit 100M /export/shared/TV/files
-
-I've also disabled copy on write:
-CMD: chattr -R -V +C /export/shared/TV/files
-chattr 1.42.12 (29-Aug-2014)
-Flags of /export/shared/TV/files set as ---------------C
-
-CMD: sync; btrfs qgroup show -r /export/shared/TV/files
-qgroupid         rfer         excl     max_rfer
---------         ----         ----     --------
-0/5           2.11TiB      2.11TiB         none
-0/1894       16.00KiB     16.00KiB    100.00MiB
-
-I created one file until I exceeded the quota using:
-CMD: dd if=/dev/zero of=/export/shared/TV/files/junk1 count=50 bs=1M
-CMD: dd if=/dev/zero of=/export/shared/TV/files/junk1 count=50 bs=1M
-dd: error writing â€˜/export/shared/TV/files/junk1â€™: Disk quota exceeded
-50+0 records in
-49+0 records out
-51380224 bytes (51 MB) copied, 0.0238218 s, 2.2 GB/s
-
-then I removed the file
-CMD: rm /export/shared/TV/files/junk1
-
-I tried to create it again (and only got 900k written before the quota 
-was exceeded):
-CMD: dd if=/dev/zero of=/export/shared/TV/files/junk1 count=50 bs=1M
-dd: error writing â€˜/export/shared/TV/files/junk1â€™: Disk quota exceeded
-1+0 records in
-0+0 records out
-917504 bytes (918 kB) copied, 0.000568984 s, 1.6 GB/s
-
-then I removed the file
-CMD: rm /export/shared/TV/files/junk1
-
-I tried to create it again (and this time got 900k again written before 
-the quota was exceeded):
-dd if=/dev/zero of=/export/shared/TV/files/junk1 count=50 bs=1M
-dd: error writing â€˜/export/shared/TV/files/junk1â€™: Disk quota exceeded
-1+0 records in
-0+0 records out
-917504 bytes (918 kB) copied, 0.000943652 s, 972 MB/s
-
-The usage looks ok:
-CMD: sync; btrfs qgroup show -r /export/shared/TV/files
-qgroupid         rfer         excl     max_rfer
---------         ----         ----     --------
-0/5           3.10TiB      3.10TiB         none
-0/1894      912.00KiB    912.00KiB    100.00MiB
-
-But I can not create any more files:
-CMD: dd if=/dev/zero of=/export/shared/TV/files/junk1 count=50 bs=1M
-dd: failed to open â€˜/export/shared/TV/files/junk1â€™: Disk quota exceeded
-
-CMD: lsattr /export/shared/TV/files
----------------C /export/shared/TV/files/junk1
-
-During other tests I have managed to get it to the point where I can't 
-delete the file (since disk quota exceeded).
-I've waited many minutes to ensure commits etc. The only way I can 
-seemingly consistently get the ability to write to the directory again 
-is to reboot. Immediately after a reboot I can create files as expected.
-
-It seems like copy on write is still functioning for this directory? or 
-quota results have delays?
-I've tried mounting the subvolume to another location, but same results.
-
-Is this happening because quotas are not yet considered stable?
-Is there something I am doing wrong?
-
-
-
-
-Other Info:
-The fstab entry:
-LABEL=SHARED            /export/shared          btrfs 
-defaults,compress=lzo,relatime,nofail 0 1
-
-uname -a
-Linux gw.lambert.rd.to 4.2.7-200.fc22.x86_64 #1 SMP Thu Dec 10 03:28:47 
-UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-btrfs --version
-btrfs-progs v4.2.2
-
-btrfs fi show
-Label: 'SHARED'  uuid: 199672d4-69ef-4ecf-865a-851bed0167d5
-         Total devices 5 FS bytes used 3.10TiB
-         devid    1 size 2.73TiB used 1.27TiB path /dev/sdc
-         devid    2 size 2.73TiB used 1.27TiB path /dev/sdf
-         devid    3 size 2.73TiB used 1.27TiB path /dev/sdh
-         devid    4 size 2.73TiB used 1.27TiB path /dev/sde
-         devid    5 size 2.73TiB used 1.27TiB path /dev/sdd
-
-btrfs fi df /export/shared
-Data, RAID10: total=3.16TiB, used=3.09TiB
-System, RAID10: total=64.00MiB, used=352.00KiB
-Metadata, RAID10: total=9.00GiB, used=7.61GiB
-GlobalReserve, single: total=512.00MiB, used=0.00B
-
-dmesg:
-http://edcint.co.nz/tmp/dmesg_20151219.log
-
-
+> Oh, and by the way:
+>
+> --- a/Documentation/mkfs.btrfs.asciidoc
+> +++ b/Documentation/mkfs.btrfs.asciidoc
+> @@ -77,7 +77,7 @@ where the space is reserved for the other block group type, is not available for
+>  allocation and can lead to ENOSPC state.
+>  +
+>  The recommended size for the mixed mode is for filesystems less than 1GiB. The
+> -soft recommendation is to use it for filesystems smaller than 5GiB. Thie mixed
+> +soft recommendation is to use it for filesystems smaller than 5GiB. The mixed
+>  mode may lead to degraded performance on larger filesystems, but is otherwise
+>  usable, even on multiple devices.
+>  +
+>
+>
+>     Christoph
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

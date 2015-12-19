@@ -1,16 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:17169 "EHLO
+Received: from aserp1040.oracle.com ([141.146.126.69]:17192 "EHLO
 	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753790AbbLSJLL (ORCPT
+	with ESMTP id S1753827AbbLSJLR (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 19 Dec 2015 04:11:11 -0500
-Subject: [PATCH 02/11] tests: don't leave cruft behind on the TEST_MNT
+	Sat, 19 Dec 2015 04:11:17 -0500
+Subject: [PATCH 03/11] generic/15[78]: fix error messages in the golden
+ output
 From: "Darrick J. Wong" <darrick.wong@oracle.com>
 To: david@fromorbit.com, darrick.wong@oracle.com
 Cc: linux-ext4@vger.kernel.org, linux-btrfs@vger.kernel.org,
         fstests@vger.kernel.org, xfs@oss.sgi.com
-Date: Sat, 19 Dec 2015 01:11:05 -0800
-Message-ID: <20151219091105.15320.69176.stgit@birch.djwong.org>
+Date: Sat, 19 Dec 2015 01:11:12 -0800
+Message-ID: <20151219091112.15320.45890.stgit@birch.djwong.org>
 In-Reply-To: <20151219091052.15320.94973.stgit@birch.djwong.org>
 References: <20151219091052.15320.94973.stgit@birch.djwong.org>
 MIME-Version: 1.0
@@ -18,96 +19,148 @@ Content-Type: text/plain; charset="utf-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Don't leave cruft behind on the test device's filesystem, so as to
-avoid filling it with debris.
+Fix the error messages in the golden output for generic/15[78], which
+examine the responses to invalid inputs as returned by the
+clone/clone_range/extent_same ioctls.  Also fix a filtering omission.
 
 Signed-off-by: Darrick J. Wong <darrick.wong@oracle.com>
 ---
- tests/generic/110 |    2 +-
- tests/generic/111 |    2 +-
- tests/generic/115 |    2 +-
- tests/generic/159 |    2 +-
- tests/generic/160 |    2 +-
- tests/xfs/129     |    2 +-
- 6 files changed, 6 insertions(+), 6 deletions(-)
+ tests/generic/157     |   18 +++++++++++++-----
+ tests/generic/157.out |    6 +++---
+ tests/generic/158     |   18 +++++++++++++-----
+ tests/generic/158.out |    8 ++++----
+ 4 files changed, 33 insertions(+), 17 deletions(-)
 
 
-diff --git a/tests/generic/110 b/tests/generic/110
-index 468d859..fffadbc 100755
---- a/tests/generic/110
-+++ b/tests/generic/110
-@@ -37,7 +37,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- _cleanup()
- {
-     cd /
--    rm -f $tmp.*
-+    rm -f $tmp.* "$TESTDIR"
- }
+diff --git a/tests/generic/157 b/tests/generic/157
+index a43fb0d..f68ff52 100755
+--- a/tests/generic/157
++++ b/tests/generic/157
+@@ -75,10 +75,18 @@ mkdir "$TESTDIR1/dir1"
+ seq 1 $((2 * BLKSZ / 250)) | while read f; do
+ 	touch "$TESTDIR1/dir1/$f"
+ done
+-mknod "$TESTDIR1/dev1" b 8 0
++mknod "$TESTDIR1/dev1" c 1 3
+ mkfifo "$TESTDIR1/fifo1"
+ sync
  
- # get standard environment, filters and checks
-diff --git a/tests/generic/111 b/tests/generic/111
-index 1797233..98077d8 100755
---- a/tests/generic/111
-+++ b/tests/generic/111
-@@ -37,7 +37,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- _cleanup()
- {
-     cd /
--    rm -f $tmp.*
-+    rm -f $tmp.* "$TESTDIR"
- }
++_filter_enotty() {
++	sed -e 's/Inappropriate ioctl for device/Invalid argument/g'
++}
++
++_filter_einval() {
++	sed -e 's/Invalid argument/Bad file descriptor/g'
++}
++
+ echo "Try cross-device reflink"
+ _reflink_range "$TESTDIR1/file1" 0 "$TESTDIR2/file1" 0 $BLKSZ
  
- # get standard environment, filters and checks
-diff --git a/tests/generic/115 b/tests/generic/115
-index b5c64ec..6c8d92d 100755
---- a/tests/generic/115
-+++ b/tests/generic/115
-@@ -35,7 +35,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- _cleanup()
- {
-     cd /
--    rm -f $tmp.*
-+    rm -f $tmp.* "$TESTDIR"
- }
+@@ -98,16 +106,16 @@ echo "Try to reflink a device"
+ _reflink_range "$TESTDIR1/dev1" 0 "$TESTDIR1/file2" 0 $BLKSZ
  
- # get standard environment, filters and checks
-diff --git a/tests/generic/159 b/tests/generic/159
-index 7944267..369663d 100755
---- a/tests/generic/159
-+++ b/tests/generic/159
-@@ -32,7 +32,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- _cleanup()
- {
-     cd /
-- #   rm -rf "$tmp".* "$TESTDIR1"
-+    rm -rf "$tmp".* "$TESTDIR1"
- }
+ echo "Try to reflink to a dir"
+-_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ
++_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ 2>&1 | _filter_test_dir
  
- # get standard environment, filters and checks
-diff --git a/tests/generic/160 b/tests/generic/160
-index e8c43df..4dfee12 100755
---- a/tests/generic/160
-+++ b/tests/generic/160
-@@ -32,7 +32,7 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- _cleanup()
- {
-     cd /
-- #   rm -rf "$tmp".* "$TESTDIR1"
-+    rm -rf "$tmp".* "$TESTDIR1"
- }
+ echo "Try to reflink to a device"
+-_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ
++_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ 2>&1 | _filter_enotty
  
- # get standard environment, filters and checks
-diff --git a/tests/xfs/129 b/tests/xfs/129
-index 6279d69..6fb9bac 100755
---- a/tests/xfs/129
-+++ b/tests/xfs/129
-@@ -35,7 +35,7 @@ _cleanup()
- {
-     cd /
-     umount "$SCRATCH_MNT" > /dev/null 2>&1
--    rm -rf "$tmp".* "$TESTDIR" "$METADUMP_FILE"
-+    rm -rf "$tmp".* "$TESTDIR" "$METADUMP_FILE" "$TEST_DIR/image"
- }
+ echo "Try to reflink to a fifo"
+-_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n
++_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n 2>&1 | _filter_enotty
  
- # get standard environment, filters and checks
+ echo "Try to reflink an append-only file"
+-_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/file3" 0 $BLKSZ -a
++_reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/file3" 0 $BLKSZ -a 2>&1 | _filter_einval
+ 
+ echo "Reflink two files"
+ _reflink_range "$TESTDIR1/file1" 0 "$TESTDIR1/file2" 0 $BLKSZ >> "$seqres.full"
+diff --git a/tests/generic/157.out b/tests/generic/157.out
+index 177e7f8..ac3c440 100644
+--- a/tests/generic/157.out
++++ b/tests/generic/157.out
+@@ -14,11 +14,11 @@ XFS_IOC_CLONE_RANGE: Is a directory
+ Try to reflink a device
+ XFS_IOC_CLONE_RANGE: Invalid argument
+ Try to reflink to a dir
+-/mnt/test-157/dir1: Is a directory
++TEST_DIR/test-157/dir1: Is a directory
+ Try to reflink to a device
+-XFS_IOC_CLONE_RANGE: Operation not supported
++XFS_IOC_CLONE_RANGE: Invalid argument
+ Try to reflink to a fifo
+-XFS_IOC_CLONE_RANGE: Operation not supported
++XFS_IOC_CLONE_RANGE: Invalid argument
+ Try to reflink an append-only file
+ XFS_IOC_CLONE_RANGE: Bad file descriptor
+ Reflink two files
+diff --git a/tests/generic/158 b/tests/generic/158
+index a499b21..749b186 100755
+--- a/tests/generic/158
++++ b/tests/generic/158
+@@ -76,10 +76,18 @@ mkdir "$TESTDIR1/dir1"
+ seq 1 $((2 * BLKSZ / 250)) | while read f; do
+ 	touch "$TESTDIR1/dir1/$f"
+ done
+-mknod "$TESTDIR1/dev1" b 8 0
++mknod "$TESTDIR1/dev1" c 1 3
+ mkfifo "$TESTDIR1/fifo1"
+ sync
+ 
++_filter_enotty() {
++	sed -e 's/Inappropriate ioctl for device/Invalid argument/g'
++}
++
++_filter_eperm() {
++	sed -e 's/Permission denied/Invalid argument/g'
++}
++
+ echo "Try cross-device dedupe"
+ _dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR2/file1" 0 $BLKSZ
+ 
+@@ -96,16 +104,16 @@ echo "Try to dedupe a dir"
+ _dedupe_range "$TESTDIR1/dir1" 0 "$TESTDIR1/file2" 0 $BLKSZ
+ 
+ echo "Try to dedupe a device"
+-_dedupe_range "$TESTDIR1/dev1" 0 "$TESTDIR1/file2" 0 $BLKSZ
++_dedupe_range "$TESTDIR1/dev1" 0 "$TESTDIR1/file2" 0 $BLKSZ 2>&1 | _filter_enotty
+ 
+ echo "Try to dedupe to a dir"
+-_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ
++_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dir1" 0 $BLKSZ 2>&1 | _filter_test_dir
+ 
+ echo "Try to dedupe to a device"
+-_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ
++_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/dev1" 0 $BLKSZ 2>&1 | _filter_eperm
+ 
+ echo "Try to dedupe to a fifo"
+-_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n
++_dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/fifo1" 0 $BLKSZ -n 2>&1 | _filter_eperm
+ 
+ echo "Try to dedupe an append-only file"
+ _dedupe_range "$TESTDIR1/file1" 0 "$TESTDIR1/file3" 0 $BLKSZ -a >> "$seqres.full"
+diff --git a/tests/generic/158.out b/tests/generic/158.out
+index 36a3f1f..dff3692 100644
+--- a/tests/generic/158.out
++++ b/tests/generic/158.out
+@@ -12,13 +12,13 @@ dedupe: Invalid argument
+ Try to dedupe a dir
+ XFS_IOC_FILE_EXTENT_SAME: Is a directory
+ Try to dedupe a device
+-XFS_IOC_FILE_EXTENT_SAME: Permission denied
++XFS_IOC_FILE_EXTENT_SAME: Invalid argument
+ Try to dedupe to a dir
+-/mnt/test-158/dir1: Is a directory
++TEST_DIR/test-158/dir1: Is a directory
+ Try to dedupe to a device
+-dedupe: Permission denied
++dedupe: Invalid argument
+ Try to dedupe to a fifo
+-dedupe: Permission denied
++dedupe: Invalid argument
+ Try to dedupe an append-only file
+ Dedupe two files
+ Check scratch fs
 

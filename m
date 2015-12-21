@@ -1,87 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:13445 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751624AbbLUCjC (ORCPT
+Received: from mail-ig0-f169.google.com ([209.85.213.169]:37369 "EHLO
+	mail-ig0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751280AbbLUCqP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Dec 2015 21:39:02 -0500
-Subject: Re: Ideas to do custom operation just after mount?
-To: Dave Chinner <david@fromorbit.com>
-References: <56721602.5050204@cn.fujitsu.com> <20151221001654.GM19802@dastard>
- <56776330.1090500@cn.fujitsu.com>
-CC: <fstests@vger.kernel.org>, btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5677662F.2060806@cn.fujitsu.com>
-Date: Mon, 21 Dec 2015 10:38:39 +0800
+	Sun, 20 Dec 2015 21:46:15 -0500
+Received: by mail-ig0-f169.google.com with SMTP id to18so27138863igc.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Dec 2015 18:46:15 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <56776330.1090500@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <567762A3.9060007@cn.fujitsu.com>
+References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
+	<566E584B.5040104@cn.fujitsu.com>
+	<CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
+	<566E77FA.3050405@cn.fujitsu.com>
+	<CAJCQCtR7B7h0+CKdpRT2KuZP-Bdzv3j0zPWD6s5MMMs7apTCOg@mail.gmail.com>
+	<CAJCQCtSEx_wYPkfazik0bcpQwXxJCA=O5f0o6RbxON4jjB4q7A@mail.gmail.com>
+	<5677592F.5000202@cn.fujitsu.com>
+	<CAJCQCtRyCxiAKDuyX-F_5Kmn8Xq+RruEo=H-S32FJPr_=b33TA@mail.gmail.com>
+	<567762A3.9060007@cn.fujitsu.com>
+Date: Sun, 20 Dec 2015 19:46:14 -0700
+Message-ID: <CAJCQCtS8nrZ8c5QwyZ=HPjnvGRGYKtzTaJXJPT+hNf5a=hDfCw@mail.gmail.com>
+Subject: Re: btrfs check inconsistency with raid1, part 1
+From: Chris Murphy <lists@colorremedies.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-Qu Wenruo wrote on 2015/12/21 10:25 +0800:
+On Sun, Dec 20, 2015 at 7:23 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
 >
-> Dave Chinner wrote on 2015/12/21 11:16 +1100:
->> On Thu, Dec 17, 2015 at 09:55:14AM +0800, Qu Wenruo wrote:
->>> Hi,
+> Chris Murphy wrote on 2015/12/20 19:12 -0700:
+>>
+>> On Sun, Dec 20, 2015 at 6:43 PM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
 >>>
->>> Will xfstests provides some API to do some operation just after
->>> mounting a filesystem?
 >>>
->>> Some filesystem(OK, btrfs again) has some function(now qgroup only)
->>> which needed to be enabled by ioctl instead of mount option.
+>>>
+>>> Chris Murphy wrote on 2015/12/20 15:31 -0700:
 >>
->> Irk.
 >>
->> Seriously, I need ot find some time to split all the fs specific
->> stuff in common/rc into separate files and have each different
->> filesystem implement it's own version of the relevant functions
->> like _scratch_mkfs, _scratch_mount, etc.
+>>>> I think the cause is related to bus power with buggy USB 3 LPM
+>>>> firmware (these enclosures are cheap maybe $6). I've found some
+>>>> threads about this being a problem, but it's not expected to cause any
+>>>> corruptions. So, the fact Btrfs picks up one some problems might prove
+>>>> that (somewhat) incorrect.
+>>>
+>>>
+>>>
+>>> Seems possible. Maybe some metadata just failed to reach disk.
+>>> BTW, did I asked for a btrfs-show-super output?
 >>
->> That will enable btrfs to do truly hideous stuff like this that
->> admins will hate you for requiring, and the rest of us won't have to
->> care about it.
-
-BTW, any good idea for btrfs to do such operation like 
-enabling/disabling some minor features? Especially when it can be set on 
-individual file/dirs.
-
-Features like incoming write time deduplication, is designed to be 
-enabled/disabled for individual file/dirs, so it's not a quite good idea 
-to use mount option to do it.
-
-Although some feature, like btrfs quota(qgroup), should be implemented 
-by mount option though.
-I don't understand why qgroup is enabled/disabled by ioctl. :(
-
-Thanks,
-Qu
-
 >>
->>> So is there any good idea to do some operation just after mounting
->>> in xfstests?
+>> Nope. I will attach to this email below for both devices.
 >>
->> You're just going to have to wait a bit - the first piece of this
->> is in the overlayfs support patches, and the rest of it is in my
->> local work area in an incomplete state.
->
-> Glad to hear that, I'll just wait for the formal implement.
->
-> Thanks,
-> Qu
->
+>>> If that's the case, superblock on device 2 maybe older than superblock on
+>>> device 1.
 >>
->> Cheers,
 >>
->> Dave.
+>> Yes, looks iike devid 1 transid 4924, and devid 2 transid 4923. And
+>> it's devid 2 that had device reset and write errors when it vanished
+>> and reappeared as a different block device.
 >>
 >
+> Now all the problem is explained.
 >
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> You should be good to mount it rw, as RAID1 will handle all the problem.
+> Then you can either use scrub on dev2 to fix all the generation mismatch.
+>
+> Although I prefer to wipe dev2 and mount dev1 as degraded, and replace the
+> missing dev2 with a good device/usb port.
+
+Yeah.
+
+Best info I have right now is this particular make/model of USB 3.0
+enclosure is common and sometimes has this reset and vanish problem
+with only certain controllers. In my case all four of the same kind of
+enclosure does this but only with 900mA ports. There's never a problem
+with 1.5A ports. I think it's just a slightly out of spec product. But
+usb-storage kernel developers said the warnings shouldn't result in
+corruptions. Another user with the same enclosure reported the problem
+only happens on Linux, not Windows, on the same host hardware. So it
+could also be some Linux SCSI layer error handling that's not working
+around a pre-existing issue when the device is flaky.
+
+Thanks!
 
 
+-- 
+Chris Murphy

@@ -1,66 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9574 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:64889 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751153AbbLUCXt (ORCPT
+	with ESMTP id S1751165AbbLUC0J (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Dec 2015 21:23:49 -0500
-Subject: Re: btrfs check inconsistency with raid1, part 1
-To: Chris Murphy <lists@colorremedies.com>
-References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
- <566E584B.5040104@cn.fujitsu.com>
- <CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
- <566E77FA.3050405@cn.fujitsu.com>
- <CAJCQCtR7B7h0+CKdpRT2KuZP-Bdzv3j0zPWD6s5MMMs7apTCOg@mail.gmail.com>
- <CAJCQCtSEx_wYPkfazik0bcpQwXxJCA=O5f0o6RbxON4jjB4q7A@mail.gmail.com>
- <5677592F.5000202@cn.fujitsu.com>
- <CAJCQCtRyCxiAKDuyX-F_5Kmn8Xq+RruEo=H-S32FJPr_=b33TA@mail.gmail.com>
-CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+	Sun, 20 Dec 2015 21:26:09 -0500
+Subject: Re: Ideas to do custom operation just after mount?
+To: Dave Chinner <david@fromorbit.com>
+References: <56721602.5050204@cn.fujitsu.com> <20151221001654.GM19802@dastard>
+CC: <fstests@vger.kernel.org>, btrfs <linux-btrfs@vger.kernel.org>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <567762A3.9060007@cn.fujitsu.com>
-Date: Mon, 21 Dec 2015 10:23:31 +0800
+Message-ID: <56776330.1090500@cn.fujitsu.com>
+Date: Mon, 21 Dec 2015 10:25:52 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRyCxiAKDuyX-F_5Kmn8Xq+RruEo=H-S32FJPr_=b33TA@mail.gmail.com>
+In-Reply-To: <20151221001654.GM19802@dastard>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Chris Murphy wrote on 2015/12/20 19:12 -0700:
-> On Sun, Dec 20, 2015 at 6:43 PM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+Dave Chinner wrote on 2015/12/21 11:16 +1100:
+> On Thu, Dec 17, 2015 at 09:55:14AM +0800, Qu Wenruo wrote:
+>> Hi,
 >>
+>> Will xfstests provides some API to do some operation just after
+>> mounting a filesystem?
 >>
->> Chris Murphy wrote on 2015/12/20 15:31 -0700:
+>> Some filesystem(OK, btrfs again) has some function(now qgroup only)
+>> which needed to be enabled by ioctl instead of mount option.
 >
->>> I think the cause is related to bus power with buggy USB 3 LPM
->>> firmware (these enclosures are cheap maybe $6). I've found some
->>> threads about this being a problem, but it's not expected to cause any
->>> corruptions. So, the fact Btrfs picks up one some problems might prove
->>> that (somewhat) incorrect.
->>
->>
->> Seems possible. Maybe some metadata just failed to reach disk.
->> BTW, did I asked for a btrfs-show-super output?
+> Irk.
 >
-> Nope. I will attach to this email below for both devices.
+> Seriously, I need ot find some time to split all the fs specific
+> stuff in common/rc into separate files and have each different
+> filesystem implement it's own version of the relevant functions
+> like _scratch_mkfs, _scratch_mount, etc.
 >
->> If that's the case, superblock on device 2 maybe older than superblock on
->> device 1.
+> That will enable btrfs to do truly hideous stuff like this that
+> admins will hate you for requiring, and the rest of us won't have to
+> care about it.
 >
-> Yes, looks iike devid 1 transid 4924, and devid 2 transid 4923. And
-> it's devid 2 that had device reset and write errors when it vanished
-> and reappeared as a different block device.
+>> So is there any good idea to do some operation just after mounting
+>> in xfstests?
 >
+> You're just going to have to wait a bit - the first piece of this
+> is in the overlayfs support patches, and the rest of it is in my
+> local work area in an incomplete state.
 
-Now all the problem is explained.
-
-You should be good to mount it rw, as RAID1 will handle all the problem.
-Then you can either use scrub on dev2 to fix all the generation mismatch.
-
-Although I prefer to wipe dev2 and mount dev1 as degraded, and replace 
-the missing dev2 with a good device/usb port.
+Glad to hear that, I'll just wait for the formal implement.
 
 Thanks,
 Qu
+
+>
+> Cheers,
+>
+> Dave.
+>
 
 

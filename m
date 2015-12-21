@@ -1,52 +1,34 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ipmail06.adl2.internode.on.net ([150.101.137.129]:34351 "EHLO
-	ipmail06.adl2.internode.on.net" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751038AbbLUARL (ORCPT
+Received: from mail-ob0-f182.google.com ([209.85.214.182]:33775 "EHLO
+	mail-ob0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751376AbbLUB01 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 20 Dec 2015 19:17:11 -0500
-Date: Mon, 21 Dec 2015 11:16:54 +1100
-From: Dave Chinner <david@fromorbit.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: fstests@vger.kernel.org, btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: Ideas to do custom operation just after mount?
-Message-ID: <20151221001654.GM19802@dastard>
-References: <56721602.5050204@cn.fujitsu.com>
+	Sun, 20 Dec 2015 20:26:27 -0500
+Received: by mail-ob0-f182.google.com with SMTP id pl17so1898925obc.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 20 Dec 2015 17:26:26 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56721602.5050204@cn.fujitsu.com>
+From: Donald Pearson <donaldwhpearson@gmail.com>
+Date: Sun, 20 Dec 2015 19:26:07 -0600
+Message-ID: <CAC=t97A1S6599aHWCCin7KnFWARs_ebfK6GptAXZQbFnSio7eA@mail.gmail.com>
+Subject: defrag vs autodefrag
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 17, 2015 at 09:55:14AM +0800, Qu Wenruo wrote:
-> Hi,
-> 
-> Will xfstests provides some API to do some operation just after
-> mounting a filesystem?
-> 
-> Some filesystem(OK, btrfs again) has some function(now qgroup only)
-> which needed to be enabled by ioctl instead of mount option.
+I read an implication in a different thread that defrag and autodefrag
+behave differently in that autodefrag is more snapshot friendly for
+COW data.
 
-Irk.
+Did I understand that correctly?  I have not been doing defrag on my
+virtual machine image directory because I do use a snapshot schedule
+and the way I understood things, a defrag would basically decouple the
+live data from the snapshots and greatly increase utilization.
 
-Seriously, I need ot find some time to split all the fs specific
-stuff in common/rc into separate files and have each different
-filesystem implement it's own version of the relevant functions
-like _scratch_mkfs, _scratch_mount, etc.
+It sounded like autodefrag does not have this problem?
 
-That will enable btrfs to do truly hideous stuff like this that
-admins will hate you for requiring, and the rest of us won't have to
-care about it.
+If that's true, is there any case where it would not be best practice
+to mount with autodefrag enabled?
 
-> So is there any good idea to do some operation just after mounting
-> in xfstests?
-
-You're just going to have to wait a bit - the first piece of this
-is in the overlayfs support patches, and the rest of it is in my
-local work area in an incomplete state.
-
-Cheers,
-
-Dave.
--- 
-Dave Chinner
-david@fromorbit.com
+Thanks,
+Donald

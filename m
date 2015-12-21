@@ -1,43 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:10128 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932189AbbLRR2x (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 18 Dec 2015 12:28:53 -0500
-Date: Fri, 18 Dec 2015 12:28:47 -0500
-From: Chris Mason <clm@fb.com>
-To: Linus Torvalds <torvalds@linux-foundation.org>,
-        <linux-kernel@vger.kernel.org>, <linux-btrfs@vger.kernel.org>
-Subject: [GIT PULL] Btrfs
-Message-ID: <20151218172847.GA36078@clm-mbp.thefacebook.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Received: from mail.kernel.org ([198.145.29.136]:42487 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750965AbbLUSAf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Dec 2015 13:00:35 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org, clm@fb.com
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] Btrfs bug fixes for 4.5
+Date: Mon, 21 Dec 2015 17:59:46 +0000
+Message-Id: <1450720786-16839-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Linus,
+From: Filipe Manana <fdmanana@suse.com>
 
-A couple of small fixes in my for-linus-4.4 branch:
+Hi Chris,
 
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.4
+Please consider the following fixes for the 4.5 merge window.
+Nothing outstanding, they are just the usual bug fixes (races, deadlocks,
+error paths, etc). These were all sent previously to the mailing list and
+rebased last week against your integration-4.4 branch (since there isn't
+any 4.5 integration branch yet).
 
-Chris Mason (2) commits (+19/-7):
-    Btrfs: check for empty bitmap list in setup_cluster_bitmaps (+5/-3)
-    Btrfs: check prepare_uptodate_page() error code earlier (+14/-4)
+Thanks.
 
-Filipe Manana (2) commits (+9/-7):
-    Btrfs: fix unprotected list move from unused_bgs to deleted_bgs list (+8/-5)
-    Btrfs: fix transaction handle leak in balance (+1/-2)
+The following changes since commit 1d3a5a82fe724c53c472a18a31fb0bbf33dfaba2:
 
-Holger Hoffstätte (1) commits (+1/-1):
-    btrfs: fix misleading warning when space cache failed to load
+  Merge branch 'for-chris-4.4' of git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux into for-linus-4.4 (2015-12-15 09:09:59 -0800)
 
-Total: (5) commits (+29/-15)
+are available in the git repository at:
 
- fs/btrfs/extent-tree.c      | 10 +++++++---
- fs/btrfs/file.c             | 18 ++++++++++++++----
- fs/btrfs/free-space-cache.c | 10 ++++++----
- fs/btrfs/transaction.c      |  1 -
- fs/btrfs/transaction.h      |  2 +-
- fs/btrfs/volumes.c          |  3 +--
- 6 files changed, 29 insertions(+), 15 deletions(-)
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.5
+
+for you to fetch changes up to e44081ef611832b47a86abf4e36dc0ed2e950884:
+
+  Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups (2015-12-21 17:51:22 +0000)
+
+----------------------------------------------------------------
+Filipe Manana (7):
+      Btrfs: fix race when finishing dev replace leading to transaction abort
+      Btrfs: fix memory leaks after transaction is aborted
+      Btrfs: fix error path when failing to submit bio for direct IO write
+      Btrfs: fix deadlock between direct IO write and defrag/readpages
+      Btrfs: fix leaking of ordered extents after direct IO write error
+      Btrfs: fix locking bugs when defragging leaves
+      Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups
+
+ fs/btrfs/extent-tree.c |  19 +++++++++++++++++--
+ fs/btrfs/inode.c       | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------------------------------------------------
+ fs/btrfs/transaction.c |  17 +++++++++++++++++
+ fs/btrfs/tree-defrag.c |  27 ++++++++++++++++++++++++---
+ fs/btrfs/volumes.c     |  17 +++++++++++++++--
+ 5 files changed, 151 insertions(+), 56 deletions(-)
+
+-- 
+2.1.3
+

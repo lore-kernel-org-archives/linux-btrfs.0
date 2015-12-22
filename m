@@ -1,74 +1,75 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:36612 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752196AbbLVDzQ convert rfc822-to-8bit (ORCPT
+Received: from mail-io0-f178.google.com ([209.85.223.178]:35645 "EHLO
+	mail-io0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751376AbbLVEVV (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Dec 2015 22:55:16 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aBE2b-0005U6-Iu
-	for linux-btrfs@vger.kernel.org; Tue, 22 Dec 2015 04:55:13 +0100
-Received: from ip5f5ae08a.dynamic.kabel-deutschland.de ([95.90.224.138])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 04:55:13 +0100
-Received: from hurikhan77 by ip5f5ae08a.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 04:55:13 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: compression disk space saving - what are your results?
-Date: Tue, 22 Dec 2015 04:55:07 +0100
-Message-ID: <20151222045507.24886af5@jupiter.sol.kaishome.de>
-References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
-	<565EEC1F.7070600@gmail.com>
-	<18fb40ae4411f31353e06bf99ee12c8a@admin.virtall.com>
-	<565F04E1.6000003@gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+	Mon, 21 Dec 2015 23:21:21 -0500
+Received: by mail-io0-f178.google.com with SMTP id q126so175172286iof.2
+        for <linux-btrfs@vger.kernel.org>; Mon, 21 Dec 2015 20:21:21 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <5678B25E.5030104@cn.fujitsu.com>
+References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
+	<566E584B.5040104@cn.fujitsu.com>
+	<CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
+	<566E77FA.3050405@cn.fujitsu.com>
+	<CAJCQCtR7B7h0+CKdpRT2KuZP-Bdzv3j0zPWD6s5MMMs7apTCOg@mail.gmail.com>
+	<CAJCQCtSEx_wYPkfazik0bcpQwXxJCA=O5f0o6RbxON4jjB4q7A@mail.gmail.com>
+	<5677592F.5000202@cn.fujitsu.com>
+	<CAJCQCtRyCxiAKDuyX-F_5Kmn8Xq+RruEo=H-S32FJPr_=b33TA@mail.gmail.com>
+	<567762A3.9060007@cn.fujitsu.com>
+	<20151222020529.1ac0c913@jupiter.sol.kaishome.de>
+	<5678A5CC.7050900@cn.fujitsu.com>
+	<20151222024804.5c4f7da2@jupiter.sol.kaishome.de>
+	<5678B25E.5030104@cn.fujitsu.com>
+Date: Mon, 21 Dec 2015 21:21:21 -0700
+Message-ID: <CAJCQCtSGrTkHN9NQ2PPx7b1ba7oSNn9qh5eN5yB5YCgY+8OaXw@mail.gmail.com>
+Subject: Re: btrfs check inconsistency with raid1, part 1
+From: Chris Murphy <lists@colorremedies.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Kai Krakow <hurikhan77@gmail.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Wed, 2 Dec 2015 09:49:05 -0500
-schrieb Austin S Hemmelgarn <ahferroin7@gmail.com>:
+Latest update.
 
-> > So, 138 GB files use just 24 GB on disk - nice!
-> >
-> > However, I would still expect that compress=zlib has almost the same
-> > effect as compress-force=zlib, for 100% text files/logs.
-> >  
-> That's better than 80% space savings (it works out to about 83.6%),
-> so I doubt that you'd manage to get anything better than that even
-> with only plain text files.  It's interesting that there's such a big
-> discrepancy though, that indicates that BTRFS really needs some work
-> WRT deciding what to compress.
+4.4.0-0.rc6.git0.1.fc24.x86_64
+btrfs-progs v4.3.1
 
-As far as I understood from reading here, btrfs fairly quickly opts out
-of compressing further extents if it stumbles across the first block
-with a bad compression ratio for file.
+Mounted the volume normally with both devices available, no mount
+options, so it is a rw mount. And it mounts with only the normal
+kernel messages:
+[ 9458.290778] BTRFS info (device sdc): disk space caching is enabled
+[ 9458.290788] BTRFS: has skinny extents
 
-So, what I do is compress-force=zlib for my backup drive which holds
-several months of snapshots, new backups go to a scratch area which is
-snapshotted after rsync finishes (important: use --no-whole-file and
---inplace).
+I left the volume alone for 20 minutes. After that time,
+btrfs-show-super still shows different generation numbers for the two
+devids.
 
-On my system drive I use compress=lzo and hope the heuristics work.
->From time to time I use find and btrfs-defrag to selectively recompress
-files (using mtime and name filters) and defrag directory nodes (which
-according to docs should defrag metadata).
+I did an ls -l at the top level of the fs. And btrfs-show-super now
+shows the same generation numbers and backup_roots information for
+both devids.
 
-A 3x TB btrfs mraid1 draid0 (1.6TB used) fits onto a 2TB backup drive
-with backlog worth around 4 months (daily backups). It looks pretty
-effective. Forcing zlib manages to compress file additions quite well
-although I didn't measure it lately. It was far from 80% but it was not
-far below 40-50%.
+Next, I read the most recently modified files, they all read OK, no
+kernel messages, no missing files.
 
-I wish one could use per-subvolume compression option already.
+Last, I umounted the volume and did a btrfs check, and it comes up
+completely clean, no errors.
 
--- 
-Regards,
-Kai
+No scrub done yet, no (user space) writes done yet. But going back to
+the original btrfs check with all the errors, it really doesn't give a
+user/admin of the volume any useful information what the problem is.
+After-the-fact it's relatively clear that devid 1 has generation 4924,
+and devid 2 has generation 4923, and that's what the btrfs check
+complaints are about: just a generation mismatch and the associated
+missing metadata on one device.
 
-Replies to list-only preferred.
+By all measures it's checking out and behaving completely healthy and
+OK. So I'm going to play with some fire, and treat it normally for a
+few days: including making snapshots and writing files. I'll do a
+scrub in a few days and report back.
 
 
+
+Chris Murphy

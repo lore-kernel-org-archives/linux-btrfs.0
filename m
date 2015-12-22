@@ -1,58 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:42487 "EHLO mail.kernel.org"
+Received: from plane.gmane.org ([80.91.229.3]:59229 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750965AbbLUSAf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Dec 2015 13:00:35 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org, clm@fb.com
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [GIT PULL] Btrfs bug fixes for 4.5
-Date: Mon, 21 Dec 2015 17:59:46 +0000
-Message-Id: <1450720786-16839-1-git-send-email-fdmanana@kernel.org>
+	id S1751453AbbLVBc3 convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Dec 2015 20:32:29 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aBBoS-0003wX-1k
+	for linux-btrfs@vger.kernel.org; Tue, 22 Dec 2015 02:32:28 +0100
+Received: from ip5f5ae08a.dynamic.kabel-deutschland.de ([95.90.224.138])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 02:32:28 +0100
+Received: from hurikhan77 by ip5f5ae08a.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 02:32:28 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: Ideas on unified real-ro mount option across all filesystems
+Date: Tue, 22 Dec 2015 02:32:21 +0100
+Message-ID: <20151222023221.56a89345@jupiter.sol.kaishome.de>
+References: <567212DA.8050808@cn.fujitsu.com>
+	<567228EF.80007@redhat.com>
+	<5673616C.1040706@cn.fujitsu.com>
+	<1450404066.6498.70.camel@scientia.net>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+Am Fri, 18 Dec 2015 03:01:06 +0100
+schrieb Christoph Anton Mitterer <calestyo@scientia.net>:
 
-Hi Chris,
+> The manpage says:
+> > ro     Mount the filesystem read-only.
+> > rw     Mount the filesystem read-write.  
 
-Please consider the following fixes for the 4.5 merge window.
-Nothing outstanding, they are just the usual bug fixes (races, deadlocks,
-error paths, etc). These were all sent previously to the mailing list and
-rebased last week against your integration-4.4 branch (since there isn't
-any 4.5 integration branch yet).
+That means: the filesystem... Not the block device...
 
-Thanks.
+Sorry, it's kinda nitpicking. But actually, the file system IS
+read-only: You cannot modify files from user's view.
 
-The following changes since commit 1d3a5a82fe724c53c472a18a31fb0bbf33dfaba2:
+What you actually want is not modifying the underlying storage which is
+the block device and includes stuff like meta and journal data (which
+is only indirectly visible to users at best).
 
-  Merge branch 'for-chris-4.4' of git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux into for-linus-4.4 (2015-12-15 09:09:59 -0800)
-
-are available in the git repository at:
-
-  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.5
-
-for you to fetch changes up to e44081ef611832b47a86abf4e36dc0ed2e950884:
-
-  Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups (2015-12-21 17:51:22 +0000)
-
-----------------------------------------------------------------
-Filipe Manana (7):
-      Btrfs: fix race when finishing dev replace leading to transaction abort
-      Btrfs: fix memory leaks after transaction is aborted
-      Btrfs: fix error path when failing to submit bio for direct IO write
-      Btrfs: fix deadlock between direct IO write and defrag/readpages
-      Btrfs: fix leaking of ordered extents after direct IO write error
-      Btrfs: fix locking bugs when defragging leaves
-      Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups
-
- fs/btrfs/extent-tree.c |  19 +++++++++++++++++--
- fs/btrfs/inode.c       | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------------------------------------------------
- fs/btrfs/transaction.c |  17 +++++++++++++++++
- fs/btrfs/tree-defrag.c |  27 ++++++++++++++++++++++++---
- fs/btrfs/volumes.c     |  17 +++++++++++++++--
- 5 files changed, 151 insertions(+), 56 deletions(-)
+You can argue that man pages are not particularly end-user friendly.
+But for an admin this makes sense without being an fs developer.
 
 -- 
-2.1.3
+Regards,
+Kai
+
+Replies to list-only preferred.
+
 

@@ -1,82 +1,91 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:33901 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752555AbbLVPo7 (ORCPT
+Received: from mail-io0-f177.google.com ([209.85.223.177]:32777 "EHLO
+	mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932944AbbLVR0G (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Dec 2015 10:44:59 -0500
-Received: by mail-ig0-f171.google.com with SMTP id m11so51807792igk.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 07:44:59 -0800 (PST)
-Subject: Re: btrfs check inconsistency with raid1, part 1
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
- <566E584B.5040104@cn.fujitsu.com>
- <CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
- <566E77FA.3050405@cn.fujitsu.com>
- <CAJCQCtR7B7h0+CKdpRT2KuZP-Bdzv3j0zPWD6s5MMMs7apTCOg@mail.gmail.com>
- <CAJCQCtSEx_wYPkfazik0bcpQwXxJCA=O5f0o6RbxON4jjB4q7A@mail.gmail.com>
- <5677592F.5000202@cn.fujitsu.com>
- <CAJCQCtRyCxiAKDuyX-F_5Kmn8Xq+RruEo=H-S32FJPr_=b33TA@mail.gmail.com>
- <567762A3.9060007@cn.fujitsu.com>
- <20151222020529.1ac0c913@jupiter.sol.kaishome.de>
- <5678A5CC.7050900@cn.fujitsu.com>
- <20151222024804.5c4f7da2@jupiter.sol.kaishome.de>
- <pan$30f15$f6f8b13b$d72dd248$aaee075f@cox.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <56796FCB.5080303@gmail.com>
-Date: Tue, 22 Dec 2015 10:44:11 -0500
+	Tue, 22 Dec 2015 12:26:06 -0500
+Received: by mail-io0-f177.google.com with SMTP id 186so195740676iow.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 09:26:06 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <pan$30f15$f6f8b13b$d72dd248$aaee075f@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <20151222045507.24886af5@jupiter.sol.kaishome.de>
+References: <4082684905f25f921ae4564b1c8a892e@admin.virtall.com>
+ <565EEC1F.7070600@gmail.com> <18fb40ae4411f31353e06bf99ee12c8a@admin.virtall.com>
+ <565F04E1.6000003@gmail.com> <20151222045507.24886af5@jupiter.sol.kaishome.de>
+From: james northrup <northrup.james@gmail.com>
+Date: Tue, 22 Dec 2015 09:25:45 -0800
+Message-ID: <CAPkEcwhE91b9DUyKH-Fi9FbM6-i+_qRQRL4tSMnZhvaUXUsgcQ@mail.gmail.com>
+Subject: Re: compression disk space saving - what are your results?
+To: Kai Krakow <hurikhan77@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-12-22 05:23, Duncan wrote:
-> Kai Krakow posted on Tue, 22 Dec 2015 02:48:04 +0100 as excerpted:
+if you have been waiting for a particular compressor to reach linux,
+chances are it already has.
+
+if you are slacking with btrfs and assuming someone will port your
+favorite compression profile to a btrfs mount option someday, someone
+has thought of that too, and that's already happened as well.
+
+
+
+Add support for LZ4-compressed kernel [LWN.net]
+https://lwn.net/Articles/541425/
+
+bzip2/lzma kernel compression [LWN.net] https://lwn.net/Articles/314295/
+
+Btrfs Picks Up Snappy Compression Support - Phoronix
+http://www.phoronix.com/scan.php?page=news_item&px=MTA0MjQ
+
+fusecompress - Transparent compression FUSE filesystem (0.9.x tree) -
+Google Project Hosting https://code.google.com/p/fusecompress/
+
+On Mon, Dec 21, 2015 at 7:55 PM, Kai Krakow <hurikhan77@gmail.com> wrote:
+> Am Wed, 2 Dec 2015 09:49:05 -0500
+> schrieb Austin S Hemmelgarn <ahferroin7@gmail.com>:
 >
->> I just wondered if btrfs allows for the case where both stripes could
->> have valid checksums despite of btrfs-RAID - just because a failure
->> occurred right on the spot.
->>
->> Is this possible? What happens then? If yes, it would mean not to
->> blindly trust the RAID without doing the homeworks.
+>> > So, 138 GB files use just 24 GB on disk - nice!
+>> >
+>> > However, I would still expect that compress=zlib has almost the same
+>> > effect as compress-force=zlib, for 100% text files/logs.
+>> >
+>> That's better than 80% space savings (it works out to about 83.6%),
+>> so I doubt that you'd manage to get anything better than that even
+>> with only plain text files.  It's interesting that there's such a big
+>> discrepancy though, that indicates that BTRFS really needs some work
+>> WRT deciding what to compress.
 >
-> The one case where btrfs could get things wrong that I know of is as I
-> discovered in my initial pre-btrfs-raid1-deployment testing...
-I've had exactly one case where I got _really_ unlucky and had a bunch 
-of media errors on a BTRFS raid1 setup that happened to result in 
-something similar to this.  Things happened such that one copy of a 
-block (we'll call this one copy 1) had correct data, and the other 
-(we'll call this one copy 2) had incorrect data, except that one copy of 
-the metadata had the correct checksum for copy 2, and the other metadata 
-copy had a correct checksum for copy 1, but, due to a hash collision, 
-the checksum for the metadata block was correct for both copies.  As a 
-result of this, I ended up getting a read-error about 25% of the time 
-(which then forced a re-read of the data, the correct data about 37.5% 
-of the time, and incorrect data the remaining 37.5% of the time.  I 
-actually ran the numbers on how likely this was to happen (more than a 
-dozen errors on different disks in blocks that happened to reference 
-each other, and a hash collision involving a 4 byte difference between 
-two 16k blocks of data), and it's a statistical impossibility (It's more 
-likely that one of Amazon or Google's data-centers goes offline due to 
-hardware failures than it is that this will happen again).  Obviously it 
-did happen, but I would say it's such a unrealistic edge case that you 
-probably don't need to worry about it (although I learned _a lot_ about 
-the internals of BTRFS in trying to figure out what was going on).
+> As far as I understood from reading here, btrfs fairly quickly opts out
+> of compressing further extents if it stumbles across the first block
+> with a bad compression ratio for file.
 >
-[...snip...]
+> So, what I do is compress-force=zlib for my backup drive which holds
+> several months of snapshots, new backups go to a scratch area which is
+> snapshotted after rsync finishes (important: use --no-whole-file and
+> --inplace).
 >
->  From all I know and from everything others told me when I asked at the
-> time, which copy you get then is entirely unpredictable, and worse yet,
-> you might get btrfs acting on divergent metadata when writing to the
-> other device.
+> On my system drive I use compress=lzo and hope the heuristics work.
+> From time to time I use find and btrfs-defrag to selectively recompress
+> files (using mtime and name filters) and defrag directory nodes (which
+> according to docs should defrag metadata).
 >
-This is indeed the case.  Because of how BTRFS verifies checksums, 
-there's a roughly 50% chance that the first read attempt will result in 
-picking a mismatched checksum and data block, which will trigger a 
-re-read which has an independent 50% chance of again picking a mismatch, 
-resulting in a 25% chance that any read that actually goes to the device 
-returns a read error.  The remaining 75% of the time, you'll get either 
-one block or the other.  These numbers of course get skewed by the VFS 
-cache.  In my case above, the file that was affected was one that is 
-almost never in cache when it gets accessed, so I saw numbers relatively 
-close to what you would get without the cache.
+> A 3x TB btrfs mraid1 draid0 (1.6TB used) fits onto a 2TB backup drive
+> with backlog worth around 4 months (daily backups). It looks pretty
+> effective. Forcing zlib manages to compress file additions quite well
+> although I didn't measure it lately. It was far from 80% but it was not
+> far below 40-50%.
+>
+> I wish one could use per-subvolume compression option already.
+>
+> --
+> Regards,
+> Kai
+>
+> Replies to list-only preferred.
+>
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

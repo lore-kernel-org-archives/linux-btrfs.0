@@ -1,48 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-vk0-f47.google.com ([209.85.213.47]:36059 "EHLO
-	mail-vk0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753423AbbLVMap (ORCPT
+Received: from mail-ig0-f177.google.com ([209.85.213.177]:33233 "EHLO
+	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932485AbbLVMlv (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Dec 2015 07:30:45 -0500
-Received: by mail-vk0-f47.google.com with SMTP id f2so78247117vkb.3
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 04:30:45 -0800 (PST)
+	Tue, 22 Dec 2015 07:41:51 -0500
+Subject: Re: Ideas on unified real-ro mount option across all filesystems
+To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
+References: <567212DA.8050808@cn.fujitsu.com> <567228EF.80007@redhat.com>
+ <5673616C.1040706@cn.fujitsu.com> <1450404066.6498.70.camel@scientia.net>
+ <20151222023221.56a89345@jupiter.sol.kaishome.de>
+Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <567944E0.6040908@gmail.com>
+Date: Tue, 22 Dec 2015 07:41:04 -0500
 MIME-Version: 1.0
-In-Reply-To: <1450750596-14627-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1450750596-14627-1-git-send-email-quwenruo@cn.fujitsu.com>
-Date: Tue, 22 Dec 2015 13:30:44 +0100
-Message-ID: <CAHji153JzZu0BW80fJo38GwEesAGWbwWcLhrianwXqbvTFjJaA@mail.gmail.com>
-Subject: Re: [PATCH v4 1/2] btrfs: Introduce new mount option backuproot to
- replace recovery
-From: =?UTF-8?Q?Holger_Hoffst=C3=A4tte?=
-	<holger.hoffstaette@googlemail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <20151222023221.56a89345@jupiter.sol.kaishome.de>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 22, 2015 at 3:16 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
-> Current "recovery" mount option will only try to use backup root.
-> However the word "recovery" is too generic and may be confusing for some
-> users.
+On 2015-12-21 20:32, Kai Krakow wrote:
+> Am Fri, 18 Dec 2015 03:01:06 +0100
+> schrieb Christoph Anton Mitterer <calestyo@scientia.net>:
 >
-> Here introduce a new and more specific mount option, "backuproot" to
-> replace "recovery" mount option.
-> "Recovery" will be kept for compatibility reason, but will be
-> deprecated.
+>> The manpage says:
+>>> ro     Mount the filesystem read-only.
+>>> rw     Mount the filesystem read-write.
+>
+> That means: the filesystem... Not the block device...
+No, that means: That particular instantiation of the VFS layer to access 
+the filesystem.
+Not the filesystem (the filesystem is the data and metadata on disk), 
+not the block device (which is an abstraction used as a container for 
+the filesystem).
+>
+> Sorry, it's kinda nitpicking. But actually, the file system IS
+> read-only: You cannot modify files from user's view.
+ From a non technical view point, yes, that is correct; until you have 
+undetected corruption in the journal or log or whatever other structure 
+is used for consistency, at which point it isn't read-only because the 
+filesystem just changed by virtue of you mounting it (and even without 
+that type of corruption, stuff gets changed on a 'read-only' mount 
+regardless in many filesystems, many of them track when the filesystem 
+was last mounted, how many times it's been mounted, and other similar 
+things).
+>
+> What you actually want is not modifying the underlying storage which is
+> the block device and includes stuff like meta and journal data (which
+> is only indirectly visible to users at best).
+No, the metadata and journal are a integral part of the filesystem 
+itself.  Without those, there is no filesystem.  That and the metadata 
+_is_ directly visible to the user, in the form of directory structure, 
+stat(), output from lsattr, and even stuff like FIEMAP and filefrag.
 
-I agree that this makes much more sense from a user's perspective, so +1.
-
-But why not go all the way: try backuproot automatically when the
-initial mount fails,
-log the fallback and simply deprecate/ignore the option?
-
-Either this works - in which case there is no need to involve a human,
-which may not
-even exist - or it does not. If it does not, things are hosed anyway
-and we can fail
-properly.
-
-Any reasons not to do this?
-
--h
+The filesystem _is_ the data and metadata on disk, as such, the 
+filesystem being read-only means that none of that data or metadata 
+should change.
+>
+> You can argue that man pages are not particularly end-user friendly.
+> But for an admin this makes sense without being an fs developer.
+That really depends.  I'm not a FS developer, but I still expect when I 
+see 'read-only' that it means the same as 'immutable for everything 
+managed by that particular object that has been made read-only, for all 
+access methods through that object'.  And while I bet most 
+administrators wouldn't use quite the same terminology, I would be 
+willing to bet that many of them have essentially the same expectation 
+unless specifically told otherwise on a case-by-case basis.

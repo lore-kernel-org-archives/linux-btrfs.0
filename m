@@ -1,68 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f177.google.com ([209.85.213.177]:33233 "EHLO
-	mail-ig0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932485AbbLVMlv (ORCPT
+Received: from mail-io0-f179.google.com ([209.85.223.179]:34373 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754266AbbLVMpK (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Dec 2015 07:41:51 -0500
-Subject: Re: Ideas on unified real-ro mount option across all filesystems
-To: Kai Krakow <hurikhan77@gmail.com>, linux-btrfs@vger.kernel.org
-References: <567212DA.8050808@cn.fujitsu.com> <567228EF.80007@redhat.com>
- <5673616C.1040706@cn.fujitsu.com> <1450404066.6498.70.camel@scientia.net>
- <20151222023221.56a89345@jupiter.sol.kaishome.de>
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org
+	Tue, 22 Dec 2015 07:45:10 -0500
+Received: by mail-io0-f179.google.com with SMTP id e126so185425189ioa.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 04:45:10 -0800 (PST)
+Subject: Re: [PATCH v4 1/2] btrfs: Introduce new mount option backuproot to
+ replace recovery
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>, linux-btrfs@vger.kernel.org
+References: <1450750596-14627-1-git-send-email-quwenruo@cn.fujitsu.com>
 From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <567944E0.6040908@gmail.com>
-Date: Tue, 22 Dec 2015 07:41:04 -0500
+Message-ID: <567945A6.2000800@gmail.com>
+Date: Tue, 22 Dec 2015 07:44:22 -0500
 MIME-Version: 1.0
-In-Reply-To: <20151222023221.56a89345@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <1450750596-14627-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-12-21 20:32, Kai Krakow wrote:
-> Am Fri, 18 Dec 2015 03:01:06 +0100
-> schrieb Christoph Anton Mitterer <calestyo@scientia.net>:
+On 2015-12-21 21:16, Qu Wenruo wrote:
+> Current "recovery" mount option will only try to use backup root.
+> However the word "recovery" is too generic and may be confusing for some
+> users.
 >
->> The manpage says:
->>> ro     Mount the filesystem read-only.
->>> rw     Mount the filesystem read-write.
+> Here introduce a new and more specific mount option, "backuproot" to
+> replace "recovery" mount option.
+> "Recovery" will be kept for compatibility reason, but will be
+> deprecated.
 >
-> That means: the filesystem... Not the block device...
-No, that means: That particular instantiation of the VFS layer to access 
-the filesystem.
-Not the filesystem (the filesystem is the data and metadata on disk), 
-not the block device (which is an abstraction used as a container for 
-the filesystem).
+> Also, since "backuproot" will only affect mount behavior and after
+> open_ctree() it has nothing to do with the filesystem, so clear the flag
+> after mount succeeded.
 >
-> Sorry, it's kinda nitpicking. But actually, the file system IS
-> read-only: You cannot modify files from user's view.
- From a non technical view point, yes, that is correct; until you have 
-undetected corruption in the journal or log or whatever other structure 
-is used for consistency, at which point it isn't read-only because the 
-filesystem just changed by virtue of you mounting it (and even without 
-that type of corruption, stuff gets changed on a 'read-only' mount 
-regardless in many filesystems, many of them track when the filesystem 
-was last mounted, how many times it's been mounted, and other similar 
-things).
+> This provides the basis for later unified "norecovery" mount option.
 >
-> What you actually want is not modifying the underlying storage which is
-> the block device and includes stuff like meta and journal data (which
-> is only indirectly visible to users at best).
-No, the metadata and journal are a integral part of the filesystem 
-itself.  Without those, there is no filesystem.  That and the metadata 
-_is_ directly visible to the user, in the form of directory structure, 
-stat(), output from lsattr, and even stuff like FIEMAP and filefrag.
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+> v4:
+>    Newly introduced to avoid confusion with later 'norecovery' patch.
+> ---
+I ran my usual tests overnight on this part, and nothing broke, so you 
+can add
+Tested-by: Austin S. Hemmelgarn
+here as well.
 
-The filesystem _is_ the data and metadata on disk, as such, the 
-filesystem being read-only means that none of that data or metadata 
-should change.
->
-> You can argue that man pages are not particularly end-user friendly.
-> But for an admin this makes sense without being an fs developer.
-That really depends.  I'm not a FS developer, but I still expect when I 
-see 'read-only' that it means the same as 'immutable for everything 
-managed by that particular object that has been made read-only, for all 
-access methods through that object'.  And while I bet most 
-administrators wouldn't use quite the same terminology, I would be 
-willing to bet that many of them have essentially the same expectation 
-unless specifically told otherwise on a case-by-case basis.

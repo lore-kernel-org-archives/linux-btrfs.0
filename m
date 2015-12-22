@@ -1,163 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:44595 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751343AbbLVCS2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Dec 2015 21:18:28 -0500
-Subject: Re: btrfs check inconsistency with raid1, part 1
-To: Kai Krakow <hurikhan77@gmail.com>, <linux-btrfs@vger.kernel.org>
-References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
- <566E584B.5040104@cn.fujitsu.com>
- <CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
- <566E77FA.3050405@cn.fujitsu.com>
- <CAJCQCtR7B7h0+CKdpRT2KuZP-Bdzv3j0zPWD6s5MMMs7apTCOg@mail.gmail.com>
- <CAJCQCtSEx_wYPkfazik0bcpQwXxJCA=O5f0o6RbxON4jjB4q7A@mail.gmail.com>
- <5677592F.5000202@cn.fujitsu.com>
- <CAJCQCtRyCxiAKDuyX-F_5Kmn8Xq+RruEo=H-S32FJPr_=b33TA@mail.gmail.com>
- <567762A3.9060007@cn.fujitsu.com>
- <20151222020529.1ac0c913@jupiter.sol.kaishome.de>
- <5678A5CC.7050900@cn.fujitsu.com>
- <20151222024804.5c4f7da2@jupiter.sol.kaishome.de>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5678B25E.5030104@cn.fujitsu.com>
-Date: Tue, 22 Dec 2015 10:15:58 +0800
-MIME-Version: 1.0
-In-Reply-To: <20151222024804.5c4f7da2@jupiter.sol.kaishome.de>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:33045 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S932674AbbLVCeg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 21 Dec 2015 21:34:36 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aBCmY-0001N4-9h
+	for linux-btrfs@vger.kernel.org; Tue, 22 Dec 2015 03:34:34 +0100
+Received: from ip5f5ae08a.dynamic.kabel-deutschland.de ([95.90.224.138])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 03:34:34 +0100
+Received: from hurikhan77 by ip5f5ae08a.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 03:34:34 +0100
+To: linux-btrfs@vger.kernel.org
+From: Kai Krakow <hurikhan77@gmail.com>
+Subject: Re: safety of journal based fs (was: Re: still kworker at 100%
+ =?UTF-8?B?Y3B14oCmKQ==?=
+Date: Tue, 22 Dec 2015 03:34:24 +0100
+Message-ID: <20151222033424.0dea705f@jupiter.sol.kaishome.de>
+References: <8336788.myI8ELqtIK@merkaba>
+	<5373860.W0QrVGf34G@merkaba>
+	<566E827A.2020604@cn.fujitsu.com>
+	<1936131.2NX0AhU8Tu@merkaba>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Am Mon, 14 Dec 2015 10:10:51 +0100
+schrieb Martin Steigerwald <martin@lichtvoll.de>:
 
+> > But the problem is, when recovering journal, there is no journal of
+> > journal, to keep journal recovering safe from power loss.  
+> 
+> But the journal should be safe due to a journal commit being one
+> sector? Of course for the last changes without a journal commit its:
+> The stuff is gone.
 
-Kai Krakow wrote on 2015/12/22 02:48 +0100:
-> Am Tue, 22 Dec 2015 09:22:20 +0800
-> schrieb Qu Wenruo <quwenruo@cn.fujitsu.com>:
->
->>
->>
->> Kai Krakow wrote on 2015/12/22 02:05 +0100:
->>> Am Mon, 21 Dec 2015 10:23:31 +0800
->>> schrieb Qu Wenruo <quwenruo@cn.fujitsu.com>:
->>>
->>>>
->>>>
->>>> Chris Murphy wrote on 2015/12/20 19:12 -0700:
->>>>> On Sun, Dec 20, 2015 at 6:43 PM, Qu Wenruo
->>>>> <quwenruo@cn.fujitsu.com> wrote:
->>>>>>
->>>>>>
->>>>>> Chris Murphy wrote on 2015/12/20 15:31 -0700:
->>>>>
->>>>>>> I think the cause is related to bus power with buggy USB 3 LPM
->>>>>>> firmware (these enclosures are cheap maybe $6). I've found some
->>>>>>> threads about this being a problem, but it's not expected to
->>>>>>> cause any corruptions. So, the fact Btrfs picks up one some
->>>>>>> problems might prove that (somewhat) incorrect.
->>>>>>
->>>>>>
->>>>>> Seems possible. Maybe some metadata just failed to reach disk.
->>>>>> BTW, did I asked for a btrfs-show-super output?
->>>>>
->>>>> Nope. I will attach to this email below for both devices.
->>>>>
->>>>>> If that's the case, superblock on device 2 maybe older than
->>>>>> superblock on device 1.
->>>>>
->>>>> Yes, looks iike devid 1 transid 4924, and devid 2 transid 4923.
->>>>> And it's devid 2 that had device reset and write errors when it
->>>>> vanished and reappeared as a different block device.
->>>>>
->>>>
->>>> Now all the problem is explained.
->>>>
->>>> You should be good to mount it rw, as RAID1 will handle all the
->>>> problem.
->>>
->>> How should RAID1 handle this if both copies have valid checksums
->>> (as I would assume here unless shown otherwise)? This is an even
->>> bigger problem with block based RAID1 which does not have checksums
->>> at all. Luckily, btrfs works different here.
->>
->> No, these two devices don't have the same generation, which means
->> they point to *different* bytenr.
->>
->> Like the following:
->>
->> Super of Dev1:
->> gen: X + 1
->> root bytenr: A (Btrfs logical)
->> logical A is mapped to A1 on dev1 and A2 on dev2.
->>
->> Super of Dev2:
->> gen: X
->> root bytenr: B
->> Here we don't need to bother bytenr B though.
->>
->> Due to the power bug, A2 and super of dev2 is not written to dev2.
->>
->> So you should see the problem now.
->> A1 on dev1 contains *valid* tree block, but A2 on dev2 doesn't(empty
->> data only).
->>
->> And your assumption on "both have valid copies" is wrong.
->>
->> Check all the 4 attachment in previous mail.
->
-> I did only see those attachments at a second glance. Sry.
->
-> Primarily I just wanted to note that RAID1 per-se doesn't mean anything
-> more than: we have two readable copies but we don't know which one is
-> correct. As in: let the admin think twice about it before blindly
-> following a guide.
->
-> This is why I pointed out btrfs csums which make this a little better
-> which in turn has further consequences as you describe (for the
-> treeblock).
->
-> In contrast to block-level RAID btrfs usually has the knowledge which
-> block is correct and which is not.
->
-> I just wondered if btrfs allows for the case where both stripes could
-> have valid checksums despite of btrfs-RAID - just because a failure
-> occurred right on the spot.
->
-> Is this possible? What happens then? If yes, it would mean not to
-> blindly trust the RAID without doing the homeworks.
+This may not be true for disks having write caching enabled and write
+barriers of. Then there's no barrier at a journal checkpoint.
 
-Very interesting question.
-Although btrfs is a little beyond your expectation on block based RAID1.
+Next thing is: At least for ext4, journal is meta-data only.
 
-1) Yes, it is possible.
+But I think what was meant here: The case of powerloss during
+log-replay... Tho I think the journal should simply be fully replayed
+again if it wasn't marked clean before.
 
-2) Btrfs still detects it as an transid error and won't trust the
-    metadata.(kernel behavior)
-    And since it's raid1, it will try next copy to go on.
+Which turns us back to write barriers and write caching... ;-)
 
-    The trick here is, btrfs metadata doesn't only record bytenr of its
-    child tree block, but also the tranid(generation) of the tree block.
+It could be that the checkpointing (or marking the journal clean after
+replay) could make it do disk before the actual data made it to disk,
+due to write-reordering of the hard disk - which can be effectively
+circumvented by disabling write caching and enabling write barriers
+(the latter should be default while I would always check the former).
 
-    So even such case happens, the transid won't match, and cause btrfs
-    detects the error.
+-- 
+Regards,
+Kai
 
-Thanks,
-Qu
->
->>>> Then you can either use scrub on dev2 to fix all the
->>>> generation mismatch.
->>>
->>> I better understand why this could fix a problem...
->>
->> Why not?
->>
->> Tree block/data copy on dev1 is valid, but tree block/data copy on
->> dev2 is empty(not written), so btrfs detects the csum error, and
->> scrub will try to rewrite it.
->>
->> After rewrite, both copy on dev1 and dev2 with match and fix the
->> problem.
->
-> Exactly. ;-) Didn't say anything against it.
->
->
-
+Replies to list-only preferred.
 

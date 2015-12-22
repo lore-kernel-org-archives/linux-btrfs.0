@@ -1,142 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:49188 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:53629 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751610AbbLVKX1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Dec 2015 05:23:27 -0500
+	id S1754192AbbLVMEn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Dec 2015 07:04:43 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aBK6G-0001AM-Hi
-	for linux-btrfs@vger.kernel.org; Tue, 22 Dec 2015 11:23:24 +0100
+	id 1aBLgH-00014z-Ne
+	for linux-btrfs@vger.kernel.org; Tue, 22 Dec 2015 13:04:41 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 11:23:24 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 13:04:41 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 11:23:24 +0100
+        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 13:04:41 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: btrfs check inconsistency with raid1, part 1
-Date: Tue, 22 Dec 2015 10:23:17 +0000 (UTC)
-Message-ID: <pan$30f15$f6f8b13b$d72dd248$aaee075f@cox.net>
-References: <CAJCQCtSQUu8c-eG01tJwwUzC9jONuuaVRTpyLLDCK-gwEE6hUg@mail.gmail.com>
-	<566E584B.5040104@cn.fujitsu.com>
-	<CAJCQCtRzQ=9NbaaajPuoP2KOCvOd_rFT6P990aU=-EOo8dKS1A@mail.gmail.com>
-	<566E77FA.3050405@cn.fujitsu.com>
-	<CAJCQCtR7B7h0+CKdpRT2KuZP-Bdzv3j0zPWD6s5MMMs7apTCOg@mail.gmail.com>
-	<CAJCQCtSEx_wYPkfazik0bcpQwXxJCA=O5f0o6RbxON4jjB4q7A@mail.gmail.com>
-	<5677592F.5000202@cn.fujitsu.com>
-	<CAJCQCtRyCxiAKDuyX-F_5Kmn8Xq+RruEo=H-S32FJPr_=b33TA@mail.gmail.com>
-	<567762A3.9060007@cn.fujitsu.com>
-	<20151222020529.1ac0c913@jupiter.sol.kaishome.de>
-	<5678A5CC.7050900@cn.fujitsu.com>
-	<20151222024804.5c4f7da2@jupiter.sol.kaishome.de>
+Subject: Re: problem after using btrfs-convert
+Date: Tue, 22 Dec 2015 12:04:35 +0000 (UTC)
+Message-ID: <pan$33fad$b0f18fca$994b863a$40058d96@cox.net>
+References: <28288.1450772045@ccs.covici.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Kai Krakow posted on Tue, 22 Dec 2015 02:48:04 +0100 as excerpted:
+covici posted on Tue, 22 Dec 2015 03:14:05 -0500 as excerpted:
 
-> I just wondered if btrfs allows for the case where both stripes could
-> have valid checksums despite of btrfs-RAID - just because a failure
-> occurred right on the spot.
+> Hi.  I had a problem after using btrfs-convert.  The file system would
+> notmount, it said could not create uuid tree and the reason was no space
+> left on device.  I tried mounting with some options, like
+> nospace_cache,nodatacow, but those did not work.  I  could not extend
+> the file system since it was not mounted, although there should be a way
+> to do thisk, so I rolled back, and extended  under ext4 which does allow
+> extending an offline file system and tried again, successfully.
 > 
-> Is this possible? What happens then? If yes, it would mean not to
-> blindly trust the RAID without doing the homeworks.
+> But I wonder is there a better way to solve this and why can't you
+> extend an offline system?
 
-The one case where btrfs could get things wrong that I know of is as I 
-discovered in my initial pre-btrfs-raid1-deployment testing...
+Not even a hint as to what kernel or userspace (btrfs-progs) version 
+you're using...
 
-1) Create a two-device btrfs raid1 (data and metadata) and ensure some 
-data on it, including a test file with some content to be modified later. 
-Sync and unmount normally.
+Meanwhile, see the wiki page:
 
-2) Remove one of the two devices.
+https://btrfs.wiki.kernel.org/index.php/Conversion_from_Ext3
 
-3) Mount the remaining device degraded-writable (it shouldn't allow 
-mounting without degraded) and modify that test file.  Sync and unmount.
+In particular, see the warning at the top, that convert isn't generally 
+used or well tested ATM and is rather buggy.
 
-4) Switch devices and repeat, modifying that test file in some other 
-incompatible way.  Sync and unmount.
+The page also explains the way the conversion works in general, fitting 
+btrfs metadata and changes in between the existing ext* data and 
+metadata, which is contained within a btrfs snapshot to allow rollback, 
+until deletion of that snapshot.
 
-To this point, everything should be fine, except that you now have two 
-incompatible versions of the test file, potentially with the same 
-separate-but-equal generation numbers after the separate degraded-
-writable mount, modify, unmount, cycles.
+While they're actually working on a convert rewrite ATM, and even on 
+expanding it to cover reiserfs as well, even when it works as best it 
+possibly can, the resulting btrfs will be somewhat less than ideal, or 
+than it could have been had you actually used the ext* as your backup, 
+created a new btrfs using mkfs.btrfs and your preferred options, mounted 
+it, and then copied all your existing data from the ext* backup.
 
-5) Plug both devices in and mount normally.  Unless this has changed 
-since my tests, btrfs will neither complain in dmesg nor otherwise 
-provide any hint than anything is wrong.  If you read the file, it'll 
-give you one of the versions, still not complaining or providing any hint 
-that something's wrong.  Again unmount, without writing anything to the 
-test file this time.
+And since the admin's rule of backups says that by definition of 
+(in)action, a backup not made defines the data that would be backed up as 
+worth less than the time, hassle and resources required for that level of 
+backup (thus covering all cases from no backup at all if the data is 
+throw-away or trivially redownloadable, say browser cache, to data worth 
+keeping 101 backups of, some kept on-line and/or off-site, just in case 
+100 levels of backups fail...), and btrfs itself is still stabilizing, 
+not yet fully stable and mature, making the chance of actually needing a 
+backup higher than it would be on a fully stable and mature filesystem, 
+if that data is worth the time and hassle to do the conversion instead of 
+just blowing it away with a mkfs.btrfs in the first place, it's almost 
+certainly worth at /least/ that one level of backup, that the existing 
+ext* copy would provide, if you mkfs.btrfs a new filesystem elsewhere and 
+then copy the data over from the existing ext*.
 
-6) Try separately mounting each device individually again (without the 
-other one available so degraded, can be writable or read-only this time) 
-and check the file.  Each incompatible copy should remain in place on its 
-respective device.  Reading the one copy (randomly chosen or more 
-precisely, chosen based on PID even/odd, as that's what the btrfs raid1 
-read-scheduler uses to decide which copy to read) didn't change the other 
-one -- btrfs remained oblivious to the incompatible versions.  Again 
-unmount.
+So starting from a new mkfs.btrfs created btrfs is better in two ways; it 
+both ensures you have an untouched existing backup, just in case, and 
+starts from a new, empty btrfs, allowing btrfs to use more efficient 
+native data and metadata from the very beginning as you copy over the 
+data.
 
-7) Plug both devices in and mount the combined filesystem writable once 
-again.  Scrub.
-
-Back when I did my testing, I stopped at step 6 as I didn't understand 
-that scrub was what I should use to resolve the problem.  However, based 
-on quite a bit of later experience due to keeping a failing device (more 
-and more sectors replaced with spares, turns out at least the SSD I was 
-working with had way more spares than I would have expected, and even 
-after several months when I finally gave up and replaced it, I was only 
-down to about 85% of spares left, 15% used) around in raid1 mode for 
-awhile, this should *NORMALLY* not be a problem.  As long as the 
-generations differ, btrfs scrub can sort things out and catch up the 
-"behind" device, resolving all differences to the latest generation copy.
-
-8) But if both generations happen to be the same, having both been 
-mounted separately and written so they diverged, but so they end up at 
-the same generation when recombined...
-
->From all I know and from everything others told me when I asked at the 
-time, which copy you get then is entirely unpredictable, and worse yet, 
-you might get btrfs acting on divergent metadata when writing to the 
-other device.
+Which is why tho a filesystem conversion tool is nice to have in theory, 
+I'd never use it myself, and could never in good conscience recommend it 
+to others, even once it is fully stable and has been demonstrated bug-
+free even for years.  If the data is worth converting rather than simply 
+blowing away with a mkfs in the first place, then it's worth having the 
+old copy as a backup.  Conversely, if it's not worth having a backup, 
+it's not worth the trouble of doing the conversion; just blow away the 
+existing data with mkfs and start over with a brand new filesystem. =:^)
 
 
-The caution, therefore, is to do your best not to ever let the two copies 
-be both mounted degraded-writable, separately.  If only one copy is 
-written to, then its generation will be higher than the other one, and 
-scrub should have no problem resolving things.  Even if both copies are 
-separately written to incompatibly, in most real-world cases one's going 
-to have more generations written than the other and scrub should reliably 
-and predictably resolve differences in favor of that one.  The problem 
-only appears if they actually happen to have the same generation number, 
-relatively unlikely except under controlled test conditions, but that has 
-the potential to be a *BIG* problem should it actually occur.
+Meanwhile, if you hadn't read that page on the wiki, it's almost certain 
+that there's a whole lot more information there that will prove useful to 
+you as you begin your btrfs journey, so I'd recommend you spend some time 
+reading it, perhaps along with the last couple weeks of list threads on 
+one of the archives, then post back with any further questions you have.
 
-So if for some reason you MUST mount both copies degraded-writable 
-separately, the following are your options:
+Here's a nice simple link to either bookmark or memorize. =:^)
 
-a) don't ever recombine them, doing a device replace missing with a third 
-device instead (or a convert to single/dup); use one of the options below 
-if you do need to recombine, or...
-
-b) manually verify (using btrfs-show-super or the like) that the supers 
-on each don't have the same generation before attempting a recombine, 
-or...
-
-c) wipe the one device and treat it as a new device add, so btrfs can't 
-get mixed up with differing versions at the same generation number, or...
-
-d) simply take your chances and hope that the generation numbers don't 
-match.
-
-(D should in practice be "good enough" if one was only mounted writable a 
-very short time, while the other was written to over a rather longer 
-period, such that it almost certainly had far more intervening commits 
-and thus generations than the other.)
+https://btrfs.wiki.kernel.org
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,58 +1,72 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:59229 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751453AbbLVBc3 convert rfc822-to-8bit (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:41818 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751382AbbLVCNE (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 21 Dec 2015 20:32:29 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aBBoS-0003wX-1k
-	for linux-btrfs@vger.kernel.org; Tue, 22 Dec 2015 02:32:28 +0100
-Received: from ip5f5ae08a.dynamic.kabel-deutschland.de ([95.90.224.138])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 02:32:28 +0100
-Received: from hurikhan77 by ip5f5ae08a.dynamic.kabel-deutschland.de with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 02:32:28 +0100
-To: linux-btrfs@vger.kernel.org
-From: Kai Krakow <hurikhan77@gmail.com>
-Subject: Re: Ideas on unified real-ro mount option across all filesystems
-Date: Tue, 22 Dec 2015 02:32:21 +0100
-Message-ID: <20151222023221.56a89345@jupiter.sol.kaishome.de>
-References: <567212DA.8050808@cn.fujitsu.com>
-	<567228EF.80007@redhat.com>
-	<5673616C.1040706@cn.fujitsu.com>
-	<1450404066.6498.70.camel@scientia.net>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
-Cc: linux-fsdevel@vger.kernel.org, linux-ext4@vger.kernel.org
+	Mon, 21 Dec 2015 21:13:04 -0500
+Date: Mon, 21 Dec 2015 21:13:03 -0500
+From: Chris Mason <clm@fb.com>
+To: <fdmanana@kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [GIT PULL] Btrfs bug fixes for 4.5
+Message-ID: <20151222021303.GA51885@clm-mbp.thefacebook.com>
+References: <1450720786-16839-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <1450720786-16839-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Fri, 18 Dec 2015 03:01:06 +0100
-schrieb Christoph Anton Mitterer <calestyo@scientia.net>:
+On Mon, Dec 21, 2015 at 05:59:46PM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Hi Chris,
+> 
+> Please consider the following fixes for the 4.5 merge window.
+> Nothing outstanding, they are just the usual bug fixes (races, deadlocks,
+> error paths, etc). These were all sent previously to the mailing list and
+> rebased last week against your integration-4.4 branch (since there isn't
+> any 4.5 integration branch yet).
 
-> The manpage says:
-> > ro     Mount the filesystem read-only.
-> > rw     Mount the filesystem read-write.  
+Thanks Filipe, I'll get these in.  I've been testing Omar's free space
+cache pretty hard, but I'll put his stuff on top of everything else just
+in case, and send out for -integration before xmas along with other
+queued items.
 
-That means: the filesystem... Not the block device...
+-chris
 
-Sorry, it's kinda nitpicking. But actually, the file system IS
-read-only: You cannot modify files from user's view.
-
-What you actually want is not modifying the underlying storage which is
-the block device and includes stuff like meta and journal data (which
-is only indirectly visible to users at best).
-
-You can argue that man pages are not particularly end-user friendly.
-But for an admin this makes sense without being an fs developer.
-
--- 
-Regards,
-Kai
-
-Replies to list-only preferred.
-
-
+> 
+> Thanks.
+> 
+> The following changes since commit 1d3a5a82fe724c53c472a18a31fb0bbf33dfaba2:
+> 
+>   Merge branch 'for-chris-4.4' of git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux into for-linus-4.4 (2015-12-15 09:09:59 -0800)
+> 
+> are available in the git repository at:
+> 
+>   git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.5
+> 
+> for you to fetch changes up to e44081ef611832b47a86abf4e36dc0ed2e950884:
+> 
+>   Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups (2015-12-21 17:51:22 +0000)
+> 
+> ----------------------------------------------------------------
+> Filipe Manana (7):
+>       Btrfs: fix race when finishing dev replace leading to transaction abort
+>       Btrfs: fix memory leaks after transaction is aborted
+>       Btrfs: fix error path when failing to submit bio for direct IO write
+>       Btrfs: fix deadlock between direct IO write and defrag/readpages
+>       Btrfs: fix leaking of ordered extents after direct IO write error
+>       Btrfs: fix locking bugs when defragging leaves
+>       Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups
+> 
+>  fs/btrfs/extent-tree.c |  19 +++++++++++++++++--
+>  fs/btrfs/inode.c       | 127 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++-------------------------------------------------
+>  fs/btrfs/transaction.c |  17 +++++++++++++++++
+>  fs/btrfs/tree-defrag.c |  27 ++++++++++++++++++++++++---
+>  fs/btrfs/volumes.c     |  17 +++++++++++++++--
+>  5 files changed, 151 insertions(+), 56 deletions(-)
+> 
+> -- 
+> 2.1.3
+> 

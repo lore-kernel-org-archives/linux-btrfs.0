@@ -1,65 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33220 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751503AbbLWUHn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Dec 2015 15:07:43 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aBphD-0002eQ-0A
-	for linux-btrfs@vger.kernel.org; Wed, 23 Dec 2015 21:07:39 +0100
-Received: from 178-83-240-22.dynamic.hispeed.ch ([178.83.240.22])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Dec 2015 21:07:38 +0100
-Received: from auslands-kv by 178-83-240-22.dynamic.hispeed.ch with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 23 Dec 2015 21:07:38 +0100
-To: linux-btrfs@vger.kernel.org
+Received: from mail.banditt-management.com ([176.28.28.35]:49121 "EHLO
+	mail.banditt-management.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751481AbbLWUV3 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Dec 2015 15:21:29 -0500
+Received: from localhost (localhost.localdomain [127.0.0.1])
+	by mail.banditt-management.com (Postfix) with SMTP id CD78E14E0611
+	for <linux-btrfs@vger.kernel.org>; Wed, 23 Dec 2015 21:21:27 +0100 (CET)
+Message-ID: <567B0245.5000902@gmx.de>
+Date: Wed, 23 Dec 2015 21:21:25 +0100
 From: Neuer User <auslands-kv@gmx.de>
+MIME-Version: 1.0
+To: Chris Murphy <lists@colorremedies.com>
+CC: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Subject: Re: btrfs und lvm-cache?
-Date: Wed, 23 Dec 2015 21:07:32 +0100
-Message-ID: <567AFF04.1030200@gmx.de>
-References: <n5du09$9rn$1@ger.gmane.org> <1527885.5NheBqth0k@merkaba> <n5e139$r1h$1@ger.gmane.org> <CADfjVrhQCxuggAzSKMcv8m6XJFvoCy4DVueSbrCX19KV-oHAPA@mail.gmail.com>
-Mime-Version: 1.0
+References: <n5du09$9rn$1@ger.gmane.org>	<1527885.5NheBqth0k@merkaba>	<n5e139$r1h$1@ger.gmane.org> <CAJCQCtStdF=JU11LOjJ_xLXir_CPzJ7GaQRRqsROEE0eOADFWA@mail.gmail.com>
+In-Reply-To: <CAJCQCtStdF=JU11LOjJ_xLXir_CPzJ7GaQRRqsROEE0eOADFWA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-In-Reply-To: <CADfjVrhQCxuggAzSKMcv8m6XJFvoCy4DVueSbrCX19KV-oHAPA@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 23.12.2015 um 20:45 schrieb Noah Massey:
-> On Wed, Dec 23, 2015 at 6:38 AM, Neuer User <auslands-kv@gmx.de> wrote:
-> I believe Martin's concern is two-fold:
-> 
-> The first, major issue, concerns the default writeback cache mode,
-> which makes the SSD a single point of failure.
-> (in writeback mode, a write to a block that is cached will go only to
-> the cache and the block
-> will be marked dirty in the metadata.) If the SSD fails with dirty
-> data in the cache which has not been flushed to the backing devices,
-> the filesystem may be in a unrecoverable state, because writes which
-> BTRFS was told had succeeded are not present on disk.
-Ok, I see. Would it help, if the cache were set to writethrough then? In
-this case the data on the hdds should be always ok, right? (At least as
-long as the hdds are fine.)
-> 
-> The second potential issue is that if the SSD performs internal
-> deduplication, the two copies of cached data (contents on drive 1,
-> content on drive 2) may actually be a reference to the same bits of
-> internal storage, meaning a single corruption will affect both cached
-> copies. If in writeback, then corrupted data could flush down to both
-> disks. I'm not sure what would happen in writethrough.
-> 
-Understood. However, do SSDs really do automatic deduplication? I might
-be completely wrong here, but that sounds to be a rather complex
-mechanism, requiring lots of RAM to deduplicate 100 GB. I wouldn't have
-thought that typical SSDs include that?
+Am 23.12.2015 um 20:49 schrieb Chris Murphy:
+> Seems to me if the LV's on the two HDDs are exposed, the lvmcache has
+> to separately keep track of those LVs. So as long as everything is
+> working correctly, it should be fine. That includes either transient
+> or persistent, but consistent, errors for either HDD or the SSD, and
+> Btrfs can fix up those bad reads with data from the other. If the SSD
+> were to decide to go nutty, chances are reads through lvmcache would
+> be corrupt no matter what LV is being read by Btrfs, and it'll be
+> aware of that and discard those reads. Any corrupt writes in this
+> case, won't be immediately known by Btrfs because it (like any file
+> system) assumes writes are OK unless the device reports a write
+> failure, but those too would be found on read.
 
-> ~ Noah
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+What corrupt write do you mean? The "nuts" SSD is not going to write to
+the HDDs, that will be done by lvmcache. So the HDDs should get the
+correct data, only the SSD will be bad, right?
 
+And that would become obvious with the next reads, in which case btrfs
+probably would throw an error as it gets crazy data from apparently both
+LVs (but only coming from the SSD). So, that could be fixed by removing
+the SSD without any data loss from the HDDs, right?
+
+> 
+> The question I have, that I don't know the answer to, is if the stack
+> arrives at a point where all writes are corrupt but hardware isn't
+> reporting write errors, and it continues to happen for a while, once
+> you've resolved that problem and try to mount the file system again,
+> how well does Btrfs disregard all those bad writes? How well would any
+> filesystem?
+> 
+Hmm, again the writes to the HDDs should be ok. Only the SSD would have
+pretty corrupt data, right? In such a case it might depend on how much
+bad data is read back from the SSDs and what the filesystem does in
+raction to these?
+
+P.S.: Of course, one other possibility would be to use a second SSD, so
+that each LV has a separate caching SSD. In this case, there would
+always be a valid source (given that not both SSDs go nuts the same
+time...).
+
+But I would need another slot for this. If the pros are very high,
+that's ok. If it works nicely with just one SSD, then even better.
 

@@ -1,58 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-18.italiaonline.it ([212.48.25.146]:58652 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S932282AbbLWSUg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Dec 2015 13:20:36 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: Loss of connection to Half of the drives
-References: <CAD=LdFREn-jTEXTHw_Q+zbnva3dSWtb_aKcYS+6paidBjH7U8A@mail.gmail.com>
- <CAJCQCtStfVppb-NU0EjeAVf6cs08cdcWCEDYLx4zMoOzbG0W+A@mail.gmail.com>
- <CAC=t97Ac07=ZFZ1nShfWc0ik50D90hBJM3bSEiLmHbKK36G9Xw@mail.gmail.com>
- <pan$9b1ad$a377a340$8346d054$a731dd54@cox.net>
- <CAC=t97BW6vYgi7edM=PknJDep9nJxDbOYpgPKi6L2u-J3hMwqQ@mail.gmail.com>
-To: Donald Pearson <donaldwhpearson@gmail.com>, Duncan <1i5t5.duncan@cox.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <567AE5F0.6060005@inwind.it>
-Date: Wed, 23 Dec 2015 19:20:32 +0100
+Received: from mail-ob0-f173.google.com ([209.85.214.173]:34973 "EHLO
+	mail-ob0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756007AbbLWTq2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Dec 2015 14:46:28 -0500
+Received: by mail-ob0-f173.google.com with SMTP id 18so172581031obc.2
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Dec 2015 11:46:27 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAC=t97BW6vYgi7edM=PknJDep9nJxDbOYpgPKi6L2u-J3hMwqQ@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <n5e139$r1h$1@ger.gmane.org>
+References: <n5du09$9rn$1@ger.gmane.org> <1527885.5NheBqth0k@merkaba> <n5e139$r1h$1@ger.gmane.org>
+From: Noah Massey <noah.massey@gmail.com>
+Date: Wed, 23 Dec 2015 14:45:48 -0500
+Message-ID: <CADfjVrhQCxuggAzSKMcv8m6XJFvoCy4DVueSbrCX19KV-oHAPA@mail.gmail.com>
+Subject: Re: btrfs und lvm-cache?
+To: Neuer User <auslands-kv@gmx.de>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2015-12-23 16:53, Donald Pearson wrote:
-[...]
-> 
-> Additionally real Raid10 will run circles around what BTRFS is doing
-> in terms of performance.  In the 20 drive array you're striping across
-> 10 drives, in BTRFS right now you're striping across 2 no matter what.
-> So not only do I lose in terms of resilience I lose in terms of
-> performance.  I assume that N-way-mirroring used with BTRFS Raid10
-> will also increase the stripe width so that will level out the
-> performance but you're always going to be short a drive for equal
-> resilience.
+On Wed, Dec 23, 2015 at 6:38 AM, Neuer User <auslands-kv@gmx.de> wrote:
+> Am 23.12.2015 um 12:21 schrieb Martin Steigerwald:
+>> Hi.
+>>
+>> As far as I understand this way you basically loose the RAID 1 semantics of
+>> BTRFS. While the data is redundant on the HDDs, it is not redundant on the
+>> SSD. It may work for a pure read cache, but for write-through you definately
+>> loose any data integrity protection a RAID 1 gives you.
+>>
+> Hmm, are you sure? I thought LVM lies underneath btrfs. Btrfs thus
+> should not know about the caching SSD at all. It only knows of the two
+> LVs on the HDDs, reading and writing data from or to one or both of the
+> two LVs.
 
-In case of RAID10,on the best of my knowledge, BTRFS allocate each CHUNK across *all* the available devices. It uses the usual RAID0 (==striping) over a RAID1 (mirroring).
+I believe Martin's concern is two-fold:
 
-What you are describing is the BTRFS RAID1; i.e. LINEAR over a RAID1:each chunk is allocated in *two*, only *two* different disks from the disks pool; the disks are the ones with the largest free space. Each chunk may be allocated on a different *pair* of disks.
+The first, major issue, concerns the default writeback cache mode,
+which makes the SSD a single point of failure.
+(in writeback mode, a write to a block that is cached will go only to
+the cache and the block
+will be marked dirty in the metadata.) If the SSD fails with dirty
+data in the cache which has not been flushed to the backing devices,
+the filesystem may be in a unrecoverable state, because writes which
+BTRFS was told had succeeded are not present on disk.
 
-> And finally the elephant in the room that comes with the necessary
-> 11-way mirroring is that the usable capacity of that 20 drive array.
-> Remember, pea brain so my math may be wrong in application and
-> calculation but if it's made of 1T drives for 20T raw, there is only
-> 1.82T usable (20 / 11) and if I'm completely off in that figure the
-> point is still that such a high level of mirroring is going to
-> excessively consume drive space.
+The second potential issue is that if the SSD performs internal
+deduplication, the two copies of cached data (contents on drive 1,
+content on drive 2) may actually be a reference to the same bits of
+internal storage, meaning a single corruption will affect both cached
+copies. If in writeback, then corrupted data could flush down to both
+disks. I'm not sure what would happen in writethrough.
 
-Ducan talked about a N-way mirroring, where each disks contains a copy of the same data. Nobody talked about N-way mirroring where N is less than the number of the available disks.
-
-To be honest in the past appeared some patches to implement a generalized RAID-NxM raid, where N are the total disk, M are the redundancy disks: i.e. the filesystem could allow a drop of M disks (see http://www.spinics.net/lists/linux-btrfs/msg29245.html).
-
-BR
-G.Baroncelli
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+~ Noah

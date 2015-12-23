@@ -1,29 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f171.google.com ([209.85.214.171]:33990 "EHLO
-	mail-ob0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753536AbbLVX4t (ORCPT
+Received: from mail0200.smtp25.com ([174.37.170.200]:48833 "EHLO
+	mail0200.smtp25.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932594AbbLWAST (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Dec 2015 18:56:49 -0500
-Received: by mail-ob0-f171.google.com with SMTP id iw8so154708377obc.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 15:56:49 -0800 (PST)
+	Tue, 22 Dec 2015 19:18:19 -0500
+Received: from ccs.covici.com (localhost [127.0.0.1])
+	by ccs.covici.com (8.14.9/8.14.8) with ESMTP id tBN0IH2N031667
+	for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 19:18:17 -0500
+From: covici@ccs.covici.com
+cc: linux-btrfs@vger.kernel.org
+Subject: Re: notify not being triggered in btrfs directory
+In-reply-to: <29680.1450828473@ccs.covici.com>
+References: <29680.1450828473@ccs.covici.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtStfVppb-NU0EjeAVf6cs08cdcWCEDYLx4zMoOzbG0W+A@mail.gmail.com>
-References: <CAD=LdFREn-jTEXTHw_Q+zbnva3dSWtb_aKcYS+6paidBjH7U8A@mail.gmail.com>
- <CAJCQCtStfVppb-NU0EjeAVf6cs08cdcWCEDYLx4zMoOzbG0W+A@mail.gmail.com>
-From: Donald Pearson <donaldwhpearson@gmail.com>
-Date: Tue, 22 Dec 2015 17:56:29 -0600
-Message-ID: <CAC=t97Ac07=ZFZ1nShfWc0ik50D90hBJM3bSEiLmHbKK36G9Xw@mail.gmail.com>
-Subject: Re: Loss of connection to Half of the drives
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Dave S <bigdave.schulz@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset="us-ascii"
+Date: Tue, 22 Dec 2015 19:18:17 -0500
+Message-ID: <31666.1450829897@ccs.covici.com>
+To: unlisted-recipients:; (no To-header on input)
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->
-> Also understand with Brfs RAID 10 you can't lose more than 1 drive
-> reliably. It's not like a strict raid1+0 where you can lose all of the
-> "copy 1" *OR* "copy 2" mirrors.
+I think I fixed it,  I am using a daemon and had to restart and now its
+working -- almost panicked there for a minute.
 
-Pardon my pea brain but this sounds like a pretty bad design flaw?
+covici@ccs.covici.com wrote:
+
+> Hi.  I am having a problem where I am watching some directories in a
+> btrfs file system, but inotify is not being triggered -- is this a known
+> issue?  I am using kernel 4.1.12-gentoo and programs 4.3.1.
+> 
+> Thanks in advance for any suggestions.
+> 
+> -- 
+> Your life is like a penny.  You're going to lose it.  The question is:
+> How do
+> you spend it?
+> 
+>          John Covici
+>          covici@ccs.covici.com
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> 
+
+-- 
+Your life is like a penny.  You're going to lose it.  The question is:
+How do
+you spend it?
+
+         John Covici
+         covici@ccs.covici.com

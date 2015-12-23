@@ -1,53 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail0200.smtp25.com ([174.37.170.200]:48833 "EHLO
-	mail0200.smtp25.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S932594AbbLWAST (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 22 Dec 2015 19:18:19 -0500
-Received: from ccs.covici.com (localhost [127.0.0.1])
-	by ccs.covici.com (8.14.9/8.14.8) with ESMTP id tBN0IH2N031667
-	for <linux-btrfs@vger.kernel.org>; Tue, 22 Dec 2015 19:18:17 -0500
-From: covici@ccs.covici.com
-cc: linux-btrfs@vger.kernel.org
-Subject: Re: notify not being triggered in btrfs directory
-In-reply-to: <29680.1450828473@ccs.covici.com>
-References: <29680.1450828473@ccs.covici.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Date: Tue, 22 Dec 2015 19:18:17 -0500
-Message-ID: <31666.1450829897@ccs.covici.com>
-To: unlisted-recipients:; (no To-header on input)
+Received: from plane.gmane.org ([80.91.229.3]:43702 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751615AbbLWCQq (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 22 Dec 2015 21:16:46 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aBYyo-0000r8-4L
+	for linux-btrfs@vger.kernel.org; Wed, 23 Dec 2015 03:16:42 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Dec 2015 03:16:42 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 23 Dec 2015 03:16:42 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: defrag vs autodefrag
+Date: Wed, 23 Dec 2015 02:16:37 +0000 (UTC)
+Message-ID: <pan$b661e$77b105fa$ec9a6b6f$a75b850c@cox.net>
+References: <CAC=t97A1S6599aHWCCin7KnFWARs_ebfK6GptAXZQbFnSio7eA@mail.gmail.com>
+	<20151221081432.GR26782@carfax.org.uk>
+	<CAL3q7H6TGU2rz+zP8hcHxaDGx47nTrCndYvP9ArS+Z0HmZ86=A@mail.gmail.com>
+	<20151222203041.GD1586@carfax.org.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I think I fixed it,  I am using a daemon and had to restart and now its
-working -- almost panicked there for a minute.
+Hugo Mills posted on Tue, 22 Dec 2015 20:30:41 +0000 as excerpted:
 
-covici@ccs.covici.com wrote:
+> On Mon, Dec 21, 2015 at 09:28:37AM +0000, Filipe Manana wrote:
 
-> Hi.  I am having a problem where I am watching some directories in a
-> btrfs file system, but inotify is not being triggered -- is this a known
-> issue?  I am using kernel 4.1.12-gentoo and programs 4.3.1.
+>> On Mon, Dec 21, 2015 at 8:14 AM, Hugo Mills <hugo@carfax.org.uk> wrote:
+
+>> > On Sun, Dec 20, 2015 at 07:26:07PM -0600, Donald Pearson wrote:
+
+>> >> I read an implication in a different thread that defrag and
+>> >> autodefrag behave differently in that autodefrag is more snapshot
+>> >> friendly for COW data.
+
+>> >    Correct.
+
+>> How is that so? Snapshot-aware defrag was disabled almost 2 years ago,
+>> and that piece of code is used both by a "manual" defrag (ioctl) and by
+>> automatic defrag.
+
+> Then I realised that actually, we're both right. :)
 > 
-> Thanks in advance for any suggestions.
+> If autodefrag behaves as you say (and I'm sure it does, since you
+> know the code), then when you write data to a file, a piece of the file
+> around the write(s) can be copied and written elsewhere by autodefrag.
+> That's going to be the same as the manual defrag. However,
+> it's a relatively small separation effect that's likely lost in the
+> noise. If you rewrite the whole file, then it'll separate the file
+> completely -- which is what manual defrag does -- but then, you'd expect
+> that behaviour without autodefrag, too.
 > 
-> -- 
-> Your life is like a penny.  You're going to lose it.  The question is:
-> How do
-> you spend it?
+> So, ultimately, autodefrag *does* separate reflink copies, but only
+> near where writes are made to the file, so the overall effect is very
+> similar to the effect you'd have from writing to the file without
+> autodefrag.
 > 
->          John Covici
->          covici@ccs.covici.com
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
+> And I am now better informed than I was before. :)
+
+And now so are we.  Thanks, Hugo.
+
+I /knew/ there had to be a good explanation, as what you were saying just 
+didn't fit in with what I knew.  Now I have that explanation, and it 
+makes perfect sense. =:^)
 
 -- 
-Your life is like a penny.  You're going to lose it.  The question is:
-How do
-you spend it?
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-         John Covici
-         covici@ccs.covici.com

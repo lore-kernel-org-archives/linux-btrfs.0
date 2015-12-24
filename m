@@ -1,90 +1,99 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:43483 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:44638 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751008AbbLXAjG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Dec 2015 19:39:06 -0500
+	id S1752129AbbLXBVZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 23 Dec 2015 20:21:25 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aBtvr-00007e-Eu
-	for linux-btrfs@vger.kernel.org; Thu, 24 Dec 2015 01:39:03 +0100
+	id 1aBuao-0001vg-Fy
+	for linux-btrfs@vger.kernel.org; Thu, 24 Dec 2015 02:21:22 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 01:39:03 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 02:21:22 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 01:39:03 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 02:21:22 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Raid 5/6 Stability
-Date: Thu, 24 Dec 2015 00:38:57 +0000 (UTC)
-Message-ID: <pan$3b05a$667561e3$4f808486$449baaf4@cox.net>
-References: <E1aBsGQ-0007zz-4V@rmm6prod02.runbox.com>
+Subject: Re: Loss of connection to Half of the drives
+Date: Thu, 24 Dec 2015 01:21:16 +0000 (UTC)
+Message-ID: <pan$82f3e$e3af006a$d15f1d6c$4b07b3ba@cox.net>
+References: <CAD=LdFREn-jTEXTHw_Q+zbnva3dSWtb_aKcYS+6paidBjH7U8A@mail.gmail.com>
+	<CAJCQCtStfVppb-NU0EjeAVf6cs08cdcWCEDYLx4zMoOzbG0W+A@mail.gmail.com>
+	<CAC=t97Ac07=ZFZ1nShfWc0ik50D90hBJM3bSEiLmHbKK36G9Xw@mail.gmail.com>
+	<pan$9b1ad$a377a340$8346d054$a731dd54@cox.net>
+	<CAC=t97BW6vYgi7edM=PknJDep9nJxDbOYpgPKi6L2u-J3hMwqQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-jwalmer posted on Wed, 23 Dec 2015 17:52:10 -0500 as excerpted:
+Donald Pearson posted on Wed, 23 Dec 2015 09:53:41 -0600 as excerpted:
 
-> Just an avid follower of the project checking in. It has been about nine
-> months since the initial Raid 5/6 features were released in 3.19 and
-> they are still listed as incomplete/experimental on the Wiki.
-> 
-> Admittedly, I don't understand how such a large and distributed project
-> prioritizes features for development, but I haven't been able to find a
-> clear roadmap anywhere.
-> 
-> I'm wondering if anyone here is able to give me some insight about when
-> the Raid 5/6 feature will next be updated, or even when they are
-> scheduled to lose their incomplete/experimental designation.
+> Additionally real Raid10 will run circles around what BTRFS is doing in
+> terms of performance.  In the 20 drive array you're striping across 10
+> drives, in BTRFS right now you're striping across 2 no matter what. So
+> not only do I lose in terms of resilience I lose in terms of
+> performance.  I assume that N-way-mirroring used with BTRFS Raid10 will
+> also increase the stripe width so that will level out the performance
+> but you're always going to be short a drive for equal resilience.
 
-Addressing the wiki side first, then the question you're probably more 
-interested in. =:^)
+No, with btrfs raid10, you're /mirroring/ across two drives no matter 
+what.  With 20 devices, you're /striping/ across 10 two-way mirrors.  
+It's the same as a standard raid10, in that regard.  
 
-FWIW, the wiki gets updated... when a volunteer (which could be you =:^) 
-updates it.  It often has quite current information... somewhere on the 
-wiki, but often not all mentions of a feature get updated at the same 
-time, and some may lag behind.
+Tho it's a bit different in that the mix of devices forming the above can 
+differ among different chunks.  IOW, the first chunk might be mirrored a/
+b c/d e/f g/h i/j k/l m/n o/p q/r s/t, with the stripe across each mirror-
+pair, but the chunk might be mirrored a/l g/o f/k b/n c/d e/s j/q h/t i/p 
+m/r (I think I got each letter once...), and striped across those pairs.
 
-That said, while btrfs raid56 is no longer experimental, I'd not call it 
-entirely stable, even to the point of the rest of btrfs (which is 
-stabilizing but not fully stable or mature yet), just yet.
+So you get the same performance as a normal raid10 (well, to the extent 
+that btrfs has been optimized, which in large part it hasn't been, yet), 
+but as should always be the case in a raid10, randomized loss of more 
+than a single device can mean data loss.
 
-I've personally long stated that raid56 feature stability, to the point 
-of the rest of btrfs anyway, can be expected roughly a year after nominal 
-feature completion, with an additional requirement of at least two kernel 
-cycles without major bugs in the feature.  At five kernel releases a year 
-that would put it more or less at 4.4, which is soon to be released and 
-quite good timing, as 4.4 is an LTS release, and indeed, the last major 
-raid56 bug was fixed early in the 4.2 cycle (well before 4.2 release), so 
-4.4 meets the requirement in that regard as well. =:^)
+But, because each chunk pair assignment is more or less randomized, 
+unlike a conventional raid10 which lets you map all of one mirror set to 
+one cabinet and all of the second mirror set to another cabinet, so you 
+can reliably lose an entire cabinet and be fine since it's known to 
+correspond exactly to a single mirror set, you can't do that with btrfs 
+raid10, because there's no way to specify individual chunk mirroring and 
+what might be precisely one mirror set with one chunk, is very likely to 
+be both copies of some mirrors and no copies of other mirrors, with 
+another chunk.
 
-Now I'm just an active list regular and btrfs user, not a dev, but I 
-began making that recommendation/prediction before 3.19's release, when 
-it was clear 3.19 would bring nominal raid56 code completion, and in the 
-immediately following releases as well, when people were (I thought) 
-jumping the gun, and indeed, getting their data eaten by remaining 
-critical bugs, and nobody has argued it otherwise in the intervening 
-time, so I'd suggest it's a reasonably solid recommendation. 
+What I was suggesting as a solution was a setup that:
+(a) has btrfs raid1 at the top level
+(b) has a pair of mdraidNs underneath, in this case a pair of 10-device 
+mdraid10s.
+(c) has the pair of mdraidNs each presented to btrfs as one of its raid1 
+mirrors.
 
-So 4.4 is what I'd consider the magical raid56-stability release, and I'd 
-actually expect the wiki to be updated shortly thereafter, tho 4.4 is 
-close enough now, and there have been no major raid56 bugs reported in 
-the 4.3 and 4.4 cycles, that arguably the wiki's raid56 status could be 
-updated now to reflect that.
+While this is actually raid01, not raid10, in this case it makes more 
+sense than a mixed raid10, because by doing it that way, you'd:
+1) keep btrfs' data integrity and error correction at the top level, as 
+it could pull from the second copy if the first failed checksum.
+2) be able to stick each mdraid0 in its own cabinet, so loss of the 
+entire cabinet wouldn't be data loss, only redundancy loss.
 
-(Personally, I'm more a newsgroups and mailing lists guy, and while I 
-read web/wiki resources and will in fact often quote them, I tend to 
-treat them as read-only and very seldom personally edit them, leaving 
-that to others, who occasionally even quote my list posts more or less 
-verbatim when they update the wiki.  So again, you're invited to do so if 
-that's your thing, but it's nothing I'm likely to do personally.  And 
-FWIW, there are a few folks that watch wiki updates and revert spam and 
-anything crazy, so as long as the edits are honestly trying to make 
-things better, any help you can be in editing the wiki is highly 
-appreciated, and you don't have to worry too much about any mistakes you 
-inadvertently make, as others will be along to fix them. =:^)
+(Reversing that, btrfs raid0 on top of mdraid1, would lose btrfs' ability 
+to correct checksum errors as at the btrfs level, it'd be non-redundant, 
+and mdraid1 doesn't have checksumming, so it couldn't provide the same 
+data integrity service.  Without checksumming and pull from the other 
+copy in case of error, you could scrub the mdraid1 to make its mirrors 
+identical again, but you'd be just as likely to copy the bad one to the 
+good one as the reverse.  Thus, btrfs really needs to be the raid1 layer 
+unless you simply don't care about data integrity, and because btrfs is 
+the filesystem layer, it has to be the top layer, so you're left doing a 
+raid01 instead of the raid10 that's ordinarily preferred due to locality 
+of a rebuild, absent other factors like this data integrity factor.)
+
+And what btrfs N-way-mirroring will provide, in the longer term once 
+btrfs gets that feature and it stabilizes to usability, is the ability to 
+actually have three cabinets, and sustain the loss of two, or four 
+cabinets, and sustain the loss of three, etc.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

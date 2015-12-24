@@ -1,98 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:42980 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:43146 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751609AbbLXPTZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Dec 2015 10:19:25 -0500
+	id S1751609AbbLXPYn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Dec 2015 10:24:43 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aC7fk-0005C2-6b
-	for linux-btrfs@vger.kernel.org; Thu, 24 Dec 2015 16:19:20 +0100
+	id 1aC7kv-0005GO-Fx
+	for linux-btrfs@vger.kernel.org; Thu, 24 Dec 2015 16:24:41 +0100
 Received: from 178-83-240-22.dynamic.hispeed.ch ([178.83.240.22])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 16:19:20 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 16:24:41 +0100
 Received: from auslands-kv by 178-83-240-22.dynamic.hispeed.ch with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 16:19:20 +0100
+        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 16:24:41 +0100
 To: linux-btrfs@vger.kernel.org
 From: Neuer User <auslands-kv@gmx.de>
 Subject: Re: btrfs und lvm-cache?
-Date: Thu, 24 Dec 2015 16:19:14 +0100
-Message-ID: <n5h2di$vq7$1@ger.gmane.org>
-References: <n5du09$9rn$1@ger.gmane.org>	<1527885.5NheBqth0k@merkaba>	<n5e139$r1h$1@ger.gmane.org>	<CAJCQCtStdF=JU11LOjJ_xLXir_CPzJ7GaQRRqsROEE0eOADFWA@mail.gmail.com>	<567B0245.5000902@gmx.de> <CAJCQCtSLfwmuBnNFHKbyDmUDV5yQg-BWDB3TjFqxtL_OqEm5TA@mail.gmail.com>
+Date: Thu, 24 Dec 2015 16:24:33 +0100
+Message-ID: <n5h2ni$53q$1@ger.gmane.org>
+References: <n5du09$9rn$1@ger.gmane.org> <pan$22dc8$3670cf4f$29866f7c$946ede75@cox.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=utf-8
-In-Reply-To: <CAJCQCtSLfwmuBnNFHKbyDmUDV5yQg-BWDB3TjFqxtL_OqEm5TA@mail.gmail.com>
+In-Reply-To: <pan$22dc8$3670cf4f$29866f7c$946ede75@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am 23.12.2015 um 21:56 schrieb Chris Murphy:
-> Btrfs always writes to the 'cache LV' and then it's up to lvmcache to
-> determine how and when things are written to the 'cache pool LV' vs
-> the 'origin LV' and I have no idea if there's a case with writeback
-> mode where things write to the SSD and only later get copied from SSD
-> to the HDD, in which case a wildly misbehaving SSD might corrupt data
-> on the origin.
-> 
-> If you use writethrough, the default, then the data on HDDs should be
-> fine even if the single SSD goes crazy for some reason. Even if all
-> reads go bad, worse case is Btrfs should stop and go read-only. If the
-> SSD read errors are more transient, then Btrfs tries to fix them with
-> COW writes, so even if these fixes aren't needed on HDD, they should
-> arrive safely on both HDDs and hence still no corruption.
-> 
-Yeah, that's what I hoped for.
+Am 24.12.2015 um 03:04 schrieb Duncan:
 
-> I mean *really* if data integrity is paramount you probably would do
-> this with production methods. Anything that has high IOPS like a mail
-> server, just write that stuff only to the SSD, and then occasionally
-> rsync it to conventionally raided (md or lvm) HDDs with XFS. You could
-> even use lvm snapshots and do this often, and now you not only have
-> something fast and safe but also you have an integrated backup that's
-> mirrored, in a sense you have three copies. Whereas what you're
+I had a look at bcache, but focused on lvmcache mainly because of the
+flexibility it offers. It can be easily added and removed. For LVM it is
+just another LV, so all the LVM magic applies.
 
-Something like that is what I used before. Ext4 on LVM with LVM
-snapshots and external backups. But it does not help against silent
-bitrot. And that is the scary thing, I would like to care for and thus
-having a deeper look at btrfs.
-http://arstechnica.com/information-technology/2014/01/bitrot-and-atomic-cows-inside-next-gen-filesystems/
+But thanks, I should take another look at bcache.
 
-> attempting is rather complicated, and while it ought to work and it
-> gets testing, you're really being a test candidate not least of which
-> is Btrfs but also lvmcache, but you're also combining both tests. I'd
-> just say make sure you have regular backups - snapshot the rw
-> subvolume regularly and sync it to another filesystem. As often as the
-> workflow can tolerate.
-> 
-Yeah, that's what I thought of. Snapshotting the system and
-send/receiving it to a second external disk. Additionally, using
-duplicity/rsync with Amazon Glacier.
-> 
-> Yeah if it's a decent name brand SSD and not one of the ones with
-> known crap firmware, then I think it's fine to just have one. Either
-> way, each origin LV gets a separate cache pool LV if I understand
-> lvmcache correctly.
-> 
-Is there a list of "SSDs with known crap firmware"? Currently I have a
-Toshiba disk Q300 in use.
 
-> Off hand I don't know if you need separate VGs to make sure the 'cache
-> LVs' you format with Btrfs in fact use different PVs as origins.
-> That's important. The usual lvcreate command has a way to specify one
-> or more PVs to use, rather than have it just grab a pile of extents
-> from the VG (which could be from either PV), but I don't know if
-> that's the way it works in conjunction with lvmcache.
+> I'll let others debate the lvm-cache details, which I don't know much
+> about, but I do have a couple points to add, one of which is detail,
+> one rather higher level.  The higher level one first:
 > 
-> You're probably best off configuring this, and while doing write, pull
-> a device. Do that three times, once for each HDD and once for the SSD,
-> and see if you can recover. If it has to be bullet proof, you need to
-> spray it with bullets.
+> 1) While I've seen both bcache and lvm-cache discussed as potential
+> options here, there is at least one user using bcache on top of btrfs
+> that posts to bcache-related threads here with some regularity.
+> While there were some serious bugs to work thru early on, his
+> recent posts suggest current bcache works very well with current
+> btrfs, and given that he has posted to several threads with some
+> time separation between them, he does appear to be a regular here,
+> and I expect he'd be posting pretty fast if things started going
+> buggy for him once again.
 > 
-Yeah, I should do a test like this. Looks scary, but it is probably the
-best.
-
-Thanks for your input!
-
+> There hasn't been a corresponding regular poster here using lvm-cache,
+> so while it may work well, we don't know that.  At minimum, postings
+> thus suggest that bcache on btrfs is a better tested solution at
+> this point, and thus, would be recommended, while lvm-cache on btrfs,
+> while an equally valid technical choice in theory, doesn't have much
+> if any real-world data going for it at this point, and is thus
+> in practice an unknown.
+> 
+> 2) Not being the person using bcache and not being familiar with it
+> or lvm-cache personally, I don't know how either one handle btrfs
+> multi-device.  However, it occurs to me that if it's necessary,
+> in addition to the multiple ssds suggested by the others to cover
+> such multi-device caching, you should also be able to partition
+> up the ssd, and use each partition as an individual device cache.
+> That's almost certainly what I'd do here if I needed to (except
+> that above a certain size, ssd prices per GiB start to go up
+> dramatically, so if I wanted total ssd cache sizes above that I'd
+> of course pay less for multiple smaller ssds again) instead of
+> fiddling with multiple physical ssds, but again, not knowing
+> how the caching works, I'm not sure if multiple cache devices
+> would be needed to cache a multi-device btrfs at the back end,
+> or not, so I don't know whether I'd need to bother with such
+> partitioning or not.
+> 
+> The key here is that on ssds, seek time is zero anyway, so
+> partitioning up the ssd and using both partitions as cache
+> doesn't have the latency issues that attempting to do something
+> like that (or for example btrfs raid1 on two partitions on the
+> same physical device) would have on spinning rust.
+> 
+> 
+> I thought I'd throw those points out, in case you had failed to
+> notice bcache as an option and would prefer it as better tested,
+> once you knew about it, and in case the partitioned ssd idea
+> does help with the multi-device btrfs caching thing.
 > 
 
 

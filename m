@@ -1,59 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:48343 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751728AbbLXD41 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 23 Dec 2015 22:56:27 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aBx0q-000658-2V
-	for linux-btrfs@vger.kernel.org; Thu, 24 Dec 2015 04:56:24 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 04:56:24 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 04:56:24 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Raid 5/6 Stability
-Date: Thu, 24 Dec 2015 03:56:14 +0000 (UTC)
-Message-ID: <pan$2d5fe$ffbfbbce$27af325f$ba6c76e8@cox.net>
-References: <E1aBsGQ-0007zz-4V@rmm6prod02.runbox.com>
-	<pan$3b05a$667561e3$4f808486$449baaf4@cox.net>
-	<CAJCQCtR=ydFe0w4MUAS6CGZeOe3wMMmijOW=qptF20uDZaSMyA@mail.gmail.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from slow1-d.mail.gandi.net ([217.70.178.86]:48019 "EHLO
+	slow1-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752770AbbLXJFN convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Dec 2015 04:05:13 -0500
+Received: from relay2-d.mail.gandi.net (relay2-d.mail.gandi.net [217.70.183.194])
+	by slow1-d.mail.gandi.net (Postfix) with ESMTP id 89A2247ECDD
+	for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 10:04:53 +0100 (CET)
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: BTRFS: could not find root 8
+Date: Thu, 24 Dec 2015 10:04:48 +0100
+Message-ID: <4764679.qpAWc4Esch@zafu>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Wed, 23 Dec 2015 19:38:23 -0700 as excerpted:
+Hi there,
 
-> There's a worthwhile distinction between stability of raid56 vs all
-> other profiles, and btrfs multiple device failure behavior. Right now
-> there's no monitoring or notification of failures to user space. In
-> fact Btrfs itself doesn't really understand device failures, a device
-> can spit out many read or write errors and Btrfs keeps trying to read
-> and write. So there's no equivalent to faultiness like with md/mdadm.
-> Therefore you'll have to figure out a way to monitor kernel messages,
-> maybe via a script that parses for btrfs messages and emails any such
-> messages ever 10m or whatever.
+I’m running Arch Linux with kernel 4.2.5-1-ARCH
 
-Absolutely.  Raid56 mode may be stabilizing, but there's still no user-
-side multi-device filesystem health monitoring application, either for 
-raid56 or in general, for the raid1/10 modes which are in fact reasonably 
-stable and mature on btrfs and have been considered at the level of btrfs 
-itself for quite awhile (several years), now.
+Since a few days, I have noticed a series of messages :
 
-Thanks for that addendum, Chris.  It could be quite helpful to someone 
-just setting up a new installation, particularly on a server where the 
-user and/or admin is unlikely to be directly observing things and thus 
-know when things go wrong due to the observed change in behavior, 
-regardless of formal monitoring or the lack thereof, as would likely be 
-the case on a desktop/workstation.
+« BTRFS: could not find root 8 »
+
+During boot.
+
+Besides that, the system behaves normally, and I have no clue…
+
+Here is an extract of the relevant parts of my dmesg :
+
+[    1.515764] Btrfs loaded
+[    1.516239] BTRFS: device label BOOT devid 1 transid 8557 /dev/sda8
+[    1.523135] device-mapper: uevent: version 1.0.3
+…
+[   20.639556] BTRFS: device label LINUX devid 1 transid 474967 /dev/dm-1
+[   20.952280] PM: Starting manual resume from disk
+[   20.952291] PM: Hibernation image partition 254:2 present
+[   20.952295] PM: Looking for hibernation image.
+[   20.952730] PM: Image not found (code -22)
+[   20.952738] PM: Hibernation image not present or could not be loaded.
+[   20.979997] BTRFS info (device dm-1): use ssd allocation scheme
+[   20.980008] BTRFS info (device dm-1): turning on discard
+[   20.980014] BTRFS info (device dm-1): disk space caching is enabled
+[   20.980017] BTRFS: has skinny extents
+[   21.319036] ip_tables: (C) 2000-2006 Netfilter Core Team
+…
+[   23.047601] FS-Cache: Loaded
+[   23.053089] systemd[1]: Mounted POSIX Message Queue File System.
+[   23.070842] systemd[1]: Mounted Huge Pages File System.
+[   23.072100] systemd[1]: Mounted Temporary Directory.
+[   23.080089] BTRFS info (device dm-1): disk space caching is enabled
+[   23.087653] systemd[1]: Started Remount Root and Kernel File Systems.
+…
+[   25.429686] BTRFS info (device sda8): use ssd allocation scheme
+[   25.429694] BTRFS info (device sda8): turning on discard
+[   25.429698] BTRFS info (device sda8): disk space caching is enabled
+[   25.429700] BTRFS: has skinny extents
+…
+[   25.593769] Adding 4530172k swap on /dev/mapper/VGZ-SWAP.  Priority:-1 
+extents:1 across:4530172k SSDscFS
+…
+[   25.777378] FAT-fs (sda2): utf8 is not a recommended IO charset for FAT 
+filesystems, filesystem will be case sensitive!
+[   25.800485] FAT-fs (sda2): Volume was not properly unmounted. Some data may 
+be corrupt. Please run fsck.
+[   25.817125] BTRFS: could not find root 8
+[   25.844334] BTRFS: could not find root 8
+[   25.845650] BTRFS: could not find root 8
+[   25.847190] BTRFS: could not find root 8
+[   25.855431] BTRFS: could not find root 8
+[   25.856834] BTRFS: could not find root 8
+[   25.860539] BTRFS: could not find root 8
+[   25.862021] BTRFS: could not find root 8
+[   29.778795] IPv6: ADDRCONF(NETDEV_UP): enp3s0: link is not ready
+…
+
+TIA, kind regards.
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 

@@ -1,34 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail0131.smtp25.com ([75.126.84.131]:59956 "EHLO
-	mail0131.smtp25.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751821AbbLXK4Y (ORCPT
+Received: from relay2-d.mail.gandi.net ([217.70.183.194]:36101 "EHLO
+	relay2-d.mail.gandi.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753427AbbLXLAH convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Dec 2015 05:56:24 -0500
-Received: from ccs.covici.com (localhost [127.0.0.1])
-	by ccs.covici.com (8.14.9/8.14.8) with ESMTP id tBOAuM8A004029
-	for <linux-btrfs@vger.kernel.org>; Thu, 24 Dec 2015 05:56:22 -0500
-From: covici@ccs.covici.com
-To: linux-btrfs@vger.kernel.org
-Subject: ssd  not detected on ssd drive
+	Thu, 24 Dec 2015 06:00:07 -0500
+From: =?ISO-8859-1?Q?Sw=E2mi?= Petaramesh <swami@petaramesh.org>
+To: Hugo Mills <hugo@carfax.org.uk>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: BTRFS: could not find root 8
+Date: Thu, 24 Dec 2015 12:00:01 +0100
+Message-ID: <4507262.pJHIiL8cZW@zafu>
+In-Reply-To: <20151224102902.GH1586@carfax.org.uk>
+References: <4764679.qpAWc4Esch@zafu> <20151224102902.GH1586@carfax.org.uk>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-Date: Thu, 24 Dec 2015 05:56:22 -0500
-Message-ID: <4028.1450954582@ccs.covici.com>
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi.  I was making a few file systems on my ssd drives (using lvm on top)
-and noticed that the ssd was not detected.  The only thing that happened
-is that the metadata is duplicated.  Is this a problem, or a waste of
-space?  If I wanted to remake the file systems -- which I don't want to
-do unless necessary -- how would I prevent this?
+Le jeudi 24 décembre 2015, 10:29:02 CET Hugo Mills a écrit :
+>
+>    systemd is now probing for qgroups on startup. The message is
+> simply indicating that qgroups are not enabled on the FS. It's harmless.
 
-Thanks in advance for any suggestions.
+Thanks Hugo. Then it’s harmless but worrying at 1st sight ;-)
+
+Kind regards.
 
 -- 
-Your life is like a penny.  You're going to lose it.  The question is:
-How do
-you spend it?
+Swâmi Petaramesh <swami@petaramesh.org> http://petaramesh.org PGP 9076E32E
 
-         John Covici
-         covici@ccs.covici.com

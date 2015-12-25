@@ -1,123 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:60959 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:33235 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752474AbbLYAXL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Dec 2015 19:23:11 -0500
+	id S1752474AbbLYAsK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 24 Dec 2015 19:48:10 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aCGA1-0005Gf-GA
-	for linux-btrfs@vger.kernel.org; Fri, 25 Dec 2015 01:23:09 +0100
+	id 1aCGY9-0001rF-Nm
+	for linux-btrfs@vger.kernel.org; Fri, 25 Dec 2015 01:48:06 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Dec 2015 01:23:09 +0100
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Dec 2015 01:48:05 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Fri, 25 Dec 2015 01:23:09 +0100
+        for <linux-btrfs@vger.kernel.org>; Fri, 25 Dec 2015 01:48:05 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Loss of connection to Half of the drives
-Date: Fri, 25 Dec 2015 00:23:04 +0000 (UTC)
-Message-ID: <pan$88899$a0c696db$cb878db4$9a294bbd@cox.net>
-References: <CAD=LdFREn-jTEXTHw_Q+zbnva3dSWtb_aKcYS+6paidBjH7U8A@mail.gmail.com>
-	<CAJCQCtStfVppb-NU0EjeAVf6cs08cdcWCEDYLx4zMoOzbG0W+A@mail.gmail.com>
-	<CAC=t97Ac07=ZFZ1nShfWc0ik50D90hBJM3bSEiLmHbKK36G9Xw@mail.gmail.com>
-	<pan$9b1ad$a377a340$8346d054$a731dd54@cox.net>
-	<CAC=t97BW6vYgi7edM=PknJDep9nJxDbOYpgPKi6L2u-J3hMwqQ@mail.gmail.com>
-	<pan$82f3e$e3af006a$d15f1d6c$4b07b3ba@cox.net>
-	<CAC=t97BsV1FJr+icGLY8XKyLjejG-k0frSuPWZtRu=N5znfXEw@mail.gmail.com>
-	<CAJCQCtRXBPBsiAH65JKFy7+5sFM7fnrAKg-7ESaoeUTsmMqdrg@mail.gmail.com>
+Subject: Re: Raid 5/6 Stability
+Date: Fri, 25 Dec 2015 00:48:00 +0000 (UTC)
+Message-ID: <pan$937ba$55672d2b$3ffa0250$de78eb00@cox.net>
+References: <567BC911.4080707@nv-systems.net>
+	<E1aC6NL-0003SE-1x@rmm6prod02.runbox.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Thu, 24 Dec 2015 13:57:35 -0700 as excerpted:
+jwalmer posted on Thu, 24 Dec 2015 08:56:15 -0500 as excerpted:
 
->> All this makes me ask why?  Why implement Raid10 in this non-standard
->> fashion and create this mess of compromise?
+> Thanks for the speedy replies! Earlier Duncan said, "there's still no
+> user-side multi-device filesystem health monitoring application." I'm
+> mostly worried about device errors/failures, not my filesystem health.
+
+EUNFORESEEN_AMBIGUITY.  Unfortunately, I seem to run into this error in 
+my posts more than I'd like. =:^(
+
+The ambiguity here is that btrfs is more than a filesystem, it's a multi-
+device raid (which would traditionally be at the block layer, not the 
+filesystem layer) as well.
+
+> Since my implimentation of btrfs will be on a storage array, I'm not
+> going to be doing anything unusual that should lend itself to creating
+> filesystem errors.
 > 
-> Because it was a straightforward extension of how the file system
-> already behaves. To implement drive based copies rather than chunk based
-> copies is a totally different strategy that actually negates how btrfs
-> does allocation, and would require things like logically checking for
-> mirrored pairs being the same size +/- maybe 1% similar to mdadm.
-> 
-> And keep in mind the raid10 multiple device failure is not fixed, not
-> just any additional failure is OK. It just depends on aviation's
-> equivalent of "big sky theory" for air traffic separation. Yes the
-> probability of mirror A's two drives dying is next to zero, but it's not
-> zero. If you're building arrays depending on it being zero, well that's
-> not a good idea. The way to look at it is more of a bonus of uptime,
-> rather than depending on it in design. You design for it's scaleable
-> performance, which it does have.
+> How serious of a concern should it be that the filesystem health is not
+> easily monitored? i.e., Since this is not a RAID-level-specific-issue,
+> should the lack of filesystem monitoring be enough to stop me from
+> playing with btrfs deployments for now?
 
-This.
+What I /meant/ was the previously discussed lack of raid-level device 
+failure notification, which is arguably filesystem health notification 
+when that filesystem incorporates multi-device raid as well, as btrfs 
+does, but would in traditional filesystems be nothing they'd deal with at 
+all as they don't do raid themselves, leaving that to other layers, which 
+means it's not filesystem health in the traditional sense, but something 
+beyond that, because btrfs is itself untraditional in that sense.
 
-Raid10 doesn't guard against any random two devices going down, let alone 
-a random half of all devices, and anyone running a raid10 with the 
-assumption that it does is simply asking for trouble.
-
-What it /does/ do, in the device-scope raid10 case, is minimize the 
-/chance/ that two devices down will take out the entire array, 
-particularly on big raid10 arrays, because the chances of any random two 
-devices being the two devices mirroring the same content goes down as the 
-number of total devices goes up.
-
-But as Chris Murphy says, btrfs is inherently chunk-scope, not drive-
-scope.  In fact, that's a very large part of its multi-device flexibility 
-in the first place.  And raid10 functionality was a straightforward 
-extension of the existing raid1 and raid0 functionality, simply combining 
-them into one at the same filesystem level with comparatively little 
-extra code.  And that, again, was due to the incredible flexibility that 
-chunk-scope granularity exposes.
-
-Of course one drawback is that with chunk-scope allocation, the per-
-device allocation of successive chunks is likely to vary, meaning you 
-lose the low device-scope chance of two random devices taking the entire 
-array down, because the chances of those two random devices containing 
-/both/ mirrors of _some_ chunk-strips is much higher than it is with 
-device-scope allocation and both copies of the device-scope mirror, but 
-that's a taken tradeoff that allowed the exposure of striped-mirrors 
-raid10 functionality in the first place, and as Chris and I are both 
-saying, any admin relying on chance to cover his *** in the two-device 
-failure case on a raid10 is already asking for trouble.
-
-But there are known workarounds for that problem, the layers on top of 
-layers scenario, raid0+1 or raid1+0, each with its own advantages and 
-disadvantages.  Of course, btrfs arguably being a layering violation 
-incorporating both filesystem and block level layers, tho it's done with 
-specific advantages in mind, does by definition of implementation have to 
-be the top layer, which does impose some limits if other btrfs features 
-such as checksumming and data integrity are wanted, but it remains simply 
-a question of matching the tradeoffs the technology makes against the 
-ones you're willing to make, within the limitations of the available 
-tradeoffs pool, of course.
-
-
-Meanwhile, there has been discussion of enhancements to the chunk 
-allocator that would let you pick allocation schemes.  Presumably, this 
-would include the ability to nail down mirror allocation to specific 
-devices, which seems to be the requested feature here.  However, while 
-definitely possible within the flexible framework btrfs' chunk-scope 
-allocation provides, to my knowledge at least, this isn't anywhere on the 
-existing near or intermediate term roadmap, so implementation by current 
-developers is likely out beyond the five year time frame, along with a 
-lot of other such features, making it effectively "bluesky", aka, 
-possible, and would be nice, but no near or intermediate term plans, tho 
-if someone with that itch to scratch appears with the patches ready to 
-go, who moreover is willing to join the btrfs team and help maintain them 
-longer term, assuming there's no huge personality clash, the feature 
-could be implemented rather sooner, perhaps with initial implementation 
-in a year or two and relative stability in two to three.
-
-In that regard, it's more ENOTIMPLEMENTED, rather than EBLACKLISTED.  
-There's all sorts of features that /could/ be implemented, and this one 
-simply hasn't been a priority for existing developers, given the other 
-features they've found to be more pressing.  But it may indeed eventually 
-come, five or ten years out, sooner if a suitable developer with suitable 
-interest and social compatibility with existing devs is found to champion 
-the cause.
+Since your concern continues to separate out the traditional filesystem 
+health from the raid health, and I was talking about the latter while you 
+are more concerned with the former, it wouldn't appear to be a concern in 
+your case. =:^)
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

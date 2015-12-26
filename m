@@ -1,45 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:33936 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752726AbbLZStp convert rfc822-to-8bit (ORCPT
+Received: from mail-ig0-f171.google.com ([209.85.213.171]:38032 "EHLO
+	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751159AbbLZTHz (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Dec 2015 13:49:45 -0500
-Received: by mail-ig0-f179.google.com with SMTP id m11so102552429igk.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Dec 2015 10:49:45 -0800 (PST)
+	Sat, 26 Dec 2015 14:07:55 -0500
+Received: by mail-ig0-f171.google.com with SMTP id mw1so3763824igb.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Dec 2015 11:07:54 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <50B1AB1702491A47883230E9A266A9880CD1FEE6@ITCIMEXCH02.uc.ucalgary.ca>
-References: <CAD=LdFREn-jTEXTHw_Q+zbnva3dSWtb_aKcYS+6paidBjH7U8A@mail.gmail.com>
-	<CAJCQCtStfVppb-NU0EjeAVf6cs08cdcWCEDYLx4zMoOzbG0W+A@mail.gmail.com>
-	<CAC=t97Ac07=ZFZ1nShfWc0ik50D90hBJM3bSEiLmHbKK36G9Xw@mail.gmail.com>
-	<pan$9b1ad$a377a340$8346d054$a731dd54@cox.net>
-	<CAC=t97BW6vYgi7edM=PknJDep9nJxDbOYpgPKi6L2u-J3hMwqQ@mail.gmail.com>
-	<pan$82f3e$e3af006a$d15f1d6c$4b07b3ba@cox.net>
-	<CAC=t97BsV1FJr+icGLY8XKyLjejG-k0frSuPWZtRu=N5znfXEw@mail.gmail.com>
-	<CAJCQCtRXBPBsiAH65JKFy7+5sFM7fnrAKg-7ESaoeUTsmMqdrg@mail.gmail.com>
-	<pan$88899$a0c696db$cb878db4$9a294bbd@cox.net>
-	<50B1AB1702491A47883230E9A266A9880CD1FEE6@ITCIMEXCH02.uc.ucalgary.ca>
-Date: Sat, 26 Dec 2015 11:49:44 -0700
-Message-ID: <CAJCQCtTUnoQ5fBT-H+XHirg-Cs6zSN4RNwexqQdUdsaOtXqtPQ@mail.gmail.com>
-Subject: Re: Loss of connection to Half of the drives
+In-Reply-To: <25045.1451129900@ccs.covici.com>
+References: <16107.1451037790@ccs.covici.com>
+	<CAPmG0jbOu6BmKfbaoJ6pzprWzbch3tf7=zbBS8AcDz4MQVEJZA@mail.gmail.com>
+	<18552.1451078098@ccs.covici.com>
+	<CAJCQCtTQ-73RbohA9wdrttj_uSnF5f8x1Opa0a6O2ZF-5NVqhQ@mail.gmail.com>
+	<5117.1451114951@ccs.covici.com>
+	<pan$a2c8c$6af1fa21$56a24ebc$40b50ca8@cox.net>
+	<25045.1451129900@ccs.covici.com>
+Date: Sat, 26 Dec 2015 12:07:54 -0700
+Message-ID: <CAJCQCtQ6y2h5k4cnGQn5Fk67HGqWnvhrqASowhjNEe-vV3Wprg@mail.gmail.com>
+Subject: Re: btrfs problems on new file system
 From: Chris Murphy <lists@colorremedies.com>
-To: David Schulz <dschulz@ucalgary.ca>, Duncan <1i5t5.duncan@cox.net>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+To: John Covici <covici@ccs.covici.com>
+Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Dec 25, 2015, 11:28 PM David Schulz <dschulz@ucalgary.ca> wrote:
+On Sat, Dec 26, 2015 at 4:38 AM,  <covici@ccs.covici.com> wrote:
+> Duncan <1i5t5.duncan@cox.net> wrote:
 >
+>> covici posted on Sat, 26 Dec 2015 02:29:11 -0500 as excerpted:
+>>
+>> > Chris Murphy <lists@colorremedies.com> wrote:
+>> >
+>> >> If you can post the entire dmesg somewhere that'd be useful. MUAs tend
+>> >> to wrap that text and make it unreadable on list. I think the problems
+>> >> with your volume happened before the messages, but it's hard to say.
+>> >> Also, a generation of nearly 5000 is not that new?
+>> >
+>> > The file system was only a few days old.  It was on an lvm volume group
+>> > which consisted of two ssd drives, so I am not sure what you are saying
+>> > about lvm cache -- how could I do anything different?
+>> >
+>> >> On another thread someone said you probably need to specify the device
+>> >> to mount when using Btrfs and lvmcache? And the device to specify is
+>> >> the combined HDD+SSD logical device, for lvmcache that's the "cache
+>> >> LV", which is the OriginLV + CachePoolLV. If Btrfs decides to mount the
+>> >> origin, it can result in corruption.
+>> >
+>> > See above.
+>>
+>> I think he mixed up two threads and thought you were running lvm-cache,
+>> not just regular lvm, which should be good unless you're exposing lvm
+>> snapshots and thus letting btrfs see multiple supposed UUIDs that aren't
+>> actually universal.  Since btrfs is multi-device and uses the UUID to
+>> track which devices belong to it (because they're _supposed_ to be
+>> universally unique, it's even in the _name_!), if it sees the same UUID
+>> it'll consider it part of the same filesystem, thus potentially causing
+>> corruption if it's a snapshot or something that's not actually supposed
+>> to be part of the (current) filesystem.
 >
-> I mentioned the btrfs rescue command with the mismatching fsid message.  After dd'ing /dev/zero to all but the boot drive, the fsid mismatch went away, but the tool still segfaults on the filesystem after losing 1/2 of the drives, so at best, the fsid mismatch error was just cosmetic.
->
->
+> I found a few more log entries, perhaps these may be helpful to track
+> this down, or maybe prevent the filesystem from going read-only.
 
-Are you running btrfs rescue on all drives? Or just 1/2?
+No, you need to post the entire dmesg. The "cut here" part is maybe
+useful for a developer diagnosing Btrfs's response to the problem, but
+the problem, or the pre-problem, happened before this.
 
-Because while rescue shouldn't crash, I also don't expect it to scrape
-any files. It's probably worth submitting a bug and a strace.
-
-
----
+-- 
 Chris Murphy

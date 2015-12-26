@@ -1,100 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:34740 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751499AbbLZRuI (ORCPT
+Received: from mail-ig0-f179.google.com ([209.85.213.179]:33936 "EHLO
+	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752726AbbLZStp convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Dec 2015 12:50:08 -0500
-Received: by mail-ig0-f171.google.com with SMTP id m11so102205267igk.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Dec 2015 09:50:08 -0800 (PST)
+	Sat, 26 Dec 2015 13:49:45 -0500
+Received: by mail-ig0-f179.google.com with SMTP id m11so102552429igk.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 26 Dec 2015 10:49:45 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20151220025010.7d353d35@natsu>
-References: <20151220025010.7d353d35@natsu>
-Date: Sat, 26 Dec 2015 09:50:07 -0800
-Message-ID: <CAN05THQftMgDnvbf=bKXeTEH9ab1CL8gXHS+W=z71eSGszZdhg@mail.gmail.com>
-Subject: Re: Timeouts copying large files to a Samba server with Btrfs
-From: ronnie sahlberg <ronniesahlberg@gmail.com>
-To: Roman Mamedov <rm@romanrm.net>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+In-Reply-To: <50B1AB1702491A47883230E9A266A9880CD1FEE6@ITCIMEXCH02.uc.ucalgary.ca>
+References: <CAD=LdFREn-jTEXTHw_Q+zbnva3dSWtb_aKcYS+6paidBjH7U8A@mail.gmail.com>
+	<CAJCQCtStfVppb-NU0EjeAVf6cs08cdcWCEDYLx4zMoOzbG0W+A@mail.gmail.com>
+	<CAC=t97Ac07=ZFZ1nShfWc0ik50D90hBJM3bSEiLmHbKK36G9Xw@mail.gmail.com>
+	<pan$9b1ad$a377a340$8346d054$a731dd54@cox.net>
+	<CAC=t97BW6vYgi7edM=PknJDep9nJxDbOYpgPKi6L2u-J3hMwqQ@mail.gmail.com>
+	<pan$82f3e$e3af006a$d15f1d6c$4b07b3ba@cox.net>
+	<CAC=t97BsV1FJr+icGLY8XKyLjejG-k0frSuPWZtRu=N5znfXEw@mail.gmail.com>
+	<CAJCQCtRXBPBsiAH65JKFy7+5sFM7fnrAKg-7ESaoeUTsmMqdrg@mail.gmail.com>
+	<pan$88899$a0c696db$cb878db4$9a294bbd@cox.net>
+	<50B1AB1702491A47883230E9A266A9880CD1FEE6@ITCIMEXCH02.uc.ucalgary.ca>
+Date: Sat, 26 Dec 2015 11:49:44 -0700
+Message-ID: <CAJCQCtTUnoQ5fBT-H+XHirg-Cs6zSN4RNwexqQdUdsaOtXqtPQ@mail.gmail.com>
+Subject: Re: Loss of connection to Half of the drives
+From: Chris Murphy <lists@colorremedies.com>
+To: David Schulz <dschulz@ucalgary.ca>, Duncan <1i5t5.duncan@cox.net>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-That does not look good.
-See if you can find something in the samba logs on the server.
-Look for messages about long running VFS operations and/or client
-disconnecting wile a file is open for writing.
-
-
-
-The CIFS/SMB protocol has hard real-time requirements in the windows
-client redirector which leads to dataloss if a server becomes
-unresponsive for a long time.
-Long time here means ~20s or more.
-
-The reason is that for performance reasons CIFS/SMB defaults to use
-clientside caching for writes (using oplocks as the cache coherency
-protocol).
-IF a server suddenly stops responding promptly the client will
-eventually (20-60 seconds) tear down the connection and reconnect. As
-part of the session teardown, any open files will be forced close, and
-any write cache on the client will be discarded.
-
-This basically means that if a server gets stuck in the VFS for a slow
-filesystem, you face a real risk that any/all files that are open for
-writing will be truncated at that stage and you have data loss.
-
-
-This used to be a big problem when using samba ontop of various
-cluster filesystems since they used to have a tendency to pause all
-I/O for sometimes very long times when the cluster topology changed,
-leading to a large amount of dataloss every time.
-We added some logging to samba to help identiify this and also to log
-all the names of the files that were very likely destroyed, but I
-can't recall the exact wording of these messages of the top of my
-head.
-Look in the samba logs for things that relate to long running VFS
-operations or client disconnect while the file is open for write.
-
-
-Basically, If you want to use a filesystem host CIFS, you must
-instrument it so that it will guarantee to always respond to I/O
-requests from the clients within 10 seconds (to have some headroom) or
-else you will face a real risk of data loss.
-
-
-If you can not guarantee that the filesystem will never pause for this
-long because it is doing foo/bar/bob/...   then you should not use
-that filesystem for samba.
-
-On Sat, Dec 19, 2015 at 1:50 PM, Roman Mamedov <rm@romanrm.net> wrote:
-> Hello,
+On Fri, Dec 25, 2015, 11:28 PM David Schulz <dschulz@ucalgary.ca> wrote:
 >
-> Sometimes when I copy large files (the latest case was with a 13 GB file) to a
-> Btrfs-residing share on a Samba file server (using Thunar file manager), the
-> copy process fails around the end with following messages in dmesg on the
-> client:
 >
-> [7699154.504380] CIFS VFS: sends on sock ffff88010d41e800 stuck for 15 seconds
-> [7699154.504440] CIFS VFS: Error -11 sending data on socket to server
-> [7699215.173469] CIFS VFS: sends on sock ffff88010d41e800 stuck for 15 seconds
-> [7699215.173533] CIFS VFS: Error -11 sending data on socket to server
-> [7699317.982262] CIFS VFS: sends on sock ffff88010d41e800 stuck for 15 seconds
-> [7699317.982319] CIFS VFS: Error -11 sending data on socket to server
+> I mentioned the btrfs rescue command with the mismatching fsid message.  After dd'ing /dev/zero to all but the boot drive, the fsid mismatch went away, but the tool still segfaults on the filesystem after losing 1/2 of the drives, so at best, the fsid mismatch error was just cosmetic.
 >
-> Nothing in dmesg on the server.
 >
-> My guess is that the Samba server process submits too much queued buffers at
-> once to be written to disk, then blocks on waiting for this, and the whole
-> operation ends up taking so long, that it doesn't get back to the client in
-> time.
->
-> This also happens much more often is compress-force is enabled on the server.
->
-> The server specs are AMD E-350 1.6GHz, 16GB of RAM, client/server network
-> connection is 1 Gbit. Kernel 4.1.15 on the server, 3.18.21 on the client.
->
-> Any idea what to tune so that this doesn't happen? (server/client/Samba/Btrfs?)
->
-> --
-> With respect,
-> Roman
+
+Are you running btrfs rescue on all drives? Or just 1/2?
+
+Because while rescue shouldn't crash, I also don't expect it to scrape
+any files. It's probably worth submitting a bug and a strace.
+
+
+---
+Chris Murphy

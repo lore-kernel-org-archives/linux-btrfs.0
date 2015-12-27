@@ -1,63 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:37982 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754481AbbL0DKm (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:53877 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754561AbbL0EBd (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Dec 2015 22:10:42 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-	by mailgw-02.dd24.net (Postfix) with ESMTP id 723025FC13
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Dec 2015 03:10:41 +0000 (UTC)
-Received: from mailgw-02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id G3fTNxOdxBHb for <linux-btrfs@vger.kernel.org>;
-	Sun, 27 Dec 2015 03:10:39 +0000 (UTC)
-Received: from schliemann.scientia.net (pD9FD8F25.dip0.t-ipconnect.de [217.253.143.37])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Sun, 27 Dec 2015 03:10:39 +0000 (UTC)
-Message-ID: <1451185839.6446.10.camel@scientia.net>
-Subject: Re: [PATCH] improve documentation of snapshot unaware defrag
+	Sat, 26 Dec 2015 23:01:33 -0500
+Message-ID: <1451188888.6446.18.camel@scientia.net>
+Subject: Re: Btrfs Check - "type mismatch with chunk"
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: linux-btrfs@vger.kernel.org
-Date: Sun, 27 Dec 2015 04:10:39 +0100
-In-Reply-To: <1451185407-11422-1-git-send-email-mail@christoph.anton.mitterer.name>
-References: <CAL3q7H6TGU2rz+zP8hcHxaDGx47nTrCndYvP9ArS+Z0HmZ86=A@mail.gmail.com>
-	 <1451185407-11422-1-git-send-email-mail@christoph.anton.mitterer.name>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org,
+        covici@ccs.covici.com, conicawd@gmail.com
+Date: Sun, 27 Dec 2015 05:01:28 +0100
+In-Reply-To: <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
+References: <CACRRrm9SwfDzqHNpWjAGniuu6HDu5wo3vW_ETdzijrdYm7YGGw@mail.gmail.com>
+	 <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-OgMutaGfQRhhF6pCnEPx"
+	boundary="=-kX+E3D3fXAEZxI2P5rJK"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-OgMutaGfQRhhF6pCnEPx
+--=-kX+E3D3fXAEZxI2P5rJK
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, 2015-12-27 at 04:03 +0100, Christoph Anton Mitterer wrote:
-> -WARNING: defragmenting with kernels up to 2.6.37 will unlink COW-ed
-Perhaps someone can also check the above.
+On Thu, 2015-12-24 at 23:41 +0000, Duncan wrote:
+> as the patch is in the userspace =C2=A04.3.1 you're running.
+I don't think this is the case.
 
-I was looking through the git history, but, couldn't find anything wrt
-2.6.37...
-The commit's I've basically searched for in the non-stable repo were
-38c227d87c49ad5d173cb5d4374d49acec6a495d (adding the ref-link aware defrag)
-8101c8dbf6243ba517aab58d69bf1bc37d8b7b9c (removing it)
+The commit was=C2=A0b08a740d7b797d870cbc3691b1291290d0815998 and AFAICT,
+it's not included in any release yet.
 
-But maybe I've missed something.
+4.3.1 was from Nov 16th, the above commit was from the 26th.
 
 
-Also, the wiki mentioned it for 3.13, I changed that:
-https://btrfs.wiki.kernel.org/index.php?title=3DChangelog&action=3Dhistorys=
-ubmit&diff=3D29765&oldid=3D29697
+As I've said before, please try with the patch applied (it's in the
+devel branch only).
 
-Please correct if wrong.
 
-HTH,
-Chris
---=-OgMutaGfQRhhF6pCnEPx
+Cheers,
+Chris.
+--=-kX+E3D3fXAEZxI2P5rJK
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -144,19 +128,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyNzAzMTAz
-OVowTwYJKoZIhvcNAQkEMUIEQFgU+c/bdY0lI6F968PnXRi6MWkTgJG93YRVuTkIfKB64mq+HcwP
-R6NHYtdMsdXMtg9IrlW6BNOh4pqGqLpyr3swagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyNzA0MDEy
+OFowTwYJKoZIhvcNAQkEMUIEQP8LS/UVaqx2Vs1N76fDSnniSMCZjI/aknJBDOkmUwIFTa+e0ZvB
+2ymBHQwC41vTQAJo4qlt2iGCuZwQpYqsrx8wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCXv86zWvQXu3F3DxHy5Puilecv10yT
-jv6wxlWKhWW/HtYXSkzJ8YI6uwJGCt6HPVbLr6vIIvKW9kcvmjB+V4X8+DmYjhZ9c6Ial3LQqM5i
-TwlFhHW/yUvbSt7zMVQy/bsuz1USW5nkfjNrIw1h63SwzGGnSvKdbkQSC3WFhhzYEsmK7ljpytjd
-/4U01rdj5n4RbzZGMd5+gQPwIyLMnqLf82FXfWpO192eDlAKMX2/mtn7+Q/PkhYa/iK3VpMBI2X2
-uPxzdlhLsPafxiobjDr/fJHrF/7BSInoLyGWPWnI0wTABKqlldkTfjKjtbTYSco2XFopwrlXJCmq
-2Qc18jpHAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC5gLkRr27AwrRVfTfEEgiqBV+jxfHW
+2m/IOMat3fop6COs4BmLM2kdpdMvRSemVaM9laAX/2x9hOE5bAQvkIPgSepTEo7Vf+YzEt+6JzVn
+LNrLggm2HggGWWOjZ6pX/R++7ihqzW+h6pLuk1pytxRkCB2hyphqLGEyqxrHmtSe6An8+44a6m3O
+wYsDjk/zKTKzXa9UBQsmgSMfzhZINJHmraFp/kK904q+1uNbxMLg4E7ikdpLFh8or9YsQ6PGVDPX
+D+Jf+FxX3MqQSSPx28Sp3SVLix4JqHG3MFfm/6ItQCEygcZQgBAjjeEhzYKjG/ffd/QDNwg3X6ns
+K8AHTylNAAAAAAAA
 
 
---=-OgMutaGfQRhhF6pCnEPx--
+--=-kX+E3D3fXAEZxI2P5rJK--
 

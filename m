@@ -1,93 +1,87 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f182.google.com ([209.85.223.182]:35629 "EHLO
-	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751636AbbLaVXg (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:52939 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754256AbbL0DIm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 16:23:36 -0500
-Received: by mail-io0-f182.google.com with SMTP id 77so70792740ioc.2
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 13:23:36 -0800 (PST)
+	Sat, 26 Dec 2015 22:08:42 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+	by mailgw-01.dd24.net (Postfix) with ESMTP id 74EE860746
+	for <linux-btrfs@vger.kernel.org>; Sun, 27 Dec 2015 03:03:29 +0000 (UTC)
+From: Christoph Anton Mitterer <mail@christoph.anton.mitterer.name>
+To: linux-btrfs@vger.kernel.org
+Cc: calestyo@scientia.net
+Subject: [PATCH] improve documentation of snapshot unaware defrag
+Date: Sun, 27 Dec 2015 04:03:27 +0100
+Message-Id: <1451185407-11422-1-git-send-email-mail@christoph.anton.mitterer.name>
+In-Reply-To: <CAL3q7H6TGU2rz+zP8hcHxaDGx47nTrCndYvP9ArS+Z0HmZ86=A@mail.gmail.com>
+References: <CAL3q7H6TGU2rz+zP8hcHxaDGx47nTrCndYvP9ArS+Z0HmZ86=A@mail.gmail.com>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtQxFm5L-RtP9Ph8qaYtG0jVo3PfrHj6U35LJSStB5pyuQ@mail.gmail.com>
-References: <CAJCQCtQxFm5L-RtP9Ph8qaYtG0jVo3PfrHj6U35LJSStB5pyuQ@mail.gmail.com>
-Date: Thu, 31 Dec 2015 13:23:35 -0800
-Message-ID: <CAN05THS2=MFKwETJMPDz_FntDVFwfgbaY4Aros9=B4rhOF91qQ@mail.gmail.com>
-Subject: Re: btrfs fail behavior when a device vanishes
-From: ronnie sahlberg <ronniesahlberg@gmail.com>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Dec 31, 2015 at 12:11 PM, Chris Murphy <lists@colorremedies.com> wrote:
-> This is a torture test, no data is at risk.
->
-> Two devices, btrfs raid1 with some stuff on them.
-> Copy from that array, elsewhere.
-> During copy, yank the active device.
->
-> dmesg shows many of these:
->
-> [ 7179.373245] BTRFS error (device sdc1): bdev /dev/sdc1 errs: wr
-> 652123, rd 697237, flush 0, corrupt 0, gen 0
+In btrfs-filesystem(8), improved the documentation of snapshot unaware
+defragmentation and included the exact kernel version numbers being affected as
+well as the possible effects.
+No longer use th word "unlink" which is easily understood as "deleting a file".
+Moved the warning more to the beginning of "defragment" subcommand's
+documentation where it's more visible to readers.
 
-For automated tests a good way could be to build a multi device btrfs filesystem
-ontop of it.
-For example STGT exporting n# volumes and then mount via the loopback interface.
-Then you could just use tgtadm to add / remove the device in a
-controlled fashion and to any filesystem it will look exactly like if
-you pulled the device physically.
+Added the same warning to the "autodefrag" option of btrfs-mount(5).
 
-This allows you to run fully automated and scripted "how long before
-the filesystem goes into total dataloss mode" tests.
+Signed-off-by: Christoph Anton Mitterer <mail@christoph.anton.mitterer.name>
+---
+ Documentation/btrfs-filesystem.asciidoc | 11 +++++++----
+ Documentation/btrfs-mount.asciidoc      |  7 +++++++
+ 2 files changed, 14 insertions(+), 4 deletions(-)
 
+diff --git a/Documentation/btrfs-filesystem.asciidoc b/Documentation/btrfs-filesystem.asciidoc
+index 31cd51b..600bbac 100644
+--- a/Documentation/btrfs-filesystem.asciidoc
++++ b/Documentation/btrfs-filesystem.asciidoc
+@@ -55,6 +55,13 @@ if the free space is too fragmented.
+ Use 0 to take the kernel default, which is 256kB but may change in the future.
+ You can also turn on compression in defragment operations.
+ +
++WARNING: Defragmenting with Linux kernel versions < 3.9 or ≥ 3.14-rc2 as well as
++with Linux stable kernel versions ≥ 3.10.31, ≥ 3.12.12 or ≥ 3.13.4 will break up
++the ref-links of CoW data (for example files copied with `cp --reflink`,
++snapshots or de-duplicated data).
++This may cause considerable increase of space usage depending on the broken up
++ref-links.
+++
+ `Options`
+ +
+ -v::::
+@@ -79,10 +86,6 @@ target extent size, do not touch extents bigger than <size>
+ For <start>, <len>, <size> it is possible to append
+ units designator: \'K', \'M', \'G', \'T', \'P', or \'E', which represent
+ KiB, MiB, GiB, TiB, PiB, or EiB, respectively. Case does not matter.
+-+
+-WARNING: defragmenting with kernels up to 2.6.37 will unlink COW-ed copies of data,
+-don't use it if you use snapshots, have de-duplicated your data or made
+-copies with `cp --reflink`.
+ 
+ *label* [<dev>|<mountpoint>] [<newlabel>]::
+ Show or update the label of a filesystem.
+diff --git a/Documentation/btrfs-mount.asciidoc b/Documentation/btrfs-mount.asciidoc
+index 39215a8..d364594 100644
+--- a/Documentation/btrfs-mount.asciidoc
++++ b/Documentation/btrfs-mount.asciidoc
+@@ -26,6 +26,13 @@ MOUNT OPTIONS
+ 	Auto defragmentation detects small random writes into files and queue
+ 	them up for the defrag process.  Works best for small files;
+ 	Not well suited for large database workloads.
++	+
++	WARNING: Defragmenting with Linux kernel versions < 3.9 or ≥ 3.14-rc2 as
++	well as with Linux stable kernel versions ≥ 3.10.31, ≥ 3.12.12 or
++	≥ 3.13.4 will break up the ref-links of CoW data (for example files
++	copied with `cp --reflink`, snapshots or de-duplicated data).
++	This may cause considerable increase of space usage depending on the
++	broken up ref-links.
+ 
+ *check_int*::
+ *check_int_data*::
+-- 
+2.6.4
 
-
-If you want more fine control than just plug/unplug on a live
-filesystem , you can use
-https://github.com/rsahlberg/flaky-stgt
-Again, this uses iSCSI but it allows you to script event such as
-"this range of blocks are now Uncorrectable read error" etc.
-To automatically stress test that the filesystem can deal with it.
-
-
-I created this STGT fork so that filesystem testers would have a way
-to automate testing of their failure paths.
-In particular for BTRFS which seems to still be incredible fragile
-when devices fail or disconnect.
-
-Unfortunately I don't think anyone cared very much. :-(
-Please BTRFS devs,  please use something like this for testing of
-failure modes and robustness. Please!
-
-
-
->
-> Why are the write errors nearly as high as the read errors, when there
-> is only a copy from this device happening?
->
-> Is Btrfs trying to write the read error count (for dev stats) of sdc1
-> onto sdc1, and that causes a write error?
->
-> Also, is there a command to make a block device go away? At least in
-> gnome shell when I eject a USB stick, it isn't just umounted, it no
-> longer appears with lsblk or blkid, so I'm wondering if there's a way
-> to vanish a misbehaving device so that Btrfs isn't bogged down with a
-> flood of retries.
->
-> In case anyone is curious, the entire dmesg from device insertion,
-> formatting, mounting, copying to then from, and device yanking is here
-> (should be permanent):
-> http://pastebin.com/raw/Wfe1pY4N
->
-> And the copy did successfully complete anyway, and the resulting files
-> have the same hashes as their originals. So, yay, despite the noisy
-> messages.
->
->
-> --
-> Chris Murphy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html

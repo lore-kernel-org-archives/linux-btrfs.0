@@ -1,117 +1,162 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f182.google.com ([209.85.213.182]:35182 "EHLO
-	mail-ig0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751676AbbLZUdj (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:37982 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754481AbbL0DKm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 26 Dec 2015 15:33:39 -0500
-Received: by mail-ig0-f182.google.com with SMTP id to4so125012058igc.0
-        for <linux-btrfs@vger.kernel.org>; Sat, 26 Dec 2015 12:33:39 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <28201.1451160163@ccs.covici.com>
-References: <16107.1451037790@ccs.covici.com>
-	<CAPmG0jbOu6BmKfbaoJ6pzprWzbch3tf7=zbBS8AcDz4MQVEJZA@mail.gmail.com>
-	<18552.1451078098@ccs.covici.com>
-	<CAJCQCtTQ-73RbohA9wdrttj_uSnF5f8x1Opa0a6O2ZF-5NVqhQ@mail.gmail.com>
-	<5117.1451114951@ccs.covici.com>
-	<pan$a2c8c$6af1fa21$56a24ebc$40b50ca8@cox.net>
-	<25045.1451129900@ccs.covici.com>
-	<CAJCQCtQ6y2h5k4cnGQn5Fk67HGqWnvhrqASowhjNEe-vV3Wprg@mail.gmail.com>
-	<23484.1451157722@ccs.covici.com>
-	<CAJCQCtQiTYfV=bEikXgeT1K2xOR+0j37=0a=hu5qBcu+t--GzA@mail.gmail.com>
-	<28201.1451160163@ccs.covici.com>
-Date: Sat, 26 Dec 2015 13:33:38 -0700
-Message-ID: <CAJCQCtSp=EiMYSd5x5UL_QT7mGuWMDk2krLcp+howro2QhA-8w@mail.gmail.com>
-Subject: Re: btrfs problems on new file system
-From: Chris Murphy <lists@colorremedies.com>
-To: John Covici <covici@ccs.covici.com>
-Cc: Chris Murphy <lists@colorremedies.com>, Duncan <1i5t5.duncan@cox.net>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+	Sat, 26 Dec 2015 22:10:42 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id 723025FC13
+	for <linux-btrfs@vger.kernel.org>; Sun, 27 Dec 2015 03:10:41 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id G3fTNxOdxBHb for <linux-btrfs@vger.kernel.org>;
+	Sun, 27 Dec 2015 03:10:39 +0000 (UTC)
+Received: from schliemann.scientia.net (pD9FD8F25.dip0.t-ipconnect.de [217.253.143.37])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Sun, 27 Dec 2015 03:10:39 +0000 (UTC)
+Message-ID: <1451185839.6446.10.camel@scientia.net>
+Subject: Re: [PATCH] improve documentation of snapshot unaware defrag
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: linux-btrfs@vger.kernel.org
+Date: Sun, 27 Dec 2015 04:10:39 +0100
+In-Reply-To: <1451185407-11422-1-git-send-email-mail@christoph.anton.mitterer.name>
+References: <CAL3q7H6TGU2rz+zP8hcHxaDGx47nTrCndYvP9ArS+Z0HmZ86=A@mail.gmail.com>
+	 <1451185407-11422-1-git-send-email-mail@christoph.anton.mitterer.name>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-OgMutaGfQRhhF6pCnEPx"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Dec 26, 2015 at 1:02 PM,  <covici@ccs.covici.com> wrote:
-> Chris Murphy <lists@colorremedies.com> wrote:
->
->> On Sat, Dec 26, 2015 at 12:22 PM,  <covici@ccs.covici.com> wrote:
->> > Chris Murphy <lists@colorremedies.com> wrote:
->> >
->> >> On Sat, Dec 26, 2015 at 4:38 AM,  <covici@ccs.covici.com> wrote:
->> >> > Duncan <1i5t5.duncan@cox.net> wrote:
->> >> >
->> >> >> covici posted on Sat, 26 Dec 2015 02:29:11 -0500 as excerpted:
->> >> >>
->> >> >> > Chris Murphy <lists@colorremedies.com> wrote:
->> >> >> >
->> >> >> >> If you can post the entire dmesg somewhere that'd be useful. MUAs tend
->> >> >> >> to wrap that text and make it unreadable on list. I think the problems
->> >> >> >> with your volume happened before the messages, but it's hard to say.
->> >> >> >> Also, a generation of nearly 5000 is not that new?
->> >> >> >
->> >> >> > The file system was only a few days old.  It was on an lvm volume group
->> >> >> > which consisted of two ssd drives, so I am not sure what you are saying
->> >> >> > about lvm cache -- how could I do anything different?
->> >> >> >
->> >> >> >> On another thread someone said you probably need to specify the device
->> >> >> >> to mount when using Btrfs and lvmcache? And the device to specify is
->> >> >> >> the combined HDD+SSD logical device, for lvmcache that's the "cache
->> >> >> >> LV", which is the OriginLV + CachePoolLV. If Btrfs decides to mount the
->> >> >> >> origin, it can result in corruption.
->> >> >> >
->> >> >> > See above.
->> >> >>
->> >> >> I think he mixed up two threads and thought you were running lvm-cache,
->> >> >> not just regular lvm, which should be good unless you're exposing lvm
->> >> >> snapshots and thus letting btrfs see multiple supposed UUIDs that aren't
->> >> >> actually universal.  Since btrfs is multi-device and uses the UUID to
->> >> >> track which devices belong to it (because they're _supposed_ to be
->> >> >> universally unique, it's even in the _name_!), if it sees the same UUID
->> >> >> it'll consider it part of the same filesystem, thus potentially causing
->> >> >> corruption if it's a snapshot or something that's not actually supposed
->> >> >> to be part of the (current) filesystem.
->> >> >
->> >> > I found a few more log entries, perhaps these may be helpful to track
->> >> > this down, or maybe prevent the filesystem from going read-only.
->> >>
->> >> No, you need to post the entire dmesg. The "cut here" part is maybe
->> >> useful for a developer diagnosing Btrfs's response to the problem, but
->> >> the problem, or the pre-problem, happened before this.
->> >
->> > It would be a 20meg file, if I were to post the whole file.  but I can
->> > tell you, no hardware errors at any time.
->>
->> The kernel is tainted, looks like a proprietary kernel module, so you
->> have to have very good familiarity with the workings of that module to
->> know whether it might affect what's going on, or you'd have to retest
->> without that kernel module.
->>
->> Anyway, asking for the whole dmesg isn't arbitrary, it saves times
->> having to ask for more later. The two things you've provided so far
->> aren't enough, any number of problems could result in those messages.
->> So my suggestion is when people ask for something, provide it or don't
->> provide it, but don't complain about what they're asking for. The
->> output from btrfs-debug-tree might be several hundred MB. The output
->> from btrfs-image might be several GB. So if you're not willing to
->> provide 100kB, let alone 20MB, of kernel messages that might give some
->> hint what's going on, the resistance itself is off putting. It's like
->> having to pull your own loose tooth for you, no one really wants to do
->> that.
->
-> How far back do you want to go in terms of the messages?
 
-The kernel log buffer isn't that big by default which is why I asked
-for the entire dmesg, not the entire /var/log/messages file. But if
-you can reproduce the problem with a new boot, that'd certainly make
-the kernel log shorter and cleaner if that's the concern.
+--=-OgMutaGfQRhhF6pCnEPx
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-The errno -95 is itself sufficiently rare there's no possible way to
-answer your question because I don't know anyone would even know what
-they're looking for until they find it. It's even possible it won't be
-found by looking at kernel messages.
+On Sun, 2015-12-27 at 04:03 +0100, Christoph Anton Mitterer wrote:
+> -WARNING: defragmenting with kernels up to 2.6.37 will unlink COW-ed
+Perhaps someone can also check the above.
 
-How was the fs created? Conversion? If mkfs.btrfs, what version of
-progs and what options were used to create it?  And what was happening
-at the time of the first errno=-95?
+I was looking through the git history, but, couldn't find anything wrt
+2.6.37...
+The commit's I've basically searched for in the non-stable repo were
+38c227d87c49ad5d173cb5d4374d49acec6a495d (adding the ref-link aware defrag)
+8101c8dbf6243ba517aab58d69bf1bc37d8b7b9c (removing it)
 
--- 
-Chris Murphy
+But maybe I've missed something.
+
+
+Also, the wiki mentioned it for 3.13, I changed that:
+https://btrfs.wiki.kernel.org/index.php?title=3DChangelog&action=3Dhistorys=
+ubmit&diff=3D29765&oldid=3D29697
+
+Please correct if wrong.
+
+HTH,
+Chris
+--=-OgMutaGfQRhhF6pCnEPx
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyNzAzMTAz
+OVowTwYJKoZIhvcNAQkEMUIEQFgU+c/bdY0lI6F968PnXRi6MWkTgJG93YRVuTkIfKB64mq+HcwP
+R6NHYtdMsdXMtg9IrlW6BNOh4pqGqLpyr3swagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCXv86zWvQXu3F3DxHy5Puilecv10yT
+jv6wxlWKhWW/HtYXSkzJ8YI6uwJGCt6HPVbLr6vIIvKW9kcvmjB+V4X8+DmYjhZ9c6Ial3LQqM5i
+TwlFhHW/yUvbSt7zMVQy/bsuz1USW5nkfjNrIw1h63SwzGGnSvKdbkQSC3WFhhzYEsmK7ljpytjd
+/4U01rdj5n4RbzZGMd5+gQPwIyLMnqLf82FXfWpO192eDlAKMX2/mtn7+Q/PkhYa/iK3VpMBI2X2
+uPxzdlhLsPafxiobjDr/fJHrF/7BSInoLyGWPWnI0wTABKqlldkTfjKjtbTYSco2XFopwrlXJCmq
+2Qc18jpHAAAAAAAA
+
+
+--=-OgMutaGfQRhhF6pCnEPx--
+

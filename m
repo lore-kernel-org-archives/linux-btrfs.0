@@ -1,32 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from static.68.134.40.188.clients.your-server.de ([188.40.134.68]:52762
-	"EHLO mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754679AbbL0OsI (ORCPT
+Received: from 60-241-247-214.static.tpgi.com.au ([60.241.247.214]:40695 "EHLO
+	ns1.allsupp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754217AbbL0P2D (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 09:48:08 -0500
+	Sun, 27 Dec 2015 10:28:03 -0500
 Subject: Re: How to change BTRFS filesystem UUID
-To: Jiri Kanicky <j@ganomi.com>, linux-btrfs@vger.kernel.org
+To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
 References: <567FF63E.3010106@ganomi.com>
-From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
-	<holger.hoffstaette@googlemail.com>
-Message-ID: <567FFA26.9070101@googlemail.com>
-Date: Sun, 27 Dec 2015 15:48:06 +0100
+ <20151227144535.GJ1586@carfax.org.uk>
+From: Jiri Kanicky <j@ganomi.com>
+Message-ID: <5680034D.7030509@ganomi.com>
+Date: Mon, 28 Dec 2015 02:27:09 +1100
 MIME-Version: 1.0
-In-Reply-To: <567FF63E.3010106@ganomi.com>
-Content-Type: text/plain; charset=utf-8
+In-Reply-To: <20151227144535.GJ1586@carfax.org.uk>
+Content-Type: text/plain; charset=windows-1252; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 12/27/15 15:31, Jiri Kanicky wrote:
-> Is there a way to change the BTRFS ID (generate new one) that I can
-> differentiate between the two disks on one host?
+Hi,
 
-btrfstune:
+Thanks for the reply. Looks like I will have o use some newer distro. 
+Debian Jessie rescue CD does not seem to have this. Anyway, i will play 
+with this.
 
-    -u
-       Change fsid to a randomly generated UUID or continue previous
-       fsid change operation in case it was interrupted.
+Thank you Jiri
 
-should do what you need.
+On 28/12/2015 1:45 AM, Hugo Mills wrote:
+> On Mon, Dec 28, 2015 at 01:31:26AM +1100, Jiri Kanicky wrote:
+>> Hi,
+>>
+>> I cloned several machines from the same disk and they all have same
+>> BTRFS filesystem UUID. I need to recovery one disk from failure, but
+>> if I attach two disks to the same machine, both disks have the same
+>> ID.
+>>
+>> This seem to confuse UDEV, because /dev/disk/by-uuid seem to show
+>> just one link, not two links to two disks.
+>>
+>> Is there a way to change the BTRFS ID (generate new one) that I can
+>> differentiate between the two disks on one host?
+>     btrfstune, with -u or -U
+>
+>     Hugo.
+>
 
--h

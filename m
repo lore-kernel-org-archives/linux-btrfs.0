@@ -1,56 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51476 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750833AbbL1BWB (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 20:22:01 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aDMVb-00046q-Di
-	for linux-btrfs@vger.kernel.org; Mon, 28 Dec 2015 02:21:59 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 02:21:59 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 02:21:59 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Btrfs scrub failure for raid 6 kernel 4.3
-Date: Mon, 28 Dec 2015 01:21:54 +0000 (UTC)
-Message-ID: <pan$ec56c$f5c0c35d$65d6e7dd$4eded2b8@cox.net>
+Received: from mail-io0-f169.google.com ([209.85.223.169]:34652 "EHLO
+	mail-io0-f169.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750771AbbL1BXQ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Dec 2015 20:23:16 -0500
+Received: by mail-io0-f169.google.com with SMTP id e126so294030768ioa.1
+        for <linux-btrfs@vger.kernel.org>; Sun, 27 Dec 2015 17:23:16 -0800 (PST)
+MIME-Version: 1.0
+In-Reply-To: <1451264981.6320.15.camel@scientia.net>
 References: <567FEEB6.3080701@online.no>
-Mime-Version: 1.0
+	<CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
+	<1451263174.6320.5.camel@scientia.net>
+	<CAJCQCtTmiKcapPpZ62Ko6mZK_MSDAFS2FAwU8CUJxkWwu-nYuw@mail.gmail.com>
+	<1451264981.6320.15.camel@scientia.net>
+Date: Sun, 27 Dec 2015 18:23:15 -0700
+Message-ID: <CAJCQCtQ29Jwmywz+TrkYC6RuDpsk4v3gOkfmBGoxPahy5Nk--g@mail.gmail.com>
+Subject: Re: Btrfs scrub failure for raid 6 kernel 4.3
+From: Chris Murphy <lists@colorremedies.com>
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Waxhead posted on Sun, 27 Dec 2015 14:59:18 +0100 as excerpted:
+On Sun, Dec 27, 2015 at 6:09 PM, Christoph Anton Mitterer
+<calestyo@scientia.net> wrote:
+> On Sun, 2015-12-27 at 17:58 -0700, Chris Murphy wrote:
+>> I don't see a good use case for scrubbing a degraded array. First
+>> make
+>> the array healthy, then scrub.
+> As I've said, I agree basically... but *if* scrubbing a degraded fs
+> leads to even more errors (apart from the fact that you may loose
+> another device for hardware reasons while scrubbing), than either this
+> needs to be fixed *or* scrub mustn't be started on a degraded array (in
+> the sense that software prevents it).
+>
+> Consider you have a weekly cron job that scrubs, which runs while the
+> array is degraded.
 
-> I have a "toy-array" of 6x USB drives hooked up to a hub where I made a
-> btrfs raid 6 data+metadata filesystem.
+The scrub should fail gracefully (exit 1).
 
-Just noting as an aside comment to the main thread...
 
-While doing this with a "toy-array" for experimental purposes is fine and 
-indeed encouraged, do your research and LOTS of testing before trying to 
-setup particularly multi-device btrfs over USB for normal use.  There 
-have been a number of trouble reports posted for USB connected devices, 
-where the trouble simply vanished when the devices were attached via 
-(e)SATA.  Apparently various SATA/USB bridge controllers aren't entirely 
-reliable, a few USB root hubs likewise (tho the bridge-controllers are 
-the most common culprit), and USB itself wasn't really designed for this 
-sort of thing, tho obviously many people use it for attaching storage 
-today.
+>
+>
+>>  But I've not tested this with mdadm or
+>> lvm raid. I don't know how they behave.
+> Don't know, but for them it makes not so much sense, as their scrub is
+> different from ours... they have no checksums and can only tell whether
+> the RAID itself is consistent, which it is of course not when degraded.
+> It does perhaps make sense in any mirrored RAIDs (e.g. when you have a
+> 4 disk RAID1, which is degraded and 1 disk is missing,... it may still
+> be worth to scrub the remaining 3,...)
+>
+>
+>>  But even if either of them
+>> tolerate it, it's a legitimate design decision for Btrfs developers
+>> to
+>> refuse supporting the scrub of a degraded array. Same for balancing
+>> for that matter.
+> Sure... but still it needs to be handled gracefully... i.e. not more
+> damage and reasonable userland output which people will understand.
 
-Personally, while I might use btrfs on single-device USB attached 
-storage, I'd be extremely hesitant to do multi-device btrfs via USB, and 
-would definitely test it (VERY!) well before considering it usable if I 
-did, as there's just too many ways multiple USB-attached devices can get 
-out of sync with each other, breaking the filesystem.
+Yes.
+
+I'd want scrub to immediately fail in a degraded case, because the
+higher workload added by the scrub itself could cause additional
+device failures sooner. And that would negatively impact the ability
+to get the array healthy again with a rebuild - during which time you
+wouldn't want the scrub running anyway.
+
 
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Chris Murphy

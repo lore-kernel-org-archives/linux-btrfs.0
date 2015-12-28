@@ -1,91 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 60-241-247-214.static.tpgi.com.au ([60.241.247.214]:42931 "EHLO
-	ns1.allsupp.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750894AbbL1CO1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 21:14:27 -0500
+Received: from plane.gmane.org ([80.91.229.3]:56954 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751273AbbL1EfM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Dec 2015 23:35:12 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aDPWX-0002c4-GX
+	for linux-btrfs@vger.kernel.org; Mon, 28 Dec 2015 05:35:09 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 05:35:09 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 05:35:09 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: How to change BTRFS filesystem UUID
-To: Hugo Mills <hugo@carfax.org.uk>,
-        Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
+Date: Mon, 28 Dec 2015 04:35:04 +0000 (UTC)
+Message-ID: <pan$8c9ca$1617b07e$b95cfe66$943328ef@cox.net>
 References: <567FF63E.3010106@ganomi.com>
- <20151227144535.GJ1586@carfax.org.uk> <5680034D.7030509@ganomi.com>
- <1451257299.6320.3.camel@scientia.net> <20151227231303.GL1586@carfax.org.uk>
-From: Jiri Kanicky <j@ganomi.com>
-Message-ID: <56809AC4.2080209@ganomi.com>
-Date: Mon, 28 Dec 2015 13:13:24 +1100
-MIME-Version: 1.0
-In-Reply-To: <20151227231303.GL1586@carfax.org.uk>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+	<20151227144535.GJ1586@carfax.org.uk> <5680034D.7030509@ganomi.com>
+	<1451257299.6320.3.camel@scientia.net>
+	<20151227231303.GL1586@carfax.org.uk> <56809AC4.2080209@ganomi.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Jiri Kanicky posted on Mon, 28 Dec 2015 13:13:24 +1100 as excerpted:
 
-Thanks for the detailed information. The data were not corrupted, so I 
-could copy them to a new BTRFS partition.
+> VM with BTRFS filesystem running on XenServer. The VM disk is a VHD
+> stored on NFS storage. NFS storage ran out of space, and I found the
+> BTRFS in RO mode. I could not remount it as RW after increasing the
+> storage space. I rebooted the VM and the VM was not able to boot
+> anymore. There were many lines during boot reporting "btrfs open_ctree
+> failed" and the boot ended up in dracut mode.
+> 
+> I booted from CD and find out that I can mount the BTRFS filesystem and
+> all data are there.
 
-Here is what happened exactly.
+You did well. =:^)
 
-VM with BTRFS filesystem running on XenServer. The VM disk is a VHD 
-stored on NFS storage. NFS storage ran out of space, and I found the 
-BTRFS in RO mode. I could not remount it as RW after increasing the 
-storage space. I rebooted the VM and the VM was not able to boot 
-anymore. There were many lines during boot reporting "btrfs open_ctree 
-failed" and the boot ended up in dracut mode.
+Just in case you ever get into a situation where the btrfs will /not/ 
+mount, however, there's an additional tool you can try to hopefully at 
+least recover the data off of it, copying it to a new (possibly non-
+btrfs) location from the unmounted filesystem.
 
-I booted from CD and find out that I can mount the BTRFS filesystem and 
-all data are there.
+btrfs restore
 
-I created a new disk with BTRFS filesystem, copied all the data on it, 
-and that new disk booted fine. (I actually used a disk from my template, 
-so that is where the same BTRFS UUID comes from. But this was not the 
-real issue. I copied the data on EXT4 disk first and then to the new 
-disk to avoid having same BTRFS UUIDs. I will try changing the UUIDs as 
-suggested later.)
+In addition to the btrfs-restore manpage, there's even a wiki page on it 
+that has some "extraordinary measures" you can try if restore won't work 
+by itself, using btrfs-find-root to hopefully find a usable previous root 
+to feed to restore's -t option.  However, once you get to this level 
+you're basically trying to reconstruct at least enough of a filesystem 
+from historical bits and pieces as they may still be found on the device 
+to be able to restore from, and it does get quite technical, so many 
+people need help, and only some end up being able to restore most or all 
+of their data, as often it's simply too damaged.
 
-In summary, I think that BTRFS was not able to recover from the scenario 
-explained above. VMs with EXT4 could boot normally.
+So the ideal is obviously to have backups if the data is important enough 
+to you that you'd be jumping thru these hoops if you had to, and once you 
+have backups, then restore becomes a tool to be used to possibly get a 
+newer copy than your backup had, but no big deal if it fails as you /do/ 
+have backups.  And at that point, you don't need to worry too much about 
+the "extraordinary measures" stuff, because if it doesn't work with 
+normal measures, then you just use the backup.
 
-Regards,
-Jiri
+What's nice about btrfs-restore is that it works in read-only mode on the 
+unmounted filesystem in question and thus won't cause any more damage.  
+As a result, it's a good tool to use to try to get a current backup with 
+if you don't have one, before trying seriously invasive procedures that 
+if they don't fix the problem, could damage the filesystem further, 
+rendering it impossible to get anything useful out of it.
 
+Anyway, just pointing out the btrfs restore tool, as it's a very useful 
+tool to have in your toolbox if a btrfs won't mount.  You will want to 
+use a recent version of btrfs-progs, however, as btrfs restore has 
+notably improved over time, with the last fix to it in 4.2.3, an off-by-
+one fix to the symlink restoration code added in 4.0.1, and 4.0 added 
+metadata (time/mode/uid/gid) restoration, where before that files were 
+restored with the ownership (root) and umask of the btrfs restore process 
+and had to be manually corrected.
 
-On 28/12/2015 10:13 AM, Hugo Mills wrote:
-> On Mon, Dec 28, 2015 at 12:01:39AM +0100, Christoph Anton Mitterer wrote:
->> On Mon, 2015-12-28 at 02:27 +1100, Jiri Kanicky wrote:
->>> Thanks for the reply. Looks like I will have o use some newer
->>> distro.
->> As it was already said... btrfs may even corrupt your filesystem if
->> colliding UUIDs are "seen".
->>
->> At least to me it's currently unclear what "seen" exactly means...
->> actually trying a mount, or already when just a device with colliding
->> IDs appear.
->     The damage happens on (or after) mount. Until that point there's no
-> danger.
->
->     The OS (usually udev) will run btfs dev scan when a new block
-> device is detected, and it tells the kernel that there's a btrfs
-> filesystem with a particular UUID on a particular block device.
->
->     The kernel uses this information to decide which devices to include
-> when it assembles a filesystem. If you have two devices where there
-> should be only one (particularly if the data on the two was similar
-> but has now diverged), then the kernel can end up writing to one or
-> other device arbitrarily, possibly having read state from the other
-> one, and things screw up rather fast.
->
->     Hugo.
->
->> So whenever you do your recovery works, make sure that there's never a
->> moment where more than one btrfs block device appears with the same
->> UUID.
->> Even when it's just for some seconds it may already cause corruption.
->>
->>
->> Cheers,
->> Chris.
->
->
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

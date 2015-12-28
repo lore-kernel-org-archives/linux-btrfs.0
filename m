@@ -1,183 +1,89 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nmsh3.e.nsc.no ([193.213.121.74]:42799 "EHLO nmsh3.e.nsc.no"
+Received: from nmsh3.e.nsc.no ([193.213.121.74]:49027 "EHLO nmsh3.e.nsc.no"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752711AbbL1VIp (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Dec 2015 16:08:45 -0500
+	id S1752643AbbL1VRy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Dec 2015 16:17:54 -0500
 Subject: Re: Btrfs scrub failure for raid 6 kernel 4.3
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
 References: <567FEEB6.3080701@online.no>
  <CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
  <56806F06.50309@online.no> <pan$c7935$46be3379$4afc60bd$677c85c5@cox.net>
- <568098B1.2040908@online.no>
- <CAJCQCtRGbKJ6RJ++1rUSuVByC_=mJq4afNV-3CCt_s4gCft92A@mail.gmail.com>
+ <568098B1.2040908@online.no> <pan$2108f$416fcf23$11933405$72f48ca8@cox.net>
 From: Waxhead <waxhead@online.no>
-Message-ID: <5681A4D5.4060203@online.no>
-Date: Mon, 28 Dec 2015 22:08:37 +0100
+Message-ID: <5681A6FD.2020808@online.no>
+Date: Mon, 28 Dec 2015 22:17:49 +0100
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtRGbKJ6RJ++1rUSuVByC_=mJq4afNV-3CCt_s4gCft92A@mail.gmail.com>
+In-Reply-To: <pan$2108f$416fcf23$11933405$72f48ca8@cox.net>
 Content-Type: text/plain; charset=UTF-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy wrote:
-> On Sun, Dec 27, 2015 at 7:04 PM, Waxhead <waxhead@online.no> wrote:
+Duncan wrote:
+> Waxhead posted on Mon, 28 Dec 2015 03:04:33 +0100 as excerpted:
 >
->> Since all drives register and since I can even mount the filesystem.
-> OK so you've umounted the file system, reconnected all devices,
-> mounted the file system normally, and there are no problems reported
-> in dmesg?
+>> Duncan wrote:
+>>> Waxhead posted on Mon, 28 Dec 2015 00:06:46 +0100 as excerpted:
+>>>
+>>>> btrfs scrub status /mnt
+>>>> scrub status for 2832346e-0720-499f-8239-355534e5721b
+>>>>            scrub started at Sun Mar 29 23:21:04 2015
+>>>> Now here is the first worrying part... it says that scrub started at
+>>>> Sun Mar 29.
+>>> Hmm...  The status is stored in readable plain-text files in /var/lib/
+>>> btrfs/scrub.status.*, where the * is the UUID.  If you check there, the
+>>> start time (t_start) seems to be in POSIX time.
+>>>
+>>> Is it possible you were or are running the scrub from, for instance, a
+>>> rescue image that might not set the system time correctly and that
+>>> falls back to, say, the date the rescue image was created, if it can't
+>>> get network connectivity or some such?
+>>>
+>> No I don't think so....
+>>
+>> # ls -la
+>> /var/lib/btrfs/scrub.status.2832346e-0720-499f-8239-355534e5721b
+>> -rw------- 1 root root 2315 Mar 29  2015
+>> /var/lib/btrfs/scrub.status.2832346e-0720-499f-8239-355534e5721b
+>>
+>> # cat /var/lib/btrfs/scrub.status.2832346e-0720-499f-8239-355534e5721b
+>> scrub status:1
+>> 2832346e-0720-499f-8239-355534e5721b:1|[...]|t_start:1427664064|[...]
+>>
+>> # date Mon Dec 28 02:54:11 CET 2015
+>>
+>> Just to clear up any possible misunderstandings. I run this from a
+>> simple netbook, and I have no idea why the date is off by so much.
+> Well, both the file time and the unix time in the file say back in March,
+> so whatever time syncing mechanism you use on that netbook, it evidently
+> failed the boot you did that scrub.
 >
-> If so, yes I agree that a scrub should probably work, it should fix
-> any problems with the simulated corrupt device, and also not crash.
+The netbook is set up with NTP with pfSense as a host server. The 
+pfSense is itself synched with multiple pools.
+>> Note:  I have used the same USB drives (memory sticks really) to create
+>> various configs of btrfs filesystems earlier. Could it be old metadata
+>> in the filesystem that mess up things? Is not metadata stamped with the
+>> UUID of the filesystem to prevent such things?
+> Yes, metadata is stamped with UUID.  But one other possible explanation
+> for the scrub time back in March might be if you were already playing
+> with it back then, and somehow you have a USB stick with a filesystem
+> from back then that... somehow... has the same UUID as the one you're
+> experimenting on today.
+yes, I  have played around with these usb sticks for a long time. 
+Probably also before march 29.
 >
-> What if you umount, and run btrfs check without --repair, what are the
-> results? This is btrfs-progs 4.3.1?
+> Don't ask me how it could get the same UUID.  I don't understand it
+> either.  But if it did somehow happen, btrfs would be /very/ confused,
+> and crashing scrubs and further data corruption could certainly result.
+What if my use of dd accidentally trashed some important part of the new 
+filesystem and btrfs therefore thinks a older version of the filesystem 
+is the current one? If UUID's are in every metadatablock I find that 
+pretty hard to believe. What if the UUID==0 ? is this accounted for?
+> Of course if you weren't experimenting with btrfs on these devices back
+> at the end of March and there's absolutely no way they could have gotten
+> btrfs on them until say October or whenever, then we're back to the date
+> somehow being wrong for that scrub, and having to look elsewhere for why
+> scrub is crashing.
 >
-The output from dmesg after mounting
-[  546.857533] BTRFS info (device sdg1): disk space caching is enabled
-[  546.872126] BTRFS: bdev /dev/sde1 errs: wr 10, rd 0, flush 0, corrupt 
-29094, gen 4
-[  546.872165] BTRFS: bdev /dev/sdb1 errs: wr 16, rd 7, flush 0, corrupt 
-0, gen 0
-
-
-This is the output I get from btrfs check /dev/sdb1 > somefile.output ....
-(note the filesystem was checked in unmounted state)
-
-Checking filesystem on /dev/sdb1
-UUID: 2832346e-0720-499f-8239-355534e5721b
-The following tree block(s) is corrupted in tree 5:
-         tree block bytenr: 28488941568, level: 1, node key: (52273, 1, 0)
-The following data extent is lost in tree 5:
-         inode: 104721, offset:0, disk_bytenr: 37828165632, disk_len: 524288
-found 9161007108 bytes used err is 1
-total csum bytes: 8859672
-total tree bytes: 80969728
-total fs tree bytes: 66633728
-total extent tree bytes: 3211264
-btree space waste bytes: 10638420
-file data blocks allocated: 7929208832
-  referenced 7929208832
-btrfs-progs v4.3
-
-I also get a pretty fantastic amount of errors that will not be 
-redirected to a file.
-
----snip---
-parent transid verify failed on 28597895168 wanted 371 found 339
-parent transid verify failed on 28597895168 wanted 371 found 339
-checksum verify failed on 28597895168 found 5D16DA87 wanted B9F56731
-checksum verify failed on 28597895168 found 1183EB4E wanted C18D87AC
-checksum verify failed on 28597895168 found 1183EB4E wanted C18D87AC
-bytenr mismatch, want=28597895168, have=147474999040
-Incorrect local backref count on 37826895872 root 5 owner 104850 offset 
-0 found 0 wanted 1 back 0x94ac688
-Backref disk bytenr does not match extent record, bytenr=37826895872, 
-ref bytenr=0
-backpointer mismatch on [37826895872 131072]
-owner ref check failed [37826895872 131072]
-ref mismatch on [37827117056 475136] extent item 1, found 0
-parent transid verify failed on 28597714944 wanted 371 found 339
-parent transid verify failed on 28597714944 wanted 371 found 339
-checksum verify failed on 28597714944 found 49CB81B9 wanted AD283C0F
-checksum verify failed on 28597714944 found D9F20AF8 wanted 1A5EE553
-checksum verify failed on 28597714944 found D9F20AF8 wanted 1A5EE553
-bytenr mismatch, want=28597714944, have=147480498944
-Incorrect local backref count on 37827117056 root 5 owner 104719 offset 
-0 found 0 wanted 1 back 0x93688b0
-Backref disk bytenr does not match extent record, bytenr=37827117056, 
-ref bytenr=37827026944
-backpointer mismatch on [37827117056 475136]
-owner ref check failed [37827117056 475136]
-ref mismatch on [37827641344 487424] extent item 1, found 0
-parent transid verify failed on 28597714944 wanted 371 found 339
-parent transid verify failed on 28597714944 wanted 371 found 339
-checksum verify failed on 28597714944 found 49CB81B9 wanted AD283C0F
-checksum verify failed on 28597714944 found D9F20AF8 wanted 1A5EE553
-checksum verify failed on 28597714944 found D9F20AF8 wanted 1A5EE553
-bytenr mismatch, want=28597714944, have=147480498944
-Incorrect local backref count on 37827641344 root 5 owner 104720 offset 
-0 found 0 wanted 1 back 0x94ac778
-Backref disk bytenr does not match extent record, bytenr=37827641344, 
-ref bytenr=0
-backpointer mismatch on [37827641344 487424]
-owner ref check failed [37827641344 487424]
-ref mismatch on [37828165632 524288] extent item 1, found 0
-parent transid verify failed on 28597714944 wanted 371 found 339
-parent transid verify failed on 28597714944 wanted 371 found 339
-checksum verify failed on 28597714944 found 49CB81B9 wanted AD283C0F
-checksum verify failed on 28597714944 found D9F20AF8 wanted 1A5EE553
-checksum verify failed on 28597714944 found D9F20AF8 wanted 1A5EE553
-bytenr mismatch, want=28597714944, have=147480498944
-Incorrect local backref count on 37828165632 root 5 owner 104721 offset 
-0 found 0 wanted 1 back 0x94ac868
-Backref disk bytenr does not match extent record, bytenr=37828165632, 
-ref bytenr=0
-backpointer mismatch on [37828165632 524288]
-owner ref check failed [37828165632 524288]
-checking free space cache
-checking fs roots
----snip end---
-
----snippety snip---
-root 5 inode 53325 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 14 name pthreadtypes.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53328 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 8 name select.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53329 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 9 name select2.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53330 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 5 name sem.h filetype 
-1 errors 6, no dir index, no inode ref
-root 5 inode 53331 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 11 name semaphore.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53333 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 9 name setjmp2.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53343 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 10 name sockaddr.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53345 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 9 name socket2.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53347 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 8 name stab.def 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53350 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 9 name statvfs.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53351 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 12 name stdio-ldbl.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53352 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 12 name stdio-lock.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53361 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 9 name string2.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 53384 errors 2001, no inode item, link count wrong
-         unresolved ref dir 52207 index 0 namelen 12 name wchar-ldbl.h 
-filetype 1 errors 6, no dir index, no inode ref
-root 5 inode 62056 errors 2001, no inode item, link count wrong
-         unresolved ref dir 51339 index 0 namelen 5 name local filetype 
-2 errors 6, no dir index, no inode ref
-root 5 inode 62093 errors 2001, no inode item, link count wrong
-         unresolved ref dir 51339 index 0 namelen 4 name sbin filetype 2 
-errors 6, no dir index, no inode ref
-root 5 inode 62344 errors 2001, no inode item, link count wrong
-         unresolved ref dir 51339 index 0 namelen 5 name share filetype 
-2 errors 6, no dir index, no inode ref
-root 5 inode 104721 errors 4001, no inode item, orphan file extent
-The following data extent is lost in tree 5:
-         inode: 104721, offset:0, disk_bytenr: 37828165632, disk_len: 524288
-root 5 inode 105299 errors 2001, no inode item, link count wrong
-         unresolved ref dir 51339 index 0 namelen 3 name src filetype 2 
-errors 6, no dir index, no inode ref
----snippety snip end---
-
-
+No, by all means - I tried a lot of weird stuff on those usb sticks way 
+before march so they defiantly had a (multi disk) btrfs filesystem on 
+them before.

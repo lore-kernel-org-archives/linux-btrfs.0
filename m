@@ -1,53 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f171.google.com ([209.85.213.171]:34537 "EHLO
-	mail-ig0-f171.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750781AbbL1Bgs (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 20:36:48 -0500
-Received: by mail-ig0-f171.google.com with SMTP id m11so111260734igk.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 27 Dec 2015 17:36:47 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <1451265937.6320.26.camel@scientia.net>
+Received: from plane.gmane.org ([80.91.229.3]:55437 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1750894AbbL1DQt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Dec 2015 22:16:49 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aDOIh-0002IF-HY
+	for linux-btrfs@vger.kernel.org; Mon, 28 Dec 2015 04:16:47 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 04:16:47 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 04:16:47 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: [BUG?] btrfs scrub -d doesn't scan all devices
+Date: Mon, 28 Dec 2015 03:16:41 +0000 (UTC)
+Message-ID: <pan$5b580$699280fb$ded9f44b$b00968c3@cox.net>
 References: <1451187536.6446.14.camel@scientia.net>
 	<pan$bcf44$1632328c$31564c06$c04774a8@cox.net>
 	<1451265688.6320.22.camel@scientia.net>
-	<1451265937.6320.26.camel@scientia.net>
-Date: Sun, 27 Dec 2015 18:36:47 -0700
-Message-ID: <CAJCQCtTbJnRMnymXhOVdPtHph3bGOj2H8fPwy=UTyz6WRhyb4A@mail.gmail.com>
-Subject: Re: [BUG?] btrfs scrub -d doesn't scan all devices
-From: Chris Murphy <lists@colorremedies.com>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: Duncan <1i5t5.duncan@cox.net>, Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, Dec 27, 2015 at 6:25 PM, Christoph Anton Mitterer
-<calestyo@scientia.net> wrote:
-> Hey.
->
-> Just noted, mine says this:
->>Start a scrub on all devices of the filesystem identified by <path>
->>or on a single <device>. If a scrub is already running, the new one
->>fails.
-> still not the text you quoted,... but there it is.
->
-> Anyway... it still contradicts the main description which implies that
-> a scrub always scrubs everything,... so I'd still call that a
-> documentation bug.
->
->
-> Further,...
-> - Eithr btrfs start allows multiple devices to be specified (which
->   isn't documented either,
-> - or it should allow that.
-> - or using -d makes no sense when the scrub is launched on a device
->   (instead of a mount point) and should thus fail or give at least a
->   warning.
+Christoph Anton Mitterer posted on Mon, 28 Dec 2015 02:21:28 +0100 as
+excerpted:
 
+> On Sun, 2015-12-27 at 07:22 +0000, Duncan wrote:
+>> I'd call that NOTABUG.  As the btrfs-scrub manpage suggests:
+>> 
+>> * When you point scrub at a mountpoint, it scrubs all devices composing
+>> that filesystem.
 
-https://bugzilla.kernel.org/show_bug.cgi?id=110051
+> Uhm,.. mine doesn't contain this,... neither do those of the master or
+> devel branches from David's repo... or am I just blind?
 
+I see that Chris Murphy just filed a bug on it with the particulars, but 
+just to clear this up...
+
+That's my paraphrase of what it says, thus the "suggests", but I do 
+specifically quote, with "the manpage specifically says" and quote marks, 
+so it's pretty hard to miss, which I /thought/, along with "suggests", 
+should make it clear that I was NOT specifically quoting the manpage in 
+the bullet-point.
+
+Apparently not...
+
+> Actually it says:
+>>DESCRIPTION
+>>       btrfs scrub is used to scrub a btrfs filesystem, which
+>>       will read all data from all disks and verify checksums.
+
+Look under scrub start...  as you did in a followup...
+
+>> Since /dev/disk/by-*/* are symlinks to various block-device nodes, it
+>> follows that if you point scrub at them, only the device pointed at is
+>> scrubbed, exactly as one might expect based on the manpage.
+
+> Sure... that was clear... but I have another manpage than yours...
+> perhaps some distro specific patch?
+
+No, just both a slightly more specific part of the manpage, under scrub 
+start, and a mistake in believing "suggests" implies or explicitly 
+specifies a direct quote, even when a direct quote is later actually 
+made, complete with quotation marks and "the manpage specifically says" 
+attribution.
+
+btrfs-progs v4.3.1, if it matters.
 
 -- 
-Chris Murphy
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
+

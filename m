@@ -1,59 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:44069 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:44211 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750840AbbL1BVd (ORCPT
+	with ESMTP id S1750803AbbL1BZk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 20:21:33 -0500
-Message-ID: <1451265688.6320.22.camel@scientia.net>
+	Sun, 27 Dec 2015 20:25:40 -0500
+Message-ID: <1451265937.6320.26.camel@scientia.net>
 Subject: Re: [BUG?] btrfs scrub -d doesn't scan all devices
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Mon, 28 Dec 2015 02:21:28 +0100
-In-Reply-To: <pan$bcf44$1632328c$31564c06$c04774a8@cox.net>
+Date: Mon, 28 Dec 2015 02:25:37 +0100
+In-Reply-To: <1451265688.6320.22.camel@scientia.net>
 References: <1451187536.6446.14.camel@scientia.net>
 	 <pan$bcf44$1632328c$31564c06$c04774a8@cox.net>
+	 <1451265688.6320.22.camel@scientia.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-a161RcpAfYFfCSWO9yYP"
+	boundary="=-uybHJHow4+h314PMbp7Y"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-a161RcpAfYFfCSWO9yYP
+--=-uybHJHow4+h314PMbp7Y
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, 2015-12-27 at 07:22 +0000, Duncan wrote:
-> I'd call that NOTABUG.=C2=A0=C2=A0As the btrfs-scrub manpage suggests:
->=20
-> * When you point scrub at a mountpoint, it scrubs all devices
-> composing=C2=A0
-> that filesystem.
-Uhm,.. mine doesn't contain this,... neither do those of the master or
-devel branches from David's repo... or am I just blind?
+Hey.
 
-Actually it says:
->DESCRIPTION
->=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0btrfs scrub is used to scrub a b=
-trfs filesystem, which will read all
->=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0=C2=A0data from all disks and verify c=
-hecksums.
+Just noted, mine says this:
+>Start a scrub on all devices of the filesystem identified by <path>
+>or on a single <device>. If a scrub is already running, the new one
+>fails.
+still not the text you quoted,... but there it is.
 
-Also, if it would allow to only selectively scrub parts of the fs (e.g.
-just some devices or subpaths/subvols/files) than the whole syntax for
-cancel, break, etc. would become ambiguous.
+Anyway... it still contradicts the main description which implies that
+a scrub always scrubs everything,... so I'd still call that a
+documentation bug.
 
-> Since /dev/disk/by-*/* are symlinks to various block-device nodes,
-> it=C2=A0
-> follows that if you point scrub at them, only the device pointed at
-> is=C2=A0
-> scrubbed, exactly as one might expect based on the manpage.
-Sure... that was clear... but I have another manpage than yours...
-perhaps some distro specific patch?
 
+Further,...
+- Eithr btrfs start allows multiple devices to be specified (which
+=C2=A0 isn't documented either,
+- or it should allow that.
+- or using -d makes no sense when the scrub is launched on a device
+=C2=A0 (instead of a mount point) and should thus fail or give at least a
+=C2=A0 warning.
+
+
+Cheers,
 Chris.
---=-a161RcpAfYFfCSWO9yYP
+--=-uybHJHow4+h314PMbp7Y
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -140,19 +136,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyODAxMjEy
-OFowTwYJKoZIhvcNAQkEMUIEQP23pUjCoMASB353FDL/b6xENnf8LW9/EFD84173CobC6E6Pt2hB
-2+3H1ihEE2FotouMudutbQA9Di0UQUAALBMwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyODAxMjUz
+N1owTwYJKoZIhvcNAQkEMUIEQBdeaVFf9XI2FESVX2RPcsvf3CRPxnXNRMGSrHTDSAZrKQQP1gpG
+8e7+k9bYu2S97CWVDn2+KN8RpDeiA5S4HgEwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCEjNOz+jwaqqi+lxo1sXXc7x+5JDjL
-bVyIsoUqPAYZ5BvAG1eswWDQQj9HuAVnvCqKwQJpqm61IM2gsaH760COuckLTQhIL5H+u09crktF
-TCQYln+8JC9Ha1uocWV6Yf5v+qSaNwqwHr0iMS88ZhIM9Q9SBFmQGUJmcKlDUz2COOwCS6Thzacc
-D+KMPl9uRcJ+/ch3ugZOwLmhRJkRHlPJhdXqRTs7qF2CjTzyjK5tb6uqICrqgCI/VSQE0AiQ4eEp
-8xc2cbsfxXcdoCB7VwG4Xcm8RDZP2n/zsM9XyPluYTqzVh2uhwsgn4s0JQAQxs/NjG88zztgzrts
-fErTG/2OAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAQUCf6NYJLVkFmbcn6dmZCEG6NESnr
+Jo2bX3ELyVJeITsNpW8QAuSq71/0fTM0Fyr6eCKZhE+Z1pHGPg+VteGGJOp8JC+j7jP55QTmS4rc
+yK6yNvJdiLdwA56zsY0qhJ8S6CS6p1IdioDMU0oiUU0ium76dK5Sfc+ehG2O8gkGN/Ze434162Ls
+haamBq9IHThmbXrAS4vYZjQIo3SN1/1KXsWcYqblrTyMKrrpSbT8UmsuESbWIFi0P2+NjSAHHRi0
+n3JqhmloJJQnG0ZMYpa7ZCTOpmAa6qVm+BrHBCmQUw/k+xfSVqG0fVBbMXoYV4zzQY+BVI88bJt5
+fCVpln5kAAAAAAAA
 
 
---=-a161RcpAfYFfCSWO9yYP--
+--=-uybHJHow4+h314PMbp7Y--
 

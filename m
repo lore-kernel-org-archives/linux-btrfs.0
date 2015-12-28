@@ -1,155 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f45.google.com ([74.125.82.45]:33326 "EHLO
-	mail-wm0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752473AbbL1Q00 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Dec 2015 11:26:26 -0500
-From: Sanidhya Solanki <jpage.lkml@gmail.com>
-To: clm@fb.com, jbacik@fb.com, dsterba@suse.com
-Cc: linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org,
-        Sanidhya Solanki <jpage.lkml@gmail.com>
-Subject: [PATCH] BTRFS: Adds an option to select RAID Stripe size
-Date: Mon, 28 Dec 2015 07:24:11 -0500
-Message-Id: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
+Received: from mout.gmx.net ([212.227.17.21]:61646 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752469AbbL1UQn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Dec 2015 15:16:43 -0500
+Subject: Trouble with broken RAID5/6 System after trying to solve a problem,
+ want to recover contained Data
+References: <567323AA.70203@GMX.net>
+To: linux-btrfs@vger.kernel.org
+From: Christian <Kamiekatze@GMX.net>
+Reply-To: Christian <Kamiekatze@GMX.net>
+Message-ID: <568198A6.10806@GMX.net>
+Date: Mon, 28 Dec 2015 21:16:38 +0100
+MIME-Version: 1.0
+In-Reply-To: <567323AA.70203@GMX.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-An option to select the RAID Stripe size is made
-available in the BTRFS Filesystem, via an option
-in the BTRFS Config setup, with minimal change
-to the existing code base.
+I found out, that i can also show more Information about Files and Diretories contained in the Filesystem.
 
-Signed-off-by: Sanidhya Solanki <jpage.lkml@gmail.com>
----
- fs/btrfs/Kconfig   | 42 ++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/Makefile  |  2 ++
- fs/btrfs/scrub.c   |  4 ++++
- fs/btrfs/super.c   |  4 ++++
- fs/btrfs/volumes.c |  2 +-
- fs/btrfs/volumes.h |  4 +++-
- 6 files changed, 56 insertions(+), 2 deletions(-)
+btrfs-debug-tree show me the following Infos:
 
-diff --git a/fs/btrfs/Kconfig b/fs/btrfs/Kconfig
-index 80e9c18..1454d21 100644
---- a/fs/btrfs/Kconfig
-+++ b/fs/btrfs/Kconfig
-@@ -28,6 +28,48 @@ config BTRFS_FS
- 
- 	  If unsure, say N.
- 
-+choice
-+         prompt "Choose Stripe Size"
-+         default RS_1024
-+         help
-+           Allows you to select the size of the stripe, which is the smallest sized
-+           data block to be replicated.
-+           Selecting a larger size than your physical block size may lead to data
-+           fragmentation in some cases.
-+
-+        config RS_512
-+                 bool "512 bytes"
-+
-+        config RS_1024
-+                 bool "1024 bytes"
-+
-+        config RS_2048
-+                 bool "2048 bytes"
-+
-+        config RS_4096
-+                 bool "4096 bytes"
-+
-+        config RS_8192
-+                 bool "8192 bytes"
-+
-+        config RS_16384
-+                 bool "16384 bytes"
-+
-+        config RS_32768
-+                 bool "32768 bytes"
-+
-+endchoice
-+
-+config BTRFS_RAID_STRIPE
-+        int
-+        default 512 if RS_512
-+        default 1024 if RS_1024
-+        default 2048 if RS_2048
-+        default 4096 if RS_4096
-+        default 8192 if RS_8192
-+        default 16384 if RS_16384
-+        default 32768 if RS_32768
-+
- config BTRFS_FS_POSIX_ACL
- 	bool "Btrfs POSIX Access Control Lists"
- 	depends on BTRFS_FS
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 6d1d0b9..1c4e384 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -17,3 +17,5 @@ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
- btrfs-$(CONFIG_BTRFS_FS_RUN_SANITY_TESTS) += tests/free-space-tests.o \
- 	tests/extent-buffer-tests.o tests/btrfs-tests.o \
- 	tests/extent-io-tests.o tests/inode-tests.o tests/qgroup-tests.o
-+
-+btrfs-$(CONFIG_BTRFS_RAID_STRIPE) += scrub.o super.o volumes.o
-diff --git a/fs/btrfs/scrub.c b/fs/btrfs/scrub.c
-index b091d94..4d0f802 100644
---- a/fs/btrfs/scrub.c
-+++ b/fs/btrfs/scrub.c
-@@ -63,6 +63,10 @@ struct scrub_ctx;
-  */
- #define SCRUB_MAX_PAGES_PER_BLOCK	16	/* 64k per node/leaf/sector */
- 
-+#define STRIPE_LENGTH CONFIG_BTRFS_RAID_STRIPE
-+
-+#define BTRFS_STRIPE_LEN	(64 * STRIPE_LENGTH)
-+
- struct scrub_recover {
- 	atomic_t		refs;
- 	struct btrfs_bio	*bbio;
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 24154e4..3d91f8d 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -64,6 +64,10 @@
- #define CREATE_TRACE_POINTS
- #include <trace/events/btrfs.h>
- 
-+#define STRIPE_LENGTH CONFIG_BTRFS_RAID_STRIPE
-+
-+#define BTRFS_STRIPE_LEN	(64 * STRIPE_LENGTH)
-+
- static const struct super_operations btrfs_super_ops;
- static struct file_system_type btrfs_fs_type;
- 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 4564522..e1b2e5c 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -4461,7 +4461,7 @@ static int btrfs_cmp_device_info(const void *a, const void *b)
- static u32 find_raid56_stripe_len(u32 data_devices, u32 dev_stripe_target)
- {
- 	/* TODO allow them to set a preferred stripe size */
--	return 64 * 1024;
-+	return BTRFS_STRIPE_LEN;
- }
- 
- static void check_raid56_incompat_flag(struct btrfs_fs_info *info, u64 type)
-diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
-index d5c84f6..9115a80 100644
---- a/fs/btrfs/volumes.h
-+++ b/fs/btrfs/volumes.h
-@@ -26,7 +26,9 @@
- 
- extern struct mutex uuid_mutex;
- 
--#define BTRFS_STRIPE_LEN	(64 * 1024)
-+#define STRIPE_LENGTH CONFIG_BTRFS_RAID_STRIPE
-+
-+#define BTRFS_STRIPE_LEN	(64 * STRIPE_LENGTH)
- 
- struct buffer_head;
- struct btrfs_pending_bios {
--- 
-2.5.0
+parent transid verify failed on 2234958286848 wanted 35674 found 35675
+parent transid verify failed on 2234958286848 wanted 35674 found 35675
+parent transid verify failed on 2234958286848 wanted 35674 found 35675
+Ignoring transid failure
+root tree
+node 2234958307328 level 1 items 20 free 101 generation 35675 owner 1
+fs uuid a405d8a3-64f5-4b70-88fa-29df558262b0
+chunk uuid 167d74cd-1bd1-4c1c-9acd-3fcb1ef4f483
+	key (EXTENT_TREE ROOT_ITEM 0) block 2234958311424 (545644119) gen 35674
+	key (1374 INODE_ITEM 0) block 2235090616320 (545676420) gen 35673
+	key (1381 INODE_ITEM 0) block 2235090214912 (545676322) gen 35673
+	key (1396 INODE_ITEM 0) block 2235090239488 (545676328) gen 35673
+	key (1411 INODE_ITEM 0) block 2235090538496 (545676401) gen 35673
+	key (1425 EXTENT_DATA 0) block 2235187728384 (545700129) gen 35637
+	key (1440 EXTENT_DATA 0) block 2235890171904 (545871624) gen 34929
+	key (1449 INODE_ITEM 0) block 2513856499712 (613734497) gen 35102
+	key (1464 INODE_ITEM 0) block 2235132993536 (545686766) gen 35636
+	key (1479 INODE_ITEM 0) block 2235090554880 (545676405) gen 35673
+	key (1494 INODE_ITEM 0) block 2235830722560 (545857110) gen 29339
+	key (1509 INODE_ITEM 0) block 2234985762816 (545650821) gen 34043
+	key (1524 INODE_ITEM 0) block 2236064706560 (545914235) gen 35321
+	key (1539 INODE_ITEM 0) block 2235081564160 (545674210) gen 35572
+	key (1547 INODE_ITEM 0) block 2235090591744 (545676414) gen 35673
+	key (1562 INODE_ITEM 0) block 2235090604032 (545676417) gen 35673
+	key (FREE_SPACE UNTYPED 2268378497024) block 2235090870272 (545676482) gen 35673
+	key (FREE_SPACE UNTYPED 2365015261184) block 2235090853888 (545676478) gen 35673
+	key (FREE_SPACE UNTYPED 2556174860288) block 2235833815040 (545857865) gen 29340
+	key (FREE_SPACE UNTYPED 2633484271616) block 2234958319616 (545644121) gen 35675
+leaf 2234958311424 items 9 free space 1349 generation 35674 owner 1
+fs uuid a405d8a3-64f5-4b70-88fa-29df558262b0
+chunk uuid 167d74cd-1bd1-4c1c-9acd-3fcb1ef4f483
+...
+leaf 2235411533824 items 50 free space 9 generation 25816 owner 5
+fs uuid a405d8a3-64f5-4b70-88fa-29df558262b0
+chunk uuid 167d74cd-1bd1-4c1c-9acd-3fcb1ef4f483
+...
+	item 2 key (259 DIR_ITEM 714625598) itemoff 3831 itemsize 51
+		location key (380075 INODE_ITEM 0) type FILE
+		namelen 21 datalen 0 name: Pixar - Gasplanet.mpg
+...
+
+
+Does someone know how to recover the files from the Filesystem?
+
+Kind regards,
+	Christian
 

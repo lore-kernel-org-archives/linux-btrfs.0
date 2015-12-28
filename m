@@ -1,76 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55437 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:55700 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750894AbbL1DQt (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 22:16:49 -0500
+	id S1751464AbbL1Dar (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Dec 2015 22:30:47 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aDOIh-0002IF-HY
-	for linux-btrfs@vger.kernel.org; Mon, 28 Dec 2015 04:16:47 +0100
+	id 1aDOWC-0000LF-FC
+	for linux-btrfs@vger.kernel.org; Mon, 28 Dec 2015 04:30:44 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 04:16:47 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 04:30:44 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 04:16:47 +0100
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 04:30:44 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
 Subject: Re: [BUG?] btrfs scrub -d doesn't scan all devices
-Date: Mon, 28 Dec 2015 03:16:41 +0000 (UTC)
-Message-ID: <pan$5b580$699280fb$ded9f44b$b00968c3@cox.net>
+Date: Mon, 28 Dec 2015 03:30:39 +0000 (UTC)
+Message-ID: <pan$145c6$d63bc79f$a86f946f$d4f01e2@cox.net>
 References: <1451187536.6446.14.camel@scientia.net>
 	<pan$bcf44$1632328c$31564c06$c04774a8@cox.net>
 	<1451265688.6320.22.camel@scientia.net>
+	<1451265937.6320.26.camel@scientia.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Christoph Anton Mitterer posted on Mon, 28 Dec 2015 02:21:28 +0100 as
+Christoph Anton Mitterer posted on Mon, 28 Dec 2015 02:25:37 +0100 as
 excerpted:
 
-> On Sun, 2015-12-27 at 07:22 +0000, Duncan wrote:
->> I'd call that NOTABUG.  As the btrfs-scrub manpage suggests:
->> 
->> * When you point scrub at a mountpoint, it scrubs all devices composing
->> that filesystem.
+>>> (The manpage specifically says "all devices of the filesystem
+>>> identified by <path>".  Emphasis on _ALL_DEVICES_ if given a
+>>> normal path.)
 
-> Uhm,.. mine doesn't contain this,... neither do those of the master or
-> devel branches from David's repo... or am I just blind?
+>>> (The manpage continues ... "or on a single <device>." Emphasis
+>>> on _SINGLE_DEVICE_ if given a device node.)
 
-I see that Chris Murphy just filed a bug on it with the particulars, but 
-just to clear this up...
+> Just noted, mine says this:
+>>Start a scrub on all devices of the filesystem identified by <path>
+>>or on a single <device>. If a scrub is already running, the new one
+>>fails.
+> still not the text you quoted,... but there it is.
 
-That's my paraphrase of what it says, thus the "suggests", but I do 
-specifically quote, with "the manpage specifically says" and quote marks, 
-so it's pretty hard to miss, which I /thought/, along with "suggests", 
-should make it clear that I was NOT specifically quoting the manpage in 
-the bullet-point.
+The text I directly quoted... with quotation marks and "the manpage 
+specifically says", is in my quote above, added back in here and marked 
+off as the third level quote.
 
-Apparently not...
+The material within my quotation marks is found verbatim within your 
+quote of the manpage.  So how is it not the text I quoted?
 
-> Actually it says:
->>DESCRIPTION
->>       btrfs scrub is used to scrub a btrfs filesystem, which
->>       will read all data from all disks and verify checksums.
-
-Look under scrub start...  as you did in a followup...
-
->> Since /dev/disk/by-*/* are symlinks to various block-device nodes, it
->> follows that if you point scrub at them, only the device pointed at is
->> scrubbed, exactly as one might expect based on the manpage.
-
-> Sure... that was clear... but I have another manpage than yours...
-> perhaps some distro specific patch?
-
-No, just both a slightly more specific part of the manpage, under scrub 
-start, and a mistake in believing "suggests" implies or explicitly 
-specifies a direct quote, even when a direct quote is later actually 
-made, complete with quotation marks and "the manpage specifically says" 
-attribution.
-
-btrfs-progs v4.3.1, if it matters.
+It's in quotation marks attributed with "the manpage specifically says", 
+my own rewording is marked as the manpage _"suggests"_ (with the choice 
+of "suggests" as opposed to "says" and quote marks rather strongly 
+implying that part is _not_ a direct quote), how could I _possibly_ make 
+it any clearer than that?
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

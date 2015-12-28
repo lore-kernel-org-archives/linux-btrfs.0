@@ -1,209 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from nmsh2.e.nsc.no ([193.213.121.73]:41247 "EHLO nmsh2.e.nsc.no"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754394AbbL0XGv (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 18:06:51 -0500
+Received: from mailgw-02.dd24.net ([193.46.215.43]:43208 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750911AbbL1Aji (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 27 Dec 2015 19:39:38 -0500
+Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
+	by mailgw-02.dd24.net (Postfix) with ESMTP id 28DAC5FB56
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 00:39:37 +0000 (UTC)
+Received: from mailgw-02.dd24.net ([192.168.1.36])
+	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
+	with ESMTP id sUorHrTu-AGf for <linux-btrfs@vger.kernel.org>;
+	Mon, 28 Dec 2015 00:39:35 +0000 (UTC)
+Received: from schliemann.scientia.net (pD9FD8F25.dip0.t-ipconnect.de [217.253.143.37])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by mailgw-02.dd24.net (Postfix) with ESMTPSA
+	for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 00:39:35 +0000 (UTC)
+Message-ID: <1451263174.6320.5.camel@scientia.net>
 Subject: Re: Btrfs scrub failure for raid 6 kernel 4.3
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-References: <567FEEB6.3080701@online.no>
- <CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
-From: Waxhead <waxhead@online.no>
-Message-ID: <56806F06.50309@online.no>
-Date: Mon, 28 Dec 2015 00:06:46 +0100
-MIME-Version: 1.0
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Date: Mon, 28 Dec 2015 01:39:34 +0100
 In-Reply-To: <CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
-Content-Type: text/plain; charset=UTF-8; format=flowed
+References: <567FEEB6.3080701@online.no>
+	 <CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-F/ncZaTreGD6HD4ZIIKg"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy wrote:
-> On Sun, Dec 27, 2015 at 6:59 AM, Waxhead <waxhead@online.no> wrote:
->> Hi,
->>
->> I have a "toy-array" of 6x USB drives hooked up to a hub where I made a
->> btrfs raid 6 data+metadata filesystem.
->>
->> I copied some files to the filesystem, ripped out one USB drive and ruined
->> it dd if=/dev/random to various locations on the drive. Put the USB drive
->> back and the filesystem mounts ok.
->>
->> If i start scrub I after seconds get the following
->>
->>   kernel:[   50.844026] CPU: 1 PID: 91 Comm: kworker/u4:2 Not tainted
->> 4.3.0-1-686-pae #1 Debian 4.3.3-2
->>   kernel:[   50.844026] Hardware name: Acer AOA150/        , BIOS v0.3310
->> 10/06/2008
->>   kernel:[   50.844026] Workqueue: btrfs-endio-raid56
->> btrfs_endio_raid56_helper [btrfs]
->>   kernel:[   50.844026] task: f642c040 ti: f664c000 task.ti: f664c000
->>   kernel:[   50.844026] Stack:
->>   kernel:[   50.844026]  00000005 f0d20800 f664ded0 f86d0262 00000000
->> f664deac c109a0fc 00000001
->>   kernel:[   50.844026]  f79eac40 edb4a000 edb7a000 edb8a000 edbba000
->> eccc1000 ecca1000 00000000
->>   kernel:[   50.844026]  00000000 f664de68 00000003 f664de74 ecb23000
->> f664de5c f5cda6a4 f0d20800
->>   kernel:[   50.844026] Call Trace:
->>   kernel:[   50.844026]  [<f86d0262>] ? finish_parity_scrub+0x272/0x560
->> [btrfs]
->>   kernel:[   50.844026]  [<c109a0fc>] ? set_next_entity+0x8c/0xba0
->>   kernel:[   50.844026]  [<c127d130>] ? bio_endio+0x40/0x70
->>   kernel:[   50.844026]  [<f86891fe>] ? btrfs_scrubparity_helper+0xce/0x270
->> [btrfs]
->>   kernel:[   50.844026]  [<c107ca7d>] ? process_one_work+0x14d/0x360
->>   kernel:[   50.844026]  [<c107ccc9>] ? worker_thread+0x39/0x440
->>   kernel:[   50.844026]  [<c107cc90>] ? process_one_work+0x360/0x360
->>   kernel:[   50.844026]  [<c10821a6>] ? kthread+0xa6/0xc0
->>   kernel:[   50.844026]  [<c1536181>] ? ret_from_kernel_thread+0x21/0x30
->>   kernel:[   50.844026]  [<c1082100>] ? kthread_create_on_node+0x130/0x130
->>   kernel:[   50.844026] Code: 6e c1 e8 ac dd f2 ff 83 c4 04 5b 5d c3 8d b6 00
->> 00 00 00 31 c9 81 3d 84 f0 6e c1 84 f0 6e c1 0f 95 c1 eb b9 8d b4 200 00 00
->> 00 0f 0b 8d b4 26 00 00 00 00 8d bc 27 00
->>   kernel:[   50.844026] EIP: [<c1174858>] kunmap_high+0xa8/0xc0 SS:ESP
->> 0068:f664de40
->>
->> This is only a test setup and I will keep this filesystem for a while if it
->> can be of any use...
-> Sounds like a bug, but also might be missing functionality still. If
-> you can include the reproduce steps, including the exact
-> locations+lengths of the random writes, that's probably useful.
->
-> More than one thing could be going on. First, I don't know that Btrfs
-> even understands the device went missing because it doesn't yet have a
-> concept of faulty devices, and then I've seen it get confused when
-> drives reappear with new drive designations (not uncommon), and from
-> your call trace we don't know if that happened because there's not
-> enough information posted. Second, if the damage is too much on a
-> device, it almost certainly isn't recognized when reattached. But this
-> depends on what locations were damaged. If Btrfs doesn't recognize the
-> drive as part of the array, then the scrub request is effectively a
+
+--=-F/ncZaTreGD6HD4ZIIKg
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
+
+On Sun, 2015-12-27 at 11:29 -0700, Chris Murphy wrote:
+> then the scrub request is effectively a
 > scrub for a volume with a missing drive which you probably wouldn't
-> ever do, you'd first replace the missing device. Scrubs happen on
-> normally operating arrays not degraded ones. So it's uncertain either
-> Btrfs, or the user, had any idea what state the volume was actually in
-> at the time.
->
-> Conversely on mdadm, it knows in such a case to mark a device as
-> faulty, the array automatically goes degraded, but when the drive is
-> reattached it is not automatically re-added. When the user re-adds,
-> typically a complete rebuild happens unless there's a write-intent
-> bitmap, which isn't a default at create time.
->
-I am afraid I can't exactly include the how to reproduce steps.
-I do however have the filesystem in a "bad state" so if there is 
-anything I can do - let me know.
+> ever do, you'd first replace the missing device.
+While that's probably the normal work flow,... it should still work the
+other way round... and if not, I'd consider that a bug.
 
-First of all ... a "btrfs filesystem show" does list all drives
-Label: none  uuid: 2832346e-0720-499f-8239-355534e5721b
-         Total devices 6 FS bytes used 8.53GiB
-         devid    1 size 7.68GiB used 3.08GiB path /dev/sdb1
-         devid    2 size 7.68GiB used 3.08GiB path /dev/sdc1
-         devid    3 size 7.68GiB used 3.08GiB path /dev/sdd1
-         devid    4 size 7.68GiB used 3.08GiB path /dev/sde1
-         devid    5 size 7.68GiB used 3.08GiB path /dev/sdf1
-         devid    6 size 7.68GiB used 3.08GiB path /dev/sdg1
+> but when the drive is
+> reattached it is not automatically re-added.
+Which is good, as it would allow for similar attacks as we've recently
+discussed in the other thread...
 
-mount /dev/sdb1 /mnt/
-btrfs filesystem df /mnt
 
-Data, RAID6: total=12.00GiB, used=8.45GiB
-System, RAID6: total=64.00MiB, used=16.00KiB
-Metadata, RAID6: total=256.00MiB, used=84.58MiB
-GlobalReserve, single: total=32.00MiB, used=0.00B
+Cheers,
+Chris.
+--=-F/ncZaTreGD6HD4ZIIKg
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
-btrfs scrub status /mnt
-scrub status for 2832346e-0720-499f-8239-355534e5721b
-         scrub started at Sun Mar 29 23:21:04 2015 and finished after 
-00:01:04
-         total bytes scrubbed: 1.97GiB with 14549 errors
-         error details: super=2 csum=14547
-         corrected errors: 0, uncorrectable errors: 14547, unverified 
-errors: 0
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++hxTb78VbTE97+9+105MP2mBd1IZ/imt0P7berZi+lqU4LOvanzIIlk1UE8zEA/iYvTc4SS1fNrj
+CiGoCZx5cp8ZQ3BEYFo++0gac+ukuEJD7ZgkODyDVQSyTbdsrJmUlZ4onJWo4GwMmaNoGw3+oqFA
+Wdq/7NB2oaEx5pKKwX/neYPeDJViDYlGXXxqmAZuDfaTIuaiaprQluGdjcNzcVW1l974/6zYLJ6n
+elUq8V6vaWVGgabxPCtobliHLHw6r/WoROmy2NtREk5UEsMJXgCM4RSPRmcT+0Sj8MrJ7GAZpWI2
++On4hl0V0mFiaxWPDhDe8bs7Sl+wuJgTJCN4OCM0RYN9rn8y58/LAh/HMIIGCDCCA/CgAwIBAgIB
+ATANBgkqhkiG9w0BAQQFADB5MRAwDgYDVQQKEwdSb290IENBMR4wHAYDVQQLExVodHRwOi8vd3d3
+LmNhY2VydC5vcmcxIjAgBgNVBAMTGUNBIENlcnQgU2lnbmluZyBBdXRob3JpdHkxITAfBgkqhkiG
+9w0BCQEWEnN1cHBvcnRAY2FjZXJ0Lm9yZzAeFw0wNTEwMTQwNzM2NTVaFw0zMzAzMjgwNzM2NTVa
+MFQxFDASBgNVBAoTC0NBY2VydCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcx
+HDAaBgNVBAMTE0NBY2VydCBDbGFzcyAzIFJvb3QwggIiMA0GCSqGSIb3DQEBAQUAA4ICDwAwggIK
+AoICAQCrSTURSHzSJn5TlM9Dqd0o10Iqi/OHeBlYfA+e2ol94fvrcpANdKGWZKufoCSZc9riVXbH
+F3v1BKxGuMO+f2SNEGwk82GcwPKQ+lHm9WkBY8MPVuJKQs/iRIwlKKjFeQl9RrmK8+nzNCkIReQc
+n8uUBByBqBSzmGXEQ+xOgo0J0b2qW42S0OzekMV/CsLj6+YxWl50PpczWejDAz1gM7/30W9HxM3u
+YoNSbi4ImqTZFRiRpoWSR7CuSOtttyHshRpocjWr//AQXcD0lKdq1TuSfkyQBX6TwSyLpI5idBVx
+bgtxA+qvFTia1NIFcm+M+SvrWnIl+TlG43IbPgTDZCciECqKT1inA62+tC4T7V2qSNfVfdQqe1z6
+RgRQ5MwOQluM7dvyz/yWk+DbETZUYjQ4jwxgmzuXVjit89Jbi6Bb6k6WuHzX1aCGcEDTkSm3ojyt
+9Yy7zxqSiuQ0e8DYbF/pCsLDpyCaWt8sXVJcukfVm+8kKHA4IC/VfynAskEDaJLM4JzMl0tF7zoQ
+CqtwOpiVcK01seqFK6QcgCExqa5geoAmSAC4AcCTY1UikTxW56/bOiXzjzFU6iaLgVn5odFTEcV7
+nQP2dBHgbbEsPyyGkZlxmqZ3izRg0RS0LKydr4wQ05/EavhvE/xzWfdmQnQeiuP43NJvmJzLR5iV
+QAX76QIDAQABo4G/MIG8MA8GA1UdEwEB/wQFMAMBAf8wXQYIKwYBBQUHAQEEUTBPMCMGCCsGAQUF
+BzABhhdodHRwOi8vb2NzcC5DQWNlcnQub3JnLzAoBggrBgEFBQcwAoYcaHR0cDovL3d3dy5DQWNl
+cnQub3JnL2NhLmNydDBKBgNVHSAEQzBBMD8GCCsGAQQBgZBKMDMwMQYIKwYBBQUHAgEWJWh0dHA6
+Ly93d3cuQ0FjZXJ0Lm9yZy9pbmRleC5waHA/aWQ9MTAwDQYJKoZIhvcNAQEEBQADggIBAH8IiKHa
+GlBJ2on7oQhy84r3HsQ6tHlbIDCxRd7CXdNlafHCXVRUPIVfuXtCkcKZ/RtRm6tGpaEQU55tiKxz
+biwzpvD0nuB1wT6IRanhZkP+VlrRekF490DaSjrxC1uluxYG5sLnk7mFTZdPsR44Q4Dvmw2M77in
+YACHV30eRBzLI++bPJmdr7UpHEV5FpZNJ23xHGzDwlVks7wU4vOkHx4y/CcVBc/dLq4+gmF78CEQ
+GPZE6lM5+dzQmiDgxrvgu1pPxJnIB721vaLbLmINQjRBvP+LivVRIqqIMADisNS8vmW61QNXeZvo
+3MhN+FDtkaVSKKKs+zZYPumUK5FQhxvWXtaMzPcPEAxSTtAWYeXlCmy/F8dyRlecmPVsYGN6b165
+Ti/Iubm7aoW8mA3t+T6XhDSUrgCvoeXnkm5OvfPi2RSLXNLrAWygF6UtEOucekq9ve7O/e0iQKtw
+OIj1CodqwqsFYMlIBdpTwd5Ed2qz8zw87YC8pjhKKSRf/lk7myV6VmMAZLldpGJ9VzZPrYPvH5JT
+oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
+sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyODAwMzkz
+NFowTwYJKoZIhvcNAQkEMUIEQKeW3HURY65uIry2qQL+ZsyZA8jY8615OOEBhFBZkd2Jnvmuy7Xs
+rJiGAuJicUc3oQeZk6gg8KH+khKdkT5w/qQwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAbyg3IR5mKi1ZmO1vGSx8ryrFJHY07
+IRLtrx+bfGnhSSBQve0rsE8kvrByrpidQSYZJEECiFq25tKksE1tT+Eg0wrMC1ZiNhPuaFRBJq5I
+IAgqw+DF4pIFxfsNnXhFuCbqoo5m6Rudc4J482c5pAuzW3lCi9B2heeA4Vh9owaLsw4vVF1KT8oQ
+CX9U6Ojq+0U5LM1H6PaJ8m0MzDGu2aQYvnGEcHkt6hty+1J2GTX4C+h7zFANyCStIOAJ7iHhvErk
+SHF4cat6GviWZJQKdMfeKyiQaTwOXcodA+7RlcMFjqb/o81VEBxJHuj3YFfw1im1SxyrHTzdNhJ6
+3+ibgrfcAAAAAAAA
 
-Now here is the first worrying part... it says that scrub started at Sun 
-Mar 29. That is NOT true, the first scrub I did on this filesystem was a 
-few days ago and it claims it is a lot of uncorrectable errors. Why? 
-This is after all a raid6 filesystem correct?!
 
-btrfs scrub start -B /mnt
+--=-F/ncZaTreGD6HD4ZIIKg--
 
-Message from syslogd@a150 at Dec 27 23:44:22 ...
-  kernel:[  611.478448] CPU: 0 PID: 1200 Comm: kworker/u4:1 Not tainted 
-4.3.0-1-686-pae #1 Debian 4.3.3-2
-
-Message from syslogd@a150 at Dec 27 23:44:22 ...
-  kernel:[  611.478448] Hardware name: Acer AOA150/        , BIOS 
-v0.3310 10/06/2008
-  kernel:[  611.478448] Workqueue: btrfs-endio-raid56 
-btrfs_endio_raid56_helper [btrfs]
-  kernel:[  611.478448] task: ec403040 ti: ec4a2000 task.ti: ec4a2000
-  kernel:[  611.478448] Stack:
-  kernel:[  611.478448]  00000005 ecd78800 ec4a3ed0 f8768262 00000000 
-0000008e 5ead4067 0000008e
-  kernel:[  611.478448]  5ead3301 ec5bd000 ec5ce000 ec5fd000 ec62d000 
-ec5a9000 ec5a8000 f79d27cc
-  kernel:[  611.478448]  00000000 ec4a3e68 00000003 ec4a3e74 ec32d700 
-ec4a3e5c f5ccaba0 ecd78800
-  kernel:[  611.478448] Call Trace:
-  kernel:[  611.478448]  [<f8768262>] ? finish_parity_scrub+0x272/0x560 
-[btrfs]
-  kernel:[  611.478448]  [<c127d130>] ? bio_endio+0x40/0x70
-  kernel:[  611.478448]  [<f87211fe>] ? 
-btrfs_scrubparity_helper+0xce/0x270 [btrfs]
-  kernel:[  611.478448]  [<c107ca7d>] ? process_one_work+0x14d/0x360
-  kernel:[  611.482350]  [<c107ccc9>] ? worker_thread+0x39/0x440
-  kernel:[  611.482350]  [<c107cc90>] ? process_one_work+0x360/0x360
-  kernel:[  611.482350]  [<c10821a6>] ? kthread+0xa6/0xc0
-  kernel:[  611.482350]  [<c1536181>] ? ret_from_kernel_thread+0x21/0x30
-  kernel:[  611.482350]  [<c1082100>] ? kthread_create_on_node+0x130/0x130
-  kernel:[  611.482350] Code: c4 04 5b 5d c3 8d b6 00 00 00 00 31 c9 81 
-3d 84 f0 6e c1 84 f0 6e c1 0f 95 c1 eb b9 8d b4 26 00 00 00 00 0f 0b 8d 
-b6 00 00 00 00 <0f> 0b 8d b4 26 00 00 00 00 8d bc 27 00 00 00 00 55 89 
-e5 56 53
-  kernel:[  611.482350] EIP: [<c1174860>] kunmap_high+0xb0/0xc0 SS:ESP 
-0068:ec4a3e40
-
-This is what I got from my ssh login , there is a longer stacktrace on 
-the computer I am testing this on... what I can read on the screen is 
-(hope I got all the numbers right):
-
-? print_oops_end_marker+0x41/0x70
-? oops_end+0x92/0xd0
-? no_context+0x100/0x2b0
-? __bad_area_nosemaphore+0xb5/0x140
-? dequeue_task_fair+0x4c/0xbd0
-? check_preempt_curr+0x7a/0x90
-? __do_page_fault+0x460/0x460
-? bad_area_nosemaphore+0x17/0x20
-? error_code+0x67/0x6c
-? alloc_pid+0x5b/0x420
-? kthread_data+0xf/0x20
-? wq_worker_sleeping+0x10/0x90
-? __schedule+0x4e2/0x8c0
-? schedule+0x2b/0x80
-? do_exit+0x746/0x9f0
-? vprintk_default+0x37/0x40
-? printk_0x17/0x19
-? oops_end+0x92
-? do_error_trap+0x8a/0x120
-? kunmap_high+0xb0/0xc0
-? __alloc_pages_nodemask+0x13b/0x850
-? do_overflow+0x30/0x30
-? do_invalid_op+0x24/0x30
-? error_code+0x67/0x6c
-? compact_unblock_should_abort.isra.31+0x7b/0x90
-? kunmap_high+0xb0/0xc0
-? finish_parity_scrub+0x272/0x556 [btrfs]
-? bio_endio+0x40/0x70
-? btrfs_scrubparity_helper+0xce/0x270 [btrfs]
-? process_one_work+0x14d/0x360
-? worker_thread+0x39/0x440
-? process_one_work+0x360/0x360
-? kthread+0xa6/0xc0
-? ret_from_kernel_thread+0x21/0x30
-? kthread_create_on_node+0x130/0x130
----[end trace....]
-
-I hope this is of more help. Again if there is anything I can do I am 
-happy to help. I don't need this filesystem so no need to recover it.

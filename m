@@ -1,57 +1,38 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:43208 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:43425 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750911AbbL1Aji (ORCPT
+	with ESMTP id S1750999AbbL1AuN (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 27 Dec 2015 19:39:38 -0500
-Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.27])
-	by mailgw-02.dd24.net (Postfix) with ESMTP id 28DAC5FB56
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 00:39:37 +0000 (UTC)
-Received: from mailgw-02.dd24.net ([192.168.1.36])
-	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-02.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10236)
-	with ESMTP id sUorHrTu-AGf for <linux-btrfs@vger.kernel.org>;
-	Mon, 28 Dec 2015 00:39:35 +0000 (UTC)
-Received: from schliemann.scientia.net (pD9FD8F25.dip0.t-ipconnect.de [217.253.143.37])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mailgw-02.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 00:39:35 +0000 (UTC)
-Message-ID: <1451263174.6320.5.camel@scientia.net>
-Subject: Re: Btrfs scrub failure for raid 6 kernel 4.3
+	Sun, 27 Dec 2015 19:50:13 -0500
+Message-ID: <1451263809.6320.9.camel@scientia.net>
+Subject: Re: [PATCH] improve documentation of snapshot unaware defrag
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Date: Mon, 28 Dec 2015 01:39:34 +0100
-In-Reply-To: <CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
-References: <567FEEB6.3080701@online.no>
-	 <CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Mon, 28 Dec 2015 01:50:09 +0100
+In-Reply-To: <pan$3bca9$74a60ba5$bf56792f$3c0040ca@cox.net>
+References: <CAL3q7H6TGU2rz+zP8hcHxaDGx47nTrCndYvP9ArS+Z0HmZ86=A@mail.gmail.com>
+	 <1451185407-11422-1-git-send-email-mail@christoph.anton.mitterer.name>
+	 <pan$3bca9$74a60ba5$bf56792f$3c0040ca@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-F/ncZaTreGD6HD4ZIIKg"
+	boundary="=-NPKFCG1DkRQJf7GG1+nj"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-F/ncZaTreGD6HD4ZIIKg
+--=-NPKFCG1DkRQJf7GG1+nj
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Sun, 2015-12-27 at 11:29 -0700, Chris Murphy wrote:
-> then the scrub request is effectively a
-> scrub for a volume with a missing drive which you probably wouldn't
-> ever do, you'd first replace the missing device.
-While that's probably the normal work flow,... it should still work the
-other way round... and if not, I'd consider that a bug.
-
-> but when the drive is
-> reattached it is not automatically re-added.
-Which is good, as it would allow for similar attacks as we've recently
-discussed in the other thread...
-
+On Sun, 2015-12-27 at 07:09 +0000, Duncan wrote:
+> raid1 mode
+I wonder when that reaches my pain threshold... and I submit a patch
+that renames it "notreallyraid1" in all places ;-)
 
 Cheers,
 Chris.
---=-F/ncZaTreGD6HD4ZIIKg
+--=-NPKFCG1DkRQJf7GG1+nj
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -138,19 +119,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyODAwMzkz
-NFowTwYJKoZIhvcNAQkEMUIEQKeW3HURY65uIry2qQL+ZsyZA8jY8615OOEBhFBZkd2Jnvmuy7Xs
-rJiGAuJicUc3oQeZk6gg8KH+khKdkT5w/qQwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyODAwNTAw
+OVowTwYJKoZIhvcNAQkEMUIEQJH3R2WYEOpQn+143yX1yHqe76S2n+aVB42pLg4X7SpYcWbYqESm
+enRRD3glL93YNBDvJWUgfGLpLsZ/F4NdWWUwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAbyg3IR5mKi1ZmO1vGSx8ryrFJHY07
-IRLtrx+bfGnhSSBQve0rsE8kvrByrpidQSYZJEECiFq25tKksE1tT+Eg0wrMC1ZiNhPuaFRBJq5I
-IAgqw+DF4pIFxfsNnXhFuCbqoo5m6Rudc4J482c5pAuzW3lCi9B2heeA4Vh9owaLsw4vVF1KT8oQ
-CX9U6Ojq+0U5LM1H6PaJ8m0MzDGu2aQYvnGEcHkt6hty+1J2GTX4C+h7zFANyCStIOAJ7iHhvErk
-SHF4cat6GviWZJQKdMfeKyiQaTwOXcodA+7RlcMFjqb/o81VEBxJHuj3YFfw1im1SxyrHTzdNhJ6
-3+ibgrfcAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQC7DCwYW657B1Lc6ZnNiwwC3X/rRgw3
+HVWKtcgGjgr/qXJIidWxTlRmRNVtr8k4x4k4pTTTMcfk8BUuqKJ0rD4dO9R2H4oWwCwH+k4qL9mM
+4DTiaVP87bXF9hqqmdF6/fP9buUoSZiqqSR4Ene1ZAaN3On1RnIUYbL1sgU5x8/yKI9XahvJPux6
+mffCUuLJb25tdTMJ2Nug/UFpJFFy37l8FEmOp2jUJIlizcOKi5fDYwXqy2IHjzZnozPoMs7xTlMO
+s6mrGzVpO1d2ytn5WcvflqntHW5O9BF4KxdeXzmGXYvjRjLbRRC4dfZya4sgNEc6z5P4y3aOrXE2
+KXiTiO+7AAAAAAAA
 
 
---=-F/ncZaTreGD6HD4ZIIKg--
+--=-NPKFCG1DkRQJf7GG1+nj--
 

@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45782 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:1693 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753263AbbL2ICZ (ORCPT
+	with ESMTP id S1753266AbbL2ICY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Dec 2015 03:02:25 -0500
+	Tue, 29 Dec 2015 03:02:24 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id 07D5A41887D9
+	by cn.fujitsu.com (Postfix) with ESMTP id 9204241887DE
 	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:13 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH 4/7] btrfs-progs: dedup: Add status subcommand
-Date: Tue, 29 Dec 2015 16:01:06 +0800
-Message-ID: <1451376069-30414-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 5/7] btrfs-progs: Add dedup feature for mkfs and convert
+Date: Tue, 29 Dec 2015 16:01:07 +0800
+Message-ID: <1451376069-30414-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1451376069-30414-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1451376069-30414-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,116 +19,293 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Add status subcommand for dedup command group.
+Add new DEDUP ro compat flag and corresponding mkfs/convert flag
+'dedup'.
+
+Since dedup tree is completely isolated from fs tree, so even old kernel
+could do read mount.
+So add it to RO compat flag instead of common incompat flags
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- Documentation/btrfs-dedup.asciidoc |  3 ++
- cmds-dedup.c                       | 72 ++++++++++++++++++++++++++++++++++++++
- 2 files changed, 75 insertions(+)
+ Documentation/mkfs.btrfs.asciidoc |  9 +++++++++
+ btrfs-convert.c                   | 19 +++++++++++++------
+ mkfs.c                            |  8 ++++++--
+ utils.c                           | 38 +++++++++++++++++++++++++++-----------
+ utils.h                           |  7 ++++---
+ 5 files changed, 59 insertions(+), 22 deletions(-)
 
-diff --git a/Documentation/btrfs-dedup.asciidoc b/Documentation/btrfs-dedup.asciidoc
-index 08d1050..8b605fb 100644
---- a/Documentation/btrfs-dedup.asciidoc
-+++ b/Documentation/btrfs-dedup.asciidoc
-@@ -54,6 +54,9 @@ If *LIMIT* is zero, there will be no limit at all. Use with caution as it can
- use up all the memory for dedup hash.
- Default value is 4096 if using 'inmemory' backend.
+diff --git a/Documentation/mkfs.btrfs.asciidoc b/Documentation/mkfs.btrfs.asciidoc
+index 12d8840..5c5b41d 100644
+--- a/Documentation/mkfs.btrfs.asciidoc
++++ b/Documentation/mkfs.btrfs.asciidoc
+@@ -207,6 +207,15 @@ reduced-size metadata for extent references, saves a few percent of metadata
+ improved representation of file extents where holes are not explicitly
+ stored as an extent, saves a few percent of metadata if sparse files are used
  
-+*status* <path>::
-+Show current in-band de-duplication status of a filesystem.
++*dedup*::
++allow btrfs to use new on-disk format designed for in-band(write time)
++de-duplication.
+++
++on-disk storage backend and persist de-duplication status needs this feature.
+++
++unlike other features, this is an RO compat flag, means old kernel can still
++mount fs read-only.
 +
- BACKENDS
- --------
- Btrfs in-band de-duplication support two different backends with their own
-diff --git a/cmds-dedup.c b/cmds-dedup.c
-index f15c2c2..5792420 100644
---- a/cmds-dedup.c
-+++ b/cmds-dedup.c
-@@ -195,11 +195,83 @@ out:
- 	return 0;
+ BLOCK GROUPS, CHUNKS, RAID
+ --------------------------
+ 
+diff --git a/btrfs-convert.c b/btrfs-convert.c
+index 02e5cdb..bf1df48 100644
+--- a/btrfs-convert.c
++++ b/btrfs-convert.c
+@@ -2288,7 +2288,7 @@ err:
+ 
+ static int do_convert(const char *devname, int datacsum, int packing, int noxattr,
+ 		u32 nodesize, int copylabel, const char *fslabel, int progress,
+-		u64 features)
++		u64 features, u64 ro_features)
+ {
+ 	int i, ret, blocks_per_node;
+ 	int fd = -1;
+@@ -2343,8 +2343,9 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
+ 		fprintf(stderr, "unable to open %s\n", devname);
+ 		goto fail;
+ 	}
+-	btrfs_parse_features_to_string(features_buf, features);
+-	if (features == BTRFS_MKFS_DEFAULT_FEATURES)
++	btrfs_parse_features_to_string(features_buf, features, ro_features);
++	if (features == BTRFS_MKFS_DEFAULT_FEATURES &&
++	    ro_features == 0)
+ 		strcat(features_buf, " (default)");
+ 
+ 	printf("create btrfs filesystem:\n");
+@@ -2360,6 +2361,7 @@ static int do_convert(const char *devname, int datacsum, int packing, int noxatt
+ 	mkfs_cfg.sectorsize = blocksize;
+ 	mkfs_cfg.stripesize = blocksize;
+ 	mkfs_cfg.features = features;
++	mkfs_cfg.ro_features = ro_features;
+ 
+ 	ret = make_btrfs(fd, &mkfs_cfg);
+ 	if (ret) {
+@@ -2898,6 +2900,7 @@ int main(int argc, char *argv[])
+ 	char *file;
+ 	char fslabel[BTRFS_LABEL_SIZE];
+ 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
++	u64 ro_features = 0;
+ 
+ 	while(1) {
+ 		enum { GETOPT_VAL_NO_PROGRESS = 256 };
+@@ -2956,7 +2959,8 @@ int main(int argc, char *argv[])
+ 				char *orig = strdup(optarg);
+ 				char *tmp = orig;
+ 
+-				tmp = btrfs_parse_fs_features(tmp, &features);
++				tmp = btrfs_parse_fs_features(tmp, &features,
++							      &ro_features);
+ 				if (tmp) {
+ 					fprintf(stderr,
+ 						"Unrecognized filesystem feature '%s'\n",
+@@ -2974,7 +2978,9 @@ int main(int argc, char *argv[])
+ 					char buf[64];
+ 
+ 					btrfs_parse_features_to_string(buf,
+-						features & ~BTRFS_CONVERT_ALLOWED_FEATURES);
++						features &
++						~BTRFS_CONVERT_ALLOWED_FEATURES,
++						ro_features);
+ 					fprintf(stderr,
+ 						"ERROR: features not allowed for convert: %s\n",
+ 						buf);
+@@ -3025,7 +3031,8 @@ int main(int argc, char *argv[])
+ 		ret = do_rollback(file);
+ 	} else {
+ 		ret = do_convert(file, datacsum, packing, noxattr, nodesize,
+-				copylabel, fslabel, progress, features);
++				copylabel, fslabel, progress, features,
++				ro_features);
+ 	}
+ 	if (ret)
+ 		return 1;
+diff --git a/mkfs.c b/mkfs.c
+index 5f1411f..9c7acc2 100644
+--- a/mkfs.c
++++ b/mkfs.c
+@@ -1372,6 +1372,7 @@ int main(int ac, char **av)
+ 	int saved_optind;
+ 	char fs_uuid[BTRFS_UUID_UNPARSED_SIZE] = { 0 };
+ 	u64 features = BTRFS_MKFS_DEFAULT_FEATURES;
++	u64 ro_features = 0;
+ 	struct mkfs_allocation allocation = { 0 };
+ 	struct btrfs_mkfs_config mkfs_cfg;
+ 
+@@ -1434,7 +1435,8 @@ int main(int ac, char **av)
+ 				char *orig = strdup(optarg);
+ 				char *tmp = orig;
+ 
+-				tmp = btrfs_parse_fs_features(tmp, &features);
++				tmp = btrfs_parse_fs_features(tmp, &features,
++							      &ro_features);
+ 				if (tmp) {
+ 					fprintf(stderr,
+ 						"Unrecognized filesystem feature '%s'\n",
+@@ -1677,6 +1679,7 @@ int main(int ac, char **av)
+ 	mkfs_cfg.sectorsize = sectorsize;
+ 	mkfs_cfg.stripesize = stripesize;
+ 	mkfs_cfg.features = features;
++	mkfs_cfg.ro_features = ro_features;
+ 
+ 	ret = make_btrfs(fd, &mkfs_cfg);
+ 	if (ret) {
+@@ -1831,7 +1834,8 @@ raid_groups:
+ 			btrfs_group_profile_str(metadata_profile),
+ 			pretty_size(allocation.system));
+ 		printf("SSD detected:       %s\n", ssd ? "yes" : "no");
+-		btrfs_parse_features_to_string(features_buf, features);
++		btrfs_parse_features_to_string(features_buf, features,
++					       ro_features);
+ 		printf("Incompat features:  %s", features_buf);
+ 		printf("\n");
+ 
+diff --git a/utils.c b/utils.c
+index 60235d8..6b0c67a 100644
+--- a/utils.c
++++ b/utils.c
+@@ -250,6 +250,7 @@ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg)
+ 	btrfs_set_super_chunk_root_generation(&super, 1);
+ 	btrfs_set_super_cache_generation(&super, -1);
+ 	btrfs_set_super_incompat_flags(&super, cfg->features);
++	btrfs_set_super_compat_ro_flags(&super, cfg->ro_features);
+ 	if (cfg->label)
+ 		strncpy(super.label, cfg->label, BTRFS_LABEL_SIZE - 1);
+ 
+@@ -572,23 +573,26 @@ out:
+ static const struct btrfs_fs_feature {
+ 	const char *name;
+ 	u64 flag;
++	u64 ro_flag;
+ 	const char *desc;
+ } mkfs_features[] = {
+-	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS,
++	{ "mixed-bg", BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS, 0,
+ 		"mixed data and metadata block groups" },
+-	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF,
++	{ "extref", BTRFS_FEATURE_INCOMPAT_EXTENDED_IREF, 0,
+ 		"increased hardlink limit per file to 65536" },
+-	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56,
++	{ "raid56", BTRFS_FEATURE_INCOMPAT_RAID56, 0,
+ 		"raid56 extended format" },
+-	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA,
++	{ "skinny-metadata", BTRFS_FEATURE_INCOMPAT_SKINNY_METADATA, 0,
+ 		"reduced-size metadata extent refs" },
+-	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES,
++	{ "no-holes", BTRFS_FEATURE_INCOMPAT_NO_HOLES, 0,
+ 		"no explicit hole extents for files" },
++	{ "dedup", 0, BTRFS_FEATURE_COMPAT_RO_DEDUP,
++		"support on-disk dedup backend and persist dedup status" },
+ 	/* Keep this one last */
+-	{ "list-all", BTRFS_FEATURE_LIST_ALL, NULL }
++	{ "list-all", BTRFS_FEATURE_LIST_ALL, 0, NULL }
+ };
+ 
+-static int parse_one_fs_feature(const char *name, u64 *flags)
++static int parse_one_fs_feature(const char *name, u64 *flags, u64 *ro_flags)
+ {
+ 	int i;
+ 	int found = 0;
+@@ -597,9 +601,11 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
+ 		if (name[0] == '^' &&
+ 			!strcmp(mkfs_features[i].name, name + 1)) {
+ 			*flags &= ~ mkfs_features[i].flag;
++			*ro_flags &= ~mkfs_features[i].ro_flag;
+ 			found = 1;
+ 		} else if (!strcmp(mkfs_features[i].name, name)) {
+ 			*flags |= mkfs_features[i].flag;
++			*ro_flags |= mkfs_features[i].ro_flag;
+ 			found = 1;
+ 		}
+ 	}
+@@ -607,7 +613,7 @@ static int parse_one_fs_feature(const char *name, u64 *flags)
+ 	return !found;
  }
  
-+static const char * const cmd_dedup_status_usage[] = {
-+	"btrfs dedup status <path>",
-+	"Show current in-band(write time) de-duplication status of a btrfs.",
-+	NULL
-+};
-+
-+static int cmd_dedup_status(int argc, char **argv)
-+{
-+	struct btrfs_ioctl_dedup_args dargs;
-+	DIR *dirstream;
-+	char *path;
-+	int fd;
-+	int ret;
-+	int print_limit = 1;
-+
-+	if (check_argc_exact(argc, 2))
-+		usage(cmd_dedup_status_usage);
-+
-+	path = argv[1];
-+	fd = open_file_or_dir(path, &dirstream);
-+	if (fd < 0) {
-+		error("failed to open file or directory: %s", path);
-+		ret = 1;
-+		goto out;
-+	}
-+	memset(&dargs, 0, sizeof(dargs));
-+	dargs.cmd = BTRFS_DEDUP_CTL_STATUS;
-+
-+	ret = ioctl(fd, BTRFS_IOC_DEDUP_CTL, &dargs);
-+	if (ret < 0) {
-+		error("failed to get inband deduplication status: %s",
-+		      strerror(errno));
-+		ret = 1;
-+		goto out;
-+	}
-+	ret = 0;
-+	if (dargs.status == 0) {
-+		printf("Status: Disabled\n");
-+		goto out;
-+	}
-+	printf("Status: Enabled\n");
-+
-+	if (dargs.hash_type == BTRFS_DEDUP_HASH_SHA256)
-+		printf("Hash algorithm: SHA-256\n");
-+	else
-+		printf("Hash algorithm: Unrecognized(%x)\n",
-+			dargs.hash_type);
-+
-+	if (dargs.backend == BTRFS_DEDUP_BACKEND_INMEMORY) {
-+		printf("Backend: In-memory\n");
-+		print_limit = 1;
-+	} else if (dargs.backend == BTRFS_DEDUP_BACKEND_ONDISK) {
-+		printf("Backend: On-disk\n");
-+		print_limit = 0;
-+	} else  {
-+		printf("Backend: Unrecognized(%x)\n",
-+			dargs.backend);
-+	}
-+
-+	printf("Dedup Blocksize: %llu\n", dargs.blocksize);
-+
-+	if (print_limit) {
-+		printf("Current number of hash: %llu\n", dargs.current_nr);
-+		printf("Max number of hash: %llu\n", dargs.limit_nr);
-+	}
-+out:
-+	close_file_or_dir(fd, dirstream);
-+	return ret;
-+}
-+
- const struct cmd_group dedup_cmd_group = {
- 	dedup_cmd_group_usage, dedup_cmd_group_info, {
- 		{ "enable", cmd_dedup_enable, cmd_dedup_enable_usage, NULL, 0},
- 		{ "disable", cmd_dedup_disable, cmd_dedup_disable_usage,
- 		  NULL, 0},
-+		{ "status", cmd_dedup_status, cmd_dedup_status_usage,
-+		  NULL, 0},
- 		NULL_CMD_STRUCT
+-void btrfs_parse_features_to_string(char *buf, u64 flags)
++void btrfs_parse_features_to_string(char *buf, u64 flags, u64 ro_flags)
+ {
+ 	int i;
+ 
+@@ -619,10 +625,15 @@ void btrfs_parse_features_to_string(char *buf, u64 flags)
+ 				strcat(buf, ", ");
+ 			strcat(buf, mkfs_features[i].name);
+ 		}
++		if (ro_flags & mkfs_features[i].ro_flag) {
++			if (*buf)
++				strcat(buf, ", ");
++			strcat(buf, mkfs_features[i].name);
++		}
  	}
+ }
+ 
+-void btrfs_process_fs_features(u64 flags)
++void btrfs_process_fs_features(u64 flags, u64 ro_flags)
+ {
+ 	int i;
+ 
+@@ -632,6 +643,11 @@ void btrfs_process_fs_features(u64 flags)
+ 				mkfs_features[i].name,
+ 				mkfs_features[i].desc);
+ 		}
++		if (ro_flags & mkfs_features[i].ro_flag) {
++			printf("Turning ON RO compat features '%s': %s\n",
++				mkfs_features[i].name,
++				mkfs_features[i].desc);
++		}
+ 	}
+ }
+ 
+@@ -659,7 +675,7 @@ void btrfs_list_all_fs_features(u64 mask_disallowed)
+  * Return NULL if all features were parsed fine, otherwise return the name of
+  * the first unparsed.
+  */
+-char* btrfs_parse_fs_features(char *namelist, u64 *flags)
++char *btrfs_parse_fs_features(char *namelist, u64 *flags, u64 *ro_flags)
+ {
+ 	char *this_char;
+ 	char *save_ptr = NULL; /* Satisfy static checkers */
+@@ -667,7 +683,7 @@ char* btrfs_parse_fs_features(char *namelist, u64 *flags)
+ 	for (this_char = strtok_r(namelist, ",", &save_ptr);
+ 	     this_char != NULL;
+ 	     this_char = strtok_r(NULL, ",", &save_ptr)) {
+-		if (parse_one_fs_feature(this_char, flags))
++		if (parse_one_fs_feature(this_char, flags, ro_flags))
+ 			return this_char;
+ 	}
+ 
+diff --git a/utils.h b/utils.h
+index b625330..835fd22 100644
+--- a/utils.h
++++ b/utils.h
+@@ -102,9 +102,9 @@ void units_set_mode(unsigned *units, unsigned mode);
+ void units_set_base(unsigned *units, unsigned base);
+ 
+ void btrfs_list_all_fs_features(u64 mask_disallowed);
+-char* btrfs_parse_fs_features(char *namelist, u64 *flags);
+-void btrfs_process_fs_features(u64 flags);
+-void btrfs_parse_features_to_string(char *buf, u64 flags);
++char *btrfs_parse_fs_features(char *namelist, u64 *flags, u64 *ro_flags);
++void btrfs_process_fs_features(u64 flags, u64 ro_flags);
++void btrfs_parse_features_to_string(char *buf, u64 flags, u64 ro_flags);
+ 
+ struct btrfs_mkfs_config {
+ 	char *label;
+@@ -115,6 +115,7 @@ struct btrfs_mkfs_config {
+ 	u32 sectorsize;
+ 	u32 stripesize;
+ 	u64 features;
++	u64 ro_features;
  };
+ 
+ int make_btrfs(int fd, struct btrfs_mkfs_config *cfg);
 -- 
 2.6.4
 

@@ -1,37 +1,39 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:57938 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751548AbbL1PjM (ORCPT
+Received: from mail-io0-f177.google.com ([209.85.223.177]:35869 "EHLO
+	mail-io0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751257AbbL2AKO (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Dec 2015 10:39:12 -0500
-Date: Mon, 28 Dec 2015 10:39:04 -0500
-From: Chris Mason <clm@fb.com>
-To: Duncan <1i5t5.duncan@cox.net>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: https://btrfs.wiki.kernel.org having OCSP issues?
-Message-ID: <20151228153904.nni7kk3v5vhbiamc@ret.masoncoding.com>
-References: <pan$d5d71$dbb2da33$97fb9c4d$f6fd4df8@cox.net>
- <20151228142943.3ea78db6@natsu>
- <pan$59692$556172e2$cc197921$a67a7f3f@cox.net>
- <pan$b05bb$2c7ef082$1fce6bc$9ca104aa@cox.net>
+	Mon, 28 Dec 2015 19:10:14 -0500
+Received: by mail-io0-f177.google.com with SMTP id o67so316299986iof.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 16:10:14 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <pan$b05bb$2c7ef082$1fce6bc$9ca104aa@cox.net>
+Date: Mon, 28 Dec 2015 17:10:14 -0700
+Message-ID: <CAJCQCtT78=kqXZVDAV-x0C1NW=7okBBM_+vM3+HAc5BtUArsiw@mail.gmail.com>
+Subject: should btrfsck fix a bad superblock?
+From: Chris Murphy <chris@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 28, 2015 at 02:03:58PM +0000, Duncan wrote:
-> Duncan posted on Mon, 28 Dec 2015 10:34:49 +0000 as excerpted:
-> 
-> >> On Mon, 28 Dec 2015 09:20:09 +0000 (UTC)
-> >> Duncan <1i5t5.duncan@cox.net> wrote:
-> >> 
-> >>> Firefox is currently giving me OCSP errors for the wiki.
-> 
-> Whatever the problem was, it seems to be fixed, now. =:^)
+Hi,
 
-I caught this after the magic fix, but I can always forward to
-kernel.org admins when other tools are busted.  Thanks for sending it
-along.
+I (intentionally) used wipefs -a on a device with a btrfs. As expected
+btrfs check doesn't recognize the device as having a btrfs volume
+anymore.
 
--chris
+Slightly surprising that it doesn't mention other intact supers are found.
+
+Most surprising that options -s1 --repair doesn't fix it.
+
+I thought maybe it's intentional, only with explicitly bad magic, and
+I'd get different results if it were zero'd. So I zero'd it and I get
+the same results. s0 superblock isn't repaired with --repair.
+
+Bug?
+
+Of course I can fix it with echo+dd.
+
+
+-- 
+Chris Murphy

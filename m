@@ -1,95 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:42783 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:43204 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753132AbbL2E0d (ORCPT
+	with ESMTP id S1751980AbbL2EmF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Dec 2015 23:26:33 -0500
-Message-ID: <1451363188.7094.23.camel@scientia.net>
-Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
+	Mon, 28 Dec 2015 23:42:05 -0500
+Message-ID: <1451364120.7094.29.camel@scientia.net>
+Subject: Re: Btrfs Check - "type mismatch with chunk"
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Sanidhya Solanki <jpage.lkml@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Date: Tue, 29 Dec 2015 05:26:28 +0100
-In-Reply-To: <20151228190336.59a3f440@gmail.com>
-References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
-	 <1451341195.7094.0.camel@scientia.net> <20151228153801.6561feff@gmail.com>
-	 <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
-	 <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
+To: Zach Fuller <conicawd@gmail.com>
+Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org,
+        covici@ccs.covici.com
+Date: Tue, 29 Dec 2015 05:42:00 +0100
+In-Reply-To: <CACRRrm-MteDcXSg10npqHLA6ZzGHfDM-ByxyvR19npaNuS3t-A@mail.gmail.com>
+References: <CACRRrm9SwfDzqHNpWjAGniuu6HDu5wo3vW_ETdzijrdYm7YGGw@mail.gmail.com>
+	 <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
+	 <1451188888.6446.18.camel@scientia.net>
+	 <CACRRrm-MteDcXSg10npqHLA6ZzGHfDM-ByxyvR19npaNuS3t-A@mail.gmail.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-D2+aQ5/FN2yQX3g9ZLD6"
+	boundary="=-KoyiWG/tUN55PW0lVveR"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-D2+aQ5/FN2yQX3g9ZLD6
+--=-KoyiWG/tUN55PW0lVveR
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Mon, 2015-12-28 at 19:03 -0500, Sanidhya Solanki wrote:
-> That sounds like an absolutely ghastly idea.
-*G* and it probably is ;)
+On Mon, 2015-12-28 at 18:08 -0600, Zach Fuller wrote:
+> I ran "btrfs check --repair" again on the drive, and no "type
+> mismatch
+> with chunk" errors were returned.
+You should always be very conservative in using --repair...
+AFAIU, it *may* do more bad than good,... often the best idea is to
+either wait till some developer encourages you do try it or as a last
+resort...
+
+If you do have backups, than I'd suggest now is the time you start to
+diff your precious data, to find out whether anything may have been
+corrupted.
 
 
->  Lots of potential for
-> mistakes and potential data loss. I take up the offer to implement
-> such a feature.=C2=A0
-> Only question is should it be in-place replacement or replace out to
-> another disk or storage type. Will wait for comments on that question
-> before implementing.=C2=A0
-I guess you really should have a decent discussion with some of the
-core btrfs developers (which I am not) before doing any efforts on this
-(and possibly wasting great amounts of work).
+> I then mounted the drive, ran "du -s", unmounted the drive again, and
+> ran "btrfs check" one more time to see if any errors remained:
+>=20
+>=20
+> $ sudo btrfs check=C2=A0=C2=A0/dev/sdc1 2>&1 | tee check2.txt
+> checking extents
+> checking free space cache
+> Wanted bytes 737280, found 1245184 for off 5683961462784
+> Wanted bytes 536870912, found 1245184 for off 5683961462784
+> cache appears valid but isnt 5683961462784
+> Checking filesystem on /dev/sdc1
+> UUID: 1a160f37-7206-43f9-9285-6217ee97a665
+> found 1681690084900 bytes used err is -22
 
-I spoke largely from the user/admin side,... running a quite big
-storage Tier-2, we did many IO benchmarks over time (with different
-hardware RAID controllers) and also as our IO patterns changed over
-time...
-The result was that our preferred RAID chunk sizes changed over
-time,...
+> I'm not sure what the output of the above check means, but there are
+> certainly less errors than before. Should I be worried about these
+> "free space cache" errors?
+Well it does seems as if something would still not be as it should...
+:-/
 
-Being able to to an online conversion (i.e. on the mounted fs) would be
-nice of course (from the sysadmin's side of view) but even if that
-doesn't seem feasible an offline conversion may be useful (one simply
-may not have enough space left elsewhere to move the data of and create
-a new fs with different RAID chunk size from scratch)
-Both open of course many questions (how to deal with crashes, etc.)...
-maybe having a look at how mdadm handles similar problems could be
-worth.
-
-
-> I do not understand this part.
-I just wanted to say that being able to set the RAID chunk size makes
-sense for any RAID level,... not just for e.g. the parity RAIDs.
-
->  Is the stripe size not independent of
-> the RAID type?
-Perhaps one should first do some normative definitions...
-Based on e.g.=C2=A0https://en.wikipedia.org/wiki/File:RAID_6.svg=C2=A0I'd u=
-se:
-
-RAID chunk size:
-the size of A1 which equals the size of A2, and also of B2 and so on
-IIRC, e2fsprogs call this the stride size (with a "d" not a "p")
-
-RAID stripe size:
-I personally would typically understand this to be the size of A1A2A3
-together (which is equal to the one of B1B2B3 and so on).
-But I've seen literature, software, people using it as a synonym for
-the RAID chunk size =C2=A0and some consider the stripe size to be also
-include the parity, which in the RAID6 example would make it the length
-of A1A2A3ApAq.
-So I usually try to use "RAID data stripe size" or "RAID data+paritiy
-stripe size"
-
-
-btrfs chunk size =3D size of a btrfs data or meta-data chunk
+So my recommendation would be... (unless someone more senior on the
+list has a better advise)... backup your current data, compare it with
+previous backups,... and start with a fresh filesystem... or at least
+that's what I personally would do - but I'm uber careful, and others
+would maybe just continue with the fs as is, as long as it doesn't show
+severe problems during usage.
 
 
 Cheers,
 Chris.
---=-D2+aQ5/FN2yQX3g9ZLD6
+--=-KoyiWG/tUN55PW0lVveR
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -176,19 +159,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyOTA0MjYy
-OFowTwYJKoZIhvcNAQkEMUIEQPblMI6gggROYkKj+Tt2dLx7n/F2Z7Soi79crGvxkV2z9USY56k9
-qjz8g83DoFLXuZrenKqKOOIaAOVrE7fYPmkwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIyOTA0NDIw
+MFowTwYJKoZIhvcNAQkEMUIEQBghFp7F7i/+dUz4eQvindUmWka1z+70k/PpjqGZYVc2OI1QW7ub
+xVHGxPX19sRWFmNH7n+TuOLFf0asEt+riaswagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBKGCKkWBQ+eVHDeZGAfqZIPKVZq8Sl
-SRVp7ampb6s/+BRZXK/zCUlRzFDQlXIMGm47dGpEccud4kGop+B8t14LijcPgOEo/kBLUZP5Wdfo
-cuEXYHHC5WP49alkjBtBkfBAPyEa12t6qS4XRGKkicq0oYP4sWBHy+Hkj/8b0ZYyL2EbWDRxaGbI
-VfC4Rbi91uknOL7p2P9YjCPUMjloqqmOOVJ9BNTvjJcV+5gutsHNPjVUrsvtWki334g2v0LNp36w
-BaEfkD0c7mXEc9oo4D12fqUdhHZBz2+DJhVYNGINPhxM6TsHsDY5ccCDgrYDU8SV4FOyC6NrCa5V
-Ts4u3J4pAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBdDwNAQamGNJLgZE/P/nTD34ss2j4n
+QxYQdVhLFLPe+8cH6yhxbuQidRyF0rl/M8aMcJDEFwENrushLLEn1etkRt1kZe3p8jwXymVx6D28
+9/J3seczpDgBwDavrxH8joJbaLEICzX+rRb+h35urMsKMMITJjV6zFAvxyhwJxKqsUO5PzRV/eBA
+plHmZqpDakYeFJfYkDLi/KQL5/OURADFPEGonu78oJHp5T0c7atQNxD1TFzUud5Hf2xT21Wm+yw1
+LeMoLLnch2v9lVZNm/zSzrjDNm4yInroyE1lBg1CjOAqw4O6lx0qQHxOPkUeQXBdkF1tJowRSKxR
+//VtPoTvAAAAAAAA
 
 
---=-D2+aQ5/FN2yQX3g9ZLD6--
+--=-KoyiWG/tUN55PW0lVveR--
 

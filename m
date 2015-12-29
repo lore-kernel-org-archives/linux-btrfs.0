@@ -1,86 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53887 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932355AbbLHJZi (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 8 Dec 2015 04:25:38 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1a6EWS-00006V-5z
-	for linux-btrfs@vger.kernel.org; Tue, 08 Dec 2015 10:25:24 +0100
-Received: from host-78-149-214-107.as13285.net ([78.149.214.107])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 10:25:24 +0100
-Received: from samtygier by host-78-149-214-107.as13285.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 08 Dec 2015 10:25:24 +0100
-To: linux-btrfs@vger.kernel.org
-From: sam tygier <samtygier@yahoo.co.uk>
-Subject: [PATCH v2] Btrfs: Check metadata redundancy on balance
-Date: Tue, 8 Dec 2015 09:25:03 +0000
-Message-ID: <n467lf$t3g$1@ger.gmane.org>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Received: from cn.fujitsu.com ([59.151.112.132]:52918 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752074AbbL2IBx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Dec 2015 03:01:53 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id 014FB409256C
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:11 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH 0/7] btrfs-progs: Support for in-band deduplication
+Date: Tue, 29 Dec 2015 16:01:02 +0800
+Message-ID: <1451376069-30414-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Resending as previous comments did not need any changes.
+Preparation patchset for in-coming (aimed for 4.6) kernel in-band
+de-duplication patchset.
 
-Currently BTRFS allows you to make bad choices of data and 
-metadata levels. For example -d raid1 -m raid0 means you can
-only use half your total disk space, but will loose everything
-if 1 disk fails. It should give a warning in these cases.
+New kernel dedup will has 2 different dedup backends and a ioctl
+interface to enable/disable dedup.
 
-This patch is a follow up to
-[PATCH v2] btrfs-progs: check metadata redundancy
-in order to cover the case of using balance to convert to such
-a set of raid levels.
+The ioctl interface and on-disk format (mostly) is determined, so submit
+this patchset first before de-duplication first.
 
-A simple example to hit this is to create a single device fs, 
-which will default to single:dup, then to add a second device and
-attempt to convert to raid1 with the command
-btrfs balance start -dconvert=raid1  /mnt
-this will result in a filesystem with raid1:dup, which will not
-survive the loss of one drive. I personally don't see why the tools
-should allow this, but in the previous thread a warning was
-considered sufficient.
+Qu Wenruo (7):
+  btrfs-progs: Basic framework for dedup command group
+  btrfs-progs: dedup: Add enable command for dedup command group
+  btrfs-progs: dedup: Add disable support for inban deduplication
+  btrfs-progs: dedup: Add status subcommand
+  btrfs-progs: Add dedup feature for mkfs and convert
+  btrfs: dedup: Add show-super support for new DEDUP flag
+  btrfs-progs: dedup-tree: Add dedup tree support
 
-Changes in v2
-Use btrfs_get_num_tolerated_disk_barrier_failures()
+ Documentation/btrfs-dedup.asciidoc | 105 ++++++++++++++
+ Documentation/mkfs.btrfs.asciidoc  |   9 ++
+ Makefile.in                        |   2 +-
+ btrfs-convert.c                    |  19 ++-
+ btrfs-debug-tree.c                 |   4 +
+ btrfs-show-super.c                 |  17 +++
+ btrfs.c                            |   1 +
+ cmds-dedup.c                       | 282 +++++++++++++++++++++++++++++++++++++
+ commands.h                         |   2 +
+ ctree.h                            |  41 +++++-
+ dedup.h                            |  39 +++++
+ ioctl.h                            |  23 +++
+ kerncompat.h                       |   5 +
+ mkfs.c                             |   8 +-
+ print-tree.c                       |  52 +++++++
+ utils.c                            |  38 +++--
+ utils.h                            |   7 +-
+ 17 files changed, 630 insertions(+), 24 deletions(-)
+ create mode 100644 Documentation/btrfs-dedup.asciidoc
+ create mode 100644 cmds-dedup.c
+ create mode 100644 dedup.h
 
-Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
-
-From: Sam Tygier <samtygier@yahoo.co.uk>
-Date: Sat, 3 Oct 2015 16:43:48 +0100
-Subject: [PATCH] Btrfs: Check metadata redundancy on balance
-
-When converting a filesystem via balance check that metadata mode
-is at least as redundant as the data mode. For example give warning
-when:
--dconvert=raid1 -mconvert=single
----
- fs/btrfs/volumes.c | 6 ++++++
- 1 file changed, 6 insertions(+)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index 6fc73586..40247e9 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3584,6 +3584,12 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 		}
- 	} while (read_seqretry(&fs_info->profiles_lock, seq));
- 
-+	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
-+		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
-+		btrfs_info(fs_info,
-+			"Warning: metatdata has lower redundancy than data\n");
-+	}
-+
- 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
- 		fs_info->num_tolerated_disk_barrier_failures = min(
- 			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
 -- 
-2.4.3
+2.6.4
 
 
 

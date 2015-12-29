@@ -1,120 +1,77 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f178.google.com ([209.85.214.178]:33316 "EHLO
-	mail-ob0-f178.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751257AbbL2AIM (ORCPT
+Received: from mail-ig0-f174.google.com ([209.85.213.174]:34478 "EHLO
+	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752835AbbL2A35 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 28 Dec 2015 19:08:12 -0500
-Received: by mail-ob0-f178.google.com with SMTP id bx1so124628964obb.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 16:08:12 -0800 (PST)
+	Mon, 28 Dec 2015 19:29:57 -0500
+Received: by mail-ig0-f174.google.com with SMTP id ik10so5276030igb.1
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 16:29:57 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <1451188888.6446.18.camel@scientia.net>
-References: <CACRRrm9SwfDzqHNpWjAGniuu6HDu5wo3vW_ETdzijrdYm7YGGw@mail.gmail.com>
-	<pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
-	<1451188888.6446.18.camel@scientia.net>
-Date: Mon, 28 Dec 2015 18:08:12 -0600
-Message-ID: <CACRRrm-MteDcXSg10npqHLA6ZzGHfDM-ByxyvR19npaNuS3t-A@mail.gmail.com>
-Subject: Re: Btrfs Check - "type mismatch with chunk"
-From: Zach Fuller <conicawd@gmail.com>
-To: Christoph Anton Mitterer <calestyo@scientia.net>
-Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org,
-        covici@ccs.covici.com
+In-Reply-To: <5681BDD0.1060407@online.no>
+References: <567FEEB6.3080701@online.no>
+	<CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
+	<56806F06.50309@online.no>
+	<pan$c7935$46be3379$4afc60bd$677c85c5@cox.net>
+	<568098B1.2040908@online.no>
+	<CAJCQCtRGbKJ6RJ++1rUSuVByC_=mJq4afNV-3CCt_s4gCft92A@mail.gmail.com>
+	<5681A4D5.4060203@online.no>
+	<CAJCQCtSAm2i0QuXPK5xDWNXvcrg3uo_DU5WYOnOD8Fkgn+c4eQ@mail.gmail.com>
+	<5681BDD0.1060407@online.no>
+Date: Mon, 28 Dec 2015 17:29:56 -0700
+Message-ID: <CAJCQCtQX6x4Fx_f_RyLmNS3q611Zb_Q+hw025--Fx-zmH1wRvw@mail.gmail.com>
+Subject: Re: Btrfs scrub failure for raid 6 kernel 4.3
+From: Chris Murphy <lists@colorremedies.com>
+To: Waxhead <waxhead@online.no>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Thanks for helping me out. Here's an update on my system.
+On Mon, Dec 28, 2015 at 3:55 PM, Waxhead <waxhead@online.no> wrote:
 
-> How long have you had the filesystem?  Was it likely created with the mkfs.btrfs from btrfs-progs v4.1.1 (July, 2015) as I suspect?
-Unfortunately, I do not remember exactly when I created the
-filesystem, but I know that it was created either on May 2015 or
-before then. I have been using the standard main branch for the
-btrfs-progs. WHen I created the btrfs filesystem, I first wiped the
-entire drive, created a new GPT on the drive, created a single
-partition, and then created the btrfs filesystem on that partition. I
-did not convert an ext* filesystem to btrfs. The hard drive model
-number is "ST2000DL003-9VT166". I had to do some manual make the drive
-use 4K sectors when I set it up because it reported 512 bytes even
-though it actually supported 4k. I followed these instructions to do
-so (https://wiki.archlinux.org/index.php/Advanced_Format)
-
-
-
-I have grabbed the "btrfs-progs-git" package from the AUR, which
-should contain the devel branch.
-$ sudo btrfs --version
-btrfs-progs v4.3.1-31-g0ab3d31
-
-I ran "btrfs check --repair" again on the drive, and no "type mismatch
-with chunk" errors were returned.
-
-
-$ sudo btrfs check --repair /dev/sdc1 2>&1 | tee repair.txt
-checking extents
-Fixed 0 roots.
-checking free space cache
-checking fs roots
-checking csums
-checking root refs
-enabling repair mode
-Checking filesystem on /dev/sdc1
-UUID: 1a160f37-7206-43f9-9285-6217ee97a665
-cache and super generation don't match, space cache will be invalidated
-found 1681690084900 bytes used err is 0
-total csum bytes: 1639800688
-total tree bytes: 2534178816
-total fs tree bytes: 390807552
-total extent tree bytes: 142917632
-btree space waste bytes: 438755239
-file data blocks allocated
-
-
-I then mounted the drive, ran "du -s", unmounted the drive again, and
-ran "btrfs check" one more time to see if any errors remained:
-
-
-$ sudo btrfs check  /dev/sdc1 2>&1 | tee check2.txt
-checking extents
-checking free space cache
-Wanted bytes 737280, found 1245184 for off 5683961462784
-Wanted bytes 536870912, found 1245184 for off 5683961462784
-cache appears valid but isnt 5683961462784
-Checking filesystem on /dev/sdc1
-UUID: 1a160f37-7206-43f9-9285-6217ee97a665
-found 1681690084900 bytes used err is -22
-total csum bytes: 1639800688
-total tree bytes: 2534178816
-total fs tree bytes: 390807552
-total extent tree bytes: 142917632
-btree space waste bytes: 438755239
-file data blocks allocated: 1802146615296
- referenced 1782959542272
-
-
-I'm not sure what the output of the above check means, but there are
-certainly less errors than before. Should I be worried about these
-"free space cache" errors?
-
-It seems that the newer version of "btrfs-progs" from the devel branch
-fixed the problem. The drive still mounts and functions correctly.
-Should I continue to run the devel branch, or should I switch back to
-the main branch? I would prefer to have a stable system rather than
-being on the bleeding edge.
-
-On Sat, Dec 26, 2015 at 10:01 PM, Christoph Anton Mitterer
-<calestyo@scientia.net> wrote:
-> On Thu, 2015-12-24 at 23:41 +0000, Duncan wrote:
->> as the patch is in the userspace  4.3.1 you're running.
-> I don't think this is the case.
+> I tried the following....
 >
-> The commit was b08a740d7b797d870cbc3691b1291290d0815998 and AFAICT,
-> it's not included in any release yet.
+>  btrfs-image -t4 -c9 /dev/sdb1 /btrfs_raid6.img
+> checksum verify failed on 28734324736 found C3E98F3B wanted EB2392C6
+> checksum verify failed on 28734324736 found C3E98F3B wanted EB2392C6
+> checksum verify failed on 28734324736 found 5F516E2A wanted BBB2D39C
+> checksum verify failed on 28734324736 found C4AA0B8D wanted 41745FB5
+> checksum verify failed on 28734324736 found C3E98F3B wanted EB2392C6
+> bytenr mismatch, want=28734324736, have=16273726433708437499
+> Error reading metadata block
+> Error adding block -5
+> checksum verify failed on 28734324736 found C3E98F3B wanted EB2392C6
+> checksum verify failed on 28734324736 found C3E98F3B wanted EB2392C6
+> checksum verify failed on 28734324736 found 5F516E2A wanted BBB2D39C
+> checksum verify failed on 28734324736 found C4AA0B8D wanted 41745FB5
+> checksum verify failed on 28734324736 found C3E98F3B wanted EB2392C6
+> bytenr mismatch, want=28734324736, have=16273726433708437499
+> Error reading metadata block
+> Error flushing pending -5
+> create failed (Success)
 >
-> 4.3.1 was from Nov 16th, the above commit was from the 26th.
->
->
-> As I've said before, please try with the patch applied (it's in the
-> devel branch only).
->
->
-> Cheers,
-> Chris.
+> Well, I can't make out what this is supposed to mean, but no output file...
+
+Dunno. Maybe btrfs-show-super -fa for each device, along with
+btrfs-debug-tree <dev> output to a file might have some useful info
+for a dev. It could be a while before we hear from one though,
+considering the season.
+
+> Here is a (rather long) stack trace... should I use a pastebin instead of
+> such large posts on this mailinglist?!
+
+Nah if it posts without wrapping and all of it can go on list, best on
+list. I'm expecting the balance fails because the fs is actually
+damaged in a way neither the kernel or btrfs check can work around. So
+I think it's an interesting case, but even better is if it's
+reproducible. The thing is, you have one device with generation 0
+which really makes no sense to me; and another with generation 4 which
+is the one sabotaged. Yet the fs mounts without complaint, and without
+the need for degraded mount option. Seems strange to me, and may not
+be reproducible if there's something else that's happen unaccounted
+for.
+
+
+
+-- 
+Chris Murphy

@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:45782 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:52918 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753275AbbL2IC1 (ORCPT
+	with ESMTP id S1752577AbbL2ICh (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Dec 2015 03:02:27 -0500
+	Tue, 29 Dec 2015 03:02:37 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id 0618A409257A
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:27 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id A7FD041887F4
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:32 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH 04/14] btrfs: dedup: Introduce function to remove hash from in-memory tree
-Date: Tue, 29 Dec 2015 16:01:13 +0800
-Message-ID: <1451376083-30474-5-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 13/14] btrfs: dedup: Add support to delete hash for on-disk backend
+Date: Tue, 29 Dec 2015 16:01:22 +0800
+Message-ID: <1451376083-30474-14-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1451376083-30474-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1451376083-30474-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,103 +20,86 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Now on-disk backend can delete hash now.
 
-Introduce static function inmem_del() to remove hash from in-memory
-dedup tree.
-And implement btrfs_dedup_del() and btrfs_dedup_destroy() interfaces.
-
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/dedup.c | 77 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 77 insertions(+)
+ fs/btrfs/dedup.c | 54 ++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 54 insertions(+)
 
 diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
-index cafbce1..658c493 100644
+index 82e21a6..704c3c7 100644
 --- a/fs/btrfs/dedup.c
 +++ b/fs/btrfs/dedup.c
-@@ -210,3 +210,80 @@ int btrfs_dedup_add(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		return inmem_add(dedup_info, hash);
+@@ -468,6 +468,58 @@ static int inmem_del(struct btrfs_dedup_info *dedup_info, u64 bytenr)
+ 	return 0;
+ }
+ 
++static int ondisk_del(struct btrfs_trans_handle *trans,
++		      struct btrfs_dedup_info *dedup_info, u64 bytenr)
++{
++	struct btrfs_root *dedup_root = dedup_info->dedup_root;
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	key.objectid = bytenr;
++	key.type = BTRFS_DEDUP_BYTENR_ITEM_KEY;
++	key.offset = 0;
++
++	mutex_lock(&dedup_info->ondisk_lock);
++
++	ret = btrfs_search_slot(trans, dedup_root, &key, path, -1, 1);
++	if (ret < 0)
++		goto out;
++
++	/* There should be at most one item with same objectid and type */
++	btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
++	if (key.objectid != bytenr || key.type != BTRFS_DEDUP_BYTENR_ITEM_KEY) {
++		ret = 0;
++		goto out;
++	}
++
++	btrfs_del_item(trans, dedup_root, path);
++	btrfs_release_path(path);
++
++	/* Search for hash item and delete it */
++	key.objectid = key.offset;
++	key.type = BTRFS_DEDUP_HASH_ITEM_KEY;
++	key.offset = bytenr;
++
++	ret = btrfs_search_slot(trans, dedup_root, &key, path, -1, 1);
++	if (WARN_ON(ret > 0)) {
++		ret = -ENOENT;
++		goto out;
++	}
++	if (ret < 0)
++		goto out;
++	btrfs_del_item(trans, dedup_root, path);
++
++out:
++	btrfs_free_path(path);
++	mutex_unlock(&dedup_info->ondisk_lock);
++	return ret;
++}
++
+ /* Remove a dedup hash from dedup tree */
+ int btrfs_dedup_del(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 		    u64 bytenr)
+@@ -480,6 +532,8 @@ int btrfs_dedup_del(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 
+ 	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
+ 		return inmem_del(dedup_info, bytenr);
++	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_ONDISK)
++		return ondisk_del(trans, dedup_info, bytenr);
  	return -EINVAL;
  }
-+
-+static struct btrfs_dedup_hash *
-+inmem_search_bytenr(struct btrfs_dedup_info *dedup_info, u64 bytenr)
-+{
-+	struct rb_node **p = &dedup_info->bytenr_root.rb_node;
-+	struct rb_node *parent = NULL;
-+	struct btrfs_dedup_hash *entry = NULL;
-+
-+	while (*p) {
-+		parent = *p;
-+		entry = rb_entry(parent, struct btrfs_dedup_hash, bytenr_node);
-+
-+		if (bytenr < entry->bytenr)
-+			p = &(*p)->rb_left;
-+		else if (bytenr > entry->bytenr)
-+			p = &(*p)->rb_right;
-+		else
-+			return entry;
-+	}
-+
-+	return NULL;
-+}
-+
-+/* Delete a hash from in-memory dedup tree */
-+static int inmem_del(struct btrfs_dedup_info *dedup_info, u64 bytenr)
-+{
-+	struct btrfs_dedup_hash *hash;
-+
-+	spin_lock(&dedup_info->lock);
-+	hash = inmem_search_bytenr(dedup_info, bytenr);
-+	if (!hash) {
-+		spin_unlock(&dedup_info->lock);
-+		return 0;
-+	}
-+
-+	__inmem_del(dedup_info, hash);
-+	spin_unlock(&dedup_info->lock);
-+	return 0;
-+}
-+
-+/* Remove a dedup hash from dedup tree */
-+int btrfs_dedup_del(struct btrfs_trans_handle *trans, struct btrfs_root *root,
-+		    u64 bytenr)
-+{
-+	struct btrfs_fs_info *fs_info = root->fs_info;
-+	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
-+
-+	if (!dedup_info)
-+		return 0;
-+
-+	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
-+		return inmem_del(dedup_info, bytenr);
-+	return -EINVAL;
-+}
-+
-+static void inmem_destroy(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_dedup_hash *entry, *tmp;
-+	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
-+
-+	spin_lock(&dedup_info->lock);
-+	list_for_each_entry_safe(entry, tmp, &dedup_info->lru_list, lru_list)
-+		__inmem_del(dedup_info, entry);
-+	spin_unlock(&dedup_info->lock);
-+}
-+
-+int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
-+{
-+	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
-+
-+	if (!dedup_info)
-+		return 0;
-+
-+	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
-+		inmem_destroy(fs_info);
-+	return 0;
-+}
+ 
 -- 
 2.6.4
 

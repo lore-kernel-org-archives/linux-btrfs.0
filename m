@@ -1,189 +1,105 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:45356 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752474AbbLXMOG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 24 Dec 2015 07:14:06 -0500
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH 3/4 v2] fstests: cleanup test btrfs/031
-Date: Wed, 23 Dec 2015 04:43:14 +0000
-Message-Id: <1450845795-18729-3-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1450845795-18729-1-git-send-email-fdmanana@kernel.org>
-References: <1450845795-18729-1-git-send-email-fdmanana@kernel.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:52918 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753259AbbL2ICV (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 29 Dec 2015 03:02:21 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id A8F7E40427CD
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:24 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v2 00/14][For 4.6] Btrfs: Add inband (write time) de-duplication framework
+Date: Tue, 29 Dec 2015 16:01:09 +0800
+Message-ID: <1451376083-30474-1-git-send-email-quwenruo@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+This updated version of inband de-duplication has the following features:
+1) ONE unified dedup framework.
+   Most of its code is hidden quietly in dedup.c and export the minimal
+   interfaces for its caller.
+   Reviewer and further developer would benefit from the unified
+   framework.
 
-The test was using $SCRATCH_MNT as a mountpoint for $SCRATCH_DEV, which
-is counter intuitive and not expected by the fstests framework - this
-made the test fail after commit 27d077ec0bda (common: use mount/umount
-helpers everywhere). So rewrite the test to use the scratch device for
-all data and use a test specific directory inside $TEST_DIR to use as a
-mount point for a cross mount of $SCRATCH_DEV.
+2) TWO different back-end with different trade-off
+   One is the improved version of previous Fujitsu in-memory only dedup.
+   The other one is enhanced dedup implement from Liu Bo.
+   Changed of its tree structure to handle bytenr -> hash search for
+   deleting hash, without the hideous data backref hack.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
+3) Ioctl interface with persist dedup status
+   Advised by David, now we use ioctl to enable/disable dedup.
+   Further we will add per-file/dir dedup disable command in that ioctl.
 
-V2: First version of the change, introduced in the v2 of the corresponding
-    patchset.
+   And we now have dedup status, recorded in the first item of dedup
+   tree.
+   Just like quota, once enabled, no extra ioctl is needed for next
+   mount.
 
- tests/btrfs/031 | 102 ++++++++++++++++++++++++++++----------------------------
- 1 file changed, 51 insertions(+), 51 deletions(-)
+Although the patchset is tagged as V2, not too much codes are from V1
+patchset, most of the patchset is reworked, so no changelog this time.
 
-diff --git a/tests/btrfs/031 b/tests/btrfs/031
-index 0159c95..fe8cd4e 100755
---- a/tests/btrfs/031
-+++ b/tests/btrfs/031
-@@ -36,11 +36,6 @@ trap "_cleanup; exit \$status" 0 1 2 3 15
- 
- _cleanup()
- {
--    _scratch_unmount
--    rm -rf $TESTDIR1
--    rm -rf $TESTDIR2
--    $BTRFS_UTIL_PROG subvolume delete $SUBVOL1 >> $seqres.full
--    $BTRFS_UTIL_PROG subvolume delete $SUBVOL2 >> $seqres.full
-     cd /
-     rm -f $tmp.*
- }
-@@ -57,84 +52,89 @@ _supported_os Linux
- _require_test
- _require_scratch
- _require_cp_reflink
-+_need_to_be_root
- 
--_checksum_files() {
--    for F in file1 file2 file3
--    do
--        echo "$F:"
--        for D in $TESTDIR1 $SCRATCH_MNT $SUBVOL2
--        do
--            _md5_checksum $D/$F
--        done
--    done
-+_checksum_files()
-+{
-+	for f in file1 file2 file3; do
-+		echo "$f:"
-+		for d in $testdir1 $cross_mount_test_dir $subvol2; do
-+			_md5_checksum $d/$f
-+		done
-+	done
- }
- 
--TESTDIR1=$TEST_DIR/test-$seq-1
--TESTDIR2=$TEST_DIR/test-$seq-2
--SUBVOL1=$TEST_DIR/subvol-$seq-1
--SUBVOL2=$TEST_DIR/subvol-$seq-2
-+testdir1=$SCRATCH_MNT/test-$seq-1
-+testdir2=$SCRATCH_MNT/test-$seq-2
-+subvol1=$SCRATCH_MNT/subvol-$seq-1
-+subvol2=$SCRATCH_MNT/subvol-$seq-2
-+cross_mount_test_dir=$TEST_DIR/test-$seq
-+
-+rm -f $seqres.full
- 
--_scratch_unmount 2>/dev/null
--rm -rf $seqres.full
--rm -rf $TESTDIR1 $TESTDIR2
--$BTRFS_UTIL_PROG subvolume delete $SUBVOL1 >/dev/null 2>&1
--$BTRFS_UTIL_PROG subvolume delete $SUBVOL2 >/dev/null 2>&1
-+_scratch_mkfs > /dev/null 2>&1
-+_scratch_mount
- 
--mkdir $TESTDIR1
--mkdir $TESTDIR2
--$BTRFS_UTIL_PROG subvolume create $SUBVOL1 >> $seqres.full
--$BTRFS_UTIL_PROG subvolume create $SUBVOL2 >> $seqres.full
--_mount -t btrfs -o subvol=subvol-$seq-1 $TEST_DEV $SCRATCH_MNT
-+mkdir $testdir1
-+mkdir $testdir2
-+$BTRFS_UTIL_PROG subvolume create $subvol1 >> $seqres.full
-+$BTRFS_UTIL_PROG subvolume create $subvol2 >> $seqres.full
-+rm -rf $cross_mount_test_dir
-+mkdir $cross_mount_test_dir
-+
-+_mount -t btrfs -o subvol=subvol-$seq-1 $SCRATCH_DEV $cross_mount_test_dir
- 
- echo "Create initial files"
--# TESTDIR1/file1 is very small and will be inlined
--$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 10' $TESTDIR1/file1 \
-+# #testdir1/file1 is very small and will be inlined
-+$XFS_IO_PROG -f -c 'pwrite -S 0x61 0 10' $testdir1/file1 \
-     >> $seqres.full
--$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 13000' $SCRATCH_MNT/file2 \
-+$XFS_IO_PROG -f -c 'pwrite -S 0x62 0 13000' $cross_mount_test_dir/file2 \
-     >> $seqres.full
--$XFS_IO_PROG -f -c 'pwrite -S 0x63 0 17000' $SUBVOL2/file3 \
-+$XFS_IO_PROG -f -c 'pwrite -S 0x63 0 17000' $subvol2/file3 \
-     >> $seqres.full
- 
- echo "Create reflinks to the initial files on other subvolumes"
--cp --reflink=always $TESTDIR1/file1 $SUBVOL1
--cp --reflink=always $TESTDIR1/file1 $SUBVOL2
--cp --reflink=always $SUBVOL1/file2 $TESTDIR1/
--cp --reflink=always $SUBVOL1/file2 $SUBVOL2
--cp --reflink=always $SUBVOL2/file3 $TESTDIR1/
--cp --reflink=always $SUBVOL2/file3 $SUBVOL1
-+cp --reflink=always $testdir1/file1 $subvol1
-+cp --reflink=always $testdir1/file1 $subvol2
-+cp --reflink=always $subvol1/file2 $testdir1/
-+cp --reflink=always $subvol1/file2 $subvol2
-+cp --reflink=always $subvol2/file3 $testdir1/
-+cp --reflink=always $subvol2/file3 $subvol1
- 
- echo "Verify the reflinks"
--_verify_reflink $SCRATCH_MNT/file2 $TESTDIR1/file2
--_verify_reflink $SCRATCH_MNT/file2 $SUBVOL2/file2
--_verify_reflink $SUBVOL2/file3 $TESTDIR1/file3
--_verify_reflink $SUBVOL2/file3 $SCRATCH_MNT/file3
-+_verify_reflink $cross_mount_test_dir/file2 $testdir1/file2
-+_verify_reflink $cross_mount_test_dir/file2 $subvol2/file2
-+_verify_reflink $subvol2/file3 $testdir1/file3
-+_verify_reflink $subvol2/file3 $cross_mount_test_dir/file3
- echo "Verify the file contents:"
- _checksum_files
- 
- echo -e "---\nOverwrite some files with new content"
--$XFS_IO_PROG -c 'pwrite -S 0x64 0 20' $TESTDIR1/file1 >> $seqres.full
--$XFS_IO_PROG -c 'pwrite -S 0x66 0 21000' $SUBVOL2/file2 >> $seqres.full
--$XFS_IO_PROG -c 'pwrite -S 0x65 5000 5000' $SCRATCH_MNT/file3 \
-+$XFS_IO_PROG -c 'pwrite -S 0x64 0 20' $testdir1/file1 >> $seqres.full
-+$XFS_IO_PROG -c 'pwrite -S 0x66 0 21000' $subvol2/file2 >> $seqres.full
-+$XFS_IO_PROG -c 'pwrite -S 0x65 5000 5000' $cross_mount_test_dir/file3 \
-     >> $seqres.full
- 
- echo -n "Verify that non-overwritten reflinks "
- echo "still have the same data blocks"
--_verify_reflink $TESTDIR1/file2 $SCRATCH_MNT/file2
--_verify_reflink $TESTDIR1/file3 $SUBVOL2/file3
-+_verify_reflink $testdir1/file2 $cross_mount_test_dir/file2
-+_verify_reflink $testdir1/file3 $subvol2/file3
- echo "Verify the file contents:"
- _checksum_files
- 
- echo -e "---\nShuffle files between directories"
--mv $TESTDIR1/file* $TESTDIR2
--mv $SCRATCH_MNT/file* $TESTDIR1/
--mv $SUBVOL2/file* $SCRATCH_MNT/
--mv $TESTDIR2/file* $SUBVOL2/
-+mv $testdir1/file* $testdir2
-+mv $cross_mount_test_dir/file* $testdir1/
-+mv $subvol2/file* $cross_mount_test_dir/
-+mv $testdir2/file* $subvol2/
- 
- # No _verify_reflink here as data is copied when moving files
- # between subvols
- echo "Verify the file contents:"
- _checksum_files
- 
-+$UMOUNT_PROG $cross_mount_test_dir
-+
- # success, all done
- status=0
- exit
+TODO:
+1) Better delayed_ref related solution
+   Find a better solution to handle hideous delayed_ref related problems.
+   Even we use a lot of codes trying to resolve the problem, it still can't
+   pass generic/068.
+
+2) Per-file ioctl to disbale dedup
+   Just like compression setting per file
+
+3) Support compression for hash miss case
+   It will go though non-compress routine, not compressing it even we can.
+   This may need to change the on-disk format for on-disk backend.
+
+4) More on-disk backend test.
+   Personally speaking, I'm not a fan of on-disk backend.
+   And not so many test is done for on-disk backend.
+   I'd better test it more and double check the hash on disk.
+   On-disk hash format may *CHANGE*.
+
+Qu Wenruo (5):
+  btrfs: dedup: Add basic tree structure for on-disk dedup method
+  btrfs: dedup: Introduce interfaces to resume and cleanup dedup info
+  btrfs: dedup: Add support for on-disk hash search
+  btrfs: dedup: Add support for adding hash for on-disk backend
+  btrfs: dedup: Add support to delete hash for on-disk backend
+
+Wang Xiaoguang (9):
+  btrfs: dedup: Introduce dedup framework and its header
+  btrfs: dedup: Introduce function to initialize dedup info
+  btrfs: dedup: Introduce function to add hash into in-memory tree
+  btrfs: dedup: Introduce function to remove hash from in-memory tree
+  btrfs: dedup: Introduce function to search for an existing hash
+  btrfs: dedup: Implement btrfs_dedup_calc_hash interface
+  btrfs: ordered-extent: Add support for dedup
+  btrfs: dedup: Inband in-memory only de-duplication implement
+  btrfs: dedup: Add ioctl for inband deduplication
+
+ fs/btrfs/Makefile            |   2 +-
+ fs/btrfs/ctree.h             |  71 +++-
+ fs/btrfs/dedup.c             | 945 +++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedup.h             | 160 ++++++++
+ fs/btrfs/disk-io.c           |  28 +-
+ fs/btrfs/disk-io.h           |   1 +
+ fs/btrfs/extent-tree.c       |   7 +
+ fs/btrfs/extent_io.c         |  30 +-
+ fs/btrfs/extent_io.h         |  15 +
+ fs/btrfs/inode.c             | 299 +++++++++++++-
+ fs/btrfs/ioctl.c             |  63 +++
+ fs/btrfs/ordered-data.c      |  33 +-
+ fs/btrfs/ordered-data.h      |  13 +
+ include/trace/events/btrfs.h |   3 +-
+ include/uapi/linux/btrfs.h   |  23 ++
+ 15 files changed, 1661 insertions(+), 32 deletions(-)
+ create mode 100644 fs/btrfs/dedup.c
+ create mode 100644 fs/btrfs/dedup.h
+
 -- 
-2.1.3
+2.6.4
+
+
 

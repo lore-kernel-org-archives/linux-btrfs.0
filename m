@@ -1,34 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44148 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752024AbbL2RWL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Dec 2015 12:22:11 -0500
-Date: Tue, 29 Dec 2015 18:19:56 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: should btrfsck fix a bad superblock?
-Message-ID: <20151229171956.GC4227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <CAJCQCtT78=kqXZVDAV-x0C1NW=7okBBM_+vM3+HAc5BtUArsiw@mail.gmail.com>
- <pan$5afbb$4270f15d$d1ce1c42$cc039fab@cox.net>
+Received: from mail-ig0-f180.google.com ([209.85.213.180]:33296 "EHLO
+	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751257AbbL2AMO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 28 Dec 2015 19:12:14 -0500
+Received: by mail-ig0-f180.google.com with SMTP id mv3so125236151igc.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 28 Dec 2015 16:12:13 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <pan$5afbb$4270f15d$d1ce1c42$cc039fab@cox.net>
+Date: Mon, 28 Dec 2015 17:12:13 -0700
+Message-ID: <CAJCQCtTKWdAknD9Cbr0kfVNsZ5GW0jH+ZE8ZsNmJ14223aVo2A@mail.gmail.com>
+Subject: [bug] btrfs fi usage reports bogus 16EiB free space
+From: Chris Murphy <lists@colorremedies.com>
+To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 29, 2015 at 02:28:19AM +0000, Duncan wrote:
-> Btrfs check's -s option simply lets you use a different superblock.  I 
-> don't believe check is designed to actually fix superblocks, tho I guess 
-> with --repair it fixes certain bad fields in them.
+Filed a bug:
+https://bugzilla.kernel.org/show_bug.cgi?id=110111
 
-The superblock is a special type of metadata, 'btrfs check' works on the
-the trees pointed by it. There's the super-recover command you mentioned
-and also the (still) standaone btrfs-select-super tool that are supposed
-to fix the superblock itself.
+The gist is that with a full USB stick, 'btrfs fi usage' reports:
 
-Similarly, check may find specific problems, will not attempt to fix all
-of them and could suggest to use a specialized fix tool. The reasons are
-to avoid overbloating the checker command line options. An example is
-the b-tree key bitflip fix (code not merged yet).
+    Free (estimated):  16.00EiB (min: 16.00EiB)
+
+Which is clearly wrong, but very exciting to imagine what such a thing
+would look like!
+
+
+-- 
+Chris Murphy

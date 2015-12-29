@@ -1,48 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21201 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932999AbbLOAfH (ORCPT
+Received: from e23smtp04.au.ibm.com ([202.81.31.146]:48064 "EHLO
+	e23smtp04.au.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753073AbbL2KMC (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 14 Dec 2015 19:35:07 -0500
-Subject: Re: [PATCH v2 1/2] btrfs: Enhance super validation check
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
-References: <1449560158-32577-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20151214162441.GL4227@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <566F601C.1070907@cn.fujitsu.com>
-Date: Tue, 15 Dec 2015 08:34:36 +0800
+	Tue, 29 Dec 2015 05:12:02 -0500
+Received: from localhost
+	by e23smtp04.au.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
+	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
+	Tue, 29 Dec 2015 20:11:58 +1000
+Received: from d23relay10.au.ibm.com (d23relay10.au.ibm.com [9.190.26.77])
+	by d23dlp03.au.ibm.com (Postfix) with ESMTP id BC0A7357804F
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 21:11:56 +1100 (EST)
+Received: from d23av04.au.ibm.com (d23av04.au.ibm.com [9.190.235.139])
+	by d23relay10.au.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id tBTABmUq459074
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 21:11:56 +1100
+Received: from d23av04.au.ibm.com (localhost [127.0.0.1])
+	by d23av04.au.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id tBTABO3P008682
+	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 21:11:24 +1100
+From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3 2/2] btrfs: Enhance chunk validation check
+Date: Tue, 29 Dec 2015 15:41:04 +0530
+Message-ID: <3370608.49fr4JG5K4@localhost.localdomain>
+In-Reply-To: <1449564042-5473-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1449564042-5473-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <20151214162441.GL4227@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tuesday 08 Dec 2015 16:40:42 Qu Wenruo wrote:
+> Enhance chunk validation:
+> 1) Num_stripes
+>    We already have such check but it's only in super block sys chunk
+>    array.
+>    Now check all on-disk chunks.
+> 
+> 2) Chunk logical
+>    It should be aligned to sector size.
+>    This behavior should be *DOUBLE CHECKED* for 64K sector size like
+>    PPC64 or AArch64.
+>    Maybe we can found some hidden bugs.
+> 
 
+Sorry about the delayed response. I executed fstests on ppc64 with 64k block
+size and all the tests that used to pass earlier (i.e. without patch applied)
+continue to pass. Hence,
 
-David Sterba wrote on 2015/12/14 17:24 +0100:
-> On Tue, Dec 08, 2015 at 03:35:57PM +0800, Qu Wenruo wrote:
->> @@ -4005,31 +3989,47 @@ static int btrfs_check_super_valid(struct btrfs_fs_info *fs_info,
->>   	}
->>
->>   	/*
->> -	 * The common minimum, we don't know if we can trust the nodesize/sectorsize
->> -	 * items yet, they'll be verified later. Issue just a warning.
->> +	 * Check sectorsize and nodesize first, some other check will need it.
->> +	 * XXX: Just do a favor for later subpage size check. Check all
->
-> Same as in v1: Please do not add new XXX or TODO markers to the sources.
-> The comment would be fine with just:
->
-> 	 "Check all possible sectorsizes (4K, 8K, 16K, 32K, 64K) here."
->
-> With that fixed,
->
-> Reviewed-by: David Sterba <dsterba@suse.com>
->
->
-Oh, sorry, forgot to modify this, I'll update it soon.
+Tested-by: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 
-Thanks,
-Qu
-
+-- 
+chandan
 

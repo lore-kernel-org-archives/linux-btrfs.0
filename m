@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1693 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:52918 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753274AbbL2IC1 (ORCPT
+	with ESMTP id S1753265AbbL2ICZ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Dec 2015 03:02:27 -0500
+	Tue, 29 Dec 2015 03:02:25 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id CAE7540427F0
+	by cn.fujitsu.com (Postfix) with ESMTP id 464EB409255C
 	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:25 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH 02/14] btrfs: dedup: Introduce function to initialize dedup info
-Date: Tue, 29 Dec 2015 16:01:11 +0800
-Message-ID: <1451376083-30474-3-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH 01/14] btrfs: dedup: Introduce dedup framework and its header
+Date: Tue, 29 Dec 2015 16:01:10 +0800
+Message-ID: <1451376083-30474-2-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1451376083-30474-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1451376083-30474-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,36 +22,40 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Add generic function to initialize dedup info.
+Introduce the header for btrfs online(write time) de-duplication
+framework and needed header.
+
+The new de-duplication framework is going to support 2 different dedup
+method and 1 dedup hash.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/Makefile |  2 +-
- fs/btrfs/dedup.c  | 96 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
- fs/btrfs/dedup.h  | 14 ++++++--
- 3 files changed, 109 insertions(+), 3 deletions(-)
- create mode 100644 fs/btrfs/dedup.c
+ fs/btrfs/ctree.h |   3 ++
+ fs/btrfs/dedup.h | 128 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 131 insertions(+)
+ create mode 100644 fs/btrfs/dedup.h
 
-diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
-index 6d1d0b9..a8bd917 100644
---- a/fs/btrfs/Makefile
-+++ b/fs/btrfs/Makefile
-@@ -9,7 +9,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
- 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
- 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
- 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
--	   uuid-tree.o props.o hash.o
-+	   uuid-tree.o props.o hash.o dedup.o
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 4c23f34..62fed1d 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -1816,6 +1816,9 @@ struct btrfs_fs_info {
+ 	 * and will be latter freed. Protected by fs_info->chunk_mutex.
+ 	 */
+ 	struct list_head pinned_chunks;
++
++	/* reference to inband de-duplication info */
++	struct btrfs_dedup_info *dedup_info;
+ };
  
- btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
- btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
-diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
+ struct btrfs_subvolume_writers {
+diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
 new file mode 100644
-index 0000000..c1fadff
+index 0000000..fd2e392
 --- /dev/null
-+++ b/fs/btrfs/dedup.c
-@@ -0,0 +1,96 @@
++++ b/fs/btrfs/dedup.h
+@@ -0,0 +1,128 @@
 +/*
 + * Copyright (C) 2015 Fujitsu.  All rights reserved.
 + *
@@ -69,110 +73,117 @@ index 0000000..c1fadff
 + * Free Software Foundation, Inc., 59 Temple Place - Suite 330,
 + * Boston, MA 021110-1307, USA.
 + */
-+#include "ctree.h"
-+#include "dedup.h"
-+#include "btrfs_inode.h"
-+#include "transaction.h"
-+#include "delayed-ref.h"
 +
++#ifndef __BTRFS_DEDUP__
++#define __BTRFS_DEDUP__
++
++#include <linux/btrfs.h>
++#include <crypto/hash.h>
++
++/*
++ * Dedup storage backend
++ * On disk is persist storage but overhead is large
++ * In memory is fast but will lose all its hash on umount
++ */
++#define BTRFS_DEDUP_BACKEND_INMEMORY		0
++#define BTRFS_DEDUP_BACKEND_ONDISK		1
++#define BTRFS_DEDUP_BACKEND_LAST		2
++
++/* Dedup block size limit and default value */
++#define BTRFS_DEDUP_BLOCKSIZE_MAX	(128 * 1024)
++#define BTRFS_DEDUP_BLOCKSIZE_MIN	(16 * 1024)
++#define BTRFS_DEDUP_BLOCKSIZE_DEFAULT	(32 * 1024)
++
++/* Hash algorithm, only support SHA256 yet */
++#define BTRFS_DEDUP_HASH_SHA256		0
++
++static int btrfs_dedup_sizes[] = { 32 };
++
++struct btrfs_dedup_hash {
++	/*
++	 * hash_node is for hash -> extent search(dedup search).
++	 * bytenr_node is for extent(bytenr) -> hash search(free extent).
++	 * lru_list is to maintain low memory usage. Currently they are
++	 * only used in in-memory dedup mode.
++	 */
++	struct rb_node hash_node;
++	struct rb_node bytenr_node;
++	struct list_head lru_list;
++
++	u64 bytenr;
++	u64 num_bytes;
++
++	/* last field is a variable length array of dedup hash */
++	u8 hash[];
++};
++
++struct btrfs_dedup_info {
++	/* dedup blocksize */
++	u64 blocksize;
++	u16 backend;
++	u16 hash_type;
++
++	/* Hash driver */
++	struct crypto_shash *dedup_driver;
++
++	/* following members are only used in in-memory dedup mode */
++	struct rb_root hash_root;
++	struct rb_root bytenr_root;
++	struct list_head lru_list;
++	spinlock_t lock;
++	u64 limit_nr;
++	u64 current_nr;
++};
++
++struct btrfs_trans_handle;
++
++int btrfs_dedup_hash_size(u16 type);
++struct btrfs_dedup_hash *btrfs_dedup_alloc_hash(u16 type);
++
++/*
++ * Initial inband dedup info
++ * Called at either dedup enable or mount time.
++ */
 +int btrfs_dedup_enable(struct btrfs_fs_info *fs_info, u16 type, u16 backend,
-+		       u64 blocksize, u64 limit)
-+{
-+	struct btrfs_dedup_info *dedup_info;
-+	int ret = 0;
++		       u64 blocksize, u64 limit);
 +
-+	/* Sanity check */
-+	if (blocksize > BTRFS_DEDUP_BLOCKSIZE_MAX ||
-+	    blocksize < BTRFS_DEDUP_BLOCKSIZE_MIN ||
-+	    blocksize < fs_info->tree_root->sectorsize ||
-+	    !is_power_of_2(blocksize))
-+		return -EINVAL;
-+	if (type > ARRAY_SIZE(btrfs_dedup_sizes))
-+		return -EINVAL;
-+	if (backend >= BTRFS_DEDUP_BACKEND_LAST)
-+		return -EINVAL;
-+	if (backend == BTRFS_DEDUP_BACKEND_INMEMORY && limit == 0)
-+		limit = 4096; /* default value */
-+	if (backend == BTRFS_DEDUP_BACKEND_ONDISK && limit != 0)
-+		limit = 0;
++/*
++ * Disable dedup and invalidate all its dedup data.
++ * Called at dedup disable time.
++ */
++int btrfs_dedup_disable(struct btrfs_fs_info *fs_info);
 +
-+	if (fs_info->dedup_info) {
-+		dedup_info = fs_info->dedup_info;
++/*
++ * Calculate hash for dedup.
++ * Caller must ensure [start, start + dedup_bs) has valid data.
++ */
++int btrfs_dedup_calc_hash(struct btrfs_root *root, struct inode *inode,
++			  u64 start, struct btrfs_dedup_hash *hash);
 +
-+		/* Check if we are re-enable for different dedup config */
-+		if (dedup_info->blocksize != blocksize ||
-+		    dedup_info->hash_type != type ||
-+		    dedup_info->backend != backend) {
-+			btrfs_dedup_disable(fs_info);
-+			goto enable;
-+		}
++/*
++ * Search for duplicated extents by calculated hash
++ * Caller must call btrfs_dedup_calc_hash() first to get the hash.
++ *
++ * @inode: the inode for we are writing
++ * @file_pos: offset inside the inode
++ * As we will increase extent ref immediately after a hash match,
++ * we need @file_pos and @inode in this case.
++ *
++ * Return > 0 for a hash match, and the extent ref will be
++ * INCREASED.
++ * Return 0 for a hash miss. Nothing is done
++ */
++int btrfs_dedup_search(struct inode *inode, u64 file_pos,
++		       struct btrfs_dedup_hash *hash);
 +
-+		/* On-fly limit change is OK */
-+		spin_lock(&dedup_info->lock);
-+		fs_info->dedup_info->limit_nr = limit;
-+		spin_unlock(&dedup_info->lock);
-+		return 0;
-+	}
++/* Add a dedup hash into dedup tree */
++int btrfs_dedup_add(struct btrfs_trans_handle *trans, struct btrfs_root *root,
++		    struct btrfs_dedup_hash *hash);
 +
-+enable:
-+	fs_info->dedup_info = kzalloc(sizeof(*dedup_info), GFP_NOFS);
-+	if (!fs_info->dedup_info)
-+		return -ENOMEM;
-+
-+	dedup_info = fs_info->dedup_info;
-+
-+	dedup_info->hash_type = type;
-+	dedup_info->backend = backend;
-+	dedup_info->blocksize = blocksize;
-+	dedup_info->limit_nr = limit;
-+
-+	/* Only support SHA256 yet */
-+	dedup_info->dedup_driver = crypto_alloc_shash("sha256", 0, 0);
-+	if (IS_ERR(dedup_info->dedup_driver)) {
-+		btrfs_err(fs_info, "failed to init sha256 driver");
-+		ret = PTR_ERR(dedup_info->dedup_driver);
-+		goto out;
-+	}
-+
-+	dedup_info->hash_root = RB_ROOT;
-+	dedup_info->bytenr_root = RB_ROOT;
-+	dedup_info->current_nr = 0;
-+	INIT_LIST_HEAD(&dedup_info->lru_list);
-+	spin_lock_init(&dedup_info->lock);
-+
-+	fs_info->dedup_info = dedup_info;
-+out:
-+	if (ret < 0) {
-+		kfree(dedup_info);
-+		fs_info->dedup_info = NULL;
-+	}
-+	return ret;
-+}
-diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
-index fd2e392..3cd6d14 100644
---- a/fs/btrfs/dedup.h
-+++ b/fs/btrfs/dedup.h
-@@ -79,8 +79,18 @@ struct btrfs_dedup_info {
- 
- struct btrfs_trans_handle;
- 
--int btrfs_dedup_hash_size(u16 type);
--struct btrfs_dedup_hash *btrfs_dedup_alloc_hash(u16 type);
-+static inline int btrfs_dedup_hash_size(u16 type)
-+{
-+	if (WARN_ON(type >= ARRAY_SIZE(btrfs_dedup_sizes)))
-+		return -EINVAL;
-+	return sizeof(struct btrfs_dedup_hash) + btrfs_dedup_sizes[type];
-+}
-+
-+static inline struct btrfs_dedup_hash *btrfs_dedup_alloc_hash(u16 type)
-+{
-+	return kzalloc(btrfs_dedup_hash_size(type), GFP_NOFS);
-+}
-+
- 
- /*
-  * Initial inband dedup info
++/* Remove a dedup hash from dedup tree */
++int btrfs_dedup_del(struct btrfs_trans_handle *trans, struct btrfs_root *root,
++		    u64 bytenr);
++#endif
 -- 
 2.6.4
 

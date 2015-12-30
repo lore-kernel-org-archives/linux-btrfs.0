@@ -1,53 +1,70 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:56910 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753808AbbL3Tsj (ORCPT
+Received: from mailgw-01.dd24.net ([193.46.215.41]:33604 "EHLO
+	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752118AbbL3UAP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Dec 2015 14:48:39 -0500
-Message-ID: <1451504914.6350.12.camel@scientia.net>
+	Wed, 30 Dec 2015 15:00:15 -0500
+Message-ID: <1451505611.6350.20.camel@scientia.net>
 Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Sanidhya Solanki <jpage.lkml@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, clm@fb.com, jbacik@fb.com,
-        linux-btrfs@vger.kernel.org
-Date: Wed, 30 Dec 2015 20:48:34 +0100
-In-Reply-To: <5683E5E4.5010006@gmx.com>
+To: dsterba@suse.cz
+Cc: Sanidhya Solanki <jpage.lkml@gmail.com>, linux-btrfs@vger.kernel.org
+Date: Wed, 30 Dec 2015 21:00:11 +0100
+In-Reply-To: <20151229180643.GD4227@twin.jikos.cz>
 References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
-	 <20151229133907.GA4227@suse.cz> <20151229061512.79a41f31@gmail.com>
-	 <20151229170611.GB4227@suse.cz> <20151230013946.7c1f0e12@gmail.com>
-	 <5683C714.4040705@gmx.com> <20151230045449.7a6c14db@gmail.com>
-	 <5683E5E4.5010006@gmx.com>
+	 <1451341195.7094.0.camel@scientia.net> <20151228153801.6561feff@gmail.com>
+	 <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
+	 <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
+	 <1451363188.7094.23.camel@scientia.net>
+	 <20151229180643.GD4227@twin.jikos.cz>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-l6xPu5CQiV30df7NfiwM"
+	boundary="=-QMDhKZn7eVvykB53cIj+"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-l6xPu5CQiV30df7NfiwM
+--=-QMDhKZn7eVvykB53cIj+
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, 2015-12-30 at 22:10 +0800, Qu Wenruo wrote:
-> Or, just don't touch it until there is really enough user demand.
-I definitely think that there is demand... as I've written previously,
-when I did some benchmarking tests (though on MD and HW raid) then
-depending on the RAID chunk size, one got different kind of IO patterns
-tuned.
+On Tue, 2015-12-29 at 19:06 +0100, David Sterba wrote:
+> > Both open of course many questions (how to deal with crashes,
+> > etc.)...
+> > maybe having a look at how mdadm handles similar problems could be
+> > worth.
+>=20
+> The crash consistency should remain, other than that we'd have to
+> enhance the balance filters to process only the unconverted chunks to
+> continue.
 
-> (In stripe_len case, it's also a possible choice, as configurable
-> stripe=C2=A0
-> length doesn't really affect much except RAID5/6)
-Sure about that? Admittedly I haven't checked it for the not parity
-RAIDs, but I'd expect that for the same reasons you get out different
-performance for sequential/random/vector reads/writes, you'd also get
-that more or less at least at RAID0.
+What about nodatacow'ed files? I'd expect that in case of a crash
+during reshaping, these files are (likely) garbage then right?
+Not particularly desirable...
+
+
+But probably that just goes in the direction of the issues/questions I
+brought up in the other thread where I've asked the devs for
+possibilities in terms of checksumming on nodatacowed areas:
+
+i.e. stability/integrity of such files
+
+
+For me, speaking with the sysadmin's hat, that was always the main
+reason not to do reshapes so far, especially when data is quite
+precious, which at least one typical use case for nodatacow is, namely
+DBs.
+
+So having crash resistance for CoW + nodataCoW during RAID reshape
+should be desired.
+
+Time for a journal in btrfs? O;-)
+
 
 Cheers,
 Chris.
---=-l6xPu5CQiV30df7NfiwM
+--=-QMDhKZn7eVvykB53cIj+
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -134,19 +151,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDE5NDgz
-NFowTwYJKoZIhvcNAQkEMUIEQPV5gG/JgJmHsnzX8xfegwS8gpR/4cRXuEcm4WwuWmCRszQDNG8F
-ECc5VWYRLxla8mCgjmwH9Dwn9dqw8LGdpAgwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDIwMDAx
+MVowTwYJKoZIhvcNAQkEMUIEQCs+lKgYxRsQcVye193WAr9/XYS+RePb9An2Jz/O/jubysLeNt90
+BPKtqOXQEwS8RNqWRtMlbIO00Zgge5IksJ8wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQA2W6WsjTsge/XpqcaPauo9zvLNEVwL
-MKiizB6D0ViE5ITJ71tlmm58lOobvOmffOVpSJEdlNW/oe11smROczsJysduTD2kEfXJq7p+HGDO
-kDPulNt6U9sWKEn7yC700FZQ4Xig8uNsnQEFZhKAgSaXebw+X/aRh0u1QH14I5AJNnxtT+/xs24v
-KiOr8UUIO+FY6f2JgGb7TbLXfat8RcRAj4gazFVwiPrNjjTCPwDPBtHPXcENYNm5xKsTSFfVrpKR
-wmiw5xVjaVaqJfsYmkc3RTwT/mVYX1v+cus4+tNjckyOxJYl47i8dMhdDvHYpeHYzwjAxdaYIQJy
-BWex8jmyAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAsk6GcIrLQp5GHCp9K558b853vUax8
+7mwLEyY5Zgc+LCtq1qd2YUkgGf4h25sA2sHk+MN3IHeBtsoSg/OUrocEgXS1g7lEgRbQP1YB3X1f
+8YmZK2NzryTBQN1/EMKTECeBFxo2+/L0gsBqxiWTEUdh6CBvQotoC/SKuMxEWK2VVQcAE4InWuer
+A+Pak4HuFzaF03gk+tbsZhNXD16lCuBhyn/O7SGE8MnxItrdewCq0tomvJDyWggJXcOlnXjp+Va6
+eg1R34WYJWWZYFPLakp/MHVrUtY4ln+V33k7UyXIKp0zmNWmDFJIHSp9IzqCYNMuLpd2b5bWUmmw
+a/gEiIOBAAAAAAAA
 
 
---=-l6xPu5CQiV30df7NfiwM--
+--=-QMDhKZn7eVvykB53cIj+--
 

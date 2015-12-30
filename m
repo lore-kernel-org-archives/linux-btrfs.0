@@ -1,60 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:35486 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:35512 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754794AbbL3VMf (ORCPT
+	with ESMTP id S1753466AbbL3VNm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Dec 2015 16:12:35 -0500
+	Wed, 30 Dec 2015 16:13:42 -0500
 Received: from mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.26])
-	by mailgw-01.dd24.net (Postfix) with ESMTP id 7D9705FD07
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2015 21:12:34 +0000 (UTC)
+	by mailgw-01.dd24.net (Postfix) with ESMTP id D3CD95FD5A
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2015 21:13:40 +0000 (UTC)
 Received: from mailgw-01.dd24.net ([192.168.1.35])
 	by mailpolicy-01.live.igb.homer.key-systems.net (mailpolicy-01.live.igb.homer.key-systems.net [192.168.1.25]) (amavisd-new, port 10235)
-	with ESMTP id mapYcwKOEW_1 for <linux-btrfs@vger.kernel.org>;
-	Wed, 30 Dec 2015 21:12:32 +0000 (UTC)
+	with ESMTP id K7BSA5CeO1Od for <linux-btrfs@vger.kernel.org>;
+	Wed, 30 Dec 2015 21:13:39 +0000 (UTC)
 Received: from heisenberg.fritz.box (ppp-93-104-122-99.dynamic.mnet-online.de [93.104.122.99])
 	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
 	(No client certificate requested)
 	by mailgw-01.dd24.net (Postfix) with ESMTPSA
-	for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2015 21:12:32 +0000 (UTC)
-Message-ID: <1451509952.6350.22.camel@scientia.net>
-Subject: Re: Confining scrub to a subvolume
+	for <linux-btrfs@vger.kernel.org>; Wed, 30 Dec 2015 21:13:39 +0000 (UTC)
+Message-ID: <1451510018.6350.24.camel@scientia.net>
+Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
 From: Christoph Anton Mitterer <calestyo@scientia.net>
 To: linux-btrfs@vger.kernel.org
-Date: Wed, 30 Dec 2015 22:12:32 +0100
-In-Reply-To: <pan$468ac$46c45058$b2c48647$420a1135@cox.net>
-References: <56831EA2.3090807@totakura.in>
-	 <20151230173949.GH4227@twin.jikos.cz>
-	 <pan$88aff$ee7e2e75$cb54e003$bedb8f3a@cox.net>
-	 <1451503680.6350.5.camel@scientia.net>
-	 <pan$468ac$46c45058$b2c48647$420a1135@cox.net>
+Date: Wed, 30 Dec 2015 22:13:38 +0100
+In-Reply-To: <pan$d7d3b$324f2b4f$8fb81773$4447b8c2@cox.net>
+References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
+	 <1451341195.7094.0.camel@scientia.net> <20151228153801.6561feff@gmail.com>
+	 <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
+	 <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
+	 <1451363188.7094.23.camel@scientia.net>
+	 <20151229180643.GD4227@twin.jikos.cz>
+	 <1451505611.6350.20.camel@scientia.net>
+	 <pan$d7d3b$324f2b4f$8fb81773$4447b8c2@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-AFOWMsQrVWWv8HP9VGUW"
+	boundary="=-YR6ehEgdmUPu1l6NVs2T"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-AFOWMsQrVWWv8HP9VGUW
+--=-YR6ehEgdmUPu1l6NVs2T
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, 2015-12-30 at 20:57 +0000, Duncan wrote:
-> Meanwhile, it's a pretty clever solution, I think. =3D:^)
-Well the problem with such workaround-solutions is... end-users get
-used to it, rely on it, and suddenly they don't work anymore (which the
-user wouldn't probably notice, though).
+On Wed, 2015-12-30 at 21:02 +0000, Duncan wrote:
+> For something like that, it'd pretty much /have/ to be done as COW,
+> at=C2=A0
+> least at the chunk level, tho the address from the outside may stay
+> the=C2=A0
+> same.=C2=A0=C2=A0That's what balance already does, after all.
+Ah... of course,... it would be basically CoW1 again... sorry for not
+having thought about that :-)
 
-> I was thinking run them in parallel, but you're right, you'd have to
-> run=C2=A0
-> them serially and dumpcache between runs.
-And, you'd need to clear the cache, at least for filesystems < memory
-but even if not, I wouldn't be 100% that one can safely do without
-clearing the cache.
+Sounds like a good and stable solution then.
 
 Cheers,
 Chris.
---=-AFOWMsQrVWWv8HP9VGUW
+--=-YR6ehEgdmUPu1l6NVs2T
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -141,19 +142,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDIxMTIz
-MlowTwYJKoZIhvcNAQkEMUIEQONa8tTdQAKThpDKod095yzzRuF0sT+b6Ws0Crke9bGdX5hPv+63
-ZKiDzwgaSW84RAzgW8GRI/12vdpdEbD0c2swagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDIxMTMz
+OFowTwYJKoZIhvcNAQkEMUIEQNCV71nPn+XNrBVoylckUxhzR4yiRXfDIndZqbp/mVM9rFL1UsTR
+S/AINiJYnHrq20UJCSdTK+DkoTqBhBbzXCYwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQAUbVf36b2rAEr/TWJbGYoGB/7w/IQU
-RbGZ25MQrK+ueejXmMNtgtDoitRPkoL+yCl7DtVd5Oik2AW5AYr8zZn5Larr9wh7h26AxWWphsoY
-jABgqYz6PUthmEBUyAtpCU1qZiSULfOiQawumJIFvMCg4D8p6+naPY+EPOO28MqcO7QOPSHrrTLJ
-97hkYylcucrWLYMH827sYf1vF389HJazLszOdKni0CkG1o7j9pkDWR5OmNmlF6V4aHnVsAOMlGfX
-QdtBcdBdFZTJnui668QT5Oltvvt5pQWc1j561dL3WJk1ejjHSfm7M64eNWtIBk3Q1XIcWFI+jsOO
-F9sDIgwcAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBqfBzdm6QVjysdJ2VbSTOk75yA9vi0
+VMSJLyYr10l2YgerHz9mFbrbMGa/TERjYYJmPVJY3JGqun/i/WZnIg6zercLoGV7d+hgyZY06C9w
+30okRh/HxGkwI94kDw9EcITzxFoA2Jwlkvc3MUtiWj04eNi6IBjyzeFiUcJLLR9TcpM/+PL/HdJD
+Ahz849fAMg3GttolGuHs75Vn9yE3WBV9H/mrk2aums+T54PSK9B2qJWNJHNftOZ0EpsmEXNQsJzR
+T4UR/4yb9BSdHHF2GgUZbysWdAyumiQOSwZIumL3WdC0mjnzx4idbIm4AOCq/1Js4Qn+tnDS4Svy
+wRdf4B1gAAAAAAAA
 
 
---=-AFOWMsQrVWWv8HP9VGUW--
+--=-YR6ehEgdmUPu1l6NVs2T--
 

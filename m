@@ -1,54 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:32983 "EHLO
-	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753215AbbL3T2E (ORCPT
+Received: from mailgw-02.dd24.net ([193.46.215.43]:56910 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753808AbbL3Tsj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Dec 2015 14:28:04 -0500
-Message-ID: <1451503680.6350.5.camel@scientia.net>
-Subject: Re: Confining scrub to a subvolume
+	Wed, 30 Dec 2015 14:48:39 -0500
+Message-ID: <1451504914.6350.12.camel@scientia.net>
+Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-Date: Wed, 30 Dec 2015 20:28:00 +0100
-In-Reply-To: <pan$88aff$ee7e2e75$cb54e003$bedb8f3a@cox.net>
-References: <56831EA2.3090807@totakura.in>
-	 <20151230173949.GH4227@twin.jikos.cz>
-	 <pan$88aff$ee7e2e75$cb54e003$bedb8f3a@cox.net>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Sanidhya Solanki <jpage.lkml@gmail.com>
+Cc: David Sterba <dsterba@suse.cz>, clm@fb.com, jbacik@fb.com,
+        linux-btrfs@vger.kernel.org
+Date: Wed, 30 Dec 2015 20:48:34 +0100
+In-Reply-To: <5683E5E4.5010006@gmx.com>
+References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
+	 <20151229133907.GA4227@suse.cz> <20151229061512.79a41f31@gmail.com>
+	 <20151229170611.GB4227@suse.cz> <20151230013946.7c1f0e12@gmail.com>
+	 <5683C714.4040705@gmx.com> <20151230045449.7a6c14db@gmail.com>
+	 <5683E5E4.5010006@gmx.com>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-zKCRZJ/0MeXrvI2cQNPE"
+	boundary="=-l6xPu5CQiV30df7NfiwM"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-zKCRZJ/0MeXrvI2cQNPE
+--=-l6xPu5CQiV30df7NfiwM
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, 2015-12-30 at 18:26 +0000, Duncan wrote:
-> That should work.=C2=A0=C2=A0Cat the files to /dev/null and check dmesg.=
-=C2=A0=C2=A0For=C2=A0
-> single mode it should check the only copy.=C2=A0=C2=A0For raid1/10 or dup=
-,
-> running=C2=A0
-> two checks, ensuring one is even-PID while the other is odd-PID,
-> should=C2=A0
-> work to check both copies, since the read-scheduler assigns copy
-> based on=C2=A0
-> even/odd PID.=C2=A0=C2=A0Errors will show up in dmesg, as well as cat's S=
-TDERR.
-That doesn't seem very reliable to me, to be honest... plus it wouldn't
-work in any RAID56 or dupN (with n!=3D2) case, when that gets sooner or
-later implemented.
+On Wed, 2015-12-30 at 22:10 +0800, Qu Wenruo wrote:
+> Or, just don't touch it until there is really enough user demand.
+I definitely think that there is demand... as I've written previously,
+when I did some benchmarking tests (though on MD and HW raid) then
+depending on the RAID chunk size, one got different kind of IO patterns
+tuned.
 
-Also, I'd kinda guess (or better said: hope) that the kernel's cache
-would destroy these efforts, at least when the two reads happen mostly
-in parallel.
-
+> (In stripe_len case, it's also a possible choice, as configurable
+> stripe=C2=A0
+> length doesn't really affect much except RAID5/6)
+Sure about that? Admittedly I haven't checked it for the not parity
+RAIDs, but I'd expect that for the same reasons you get out different
+performance for sequential/random/vector reads/writes, you'd also get
+that more or less at least at RAID0.
 
 Cheers,
 Chris.
---=-zKCRZJ/0MeXrvI2cQNPE
+--=-l6xPu5CQiV30df7NfiwM
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -135,19 +134,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDE5Mjgw
-MFowTwYJKoZIhvcNAQkEMUIEQBZjVDlttx8tF3VlALF5fjjjJKQwEg9ocJTv1NY1MUktxDIbFsBx
-vr8fA7lQ9JeUQE+NqvecBBJ3p2/ncpCKU7kwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDE5NDgz
+NFowTwYJKoZIhvcNAQkEMUIEQPV5gG/JgJmHsnzX8xfegwS8gpR/4cRXuEcm4WwuWmCRszQDNG8F
+ECc5VWYRLxla8mCgjmwH9Dwn9dqw8LGdpAgwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBhDBfGQpkUof2oSUws891alCyyeADF
-hWJwkTCPnT/l9lyFIQuZ/tbFIuKETNChWeYziMfQ9+lsYmvr3o8p4rx/ctGPW0rxqeOA1+x5y80q
-SMhMtyUTCIuFcM6WvkRFECXjXupiD0uxldBfuFUZPxFy/UTmioWt25XGwRjfOr43Ae8wO+YPA2RU
-1s64zQzwIKv+irSwnXRayB9vZ2DOfCjmL4kLwX+KTCoFO5j/bg15/tkocUfigKbFI0kowtrev5ds
-NkrRsjYcl5aJKGKojgqSiGz0uwij818c1/KZuRk2MNI1digP3ktsobCwSDZ1Li/1Bw6HP6ibNSSU
-mPd2RzW+AAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQA2W6WsjTsge/XpqcaPauo9zvLNEVwL
+MKiizB6D0ViE5ITJ71tlmm58lOobvOmffOVpSJEdlNW/oe11smROczsJysduTD2kEfXJq7p+HGDO
+kDPulNt6U9sWKEn7yC700FZQ4Xig8uNsnQEFZhKAgSaXebw+X/aRh0u1QH14I5AJNnxtT+/xs24v
+KiOr8UUIO+FY6f2JgGb7TbLXfat8RcRAj4gazFVwiPrNjjTCPwDPBtHPXcENYNm5xKsTSFfVrpKR
+wmiw5xVjaVaqJfsYmkc3RTwT/mVYX1v+cus4+tNjckyOxJYl47i8dMhdDvHYpeHYzwjAxdaYIQJy
+BWex8jmyAAAAAAAA
 
 
---=-zKCRZJ/0MeXrvI2cQNPE--
+--=-l6xPu5CQiV30df7NfiwM--
 

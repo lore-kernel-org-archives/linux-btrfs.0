@@ -1,97 +1,71 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:58076 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754253AbbL3MAW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Dec 2015 07:00:22 -0500
-Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
-To: Sanidhya Solanki <jpage.lkml@gmail.com>, David Sterba <dsterba@suse.cz>,
-        calestyo@scientia.net
-References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
- <20151229133907.GA4227@suse.cz> <20151229061512.79a41f31@gmail.com>
- <20151229170611.GB4227@suse.cz> <20151230013946.7c1f0e12@gmail.com>
-Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+Received: from mail-wm0-f42.google.com ([74.125.82.42]:36749 "EHLO
+	mail-wm0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753991AbbL3N4x (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Dec 2015 08:56:53 -0500
+Date: Wed, 30 Dec 2015 04:54:49 -0500
+From: Sanidhya Solanki <jpage.lkml@gmail.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: David Sterba <dsterba@suse.cz>, calestyo@scientia.net, clm@fb.com,
+        jbacik@fb.com, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <5683C714.4040705@gmx.com>
-Date: Wed, 30 Dec 2015 19:59:16 +0800
+Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
+Message-ID: <20151230045449.7a6c14db@gmail.com>
+In-Reply-To: <5683C714.4040705@gmx.com>
+References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
+	<20151229133907.GA4227@suse.cz>
+	<20151229061512.79a41f31@gmail.com>
+	<20151229170611.GB4227@suse.cz>
+	<20151230013946.7c1f0e12@gmail.com>
+	<5683C714.4040705@gmx.com>
 MIME-Version: 1.0
-In-Reply-To: <20151230013946.7c1f0e12@gmail.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Wed, 30 Dec 2015 19:59:16 +0800
+Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> Not really sure about the difference between 2 and 3.
 
+I should have made it clear before, I was asking the exact use case in
+mind when listing the choices. Option 2 would be for SysAdmins running
+production software and configuring it as they desire.
+Option 3 is what we have in the Kernel now, before my patch, where the
+option exists, but it is fixed by the code. You can change it, but you
+need to be someone fairly involved in the upstream work (like a
+distribution Maintainer). This is what my patch implements (well, this
+and option 3).
+Option 1 leaves it as a compile time option.
 
-On 12/30/2015 02:39 PM, Sanidhya Solanki wrote:
-> On Tue, 29 Dec 2015 18:06:11 +0100
-> David Sterba <dsterba@suse.cz> wrote:
->
->> So you want to make the stripe size configurable?...
->
-> As I see it there are 3 ways to do it:
-> -Make it a compile time option that only configures it for a single
-> system with any devices that are added to the RAID.
-> -Make it a runtime option that can change based on how the
-> administrator configures it.
-> -A non-user facing option that is configurable by someone like a
-> distribution maintainer for all systems using the Binary Distribution.
+> When you mention runtime option, did you mean ioctl/mount/balance 
+> convert option?
 
-Not really sure about the difference between 2 and 3.
+Yes, that is correct.
 
-When you mention runtime option, did you mean ioctl/mount/balance 
-convert option?
+> And what's the third one? Default mkfs time option?
+> If you can make it mkfs time option, it won't be really hard to make
+> it configurable.
 
-And what's the third one? Default mkfs time option?
+This would be ideal for all use-cases, but make the implementation
+much larger than it would be for the other options. Hence, I asked
+what the exact use case was for the end-user being targeted.
+ 
+> I didn't consider David means something that.
+> As far as I read, he means balance convert option along with mkfs
+> option.
 
-If you can make it mkfs time option, it won't be really hard to make it 
-configurable.
+Hence, why I asked.
 
->
-> As I see it, DS would like something like the third option, but CAM
-> (ostensibly a SysAdmin) wants the second option.
+> At least from what I have learned in recent btrfs development,
+He> He> either
+> we provide a good enough interfaces (normally, balance convert ioctl
+> with mkfs time option) to configure some on-disk fields.
 
-I didn't consider David means something that.
+Just confirming before starting the implementation.
+> So fixed kernel value is not a really good idea, and should at least
+> be replace by mkfs time option.
 
-As far as I read, he means balance convert option along with mkfs option.
+Will do after confirmation.
 
->
-> On the other hand, I implemented the first option.
-
-At least from what I have learned in recent btrfs development, either we 
-provide a good enough interfaces (normally, balance convert ioctl with 
-mkfs time option) to configure some on-disk fields.
-
-Or we just leave it to fixed value(normally 0, just like for encryption 
-of EXTENT_DATA, and that's the case for current stripe_size).
-
-So fixed kernel value is not a really good idea, and should at least be 
-replace by mkfs time option.
-
->
-> The first and third option can co-exit, the second is an orthogonal
-> target that needs to be setup separately.
->
-> Or we can make all options co-exist, but make it more complicated.
-
-No need.
-Just refer to how btrfs kernel handle chunk profile.
-
-It can be specified at mkfs time (by -d and -m options), and can also be 
-converted later by balance ioctl. (by btrfs balance convert filter).
-
-The only tricky thing I am a little considered about is, how do we keep 
-the default chunk stripe size for a fs.
-
-Thanks,
-Qu
->
-> Please let me know which implementation is preferable, and, if you just
-> want me to expand the description (as DS' mail asked for) or redo the
-> entire setup.
->
-> Thanks
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Thanks

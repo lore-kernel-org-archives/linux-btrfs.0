@@ -1,47 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f181.google.com ([209.85.223.181]:34614 "EHLO
-	mail-io0-f181.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753247AbbL3EWe (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:52814 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751482AbbL3Iin (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Dec 2015 23:22:34 -0500
-Received: by mail-io0-f181.google.com with SMTP id 1so17347660ion.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 20:22:34 -0800 (PST)
+	Wed, 30 Dec 2015 03:38:43 -0500
+Subject: Re: Feedback on inline dedup patches
+To: Marcel Ritter <ritter.marcel@gmail.com>
+References: <CADurGxzoCAk7EFVGiRD+8cc1LMYTFiFBLd02ZcPFtjn=MhBuwQ@mail.gmail.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+CC: btrfs <linux-btrfs@vger.kernel.org>
+Message-ID: <568397F5.7070706@cn.fujitsu.com>
+Date: Wed, 30 Dec 2015 16:38:13 +0800
 MIME-Version: 1.0
-In-Reply-To: <5682EABB.8040408@online.no>
-References: <567FEEB6.3080701@online.no>
-	<CAJCQCtSHWTqn7zzCtUtGjpr5=dMqfC1aGWaeNpZyVVhjrCvDHg@mail.gmail.com>
-	<56806F06.50309@online.no>
-	<pan$c7935$46be3379$4afc60bd$677c85c5@cox.net>
-	<568098B1.2040908@online.no>
-	<CAJCQCtRGbKJ6RJ++1rUSuVByC_=mJq4afNV-3CCt_s4gCft92A@mail.gmail.com>
-	<5681A4D5.4060203@online.no>
-	<CAJCQCtSAm2i0QuXPK5xDWNXvcrg3uo_DU5WYOnOD8Fkgn+c4eQ@mail.gmail.com>
-	<5681BDD0.1060407@online.no>
-	<CAJCQCtQX6x4Fx_f_RyLmNS3q611Zb_Q+hw025--Fx-zmH1wRvw@mail.gmail.com>
-	<5682EABB.8040408@online.no>
-Date: Tue, 29 Dec 2015 21:22:33 -0700
-Message-ID: <CAJCQCtSZHpdLhkbSMfJi0RmV9Sa1_h4ea8yJzJMc3CxoLGhK+A@mail.gmail.com>
-Subject: Re: Btrfs scrub failure for raid 6 kernel 4.3
-From: Chris Murphy <lists@colorremedies.com>
-To: Waxhead <waxhead@online.no>
-Cc: Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CADurGxzoCAk7EFVGiRD+8cc1LMYTFiFBLd02ZcPFtjn=MhBuwQ@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Well all the generations on all devices are now the same, and so are
-the chunk trees. I haven't looked at them in detail to see if there
-are any discrepancies among them.
+Hi Marcel
 
-If you don't care much for this file system, then you could try btrfs
-check --repair, using btrfs-progs 4.3.1 or integration branch. I have
-no idea where btrfsck repair is at with raid56.
+Thanks a lot for the feedback.
 
-On the one hand, corruption should be fixed by scrub. But scrub fails
-with a kernel trace. Maybe btrfs check --repair can fix the tree block
-corruption since scrub can't, and then if that corruption is fixed,
-possibly scrub will work.
+Marcel Ritter wrote on 2015/12/30 09:15 +0100:
+> Hi Qu Wenrou,
+>
+> I just wanted to give some feedback on yesterdays dedup patches:
+>
+> I just applied them to a 4.4-rc7 kernel and did some (very basic)
+> testing:
+>
+> Test1: in-memory
+>
+> Didn't crash on my 350 GB test files. Copying those files again,
+> but "btrfs fi df" didn't show much space savings (maybe that's not
+> the tool to check anyway?).
+Two reasons, one is the the default limit for 4096 hashes.
+
+The other one is a bug for not deduping if a transaction is just committed.
+We already have fix for it internally, but we are busy fixing/testing 
+on-disk backend.
+But that's not a big problem as it will only skipped the first several hit.
+
+> Looking further I found the (default) limit of 4096 hashes (is it really
+> hashes? with 16k blocks that'd cover a dataset of only 64 MB?).
+
+Yes, that's the default value.
+
+Allowing even embedded device to have a try on btrfs dedup.
+Default value shouldn't be super big to make the system OOM, so I just 
+chose the small 4096 default value.
+
+> I think I'll start a new test run, with a much higher number of hashes,
+> but I'd like to know the memory requirements involved - is there
+> a formula for calculating those memory needs?
+
+The formula is very easy:
+Memory usage = btrfs_dedup_hash_size * limit.
+
+Currently, btrfs_dedup_hahs_size for SHA-256 is 112 bytes.
+
+>
+> Test2: ondisk
+>
+> Created filesystem with "-O dedup", did a btrfs dedup enable -s ondisk"
+> and started copying the same date (s. above). Just a few seconds
+> later I got a kernel crash :-(
+> I'll try to get a kernel dump - maybe this helps to track down the problem.
+
+We're aware of the bug, and are trying our best to fix it.
+But the bug seems quite wired and it may take some time to fix.
+
+So on-disk is not recommended, unless you want to help fixing the bug.
+
+Thanks,
+Qu
+
+>
+>
+>     Marcel
+>
+>
 
 
-Chris Murphy

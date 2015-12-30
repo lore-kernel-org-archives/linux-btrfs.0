@@ -1,531 +1,130 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:1693 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753286AbbL2ICg (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 29 Dec 2015 03:02:36 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id 7015E41890F3
-	for <linux-btrfs@vger.kernel.org>; Tue, 29 Dec 2015 16:01:29 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH 08/14] btrfs: dedup: Inband in-memory only de-duplication implement
-Date: Tue, 29 Dec 2015 16:01:17 +0800
-Message-ID: <1451376083-30474-9-git-send-email-quwenruo@cn.fujitsu.com>
-In-Reply-To: <1451376083-30474-1-git-send-email-quwenruo@cn.fujitsu.com>
-References: <1451376083-30474-1-git-send-email-quwenruo@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail.kernel.org ([198.145.29.136]:45791 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752519AbbL3QCS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 30 Dec 2015 11:02:18 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix race between free space endio workers and space cache writeout
+Date: Wed, 30 Dec 2015 16:02:04 +0000
+Message-Id: <1451491324-23937-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+From: Filipe Manana <fdmanana@suse.com>
 
-Core implement for inband de-duplication.
-It reuse the async_cow_start() facility to do the calculate dedup hash.
-And use dedup hash to do inband de-duplication at extent level.
+While running a stress test I ran into the following trace/transaction
+abort:
 
-The work flow is as below:
-1) Run delalloc range for an inode
-2) Calculate hash for the delalloc range at the unit of dedup_bs
-3) For hash match(duplicated) case, just increase source extent ref
-   and insert file extent.
-   For hash mismatch case, go through the normal cow_file_range()
-   fallback, and add hash into dedup_tree.
-   Compress for hash miss case is not supported yet.
+[471626.672243] ------------[ cut here ]------------
+[471626.673322] WARNING: CPU: 9 PID: 19107 at fs/btrfs/extent-tree.c:3740 btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]()
+[471626.675492] BTRFS: Transaction aborted (error -2)
+[471626.676748] Modules linked in: btrfs dm_flakey dm_mod crc32c_generic xor raid6_pq nfsd auth_rpcgss oid_registry nfs_acl nfs lockd grace fscache sunrpc loop fuse parport_pc i2c_piix
+[471626.688802] CPU: 14 PID: 19107 Comm: fsstress Tainted: G        W       4.3.0-rc5-btrfs-next-17+ #1
+[471626.690148] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.8.1-0-g4adadbd-20150316_085822-nilsson.home.kraxel.org 04/01/2014
+[471626.691901]  0000000000000000 ffff880016037cf0 ffffffff812566f4 ffff880016037d38
+[471626.695009]  ffff880016037d28 ffffffff8104d0a6 ffffffffa040c84e 00000000fffffffe
+[471626.697490]  ffff88011fe855f8 ffff88000c484cb0 ffff88000d195000 ffff880016037d90
+[471626.699201] Call Trace:
+[471626.699804]  [<ffffffff812566f4>] dump_stack+0x4e/0x79
+[471626.701049]  [<ffffffff8104d0a6>] warn_slowpath_common+0x9f/0xb8
+[471626.702542]  [<ffffffffa040c84e>] ? btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]
+[471626.704326]  [<ffffffff8104d107>] warn_slowpath_fmt+0x48/0x50
+[471626.705636]  [<ffffffffa0403717>] ? write_one_cache_group.isra.32+0x77/0x82 [btrfs]
+[471626.707048]  [<ffffffffa040c84e>] btrfs_write_dirty_block_groups+0x17c/0x214 [btrfs]
+[471626.708616]  [<ffffffffa048a50a>] commit_cowonly_roots+0x1d7/0x25a [btrfs]
+[471626.709950]  [<ffffffffa041e34a>] btrfs_commit_transaction+0x4c4/0x991 [btrfs]
+[471626.711286]  [<ffffffff81081c61>] ? signal_pending_state+0x31/0x31
+[471626.712611]  [<ffffffffa03f6df4>] btrfs_sync_fs+0x145/0x1ad [btrfs]
+[471626.715610]  [<ffffffff811962a2>] ? SyS_tee+0x226/0x226
+[471626.716718]  [<ffffffff811962c2>] sync_fs_one_sb+0x20/0x22
+[471626.717672]  [<ffffffff8116fc01>] iterate_supers+0x75/0xc2
+[471626.718800]  [<ffffffff8119669a>] sys_sync+0x52/0x80
+[471626.719990]  [<ffffffff8147cd97>] entry_SYSCALL_64_fastpath+0x12/0x6f
+[471626.721835] ---[ end trace baf57f43d76693f4 ]---
+[471626.722954] BTRFS: error (device sdc) in btrfs_write_dirty_block_groups:3740: errno=-2 No such entry
 
-Current implement restore all dedup hash in memory rb-tree, with LRU
-behavior to control the limit.
+This is a very rare situation and it happened due to a race between a free
+space endio worker and writing the space caches for dirty block groups at
+a transaction's commit critical section. The steps leading to this are:
 
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+1) A task calls btrfs_commit_transaction() and starts the writeout of the
+   space caches for all currently dirty block groups (i.e. it calls
+   btrfs_start_dirty_block_groups());
+
+2) The previous step starts writeback for space caches;
+
+3) When the writeback finishes it queues jobs for free space endio work
+   queue (fs_info->endio_freespace_worker) that execute
+   btrfs_finish_ordered_io();
+
+4) The task committing the transaction sets the transaction's state
+   to TRANS_STATE_COMMIT_DOING and shortly after calls
+   btrfs_write_dirty_block_groups();
+
+5) A free space endio job joins the transaction, through
+   btrfs_join_transaction_nolock(), and updates a free space inode item
+   in the root tree through btrfs_update_inode_fallback();
+
+6) Updating the free space inode item resulted in COWing one or more
+   nodes/leaves of the root tree, and that resulted in creating a new
+   metadata block group, which gets added to the transaction's list
+   of dirty block groups (this is a very rare case);
+
+7) The free space endio job has not released yet its transaction handle
+   at this point, so the new metadata block group was not yet fully
+   created (didn't go through btrfs_create_pending_block_groups() yet);
+
+8) The transaction commit task sees the new metadata block group in
+   the transaction's list of dirty block groups and processes it.
+   When it attempts to update the block group's block group item in
+   the extent tree, through write_one_cache_group(), it isn't able
+   to find it and aborts the transaction with error -ENOENT - this
+   is because the free space endio job hasn't yet released its
+   transaction handle (which calls btrfs_create_pending_block_groups())
+   and therefore the block group item was not yet added to the extent
+   tree.
+
+Fix this waiting for free space endio jobs if we fail to find a block
+group item in the extent tree and then retry once updating the block
+group item.
+
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/extent-tree.c |   7 ++
- fs/btrfs/extent_io.c   |  30 ++---
- fs/btrfs/extent_io.h   |  15 +++
- fs/btrfs/inode.c       | 299 +++++++++++++++++++++++++++++++++++++++++++++++--
- 4 files changed, 328 insertions(+), 23 deletions(-)
+ fs/btrfs/extent-tree.c | 19 +++++++++++++++++++
+ 1 file changed, 19 insertions(+)
 
 diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index c4661db..3f2ca718 100644
+index 0617cb7..9bca90d 100644
 --- a/fs/btrfs/extent-tree.c
 +++ b/fs/btrfs/extent-tree.c
-@@ -36,6 +36,7 @@
- #include "math.h"
- #include "sysfs.h"
- #include "qgroup.h"
-+#include "dedup.h"
- 
- #undef SCRAMBLE_DELAYED_REFS
- 
-@@ -6654,6 +6655,12 @@ static int __btrfs_free_extent(struct btrfs_trans_handle *trans,
- 		btrfs_release_path(path);
- 
- 		if (is_data) {
-+			ret = btrfs_dedup_del(trans, root, bytenr);
-+			if (ret < 0) {
-+				btrfs_abort_transaction(trans, extent_root,
-+							ret);
-+				goto out;
+@@ -3763,6 +3763,25 @@ int btrfs_write_dirty_block_groups(struct btrfs_trans_handle *trans,
+ 		}
+ 		if (!ret) {
+ 			ret = write_one_cache_group(trans, root, path, cache);
++			/*
++			 * One of the free space endio workers might have
++			 * created a new block group while updating a free space
++			 * cache's inode (at inode.c:btrfs_finish_ordered_io())
++			 * and hasn't released its transaction handle yet, in
++			 * which case the new block group is still attached to
++			 * its transaction handle and its creation has not
++			 * finished yet (no block group item in the extent tree
++			 * yet, etc). If this is the case, wait for all free
++			 * space endio workers to finish and retry. This is a
++			 * a very rare case so no need for a more efficient and
++			 * complex approach.
++			 */
++			if (ret == -ENOENT) {
++				wait_event(cur_trans->writer_wait,
++				   atomic_read(&cur_trans->num_writers) == 1);
++				ret = write_one_cache_group(trans, root, path,
++							    cache);
 +			}
- 			ret = btrfs_del_csums(trans, root, bytenr, num_bytes);
- 			if (ret) {
- 				btrfs_abort_transaction(trans, extent_root, ret);
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 33a01ea..b7a6612 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2549,7 +2549,7 @@ int end_extent_writepage(struct page *page, int err, u64 start, u64 end)
-  * Scheduling is not allowed, so the extent state tree is expected
-  * to have one and only one object corresponding to this IO.
-  */
--static void end_bio_extent_writepage(struct bio *bio)
-+void end_bio_extent_writepage(struct bio *bio)
- {
- 	struct bio_vec *bvec;
- 	u64 start;
-@@ -2813,8 +2813,8 @@ struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs)
- }
- 
- 
--static int __must_check submit_one_bio(int rw, struct bio *bio,
--				       int mirror_num, unsigned long bio_flags)
-+int __must_check submit_one_bio(int rw, struct bio *bio,
-+				int mirror_num, unsigned long bio_flags)
- {
- 	int ret = 0;
- 	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
-@@ -2851,18 +2851,18 @@ static int merge_bio(int rw, struct extent_io_tree *tree, struct page *page,
- 
- }
- 
--static int submit_extent_page(int rw, struct extent_io_tree *tree,
--			      struct writeback_control *wbc,
--			      struct page *page, sector_t sector,
--			      size_t size, unsigned long offset,
--			      struct block_device *bdev,
--			      struct bio **bio_ret,
--			      unsigned long max_pages,
--			      bio_end_io_t end_io_func,
--			      int mirror_num,
--			      unsigned long prev_bio_flags,
--			      unsigned long bio_flags,
--			      bool force_bio_submit)
-+int submit_extent_page(int rw, struct extent_io_tree *tree,
-+			struct writeback_control *wbc,
-+			struct page *page, sector_t sector,
-+			size_t size, unsigned long offset,
-+			struct block_device *bdev,
-+			struct bio **bio_ret,
-+			unsigned long max_pages,
-+			bio_end_io_t end_io_func,
-+			int mirror_num,
-+			unsigned long prev_bio_flags,
-+			unsigned long bio_flags,
-+			bool force_bio_submit)
- {
- 	int ret = 0;
- 	struct bio *bio;
-diff --git a/fs/btrfs/extent_io.h b/fs/btrfs/extent_io.h
-index f4c1ae1..ae17832 100644
---- a/fs/btrfs/extent_io.h
-+++ b/fs/btrfs/extent_io.h
-@@ -360,6 +360,21 @@ int clean_io_failure(struct inode *inode, u64 start, struct page *page,
- int end_extent_writepage(struct page *page, int err, u64 start, u64 end);
- int repair_eb_io_failure(struct btrfs_root *root, struct extent_buffer *eb,
- 			 int mirror_num);
-+int submit_extent_page(int rw, struct extent_io_tree *tree,
-+		       struct writeback_control *wbc,
-+		       struct page *page, sector_t sector,
-+		       size_t size, unsigned long offset,
-+		       struct block_device *bdev,
-+		       struct bio **bio_ret,
-+		       unsigned long max_pages,
-+		       bio_end_io_t end_io_func,
-+		       int mirror_num,
-+		       unsigned long prev_bio_flags,
-+		       unsigned long bio_flags,
-+		       bool force_bio_submit);
-+int __must_check submit_one_bio(int rw, struct bio *bio,
-+				int mirror_num, unsigned long bio_flags);
-+void end_bio_extent_writepage(struct bio *bio);
- 
- /*
-  * When IO fails, either with EIO or csum verification fails, we
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index f82d1f4..6c4f0f9 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -60,6 +60,7 @@
- #include "hash.h"
- #include "props.h"
- #include "qgroup.h"
-+#include "dedup.h"
- 
- struct btrfs_iget_args {
- 	struct btrfs_key *location;
-@@ -666,6 +667,256 @@ static void free_async_extent_pages(struct async_extent *async_extent)
- }
- 
- /*
-+ * Run dedup for delalloc range
-+ * Will calculate the hash for the range.
-+ */
-+static noinline int
-+run_delalloc_dedup(struct inode *inode, struct page *locked_page, u64 start,
-+		   u64 end, struct async_cow *async_cow)
-+{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct bio *bio = NULL;
-+	struct extent_map_tree *em_tree = &BTRFS_I(inode)->extent_tree;
-+	struct extent_io_tree *tree = &BTRFS_I(inode)->io_tree;
-+	struct extent_map *em;
-+	struct page *page = NULL;
-+	struct block_device *bdev;
-+	struct btrfs_key ins;
-+	u64 blocksize = root->sectorsize;
-+	u64 num_bytes;
-+	u64 cur_alloc_size;
-+	u64 cur_end;
-+	u64 alloc_hint = 0;
-+	u64 iosize;
-+	int found = 0;
-+	int type = 0;
-+	sector_t sector;
-+	int ret = 0;
-+	struct extent_state *cached_state = NULL;
-+	struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
-+	u64 dedup_bs = dedup_info->blocksize;
-+	u16 hash_type = dedup_info->hash_type;
-+	struct btrfs_dedup_hash *hash;
-+
-+	WARN_ON(btrfs_is_free_space_inode(inode));
-+
-+	num_bytes = ALIGN(end - start + 1, blocksize);
-+	num_bytes = max(blocksize, num_bytes);
-+
-+	hash = btrfs_dedup_alloc_hash(hash_type);
-+	if (!hash) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	btrfs_drop_extent_cache(inode, start, start + num_bytes - 1, 0);
-+
-+	while (num_bytes > 0) {
-+		unsigned long op = 0;
-+
-+		/* page has been locked by caller */
-+		page = find_get_page(inode->i_mapping,
-+				     start >> PAGE_CACHE_SHIFT);
-+		WARN_ON(!page);	/* page should be here */
-+
-+		/* already ordered? */
-+		if (PagePrivate2(page))
-+			goto submit;
-+
-+		/* too small data, go for normal path */
-+		if (num_bytes < dedup_bs) {
-+			int page_started = 0;
-+			unsigned long nr_written = 0;
-+
-+			cur_end = start + num_bytes - 1;
-+
-+			/* Now locked_page is not dirty. */
-+			if (page_offset(locked_page) >= start &&
-+			    page_offset(locked_page) <= cur_end) {
-+				__set_page_dirty_nobuffers(locked_page);
-+			}
-+
-+			lock_extent(tree, start, cur_end);
-+
-+			/* allocate blocks */
-+			ret = cow_file_range(inode, locked_page, start, cur_end,
-+					     &page_started, &nr_written, 0);
-+
-+			if (!page_started && !ret)
-+				extent_write_locked_range(tree, inode, start,
-+						cur_end, btrfs_get_extent,
-+						WB_SYNC_ALL);
-+			else if (ret)
-+				unlock_page(async_cow->locked_page);
-+
-+			if (ret)
-+				SetPageError(page);
-+
-+			page_cache_release(page);
-+			page = NULL;
-+
-+			num_bytes = 0;
-+			start += num_bytes;
-+			cond_resched();
-+			continue;
-+		}
-+
-+		cur_alloc_size = min_t(u64, num_bytes, dedup_bs);
-+		WARN_ON(cur_alloc_size < dedup_bs);	/* shouldn't happen */
-+		cur_end = start + cur_alloc_size - 1;
-+
-+		/* see comments in compress_file_range */
-+		extent_range_clear_dirty_for_io(inode, start, cur_end);
-+
-+		ret = btrfs_dedup_calc_hash(root, inode, start, hash);
-+		if (ret < 0)
-+			goto out_unlock;
-+
-+		found = btrfs_dedup_search(inode, start, hash);
-+
-+		if (found == 0) {
-+			/* Dedup hash miss, normal routine */
-+			ret = btrfs_reserve_extent(root, cur_alloc_size,
-+					   cur_alloc_size, 0, alloc_hint,
-+					   &ins, 1, 1);
-+			if (ret < 0)
-+				goto out_unlock;
-+		} else {
-+			/* Dedup hash hit, only insert file extent */
-+			ins.objectid = hash->bytenr;
-+			ins.offset = hash->num_bytes;
-+		}
-+
-+		lock_extent(tree, start, cur_end);
-+
-+		em = alloc_extent_map();
-+		if (!em) {
-+			ret = -ENOMEM;
-+			goto out_reserve;
-+		}
-+		em->start = start;
-+		em->orig_start = em->start;
-+		em->len = cur_alloc_size;
-+		em->mod_start = em->start;
-+		em->mod_len = em->len;
-+
-+		em->block_start = ins.objectid;
-+		em->block_len = ins.offset;
-+		em->orig_block_len = ins.offset;
-+		em->bdev = root->fs_info->fs_devices->latest_bdev;
-+		set_bit(EXTENT_FLAG_PINNED, &em->flags);
-+		em->generation = -1;
-+
-+		while (1) {
-+			write_lock(&em_tree->lock);
-+			ret = add_extent_mapping(em_tree, em, 1);
-+			write_unlock(&em_tree->lock);
-+			if (ret != -EEXIST) {
-+				free_extent_map(em);
-+				break;
-+			}
-+			btrfs_drop_extent_cache(inode, start, cur_end, 0);
-+		}
-+		if (ret)
-+			goto out_reserve;
-+
-+		ret = btrfs_add_ordered_extent_dedup(inode, start, ins.objectid,
-+						     cur_alloc_size, ins.offset,
-+						     type, hash);
-+		if (ret)
-+			goto out_reserve;
-+
-+		/*
-+		 * Do set the Private2 bit so we know this page was properly
-+		 * setup for writepage
-+		 */
-+		op |= PAGE_SET_PRIVATE2 | PAGE_SET_WRITEBACK | PAGE_CLEAR_DIRTY;
-+		extent_clear_unlock_delalloc(inode, start, cur_end,
-+					     NULL,
-+					     EXTENT_LOCKED | EXTENT_DELALLOC,
-+					     op);
-+
-+submit:
-+		iosize = blocksize;
-+
-+		if (found == 0) {
-+			em = btrfs_get_extent(inode, page, 0, start, blocksize,
-+					      1);
-+			if (IS_ERR(em)) {
-+				/* btrfs_get_extent will not return NULL */
-+				ret = PTR_ERR(em);
-+				goto out_reserve;
-+			}
-+
-+			sector = (em->block_start + start - em->start) >> 9;
-+			bdev = em->bdev;
-+			free_extent_map(em);
-+			em = NULL;
-+
-+			/* TODO: rw can be WRTIE_SYNC */
-+			ret = submit_extent_page(WRITE, tree, NULL, page,
-+						 sector, iosize, 0,
-+						 bdev, &bio,
-+						 0, /* max_nr is no used */
-+						 end_bio_extent_writepage,
-+						 0, 0, 0, 0);
-+			if (ret)
-+				break;
-+		} else {
-+			end_extent_writepage(page, 0, start,
-+					     start + iosize - 1);
-+			/* we need to do this ourselves because we skip IO */
-+			end_page_writeback(page);
-+
-+			/* Don't forget to free qgroup reserved space */
-+			btrfs_qgroup_free_data(inode, start, cur_alloc_size);
-+		}
-+
-+		unlock_page(page);
-+		page_cache_release(page);
-+		page = NULL;
-+
-+		num_bytes -= blocksize;
-+		alloc_hint = ins.objectid + blocksize;
-+		start += blocksize;
-+		cond_resched();
-+	}
-+
-+out_unlock:
-+	if (bio) {
-+		if (ret)
-+			bio_put(bio);
-+		else
-+			ret = submit_one_bio(WRITE, bio, 0, 0);
-+		bio = NULL;
-+	}
-+
-+	if (ret && page)
-+		SetPageError(page);
-+	if (page) {
-+		unlock_page(page);
-+		page_cache_release(page);
-+	}
-+
-+out:
-+	if (ret && num_bytes > 0)
-+		extent_clear_unlock_delalloc(inode,
-+			     start, start + num_bytes - 1, NULL,
-+			     EXTENT_DELALLOC | EXTENT_LOCKED | EXTENT_DEFRAG,
-+			     PAGE_UNLOCK | PAGE_SET_WRITEBACK |
-+			     PAGE_END_WRITEBACK | PAGE_CLEAR_DIRTY);
-+
-+	kfree(hash);
-+	free_extent_state(cached_state);
-+	return ret;
-+
-+out_reserve:
-+	if (found == 0)
-+		btrfs_free_reserved_extent(root, ins.objectid, ins.offset, 1);
-+	goto out_unlock;
-+}
-+
-+/*
-  * phase two of compressed writeback.  This is the ordered portion
-  * of the code, which only gets called in the order the work was
-  * queued.  We walk all the async extents created by compress_file_range
-@@ -1077,11 +1328,19 @@ static noinline void async_cow_start(struct btrfs_work *work)
- {
- 	struct async_cow *async_cow;
- 	int num_added = 0;
-+	int ret = 0;
- 	async_cow = container_of(work, struct async_cow, work);
- 
--	compress_file_range(async_cow->inode, async_cow->locked_page,
--			    async_cow->start, async_cow->end, async_cow,
--			    &num_added);
-+	if (inode_need_compress(async_cow->inode))
-+		compress_file_range(async_cow->inode, async_cow->locked_page,
-+				    async_cow->start, async_cow->end, async_cow,
-+				    &num_added);
-+	else
-+		ret = run_delalloc_dedup(async_cow->inode,
-+				async_cow->locked_page, async_cow->start,
-+				async_cow->end, async_cow);
-+	WARN_ON(ret);
-+
- 	if (num_added == 0) {
- 		btrfs_add_delayed_iput(async_cow->inode);
- 		async_cow->inode = NULL;
-@@ -1531,6 +1790,8 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- {
- 	int ret;
- 	int force_cow = need_force_cow(inode, start, end);
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
- 
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
-@@ -1538,7 +1799,7 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
--	} else if (!inode_need_compress(inode)) {
-+	} else if (!inode_need_compress(inode) && !dedup_info) {
- 		ret = cow_file_range(inode, locked_page, start, end,
- 				      page_started, nr_written, 1);
- 	} else {
-@@ -2069,7 +2330,8 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 				       u64 disk_bytenr, u64 disk_num_bytes,
- 				       u64 num_bytes, u64 ram_bytes,
- 				       u8 compression, u8 encryption,
--				       u16 other_encoding, int extent_type)
-+				       u16 other_encoding, int extent_type,
-+				       struct btrfs_dedup_hash *hash)
- {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_file_extent_item *fi;
-@@ -2131,10 +2393,29 @@ static int insert_reserved_file_extent(struct btrfs_trans_handle *trans,
- 	ins.objectid = disk_bytenr;
- 	ins.offset = disk_num_bytes;
- 	ins.type = BTRFS_EXTENT_ITEM_KEY;
--	ret = btrfs_alloc_reserved_file_extent(trans, root,
-+
-+	/*
-+	 * Only for no-dedup or hash miss case, we need to increase
-+	 * extent reference
-+	 * For hash hit case, reference is already increased
-+	 */
-+	if (!hash || hash->bytenr == 0)
-+		ret = btrfs_alloc_reserved_file_extent(trans, root,
- 					root->root_key.objectid,
- 					btrfs_ino(inode), file_pos,
- 					ram_bytes, &ins);
-+	if (ret < 0)
-+		goto out_qgroup;
-+
-+	/* Add missed hash into dedup tree */
-+	if (hash && hash->bytenr == 0) {
-+		hash->bytenr = ins.objectid;
-+		hash->num_bytes = ins.offset;
-+		ret = btrfs_dedup_add(trans, root, hash);
-+	}
-+
-+out_qgroup:
-+
- 	/*
- 	 * Release the reserved range from inode dirty range map, as it is
- 	 * already moved into delayed_ref_head
-@@ -2918,7 +3199,8 @@ static int btrfs_finish_ordered_io(struct btrfs_ordered_extent *ordered_extent)
- 						ordered_extent->disk_len,
- 						logical_len, logical_len,
- 						compress_type, 0, 0,
--						BTRFS_FILE_EXTENT_REG);
-+						BTRFS_FILE_EXTENT_REG,
-+						ordered_extent->hash);
- 		if (!ret)
- 			btrfs_release_delalloc_bytes(root,
- 						     ordered_extent->start,
-@@ -9784,7 +10066,8 @@ static int __btrfs_prealloc_file_range(struct inode *inode, int mode,
- 						  cur_offset, ins.objectid,
- 						  ins.offset, ins.offset,
- 						  ins.offset, 0, 0, 0,
--						  BTRFS_FILE_EXTENT_PREALLOC);
-+						  BTRFS_FILE_EXTENT_PREALLOC,
-+						  NULL);
- 		if (ret) {
- 			btrfs_free_reserved_extent(root, ins.objectid,
- 						   ins.offset, 0);
+ 			if (ret)
+ 				btrfs_abort_transaction(trans, root, ret);
+ 		}
 -- 
-2.6.4
-
-
+2.1.3
 

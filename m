@@ -1,41 +1,54 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-01.dd24.net ([193.46.215.41]:32873 "EHLO
+Received: from mailgw-01.dd24.net ([193.46.215.41]:32983 "EHLO
 	mailgw-01.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751276AbbL3T0F (ORCPT
+	with ESMTP id S1753215AbbL3T2E (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Dec 2015 14:26:05 -0500
-Message-ID: <1451503560.6350.3.camel@scientia.net>
+	Wed, 30 Dec 2015 14:28:04 -0500
+Message-ID: <1451503680.6350.5.camel@scientia.net>
 Subject: Re: Confining scrub to a subvolume
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: dsterba@suse.cz, Sree Harsha Totakura <sreeharsha@totakura.in>
-Cc: linux-btrfs@vger.kernel.org
-Date: Wed, 30 Dec 2015 20:26:00 +0100
-In-Reply-To: <20151230173949.GH4227@twin.jikos.cz>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Wed, 30 Dec 2015 20:28:00 +0100
+In-Reply-To: <pan$88aff$ee7e2e75$cb54e003$bedb8f3a@cox.net>
 References: <56831EA2.3090807@totakura.in>
 	 <20151230173949.GH4227@twin.jikos.cz>
+	 <pan$88aff$ee7e2e75$cb54e003$bedb8f3a@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-ZP5nl9SMMq8uBP5iuhb4"
+	boundary="=-zKCRZJ/0MeXrvI2cQNPE"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-ZP5nl9SMMq8uBP5iuhb4
+--=-zKCRZJ/0MeXrvI2cQNPE
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Wed, 2015-12-30 at 18:39 +0100, David Sterba wrote:
-> The closest would be to read the files and look for any reported
-> errors.
-Doesn't that fail for any multi-device setup, in which case btrfs reads
-the blocks only from one device, and if that verifies, doesn't check
-the other?
+On Wed, 2015-12-30 at 18:26 +0000, Duncan wrote:
+> That should work.=C2=A0=C2=A0Cat the files to /dev/null and check dmesg.=
+=C2=A0=C2=A0For=C2=A0
+> single mode it should check the only copy.=C2=A0=C2=A0For raid1/10 or dup=
+,
+> running=C2=A0
+> two checks, ensuring one is even-PID while the other is odd-PID,
+> should=C2=A0
+> work to check both copies, since the read-scheduler assigns copy
+> based on=C2=A0
+> even/odd PID.=C2=A0=C2=A0Errors will show up in dmesg, as well as cat's S=
+TDERR.
+That doesn't seem very reliable to me, to be honest... plus it wouldn't
+work in any RAID56 or dupN (with n!=3D2) case, when that gets sooner or
+later implemented.
+
+Also, I'd kinda guess (or better said: hope) that the kernel's cache
+would destroy these efforts, at least when the two reads happen mostly
+in parallel.
 
 
 Cheers,
 Chris.
---=-ZP5nl9SMMq8uBP5iuhb4
+--=-zKCRZJ/0MeXrvI2cQNPE
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -122,19 +135,19 @@ oI53V93lYRE9IwCQTDz6o2CTBKOvNfYOao9PSmCnhQVsRqGP9Md246FZV/dxssRuFFxtbUFm3xuT
 sdQAw+7Lzzw9IYCpX2Nl/N3gX6T0K/CFcUHUZyX7GrGXrtaZghNB0m6lG5kngOcLqagAMYIC7TCC
 AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
 cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
-ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDE5MjYw
-MFowTwYJKoZIhvcNAQkEMUIEQO5EV7BMymaUnI/VxpaYDxz6YPfDPxZKMkYznDjFuJdGaCid3tr0
-SBj6nKYcNKVUlpnK6qBzUdqJ8t9L7KTIws4wagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE1MTIzMDE5Mjgw
+MFowTwYJKoZIhvcNAQkEMUIEQBZjVDlttx8tF3VlALF5fjjjJKQwEg9ocJTv1NY1MUktxDIbFsBx
+vr8fA7lQ9JeUQE+NqvecBBJ3p2/ncpCKU7kwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
 QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
 cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
 dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
-bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQCJkaJECvhYNCmPi3f3rAtLD3viSnc+
-B0YygYcsN4PTYY9u1JlvtPXq7q+geA1h+e8rwcf39xT2ezLtA8dyZQ0HUXufhV8X9AFiGY3R1m3k
-yjcXRcbIvJP0VqlnaX8acDKNS5iAlCoD7S1reoRkWqq1vw/PY27MJPHrj/Na/6CQ0aHUptxt9+MU
-rQqOAbFd3VIEaw2+P52BZrMT1PLwZAfOaRwqduaRL7E3A+H529kC83HggcoR7x6B+c7Z4qUstl5O
-/how6L/o2bUHuaX0DvO/d1zMpc1oE+JfSU5KHt4R1ECuizvjJrTu4U5KnoI8TVfP1oJ2ApP1rBYN
-Y6vyX0MSAAAAAAAA
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQBhDBfGQpkUof2oSUws891alCyyeADF
+hWJwkTCPnT/l9lyFIQuZ/tbFIuKETNChWeYziMfQ9+lsYmvr3o8p4rx/ctGPW0rxqeOA1+x5y80q
+SMhMtyUTCIuFcM6WvkRFECXjXupiD0uxldBfuFUZPxFy/UTmioWt25XGwRjfOr43Ae8wO+YPA2RU
+1s64zQzwIKv+irSwnXRayB9vZ2DOfCjmL4kLwX+KTCoFO5j/bg15/tkocUfigKbFI0kowtrev5ds
+NkrRsjYcl5aJKGKojgqSiGz0uwij818c1/KZuRk2MNI1digP3ktsobCwSDZ1Li/1Bw6HP6ibNSSU
+mPd2RzW+AAAAAAAA
 
 
---=-ZP5nl9SMMq8uBP5iuhb4--
+--=-zKCRZJ/0MeXrvI2cQNPE--
 

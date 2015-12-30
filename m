@@ -1,109 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50926 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751795AbbL3I6Y (ORCPT
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:38151 "EHLO
+	mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754450AbbL3Klb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 30 Dec 2015 03:58:24 -0500
-Subject: Re: Feedback on inline dedup patches
-To: Marcel Ritter <ritter.marcel@gmail.com>
-References: <CADurGxzoCAk7EFVGiRD+8cc1LMYTFiFBLd02ZcPFtjn=MhBuwQ@mail.gmail.com>
- <568397F5.7070706@cn.fujitsu.com>
-CC: btrfs <linux-btrfs@vger.kernel.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56839C9F.2090401@cn.fujitsu.com>
-Date: Wed, 30 Dec 2015 16:58:07 +0800
+	Wed, 30 Dec 2015 05:41:31 -0500
+Date: Wed, 30 Dec 2015 01:39:46 -0500
+From: Sanidhya Solanki <jpage.lkml@gmail.com>
+To: David Sterba <dsterba@suse.cz>, calestyo@scientia.net
+Cc: clm@fb.com, jbacik@fb.com, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
+Message-ID: <20151230013946.7c1f0e12@gmail.com>
+In-Reply-To: <20151229170611.GB4227@suse.cz>
+References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
+	<20151229133907.GA4227@suse.cz>
+	<20151229061512.79a41f31@gmail.com>
+	<20151229170611.GB4227@suse.cz>
 MIME-Version: 1.0
-In-Reply-To: <568397F5.7070706@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On Tue, 29 Dec 2015 18:06:11 +0100
+David Sterba <dsterba@suse.cz> wrote:
 
+> So you want to make the stripe size configurable?...
 
-Qu Wenruo wrote on 2015/12/30 16:38 +0800:
-> Hi Marcel
->
-> Thanks a lot for the feedback.
->
-> Marcel Ritter wrote on 2015/12/30 09:15 +0100:
->> Hi Qu Wenrou,
->>
->> I just wanted to give some feedback on yesterdays dedup patches:
->>
->> I just applied them to a 4.4-rc7 kernel and did some (very basic)
->> testing:
->>
->> Test1: in-memory
->>
->> Didn't crash on my 350 GB test files. Copying those files again,
->> but "btrfs fi df" didn't show much space savings (maybe that's not
->> the tool to check anyway?).
-> Two reasons, one is the the default limit for 4096 hashes.
->
-> The other one is a bug for not deduping if a transaction is just committed.
-> We already have fix for it internally, but we are busy fixing/testing
-> on-disk backend.
-> But that's not a big problem as it will only skipped the first several hit.
->
->> Looking further I found the (default) limit of 4096 hashes (is it really
->> hashes? with 16k blocks that'd cover a dataset of only 64 MB?).
->
-> Yes, that's the default value.
->
-> Allowing even embedded device to have a try on btrfs dedup.
-> Default value shouldn't be super big to make the system OOM, so I just
-> chose the small 4096 default value.
->
->> I think I'll start a new test run, with a much higher number of hashes,
->> but I'd like to know the memory requirements involved - is there
->> a formula for calculating those memory needs?
->
-> The formula is very easy:
-> Memory usage = btrfs_dedup_hash_size * limit.
->
-> Currently, btrfs_dedup_hahs_size for SHA-256 is 112 bytes.
->
->>
->> Test2: ondisk
->>
->> Created filesystem with "-O dedup", did a btrfs dedup enable -s ondisk"
->> and started copying the same date (s. above). Just a few seconds
->> later I got a kernel crash :-(
->> I'll try to get a kernel dump - maybe this helps to track down the
->> problem.
->
-> We're aware of the bug, and are trying our best to fix it.
-> But the bug seems quite wired and it may take some time to fix.
+As I see it there are 3 ways to do it:
+-Make it a compile time option that only configures it for a single
+system with any devices that are added to the RAID.
+-Make it a runtime option that can change based on how the
+administrator configures it.
+-A non-user facing option that is configurable by someone like a
+distribution maintainer for all systems using the Binary Distribution.
 
-OK....
+As I see it, DS would like something like the third option, but CAM
+(ostensibly a SysAdmin) wants the second option.
 
-I'm just confused with "btrfs_item_offset_nr" and "btrfs_item_ptr_offset".
+On the other hand, I implemented the first option. 
 
-And that's the root cause of the problem for on-disk backend.
+The first and third option can co-exit, the second is an orthogonal
+target that needs to be setup separately.
 
-What a SUUUUUUUUUUUUPER STUUUUUUUUUUUUUPID bug!!!
+Or we can make all options co-exist, but make it more complicated.
 
-So the fix will be much sooner than I'd expected.
+Please let me know which implementation is preferable, and, if you just
+want me to expand the description (as DS' mail asked for) or redo the
+entire setup.
 
-Thanks,
-Qu
-
->
-> So on-disk is not recommended, unless you want to help fixing the bug.
->
-> Thanks,
-> Qu
->
->>
->>
->>     Marcel
->>
->>
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-
-
+Thanks

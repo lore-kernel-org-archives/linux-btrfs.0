@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:8912 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753657AbbLaPHs (ORCPT
+	with ESMTP id S1753784AbbLaPHu (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 10:07:48 -0500
+	Thu, 31 Dec 2015 10:07:50 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id A0E2E41887C9
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:27 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id C7F3841887DF
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:28 +0800 (CST)
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 05/10] btrfs: reada: Remove level argument in severial functions
-Date: Thu, 31 Dec 2015 23:03:39 +0800
-Message-ID: <edfc6894faf1768d32e47f65fef8d184045b3429.1451574005.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 07/10] btrfs: reada: Pass reada_extent into __readahead_hook directly
+Date: Thu, 31 Dec 2015 23:03:41 +0800
+Message-ID: <b1bec43b20d38ecea3cf2e61266b3513337dbe39.1451574005.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 References: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,83 +20,112 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-level is not used in severial functions, remove them from arguments,
-and remove relative code for get its value.
+reada_start_machine_dev() already have reada_extent pointer, pass
+it into __readahead_hook() directly instead of search radix_tree
+will make code run faster.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/reada.c | 15 ++++++---------
- 1 file changed, 6 insertions(+), 9 deletions(-)
+ fs/btrfs/reada.c | 45 ++++++++++++++++++++++++---------------------
+ 1 file changed, 24 insertions(+), 21 deletions(-)
 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index ef9457e..66409f3 100644
+index 7015906..7668066 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -101,7 +101,7 @@ static void reada_start_machine(struct btrfs_fs_info *fs_info);
- static void __reada_start_machine(struct btrfs_fs_info *fs_info);
- 
- static int reada_add_block(struct reada_control *rc, u64 logical,
--			   struct btrfs_key *top, int level, u64 generation);
-+			   struct btrfs_key *top, u64 generation);
+@@ -105,33 +105,21 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
  
  /* recurses */
  /* in case of err, eb might be NULL */
-@@ -197,8 +197,7 @@ static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
- 			if (rec->generation == generation &&
- 			    btrfs_comp_cpu_keys(&key, &rc->key_end) < 0 &&
- 			    btrfs_comp_cpu_keys(&next_key, &rc->key_start) > 0)
--				reada_add_block(rc, bytenr, &next_key,
--						level - 1, n_gen);
-+				reada_add_block(rc, bytenr, &next_key, n_gen);
- 		}
- 	}
- 	/*
-@@ -315,7 +314,7 @@ static struct reada_zone *reada_find_zone(struct btrfs_fs_info *fs_info,
- 
- static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 					      u64 logical,
--					      struct btrfs_key *top, int level)
-+					      struct btrfs_key *top)
+-static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
+-			    u64 start, int err)
++static void __readahead_hook(struct btrfs_root *root, struct reada_extent *re,
++			     struct extent_buffer *eb, u64 start, int err)
  {
- 	int ret;
- 	struct reada_extent *re = NULL;
-@@ -562,13 +561,13 @@ static void reada_control_release(struct kref *kref)
+ 	int level = 0;
+ 	int nritems;
+ 	int i;
+ 	u64 bytenr;
+ 	u64 generation;
+-	struct reada_extent *re;
+ 	struct btrfs_fs_info *fs_info = root->fs_info;
+ 	struct list_head list;
+-	unsigned long index = start >> PAGE_CACHE_SHIFT;
+ 	struct btrfs_device *for_dev;
+ 
+ 	if (eb)
+ 		level = btrfs_header_level(eb);
+ 
+-	/* find extent */
+-	spin_lock(&fs_info->reada_lock);
+-	re = radix_tree_lookup(&fs_info->reada_tree, index);
+-	if (re)
+-		re->refcnt++;
+-	spin_unlock(&fs_info->reada_lock);
+-
+-	if (!re)
+-		return -1;
+-
+ 	spin_lock(&re->lock);
+ 	/*
+ 	 * just take the full list from the extent. afterwards we
+@@ -221,11 +209,11 @@ static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
+ 
+ 		reada_extent_put(fs_info, re);	/* one ref for each entry */
+ 	}
+-	reada_extent_put(fs_info, re);	/* our ref */
++
+ 	if (for_dev)
+ 		atomic_dec(&for_dev->reada_in_flight);
+ 
+-	return 0;
++	return;
  }
  
- static int reada_add_block(struct reada_control *rc, u64 logical,
--			   struct btrfs_key *top, int level, u64 generation)
-+			   struct btrfs_key *top, u64 generation)
+ /*
+@@ -235,12 +223,27 @@ static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
+ int btree_readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
+ 			 u64 start, int err)
  {
- 	struct btrfs_root *root = rc->root;
- 	struct reada_extent *re;
- 	struct reada_extctl *rec;
+-	int ret;
++	int ret = 0;
++	struct reada_extent *re;
++	struct btrfs_fs_info *fs_info = root->fs_info;
  
--	re = reada_find_extent(root, logical, top, level); /* takes one ref */
-+	re = reada_find_extent(root, logical, top); /* takes one ref */
- 	if (!re)
- 		return -1;
+-	ret = __readahead_hook(root, eb, start, err);
++	/* find extent */
++	spin_lock(&fs_info->reada_lock);
++	re = radix_tree_lookup(&fs_info->reada_tree,
++			       start >> PAGE_CACHE_SHIFT);
++	if (re)
++		re->refcnt++;
++	spin_unlock(&fs_info->reada_lock);
++	if (!re) {
++		ret = -1;
++		goto start_machine;
++	}
  
-@@ -921,7 +920,6 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
- 	struct reada_control *rc;
- 	u64 start;
- 	u64 generation;
--	int level;
- 	int ret;
- 	struct extent_buffer *node;
- 	static struct btrfs_key max_key = {
-@@ -944,11 +942,10 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
+-	reada_start_machine(root->fs_info);
++	__readahead_hook(fs_info, re, eb, start, err);
++	reada_extent_put(fs_info, re);	/* our ref */
  
- 	node = btrfs_root_node(root);
- 	start = node->start;
--	level = btrfs_header_level(node);
- 	generation = btrfs_header_generation(node);
- 	free_extent_buffer(node);
++start_machine:
++	reada_start_machine(fs_info);
+ 	return ret;
+ }
  
--	ret = reada_add_block(rc, start, &max_key, level, generation);
-+	ret = reada_add_block(rc, start, &max_key, generation);
- 	if (ret) {
- 		kfree(rc);
- 		return ERR_PTR(ret);
+@@ -726,9 +729,9 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
+ 			mirror_num, &eb);
+ 	if (ret)
+-		__readahead_hook(fs_info->extent_root, NULL, logical, ret);
++		__readahead_hook(fs_info->extent_root, re, NULL, logical, ret);
+ 	else if (eb)
+-		__readahead_hook(fs_info->extent_root, eb, eb->start, ret);
++		__readahead_hook(fs_info->extent_root, re, eb, eb->start, ret);
+ 
+ 	if (eb)
+ 		free_extent_buffer(eb);
 -- 
 1.8.5.1
 

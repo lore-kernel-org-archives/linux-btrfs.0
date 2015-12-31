@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31708 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:8912 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753524AbbLaPHl (ORCPT
+	with ESMTP id S1753247AbbLaPHp (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 10:07:41 -0500
+	Thu, 31 Dec 2015 10:07:45 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 119AD409257F
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:27 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 7C5F34092565
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:25 +0800 (CST)
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 04/10] btrfs: reada: bypass adding extent when all zone failed
-Date: Thu, 31 Dec 2015 23:03:38 +0800
-Message-ID: <ddecc87e86e0e56af34600b65cbcdddd8cd0f873.1451574005.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 01/10] btrfs: reada: Avoid many times of empty loop
+Date: Thu, 31 Dec 2015 23:03:35 +0800
+Message-ID: <2af066124843c9a7e2b831c57dc9f57c0603254b.1451574005.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 References: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,44 +20,54 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-When failed adding all dev_zones for a reada_extent, the extent
-will have no chance to be selected to run, and keep in memory
-for ever.
+We can see following loop(10000 times) in trace_log:
+ [   75.416137] ZL_DEBUG: reada_start_machine_dev:730: pid=771 comm=kworker/u2:3 re->ref_cnt ffff88003741e0c0 1 -> 2
+ [   75.417413] ZL_DEBUG: reada_extent_put:524: pid=771 comm=kworker/u2:3 re = ffff88003741e0c0, refcnt = 2 -> 1
+ [   75.418611] ZL_DEBUG: __readahead_hook:129: pid=771 comm=kworker/u2:3 re->ref_cnt ffff88003741e0c0 1 -> 2
+ [   75.419793] ZL_DEBUG: reada_extent_put:524: pid=771 comm=kworker/u2:3 re = ffff88003741e0c0, refcnt = 2 -> 1
 
-We should bypass this extent to avoid above case.
+ [   75.421016] ZL_DEBUG: reada_start_machine_dev:730: pid=771 comm=kworker/u2:3 re->ref_cnt ffff88003741e0c0 1 -> 2
+ [   75.422324] ZL_DEBUG: reada_extent_put:524: pid=771 comm=kworker/u2:3 re = ffff88003741e0c0, refcnt = 2 -> 1
+ [   75.423661] ZL_DEBUG: __readahead_hook:129: pid=771 comm=kworker/u2:3 re->ref_cnt ffff88003741e0c0 1 -> 2
+ [   75.424882] ZL_DEBUG: reada_extent_put:524: pid=771 comm=kworker/u2:3 re = ffff88003741e0c0, refcnt = 2 -> 1
+
+ ...(10000 times)
+
+ [  124.101672] ZL_DEBUG: reada_start_machine_dev:730: pid=771 comm=kworker/u2:3 re->ref_cnt ffff88003741e0c0 1 -> 2
+ [  124.102850] ZL_DEBUG: reada_extent_put:524: pid=771 comm=kworker/u2:3 re = ffff88003741e0c0, refcnt = 2 -> 1
+ [  124.104008] ZL_DEBUG: __readahead_hook:129: pid=771 comm=kworker/u2:3 re->ref_cnt ffff88003741e0c0 1 -> 2
+ [  124.105121] ZL_DEBUG: reada_extent_put:524: pid=771 comm=kworker/u2:3 re = ffff88003741e0c0, refcnt = 2 -> 1
+
+Reason:
+ If more than one user trigger reada in same extent, the first task
+ finished setting of reada data struct and call reada_start_machine()
+ to start, and the second task only add a ref_count but have not
+ add reada_extctl struct completely, the reada_extent can not finished
+ all jobs, and will be selected in __reada_start_machine() for 10000
+ times(total times in __reada_start_machine()).
+
+Fix:
+ For a reada_extent without job, we don't need to run it, just return
+ 0 to let caller break.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/reada.c | 5 +++++
- 1 file changed, 5 insertions(+)
+ fs/btrfs/reada.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 7733a09..ef9457e 100644
+index c65b42f..fb21bf0 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -330,6 +330,7 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 	int nzones = 0;
- 	unsigned long index = logical >> PAGE_CACHE_SHIFT;
- 	int dev_replace_is_ongoing;
-+	int have_zone = 0;
+@@ -713,7 +713,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 	logical = re->logical;
  
- 	spin_lock(&fs_info->reada_lock);
- 	re = radix_tree_lookup(&fs_info->reada_tree, index);
-@@ -461,10 +462,14 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 			btrfs_dev_replace_unlock(&fs_info->dev_replace);
- 			goto error;
- 		}
-+		have_zone = 1;
+ 	spin_lock(&re->lock);
+-	if (re->scheduled_for == NULL) {
++	if (!re->scheduled_for && !list_empty(&re->extctl)) {
+ 		re->scheduled_for = dev;
+ 		need_kick = 1;
  	}
- 	spin_unlock(&fs_info->reada_lock);
- 	btrfs_dev_replace_unlock(&fs_info->dev_replace);
- 
-+	if (!have_zone)
-+		goto error;
-+
- 	btrfs_put_bbio(bbio);
- 	return re;
- 
 -- 
 1.8.5.1
 

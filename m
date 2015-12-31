@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:8912 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:31708 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753657AbbLaPID (ORCPT
+	with ESMTP id S1753598AbbLaPIL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 10:08:03 -0500
+	Thu, 31 Dec 2015 10:08:11 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 63DB041887E0
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:29 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 399CD41887D9
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:28 +0800 (CST)
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 08/10] btrfs: reada: Use fs_info instead of root in __readahead_hook's argument
-Date: Thu, 31 Dec 2015 23:03:42 +0800
-Message-ID: <3d5adf8fefd36609e02524d4bc638a98f907ab9b.1451574005.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 06/10] btrfs: reada: move reada_extent_put to place after __readahead_hook()
+Date: Thu, 31 Dec 2015 23:03:40 +0800
+Message-ID: <9e54577b63a574b60950a62828a2f05702a86422.1451574005.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 References: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,171 +20,44 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-What __readahead_hook() need exactly is fs_info, no need to convert
-fs_info to root in caller and convert back in __readahead_hook()
+We can't release reada_extent earlier than __readahead_hook(), because
+__readahead_hook() still need to use it, it is necessary to hode a refcnt
+to avoid it be freed.
+
+Actually it is not a problem after my patch named:
+  Avoid many times of empty loop
+It make reada_extent in above line include at least one reada_extctl,
+which keeps additional one refcnt for reada_extent.
+
+But we still need this patch to make the code in pretty logic.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h   |  4 ++--
- fs/btrfs/disk-io.c | 22 +++++++++++-----------
- fs/btrfs/reada.c   | 23 +++++++++++------------
- 3 files changed, 24 insertions(+), 25 deletions(-)
+ fs/btrfs/reada.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 54e7b0d..0912f89 100644
---- a/fs/btrfs/ctree.h
-+++ b/fs/btrfs/ctree.h
-@@ -4358,8 +4358,8 @@ struct reada_control *btrfs_reada_add(struct btrfs_root *root,
- 			      struct btrfs_key *start, struct btrfs_key *end);
- int btrfs_reada_wait(void *handle);
- void btrfs_reada_detach(void *handle);
--int btree_readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
--			 u64 start, int err);
-+int btree_readahead_hook(struct btrfs_fs_info *fs_info,
-+			 struct extent_buffer *eb, u64 start, int err);
- 
- static inline int is_fstree(u64 rootid)
- {
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index 974be09..9d120e4 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -604,6 +604,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 	int found_level;
- 	struct extent_buffer *eb;
- 	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 	int ret = 0;
- 	int reads_done;
- 
-@@ -629,21 +630,21 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 
- 	found_start = btrfs_header_bytenr(eb);
- 	if (found_start != eb->start) {
--		btrfs_err_rl(eb->fs_info, "bad tree block start %llu %llu",
--			       found_start, eb->start);
-+		btrfs_err_rl(fs_info, "bad tree block start %llu %llu",
-+			     found_start, eb->start);
- 		ret = -EIO;
- 		goto err;
- 	}
--	if (check_tree_block_fsid(root->fs_info, eb)) {
--		btrfs_err_rl(eb->fs_info, "bad fsid on block %llu",
--			       eb->start);
-+	if (check_tree_block_fsid(fs_info, eb)) {
-+		btrfs_err_rl(fs_info, "bad fsid on block %llu",
-+			     eb->start);
- 		ret = -EIO;
- 		goto err;
- 	}
- 	found_level = btrfs_header_level(eb);
- 	if (found_level >= BTRFS_MAX_LEVEL) {
--		btrfs_err(root->fs_info, "bad tree block level %d",
--			   (int)btrfs_header_level(eb));
-+		btrfs_err(fs_info, "bad tree block level %d",
-+			  (int)btrfs_header_level(eb));
- 		ret = -EIO;
- 		goto err;
- 	}
-@@ -651,7 +652,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- 	btrfs_set_buffer_lockdep_class(btrfs_header_owner(eb),
- 				       eb, found_level);
- 
--	ret = csum_tree_block(root->fs_info, eb, 1);
-+	ret = csum_tree_block(fs_info, eb, 1);
- 	if (ret) {
- 		ret = -EIO;
- 		goto err;
-@@ -672,7 +673,7 @@ static int btree_readpage_end_io_hook(struct btrfs_io_bio *io_bio,
- err:
- 	if (reads_done &&
- 	    test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
--		btree_readahead_hook(root, eb, eb->start, ret);
-+		btree_readahead_hook(fs_info, eb, eb->start, ret);
- 
- 	if (ret) {
- 		/*
-@@ -691,14 +692,13 @@ out:
- static int btree_io_failed_hook(struct page *page, int failed_mirror)
- {
- 	struct extent_buffer *eb;
--	struct btrfs_root *root = BTRFS_I(page->mapping->host)->root;
- 
- 	eb = (struct extent_buffer *)page->private;
- 	set_bit(EXTENT_BUFFER_READ_ERR, &eb->bflags);
- 	eb->read_mirror = failed_mirror;
- 	atomic_dec(&eb->io_pages);
- 	if (test_and_clear_bit(EXTENT_BUFFER_READAHEAD, &eb->bflags))
--		btree_readahead_hook(root, eb, eb->start, -EIO);
-+		btree_readahead_hook(eb->fs_info, eb, eb->start, -EIO);
- 	return -EIO;	/* we fixed nothing */
- }
- 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 7668066..869bb1c 100644
+index 66409f3..7015906 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -105,15 +105,15 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
+@@ -722,8 +722,6 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 	}
+ 	logical = re->logical;
  
- /* recurses */
- /* in case of err, eb might be NULL */
--static void __readahead_hook(struct btrfs_root *root, struct reada_extent *re,
--			     struct extent_buffer *eb, u64 start, int err)
-+static void __readahead_hook(struct btrfs_fs_info *fs_info,
-+			     struct reada_extent *re, struct extent_buffer *eb,
-+			     u64 start, int err)
- {
- 	int level = 0;
- 	int nritems;
- 	int i;
- 	u64 bytenr;
- 	u64 generation;
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct list_head list;
- 	struct btrfs_device *for_dev;
- 
-@@ -176,10 +176,10 @@ static void __readahead_hook(struct btrfs_root *root, struct reada_extent *re,
- 			 */
- #ifdef DEBUG
- 			if (rec->generation != generation) {
--				btrfs_debug(root->fs_info,
--					   "generation mismatch for (%llu,%d,%llu) %llu != %llu",
--				       key.objectid, key.type, key.offset,
--				       rec->generation, generation);
-+				btrfs_debug(fs_info,
-+					    "generation mismatch for (%llu,%d,%llu) %llu != %llu",
-+					    key.objectid, key.type, key.offset,
-+					    rec->generation, generation);
- 			}
- #endif
- 			if (rec->generation == generation &&
-@@ -220,12 +220,11 @@ static void __readahead_hook(struct btrfs_root *root, struct reada_extent *re,
-  * start is passed separately in case eb in NULL, which may be the case with
-  * failed I/O
-  */
--int btree_readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
--			 u64 start, int err)
-+int btree_readahead_hook(struct btrfs_fs_info *fs_info,
-+			 struct extent_buffer *eb, u64 start, int err)
- {
- 	int ret = 0;
- 	struct reada_extent *re;
--	struct btrfs_fs_info *fs_info = root->fs_info;
- 
- 	/* find extent */
- 	spin_lock(&fs_info->reada_lock);
-@@ -729,9 +728,9 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+-	reada_extent_put(fs_info, re);
+-
+ 	atomic_inc(&dev->reada_in_flight);
  	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
  			mirror_num, &eb);
- 	if (ret)
--		__readahead_hook(fs_info->extent_root, re, NULL, logical, ret);
-+		__readahead_hook(fs_info, re, NULL, logical, ret);
- 	else if (eb)
--		__readahead_hook(fs_info->extent_root, re, eb, eb->start, ret);
-+		__readahead_hook(fs_info, re, eb, eb->start, ret);
- 
+@@ -735,6 +733,8 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
  	if (eb)
  		free_extent_buffer(eb);
+ 
++	reada_extent_put(fs_info, re);
++
+ 	return 1;
+ 
+ }
 -- 
 1.8.5.1
 

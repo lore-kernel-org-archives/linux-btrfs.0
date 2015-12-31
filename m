@@ -1,42 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:51215 "EHLO
+Received: from frost.carfax.org.uk ([85.119.82.111]:51231 "EHLO
 	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752052AbbLaLvz (ORCPT
+	with ESMTP id S1750876AbbLaL7e (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 06:51:55 -0500
-Date: Thu, 31 Dec 2015 11:51:53 +0000
+	Thu, 31 Dec 2015 06:59:34 -0500
+Date: Thu, 31 Dec 2015 11:59:32 +0000
 From: Hugo Mills <hugo@carfax.org.uk>
-To: Xavier Romero <XRomero@nexica.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: RAID10 question
-Message-ID: <20151231115153.GW1586@carfax.org.uk>
-References: <47770e1d8a804d31994eebaf733adf55@nex-exchng-01-v.bcn.nexica.com>
+To: Ahtisham wani <ahtishamwani@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: BTRFS File trace from superblock using memory dumps
+Message-ID: <20151231115932.GX1586@carfax.org.uk>
+References: <loom.20151231T111455-536@post.gmane.org>
 MIME-Version: 1.0
 Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="V2AZ19bMCakBLong"
-In-Reply-To: <47770e1d8a804d31994eebaf733adf55@nex-exchng-01-v.bcn.nexica.com>
+	protocol="application/pgp-signature"; boundary="wwU9tsYnHnYeRAKj"
+In-Reply-To: <loom.20151231T111455-536@post.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---V2AZ19bMCakBLong
+--wwU9tsYnHnYeRAKj
 Content-Type: text/plain; charset=us-ascii
 Content-Disposition: inline
 
-On Thu, Dec 31, 2015 at 09:52:16AM +0000, Xavier Romero wrote:
-> Hello,
-> 
-> I have 2 completely independent set of 12 disks each, let's name them A1, A2, A3... A12 for first set, and B1, B2, B3...B12 for second set. For availability purposes I want disks to be paired that way:
-> A1 <--> B1: RAID1
-> A2 <--> B2: RAID1
-> ...
-> A12 <--> B12: RAID1
-> 
-> And then I want a RAID0 out of all these RAID1.
-> 
-> I know I can achieve that by doing all the RAID1 with MD and then build the RAID0 with BTRFS. But my question is: can I achieve that directly with BTRFS RAID10?
+On Thu, Dec 31, 2015 at 10:20:17AM +0000, Ahtisham wani wrote:
+> Respected sir,
+> I have been researching on how btrfs works and manages files for a long 
+> time. What I want to achieve here is to trace a path of a file starting 
+> from superblock, then to root and so on. The problem is I dont know how to 
+> do it. I have been using dd and hexdump but I dont know what to look for 
+> and where to look for. I have been able to see some fragments of 
+> superblock at 64K but I dont know how to use it to trace the tree of tree 
+> roots node or its object_id. Any help is appreciated. Thanks
 
-   No, not at the moment.
+   Start here:
+
+   https://btrfs.wiki.kernel.org/index.php/Data_Structures
+
+   This will give you the basic high-level data structures. You can
+explore those data structures fairly easily using btrfs-debug-tree.
+
+   After that, you'll mostly have to start reading the code a little.
+fs/btrfs/ctree.h in the kernel sources is the place to get all of the
+data structures you'll need. Those will tell you the layout of the
+data items.
+
+   To get from the superblock to the diagram on the data structures
+page, the first thing you'll need to do is read the list of system
+chunks at the end of the superblock. Those chunks contain the chunk
+tree, which contains the mapping from physical device addresses to
+internal (virtual) addresses. Everything else is done in terms of
+those virtual addresses. Once you have the chunk tree, you can start
+using the other addresses in the superblock to find the tree of tree
+roots, and then follow that into the other trees (at which point, you
+can start using the data structures page).
 
    Hugo.
 
@@ -46,26 +63,26 @@ hugo@... carfax.org.uk | don't serve your type here."
 http://carfax.org.uk/  |
 PGP: E2AB1DE4          |
 
---V2AZ19bMCakBLong
+--wwU9tsYnHnYeRAKj
 Content-Type: application/pgp-signature; name="signature.asc"
 Content-Description: Digital signature
 
 -----BEGIN PGP SIGNATURE-----
 Version: GnuPG v1.4.12 (GNU/Linux)
 
-iQIcBAEBAgAGBQJWhRbYAAoJEFheFHXiqx3kTqkQAKl5MURLavf4IUUOKrhnVMSv
-YVGEyK0ZvAMRY+n07ehIpDVJioYN2xKti8gZklae1633d+8r2VzBYB6y95POl4lI
-D6kVQOi/XYfi29zMxntt/XGSQW6oSKLxB55WfboPvg8A3q8U3EfIM7eEpBTGkkjS
-TXvl121Q40y51eNmK9hdTPraC2a1WpVTb4KsK1GxoT6ItiiIdcjLhauU8KmeYIj+
-6vGFzQ0NWtDNZu9hLmQj2lGfINpweBO0Kwuxmwmhrke+px9gRmQHa+waR3cenJYc
-dG7rwKDAvmCnyvCtBVInLZuFjZkOft0DSlCIfPpOG9nhWMNe36WsiJscI3eVWT+l
-G7vj9WlToD+YCSTtYXrQdlxUorzXFJcCfn5+p2uHJk5ju5a+GJB6NoXyFBUy/3Ai
-h6V0xlkbkGY/OG0THak/GkVjZfRKaIui7jCjWm5XXo2c6c0HylAlp8sQ5Wu7SOrR
-aLNDypvldLrG9zcQeKROObKgel0QTa/o5qhO2JyJ4OO/sSy0C72yfXjEhcnmU+mE
-aQclUHuGM/Ty5IG36wbKgkl2hxN5NgckAWcz7GaykzWQg2xxBuOW3F+kb0bU5IM4
-0muteauY9FTq7uqVz5sQ/uXCI/VbhDjDPaerxVxsLvUrgqQad+TlyYcaeXcTn2J2
-/GjTxSzS67y0lNstfJVp
-=DxeL
+iQIcBAEBAgAGBQJWhRikAAoJEFheFHXiqx3ku0UP/jh9eiMXb7FVupTkOC1LqMdY
+ilaGPOg3xV3YD2RIFTIDbGRKGIXwvFiUmh+WS8Hr+EqQC/wU7pV0tY5pnT0EhzB4
+7zoeFdendHIAEsF6rkEXaFWSR5/Ga74haJQqCdBXULDjOLrwolvgJLDvgQcROjLP
+DaUPuI5+LJRER1+QH2ciRt0PBKm7AKikAhxaZprn2Mp8jcWNNiXZnwcciG29z3NI
+BlO7A7ZiLTUnIhMXTQWEkQKuDGfd2QSqph3V5OdYHNYscDjSHE3N6vJzNwUGjQEt
+WHOD0+YpGckoDcqsjYt7cQjyrfkDSssvzZU4RLqdheZZyknygQDDwSuO8tfJKrcA
+2b2dHLtq9rQ5EL+KrB5mk9FQTvsGbgB7PIChiy5FJnZunFwK7sulB2crS5gTXU4E
+Mgj9OSUpMkUIQYrjlhuyvEPgA2L+vir6+K/Hm1N9RdiNBwzwRIO998N+96LVp4GC
+Lp8eDDDSzhc1c1DyQD1hz0QysVnwLX3qJCsLq4K8oKkIioCk5AxpUsJ2IyoCuL2x
+/dfwkgfZW5h+RAN1eyRdp/AlQUW9a3kzitlyKF58DMV8tNqANqc23INWdFYkcF2a
+Yd3iC++OJcYA9Vv1aEAKqP6npI7Wr4SmJ+BuSOaRDwfnTHWcNs8yxGFkBBKI+Zy2
+3QeAKst+dxZgZkxDIayt
+=qfS1
 -----END PGP SIGNATURE-----
 
---V2AZ19bMCakBLong--
+--wwU9tsYnHnYeRAKj--

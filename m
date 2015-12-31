@@ -1,90 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:33154 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751544AbbLaNcH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 08:32:07 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aEdKn-0002g6-QS
-	for linux-btrfs@vger.kernel.org; Thu, 31 Dec 2015 14:32:06 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 14:32:05 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 14:32:05 +0100
+Received: from aristoteles.cuci.nl ([212.125.128.18]:58590 "EHLO
+	aristoteles.cuci.nl" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751262AbbLaQKN (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Dec 2015 11:10:13 -0500
+Date: Thu, 31 Dec 2015 17:04:16 +0100
+From: "Stephen R. van den Berg" <srb@cuci.nl>
 To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: RAID10 question
-Date: Thu, 31 Dec 2015 13:31:59 +0000 (UTC)
-Message-ID: <pan$b2d51$f981c36c$54145fc4$c0b07bc0@cox.net>
-References: <47770e1d8a804d31994eebaf733adf55@nex-exchng-01-v.bcn.nexica.com>
-	<20151231115153.GW1586@carfax.org.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Subject: kernel BUG at fs/btrfs/send.c:1482
+Message-ID: <20151231160416.GA5579@cuci.nl>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hugo Mills posted on Thu, 31 Dec 2015 11:51:53 +0000 as excerpted:
+I'm running 4.4.0-rc7.
+This exact problem was present on 4.0.5 and 4.3.3 too though.
 
-> On Thu, Dec 31, 2015 at 09:52:16AM +0000, Xavier Romero wrote:
->> Hello,
->> 
->> I have 2 completely independent set of 12 disks each, let's name them
->> A1, A2, A3... A12 for first set, and B1, B2, B3...B12 for second set.
->> For availability purposes I want disks to be paired that way:
->> A1 <--> B1: RAID1 A2 <--> B2: RAID1 ...
->> A12 <--> B12: RAID1
->> 
->> And then I want a RAID0 out of all these RAID1.
->> 
->> I know I can achieve that by doing all the RAID1 with MD and then build
->> the RAID0 with BTRFS. But my question is: can I achieve that directly
->> with BTRFS RAID10?
-> 
->    No, not at the moment.
+I do a "btrfs send /var/lib/lxc/template64/rootfs", that generates
+the following error consistently at the same file, over and over again:
 
-Additionally, if you're going to put btrfs on mdraid, then you may wish 
-to consider reversing the above, doing raid01, which while ordinarily 
-discouraged in favor of raid10, has some things going for it when the top 
-level is btrfs, that raid10 doesn't.
+Dec 29 14:49:04 argo kernel: kernel BUG at fs/btrfs/send.c:1482!
+Dec 29 14:49:04 argo kernel: Modules linked in: nfsd
+Dec 29 14:49:04 argo kernel: task: ffff880041295c40 ti: ffff88010423c000 task.ti: ffff88010423c000
+Dec 29 14:49:04 argo kernel: RSP: 0018:ffff88010423fb20  EFLAGS: 00010202
+Dec 29 14:49:04 argo kernel: RDX: 0000000000000001 RSI: 0000000000000000 RDI: 0000000000000000
+Dec 29 14:49:04 argo kernel: R10: ffff88019d53b5e0 R11: 0000000000000000 R12: ffff8801b35ac510
+Dec 29 14:49:04 argo kernel: FS:  00007fac9113f8c0(0000) GS:ffff88022fd80000(0000) knlGS:0000000000000000
+Dec 29 14:49:04 argo kernel: CR2: 00007f99ba308520 CR3: 0000000154a40000 CR4: 00000000001006e0
+Dec 29 14:49:04 argo kernel: 00000000000081ed 000000000009b15a 000000000000a1ff 0000000000000000
+Dec 29 14:49:04 argo kernel: 000000000009b15a 0000000000000000 0000000000001a03 ffff8801baf2e800
+Dec 29 14:49:04 argo kernel: [<ffffffff8129a8a3>] send_create_inode_if_needed+0x30/0x49
+Dec 29 14:49:04 argo kernel: [<ffffffff81222923>] ? btrfs_item_key+0x19/0x1b
+Dec 29 14:49:04 argo kernel: [<ffffffff8122a090>] btrfs_compare_trees+0x2f2/0x4fe
+Dec 29 14:49:04 argo kernel: [<ffffffff8129e05b>] btrfs_ioctl_send+0x846/0xce5
+Dec 29 14:49:04 argo kernel: [<ffffffff810a5c5f>] ? try_to_freeze_unsafe+0x9/0x32
+Dec 29 14:49:04 argo kernel: [<ffffffff8158b499>] ? _raw_spin_lock_irq+0xf/0x11
+Dec 29 14:49:04 argo kernel: [<ffffffff810a7299>] ? ptrace_do_notify+0x84/0x95
+Dec 29 14:49:04 argo kernel: [<ffffffff811803a2>] SyS_ioctl+0x43/0x61
+Dec 29 14:49:04 argo kernel: RIP  [<ffffffff8129a734>] send_create_inode+0x1ce/0x30d
 
-The btrfs feature in question here is data and metadata checksumming and 
-file integrity.  Btrfs normally checksums all data and metadata and 
-verifies checksums at read-time, but when there's only one copy, as is 
-the case with btrfs single and raid0 modes, if there's a checksum verify 
-failure, all it can do is report it and fail the read.  If however, 
-there's a second copy, as there is with btrfs raid1, then a checksum 
-failure on the first copy will automatically failover to trying the 
-second.  Assuming the second copy is good, it will use that instead of 
-failing the read, and btrfs scrub can be used to systematically scrub and 
-detect (if single/raid0 mode) or repair (if raid1/10 mode and the other 
-copy is good) the entire filesystem.
 
-Mdraid doesn't have that sort of integrity verification.  All it does 
-with raid1 scrub is check that the copies agree, and pick an arbitrary 
-copy to replace the other one with if they don't.  But for all it or you 
-know, it can be replacing the good copy with the bad one, since it has no 
-checksum verification to tell which is actually the good copy.
+On the receiving end, I have a "btrfs receive" which takes the above stream as
+input, and *always* reports this:
 
-If that sort of data integrity verification and repair is of interest to 
-you, you obviously want btrfs raid1, not mdraid1.  But btrfs, as the 
-filesystem, must be the top layer.  So while raid10 is normally preferred 
-over raid01, in this case, you may want to do raid01, putting the btrfs 
-raid1 on top of the mdraid0.
+receiving snapshot 20151230-141324.1451484804.965085668@argo uuid=53df0616-5715-ad40-ae81-78a023860fe0, ctransid=649684 parent_
+uuid=d3f807da-1e9d-aa4d-ab01-77ce5e2fbcd7, parent_ctransid=649735
+utimes 
+rename bin -> o257-379784-0
+mkdir o257-34888-0
+rename o257-34888-0 -> bin
+utimes 
+chown bin - uid=0, gid=0
+chmod bin - mode=0755
+utimes bin
+rmdir boot
+ERROR: rmdir boot failed. No such file or directory
+mkdir o258-34888-0
+rename o258-34888-0 -> boot
+utimes 
+chown boot - uid=0, gid=0
+chmod boot - mode=0755
+utimes boot
+rename dev -> o259-379784-0
+mkdir o259-34888-0
+rename o259-34888-0 -> dev
+... rest of the logging follows as normal...
+... then we get ...
+rmdir media
+mkdir o264-34888-0
+rename o264-34888-0 -> media
+utimes 
+chown media - uid=0, gid=0
+chmod media - mode=0755
+utimes media
+rmdir mnt
+ERROR: rmdir mnt failed. No such file or directory
+rmdir opt
+mkdir o266-34888-0
+rename o266-34888-0 -> opt
+utimes 
+... continues as normal ...
 
-Unfortunately that won't let you do a1 <-> b1, a2 <-> b2, etc.  But it 
-will let you do a[1-6] <-> b[1-6], if that's good enough for your use-
-case.
+It then still creates lots of files, until it encounters the sudden EOF
+due to the sending side experiencing the kernel bug and abruptly halting
+the send.
 
-IOW, you have to choose between btrfs raid1 with data integrity repair on 
-top, with only two mdraid0's underneath, or btrfs raid0 with only data 
-integrity detection, not repair, on top, and a bunch of mdraid1 that 
-don't have data integrity at all, underneath.
+Since the problem is consistently and easily reproducible, I can immediately
+try any proposed patches or fixes (or provide more insight into the
+subvolume this problem occurs with).
+Numerous other subvolumes in the same BTRFS partition work flawlessly
+using btrfs send/receive.
 
+The sending partition is RAID0 with two 512GB SSD drives.  The receiving
+partition is RAID1 with 6 6TB HDD drives.
 -- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
-
+Stephen.

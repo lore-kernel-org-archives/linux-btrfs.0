@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:8912 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753784AbbLaPHu (ORCPT
+	with ESMTP id S1753657AbbLaPHw (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 10:07:50 -0500
+	Thu, 31 Dec 2015 10:07:52 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id C7F3841887DF
-	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:28 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id F0FC641887E8
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 23:05:29 +0800 (CST)
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 07/10] btrfs: reada: Pass reada_extent into __readahead_hook directly
-Date: Thu, 31 Dec 2015 23:03:41 +0800
-Message-ID: <b1bec43b20d38ecea3cf2e61266b3513337dbe39.1451574005.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 09/10] btrfs: reada: Jump into cleanup in direct way for __readahead_hook()
+Date: Thu, 31 Dec 2015 23:03:43 +0800
+Message-ID: <0e2798bfc98a6e1d848b552ca221100786123269.1451574005.git.zhaolei@cn.fujitsu.com>
 In-Reply-To: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 References: <cover.1451574005.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,112 +20,74 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-reada_start_machine_dev() already have reada_extent pointer, pass
-it into __readahead_hook() directly instead of search radix_tree
-will make code run faster.
+Current code set nritems to 0 to make for_loop useless to bypass it,
+and set generation's value which is not necessary.
+Jump into cleanup directly is better choise.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/reada.c | 45 ++++++++++++++++++++++++---------------------
- 1 file changed, 24 insertions(+), 21 deletions(-)
+ fs/btrfs/reada.c | 40 +++++++++++++++++++++-------------------
+ 1 file changed, 21 insertions(+), 19 deletions(-)
 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 7015906..7668066 100644
+index 869bb1c..902f899 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -105,33 +105,21 @@ static int reada_add_block(struct reada_control *rc, u64 logical,
+@@ -130,26 +130,26 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+ 	re->scheduled_for = NULL;
+ 	spin_unlock(&re->lock);
  
- /* recurses */
- /* in case of err, eb might be NULL */
--static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
--			    u64 start, int err)
-+static void __readahead_hook(struct btrfs_root *root, struct reada_extent *re,
-+			     struct extent_buffer *eb, u64 start, int err)
- {
- 	int level = 0;
- 	int nritems;
- 	int i;
- 	u64 bytenr;
- 	u64 generation;
--	struct reada_extent *re;
- 	struct btrfs_fs_info *fs_info = root->fs_info;
- 	struct list_head list;
--	unsigned long index = start >> PAGE_CACHE_SHIFT;
- 	struct btrfs_device *for_dev;
+-	if (err == 0) {
+-		nritems = level ? btrfs_header_nritems(eb) : 0;
+-		generation = btrfs_header_generation(eb);
+-		/*
+-		 * FIXME: currently we just set nritems to 0 if this is a leaf,
+-		 * effectively ignoring the content. In a next step we could
+-		 * trigger more readahead depending from the content, e.g.
+-		 * fetch the checksums for the extents in the leaf.
+-		 */
+-	} else {
+-		/*
+-		 * this is the error case, the extent buffer has not been
+-		 * read correctly. We won't access anything from it and
+-		 * just cleanup our data structures. Effectively this will
+-		 * cut the branch below this node from read ahead.
+-		 */
+-		nritems = 0;
+-		generation = 0;
+-	}
++	/*
++	 * this is the error case, the extent buffer has not been
++	 * read correctly. We won't access anything from it and
++	 * just cleanup our data structures. Effectively this will
++	 * cut the branch below this node from read ahead.
++	 */
++	if (err)
++		goto cleanup;
  
- 	if (eb)
- 		level = btrfs_header_level(eb);
- 
--	/* find extent */
--	spin_lock(&fs_info->reada_lock);
--	re = radix_tree_lookup(&fs_info->reada_tree, index);
--	if (re)
--		re->refcnt++;
--	spin_unlock(&fs_info->reada_lock);
--
--	if (!re)
--		return -1;
--
- 	spin_lock(&re->lock);
- 	/*
- 	 * just take the full list from the extent. afterwards we
-@@ -221,11 +209,11 @@ static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
- 
- 		reada_extent_put(fs_info, re);	/* one ref for each entry */
- 	}
--	reada_extent_put(fs_info, re);	/* our ref */
++	/*
++	 * FIXME: currently we just set nritems to 0 if this is a leaf,
++	 * effectively ignoring the content. In a next step we could
++	 * trigger more readahead depending from the content, e.g.
++	 * fetch the checksums for the extents in the leaf.
++	 */
++	if (!level)
++		goto cleanup;
 +
- 	if (for_dev)
- 		atomic_dec(&for_dev->reada_in_flight);
- 
--	return 0;
-+	return;
- }
- 
- /*
-@@ -235,12 +223,27 @@ static int __readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
- int btree_readahead_hook(struct btrfs_root *root, struct extent_buffer *eb,
- 			 u64 start, int err)
- {
--	int ret;
-+	int ret = 0;
-+	struct reada_extent *re;
-+	struct btrfs_fs_info *fs_info = root->fs_info;
- 
--	ret = __readahead_hook(root, eb, start, err);
-+	/* find extent */
-+	spin_lock(&fs_info->reada_lock);
-+	re = radix_tree_lookup(&fs_info->reada_tree,
-+			       start >> PAGE_CACHE_SHIFT);
-+	if (re)
-+		re->refcnt++;
-+	spin_unlock(&fs_info->reada_lock);
-+	if (!re) {
-+		ret = -1;
-+		goto start_machine;
-+	}
- 
--	reada_start_machine(root->fs_info);
-+	__readahead_hook(fs_info, re, eb, start, err);
-+	reada_extent_put(fs_info, re);	/* our ref */
- 
-+start_machine:
-+	reada_start_machine(fs_info);
- 	return ret;
- }
- 
-@@ -726,9 +729,9 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 	ret = reada_tree_block_flagged(fs_info->extent_root, logical,
- 			mirror_num, &eb);
- 	if (ret)
--		__readahead_hook(fs_info->extent_root, NULL, logical, ret);
-+		__readahead_hook(fs_info->extent_root, re, NULL, logical, ret);
- 	else if (eb)
--		__readahead_hook(fs_info->extent_root, eb, eb->start, ret);
-+		__readahead_hook(fs_info->extent_root, re, eb, eb->start, ret);
- 
- 	if (eb)
- 		free_extent_buffer(eb);
++	nritems = btrfs_header_nritems(eb);
++	generation = btrfs_header_generation(eb);
+ 	for (i = 0; i < nritems; i++) {
+ 		struct reada_extctl *rec;
+ 		u64 n_gen;
+@@ -188,6 +188,8 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+ 				reada_add_block(rc, bytenr, &next_key, n_gen);
+ 		}
+ 	}
++
++cleanup:
+ 	/*
+ 	 * free extctl records
+ 	 */
 -- 
 1.8.5.1
 

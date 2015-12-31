@@ -1,88 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:51231 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750876AbbLaL7e (ORCPT
+Received: from relay1.mail.nexica.com ([217.13.116.17]:56752 "EHLO
+	relay1.mail.nexica.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750876AbbLaMM6 convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 31 Dec 2015 06:59:34 -0500
-Date: Thu, 31 Dec 2015 11:59:32 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Ahtisham wani <ahtishamwani@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: BTRFS File trace from superblock using memory dumps
-Message-ID: <20151231115932.GX1586@carfax.org.uk>
-References: <loom.20151231T111455-536@post.gmane.org>
+	Thu, 31 Dec 2015 07:12:58 -0500
+Received: from cl4-smtp.mail.nexica.com (zeus02nex.noc.nexica.com [10.2.0.151])
+	by relay1.noc.nexica.com (Postfix) with ESMTP id B7853133343
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 13:12:53 +0100 (CET)
+Received: from vnxbcnex02.bcn.nexica.com (unknown [212.92.38.69])
+	(using TLSv1 with cipher RC4-MD5 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: relay.nexica.com)
+	by cl4-smtp.mail.nexica.com (Postfix) with ESMTP id B0C6112B640
+	for <linux-btrfs@vger.kernel.org>; Thu, 31 Dec 2015 13:12:53 +0100 (CET)
+From: Xavier Romero <XRomero@nexica.com>
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Subject: subvolume capacity
+Date: Thu, 31 Dec 2015 12:12:37 +0000
+Message-ID: <943c2fc6fe4c4e6c9038545d24b4e0db@nex-exchng-01-v.bcn.nexica.com>
+Content-Type: text/plain; charset="us-ascii"
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="wwU9tsYnHnYeRAKj"
-In-Reply-To: <loom.20151231T111455-536@post.gmane.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hello,
 
---wwU9tsYnHnYeRAKj
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+I create a subvolume, I assign a quota on it, I mount the subvolume, the capacity reported for that mount point is not the assigned quota but the total btrfs filesystem capacity.
+I would rather expect it to report the assigned space (unless there is no quota assigned obviously), that would perfectly fit on a multi-tenant environment; also using btrfs for virtual machines datastores, etc. Otherwise it will be really confusing and sometimes problematic when exporting subvolumes through NFS/CIFS/etc.
 
-On Thu, Dec 31, 2015 at 10:20:17AM +0000, Ahtisham wani wrote:
-> Respected sir,
-> I have been researching on how btrfs works and manages files for a long 
-> time. What I want to achieve here is to trace a path of a file starting 
-> from superblock, then to root and so on. The problem is I dont know how to 
-> do it. I have been using dd and hexdump but I dont know what to look for 
-> and where to look for. I have been able to see some fragments of 
-> superblock at 64K but I dont know how to use it to trace the tree of tree 
-> roots node or its object_id. Any help is appreciated. Thanks
-
-   Start here:
-
-   https://btrfs.wiki.kernel.org/index.php/Data_Structures
-
-   This will give you the basic high-level data structures. You can
-explore those data structures fairly easily using btrfs-debug-tree.
-
-   After that, you'll mostly have to start reading the code a little.
-fs/btrfs/ctree.h in the kernel sources is the place to get all of the
-data structures you'll need. Those will tell you the layout of the
-data items.
-
-   To get from the superblock to the diagram on the data structures
-page, the first thing you'll need to do is read the list of system
-chunks at the end of the superblock. Those chunks contain the chunk
-tree, which contains the mapping from physical device addresses to
-internal (virtual) addresses. Everything else is done in terms of
-those virtual addresses. Once you have the chunk tree, you can start
-using the other addresses in the superblock to find the tree of tree
-roots, and then follow that into the other trees (at which point, you
-can start using the data structures page).
-
-   Hugo.
-
--- 
-Hugo Mills             | Comic Sans goes into a bar, and the barman says, "We
-hugo@... carfax.org.uk | don't serve your type here."
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---wwU9tsYnHnYeRAKj
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWhRikAAoJEFheFHXiqx3ku0UP/jh9eiMXb7FVupTkOC1LqMdY
-ilaGPOg3xV3YD2RIFTIDbGRKGIXwvFiUmh+WS8Hr+EqQC/wU7pV0tY5pnT0EhzB4
-7zoeFdendHIAEsF6rkEXaFWSR5/Ga74haJQqCdBXULDjOLrwolvgJLDvgQcROjLP
-DaUPuI5+LJRER1+QH2ciRt0PBKm7AKikAhxaZprn2Mp8jcWNNiXZnwcciG29z3NI
-BlO7A7ZiLTUnIhMXTQWEkQKuDGfd2QSqph3V5OdYHNYscDjSHE3N6vJzNwUGjQEt
-WHOD0+YpGckoDcqsjYt7cQjyrfkDSssvzZU4RLqdheZZyknygQDDwSuO8tfJKrcA
-2b2dHLtq9rQ5EL+KrB5mk9FQTvsGbgB7PIChiy5FJnZunFwK7sulB2crS5gTXU4E
-Mgj9OSUpMkUIQYrjlhuyvEPgA2L+vir6+K/Hm1N9RdiNBwzwRIO998N+96LVp4GC
-Lp8eDDDSzhc1c1DyQD1hz0QysVnwLX3qJCsLq4K8oKkIioCk5AxpUsJ2IyoCuL2x
-/dfwkgfZW5h+RAN1eyRdp/AlQUW9a3kzitlyKF58DMV8tNqANqc23INWdFYkcF2a
-Yd3iC++OJcYA9Vv1aEAKqP6npI7Wr4SmJ+BuSOaRDwfnTHWcNs8yxGFkBBKI+Zy2
-3QeAKst+dxZgZkxDIayt
-=qfS1
------END PGP SIGNATURE-----
-
---wwU9tsYnHnYeRAKj--
+Best regards,
+Xavier Romero

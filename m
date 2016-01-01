@@ -1,94 +1,110 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:53637 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751682AbcAAMXn (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jan 2016 07:23:43 -0500
-Date: Fri, 1 Jan 2016 12:23:42 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: UGlee <matianfu@gmail.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: how btrfs uses devid?
-Message-ID: <20160101122342.GA1586@carfax.org.uk>
-References: <CAEgruXuFNsumiyBXrWwiu47WVuukSHLynMJHN7e3E1cYWn3QnQ@mail.gmail.com>
+Received: from mout.gmx.net ([212.227.17.22]:51621 "EHLO mout.gmx.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751737AbcAAPor (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Jan 2016 10:44:47 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="edESjMboOAwUFn6i"
-In-Reply-To: <CAEgruXuFNsumiyBXrWwiu47WVuukSHLynMJHN7e3E1cYWn3QnQ@mail.gmail.com>
+Message-ID: <trinity-453ea1bf-27ee-494f-a3a8-c39fd6061a58-1451663085330@3capp-gmx-bs06>
+From: "Jan Koester" <jan.koester@gmx.net>
+To: linux-btrfs@vger.kernel.org
+Subject: cannot repair filesystem
+Content-Type: text/plain; charset=UTF-8
+Date: Fri, 1 Jan 2016 16:44:45 +0100
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Hi,
 
---edESjMboOAwUFn6i
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+if I try to repair filesystem got I'am assert. I use Raid6.
 
-On Fri, Jan 01, 2016 at 08:16:28PM +0800, UGlee wrote:
-> Dear all:
-> 
-> If a btrfs device is missing, the command tool tells user the devid of
-> the missing devices.
-> 
-> I understand that each device (disk) in a btrfs volume has been
-> assigned a uuid (UUID_SUB field in udevadm info output). If the device
-> is missing, it's hard to tell user to input such uuid string in
-> command line. So devid is for convenience.
+Linux dibsi 3.16.0-0.bpo.4-amd64 #1 SMP Debian 3.16.7-ckt4-3~bpo70+1 (2015-02-12) x86_64 GNU/Linux
 
-> In our product, we want to record all disk information of a volume in
-> a file. If a disk is missing, not because it's broken, but because the
-> user has so many disks and in some cases they may put back the wrong
-> one. In this scenario, we can provide the disk information (such as
-> serial number) to user and help them to check if they did something
-> wrong.
-> 
-> My question is: is the devid just an alias to sub uuid? for a given
-> disk device, it is never changed during any btrfs operation, including
-> add, remove, balance and replace? or it may be changed, and when?
+root@dibsi:~/btrfs-progs# btrfs fi show
+Label: none  uuid: 6a2f3936-d0ef-43c0-9815-41e24f2bc21a
+        Total devices 1 FS bytes used 26.63GiB
+        devid    1 size 111.70GiB used 49.04GiB path /dev/sdf2
 
-   Actually, devid is the ID that the FS uses internally in the device
-tree to identify them. It's not just a convenience -- it's the
-"official" identifier for the device within the filesystem.
- 
-> One more question just for curiosity. I checked the source code of
-> btrfs-progs briefly. It seems that there is no data structure in
-> superblock recording all sub-uuids or all devids for the volume, so
-> how does btrfs figure out the missing devid? since they are not always
-> sequential integers, for example, after one device is removed, the
-> devid is simply removed and the devid of other device is not
-> re-numbered.
+Label: none  uuid: 73d4dc77-6ff3-412f-9b0a-0d11458faf32
+        Total devices 5 FS bytes used 1.17TiB
+        devid    1 size 931.51GiB used 420.78GiB path /dev/sdb
+        devid    2 size 931.51GiB used 420.78GiB path /dev/sdc
+        devid    3 size 931.51GiB used 420.78GiB path /dev/sdd
+        devid    4 size 931.51GiB used 420.78GiB path /dev/sde
+        devid    5 size 931.51GiB used 420.78GiB path /dev/sda
 
-   The devices that should be there (identified by devid) are listed
-in the device tree. If one of those doesn't match up with a
-currently-known device for that filesystem (as determined by btrfs dev
-scan), then it's missing.
-
-   Hugo.
-
--- 
-Hugo Mills             | I gave up smoking, drinking and sex once. It was the
-hugo@... carfax.org.uk | scariest 20 minutes of my life.
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---edESjMboOAwUFn6i
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWhm/OAAoJEFheFHXiqx3kHk0QAJ8JwqqvLv//+3G4vmJNCfwN
-q+X/TIIWNyXfoAc6upJ4UrYsajMLrCTM/8MnSaad83dSy3CjRtLLroV1Jzys+aMw
-ys8WQsx6JFISIemaxmpdxunaISF0mYT5DRZbVuCalF4AG8viQ14qxtj8tJ6aPksJ
-fflHRiZ+RRwq/W4UnYA+jlyksuLEk5cpw7vXy4GwkMuPqxE8/4IflxJioMM+uP6p
-OtRwzGY+NOcDtDSh2kf9fBei8/N1VdHcrjXyp7CStflOmhyqMUw2k4yjNv7iEOdV
-m29OKdAR7/NkJYoEg+yRXsiLKjDg5JPwD1QUMQ1JDiiADOqkhsHSlmUDMd28wy3+
-tFv9RtsAffdFyeMOwkwd1n4LgDn6AWIiEgwfcZRM7IG8vnfi2agIq2aY/Eg9JAUG
-ARxxqAPX3N2r55djIunQ/HAVkM0WKcRJ8BRq89W4zNCq1M1vxWrLC0Z/9k+zcNuj
-LwQBJuE8ZQxyCM/3sLNYUzTpwHZZW7eVpfGIAScdONA1YMfkSOQ/e21kqdRXs0jR
-XR6n599pP10AHcmreAZdXn/dk56QPAoAmssWruDDhVQHd16eV6+oUvctx+huJPTf
-4PWSy4ML5NLfb3fUtijRZmKgejNLb+e4JbqGjQvVO8qHpgJfMU0RoNZpis9KUml0
-AYh141bqNj5tj+mnxftA
-=ozUe
------END PGP SIGNATURE-----
-
---edESjMboOAwUFn6i--
+root@dibsi:~/btrfs-progs# btrfs check --repair /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32 
+enabling repair mode
+parent transid verify failed on 2280450637824 wanted 861168 found 860380
+parent transid verify failed on 2280450637824 wanted 861168 found 860380
+checksum verify failed on 2280450637824 found BF5F5D16 wanted AE725F92
+checksum verify failed on 2280450637824 found BF5F5D16 wanted AE725F92
+bytenr mismatch, want=2280450637824, have=15938376490240
+repair mode will force to clear out log tree, Are you sure? [y/N]: y
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+parent transid verify failed on 2280260939776 wanted 861166 found 860368
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
+bytenr mismatch, want=2280260939776, have=15937230354176
+extent-tree.c:2728: alloc_reserved_tree_block: Assertion `ret` failed.
+btrfs[0x4441cc]
+btrfs[0x444441]
+btrfs(btrfs_alloc_free_block+0x23d)[0x448c1a]
+btrfs(__btrfs_cow_block+0x19d)[0x4387d6]
+btrfs(btrfs_cow_block+0xec)[0x43922d]
+btrfs[0x43e73a]
+btrfs(btrfs_commit_transaction+0xec)[0x440408]
+btrfs(cmd_check+0x648)[0x428e5e]
+btrfs(main+0x155)[0x409e2e]
+/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7f0a80093b45]
+btrfs[0x4099e9]
+root@dibsi:~/btrfs

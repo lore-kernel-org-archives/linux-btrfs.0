@@ -1,160 +1,138 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:32441 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753756AbcAECBk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jan 2016 21:01:40 -0500
-Subject: Re: [PATCH] btrfs-progs: Format change for btrfs fi df
-To: <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
-References: <1450070396-20744-1-git-send-email-quwenruo@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <568B23E4.5040809@cn.fujitsu.com>
-Date: Tue, 5 Jan 2016 10:01:08 +0800
-MIME-Version: 1.0
-In-Reply-To: <1450070396-20744-1-git-send-email-quwenruo@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from mailgw-02.dd24.net ([193.46.215.43]:45138 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750977AbcAAARi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 31 Dec 2015 19:17:38 -0500
+Message-ID: <1451607454.6313.0.camel@scientia.net>
+Subject: Re: kernel BUG at fs/btrfs/send.c:1482
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: fdmanana@gmail.com, "Stephen R. van den Berg" <srb@cuci.nl>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Date: Fri, 01 Jan 2016 01:17:34 +0100
+In-Reply-To: <CAL3q7H7J_tL89wpZ5DJPX8N-0Dv9-KKpPROOserK+hn8E9O2qA@mail.gmail.com>
+References: <20151231160416.GA5579@cuci.nl> <20151231162757.GB5579@cuci.nl>
+	 <CAL3q7H7J_tL89wpZ5DJPX8N-0Dv9-KKpPROOserK+hn8E9O2qA@mail.gmail.com>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-QTgVJ/7+UgVT1T8elOS4"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi David,
 
-Would you please consider merge this patch?
+--=-QTgVJ/7+UgVT1T8elOS4
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-As current output is already quite confusing for a lot of users who are 
-not familiar with btrfs.
+On Thu, 2015-12-31 at 18:29 +0000, Filipe Manana wrote:
+> As for fixing the (very) rare cases where we end up creating empty
+> symlinks, it's not trivial to fix.
+Would it be reasonable to have btrfs-check list such broken symlinks?
 
-Thanks,
-Qu
 
-Qu Wenruo wrote on 2015/12/14 13:19 +0800:
-> The GlobalReserve space in 'btrfs fi df' is always confusing for a lot
-> of users.
-> As it is not a special chunk type like DATA or METADATA, it's in fact a
-> sub-type of METADATA.
->
-> So change the output to skip GlobalReserve by default, and adding its
-> total to metadata used.
-> And add a new option '-r|--reserve' to show the GlobalReserve, but skip
-> the profile of GlobalReserve.
->
-> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-> ---
->   Documentation/btrfs-filesystem.asciidoc |  8 ++++++
->   cmds-filesystem.c                       | 51 ++++++++++++++++++++++++++++++---
->   2 files changed, 55 insertions(+), 4 deletions(-)
->
-> diff --git a/Documentation/btrfs-filesystem.asciidoc b/Documentation/btrfs-filesystem.asciidoc
-> index 31cd51b..510c23f 100644
-> --- a/Documentation/btrfs-filesystem.asciidoc
-> +++ b/Documentation/btrfs-filesystem.asciidoc
-> @@ -22,6 +22,14 @@ Show space usage information for a mount point.
->   +
->   `Options`
->   +
-> +-r|--reserve::::
-> +also show Global Reserve space info.
-> ++
-> +Global Reserve space is reserved space from metadata. It's reserved for Btrfs
-> +metadata COW.
-> ++
-> +It will be counted as 'used' space in metadata space info.
-> ++
->   -b|--raw::::
->   raw numbers in bytes, without the 'B' suffix
->   -h|--human-readable::::
-> diff --git a/cmds-filesystem.c b/cmds-filesystem.c
-> index 25317fa..26e62e0 100644
-> --- a/cmds-filesystem.c
-> +++ b/cmds-filesystem.c
-> @@ -123,6 +123,8 @@ static const char * const filesystem_cmd_group_usage[] = {
->   static const char * const cmd_filesystem_df_usage[] = {
->   	"btrfs filesystem df [options] <path>",
->   	"Show space usage information for a mount point",
-> +	"",
-> +	"-r|--reserve   show global reserve space info"
->   	HELPINFO_UNITS_SHORT_LONG,
->   	NULL
->   };
-> @@ -175,12 +177,32 @@ static int get_df(int fd, struct btrfs_ioctl_space_args **sargs_ret)
->   	return 0;
->   }
->
-> -static void print_df(struct btrfs_ioctl_space_args *sargs, unsigned unit_mode)
-> +static void print_df(struct btrfs_ioctl_space_args *sargs, unsigned unit_mode,
-> +		     int show_reserve)
->   {
->   	u64 i;
-> +	u64 global_reserve = 0;
->   	struct btrfs_ioctl_space_info *sp = sargs->spaces;
->
-> +	/* First iterate to get global reserve space size */
->   	for (i = 0; i < sargs->total_spaces; i++, sp++) {
-> +		if (sp->flags & BTRFS_SPACE_INFO_GLOBAL_RSV)
-> +			global_reserve = sp->total_bytes;
-> +	}
-> +
-> +	for (i = 0, sp = sargs->spaces; i < sargs->total_spaces; i++, sp++) {
-> +		if (sp->flags & BTRFS_SPACE_INFO_GLOBAL_RSV) {
-> +			if (!show_reserve)
-> +				continue;
-> +			printf(" \\- %s: reserved=%s, used=%s\n",
-> +				btrfs_group_type_str(sp->flags),
-> +				pretty_size_mode(sp->total_bytes, unit_mode),
-> +				pretty_size_mode(sp->used_bytes, unit_mode));
-> +			continue;
-> +		}
-> +
-> +		if (sp->flags & BTRFS_BLOCK_GROUP_METADATA)
-> +			sp->used_bytes += global_reserve;
->   		printf("%s, %s: total=%s, used=%s\n",
->   			btrfs_group_type_str(sp->flags),
->   			btrfs_group_profile_str(sp->flags),
-> @@ -196,14 +218,35 @@ static int cmd_filesystem_df(int argc, char **argv)
->   	int fd;
->   	char *path;
->   	DIR *dirstream = NULL;
-> +	int show_reserve = 0;
->   	unsigned unit_mode;
->
->   	unit_mode = get_unit_mode_from_arg(&argc, argv, 1);
->
-> -	if (argc != 2 || argv[1][0] == '-')
-> +	while (1) {
-> +		int c;
-> +		static const struct option long_options[] = {
-> +			{ "reserve", no_argument, NULL, 'r'},
-> +			{ NULL, 0, NULL, 0}
-> +		};
-> +
-> +		c = getopt_long(argc, argv, "r", long_options, NULL);
-> +		if (c < 0)
-> +			break;
-> +		switch (c) {
-> +		case 'r':
-> +			show_reserve = 1;
-> +			break;
-> +		default:
-> +			usage(cmd_filesystem_df_usage);
-> +		}
-> +	}
-> +
-> +	argc = argc - optind;
-> +	if (check_argc_exact(argc, 1))
->   		usage(cmd_filesystem_df_usage);
->
-> -	path = argv[1];
-> +	path = argv[optind];
->
->   	fd = btrfs_open_dir(path, &dirstream, 1);
->   	if (fd < 0)
-> @@ -212,7 +255,7 @@ static int cmd_filesystem_df(int argc, char **argv)
->   	ret = get_df(fd, &sargs);
->
->   	if (ret == 0) {
-> -		print_df(sargs, unit_mode);
-> +		print_df(sargs, unit_mode, show_reserve);
->   		free(sargs);
->   	} else {
->   		fprintf(stderr, "ERROR: get_df failed %s\n", strerror(-ret));
->
+Cheers,
+Chris.
+--=-QTgVJ/7+UgVT1T8elOS4
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
 
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEZIw
+ggW/MIIDp6ADAgECAgMCOakwDQYJKoZIhvcNAQENBQAwVDEUMBIGA1UEChMLQ0FjZXJ0IEluYy4x
+HjAcBgNVBAsTFWh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzEcMBoGA1UEAxMTQ0FjZXJ0IENsYXNzIDMg
+Um9vdDAeFw0xNDA2MTIxNjM2MThaFw0xNjA2MTExNjM2MThaMHwxITAfBgNVBAMTGENocmlzdG9w
+aCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50aWEubmV0MTEw
+LwYJKoZIhvcNAQkBFiJtYWlsQGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMIIBIjANBgkq
+hkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA4phP/j9vT9dZT+k3ffHxvRWMOuzBnu5O3Fl4y2+WL7pL
+rfLiEhWzGXhHvjSqpt4vCNSdqy43453nnu8+hMb+uEtqSIL1AHU5eLhuDNVN9S4bt9E7nA2WKYBU
+LCUi/xCD/GL7ToyJNwhrhzcCZ7pXSc3xVqFoC4f6weU9ExhoEZQNRpTM0BFCOi4fRxvKFNnUYgjK
+hqy0Ta5H0Xx86mAp0Q4dxoD7mhI5iTF6TRkUheELxF24JCuAf04M89Cwft6DRH1FpJ3yvgW2B5U5
+aFSL4ZnF4N/wyCB7Dkm1rQ7RCAvw5btkf0VdPnU7ccDCx8HEc2nxK/lbCjrznvh3sa1CCwIDAQAB
+o4IBcDCCAWwwDAYDVR0TAQH/BAIwADBWBglghkgBhvhCAQ0ESRZHVG8gZ2V0IHlvdXIgb3duIGNl
+cnRpZmljYXRlIGZvciBGUkVFIGhlYWQgb3ZlciB0byBodHRwOi8vd3d3LkNBY2VydC5vcmcwDgYD
+VR0PAQH/BAQDAgOoMEAGA1UdJQQ5MDcGCCsGAQUFBwMEBggrBgEFBQcDAgYKKwYBBAGCNwoDBAYK
+KwYBBAGCNwoDAwYJYIZIAYb4QgQBMDIGCCsGAQUFBwEBBCYwJDAiBggrBgEFBQcwAYYWaHR0cDov
+L29jc3AuY2FjZXJ0Lm9yZzA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLmNhY2VydC5vcmcv
+Y2xhc3MzLXJldm9rZS5jcmwwRAYDVR0RBD0wO4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0gSJtYWls
+QGNocmlzdG9waC5hbnRvbi5taXR0ZXJlci5uYW1lMA0GCSqGSIb3DQEBDQUAA4ICAQBefctiLgGl
+e5baspuozyA4k7Up7SVhGHbif6pQfoFc/9Thx9GXnYpX+U64PMyWBfWwHZIy52Vg0RVkvPi1t6mi
+GyBfoSpC6ooR0bKWtUIogw/ymqKWlTLVR8kbLqRmRk4juMtCXG2K3yMygX/rjkuUSuFj2Bjpkmzg
+CtMojbUMYbszePmhQ7DJ62YEdtKpcjN94QAsI5GWlIAbs3KJazAcaNCRJeXCLcUMchyKHJA+NXH5
+az/ekBxBMBzJP2An20PP88UI4JW18z31KiG9UVGa2uO4l4aWgVe2GnhNEdCD/o48msJEWKAt5vl2
+yMqr7ihmNPocU2+/FW0xPe/vftdOTD9pgXdSGf4prdD+23q2YvpalOCzr2p8yCJZNVBPMxAP4mL0
+3OEktXza4wohqAmceXKfGUNwRGBaPvtIGnPrpLhCQ+2YJDg8g1UEsk23bKyZlJWeKJyVqOBsDJmj
+aBsN/qKhQFnav+zQdqGhMeaSisF/53mD3gyVYg2JRl18apgGbg32kyLmomqa0JbhnY3Dc3FVtZfe
++P+s2Cyep3pVKvFer2llRoGm8TwraG5Yhyx8Oq/1qETpstjbURJOVBLDCV4AjOEUj0ZnE/tEo/DK
+yexgGaViNvjp+IZdFdJhYmsVjw4Q3vG7O0pfsLiYEyQjeDgjNEWDfa5/MufPywIfxzCCBb8wggOn
+oAMCAQICAwI5qTANBgkqhkiG9w0BAQ0FADBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UE
+CxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290MB4X
+DTE0MDYxMjE2MzYxOFoXDTE2MDYxMTE2MzYxOFowfDEhMB8GA1UEAxMYQ2hyaXN0b3BoIEFudG9u
+IE1pdHRlcmVyMSQwIgYJKoZIhvcNAQkBFhVjYWxlc3R5b0BzY2llbnRpYS5uZXQxMTAvBgkqhkiG
+9w0BCQEWIm1haWxAY2hyaXN0b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwggEiMA0GCSqGSIb3DQEB
+AQUAA4IBDwAwggEKAoIBAQDimE/+P29P11lP6Td98fG9FYw67MGe7k7cWXjLb5Yvukut8uISFbMZ
+eEe+NKqm3i8I1J2rLjfjneee7z6Exv64S2pIgvUAdTl4uG4M1U31Lhu30TucDZYpgFQsJSL/EIP8
+YvtOjIk3CGuHNwJnuldJzfFWoWgLh/rB5T0TGGgRlA1GlMzQEUI6Lh9HG8oU2dRiCMqGrLRNrkfR
+fHzqYCnRDh3GgPuaEjmJMXpNGRSF4QvEXbgkK4B/Tgzz0LB+3oNEfUWknfK+BbYHlTloVIvhmcXg
+3/DIIHsOSbWtDtEIC/Dlu2R/RV0+dTtxwMLHwcRzafEr+VsKOvOe+HexrUILAgMBAAGjggFwMIIB
+bDAMBgNVHRMBAf8EAjAAMFYGCWCGSAGG+EIBDQRJFkdUbyBnZXQgeW91ciBvd24gY2VydGlmaWNh
+dGUgZm9yIEZSRUUgaGVhZCBvdmVyIHRvIGh0dHA6Ly93d3cuQ0FjZXJ0Lm9yZzAOBgNVHQ8BAf8E
+BAMCA6gwQAYDVR0lBDkwNwYIKwYBBQUHAwQGCCsGAQUFBwMCBgorBgEEAYI3CgMEBgorBgEEAYI3
+CgMDBglghkgBhvhCBAEwMgYIKwYBBQUHAQEEJjAkMCIGCCsGAQUFBzABhhZodHRwOi8vb2NzcC5j
+YWNlcnQub3JnMDgGA1UdHwQxMC8wLaAroCmGJ2h0dHA6Ly9jcmwuY2FjZXJ0Lm9yZy9jbGFzczMt
+cmV2b2tlLmNybDBEBgNVHREEPTA7gRVjYWxlc3R5b0BzY2llbnRpYS5uZXSBIm1haWxAY2hyaXN0
+b3BoLmFudG9uLm1pdHRlcmVyLm5hbWUwDQYJKoZIhvcNAQENBQADggIBAF59y2IuAaV7ltqym6jP
+IDiTtSntJWEYduJ/qlB+gVz/1OHH0Zedilf5Trg8zJYF9bAdkjLnZWDRFWS8+LW3qaIbIF+hKkLq
+ihHRspa1QiiDD/KaopaVMtVHyRsupGZGTiO4y0JcbYrfIzKBf+uOS5RK4WPYGOmSbOAK0yiNtQxh
+uzN4+aFDsMnrZgR20qlyM33hACwjkZaUgBuzcolrMBxo0JEl5cItxQxyHIockD41cflrP96QHEEw
+HMk/YCfbQ8/zxQjglbXzPfUqIb1RUZra47iXhpaBV7YaeE0R0IP+jjyawkRYoC3m+XbIyqvuKGY0
++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
+AukCAQEwWzBUMRQwEgYDVQQKEwtDQWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNl
+cnQub3JnMRwwGgYDVQQDExNDQWNlcnQgQ2xhc3MgMyBSb290AgMCOakwDQYJYIZIAWUDBAIDBQCg
+ggFjMBgGCSqGSIb3DQEJAzELBgkqhkiG9w0BBwEwHAYJKoZIhvcNAQkFMQ8XDTE2MDEwMTAwMTcz
+NFowTwYJKoZIhvcNAQkEMUIEQOXcdUIDQ7FkaLHO775V6YVIeqUynAPKuvi9QQlrJh/PJaIICmR8
+OyMNSDfbU5jZwRsuidOspSU7UqYjHcqRPeUwagYJKwYBBAGCNxAEMV0wWzBUMRQwEgYDVQQKEwtD
+QWNlcnQgSW5jLjEeMBwGA1UECxMVaHR0cDovL3d3dy5DQWNlcnQub3JnMRwwGgYDVQQDExNDQWNl
+cnQgQ2xhc3MgMyBSb290AgMCOakwbAYLKoZIhvcNAQkQAgsxXaBbMFQxFDASBgNVBAoTC0NBY2Vy
+dCBJbmMuMR4wHAYDVQQLExVodHRwOi8vd3d3LkNBY2VydC5vcmcxHDAaBgNVBAMTE0NBY2VydCBD
+bGFzcyAzIFJvb3QCAwI5qTANBgkqhkiG9w0BAQEFAASCAQADcFrCjzATH6uRL0xCrqWJSc/smMwQ
+O1eesmo0OLeq07kcXRaPrMLkEwcBYsLwjPPZkmSPntiXCvQtAr3wd16ksEUSHQfUAgJ0YJCF/pDa
+UStPwD5zMSGVLRREfNW2+xpKXv1lT2foQifxJPxnM/P9wTeyFRMWfb9LmuQXKFEpnRoFvlkjuKFm
+7nd81jQv+b8JVaFK3JRD+7vJzbiGmKXqglZGRmBB9okc+vMxAGNFN3MYmOMgpD7WSyW0Gwb4CcMy
+WbjQ/2zHB8rPfus/t4Ll2OZk2oF+d8K5O7sZxcyDrXOwbKQn25y2MdgkGmo8D9r2nI9gZHWYNV76
+Y2a3/wg+AAAAAAAA
+
+
+--=-QTgVJ/7+UgVT1T8elOS4--
 

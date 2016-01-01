@@ -1,110 +1,51 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:51621 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751737AbcAAPor (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 1 Jan 2016 10:44:47 -0500
-MIME-Version: 1.0
-Message-ID: <trinity-453ea1bf-27ee-494f-a3a8-c39fd6061a58-1451663085330@3capp-gmx-bs06>
-From: "Jan Koester" <jan.koester@gmx.net>
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:33453 "EHLO
+	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752360AbcAAPvh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jan 2016 10:51:37 -0500
+Received: by mail-wm0-f43.google.com with SMTP id f206so114640459wmf.0
+        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jan 2016 07:51:36 -0800 (PST)
+Received: from orione.localnet (183.Red-83-50-202.dynamicIP.rima-tde.net. [83.50.202.183])
+        by smtp.gmail.com with ESMTPSA id w17sm32374686wmw.15.2016.01.01.07.51.35
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Fri, 01 Jan 2016 07:51:35 -0800 (PST)
+From: =?ISO-8859-1?Q?fugazzi=AE?= <fugazzi99@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: cannot repair filesystem
-Content-Type: text/plain; charset=UTF-8
-Date: Fri, 1 Jan 2016 16:44:45 +0100
+Subject: Btrfs send / receive freeze system?
+Date: Fri, 01 Jan 2016 15:51:33 +0000
+Message-ID: <2876879.yKrnxB0p8M@orione>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+Hi everyone.
+It's a few weeks that I converted my root partition into btrfs with three sub-
+volumes named boot,root,home. I'm booting with /boot on subvol.
 
-if I try to repair filesystem got I'am assert. I use Raid6.
+I'm using btrfs send and receive to make backup of the three snapshotted 
+subvolumes on a second btrfs formatted drive with three commands like this: 
 
-Linux dibsi 3.16.0-0.bpo.4-amd64 #1 SMP Debian 3.16.7-ckt4-3~bpo70+1 (2015-02-12) x86_64 GNU/Linux
+btrfs send /btrfs-root/snap-root/ | gzip > $BKFOLDER/root.dump.gz
 
-root@dibsi:~/btrfs-progs# btrfs fi show
-Label: none  uuid: 6a2f3936-d0ef-43c0-9815-41e24f2bc21a
-        Total devices 1 FS bytes used 26.63GiB
-        devid    1 size 111.70GiB used 49.04GiB path /dev/sdf2
+Sometimes, let say once a week, the system completely freeze (mouse keyboard) 
+during the send, only solution was the reset button. The freeze happened on 
+different place every time. Last time happened at 80% of the home send for 
+example.
 
-Label: none  uuid: 73d4dc77-6ff3-412f-9b0a-0d11458faf32
-        Total devices 5 FS bytes used 1.17TiB
-        devid    1 size 931.51GiB used 420.78GiB path /dev/sdb
-        devid    2 size 931.51GiB used 420.78GiB path /dev/sdc
-        devid    3 size 931.51GiB used 420.78GiB path /dev/sdd
-        devid    4 size 931.51GiB used 420.78GiB path /dev/sde
-        devid    5 size 931.51GiB used 420.78GiB path /dev/sda
+The freeze also happened during a send/receive from an external e-sata drive 
+(to copy some mp3 using send instead of rsync) to the same internal drive 
+where the backup are also made.
 
-root@dibsi:~/btrfs-progs# btrfs check --repair /dev/disk/by-uuid/73d4dc77-6ff3-412f-9b0a-0d11458faf32 
-enabling repair mode
-parent transid verify failed on 2280450637824 wanted 861168 found 860380
-parent transid verify failed on 2280450637824 wanted 861168 found 860380
-checksum verify failed on 2280450637824 found BF5F5D16 wanted AE725F92
-checksum verify failed on 2280450637824 found BF5F5D16 wanted AE725F92
-bytenr mismatch, want=2280450637824, have=15938376490240
-repair mode will force to clear out log tree, Are you sure? [y/N]: y
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-parent transid verify failed on 2280260939776 wanted 861166 found 860368
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-checksum verify failed on 2280260939776 found 816E966C wanted CB60A223
-bytenr mismatch, want=2280260939776, have=15937230354176
-extent-tree.c:2728: alloc_reserved_tree_block: Assertion `ret` failed.
-btrfs[0x4441cc]
-btrfs[0x444441]
-btrfs(btrfs_alloc_free_block+0x23d)[0x448c1a]
-btrfs(__btrfs_cow_block+0x19d)[0x4387d6]
-btrfs(btrfs_cow_block+0xec)[0x43922d]
-btrfs[0x43e73a]
-btrfs(btrfs_commit_transaction+0xec)[0x440408]
-btrfs(cmd_check+0x648)[0x428e5e]
-btrfs(main+0x155)[0x409e2e]
-/lib/x86_64-linux-gnu/libc.so.6(__libc_start_main+0xf5)[0x7f0a80093b45]
-btrfs[0x4099e9]
-root@dibsi:~/btrfs
+The system always run and was stable with XFS/xfsdump.
+
+Kernel is 4.3.3, btrfs progs are 4.3.1, system is Arch Linux 64 bit, Ram 8Gb 
+Mainboard Asus striker extreme Nvidia 680i, 8 years old.
+
+After the crash nothing is shown in the systemd log, it simply freeze.
+
+Thanks, regards,
+Mario
+
+

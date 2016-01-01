@@ -1,20 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f47.google.com ([74.125.82.47]:35955 "EHLO
-	mail-wm0-f47.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751800AbcAAQG6 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Fri, 1 Jan 2016 11:06:58 -0500
-Received: by mail-wm0-f47.google.com with SMTP id l65so106807276wmf.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 01 Jan 2016 08:06:57 -0800 (PST)
-Received: from orione.localnet (183.Red-83-50-202.dynamicIP.rima-tde.net. [83.50.202.183])
-        by smtp.gmail.com with ESMTPSA id pn6sm73985531wjb.15.2016.01.01.08.06.56
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Fri, 01 Jan 2016 08:06:56 -0800 (PST)
-From: =?ISO-8859-1?Q?fugazzi=AE?= <fugazzi99@gmail.com>
+Received: from www.dwami.com ([178.79.162.101]:37442 "EHLO mail.dwami.com"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751922AbcAAQP2 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 1 Jan 2016 11:15:28 -0500
+Received: from orione.localnet (183.Red-83-50-202.dynamicIP.rima-tde.net [83.50.202.183])
+	by mail.dwami.com (Postfix) with ESMTPSA id 81C13133C4
+	for <linux-btrfs@vger.kernel.org>; Fri,  1 Jan 2016 16:06:06 +0000 (WET)
+From: =?ISO-8859-1?Q?berny=AE?= <berny@dwami.com>
 To: linux-btrfs@vger.kernel.org
 Subject: Btrfs send / receive freeze system - Addendum
-Date: Fri, 01 Jan 2016 16:06:55 +0000
-Message-ID: <1616501.4qyDSaKgzl@orione>
+Date: Fri, 01 Jan 2016 16:06:05 +0000
+Message-ID: <3823710.C4JhcYPFa8@orione>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org

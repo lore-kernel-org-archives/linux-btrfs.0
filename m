@@ -1,53 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f175.google.com ([209.85.217.175]:33593 "EHLO
-	mail-lb0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933022AbcAaSGk (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 31 Jan 2016 13:06:40 -0500
-Received: by mail-lb0-f175.google.com with SMTP id x4so64415135lbm.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 31 Jan 2016 10:06:39 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAKbQEqFYQ0XQAQOzOBX=n5jrxxws97Qd5OizEaGGq6tayEJcKg@mail.gmail.com>
-References: <CAKbQEqE0w5fewMw9YwooFXaEVT2ecfGf6ZCVvUmQg8SjGx2Zsw@mail.gmail.com>
-	<CAPmG0jbLVVRJVoqehWxuNncF6oLydazo5-YO=3fLAbrksv2sJg@mail.gmail.com>
-	<CAKbQEqH5twwezxYicthcCb6=dWgW3Hy-s6fLjH_BQETk4i0ikQ@mail.gmail.com>
-	<CAJCQCtRw1VqaES4UCbaSNqCRXV5puA5gssxNSxsiUBKxa13dPQ@mail.gmail.com>
-	<CAKbQEqFYQ0XQAQOzOBX=n5jrxxws97Qd5OizEaGGq6tayEJcKg@mail.gmail.com>
-Date: Sun, 31 Jan 2016 19:06:38 +0100
-Message-ID: <CAPmG0jY=5qWgE1b2HTXYZFY97peu8cZ=1i0kR=tMvrnG-MJgVA@mail.gmail.com>
-Subject: Re: "WARNING: device 0 not present" during scrub?
-From: Henk Slager <eye1tm@gmail.com>
-To: Christian Pernegger <pernegger@gmail.com>
-Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:37079 "EHLO
+	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751275AbcABHLA (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 02:11:00 -0500
+From: Sanidhya Solanki <jpage.lkml@gmail.com>
+To: clm@fb.com, jbacik@fb.com, dsterba@suse.com, jpage.lkml@gmail.com
+Cc: linux-kernel@vger.kernel.org, linux-btrfs@vger.kernel.org
+Subject: [PATCH] BTRFS: Adds the files and options needed for Hybrid Storage
+Date: Fri,  1 Jan 2016 22:08:32 -0500
+Message-Id: <1451704112-25463-1-git-send-email-jpage.lkml@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> The modules are in the kernel, the progs are in the main archive, it's
-> an option in the installer. It's not the default fs but I couldn't
-> find any indication that it's more or less supported than, say, xfs.
-> Why they've chosen 3.16 (and not 3.18, which would be a long term
-> release) I don't know, but the fact remains that that's the default
-> kernel of a tier 1 distro, so people using it are going to be around
-> for a while.
->
->> But absolutely, of course we hope the problem is gone with the newer
->> version, *that's how file system development works.*
->
-> Be that as it may, as I said, that approach doesn't inspire
-> confidence. If I had the vaguest idea about how to reproduce it, sure,
-> but all I have is an apparently lightly corrupted or at the very least
-> glitchy fs (it mounts and unmounts just fine). How would I know if a
-> new kernel helped things?
+This patch adds the file required for Hybrid Storage. It contains
+the memory, time and size limits for the cache and the statistics that
+will be provided while the cache is operating.
+It also adds the Makefile changes needed to add the Hybrid Storage.
 
-Boot the board with one of these images (a live one I would say):
-http://download.opensuse.org/tumbleweed/iso/
-This weekend this is kernel 4.4.0-2-default and tools 4.3.1
+Signed-off-by: Sanidhya Solanki <jpage.lkml@gmail.com>
+---
+ fs/btrfs/Makefile |  2 +-
+ fs/btrfs/cache.c  | 58 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 2 files changed, 59 insertions(+), 1 deletion(-)
+ create mode 100644 fs/btrfs/cache.c
 
-Then report back the result of btrfs check of the fs
+diff --git a/fs/btrfs/Makefile b/fs/btrfs/Makefile
+index 6d1d0b9..dc56ae4 100644
+--- a/fs/btrfs/Makefile
++++ b/fs/btrfs/Makefile
+@@ -9,7 +9,7 @@ btrfs-y += super.o ctree.o extent-tree.o print-tree.o root-tree.o dir-item.o \
+ 	   export.o tree-log.o free-space-cache.o zlib.o lzo.o \
+ 	   compression.o delayed-ref.o relocation.o delayed-inode.o scrub.o \
+ 	   reada.o backref.o ulist.o qgroup.o send.o dev-replace.o raid56.o \
+-	   uuid-tree.o props.o hash.o
++	   uuid-tree.o props.o hash.o cache.o
+ 
+ btrfs-$(CONFIG_BTRFS_FS_POSIX_ACL) += acl.o
+ btrfs-$(CONFIG_BTRFS_FS_CHECK_INTEGRITY) += check-integrity.o
+diff --git a/fs/btrfs/cache.c b/fs/btrfs/cache.c
+new file mode 100644
+index 0000000..0ece7a1
+--- /dev/null
++++ b/fs/btrfs/cache.c
+@@ -0,0 +1,58 @@
++/*
++ * (c) Sanidhya Solanki, 2016
++ *
++ * Licensed under the FSF's GNU Public License v2 or later.
++ */
++#include <linux/types.h>
++
++/* Cache size configuration )in MiB).*/
++#define MAX_CACHE_SIZE = 10000
++#define MIN_CACHE_SIZE = 10
++
++/* Time (in seconds)before retrying to increase the cache size.*/
++#define CACHE_RETRY = 10
++
++/* Space required to be free (in MiB) before increasing the size of the
++ * cache. If cache size is less than cache_grow_limit, a block will be freed
++ * from the cache to allow the cache to continue growning.
++ */
++#define CACHE_GROW_LIMIT = 100
++
++/* Size required to be free (in MiB) after we shrink the cache, so that it
++ * does not grow in size immediately.
++ */
++#define CACHE_SHRINK_FREE_SPACE_LIMIT = 100
++
++/* Age (in seconds) of oldest and newest block in the cache.*/
++#define MAX_AGE_LIMIT = 300	/* Five Minute Rule recommendation,
++				 * optimum size depends on size of data
++				 * blocks.
++				 */
++#define MIN_AGE_LIMIT = 15	/* In case of cache stampede.*/
++
++/* Memory constraints (in percentage) before we stop caching.*/
++#define MIN_MEM_FREE = 10
++
++/* Cache statistics. */
++struct cache_stats {
++	u64		cache_size;
++	u64		maximum_cache_size_attained;
++	int		cache_hit_rate;
++	int		cache_miss_rate;
++	u64		cache_evicted;
++	u64		duplicate_read;
++	u64		duplicate_write;
++	int		stats_update_interval;
++};
++
++#define cache_size	CACHE_SIZE /* Current cache size.*/
++#define max_cache_size	MAX_SIZE /* Max cache limit. */
++#define min_cache_size	MIN_SIZE /* Min cache limit.*/
++#define cache_time	MAX_TIME /* Maximum time to keep data in cache.*/
++#define evicted_csum	EVICTED_CSUM	/* Checksum of the evited data
++					 * (to avoid repeatedly caching
++					 * data that was just evicted.
++					 */
++#define read_csum	READ_CSUM /* Checksum of the read data.*/
++#define write_csum	WRITE_CSUM /* Checksum of the written data.*/
++#define evict_interval	EVICT_INTERVAL /* Time to keep data before eviction.*/
+-- 
+2.5.0
 
-You might get some (or millions) false positives from the check with
-tools 4.3.1 (but fixed in v4.4), due to the tools version your fs is
-created with. This is not a problem, at least is my experience.
-But you can compile the v4.4 tools from
-https://github.com/kdave/btrfs-progs

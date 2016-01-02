@@ -1,94 +1,227 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:37735 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751039AbcABKsT convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 05:48:19 -0500
-Received: from merkaba.localnet (host-188-174-222-218.customer.m-online.net [188.174.222.218])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id 199D224C
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Jan 2016 11:48:18 +0100 (CET)
-From: Martin Steigerwald <martin@lichtvoll.de>
+Received: from mail-wm0-f53.google.com ([74.125.82.53]:35091 "EHLO
+	mail-wm0-f53.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750977AbcABKxd (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 05:53:33 -0500
+Received: by mail-wm0-f53.google.com with SMTP id f206so96506254wmf.0
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 02:53:32 -0800 (PST)
+Received: from hydra ([2a02:8109:1cc0:c84:922b:34ff:fe32:57ad])
+        by smtp.gmail.com with ESMTPSA id cv10sm26438603wjb.17.2016.01.02.02.53.30
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 02 Jan 2016 02:53:30 -0800 (PST)
+Date: Sat, 2 Jan 2016 11:53:18 +0100
+From: Alexander Duscheleit <alexander.duscheleit@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs Check - "type mismatch with chunk"
-Date: Sat, 02 Jan 2016 11:48:16 +0100
-Message-ID: <4569077.c1v08b5nvL@merkaba>
-In-Reply-To: <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
-References: <CACRRrm9SwfDzqHNpWjAGniuu6HDu5wo3vW_ETdzijrdYm7YGGw@mail.gmail.com> <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
+Subject: Re: Unrecoverable fs corruption?
+Message-ID: <20160102115318.4e76f773@hydra>
+In-Reply-To: <pan$775e4$fad1d9d7$a69e525a$ff4dac1a@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="iso-8859-1"
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Donnerstag, 24. Dezember 2015, 23:41:06 CET schrieb Duncan:
-> Zach Fuller posted on Thu, 24 Dec 2015 13:15:22 -0600 as excerpted:
-> > I am currently running btrfs on a 2TB GPT drive. The drive is working
-> > fine, still mounts correctly, and I have experienced no data corruption.
-> > Whenever I run "btrfs check" on the drive, it returns 100,000+ messages
-> > stating "bad extent [###, ###), type mismatch with chunk". Whenever I
-> > try to run "btrfs check --repair" it says that it has fixed the errors,
-> > but whenever I run "btrfs check" again, the errors return. Should I be
-> > worried about data/filesystem corruption,
-> > or are these errors meaningless?
-> > 
-> > I have my data backed up on 2 different drives, so I can afford to lose
-> > the entire btrfs drive temporarily.
-> > 
-> > Here is some info about my system:
-> > 
-> > $ uname -[r]
-> > 4.2.5-1-ARCH
-> > 
-> > 
-> > $ btrfs --version
-> > btrfs-progs v4.3.1
-> 
-> While Chris's reply mentioning a patch is correct, that's not the whole
-> story and I suspect you have a problem, as the patch is in the userspace
-> 4.3.1 you're running.
-> 
-> How long have you had the filesystem?  Was it likely created with the
-> mkfs.btrfs from btrfs-progs v4.1.1 (July, 2015) as I suspect?  If so, you
-> have a problem, as that mkfs.btrfs was buggy and created invalid
-> filesystems.
-> 
-> As you have two separate backups and you're not experiencing corruption
-> or the like so far, you should be fine, but if the filesystem was created
-> with that buggy mkfs.btrfs, you need to wipe and recreate it as soon as
-> possible, because it's unstable in its current state and could fail, with
-> massive corruption, at any point.  Unfortunately, the bug created
-> filesystems so broken that (last I knew anyway, and your experience
-> agrees) there's no way btrfs check --repair can fix them.  The only way
-> to fix it is to blow away the filesystem and recreate it with a
-> mkfs.btrfs that doesn't have the bug that 4.1.1 did.  Your 4.3.1 should
-> be fine.
-> 
-> (The patch Chris mentioned was to btrfs check, as the first set of
-> patches to it to allow it to detect the problem triggered all sorts of
-> false-positives and pretty much everybody was flagged as having the
-> problem.  I believe that was patched in the 4.2 series, however, and
-> you're running 4.3.1, so you should have that patch and the reports
-> shouldn't be false positives.  Tho if you didn't create the filesystem
-> with the buggy mkfs.btrfs from v4.1.1, there's likely some other problem
-> to root out, but I'm guessing you did, and thus have the bad filesystem
-> the patched btrfs check is designed to report, and that report is indeed
-> valid.)
+On Fri, 01 Jan 2016 00:14:37 -0800, Duncan wrote:
+> Chris Murphy posted on Thu, 31 Dec 2015 18:22:09 -0700 as excerpted:
+>
+>> On Thu, Dec 31, 2015 at 4:36 PM, Alexander Duscheleit
+>> <alexander.duschel...@gmail.com> wrote:
+>>> [...]
+>>
+>>
+>> Why are you trying to mount only one? What mount options did you use
+>> when you did this?
+>
+> Yes, please.
 
-I have this issue as well on one of the filesystems I just checked in order to 
-describe to John how to have a go at fixing his filesystem. A tone of these 
-with different numbers:
+I was under the impression that a mount (actually any) command issued
+against a member of a multi-device btrfs would affect the whole
+multi-device.
 
-bad extent [347045888, 347062272), type mismatch with chunk
+>
+>>> btrfs restore -viD seems to find most of the files accessible but
+>>> since I don't have a spare hdd of sufficient size I would have to
+>>> break the array and reformat and use one of the disk as restore
+>>> target. I'm not prepared to do this before I know there is no other
+>>> way to fix the drives since I'm essentially destroying one more
+>>> chance at saving the data.
+>
+>> Anyway, in the meantime, my advice is do not mount either device rw
+>> (together or separately). The less changes you make right now the
+>> better.
+>>
+>> What kernel and btrfs-progs version are you using?
 
-It doesn´t go away with running btrfs check --repair on it.
+Sorry, I had this included in a paragraph I later removed.
+Kernel 4.3.3, btrfs-progs v4.3.1
 
-Last scrub was from yesterday and returned with 0 errors. I will rerun a scrub 
-again after the repair attempt. And if its good I will play it safe and redo 
-the filesystem from scratch.
+>
+> Unless you've already tried it (hard to say without the mount options
+> you used above), I'd first try a different tact than C Murphy
+> suggests, falling back to what he suggests if it doesn't work.  I
+> suppose he assumes you've already tried this...
+>
+> But first things first, as C Murphy suggests, when you post problems
+> like this, *PLEASE* post kernel and progs userspace versions.  Given
+> the rate at which btrfs is still changing, that's pretty critical
+> information. Also, if you're not running the latest or second latest
+> kernel or LTS kernel series and a similar or newer userspace, be
+> prepared to be asked to try a newer version.  With the almost
+> released 4.4 set to be an LTS, that means it if you want to try it,
+> or the LTS kernel series 4.1 and 3.18, or the current or previous
+> current kernel series 4.3 or 4.2 (tho with 4.2 not being an LTS
+> updates are ended or close to it, so people on it should be either
+> upgrading to 4.3 or downgrading to 4.1 LTS anyway). And for
+> userspace, a good rule of thumb is whatever the kernel series, a
+> corresponding or newer userspace as well.
+>
+> With that covered...
+>
+> This is a good place to bring in something else CM recommended, but
+> in a slightly different context.  If you've read many of my previous
+> posts you're likely to know what I'm about to say.  The admin's first
+> rule of backups says, in simplest form[1], that if you don't have a
+> backup, by your actions you're defining the data that would be backed
+> up as not worth the hassle and resources to do that backup.  If in
+> that case you lose the data, be happy, as you still saved what you
+> defined by your actions as of /true/ value regardless of any claims
+> to the contrary, the hassle and resourced you would have spent making
+> that backup.  =:^)
+>
+> While the rule of backups applies in general, for btrfs it applies
+> even more, because btrfs is still under heavy development and while
+> btrfs is "stabilizING, it's not yet fully stable and mature, so the
+> risk of actually needing to use that backup remains correspondingly
+> higher than it'd ordinarily be.
+>
+> But, you didn't mention having backups, and did mention that you
+> didn't have a spare hdd so would have to break the array to have a
+> place to do a btrfs restore to, which reads very much like you don't
+> have ANY BACKUPS AT ALL!!
+>
+> Of course, in the context of the above backups rule, I guess you
+> understand the implications, that you consider the value of that data
+> essentially throw-away, particularly since you still don't have a
+> backup, despite running a not entirely stable filesystem that puts
+> the data at greater risk than would a fully stable filesystem.
+>
+> Which means no big deal.  You've obviously saved the time, hassle and
+> resources necessary to make that backup, which is obviously of more
+> value to you than the data that's not backed up, so the data is
+> obviously of low enough value you can simply blow away the filesystem
+> with a fresh mkfs and start over. =:^)
+>
+> Except... were that the case, you probably wouldn't be posting.
+>
+> Which brings entirely new urgency to what CM said about getting that
+> spare hdd, so you can actually create that backup, and count yourself
+> very lucky if you don't lose your data before you have it backed up,
+> since your previous actions were unfortunately not in accordance with
+> the value you seem to be claiming for the data.
 
-It may have been I used a mkfs.btrfs from 4.1.1 for creating it. Would be good 
-if it stored the version of the tool that created the fs into the fs itself to 
-be able to know for sure. It is the youngest BTRFS filesystem on my laptop 
-SSDs. I created it about April 2014 tough.
+Yes, there are things that rank higher in priority than backups of
+the data in question. Namely food and shelter. The mirror drives
+is all I could scrounge together after several months. The previous
+setup was JBOD of 9 disks no younger than 7 years. At the point of
+replacement I was so wary of the hardware giving in that I didn't even
+think about potential software issues.
 
-Thanks,
+I chose btrfs as a means to "future-proof" the storage. For me it won
+out against zfs for it's superior re-shapaing capability in terms of
+RAID modes and adding disks to existing arrays.
+
+>
+> OK, the rest of this post is written with the assumption that your
+> claims and your actions regarding the value of the data in question,
+> agree, and that since you're still trying to recover the data, you
+> don't consider it just throw-away, which means you now have someplace
+> to put that backup, should you actually be lucky enough to get the
+> chance to make it...
+
+An additional drive of matching capacity won't be within my financial
+means for several months, sadly.
+I DO still have the old drives in storage. While they are of very
+questionable reliability, I'm confident I can get most of the data
+back from those.
+None of it is *essential* data. I can always re-rip my music,
+re-download most of the other media and re-create the rest from raw
+sources. But given the hassle in time and bandwidth I can invest some
+hours on and off to try to pull it from the drives as well.
+
+>
+>
+> With your try to mount, did you try the degraded mount option?  That's
+> primarily what this post is about as it's not clear you did, and what
+> I'd try first, as without that, btrfs will normally refuse to mount
+> if a device is missing, failing with the rather generic ctree open
+> failure error, as your attempt did.
+>
+> And as CM suggests, trying the degraded,ro mount options together is a
+> wise idea, at least at first, in ordered to help prevent further
+> damage.
+>
+> If a degraded,ro mount fails, then it's time to try CM's suggestions.
+
+I had tried a degraded,ro mount early on. I don't know why I didn't
+include that in my first mail. The result is as follows:
+
+[13984.341838] BTRFS info (device sdc2): allowing degraded mounts
+[13984.341844] BTRFS info (device sdc2): disk space caching is enabled
+[13984.341846] BTRFS: has skinny extents
+[13984.538637] BTRFS critical (device sdc2): corrupt leaf, bad key
+order: block=6513625202688,root=1, slot=68 [13984.546327] BTRFS
+critical (device sdc2): corrupt leaf, bad key order:
+block=6513625202688,root=1, slot=68 [13984.552233] BTRFS: Failed to
+read block groups: -5 [13984.585375] BTRFS: open_ctree failed
+[13997.313514] BTRFS info (device sdb2): allowing degraded mounts
+[13997.313520] BTRFS info (device sdb2): disk space caching is enabled
+[13997.313522] BTRFS: has skinny extents [13997.522838] BTRFS critical
+(device sdb2): corrupt leaf, bad key order: block=6513625202688,root=1,
+slot=68 [13997.530175] BTRFS critical (device sdb2): corrupt leaf, bad
+key order: block=6513625202688,root=1, slot=68 [13997.538289] BTRFS:
+Failed to read block groups: -5 [13997.582019] BTRFS: open_ctree failed
+
+
+>
+> [...]
+>
+
+So I can't mount either disk as ro and I can't afford another drive
+to store the data.
+
+I can confirm that I can get at least a subset of the data off the
+drives via btrfs-restore. (In fact I already restored the only chunk of
+data that's newer than the old disk set AND not easily recreated, which
+makes the whole endeavour a bit less nerve-wracking.)
+
+As I see it, my best course of action right now is wiping one of the
+two disks and then using btrfs restore to copy the data off the other
+disk onto the now blank one. I'd expect to get back a large percentage
+of the inaccessible data that way. That is unless someone tells me
+there's an easy fix for the "corrupt leaf, bad key order" fault and
+I've been chasing ghosts the whole time.
+
+> ---
+> [1] Sysadmin's first rule of backups:  The more complex form covers
+> multiple backups and accounts for the risk factor of actually needing
+> to use them.  It says that for any level of backup, either you have
+> it, or you consider the value of the data multiplied by the risk
+> factor of having to actually use that level of backup, to be less
+> than the resource and hassle cost of making that backup.  In this
+> form, data such as your internet cache is probably not worth enough
+> to justify even a single level of backup, while truly valuable data
+> might be worth 101 levels of backup or more, some of them offsite and
+> others onsite but not normally physically connected, because the data
+> is truly valuable enough that even multiplied by the extremely tiny
+> chance of actually having 100 levels of backup fail and actually
+> needing that 101st level, justifies having it.
+
+The data is certainly worth another level of security, the problem is I
+can't afford it. Basically the amount I have accumulated has outstripped
+my means to properly store it. I'm trying my best with what's available.
+
+And no, I wouldn't trust data to this storage that could have a
+financial or personal impact if lost.
+
 -- 
-Martin
+Alex

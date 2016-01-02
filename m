@@ -1,111 +1,93 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:40742 "EHLO
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:37735 "EHLO
 	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751039AbcABKfy convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 05:35:54 -0500
+	with ESMTP id S1751039AbcABKsT convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 05:48:19 -0500
+Received: from merkaba.localnet (host-188-174-222-218.customer.m-online.net [188.174.222.218])
+	by mail.lichtvoll.de (Postfix) with ESMTPSA id 199D224C
+	for <linux-btrfs@vger.kernel.org>; Sat,  2 Jan 2016 11:48:18 +0100 (CET)
 From: Martin Steigerwald <martin@lichtvoll.de>
-To: John Center <jlcenter15@gmail.com>,
-        linux-btrfs <linux-btrfs@vger.kernel.org>
-Subject: Re: btrfs scrub failing
-Date: Sat, 02 Jan 2016 11:35:51 +0100
-Message-ID: <1711801.PU4dV1cMlN@merkaba>
-In-Reply-To: <CAPgWCbTntO5q1acH+MkF7QsGUv3wWqqDXKmBy6pJiQU0OFO-Pg@mail.gmail.com>
-References: <CAPgWCbQ9HS1N=JCbbHuT9yyTz3JPAizA+DvOAR7_GX73CVix0g@mail.gmail.com> <pan$ddf92$7633f36c$14118b68$b87353e3@cox.net> <CAPgWCbTntO5q1acH+MkF7QsGUv3wWqqDXKmBy6pJiQU0OFO-Pg@mail.gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs Check - "type mismatch with chunk"
+Date: Sat, 02 Jan 2016 11:48:16 +0100
+Message-ID: <4569077.c1v08b5nvL@merkaba>
+In-Reply-To: <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
+References: <CACRRrm9SwfDzqHNpWjAGniuu6HDu5wo3vW_ETdzijrdYm7YGGw@mail.gmail.com> <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="UTF-8"
+Content-Type: text/plain; charset="iso-8859-1"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Freitag, 1. Januar 2016, 20:04:43 CET schrieb John Center:
-> Hi Duncan,
-> 
-> On Fri, Jan 1, 2016 at 12:05 PM, Duncan <1i5t5.duncan@cox.net> wrote:
-> > John Center posted on Fri, 01 Jan 2016 11:41:20 -0500 as excerpted:
-> >> If this doesn't resolve the problem, what would you recommend my next
-> >> steps should be?  I've been hesitant to run too many of the btrfs-tools,
-> >> mainly because I don't want to accidentally screw things up & I don't
-> >> always know how to interpret the results. (I ran btrfs-debug-tree,
-> >> hoping something obvious would show up.  Big mistake. 😋)
+Am Donnerstag, 24. Dezember 2015, 23:41:06 CET schrieb Duncan:
+> Zach Fuller posted on Thu, 24 Dec 2015 13:15:22 -0600 as excerpted:
+> > I am currently running btrfs on a 2TB GPT drive. The drive is working
+> > fine, still mounts correctly, and I have experienced no data corruption.
+> > Whenever I run "btrfs check" on the drive, it returns 100,000+ messages
+> > stating "bad extent [###, ###), type mismatch with chunk". Whenever I
+> > try to run "btrfs check --repair" it says that it has fixed the errors,
+> > but whenever I run "btrfs check" again, the errors return. Should I be
+> > worried about data/filesystem corruption,
+> > or are these errors meaningless?
 > > 
-> > LOLed at that debug-tree remark.  Been there (with other tools) myself.
+> > I have my data backed up on 2 different drives, so I can afford to lose
+> > the entire btrfs drive temporarily.
 > > 
-> > Well, I'm hoping someone who had the problem can confirm whether it's
-> > fixed in current kernels (scrub is one of those userspace commands that's
-> > mostly just a front-end to the kernel code which does the real work, so
-> > kernel version is the important thing for scrub).  I'm guessing so, and
-> > that you'll find the problem gone in 4.3.
+> > Here is some info about my system:
 > > 
-> > We'll cross the not-gone bridge if we get to it, but again, if the other
-> > people who had the similar problem can confirm whether it disappeared for
-> > them with the new kernel, it would help a lot, as there were enough such
-> > reports that if it's the same problem and still there for everyone (which
-> > I doubt as I expect there'd still be way more posts about it if so, but
-> > confirmation's always good), nothing to do but wait for a fix, while if
-> > not, and you still have your problem, then it's a different issue and the
-> > devs will need to work with you on a fix specific to your problem.
+> > $ uname -[r]
+> > 4.2.5-1-ARCH
+> > 
+> > 
+> > $ btrfs --version
+> > btrfs-progs v4.3.1
 > 
-> Ok, I'm at the next bridge. :-(  I upgraded the kernel to 4.4rc7 from
-> the Ubuntu Mainline archive & I just ran the scrub:
+> While Chris's reply mentioning a patch is correct, that's not the whole
+> story and I suspect you have a problem, as the patch is in the userspace
+> 4.3.1 you're running.
 > 
-> john@mariposa:~$ sudo /sbin/btrfs scrub start -BdR /dev/md125p2
-> ERROR: scrubbing /dev/md125p2 failed for device id 1: ret=-1, errno=5
-> (Input/output error)
-> scrub device /dev/md125p2 (id 1) canceled
-> scrub started at Fri Jan  1 19:38:21 2016 and was aborted after 00:02:34
-> data_extents_scrubbed: 111031
-> tree_extents_scrubbed: 104061
-> data_bytes_scrubbed: 2549907456
-> tree_bytes_scrubbed: 1704935424
-> read_errors: 0
-> csum_errors: 0
-> verify_errors: 0
-> no_csum: 1573
-> csum_discards: 0
-> super_errors: 0
-> malloc_errors: 0
-> uncorrectable_errors: 0
-> unverified_errors: 0
-> corrected_errors: 0
-> last_physical: 4729667584
+> How long have you had the filesystem?  Was it likely created with the
+> mkfs.btrfs from btrfs-progs v4.1.1 (July, 2015) as I suspect?  If so, you
+> have a problem, as that mkfs.btrfs was buggy and created invalid
+> filesystems.
 > 
-> I checked dmesg & this appeared:
+> As you have two separate backups and you're not experiencing corruption
+> or the like so far, you should be fine, but if the filesystem was created
+> with that buggy mkfs.btrfs, you need to wipe and recreate it as soon as
+> possible, because it's unstable in its current state and could fail, with
+> massive corruption, at any point.  Unfortunately, the bug created
+> filesystems so broken that (last I knew anyway, and your experience
+> agrees) there's no way btrfs check --repair can fix them.  The only way
+> to fix it is to blow away the filesystem and recreate it with a
+> mkfs.btrfs that doesn't have the bug that 4.1.1 did.  Your 4.3.1 should
+> be fine.
 > 
-> [11428.983355] BTRFS error (device md125p2): parent transid verify
-> failed on 241287168 wanted 33554449 found 17
-> [11431.028399] BTRFS error (device md125p2): parent transid verify
-> failed on 241287168 wanted 33554449 found 17
-> 
-> Where do I go from here?
+> (The patch Chris mentioned was to btrfs check, as the first set of
+> patches to it to allow it to detect the problem triggered all sorts of
+> false-positives and pretty much everybody was flagged as having the
+> problem.  I believe that was patched in the 4.2 series, however, and
+> you're running 4.3.1, so you should have that patch and the reports
+> shouldn't be false positives.  Tho if you didn't create the filesystem
+> with the buggy mkfs.btrfs from v4.1.1, there's likely some other problem
+> to root out, but I'm guessing you did, and thus have the bad filesystem
+> the patched btrfs check is designed to report, and that report is indeed
+> valid.)
 
-These and the other errors point at an issue with the filesystem structure.
+I have this issue as well on one of the filesystems I just checked in order to 
+describe to John how to have a go at fixing his filesystem. A tone of these 
+with different numbers:
 
-As I never had to deal with that, I can only give generic advice:
+bad extent [347045888, 347062272), type mismatch with chunk
 
-1) Use latest stable btrfs-progs.
+It doesn�t go away with running btrfs check --repair on it.
 
-2) Umount the filesystem and run 
+Last scrub was from yesterday and returned with 0 errors. I will rerun a scrub 
+again after the repair attempt. And if its good I will play it safe and redo 
+the filesystem from scratch.
 
-btrfs check (maybe with -p)
-
-When it finds some errors, proceed with the following steps:
-
-Without --repair or some of the other options that modify things it is read 
-only.
-
-3) If you can still access all the files, first thing to do is: rsync or 
-otherwise backup them all to a different location, before attempting anything 
-to repair the issue.
-
-4) If you can´t access some files, you may try to use btrfs restore for 
-restoring them.
-
-5) Then, if you made sure you have an up-to-date backup run
-
-btrfs --repair
-
-
-Also watch out for other guidance you may receive her. My approach is based on 
-what I would do. I never had the need to repair a BTRFS filesystem so far.
+It may have been I used a mkfs.btrfs from 4.1.1 for creating it. Would be good 
+if it stored the version of the tool that created the fs into the fs itself to 
+be able to know for sure. It is the youngest BTRFS filesystem on my laptop 
+SSDs. I created it about April 2014 tough.
 
 Thanks,
 -- 

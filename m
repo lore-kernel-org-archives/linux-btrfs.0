@@ -1,71 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out4-smtp.messagingengine.com ([66.111.4.28]:36907 "EHLO
-	out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751859AbcABVax (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 2 Jan 2016 16:30:53 -0500
-Received: from compute5.internal (compute5.nyi.internal [10.202.2.45])
-	by mailout.nyi.internal (Postfix) with ESMTP id 62E4120146
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Jan 2016 16:30:53 -0500 (EST)
-Message-Id: <1451770253.3032043.481236290.26B8D142@webmail.messagingengine.com>
-From: Rasmus Abrahamsen <btrfs@rasmusa.net>
-To: Chris Murphy <lists@colorremedies.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mail-io0-f176.google.com ([209.85.223.176]:36634 "EHLO
+	mail-io0-f176.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751678AbcABVhs (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 16:37:48 -0500
+Received: by mail-io0-f176.google.com with SMTP id o67so407563298iof.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 13:37:48 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain
-Subject: Re: Add big device, remove small device, read-only
-Date: Sat, 02 Jan 2016 22:30:53 +0100
-In-Reply-To: <CAJCQCtQa6WD5TGQ2gUOTPdtEXBVhYQqsHG_fmuKTkkfQDnLNmQ@mail.gmail.com>
+In-Reply-To: <1451770253.3032043.481236290.26B8D142@webmail.messagingengine.com>
 References: <9E462AAE-481A-4A0D-9918-FF56A73D6F6D@rasmusa.net>
- <CAJCQCtSCJ91FaJ20g-+TKMwGkXeQdEkn1yDf6w+H3=V_8_xshA@mail.gmail.com>
- <1451679613.2761176.480641362.3ADA17DB@webmail.messagingengine.com>
- <CAJCQCtTn1xZ3KLQoPqjDowu__f5AAAXHNye2vU4ceEb6VFK--w@mail.gmail.com>
- <1451764729.3016753.481194250.0BE48A69@webmail.messagingengine.com>
- <CAJCQCtSJp-p06VCrSaoeqAOFtnt=EfCMKfRF-DVkjpAiW9iv3A@mail.gmail.com>
- <CAJCQCtQLrh5AM2eRp0g0UvAOedz3=Y8qm1XAi7PV7m26uZsR-Q@mail.gmail.com>
- <1451767152.3023000.481211490.1B8EC687@webmail.messagingengine.com>
- <CAJCQCtQa6WD5TGQ2gUOTPdtEXBVhYQqsHG_fmuKTkkfQDnLNmQ@mail.gmail.com>
+	<CAJCQCtSCJ91FaJ20g-+TKMwGkXeQdEkn1yDf6w+H3=V_8_xshA@mail.gmail.com>
+	<1451679613.2761176.480641362.3ADA17DB@webmail.messagingengine.com>
+	<CAJCQCtTn1xZ3KLQoPqjDowu__f5AAAXHNye2vU4ceEb6VFK--w@mail.gmail.com>
+	<1451764729.3016753.481194250.0BE48A69@webmail.messagingengine.com>
+	<CAJCQCtSJp-p06VCrSaoeqAOFtnt=EfCMKfRF-DVkjpAiW9iv3A@mail.gmail.com>
+	<CAJCQCtQLrh5AM2eRp0g0UvAOedz3=Y8qm1XAi7PV7m26uZsR-Q@mail.gmail.com>
+	<1451767152.3023000.481211490.1B8EC687@webmail.messagingengine.com>
+	<CAJCQCtQa6WD5TGQ2gUOTPdtEXBVhYQqsHG_fmuKTkkfQDnLNmQ@mail.gmail.com>
+	<1451770253.3032043.481236290.26B8D142@webmail.messagingengine.com>
+Date: Sat, 2 Jan 2016 14:37:47 -0700
+Message-ID: <CAJCQCtTvXTO=-N9r+o2BD=UCd0ULAxa_BnF16Bw7W5Xy4aEWag@mail.gmail.com>
+Subject: Re: Add big device, remove small device, read-only
+From: Chris Murphy <lists@colorremedies.com>
+To: Rasmus Abrahamsen <btrfs@rasmusa.net>
+Cc: Chris Murphy <lists@colorremedies.com>,
+        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Okay, I will rebuild it then. Thank you.
+On Sat, Jan 2, 2016 at 2:30 PM, Rasmus Abrahamsen <btrfs@rasmusa.net> wrote:
+> Okay, I will rebuild it then. Thank you.
+>
+> Where do I add -p?
 
-Where do I add -p?
+OK for me, I have these ro snapshots:
+drwxrwx---. 1 chris chris  218 Apr  3  2015 everything-20150403
+drwxrwx---. 1 chris chris  218 Apr  3  2015 everything-20150404
+drwxrwx---. 1 chris chris  218 Apr  3  2015 everything-20150412
+drwxrwx---. 1 chris chris  218 Apr  3  2015 everything-20150922
 
-On Sat, Jan 2, 2016, at 10:28 PM, Chris Murphy wrote:
-> On Sat, Jan 2, 2016 at 1:39 PM, Rasmus Abrahamsen <btrfs@rasmusa.net>
-> wrote:
-> > Sounds like you think my best bet is to re-roll my filesystem instead of
-> > attempt to repair it. Is that right?
-> 
-> If you want to get back to a working fs as soon as possible, yes. You
-> could take a btrfs-image of it first; if that fails you can use
-> btrfs-debug-tree. Both of those should direct the output to a file on
-> another file system. Maybe a dev will find it useful?
-> 
-> And then if you want you can keep trying to repair it, but my
-> experience is that in such cases the fs quickly is in the weeds and is
-> beyond repair even when it's possible to ro mount or use restore to
-> get all data out.
-> 
-> 
-> > I have snapshots which are based on each other as a backup of a remote
-> > machine by date. By sending these snapshots to a new filesystem, will I
-> > be able to have them still be incremental and save space?
-> 
-> Yes, the first one without -p is the big send. Then each additional
-> one uses the most immediate previous snapshot with -p. I haven't tried
-> the -e option with multiple increments, so I don't know if that works
-> or if it's expected to work.
-> 
-> I'm having to do this right now myself with an imploded raid1 that
-> won't mount so I might find out in the next hour or two if -e works.
-> 
-> 
-> 
-> -- 
-> Chris Murphy
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+# btrfs send everything-20150403 | btrfs receive /mnt/new
+# btrfs send -p everything-20150403 everything-20150404 | btrfs receive /mnt/new
+# btrfs send -p everything-20150404 everything-20150412 | btrfs receive /mnt/new
+# btrfs send -p everything-20150412 everything-20150922 | btrfs receive /mnt/new
+
+I have not tried to use && in between those, instead of just
+separately issuing the commands.
+
+It's valid to always use the same first subvolume as -p, but the
+increments are then larger so even though it succeeds, it's also
+inefficient.
+
+-- 
+Chris Murphy

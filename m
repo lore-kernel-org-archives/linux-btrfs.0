@@ -1,70 +1,98 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f52.google.com ([74.125.82.52]:34084 "EHLO
-	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751693AbcABPyi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 10:54:38 -0500
-Received: by mail-wm0-f52.google.com with SMTP id u188so105279919wmu.1
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 07:54:38 -0800 (PST)
-Date: Sat, 2 Jan 2016 06:52:07 -0500
-From: Sanidhya Solanki <jpage.lkml@gmail.com>
-To: David Sterba <dsterba@suse.cz>, clm@fb.com, jbacik@fb.com,
-        quwenruo.btrfs@gmx.com
-Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
-Message-ID: <20160102065207.4eec760a@gmail.com>
-In-Reply-To: <20151229180643.GD4227@twin.jikos.cz>
-References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
-	<1451341195.7094.0.camel@scientia.net>
-	<20151228153801.6561feff@gmail.com>
-	<1451352069.7094.3.camel@scientia.net>
-	<20151228164333.2b8d8336@gmail.com>
-	<1451360528.7094.7.camel@scientia.net>
-	<20151228190336.59a3f440@gmail.com>
-	<1451363188.7094.23.camel@scientia.net>
-	<20151229180643.GD4227@twin.jikos.cz>
+Received: from mail-wm0-f50.google.com ([74.125.82.50]:38686 "EHLO
+	mail-wm0-f50.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751693AbcABQKY convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 11:10:24 -0500
+Received: by mail-wm0-f50.google.com with SMTP id b14so132389141wmb.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 08:10:23 -0800 (PST)
+Received: from orione.localnet (16.Red-83-50-201.dynamicIP.rima-tde.net. [83.50.201.16])
+        by smtp.gmail.com with ESMTPSA id u126sm69440571wme.3.2016.01.02.08.10.21
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Sat, 02 Jan 2016 08:10:22 -0800 (PST)
+From: =?ISO-8859-1?Q?fugazzi=AE?= <fugazzi99@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: Btrfs send / receive freeze system?
+Date: Sat, 02 Jan 2016 16:10:20 +0000
+Message-ID: <3883736.oK4BscmJWO@orione>
+In-Reply-To: <CAPmG0jYHf90fuw1kds1aMhUbopmZX-wOLqDkR36mfb_hSm6szw@mail.gmail.com>
+References: <2876879.yKrnxB0p8M@orione> <CAPmG0jYHf90fuw1kds1aMhUbopmZX-wOLqDkR36mfb_hSm6szw@mail.gmail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 29 Dec 2015 19:06:44 +0100
-David Sterba <dsterba@suse.cz> wrote:
+Thank you Henk.
 
-> In theory this is possible with current on-disk data structures. The
-> stripe length is property of btrfs_chunk and changing it should be
-> possible the same way we do other raid transformations. The
-> implementation might be tricky at some places, but basically boils
-> down to the "read-" and "write-" stripe size. Reading chunks would
-> always respect the stored size, writing new data would use eg. the
-> superblock->stripesize or other value provided by the user.
+Yes I already tried that but it seems the keyboard is also offline so sys 
+commands had no effect. In fact ping was not working also, it seem interrupt 
+got disconnected somehow.
 
-I was having misgivings about the conversion project, but after
-re-reading this part, I will try and get a patch in by Wednesday.
+I tried your suggestion but it freeze on different files on different run. 
+I got a freeze every 3-4 pass on average.
 
-I still have my reservations about the following two parts:
-- Checksumming: I have no experience with how the CRC implementation
-  would deal with the changed blocksizes. Would the checksum be
-  different just because the superblock size has been changed? This
-  would make confirming if the transformation was successful much more
-  difficult. Another way to deal with this would be ti read the data
-  instead and compare it directly, instead of using checksums.
+I also formatted again and tried to copy something from an external e-sata 
+drive (mounted read only) to the same internal sata drive, it freeze also from 
+there every time on a different file.
 
-- Performance: Should it have a higher throughput by using larger data
-  sizes (which may reduce performance in scenarios such as databases and
-  video editing) or by having multiple transformations in parallel on
-  smaller data blocks. I am not sure if you can implement things such
-  as OpenMP in kernel space. Or spawn multiple kworkers in parallel to
-  deal with multiple streams of data.
+If I use rsync to copy or cp the freeze does not happen.
 
-I am not too worried about dealing with crashes, as we can just
-implement something like a table that contains the addresses currently
-undergoing changes (which may further reduce throughput, but make it
-more space) or do it by using a serial transformation, which ensures a
-block was committed to storage before proceeding to the next
-transformation.
+Reformatting the internal drive to XFS solve the freeze, I mean sending the 
+gzipped send to the XFS formatted drive do not freeze the pc. Sending the same 
+gzipped send on the same drive formatted in btrfs freeze the system.
 
-Essentially a time vs. CPU usage vs. Memory usage trade-off.
-Please chime in with your thoughts, developers and administrators.
+Since no one had/have this problem I'm beginning to guess btrfs might be 
+exposing some hardware failure I was not aware of. It might be possible that 
+having the two drive formatted as btrfs is more hard to the system due to 
+double checksumming, etc.
 
-Thanks.
+It is one month now that this system was converted to btrfs, I never had any 
+problems only this send problem and only after I converted also the second 
+internal drive to btrfs. Scrubs are OK, btrfs check are OK.
+
+I would wait and see if someone else will have similar problems.
+
+For now I mitigated adding a third internal drive formatted in XFS and sending 
+the backup there, then from there copying the backup back to the btrfs drive. 
+Now I have two copy of the same backup on different drive :-)
+
+Regards.  
+
+On Saturday, January 2, 2016 12:23:12 AM WET you wrote:
+> On Fri, Jan 1, 2016 at 4:51 PM, fugazzi® <fugazzi99@gmail.com> wrote:
+> > Hi everyone.
+> > It's a few weeks that I converted my root partition into btrfs with three
+> > sub- volumes named boot,root,home. I'm booting with /boot on subvol.
+> > 
+> > I'm using btrfs send and receive to make backup of the three snapshotted
+> > subvolumes on a second btrfs formatted drive with three commands like
+> > this:
+> > 
+> > btrfs send /btrfs-root/snap-root/ | gzip > $BKFOLDER/root.dump.gz
+> > 
+> > Sometimes, let say once a week, the system completely freeze (mouse
+> > keyboard) during the send, only solution was the reset button. The freeze
+> > happened on different place every time. Last time happened at 80% of the
+> > home send for example.
+> > 
+> > The freeze also happened during a send/receive from an external e-sata
+> > drive (to copy some mp3 using send instead of rsync) to the same internal
+> > drive where the backup are also made.
+> > 
+> > The system always run and was stable with XFS/xfsdump.
+> > 
+> > Kernel is 4.3.3, btrfs progs are 4.3.1, system is Arch Linux 64 bit, Ram
+> > 8Gb Mainboard Asus striker extreme Nvidia 680i, 8 years old.
+> > 
+> > After the crash nothing is shown in the systemd log, it simply freeze.
+> 
+> You could try this (maybe you have already) and see if and where the
+> problem is in btrfs:
+> https://en.m.wikipedia.org/wiki/Magic_SysRq_key
+> 
+> Instead of pipe to gzip you could do:
+> | btrfs receive -vv <some btrfs mount>
+> 
+> and trace back at which file the freeze happens. Maybe that tells something
+> about the source filesystem.
+

@@ -1,43 +1,120 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from out4-smtp.messagingengine.com ([66.111.4.28]:48569 "EHLO
-	out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750977AbcABLDD convert rfc822-to-8bit
-	(ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 2 Jan 2016 06:03:03 -0500
-Received: from compute4.internal (compute4.nyi.internal [10.202.2.44])
-	by mailout.nyi.internal (Postfix) with ESMTP id 2953F20248
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Jan 2016 06:03:03 -0500 (EST)
-Received: from [10.0.0.5] (x1-6-20-0c-c8-26-c9-2d.cpe.webspeed.dk [176.23.125.70])
-	by mail.messagingengine.com (Postfix) with ESMTPA id 764E1C013FE
-	for <linux-btrfs@vger.kernel.org>; Sat,  2 Jan 2016 06:03:02 -0500 (EST)
-Content-Type: text/plain; charset=us-ascii
-Mime-Version: 1.0 (Mac OS X Mail 9.2 \(3112\))
-Subject: Re: Add big device, remove small device, read-only
-From: Rasmus Abrahamsen <btrfs@rasmusa.net>
-In-Reply-To: <1451729336.2917121.480913242.132825EE@webmail.messagingengine.com>
-Date: Sat, 2 Jan 2016 12:03:02 +0100
-Message-Id: <E84088C8-6D44-488A-AE02-842132DB4596@rasmusa.net>
-References: <9E462AAE-481A-4A0D-9918-FF56A73D6F6D@rasmusa.net> <CAJCQCtSCJ91FaJ20g-+TKMwGkXeQdEkn1yDf6w+H3=V_8_xshA@mail.gmail.com> <1451679613.2761176.480641362.3ADA17DB@webmail.messagingengine.com> <1451729336.2917121.480913242.132825EE@webmail.messagingengine.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mondschein.lichtvoll.de ([194.150.191.11]:50330 "EHLO
+	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751498AbcABLll convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 06:41:41 -0500
+From: Martin Steigerwald <martin@lichtvoll.de>
+To: John Center <jlcenter15@gmail.com>
+Cc: linux-btrfs <linux-btrfs@vger.kernel.org>
+Subject: Re: btrfs scrub failing
+Date: Sat, 02 Jan 2016 12:41:38 +0100
+Message-ID: <3194509.MCEib7paxX@merkaba>
+In-Reply-To: <1711801.PU4dV1cMlN@merkaba>
+References: <CAPgWCbQ9HS1N=JCbbHuT9yyTz3JPAizA+DvOAR7_GX73CVix0g@mail.gmail.com> <CAPgWCbTntO5q1acH+MkF7QsGUv3wWqqDXKmBy6pJiQU0OFO-Pg@mail.gmail.com> <1711801.PU4dV1cMlN@merkaba>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="UTF-8"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Oops, sent this message from the wrong email, then tried attaching a file. I am really bad at this.
+Am Samstag, 2. Januar 2016, 11:35:51 CET schrieb Martin Steigerwald:
+> Am Freitag, 1. Januar 2016, 20:04:43 CET schrieb John Center:
+> > Hi Duncan,
+> > 
+> > On Fri, Jan 1, 2016 at 12:05 PM, Duncan <1i5t5.duncan@cox.net> wrote:
+> > > John Center posted on Fri, 01 Jan 2016 11:41:20 -0500 as excerpted:
+> > >> If this doesn't resolve the problem, what would you recommend my next
+> > >> steps should be?  I've been hesitant to run too many of the
+> > >> btrfs-tools,
+> > >> mainly because I don't want to accidentally screw things up & I don't
+> > >> always know how to interpret the results. (I ran btrfs-debug-tree,
+> > >> hoping something obvious would show up.  Big mistake. 😋)
+> > > 
+> > > LOLed at that debug-tree remark.  Been there (with other tools) myself.
+> > > 
+> > > Well, I'm hoping someone who had the problem can confirm whether it's
+> > > fixed in current kernels (scrub is one of those userspace commands
+> > > that's
+> > > mostly just a front-end to the kernel code which does the real work, so
+> > > kernel version is the important thing for scrub).  I'm guessing so, and
+> > > that you'll find the problem gone in 4.3.
+> > > 
+> > > We'll cross the not-gone bridge if we get to it, but again, if the other
+> > > people who had the similar problem can confirm whether it disappeared
+> > > for
+> > > them with the new kernel, it would help a lot, as there were enough such
+> > > reports that if it's the same problem and still there for everyone
+> > > (which
+> > > I doubt as I expect there'd still be way more posts about it if so, but
+> > > confirmation's always good), nothing to do but wait for a fix, while if
+> > > not, and you still have your problem, then it's a different issue and
+> > > the
+> > > devs will need to work with you on a fix specific to your problem.
+> > 
+> > Ok, I'm at the next bridge. :-(  I upgraded the kernel to 4.4rc7 from
+> > the Ubuntu Mainline archive & I just ran the scrub:
+> > 
+> > john@mariposa:~$ sudo /sbin/btrfs scrub start -BdR /dev/md125p2
+> > ERROR: scrubbing /dev/md125p2 failed for device id 1: ret=-1, errno=5
+> > (Input/output error)
+> > scrub device /dev/md125p2 (id 1) canceled
+> > scrub started at Fri Jan  1 19:38:21 2016 and was aborted after 00:02:34
+> > data_extents_scrubbed: 111031
+> > tree_extents_scrubbed: 104061
+> > data_bytes_scrubbed: 2549907456
+> > tree_bytes_scrubbed: 1704935424
+> > read_errors: 0
+> > csum_errors: 0
+> > verify_errors: 0
+> > no_csum: 1573
+> > csum_discards: 0
+> > super_errors: 0
+> > malloc_errors: 0
+> > uncorrectable_errors: 0
+> > unverified_errors: 0
+> > corrected_errors: 0
+> > last_physical: 4729667584
+> > 
+> > I checked dmesg & this appeared:
+> > 
+> > [11428.983355] BTRFS error (device md125p2): parent transid verify
+> > failed on 241287168 wanted 33554449 found 17
+> > [11431.028399] BTRFS error (device md125p2): parent transid verify
+> > failed on 241287168 wanted 33554449 found 17
+> > 
+> > Where do I go from here?
+> 
+> These and the other errors point at an issue with the filesystem structure.
+> 
+> As I never had to deal with that, I can only give generic advice:
+> 
+> 1) Use latest stable btrfs-progs.
+> 
+> 2) Umount the filesystem and run
+> 
+> btrfs check (maybe with -p)
+> 
+> When it finds some errors, proceed with the following steps:
+> 
+> Without --repair or some of the other options that modify things it is read
+> only.
+> 
+> 3) If you can still access all the files, first thing to do is: rsync or
+> otherwise backup them all to a different location, before attempting
+> anything to repair the issue.
+> 
+> 4) If you can´t access some files, you may try to use btrfs restore for
+> restoring them.
+> 
+> 5) Then, if you made sure you have an up-to-date backup run
+> 
+> btrfs --repair
 
-This morning I wanted to check on progress of removing the device but
-when trying to get the screen to wake, I was met with nothing. I tried
-SSH, nothing. The machine had crashed or something of the like. After a
-reboot, the device is still part of the filesystem.
-I have now tried booting from an Arch Linux flash drive and try to
-remove the device when booted from that.
+Before doing that, review:
 
-Let's see how it goes.
+https://btrfs.wiki.kernel.org/index.php/Btrfsck
 
-UPDATE: Seems like the kernel crashed. I have attached a picture link.
-https://dl.dropboxusercontent.com/u/323865/2016-01-02%20IMG_8478.jpg
+to learn about other options.
 
-Can anyone give me any advice on what to do?
-
-I think I will reboot and try a btrfs scrub before trying again.
-
-Rasmus
+Thanks,
+-- 
+Martin

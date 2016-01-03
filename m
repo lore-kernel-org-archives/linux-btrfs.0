@@ -1,25 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qg0-f54.google.com ([209.85.192.54]:33912 "EHLO
-	mail-qg0-f54.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752207AbcACWQl convert rfc822-to-8bit (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 17:16:41 -0500
-Received: by mail-qg0-f54.google.com with SMTP id 6so165236128qgy.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 14:16:40 -0800 (PST)
+Received: from mail-qk0-f182.google.com ([209.85.220.182]:33184 "EHLO
+	mail-qk0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752482AbcACWdH convert rfc822-to-8bit (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 17:33:07 -0500
+Received: by mail-qk0-f182.google.com with SMTP id p186so43078188qke.0
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 14:33:05 -0800 (PST)
 Content-Type: text/plain;
 	charset=utf-8
 Mime-Version: 1.0 (1.0)
 Subject: Re: btrfs scrub failing
 From: John Center <jlcenter15@gmail.com>
 In-Reply-To: <2304914.ebMOxPbdB3@merkaba>
-Date: Sun, 3 Jan 2016 17:16:38 -0500
+Date: Sun, 3 Jan 2016 17:33:03 -0500
 Cc: Duncan <1i5t5.duncan@cox.net>, linux-btrfs <linux-btrfs@vger.kernel.org>
-Message-Id: <853729F2-AC1E-4971-AF29-32F0EC33D8D3@gmail.com>
+Message-Id: <650A2729-5234-4088-AF10-89D27FE9DC25@gmail.com>
 References: <CAPgWCbQ9HS1N=JCbbHuT9yyTz3JPAizA+DvOAR7_GX73CVix0g@mail.gmail.com> <CAPgWCbTPMqCDx99vBXqFsCAjLzCsnxvCwFQnRfSymbD-_RssMA@mail.gmail.com> <CAPgWCbRZOT-LvECuqgbaHSKWE8mYiO5R9kvk-8BeL-9Lb85fVA@mail.gmail.com> <2304914.ebMOxPbdB3@merkaba>
 To: Martin Steigerwald <martin@lichtvoll.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 Hi Martin,
+
+One thing I forgot, I did run btrfs-image & it appears to have successfully completed afaict. Do you think it would be useful to someone for future troubleshooting?
+
+Thanks.
+
+    -John
+
+Sent from my iPhone
 
 > On Jan 3, 2016, at 5:06 AM, Martin Steigerwald <martin@lichtvoll.de> wrote:
 > 
@@ -101,8 +109,6 @@ Hi Martin,
 > 
 > Thats at least my take on this.
 > 
-Yeah, unfortunately I came to the same conclusion. I eventually killed the repair loop & ran check again with no luck - same errors, no repairs. I'm going to rebuild it, hopefully next weekend. 
-
-Thanks again for your help!
-
-    -John
+> Thanks,
+> -- 
+> Martin

@@ -1,104 +1,47 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:21268 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752495AbcAFLCT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 06:02:19 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id E4DC941890FC
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2016 19:02:00 +0800 (CST)
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/3] btrfs: Continue write in case of can_not_nocow
-Date: Wed, 6 Jan 2016 19:00:17 +0800
-Message-ID: <9b89157957abcc87a6ea0530989a4984794484cd.1452078012.git.zhaolei@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain
+Received: from mail-pa0-f51.google.com ([209.85.220.51]:36662 "EHLO
+	mail-pa0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751539AbcACTAJ (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 14:00:09 -0500
+Received: by mail-pa0-f51.google.com with SMTP id yy13so93270292pab.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 11:00:09 -0800 (PST)
+Received: from arch-gct.localdomain ([175.114.213.172])
+        by smtp.gmail.com with ESMTPSA id fc6sm120726837pac.44.2016.01.03.11.00.07
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Sun, 03 Jan 2016 11:00:07 -0800 (PST)
+From: Byongho Lee <bhlee.kernel@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH 0/6] fix endian bugs and clean-ups
+Date: Mon,  4 Jan 2016 03:59:52 +0900
+Message-Id: <1451847598-30666-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-btrfs failed in xfstests btrfs/080 with -o nodatacow.
+This is a patch-set after getting running sparse.
 
-Can be reproduced by following script:
-  DEV=/dev/vdg
-  MNT=/mnt/tmp
+There are two endian patches one is new and the other is Zach Brown's work
+but we lost.  And rest are just for clean-ups.
 
-  umount $DEV &>/dev/null
-  mkfs.btrfs -f $DEV
-  mount -o nodatacow $DEV $MNT
+Byongho Lee (6):
+  btrfs-progs: get sparse checking working
+  btrfs-progs: use NULL instead of 0
+  btrfs-progs: make private symbols to static
+  btrfs-progs: fix endian bugs in chunk rebuilding
+  btrfs-progs: fix endian bug in update_super()
+  btrfs-progs: fix using on-disk structure to store in memory data
 
-  dd if=/dev/zero of=$MNT/test bs=1 count=2048 &
-  btrfs subvolume snapshot -r $MNT $MNT/test_snap &
-  wait
-  --
-  We can see dd failed on NO_SPACE.
+ Makefile.in        |  2 +-
+ btrfs-image.c      |  3 +--
+ btrfs-show-super.c |  4 ++--
+ chunk-recover.c    |  8 ++++----
+ cmds-fi-usage.c    | 12 ++++++------
+ props.c            |  2 +-
+ qgroup-verify.c    | 36 +++++++++++++++++++++---------------
+ qgroup.c           |  6 ++++--
+ utils.c            |  4 ++--
+ 9 files changed, 42 insertions(+), 35 deletions(-)
 
-Reason:
-  __btrfs_buffered_write should run cow write when no_cow impossible,
-  and current code is designed with above logic.
-  But check_can_nocow() have 2 type of return value(0 and <0) on
-  can_not_no_cow, and current code only continue write on first case,
-  the second case happened in doing subvolume.
-
-Fix:
-  Continue write when check_can_nocow() return 0 and <0.
-
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/file.c | 37 +++++++++++++++++--------------------
- 1 file changed, 17 insertions(+), 20 deletions(-)
-
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 977e715..11fd981 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -1516,27 +1516,24 @@ static noinline ssize_t __btrfs_buffered_write(struct file *file,
- 
- 		reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
- 
--		if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
--					     BTRFS_INODE_PREALLOC)) {
--			ret = check_can_nocow(inode, pos, &write_bytes);
--			if (ret < 0)
--				break;
--			if (ret > 0) {
--				/*
--				 * For nodata cow case, no need to reserve
--				 * data space.
--				 */
--				only_release_metadata = true;
--				/*
--				 * our prealloc extent may be smaller than
--				 * write_bytes, so scale down.
--				 */
--				num_pages = DIV_ROUND_UP(write_bytes + offset,
--							 PAGE_CACHE_SIZE);
--				reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
--				goto reserve_metadata;
--			}
-+		if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-+					      BTRFS_INODE_PREALLOC)) &&
-+		    check_can_nocow(inode, pos, &write_bytes) > 0) {
-+			/*
-+			 * For nodata cow case, no need to reserve
-+			 * data space.
-+			 */
-+			only_release_metadata = true;
-+			/*
-+			 * our prealloc extent may be smaller than
-+			 * write_bytes, so scale down.
-+			 */
-+			num_pages = DIV_ROUND_UP(write_bytes + offset,
-+						 PAGE_CACHE_SIZE);
-+			reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
-+			goto reserve_metadata;
- 		}
-+
- 		ret = btrfs_check_data_free_space(inode, pos, write_bytes);
- 		if (ret < 0)
- 			break;
 -- 
-1.8.5.1
-
-
+2.6.4
 

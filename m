@@ -1,100 +1,184 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mout.gmx.net ([212.227.17.22]:63772 "EHLO mout.gmx.net"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751897AbcACBhS (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 2 Jan 2016 20:37:18 -0500
+Received: from mailgw-02.dd24.net ([193.46.215.43]:55589 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750878AbcACC0a (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 21:26:30 -0500
+Message-ID: <1451787985.6645.12.camel@scientia.net>
 Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
-To: Sanidhya Solanki <jpage.lkml@gmail.com>, David Sterba <dsterba@suse.cz>,
-        clm@fb.com, jbacik@fb.com
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Sanidhya Solanki <jpage.lkml@gmail.com>,
+        David Sterba <dsterba@suse.cz>, clm@fb.com, jbacik@fb.com
+Cc: linux-btrfs@vger.kernel.org
+Date: Sun, 03 Jan 2016 03:26:25 +0100
+In-Reply-To: <56887B40.10105@gmx.com>
 References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
- <1451341195.7094.0.camel@scientia.net> <20151228153801.6561feff@gmail.com>
- <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
- <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
- <1451363188.7094.23.camel@scientia.net> <20151229180643.GD4227@twin.jikos.cz>
- <20160102065207.4eec760a@gmail.com>
-Cc: Christoph Anton Mitterer <calestyo@scientia.net>,
-        linux-btrfs@vger.kernel.org
-From: Qu Wenruo <quwenruo.btrfs@gmx.com>
-Message-ID: <56887B40.10105@gmx.com>
-Date: Sun, 3 Jan 2016 09:37:04 +0800
-MIME-Version: 1.0
-In-Reply-To: <20160102065207.4eec760a@gmail.com>
-Content-Type: text/plain; charset=windows-1252; format=flowed
+	 <1451341195.7094.0.camel@scientia.net> <20151228153801.6561feff@gmail.com>
+	 <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
+	 <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
+	 <1451363188.7094.23.camel@scientia.net>
+	 <20151229180643.GD4227@twin.jikos.cz> <20160102065207.4eec760a@gmail.com>
+	 <56887B40.10105@gmx.com>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-QMHZJNOC7hir/uHfSQU8"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
+--=-QMHZJNOC7hir/uHfSQU8
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-On 01/02/2016 07:52 PM, Sanidhya Solanki wrote:
-> On Tue, 29 Dec 2015 19:06:44 +0100
-> David Sterba <dsterba@suse.cz> wrote:
->
->> In theory this is possible with current on-disk data structures. The
->> stripe length is property of btrfs_chunk and changing it should be
->> possible the same way we do other raid transformations. The
->> implementation might be tricky at some places, but basically boils
->> down to the "read-" and "write-" stripe size. Reading chunks would
->> always respect the stored size, writing new data would use eg. the
->> superblock->stripesize or other value provided by the user.
->
-> I was having misgivings about the conversion project, but after
-> re-reading this part, I will try and get a patch in by Wednesday.
->
-> I still have my reservations about the following two parts:
-> - Checksumming: I have no experience with how the CRC implementation
->    would deal with the changed blocksizes. Would the checksum be
->    different just because the superblock size has been changed? This
->    would make confirming if the transformation was successful much more
->    difficult. Another way to deal with this would be ti read the data
->    instead and compare it directly, instead of using checksums.
+On Sun, 2016-01-03 at 09:37 +0800, Qu Wenruo wrote:
+> And since you are making the stripe size configurable, then user is=C2=A0
+> responsible for any too large or too small stripe size setting.
+That pops up the questions, which raid chunk sizes the kernel,
+respectively the userland tools should allow for btrfs...
 
-Btrfs checksum are calculated in 3 different method:
-1) Metadata: Per nodesize, stored in tree blocker header. (struct 
-btrfs_header->csum)
-2) Data: Per sectorsize, stored in csum tree.
-3) Superblock: Per 4K (fixed), stored in its header (struct 
-btrfs_super->csum)
+I'd guess only powers of 2, some minimum, some maximum.
 
-I didn't the need to change any of them, as you are not changing any of 
-the csum behavior.
+Are there any concerns/constraints with too small/too big chunks when
+these play together with lower block layers (I'd guess not).
 
-Stripe size only affect how btrfs does IO, not the csum size.
+Can one use any device topology information from lower block layers and
+make according warnings/suggestions?
 
->
-> - Performance: Should it have a higher throughput by using larger data
->    sizes (which may reduce performance in scenarios such as databases and
->    video editing) or by having multiple transformations in parallel on
->    smaller data blocks. I am not sure if you can implement things such
->    as OpenMP in kernel space. Or spawn multiple kworkers in parallel to
->    deal with multiple streams of data.
 
-IIRC, btrfs only need to pass bio to devices, and the 
-parallel/merge/schedule are all done by kernel bio level.
-So you don't really need to bother that much.
+> Your only concern would be the default value, but IMHO current 64K=C2=A0
+> stripe size is good enough as a default value.
+IIRC mdadm's default was 512K...
+Also in my benchmarks the observation was rather that for most IO
+patterns, higher chunk sizes perform better (that is at least in MD
+RAID and especially HW RAID).
+For all our HW RAIDs at the Tier-2 I use the respective maximum
+nowadays (1MiB on the newer controllers, 512KiB on some olders, 64KiB
+on the ones which are still steam powered).
 
-And since you are making the stripe size configurable, then user is 
-responsible for any too large or too small stripe size setting.
+Only on some special nodes that run a DB I use something lower (IIRC
+512KiB or 256KiB).
 
-Your only concern would be the default value, but IMHO current 64K 
-stripe size is good enough as a default value.
+Best is probably, that once there actually is variable chunk size
+support in btrfs, and the different RAID levels have stabilised and
+been optimised, and RAID1 renamed to something better (SCNR, ;-P ),...
+so probably in some 5-10 years... one makes some more extensive
+benchmarks and then picks a reasonable default :-)
 
-Thanks,
-Qu
 
->
-> I am not too worried about dealing with crashes, as we can just
-> implement something like a table that contains the addresses currently
-> undergoing changes (which may further reduce throughput, but make it
-> more space) or do it by using a serial transformation, which ensures a
-> block was committed to storage before proceeding to the next
-> transformation.
->
-> Essentially a time vs. CPU usage vs. Memory usage trade-off.
-> Please chime in with your thoughts, developers and administrators.
->
-> Thanks.
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
+Cheers,
+Chris.
+--=-QMHZJNOC7hir/uHfSQU8
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTAzMDIyNjI1WjBPBgkqhkiG9w0BCQQxQgRATItO
+0g6pdRB7IMV8u+xPKDnHQX3rIo+TmeBraeTKSb/MOLEQL+K3FSlpCWJUU9gx4uHZd4tetP22+mWo
+Ff52IDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAXJZx
+oa8Rv96WGEdStvM/Y4vzsdWjrL/NRYIue+F2MLImW+AYI9JPVvmclpXn5zFAeUeKwVUBxOwwrQmD
+egZT3EjafzlR1UBj/jSu2HAbpqVqW78B6yGmZwjWRQjhJ7zcnEsNV24sLfmS75EMrbSUHOVaCKm+
+YG3Yh9rUz2JBXOpZcyrsMdR/FSZyn4+LD1BqXwUWfUDfak3GRfK7SrdgkKgmDHJ32lwVDjyx436/
+tlsTIXUCmfHIXh5071J/a1lJa0pedLpvC67YPMbnHYBuaJ8E47C0x/GKW13Nyq2ZpYoT96jV+D09
+u5pioQHhxJYnLJ1YbobTlcQPP5ixw3oMCICfj3Vv4Aa1ZNwqUMrM/kJ7kbphUbQ9jAqMCkVy7mOb
+qWU022KFcYRJVJR917ykTKuDCOQNhjhA2Y9pc6zvL6hDDMDuF1PyAkoBHOiLw4zS1H8ynrrjlroR
+qSGFi4fSuVA1PvxjpIyX2zWWfMFtUa0FO6q+7xpr8hRfoNFnkoFNKEkkn2iD8FphrWYsP2X118TZ
+mbNSqu0rONJ7tHT26wmgmRTAVunUUd4pvg+aoN1hdRIm9Lf2I5Rpy5iLZ0H3zMzPod1VZsgW75Mx
+pK7xa4NM4gcHoviSS0hANC2bNwGPlgaXR1N8CUSn1hJoow7tX4Xo8AyTpSednZWqYHFpBtYAAAAA
+AAA=
+
+
+--=-QMHZJNOC7hir/uHfSQU8--
+

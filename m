@@ -1,184 +1,166 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:55589 "EHLO
-	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750878AbcACC0a (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 21:26:30 -0500
-Message-ID: <1451787985.6645.12.camel@scientia.net>
-Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
-From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        Sanidhya Solanki <jpage.lkml@gmail.com>,
-        David Sterba <dsterba@suse.cz>, clm@fb.com, jbacik@fb.com
-Cc: linux-btrfs@vger.kernel.org
-Date: Sun, 03 Jan 2016 03:26:25 +0100
-In-Reply-To: <56887B40.10105@gmx.com>
-References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
-	 <1451341195.7094.0.camel@scientia.net> <20151228153801.6561feff@gmail.com>
-	 <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
-	 <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
-	 <1451363188.7094.23.camel@scientia.net>
-	 <20151229180643.GD4227@twin.jikos.cz> <20160102065207.4eec760a@gmail.com>
-	 <56887B40.10105@gmx.com>
-Content-Type: multipart/signed; micalg="sha-512";
-	protocol="application/x-pkcs7-signature";
-	boundary="=-QMHZJNOC7hir/uHfSQU8"
-Mime-Version: 1.0
+Received: from mail-pf0-f180.google.com ([209.85.192.180]:35266 "EHLO
+	mail-pf0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750923AbcACDkD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 22:40:03 -0500
+Received: by mail-pf0-f180.google.com with SMTP id 78so185496723pfw.2
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 19:40:02 -0800 (PST)
+Received: from localhost (203-214-36-148.dyn.iinet.net.au. [203.214.36.148])
+        by smtp.gmail.com with ESMTPSA id i66sm78103218pfj.28.2016.01.02.19.40.00
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
+        Sat, 02 Jan 2016 19:40:01 -0800 (PST)
+Date: Sun, 3 Jan 2016 14:39:57 +1100
+From: Alistair Grant <akgrant0710@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Subject: Re: btrfs send fail and check hang
+Message-ID: <20160103033957.GA18124@alistair-xps13>
+References: <20160102044630.GA10269@alistair-xps13>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160102044630.GA10269@alistair-xps13>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
---=-QMHZJNOC7hir/uHfSQU8
-Content-Type: text/plain; charset="UTF-8"
-Content-Transfer-Encoding: quoted-printable
-
-On Sun, 2016-01-03 at 09:37 +0800, Qu Wenruo wrote:
-> And since you are making the stripe size configurable, then user is=C2=A0
-> responsible for any too large or too small stripe size setting.
-That pops up the questions, which raid chunk sizes the kernel,
-respectively the userland tools should allow for btrfs...
-
-I'd guess only powers of 2, some minimum, some maximum.
-
-Are there any concerns/constraints with too small/too big chunks when
-these play together with lower block layers (I'd guess not).
-
-Can one use any device topology information from lower block layers and
-make according warnings/suggestions?
-
-
-> Your only concern would be the default value, but IMHO current 64K=C2=A0
-> stripe size is good enough as a default value.
-IIRC mdadm's default was 512K...
-Also in my benchmarks the observation was rather that for most IO
-patterns, higher chunk sizes perform better (that is at least in MD
-RAID and especially HW RAID).
-For all our HW RAIDs at the Tier-2 I use the respective maximum
-nowadays (1MiB on the newer controllers, 512KiB on some olders, 64KiB
-on the ones which are still steam powered).
-
-Only on some special nodes that run a DB I use something lower (IIRC
-512KiB or 256KiB).
-
-Best is probably, that once there actually is variable chunk size
-support in btrfs, and the different RAID levels have stabilised and
-been optimised, and RAID1 renamed to something better (SCNR, ;-P ),...
-so probably in some 5-10 years... one makes some more extensive
-benchmarks and then picks a reasonable default :-)
-
-
-Cheers,
-Chris.
---=-QMHZJNOC7hir/uHfSQU8
-Content-Type: application/x-pkcs7-signature; name="smime.p7s"
-Content-Disposition: attachment; filename="smime.p7s"
-Content-Transfer-Encoding: base64
-
-MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
-ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
-AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
-aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
-Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
-eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
-A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
-4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
-Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
-tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
-3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
-BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
-MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
-Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
-MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
-BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
-MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
-bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
-01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
-+MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
-7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
-DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
-r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
-qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
-OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
-sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
-npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
-DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
-MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
-Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
-MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
-GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
-aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
-YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
-0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
-T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
-0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
-Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
-mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
-09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
-1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
-VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
-DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
-FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
-bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
-KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
-BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
-IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
-c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
-BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
-A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
-kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
-hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
-H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
-JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
-z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
-THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
-GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
-NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
-BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
-c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
-P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
-Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
-0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
-nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
-r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
-0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
-7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
-a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
-bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
-MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
-BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
-9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
-b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
-LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
-Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
-Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
-AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
-DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
-SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
-ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
-RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
-Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
-MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
-cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
-QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTAzMDIyNjI1WjBPBgkqhkiG9w0BCQQxQgRATItO
-0g6pdRB7IMV8u+xPKDnHQX3rIo+TmeBraeTKSb/MOLEQL+K3FSlpCWJUU9gx4uHZd4tetP22+mWo
-Ff52IDCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
-bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
-AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
-DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
-VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAXJZx
-oa8Rv96WGEdStvM/Y4vzsdWjrL/NRYIue+F2MLImW+AYI9JPVvmclpXn5zFAeUeKwVUBxOwwrQmD
-egZT3EjafzlR1UBj/jSu2HAbpqVqW78B6yGmZwjWRQjhJ7zcnEsNV24sLfmS75EMrbSUHOVaCKm+
-YG3Yh9rUz2JBXOpZcyrsMdR/FSZyn4+LD1BqXwUWfUDfak3GRfK7SrdgkKgmDHJ32lwVDjyx436/
-tlsTIXUCmfHIXh5071J/a1lJa0pedLpvC67YPMbnHYBuaJ8E47C0x/GKW13Nyq2ZpYoT96jV+D09
-u5pioQHhxJYnLJ1YbobTlcQPP5ixw3oMCICfj3Vv4Aa1ZNwqUMrM/kJ7kbphUbQ9jAqMCkVy7mOb
-qWU022KFcYRJVJR917ykTKuDCOQNhjhA2Y9pc6zvL6hDDMDuF1PyAkoBHOiLw4zS1H8ynrrjlroR
-qSGFi4fSuVA1PvxjpIyX2zWWfMFtUa0FO6q+7xpr8hRfoNFnkoFNKEkkn2iD8FphrWYsP2X118TZ
-mbNSqu0rONJ7tHT26wmgmRTAVunUUd4pvg+aoN1hdRIm9Lf2I5Rpy5iLZ0H3zMzPod1VZsgW75Mx
-pK7xa4NM4gcHoviSS0hANC2bNwGPlgaXR1N8CUSn1hJoow7tX4Xo8AyTpSednZWqYHFpBtYAAAAA
-AAA=
+On Sat, Jan 02, 2016 at 03:46:30PM +1100, Alistair Grant wrote:
+> 
+> When trying to send a snapshot I'm now getting errors such as:
+> 
+> ERROR: failed to open backups/xps13/@home/@home.20151229_13:43:09/alistair/.mozilla/firefox/yu3bxg7y.default/cookies.sqlite. No such file or directory
+>
+> [snip...]
+> 
+> General system information:
+> 
+> uname -a
+> Linux alarmpi 4.1.15-1-ARCH #1 SMP Tue Dec 15 18:39:32 MST 2015 armv7l
+> GNU/Linux
+> 
+> 
+> btrfs --version
+> btrfs-progs v4.3.1
+> 
+> 
+> 
+> mount | grep btrfs
+> /dev/sda on /srv/d2root type btrfs (rw,noatime,compress-force=zlib,space_cache)
+> 
+> 
+> > sudo btrfs fi show /srv/d2root
+> Label: 'data2'  uuid: d8daaa62-afa2-4654-b7de-22fdc8456e03
+> 	Total devices 2 FS bytes used 117.34GiB
+> 	devid    1 size 1.82TiB used 118.03GiB path /dev/sda
+> 	devid    2 size 1.82TiB used 118.03GiB path /dev/sdb
+> 
+> 
+> 
+> > sudo btrfs fi df /srv/d2root
+> Data, RAID1: total=117.00GiB, used=116.76GiB
+> System, RAID1: total=32.00MiB, used=48.00KiB
+> Metadata, RAID1: total=1.00GiB, used=595.36MiB
+> GlobalReserve, single: total=208.00MiB, used=0.00B
+> 
+> 
+> > sudo btrfs fi usage /srv/d2root
+> Overall:
+>     Device size:		   3.64TiB
+>     Device allocated:		 236.06GiB
+>     Device unallocated:		   3.41TiB
+>     Device missing:		     0.00B
+>     Used:			 234.68GiB
+>     Free (estimated):		   1.70TiB	(min: 1.70TiB)
+>     Data ratio:			      2.00
+>     Metadata ratio:		      2.00
+>     Global reserve:		 208.00MiB	(used: 0.00B)
+> 
+> Data,RAID1: Size:117.00GiB, Used:116.76GiB
+>    /dev/sda	 117.00GiB
+>    /dev/sdb	 117.00GiB
+> 
+> Metadata,RAID1: Size:1.00GiB, Used:595.36MiB
+>    /dev/sda	   1.00GiB
+>    /dev/sdb	   1.00GiB
+> 
+> System,RAID1: Size:32.00MiB, Used:48.00KiB
+>    /dev/sda	  32.00MiB
+>    /dev/sdb	  32.00MiB
+> 
+> Unallocated:
+>    /dev/sda	   1.70TiB
+>    /dev/sdb	   1.70TiB
 
 
---=-QMHZJNOC7hir/uHfSQU8--
+I've figured out a workaround for the errors, but I don't understand why
+the workaround is needed.
+
+The error that I was getting from the btrfs receive process was:
+
+ERROR: failed to open backups/xps13/@home/@home.20151229_07:57:44/alistair/.mozilla/firefox/yu3bxg7y.default/cookies.sqlite.  No such file or directory
+
+It can be avoided by changing the receive command (which has worked fine
+until now) from:
+
+btrfs receive /srv/d2backups/xps13/@home
+
+to:
+
+btrfs receive /srv/d2root/backups/xps13/@home
+
+(not shown in the commands is that while testing I wrote the output from
+btrfs send to a file and manually copied it across to the destination
+machine.  Normally it is piped through ssh.)
+
+These are the same directory:
+
+(As an added complication, there appears to be a bug somewhere in
+4.1.15-1-ARCH as the mount command isn't displaying the subvolume)
+
+> mount | grep btrfs
+/dev/sda on /srv/d2backups type btrfs (rw,noatime,compress-force=zlib,space_cache)
+/dev/sda on /srv/d2root type btrfs (rw,noatime,compress-force=zlib,space_cache)
+
+The original mount commands were:
+
+> sudo mount -t btrfs -o compress-force=zlib,noatime,subvol=backups
+> LABEL=data2 /srv/d2backups
+> sudo mount -t btrfs -o compress-force=zlib,noatime LABEL=data2
+> /srv/d2root
+
+And can be confirmed by:
+
+> ls /srv/d2root
+backups/  snapshots/
+> ls /srv/d2root/backups
+alistair-srv/  xps13/
+> ls /srv/d2backups
+alistair-srv/  xps13/
+
+Version information about the destination machine is in my original
+message below.
+
+In case information about the source machine is useful:
+
+> uname -a
+Linux alistair-xps13 4.2.0-22-generic #27-Ubuntu SMP Thu Dec 17 22:57:08
+UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
+
+> btrfs --version
+btrfs-progs v4.0
+
+The send command was:
+
+sudo btrfs send -p '@home.20151229_07:57:44' -c '@home.20151229_07:57:44' '@home.20160103_13:16:29'
+
+> mount | grep btrfs
+/dev/sda4 on /home type btrfs (rw,noatime,compress=zlib,ssd,space_cache,autodefrag,subvolid=257,subvol=/@home)
+/dev/sda4 on /srv/home type btrfs (rw,noatime,compress=zlib,ssd,space_cache,autodefrag,subvolid=5,subvol=/)
+
+I don't believe there have been any recent updates to the kernel or
+btrfs progs on either machine.
+
+If you would like any more information, please let me know.
+
+Thanks,
+Alistair
+
 

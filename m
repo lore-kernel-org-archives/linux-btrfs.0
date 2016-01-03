@@ -1,166 +1,136 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f180.google.com ([209.85.192.180]:35266 "EHLO
-	mail-pf0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750923AbcACDkD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 22:40:03 -0500
-Received: by mail-pf0-f180.google.com with SMTP id 78so185496723pfw.2
-        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 19:40:02 -0800 (PST)
-Received: from localhost (203-214-36-148.dyn.iinet.net.au. [203.214.36.148])
-        by smtp.gmail.com with ESMTPSA id i66sm78103218pfj.28.2016.01.02.19.40.00
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-GCM-SHA256 bits=128/128);
-        Sat, 02 Jan 2016 19:40:01 -0800 (PST)
-Date: Sun, 3 Jan 2016 14:39:57 +1100
-From: Alistair Grant <akgrant0710@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: btrfs send fail and check hang
-Message-ID: <20160103033957.GA18124@alistair-xps13>
-References: <20160102044630.GA10269@alistair-xps13>
+Received: from mail-lf0-f45.google.com ([209.85.215.45]:36263 "EHLO
+	mail-lf0-f45.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751227AbcACEkk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 2 Jan 2016 23:40:40 -0500
+Received: by mail-lf0-f45.google.com with SMTP id z124so255674642lfa.3
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 20:40:39 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160102044630.GA10269@alistair-xps13>
+Date: Sat, 2 Jan 2016 23:40:38 -0500
+Message-ID: <CA+X5Wn66VabG5mnQPfPvgUuadgEs5a+UtNLSohjrr-pe1GOoog@mail.gmail.com>
+Subject: WARNING CPU at linux/fs/btrfs/ioctl.c:558 create_subvol BTRFS
+ Transaction aborted (error -2)
+From: james harvey <jamespharvey20@gmail.com>
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 02, 2016 at 03:46:30PM +1100, Alistair Grant wrote:
-> 
-> When trying to send a snapshot I'm now getting errors such as:
-> 
-> ERROR: failed to open backups/xps13/@home/@home.20151229_13:43:09/alistair/.mozilla/firefox/yu3bxg7y.default/cookies.sqlite. No such file or directory
->
-> [snip...]
-> 
-> General system information:
-> 
-> uname -a
-> Linux alarmpi 4.1.15-1-ARCH #1 SMP Tue Dec 15 18:39:32 MST 2015 armv7l
-> GNU/Linux
-> 
-> 
-> btrfs --version
-> btrfs-progs v4.3.1
-> 
-> 
-> 
-> mount | grep btrfs
-> /dev/sda on /srv/d2root type btrfs (rw,noatime,compress-force=zlib,space_cache)
-> 
-> 
-> > sudo btrfs fi show /srv/d2root
-> Label: 'data2'  uuid: d8daaa62-afa2-4654-b7de-22fdc8456e03
-> 	Total devices 2 FS bytes used 117.34GiB
-> 	devid    1 size 1.82TiB used 118.03GiB path /dev/sda
-> 	devid    2 size 1.82TiB used 118.03GiB path /dev/sdb
-> 
-> 
-> 
-> > sudo btrfs fi df /srv/d2root
-> Data, RAID1: total=117.00GiB, used=116.76GiB
-> System, RAID1: total=32.00MiB, used=48.00KiB
-> Metadata, RAID1: total=1.00GiB, used=595.36MiB
-> GlobalReserve, single: total=208.00MiB, used=0.00B
-> 
-> 
-> > sudo btrfs fi usage /srv/d2root
-> Overall:
->     Device size:		   3.64TiB
->     Device allocated:		 236.06GiB
->     Device unallocated:		   3.41TiB
->     Device missing:		     0.00B
->     Used:			 234.68GiB
->     Free (estimated):		   1.70TiB	(min: 1.70TiB)
->     Data ratio:			      2.00
->     Metadata ratio:		      2.00
->     Global reserve:		 208.00MiB	(used: 0.00B)
-> 
-> Data,RAID1: Size:117.00GiB, Used:116.76GiB
->    /dev/sda	 117.00GiB
->    /dev/sdb	 117.00GiB
-> 
-> Metadata,RAID1: Size:1.00GiB, Used:595.36MiB
->    /dev/sda	   1.00GiB
->    /dev/sdb	   1.00GiB
-> 
-> System,RAID1: Size:32.00MiB, Used:48.00KiB
->    /dev/sda	  32.00MiB
->    /dev/sdb	  32.00MiB
-> 
-> Unallocated:
->    /dev/sda	   1.70TiB
->    /dev/sdb	   1.70TiB
+Fresh Arch install.  Official ISO dated 1/1/2016, using linux 4.3.3-2,
+btrfs-progs 4.3.1-2, lvm2 2.02.137-1, and thin-provisioning-tools
+0.5.6-2.  Hard drive installation uses the exact same (only a day
+after ISO released) and snapper 0.2.8-4.
+
+I can re-create this by when booted off the archiso, when
+arch-chroot'ing into my mounted hard drive, running "snapper --no-dbus
+create-config /terra/main".  Then, either inside the arch-chroot (or
+outside of it, it doesn't matter) running "btrfs subvolume delete
+/terra/main/.snapshots".  I do this because I prefer to have a
+main.snapshots primary volume, rather than a subvolume.  If I wait
+until I've booted off the new install, I can run the subvolume delete
+command just fine.
+
+I notice snapper always forces me to have a subvolume
+"main/var/lib/machines".  I don't store vm files there, I've tried
+deleting it, but snapper forces it back.  But, when running off the
+archiso the subvolume delete for the .snapshots folder, I don't see
+the "main/var/lib/machines" subvolume... So I'm thinking this oddity
+may be a pointer toward why this is happening.
+
+I was confused why I was even seeing "create_subvol" during boot.  It
+must be then snapper makes the "main/var/lib/machines" subvolume
+during boot, not when on the archiso.  So, deleting the .snapshots
+volume booted off the ISO must be leaving btrfs in a bad state, so on
+reboot when a subvol is created by snapper, it fails.
 
 
-I've figured out a workaround for the errors, but I don't understand why
-the workaround is needed.
+After a fresh install, on the first boot from the hard drive:
 
-The error that I was getting from the btrfs receive process was:
+Full dmesg here: http://pastebin.ca/3313720
+Pertinent section below:
 
-ERROR: failed to open backups/xps13/@home/@home.20151229_07:57:44/alistair/.mozilla/firefox/yu3bxg7y.default/cookies.sqlite.  No such file or directory
+[    9.989908] ------------[ cut here ]------------
+[    9.989933] WARNING: CPU: 4 PID: 605 at fs/btrfs/ioctl.c:558
+create_subvol+0x3f2/0x721 [btrfs]()
+[    9.989934] BTRFS: Transaction aborted (error -2)
+[    9.989986] Modules linked in: hp_wmi sparse_keymap rfkill iTCO_wdt
+gpio_ich iTCO_vendor_support coretemp tg3 kvm_intel ppdev
+snd_hda_codec_realtek snd_hda_codec_generic lpc_ich mlx4_core(+) ptp
+pps_core input_leds led_class evdev snd_hda_intel libphy mac_hid kvm
+psmouse serio_raw snd_hda_codec snd_hda_core pcspkr snd_hwdep snd_pcm
+parport_pc snd_timer parport snd i5000_edac rng_core acpi_cpufreq
+soundcore edac_core wmi shpchp processor i5k_amb fjes button
+sch_fq_codel ip_tables x_tables btrfs xor raid6_pq dm_thin_pool
+dm_persistent_data crc32c_generic libcrc32c dm_bio_prison dm_bufio
+dm_mod raid1 md_mod sr_mod cdrom sd_mod ata_generic pata_acpi atkbd
+libps2 ahci libahci ata_piix uhci_hcd ehci_pci firewire_ohci libata
+ehci_hcd firewire_core crc_itu_t usbcore usb_common mptsas
+scsi_transport_sas mptscsih
+[    9.989998]  scsi_mod mptbase i8042 serio floppy ext4 crc16 mbcache
+jbd2 radeon i2c_algo_bit drm_kms_helper syscopyarea sysfillrect
+sysimgblt fb_sys_fops ttm drm
+[    9.990020] CPU: 4 PID: 605 Comm: systemd-tmpfile Not tainted 4.3.3-2-ARCH #1
+[    9.990022] Hardware name: Hewlett-Packard HP xw8400
+Workstation/0A08h, BIOS 786D5 v02.38 10/25/2010
+[    9.990025]  0000000000000000 000000000a69a5d9 ffff88085a7f78c0
+ffffffff812c0dc9
+[    9.990027]  ffff88085a7f7908 ffff88085a7f78f8 ffffffff81074f42
+00000000fffffffe
+[    9.990029]  ffff8808566db000 ffff88085a9e4170 ffff8808575d3478
+fffffffffffffffe
+[    9.990030] Call Trace:
+[    9.990038]  [<ffffffff812c0dc9>] dump_stack+0x4b/0x72
+[    9.990043]  [<ffffffff81074f42>] warn_slowpath_common+0x82/0xc0
+[    9.990045]  [<ffffffff81074fdc>] warn_slowpath_fmt+0x5c/0x80
+[    9.990054]  [<ffffffffa05c9a6e>] create_subvol+0x3f2/0x721 [btrfs]
+[    9.990068]  [<ffffffffa058587b>] btrfs_mksubvol+0x35b/0x500 [btrfs]
+[    9.990079]  [<ffffffffa058587b>] ? btrfs_mksubvol+0x35b/0x500 [btrfs]
+[    9.990091]  [<ffffffffa0585b25>]
+btrfs_ioctl_snap_create_transid+0x105/0x180 [btrfs]
+[    9.990102]  [<ffffffffa0585bf7>] btrfs_ioctl_snap_create+0x57/0x70 [btrfs]
+[    9.990114]  [<ffffffffa058a457>] btrfs_ioctl+0x497/0x2910 [btrfs]
+[    9.990119]  [<ffffffff811e9075>] ? do_filp_open+0xa5/0x100
+[    9.990121]  [<ffffffff811eb5f5>] do_vfs_ioctl+0x295/0x480
+[    9.990124]  [<ffffffff811e8154>] ? putname+0x54/0x60
+[    9.990126]  [<ffffffff811d8bcb>] ? do_sys_open+0x1bb/0x230
+[    9.990128]  [<ffffffff811eb859>] SyS_ioctl+0x79/0x90
+[    9.990132]  [<ffffffff81583d2e>] entry_SYSCALL_64_fastpath+0x12/0x71
+[    9.990134] ---[ end trace 82633426a6c67618 ]---
+[    9.990137] BTRFS: error (device dm-17) in create_subvol:558:
+errno=-2 No such entry
+[    9.990139] BTRFS info (device dm-17): forced readonly
+[    9.990356] pending csums is 4096
+[    9.990499] systemd-journald[437]: Failed to truncate file to its
+own size: Read-only file system
 
-It can be avoided by changing the receive command (which has worked fine
-until now) from:
+And then / is read-only, and tons of systemd-journald messages flood.
+I can log in and see:
 
-btrfs receive /srv/d2backups/xps13/@home
+# btrfs subvolume list /terra
+ID 258 gen 22 top level 5 path main
+ID 259 gen 8 top level 5 path main.snapshots
+ID 260 gen 20 top level 5 path persistent
+ID 261 gen 10 top level 5 path persistent.snapshots
+ID 262 gen 20 top level 5 path snapper
 
-to:
+# btrfs subvolume get-default /terra
+ID 258 gen 22 top level 5 path main
 
-btrfs receive /srv/d2root/backups/xps13/@home
+Rebooting to the arch ISO:
 
-(not shown in the commands is that while testing I wrote the output from
-btrfs send to a file and manually copied it across to the destination
-machine.  Normally it is piped through ssh.)
-
-These are the same directory:
-
-(As an added complication, there appears to be a bug somewhere in
-4.1.15-1-ARCH as the mount command isn't displaying the subvolume)
-
-> mount | grep btrfs
-/dev/sda on /srv/d2backups type btrfs (rw,noatime,compress-force=zlib,space_cache)
-/dev/sda on /srv/d2root type btrfs (rw,noatime,compress-force=zlib,space_cache)
-
-The original mount commands were:
-
-> sudo mount -t btrfs -o compress-force=zlib,noatime,subvol=backups
-> LABEL=data2 /srv/d2backups
-> sudo mount -t btrfs -o compress-force=zlib,noatime LABEL=data2
-> /srv/d2root
-
-And can be confirmed by:
-
-> ls /srv/d2root
-backups/  snapshots/
-> ls /srv/d2root/backups
-alistair-srv/  xps13/
-> ls /srv/d2backups
-alistair-srv/  xps13/
-
-Version information about the destination machine is in my original
-message below.
-
-In case information about the source machine is useful:
-
-> uname -a
-Linux alistair-xps13 4.2.0-22-generic #27-Ubuntu SMP Thu Dec 17 22:57:08
-UTC 2015 x86_64 x86_64 x86_64 GNU/Linux
-
-> btrfs --version
-btrfs-progs v4.0
-
-The send command was:
-
-sudo btrfs send -p '@home.20151229_07:57:44' -c '@home.20151229_07:57:44' '@home.20160103_13:16:29'
-
-> mount | grep btrfs
-/dev/sda4 on /home type btrfs (rw,noatime,compress=zlib,ssd,space_cache,autodefrag,subvolid=257,subvol=/@home)
-/dev/sda4 on /srv/home type btrfs (rw,noatime,compress=zlib,ssd,space_cache,autodefrag,subvolid=5,subvol=/)
-
-I don't believe there have been any recent updates to the kernel or
-btrfs progs on either machine.
-
-If you would like any more information, please let me know.
-
-Thanks,
-Alistair
-
-
+# btrfs check /dev/disk1/terra1
+Checking filesystem on /dev/disk1/terra1
+UUID: 05321b3b-0447-43f7-9eb0-801b246a2b6c
+checking extents
+checking free space cache
+checking fs roots
+checking csums
+checking root refs
+found 897310722 bytes used err is 0
+total csum bytes: 759744
+total tree bytes: 106840064
+total fs tree bytes: 103022592
+total extent tree bytes: 2637824
+btree space waste bytes: 14738997
+file data blocks allocated: 1567948800
+ referenced 2021396480

@@ -1,83 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:51543 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:53070 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750878AbcACOZg (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 3 Jan 2016 09:25:36 -0500
+	id S1751498AbcACPAk (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 3 Jan 2016 10:00:40 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aFjbB-0000g1-GS
-	for linux-btrfs@vger.kernel.org; Sun, 03 Jan 2016 15:25:33 +0100
+	id 1aFk98-0002R3-5j
+	for linux-btrfs@vger.kernel.org; Sun, 03 Jan 2016 16:00:38 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 15:25:33 +0100
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 16:00:38 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 15:25:33 +0100
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 16:00:38 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: WARNING CPU at linux/fs/btrfs/ioctl.c:558 create_subvol BTRFS
- Transaction aborted (error -2)
-Date: Sun, 3 Jan 2016 14:25:27 +0000 (UTC)
-Message-ID: <pan$adec0$9aa96a93$995ad4e8$faf97fc@cox.net>
-References: <CA+X5Wn66VabG5mnQPfPvgUuadgEs5a+UtNLSohjrr-pe1GOoog@mail.gmail.com>
+Subject: Re: Unrecoverable fs corruption?
+Date: Sun, 3 Jan 2016 15:00:33 +0000 (UTC)
+Message-ID: <pan$e83b6$5156a07d$651aae24$9dda2c0a@cox.net>
+References: <4bfedb90694d34a9a311d532715560d1@mail.mended-drum.net>
+	<CAJCQCtSDpGnXpFpHxO9eyb7pLWKQis6+yOBznFkJO85e0NLyyw@mail.gmail.com>
+	<pan$775e4$fad1d9d7$a69e525a$ff4dac1a@cox.net>
+	<1451709141.8761.16.camel@scientia.net>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-james harvey posted on Sat, 02 Jan 2016 23:40:38 -0500 as excerpted:
+Christoph Anton Mitterer posted on Sat, 02 Jan 2016 05:32:21 +0100 as
+excerpted:
 
-> I notice snapper always forces me to have a subvolume
-> "main/var/lib/machines".  I don't store vm files there, I've tried
-> deleting it, but snapper forces it back.  But, when running off the
-> archiso the subvolume delete for the .snapshots folder, I don't see the
-> "main/var/lib/machines" subvolume... So I'm thinking this oddity may be
-> a pointer toward why this is happening.
+> On Fri, 2016-01-01 at 08:13 +0000, Duncan wrote:
+>> you can also try a read-only scrub
+> OT: I just wondered, would a balance include everything a scrub includes
+> (i.e. read+verify all data and rebuild an errors on different devices /
+> block copies)... of course in addition to also copying all "good"
+> data... and perhaps with the difference, that you don't get that
+> detailed information as in scrub but only the kernel log messages about
+> errors?
+
+AFAIK, no, at least not by design, as balance works at the chunk level, 
+while scrub works inside chunks, verifying the checksums on each block.
+
+But now that I think about it, balance does read the chunk in ordered to 
+rewrite its contents, and that read, like all reads, should normally be 
+checksum verified (except of course in the case of nodatasum, which nocow 
+of course implies).  So a balance completed without error /may/ 
+effectively indicate a scrub would complete without error as well.  But 
+it wasn't specifically designed for that, and if it does so, it's only 
+doing it because all reads are checksum verified, not because it's 
+actually purposely doing a scrub.
+
+And even if balance works to verify no checksum errors, I don't believe 
+it would correct them or give you the detail on them that a scrub would.  
+And if there is an error, it'd be a balance error, which might or might 
+not actually be a scrub error.
+
+>> In this case,
+>> you'll need to recover from the degraded-mount working device as if the
+>> second one had entirely failed.
+>> 
+>> What I'd do in this case, if you haven't done so already, is that read-
+>> only btrfs scrub, just to see where you are in terms of corruption on
+>> the remaining device.
+> I don't think that this is the best order of the steps - at least not
+> when it's about precious data.
 > 
-> I was confused why I was even seeing "create_subvol" during boot.  It
-> must be then snapper makes the "main/var/lib/machines" subvolume during
-> boot, not when on the archiso.  So, deleting the .snapshots volume
-> booted off the ISO must be leaving btrfs in a bad state, so on reboot
-> when a subvol is created by snapper, it fails.
+> Doing a scrub at this phase, would just read all data, telling you the
+> status,... but first you should try to copy as much as possible (just in
+> case the remaining good drive fails as well) and *then* do the scrub to
+> see what's actually good or not.
 
-FWIW...
-
-I don't use snapper, or indeed, subvolumes/snapshots at all, on my (gentoo 
-with systemd) installation, but FWIW, recent versions of systemd will try 
-to create /var/lib/machines (and a few others) as a subvolume at boot 
-time, if it doesn't already exist.
-
-Older versions of systemd, before it integrated more btrfs support, 
-created normal subdirs at these locations (tho the /var/lib/machines one 
-was /var/lib/container or some such, back then).
-
-I happen to know about it as the first systemd version (218, IIRC, or was 
-it 219?) that attempted to include that integration didn't handle the 
-errors from attempts to do the subvolume create on a still read-only-
-mounted / [1], so the corresponding tmpfs.d running service failed.  The 
-previous version's mkdir -p calls had worked fine, since mkdir -p 
-succeeds when the dirs already exist.  That wasn't fixed until 221 or 
-perhaps 222.
-
-Of course your post mentions main/var/lib/machines, not simply /var/lib/
-machines, but obviously, in the correct context the main/ version is 
-there due to the /var/lib/machines case, and /var/lib/machines may in 
-fact be seen as main/var/lib/machines depending on subvolume usage and 
-mounting.
-
-So I'm guessing either it's systemd creating it (with the /var/ context) 
-and not snapper, or it's snapper creating it (with the main/ context), 
-knowing that systemd uses the corollary, so it can manage the systemd 
-created subvolume in snapshot context as well.
-
-Doesn't solve your transaction aborted situation, but should provide a 
-bit more information on those specific subvols/subdirs and why snapper or 
-systemd is trying to create them.
-
----
-[1] Read-only mounte /: I keep my / mounted read-only by default, only 
-mounting it writable when I want to update or change configuration.
+Good point.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,39 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:48529 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757378AbcALA1m (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jan 2016 19:27:42 -0500
-Subject: Re: [PATCH] btrfs-progs: chunk-recovery: Fix a float point error
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>,
-        David Sterba <dsterba@suse.com>
-References: <1447915359-29707-1-git-send-email-quwenruo@cn.fujitsu.com>
- <5693102C.609@cn.fujitsu.com> <20160111091438.GF4227@twin.jikos.cz>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <5694486C.8040001@cn.fujitsu.com>
-Date: Tue, 12 Jan 2016 08:27:24 +0800
+Received: from mail-lf0-f41.google.com ([209.85.215.41]:34463 "EHLO
+	mail-lf0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750758AbcACFCU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 00:02:20 -0500
+Received: by mail-lf0-f41.google.com with SMTP id y184so260529946lfc.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 02 Jan 2016 21:02:19 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <20160111091438.GF4227@twin.jikos.cz>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+In-Reply-To: <8703019.0plYdL21k7@localhost.localdomain>
+References: <1444063465-5641-1-git-send-email-chandan@linux.vnet.ibm.com>
+	<20151007092503.GG7734@twin.jikos.cz>
+	<8703019.0plYdL21k7@localhost.localdomain>
+Date: Sun, 3 Jan 2016 00:02:18 -0500
+Message-ID: <CA+X5Wn5EKaSwD1B1H9Sd+QRcKezOMmE6GaGMVjPFZRNAwhe4oA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: Intialize btrfs_root->highest_objectid when
+ loading tree root and subvolume roots
+From: james harvey <jamespharvey20@gmail.com>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, fdmanana@gmail.com,
+        chandan@mykolab.com
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Sorry, I meant 4.4.
+Bump.
 
-And thank you for merging it.
+Pretty sure I just ran into this, outside of a testing scenario.  See
+http://permalink.gmane.org/gmane.comp.file-systems.btrfs/51796
 
-Thanks,
-Qu
+Looks like the patch was never committed.
 
-David Sterba wrote on 2016/01/11 10:14 +0100:
-> On Mon, Jan 11, 2016 at 10:15:08AM +0800, Qu Wenruo wrote:
->> Hi David,
+On Wed, Oct 7, 2015 at 10:10 AM, Chandan Rajendra
+<chandan@linux.vnet.ibm.com> wrote:
+> On Wednesday 07 Oct 2015 11:25:03 David Sterba wrote:
+>> On Mon, Oct 05, 2015 at 10:14:24PM +0530, Chandan Rajendra wrote:
+>> > +   if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
+>> > +           mutex_unlock(&root->objectid_mutex);
+>> > +           ret = -ENOSPC;
 >>
->> Would you please consider merging this patch for v4.2 btrfs-progs?
+>> ENOSPC ... I don't think it's right as this could be with a normal
+>> enospc during subvolume creation. The problem is that theh inode number
+>> space is exhausted, the closest error code I see is EOVERFLOW. As this
+>> is an ioctl we can afford to define the meaning of this return value as
+>> such (unlike for eg. creat()/open()).
+>>
+>> > +           goto free_root_dev;
+>> > +   }
+>> > +
+>> > +   mutex_unlock(&root->objectid_mutex);
+>> > +
+>> >
+>> >     return 0;
 >
-> Do you really mean 4.2? The patch is queued for 4.4 release,
-> commit a99d13dccee11d29da3d045c2c2fc69d47eff770
+> David, Are you suggesting that we return -EOVERFLOW from within
+> btrfs_init_fs_root() and continue returning -ENOSPC in case of error
+> (i.e. tree_root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID) from
+> open_ctree()?
 >
+> If yes, btrfs_init_fs_root() gets invoked from open_ctree() via
+> btrfs_read_fs_root_no_name() and hence we may end up returning -EOVERFLOW when
+> servicing the mount() syscall.
 >
-
-
+> --
+> chandan
+>
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

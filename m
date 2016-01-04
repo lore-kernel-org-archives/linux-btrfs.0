@@ -1,104 +1,46 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f173.google.com ([209.85.192.173]:35933 "EHLO
-	mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752262AbcACTAX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 14:00:23 -0500
-Received: by mail-pf0-f173.google.com with SMTP id 65so145530176pff.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 11:00:23 -0800 (PST)
-From: Byongho Lee <bhlee.kernel@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Cc: Zach Brown <zab@redhat.com>
-Subject: [PATCH 6/6] btrfs-progs: fix using on-disk structure to store in memory data
-Date: Mon,  4 Jan 2016 03:59:58 +0900
-Message-Id: <1451847598-30666-7-git-send-email-bhlee.kernel@gmail.com>
-In-Reply-To: <1451847598-30666-1-git-send-email-bhlee.kernel@gmail.com>
-References: <1451847598-30666-1-git-send-email-bhlee.kernel@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:47881 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753407AbcADKBm (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 4 Jan 2016 05:01:42 -0500
+Date: Mon, 4 Jan 2016 10:59:24 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Byongho Lee <bhlee.kernel@gmail.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v2 0/6] btrfs-progs: fix endian bugs and clean-ups
+Message-ID: <20160104095924.GM4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1451869294-4291-1-git-send-email-bhlee.kernel@gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1451869294-4291-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In 'qgroup_count' structure 'diskinfo' and 'info' are used to store only
-in memory data but its types are for on-disk structure as a result sparse
-warns it (different base types).  So fix it by adding new structure
-'qgroup_info' to store in memory data and replace on-disk structure
-'btrfs_qgroup_info_item' by 'qgroup_info'.  In addition in alloc_cnt()
-'generation' is set but not used after that so remove the relevant code.
+On Mon, Jan 04, 2016 at 10:01:28AM +0900, Byongho Lee wrote:
+> This is a patch-set after getting running sparse.
+> 
+> There are two endian patches one is new and the other is Zach Brown's work
+> but we lost.  And rest are just for clean-ups.
+> 
+> v2:
+>  - cover-letter:
+>     add, 'btrfs-progs' prefix in subject
 
-Signed-off-by: Zach Brown <zab@redhat.com>
-Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
----
- qgroup-verify.c | 28 +++++++++++++++++-----------
- 1 file changed, 17 insertions(+), 11 deletions(-)
+JFYI, this by itself would not be a reason for a v2, the patch subjects
+contained 'progs'.
 
-diff --git a/qgroup-verify.c b/qgroup-verify.c
-index 0ee52ff5c857..a0a4d4a5f5d9 100644
---- a/qgroup-verify.c
-+++ b/qgroup-verify.c
-@@ -37,16 +37,23 @@ static unsigned long tot_extents_scanned = 0;
- 
- static void add_bytes(u64 root_objectid, u64 num_bytes, int exclusive);
- 
-+struct qgroup_info {
-+	u64 referenced;
-+	u64 referenced_compressed;
-+	u64 exclusive;
-+	u64 exclusive_compressed;
-+};
-+
- struct qgroup_count {
--	u64				qgroupid;
--	int				subvol_exists;
-+	u64			qgroupid;
-+	int			subvol_exists;
- 
--	struct btrfs_disk_key		key;
--	struct btrfs_qgroup_info_item	diskinfo;
-+	struct btrfs_disk_key	key;
-+	struct qgroup_info	diskinfo;
- 
--	struct btrfs_qgroup_info_item	info;
-+	struct qgroup_info	info;
- 
--	struct rb_node			rb_node;
-+	struct rb_node		rb_node;
- };
- 
- static struct counts_tree {
-@@ -647,14 +654,13 @@ static struct qgroup_count *alloc_count(struct btrfs_disk_key *key,
- 					struct btrfs_qgroup_info_item *disk)
- {
- 	struct qgroup_count *c = calloc(1, sizeof(*c));
--	struct btrfs_qgroup_info_item *item;
-+	struct qgroup_info *item;
- 
- 	if (c) {
- 		c->qgroupid = btrfs_disk_key_offset(key);
- 		c->key = *key;
- 
- 		item = &c->diskinfo;
--		item->generation = btrfs_qgroup_info_generation(leaf, disk);
- 		item->referenced = btrfs_qgroup_info_referenced(leaf, disk);
- 		item->referenced_compressed =
- 			btrfs_qgroup_info_referenced_compressed(leaf, disk);
-@@ -673,7 +679,7 @@ static struct qgroup_count *alloc_count(struct btrfs_disk_key *key,
- static void add_bytes(u64 root_objectid, u64 num_bytes, int exclusive)
- {
- 	struct qgroup_count *count = find_count(root_objectid);
--	struct btrfs_qgroup_info_item *qg;
-+	struct qgroup_info *qg;
- 
- 	BUG_ON(num_bytes < 4096); /* Random sanity check. */
- 
-@@ -1014,8 +1020,8 @@ static void print_fields_signed(long long bytes,
- static void print_qgroup_difference(struct qgroup_count *count, int verbose)
- {
- 	int is_different;
--	struct btrfs_qgroup_info_item *info = &count->info;
--	struct btrfs_qgroup_info_item *disk = &count->diskinfo;
-+	struct qgroup_info *info = &count->info;
-+	struct qgroup_info *disk = &count->diskinfo;
- 	long long excl_diff = info->exclusive - disk->exclusive;
- 	long long ref_diff = info->referenced - disk->referenced;
- 
--- 
-2.6.4
+>  - btrfs-progs: fix using on-disk structure to store in memory data:
+>     remove, "Signed-off-by: Zach Brown <zab@redhat.com>" which was for
+>     below patch but added by mistake.
+>     '[PATCH 4/6] btrfs-progs: fix endian bugs in chunk rebuilding'
+> 
+> Byongho Lee (6):
+>   btrfs-progs: get sparse checking working
+>   btrfs-progs: use NULL instead of 0
+>   btrfs-progs: make private symbols to static
+>   btrfs-progs: fix endian bugs in chunk rebuilding
+>   btrfs-progs: fix endian bug in update_super()
+>   btrfs-progs: fix using on-disk structure to store in memory data
 
+All applied, thanks.

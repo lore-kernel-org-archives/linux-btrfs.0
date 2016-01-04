@@ -1,57 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f173.google.com ([209.85.192.173]:32999 "EHLO
-	mail-pf0-f173.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752136AbcADBCK (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 20:02:10 -0500
-Received: by mail-pf0-f173.google.com with SMTP id q63so157225796pfb.0
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 17:02:09 -0800 (PST)
+Received: from mail-pa0-f43.google.com ([209.85.220.43]:36727 "EHLO
+	mail-pa0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752180AbcADBCM (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 20:02:12 -0500
+Received: by mail-pa0-f43.google.com with SMTP id yy13so95967221pab.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 17:02:12 -0800 (PST)
+Received: from arch-gct.localdomain ([175.114.213.172])
+        by smtp.gmail.com with ESMTPSA id 184sm45125786pfa.15.2016.01.03.17.02.10
+        for <linux-btrfs@vger.kernel.org>
+        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
+        Sun, 03 Jan 2016 17:02:11 -0800 (PST)
 From: Byongho Lee <bhlee.kernel@gmail.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Zach Brown <zab@redhat.com>
-Subject: [PATCH v2 4/6] btrfs-progs: fix endian bugs in chunk rebuilding
-Date: Mon,  4 Jan 2016 10:01:32 +0900
-Message-Id: <1451869294-4291-5-git-send-email-bhlee.kernel@gmail.com>
+Subject: [PATCH v2 5/6] btrfs-progs: fix endian bug in update_super()
+Date: Mon,  4 Jan 2016 10:01:33 +0900
+Message-Id: <1451869294-4291-6-git-send-email-bhlee.kernel@gmail.com>
 In-Reply-To: <1451869294-4291-1-git-send-email-bhlee.kernel@gmail.com>
 References: <1451869294-4291-1-git-send-email-bhlee.kernel@gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-This is a same patch as Zach Brown's but we lost so I resend it based on
-current code.
- - 'commit 2cd95f945a61 ("fix endian bugs in chunk rebuilding")'
+In update_super() 'chunk->stripe.devid' and 'super->dev_item.devid' both
+are little endian. So we should not use endian helper
+btrfs_set_stack_stripe_devid().
 
-Signed-off-by: Zach Brown <zab@redhat.com>
 Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
 ---
- chunk-recover.c | 8 ++++----
- 1 file changed, 4 insertions(+), 4 deletions(-)
+ btrfs-image.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
 
-diff --git a/chunk-recover.c b/chunk-recover.c
-index 85dc1bca031a..b03330b4cda0 100644
---- a/chunk-recover.c
-+++ b/chunk-recover.c
-@@ -1159,9 +1159,9 @@ static int __rebuild_chunk_root(struct btrfs_trans_handle *trans,
- 		if (min_devid > dev->devid)
- 			min_devid = dev->devid;
- 	}
--	disk_key.objectid = BTRFS_DEV_ITEMS_OBJECTID;
--	disk_key.type = BTRFS_DEV_ITEM_KEY;
--	disk_key.offset = min_devid;
-+	btrfs_set_disk_key_objectid(&disk_key, BTRFS_DEV_ITEMS_OBJECTID);
-+	btrfs_set_disk_key_type(&disk_key, BTRFS_DEV_ITEM_KEY);
-+	btrfs_set_disk_key_offset(&disk_key, min_devid);
- 
- 	cow = btrfs_alloc_free_block(trans, root, root->nodesize,
- 				     BTRFS_CHUNK_TREE_OBJECTID,
-@@ -1234,7 +1234,7 @@ static int __insert_chunk_item(struct btrfs_trans_handle *trans,
- 	key.offset = chunk_rec->offset;
- 
- 	ret = btrfs_insert_item(trans, chunk_root, &key, chunk,
--				btrfs_chunk_item_size(chunk->num_stripes));
-+				btrfs_chunk_item_size(chunk_rec->num_stripes));
- 	free(chunk);
- 	return ret;
- }
+diff --git a/btrfs-image.c b/btrfs-image.c
+index 4a0a7c5414a7..bb1f63511647 100644
+--- a/btrfs-image.c
++++ b/btrfs-image.c
+@@ -1464,8 +1464,7 @@ static int update_super(struct mdrestore_struct *mdres, u8 *buffer)
+ 			btrfs_set_stack_chunk_sub_stripes(chunk, 0);
+ 			btrfs_set_stack_chunk_type(chunk,
+ 						   BTRFS_BLOCK_GROUP_SYSTEM);
+-			btrfs_set_stack_stripe_devid(&chunk->stripe,
+-						     super->dev_item.devid);
++			chunk->stripe.devid = super->dev_item.devid;
+ 			physical = logical_to_physical(mdres, key.offset,
+ 						       &size);
+ 			if (size != (u64)-1)
 -- 
 2.6.4
 

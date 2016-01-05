@@ -1,112 +1,28 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pa0-f42.google.com ([209.85.220.42]:36743 "EHLO
-	mail-pa0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752185AbcADBCO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sun, 3 Jan 2016 20:02:14 -0500
-Received: by mail-pa0-f42.google.com with SMTP id yy13so95967693pab.3
-        for <linux-btrfs@vger.kernel.org>; Sun, 03 Jan 2016 17:02:14 -0800 (PST)
-Received: from arch-gct.localdomain ([175.114.213.172])
-        by smtp.gmail.com with ESMTPSA id 184sm45125786pfa.15.2016.01.03.17.02.12
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLS1_2 cipher=ECDHE-RSA-AES128-SHA bits=128/128);
-        Sun, 03 Jan 2016 17:02:13 -0800 (PST)
-From: Byongho Lee <bhlee.kernel@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2 6/6] btrfs-progs: fix using on-disk structure to store in memory data
-Date: Mon,  4 Jan 2016 10:01:34 +0900
-Message-Id: <1451869294-4291-7-git-send-email-bhlee.kernel@gmail.com>
-In-Reply-To: <1451869294-4291-1-git-send-email-bhlee.kernel@gmail.com>
-References: <1451869294-4291-1-git-send-email-bhlee.kernel@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:34775 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751623AbcAENxK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 08:53:10 -0500
+Date: Tue, 5 Jan 2016 14:50:49 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Geliang Tang <geliangtang@163.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, linux-btrfs@vger.kernel.org,
+        linux-kernel@vger.kernel.org
+Subject: Re: [PATCH 1/3] btrfs: use list_for_each_entry* in check-integrity.c
+Message-ID: <20160105135049.GW4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <8a5a49f737a7eed984c8f92f4684d9a6b761f2f2.1450447999.git.geliangtang@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-In 'qgroup_count' structure 'diskinfo' and 'info' are used to store only
-in memory data but its types are for on-disk structure as a result sparse
-warns it (different base types).  So fix it by adding new structure
-'qgroup_info' to store in memory data and replace on-disk structure
-'btrfs_qgroup_info_item' by 'qgroup_info'.  In addition in alloc_cnt()
-'generation' is set but not used after that so remove the relevant code.
+On Fri, Dec 18, 2015 at 10:16:59PM +0800, Geliang Tang wrote:
+> Use list_for_each_entry*() instead of list_for_each*() to simplify
+> the code.
+> 
+> Signed-off-by: Geliang Tang <geliangtang@163.com>
 
-Signed-off-by: Byongho Lee <bhlee.kernel@gmail.com>
----
-v2:
-  remove, "Signed-off-by: Zach Brown <zab@redhat.com>" which was for
-  below patch but added by mistake.
-  '[PATCH 4/6] btrfs-progs: fix endian bugs in chunk rebuilding'
----
- qgroup-verify.c | 28 +++++++++++++++++-----------
- 1 file changed, 17 insertions(+), 11 deletions(-)
-
-diff --git a/qgroup-verify.c b/qgroup-verify.c
-index 0ee52ff5c857..a0a4d4a5f5d9 100644
---- a/qgroup-verify.c
-+++ b/qgroup-verify.c
-@@ -37,16 +37,23 @@ static unsigned long tot_extents_scanned = 0;
- 
- static void add_bytes(u64 root_objectid, u64 num_bytes, int exclusive);
- 
-+struct qgroup_info {
-+	u64 referenced;
-+	u64 referenced_compressed;
-+	u64 exclusive;
-+	u64 exclusive_compressed;
-+};
-+
- struct qgroup_count {
--	u64				qgroupid;
--	int				subvol_exists;
-+	u64			qgroupid;
-+	int			subvol_exists;
- 
--	struct btrfs_disk_key		key;
--	struct btrfs_qgroup_info_item	diskinfo;
-+	struct btrfs_disk_key	key;
-+	struct qgroup_info	diskinfo;
- 
--	struct btrfs_qgroup_info_item	info;
-+	struct qgroup_info	info;
- 
--	struct rb_node			rb_node;
-+	struct rb_node		rb_node;
- };
- 
- static struct counts_tree {
-@@ -647,14 +654,13 @@ static struct qgroup_count *alloc_count(struct btrfs_disk_key *key,
- 					struct btrfs_qgroup_info_item *disk)
- {
- 	struct qgroup_count *c = calloc(1, sizeof(*c));
--	struct btrfs_qgroup_info_item *item;
-+	struct qgroup_info *item;
- 
- 	if (c) {
- 		c->qgroupid = btrfs_disk_key_offset(key);
- 		c->key = *key;
- 
- 		item = &c->diskinfo;
--		item->generation = btrfs_qgroup_info_generation(leaf, disk);
- 		item->referenced = btrfs_qgroup_info_referenced(leaf, disk);
- 		item->referenced_compressed =
- 			btrfs_qgroup_info_referenced_compressed(leaf, disk);
-@@ -673,7 +679,7 @@ static struct qgroup_count *alloc_count(struct btrfs_disk_key *key,
- static void add_bytes(u64 root_objectid, u64 num_bytes, int exclusive)
- {
- 	struct qgroup_count *count = find_count(root_objectid);
--	struct btrfs_qgroup_info_item *qg;
-+	struct qgroup_info *qg;
- 
- 	BUG_ON(num_bytes < 4096); /* Random sanity check. */
- 
-@@ -1014,8 +1020,8 @@ static void print_fields_signed(long long bytes,
- static void print_qgroup_difference(struct qgroup_count *count, int verbose)
- {
- 	int is_different;
--	struct btrfs_qgroup_info_item *info = &count->info;
--	struct btrfs_qgroup_info_item *disk = &count->diskinfo;
-+	struct qgroup_info *info = &count->info;
-+	struct qgroup_info *disk = &count->diskinfo;
- 	long long excl_diff = info->exclusive - disk->exclusive;
- 	long long ref_diff = info->referenced - disk->referenced;
- 
--- 
-2.6.4
-
+Reviewed-by: David Sterba <dsterba@suse.com>

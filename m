@@ -1,88 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from ns.bouton.name ([109.74.195.142]:34132 "EHLO mail.bouton.name"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751676AbcAEQfj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jan 2016 11:35:39 -0500
-Subject: Re: device removal seems to be very slow (kernel 4.1.15)
-To: David Goodwin <david@codepoets.co.uk>,
-        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-References: <568BBF5D.40304@codepoets.co.uk>
-From: Lionel Bouton <lionel-subscription@bouton.name>
-Message-ID: <568BF0D9.6030908@bouton.name>
-Date: Tue, 5 Jan 2016 17:35:37 +0100
-MIME-Version: 1.0
-In-Reply-To: <568BBF5D.40304@codepoets.co.uk>
-Content-Type: text/plain; charset=utf-8
+Received: from mailgw-02.dd24.net ([193.46.215.43]:38854 "EHLO
+	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751815AbcAESsX (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 13:48:23 -0500
+Message-ID: <1452019697.5722.10.camel@scientia.net>
+Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
+From: Christoph Anton Mitterer <calestyo@scientia.net>
+To: dsterba@suse.cz
+Cc: linux-btrfs@vger.kernel.org
+Date: Tue, 05 Jan 2016 19:48:17 +0100
+In-Reply-To: <20160105104455.GS4227@twin.jikos.cz>
+References: <20151228153801.6561feff@gmail.com>
+	 <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
+	 <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
+	 <1451363188.7094.23.camel@scientia.net>
+	 <20151229180643.GD4227@twin.jikos.cz> <20160102065207.4eec760a@gmail.com>
+	 <56887B40.10105@gmx.com> <1451787985.6645.12.camel@scientia.net>
+	 <20160105104455.GS4227@twin.jikos.cz>
+Content-Type: multipart/signed; micalg="sha-512";
+	protocol="application/x-pkcs7-signature";
+	boundary="=-Kx2v1mNHltaHowAS8Jo5"
+Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Le 05/01/2016 14:04, David Goodwin a écrit :
-> Using btrfs progs 4.3.1 on a Vanilla kernel.org 4.1.15 kernel.
->
-> time btrfs device delete /dev/xvdh /backups
->
-> real    13936m56.796s
-> user    0m0.000s
-> sys     1351m48.280s
->
->
-> (which is about 9 days).
->
-> Where :
->
-> /dev/xvdh was 120gb in size.
->
 
-That's very slow. Last week with a 4.1.12 kernel I just deleted a 3TB
-SATA 7200rpm device with ~1.5TB used on a RAID10 filesystem (reduced
-from 6 3TB devices to 5 devices in the process) in approximately 38
-hours. This was without virtualisation though but there were some
-damaged sectors to handle along the way which should have slowed the
-delete a bit and it had more than 10 times the data to move than your
-/dev/xvdh.
+--=-Kx2v1mNHltaHowAS8Jo5
+Content-Type: text/plain; charset="UTF-8"
+Content-Transfer-Encoding: quoted-printable
 
-Note about the damaged sectors :
-we use 7 disks for this BTRFS RAID10 arrays but to reduce the risk of
-having to restore huge backups (see recent discussion about BTRFS RAID10
-not protecting against 2-devices failure at all), as soon as numerous
-damaged sectors appear on a drive we delete it from the RAID10 and add
-it to a MD RAID1 array which is one of the devices on the BTRFS RAID10
-(right now we have 5 devices in the RAID10 one of them being a 3-way md
-RAID1 with disks having these numerous reallocated sectors)  : so the
-reads from the deleted device had some errors to handle and the writes
-on the md RAID1 device triggered some sector relocations too. Note that
-ideally I would replace at least 2 of the disks in the md RAID1 because
-I know from experience that they will fail in the short future (my
-estimate is between right now and 6 months at best given the current
-rate of reallocated sectors) but replacing a working drive with damaged
-sectors costs us some downtime and a one time fee (unlike a drive which
-is either unreadable or doesn't pass SMART tests anymore). We can live
-with both the occasional slowdowns (SATA errors generated when the
-drives detect new damaged sectors usually block IOs for a handful of
-seconds) and the minor risk this causes : until now this worked OK for
-this server, the md RAID1 array acts as a buffer for disks that are
-slowly dying (and the monthly BTRFS scrub + md raid check helps getting
-the worst ones up to the point where they fail fast enough to avoid
-accumulating too much bad drives in this array for long periods of time).
+On Tue, 2016-01-05 at 11:44 +0100, David Sterba wrote:
+> We have a full 32 bit number space, so multiples of power of 2 are
+> also
+> possible if that makes sense.
+Hmm that would make a maximum of 4GiB RAID chunks...
+perhaps we should reserve some of the higher bits for a multiplier, in
+case 4GiB would ever become too little O;-)
 
->
-> /backups is a single / "raid 0" volume that now looks like :
->
-> Label: 'BACKUP_BTRFS_SNAPS'  uuid: 6ee08c31-f310-4890-8424-b88bb77186ed
->     Total devices 3 FS bytes used 301.09GiB
->     devid    1 size 100.00GiB used 90.00GiB path /dev/xvdg
->     devid    3 size 220.00GiB used 196.06GiB path /dev/xvdi
->     devid    4 size 221.00GiB used 59.06GiB path /dev/xvdj
->
->
-> There are about 400 snapshots on it.
 
-I'm not sure if the number of snapshots can impact the device delete
-operation: the slow part of device delete is relocating block groups
-which (AFAIK) seems to be one level down in the stack and shouldn't even
-know about snapshots. If however you create or delete snapshots during
-the delete operation you could probably slow down the delete.
+>  In general we don't need to set additional
+> limitations besides minimum, maximum and "minimal step".
+And that can/should be done in the userland.
 
-Best regards,
 
-Lionel
+> > Are there any concerns/constraints with too small/too big chunks
+> > when
+> > these play together with lower block layers (I'd guess not).
+>=20
+> I don't think so.
+
+Well I was mainly thinking about dm-crypt, that uses 512B blocks and in
+fact that size wouldn't be easy to change, as (IIRC) larger block sizes
+make XTS less secure.
+Obviously *this* isn't anything that btrfs would have to worry about,
+especially as we're anyway on a higher block layer level,.. but it just
+reminded me that there can be cases where too large / too small may
+actually cause issues.
+
+
+Cheers,
+Chris.
+--=-Kx2v1mNHltaHowAS8Jo5
+Content-Type: application/x-pkcs7-signature; name="smime.p7s"
+Content-Disposition: attachment; filename="smime.p7s"
+Content-Transfer-Encoding: base64
+
+MIAGCSqGSIb3DQEHAqCAMIACAQExDzANBglghkgBZQMEAgMFADCABgkqhkiG9w0BBwEAAKCCEmow
+ggXiMIIDyqADAgECAhBctkhuRwyYxn/2gNtkSuKNMA0GCSqGSIb3DQEBCwUAMH0xCzAJBgNVBAYT
+AklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSswKQYDVQQLEyJTZWN1cmUgRGlnaXRhbCBDZXJ0
+aWZpY2F0ZSBTaWduaW5nMSkwJwYDVQQDEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTAeFw0xNTEyMTYwMTAwMDVaFw0zMDEyMTYwMTAwMDVaMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQK
+Ew1TdGFydENvbSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0
+eTEjMCEGA1UEAxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0EwggEiMA0GCSqGSIb3DQEBAQUA
+A4IBDwAwggEKAoIBAQDuD1CMlQkjhKz1UGqP1jeiTiH9MgllRz6vOPrVG/eE0H/J4QQLV/PeL8RT
+4xc44bEzsoJu0IhwnEchb+TxE/qw88w7hxODuw3N8Faxix6a1jp83+RWvZHZf78+O+3GYBpekZfT
+Oe9A/FoTXbcgwZfLTMQodn+ckNnX31M/1M2f2/7VA7QBlvihontyHQOlIlryQXnGI0UMCD21oopK
+tW48ckv0wUVg8irBKGMeD65gTON/Fsw/ZBbBqadoD1jt85FIM1ql24WUBEBwO1d0ykCKOIbgcqes
+3fbcjQpruUNMBbIu1MMIRMqwjx/M7IvSKcS7VYRWl0/K2byzWvBAHh/1AgMBAAGjggFkMIIBYDAO
+BgNVHQ8BAf8EBAMCAQYwHQYDVR0lBBYwFAYIKwYBBQUHAwIGCCsGAQUFBwMEMBIGA1UdEwEB/wQI
+MAYBAf8CAQAwMgYDVR0fBCswKTAnoCWgI4YhaHR0cDovL2NybC5zdGFydHNzbC5jb20vc2ZzY2Eu
+Y3JsMGYGCCsGAQUFBwEBBFowWDAkBggrBgEFBQcwAYYYaHR0cDovL29jc3Auc3RhcnRzc2wuY29t
+MDAGCCsGAQUFBzAChiRodHRwOi8vYWlhLnN0YXJ0c3NsLmNvbS9jZXJ0cy9jYS5jcnQwHQYDVR0O
+BBYEFJmXqxg1OotZRUOYsnJxyPT7Cc8WMB8GA1UdIwQYMBaAFE4L7xqkQFulF2mHMMo0aEPQQa7y
+MD8GA1UdIAQ4MDYwNAYEVR0gADAsMCoGCCsGAQUFBwIBFh5odHRwOi8vd3d3LnN0YXJ0c3NsLmNv
+bS9wb2xpY3kwDQYJKoZIhvcNAQELBQADggIBAJlBQQTO9iT1TjA0eEO7V/1AbBvMAfibjAgofxmJ
+01jBmHKg0pbTjWInTTYoxb3LBgz3mfjvvS1PjnIfb29MyVm0G/PSHjgq7Ews1dEJMPC9XTuxPf2c
++MWLkynBlotW542JprW+iTWfZafyUtzIKW1hk0YASJ8zSSj8D++9yR+0UhkbvlECJkdi1+et0EaI
+7HIX6ccj1rfcFFflWX/fPT64dn9jpg9s0nuJug4WsVkEK236WndZoMHrZmgF7CIyZ3T0muqYwkAS
+DDcRt9A21o/Mc+D8Q6GVmKRGB3gEKvOtsioHZEqJv6CdAm3a6gloo5pX3RL1eCzc8Lzfs4T0ISZj
+r8xNMbTGlsuHaFH+stDewKsfnpo4N64OtAGrzmVfFFsMIRENRHsVlSEe/6LVpBpjn00+7bqEN3qe
+qSxIOraYJ12mJ08G4YnP2U1fadHIaS50O5ZXqAivoBl9pi/6CBNc5wIMlkXMyFZ0sLsI+9ErFDu9
+OJhX7iWCo69X0ydlzXj08+2K1PKyr+g6/vTPHur63JotNrhyoWEJyWEjBLA4QmJXfGpB5u+bCwNf
+sFpcYAlkiFt1Rs2vemgSBy3q4DHDbPKvr1YImZNRSHP+TX9NP94JRkmqcyD/qaN7u2JV1pRAlwG0
+npyrn6ZQM1QHV+iFbwQ4VqLMWk//QVo/rZy1MIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwcz1F+2kRA
+DzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20gTHRkLjEp
+MCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMTGlN0YXJ0
+Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIzNlowejEL
+MAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAfBgNVBAMM
+GENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9Ac2NpZW50
+aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqeP2vwE3Cp
+YosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjrFe0zmZWZ
+0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ0+c1NYFQ
+T6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJnmiiId9e
+0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7r2NVLkpo
+Gbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA0BtydQC0
+mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS7XEGOuCU
+09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6a1rkhJl7
+1rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8bxPJiX2/
+VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/MAsGA1Ud
+DwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAdBgNVHQ4E
+FgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI9PsJzxYw
+bwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5jb20wOQYI
+KwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQyLmNydDA4
+BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50Mi5jcmww
+IAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6Ly93d3cu
+c3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcBAgQwLDAq
+BggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3DQEBCwUA
+A4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7SG3MQkyO
+kvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndjZIHMfSkn
+hdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9RS51K1gt
+H4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11Yeq6UTW/
+JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMIIGPjCCBSagAwIBAgIQPZ6tDP/RHLwc
+z1F+2kRADzANBgkqhkiG9w0BAQsFADB1MQswCQYDVQQGEwJJTDEWMBQGA1UEChMNU3RhcnRDb20g
+THRkLjEpMCcGA1UECxMgU3RhcnRDb20gQ2VydGlmaWNhdGlvbiBBdXRob3JpdHkxIzAhBgNVBAMT
+GlN0YXJ0Q29tIENsYXNzIDIgQ2xpZW50IENBMB4XDTE2MDEwMjAyMDIzNloXDTE4MDEwMjAyMDIz
+NlowejELMAkGA1UEBhMCREUxDzANBgNVBAgMBkJheWVybjERMA8GA1UEBwwITcO8bmNoZW4xITAf
+BgNVBAMMGENocmlzdG9waCBBbnRvbiBNaXR0ZXJlcjEkMCIGCSqGSIb3DQEJARYVY2FsZXN0eW9A
+c2NpZW50aWEubmV0MIICIjANBgkqhkiG9w0BAQEFAAOCAg8AMIICCgKCAgEAsoxs789VtR81tlqe
+P2vwE3CpYosZYRfrovj+Wb91paoV5OQcFuXA7yONnLsWxOnJ3AGgy1/wG79Ko+yHSmF2K88pEWjr
+Fe0zmZWZ0b2OtMoKLEjxz7Nz2N7/lmgss8XinJ083LwLKSe4f+JLjnF5hX/g6wG4NkFXVOIf2YFZ
+0+c1NYFQT6Vy42EWdk+JLDoXjyd2hEperLCz9rQr2k3wh0cn8R1FDUGerBGpMnvyKV6JXj5vZsqJ
+nmiiId9e0IdBj4Wcs3hT2usk6dJYwHrZ8b7Fkv6BRq90DUI7i8+ukTdp5hnAb8TPSbe1JS4h3Jc7
+r2NVLkpoGbuw98er9s2PEAvpECD3toO3ojBevL56vEDbGa5tXpvvcWCz6t3QyEKJ2E54hWw1fbUA
+0BtydQC0mhKBtrENVnnCDrSgiyBMnd8y+kw6iPKeJEjNObGubc4BZp47zPn/ZiDBaHue6S0MXsoS
+7XEGOuCU09S/8kD8wTecBg+KdlLSNkLm+xqx6Cy7zwcj3IuQv0PeWi4kfEkAJfl8IeAP/4049iA6
+a1rkhJl71rDjpEGBCG+i9BAgBeNdHLtQ7bugdvU+GfHjFXEU1emUk91E2liML8kpCvhUAXcLhhL8
+bxPJiX2/VQ2esrpQVO56OzpivNauonLaWmHEKOSfPC3s5AKMytMTiUiszEUCAwEAAaOCAcMwggG/
+MAsGA1UdDwQEAwIEsDAdBgNVHSUEFjAUBggrBgEFBQcDAgYIKwYBBQUHAwQwCQYDVR0TBAIwADAd
+BgNVHQ4EFgQUwRklxF1ZV2ooSMkFwLiK13apkK0wHwYDVR0jBBgwFoAUmZerGDU6i1lFQ5iycnHI
+9PsJzxYwbwYIKwYBBQUHAQEEYzBhMCQGCCsGAQUFBzABhhhodHRwOi8vb2NzcC5zdGFydHNzbC5j
+b20wOQYIKwYBBQUHMAKGLWh0dHA6Ly9haWEuc3RhcnRzc2wuY29tL2NlcnRzL3NjYS5jbGllbnQy
+LmNydDA4BgNVHR8EMTAvMC2gK6AphidodHRwOi8vY3JsLnN0YXJ0c3NsLmNvbS9zY2EtY2xpZW50
+Mi5jcmwwIAYDVR0RBBkwF4EVY2FsZXN0eW9Ac2NpZW50aWEubmV0MCMGA1UdEgQcMBqGGGh0dHA6
+Ly93d3cuc3RhcnRzc2wuY29tLzBUBgNVHSAETTBLMAwGCisGAQQBgbU3BgEwOwYLKwYBBAGBtTcB
+AgQwLDAqBggrBgEFBQcCARYeaHR0cDovL3d3dy5zdGFydHNzbC5jb20vcG9saWN5MA0GCSqGSIb3
+DQEBCwUAA4IBAQBb8EIsoUN/tgUgQqrNXNtlksPep84kx5yRBgr71uf3ITLddGtzfDBj6KdZUoy7
+SG3MQkyOkvYmXBClj23rv8Iol48/3oi9XWZw5EV3uHrRse1TzQgMPZE0hZsDgkqXVoxMQfk55ndj
+ZIHMfSknhdnqSP5zZ4TCmDEKLppPMDcQSSrjilnbthpxlIJzeGeEFtrh6ssh/oF6mUaEGFcd8kx9
+RS51K1gtH4J36y4E6pKB7EdxG2+0yVzAIta8dkD/BiMCKRWhp1EmzQ2uIh2nX5y8t4e2xHHuiy11
+Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
+MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
+cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
+QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTA1MTg0ODE3WjBPBgkqhkiG9w0BCQQxQgRA7ei9
+M8AQOTivff3MnpRnWT1jbtBQSlQsBP73VH8NjZEdkTdikt/EUO5g2AgxjGRQ2tCenxPeRMZoQm47
+YKKd3TCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
+AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
+DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
+VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAhcq9
+igCf+lyhx4pWPNCd3cA6ywvz33xCd2Ind/Kwg+3/o41N9UY+I43eNmsO8Hr+/jCa0+Pngs3zrTN3
+3NXIPrB6Pm266cn9BCAAtM7LnCAypyK4KB8UA4u012rDLZvvq/O6sTSghUdaXcVolGuC2L2v1vXX
+IVULF8uw0RSCYObNGMjcAODlnNGqX6HPBG3QPsz3iMu7RwhbzuUdhJ8HFmsSK8rPROoZrNcOPkdv
+DgZ3ObBvH/OkMBxBHgeHTNFsWsLH5izzq4/6LzerQ6fITdyGxEeu+CTdyUfyvQIE+jW9W1PmSbml
+8lYso4T2RtaOjLha4wk4szJ3CfMH0JQ3MsIfC26ctlDjuhNjIDdm1arMvyIGTQ6GK547bVZiG0hU
+KjSo6mIleOND0nJR/aaX03jLhX0R97B+KZASxpPNxxYWiFJVCkZwyf1MXKhyqOXAu3vkK9pA8s1u
+PfHHxHfiYoA7nSYeRpnkQu0NxaCmS8y++fhW++qvFl8KXbnmie//a+W20SIEhRJ5TfDJupwvEhfm
+cIMviqglmmZxA4oX3lqRWnt9Es/3VpBoNBx7ww2AveQjBlSI1HwlEWz1gMB0ATEMrd0eD2NCgSg4
+/5+LbxIjTpq52VShkKOUxzFLxcpbGwtOTM1wFzePfXSoFLZC5tzxbAUuin+8hByWC7t2ay4AAAAA
+AAA=
+
+
+--=-Kx2v1mNHltaHowAS8Jo5--
+

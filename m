@@ -1,46 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:49183 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:49993 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751456AbcAEJY4 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jan 2016 04:24:56 -0500
-Date: Tue, 5 Jan 2016 10:22:36 +0100
+	id S1751543AbcAEJmV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 04:42:21 -0500
+Date: Tue, 5 Jan 2016 10:40:00 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Sanidhya Solanki <jpage.lkml@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, clm@fb.com, jbacik@fb.com,
-        dsterba@suse.com, linux-kernel@vger.kernel.org,
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: dsterba@suse.cz, Sree Harsha Totakura <sreeharsha@totakura.in>,
         linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] BTRFS: Runs the xor function if a Block has failed
-Message-ID: <20160105092236.GO4227@twin.jikos.cz>
+Subject: Re: Confining scrub to a subvolume
+Message-ID: <20160105094000.GP4227@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1451456916-16520-1-git-send-email-jpage.lkml@gmail.com>
- <20151230171826.GG4227@twin.jikos.cz>
- <20151230211544.32bc337e@gmail.com>
+References: <56831EA2.3090807@totakura.in>
+ <20151230173949.GH4227@twin.jikos.cz>
+ <1451503560.6350.3.camel@scientia.net>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151230211544.32bc337e@gmail.com>
+In-Reply-To: <1451503560.6350.3.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 30, 2015 at 09:15:44PM -0500, Sanidhya Solanki wrote:
-> On Wed, 30 Dec 2015 18:18:26 +0100
-> David Sterba <dsterba@suse.cz> wrote:
-> 
-> > That's just the comment copied, the changelog does not explain why
-> > it's ok to do just the run_xor there. It does not seem trivial to me.
-> > Please describe that the end result after the code change is expected.
-> 
-> In the RAID 6 case after a failure, we discover that the failure
-> affected the entire P stripe, without any bad data occurring. Hence, we
-> xor the previously stored parity data to return the data that was lost
-> in the P stripe failure.
-> 
-> The xor-red data is from the parity blocks. Hence, we are left with 
-> recovered data belonging to the P stripe.
+On Wed, Dec 30, 2015 at 08:26:00PM +0100, Christoph Anton Mitterer wrote:
+> On Wed, 2015-12-30 at 18:39 +0100, David Sterba wrote:
+> > The closest would be to read the files and look for any reported
+> > errors.
+> Doesn't that fail for any multi-device setup, in which case btrfs reads
+> the blocks only from one device, and if that verifies, doesn't check
+> the other?
 
-If the data a rerecovered, why is -EIO still returned? Also, I see some
-post-recovery steps eg. for the damaged P stripes (at label pstripes)
-and I'd expect something similar for the case you're fixing.
-
-I'm not familiar with the raid56 implementation but the fix looks
-suspiciously trivial and I doubt that the xor was omitted out of
-laziness.
+That's right, it's not equivalent to the scrub.

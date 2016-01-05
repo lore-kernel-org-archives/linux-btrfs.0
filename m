@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:39300 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:55250 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753032AbcAEUyG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jan 2016 15:54:06 -0500
+	id S1752253AbcAEUyA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 15:54:00 -0500
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 07/35] btrfs: have submit_one_bio users setup bio bi_op
-Date: Tue,  5 Jan 2016 14:53:10 -0600
-Message-Id: <1452027218-32303-8-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 05/35] fs: have ll_rw_block users pass in op and flags separately
+Date: Tue,  5 Jan 2016 14:53:08 -0600
+Message-Id: <1452027218-32303-6-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
 References: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,343 +24,456 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-This patch has btrfs's submit_one_bio callers set
-the bio->bi_op to a REQ_OP and the bi_rw to rq_flag_bits.
-
-The next patches will continue to convert btrfs,
-so submit_bio_hook and merge_bio_hook
-related code will be modified to take only the bio. I did
-not do it in this patch to try and keep it smaller.
-
-Note:
-I have run xfs tests on these btrfs patches. There were some failures
-with and without the patches. I have not had time to track down why
-xfstest fails without the patches.
+This has ll_rw_block users pass in the operation and flags separately,
+so we can setup the bio->bi_op and bio-bi_rw flags.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
 ---
- fs/btrfs/extent_io.c | 92 +++++++++++++++++++++++++++-------------------------
- 1 file changed, 47 insertions(+), 45 deletions(-)
+ fs/buffer.c                 | 19 ++++++++++---------
+ fs/ext4/inode.c             |  6 +++---
+ fs/ext4/namei.c             |  2 +-
+ fs/ext4/super.c             |  2 +-
+ fs/gfs2/bmap.c              |  2 +-
+ fs/gfs2/meta_io.c           |  4 ++--
+ fs/gfs2/quota.c             |  2 +-
+ fs/isofs/compress.c         |  2 +-
+ fs/jbd2/journal.c           |  2 +-
+ fs/jbd2/recovery.c          |  4 ++--
+ fs/ocfs2/aops.c             |  2 +-
+ fs/ocfs2/super.c            |  2 +-
+ fs/reiserfs/journal.c       |  8 ++++----
+ fs/reiserfs/stree.c         |  4 ++--
+ fs/reiserfs/super.c         |  2 +-
+ fs/squashfs/block.c         |  4 ++--
+ fs/udf/dir.c                |  2 +-
+ fs/udf/directory.c          |  2 +-
+ fs/udf/inode.c              |  2 +-
+ fs/ufs/balloc.c             |  2 +-
+ include/linux/buffer_head.h |  2 +-
+ 21 files changed, 39 insertions(+), 38 deletions(-)
 
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 7bcc729..b6c281a 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -2382,7 +2382,7 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
- 	int read_mode;
- 	int ret;
- 
--	BUG_ON(failed_bio->bi_rw & REQ_WRITE);
-+	BUG_ON(failed_bio->bi_op == REQ_OP_WRITE);
- 
- 	ret = btrfs_get_io_failure_record(inode, start, end, &failrec);
- 	if (ret)
-@@ -2408,6 +2408,8 @@ static int bio_readpage_error(struct bio *failed_bio, u64 phy_offset,
- 		free_io_failure(inode, failrec);
- 		return -EIO;
+diff --git a/fs/buffer.c b/fs/buffer.c
+index 0843964..1a14bf2 100644
+--- a/fs/buffer.c
++++ b/fs/buffer.c
+@@ -595,7 +595,7 @@ void write_boundary_block(struct block_device *bdev,
+ 	struct buffer_head *bh = __find_get_block(bdev, bblock + 1, blocksize);
+ 	if (bh) {
+ 		if (buffer_dirty(bh))
+-			ll_rw_block(WRITE, 1, &bh);
++			ll_rw_block(REQ_OP_WRITE, 0, 1, &bh);
+ 		put_bh(bh);
  	}
-+	bio->bi_op = REQ_OP_READ;
-+	bio->bi_rw |= read_mode;
- 
- 	pr_debug("Repair Read Error: submitting new read[%#x] to this_mirror=%d, in_validation=%d\n",
- 		 read_mode, failrec->this_mirror, failrec->in_validation);
-@@ -2719,8 +2721,8 @@ struct bio *btrfs_io_bio_alloc(gfp_t gfp_mask, unsigned int nr_iovecs)
  }
- 
- 
--static int __must_check submit_one_bio(int rw, struct bio *bio,
--				       int mirror_num, unsigned long bio_flags)
-+static int __must_check submit_one_bio(struct bio *bio, int mirror_num,
-+				       unsigned long bio_flags)
+@@ -1406,7 +1406,7 @@ void __breadahead(struct block_device *bdev, sector_t block, unsigned size)
  {
- 	int ret = 0;
- 	struct bio_vec *bvec = bio->bi_io_vec + bio->bi_vcnt - 1;
-@@ -2731,12 +2733,12 @@ static int __must_check submit_one_bio(int rw, struct bio *bio,
- 	start = page_offset(page) + bvec->bv_offset;
- 
- 	bio->bi_private = NULL;
--	bio->bi_rw |= rw;
- 	bio_get(bio);
- 
- 	if (tree->ops && tree->ops->submit_bio_hook)
--		ret = tree->ops->submit_bio_hook(page->mapping->host, rw, bio,
--					   mirror_num, bio_flags, start);
-+		ret = tree->ops->submit_bio_hook(page->mapping->host,
-+						 bio->bi_rw, bio, mirror_num,
-+						 bio_flags, start);
- 	else
- 		btrfsic_submit_bio(bio);
- 
-@@ -2744,20 +2746,20 @@ static int __must_check submit_one_bio(int rw, struct bio *bio,
- 	return ret;
+ 	struct buffer_head *bh = __getblk(bdev, block, size);
+ 	if (likely(bh)) {
+-		ll_rw_block(READA, 1, &bh);
++		ll_rw_block(REQ_OP_READ, READA, 1, &bh);
+ 		brelse(bh);
+ 	}
  }
+@@ -1966,7 +1966,7 @@ int __block_write_begin(struct page *page, loff_t pos, unsigned len,
+ 		if (!buffer_uptodate(bh) && !buffer_delay(bh) &&
+ 		    !buffer_unwritten(bh) &&
+ 		     (block_start < from || block_end > to)) {
+-			ll_rw_block(READ, 1, &bh);
++			ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 			*wait_bh++=bh;
+ 		}
+ 	}
+@@ -2863,7 +2863,7 @@ int block_truncate_page(struct address_space *mapping,
  
--static int merge_bio(int rw, struct extent_io_tree *tree, struct page *page,
-+static int merge_bio(struct extent_io_tree *tree, struct page *page,
- 		     unsigned long offset, size_t size, struct bio *bio,
- 		     unsigned long bio_flags)
+ 	if (!buffer_uptodate(bh) && !buffer_delay(bh) && !buffer_unwritten(bh)) {
+ 		err = -EIO;
+-		ll_rw_block(READ, 1, &bh);
++		ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 		wait_on_buffer(bh);
+ 		/* Uhhuh. Read error. Complain and punt. */
+ 		if (!buffer_uptodate(bh))
+@@ -3063,7 +3063,8 @@ EXPORT_SYMBOL(submit_bh);
+ 
+ /**
+  * ll_rw_block: low-level access to block devices (DEPRECATED)
+- * @rw: whether to %READ or %WRITE or maybe %READA (readahead)
++ * @op: whether to %READ or %WRITE
++ * op_flags: rq_flag_bits or %READA (readahead)
+  * @nr: number of &struct buffer_heads in the array
+  * @bhs: array of pointers to &struct buffer_head
+  *
+@@ -3086,7 +3087,7 @@ EXPORT_SYMBOL(submit_bh);
+  * All of the buffers must be for the same device, and must also be a
+  * multiple of the current approved size for the device.
+  */
+-void ll_rw_block(int rw, int nr, struct buffer_head *bhs[])
++void ll_rw_block(int op, int op_flags,  int nr, struct buffer_head *bhs[])
  {
- 	int ret = 0;
- 	if (tree->ops && tree->ops->merge_bio_hook)
--		ret = tree->ops->merge_bio_hook(rw, page, offset, size, bio,
--						bio_flags);
-+		ret = tree->ops->merge_bio_hook(bio->bi_op, page, offset, size,
-+						bio, bio_flags);
- 	BUG_ON(ret < 0);
- 	return ret;
+ 	int i;
  
- }
+@@ -3095,18 +3096,18 @@ void ll_rw_block(int rw, int nr, struct buffer_head *bhs[])
  
--static int submit_extent_page(int rw, struct extent_io_tree *tree,
-+static int submit_extent_page(int op, int op_flags, struct extent_io_tree *tree,
- 			      struct writeback_control *wbc,
- 			      struct page *page, sector_t sector,
- 			      size_t size, unsigned long offset,
-@@ -2785,10 +2787,9 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
+ 		if (!trylock_buffer(bh))
+ 			continue;
+-		if (rw == WRITE) {
++		if (op == WRITE) {
+ 			if (test_clear_buffer_dirty(bh)) {
+ 				bh->b_end_io = end_buffer_write_sync;
+ 				get_bh(bh);
+-				submit_bh(rw, 0, bh);
++				submit_bh(op, op_flags, bh);
+ 				continue;
+ 			}
+ 		} else {
+ 			if (!buffer_uptodate(bh)) {
+ 				bh->b_end_io = end_buffer_read_sync;
+ 				get_bh(bh);
+-				submit_bh(rw, 0, bh);
++				submit_bh(op, op_flags, bh);
+ 				continue;
+ 			}
+ 		}
+diff --git a/fs/ext4/inode.c b/fs/ext4/inode.c
+index 4fc178a..26a07cb 100644
+--- a/fs/ext4/inode.c
++++ b/fs/ext4/inode.c
+@@ -810,7 +810,7 @@ struct buffer_head *ext4_bread(handle_t *handle, struct inode *inode,
+ 		return bh;
+ 	if (!bh || buffer_uptodate(bh))
+ 		return bh;
+-	ll_rw_block(READ | REQ_META | REQ_PRIO, 1, &bh);
++	ll_rw_block(REQ_OP_READ, REQ_META | REQ_PRIO, 1, &bh);
+ 	wait_on_buffer(bh);
+ 	if (buffer_uptodate(bh))
+ 		return bh;
+@@ -964,7 +964,7 @@ static int ext4_block_write_begin(struct page *page, loff_t pos, unsigned len,
+ 		if (!buffer_uptodate(bh) && !buffer_delay(bh) &&
+ 		    !buffer_unwritten(bh) &&
+ 		    (block_start < from || block_end > to)) {
+-			ll_rw_block(READ, 1, &bh);
++			ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 			*wait_bh++ = bh;
+ 			decrypt = ext4_encrypted_inode(inode) &&
+ 				S_ISREG(inode->i_mode);
+@@ -3511,7 +3511,7 @@ static int __ext4_block_zero_page_range(handle_t *handle,
  
- 		if (prev_bio_flags != bio_flags || !contig ||
- 		    force_bio_submit ||
--		    merge_bio(rw, tree, page, offset, page_size, bio, bio_flags) ||
-+		    merge_bio(tree, page, offset, page_size, bio, bio_flags) ||
- 		    bio_add_page(bio, page, page_size, offset) < page_size) {
--			ret = submit_one_bio(rw, bio, mirror_num,
--					     prev_bio_flags);
-+			ret = submit_one_bio(bio, mirror_num, prev_bio_flags);
- 			if (ret < 0) {
- 				*bio_ret = NULL;
- 				return ret;
-@@ -2809,6 +2810,8 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 	bio_add_page(bio, page, page_size, offset);
- 	bio->bi_end_io = end_io_func;
- 	bio->bi_private = tree;
-+	bio->bi_op = op;
-+	bio->bi_rw |= op_flags;
- 	if (wbc) {
- 		wbc_init_bio(wbc, bio);
- 		wbc_account_io(wbc, page, page_size);
-@@ -2817,7 +2820,7 @@ static int submit_extent_page(int rw, struct extent_io_tree *tree,
- 	if (bio_ret)
- 		*bio_ret = bio;
- 	else
--		ret = submit_one_bio(rw, bio, mirror_num, bio_flags);
-+		ret = submit_one_bio(bio, mirror_num, bio_flags);
+ 	if (!buffer_uptodate(bh)) {
+ 		err = -EIO;
+-		ll_rw_block(READ, 1, &bh);
++		ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 		wait_on_buffer(bh);
+ 		/* Uhhuh. Read error. Complain and punt. */
+ 		if (!buffer_uptodate(bh))
+diff --git a/fs/ext4/namei.c b/fs/ext4/namei.c
+index 71d1021..714bf29 100644
+--- a/fs/ext4/namei.c
++++ b/fs/ext4/namei.c
+@@ -1440,7 +1440,7 @@ restart:
+ 				}
+ 				bh_use[ra_max] = bh;
+ 				if (bh)
+-					ll_rw_block(READ | REQ_META | REQ_PRIO,
++					ll_rw_block(REQ_OP_READ, REQ_META | REQ_PRIO,
+ 						    1, &bh);
+ 			}
+ 		}
+diff --git a/fs/ext4/super.c b/fs/ext4/super.c
+index 50b2207..380aadc 100644
+--- a/fs/ext4/super.c
++++ b/fs/ext4/super.c
+@@ -4204,7 +4204,7 @@ static journal_t *ext4_get_dev_journal(struct super_block *sb,
+ 		goto out_bdev;
+ 	}
+ 	journal->j_private = sb;
+-	ll_rw_block(READ | REQ_META | REQ_PRIO, 1, &journal->j_sb_buffer);
++	ll_rw_block(REQ_OP_READ, REQ_META | REQ_PRIO, 1, &journal->j_sb_buffer);
+ 	wait_on_buffer(journal->j_sb_buffer);
+ 	if (!buffer_uptodate(journal->j_sb_buffer)) {
+ 		ext4_msg(sb, KERN_ERR, "I/O error on journal device");
+diff --git a/fs/gfs2/bmap.c b/fs/gfs2/bmap.c
+index 29faf72..628d4a4 100644
+--- a/fs/gfs2/bmap.c
++++ b/fs/gfs2/bmap.c
+@@ -974,7 +974,7 @@ static int gfs2_block_truncate_page(struct address_space *mapping, loff_t from)
  
- 	return ret;
- }
-@@ -2881,7 +2884,7 @@ static int __do_readpage(struct extent_io_tree *tree,
- 			 get_extent_t *get_extent,
- 			 struct extent_map **em_cached,
- 			 struct bio **bio, int mirror_num,
--			 unsigned long *bio_flags, int rw,
-+			 unsigned long *bio_flags, int read_flags,
- 			 u64 *prev_em_start)
- {
- 	struct inode *inode = page->mapping->host;
-@@ -3072,8 +3075,8 @@ static int __do_readpage(struct extent_io_tree *tree,
+ 	if (!buffer_uptodate(bh)) {
+ 		err = -EIO;
+-		ll_rw_block(READ, 1, &bh);
++		ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 		wait_on_buffer(bh);
+ 		/* Uhhuh. Read error. Complain and punt. */
+ 		if (!buffer_uptodate(bh))
+diff --git a/fs/gfs2/meta_io.c b/fs/gfs2/meta_io.c
+index b54a6fa..e2fc2b9 100644
+--- a/fs/gfs2/meta_io.c
++++ b/fs/gfs2/meta_io.c
+@@ -448,7 +448,7 @@ struct buffer_head *gfs2_meta_ra(struct gfs2_glock *gl, u64 dblock, u32 extlen)
+ 	if (buffer_uptodate(first_bh))
+ 		goto out;
+ 	if (!buffer_locked(first_bh))
+-		ll_rw_block(READ_SYNC | REQ_META, 1, &first_bh);
++		ll_rw_block(REQ_OP_READ, READ_SYNC | REQ_META, 1, &first_bh);
+ 
+ 	dblock++;
+ 	extlen--;
+@@ -457,7 +457,7 @@ struct buffer_head *gfs2_meta_ra(struct gfs2_glock *gl, u64 dblock, u32 extlen)
+ 		bh = gfs2_getbuf(gl, dblock, CREATE);
+ 
+ 		if (!buffer_uptodate(bh) && !buffer_locked(bh))
+-			ll_rw_block(READA | REQ_META, 1, &bh);
++			ll_rw_block(REQ_OP_READ, READA | REQ_META, 1, &bh);
+ 		brelse(bh);
+ 		dblock++;
+ 		extlen--;
+diff --git a/fs/gfs2/quota.c b/fs/gfs2/quota.c
+index be6d9c4..13be922 100644
+--- a/fs/gfs2/quota.c
++++ b/fs/gfs2/quota.c
+@@ -730,7 +730,7 @@ static int gfs2_write_buf_to_page(struct gfs2_inode *ip, unsigned long index,
+ 		if (PageUptodate(page))
+ 			set_buffer_uptodate(bh);
+ 		if (!buffer_uptodate(bh)) {
+-			ll_rw_block(READ | REQ_META, 1, &bh);
++			ll_rw_block(REQ_OP_READ, REQ_META, 1, &bh);
+ 			wait_on_buffer(bh);
+ 			if (!buffer_uptodate(bh))
+ 				goto unlock_out;
+diff --git a/fs/isofs/compress.c b/fs/isofs/compress.c
+index f311bf0..f9b5fc8 100644
+--- a/fs/isofs/compress.c
++++ b/fs/isofs/compress.c
+@@ -81,7 +81,7 @@ static loff_t zisofs_uncompress_block(struct inode *inode, loff_t block_start,
+ 	blocknum = block_start >> bufshift;
+ 	memset(bhs, 0, (needblocks + 1) * sizeof(struct buffer_head *));
+ 	haveblocks = isofs_get_blocks(inode, blocknum, bhs, needblocks);
+-	ll_rw_block(READ, haveblocks, bhs);
++	ll_rw_block(REQ_OP_READ, 0, haveblocks, bhs);
+ 
+ 	curbh = 0;
+ 	curpage = 0;
+diff --git a/fs/jbd2/journal.c b/fs/jbd2/journal.c
+index 3b7db0b..7104d76 100644
+--- a/fs/jbd2/journal.c
++++ b/fs/jbd2/journal.c
+@@ -1474,7 +1474,7 @@ static int journal_get_superblock(journal_t *journal)
+ 
+ 	J_ASSERT(bh != NULL);
+ 	if (!buffer_uptodate(bh)) {
+-		ll_rw_block(READ, 1, &bh);
++		ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 		wait_on_buffer(bh);
+ 		if (!buffer_uptodate(bh)) {
+ 			printk(KERN_ERR
+diff --git a/fs/jbd2/recovery.c b/fs/jbd2/recovery.c
+index 7f277e4..8d66ea9 100644
+--- a/fs/jbd2/recovery.c
++++ b/fs/jbd2/recovery.c
+@@ -104,7 +104,7 @@ static int do_readahead(journal_t *journal, unsigned int start)
+ 		if (!buffer_uptodate(bh) && !buffer_locked(bh)) {
+ 			bufs[nbufs++] = bh;
+ 			if (nbufs == MAXBUF) {
+-				ll_rw_block(READ, nbufs, bufs);
++				ll_rw_block(REQ_OP_READ, 0, nbufs, bufs);
+ 				journal_brelse_array(bufs, nbufs);
+ 				nbufs = 0;
+ 			}
+@@ -113,7 +113,7 @@ static int do_readahead(journal_t *journal, unsigned int start)
+ 	}
+ 
+ 	if (nbufs)
+-		ll_rw_block(READ, nbufs, bufs);
++		ll_rw_block(REQ_OP_READ, 0, nbufs, bufs);
+ 	err = 0;
+ 
+ failed:
+diff --git a/fs/ocfs2/aops.c b/fs/ocfs2/aops.c
+index 182f754..2e761fa 100644
+--- a/fs/ocfs2/aops.c
++++ b/fs/ocfs2/aops.c
+@@ -640,7 +640,7 @@ int ocfs2_map_page_blocks(struct page *page, u64 *p_blkno,
+ 			   !buffer_new(bh) &&
+ 			   ocfs2_should_read_blk(inode, page, block_start) &&
+ 			   (block_start < from || block_end > to)) {
+-			ll_rw_block(READ, 1, &bh);
++			ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 			*wait_bh++=bh;
  		}
  
- 		pnr -= page->index;
--		ret = submit_extent_page(rw, tree, NULL, page,
--					 sector, disk_io_size, pg_offset,
-+		ret = submit_extent_page(REQ_OP_READ, read_flags, tree, NULL,
-+					 page, sector, disk_io_size, pg_offset,
- 					 bdev, bio, pnr,
- 					 end_bio_extent_readpage, mirror_num,
- 					 *bio_flags,
-@@ -3105,7 +3108,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
- 					     get_extent_t *get_extent,
- 					     struct extent_map **em_cached,
- 					     struct bio **bio, int mirror_num,
--					     unsigned long *bio_flags, int rw,
-+					     unsigned long *bio_flags,
- 					     u64 *prev_em_start)
- {
- 	struct inode *inode;
-@@ -3126,7 +3129,7 @@ static inline void __do_contiguous_readpages(struct extent_io_tree *tree,
- 
- 	for (index = 0; index < nr_pages; index++) {
- 		__do_readpage(tree, pages[index], get_extent, em_cached, bio,
--			      mirror_num, bio_flags, rw, prev_em_start);
-+			      mirror_num, bio_flags, 0, prev_em_start);
- 		page_cache_release(pages[index]);
- 	}
- }
-@@ -3136,7 +3139,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
- 			       int nr_pages, get_extent_t *get_extent,
- 			       struct extent_map **em_cached,
- 			       struct bio **bio, int mirror_num,
--			       unsigned long *bio_flags, int rw,
-+			       unsigned long *bio_flags,
- 			       u64 *prev_em_start)
- {
- 	u64 start = 0;
-@@ -3158,7 +3161,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
- 						  index - first_index, start,
- 						  end, get_extent, em_cached,
- 						  bio, mirror_num, bio_flags,
--						  rw, prev_em_start);
-+						  prev_em_start);
- 			start = page_start;
- 			end = start + PAGE_CACHE_SIZE - 1;
- 			first_index = index;
-@@ -3169,7 +3172,7 @@ static void __extent_readpages(struct extent_io_tree *tree,
- 		__do_contiguous_readpages(tree, &pages[first_index],
- 					  index - first_index, start,
- 					  end, get_extent, em_cached, bio,
--					  mirror_num, bio_flags, rw,
-+					  mirror_num, bio_flags,
- 					  prev_em_start);
- }
- 
-@@ -3177,7 +3180,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 				   struct page *page,
- 				   get_extent_t *get_extent,
- 				   struct bio **bio, int mirror_num,
--				   unsigned long *bio_flags, int rw)
-+				   unsigned long *bio_flags, int read_flags)
- {
- 	struct inode *inode = page->mapping->host;
- 	struct btrfs_ordered_extent *ordered;
-@@ -3196,7 +3199,7 @@ static int __extent_read_full_page(struct extent_io_tree *tree,
- 	}
- 
- 	ret = __do_readpage(tree, page, get_extent, NULL, bio, mirror_num,
--			    bio_flags, rw, NULL);
-+			    bio_flags, read_flags, NULL);
- 	return ret;
- }
- 
-@@ -3208,9 +3211,9 @@ int extent_read_full_page(struct extent_io_tree *tree, struct page *page,
- 	int ret;
- 
- 	ret = __extent_read_full_page(tree, page, get_extent, &bio, mirror_num,
--				      &bio_flags, READ);
-+				      &bio_flags, 0);
- 	if (bio)
--		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
-+		ret = submit_one_bio(bio, mirror_num, bio_flags);
- 	return ret;
- }
- 
-@@ -3222,9 +3225,9 @@ int extent_read_full_page_nolock(struct extent_io_tree *tree, struct page *page,
- 	int ret;
- 
- 	ret = __do_readpage(tree, page, get_extent, NULL, &bio, mirror_num,
--			    &bio_flags, READ, NULL);
-+			    &bio_flags, 0, NULL);
- 	if (bio)
--		ret = submit_one_bio(READ, bio, mirror_num, bio_flags);
-+		ret = submit_one_bio(bio, mirror_num, bio_flags);
- 	return ret;
- }
- 
-@@ -3471,7 +3474,8 @@ static noinline_for_stack int __extent_writepage_io(struct inode *inode,
- 				       page->index, cur, end);
+diff --git a/fs/ocfs2/super.c b/fs/ocfs2/super.c
+index 45b6139..9550593 100644
+--- a/fs/ocfs2/super.c
++++ b/fs/ocfs2/super.c
+@@ -1818,7 +1818,7 @@ static int ocfs2_get_sector(struct super_block *sb,
+ 	if (!buffer_dirty(*bh))
+ 		clear_buffer_uptodate(*bh);
+ 	unlock_buffer(*bh);
+-	ll_rw_block(READ, 1, bh);
++	ll_rw_block(REQ_OP_READ, 0, 1, bh);
+ 	wait_on_buffer(*bh);
+ 	if (!buffer_uptodate(*bh)) {
+ 		mlog_errno(-EIO);
+diff --git a/fs/reiserfs/journal.c b/fs/reiserfs/journal.c
+index 9e63bc2..5c14c90 100644
+--- a/fs/reiserfs/journal.c
++++ b/fs/reiserfs/journal.c
+@@ -872,7 +872,7 @@ loop_next:
+ 		 */
+ 		if (buffer_dirty(bh) && unlikely(bh->b_page->mapping == NULL)) {
+ 			spin_unlock(lock);
+-			ll_rw_block(WRITE, 1, &bh);
++			ll_rw_block(REQ_OP_WRITE, 0, 1, &bh);
+ 			spin_lock(lock);
+ 		}
+ 		put_bh(bh);
+@@ -1059,7 +1059,7 @@ static int flush_commit_list(struct super_block *s,
+ 		if (tbh) {
+ 			if (buffer_dirty(tbh)) {
+ 		            depth = reiserfs_write_unlock_nested(s);
+-			    ll_rw_block(WRITE, 1, &tbh);
++			    ll_rw_block(REQ_OP_WRITE, 0, 1, &tbh);
+ 			    reiserfs_write_lock_nested(s, depth);
  			}
+ 			put_bh(tbh) ;
+@@ -2246,7 +2246,7 @@ abort_replay:
+ 		}
+ 	}
+ 	/* read in the log blocks, memcpy to the corresponding real block */
+-	ll_rw_block(READ, get_desc_trans_len(desc), log_blocks);
++	ll_rw_block(REQ_OP_READ, 0, get_desc_trans_len(desc), log_blocks);
+ 	for (i = 0; i < get_desc_trans_len(desc); i++) {
  
--			ret = submit_extent_page(write_flags, tree, wbc, page,
-+			ret = submit_extent_page(REQ_OP_WRITE, write_flags,
-+						 tree, wbc, page,
- 						 sector, iosize, pg_offset,
- 						 bdev, &epd->bio, max_nr,
- 						 end_bio_extent_writepage,
-@@ -3511,13 +3515,11 @@ static int __extent_writepage(struct page *page, struct writeback_control *wbc,
- 	size_t pg_offset = 0;
- 	loff_t i_size = i_size_read(inode);
- 	unsigned long end_index = i_size >> PAGE_CACHE_SHIFT;
--	int write_flags;
-+	int write_flags = 0;
- 	unsigned long nr_written = 0;
+ 		wait_on_buffer(log_blocks[i]);
+@@ -2348,7 +2348,7 @@ static struct buffer_head *reiserfs_breada(struct block_device *dev,
+ 		} else
+ 			bhlist[j++] = bh;
+ 	}
+-	ll_rw_block(READ, j, bhlist);
++	ll_rw_block(REQ_OP_READ, 0, j, bhlist);
+ 	for (i = 1; i < j; i++)
+ 		brelse(bhlist[i]);
+ 	bh = bhlist[0];
+diff --git a/fs/reiserfs/stree.c b/fs/reiserfs/stree.c
+index 24cbe01..5f9b6df 100644
+--- a/fs/reiserfs/stree.c
++++ b/fs/reiserfs/stree.c
+@@ -551,7 +551,7 @@ static int search_by_key_reada(struct super_block *s,
+ 		if (!buffer_uptodate(bh[j])) {
+ 			if (depth == -1)
+ 				depth = reiserfs_write_unlock_nested(s);
+-			ll_rw_block(READA, 1, bh + j);
++			ll_rw_block(REQ_OP_READ, READA, 1, bh + j);
+ 		}
+ 		brelse(bh[j]);
+ 	}
+@@ -660,7 +660,7 @@ int search_by_key(struct super_block *sb, const struct cpu_key *key,
+ 			if (!buffer_uptodate(bh) && depth == -1)
+ 				depth = reiserfs_write_unlock_nested(sb);
  
- 	if (wbc->sync_mode == WB_SYNC_ALL)
- 		write_flags = WRITE_SYNC;
--	else
--		write_flags = WRITE;
+-			ll_rw_block(READ, 1, &bh);
++			ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 			wait_on_buffer(bh);
  
- 	trace___extent_writepage(page, inode, wbc);
- 
-@@ -3761,7 +3763,7 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 	u64 offset = eb->start;
- 	unsigned long i, num_pages;
- 	unsigned long bio_flags = 0;
--	int rw = (epd->sync_io ? WRITE_SYNC : WRITE) | REQ_META;
-+	int write_flags = (epd->sync_io ? WRITE_SYNC : 0) | REQ_META;
- 	int ret = 0;
- 
- 	clear_bit(EXTENT_BUFFER_WRITE_ERR, &eb->bflags);
-@@ -3775,9 +3777,10 @@ static noinline_for_stack int write_one_eb(struct extent_buffer *eb,
- 
- 		clear_page_dirty_for_io(p);
- 		set_page_writeback(p);
--		ret = submit_extent_page(rw, tree, wbc, p, offset >> 9,
--					 PAGE_CACHE_SIZE, 0, bdev, &epd->bio,
--					 -1, end_bio_extent_buffer_writepage,
-+		ret = submit_extent_page(REQ_OP_WRITE, write_flags, tree, wbc,
-+					 p, offset >> 9, PAGE_CACHE_SIZE, 0,
-+					 bdev, &epd->bio, -1,
-+					 end_bio_extent_buffer_writepage,
- 					 0, epd->bio_flags, bio_flags, false);
- 		epd->bio_flags = bio_flags;
- 		if (ret) {
-@@ -4066,13 +4069,13 @@ retry:
- static void flush_epd_write_bio(struct extent_page_data *epd)
+ 			if (depth != -1)
+diff --git a/fs/reiserfs/super.c b/fs/reiserfs/super.c
+index 05db747..bd04525 100644
+--- a/fs/reiserfs/super.c
++++ b/fs/reiserfs/super.c
+@@ -1660,7 +1660,7 @@ static int read_super_block(struct super_block *s, int offset)
+ /* after journal replay, reread all bitmap and super blocks */
+ static int reread_meta_blocks(struct super_block *s)
  {
- 	if (epd->bio) {
--		int rw = WRITE;
- 		int ret;
- 
-+		epd->bio->bi_op = REQ_OP_WRITE;
- 		if (epd->sync_io)
--			rw = WRITE_SYNC;
-+			epd->bio->bi_rw = WRITE_SYNC;
- 
--		ret = submit_one_bio(rw, epd->bio, 0, epd->bio_flags);
-+		ret = submit_one_bio(epd->bio, 0, epd->bio_flags);
- 		BUG_ON(ret < 0); /* -ENOMEM */
- 		epd->bio = NULL;
- 	}
-@@ -4199,19 +4202,19 @@ int extent_readpages(struct extent_io_tree *tree,
- 		if (nr < ARRAY_SIZE(pagepool))
- 			continue;
- 		__extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
--				   &bio, 0, &bio_flags, READ, &prev_em_start);
-+				   &bio, 0, &bio_flags, &prev_em_start);
- 		nr = 0;
- 	}
- 	if (nr)
- 		__extent_readpages(tree, pagepool, nr, get_extent, &em_cached,
--				   &bio, 0, &bio_flags, READ, &prev_em_start);
-+				   &bio, 0, &bio_flags, &prev_em_start);
- 
- 	if (em_cached)
- 		free_extent_map(em_cached);
- 
- 	BUG_ON(!list_empty(pages));
- 	if (bio)
--		return submit_one_bio(READ, bio, 0, bio_flags);
-+		return submit_one_bio(bio, 0, bio_flags);
- 	return 0;
- }
- 
-@@ -5233,7 +5236,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
- 			err = __extent_read_full_page(tree, page,
- 						      get_extent, &bio,
- 						      mirror_num, &bio_flags,
--						      READ | REQ_META);
-+						      REQ_META);
- 			if (err)
- 				ret = err;
- 		} else {
-@@ -5242,8 +5245,7 @@ int read_extent_buffer_pages(struct extent_io_tree *tree,
+-	ll_rw_block(READ, 1, &SB_BUFFER_WITH_SB(s));
++	ll_rw_block(REQ_OP_READ, 0, 1, &SB_BUFFER_WITH_SB(s));
+ 	wait_on_buffer(SB_BUFFER_WITH_SB(s));
+ 	if (!buffer_uptodate(SB_BUFFER_WITH_SB(s))) {
+ 		reiserfs_warning(s, "reiserfs-2504", "error reading the super");
+diff --git a/fs/squashfs/block.c b/fs/squashfs/block.c
+index 0cea9b9..59375be 100644
+--- a/fs/squashfs/block.c
++++ b/fs/squashfs/block.c
+@@ -124,7 +124,7 @@ int squashfs_read_data(struct super_block *sb, u64 index, int length,
+ 				goto block_release;
+ 			bytes += msblk->devblksize;
+ 		}
+-		ll_rw_block(READ, b, bh);
++		ll_rw_block(REQ_OP_READ, 0, b, bh);
+ 	} else {
+ 		/*
+ 		 * Metadata block.
+@@ -156,7 +156,7 @@ int squashfs_read_data(struct super_block *sb, u64 index, int length,
+ 				goto block_release;
+ 			bytes += msblk->devblksize;
+ 		}
+-		ll_rw_block(READ, b - 1, bh + 1);
++		ll_rw_block(REQ_OP_READ, 0, b - 1, bh + 1);
  	}
  
- 	if (bio) {
--		err = submit_one_bio(READ | REQ_META, bio, mirror_num,
--				     bio_flags);
-+		err = submit_one_bio(bio, mirror_num, bio_flags);
- 		if (err)
- 			return err;
- 	}
+ 	for (i = 0; i < b; i++) {
+diff --git a/fs/udf/dir.c b/fs/udf/dir.c
+index 541d9c6..91b9f02 100644
+--- a/fs/udf/dir.c
++++ b/fs/udf/dir.c
+@@ -113,7 +113,7 @@ static int udf_readdir(struct file *file, struct dir_context *ctx)
+ 					brelse(tmp);
+ 			}
+ 			if (num) {
+-				ll_rw_block(READA, num, bha);
++				ll_rw_block(REQ_OP_READ, READA, num, bha);
+ 				for (i = 0; i < num; i++)
+ 					brelse(bha[i]);
+ 			}
+diff --git a/fs/udf/directory.c b/fs/udf/directory.c
+index c763fda..71f3e0b 100644
+--- a/fs/udf/directory.c
++++ b/fs/udf/directory.c
+@@ -87,7 +87,7 @@ struct fileIdentDesc *udf_fileident_read(struct inode *dir, loff_t *nf_pos,
+ 					brelse(tmp);
+ 			}
+ 			if (num) {
+-				ll_rw_block(READA, num, bha);
++				ll_rw_block(REQ_OP_READ, READA, num, bha);
+ 				for (i = 0; i < num; i++)
+ 					brelse(bha[i]);
+ 			}
+diff --git a/fs/udf/inode.c b/fs/udf/inode.c
+index 87dc16d..e49036b 100644
+--- a/fs/udf/inode.c
++++ b/fs/udf/inode.c
+@@ -1200,7 +1200,7 @@ struct buffer_head *udf_bread(struct inode *inode, int block,
+ 	if (buffer_uptodate(bh))
+ 		return bh;
+ 
+-	ll_rw_block(READ, 1, &bh);
++	ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 
+ 	wait_on_buffer(bh);
+ 	if (buffer_uptodate(bh))
+diff --git a/fs/ufs/balloc.c b/fs/ufs/balloc.c
+index dc5fae6..26a3bb1 100644
+--- a/fs/ufs/balloc.c
++++ b/fs/ufs/balloc.c
+@@ -292,7 +292,7 @@ static void ufs_change_blocknr(struct inode *inode, sector_t beg,
+ 			if (!buffer_mapped(bh))
+ 					map_bh(bh, inode->i_sb, oldb + pos);
+ 			if (!buffer_uptodate(bh)) {
+-				ll_rw_block(READ, 1, &bh);
++				ll_rw_block(REQ_OP_READ, 0, 1, &bh);
+ 				wait_on_buffer(bh);
+ 				if (!buffer_uptodate(bh)) {
+ 					ufs_error(inode->i_sb, __func__,
+diff --git a/include/linux/buffer_head.h b/include/linux/buffer_head.h
+index f7cc163..15af19f 100644
+--- a/include/linux/buffer_head.h
++++ b/include/linux/buffer_head.h
+@@ -187,7 +187,7 @@ struct buffer_head *alloc_buffer_head(gfp_t gfp_flags);
+ void free_buffer_head(struct buffer_head * bh);
+ void unlock_buffer(struct buffer_head *bh);
+ void __lock_buffer(struct buffer_head *bh);
+-void ll_rw_block(int, int, struct buffer_head * bh[]);
++void ll_rw_block(int, int, int, struct buffer_head * bh[]);
+ int sync_dirty_buffer(struct buffer_head *bh);
+ int __sync_dirty_buffer(struct buffer_head *bh, int op_flags);
+ void write_dirty_buffer(struct buffer_head *bh, int op_flags);
 -- 
 1.8.3.1
 

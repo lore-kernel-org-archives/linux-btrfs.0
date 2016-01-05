@@ -1,52 +1,45 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mondschein.lichtvoll.de ([194.150.191.11]:60476 "EHLO
-	mail.lichtvoll.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751623AbcAETBO (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 14:01:14 -0500
-Received: from merkaba.localnet (host-188-174-204-22.customer.m-online.net [188.174.204.22])
-	by mail.lichtvoll.de (Postfix) with ESMTPSA id 1AC6B24C
-	for <linux-btrfs@vger.kernel.org>; Tue,  5 Jan 2016 20:01:13 +0100 (CET)
-From: Martin Steigerwald <martin@lichtvoll.de>
-To: linux-btrfs@vger.kernel.org
-Subject: Re: Btrfs Check - "type mismatch with chunk"
-Date: Tue, 05 Jan 2016 20:01:12 +0100
-Message-ID: <3477132.ObA1D5uT4E@merkaba>
-In-Reply-To: <pan$2c260$62827c72$5fe5d34$36d9b844@cox.net>
-References: <CACRRrm9SwfDzqHNpWjAGniuu6HDu5wo3vW_ETdzijrdYm7YGGw@mail.gmail.com> <1451711566.8761.31.camel@scientia.net> <pan$2c260$62827c72$5fe5d34$36d9b844@cox.net>
+Received: from mail-io0-f170.google.com ([209.85.223.170]:34575 "EHLO
+	mail-io0-f170.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751809AbcAEVrx (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 16:47:53 -0500
+Received: by mail-io0-f170.google.com with SMTP id 1so153647770ion.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2016 13:47:53 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <pan$4b55a$cfffcc6c$c8faaa76$1740646a@cox.net>
+References: <CAJCQCtS59TFek+g9x_aoqGzepySMrRn6DcOQkuwi=VQYR9M4tw@mail.gmail.com>
+	<pan$671e2$87d221b4$c1b40d79$6f794584@cox.net>
+	<CAJCQCtSCvzoOdqFx9dB9sbT-dR0XsQVzWwVcK3zBnwC17+ZV_Q@mail.gmail.com>
+	<pan$4b55a$cfffcc6c$c8faaa76$1740646a@cox.net>
+Date: Tue, 5 Jan 2016 14:47:52 -0700
+Message-ID: <CAJCQCtRkDrUhiCsgO5Wm=1OhpbtxaR58SLLg5JxZvYQE_nSTUQ@mail.gmail.com>
+Subject: Re: evidence of persistent state, despite device disconnects
+From: Chris Murphy <lists@colorremedies.com>
+To: Duncan <1i5t5.duncan@cox.net>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Am Dienstag, 5. Januar 2016, 15:34:35 CET schrieb Duncan:
-> Christoph Anton Mitterer posted on Sat, 02 Jan 2016 06:12:46 +0100 as
-> 
-> excerpted:
-> > On Fri, 2015-12-25 at 08:06 +0000, Duncan wrote:
-> >> I wasn't personally sure if 4.1 itself was affected or not, but the
-> >> wiki says don't use 4.1.1 as it's broken with this bug, with the
-> >> quick-fix in 4.1.2, so I /think/ 4.1 itself is fine.  A scan with a
-> >> current btrfs check should tell you for sure.  But if you meant 4.1.1
-> >> and only typed 4.1, then yes, better redo.
-> > 
-> > What exactly was that bug in 4.1.1 mkfs and how would one notice that
-> > one suffers from it?
-> > I created a number of personal filesystems that I use "productively" and
-> > I'm not 100% sure during which version I've created them... :/
-> >
-> > 
-> >
-> > Is there some easy way to find out, like a fs creation time stamp??
-> 
-> I believe a current btrfs check will flag the errors, but can't fix them, 
-> as the problem was in the filesystem creation and is simply too deep to 
-> fix, so the bad filesystems must be wiped and recreated with a mkfs.btrfs 
-> without the bug, to fix.
+On Tue, Jan 5, 2016 at 7:50 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 
-btrfs check from btrfs tools 4.3.1 on kernel 4.4-rc6 has not been able to fix 
-these errors and I recreated the filesystem that had the errors. I think I 
-mentioned it also in this thread.
+>
+> If however you mounted it degraded,rw at some point, then I'd say the bug
+> is in wetware, as in that case, based on my understanding, it's working
+> as intended.  I was inclined to believe that was what happened based on
+> the obviously partial sequence in the earlier post, but if you say you
+> didn't... then it's all down to duplication and finding why it's suddenly
+> reverting to single mode on non-degraded mounts, which indeed /is/ a bug.
 
-Thanks,
+Clearly I will have to retest.
+
+But even as rw,degraded, it doesn't matter, that'd still be a huge
+bug. There's no possible way you'll convince me this is a user
+misunderstanding. No where is this documented.
+
+I made the fs using mfks.btrfs -draid1 -mraid1. There is no way the
+fs, under any circumstance, legitimately creates and uses any other
+profile for any chunk type, ever. Let alone silently.
+
 -- 
-Martin
+Chris Murphy

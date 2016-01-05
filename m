@@ -1,47 +1,63 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:56117 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751088AbcA1Nan (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jan 2016 08:30:43 -0500
-Date: Thu, 28 Jan 2016 08:30:32 -0500
-From: Chris Mason <clm@fb.com>
-To: Zhao Lei <zhaolei@cn.fujitsu.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PATCH 1/2] btrfs: reada: limit max works count
-Message-ID: <20160128133032.aesambv5jlnungje@floor.thefacebook.com>
-References: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
- <20160120151627.kuy3auwiguoe6xc6@floor.thefacebook.com>
- <20160120174823.ck5zeoihwsrbvoih@floor.thefacebook.com>
- <00a501d15433$61275d10$23761730$@cn.fujitsu.com>
- <20160121141444.gygz5lrkerq67lxz@floor.thefacebook.com>
- <00ce01d15510$0b35adc0$21a10940$@cn.fujitsu.com>
- <20160122141917.qs632ec3iwykdfdm@floor.thefacebook.com>
- <006601d159a0$7a6a47c0$6f3ed740$@cn.fujitsu.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <006601d159a0$7a6a47c0$6f3ed740$@cn.fujitsu.com>
+Received: from mail.kernel.org ([198.145.29.136]:45115 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751456AbcAEQdK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 11:33:10 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix transaction handle leak on failure to create hard link
+Date: Tue,  5 Jan 2016 16:33:02 +0000
+Message-Id: <1452011582-9460-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 28, 2016 at 03:49:54PM +0800, Zhao Lei wrote:
-> I rebased following branch:
-> https://github.com/zhaoleidd/btrfs.git integration-4.5
-> 
-> With updated patch to fix btrfs/066 bug.
-> Bug reason is descripted in changelog of:
-> btrfs: reada: avoid undone reada extents in btrfs_reada_wait
-> 
-> Test:
-> 1: In the node which can repgoduce btrfs/066 bug,
->   Confirmed HAVING_BUG before patch, and NO_BUG after patch.
-> 2: Run xfstests's btrfs group, confirmed no regression.
-> 
-> Most patchs in this branch are for reada, except this one for NO_SPACE bug:
-> btrfs: Continue write in case of can_not_nocow
-> 
-> Cound you consider merging it in suitable time?
+From: Filipe Manana <fdmanana@suse.com>
 
-Thanks for tracking all of this down, I'll take a look.
+If we failed to create a hard link we were not always releasing the
+the transaction handle we got before, resulting in a memory leak and
+preventing any other tasks from being able to commit the current
+transaction.
+Fix this by always releasing our transaction handle.
 
--chris
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/inode.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 5dbc07a..018c2a6 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -6488,7 +6488,7 @@ out_unlock_inode:
+ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 		      struct dentry *dentry)
+ {
+-	struct btrfs_trans_handle *trans;
++	struct btrfs_trans_handle *trans = NULL;
+ 	struct btrfs_root *root = BTRFS_I(dir)->root;
+ 	struct inode *inode = d_inode(old_dentry);
+ 	u64 index;
+@@ -6514,6 +6514,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 	trans = btrfs_start_transaction(root, 5);
+ 	if (IS_ERR(trans)) {
+ 		err = PTR_ERR(trans);
++		trans = NULL;
+ 		goto fail;
+ 	}
+ 
+@@ -6547,9 +6548,10 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
+ 		btrfs_log_new_name(trans, inode, NULL, parent);
+ 	}
+ 
+-	btrfs_end_transaction(trans, root);
+ 	btrfs_balance_delayed_items(root);
+ fail:
++	if (trans)
++		btrfs_end_transaction(trans, root);
+ 	if (drop_inode) {
+ 		inode_dec_link_count(inode);
+ 		iput(inode);
+-- 
+2.1.3
+

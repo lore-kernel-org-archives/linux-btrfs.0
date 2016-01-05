@@ -1,47 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from e28smtp03.in.ibm.com ([125.16.236.3]:50635 "EHLO
-	e28smtp03.in.ibm.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751925AbcAEDWa (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jan 2016 22:22:30 -0500
-Received: from localhost
-	by e28smtp03.in.ibm.com with IBM ESMTP SMTP Gateway: Authorized Use Only! Violators will be prosecuted
-	for <linux-btrfs@vger.kernel.org> from <chandan@linux.vnet.ibm.com>;
-	Tue, 5 Jan 2016 08:52:27 +0530
-Received: from d28relay04.in.ibm.com (d28relay04.in.ibm.com [9.184.220.61])
-	by d28dlp01.in.ibm.com (Postfix) with ESMTP id BFC1EE0054
-	for <linux-btrfs@vger.kernel.org>; Tue,  5 Jan 2016 08:53:36 +0530 (IST)
-Received: from d28av01.in.ibm.com (d28av01.in.ibm.com [9.184.220.63])
-	by d28relay04.in.ibm.com (8.14.9/8.14.9/NCO v10.0) with ESMTP id u053MNa710027232
-	for <linux-btrfs@vger.kernel.org>; Tue, 5 Jan 2016 08:52:23 +0530
-Received: from d28av01.in.ibm.com (localhost [127.0.0.1])
-	by d28av01.in.ibm.com (8.14.4/8.14.4/NCO v10.0 AVout) with ESMTP id u053MMKU026533
-	for <linux-btrfs@vger.kernel.org>; Tue, 5 Jan 2016 08:52:23 +0530
-From: Chandan Rajendra <chandan@linux.vnet.ibm.com>
-To: james harvey <jamespharvey20@gmail.com>
+Received: from mx2.suse.de ([195.135.220.15]:57436 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751601AbcAEMOy (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 07:14:54 -0500
+Date: Tue, 5 Jan 2016 13:12:34 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Chandan Rajendra <chandan@linux.vnet.ibm.com>
 Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, fdmanana@gmail.com,
         chandan@mykolab.com
-Subject: Re: [PATCH] Btrfs: Intialize btrfs_root->highest_objectid when loading tree root and subvolume roots
-Date: Tue, 05 Jan 2016 08:52:22 +0530
-Message-ID: <5978134.q4ybM9MPWz@localhost.localdomain>
-In-Reply-To: <CA+X5Wn5EKaSwD1B1H9Sd+QRcKezOMmE6GaGMVjPFZRNAwhe4oA@mail.gmail.com>
-References: <1444063465-5641-1-git-send-email-chandan@linux.vnet.ibm.com> <8703019.0plYdL21k7@localhost.localdomain> <CA+X5Wn5EKaSwD1B1H9Sd+QRcKezOMmE6GaGMVjPFZRNAwhe4oA@mail.gmail.com>
+Subject: Re: [PATCH] Btrfs: Intialize btrfs_root->highest_objectid when
+ loading tree root and subvolume roots
+Message-ID: <20160105121234.GT4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1444063465-5641-1-git-send-email-chandan@linux.vnet.ibm.com>
+ <20151007092503.GG7734@twin.jikos.cz>
+ <8703019.0plYdL21k7@localhost.localdomain>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <8703019.0plYdL21k7@localhost.localdomain>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sunday 03 Jan 2016 00:02:18 james harvey wrote:
-> Bump.
+On Wed, Oct 07, 2015 at 07:40:46PM +0530, Chandan Rajendra wrote:
+> On Wednesday 07 Oct 2015 11:25:03 David Sterba wrote:
+> > On Mon, Oct 05, 2015 at 10:14:24PM +0530, Chandan Rajendra wrote:
+> > > +	if (unlikely(root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID)) {
+> > > +		mutex_unlock(&root->objectid_mutex);
+> > > +		ret = -ENOSPC;
+> > 
+> > ENOSPC ... I don't think it's right as this could be with a normal
+> > enospc during subvolume creation. The problem is that theh inode number
+> > space is exhausted, the closest error code I see is EOVERFLOW. As this
+> > is an ioctl we can afford to define the meaning of this return value as
+> > such (unlike for eg. creat()/open()).
+> > 
+> > > +		goto free_root_dev;
+> > > +	}
+> > > +
+> > > +	mutex_unlock(&root->objectid_mutex);
+> > > +
+> > > 
+> > >  	return 0;
 > 
-> Pretty sure I just ran into this, outside of a testing scenario.  See
-> http://permalink.gmane.org/gmane.comp.file-systems.btrfs/51796
+> David, Are you suggesting that we return -EOVERFLOW from within
+> btrfs_init_fs_root() and continue returning -ENOSPC in case of error
+> (i.e. tree_root->highest_objectid >= BTRFS_LAST_FREE_OBJECTID) from
+> open_ctree()?
 > 
-> Looks like the patch was never committed.
->
+> If yes, btrfs_init_fs_root() gets invoked from open_ctree() via
+> btrfs_read_fs_root_no_name() and hence we may end up returning -EOVERFLOW when
+> servicing the mount() syscall.
 
-Thanks for pointing this out. I will rebase & test the patch on top of current
-integration branch and post it again.
-
--- 
-chandan
-
+Sorry for not answering that. As you're going to resend it, please
+use EOVERFLOW in the btrfs_init_fs_root. We should not hit the overflow
+error in the mount path.

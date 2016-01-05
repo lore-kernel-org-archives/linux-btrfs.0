@@ -1,44 +1,65 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f46.google.com ([74.125.82.46]:36177 "EHLO
-	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751631AbcAEQYe (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 11:24:34 -0500
-Received: by mail-wm0-f46.google.com with SMTP id l65so29051881wmf.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2016 08:24:33 -0800 (PST)
-Received: from [192.168.2.69] (23.115.135.37.dynamic.jazztel.es. [37.135.115.23])
-        by smtp.gmail.com with ESMTPSA id kb5sm91434172wjc.20.2016.01.05.08.24.31
-        for <linux-btrfs@vger.kernel.org>
-        (version=TLSv1/SSLv3 cipher=OTHER);
-        Tue, 05 Jan 2016 08:24:32 -0800 (PST)
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Received: from mail-wm0-f51.google.com ([74.125.82.51]:36077 "EHLO
+	mail-wm0-f51.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751688AbcAEQeE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 11:34:04 -0500
+Received: by mail-wm0-f51.google.com with SMTP id l65so29391548wmf.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2016 08:34:02 -0800 (PST)
+Subject: Re: Purposely using btrfs RAID1 in degraded mode ?
+To: Alphazo <alphazo@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAHJqNbyXUfzscHteqrQtxJdYKToDNv7_Hw9tVpPuNJYwe=NHxw@mail.gmail.com>
 From: Psalle <psalleetsile@gmail.com>
-Subject: raid1 vs raid5
-Message-ID: <568BEE3F.4060402@gmail.com>
-Date: Tue, 5 Jan 2016 17:24:31 +0100
+Message-ID: <568BF078.8060303@gmail.com>
+Date: Tue, 5 Jan 2016 17:34:00 +0100
 MIME-Version: 1.0
+In-Reply-To: <CAHJqNbyXUfzscHteqrQtxJdYKToDNv7_Hw9tVpPuNJYwe=NHxw@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello all and excuse me if this is a silly question. I looked around in 
-the wiki and list archives but couldn't find any in-depth discussion 
-about this:
+Hello Alphazo,
 
-I just realized that, since raid1 in btrfs is special (meaning only two 
-copies in different devices), the effect in terms of resilience achieved 
-with raid1 and raid5 are the same: you can lose one drive and not lose data.
+I am a mere btrfs user, but given the discussions I regularly see here 
+about difficulties with degraded filesystems I wouldn't rely on this 
+(yet?) as a regular work strategy, even if it's supposed to work.
 
-So!, presuming that raid5 were at the same level of maturity, what would 
-be the pros/cons of each mode?
+If you're familiar with git, perhaps git-annex could be an alternative.
 
-As a corollary, I guess that if raid1 is considered a good compromise, 
-then functional equivalents to raid6 and beyond could simply be 
-implemented as "storing n copies in different devices", dropping any 
-complex parity computations and making this mode entirely generic. Since 
-this seems pretty obvious, I'd welcome your insights on what are the 
-things I'm missing, since it doesn't exist (and it isn't planned to be 
-this way, AFAIK). I can foresee consistency difficulties, but that seems 
-hardly insurmountable if its being done for raid1?
+-Psalle.
 
-Thanks in advance,
-Psalle.
+On 04/01/16 18:00, Alphazo wrote:
+> Hello,
+>
+> My picture library today lies on an external hard drive that I sync on
+> a regular basis with a couple of servers and other external drives.
+> I'm interested by the on-the-fly checksum brought by btrfs and would
+> like to get your opinion on the following unusual use case that I have
+> tested:
+> - Create a btrfs with the two drives with RAID1
+> - When at home I can work with the two drives connected so I can enjoy
+> the self-healing feature if a bit goes mad so I only backup perfect
+> copies to my backup servers.
+> - When not at home I only bring one external drive and manually mount
+> it in degraded mode so I can continue working on my pictures while
+> still having checksum error detection (but not correction).
+> - When coming back home I can plug-back the seconde drive and initiate
+> a scrub or balance to get the second drive duplicated.
+>
+> I have tested the above use case with a couple of USB flash drive and
+> even used btrfs over dm-crypt partitions and it seemed to work fine
+> but I wanted to get some advices from the community if this is really
+> a bad practice that should not be used on the long run. Is there any
+> limitation/risk to read/write to/from a degraded filesystem knowing it
+> will be re-synced later?
+>
+> Thanks
+> alphazo
+>
+> PS: I have also investigated the RAID1 on a single drive with two
+> partitions but I cannot afford the half capacity resulting from that
+> approach.
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+

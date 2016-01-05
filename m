@@ -1,74 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-wm0-f43.google.com ([74.125.82.43]:33131 "EHLO
-	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751645AbcAEOF1 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 09:05:27 -0500
-Date: Tue, 5 Jan 2016 05:03:27 -0500
-From: Sanidhya Solanki <jpage.lkml@gmail.com>
-To: David Sterba <dsterba@suse.cz>
-Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-kernel@vger.kernel.org,
-        linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] BTRFS: Runs the xor function if a Block has failed
-Message-ID: <20160105050327.1ff85a20@gmail.com>
-In-Reply-To: <20160105092236.GO4227@twin.jikos.cz>
-References: <1451456916-16520-1-git-send-email-jpage.lkml@gmail.com>
-	<20151230171826.GG4227@twin.jikos.cz>
-	<20151230211544.32bc337e@gmail.com>
-	<20160105092236.GO4227@twin.jikos.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=US-ASCII
+Received: from plane.gmane.org ([80.91.229.3]:50236 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751104AbcAEOui (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 09:50:38 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aGSwP-0002EZ-AT
+	for linux-btrfs@vger.kernel.org; Tue, 05 Jan 2016 15:50:29 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2016 15:50:29 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2016 15:50:29 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: evidence of persistent state, despite device disconnects
+Date: Tue, 5 Jan 2016 14:50:23 +0000 (UTC)
+Message-ID: <pan$4b55a$cfffcc6c$c8faaa76$1740646a@cox.net>
+References: <CAJCQCtS59TFek+g9x_aoqGzepySMrRn6DcOQkuwi=VQYR9M4tw@mail.gmail.com>
+	<pan$671e2$87d221b4$c1b40d79$6f794584@cox.net>
+	<CAJCQCtSCvzoOdqFx9dB9sbT-dR0XsQVzWwVcK3zBnwC17+ZV_Q@mail.gmail.com>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, 5 Jan 2016 10:22:36 +0100
-David Sterba <dsterba@suse.cz> wrote:
+Chris Murphy posted on Sun, 03 Jan 2016 14:33:40 -0700 as excerpted:
 
-> If the data a rerecovered, why is -EIO still returned? 
+> kernel-4.4.0-0.rc6.git0.1.fc24.x86_64 btrfs-progs 4.3.1
+> 
+> There was some copy pasting, hence /mnt/brick vs /mnt/brick2 confusion,
+> but the volume was always cleanly mounted and umounted.
+> 
+> The biggest problem I have with all of this is the completely silent
+> addition of single chunks. That made the volume, in effect, no longer
+> completely raid1. No other details matter, except to try and reproduce
+> the problem, and find its source so it can be fixed. It is a bug,
+> because it's definitely not sane or expected behavior at all.
 
-In the other places in the file where the code appears, the submitted
-patch is all that is required to do the xor. I think we also need to
-include the following line:
-memcpy(pointers[nr_data], pointers[0], PAGE_SIZE);
-and delete the "return EIO" statement which I believe appears to be a
-placeholder for the xor function.
-In the end the final patch should look something like this:
-> -					 * TODO, we should redo the xor here.
->  					 */
-> +					memcpy(pointers[nr_data], pointers[0], PAGE_SIZE);
-> +					run_xor(pointers, rbio->nr_data - 1, PAGE_CACHE_SIZE); 
-> - err = -EIO;
+If there's no way you mounted it degraded,rw at any point, I agree, 
+single mode chunks are unexpected on a raid1 for both data and metadata, 
+and it's a bug -- possibly actually related to that new code that allows 
+degraded,rw recovery via per-chunk checks.
 
-So, I was just going to send you the mail as it is written above, but I
-decided to investigate. The commit in question that added the todo was
-53b381b3abeb86f12787a6c40fee9b2f71edc23b. Unfortunately, it was not
-submitted  by the original author, nor was it by any means a small
-dedicated patch. It adds the entire file, without much comment or
-explanation and has not been touched since. 
+If however you mounted it degraded,rw at some point, then I'd say the bug 
+is in wetware, as in that case, based on my understanding, it's working 
+as intended.  I was inclined to believe that was what happened based on 
+the obviously partial sequence in the earlier post, but if you say you 
+didn't... then it's all down to duplication and finding why it's suddenly 
+reverting to single mode on non-degraded mounts, which indeed /is/ a bug.
 
-However, we can get some idea of what is expected by looking at line
-2398 in raid56.c, where a similar case of raid 5 recovery is handled.
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 
-So what the patch described above does is deal with a scenario where
-no q stripe or bad data block exists, and, we can only rebuild from the
-p-stripe, in effect like a raid 5 recovery.
-
-So, if you are satisfied with the above retouched change, I can modify
-my original patch with your suggestions and my changes, and, I can
-forward them to the list again.
-
-> Also, I see some post-recovery steps eg. for the damaged P stripes
-> (at label pstripes) and I'd expect something similar for the case
-> you're fixing.
-
-I believe that is the case because the other cases still have the q-
-stripe available tor rebuild from, which requires cleanup afterwards,
-but the raid5-like scenario above does not. Let me know if anything
-else is needed.
-
-> I'm not familiar with the raid56 implementation but the fix looks
-> suspiciously trivial and I doubt that the xor was omitted out of
-> laziness.
-
-I guess we will never know.
-
-Thanks

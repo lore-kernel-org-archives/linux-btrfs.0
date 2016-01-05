@@ -1,66 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailgw-02.dd24.net ([193.46.215.43]:38854 "EHLO
+Received: from mailgw-02.dd24.net ([193.46.215.43]:39024 "EHLO
 	mailgw-02.dd24.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751815AbcAESsX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 13:48:23 -0500
-Message-ID: <1452019697.5722.10.camel@scientia.net>
-Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
+	with ESMTP id S1751572AbcAESzE (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 13:55:04 -0500
+Message-ID: <1452020097.5722.16.camel@scientia.net>
+Subject: Re: Btrfs Check - "type mismatch with chunk"
 From: Christoph Anton Mitterer <calestyo@scientia.net>
-To: dsterba@suse.cz
-Cc: linux-btrfs@vger.kernel.org
-Date: Tue, 05 Jan 2016 19:48:17 +0100
-In-Reply-To: <20160105104455.GS4227@twin.jikos.cz>
-References: <20151228153801.6561feff@gmail.com>
-	 <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
-	 <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
-	 <1451363188.7094.23.camel@scientia.net>
-	 <20151229180643.GD4227@twin.jikos.cz> <20160102065207.4eec760a@gmail.com>
-	 <56887B40.10105@gmx.com> <1451787985.6645.12.camel@scientia.net>
-	 <20160105104455.GS4227@twin.jikos.cz>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+Date: Tue, 05 Jan 2016 19:54:57 +0100
+In-Reply-To: <pan$2c260$62827c72$5fe5d34$36d9b844@cox.net>
+References: <CACRRrm9SwfDzqHNpWjAGniuu6HDu5wo3vW_ETdzijrdYm7YGGw@mail.gmail.com>
+	 <pan$ed44$b7377cf0$bc775a24$c5211738@cox.net>
+	 <9871.1451021289@ccs.covici.com>
+	 <pan$c92dd$6a940cd1$f625da64$e4be62fc@cox.net>
+	 <1451711566.8761.31.camel@scientia.net>
+	 <pan$2c260$62827c72$5fe5d34$36d9b844@cox.net>
 Content-Type: multipart/signed; micalg="sha-512";
 	protocol="application/x-pkcs7-signature";
-	boundary="=-Kx2v1mNHltaHowAS8Jo5"
+	boundary="=-u+gqzKNChPoiLUuvtm7M"
 Mime-Version: 1.0
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
---=-Kx2v1mNHltaHowAS8Jo5
+--=-u+gqzKNChPoiLUuvtm7M
 Content-Type: text/plain; charset="UTF-8"
 Content-Transfer-Encoding: quoted-printable
 
-On Tue, 2016-01-05 at 11:44 +0100, David Sterba wrote:
-> We have a full 32 bit number space, so multiples of power of 2 are
-> also
-> possible if that makes sense.
-Hmm that would make a maximum of 4GiB RAID chunks...
-perhaps we should reserve some of the higher bits for a multiplier, in
-case 4GiB would ever become too little O;-)
-
-
->  In general we don't need to set additional
-> limitations besides minimum, maximum and "minimal step".
-And that can/should be done in the userland.
-
-
-> > Are there any concerns/constraints with too small/too big chunks
-> > when
-> > these play together with lower block layers (I'd guess not).
+On Tue, 2016-01-05 at 15:34 +0000, Duncan wrote:
+> >What exactly was that bug in 4.1.1 mkfs and how would one notice
+> > that
+> > one suffers from it?
+> > I created a number of personal filesystems that I use
+> > "productively" and
+> > I'm not 100% sure during which version I've created them... :/
+> >=20
+> > Is there some easy way to find out, like a fs creation time stamp??
 >=20
-> I don't think so.
+> I believe a current btrfs check will flag the errors, but can't fix
+> them,=C2=A0
+> as the problem was in the filesystem creation and is simply too deep
+> to=C2=A0
+> fix, so the bad filesystems must be wiped and recreated with a
+> mkfs.btrfs=C2=A0
+> without the bug, to fix.
+If I didn't mix things up, there was a post by someone just few days
+ago, which showed the error that would pop up on fsck.
 
-Well I was mainly thinking about dm-crypt, that uses 512B blocks and in
-fact that size wouldn't be easy to change, as (IIRC) larger block sizes
-make XTS less secure.
-Obviously *this* isn't anything that btrfs would have to worry about,
-especially as we're anyway on a higher block layer level,.. but it just
-reminded me that there can be cases where too large / too small may
-actually cause issues.
+
+> the=C2=A0
+> people volunteering (directly or indirectly) to do that coding
+> scratch,=C2=A0
+> or choose not to scratch by spending their time and/or resources=C2=A0
+> elsewhere, their own itches in the priority they choose.
+Sure that,'s all clear.
+And obviously I didn't want to distract anyone from working on it. It's
+just if those people wouldn't care on which part of btrfs they're
+working,... than I'd have considered btrfs-convert rather just a nice-
+to have.
+
+
+> It's the same reason that I as a kde user who finds the gnome "dumb-
+> down"=C2=A0
+> approach horribly frustrating, remain extremely glad there's a gnome=C2=
+=A0
+> project for those who approve of that sort of approach to work on --=20
+I'd rather have wished that all those guys get hired by Apple or MS ;-)
 
 
 Cheers,
 Chris.
---=-Kx2v1mNHltaHowAS8Jo5
+--=-u+gqzKNChPoiLUuvtm7M
 Content-Type: application/x-pkcs7-signature; name="smime.p7s"
 Content-Disposition: attachment; filename="smime.p7s"
 Content-Transfer-Encoding: base64
@@ -152,25 +162,25 @@ Yeq6UTW/JmfxF4xcbkNK/rv9ISBg9K+mZtg2QXr+P/CJBtej2RLUMYIEfjCCBHoCAQEwgYkwdTEL
 MAkGA1UEBhMCSUwxFjAUBgNVBAoTDVN0YXJ0Q29tIEx0ZC4xKTAnBgNVBAsTIFN0YXJ0Q29tIENl
 cnRpZmljYXRpb24gQXV0aG9yaXR5MSMwIQYDVQQDExpTdGFydENvbSBDbGFzcyAyIENsaWVudCBD
 QQIQPZ6tDP/RHLwcz1F+2kRADzANBglghkgBZQMEAgMFAKCCAcUwGAYJKoZIhvcNAQkDMQsGCSqG
-SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTA1MTg0ODE3WjBPBgkqhkiG9w0BCQQxQgRA7ei9
-M8AQOTivff3MnpRnWT1jbtBQSlQsBP73VH8NjZEdkTdikt/EUO5g2AgxjGRQ2tCenxPeRMZoQm47
-YKKd3TCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
+SIb3DQEHATAcBgkqhkiG9w0BCQUxDxcNMTYwMTA1MTg1NDU3WjBPBgkqhkiG9w0BCQQxQgRA1N8d
+vP2cf+c5PHG9RejYd+opiZPq8Q5PEFEwl/Lo8qMe+L+VHUPewZJcLRF21+u/AMGqIf2Yulgn/9+3
+s8TLRzCBmgYJKwYBBAGCNxAEMYGMMIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENv
 bSBMdGQuMSkwJwYDVQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UE
 AxMaU3RhcnRDb20gQ2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wgZwGCyqGSIb3
 DQEJEAILMYGMoIGJMHUxCzAJBgNVBAYTAklMMRYwFAYDVQQKEw1TdGFydENvbSBMdGQuMSkwJwYD
 VQQLEyBTdGFydENvbSBDZXJ0aWZpY2F0aW9uIEF1dGhvcml0eTEjMCEGA1UEAxMaU3RhcnRDb20g
-Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAhcq9
-igCf+lyhx4pWPNCd3cA6ywvz33xCd2Ind/Kwg+3/o41N9UY+I43eNmsO8Hr+/jCa0+Pngs3zrTN3
-3NXIPrB6Pm266cn9BCAAtM7LnCAypyK4KB8UA4u012rDLZvvq/O6sTSghUdaXcVolGuC2L2v1vXX
-IVULF8uw0RSCYObNGMjcAODlnNGqX6HPBG3QPsz3iMu7RwhbzuUdhJ8HFmsSK8rPROoZrNcOPkdv
-DgZ3ObBvH/OkMBxBHgeHTNFsWsLH5izzq4/6LzerQ6fITdyGxEeu+CTdyUfyvQIE+jW9W1PmSbml
-8lYso4T2RtaOjLha4wk4szJ3CfMH0JQ3MsIfC26ctlDjuhNjIDdm1arMvyIGTQ6GK547bVZiG0hU
-KjSo6mIleOND0nJR/aaX03jLhX0R97B+KZASxpPNxxYWiFJVCkZwyf1MXKhyqOXAu3vkK9pA8s1u
-PfHHxHfiYoA7nSYeRpnkQu0NxaCmS8y++fhW++qvFl8KXbnmie//a+W20SIEhRJ5TfDJupwvEhfm
-cIMviqglmmZxA4oX3lqRWnt9Es/3VpBoNBx7ww2AveQjBlSI1HwlEWz1gMB0ATEMrd0eD2NCgSg4
-/5+LbxIjTpq52VShkKOUxzFLxcpbGwtOTM1wFzePfXSoFLZC5tzxbAUuin+8hByWC7t2ay4AAAAA
+Q2xhc3MgMiBDbGllbnQgQ0ECED2erQz/0Ry8HM9RftpEQA8wDQYJKoZIhvcNAQEBBQAEggIAZe0m
+22t5CRSjj28A3h/KN2DUmBIrhhPriLprIgBBM3frkx2Ii5X479mJW6Ey+nQp21K6sINDDHufGz4/
+9F4Qab1HDHp9wQ8Zbe9slTsGQhqo+vd7BpwDt67Z+MetcJs2RWmpweN5TW1tPk+d8iFxPHCFydhz
+FTl7+qksP4FQjYe5JBl9qlxarGGLl+3O868Zf1qttn3OBd70bbpekIy5u1PMCBsdsEB73IiKvV1c
+Vb18DRGfXVkyEK2lyDLN7vYiCeJOYsV1gjJuFlyJG3cBMibo7vmwoY8KArTEMYAI1fo0u5J9/XsK
+RoiXqjvzcSOl6DufyfyQgcb5B69NLRTgT+NbbtBIKOmTQ5Uxs6OMJv3VsLj0wRm1DTGkUnDRI6m8
+DTetnDKY/jfQs0bAu+yWwW9FnHocQXCyu5rt2I9cYBk2VudU4HbDgMBHpVIh/U666DMRSsFod+vB
+68xLvrpgfSzPgT6uQvLFTpKPBPd0kFl9+bVVrt/geTpy5M8X93iOQHHbnBGJfDqTEyEGxy840koi
+JfopVVnLsbNvkXPktTtYYKbrDvQB6/OxsQPWYXCBDEqN8chjE0zllI4aGYrgBZmFEF2pp+2kVh3t
+lsbIVH3SBXRnR5DDOjmONwohPY0c30PPPxvMWkQdOGK+3cS84D0PqSI/oooyRiVoTSvEyjwAAAAA
 AAA=
 
 
---=-Kx2v1mNHltaHowAS8Jo5--
+--=-u+gqzKNChPoiLUuvtm7M--
 

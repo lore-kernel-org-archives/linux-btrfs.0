@@ -1,8 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx1.redhat.com ([209.132.183.28]:34438 "EHLO mx1.redhat.com"
+Received: from mx1.redhat.com ([209.132.183.28]:55548 "EHLO mx1.redhat.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752769AbcAEUxw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jan 2016 15:53:52 -0500
+	id S1752497AbcAEUzO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 15:55:14 -0500
 From: mchristi@redhat.com
 To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -14,9 +14,9 @@ To: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
 Cc: Mike Christie <mchristi@redhat.com>
-Subject: [PATCH 02/35] block: add REQ_OP definitions and bi_op/op fields
-Date: Tue,  5 Jan 2016 14:53:05 -0600
-Message-Id: <1452027218-32303-3-git-send-email-mchristi@redhat.com>
+Subject: [PATCH 32/35] block: shrink bi_rw and bi_op
+Date: Tue,  5 Jan 2016 14:53:35 -0600
+Message-Id: <1452027218-32303-33-git-send-email-mchristi@redhat.com>
 In-Reply-To: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
 References: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
@@ -24,178 +24,183 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Mike Christie <mchristi@redhat.com>
 
-The following patches separate the operation (write, read, discard,
-etc) from the flags in bi_rw/cmd_flags. This patch adds definitions
-for request/bio operations, adds fields to the request/bio to set
-them, and some temporary compat code so the kernel/modules can use
-either one. In the final patches this compat code will be removed
-when everything is converted.
-
-Also, in this patch the REQ_OPs match the REQ rq_flag_bits ones
-for compat reasons while all the code is converted in this set. In the
-last patches that will also be removed.
+There is no need for bi_op/op and bi_rw to be so large
+now, so this patch shrinks them.
 
 Signed-off-by: Mike Christie <mchristi@redhat.com>
 ---
- block/blk-core.c          | 19 ++++++++++++++++---
- include/linux/blk_types.h | 15 ++++++++++++++-
- include/linux/blkdev.h    |  1 +
- include/linux/fs.h        | 37 +++++++++++++++++++++++++++++++++++--
- 4 files changed, 66 insertions(+), 6 deletions(-)
+ block/blk-core.c           |  2 +-
+ drivers/md/dm-flakey.c     |  2 +-
+ drivers/md/raid5.c         | 13 +++++++------
+ fs/btrfs/check-integrity.c |  4 ++--
+ fs/btrfs/inode.c           |  2 +-
+ include/linux/bio.h        | 13 ++-----------
+ include/linux/blk_types.h  | 11 +++--------
+ include/linux/blkdev.h     |  2 +-
+ 8 files changed, 18 insertions(+), 31 deletions(-)
 
 diff --git a/block/blk-core.c b/block/blk-core.c
-index 9b887e3..954a450 100644
+index 0f6cb5c..ae2afab 100644
 --- a/block/blk-core.c
 +++ b/block/blk-core.c
-@@ -1697,7 +1697,8 @@ void init_request_from_bio(struct request *req, struct bio *bio)
- {
- 	req->cmd_type = REQ_TYPE_FS;
+@@ -1854,7 +1854,7 @@ static void handle_bad_sector(struct bio *bio)
+ 	char b[BDEVNAME_SIZE];
  
--	req->cmd_flags |= bio->bi_rw & REQ_COMMON_MASK;
-+	/* tmp compat. Allow users to set bi_op or bi_rw */
-+	req->cmd_flags |= (bio->bi_rw | bio->bi_op) & REQ_COMMON_MASK;
- 	if (bio->bi_rw & REQ_RAHEAD)
- 		req->cmd_flags |= REQ_FAILFAST_MASK;
+ 	printk(KERN_INFO "attempt to access beyond end of device\n");
+-	printk(KERN_INFO "%s: rw=%d,%ld, want=%Lu, limit=%Lu\n",
++	printk(KERN_INFO "%s: rw=%d,%u, want=%Lu, limit=%Lu\n",
+ 			bdevname(bio->bi_bdev, b),
+ 			bio->bi_op, bio->bi_rw,
+ 			(unsigned long long)bio_end_sector(bio),
+diff --git a/drivers/md/dm-flakey.c b/drivers/md/dm-flakey.c
+index 09e2afc..b831226 100644
+--- a/drivers/md/dm-flakey.c
++++ b/drivers/md/dm-flakey.c
+@@ -266,7 +266,7 @@ static void corrupt_bio_data(struct bio *bio, struct flakey_c *fc)
+ 		data[fc->corrupt_bio_byte - 1] = fc->corrupt_bio_value;
  
-@@ -2032,6 +2033,12 @@ blk_qc_t generic_make_request(struct bio *bio)
- 	struct bio_list bio_list_on_stack;
- 	blk_qc_t ret = BLK_QC_T_NONE;
+ 		DMDEBUG("Corrupting data bio=%p by writing %u to byte %u "
+-			"(rw=%c bi_rw=%lu bi_sector=%llu cur_bytes=%u)\n",
++			"(rw=%c bi_rw=%u bi_sector=%llu cur_bytes=%u)\n",
+ 			bio, fc->corrupt_bio_value, fc->corrupt_bio_byte,
+ 			(bio_data_dir(bio) == WRITE) ? 'w' : 'r', bio->bi_rw,
+ 			(unsigned long long)bio->bi_iter.bi_sector, bio_bytes);
+diff --git a/drivers/md/raid5.c b/drivers/md/raid5.c
+index fa4fe95..aafd49e 100644
+--- a/drivers/md/raid5.c
++++ b/drivers/md/raid5.c
+@@ -1015,9 +1015,9 @@ again:
+ 				: raid5_end_read_request;
+ 			bi->bi_private = sh;
  
-+	/* tmp compat. Allow users to set either one or both.
-+	 * This will be removed when we have converted
-+	 * everyone in the next patches.
-+	 */
-+	bio->bi_rw |= bio->bi_op;
-+
- 	if (!generic_make_request_checks(bio))
- 		goto out;
+-			pr_debug("%s: for %llu schedule op %ld on disc %d\n",
++			pr_debug("%s: for %llu schedule op %d,%u on disc %d\n",
+ 				__func__, (unsigned long long)sh->sector,
+-				bi->bi_rw, i);
++				bi->bi_op, bi->bi_rw, i);
+ 			atomic_inc(&sh->count);
+ 			if (sh != head_sh)
+ 				atomic_inc(&head_sh->count);
+@@ -1067,10 +1067,10 @@ again:
+ 			rbi->bi_end_io = raid5_end_write_request;
+ 			rbi->bi_private = sh;
  
-@@ -2101,6 +2108,12 @@ EXPORT_SYMBOL(generic_make_request);
-  */
- blk_qc_t submit_bio(struct bio *bio)
- {
-+	/* tmp compat. Allow users to set either one or both.
-+	 * This will be removed when we have converted
-+	 * everyone in the next patches.
-+	 */
-+	bio->bi_rw |= bio->bi_op;
-+
- 	/*
- 	 * If it's a regular read/write or a barrier with data attached,
- 	 * go through the normal accounting stuff before submission.
-@@ -2972,8 +2985,8 @@ EXPORT_SYMBOL_GPL(__blk_end_request_err);
- void blk_rq_bio_prep(struct request_queue *q, struct request *rq,
- 		     struct bio *bio)
- {
--	/* Bit 0 (R/W) is identical in rq->cmd_flags and bio->bi_rw */
--	rq->cmd_flags |= bio->bi_rw & REQ_WRITE;
-+	/* tmp compat. Allow users to set bi_op or bi_rw */
-+	rq->cmd_flags |= bio_data_dir(bio);
+-			pr_debug("%s: for %llu schedule op %ld on "
++			pr_debug("%s: for %llu schedule op %d,%u on "
+ 				 "replacement disc %d\n",
+ 				__func__, (unsigned long long)sh->sector,
+-				rbi->bi_rw, i);
++				rbi->bi_op, rbi->bi_rw, i);
+ 			atomic_inc(&sh->count);
+ 			if (sh != head_sh)
+ 				atomic_inc(&head_sh->count);
+@@ -1102,8 +1102,9 @@ again:
+ 		if (!rdev && !rrdev) {
+ 			if (op_is_write(op))
+ 				set_bit(STRIPE_DEGRADED, &sh->state);
+-			pr_debug("skip op %ld on disc %d for sector %llu\n",
+-				bi->bi_rw, i, (unsigned long long)sh->sector);
++			pr_debug("skip op %d,%u on disc %d for sector %llu\n",
++				 bi->bi_op, bi->bi_rw, i,
++				 (unsigned long long)sh->sector);
+ 			clear_bit(R5_LOCKED, &sh->dev[i].flags);
+ 			set_bit(STRIPE_HANDLE, &sh->state);
+ 		}
+diff --git a/fs/btrfs/check-integrity.c b/fs/btrfs/check-integrity.c
+index e409d1f..1623d11 100644
+--- a/fs/btrfs/check-integrity.c
++++ b/fs/btrfs/check-integrity.c
+@@ -2985,7 +2985,7 @@ static void __btrfsic_submit_bio(struct bio *bio)
+ 		if (dev_state->state->print_mask &
+ 		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
+ 			printk(KERN_INFO
+-			       "submit_bio(rw=%d,0x%lx, bi_vcnt=%u,"
++			       "submit_bio(rw=%d,0x%x, bi_vcnt=%u,"
+ 			       " bi_sector=%llu (bytenr %llu), bi_bdev=%p)\n",
+ 			       bio->bi_op, bio->bi_rw, bio->bi_vcnt,
+ 			       (unsigned long long)bio->bi_iter.bi_sector,
+@@ -3028,7 +3028,7 @@ static void __btrfsic_submit_bio(struct bio *bio)
+ 		if (dev_state->state->print_mask &
+ 		    BTRFSIC_PRINT_MASK_SUBMIT_BIO_BH)
+ 			printk(KERN_INFO
+-			       "submit_bio(rw=%d,0x%lx FLUSH, bdev=%p)\n",
++			       "submit_bio(rw=%d,0x%x FLUSH, bdev=%p)\n",
+ 			       bio->bi_op, bio->bi_rw, bio->bi_bdev);
+ 		if (!dev_state->dummy_block_for_bio_bh_flush.is_iodone) {
+ 			if ((dev_state->state->print_mask &
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index a96984f..b9c3799 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -8061,7 +8061,7 @@ static void btrfs_end_dio_bio(struct bio *bio)
  
- 	if (bio_has_data(bio))
- 		rq->nr_phys_segments = bio_phys_segments(q, bio);
+ 	if (err)
+ 		btrfs_warn(BTRFS_I(dip->inode)->root->fs_info,
+-			   "direct IO failed ino %llu rw %d,%lu sector %#Lx len %u err no %d",
++			   "direct IO failed ino %llu rw %d,0x%x sector %#Lx len %u err no %d",
+ 			   btrfs_ino(dip->inode), bio->bi_op, bio->bi_rw,
+ 			   (unsigned long long)bio->bi_iter.bi_sector,
+ 			   bio->bi_iter.bi_size, err);
+diff --git a/include/linux/bio.h b/include/linux/bio.h
+index 1e4b3b5..c91afc1 100644
+--- a/include/linux/bio.h
++++ b/include/linux/bio.h
+@@ -44,18 +44,9 @@
+ #define BIO_MAX_SIZE		(BIO_MAX_PAGES << PAGE_CACHE_SHIFT)
+ #define BIO_MAX_SECTORS		(BIO_MAX_SIZE >> 9)
+ 
+-/*
+- * upper 16 bits of bi_rw define the io priority of this bio
+- */
+-#define BIO_PRIO_SHIFT	(8 * sizeof(unsigned long) - IOPRIO_BITS)
+-#define bio_prio(bio)	((bio)->bi_rw >> BIO_PRIO_SHIFT)
++#define bio_prio(bio)		(bio)->bi_ioprio
+ #define bio_prio_valid(bio)	ioprio_valid(bio_prio(bio))
+-
+-#define bio_set_prio(bio, prio)		do {			\
+-	WARN_ON(prio >= (1 << IOPRIO_BITS));			\
+-	(bio)->bi_rw &= ((1UL << BIO_PRIO_SHIFT) - 1);		\
+-	(bio)->bi_rw |= ((unsigned long) (prio) << BIO_PRIO_SHIFT);	\
+-} while (0)
++#define bio_set_prio(bio, prio)	((bio)->bi_ioprio = prio)
+ 
+ /*
+  * various member access, note that bio_data should of course not be used
 diff --git a/include/linux/blk_types.h b/include/linux/blk_types.h
-index 86a38ea..6e49c91 100644
+index bb30c2b..5d19b393 100644
 --- a/include/linux/blk_types.h
 +++ b/include/linux/blk_types.h
-@@ -48,9 +48,15 @@ struct bio {
+@@ -48,14 +48,9 @@ struct bio {
  	struct block_device	*bi_bdev;
  	unsigned int		bi_flags;	/* status, command, etc */
  	int			bi_error;
--	unsigned long		bi_rw;		/* bottom bits READ/WRITE,
-+	unsigned long		bi_rw;		/* bottom bits rq_flags_bits
- 						 * top bits priority
- 						 */
-+	/*
-+	 * this will be a u8 in the next patches and bi_rw can be shrunk to
-+	 * a u32. For compat in these transistional patches op is a int here.
-+	 */
-+	int			bi_op;		/* REQ_OP */
-+
+-	unsigned long		bi_rw;		/* bottom bits rq_flags_bits
+-						 * top bits priority
+-						 */
+-	/*
+-	 * this will be a u8 in the next patches and bi_rw can be shrunk to
+-	 * a u32. For compat in these transistional patches op is a int here.
+-	 */
+-	int			bi_op;		/* REQ_OP */
++	unsigned int		bi_rw;		/* rq_flag_bits */
++	unsigned short		bi_ioprio;
++	u8			bi_op;		/* REQ_OP */
+ 
  
  	struct bvec_iter	bi_iter;
- 
-@@ -242,6 +248,13 @@ enum rq_flag_bits {
- #define REQ_HASHED		(1ULL << __REQ_HASHED)
- #define REQ_MQ_INFLIGHT		(1ULL << __REQ_MQ_INFLIGHT)
- 
-+enum req_op {
-+	REQ_OP_READ,
-+	REQ_OP_WRITE		= REQ_WRITE,
-+	REQ_OP_DISCARD		= REQ_DISCARD,
-+	REQ_OP_WRITE_SAME	= REQ_WRITE_SAME,
-+};
-+
- typedef unsigned int blk_qc_t;
- #define BLK_QC_T_NONE	-1U
- #define BLK_QC_T_SHIFT	16
 diff --git a/include/linux/blkdev.h b/include/linux/blkdev.h
-index 29189ae..35b9eb3 100644
+index bc024c7..83d6f033 100644
 --- a/include/linux/blkdev.h
 +++ b/include/linux/blkdev.h
-@@ -96,6 +96,7 @@ struct request {
+@@ -96,7 +96,7 @@ struct request {
  	struct request_queue *q;
  	struct blk_mq_ctx *mq_ctx;
  
-+	int op;
+-	int op;
++	u8 op;
  	u64 cmd_flags;
  	unsigned cmd_type;
  	unsigned long atomic_flags;
-diff --git a/include/linux/fs.h b/include/linux/fs.h
-index 3b4e751..fb9e516 100644
---- a/include/linux/fs.h
-+++ b/include/linux/fs.h
-@@ -2405,15 +2405,48 @@ extern void make_bad_inode(struct inode *);
- extern bool is_bad_inode(struct inode *);
- 
- #ifdef CONFIG_BLOCK
-+
-+static inline bool op_is_write(int op)
-+{
-+	switch (op) {
-+	case REQ_OP_WRITE:
-+	case REQ_OP_WRITE_SAME:
-+	case REQ_OP_DISCARD:
-+		return true;
-+	default:
-+		return false;
-+	}
-+}
-+
- /*
-  * return READ, READA, or WRITE
-  */
--#define bio_rw(bio)		((bio)->bi_rw & (RW_MASK | RWA_MASK))
-+static inline int bio_rw(struct bio *bio)
-+{
-+	/*
-+	 * tmp cpmpat. Allow users to set either op or rw, until
-+	 * all code is converted in the next patches.
-+	 */
-+	if (op_is_write(bio->bi_op))
-+		return WRITE;
-+
-+	return bio->bi_rw & (RW_MASK | RWA_MASK);
-+}
- 
- /*
-  * return data direction, READ or WRITE
-  */
--#define bio_data_dir(bio)	((bio)->bi_rw & 1)
-+static inline int bio_data_dir(struct bio *bio)
-+{
-+	/*
-+	 * tmp cpmpat. Allow users to set either op or rw, until
-+	 * all code is converted in the next patches.
-+	 */
-+	if (op_is_write(bio->bi_op))
-+		return WRITE;
-+
-+	return bio->bi_rw & 1;
-+}
- 
- extern void check_disk_size_change(struct gendisk *disk,
- 				   struct block_device *bdev);
 -- 
 1.8.3.1
 

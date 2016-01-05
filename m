@@ -1,138 +1,35 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:32983 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:36042 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754303AbcAHLDY (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Jan 2016 06:03:24 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH v3] Btrfs: fix fitrim discarding device area reserved for boot loader's use
-Date: Thu,  7 Jan 2016 21:21:10 +0000
-Message-Id: <1452201673-29033-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1452121064-15594-1-git-send-email-fdmanana@kernel.org>
-References: <1452121064-15594-1-git-send-email-fdmanana@kernel.org>
+	id S1751445AbcAEOOr (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 09:14:47 -0500
+Date: Tue, 5 Jan 2016 15:12:25 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] Btrfs: fix output of compression message in
+ btrfs_parse_options()
+Message-ID: <20160105141225.GB4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <201512160257.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <201512160257.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Dec 16, 2015 at 11:57:38AM +0900, Tsutomu Itoh wrote:
+> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
+> index 974be09..dcc1f15 100644
+> --- a/fs/btrfs/disk-io.c
+> +++ b/fs/btrfs/disk-io.c
+> @@ -2709,7 +2709,7 @@ int open_ctree(struct super_block *sb,
+>  	 * In the long term, we'll store the compression type in the super
+>  	 * block, and it'll be used for per file compression control.
+>  	 */
+> -	fs_info->compress_type = BTRFS_COMPRESS_ZLIB;
+> +	fs_info->compress_type = BTRFS_COMPRESS_NONE;
 
-As of the 4.3 kernel release, the fitrim ioctl can now discard any region
-of a disk that is not allocated to any chunk/block group, including the
-first megabyte which is used for our primary superblock and by the boot
-loader (grub for example).
-
-Fix this by not allowing to trim/discard any region in the device starting
-with an offset not greater than min(alloc_start_mount_option, 1Mb), just
-as it was not possible before 4.3.
-
-A reproducer test case for xfstests follows.
-
-  seq=`basename $0`
-  seqres=$RESULT_DIR/$seq
-  echo "QA output created by $seq"
-  tmp=/tmp/$$
-  status=1	# failure is the default!
-  trap "_cleanup; exit \$status" 0 1 2 3 15
-
-  _cleanup()
-  {
-      cd /
-      rm -f $tmp.*
-  }
-
-  # get standard environment, filters and checks
-  . ./common/rc
-  . ./common/filter
-
-  # real QA test starts here
-  _need_to_be_root
-  _supported_fs btrfs
-  _supported_os Linux
-  _require_scratch
-
-  rm -f $seqres.full
-
-  _scratch_mkfs >>$seqres.full 2>&1
-
-  # Write to the [0, 64Kb[ and [68Kb, 1Mb[ ranges of the device. These ranges are
-  # reserved for a boot loader to use (GRUB for example) and btrfs should never
-  # use them - neither for allocating metadata/data nor should trim/discard them.
-  # The range [64Kb, 68Kb[ is used for the primary superblock of the filesystem.
-  $XFS_IO_PROG -c "pwrite -S 0xfd 0 64K" $SCRATCH_DEV | _filter_xfs_io
-  $XFS_IO_PROG -c "pwrite -S 0xfd 68K 956K" $SCRATCH_DEV | _filter_xfs_io
-
-  # Now mount the filesystem and perform a fitrim against it.
-  _scratch_mount
-  _require_batched_discard $SCRATCH_MNT
-  $FSTRIM_PROG $SCRATCH_MNT
-
-  # Now unmount the filesystem and verify the content of the ranges was not
-  # modified (no trim/discard happened on them).
-  _scratch_unmount
-  echo "Content of the ranges [0, 64Kb] and [68Kb, 1Mb[ after fitrim:"
-  od -t x1 -N $((64 * 1024)) $SCRATCH_DEV
-  od -t x1 -j $((68 * 1024)) -N $((956 * 1024)) $SCRATCH_DEV
-
-  status=0
-  exit
-
-Reported-by: Vincent Petry  <PVince81@yahoo.fr>
-Reported-by: Andrei Borzenkov <arvidjaar@gmail.com>
-Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=109341
-Fixes: 499f377f49f0 (btrfs: iterate over unused chunk space in FITRIM)
-Cc: stable@vger.kernel.org # 4.3+
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
-
-V2: Fix possiblity of endless loop with fitrim call.
-V3: Updated title (used to be "Btrfs: fix regression that makes fitrim ioctl
-    discard a device's MBR" in v2 and v1) and changelog to be less confusing.
-    They used MBR to refer to sectors that store boot loader's additional code
-    which is not the correct terminology.
-
- fs/btrfs/volumes.c | 20 ++++++++++----------
- 1 file changed, 10 insertions(+), 10 deletions(-)
-
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a114b7b..b0a0eb2 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -1258,6 +1258,15 @@ int find_free_dev_extent_start(struct btrfs_transaction *transaction,
- 	int ret;
- 	int slot;
- 	struct extent_buffer *l;
-+	u64 min_search_start;
-+
-+	/*
-+	 * We don't want to overwrite the superblock on the drive nor any area
-+	 * used by the boot loader (grub for example), so we make sure to start
-+	 * at an offset of at least 1MB.
-+	 */
-+	min_search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
-+	search_start = max(search_start, min_search_start);
- 
- 	path = btrfs_alloc_path();
- 	if (!path)
-@@ -1398,18 +1407,9 @@ int find_free_dev_extent(struct btrfs_trans_handle *trans,
- 			 struct btrfs_device *device, u64 num_bytes,
- 			 u64 *start, u64 *len)
- {
--	struct btrfs_root *root = device->dev_root;
--	u64 search_start;
--
- 	/* FIXME use last free of some kind */
--
--	/*
--	 * we don't want to overwrite the superblock on the drive,
--	 * so we make sure to start at an offset of at least 1MB
--	 */
--	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
- 	return find_free_dev_extent_start(trans->transaction, device,
--					  num_bytes, search_start, start, len);
-+					  num_bytes, 0, start, len);
- }
- 
- static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
--- 
-2.1.3
-
+This would change the default compression type, eg. when the compression
+is turned on via chattr +c . This would break the applications out
+there, the fix has to avoid changing that.

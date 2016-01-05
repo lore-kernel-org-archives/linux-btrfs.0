@@ -1,56 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:52395 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:52794 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751572AbcAEKfV (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jan 2016 05:35:21 -0500
-Date: Tue, 5 Jan 2016 11:33:00 +0100
+	id S1752249AbcAEKrP (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 5 Jan 2016 05:47:15 -0500
+Date: Tue, 5 Jan 2016 11:44:55 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Sanidhya Solanki <jpage.lkml@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, Qu Wenruo <quwenruo.btrfs@gmx.com>,
-        calestyo@scientia.net, clm@fb.com, jbacik@fb.com,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+To: Christoph Anton Mitterer <calestyo@scientia.net>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>,
+        Sanidhya Solanki <jpage.lkml@gmail.com>,
+        David Sterba <dsterba@suse.cz>, clm@fb.com, jbacik@fb.com,
+        linux-btrfs@vger.kernel.org
 Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
-Message-ID: <20160105103300.GR4227@twin.jikos.cz>
+Message-ID: <20160105104455.GS4227@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
-References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
- <20151229133907.GA4227@suse.cz>
- <20151229061512.79a41f31@gmail.com>
- <20151229170611.GB4227@suse.cz>
- <20151230013946.7c1f0e12@gmail.com>
- <5683C714.4040705@gmx.com>
- <20151230045449.7a6c14db@gmail.com>
- <5683E5E4.5010006@gmx.com>
- <20151230161722.GF4227@twin.jikos.cz>
- <20151230162147.7b95c7a7@gmail.com>
+References: <20151228153801.6561feff@gmail.com>
+ <1451352069.7094.3.camel@scientia.net>
+ <20151228164333.2b8d8336@gmail.com>
+ <1451360528.7094.7.camel@scientia.net>
+ <20151228190336.59a3f440@gmail.com>
+ <1451363188.7094.23.camel@scientia.net>
+ <20151229180643.GD4227@twin.jikos.cz>
+ <20160102065207.4eec760a@gmail.com>
+ <56887B40.10105@gmx.com>
+ <1451787985.6645.12.camel@scientia.net>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20151230162147.7b95c7a7@gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <1451787985.6645.12.camel@scientia.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Dec 30, 2015 at 04:21:47PM -0500, Sanidhya Solanki wrote:
-> On Wed, 30 Dec 2015 17:17:22 +0100
-> David Sterba <dsterba@suse.cz> wrote:
+On Sun, Jan 03, 2016 at 03:26:25AM +0100, Christoph Anton Mitterer wrote:
+> On Sun, 2016-01-03 at 09:37 +0800, Qu Wenruo wrote:
+> > And since you are making the stripe size configurable, then user is 
+> > responsible for any too large or too small stripe size setting.
+> That pops up the questions, which raid chunk sizes the kernel,
+> respectively the userland tools should allow for btrfs...
 > 
-> > Let me note that a good reputation is also built from patch reviews
-> > (hint hint).
-> 
-> Unfortunately, not too many patches coming in for BTRFS presently.
-> Mailing list activity is down to 25-35 mails per day. Mostly feature
-> and bug requests.
-> 
-> I will try to pitch in with patch reviews where possible.
+> I'd guess only powers of 2, some minimum, some maximum.
 
-It was not meant specifically to you, but I won't discourage you from
-doing reviews of course. The period where a review is expected can vary
-and is bound to the development cycle of kernel. At the latest, they
-should come before the integration branch is put togheter (before the
-merge window), and for the rc's it's before the next schedule (less than
-a week).
+We have a full 32 bit number space, so multiples of power of 2 are also
+possible if that makes sense. In general we don't need to set additional
+limitations besides minimum, maximum and "minimal step".
 
-The reviewed-by tag has a real meaning and weight in the community
+> Are there any concerns/constraints with too small/too big chunks when
+> these play together with lower block layers (I'd guess not).
 
-http://lxr.free-electrons.com/source/Documentation/SubmittingPatches#L552
-
-and besides that, subscribes the person to the blame game and can cause
-bad feelings if the code turns out to be buggy later on.
+I don't think so.

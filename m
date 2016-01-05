@@ -1,67 +1,74 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f195.google.com ([209.85.217.195]:34141 "EHLO
-	mail-lb0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751645AbcAENlo (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 08:41:44 -0500
-Received: by mail-lb0-f195.google.com with SMTP id jk7so14527402lbc.1
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2016 05:41:43 -0800 (PST)
+Received: from mail-wm0-f43.google.com ([74.125.82.43]:33131 "EHLO
+	mail-wm0-f43.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751645AbcAEOF1 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 09:05:27 -0500
+Date: Tue, 5 Jan 2016 05:03:27 -0500
+From: Sanidhya Solanki <jpage.lkml@gmail.com>
+To: David Sterba <dsterba@suse.cz>
+Cc: clm@fb.com, jbacik@fb.com, dsterba@suse.com, linux-kernel@vger.kernel.org,
+        linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] BTRFS: Runs the xor function if a Block has failed
+Message-ID: <20160105050327.1ff85a20@gmail.com>
+In-Reply-To: <20160105092236.GO4227@twin.jikos.cz>
+References: <1451456916-16520-1-git-send-email-jpage.lkml@gmail.com>
+	<20151230171826.GG4227@twin.jikos.cz>
+	<20151230211544.32bc337e@gmail.com>
+	<20160105092236.GO4227@twin.jikos.cz>
 MIME-Version: 1.0
-In-Reply-To: <568B2304.8090205@cn.fujitsu.com>
-References: <20160104170553.GA4975@localhost>
-	<568B2304.8090205@cn.fujitsu.com>
-Date: Tue, 5 Jan 2016 13:41:42 +0000
-Message-ID: <CAP-bSRYB4mH1TK9uQnHQaMazxOnMcmCYkhF9xXmrVHPbveZLQQ@mail.gmail.com>
-Subject: Re: Crash, boot mount failure: "corrupt leaf, slot offset bad"
-From: Chris Bainbridge <chris.bainbridge@gmail.com>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 5 January 2016 at 01:57, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->>
->> Data, single: total=106.79GiB, used=82.01GiB
->> System, single: total=4.00MiB, used=16.00KiB
->> Metadata, single: total=2.01GiB, used=1.51GiB
->> GlobalReserve, single: total=512.00MiB, used=0.00B
->
->
-> That's the btrfs fi df misleading output confusing you.
->
-> In fact, your metadata is already used up without available space.
-> GlobalReserve should also be counted as Metadata *used* space.
+On Tue, 5 Jan 2016 10:22:36 +0100
+David Sterba <dsterba@suse.cz> wrote:
 
-Thanks for the explanation - the FAQ[1] misleads when it describes
-GlobalReserve as "The block reserve is only virtual and is not stored
-on the devices." - which sounds like the reserve is literally not
-stored on the drive.
+> If the data a rerecovered, why is -EIO still returned? 
 
-The FAQ[2] also suggests that the free space in metadata can be less
-than the block reserve total:
+In the other places in the file where the code appears, the submitted
+patch is all that is required to do the xor. I think we also need to
+include the following line:
+memcpy(pointers[nr_data], pointers[0], PAGE_SIZE);
+and delete the "return EIO" statement which I believe appears to be a
+placeholder for the xor function.
+In the end the final patch should look something like this:
+> -					 * TODO, we should redo the xor here.
+>  					 */
+> +					memcpy(pointers[nr_data], pointers[0], PAGE_SIZE);
+> +					run_xor(pointers, rbio->nr_data - 1, PAGE_CACHE_SIZE); 
+> - err = -EIO;
 
-"If the free space in metadata is less than or equal to the block
-reserve value (typically 512 MiB, but might be something else on a
-particularly small or large filesystem), then it's close to full."
+So, I was just going to send you the mail as it is written above, but I
+decided to investigate. The commit in question that added the todo was
+53b381b3abeb86f12787a6c40fee9b2f71edc23b. Unfortunately, it was not
+submitted  by the original author, nor was it by any means a small
+dedicated patch. It adds the entire file, without much comment or
+explanation and has not been touched since. 
 
-But what you are saying is that this is wrong and the free space in
-metadata can never be less than the block reserve, because the block
-reserve includes the metadata free space?
+However, we can get some idea of what is expected by looking at line
+2398 in raid56.c, where a similar case of raid 5 recovery is handled.
 
-[1] https://btrfs.wiki.kernel.org/index.php/FAQ#What_is_the_GlobalReserve_and_why_does_.27btrfs_fi_df.27_show_it_as_single_even_on_RAID_filesystems.3F
-[2] https://btrfs.wiki.kernel.org/index.php/FAQ#if_your_device_is_large_.28.3E16GiB.29
+So what the patch described above does is deal with a scenario where
+no q stripe or bad data block exists, and, we can only rebuild from the
+p-stripe, in effect like a raid 5 recovery.
 
-> Good, 5GiB freed space, it can be allocated for metadata to slightly reduce
-> the metadata pressure.
->
-> But not for long.
-> The root resolve will be, add more space into this btrfs.
+So, if you are satisfied with the above retouched change, I can modify
+my original patch with your suggestions and my changes, and, I can
+forward them to the list again.
 
-Yes but this is a 128GB SSD and metadata could have been reallocated
-from some of the 25GB of free space allocated to data. Even with a
-bigger drive, it is possible that chunks could be allocated to data,
-and then later operations requiring more metadata will still run out
-(running out of metadata space seems to be a reasonably common
-occurrence judging by the number of "why is btrfs reporting no space
-when I have space free" questions). The file system shouldn't be
-corrupted when that happens.
+> Also, I see some post-recovery steps eg. for the damaged P stripes
+> (at label pstripes) and I'd expect something similar for the case
+> you're fixing.
+
+I believe that is the case because the other cases still have the q-
+stripe available tor rebuild from, which requires cleanup afterwards,
+but the raid5-like scenario above does not. Let me know if anything
+else is needed.
+
+> I'm not familiar with the raid56 implementation but the fix looks
+> suspiciously trivial and I doubt that the xor was omitted out of
+> laziness.
+
+I guess we will never know.
+
+Thanks

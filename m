@@ -1,52 +1,59 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f180.google.com ([209.85.213.180]:37818 "EHLO
-	mail-ig0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751440AbcAEMic (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 07:38:32 -0500
-Received: by mail-ig0-f180.google.com with SMTP id to18so11189807igc.0
-        for <linux-btrfs@vger.kernel.org>; Tue, 05 Jan 2016 04:38:32 -0800 (PST)
-Subject: Re: Replace a corrupted block using a known-good file from another
- filesystem ?
-To: Sylvain Joyeux <sylvain.joyeux@m4x.org>, linux-btrfs@vger.kernel.org
-References: <CAFENT7KXjVBa0n16=FuWhK6xvgFZ7N5GdH_dVufaZbsx9wmeNA@mail.gmail.com>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <568BB911.4010803@gmail.com>
-Date: Tue, 5 Jan 2016 07:37:37 -0500
+Received: from mail.palepurple.co.uk ([89.16.183.188]:45159 "EHLO
+	mail.palepurple.co.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751614AbcAENEa (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 08:04:30 -0500
+Received: from localhost (localhost [127.0.0.1])
+	by mail.palepurple.co.uk (Postfix) with ESMTP id 3B5458334
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Jan 2016 13:04:29 +0000 (GMT)
+Received: from mail.palepurple.co.uk ([127.0.0.1])
+	by localhost (mail.palepurple.co.uk [127.0.0.50]) (amavisd-new, port 10024)
+	with ESMTP id Z0uk71vq9Hiq for <linux-btrfs@vger.kernel.org>;
+	Tue,  5 Jan 2016 13:04:29 +0000 (GMT)
+Received: from [172.30.33.200] (host81-133-46-190.in-addr.btopenworld.com [81.133.46.190])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: david@palepurple.co.uk)
+	by mail.palepurple.co.uk (Postfix) with ESMTPSA id 00E0D8111
+	for <linux-btrfs@vger.kernel.org>; Tue,  5 Jan 2016 13:04:28 +0000 (GMT)
+To: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+From: David Goodwin <david@codepoets.co.uk>
+Subject: device removal seems to be very slow (kernel 4.1.15)
+Message-ID: <568BBF5D.40304@codepoets.co.uk>
+Date: Tue, 5 Jan 2016 13:04:29 +0000
 MIME-Version: 1.0
-In-Reply-To: <CAFENT7KXjVBa0n16=FuWhK6xvgFZ7N5GdH_dVufaZbsx9wmeNA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-01-05 07:25, Sylvain Joyeux wrote:
-> In the course of the few btrfs crashes I had on my USB backup drive
-> (NOT the drive from my other bug report, which is an internal SATA
-> drive) - in the last 6 months or so - I ended up having a 4 to 5 bad
-> checksums reported by scrub.
->
-> This drive is used to synchronize snapshots from my main machine, and
-> the corrupted files are system files that are still present on the
-> main machine.
->
-> I could obviously reset the filesystem on the USB drive, but since the
-> goal is to keep a backup history (which the main machine does not
-> keep), I would rather avoid that.
->
-> Would there be a way to replace the bad blocks using the good file on
-> the main filesystem ? Replacing it in each snapshot separately does
-> not look very appealing as the file is present on most of them.
-Short of manually modifying the underlying block device directly, there 
-really isn't much you can do.  However, if the file is in the same place 
-in every snapshot, it should be really easy to script from the command 
-line with a simple for loop.  Assuming that the file is /bin/bash, the 
-following should work if run from the directory containing the snapshots 
-(assuming of course that the snapshots are read-only, if not you can 
-just remove both of the btrfs property set lines):
+Using btrfs progs 4.3.1 on a Vanilla kernel.org 4.1.15 kernel.
 
-for snapshot in * ; do
-     btrfs property set ${snapshot} ro false
-     cp /bin/bash ${snapshot}/bin/bash
-     btrfs property set ${snapshot} ro true
-done
+time btrfs device delete /dev/xvdh /backups
 
-You can of course replace /bin/bash in that with any file.
+real    13936m56.796s
+user    0m0.000s
+sys     1351m48.280s
+
+
+(which is about 9 days).
+
+
+Where :
+
+/dev/xvdh was 120gb in size.
+
+
+/backups is a single / "raid 0" volume that now looks like :
+
+Label: 'BACKUP_BTRFS_SNAPS'  uuid: 6ee08c31-f310-4890-8424-b88bb77186ed
+	Total devices 3 FS bytes used 301.09GiB
+	devid    1 size 100.00GiB used 90.00GiB path /dev/xvdg
+	devid    3 size 220.00GiB used 196.06GiB path /dev/xvdi
+	devid    4 size 221.00GiB used 59.06GiB path /dev/xvdj
+
+
+There are about 400 snapshots on it.
+
+
+thanks
+David.

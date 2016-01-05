@@ -1,28 +1,24 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f49.google.com ([209.85.215.49]:32771 "EHLO
-	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753472AbcAEAUX (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jan 2016 19:20:23 -0500
-Received: by mail-lf0-f49.google.com with SMTP id p203so287295954lfa.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 04 Jan 2016 16:20:22 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <CAFENT7K4ir7xNXw=a-=6v=WMyf-3AkGVpgT4ivV=CS54qPp9kg@mail.gmail.com>
-References: <CAFENT7K4ir7xNXw=a-=6v=WMyf-3AkGVpgT4ivV=CS54qPp9kg@mail.gmail.com>
-Date: Tue, 5 Jan 2016 01:20:21 +0100
-Message-ID: <CAPmG0ja0T2rq5E=pCBS+9xGpk4LWvo9Bfr1cGZ_z0hwnPSmW_Q@mail.gmail.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:48670 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1753688AbcAEBSh (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Mon, 4 Jan 2016 20:18:37 -0500
 Subject: Re: Computer freezes, btrfs check reports bad extent ... type
  mismatch with chunk
-From: Henk Slager <eye1tm@gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+To: Sylvain Joyeux <sylvain.joyeux@m4x.org>, <linux-btrfs@vger.kernel.org>
+References: <CAFENT7K4ir7xNXw=a-=6v=WMyf-3AkGVpgT4ivV=CS54qPp9kg@mail.gmail.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <568B19D8.40608@cn.fujitsu.com>
+Date: Tue, 5 Jan 2016 09:18:16 +0800
+MIME-Version: 1.0
+In-Reply-To: <CAFENT7K4ir7xNXw=a-=6v=WMyf-3AkGVpgT4ivV=CS54qPp9kg@mail.gmail.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-What does   btrfs-show-super  /dev/sda5
-list as  output for   incompat_flags  ?
 
 
-On Mon, Jan 4, 2016 at 8:25 PM, Sylvain Joyeux <sylvain.joyeux@m4x.org> wrote:
+Sylvain Joyeux wrote on 2016/01/04 17:25 -0200:
 > I currently have a btrfs partition that, when mounted, ends up
 > freezing my system. The only error I get when running btrfs check on
 > it is a whole lot of "bad extent ... type mismatch with chunk"
@@ -57,7 +53,7 @@ On Mon, Jan 4, 2016 at 8:25 PM, Sylvain Joyeux <sylvain.joyeux@m4x.org> wrote:
 > drm_kms_helper e1000e psmouse ahci drm ptp rtsx_pci libahci pps_core
 > wmi video
 > 13:29:09 kernel: CPU: 0 PID: 6 Comm: kworker/u16:0 Tainted: G
->  OE   4.1.15-040115-generic #201512150136
+>   OE   4.1.15-040115-generic #201512150136
 > 13:29:09 kernel: Hardware name: LENOVO 20ANCTO1WW/20ANCTO1WW, BIOS
 > GLET81WW (2.35 ) 09/10/2015
 > 13:29:09 kernel: Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
@@ -82,6 +78,22 @@ On Mon, Jan 4, 2016 at 8:25 PM, Sylvain Joyeux <sylvain.joyeux@m4x.org> wrote:
 > btrfs_run_delayed_refs.part.68+0x73/0x270 [btrfs]
 > 13:29:09 kernel:  [<ffffffffc034e5bc>] delayed_ref_async_start+0x8c/0xb0 [btrfs]
 > 13:29:09 kernel:  [<ffffffffc0390cea>] btrfs_scrubnc_helper+0xca/0x2b0 [btrfs]
+
+Seems to be a bug related to delayed refs and scrub.
+
+Although your 4.1 is unaffected by the delayed ref regression introduced 
+in 4.2, but I'm afraid there may be some fix in recent kernels related 
+to scrub/delayed ref.
+
+Would you please try 4.4-rc kernel and see if it still triggers the bug?
+
+And, it would be much better if you can provide some info about the 
+operations you are doing when the bug is triggered.
+This should help us to reproduce the bug.
+
+Thanks,
+Qu
+
 > 13:29:09 kernel:  [<ffffffffc0390efe>] btrfs_extent_refs_helper+0xe/0x10 [btrfs]
 > 13:29:09 kernel:  [<ffffffff81093053>] process_one_work+0x163/0x4c0
 > 13:29:09 kernel:  [<ffffffff81093408>] worker_thread+0x58/0x590
@@ -1072,7 +1084,7 @@ On Mon, Jan 4, 2016 at 8:25 PM, Sylvain Joyeux <sylvain.joyeux@m4x.org> wrote:
 > drm_kms_helper e1000e psmouse ahci drm ptp rtsx_pci libahci pps_core
 > wmi video
 > 13:29:09 kernel: CPU: 0 PID: 6 Comm: kworker/u16:0 Tainted: G        W
->  OE   4.1.15-040115-generic #201512150136
+>   OE   4.1.15-040115-generic #201512150136
 > 13:29:09 kernel: Hardware name: LENOVO 20ANCTO1WW/20ANCTO1WW, BIOS
 > GLET81WW (2.35 ) 09/10/2015
 > 13:29:09 kernel: Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
@@ -1109,3 +1121,7 @@ On Mon, Jan 4, 2016 at 8:25 PM, Sylvain Joyeux <sylvain.joyeux@m4x.org> wrote:
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org
 > More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>
+
+

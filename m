@@ -1,11 +1,8 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.linux-iscsi.org ([67.23.28.174]:55720 "EHLO
-	linux-iscsi.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751809AbcAFTGD (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 14:06:03 -0500
-Message-ID: <1452107160.26125.39.camel@haakon3.risingtidesystems.com>
-Subject: Re: [PATCH 25/35] target: set bi_op to REQ_OP
-From: "Nicholas A. Bellinger" <nab@linux-iscsi.org>
+Received: from userp1040.oracle.com ([156.151.31.81]:21144 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752315AbcAFXR6 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 18:17:58 -0500
 To: mchristi@redhat.com
 Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -16,35 +13,34 @@ Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         linux-scsi@vger.kernel.org, linux-mtd@lists.infradead.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
-Date: Wed, 06 Jan 2016 11:06:00 -0800
-In-Reply-To: <1452027218-32303-26-git-send-email-mchristi@redhat.com>
+Subject: Re: [PATCH 02/35] block: add REQ_OP definitions and bi_op/op fields
+From: "Martin K. Petersen" <martin.petersen@oracle.com>
 References: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
-	 <1452027218-32303-26-git-send-email-mchristi@redhat.com>
-Content-Type: text/plain; charset="UTF-8"
-Mime-Version: 1.0
+	<1452027218-32303-3-git-send-email-mchristi@redhat.com>
+Date: Wed, 06 Jan 2016 18:17:01 -0500
+In-Reply-To: <1452027218-32303-3-git-send-email-mchristi@redhat.com>
+	(mchristi@redhat.com's message of "Tue, 5 Jan 2016 14:53:05 -0600")
+Message-ID: <yq1d1tei9hu.fsf@sermon.lab.mkp.net>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi Mike,
+>>>>> "Mike" == mchristi  <mchristi@redhat.com> writes:
 
-On Tue, 2016-01-05 at 14:53 -0600, mchristi@redhat.com wrote:
-> From: Mike Christie <mchristi@redhat.com>
-> 
-> This patch has the target modules set the bio bi_op to a REQ_OP, and
-> rq_flag_bits to bi_rw.
-> 
-> This patch is compile tested only.
-> 
-> Signed-off-by: Mike Christie <mchristi@redhat.com>
-> ---
->  drivers/target/target_core_iblock.c | 38 ++++++++++++++++++++++---------------
->  drivers/target/target_core_pscsi.c  |  2 +-
->  2 files changed, 24 insertions(+), 16 deletions(-)
-> 
++enum req_op {
++	REQ_OP_READ,
++	REQ_OP_WRITE		= REQ_WRITE,
++	REQ_OP_DISCARD		= REQ_DISCARD,
++	REQ_OP_WRITE_SAME	= REQ_WRITE_SAME,
++};
++
 
-Nice work to clean this long standing abuse.  ;)
+I have been irked by the REQ_ prefix in bios since the flags were
+consolidated a while back. When I attempted to fix the READ/WRITE mess I
+used a BLK_ prefix as a result.
 
-For the target/iblock bit:
+Anyway. Just bikeshedding...
 
-Acked-by: Nicholas Bellinger <nab@linux-iscsi.org>
-
+-- 
+Martin K. Petersen	Oracle Linux Engineering

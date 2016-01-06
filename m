@@ -1,69 +1,58 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:55959 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752174AbcAFJCo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 6 Jan 2016 04:02:44 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aGjzO-0004X9-5S
-	for linux-btrfs@vger.kernel.org; Wed, 06 Jan 2016 10:02:42 +0100
-Received: from host-78-149-214-223.as13285.net ([78.149.214.223])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jan 2016 10:02:42 +0100
-Received: from samtygier by host-78-149-214-223.as13285.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jan 2016 10:02:42 +0100
-To: linux-btrfs@vger.kernel.org
-From: sam tygier <samtygier@yahoo.co.uk>
-Subject: [PATCH v3] Btrfs: Check metadata redundancy on balance
-Date: Wed, 6 Jan 2016 09:02:31 +0000
-Message-ID: <568CD827.3060601@yahoo.co.uk>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=utf-8
-Cc: dave@jikos.cz
+Received: from cn.fujitsu.com ([59.151.112.132]:21268 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752768AbcAFLCU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 06:02:20 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+	by cn.fujitsu.com (Postfix) with ESMTP id 76E9D41890EC
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2016 19:02:01 +0800 (CST)
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/3] btrfs: delete no_used argument in btrfs_copy_from_user
+Date: Wed, 6 Jan 2016 19:00:18 +0800
+Message-ID: <795abda08582e64b59eecd050c96a2f3639767ec.1452078012.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <9b89157957abcc87a6ea0530989a4984794484cd.1452078012.git.zhaolei@cn.fujitsu.com>
+References: <9b89157957abcc87a6ea0530989a4984794484cd.1452078012.git.zhaolei@cn.fujitsu.com>
+MIME-Version: 1.0
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Sam Tygier <samtygier@yahoo.co.uk>
-Date: Wed, 6 Jan 2016 08:46:12 +0000
-Subject: [PATCH] Btrfs: Check metadata redundancy on balance
+size_t write_bytes is not necessary for btrfs_copy_from_user(),
+delete it.
 
-When converting a filesystem via balance check that metadata mode
-is at least as redundant as the data mode. For example give warning
-when:
--dconvert=raid1 -mconvert=single
-
-Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
-v3:
-  Use btrfs_warn()
-  Mention profiles in message
-v2:
-  Use btrfs_get_num_tolerated_disk_barrier_failures()
----
- fs/btrfs/volumes.c | 8 ++++++++
- 1 file changed, 8 insertions(+)
+ fs/btrfs/file.c | 6 ++----
+ 1 file changed, 2 insertions(+), 4 deletions(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a23399e..be91458 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3756,6 +3756,14 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
+index 11fd981..e4f287c 100644
+--- a/fs/btrfs/file.c
++++ b/fs/btrfs/file.c
+@@ -406,8 +406,7 @@ int btrfs_run_defrag_inodes(struct btrfs_fs_info *fs_info)
+ /* simple helper to fault in pages and copy.  This should go away
+  * and be replaced with calls into generic code.
+  */
+-static noinline int btrfs_copy_from_user(loff_t pos, int num_pages,
+-					 size_t write_bytes,
++static noinline int btrfs_copy_from_user(loff_t pos, size_t write_bytes,
+ 					 struct page **prepared_pages,
+ 					 struct iov_iter *i)
+ {
+@@ -1575,8 +1574,7 @@ again:
+ 			ret = 0;
  		}
- 	} while (read_seqretry(&fs_info->profiles_lock, seq));
  
-+	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
-+		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
-+		btrfs_warn(fs_info,
-+			"Warning: metatdata profile %llu has lower redundancy "
-+		        "than data profile %llu\n", bctl->meta.target,
-+		        bctl->data.target);
-+	}
-+
- 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
- 		fs_info->num_tolerated_disk_barrier_failures = min(
- 			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
+-		copied = btrfs_copy_from_user(pos, num_pages,
+-					   write_bytes, pages, i);
++		copied = btrfs_copy_from_user(pos, write_bytes, pages, i);
+ 
+ 		/*
+ 		 * if we have trouble faulting in the pages, fall
 -- 
-2.4.3
+1.8.5.1
+
+
 

@@ -1,152 +1,69 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:45081 "EHLO
-	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752170AbcAFIEF (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 03:04:05 -0500
-Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
-	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id CB662AC0320
-	for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2016 17:03:59 +0900 (JST)
-Message-Id: <201601060803.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
-From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
-Date: Wed, 06 Jan 2016 17:03:40 +0900
-To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
-Subject: [PATCH V2] Btrfs: fix output of compression message in btrfs_parse_options()
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+Received: from plane.gmane.org ([80.91.229.3]:55959 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752174AbcAFJCo (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Jan 2016 04:02:44 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aGjzO-0004X9-5S
+	for linux-btrfs@vger.kernel.org; Wed, 06 Jan 2016 10:02:42 +0100
+Received: from host-78-149-214-223.as13285.net ([78.149.214.223])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jan 2016 10:02:42 +0100
+Received: from samtygier by host-78-149-214-223.as13285.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Wed, 06 Jan 2016 10:02:42 +0100
+To: linux-btrfs@vger.kernel.org
+From: sam tygier <samtygier@yahoo.co.uk>
+Subject: [PATCH v3] Btrfs: Check metadata redundancy on balance
+Date: Wed, 6 Jan 2016 09:02:31 +0000
+Message-ID: <568CD827.3060601@yahoo.co.uk>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=utf-8
+Cc: dave@jikos.cz
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-The compression message might not be correctly output.
-Fix it.
+From: Sam Tygier <samtygier@yahoo.co.uk>
+Date: Wed, 6 Jan 2016 08:46:12 +0000
+Subject: [PATCH] Btrfs: Check metadata redundancy on balance
 
-[[before fix]]
+When converting a filesystem via balance check that metadata mode
+is at least as redundant as the data mode. For example give warning
+when:
+-dconvert=raid1 -mconvert=single
 
-# mount -o compress /dev/sdb3 /test3
-[  996.874264] BTRFS info (device sdb3): disk space caching is enabled
-[  996.874268] BTRFS: has skinny extents
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
-
-# mount -o remount,compress-force /dev/sdb3 /test3
-[ 1035.075017] BTRFS info (device sdb3): force zlib compression
-[ 1035.075021] BTRFS info (device sdb3): disk space caching is enabled
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress-force=zlib,space_cache,subvolid=5,subvol=/)
-
-# mount -o remount,compress /dev/sdb3 /test3
-[ 1053.679092] BTRFS info (device sdb3): disk space caching is enabled
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
-
-[[after fix]]
-
-# mount -o compress /dev/sdb3 /test3
-[  401.021753] BTRFS info (device sdb3): use zlib compression
-[  401.021758] BTRFS info (device sdb3): disk space caching is enabled
-[  401.021760] BTRFS: has skinny extents
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
-
-# mount -o remount,compress-force /dev/sdb3 /test3
-[  439.824624] BTRFS info (device sdb3): force zlib compression
-[  439.824629] BTRFS info (device sdb3): disk space caching is enabled
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress-force=zlib,space_cache,subvolid=5,subvol=/)
-
-# mount -o remount,compress /dev/sdb3 /test3
-[  459.918430] BTRFS info (device sdb3): use zlib compression
-[  459.918434] BTRFS info (device sdb3): disk space caching is enabled
-# mount | grep /test3
-/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
-
-Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
 ---
-V1->V2: It is corrected that API doesn't change.
+v3:
+  Use btrfs_warn()
+  Mention profiles in message
+v2:
+  Use btrfs_get_num_tolerated_disk_barrier_failures()
+---
+ fs/btrfs/volumes.c | 8 ++++++++
+ 1 file changed, 8 insertions(+)
 
- fs/btrfs/super.c | 29 ++++++++++++++++++++++-------
- 1 file changed, 22 insertions(+), 7 deletions(-)
-
-diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
-index 24154e4..12d04c9 100644
---- a/fs/btrfs/super.c
-+++ b/fs/btrfs/super.c
-@@ -381,6 +381,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 	int ret = 0;
- 	char *compress_type;
- 	bool compress_force = false;
-+	enum btrfs_compression_type saved_compress_type;
-+	bool saved_compress_force;
-+	int no_compress = 0;
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a23399e..be91458 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3756,6 +3756,14 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 		}
+ 	} while (read_seqretry(&fs_info->profiles_lock, seq));
  
- 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
- 	if (cache_gen)
-@@ -458,6 +461,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 			/* Fallthrough */
- 		case Opt_compress:
- 		case Opt_compress_type:
-+			saved_compress_type = btrfs_test_opt(root, COMPRESS) ?
-+				info->compress_type : BTRFS_COMPRESS_NONE;
-+			saved_compress_force =
-+				btrfs_test_opt(root, FORCE_COMPRESS);
- 			if (token == Opt_compress ||
- 			    token == Opt_compress_force ||
- 			    strcmp(args[0].from, "zlib") == 0) {
-@@ -466,6 +473,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				btrfs_set_opt(info->mount_opt, COMPRESS);
- 				btrfs_clear_opt(info->mount_opt, NODATACOW);
- 				btrfs_clear_opt(info->mount_opt, NODATASUM);
-+				no_compress = 0;
- 			} else if (strcmp(args[0].from, "lzo") == 0) {
- 				compress_type = "lzo";
- 				info->compress_type = BTRFS_COMPRESS_LZO;
-@@ -473,25 +481,21 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				btrfs_clear_opt(info->mount_opt, NODATACOW);
- 				btrfs_clear_opt(info->mount_opt, NODATASUM);
- 				btrfs_set_fs_incompat(info, COMPRESS_LZO);
-+				no_compress = 0;
- 			} else if (strncmp(args[0].from, "no", 2) == 0) {
- 				compress_type = "no";
- 				btrfs_clear_opt(info->mount_opt, COMPRESS);
- 				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
- 				compress_force = false;
-+				no_compress++;
- 			} else {
- 				ret = -EINVAL;
- 				goto out;
- 			}
- 
- 			if (compress_force) {
--				btrfs_set_and_info(root, FORCE_COMPRESS,
--						   "force %s compression",
--						   compress_type);
-+				btrfs_set_opt(info->mount_opt, FORCE_COMPRESS);
- 			} else {
--				if (!btrfs_test_opt(root, COMPRESS))
--					btrfs_info(root->fs_info,
--						   "btrfs: use %s compression",
--						   compress_type);
- 				/*
- 				 * If we remount from compress-force=xxx to
- 				 * compress=xxx, we need clear FORCE_COMPRESS
-@@ -500,6 +504,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
- 				 */
- 				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
- 			}
-+			if ((btrfs_test_opt(root, COMPRESS) &&
-+			     (info->compress_type != saved_compress_type ||
-+			      compress_force != saved_compress_force)) ||
-+			    (!btrfs_test_opt(root, COMPRESS) &&
-+			     no_compress == 1)) {
-+				btrfs_info(root->fs_info,
-+					   "%s %s compression",
-+					   (compress_force) ? "force" : "use",
-+					   compress_type);
-+			}
-+			compress_force = false;
- 			break;
- 		case Opt_ssd:
- 			btrfs_set_and_info(root, SSD,
++	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
++		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
++		btrfs_warn(fs_info,
++			"Warning: metatdata profile %llu has lower redundancy "
++		        "than data profile %llu\n", bctl->meta.target,
++		        bctl->data.target);
++	}
++
+ 	if (bctl->sys.flags & BTRFS_BALANCE_ARGS_CONVERT) {
+ 		fs_info->num_tolerated_disk_barrier_failures = min(
+ 			btrfs_calc_num_tolerated_disk_barrier_failures(fs_info),
 -- 
-2.6.4
-
+2.4.3
 

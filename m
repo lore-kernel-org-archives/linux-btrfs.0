@@ -1,62 +1,79 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from email.routify.me ([162.208.10.182]:37459 "EHLO
-	cartman.routify.me" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751798AbcAFITd (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 03:19:33 -0500
-Date: Wed, 6 Jan 2016 03:09:08 -0500
-From: Sean Greenslade <sean@seangreenslade.com>
-To: Psalle <psalleetsile@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: raid1 vs raid5
-Message-ID: <20160106080907.GA30773@wheatley.ludlow.local>
-References: <568BEE3F.4060402@gmail.com>
+Received: from out4-smtp.messagingengine.com ([66.111.4.28]:49963 "EHLO
+	out4-smtp.messagingengine.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753222AbcAFLER (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Jan 2016 06:04:17 -0500
+Received: from compute1.internal (compute1.nyi.internal [10.202.2.41])
+	by mailout.nyi.internal (Postfix) with ESMTP id 88C6A20C68
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2016 06:04:16 -0500 (EST)
+Message-Id: <1452078256.371119.484306690.4F4014FE@webmail.messagingengine.com>
+From: Rasmus Abrahamsen <btrfs@rasmusa.net>
+To: linux-btrfs@vger.kernel.org
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <568BEE3F.4060402@gmail.com>
+Content-Type: text/plain
+Subject: Re: Add big device, remove small device, read-only
+Date: Wed, 06 Jan 2016 12:04:16 +0100
+In-Reply-To: <pan$8f979$3e11d093$c11f0907$776df255@cox.net>
+References: <9E462AAE-481A-4A0D-9918-FF56A73D6F6D@rasmusa.net>
+ <CAJCQCtSCJ91FaJ20g-+TKMwGkXeQdEkn1yDf6w+H3=V_8_xshA@mail.gmail.com>
+ <1451679613.2761176.480641362.3ADA17DB@webmail.messagingengine.com>
+ <pan$8f979$3e11d093$c11f0907$776df255@cox.net>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 05, 2016 at 05:24:31PM +0100, Psalle wrote:
-> Hello all and excuse me if this is a silly question. I looked around in the
-> wiki and list archives but couldn't find any in-depth discussion about this:
+
+
+On Wed, Jan 6, 2016, at 07:45 AM, Duncan wrote:
+> Rasmus Abrahamsen posted on Fri, 01 Jan 2016 21:20:13 +0100 as excerpted:
 > 
-> I just realized that, since raid1 in btrfs is special (meaning only two
-> copies in different devices), the effect in terms of resilience achieved
-> with raid1 and raid5 are the same: you can lose one drive and not lose data.
+> > I accidentically sent my messages directly to Duncan, I am copying them
+> > in here.
+> > 
+> > Hello Duncan,
+> > 
+> > Thank you for the amazing response. Wow, you are awesome.
 > 
-> So!, presuming that raid5 were at the same level of maturity, what would be
-> the pros/cons of each mode?
+> Just a note to mention that real life (TM) got in the way, and I'm a few 
+> days and a couple hundred posts behind on the list, now.  Sounds like you 
+> have a backup tho, and if worse comes to worse, you can simply blow away 
+> the filesystem and start over.  Between that and Chris Murphy helping you 
+> now, I read the thread to date but am simply marking it read without 
+> further replies as it exists ATM, but might reply to new posts to the 
+> thread from now, if I think I can be helpful.
+> 
+> (Which is why I try to discourage direct replies, too.  With direct 
+> replies to a single person, if that person doesn't get back...  While if 
+> it's to the list, there's more that can take up the thread, it's not on 
+> just one person.  Of course the just to me was an accident, but...)
+> 
+> -- 
+> Duncan - List replies preferred.   No HTML msgs.
+> "Every nonfree program has a lord, a master --
+> and if you use the program, he is your master."  Richard Stallman
+> 
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html
 
-This is true for "classic" RAID: assume you have 3x 1TB disks. RAID1
-will give you 1.5TB, whereas RAID5 will give you 2TB.
+Yeah, I have made many mistakes as this is my first time participating
+on a mailing list :)
 
-RAID1 = 1/2 total disk space (assuming equally-sized disks)
-RAID5 = (N-1)*single disk space (same assumption)
+I decided to blow away the filesystem and start over. I did so by
+physically removing the new 4 TB drive, mounting -o degraded and then
+running:
 
-> As a corollary, I guess that if raid1 is considered a good compromise, then
-> functional equivalents to raid6 and beyond could simply be implemented as
-> "storing n copies in different devices", dropping any complex parity
-> computations and making this mode entirely generic.
+find . -type f -exec cat {} >> /dev/null \;
 
-This is akin to what has been mentioned on the list earlier as "N-way
-mirroring" and I agree that it will be very nice to have once
-implemented. However it is not the same as RAID5/6 since the parity
-schemes are used to get more usable storage than just simple mirroring
-would allow for.
+In all folders that matter to me to make sure everything is readable
+without the new drive. I then formatted the new drive as BTRFS and moved
+over all my data. Then I added my old 4 TB drive to the new filesystem
+and did balance -dconvert=raid1 -mconvert=raid1. I am now online with
+the new filesystem and things are good.
 
-Thus, the main pro of RAID5/6 is more usable storage, and the main con
-is more computational complexity (and thus more cpu requirements, slower
-access time, more fragile error states, etc.)
+I was expecting btrfs to just work (tm) when adding the new drive and
+removing the old, so that made me a little sad. However, it's awesome
+that no data was lost and my method actually worked.
 
-> Since this seems pretty obvious, I'd welcome your insights on what are
-> the things I'm missing, since it doesn't exist (and it isn't planned
-> to be this way, AFAIK). I can foresee consistency difficulties, but
-> that seems hardly insurmountable if its being done for raid1?
-
-Fixing an inconsistency in RAID1 is much easier than RAID5/6. No math,
-just checking csums. Fixing an inconsistency in RAID5/6 involves busting
-out the parity math. This is why repairing RAID5/6 only became possible
-in btrfs relatively recently. Generating the parity data was relatively
-easy, but rebuilding missing data with it was a more difficult task.
-
---Sean
+Thanks for a great place and product.

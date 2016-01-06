@@ -1,267 +1,156 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:43197 "EHLO mail.kernel.org"
+Received: from mail.kernel.org ([198.145.29.136]:41917 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753168AbcA3UOn (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 30 Jan 2016 15:14:43 -0500
-Received: from mail.kernel.org (localhost [127.0.0.1])
-	by mail.kernel.org (Postfix) with ESMTP id 40B2820361
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 20:14:42 +0000 (UTC)
-Received: from debian3.lan (bl8-199-62.dsl.telepac.pt [85.241.199.62])
-	(using TLSv1.2 with cipher AES128-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kernel.org (Postfix) with ESMTPSA id 79C4A2034E
-	for <linux-btrfs@vger.kernel.org>; Sat, 30 Jan 2016 20:14:40 +0000 (UTC)
+	id S1750938AbcAFW7G (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Jan 2016 17:59:06 -0500
 From: fdmanana@kernel.org
 To: linux-btrfs@vger.kernel.org
-Subject: [PATCH v2] Btrfs: fix invalid page accesses in extent_same (dedup) ioctl
-Date: Sat, 30 Jan 2016 18:20:49 +0000
-Message-Id: <1454178049-9344-1-git-send-email-fdmanana@kernel.org>
-In-Reply-To: <1453891273-22778-1-git-send-email-fdmanana@kernel.org>
-References: <1453891273-22778-1-git-send-email-fdmanana@kernel.org>
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix regression that makes fitrim ioctl discard a device's MBR
+Date: Wed,  6 Jan 2016 22:57:11 +0000
+Message-Id: <1452121064-15594-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Filipe Manana <fdmanana@suse.com>
 
-In the extent_same ioctl we are getting the pages for the source and
-target ranges and unlocking them immediately after, which is incorrect
-because later we attempt to map them (with kmap_atomic) and access their
-contents at btrfs_cmp_data(). When we do such access the pages might have
-been relocated or removed from memory, which leads to an invalid memory
-access. This issue is detected on a kernel with CONFIG_DEBUG_PAGEALLOC=y
-which produces a trace like the following:
+As of the 4.3 kernel release, the fitrim ioctl can now discard any region
+of a disk that is not part of a chunk/block group, including the MBR
+(master boot record).
+Fix this by not allowing to trim/discard any region in the device starting
+with an offset not greater than min(alloc_start_mount_option, 1Mb), just
+as we did for space allocated to chunks/block groups.
 
-186736.677437] general protection fault: 0000 [#1] PREEMPT SMP DEBUG_PAGEALLOC
-[186736.680382] Modules linked in: btrfs dm_flakey dm_mod ppdev xor raid6_pq sha256_generic hmac drbg ansi_cprng acpi_cpufreq evdev sg aesni_intel aes_x86_64
-parport_pc ablk_helper tpm_tis psmouse parport i2c_piix4 tpm cryptd i2c_core lrw processor button serio_raw pcspkr gf128mul glue_helper loop autofs4 ext4
-crc16 mbcache jbd2 sd_mod sr_mod cdrom ata_generic virtio_scsi ata_piix libata virtio_pci virtio_ring crc32c_intel scsi_mod e1000 virtio floppy [last
-unloaded: btrfs]
-[186736.681319] CPU: 13 PID: 10222 Comm: duperemove Tainted: G        W       4.4.0-rc6-btrfs-next-18+ #1
-[186736.681319] Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS by qemu-project.org 04/01/2014
-[186736.681319] task: ffff880132600400 ti: ffff880362284000 task.ti: ffff880362284000
-[186736.681319] RIP: 0010:[<ffffffff81264d00>]  [<ffffffff81264d00>] memcmp+0xb/0x22
-[186736.681319] RSP: 0018:ffff880362287d70  EFLAGS: 00010287
-[186736.681319] RAX: 000002c002468acf RBX: 0000000012345678 RCX: 0000000000000000
-[186736.681319] RDX: 0000000000001000 RSI: 0005d129c5cf9000 RDI: 0005d129c5cf9000
-[186736.681319] RBP: ffff880362287d70 R08: 0000000000000000 R09: 0000000000001000
-[186736.681319] R10: ffff880000000000 R11: 0000000000000476 R12: 0000000000001000
-[186736.681319] R13: ffff8802f91d4c88 R14: ffff8801f2a77830 R15: ffff880352e83e40
-[186736.681319] FS:  00007f27b37fe700(0000) GS:ffff88043dda0000(0000) knlGS:0000000000000000
-[186736.681319] CS:  0010 DS: 0000 ES: 0000 CR0: 0000000080050033
-[186736.681319] CR2: 00007f27a406a000 CR3: 0000000217421000 CR4: 00000000001406e0
-[186736.681319] Stack:
-[186736.681319]  ffff880362287ea0 ffffffffa048d0bd 000000000009f000 0000000000001000
-[186736.681319]  0100000000000000 ffff8801f2a77850 ffff8802f91d49b0 ffff880132600400
-[186736.681319]  00000000000004f8 ffff8801c1efbe41 0000000000000000 0000000000000038
-[186736.681319] Call Trace:
-[186736.681319]  [<ffffffffa048d0bd>] btrfs_ioctl+0x24cb/0x2731 [btrfs]
-[186736.681319]  [<ffffffff8108a8b0>] ? arch_local_irq_save+0x9/0xc
-[186736.681319]  [<ffffffff8118b3d4>] ? rcu_read_unlock+0x3e/0x5d
-[186736.681319]  [<ffffffff811822f8>] do_vfs_ioctl+0x42b/0x4ea
-[186736.681319]  [<ffffffff8118b4f3>] ? __fget_light+0x62/0x71
-[186736.681319]  [<ffffffff8118240e>] SyS_ioctl+0x57/0x79
-[186736.681319]  [<ffffffff814872d7>] entry_SYSCALL_64_fastpath+0x12/0x6f
-[186736.681319] Code: 0a 3c 6e 74 0d 3c 79 74 04 3c 59 75 0c c6 06 01 eb 03 c6 06 00 31 c0 eb 05 b8 ea ff ff ff 5d c3 55 31 c9 48 89 e5 48 39 d1 74 13 <0f> b6
-04 0f 44 0f b6 04 0e 48 ff c1 44 29 c0 74 ea eb 02 31 c0
-
-(gdb) list *(btrfs_ioctl+0x24cb)
-0x5e0e1 is in btrfs_ioctl (fs/btrfs/ioctl.c:2972).
-2967                    dst_addr = kmap_atomic(dst_page);
-2968
-2969                    flush_dcache_page(src_page);
-2970                    flush_dcache_page(dst_page);
-2971
-2972                    if (memcmp(addr, dst_addr, cmp_len))
-2973                            ret = BTRFS_SAME_DATA_DIFFERS;
-2974
-2975                    kunmap_atomic(addr);
-2976                    kunmap_atomic(dst_addr);
-
-So fix this by making sure we keep the pages locked and respect the same
-locking order as everywhere else: get and lock the pages first and then
-lock the range in the inode's io tree (like for example at
-__btrfs_buffered_write() and extent_readpages()). If an ordered extent
-is found after locking the range in the io tree, unlock the range,
-unlock the pages, wait for the ordered extent to complete and repeat the
-entire locking process until no overlapping ordered extents are found.
-
-Cc: stable@vger.kernel.org   # 4.2+
+Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=109341
+Fixes: 499f377f49f0 (btrfs: iterate over unused chunk space in FITRIM)
+Cc: stable@vger.kernel.org # 4.3+
 Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
+ fs/btrfs/extent-tree.c |  7 +++----
+ fs/btrfs/volumes.c     | 38 ++++++++++++++------------------------
+ fs/btrfs/volumes.h     |  5 +----
+ 3 files changed, 18 insertions(+), 32 deletions(-)
 
-V2: Updated a comment for correctness. No code changes.
-
- fs/btrfs/ioctl.c | 90 +++++++++++++++++++++++++++++++++++++++++++++++---------
- 1 file changed, 76 insertions(+), 14 deletions(-)
-
-diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-index 83c9ad3..c3c5def 100644
---- a/fs/btrfs/ioctl.c
-+++ b/fs/btrfs/ioctl.c
-@@ -2811,7 +2811,6 @@ static struct page *extent_same_get_page(struct inode *inode, pgoff_t index)
- 			return NULL;
- 		}
- 	}
--	unlock_page(page);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index cf8983e..7af2f03 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -9482,8 +9482,8 @@ int btrfs_can_relocate(struct btrfs_root *root, u64 bytenr)
+ 		 */
+ 		if (device->total_bytes > device->bytes_used + min_free &&
+ 		    !device->is_tgtdev_for_dev_replace) {
+-			ret = find_free_dev_extent(trans, device, min_free,
+-						   &dev_offset, NULL);
++			ret = find_free_dev_extent(trans->transaction, device,
++						   min_free, &dev_offset, NULL);
+ 			if (!ret)
+ 				dev_nr++;
  
- 	return page;
- }
-@@ -2830,10 +2829,17 @@ static int gather_extent_pages(struct inode *inode, struct page **pages,
- 	return 0;
- }
+@@ -10677,8 +10677,7 @@ static int btrfs_trim_free_extents(struct btrfs_device *device,
+ 			atomic_inc(&trans->use_count);
+ 		spin_unlock(&fs_info->trans_lock);
  
--static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
-+static int lock_extent_range(struct inode *inode, u64 off, u64 len,
-+			     bool retry_range_locking)
+-		ret = find_free_dev_extent_start(trans, device, minlen, start,
+-						 &start, &len);
++		ret = find_free_dev_extent(trans, device, minlen, &start, &len);
+ 		if (trans)
+ 			btrfs_put_transaction(trans);
+ 
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a114b7b..207f077 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -1222,10 +1222,9 @@ again:
+ 
+ 
+ /*
+- * find_free_dev_extent_start - find free space in the specified device
++ * find_free_dev_extent - find free space in the specified device
+  * @device:	  the device which we search the free space in
+  * @num_bytes:	  the size of the free space that we need
+- * @search_start: the position from which to begin the search
+  * @start:	  store the start of the free space.
+  * @len:	  the size of the free space. that we find, or the size
+  *		  of the max free space if we don't find suitable free space
+@@ -1242,9 +1241,9 @@ again:
+  * But if we don't find suitable free space, it is used to store the size of
+  * the max free space.
+  */
+-int find_free_dev_extent_start(struct btrfs_transaction *transaction,
+-			       struct btrfs_device *device, u64 num_bytes,
+-			       u64 search_start, u64 *start, u64 *len)
++int find_free_dev_extent(struct btrfs_transaction *transaction,
++			 struct btrfs_device *device, u64 num_bytes,
++			 u64 *start, u64 *len)
  {
--	/* do any pending delalloc/csum calc on src, one way or
--	   another, and lock file content */
-+	/*
-+	 * Do any pending delalloc/csum calculations on inode, one way or
-+	 * another, and lock file content.
-+	 * The locking order is:
-+	 *
-+	 *   1) pages
-+	 *   2) range in the inode's io tree
-+	 */
- 	while (1) {
- 		struct btrfs_ordered_extent *ordered;
- 		lock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
-@@ -2851,8 +2857,11 @@ static inline void lock_extent_range(struct inode *inode, u64 off, u64 len)
- 		unlock_extent(&BTRFS_I(inode)->io_tree, off, off + len - 1);
- 		if (ordered)
- 			btrfs_put_ordered_extent(ordered);
-+		if (!retry_range_locking)
-+			return -EAGAIN;
- 		btrfs_wait_ordered_range(inode, off, len);
- 	}
-+	return 0;
- }
- 
- static void btrfs_double_inode_unlock(struct inode *inode1, struct inode *inode2)
-@@ -2877,15 +2886,24 @@ static void btrfs_double_extent_unlock(struct inode *inode1, u64 loff1,
- 	unlock_extent(&BTRFS_I(inode2)->io_tree, loff2, loff2 + len - 1);
- }
- 
--static void btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
--				     struct inode *inode2, u64 loff2, u64 len)
-+static int btrfs_double_extent_lock(struct inode *inode1, u64 loff1,
-+				    struct inode *inode2, u64 loff2, u64 len,
-+				    bool retry_range_locking)
- {
-+	int ret;
+ 	struct btrfs_key key;
+ 	struct btrfs_root *root = device->dev_root;
+@@ -1258,6 +1257,15 @@ int find_free_dev_extent_start(struct btrfs_transaction *transaction,
+ 	int ret;
+ 	int slot;
+ 	struct extent_buffer *l;
++	u64 search_start;
 +
- 	if (inode1 < inode2) {
- 		swap(inode1, inode2);
- 		swap(loff1, loff2);
- 	}
--	lock_extent_range(inode1, loff1, len);
--	lock_extent_range(inode2, loff2, len);
-+	ret = lock_extent_range(inode1, loff1, len, retry_range_locking);
-+	if (ret)
-+		return ret;
-+	ret = lock_extent_range(inode2, loff2, len, retry_range_locking);
-+	if (ret)
-+		unlock_extent(&BTRFS_I(inode1)->io_tree, loff1,
-+			      loff1 + len - 1);
-+	return ret;
++	/* FIXME use last free of some kind */
++
++	/*
++	 * we don't want to overwrite the superblock on the drive (nor the MBR
++	 * sector), so we make sure to start at an offset of at least 1MB
++	 */
++	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
+ 
+ 	path = btrfs_alloc_path();
+ 	if (!path)
+@@ -1394,24 +1402,6 @@ out:
+ 	return ret;
  }
  
- struct cmp_pages {
-@@ -2901,11 +2919,15 @@ static void btrfs_cmp_data_free(struct cmp_pages *cmp)
+-int find_free_dev_extent(struct btrfs_trans_handle *trans,
+-			 struct btrfs_device *device, u64 num_bytes,
+-			 u64 *start, u64 *len)
+-{
+-	struct btrfs_root *root = device->dev_root;
+-	u64 search_start;
+-
+-	/* FIXME use last free of some kind */
+-
+-	/*
+-	 * we don't want to overwrite the superblock on the drive,
+-	 * so we make sure to start at an offset of at least 1MB
+-	 */
+-	search_start = max(root->fs_info->alloc_start, 1024ull * 1024);
+-	return find_free_dev_extent_start(trans->transaction, device,
+-					  num_bytes, search_start, start, len);
+-}
+-
+ static int btrfs_free_dev_extent(struct btrfs_trans_handle *trans,
+ 			  struct btrfs_device *device,
+ 			  u64 start, u64 *dev_extent_len)
+@@ -4597,7 +4587,7 @@ static int __btrfs_alloc_chunk(struct btrfs_trans_handle *trans,
+ 		if (total_avail == 0)
+ 			continue;
  
- 	for (i = 0; i < cmp->num_pages; i++) {
- 		pg = cmp->src_pages[i];
--		if (pg)
-+		if (pg) {
-+			unlock_page(pg);
- 			page_cache_release(pg);
-+		}
- 		pg = cmp->dst_pages[i];
--		if (pg)
-+		if (pg) {
-+			unlock_page(pg);
- 			page_cache_release(pg);
-+		}
- 	}
- 	kfree(cmp->src_pages);
- 	kfree(cmp->dst_pages);
-@@ -2966,6 +2988,8 @@ static int btrfs_cmp_data(struct inode *src, u64 loff, struct inode *dst,
- 
- 		src_page = cmp->src_pages[i];
- 		dst_page = cmp->dst_pages[i];
-+		ASSERT(PageLocked(src_page));
-+		ASSERT(PageLocked(dst_page));
- 
- 		addr = kmap_atomic(src_page);
- 		dst_addr = kmap_atomic(dst_page);
-@@ -3078,14 +3102,46 @@ static int btrfs_extent_same(struct inode *src, u64 loff, u64 olen,
- 		goto out_unlock;
- 	}
- 
-+again:
- 	ret = btrfs_cmp_data_prepare(src, loff, dst, dst_loff, olen, &cmp);
- 	if (ret)
- 		goto out_unlock;
- 
- 	if (same_inode)
--		lock_extent_range(src, same_lock_start, same_lock_len);
-+		ret = lock_extent_range(src, same_lock_start, same_lock_len,
-+					false);
- 	else
--		btrfs_double_extent_lock(src, loff, dst, dst_loff, len);
-+		ret = btrfs_double_extent_lock(src, loff, dst, dst_loff, len,
-+					       false);
-+	/*
-+	 * If one of the inodes has dirty pages in the respective range or
-+	 * ordered extents, we need to flush dellaloc and wait for all ordered
-+	 * extents in the range. We must unlock the pages and the ranges in the
-+	 * io trees to avoid deadlocks when flushing delalloc (requires locking
-+	 * pages) and when waiting for ordered extents to complete (they require
-+	 * range locking).
-+	 */
-+	if (ret == -EAGAIN) {
-+		/*
-+		 * Ranges in the io trees already unlocked. Now unlock all
-+		 * pages before waiting for all IO to complete.
-+		 */
-+		btrfs_cmp_data_free(&cmp);
-+		if (same_inode) {
-+			btrfs_wait_ordered_range(src, same_lock_start,
-+						 same_lock_len);
-+		} else {
-+			btrfs_wait_ordered_range(src, loff, len);
-+			btrfs_wait_ordered_range(dst, dst_loff, len);
-+		}
-+		goto again;
-+	}
-+	ASSERT(ret == 0);
-+	if (WARN_ON(ret)) {
-+		/* ranges in the io trees already unlocked */
-+		btrfs_cmp_data_free(&cmp);
-+		return ret;
-+	}
- 
- 	/* pass original length for comparison so we stay within i_size */
- 	ret = btrfs_cmp_data(src, loff, dst, dst_loff, olen, &cmp);
-@@ -3907,9 +3963,15 @@ static noinline long btrfs_ioctl_clone(struct file *file, unsigned long srcfd,
- 		u64 lock_start = min_t(u64, off, destoff);
- 		u64 lock_len = max_t(u64, off, destoff) + len - lock_start;
- 
--		lock_extent_range(src, lock_start, lock_len);
-+		ret = lock_extent_range(src, lock_start, lock_len, true);
- 	} else {
--		btrfs_double_extent_lock(src, off, inode, destoff, len);
-+		ret = btrfs_double_extent_lock(src, off, inode, destoff, len,
-+					       true);
-+	}
-+	ASSERT(ret == 0);
-+	if (WARN_ON(ret)) {
-+		/* ranges in the io trees already unlocked */
-+		goto out_fput;
- 	}
- 
- 	ret = btrfs_clone(src, inode, off, olen, len, destoff, 0);
+-		ret = find_free_dev_extent(trans, device,
++		ret = find_free_dev_extent(trans->transaction, device,
+ 					   max_stripe_size * dev_stripes,
+ 					   &dev_offset, &max_avail);
+ 		if (ret && ret != -ENOSPC)
+diff --git a/fs/btrfs/volumes.h b/fs/btrfs/volumes.h
+index 6a4375a..9db9261 100644
+--- a/fs/btrfs/volumes.h
++++ b/fs/btrfs/volumes.h
+@@ -472,10 +472,7 @@ int btrfs_cancel_balance(struct btrfs_fs_info *fs_info);
+ int btrfs_create_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_check_uuid_tree(struct btrfs_fs_info *fs_info);
+ int btrfs_chunk_readonly(struct btrfs_root *root, u64 chunk_offset);
+-int find_free_dev_extent_start(struct btrfs_transaction *transaction,
+-			 struct btrfs_device *device, u64 num_bytes,
+-			 u64 search_start, u64 *start, u64 *max_avail);
+-int find_free_dev_extent(struct btrfs_trans_handle *trans,
++int find_free_dev_extent(struct btrfs_transaction *transaction,
+ 			 struct btrfs_device *device, u64 num_bytes,
+ 			 u64 *start, u64 *max_avail);
+ void btrfs_dev_stat_inc_and_print(struct btrfs_device *dev, int index);
 -- 
-2.7.0.rc3
+2.1.3
 

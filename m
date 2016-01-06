@@ -1,159 +1,152 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:26079 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755580AbcAUDk2 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 22:40:28 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <fdmanana@gmail.com>
-CC: <linux-btrfs@vger.kernel.org>
-References: <9b89157957abcc87a6ea0530989a4984794484cd.1452078012.git.zhaolei@cn.fujitsu.com> <CAL3q7H4P5t0X7mw-BSt5H2h2e1U15Y=Wyd5RjtJzqEhQs6ODpQ@mail.gmail.com>
-In-Reply-To: <CAL3q7H4P5t0X7mw-BSt5H2h2e1U15Y=Wyd5RjtJzqEhQs6ODpQ@mail.gmail.com>
-Subject: RE: [PATCH 1/3] btrfs: Continue write in case of can_not_nocow
-Date: Thu, 21 Jan 2016 11:39:57 +0800
-Message-ID: <009101d153fd$66788220$33698660$@cn.fujitsu.com>
+Received: from mgwkm04.jp.fujitsu.com ([202.219.69.171]:45081 "EHLO
+	mgwkm04.jp.fujitsu.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752170AbcAFIEF (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 03:04:05 -0500
+Received: from m3051.s.css.fujitsu.com (m3051.s.css.fujitsu.com [10.134.21.209])
+	by kw-mxoi1.gw.nic.fujitsu.com (Postfix) with ESMTP id CB662AC0320
+	for <linux-btrfs@vger.kernel.org>; Wed,  6 Jan 2016 17:03:59 +0900 (JST)
+Message-Id: <201601060803.AA00000@WIN-5MHF4RKU941.jp.fujitsu.com>
+From: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+Date: Wed, 06 Jan 2016 17:03:40 +0900
+To: linux-btrfs@vger.kernel.org, dsterba@suse.cz
+Subject: [PATCH V2] Btrfs: fix output of compression message in btrfs_parse_options()
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, Filipe Manana
+The compression message might not be correctly output.
+Fix it.
 
-> -----Original Message-----
-> From: Filipe Manana [mailto:fdmanana@gmail.com]
-> Sent: Thursday, January 21, 2016 4:49 AM
-> To: Zhao Lei <zhaolei@cn.fujitsu.com>
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: [PATCH 1/3] btrfs: Continue write in case of can_not_nocow
-> 
-> On Wed, Jan 6, 2016 at 11:00 AM, Zhao Lei <zhaolei@cn.fujitsu.com> wrote:
-> > btrfs failed in xfstests btrfs/080 with -o nodatacow.
-> >
-> > Can be reproduced by following script:
-> >   DEV=/dev/vdg
-> >   MNT=/mnt/tmp
-> >
-> >   umount $DEV &>/dev/null
-> >   mkfs.btrfs -f $DEV
-> >   mount -o nodatacow $DEV $MNT
-> >
-> >   dd if=/dev/zero of=$MNT/test bs=1 count=2048 &
-> >   btrfs subvolume snapshot -r $MNT $MNT/test_snap &
-> >   wait
-> >   --
-> >   We can see dd failed on NO_SPACE.
-> >
-> > Reason:
-> >   __btrfs_buffered_write should run cow write when no_cow impossible,
-> >   and current code is designed with above logic.
-> >   But check_can_nocow() have 2 type of return value(0 and <0) on
-> >   can_not_no_cow, and current code only continue write on first case,
-> >   the second case happened in doing subvolume.
-> >
-> > Fix:
-> >   Continue write when check_can_nocow() return 0 and <0.
-> >
-> > Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
-> Reviewed-by: Filipe Manana <fdmanana@suse.com>
-> 
-Thanks for review.
+[[before fix]]
 
-> Could you please submit a test case for xfstests as well?
+# mount -o compress /dev/sdb3 /test3
+[  996.874264] BTRFS info (device sdb3): disk space caching is enabled
+[  996.874268] BTRFS: has skinny extents
+# mount | grep /test3
+/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
 
-btrfs/080 with -o nodatacow already can trigger this bug.
+# mount -o remount,compress-force /dev/sdb3 /test3
+[ 1035.075017] BTRFS info (device sdb3): force zlib compression
+[ 1035.075021] BTRFS info (device sdb3): disk space caching is enabled
+# mount | grep /test3
+/dev/sdb3 on /test3 type btrfs (rw,relatime,compress-force=zlib,space_cache,subvolid=5,subvol=/)
 
-Thanks
-Zhaolei
+# mount -o remount,compress /dev/sdb3 /test3
+[ 1053.679092] BTRFS info (device sdb3): disk space caching is enabled
+# mount | grep /test3
+/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
 
-> Thanks.
-> 
+[[after fix]]
 
-> > ---
-> >  fs/btrfs/file.c | 37 +++++++++++++++++--------------------
-> >  1 file changed, 17 insertions(+), 20 deletions(-)
-> >
-> > diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c index 977e715..11fd981
-> > 100644
-> > --- a/fs/btrfs/file.c
-> > +++ b/fs/btrfs/file.c
-> > @@ -1516,27 +1516,24 @@ static noinline ssize_t
-> > __btrfs_buffered_write(struct file *file,
-> >
-> >                 reserve_bytes = num_pages << PAGE_CACHE_SHIFT;
-> >
-> > -               if (BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW |
-> > -
-> BTRFS_INODE_PREALLOC)) {
-> > -                       ret = check_can_nocow(inode, pos,
-> &write_bytes);
-> > -                       if (ret < 0)
-> > -                               break;
-> > -                       if (ret > 0) {
-> > -                               /*
-> > -                                * For nodata cow case, no need to
-> reserve
-> > -                                * data space.
-> > -                                */
-> > -                               only_release_metadata = true;
-> > -                               /*
-> > -                                * our prealloc extent may be smaller
-> than
-> > -                                * write_bytes, so scale down.
-> > -                                */
-> > -                               num_pages =
-> DIV_ROUND_UP(write_bytes + offset,
-> > -
-> PAGE_CACHE_SIZE);
-> > -                               reserve_bytes = num_pages <<
-> PAGE_CACHE_SHIFT;
-> > -                               goto reserve_metadata;
-> > -                       }
-> > +               if ((BTRFS_I(inode)->flags & (BTRFS_INODE_NODATACOW
-> |
-> > +
-> BTRFS_INODE_PREALLOC)) &&
-> > +                   check_can_nocow(inode, pos, &write_bytes) > 0) {
-> > +                       /*
-> > +                        * For nodata cow case, no need to reserve
-> > +                        * data space.
-> > +                        */
-> > +                       only_release_metadata = true;
-> > +                       /*
-> > +                        * our prealloc extent may be smaller than
-> > +                        * write_bytes, so scale down.
-> > +                        */
-> > +                       num_pages = DIV_ROUND_UP(write_bytes +
-> offset,
-> > +
-> PAGE_CACHE_SIZE);
-> > +                       reserve_bytes = num_pages <<
-> PAGE_CACHE_SHIFT;
-> > +                       goto reserve_metadata;
-> >                 }
-> > +
-> >                 ret = btrfs_check_data_free_space(inode, pos,
-> write_bytes);
-> >                 if (ret < 0)
-> >                         break;
-> > --
-> > 1.8.5.1
-> >
-> >
-> >
-> > --
-> > To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
-> > in the body of a message to majordomo@vger.kernel.org More majordomo
-> > info at  http://vger.kernel.org/majordomo-info.html
-> 
-> 
-> 
-> --
-> Filipe David Manana,
-> 
-> "Reasonable men adapt themselves to the world.
->  Unreasonable men adapt the world to themselves.
->  That's why all progress depends on unreasonable men."
+# mount -o compress /dev/sdb3 /test3
+[  401.021753] BTRFS info (device sdb3): use zlib compression
+[  401.021758] BTRFS info (device sdb3): disk space caching is enabled
+[  401.021760] BTRFS: has skinny extents
+# mount | grep /test3
+/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
 
+# mount -o remount,compress-force /dev/sdb3 /test3
+[  439.824624] BTRFS info (device sdb3): force zlib compression
+[  439.824629] BTRFS info (device sdb3): disk space caching is enabled
+# mount | grep /test3
+/dev/sdb3 on /test3 type btrfs (rw,relatime,compress-force=zlib,space_cache,subvolid=5,subvol=/)
 
+# mount -o remount,compress /dev/sdb3 /test3
+[  459.918430] BTRFS info (device sdb3): use zlib compression
+[  459.918434] BTRFS info (device sdb3): disk space caching is enabled
+# mount | grep /test3
+/dev/sdb3 on /test3 type btrfs (rw,relatime,compress=zlib,space_cache,subvolid=5,subvol=/)
+
+Signed-off-by: Tsutomu Itoh <t-itoh@jp.fujitsu.com>
+---
+V1->V2: It is corrected that API doesn't change.
+
+ fs/btrfs/super.c | 29 ++++++++++++++++++++++-------
+ 1 file changed, 22 insertions(+), 7 deletions(-)
+
+diff --git a/fs/btrfs/super.c b/fs/btrfs/super.c
+index 24154e4..12d04c9 100644
+--- a/fs/btrfs/super.c
++++ b/fs/btrfs/super.c
+@@ -381,6 +381,9 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 	int ret = 0;
+ 	char *compress_type;
+ 	bool compress_force = false;
++	enum btrfs_compression_type saved_compress_type;
++	bool saved_compress_force;
++	int no_compress = 0;
+ 
+ 	cache_gen = btrfs_super_cache_generation(root->fs_info->super_copy);
+ 	if (cache_gen)
+@@ -458,6 +461,10 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 			/* Fallthrough */
+ 		case Opt_compress:
+ 		case Opt_compress_type:
++			saved_compress_type = btrfs_test_opt(root, COMPRESS) ?
++				info->compress_type : BTRFS_COMPRESS_NONE;
++			saved_compress_force =
++				btrfs_test_opt(root, FORCE_COMPRESS);
+ 			if (token == Opt_compress ||
+ 			    token == Opt_compress_force ||
+ 			    strcmp(args[0].from, "zlib") == 0) {
+@@ -466,6 +473,7 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 				btrfs_set_opt(info->mount_opt, COMPRESS);
+ 				btrfs_clear_opt(info->mount_opt, NODATACOW);
+ 				btrfs_clear_opt(info->mount_opt, NODATASUM);
++				no_compress = 0;
+ 			} else if (strcmp(args[0].from, "lzo") == 0) {
+ 				compress_type = "lzo";
+ 				info->compress_type = BTRFS_COMPRESS_LZO;
+@@ -473,25 +481,21 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 				btrfs_clear_opt(info->mount_opt, NODATACOW);
+ 				btrfs_clear_opt(info->mount_opt, NODATASUM);
+ 				btrfs_set_fs_incompat(info, COMPRESS_LZO);
++				no_compress = 0;
+ 			} else if (strncmp(args[0].from, "no", 2) == 0) {
+ 				compress_type = "no";
+ 				btrfs_clear_opt(info->mount_opt, COMPRESS);
+ 				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
+ 				compress_force = false;
++				no_compress++;
+ 			} else {
+ 				ret = -EINVAL;
+ 				goto out;
+ 			}
+ 
+ 			if (compress_force) {
+-				btrfs_set_and_info(root, FORCE_COMPRESS,
+-						   "force %s compression",
+-						   compress_type);
++				btrfs_set_opt(info->mount_opt, FORCE_COMPRESS);
+ 			} else {
+-				if (!btrfs_test_opt(root, COMPRESS))
+-					btrfs_info(root->fs_info,
+-						   "btrfs: use %s compression",
+-						   compress_type);
+ 				/*
+ 				 * If we remount from compress-force=xxx to
+ 				 * compress=xxx, we need clear FORCE_COMPRESS
+@@ -500,6 +504,17 @@ int btrfs_parse_options(struct btrfs_root *root, char *options)
+ 				 */
+ 				btrfs_clear_opt(info->mount_opt, FORCE_COMPRESS);
+ 			}
++			if ((btrfs_test_opt(root, COMPRESS) &&
++			     (info->compress_type != saved_compress_type ||
++			      compress_force != saved_compress_force)) ||
++			    (!btrfs_test_opt(root, COMPRESS) &&
++			     no_compress == 1)) {
++				btrfs_info(root->fs_info,
++					   "%s %s compression",
++					   (compress_force) ? "force" : "use",
++					   compress_type);
++			}
++			compress_force = false;
+ 			break;
+ 		case Opt_ssd:
+ 			btrfs_set_and_info(root, SSD,
+-- 
+2.6.4
 
 

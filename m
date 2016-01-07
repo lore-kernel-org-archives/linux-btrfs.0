@@ -1,65 +1,76 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:40560 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752711AbcAGWOu (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jan 2016 17:14:50 -0500
-Date: Thu, 7 Jan 2016 14:14:46 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: "Wang, Zhiye" <Zhiye.Wang@Arcserve.com>
-Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
-Subject: Re: freeze_bdev and scrub/re-balance
-Message-ID: <20160107221446.GB7187@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <CY1PR10MB0428B98E759584F476DB4CF3E40B0@CY1PR10MB0428.namprd10.prod.outlook.com>
- <CY1PR10MB0428E36B7C37C92740306A60E40B0@CY1PR10MB0428.namprd10.prod.outlook.com>
- <20151209172143.GA30753@localhost.localdomain>
- <CY1PR10MB0428D9B9F5ED1E9E5080EA2EE4ED0@CY1PR10MB0428.namprd10.prod.outlook.com>
+Received: from mail-io0-f179.google.com ([209.85.223.179]:35168 "EHLO
+	mail-io0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752209AbcAGXK2 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jan 2016 18:10:28 -0500
+Received: by mail-io0-f179.google.com with SMTP id 77so238449945ioc.2
+        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jan 2016 15:10:28 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=iso-8859-1
-In-Reply-To: <CY1PR10MB0428D9B9F5ED1E9E5080EA2EE4ED0@CY1PR10MB0428.namprd10.prod.outlook.com>
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <CAJCQCtTCx4MBQyxNTyq1EpbxHTvuQrjJPehNR4jqw=9ZZu98Tg@mail.gmail.com>
+References: <568EB86F.7070800@gmail.com>
+	<CAL3q7H5VsDHfwwnoHc9_N9cg1KrtFro6gW59-XRoPj_orUyKVw@mail.gmail.com>
+	<CAJCQCtTCx4MBQyxNTyq1EpbxHTvuQrjJPehNR4jqw=9ZZu98Tg@mail.gmail.com>
+Date: Thu, 7 Jan 2016 23:10:28 +0000
+Message-ID: <CAL3q7H5Ac2OBhQvGA77=HmcgdRcV1UDPjWiyzkB7zWJF=upiHw@mail.gmail.com>
+Subject: Re: btrfs trim erases bootloader area
+From: Filipe Manana <fdmanana@gmail.com>
+To: Chris Murphy <lists@colorremedies.com>
+Cc: Andrei Borzenkov <arvidjaar@gmail.com>,
+        The development of GNU GRUB <grub-devel@gnu.org>,
+        "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Dec 14, 2015 at 09:27:10AM +0000, Wang, Zhiye wrote:
-> Thank you liubo for your reply.
-> 
-> But I am very clear with your meaning of "It should be like that with COW enabled"
-> 
-> I'd like to confirm, if defragment/scrub/rebalance is in progress, and my code calls "freeze_bdev" (in kernel code, or in user space code via ioctl), I can get a consistent file system state. "consistent file system state" means, if I run a LVM snapshot (or hardware snapshot, or even "dd" if it can do that quickly) after call freeze_bdev, the snapshot is file system consistent.
+On Thu, Jan 7, 2016 at 10:05 PM, Chris Murphy <lists@colorremedies.com> wrote:
+> On Thu, Jan 7, 2016 at 12:16 PM, Filipe Manana <fdmanana@gmail.com> wrote:
+>> On Thu, Jan 7, 2016 at 7:11 PM, Andrei Borzenkov <arvidjaar@gmail.com> wrote:
+>>> As discussed on opensuse-factory list, running fstrim on btrfs erases
+>>> bootloader area, rendering system unbootable. See
+>>>
+>>> https://lists.opensuse.org/opensuse-factory/2016-01/msg00067.html
+>>> https://lists.opensuse.org/opensuse-factory/2016-01/msg00090.html
+>>>
+>>> and follow-ups that demonstrate that beginning of device gets zeroed out.
+>>>
+>>> Not sure what we can do, but from GRUB side I can only see disabling
+>>> embedding support on btrfs entirely.
+>>
+>> Try this (sent to the btrfs mailing list yesterday):
+>>
+>> http://git.kernel.org/cgit/linux/kernel/git/fdmanana/linux.git/commit/?h=integration-4.5&id=7b6cb6618b45bb383f9336ec89df5f1f31f9935b
+>>
+>> thanks
+>
+> The description is a bit confusing by referring to MBR, which mainly
+> exists only at LBA 0. In the case of extended partitions, the EBR
+> (using the same MBR format) is still outside the LBA range for Btrfs
+> to apply fitrim ioctl. The VBR however, would be inside that range,
+> and it's that 64KiB bootloader pad Btrfs reserves that's being
+> inadvertently obliterated. Correct?
 
-I think so, the metadata is always written as a copy-on-write way, so
-it's consistent.
+Right, the title and description is confusing. I lacked the
+terminology and all technical details of grub, so I just used MBR to
+refer to any sector containing code used by the boot loader.
+Do you like the following title/change log better?
 
-Thanks,
+http://git.kernel.org/cgit/linux/kernel/git/fdmanana/linux.git/commit/?h=integration-4.5&id=6a340b36b68463ddca2b088c398d94a067a00e82
 
--liubo
-> 
-> 
-> Thanks
-> Mike
-> 
-> 
-> -----Original Message-----
-> From: Liu Bo [mailto:bo.li.liu@oracle.com] 
-> Sent: Thursday, December 10, 2015 1:22 AM
-> To: Wang, Zhiye
-> Cc: linux-btrfs@vger.kernel.org
-> Subject: Re: freeze_bdev and scrub/re-balance
-> 
-> On Sat, Dec 05, 2015 at 09:57:18AM +0000, Wang, Zhiye wrote:
-> > Hi all,
-> > 
-> > 
-> > If I understand it correctly, defragment operation is done in user space tools, while scrub/re-balance is done in kernel thread.
-> 
-> Defragment is done via a IOCTL, so it also works in the kernel.
-> 
-> > 
-> > 
-> > So, if my kernel module calls freeze_bdev when scrub/re-balance is in progress, will I still be able to get a consistent file system state?
-> 
-> It should be like that with COW enabled.
-> 
-> Thanks,
-> 
-> -liubo
+I'll resend it later or tomorrow.
+
+thanks
+
+>
+>
+>
+> Chris Murphy
+
+
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

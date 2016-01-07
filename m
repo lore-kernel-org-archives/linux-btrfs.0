@@ -1,17 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:43542 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:49498 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752519AbcAGBIv (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 20:08:51 -0500
+	with ESMTP id S1752509AbcAGBIt (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 20:08:49 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id BEF0941887F7
-	for <linux-btrfs@vger.kernel.org>; Thu,  7 Jan 2016 09:08:27 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 1D64D45DEE17
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Jan 2016 09:08:23 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v3 15/16] btrfs: dedup: Add support for adding hash for on-disk backend
-Date: Thu, 7 Jan 2016 09:08:16 +0800
-Message-ID: <1452128897-5433-16-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v3 07/16] btrfs: dedup: Introduce function to search for an existing hash
+Date: Thu, 7 Jan 2016 09:08:08 +0800
+Message-ID: <1452128897-5433-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1452128897-5433-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1452128897-5433-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -19,128 +19,197 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now on-disk backend can add hash now.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Introduce static function inmem_search() to handle the job for in-memory
+hash tree.
+
+The trick is, we must ensure the delayed ref head is not being run at
+the time we search the for the hash.
+
+With inmem_search(), we can implement the btrfs_dedup_search()
+interface.
+
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
 v3:
-  Fix a bug in writing extent buffer with wrong offset.
-  Add handler for same bytenr different hashes case.
+  Use struct inmem_hash instead of struct btrfs_dedup_hash.
 ---
- fs/btrfs/dedup.c | 84 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 84 insertions(+)
+ fs/btrfs/dedup.c | 163 +++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 163 insertions(+)
 
 diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
-index f448e27..3e09fd8 100644
+index 0272411..4863cf2 100644
 --- a/fs/btrfs/dedup.c
 +++ b/fs/btrfs/dedup.c
-@@ -246,6 +246,8 @@ out:
- 	return ret;
- }
- 
-+static int ondisk_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash,
-+			      u64 *bytenr_ret, u64 *num_bytes_ret);
- static void inmem_destroy(struct btrfs_fs_info *fs_info);
- int btrfs_dedup_cleanup(struct btrfs_fs_info *fs_info)
- {
-@@ -392,6 +394,86 @@ out:
+@@ -336,3 +336,166 @@ int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
+ 		inmem_destroy(fs_info);
  	return 0;
  }
- 
-+static int ondisk_search_bytenr(struct btrfs_trans_handle *trans,
-+				struct btrfs_dedup_info *dedup_info,
-+				struct btrfs_path *path, u64 bytenr,
-+				int prepare_del);
-+static int ondisk_add(struct btrfs_trans_handle *trans,
-+		      struct btrfs_dedup_info *dedup_info,
-+		      struct btrfs_dedup_hash *hash)
++
++/*
++ * Caller must ensure the corresponding ref head is not being run.
++ */
++static struct inmem_hash *
++inmem_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash)
 +{
-+	struct btrfs_path *path;
-+	struct btrfs_root *dedup_root = dedup_info->dedup_root;
-+	struct btrfs_key key;
-+	struct btrfs_dedup_hash_item *hash_item;
-+	u64 bytenr;
-+	u64 num_bytes;
-+	int hash_len = btrfs_dedup_sizes[dedup_info->hash_type];
-+	int ret;
++	struct rb_node **p = &dedup_info->hash_root.rb_node;
++	struct rb_node *parent = NULL;
++	struct inmem_hash *entry = NULL;
++	u16 hash_type = dedup_info->hash_type;
++	int hash_len = btrfs_dedup_sizes[hash_type];
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
++	while (*p) {
++		parent = *p;
++		entry = rb_entry(parent, struct inmem_hash, hash_node);
 +
-+	mutex_lock(&dedup_info->ondisk_lock);
-+
-+	/* Search for duplicated bytenr, refer inmem_add() for reason */
-+	ret = ondisk_search_bytenr(NULL, dedup_info, path, hash->bytenr, 0);
-+	if (ret < 0)
-+		goto out;
-+	if (ret > 0) {
-+		ret = 0;
-+		goto out;
++		if (memcmp(hash, entry->hash, hash_len) < 0) {
++			p = &(*p)->rb_left;
++		} else if (memcmp(hash, entry->hash, hash_len) > 0) {
++			p = &(*p)->rb_right;
++		} else {
++			/* Found, need to re-add it to LRU list head */
++			list_del(&entry->lru_list);
++			list_add(&entry->lru_list, &dedup_info->lru_list);
++			return entry;
++		}
 +	}
-+	btrfs_release_path(path);
-+
-+	ret = ondisk_search_hash(dedup_info, hash->hash, &bytenr, &num_bytes);
-+	if (ret < 0)
-+		goto out;
-+	/* Same hash found, don't re-add to save dedup tree space */
-+	if (ret > 0) {
-+		ret = 0;
-+		goto out;
-+	}
-+
-+	/* Insert hash->bytenr item */
-+	memcpy(&key.objectid, hash->hash + hash_len - 8, 8);
-+	key.type = BTRFS_DEDUP_HASH_ITEM_KEY;
-+	key.offset = hash->bytenr;
-+
-+	ret = btrfs_insert_empty_item(trans, dedup_root, path, &key,
-+			sizeof(*hash_item) + hash_len);
-+	WARN_ON(ret == -EEXIST);
-+	if (ret < 0)
-+		goto out;
-+	hash_item = btrfs_item_ptr(path->nodes[0], path->slots[0],
-+				   struct btrfs_dedup_hash_item);
-+	btrfs_set_dedup_hash_len(path->nodes[0], hash_item, hash->num_bytes);
-+	write_extent_buffer(path->nodes[0], hash->hash,
-+			    (unsigned long)(hash_item + 1), hash_len);
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+	btrfs_release_path(path);
-+
-+	/* Then bytenr->hash item */
-+	key.objectid = hash->bytenr;
-+	key.type = BTRFS_DEDUP_BYTENR_ITEM_KEY;
-+	memcpy(&key.offset, hash->hash + hash_len - 8, 8);
-+
-+	ret = btrfs_insert_empty_item(trans, dedup_root, path, &key, hash_len);
-+	WARN_ON(ret == -EEXIST);
-+	if (ret < 0)
-+		goto out;
-+	write_extent_buffer(path->nodes[0], hash->hash,
-+			btrfs_item_ptr_offset(path->nodes[0], path->slots[0]),
-+			hash_len);
-+	btrfs_mark_buffer_dirty(path->nodes[0]);
-+
-+out:
-+	mutex_unlock(&dedup_info->ondisk_lock);
-+	btrfs_free_path(path);
-+	return ret;
++	return NULL;
 +}
 +
- int btrfs_dedup_add(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 		    struct btrfs_dedup_hash *hash)
- {
-@@ -406,6 +488,8 @@ int btrfs_dedup_add(struct btrfs_trans_handle *trans, struct btrfs_root *root,
- 
- 	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
- 		return inmem_add(dedup_info, hash);
-+	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_ONDISK)
-+		return ondisk_add(trans, dedup_info, hash);
- 	return -EINVAL;
- }
- 
++static int inmem_search(struct inode *inode, u64 file_pos,
++			struct btrfs_dedup_hash *hash)
++{
++	int ret;
++	struct btrfs_root *root = BTRFS_I(inode)->root;
++	struct btrfs_fs_info *fs_info = root->fs_info;
++	struct btrfs_trans_handle *trans;
++	struct btrfs_delayed_ref_root *delayed_refs;
++	struct btrfs_delayed_ref_head *head;
++	struct inmem_hash *found_hash;
++	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
++	u64 bytenr, num_bytes;
++
++	spin_lock(&dedup_info->lock);
++	found_hash = inmem_search_hash(dedup_info, hash->hash);
++	/* If we don't find a duplicated extent, just return. */
++	if (!found_hash) {
++		spin_unlock(&dedup_info->lock);
++		return 0;
++	}
++	bytenr = found_hash->bytenr;
++	num_bytes = found_hash->num_bytes;
++	spin_unlock(&dedup_info->lock);
++
++	trans = btrfs_join_transaction(root);
++	if (IS_ERR(trans))
++		return PTR_ERR(trans);
++
++again:
++	delayed_refs = &trans->transaction->delayed_refs;
++
++	spin_lock(&delayed_refs->lock);
++	head = btrfs_find_delayed_ref_head(trans, bytenr);
++	if (!head) {
++		/*
++		 * We can safely insert a new delayed_ref as long as we
++		 * hold delayed_refs->lock.
++		 * Only need to use atomic inc_extent_ref()
++		 */
++		ret = btrfs_inc_extent_ref_atomic(trans, root, bytenr,
++				num_bytes, 0, root->root_key.objectid,
++				btrfs_ino(inode), file_pos);
++		spin_unlock(&delayed_refs->lock);
++		btrfs_end_transaction(trans, root);
++
++		if (ret == 0) {
++			hash->bytenr = bytenr;
++			hash->num_bytes = num_bytes;
++			ret = 1;
++		}
++		return ret;
++	}
++
++	/*
++	 * we may have dropped the delayed_refs->lock to get the head mutex
++	 * lock, and that might have given someone else time to free the head.
++	 * If that's true, it has been removed from our list and we can move on.
++	 */
++	ret = btrfs_delayed_ref_lock(trans, head);
++	spin_unlock(&delayed_refs->lock);
++	if (ret == -EAGAIN) {
++		spin_lock(&dedup_info->lock);
++		found_hash = inmem_search_hash(dedup_info, hash->hash);
++		if (!found_hash) {
++			spin_unlock(&dedup_info->lock);
++			goto out;
++		}
++		bytenr = found_hash->bytenr;
++		num_bytes = found_hash->num_bytes;
++		spin_unlock(&dedup_info->lock);
++		goto again;
++	}
++
++	/* We still need to look up the hash again... */
++	spin_lock(&dedup_info->lock);
++	found_hash = inmem_search_hash(dedup_info, hash->hash);
++	if (!found_hash) {
++		spin_unlock(&dedup_info->lock);
++		mutex_unlock(&head->mutex);
++		goto out;
++	}
++
++	/* The bytenr has changed, we need to re-lock the delayed_ref head */
++	if (found_hash->bytenr != bytenr) {
++		bytenr = found_hash->bytenr;
++		num_bytes = found_hash->num_bytes;
++		spin_unlock(&dedup_info->lock);
++		mutex_unlock(&head->mutex);
++		goto again;
++	}
++
++	hash->bytenr = bytenr;
++	hash->num_bytes = num_bytes;
++	spin_unlock(&dedup_info->lock);
++
++	/*
++	 * Increase the extent ref right now, to avoid delayed ref run
++	 * Or we may increase ref on non-exist extent.
++	 */
++	btrfs_inc_extent_ref(trans, root, bytenr, num_bytes, 0,
++			     root->root_key.objectid,
++			     btrfs_ino(inode), file_pos);
++	mutex_unlock(&head->mutex);
++	btrfs_end_transaction(trans, root);
++
++	return 1;
++
++out:
++	btrfs_end_transaction(trans, root);
++	return 0;
++}
++
++int btrfs_dedup_search(struct inode *inode, u64 file_pos,
++		       struct btrfs_dedup_hash *hash)
++{
++	struct btrfs_fs_info *fs_info = BTRFS_I(inode)->root->fs_info;
++	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
++	int ret = 0;
++
++	if (WARN_ON(!dedup_info || !hash))
++		return 0;
++
++	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
++		ret = inmem_search(inode, file_pos, hash);
++
++	/* It's possible hash->bytenr/num_bytenr already changed */
++	if (ret == 0) {
++		hash->num_bytes = 0;
++		hash->bytenr = 0;
++	}
++	return ret;
++}
 -- 
 2.6.4
 

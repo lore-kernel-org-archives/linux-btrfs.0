@@ -1,123 +1,90 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-qk0-f177.google.com ([209.85.220.177]:35849 "EHLO
-	mail-qk0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750791AbcAGNJ7 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Thu, 7 Jan 2016 08:09:59 -0500
-Received: by mail-qk0-f177.google.com with SMTP id q19so121167051qke.3
-        for <linux-btrfs@vger.kernel.org>; Thu, 07 Jan 2016 05:09:59 -0800 (PST)
+Received: from smtp-2.arkena.net ([95.81.173.75]:50624 "EHLO smtp-2.arkena.net"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751057AbcAGQjl (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jan 2016 11:39:41 -0500
+Received: from [10.201.4.47] (unknown [10.201.4.47])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
+	(No client certificate requested)
+	by smtp-2.arkena.net (Postfix) with ESMTPSA id 3pbtZL5z8MzHkDZ
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Jan 2016 16:39:38 +0000 (UTC)
+Subject: Re: Broken RAID6, segfault on chunk-recover
+To: linux-btrfs@vger.kernel.org
+References: <568A7460.6070607@zeroloop.net>
+ <9e61601b1589f0fd9381dc9cf0232e0e@mail.zeroloop.net>
+From: Abe <ml-btrfs@zeroloop.net>
+Message-ID: <568E94CA.4070907@zeroloop.net>
+Date: Thu, 7 Jan 2016 17:39:38 +0100
 MIME-Version: 1.0
-In-Reply-To: <568E60CF.70004@gmail.com>
-References: <CAHJqNbyXUfzscHteqrQtxJdYKToDNv7_Hw9tVpPuNJYwe=NHxw@mail.gmail.com>
-	<568BF078.8060303@gmail.com>
-	<CAHJqNbypeuLyYHEzH+4nPbmS=nTkeP6hgG+H+vuiQJTjP=t0vA@mail.gmail.com>
-	<568E60CF.70004@gmail.com>
-Date: Thu, 7 Jan 2016 14:09:59 +0100
-Message-ID: <CAHJqNbxnB9o-UwXyLf+PvttnNOcf88FwhEep1FSkye1Etp0CTA@mail.gmail.com>
-Subject: Re: Purposely using btrfs RAID1 in degraded mode ?
-From: Alphazo <alphazo@gmail.com>
-To: Psalle <psalleetsile@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <9e61601b1589f0fd9381dc9cf0232e0e@mail.zeroloop.net>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm a former bup user but I switched to borgbackup
-https://borgbackup.readthedocs.org/en/stable/ which is a more active
-fork of Attic and that solves two issues I had with bup: increasing
-time required to perform the incremental backup on large dataset with
-only few modifications and more importantly the impossibility to prune
-older backups. Also borgbackup natively supports encryption (AES256)
-and authentication (HMAC-SHA256).
+No wonder why chunck-recover crashed, superblocks are valid but they all
+contain a bogus chunk_root, it exceeds the total_bytes !
+So all I need it to find where that btree root is on disk, right?
 
-For offline long term backups I also used to work with hashdeep to
-perform and store a hash of all the files and recently started playing
-with FIM https://evrignaud.github.io/fim/ which is similar but with a
-git backend for storing history. Don't get fooled by fim being a java
-application. It easily outperformed hashdeep on large datasets.
+Problem is almost every tool from btrfs-progs is unusuable because they
+try to read the chunck root at first. Do you know of any alternative
+tool that could scan devices and find where roots might be?
 
-Alphazo
 
-On Thu, Jan 7, 2016 at 1:57 PM, Psalle <psalleetsile@gmail.com> wrote:
-> On 06/01/16 13:34, Alphazo wrote:
->>
->> Thanks Psalle. This is the kind of feedback I was looking for. I do
->> realize that using a filesystem in a degraded mode is not the wisest
->> thing to do. While I looked at git-annex I'm not sure it can help to
->> solve bit-rot detection. Now I noticed that my current backup solution
->> borg-backup also has a checksum verification feature so I can at least
->> detect errors. In addition it provides incremental deduplicated backup
->> so it should get me covered if I discover that something went wrong.
->
->
-> Is that bup? I see it isn't, I guess they're similar. That is interesting
-> too.
->
-> Git (or hg or similar) helps with bit rot because 'git fsck' will check the
-> hashes of the objects in the repository. If you detected a problem you could
-> re-clone from the good copy (assuming you have two drives with the same
-> repository in each one). Admittedly, it's a purely manual method but is
-> better than being unable to detect problems at all. git-annex is a layer on
-> top of git that automates things to some extent and is tailored to large
-> files, although the learning curve is not shallow in my experience.
->
-> -Psalle.
->
->
->>
->> alphazo
->>
->> On Tue, Jan 5, 2016 at 5:34 PM, Psalle <psalleetsile@gmail.com> wrote:
->>>
->>> Hello Alphazo,
->>>
->>> I am a mere btrfs user, but given the discussions I regularly see here
->>> about
->>> difficulties with degraded filesystems I wouldn't rely on this (yet?) as
->>> a
->>> regular work strategy, even if it's supposed to work.
->>>
->>> If you're familiar with git, perhaps git-annex could be an alternative.
->>>
->>> -Psalle.
->>>
->>>
->>> On 04/01/16 18:00, Alphazo wrote:
->>>>
->>>> Hello,
->>>>
->>>> My picture library today lies on an external hard drive that I sync on
->>>> a regular basis with a couple of servers and other external drives.
->>>> I'm interested by the on-the-fly checksum brought by btrfs and would
->>>> like to get your opinion on the following unusual use case that I have
->>>> tested:
->>>> - Create a btrfs with the two drives with RAID1
->>>> - When at home I can work with the two drives connected so I can enjoy
->>>> the self-healing feature if a bit goes mad so I only backup perfect
->>>> copies to my backup servers.
->>>> - When not at home I only bring one external drive and manually mount
->>>> it in degraded mode so I can continue working on my pictures while
->>>> still having checksum error detection (but not correction).
->>>> - When coming back home I can plug-back the seconde drive and initiate
->>>> a scrub or balance to get the second drive duplicated.
->>>>
->>>> I have tested the above use case with a couple of USB flash drive and
->>>> even used btrfs over dm-crypt partitions and it seemed to work fine
->>>> but I wanted to get some advices from the community if this is really
->>>> a bad practice that should not be used on the long run. Is there any
->>>> limitation/risk to read/write to/from a degraded filesystem knowing it
->>>> will be re-synced later?
->>>>
->>>> Thanks
->>>> alphazo
->>>>
->>>> PS: I have also investigated the RAID1 on a single drive with two
->>>> partitions but I cannot afford the half capacity resulting from that
->>>> approach.
->>>> --
->>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
->>>> in
->>>> the body of a message to majordomo@vger.kernel.org
->>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>>
->>>
->
+All superblock copies for all devices look like this :
+
+# ./btrfs-show-super /dev/sdb1
+superblock: bytenr=65536, device=/dev/sdb1
+---------------------------------------------------------
+csum			0x938855ef [match]
+bytenr			65536
+flags			0x1
+			( WRITTEN )
+magic			_BHRfS_M [match]
+fsid			bec7b9a0-c56c-494e-8631-072d3f89c0c9
+label			hive
+generation		34245
+root			6766859681792
+sys_array_size		321
+chunk_root_generation	32751
+root_level		1
+chunk_root		4415566151680  <--- Impossible Offset
+chunk_root_level	1
+log_root		0
+log_root_transid	0
+log_root_level		0
+total_bytes		4096872997376  <---
+bytes_used		2438972817408
+sectorsize		4096
+nodesize		16384
+leafsize		16384
+stripesize		4096
+root_dir		6
+num_devices		8
+compat_flags		0x0
+compat_ro_flags		0x0
+incompat_flags		0x1e1
+			( MIXED_BACKREF |
+			  BIG_METADATA |
+			  EXTENDED_IREF |
+			  RAID56 |
+			  SKINNY_METADATA )
+csum_type		0
+csum_size		4
+cache_generation	34245
+uuid_tree_generation	34245
+dev_item.uuid		ea4a089b-c88c-4a6c-80e5-b2c93f0613f5
+dev_item.fsid		bec7b9a0-c56c-494e-8631-072d3f89c0c9 [match]
+dev_item.type		0
+dev_item.total_bytes	512109125120
+dev_item.bytes_used	349754621952
+dev_item.io_align	4096
+dev_item.io_width	4096
+dev_item.sector_size	4096
+dev_item.devid		5
+dev_item.dev_group	0
+dev_item.seek_speed	0
+dev_item.bandwidth	0
+dev_item.generation	0
+
+
+Best regards,

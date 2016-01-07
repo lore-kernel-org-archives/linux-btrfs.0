@@ -1,36 +1,27 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from charlotte.tuxdriver.com ([70.61.120.58]:40483 "EHLO
-	smtp.tuxdriver.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751434AbcAEORV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 09:17:21 -0500
-Date: Tue, 5 Jan 2016 09:17:10 -0500
-From: Neil Horman <nhorman@tuxdriver.com>
-To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, Josef Bacik <jbacik@fb.com>
-Subject: Re: [PATCH] btrfs: only free root_path if it was allocated from the
- heap
-Message-ID: <20160105141710.GA6607@hmsreliant.think-freely.org>
-References: <1449168344-5803-1-git-send-email-nhorman@tuxdriver.com>
- <20160105140138.GA4227@twin.jikos.cz>
+Received: from mx2.suse.de ([195.135.220.15]:38429 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752209AbcAGPAU (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jan 2016 10:00:20 -0500
+Date: Thu, 7 Jan 2016 15:57:58 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Liu Bo <bo.li.liu@oracle.com>
+Cc: linux-btrfs@vger.kernel.org, dsterba@suse.com
+Subject: Re: [PATCH] Btrfs-progs: fix typo in parse_range
+Message-ID: <20160107145758.GE4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <1452114533-15121-1-git-send-email-bo.li.liu@oracle.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160105140138.GA4227@twin.jikos.cz>
+In-Reply-To: <1452114533-15121-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 05, 2016 at 03:01:38PM +0100, David Sterba wrote:
-> On Thu, Dec 03, 2015 at 01:45:44PM -0500, Neil Horman wrote:
-> > Noticed this while doing some snapshots in a chroot environment
-> > 
-> > btrfs receive can set root_path to either realmnt, which is passed in from the
-> > command line, or to a heap allocated via find_mount_root  in do_receive.  We
-> > should only free the later, not the former, as the former results in an invalid
-> > pointer warning from glibc during free.
-> > 
-> > Signed-off-by: Neil Horman <nhorman@tuxdriver.com>
+On Wed, Jan 06, 2016 at 01:08:53PM -0800, Liu Bo wrote:
+> s/*end/*start.
 > 
-> Sorry, I missed this patch, now applied, thanks.
+> This makes 'btrfs balance start -dvrange=xxx..yyy' really work.
 > 
+> Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 
-Thanks!
-Neil
-
+Applied, thanks.

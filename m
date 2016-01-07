@@ -1,80 +1,56 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:17215 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750846AbcAFCdq (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Tue, 5 Jan 2016 21:33:46 -0500
-Date: Tue, 5 Jan 2016 18:33:41 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: fdmanana@kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [PATCH] Btrfs: fix transaction handle leak on failure to create
- hard link
-Message-ID: <20160106023341.GC23191@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1452011582-9460-1-git-send-email-fdmanana@kernel.org>
+Received: from mx2.suse.de ([195.135.220.15]:32836 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752347AbcAGN0c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 7 Jan 2016 08:26:32 -0500
+Date: Thu, 7 Jan 2016 14:24:10 +0100
+From: David Sterba <dsterba@suse.cz>
+To: sam tygier <samtygier@yahoo.co.uk>
+Cc: linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH v3] Btrfs: Check metadata redundancy on balance
+Message-ID: <20160107132409.GD4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <568CD827.3060601@yahoo.co.uk>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1452011582-9460-1-git-send-email-fdmanana@kernel.org>
+In-Reply-To: <568CD827.3060601@yahoo.co.uk>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 05, 2016 at 04:33:02PM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
+On Wed, Jan 06, 2016 at 09:02:31AM +0000, sam tygier wrote:
+> From: Sam Tygier <samtygier@yahoo.co.uk>
+> Date: Wed, 6 Jan 2016 08:46:12 +0000
+> Subject: [PATCH] Btrfs: Check metadata redundancy on balance
 > 
-> If we failed to create a hard link we were not always releasing the
-> the transaction handle we got before, resulting in a memory leak and
-> preventing any other tasks from being able to commit the current
-> transaction.
-> Fix this by always releasing our transaction handle.
-
-Reviewed-by: Liu Bo <bo.li.liu@oracle.com>
-
-Thanks,
-
--liubo
+> When converting a filesystem via balance check that metadata mode
+> is at least as redundant as the data mode. For example give warning
+> when:
+> -dconvert=raid1 -mconvert=single
 > 
-> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
 > ---
->  fs/btrfs/inode.c | 6 ++++--
->  1 file changed, 4 insertions(+), 2 deletions(-)
+> v3:
+>   Use btrfs_warn()
+>   Mention profiles in message
+> v2:
+>   Use btrfs_get_num_tolerated_disk_barrier_failures()
+> ---
+>  fs/btrfs/volumes.c | 8 ++++++++
+>  1 file changed, 8 insertions(+)
 > 
-> diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-> index 5dbc07a..018c2a6 100644
-> --- a/fs/btrfs/inode.c
-> +++ b/fs/btrfs/inode.c
-> @@ -6488,7 +6488,7 @@ out_unlock_inode:
->  static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->  		      struct dentry *dentry)
->  {
-> -	struct btrfs_trans_handle *trans;
-> +	struct btrfs_trans_handle *trans = NULL;
->  	struct btrfs_root *root = BTRFS_I(dir)->root;
->  	struct inode *inode = d_inode(old_dentry);
->  	u64 index;
-> @@ -6514,6 +6514,7 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->  	trans = btrfs_start_transaction(root, 5);
->  	if (IS_ERR(trans)) {
->  		err = PTR_ERR(trans);
-> +		trans = NULL;
->  		goto fail;
->  	}
+> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+> index a23399e..be91458 100644
+> --- a/fs/btrfs/volumes.c
+> +++ b/fs/btrfs/volumes.c
+> @@ -3756,6 +3756,14 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+>  		}
+>  	} while (read_seqretry(&fs_info->profiles_lock, seq));
 >  
-> @@ -6547,9 +6548,10 @@ static int btrfs_link(struct dentry *old_dentry, struct inode *dir,
->  		btrfs_log_new_name(trans, inode, NULL, parent);
->  	}
->  
-> -	btrfs_end_transaction(trans, root);
->  	btrfs_balance_delayed_items(root);
->  fail:
-> +	if (trans)
-> +		btrfs_end_transaction(trans, root);
->  	if (drop_inode) {
->  		inode_dec_link_count(inode);
->  		iput(inode);
-> -- 
-> 2.1.3
-> 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+> +	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
+> +		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
+> +		btrfs_warn(fs_info,
+> +			"Warning: metatdata profile %llu has lower redundancy "
+> +		        "than data profile %llu\n", bctl->meta.target,
+
+Thanks. FYI, I made some minor adjustments to the message ("warning" is
+not necessary, numer format looks better in hexa, no ending \n).

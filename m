@@ -1,8 +1,11 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:28168 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751905AbcAGBlH (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 20:41:07 -0500
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:59999 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751924AbcAGDLk (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Wed, 6 Jan 2016 22:11:40 -0500
+Date: Thu, 7 Jan 2016 14:11:31 +1100
+From: Dave Chinner <david@fromorbit.com>
 To: mchristi@redhat.com
 Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
@@ -13,41 +16,40 @@ Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         linux-scsi@vger.kernel.org, linux-mtd@lists.infradead.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 00/35 v2] separate operations from flags in the bio/request structs
-From: "Martin K. Petersen" <martin.petersen@oracle.com>
+Subject: Re: [PATCH 13/35] xfs: set bi_op to REQ_OP
+Message-ID: <20160107031131.GB32200@dastard>
 References: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
-Date: Wed, 06 Jan 2016 20:40:09 -0500
-In-Reply-To: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
-	(mchristi@redhat.com's message of "Tue, 5 Jan 2016 14:53:03 -0600")
-Message-ID: <yq14meqi2va.fsf@sermon.lab.mkp.net>
+ <1452027218-32303-14-git-send-email-mchristi@redhat.com>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1452027218-32303-14-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
->>>>> "Mike" == mchristi  <mchristi@redhat.com> writes:
+On Tue, Jan 05, 2016 at 02:53:16PM -0600, mchristi@redhat.com wrote:
+> From: Mike Christie <mchristi@redhat.com>
+> 
+> This patch has xfs set the bio bi_op to a REQ_OP, and
+> rq_flag_bits to bi_rw.
+> 
+> Note:
+> I have run xfs tests on these btrfs patches. There were some failures
+> with and without the patches. I have not had time to track down why
+> xfstest fails without the patches.
+> 
+> Signed-off-by: Mike Christie <mchristi@redhat.com>
+> ---
+>  fs/xfs/xfs_aops.c |  3 ++-
+>  fs/xfs/xfs_buf.c  | 27 +++++++++++++++------------
+>  2 files changed, 17 insertions(+), 13 deletions(-)
 
-Mike> The following patches begin to cleanup the request->cmd_flags and
-bio-> bi_rw mess. We currently use cmd_flags to specify the operation,
-Mike> attributes and state of the request. For bi_rw we use it for
-Mike> similar info and also the priority but then also have another
-Mike> bi_flags field for state. At some point, we abused them so much we
-Mike> just made cmd_flags 64 bits, so we could add more.
+Not sure which patches your note is refering to here.
 
-Mike> The following patches seperate the operation (read, write discard,
-Mike> flush, etc) from cmd_flags/bi_rw.
+The XFS change here looks fine.
 
-Mike> This patchset was made against linux-next from today Jan 5 2016.
-Mike> (git tag next-20160105).
+Acked-by: Dave Chinner <dchinner@redhat.com>
 
-Very nice work. Thanks for doing this!
-
-I think it's a much needed cleanup. I focused mainly on the core block,
-discard, write same and sd.c pieces and everything looks sensible to me.
-
-I wonder what the best approach is to move a patch set with this many
-stakeholders forward? Set a "speak now or forever hold your peace"
-review deadline?
-
+-Dave.
 -- 
-Martin K. Petersen	Oracle Linux Engineering
+Dave Chinner
+david@fromorbit.com

@@ -1,78 +1,112 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:60089 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:7498 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1755107AbcA1HlB (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 28 Jan 2016 02:41:01 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 029E441896ED
-	for <linux-btrfs@vger.kernel.org>; Thu, 28 Jan 2016 15:39:57 +0800 (CST)
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
+	with ESMTP id S1751924AbcAGBIg (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Wed, 6 Jan 2016 20:08:36 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id 26A6D4092578
+	for <linux-btrfs@vger.kernel.org>; Thu,  7 Jan 2016 09:08:19 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH] btrfs: reada: Ignore creating reada_extent for non-exist device
-Date: Thu, 28 Jan 2016 15:38:37 +0800
-Message-ID: <0b625fb1b1bef88f7c6c953ce8972c9aee33c9a1.1453966709.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH v3 00/14][For 4.6] Btrfs: Add inband (write time) de-duplication framework
+Date: Thu, 7 Jan 2016 09:08:01 +0800
+Message-ID: <1452128897-5433-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-For a non-exist device, old code bypass adding it in dev's reada
-queue.
+This updated version of inband de-duplication has the following features:
+1) ONE unified dedup framework.
+   Most of its code is hidden quietly in dedup.c and export the minimal
+   interfaces for its caller.
+   Reviewer and further developer would benefit from the unified
+   framework.
 
-And to solve problem of unfinished waitting in raid5/6,
-commit 5fbc7c59fd22 ("Btrfs: fix unfinished readahead thread for
-raid5/6 degraded mounting")
-adding a exception for the first strip, in short, the first
-strip will always be processed whether the device exist or not.
+2) TWO different back-end with different trade-off
+   One is the improved version of previous Fujitsu in-memory only dedup.
+   The other one is enhanced dedup implementation from Liu Bo.
+   Changed its tree structure to handle bytenr -> hash search for
+   deleting hash, without the hideous data backref hack.
 
-Actually we have a better way for above request: just bypass
-creation of the reada_extent for non-exist device, it will make
-code simple and effective.
+3) Ioctl interface with persist dedup status
+   Advised by David, now we use ioctl to enable/disable dedup.
+   Further we will add per-file/dir dedup disable command in that ioctl.
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/reada.c | 17 ++++++++---------
- 1 file changed, 8 insertions(+), 9 deletions(-)
+   And we now have dedup status, recorded in the first item of dedup
+   tree.
+   Just like quota, once enabled, no extra ioctl is needed for next
+   mount.
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 12a9c9c..5b5187e 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -371,6 +371,11 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 		struct reada_zone *zone;
- 
- 		dev = bbio->stripes[nzones].dev;
-+
-+		/* cannot read ahead on missing device. */
-+		 if (!dev->bdev)
-+			continue;
-+
- 		zone = reada_find_zone(fs_info, dev, logical, bbio);
- 		if (!zone)
- 			continue;
-@@ -423,15 +428,9 @@ static struct reada_extent *reada_find_extent(struct btrfs_root *root,
- 			 */
- 			continue;
- 		}
--		if (!dev->bdev) {
--			/*
--			 * cannot read ahead on missing device, but for RAID5/6,
--			 * REQ_GET_READ_MIRRORS return 1. So don't skip missing
--			 * device for such case.
--			 */
--			if (nzones > 1)
--				continue;
--		}
-+		if (!dev->bdev)
-+			continue;
-+
- 		if (dev_replace_is_ongoing &&
- 		    dev == fs_info->dev_replace.tgtdev) {
- 			/*
+TODO:
+1) Per-file ioctl to disbale dedup
+   Just like compression setting per file
+
+2) Support compression for hash miss case
+   It will go though non-compress routine, not compressing it even we can.
+   This may need to change the on-disk format for on-disk backend.
+
+3) Make codes more elegant
+   A lot of place is quite ugly, espcially when it comes to delayed_ref
+   related part.
+   Like btrfs_dedup_add() and btrfs_dedup_del().
+   We may need to rework delayed_ref to a more simple and straightforward
+   implementation.
+
+Changelog:
+v2:
+  Totally reworked to handle multiple backends
+v3:
+  Fix a stupid but deadly on-disk backend bug
+  Add handle for multiple hash on same bytenr corner case to fix abort
+  trans error
+  Increase dedup rate by enhancing delayed ref handler for both backend.
+  Move dedup_add() to run_delayed_ref() time, to fix abort trans error.
+  Increase dedup block size up limit to 8M.
+
+Qu Wenruo (7):
+  btrfs: delayed-ref: Add support for atomic increasing extent ref
+  btrfs: delayed_ref: Add support for handle dedup hash
+  btrfs: dedup: Add basic tree structure for on-disk dedup method
+  btrfs: dedup: Introduce interfaces to resume and cleanup dedup info
+  btrfs: dedup: Add support for on-disk hash search
+  btrfs: dedup: Add support to delete hash for on-disk backend
+  btrfs: dedup: Add support for adding hash for on-disk backend
+
+Wang Xiaoguang (9):
+  btrfs: dedup: Introduce dedup framework and its header
+  btrfs: dedup: Introduce function to initialize dedup info
+  btrfs: dedup: Introduce function to add hash into in-memory tree
+  btrfs: dedup: Introduce function to remove hash from in-memory tree
+  btrfs: dedup: Introduce function to search for an existing hash
+  btrfs: dedup: Implement btrfs_dedup_calc_hash interface
+  btrfs: ordered-extent: Add support for dedup
+  btrfs: dedup: Inband in-memory only de-duplication implement
+  btrfs: dedup: Add ioctl for inband deduplication
+
+ fs/btrfs/Makefile            |    2 +-
+ fs/btrfs/ctree.h             |   79 +++-
+ fs/btrfs/dedup.c             | 1053 ++++++++++++++++++++++++++++++++++++++++++
+ fs/btrfs/dedup.h             |  155 +++++++
+ fs/btrfs/delayed-ref.c       |   26 +-
+ fs/btrfs/delayed-ref.h       |    9 +-
+ fs/btrfs/disk-io.c           |   28 +-
+ fs/btrfs/disk-io.h           |    1 +
+ fs/btrfs/extent-tree.c       |   39 +-
+ fs/btrfs/extent_io.c         |   30 +-
+ fs/btrfs/extent_io.h         |   15 +
+ fs/btrfs/inode.c             |  305 +++++++++++-
+ fs/btrfs/ioctl.c             |   63 +++
+ fs/btrfs/ordered-data.c      |   33 +-
+ fs/btrfs/ordered-data.h      |   13 +
+ include/trace/events/btrfs.h |    3 +-
+ include/uapi/linux/btrfs.h   |   23 +
+ 17 files changed, 1829 insertions(+), 48 deletions(-)
+ create mode 100644 fs/btrfs/dedup.c
+ create mode 100644 fs/btrfs/dedup.h
+
 -- 
-1.8.5.1
+2.6.4
 
 
 

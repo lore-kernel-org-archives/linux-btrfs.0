@@ -1,74 +1,57 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38185 "EHLO mx2.suse.de"
+Received: from mail.kernel.org ([198.145.29.136]:36505 "EHLO mail.kernel.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751057AbcAGOzK (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 7 Jan 2016 09:55:10 -0500
-From: David Sterba <dsterba@suse.com>
-To: clm@fb.com
-Cc: linux-btrfs@vger.kernel.org, David Sterba <dsterba@suse.com>
-Subject: [PULL] Btrfs: cleanups for 4.5
-Date: Thu,  7 Jan 2016 15:52:47 +0100
-Message-Id: <cover.1452177907.git.dsterba@suse.com>
+	id S932240AbcAHLoQ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 8 Jan 2016 06:44:16 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org, clm@fb.com
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [GIT PULL] More btrfs bug fixes for 4.5
+Date: Fri,  8 Jan 2016 11:43:51 +0000
+Message-Id: <1452253431-29510-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+From: Filipe Manana <fdmanana@suse.com>
 
-a few more patches from the mailinglist, cleanups. Please pull to 4.5. Thanks.
+Hi Chris.
 
-----------------------------------------------------------------
-The following changes since commit 4ef7675344d687a0ef5b0d7c0cee12da005870c0:
+Please consider the following bug fixes for the 4.5 kernel release.
+Just the usual set of bug fixes. One of these is tagged for stable and it
+fixes a regression introduced in 4.3 that makes a filesystem unbootable
+after a fitrim operation (recently reported by a few openSUSE users).
+These patches were all previously sent to the mailing list as well as a
+new test case for fstests that covers the regression with fitrim.
 
-  Linux 4.4-rc6 (2015-12-20 16:06:09 -0800)
+Thanks.
+
+The following changes since commit 511711af91f21d80b27f18b569352d6896562828:
+
+  btrfs: don't run delayed references while we are creating the free space tree (2015-12-30 07:52:35 -0800)
 
 are available in the git repository at:
 
-  git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git misc-cleanups-4.5
+  git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.5
 
-for you to fetch changes up to a7ca42256d9fad572fb7f2c471514d7d3572b1db:
+for you to fetch changes up to 8cdc7c5b00d945a3c823fc4277af304abb9cb43d:
 
-  btrfs: use list_for_each_entry* in backref.c (2016-01-07 14:42:46 +0100)
+  Btrfs: fix fitrim discarding device area reserved for boot loader's use (2016-01-07 21:16:03 +0000)
 
 ----------------------------------------------------------------
-Alexandru Moise (3):
-      btrfs: switch __btrfs_fs_incompat return type from int to bool
-      btrfs: pass proper enum type to start_transaction()
-      btrfs: zero out delayed node upon allocation
+Filipe Manana (6):
+      Btrfs: fix race between free space endio workers and space cache writeout
+      Btrfs: send, don't BUG_ON() when an empty symlink is found
+      Btrfs: don't leave dangling dentry if symlink creation failed
+      Btrfs: fix number of transaction units required to create symlink
+      Btrfs: fix transaction handle leak on failure to create hard link
+      Btrfs: fix fitrim discarding device area reserved for boot loader's use
 
-Byongho Lee (2):
-      btrfs: remove unused inode argument from uncompress_inline()
-      Btrfs: use linux/sizes.h to represent constants
+ fs/btrfs/extent-tree.c | 19 +++++++++++++++++++
+ fs/btrfs/inode.c       | 21 ++++++++++++++-------
+ fs/btrfs/send.c        | 16 +++++++++++++++-
+ fs/btrfs/volumes.c     | 20 ++++++++++----------
+ 4 files changed, 58 insertions(+), 18 deletions(-)
 
-David Sterba (1):
-      btrfs: cleanup, remove stray return statements
+-- 
+2.1.3
 
-Geliang Tang (3):
-      btrfs: use list_for_each_entry* in check-integrity.c
-      btrfs: use list_for_each_entry_safe in free-space-cache.c
-      btrfs: use list_for_each_entry* in backref.c
-
- fs/btrfs/backref.c                |  23 ++---
- fs/btrfs/check-integrity.c        | 105 ++++++---------------
- fs/btrfs/ctree.c                  |   2 +-
- fs/btrfs/ctree.h                  |   7 +-
- fs/btrfs/delayed-inode.c          |   7 +-
- fs/btrfs/disk-io.c                |   3 +-
- fs/btrfs/disk-io.h                |   4 +-
- fs/btrfs/extent-tree.c            |  29 +++---
- fs/btrfs/extent_io.c              |   2 +-
- fs/btrfs/free-space-cache.c       |  24 ++---
- fs/btrfs/inode-map.c              |   2 +-
- fs/btrfs/inode.c                  |  28 +++---
- fs/btrfs/ioctl.c                  |  23 +++--
- fs/btrfs/locking.c                |   2 -
- fs/btrfs/raid56.c                 |   2 -
- fs/btrfs/scrub.c                  |   2 -
- fs/btrfs/send.h                   |   4 +-
- fs/btrfs/super.c                  |   2 +-
- fs/btrfs/tests/extent-io-tests.c  |  11 ++-
- fs/btrfs/tests/free-space-tests.c | 186 ++++++++++++++++----------------------
- fs/btrfs/tests/inode-tests.c      |   2 +-
- fs/btrfs/transaction.c            |  15 ++-
- fs/btrfs/volumes.c                |  17 ++--
- fs/btrfs/volumes.h                |   2 +-
- 24 files changed, 197 insertions(+), 307 deletions(-)

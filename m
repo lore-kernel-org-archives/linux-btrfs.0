@@ -1,9 +1,9 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:57838 "EHLO
+Received: from bombadil.infradead.org ([198.137.202.9]:58421 "EHLO
 	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754715AbcAINhT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Jan 2016 08:37:19 -0500
-Date: Sat, 9 Jan 2016 05:37:16 -0800
+	with ESMTP id S1755212AbcAINjT (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Jan 2016 08:39:19 -0500
+Date: Sat, 9 Jan 2016 05:39:18 -0800
 From: Christoph Hellwig <hch@infradead.org>
 To: mchristi@redhat.com
 Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
@@ -15,15 +15,24 @@ Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         linux-scsi@vger.kernel.org, linux-mtd@lists.infradead.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 02/35] block: add REQ_OP definitions and bi_op/op fields
-Message-ID: <20160109133716.GB26660@infradead.org>
+Subject: Re: [PATCH 26/35] block: set op to REQ_OP
+Message-ID: <20160109133918.GC26660@infradead.org>
 References: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
- <1452027218-32303-3-git-send-email-mchristi@redhat.com>
+ <1452027218-32303-27-git-send-email-mchristi@redhat.com>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1452027218-32303-3-git-send-email-mchristi@redhat.com>
+In-Reply-To: <1452027218-32303-27-git-send-email-mchristi@redhat.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Seems like this is missing REQ_OP_FLUSH, which still hides as a write?
+> @@ -1149,10 +1151,12 @@ static struct request *__get_request(struct request_list *rl, int rw_flags,
+>  
+>  	blk_rq_init(q, rq);
+>  	blk_rq_set_rl(rq, rl);
+> -	rq->cmd_flags = rw_flags | REQ_ALLOCED;
+> +	/* tmp compat - allow users to check either one for the op */
+> +	rq->cmd_flags = op | op_flags | REQ_ALLOCED;
+
+This one is still left after the whole series is applied, seems like
+the hunk to remove it again got lost somewhere.
 

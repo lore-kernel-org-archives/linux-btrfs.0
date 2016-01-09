@@ -1,120 +1,84 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:53635 "EHLO plane.gmane.org"
+Received: from plane.gmane.org ([80.91.229.3]:55332 "EHLO plane.gmane.org"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752576AbcAIKIj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Sat, 9 Jan 2016 05:08:39 -0500
+	id S1752395AbcAIKzf (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Jan 2016 05:55:35 -0500
 Received: from list by plane.gmane.org with local (Exim 4.69)
 	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aHqRp-0001rd-1C
-	for linux-btrfs@vger.kernel.org; Sat, 09 Jan 2016 11:08:37 +0100
+	id 1aHrBF-000653-Ss
+	for linux-btrfs@vger.kernel.org; Sat, 09 Jan 2016 11:55:34 +0100
 Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
         by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Jan 2016 11:08:37 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Jan 2016 11:55:33 +0100
 Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
         id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Sat, 09 Jan 2016 11:08:37 +0100
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Jan 2016 11:55:33 +0100
 To: linux-btrfs@vger.kernel.org
 From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: Purposely using btrfs RAID1 in degraded mode ?
-Date: Sat, 9 Jan 2016 10:08:30 +0000 (UTC)
-Message-ID: <pan$c865f$a56b47b9$50596374$de688f5d@cox.net>
-References: <CAHJqNbyXUfzscHteqrQtxJdYKToDNv7_Hw9tVpPuNJYwe=NHxw@mail.gmail.com>
-	<CAJCQCtS2ePxA44YCUS=Q7xS1sWszPmzDe13idDVvxwpeqHD05A@mail.gmail.com>
+Subject: Re: evidence of persistent state, despite device disconnects
+Date: Sat, 9 Jan 2016 10:55:23 +0000 (UTC)
+Message-ID: <pan$84a33$9b12297$c9fad6dd$fe3dbd43@cox.net>
+References: <CAJCQCtS59TFek+g9x_aoqGzepySMrRn6DcOQkuwi=VQYR9M4tw@mail.gmail.com>
+	<pan$671e2$87d221b4$c1b40d79$6f794584@cox.net>
+	<CAJCQCtSCvzoOdqFx9dB9sbT-dR0XsQVzWwVcK3zBnwC17+ZV_Q@mail.gmail.com>
+	<pan$4b55a$cfffcc6c$c8faaa76$1740646a@cox.net>
+	<CAJCQCtRkDrUhiCsgO5Wm=1OhpbtxaR58SLLg5JxZvYQE_nSTUQ@mail.gmail.com>
 Mime-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Chris Murphy posted on Mon, 04 Jan 2016 10:41:09 -0700 as excerpted:
+Chris Murphy posted on Tue, 05 Jan 2016 14:47:52 -0700 as excerpted:
 
-> On Mon, Jan 4, 2016 at 10:00 AM, Alphazo <alphazo@gmail.com> wrote:
+> On Tue, Jan 5, 2016 at 7:50 AM, Duncan <1i5t5.duncan@cox.net> wrote:
 > 
->> I have tested the above use case with a couple of USB flash drive and
->> even used btrfs over dm-crypt partitions and it seemed to work fine but
->> I wanted to get some advices from the community if this is really a bad
->> practice that should not be used on the long run. Is there any
->> limitation/risk to read/write to/from a degraded filesystem knowing it
->> will be re-synced later?
 > 
-> As long as you realize you're testing a sort of edge case, but an
-> important one (it should work, that's the point of rw degraded mounts
-> being possible), then I think it's fine.
+>> If however you mounted it degraded,rw at some point, then I'd say the
+>> bug is in wetware, as in that case, based on my understanding, it's
+>> working as intended.  I was inclined to believe that was what happened
+>> based on the obviously partial sequence in the earlier post, but if you
+>> say you didn't... then it's all down to duplication and finding why
+>> it's suddenly reverting to single mode on non-degraded mounts, which
+>> indeed /is/ a bug.
 > 
-> The warning though is, you need to designate a specific drive for the
-> rw,degraded mounts. If you were to separately rw,degraded mount the two
-> drives, the fs will become irreparably corrupt if they are rejoined. And
-> you'll probably lose everything on the volume. The other thing is that
-> to "resync" you have to manually initiate a scrub, it's not going to
-> resync automatically, and it has to read everything on both drives to
-> compare and fix what's missing. There is no equivalent to a write intent
-> bitmap on Btrfs like with mdadm (the information ostensibly could be
-> inferred from btrfs generation metadata similar to how incremental
-> snapshot send/receive works) but that work isn't done.
+> Clearly I will have to retest.
+> 
+> But even as rw,degraded, it doesn't matter, that'd still be a huge bug.
+> There's no possible way you'll convince me this is a user
+> misunderstanding. No where is this documented.
+> 
+> I made the fs using mfks.btrfs -draid1 -mraid1. There is no way the fs,
+> under any circumstance, legitimately creates and uses any other profile
+> for any chunk type, ever. Let alone silently.
 
-In addition to what CMurphy says above (which I see you/Alphazo acked), 
-be aware that btrfs' chunk-writing behavior isn't particularly well 
-suited to this sort of split-raid1 application.
+If you're mounting degraded,rw, and you're down to a single device on a 
+raid1, then once the existing chunks fill up, it /has/ to create single 
+chunks, because it can't create them raid1 as there's not enough devices 
+(a minimum of two devices are required to create raid1 chunks, since two 
+copies are required and they can't be on the same device).
 
-In general, btrfs allocates space in two steps.  First, it allocates 
-rather large "chunks" of space, data chunks separately from metadata 
-(unless you use --mixed mode, when you first setup the filesystem with 
-mkfs.btrfs, then data and metadata are mixed together in the same 
-chunks).  Data chunks are typically 1 GiB in size except on filesystems 
-over 100 GiB (where they're larger), while metadata chunks are typically 
-256 MiB (as are mixed-mode chunks).
+And by mounting degraded,rw you've given it permission to create those 
+single mode chunks if it has to, so it's not "silent", as you've 
+explicitly mounted it degraded,rw, and single is what raid1 degrades to 
+when there's only one device.
 
-Then btrfs uses space from these chunks until they get full, at which 
-point it will attempt to allocate more chunks.
+And with automatic empty-chunk deletion, existing chunks can fill up 
+pretty fast...
 
-Older btrfs (before kernel 3.17, IIRC) could allocate chunks, but didn't 
-know how to deallocate chunks when empty, so a common problem back then 
-was that over time, all free space would be allocated to empty data 
-chunks, and people would run into ENOSPC errors when metadata chunks ran 
-out of space, but more couldn't be created because all the empty space 
-was in data chunks.
+Further, NOT letting it write single chunks when an otherwise raid1 btrfs 
+is mounted in degraded,rw mode, would very possibly prevent you from 
+repairing the filesystem with a btrfs replace or btrfs device add and 
+delete.  And we've been there, done that, except slightly differently, 
+with the can only mount degraded,rw until a single mode chunk is written, 
+after which you can only mount degraded,ro, and then can't repair, which 
+is the problem that the per-chunk check patches, vs. the old filesystem-
+scope check, were designed to eliminate.
 
-Newer btrfs automatically reclaims empty chunks, so this doesn't happen 
-so often.
-
-But here comes the problem for the use-case you've described.  Btrfs 
-can't allocate raid1 chunks if there's only a single device, because 
-raid1 requires two devices.
-
-So what's likely to happen is that at some point, you'll be away from 
-home and the existing raid1 chunks, either data or metadata, will fill 
-up, and btrfs will try to allocate more.  But you'll be running in 
-degraded mode with only a single device, and it wouldn't be able to 
-allocate raid1 chunks with just that single device.
-
-Oops!  Big problem!
-
-Now until very recently (I believe thru current 4.3), what would happen 
-in this case is that btrfs would find that it couldn't create a new chunk 
-in raid1 mode, and if operating degraded, would then fall back to 
-creating it in single mode.  Which lets you continue writing, so all is 
-well.  Except... once you unmounted and attempted to mount the device 
-again, still degraded, it would see the single-mode chunks on a 
-filesystem that was supposed to have two devices, and would refuse to 
-mount degraded,rw again.  You could only mount degraded,ro.  Of course in 
-your use-case, you could still wait until you got home and mount 
-undegraded again, which would allow you to mount writable.
-
-But a scrub wouldn't sync the single chunks.  For that, after the scrub, 
-you'd need to run a filtered balance-convert, to convert the single 
-chunks back to raid1.  Something like this (one command):
-
-btrfs balance start -dprofile=single,convert=raid1 
--mprofile=single,convert=raid1
-
-There are very new patches that should solve the problem of not being 
-able to mount degraded,rw after single mode chunks are found, provided 
-all those single mode chunks actually exist on the found device(s).  I 
-think but I'm not sure, that they're in 4.4.  That would give you more 
-flexibility in terms of mounting degraded,rw after single chunks have 
-been created on the device you have with you, but you'd still need to run 
-both a scrub, to sync the raid1 chunks, and a balance, to convert the 
-single chunks to raid1 and sync them, once you had both devices connected.
+But as I said, if it's creating single chunks when you did /not/ have it 
+mounted degraded, then you indeed have found a bug, and figuring out how 
+to replicate it so it can be properly traced and fixed is where we're 
+left, as I can't see how anyone would find that not a bug.
 
 -- 
 Duncan - List replies preferred.   No HTML msgs.

@@ -1,61 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from 220-245-31-42.static.tpgi.com.au ([220.245.31.42]:45867 "EHLO
-	smtp.sws.net.au" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1756819AbcAJG0o (ORCPT
+Received: from mail-wm0-f41.google.com ([74.125.82.41]:34078 "EHLO
+	mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751400AbcAJHNQ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Jan 2016 01:26:44 -0500
-From: Russell Coker <russell@coker.com.au>
-To: "cheater00 ." <cheater00@gmail.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Re: 6TB partition, Data only 2TB - aka When you haven't hit the "usual" problem
-Date: Sun, 10 Jan 2016 17:16:43 +1100
-References: <CAJCQCtSyJ8cHrmZcnLQ_fvsaaS1qZiQx_rsFt7-_6LJuvhKR-A@mail.gmail.com> <20160109210429.GD6060@carfax.org.uk> <CA+9GZUg-F1PWSAvpwy3=D6tz1gNgK88nTYzUP32D_hbg0H=rYg@mail.gmail.com>
-In-Reply-To: <CA+9GZUg-F1PWSAvpwy3=D6tz1gNgK88nTYzUP32D_hbg0H=rYg@mail.gmail.com>
+	Sun, 10 Jan 2016 02:13:16 -0500
+Received: by mail-wm0-f41.google.com with SMTP id u188so180202029wmu.1
+        for <linux-btrfs@vger.kernel.org>; Sat, 09 Jan 2016 23:13:15 -0800 (PST)
+Date: Sat, 9 Jan 2016 22:11:05 -0500
+From: Sanidhya Solanki <jpage.lkml@gmail.com>
+To: Qu Wenruo <quwenruo.btrfs@gmx.com>
+Cc: David Sterba <dsterba@suse.cz>, jbacik@fb.com, linux-btrfs@vger.kernel.org
+Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
+Message-ID: <20160109221105.6b18fb8e@gmail.com>
+In-Reply-To: <56887B40.10105@gmx.com>
+References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
+	<1451341195.7094.0.camel@scientia.net>
+	<20151228153801.6561feff@gmail.com>
+	<1451352069.7094.3.camel@scientia.net>
+	<20151228164333.2b8d8336@gmail.com>
+	<1451360528.7094.7.camel@scientia.net>
+	<20151228190336.59a3f440@gmail.com>
+	<1451363188.7094.23.camel@scientia.net>
+	<20151229180643.GD4227@twin.jikos.cz>
+	<20160102065207.4eec760a@gmail.com>
+	<56887B40.10105@gmx.com>
 MIME-Version: 1.0
-Content-Type: Text/Plain;
-  charset="utf-8"
-Message-Id: <201601101716.43204.russell@coker.com.au>
+Content-Type: text/plain; charset=US-ASCII
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sun, 10 Jan 2016 08:07:50 AM cheater00 . wrote:
-> Would like to point out that this can cause data loss. If I'm writing
-> to disk and the disk becomes unexpectedly read only - that data will
-> be lost, because who in their right mind makes their code expect this
-> and builds a contingency (e.g. caching, backpressure, etc)...
+On Sun, 3 Jan 2016 09:37:04 +0800
+Qu Wenruo <quwenruo.btrfs@gmx.com> wrote:
+> Btrfs checksum are calculated in 3 different method:
+> 1) Metadata: Per nodesize, stored in tree blocker header. (struct 
+> btrfs_header->csum)
+> 2) Data: Per sectorsize, stored in csum tree.
+> 3) Superblock: Per 4K (fixed), stored in its header (struct 
+> btrfs_super->csum)
+> 
+> I didn't the need to change any of them, as you are not changing any
+> of the csum behavior.
 
-There are lots of situations when a filesystem can become read-only, it's a 
-fairly standard response to disk errors.  You should be able to handle that if 
-your application deals with important data.
+Good, that means I do not need to compare csums, just the data at the
+end of the re-sizing operation. 
 
-I was under the impression that this bug didn't make the disk read-only (IE 
-you can delete/truncate files to free space) but instead incorrectly told the 
-application that there was no space.  ENOSPACE is very common and all apps 
-have to deal with it.
+I have finished most of the actual implementation details and 
+documentation for the re-size. However, before I undertake the last 
+part of the development, the integration of kernel-space and user-space,
+as well as the integration between my code and the kernel code. 
 
-> There's no loss of data on the disk because the data doesn't make it
-> to disk in the first place. But it's exactly the same as if the data
-> had been written to disk, and then lost.
+> Stripe size only affect how btrfs does IO, not the csum size.
 
-No it's not.  If you write data and a fsync() or fdatasync() call succeeds 
-then it's on disk, otherwise not.  All apps which depend on data being written 
-to disk (EG database servers and mail servers) use fsync() and fdatasync().
+I have a question regarding this statement. I wanted to confirm that
+the re-size will result in all the data blocks being re-written. Is
+that correct? 
+Because the single statement above may also mean that all that needs to
+be done is change one option and the kernel code takes care of the rest.
 
-On Sun, 10 Jan 2016 02:59:46 PM cheater00 . wrote:
-> Not really - at power loss the whole system is unreachable and can not
-> accept incoming jobs/RPCs. When btrfs bugs out, it can still do that,
-> and will not be able to say "oops i messed up" because it's not the
-> kind of error that you'd be expected to handle as a programmer. So say
-> an email server will not accept incoming emails at power loss, whereas
-> if btrfs bugs out it will accept emails but will put them in a black
-> hole. So it's more urgent than "hey this is like power loss and we
-> can't really do much about power loss so let's ignore this issue for
-> now"
+Just clarify that for me.
+ 
+> And since you are making the stripe size configurable, then user is 
+> responsible for any too large or too small stripe size setting.
 
-Please test this with the common mail server software, EG Postfix, Exim, 
-Procmail, Maildrop, Dovecot, etc.  The BTRFS bug as described won't cause data 
-loss with any of them.
+I have also left the option to use an un-conventional stripe size to the
+user, for e.g., 768, 3072, 6144, etc.
 
--- 
-My Main Blog         http://etbe.coker.com.au/
-My Documents Blog    http://doc.coker.com.au/
+Thanks.

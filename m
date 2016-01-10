@@ -1,126 +1,40 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f48.google.com ([209.85.215.48]:34724 "EHLO
-	mail-lf0-f48.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1751722AbcAJOOt (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 10 Jan 2016 09:14:49 -0500
-Received: by mail-lf0-f48.google.com with SMTP id d17so34768063lfb.1
-        for <linux-btrfs@vger.kernel.org>; Sun, 10 Jan 2016 06:14:48 -0800 (PST)
+Received: from smtp-31.italiaonline.it ([212.48.25.159]:42787 "EHLO libero.it"
+	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
+	id S1755212AbcAJQyM (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jan 2016 11:54:12 -0500
+Reply-To: kreijack@inwind.it
+Subject: Re: evidence of persistent state, despite device disconnects
+References: <CAJCQCtS59TFek+g9x_aoqGzepySMrRn6DcOQkuwi=VQYR9M4tw@mail.gmail.com>
+ <pan$671e2$87d221b4$c1b40d79$6f794584@cox.net>
+ <CAJCQCtSCvzoOdqFx9dB9sbT-dR0XsQVzWwVcK3zBnwC17+ZV_Q@mail.gmail.com>
+ <pan$4b55a$cfffcc6c$c8faaa76$1740646a@cox.net>
+ <CAJCQCtRkDrUhiCsgO5Wm=1OhpbtxaR58SLLg5JxZvYQE_nSTUQ@mail.gmail.com>
+ <pan$84a33$9b12297$c9fad6dd$fe3dbd43@cox.net>
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+From: Goffredo Baroncelli <kreijack@inwind.it>
+Message-ID: <56928CB1.1070104@inwind.it>
+Date: Sun, 10 Jan 2016 17:54:09 +0100
 MIME-Version: 1.0
-In-Reply-To: <20160109202659.GC6060@carfax.org.uk>
-References: <CA+9GZUitvMjJSgdpmMb8Fsz-CHK4WXV9XVhGCk9mRCWUU_D-VQ@mail.gmail.com>
-	<CAJCQCtSyJ8cHrmZcnLQ_fvsaaS1qZiQx_rsFt7-_6LJuvhKR-A@mail.gmail.com>
-	<CA+9GZUgnmMoLeGsyeo=tFe2GLsDkLEr0umiDovf3P2aBtDA+Xg@mail.gmail.com>
-	<CA+9GZUjRWNVShW=6jfCVDTjRdQQCS9T_-cMkOF3s8846uAhn+w@mail.gmail.com>
-	<CA+9GZUiWQ2tAotFuq2Svkjnk+2Quz5B8UwZSSpm4SJfhqfoStQ@mail.gmail.com>
-	<CAJCQCtR3Gj5K0dsAhDBo27Z6h3ki5cs6X0SrrFhC0dPPgY=4nw@mail.gmail.com>
-	<CA+9GZUjLcRnRX_mwO-McXWFd+G4o3jtBENMLnszg-rJTn6vL1w@mail.gmail.com>
-	<CAJCQCtRhYZi9nqWP_LYmZeg1yRQVkpnmUDQ-P5o1-gc-3w+Pdg@mail.gmail.com>
-	<CA+9GZUg1CSFAURu05MuQvsYPVr9maiYvGMQHTzCmU5ev-C63Kg@mail.gmail.com>
-	<20160109202659.GC6060@carfax.org.uk>
-Date: Sun, 10 Jan 2016 15:14:47 +0100
-Message-ID: <CAPmG0jYaga9c0+x+TzdR_FuV57qfr2M-topeRstazV9n1=f9sQ@mail.gmail.com>
-Subject: Re: 6TB partition, Data only 2TB - aka When you haven't hit the
- "usual" problem
-From: Henk Slager <eye1tm@gmail.com>
-To: "cheater00 ." <cheater00@gmail.com>
-Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>, Hugo Mills <hugo@carfax.org.uk>,
-        Chris Murphy <lists@colorremedies.com>
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <pan$84a33$9b12297$c9fad6dd$fe3dbd43@cox.net>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Sat, Jan 9, 2016 at 9:26 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
-> On Sat, Jan 09, 2016 at 09:00:47PM +0100, cheater00 . wrote:
->> Hello,
->> I can repeatedly trigger this bug by making the "data" portion fill
->> up. If you remember the partition is 6 TB but in btrfs filesystem df
->> Data is shown as only 2TB when in fact it should be nearly 6TB. So
->> this has nothing to do with kernel bugs. The filesystem on disk is
->> structured incorrectly. How do i fix this? How do I make "Data"
->> bigger? What is it exactly?
->
->    This is *exactly* the behaviour of the known kernel bug. The bug is
-> that the FS *should* be extending the data allocation when it gets
-> near to full, and it's not. There is no way of manually allocating
-> more (because the FS should be doing it automatically). There is no
-> known way of persuading the FS to it when it isn't.
+On 2016-01-09 11:55, Duncan wrote:
+> (a minimum of two devices are required to create raid1 chunks, since two
+> copies are required and they can't be on the same device).
 
-Probably this is 'the'  bug we talk about:
-https://bugzilla.kernel.org/show_bug.cgi?id=74101
+I think that this is the problem: BTRFS should allocate a new chunk as RAID1, even if only one device is available. It is already capable to use a RAID1 chunk in degraded mode, so it shouldn't be so difficult to create new chunk RAID1 when only a one disk is available.
 
-Size of the fs is much smaller, but also problem occurs when fill-level is <50%
+Anyway I agree with Chris about the fact that btrfs sometime gives incorrect information about the devices. In the past I proposed to abandon the current model where the device are "per-registered" before the mount command asynchronously.
+I wrote a mount helper which does a scan at the mount time [1]; this would reduce the window time where a device disappearing could cause confusion.
 
-btrfs fs resize  did nothing you mention, but AFAIK you should see
-something in dmesg when you do that.
-And what is the output of   gdisk -l /dev/sdd  , just to check?
-
-Have you had the fs already filled up to e.g. 95% before or has is
-always been not more than 2TiB?
-
-Why are the single (empty )profiles for metadata and system still
-there?  They should have been removed already by the various balancing
-operations that are advised in the btrfs-wiki.
-
-What is the output of   btrfs check  /dev/sdd  ?  The usb resets
-mentioned might have introduced some errors to the fs (that is what I
-have experienced at least, but it depends on timing etc)
-
-What you could try is to create an image+'copy' of the fs with
-btrfs-image just after you get ENOSPC abd then do various tests with
-that (make sure unmount or even better unplug the physical hdd!). Like
-mounting and then try to add a file, convert all metadata + system
-from dup to single and then try to add a file. It all doesn't give
-real space, but it might give hints to what could be wrong.
-
-If you somehow manage to reduce the fs by lets say 100G and also the
-partition, you could install or copy a newer linux+kernel to
-partition(s) in that 100G space and boot from there.
+BR
+G.Baroncelli
 
 
->    The only good solution I know of is to reformat the FS and restore
-> from backups. Even then, some people manage to repeatedly hit this
-> with newly-created filesystems.
->
->    Hugo.
->
->> Thanks
->>
->> P.S. Sorry about reposting twice, apparently Google's "Inbox" app
->> doesn't allow posting plain text at all and the mail got rejected from
->> the list.
->>
->> On Thu, 7 Jan 2016 23:22 Chris Murphy <lists@colorremedies.com> wrote:
->> >
->> > On Thu, Jan 7, 2016 at 3:04 PM, cheater00 . <cheater00@gmail.com> wrote:
->> > > Yes, both times it was the same drive. I only have one usb drive now.
->> >
->> > That it's the same drive is suspicious. But I don't know what
->> > errno=-28 means or what could trigger it, if some USB weirdness could
->> > cause Btrfs to get confused somehow. I have one 7200rpm drive that
->> > wants 1.15A compared to all the others that have a 900mA spec, and
->> > while it behaves find 99% of the time like the others, rarely I would
->> > get the reset message and most of the time it was that drive (and less
->> > often one other). Now that doesn't happen anymore.
->> >
->> > >
->> > > I am not sure if chasing the kernel makes sense unless you think there is a
->> > > specific commit that would have foxed it. I only reported here in case
->> > > anyone here wanted to do some form of debugging before i reset the drive and
->> > > rescan the fs to make it writeable again. But since there seems to be no
->> > > interest i will go forward.
->> >
->> > I'd chase the hardware problem then first. It's just that the kernel
->> > switch is easier from my perspective. And it's just as unclear this is
->> > hardware related than just a bug. And since there are hundreds to
->> > thousands of Btrfs bugs being fixed per kernel release, I have no way
->> > to tell you whether it's fixed and maybe even a developer wouldn't
->> > either, you'd just have to try it.
->> >
->> >
->
-> --
-> Hugo Mills             | Hey, Virtual Memory! Now I can have a *really big*
-> hugo@... carfax.org.uk | ramdisk!
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |
+[1] https://www.mail-archive.com/linux-btrfs@vger.kernel.org/msg39429.html
+-- 
+gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
+Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5

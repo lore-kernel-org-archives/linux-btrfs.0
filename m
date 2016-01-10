@@ -1,12 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from bombadil.infradead.org ([198.137.202.9]:58421 "EHLO
-	bombadil.infradead.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755212AbcAINjT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>); Sat, 9 Jan 2016 08:39:19 -0500
-Date: Sat, 9 Jan 2016 05:39:18 -0800
-From: Christoph Hellwig <hch@infradead.org>
-To: mchristi@redhat.com
-Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
+Received: from sabe.cs.wisc.edu ([128.105.6.20]:41965 "EHLO sabe.cs.wisc.edu"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1756051AbcAJApG (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sat, 9 Jan 2016 19:45:06 -0500
+Message-ID: <5691A934.8020000@cs.wisc.edu>
+Date: Sat, 09 Jan 2016 18:43:32 -0600
+From: Mike Christie <michaelc@cs.wisc.edu>
+MIME-Version: 1.0
+To: Christoph Hellwig <hch@infradead.org>, mchristi@redhat.com
+CC: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         konrad.wilk@oracle.com, drbd-dev@lists.linbit.com,
         philipp.reisner@linbit.com, lars.ellenberg@linbit.com,
         linux-raid@vger.kernel.org, dm-devel@redhat.com,
@@ -15,24 +17,25 @@ Cc: linux-f2fs-devel@lists.sourceforge.net, linux-ext4@vger.kernel.org,
         linux-scsi@vger.kernel.org, linux-mtd@lists.infradead.org,
         target-devel@vger.kernel.org, linux-btrfs@vger.kernel.org,
         osd-dev@open-osd.org, xfs@oss.sgi.com, ocfs2-devel@oss.oracle.com
-Subject: Re: [PATCH 26/35] block: set op to REQ_OP
-Message-ID: <20160109133918.GC26660@infradead.org>
-References: <1452027218-32303-1-git-send-email-mchristi@redhat.com>
- <1452027218-32303-27-git-send-email-mchristi@redhat.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <1452027218-32303-27-git-send-email-mchristi@redhat.com>
+Subject: Re: [PATCH 01/35] block/fs/drivers: remove rw argument from submit_bio
+References: <1452027218-32303-1-git-send-email-mchristi@redhat.com> <1452027218-32303-2-git-send-email-mchristi@redhat.com> <20160109133409.GA26660@infradead.org>
+In-Reply-To: <20160109133409.GA26660@infradead.org>
+Content-Type: text/plain; charset=windows-1252
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-> @@ -1149,10 +1151,12 @@ static struct request *__get_request(struct request_list *rl, int rw_flags,
->  
->  	blk_rq_init(q, rq);
->  	blk_rq_set_rl(rq, rl);
-> -	rq->cmd_flags = rw_flags | REQ_ALLOCED;
-> +	/* tmp compat - allow users to check either one for the op */
-> +	rq->cmd_flags = op | op_flags | REQ_ALLOCED;
+On 01/09/2016 07:34 AM, Christoph Hellwig wrote:
+>>  				count);
+>> > diff --git a/block/blk-flush.c b/block/blk-flush.c
+>> > index 9c423e5..e092e13 100644
+>> > --- a/block/blk-flush.c
+>> > +++ b/block/blk-flush.c
+>> > @@ -484,8 +484,9 @@ int blkdev_issue_flush(struct block_device *bdev, gfp_t gfp_mask,
+>> >  
+>> >  	bio = bio_alloc(gfp_mask, 0);
+>> >  	bio->bi_bdev = bdev;
+>> > +	bio->bi_rw |= WRITE_FLUSH;
+> Shouldn't the |= be a = here and in many other places?
 
-This one is still left after the whole series is applied, seems like
-the hunk to remove it again got lost somewhere.
-
+Yeah, I was trying to merge bi_rw and bio_flags. I am not going to send
+that. I will fix up the patchset.

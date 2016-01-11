@@ -1,40 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:65422 "EHLO
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34289 "EHLO
 	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S933186AbcAKNzi (ORCPT
+	by vger.kernel.org with ESMTP id S932895AbcAKNzY (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jan 2016 08:55:38 -0500
-Date: Mon, 11 Jan 2016 08:55:31 -0500
+	Mon, 11 Jan 2016 08:55:24 -0500
+Date: Mon, 11 Jan 2016 08:55:07 -0500
 From: Chris Mason <clm@fb.com>
-To: David Sterba <dsterba@suse.com>
-CC: <linux-btrfs@vger.kernel.org>
-Subject: Re: [PULL] Btrfs: cleanups for 4.5
-Message-ID: <20160111135531.7wumj2imznhy3l4j@ret.masoncoding.com>
-References: <cover.1452177907.git.dsterba@suse.com>
+To: <fdmanana@kernel.org>
+CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
+Subject: Re: [GIT PULL] More btrfs bug fixes for 4.5
+Message-ID: <20160111135507.5qswrrfckj5mxyno@ret.masoncoding.com>
+References: <1452253431-29510-1-git-send-email-fdmanana@kernel.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <cover.1452177907.git.dsterba@suse.com>
+In-Reply-To: <1452253431-29510-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 07, 2016 at 03:52:47PM +0100, David Sterba wrote:
-> Hi,
+On Fri, Jan 08, 2016 at 11:43:51AM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
 > 
-> a few more patches from the mailinglist, cleanups. Please pull to 4.5. Thanks.
+> Hi Chris.
 > 
-> ----------------------------------------------------------------
-> The following changes since commit 4ef7675344d687a0ef5b0d7c0cee12da005870c0:
+> Please consider the following bug fixes for the 4.5 kernel release.
+> Just the usual set of bug fixes. One of these is tagged for stable and it
+> fixes a regression introduced in 4.3 that makes a filesystem unbootable
+> after a fitrim operation (recently reported by a few openSUSE users).
+> These patches were all previously sent to the mailing list as well as a
+> new test case for fstests that covers the regression with fitrim.
 > 
->   Linux 4.4-rc6 (2015-12-20 16:06:09 -0800)
+> Thanks.
+> 
+> The following changes since commit 511711af91f21d80b27f18b569352d6896562828:
+> 
+>   btrfs: don't run delayed references while we are creating the free space tree (2015-12-30 07:52:35 -0800)
 > 
 > are available in the git repository at:
 > 
->   git://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux.git misc-cleanups-4.5
-> 
-> for you to fetch changes up to a7ca42256d9fad572fb7f2c471514d7d3572b1db:
-> 
->   btrfs: use list_for_each_entry* in backref.c (2016-01-07 14:42:46 +0100)
+>   git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.5
 
-Thanks Dave, pulling both of these.
+Thanks Filipe, pulling this in.
 
 -chris

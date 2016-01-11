@@ -1,15 +1,14 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lf0-f49.google.com ([209.85.215.49]:33968 "EHLO
-	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933705AbcAKTuP (ORCPT
+Received: from mail-lf0-f42.google.com ([209.85.215.42]:36725 "EHLO
+	mail-lf0-f42.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S932636AbcAKU3i (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jan 2016 14:50:15 -0500
-Received: by mail-lf0-f49.google.com with SMTP id 17so18426607lfz.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 11:50:14 -0800 (PST)
+	Mon, 11 Jan 2016 15:29:38 -0500
+Received: by mail-lf0-f42.google.com with SMTP id h129so25772154lfh.3
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 12:29:37 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CA+9GZUg752dgd2mpEiBvHrFr3W_zccwk4yN=e04DN0OPTBrGDg@mail.gmail.com>
-References: <CA+9GZUitvMjJSgdpmMb8Fsz-CHK4WXV9XVhGCk9mRCWUU_D-VQ@mail.gmail.com>
-	<CAJCQCtSyJ8cHrmZcnLQ_fvsaaS1qZiQx_rsFt7-_6LJuvhKR-A@mail.gmail.com>
+In-Reply-To: <CA+9GZUj92Y2qvgXjQbnavzrc4kM4n_0mBt+yu4CEFjzZJ2+kcQ@mail.gmail.com>
+References: <CAJCQCtSyJ8cHrmZcnLQ_fvsaaS1qZiQx_rsFt7-_6LJuvhKR-A@mail.gmail.com>
 	<CA+9GZUgnmMoLeGsyeo=tFe2GLsDkLEr0umiDovf3P2aBtDA+Xg@mail.gmail.com>
 	<CA+9GZUjRWNVShW=6jfCVDTjRdQQCS9T_-cMkOF3s8846uAhn+w@mail.gmail.com>
 	<CA+9GZUiWQ2tAotFuq2Svkjnk+2Quz5B8UwZSSpm4SJfhqfoStQ@mail.gmail.com>
@@ -18,10 +17,16 @@ References: <CA+9GZUitvMjJSgdpmMb8Fsz-CHK4WXV9XVhGCk9mRCWUU_D-VQ@mail.gmail.com>
 	<CAJCQCtRhYZi9nqWP_LYmZeg1yRQVkpnmUDQ-P5o1-gc-3w+Pdg@mail.gmail.com>
 	<CA+9GZUg1CSFAURu05MuQvsYPVr9maiYvGMQHTzCmU5ev-C63Kg@mail.gmail.com>
 	<20160109202659.GC6060@carfax.org.uk>
-	<CAPmG0jYaga9c0+x+TzdR_FuV57qfr2M-topeRstazV9n1=f9sQ@mail.gmail.com>
-	<CA+9GZUg752dgd2mpEiBvHrFr3W_zccwk4yN=e04DN0OPTBrGDg@mail.gmail.com>
-Date: Mon, 11 Jan 2016 20:50:13 +0100
-Message-ID: <CAPmG0jZDa6yJJyu5fsyscJ_v7D7s-bjcvo1WDLp4jqqHFO=0xA@mail.gmail.com>
+	<CA+9GZUjeJBhjr4ERBLHehhA2xow=-5gBYR4+y8eiMGxhiCi_mA@mail.gmail.com>
+	<20160109210429.GD6060@carfax.org.uk>
+	<CA+9GZUg-F1PWSAvpwy3=D6tz1gNgK88nTYzUP32D_hbg0H=rYg@mail.gmail.com>
+	<5693A8B3.2090508@gmail.com>
+	<CA+9GZUjj8a=drg7--p-f02+QXLo7aWMyZd3O8TA9gTyGWb3MLA@mail.gmail.com>
+	<5693B7C0.8010903@gmail.com>
+	<CA+9GZUizsH3ToTMf_7mfN1Xgv=5obrCxCRHY+APS4SSGKoWHVA@mail.gmail.com>
+	<CA+9GZUj92Y2qvgXjQbnavzrc4kM4n_0mBt+yu4CEFjzZJ2+kcQ@mail.gmail.com>
+Date: Mon, 11 Jan 2016 21:29:37 +0100
+Message-ID: <CAPmG0jYGRzvTWjSV09R7PswL6nqZVc7dhgXTQarej3JNeh0Q5g@mail.gmail.com>
 Subject: Re: 6TB partition, Data only 2TB - aka When you haven't hit the
  "usual" problem
 From: Henk Slager <eye1tm@gmail.com>
@@ -30,167 +35,51 @@ Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 11, 2016 at 12:47 AM, cheater00 . <cheater00@gmail.com> wrote:
-> On Sun, Jan 10, 2016 at 3:14 PM, Henk Slager <eye1tm@gmail.com> wrote:
->> On Sat, Jan 9, 2016 at 9:26 PM, Hugo Mills <hugo@carfax.org.uk> wrote:
->>> On Sat, Jan 09, 2016 at 09:00:47PM +0100, cheater00 . wrote:
->>>> Hello,
->>>> I can repeatedly trigger this bug by making the "data" portion fill
->>>> up. If you remember the partition is 6 TB but in btrfs filesystem df
->>>> Data is shown as only 2TB when in fact it should be nearly 6TB. So
->>>> this has nothing to do with kernel bugs. The filesystem on disk is
->>>> structured incorrectly. How do i fix this? How do I make "Data"
->>>> bigger? What is it exactly?
->>>
->>>    This is *exactly* the behaviour of the known kernel bug. The bug is
->>> that the FS *should* be extending the data allocation when it gets
->>> near to full, and it's not. There is no way of manually allocating
->>> more (because the FS should be doing it automatically). There is no
->>> known way of persuading the FS to it when it isn't.
+On Mon, Jan 11, 2016 at 5:33 PM, cheater00 . <cheater00@gmail.com> wrote:
+> After unmounting:
+> [251818.992992] BTRFS error (device sdc1): cleaner transaction attach
+> returned -30
+>
+> and remounting:
+> [251837.393750] BTRFS info (device sdc1): disk space caching is enabled
+>
+> the disk again resizes Data.
+>
+> On Mon, Jan 11, 2016 at 5:02 PM, cheater00 . <cheater00@gmail.com> wrote:
+>> I triggered the bug again, attaching log. There were some usb resets,
+>> but they happened 23 minutes before the fs crashed.
 >>
->> Probably this is 'the'  bug we talk about:
->> https://bugzilla.kernel.org/show_bug.cgi?id=74101
->
-> Yes, would seem like it.
->
->> Size of the fs is much smaller, but also problem occurs when fill-level is <50%
+>> At mount, the output of btrfs fi df -g was like this:
+>> Data, single: total=2080.01GiB, used=2078.80GiB
+>> System, DUP: total=0.01GiB, used=0.00GiB
+>> System, single: total=0.00GiB, used=0.00GiB
+>> Metadata, DUP: total=5.50GiB, used=3.73GiB
+>> Metadata, single: total=0.01GiB, used=0.00GiB
+>> GlobalReserve, single: total=0.50GiB, used=0.00GiB
 >>
->> btrfs fs resize  did nothing you mention, but AFAIK you should see
->> something in dmesg when you do that.
->
->
-> I remounted (to make the filesystem rw again) and got the attached
-> log. There are some errors in there. But bear in mind that this disk
-> has been hanging on in ro mode for a few days now.
->
-> I did this:
-> # btrfs fi resize -1T Media
-> Resize 'Media' of '-1T'
-> # btrfs filesystem resize -1G Media
-> Resize 'Media' of '-1G'
-> # btrfs filesystem resize -1T Media
-> Resize 'Media' of '-1T'
-> # btrfs filesystem resize max Media
-> Resize 'Media' of 'max'
->
-> and it resulted in the following lines in dmesg:
-> [189115.919160] BTRFS: new size for /dev/sdc1 is 4901661835264
-> [189177.306291] BTRFS: new size for /dev/sdc1 is 4900588093440
-> [189181.950289] BTRFS: new size for /dev/sdc1 is 3801076465664
-> [189232.064357] BTRFS: new size for /dev/sdc1 is 6001173463040
->
-> (note the device changed from sdd to sdc when I rebooted last)
->
->> And what is the output of   gdisk -l /dev/sdd  , just to check?
->
-> (the device changed to sdc since I've rebooted)
->
-> # gdisk -l /dev/sdc
-> GPT fdisk (gdisk) version 0.8.8
->
-> Partition table scan:
->   MBR: protective
->   BSD: not present
->   APM: not present
->   GPT: present
->
-> Found valid GPT with protective MBR; using GPT.
-> Disk /dev/sdc: 11721045168 sectors, 5.5 TiB
-> Logical sector size: 512 bytes
-> Disk identifier (GUID): 0DEF5509-8730-4AB4-A846-79DA3C376F66
-> Partition table holds up to 128 entries
-> First usable sector is 34, last usable sector is 11721045134
-> Partitions will be aligned on 2048-sector boundaries
-> Total free space is 3181 sectors (1.6 MiB)
->
-> Number  Start (sector)    End (sector)  Size       Code  Name
->    1            2048     11721043967   5.5 TiB     8300
->
->
->> Have you had the fs already filled up to e.g. 95% before or has is
->> always been not more than 2TiB?
->
-> It has never been more than 2TB, I've had it for quite some time now
-> but it's always hovered around 1TB.
->
->> Why are the single (empty )profiles for metadata and system still
->> there?  They should have been removed already by the various balancing
->> operations that are advised in the btrfs-wiki.
->
-> Not sure. Would this happen automatically? Or is this something I
-> should have done?
-> I have another fs on the same model/size disk, which isn't exhibiting
-> this bug, and it has those profiles as well.
+>> Now it is:
+>> Data, single: total=2094.01GiB, used=2092.26GiB
+>> System, DUP: total=0.01GiB, used=0.00GiB
+>> System, single: total=0.00GiB, used=0.00GiB
+>> Metadata, DUP: total=5.50GiB, used=3.79GiB
+>> Metadata, single: total=0.01GiB, used=0.00GiB
+>> GlobalReserve, single: total=0.50GiB, used=0.00GiB
 
-There is nothing really wrong (just by quickly browsing the numbers)
-as far as I can see. So it seems the 'btrfs space allocation
-mechanism' somehow gives up under certain circumstances. The fs was
-created by bit older tools/kernel, that is why these dummy single
-chunks are there. They should not harm, but at least a full balance
-will remove them. Also a parttial balance -musage=0 with latest tools
-should also remove them, i don't remember exactly. If they are not
-needed, keep the fs as simple as possible and remove them I would say.
-I was just wondering what balancing options you have tried.
+The Data increments with 1G (or 10G?) chunks if there is no
+well-fitting space in existing chunks.
 
-> Here's what both look like:
->
-> buggy fs ("Media"):
-> Data, single: total=1.98TiB, used=1.98TiB
-> System, DUP: total=8.00MiB, used=240.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, DUP: total=5.50GiB, used=3.49GiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
-> non-buggy fs:
-> Data, single: total=5.43TiB, used=5.40TiB
-> System, DUP: total=8.00MiB, used=608.00KiB
-> System, single: total=4.00MiB, used=0.00B
-> Metadata, DUP: total=12.50GiB, used=11.21GiB
-> Metadata, single: total=8.00MiB, used=0.00B
-> GlobalReserve, single: total=512.00MiB, used=0.00B
->
->
->> What is the output of   btrfs check  /dev/sdd  ?  The usb resets
->> mentioned might have introduced some errors to the fs (that is what I
->> have experienced at least, but it depends on timing etc)
->
-> I'll run that overnight and report tomorrow.
->
->> What you could try is to create an image+'copy' of the fs with
->> btrfs-image just after you get ENOSPC abd then do various tests with
->> that (make sure unmount or even better unplug the physical hdd!). Like
->> mounting and then try to add a file, convert all metadata + system
->> from dup to single and then try to add a file. It all doesn't give
->> real space, but it might give hints to what could be wrong.
->
-> I can't do that because I would have to buy an extra disk which is 300 euro.
+>> The file being copied at the time was 954 MB.
 
-btrfs-image only images/dumps the metadata. In your case it is ~6GiB.
-# umount /dev/sdc1
-# cd /sparse-file-featured-fs-mount/
-# btrfs-image /dev/sdc1 Mediafs.metadump
-# btrfs-image -r Mediafs.metadump Mediafs.img
-# losetup -f /Mediafs.img
-# mount /dev/loopX /mnt
-# dd if=/dev/zero of=/mnt/testfile bs=1M count=5000
-
-The file Mediafs.img is initially using ~6GiB space, its reported size
-is same as real partition on the harddisk. The dd command increases it
-with 5GB and simulates a large file copy. So you need upto 10's of GBs
-freespace to do this tests, fast SSD preferred. You can also copy some
-real files and see if you hit ENOSPC.
-
-If the test is on btrfs, you can easily snapshot or copy--reflink the
-original Mediafs.img and try various metadata balancing. And use the
-btrfs compression.
-
->
->> If you somehow manage to reduce the fs by lets say 100G and also the
->> partition, you could install or copy a newer linux+kernel to
->> partition(s) in that 100G space and boot from there.
->
-> let me try finding the latest kernel then. There are backports.
-As suggested earlier, try kernel 4.4 (released today). People have
-reported that they weren't bugged anymore by ENOSPC aborts after
-switching from some older kernel.
+The space cache faults get repaired automatically, that is not an
+issue. Also your fs gives no errors when doing a check.
+The sort of files you write is nothing difficult for btrfs, even not
+over a stable usb2 connection. I am writing/incrementing files of
+~50G, also C-sources etc over an old usb2 link since 2 years Also
+balancing many hours over this link. I have not seen resets however
+(grepped /var/log/messages). The usb2 link is an 2T usb3 disk plugged
+into an usb2 port. In usb3 port it isn't even recognised. I also have
+a usb3 3.5 inch dock that produces resets with a 4T harddisk since
+kernel 4.x (was 4.1.x or so, it was a dd full disk copy). Also if you
+have too many ATA resets caused by whatever or short disconnects,
+btrfs might get in trouble; it can't handle bad disks/IO very well
+currently.

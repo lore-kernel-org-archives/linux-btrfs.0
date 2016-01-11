@@ -1,78 +1,126 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f174.google.com ([209.85.213.174]:38718 "EHLO
-	mail-ig0-f174.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933104AbcAKOKt (ORCPT
+Received: from mail-wm0-f52.google.com ([74.125.82.52]:33310 "EHLO
+	mail-wm0-f52.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751992AbcAKOZL (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jan 2016 09:10:49 -0500
-Received: by mail-ig0-f174.google.com with SMTP id mw1so111246622igb.1
-        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 06:10:48 -0800 (PST)
-Subject: Re: 6TB partition, Data only 2TB - aka When you haven't hit the
- "usual" problem
-To: "cheater00 ." <cheater00@gmail.com>
-References: <CAJCQCtSyJ8cHrmZcnLQ_fvsaaS1qZiQx_rsFt7-_6LJuvhKR-A@mail.gmail.com>
- <CA+9GZUgnmMoLeGsyeo=tFe2GLsDkLEr0umiDovf3P2aBtDA+Xg@mail.gmail.com>
- <CA+9GZUjRWNVShW=6jfCVDTjRdQQCS9T_-cMkOF3s8846uAhn+w@mail.gmail.com>
- <CA+9GZUiWQ2tAotFuq2Svkjnk+2Quz5B8UwZSSpm4SJfhqfoStQ@mail.gmail.com>
- <CAJCQCtR3Gj5K0dsAhDBo27Z6h3ki5cs6X0SrrFhC0dPPgY=4nw@mail.gmail.com>
- <CA+9GZUjLcRnRX_mwO-McXWFd+G4o3jtBENMLnszg-rJTn6vL1w@mail.gmail.com>
- <CAJCQCtRhYZi9nqWP_LYmZeg1yRQVkpnmUDQ-P5o1-gc-3w+Pdg@mail.gmail.com>
- <CA+9GZUg1CSFAURu05MuQvsYPVr9maiYvGMQHTzCmU5ev-C63Kg@mail.gmail.com>
- <20160109202659.GC6060@carfax.org.uk>
- <CA+9GZUjeJBhjr4ERBLHehhA2xow=-5gBYR4+y8eiMGxhiCi_mA@mail.gmail.com>
- <20160109210429.GD6060@carfax.org.uk>
- <CA+9GZUg-F1PWSAvpwy3=D6tz1gNgK88nTYzUP32D_hbg0H=rYg@mail.gmail.com>
- <5693A8B3.2090508@gmail.com>
- <CA+9GZUjj8a=drg7--p-f02+QXLo7aWMyZd3O8TA9gTyGWb3MLA@mail.gmail.com>
-Cc: Hugo Mills <hugo@carfax.org.uk>, Chris Murphy <lists@colorremedies.com>,
-        Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <5693B7C0.8010903@gmail.com>
-Date: Mon, 11 Jan 2016 09:10:08 -0500
+	Mon, 11 Jan 2016 09:25:11 -0500
+Received: by mail-wm0-f52.google.com with SMTP id f206so214943760wmf.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 06:25:10 -0800 (PST)
+Subject: Re: Purposely using btrfs RAID1 in degraded mode ?
+To: Alphazo <alphazo@gmail.com>
+References: <CAHJqNbyXUfzscHteqrQtxJdYKToDNv7_Hw9tVpPuNJYwe=NHxw@mail.gmail.com>
+ <568BF078.8060303@gmail.com>
+ <CAHJqNbypeuLyYHEzH+4nPbmS=nTkeP6hgG+H+vuiQJTjP=t0vA@mail.gmail.com>
+ <568E60CF.70004@gmail.com>
+ <CAHJqNbxnB9o-UwXyLf+PvttnNOcf88FwhEep1FSkye1Etp0CTA@mail.gmail.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: Psalle <psalleetsile@gmail.com>
+Message-ID: <5693BB43.5040200@gmail.com>
+Date: Mon, 11 Jan 2016 15:25:07 +0100
 MIME-Version: 1.0
-In-Reply-To: <CA+9GZUjj8a=drg7--p-f02+QXLo7aWMyZd3O8TA9gTyGWb3MLA@mail.gmail.com>
+In-Reply-To: <CAHJqNbxnB9o-UwXyLf+PvttnNOcf88FwhEep1FSkye1Etp0CTA@mail.gmail.com>
 Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-01-11 08:11, cheater00 . wrote:
-> On Mon, Jan 11, 2016 at 2:05 PM, Austin S. Hemmelgarn
-> <ahferroin7@gmail.com> wrote:
->> On 2016-01-09 16:07, cheater00 . wrote:
->>>
->>> Would like to point out that this can cause data loss. If I'm writing
->>> to disk and the disk becomes unexpectedly read only - that data will
->>> be lost, because who in their right mind makes their code expect this
->>> and builds a contingency (e.g. caching, backpressure, etc)...
+
+
+On 07/01/16 14:09, Alphazo wrote:
+> I'm a former bup user but I switched to borgbackup
+> https://borgbackup.readthedocs.org/en/stable/ which is a more active
+> fork of Attic and that solves two issues I had with bup: increasing
+> time required to perform the incremental backup on large dataset with
+> only few modifications and more importantly the impossibility to prune
+> older backups. Also borgbackup natively supports encryption (AES256)
+> and authentication (HMAC-SHA256).
+>
+> For offline long term backups I also used to work with hashdeep to
+> perform and store a hash of all the files and recently started playing
+> with FIM https://evrignaud.github.io/fim/ which is similar but with a
+> git backend for storing history. Don't get fooled by fim being a java
+> application. It easily outperformed hashdeep on large datasets.
+Interesting pointers, thanks.
+
+-Psalle.
+
+>
+> Alphazo
+>
+> On Thu, Jan 7, 2016 at 1:57 PM, Psalle <psalleetsile@gmail.com> wrote:
+>> On 06/01/16 13:34, Alphazo wrote:
+>>> Thanks Psalle. This is the kind of feedback I was looking for. I do
+>>> realize that using a filesystem in a degraded mode is not the wisest
+>>> thing to do. While I looked at git-annex I'm not sure it can help to
+>>> solve bit-rot detection. Now I noticed that my current backup solution
+>>> borg-backup also has a checksum verification feature so I can at least
+>>> detect errors. In addition it provides incremental deduplicated backup
+>>> so it should get me covered if I discover that something went wrong.
 >>
->> If a data critical application (mail server, database server, anything
->> similar) can't gracefully handle ENOSPC, then that application is broken,
->> not the FS.  As an example, set up a small VM with an SMTP server, then
->> force the FS the server uses for queuing mail read-only, and see if you can
->> submit mail, then go read the RFCs for SMTP and see what clients are
->> supposed to do when they can't submit mail.  A properly designed piece of
->> software is supposed to be resilient against common failure modes of the
->> resources it depends on (which includes ENOSPC and read-only filesystems for
->> anything that works with data on disk).
+>> Is that bup? I see it isn't, I guess they're similar. That is interesting
+>> too.
+>>
+>> Git (or hg or similar) helps with bit rot because 'git fsck' will check the
+>> hashes of the objects in the repository. If you detected a problem you could
+>> re-clone from the good copy (assuming you have two drives with the same
+>> repository in each one). Admittedly, it's a purely manual method but is
+>> better than being unable to detect problems at all. git-annex is a layer on
+>> top of git that automates things to some extent and is tailored to large
+>> files, although the learning curve is not shallow in my experience.
+>>
+>> -Psalle.
+>>
+>>
+>>> alphazo
 >>>
->>>
->>> There's no loss of data on the disk because the data doesn't make it
->>> to disk in the first place. But it's exactly the same as if the data
->>> had been written to disk, and then lost.
->>>
->> No, it isn't.  If you absolutely need the data on disk, you should be
->> calling fsync or fdatasync, and then assuming if those return an error that
->> none of the data written since the last call has gotten to the disk (some of
->> it might have, but you need to assume it hasn't).  Every piece of software
->> in wide usage that requires data to be on the disk does this, because
->> otherwise it can't guarantee that the data is on disk.
->
-> I agree that a lot of stuff goes right in a perfect world. But most of
-> the time what you're running isn't a mail server used by billions of
-> users, but instead a bash script someone wrote once that's supposed to
-> do something, and no one knows how it works.
->
-And that's why no sane person does stuff like that on enterprise level 
-systems.  And even then, if the person writing the bash script actually 
-knows what they're doing, they will be using the 'sync' command to 
-ensure data integrity when they actually need it, or they will write 
-their script in such a way that it gracefully handles a partial run.
+>>> On Tue, Jan 5, 2016 at 5:34 PM, Psalle <psalleetsile@gmail.com> wrote:
+>>>> Hello Alphazo,
+>>>>
+>>>> I am a mere btrfs user, but given the discussions I regularly see here
+>>>> about
+>>>> difficulties with degraded filesystems I wouldn't rely on this (yet?) as
+>>>> a
+>>>> regular work strategy, even if it's supposed to work.
+>>>>
+>>>> If you're familiar with git, perhaps git-annex could be an alternative.
+>>>>
+>>>> -Psalle.
+>>>>
+>>>>
+>>>> On 04/01/16 18:00, Alphazo wrote:
+>>>>> Hello,
+>>>>>
+>>>>> My picture library today lies on an external hard drive that I sync on
+>>>>> a regular basis with a couple of servers and other external drives.
+>>>>> I'm interested by the on-the-fly checksum brought by btrfs and would
+>>>>> like to get your opinion on the following unusual use case that I have
+>>>>> tested:
+>>>>> - Create a btrfs with the two drives with RAID1
+>>>>> - When at home I can work with the two drives connected so I can enjoy
+>>>>> the self-healing feature if a bit goes mad so I only backup perfect
+>>>>> copies to my backup servers.
+>>>>> - When not at home I only bring one external drive and manually mount
+>>>>> it in degraded mode so I can continue working on my pictures while
+>>>>> still having checksum error detection (but not correction).
+>>>>> - When coming back home I can plug-back the seconde drive and initiate
+>>>>> a scrub or balance to get the second drive duplicated.
+>>>>>
+>>>>> I have tested the above use case with a couple of USB flash drive and
+>>>>> even used btrfs over dm-crypt partitions and it seemed to work fine
+>>>>> but I wanted to get some advices from the community if this is really
+>>>>> a bad practice that should not be used on the long run. Is there any
+>>>>> limitation/risk to read/write to/from a degraded filesystem knowing it
+>>>>> will be re-synced later?
+>>>>>
+>>>>> Thanks
+>>>>> alphazo
+>>>>>
+>>>>> PS: I have also investigated the RAID1 on a single drive with two
+>>>>> partitions but I cannot afford the half capacity resulting from that
+>>>>> approach.
+>>>>> --
+>>>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs"
+>>>>> in
+>>>>> the body of a message to majordomo@vger.kernel.org
+>>>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>>>
+

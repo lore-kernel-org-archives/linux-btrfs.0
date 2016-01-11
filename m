@@ -1,90 +1,95 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:50499 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932327AbcAMMEW (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jan 2016 07:04:22 -0500
-Received: from relay1.suse.de (charybdis-ext.suse.de [195.135.220.254])
-	by mx2.suse.de (Postfix) with ESMTP id EA749AAB2
-	for <linux-btrfs@vger.kernel.org>; Wed, 13 Jan 2016 12:04:19 +0000 (UTC)
-From: David Sterba <dsterba@suse.com>
-To: linux-btrfs@vger.kernel.org
-Cc: David Sterba <dsterba@suse.com>
-Subject: [PATCH] btrfs-progs: fi usage: support mixed blockgroups
-Date: Wed, 13 Jan 2016 13:04:14 +0100
-Message-Id: <1452686654-801-1-git-send-email-dsterba@suse.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:17775 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1757710AbcAKCWO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jan 2016 21:22:14 -0500
+Subject: Re: [PATCH] btrfs-progs: chunk-recovery: Fix a float point error
+To: <linux-btrfs@vger.kernel.org>, David Sterba <dsterba@suse.com>
+References: <1447915359-29707-1-git-send-email-quwenruo@cn.fujitsu.com>
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Message-ID: <5693102C.609@cn.fujitsu.com>
+Date: Mon, 11 Jan 2016 10:15:08 +0800
+MIME-Version: 1.0
+In-Reply-To: <1447915359-29707-1-git-send-email-quwenruo@cn.fujitsu.com>
+Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Properly account the duplicated block groups and global reserve.
+Hi David,
 
-Signed-off-by: David Sterba <dsterba@suse.com>
----
- cmds-fi-usage.c | 26 ++++++++++++++++++++------
- 1 file changed, 20 insertions(+), 6 deletions(-)
+Would you please consider merging this patch for v4.2 btrfs-progs?
 
-diff --git a/cmds-fi-usage.c b/cmds-fi-usage.c
-index 0299fcc1339b..33bf403af569 100644
---- a/cmds-fi-usage.c
-+++ b/cmds-fi-usage.c
-@@ -337,6 +337,7 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 	u64 free_estimated = 0;
- 	u64 free_min = 0;
- 	int max_data_ratio = 1;
-+	int mixed = 0;
- 
- 	sargs = load_space_info(fd, path);
- 	if (!sargs) {
-@@ -394,10 +395,9 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 			l_global_reserve_used = sargs->spaces[i].used_bytes;
- 		}
- 		if ((flags & (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA))
--			== (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
--			warning("MIXED blockgroups not handled");
-+		    == (BTRFS_BLOCK_GROUP_DATA | BTRFS_BLOCK_GROUP_METADATA)) {
-+			mixed = 1;
- 		}
--
- 		if (flags & BTRFS_BLOCK_GROUP_DATA) {
- 			r_data_used += sargs->spaces[i].used_bytes * ratio;
- 			r_data_chunks += sargs->spaces[i].total_bytes * ratio;
-@@ -414,13 +414,20 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 		}
- 	}
- 
--	r_total_chunks = r_data_chunks + r_metadata_chunks + r_system_chunks;
--	r_total_used = r_data_used + r_metadata_used + r_system_used;
-+	r_total_chunks = r_data_chunks + r_system_chunks;
-+	r_total_used = r_data_used + r_system_used;
-+	if (!mixed) {
-+		r_total_chunks += r_metadata_chunks;
-+		r_total_used += r_metadata_used;
-+	}
- 	r_total_unused = r_total_size - r_total_chunks;
- 
- 	/* Raw / Logical = raid factor, >= 1 */
- 	data_ratio = (double)r_data_chunks / l_data_chunks;
--	metadata_ratio = (double)r_metadata_chunks / l_metadata_chunks;
-+	if (mixed)
-+		metadata_ratio = data_ratio;
-+	else
-+		metadata_ratio = (double)r_metadata_chunks / l_metadata_chunks;
- 
- #if 0
- 	/* add the raid5/6 allocated space */
-@@ -437,6 +444,13 @@ static int print_filesystem_usage_overall(int fd, struct chunk_info *chunkinfo,
- 	 * In non-mixed case there's no difference.
- 	 */
- 	free_estimated = (r_data_chunks - r_data_used) / data_ratio;
-+	/*
-+	 * For mixed-bg the metadata are left out in calculations thus global
-+	 * reserve would be lost. Part of it could be permanently allocated,
-+	 * we have to subtract the used bytes so we don't go under zero free.
-+	 */
-+	if (mixed)
-+		free_estimated -= l_global_reserve - l_global_reserve_used;
- 	free_min = free_estimated;
- 
- 	/* Chop unallocatable space */
--- 
-2.6.3
+Thanks,
+Qu
+
+Qu Wenruo wrote on 2015/11/19 14:42 +0800:
+> Fix a zero division causing chunk-recovery fail.
+>
+> Also fix a typo "strpie_length" -> "stripe_length".
+>
+> Reported-by: Scotty Edmonds <scotty@scottyedmonds.com>
+> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+> ---
+>   btrfsck.h       | 17 +++++++++++++++++
+>   chunk-recover.c |  9 ++++++---
+>   2 files changed, 23 insertions(+), 3 deletions(-)
+>
+> diff --git a/btrfsck.h b/btrfsck.h
+> index 0882a38..e16f52f 100644
+> --- a/btrfsck.h
+> +++ b/btrfsck.h
+> @@ -142,6 +142,23 @@ static inline unsigned long btrfs_chunk_record_size(int num_stripes)
+>   }
+>   void free_chunk_cache_tree(struct cache_tree *chunk_cache);
+>
+> +/*
+> + * Function to check validation for num_stripes, or it can call
+> + * float point error for 0 division
+> + * return < 0 for invalid combination
+> + * return 0 for valid combination
+> + */
+> +static inline int check_num_stripes(u64 type, int num_stripes)
+> +{
+> +	if (num_stripes == 0)
+> +		return -1;
+> +	if (type & BTRFS_BLOCK_GROUP_RAID5 && num_stripes <= 1)
+> +		return -1;
+> +	if (type & BTRFS_BLOCK_GROUP_RAID6 && num_stripes <= 2)
+> +		return -1;
+> +	return 0;
+> +}
+> +
+>   u64 calc_stripe_length(u64 type, u64 length, int num_stripes);
+>   /* For block group tree */
+>   static inline void block_group_tree_init(struct block_group_tree *tree)
+> diff --git a/chunk-recover.c b/chunk-recover.c
+> index 0d4c8ff..85dc1bc 100644
+> --- a/chunk-recover.c
+> +++ b/chunk-recover.c
+> @@ -1607,16 +1607,19 @@ static int btrfs_verify_device_extents(struct block_group_record *bg,
+>   				       struct list_head *devexts, int ndevexts)
+>   {
+>   	struct device_extent_record *devext;
+> -	u64 strpie_length;
+> +	u64 stripe_length;
+>   	int expected_num_stripes;
+>
+>   	expected_num_stripes = calc_num_stripes(bg->flags);
+>   	if (expected_num_stripes && expected_num_stripes != ndevexts)
+>   		return 1;
+>
+> -	strpie_length = calc_stripe_length(bg->flags, bg->offset, ndevexts);
+> +	if (check_num_stripes(bg->flags, ndevexts) < 0)
+> +		return 1;
+> +
+> +	stripe_length = calc_stripe_length(bg->flags, bg->offset, ndevexts);
+>   	list_for_each_entry(devext, devexts, chunk_list) {
+> -		if (devext->length != strpie_length)
+> +		if (devext->length != stripe_length)
+>   			return 1;
+>   	}
+>   	return 0;
+>
+
 

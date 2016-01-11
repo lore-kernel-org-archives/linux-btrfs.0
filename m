@@ -1,188 +1,92 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-pf0-f195.google.com ([209.85.192.195]:34452 "EHLO
-	mail-pf0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755744AbcA2NhA (ORCPT
+Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:51321 "EHLO
+	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1758795AbcAKW2w (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 29 Jan 2016 08:37:00 -0500
-Received: by mail-pf0-f195.google.com with SMTP id 65so3810366pfd.1
-        for <linux-btrfs@vger.kernel.org>; Fri, 29 Jan 2016 05:37:00 -0800 (PST)
-To: Chris Mason <clm@fb.com>, linux-btrfs@vger.kernel.org
-Cc: kinglongmee@gmail.com
-From: Kinglong Mee <kinglongmee@gmail.com>
-Subject: [PATCH 3/3] btrfs: drop null testing before destroy functions
-Message-ID: <56AB6AE3.4010706@gmail.com>
-Date: Fri, 29 Jan 2016 21:36:35 +0800
+	Mon, 11 Jan 2016 17:28:52 -0500
+Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
+	by m0001303.ppops.net (8.15.0.59/8.15.0.59) with SMTP id u0BMRjJC003824
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 14:28:49 -0800
+Received: from mail.thefacebook.com ([199.201.64.23])
+	by m0001303.ppops.net with ESMTP id 20cdy09vx9-1
+	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
+	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 14:28:49 -0800
+From: Josef Bacik <jbacik@fb.com>
+To: <kernel-team@fb.com>, <linux-btrfs@vger.kernel.org>
+Subject: [PATCH] Btrfs: change how we update the global block rsv
+Date: Mon, 11 Jan 2016 17:28:38 -0500
+Message-ID: <1452551318-13631-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Cleanup.
+I'm writing a tool to visualize the enospc system in order to help debug enospc
+bugs and I found weird data and ran it down to when we update the global block
+rsv.  We add all of the remaining free space to the block rsv, do a trace event,
+then remove the extra and do another trace event.  This makes my visualization
+look silly and is unintuitive code as well.  Fix this stuff to only add the
+amount we are missing, or free the amount we are missing.  This is less clean to
+read but more explicit in what it is doing, as well as only emitting events for
+values that make sense.  Thanks,
 
-kmem_cache_destroy has support NULL argument checking, 
-so drop the double null testing before calling it.
-
-Signed-off-by: Kinglong Mee <kinglongmee@gmail.com>
+Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/backref.c       |  3 +--
- fs/btrfs/delayed-inode.c |  3 +--
- fs/btrfs/delayed-ref.c   | 12 ++++--------
- fs/btrfs/disk-io.c       |  3 +--
- fs/btrfs/extent_io.c     |  6 ++----
- fs/btrfs/extent_map.c    |  3 +--
- fs/btrfs/file.c          |  3 +--
- fs/btrfs/inode.c         | 15 +++++----------
- fs/btrfs/ordered-data.c  |  3 +--
- 9 files changed, 17 insertions(+), 34 deletions(-)
+ fs/btrfs/extent-tree.c | 34 ++++++++++++++++++++--------------
+ 1 file changed, 20 insertions(+), 14 deletions(-)
 
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index b90cd37..bf1336e 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -148,8 +148,7 @@ int __init btrfs_prelim_ref_init(void)
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index e478f91..3424ee8 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -5529,27 +5529,33 @@ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
  
- void btrfs_prelim_ref_exit(void)
- {
--	if (btrfs_prelim_ref_cache)
--		kmem_cache_destroy(btrfs_prelim_ref_cache);
-+	kmem_cache_destroy(btrfs_prelim_ref_cache);
- }
+ 	block_rsv->size = min_t(u64, num_bytes, 512 * 1024 * 1024);
  
- /*
-diff --git a/fs/btrfs/delayed-inode.c b/fs/btrfs/delayed-inode.c
-index 0be47e4..716a4ec 100644
---- a/fs/btrfs/delayed-inode.c
-+++ b/fs/btrfs/delayed-inode.c
-@@ -43,8 +43,7 @@ int __init btrfs_delayed_inode_init(void)
+-	num_bytes = sinfo->bytes_used + sinfo->bytes_pinned +
+-		    sinfo->bytes_reserved + sinfo->bytes_readonly +
+-		    sinfo->bytes_may_use;
+-
+-	if (sinfo->total_bytes > num_bytes) {
+-		num_bytes = sinfo->total_bytes - num_bytes;
+-		block_rsv->reserved += num_bytes;
+-		sinfo->bytes_may_use += num_bytes;
+-		trace_btrfs_space_reservation(fs_info, "space_info",
+-				      sinfo->flags, num_bytes, 1);
+-	}
+-
+-	if (block_rsv->reserved >= block_rsv->size) {
++	if (block_rsv->reserved < block_rsv->size) {
++		num_bytes = sinfo->bytes_used + sinfo->bytes_pinned +
++			sinfo->bytes_reserved + sinfo->bytes_readonly +
++			sinfo->bytes_may_use;
++		if (sinfo->total_bytes > num_bytes) {
++			num_bytes = sinfo->total_bytes - num_bytes;
++			num_bytes = min(num_bytes,
++					block_rsv->size - block_rsv->reserved);
++			block_rsv->reserved += num_bytes;
++			sinfo->bytes_may_use += num_bytes;
++			trace_btrfs_space_reservation(fs_info, "space_info",
++						      sinfo->flags, num_bytes,
++						      1);
++		}
++	} else if (block_rsv->reserved > block_rsv->size) {
+ 		num_bytes = block_rsv->reserved - block_rsv->size;
+ 		sinfo->bytes_may_use -= num_bytes;
+ 		trace_btrfs_space_reservation(fs_info, "space_info",
+ 				      sinfo->flags, num_bytes, 0);
+ 		block_rsv->reserved = block_rsv->size;
+-		block_rsv->full = 1;
+ 	}
  
- void btrfs_delayed_inode_exit(void)
- {
--	if (delayed_node_cache)
--		kmem_cache_destroy(delayed_node_cache);
-+	kmem_cache_destroy(delayed_node_cache);
- }
- 
- static inline void btrfs_init_delayed_node(
-diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
-index 914ac13..430b368 100644
---- a/fs/btrfs/delayed-ref.c
-+++ b/fs/btrfs/delayed-ref.c
-@@ -929,14 +929,10 @@ btrfs_find_delayed_ref_head(struct btrfs_trans_handle *trans, u64 bytenr)
- 
- void btrfs_delayed_ref_exit(void)
- {
--	if (btrfs_delayed_ref_head_cachep)
--		kmem_cache_destroy(btrfs_delayed_ref_head_cachep);
--	if (btrfs_delayed_tree_ref_cachep)
--		kmem_cache_destroy(btrfs_delayed_tree_ref_cachep);
--	if (btrfs_delayed_data_ref_cachep)
--		kmem_cache_destroy(btrfs_delayed_data_ref_cachep);
--	if (btrfs_delayed_extent_op_cachep)
--		kmem_cache_destroy(btrfs_delayed_extent_op_cachep);
-+	kmem_cache_destroy(btrfs_delayed_ref_head_cachep);
-+	kmem_cache_destroy(btrfs_delayed_tree_ref_cachep);
-+	kmem_cache_destroy(btrfs_delayed_data_ref_cachep);
-+	kmem_cache_destroy(btrfs_delayed_extent_op_cachep);
- }
- 
- int btrfs_delayed_ref_init(void)
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index dd08e29..669958d 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -110,8 +110,7 @@ int __init btrfs_end_io_wq_init(void)
- 
- void btrfs_end_io_wq_exit(void)
- {
--	if (btrfs_end_io_wq_cache)
--		kmem_cache_destroy(btrfs_end_io_wq_cache);
-+	kmem_cache_destroy(btrfs_end_io_wq_cache);
- }
- 
- /*
-diff --git a/fs/btrfs/extent_io.c b/fs/btrfs/extent_io.c
-index 2e7c97a..889d180 100644
---- a/fs/btrfs/extent_io.c
-+++ b/fs/btrfs/extent_io.c
-@@ -206,10 +206,8 @@ void extent_io_exit(void)
- 	 * destroy caches.
- 	 */
- 	rcu_barrier();
--	if (extent_state_cache)
--		kmem_cache_destroy(extent_state_cache);
--	if (extent_buffer_cache)
--		kmem_cache_destroy(extent_buffer_cache);
-+	kmem_cache_destroy(extent_state_cache);
-+	kmem_cache_destroy(extent_buffer_cache);
- 	if (btrfs_bioset)
- 		bioset_free(btrfs_bioset);
- }
-diff --git a/fs/btrfs/extent_map.c b/fs/btrfs/extent_map.c
-index 84fb56d..cdbadea 100644
---- a/fs/btrfs/extent_map.c
-+++ b/fs/btrfs/extent_map.c
-@@ -20,8 +20,7 @@ int __init extent_map_init(void)
- 
- void extent_map_exit(void)
- {
--	if (extent_map_cache)
--		kmem_cache_destroy(extent_map_cache);
-+	kmem_cache_destroy(extent_map_cache);
- }
- 
- /**
-diff --git a/fs/btrfs/file.c b/fs/btrfs/file.c
-index 098bb8f..7f5bf64 100644
---- a/fs/btrfs/file.c
-+++ b/fs/btrfs/file.c
-@@ -2939,8 +2939,7 @@ const struct file_operations btrfs_file_operations = {
- 
- void btrfs_auto_defrag_exit(void)
- {
--	if (btrfs_inode_defrag_cachep)
--		kmem_cache_destroy(btrfs_inode_defrag_cachep);
-+	kmem_cache_destroy(btrfs_inode_defrag_cachep);
- }
- 
- int btrfs_auto_defrag_init(void)
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index e28f3d4..9669c3b 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -9156,16 +9156,11 @@ void btrfs_destroy_cachep(void)
- 	 * destroy cache.
- 	 */
- 	rcu_barrier();
--	if (btrfs_inode_cachep)
--		kmem_cache_destroy(btrfs_inode_cachep);
--	if (btrfs_trans_handle_cachep)
--		kmem_cache_destroy(btrfs_trans_handle_cachep);
--	if (btrfs_transaction_cachep)
--		kmem_cache_destroy(btrfs_transaction_cachep);
--	if (btrfs_path_cachep)
--		kmem_cache_destroy(btrfs_path_cachep);
--	if (btrfs_free_space_cachep)
--		kmem_cache_destroy(btrfs_free_space_cachep);
-+	kmem_cache_destroy(btrfs_inode_cachep);
-+	kmem_cache_destroy(btrfs_trans_handle_cachep);
-+	kmem_cache_destroy(btrfs_transaction_cachep);
-+	kmem_cache_destroy(btrfs_path_cachep);
-+	kmem_cache_destroy(btrfs_free_space_cachep);
- }
- 
- int btrfs_init_cachep(void)
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 8c27292..988eb15 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -1114,6 +1114,5 @@ int __init ordered_data_init(void)
- 
- void ordered_data_exit(void)
- {
--	if (btrfs_ordered_extent_cache)
--		kmem_cache_destroy(btrfs_ordered_extent_cache);
-+	kmem_cache_destroy(btrfs_ordered_extent_cache);
++	if (block_rsv->reserved == block_rsv->size)
++		block_rsv->full = 1;
++	else
++		block_rsv->full = 0;
++
+ 	spin_unlock(&block_rsv->lock);
+ 	spin_unlock(&sinfo->lock);
  }
 -- 
-2.5.0
+1.8.3.1
 

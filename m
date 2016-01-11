@@ -1,149 +1,97 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:33057 "EHLO mail.kernel.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753654AbcAHLEw (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 8 Jan 2016 06:04:52 -0500
-From: fdmanana@kernel.org
-To: fstests@vger.kernel.org
-Cc: linux-btrfs@vger.kernel.org, Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] fstests: btrfs, verify fitrim does not discard reserved device area
-Date: Thu,  7 Jan 2016 21:21:46 +0000
-Message-Id: <1452201706-29080-1-git-send-email-fdmanana@kernel.org>
+Received: from ipmail04.adl6.internode.on.net ([150.101.137.141]:34522 "EHLO
+	ipmail04.adl6.internode.on.net" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1757173AbcAKDl0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 10 Jan 2016 22:41:26 -0500
+Date: Mon, 11 Jan 2016 14:41:19 +1100
+From: Dave Chinner <david@fromorbit.com>
+To: fdmanana@kernel.org
+Cc: fstests@vger.kernel.org, linux-btrfs@vger.kernel.org,
+        Filipe Manana <fdmanana@suse.com>
+Subject: Re: [PATCH 1/4 v2] fstests: fix btrfs test failures after commit
+ 27d077ec0bda
+Message-ID: <20160111034119.GG10456@dastard>
+References: <1450845795-18729-1-git-send-email-fdmanana@kernel.org>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <1450845795-18729-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Wed, Dec 23, 2015 at 04:43:12AM +0000, fdmanana@kernel.org wrote:
+> From: Filipe Manana <fdmanana@suse.com>
+> 
+> Commit 27d077ec0bda (common: use mount/umount helpers everywhere) made
+> a few btrfs test fail for 2 different reasons:
+> 
+> 1) Some tests (btrfs/029 and btrfs/031) use $SCRATCH_MNT as a mount
+>    point for some subvolume created in $TEST_DEV, therefore calling
+>    _scratch_unmount does not work as it passes $SCRATCH_DEV as the
+>    argument to the umount program. This is intentional to test reflinks
+>    accross different mountpoints of the same filesystem but for different
+>    subvolumes;
+> 
+> 2) For multiple devices filesystems (btrfs/003 and btrfs/011) that test
+>    the device replace feature, we need to unmount using the mount path
+>    ($SCRATCH_MNT) because unmounting using one of the devices as an
+>    argument ($SCRATCH_DEV) does not always work - after replace operations
+>    we get in /proc/mounts a device other than $SCRATCH_DEV associated
+>    with the mount point $SCRATCH_MNT (this is mentioned in a comment at
+>    btrfs/011 for example), so we need to pass that other device to the
+>    umount program or pass it the mount point.
+> 
+> Using $SCRATCH_MNT as a mountpoint for a device other than $SCRATCH_DEV is
+> misleading, but that's a different problem that existed long before and
+> this change attempts only to fix the regression from 27d077ec0bda, leaving
+> such cleanups to later.
+> Fix this by making _sctatch_unmmount() pass $SCRATCH_MNT to umount instead
+> of $SCRATCH_DEV.
+> 
+> Signed-off-by: Filipe Manana <fdmanana@suse.com>
+> ---
+> 
+> V2: Change _sctatch_unmount() to pass $SCRATCH_MNT as the argument to the
+>     umount program instead of $SCRATCH_DEV. This makes the btrfs tests
+>     pass again.
+> 
+>  common/rc | 2 +-
+>  1 file changed, 1 insertion(+), 1 deletion(-)
+> 
+> diff --git a/common/rc b/common/rc
+> index d33e3fb..16a47fe 100644
+> --- a/common/rc
+> +++ b/common/rc
+> @@ -319,7 +319,7 @@ _scratch_unmount()
+>  	if [ "$FSTYP" == "overlay" ]; then
+>  		_overlay_scratch_unmount
+>  	else
+> -		$UMOUNT_PROG $SCRATCH_DEV
+> +		$UMOUNT_PROG $SCRATCH_MNT
+>  	fi
 
-Verify that when a fitrim operation is made against a btrfs filesystem,
-the ranges [0, 64Kb[ and [68Kb, 1Mb[ of the device are not discarded,
-they remain with the content they had before the fitrim operation. These
-regions of the device are reserved for a boot loader to use at its will.
+This causes generic/050 to fail (and there's probably others, too):
 
-In the 4.3 linux kernel we got a regression that allowed a fitrim
-operation to discard these reserved ranges of the device, resulting in
-the filesystem becoming unbootable after a fitrim. The issue is fixed
-by the following patch (targeted for 4.5 and 4.3/4.4 stable releases):
+@@ -15,7 +15,7 @@
+     mount: SCRATCH_DEV is write-protected, mounting read-only
+     mount: cannot mount SCRATCH_DEV read-only
+     unmounting read-only filesystem
+    -umount: SCRATCH_DEV: not mounted
+    +umount: SCRATCH_MNT: not mounted
+     mounting filesystem with -o norecovery on a read-only device:
+     mount: SCRATCH_DEV is write-protected, mounting read-only
+    ...
 
- "Btrfs: fix fitrim discarding device area reserved for boot loader's use"
+And, looking at the change for a second or two, the above code is
+obviously wrong. Have a look at _overlay_scratch_unmount() and have
+a think about what we normally do when multiple fileystem types need
+a non-standard behaviour for a generic operation?
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
----
- tests/btrfs/116     | 76 +++++++++++++++++++++++++++++++++++++++++++++++++++++
- tests/btrfs/116.out | 12 +++++++++
- tests/btrfs/group   |  1 +
- 3 files changed, 89 insertions(+)
- create mode 100755 tests/btrfs/116
- create mode 100644 tests/btrfs/116.out
+Hint: it starts with 'case "$FSTYP" in'....
 
-diff --git a/tests/btrfs/116 b/tests/btrfs/116
-new file mode 100755
-index 0000000..c51e135
---- /dev/null
-+++ b/tests/btrfs/116
-@@ -0,0 +1,76 @@
-+#! /bin/bash
-+# FSQA Test No. 116
-+#
-+# Verify that when a fitrim operation is made against a btrfs filesystem, the
-+# ranges [0, 64Kb[ and [68Kb, 1Mb[ of the device are not discarded, they remain
-+# with the content they had before the fitrim operation. These regions of the
-+# device are reserved for a boot loader to use at its will.
-+#
-+#-----------------------------------------------------------------------
-+#
-+# Copyright (C) 2016 SUSE Linux Products GmbH. All Rights Reserved.
-+# Author: Filipe Manana <fdmanana@suse.com>
-+#
-+# This program is free software; you can redistribute it and/or
-+# modify it under the terms of the GNU General Public License as
-+# published by the Free Software Foundation.
-+#
-+# This program is distributed in the hope that it would be useful,
-+# but WITHOUT ANY WARRANTY; without even the implied warranty of
-+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-+# GNU General Public License for more details.
-+#
-+# You should have received a copy of the GNU General Public License
-+# along with this program; if not, write the Free Software Foundation,
-+# Inc.,  51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
-+#-----------------------------------------------------------------------
-+#
-+
-+seq=`basename $0`
-+seqres=$RESULT_DIR/$seq
-+echo "QA output created by $seq"
-+tmp=/tmp/$$
-+status=1	# failure is the default!
-+trap "_cleanup; exit \$status" 0 1 2 3 15
-+
-+_cleanup()
-+{
-+	cd /
-+	rm -f $tmp.*
-+}
-+
-+# get standard environment, filters and checks
-+. ./common/rc
-+. ./common/filter
-+
-+# real QA test starts here
-+_need_to_be_root
-+_supported_fs btrfs
-+_supported_os Linux
-+_require_scratch
-+
-+rm -f $seqres.full
-+
-+_scratch_mkfs >>$seqres.full 2>&1
-+
-+# Write to the [0, 64Kb[ and [68Kb, 1Mb[ ranges of the device. These ranges are
-+# reserved for a boot loader to use (GRUB for example) and btrfs should never
-+# use them - neither for allocating metadata/data nor should trim/discard them.
-+# The range [64Kb, 68Kb[ is used for the primary superblock of the filesystem.
-+$XFS_IO_PROG -c "pwrite -S 0xfd 0 64K" $SCRATCH_DEV | _filter_xfs_io
-+$XFS_IO_PROG -c "pwrite -S 0xfd 68K 956K" $SCRATCH_DEV | _filter_xfs_io
-+
-+# Now mount the filesystem and perform a fitrim against it.
-+_scratch_mount
-+_require_batched_discard $SCRATCH_MNT
-+$FSTRIM_PROG $SCRATCH_MNT
-+
-+# Now unmount the filesystem and verify the content of the ranges was not
-+# modified (no trim/discard happened on them).
-+_scratch_unmount
-+echo "Content of the ranges [0, 64Kb] and [68Kb, 1Mb[ after fitrim:"
-+od -t x1 -N $((64 * 1024)) $SCRATCH_DEV
-+od -t x1 -j $((68 * 1024)) -N $((956 * 1024)) $SCRATCH_DEV
-+
-+status=0
-+exit
-diff --git a/tests/btrfs/116.out b/tests/btrfs/116.out
-new file mode 100644
-index 0000000..9cec94d
---- /dev/null
-+++ b/tests/btrfs/116.out
-@@ -0,0 +1,12 @@
-+QA output created by 116
-+wrote 65536/65536 bytes at offset 0
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+wrote 978944/978944 bytes at offset 69632
-+XXX Bytes, X ops; XX:XX:XX.X (XXX YYY/sec and XXX ops/sec)
-+Content of the ranges [0, 64Kb] and [68Kb, 1Mb[ after fitrim:
-+0000000 fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
-+*
-+0200000
-+0210000 fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd fd
-+*
-+4000000
-diff --git a/tests/btrfs/group b/tests/btrfs/group
-index 3a99289..de628be 100644
---- a/tests/btrfs/group
-+++ b/tests/btrfs/group
-@@ -116,3 +116,4 @@
- 113 auto quick compress clone
- 114 auto qgroup
- 115 auto qgroup
-+116 auto quick metadata
+Cheers,
+
+Dave.
 -- 
-2.1.3
-
+Dave Chinner
+david@fromorbit.com

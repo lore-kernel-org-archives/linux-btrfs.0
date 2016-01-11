@@ -1,102 +1,176 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:57041 "EHLO
-	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751275AbcAZAfF (ORCPT
+Received: from aserp1040.oracle.com ([141.146.126.69]:23678 "EHLO
+	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1759184AbcAKUKg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 25 Jan 2016 19:35:05 -0500
-Date: Mon, 25 Jan 2016 19:34:56 -0500
-From: Chris Mason <clm@fb.com>
-To: David Sterba <dsterba@suse.com>
-CC: <linux-btrfs@vger.kernel.org>, <stable@vger.kernel.org>, <#@suse.cz>,
-        <4.4@suse.cz>, Jiri Kosina <jkosina@suse.cz>
-Subject: Re: [PATCH, 4.5-rc2] Revert "btrfs: clear PF_NOFREEZE in
- cleaner_kthread()"
-Message-ID: <20160126003456.gohrigjejpwb4ktk@floor.thefacebook.com>
-References: <1453716126-7282-1-git-send-email-dsterba@suse.com>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1453716126-7282-1-git-send-email-dsterba@suse.com>
+	Mon, 11 Jan 2016 15:10:36 -0500
+From: Liu Bo <bo.li.liu@oracle.com>
+To: linux-btrfs@vger.kernel.org
+Cc: dsterba@suse.com
+Subject: [PATCH] Btrfs-progs: use btrfs-debugfs to fetch block group information
+Date: Mon, 11 Jan 2016 12:10:22 -0800
+Message-Id: <1452543022-9224-1-git-send-email-bo.li.liu@oracle.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Mon, Jan 25, 2016 at 11:02:06AM +0100, David Sterba wrote:
-> This reverts commit 696249132158014d594896df3a81390616069c5c. The
-> cleaner thread can block freezing when there's a snapshot cleaning in
-> progress and the other threads get suspended first. From the logs
-> provided by Martin we're waiting for reading extent pages:
+From: liub.liubo@gmail.com <boliu23@localhost.localdomain>
 
-Sorry, I specifically looked for this kind of interaction when I took
-the patch and missed it.
+This aims to decide whether a balance can reduce the number of
+data block groups and if it is, this shows the '-dvrange' block
+group's objectid.
 
-I'll revert for rc2.
+Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
+---
+ btrfs-debugfs |  117 ++++++++++++++++++++++++++++++++++++++++++++++++++++++---
+ 1 files changed, 111 insertions(+), 6 deletions(-)
 
--chris
+diff --git a/btrfs-debugfs b/btrfs-debugfs
+index cf1d285..08e3ec6 100755
+--- a/btrfs-debugfs
++++ b/btrfs-debugfs
+@@ -4,7 +4,7 @@
+ # LGPLv2 license
+ # Copyright Facebook 2014
+ 
+-import sys,os,struct,fcntl,ctypes,stat
++import sys,os,struct,fcntl,ctypes,stat,argparse
+ 
+ # helpers for max ints
+ maxu64 = (1L << 64) - 1
+@@ -65,6 +65,11 @@ BTRFS_DEV_STATS_KEY = 249
+ BTRFS_DEV_REPLACE_KEY = 250
+ BTRFS_STRING_ITEM_KEY = 253
+ 
++# store information about which extents are in use, and reference counts
++BTRFS_EXTENT_TREE_OBJECTID = 2
++
++BTRFS_BLOCK_GROUP_DATA = (1 << 0)
++
+ # in the kernel sources, this is flattened
+ # btrfs_ioctl_search_args_v2.  It includes both the btrfs_ioctl_search_key
+ # and the buffer.  We're using a 64K buffer size.
+@@ -121,6 +126,13 @@ class btrfs_file_extent_item(ctypes.LittleEndianStructure):
+                  ("num_bytes", ctypes.c_ulonglong),
+                ]
+ 
++class btrfs_block_group_item(ctypes.LittleEndianStructure):
++    _pack_ = 1
++    _fields_ = [ ("used", ctypes.c_ulonglong),
++                 ("chunk_objectid", ctypes.c_ulonglong),
++                 ("flags", ctypes.c_ulonglong),
++              ]
++
+ class btrfs_ioctl_search():
+     def __init__(self):
+         self.args = btrfs_ioctl_search_args()
+@@ -288,9 +300,102 @@ def print_file_extents(filename):
+           float(st.st_size) / float(total_on_disk))
+     return 0
+ 
+-if len(sys.argv) == 1:
+-    sys.stderr.write("Usage: btrfs-debug filename ...\n")
+-    sys.exit(1)
++def print_block_groups(mountpoint):
++    s = btrfs_ioctl_search()
++
++    s.args.min_type = BTRFS_BLOCK_GROUP_ITEM_KEY
++    s.args.max_type = BTRFS_BLOCK_GROUP_ITEM_KEY
++    s.args.tree_id = BTRFS_EXTENT_TREE_OBJECTID
++
++    min_used = maxu64
++    free_of_min_used = 0
++    bg_of_min_used = 0
++    total_free = 0
++
++    try:
++        fd = os.open(mountpoint, os.O_RDONLY)
++        st = os.fstat(fd)
++    except Exception, e:
++        sys.stderr.write("Failed to open %s (%s)\n" % (mountpoint, e))
++        return -1
++
++    while True:
++        try:
++            s.search(fd)
++        except Exception, e:
++            sys.stderr.write("Search ioctl failed for %s (%s)\n" % (mountpoint, e))
++            return -1
++
++        if s.args.nr_items == 0:
++            break
++
++        # p is the results buffer from kernel
++        p = ctypes.addressof(s.args.buf)
++        header = btrfs_ioctl_search_header()
++        header_size = ctypes.sizeof(header)
++        h = ctypes.addressof(header)
++        p_left = args_buffer_size
++
++        for x in xrange(0, s.args.nr_items):
++            # for each itme, copy the header from the buffer into
++            # our header struct
++            ctypes.memmove(h, p, header_size)
++            p += header_size
++            p_left -= header_size
++
++            # this would be a kernel bug it shouldn't be sending malformed
++            # items
++            if p_left <= 0:
++                break
++
++            if header.type == BTRFS_BLOCK_GROUP_ITEM_KEY:
++                bg = btrfs_block_group_item()
++
++                # this would be a kernel bug
++                if p_left < ctypes.sizeof(bg):
++                    break
++
++                ctypes.memmove(ctypes.addressof(bg), p, ctypes.sizeof(bg))
++                if bg.flags & BTRFS_BLOCK_GROUP_DATA:
++                    print "block group offset %Lu len %Lu used %Lu chunk_objectid %Lu flags %Lu usage %.2f" %\
++                     (header.objectid, header.offset, bg.used, bg.chunk_objectid, bg.flags, float(bg.used) / float(header.offset))
++
++                    total_free += (header.offset - bg.used)
++                    if min_used >= bg.used:
++                        min_used = bg.used
++                        free_of_min_used = (header.offset - bg.used)
++                        bg_of_min_used = header.objectid
++
++            p += header.len
++            p_left -= header.len
++            if p_left <= 0:
++                break
++
++            s.args.min_objectid = header.objectid
++
++        if s.args.min_objectid < maxu64:
++            s.args.min_objectid += 1
++        if s.args.min_objectid > s.args.max_objectid:
++            break
++
++    print "total_free %Lu min_used %Lu free_of_min_used %Lu block_group_of_min_used %Lu" %\
++     (total_free, min_used, free_of_min_used, bg_of_min_used)
++    if (total_free - free_of_min_used) >= min_used:
++        print "balance block group (%Lu) can reduce the number of data block group" % bg_of_min_used
++
++    return 0
++
++# main
++parser = argparse.ArgumentParser()
++parser.add_argument('path', nargs='+')
++parser.add_argument('-b', '--block-group', action='store_const', const=1, help='get block group information, use mountpoint as "path"')
++parser.add_argument('-f', '--file', action='store_const', const=1, help='get file mapping, use filepath')
++
++args = parser.parse_args()
+ 
+-for f in sys.argv[1:]:
+-    print_file_extents(f)
++if args.block_group:
++    for i in args.path[0:]:
++        print_block_groups(i)
++elif args.file:
++    for f in args.path[0:]:
++        print_file_extents(f)
+-- 
+1.7.1
 
-> 
-> kernel: PM: Syncing filesystems ... done.
-> kernel: Freezing user space processes ... (elapsed 0.015 seconds) done.
-> kernel: Freezing remaining freezable tasks ...
-> kernel: Freezing of tasks failed after 20.003 seconds (1 tasks refusing to freeze, wq_busy=0):
-> kernel: btrfs-cleaner   D ffff88033dd13bc0     0   152      2 0x00000000
-> kernel: ffff88032ebc2e00 ffff88032e750000 ffff88032e74fa50 7fffffffffffffff
-> kernel: ffffffff814a58df 0000000000000002 ffffea000934d580 ffffffff814a5451
-> kernel: 7fffffffffffffff ffffffff814a6e8f 0000000000000000 0000000000000020
-> kernel: Call Trace:
-> kernel: [<ffffffff814a58df>] ? bit_wait+0x2c/0x2c
-> kernel: [<ffffffff814a5451>] ? schedule+0x6f/0x7c
-> kernel: [<ffffffff814a6e8f>] ? schedule_timeout+0x2f/0xd8
-> kernel: [<ffffffff81076f94>] ? timekeeping_get_ns+0xa/0x2e
-> kernel: [<ffffffff81077603>] ? ktime_get+0x36/0x44
-> kernel: [<ffffffff814a4f6c>] ? io_schedule_timeout+0x94/0xf2
-> kernel: [<ffffffff814a4f6c>] ? io_schedule_timeout+0x94/0xf2
-> kernel: [<ffffffff814a590b>] ? bit_wait_io+0x2c/0x30
-> kernel: [<ffffffff814a5694>] ? __wait_on_bit+0x41/0x73
-> kernel: [<ffffffff8109eba8>] ? wait_on_page_bit+0x6d/0x72
-> kernel: [<ffffffff8105d718>] ? autoremove_wake_function+0x2a/0x2a
-> kernel: [<ffffffff811a02d7>] ? read_extent_buffer_pages+0x1bd/0x203
-> kernel: [<ffffffff8117d9e9>] ? free_root_pointers+0x4c/0x4c
-> kernel: [<ffffffff8117e831>] ? btree_read_extent_buffer_pages.constprop.57+0x5a/0xe9
-> kernel: [<ffffffff8117f4f3>] ? read_tree_block+0x2d/0x45
-> kernel: [<ffffffff8116782a>] ? read_block_for_search.isra.34+0x22a/0x26b
-> kernel: [<ffffffff811656c3>] ? btrfs_set_path_blocking+0x1e/0x4a
-> kernel: [<ffffffff8116919b>] ? btrfs_search_slot+0x648/0x736
-> kernel: [<ffffffff81170559>] ? btrfs_lookup_extent_info+0xb7/0x2c7
-> kernel: [<ffffffff81170ee5>] ? walk_down_proc+0x9c/0x1ae
-> kernel: [<ffffffff81171c9d>] ? walk_down_tree+0x40/0xa4
-> kernel: [<ffffffff8117375f>] ? btrfs_drop_snapshot+0x2da/0x664
-> kernel: [<ffffffff8104ff21>] ? finish_task_switch+0x126/0x167
-> kernel: [<ffffffff811850f8>] ? btrfs_clean_one_deleted_snapshot+0xa6/0xb0
-> kernel: [<ffffffff8117eaba>] ? cleaner_kthread+0x13e/0x17b
-> kernel: [<ffffffff8117e97c>] ? btrfs_item_end+0x33/0x33
-> kernel: [<ffffffff8104d256>] ? kthread+0x95/0x9d
-> kernel: [<ffffffff8104d1c1>] ? kthread_parkme+0x16/0x16
-> kernel: [<ffffffff814a7b5f>] ? ret_from_fork+0x3f/0x70
-> kernel: [<ffffffff8104d1c1>] ? kthread_parkme+0x16/0x16
-> 
-> As this affects a released kernel (4.4) we need a minimal fix for
-> stable kernels.
-> 
-> Bugzilla: https://bugzilla.kernel.org/show_bug.cgi?id=108361
-> Reported-by: Martin Ziegler <ziegler@uni-freiburg.de>
-> CC: stable@vger.kernel.org # 4.4
-> CC: Jiri Kosina <jkosina@suse.cz>
-> Signed-off-by: David Sterba <dsterba@suse.com>
-> ---
->  fs/btrfs/disk-io.c | 1 -
->  1 file changed, 1 deletion(-)
-> 
-> diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-> index 26ef14152093..404e894c33d9 100644
-> --- a/fs/btrfs/disk-io.c
-> +++ b/fs/btrfs/disk-io.c
-> @@ -1787,7 +1787,6 @@ static int cleaner_kthread(void *arg)
->  	int again;
->  	struct btrfs_trans_handle *trans;
->  
-> -	set_freezable();
->  	do {
->  		again = 0;
->  
-> -- 
-> 2.6.3
-> 

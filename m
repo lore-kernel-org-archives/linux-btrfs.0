@@ -1,147 +1,208 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:10623 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932733AbcALHso (ORCPT
+Received: from userp1040.oracle.com ([156.151.31.81]:25291 "EHLO
+	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752629AbcALJPM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 02:48:44 -0500
-Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id 92624418910E
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 15:48:19 +0800 (CST)
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <linux-btrfs@vger.kernel.org>
-CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 2/2] btrfs: reada: simplify dev->reada_in_flight processing
-Date: Tue, 12 Jan 2016 15:46:27 +0800
-Message-ID: <bdfd98150b0b58c8176df79176fd41f1cb3c03fe.1452584763.git.zhaolei@cn.fujitsu.com>
-In-Reply-To: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
-References: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
+	Tue, 12 Jan 2016 04:15:12 -0500
+Date: Tue, 12 Jan 2016 01:14:32 -0800
+From: "Darrick J. Wong" <darrick.wong@oracle.com>
+To: Eric Biggers <ebiggers3@gmail.com>
+Cc: david@fromorbit.com, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, hch@infradead.org
+Subject: Re: [PATCH 8/9] vfs: hoist the btrfs deduplication ioctl to the vfs
+Message-ID: <20160112091432.GB7832@birch.djwong.org>
+References: <20151219085505.12478.71157.stgit@birch.djwong.org>
+ <20151219085559.12478.33700.stgit@birch.djwong.org>
+ <20160112060714.GA4980@zzz>
 MIME-Version: 1.0
-Content-Type: text/plain
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160112060714.GA4980@zzz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-No need to decrease dev->reada_in_flight in __readahead_hook()'s
-internal and reada_extent_put().
-reada_extent_put() have no chance to decrease dev->reada_in_flight
-in free operation, because reada_extent have additional refcnt when
-scheduled to a dev.
+[adding btrfs to the cc since we're talking about a whole new dedupe interface]
 
-We can put inc and dec operation for dev->reada_in_flight to one
-place instead to make logic simple and safe, and move useless
-reada_extent->scheduled_for to a bool flag instead.
+On Tue, Jan 12, 2016 at 12:07:14AM -0600, Eric Biggers wrote:
+> Some feedback on the VFS portion of the FIDEDUPERANGE ioctl and its man page...
+> (note: I realize the patch is mostly just moving the code that already existed
+> in btrfs, but in the VFS it deserves a more thorough review):
 
-Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
----
- fs/btrfs/reada.c | 28 ++++++++++------------------
- 1 file changed, 10 insertions(+), 18 deletions(-)
+Wheee. :)
 
-diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 7b150b2..87c211a 100644
---- a/fs/btrfs/reada.c
-+++ b/fs/btrfs/reada.c
-@@ -72,7 +72,7 @@ struct reada_extent {
- 	spinlock_t		lock;
- 	struct reada_zone	*zones[BTRFS_MAX_MIRRORS];
- 	int			nzones;
--	struct btrfs_device	*scheduled_for;
-+	int			scheduled;
- };
- 
- struct reada_zone {
-@@ -118,7 +118,6 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
- 	u64 bytenr;
- 	u64 generation;
- 	struct list_head list;
--	struct btrfs_device *for_dev;
- 
- 	if (eb)
- 		level = btrfs_header_level(eb);
-@@ -129,8 +128,7 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
- 	 * don't need the lock anymore
- 	 */
- 	list_replace_init(&re->extctl, &list);
--	for_dev = re->scheduled_for;
--	re->scheduled_for = NULL;
-+	re->scheduled = 0;
- 	spin_unlock(&re->lock);
- 
- 	/*
-@@ -215,9 +213,6 @@ cleanup:
- 		reada_extent_put(fs_info, re);	/* one ref for each entry */
- 	}
- 
--	if (for_dev)
--		atomic_dec(&for_dev->reada_in_flight);
--
- 	return;
- }
- 
-@@ -543,8 +538,6 @@ static void reada_extent_put(struct btrfs_fs_info *fs_info,
- 		kref_put(&zone->refcnt, reada_zone_release);
- 		spin_unlock(&fs_info->reada_lock);
- 	}
--	if (re->scheduled_for)
--		atomic_dec(&re->scheduled_for->reada_in_flight);
- 
- 	kfree(re);
- }
-@@ -710,12 +703,12 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 	spin_unlock(&fs_info->reada_lock);
- 
- 	spin_lock(&re->lock);
--		if (re->scheduled_for || list_empty(&re->extctl)) {
-+		if (re->scheduled || list_empty(&re->extctl)) {
- 			spin_unlock(&re->lock);
- 			reada_extent_put(fs_info, re);
- 			return 0;
- 		}
--		re->scheduled_for = dev;
-+		re->scheduled = 1;
- 	spin_unlock(&re->lock);
- 
- 	/*
-@@ -740,6 +733,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
- 	if (eb)
- 		free_extent_buffer(eb);
- 
-+	atomic_dec(&dev->reada_in_flight);
- 	reada_extent_put(fs_info, re);
- 
- 	return 1;
-@@ -864,10 +858,9 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
- 			if (ret == 0)
- 				break;
- 			printk(KERN_DEBUG
--				"  re: logical %llu size %u empty %d for %lld",
-+				"  re: logical %llu size %u empty %d scheduled %d",
- 				re->logical, fs_info->tree_root->nodesize,
--				list_empty(&re->extctl), re->scheduled_for ?
--				re->scheduled_for->devid : -1);
-+				list_empty(&re->extctl), re->scheduled);
- 
- 			for (i = 0; i < re->nzones; ++i) {
- 				printk(KERN_CONT " zone %llu-%llu devs",
-@@ -894,15 +887,14 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
- 					     index, 1);
- 		if (ret == 0)
- 			break;
--		if (!re->scheduled_for) {
-+		if (!re->scheduled) {
- 			index = (re->logical >> PAGE_CACHE_SHIFT) + 1;
- 			continue;
- 		}
- 		printk(KERN_DEBUG
--			"re: logical %llu size %u list empty %d for %lld",
-+			"re: logical %llu size %u list empty %d scheduled %d",
- 			re->logical, fs_info->tree_root->nodesize,
--			list_empty(&re->extctl),
--			re->scheduled_for ? re->scheduled_for->devid : -1);
-+			list_empty(&re->extctl), re->scheduled);
- 		for (i = 0; i < re->nzones; ++i) {
- 			printk(KERN_CONT " zone %llu-%llu devs",
- 				re->zones[i]->start,
--- 
-1.8.5.1
+Yes, let's discuss the concerns about the btrfs extent same ioctl.
 
+I believe Christoph dislikes about the odd return mechanism (i.e. status and
+bytes_deduped) and doubts that the vectorization is really necessary.  There's
+not a lot of documentation to go on aside from "Do whatever the BTRFS ioctl
+does".  I suspect that will leave my explanations lackng, since I neither
+designed the btrfs interface nor know all that much about the decisions made to
+arrive at what we have now.
 
+(I agree with both of hch's complaints.)
 
+Really, the best argument for keeping this ioctl is to avoid breaking
+duperemove.  Even then, given that current duperemove checks for btrfs before
+trying to use BTRFS_IOC_EXTENT_SAME, we could very well design a new dedupe
+ioctl for the VFS, hook the new dedupers (XFS) into the new VFS ioctl
+leaving the old btrfs ioctl intact, and train duperemove to try the new
+ioctl and fall back on the btrfs one if the VFS ioctl isn't supported.
+
+Frankly, I also wouldn't mind changing the VFS dedupe ioctl that to something
+that resembles the clone_range interface:
+
+int ioctl(int dest_fd, FIDEDUPERANGE, struct file_dedupe_range * arg);
+
+struct file_dedupe_range {
+    __s64 src_fd;
+    __u64 src_offset;
+    __u64 length;
+    __u64 dest_offset;
+    __u64 flags;
+};
+
+"See if the byte range src_offset:length in src_fd matches all of
+dest_offset:length in dest_fd; if so, share src_fd's physical storage with
+dest_fd.  Both fds must be files; if they are the same file the ranges cannot
+overlap; src_fd must be readable; dest_fd must be writable or append-only.
+Offsets and lengths probably need to be block-aligned, but that is filesystem
+dependent."
+
+The error conditions would be superset of the ones we know about today.  I'd
+return EOVERFLOW or something if length is longer than the FS wants to deal
+with.
+
+Now all the vectorization problems go away, and since it's a new VFS interface
+we can define everything from the start.
+
+Christoph, if this new interface solves your complaints I think I'd like to get
+started on the code/docs soon.
+
+> At high level, I am confused about what is meant by the "source" and
+> "destination" files.  I understand that with more than two files, you
+> effectively have to choose one file to treat specially and dedupe with all
+> the other files (an NxN comparison isn't realistic).  But with just two
+> files, a deduplication operation should be completely symmetric, should it
+> not?  The end
+
+Not sure what you mean by 'symmetric', but in any case the convention seems
+to be that src_fd's storage is shared with dest_fd if there's a match.
+
+> result should be that the data is deduplicated, regardless of the order in
+> which I gave the file descriptors.  So why is there some non-symmetric
+> behavior?  There are several examples but one is that the VFS is checking
+> !S_ISREG() on the "source" file descriptor but not on the "destination" file
+> descriptor.
+
+The dedupe_range function pointer should only be supplied for regular files.
+
+> Another is that different permissions are required on the source versus on
+> the destination.  If there are good reasons for the nonsymmetry then this
+> needs to be clearly explained in the man page; otherwise it may not be clear
+> what to use as the "source" and what to use as the "destination".
+> 
+> It seems odd to be adding "copy" as a system call but then have "dedupe" and
+> "clone" as ioctls rather than system calls... it seems that they should all
+> be one or the other (at least, if we put aside the fact that the ioctls
+> already exist in btrfs).
+
+We can't put the clone ioctl aside; coreutils has already started using it.
+
+I'm not sure if clone_range or extent_same are all that popular, though.
+AFAIK duperemove is the only program using extent_same, and I don't know
+of anything using clone_range.
+
+(Well, xfs_io does...)
+
+> The range checking in clone_verify_area() appears incomplete.  Someone could
+> provide len=UINT64_MAX and all the checks would still pass even though
+> 'pos+len' would overflow.
+
+Yeah...
+
+> Should the ioctl be interruptible?  Right now it always goes through *all*
+> the 'struct file_dedupe_range_info's you passed in --- potentially up to
+> 65535 of them.
+
+There probably ought to be explicit signal checks, or we could just get rid
+of the vectorization entirely. :)
+
+> Why 'info->bytes_deduped += deduped' rather than 'info->bytes_deduped =
+> deduped'?  'bytes_deduped' is per file descriptor, not for the operation as a
+> whole.
+
+Right, because bytes_deduped is a part of file_dedup_range_info, not
+file_dedupe_range.
+
+(Note the bytes_deduped = 0 earlier in the function.)
+
+> What permissions do you need on the destination file descriptors?  The man
+> page implies they must be open for writing and not appending.  The
+> implementation differs: it requires FMODE_WRITE only for non-admin users, and
+> it doesn't check for O_APPEND at all.
+
+I think the result of an earlier discussion was that src_fd must be readable,
+and dest_fd must be writable or appendable.
+
+> The man page also says you get EPERM if "dest_fd is immutable" and ETXTBSY if
+> "one of the files is a swap file", which I don't see actually happening in
+> the implementation; it seems those error codes perhaps exist at all for this
+> ioctl but rather be left to open(..., O_WRONLY).
+
+Those could be hoisted to the VFS (from the XFS implementation), I think.
+
+> If the filesystem doesn't support deduplication, or I pass in a strange file
+> descriptor such as one for a named pipe, do I get EINVAL or EOPNOTSUPP?  The
+> man page isn't clear.
+
+Should be EOPNOTSUPP if dest_fd isn't a regular file; EISDIR if either are
+directories; and EINVAL for any other kind of non-file fd.  I suspect the
+clone* manpages don't make this too clear either.
+
+> Under what circumstances will 'bytes_deduped' differ from the count that was
+> passed in?
+
+btrfs/xfs will only compare the first 16MB.  Not documented anywhere. :(
+
+> If short counts are allowed, what will be the 'status' be in that case:
+> FILE_DEDUP_RANGE_DIFFERS, FILE_DEDUPE_RANGE_SAME, or something else?
+
+One of those two.
+
+> Can data be deduped even if only a prefix of the data region matches?
+
+No.
+
+> The man page doesn't mention FILE_DEDUPE_RANGE_SAME at all, instead calling it
+> 0; it only mentions FILE_DEDUPE_RANGE_DIFFERS.
+
+Oops, good catch. :(
+
+> The man page isn't clear about whether the ioctl stops early if an error
+> occurs or always processes all the 'struct file_dedupe_range_info's you pass
+> in.  And if it were, hypothetically, to stop early, how is the user meant to
+> know on which file it stopped?
+
+I don't know if this should be the official behavior, but it stopped at
+whichever file_dedupe_range_info has both status and bytes_deduped set to zero.
+
+> The man page says "logical_offset" but in the struct it is called
+> "dest_offset".
+
+Oops.
+
+> There are some variables named "same" which don't really make sense now that
+> the ioctl is called FIDEDUPERANGE instead of EXTENT_SAME.
+
+Perhaps not.
+
+I'll later take a look at how many of these issues apply to clone/clone_range.
+
+--D
+
+> 
+> Eric
+> --
+> To unsubscribe from this list: send the line "unsubscribe linux-api" in
+> the body of a message to majordomo@vger.kernel.org
+> More majordomo info at  http://vger.kernel.org/majordomo-info.html

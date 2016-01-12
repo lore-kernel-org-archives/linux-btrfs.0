@@ -1,50 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from smtp-32.italiaonline.it ([212.48.25.160]:38507 "EHLO libero.it"
-	rhost-flags-OK-OK-OK-FAIL) by vger.kernel.org with ESMTP
-	id S1751451AbcALTz0 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 14:55:26 -0500
-Reply-To: kreijack@inwind.it
-Subject: Re: [PATCH] btrfs-progs: Format change for btrfs fi df
-References: <1450070396-20744-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20160112142806.GL4227@twin.jikos.cz>
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org
-From: Goffredo Baroncelli <kreijack@inwind.it>
-Message-ID: <56955A2A.6070708@inwind.it>
-Date: Tue, 12 Jan 2016 20:55:22 +0100
+Received: from mail-lf0-f49.google.com ([209.85.215.49]:34201 "EHLO
+	mail-lf0-f49.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1753145AbcALUqG (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jan 2016 15:46:06 -0500
+Received: by mail-lf0-f49.google.com with SMTP id 17so40275963lfz.1
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 12:46:05 -0800 (PST)
 MIME-Version: 1.0
 In-Reply-To: <20160112142806.GL4227@twin.jikos.cz>
-Content-Type: text/plain; charset=windows-1252
+References: <1450070396-20744-1-git-send-email-quwenruo@cn.fujitsu.com>
+	<20160112142806.GL4227@twin.jikos.cz>
+Date: Tue, 12 Jan 2016 21:46:04 +0100
+Message-ID: <CAPmG0jZDKQbuFmFZXxQkcwyw_3oLzy-8nvr+W=mv3e7UEpfa4w@mail.gmail.com>
+Subject: Re: [PATCH] btrfs-progs: Format change for btrfs fi df
+From: Henk Slager <eye1tm@gmail.com>
+To: linux-btrfs <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-01-12 15:28, David Sterba wrote:
-[...]
+On Tue, Jan 12, 2016 at 3:28 PM, David Sterba <dsterba@suse.cz> wrote:
+> On Mon, Dec 14, 2015 at 01:19:56PM +0800, Qu Wenruo wrote:
+>> The GlobalReserve space in 'btrfs fi df' is always confusing for a lot
+>> of users.
+>> As it is not a special chunk type like DATA or METADATA, it's in fact a
+>> sub-type of METADATA.
+>>
+>> So change the output to skip GlobalReserve by default, and adding its
+>> total to metadata used.
+>> And add a new option '-r|--reserve' to show the GlobalReserve, but skip
+>> the profile of GlobalReserve.
+>
 > How about this:
-> 
+>
 > - keep the global reserve in the output, separate from metadata and not
->    accounted
+>   accounted
 > - add new option to account the global reserve into metadata and then
->    drop it from the output
+>   drop it from the output
 
+I think this alternative does not remove the confusion for people,
+maybe even keeps it and/or increases it. The default 'btrfs fi df'
+would then still include a confusing term and numbers belonging to it
+that still don't make sense.
 
-Instead of dropping it, what about prefixing it with '\_' in order to show that
-it is a subtype of metadata (it is not a my idea, I read this sometime ago in 
-this mailing list) ?
+Maybe there are scripts around that try to do something with the
+number belonging to GlobalReserve, but I think such would already be
+part of the problem. Such calculations should be in progs itself by
+default. If people want more detail or more output, the -r can be
+used. If the used= for metadata is smaller by default and there is
+some 'free space hidden', the risk is higher that scripts/people let
+the fs grow to even close to full with all the trouble we see so often
+in this list and elsewhere.
 
-$ btrfs fi df /
-Data, single: total=29.00GiB, used=21.01GiB
-System, single: total=32.00MiB, used=16.00KiB
-Metadata, single: total=2.00GiB, used=716.59MiB
-\_GlobalReserve, single: total=240.00MiB, used=0.00B
+So I think the original patch is the way forward; It should also be
+applied to 'btrfs fi us' I think.
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
-> 
-
-
--- 
-gpg @keyserver.linux.it: Goffredo Baroncelli <kreijackATinwind.it>
-Key fingerprint BBF5 1610 0B64 DAC6 5F7D  17B2 0EDA 9B37 8B82 E0B5
+Additionally, when 'btrfs fi df' is default 3 lines, those 3 lines
+could exactly match lines that 'btrfs fi us' outputs for
+Data/System/Metadata, so aligning Size: with total=  etc. Hopefully
+this gives options for making the code more compact for 'btrfs fi df'
++ 'btrfs fi sh' + 'btrfs fi us' + 'btrfs de us'.

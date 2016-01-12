@@ -1,44 +1,44 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:34289 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S932895AbcAKNzY (ORCPT
+Received: from cn.fujitsu.com ([59.151.112.132]:13962 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1758771AbcALCHn (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jan 2016 08:55:24 -0500
-Date: Mon, 11 Jan 2016 08:55:07 -0500
-From: Chris Mason <clm@fb.com>
-To: <fdmanana@kernel.org>
-CC: <linux-btrfs@vger.kernel.org>, Filipe Manana <fdmanana@suse.com>
-Subject: Re: [GIT PULL] More btrfs bug fixes for 4.5
-Message-ID: <20160111135507.5qswrrfckj5mxyno@ret.masoncoding.com>
-References: <1452253431-29510-1-git-send-email-fdmanana@kernel.org>
+	Mon, 11 Jan 2016 21:07:43 -0500
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: <clm@fb.com>
+Subject: [PATCH v5 0/2][PULL REQUEST] Unify 'norecovery' bahavior with other filesystems
+Date: Tue, 12 Jan 2016 10:05:11 +0800
+Message-ID: <1452564313-22007-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
-In-Reply-To: <1452253431-29510-1-git-send-email-fdmanana@kernel.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 08, 2016 at 11:43:51AM +0000, fdmanana@kernel.org wrote:
-> From: Filipe Manana <fdmanana@suse.com>
-> 
-> Hi Chris.
-> 
-> Please consider the following bug fixes for the 4.5 kernel release.
-> Just the usual set of bug fixes. One of these is tagged for stable and it
-> fixes a regression introduced in 4.3 that makes a filesystem unbootable
-> after a fitrim operation (recently reported by a few openSUSE users).
-> These patches were all previously sent to the mailing list as well as a
-> new test case for fstests that covers the regression with fitrim.
-> 
-> Thanks.
-> 
-> The following changes since commit 511711af91f21d80b27f18b569352d6896562828:
-> 
->   btrfs: don't run delayed references while we are creating the free space tree (2015-12-30 07:52:35 -0800)
-> 
-> are available in the git repository at:
-> 
->   git://git.kernel.org/pub/scm/linux/kernel/git/fdmanana/linux.git for-chris-4.5
+'Norecovery' mount option is almost a standard for all other
+filesystems, including f2fs, ext4, gfs2, nilfs2, and xfs.
+And since current 'recovery' mount option for btrfs is too generic, it's
+better to change btrfs 'recovery' to 'usebackuproot' and then we can
+safely add 'norecovery' and 'nologreplay' mount option for btrfs.
 
-Thanks Filipe, pulling this in.
+The patch itself is not huge and already tested by others since v2.
+Only mount option name is changing during all these version changes.
 
--chris
+Thanks,
+Qu
+
+Qu Wenruo (2):
+  btrfs: Introduce new mount option usebackuproot to replace recovery
+  btrfs: Introduce new mount option to disable tree log replay
+
+ Documentation/filesystems/btrfs.txt | 18 +++++++++++---
+ fs/btrfs/ctree.h                    |  6 +++--
+ fs/btrfs/disk-io.c                  | 15 ++++++++----
+ fs/btrfs/super.c                    | 47 ++++++++++++++++++++++++++++++-------
+ 4 files changed, 68 insertions(+), 18 deletions(-)
+
+-- 
+2.7.0
+
+
+

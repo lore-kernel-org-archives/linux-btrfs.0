@@ -1,79 +1,145 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
 Received: from cn.fujitsu.com ([59.151.112.132]:10623 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S932688AbcALHsk (ORCPT
+	with ESMTP id S932733AbcALHso (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 02:48:40 -0500
+	Tue, 12 Jan 2016 02:48:44 -0500
 Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
-	by cn.fujitsu.com (Postfix) with ESMTP id E3C6E4189106
-	for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 15:48:18 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 92624418910E
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 15:48:19 +0800 (CST)
 From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Zhao Lei <zhaolei@cn.fujitsu.com>
-Subject: [PATCH 1/2] btrfs: reada: limit max works count
-Date: Tue, 12 Jan 2016 15:46:26 +0800
-Message-ID: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
+Subject: [PATCH 2/2] btrfs: reada: simplify dev->reada_in_flight processing
+Date: Tue, 12 Jan 2016 15:46:27 +0800
+Message-ID: <bdfd98150b0b58c8176df79176fd41f1cb3c03fe.1452584763.git.zhaolei@cn.fujitsu.com>
+In-Reply-To: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
+References: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-reada create 2 works for each level of tree in recursion.
+No need to decrease dev->reada_in_flight in __readahead_hook()'s
+internal and reada_extent_put().
+reada_extent_put() have no chance to decrease dev->reada_in_flight
+in free operation, because reada_extent have additional refcnt when
+scheduled to a dev.
 
-In case of a tree having many levels, the number of created works
-is 2^level_of_tree.
-Actually we don't need so many works in parallel, this patch limit
-max works to BTRFS_MAX_MIRRORS * 2.
+We can put inc and dec operation for dev->reada_in_flight to one
+place instead to make logic simple and safe, and move useless
+reada_extent->scheduled_for to a bool flag instead.
 
 Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
 ---
- fs/btrfs/reada.c | 11 ++++++++++-
- 1 file changed, 10 insertions(+), 1 deletion(-)
+ fs/btrfs/reada.c | 28 ++++++++++------------------
+ 1 file changed, 10 insertions(+), 18 deletions(-)
 
 diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
-index 53ee7b1..7b150b2 100644
+index 7b150b2..87c211a 100644
 --- a/fs/btrfs/reada.c
 +++ b/fs/btrfs/reada.c
-@@ -103,6 +103,9 @@ static void __reada_start_machine(struct btrfs_fs_info *fs_info);
- static int reada_add_block(struct reada_control *rc, u64 logical,
- 			   struct btrfs_key *top, u64 generation);
+@@ -72,7 +72,7 @@ struct reada_extent {
+ 	spinlock_t		lock;
+ 	struct reada_zone	*zones[BTRFS_MAX_MIRRORS];
+ 	int			nzones;
+-	struct btrfs_device	*scheduled_for;
++	int			scheduled;
+ };
  
-+/* To limit max reada works */
-+static atomic_t works_cnt = ATOMIC_INIT(0);
-+
- /* recurses */
- /* in case of err, eb might be NULL */
- static void __readahead_hook(struct btrfs_fs_info *fs_info,
-@@ -759,6 +762,8 @@ static void reada_start_machine_worker(struct btrfs_work *work)
- 	set_task_ioprio(current, BTRFS_IOPRIO_READA);
- 	__reada_start_machine(fs_info);
- 	set_task_ioprio(current, old_ioprio);
-+
-+	atomic_dec(&works_cnt);
- }
+ struct reada_zone {
+@@ -118,7 +118,6 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+ 	u64 bytenr;
+ 	u64 generation;
+ 	struct list_head list;
+-	struct btrfs_device *for_dev;
  
- static void __reada_start_machine(struct btrfs_fs_info *fs_info)
-@@ -790,8 +795,11 @@ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
- 	 * enqueue to workers to finish it. This will distribute the load to
- 	 * the cores.
+ 	if (eb)
+ 		level = btrfs_header_level(eb);
+@@ -129,8 +128,7 @@ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+ 	 * don't need the lock anymore
  	 */
--	for (i = 0; i < 2; ++i)
-+	for (i = 0; i < 2; ++i) {
- 		reada_start_machine(fs_info);
-+		if (atomic_read(&works_cnt) > BTRFS_MAX_MIRRORS * 2)
-+			break;
-+	}
+ 	list_replace_init(&re->extctl, &list);
+-	for_dev = re->scheduled_for;
+-	re->scheduled_for = NULL;
++	re->scheduled = 0;
+ 	spin_unlock(&re->lock);
+ 
+ 	/*
+@@ -215,9 +213,6 @@ cleanup:
+ 		reada_extent_put(fs_info, re);	/* one ref for each entry */
+ 	}
+ 
+-	if (for_dev)
+-		atomic_dec(&for_dev->reada_in_flight);
+-
+ 	return;
  }
  
- static void reada_start_machine(struct btrfs_fs_info *fs_info)
-@@ -808,6 +816,7 @@ static void reada_start_machine(struct btrfs_fs_info *fs_info)
- 	rmw->fs_info = fs_info;
+@@ -543,8 +538,6 @@ static void reada_extent_put(struct btrfs_fs_info *fs_info,
+ 		kref_put(&zone->refcnt, reada_zone_release);
+ 		spin_unlock(&fs_info->reada_lock);
+ 	}
+-	if (re->scheduled_for)
+-		atomic_dec(&re->scheduled_for->reada_in_flight);
  
- 	btrfs_queue_work(fs_info->readahead_workers, &rmw->work);
-+	atomic_inc(&works_cnt);
+ 	kfree(re);
  }
+@@ -710,12 +703,12 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 	spin_unlock(&fs_info->reada_lock);
  
- #ifdef DEBUG
+ 	spin_lock(&re->lock);
+-		if (re->scheduled_for || list_empty(&re->extctl)) {
++		if (re->scheduled || list_empty(&re->extctl)) {
+ 			spin_unlock(&re->lock);
+ 			reada_extent_put(fs_info, re);
+ 			return 0;
+ 		}
+-		re->scheduled_for = dev;
++		re->scheduled = 1;
+ 	spin_unlock(&re->lock);
+ 
+ 	/*
+@@ -740,6 +733,7 @@ static int reada_start_machine_dev(struct btrfs_fs_info *fs_info,
+ 	if (eb)
+ 		free_extent_buffer(eb);
+ 
++	atomic_dec(&dev->reada_in_flight);
+ 	reada_extent_put(fs_info, re);
+ 
+ 	return 1;
+@@ -864,10 +858,9 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
+ 			if (ret == 0)
+ 				break;
+ 			printk(KERN_DEBUG
+-				"  re: logical %llu size %u empty %d for %lld",
++				"  re: logical %llu size %u empty %d scheduled %d",
+ 				re->logical, fs_info->tree_root->nodesize,
+-				list_empty(&re->extctl), re->scheduled_for ?
+-				re->scheduled_for->devid : -1);
++				list_empty(&re->extctl), re->scheduled);
+ 
+ 			for (i = 0; i < re->nzones; ++i) {
+ 				printk(KERN_CONT " zone %llu-%llu devs",
+@@ -894,15 +887,14 @@ static void dump_devs(struct btrfs_fs_info *fs_info, int all)
+ 					     index, 1);
+ 		if (ret == 0)
+ 			break;
+-		if (!re->scheduled_for) {
++		if (!re->scheduled) {
+ 			index = (re->logical >> PAGE_CACHE_SHIFT) + 1;
+ 			continue;
+ 		}
+ 		printk(KERN_DEBUG
+-			"re: logical %llu size %u list empty %d for %lld",
++			"re: logical %llu size %u list empty %d scheduled %d",
+ 			re->logical, fs_info->tree_root->nodesize,
+-			list_empty(&re->extctl),
+-			re->scheduled_for ? re->scheduled_for->devid : -1);
++			list_empty(&re->extctl), re->scheduled);
+ 		for (i = 0; i < re->nzones; ++i) {
+ 			printk(KERN_CONT " zone %llu-%llu devs",
+ 				re->zones[i]->start,
 -- 
 1.8.5.1
 

@@ -1,86 +1,31 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m50-134.163.com ([123.125.50.134]:53956 "EHLO m50-134.163.com"
+Received: from mx2.suse.de ([195.135.220.15]:51127 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1752973AbcALPYZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 10:24:25 -0500
-From: Geliang Tang <geliangtang@163.com>
-To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Julia Lawall <julia.lawall@lip6.fr>
-Cc: Geliang Tang <geliangtang@163.com>, linux-btrfs@vger.kernel.org,
-        linux-kernel@vger.kernel.org
-Subject: [PATCH v3] btrfs: use list_for_each_entry* in backref.c
-Date: Tue, 12 Jan 2016 23:23:16 +0800
-Message-Id: <222fad42bdeab5259978d086b3f9e466a8f0d531.1452611741.git.geliangtang@163.com>
-In-Reply-To: <cover.1452611741.git.geliangtang@163.com>
+	id S1753312AbcALSQO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jan 2016 13:16:14 -0500
+Date: Tue, 12 Jan 2016 19:13:48 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Geliang Tang <geliangtang@163.com>
+Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
+        David Sterba <dsterba@suse.com>, Julia Lawall <julia.lawall@lip6.fr>,
+        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
+Subject: Re: [PATCH v3] btrfs: use list_for_each_entry* in backref.c
+Message-ID: <20160112181348.GM4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
 References: <cover.1452611741.git.geliangtang@163.com>
-In-Reply-To: <cover.1452611741.git.geliangtang@163.com>
-References: <cover.1452611741.git.geliangtang@163.com>
+ <222fad42bdeab5259978d086b3f9e466a8f0d531.1452611741.git.geliangtang@163.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <222fad42bdeab5259978d086b3f9e466a8f0d531.1452611741.git.geliangtang@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Use list_for_each_entry*() to simplify the code.
+On Tue, Jan 12, 2016 at 11:23:16PM +0800, Geliang Tang wrote:
+> Use list_for_each_entry*() to simplify the code.
+> 
+> Signed-off-by: Geliang Tang <geliangtang@163.com>
 
-Signed-off-by: Geliang Tang <geliangtang@163.com>
----
-Changes in v3:
- - fix 'fs/btrfs/backref.c:565:1-20: iterator with update on line 577'
-
-Changes in v2:
- - Use list_for_each_entry_safe_continue() in __merge_refs().
----
- fs/btrfs/backref.c | 25 +++++++------------------
- 1 file changed, 7 insertions(+), 18 deletions(-)
-
-diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
-index d453d62..b90cd37 100644
---- a/fs/btrfs/backref.c
-+++ b/fs/btrfs/backref.c
-@@ -520,13 +520,10 @@ static inline int ref_for_same_block(struct __prelim_ref *ref1,
- static int __add_missing_keys(struct btrfs_fs_info *fs_info,
- 			      struct list_head *head)
- {
--	struct list_head *pos;
-+	struct __prelim_ref *ref;
- 	struct extent_buffer *eb;
- 
--	list_for_each(pos, head) {
--		struct __prelim_ref *ref;
--		ref = list_entry(pos, struct __prelim_ref, list);
--
-+	list_for_each_entry(ref, head, list) {
- 		if (ref->parent)
- 			continue;
- 		if (ref->key_for_search.type)
-@@ -563,23 +560,15 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
-  */
- static void __merge_refs(struct list_head *head, int mode)
- {
--	struct list_head *pos1;
-+	struct __prelim_ref *pos1;
- 
--	list_for_each(pos1, head) {
--		struct list_head *n2;
--		struct list_head *pos2;
--		struct __prelim_ref *ref1;
-+	list_for_each_entry(pos1, head, list) {
-+		struct __prelim_ref *pos2 = pos1, *tmp;
- 
--		ref1 = list_entry(pos1, struct __prelim_ref, list);
--
--		for (pos2 = pos1->next, n2 = pos2->next; pos2 != head;
--		     pos2 = n2, n2 = pos2->next) {
--			struct __prelim_ref *ref2;
--			struct __prelim_ref *xchg;
-+		list_for_each_entry_safe_continue(pos2, tmp, head, list) {
-+			struct __prelim_ref *xchg, *ref1 = pos1, *ref2 = pos2;
- 			struct extent_inode_elem *eie;
- 
--			ref2 = list_entry(pos2, struct __prelim_ref, list);
--
- 			if (!ref_for_same_block(ref1, ref2))
- 				continue;
- 			if (mode == 1) {
--- 
-2.5.0
-
-
+The patch has been pulled to 4.5 queue already, please do an incremental
+against branch integration-4.5 (in Chris' git
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git)
+Thanks.

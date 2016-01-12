@@ -1,50 +1,85 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from m50-133.163.com ([123.125.50.133]:34379 "EHLO m50-133.163.com"
+Received: from m50-134.163.com ([123.125.50.134]:53956 "EHLO m50-134.163.com"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S965427AbcALPYc (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 10:24:32 -0500
+	id S1752973AbcALPYZ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jan 2016 10:24:25 -0500
 From: Geliang Tang <geliangtang@163.com>
 To: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
         David Sterba <dsterba@suse.com>, Julia Lawall <julia.lawall@lip6.fr>
 Cc: Geliang Tang <geliangtang@163.com>, linux-btrfs@vger.kernel.org,
         linux-kernel@vger.kernel.org
-Subject: Re: [kdave:misc-cleanups-4.5 9/9] fs/btrfs/backref.c:565:1-20: iterator with update on line 577
-Date: Tue, 12 Jan 2016 23:23:15 +0800
-Message-Id: <cover.1452611741.git.geliangtang@163.com>
-In-Reply-To: <alpine.DEB.2.02.1601120706340.2042@localhost6.localdomain6>
+Subject: [PATCH v3] btrfs: use list_for_each_entry* in backref.c
+Date: Tue, 12 Jan 2016 23:23:16 +0800
+Message-Id: <222fad42bdeab5259978d086b3f9e466a8f0d531.1452611741.git.geliangtang@163.com>
+In-Reply-To: <cover.1452611741.git.geliangtang@163.com>
+References: <cover.1452611741.git.geliangtang@163.com>
+In-Reply-To: <cover.1452611741.git.geliangtang@163.com>
+References: <cover.1452611741.git.geliangtang@163.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 12, 2016 at 07:07:24AM +0100, Julia Lawall wrote:
-> I really have no idea if this is safe or not.
-> 
-> julia
-> 
-> On Tue, 12 Jan 2016, kbuild test robot wrote:
-> 
-> > CC: kbuild-all@01.org
-> > TO: Geliang Tang <geliangtang@163.com>
-> > CC: David Sterba <dsterba@suse.com>
-> > 
-> > tree:   https://git.kernel.org/pub/scm/linux/kernel/git/kdave/linux misc-cleanups-4.5
-> > head:   a7ca42256d9fad572fb7f2c471514d7d3572b1db
-> > commit: a7ca42256d9fad572fb7f2c471514d7d3572b1db [9/9] btrfs: use list_for_each_entry* in backref.c
-> > :::::: branch date: 5 days ago
-> > :::::: commit date: 5 days ago
-> > 
-> > >> fs/btrfs/backref.c:565:1-20: iterator with update on line 577
+Use list_for_each_entry*() to simplify the code.
 
-Sorry for the trouble caused. It's probably unsafe. I updated my patch
-to fix this problem.
+Signed-off-by: Geliang Tang <geliangtang@163.com>
+---
+Changes in v3:
+ - fix 'fs/btrfs/backref.c:565:1-20: iterator with update on line 577'
 
-- Geliang
-
-Geliang Tang (1):
-  btrfs: use list_for_each_entry* in backref.c
-
+Changes in v2:
+ - Use list_for_each_entry_safe_continue() in __merge_refs().
+---
  fs/btrfs/backref.c | 25 +++++++------------------
  1 file changed, 7 insertions(+), 18 deletions(-)
 
+diff --git a/fs/btrfs/backref.c b/fs/btrfs/backref.c
+index d453d62..b90cd37 100644
+--- a/fs/btrfs/backref.c
++++ b/fs/btrfs/backref.c
+@@ -520,13 +520,10 @@ static inline int ref_for_same_block(struct __prelim_ref *ref1,
+ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
+ 			      struct list_head *head)
+ {
+-	struct list_head *pos;
++	struct __prelim_ref *ref;
+ 	struct extent_buffer *eb;
+ 
+-	list_for_each(pos, head) {
+-		struct __prelim_ref *ref;
+-		ref = list_entry(pos, struct __prelim_ref, list);
+-
++	list_for_each_entry(ref, head, list) {
+ 		if (ref->parent)
+ 			continue;
+ 		if (ref->key_for_search.type)
+@@ -563,23 +560,15 @@ static int __add_missing_keys(struct btrfs_fs_info *fs_info,
+  */
+ static void __merge_refs(struct list_head *head, int mode)
+ {
+-	struct list_head *pos1;
++	struct __prelim_ref *pos1;
+ 
+-	list_for_each(pos1, head) {
+-		struct list_head *n2;
+-		struct list_head *pos2;
+-		struct __prelim_ref *ref1;
++	list_for_each_entry(pos1, head, list) {
++		struct __prelim_ref *pos2 = pos1, *tmp;
+ 
+-		ref1 = list_entry(pos1, struct __prelim_ref, list);
+-
+-		for (pos2 = pos1->next, n2 = pos2->next; pos2 != head;
+-		     pos2 = n2, n2 = pos2->next) {
+-			struct __prelim_ref *ref2;
+-			struct __prelim_ref *xchg;
++		list_for_each_entry_safe_continue(pos2, tmp, head, list) {
++			struct __prelim_ref *xchg, *ref1 = pos1, *ref2 = pos2;
+ 			struct extent_inode_elem *eie;
+ 
+-			ref2 = list_entry(pos2, struct __prelim_ref, list);
+-
+ 			if (!ref_for_same_block(ref1, ref2))
+ 				continue;
+ 			if (mode == 1) {
 -- 
 2.5.0
 

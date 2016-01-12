@@ -1,45 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:58467 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:10623 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1756738AbcASCZb (ORCPT
+	with ESMTP id S932688AbcALHsk (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 21:25:31 -0500
-Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id B020241896F7
-	for <linux-btrfs@vger.kernel.org>; Tue, 19 Jan 2016 10:25:10 +0800 (CST)
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+	Tue, 12 Jan 2016 02:48:40 -0500
+Received: from G08CNEXCHPEKD01.g08.fujitsu.local (unknown [10.167.33.80])
+	by cn.fujitsu.com (Postfix) with ESMTP id E3C6E4189106
+	for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 15:48:18 +0800 (CST)
+From: Zhao Lei <zhaolei@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-Subject: [PATCH V7 0/3][PULL REQUEST] Unify 'norecovery' bahavior with other filesystems
-Date: Tue, 19 Jan 2016 10:23:01 +0800
-Message-ID: <1453170184-22869-1-git-send-email-quwenruo@cn.fujitsu.com>
+CC: Zhao Lei <zhaolei@cn.fujitsu.com>
+Subject: [PATCH 1/2] btrfs: reada: limit max works count
+Date: Tue, 12 Jan 2016 15:46:26 +0800
+Message-ID: <9d3a1b584cec0081382f832ab0a7f9b31b1d9798.1452584763.git.zhaolei@cn.fujitsu.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-'Norecovery' mount option is almost a standard for all other
-filesystems, including f2fs, ext4, gfs2, nilfs2, and xfs.
-And since current 'recovery' mount option for btrfs is too generic, it's
-better to change btrfs 'recovery' to 'usebackuproot' and then we can
-safely add 'norecovery' and 'nologreplay' mount option for btrfs.
+reada create 2 works for each level of tree in recursion.
 
-The patch itself is not huge and already tested by others since v2.
-Only mount option name and patch slipting is changing during all
-these version changes.
+In case of a tree having many levels, the number of created works
+is 2^level_of_tree.
+Actually we don't need so many works in parallel, this patch limit
+max works to BTRFS_MAX_MIRRORS * 2.
 
-Qu Wenruo (3):
-  btrfs: Introduce new mount option usebackuproot to replace recovery
-  btrfs: Introduce new mount option to disable tree log replay
-  btrfs: Introduce new mount option alias for nologreplay
+Signed-off-by: Zhao Lei <zhaolei@cn.fujitsu.com>
+---
+ fs/btrfs/reada.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
- Documentation/filesystems/btrfs.txt | 17 +++++++++++---
- fs/btrfs/ctree.h                    |  6 +++--
- fs/btrfs/disk-io.c                  | 15 ++++++++----
- fs/btrfs/super.c                    | 47 ++++++++++++++++++++++++++++++-------
- 4 files changed, 67 insertions(+), 18 deletions(-)
-
+diff --git a/fs/btrfs/reada.c b/fs/btrfs/reada.c
+index 53ee7b1..7b150b2 100644
+--- a/fs/btrfs/reada.c
++++ b/fs/btrfs/reada.c
+@@ -103,6 +103,9 @@ static void __reada_start_machine(struct btrfs_fs_info *fs_info);
+ static int reada_add_block(struct reada_control *rc, u64 logical,
+ 			   struct btrfs_key *top, u64 generation);
+ 
++/* To limit max reada works */
++static atomic_t works_cnt = ATOMIC_INIT(0);
++
+ /* recurses */
+ /* in case of err, eb might be NULL */
+ static void __readahead_hook(struct btrfs_fs_info *fs_info,
+@@ -759,6 +762,8 @@ static void reada_start_machine_worker(struct btrfs_work *work)
+ 	set_task_ioprio(current, BTRFS_IOPRIO_READA);
+ 	__reada_start_machine(fs_info);
+ 	set_task_ioprio(current, old_ioprio);
++
++	atomic_dec(&works_cnt);
+ }
+ 
+ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
+@@ -790,8 +795,11 @@ static void __reada_start_machine(struct btrfs_fs_info *fs_info)
+ 	 * enqueue to workers to finish it. This will distribute the load to
+ 	 * the cores.
+ 	 */
+-	for (i = 0; i < 2; ++i)
++	for (i = 0; i < 2; ++i) {
+ 		reada_start_machine(fs_info);
++		if (atomic_read(&works_cnt) > BTRFS_MAX_MIRRORS * 2)
++			break;
++	}
+ }
+ 
+ static void reada_start_machine(struct btrfs_fs_info *fs_info)
+@@ -808,6 +816,7 @@ static void reada_start_machine(struct btrfs_fs_info *fs_info)
+ 	rmw->fs_info = fs_info;
+ 
+ 	btrfs_queue_work(fs_info->readahead_workers, &rmw->work);
++	atomic_inc(&works_cnt);
+ }
+ 
+ #ifdef DEBUG
 -- 
-2.7.0
+1.8.5.1
 
 
 

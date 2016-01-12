@@ -1,71 +1,48 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from plane.gmane.org ([80.91.229.3]:58580 "EHLO plane.gmane.org"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1750776AbcALFML (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 00:12:11 -0500
-Received: from list by plane.gmane.org with local (Exim 4.69)
-	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
-	id 1aIrFY-0005Vu-5o
-	for linux-btrfs@vger.kernel.org; Tue, 12 Jan 2016 06:12:08 +0100
-Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
-        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 06:12:08 +0100
-Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
-        id 1AlnuQ-0007hv-00
-        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 06:12:08 +0100
-To: linux-btrfs@vger.kernel.org
-From: Duncan <1i5t5.duncan@cox.net>
-Subject: Re: About per-file dedup flag
-Date: Tue, 12 Jan 2016 05:11:56 +0000 (UTC)
-Message-ID: <pan$db46d$a628590c$69427a64$860910d9@cox.net>
-References: <56946E63.1040502@cn.fujitsu.com>
-	<pan$e524$5a11cd54$91431292$c1fe13df@cox.net>
-	<56948655.2090309@cn.fujitsu.com>
-Mime-Version: 1.0
-Content-Type: text/plain; charset=UTF-8
+Received: from mail-io0-f182.google.com ([209.85.223.182]:33248 "EHLO
+	mail-io0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752537AbcALMXO (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jan 2016 07:23:14 -0500
+Received: by mail-io0-f182.google.com with SMTP id q21so381376140iod.0
+        for <linux-btrfs@vger.kernel.org>; Tue, 12 Jan 2016 04:23:13 -0800 (PST)
+Subject: Re: [PATCH] BTRFS: Adds an option to select RAID Stripe size
+To: Christoph Anton Mitterer <calestyo@scientia.net>,
+        Sanidhya Solanki <jpage.lkml@gmail.com>
+References: <1451305451-31222-1-git-send-email-jpage.lkml@gmail.com>
+ <1451341195.7094.0.camel@scientia.net> <20151228153801.6561feff@gmail.com>
+ <1451352069.7094.3.camel@scientia.net> <20151228164333.2b8d8336@gmail.com>
+ <1451360528.7094.7.camel@scientia.net> <20151228190336.59a3f440@gmail.com>
+ <1451363188.7094.23.camel@scientia.net> <20151229180643.GD4227@twin.jikos.cz>
+ <20160102065207.4eec760a@gmail.com> <56887B40.10105@gmx.com>
+ <20160109221105.6b18fb8e@gmail.com> <1452527015.7801.1.camel@scientia.net>
+ <20160111064956.573ec21b@gmail.com> <1452527868.7801.2.camel@scientia.net>
+Cc: Qu Wenruo <quwenruo.btrfs@gmx.com>, David Sterba <dsterba@suse.cz>,
+        jbacik@fb.com, linux-btrfs@vger.kernel.org
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5694F025.1000800@gmail.com>
+Date: Tue, 12 Jan 2016 07:23:01 -0500
+MIME-Version: 1.0
+In-Reply-To: <1452527868.7801.2.camel@scientia.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Qu Wenruo posted on Tue, 12 Jan 2016 12:51:33 +0800 as excerpted:
+On 2016-01-11 10:57, Christoph Anton Mitterer wrote:
+> On Mon, 2016-01-11 at 06:49 -0500, Sanidhya Solanki wrote:
+>> I considered that, but, if you read the specification of modern HDDs
+>> carefully, it states that they are 4K or 512e sector size compatible,
+>> hence the concession. Also, older drive users may find this
+>> preferable.
+> But these are powers of 2,... why does one need 768, 3072, 6144, etc.?
+768 I don't know, the other two though would provide proper 
+stripe-alignment on a 8 or 14 disk hardware RAID6 setup using 512 byte 
+sectors (that is, one stripe in BTRFS would span the full array).
 
-> Duncan wrote on 2016/01/12 04:13 +0000:
->> Qu Wenruo posted on Tue, 12 Jan 2016 11:09:23 +0800 as excerpted:
->>
->>> Now we hope to add support to enable/disable dedup per-file.
->>> Much like current NODATACOW/NOCOMPRESS for inode.
->>
->> How is this going to work?
->>
->> NODATACOW/NOCOMPRESS can apply to a single file.  But a dup flag, by
->> definition, needs two files, except for the special case of parts of a
->> file duplicating other parts of the same file.
-> 
-> You are still thinking in the way off-band dedup.
-
-> So the things should be quite easy to understand:
-> 
-> For normal case (no NODEDUP flag), valid data(page cache) will be hashed
-> to find if it's a duplicated one.
-> 
-> For NODEDUP flag case, all its page cache just direct write to disk or
-> compressed then write to disk.
-> No hash will be calculated.
-
-Oh, _NO_DEDUP.  =:^)
-
-Opposite the dedup logic implied by the subject, with no hint in the 
-original post indicating logic actually the reverse of that.
-
-NODEDUP indeed makes more sense, since with a mount or filesystem option 
-enabling dedup, it would then be the default and nodedup as a per-file 
-exception is the next logical extension.
-
-Thanks.  I knew I must be missing something.  A little negation makes a 
-big difference!  =:^)
-
--- 
-Duncan - List replies preferred.   No HTML msgs.
-"Every nonfree program has a lord, a master --
-and if you use the program, he is your master."  Richard Stallman
+I personally think it should be restricted to multiples of 512, as that 
+is the smallest sector size on any disk drive that is realistically 
+usable with BTRFS.  That would also provide 4k support, and beyond that 
+64k (which is where the really big drives are headed anyway), and also 
+provide the ability to get proper stripe alignment on almost any 
+hardware RAID configuration.
 

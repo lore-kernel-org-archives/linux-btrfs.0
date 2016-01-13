@@ -1,31 +1,94 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:51127 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753312AbcALSQO (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 13:16:14 -0500
-Date: Tue, 12 Jan 2016 19:13:48 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Geliang Tang <geliangtang@163.com>
-Cc: Chris Mason <clm@fb.com>, Josef Bacik <jbacik@fb.com>,
-        David Sterba <dsterba@suse.com>, Julia Lawall <julia.lawall@lip6.fr>,
-        linux-btrfs@vger.kernel.org, linux-kernel@vger.kernel.org
-Subject: Re: [PATCH v3] btrfs: use list_for_each_entry* in backref.c
-Message-ID: <20160112181348.GM4227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <cover.1452611741.git.geliangtang@163.com>
- <222fad42bdeab5259978d086b3f9e466a8f0d531.1452611741.git.geliangtang@163.com>
+Received: from mail-io0-f195.google.com ([209.85.223.195]:35403 "EHLO
+	mail-io0-f195.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752209AbcAMChB (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 12 Jan 2016 21:37:01 -0500
+Date: Tue, 12 Jan 2016 20:36:58 -0600
+From: Eric Biggers <ebiggers3@gmail.com>
+To: "Darrick J. Wong" <darrick.wong@oracle.com>
+Cc: david@fromorbit.com, linux-fsdevel@vger.kernel.org,
+        linux-api@vger.kernel.org, xfs@oss.sgi.com,
+        linux-btrfs@vger.kernel.org, hch@infradead.org
+Subject: Re: [PATCH 8/9] vfs: hoist the btrfs deduplication ioctl to the vfs
+Message-ID: <20160113023658.GA1551@zzz>
+References: <20151219085505.12478.71157.stgit@birch.djwong.org>
+ <20151219085559.12478.33700.stgit@birch.djwong.org>
+ <20160112060714.GA4980@zzz>
+ <20160112091432.GB7832@birch.djwong.org>
 MIME-Version: 1.0
 Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <222fad42bdeab5259978d086b3f9e466a8f0d531.1452611741.git.geliangtang@163.com>
+In-Reply-To: <20160112091432.GB7832@birch.djwong.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Jan 12, 2016 at 11:23:16PM +0800, Geliang Tang wrote:
-> Use list_for_each_entry*() to simplify the code.
+On Tue, Jan 12, 2016 at 01:14:32AM -0800, Darrick J. Wong wrote:
 > 
-> Signed-off-by: Geliang Tang <geliangtang@163.com>
+> Frankly, I also wouldn't mind changing the VFS dedupe ioctl that to something
+> that resembles the clone_range interface:
+> 
+> int ioctl(int dest_fd, FIDEDUPERANGE, struct file_dedupe_range * arg);
 
-The patch has been pulled to 4.5 queue already, please do an incremental
-against branch integration-4.5 (in Chris' git
-git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git)
-Thanks.
+Getting rid of the vectorization certainly avoids a lot of API complexity.  I
+don't know precisely why it was made vectorized in the first place, but to me it
+seems it shouldn't be vectorized unless there's a strong reason for it to be.
+
+> Not sure what you mean by 'symmetric', but in any case the convention seems
+> to be that src_fd's storage is shared with dest_fd if there's a match.
+> ...
+> I think the result of an earlier discussion was that src_fd must be readable,
+> and dest_fd must be writable or appendable.
+
+Deduplication is a strange operation since you're not "reading" or "writing" in
+the traditional sense.  All file data stays exactly the same from a user
+perspective.
+
+So rather than arbitrarily say that you're "reading" from one file and "writing"
+to the other, one possibility is to have an API where you submit two files and
+the implementation decides how to best deduplicate them.  That could involve
+sharing existing extents in file 1 with file 2; or sharing existing extents in
+file 2 with file 1; or creating a new extent and referencing it from each file.
+It would be up to the implementation to choose the most efficient approach.
+
+But I take it that the existing btrfs ioctl doesn't work that way, and it always
+will share the existing extents in file 1 with file 2.
+
+That's probably a perfectly fine way to do it, but I was wondering whether it
+really makes sense to hard-code that detail in the API, since an API could be
+defined more generally.
+
+And from a practical perpective, people using the ioctl to deduplicate two files
+need to know which one to submit to the API as the "source" and which as the
+"destination", if it matters.
+
+Related to this are the permissions you need on each file descriptor.  Since
+deduplication isn't "reading" or "writing" in the traditional sense it could,
+theoretically, be argued that no permissions at all should be required: neither
+FMODE_READ nor FMODE_WRITE.
+
+Most likely are concerns that would make that a bad idea, though.  Perhaps
+someone could create mischief by causing fragmentation in system files.
+
+If this was previously discussed, can you point me to that discussion?
+
+The proposed man page is also very brief on permissions, only mentioning them
+indirectly in the error codes section.
+
+> > The man page also says you get EPERM if "dest_fd is immutable" and ETXTBSY if
+> > "one of the files is a swap file", which I don't see actually happening in
+> > the implementation; it seems those error codes perhaps exist at all for this
+> > ioctl but rather be left to open(..., O_WRONLY).
+> 
+> Those could be hoisted to the VFS (from the XFS implementation), I think.
+
+If the destination file has to already be open for writing then it can't be
+immutable.  So I don't think that error code is needed.  Checking for an active
+swapfile, on the other hand, may be valid, although I don't see such a check
+anywhere in the version of the code I'm looking at.
+
+> I'll later take a look at how many of these issues apply to clone/clone_range.
+
+clone and clone_range seem to avoid the two biggest issues I saw: they aren't
+vectorized, and there's a natural distinction between the "source" and the
+"destination" of the operation.  They definitely need careful consideration as
+well, though.

@@ -1,75 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-lb0-f177.google.com ([209.85.217.177]:32963 "EHLO
-	mail-lb0-f177.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S933349AbcAMJhv convert rfc822-to-8bit (ORCPT
+Received: from mail-wm0-f46.google.com ([74.125.82.46]:38116 "EHLO
+	mail-wm0-f46.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754199AbcAMQok convert rfc822-to-8bit (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jan 2016 04:37:51 -0500
-Received: by mail-lb0-f177.google.com with SMTP id x4so30584564lbm.0
-        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jan 2016 01:37:50 -0800 (PST)
+	Wed, 13 Jan 2016 11:44:40 -0500
+Received: by mail-wm0-f46.google.com with SMTP id b14so381390154wmb.1
+        for <linux-btrfs@vger.kernel.org>; Wed, 13 Jan 2016 08:44:40 -0800 (PST)
 MIME-Version: 1.0
-Date: Wed, 13 Jan 2016 11:37:49 +0200
-Message-ID: <CA+xOVSNYJPDMptqA2fdnN4cqBO2TA+1HuwX2Ve+9yHa-V5xP7A@mail.gmail.com>
-Subject: send/receive and a WEIRD path
-From: Mordechay Kaganer <mkaganer@gmail.com>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+From: =?UTF-8?B?TMOpbyBHaWxsb3QtTGFtdXJl?= <leo.gillot@navaati.net>
+Date: Wed, 13 Jan 2016 17:43:59 +0100
+Message-ID: <CAMuu1rPqTOweYKGGxwW1ZReQfgafSOdSsztZBGZoUpidRDDOTw@mail.gmail.com>
+Subject: "BTRFS critical (device sda1): unable to find logical
+ 576460868201611264 len 4096", hardware or software error ?
+To: linux-btrfs@vger.kernel.org
 Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-B.H.
+Hello.
 
-Hello, I have Ubuntu with mainline 4.3.3 kernel (from Ubuntu's
-mainline ppa) and btrfs-progs v4.3.1.
+I'm running a btrfs filesystem on 2 SSDs and have done successfully so
+for a few years, keeping the same filesystem while hot-migrating from
+one ssd to another and then both of them.
 
-Tried to copy a subvolume from one btrfs volume to another using
-send/receive like that:
+Now since the last few days i get errors like this:
 
-btrfs send -vvv /storage/bkp1/snapshots/2015-12-03 | btrfs receive
-/storage/bkp2/snapshots
+> janv. 13 17:25:17 queulorior.navaati.net kernel: BTRFS critical (device sda1): unable to find logical 576460868201611264 len 4096
+> janv. 13 17:25:17 queulorior.navaati.net kernel: BTRFS critical (device sda1): No mapping for 576460868201611264-576460868201615360
+> janv. 13 17:25:17 queulorior.navaati.net kernel: ------------[ cut here ]------------
+> janv. 13 17:25:17 queulorior.navaati.net kernel: WARNING: CPU: 0 PID: 389 at fs/btrfs/extent-tree.c:6264 __btrfs_free_extent.isra.76+0x139/0xd30()
+> janv. 13 17:25:17 queulorior.navaati.net kernel: BTRFS: Transaction aborted (error -5)
+> janv. 13 17:25:17 queulorior.navaati.net kernel: Modules linked in:
+> janv. 13 17:25:17 queulorior.navaati.net kernel: CPU: 0 PID: 389 Comm: btrfs-transacti Not tainted 4.2.3 #29
+> janv. 13 17:25:17 queulorior.navaati.net kernel: Hardware name: MSI MS-7816/Z87-G43 (MS-7816), BIOS V1.5 09/23/2013
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  0000000000000000 ffffffff81eb6bf2 ffffffff81a73bc0 ffff8800c3183b38
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  ffffffff810b5d57 00000000fffffffb 0000001c15991000 ffff8800c3a8f800
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  ffff880212dae000 0000000000000000 ffffffff810b5dd5 ffffffff81ea54f8
+> janv. 13 17:25:17 queulorior.navaati.net kernel: Call Trace:
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff81a73bc0>] ? dump_stack+0x47/0x67
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff810b5d57>] ? warn_slowpath_common+0x77/0xb0
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff810b5dd5>] ? warn_slowpath_fmt+0x45/0x50
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff81344129>] ? __btrfs_free_extent.isra.76+0x139/0xd30
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff81347c16>] ? __btrfs_run_delayed_refs+0x5d6/0xf60
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff8134afd8>] ? btrfs_run_delayed_refs.part.81+0x68/0x250
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff8135e32b>] ? btrfs_commit_transaction+0x3b/0xa50
+> janv. 13 17:25:17 queulorior.navaati.net kernel:  [<ffffffff8135edcb>] ? start_transaction+0x8b/0x530
 
-The subvol is about 10TB in size. It took about 3 days and finally
-failed with the following message. Checked that path and yes, it's
-true, one of our customers created more than 2000 nested directories -
-don't ask me why, may be it's some kind of bug that we'll have to fix
-or it's just some really bored guy ;-)
+Then the filesystem remounts itself readonly, everything on the system
+gets crazy as a consequence and I need to reboot. On the next boot
+everything seem to be working fine, until it happens again after a day
+or so.
+Of course I freaked out for my data and started backuping like crazy,
+as I could still read my data.
 
-Anyway, looks like send/receive cannot handle such paths. Is there
-something to do about that (other than delete that weird path and
-rerun send/receive)?
+I went to see the SMART infos of the disk (it's always on sda1, never
+on sdb1 which is also part of the fs) using gnome-disks and it looks
+fine. Is this kind of error a problem with my hardware or a corruption
+of the filesystem ?
 
-Thanks!
-
-At subvol /storage/bkp1/snapshots/2015-12-03
-At subvol 2015-12-03
-ERROR: rename: target path invalid:
-somepath/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3
-/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/3/2
-
-
--- 
-משיח NOW!
-Moshiach is coming very soon, prepare yourself!
-יחי אדוננו מורינו ורבינו מלך המשיח לעולם ועד!
+Regards,
+Léo Gillot-Lamure.

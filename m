@@ -1,54 +1,64 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:41488 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:2894 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751444AbcAMAfn (ORCPT
+	with ESMTP id S1752905AbcAMAhb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 12 Jan 2016 19:35:43 -0500
+	Tue, 12 Jan 2016 19:37:31 -0500
 Subject: Re: [PATCH] btrfs-progs: Format change for btrfs fi df
-To: <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
+To: <kreijack@inwind.it>, <dsterba@suse.cz>, <linux-btrfs@vger.kernel.org>
 References: <1450070396-20744-1-git-send-email-quwenruo@cn.fujitsu.com>
- <20160112142806.GL4227@twin.jikos.cz>
+ <20160112142806.GL4227@twin.jikos.cz> <56955A2A.6070708@inwind.it>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56959BC7.7060201@cn.fujitsu.com>
-Date: Wed, 13 Jan 2016 08:35:19 +0800
+Message-ID: <56959C2D.6000307@cn.fujitsu.com>
+Date: Wed, 13 Jan 2016 08:37:01 +0800
 MIME-Version: 1.0
-In-Reply-To: <20160112142806.GL4227@twin.jikos.cz>
+In-Reply-To: <56955A2A.6070708@inwind.it>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-David Sterba wrote on 2016/01/12 15:28 +0100:
-> On Mon, Dec 14, 2015 at 01:19:56PM +0800, Qu Wenruo wrote:
->> The GlobalReserve space in 'btrfs fi df' is always confusing for a lot
->> of users.
->> As it is not a special chunk type like DATA or METADATA, it's in fact a
->> sub-type of METADATA.
+Goffredo Baroncelli wrote on 2016/01/12 20:55 +0100:
+> On 2016-01-12 15:28, David Sterba wrote:
+> [...]
+>> How about this:
 >>
->> So change the output to skip GlobalReserve by default, and adding its
->> total to metadata used.
->> And add a new option '-r|--reserve' to show the GlobalReserve, but skip
->> the profile of GlobalReserve.
+>> - keep the global reserve in the output, separate from metadata and not
+>>     accounted
+>> - add new option to account the global reserve into metadata and then
+>>     drop it from the output
 >
-> How about this:
 >
-> - keep the global reserve in the output, separate from metadata and not
->    accounted
-> - add new option to account the global reserve into metadata and then
->    drop it from the output
+> Instead of dropping it, what about prefixing it with '\_' in order to show that
+> it is a subtype of metadata (it is not a my idea, I read this sometime ago in
+> this mailing list) ?
+>
+> $ btrfs fi df /
+> Data, single: total=29.00GiB, used=21.01GiB
+> System, single: total=32.00MiB, used=16.00KiB
+> Metadata, single: total=2.00GiB, used=716.59MiB
+> \_GlobalReserve, single: total=240.00MiB, used=0.00B
 
-I'm OK about it, although that would just make '-r' option default.
+Yes, that's what my new patch does:
 
-But anyway, the profile of GlobalReserve should not be output.
+See the code:
++			printf(" \\- %s: reserved=%s, used=%s\n",
++				btrfs_group_type_str(sp->flags),
++				pretty_size_mode(sp->total_bytes, unit_mode),
++				pretty_size_mode(sp->used_bytes, unit_mode));
+
+Although I'm using "\-" other than "\_".
 
 Thanks,
 Qu
 
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
 >
 >
 

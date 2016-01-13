@@ -1,91 +1,61 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx0b-00082601.pphosted.com ([67.231.153.30]:51321 "EHLO
-	mx0b-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1758795AbcAKW2w (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:44410 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1753634AbcAMQsM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jan 2016 17:28:52 -0500
-Received: from pps.filterd (m0001303.ppops.net [127.0.0.1])
-	by m0001303.ppops.net (8.15.0.59/8.15.0.59) with SMTP id u0BMRjJC003824
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 14:28:49 -0800
+	Wed, 13 Jan 2016 11:48:12 -0500
+Received: from pps.filterd (m0044008.ppops.net [127.0.0.1])
+	by mx0a-00082601.pphosted.com (8.15.0.59/8.15.0.59) with SMTP id u0DGiAho019529
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Jan 2016 08:48:11 -0800
 Received: from mail.thefacebook.com ([199.201.64.23])
-	by m0001303.ppops.net with ESMTP id 20cdy09vx9-1
+	by mx0a-00082601.pphosted.com with ESMTP id 20ddn8u755-1
 	(version=TLSv1/SSLv3 cipher=AES128-SHA bits=128 verify=NOT)
-	for <linux-btrfs@vger.kernel.org>; Mon, 11 Jan 2016 14:28:49 -0800
+	for <linux-btrfs@vger.kernel.org>; Wed, 13 Jan 2016 08:48:11 -0800
 From: Josef Bacik <jbacik@fb.com>
-To: <kernel-team@fb.com>, <linux-btrfs@vger.kernel.org>
-Subject: [PATCH] Btrfs: change how we update the global block rsv
-Date: Mon, 11 Jan 2016 17:28:38 -0500
-Message-ID: <1452551318-13631-1-git-send-email-jbacik@fb.com>
+To: <linux-btrfs@vger.kernel.org>, <kernel-team@fb.com>
+Subject: [PATCH] Btrfs: fix truncate_space_check
+Date: Wed, 13 Jan 2016 11:48:06 -0500
+Message-ID: <1452703686-6341-1-git-send-email-jbacik@fb.com>
 MIME-Version: 1.0
 Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I'm writing a tool to visualize the enospc system in order to help debug enospc
-bugs and I found weird data and ran it down to when we update the global block
-rsv.  We add all of the remaining free space to the block rsv, do a trace event,
-then remove the extra and do another trace event.  This makes my visualization
-look silly and is unintuitive code as well.  Fix this stuff to only add the
-amount we are missing, or free the amount we are missing.  This is less clean to
-read but more explicit in what it is doing, as well as only emitting events for
-values that make sense.  Thanks,
+truncate_space_check is using btrfs_csum_bytes_to_leaves() but forgetting to
+multiply by nodesize so we get an actual byte count.  We need a tracepoint here
+so that we have the matching reserve for the release that will come later.  Also
+add a comment to make clear what the intent of truncate_space_check is.
 
 Signed-off-by: Josef Bacik <jbacik@fb.com>
 ---
- fs/btrfs/extent-tree.c | 34 ++++++++++++++++++++--------------
- 1 file changed, 20 insertions(+), 14 deletions(-)
+ fs/btrfs/inode.c | 11 ++++++++++-
+ 1 file changed, 10 insertions(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index e478f91..3424ee8 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -5529,27 +5529,33 @@ static void update_global_block_rsv(struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
+index 2b8a3fe..44d138a 100644
+--- a/fs/btrfs/inode.c
++++ b/fs/btrfs/inode.c
+@@ -4221,11 +4221,20 @@ static int truncate_space_check(struct btrfs_trans_handle *trans,
+ {
+ 	int ret;
  
- 	block_rsv->size = min_t(u64, num_bytes, 512 * 1024 * 1024);
++	/*
++	 * This is only used to apply pressure to the enospc system, we don't
++	 * intend to use this reservation at all.
++	 */
+ 	bytes_deleted = btrfs_csum_bytes_to_leaves(root, bytes_deleted);
++	bytes_deleted *= root->nodesize;
+ 	ret = btrfs_block_rsv_add(root, &root->fs_info->trans_block_rsv,
+ 				  bytes_deleted, BTRFS_RESERVE_NO_FLUSH);
+-	if (!ret)
++	if (!ret) {
++		trace_btrfs_space_reservation(root->fs_info, "transaction",
++					      trans->transid,
++					      bytes_deleted, 1);
+ 		trans->bytes_reserved += bytes_deleted;
++	}
+ 	return ret;
  
--	num_bytes = sinfo->bytes_used + sinfo->bytes_pinned +
--		    sinfo->bytes_reserved + sinfo->bytes_readonly +
--		    sinfo->bytes_may_use;
--
--	if (sinfo->total_bytes > num_bytes) {
--		num_bytes = sinfo->total_bytes - num_bytes;
--		block_rsv->reserved += num_bytes;
--		sinfo->bytes_may_use += num_bytes;
--		trace_btrfs_space_reservation(fs_info, "space_info",
--				      sinfo->flags, num_bytes, 1);
--	}
--
--	if (block_rsv->reserved >= block_rsv->size) {
-+	if (block_rsv->reserved < block_rsv->size) {
-+		num_bytes = sinfo->bytes_used + sinfo->bytes_pinned +
-+			sinfo->bytes_reserved + sinfo->bytes_readonly +
-+			sinfo->bytes_may_use;
-+		if (sinfo->total_bytes > num_bytes) {
-+			num_bytes = sinfo->total_bytes - num_bytes;
-+			num_bytes = min(num_bytes,
-+					block_rsv->size - block_rsv->reserved);
-+			block_rsv->reserved += num_bytes;
-+			sinfo->bytes_may_use += num_bytes;
-+			trace_btrfs_space_reservation(fs_info, "space_info",
-+						      sinfo->flags, num_bytes,
-+						      1);
-+		}
-+	} else if (block_rsv->reserved > block_rsv->size) {
- 		num_bytes = block_rsv->reserved - block_rsv->size;
- 		sinfo->bytes_may_use -= num_bytes;
- 		trace_btrfs_space_reservation(fs_info, "space_info",
- 				      sinfo->flags, num_bytes, 0);
- 		block_rsv->reserved = block_rsv->size;
--		block_rsv->full = 1;
- 	}
- 
-+	if (block_rsv->reserved == block_rsv->size)
-+		block_rsv->full = 1;
-+	else
-+		block_rsv->full = 0;
-+
- 	spin_unlock(&block_rsv->lock);
- 	spin_unlock(&sinfo->lock);
  }
 -- 
 1.8.3.1

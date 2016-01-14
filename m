@@ -1,55 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from www.linutronix.de ([62.245.132.108]:38085 "EHLO
-	Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1750729AbcAONh0 (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 08:37:26 -0500
-From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-To: Chris Mason <clm@fb.com>
-Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
-        linux-btrfs@vger.kernel.org, tglx@linutronix.de,
-        Miao Xie <miaox@cn.fujitsu.com>,
-        Sebastian Andrzej Siewior <bigeasy@linutronix.de>
-Subject: [PATCH] btrfs: initialize the seq counter in struct btrfs_device
-Date: Fri, 15 Jan 2016 14:37:15 +0100
-Message-Id: <1452865035-19681-1-git-send-email-bigeasy@linutronix.de>
+Received: from smtp.gentoo.org ([140.211.166.183]:53415 "EHLO smtp.gentoo.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1752226AbcANKSH (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jan 2016 05:18:07 -0500
+Received: from naomi.gilbertsystems.net (d192-24-148-25.try.wideopenwest.com [24.192.25.148])
+	(using TLSv1.2 with cipher ECDHE-RSA-AES128-SHA256 (128/128 bits))
+	(No client certificate requested)
+	(Authenticated sender: floppym)
+	by smtp.gentoo.org (Postfix) with ESMTPSA id B8D32340AA1
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 10:18:06 +0000 (UTC)
+From: Mike Gilbert <floppym@gentoo.org>
+To: linux-btrfs@vger.kernel.org
+Subject: [PATCH] btrfs-progs: Use AC_CHECK_TOOL to find AR
+Date: Thu, 14 Jan 2016 05:18:03 -0500
+Message-Id: <1452766683-17982-1-git-send-email-floppym@gentoo.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-I managed to trigger this:
-| INFO: trying to register non-static key.
-| the code is fine but needs lockdep annotation.
-| turning off the locking correctness validator.
-| CPU: 1 PID: 781 Comm: systemd-gpt-aut Not tainted 4.4.0-rt2+ #14
-| Hardware name: ARM-Versatile Express
-| [<80307cec>] (dump_stack)
-| [<80070e98>] (__lock_acquire)
-| [<8007184c>] (lock_acquire)
-| [<80287800>] (btrfs_ioctl)
-| [<8012a8d4>] (do_vfs_ioctl)
-| [<8012ac14>] (SyS_ioctl)
+AC_CHECK_TOOL takes the --host option into account for cross-compiling.
 
-so I think that btrfs_device_data_ordered_init() is not invoked behind
-a macro somewhere.
-
-Fixes: 7cc8e58d53cd ("Btrfs: fix unprotected device's variants on 32bits machine")
-Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Signed-off-by: Mike Gilbert <floppym@gentoo.org>
 ---
- fs/btrfs/volumes.c | 1 +
- 1 file changed, 1 insertion(+)
+ configure.ac | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index a23399e8e3ab..1fc2e13fc2c1 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -232,6 +232,7 @@ static struct btrfs_device *__alloc_device(void)
- 	spin_lock_init(&dev->reada_lock);
- 	atomic_set(&dev->reada_in_flight, 0);
- 	atomic_set(&dev->dev_stats_ccnt, 0);
-+	btrfs_device_data_ordered_init(dev);
- 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
- 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+diff --git a/configure.ac b/configure.ac
+index c114097..fc343ea 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -35,7 +35,7 @@ AC_SYS_LARGEFILE
+ 
+ AC_PROG_INSTALL
+ AC_PROG_LN_S
+-AC_PATH_PROG([AR], [ar])
++AC_CHECK_TOOL([AR], [ar])
+ AC_PATH_PROG([RM], [rm], [rm])
+ AC_PATH_PROG([RMDIR], [rmdir], [rmdir])
  
 -- 
-2.7.0.rc3
+2.7.0
 

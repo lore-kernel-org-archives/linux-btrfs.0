@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31538 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60958 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751976AbcANGAK (ORCPT
+	with ESMTP id S1751957AbcANGAM (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 01:00:10 -0500
+	Thu, 14 Jan 2016 01:00:12 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id AD6DA41896D8
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:44 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 9E72541896DD
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:47 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v4 12/18] btrfs: dedup: Add support for on-disk hash search
-Date: Thu, 14 Jan 2016 13:57:28 +0800
-Message-ID: <1452751054-2365-13-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 17/18] btrfs: dedup: add a property handler for online dedup
+Date: Thu, 14 Jan 2016 13:57:33 +0800
+Message-ID: <1452751054-2365-18-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,227 +20,79 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Now on-disk backend should be able to search hash now.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+
+We use btrfs extended attribute "btrfs.dedup" to record per-file online
+dedup status, so add a dedup property handler.
 
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/dedup.c | 145 +++++++++++++++++++++++++++++++++++++++++++++++--------
- fs/btrfs/dedup.h |   3 ++
- 2 files changed, 127 insertions(+), 21 deletions(-)
+ fs/btrfs/props.c | 40 ++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 40 insertions(+)
 
-diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
-index c97823f..4acbbfb 100644
---- a/fs/btrfs/dedup.c
-+++ b/fs/btrfs/dedup.c
-@@ -482,6 +482,79 @@ int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
- }
+diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+index f9e6023..ae8b76d 100644
+--- a/fs/btrfs/props.c
++++ b/fs/btrfs/props.c
+@@ -41,6 +41,10 @@ static int prop_compression_apply(struct inode *inode,
+ 				  size_t len);
+ static const char *prop_compression_extract(struct inode *inode);
  
- /*
-+ * Return 0 for not found
-+ * Return >0 for found and set bytenr_ret
-+ * Return <0 for error
-+ */
-+static int ondisk_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash,
-+			      u64 *bytenr_ret, u32 *num_bytes_ret)
-+{
-+	struct btrfs_path *path;
-+	struct btrfs_key key;
-+	struct btrfs_root *dedup_root = dedup_info->dedup_root;
-+	u8 *buf = NULL;
-+	u64 hash_key;
-+	int hash_len = btrfs_dedup_sizes[dedup_info->hash_type];
-+	int ret;
++static int prop_dedup_validate(const char *value, size_t len);
++static int prop_dedup_apply(struct inode *inode, const char *value, size_t len);
++static const char *prop_dedup_extract(struct inode *inode);
 +
-+	path = btrfs_alloc_path();
-+	if (!path)
-+		return -ENOMEM;
-+
-+	buf = kmalloc(hash_len, GFP_NOFS);
-+	if (!buf) {
-+		ret = -ENOMEM;
-+		goto out;
-+	}
-+
-+	memcpy(&hash_key, hash + hash_len - 8, 8);
-+	key.objectid = hash_key;
-+	key.type = BTRFS_DEDUP_HASH_ITEM_KEY;
-+	key.offset = (u64)-1;
-+
-+	ret = btrfs_search_slot(NULL, dedup_root, &key, path, 0, 0);
-+	if (ret < 0)
-+		goto out;
-+	WARN_ON(ret == 0);
-+	while (1) {
-+		struct extent_buffer *node;
-+		struct btrfs_dedup_hash_item *hash_item;
-+		int slot;
-+
-+		ret = btrfs_previous_item(dedup_root, path, hash_key,
-+					  BTRFS_DEDUP_HASH_ITEM_KEY);
-+		if (ret < 0)
-+			goto out;
-+		if (ret > 0) {
-+			ret = 0;
-+			goto out;
-+		}
-+
-+		node = path->nodes[0];
-+		slot = path->slots[0];
-+		btrfs_item_key_to_cpu(node, &key, slot);
-+
-+		if (key.type != BTRFS_DEDUP_HASH_ITEM_KEY ||
-+		    memcmp(&key.objectid, hash + hash_len - 8, 8))
-+			break;
-+		hash_item = btrfs_item_ptr(node, slot,
-+				struct btrfs_dedup_hash_item);
-+		read_extent_buffer(node, buf, (unsigned long)(hash_item + 1),
-+				   hash_len);
-+		if (!memcmp(buf, hash, hash_len)) {
-+			ret = 1;
-+			*bytenr_ret = key.offset;
-+			*num_bytes_ret = btrfs_dedup_hash_len(node, hash_item);
-+			break;
-+		}
-+	}
-+out:
-+	kfree(buf);
-+	btrfs_free_path(path);
-+	return ret;
-+}
-+
-+/*
-  * Caller must ensure the corresponding ref head is not being run.
-  */
- static struct inmem_hash *
-@@ -511,7 +584,34 @@ inmem_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash)
+ static struct prop_handler prop_handlers[] = {
+ 	{
+ 		.xattr_name = XATTR_BTRFS_PREFIX "compression",
+@@ -49,6 +53,13 @@ static struct prop_handler prop_handlers[] = {
+ 		.extract = prop_compression_extract,
+ 		.inheritable = 1
+ 	},
++	{
++		.xattr_name = XATTR_BTRFS_PREFIX "dedup",
++		.validate = prop_dedup_validate,
++		.apply = prop_dedup_apply,
++		.extract = prop_dedup_extract,
++		.inheritable = 1
++	},
+ };
+ 
+ void __init btrfs_props_init(void)
+@@ -425,4 +436,33 @@ static const char *prop_compression_extract(struct inode *inode)
  	return NULL;
  }
  
--static int inmem_search(struct inode *inode, u64 file_pos,
-+/* Wrapper for different backends, caller needs to hold dedup_info->lock */
-+static inline int generic_search_hash(struct btrfs_dedup_info *dedup_info,
-+				      u8 *hash, u64 *bytenr_ret,
-+				      u32 *num_bytes_ret)
++static int prop_dedup_validate(const char *value, size_t len)
 +{
-+	if (dedup_info->hash_type == BTRFS_DEDUP_BACKEND_INMEMORY) {
-+		struct inmem_hash *found_hash;
-+		int ret;
++	if (!strncmp("disable", value, len))
++		return 0;
 +
-+		found_hash = inmem_search_hash(dedup_info, hash);
-+		if (found_hash) {
-+			ret = 1;
-+			*bytenr_ret = found_hash->bytenr;
-+			*num_bytes_ret = found_hash->num_bytes;
-+		} else {
-+			ret = 0;
-+			*bytenr_ret = 0;
-+			*num_bytes_ret = 0;
-+		}
-+		return ret;
-+	} else if (dedup_info->hash_type == BTRFS_DEDUP_BACKEND_ONDISK) {
-+		return ondisk_search_hash(dedup_info, hash, bytenr_ret,
-+					  num_bytes_ret);
-+	}
 +	return -EINVAL;
 +}
 +
-+static int generic_search(struct inode *inode, u64 file_pos,
- 			struct btrfs_dedup_hash *hash)
- {
- 	int ret;
-@@ -520,9 +620,9 @@ static int inmem_search(struct inode *inode, u64 file_pos,
- 	struct btrfs_trans_handle *trans;
- 	struct btrfs_delayed_ref_root *delayed_refs;
- 	struct btrfs_delayed_ref_head *head;
--	struct inmem_hash *found_hash;
- 	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
- 	u64 bytenr;
-+	u64 tmp_bytenr;
- 	u32 num_bytes;
- 
- 	trans = btrfs_join_transaction(root);
-@@ -531,14 +631,9 @@ static int inmem_search(struct inode *inode, u64 file_pos,
- 
- again:
- 	mutex_lock(&dedup_info->lock);
--	found_hash = inmem_search_hash(dedup_info, hash->hash);
--	/* If we don't find a duplicated extent, just return. */
--	if (!found_hash) {
--		ret = 0;
-+	ret = generic_search_hash(dedup_info, hash->hash, &bytenr, &num_bytes);
-+	if (ret <= 0)
- 		goto out;
--	}
--	bytenr = found_hash->bytenr;
--	num_bytes = found_hash->num_bytes;
- 
- 	delayed_refs = &trans->transaction->delayed_refs;
- 
-@@ -574,13 +669,21 @@ again:
- 		goto again;
- 
- 	mutex_lock(&dedup_info->lock);
--	/* Search again to ensure the hash is still here */
--	found_hash = inmem_search_hash(dedup_info, hash->hash);
--	if (!found_hash) {
--		ret = 0;
-+	/*
-+	 * Search again to ensure the hash is still here and bytenr didn't
-+	 * change
-+	 */
-+	ret = generic_search_hash(dedup_info, hash->hash, &tmp_bytenr,
-+				  &num_bytes);
-+	if (ret <= 0) {
- 		mutex_unlock(&head->mutex);
- 		goto out;
- 	}
-+	if (tmp_bytenr != bytenr) {
-+		mutex_unlock(&head->mutex);
-+		mutex_unlock(&dedup_info->lock);
-+		goto again;
++static int prop_dedup_apply(struct inode *inode, const char *value, size_t len)
++{
++	if (len == 0) {
++		BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUP;
++		return 0;
 +	}
- 	hash->bytenr = bytenr;
- 	hash->num_bytes = num_bytes;
- 
-@@ -609,15 +712,15 @@ int btrfs_dedup_search(struct inode *inode, u64 file_pos,
- 	if (WARN_ON(!dedup_info || !hash))
- 		return 0;
- 
--	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
--		ret = inmem_search(inode, file_pos, hash);
--
--	/* It's possible hash->bytenr/num_bytenr already changed */
--	if (ret == 0) {
--		hash->num_bytes = 0;
--		hash->bytenr = 0;
-+	if (dedup_info->backend < BTRFS_DEDUP_BACKEND_LAST) {
-+		ret = generic_search(inode, file_pos, hash);
-+		if (ret == 0) {
-+			hash->num_bytes = 0;
-+			hash->bytenr = 0;
-+		}
-+		return ret;
- 	}
--	return ret;
++
++	if (!strncmp("disable", value, len)) {
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUP;
++		return 0;
++	}
++
 +	return -EINVAL;
- }
++}
++
++static const char *prop_dedup_extract(struct inode *inode)
++{
++	if (BTRFS_I(inode)->flags | BTRFS_INODE_NODEDUP)
++		return "disable";
  
- static int hash_data(struct btrfs_dedup_info *dedup_info, const char *data,
-diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
-index f23053c..3c08b86 100644
---- a/fs/btrfs/dedup.h
-+++ b/fs/btrfs/dedup.h
-@@ -137,6 +137,9 @@ int btrfs_dedup_calc_hash(struct btrfs_root *root, struct inode *inode,
-  * *INCREASED*, and hash->bytenr/num_bytes will record the existing
-  * extent data.
-  * Return 0 for a hash miss. Nothing is done
-+ * Return <0 for error.
-+ *
-+ * Only on-disk backedn may return error though.
-  */
- int btrfs_dedup_search(struct inode *inode, u64 file_pos,
- 		       struct btrfs_dedup_hash *hash);
++	return NULL;
++}
 -- 
 2.7.0
 

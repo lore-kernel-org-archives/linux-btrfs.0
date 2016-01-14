@@ -1,15 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:31538 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60958 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1752138AbcANGAO (ORCPT
+	with ESMTP id S1752140AbcANGAP (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 01:00:14 -0500
+	Thu, 14 Jan 2016 01:00:15 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id 1022641896DC
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:47 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Liu Bo <bo.li.liu@oracle.com>, Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v4 10/18] btrfs: dedup: Add basic tree structure for on-disk dedup method
-Date: Thu, 14 Jan 2016 13:57:26 +0800
-Message-ID: <1452751054-2365-11-git-send-email-quwenruo@cn.fujitsu.com>
+CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v4 16/18] btrfs: dedup: add an inode nodedup flag
+Date: Thu, 14 Jan 2016 13:57:32 +0800
+Message-ID: <1452751054-2365-17-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -17,190 +20,53 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Introduce a new tree, dedup tree to record on-disk dedup hash.
-As a persist hash storage instead of in-memeory only implement.
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Unlike Liu Bo's implement, in this version we won't do hack for
-bytenr -> hash search, but add a new type, DEDUP_BYTENR_ITEM for such
-search case, just like in-memory backend.
+Introduce BTRFS_INODE_NODEDUP flag, then we can explicitly disable
+online data deduplication for specified files.
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 ---
- fs/btrfs/ctree.h             | 67 +++++++++++++++++++++++++++++++++++++++++++-
- fs/btrfs/dedup.h             |  5 ++++
- fs/btrfs/disk-io.c           |  1 +
- include/trace/events/btrfs.h |  3 +-
- 4 files changed, 74 insertions(+), 2 deletions(-)
+ fs/btrfs/ctree.h | 1 +
+ fs/btrfs/ioctl.c | 6 +++++-
+ 2 files changed, 6 insertions(+), 1 deletion(-)
 
 diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
-index 671be87..6f75e48 100644
+index a68e23d..ddc6ff2 100644
 --- a/fs/btrfs/ctree.h
 +++ b/fs/btrfs/ctree.h
-@@ -100,6 +100,9 @@ struct btrfs_ordered_sum;
- /* tracks free space in block groups. */
- #define BTRFS_FREE_SPACE_TREE_OBJECTID 10ULL
+@@ -2400,6 +2400,7 @@ do {                                                                   \
+ #define BTRFS_INODE_NOATIME		(1 << 9)
+ #define BTRFS_INODE_DIRSYNC		(1 << 10)
+ #define BTRFS_INODE_COMPRESS		(1 << 11)
++#define BTRFS_INODE_NODEDUP		(1 << 12)
  
-+/* on-disk dedup tree (EXPERIMENTAL) */
-+#define BTRFS_DEDUP_TREE_OBJECTID 11ULL
-+
- /* for storing balance parameters in the root tree */
- #define BTRFS_BALANCE_OBJECTID -4ULL
+ #define BTRFS_INODE_ROOT_ITEM_INIT	(1 << 31)
  
-@@ -505,6 +508,7 @@ struct btrfs_super_block {
-  * ones specified below then we will fail to mount
-  */
- #define BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE	(1ULL << 0)
-+#define BTRFS_FEATURE_COMPAT_RO_DEDUP		(1ULL << 1)
- 
- #define BTRFS_FEATURE_INCOMPAT_MIXED_BACKREF	(1ULL << 0)
- #define BTRFS_FEATURE_INCOMPAT_DEFAULT_SUBVOL	(1ULL << 1)
-@@ -534,7 +538,8 @@ struct btrfs_super_block {
- #define BTRFS_FEATURE_COMPAT_SAFE_CLEAR		0ULL
- 
- #define BTRFS_FEATURE_COMPAT_RO_SUPP			\
--	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE)
-+	(BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE |	\
-+	 BTRFS_FEATURE_COMPAT_RO_DEDUP)
- 
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_SET	0ULL
- #define BTRFS_FEATURE_COMPAT_RO_SAFE_CLEAR	0ULL
-@@ -964,6 +969,46 @@ struct btrfs_csum_item {
- 	u8 csum;
- } __attribute__ ((__packed__));
- 
-+/*
-+ * Objectid: 0
-+ * Type: BTRFS_DEDUP_STATUS_ITEM_KEY
-+ * Offset: 0
-+ */
-+struct btrfs_dedup_status_item {
-+	__le64 blocksize;
-+	__le64 limit_nr;
-+	__le16 hash_type;
-+	__le16 backend;
-+} __attribute__ ((__packed__));
-+
-+/*
-+ * Objectid: Last 64 bit of the hash
-+ * Type: BTRFS_DEDUP_HASH_ITEM_KEY
-+ * Offset: Bytenr of the hash
-+ *
-+ * Used for hash <-> bytenr search
-+ * XXX: On-disk format not stable yet, see the unsed one
-+ */
-+struct btrfs_dedup_hash_item {
-+	/* on disk length of dedup range */
-+	__le64 len;
-+
-+	/* Spare space */
-+	u8 __unused[16];
-+
-+	/* Hash follows */
-+} __attribute__ ((__packed__));
-+
-+/*
-+ * Objectid: bytenr
-+ * Type: BTRFS_DEDUP_BYTENR_ITEM_KEY
-+ * offset: Last 64 bit of the hash
-+ *
-+ * Used for bytenr <-> hash search (for free_extent)
-+ * all its content is hash.
-+ * So no special item struct is needed.
-+ */
-+
- struct btrfs_dev_stats_item {
- 	/*
- 	 * grow this item struct at the end for future enhancements and keep
-@@ -2165,6 +2210,13 @@ struct btrfs_ioctl_defrag_range_args {
- #define BTRFS_CHUNK_ITEM_KEY	228
- 
+diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
+index c18be18..32c3aa2 100644
+--- a/fs/btrfs/ioctl.c
++++ b/fs/btrfs/ioctl.c
+@@ -159,7 +159,8 @@ void btrfs_update_iflags(struct inode *inode)
  /*
-+ * Dedup item and status
-+ */
-+#define BTRFS_DEDUP_STATUS_ITEM_KEY	230
-+#define BTRFS_DEDUP_HASH_ITEM_KEY	231
-+#define BTRFS_DEDUP_BYTENR_ITEM_KEY	232
+  * Inherit flags from the parent inode.
+  *
+- * Currently only the compression flags and the cow flags are inherited.
++ * Currently only the compression flags, the dedup flags and the cow
++ * flags are inherited.
+  */
+ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+ {
+@@ -184,6 +185,9 @@ void btrfs_inherit_iflags(struct inode *inode, struct inode *dir)
+ 			BTRFS_I(inode)->flags |= BTRFS_INODE_NODATASUM;
+ 	}
+ 
++	if (flags & BTRFS_INODE_NODEDUP)
++		BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUP;
 +
-+/*
-  * Records the overall state of the qgroups.
-  * There's only one instance of this key present,
-  * (0, BTRFS_QGROUP_STATUS_KEY, 0)
-@@ -3227,6 +3279,19 @@ static inline unsigned long btrfs_leaf_data(struct extent_buffer *l)
- 	return offsetof(struct btrfs_leaf, items);
+ 	btrfs_update_iflags(inode);
  }
  
-+/* btrfs_dedup_status */
-+BTRFS_SETGET_FUNCS(dedup_status_blocksize, struct btrfs_dedup_status_item,
-+		   blocksize, 64);
-+BTRFS_SETGET_FUNCS(dedup_status_limit, struct btrfs_dedup_status_item,
-+		   limit_nr, 64);
-+BTRFS_SETGET_FUNCS(dedup_status_hash_type, struct btrfs_dedup_status_item,
-+		   hash_type, 16);
-+BTRFS_SETGET_FUNCS(dedup_status_backend, struct btrfs_dedup_status_item,
-+		   backend, 16);
-+
-+/* btrfs_dedup_hash_item */
-+BTRFS_SETGET_FUNCS(dedup_hash_len, struct btrfs_dedup_hash_item, len, 64);
-+
- /* struct btrfs_file_extent_item */
- BTRFS_SETGET_FUNCS(file_extent_type, struct btrfs_file_extent_item, type, 8);
- BTRFS_SETGET_STACK_FUNCS(stack_file_extent_disk_bytenr,
-diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
-index a859ad8..d22031b 100644
---- a/fs/btrfs/dedup.h
-+++ b/fs/btrfs/dedup.h
-@@ -54,6 +54,8 @@ struct btrfs_dedup_hash {
- 	u8 hash[];
- };
- 
-+struct btrfs_root;
-+
- struct btrfs_dedup_info {
- 	/* dedup blocksize */
- 	u64 blocksize;
-@@ -69,6 +71,9 @@ struct btrfs_dedup_info {
- 	struct list_head lru_list;
- 	u64 limit_nr;
- 	u64 current_nr;
-+
-+	/* for persist data like dedup-hash and dedup status */
-+	struct btrfs_root *dedup_root;
- };
- 
- struct btrfs_trans_handle;
-diff --git a/fs/btrfs/disk-io.c b/fs/btrfs/disk-io.c
-index c67c129..a544277 100644
---- a/fs/btrfs/disk-io.c
-+++ b/fs/btrfs/disk-io.c
-@@ -176,6 +176,7 @@ static struct btrfs_lockdep_keyset {
- 	{ .id = BTRFS_TREE_RELOC_OBJECTID,	.name_stem = "treloc"	},
- 	{ .id = BTRFS_DATA_RELOC_TREE_OBJECTID,	.name_stem = "dreloc"	},
- 	{ .id = BTRFS_UUID_TREE_OBJECTID,	.name_stem = "uuid"	},
-+	{ .id = BTRFS_DEDUP_TREE_OBJECTID,	.name_stem = "dedup"	},
- 	{ .id = 0,				.name_stem = "tree"	},
- };
- 
-diff --git a/include/trace/events/btrfs.h b/include/trace/events/btrfs.h
-index d866f21..44d5e0f 100644
---- a/include/trace/events/btrfs.h
-+++ b/include/trace/events/btrfs.h
-@@ -47,12 +47,13 @@ struct btrfs_qgroup_operation;
- 		{ BTRFS_TREE_RELOC_OBJECTID,	"TREE_RELOC"	},	\
- 		{ BTRFS_UUID_TREE_OBJECTID,	"UUID_TREE"	},	\
- 		{ BTRFS_FREE_SPACE_TREE_OBJECTID, "FREE_SPACE_TREE" },	\
-+		{ BTRFS_DEDUP_TREE_OBJECTID,	"DEDUP_TREE"	},	\
- 		{ BTRFS_DATA_RELOC_TREE_OBJECTID, "DATA_RELOC_TREE" })
- 
- #define show_root_type(obj)						\
- 	obj, ((obj >= BTRFS_DATA_RELOC_TREE_OBJECTID) ||		\
- 	      (obj >= BTRFS_ROOT_TREE_OBJECTID &&			\
--	       obj <= BTRFS_QUOTA_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
-+	       obj <= BTRFS_DEDUP_TREE_OBJECTID)) ? __show_root_type(obj) : "-"
- 
- #define BTRFS_GROUP_FLAGS	\
- 	{ BTRFS_BLOCK_GROUP_DATA,	"DATA"},	\
 -- 
 2.7.0
 

@@ -1,45 +1,53 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ig0-f179.google.com ([209.85.213.179]:36142 "EHLO
-	mail-ig0-f179.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1753552AbcANQNA (ORCPT
+Received: from mail-ig0-f175.google.com ([209.85.213.175]:37025 "EHLO
+	mail-ig0-f175.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1755346AbcANQrH (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 11:13:00 -0500
-Received: by mail-ig0-f179.google.com with SMTP id z14so179222030igp.1
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 08:13:00 -0800 (PST)
+	Thu, 14 Jan 2016 11:47:07 -0500
+Received: by mail-ig0-f175.google.com with SMTP id h5so131413763igh.0
+        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 08:47:06 -0800 (PST)
+Subject: Re: Query about proposed dedup patches and behaviours
+To: James Hogarth <james.hogarth@gmail.com>, linux-btrfs@vger.kernel.org
+References: <CAGkb5vfzcOmj1Js=pBR6=-Uad7jY2bJy5ht3F-m-1TEOBjwCYA@mail.gmail.com>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <5697D0E9.3080007@gmail.com>
+Date: Thu, 14 Jan 2016 11:46:33 -0500
 MIME-Version: 1.0
-Date: Thu, 14 Jan 2016 16:13:00 +0000
-Message-ID: <CAGkb5vfzcOmj1Js=pBR6=-Uad7jY2bJy5ht3F-m-1TEOBjwCYA@mail.gmail.com>
-Subject: Query about proposed dedup patches and behaviours
-From: James Hogarth <james.hogarth@gmail.com>
-To: linux-btrfs@vger.kernel.org
-Content-Type: text/plain; charset=UTF-8
+In-Reply-To: <CAGkb5vfzcOmj1Js=pBR6=-Uad7jY2bJy5ht3F-m-1TEOBjwCYA@mail.gmail.com>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 2016-01-14 11:13, James Hogarth wrote:
+> Hi,
+>
+> The duperemove[1] tool is in the process for packaging for Fedora at
+> present but I was wondering what future this may have with the 4.5
+> dedup patches being proposed.
+>
+> WIll the btrfs command have the ability to out-of-line dedup files
+> similar to duperemove (thus negating the need for it) or will this
+> only control in-line dedup with a tool like duperemove still being
+> required for periodic only (or restricted path) dedup?
+Unless I'm horribly misreading the code, the regular btrfs-progs will 
+not be adding the ability to do out-of-band deduplication.  It may at 
+some point add a shortcut for the required ioctl to be used from 
+scripts, but that's probably unlikely.
+>
+> To avoid memory usage bloat if the btrfs command can order dedup  of X
+> files on the path correctly can it be passed a path to carry the hash
+> map in some form (similar to how dupeemeove can use sqlite for this)
+> or is this another use case for the external tool?
+This shouldn't be an issue for in-line deduplication, as that's handled 
+in the kernel.
+>
+> Finally what's the present situation with regards to defragmentation
+> and deduplication? Is it safe to turn on autodefrag now when using
+> snapshots and duperemove? What should the behaviour be with the
+> proposed 4.5 dedup patches if both inline dedup and autodefrag are
+> enabled as mount options?
+I'm not entirely certain how deduplication would interact with any form 
+of defragmentation.  I'm pretty certain though that autodefrag does 
+properly handle snapshots, such that the reflinks aren't broken, and 
+it's the original copy that gets any shared extents defragmented into it.
 
-The duperemove[1] tool is in the process for packaging for Fedora at
-present but I was wondering what future this may have with the 4.5
-dedup patches being proposed.
-
-WIll the btrfs command have the ability to out-of-line dedup files
-similar to duperemove (thus negating the need for it) or will this
-only control in-line dedup with a tool like duperemove still being
-required for periodic only (or restricted path) dedup?
-
-To avoid memory usage bloat if the btrfs command can order dedup  of X
-files on the path correctly can it be passed a path to carry the hash
-map in some form (similar to how dupeemeove can use sqlite for this)
-or is this another use case for the external tool?
-
-Finally what's the present situation with regards to defragmentation
-and deduplication? Is it safe to turn on autodefrag now when using
-snapshots and duperemove? What should the behaviour be with the
-proposed 4.5 dedup patches if both inline dedup and autodefrag are
-enabled as mount options?
-
-Cheers,
-
-James
-
-[1] https://bugzilla.redhat.com/show_bug.cgi?id=1244678

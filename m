@@ -1,57 +1,78 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from twin.jikos.cz ([89.185.236.188]:49767 "EHLO twin.jikos.cz"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751498AbcAEOlL (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 5 Jan 2016 09:41:11 -0500
-Date: Tue, 5 Jan 2016 15:41:07 +0100
-From: David Sterba <dave@jikos.cz>
-To: sam tygier <samtygier@yahoo.co.uk>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2] Btrfs: Check metadata redundancy on balance
-Message-ID: <20160105144107.GS26112@twin.jikos.cz>
-Reply-To: dave@jikos.cz
-References: <n467lf$t3g$1@ger.gmane.org>
+Received: from cn.fujitsu.com ([59.151.112.132]:60958 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1752235AbcANGAU (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jan 2016 01:00:20 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id 24E3D41896E3
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:51 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+Subject: [PATCH v3 0/8] btrfs-progs: Support in-band de-duplication
+Date: Thu, 14 Jan 2016 13:57:42 +0800
+Message-ID: <1452751070-2460-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <n467lf$t3g$1@ger.gmane.org>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Tue, Dec 08, 2015 at 09:25:03AM +0000, sam tygier wrote:
-> Signed-off-by: Sam Tygier <samtygier@yahoo.co.uk>
-> 
-> From: Sam Tygier <samtygier@yahoo.co.uk>
-> Date: Sat, 3 Oct 2015 16:43:48 +0100
-> Subject: [PATCH] Btrfs: Check metadata redundancy on balance
-> 
-> When converting a filesystem via balance check that metadata mode
-> is at least as redundant as the data mode. For example give warning
-> when:
-> -dconvert=raid1 -mconvert=single
+Preparation patchset for in-coming (aimed for 4.6) kernel in-band
+de-duplication patchset.
 
-Missing signed-off-by
+New kernel dedup will has 2 different dedup backends and a ioctl
+interface to enable/disable dedup.
 
-> ---
->  fs/btrfs/volumes.c | 6 ++++++
->  1 file changed, 6 insertions(+)
-> 
-> diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-> index 6fc73586..40247e9 100644
-> --- a/fs/btrfs/volumes.c
-> +++ b/fs/btrfs/volumes.c
-> @@ -3584,6 +3584,12 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
->  		}
->  	} while (read_seqretry(&fs_info->profiles_lock, seq));
->  
-> +	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
-> +		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
-> +		btrfs_info(fs_info,
-> +			"Warning: metatdata has lower redundancy than data\n");
+The ioctl interface and on-disk format (mostly) is determined, so submit
+this patchset first before de-duplication first.
 
-If it's a warning then please use btrfs_warn. The message gets a higher
-priority and would be caught by log scanners as an issue worth attention.
+v2:
+  Better objectid/offset format for dedup hash items
+  Output hash for dedup hash items
+v3:
+  Keep dedup tree objectid and ro_flag the same with kernal,
+  since the tree objectid 11 and ro_flag 1 are all taken by space cache
+  tree v2.
+  Add dedup property support.
 
-Also, explicitly mentioning the profiles for data and metadata would be
-better.
+Qu Wenruo (7):
+  btrfs-progs: Basic framework for dedup command group
+  btrfs-progs: dedup: Add enable command for dedup command group
+  btrfs-progs: dedup: Add disable support for inban deduplication
+  btrfs-progs: dedup: Add status subcommand
+  btrfs-progs: Add dedup feature for mkfs and convert
+  btrfs-progs: Add show-super support for new DEDUP flag
+  btrfs-progs: dedup-tree: Add dedup tree support
 
-And sorry that it takes so long to get this patch merged.
+Wang Xiaoguang (1):
+  btrfs-progs: property: add a dedup property
+
+ Documentation/btrfs-dedup.asciidoc    | 105 +++++++++++++
+ Documentation/btrfs-property.asciidoc |   2 +
+ Documentation/mkfs.btrfs.asciidoc     |   9 ++
+ Makefile.in                           |   2 +-
+ btrfs-convert.c                       |  19 ++-
+ btrfs-debug-tree.c                    |   4 +
+ btrfs-show-super.c                    |  17 ++
+ btrfs.c                               |   1 +
+ cmds-dedup.c                          | 282 ++++++++++++++++++++++++++++++++++
+ commands.h                            |   2 +
+ ctree.h                               |  41 ++++-
+ dedup.h                               |  39 +++++
+ ioctl.h                               |  23 +++
+ kerncompat.h                          |   5 +
+ mkfs.c                                |   8 +-
+ print-tree.c                          |  75 +++++++++
+ props.c                               |  73 +++++++++
+ utils.c                               |  38 +++--
+ utils.h                               |   7 +-
+ 19 files changed, 728 insertions(+), 24 deletions(-)
+ create mode 100644 Documentation/btrfs-dedup.asciidoc
+ create mode 100644 cmds-dedup.c
+ create mode 100644 dedup.h
+
+-- 
+2.7.0
+
+
+

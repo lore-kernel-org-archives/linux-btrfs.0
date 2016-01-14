@@ -1,18 +1,17 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18653 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:31538 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751870AbcANGAD (ORCPT
+	with ESMTP id S1751878AbcANGAF (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 01:00:03 -0500
+	Thu, 14 Jan 2016 01:00:05 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id 9B0554189162
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:40 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id D780D41896C3
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:38 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
-CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v4 08/18] btrfs: ordered-extent: Add support for dedup
-Date: Thu, 14 Jan 2016 13:57:24 +0800
-Message-ID: <1452751054-2365-9-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 05/18] btrfs: delayed-ref: Add support for atomic increasing extent ref
+Date: Thu, 14 Jan 2016 13:57:21 +0800
+Message-ID: <1452751054-2365-6-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -20,136 +19,167 @@ Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Slightly modify btrfs_add_delayed_data_ref() to allow it accept
+GFP_ATOMIC, and allow it to do be called inside a spinlock.
 
-Add ordered-extent support for dedup.
-
-Note, current ordered-extent support only supports non-compressed source
-extent.
-Support for compressed source extent will be added later.
+This is used by later dedup patches.
 
 Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/ordered-data.c | 33 +++++++++++++++++++++++++++++----
- fs/btrfs/ordered-data.h | 13 +++++++++++++
- 2 files changed, 42 insertions(+), 4 deletions(-)
+ fs/btrfs/ctree.h       |  4 ++++
+ fs/btrfs/delayed-ref.c | 25 +++++++++++++++++--------
+ fs/btrfs/delayed-ref.h |  2 +-
+ fs/btrfs/extent-tree.c | 24 +++++++++++++++++++++---
+ 4 files changed, 43 insertions(+), 12 deletions(-)
 
-diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
-index 8c27292..46493f5 100644
---- a/fs/btrfs/ordered-data.c
-+++ b/fs/btrfs/ordered-data.c
-@@ -25,6 +25,7 @@
- #include "btrfs_inode.h"
- #include "extent_io.h"
- #include "disk-io.h"
-+#include "dedup.h"
+diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
+index 2132fa5..671be87 100644
+--- a/fs/btrfs/ctree.h
++++ b/fs/btrfs/ctree.h
+@@ -3539,6 +3539,10 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 			 struct btrfs_root *root,
+ 			 u64 bytenr, u64 num_bytes, u64 parent,
+ 			 u64 root_objectid, u64 owner, u64 offset);
++int btrfs_inc_extent_ref_atomic(struct btrfs_trans_handle *trans,
++				struct btrfs_root *root, u64 bytenr,
++				u64 num_bytes, u64 parent,
++				u64 root_objectid, u64 owner, u64 offset);
  
- static struct kmem_cache *btrfs_ordered_extent_cache;
- 
-@@ -183,12 +184,14 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
-  */
- static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 				      u64 start, u64 len, u64 disk_len,
--				      int type, int dio, int compress_type)
-+				      int type, int dio, int compress_type,
-+				      struct btrfs_dedup_hash *hash)
+ int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans,
+ 				   struct btrfs_root *root);
+diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
+index 914ac13..e869442 100644
+--- a/fs/btrfs/delayed-ref.c
++++ b/fs/btrfs/delayed-ref.c
+@@ -812,26 +812,31 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       u64 bytenr, u64 num_bytes,
+ 			       u64 parent, u64 ref_root,
+ 			       u64 owner, u64 offset, u64 reserved, int action,
+-			       struct btrfs_delayed_extent_op *extent_op)
++			       int atomic)
  {
- 	struct btrfs_root *root = BTRFS_I(inode)->root;
- 	struct btrfs_ordered_inode_tree *tree;
- 	struct rb_node *node;
- 	struct btrfs_ordered_extent *entry;
-+	struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
- 
- 	tree = &BTRFS_I(inode)->ordered_tree;
- 	entry = kmem_cache_zalloc(btrfs_ordered_extent_cache, GFP_NOFS);
-@@ -203,6 +206,20 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 	entry->inode = igrab(inode);
- 	entry->compress_type = compress_type;
- 	entry->truncated_len = (u64)-1;
-+	entry->hash = NULL;
-+	if (hash && dedup_info) {
-+		entry->hash = btrfs_dedup_alloc_hash(dedup_info->hash_type);
-+		if (!entry->hash) {
-+			kmem_cache_free(btrfs_ordered_extent_cache, entry);
-+			return -ENOMEM;
-+		}
-+		/* Hash contains locks, only copy what we need */
-+		entry->hash->bytenr = hash->bytenr;
-+		entry->hash->num_bytes = hash->num_bytes;
-+		memcpy(entry->hash->hash, hash->hash,
-+		       btrfs_dedup_sizes[dedup_info->hash_type]);
-+	}
+ 	struct btrfs_delayed_data_ref *ref;
+ 	struct btrfs_delayed_ref_head *head_ref;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_qgroup_extent_record *record = NULL;
++	gfp_t gfp_flags;
 +
- 	if (type != BTRFS_ORDERED_IO_DONE && type != BTRFS_ORDERED_COMPLETE)
- 		set_bit(type, &entry->flags);
++	if (atomic)
++		gfp_flags = GFP_ATOMIC;
++	else
++		gfp_flags = GFP_NOFS;
  
-@@ -249,15 +266,23 @@ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- {
- 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
- 					  disk_len, type, 0,
--					  BTRFS_COMPRESS_NONE);
-+					  BTRFS_COMPRESS_NONE, NULL);
+-	BUG_ON(extent_op && !extent_op->is_data);
+-	ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
++	ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, gfp_flags);
+ 	if (!ref)
+ 		return -ENOMEM;
+ 
+-	head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, GFP_NOFS);
++	head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep, gfp_flags);
+ 	if (!head_ref) {
+ 		kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+ 		return -ENOMEM;
+ 	}
+ 
+ 	if (fs_info->quota_enabled && is_fstree(ref_root)) {
+-		record = kmalloc(sizeof(*record), GFP_NOFS);
++		record = kmalloc(sizeof(*record), gfp_flags);
+ 		if (!record) {
+ 			kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
+ 			kmem_cache_free(btrfs_delayed_ref_head_cachep,
+@@ -840,10 +845,13 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 		}
+ 	}
+ 
+-	head_ref->extent_op = extent_op;
++	head_ref->extent_op = NULL;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+-	spin_lock(&delayed_refs->lock);
++
++	/* For atomic case, caller should already hold the delayed_refs lock */
++	if (!atomic)
++		spin_lock(&delayed_refs->lock);
+ 
+ 	/*
+ 	 * insert both the head node and the new ref without dropping
+@@ -856,7 +864,8 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 	add_delayed_data_ref(fs_info, trans, head_ref, &ref->node, bytenr,
+ 				   num_bytes, parent, ref_root, owner, offset,
+ 				   action);
+-	spin_unlock(&delayed_refs->lock);
++	if (!atomic)
++		spin_unlock(&delayed_refs->lock);
+ 
+ 	return 0;
+ }
+diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
+index c24b653..e34f96a 100644
+--- a/fs/btrfs/delayed-ref.h
++++ b/fs/btrfs/delayed-ref.h
+@@ -249,7 +249,7 @@ int btrfs_add_delayed_data_ref(struct btrfs_fs_info *fs_info,
+ 			       u64 bytenr, u64 num_bytes,
+ 			       u64 parent, u64 ref_root,
+ 			       u64 owner, u64 offset, u64 reserved, int action,
+-			       struct btrfs_delayed_extent_op *extent_op);
++			       int atomic);
+ int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
+ 				     struct btrfs_trans_handle *trans,
+ 				     u64 ref_root, u64 bytenr, u64 num_bytes);
+diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
+index 60cc139..4a01ca9 100644
+--- a/fs/btrfs/extent-tree.c
++++ b/fs/btrfs/extent-tree.c
+@@ -2105,11 +2105,29 @@ int btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 		ret = btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
+ 					num_bytes, parent, root_objectid,
+ 					owner, offset, 0,
+-					BTRFS_ADD_DELAYED_REF, NULL);
++					BTRFS_ADD_DELAYED_REF, 0);
+ 	}
+ 	return ret;
  }
  
-+int btrfs_add_ordered_extent_dedup(struct inode *inode, u64 file_offset,
-+				   u64 start, u64 len, u64 disk_len, int type,
-+				   struct btrfs_dedup_hash *hash)
++int btrfs_inc_extent_ref_atomic(struct btrfs_trans_handle *trans,
++				struct btrfs_root *root, u64 bytenr,
++				u64 num_bytes, u64 parent,
++				u64 root_objectid, u64 owner, u64 offset)
 +{
-+	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
-+					  disk_len, type, 0,
-+					  BTRFS_COMPRESS_NONE, hash);
-+}
- int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
- 				 u64 start, u64 len, u64 disk_len, int type)
- {
- 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
- 					  disk_len, type, 1,
--					  BTRFS_COMPRESS_NONE);
-+					  BTRFS_COMPRESS_NONE, NULL);
- }
- 
- int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
-@@ -266,7 +291,7 @@ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
- {
- 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
- 					  disk_len, type, 0,
--					  compress_type);
-+					  compress_type, NULL);
- }
- 
- /*
-diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
-index 23c9605..58519ce 100644
---- a/fs/btrfs/ordered-data.h
-+++ b/fs/btrfs/ordered-data.h
-@@ -139,6 +139,16 @@ struct btrfs_ordered_extent {
- 	struct completion completion;
- 	struct btrfs_work flush_work;
- 	struct list_head work_list;
++	struct btrfs_fs_info *fs_info = root->fs_info;
 +
-+	/*
-+	 * For inband deduplication
-+	 * If hash is NULL, no deduplication.
-+	 * If hash->bytenr is zero, means this is a dedup miss, hash will
-+	 * be added into dedup tree.
-+	 * If hash->bytenr is non-zero, this is a dedup hit. Extent ref is
-+	 * *ALREADY* increased.
-+	 */
-+	struct btrfs_dedup_hash *hash;
- };
++	BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
++	       root_objectid == BTRFS_TREE_LOG_OBJECTID);
++
++	/* Only used by dedup, so only data is possible */
++	if (WARN_ON(owner < BTRFS_FIRST_FREE_OBJECTID))
++		return -EINVAL;
++	return btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
++			num_bytes, parent, root_objectid,
++			owner, offset, 0, BTRFS_ADD_DELAYED_REF, 1);
++}
++
+ static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
+ 				  struct btrfs_root *root,
+ 				  struct btrfs_delayed_ref_node *node,
+@@ -6893,7 +6911,7 @@ int btrfs_free_extent(struct btrfs_trans_handle *trans, struct btrfs_root *root,
+ 						num_bytes,
+ 						parent, root_objectid, owner,
+ 						offset, 0,
+-						BTRFS_DROP_DELAYED_REF, NULL);
++						BTRFS_DROP_DELAYED_REF, 0);
+ 	}
+ 	return ret;
+ }
+@@ -7845,7 +7863,7 @@ int btrfs_alloc_reserved_file_extent(struct btrfs_trans_handle *trans,
+ 					 ins->offset, 0,
+ 					 root_objectid, owner, offset,
+ 					 ram_bytes, BTRFS_ADD_DELAYED_EXTENT,
+-					 NULL);
++					 0);
+ 	return ret;
+ }
  
- /*
-@@ -172,6 +182,9 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
- 				   int uptodate);
- int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
- 			     u64 start, u64 len, u64 disk_len, int type);
-+int btrfs_add_ordered_extent_dedup(struct inode *inode, u64 file_offset,
-+				   u64 start, u64 len, u64 disk_len, int type,
-+				   struct btrfs_dedup_hash *hash);
- int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
- 				 u64 start, u64 len, u64 disk_len, int type);
- int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
 -- 
 2.7.0
 

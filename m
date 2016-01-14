@@ -1,18 +1,18 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:18653 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:60958 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751962AbcANGAK (ORCPT
+	with ESMTP id S1751957AbcANGAJ (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 01:00:10 -0500
+	Thu, 14 Jan 2016 01:00:09 -0500
 Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
-	by cn.fujitsu.com (Postfix) with ESMTP id A7A9D41896DF
-	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:48 +0800 (CST)
+	by cn.fujitsu.com (Postfix) with ESMTP id 0CB8941896CB
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:40 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
 To: <linux-btrfs@vger.kernel.org>
 CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-Subject: [PATCH v4 18/18] btrfs: dedup: add per-file online dedup control
-Date: Thu, 14 Jan 2016 13:57:34 +0800
-Message-ID: <1452751054-2365-19-git-send-email-quwenruo@cn.fujitsu.com>
+Subject: [PATCH v4 07/18] btrfs: dedup: Implement btrfs_dedup_calc_hash interface
+Date: Thu, 14 Jan 2016 13:57:23 +0800
+Message-ID: <1452751054-2365-8-git-send-email-quwenruo@cn.fujitsu.com>
 In-Reply-To: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
@@ -22,57 +22,81 @@ List-ID: <linux-btrfs.vger.kernel.org>
 
 From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Introduce inode_need_dedup() to implement per-file online dedup control.
+Unlike in-memory or on-disk dedup method, only SHA256 hash method is
+supported yet, so implement btrfs_dedup_calc_hash() interface using
+SHA256.
 
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 ---
- fs/btrfs/inode.c | 19 ++++++++++++++++---
- 1 file changed, 16 insertions(+), 3 deletions(-)
+ fs/btrfs/dedup.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ 1 file changed, 57 insertions(+)
 
-diff --git a/fs/btrfs/inode.c b/fs/btrfs/inode.c
-index 5a49afa..6d2f068 100644
---- a/fs/btrfs/inode.c
-+++ b/fs/btrfs/inode.c
-@@ -672,6 +672,21 @@ static void free_async_extent_pages(struct async_extent *async_extent)
- 	async_extent->pages = NULL;
+diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
+index d6ee576..8860916 100644
+--- a/fs/btrfs/dedup.c
++++ b/fs/btrfs/dedup.c
+@@ -465,3 +465,60 @@ int btrfs_dedup_search(struct inode *inode, u64 file_pos,
+ 	}
+ 	return ret;
  }
- 
-+static inline int inode_need_dedup(struct inode *inode)
++
++static int hash_data(struct btrfs_dedup_info *dedup_info, const char *data,
++		     u64 length, struct btrfs_dedup_hash *hash)
 +{
-+	struct btrfs_root *root = BTRFS_I(inode)->root;
-+	struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
++	struct crypto_shash *tfm = dedup_info->dedup_driver;
++	struct {
++		struct shash_desc desc;
++		char ctx[crypto_shash_descsize(tfm)];
++	} sdesc;
++	int ret;
 +
-+	if (!dedup_info)
-+		return 0;
++	sdesc.desc.tfm = tfm;
++	sdesc.desc.flags = 0;
 +
-+	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODEDUP)
-+		return 0;
-+
-+	return 1;
++	ret = crypto_shash_digest(&sdesc.desc, data, length,
++				  (char *)(hash->hash));
++	return ret;
 +}
 +
++int btrfs_dedup_calc_hash(struct btrfs_root *root, struct inode *inode,
++			  u64 start, struct btrfs_dedup_hash *hash)
++{
++	struct page *p;
++	struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
++	char *data;
++	int i;
++	int ret;
++	u64 dedup_bs;
++	u64 sectorsize = root->sectorsize;
 +
- static int submit_dedup_extent(struct inode *inode, u64 start,
- 			       unsigned long len, u64 disk_start, int dedup)
- {
-@@ -1794,8 +1809,6 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- {
- 	int ret;
- 	int force_cow = need_force_cow(inode, start, end);
--	struct btrfs_root *root = BTRFS_I(inode)->root;
--	struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
- 
- 	if (BTRFS_I(inode)->flags & BTRFS_INODE_NODATACOW && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
-@@ -1803,7 +1816,7 @@ static int run_delalloc_range(struct inode *inode, struct page *locked_page,
- 	} else if (BTRFS_I(inode)->flags & BTRFS_INODE_PREALLOC && !force_cow) {
- 		ret = run_delalloc_nocow(inode, locked_page, start, end,
- 					 page_started, 0, nr_written);
--	} else if (!inode_need_compress(inode) && !dedup_info) {
-+	} else if (!inode_need_compress(inode) && !inode_need_dedup(inode)) {
- 		ret = cow_file_range(inode, locked_page, start, end,
- 				      page_started, nr_written, 1);
- 	} else {
++	if (!dedup_info || !hash)
++		return 0;
++
++	WARN_ON(!IS_ALIGNED(start, sectorsize));
++
++	dedup_bs = dedup_info->blocksize;
++	sectorsize = root->sectorsize;
++
++	data = kmalloc(dedup_bs, GFP_NOFS);
++	if (!data)
++		return -ENOMEM;
++	for (i = 0; sectorsize * i < dedup_bs; i++) {
++		char *d;
++
++		/* TODO: Add support for subpage size case */
++		p = find_get_page(inode->i_mapping,
++				  (start >> PAGE_CACHE_SHIFT) + i);
++		WARN_ON(!p);
++		d = kmap_atomic(p);
++		memcpy((data + sectorsize * i), d, sectorsize);
++		kunmap_atomic(d);
++		page_cache_release(p);
++	}
++	ret = hash_data(dedup_info, data, dedup_bs, hash);
++	kfree(data);
++	return ret;
++}
 -- 
 2.7.0
 

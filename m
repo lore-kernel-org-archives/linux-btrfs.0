@@ -1,274 +1,251 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:9832 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:26687 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S935006AbcATDZ1 (ORCPT
+	with ESMTP id S1752516AbcANI50 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Jan 2016 22:25:27 -0500
-Subject: Re: [PATCH v4 05/18] btrfs: delayed-ref: Add support for atomic
- increasing extent ref
-To: <fdmanana@gmail.com>
-References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1452751054-2365-6-git-send-email-quwenruo@cn.fujitsu.com>
- <CAL3q7H4tLp4H-6=boucNsdhndfTeYZqweyWR3fbw-V=e=se4ow@mail.gmail.com>
- <56984865.5070601@cn.fujitsu.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>
+	Thu, 14 Jan 2016 03:57:26 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id B4B28418915D
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 16:57:04 +0800 (CST)
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <569EFE0C.6070502@cn.fujitsu.com>
-Date: Wed, 20 Jan 2016 11:25:00 +0800
+To: <linux-btrfs@vger.kernel.org>
+CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v4.1 12/18] btrfs: dedup: Add support for on-disk hash search
+Date: Thu, 14 Jan 2016 16:54:58 +0800
+Message-ID: <1452761698-17301-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-In-Reply-To: <56984865.5070601@cn.fujitsu.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Now on-disk backend should be able to search hash now.
 
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+---
+v4.1:
+   Fix a stupid typo where info->hash_type should be info->backend.
+   This makes on-disk backend almost unable to dedup.
 
-Qu Wenruo wrote on 2016/01/15 09:16 +0800:
-> Hi Filipe,
->
-> Thanks for your review.
->
-> Filipe Manana wrote on 2016/01/14 09:56 +0000:
->> On Thu, Jan 14, 2016 at 5:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
->> wrote:
->>> Slightly modify btrfs_add_delayed_data_ref() to allow it accept
->>> GFP_ATOMIC, and allow it to do be called inside a spinlock.
->>
->> Hi Qu,
->>
->> I really would prefer to avoid gfp_atomic allocations.
->> Instead of using them, how about changing the approach so that callers
->> allocate the ref structure (without using gfp_atomic), then take the
->> spinlock, and then pass the structure to the inc/dec ref functions?
->
-> Yes, we also considered that method too.
->
-> But since it's only used for dedup hit case which has no existing
-> delayed ref head, it's on a uncommon routine.
->
-> On the other hand, if using the method you mentioned, alloc memory first
-> then pass it to add_delayed_data_ref(), we will always need to alloc
-> memory for minority cases.
->
-> It would be very nice if you can provide some extra disadvantage on
-> using GFP_ATOMIC, maybe there is something important I missed.
->
-> Thanks
-> Qu
->
+---
+ fs/btrfs/dedup.c | 145 +++++++++++++++++++++++++++++++++++++++++++++++--------
+ fs/btrfs/dedup.h |   3 ++
+ 2 files changed, 127 insertions(+), 21 deletions(-)
 
-My previous comment is totally wrong.
+diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
+index c97823f..bee9589 100644
+--- a/fs/btrfs/dedup.c
++++ b/fs/btrfs/dedup.c
+@@ -482,6 +482,79 @@ int btrfs_dedup_disable(struct btrfs_fs_info *fs_info)
+ }
+ 
+ /*
++ * Return 0 for not found
++ * Return >0 for found and set bytenr_ret
++ * Return <0 for error
++ */
++static int ondisk_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash,
++			      u64 *bytenr_ret, u32 *num_bytes_ret)
++{
++	struct btrfs_path *path;
++	struct btrfs_key key;
++	struct btrfs_root *dedup_root = dedup_info->dedup_root;
++	u8 *buf = NULL;
++	u64 hash_key;
++	int hash_len = btrfs_dedup_sizes[dedup_info->hash_type];
++	int ret;
++
++	path = btrfs_alloc_path();
++	if (!path)
++		return -ENOMEM;
++
++	buf = kmalloc(hash_len, GFP_NOFS);
++	if (!buf) {
++		ret = -ENOMEM;
++		goto out;
++	}
++
++	memcpy(&hash_key, hash + hash_len - 8, 8);
++	key.objectid = hash_key;
++	key.type = BTRFS_DEDUP_HASH_ITEM_KEY;
++	key.offset = (u64)-1;
++
++	ret = btrfs_search_slot(NULL, dedup_root, &key, path, 0, 0);
++	if (ret < 0)
++		goto out;
++	WARN_ON(ret == 0);
++	while (1) {
++		struct extent_buffer *node;
++		struct btrfs_dedup_hash_item *hash_item;
++		int slot;
++
++		ret = btrfs_previous_item(dedup_root, path, hash_key,
++					  BTRFS_DEDUP_HASH_ITEM_KEY);
++		if (ret < 0)
++			goto out;
++		if (ret > 0) {
++			ret = 0;
++			goto out;
++		}
++
++		node = path->nodes[0];
++		slot = path->slots[0];
++		btrfs_item_key_to_cpu(node, &key, slot);
++
++		if (key.type != BTRFS_DEDUP_HASH_ITEM_KEY ||
++		    memcmp(&key.objectid, hash + hash_len - 8, 8))
++			break;
++		hash_item = btrfs_item_ptr(node, slot,
++				struct btrfs_dedup_hash_item);
++		read_extent_buffer(node, buf, (unsigned long)(hash_item + 1),
++				   hash_len);
++		if (!memcmp(buf, hash, hash_len)) {
++			ret = 1;
++			*bytenr_ret = key.offset;
++			*num_bytes_ret = btrfs_dedup_hash_len(node, hash_item);
++			break;
++		}
++	}
++out:
++	kfree(buf);
++	btrfs_free_path(path);
++	return ret;
++}
++
++/*
+  * Caller must ensure the corresponding ref head is not being run.
+  */
+ static struct inmem_hash *
+@@ -511,7 +584,34 @@ inmem_search_hash(struct btrfs_dedup_info *dedup_info, u8 *hash)
+ 	return NULL;
+ }
+ 
+-static int inmem_search(struct inode *inode, u64 file_pos,
++/* Wrapper for different backends, caller needs to hold dedup_info->lock */
++static inline int generic_search_hash(struct btrfs_dedup_info *dedup_info,
++				      u8 *hash, u64 *bytenr_ret,
++				      u32 *num_bytes_ret)
++{
++	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY) {
++		struct inmem_hash *found_hash;
++		int ret;
++
++		found_hash = inmem_search_hash(dedup_info, hash);
++		if (found_hash) {
++			ret = 1;
++			*bytenr_ret = found_hash->bytenr;
++			*num_bytes_ret = found_hash->num_bytes;
++		} else {
++			ret = 0;
++			*bytenr_ret = 0;
++			*num_bytes_ret = 0;
++		}
++		return ret;
++	} else if (dedup_info->backend == BTRFS_DEDUP_BACKEND_ONDISK) {
++		return ondisk_search_hash(dedup_info, hash, bytenr_ret,
++					  num_bytes_ret);
++	}
++	return -EINVAL;
++}
++
++static int generic_search(struct inode *inode, u64 file_pos,
+ 			struct btrfs_dedup_hash *hash)
+ {
+ 	int ret;
+@@ -520,9 +620,9 @@ static int inmem_search(struct inode *inode, u64 file_pos,
+ 	struct btrfs_trans_handle *trans;
+ 	struct btrfs_delayed_ref_root *delayed_refs;
+ 	struct btrfs_delayed_ref_head *head;
+-	struct inmem_hash *found_hash;
+ 	struct btrfs_dedup_info *dedup_info = fs_info->dedup_info;
+ 	u64 bytenr;
++	u64 tmp_bytenr;
+ 	u32 num_bytes;
+ 
+ 	trans = btrfs_join_transaction(root);
+@@ -531,14 +631,9 @@ static int inmem_search(struct inode *inode, u64 file_pos,
+ 
+ again:
+ 	mutex_lock(&dedup_info->lock);
+-	found_hash = inmem_search_hash(dedup_info, hash->hash);
+-	/* If we don't find a duplicated extent, just return. */
+-	if (!found_hash) {
+-		ret = 0;
++	ret = generic_search_hash(dedup_info, hash->hash, &bytenr, &num_bytes);
++	if (ret <= 0)
+ 		goto out;
+-	}
+-	bytenr = found_hash->bytenr;
+-	num_bytes = found_hash->num_bytes;
+ 
+ 	delayed_refs = &trans->transaction->delayed_refs;
+ 
+@@ -574,13 +669,21 @@ again:
+ 		goto again;
+ 
+ 	mutex_lock(&dedup_info->lock);
+-	/* Search again to ensure the hash is still here */
+-	found_hash = inmem_search_hash(dedup_info, hash->hash);
+-	if (!found_hash) {
+-		ret = 0;
++	/*
++	 * Search again to ensure the hash is still here and bytenr didn't
++	 * change
++	 */
++	ret = generic_search_hash(dedup_info, hash->hash, &tmp_bytenr,
++				  &num_bytes);
++	if (ret <= 0) {
+ 		mutex_unlock(&head->mutex);
+ 		goto out;
+ 	}
++	if (tmp_bytenr != bytenr) {
++		mutex_unlock(&head->mutex);
++		mutex_unlock(&dedup_info->lock);
++		goto again;
++	}
+ 	hash->bytenr = bytenr;
+ 	hash->num_bytes = num_bytes;
+ 
+@@ -609,15 +712,15 @@ int btrfs_dedup_search(struct inode *inode, u64 file_pos,
+ 	if (WARN_ON(!dedup_info || !hash))
+ 		return 0;
+ 
+-	if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
+-		ret = inmem_search(inode, file_pos, hash);
+-
+-	/* It's possible hash->bytenr/num_bytenr already changed */
+-	if (ret == 0) {
+-		hash->num_bytes = 0;
+-		hash->bytenr = 0;
++	if (dedup_info->backend < BTRFS_DEDUP_BACKEND_LAST) {
++		ret = generic_search(inode, file_pos, hash);
++		if (ret == 0) {
++			hash->num_bytes = 0;
++			hash->bytenr = 0;
++		}
++		return ret;
+ 	}
+-	return ret;
++	return -EINVAL;
+ }
+ 
+ static int hash_data(struct btrfs_dedup_info *dedup_info, const char *data,
+diff --git a/fs/btrfs/dedup.h b/fs/btrfs/dedup.h
+index f23053c..3c08b86 100644
+--- a/fs/btrfs/dedup.h
++++ b/fs/btrfs/dedup.h
+@@ -137,6 +137,9 @@ int btrfs_dedup_calc_hash(struct btrfs_root *root, struct inode *inode,
+  * *INCREASED*, and hash->bytenr/num_bytes will record the existing
+  * extent data.
+  * Return 0 for a hash miss. Nothing is done
++ * Return <0 for error.
++ *
++ * Only on-disk backedn may return error though.
+  */
+ int btrfs_dedup_search(struct inode *inode, u64 file_pos,
+ 		       struct btrfs_dedup_hash *hash);
+-- 
+2.7.0
 
-Such ATOMIC allocation failure has happened twice, much much more 
-possible than I expected.
-
-So I'll use the method mentioned.
-
-Thanks,
-Qu
-
->>
->> thanks
->>
->>>
->>> This is used by later dedup patches.
->>>
->>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->>> ---
->>>   fs/btrfs/ctree.h       |  4 ++++
->>>   fs/btrfs/delayed-ref.c | 25 +++++++++++++++++--------
->>>   fs/btrfs/delayed-ref.h |  2 +-
->>>   fs/btrfs/extent-tree.c | 24 +++++++++++++++++++++---
->>>   4 files changed, 43 insertions(+), 12 deletions(-)
->>>
->>> diff --git a/fs/btrfs/ctree.h b/fs/btrfs/ctree.h
->>> index 2132fa5..671be87 100644
->>> --- a/fs/btrfs/ctree.h
->>> +++ b/fs/btrfs/ctree.h
->>> @@ -3539,6 +3539,10 @@ int btrfs_inc_extent_ref(struct
->>> btrfs_trans_handle *trans,
->>>                           struct btrfs_root *root,
->>>                           u64 bytenr, u64 num_bytes, u64 parent,
->>>                           u64 root_objectid, u64 owner, u64 offset);
->>> +int btrfs_inc_extent_ref_atomic(struct btrfs_trans_handle *trans,
->>> +                               struct btrfs_root *root, u64 bytenr,
->>> +                               u64 num_bytes, u64 parent,
->>> +                               u64 root_objectid, u64 owner, u64
->>> offset);
->>>
->>>   int btrfs_start_dirty_block_groups(struct btrfs_trans_handle *trans,
->>>                                     struct btrfs_root *root);
->>> diff --git a/fs/btrfs/delayed-ref.c b/fs/btrfs/delayed-ref.c
->>> index 914ac13..e869442 100644
->>> --- a/fs/btrfs/delayed-ref.c
->>> +++ b/fs/btrfs/delayed-ref.c
->>> @@ -812,26 +812,31 @@ int btrfs_add_delayed_data_ref(struct
->>> btrfs_fs_info *fs_info,
->>>                                 u64 bytenr, u64 num_bytes,
->>>                                 u64 parent, u64 ref_root,
->>>                                 u64 owner, u64 offset, u64 reserved,
->>> int action,
->>> -                              struct btrfs_delayed_extent_op
->>> *extent_op)
->>> +                              int atomic)
->>>   {
->>>          struct btrfs_delayed_data_ref *ref;
->>>          struct btrfs_delayed_ref_head *head_ref;
->>>          struct btrfs_delayed_ref_root *delayed_refs;
->>>          struct btrfs_qgroup_extent_record *record = NULL;
->>> +       gfp_t gfp_flags;
->>> +
->>> +       if (atomic)
->>> +               gfp_flags = GFP_ATOMIC;
->>> +       else
->>> +               gfp_flags = GFP_NOFS;
->>>
->>> -       BUG_ON(extent_op && !extent_op->is_data);
->>> -       ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep, GFP_NOFS);
->>> +       ref = kmem_cache_alloc(btrfs_delayed_data_ref_cachep,
->>> gfp_flags);
->>>          if (!ref)
->>>                  return -ENOMEM;
->>>
->>> -       head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep,
->>> GFP_NOFS);
->>> +       head_ref = kmem_cache_alloc(btrfs_delayed_ref_head_cachep,
->>> gfp_flags);
->>>          if (!head_ref) {
->>>                  kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
->>>                  return -ENOMEM;
->>>          }
->>>
->>>          if (fs_info->quota_enabled && is_fstree(ref_root)) {
->>> -               record = kmalloc(sizeof(*record), GFP_NOFS);
->>> +               record = kmalloc(sizeof(*record), gfp_flags);
->>>                  if (!record) {
->>>
->>> kmem_cache_free(btrfs_delayed_data_ref_cachep, ref);
->>>                          kmem_cache_free(btrfs_delayed_ref_head_cachep,
->>> @@ -840,10 +845,13 @@ int btrfs_add_delayed_data_ref(struct
->>> btrfs_fs_info *fs_info,
->>>                  }
->>>          }
->>>
->>> -       head_ref->extent_op = extent_op;
->>> +       head_ref->extent_op = NULL;
->>>
->>>          delayed_refs = &trans->transaction->delayed_refs;
->>> -       spin_lock(&delayed_refs->lock);
->>> +
->>> +       /* For atomic case, caller should already hold the
->>> delayed_refs lock */
->>> +       if (!atomic)
->>> +               spin_lock(&delayed_refs->lock);
->>>
->>>          /*
->>>           * insert both the head node and the new ref without dropping
->>> @@ -856,7 +864,8 @@ int btrfs_add_delayed_data_ref(struct
->>> btrfs_fs_info *fs_info,
->>>          add_delayed_data_ref(fs_info, trans, head_ref, &ref->node,
->>> bytenr,
->>>                                     num_bytes, parent, ref_root,
->>> owner, offset,
->>>                                     action);
->>> -       spin_unlock(&delayed_refs->lock);
->>> +       if (!atomic)
->>> +               spin_unlock(&delayed_refs->lock);
->>>
->>>          return 0;
->>>   }
->>> diff --git a/fs/btrfs/delayed-ref.h b/fs/btrfs/delayed-ref.h
->>> index c24b653..e34f96a 100644
->>> --- a/fs/btrfs/delayed-ref.h
->>> +++ b/fs/btrfs/delayed-ref.h
->>> @@ -249,7 +249,7 @@ int btrfs_add_delayed_data_ref(struct
->>> btrfs_fs_info *fs_info,
->>>                                 u64 bytenr, u64 num_bytes,
->>>                                 u64 parent, u64 ref_root,
->>>                                 u64 owner, u64 offset, u64 reserved,
->>> int action,
->>> -                              struct btrfs_delayed_extent_op
->>> *extent_op);
->>> +                              int atomic);
->>>   int btrfs_add_delayed_qgroup_reserve(struct btrfs_fs_info *fs_info,
->>>                                       struct btrfs_trans_handle *trans,
->>>                                       u64 ref_root, u64 bytenr, u64
->>> num_bytes);
->>> diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
->>> index 60cc139..4a01ca9 100644
->>> --- a/fs/btrfs/extent-tree.c
->>> +++ b/fs/btrfs/extent-tree.c
->>> @@ -2105,11 +2105,29 @@ int btrfs_inc_extent_ref(struct
->>> btrfs_trans_handle *trans,
->>>                  ret = btrfs_add_delayed_data_ref(fs_info, trans,
->>> bytenr,
->>>                                          num_bytes, parent,
->>> root_objectid,
->>>                                          owner, offset, 0,
->>> -                                       BTRFS_ADD_DELAYED_REF, NULL);
->>> +                                       BTRFS_ADD_DELAYED_REF, 0);
->>>          }
->>>          return ret;
->>>   }
->>>
->>> +int btrfs_inc_extent_ref_atomic(struct btrfs_trans_handle *trans,
->>> +                               struct btrfs_root *root, u64 bytenr,
->>> +                               u64 num_bytes, u64 parent,
->>> +                               u64 root_objectid, u64 owner, u64
->>> offset)
->>> +{
->>> +       struct btrfs_fs_info *fs_info = root->fs_info;
->>> +
->>> +       BUG_ON(owner < BTRFS_FIRST_FREE_OBJECTID &&
->>> +              root_objectid == BTRFS_TREE_LOG_OBJECTID);
->>> +
->>> +       /* Only used by dedup, so only data is possible */
->>> +       if (WARN_ON(owner < BTRFS_FIRST_FREE_OBJECTID))
->>> +               return -EINVAL;
->>> +       return btrfs_add_delayed_data_ref(fs_info, trans, bytenr,
->>> +                       num_bytes, parent, root_objectid,
->>> +                       owner, offset, 0, BTRFS_ADD_DELAYED_REF, 1);
->>> +}
->>> +
->>>   static int __btrfs_inc_extent_ref(struct btrfs_trans_handle *trans,
->>>                                    struct btrfs_root *root,
->>>                                    struct btrfs_delayed_ref_node *node,
->>> @@ -6893,7 +6911,7 @@ int btrfs_free_extent(struct btrfs_trans_handle
->>> *trans, struct btrfs_root *root,
->>>                                                  num_bytes,
->>>                                                  parent,
->>> root_objectid, owner,
->>>                                                  offset, 0,
->>> -
->>> BTRFS_DROP_DELAYED_REF, NULL);
->>> +
->>> BTRFS_DROP_DELAYED_REF, 0);
->>>          }
->>>          return ret;
->>>   }
->>> @@ -7845,7 +7863,7 @@ int btrfs_alloc_reserved_file_extent(struct
->>> btrfs_trans_handle *trans,
->>>                                           ins->offset, 0,
->>>                                           root_objectid, owner, offset,
->>>                                           ram_bytes,
->>> BTRFS_ADD_DELAYED_EXTENT,
->>> -                                        NULL);
->>> +                                        0);
->>>          return ret;
->>>   }
->>>
->>> --
->>> 2.7.0
->>>
->>>
->>>
->>> --
->>> To unsubscribe from this list: send the line "unsubscribe
->>> linux-btrfs" in
->>> the body of a message to majordomo@vger.kernel.org
->>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->>
->>
->>
 
 

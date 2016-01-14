@@ -1,39 +1,29 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:47002 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753184AbcANMry (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 07:47:54 -0500
-Date: Thu, 14 Jan 2016 13:47:48 +0100
-From: David Sterba <dsterba@suse.cz>
-To: linux-btrfs@vger.kernel.org
-Cc: clm@fb.com
-Subject: Btrfs progs pre-release 4.4-rc1
-Message-ID: <20160114124748.GV4227@suse.cz>
-Reply-To: dsterba@suse.cz
+Received: from mail02.iobjects.de ([188.40.134.68]:46922 "EHLO
+	mail02.iobjects.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752418AbcANNsi (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jan 2016 08:48:38 -0500
+Subject: Re: Btrfs progs pre-release 4.4-rc1
+To: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
+References: <20160114124748.GV4227@suse.cz>
+From: =?UTF-8?Q?Holger_Hoffst=c3=a4tte?=
+	<holger.hoffstaette@googlemail.com>
+Message-ID: <5697A734.1000700@googlemail.com>
+Date: Thu, 14 Jan 2016 14:48:36 +0100
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <20160114124748.GV4227@suse.cz>
+Content-Type: text/plain; charset=utf-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi,
+On 01/14/16 13:47, David Sterba wrote:
+[..]
+> * free space tree (aka space_cache=v2, kernel 4.5+)
 
-the btrfs-progs 4.4-rc1 has been tagged. This is a heads-up before the release
-(ETA tmorrow). Please give it some testing.
+I'd like to suggest to maybe add a BIG WARNING to the release notes that
+enabling the fst will currently prevent btrfsck from fixing a filesystem,
+due to the incompatible feature flag.
 
-I'll write a more detailed changelog for 4.4, but here are some notable changes:
+-h
 
-* manual pages enhanced (btrfs, mkfs, mount, filesystem, balance)
-* mkfs.btrfs --data dup
-* new/enhanced balance filters (kernel 4.4+):
-  * limit=min..max
-  * stripes=min..max
-  * usage=min..max
-* free space tree (aka space_cache=v2, kernel 4.5+)
-* fix: fi usage and mixed block groups
-* debug-tree: -t understands chunk tree (3) and tree root (1)
-
-Minor bugfixes are still accepted, the rest will go to the next development
-cycle.
-
-Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
-Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git

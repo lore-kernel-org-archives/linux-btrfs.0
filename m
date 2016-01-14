@@ -1,61 +1,157 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:35686 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1754603AbcAMI6M (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 13 Jan 2016 03:58:12 -0500
-Date: Wed, 13 Jan 2016 09:55:46 +0100
-From: David Sterba <dsterba@suse.cz>
-To: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH v2 17/25] btrfs-progs: extent-tree: Enhance
- btrfs_record_file_extent
-Message-ID: <20160113085546.GO4227@suse.cz>
-Reply-To: dsterba@suse.cz
-References: <1448953905-28673-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1448953905-28673-18-git-send-email-quwenruo@cn.fujitsu.com>
- <20160112101720.GK4227@twin.jikos.cz>
- <56959B4D.5060603@cn.fujitsu.com>
+Received: from cn.fujitsu.com ([59.151.112.132]:18653 "EHLO
+	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
+	with ESMTP id S1751870AbcANGAD (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Thu, 14 Jan 2016 01:00:03 -0500
+Received: from G08CNEXCHPEKD02.g08.fujitsu.local (unknown [10.167.33.83])
+	by cn.fujitsu.com (Postfix) with ESMTP id 9B0554189162
+	for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 13:59:40 +0800 (CST)
+From: Qu Wenruo <quwenruo@cn.fujitsu.com>
+To: <linux-btrfs@vger.kernel.org>
+CC: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Subject: [PATCH v4 08/18] btrfs: ordered-extent: Add support for dedup
+Date: Thu, 14 Jan 2016 13:57:24 +0800
+Message-ID: <1452751054-2365-9-git-send-email-quwenruo@cn.fujitsu.com>
+In-Reply-To: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
+References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <56959B4D.5060603@cn.fujitsu.com>
+Content-Type: text/plain
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 13, 2016 at 08:33:17AM +0800, Qu Wenruo wrote:
-> 
-> 
-> David Sterba wrote on 2016/01/12 11:17 +0100:
-> > On Tue, Dec 01, 2015 at 03:11:37PM +0800, Qu Wenruo wrote:
-> >> --- a/extent-tree.c
-> >> +++ b/extent-tree.c
-> >> +static int __btrfs_record_file_extent(struct btrfs_trans_handle *trans,
-> >> +				      struct btrfs_root *root, u64 objectid,
-> >> +				      struct btrfs_inode_item *inode,
-> >> +				      u64 file_pos, u64 disk_bytenr,
-> >> +				      u64 *ret_num_bytes)
-> >>   {
-> >>   	int ret;
-> >>   	struct btrfs_fs_info *info = root->fs_info;
-> > ...
-> >> @@ -3999,25 +4003,80 @@ int btrfs_record_file_extent(struct btrfs_trans_handle *trans,
-> >>   		return ret;
-> >>   	}
-> >>
-> >> -	btrfs_init_path(&path);
-> >> +	path = btrfs_alloc_path();
-> >> +	if (!path)
-> >> +		return -ENOMEM;
-> >> +
-> > ...
-> >>   fail:
-> >> -	btrfs_release_path(&path);
-> >> +	btrfs_release_path(path);
-> >> +	return ret;
-> >
-> > Coverity correctly complains that path leaks here.
-> 
-> Oh, I should use btrfs_free_path().
-> 
-> Should I rebase the unmerged to patches to current devel and send it again?
+From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 
-Please hold on until 4.4 is released (at most a few days from now).
+Add ordered-extent support for dedup.
+
+Note, current ordered-extent support only supports non-compressed source
+extent.
+Support for compressed source extent will be added later.
+
+Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+---
+ fs/btrfs/ordered-data.c | 33 +++++++++++++++++++++++++++++----
+ fs/btrfs/ordered-data.h | 13 +++++++++++++
+ 2 files changed, 42 insertions(+), 4 deletions(-)
+
+diff --git a/fs/btrfs/ordered-data.c b/fs/btrfs/ordered-data.c
+index 8c27292..46493f5 100644
+--- a/fs/btrfs/ordered-data.c
++++ b/fs/btrfs/ordered-data.c
+@@ -25,6 +25,7 @@
+ #include "btrfs_inode.h"
+ #include "extent_io.h"
+ #include "disk-io.h"
++#include "dedup.h"
+ 
+ static struct kmem_cache *btrfs_ordered_extent_cache;
+ 
+@@ -183,12 +184,14 @@ static inline struct rb_node *tree_search(struct btrfs_ordered_inode_tree *tree,
+  */
+ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 				      u64 start, u64 len, u64 disk_len,
+-				      int type, int dio, int compress_type)
++				      int type, int dio, int compress_type,
++				      struct btrfs_dedup_hash *hash)
+ {
+ 	struct btrfs_root *root = BTRFS_I(inode)->root;
+ 	struct btrfs_ordered_inode_tree *tree;
+ 	struct rb_node *node;
+ 	struct btrfs_ordered_extent *entry;
++	struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
+ 
+ 	tree = &BTRFS_I(inode)->ordered_tree;
+ 	entry = kmem_cache_zalloc(btrfs_ordered_extent_cache, GFP_NOFS);
+@@ -203,6 +206,20 @@ static int __btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 	entry->inode = igrab(inode);
+ 	entry->compress_type = compress_type;
+ 	entry->truncated_len = (u64)-1;
++	entry->hash = NULL;
++	if (hash && dedup_info) {
++		entry->hash = btrfs_dedup_alloc_hash(dedup_info->hash_type);
++		if (!entry->hash) {
++			kmem_cache_free(btrfs_ordered_extent_cache, entry);
++			return -ENOMEM;
++		}
++		/* Hash contains locks, only copy what we need */
++		entry->hash->bytenr = hash->bytenr;
++		entry->hash->num_bytes = hash->num_bytes;
++		memcpy(entry->hash->hash, hash->hash,
++		       btrfs_dedup_sizes[dedup_info->hash_type]);
++	}
++
+ 	if (type != BTRFS_ORDERED_IO_DONE && type != BTRFS_ORDERED_COMPLETE)
+ 		set_bit(type, &entry->flags);
+ 
+@@ -249,15 +266,23 @@ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ {
+ 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
+ 					  disk_len, type, 0,
+-					  BTRFS_COMPRESS_NONE);
++					  BTRFS_COMPRESS_NONE, NULL);
+ }
+ 
++int btrfs_add_ordered_extent_dedup(struct inode *inode, u64 file_offset,
++				   u64 start, u64 len, u64 disk_len, int type,
++				   struct btrfs_dedup_hash *hash)
++{
++	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
++					  disk_len, type, 0,
++					  BTRFS_COMPRESS_NONE, hash);
++}
+ int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
+ 				 u64 start, u64 len, u64 disk_len, int type)
+ {
+ 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
+ 					  disk_len, type, 1,
+-					  BTRFS_COMPRESS_NONE);
++					  BTRFS_COMPRESS_NONE, NULL);
+ }
+ 
+ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
+@@ -266,7 +291,7 @@ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
+ {
+ 	return __btrfs_add_ordered_extent(inode, file_offset, start, len,
+ 					  disk_len, type, 0,
+-					  compress_type);
++					  compress_type, NULL);
+ }
+ 
+ /*
+diff --git a/fs/btrfs/ordered-data.h b/fs/btrfs/ordered-data.h
+index 23c9605..58519ce 100644
+--- a/fs/btrfs/ordered-data.h
++++ b/fs/btrfs/ordered-data.h
+@@ -139,6 +139,16 @@ struct btrfs_ordered_extent {
+ 	struct completion completion;
+ 	struct btrfs_work flush_work;
+ 	struct list_head work_list;
++
++	/*
++	 * For inband deduplication
++	 * If hash is NULL, no deduplication.
++	 * If hash->bytenr is zero, means this is a dedup miss, hash will
++	 * be added into dedup tree.
++	 * If hash->bytenr is non-zero, this is a dedup hit. Extent ref is
++	 * *ALREADY* increased.
++	 */
++	struct btrfs_dedup_hash *hash;
+ };
+ 
+ /*
+@@ -172,6 +182,9 @@ int btrfs_dec_test_first_ordered_pending(struct inode *inode,
+ 				   int uptodate);
+ int btrfs_add_ordered_extent(struct inode *inode, u64 file_offset,
+ 			     u64 start, u64 len, u64 disk_len, int type);
++int btrfs_add_ordered_extent_dedup(struct inode *inode, u64 file_offset,
++				   u64 start, u64 len, u64 disk_len, int type,
++				   struct btrfs_dedup_hash *hash);
+ int btrfs_add_ordered_extent_dio(struct inode *inode, u64 file_offset,
+ 				 u64 start, u64 len, u64 disk_len, int type);
+ int btrfs_add_ordered_extent_compress(struct inode *inode, u64 file_offset,
+-- 
+2.7.0
+
+
+

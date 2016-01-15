@@ -1,114 +1,194 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-afa65.mailout.artfiles.de ([212.72.176.65]:47750 "EHLO
-	mailout-afa65.mailout.artfiles.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1751107AbcAONdf (ORCPT
+Received: from mail-wm0-f41.google.com ([74.125.82.41]:33874 "EHLO
+	mail-wm0-f41.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750912AbcAON45 (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 08:33:35 -0500
-From: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
-To: Duncan <1i5t5.duncan@cox.net>
-Cc: linux-btrfs@vger.kernel.org
-Subject: Re: Recursive delete file from all subvolumes (snapshots)
-Date: Fri, 15 Jan 2016 14:33:27 +0100
-Message-ID: <5247876.zUN2tVm85X@discus>
-In-Reply-To: <pan$cd84a$7dd8a74d$a2b00ed6$e26c6f75@cox.net>
-References: <15624885.ucZm0n36hp@discus> <20160115140539.3afa66f0@natsu> <pan$cd84a$7dd8a74d$a2b00ed6$e26c6f75@cox.net>
+	Fri, 15 Jan 2016 08:56:57 -0500
+Received: by mail-wm0-f41.google.com with SMTP id u188so24142928wmu.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2016 05:56:56 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <56985B23.9040802@cn.fujitsu.com>
+References: <CA+9GZUjeXhvb0xHCrfxg3F+Os55EzSq+66009EAbqztwQM-VVQ@mail.gmail.com>
+ <56985B23.9040802@cn.fujitsu.com>
+From: "cheater00 ." <cheater00@gmail.com>
+Date: Fri, 15 Jan 2016 14:56:36 +0100
+Message-ID: <CA+9GZUgCMoBG_ZetkFy73oawpDKFEcBt+Gj9-eoOJ9PkK9ewjw@mail.gmail.com>
+Subject: Re: Crash on btrfs check
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Friday, January 15, 2016 11:48:11 AM CET Duncan wrote:
-> Roman Mamedov posted on Fri, 15 Jan 2016 14:05:39 +0500 as excerpted:
-> > On Fri, 15 Jan 2016 09:33:14 +0100 Wolfgang Mader
-> > 
-> > <Wolfgang_Mader@brain-frog.de> wrote:
-> >> I have a btrfs raid 10 from which I take hourly snapshots using
-> >> snapper.
-> 
-> Hopefully you have snapper setup with a good thinning program as well, as
-> ideally, you want to keep your snapshots to 250-ish per subvolume and a
-> thousand or two per filesystem, maximum, for scaling reasons, and hourly
-> snapshots will eat up that 250 target in 10 days, 10 hours...
-> 
-> But it's quite possible to start with hourly snapshots, thinning to say 6-
-> hourly (four per day, deleting 5/6) after a couple days, and continuing
-> to thin down to say weekly after several weeks, then keeping weekly
-> snapshots for a year before deleting them to recover the space and
-> resorting to proper backups if anything older needs recovered, and stay
-> under 200 snapshots per subvolume.
-> 
-> That'll help keep your btrfs healthy and your btrfs maintenance commands
-> (scrub, balance, check, etc), if needed, running in something like
-> reasonable time. =:^)
+Thanks for the help!
 
-Thanks to raise this point. Right now, I have some of my subvolumes snapshoted 
-w/o thinning, but I am aware of the issues arising from too many subvolumes. I 
-have to fix this in a timely manner...
-
-> 
-> >> Now, I wonder, if there is a way to delete a file together
-> >> with all its occurrences in all snapshots.
-> 
-> If the file was there at the time of the snapshot, it's part of the
-> snapshot and to remove it when deleting a file from the working set
-> rather defeats the purpose, tho of course with writable snapshots, you
-> can delete it from the snapshot manually (see RM's method below), and as
-> RM says, with read-only snapshots it's more complex but still possible
-> (see my reply under that bit, further below).
-> 
-> >> My use case is, that the file I want to delete is large, and I want to
-> >> free its space on disk. Thus, I have to get rid of its "live" version
-> >> but also of all references to it in snapshots.
-> > 
-> > E.g. if your file is at /path/to/file.dat, and your snapshot structure
-> > is /snapshots/YYYY-MM-DD@time/, you would simply do:
-> > 
-> > rm /snapshots/*/path/to/file.dat
-> > 
-> > In fact this is what I often do with my timed snapshots when deleting
-> > some files and wanting to recover free space immediately, not waiting
-> > for all their snapshots to expire and get deleted by the usual
-> > time-based deletion rules.
-> 
-> Of course that implies that the root containing all the snapshots is
-> itself mounted or otherwise nested in the mounted tree, somewhere.  The
-> recommendation is to keep it unmounted and not directly accessible, by
-> default, only mounting the snapshots root when you are directly working
-> with the snapshots.
-
-As far as I know, snapper puts its snapshots under .snapshots in the root of 
-the snapshoted subvolume. As I want to work with the subvolume, it is mounted, 
-and with it its snapshots. So, according to your answer, I should figure out 
-how to change the location at which snapper places its snapshots. The 
-subvolumes snapper creates as ro, which gives some protection against unwanted 
-changes.
-
-> 
-> Among other reasons, there's a security issue if you're snapshots contain
-> old executables including set-UID/GID executables, and they're security
-> updated.  If the old vulnerable versions remain accessible to ordinary
-> users, as they will if the snapshots remain routinely accessible within
-> the tree, then it's possible for a user to use them to gain the privs of
-> the user/group (typically root) they run as.  If these snapshots aren't
-> normally accessible in the tree, then users won't have access to them and
-> won't be able to use the old and vulnerable versions the snapshots
-> contain to privilege-escalate.
-
-While I can see the issue, I only have music and image files. So this should be 
-no problem for my setup. But good to keep this in mind.
-
-> 
-> Plus of course, if they're unmounted, they're less likely to be
-> accidentally damaged or deleted.
-> 
-> > If your snapshots are read-only it becomes more complex, but still
-> > doable.
-> 
-> Read-only is a snapshot property.  As such, it can be toggled via btrfs
-> property set calls.  So the idea here would be a script that loops thru
-> the snapshots, doing a btrfs property set writable, rm file, btrfs set
-> property read-only, for each snapshot.  Trivial enough shell script.  So
-> a bit more complex than if the snapshots are writable in the first place,
-> but far from unmanageably so. =:^)
-
-
+On Fri, Jan 15, 2016 at 3:36 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
+>
+>
+> cheater00 . wrote on 2016/01/15 03:25 +0100:
+>>
+>> Hi guys,
+>> I have a particularly full btrfs (nearly all of 6TB used on a disk).
+>> This is different than the fs I've experienced the resize bug on
+>> recently.
+>>
+>> btrfs check crashes on it:
+>>
+>> # btrfs check /dev/sdb1
+>> Checking filesystem on /dev/sdb1
+>> UUID: 95db96b3-96fe-4a12-810c-27c1dbd30b0d
+>> checking extents
+>> extent_io.c:543: __alloc_extent_buffer: Assertion failed.
+>> btrfs[0x80558a3]
+>> btrfs[0x8092971]
+>> btrfs(alloc_extent_buffer+0xb7)[0x8093494]
+>> btrfs(btrfs_find_create_tree_block+0x2b)[0x8083785]
+>> btrfs(read_tree_block+0x32)[0x808503f]
+>> btrfs(read_node_slot+0x63)[0x807f430]
+>> btrfs(btrfs_search_slot+0xb47)[0x8081a28]
+>> btrfs(btrfs_lookup_extent_info+0xd6)[0x808a0df]
+>> btrfs[0x806c13a]
+>> btrfs[0x806d95e]
+>> btrfs[0x806e5cb]
+>> btrfs(cmd_check+0x10f8)[0x8070fee]
+>> btrfs(main+0x14d)[0x8055acb]
+>> /lib/i386-linux-gnu/libc.so.6(__libc_start_main+0xf3)[0xb74f0a83]
+>> btrfs[0x8055af8]
+>>
+>>
+>>
+>> $ uname -a
+>> Linux SX20S 4.4.0-040400-generic #201601101930 SMP Mon Jan 11 00:49:33
+>> UTC 2016 i686 i686 i686 GNU/Linux
+>>
+>> $ btrfs --version
+>> btrfs-progs v4.3
+>>
+>> # btrfs fi show /dev/sdb1
+>> Label: 'A'  uuid: 95db96b3-96fe-4a12-810c-27c1dbd30b0d
+>>      Total devices 1 FS bytes used 5.41TiB
+>>      devid    1 size 5.46TiB used 5.46TiB path /dev/sdb1
+>>
+>> # btrfs-show-super /dev/sdb1
+>> superblock: bytenr=65536, device=/dev/sdb1
+>> ---------------------------------------------------------
+>> csum            0x116b97f0 [match]
+>> bytenr            65536
+>> flags            0x1
+>>              ( WRITTEN )
+>> magic            _BHRfS_M [match]
+>> fsid            95db96b3-96fe-4a12-810c-27c1dbd30b0d
+>> label            P
+>> generation        128737
+>> root            43384832
+>> sys_array_size        226
+>> chunk_root_generation    106809
+>> root_level        1
+>> chunk_root        20971520
+>> chunk_root_level    1
+>> log_root        0
+>> log_root_transid    0
+>> log_root_level        0
+>> total_bytes        6001173463040
+>> bytes_used        5948325072896
+>> sectorsize        4096
+>> nodesize        16384
+>> leafsize        16384
+>> stripesize        4096
+>> root_dir        6
+>> num_devices        1
+>> compat_flags        0x0
+>> compat_ro_flags        0x0
+>> incompat_flags        0x61
+>>              ( MIXED_BACKREF |
+>>                BIG_METADATA |
+>>                EXTENDED_IREF )
+>> csum_type        0
+>> csum_size        4
+>> cache_generation    128737
+>> uuid_tree_generation    128737
+>> dev_item.uuid        e2a8e731-b28c-437b-8cb9-583bb96aea5f
+>> dev_item.fsid        95db96b3-96fe-4a12-810c-27c1dbd30b0d [match]
+>> dev_item.type        0
+>> dev_item.total_bytes    6001173463040
+>> dev_item.bytes_used    6001173463040
+>> dev_item.io_align    4096
+>> dev_item.io_width    4096
+>> dev_item.sector_size    4096
+>> dev_item.devid        1
+>> dev_item.dev_group    0
+>> dev_item.seek_speed    0
+>> dev_item.bandwidth    0
+>> dev_item.generation    0
+>>
+>> # btrfs fi usage A
+>> Overall:
+>>      Device size:           5.46TiB
+>>      Device allocated:           5.46TiB
+>>      Device unallocated:             0.00B
+>>      Device missing:             0.00B
+>>      Used:               5.42TiB
+>>      Free (estimated):          35.41GiB    (min: 35.41GiB)
+>>      Data ratio:                  1.00
+>>      Metadata ratio:              2.00
+>>      Global reserve:         512.00MiB    (used: 0.00B)
+>>
+>> Data,single: Size:5.43TiB, Used:5.40TiB
+>>     /dev/sdb1       5.43TiB
+>>
+>> Metadata,single: Size:8.00MiB, Used:0.00B
+>>     /dev/sdb1       8.00MiB
+>>
+>> Metadata,DUP: Size:12.50GiB, Used:11.22GiB
+>>     /dev/sdb1      25.00GiB
+>>
+>> System,single: Size:4.00MiB, Used:0.00B
+>>     /dev/sdb1       4.00MiB
+>>
+>> System,DUP: Size:8.00MiB, Used:608.00KiB
+>>     /dev/sdb1      16.00MiB
+>>
+>> Unallocated:
+>>     /dev/sdb1         0.00B
+>>
+>> dmesg is showing a lot of stuff like this, but it only started doing
+>> this when I upgraded to linux 4.4, whereas before on 4.3 this didn't
+>> happen:
+>>
+>> [56319.486446] BTRFS critical (device sdb1): entry offset
+>> 6102519574528, bytes 20480, bitmap no
+>> [56319.486447] BTRFS critical (device sdb1): entry offset
+>> 6102527688704, bytes 24576, bitmap no
+>> [56319.486448] BTRFS critical (device sdb1): entry offset
+>> 6102528040960, bytes 8192, bitmap no
+>> [56319.486450] BTRFS critical (device sdb1): entry offset
+>> 6102536241152, bytes 8192, bitmap no
+>> [56319.486451] BTRFS critical (device sdb1): entry offset
+>> 6102561120256, bytes 8192, bitmap no
+>> [56319.486452] BTRFS critical (device sdb1): entry offset
+>> 6102590480384, bytes 4096, bitmap no
+>> [56319.486453] BTRFS critical (device sdb1): entry offset
+>> 6102620999680, bytes 12288, bitmap no
+>> [56319.486454] BTRFS critical (device sdb1): entry offset
+>> 6102633365504, bytes 16384, bitmap no
+>> [56319.486455] BTRFS info (device sdb1): block group has cluster?: no
+>> [56319.486456] BTRFS info (device sdb1): 1 blocks of free space at or
+>> bigger than bytes is
+>
+>
+> And this dmesg is not a big problem, just means space cache is wrong.
+>
+> Normally mount it with clear_cache should be able to make it disappear.
+>
+> Thanks,
+> Qu
+>
+>
+>> --
+>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>> the body of a message to majordomo@vger.kernel.org
+>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>
+>

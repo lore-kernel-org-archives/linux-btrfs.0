@@ -1,39 +1,32 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:55456 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1757190AbcAOJq4 (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:43631 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1751030AbcAOQMm (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 04:46:56 -0500
-From: Zhao Lei <zhaolei@cn.fujitsu.com>
-To: <dsterba@suse.cz>
-CC: "'Chris Mason'" <clm@fb.com>, "'btrfs'" <linux-btrfs@vger.kernel.org>
-References: <01ad01d14de4$b9489900$2bd9cb00$@cn.fujitsu.com> <20160114141710.GW4227@twin.jikos.cz>
-In-Reply-To: <20160114141710.GW4227@twin.jikos.cz>
-Subject: RE: [GIT PULL] Fujitsu for 4.5
-Date: Fri, 15 Jan 2016 17:46:42 +0800
-Message-ID: <01e901d14f79$a4adb660$ee092320$@cn.fujitsu.com>
+	Fri, 15 Jan 2016 11:12:42 -0500
+Date: Fri, 15 Jan 2016 11:12:24 -0500
+From: Chris Mason <clm@fb.com>
+To: <dsterba@suse.cz>, Zhao Lei <zhaolei@cn.fujitsu.com>,
+        "'btrfs'" <linux-btrfs@vger.kernel.org>
+Subject: Re: [GIT PULL] Fujitsu for 4.5
+Message-ID: <20160115161224.GA38730@clm-mbp.thefacebook.com>
+References: <01ad01d14de4$b9489900$2bd9cb00$@cn.fujitsu.com>
+ <20160114141710.GW4227@twin.jikos.cz>
 MIME-Version: 1.0
-Content-Type: text/plain; charset="utf-8"
+Content-Type: text/plain; charset="us-ascii"
+In-Reply-To: <20160114141710.GW4227@twin.jikos.cz>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hi, David Sterba
-
-> From: David Sterba [mailto:dsterba@suse.cz]
-> Sent: Thursday, January 14, 2016 10:17 PM
-> To: Zhao Lei <zhaolei@cn.fujitsu.com>
-> Cc: 'Chris Mason' <clm@fb.com>; 'btrfs' <linux-btrfs@vger.kernel.org>
-> Subject: Re: [GIT PULL] Fujitsu for 4.5
-> 
+On Thu, Jan 14, 2016 at 03:17:10PM +0100, David Sterba wrote:
 > On Wed, Jan 13, 2016 at 05:28:12PM +0800, Zhao Lei wrote:
 > > This is collection of some bug fix, enhance and cleanup from fujitsu
-> > against btrfs for v4.5, mainly for reada, plus some small fix and
-> > cleanup for scrub and raid56.
-> >
+> > against btrfs for v4.5, mainly for reada, plus some small fix and cleanup
+> > for scrub and raid56.
+> > 
 > > All patchs are in btrfs-maillist, rebased on top of integration-4.5.
-> >
-> > Would you please consider merging the following fixes to integration-4.5
-> branch?
+> > 
+> > Would you please consider merging the following fixes to integration-4.5 branch?
 > 
 > > Zhao Lei (26):
 > ...
@@ -54,19 +47,11 @@ Hi, David Sterba
 > 
 > I have reviewed the readahead patches and ack them for 4.5.
 
-Great thanks for reviewing these patchs.
+My plan is to send the first 4.5 pull on Monday with the current
+integration.  I hit an oom during overnight runs, and I'm double
+checking things after that.
 
-And following 3 patchs in this branch are also for readahead, but sorry that
-I forgot adding "reada" prefix in subject.
-  btrfs: Fix in-segment calculation for reada
-  btrfs: reduce additional fs_info->reada_lock in reada_find_zone
-  btrfs: Add missed segment checking in reada_find_zone
+I'll get the reada stuff merged for a second pull.
 
-Would you please consider helping me to review them?
-
-Thanks
-Zhaolei
-
-
-
+-chris
 

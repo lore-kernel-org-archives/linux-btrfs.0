@@ -1,16 +1,16 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:16305 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:53263 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1751577AbcAOCbr (ORCPT
+	with ESMTP id S1751652AbcAOCgj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 21:31:47 -0500
+	Thu, 14 Jan 2016 21:36:39 -0500
 Subject: Re: Crash on btrfs check
 To: "cheater00 ." <cheater00@gmail.com>,
         Btrfs BTRFS <linux-btrfs@vger.kernel.org>
 References: <CA+9GZUjeXhvb0xHCrfxg3F+Os55EzSq+66009EAbqztwQM-VVQ@mail.gmail.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56985A05.4050506@cn.fujitsu.com>
-Date: Fri, 15 Jan 2016 10:31:33 +0800
+Message-ID: <56985B23.9040802@cn.fujitsu.com>
+Date: Fri, 15 Jan 2016 10:36:19 +0800
 MIME-Version: 1.0
 In-Reply-To: <CA+9GZUjeXhvb0xHCrfxg3F+Os55EzSq+66009EAbqztwQM-VVQ@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
@@ -32,21 +32,6 @@ cheater00 . wrote on 2016/01/15 03:25 +0100:
 > UUID: 95db96b3-96fe-4a12-810c-27c1dbd30b0d
 > checking extents
 > extent_io.c:543: __alloc_extent_buffer: Assertion failed.
-
-This means memory allocation failed.
-
-And considering the size of FS, and how btrfsck caches metadata (btrfsck 
-will cache all extent info during extent tree check),
-it just mean your memory is not big enough to cache them all.
-
-
-It's already an known problem.
-Workaround is to increase your swap size until btrfsck can continue 
-without segfault.
-
-Thanks,
-Qu
-
 > btrfs[0x80558a3]
 > btrfs[0x8092971]
 > btrfs(alloc_extent_buffer+0xb7)[0x8093494]
@@ -182,6 +167,14 @@ Qu
 > [56319.486455] BTRFS info (device sdb1): block group has cluster?: no
 > [56319.486456] BTRFS info (device sdb1): 1 blocks of free space at or
 > bigger than bytes is
+
+And this dmesg is not a big problem, just means space cache is wrong.
+
+Normally mount it with clear_cache should be able to make it disappear.
+
+Thanks,
+Qu
+
 > --
 > To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
 > the body of a message to majordomo@vger.kernel.org

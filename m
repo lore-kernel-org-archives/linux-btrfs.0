@@ -1,74 +1,41 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-ob0-f182.google.com ([209.85.214.182]:33202 "EHLO
-	mail-ob0-f182.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754116AbcANOmi (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 09:42:38 -0500
-Received: by mail-ob0-f182.google.com with SMTP id is5so84500103obc.0
-        for <linux-btrfs@vger.kernel.org>; Thu, 14 Jan 2016 06:42:37 -0800 (PST)
-MIME-Version: 1.0
-In-Reply-To: <20160114124748.GV4227@suse.cz>
-References: <20160114124748.GV4227@suse.cz>
-From: Noah Massey <noah.massey@gmail.com>
-Date: Thu, 14 Jan 2016 09:41:58 -0500
-Message-ID: <CADfjVrjSDsD84MJ=kaXNFMj_Mgjnf5_nskROyt=nuTGgTJO3ew@mail.gmail.com>
-Subject: Re: Btrfs progs pre-release 4.4-rc1
-To: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        clm@fb.com
-Content-Type: text/plain; charset=UTF-8
+Received: from mail.kernel.org ([198.145.29.136]:36898 "EHLO mail.kernel.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751120AbcAOK4c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Jan 2016 05:56:32 -0500
+From: fdmanana@kernel.org
+To: linux-btrfs@vger.kernel.org
+Cc: Filipe Manana <fdmanana@suse.com>
+Subject: [PATCH] Btrfs: fix typo in log message when starting a balance
+Date: Fri, 15 Jan 2016 10:56:15 +0000
+Message-Id: <1452855375-17633-1-git-send-email-fdmanana@kernel.org>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 14, 2016 at 7:47 AM, David Sterba <dsterba@suse.cz> wrote:
-> Hi,
->
-> the btrfs-progs 4.4-rc1 has been tagged. This is a heads-up before the release
-> (ETA tmorrow). Please give it some testing.
+From: Filipe Manana <fdmanana@suse.com>
 
-$ ./autogen.sh && ./configure && make static
+The recent change titled "Btrfs: Check metadata redundancy on balance"
+(already in linux-next) left a typo in a message for users:
+metatdata -> metadata.
 
-Generate build-system by:
-   aclocal:    aclocal (GNU automake) 1.15
-   autoconf:   autoconf (GNU Autoconf) 2.69
-   autoheader: autoheader (GNU Autoconf) 2.69
-   automake:   automake (GNU automake) 1.15
+Signed-off-by: Filipe Manana <fdmanana@suse.com>
+---
+ fs/btrfs/volumes.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-....
-    [LD]     btrfs.static
-help.static.o: In function `usage_command':
-/usr/local/src/btrfs-progs/help.c:120: multiple definition of `usage_command'
-help.static.o:/usr/local/src/btrfs-progs/help.c:120: first defined here
-help.static.o: In function `usage':
-help.c:(.text.usage+0x0): multiple definition of `usage'
-help.static.o:help.c:(.text.usage+0x0): first defined here
-help.static.o: In function `usage_command_group_short':
-help.c:(.text.usage_command_group_short+0x0): multiple definition of
-`usage_command_group_short'
-help.static.o:help.c:(.text.usage_command_group_short+0x0): first defined here
-help.static.o: In function `usage_command_group':
-help.c:(.text.usage_command_group+0x0): multiple definition of
-`usage_command_group'
-help.static.o:help.c:(.text.usage_command_group+0x0): first defined here
-help.static.o: In function `help_unknown_token':
-help.c:(.text.help_unknown_token+0x0): multiple definition of
-`help_unknown_token'
-help.static.o:help.c:(.text.help_unknown_token+0x0): first defined here
-help.static.o: In function `help_command_group':
-help.c:(.text.help_command_group+0x0): multiple definition of
-`help_command_group'
-help.static.o:help.c:(.text.help_command_group+0x0): first defined here
-help.static.o: In function `prefixcmp':
-help.c:(.text.prefixcmp+0x0): multiple definition of `prefixcmp'
-help.static.o:help.c:(.text.prefixcmp+0x0): first defined here
-help.static.o: In function `help_ambiguous_token':
-help.c:(.text.help_ambiguous_token+0x0): multiple definition of
-`help_ambiguous_token'
-help.static.o:help.c:(.text.help_ambiguous_token+0x0): first defined here
-collect2: error: ld returned 1 exit status
-Makefile:269: recipe for target 'btrfs.static' failed
-make: *** [btrfs.static] Error 1
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index c32abbc..b59db3e 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -3751,7 +3751,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
+ 	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
+ 		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
+ 		btrfs_warn(fs_info,
+-	"metatdata profile 0x%llx has lower redundancy than data profile 0x%llx",
++	"metadata profile 0x%llx has lower redundancy than data profile 0x%llx",
+ 			bctl->meta.target, bctl->data.target);
+ 	}
+ 
+-- 
+2.7.0.rc3
 
-
-git bisect blames  a6cc8ea10ad84e4b7d1303ed048e644f0dd7ae04
-
-~ Noah

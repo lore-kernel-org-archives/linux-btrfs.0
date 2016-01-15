@@ -1,34 +1,68 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mailout-afa65.mailout.artfiles.de ([212.72.176.65]:52324 "EHLO
-	mailout-afa65.mailout.artfiles.de" rhost-flags-OK-OK-OK-OK)
-	by vger.kernel.org with ESMTP id S1750810AbcAOIsI (ORCPT
+Received: from meiko.romanrm.net ([195.154.92.155]:55312 "EHLO
+	meiko.romanrm.net" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752183AbcAOJFo (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 03:48:08 -0500
-Received: from [132.230.80.54] (helo=discus.localnet)
-	auth=Wolfgang_Mader@brain-frog.de
-	by mailout.artfiles.de with esmtpsa (TLS1.2:DHE_RSA_AES_256_CBC_SHA256:256)
-	(Exim 4.80.1)
-	id 1aJzoq-0007qx-Cg
-	for linux-btrfs@vger.kernel.org; Fri, 15 Jan 2016 09:33:16 +0100
-From: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
-To: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
-Subject: Recursive delete file from all subvolumes (snapshots)
-Date: Fri, 15 Jan 2016 09:33:14 +0100
-Message-ID: <15624885.ucZm0n36hp@discus>
-MIME-Version: 1.0
-Content-Type: text/plain; charset="us-ascii"
+	Fri, 15 Jan 2016 04:05:44 -0500
+Date: Fri, 15 Jan 2016 14:05:39 +0500
+From: Roman Mamedov <rm@romanrm.net>
+To: Wolfgang Mader <Wolfgang_Mader@brain-frog.de>
+Cc: Btrfs BTRFS <linux-btrfs@vger.kernel.org>
+Subject: Re: Recursive delete file from all subvolumes (snapshots)
+Message-ID: <20160115140539.3afa66f0@natsu>
+In-Reply-To: <15624885.ucZm0n36hp@discus>
+References: <15624885.ucZm0n36hp@discus>
+Mime-Version: 1.0
+Content-Type: multipart/signed; micalg=PGP-SHA1;
+ boundary="Sig_/eNgU1.l6aolUKxiTmmIfSka"; protocol="application/pgp-signature"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Dear all,
+--Sig_/eNgU1.l6aolUKxiTmmIfSka
+Content-Type: text/plain; charset=US-ASCII
+Content-Transfer-Encoding: quoted-printable
 
-I have a btrfs raid 10 from which I take hourly snapshots using snapper. Now, 
-I wonder, if there is a way to delete a file together with all its occurrences 
-in all snapshots.
+On Fri, 15 Jan 2016 09:33:14 +0100
+Wolfgang Mader <Wolfgang_Mader@brain-frog.de> wrote:
 
-My use case is, that the file I want to delete is large, and I want to free its 
-space on disk. Thus, I have to get rid of its "live" version but also of all 
-references to it in snapshots.
+> I have a btrfs raid 10 from which I take hourly snapshots using snapper. =
+Now,=20
+> I wonder, if there is a way to delete a file together with all its occurr=
+ences=20
+> in all snapshots.
+>=20
+> My use case is, that the file I want to delete is large, and I want to fr=
+ee its=20
+> space on disk. Thus, I have to get rid of its "live" version but also of =
+all=20
+> references to it in snapshots.
 
-Thank,
-Wolfgang
+E.g. if your file is at /path/to/file.dat, and your snapshot structure is=20
+/snapshots/YYYY-MM-DD@time/, you would simply do:
+
+rm /snapshots/*/path/to/file.dat
+
+In fact this is what I often do with my timed snapshots when deleting some
+files and wanting to recover free space immediately, not waiting for all th=
+eir
+snapshots to expire and get deleted by the usual time-based deletion rules.
+
+If your snapshots are read-only it becomes more complex, but still doable.
+
+--=20
+With respect,
+Roman
+
+--Sig_/eNgU1.l6aolUKxiTmmIfSka
+Content-Type: application/pgp-signature; name=signature.asc
+Content-Disposition: attachment; filename=signature.asc
+
+-----BEGIN PGP SIGNATURE-----
+Version: GnuPG v1
+
+iEYEARECAAYFAlaYtmMACgkQTLKSvz+PZwi3RgCfQyXVrpYVRcG88kjh6m3ERTMQ
+yV0AoImpeb/Kp5t2gpRpL/DTQopQI3th
+=BqG/
+-----END PGP SIGNATURE-----
+
+--Sig_/eNgU1.l6aolUKxiTmmIfSka--

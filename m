@@ -1,41 +1,62 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail.kernel.org ([198.145.29.136]:36898 "EHLO mail.kernel.org"
+Received: from mx2.suse.de ([195.135.220.15]:38869 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1751120AbcAOK4c (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 05:56:32 -0500
-From: fdmanana@kernel.org
-To: linux-btrfs@vger.kernel.org
-Cc: Filipe Manana <fdmanana@suse.com>
-Subject: [PATCH] Btrfs: fix typo in log message when starting a balance
-Date: Fri, 15 Jan 2016 10:56:15 +0000
-Message-Id: <1452855375-17633-1-git-send-email-fdmanana@kernel.org>
+	id S1753108AbcAOMnE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Jan 2016 07:43:04 -0500
+Date: Fri, 15 Jan 2016 13:43:01 +0100
+From: David Sterba <dsterba@suse.cz>
+To: Noah Massey <noah.massey@gmail.com>
+Cc: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>,
+        clm@fb.com
+Subject: Static build fixed (Was: Re: Btrfs progs pre-release 4.4-rc1
+Message-ID: <20160115124301.GD4227@twin.jikos.cz>
+Reply-To: dsterba@suse.cz
+References: <20160114124748.GV4227@suse.cz>
+ <CADfjVrjSDsD84MJ=kaXNFMj_Mgjnf5_nskROyt=nuTGgTJO3ew@mail.gmail.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset=us-ascii
+In-Reply-To: <CADfjVrjSDsD84MJ=kaXNFMj_Mgjnf5_nskROyt=nuTGgTJO3ew@mail.gmail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Filipe Manana <fdmanana@suse.com>
+On Thu, Jan 14, 2016 at 09:41:58AM -0500, Noah Massey wrote:
+>     [LD]     btrfs.static
+> help.static.o: In function `usage_command':
+> /usr/local/src/btrfs-progs/help.c:120: multiple definition of `usage_command'
+> help.static.o:/usr/local/src/btrfs-progs/help.c:120: first defined here
+...
+> 
+> git bisect blames  a6cc8ea10ad84e4b7d1303ed048e644f0dd7ae04
 
-The recent change titled "Btrfs: Check metadata redundancy on balance"
-(already in linux-next) left a typo in a message for users:
-metatdata -> metadata.
+Thanks, I'm committing the following patch as you found the fix faster.
 
-Signed-off-by: Filipe Manana <fdmanana@suse.com>
 ---
- fs/btrfs/volumes.c | 2 +-
- 1 file changed, 1 insertion(+), 1 deletion(-)
+commit 1bb0bba1b625eec1bd288699f10c8855034daef1
+Author: Noah Massey <noah.massey@gmail.com>
+Date:   Fri Jan 15 13:31:01 2016 +0100
 
-diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
-index c32abbc..b59db3e 100644
---- a/fs/btrfs/volumes.c
-+++ b/fs/btrfs/volumes.c
-@@ -3751,7 +3751,7 @@ int btrfs_balance(struct btrfs_balance_control *bctl,
- 	if (btrfs_get_num_tolerated_disk_barrier_failures(bctl->meta.target) <
- 		btrfs_get_num_tolerated_disk_barrier_failures(bctl->data.target)) {
- 		btrfs_warn(fs_info,
--	"metatdata profile 0x%llx has lower redundancy than data profile 0x%llx",
-+	"metadata profile 0x%llx has lower redundancy than data profile 0x%llx",
- 			bctl->meta.target, bctl->data.target);
- 	}
- 
--- 
-2.7.0.rc3
+    btrfs-progs: fix static build
 
+    Change in "btrfs-progs: introduce helper for parsing args without
+    options" added a dependency on help.o that was duplicated for the static
+    build.
+
+    Signed-off-by: Noah Massey <noah.massey@gmail.com>
+    Signed-off-by: David Sterba <dsterba@suse.com>
+
+diff --git a/Makefile.in b/Makefile.in
+index 1bd497aca469..19697ffaf0bf 100644
+--- a/Makefile.in
++++ b/Makefile.in
+@@ -265,9 +265,9 @@ btrfs: $(objects) btrfs.o $(cmds_objects) $(libs_static)
+        $(Q)$(CC) $(CFLAGS) -o btrfs btrfs.o $(cmds_objects) \
+                $(objects) $(libs_static) $(LDFLAGS) $(LIBS)
+
+-btrfs.static: $(static_objects) btrfs.static.o help.static.o $(static_cmds_objects) $(static_libbtrfs_objects)
++btrfs.static: $(static_objects) btrfs.static.o $(static_cmds_objects) $(static_libbtrfs_objects)
+        @echo "    [LD]     $@"
+-       $(Q)$(CC) $(STATIC_CFLAGS) -o btrfs.static btrfs.static.o help.static.o $(static_cmds_objects) \
++       $(Q)$(CC) $(STATIC_CFLAGS) -o btrfs.static btrfs.static.o $(static_cmds_objects) \
+                $(static_objects) $(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS)
+
+ # For backward compatibility, 'btrfs' changes behaviour to fsck if it's named 'btrfsck'

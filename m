@@ -1,62 +1,33 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:38869 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:40266 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S1753108AbcAOMnE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 07:43:04 -0500
-Date: Fri, 15 Jan 2016 13:43:01 +0100
+	id S1753959AbcAOMy3 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Jan 2016 07:54:29 -0500
+Date: Fri, 15 Jan 2016 13:54:24 +0100
 From: David Sterba <dsterba@suse.cz>
-To: Noah Massey <noah.massey@gmail.com>
-Cc: David Sterba <dsterba@suse.cz>, linux-btrfs <linux-btrfs@vger.kernel.org>,
-        clm@fb.com
-Subject: Static build fixed (Was: Re: Btrfs progs pre-release 4.4-rc1
-Message-ID: <20160115124301.GD4227@twin.jikos.cz>
+To: Holger =?iso-8859-1?Q?Hoffst=E4tte?=
+	<holger.hoffstaette@googlemail.com>
+Cc: dsterba@suse.cz, linux-btrfs@vger.kernel.org, clm@fb.com
+Subject: Re: Btrfs progs pre-release 4.4-rc1
+Message-ID: <20160115125424.GE4227@twin.jikos.cz>
 Reply-To: dsterba@suse.cz
 References: <20160114124748.GV4227@suse.cz>
- <CADfjVrjSDsD84MJ=kaXNFMj_Mgjnf5_nskROyt=nuTGgTJO3ew@mail.gmail.com>
+ <5697A734.1000700@googlemail.com>
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <CADfjVrjSDsD84MJ=kaXNFMj_Mgjnf5_nskROyt=nuTGgTJO3ew@mail.gmail.com>
+Content-Type: text/plain; charset=iso-8859-1
+In-Reply-To: <5697A734.1000700@googlemail.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Thu, Jan 14, 2016 at 09:41:58AM -0500, Noah Massey wrote:
->     [LD]     btrfs.static
-> help.static.o: In function `usage_command':
-> /usr/local/src/btrfs-progs/help.c:120: multiple definition of `usage_command'
-> help.static.o:/usr/local/src/btrfs-progs/help.c:120: first defined here
-...
+On Thu, Jan 14, 2016 at 02:48:36PM +0100, Holger Hoffstätte wrote:
+> On 01/14/16 13:47, David Sterba wrote:
+> [..]
+> > * free space tree (aka space_cache=v2, kernel 4.5+)
 > 
-> git bisect blames  a6cc8ea10ad84e4b7d1303ed048e644f0dd7ae04
+> I'd like to suggest to maybe add a BIG WARNING to the release notes that
+> enabling the fst will currently prevent btrfsck from fixing a filesystem,
+> due to the incompatible feature flag.
 
-Thanks, I'm committing the following patch as you found the fix faster.
-
----
-commit 1bb0bba1b625eec1bd288699f10c8855034daef1
-Author: Noah Massey <noah.massey@gmail.com>
-Date:   Fri Jan 15 13:31:01 2016 +0100
-
-    btrfs-progs: fix static build
-
-    Change in "btrfs-progs: introduce helper for parsing args without
-    options" added a dependency on help.o that was duplicated for the static
-    build.
-
-    Signed-off-by: Noah Massey <noah.massey@gmail.com>
-    Signed-off-by: David Sterba <dsterba@suse.com>
-
-diff --git a/Makefile.in b/Makefile.in
-index 1bd497aca469..19697ffaf0bf 100644
---- a/Makefile.in
-+++ b/Makefile.in
-@@ -265,9 +265,9 @@ btrfs: $(objects) btrfs.o $(cmds_objects) $(libs_static)
-        $(Q)$(CC) $(CFLAGS) -o btrfs btrfs.o $(cmds_objects) \
-                $(objects) $(libs_static) $(LDFLAGS) $(LIBS)
-
--btrfs.static: $(static_objects) btrfs.static.o help.static.o $(static_cmds_objects) $(static_libbtrfs_objects)
-+btrfs.static: $(static_objects) btrfs.static.o $(static_cmds_objects) $(static_libbtrfs_objects)
-        @echo "    [LD]     $@"
--       $(Q)$(CC) $(STATIC_CFLAGS) -o btrfs.static btrfs.static.o help.static.o $(static_cmds_objects) \
-+       $(Q)$(CC) $(STATIC_CFLAGS) -o btrfs.static btrfs.static.o $(static_cmds_objects) \
-                $(static_objects) $(static_libbtrfs_objects) $(STATIC_LDFLAGS) $(STATIC_LIBS)
-
- # For backward compatibility, 'btrfs' changes behaviour to fsck if it's named 'btrfsck'
+Thanks for the notice.  As the free-space-tree patches are not in any
+released kernel, this should affect only developers. Btrfs-progs 4.5
+is supposed to work with f-s-t.

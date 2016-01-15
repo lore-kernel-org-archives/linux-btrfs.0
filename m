@@ -1,34 +1,55 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44182 "EHLO mx2.suse.de"
-	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S934728AbcATSEj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Wed, 20 Jan 2016 13:04:39 -0500
-Date: Wed, 20 Jan 2016 19:04:30 +0100
-From: David Sterba <dsterba@suse.cz>
-To: dsterba@suse.cz, Qu Wenruo <quwenruo@cn.fujitsu.com>,
-        linux-btrfs@vger.kernel.org, clm@fb.com
-Subject: Re: Btrfs progs release 4.4
-Message-ID: <20160120180430.GO4227@twin.jikos.cz>
-Reply-To: dsterba@suse.cz
-References: <20160118130626.GK4227@suse.cz>
- <569EFA89.7080600@cn.fujitsu.com>
- <20160120091956.GN4227@suse.cz>
-MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160120091956.GN4227@suse.cz>
+Received: from www.linutronix.de ([62.245.132.108]:38085 "EHLO
+	Galois.linutronix.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1750729AbcAONh0 (ORCPT
+	<rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Jan 2016 08:37:26 -0500
+From: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+To: Chris Mason <clm@fb.com>
+Cc: Josef Bacik <jbacik@fb.com>, David Sterba <dsterba@suse.com>,
+        linux-btrfs@vger.kernel.org, tglx@linutronix.de,
+        Miao Xie <miaox@cn.fujitsu.com>,
+        Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+Subject: [PATCH] btrfs: initialize the seq counter in struct btrfs_device
+Date: Fri, 15 Jan 2016 14:37:15 +0100
+Message-Id: <1452865035-19681-1-git-send-email-bigeasy@linutronix.de>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Wed, Jan 20, 2016 at 10:19:56AM +0100, David Sterba wrote:
-> On Wed, Jan 20, 2016 at 11:10:01AM +0800, Qu Wenruo wrote:
-> > Not sure if it's intended or just a small miss, in btrfs-progs ctree.h,
-> > there is BTRFS_FEATURE_COMPAT_RO_FREE_SPACE_TREE, but
-> > BTRFS_FEATURE_COMPAT_RO_SUPP is still 0, not including FREE_SPACE_TREE.
-> > 
-> > Is it intended as current btrfsck doesn't support to modify fs with new 
-> > free space cache tree?
-> 
-> In progs it's unintended and buggy, the kernel side is buggy as well.
-> I'm fixing it.
+I managed to trigger this:
+| INFO: trying to register non-static key.
+| the code is fine but needs lockdep annotation.
+| turning off the locking correctness validator.
+| CPU: 1 PID: 781 Comm: systemd-gpt-aut Not tainted 4.4.0-rt2+ #14
+| Hardware name: ARM-Versatile Express
+| [<80307cec>] (dump_stack)
+| [<80070e98>] (__lock_acquire)
+| [<8007184c>] (lock_acquire)
+| [<80287800>] (btrfs_ioctl)
+| [<8012a8d4>] (do_vfs_ioctl)
+| [<8012ac14>] (SyS_ioctl)
 
-So it's just the btrfs-progs side, kernel side is fine.
+so I think that btrfs_device_data_ordered_init() is not invoked behind
+a macro somewhere.
+
+Fixes: 7cc8e58d53cd ("Btrfs: fix unprotected device's variants on 32bits machine")
+Signed-off-by: Sebastian Andrzej Siewior <bigeasy@linutronix.de>
+---
+ fs/btrfs/volumes.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index a23399e8e3ab..1fc2e13fc2c1 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -232,6 +232,7 @@ static struct btrfs_device *__alloc_device(void)
+ 	spin_lock_init(&dev->reada_lock);
+ 	atomic_set(&dev->reada_in_flight, 0);
+ 	atomic_set(&dev->dev_stats_ccnt, 0);
++	btrfs_device_data_ordered_init(dev);
+ 	INIT_RADIX_TREE(&dev->reada_zones, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+ 	INIT_RADIX_TREE(&dev->reada_extents, GFP_NOFS & ~__GFP_DIRECT_RECLAIM);
+ 
+-- 
+2.7.0.rc3
+

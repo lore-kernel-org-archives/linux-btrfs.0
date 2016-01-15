@@ -1,142 +1,118 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:64609 "EHLO
+Received: from cn.fujitsu.com ([59.151.112.132]:38205 "EHLO
 	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750884AbcAOBhk (ORCPT
+	with ESMTP id S1751930AbcAOBlg (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 20:37:40 -0500
-Subject: Re: [PATCH v4 17/18] btrfs: dedup: add a property handler for online
- dedup
+	Thu, 14 Jan 2016 20:41:36 -0500
+Subject: Re: [PATCH v4 07/18] btrfs: dedup: Implement btrfs_dedup_calc_hash
+ interface
 To: <fdmanana@gmail.com>
 References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1452751054-2365-18-git-send-email-quwenruo@cn.fujitsu.com>
- <CAL3q7H4-Ztmx9Z4=jNT3610Y6eZbL5GqZXXOajYg3FoP_uyxYA@mail.gmail.com>
+ <1452751054-2365-8-git-send-email-quwenruo@cn.fujitsu.com>
+ <CAL3q7H4gpHUCZrBK6WLJMhDaj+j_gJJguZwTVzLO6E0eR0fgNw@mail.gmail.com>
 CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
         Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56984D50.3040106@cn.fujitsu.com>
-Date: Fri, 15 Jan 2016 09:37:20 +0800
+Message-ID: <56984E3D.50703@cn.fujitsu.com>
+Date: Fri, 15 Jan 2016 09:41:17 +0800
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H4-Ztmx9Z4=jNT3610Y6eZbL5GqZXXOajYg3FoP_uyxYA@mail.gmail.com>
+In-Reply-To: <CAL3q7H4gpHUCZrBK6WLJMhDaj+j_gJJguZwTVzLO6E0eR0fgNw@mail.gmail.com>
 Content-Type: text/plain; charset="utf-8"; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
 
 
-Filipe Manana wrote on 2016/01/14 09:56 +0000:
+Filipe Manana wrote on 2016/01/14 10:08 +0000:
 > On Thu, Jan 14, 2016 at 5:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >> From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 >>
->> We use btrfs extended attribute "btrfs.dedup" to record per-file online
->> dedup status, so add a dedup property handler.
+>> Unlike in-memory or on-disk dedup method, only SHA256 hash method is
+>> supported yet, so implement btrfs_dedup_calc_hash() interface using
+>> SHA256.
 >>
+>> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
 >> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
 >> ---
->>   fs/btrfs/props.c | 40 ++++++++++++++++++++++++++++++++++++++++
->>   1 file changed, 40 insertions(+)
+>>   fs/btrfs/dedup.c | 57 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+>>   1 file changed, 57 insertions(+)
 >>
->> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
->> index f9e6023..ae8b76d 100644
->> --- a/fs/btrfs/props.c
->> +++ b/fs/btrfs/props.c
->> @@ -41,6 +41,10 @@ static int prop_compression_apply(struct inode *inode,
->>                                    size_t len);
->>   static const char *prop_compression_extract(struct inode *inode);
->>
->> +static int prop_dedup_validate(const char *value, size_t len);
->> +static int prop_dedup_apply(struct inode *inode, const char *value, size_t len);
->> +static const char *prop_dedup_extract(struct inode *inode);
->> +
->>   static struct prop_handler prop_handlers[] = {
->>          {
->>                  .xattr_name = XATTR_BTRFS_PREFIX "compression",
->> @@ -49,6 +53,13 @@ static struct prop_handler prop_handlers[] = {
->>                  .extract = prop_compression_extract,
->>                  .inheritable = 1
->>          },
->> +       {
->> +               .xattr_name = XATTR_BTRFS_PREFIX "dedup",
->> +               .validate = prop_dedup_validate,
->> +               .apply = prop_dedup_apply,
->> +               .extract = prop_dedup_extract,
->> +               .inheritable = 1
->> +       },
->>   };
->>
->>   void __init btrfs_props_init(void)
->> @@ -425,4 +436,33 @@ static const char *prop_compression_extract(struct inode *inode)
->>          return NULL;
+>> diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
+>> index d6ee576..8860916 100644
+>> --- a/fs/btrfs/dedup.c
+>> +++ b/fs/btrfs/dedup.c
+>> @@ -465,3 +465,60 @@ int btrfs_dedup_search(struct inode *inode, u64 file_pos,
+>>          }
+>>          return ret;
 >>   }
->>
->> +static int prop_dedup_validate(const char *value, size_t len)
->> +{
->> +       if (!strncmp("disable", value, len))
->> +               return 0;
 >> +
->> +       return -EINVAL;
+>> +static int hash_data(struct btrfs_dedup_info *dedup_info, const char *data,
+>> +                    u64 length, struct btrfs_dedup_hash *hash)
+>> +{
+>> +       struct crypto_shash *tfm = dedup_info->dedup_driver;
+>> +       struct {
+>> +               struct shash_desc desc;
+>> +               char ctx[crypto_shash_descsize(tfm)];
+>> +       } sdesc;
+>> +       int ret;
+>> +
+>> +       sdesc.desc.tfm = tfm;
+>> +       sdesc.desc.flags = 0;
+>> +
+>> +       ret = crypto_shash_digest(&sdesc.desc, data, length,
+>> +                                 (char *)(hash->hash));
+>> +       return ret;
 >> +}
 >> +
->> +static int prop_dedup_apply(struct inode *inode, const char *value, size_t len)
+>> +int btrfs_dedup_calc_hash(struct btrfs_root *root, struct inode *inode,
+>> +                         u64 start, struct btrfs_dedup_hash *hash)
 >> +{
->> +       if (len == 0) {
->> +               BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUP;
+>> +       struct page *p;
+>> +       struct btrfs_dedup_info *dedup_info = root->fs_info->dedup_info;
+>> +       char *data;
+>> +       int i;
+>> +       int ret;
+>> +       u64 dedup_bs;
+>> +       u64 sectorsize = root->sectorsize;
+>> +
+>> +       if (!dedup_info || !hash)
 >> +               return 0;
->> +       }
 >> +
->> +       if (!strncmp("disable", value, len)) {
->> +               BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUP;
->> +               return 0;
->> +       }
+>> +       WARN_ON(!IS_ALIGNED(start, sectorsize));
 >> +
->> +       return -EINVAL;
->> +}
+>> +       dedup_bs = dedup_info->blocksize;
+>> +       sectorsize = root->sectorsize;
 >> +
->> +static const char *prop_dedup_extract(struct inode *inode)
->> +{
->> +       if (BTRFS_I(inode)->flags | BTRFS_INODE_NODEDUP)
->> +               return "disable";
+>> +       data = kmalloc(dedup_bs, GFP_NOFS);
+>> +       if (!data)
+>> +               return -ENOMEM;
+>> +       for (i = 0; sectorsize * i < dedup_bs; i++) {
+>> +               char *d;
+>> +
+>> +               /* TODO: Add support for subpage size case */
+>> +               p = find_get_page(inode->i_mapping,
+>> +                                 (start >> PAGE_CACHE_SHIFT) + i);
+>> +               WARN_ON(!p);
 >
-> | -> &
->
-> How about writing test cases (for xfstests)? Not only for the property
-> but for the whole dedup feature, it would avoid such simple
-> mistakes...
+> If !p, we should return with an error too, otherwise we'll get a null
+> pointer dereference below.
 
-Yes, it's already in our schedule and we have some internal simple test 
-case.
+Right, and that's also true for all the caller of find_get_page() in btrfs.
 
-But the problem is,
-Some behavior/format is not completely determined yet
-Especially for on-disk format (ondisk backend only), and ioctl interface.
+I'll also locate and fix them in another patch before btrfs dedup patchset.
 
-So I'm a little concerned about submit them too early before we made 
-final decision on the ioctl interface.
-
-> Take a look at the good example of xfs development. For example when
-> all the recent patches for their reflink implementation was posted
-> (and before getting merged), a comprehensive set of test cases for
-> xfstests was also posted...
-
-Yes, test driven development is very nice, but there is also problem, 
-especially for btrfs, like btrfs/047 which needs btrfs send 
---stream-version support.
-
-But unfortunately, there is not --stream-version support in upsteam 
-btrfs-progs and the test case never get executed on upsteam btrfs-progs.
-
-Personally speaking, xfs development can only happen in that way because 
-xfstest maintainer is also the maintainer of xfs.
-As Dave knows every aspect of xfs and can determine which feature will 
-be merged.
-But that's not true for btrfs, so he can merge wrong patch and cause 
-inconsistent with what btrfs really supports between test cases.
-
-Thanks,
+Thanks for the review and hint.
 Qu
 
 >
->>
->> +       return NULL;
+>> +               d = kmap_atomic(p);
+>> +               memcpy((data + sectorsize * i), d, sectorsize);
+>> +               kunmap_atomic(d);
+>> +               page_cache_release(p);
+>> +       }
+>> +       ret = hash_data(dedup_info, data, dedup_bs, hash);
+>> +       kfree(data);
+>> +       return ret;
 >> +}
 >> --
 >> 2.7.0

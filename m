@@ -1,179 +1,200 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:20805 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750805AbcAOBny (ORCPT
+Received: from mail-ig0-f194.google.com ([209.85.213.194]:34083 "EHLO
+	mail-ig0-f194.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1751381AbcAOJTa (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 20:43:54 -0500
-Subject: Re: [PATCH v4 13/18] btrfs: dedup: Add support to delete hash for
- on-disk backend
-To: <fdmanana@gmail.com>
-References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
- <1452751054-2365-14-git-send-email-quwenruo@cn.fujitsu.com>
- <CAL3q7H4fJvm_xNSgXNTk0cgfbPUA5Gfja5waU+RkHu+TCzEmuw@mail.gmail.com>
-CC: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
-        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <56984ECF.5030305@cn.fujitsu.com>
-Date: Fri, 15 Jan 2016 09:43:43 +0800
+	Fri, 15 Jan 2016 04:19:30 -0500
+Received: by mail-ig0-f194.google.com with SMTP id ik10so772553igb.1
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2016 01:19:29 -0800 (PST)
 MIME-Version: 1.0
-In-Reply-To: <CAL3q7H4fJvm_xNSgXNTk0cgfbPUA5Gfja5waU+RkHu+TCzEmuw@mail.gmail.com>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Reply-To: fdmanana@gmail.com
+In-Reply-To: <56984D50.3040106@cn.fujitsu.com>
+References: <1452751054-2365-1-git-send-email-quwenruo@cn.fujitsu.com>
+	<1452751054-2365-18-git-send-email-quwenruo@cn.fujitsu.com>
+	<CAL3q7H4-Ztmx9Z4=jNT3610Y6eZbL5GqZXXOajYg3FoP_uyxYA@mail.gmail.com>
+	<56984D50.3040106@cn.fujitsu.com>
+Date: Fri, 15 Jan 2016 09:19:28 +0000
+Message-ID: <CAL3q7H4ZS_qj3VqiFmDkvCBZK8f34SQ-T3jCDQv-V+rXrpu8Ng@mail.gmail.com>
+Subject: Re: [PATCH v4 17/18] btrfs: dedup: add a property handler for online dedup
+From: Filipe Manana <fdmanana@gmail.com>
+To: Qu Wenruo <quwenruo@cn.fujitsu.com>
+Cc: "linux-btrfs@vger.kernel.org" <linux-btrfs@vger.kernel.org>,
+        Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-
-
-Filipe Manana wrote on 2016/01/14 10:19 +0000:
-> On Thu, Jan 14, 2016 at 5:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
->> Now on-disk backend can delete hash now.
->>
->> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
->> Signed-off-by: Qu Wenruo <quwenruo@cn.fujitsu.com>
->> ---
->>   fs/btrfs/dedup.c | 93 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++
->>   1 file changed, 93 insertions(+)
->>
->> diff --git a/fs/btrfs/dedup.c b/fs/btrfs/dedup.c
->> index 4acbbfb..66c8f05 100644
->> --- a/fs/btrfs/dedup.c
->> +++ b/fs/btrfs/dedup.c
->> @@ -437,6 +437,97 @@ static int inmem_del(struct btrfs_dedup_info *dedup_info, u64 bytenr)
->>          return 0;
->>   }
->>
->> +/*
->> + * If prepare_del is given, this will setup search_slot() for delete.
->> + * Caller needs to do proper locking.
->> + *
->> + * Return > 0 for found.
->> + * Return 0 for not found.
->> + * Return < 0 for error.
->> + */
->> +static int ondisk_search_bytenr(struct btrfs_trans_handle *trans,
->> +                               struct btrfs_dedup_info *dedup_info,
->> +                               struct btrfs_path *path, u64 bytenr,
->> +                               int prepare_del)
->> +{
->> +       struct btrfs_key key;
->> +       struct btrfs_root *dedup_root = dedup_info->dedup_root;
->> +       int ret;
->> +       int ins_len = 0;
->> +       int cow = 0;
->> +
->> +       if (prepare_del) {
->> +               if (WARN_ON(trans == NULL))
->> +                       return -EINVAL;
->> +               cow = 1;
->> +               ins_len = -1;
->> +       }
->> +
->> +       key.objectid = bytenr;
->> +       key.type = BTRFS_DEDUP_BYTENR_ITEM_KEY;
->> +       key.offset = (u64)-1;
->> +
->> +       ret = btrfs_search_slot(trans, dedup_root, &key, path,
->> +                               ins_len, cow);
->> +       if (ret < 0)
->> +               return ret;
->> +
->> +       WARN_ON(ret == 0);
->
-> If ret == 0 (who knows if one day there won't be an hash algorithm
-> that produces 64 bits hashes with all bits set for some inputs), then
-> we shouldn't do the btrfs_previous_item() call, which would make us
-> miss the item.
-
-That's right, and it doesn't even need another algorithm, since at least 
-in theory, SHA256 should also be able to produce such hash (only need to 
-be all 1 for the last 64bits).
-
-I'll change it to skip the previous_item() if ret == 0.
-
-Thanks,
-Qu
-
->
->> +       ret = btrfs_previous_item(dedup_root, path, bytenr,
->> +                                 BTRFS_DEDUP_BYTENR_ITEM_KEY);
->> +       if (ret < 0)
->> +               return ret;
->> +       if (ret > 0)
->> +               return 0;
->> +       return 1;
->> +}
->> +
->> +static int ondisk_del(struct btrfs_trans_handle *trans,
->> +                     struct btrfs_dedup_info *dedup_info, u64 bytenr)
->> +{
->> +       struct btrfs_root *dedup_root = dedup_info->dedup_root;
->> +       struct btrfs_path *path;
->> +       struct btrfs_key key;
->> +       int ret;
->> +
->> +       path = btrfs_alloc_path();
->> +       if (!path)
->> +               return -ENOMEM;
->> +
->> +       key.objectid = bytenr;
->> +       key.type = BTRFS_DEDUP_BYTENR_ITEM_KEY;
->> +       key.offset = 0;
->> +
->> +       mutex_lock(&dedup_info->lock);
->> +
->> +       ret = ondisk_search_bytenr(trans, dedup_info, path, bytenr, 1);
->> +       if (ret <= 0)
->> +               goto out;
->> +
->> +       btrfs_item_key_to_cpu(path->nodes[0], &key, path->slots[0]);
->> +       btrfs_del_item(trans, dedup_root, path);
->> +       btrfs_release_path(path);
->> +
->> +       /* Search for hash item and delete it */
->> +       key.objectid = key.offset;
->> +       key.type = BTRFS_DEDUP_HASH_ITEM_KEY;
->> +       key.offset = bytenr;
->> +
->> +       ret = btrfs_search_slot(trans, dedup_root, &key, path, -1, 1);
->> +       if (WARN_ON(ret > 0)) {
->> +               ret = -ENOENT;
->> +               goto out;
->> +       }
->> +       if (ret < 0)
->> +               goto out;
->> +       btrfs_del_item(trans, dedup_root, path);
->
-> btrfs_del_item() can return errors.
->
->> +
->> +out:
->> +       btrfs_free_path(path);
->> +       mutex_unlock(&dedup_info->lock);
->> +       return ret;
->> +}
->> +
->>   /* Remove a dedup hash from dedup tree */
->>   int btrfs_dedup_del(struct btrfs_trans_handle *trans, struct btrfs_root *root,
->>                      u64 bytenr)
->> @@ -449,6 +540,8 @@ int btrfs_dedup_del(struct btrfs_trans_handle *trans, struct btrfs_root *root,
->>
->>          if (dedup_info->backend == BTRFS_DEDUP_BACKEND_INMEMORY)
->>                  return inmem_del(dedup_info, bytenr);
->> +       if (dedup_info->backend == BTRFS_DEDUP_BACKEND_ONDISK)
->> +               return ondisk_del(trans, dedup_info, bytenr);
->>          return -EINVAL;
->>   }
->>
->> --
->> 2.7.0
->>
->>
->>
->> --
->> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
->> the body of a message to majordomo@vger.kernel.org
->> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+On Fri, Jan 15, 2016 at 1:37 AM, Qu Wenruo <quwenruo@cn.fujitsu.com> wrote:
 >
 >
+> Filipe Manana wrote on 2016/01/14 09:56 +0000:
+>>
+>> On Thu, Jan 14, 2016 at 5:57 AM, Qu Wenruo <quwenruo@cn.fujitsu.com>
+>> wrote:
+>>>
+>>> From: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+>>>
+>>> We use btrfs extended attribute "btrfs.dedup" to record per-file online
+>>> dedup status, so add a dedup property handler.
+>>>
+>>> Signed-off-by: Wang Xiaoguang <wangxg.fnst@cn.fujitsu.com>
+>>> ---
+>>>   fs/btrfs/props.c | 40 ++++++++++++++++++++++++++++++++++++++++
+>>>   1 file changed, 40 insertions(+)
+>>>
+>>> diff --git a/fs/btrfs/props.c b/fs/btrfs/props.c
+>>> index f9e6023..ae8b76d 100644
+>>> --- a/fs/btrfs/props.c
+>>> +++ b/fs/btrfs/props.c
+>>> @@ -41,6 +41,10 @@ static int prop_compression_apply(struct inode *inode,
+>>>                                    size_t len);
+>>>   static const char *prop_compression_extract(struct inode *inode);
+>>>
+>>> +static int prop_dedup_validate(const char *value, size_t len);
+>>> +static int prop_dedup_apply(struct inode *inode, const char *value,
+>>> size_t len);
+>>> +static const char *prop_dedup_extract(struct inode *inode);
+>>> +
+>>>   static struct prop_handler prop_handlers[] = {
+>>>          {
+>>>                  .xattr_name = XATTR_BTRFS_PREFIX "compression",
+>>> @@ -49,6 +53,13 @@ static struct prop_handler prop_handlers[] = {
+>>>                  .extract = prop_compression_extract,
+>>>                  .inheritable = 1
+>>>          },
+>>> +       {
+>>> +               .xattr_name = XATTR_BTRFS_PREFIX "dedup",
+>>> +               .validate = prop_dedup_validate,
+>>> +               .apply = prop_dedup_apply,
+>>> +               .extract = prop_dedup_extract,
+>>> +               .inheritable = 1
+>>> +       },
+>>>   };
+>>>
+>>>   void __init btrfs_props_init(void)
+>>> @@ -425,4 +436,33 @@ static const char *prop_compression_extract(struct
+>>> inode *inode)
+>>>          return NULL;
+>>>   }
+>>>
+>>> +static int prop_dedup_validate(const char *value, size_t len)
+>>> +{
+>>> +       if (!strncmp("disable", value, len))
+>>> +               return 0;
+>>> +
+>>> +       return -EINVAL;
+>>> +}
+>>> +
+>>> +static int prop_dedup_apply(struct inode *inode, const char *value,
+>>> size_t len)
+>>> +{
+>>> +       if (len == 0) {
+>>> +               BTRFS_I(inode)->flags &= ~BTRFS_INODE_NODEDUP;
+>>> +               return 0;
+>>> +       }
+>>> +
+>>> +       if (!strncmp("disable", value, len)) {
+>>> +               BTRFS_I(inode)->flags |= BTRFS_INODE_NODEDUP;
+>>> +               return 0;
+>>> +       }
+>>> +
+>>> +       return -EINVAL;
+>>> +}
+>>> +
+>>> +static const char *prop_dedup_extract(struct inode *inode)
+>>> +{
+>>> +       if (BTRFS_I(inode)->flags | BTRFS_INODE_NODEDUP)
+>>> +               return "disable";
+>>
+>>
+>> | -> &
+>>
+>> How about writing test cases (for xfstests)? Not only for the property
+>> but for the whole dedup feature, it would avoid such simple
+>> mistakes...
+>
+>
+> Yes, it's already in our schedule and we have some internal simple test
+> case.
+>
+> But the problem is,
+> Some behavior/format is not completely determined yet
+> Especially for on-disk format (ondisk backend only), and ioctl interface.
+
+How does someone guesses that? You could add an RFC tag to the patches...
+
+>
+> So I'm a little concerned about submit them too early before we made final
+> decision on the ioctl interface.
+
+What's the problem? You can submit such tests only to the btrfs list
+for now and tag them as RFC and mention that.
+
+>
+>> Take a look at the good example of xfs development. For example when
+>> all the recent patches for their reflink implementation was posted
+>> (and before getting merged), a comprehensive set of test cases for
+>> xfstests was also posted...
+>
+>
+> Yes, test driven development is very nice, but there is also problem,
+> especially for btrfs, like btrfs/047 which needs btrfs send --stream-version
+> support.
+
+Yes, this one was a special case in that around 2 years ago it seemed
+the functionality was going to be merged, but it ended up not being
+merged due to reasons not known to me (no reasons pointed in the
+mailing list nor in private).
+
+Better have unused tests instead of features without tests (and many
+btrfs specific features had no tests or almost nothing not that long
+ago).
+
+>
+> But unfortunately, there is not --stream-version support in upsteam
+> btrfs-progs and the test case never get executed on upsteam btrfs-progs.
+>
+> Personally speaking, xfs development can only happen in that way because
+> xfstest maintainer is also the maintainer of xfs.
+> As Dave knows every aspect of xfs and can determine which feature will be
+> merged.
+
+He can also accept patches to remove tests or change them...
+Shouldn't be an excuse to not share tests along with patches for new
+features, as noted above.
+
+> But that's not true for btrfs, so he can merge wrong patch and cause
+> inconsistent with what btrfs really supports between test cases.
+>
+> Thanks,
+> Qu
+>
+>
+>>
+>>>
+>>> +       return NULL;
+>>> +}
+>>> --
+>>> 2.7.0
+>>>
+>>>
+>>>
+>>> --
+>>> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
+>>> the body of a message to majordomo@vger.kernel.org
+>>> More majordomo info at  http://vger.kernel.org/majordomo-info.html
+>>
+>>
+>>
+>>
+>
 >
 
 
+
+-- 
+Filipe David Manana,
+
+"Reasonable men adapt themselves to the world.
+ Unreasonable men adapt the world to themselves.
+ That's why all progress depends on unreasonable men."

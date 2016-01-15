@@ -1,221 +1,109 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from userp1040.oracle.com ([156.151.31.81]:23533 "EHLO
-	userp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1755050AbcANXMZ (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Thu, 14 Jan 2016 18:12:25 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
+Received: from plane.gmane.org ([80.91.229.3]:40871 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1751095AbcAOLs1 (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Fri, 15 Jan 2016 06:48:27 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aK2rf-000298-41
+	for linux-btrfs@vger.kernel.org; Fri, 15 Jan 2016 12:48:23 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2016 12:48:23 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Fri, 15 Jan 2016 12:48:23 +0100
 To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-Subject: [PATCH] Btrfs-progs: add check-only option for balance
-Date: Thu, 14 Jan 2016 15:12:12 -0800
-Message-Id: <1452813132-18878-1-git-send-email-bo.li.liu@oracle.com>
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: Recursive delete file from all subvolumes (snapshots)
+Date: Fri, 15 Jan 2016 11:48:11 +0000 (UTC)
+Message-ID: <pan$cd84a$7dd8a74d$a2b00ed6$e26c6f75@cox.net>
+References: <15624885.ucZm0n36hp@discus> <20160115140539.3afa66f0@natsu>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Previously I did the same thing to btrfs-debugfs, it works good,
-but since it's python script, and if your system doesn't have
-python installed, then you need a binary.
+Roman Mamedov posted on Fri, 15 Jan 2016 14:05:39 +0500 as excerpted:
 
-This aims to decide whether a balance can reduce the number of
-data block groups and if it is, this shows the '-dvrange' block
-group's objectid.
+> On Fri, 15 Jan 2016 09:33:14 +0100 Wolfgang Mader
+> <Wolfgang_Mader@brain-frog.de> wrote:
+> 
+>> I have a btrfs raid 10 from which I take hourly snapshots using
+>> snapper.
 
-With this, you can run
-'btrfs balance start -c mnt' or 'btrfs balance start --check-only mnt'
+Hopefully you have snapper setup with a good thinning program as well, as 
+ideally, you want to keep your snapshots to 250-ish per subvolume and a 
+thousand or two per filesystem, maximum, for scaling reasons, and hourly 
+snapshots will eat up that 250 target in 10 days, 10 hours...
 
---------------------------------------------------------------
-$ btrfs balance start -c /mnt/btrfs
-Checking data block group...
-block_group        12582912 (len     8388608 used      786432)
-block_group      1103101952 (len  1073741824 used   536870912)
-block_group      2176843776 (len  1073741824 used  1073741824)
-total_free 544473088 min_used bg 12582912 has (min_used 786432 free 7602176)
-run btrfs balance start -dvrange=12582912..12582913 your_mnt
+But it's quite possible to start with hourly snapshots, thinning to say 6-
+hourly (four per day, deleting 5/6) after a couple days, and continuing 
+to thin down to say weekly after several weeks, then keeping weekly 
+snapshots for a year before deleting them to recover the space and 
+resorting to proper backups if anything older needs recovered, and stay 
+under 200 snapshots per subvolume.
 
-$ btrfs balance start -dvrange=12582912..12582913 /mnt/btrfs
-Done, had to relocate 1 out of 5 chunks
+That'll help keep your btrfs healthy and your btrfs maintenance commands 
+(scrub, balance, check, etc), if needed, running in something like 
+reasonable time. =:^)
 
-$ btrfs balance start -c /mnt/btrfs
-Checking data block group...
-block_group      1103101952 (len  1073741824 used   537395200)
-block_group      2176843776 (len  1073741824 used  1073741824)
-total_free 536346624 min_used bg 1103101952 has (min_used 537395200 free 536346624)
---------------------------------------------------------------
+>> Now, I wonder, if there is a way to delete a file together
+>> with all its occurrences in all snapshots.
 
-So you now know how to babysit your btrfs in a smart way.
+If the file was there at the time of the snapshot, it's part of the 
+snapshot and to remove it when deleting a file from the working set 
+rather defeats the purpose, tho of course with writable snapshots, you 
+can delete it from the snapshot manually (see RM's method below), and as 
+RM says, with read-only snapshots it's more complex but still possible 
+(see my reply under that bit, further below).
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- cmds-balance.c | 116 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++-
- 1 file changed, 115 insertions(+), 1 deletion(-)
+>> My use case is, that the file I want to delete is large, and I want to
+>> free its space on disk. Thus, I have to get rid of its "live" version
+>> but also of all references to it in snapshots.
+> 
+> E.g. if your file is at /path/to/file.dat, and your snapshot structure
+> is /snapshots/YYYY-MM-DD@time/, you would simply do:
+> 
+> rm /snapshots/*/path/to/file.dat
+> 
+> In fact this is what I often do with my timed snapshots when deleting
+> some files and wanting to recover free space immediately, not waiting
+> for all their snapshots to expire and get deleted by the usual
+> time-based deletion rules.
 
-diff --git a/cmds-balance.c b/cmds-balance.c
-index 9f647cd..fc5c0e8 100644
---- a/cmds-balance.c
-+++ b/cmds-balance.c
-@@ -437,6 +437,106 @@ out:
- 	return ret;
- }
- 
-+/* return 0 if balance remove data a block group, return 1 if it does not */
-+static int search_data_bgs(const char *path)
-+{
-+	struct btrfs_ioctl_search_args_v2 *args;
-+	struct btrfs_ioctl_search_key *sk;
-+	struct btrfs_ioctl_search_header *header;
-+	struct btrfs_block_group_item *bg;
-+	DIR *dirstream = NULL;
-+	int e;
-+	int args_size = 65536;
-+	int fd;
-+	int i;
-+	char buf[args_size];
-+	u64 total_free = 0;
-+	u64 min_used = (u64)-1;
-+	u64 free_of_min_used = 0;
-+	u64 bg_of_min_used = 0;
-+	u64 flags;
-+	u64 used;
-+	int ret = 0;
-+	char *p;
-+
-+	fd = btrfs_open_dir(path, &dirstream, 1);
-+	if (fd < 0)
-+		return 1;
-+
-+	memset(buf, 0, args_size);
-+	args = (struct btrfs_ioctl_search_args_v2 *)buf;
-+	sk = &(args->key);
-+
-+	sk->tree_id = BTRFS_EXTENT_TREE_OBJECTID;
-+	sk->min_objectid = sk->min_offset = sk->min_transid = 0;
-+	sk->max_objectid = sk->max_offset = sk->max_transid = (u64)-1;
-+	sk->max_type = sk->min_type = BTRFS_BLOCK_GROUP_ITEM_KEY;
-+	sk->nr_items = 65536;
-+	args->buf_size = args_size - sizeof(struct btrfs_ioctl_search_args_v2);
-+
-+	while (1) {
-+		ret = ioctl(fd, BTRFS_IOC_TREE_SEARCH_V2, args);
-+		e = errno;
-+		if (ret != 0) {
-+			fprintf(stderr, "ret %d error '%s'\n", ret, strerror(e));
-+			return ret;
-+		}
-+
-+		// it should not happen.
-+		if (sk->nr_items == 0)
-+			break;
-+
-+		/*
-+		 * BTRFS_IOC_TREE_SEARCH_V2: args->buf is in fact __u64 buf[0]
-+		 * instead of char buf[0]
-+		 */
-+		p = (char *)args->buf;
-+
-+		for (i = 0; i < sk->nr_items; i++) {
-+			header = (struct btrfs_ioctl_search_header *)p;
-+
-+			p += sizeof(*header);
-+			if (header->type == BTRFS_BLOCK_GROUP_ITEM_KEY) {
-+				bg = (struct btrfs_block_group_item *)p;
-+				flags = btrfs_block_group_flags(bg);
-+				used = btrfs_block_group_used(bg);
-+				if (flags & BTRFS_BLOCK_GROUP_DATA) {
-+					printf("block_group %15llu (len %11llu used %11llu)\n",
-+						header->objectid, header->offset,
-+						btrfs_block_group_used(bg));
-+					total_free += header->offset - used;
-+					if (min_used >= used) {
-+						min_used = used;
-+						free_of_min_used = header->offset - used;
-+						bg_of_min_used = header->objectid;
-+					}
-+				}
-+			}
-+
-+			p += header->len;
-+			sk->min_objectid = header->objectid;
-+		}
-+
-+		if (sk->min_objectid < sk->max_objectid)
-+			sk->min_objectid += 1;
-+		else
-+			break;
-+	}
-+
-+	printf("total_free %llu min_used bg %llu has (min_used %llu free %llu)\n",
-+		total_free, bg_of_min_used, min_used, free_of_min_used);
-+	if (total_free - free_of_min_used > min_used) {
-+		printf("run 'btrfs balance start -dvrange=%llu..%llu your_mnt'\n",
-+			bg_of_min_used, bg_of_min_used + 1);
-+		ret = 0;
-+	} else {
-+		printf("Please do not balance data block groups, it won't work\n");
-+		ret = 1;
-+	}
-+
-+	return ret;
-+}
-+
- static const char * const cmd_balance_start_usage[] = {
- 	"btrfs balance start [options] <path>",
- 	"Balance chunks across the devices",
-@@ -450,6 +550,7 @@ static const char * const cmd_balance_start_usage[] = {
- 	"-m[filters]    act on metadata chunks",
- 	"-s[filters]    act on system chunks (only under -f)",
- 	"-v             be verbose",
-+	"-c             only check if balance would make sense, not doing real job",
- 	"-f             force reducing of metadata integrity",
- 	NULL
- };
-@@ -462,6 +563,7 @@ static int cmd_balance_start(int argc, char **argv)
- 	int force = 0;
- 	int verbose = 0;
- 	int nofilters = 1;
-+	int check_data_bgs = 0;
- 	int i;
- 
- 	memset(&args, 0, sizeof(args));
-@@ -473,11 +575,12 @@ static int cmd_balance_start(int argc, char **argv)
- 			{ "metadata", optional_argument, NULL, 'm' },
- 			{ "system", optional_argument, NULL, 's' },
- 			{ "force", no_argument, NULL, 'f' },
-+			{ "check-only", no_argument, NULL, 'c' },
- 			{ "verbose", no_argument, NULL, 'v' },
- 			{ NULL, 0, NULL, 0 }
- 		};
- 
--		int opt = getopt_long(argc, argv, "d::s::m::fv", longopts, NULL);
-+		int opt = getopt_long(argc, argv, "d::s::m::fvc", longopts, NULL);
- 		if (opt < 0)
- 			break;
- 
-@@ -509,6 +612,9 @@ static int cmd_balance_start(int argc, char **argv)
- 		case 'v':
- 			verbose = 1;
- 			break;
-+		case 'c':
-+			check_data_bgs = 1;
-+			break;
- 		default:
- 			usage(cmd_balance_start_usage);
- 		}
-@@ -517,6 +623,14 @@ static int cmd_balance_start(int argc, char **argv)
- 	if (check_argc_exact(argc - optind, 1))
- 		usage(cmd_balance_start_usage);
- 
-+	if (check_data_bgs) {
-+		if (verbose)
-+			dump_ioctl_balance_args(&args);
-+
-+		printf("Checking data block group...\n");
-+		return search_data_bgs(argv[optind]);
-+	}
-+
- 	/*
- 	 * allow -s only under --force, otherwise do with system chunks
- 	 * the same thing we were ordered to do with meta chunks
+Of course that implies that the root containing all the snapshots is 
+itself mounted or otherwise nested in the mounted tree, somewhere.  The 
+recommendation is to keep it unmounted and not directly accessible, by 
+default, only mounting the snapshots root when you are directly working 
+with the snapshots.
+
+Among other reasons, there's a security issue if you're snapshots contain 
+old executables including set-UID/GID executables, and they're security 
+updated.  If the old vulnerable versions remain accessible to ordinary 
+users, as they will if the snapshots remain routinely accessible within 
+the tree, then it's possible for a user to use them to gain the privs of 
+the user/group (typically root) they run as.  If these snapshots aren't 
+normally accessible in the tree, then users won't have access to them and 
+won't be able to use the old and vulnerable versions the snapshots 
+contain to privilege-escalate.
+
+Plus of course, if they're unmounted, they're less likely to be 
+accidentally damaged or deleted.
+
+> If your snapshots are read-only it becomes more complex, but still
+> doable.
+
+Read-only is a snapshot property.  As such, it can be toggled via btrfs 
+property set calls.  So the idea here would be a script that loops thru 
+the snapshots, doing a btrfs property set writable, rm file, btrfs set 
+property read-only, for each snapshot.  Trivial enough shell script.  So 
+a bit more complex than if the snapshots are writable in the first place, 
+but far from unmanageably so. =:^)
+
 -- 
-2.5.0
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

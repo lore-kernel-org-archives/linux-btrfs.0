@@ -1,176 +1,183 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:23678 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1759184AbcAKUKg (ORCPT
+Received: from mx0a-00082601.pphosted.com ([67.231.145.42]:58615 "EHLO
+	mx0a-00082601.pphosted.com" rhost-flags-OK-OK-OK-OK)
+	by vger.kernel.org with ESMTP id S1752937AbcAQXaj (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 11 Jan 2016 15:10:36 -0500
-From: Liu Bo <bo.li.liu@oracle.com>
-To: linux-btrfs@vger.kernel.org
-Cc: dsterba@suse.com
-Subject: [PATCH] Btrfs-progs: use btrfs-debugfs to fetch block group information
-Date: Mon, 11 Jan 2016 12:10:22 -0800
-Message-Id: <1452543022-9224-1-git-send-email-bo.li.liu@oracle.com>
+	Sun, 17 Jan 2016 18:30:39 -0500
+Date: Sun, 17 Jan 2016 18:30:34 -0500
+From: Chris Mason <clm@fb.com>
+To: Linus Torvalds <torvalds@linux-foundation.org>,
+        Btrfs mailing list <linux-btrfs@vger.kernel.org>,
+        LKML <linux-kernel@vger.kernel.org>
+Subject: [GIT PULL] Btrfs
+Message-ID: <20160117233033.aowuldoul2cfuaad@floor.thefacebook.com>
+MIME-Version: 1.0
+Content-Type: text/plain; charset="us-ascii"
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: liub.liubo@gmail.com <boliu23@localhost.localdomain>
+Hi Linus,
 
-This aims to decide whether a balance can reduce the number of
-data block groups and if it is, this shows the '-dvrange' block
-group's objectid.
+Please pull my for-linus-4.5 branch:
 
-Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
----
- btrfs-debugfs |  117 ++++++++++++++++++++++++++++++++++++++++++++++++++++++---
- 1 files changed, 111 insertions(+), 6 deletions(-)
+git://git.kernel.org/pub/scm/linux/kernel/git/mason/linux-btrfs.git for-linus-4.5
 
-diff --git a/btrfs-debugfs b/btrfs-debugfs
-index cf1d285..08e3ec6 100755
---- a/btrfs-debugfs
-+++ b/btrfs-debugfs
-@@ -4,7 +4,7 @@
- # LGPLv2 license
- # Copyright Facebook 2014
- 
--import sys,os,struct,fcntl,ctypes,stat
-+import sys,os,struct,fcntl,ctypes,stat,argparse
- 
- # helpers for max ints
- maxu64 = (1L << 64) - 1
-@@ -65,6 +65,11 @@ BTRFS_DEV_STATS_KEY = 249
- BTRFS_DEV_REPLACE_KEY = 250
- BTRFS_STRING_ITEM_KEY = 253
- 
-+# store information about which extents are in use, and reference counts
-+BTRFS_EXTENT_TREE_OBJECTID = 2
-+
-+BTRFS_BLOCK_GROUP_DATA = (1 << 0)
-+
- # in the kernel sources, this is flattened
- # btrfs_ioctl_search_args_v2.  It includes both the btrfs_ioctl_search_key
- # and the buffer.  We're using a 64K buffer size.
-@@ -121,6 +126,13 @@ class btrfs_file_extent_item(ctypes.LittleEndianStructure):
-                  ("num_bytes", ctypes.c_ulonglong),
-                ]
- 
-+class btrfs_block_group_item(ctypes.LittleEndianStructure):
-+    _pack_ = 1
-+    _fields_ = [ ("used", ctypes.c_ulonglong),
-+                 ("chunk_objectid", ctypes.c_ulonglong),
-+                 ("flags", ctypes.c_ulonglong),
-+              ]
-+
- class btrfs_ioctl_search():
-     def __init__(self):
-         self.args = btrfs_ioctl_search_args()
-@@ -288,9 +300,102 @@ def print_file_extents(filename):
-           float(st.st_size) / float(total_on_disk))
-     return 0
- 
--if len(sys.argv) == 1:
--    sys.stderr.write("Usage: btrfs-debug filename ...\n")
--    sys.exit(1)
-+def print_block_groups(mountpoint):
-+    s = btrfs_ioctl_search()
-+
-+    s.args.min_type = BTRFS_BLOCK_GROUP_ITEM_KEY
-+    s.args.max_type = BTRFS_BLOCK_GROUP_ITEM_KEY
-+    s.args.tree_id = BTRFS_EXTENT_TREE_OBJECTID
-+
-+    min_used = maxu64
-+    free_of_min_used = 0
-+    bg_of_min_used = 0
-+    total_free = 0
-+
-+    try:
-+        fd = os.open(mountpoint, os.O_RDONLY)
-+        st = os.fstat(fd)
-+    except Exception, e:
-+        sys.stderr.write("Failed to open %s (%s)\n" % (mountpoint, e))
-+        return -1
-+
-+    while True:
-+        try:
-+            s.search(fd)
-+        except Exception, e:
-+            sys.stderr.write("Search ioctl failed for %s (%s)\n" % (mountpoint, e))
-+            return -1
-+
-+        if s.args.nr_items == 0:
-+            break
-+
-+        # p is the results buffer from kernel
-+        p = ctypes.addressof(s.args.buf)
-+        header = btrfs_ioctl_search_header()
-+        header_size = ctypes.sizeof(header)
-+        h = ctypes.addressof(header)
-+        p_left = args_buffer_size
-+
-+        for x in xrange(0, s.args.nr_items):
-+            # for each itme, copy the header from the buffer into
-+            # our header struct
-+            ctypes.memmove(h, p, header_size)
-+            p += header_size
-+            p_left -= header_size
-+
-+            # this would be a kernel bug it shouldn't be sending malformed
-+            # items
-+            if p_left <= 0:
-+                break
-+
-+            if header.type == BTRFS_BLOCK_GROUP_ITEM_KEY:
-+                bg = btrfs_block_group_item()
-+
-+                # this would be a kernel bug
-+                if p_left < ctypes.sizeof(bg):
-+                    break
-+
-+                ctypes.memmove(ctypes.addressof(bg), p, ctypes.sizeof(bg))
-+                if bg.flags & BTRFS_BLOCK_GROUP_DATA:
-+                    print "block group offset %Lu len %Lu used %Lu chunk_objectid %Lu flags %Lu usage %.2f" %\
-+                     (header.objectid, header.offset, bg.used, bg.chunk_objectid, bg.flags, float(bg.used) / float(header.offset))
-+
-+                    total_free += (header.offset - bg.used)
-+                    if min_used >= bg.used:
-+                        min_used = bg.used
-+                        free_of_min_used = (header.offset - bg.used)
-+                        bg_of_min_used = header.objectid
-+
-+            p += header.len
-+            p_left -= header.len
-+            if p_left <= 0:
-+                break
-+
-+            s.args.min_objectid = header.objectid
-+
-+        if s.args.min_objectid < maxu64:
-+            s.args.min_objectid += 1
-+        if s.args.min_objectid > s.args.max_objectid:
-+            break
-+
-+    print "total_free %Lu min_used %Lu free_of_min_used %Lu block_group_of_min_used %Lu" %\
-+     (total_free, min_used, free_of_min_used, bg_of_min_used)
-+    if (total_free - free_of_min_used) >= min_used:
-+        print "balance block group (%Lu) can reduce the number of data block group" % bg_of_min_used
-+
-+    return 0
-+
-+# main
-+parser = argparse.ArgumentParser()
-+parser.add_argument('path', nargs='+')
-+parser.add_argument('-b', '--block-group', action='store_const', const=1, help='get block group information, use mountpoint as "path"')
-+parser.add_argument('-f', '--file', action='store_const', const=1, help='get file mapping, use filepath')
-+
-+args = parser.parse_args()
- 
--for f in sys.argv[1:]:
--    print_file_extents(f)
-+if args.block_group:
-+    for i in args.path[0:]:
-+        print_block_groups(i)
-+elif args.file:
-+    for f in args.path[0:]:
-+        print_file_extents(f)
--- 
-1.7.1
+This has our usual assortment of fixes and cleanups, but the biggest
+change included is Omar Sandoval's free space tree.  It's not the
+default yet, mounting -o space_cache=v2 enables it and sets a readonly
+compat bit.  The tree can actually be deleted and regenerated if there
+are any problems, but it has held up really well in testing so far.
 
+For very large filesystems (30T+) our existing free space caching code
+can end up taking a huge amount of time during commits.  The new tree
+based code is faster and less work overall to update as the commit
+progresses.
+
+Omar worked on this during the summer and we'll hammer on it in
+production here at FB over the next few months.
+
+David Sterba (36) commits (+320/-341):
+    btrfs: verbose error when we find an unexpected item in sys_array (+3/-0)
+    btrfs: statfs: report zero available if metadata are exhausted (+24/-0)
+    btrfs tests: replace whole ops structure for free space tests (+8/-6)
+    btrfs: preallocate path for snapshot creation at ioctl time (+8/-6)
+    btrfs: don't use slab cache for struct btrfs_delalloc_work (+2/-12)
+    btrfs: do an allocation earlier during snapshot creation (+9/-11)
+    btrfs: constify remaining structs with function pointers (+8/-8)
+    btrfs: remove a trivial helper btrfs_set_buffer_uptodate (+3/-9)
+    btrfs: make extent_range_clear_dirty_for_io return void (+2/-3)
+    btrfs: use GFP_KERNEL for allocations in ioctl handlers (+5/-5)
+    btrfs: sink parameter wait to btrfs_alloc_delalloc_work (+4/-4)
+    btrfs: cleanup, use enum values for btrfs_path reada (+30/-30)
+    btrfs: make extent_clear_unlock_delalloc return void (+3/-4)
+    btrfs: make clear_extent_buffer_uptodate return void (+2/-3)
+    btrfs: drop unused parameter from lock_extent_bits (+27/-27)
+    btrfs: make clear_extent_bit helpers static inline (+38/-48)
+    btrfs: use smaller type for btrfs_path lowest_level (+1/-1)
+    btrfs: make extent_range_redirty_for_io return void (+2/-3)
+    btrfs: use GFP_KERNEL for xattr and acl allocations (+3/-3)
+    btrfs: use GFP_KERNEL for allocations of workqueues (+2/-2)
+    btrfs: drop duplicate prefix from scrub workqueues (+5/-5)
+    btrfs: better packing of btrfs_delayed_extent_op (+12/-15)
+    btrfs: make set_extent_buffer_uptodate return void (+2/-3)
+    btrfs: remove wait from struct btrfs_delalloc_work (+3/-9)
+    btrfs: make set_extent_bit helpers static inline (+46/-56)
+    btrfs: allocate root item at snapshot ioctl time (+13/-6)
+    btrfs: cleanup, remove stray return statements (+0/-9)
+    btrfs: handle invalid num_stripes in sys_array (+8/-0)
+    btrfs: use smaller type for btrfs_path locks (+1/-1)
+    btrfs: use smaller type for btrfs_path reada (+1/-1)
+    btrfs: make end_extent_writepage return void (+3/-6)
+    btrfs: make set_range_writeback return void (+1/-2)
+    btrfs: put delayed item hook into inode (+29/-31)
+    btrfs: make btrfs_close_one_device static (+2/-2)
+    btrfs: make lock_extent static inline (+6/-6)
+    btrfs: constify static arrays (+4/-4)
+
+Filipe Manana (13) commits (+209/-74):
+    Btrfs: fix race between free space endio workers and space cache writeout (+19/-0)
+    Btrfs: fix fitrim discarding device area reserved for boot loader's use (+10/-10)
+    Btrfs: fix unprotected list operations at btrfs_write_dirty_block_groups (+17/-2)
+    Btrfs: fix race when finishing dev replace leading to transaction abort (+15/-2)
+    Btrfs: fix error path when failing to submit bio for direct IO write (+27/-27)
+    Btrfs: fix leaking of ordered extents after direct IO write error (+38/-5)
+    Btrfs: fix deadlock between direct IO write and defrag/readpages (+13/-17)
+    Btrfs: fix transaction handle leak on failure to create hard link (+4/-2)
+    Btrfs: fix number of transaction units required to create symlink (+3/-1)
+    Btrfs: don't leave dangling dentry if symlink creation failed (+7/-4)
+    Btrfs: send, don't BUG_ON() when an empty symlink is found (+15/-1)
+    Btrfs: fix memory leaks after transaction is aborted (+17/-0)
+    Btrfs: fix locking bugs when defragging leaves (+24/-3)
+
+Omar Sandoval (9) commits (+2926/-108):
+    Btrfs: wire up the free space tree to the extent tree (+33/-3)
+    Btrfs: introduce the free space B-tree on-disk format (+40/-1)
+    Btrfs: add extent buffer bitmap sanity tests (+160/-16)
+    Btrfs: add helpers for read-only compat bits (+82/-0)
+    Btrfs: add extent buffer bitmap operations (+155/-0)
+    Btrfs: add free space tree sanity tests (+646/-48)
+    Btrfs: add free space tree mount option (+88/-10)
+    Btrfs: implement the free space B-tree (+1686/-4)
+    Btrfs: refactor caching_thread() (+36/-26)
+
+Chris Mason (3) commits (+31/-17):
+    btrfs: don't run delayed references while we are creating the free space tree (+28/-16)
+    btrfs: fix warning on uninit variable in btrfs_finish_chunk_alloc (+1/-1)
+    btrfs: fix compiling with CONFIG_BTRFS_DEBUG enabled. (+2/-0)
+
+Alexandru Moise (3) commits (+12/-12):
+    btrfs: switch __btrfs_fs_incompat return type from int to bool (+1/-1)
+    btrfs: pass proper enum type to start_transaction() (+10/-5)
+    btrfs: zero out delayed node upon allocation (+1/-6)
+
+Geliang Tang (3) commits (+36/-106):
+    btrfs: use list_for_each_entry_safe in free-space-cache.c (+4/-10)
+    btrfs: use list_for_each_entry* in check-integrity.c (+26/-79)
+    btrfs: use list_for_each_entry* in backref.c (+6/-17)
+
+Byongho Lee (2) commits (+149/-180):
+    btrfs: remove unused inode argument from uncompress_inline() (+2/-3)
+    Btrfs: use linux/sizes.h to represent constants (+147/-177)
+
+Anand Jain (1) commits (+1/-0):
+    Btrfs: add missing brelse when superblock checksum fails
+
+Zhao Lei (1) commits (+0/-8):
+    btrfs: Support convert to -d dup for btrfs-convert
+
+Josef Bacik (1) commits (+15/-2):
+    Btrfs: igrab inode in writepage
+
+Sam Tygier (1) commits (+7/-0):
+    Btrfs: Check metadata redundancy on balance
+
+Total: (73) commits (+3706/-848)
+
+ fs/btrfs/Makefile                      |    5 +-
+ fs/btrfs/acl.c                         |    4 +-
+ fs/btrfs/async-thread.c                |    4 +-
+ fs/btrfs/backref.c                     |   23 +-
+ fs/btrfs/btrfs_inode.h                 |    4 +
+ fs/btrfs/check-integrity.c             |  105 +--
+ fs/btrfs/ctree.c                       |   11 +-
+ fs/btrfs/ctree.h                       |  178 +++-
+ fs/btrfs/delayed-inode.c               |    7 +-
+ fs/btrfs/delayed-ref.c                 |    4 +-
+ fs/btrfs/delayed-ref.h                 |    8 +-
+ fs/btrfs/disk-io.c                     |   49 +-
+ fs/btrfs/disk-io.h                     |    5 +-
+ fs/btrfs/extent-tree.c                 |  200 ++--
+ fs/btrfs/extent-tree.h                 |    0
+ fs/btrfs/extent_io.c                   |  310 ++++---
+ fs/btrfs/extent_io.h                   |  136 ++-
+ fs/btrfs/file-item.c                   |    4 +-
+ fs/btrfs/file.c                        |    8 +-
+ fs/btrfs/free-space-cache.c            |   28 +-
+ fs/btrfs/free-space-cache.h            |    2 +-
+ fs/btrfs/free-space-tree.c             | 1591 ++++++++++++++++++++++++++++++++
+ fs/btrfs/free-space-tree.h             |   72 ++
+ fs/btrfs/inode-map.c                   |    8 +-
+ fs/btrfs/inode.c                       |  312 ++++---
+ fs/btrfs/ioctl.c                       |   74 +-
+ fs/btrfs/locking.c                     |    2 -
+ fs/btrfs/raid56.c                      |    2 -
+ fs/btrfs/relocation.c                  |   12 +-
+ fs/btrfs/scrub.c                       |   16 +-
+ fs/btrfs/send.c                        |   16 +-
+ fs/btrfs/send.h                        |    4 +-
+ fs/btrfs/super.c                       |   84 +-
+ fs/btrfs/tests/btrfs-tests.c           |   58 ++
+ fs/btrfs/tests/btrfs-tests.h           |   10 +
+ fs/btrfs/tests/extent-io-tests.c       |  149 ++-
+ fs/btrfs/tests/free-space-tests.c      |  239 ++---
+ fs/btrfs/tests/free-space-tree-tests.c |  571 ++++++++++++
+ fs/btrfs/tests/inode-tests.c           |    2 +-
+ fs/btrfs/tests/qgroup-tests.c          |   20 +-
+ fs/btrfs/transaction.c                 |   50 +-
+ fs/btrfs/transaction.h                 |    2 +
+ fs/btrfs/tree-defrag.c                 |   27 +-
+ fs/btrfs/volumes.c                     |   93 +-
+ fs/btrfs/volumes.h                     |    3 +-
+ fs/btrfs/xattr.c                       |    4 +-
+ include/trace/events/btrfs.h           |    3 +-
+ 47 files changed, 3690 insertions(+), 829 deletions(-)

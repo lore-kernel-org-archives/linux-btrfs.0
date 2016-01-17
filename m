@@ -1,64 +1,73 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from [89.248.244.226] ([89.248.244.226]:36578 "EHLO mail.kolouch.org"
-	rhost-flags-FAIL-FAIL-OK-OK) by vger.kernel.org with ESMTP
-	id S1751209AbcAQMlz convert rfc822-to-8bit (ORCPT
+Received: from mail-qk0-f172.google.com ([209.85.220.172]:36469 "EHLO
+	mail-qk0-f172.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752520AbcAQTyt (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Jan 2016 07:41:55 -0500
-Received: from localhost (unknown [127.0.0.1])
-	by mail.kolouch.org (Postfix) with ESMTP id 36047E2716D
-	for <linux-btrfs@vger.kernel.org>; Sun, 17 Jan 2016 12:35:32 +0000 (UTC)
-Received: from mail.kolouch.org ([127.0.0.1])
-	by localhost (mail.kolouch.org [127.0.0.1]) (amavisd-new, port 10024)
-	with ESMTP id HNGgODgwNFtx for <linux-btrfs@vger.kernel.org>;
-	Sun, 17 Jan 2016 13:35:31 +0100 (CET)
-Received: from localhost.localdomain (unknown [192.168.2.97])
-	(using TLSv1.2 with cipher ECDHE-RSA-AES128-GCM-SHA256 (128/128 bits))
-	(No client certificate requested)
-	by mail.kolouch.org (Postfix) with ESMTPSA id 40E1DE27168
-	for <linux-btrfs@vger.kernel.org>; Sun, 17 Jan 2016 12:35:31 +0000 (UTC)
-Date: Sun, 17 Jan 2016 13:35:29 +0100
-From: Lubos Kolouch <kolcon@kolcon.net>
-To: linux-btrfs@vger.kernel.org
-Subject: btrfs send - detect if complete
-Message-ID: <20160117123529.GA26322@localhost.localdomain>
+	Sun, 17 Jan 2016 14:54:49 -0500
+Received: by mail-qk0-f172.google.com with SMTP id b66so11873734qkf.3
+        for <linux-btrfs@vger.kernel.org>; Sun, 17 Jan 2016 11:54:49 -0800 (PST)
 MIME-Version: 1.0
-Content-Type: text/plain; charset=utf-8; format=flowed
+In-Reply-To: <CADrfcdae8Z7towaXpuA=dtq-GP-hMxJZp69UP5TayH20_ZMvBw@mail.gmail.com>
+References: <CADrfcdae8Z7towaXpuA=dtq-GP-hMxJZp69UP5TayH20_ZMvBw@mail.gmail.com>
+From: bbrendon@gmail.com
+Date: Sun, 17 Jan 2016 11:54:09 -0800
+Message-ID: <CADrfcdYnCkbdHs9EmmvC3WoRPm_O3WnZRiCwcqKM2X3tFv8V-Q@mail.gmail.com>
+Subject: Re: kernel crash when balancing raid56 after low on space
+To: linux-btrfs@vger.kernel.org
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-Hello,
+I was able to get this issue resolved.
 
-I am building a backup system, based on btrfs incremental send/receive.
+I think the key to realize is that when mounting with skip_balance,
+that doesn't actually disable/cancel the balance. You still have to
+run the 'btrfs balance cancel FS' command. Once I did this, I was able
+to mount the FS without the crashing. For some reason a balance resume
+was casing the crashes.
 
-I am a bit stuck on how to detect, if the transfer has been completed
-(and not interrupted during transfer).
+I then did a balance dusage=5, and then a full balance. The full
+balance has been running for a day so I'm guessing it'll finish
+successfully in a few more days.
 
-Host A :
-du --max-depth=0 home_20160117
-45787768  home_20160117
-
-btrfs send home_20160117 | ssh dest_host "btrfs receive 
-/mnt/destination/"
-
-… transfer completes without any error
-
-on dest_host:
-
-du --max-depth=0 home_20160117
-45763984  home_20160117
-
-Ie. the size differs, perhaps due to different compression(?)
-
-The volume seems OK, I can use it as a parent volume for further 
-transfers etc.
-
-The question is - is there a "btrfs native" way to tell, if the two
-subvolumes are really identical (and the transfer was not interrupted 
-etc.)?
-
-Or do I have to resort to costly things like checksumming all files?
-
-Thanks,
-
-Lubos
-
+On Thu, Jan 14, 2016 at 11:03 PM,  <bbrendon@gmail.com> wrote:
+> Looking for a bit of help getting this FS balanced. I'm getting a
+> kernel crash and readonly file system error:
+> [ 9357.096562] Workqueue: btrfs-extent-refs btrfs_extent_refs_helper [btrfs]
+>
+> dmesg output. http://pastebin.com/c9xKvpZ0
+>
+> This problem began because of performance issues. Basically the FS
+> appeared to be hung. (I think because it got to about 100GB free) I
+> added a drive and started a rebalance which somehow also hung. I then
+> aborted the whole thing, upgraded from 4.3 to 4.4 and after a long
+> wait the FS mounted. I deleted more snaps and now when I start a
+> balance, the FS goes read-only.
+>
+> Thanks for any help you can provide! -Brendon
+>
+> # uname -a
+> Linux humvee 4.4.0 #1 SMP Thu Jan 14 15:54:03 PST 2016 x86_64 GNU/Linux
+>
+> #  btrfs --version
+> btrfs-progs v4.3
+> #
+>
+> # btrfs fi show
+> Label: 'tank0'  uuid: d25217dd-91f1-4add-8c07-66eacff9fb28
+>         Total devices 6 FS bytes used 6.22TiB
+>         devid    1 size 3.64TiB used 3.52TiB path /dev/sdc
+>         devid    2 size 3.64TiB used 3.52TiB path /dev/sdd
+>         devid    3 size 3.64TiB used 3.52TiB path /dev/sde
+>         devid    4 size 3.64TiB used 3.52TiB path /dev/sdf
+>         devid    5 size 3.64TiB used 3.52TiB path /dev/sdg
+>         devid    6 size 3.64TiB used 1.00GiB path /dev/sdh
+>
+> btrfs-progs v4.3
+> #
+> #  btrfs fi df /tank0
+> Data, RAID6: total=10.55TiB, used=6.21TiB
+> System, RAID6: total=96.00MiB, used=880.00KiB
+> Metadata, RAID6: total=19.59GiB, used=10.34GiB
+> GlobalReserve, single: total=512.00MiB, used=0.00B
+> #

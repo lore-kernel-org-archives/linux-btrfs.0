@@ -1,122 +1,106 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from frost.carfax.org.uk ([85.119.82.111]:50383 "EHLO
-	frost.carfax.org.uk" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754828AbcARMpg (ORCPT
+Received: from mail-io0-f180.google.com ([209.85.223.180]:33730 "EHLO
+	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1754874AbcARMtb (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 07:45:36 -0500
-Date: Mon, 18 Jan 2016 12:45:33 +0000
-From: Hugo Mills <hugo@carfax.org.uk>
-To: Marc MERLIN <marc@merlins.org>
-Cc: Btrfs mailing list <linux-btrfs@vger.kernel.org>
-Subject: Re: BTRFS: bdev /dev/mapper/dshelf1 errs: wr 2970, rd 848, flush 0,
- corrupt 189, gen 0
-Message-ID: <20160118124533.GU422@carfax.org.uk>
-References: <20160118002748.GE12045@merlins.org>
+	Mon, 18 Jan 2016 07:49:31 -0500
+Received: by mail-io0-f180.google.com with SMTP id q21so548396702iod.0
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2016 04:49:31 -0800 (PST)
+Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain
+ like I'm five pls.
+To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
+References: <loom.20160116T132316-196@post.gmane.org>
+ <569C41B1.1090206@cn.fujitsu.com>
+ <pan$9ea8b$cdf4a5be$a6b3ced0$e73fd4ce@cox.net>
+ <569C58FB.70407@cn.fujitsu.com> <pan$9dd9b$58cdc4a$94401f0f$f97ce29e@cox.net>
+From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
+Message-ID: <569CDF0D.9030609@gmail.com>
+Date: Mon, 18 Jan 2016 07:48:13 -0500
 MIME-Version: 1.0
-Content-Type: multipart/signed; micalg=pgp-sha1;
-	protocol="application/pgp-signature"; boundary="p8mP+8RrBGerSNjm"
-In-Reply-To: <20160118002748.GE12045@merlins.org>
+In-Reply-To: <pan$9dd9b$58cdc4a$94401f0f$f97ce29e@cox.net>
+Content-Type: text/plain; charset=utf-8; format=flowed
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+On 2016-01-17 22:51, Duncan wrote:
+> Qu Wenruo posted on Mon, 18 Jan 2016 11:16:11 +0800 as excerpted:
+>
+>> Duncan wrote on 2016/01/18 03:10 +0000:
+>>>
+>>> Doesn't the kernel write cache get synced by timeout as well as
+>>> memory pressure and manual sync, with the timeouts found in
+>>> /proc/sys/vm/dirty_*_centisecs, with defaults of 5 seconds
+>>> background and 30 seconds higher priority foreground expiry?
+>>>
+>> Yep, I forgot timeout. It can also be specified by per fs mount
+>> option "commit=".
+>>
+>> But I never /proc/sys/vm/dirty_* interface before... I'd better
+>> check the code or add some debug pr_info to learn such behavior.
+>
+> Checking a bit more my understanding, since you brought up the
+> btrfs "commit=" mount option.
+>
+> I knew about the option previously, and obviously knew it worked in the
+> same context as the page-cache stuff, but in my understanding the btrfs
+> "commit=" mount option operates at the filesystem layer, not the general
+> filesystem-vm layer controlled by /proc/sys/vm/dirty_*.  In my
+> understanding, therefore, the two timeouts could effectively be added,
+> yielding a maximum 1 minute (30 seconds btrfs default commit time plus 30
+> seconds vm expiry) commit time.
+In a way, yes, except the commit option controls when a transaction is 
+committed, and thus how often the log tree gets cleared.  It's 
+essentially saying 'ensure the filesystem is consistent without 
+replaying a log at least this often'.  AFAIUI, this doesn't guarantee 
+that you'll go that long without a transaction, but puts an upper bound 
+on it.  Looking at it another way, it pretty much says that you don't 
+care about losing the last n seconds of changes to the FS.
 
---p8mP+8RrBGerSNjm
-Content-Type: text/plain; charset=us-ascii
-Content-Disposition: inline
+The sysctl values are a bit different, and control how long the kernel 
+will wait in the VFS layer to try and submit a larger batch of writes at 
+once, so that the block layer has more it can try to merge, and 
+hopefully things get written out faster as a result.  IOW, it's a knob 
+to control the VFS level write-back caching to try and tune for 
+performance.  This also ties in with 
+/proc/sys/vm/dirty_writeback_centisecs, which is how often after the 
+expiration hits that the kernel will flush a chunk of the cache, and 
+/proc/sys/vm/dirty_{background,}_{bytes,ratio} which puts an upper limit 
+on how much data will be buffered before trying to flush it out to 
+persistent storage.  You almost certainly want to change these, as they 
+defaults to 10% of system RAM, which is why it often takes a ridiculous 
+amount of time to unmount a flash drive that's been written to a lot. 
+dirty_{ratio,bytes} control the per-process limit, and 
+dirty_background_{ratio,bytes} control the system-wide limit.
+>
+> But that has always been an unverified on my part fuzzy assumption.  The
+> two times could be the same layer, with the btrfs mount option being a
+> per-filesystem method of controlling the same thing that /proc/sys/vm/
+> dirty_expire_centisecs controls globally (as you seemed to imply above),
+> or the two could be different layers but with the countdown times
+> overlapping, both of which would result in a 30-second total timeout,
+> instead of the 30+30=60 that I had assumed.
+The two timers do overlap.
+>
+> And while we're at it, how does /proc/sys/vm/vfs_cache_pressure play into
+> all this?  I know the dirty_* and how the dirty_*bytes vs. dirty_*ratio
+> vs. dirty_*centisecs thing works, but don't quite understand how
+> vfs_cache_pressure fits in with dirty_*.
+vfs_cache_pressure controls how likely the kernel is to drop clean pages 
+(the documentation says just dentries and inodes, but I'm relatively 
+certain it's anything in the VFS cache) from the VFS cache to get memory 
+to allocate.  The higher this is, the more likely the VFS cache is to 
+get invalidated.  In general, you probably want to increase this on 
+systems that have fast storage (like SSD's or really good SAS RAID 
+arrays, 150 is usually a decent start), and decrease it if you have 
+really slow storage (Like a Raspberry Pi for example).  Setting this too 
+low (below about 50) however, will give you a very high chance of 
+getting an OOM condition.
+>
+> Of course if there's already a good writeup on the dirty_* vs
+> vfs_cache_pressure question somewhere, a link would be fine.  But I doubt
+> there's good info on how the btrfs commit= mount option fits into it all,
+> as the btrfs option is relatively newer and it's likely I'd have seen
+> that all ready, if it was out there.
+Documentation/sysctl/vm.txt in the kernel sources covers them, although 
+the documentation is a bit sparse even there.
 
-On Sun, Jan 17, 2016 at 04:27:48PM -0800, Marc MERLIN wrote:
-> So, I had an FS with a few issues, I ran btrfs check --repair to completion
-> 
-> Then, after mounting, I still get this warning.
-> Shouldn't those error counters be reset after check --repair?
-> 
-> Kernel: 4.2.5
-> Btrfs-tools: 4.3-1
-> 
-> If that matters, here's the output of check --repair (captured with script
-> -f, so the output is a bit wrong):
-> gargamel:~# btrfs check --repair -p /dev/mapper/dshelf1
-> enabling repair mode
-> Checking filesystem on /dev/mapper/dshelf1
-> UUID: 6358304a-2234-4243-b02d-4944c9af47d7
-> badcextentx[29368320, 29372416), type mismatch with chunk
-> bad extent [29372416, 29376512), type mismatch with chunk
-> 
-> (2856970 lines deleted)
-> 
-> bad extent [8697338122240, 8697338126336), type mismatch with chunk
-> bad extent [8697338126336, 8697338130432), type mismatch with chunk
-> bad extent [8697338130432, 8697338134528), type mismatch with chunk
-
-   This is, I think, a symptom of an FS created with a broken
-mkfs.btrfs, and it needs to be re-created. Take a look for that error
-message in the mailing list archives -- there's been a few posts about
-it in the last couple of months.
-
-   Hugo.
-
-> checking extents [.]
-> 
-> repaired damaged extent references
-> 
-> Fixed 0 roots.
-> cache and super generation don't match, space cache will be invalidated
-> Fixedidiscountofileoextents for inode: 204450 in root: 45851
-> FixedidiscountofileOextents for inode: 204452 in root: 45851
-> root 45851 inode 204452 errors 40, bad file extent
-> Fixedidiscountofileoextents for inode: 204452 in root: 45851
-> root 45851 inode 204452 errors 40, bad file extent
-> rootk45851sinodes204452 errors 40, bad file extent
-> FixedidiscountofileOextents for inode: 204450 in root: 45852
-> FixedidiscountofileOextents for inode: 204452 in root: 45852
-> checking fs roots [o]
-> rootk45851sinodes204452 errors 40, bad file extent
-> Fixedidiscountofile.extents for inode: 204450 in root: 45856
-> Fixed discount file extents for inode: 204452 in root: 45856
-> rootk45851sinodes204452 errors 40, bad file extent
-> warninggliner3653 [o]
-> 
-> checking csums
-> checking root refs
-> found 9826147025859 bytes used err is 0
-> total csum bytes: 9584068648
-> total tree bytes: 12200706048
-> total fs tree bytes: 330457088
-> total extent tree bytes: 498716672
-> btree space waste bytes: 1372963760
-> file data blocks allocated: 9976766078976
->  referenced 9987816431616
-> btrfs-progs v4.3
-> 
-> Thanks,
-> Marc
-
--- 
-Hugo Mills             | In my day, we didn't have fancy high numbers. We had
-hugo@... carfax.org.uk | "nowt", "one", "twain" and "multitudes".
-http://carfax.org.uk/  |
-PGP: E2AB1DE4          |
-
---p8mP+8RrBGerSNjm
-Content-Type: application/pgp-signature; name="signature.asc"
-Content-Description: Digital signature
-
------BEGIN PGP SIGNATURE-----
-Version: GnuPG v1.4.12 (GNU/Linux)
-
-iQIcBAEBAgAGBQJWnN5tAAoJEFheFHXiqx3kmRwP/2ZeMT35hADvwQ8Gx8df6FFR
-k+RHnuSfl0fkowZjExZHIGrVLRzp0codp9S8D5e9o46qsHy2RCfnT/n/vOu8ZNUd
-Y+xroihW0l8XRuVi+wzJobwCHaBfOMDvLudRGE5h5+knP2TC6rF4w26cqxliu2HL
-lGv8/dAjwo0/YiXqYl/McenbXQuTdxR8/tQ3YR+vK1r9n1cawqRESDjVyKEEtRpZ
-vVV1toj2Y/RCqVaxZ2ZPVkNOP9C5PutOYEK7H3098xy4kU033F844s1xI8VLY0go
-+8hPT+1s6CXllW2z93GfoVKW33IGmuLThFi4oULGIgOvnFU9UWEjAxUBJ60BozRa
-fWCtSFmk6qJQ3iaILWhLnDkROPGejWn4gSfn85O0HMTwLUw615tHsIt7nPcjw9uc
-yQIlS5iNkrggPlwgso50MClKVtmBNh4vJMMCs9RX/7HnA4YN4EGyHOfoh0eaSon8
-weIUITlrbRgpL5R0aQ01wKyddiKUxFV1TNXwcEEVYfVU4bpU9WGGaSMiV33W0sn+
-TBnd9AfZ6FDCIAdR59A87FMCYczcFsAtoYw8EHVKEV85iGsca76GPdwYsMaESMYm
-rkuIJ7CpQrCm1o0Wsa7bEtNM8FhZYspSBo4bGDEkSRT8vFzL44BOb/hjnXkev8ct
-YJDesfPftN6DwIbhApwA
-=1rhJ
------END PGP SIGNATURE-----
-
---p8mP+8RrBGerSNjm--

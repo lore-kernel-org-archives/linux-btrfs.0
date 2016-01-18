@@ -1,57 +1,49 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:14845 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1750884AbcARDQz (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Jan 2016 22:16:55 -0500
-Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain
- like I'm five pls.
-To: Duncan <1i5t5.duncan@cox.net>, <linux-btrfs@vger.kernel.org>
-References: <loom.20160116T132316-196@post.gmane.org>
- <569C41B1.1090206@cn.fujitsu.com>
- <pan$9ea8b$cdf4a5be$a6b3ced0$e73fd4ce@cox.net>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <569C58FB.70407@cn.fujitsu.com>
-Date: Mon, 18 Jan 2016 11:16:11 +0800
-MIME-Version: 1.0
-In-Reply-To: <pan$9ea8b$cdf4a5be$a6b3ced0$e73fd4ce@cox.net>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:51173 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753486AbcARDWJ (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 17 Jan 2016 22:22:09 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aL0ON-00059M-3Y
+	for linux-btrfs@vger.kernel.org; Mon, 18 Jan 2016 04:22:07 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2016 04:22:02 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2016 04:22:02 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: BTRFS: bdev /dev/mapper/dshelf1 errs: wr 2970, rd 848, flush 0,
+ corrupt 189, gen 0
+Date: Mon, 18 Jan 2016 03:21:53 +0000 (UTC)
+Message-ID: <pan$6d745$1ec4d122$7401737e$1adc2b07@cox.net>
+References: <20160118002748.GE12045@merlins.org>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Marc MERLIN posted on Sun, 17 Jan 2016 16:27:48 -0800 as excerpted:
 
+> So, I had an FS with a few issues, I ran btrfs check --repair to
+> completion
+> 
+> Then, after mounting, I still get this warning. [see subject]
+> Shouldn't those error counters be reset after check --repair?
 
-Duncan wrote on 2016/01/18 03:10 +0000:
-> Qu Wenruo posted on Mon, 18 Jan 2016 09:36:49 +0800 as excerpted:
->
->>> dedup'ing data immediately when written to high-write-count data is
->>> counter productive because no sooner has it been deduped then it is
->>> rendered obsolete by another COW write.
->>
->> And it seems that you are not familiar how kernel is caching data for
->> filesystem.
->> There is already kernel page cache for such case.
->> No matter how many times you write, as long as you're doing buffered
->> write the the data is not written to disk but cached by kernel, until
->> either you triggered a manual sync or memory pressure hits threshold.
->
-> Not contradicting in general, but checking my own understanding here...
->
-> Doesn't the kernel write cache get synced by timeout as well as memory
-> pressure and manual sync, with the timeouts found in
-> /proc/sys/vm/dirty_*_centisecs, with defaults of 5 seconds background and
-> 30 seconds higher priority foreground expiry?
->
-> Regardless, I agree, the kernel page-cache seriously mitigates the stated
-> concerns.
->
-Yep, I forgot timeout. It can also be specified by per fs mount option 
-"commit=".
+No.  Those are monotonically increasing counts that are never 
+automatically reset over the life of the filesystem.  Use ...
 
-But I never /proc/sys/vm/dirty_* interface before... I'd better check 
-the code or add some debug pr_info to learn such behavior.
+btrfs dev stats
 
-Thanks for pointing out this,
-Qu
+... to display them on the commandline (vs. the kernel log at filesystem 
+mount), with the -z option to reset them after display, if desired.
 
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

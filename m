@@ -1,105 +1,235 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from aserp1040.oracle.com ([141.146.126.69]:20096 "EHLO
-	aserp1040.oracle.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1161362AbcAPAyT (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Fri, 15 Jan 2016 19:54:19 -0500
-Date: Fri, 15 Jan 2016 16:54:04 -0800
-From: Liu Bo <bo.li.liu@oracle.com>
-To: Hugo Mills <hugo@carfax.org.uk>, linux-btrfs@vger.kernel.org
-Subject: Re: [PATCH] Btrfs: copy the certain type of item if min_type equals
- to max_type
-Message-ID: <20160116005404.GA30062@localhost.localdomain>
-Reply-To: bo.li.liu@oracle.com
-References: <1452891148-7738-1-git-send-email-bo.li.liu@oracle.com>
- <20160115211841.GO422@carfax.org.uk>
+Received: from mx2.suse.de ([195.135.220.15]:52889 "EHLO mx2.suse.de"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1755096AbcARNGj (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Mon, 18 Jan 2016 08:06:39 -0500
+Date: Mon, 18 Jan 2016 14:06:26 +0100
+From: David Sterba <dsterba@suse.cz>
+To: linux-btrfs@vger.kernel.org
+Cc: clm@fb.com
+Subject: Btrfs progs release 4.4
+Message-ID: <20160118130626.GK4227@suse.cz>
+Reply-To: dsterba@suse.cz
 MIME-Version: 1.0
-Content-Type: text/plain; charset=us-ascii
-In-Reply-To: <20160115211841.GO422@carfax.org.uk>
+Content-Type: text/plain; charset=iso-8859-1
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On Fri, Jan 15, 2016 at 09:18:41PM +0000, Hugo Mills wrote:
-> On Fri, Jan 15, 2016 at 12:52:28PM -0800, Liu Bo wrote:
-> > Some tools in btrfs-progs utilize ioctl 'BTRFS_IOC_TREE_SEARCH' and
-> > ioctl 'BTRFS_IOC_TREE_SEARCH_V2' to look up metadata btree for what
-> > they want, and several tools in fact only look for one certain type,
-> > where they set a certain value for both 'sk->min_type' and 'sk->max_type'.
-> > 
-> > For example,
-> > if we want to get the information of block groups, the current btrfs
-> > searches extent_tree and returns not only block groups's items, but also
-> > EXTENT_ITEM's items which could cost a large amount of user's buffer,
-> > and tools then needs to read the buffer and spends several loops to
-> > pick up what they want.
-> > 
-> > This lets the above two ioctl only return the certain type of items
-> > that tools wants.
-> 
->    This changes the semantics of the ioctl in a subtle and
-> incompatible way.
-> 
->    The keyspace used by btrfs trees can be viewed in two different and
-> semantically incompatible ways. A key is an (Ob, T, Of) tuple. The
-> first way of looking at this is as a one-dimensional keyspace, ordered
-> lexically, as Ob+T+Of. This is what btrfs uses internally, and it's
-> the way that the TREE_SEARCH ioctl works. A search simply returns a
-> linear subset of the keys between the minimum and the maximum.
-> 
->    The other view of the keyspace, which is more useful in some
-> circumstances, is of a 3-dimensional keyspace, with the obvious
-> lattice-like ordering, where K1 <= K2 iff Ob1 <= Ob2 and T1 <= T2 and
-> Of1 <= Of2. This offers a very different interpretation of searching,
-> where you are carving out a rectangular block of the 3-dimensional
-> keyspace. This is the behaviour you're trying to impose on the search
-> ioctl for a specific special case of search.
-> 
->    I would argue that if you want to have the second form of search
-> (and it's a useful one, certainly), you should implement an
-> alternative search ioctl, rather than trying to retrofit that
-> behaviour on something with very different, already well-defined
-> semantics.
-> 
->    In other words, this change makes for an awkward and confusing
-> interface, and I think it shouldn't be done this way.
+Hi,
 
-OK, I also realize that we can do sk->min_type++ in some places, where
-we will get wrong results.
+btrfs-progs 4.4 have been released.
 
-Please ignore it.
+User visible changes
+--------------------
 
-Thanks,
+* mkfs.btrfs --data dup
 
--liubo
+  People asked about duplicating data on a single device for a long time. There
+  are no technical obstacles preventing that, so it got enabled with a warning
+  about potential dangers when the device will not do the duplicated copies.
+  See mkfs.btrfs section 'DUP PROFILES ON A SINGLE DEVICE'.
 
-> 
->    Hugo.
-> 
-> > Signed-off-by: Liu Bo <bo.li.liu@oracle.com>
-> > ---
-> >  fs/btrfs/ioctl.c | 4 ++++
-> >  1 file changed, 4 insertions(+)
-> > 
-> > diff --git a/fs/btrfs/ioctl.c b/fs/btrfs/ioctl.c
-> > index da94138..f795423 100644
-> > --- a/fs/btrfs/ioctl.c
-> > +++ b/fs/btrfs/ioctl.c
-> > @@ -1911,6 +1911,10 @@ static noinline int key_in_sk(struct btrfs_key *key,
-> >  	struct btrfs_key test;
-> >  	int ret;
-> >  
-> > +	/* All we want is this type of key. */
-> > +	if (sk->min_type == sk->max_type && key->type != sk->min_type)
-> > +		return 0;
-> > +
-> >  	test.objectid = sk->min_objectid;
-> >  	test.type = sk->min_type;
-> >  	test.offset = sk->min_offset;
-> 
-> -- 
-> Hugo Mills             | "He's a nutcase, you know. There's no getting away
-> hugo@... carfax.org.uk | from it -- he'll end up with a knighthood"
-> http://carfax.org.uk/  |
-> PGP: E2AB1DE4          |                         Lexy, The League of Gentlemen
+* support balance filters added/enhanced in linux 4.4
 
+  * usage=min..max	-- enhanced to take range
+  * stripes=min..max	-- new, filter by stripes for raid0/10/5/6
+  * limit=min..max	-- enhanced to take range
+
+  Due to backward compatibility, the range maximum for 'usage' is not inclusive
+  as for the others, to keep the same behaviour as usage=N .
+
+* manual pages enhanced (btrfs, mkfs, mount, filesystem, balance)
+
+* error messages updates, rewordings -- some fstests may break due to that
+
+* added support for free-space-tree implementation of space cache
+
+  this requires kernel 4.5 and is not recommended for non-developers yet
+
+* 'btrfs filesystem usage' works with mixed blockgroups
+
+Other:
+
+* installation to /usr/local -- this has unintentionally changed during
+  conversion to autotools in 3.19
+* check: fix a false alert where extent record has wrong metadata flag
+* improved stability on fuzzed/crafted images when reading sys array in
+  superblock
+* build: the 'ar' tool is properly deteced during cross-compilation
+* debug-tree: option -t understands ids for tree root and chnuk tree
+* preparatory work for btrfs-convert rewrite
+* sparse, gcc warning fixes
+* more memory allocation failure handling
+* cleanups ...
+* more tests
+
+Bugfixes:
+
+* chunk recovery: fix floating point exception
+* chunk recovery: endianity bugfix during rebuild
+* mkfs with 64K pages and nodesize reported superblock checksum mismatch
+* check: properly reset nlink of multi-linked file
+
+
+Development cycle for 4.5
+-------------------------
+
+There are a few patchsets that did not make it to 4.4 and are currently
+at the top of my list.
+
+* feature compatibility of mkfs and kernel (Anand)
+
+* convert rework (Qu) -- more reivew needed, the pending patches are
+  in branch foreign/qu/convert-rework
+
+* delete device by id (Anand) -- the kernel support is required, I need
+  to look at the patches again
+
+* improved btrfs check progress
+
+There are a few more and I hope I'll get to them eventually. The bi-weekly
+stable releases are supposed to be resumed with bugfixes or docs updates.
+
+
+Tarballs: https://www.kernel.org/pub/linux/kernel/people/kdave/btrfs-progs/
+Git: git://git.kernel.org/pub/scm/linux/kernel/git/kdave/btrfs-progs.git
+
+Byongho Lee (6):
+      btrfs-progs: get sparse checking working
+      btrfs-progs: use NULL instead of 0
+      btrfs-progs: make private symbols to static
+      btrfs-progs: fix endian bugs in chunk rebuilding
+      btrfs-progs: fix endian bug in update_super()
+      btrfs-progs: fix using on-disk structure to store in memory data
+
+Chandan Rajendra (1):
+      btrfs-progs: ftw_add_entry_size: Round up file size to sectorsize
+
+Christoph Anton Mitterer (1):
+      btrfs-progs: document snapshot unaware defrag
+
+David Sterba (79):
+      btrfs-progs: mkfs: use correct size for superblock csum and writeout
+      btrfs-progs: tests: add 007-mix-nodesize-sectorsize
+      btrfs-progs: docs: update raid table in mkfs manpage
+      btrfs-progs: tests: add 019-non-skinny-false-alert
+      btrfs-progs: tests: enhance 001-basic-profiles with --data DUP
+      btrfs-progs: docs: mkfs, implications of DUP on devices
+      btrfs-progs: install to /usr/local by default again
+      btrfs-progs: update btrfs_read_sys_array to match kernel implementation
+      btrfs-progs: cleanup, rename a few variables in btrfs_read_sys_array
+      btrfs-progs: add more checks to btrfs_read_sys_array
+      btrfs-progs: handle invalid num_stripes in sys_array
+      btrfs-progs: verbose error when we find an unexpected item in sys_array
+      btrfs-progs: tests: add sys-array-num-stripes-0.raw.xz
+      btrfs-progs: show-super: copy implementation of btrfs_read_sys_array
+      btrfs-progs: tests: print test type
+      btrfs-progs: extend balance args to take min/max limit filter
+      btrfs-progs: balance: enhance the limit fiter with range
+      btrfs-progs: extend balance args to take min/max usage filter
+      btrfs-progs: balance: enhance the usage filter with range
+      btrfs-progs: use on-stack buffer in add_symbolic_link
+      btrfs-progs: docs, update btrfs(8) manual page
+      btrfs-progs: docs, btrfs-mount: unindent descriptions
+      btrfs-progs: docs, btrfs-mount: put NOTE tag to new paragraph
+      btrfs-progs: docs, btrfs-mount: enhance fatal_erros
+      btrfs-progs: docs, enhance the mount option manual page
+      btrfs-progs: return errors from get_inode_rec, fail in callers
+      btrfs-progs: return errors from clone_inode_rec, fail in callers
+      btrfs-progs: handle errors in add_shared_node and fail in the caller
+      btrfs-progs: return errors from get_root_rec, fail in callers
+      btrfs-progs: handle errors in get_root_backref and fail in the caller
+      btrfs-progs: handle errors in get_inode_backref and fail in the caller
+      btrfs-progs: catch memory allocation failure in splice_shared_node
+      btrfs-progs: catch memory allocation failure from alloc_tree_backref
+      btrfs-progs: catch memory allocation failure from alloc_data_backref
+      btrfs-progs: handler memory allocation failure in add_extent_rec
+      btrfs-progs: catch memory allocation failure in btrfs_split_item
+      btrfs-progs: cmd rescue: switch to common error message wrapper
+      btrfs-progs: cmd quota: switch to common error message wrapper
+      btrfs-progs: cmd balance: switch to common error message wrapper
+      btrfs-progs: cmd property: switch to common error message wrapper
+      btrfs-progs: cmd qgroup: switch to common error message wrapper
+      btrfs-progs: cmd receive: switch to common error message wrapper
+      btrfs-progs: cmd send: switch to common error message wrapper
+      btrfs-progs: cmd subvolume: switch to common error message wrapper
+      btrfs-progs: cmd replace: switch to common error message wrapper
+      btrfs-progs: cmd filesystem: switch to common error message wrapper
+      btrfs-progs: cmd fi usage: switch to common error message wrapper
+      btrfs-progs: cmd property: use correct usage strings
+      btrfs-progs: cleanup, move usage help strings closer to the command callbacks
+      btrfs-progs: docs, btrfs-mount: enhance file attributes section
+      btrfs-progs: docs: rename btrfs-mount to btrfs-man5
+      btrfs-progs: docs: sort mount options alphabetically
+      btrfs-progs: docs: document new mount option fragment
+      btrfs-progs: free-space-tree: minor message adjustments
+      btrfs-progs: remove unnecessary errno temp variables
+      btrfs-progs: check for negative return value from ioctl
+      btrfs-progs: build: fix builds with extra warnings, W=1
+      btrfs-progs: add function attributes for the printf-like
+      btrfs-porgs: qgroup: rename variable to avoid shadowing
+      btrfs-porgs: check: rename variable to avoid shadowing
+      btrfs-porgs: fi usage: rename variable to avoid shadowing
+      btrfs-progs: tests: add missing prerequisites
+      btrfs-progs: docs: enhance btrfs-filesystem manual page
+      btrfs-progs: fi usage: support mixed blockgroups
+      btrfs-progs: subvol show: handle options by getopt
+      btrfs-progs: debug-tree: teach -t option about the chunk and root trees
+      btrfs-progs: let test_isdir return the exact error
+      btrfs-progs: handle errors from test_isdir
+      btrfs-progs: use symbolic name for subvolume inode number in test_issubvolume
+      btrfs-progs: let test_issubvolume return the exact error
+      btrfs-progs: more verbose errors from test_issubvolume
+      btrfs-progs: also check filesystem type in test_issubvolume
+      btrfs-progs: receive: don't leak open find handle
+      btrfs-progs: move prefixcmp to utils
+      btrfs-progs: introduce helper for parsing args without options
+      btrfs-progs: subvol show: use clean_args_no_options instead of opencoding
+      Btrfs progs v4.4-rc1
+      btrfs-progs: debug-tree: tweak tree node checks
+      btrfs-progs: docs: update balance manual page
+
+Gabríel Arthúr Pétursson (1):
+      btrfs-progs: balance: add stripes filter
+
+Jeff Mahoney (1):
+      btrfs-progs: convert: add context and operations struct to allow different file systems
+
+Jeffrey Schiller (1):
+      btrfs-progs: docs: fix typo in balance man page
+
+Khem Raj (1):
+      btrfsprogs: corrupt-blocks: include limits.h to define PATH_MAX
+
+Liu Bo (1):
+      Btrfs-progs: fix typo in parse_range
+
+Mike Gilbert (1):
+      btrfs-progs: Use AC_CHECK_TOOL to find AR
+
+Naohiro Aota (2):
+      btrfs-progs: check, properly reset nlink of multi-linked file
+      btrfs-progs: tests: test multiple-linked file corruption
+
+Neil Horman (1):
+      btrfs: only free root_path if it was allocated from the heap
+
+Noah Massey (1):
+      btrfs-progs: fix static build
+
+Omar Sandoval (2):
+      btrfs-progs: add basic awareness of the free space tree
+      btrfs-progs: check the free space tree in btrfsck
+
+Qu Wenruo (7):
+      btrfs-progs: chunk-recovery: Fix a float point error
+      btrfs-progs: fsck: Fix a false alert where extent record has wrong metadata flag
+      btrfs-progs: tests: mkfs, check sectorsize and nodesize combinations
+      btrfs-progs: extent-cache: Add comments for search/lookup functions
+      btrfs-progs: extent-tree: Add add_merge_cache_extent function
+      btrfs-progs: Introduce new members for btrfs_convert_context
+      btrfs-progs: Enhance chunk validation check
+
+Zhao Lei (1):
+      btrfs-progs: mkfs: allow --data DUP for single device
 

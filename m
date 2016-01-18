@@ -1,136 +1,113 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from cn.fujitsu.com ([59.151.112.132]:50854 "EHLO
-	heian.cn.fujitsu.com" rhost-flags-OK-FAIL-OK-FAIL) by vger.kernel.org
-	with ESMTP id S1753238AbcARBhV (ORCPT
-	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Jan 2016 20:37:21 -0500
-Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain
- like I'm five pls.
-To: Al <6401e46d@opayq.com>, <linux-btrfs@vger.kernel.org>
-References: <loom.20160116T132316-196@post.gmane.org>
-From: Qu Wenruo <quwenruo@cn.fujitsu.com>
-Message-ID: <569C41B1.1090206@cn.fujitsu.com>
-Date: Mon, 18 Jan 2016 09:36:49 +0800
-MIME-Version: 1.0
-In-Reply-To: <loom.20160116T132316-196@post.gmane.org>
-Content-Type: text/plain; charset="utf-8"; format=flowed
+Received: from plane.gmane.org ([80.91.229.3]:47563 "EHLO plane.gmane.org"
+	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
+	id S1753371AbcARCLh (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Sun, 17 Jan 2016 21:11:37 -0500
+Received: from list by plane.gmane.org with local (Exim 4.69)
+	(envelope-from <gcfb-btrfs-devel-moved1-2@m.gmane.org>)
+	id 1aKzI6-00056T-3U
+	for linux-btrfs@vger.kernel.org; Mon, 18 Jan 2016 03:11:34 +0100
+Received: from ip98-167-165-199.ph.ph.cox.net ([98.167.165.199])
+        by main.gmane.org with esmtp (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2016 03:11:34 +0100
+Received: from 1i5t5.duncan by ip98-167-165-199.ph.ph.cox.net with local (Gmexim 0.1 (Debian))
+        id 1AlnuQ-0007hv-00
+        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2016 03:11:34 +0100
+To: linux-btrfs@vger.kernel.org
+From: Duncan <1i5t5.duncan@cox.net>
+Subject: Re: btrfs send - detect if complete
+Date: Mon, 18 Jan 2016 02:11:28 +0000 (UTC)
+Message-ID: <pan$9caf0$b39039c8$a46575fb$3e36bb8@cox.net>
+References: <20160117123529.GA26322@localhost.localdomain>
+Mime-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
+Lubos Kolouch posted on Sun, 17 Jan 2016 13:35:29 +0100 as excerpted:
 
+> I am building a backup system, based on btrfs incremental send/receive.
+> 
+> I am a bit stuck on how to detect, if the transfer has been completed
+> (and not interrupted during transfer).
+> 
+> Host A :
+> du --max-depth=0 home_20160117
+> 45787768  home_20160117
+> 
+> btrfs send home_20160117 | ssh dest_host "btrfs receive
+> /mnt/destination/"
+> 
+> … transfer completes without any error
+> 
+> on dest_host:
+> 
+> du --max-depth=0 home_20160117
+> 45763984  home_20160117
+> 
+> Ie. the size differs, perhaps due to different compression(?)
 
-Al wrote on 2016/01/16 12:27 +0000:
-> Hi,
->
-> This must be a silly question! Please assume that I know not much more than
-> nothing abou*t fs.
-> I know dedup is traditionally costs a lot of memory, but I don't really
-> understand why it is done like that. Let me explain my question:
+Does du --apparent-size compare equally?
 
-As one of the author of the recent btrfs inband dedup patches, at least 
-from my codes, dedup doesn't cost a lot of memory, unless stupid user 
-gives a stupid memory limit for in-memory backend.
+My experience, even with normal copies on non-btrfs (reiserfs, in my 
+case), suggests that files on an in-use filesystem, where files have been 
+created, modified and deleted over time, will use more space than if 
+everything's copied over to a fresh filesystem, where the copy is all at 
+once and files are thus defragged and may be sparsely copied where the 
+original was no-holes, etc.
 
-And for on-disk backend, the memory pressure is even smaller.
-Kernel can trigger a transaction commit to reclaim the pages caches used 
-for dedup.
-So I didn't see what's wrong with the memory usage.
+I've not messed around with du enough to know if --apparent-size will 
+display equally in such cases or not, but it's worth a shot, and in any 
+case, with even straight copies normally showing up as more efficiently 
+stored (by df and in the btrfs case btrfs fi df and btrfs fi show, on 
+identically sized and type filesystems), you can't rely on simple 
+aggregate size to verify a full transfer.
+ 
+> The volume seems OK, I can use it as a parent volume for further
+> transfers etc.
+> 
+> The question is - is there a "btrfs native" way to tell, if the two
+> subvolumes are really identical (and the transfer was not interrupted
+> etc.)?
+> 
+> Or do I have to resort to costly things like checksumming all files?
 
->
-> AFAICT dedup matches file level chunks (or whatever you call them) using a
-> hash function or something which has limited collision potential.
+In general, what send/receive bugs there are tend to be of the command-
+failure kind -- if both the send and receive complete without error, the 
+copy can be considered reliable.  The problems have been various corner-
+cases that receive didn't know how to handle, in which case it errors out 
+rather than silently failing -- if there's an error, it lets you know and 
+exit status is non-zero.   (On the send side, failure would normally 
+indicate a filesystem inconsistency, that other tools like balance or 
+scrub, depending on the problem, would fail on as well.)
 
-The more accurate term should be "file extent" though.
+So while you can of course manually checksum-verify everything if you're 
+paranoid, I'd normally consider an exit status of success on both the 
+send and receive sides as verification enough, and /definitely/ more 
+reliable than simple size checks.
 
-> The hash
-> is used to match blocks as they are committed to disk, I'm talking online
-> dedup*, and reflink/eliminate the duplicated blocks as necessary.  This
-> bloody great hash tree is saved in memory for speed of lookup (I assume).
+However, bugs do still occasionally come up where send/receive fails, 
+simply because it doesn't know how to handle some corner-case.  A very 
+simple example of one such incremental-send corner-case that was fixed 
+early on, was when nested directories "reverse" their nesting -- IOW, 
+where the original layout was /whatever/a/b, with b nested inside a, but 
+that reversed to /whatever/b/a, with a nested inside b.  Again, that's 
+one simple corner-case that was long ago fixed to work correctly, and 
+it's now far more complex cases that still cause failure, but it 
+illustrates the general type of corner-case issues that can be 
+problematic.
 
-No, you can choose whether to store it in memory or on disk.
-Which is one of the selling point of the patchset I recently submitted.
-Before this, either using Liu Bo's on-disk one, or my early pure 
-in-memory one.
+So while successful completion should be entirely reliable, do be 
+prepared for it to fail, and to either investigate and delete the 
+offending file (perhaps copying it elsewhere and then back), or to report 
+the problem and switch to something else, perhaps rsync, if necessary, 
+until the problem is resolved.  Tho these types of issues are getting 
+rarer than they were, so you might never have to deal with one, but 
+having a fallback plan in case you do have such a corner-case never hurts.
 
-And unfortunately (or in fact fortunately?), the size of hash is already 
-quite small.
-
-Current dedup unit (although I use the term "dedup blocksize") is 16K, 
-which means only write larger than 16K will go through inband dedup.
-So, 16K data = one hash = 112 bytes.
-For 1G data, it's about just 7M.
-(BTW, 1G data means 1M CRC32 checksum, although it can be stored into 
-disk, just like what we do in on-disk backend)
-
-And the dedup blocksize can be tuned from 4K to 8M.
-If using 8M dedup blocksize. 1G data only takes about 14K memory.
-Much smaller than btrfs CRC32 checksum.
-
-Not to mention there is a memory usage limit and there is also on-disk 
-backend.
-
->
-> But why?
->
-> Is there any urgency for dedup? What's wrong with storing the hash on disk
-> with the block and having a separate process dedup the written data over
-> time;
-
-And that's almost what on-disk backend doing.
-
-> dedup'ing data immediately when written to high-write-count data is
-> counter productive because no sooner has it been deduped then it is rendered
-> obsolete by another COW write.
-
-And it seems that you are not familiar how kernel is caching data for 
-filesystem.
-There is already kernel page cache for such case.
-No matter how many times you write, as long as you're doing buffered 
-write the the data is not written to disk but cached by kernel, until 
-either you triggered a manual sync or memory pressure hits threshold.
-
-And inband dedup doesn't happen *until* the cached data is going to 
-written to disk.
-So all you concerned is not a problem.
-No extra CPU/memory is used until you're committing data to disk.
-
->
-> There's also the problem of opening a potential problem window before the
-> commit to disk, hopefully covered by the journal, whilst we seek the
-> relevant duplicate if there is one.
-
->
-> Help me out peeps? Why is there a such an urgency to have online dedup,
-> rather than a triggered/delayed dedup, similar the current autodefrag process?
->
-> Thank you. I'm sure the answer is obvious, but not to me!
-
-Although I really don't like to say things like this,
-but please, READ THE "FUNNY" CODE.
-
-I used to have a lot of questions and "good" ideas about btrfs,
-but as I digging into the code, the question disappeared and "good" 
-ideas turn to be either already done or really bad ideas.
-
-So if you're really interested in btrfs, please stand from digging the 
-on-disk format(believe me, this is the easiest way) and get familiar 
-with a lot of kernel MM/VFS facilities.
-(and that's what I used to do and are still doing)
-
-Thanks,
-Qu
-
->
-> * dedup/dedupe/deduplication
->
->
->
->
-> --
-> To unsubscribe from this list: send the line "unsubscribe linux-btrfs" in
-> the body of a message to majordomo@vger.kernel.org
-> More majordomo info at  http://vger.kernel.org/majordomo-info.html
->
->
-
+-- 
+Duncan - List replies preferred.   No HTML msgs.
+"Every nonfree program has a lord, a master --
+and if you use the program, he is your master."  Richard Stallman
 

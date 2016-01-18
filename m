@@ -1,63 +1,81 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from sender153-mail.zoho.com ([74.201.84.153]:22830 "EHLO
-	sender153-mail.zoho.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1752761AbcAQV6D (ORCPT
+Received: from magic.merlins.org ([209.81.13.136]:38831 "EHLO
+	mail1.merlins.org" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1752982AbcARA1t (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Sun, 17 Jan 2016 16:58:03 -0500
-Subject: Re: Copying between lzo compressed BtrFS's: de/re-compressing.
-References: <5698B534.4040202@xoxy.net>
- <CAGqmi76EQ1NYFhp7hdwdrP0VTNXdSYgePje036UGRWDnUV=EWw@mail.gmail.com>
- <CAL3q7H7pQ576qKqknWEA2Trgu4hn_6SV00vm2fLwz=_MJ8Nw2Q@mail.gmail.com>
- <569BFCB1.2000107@xoxy.net>
- <CAJCQCtTg0s=f8FTPtXsn7-g-Lf=duBDH2ATV-muB34XVG_Ce0A@mail.gmail.com>
-To: linux-btrfs <linux-btrfs@vger.kernel.org>
-From: Diagon <kernel.boxy@xoxy.net>
-Message-ID: <569C0E5C.1080003@xoxy.net>
-Date: Sun, 17 Jan 2016 13:57:48 -0800
+	Sun, 17 Jan 2016 19:27:49 -0500
+Received: from merlin by mail1.merlins.org with local (Exim 4.80 #2)
+	id 1aKxfg-0005xj-Ga by authid <merlin>
+	for <linux-btrfs@vger.kernel.org>; Sun, 17 Jan 2016 16:27:48 -0800
+Date: Sun, 17 Jan 2016 16:27:48 -0800
+From: Marc MERLIN <marc@merlins.org>
+To: Btrfs mailing list <linux-btrfs@vger.kernel.org>
+Subject: BTRFS: bdev /dev/mapper/dshelf1 errs: wr 2970, rd 848, flush 0, corrupt 189, gen 0
+Message-ID: <20160118002748.GE12045@merlins.org>
 MIME-Version: 1.0
-In-Reply-To: <CAJCQCtTg0s=f8FTPtXsn7-g-Lf=duBDH2ATV-muB34XVG_Ce0A@mail.gmail.com>
-Content-Type: text/plain; charset=utf-8
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 01/17/2016 01:27 PM, Chris Murphy - lists@colorremedies.com wrote:
-> On Sun, Jan 17, 2016 at 1:42 PM, Diagon <kernel.boxy@xoxy.net> wrote:
->> On 01/15/2016 04:25 AM, Filipe Manana wrote:
->>> On Fri, Jan 15, 2016 at 9:56 AM, Timofey Titovets <nefelim4ag@gmail.com> wrote:
->>
->>>> 2016-01-15 12:00 GMT+03:00 Diagon <kernel.boxy@xoxy.net>:
->>
->>>>> I'm copying a large number of files between two lzo compressed BtrFS
->>>>> filesystems on different drives mounted on the same machine. It appears
->>>>> that the files are being de/re-compressed. Is there a way avoid this?
->>>>
->>>> If you just copy files, files will be decompressed while reading and
->>>> recompressed while writing
->>>> For avoiding this, you must use send receive feature
->>>
->>> No, send/receive does not avoid decompression on the send side nor
->>> re-compression at the receiving side. The receiving side writes the
->>> data from a send stream, which is uncompressed, to the destination
->>> filesystem using standard system calls like write/pwrite.
->>
->> So, just to spell it out, I understand that de/re-compression is
->> unavoidable?  (And I'll post that to my stackexchange question.)
-> 
-> It's unavoidable when replicating data across file systems
-> (send/receive, rsync, cp). 
+So, I had an FS with a few issues, I ran btrfs check --repair to completion
 
-Got it.
+Then, after mounting, I still get this warning.
+Shouldn't those error counters be reset after check --repair?
 
-> It's avoidable if you use a seed device,
-> add a new device, then delete the seed. While the volume UUID changes
-> with this process, the duplicate volume is essentially the same as the
-> source (the process copies chunks), which means the chunk profile is
-> also preserved.
+Kernel: 4.2.5
+Btrfs-tools: 4.3-1
 
-Fantastic!  I could have actually used this on a new build by using the
-installer to build into a new subvolume and then moving the files over.
+If that matters, here's the output of check --repair (captured with script
+-f, so the output is a bit wrong):
+gargamel:~# btrfs check --repair -p /dev/mapper/dshelf1
+enabling repair mode
+Checking filesystem on /dev/mapper/dshelf1
+UUID: 6358304a-2234-4243-b02d-4944c9af47d7
+badcextentx[29368320, 29372416), type mismatch with chunk
+bad extent [29372416, 29376512), type mismatch with chunk
 
-I'll know next time.  Much appreciated.
+(2856970 lines deleted)
 
-/D
+bad extent [8697338122240, 8697338126336), type mismatch with chunk
+bad extent [8697338126336, 8697338130432), type mismatch with chunk
+bad extent [8697338130432, 8697338134528), type mismatch with chunk
+checking extents [.]
 
+repaired damaged extent references
+
+Fixed 0 roots.
+cache and super generation don't match, space cache will be invalidated
+Fixedidiscountofileoextents for inode: 204450 in root: 45851
+FixedidiscountofileOextents for inode: 204452 in root: 45851
+root 45851 inode 204452 errors 40, bad file extent
+Fixedidiscountofileoextents for inode: 204452 in root: 45851
+root 45851 inode 204452 errors 40, bad file extent
+rootk45851sinodes204452 errors 40, bad file extent
+FixedidiscountofileOextents for inode: 204450 in root: 45852
+FixedidiscountofileOextents for inode: 204452 in root: 45852
+checking fs roots [o]
+rootk45851sinodes204452 errors 40, bad file extent
+Fixedidiscountofile.extents for inode: 204450 in root: 45856
+Fixed discount file extents for inode: 204452 in root: 45856
+rootk45851sinodes204452 errors 40, bad file extent
+warninggliner3653 [o]
+
+checking csums
+checking root refs
+found 9826147025859 bytes used err is 0
+total csum bytes: 9584068648
+total tree bytes: 12200706048
+total fs tree bytes: 330457088
+total extent tree bytes: 498716672
+btree space waste bytes: 1372963760
+file data blocks allocated: 9976766078976
+ referenced 9987816431616
+btrfs-progs v4.3
+
+Thanks,
+Marc
+-- 
+"A mouse is a device used to point at the xterm you want to type in" - A.S.R.
+Microsoft is to operating systems ....
+                                      .... what McDonalds is to gourmet cooking
+Home page: http://marc.merlins.org/  

@@ -1,106 +1,66 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mail-io0-f180.google.com ([209.85.223.180]:33730 "EHLO
-	mail-io0-f180.google.com" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
-	with ESMTP id S1754874AbcARMtb (ORCPT
+Received: from ud10.udmedia.de ([194.117.254.50]:32938 "EHLO
+	mail.ud10.udmedia.de" rhost-flags-OK-OK-OK-OK) by vger.kernel.org
+	with ESMTP id S1756211AbcARSeA (ORCPT
 	<rfc822;linux-btrfs@vger.kernel.org>);
-	Mon, 18 Jan 2016 07:49:31 -0500
-Received: by mail-io0-f180.google.com with SMTP id q21so548396702iod.0
-        for <linux-btrfs@vger.kernel.org>; Mon, 18 Jan 2016 04:49:31 -0800 (PST)
-Subject: Re: Why is dedup inline, not delayed (as opposed to offline)? Explain
- like I'm five pls.
-To: Duncan <1i5t5.duncan@cox.net>, linux-btrfs@vger.kernel.org
-References: <loom.20160116T132316-196@post.gmane.org>
- <569C41B1.1090206@cn.fujitsu.com>
- <pan$9ea8b$cdf4a5be$a6b3ced0$e73fd4ce@cox.net>
- <569C58FB.70407@cn.fujitsu.com> <pan$9dd9b$58cdc4a$94401f0f$f97ce29e@cox.net>
-From: "Austin S. Hemmelgarn" <ahferroin7@gmail.com>
-Message-ID: <569CDF0D.9030609@gmail.com>
-Date: Mon, 18 Jan 2016 07:48:13 -0500
+	Mon, 18 Jan 2016 13:34:00 -0500
+Date: Mon, 18 Jan 2016 19:27:17 +0100
+From: Markus Trippelsdorf <markus@trippelsdorf.de>
+To: Omar Sandoval <osandov@fb.com>
+Cc: linux-btrfs@vger.kernel.org
+Subject: space_cache=v2 on root fs
+Message-ID: <20160118182717.GA321@x4>
 MIME-Version: 1.0
-In-Reply-To: <pan$9dd9b$58cdc4a$94401f0f$f97ce29e@cox.net>
-Content-Type: text/plain; charset=utf-8; format=flowed
+Content-Type: text/plain; charset=us-ascii
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-On 2016-01-17 22:51, Duncan wrote:
-> Qu Wenruo posted on Mon, 18 Jan 2016 11:16:11 +0800 as excerpted:
->
->> Duncan wrote on 2016/01/18 03:10 +0000:
->>>
->>> Doesn't the kernel write cache get synced by timeout as well as
->>> memory pressure and manual sync, with the timeouts found in
->>> /proc/sys/vm/dirty_*_centisecs, with defaults of 5 seconds
->>> background and 30 seconds higher priority foreground expiry?
->>>
->> Yep, I forgot timeout. It can also be specified by per fs mount
->> option "commit=".
->>
->> But I never /proc/sys/vm/dirty_* interface before... I'd better
->> check the code or add some debug pr_info to learn such behavior.
->
-> Checking a bit more my understanding, since you brought up the
-> btrfs "commit=" mount option.
->
-> I knew about the option previously, and obviously knew it worked in the
-> same context as the page-cache stuff, but in my understanding the btrfs
-> "commit=" mount option operates at the filesystem layer, not the general
-> filesystem-vm layer controlled by /proc/sys/vm/dirty_*.  In my
-> understanding, therefore, the two timeouts could effectively be added,
-> yielding a maximum 1 minute (30 seconds btrfs default commit time plus 30
-> seconds vm expiry) commit time.
-In a way, yes, except the commit option controls when a transaction is 
-committed, and thus how often the log tree gets cleared.  It's 
-essentially saying 'ensure the filesystem is consistent without 
-replaying a log at least this often'.  AFAIUI, this doesn't guarantee 
-that you'll go that long without a transaction, but puts an upper bound 
-on it.  Looking at it another way, it pretty much says that you don't 
-care about losing the last n seconds of changes to the FS.
+Hi,
 
-The sysctl values are a bit different, and control how long the kernel 
-will wait in the VFS layer to try and submit a larger batch of writes at 
-once, so that the block layer has more it can try to merge, and 
-hopefully things get written out faster as a result.  IOW, it's a knob 
-to control the VFS level write-back caching to try and tune for 
-performance.  This also ties in with 
-/proc/sys/vm/dirty_writeback_centisecs, which is how often after the 
-expiration hits that the kernel will flush a chunk of the cache, and 
-/proc/sys/vm/dirty_{background,}_{bytes,ratio} which puts an upper limit 
-on how much data will be buffered before trying to flush it out to 
-persistent storage.  You almost certainly want to change these, as they 
-defaults to 10% of system RAM, which is why it often takes a ridiculous 
-amount of time to unmount a flash drive that's been written to a lot. 
-dirty_{ratio,bytes} control the per-process limit, and 
-dirty_background_{ratio,bytes} control the system-wide limit.
->
-> But that has always been an unverified on my part fuzzy assumption.  The
-> two times could be the same layer, with the btrfs mount option being a
-> per-filesystem method of controlling the same thing that /proc/sys/vm/
-> dirty_expire_centisecs controls globally (as you seemed to imply above),
-> or the two could be different layers but with the countdown times
-> overlapping, both of which would result in a 30-second total timeout,
-> instead of the 30+30=60 that I had assumed.
-The two timers do overlap.
->
-> And while we're at it, how does /proc/sys/vm/vfs_cache_pressure play into
-> all this?  I know the dirty_* and how the dirty_*bytes vs. dirty_*ratio
-> vs. dirty_*centisecs thing works, but don't quite understand how
-> vfs_cache_pressure fits in with dirty_*.
-vfs_cache_pressure controls how likely the kernel is to drop clean pages 
-(the documentation says just dentries and inodes, but I'm relatively 
-certain it's anything in the VFS cache) from the VFS cache to get memory 
-to allocate.  The higher this is, the more likely the VFS cache is to 
-get invalidated.  In general, you probably want to increase this on 
-systems that have fast storage (like SSD's or really good SAS RAID 
-arrays, 150 is usually a decent start), and decrease it if you have 
-really slow storage (Like a Raspberry Pi for example).  Setting this too 
-low (below about 50) however, will give you a very high chance of 
-getting an OOM condition.
->
-> Of course if there's already a good writeup on the dirty_* vs
-> vfs_cache_pressure question somewhere, a link would be fine.  But I doubt
-> there's good info on how the btrfs commit= mount option fits into it all,
-> as the btrfs option is relatively newer and it's likely I'd have seen
-> that all ready, if it was out there.
-Documentation/sysctl/vm.txt in the kernel sources covers them, although 
-the documentation is a bit sparse even there.
+while testing the new space_cache=v2 mount option it looks like my root fs
+doesn't automatically create the new space cache.
 
+I'm using the following /etc/fstab:
+
+UUID=7ef56edc-673e-452e-9e05-3fabf074168b       /               btrfs           noatime,compress=lzo,space_cache=v2             0 0
+UUID=6b7d75bf-3d12-409c-88ed-500ac6b78510       /var            btrfs           compress=lzo,space_cache=v2                     0 0
+UUID=24cee7e4-9093-4f86-aa73-d8a59d7f3c6c       /var/tmp        btrfs           compress=lzo,space_cache=v2                     0 0
+
+During first mount the space cache was created for /var (/dev/sdb2) and
+/var/tmp (/dev/sda3), but apparently not for / (/dev/sdc3):
+
+Jan 18 18:48:18 x4 kernel: BTRFS info (device sdb2): enabling free space tree  
+Jan 18 18:48:18 x4 kernel: BTRFS info (device sdb2): using free space tree 
+Jan 18 18:48:18 x4 kernel: BTRFS: creating free space tree
+Jan 18 18:48:18 x4 kernel: BTRFS info (device sdb2): setting 1 ro feature flag
+Jan 18 18:48:18 x4 kernel: BTRFS: checking UUID tree
+Jan 18 18:48:18 x4 kernel: BTRFS info (device sda3): enabling free space tree
+Jan 18 18:48:18 x4 kernel: BTRFS info (device sda3): using free space tree
+Jan 18 18:48:18 x4 kernel: BTRFS: has skinny extents
+Jan 18 18:48:18 x4 kernel: BTRFS: detected SSD devices, enabling SSD mode
+Jan 18 18:48:18 x4 kernel: BTRFS: creating free space tree
+Jan 18 18:48:18 x4 kernel: BTRFS info (device sda3): setting 1 ro feature flag
+Jan 18 18:48:18 x4 kernel: BTRFS: checking UUID tree
+Jan 18 18:48:22 x4 kernel: BTRFS info (device sdc3): enabling free space tree
+Jan 18 18:48:22 x4 kernel: BTRFS info (device sdc3): using free space tree
+
+During subsequent boots the "enabling free space tree" message is
+repeated every time for the root fs.
+
+Jan 18 18:53:48 x4 kernel: BTRFS info (device sdb2): using free space tree 
+Jan 18 18:53:48 x4 kernel: BTRFS info (device sda3): using free space tree 
+Jan 18 18:53:52 x4 kernel: BTRFS info (device sdc3): enabling free space tree 
+Jan 18 18:53:52 x4 kernel: BTRFS info (device sdc3): using free space tree  
+
+markus@x4 tmp % mount
+/dev/sdc3 on / type btrfs (rw,noatime,compress=lzo,ssd,noacl,space_cache=v2,subvolid=5,subvol=/)
+devtmpfs on /dev type devtmpfs (rw,relatime,size=4080208k,nr_inodes=1020052,mode=755)
+proc on /proc type proc (rw,relatime)
+sys on /sys type sysfs (rw,relatime)
+devpts on /dev/pts type devpts (rw,relatime,gid=5,mode=620)
+none on /dev/shm type tmpfs (rw,relatime,size=409600k)
+/dev/sdb2 on /var type btrfs (rw,relatime,compress=lzo,noacl,space_cache=v2,subvolid=5,subvol=/)
+/dev/sda3 on /var/tmp type btrfs (rw,relatime,compress=lzo,ssd,noacl,space_cache=v2,subvolid=5,subvol=/)
+
+-- 
+Markus

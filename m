@@ -1,45 +1,42 @@
 Return-Path: <linux-btrfs-owner@vger.kernel.org>
-Received: from mx2.suse.de ([195.135.220.15]:44848 "EHLO mx2.suse.de"
+Received: from mx2.suse.de ([195.135.220.15]:44863 "EHLO mx2.suse.de"
 	rhost-flags-OK-OK-OK-OK) by vger.kernel.org with ESMTP
-	id S932985AbcASKoA (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
-	Tue, 19 Jan 2016 05:44:00 -0500
+	id S932977AbcASKoE (ORCPT <rfc822;linux-btrfs@vger.kernel.org>);
+	Tue, 19 Jan 2016 05:44:04 -0500
 From: David Sterba <dsterba@suse.com>
 To: linux-btrfs@vger.kernel.org
-Cc: Dan Carpenter <dan.carpenter@oracle.com>, David Sterba <dsterba@suse.com>
-Subject: [PATCH 3/4] Btrfs: clean up an error code in btrfs_init_space_info()
-Date: Tue, 19 Jan 2016 11:43:54 +0100
-Message-Id: <0dc924c5f2a3c4d999e12feaccee5f970cea1315.1453199864.git.dsterba@suse.com>
+Cc: Colin Ian King <colin.king@canonical.com>, David Sterba <dsterba@suse.com>
+Subject: [PATCH 4/4] btrfs: remove duplicate const specifier
+Date: Tue, 19 Jan 2016 11:43:57 +0100
+Message-Id: <fb75d857a31d600cc0c37b8c7d914014f7fa3f9a.1453199864.git.dsterba@suse.com>
 In-Reply-To: <cover.1453199864.git.dsterba@suse.com>
 References: <cover.1453199864.git.dsterba@suse.com>
 Sender: linux-btrfs-owner@vger.kernel.org
 List-ID: <linux-btrfs.vger.kernel.org>
 
-From: Dan Carpenter <dan.carpenter@oracle.com>
+From: Colin Ian King <colin.king@canonical.com>
 
-If we return 1 here, then the caller treats it as an error and returns
--EINVAL.  It causes a static checker warning to treat positive returns
-as an error.
+duplicate const is redundant so remove it
 
-Fixes: 1aba86d67f34 ('Btrfs: fix easily get into ENOSPC in mixed case')
-Signed-off-by: Dan Carpenter <dan.carpenter@oracle.com>
+Signed-off-by: Colin Ian King <colin.king@canonical.com>
 Signed-off-by: David Sterba <dsterba@suse.com>
 ---
- fs/btrfs/extent-tree.c | 2 +-
+ fs/btrfs/volumes.c | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/fs/btrfs/extent-tree.c b/fs/btrfs/extent-tree.c
-index 8c912894a5bd..9d70330c6ebf 100644
---- a/fs/btrfs/extent-tree.c
-+++ b/fs/btrfs/extent-tree.c
-@@ -10509,7 +10509,7 @@ int btrfs_init_space_info(struct btrfs_fs_info *fs_info)
+diff --git a/fs/btrfs/volumes.c b/fs/btrfs/volumes.c
+index 9cb78e31fc76..78f76958b855 100644
+--- a/fs/btrfs/volumes.c
++++ b/fs/btrfs/volumes.c
+@@ -108,7 +108,7 @@ const struct btrfs_raid_attr btrfs_raid_array[BTRFS_NR_RAID_TYPES] = {
+ 	},
+ };
  
- 	disk_super = fs_info->super_copy;
- 	if (!btrfs_super_root(disk_super))
--		return 1;
-+		return -EINVAL;
- 
- 	features = btrfs_super_incompat_flags(disk_super);
- 	if (features & BTRFS_FEATURE_INCOMPAT_MIXED_GROUPS)
+-const u64 const btrfs_raid_group[BTRFS_NR_RAID_TYPES] = {
++const u64 btrfs_raid_group[BTRFS_NR_RAID_TYPES] = {
+ 	[BTRFS_RAID_RAID10] = BTRFS_BLOCK_GROUP_RAID10,
+ 	[BTRFS_RAID_RAID1]  = BTRFS_BLOCK_GROUP_RAID1,
+ 	[BTRFS_RAID_DUP]    = BTRFS_BLOCK_GROUP_DUP,
 -- 
 2.6.3
 
